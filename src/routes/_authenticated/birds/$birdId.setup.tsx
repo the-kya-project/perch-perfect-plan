@@ -1469,9 +1469,9 @@ function HealthBaselineStep({ birdId, birdName, registerFlush }: { birdId: strin
   }, [droppingsPath, clipPath]);
 
   // Debounced persist of text/numeric fields. Also feeds the weight log on change.
-  useEffect(() => {
-    if (!plan || !bird || !hydrated) return;
-    const handle = setTimeout(async () => {
+  useDebouncedAutosave(
+    async () => {
+      if (!plan || !bird) return;
       const newWeight = weight.trim() ? Number(weight) : null;
       await supabase
         .from("birds")
@@ -1505,10 +1505,12 @@ function HealthBaselineStep({ birdId, birdName, registerFlush }: { birdId: strin
 
       qc.invalidateQueries({ queryKey: ["plan", birdId] });
       qc.invalidateQueries({ queryKey: ["tasks", plan.id] });
-    }, 600);
-    return () => clearTimeout(handle);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [weight, conditions, meds, medSchedule, whatsNormal, droppingsPath, clipPath, hydrated]);
+    },
+    [weight, conditions, meds, medSchedule, whatsNormal, droppingsPath, clipPath],
+    !!plan && !!bird && hydrated,
+    registerFlush,
+    600,
+  );
 
   async function uploadPhoto(file: File) {
     if (!bird) return;
