@@ -368,6 +368,3 @@ function TimeBlockSection({
     </section>
   );
 }
-    </div>
-  );
-}
