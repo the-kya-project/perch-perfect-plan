@@ -9,7 +9,7 @@ export const Route = createFileRoute("/sitter/$token/emergency")({
 function Emergency() {
   const { token } = Route.useParams();
   const { data: ctx } = useSitterContext(token);
-  const c = ctx.contacts ?? {};
+  const c: Record<string, string | undefined> = (ctx.contacts ?? {}) as any;
   const playbooks = [
     { title: "Trouble breathing / open-mouth", steps: ["Keep the bird perched and still — do not handle.", "Move to fresh air. No fans or AC pulling from the same room.", "Call the avian vet now."] },
     { title: "Bleeding that won't stop", steps: ["Apply gentle pressure with clean gauze.", "If a broken blood feather, contain the bird and go to the vet now."] },
