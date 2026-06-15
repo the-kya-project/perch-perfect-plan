@@ -424,6 +424,10 @@ function LogsPanel({ birdId }: { birdId: string }) {
     toast.success("Weight logged.");
   }
 
+  const triageColor = (s: string) =>
+    s === "red" ? "bg-warn-red/10 text-warn-red"
+    : s === "yellow" ? "bg-warn-amber/10 text-warn-amber"
+    : "bg-warn-green/10 text-warn-green";
   const SCAN_COLS: { col: string; label: string }[] = [
     { col: "alertness_status", label: "Alert and responsive" },
     { col: "food_status", label: "Eating normally" },
