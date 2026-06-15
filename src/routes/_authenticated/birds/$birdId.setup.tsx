@@ -612,12 +612,13 @@ const WATER_BOWL_WASH_OPTIONS = [
   { value: "twice_daily", label: "Twice a day" },
 ];
 
-// Prefixes used by syncHygieneTasks so we can update/delete the auto-generated rows.
+// Prefixes used by syncHygieneTasks / syncFeedingTasks so we can update/delete
+// the auto-generated rows.
 const HYG_REMOVE_PREFIX = "Remove fresh food";
 const HYG_WASH_FOOD_PREFIX = "Wash food bowls";
 const HYG_WASH_WATER_PREFIX = "Wash water bowl";
+const FEED_PREFIX = "Feed:";
 
-const FEEDING_PATTERN = /food|feed|chop|pellet|seed|fresh|meal|breakfast|dinner/i;
 // A user-checked sitter task counts as "fresh food served" when the title
 // looks like a fresh-food / chop meal task. The auto-generated removal task
 // itself is excluded — checking the removal task should NOT start a new timer.
