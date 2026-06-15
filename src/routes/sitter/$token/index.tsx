@@ -37,16 +37,68 @@ function SitterHome() {
   const { data: ctx } = useSitterContext(token);
   const qc = useQueryClient();
   const toggle = useServerFn(toggleTaskCompletion);
+
+  const sitId = ctx.sit.id;
+  const birdId = ctx.activeBirdId;
+  const removalMinutes = (ctx.plan?.fresh_food_removal_minutes ?? 120) as number;
+
+  const [timers, setTimers] = useState<Record<string, FreshTimer>>(() => loadTimers(sitId, birdId));
+  // Re-render every 30s so countdowns and "Time to remove" surfaces update.
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick((n) => n + 1), 30_000);
+    return () => clearInterval(id);
+  }, []);
+  // Reload timers if the active bird changes.
+  useEffect(() => { setTimers(loadTimers(sitId, birdId)); }, [sitId, birdId]);
+
   const m = useMutation({
-    mutationFn: (vars: { taskId: string; completed: boolean }) =>
+    mutationFn: (vars: { taskId: string; completed: boolean; title: string }) =>
       toggle({ data: { token, taskId: vars.taskId, completed: vars.completed } }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["sitter-ctx", token] }),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: ["sitter-ctx", token] });
+      // Manage the fresh-food removal timer.
+      const isFresh = FRESH_FOOD_TASK_PATTERN.test(vars.title) && !REMOVAL_TASK_PATTERN.test(vars.title);
+      if (!isFresh) return;
+      const next = { ...timers };
+      if (vars.completed) {
+        next[vars.taskId] = { startedAt: Date.now(), taskTitle: vars.title };
+      } else {
+        delete next[vars.taskId];
+      }
+      setTimers(next);
+      saveTimers(sitId, birdId, next);
+    },
   });
 
+  function dismissTimer(taskId: string) {
+    const next = { ...timers };
+    delete next[taskId];
+    setTimers(next);
+    saveTimers(sitId, birdId, next);
+  }
+
   const completedIds = new Set((ctx.completions ?? []).map((c: any) => c.routine_task_id));
+  // Drop timers for tasks no longer completed (e.g. unchecked elsewhere).
+  useEffect(() => {
+    let changed = false;
+    const next = { ...timers };
+    for (const id of Object.keys(next)) {
+      if (!completedIds.has(id)) { delete next[id]; changed = true; }
+    }
+    if (changed) { setTimers(next); saveTimers(sitId, birdId, next); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ctx.completions]);
+
   const grouped: Record<string, any[]> = {};
   for (const t of ctx.tasks) (grouped[t.category] ??= []).push(t);
   const todayLabel = new Date().toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+
+  const now = Date.now();
+  const activeTimers = Object.entries(timers).map(([taskId, t]) => {
+    const dueAt = t.startedAt + removalMinutes * 60_000;
+    return { taskId, ...t, dueAt, isDue: now >= dueAt };
+  });
 
   return (
     <>
