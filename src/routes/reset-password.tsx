@@ -2,13 +2,14 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Bird, ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
+import { BrandLogo } from "@/components/BrandLogo";
 
 export const Route = createFileRoute("/reset-password")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Reset password — Parrot Care Companion" },
+      { title: "Reset password — Parrot Care Co-Pilot" },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),
@@ -69,11 +70,8 @@ function ResetPasswordPage() {
           <ArrowLeft className="size-4" /> Back to sign in
         </Link>
 
-        <div className="mt-6 flex items-center gap-2">
-          <div className="grid size-9 place-items-center rounded-full bg-sage-600 text-white">
-            <Bird className="size-5" />
-          </div>
-          <span className="text-sm font-bold tracking-tight">Parrot Care Companion</span>
+        <div className="mt-6">
+          <BrandLogo size="md" />
         </div>
 
         <h1 className="mt-8 text-2xl font-bold tracking-tight">Set a new password</h1>

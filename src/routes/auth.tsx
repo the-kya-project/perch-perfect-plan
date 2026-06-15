@@ -4,7 +4,8 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { toast } from "sonner";
-import { Bird, ArrowLeft } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
+import { BrandLogo } from "@/components/BrandLogo";
 
 const search = z.object({
   mode: z.enum(["signin", "signup"]).default("signin"),
@@ -14,7 +15,7 @@ export const Route = createFileRoute("/auth")({
   validateSearch: search,
   head: () => ({
     meta: [
-      { title: "Sign in — Parrot Care Companion" },
+      { title: "Sign in — Parrot Care Co-Pilot" },
       { name: "description", content: "Sign in or create an owner account to build a bird care plan." },
     ],
   }),
@@ -111,11 +112,8 @@ function AuthPage() {
           <ArrowLeft className="size-4" /> Back
         </Link>
 
-        <div className="mt-6 flex items-center gap-2">
-          <div className="grid size-9 place-items-center rounded-full bg-sage-600 text-white">
-            <Bird className="size-5" />
-          </div>
-          <span className="text-sm font-bold tracking-tight">Parrot Care Companion</span>
+        <div className="mt-6">
+          <BrandLogo size="md" />
         </div>
 
         <h1 className="mt-8 text-2xl font-bold tracking-tight">

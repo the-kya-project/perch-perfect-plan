@@ -7,7 +7,7 @@ import { SpeciesPicker, AgePicker, BirdField } from "@/components/BirdPickers";
 import { SetupShell } from "@/components/SetupShell";
 
 export const Route = createFileRoute("/_authenticated/birds/new")({
-  head: () => ({ meta: [{ title: "Add a bird — Parrot Care Companion" }] }),
+  head: () => ({ meta: [{ title: "Add a bird — Parrot Care Co-Pilot" }] }),
   component: NewBird,
 });
 

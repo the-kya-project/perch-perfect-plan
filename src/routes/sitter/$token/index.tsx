@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSitterContext } from "./route";
 import { toggleTaskCompletion } from "@/lib/sitter.functions";
 import { Disclaimer } from "@/components/Disclaimer";
+import { BrandLogo } from "@/components/BrandLogo";
 import { Stethoscope, Calendar, PlayCircle } from "lucide-react";
 
 export const Route = createFileRoute("/sitter/$token/")({
@@ -31,8 +32,12 @@ function SitterHome() {
   return (
     <>
       <header className="sticky top-0 z-10 border-b border-sage-100 bg-white">
-        <div className="mx-auto flex max-w-md items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-3">
+        <div className="mx-auto max-w-md px-4 py-3">
+          <div className="flex items-center justify-between gap-3">
+            <BrandLogo size="sm" showTagline={false} />
+            <div className="rounded bg-sage-50 px-2 py-1 text-[10px] font-bold uppercase">Sit active</div>
+          </div>
+          <div className="mt-3 flex items-center gap-3">
             <div className="grid size-10 place-items-center rounded-full bg-sage-100 font-bold text-sage-700">
               {ctx.bird.name.slice(0, 1).toUpperCase()}
             </div>
@@ -41,7 +46,6 @@ function SitterHome() {
               <p className="text-[11px] uppercase tracking-wider text-sage-600">{ctx.bird.species ?? "Parrot"}</p>
             </div>
           </div>
-          <div className="rounded bg-sage-50 px-2 py-1 text-[10px] font-bold uppercase">Sit active</div>
         </div>
       </header>
 

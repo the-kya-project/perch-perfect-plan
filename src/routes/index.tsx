@@ -1,13 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Bird, ShieldCheck, ClipboardList } from "lucide-react";
+import { ShieldCheck, ClipboardList } from "lucide-react";
 import { Disclaimer } from "@/components/Disclaimer";
+import { BrandLogo } from "@/components/BrandLogo";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Parrot Care Companion — clear care for your bird, calm hands for your sitter" },
+      { title: "Parrot Care Co-Pilot — by The Kya Project" },
       { name: "description", content: "Owners build a complete bird care plan. Sitters open a secure link, follow the routine, run a daily health scan, and reach emergency help fast." },
-      { property: "og:title", content: "Parrot Care Companion" },
+      { property: "og:title", content: "Parrot Care Co-Pilot — by The Kya Project" },
       { property: "og:description", content: "Care plans, daily health scans, and emergency guidance for parrot sitters." },
     ],
   }),
@@ -18,12 +19,7 @@ function Welcome() {
   return (
     <div className="min-h-screen bg-sage-50">
       <main className="mx-auto flex min-h-screen max-w-md flex-col px-5 py-10">
-        <div className="flex items-center gap-2">
-          <div className="grid size-9 place-items-center rounded-full bg-sage-600 text-white">
-            <Bird className="size-5" />
-          </div>
-          <span className="text-sm font-bold tracking-tight">Parrot Care Companion</span>
-        </div>
+        <BrandLogo size="md" />
 
         <div className="mt-12 space-y-3">
           <h1 className="text-balance text-4xl font-bold leading-[1.05] tracking-tight">
