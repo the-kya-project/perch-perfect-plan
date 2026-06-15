@@ -750,7 +750,7 @@ function FoodWaterStep({
         const items = (dietDetails[t] ?? []).filter((it) => it.name.trim() || it.amount.trim());
         if (!items.length) continue;
         const parts = items.map((it) => {
-          const amt = it.amount.trim() && it.unit ? `${it.amount.trim()} ${it.unit}` : "";
+          const amt = formatAmountUnit(it.amount, it.unit);
           const when = it.freeFed
             ? "available all day"
             : (it.times ?? []).length ? `@ ${(it.times ?? []).join(", ")}` : "";
