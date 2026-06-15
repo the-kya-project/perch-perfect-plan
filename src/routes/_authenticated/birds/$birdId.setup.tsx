@@ -221,6 +221,94 @@ const COMMON_TASKS = [
   "Cover for night",
 ];
 
+function BasicsStep({ birdId, onBlockNext }: { birdId: string; onBlockNext: (block: boolean) => void }) {
+  const qc = useQueryClient();
+  const { data: bird, isLoading } = useQuery({
+    queryKey: ["bird-basics", birdId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("birds").select("*").eq("id", birdId).single();
+      if (error) throw error;
+      return data as any;
+    },
+  });
+  const [form, setForm] = useState<any>(null);
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    if (!bird || hydrated) return;
+    setForm(bird);
+    setHydrated(true);
+  }, [bird, hydrated]);
+
+  useEffect(() => {
+    onBlockNext(!form?.name?.trim() || !form?.species?.trim());
+  }, [form?.name, form?.species, onBlockNext]);
+
+  useEffect(() => {
+    if (!form || !hydrated) return;
+    const handle = setTimeout(async () => {
+      const { id, owner_id, created_at, updated_at, ...patch } = form;
+      await supabase.from("birds").update(patch).eq("id", birdId);
+      qc.invalidateQueries({ queryKey: ["bird", birdId] });
+      qc.invalidateQueries({ queryKey: ["bird-setup", birdId] });
+    }, 500);
+    return () => clearTimeout(handle);
+  }, [form, hydrated, birdId, qc]);
+
+  if (isLoading || !form) return <div className="h-32 animate-pulse rounded-2xl bg-sage-100" />;
+
+  function onPhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2_000_000) { toast.error("Photo must be under 2MB."); return; }
+    const reader = new FileReader();
+    reader.onload = () => setForm({ ...form, photo_url: reader.result as string });
+    reader.readAsDataURL(file);
+  }
+
+  return (
+    <div className="space-y-4">
+      <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
+        <div className="flex items-start gap-3">
+          {form.photo_url ? (
+            <PhotoCropper src={form.photo_url} position={form.photo_position} onChange={(pos) => setForm({ ...form, photo_position: pos })} size={120} />
+          ) : (
+            <div className="flex size-[120px] items-center justify-center rounded-xl bg-sage-100 text-[10px] uppercase tracking-wider text-sage-600">No photo</div>
+          )}
+          <div className="flex-1 space-y-2 pt-1">
+            <label className="inline-block cursor-pointer rounded-lg bg-sage-100 px-3 py-1.5 text-xs font-semibold text-sage-700">
+              {form.photo_url ? "Change photo" : "Add photo"}
+              <input type="file" accept="image/*" className="hidden" onChange={onPhoto} />
+            </label>
+            {form.photo_url && (
+              <button type="button" onClick={() => setForm({ ...form, photo_url: null, photo_position: null })} className="ml-2 text-xs font-semibold text-warn-red underline">Remove</button>
+            )}
+          </div>
+        </div>
+        <BirdField label="Name"><input className="input" value={form.name ?? ""} onChange={(e) => setForm({ ...form, name: e.target.value })} /></BirdField>
+        <SpeciesPicker value={form.species ?? ""} onChange={(v) => setForm({ ...form, species: v })} />
+        <AgePicker age={form.age ?? ""} birthDate={form.birth_date ?? ""} onChange={(next) => setForm({ ...form, age: next.age, birth_date: next.birthDate })} />
+        <div className="grid grid-cols-2 gap-3">
+          <BirdField label="Sex">
+            <select className="input" value={form.sex ?? ""} onChange={(e) => setForm({ ...form, sex: e.target.value || null })}>
+              <option value="">Unknown</option><option>Male</option><option>Female</option>
+            </select>
+          </BirdField>
+          <BirdField label="Flight">
+            <select className="input" value={form.flight_status ?? "unknown"} onChange={(e) => setForm({ ...form, flight_status: e.target.value })}>
+              <option value="unknown">Unknown</option>
+              <option value="fully_flighted">Fully flighted</option>
+              <option value="clipped">Clipped</option>
+              <option value="partially_clipped">Partially clipped</option>
+            </select>
+          </BirdField>
+        </div>
+      </section>
+      <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.65rem .8rem;font-size:16px;outline:none}.input:focus{border-color:var(--sage-600);box-shadow:0 0 0 3px rgb(74 103 65 / .15)}`}</style>
+    </div>
+  );
+}
+
 function DayInLifeStep({ birdId }: { birdId: string }) {
   const qc = useQueryClient();
 
