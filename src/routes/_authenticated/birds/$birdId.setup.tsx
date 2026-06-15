@@ -572,7 +572,7 @@ const DIET_OPTIONS = [
 const UNITS = ["tablespoons", "cups", "grams", "scoops", "pieces"];
 
 const FRESH_FOOD_OPTIONS = [
-  "Leafy greens", "Carrot", "Bell pepper", "Broccoli", "Sweet potato",
+  "Pre-made chop", "Leafy greens", "Carrot", "Bell pepper", "Broccoli", "Sweet potato",
   "Squash", "Apple (no seeds)", "Berries", "Banana", "Cooked grains",
   "Cooked legumes", "Sprouts", "Quinoa",
 ];
