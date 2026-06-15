@@ -201,6 +201,7 @@ function BirdSetup() {
         onBlockNext={setBlockNext}
         onJumpToStep={jumpToStep}
         onFinish={finishAndGo}
+        registerFlush={registerFlush}
       />
     </SetupShell>
   );
@@ -213,6 +214,7 @@ function StepBody({
   onBlockNext,
   onJumpToStep,
   onFinish,
+  registerFlush,
 }: {
   step: number;
   birdId: string;
@@ -220,15 +222,16 @@ function StepBody({
   onBlockNext: (block: boolean) => void;
   onJumpToStep: (target: number) => void;
   onFinish: (opts: { to: "dashboard-newsit" | "tabs" }) => void;
+  registerFlush: (fn: (() => Promise<void>) | null) => void;
 }) {
-  if (step === 1) return <BasicsStep birdId={birdId} onBlockNext={onBlockNext} />;
+  if (step === 1) return <BasicsStep birdId={birdId} onBlockNext={onBlockNext} registerFlush={registerFlush} />;
   if (step === 2) return <DayInLifeStep birdId={birdId} />;
-  if (step === 3) return <FoodWaterStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} />;
-  if (step === 4) return <PersonalityStep birdId={birdId} birdName={birdName} />;
-  if (step === 5) return <EnvironmentStep birdId={birdId} />;
-  if (step === 6) return <HealthBaselineStep birdId={birdId} birdName={birdName} />;
+  if (step === 3) return <FoodWaterStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} registerFlush={registerFlush} />;
+  if (step === 4) return <PersonalityStep birdId={birdId} birdName={birdName} registerFlush={registerFlush} />;
+  if (step === 5) return <EnvironmentStep birdId={birdId} registerFlush={registerFlush} />;
+  if (step === 6) return <HealthBaselineStep birdId={birdId} birdName={birdName} registerFlush={registerFlush} />;
   if (step === 7) return <WatchFirstClipsStep birdId={birdId} />;
-  if (step === 8) return <EmergencyStep birdId={birdId} onBlockNext={onBlockNext} />;
+  if (step === 8) return <EmergencyStep birdId={birdId} onBlockNext={onBlockNext} registerFlush={registerFlush} />;
   if (step === 9) return <ReviewStep birdId={birdId} birdName={birdName} onJumpToStep={onJumpToStep} onFinish={onFinish} />;
 
 
