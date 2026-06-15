@@ -2,6 +2,15 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, AlertTriangle, ShieldAlert } from "lucide-react";
 import { useSitterContext } from "./route";
 import { ClipPlayer } from "@/components/ClipPlayer";
+import {
+  WATER_FREQ_LABELS,
+  TREATS_FREQ_LABELS,
+  OUT_OF_CAGE_LABELS,
+  BOWL_WASH_LABELS,
+  prettyLabel,
+  formatAmountUnit,
+  formatRemovalMinutes,
+} from "@/lib/labels";
 
 export const Route = createFileRoute("/sitter/$token/care-sheet")({
   component: CareSheet,
