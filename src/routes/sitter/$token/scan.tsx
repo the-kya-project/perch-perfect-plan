@@ -104,7 +104,7 @@ function ScanPage() {
           <h1 className="text-sm font-bold">Daily health scan — {ctx.bird.name}</h1>
         </div>
       </header>
-      <main className="mx-auto max-w-md space-y-4 px-4 py-5">
+      <main className="mx-auto max-w-md space-y-4 px-4 py-5 pb-32">
         <VetReviewBanner />
 
         {SCAN_FIELDS.map((f) => {
