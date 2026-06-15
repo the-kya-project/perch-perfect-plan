@@ -28,6 +28,7 @@ export function SetupShell({
   nextDisabled,
   saving,
   backDisabled,
+  hideFooter,
 }: {
   step: number; // 1-indexed
   title: string;
@@ -40,6 +41,7 @@ export function SetupShell({
   nextDisabled?: boolean;
   saving?: boolean;
   backDisabled?: boolean;
+  hideFooter?: boolean;
 }) {
   const pct = Math.round((step / TOTAL_STEPS) * 100);
   return (
