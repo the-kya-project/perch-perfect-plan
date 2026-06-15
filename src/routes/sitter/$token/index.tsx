@@ -179,7 +179,7 @@ function SitterHome() {
                 return (
                   <button
                     key={t.id}
-                    onClick={() => m.mutate({ taskId: t.id, completed: !done })}
+                    onClick={() => m.mutate({ taskId: t.id, completed: !done, title: t.title })}
                     className={`flex w-full items-start gap-4 rounded-xl p-4 text-left ring-1 transition ${done ? "bg-sage-50 ring-sage-100 opacity-70" : "bg-white ring-sage-100 shadow-sm"}`}
                   >
                     <div className={`mt-0.5 size-6 shrink-0 rounded border-2 ${done ? "border-warn-green bg-warn-green" : "border-sage-200 bg-white"} grid place-items-center`}>
