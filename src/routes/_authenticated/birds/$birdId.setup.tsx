@@ -85,6 +85,25 @@ function BirdSetup() {
     }
   }
 
+  async function jumpToStep(target: number) {
+    const clamped = Math.min(TOTAL_STEPS, Math.max(2, target));
+    const ok = await persistStep(clamped);
+    if (ok) setStep(clamped);
+  }
+
+  async function finishAndGo(opts: { to: "dashboard-newsit" | "tabs" }) {
+    const ok = await persistStep(TOTAL_STEPS, true);
+    if (!ok) return;
+    if (opts.to === "dashboard-newsit") {
+      navigate({
+        to: "/dashboard",
+        search: { newSit: true, preselectBirdId: birdId },
+      });
+    } else {
+      navigate({ to: "/birds/$birdId", params: { birdId } });
+    }
+  }
+
   if (isLoading || !bird || bird.setup_complete) {
     return (
       <SetupShell step={step} title="Loading…">
@@ -107,8 +126,16 @@ function BirdSetup() {
       nextLabel={isLast ? "Finish setup" : "Next"}
       backDisabled={step <= 2}
       nextDisabled={blockNext}
+      hideFooter={step === TOTAL_STEPS}
     >
-      <StepBody step={step} birdId={birdId} birdName={bird.name} onBlockNext={setBlockNext} />
+      <StepBody
+        step={step}
+        birdId={birdId}
+        birdName={bird.name}
+        onBlockNext={setBlockNext}
+        onJumpToStep={jumpToStep}
+        onFinish={finishAndGo}
+      />
     </SetupShell>
   );
 }
@@ -118,11 +145,15 @@ function StepBody({
   birdId,
   birdName,
   onBlockNext,
+  onJumpToStep,
+  onFinish,
 }: {
   step: number;
   birdId: string;
   birdName: string;
   onBlockNext: (block: boolean) => void;
+  onJumpToStep: (target: number) => void;
+  onFinish: (opts: { to: "dashboard-newsit" | "tabs" }) => void;
 }) {
   if (step === 2) return <DayInLifeStep birdId={birdId} />;
   if (step === 3) return <FoodWaterStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} />;
@@ -131,26 +162,9 @@ function StepBody({
   if (step === 6) return <HealthBaselineStep birdId={birdId} birdName={birdName} />;
   if (step === 7) return <WatchFirstClipsStep birdId={birdId} />;
   if (step === 8) return <EmergencyStep birdId={birdId} onBlockNext={onBlockNext} />;
+  if (step === 9) return <ReviewStep birdId={birdId} birdName={birdName} onJumpToStep={onJumpToStep} onFinish={onFinish} />;
 
-  if (step === 9) {
-    return (
-      <div className="space-y-4">
-        <div className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
-          <p className="text-sm font-semibold">You're ready to finish setup for {birdName}.</p>
-          <p className="mt-1 text-sm text-sage-600">
-            Tap <strong>Finish setup</strong> to mark this bird's plan complete. You can edit anything later from the tabs.
-          </p>
-        </div>
-        <Link
-          to="/birds/$birdId"
-          params={{ birdId }}
-          className="block rounded-xl border border-sage-200 bg-white p-3 text-center text-sm font-semibold text-sage-700"
-        >
-          Jump to full editor
-        </Link>
-      </div>
-    );
-  }
+
 
   const blurbs: Record<number, { lead: string; hint: string }> = {
     8: {
@@ -1723,4 +1737,218 @@ function emptyValues(): Record<EmergencyField, string> {
   const o = {} as Record<EmergencyField, string>;
   for (const f of EMERGENCY_FIELDS) o[f] = "";
   return o;
+}
+
+// ---------- Step 9: Review (real sitter preview) ----------
+
+function ReviewStep({
+  birdId,
+  birdName,
+  onJumpToStep,
+  onFinish,
+}: {
+  birdId: string;
+  birdName: string;
+  onJumpToStep: (target: number) => void;
+  onFinish: (opts: { to: "dashboard-newsit" | "tabs" }) => void;
+}) {
+  // Pull the same shape used elsewhere so the warning list reflects real data.
+  const { data: bird } = useQuery({
+    queryKey: ["bird-review", birdId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("birds")
+        .select("id, owner_id, normal_weight")
+        .eq("id", birdId)
+        .single();
+      if (error) throw error;
+      return data as any;
+    },
+  });
+
+  const { data: plan } = useQuery({
+    queryKey: ["plan-review", birdId],
+    queryFn: async () => {
+      const { data } = await supabase.from("care_plans").select("*").eq("bird_id", birdId).maybeSingle();
+      return data as any;
+    },
+  });
+
+  const { data: tasks = [] } = useQuery({
+    queryKey: ["tasks-review", plan?.id],
+    enabled: !!plan?.id,
+    queryFn: async () => {
+      const { data } = await supabase.from("routine_tasks").select("id").eq("care_plan_id", plan!.id);
+      return data ?? [];
+    },
+  });
+
+  const { data: contacts } = useQuery({
+    queryKey: ["contacts-review", birdId],
+    queryFn: async () => {
+      const { data } = await supabase.from("emergency_contacts").select("*").eq("bird_id", birdId).maybeSingle();
+      return data as any;
+    },
+  });
+
+  const { data: defaults } = useQuery({
+    queryKey: ["defaults-review", bird?.owner_id],
+    enabled: !!bird?.owner_id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("owner_emergency_defaults")
+        .select("*")
+        .eq("owner_id", bird!.owner_id)
+        .maybeSingle();
+      return data as any;
+    },
+  });
+
+  // Find-or-create a preview sit so we can render the REAL sitter view.
+  const [previewToken, setPreviewToken] = useState<string | null>(null);
+  const [previewError, setPreviewError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function ensurePreviewSit() {
+      if (!bird?.owner_id) return;
+      try {
+        // Look for an existing, valid preview sit that already includes this bird.
+        const { data: existing } = await supabase
+          .from("sits")
+          .select("id, invite_token, token_expires_at, revoked, sit_birds(bird_id)")
+          .eq("owner_id", bird.owner_id)
+          .eq("sitter_name", "__preview__")
+          .eq("revoked", false);
+        const match = (existing ?? []).find((s: any) =>
+          (s.sit_birds ?? []).some((sb: any) => sb.bird_id === birdId) &&
+          new Date(s.token_expires_at) > new Date(),
+        );
+        if (match) {
+          if (!cancelled) setPreviewToken(match.invite_token);
+          return;
+        }
+        // Otherwise create a fresh one. Far-future expiry so the owner can revisit.
+        const expires = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+        const today = new Date().toISOString().slice(0, 10);
+        const { data: sit, error } = await supabase
+          .from("sits")
+          .insert({
+            owner_id: bird.owner_id,
+            sitter_name: "__preview__",
+            sitter_email: null,
+            start_date: today,
+            end_date: today,
+            notes: "Preview from setup flow",
+            token_expires_at: expires,
+            status: "upcoming",
+          })
+          .select()
+          .single();
+        if (error || !sit) throw new Error(error?.message ?? "Could not build preview");
+        const { error: linkErr } = await supabase.from("sit_birds").insert({ sit_id: sit.id, bird_id: birdId });
+        if (linkErr) throw new Error(linkErr.message);
+        if (!cancelled) setPreviewToken(sit.invite_token);
+      } catch (e: any) {
+        if (!cancelled) setPreviewError(e.message ?? "Could not build preview");
+      }
+    }
+    ensurePreviewSit();
+    return () => { cancelled = true; };
+  }, [bird?.owner_id, birdId]);
+
+  // "Before you share" thin/empty checks. Each links to its step.
+  const issues = useMemo(() => {
+    const list: { label: string; step: number }[] = [];
+    if ((tasks?.length ?? 0) === 0) list.push({ label: "No routine tasks yet", step: 2 });
+    if (!plan?.diet_types?.length && !plan?.food_instructions) list.push({ label: "No food & water details", step: 3 });
+    if (!plan?.handlers && !plan?.likes && !plan?.fears_triggers) list.push({ label: "No personality & handling notes", step: 4 });
+    if (!plan?.cage_location && !plan?.out_of_cage_mode && !(plan?.hazards?.length)) list.push({ label: "No environment & safety details", step: 5 });
+    if (!bird?.normal_weight && !plan?.baseline_droppings_path && !plan?.baseline_clip_path && !plan?.whats_normal) {
+      list.push({ label: "No health baseline (weight, photo, clip, or notes)", step: 6 });
+    }
+    if (!plan?.clip_step_up_path && !plan?.clip_food_water_path && !plan?.clip_locations_path && !plan?.clip_bedtime_path) {
+      list.push({ label: "No watch-first clips", step: 7 });
+    }
+    const eff = (k: string) => ((contacts?.[k] ?? "").toString().trim() || (defaults?.[k] ?? "").toString().trim());
+    if (!eff("owner_phone") || !eff("avian_vet_phone")) {
+      list.push({ label: "Required emergency contacts missing", step: 8 });
+    }
+    return list;
+  }, [tasks, plan, bird, contacts, defaults]);
+
+  const previewSrc = previewToken ? `/sitter/${previewToken}?birdId=${birdId}` : null;
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
+        <p className="text-sm font-semibold">Here's exactly what your sitter will see for {birdName}.</p>
+        <p className="mt-1 text-sm text-sage-600">Scroll inside the preview to explore the sitter's Today screen.</p>
+      </div>
+
+      {issues.length > 0 && (
+        <section className="rounded-2xl bg-warn-amber/10 p-4 ring-1 ring-warn-amber/30">
+          <h2 className="text-sm font-bold text-warn-amber">Before you share</h2>
+          <p className="mt-1 text-xs text-sage-700">A few things are still thin or empty:</p>
+          <ul className="mt-2 space-y-1">
+            {issues.map((i) => (
+              <li key={i.step}>
+                <button
+                  type="button"
+                  onClick={() => onJumpToStep(i.step)}
+                  className="text-left text-sm font-semibold text-sage-900 underline decoration-warn-amber underline-offset-2"
+                >
+                  {i.label} <span className="text-xs text-sage-600">— fix in step {i.step}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      <section className="overflow-hidden rounded-2xl bg-sage-900 ring-1 ring-sage-200">
+        <div className="flex items-center justify-between px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-white/80">
+          <span>Sitter preview</span>
+          <span className="rounded bg-white/10 px-2 py-0.5">Live</span>
+        </div>
+        <div className="bg-sage-50">
+          {previewError ? (
+            <div className="p-6 text-sm text-warn-red">{previewError}</div>
+          ) : previewSrc ? (
+            <iframe
+              src={previewSrc}
+              title="Sitter preview"
+              className="h-[640px] w-full border-0 bg-sage-50"
+            />
+          ) : (
+            <div className="h-[640px] animate-pulse bg-sage-100" />
+          )}
+        </div>
+      </section>
+
+      <div className="space-y-2">
+        <button
+          type="button"
+          onClick={() => onFinish({ to: "dashboard-newsit" })}
+          className="w-full rounded-xl bg-sage-600 py-3 text-sm font-semibold text-white"
+        >
+          Looks good — create a sit
+        </button>
+        <button
+          type="button"
+          onClick={() => onFinish({ to: "tabs" })}
+          className="w-full rounded-xl border border-sage-200 bg-white py-3 text-sm font-semibold text-sage-700"
+        >
+          Keep editing
+        </button>
+        <button
+          type="button"
+          onClick={() => onJumpToStep(8)}
+          className="block w-full text-center text-xs font-semibold text-sage-700 underline"
+        >
+          ← Back to Emergency
+        </button>
+      </div>
+    </div>
+  );
 }

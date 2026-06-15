@@ -1,20 +1,30 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Bird as BirdIcon, LogOut, ChevronRight, Calendar } from "lucide-react";
 import { Disclaimer } from "@/components/Disclaimer";
 import { SitCard } from "@/components/SitCard";
 import { toast } from "sonner";
 
+const dashboardSearch = z.object({
+  newSit: z.coerce.boolean().optional(),
+  preselectBirdId: z.string().uuid().optional(),
+});
+
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [{ title: "Your birds — Parrot Care Companion" }] }),
+  validateSearch: dashboardSearch,
   component: Dashboard,
 });
 
 function Dashboard() {
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const { newSit, preselectBirdId } = Route.useSearch();
+
+
 
   const { data: birds = [] } = useQuery({
     queryKey: ["birds"],
@@ -34,6 +44,8 @@ function Dashboard() {
       const { data, error } = await supabase
         .from("sits")
         .select("*, sit_birds(bird_id)")
+        // Hide internal preview sits used by the setup flow's review screen.
+        .neq("sitter_name", "__preview__")
         .order("start_date", { ascending: false });
       if (error) throw error;
       return data ?? [];
@@ -125,7 +137,14 @@ function Dashboard() {
           <section className="space-y-3">
             <h2 className="text-base font-bold">Sits</h2>
             <p className="text-xs text-sage-600">Create one sit that covers any combination of your birds. The sitter gets a single secure invite link.</p>
-            <SitForm birds={birds} onCreated={refreshSits} />
+            <SitForm
+              birds={birds}
+              onCreated={refreshSits}
+              initialOpen={!!newSit}
+              preselectBirdId={preselectBirdId}
+            />
+
+
             {sits.length === 0 ? (
               <p className="text-sm text-sage-600">No sits yet.</p>
             ) : (
@@ -156,9 +175,34 @@ function Avatar({ name, photo, position }: { name: string; photo?: string | null
   );
 }
 
-function SitForm({ birds, onCreated }: { birds: any[]; onCreated: () => void }) {
-  const [open, setOpen] = useState(false);
-  const [selected, setSelected] = useState<Set<string>>(new Set(birds.length === 1 ? [birds[0].id] : []));
+function SitForm({
+  birds,
+  onCreated,
+  initialOpen = false,
+  preselectBirdId,
+}: {
+  birds: any[];
+  onCreated: () => void;
+  initialOpen?: boolean;
+  preselectBirdId?: string;
+}) {
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(initialOpen);
+  const initialSelection = preselectBirdId
+    ? new Set([preselectBirdId])
+    : new Set<string>(birds.length === 1 ? [birds[0].id] : []);
+  const [selected, setSelected] = useState<Set<string>>(initialSelection);
+
+  // When the dashboard is opened with ?newSit=1, auto-open the form once and
+  // clear the search params so refreshes don't keep re-triggering it.
+  useEffect(() => {
+    if (initialOpen) {
+      setOpen(true);
+      navigate({ to: "/dashboard", search: {}, replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const [sitterName, setSitterName] = useState("");
   const [sitterEmail, setSitterEmail] = useState("");
   const [start, setStart] = useState("");
