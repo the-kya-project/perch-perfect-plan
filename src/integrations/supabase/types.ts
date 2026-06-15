@@ -17,6 +17,7 @@ export type Database = {
       birds: {
         Row: {
           age: string | null
+          birth_date: string | null
           created_at: string
           flight_status: string | null
           id: string
@@ -28,6 +29,7 @@ export type Database = {
           normal_weight_min: number | null
           notes: string | null
           owner_id: string
+          photo_position: string | null
           photo_url: string | null
           sex: string | null
           species: string | null
@@ -35,6 +37,7 @@ export type Database = {
         }
         Insert: {
           age?: string | null
+          birth_date?: string | null
           created_at?: string
           flight_status?: string | null
           id?: string
@@ -46,6 +49,7 @@ export type Database = {
           normal_weight_min?: number | null
           notes?: string | null
           owner_id: string
+          photo_position?: string | null
           photo_url?: string | null
           sex?: string | null
           species?: string | null
@@ -53,6 +57,7 @@ export type Database = {
         }
         Update: {
           age?: string | null
+          birth_date?: string | null
           created_at?: string
           flight_status?: string | null
           id?: string
@@ -64,6 +69,7 @@ export type Database = {
           normal_weight_min?: number | null
           notes?: string | null
           owner_id?: string
+          photo_position?: string | null
           photo_url?: string | null
           sex?: string | null
           species?: string | null
