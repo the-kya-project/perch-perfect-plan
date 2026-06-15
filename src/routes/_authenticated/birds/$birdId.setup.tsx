@@ -303,16 +303,18 @@ function BasicsStep({ birdId, onBlockNext, registerFlush }: { birdId: string; on
     onBlockNext(!form?.name?.trim() || !form?.species?.trim());
   }, [form?.name, form?.species, onBlockNext]);
 
-  useEffect(() => {
-    if (!form || !hydrated) return;
-    const handle = setTimeout(async () => {
+  useDebouncedAutosave(
+    async () => {
+      if (!form) return;
       const { id, owner_id, created_at, updated_at, ...patch } = form;
       await supabase.from("birds").update(patch).eq("id", birdId);
       qc.invalidateQueries({ queryKey: ["bird", birdId] });
       qc.invalidateQueries({ queryKey: ["bird-setup", birdId] });
-    }, 500);
-    return () => clearTimeout(handle);
-  }, [form, hydrated, birdId, qc]);
+    },
+    [form, birdId, qc],
+    !!form && hydrated,
+    registerFlush,
+  );
 
   if (isLoading || !form) return <div className="h-32 animate-pulse rounded-2xl bg-sage-100" />;
 
