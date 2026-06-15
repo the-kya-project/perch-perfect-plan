@@ -84,6 +84,16 @@ function BirdSetup() {
   useEffect(() => { setBlockNext(false); }, [step]);
   const [saving, setSaving] = useState(false);
 
+  // Imperative flush registered by the current step's autosave hook.
+  // Called before any navigation so pending edits persist immediately.
+  const flushRef = useRef<(() => Promise<void>) | null>(null);
+  const registerFlush = useCallback((fn: (() => Promise<void>) | null) => {
+    flushRef.current = fn;
+  }, []);
+  async function flushPending() {
+    try { await flushRef.current?.(); } catch { /* surfaced by per-row toasts */ }
+  }
+
   // Start at step one unless this bird has an unfinished saved position.
   // Explicit ?step= links still open the requested step.
   useEffect(() => {
@@ -108,6 +118,7 @@ function BirdSetup() {
   }
 
   async function onNext() {
+    await flushPending();
     if (step >= TOTAL_STEPS) {
       const ok = await persistStep(TOTAL_STEPS, true);
       if (ok) {
@@ -123,12 +134,14 @@ function BirdSetup() {
 
   async function onBack() {
     if (step <= 1) return;
+    await flushPending();
     const prev = step - 1;
     const ok = await persistStep(prev);
     if (ok) setStep(prev);
   }
 
   async function onSaveAndExit() {
+    await flushPending();
     const ok = await persistStep(step);
     if (ok) {
       toast.success("Progress saved.");
@@ -137,12 +150,14 @@ function BirdSetup() {
   }
 
   async function jumpToStep(target: number) {
+    await flushPending();
     const clamped = Math.min(TOTAL_STEPS, Math.max(1, target));
     const ok = await persistStep(clamped);
     if (ok) setStep(clamped);
   }
 
   async function finishAndGo(opts: { to: "dashboard-newsit" | "tabs" }) {
+    await flushPending();
     const ok = await persistStep(TOTAL_STEPS, true);
     if (!ok) return;
     if (opts.to === "dashboard-newsit") {
