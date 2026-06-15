@@ -1270,7 +1270,7 @@ const HAZARD_OPTIONS = [
   "Candles or diffusers",
 ];
 
-function EnvironmentStep({ birdId }: { birdId: string }) {
+function EnvironmentStep({ birdId, registerFlush }: { birdId: string; registerFlush?: (fn: (() => Promise<void>) | null) => void }) {
   const qc = useQueryClient();
   const { data: plan, isLoading } = useQuery({
     queryKey: ["plan-environment", birdId],
