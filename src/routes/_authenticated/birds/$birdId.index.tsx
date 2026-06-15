@@ -90,12 +90,25 @@ function BirdEditor() {
   if (!bird) return <div className="p-6 text-sm text-sage-600">Loading...</div>;
 
   const tabs: { id: Tab; label: string }[] = [
-    { id: "plan", label: "Care plan" },
+    { id: "basics", label: "Basics" },
     { id: "routine", label: "Routine" },
+    { id: "food", label: "Food" },
+    { id: "behavior", label: "Behavior" },
+    { id: "home", label: "Home" },
+    { id: "health", label: "Health" },
+    { id: "clips", label: "Clips" },
     { id: "emergency", label: "Emergency" },
     { id: "sits", label: "Sits" },
     { id: "logs", label: "Logs" },
   ];
+
+  const completeness = computeSetupCompleteness({ bird, plan, tasksCount: tasks.length, contacts, defaults });
+  const isComplete = completeness.firstIncompleteStep === null;
+
+  const onPlanSaved = () => {
+    qc.invalidateQueries({ queryKey: ["plan", birdId] });
+    qc.invalidateQueries({ queryKey: ["bird", birdId] });
+  };
 
   return (
     <div className="min-h-screen bg-sage-50 pb-20">
@@ -104,10 +117,21 @@ function BirdEditor() {
           <div className="flex items-center gap-3">
             <Link to="/dashboard" className="rounded p-1 text-sage-600"><ArrowLeft className="size-5" /></Link>
             {bird.photo_url && <img src={bird.photo_url} alt={bird.name} className="size-9 rounded-full object-cover ring-1 ring-sage-200" style={{ objectPosition: bird.photo_position ?? "50% 50%" }} />}
-            <div className="flex-1">
-              <h1 className="text-sm font-bold">{bird.name}</h1>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-sm font-bold truncate">{bird.name}</h1>
               <p className="text-[10px] uppercase tracking-wider text-sage-600">{bird.species ?? "Parrot"}</p>
             </div>
+            <Link
+              to="/birds/$birdId/setup"
+              params={{ birdId }}
+              search={completeness.firstIncompleteStep ? { step: completeness.firstIncompleteStep } : undefined}
+              className="inline-flex shrink-0 items-center gap-1 rounded-full bg-sage-100 px-2.5 py-1 text-[11px] font-semibold text-sage-800"
+              title="Open guided setup walkthrough"
+            >
+              <Wand2 className="size-3.5" />
+              <span>Guided setup</span>
+              <span className="text-sage-600">· {isComplete ? "done" : `${completeness.doneCount}/${completeness.total}`}</span>
+            </Link>
           </div>
           <div className="-mx-1 mt-3 flex gap-1 overflow-x-auto pb-1">
             {tabs.map((t) => (
@@ -124,57 +148,19 @@ function BirdEditor() {
       </header>
 
       <main className="mx-auto max-w-md space-y-4 px-4 py-5">
-        {(() => {
-          const completeness = computeSetupCompleteness({ bird, plan, tasksCount: tasks.length, contacts, defaults });
-          const isComplete = completeness.firstIncompleteStep === null;
-          return (
-            <>
-              {tab !== "plan" && (
-                <Link
-                  to="/birds/$birdId/setup"
-                  params={{ birdId }}
-                  search={completeness.firstIncompleteStep ? { step: completeness.firstIncompleteStep } : undefined}
-                  className="flex items-center justify-between gap-3 rounded-2xl bg-sage-900 px-4 py-3 text-white shadow-sm active:scale-[0.99]"
-                >
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-sage-300">Guided walkthrough</p>
-                    <p className="text-sm font-semibold">
-                      {isComplete ? `Review ${bird.name}'s care plan step by step` : `Build ${bird.name}'s care plan step by step`}
-                    </p>
-                    {!isComplete && (
-                      <p className="mt-0.5 text-[11px] text-sage-300">{completeness.doneCount} of {completeness.total} sections done · recommended</p>
-                    )}
-                  </div>
-                  <span className="rounded-lg bg-white/10 px-2.5 py-1 text-[11px] font-bold">{isComplete ? "Open" : "Start"}</span>
-                </Link>
-              )}
-              {tab === "plan" && plan && (
-                <>
-                  <div className="flex items-center justify-between gap-3 rounded-xl bg-white px-3 py-2 ring-1 ring-sage-100">
-                    <p className="text-[11px] text-sage-600">
-                      {isComplete
-                        ? "All sections done."
-                        : `${completeness.doneCount} of ${completeness.total} done`}
-                    </p>
-                    <Link
-                      to="/birds/$birdId/setup"
-                      params={{ birdId }}
-                      search={completeness.firstIncompleteStep ? { step: completeness.firstIncompleteStep } : undefined}
-                      className="inline-flex items-center gap-1 text-xs font-semibold text-sage-900 underline"
-                    >
-                      <Wand2 className="size-3.5" /> Guided setup
-                    </Link>
-                  </div>
-                  <PlanForm birdId={birdId} bird={bird} plan={plan} onSaved={() => { qc.invalidateQueries({ queryKey: ["plan", birdId] }); qc.invalidateQueries({ queryKey: ["bird", birdId] }); }} />
-                </>
-              )}
-              {tab === "routine" && plan && <RoutineEditor planId={plan.id} tasks={tasks} onChange={() => qc.invalidateQueries({ queryKey: ["tasks", plan.id] })} />}
-              {tab === "emergency" && contacts && <ContactsForm birdId={birdId} contacts={contacts} defaults={defaults ?? null} onSaved={() => qc.invalidateQueries({ queryKey: ["contacts", birdId] })} />}
-              {tab === "sits" && <SitsPanel birdId={birdId} sits={sits} onChange={() => qc.invalidateQueries({ queryKey: ["sits", birdId] })} />}
-              {tab === "logs" && <LogsPanel birdId={birdId} />}
-            </>
-          );
-        })()}
+        {["basics", "food", "behavior", "home", "health", "clips"].includes(tab) && plan && (
+          <PlanFormSection
+            section={tab as PlanSection}
+            birdId={birdId}
+            bird={bird}
+            plan={plan}
+            onSaved={onPlanSaved}
+          />
+        )}
+        {tab === "routine" && plan && <RoutineEditor planId={plan.id} tasks={tasks} onChange={() => qc.invalidateQueries({ queryKey: ["tasks", plan.id] })} />}
+        {tab === "emergency" && contacts && <ContactsForm birdId={birdId} contacts={contacts} defaults={defaults ?? null} onSaved={() => qc.invalidateQueries({ queryKey: ["contacts", birdId] })} />}
+        {tab === "sits" && <SitsPanel birdId={birdId} sits={sits} onChange={() => qc.invalidateQueries({ queryKey: ["sits", birdId] })} />}
+        {tab === "logs" && <LogsPanel birdId={birdId} />}
       </main>
 
       <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.65rem .8rem;font-size:16px;outline:none}.input:focus{border-color:var(--sage-600);box-shadow:0 0 0 3px rgb(74 103 65 / .15)}.area{min-height:80px;line-height:1.4}`}</style>
