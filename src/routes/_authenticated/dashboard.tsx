@@ -5,6 +5,7 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Bird as BirdIcon, LogOut, ChevronRight, Calendar } from "lucide-react";
 import { Disclaimer } from "@/components/Disclaimer";
+import { BrandLogo } from "@/components/BrandLogo";
 import { SitCard } from "@/components/SitCard";
 import { toast } from "sonner";
 import { computeSetupCompleteness } from "@/lib/setupCompleteness";
