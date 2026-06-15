@@ -6,7 +6,8 @@ import { useSitterContext } from "./route";
 import { toggleTaskCompletion } from "@/lib/sitter.functions";
 import { Disclaimer } from "@/components/Disclaimer";
 import { BrandLogo } from "@/components/BrandLogo";
-import { Stethoscope, Calendar, PlayCircle, Clock, X, BookOpen, ChevronRight } from "lucide-react";
+import { Stethoscope, Calendar, Clock, X, BookOpen, ChevronRight } from "lucide-react";
+import { ClipPlayer } from "@/components/ClipPlayer";
 
 export const Route = createFileRoute("/sitter/$token/")({
   component: SitterHome,
@@ -156,24 +157,16 @@ function SitterHome() {
             <p className="text-xs text-sage-600">Short clips from {ctx.bird.name}'s owner. These are private to you.</p>
             <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1">
               {ctx.watchClips.map((c: any) => (
-                <a
+                <div
                   key={c.key}
-                  href={c.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="group flex w-60 shrink-0 snap-start flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-sage-100 shadow-sm"
+                  className="flex w-60 shrink-0 snap-start flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-sage-100 shadow-sm"
                 >
-                  <div className="relative aspect-video bg-sage-900">
-                    <video src={c.url} className="size-full object-cover opacity-90" preload="metadata" muted playsInline />
-                    <div className="absolute inset-0 grid place-items-center">
-                      <PlayCircle className="size-10 text-white drop-shadow" />
-                    </div>
-                  </div>
+                  <ClipPlayer src={c.url} label={c.label} className="aspect-video" />
                   <div className="p-3">
                     <p className="text-sm font-semibold leading-tight">{c.label}</p>
-                    <p className="mt-0.5 text-[11px] uppercase tracking-wider text-sage-600">Tap to play</p>
+                    <p className="mt-0.5 text-[11px] uppercase tracking-wider text-sage-600">Owner-recorded</p>
                   </div>
-                </a>
+                </div>
               ))}
             </div>
           </section>

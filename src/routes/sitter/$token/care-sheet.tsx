@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, AlertTriangle, PlayCircle, ShieldAlert } from "lucide-react";
+import { ArrowLeft, AlertTriangle, ShieldAlert } from "lucide-react";
 import { useSitterContext } from "./route";
+import { ClipPlayer } from "@/components/ClipPlayer";
 
 export const Route = createFileRoute("/sitter/$token/care-sheet")({
   component: CareSheet,
@@ -119,16 +120,13 @@ function CareSheet() {
 
         {clips.length > 0 && (
           <Section title="Watch-first clips">
-            <p className="text-xs text-sage-600">Short clips from the owner. Tap to play.</p>
-            <div className="-mx-1 grid grid-cols-2 gap-2">
+            <p className="text-xs text-sage-600">Short clips from the owner.</p>
+            <div className="-mx-1 grid grid-cols-1 gap-3">
               {clips.map((c: any) => (
-                <a key={c.key} href={c.url} target="_blank" rel="noreferrer" className="group overflow-hidden rounded-xl bg-white ring-1 ring-sage-100">
-                  <div className="relative aspect-video bg-sage-900">
-                    <video src={c.url} className="size-full object-cover opacity-90" preload="metadata" muted playsInline />
-                    <div className="absolute inset-0 grid place-items-center"><PlayCircle className="size-8 text-white drop-shadow" /></div>
-                  </div>
-                  <p className="px-2 py-1.5 text-[11px] font-semibold leading-tight">{c.label}</p>
-                </a>
+                <div key={c.key} className="overflow-hidden rounded-xl bg-white ring-1 ring-sage-100">
+                  <ClipPlayer src={c.url} label={c.label} className="aspect-video" />
+                  <p className="px-2 py-1.5 text-[12px] font-semibold leading-tight">{c.label}</p>
+                </div>
               ))}
             </div>
           </Section>
@@ -249,21 +247,18 @@ function CareSheet() {
               <Field label="Medications" value={[bird.medications, plan.medication_schedule].filter(Boolean).join("\n")} />
             )}
             {(ctx.baselineDroppingsUrl || ctx.baselineClipUrl) && (
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-2">
                 {ctx.baselineDroppingsUrl && (
-                  <a href={ctx.baselineDroppingsUrl} target="_blank" rel="noreferrer" className="overflow-hidden rounded-xl ring-1 ring-sage-100">
-                    <img src={ctx.baselineDroppingsUrl} alt="Baseline droppings" className="aspect-square w-full object-cover" />
+                  <div className="overflow-hidden rounded-xl ring-1 ring-sage-100">
+                    <img src={ctx.baselineDroppingsUrl} alt="Baseline droppings" className="aspect-video w-full object-cover" />
                     <p className="bg-white px-2 py-1 text-[11px] font-semibold">Baseline droppings</p>
-                  </a>
+                  </div>
                 )}
                 {ctx.baselineClipUrl && (
-                  <a href={ctx.baselineClipUrl} target="_blank" rel="noreferrer" className="overflow-hidden rounded-xl bg-sage-900 ring-1 ring-sage-100">
-                    <div className="relative aspect-square">
-                      <video src={ctx.baselineClipUrl} className="size-full object-cover opacity-90" preload="metadata" muted playsInline />
-                      <div className="absolute inset-0 grid place-items-center"><PlayCircle className="size-8 text-white drop-shadow" /></div>
-                    </div>
+                  <div className="overflow-hidden rounded-xl ring-1 ring-sage-100">
+                    <ClipPlayer src={ctx.baselineClipUrl} label="Normal-behavior clip" className="aspect-video" />
                     <p className="bg-white px-2 py-1 text-[11px] font-semibold">Normal-behavior clip</p>
-                  </a>
+                  </div>
                 )}
               </div>
             )}
