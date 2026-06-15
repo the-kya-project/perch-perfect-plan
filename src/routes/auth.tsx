@@ -152,6 +152,18 @@ function AuthPage() {
               placeholder="••••••••"
             />
           </Field>
+          {mode === "signin" && (
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={handleForgotPassword}
+                disabled={loading}
+                className="text-xs font-semibold text-sage-700 underline disabled:opacity-50"
+              >
+                Forgot password?
+              </button>
+            </div>
+          )}
           <button
             type="submit"
             disabled={loading}
