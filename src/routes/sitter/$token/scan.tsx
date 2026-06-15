@@ -6,7 +6,7 @@ import { useSitterContext } from "./route";
 import { submitHealthScan, uploadDroppingsPhoto } from "@/lib/sitter.functions";
 import { SCAN_FIELDS, type ScanAnswer, type ScanFieldKey, computeTriage } from "@/lib/triage";
 import { ArrowLeft, Camera } from "lucide-react";
-import { Disclaimer, VetReviewBanner } from "@/components/Disclaimer";
+import { VetReviewBanner } from "@/components/Disclaimer";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/sitter/$token/scan")({
