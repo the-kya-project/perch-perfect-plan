@@ -337,12 +337,12 @@ function ContactsForm({ birdId, contacts, onSaved }: { birdId: string; contacts:
     toast.success("Emergency info saved.");
     onSaved();
   }
-  const fields: [string, string][] = [
-    ["owner_phone", "Owner phone"],
+  const fields: [string, string, boolean?][] = [
+    ["owner_phone", "Owner phone", true],
     ["backup_name", "Backup contact name"],
     ["backup_phone", "Backup contact phone"],
     ["avian_vet_name", "Avian vet name"],
-    ["avian_vet_phone", "Avian vet phone"],
+    ["avian_vet_phone", "Avian vet phone", true],
     ["avian_vet_address", "Avian vet address"],
     ["emergency_vet_name", "Emergency vet name"],
     ["emergency_vet_phone", "Emergency vet phone"],
@@ -356,9 +356,9 @@ function ContactsForm({ birdId, contacts, onSaved }: { birdId: string; contacts:
   return (
     <section className="space-y-3 rounded-2xl bg-white p-4 ring-1 ring-sage-100">
       <h2 className="text-sm font-bold">Emergency contacts & home info</h2>
-      <p className="text-xs text-sage-600">This information appears in the sitter's Emergency Mode.</p>
-      {fields.map(([k, l]) => (
-        <Field key={k} label={l}><input className="input" value={c[k] ?? ""} onChange={(e) => setC({ ...c, [k]: e.target.value })} /></Field>
+      <p className="text-xs text-sage-600">This information appears in the sitter's Emergency Mode. Owner phone and avian vet phone are required before you can share a sitter link.</p>
+      {fields.map(([k, l, required]) => (
+        <Field key={k} label={required ? `${l} (required for sitter link)` : l}><input className="input" value={c[k] ?? ""} onChange={(e) => setC({ ...c, [k]: e.target.value })} /></Field>
       ))}
       <button disabled={saving} onClick={save} className="mt-2 w-full rounded-xl bg-sage-600 py-3 text-sm font-semibold text-white disabled:opacity-50">{saving ? "Saving..." : "Save emergency info"}</button>
     </section>
