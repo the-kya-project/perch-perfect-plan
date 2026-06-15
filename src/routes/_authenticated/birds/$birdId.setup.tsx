@@ -112,8 +112,19 @@ function BirdSetup() {
   );
 }
 
-function StepBody({ step, birdId, birdName }: { step: number; birdId: string; birdName: string }) {
+function StepBody({
+  step,
+  birdId,
+  birdName,
+  onBlockNext,
+}: {
+  step: number;
+  birdId: string;
+  birdName: string;
+  onBlockNext: (block: boolean) => void;
+}) {
   if (step === 2) return <DayInLifeStep birdId={birdId} />;
+  if (step === 3) return <FoodWaterStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} />;
 
   if (step === 5) {
     return (
@@ -136,10 +147,6 @@ function StepBody({ step, birdId, birdName }: { step: number; birdId: string; bi
   }
 
   const blurbs: Record<number, { lead: string; hint: string }> = {
-    3: {
-      lead: "Care details — diet, housing, handling, behavior and health notes.",
-      hint: "We'll add the structured fields here in the next iteration. For now, tap Next to advance, or open the full editor to fill it in.",
-    },
     4: {
       lead: "Emergency info — vets, contacts, and home info for sitters.",
       hint: "Most of this is inherited from your account defaults. The full form lives on the Emergency tab.",
