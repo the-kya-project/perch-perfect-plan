@@ -44,7 +44,7 @@ function SitterLayout() {
   return (
     <div className="min-h-screen bg-sage-50 pb-32">
       {ctx.birds.length > 1 && (
-        <div className="border-b border-sage-100 bg-white">
+        <div className="sticky top-0 z-30 border-b border-sage-100 bg-white/95 backdrop-blur">
           <div className="mx-auto flex max-w-md items-center gap-2 overflow-x-auto px-4 py-2">
             <span className="text-[10px] font-bold uppercase tracking-widest text-sage-600">Bird:</span>
             {ctx.birds.map((b: any) => (
@@ -57,7 +57,6 @@ function SitterLayout() {
               </button>
             ))}
           </div>
-
         </div>
       )}
       <Suspense fallback={<TabSkeleton />}>
