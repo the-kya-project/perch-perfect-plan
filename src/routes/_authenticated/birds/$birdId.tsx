@@ -43,6 +43,19 @@ function BirdEditor() {
       return data;
     },
   });
+  const { data: defaults } = useQuery({
+    queryKey: ["owner-defaults"],
+    queryFn: async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return null;
+      const { data } = await supabase
+        .from("owner_emergency_defaults")
+        .select("*")
+        .eq("owner_id", u.user.id)
+        .maybeSingle();
+      return data;
+    },
+  });
   const { data: tasks = [] } = useQuery({
     queryKey: ["tasks", plan?.id],
     enabled: !!plan?.id,
