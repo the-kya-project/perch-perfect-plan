@@ -11,7 +11,7 @@ export const Route = createFileRoute("/_authenticated/birds/$birdId")({
   component: BirdEditor,
 });
 
-type Tab = "plan" | "routine" | "emergency" | "sits";
+type Tab = "plan" | "routine" | "emergency" | "sits" | "logs";
 
 function BirdEditor() {
   const { birdId } = Route.useParams();
