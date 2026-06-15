@@ -56,8 +56,8 @@ function SitterLayout() {
                 {b.name}
               </button>
             ))}
-            {isFetching && <SpinnerDot />}
           </div>
+
         </div>
       )}
       <Suspense fallback={<TabSkeleton />}>
