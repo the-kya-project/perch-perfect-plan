@@ -756,28 +756,99 @@ function FoodWaterStep({
         )}
       </Card>
 
-      <Card title="Brand or product (optional)">
-        <input className="input" value={brand} maxLength={120} onChange={(e) => setBrand(e.target.value)} placeholder="e.g. Harrison's High Potency Fine" />
-      </Card>
-
-      <Card title="Amount per serving" hint="Always include a unit.">
-        <div className="grid grid-cols-[1fr,1.4fr] gap-2">
-          <input
-            className="input"
-            inputMode="decimal"
-            placeholder="e.g. 2"
-            value={amountValue}
-            onChange={(e) => setAmountValue(e.target.value.replace(/[^0-9.]/g, ""))}
-          />
-          <select className="input" value={amountUnit} onChange={(e) => setAmountUnit(e.target.value)}>
-            <option value="">Pick a unit…</option>
-            {UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
-          </select>
-        </div>
-        {!amountValid && (
-          <p className="mt-2 text-xs font-semibold text-warn-red">Add both an amount and a unit, or clear both.</p>
-        )}
-      </Card>
+      {/* Per-diet-type items & amounts */}
+      {diet.length > 0 && (
+        <Card
+          title={diet.length === 1 ? "Brand / items & amount" : "Items & amounts per food type"}
+          hint={diet.length === 1
+            ? "Add the brand or item name and how much to serve."
+            : "For each food type you picked, list the specific items and how much of each."}
+        >
+          <div className="space-y-4">
+            {diet.map((t) => {
+              const label = DIET_OPTIONS.find((o) => o.value === t)?.label ?? t;
+              const items = dietDetails[t] ?? [];
+              const update = (next: DietItem[]) =>
+                setDietDetails({ ...dietDetails, [t]: next });
+              return (
+                <div key={t} className="rounded-xl bg-sage-50/60 p-3 ring-1 ring-sage-100">
+                  <div className="mb-2 flex items-center justify-between">
+                    <p className="text-sm font-semibold text-sage-800">{label}</p>
+                    <button
+                      type="button"
+                      onClick={() => update([...items, { name: "", amount: "", unit: "" }])}
+                      className="inline-flex items-center gap-1 rounded-lg bg-sage-100 px-2.5 py-1 text-xs font-semibold text-sage-700 hover:bg-sage-200"
+                    >
+                      <Plus className="size-3.5" /> Add item
+                    </button>
+                  </div>
+                  {items.length === 0 && (
+                    <p className="text-xs text-sage-500">No items yet. Tap “Add item” to list a brand or food.</p>
+                  )}
+                  <div className="space-y-2">
+                    {items.map((it, idx) => {
+                      const rowInvalid = ((it.amount?.trim() === "") !== (it.unit === ""));
+                      return (
+                        <div key={idx} className="rounded-lg bg-white p-2 ring-1 ring-sage-100">
+                          <div className="grid grid-cols-[1fr,auto] gap-2">
+                            <input
+                              className="input"
+                              placeholder={t === "chop" ? "e.g. Morning chop mix" : "Brand or item name"}
+                              value={it.name}
+                              maxLength={120}
+                              onChange={(e) => {
+                                const next = items.slice();
+                                next[idx] = { ...it, name: e.target.value };
+                                update(next);
+                              }}
+                            />
+                            <button
+                              type="button"
+                              aria-label="Remove item"
+                              onClick={() => update(items.filter((_, i) => i !== idx))}
+                              className="rounded-lg p-2 text-sage-500 hover:bg-sage-100"
+                            >
+                              <X className="size-4" />
+                            </button>
+                          </div>
+                          <div className="mt-2 grid grid-cols-[1fr,1.4fr] gap-2">
+                            <input
+                              className="input"
+                              inputMode="decimal"
+                              placeholder="Amount (e.g. 2)"
+                              value={it.amount}
+                              onChange={(e) => {
+                                const next = items.slice();
+                                next[idx] = { ...it, amount: e.target.value.replace(/[^0-9.]/g, "") };
+                                update(next);
+                              }}
+                            />
+                            <select
+                              className="input"
+                              value={it.unit}
+                              onChange={(e) => {
+                                const next = items.slice();
+                                next[idx] = { ...it, unit: e.target.value };
+                                update(next);
+                              }}
+                            >
+                              <option value="">Pick a unit…</option>
+                              {UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
+                            </select>
+                          </div>
+                          {rowInvalid && (
+                            <p className="mt-1.5 text-xs font-semibold text-warn-red">Add both an amount and a unit, or clear both.</p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      )}
 
       <Card
         title="Feeding schedule"
