@@ -21,7 +21,7 @@ function Dashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("birds")
-        .select("id, name, species, photo_url, photo_position")
+        .select("id, name, species, photo_url, photo_position, setup_complete, setup_step")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data ?? [];
