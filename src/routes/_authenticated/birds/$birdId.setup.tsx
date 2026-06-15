@@ -765,7 +765,7 @@ function FoodWaterStep({
       const legacyBrand = (firstItem?.name?.trim() || brand) ?? "";
       const legacyAmtVal = (firstItem?.amount?.trim() || amountValue) ?? "";
       const legacyAmtUnit = firstItem?.unit || amountUnit;
-      const amountStr = legacyAmtVal && legacyAmtUnit ? `${legacyAmtVal} ${legacyAmtUnit}` : "";
+      const amountStr = formatAmountUnit(legacyAmtVal, legacyAmtUnit);
 
       const removalLabel = REMOVAL_OPTIONS.find((o) => o.value === removalMinutes)?.label ?? `${removalMinutes} min`;
       const foodWashLabel = FOOD_BOWL_WASH_OPTIONS.find((o) => o.value === foodBowlWash)?.label ?? foodBowlWash;
