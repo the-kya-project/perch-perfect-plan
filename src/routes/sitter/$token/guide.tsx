@@ -26,38 +26,10 @@ function Guide() {
   for (const c of filtered) (grouped[c.category] ??= []).push(c);
 
   const active = cards.find((c: any) => c.id === open);
+  const level = active?.emergency_level as string | undefined;
+  const color = level === "red" ? "bg-warn-red text-white" : level === "yellow" ? "bg-warn-amber/15 text-warn-amber" : "bg-sage-100 text-sage-700";
 
-  if (active) {
-    const level = active.emergency_level as string;
-    const color = level === "red" ? "bg-warn-red text-white" : level === "yellow" ? "bg-warn-amber/15 text-warn-amber" : "bg-sage-100 text-sage-700";
-    return (
-      <>
-        <header className="sticky top-0 z-10 border-b border-sage-100 bg-white">
-          <div className="mx-auto flex max-w-md items-center gap-3 px-4 py-3">
-            <button onClick={() => setOpen(null)} className="rounded p-1 text-sage-600"><ArrowLeft className="size-5" /></button>
-            <h1 className="text-sm font-bold truncate">{active.title}</h1>
-          </div>
-        </header>
-        <main className="mx-auto max-w-md space-y-4 px-4 py-5">
-          <span className={`inline-block rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest ${color}`}>{level}</span>
-          {active.quick_answer && (
-            <section className="rounded-xl bg-white p-4 ring-1 ring-sage-100"><p className="text-[11px] font-bold uppercase tracking-widest text-sage-600">Quick answer</p><p className="mt-2 text-sm">{active.quick_answer}</p></section>
-          )}
-          {active.what_to_check && (
-            <section className="rounded-xl bg-white p-4 ring-1 ring-sage-100"><p className="text-[11px] font-bold uppercase tracking-widest text-sage-600">What to check</p><p className="mt-2 text-sm">{active.what_to_check}</p></section>
-          )}
-          {active.what_to_do && (
-            <section className="rounded-xl bg-white p-4 ring-1 ring-sage-100"><p className="text-[11px] font-bold uppercase tracking-widest text-sage-600">What to do</p><p className="mt-2 text-sm">{active.what_to_do}</p></section>
-          )}
-          {active.when_to_call_vet && (
-            <section className="rounded-xl bg-warn-red/5 p-4 ring-1 ring-warn-red/20"><p className="text-[11px] font-bold uppercase tracking-widest text-warn-red">When to call the vet</p><p className="mt-2 text-sm">{active.when_to_call_vet}</p></section>
-          )}
-          {!active.reviewed_at && <VetReviewBanner />}
-          <Link to="/sitter/$token/emergency" params={{ token }} className="block rounded-xl bg-sage-900 py-3 text-center text-sm font-semibold text-white">Open emergency contacts</Link>
-        </main>
-      </>
-    );
-  }
+
 
   return (
     <>
