@@ -43,7 +43,9 @@ function Guide() {
         <section className="rounded-2xl bg-sage-900 p-4 text-white">
           <p className="text-[10px] font-bold uppercase tracking-widest text-white/60">Care guide</p>
           <p className="mt-1 text-sm leading-relaxed">
-            Sourced from <span className="font-semibold">The Kya Project — Parrot Care Bible for Pet Sitters</span>. The owner's care sheet is the source of truth for this specific bird; use this guide for the why behind the what.
+            Sourced from <span className="font-semibold">The Kya Project — Parrot Care Bible for Pet Sitters</span>. The{" "}
+            <Link to="/sitter/$token/care-sheet" params={{ token }} className="font-semibold underline">owner's care sheet</Link>{" "}
+            is the source of truth for this specific bird; use this guide for the why behind the what.
           </p>
         </section>
         <VetReviewBanner />
