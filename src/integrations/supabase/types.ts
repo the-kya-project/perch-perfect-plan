@@ -103,11 +103,14 @@ export type Database = {
           diet_types: string[]
           fears_triggers: string | null
           feeding_times: string[]
+          food_bowl_wash_cadence: string
           food_brand: string | null
+          food_hygiene_notes: string | null
           food_instructions: string | null
           food_storage: string | null
           foods_never_allowed: string | null
           fresh_food_removal: string | null
+          fresh_food_removal_minutes: number
           fresh_foods: string[]
           fresh_foods_other: string | null
           handlers: string | null
@@ -138,6 +141,7 @@ export type Database = {
           treats_frequency: string | null
           treats_notes: string | null
           updated_at: string
+          water_bowl_wash_cadence: string
           water_frequency: string | null
           water_instructions: string | null
           water_notes: string | null
@@ -164,11 +168,14 @@ export type Database = {
           diet_types?: string[]
           fears_triggers?: string | null
           feeding_times?: string[]
+          food_bowl_wash_cadence?: string
           food_brand?: string | null
+          food_hygiene_notes?: string | null
           food_instructions?: string | null
           food_storage?: string | null
           foods_never_allowed?: string | null
           fresh_food_removal?: string | null
+          fresh_food_removal_minutes?: number
           fresh_foods?: string[]
           fresh_foods_other?: string | null
           handlers?: string | null
@@ -199,6 +206,7 @@ export type Database = {
           treats_frequency?: string | null
           treats_notes?: string | null
           updated_at?: string
+          water_bowl_wash_cadence?: string
           water_frequency?: string | null
           water_instructions?: string | null
           water_notes?: string | null
@@ -225,11 +233,14 @@ export type Database = {
           diet_types?: string[]
           fears_triggers?: string | null
           feeding_times?: string[]
+          food_bowl_wash_cadence?: string
           food_brand?: string | null
+          food_hygiene_notes?: string | null
           food_instructions?: string | null
           food_storage?: string | null
           foods_never_allowed?: string | null
           fresh_food_removal?: string | null
+          fresh_food_removal_minutes?: number
           fresh_foods?: string[]
           fresh_foods_other?: string | null
           handlers?: string | null
@@ -260,6 +271,7 @@ export type Database = {
           treats_frequency?: string | null
           treats_notes?: string | null
           updated_at?: string
+          water_bowl_wash_cadence?: string
           water_frequency?: string | null
           water_instructions?: string | null
           water_notes?: string | null
