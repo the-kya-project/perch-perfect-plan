@@ -247,21 +247,18 @@ function CareSheet() {
               <Field label="Medications" value={[bird.medications, plan.medication_schedule].filter(Boolean).join("\n")} />
             )}
             {(ctx.baselineDroppingsUrl || ctx.baselineClipUrl) && (
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-2">
                 {ctx.baselineDroppingsUrl && (
-                  <a href={ctx.baselineDroppingsUrl} target="_blank" rel="noreferrer" className="overflow-hidden rounded-xl ring-1 ring-sage-100">
-                    <img src={ctx.baselineDroppingsUrl} alt="Baseline droppings" className="aspect-square w-full object-cover" />
+                  <div className="overflow-hidden rounded-xl ring-1 ring-sage-100">
+                    <img src={ctx.baselineDroppingsUrl} alt="Baseline droppings" className="aspect-video w-full object-cover" />
                     <p className="bg-white px-2 py-1 text-[11px] font-semibold">Baseline droppings</p>
-                  </a>
+                  </div>
                 )}
                 {ctx.baselineClipUrl && (
-                  <a href={ctx.baselineClipUrl} target="_blank" rel="noreferrer" className="overflow-hidden rounded-xl bg-sage-900 ring-1 ring-sage-100">
-                    <div className="relative aspect-square">
-                      <video src={ctx.baselineClipUrl} className="size-full object-cover opacity-90" preload="metadata" muted playsInline />
-                      <div className="absolute inset-0 grid place-items-center"><PlayCircle className="size-8 text-white drop-shadow" /></div>
-                    </div>
+                  <div className="overflow-hidden rounded-xl ring-1 ring-sage-100">
+                    <ClipPlayer src={ctx.baselineClipUrl} label="Normal-behavior clip" className="aspect-video" />
                     <p className="bg-white px-2 py-1 text-[11px] font-semibold">Normal-behavior clip</p>
-                  </a>
+                  </div>
                 )}
               </div>
             )}
