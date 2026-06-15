@@ -86,7 +86,7 @@ export const SCAN_FIELDS: ScanField[] = [
   },
   {
     key: "vomiting",
-    question: "Any vomiting or wet face feathers?",
+    question: "Is the face clean and dry, with no vomiting?",
     helpNormal: "Face and beak dry and clean.",
     helpNotSure: "Check face, chest, and cage walls for wet flecks.",
     helpConcerning: "Repeated head-flicking with wet matter, wet face/chest feathers.",
@@ -94,7 +94,7 @@ export const SCAN_FIELDS: ScanField[] = [
   },
   {
     key: "injury",
-    question: "Any injury, fall, bite, or scratch?",
+    question: "Is the bird free of any injury, fall, bite, or scratch?",
     helpNormal: "No new wounds, no bleeding, no limping.",
     helpNotSure: "Check whole body — feet, wings, chest. Compare to owner photos if available.",
     helpConcerning: "Any wound, blood, limp, missing feathers, or fall from height.",
@@ -102,7 +102,7 @@ export const SCAN_FIELDS: ScanField[] = [
   },
   {
     key: "exposure",
-    question: "Any possible fumes, unsafe food, metal, plant, or other pet exposure?",
+    question: "Has the bird been kept away from fumes, unsafe foods, metals, plants, and other pets?",
     helpNormal: "Nothing new in the air or the bird's reach.",
     helpNotSure: "Think back: any spray, candle, non-stick cooking, new plant, or pet contact today?",
     helpConcerning: "Known exposure to smoke, aerosols, toxic food, metal, or a cat/dog.",
