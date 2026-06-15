@@ -313,10 +313,6 @@ function DefaultsPanel() {
   });
   const [d, setD] = useState<any>(defaults ?? {});
   const [saving, setSaving] = useState(false);
-  // sync local state when query resolves
-  if (defaults && d !== defaults && !open) {
-    // no-op: opening initializes
-  }
   const fields: [string, string, boolean?][] = [
     ["owner_phone", "Owner phone", true],
     ["backup_name", "Backup contact name"],
