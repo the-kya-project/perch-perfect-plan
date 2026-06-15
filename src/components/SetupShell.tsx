@@ -5,7 +5,7 @@ import { ArrowLeft } from "lucide-react";
 export const SETUP_STEPS = [
   { key: "basics", title: "The basics" },
   { key: "day", title: "A day in the life" },
-  { key: "care", title: "Care details" },
+  { key: "food", title: "Food & water" },
   { key: "emergency", title: "Emergency info" },
   { key: "review", title: "Review & finish" },
 ] as const;
