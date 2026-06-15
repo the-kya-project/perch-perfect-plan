@@ -2246,17 +2246,17 @@ function ReviewStep({
       <div className="space-y-2">
         <button
           type="button"
-          onClick={() => onFinish({ to: "dashboard-newsit" })}
+          onClick={() => onFinish({ to: "tabs" })}
           className="w-full rounded-xl bg-sage-600 py-3 text-sm font-semibold text-white"
         >
-          Looks good — create a sit
+          Looks good — save
         </button>
         <button
           type="button"
-          onClick={() => onFinish({ to: "tabs" })}
-          className="w-full rounded-xl border border-sage-200 bg-white py-3 text-sm font-semibold text-sage-700"
+          onClick={() => onFinish({ to: "dashboard-newsit" })}
+          className="w-full rounded-xl border border-sage-300 bg-white py-3 text-sm font-semibold text-sage-700"
         >
-          Keep editing
+          Save & create a sit
         </button>
         <button
           type="button"
