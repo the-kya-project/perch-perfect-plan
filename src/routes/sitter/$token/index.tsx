@@ -6,7 +6,8 @@ import { useSitterContext } from "./route";
 import { toggleTaskCompletion } from "@/lib/sitter.functions";
 import { Disclaimer } from "@/components/Disclaimer";
 import { BrandLogo } from "@/components/BrandLogo";
-import { Stethoscope, Calendar, PlayCircle, Clock, X, BookOpen, ChevronRight } from "lucide-react";
+import { Stethoscope, Calendar, Clock, X, BookOpen, ChevronRight } from "lucide-react";
+import { ClipPlayer } from "@/components/ClipPlayer";
 
 export const Route = createFileRoute("/sitter/$token/")({
   component: SitterHome,
