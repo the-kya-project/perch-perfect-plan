@@ -153,29 +153,36 @@ function CareSheet() {
                 <div key={k} className="rounded-lg bg-sage-50 p-3">
                   <p className="text-xs font-bold uppercase tracking-wider text-sage-700">{k.replace(/_/g, " ")}</p>
                   {has(d.brand) && <p className="mt-1 text-sm"><span className="text-sage-500">Brand: </span>{d.brand}</p>}
-                  {has(d.amount) && <p className="text-sm"><span className="text-sage-500">Amount: </span>{d.amount}</p>}
+                  {has(d.amount) && <p className="text-sm"><span className="text-sage-500">Amount: </span>{(d as any).unit ? formatAmountUnit(d.amount, (d as any).unit) : d.amount}</p>}
                   {has(d.notes) && <p className="text-sm whitespace-pre-line"><span className="text-sage-500">Notes: </span>{d.notes}</p>}
                 </div>
               ) : null
             ))}
             {(has(plan.food_brand) || has(plan.amount_value)) && (
-              <Field label="Brand & amount" value={`${plan.food_brand ?? ""}${has(plan.amount_value) ? ` — ${plan.amount_value}${plan.amount_unit ? ` ${plan.amount_unit}` : ""}` : ""}`.trim()} />
+              <Field label="Brand & amount" value={`${plan.food_brand ?? ""}${has(plan.amount_value) ? ` — ${formatAmountUnit(plan.amount_value, plan.amount_unit)}` : ""}`.trim()} />
             )}
             {feedingTimes.length > 0 && <Field label="Feeding times" value={<Chips items={feedingTimes} />} />}
             {freshFoods.length > 0 && <Field label="Fresh foods" value={<Chips items={freshFoods} />} />}
             {has(plan.fresh_foods_other) && <Field label="Other fresh foods" value={plan.fresh_foods_other} />}
             {(has(plan.treats_notes) || has(plan.treats_frequency)) && (
-              <Field label="Treats" value={`${plan.treats_notes ?? ""}${has(plan.treats_frequency) ? `\nFrequency: ${plan.treats_frequency}` : ""}`.trim()} />
+              <Field label="Treats" value={`${plan.treats_notes ?? ""}${has(plan.treats_frequency) ? `\nFrequency: ${prettyLabel(plan.treats_frequency, TREATS_FREQ_LABELS)}` : ""}`.trim()} />
             )}
             {(has(plan.water_frequency) || has(plan.water_notes) || has(plan.water_instructions)) && (
-              <Field label="Water" value={[plan.water_frequency && `Refresh: ${plan.water_frequency}`, plan.water_notes, plan.water_instructions].filter(Boolean).join("\n")} />
+              <Field
+                label="Water"
+                value={[
+                  plan.water_frequency && `Water ${prettyLabel(plan.water_frequency, WATER_FREQ_LABELS)}`,
+                  plan.water_notes,
+                  plan.water_instructions,
+                ].filter(Boolean).join("\n")}
+              />
             )}
             <div className="rounded-lg bg-sage-50 p-3">
               <p className="text-[10px] font-bold uppercase tracking-wider text-sage-600">Freshness & hygiene</p>
               <ul className="mt-1.5 space-y-1 text-sm text-sage-900">
-                <li>Remove fresh food within <strong>{plan.fresh_food_removal_minutes ?? 120} min</strong> of serving.</li>
-                <li>Wash food bowls: <strong>{CADENCE_LABELS[plan.food_bowl_wash_cadence] ?? plan.food_bowl_wash_cadence ?? "—"}</strong>.</li>
-                <li>Wash water bowl: <strong>{CADENCE_LABELS[plan.water_bowl_wash_cadence] ?? plan.water_bowl_wash_cadence ?? "—"}</strong>.</li>
+                <li>Remove fresh food within <strong>{formatRemovalMinutes(plan.fresh_food_removal_minutes)}</strong> of serving.</li>
+                <li>Wash food bowls: <strong>{prettyLabel(plan.food_bowl_wash_cadence, BOWL_WASH_LABELS) || "—"}</strong>.</li>
+                <li>Wash water bowl: <strong>{prettyLabel(plan.water_bowl_wash_cadence, BOWL_WASH_LABELS) || "—"}</strong>.</li>
               </ul>
               {has(plan.food_hygiene_notes) && <p className="mt-2 text-xs text-sage-700 whitespace-pre-line">{plan.food_hygiene_notes}</p>}
             </div>
