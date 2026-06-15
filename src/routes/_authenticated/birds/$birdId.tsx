@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { Disclaimer, VetReviewBanner } from "@/components/Disclaimer";
 import { PhotoCropper } from "@/components/PhotoCropper";
 import { SpeciesPicker, AgePicker } from "@/components/BirdPickers";
-import { ageFromBirthDate } from "@/lib/parrot-data";
+
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId")({
   head: () => ({ meta: [{ title: "Care plan — Parrot Care Companion" }] }),
