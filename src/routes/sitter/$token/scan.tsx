@@ -20,13 +20,14 @@ function ScanPage() {
   const [notes, setNotes] = useState("");
   const [photo, setPhoto] = useState<string | null>(null);
   const [result, setResult] = useState<{ status: string; message: string; reasons: string[] } | null>(null);
+  const [showErrors, setShowErrors] = useState(false);
 
   const submit = useServerFn(submitHealthScan);
   const upload = useServerFn(uploadDroppingsPhoto);
   const m = useMutation({
     mutationFn: async () => {
       const filled = Object.fromEntries(
-        SCAN_FIELDS.map((f) => [f.key, answers[f.key] ?? "normal"]),
+        SCAN_FIELDS.map((f) => [f.key, answers[f.key]!]),
       ) as Record<ScanFieldKey, ScanAnswer>;
       const res = await submit({ data: { token, birdId: ctx.activeBirdId, answers: filled, notes: notes || undefined } });
       if (photo) await upload({ data: { token, birdId: ctx.activeBirdId, dataUrl: photo, notes: "Attached to health scan" } });
@@ -41,9 +42,21 @@ function ScanPage() {
 
   function previewTriage() {
     const filled = Object.fromEntries(
-      SCAN_FIELDS.map((f) => [f.key, answers[f.key] ?? "normal"]),
+      SCAN_FIELDS.map((f) => [f.key, answers[f.key]!]),
     ) as Record<ScanFieldKey, ScanAnswer>;
     return computeTriage(filled);
+  }
+
+  function handleSubmit() {
+    const firstMissing = SCAN_FIELDS.find((f) => !answers[f.key]);
+    if (firstMissing) {
+      setShowErrors(true);
+      const el = document.getElementById(`scan-field-${firstMissing.key}`);
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      toast.error("Please answer every question before submitting.");
+      return;
+    }
+    m.mutate();
   }
 
   if (result) {
@@ -97,8 +110,13 @@ function ScanPage() {
 
         {SCAN_FIELDS.map((f) => {
           const a = answers[f.key];
+          const missing = showErrors && !a;
           return (
-            <section key={f.key} className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
+            <section
+              key={f.key}
+              id={`scan-field-${f.key}`}
+              className={`rounded-2xl bg-white p-4 ring-1 ${missing ? "ring-2 ring-warn-red" : "ring-sage-100"}`}
+            >
               <p className="text-sm font-semibold">{f.question}</p>
               <div className="mt-3 grid grid-cols-3 gap-2">
                 {(["normal", "not_sure", "concerning"] as ScanAnswer[]).map((opt) => (
@@ -115,6 +133,9 @@ function ScanPage() {
                   </button>
                 ))}
               </div>
+              {missing && (
+                <p className="mt-3 text-[11px] font-semibold text-warn-red">Please answer this before submitting.</p>
+              )}
               {a === "not_sure" && (
                 <p className="mt-3 rounded bg-warn-amber/10 p-2 text-[11px] leading-relaxed text-sage-900"><b>Look again: </b>{f.helpNotSure}</p>
               )}
@@ -149,7 +170,7 @@ function ScanPage() {
         )}
 
         <button
-          onClick={() => m.mutate()}
+          onClick={handleSubmit}
           disabled={m.isPending}
           className="w-full rounded-xl bg-sage-900 py-3.5 text-sm font-semibold text-white disabled:opacity-60"
         >

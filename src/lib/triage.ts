@@ -135,11 +135,9 @@ export function computeTriage(
         yellowCount++;
       }
     } else if (a === "not_sure") {
-      if (NOT_SURE_YELLOW_KEYS.includes(field.key)) {
-        // "Not sure" on a critical item is never silently green
-        reasons.push(`Not sure: ${field.question.replace(/\?$/, "")}`);
-        yellowCount++;
-      }
+      // Any "not sure" should never be silently logged as all-clear.
+      reasons.push(`Not sure: ${field.question.replace(/\?$/, "")}`);
+      yellowCount++;
     }
   }
 
