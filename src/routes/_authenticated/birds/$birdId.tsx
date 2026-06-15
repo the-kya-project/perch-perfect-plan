@@ -5,6 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Plus, Trash2, Link2, Copy, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { Disclaimer, VetReviewBanner } from "@/components/Disclaimer";
+import { PhotoCropper } from "@/components/PhotoCropper";
+import { PARROT_SPECIES, AGE_OPTIONS, ageFromBirthDate } from "@/lib/parrot-data";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId")({
   head: () => ({ meta: [{ title: "Care plan — Parrot Care Companion" }] }),
@@ -143,27 +145,34 @@ function PlanForm({ birdId, bird, plan, onSaved }: { birdId: string; bird: any; 
       <Disclaimer compact />
       <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
         <h2 className="text-sm font-bold">Basics</h2>
-        <div className="flex items-center gap-3">
+        <div className="flex items-start gap-3">
           {b.photo_url ? (
-            <img src={b.photo_url} alt={b.name} className="size-20 rounded-xl object-cover ring-1 ring-sage-200" />
+            <PhotoCropper
+              src={b.photo_url}
+              position={b.photo_position}
+              onChange={(pos) => setB({ ...b, photo_position: pos })}
+              size={120}
+            />
           ) : (
-            <div className="flex size-20 items-center justify-center rounded-xl bg-sage-100 text-[10px] uppercase tracking-wider text-sage-600">No photo</div>
+            <div className="flex size-[120px] items-center justify-center rounded-xl bg-sage-100 text-[10px] uppercase tracking-wider text-sage-600">No photo</div>
           )}
-          <div className="flex-1 space-y-2">
+          <div className="flex-1 space-y-2 pt-1">
             <label className="inline-block cursor-pointer rounded-lg bg-sage-100 px-3 py-1.5 text-xs font-semibold text-sage-700">
               {b.photo_url ? "Change photo" : "Add photo"}
               <input type="file" accept="image/*" className="hidden" onChange={onPhoto} />
             </label>
             {b.photo_url && (
-              <button type="button" onClick={() => setB({ ...b, photo_url: null })} className="ml-2 text-xs font-semibold text-warn-red underline">Remove</button>
+              <button type="button" onClick={() => setB({ ...b, photo_url: null, photo_position: null })} className="ml-2 text-xs font-semibold text-warn-red underline">Remove</button>
             )}
           </div>
         </div>
         <Field label="Name"><input className="input" value={b.name ?? ""} onChange={(e) => setB({ ...b, name: e.target.value })} /></Field>
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Species"><input className="input" value={b.species ?? ""} onChange={(e) => setB({ ...b, species: e.target.value })} /></Field>
-          <Field label="Age"><input className="input" value={b.age ?? ""} onChange={(e) => setB({ ...b, age: e.target.value })} /></Field>
-        </div>
+        <SpeciesPicker value={b.species ?? ""} onChange={(v) => setB({ ...b, species: v })} />
+        <AgePicker
+          age={b.age ?? ""}
+          birthDate={b.birth_date ?? ""}
+          onChange={(next) => setB({ ...b, age: next.age, birth_date: next.birthDate })}
+        />
         <div className="grid grid-cols-2 gap-3">
           <Field label="Sex">
             <select className="input" value={b.sex ?? ""} onChange={(e) => setB({ ...b, sex: e.target.value || null })}>
