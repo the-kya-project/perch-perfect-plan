@@ -16,7 +16,7 @@ const birdSearch = z.object({
 });
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/")({
-  head: () => ({ meta: [{ title: "Care plan — Parrot Care Companion" }] }),
+  head: () => ({ meta: [{ title: "Care plan — Parrot Care Co-Pilot" }] }),
   validateSearch: birdSearch,
   component: BirdEditor,
 });
