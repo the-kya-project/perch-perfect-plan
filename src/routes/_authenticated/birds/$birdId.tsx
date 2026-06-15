@@ -350,7 +350,7 @@ function ContactsForm({ birdId, contacts, defaults, onSaved }: { birdId: string;
     for (const [k, v] of Object.entries(rest)) {
       patch[k] = typeof v === "string" && v.trim() === "" ? null : v;
     }
-    await supabase.from("emergency_contacts").update(patch).eq("bird_id", birdId);
+    await supabase.from("emergency_contacts").update(patch as any).eq("bird_id", birdId);
     setSaving(false);
     toast.success("Emergency info saved.");
     onSaved();
