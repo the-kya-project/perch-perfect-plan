@@ -6,7 +6,7 @@ import { ArrowLeft, Plus, Trash2, Link2, Copy, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { Disclaimer, VetReviewBanner } from "@/components/Disclaimer";
 import { PhotoCropper } from "@/components/PhotoCropper";
-import { PARROT_SPECIES, AGE_OPTIONS, ageFromBirthDate } from "@/lib/parrot-data";
+import { PARROT_SPECIES, PARROT_SPECIES_GROUPS, AGE_OPTIONS, ageFromBirthDate } from "@/lib/parrot-data";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId")({
   head: () => ({ meta: [{ title: "Care plan — Parrot Care Companion" }] }),
@@ -131,7 +131,11 @@ function SpeciesPicker({ value, onChange }: { value: string; onChange: (v: strin
         }}
       >
         <option value="">Select species…</option>
-        {PARROT_SPECIES.map((s) => <option key={s} value={s}>{s}</option>)}
+        {PARROT_SPECIES_GROUPS.map((g) => (
+          <optgroup key={g.label} label={g.label}>
+            {g.options.map((s) => <option key={s} value={s}>{s}</option>)}
+          </optgroup>
+        ))}
         <option value="__other__">Other…</option>
       </select>
       {mode === "other" && (
