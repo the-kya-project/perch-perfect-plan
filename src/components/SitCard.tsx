@@ -26,23 +26,35 @@ export function SitCard({ sit, birds = [], onChange }: { sit: any; birds?: Bird[
   async function copy() {
     const birdIds = birds.map((b) => b.id);
     if (birdIds.length) {
-      const { data: contacts } = await supabase
-        .from("emergency_contacts")
-        .select("bird_id, owner_phone, avian_vet_phone")
-        .in("bird_id", birdIds);
+      const [{ data: contacts }, { data: u }] = await Promise.all([
+        supabase
+          .from("emergency_contacts")
+          .select("bird_id, owner_phone, avian_vet_phone")
+          .in("bird_id", birdIds),
+        supabase.auth.getUser(),
+      ]);
+      const { data: defaults } = u.user
+        ? await supabase
+            .from("owner_emergency_defaults")
+            .select("owner_phone, avian_vet_phone")
+            .eq("owner_id", u.user.id)
+            .maybeSingle()
+        : { data: null };
       const byBird = new Map((contacts ?? []).map((c: any) => [c.bird_id, c]));
+      const eff = (c: any, k: string) =>
+        (c?.[k]?.trim?.() || (defaults as any)?.[k]?.trim?.() || "");
       const missing = birds
         .map((b) => {
           const c = byBird.get(b.id);
           const needs: string[] = [];
-          if (!c?.owner_phone?.trim()) needs.push("your phone");
-          if (!c?.avian_vet_phone?.trim()) needs.push("avian vet phone");
+          if (!eff(c, "owner_phone")) needs.push("your phone");
+          if (!eff(c, "avian_vet_phone")) needs.push("avian vet phone");
           return needs.length ? `${b.name}: ${needs.join(" & ")}` : null;
         })
         .filter(Boolean);
       if (missing.length) {
         toast.error(
-          `Add the required emergency contacts before sharing — ${missing.join("; ")}. Open the bird's profile → Emergency contacts.`,
+          `Add the required emergency contacts before sharing — ${missing.join("; ")}. Set account defaults on the dashboard or fill the bird's Emergency tab.`,
           { duration: 8000 },
         );
         return;
