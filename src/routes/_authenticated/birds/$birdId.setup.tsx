@@ -1124,7 +1124,7 @@ const STEP_UP_OPTIONS = [
   { value: "no", label: "No — cage-only is fine" },
 ];
 
-function PersonalityStep({ birdId, birdName }: { birdId: string; birdName: string }) {
+function PersonalityStep({ birdId, birdName, registerFlush }: { birdId: string; birdName: string; registerFlush?: (fn: (() => Promise<void>) | null) => void }) {
   const qc = useQueryClient();
   const { data: plan, isLoading } = useQuery({
     queryKey: ["plan-personality", birdId],
