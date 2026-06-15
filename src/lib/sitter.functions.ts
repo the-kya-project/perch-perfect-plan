@@ -10,6 +10,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { computeTriage, type ScanAnswer, type ScanFieldKey } from "./triage";
+import { mergeEmergency } from "./emergency";
 
 async function getAdmin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
