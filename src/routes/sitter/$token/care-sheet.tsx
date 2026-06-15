@@ -241,7 +241,7 @@ function CareSheet() {
           <Section title="Home & safety">
             {has(plan.cage_location) && <Field label="Cage location" value={plan.cage_location} />}
             {(has(plan.out_of_cage_mode) || has(plan.out_of_cage_notes) || has(plan.out_of_cage_rules)) && (
-              <Field label="Out-of-cage rules" value={[plan.out_of_cage_mode, plan.out_of_cage_notes, plan.out_of_cage_rules].filter(Boolean).join("\n")} />
+              <Field label="Out-of-cage rules" value={[prettyLabel(plan.out_of_cage_mode, OUT_OF_CAGE_LABELS), plan.out_of_cage_notes, plan.out_of_cage_rules].filter(Boolean).join("\n")} />
             )}
             {(has(plan.off_limits) || has(plan.off_limits_rooms)) && (
               <Field label="Off-limits areas" value={[plan.off_limits, plan.off_limits_rooms].filter(Boolean).join("\n")} />
