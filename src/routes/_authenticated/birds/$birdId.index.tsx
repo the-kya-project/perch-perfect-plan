@@ -125,7 +125,6 @@ function BirdEditor() {
         <Link
           to="/birds/$birdId/setup"
           params={{ birdId }}
-          search={{ step: 2 }}
           className="flex items-center justify-between gap-3 rounded-2xl bg-sage-900 px-4 py-3 text-white shadow-sm active:scale-[0.99]"
         >
           <div>
