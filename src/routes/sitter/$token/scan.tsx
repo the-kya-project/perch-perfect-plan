@@ -20,13 +20,14 @@ function ScanPage() {
   const [notes, setNotes] = useState("");
   const [photo, setPhoto] = useState<string | null>(null);
   const [result, setResult] = useState<{ status: string; message: string; reasons: string[] } | null>(null);
+  const [showErrors, setShowErrors] = useState(false);
 
   const submit = useServerFn(submitHealthScan);
   const upload = useServerFn(uploadDroppingsPhoto);
   const m = useMutation({
     mutationFn: async () => {
       const filled = Object.fromEntries(
-        SCAN_FIELDS.map((f) => [f.key, answers[f.key] ?? "normal"]),
+        SCAN_FIELDS.map((f) => [f.key, answers[f.key]!]),
       ) as Record<ScanFieldKey, ScanAnswer>;
       const res = await submit({ data: { token, birdId: ctx.activeBirdId, answers: filled, notes: notes || undefined } });
       if (photo) await upload({ data: { token, birdId: ctx.activeBirdId, dataUrl: photo, notes: "Attached to health scan" } });
@@ -41,9 +42,21 @@ function ScanPage() {
 
   function previewTriage() {
     const filled = Object.fromEntries(
-      SCAN_FIELDS.map((f) => [f.key, answers[f.key] ?? "normal"]),
+      SCAN_FIELDS.map((f) => [f.key, answers[f.key]!]),
     ) as Record<ScanFieldKey, ScanAnswer>;
     return computeTriage(filled);
+  }
+
+  function handleSubmit() {
+    const firstMissing = SCAN_FIELDS.find((f) => !answers[f.key]);
+    if (firstMissing) {
+      setShowErrors(true);
+      const el = document.getElementById(`scan-field-${firstMissing.key}`);
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      toast.error("Please answer every question before submitting.");
+      return;
+    }
+    m.mutate();
   }
 
   if (result) {
