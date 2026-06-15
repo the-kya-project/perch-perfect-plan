@@ -165,33 +165,42 @@ function SitForm({ birds, onCreated }: { birds: any[]; onCreated: () => void }) 
     setSaving(true);
     try {
       const birdIds = Array.from(selected);
-      const { data: contacts, error: ecErr } = await supabase
-        .from("emergency_contacts")
-        .select("bird_id, owner_phone, avian_vet_phone")
-        .in("bird_id", birdIds);
+      const [{ data: contacts, error: ecErr }, { data: u }] = await Promise.all([
+        supabase
+          .from("emergency_contacts")
+          .select("bird_id, owner_phone, avian_vet_phone")
+          .in("bird_id", birdIds),
+        supabase.auth.getUser(),
+      ]);
       if (ecErr) { toast.error(ecErr.message); setSaving(false); return; }
+      if (!u.user) { toast.error("You're signed out."); setSaving(false); return; }
+      const { data: defaults } = await supabase
+        .from("owner_emergency_defaults")
+        .select("owner_phone, avian_vet_phone")
+        .eq("owner_id", u.user.id)
+        .maybeSingle();
       const contactByBird = new Map((contacts ?? []).map((c: any) => [c.bird_id, c]));
+      const eff = (c: any, k: string) =>
+        (c?.[k]?.trim?.() || (defaults as any)?.[k]?.trim?.() || "");
       const missing = birdIds
         .map((id) => {
           const c = contactByBird.get(id);
           const needs: string[] = [];
-          if (!c?.owner_phone?.trim()) needs.push("your phone");
-          if (!c?.avian_vet_phone?.trim()) needs.push("avian vet phone");
+          if (!eff(c, "owner_phone")) needs.push("your phone");
+          if (!eff(c, "avian_vet_phone")) needs.push("avian vet phone");
           return needs.length ? { bird: birds.find((b: any) => b.id === id), needs } : null;
         })
         .filter(Boolean) as { bird: any; needs: string[] }[];
       if (missing.length) {
         const details = missing.map((m) => `${m.bird?.name ?? "Bird"}: ${m.needs.join(" & ")}`).join("; ");
         toast.error(
-          `Add the required emergency contacts before sharing a sitter link — ${details}. Open the bird's profile → Emergency contacts to fill them in.`,
+          `Add the required emergency contacts before sharing a sitter link — ${details}. Set account defaults below, or open the bird's Emergency tab.`,
           { duration: 8000 },
         );
         setSaving(false);
         return;
       }
 
-      const { data: u } = await supabase.auth.getUser();
-      if (!u.user) { toast.error("You're signed out."); setSaving(false); return; }
       const expires = new Date(end + "T23:59:59Z").toISOString();
       const { data: sit, error } = await supabase.from("sits").insert({
         owner_id: u.user.id,
