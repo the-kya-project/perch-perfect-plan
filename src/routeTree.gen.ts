@@ -19,6 +19,7 @@ import { Route as SitterTokenIndexRouteImport } from './routes/sitter/$token/ind
 import { Route as SitterTokenScanRouteImport } from './routes/sitter/$token/scan'
 import { Route as SitterTokenGuideRouteImport } from './routes/sitter/$token/guide'
 import { Route as SitterTokenEmergencyRouteImport } from './routes/sitter/$token/emergency'
+import { Route as SitterTokenCareSheetRouteImport } from './routes/sitter/$token/care-sheet'
 import { Route as AuthenticatedBirdsNewRouteImport } from './routes/_authenticated/birds/new'
 import { Route as AuthenticatedBirdsBirdIdRouteImport } from './routes/_authenticated/birds/$birdId'
 import { Route as AuthenticatedBirdsBirdIdIndexRouteImport } from './routes/_authenticated/birds/$birdId.index'
@@ -73,6 +74,11 @@ const SitterTokenEmergencyRoute = SitterTokenEmergencyRouteImport.update({
   path: '/emergency',
   getParentRoute: () => SitterTokenRouteRoute,
 } as any)
+const SitterTokenCareSheetRoute = SitterTokenCareSheetRouteImport.update({
+  id: '/care-sheet',
+  path: '/care-sheet',
+  getParentRoute: () => SitterTokenRouteRoute,
+} as any)
 const AuthenticatedBirdsNewRoute = AuthenticatedBirdsNewRouteImport.update({
   id: '/birds/new',
   path: '/birds/new',
@@ -105,6 +111,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/birds/$birdId': typeof AuthenticatedBirdsBirdIdRouteWithChildren
   '/birds/new': typeof AuthenticatedBirdsNewRoute
+  '/sitter/$token/care-sheet': typeof SitterTokenCareSheetRoute
   '/sitter/$token/emergency': typeof SitterTokenEmergencyRoute
   '/sitter/$token/guide': typeof SitterTokenGuideRoute
   '/sitter/$token/scan': typeof SitterTokenScanRoute
@@ -118,6 +125,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/birds/new': typeof AuthenticatedBirdsNewRoute
+  '/sitter/$token/care-sheet': typeof SitterTokenCareSheetRoute
   '/sitter/$token/emergency': typeof SitterTokenEmergencyRoute
   '/sitter/$token/guide': typeof SitterTokenGuideRoute
   '/sitter/$token/scan': typeof SitterTokenScanRoute
@@ -135,6 +143,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/birds/$birdId': typeof AuthenticatedBirdsBirdIdRouteWithChildren
   '/_authenticated/birds/new': typeof AuthenticatedBirdsNewRoute
+  '/sitter/$token/care-sheet': typeof SitterTokenCareSheetRoute
   '/sitter/$token/emergency': typeof SitterTokenEmergencyRoute
   '/sitter/$token/guide': typeof SitterTokenGuideRoute
   '/sitter/$token/scan': typeof SitterTokenScanRoute
@@ -152,6 +161,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/birds/$birdId'
     | '/birds/new'
+    | '/sitter/$token/care-sheet'
     | '/sitter/$token/emergency'
     | '/sitter/$token/guide'
     | '/sitter/$token/scan'
@@ -165,6 +175,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/dashboard'
     | '/birds/new'
+    | '/sitter/$token/care-sheet'
     | '/sitter/$token/emergency'
     | '/sitter/$token/guide'
     | '/sitter/$token/scan'
@@ -181,6 +192,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/birds/$birdId'
     | '/_authenticated/birds/new'
+    | '/sitter/$token/care-sheet'
     | '/sitter/$token/emergency'
     | '/sitter/$token/guide'
     | '/sitter/$token/scan'
@@ -269,6 +281,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SitterTokenEmergencyRouteImport
       parentRoute: typeof SitterTokenRouteRoute
     }
+    '/sitter/$token/care-sheet': {
+      id: '/sitter/$token/care-sheet'
+      path: '/care-sheet'
+      fullPath: '/sitter/$token/care-sheet'
+      preLoaderRoute: typeof SitterTokenCareSheetRouteImport
+      parentRoute: typeof SitterTokenRouteRoute
+    }
     '/_authenticated/birds/new': {
       id: '/_authenticated/birds/new'
       path: '/birds/new'
@@ -332,6 +351,7 @@ const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
 interface SitterTokenRouteRouteChildren {
+  SitterTokenCareSheetRoute: typeof SitterTokenCareSheetRoute
   SitterTokenEmergencyRoute: typeof SitterTokenEmergencyRoute
   SitterTokenGuideRoute: typeof SitterTokenGuideRoute
   SitterTokenScanRoute: typeof SitterTokenScanRoute
@@ -339,6 +359,7 @@ interface SitterTokenRouteRouteChildren {
 }
 
 const SitterTokenRouteRouteChildren: SitterTokenRouteRouteChildren = {
+  SitterTokenCareSheetRoute: SitterTokenCareSheetRoute,
   SitterTokenEmergencyRoute: SitterTokenEmergencyRoute,
   SitterTokenGuideRoute: SitterTokenGuideRoute,
   SitterTokenScanRoute: SitterTokenScanRoute,
