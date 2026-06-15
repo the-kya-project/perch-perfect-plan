@@ -1945,9 +1945,8 @@ function EmergencyStep({
   useEffect(() => { onBlockNext(missing.length > 0); }, [missing.length, onBlockNext]);
 
   // Debounced persistence to emergency_contacts (upsert by bird_id).
-  useEffect(() => {
-    if (!hydrated) return;
-    const handle = setTimeout(async () => {
+  useDebouncedAutosave(
+    async () => {
       const payload: Record<string, any> = { bird_id: birdId };
       for (const f of EMERGENCY_FIELDS) payload[f] = values[f].trim() || null;
       const { error } = await supabase
@@ -1955,10 +1954,11 @@ function EmergencyStep({
         .upsert(payload, { onConflict: "bird_id" });
       if (error) toast.error(error.message);
       qc.invalidateQueries({ queryKey: ["emergency-contacts", birdId] });
-    }, 500);
-    return () => clearTimeout(handle);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [values, hydrated]);
+    },
+    [values, birdId],
+    hydrated,
+    registerFlush,
+  );
 
   if (isLoading || !bird) return <div className="h-32 animate-pulse rounded-2xl bg-sage-100" />;
 
