@@ -1673,26 +1673,39 @@ function HealthBaselineStep({ birdId, birdName, registerFlush }: { birdId: strin
 
   async function uploadClip(file: File) {
     if (!bird) return;
-    if (file.size > 25 * 1024 * 1024) {
+    if (file.size > MAX_CLIP_BYTES) {
       toast.error("Clip must be under 25 MB.");
       return;
     }
+    const duration = await probeDuration(file);
+    if (duration > MAX_CLIP_SECONDS) {
+      toast.error(`Clip is ${Math.round(duration)}s — keep it under ${MAX_CLIP_SECONDS}s so it converts quickly.`);
+      return;
+    }
     setUploading("clip");
+    setConvertPct(0);
     try {
-      const ext = (file.name.split(".").pop() || "mp4").toLowerCase();
+      const { file: outFile, converted, reason } = await convertToMp4H264(file, setConvertPct);
+      if (!converted) {
+        toast.message("Couldn't convert in browser — uploading original.", {
+          description: `${reason ?? "Conversion failed"}. It may not play on every device.`,
+        });
+      }
+      const ext = (outFile.name.split(".").pop() || "mp4").toLowerCase();
       const path = `${bird.owner_id}/baselines/${birdId}/clip-${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("bird-photos").upload(path, file, {
-        contentType: file.type || "video/mp4",
+      const { error } = await supabase.storage.from("bird-photos").upload(path, outFile, {
+        contentType: outFile.type || "video/mp4",
         upsert: true,
       });
       if (error) throw error;
       if (clipPath) await supabase.storage.from("bird-photos").remove([clipPath]);
       setClipPath(path);
-      toast.success("Baseline clip saved.");
+      toast.success(converted ? "Baseline clip converted & saved." : "Baseline clip saved.");
     } catch (e: any) {
       toast.error(e.message ?? "Upload failed");
     } finally {
       setUploading(null);
+      setConvertPct(0);
     }
   }
 
