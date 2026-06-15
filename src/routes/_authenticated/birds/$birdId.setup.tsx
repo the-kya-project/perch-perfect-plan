@@ -1,14 +1,20 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
+import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { SetupShell, SETUP_STEPS, TOTAL_STEPS } from "@/components/SetupShell";
 import { EMERGENCY_FIELDS, EMERGENCY_LABELS, REQUIRED_FIELDS, mergeEmergency, type EmergencyField } from "@/lib/emergency";
 import { Plus, X } from "lucide-react";
 
+const setupSearch = z.object({
+  step: z.coerce.number().int().min(2).max(TOTAL_STEPS).optional(),
+});
+
 export const Route = createFileRoute("/_authenticated/birds/$birdId/setup")({
   head: () => ({ meta: [{ title: "Set up bird — Parrot Care Companion" }] }),
+  validateSearch: setupSearch,
   component: BirdSetup,
 });
 
