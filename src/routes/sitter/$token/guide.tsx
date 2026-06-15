@@ -67,6 +67,12 @@ function Guide() {
         </div>
       </header>
       <main className="mx-auto max-w-md space-y-4 px-4 py-5">
+        <section className="rounded-2xl bg-sage-900 p-4 text-white">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-white/60">Care guide</p>
+          <p className="mt-1 text-sm leading-relaxed">
+            Sourced from <span className="font-semibold">The Kya Project — Parrot Care Bible for Pet Sitters</span>. The owner's care sheet is the source of truth for this specific bird; use this guide for the why behind the what.
+          </p>
+        </section>
         <VetReviewBanner />
         <div className="relative">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-sage-400" />
@@ -74,7 +80,7 @@ function Guide() {
         </div>
         {Object.entries(grouped).map(([cat, list]) => (
           <section key={cat} className="space-y-2">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-sage-600">{cat.replace(/-/g, " ")}</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-sage-600">{cat.replace(/^\d+-/, "").replace(/-/g, " ")}</p>
             {list.map((c: any) => (
               <button key={c.id} onClick={() => setOpen(c.id)} className="flex w-full items-start justify-between gap-2 rounded-xl bg-white p-3 text-left ring-1 ring-sage-100 active:scale-[0.99]">
                 <div className="flex-1">
