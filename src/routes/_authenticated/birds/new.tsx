@@ -47,9 +47,6 @@ function NewBird() {
       flight_status: flight,
       photo_url: photo,
       photo_position: photo ? photoPos : null,
-      normal_weight: normal ? Number(normal) : null,
-      normal_weight_min: min ? Number(min) : null,
-      normal_weight_max: max ? Number(max) : null,
       setup_complete: false,
       setup_step: targetStep,
     } as any).select().single();
