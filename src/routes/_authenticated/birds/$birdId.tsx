@@ -95,6 +95,7 @@ function BirdEditor() {
         {tab === "routine" && plan && <RoutineEditor planId={plan.id} tasks={tasks} onChange={() => qc.invalidateQueries({ queryKey: ["tasks", plan.id] })} />}
         {tab === "emergency" && contacts && <ContactsForm birdId={birdId} contacts={contacts} onSaved={() => qc.invalidateQueries({ queryKey: ["contacts", birdId] })} />}
         {tab === "sits" && <SitsPanel birdId={birdId} sits={sits} onChange={() => qc.invalidateQueries({ queryKey: ["sits", birdId] })} />}
+        {tab === "logs" && <LogsPanel birdId={birdId} />}
       </main>
 
       <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.65rem .8rem;font-size:16px;outline:none}.input:focus{border-color:var(--sage-600);box-shadow:0 0 0 3px rgb(74 103 65 / .15)}.area{min-height:80px;line-height:1.4}`}</style>
