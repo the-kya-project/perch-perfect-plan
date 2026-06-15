@@ -164,6 +164,32 @@ function SitForm({ birds, onCreated }: { birds: any[]; onCreated: () => void }) 
     if (end < start) { toast.error("End date must be on or after start date."); return; }
     setSaving(true);
     try {
+      const birdIds = Array.from(selected);
+      const { data: contacts, error: ecErr } = await supabase
+        .from("emergency_contacts")
+        .select("bird_id, owner_phone, avian_vet_phone")
+        .in("bird_id", birdIds);
+      if (ecErr) { toast.error(ecErr.message); setSaving(false); return; }
+      const contactByBird = new Map((contacts ?? []).map((c: any) => [c.bird_id, c]));
+      const missing = birdIds
+        .map((id) => {
+          const c = contactByBird.get(id);
+          const needs: string[] = [];
+          if (!c?.owner_phone?.trim()) needs.push("your phone");
+          if (!c?.avian_vet_phone?.trim()) needs.push("avian vet phone");
+          return needs.length ? { bird: birds.find((b: any) => b.id === id), needs } : null;
+        })
+        .filter(Boolean) as { bird: any; needs: string[] }[];
+      if (missing.length) {
+        const details = missing.map((m) => `${m.bird?.name ?? "Bird"}: ${m.needs.join(" & ")}`).join("; ");
+        toast.error(
+          `Add the required emergency contacts before sharing a sitter link — ${details}. Open the bird's profile → Emergency contacts to fill them in.`,
+          { duration: 8000 },
+        );
+        setSaving(false);
+        return;
+      }
+
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) { toast.error("You're signed out."); setSaving(false); return; }
       const expires = new Date(end + "T23:59:59Z").toISOString();
@@ -177,7 +203,7 @@ function SitForm({ birds, onCreated }: { birds: any[]; onCreated: () => void }) 
         status: "upcoming",
       }).select().single();
       if (error || !sit) { toast.error(error?.message ?? "Could not create sit."); setSaving(false); return; }
-      const rows = Array.from(selected).map((bird_id) => ({ sit_id: sit.id, bird_id }));
+      const rows = birdIds.map((bird_id) => ({ sit_id: sit.id, bird_id }));
       const { error: linkErr } = await supabase.from("sit_birds").insert(rows);
       if (linkErr) { toast.error(linkErr.message); setSaving(false); return; }
       toast.success("Sit created.");
