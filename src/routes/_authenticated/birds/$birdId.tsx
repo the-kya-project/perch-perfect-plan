@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Plus, Trash2, ChevronDown, AlertTriangle } from "lucide-react";
 import { SitCard } from "@/components/SitCard";
@@ -10,8 +11,13 @@ import { PhotoCropper } from "@/components/PhotoCropper";
 import { SpeciesPicker, AgePicker } from "@/components/BirdPickers";
 
 
+const birdSearch = z.object({
+  tab: z.enum(["plan", "routine", "emergency", "sits", "logs"]).optional(),
+});
+
 export const Route = createFileRoute("/_authenticated/birds/$birdId")({
   head: () => ({ meta: [{ title: "Care plan — Parrot Care Companion" }] }),
+  validateSearch: birdSearch,
   component: BirdEditor,
 });
 
@@ -19,8 +25,10 @@ type Tab = "plan" | "routine" | "emergency" | "sits" | "logs";
 
 function BirdEditor() {
   const { birdId } = Route.useParams();
+  const { tab: tabParam } = Route.useSearch();
   const qc = useQueryClient();
-  const [tab, setTab] = useState<Tab>("plan");
+  const [tab, setTab] = useState<Tab>(tabParam ?? "plan");
+  useEffect(() => { if (tabParam) setTab(tabParam); }, [tabParam]);
 
   const { data: bird } = useQuery({
     queryKey: ["bird", birdId],
