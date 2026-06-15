@@ -67,13 +67,7 @@ function BirdSetup() {
   }
 
   async function onBack() {
-    if (step <= 2) {
-      navigate({ to: "/birds/$birdId/setup", params: { birdId } });
-      // Step 1 lives in /birds/new and is already saved. Send the user to dashboard
-      // since we can't re-enter step 1 against an existing bird record cleanly.
-      navigate({ to: "/dashboard" });
-      return;
-    }
+    if (step <= 2) return; // Step 1 lives in /birds/new; basics are editable via the tabs.
     const prev = step - 1;
     const ok = await persistStep(prev);
     if (ok) setStep(prev);
