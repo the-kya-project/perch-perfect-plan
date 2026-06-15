@@ -1,9 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { SetupShell, SETUP_STEPS, TOTAL_STEPS } from "@/components/SetupShell";
+import { Plus, X } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/setup")({
   head: () => ({ meta: [{ title: "Set up bird — Parrot Care Companion" }] }),
@@ -109,6 +110,8 @@ function BirdSetup() {
 }
 
 function StepBody({ step, birdId, birdName }: { step: number; birdId: string; birdName: string }) {
+  if (step === 2) return <DayInLifeStep birdId={birdId} />;
+
   if (step === 5) {
     return (
       <div className="space-y-4">
@@ -130,13 +133,9 @@ function StepBody({ step, birdId, birdName }: { step: number; birdId: string; bi
   }
 
   const blurbs: Record<number, { lead: string; hint: string }> = {
-    2: {
-      lead: "Care plan — diet, housing, handling, behavior and health notes.",
-      hint: "We'll add the structured fields here in the next iteration. For now, tap Next to advance, or open the full editor to fill it in.",
-    },
     3: {
-      lead: "Daily routine — wake, feed, out-of-cage, bedtime.",
-      hint: "Routine builder is coming next. Skip ahead and you can add tasks from the Routine tab any time.",
+      lead: "Care details — diet, housing, handling, behavior and health notes.",
+      hint: "We'll add the structured fields here in the next iteration. For now, tap Next to advance, or open the full editor to fill it in.",
     },
     4: {
       lead: "Emergency info — vets, contacts, and home info for sitters.",
@@ -159,5 +158,213 @@ function StepBody({ step, birdId, birdName }: { step: number; birdId: string; bi
         Open the full editor for this step
       </Link>
     </div>
+  );
+}
+
+const TIME_BLOCKS: { key: string; label: string }[] = [
+  { key: "morning", label: "Morning" },
+  { key: "midday", label: "Midday" },
+  { key: "evening", label: "Evening" },
+  { key: "bedtime", label: "Bedtime" },
+  { key: "custom", label: "Custom" },
+];
+
+const COMMON_TASKS = [
+  "Uncover cage",
+  "Fresh food",
+  "Fresh water",
+  "Out-of-cage time",
+  "Misting or bath",
+  "Training or play",
+  "Medication",
+  "Cover for night",
+];
+
+function DayInLifeStep({ birdId }: { birdId: string }) {
+  const qc = useQueryClient();
+
+  const { data: plan } = useQuery({
+    queryKey: ["plan", birdId],
+    queryFn: async () => {
+      const { data } = await supabase.from("care_plans").select("id").eq("bird_id", birdId).maybeSingle();
+      return data;
+    },
+  });
+
+  const { data: tasks = [], isLoading } = useQuery({
+    queryKey: ["tasks", plan?.id],
+    enabled: !!plan?.id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("routine_tasks")
+        .select("*")
+        .eq("care_plan_id", plan!.id)
+        .order("category")
+        .order("sort_order");
+      return data ?? [];
+    },
+  });
+
+  const grouped = useMemo(() => {
+    const g: Record<string, any[]> = {};
+    for (const t of tasks) (g[t.category] ??= []).push(t);
+    return g;
+  }, [tasks]);
+
+  function refresh() {
+    if (plan?.id) qc.invalidateQueries({ queryKey: ["tasks", plan.id] });
+  }
+
+  if (isLoading || !plan) {
+    return <div className="h-32 animate-pulse rounded-2xl bg-sage-100" />;
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
+        <p className="text-sm font-semibold">Walk through a normal day.</p>
+        <p className="mt-1 text-sm text-sage-600">What happens, and when? Tap chips to add the usual tasks to each block — they'll appear in the Routine tab.</p>
+      </div>
+
+      {TIME_BLOCKS.map((block) => (
+        <TimeBlockSection
+          key={block.key}
+          block={block}
+          planId={plan.id}
+          tasks={grouped[block.key] ?? []}
+          onChange={refresh}
+        />
+      ))}
+    </div>
+  );
+}
+
+function TimeBlockSection({
+  block,
+  planId,
+  tasks,
+  onChange,
+}: {
+  block: { key: string; label: string };
+  planId: string;
+  tasks: any[];
+  onChange: () => void;
+}) {
+  const [custom, setCustom] = useState("");
+  const [busy, setBusy] = useState(false);
+  const present = new Map(tasks.map((t) => [t.title.trim().toLowerCase(), t]));
+
+  async function add(title: string) {
+    if (busy) return;
+    setBusy(true);
+    await supabase.from("routine_tasks").insert({
+      care_plan_id: planId,
+      title,
+      category: block.key,
+      sort_order: tasks.length,
+    } as any);
+    setBusy(false);
+    onChange();
+  }
+  async function remove(id: string) {
+    if (busy) return;
+    setBusy(true);
+    await supabase.from("routine_tasks").delete().eq("id", id);
+    setBusy(false);
+    onChange();
+  }
+  async function toggle(title: string) {
+    const existing = present.get(title.trim().toLowerCase());
+    if (existing) await remove(existing.id);
+    else await add(title);
+  }
+  async function addCustom() {
+    const t = custom.trim();
+    if (!t) return;
+    await add(t);
+    setCustom("");
+  }
+  async function saveNote(id: string, value: string) {
+    await supabase.from("routine_tasks").update({ instructions: value || null } as any).eq("id", id);
+    onChange();
+  }
+
+  return (
+    <section className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
+      <h2 className="text-[11px] font-bold uppercase tracking-widest text-sage-600">{block.label}</h2>
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        {COMMON_TASKS.map((t) => {
+          const isOn = present.has(t.trim().toLowerCase());
+          return (
+            <button
+              key={t}
+              type="button"
+              onClick={() => toggle(t)}
+              disabled={busy}
+              className={
+                "rounded-full border px-3 py-1.5 text-xs font-semibold transition disabled:opacity-50 " +
+                (isOn
+                  ? "border-sage-600 bg-sage-600 text-white"
+                  : "border-sage-200 bg-white text-sage-700 hover:bg-sage-50")
+              }
+            >
+              {isOn ? "✓ " : "+ "}{t}
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="mt-3 flex gap-2">
+        <input
+          className="input flex-1"
+          value={custom}
+          onChange={(e) => setCustom(e.target.value)}
+          placeholder="Add your own…"
+          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCustom(); } }}
+        />
+        <button
+          type="button"
+          onClick={addCustom}
+          disabled={!custom.trim() || busy}
+          className="rounded-xl bg-sage-100 px-3 text-sm font-semibold text-sage-700 disabled:opacity-50"
+          aria-label="Add custom task"
+        >
+          <Plus className="size-4" />
+        </button>
+      </div>
+
+      {tasks.length > 0 && (
+        <ul className="mt-4 space-y-2">
+          {tasks.map((t) => (
+            <li key={t.id} className="rounded-lg bg-sage-50 p-3">
+              <div className="flex items-start gap-2">
+                <p className="flex-1 text-sm font-semibold">{t.title}</p>
+                <button
+                  type="button"
+                  onClick={() => remove(t.id)}
+                  className="rounded p-1 text-sage-600 hover:bg-sage-100"
+                  aria-label={`Remove ${t.title}`}
+                >
+                  <X className="size-4" />
+                </button>
+              </div>
+              <textarea
+                className="input area mt-2 text-xs"
+                placeholder="Add a note (optional)"
+                defaultValue={t.instructions ?? ""}
+                onBlur={(e) => {
+                  if ((e.target.value ?? "") !== (t.instructions ?? "")) {
+                    saveNote(t.id, e.target.value);
+                  }
+                }}
+              />
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.55rem .7rem;font-size:14px;outline:none}.input:focus{border-color:var(--sage-600);box-shadow:0 0 0 3px rgb(74 103 65 / .15)}.area{min-height:50px;line-height:1.4}`}</style>
+    </section>
   );
 }

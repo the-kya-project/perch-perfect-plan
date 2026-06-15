@@ -21,9 +21,6 @@ function NewBird() {
   const [flight, setFlight] = useState("unknown");
   const [photo, setPhoto] = useState<string | null>(null);
   const [photoPos, setPhotoPos] = useState<string>("50% 50%");
-  const [normal, setNormal] = useState("");
-  const [min, setMin] = useState("");
-  const [max, setMax] = useState("");
   const [saving, setSaving] = useState(false);
 
   function onPhoto(e: React.ChangeEvent<HTMLInputElement>) {
@@ -37,6 +34,7 @@ function NewBird() {
 
   async function createBird(targetStep: number): Promise<string | null> {
     if (!name.trim()) { toast.error("Give your bird a name."); return null; }
+    if (!species.trim()) { toast.error("Choose a species."); return null; }
     setSaving(true);
     const { data: u } = await supabase.auth.getUser();
     if (!u.user) { setSaving(false); return null; }
@@ -50,9 +48,6 @@ function NewBird() {
       flight_status: flight,
       photo_url: photo,
       photo_position: photo ? photoPos : null,
-      normal_weight: normal ? Number(normal) : null,
-      normal_weight_min: min ? Number(min) : null,
-      normal_weight_max: max ? Number(max) : null,
       setup_complete: false,
       setup_step: targetStep,
     } as any).select().single();
@@ -89,7 +84,7 @@ function NewBird() {
       saving={saving}
       onNext={onNext}
       onSaveAndExit={onSaveAndExit}
-      nextDisabled={!name.trim()}
+      nextDisabled={!name.trim() || !species.trim()}
     >
       <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
         <div className="flex items-start gap-3">
@@ -132,15 +127,6 @@ function NewBird() {
         </div>
       </section>
 
-      <fieldset className="rounded-2xl border border-sage-200 bg-white/60 p-3">
-        <legend className="px-1 text-xs font-semibold uppercase tracking-wider text-sage-600">Weight (grams)</legend>
-        <p className="mb-2 text-xs text-sage-600">Used by the sitter's daily health scan to flag weight loss. You can fill this in later.</p>
-        <div className="grid grid-cols-3 gap-3">
-          <BirdField label="Normal"><input className="input" inputMode="decimal" placeholder="e.g. 110" value={normal} onChange={(e) => setNormal(e.target.value)} /></BirdField>
-          <BirdField label="Min"><input className="input" inputMode="decimal" placeholder="105" value={min} onChange={(e) => setMin(e.target.value)} /></BirdField>
-          <BirdField label="Max"><input className="input" inputMode="decimal" placeholder="115" value={max} onChange={(e) => setMax(e.target.value)} /></BirdField>
-        </div>
-      </fieldset>
 
       <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.65rem .8rem;font-size:16px;outline:none}.input:focus{border-color:var(--sage-600);box-shadow:0 0 0 3px rgb(74 103 65 / .15)}`}</style>
     </SetupShell>
