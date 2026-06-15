@@ -101,7 +101,7 @@ function BirdSetup() {
       onNext={onNext}
       onSaveAndExit={onSaveAndExit}
       nextLabel={isLast ? "Finish setup" : "Next"}
-      backDisabled={step <= 2 && false}
+      backDisabled={step <= 2}
     >
       <StepBody step={step} birdId={birdId} birdName={bird.name} />
     </SetupShell>
