@@ -624,6 +624,8 @@ const FEED_PREFIX = "Feed:";
 // itself is excluded — checking the removal task should NOT start a new timer.
 export const FRESH_FOOD_TASK_PATTERN = /\b(fresh|chop|veg|veggies|salad|sprout)\b/i;
 
+type DietItem = { name: string; amount: string; unit: string; times?: string[]; freeFed?: boolean };
+
 function FoodWaterStep({
   birdId,
   birdName,
@@ -650,39 +652,13 @@ function FoodWaterStep({
     },
   });
 
-  const { data: routine = [] } = useQuery({
-    queryKey: ["plan-routine-times", plan?.id],
-    enabled: !!plan?.id,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("routine_tasks")
-        .select("title, time_of_day, category")
-        .eq("care_plan_id", plan!.id);
-      return data ?? [];
-    },
-  });
-
-  const suggestedTimes = useMemo(() => {
-    const out: string[] = [];
-    for (const t of routine as any[]) {
-      if (!FEEDING_PATTERN.test(t.title ?? "")) continue;
-      const slot = (t.time_of_day && String(t.time_of_day).trim()) || capitalize(t.category);
-      if (slot && !out.includes(slot)) out.push(slot);
-    }
-    return out;
-  }, [routine]);
-
   // form state — initialized once from plan
-  type DietItem = { name: string; amount: string; unit: string; times?: string[] };
   const [diet, setDiet] = useState<string[]>([]);
   const [dietOther, setDietOther] = useState("");
   const [dietDetails, setDietDetails] = useState<Record<string, DietItem[]>>({});
   const [brand, setBrand] = useState("");
   const [amountValue, setAmountValue] = useState("");
   const [amountUnit, setAmountUnit] = useState("");
-  const [feedingTimes, setFeedingTimes] = useState<string[]>([]);
-  const [newTime, setNewTime] = useState("");
-  const [fresh, setFresh] = useState<string[]>([]);
   const [freshOther, setFreshOther] = useState("");
   const [treatsNotes, setTreatsNotes] = useState("");
   const [treatsFreq, setTreatsFreq] = useState("");
@@ -695,6 +671,8 @@ function FoodWaterStep({
   const [foodBowlWash, setFoodBowlWash] = useState<string>("after_each_fresh");
   const [waterBowlWash, setWaterBowlWash] = useState<string>("once_daily");
   const [hygieneNotes, setHygieneNotes] = useState<string>("");
+  // Per-row in-flight "add a time" input, keyed by `${type}:${index}`.
+  const [timeDraft, setTimeDraft] = useState<Record<string, string>>({});
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -711,12 +689,23 @@ function FoodWaterStep({
     const dd = { ...((plan.diet_details ?? {}) as Record<string, DietItem[]>) };
     const hasAny = Object.values(dd).some((arr) => Array.isArray(arr) && arr.length);
     if (!hasAny && dietTypes.length && (seedBrand || seedAmt || seedUnit)) {
-      dd[dietTypes[0]] = [{ name: seedBrand, amount: seedAmt, unit: seedUnit }];
+      dd[dietTypes[0]] = [{ name: seedBrand, amount: seedAmt, unit: seedUnit, times: [] }];
+    }
+    // Back-compat: seed chop items from legacy fresh_foods list.
+    if (dietTypes.includes("chop")) {
+      const existing = (dd["chop"] ?? []) as DietItem[];
+      const existingNames = new Set(existing.map((i) => i.name.trim().toLowerCase()));
+      const legacyFresh = (plan.fresh_foods ?? []) as string[];
+      const seeded: DietItem[] = [...existing];
+      for (const f of legacyFresh) {
+        if (!existingNames.has(f.trim().toLowerCase())) {
+          seeded.push({ name: f, amount: "", unit: "", times: [] });
+          existingNames.add(f.trim().toLowerCase());
+        }
+      }
+      dd["chop"] = seeded;
     }
     setDietDetails(dd);
-    const ft = (plan.feeding_times ?? []) as string[];
-    setFeedingTimes(ft.length ? ft : suggestedTimes);
-    setFresh(plan.fresh_foods ?? []);
     setFreshOther(plan.fresh_foods_other ?? "");
     setTreatsNotes(plan.treats_notes ?? "");
     setTreatsFreq(plan.treats_frequency ?? "");
@@ -730,7 +719,7 @@ function FoodWaterStep({
     setWaterBowlWash(plan.water_bowl_wash_cadence ?? "once_daily");
     setHygieneNotes(plan.food_hygiene_notes ?? "");
     setHydrated(true);
-  }, [plan, suggestedTimes, hydrated]);
+  }, [plan, hydrated]);
 
   // Validation: each filled row must have both amount and unit (or neither).
   const dietRowsValid = useMemo(() => {
@@ -753,14 +742,18 @@ function FoodWaterStep({
       if (diet.includes("other") && dietOther.trim()) dietLabels.push(dietOther.trim());
 
       const perTypeLines: string[] = [];
+      const allFeedingTimes = new Set<string>();
       for (const t of diet) {
         const label = DIET_OPTIONS.find((o) => o.value === t)?.label ?? t;
         const items = (dietDetails[t] ?? []).filter((it) => it.name.trim() || it.amount.trim());
         if (!items.length) continue;
         const parts = items.map((it) => {
           const amt = it.amount.trim() && it.unit ? `${it.amount.trim()} ${it.unit}` : "";
-          const timesStr = (it.times ?? []).length ? `@ ${(it.times ?? []).join(", ")}` : "";
-          return [it.name.trim(), amt, timesStr].filter(Boolean).join(" — ");
+          const when = it.freeFed
+            ? "available all day"
+            : (it.times ?? []).length ? `@ ${(it.times ?? []).join(", ")}` : "";
+          (it.times ?? []).forEach((tm) => allFeedingTimes.add(tm));
+          return [it.name.trim(), amt, when].filter(Boolean).join(" — ");
         }).filter(Boolean);
         if (parts.length) perTypeLines.push(`${label}: ${parts.join("; ")}`);
       }
@@ -776,15 +769,20 @@ function FoodWaterStep({
       const foodWashLabel = FOOD_BOWL_WASH_OPTIONS.find((o) => o.value === foodBowlWash)?.label ?? foodBowlWash;
       const waterWashLabel = WATER_BOWL_WASH_OPTIONS.find((o) => o.value === waterBowlWash)?.label ?? waterBowlWash;
 
+      // Fresh foods list (only meaningful when chop is selected) — derived
+      // from chop item names so the care sheet and legacy `fresh_foods`
+      // column stay in sync.
+      const chopItems = diet.includes("chop") ? (dietDetails["chop"] ?? []) : [];
+      const freshList = chopItems.map((it) => it.name.trim()).filter(Boolean);
+
+      const feedingTimesArr = Array.from(allFeedingTimes);
+
       const foodSummaryParts = [
         dietLabels.length ? `Diet: ${dietLabels.join(", ")}` : "",
         ...perTypeLines,
         perTypeLines.length === 0 && legacyBrand.trim() ? `Brand: ${legacyBrand.trim()}` : "",
         perTypeLines.length === 0 && amountStr ? `Amount per serving: ${amountStr}` : "",
-        feedingTimes.length ? `Feeding times: ${feedingTimes.join(", ")}` : "",
-        fresh.length || freshOther.trim()
-          ? `Fresh foods: ${[...fresh, ...(freshOther.trim() ? [freshOther.trim()] : [])].join(", ")}`
-          : "",
+        diet.includes("chop") && freshOther.trim() ? `Other fresh foods: ${freshOther.trim()}` : "",
         storage.trim() ? `Stored: ${storage.trim()}` : "",
         `Freshness & hygiene:\n  • Remove fresh/wet food after ${removalLabel}\n  • Wash food bowls: ${foodWashLabel}\n  • Wash water bowl/bottle: ${waterWashLabel}${hygieneNotes.trim() ? `\n  • Notes: ${hygieneNotes.trim()}` : ""}`,
       ].filter(Boolean);
@@ -813,9 +811,9 @@ function FoodWaterStep({
           food_brand: legacyBrand || null,
           amount_value: legacyAmtVal ? Number(legacyAmtVal) : null,
           amount_unit: legacyAmtUnit || null,
-          feeding_times: feedingTimes,
-          fresh_foods: fresh,
-          fresh_foods_other: freshOther || null,
+          feeding_times: feedingTimesArr,
+          fresh_foods: freshList,
+          fresh_foods_other: diet.includes("chop") ? (freshOther || null) : null,
           treats_notes: treatsNotes || null,
           treats_frequency: treatsFreq || null,
           never_feed: never,
@@ -834,8 +832,11 @@ function FoodWaterStep({
         } as any)
         .eq("id", plan.id);
 
-      // Keep the auto-generated hygiene routine tasks in sync.
-      const hasFresh = diet.includes("chop") || fresh.length > 0 || freshOther.trim().length > 0;
+      // Sync auto-generated routine tasks: feeding (per-item × times) and hygiene.
+      const allItems: DietItem[] = diet.flatMap((t) => (dietDetails[t] ?? []));
+      await syncFeedingTasks(plan.id, allItems);
+
+      const hasFresh = diet.includes("chop") || freshList.length > 0 || freshOther.trim().length > 0;
       await syncHygieneTasks(plan.id, {
         removalLabel,
         foodWashLabel,
@@ -846,7 +847,7 @@ function FoodWaterStep({
       qc.invalidateQueries({ queryKey: ["plan", birdId] });
       qc.invalidateQueries({ queryKey: ["tasks", plan.id] });
     },
-    [diet, dietOther, dietDetails, brand, amountValue, amountUnit, feedingTimes, fresh, freshOther, treatsNotes, treatsFreq, never, waterFreq, waterNotes, storage, removalMinutes, foodBowlWash, waterBowlWash, hygieneNotes],
+    [diet, dietOther, dietDetails, brand, amountValue, amountUnit, freshOther, treatsNotes, treatsFreq, never, waterFreq, waterNotes, storage, removalMinutes, foodBowlWash, waterBowlWash, hygieneNotes],
     !!plan && hydrated,
     registerFlush,
   );
@@ -857,11 +858,21 @@ function FoodWaterStep({
     setter(arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
   }
 
+  function toggleFreshFood(label: string) {
+    const items = dietDetails["chop"] ?? [];
+    const lower = label.trim().toLowerCase();
+    const exists = items.some((i) => i.name.trim().toLowerCase() === lower);
+    const next = exists
+      ? items.filter((i) => i.name.trim().toLowerCase() !== lower)
+      : [...items, { name: label, amount: "", unit: "", times: [] }];
+    setDietDetails({ ...dietDetails, chop: next });
+  }
+
   return (
     <div className="space-y-4">
       <div className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
         <p className="text-sm font-semibold">What does {birdName} eat, and how much?</p>
-        <p className="mt-1 text-sm text-sage-600">Structured answers help the sitter know exactly what to serve.</p>
+        <p className="mt-1 text-sm text-sage-600">Structured answers help the sitter know exactly what to serve and when.</p>
       </div>
 
       {/* Primary diet */}
@@ -884,13 +895,11 @@ function FoodWaterStep({
         )}
       </Card>
 
-      {/* Per-diet-type items & amounts */}
+      {/* Per-diet-type items, amounts & feed times */}
       {diet.length > 0 && (
         <Card
-          title={diet.length === 1 ? "Brand / items & amount" : "Items & amounts per food type"}
-          hint={diet.length === 1
-            ? "Add the brand or item name and how much to serve."
-            : "For each food type you picked, list the specific items and how much of each."}
+          title={diet.length === 1 ? "Items, amounts & feed time(s)" : "Items & amounts per food type"}
+          hint="For each item, add the amount and when it's served. Use “Available all day” for food left in the cage."
         >
           <div className="space-y-4">
             {diet.map((t) => {
@@ -898,6 +907,8 @@ function FoodWaterStep({
               const items = dietDetails[t] ?? [];
               const update = (next: DietItem[]) =>
                 setDietDetails({ ...dietDetails, [t]: next });
+              const isChop = t === "chop";
+              const selectedFreshNames = new Set(items.map((i) => i.name.trim().toLowerCase()));
               return (
                 <div key={t} className="rounded-xl bg-sage-50/60 p-3 ring-1 ring-sage-100">
                   <div className="mb-2 flex items-center justify-between">
@@ -910,18 +921,60 @@ function FoodWaterStep({
                       <Plus className="size-3.5" /> Add item
                     </button>
                   </div>
+
+                  {isChop && (
+                    <div className="mb-3 rounded-lg bg-white p-2 ring-1 ring-sage-100">
+                      <p className="mb-1.5 text-xs font-semibold text-sage-600">Fresh foods offered — tap to add as items</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {FRESH_FOOD_OPTIONS.map((f) => (
+                          <Chip
+                            key={f}
+                            on={selectedFreshNames.has(f.trim().toLowerCase())}
+                            onClick={() => toggleFreshFood(f)}
+                          >
+                            {f}
+                          </Chip>
+                        ))}
+                      </div>
+                      <input
+                        className="input mt-2 text-sm"
+                        placeholder="Other fresh foods (free text)"
+                        value={freshOther}
+                        maxLength={300}
+                        onChange={(e) => setFreshOther(e.target.value)}
+                      />
+                    </div>
+                  )}
+
                   {items.length === 0 && (
-                    <p className="text-xs text-sage-500">No items yet. Tap “Add item” to list a brand or food.</p>
+                    <p className="text-xs text-sage-500">
+                      {isChop
+                        ? "Pick fresh foods above or tap “Add item” to list your own."
+                        : "No items yet. Tap “Add item” to list a brand or food."}
+                    </p>
                   )}
                   <div className="space-y-2">
                     {items.map((it, idx) => {
                       const rowInvalid = ((it.amount?.trim() === "") !== (it.unit === ""));
+                      const rowKey = `${t}:${idx}`;
+                      const draft = timeDraft[rowKey] ?? "";
+                      const setDraft = (v: string) => setTimeDraft({ ...timeDraft, [rowKey]: v });
+                      const addRowTime = () => {
+                        const v = draft.trim();
+                        if (!v) return;
+                        const cur = it.times ?? [];
+                        if (cur.includes(v)) { setDraft(""); return; }
+                        const next = items.slice();
+                        next[idx] = { ...it, times: [...cur, v], freeFed: false };
+                        update(next);
+                        setDraft("");
+                      };
                       return (
                         <div key={idx} className="rounded-lg bg-white p-2 ring-1 ring-sage-100">
                           <div className="grid grid-cols-[1fr,auto] gap-2">
                             <input
                               className="input"
-                              placeholder={t === "chop" ? "e.g. Morning chop mix" : "Brand or item name"}
+                              placeholder={isChop ? "e.g. Morning chop mix" : "Brand or item name"}
                               value={it.name}
                               maxLength={120}
                               onChange={(e) => {
@@ -967,36 +1020,69 @@ function FoodWaterStep({
                           {rowInvalid && (
                             <p className="mt-1.5 text-xs font-semibold text-warn-red">Add both an amount and a unit, or clear both.</p>
                           )}
-                          {/* Per-item feeding times */}
-                          <div className="mt-2">
-                            <p className="mb-1 text-xs font-semibold text-sage-600">Served at</p>
-                            {feedingTimes.length === 0 && (it.times ?? []).length === 0 ? (
-                              <p className="text-xs text-sage-500">Add feeding times below, then tap to assign.</p>
-                            ) : (
-                              <div className="flex flex-wrap gap-1.5">
-                                {Array.from(new Set([...(feedingTimes ?? []), ...((it.times ?? []))])).map((tm) => {
-                                  const on = (it.times ?? []).includes(tm);
-                                  return (
-                                    <button
-                                      key={tm}
-                                      type="button"
-                                      onClick={() => {
-                                        const cur = it.times ?? [];
-                                        const nextTimes = on ? cur.filter((x) => x !== tm) : [...cur, tm];
-                                        const next = items.slice();
-                                        next[idx] = { ...it, times: nextTimes };
-                                        update(next);
-                                      }}
-                                      className={`rounded-full px-2.5 py-1 text-xs font-semibold ring-1 transition ${
-                                        on
-                                          ? "bg-sage-600 text-white ring-sage-600"
-                                          : "bg-white text-sage-700 ring-sage-200 hover:bg-sage-50"
-                                      }`}
-                                    >
+
+                          {/* Per-item feed time(s) */}
+                          <div className="mt-2 rounded-md bg-sage-50/70 p-2">
+                            <label className="flex items-center gap-2 text-xs font-semibold text-sage-700">
+                              <input
+                                type="checkbox"
+                                className="size-4 accent-sage-600"
+                                checked={!!it.freeFed}
+                                onChange={(e) => {
+                                  const next = items.slice();
+                                  next[idx] = {
+                                    ...it,
+                                    freeFed: e.target.checked,
+                                    times: e.target.checked ? [] : (it.times ?? []),
+                                  };
+                                  update(next);
+                                }}
+                              />
+                              Available all day / free-fed
+                            </label>
+                            {!it.freeFed && (
+                              <div className="mt-2">
+                                <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-sage-600">Feed time(s)</p>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {(it.times ?? []).map((tm) => (
+                                    <span key={tm} className="inline-flex items-center gap-1 rounded-full bg-sage-100 px-2.5 py-1 text-xs font-semibold text-sage-700">
                                       {tm}
-                                    </button>
-                                  );
-                                })}
+                                      <button
+                                        type="button"
+                                        aria-label={`Remove ${tm}`}
+                                        onClick={() => {
+                                          const next = items.slice();
+                                          next[idx] = { ...it, times: (it.times ?? []).filter((x) => x !== tm) };
+                                          update(next);
+                                        }}
+                                        className="rounded-full p-0.5 text-sage-600 hover:bg-sage-200"
+                                      >
+                                        <X className="size-3" />
+                                      </button>
+                                    </span>
+                                  ))}
+                                  {(it.times ?? []).length === 0 && <span className="text-[11px] text-sage-400">No times yet.</span>}
+                                </div>
+                                <div className="mt-2 flex gap-2">
+                                  <input
+                                    className="input flex-1 text-sm"
+                                    placeholder="e.g. 8:00 AM, Morning, Bedtime"
+                                    value={draft}
+                                    maxLength={40}
+                                    onChange={(e) => setDraft(e.target.value)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter") { e.preventDefault(); addRowTime(); }
+                                    }}
+                                  />
+                                  <button
+                                    type="button"
+                                    onClick={addRowTime}
+                                    disabled={!draft.trim()}
+                                    className="rounded-xl bg-sage-100 px-3 text-sm font-semibold text-sage-700 disabled:opacity-50"
+                                  >
+                                    <Plus className="size-4" />
+                                  </button>
+                                </div>
                               </div>
                             )}
                           </div>
@@ -1010,58 +1096,6 @@ function FoodWaterStep({
           </div>
         </Card>
       )}
-
-      <Card
-        title="Feeding schedule"
-        hint={suggestedTimes.length ? "Prefilled from your day-in-the-life step. Edit as needed." : "Add the times you feed each day."}
-      >
-        <div className="flex flex-wrap gap-2">
-          {feedingTimes.map((t) => (
-            <span key={t} className="inline-flex items-center gap-1 rounded-full bg-sage-100 px-3 py-1.5 text-xs font-semibold text-sage-700">
-              {t}
-              <button
-                type="button"
-                aria-label={`Remove ${t}`}
-                onClick={() => setFeedingTimes(feedingTimes.filter((x) => x !== t))}
-                className="rounded-full p-0.5 text-sage-600 hover:bg-sage-200"
-              >
-                <X className="size-3" />
-              </button>
-            </span>
-          ))}
-          {feedingTimes.length === 0 && <span className="text-xs text-sage-400">No feeding times yet.</span>}
-        </div>
-        <div className="mt-3 flex gap-2">
-          <input
-            className="input flex-1"
-            placeholder="Add a time (e.g. 8:00 AM)"
-            value={newTime}
-            maxLength={40}
-            onChange={(e) => setNewTime(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") { e.preventDefault(); addTime(); }
-            }}
-          />
-          <button type="button" onClick={addTime} disabled={!newTime.trim()} className="rounded-xl bg-sage-100 px-3 text-sm font-semibold text-sage-700 disabled:opacity-50">
-            <Plus className="size-4" />
-          </button>
-        </div>
-      </Card>
-
-      <Card title="Fresh foods offered" hint="Tap any that apply, then add your own.">
-        <div className="flex flex-wrap gap-2">
-          {FRESH_FOOD_OPTIONS.map((f) => (
-            <Chip key={f} on={fresh.includes(f)} onClick={() => toggleArr(fresh, f, setFresh)}>{f}</Chip>
-          ))}
-        </div>
-        <input
-          className="input mt-3"
-          placeholder="Other fresh foods"
-          value={freshOther}
-          maxLength={300}
-          onChange={(e) => setFreshOther(e.target.value)}
-        />
-      </Card>
 
       <Card title="Treats">
         <input
@@ -1182,12 +1216,6 @@ function FoodWaterStep({
     </div>
   );
 
-  function addTime() {
-    const v = newTime.trim();
-    if (!v || feedingTimes.includes(v)) { setNewTime(""); return; }
-    setFeedingTimes([...feedingTimes, v]);
-    setNewTime("");
-  }
   function addNever() {
     const v = newNever.trim();
     if (!v || never.includes(v)) { setNewNever(""); return; }
