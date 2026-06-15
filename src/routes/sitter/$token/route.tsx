@@ -1,11 +1,15 @@
-import { createFileRoute, Outlet, useRouter } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useSearch, useNavigate } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { z } from "zod";
 import { getSitterContext } from "@/lib/sitter.functions";
 import { EmergencyBar } from "@/components/EmergencyBar";
 
+const searchSchema = z.object({ birdId: z.string().uuid().optional() });
+
 export const Route = createFileRoute("/sitter/$token")({
   ssr: false,
+  validateSearch: searchSchema,
   head: () => ({ meta: [
     { title: "Sitter access — Parrot Care Companion" },
     { name: "robots", content: "noindex,nofollow" },
@@ -24,18 +28,38 @@ export const Route = createFileRoute("/sitter/$token")({
 
 function SitterLayout() {
   const { token } = Route.useParams();
+  const search = useSearch({ from: "/sitter/$token" });
+  const navigate = useNavigate();
+  const { data: ctx } = useSitterContext(token, search.birdId);
+
   return (
     <div className="min-h-screen bg-sage-50 pb-32">
+      {ctx.birds.length > 1 && (
+        <div className="border-b border-sage-100 bg-white">
+          <div className="mx-auto flex max-w-md items-center gap-2 overflow-x-auto px-4 py-2">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-sage-600">Bird:</span>
+            {ctx.birds.map((b: any) => (
+              <button
+                key={b.id}
+                onClick={() => navigate({ to: "/sitter/$token", params: { token }, search: { birdId: b.id } })}
+                className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${b.id === ctx.activeBirdId ? "bg-sage-900 text-white" : "bg-sage-100 text-sage-700"}`}
+              >
+                {b.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       <Outlet />
       <EmergencyBar token={token} />
     </div>
   );
 }
 
-export function useSitterContext(token: string) {
+export function useSitterContext(token: string, birdId?: string) {
   const fn = useServerFn(getSitterContext);
   return useSuspenseQuery({
-    queryKey: ["sitter-ctx", token],
-    queryFn: () => fn({ data: { token } }),
+    queryKey: ["sitter-ctx", token, birdId ?? null],
+    queryFn: () => fn({ data: { token, birdId } }),
   });
 }

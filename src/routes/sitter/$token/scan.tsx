@@ -28,8 +28,8 @@ function ScanPage() {
       const filled = Object.fromEntries(
         SCAN_FIELDS.map((f) => [f.key, answers[f.key] ?? "normal"]),
       ) as Record<ScanFieldKey, ScanAnswer>;
-      const res = await submit({ data: { token, answers: filled, notes: notes || undefined } });
-      if (photo) await upload({ data: { token, dataUrl: photo, notes: "Attached to health scan" } });
+      const res = await submit({ data: { token, birdId: ctx.activeBirdId, answers: filled, notes: notes || undefined } });
+      if (photo) await upload({ data: { token, birdId: ctx.activeBirdId, dataUrl: photo, notes: "Attached to health scan" } });
       return res;
     },
     onSuccess: (res) => {
