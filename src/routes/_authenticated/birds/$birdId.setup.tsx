@@ -661,7 +661,8 @@ function FoodWaterStep({
         if (!items.length) continue;
         const parts = items.map((it) => {
           const amt = it.amount.trim() && it.unit ? `${it.amount.trim()} ${it.unit}` : "";
-          return [it.name.trim(), amt].filter(Boolean).join(" — ");
+          const timesStr = (it.times ?? []).length ? `@ ${(it.times ?? []).join(", ")}` : "";
+          return [it.name.trim(), amt, timesStr].filter(Boolean).join(" — ");
         }).filter(Boolean);
         if (parts.length) perTypeLines.push(`${label}: ${parts.join("; ")}`);
       }
