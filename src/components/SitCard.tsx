@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Calendar, Link2, Copy } from "lucide-react";
 import { toast } from "sonner";
+import { SitChecklist } from "@/components/SitChecklist";
 
 type Bird = { id: string; name: string };
 
