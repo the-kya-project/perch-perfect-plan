@@ -7,9 +7,11 @@ import { toast } from "sonner";
 import { SetupShell, SETUP_STEPS, TOTAL_STEPS } from "@/components/SetupShell";
 import { EMERGENCY_FIELDS, EMERGENCY_LABELS, REQUIRED_FIELDS, mergeEmergency, type EmergencyField } from "@/lib/emergency";
 import { Plus, X } from "lucide-react";
+import { PhotoCropper } from "@/components/PhotoCropper";
+import { AgePicker, BirdField, SpeciesPicker } from "@/components/BirdPickers";
 
 const setupSearch = z.object({
-  step: z.coerce.number().int().min(2).max(TOTAL_STEPS).optional(),
+  step: z.coerce.number().int().min(1).max(TOTAL_STEPS).optional(),
 });
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/setup")({
@@ -36,27 +38,22 @@ function BirdSetup() {
     },
   });
 
-  const [step, setStep] = useState<number>(2);
+  const [step, setStep] = useState<number>(1);
   const [blockNext, setBlockNext] = useState(false);
   useEffect(() => { setBlockNext(false); }, [step]);
   const [saving, setSaving] = useState(false);
 
-  // Initialise step from URL (?step=) when present, else from stored progress.
-  // Skip the auto-redirect when the URL explicitly asks for a step, so owners
-  // can revisit any incomplete step from the dashboard completeness indicator.
+  // Start at step one unless this bird has an unfinished saved position.
+  // Explicit ?step= links still open the requested step.
   useEffect(() => {
     if (!bird) return;
-    if (stepParam) {
-      setStep(Math.min(TOTAL_STEPS, Math.max(2, stepParam)));
-      return;
-    }
-    if (bird.setup_complete) {
-      navigate({ to: "/birds/$birdId", params: { birdId }, replace: true });
+    if (stepParam != null) {
+      setStep(Math.min(TOTAL_STEPS, Math.max(1, stepParam)));
       return;
     }
     const stored = Number(bird.setup_step ?? 0);
-    setStep(Math.min(TOTAL_STEPS, Math.max(2, stored || 2)));
-  }, [bird, birdId, navigate, stepParam]);
+    setStep(!bird.setup_complete && stored > 1 ? Math.min(TOTAL_STEPS, stored) : 1);
+  }, [bird, stepParam]);
 
   async function persistStep(nextStep: number, complete = false) {
     setSaving(true);
@@ -84,7 +81,7 @@ function BirdSetup() {
   }
 
   async function onBack() {
-    if (step <= 2) return; // Step 1 lives in /birds/new; basics are editable via the tabs.
+    if (step <= 1) return;
     const prev = step - 1;
     const ok = await persistStep(prev);
     if (ok) setStep(prev);
@@ -117,7 +114,7 @@ function BirdSetup() {
     }
   }
 
-  if (isLoading || !bird || (bird.setup_complete && !stepParam)) {
+  if (isLoading || !bird) {
     return (
       <SetupShell step={step} title="Loading…">
         <div className="h-32 animate-pulse rounded-2xl bg-sage-100" />
@@ -137,7 +134,7 @@ function BirdSetup() {
       onNext={onNext}
       onSaveAndExit={onSaveAndExit}
       nextLabel={isLast ? "Finish setup" : "Next"}
-      backDisabled={step <= 2}
+      backDisabled={step <= 1}
       nextDisabled={blockNext}
       hideFooter={step === TOTAL_STEPS}
     >
