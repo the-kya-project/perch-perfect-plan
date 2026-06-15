@@ -12,8 +12,11 @@ import { SpeciesPicker, AgePicker } from "@/components/BirdPickers";
 import { computeSetupCompleteness } from "@/lib/setupCompleteness";
 
 
+const TAB_IDS = ["basics", "routine", "food", "behavior", "home", "health", "clips", "emergency", "sits", "logs"] as const;
+type Tab = (typeof TAB_IDS)[number];
+
 const birdSearch = z.object({
-  tab: z.enum(["plan", "routine", "emergency", "sits", "logs"]).optional(),
+  tab: z.enum(TAB_IDS).optional(),
 });
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/")({
@@ -22,13 +25,11 @@ export const Route = createFileRoute("/_authenticated/birds/$birdId/")({
   component: BirdEditor,
 });
 
-type Tab = "plan" | "routine" | "emergency" | "sits" | "logs";
-
 function BirdEditor() {
   const { birdId } = Route.useParams();
   const { tab: tabParam } = Route.useSearch();
   const qc = useQueryClient();
-  const [tab, setTab] = useState<Tab>(tabParam ?? "plan");
+  const [tab, setTab] = useState<Tab>(tabParam ?? "basics");
   useEffect(() => { if (tabParam) setTab(tabParam); }, [tabParam]);
 
   const { data: bird } = useQuery({
