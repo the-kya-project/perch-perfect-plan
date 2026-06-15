@@ -88,10 +88,13 @@ export type Database = {
           amount_unit: string | null
           amount_value: number | null
           bird_id: string
+          bite_risk: string | null
+          cage_location: string | null
           cleaning_instructions: string | null
           created_at: string
           diet_other: string | null
           diet_types: string[]
+          fears_triggers: string | null
           feeding_times: string[]
           food_brand: string | null
           food_instructions: string | null
@@ -100,9 +103,13 @@ export type Database = {
           fresh_food_removal: string | null
           fresh_foods: string[]
           fresh_foods_other: string | null
+          handlers: string | null
           handling_rules: string | null
+          hazards: string[]
+          hazards_other: string | null
           id: string
           known_triggers: string | null
+          likes: string | null
           never_feed: string[]
           normal_activity: string | null
           normal_appetite: string | null
@@ -110,10 +117,15 @@ export type Database = {
           normal_droppings: string | null
           normal_noise: string | null
           normal_sleep: string | null
+          off_limits: string | null
           off_limits_rooms: string | null
           other_pets: string | null
+          out_of_cage_mode: string | null
+          out_of_cage_notes: string | null
           out_of_cage_rules: string | null
           safety_rules: string | null
+          step_up: string | null
+          step_up_notes: string | null
           treats_allowed: string | null
           treats_frequency: string | null
           treats_notes: string | null
@@ -128,10 +140,13 @@ export type Database = {
           amount_unit?: string | null
           amount_value?: number | null
           bird_id: string
+          bite_risk?: string | null
+          cage_location?: string | null
           cleaning_instructions?: string | null
           created_at?: string
           diet_other?: string | null
           diet_types?: string[]
+          fears_triggers?: string | null
           feeding_times?: string[]
           food_brand?: string | null
           food_instructions?: string | null
@@ -140,9 +155,13 @@ export type Database = {
           fresh_food_removal?: string | null
           fresh_foods?: string[]
           fresh_foods_other?: string | null
+          handlers?: string | null
           handling_rules?: string | null
+          hazards?: string[]
+          hazards_other?: string | null
           id?: string
           known_triggers?: string | null
+          likes?: string | null
           never_feed?: string[]
           normal_activity?: string | null
           normal_appetite?: string | null
@@ -150,10 +169,15 @@ export type Database = {
           normal_droppings?: string | null
           normal_noise?: string | null
           normal_sleep?: string | null
+          off_limits?: string | null
           off_limits_rooms?: string | null
           other_pets?: string | null
+          out_of_cage_mode?: string | null
+          out_of_cage_notes?: string | null
           out_of_cage_rules?: string | null
           safety_rules?: string | null
+          step_up?: string | null
+          step_up_notes?: string | null
           treats_allowed?: string | null
           treats_frequency?: string | null
           treats_notes?: string | null
@@ -168,10 +192,13 @@ export type Database = {
           amount_unit?: string | null
           amount_value?: number | null
           bird_id?: string
+          bite_risk?: string | null
+          cage_location?: string | null
           cleaning_instructions?: string | null
           created_at?: string
           diet_other?: string | null
           diet_types?: string[]
+          fears_triggers?: string | null
           feeding_times?: string[]
           food_brand?: string | null
           food_instructions?: string | null
@@ -180,9 +207,13 @@ export type Database = {
           fresh_food_removal?: string | null
           fresh_foods?: string[]
           fresh_foods_other?: string | null
+          handlers?: string | null
           handling_rules?: string | null
+          hazards?: string[]
+          hazards_other?: string | null
           id?: string
           known_triggers?: string | null
+          likes?: string | null
           never_feed?: string[]
           normal_activity?: string | null
           normal_appetite?: string | null
@@ -190,10 +221,15 @@ export type Database = {
           normal_droppings?: string | null
           normal_noise?: string | null
           normal_sleep?: string | null
+          off_limits?: string | null
           off_limits_rooms?: string | null
           other_pets?: string | null
+          out_of_cage_mode?: string | null
+          out_of_cage_notes?: string | null
           out_of_cage_rules?: string | null
           safety_rules?: string | null
+          step_up?: string | null
+          step_up_notes?: string | null
           treats_allowed?: string | null
           treats_frequency?: string | null
           treats_notes?: string | null

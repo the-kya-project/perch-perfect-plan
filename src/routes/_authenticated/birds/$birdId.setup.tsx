@@ -125,8 +125,10 @@ function StepBody({
 }) {
   if (step === 2) return <DayInLifeStep birdId={birdId} />;
   if (step === 3) return <FoodWaterStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} />;
+  if (step === 4) return <PersonalityStep birdId={birdId} birdName={birdName} />;
+  if (step === 5) return <EnvironmentStep birdId={birdId} />;
 
-  if (step === 5) {
+  if (step === 7) {
     return (
       <div className="space-y-4">
         <div className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
@@ -147,7 +149,7 @@ function StepBody({
   }
 
   const blurbs: Record<number, { lead: string; hint: string }> = {
-    4: {
+    6: {
       lead: "Emergency info — vets, contacts, and home info for sitters.",
       hint: "Most of this is inherited from your account defaults. The full form lives on the Emergency tab.",
     },
@@ -786,4 +788,282 @@ function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; chi
 function capitalize(s: string | null | undefined) {
   if (!s) return "";
   return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+// ---------- Step 4: Personality & handling ----------
+
+const STEP_UP_OPTIONS = [
+  { value: "yes", label: "Yes" },
+  { value: "sometimes", label: "Sometimes" },
+  { value: "no", label: "No — cage-only is fine" },
+];
+
+function PersonalityStep({ birdId, birdName }: { birdId: string; birdName: string }) {
+  const qc = useQueryClient();
+  const { data: plan, isLoading } = useQuery({
+    queryKey: ["plan-personality", birdId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("care_plans").select("*").eq("bird_id", birdId).maybeSingle();
+      if (error) throw error;
+      return data as any;
+    },
+  });
+
+  const [stepUp, setStepUp] = useState("");
+  const [stepUpNotes, setStepUpNotes] = useState("");
+  const [handlers, setHandlers] = useState("");
+  const [likes, setLikes] = useState("");
+  const [fears, setFears] = useState("");
+  const [bite, setBite] = useState("");
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    if (!plan || hydrated) return;
+    setStepUp(plan.step_up ?? "");
+    setStepUpNotes(plan.step_up_notes ?? "");
+    setHandlers(plan.handlers ?? "");
+    setLikes(plan.likes ?? "");
+    setFears(plan.fears_triggers ?? plan.known_triggers ?? "");
+    setBite(plan.bite_risk ?? "");
+    setHydrated(true);
+  }, [plan, hydrated]);
+
+  useEffect(() => {
+    if (!plan || !hydrated) return;
+    const handle = setTimeout(async () => {
+      const stepUpLabel = STEP_UP_OPTIONS.find((o) => o.value === stepUp)?.label;
+      const handlingSummary = [
+        stepUpLabel ? `Step up: ${stepUpLabel}` : "",
+        stepUpNotes.trim() ? `Step-up notes: ${stepUpNotes.trim()}` : "",
+        handlers.trim() ? `Who can handle: ${handlers.trim()}` : "",
+        bite.trim() ? `Bite risk: ${bite.trim()}` : "",
+      ].filter(Boolean).join("\n");
+      await supabase
+        .from("care_plans")
+        .update({
+          step_up: stepUp || null,
+          step_up_notes: stepUpNotes || null,
+          handlers: handlers || null,
+          likes: likes || null,
+          fears_triggers: fears || null,
+          bite_risk: bite || null,
+          // Mirror to legacy fields visible in the Care plan tab
+          handling_rules: handlingSummary || null,
+          known_triggers: fears || null,
+        } as any)
+        .eq("id", plan.id);
+      qc.invalidateQueries({ queryKey: ["plan", birdId] });
+    }, 500);
+    return () => clearTimeout(handle);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stepUp, stepUpNotes, handlers, likes, fears, bite, hydrated]);
+
+  if (isLoading || !plan) return <div className="h-32 animate-pulse rounded-2xl bg-sage-100" />;
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
+        <p className="text-sm font-semibold">How does {birdName} like to be treated?</p>
+        <p className="mt-1 text-sm text-sage-600">What should a sitter expect?</p>
+      </div>
+
+      <Card title="Does the bird step up?">
+        <select className="input" value={stepUp} onChange={(e) => setStepUp(e.target.value)}>
+          <option value="">Pick one…</option>
+          {STEP_UP_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
+        <textarea
+          className="input area mt-2"
+          placeholder="Notes (only from certain perches? prefers a hand vs. perch?)"
+          value={stepUpNotes}
+          maxLength={400}
+          onChange={(e) => setStepUpNotes(e.target.value)}
+        />
+      </Card>
+
+      <Card title="Who can handle, and how">
+        <textarea
+          className="input area"
+          placeholder="e.g. Only me and my partner. Sitter: don't try to handle — talk only."
+          value={handlers}
+          maxLength={500}
+          onChange={(e) => setHandlers(e.target.value)}
+        />
+      </Card>
+
+      <Card title="Likes">
+        <input
+          className="input"
+          placeholder="e.g. head scratches, millet, shoulder rides"
+          value={likes}
+          maxLength={300}
+          onChange={(e) => setLikes(e.target.value)}
+        />
+      </Card>
+
+      <Card title="Fears & triggers">
+        <textarea
+          className="input area"
+          placeholder="e.g. panics at the vacuum, hates hats"
+          value={fears}
+          maxLength={500}
+          onChange={(e) => setFears(e.target.value)}
+        />
+      </Card>
+
+      <Card title="Bite risk & warning signs">
+        <textarea
+          className="input area"
+          placeholder="e.g. low risk, but pinned eyes and tail fan = back off"
+          value={bite}
+          maxLength={500}
+          onChange={(e) => setBite(e.target.value)}
+        />
+      </Card>
+
+      <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.65rem .8rem;font-size:16px;outline:none}.input:focus{border-color:var(--sage-600);box-shadow:0 0 0 3px rgb(74 103 65 / .15)}.area{min-height:60px;line-height:1.4}`}</style>
+    </div>
+  );
+}
+
+// ---------- Step 5: Environment & safety ----------
+
+const OUT_OF_CAGE_OPTIONS = [
+  { value: "supervised", label: "Supervised only" },
+  { value: "specific_room", label: "Specific room only" },
+  { value: "not_while_sitting", label: "Not while sitting" },
+];
+
+const HAZARD_OPTIONS = [
+  "Other pets",
+  "Ceiling fans",
+  "Open windows",
+  "Young children",
+  "Houseplants",
+  "Kitchen & nonstick cookware",
+  "Candles or diffusers",
+];
+
+function EnvironmentStep({ birdId }: { birdId: string }) {
+  const qc = useQueryClient();
+  const { data: plan, isLoading } = useQuery({
+    queryKey: ["plan-environment", birdId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("care_plans").select("*").eq("bird_id", birdId).maybeSingle();
+      if (error) throw error;
+      return data as any;
+    },
+  });
+
+  const [cageLoc, setCageLoc] = useState("");
+  const [oocMode, setOocMode] = useState("");
+  const [oocNotes, setOocNotes] = useState("");
+  const [hazards, setHazards] = useState<string[]>([]);
+  const [hazardsOther, setHazardsOther] = useState("");
+  const [offLimits, setOffLimits] = useState("");
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    if (!plan || hydrated) return;
+    setCageLoc(plan.cage_location ?? "");
+    setOocMode(plan.out_of_cage_mode ?? "");
+    setOocNotes(plan.out_of_cage_notes ?? plan.out_of_cage_rules ?? "");
+    setHazards(plan.hazards ?? []);
+    setHazardsOther(plan.hazards_other ?? "");
+    setOffLimits(plan.off_limits ?? plan.off_limits_rooms ?? "");
+    setHydrated(true);
+  }, [plan, hydrated]);
+
+  useEffect(() => {
+    if (!plan || !hydrated) return;
+    const handle = setTimeout(async () => {
+      const modeLabel = OUT_OF_CAGE_OPTIONS.find((o) => o.value === oocMode)?.label;
+      const oocSummary = [modeLabel ?? "", oocNotes.trim()].filter(Boolean).join(" — ");
+      const allHazards = [...hazards, ...(hazardsOther.trim() ? [hazardsOther.trim()] : [])];
+      const safetySummary = allHazards.length ? `Hazards: ${allHazards.join(", ")}` : "";
+      await supabase
+        .from("care_plans")
+        .update({
+          cage_location: cageLoc || null,
+          out_of_cage_mode: oocMode || null,
+          out_of_cage_notes: oocNotes || null,
+          hazards,
+          hazards_other: hazardsOther || null,
+          off_limits: offLimits || null,
+          // Mirror to legacy fields visible in the Care plan tab
+          out_of_cage_rules: oocSummary || null,
+          safety_rules: safetySummary || null,
+          off_limits_rooms: offLimits || null,
+        } as any)
+        .eq("id", plan.id);
+      qc.invalidateQueries({ queryKey: ["plan", birdId] });
+    }, 500);
+    return () => clearTimeout(handle);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cageLoc, oocMode, oocNotes, hazards, hazardsOther, offLimits, hydrated]);
+
+  if (isLoading || !plan) return <div className="h-32 animate-pulse rounded-2xl bg-sage-100" />;
+
+  function toggleHazard(v: string) {
+    setHazards(hazards.includes(v) ? hazards.filter((x) => x !== v) : [...hazards, v]);
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
+        <p className="text-sm font-semibold">What does a sitter need to know about your home?</p>
+      </div>
+
+      <Card title="Cage location & setup notes">
+        <textarea
+          className="input area"
+          placeholder="e.g. Living room, away from the kitchen. Cover is on the side table."
+          value={cageLoc}
+          maxLength={500}
+          onChange={(e) => setCageLoc(e.target.value)}
+        />
+      </Card>
+
+      <Card title="Out-of-cage rules">
+        <select className="input" value={oocMode} onChange={(e) => setOocMode(e.target.value)}>
+          <option value="">Pick one…</option>
+          {OUT_OF_CAGE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
+        <textarea
+          className="input area mt-2"
+          placeholder="Notes (which room? how long? what to watch for?)"
+          value={oocNotes}
+          maxLength={500}
+          onChange={(e) => setOocNotes(e.target.value)}
+        />
+      </Card>
+
+      <Card title="Home-specific hazards" hint="Tap any that apply, then add your own.">
+        <div className="flex flex-wrap gap-2">
+          {HAZARD_OPTIONS.map((h) => (
+            <Chip key={h} on={hazards.includes(h)} onClick={() => toggleHazard(h)}>{h}</Chip>
+          ))}
+        </div>
+        <input
+          className="input mt-3"
+          placeholder="Other hazards"
+          value={hazardsOther}
+          maxLength={300}
+          onChange={(e) => setHazardsOther(e.target.value)}
+        />
+      </Card>
+
+      <Card title="Anything off-limits">
+        <textarea
+          className="input area"
+          placeholder="e.g. No access to the kitchen or bathroom; bedroom door stays closed."
+          value={offLimits}
+          maxLength={400}
+          onChange={(e) => setOffLimits(e.target.value)}
+        />
+      </Card>
+
+      <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.65rem .8rem;font-size:16px;outline:none}.input:focus{border-color:var(--sage-600);box-shadow:0 0 0 3px rgb(74 103 65 / .15)}.area{min-height:60px;line-height:1.4}`}</style>
+    </div>
+  );
 }
