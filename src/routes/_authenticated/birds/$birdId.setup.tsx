@@ -125,8 +125,10 @@ function StepBody({
 }) {
   if (step === 2) return <DayInLifeStep birdId={birdId} />;
   if (step === 3) return <FoodWaterStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} />;
+  if (step === 4) return <PersonalityStep birdId={birdId} birdName={birdName} />;
+  if (step === 5) return <EnvironmentStep birdId={birdId} />;
 
-  if (step === 5) {
+  if (step === 7) {
     return (
       <div className="space-y-4">
         <div className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
@@ -147,7 +149,7 @@ function StepBody({
   }
 
   const blurbs: Record<number, { lead: string; hint: string }> = {
-    4: {
+    6: {
       lead: "Emergency info — vets, contacts, and home info for sitters.",
       hint: "Most of this is inherited from your account defaults. The full form lives on the Emergency tab.",
     },
