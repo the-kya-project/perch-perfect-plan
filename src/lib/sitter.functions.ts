@@ -32,16 +32,41 @@ async function loadSitByToken(token: string) {
   return sit;
 }
 
+async function loadSitBirdIds(sitId: string): Promise<string[]> {
+  const sb = await getAdmin();
+  const { data, error } = await sb.from("sit_birds").select("bird_id").eq("sit_id", sitId);
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((r: any) => r.bird_id);
+}
+
+async function assertBirdInSit(sitId: string, birdId: string) {
+  const ids = await loadSitBirdIds(sitId);
+  if (!ids.includes(birdId)) throw new Error("Bird not in this sit.");
+}
+
 export const getSitterContext = createServerFn({ method: "GET" })
-  .inputValidator((d: { token: string }) => z.object({ token: z.string().min(8) }).parse(d))
+  .inputValidator((d: { token: string; birdId?: string }) =>
+    z.object({ token: z.string().min(8), birdId: z.string().uuid().optional() }).parse(d),
+  )
   .handler(async ({ data }) => {
     const sb = await getAdmin();
     const sit = await loadSitByToken(data.token);
 
+    const birdIds = await loadSitBirdIds(sit.id);
+    if (birdIds.length === 0) throw new Error("This sit has no birds.");
+
+    const { data: birds, error: bErr } = await sb
+      .from("birds")
+      .select("id, name, species, photo_url, photo_position")
+      .in("id", birdIds);
+    if (bErr) throw new Error(bErr.message);
+
+    const activeId = data.birdId && birdIds.includes(data.birdId) ? data.birdId : birdIds[0];
+
     const [birdRes, planRes, contactsRes] = await Promise.all([
-      sb.from("birds").select("*").eq("id", sit.bird_id).maybeSingle(),
-      sb.from("care_plans").select("*").eq("bird_id", sit.bird_id).maybeSingle(),
-      sb.from("emergency_contacts").select("*").eq("bird_id", sit.bird_id).maybeSingle(),
+      sb.from("birds").select("*").eq("id", activeId).maybeSingle(),
+      sb.from("care_plans").select("*").eq("bird_id", activeId).maybeSingle(),
+      sb.from("emergency_contacts").select("*").eq("bird_id", activeId).maybeSingle(),
     ]);
     if (birdRes.error || !birdRes.data) throw new Error("Bird not found.");
 
@@ -65,6 +90,7 @@ export const getSitterContext = createServerFn({ method: "GET" })
       .from("daily_logs")
       .select("*")
       .eq("sit_id", sit.id)
+      .eq("bird_id", activeId)
       .eq("log_date", today)
       .order("created_at", { ascending: false })
       .limit(1)
@@ -72,6 +98,8 @@ export const getSitterContext = createServerFn({ method: "GET" })
 
     return {
       sit,
+      birds: birds ?? [],
+      activeBirdId: activeId,
       bird: birdRes.data,
       plan: planRes.data,
       contacts: contactsRes.data,
@@ -112,9 +140,10 @@ export const toggleTaskCompletion = createServerFn({ method: "POST" })
 const AnswerEnum = z.enum(["normal", "not_sure", "concerning"]);
 
 export const submitHealthScan = createServerFn({ method: "POST" })
-  .inputValidator((d: { token: string; answers: Record<string, ScanAnswer>; notes?: string }) =>
+  .inputValidator((d: { token: string; birdId: string; answers: Record<string, ScanAnswer>; notes?: string }) =>
     z.object({
       token: z.string().min(8),
+      birdId: z.string().uuid(),
       answers: z.record(z.string(), AnswerEnum),
       notes: z.string().max(2000).optional(),
     }).parse(d),
@@ -122,6 +151,7 @@ export const submitHealthScan = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const sb = await getAdmin();
     const sit = await loadSitByToken(data.token);
+    await assertBirdInSit(sit.id, data.birdId);
     const triage = computeTriage(data.answers as Record<ScanFieldKey, ScanAnswer>);
     const today = new Date().toISOString().slice(0, 10);
     const a = data.answers as Record<string, string>;
@@ -129,7 +159,7 @@ export const submitHealthScan = createServerFn({ method: "POST" })
       .from("daily_logs")
       .insert({
         sit_id: sit.id,
-        bird_id: sit.bird_id,
+        bird_id: data.birdId,
         log_date: today,
         alertness_status: a.alertness,
         food_status: a.food,
@@ -151,19 +181,21 @@ export const submitHealthScan = createServerFn({ method: "POST" })
   });
 
 export const uploadDroppingsPhoto = createServerFn({ method: "POST" })
-  .inputValidator((d: { token: string; dataUrl: string; notes?: string }) =>
+  .inputValidator((d: { token: string; birdId: string; dataUrl: string; notes?: string }) =>
     z.object({
       token: z.string().min(8),
-      dataUrl: z.string().startsWith("data:image/").max(2_500_000), // ~1.8MB image
+      birdId: z.string().uuid(),
+      dataUrl: z.string().startsWith("data:image/").max(2_500_000),
       notes: z.string().max(1000).optional(),
     }).parse(d),
   )
   .handler(async ({ data }) => {
     const sb = await getAdmin();
     const sit = await loadSitByToken(data.token);
+    await assertBirdInSit(sit.id, data.birdId);
     const { error } = await sb.from("photo_logs").insert({
       sit_id: sit.id,
-      bird_id: sit.bird_id,
+      bird_id: data.birdId,
       photo_type: "droppings",
       photo_url: data.dataUrl,
       notes: data.notes ?? null,
