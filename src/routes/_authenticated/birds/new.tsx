@@ -34,6 +34,7 @@ function NewBird() {
 
   async function createBird(targetStep: number): Promise<string | null> {
     if (!name.trim()) { toast.error("Give your bird a name."); return null; }
+    if (!species.trim()) { toast.error("Choose a species."); return null; }
     setSaving(true);
     const { data: u } = await supabase.auth.getUser();
     if (!u.user) { setSaving(false); return null; }
