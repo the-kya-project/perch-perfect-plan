@@ -10,6 +10,7 @@ import { Plus, X } from "lucide-react";
 import { PhotoCropper } from "@/components/PhotoCropper";
 import { AgePicker, BirdField, SpeciesPicker } from "@/components/BirdPickers";
 import { convertToMp4H264, probeDuration, MAX_CLIP_SECONDS, MAX_CLIP_BYTES } from "@/lib/videoConvert";
+import { formatAmountUnit } from "@/lib/labels";
 
 const setupSearch = z.object({
   step: z.coerce.number().int().min(1).max(TOTAL_STEPS).optional(),
