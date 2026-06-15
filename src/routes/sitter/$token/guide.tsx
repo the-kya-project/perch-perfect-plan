@@ -67,6 +67,33 @@ function Guide() {
         ))}
         {filtered.length === 0 && <p className="text-sm text-sage-600">No cards match "{q}".</p>}
       </main>
+      <Dialog open={!!active} onOpenChange={(o) => !o && setOpen(null)}>
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto rounded-2xl p-0">
+          {active && (
+            <div className="space-y-4 p-5">
+              <div>
+                <DialogTitle className="text-base font-bold">{active.title}</DialogTitle>
+                <DialogDescription className="sr-only">Care guide details for {active.title}</DialogDescription>
+                <span className={`mt-2 inline-block rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest ${color}`}>{level}</span>
+              </div>
+              {active.quick_answer && (
+                <section className="rounded-xl bg-sage-50 p-4"><p className="text-[11px] font-bold uppercase tracking-widest text-sage-600">Quick answer</p><p className="mt-2 text-sm">{active.quick_answer}</p></section>
+              )}
+              {active.what_to_check && (
+                <section className="rounded-xl bg-sage-50 p-4"><p className="text-[11px] font-bold uppercase tracking-widest text-sage-600">What to check</p><p className="mt-2 text-sm whitespace-pre-line">{active.what_to_check}</p></section>
+              )}
+              {active.what_to_do && (
+                <section className="rounded-xl bg-sage-50 p-4"><p className="text-[11px] font-bold uppercase tracking-widest text-sage-600">What to do</p><p className="mt-2 text-sm whitespace-pre-line">{active.what_to_do}</p></section>
+              )}
+              {active.when_to_call_vet && (
+                <section className="rounded-xl bg-warn-red/5 p-4 ring-1 ring-warn-red/20"><p className="text-[11px] font-bold uppercase tracking-widest text-warn-red">When to call the vet</p><p className="mt-2 text-sm whitespace-pre-line">{active.when_to_call_vet}</p></section>
+              )}
+              {!active.reviewed_at && <VetReviewBanner />}
+              <Link to="/sitter/$token/emergency" params={{ token }} onClick={() => setOpen(null)} className="block rounded-xl bg-sage-900 py-3 text-center text-sm font-semibold text-white">Open emergency contacts</Link>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
