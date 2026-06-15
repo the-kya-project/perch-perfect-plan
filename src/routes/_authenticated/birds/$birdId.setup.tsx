@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { SetupShell, SETUP_STEPS, TOTAL_STEPS } from "@/components/SetupShell";
+import { EMERGENCY_FIELDS, EMERGENCY_LABELS, REQUIRED_FIELDS, mergeEmergency, type EmergencyField } from "@/lib/emergency";
 import { Plus, X } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/setup")({
@@ -129,6 +130,7 @@ function StepBody({
   if (step === 5) return <EnvironmentStep birdId={birdId} />;
   if (step === 6) return <HealthBaselineStep birdId={birdId} birdName={birdName} />;
   if (step === 7) return <WatchFirstClipsStep birdId={birdId} />;
+  if (step === 8) return <EmergencyStep birdId={birdId} onBlockNext={onBlockNext} />;
 
   if (step === 9) {
     return (
@@ -1517,4 +1519,208 @@ function ClipSlotCard({
       )}
     </Card>
   );
+}
+
+// ---------- Step 8: Emergency ----------
+
+const FIELD_PLACEHOLDERS: Partial<Record<EmergencyField, string>> = {
+  owner_phone: "(555) 123-4567",
+  backup_phone: "(555) 987-6543",
+  avian_vet_phone: "(555) 246-8000",
+  emergency_vet_phone: "(555) 911-0000",
+  spending_limit: "e.g. up to $500 without calling",
+  poison_control: "(888) 426-4435",
+};
+
+const MULTI_LINE: EmergencyField[] = [
+  "avian_vet_address",
+  "emergency_vet_address",
+  "carrier_location",
+  "first_aid_kit_location",
+  "emergency_authorization",
+];
+
+const ASPCA_POISON_CONTROL = "(888) 426-4435";
+
+function EmergencyStep({
+  birdId,
+  onBlockNext,
+}: {
+  birdId: string;
+  onBlockNext: (block: boolean) => void;
+}) {
+  const qc = useQueryClient();
+
+  const { data: bird } = useQuery({
+    queryKey: ["bird-owner-emerg", birdId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("birds").select("id, owner_id").eq("id", birdId).single();
+      if (error) throw error;
+      return data as any;
+    },
+  });
+
+  const { data: contacts, isLoading } = useQuery({
+    queryKey: ["emergency-contacts", birdId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("emergency_contacts")
+        .select("*")
+        .eq("bird_id", birdId)
+        .maybeSingle();
+      if (error) throw error;
+      return data as any;
+    },
+  });
+
+  const { data: defaults } = useQuery({
+    queryKey: ["owner-emergency-defaults", bird?.owner_id],
+    enabled: !!bird?.owner_id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("owner_emergency_defaults")
+        .select("*")
+        .eq("owner_id", bird!.owner_id)
+        .maybeSingle();
+      return data as any;
+    },
+  });
+
+  // Local form state per field (string), only the override value (per-bird).
+  const [values, setValues] = useState<Record<EmergencyField, string>>(() => emptyValues());
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    if (hydrated || isLoading) return;
+    const next = emptyValues();
+    for (const f of EMERGENCY_FIELDS) next[f] = (contacts?.[f] ?? "") as string;
+    // Default the poison control number if neither override nor default is set.
+    if (!next.poison_control && !defaults?.poison_control) {
+      next.poison_control = ASPCA_POISON_CONTROL;
+    }
+    setValues(next);
+    setHydrated(true);
+  }, [contacts, defaults, hydrated, isLoading]);
+
+  // Validation: required fields must have a non-empty merged value
+  // (per-bird override OR inherited owner default).
+  const merged = useMemo(() => {
+    const birdLike: Record<string, any> = {};
+    for (const f of EMERGENCY_FIELDS) birdLike[f] = values[f];
+    return mergeEmergency(birdLike, defaults ?? null);
+  }, [values, defaults]);
+
+  const missing = REQUIRED_FIELDS.filter((f) => !merged[f] || !merged[f]!.trim());
+  useEffect(() => { onBlockNext(missing.length > 0); }, [missing.length, onBlockNext]);
+
+  // Debounced persistence to emergency_contacts (upsert by bird_id).
+  useEffect(() => {
+    if (!hydrated) return;
+    const handle = setTimeout(async () => {
+      const payload: Record<string, any> = { bird_id: birdId };
+      for (const f of EMERGENCY_FIELDS) payload[f] = values[f].trim() || null;
+      const { error } = await supabase
+        .from("emergency_contacts")
+        .upsert(payload, { onConflict: "bird_id" });
+      if (error) toast.error(error.message);
+      qc.invalidateQueries({ queryKey: ["emergency-contacts", birdId] });
+    }, 500);
+    return () => clearTimeout(handle);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [values, hydrated]);
+
+  if (isLoading || !bird) return <div className="h-32 animate-pulse rounded-2xl bg-sage-100" />;
+
+  function set(field: EmergencyField, v: string) {
+    setValues((prev) => ({ ...prev, [field]: v }));
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
+        <p className="text-sm font-semibold">If something goes wrong, who does your sitter call?</p>
+        <p className="mt-1 text-sm text-sage-600">
+          Owner phone and avian vet phone are required. Fields with a default from your account are marked <em>inherited</em> — typing in them creates a per-bird override.
+        </p>
+      </div>
+
+      {EMERGENCY_FIELDS.map((f) => {
+        const birdValue = values[f] ?? "";
+        const isOverride = birdValue.trim().length > 0;
+        const inherited = !isOverride && !!defaults?.[f];
+        const inheritedValue = (defaults?.[f] ?? "") as string;
+        const placeholder = inherited && inheritedValue
+          ? `Inherited: ${inheritedValue}`
+          : (FIELD_PLACEHOLDERS[f] ?? "");
+        const required = REQUIRED_FIELDS.includes(f);
+        const isMissing = required && (!merged[f] || !merged[f]!.trim());
+
+        return (
+          <section key={f} className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
+            <div className="flex items-baseline justify-between gap-2">
+              <h2 className="text-sm font-bold">
+                {EMERGENCY_LABELS[f]}
+                {required && <span className="ml-1 text-warn-red">*</span>}
+              </h2>
+              {isOverride ? (
+                <span className="rounded-full bg-sage-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-sage-700">
+                  Override
+                </span>
+              ) : inherited ? (
+                <span className="rounded-full bg-sage-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-sage-600">
+                  Inherited
+                </span>
+              ) : null}
+            </div>
+
+            {MULTI_LINE.includes(f) ? (
+              <textarea
+                className="input area mt-2"
+                placeholder={placeholder}
+                value={birdValue}
+                maxLength={1000}
+                onChange={(e) => set(f, e.target.value)}
+              />
+            ) : (
+              <input
+                className="input mt-2"
+                placeholder={placeholder}
+                value={birdValue}
+                maxLength={300}
+                onChange={(e) => set(f, e.target.value)}
+              />
+            )}
+
+            {isOverride && inherited === false && defaults?.[f] && (
+              <button
+                type="button"
+                className="mt-2 text-[11px] font-semibold text-sage-600 underline"
+                onClick={() => set(f, "")}
+              >
+                Clear override (use account default)
+              </button>
+            )}
+
+            {isMissing && (
+              <p className="mt-2 text-xs font-semibold text-warn-red">Required.</p>
+            )}
+          </section>
+        );
+      })}
+
+      {missing.length > 0 && (
+        <div className="rounded-2xl bg-warn-red/10 p-3 text-xs font-semibold text-warn-red">
+          Add {missing.map((f) => EMERGENCY_LABELS[f]).join(" and ")} before continuing.
+        </div>
+      )}
+
+      <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.65rem .8rem;font-size:16px;outline:none}.input:focus{border-color:var(--sage-600);box-shadow:0 0 0 3px rgb(74 103 65 / .15)}.area{min-height:60px;line-height:1.4}`}</style>
+    </div>
+  );
+}
+
+function emptyValues(): Record<EmergencyField, string> {
+  const o = {} as Record<EmergencyField, string>;
+  for (const f of EMERGENCY_FIELDS) o[f] = "";
+  return o;
 }
