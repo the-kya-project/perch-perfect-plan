@@ -62,6 +62,7 @@ function BirdEditor() {
     { id: "routine", label: "Routine" },
     { id: "emergency", label: "Emergency" },
     { id: "sits", label: "Sits" },
+    { id: "logs", label: "Logs" },
   ];
 
   return (
