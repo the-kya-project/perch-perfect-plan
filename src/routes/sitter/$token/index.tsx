@@ -46,7 +46,7 @@ function SitterHome() {
       </header>
 
       <main className="mx-auto max-w-md space-y-5 px-4 py-5">
-        <Disclaimer compact />
+        <Disclaimer />
 
         <Link
           to="/sitter/$token/scan" params={{ token }}
