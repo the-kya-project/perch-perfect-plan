@@ -89,6 +89,9 @@ export function SitCard({ sit, birds = [], onChange }: { sit: any; birds?: Bird[
           <button onClick={copy} className="rounded p-1 text-sage-600" aria-label="Copy link"><Copy className="size-3.5" /></button>
         </div>
       )}
+      {!sit.revoked && (
+        <SitChecklist sitId={sit.id} birds={birds} />
+      )}
       <div className="mt-3 flex gap-3 text-xs font-semibold">
         {!sit.revoked && !expired && (
           <button onClick={revoke} className="text-warn-red underline">Revoke link</button>
