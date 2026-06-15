@@ -181,9 +181,6 @@ function AgePicker({ age, birthDate, onChange }: { age: string; birthDate: strin
     </div>
   );
 }
-    </div>
-  );
-}
 
 function PlanForm({ birdId, bird, plan, onSaved }: { birdId: string; bird: any; plan: any; onSaved: () => void }) {
   const [b, setB] = useState(bird);
