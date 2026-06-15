@@ -159,6 +159,34 @@ function PlanForm({ birdId, bird, plan, onSaved }: { birdId: string; bird: any; 
   const [b, setB] = useState(bird);
   const [p, setP] = useState(plan);
   const [saving, setSaving] = useState(false);
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleteText, setDeleteText] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  async function deleteBird() {
+    if (deleteText.trim() !== (bird.name ?? "").trim()) {
+      toast.error(`Type "${bird.name}" exactly to confirm.`);
+      return;
+    }
+    setDeleting(true);
+    // Clean up dependents that may not cascade.
+    await supabase.from("sit_birds").delete().eq("bird_id", birdId);
+    await supabase.from("weight_logs").delete().eq("bird_id", birdId);
+    await supabase.from("photo_logs").delete().eq("bird_id", birdId);
+    await supabase.from("daily_logs").delete().eq("bird_id", birdId);
+    await supabase.from("emergency_contacts").delete().eq("bird_id", birdId);
+    if (plan?.id) {
+      await supabase.from("routine_tasks").delete().eq("care_plan_id", plan.id);
+      await supabase.from("care_plans").delete().eq("id", plan.id);
+    }
+    const { error } = await supabase.from("birds").delete().eq("id", birdId);
+    setDeleting(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`${bird.name} removed.`);
+    qc.invalidateQueries({ queryKey: ["birds"] });
+    navigate({ to: "/dashboard" });
+  }
   async function save() {
     setSaving(true);
     const { id: bId, owner_id, created_at, updated_at, ...birdPatch } = b;
