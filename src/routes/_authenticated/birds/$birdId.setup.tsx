@@ -107,6 +107,7 @@ function BirdSetup() {
       nextLabel={isLast ? "Finish setup" : "Next"}
       backDisabled={step <= 2}
       nextDisabled={blockNext}
+      hideFooter={step === TOTAL_STEPS}
     >
       <StepBody step={step} birdId={birdId} birdName={bird.name} onBlockNext={setBlockNext} />
     </SetupShell>
