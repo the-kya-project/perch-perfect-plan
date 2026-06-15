@@ -100,6 +100,9 @@ function AuthPage() {
     } finally {
       setLoading(false);
     }
+  }
+
+
 
   return (
     <div className="min-h-screen bg-sage-50">
