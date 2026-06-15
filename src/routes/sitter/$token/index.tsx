@@ -60,6 +60,36 @@ function SitterHome() {
           <div className="rounded-full bg-white/10 p-3"><Stethoscope className="size-5" /></div>
         </Link>
 
+        {ctx.watchClips && ctx.watchClips.length > 0 && (
+          <section className="space-y-2">
+            <h2 className="text-lg font-bold tracking-tight">Watch first</h2>
+            <p className="text-xs text-sage-600">Short clips from {ctx.bird.name}'s owner. These are private to you.</p>
+            <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1">
+              {ctx.watchClips.map((c: any) => (
+                <a
+                  key={c.key}
+                  href={c.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="group flex w-60 shrink-0 snap-start flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-sage-100 shadow-sm"
+                >
+                  <div className="relative aspect-video bg-sage-900">
+                    <video src={c.url} className="size-full object-cover opacity-90" preload="metadata" muted playsInline />
+                    <div className="absolute inset-0 grid place-items-center">
+                      <PlayCircle className="size-10 text-white drop-shadow" />
+                    </div>
+                  </div>
+                  <div className="p-3">
+                    <p className="text-sm font-semibold leading-tight">{c.label}</p>
+                    <p className="mt-0.5 text-[11px] uppercase tracking-wider text-sage-600">Tap to play</p>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </section>
+        )}
+
+
         <section className="space-y-3">
           <div className="flex items-end justify-between">
             <h2 className="text-lg font-bold tracking-tight">Today's routine</h2>
