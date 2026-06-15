@@ -339,12 +339,17 @@ function RoutineEditor({ planId, tasks, onChange }: { planId: string; tasks: any
   );
 }
 
-function ContactsForm({ birdId, contacts, onSaved }: { birdId: string; contacts: any; onSaved: () => void }) {
+function ContactsForm({ birdId, contacts, defaults, onSaved }: { birdId: string; contacts: any; defaults: any | null; onSaved: () => void }) {
   const [c, setC] = useState(contacts);
   const [saving, setSaving] = useState(false);
   async function save() {
     setSaving(true);
-    const { id, bird_id, updated_at, ...patch } = c;
+    const { id, bird_id, updated_at, ...rest } = c;
+    // Empty strings → null so per-bird value "falls back" to the owner default.
+    const patch: Record<string, any> = {};
+    for (const [k, v] of Object.entries(rest)) {
+      patch[k] = typeof v === "string" && v.trim() === "" ? null : v;
+    }
     await supabase.from("emergency_contacts").update(patch).eq("bird_id", birdId);
     setSaving(false);
     toast.success("Emergency info saved.");
@@ -366,13 +371,62 @@ function ContactsForm({ birdId, contacts, onSaved }: { birdId: string; contacts:
     ["emergency_authorization", "Emergency-care authorization"],
     ["spending_limit", "Approved spending limit"],
   ];
+  const hasAnyDefault = defaults && Object.values(defaults).some((v) => typeof v === "string" && v.trim());
   return (
     <section className="space-y-3 rounded-2xl bg-white p-4 ring-1 ring-sage-100">
       <h2 className="text-sm font-bold">Emergency contacts & home info</h2>
-      <p className="text-xs text-sage-600">This information appears in the sitter's Emergency Mode. Owner phone and avian vet phone are required before you can share a sitter link.</p>
-      {fields.map(([k, l, required]) => (
-        <Field key={k} label={required ? `${l} (required for sitter link)` : l}><input className="input" value={c[k] ?? ""} onChange={(e) => setC({ ...c, [k]: e.target.value })} /></Field>
-      ))}
+      <p className="text-xs text-sage-600">
+        Empty fields use your <Link to="/dashboard" className="font-semibold underline">account defaults</Link>.
+        Type anything here to override the default for this bird. Owner phone and avian vet phone are required (default or override) before you can share a sitter link.
+      </p>
+      {!hasAnyDefault && (
+        <p className="rounded-lg bg-sage-50 px-3 py-2 text-[11px] text-sage-700">
+          No account defaults set yet. Add them once on the <Link to="/dashboard" className="font-semibold underline">dashboard</Link> and every bird will inherit them.
+        </p>
+      )}
+      {fields.map(([k, l, required]) => {
+        const raw = c[k];
+        const isOverride = typeof raw === "string" && raw.trim() !== "";
+        const defaultVal: string = (defaults?.[k] ?? "").toString();
+        const inheriting = !isOverride && defaultVal.trim() !== "";
+        return (
+          <div key={k} className="space-y-1">
+            <div className="flex items-center justify-between gap-2">
+              <label className="block text-xs font-semibold text-sage-700">
+                {l}{required && <span className="text-warn-red"> *</span>}
+              </label>
+              {isOverride ? (
+                <button
+                  type="button"
+                  onClick={() => setC({ ...c, [k]: "" })}
+                  className="rounded-full bg-warn-amber/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-warn-amber"
+                  title="Clear override and use account default"
+                >
+                  Override · reset
+                </button>
+              ) : inheriting ? (
+                <span className="rounded-full bg-sage-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-sage-700">
+                  Default
+                </span>
+              ) : required ? (
+                <span className="rounded-full bg-warn-red/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-warn-red">
+                  Missing
+                </span>
+              ) : (
+                <span className="rounded-full bg-sage-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-sage-500">
+                  Empty
+                </span>
+              )}
+            </div>
+            <input
+              className="input"
+              value={raw ?? ""}
+              placeholder={inheriting ? `Default: ${defaultVal}` : required ? "Required" : "Optional"}
+              onChange={(e) => setC({ ...c, [k]: e.target.value })}
+            />
+          </div>
+        );
+      })}
       <button disabled={saving} onClick={save} className="mt-2 w-full rounded-xl bg-sage-600 py-3 text-sm font-semibold text-white disabled:opacity-50">{saving ? "Saving..." : "Save emergency info"}</button>
     </section>
   );
