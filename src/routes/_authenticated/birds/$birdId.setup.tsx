@@ -595,7 +595,33 @@ const NEVER_DEFAULTS = [
   "Onion & garlic", "Salt", "Fruit pits & apple seeds",
 ];
 
+const REMOVAL_OPTIONS = [
+  { value: 60, label: "1 hour" },
+  { value: 120, label: "2 hours" },
+  { value: 180, label: "3 hours" },
+];
+
+const FOOD_BOWL_WASH_OPTIONS = [
+  { value: "after_each_fresh", label: "After every fresh-food serving" },
+  { value: "once_daily", label: "Once a day" },
+  { value: "every_few_days", label: "Every few days" },
+];
+
+const WATER_BOWL_WASH_OPTIONS = [
+  { value: "once_daily", label: "Once a day" },
+  { value: "twice_daily", label: "Twice a day" },
+];
+
+// Prefixes used by syncHygieneTasks so we can update/delete the auto-generated rows.
+const HYG_REMOVE_PREFIX = "Remove fresh food";
+const HYG_WASH_FOOD_PREFIX = "Wash food bowls";
+const HYG_WASH_WATER_PREFIX = "Wash water bowl";
+
 const FEEDING_PATTERN = /food|feed|chop|pellet|seed|fresh|meal|breakfast|dinner/i;
+// A user-checked sitter task counts as "fresh food served" when the title
+// looks like a fresh-food / chop meal task. The auto-generated removal task
+// itself is excluded — checking the removal task should NOT start a new timer.
+export const FRESH_FOOD_TASK_PATTERN = /\b(fresh|chop|veg|veggies|salad|sprout)\b/i;
 
 function FoodWaterStep({
   birdId,
