@@ -5,6 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Plus, Trash2, Link2, Copy, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { Disclaimer, VetReviewBanner } from "@/components/Disclaimer";
+import { PhotoCropper } from "@/components/PhotoCropper";
+import { PARROT_SPECIES, AGE_OPTIONS, ageFromBirthDate } from "@/lib/parrot-data";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId")({
   head: () => ({ meta: [{ title: "Care plan — Parrot Care Companion" }] }),
@@ -71,7 +73,7 @@ function BirdEditor() {
         <div className="mx-auto max-w-md px-4 py-3">
           <div className="flex items-center gap-3">
             <Link to="/dashboard" className="rounded p-1 text-sage-600"><ArrowLeft className="size-5" /></Link>
-            {bird.photo_url && <img src={bird.photo_url} alt={bird.name} className="size-9 rounded-full object-cover ring-1 ring-sage-200" />}
+            {bird.photo_url && <img src={bird.photo_url} alt={bird.name} className="size-9 rounded-full object-cover ring-1 ring-sage-200" style={{ objectPosition: bird.photo_position ?? "50% 50%" }} />}
             <div className="flex-1">
               <h1 className="text-sm font-bold">{bird.name}</h1>
               <p className="text-[10px] uppercase tracking-wider text-sage-600">{bird.species ?? "Parrot"}</p>
@@ -114,6 +116,73 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
   );
 }
 
+function SpeciesPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const known = PARROT_SPECIES.includes(value);
+  const isOther = value !== "" && !known;
+  const [mode, setMode] = useState<"known" | "other">(isOther ? "other" : "known");
+  return (
+    <Field label="Species">
+      <select
+        className="input"
+        value={mode === "other" ? "__other__" : value}
+        onChange={(e) => {
+          if (e.target.value === "__other__") { setMode("other"); onChange(""); }
+          else { setMode("known"); onChange(e.target.value); }
+        }}
+      >
+        <option value="">Select species…</option>
+        {PARROT_SPECIES.map((s) => <option key={s} value={s}>{s}</option>)}
+        <option value="__other__">Other…</option>
+      </select>
+      {mode === "other" && (
+        <input
+          className="input mt-2"
+          placeholder="Enter species"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+        />
+      )}
+    </Field>
+  );
+}
+
+function AgePicker({ age, birthDate, onChange }: { age: string; birthDate: string; onChange: (next: { age: string; birthDate: string | null }) => void }) {
+  const [mode, setMode] = useState<"approx" | "exact">(birthDate ? "exact" : "approx");
+  const computed = ageFromBirthDate(birthDate);
+  return (
+    <div className="grid grid-cols-2 gap-3">
+      <Field label="Age">
+        <select
+          className="input"
+          value={mode === "exact" ? "__exact__" : age}
+          onChange={(e) => {
+            if (e.target.value === "__exact__") { setMode("exact"); }
+            else { setMode("approx"); onChange({ age: e.target.value, birthDate: null }); }
+          }}
+        >
+          <option value="">Unknown</option>
+          {AGE_OPTIONS.map((a) => <option key={a} value={a}>{a}</option>)}
+          <option value="__exact__">Use exact birthdate…</option>
+        </select>
+      </Field>
+      {mode === "exact" && (
+        <Field label="Birth date" hint={computed ? `Currently ${computed}` : undefined}>
+          <input
+            className="input"
+            type="date"
+            max={new Date().toISOString().slice(0, 10)}
+            value={birthDate ?? ""}
+            onChange={(e) => {
+              const bd = e.target.value || null;
+              onChange({ age: ageFromBirthDate(bd) ?? "", birthDate: bd });
+            }}
+          />
+        </Field>
+      )}
+    </div>
+  );
+}
+
 function PlanForm({ birdId, bird, plan, onSaved }: { birdId: string; bird: any; plan: any; onSaved: () => void }) {
   const [b, setB] = useState(bird);
   const [p, setP] = useState(plan);
@@ -143,27 +212,34 @@ function PlanForm({ birdId, bird, plan, onSaved }: { birdId: string; bird: any; 
       <Disclaimer compact />
       <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
         <h2 className="text-sm font-bold">Basics</h2>
-        <div className="flex items-center gap-3">
+        <div className="flex items-start gap-3">
           {b.photo_url ? (
-            <img src={b.photo_url} alt={b.name} className="size-20 rounded-xl object-cover ring-1 ring-sage-200" />
+            <PhotoCropper
+              src={b.photo_url}
+              position={b.photo_position}
+              onChange={(pos) => setB({ ...b, photo_position: pos })}
+              size={120}
+            />
           ) : (
-            <div className="flex size-20 items-center justify-center rounded-xl bg-sage-100 text-[10px] uppercase tracking-wider text-sage-600">No photo</div>
+            <div className="flex size-[120px] items-center justify-center rounded-xl bg-sage-100 text-[10px] uppercase tracking-wider text-sage-600">No photo</div>
           )}
-          <div className="flex-1 space-y-2">
+          <div className="flex-1 space-y-2 pt-1">
             <label className="inline-block cursor-pointer rounded-lg bg-sage-100 px-3 py-1.5 text-xs font-semibold text-sage-700">
               {b.photo_url ? "Change photo" : "Add photo"}
               <input type="file" accept="image/*" className="hidden" onChange={onPhoto} />
             </label>
             {b.photo_url && (
-              <button type="button" onClick={() => setB({ ...b, photo_url: null })} className="ml-2 text-xs font-semibold text-warn-red underline">Remove</button>
+              <button type="button" onClick={() => setB({ ...b, photo_url: null, photo_position: null })} className="ml-2 text-xs font-semibold text-warn-red underline">Remove</button>
             )}
           </div>
         </div>
         <Field label="Name"><input className="input" value={b.name ?? ""} onChange={(e) => setB({ ...b, name: e.target.value })} /></Field>
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Species"><input className="input" value={b.species ?? ""} onChange={(e) => setB({ ...b, species: e.target.value })} /></Field>
-          <Field label="Age"><input className="input" value={b.age ?? ""} onChange={(e) => setB({ ...b, age: e.target.value })} /></Field>
-        </div>
+        <SpeciesPicker value={b.species ?? ""} onChange={(v) => setB({ ...b, species: v })} />
+        <AgePicker
+          age={b.age ?? ""}
+          birthDate={b.birth_date ?? ""}
+          onChange={(next) => setB({ ...b, age: next.age, birth_date: next.birthDate })}
+        />
         <div className="grid grid-cols-2 gap-3">
           <Field label="Sex">
             <select className="input" value={b.sex ?? ""} onChange={(e) => setB({ ...b, sex: e.target.value || null })}>
