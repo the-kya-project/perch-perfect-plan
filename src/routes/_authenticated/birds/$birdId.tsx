@@ -116,6 +116,73 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
   );
 }
 
+function SpeciesPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const known = PARROT_SPECIES.includes(value);
+  const isOther = value !== "" && !known;
+  const [mode, setMode] = useState<"known" | "other">(isOther ? "other" : "known");
+  return (
+    <Field label="Species">
+      <select
+        className="input"
+        value={mode === "other" ? "__other__" : value}
+        onChange={(e) => {
+          if (e.target.value === "__other__") { setMode("other"); onChange(""); }
+          else { setMode("known"); onChange(e.target.value); }
+        }}
+      >
+        <option value="">Select species…</option>
+        {PARROT_SPECIES.map((s) => <option key={s} value={s}>{s}</option>)}
+        <option value="__other__">Other…</option>
+      </select>
+      {mode === "other" && (
+        <input
+          className="input mt-2"
+          placeholder="Enter species"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+        />
+      )}
+    </Field>
+  );
+}
+
+function AgePicker({ age, birthDate, onChange }: { age: string; birthDate: string; onChange: (next: { age: string; birthDate: string | null }) => void }) {
+  const [mode, setMode] = useState<"approx" | "exact">(birthDate ? "exact" : "approx");
+  const computed = ageFromBirthDate(birthDate);
+  return (
+    <div className="grid grid-cols-2 gap-3">
+      <Field label="Age">
+        <select
+          className="input"
+          value={mode === "exact" ? "__exact__" : age}
+          onChange={(e) => {
+            if (e.target.value === "__exact__") { setMode("exact"); }
+            else { setMode("approx"); onChange({ age: e.target.value, birthDate: null }); }
+          }}
+        >
+          <option value="">Unknown</option>
+          {AGE_OPTIONS.map((a) => <option key={a} value={a}>{a}</option>)}
+          <option value="__exact__">Use exact birthdate…</option>
+        </select>
+      </Field>
+      {mode === "exact" && (
+        <Field label="Birth date" hint={computed ? `Currently ${computed}` : undefined}>
+          <input
+            className="input"
+            type="date"
+            max={new Date().toISOString().slice(0, 10)}
+            value={birthDate ?? ""}
+            onChange={(e) => {
+              const bd = e.target.value || null;
+              onChange({ age: ageFromBirthDate(bd) ?? "", birthDate: bd });
+            }}
+          />
+        </Field>
+      )}
+    </div>
+  );
+}
+
 function PlanForm({ birdId, bird, plan, onSaved }: { birdId: string; bird: any; plan: any; onSaved: () => void }) {
   const [b, setB] = useState(bird);
   const [p, setP] = useState(plan);
