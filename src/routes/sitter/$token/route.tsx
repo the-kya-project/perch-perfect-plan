@@ -75,9 +75,6 @@ export function useSitterContext(token: string) {
   return useSuspenseQuery({
     queryKey: ["sitter-ctx", token, birdId ?? null],
     queryFn: () => fn({ data: { token, birdId } }),
-    // Keep previous bird's data on screen while the new bird loads, so the
-    // bird selector and chrome never blank out during a switch.
-    placeholderData: keepPreviousData,
   });
 }
 
