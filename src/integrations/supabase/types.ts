@@ -489,9 +489,41 @@ export type Database = {
           },
         ]
       }
-      sits: {
+      sit_birds: {
         Row: {
           bird_id: string
+          created_at: string
+          sit_id: string
+        }
+        Insert: {
+          bird_id: string
+          created_at?: string
+          sit_id: string
+        }
+        Update: {
+          bird_id?: string
+          created_at?: string
+          sit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sit_birds_bird_id_fkey"
+            columns: ["bird_id"]
+            isOneToOne: false
+            referencedRelation: "birds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sit_birds_sit_id_fkey"
+            columns: ["sit_id"]
+            isOneToOne: false
+            referencedRelation: "sits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sits: {
+        Row: {
           created_at: string
           end_date: string
           id: string
@@ -506,7 +538,6 @@ export type Database = {
           token_expires_at: string
         }
         Insert: {
-          bird_id: string
           created_at?: string
           end_date: string
           id?: string
@@ -521,7 +552,6 @@ export type Database = {
           token_expires_at: string
         }
         Update: {
-          bird_id?: string
           created_at?: string
           end_date?: string
           id?: string
@@ -535,15 +565,7 @@ export type Database = {
           status?: string
           token_expires_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "sits_bird_id_fkey"
-            columns: ["bird_id"]
-            isOneToOne: false
-            referencedRelation: "birds"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       task_completions: {
         Row: {
