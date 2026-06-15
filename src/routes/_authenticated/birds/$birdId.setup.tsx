@@ -1759,24 +1759,28 @@ function HealthBaselineStep({ birdId, birdName, registerFlush }: { birdId: strin
         )}
       </Card>
 
-      <Card title="Short clip of normal behavior or vocalizing" hint="Optional, up to 25 MB. Private — only your assigned sitter can view it.">
+      <Card title="Short clip of normal behavior or vocalizing" hint={`Optional, up to ${MAX_CLIP_SECONDS}s and 25 MB. Converted in your browser so every sitter can play it. Private — only your assigned sitter can view it.`}>
         {clipPreview ? (
           <div className="space-y-2">
-            <video src={clipPreview} controls className="h-48 w-full rounded-xl bg-black object-contain ring-1 ring-sage-200" />
+            <video src={clipPreview} controls playsInline className="h-48 w-full rounded-xl bg-black object-contain ring-1 ring-sage-200" />
             <div className="flex gap-2">
               <label className="flex-1 cursor-pointer rounded-xl border border-sage-200 bg-white py-2 text-center text-xs font-semibold text-sage-700">
-                Replace
-                <input type="file" accept="video/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadClip(e.target.files[0])} />
+                {uploading === "clip" ? `Converting ${Math.round(convertPct * 100)}%…` : "Replace"}
+                <input type="file" accept="video/*" className="hidden" disabled={uploading === "clip"} onChange={(e) => e.target.files?.[0] && uploadClip(e.target.files[0])} />
               </label>
-              <button type="button" onClick={removeClip} className="flex-1 rounded-xl border border-sage-200 bg-white py-2 text-xs font-semibold text-warn-red">
+              <button type="button" onClick={removeClip} disabled={uploading === "clip"} className="flex-1 rounded-xl border border-sage-200 bg-white py-2 text-xs font-semibold text-warn-red disabled:opacity-50">
                 Remove
               </button>
             </div>
           </div>
         ) : (
           <label className="block cursor-pointer rounded-xl border-2 border-dashed border-sage-200 bg-sage-50 p-4 text-center">
-            <span className="text-sm font-semibold text-sage-700">{uploading === "clip" ? "Uploading…" : "Tap to upload a clip"}</span>
-            <input type="file" accept="video/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadClip(e.target.files[0])} />
+            <span className="text-sm font-semibold text-sage-700">
+              {uploading === "clip"
+                ? (convertPct > 0 ? `Converting ${Math.round(convertPct * 100)}%…` : "Preparing converter…")
+                : "Tap to upload a clip"}
+            </span>
+            <input type="file" accept="video/*" className="hidden" disabled={uploading === "clip"} onChange={(e) => e.target.files?.[0] && uploadClip(e.target.files[0])} />
           </label>
         )}
       </Card>
