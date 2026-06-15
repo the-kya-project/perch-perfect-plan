@@ -31,6 +31,8 @@ export type Database = {
           owner_id: string
           photo_position: string | null
           photo_url: string | null
+          setup_complete: boolean
+          setup_step: number
           sex: string | null
           species: string | null
           updated_at: string
@@ -51,6 +53,8 @@ export type Database = {
           owner_id: string
           photo_position?: string | null
           photo_url?: string | null
+          setup_complete?: boolean
+          setup_step?: number
           sex?: string | null
           species?: string | null
           updated_at?: string
@@ -71,6 +75,8 @@ export type Database = {
           owner_id?: string
           photo_position?: string | null
           photo_url?: string | null
+          setup_complete?: boolean
+          setup_step?: number
           sex?: string | null
           species?: string | null
           updated_at?: string
