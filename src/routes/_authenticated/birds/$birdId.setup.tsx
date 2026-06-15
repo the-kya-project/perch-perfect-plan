@@ -129,6 +129,7 @@ function StepBody({
   if (step === 5) return <EnvironmentStep birdId={birdId} />;
   if (step === 6) return <HealthBaselineStep birdId={birdId} birdName={birdName} />;
   if (step === 7) return <WatchFirstClipsStep birdId={birdId} />;
+  if (step === 8) return <EmergencyStep birdId={birdId} onBlockNext={onBlockNext} />;
 
   if (step === 9) {
     return (
