@@ -1,45 +1,45 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { Check, ChevronDown, ChevronRight, ExternalLink, Sparkles } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, ExternalLink, Plus, Sparkles, Trash2, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 type Bird = { id: string; name: string };
+type Tag = "recommended" | "optional";
 
-export const CHECKLIST_ITEMS: { key: string; label: string }[] = [
-  { key: "first_aid", label: "First-aid kit stocked, and its location noted" },
-  { key: "carrier", label: "Carrier clean and accessible" },
-  { key: "food_portioned", label: "Enough food portioned for the full sit, plus extra" },
-  { key: "enrichment", label: "Foraging toys and enrichment set up" },
-  { key: "cage_clean", label: "Cage cleaned with fresh substrate" },
-  { key: "sitter_access", label: "Sitter has access (key, code, or entry plan)" },
-  { key: "temperature", label: "Temperature and heating plan set" },
-  { key: "hazards", label: "Hazards handled (rooms closed, pets secured, windows checked)" },
-  { key: "emergency_contacts", label: "Emergency contacts confirmed current" },
-  { key: "invite_tested", label: "Sitter invite link tested" },
+type StandardItem = { key: string; label: string; tag: Tag };
+
+export const CHECKLIST_ITEMS: StandardItem[] = [
+  { key: "first_aid", label: "First-aid kit stocked, and its location noted", tag: "recommended" },
+  { key: "carrier", label: "Carrier clean and accessible", tag: "recommended" },
+  { key: "food_portioned", label: "Enough food portioned for the full sit, plus extra", tag: "recommended" },
+  { key: "enrichment", label: "Foraging toys and enrichment set up", tag: "optional" },
+  { key: "cage_clean", label: "Cage cleaned with fresh substrate", tag: "optional" },
+  { key: "sitter_access", label: "Sitter has access (key, code, or entry plan)", tag: "recommended" },
+  { key: "temperature", label: "Temperature and heating plan set", tag: "optional" },
+  { key: "hazards", label: "Hazards handled (rooms closed, pets secured, windows checked)", tag: "recommended" },
+  { key: "emergency_contacts", label: "Emergency contacts confirmed current", tag: "recommended" },
+  { key: "invite_tested", label: "Sitter invite link tested", tag: "recommended" },
 ];
 
-type AutoItem = { key: string; label: string; birdId: string; birdName: string };
+type AutoItem = { key: string; label: string; birdId: string; birdName: string; tag: Tag };
 
 function daysBetween(start: string, end: string): number {
-  // Inclusive day count between two YYYY-MM-DD dates. Falls back to 1 on parse fail.
   const s = new Date(start + "T00:00:00");
   const e = new Date(end + "T00:00:00");
   if (Number.isNaN(s.getTime()) || Number.isNaN(e.getTime())) return 1;
-  const ms = e.getTime() - s.getTime();
-  return Math.max(1, Math.round(ms / 86_400_000) + 1);
+  return Math.max(1, Math.round((e.getTime() - s.getTime()) / 86_400_000) + 1);
 }
 
 function computeAutoItems(args: {
   birds: Bird[];
-  bundles: Map<string, { medications?: string | null; flight_status?: string | null; diet_types?: string[] | null; fresh_foods?: string[] | null }>;
+  bundles: Map<string, any>;
   days: number;
 }): AutoItem[] {
   const out: AutoItem[] = [];
-  const { birds, bundles, days } = args;
-  for (const b of birds) {
-    const data = bundles.get(b.id);
+  for (const b of args.birds) {
+    const data = args.bundles.get(b.id);
     if (!data) continue;
     const meds = (data.medications ?? "").trim();
     if (meds) {
@@ -47,7 +47,8 @@ function computeAutoItems(args: {
         key: `auto:meds:${b.id}`,
         birdId: b.id,
         birdName: b.name,
-        label: `Measure out ${days} day${days === 1 ? "" : "s"} of ${meds}.`,
+        label: `Measure out ${args.days} day${args.days === 1 ? "" : "s"} of ${meds}.`,
+        tag: "recommended",
       });
     }
     const hasFresh =
@@ -59,6 +60,7 @@ function computeAutoItems(args: {
         birdId: b.id,
         birdName: b.name,
         label: "Portion fresh food for the week.",
+        tag: "recommended",
       });
     }
     if ((data.flight_status ?? "") === "fully_flighted") {
@@ -67,36 +69,50 @@ function computeAutoItems(args: {
         birdId: b.id,
         birdName: b.name,
         label: "Confirm the windows-and-doors plan with your sitter.",
+        tag: "recommended",
       });
     }
   }
   return out;
 }
 
+type Row = {
+  id?: string;
+  item_key: string;
+  checked: boolean;
+  is_custom?: boolean;
+  custom_label?: string | null;
+  tag?: Tag;
+};
+
 export function SitChecklist({
   sit,
   birds,
+  onSitChanged,
 }: {
-  sit: { id: string; start_date: string; end_date: string };
+  sit: { id: string; start_date: string; end_date: string; sitter_name?: string | null; marked_ready_at?: string | null };
   birds: Bird[];
+  onSitChanged?: () => void;
 }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [newLabel, setNewLabel] = useState("");
+  const [newTag, setNewTag] = useState<Tag>("recommended");
+  const [confirmReady, setConfirmReady] = useState<null | { missing: { key: string; label: string }[] }>(null);
 
-  const { data: rows = [], isLoading } = useQuery({
+  const { data: rows = [], isLoading } = useQuery<Row[]>({
     queryKey: ["sit-checklist", sit.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("sit_checklist_items")
-        .select("item_key, checked")
+        .select("id, item_key, checked, is_custom, custom_label, tag")
         .eq("sit_id", sit.id);
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as Row[];
     },
   });
 
-  // Pull live bird + care-plan data so auto items regenerate whenever the
-  // underlying care plan changes (refetched on mount/focus by default).
   const birdIds = birds.map((b) => b.id);
   const { data: autoBundles } = useQuery({
     queryKey: ["sit-checklist-auto", sit.id, birdIds],
@@ -121,18 +137,39 @@ export function SitChecklist({
     ? computeAutoItems({ birds, bundles: autoBundles, days })
     : [];
 
-  const checkedSet = new Set(
-    rows.filter((r: any) => r.checked).map((r: any) => r.item_key),
-  );
-  const totalCount = CHECKLIST_ITEMS.length + autoItems.length;
-  const doneCount =
-    CHECKLIST_ITEMS.filter((i) => checkedSet.has(i.key)).length +
-    autoItems.filter((i) => checkedSet.has(i.key)).length;
+  const checkedSet = new Set(rows.filter((r) => r.checked).map((r) => r.item_key));
+  const customRows = rows.filter((r) => r.is_custom);
+
+  // Master list with tags for progress + recommended-confirmation logic.
+  const allEntries: { key: string; label: string; tag: Tag }[] = [
+    ...CHECKLIST_ITEMS.map((i) => ({ key: i.key, label: i.label, tag: i.tag })),
+    ...autoItems.map((i) => ({ key: i.key, label: i.label, tag: i.tag })),
+    ...customRows.map((r) => ({
+      key: r.item_key,
+      label: r.custom_label ?? "Custom item",
+      tag: (r.tag ?? "recommended") as Tag,
+    })),
+  ];
+  const totalCount = allEntries.length;
+  const doneCount = allEntries.filter((e) => checkedSet.has(e.key)).length;
+  const pct = totalCount === 0 ? 0 : Math.round((doneCount / totalCount) * 100);
+  const itemsLeft = totalCount - doneCount;
+
+  // Reminder banner — within 3 days of start, before the sit begins.
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const start = new Date(sit.start_date + "T00:00:00");
+  const msPerDay = 86_400_000;
+  const daysToStart = Math.round((start.getTime() - today.getTime()) / msPerDay);
+  const showReminder = daysToStart >= 0 && daysToStart <= 3 && itemsLeft > 0;
 
   async function toggle(itemKey: string, nextChecked: boolean) {
-    qc.setQueryData(["sit-checklist", sit.id], (prev: any[] = []) => {
+    qc.setQueryData(["sit-checklist", sit.id], (prev: Row[] = []) => {
       const others = prev.filter((r) => r.item_key !== itemKey);
-      return [...others, { item_key: itemKey, checked: nextChecked }];
+      const existing = prev.find((r) => r.item_key === itemKey);
+      return [
+        ...others,
+        { ...(existing ?? { item_key: itemKey }), checked: nextChecked } as Row,
+      ];
     });
     const { error } = await supabase
       .from("sit_checklist_items")
@@ -146,16 +183,86 @@ export function SitChecklist({
     }
   }
 
-  // Group auto items by bird for the multi-bird case.
+  async function addCustom() {
+    const label = newLabel.trim();
+    if (!label) return;
+    const key = `custom:${crypto.randomUUID()}`;
+    const { error } = await supabase.from("sit_checklist_items").insert({
+      sit_id: sit.id,
+      item_key: key,
+      checked: false,
+      is_custom: true,
+      custom_label: label,
+      tag: newTag,
+    });
+    if (error) { toast.error(error.message); return; }
+    setNewLabel("");
+    setNewTag("recommended");
+    setAdding(false);
+    qc.invalidateQueries({ queryKey: ["sit-checklist", sit.id] });
+  }
+
+  async function removeCustom(rowId: string) {
+    const { error } = await supabase.from("sit_checklist_items").delete().eq("id", rowId);
+    if (error) { toast.error(error.message); return; }
+    qc.invalidateQueries({ queryKey: ["sit-checklist", sit.id] });
+  }
+
+  async function markReady(force = false) {
+    const missing = allEntries
+      .filter((e) => e.tag === "recommended" && !checkedSet.has(e.key))
+      .map((e) => ({ key: e.key, label: e.label }));
+    if (!force && missing.length > 0) {
+      setConfirmReady({ missing });
+      return;
+    }
+    setConfirmReady(null);
+    const { error } = await supabase
+      .from("sits")
+      .update({ marked_ready_at: new Date().toISOString() } as any)
+      .eq("id", sit.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Marked ready. Just for your view — the sitter isn't notified yet.");
+    onSitChanged?.();
+  }
+
+  async function unmarkReady() {
+    const { error } = await supabase
+      .from("sits")
+      .update({ marked_ready_at: null } as any)
+      .eq("id", sit.id);
+    if (error) { toast.error(error.message); return; }
+    onSitChanged?.();
+  }
+
   const autoByBird = new Map<string, AutoItem[]>();
   for (const item of autoItems) {
     const arr = autoByBird.get(item.birdId) ?? [];
-    arr.push(item);
-    autoByBird.set(item.birdId, arr);
+    arr.push(item); autoByBird.set(item.birdId, arr);
   }
   const isMultiBird = birds.length > 1;
 
-  function renderItem(itemKey: string, label: string, extra?: React.ReactNode) {
+  function tagBadge(tag: Tag) {
+    return (
+      <span
+        className={`shrink-0 rounded-full px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide ${
+          tag === "recommended"
+            ? "bg-sage-100 text-sage-700"
+            : "bg-sage-50 text-sage-500"
+        }`}
+      >
+        {tag}
+      </span>
+    );
+  }
+
+  function renderItem(
+    itemKey: string,
+    label: string,
+    tag: Tag,
+    extra?: React.ReactNode,
+    onRemove?: () => void,
+  ) {
     const isChecked = checkedSet.has(itemKey);
     return (
       <div
@@ -177,18 +284,33 @@ export function SitChecklist({
           <Check className="size-3.5" strokeWidth={3} />
         </button>
         <div className="min-w-0 flex-1">
-          <p
-            className={`text-xs leading-snug ${
-              isChecked ? "text-sage-600 line-through" : "text-sage-800"
-            }`}
-          >
-            {label}
-          </p>
+          <div className="flex items-start gap-1.5">
+            <p
+              className={`flex-1 text-xs leading-snug ${
+                isChecked ? "text-sage-600 line-through" : "text-sage-800"
+              }`}
+            >
+              {label}
+            </p>
+            {tagBadge(tag)}
+            {onRemove && (
+              <button
+                type="button"
+                onClick={onRemove}
+                className="shrink-0 rounded p-0.5 text-sage-400 hover:text-warn-red"
+                aria-label={`Remove: ${label}`}
+              >
+                <Trash2 className="size-3" />
+              </button>
+            )}
+          </div>
           {extra}
         </div>
       </div>
     );
   }
+
+  const sitterLabel = sit.sitter_name && sit.sitter_name !== "__preview__" ? sit.sitter_name : "Your sitter";
 
   return (
     <div className="mt-3 rounded-xl border border-sage-100 bg-sage-50/60">
@@ -199,19 +321,34 @@ export function SitChecklist({
         aria-expanded={open}
       >
         <div className="flex items-center gap-2">
-          {open ? (
-            <ChevronDown className="size-4 text-sage-600" />
-          ) : (
-            <ChevronRight className="size-4 text-sage-600" />
-          )}
+          {open ? <ChevronDown className="size-4 text-sage-600" /> : <ChevronRight className="size-4 text-sage-600" />}
           <span className="text-xs font-bold uppercase tracking-wider text-sage-700">
             Pre-leaving checklist
           </span>
+          {sit.marked_ready_at && (
+            <span className="inline-flex items-center gap-0.5 rounded-full bg-warn-green/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-warn-green">
+              <CheckCircle2 className="size-2.5" /> Ready
+            </span>
+          )}
         </div>
-        <span className="text-[11px] font-semibold text-sage-600">
-          {doneCount}/{totalCount}
-        </span>
+        <span className="text-[11px] font-semibold text-sage-600">{doneCount}/{totalCount}</span>
       </button>
+
+      {/* Always-visible progress bar */}
+      <div className="mx-3 mb-1 h-1 overflow-hidden rounded-full bg-sage-100">
+        <div
+          className="h-full rounded-full bg-sage-600 transition-all"
+          style={{ width: `${Math.max(2, pct)}%` }}
+        />
+      </div>
+
+      {showReminder && (
+        <div className="mx-3 mb-2 rounded-lg bg-warn-amber/10 px-3 py-2 ring-1 ring-warn-amber/30">
+          <p className="text-[11px] font-semibold text-warn-amber">
+            {sitterLabel} arrives in {daysToStart === 0 ? "today" : `${daysToStart} day${daysToStart === 1 ? "" : "s"}`} — {itemsLeft} prep item{itemsLeft === 1 ? "" : "s"} left
+          </p>
+        </div>
+      )}
 
       {open && (
         <div className="space-y-2 px-2 pb-3">
@@ -223,6 +360,7 @@ export function SitChecklist({
                 {renderItem(
                   item.key,
                   item.label,
+                  item.tag,
                   item.key === "emergency_contacts" && birds.length > 0 ? (
                     <div className="mt-1 flex flex-wrap gap-1.5">
                       {birds.map((b) => (
@@ -251,7 +389,7 @@ export function SitChecklist({
               </div>
               <ul className="space-y-1">
                 {autoItems.map((item) => (
-                  <li key={item.key}>{renderItem(item.key, item.label)}</li>
+                  <li key={item.key}>{renderItem(item.key, item.label, item.tag)}</li>
                 ))}
               </ul>
             </div>
@@ -270,7 +408,7 @@ export function SitChecklist({
                     <p className="px-1 pb-1 text-[11px] font-bold text-sage-700">{b.name}</p>
                     <ul className="space-y-1">
                       {items.map((item) => (
-                        <li key={item.key}>{renderItem(item.key, item.label)}</li>
+                        <li key={item.key}>{renderItem(item.key, item.label, item.tag)}</li>
                       ))}
                     </ul>
                   </div>
@@ -278,6 +416,142 @@ export function SitChecklist({
               })}
             </div>
           )}
+
+          {customRows.length > 0 && (
+            <div className="space-y-1">
+              <div className="px-1 pt-1 text-[10px] font-bold uppercase tracking-wider text-sage-600">
+                Your additions
+              </div>
+              <ul className="space-y-1">
+                {customRows.map((r) => (
+                  <li key={r.item_key}>
+                    {renderItem(
+                      r.item_key,
+                      r.custom_label ?? "Custom item",
+                      (r.tag ?? "recommended") as Tag,
+                      null,
+                      r.id ? () => removeCustom(r.id!) : undefined,
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Add custom item */}
+          {adding ? (
+            <div className="space-y-2 rounded-lg bg-white p-2 ring-1 ring-sage-200">
+              <input
+                autoFocus
+                value={newLabel}
+                onChange={(e) => setNewLabel(e.target.value)}
+                placeholder="e.g. Top up humidifier"
+                className="w-full rounded-md border border-sage-200 px-2 py-1.5 text-xs focus:border-sage-600 focus:outline-none"
+                onKeyDown={(e) => { if (e.key === "Enter") addCustom(); }}
+              />
+              <div className="flex items-center gap-2">
+                <select
+                  value={newTag}
+                  onChange={(e) => setNewTag(e.target.value as Tag)}
+                  className="rounded-md border border-sage-200 px-2 py-1 text-[11px]"
+                >
+                  <option value="recommended">Recommended</option>
+                  <option value="optional">Optional</option>
+                </select>
+                <button
+                  type="button"
+                  onClick={addCustom}
+                  disabled={!newLabel.trim()}
+                  className="ml-auto rounded-md bg-sage-600 px-3 py-1 text-[11px] font-semibold text-white disabled:opacity-40"
+                >
+                  Add
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setAdding(false); setNewLabel(""); }}
+                  className="rounded-md px-2 py-1 text-[11px] font-semibold text-sage-600"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setAdding(true)}
+              className="flex w-full items-center justify-center gap-1 rounded-lg border border-dashed border-sage-300 bg-white px-3 py-2 text-[11px] font-semibold text-sage-700 hover:bg-sage-50"
+            >
+              <Plus className="size-3" /> Add a custom item
+            </button>
+          )}
+
+          {/* Mark ready */}
+          <div className="pt-1">
+            {sit.marked_ready_at ? (
+              <div className="flex items-center justify-between gap-2 rounded-lg bg-warn-green/10 px-3 py-2 ring-1 ring-warn-green/30">
+                <div className="flex items-center gap-1.5 text-[11px] font-semibold text-warn-green">
+                  <CheckCircle2 className="size-3.5" />
+                  Marked ready · only visible to you for now
+                </div>
+                <button
+                  type="button"
+                  onClick={unmarkReady}
+                  className="text-[10px] font-semibold text-sage-600 underline"
+                >
+                  Undo
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => markReady(false)}
+                className="w-full rounded-lg bg-sage-900 px-3 py-2 text-xs font-semibold text-white"
+              >
+                Mark ready
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation dialog for unchecked recommended items */}
+      {confirmReady && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setConfirmReady(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl bg-white p-4 shadow-lg"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-sm font-bold">Mark ready anyway?</h3>
+            <p className="mt-1 text-xs text-sage-600">
+              A few recommended items aren't checked off yet. Nothing is blocked — this is just for you.
+            </p>
+            <ul className="mt-3 max-h-48 space-y-1 overflow-y-auto rounded-lg bg-sage-50 p-2">
+              {confirmReady.missing.map((m) => (
+                <li key={m.key} className="text-[11px] text-sage-800">• {m.label}</li>
+              ))}
+            </ul>
+            <div className="mt-3 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmReady(null)}
+                className="flex-1 rounded-lg border border-sage-200 bg-white py-2 text-xs font-semibold text-sage-700"
+              >
+                Keep editing
+              </button>
+              <button
+                type="button"
+                onClick={() => markReady(true)}
+                className="flex-1 rounded-lg bg-sage-900 py-2 text-xs font-semibold text-white"
+              >
+                Mark ready anyway
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
