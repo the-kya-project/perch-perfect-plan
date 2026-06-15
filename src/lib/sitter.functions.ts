@@ -71,6 +71,16 @@ export const getSitterContext = createServerFn({ method: "GET" })
     ]);
     if (birdRes.error || !birdRes.data) throw new Error("Bird not found.");
 
+    const { data: defaultsRow } = await sb
+      .from("owner_emergency_defaults")
+      .select("*")
+      .eq("owner_id", birdRes.data.owner_id)
+      .maybeSingle();
+    const mergedContacts = {
+      ...(contactsRes.data ?? { bird_id: activeId }),
+      ...mergeEmergency(contactsRes.data, defaultsRow),
+    };
+
     const tasksRes = planRes.data
       ? await sb
           .from("routine_tasks")
