@@ -1,15 +1,34 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { useSitterContext } from "./route";
 import { toggleTaskCompletion } from "@/lib/sitter.functions";
 import { Disclaimer } from "@/components/Disclaimer";
 import { BrandLogo } from "@/components/BrandLogo";
-import { Stethoscope, Calendar, PlayCircle } from "lucide-react";
+import { Stethoscope, Calendar, PlayCircle, Clock, X } from "lucide-react";
 
 export const Route = createFileRoute("/sitter/$token/")({
   component: SitterHome,
 });
+
+const FRESH_FOOD_TASK_PATTERN = /\b(fresh|chop|veg|veggies|salad|sprout)\b/i;
+const REMOVAL_TASK_PATTERN = /^remove fresh food/i;
+
+type FreshTimer = { startedAt: number; taskTitle: string };
+
+function loadTimers(sitId: string, birdId: string): Record<string, FreshTimer> {
+  try {
+    const raw = localStorage.getItem(`freshTimers:${sitId}:${birdId}`);
+    return raw ? JSON.parse(raw) : {};
+  } catch { return {}; }
+}
+function saveTimers(sitId: string, birdId: string, t: Record<string, FreshTimer>) {
+  try { localStorage.setItem(`freshTimers:${sitId}:${birdId}`, JSON.stringify(t)); } catch {}
+}
+function fmtTime(ms: number) {
+  return new Date(ms).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+}
 
 const CATS = ["morning", "midday", "evening", "bedtime", "custom"] as const;
 
@@ -18,16 +37,68 @@ function SitterHome() {
   const { data: ctx } = useSitterContext(token);
   const qc = useQueryClient();
   const toggle = useServerFn(toggleTaskCompletion);
+
+  const sitId = ctx.sit.id;
+  const birdId = ctx.activeBirdId;
+  const removalMinutes = (ctx.plan?.fresh_food_removal_minutes ?? 120) as number;
+
+  const [timers, setTimers] = useState<Record<string, FreshTimer>>(() => loadTimers(sitId, birdId));
+  // Re-render every 30s so countdowns and "Time to remove" surfaces update.
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick((n) => n + 1), 30_000);
+    return () => clearInterval(id);
+  }, []);
+  // Reload timers if the active bird changes.
+  useEffect(() => { setTimers(loadTimers(sitId, birdId)); }, [sitId, birdId]);
+
   const m = useMutation({
-    mutationFn: (vars: { taskId: string; completed: boolean }) =>
+    mutationFn: (vars: { taskId: string; completed: boolean; title: string }) =>
       toggle({ data: { token, taskId: vars.taskId, completed: vars.completed } }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["sitter-ctx", token] }),
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: ["sitter-ctx", token] });
+      // Manage the fresh-food removal timer.
+      const isFresh = FRESH_FOOD_TASK_PATTERN.test(vars.title) && !REMOVAL_TASK_PATTERN.test(vars.title);
+      if (!isFresh) return;
+      const next = { ...timers };
+      if (vars.completed) {
+        next[vars.taskId] = { startedAt: Date.now(), taskTitle: vars.title };
+      } else {
+        delete next[vars.taskId];
+      }
+      setTimers(next);
+      saveTimers(sitId, birdId, next);
+    },
   });
 
+  function dismissTimer(taskId: string) {
+    const next = { ...timers };
+    delete next[taskId];
+    setTimers(next);
+    saveTimers(sitId, birdId, next);
+  }
+
   const completedIds = new Set((ctx.completions ?? []).map((c: any) => c.routine_task_id));
+  // Drop timers for tasks no longer completed (e.g. unchecked elsewhere).
+  useEffect(() => {
+    let changed = false;
+    const next = { ...timers };
+    for (const id of Object.keys(next)) {
+      if (!completedIds.has(id)) { delete next[id]; changed = true; }
+    }
+    if (changed) { setTimers(next); saveTimers(sitId, birdId, next); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ctx.completions]);
+
   const grouped: Record<string, any[]> = {};
   for (const t of ctx.tasks) (grouped[t.category] ??= []).push(t);
   const todayLabel = new Date().toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+
+  const now = Date.now();
+  const activeTimers = Object.entries(timers).map(([taskId, t]) => {
+    const dueAt = t.startedAt + removalMinutes * 60_000;
+    return { taskId, ...t, dueAt, isDue: now >= dueAt };
+  });
 
   return (
     <>
@@ -108,7 +179,7 @@ function SitterHome() {
                 return (
                   <button
                     key={t.id}
-                    onClick={() => m.mutate({ taskId: t.id, completed: !done })}
+                    onClick={() => m.mutate({ taskId: t.id, completed: !done, title: t.title })}
                     className={`flex w-full items-start gap-4 rounded-xl p-4 text-left ring-1 transition ${done ? "bg-sage-50 ring-sage-100 opacity-70" : "bg-white ring-sage-100 shadow-sm"}`}
                   >
                     <div className={`mt-0.5 size-6 shrink-0 rounded border-2 ${done ? "border-warn-green bg-warn-green" : "border-sage-200 bg-white"} grid place-items-center`}>

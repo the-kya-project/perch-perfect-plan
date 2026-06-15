@@ -595,7 +595,33 @@ const NEVER_DEFAULTS = [
   "Onion & garlic", "Salt", "Fruit pits & apple seeds",
 ];
 
+const REMOVAL_OPTIONS = [
+  { value: 60, label: "1 hour" },
+  { value: 120, label: "2 hours" },
+  { value: 180, label: "3 hours" },
+];
+
+const FOOD_BOWL_WASH_OPTIONS = [
+  { value: "after_each_fresh", label: "After every fresh-food serving" },
+  { value: "once_daily", label: "Once a day" },
+  { value: "every_few_days", label: "Every few days" },
+];
+
+const WATER_BOWL_WASH_OPTIONS = [
+  { value: "once_daily", label: "Once a day" },
+  { value: "twice_daily", label: "Twice a day" },
+];
+
+// Prefixes used by syncHygieneTasks so we can update/delete the auto-generated rows.
+const HYG_REMOVE_PREFIX = "Remove fresh food";
+const HYG_WASH_FOOD_PREFIX = "Wash food bowls";
+const HYG_WASH_WATER_PREFIX = "Wash water bowl";
+
 const FEEDING_PATTERN = /food|feed|chop|pellet|seed|fresh|meal|breakfast|dinner/i;
+// A user-checked sitter task counts as "fresh food served" when the title
+// looks like a fresh-food / chop meal task. The auto-generated removal task
+// itself is excluded — checking the removal task should NOT start a new timer.
+export const FRESH_FOOD_TASK_PATTERN = /\b(fresh|chop|veg|veggies|salad|sprout)\b/i;
 
 function FoodWaterStep({
   birdId,
@@ -664,6 +690,10 @@ function FoodWaterStep({
   const [waterFreq, setWaterFreq] = useState("");
   const [waterNotes, setWaterNotes] = useState("");
   const [storage, setStorage] = useState("");
+  const [removalMinutes, setRemovalMinutes] = useState<number>(120);
+  const [foodBowlWash, setFoodBowlWash] = useState<string>("after_each_fresh");
+  const [waterBowlWash, setWaterBowlWash] = useState<string>("once_daily");
+  const [hygieneNotes, setHygieneNotes] = useState<string>("");
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -694,6 +724,10 @@ function FoodWaterStep({
     setWaterFreq(plan.water_frequency ?? "");
     setWaterNotes(plan.water_notes ?? "");
     setStorage(plan.food_storage ?? "");
+    setRemovalMinutes(plan.fresh_food_removal_minutes ?? 120);
+    setFoodBowlWash(plan.food_bowl_wash_cadence ?? "after_each_fresh");
+    setWaterBowlWash(plan.water_bowl_wash_cadence ?? "once_daily");
+    setHygieneNotes(plan.food_hygiene_notes ?? "");
     setHydrated(true);
   }, [plan, suggestedTimes, hydrated]);
 
@@ -737,6 +771,10 @@ function FoodWaterStep({
       const legacyAmtUnit = firstItem?.unit || amountUnit;
       const amountStr = legacyAmtVal && legacyAmtUnit ? `${legacyAmtVal} ${legacyAmtUnit}` : "";
 
+      const removalLabel = REMOVAL_OPTIONS.find((o) => o.value === removalMinutes)?.label ?? `${removalMinutes} min`;
+      const foodWashLabel = FOOD_BOWL_WASH_OPTIONS.find((o) => o.value === foodBowlWash)?.label ?? foodBowlWash;
+      const waterWashLabel = WATER_BOWL_WASH_OPTIONS.find((o) => o.value === waterBowlWash)?.label ?? waterBowlWash;
+
       const foodSummaryParts = [
         dietLabels.length ? `Diet: ${dietLabels.join(", ")}` : "",
         ...perTypeLines,
@@ -747,15 +785,23 @@ function FoodWaterStep({
           ? `Fresh foods: ${[...fresh, ...(freshOther.trim() ? [freshOther.trim()] : [])].join(", ")}`
           : "",
         storage.trim() ? `Stored: ${storage.trim()}` : "",
+        `Freshness & hygiene:\n  • Remove fresh/wet food after ${removalLabel}\n  • Wash food bowls: ${foodWashLabel}\n  • Wash water bowl/bottle: ${waterWashLabel}${hygieneNotes.trim() ? `\n  • Notes: ${hygieneNotes.trim()}` : ""}`,
       ].filter(Boolean);
       const treatLabel = TREAT_FREQ.find((f) => f.value === treatsFreq)?.label;
       const treatsSummary = [treatsNotes.trim(), treatLabel ? `Frequency: ${treatLabel}` : ""].filter(Boolean).join(" — ");
       const waterLabel = WATER_FREQ.find((f) => f.value === waterFreq)?.label;
-      const waterSummary = [waterLabel ?? "", waterNotes.trim()].filter(Boolean).join(" — ");
+      const waterSummary = [
+        waterLabel ?? "",
+        waterNotes.trim(),
+        `Wash bowl/bottle ${waterWashLabel.toLowerCase()}`,
+      ].filter(Boolean).join(" — ");
 
       // Persist only currently-selected diet types' details.
       const detailsToSave: Record<string, DietItem[]> = {};
       for (const t of diet) if ((dietDetails[t] ?? []).length) detailsToSave[t] = dietDetails[t];
+
+      // Mirror to the legacy text field too so the sitter view stays consistent.
+      const freshRemovalSummary = `Remove fresh / wet food after ${removalLabel}. Fresh food spoils fast and can grow bacteria.`;
 
       await supabase
         .from("care_plans")
@@ -775,15 +821,31 @@ function FoodWaterStep({
           water_frequency: waterFreq || null,
           water_notes: waterNotes || null,
           food_storage: storage || null,
+          fresh_food_removal_minutes: removalMinutes,
+          food_bowl_wash_cadence: foodBowlWash,
+          water_bowl_wash_cadence: waterBowlWash,
+          food_hygiene_notes: hygieneNotes || null,
           food_instructions: foodSummaryParts.join("\n") || null,
           treats_allowed: treatsSummary || null,
           foods_never_allowed: never.join(", ") || null,
           water_instructions: waterSummary || null,
+          fresh_food_removal: freshRemovalSummary,
         } as any)
         .eq("id", plan.id);
+
+      // Keep the auto-generated hygiene routine tasks in sync.
+      const hasFresh = diet.includes("chop") || fresh.length > 0 || freshOther.trim().length > 0;
+      await syncHygieneTasks(plan.id, {
+        removalLabel,
+        foodWashLabel,
+        waterWashLabel,
+        hasFresh,
+      });
+
       qc.invalidateQueries({ queryKey: ["plan", birdId] });
+      qc.invalidateQueries({ queryKey: ["tasks", plan.id] });
     },
-    [diet, dietOther, dietDetails, brand, amountValue, amountUnit, feedingTimes, fresh, freshOther, treatsNotes, treatsFreq, never, waterFreq, waterNotes, storage],
+    [diet, dietOther, dietDetails, brand, amountValue, amountUnit, feedingTimes, fresh, freshOther, treatsNotes, treatsFreq, never, waterFreq, waterNotes, storage, removalMinutes, foodBowlWash, waterBowlWash, hygieneNotes],
     !!plan && hydrated,
     registerFlush,
   );
@@ -1066,6 +1128,52 @@ function FoodWaterStep({
           value={storage}
           maxLength={200}
           onChange={(e) => setStorage(e.target.value)}
+        />
+      </Card>
+
+      <Card title="Freshness & hygiene" hint="General defaults — adjust to fit your bird and routine.">
+        <label className="text-xs font-semibold text-sage-700">Remove fresh or wet food after</label>
+        <select
+          className="input mt-1"
+          value={String(removalMinutes)}
+          onChange={(e) => setRemovalMinutes(Number(e.target.value))}
+        >
+          {REMOVAL_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
+        </select>
+        <p className="mt-1 text-[11px] text-sage-600">Fresh food spoils fast and can grow bacteria. This tells your sitter when to take it out.</p>
+
+        <label className="mt-3 block text-xs font-semibold text-sage-700">Wash food bowls</label>
+        <select
+          className="input mt-1"
+          value={foodBowlWash}
+          onChange={(e) => setFoodBowlWash(e.target.value)}
+        >
+          {FOOD_BOWL_WASH_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
+        </select>
+
+        <label className="mt-3 block text-xs font-semibold text-sage-700">Wash water bowl or bottle</label>
+        <select
+          className="input mt-1"
+          value={waterBowlWash}
+          onChange={(e) => setWaterBowlWash(e.target.value)}
+        >
+          {WATER_BOWL_WASH_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
+        </select>
+        <p className="mt-1 text-[11px] text-sage-600">This is washing the bowl itself — separate from how often you change the water.</p>
+
+        <label className="mt-3 block text-xs font-semibold text-sage-700">Other food hygiene notes</label>
+        <textarea
+          className="input area mt-1"
+          placeholder="Optional — anything else the sitter should know about food/water hygiene."
+          value={hygieneNotes}
+          maxLength={500}
+          onChange={(e) => setHygieneNotes(e.target.value)}
         />
       </Card>
 
@@ -1702,6 +1810,68 @@ async function syncMedicationTask(planId: string, meds: string, schedule: string
     const [first, ...rest] = existing as any[];
     await supabase.from("routine_tasks").update({ title, instructions } as any).eq("id", first.id);
     if (rest.length) await supabase.from("routine_tasks").delete().in("id", rest.map((t) => t.id));
+  }
+}
+
+// Keep the auto-generated freshness & hygiene tasks (one per prefix) in sync
+// with the owner-selected cadences. Tasks are matched by title prefix so the
+// owner can still rename them inline without losing the sync target.
+async function syncHygieneTasks(
+  planId: string,
+  args: { removalLabel: string; foodWashLabel: string; waterWashLabel: string; hasFresh: boolean },
+) {
+  type Spec = { prefix: string; title: string; instructions: string; category: string; sort_order: number; skip: boolean };
+  const specs: Spec[] = [
+    {
+      prefix: HYG_REMOVE_PREFIX,
+      title: `${HYG_REMOVE_PREFIX} (within ${args.removalLabel} of serving)`,
+      instructions: "Fresh / wet food spoils fast. Take it out within this window to prevent bacteria.",
+      category: "midday",
+      sort_order: 990,
+      skip: !args.hasFresh,
+    },
+    {
+      prefix: HYG_WASH_FOOD_PREFIX,
+      title: `${HYG_WASH_FOOD_PREFIX} (${args.foodWashLabel.toLowerCase()})`,
+      instructions: "Use hot water and a bottle brush. Rinse thoroughly before refilling.",
+      category: "evening",
+      sort_order: 991,
+      skip: false,
+    },
+    {
+      prefix: HYG_WASH_WATER_PREFIX,
+      title: `${HYG_WASH_WATER_PREFIX} (${args.waterWashLabel.toLowerCase()})`,
+      instructions: "Wash the bowl/bottle itself — separate from how often water is changed.",
+      category: "morning",
+      sort_order: 992,
+      skip: false,
+    },
+  ];
+
+  for (const s of specs) {
+    const { data: existing } = await supabase
+      .from("routine_tasks")
+      .select("id")
+      .eq("care_plan_id", planId)
+      .ilike("title", `${s.prefix}%`);
+    const rows = (existing ?? []) as any[];
+    if (s.skip) {
+      if (rows.length) await supabase.from("routine_tasks").delete().in("id", rows.map((r) => r.id));
+      continue;
+    }
+    if (rows.length === 0) {
+      await supabase.from("routine_tasks").insert({
+        care_plan_id: planId,
+        title: s.title,
+        instructions: s.instructions,
+        category: s.category,
+        sort_order: s.sort_order,
+      } as any);
+    } else {
+      const [first, ...rest] = rows;
+      await supabase.from("routine_tasks").update({ title: s.title, instructions: s.instructions } as any).eq("id", first.id);
+      if (rest.length) await supabase.from("routine_tasks").delete().in("id", rest.map((r) => r.id));
+    }
   }
 }
 
