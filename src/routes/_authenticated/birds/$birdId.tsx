@@ -338,3 +338,118 @@ function SitCard({ sit, onChange }: { sit: any; onChange: () => void }) {
     </div>
   );
 }
+
+function LogsPanel({ birdId }: { birdId: string }) {
+  const qc = useQueryClient();
+  const [weight, setWeight] = useState("");
+  const [wNotes, setWNotes] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const { data: weights = [] } = useQuery({
+    queryKey: ["weights", birdId],
+    queryFn: async () => {
+      const { data } = await supabase.from("weight_logs").select("*").eq("bird_id", birdId).order("weighed_at", { ascending: false }).limit(30);
+      return data ?? [];
+    },
+  });
+  const { data: daily = [] } = useQuery({
+    queryKey: ["daily-logs", birdId],
+    queryFn: async () => {
+      const { data } = await supabase.from("daily_logs").select("*").eq("bird_id", birdId).order("created_at", { ascending: false }).limit(30);
+      return data ?? [];
+    },
+  });
+  const { data: photos = [] } = useQuery({
+    queryKey: ["photo-logs", birdId],
+    queryFn: async () => {
+      const { data } = await supabase.from("photo_logs").select("*").eq("bird_id", birdId).order("created_at", { ascending: false }).limit(20);
+      return data ?? [];
+    },
+  });
+
+  async function addWeight(e: React.FormEvent) {
+    e.preventDefault();
+    const grams = parseFloat(weight);
+    if (!grams || grams <= 0) { toast.error("Enter a weight in grams."); return; }
+    setSaving(true);
+    const { error } = await supabase.from("weight_logs").insert({
+      bird_id: birdId,
+      weight_grams: grams,
+      notes: wNotes || null,
+      weighed_at: new Date().toISOString(),
+    });
+    setSaving(false);
+    if (error) { toast.error(error.message); return; }
+    setWeight(""); setWNotes("");
+    qc.invalidateQueries({ queryKey: ["weights", birdId] });
+    toast.success("Weight logged.");
+  }
+
+  const triageColor = (s: string) =>
+    s === "red" ? "bg-warn-red/10 text-warn-red"
+    : s === "yellow" ? "bg-warn-amber/10 text-warn-amber"
+    : "bg-warn-green/10 text-warn-green";
+
+  return (
+    <>
+      <Disclaimer compact />
+
+      <section className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
+        <h2 className="text-sm font-bold">Log weight</h2>
+        <p className="mt-1 text-[11px] text-sage-600">Weigh at the same time of day on the same scale for trustworthy trends.</p>
+        <form onSubmit={addWeight} className="mt-3 space-y-2">
+          <div className="flex gap-2">
+            <input className="input" type="number" step="0.1" placeholder="Weight (g)" value={weight} onChange={(e) => setWeight(e.target.value)} />
+            <button disabled={saving} className="rounded-xl bg-sage-600 px-4 text-sm font-semibold text-white disabled:opacity-50">Add</button>
+          </div>
+          <input className="input" placeholder="Notes (optional)" value={wNotes} onChange={(e) => setWNotes(e.target.value)} />
+        </form>
+        {weights.length > 0 && (
+          <ul className="mt-3 divide-y divide-sage-100 text-sm">
+            {weights.map((w: any) => (
+              <li key={w.id} className="flex items-center justify-between py-2">
+                <span className="font-semibold">{w.weight_grams} g</span>
+                <span className="text-[11px] text-sage-600">{new Date(w.weighed_at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
+        <h2 className="text-sm font-bold">Health scans from sitters</h2>
+        {daily.length === 0 ? (
+          <p className="mt-2 text-sm text-sage-600">No scans logged yet.</p>
+        ) : (
+          <ul className="mt-3 space-y-3">
+            {daily.map((d: any) => (
+              <li key={d.id} className="rounded-xl bg-sage-50 p-3">
+                <div className="flex items-center justify-between">
+                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${triageColor(d.triage_status)}`}>{d.triage_status}</span>
+                  <span className="text-[11px] text-sage-600">{new Date(d.created_at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
+                </div>
+                {d.triage_reasons && <p className="mt-2 text-xs text-sage-700">{d.triage_reasons}</p>}
+                {d.notes && <p className="mt-1 text-xs italic text-sage-600">"{d.notes}"</p>}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
+        <h2 className="text-sm font-bold">Photos from sitters</h2>
+        {photos.length === 0 ? (
+          <p className="mt-2 text-sm text-sage-600">No photos logged yet.</p>
+        ) : (
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            {photos.map((p: any) => (
+              <a key={p.id} href={p.photo_url} target="_blank" rel="noreferrer" className="block aspect-square overflow-hidden rounded-lg bg-sage-100">
+                <img src={p.photo_url} alt={p.photo_type} className="size-full object-cover" />
+              </a>
+            ))}
+          </div>
+        )}
+      </section>
+    </>
+  );
+}
