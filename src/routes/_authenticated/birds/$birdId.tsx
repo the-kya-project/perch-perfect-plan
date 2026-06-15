@@ -348,7 +348,7 @@ function LogsPanel({ birdId }: { birdId: string }) {
   const { data: weights = [] } = useQuery({
     queryKey: ["weights", birdId],
     queryFn: async () => {
-      const { data } = await supabase.from("weight_logs").select("*").eq("bird_id", birdId).order("weighed_at", { ascending: false }).limit(30);
+      const { data } = await supabase.from("weight_logs").select("*").eq("bird_id", birdId).order("logged_at", { ascending: false }).limit(30);
       return data ?? [];
     },
   });
@@ -374,9 +374,9 @@ function LogsPanel({ birdId }: { birdId: string }) {
     setSaving(true);
     const { error } = await supabase.from("weight_logs").insert({
       bird_id: birdId,
-      weight_grams: grams,
+      weight: grams,
       notes: wNotes || null,
-      weighed_at: new Date().toISOString(),
+      logged_at: new Date().toISOString(),
     });
     setSaving(false);
     if (error) { toast.error(error.message); return; }
@@ -408,8 +408,8 @@ function LogsPanel({ birdId }: { birdId: string }) {
           <ul className="mt-3 divide-y divide-sage-100 text-sm">
             {weights.map((w: any) => (
               <li key={w.id} className="flex items-center justify-between py-2">
-                <span className="font-semibold">{w.weight_grams} g</span>
-                <span className="text-[11px] text-sage-600">{new Date(w.weighed_at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
+                <span className="font-semibold">{w.weight} g</span>
+                <span className="text-[11px] text-sage-600">{new Date(w.logged_at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
               </li>
             ))}
           </ul>
