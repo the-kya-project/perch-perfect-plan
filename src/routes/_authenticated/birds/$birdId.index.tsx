@@ -179,7 +179,16 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
 }
 
 
-function PlanForm({ birdId, bird, plan, onSaved }: { birdId: string; bird: any; plan: any; onSaved: () => void }) {
+type PlanSection = "basics" | "food" | "behavior" | "home" | "health" | "clips";
+
+const CLIP_FIELDS: { key: string; label: string; hint: string }[] = [
+  { key: "clip_step_up_path", label: "How she steps up", hint: "Hand position, cue word, what works." },
+  { key: "clip_food_water_path", label: "Refilling food & water", hint: "Bowls, fill amount, cage-door routine." },
+  { key: "clip_locations_path", label: "Where everything is", hint: "Food, treats, towels, carrier, first aid." },
+  { key: "clip_bedtime_path", label: "Settling for the night", hint: "Cover, lights, sounds." },
+];
+
+function PlanFormSection({ section, birdId, bird, plan, onSaved }: { section: PlanSection; birdId: string; bird: any; plan: any; onSaved: () => void }) {
   const [b, setB] = useState(bird);
   const [p, setP] = useState(plan);
   const [saving, setSaving] = useState(false);
@@ -188,13 +197,17 @@ function PlanForm({ birdId, bird, plan, onSaved }: { birdId: string; bird: any; 
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleteText, setDeleteText] = useState("");
   const [deleting, setDeleting] = useState(false);
+
+  // Re-sync local state when the section changes or fresh data arrives.
+  useEffect(() => { setB(bird); }, [bird, section]);
+  useEffect(() => { setP(plan); }, [plan, section]);
+
   async function deleteBird() {
     if (deleteText.trim() !== (bird.name ?? "").trim()) {
       toast.error(`Type "${bird.name}" exactly to confirm.`);
       return;
     }
     setDeleting(true);
-    // Clean up dependents that may not cascade.
     await supabase.from("sit_birds").delete().eq("bird_id", birdId);
     await supabase.from("weight_logs").delete().eq("bird_id", birdId);
     await supabase.from("photo_logs").delete().eq("bird_id", birdId);
@@ -220,7 +233,7 @@ function PlanForm({ birdId, bird, plan, onSaved }: { birdId: string; bird: any; 
       supabase.from("care_plans").update(planPatch).eq("id", plan.id),
     ]);
     setSaving(false);
-    toast.success("Care plan saved.");
+    toast.success("Saved.");
     onSaved();
   }
   async function onPhoto(e: React.ChangeEvent<HTMLInputElement>) {
@@ -231,201 +244,285 @@ function PlanForm({ birdId, bird, plan, onSaved }: { birdId: string; bird: any; 
     reader.onload = () => setB({ ...b, photo_url: reader.result as string });
     reader.readAsDataURL(file);
   }
+
+  const guidedHint = (
+    <p className="text-[11px] text-sage-600">
+      Need to capture richer details?{" "}
+      <Link to="/birds/$birdId/setup" params={{ birdId }} className="font-semibold text-sage-800 underline">
+        Open guided setup
+      </Link>.
+    </p>
+  );
+
   return (
     <>
       <Disclaimer compact />
-      <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
-        <h2 className="text-sm font-bold">Basics</h2>
-        <div className="flex items-start gap-3">
-          {b.photo_url ? (
-            <PhotoCropper
-              src={b.photo_url}
-              position={b.photo_position}
-              onChange={(pos) => setB({ ...b, photo_position: pos })}
-              size={120}
-            />
-          ) : (
-            <div className="flex size-[120px] items-center justify-center rounded-xl bg-sage-100 text-[10px] uppercase tracking-wider text-sage-600">No photo</div>
-          )}
-          <div className="flex-1 space-y-2 pt-1">
-            <label className="inline-block cursor-pointer rounded-lg bg-sage-100 px-3 py-1.5 text-xs font-semibold text-sage-700">
-              {b.photo_url ? "Change photo" : "Add photo"}
-              <input type="file" accept="image/*" className="hidden" onChange={onPhoto} />
-            </label>
-            {b.photo_url && (
-              <button type="button" onClick={() => setB({ ...b, photo_url: null, photo_position: null })} className="ml-2 text-xs font-semibold text-warn-red underline">Remove</button>
+
+      {section === "basics" && (
+        <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
+          <h2 className="text-sm font-bold">Basics</h2>
+          <div className="flex items-start gap-3">
+            {b.photo_url ? (
+              <PhotoCropper
+                src={b.photo_url}
+                position={b.photo_position}
+                onChange={(pos) => setB({ ...b, photo_position: pos })}
+                size={120}
+              />
+            ) : (
+              <div className="flex size-[120px] items-center justify-center rounded-xl bg-sage-100 text-[10px] uppercase tracking-wider text-sage-600">No photo</div>
             )}
-          </div>
-        </div>
-        <Field label="Name"><input className="input" value={b.name ?? ""} onChange={(e) => setB({ ...b, name: e.target.value })} /></Field>
-        <SpeciesPicker value={b.species ?? ""} onChange={(v) => setB({ ...b, species: v })} />
-        <AgePicker
-          age={b.age ?? ""}
-          birthDate={b.birth_date ?? ""}
-          onChange={(next) => setB({ ...b, age: next.age, birth_date: next.birthDate })}
-        />
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Sex">
-            <select className="input" value={b.sex ?? ""} onChange={(e) => setB({ ...b, sex: e.target.value || null })}>
-              <option value="">Unknown</option><option>Male</option><option>Female</option>
-            </select>
-          </Field>
-          <Field label="Flight">
-            <select className="input" value={b.flight_status ?? "unknown"} onChange={(e) => setB({ ...b, flight_status: e.target.value })}>
-              <option value="unknown">Unknown</option>
-              <option value="fully_flighted">Fully flighted</option>
-              <option value="clipped">Clipped</option>
-              <option value="partially_clipped">Partially clipped</option>
-            </select>
-          </Field>
-        </div>
-      </section>
-
-      <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
-        <h2 className="text-sm font-bold">Baseline weight (grams)</h2>
-        <p className="text-xs text-sage-600">Used by the sitter's daily health scan to flag weight loss.</p>
-        <div className="grid grid-cols-3 gap-3">
-          <Field label="Normal"><input className="input" inputMode="decimal" value={b.normal_weight ?? ""} onChange={(e) => setB({ ...b, normal_weight: e.target.value === "" ? null : Number(e.target.value) })} /></Field>
-          <Field label="Min"><input className="input" inputMode="decimal" value={b.normal_weight_min ?? ""} onChange={(e) => setB({ ...b, normal_weight_min: e.target.value === "" ? null : Number(e.target.value) })} /></Field>
-          <Field label="Max"><input className="input" inputMode="decimal" value={b.normal_weight_max ?? ""} onChange={(e) => setB({ ...b, normal_weight_max: e.target.value === "" ? null : Number(e.target.value) })} /></Field>
-        </div>
-      </section>
-
-      <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
-        <h2 className="text-sm font-bold">Profile</h2>
-        <Field label="Medical conditions"><textarea className="input area" value={b.medical_conditions ?? ""} onChange={(e) => setB({ ...b, medical_conditions: e.target.value })} /></Field>
-        <Field label="Medications"><textarea className="input area" value={b.medications ?? ""} onChange={(e) => setB({ ...b, medications: e.target.value })} /></Field>
-        <Field label="Notes"><textarea className="input area" value={b.notes ?? ""} onChange={(e) => setB({ ...b, notes: e.target.value })} /></Field>
-      </section>
-
-      <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
-        <h2 className="text-sm font-bold">Health baseline</h2>
-        {[
-          ["normal_appetite", "Normal appetite"],
-          ["normal_droppings", "Normal droppings"],
-          ["normal_noise", "Normal noise level"],
-          ["normal_activity", "Normal activity"],
-          ["normal_sleep", "Sleep / nap habits"],
-          ["normal_behavior_with_strangers", "Behavior with strangers"],
-          ["known_triggers", "Known bite triggers / hormonal behaviors"],
-        ].map(([k, l]) => (
-          <Field key={k} label={l}><textarea className="input area" value={p[k] ?? ""} onChange={(e) => setP({ ...p, [k]: e.target.value })} /></Field>
-        ))}
-      </section>
-
-      <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
-        <h2 className="text-sm font-bold">Food & water</h2>
-        <div className="rounded-lg bg-warn-amber/10 p-2 text-[11px] font-semibold text-warn-amber">Reminder: do not introduce new foods while the owner is away.</div>
-        {[["food_instructions", "Food instructions (pellets, fresh, treats)"], ["water_instructions", "Water"], ["fresh_food_removal", "Fresh food removal timing"], ["treats_allowed", "Treats allowed"], ["foods_never_allowed", "Foods NEVER allowed for this bird"]].map(([k, l]) => (
-          <Field key={k} label={l}><textarea className="input area" value={p[k] ?? ""} onChange={(e) => setP({ ...p, [k]: e.target.value })} /></Field>
-        ))}
-        <div className="rounded-xl bg-sage-50/60 p-3 ring-1 ring-sage-100 space-y-3">
-          <p className="text-xs font-bold uppercase tracking-wider text-sage-700">Freshness & hygiene</p>
-          <Field label="Remove fresh or wet food after" hint="Fresh food spoils fast and can grow bacteria.">
-            <select
-              className="input"
-              value={String(p.fresh_food_removal_minutes ?? 120)}
-              onChange={(e) => setP({ ...p, fresh_food_removal_minutes: Number(e.target.value) })}
-            >
-              <option value="60">1 hour</option>
-              <option value="120">2 hours</option>
-              <option value="180">3 hours</option>
-            </select>
-          </Field>
-          <Field label="Wash food bowls">
-            <select
-              className="input"
-              value={p.food_bowl_wash_cadence ?? "after_each_fresh"}
-              onChange={(e) => setP({ ...p, food_bowl_wash_cadence: e.target.value })}
-            >
-              <option value="after_each_fresh">After every fresh-food serving</option>
-              <option value="once_daily">Once a day</option>
-              <option value="every_few_days">Every few days</option>
-            </select>
-          </Field>
-          <Field label="Wash water bowl or bottle" hint="Separate from how often water is changed.">
-            <select
-              className="input"
-              value={p.water_bowl_wash_cadence ?? "once_daily"}
-              onChange={(e) => setP({ ...p, water_bowl_wash_cadence: e.target.value })}
-            >
-              <option value="once_daily">Once a day</option>
-              <option value="twice_daily">Twice a day</option>
-            </select>
-          </Field>
-          <Field label="Other food hygiene notes">
-            <textarea
-              className="input area"
-              value={p.food_hygiene_notes ?? ""}
-              onChange={(e) => setP({ ...p, food_hygiene_notes: e.target.value })}
-            />
-          </Field>
-        </div>
-      </section>
-
-      <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
-        <h2 className="text-sm font-bold">Handling & home safety</h2>
-        {[["handling_rules", "Handling rules (step-up, step-down, refusal)"], ["out_of_cage_rules", "Out-of-cage rules"], ["safety_rules", "Home safety (windows, fans, appliances)"], ["other_pets", "Other pets & separation rules"], ["cleaning_instructions", "Cleaning products / instructions"], ["off_limits_rooms", "Off-limits rooms"]].map(([k, l]) => (
-          <Field key={k} label={l}><textarea className="input area" value={p[k] ?? ""} onChange={(e) => setP({ ...p, [k]: e.target.value })} /></Field>
-        ))}
-      </section>
-
-      <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
-        <h2 className="text-sm font-bold">When to call</h2>
-        <Field label="When to call the owner"><textarea className="input area" value={p.when_to_call_owner ?? ""} onChange={(e) => setP({ ...p, when_to_call_owner: e.target.value })} /></Field>
-        <Field label="When to call the vet"><textarea className="input area" value={p.when_to_call_vet ?? ""} onChange={(e) => setP({ ...p, when_to_call_vet: e.target.value })} /></Field>
-      </section>
-
-      <button disabled={saving} onClick={save} className="sticky bottom-4 w-full rounded-xl bg-sage-600 py-3 text-sm font-semibold text-white shadow-lg disabled:opacity-50">
-        {saving ? "Saving..." : "Save care plan"}
-      </button>
-
-      <section className="rounded-2xl border-2 border-warn-red/30 bg-warn-red/5 p-4 space-y-3">
-        <h2 className="text-sm font-bold text-warn-red">Danger zone</h2>
-        <p className="text-xs text-sage-700">
-          Permanently delete {bird.name} and all of their care plan, routine, emergency info, weight logs, daily scans, and photos. This cannot be undone.
-        </p>
-        {!confirmDelete ? (
-          <button
-            type="button"
-            onClick={() => setConfirmDelete(true)}
-            className="inline-flex items-center gap-2 rounded-xl border border-warn-red/40 bg-white px-3 py-2 text-xs font-semibold text-warn-red"
-          >
-            <Trash2 className="size-4" /> Delete {bird.name}
-          </button>
-        ) : (
-          <div className="space-y-2">
-            <label className="block text-[11px] font-semibold text-sage-700">
-              Type <span className="font-bold">{bird.name}</span> to confirm
-            </label>
-            <input
-              className="input"
-              value={deleteText}
-              onChange={(e) => setDeleteText(e.target.value)}
-              placeholder={bird.name}
-              autoFocus
-            />
-            <div className="flex gap-2">
-              <button
-                type="button"
-                disabled={deleting || deleteText.trim() !== (bird.name ?? "").trim()}
-                onClick={deleteBird}
-                className="flex-1 rounded-xl bg-warn-red py-2.5 text-sm font-semibold text-white disabled:opacity-50"
-              >
-                {deleting ? "Deleting..." : `Permanently delete ${bird.name}`}
-              </button>
-              <button
-                type="button"
-                onClick={() => { setConfirmDelete(false); setDeleteText(""); }}
-                className="rounded-xl border border-sage-200 px-3 py-2.5 text-sm"
-              >
-                Cancel
-              </button>
+            <div className="flex-1 space-y-2 pt-1">
+              <label className="inline-block cursor-pointer rounded-lg bg-sage-100 px-3 py-1.5 text-xs font-semibold text-sage-700">
+                {b.photo_url ? "Change photo" : "Add photo"}
+                <input type="file" accept="image/*" className="hidden" onChange={onPhoto} />
+              </label>
+              {b.photo_url && (
+                <button type="button" onClick={() => setB({ ...b, photo_url: null, photo_position: null })} className="ml-2 text-xs font-semibold text-warn-red underline">Remove</button>
+              )}
             </div>
           </div>
-        )}
-      </section>
+          <Field label="Name"><input className="input" value={b.name ?? ""} onChange={(e) => setB({ ...b, name: e.target.value })} /></Field>
+          <SpeciesPicker value={b.species ?? ""} onChange={(v) => setB({ ...b, species: v })} />
+          <AgePicker
+            age={b.age ?? ""}
+            birthDate={b.birth_date ?? ""}
+            onChange={(next) => setB({ ...b, age: next.age, birth_date: next.birthDate })}
+          />
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Sex">
+              <select className="input" value={b.sex ?? ""} onChange={(e) => setB({ ...b, sex: e.target.value || null })}>
+                <option value="">Unknown</option><option>Male</option><option>Female</option>
+              </select>
+            </Field>
+            <Field label="Flight">
+              <select className="input" value={b.flight_status ?? "unknown"} onChange={(e) => setB({ ...b, flight_status: e.target.value })}>
+                <option value="unknown">Unknown</option>
+                <option value="fully_flighted">Fully flighted</option>
+                <option value="clipped">Clipped</option>
+                <option value="partially_clipped">Partially clipped</option>
+              </select>
+            </Field>
+          </div>
+        </section>
+      )}
+
+      {section === "food" && (
+        <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
+          <h2 className="text-sm font-bold">Food & water</h2>
+          <div className="rounded-lg bg-warn-amber/10 p-2 text-[11px] font-semibold text-warn-amber">Reminder: do not introduce new foods while the owner is away.</div>
+          {guidedHint}
+          {[["food_instructions", "Food instructions (pellets, fresh, treats)"], ["water_instructions", "Water"], ["fresh_food_removal", "Fresh food removal timing"], ["treats_allowed", "Treats allowed"], ["foods_never_allowed", "Foods NEVER allowed for this bird"]].map(([k, l]) => (
+            <Field key={k} label={l}><textarea className="input area" value={p[k] ?? ""} onChange={(e) => setP({ ...p, [k]: e.target.value })} /></Field>
+          ))}
+          <div className="rounded-xl bg-sage-50/60 p-3 ring-1 ring-sage-100 space-y-3">
+            <p className="text-xs font-bold uppercase tracking-wider text-sage-700">Freshness & hygiene</p>
+            <Field label="Remove fresh or wet food after" hint="Fresh food spoils fast and can grow bacteria.">
+              <select
+                className="input"
+                value={String(p.fresh_food_removal_minutes ?? 120)}
+                onChange={(e) => setP({ ...p, fresh_food_removal_minutes: Number(e.target.value) })}
+              >
+                <option value="60">1 hour</option>
+                <option value="120">2 hours</option>
+                <option value="180">3 hours</option>
+              </select>
+            </Field>
+            <Field label="Wash food bowls">
+              <select
+                className="input"
+                value={p.food_bowl_wash_cadence ?? "after_each_fresh"}
+                onChange={(e) => setP({ ...p, food_bowl_wash_cadence: e.target.value })}
+              >
+                <option value="after_each_fresh">After every fresh-food serving</option>
+                <option value="once_daily">Once a day</option>
+                <option value="every_few_days">Every few days</option>
+              </select>
+            </Field>
+            <Field label="Wash water bowl or bottle" hint="Separate from how often water is changed.">
+              <select
+                className="input"
+                value={p.water_bowl_wash_cadence ?? "once_daily"}
+                onChange={(e) => setP({ ...p, water_bowl_wash_cadence: e.target.value })}
+              >
+                <option value="once_daily">Once a day</option>
+                <option value="twice_daily">Twice a day</option>
+              </select>
+            </Field>
+            <Field label="Other food hygiene notes">
+              <textarea
+                className="input area"
+                value={p.food_hygiene_notes ?? ""}
+                onChange={(e) => setP({ ...p, food_hygiene_notes: e.target.value })}
+              />
+            </Field>
+          </div>
+        </section>
+      )}
+
+      {section === "behavior" && (
+        <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
+          <h2 className="text-sm font-bold">Personality & handling</h2>
+          {guidedHint}
+          <Field label="Step-up cue & technique"><textarea className="input area" value={p.step_up ?? ""} onChange={(e) => setP({ ...p, step_up: e.target.value })} /></Field>
+          <Field label="Step-up notes (refusal, exceptions)"><textarea className="input area" value={p.step_up_notes ?? ""} onChange={(e) => setP({ ...p, step_up_notes: e.target.value })} /></Field>
+          <Field label="Who can handle her"><textarea className="input area" value={p.handlers ?? ""} onChange={(e) => setP({ ...p, handlers: e.target.value })} /></Field>
+          <Field label="Likes"><textarea className="input area" value={p.likes ?? ""} onChange={(e) => setP({ ...p, likes: e.target.value })} /></Field>
+          <Field label="Fears & triggers"><textarea className="input area" value={p.fears_triggers ?? ""} onChange={(e) => setP({ ...p, fears_triggers: e.target.value })} /></Field>
+          <Field label="Bite warning signs"><textarea className="input area" value={p.known_triggers ?? ""} onChange={(e) => setP({ ...p, known_triggers: e.target.value })} /></Field>
+          <Field label="Handling rules summary"><textarea className="input area" value={p.handling_rules ?? ""} onChange={(e) => setP({ ...p, handling_rules: e.target.value })} /></Field>
+        </section>
+      )}
+
+      {section === "home" && (
+        <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
+          <h2 className="text-sm font-bold">Environment & safety</h2>
+          {guidedHint}
+          <Field label="Cage location"><textarea className="input area" value={p.cage_location ?? ""} onChange={(e) => setP({ ...p, cage_location: e.target.value })} /></Field>
+          <Field label="Out-of-cage rules"><textarea className="input area" value={p.out_of_cage_rules ?? ""} onChange={(e) => setP({ ...p, out_of_cage_rules: e.target.value })} /></Field>
+          <Field label="Home hazards (windows, fans, appliances)"><textarea className="input area" value={p.safety_rules ?? ""} onChange={(e) => setP({ ...p, safety_rules: e.target.value })} /></Field>
+          <Field label="Other pets & separation rules"><textarea className="input area" value={p.other_pets ?? ""} onChange={(e) => setP({ ...p, other_pets: e.target.value })} /></Field>
+          <Field label="Cleaning products / instructions"><textarea className="input area" value={p.cleaning_instructions ?? ""} onChange={(e) => setP({ ...p, cleaning_instructions: e.target.value })} /></Field>
+          <Field label="Off-limits rooms"><textarea className="input area" value={p.off_limits_rooms ?? ""} onChange={(e) => setP({ ...p, off_limits_rooms: e.target.value })} /></Field>
+        </section>
+      )}
+
+      {section === "health" && (
+        <>
+          <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
+            <h2 className="text-sm font-bold">Baseline weight (grams)</h2>
+            <p className="text-xs text-sage-600">Used by the sitter's daily health scan to flag weight loss.</p>
+            <div className="grid grid-cols-3 gap-3">
+              <Field label="Normal"><input className="input" inputMode="decimal" value={b.normal_weight ?? ""} onChange={(e) => setB({ ...b, normal_weight: e.target.value === "" ? null : Number(e.target.value) })} /></Field>
+              <Field label="Min"><input className="input" inputMode="decimal" value={b.normal_weight_min ?? ""} onChange={(e) => setB({ ...b, normal_weight_min: e.target.value === "" ? null : Number(e.target.value) })} /></Field>
+              <Field label="Max"><input className="input" inputMode="decimal" value={b.normal_weight_max ?? ""} onChange={(e) => setB({ ...b, normal_weight_max: e.target.value === "" ? null : Number(e.target.value) })} /></Field>
+            </div>
+          </section>
+          <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
+            <h2 className="text-sm font-bold">Conditions & medications</h2>
+            <Field label="Medical conditions"><textarea className="input area" value={b.medical_conditions ?? ""} onChange={(e) => setB({ ...b, medical_conditions: e.target.value })} /></Field>
+            <Field label="Medications"><textarea className="input area" value={b.medications ?? ""} onChange={(e) => setB({ ...b, medications: e.target.value })} /></Field>
+            <Field label="Notes"><textarea className="input area" value={b.notes ?? ""} onChange={(e) => setB({ ...b, notes: e.target.value })} /></Field>
+          </section>
+          <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
+            <h2 className="text-sm font-bold">What's normal</h2>
+            {guidedHint}
+            <Field label="Normal appetite & behavior summary"><textarea className="input area" value={p.whats_normal ?? ""} onChange={(e) => setP({ ...p, whats_normal: e.target.value })} /></Field>
+            {[
+              ["normal_appetite", "Normal appetite"],
+              ["normal_droppings", "Normal droppings"],
+              ["normal_noise", "Normal noise level"],
+              ["normal_activity", "Normal activity"],
+              ["normal_sleep", "Sleep / nap habits"],
+              ["normal_behavior_with_strangers", "Behavior with strangers"],
+            ].map(([k, l]) => (
+              <Field key={k} label={l}><textarea className="input area" value={p[k] ?? ""} onChange={(e) => setP({ ...p, [k]: e.target.value })} /></Field>
+            ))}
+          </section>
+          <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
+            <h2 className="text-sm font-bold">Baseline media</h2>
+            <MediaRow label="Baseline droppings photo" path={p.baseline_droppings_path} onClear={() => setP({ ...p, baseline_droppings_path: null })} />
+            <MediaRow label="Normal-behavior clip" path={p.baseline_clip_path} onClear={() => setP({ ...p, baseline_clip_path: null })} />
+            <p className="text-[11px] text-sage-600">
+              Record or replace in{" "}
+              <Link to="/birds/$birdId/setup" params={{ birdId }} className="font-semibold text-sage-800 underline">guided setup</Link>.
+            </p>
+          </section>
+          <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
+            <h2 className="text-sm font-bold">When to call</h2>
+            <Field label="When to call the owner"><textarea className="input area" value={p.when_to_call_owner ?? ""} onChange={(e) => setP({ ...p, when_to_call_owner: e.target.value })} /></Field>
+            <Field label="When to call the vet"><textarea className="input area" value={p.when_to_call_vet ?? ""} onChange={(e) => setP({ ...p, when_to_call_vet: e.target.value })} /></Field>
+          </section>
+        </>
+      )}
+
+      {section === "clips" && (
+        <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
+          <h2 className="text-sm font-bold">Watch-first clips</h2>
+          <p className="text-[11px] text-sage-600">
+            Short videos sitters watch first. Record or replace in{" "}
+            <Link to="/birds/$birdId/setup" params={{ birdId }} className="font-semibold text-sage-800 underline">guided setup</Link>.
+          </p>
+          {CLIP_FIELDS.map((c) => (
+            <div key={c.key} className="rounded-xl bg-sage-50/60 p-3 ring-1 ring-sage-100 space-y-1">
+              <p className="text-xs font-semibold text-sage-800">{c.label}</p>
+              <p className="text-[11px] text-sage-600">{c.hint}</p>
+              <MediaRow label="" path={p[c.key]} onClear={() => setP({ ...p, [c.key]: null })} />
+            </div>
+          ))}
+        </section>
+      )}
+
+      <button disabled={saving} onClick={save} className="sticky bottom-4 w-full rounded-xl bg-sage-600 py-3 text-sm font-semibold text-white shadow-lg disabled:opacity-50">
+        {saving ? "Saving..." : "Save changes"}
+      </button>
+
+      {section === "basics" && (
+        <section className="rounded-2xl border-2 border-warn-red/30 bg-warn-red/5 p-4 space-y-3">
+          <h2 className="text-sm font-bold text-warn-red">Danger zone</h2>
+          <p className="text-xs text-sage-700">
+            Permanently delete {bird.name} and all of their care plan, routine, emergency info, weight logs, daily scans, and photos. This cannot be undone.
+          </p>
+          {!confirmDelete ? (
+            <button
+              type="button"
+              onClick={() => setConfirmDelete(true)}
+              className="inline-flex items-center gap-2 rounded-xl border border-warn-red/40 bg-white px-3 py-2 text-xs font-semibold text-warn-red"
+            >
+              <Trash2 className="size-4" /> Delete {bird.name}
+            </button>
+          ) : (
+            <div className="space-y-2">
+              <label className="block text-[11px] font-semibold text-sage-700">
+                Type <span className="font-bold">{bird.name}</span> to confirm
+              </label>
+              <input
+                className="input"
+                value={deleteText}
+                onChange={(e) => setDeleteText(e.target.value)}
+                placeholder={bird.name}
+                autoFocus
+              />
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  disabled={deleting || deleteText.trim() !== (bird.name ?? "").trim()}
+                  onClick={deleteBird}
+                  className="flex-1 rounded-xl bg-warn-red py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+                >
+                  {deleting ? "Deleting..." : `Permanently delete ${bird.name}`}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setConfirmDelete(false); setDeleteText(""); }}
+                  className="rounded-xl border border-sage-200 px-3 py-2.5 text-sm"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+        </section>
+      )}
     </>
+  );
+}
+
+function MediaRow({ label, path, onClear }: { label: string; path: string | null | undefined; onClear: () => void }) {
+  return (
+    <div className="flex items-center justify-between gap-2">
+      {label && <span className="text-xs font-semibold text-sage-700">{label}</span>}
+      <div className="ml-auto flex items-center gap-2">
+        {path ? (
+          <>
+            <span className="rounded-full bg-warn-green/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-warn-green">Recorded</span>
+            <button type="button" onClick={onClear} className="text-[11px] font-semibold text-warn-red underline">Clear</button>
+          </>
+        ) : (
+          <span className="rounded-full bg-sage-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-sage-600">Not recorded</span>
+        )}
+      </div>
+    </div>
   );
 }
 
