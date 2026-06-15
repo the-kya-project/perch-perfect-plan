@@ -334,7 +334,7 @@ function DefaultsPanel() {
     ["spending_limit", "Approved spending limit"],
   ];
   const filledCount = defaults
-    ? fields.filter(([k]) => typeof defaults[k] === "string" && defaults[k].trim()).length
+    ? fields.filter(([k]) => typeof (defaults as any)[k] === "string" && (defaults as any)[k].trim()).length
     : 0;
 
   async function save() {
