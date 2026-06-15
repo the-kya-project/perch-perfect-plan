@@ -1,7 +1,17 @@
+import { createFileRoute, Link, Outlet } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { AlertTriangle, ChevronDown, Plus, Trash2 } from "lucide-react";
+import { SitCard } from "@/components/SitCard";
+import { toast } from "sonner";
+import { Disclaimer } from "@/components/Disclaimer";
+import { PhotoCropper } from "@/components/PhotoCropper";
+import { AgePicker, SpeciesPicker } from "@/components/BirdPickers";
+
 export const Route = createFileRoute("/_authenticated/birds/$birdId")({
   component: () => <Outlet />,
 });
-import { createFileRoute, Outlet } from "@tanstack/react-router";
 
 function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
