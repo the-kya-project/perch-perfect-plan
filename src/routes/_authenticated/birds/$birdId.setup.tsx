@@ -1845,6 +1845,76 @@ async function syncMedicationTask(planId: string, meds: string, schedule: string
 // Keep the auto-generated freshness & hygiene tasks (one per prefix) in sync
 // with the owner-selected cadences. Tasks are matched by title prefix so the
 // owner can still rename them inline without losing the sync target.
+function inferFeedingCategory(time: string): string {
+  const s = time.toLowerCase();
+  if (/morning|breakfast|am\b|sunrise|wake/.test(s)) return "morning";
+  if (/midday|noon|lunch/.test(s)) return "midday";
+  if (/evening|dinner|supper|pm\b/.test(s)) return "evening";
+  if (/bedtime|night|cover|sleep/.test(s)) return "bedtime";
+  // Numeric "8:00 AM" / "14:00" — try to parse the hour.
+  const m = s.match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/);
+  if (m) {
+    let h = parseInt(m[1], 10);
+    const ampm = m[3];
+    if (ampm === "pm" && h < 12) h += 12;
+    if (ampm === "am" && h === 12) h = 0;
+    if (h < 11) return "morning";
+    if (h < 14) return "midday";
+    if (h < 20) return "evening";
+    return "bedtime";
+  }
+  return "custom";
+}
+
+type FeedingItem = { name: string; amount: string; unit: string; times?: string[]; freeFed?: boolean };
+
+async function syncFeedingTasks(planId: string, items: FeedingItem[]) {
+  // Wipe and rebuild all auto-generated feeding rows on every save. Keeps the
+  // logic dead-simple and matches how the owner expects per-item edits to
+  // flow through to the sitter view.
+  const { data: existing } = await supabase
+    .from("routine_tasks")
+    .select("id")
+    .eq("care_plan_id", planId)
+    .ilike("title", `${FEED_PREFIX}%`);
+  const oldIds = ((existing ?? []) as any[]).map((r) => r.id);
+  if (oldIds.length) await supabase.from("routine_tasks").delete().in("id", oldIds);
+
+  const rows: any[] = [];
+  let order = 100;
+  for (const it of items) {
+    const name = (it.name ?? "").trim();
+    if (!name) continue;
+    const amt = it.amount?.trim() && it.unit ? `${it.amount.trim()} ${it.unit}` : "";
+    const baseInstr = amt ? `Serve ${amt}.` : "";
+    if (it.freeFed) {
+      rows.push({
+        care_plan_id: planId,
+        title: `${FEED_PREFIX} ${name} (available all day)`,
+        instructions: [baseInstr, "Keep topped up — this is free-fed in the cage."].filter(Boolean).join(" "),
+        category: "custom",
+        time_of_day: "Available all day",
+        sort_order: order++,
+      });
+      continue;
+    }
+    const times = (it.times ?? []).filter((t) => t.trim());
+    if (times.length === 0) continue;
+    for (const tm of times) {
+      rows.push({
+        care_plan_id: planId,
+        title: `${FEED_PREFIX} ${name}`,
+        instructions: baseInstr,
+        category: inferFeedingCategory(tm),
+        time_of_day: tm,
+        sort_order: order++,
+      });
+    }
+  }
+
+  if (rows.length) await supabase.from("routine_tasks").insert(rows as any);
+}
+
 async function syncHygieneTasks(
   planId: string,
   args: { removalLabel: string; foodWashLabel: string; waterWashLabel: string; hasFresh: boolean },
