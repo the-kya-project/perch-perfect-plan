@@ -63,11 +63,6 @@ function DangerChips({ items }: { items: string[] }) {
   );
 }
 
-const CADENCE_LABELS: Record<string, string> = {
-  after_each_fresh: "After every fresh-food serving",
-  once_daily: "Once a day",
-  every_few_days: "Every few days",
-};
 
 function CareSheet() {
   const { token } = Route.useParams();
