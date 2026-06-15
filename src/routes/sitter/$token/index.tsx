@@ -1,15 +1,34 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { useSitterContext } from "./route";
 import { toggleTaskCompletion } from "@/lib/sitter.functions";
 import { Disclaimer } from "@/components/Disclaimer";
 import { BrandLogo } from "@/components/BrandLogo";
-import { Stethoscope, Calendar, PlayCircle } from "lucide-react";
+import { Stethoscope, Calendar, PlayCircle, Clock, X } from "lucide-react";
 
 export const Route = createFileRoute("/sitter/$token/")({
   component: SitterHome,
 });
+
+const FRESH_FOOD_TASK_PATTERN = /\b(fresh|chop|veg|veggies|salad|sprout)\b/i;
+const REMOVAL_TASK_PATTERN = /^remove fresh food/i;
+
+type FreshTimer = { startedAt: number; taskTitle: string };
+
+function loadTimers(sitId: string, birdId: string): Record<string, FreshTimer> {
+  try {
+    const raw = localStorage.getItem(`freshTimers:${sitId}:${birdId}`);
+    return raw ? JSON.parse(raw) : {};
+  } catch { return {}; }
+}
+function saveTimers(sitId: string, birdId: string, t: Record<string, FreshTimer>) {
+  try { localStorage.setItem(`freshTimers:${sitId}:${birdId}`, JSON.stringify(t)); } catch {}
+}
+function fmtTime(ms: number) {
+  return new Date(ms).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+}
 
 const CATS = ["morning", "midday", "evening", "bedtime", "custom"] as const;
 
