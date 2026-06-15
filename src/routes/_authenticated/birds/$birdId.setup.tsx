@@ -1813,6 +1813,68 @@ async function syncMedicationTask(planId: string, meds: string, schedule: string
   }
 }
 
+// Keep the auto-generated freshness & hygiene tasks (one per prefix) in sync
+// with the owner-selected cadences. Tasks are matched by title prefix so the
+// owner can still rename them inline without losing the sync target.
+async function syncHygieneTasks(
+  planId: string,
+  args: { removalLabel: string; foodWashLabel: string; waterWashLabel: string; hasFresh: boolean },
+) {
+  type Spec = { prefix: string; title: string; instructions: string; category: string; sort_order: number; skip: boolean };
+  const specs: Spec[] = [
+    {
+      prefix: HYG_REMOVE_PREFIX,
+      title: `${HYG_REMOVE_PREFIX} (within ${args.removalLabel} of serving)`,
+      instructions: "Fresh / wet food spoils fast. Take it out within this window to prevent bacteria.",
+      category: "midday",
+      sort_order: 990,
+      skip: !args.hasFresh,
+    },
+    {
+      prefix: HYG_WASH_FOOD_PREFIX,
+      title: `${HYG_WASH_FOOD_PREFIX} (${args.foodWashLabel.toLowerCase()})`,
+      instructions: "Use hot water and a bottle brush. Rinse thoroughly before refilling.",
+      category: "evening",
+      sort_order: 991,
+      skip: false,
+    },
+    {
+      prefix: HYG_WASH_WATER_PREFIX,
+      title: `${HYG_WASH_WATER_PREFIX} (${args.waterWashLabel.toLowerCase()})`,
+      instructions: "Wash the bowl/bottle itself — separate from how often water is changed.",
+      category: "morning",
+      sort_order: 992,
+      skip: false,
+    },
+  ];
+
+  for (const s of specs) {
+    const { data: existing } = await supabase
+      .from("routine_tasks")
+      .select("id")
+      .eq("care_plan_id", planId)
+      .ilike("title", `${s.prefix}%`);
+    const rows = (existing ?? []) as any[];
+    if (s.skip) {
+      if (rows.length) await supabase.from("routine_tasks").delete().in("id", rows.map((r) => r.id));
+      continue;
+    }
+    if (rows.length === 0) {
+      await supabase.from("routine_tasks").insert({
+        care_plan_id: planId,
+        title: s.title,
+        instructions: s.instructions,
+        category: s.category,
+        sort_order: s.sort_order,
+      } as any);
+    } else {
+      const [first, ...rest] = rows;
+      await supabase.from("routine_tasks").update({ title: s.title, instructions: s.instructions } as any).eq("id", first.id);
+      if (rest.length) await supabase.from("routine_tasks").delete().in("id", rest.map((r) => r.id));
+    }
+  }
+}
+
 // ---------- Step 7: Watch-first clips ----------
 
 type ClipSlot = {
