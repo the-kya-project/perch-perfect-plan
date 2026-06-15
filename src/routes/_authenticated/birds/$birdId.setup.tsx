@@ -14,6 +14,47 @@ const setupSearch = z.object({
   step: z.coerce.number().int().min(1).max(TOTAL_STEPS).optional(),
 });
 
+
+/**
+ * Debounced autosave that ALSO supports an imperative flush from the parent
+ * wizard. When the user clicks Next/Back, the wizard calls the registered
+ * flush function so pending edits are persisted before the step unmounts.
+ */
+function useDebouncedAutosave(
+  save: () => Promise<void>,
+  deps: React.DependencyList,
+  enabled: boolean,
+  registerFlush?: (fn: (() => Promise<void>) | null) => void,
+  delay = 500,
+) {
+  const saveRef = useRef(save);
+  saveRef.current = save;
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!enabled) return;
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      timerRef.current = null;
+      void saveRef.current();
+    }, delay);
+    return () => {
+      if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled, ...deps]);
+
+  useEffect(() => {
+    if (!registerFlush) return;
+    const flush = async () => {
+      if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
+      await saveRef.current();
+    };
+    registerFlush(flush);
+    return () => registerFlush(null);
+  }, [registerFlush]);
+}
+
 export const Route = createFileRoute("/_authenticated/birds/$birdId/setup")({
   head: () => ({ meta: [{ title: "Set up bird — Parrot Care Co-Pilot" }] }),
   validateSearch: setupSearch,
