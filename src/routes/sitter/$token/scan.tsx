@@ -22,6 +22,16 @@ function ScanPage() {
   const [result, setResult] = useState<{ status: string; message: string; reasons: string[] } | null>(null);
   const [showErrors, setShowErrors] = useState(false);
 
+  // Reset all scan state when the selected bird changes — a fresh scan should
+  // never inherit validation errors or answers from a previous bird/attempt.
+  useEffect(() => {
+    setAnswers({});
+    setNotes("");
+    setPhoto(null);
+    setResult(null);
+    setShowErrors(false);
+  }, [ctx.activeBirdId]);
+
   const submit = useServerFn(submitHealthScan);
   const upload = useServerFn(uploadDroppingsPhoto);
   const m = useMutation({
