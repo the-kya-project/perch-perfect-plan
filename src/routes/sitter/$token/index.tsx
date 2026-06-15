@@ -135,6 +135,21 @@ function SitterHome() {
           <div className="rounded-full bg-white/10 p-3"><Stethoscope className="size-5" /></div>
         </Link>
 
+        <Link
+          to="/sitter/$token/care-sheet" params={{ token }}
+          className="flex items-center justify-between rounded-2xl bg-white p-5 ring-1 ring-sage-200 shadow-sm active:scale-[0.99]"
+        >
+          <div className="flex items-start gap-3">
+            <div className="rounded-full bg-sage-100 p-2.5 text-sage-700"><BookOpen className="size-5" /></div>
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-widest text-sage-600">Source of truth</p>
+              <p className="mt-0.5 text-base font-semibold leading-tight">{ctx.bird.name}'s full care plan</p>
+              <p className="mt-0.5 text-xs text-sage-600">Everything the owner wants you to know.</p>
+            </div>
+          </div>
+          <ChevronRight className="size-5 text-sage-400" />
+        </Link>
+
         {ctx.watchClips && ctx.watchClips.length > 0 && (
           <section className="space-y-2">
             <h2 className="text-lg font-bold tracking-tight">Watch first</h2>
