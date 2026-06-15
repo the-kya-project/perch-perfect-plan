@@ -294,3 +294,105 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     </label>
   );
 }
+
+function DefaultsPanel() {
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const { data: defaults } = useQuery({
+    queryKey: ["owner-defaults"],
+    queryFn: async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return null;
+      const { data } = await supabase
+        .from("owner_emergency_defaults")
+        .select("*")
+        .eq("owner_id", u.user.id)
+        .maybeSingle();
+      return data ?? { owner_id: u.user.id };
+    },
+  });
+  const [d, setD] = useState<any>(defaults ?? {});
+  const [saving, setSaving] = useState(false);
+  // sync local state when query resolves
+  if (defaults && d !== defaults && !open) {
+    // no-op: opening initializes
+  }
+  const fields: [string, string, boolean?][] = [
+    ["owner_phone", "Owner phone", true],
+    ["backup_name", "Backup contact name"],
+    ["backup_phone", "Backup contact phone"],
+    ["avian_vet_name", "Avian vet name"],
+    ["avian_vet_phone", "Avian vet phone", true],
+    ["avian_vet_address", "Avian vet address"],
+    ["emergency_vet_name", "Emergency vet name"],
+    ["emergency_vet_phone", "Emergency vet phone"],
+    ["emergency_vet_address", "Emergency vet address"],
+    ["poison_control", "Poison control number"],
+    ["carrier_location", "Carrier location"],
+    ["first_aid_kit_location", "First-aid kit location"],
+    ["emergency_authorization", "Emergency-care authorization"],
+    ["spending_limit", "Approved spending limit"],
+  ];
+  const filledCount = defaults
+    ? fields.filter(([k]) => typeof defaults[k] === "string" && defaults[k].trim()).length
+    : 0;
+
+  async function save() {
+    setSaving(true);
+    const { data: u } = await supabase.auth.getUser();
+    if (!u.user) { toast.error("Signed out."); setSaving(false); return; }
+    const row: Record<string, any> = { owner_id: u.user.id };
+    for (const [k] of fields) {
+      const v = d[k];
+      row[k] = typeof v === "string" && v.trim() === "" ? null : v ?? null;
+    }
+    const { error } = await supabase
+      .from("owner_emergency_defaults")
+      .upsert(row, { onConflict: "owner_id" });
+    setSaving(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Defaults saved. New and existing birds inherit any empty fields.");
+    setOpen(false);
+    qc.invalidateQueries({ queryKey: ["owner-defaults"] });
+  }
+
+  return (
+    <section className="space-y-3">
+      <div className="flex items-end justify-between">
+        <h2 className="text-base font-bold">Account emergency defaults</h2>
+        <button
+          type="button"
+          onClick={() => { setD(defaults ?? {}); setOpen((o) => !o); }}
+          className="text-xs font-semibold text-sage-700 underline"
+        >
+          {open ? "Close" : filledCount > 0 ? "Edit" : "Set up"}
+        </button>
+      </div>
+      <p className="text-xs text-sage-600">
+        Set owner phone, avian vet, and other emergency info <em>once</em>. Every bird inherits these unless its Emergency tab overrides a field.
+      </p>
+      {!open ? (
+        <div className="rounded-2xl bg-white p-4 ring-1 ring-sage-100 text-xs text-sage-700">
+          {filledCount === 0
+            ? "No defaults set yet — each bird needs its own contacts until you fill these in."
+            : `${filledCount} of ${fields.length} default fields set.`}
+        </div>
+      ) : (
+        <div className="space-y-3 rounded-2xl bg-white p-4 ring-1 ring-sage-100">
+          {fields.map(([k, l, required]) => (
+            <Field key={k} label={required ? `${l} *` : l}>
+              <input
+                className="input"
+                value={d[k] ?? ""}
+                onChange={(e) => setD({ ...d, [k]: e.target.value })}
+              />
+            </Field>
+          ))}
+          <button disabled={saving} onClick={save} className="mt-2 w-full rounded-xl bg-sage-600 py-3 text-sm font-semibold text-white disabled:opacity-50">
+            {saving ? "Saving..." : "Save account defaults"}
+          </button>
+        </div>
+      )}
+    </section>
+  );
+}
