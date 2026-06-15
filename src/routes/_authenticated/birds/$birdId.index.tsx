@@ -121,17 +121,50 @@ function BirdEditor() {
               <h1 className="text-sm font-bold truncate">{bird.name}</h1>
               <p className="text-[10px] uppercase tracking-wider text-sage-600">{bird.species ?? "Parrot"}</p>
             </div>
-            <Link
-              to="/birds/$birdId/setup"
-              params={{ birdId }}
-              search={completeness.firstIncompleteStep ? { step: completeness.firstIncompleteStep } : undefined}
-              className="inline-flex shrink-0 items-center gap-1 rounded-full bg-sage-100 px-2.5 py-1 text-[11px] font-semibold text-sage-800"
-              title="Open guided setup walkthrough"
-            >
-              <Wand2 className="size-3.5" />
-              <span>Guided setup</span>
-              <span className="text-sage-600">· {isComplete ? "done" : `${completeness.doneCount}/${completeness.total}`}</span>
-            </Link>
+          </div>
+          <div className="-mx-1 mt-3 flex gap-1 overflow-x-auto pb-1">
+            {tabs.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold ${tab === t.id ? "bg-sage-900 text-white" : "bg-sage-100 text-sage-700"}`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-md space-y-4 px-4 py-5">
+        <Link
+          to="/birds/$birdId/setup"
+          params={{ birdId }}
+          search={completeness.firstIncompleteStep ? { step: completeness.firstIncompleteStep } : undefined}
+          className="block rounded-2xl bg-sage-900 p-4 text-white shadow-sm ring-1 ring-sage-900/10 active:scale-[0.99]"
+        >
+          <div className="flex items-start gap-3">
+            <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl bg-white/10">
+              <Wand2 className="size-5" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-sage-300">Guided care plan editor</p>
+              <p className="mt-0.5 text-sm font-semibold leading-snug">Build and edit {bird.name}'s full care plan</p>
+              <p className="mt-1 text-[11px] leading-snug text-sage-200">
+                Step through every section — feeding, behavior, home, health, clips, emergency — and update it anytime.
+              </p>
+              <p className="mt-2 text-[11px] font-semibold text-sage-300">
+                {isComplete
+                  ? `All ${completeness.total} sections complete.`
+                  : `${completeness.doneCount} of ${completeness.total} sections complete.`}
+              </p>
+            </div>
+            <span className="shrink-0 self-center rounded-lg bg-white px-3 py-1.5 text-[11px] font-bold text-sage-900">
+              {isComplete ? "Open editor" : completeness.doneCount === 0 ? "Open editor" : "Continue"}
+            </span>
+          </div>
+        </Link>
+
           </div>
           <div className="-mx-1 mt-3 flex gap-1 overflow-x-auto pb-1">
             {tabs.map((t) => (
