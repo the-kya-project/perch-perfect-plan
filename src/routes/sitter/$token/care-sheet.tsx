@@ -94,7 +94,7 @@ function CareSheet() {
 
   return (
     <>
-      <header className="sticky top-0 z-10 border-b border-sage-100 bg-white">
+      <header className="border-b border-sage-100 bg-white">
         <div className="mx-auto flex max-w-md items-center gap-3 px-4 py-3">
           <Link to="/sitter/$token" params={{ token }} search={{ birdId: ctx.activeBirdId }} className="rounded p-1 text-sage-600"><ArrowLeft className="size-5" /></Link>
           <div>

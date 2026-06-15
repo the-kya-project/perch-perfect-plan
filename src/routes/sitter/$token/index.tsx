@@ -103,7 +103,7 @@ function SitterHome() {
 
   return (
     <>
-      <header className="sticky top-0 z-10 border-b border-sage-100 bg-white">
+      <header className="border-b border-sage-100 bg-white">
         <div className="mx-auto max-w-md px-4 py-3">
           <div className="flex items-center justify-between gap-3">
             <BrandLogo size="sm" showTagline={false} />
