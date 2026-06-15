@@ -87,6 +87,8 @@ export type Database = {
         Row: {
           amount_unit: string | null
           amount_value: number | null
+          baseline_clip_path: string | null
+          baseline_droppings_path: string | null
           bird_id: string
           bite_risk: string | null
           cage_location: string | null
@@ -110,6 +112,7 @@ export type Database = {
           id: string
           known_triggers: string | null
           likes: string | null
+          medication_schedule: string | null
           never_feed: string[]
           normal_activity: string | null
           normal_appetite: string | null
@@ -133,12 +136,15 @@ export type Database = {
           water_frequency: string | null
           water_instructions: string | null
           water_notes: string | null
+          whats_normal: string | null
           when_to_call_owner: string | null
           when_to_call_vet: string | null
         }
         Insert: {
           amount_unit?: string | null
           amount_value?: number | null
+          baseline_clip_path?: string | null
+          baseline_droppings_path?: string | null
           bird_id: string
           bite_risk?: string | null
           cage_location?: string | null
@@ -162,6 +168,7 @@ export type Database = {
           id?: string
           known_triggers?: string | null
           likes?: string | null
+          medication_schedule?: string | null
           never_feed?: string[]
           normal_activity?: string | null
           normal_appetite?: string | null
@@ -185,12 +192,15 @@ export type Database = {
           water_frequency?: string | null
           water_instructions?: string | null
           water_notes?: string | null
+          whats_normal?: string | null
           when_to_call_owner?: string | null
           when_to_call_vet?: string | null
         }
         Update: {
           amount_unit?: string | null
           amount_value?: number | null
+          baseline_clip_path?: string | null
+          baseline_droppings_path?: string | null
           bird_id?: string
           bite_risk?: string | null
           cage_location?: string | null
@@ -214,6 +224,7 @@ export type Database = {
           id?: string
           known_triggers?: string | null
           likes?: string | null
+          medication_schedule?: string | null
           never_feed?: string[]
           normal_activity?: string | null
           normal_appetite?: string | null
@@ -237,6 +248,7 @@ export type Database = {
           water_frequency?: string | null
           water_instructions?: string | null
           water_notes?: string | null
+          whats_normal?: string | null
           when_to_call_owner?: string | null
           when_to_call_vet?: string | null
         }

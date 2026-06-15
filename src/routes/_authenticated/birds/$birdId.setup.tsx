@@ -127,8 +127,9 @@ function StepBody({
   if (step === 3) return <FoodWaterStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} />;
   if (step === 4) return <PersonalityStep birdId={birdId} birdName={birdName} />;
   if (step === 5) return <EnvironmentStep birdId={birdId} />;
+  if (step === 6) return <HealthBaselineStep birdId={birdId} birdName={birdName} />;
 
-  if (step === 7) {
+  if (step === 8) {
     return (
       <div className="space-y-4">
         <div className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
@@ -149,7 +150,7 @@ function StepBody({
   }
 
   const blurbs: Record<number, { lead: string; hint: string }> = {
-    6: {
+    7: {
       lead: "Emergency info — vets, contacts, and home info for sitters.",
       hint: "Most of this is inherited from your account defaults. The full form lives on the Emergency tab.",
     },
@@ -1066,4 +1067,308 @@ function EnvironmentStep({ birdId }: { birdId: string }) {
       <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.65rem .8rem;font-size:16px;outline:none}.input:focus{border-color:var(--sage-600);box-shadow:0 0 0 3px rgb(74 103 65 / .15)}.area{min-height:60px;line-height:1.4}`}</style>
     </div>
   );
+}
+
+// ---------- Step 6: Health baseline ----------
+
+const MED_TASK_PREFIX = "Medication";
+
+function HealthBaselineStep({ birdId, birdName }: { birdId: string; birdName: string }) {
+  const qc = useQueryClient();
+
+  const { data: bird } = useQuery({
+    queryKey: ["bird-health", birdId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("birds")
+        .select("id, owner_id, normal_weight, medical_conditions, medications")
+        .eq("id", birdId)
+        .single();
+      if (error) throw error;
+      return data as any;
+    },
+  });
+
+  const { data: plan, isLoading } = useQuery({
+    queryKey: ["plan-health", birdId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("care_plans").select("*").eq("bird_id", birdId).maybeSingle();
+      if (error) throw error;
+      return data as any;
+    },
+  });
+
+  const [weight, setWeight] = useState("");
+  const [conditions, setConditions] = useState("");
+  const [meds, setMeds] = useState("");
+  const [medSchedule, setMedSchedule] = useState("");
+  const [whatsNormal, setWhatsNormal] = useState("");
+  const [droppingsPath, setDroppingsPath] = useState<string | null>(null);
+  const [clipPath, setClipPath] = useState<string | null>(null);
+  const [droppingsPreview, setDroppingsPreview] = useState<string | null>(null);
+  const [clipPreview, setClipPreview] = useState<string | null>(null);
+  const [hydrated, setHydrated] = useState(false);
+  const [uploading, setUploading] = useState<"photo" | "clip" | null>(null);
+  const [initialWeight, setInitialWeight] = useState<string>("");
+
+  useEffect(() => {
+    if (!plan || !bird || hydrated) return;
+    const w = bird.normal_weight != null ? String(bird.normal_weight) : "";
+    setWeight(w);
+    setInitialWeight(w);
+    setConditions(bird.medical_conditions ?? "");
+    setMeds(bird.medications ?? "");
+    setMedSchedule(plan.medication_schedule ?? "");
+    setWhatsNormal(plan.whats_normal ?? "");
+    setDroppingsPath(plan.baseline_droppings_path ?? null);
+    setClipPath(plan.baseline_clip_path ?? null);
+    setHydrated(true);
+  }, [plan, bird, hydrated]);
+
+  // Resolve signed preview URLs for any saved baseline media.
+  useEffect(() => {
+    let cancelled = false;
+    async function sign(path: string | null, setter: (u: string | null) => void) {
+      if (!path) { setter(null); return; }
+      const { data } = await supabase.storage.from("bird-photos").createSignedUrl(path, 3600);
+      if (!cancelled) setter(data?.signedUrl ?? null);
+    }
+    sign(droppingsPath, setDroppingsPreview);
+    sign(clipPath, setClipPreview);
+    return () => { cancelled = true; };
+  }, [droppingsPath, clipPath]);
+
+  // Debounced persist of text/numeric fields. Also feeds the weight log on change.
+  useEffect(() => {
+    if (!plan || !bird || !hydrated) return;
+    const handle = setTimeout(async () => {
+      const newWeight = weight.trim() ? Number(weight) : null;
+      await supabase
+        .from("birds")
+        .update({
+          normal_weight: newWeight,
+          medical_conditions: conditions || null,
+          medications: meds || null,
+        } as any)
+        .eq("id", birdId);
+
+      await supabase
+        .from("care_plans")
+        .update({
+          medication_schedule: medSchedule || null,
+          whats_normal: whatsNormal || null,
+          baseline_droppings_path: droppingsPath,
+          baseline_clip_path: clipPath,
+        } as any)
+        .eq("id", plan.id);
+
+      // Feed weight log when the normal weight changes.
+      if (newWeight != null && weight !== initialWeight) {
+        await supabase
+          .from("weight_logs")
+          .insert({ bird_id: birdId, weight: newWeight, notes: "Baseline weight" } as any);
+        setInitialWeight(weight);
+      }
+
+      // Auto-create / sync the medication routine task.
+      await syncMedicationTask(plan.id, meds, medSchedule);
+
+      qc.invalidateQueries({ queryKey: ["plan", birdId] });
+      qc.invalidateQueries({ queryKey: ["tasks", plan.id] });
+    }, 600);
+    return () => clearTimeout(handle);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [weight, conditions, meds, medSchedule, whatsNormal, droppingsPath, clipPath, hydrated]);
+
+  async function uploadPhoto(file: File) {
+    if (!bird) return;
+    setUploading("photo");
+    try {
+      const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+      const path = `${bird.owner_id}/baselines/${birdId}/droppings-${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("bird-photos").upload(path, file, {
+        contentType: file.type || "image/jpeg",
+        upsert: true,
+      });
+      if (error) throw error;
+      if (droppingsPath) await supabase.storage.from("bird-photos").remove([droppingsPath]);
+      setDroppingsPath(path);
+      toast.success("Baseline photo saved.");
+    } catch (e: any) {
+      toast.error(e.message ?? "Upload failed");
+    } finally {
+      setUploading(null);
+    }
+  }
+
+  async function uploadClip(file: File) {
+    if (!bird) return;
+    if (file.size > 25 * 1024 * 1024) {
+      toast.error("Clip must be under 25 MB.");
+      return;
+    }
+    setUploading("clip");
+    try {
+      const ext = (file.name.split(".").pop() || "mp4").toLowerCase();
+      const path = `${bird.owner_id}/baselines/${birdId}/clip-${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("bird-photos").upload(path, file, {
+        contentType: file.type || "video/mp4",
+        upsert: true,
+      });
+      if (error) throw error;
+      if (clipPath) await supabase.storage.from("bird-photos").remove([clipPath]);
+      setClipPath(path);
+      toast.success("Baseline clip saved.");
+    } catch (e: any) {
+      toast.error(e.message ?? "Upload failed");
+    } finally {
+      setUploading(null);
+    }
+  }
+
+  async function removePhoto() {
+    if (droppingsPath) await supabase.storage.from("bird-photos").remove([droppingsPath]);
+    setDroppingsPath(null);
+  }
+  async function removeClip() {
+    if (clipPath) await supabase.storage.from("bird-photos").remove([clipPath]);
+    setClipPath(null);
+  }
+
+  if (isLoading || !plan || !bird) return <div className="h-32 animate-pulse rounded-2xl bg-sage-100" />;
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
+        <p className="text-sm font-semibold">Help your sitter know what's normal for {birdName}, so they can spot what isn't.</p>
+      </div>
+
+      <Card title="Normal weight (grams)" hint="Optional. Updating this adds an entry to the weight log.">
+        <input
+          className="input"
+          inputMode="decimal"
+          placeholder="e.g. 410"
+          value={weight}
+          onChange={(e) => setWeight(e.target.value.replace(/[^0-9.]/g, ""))}
+        />
+      </Card>
+
+      <Card title="Photo of normal droppings" hint="Optional. Private — only your assigned sitter can view it.">
+        {droppingsPreview ? (
+          <div className="space-y-2">
+            <img src={droppingsPreview} alt="Baseline droppings" className="h-40 w-full rounded-xl object-cover ring-1 ring-sage-200" />
+            <div className="flex gap-2">
+              <label className="flex-1 cursor-pointer rounded-xl border border-sage-200 bg-white py-2 text-center text-xs font-semibold text-sage-700">
+                Replace
+                <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadPhoto(e.target.files[0])} />
+              </label>
+              <button type="button" onClick={removePhoto} className="flex-1 rounded-xl border border-sage-200 bg-white py-2 text-xs font-semibold text-warn-red">
+                Remove
+              </button>
+            </div>
+          </div>
+        ) : (
+          <label className="block cursor-pointer rounded-xl border-2 border-dashed border-sage-200 bg-sage-50 p-4 text-center">
+            <span className="text-sm font-semibold text-sage-700">{uploading === "photo" ? "Uploading…" : "Tap to upload a photo"}</span>
+            <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadPhoto(e.target.files[0])} />
+          </label>
+        )}
+      </Card>
+
+      <Card title="Short clip of normal behavior or vocalizing" hint="Optional, up to 25 MB. Private — only your assigned sitter can view it.">
+        {clipPreview ? (
+          <div className="space-y-2">
+            <video src={clipPreview} controls className="h-48 w-full rounded-xl bg-black object-contain ring-1 ring-sage-200" />
+            <div className="flex gap-2">
+              <label className="flex-1 cursor-pointer rounded-xl border border-sage-200 bg-white py-2 text-center text-xs font-semibold text-sage-700">
+                Replace
+                <input type="file" accept="video/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadClip(e.target.files[0])} />
+              </label>
+              <button type="button" onClick={removeClip} className="flex-1 rounded-xl border border-sage-200 bg-white py-2 text-xs font-semibold text-warn-red">
+                Remove
+              </button>
+            </div>
+          </div>
+        ) : (
+          <label className="block cursor-pointer rounded-xl border-2 border-dashed border-sage-200 bg-sage-50 p-4 text-center">
+            <span className="text-sm font-semibold text-sage-700">{uploading === "clip" ? "Uploading…" : "Tap to upload a clip"}</span>
+            <input type="file" accept="video/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadClip(e.target.files[0])} />
+          </label>
+        )}
+      </Card>
+
+      <Card title="Known conditions">
+        <textarea
+          className="input area"
+          placeholder="e.g. Mild feather plucking; old wing injury (no flight)."
+          value={conditions}
+          maxLength={500}
+          onChange={(e) => setConditions(e.target.value)}
+        />
+      </Card>
+
+      <Card title="Medications" hint="Adding a medication here also creates a matching task in the Routine tab.">
+        <input
+          className="input"
+          placeholder="e.g. Metacam 0.1ml"
+          value={meds}
+          maxLength={300}
+          onChange={(e) => setMeds(e.target.value)}
+        />
+        <input
+          className="input mt-2"
+          placeholder="Schedule (e.g. once daily in the morning with food)"
+          value={medSchedule}
+          maxLength={300}
+          onChange={(e) => setMedSchedule(e.target.value)}
+        />
+      </Card>
+
+      <Card title="What's normal for this bird">
+        <textarea
+          className="input area"
+          placeholder="e.g. Loud whistles at sunrise and sunset are normal. Naps mid-afternoon for ~30 min. Likes to flap on the perch for exercise."
+          value={whatsNormal}
+          maxLength={800}
+          onChange={(e) => setWhatsNormal(e.target.value)}
+        />
+      </Card>
+
+      <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.65rem .8rem;font-size:16px;outline:none}.input:focus{border-color:var(--sage-600);box-shadow:0 0 0 3px rgb(74 103 65 / .15)}.area{min-height:60px;line-height:1.4}`}</style>
+    </div>
+  );
+}
+
+// Keep exactly one Medication routine task in sync with the medication fields.
+async function syncMedicationTask(planId: string, meds: string, schedule: string) {
+  const { data: existing } = await supabase
+    .from("routine_tasks")
+    .select("id, title, instructions")
+    .eq("care_plan_id", planId)
+    .ilike("title", `${MED_TASK_PREFIX}%`);
+  const med = meds.trim();
+  const sched = schedule.trim();
+  const title = med ? `${MED_TASK_PREFIX}: ${med}` : "";
+  const instructions = sched || null;
+
+  if (!med) {
+    if (existing && existing.length) {
+      await supabase.from("routine_tasks").delete().in("id", existing.map((t: any) => t.id));
+    }
+    return;
+  }
+
+  if (!existing || existing.length === 0) {
+    await supabase.from("routine_tasks").insert({
+      care_plan_id: planId,
+      title,
+      instructions,
+      category: "morning",
+      sort_order: 999,
+    } as any);
+  } else {
+    const [first, ...rest] = existing as any[];
+    await supabase.from("routine_tasks").update({ title, instructions } as any).eq("id", first.id);
+    if (rest.length) await supabase.from("routine_tasks").delete().in("id", rest.map((t) => t.id));
+  }
 }
