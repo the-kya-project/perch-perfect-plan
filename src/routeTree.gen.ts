@@ -20,7 +20,6 @@ import { Route as SitterTokenScanRouteImport } from './routes/sitter/$token/scan
 import { Route as SitterTokenGuideRouteImport } from './routes/sitter/$token/guide'
 import { Route as SitterTokenEmergencyRouteImport } from './routes/sitter/$token/emergency'
 import { Route as AuthenticatedBirdsNewRouteImport } from './routes/_authenticated/birds/new'
-import { Route as AuthenticatedBirdsBirdIdRouteImport } from './routes/_authenticated/birds/$birdId'
 import { Route as AuthenticatedBirdsBirdIdIndexRouteImport } from './routes/_authenticated/birds/$birdId.index'
 import { Route as AuthenticatedBirdsBirdIdSetupRouteImport } from './routes/_authenticated/birds/$birdId.setup'
 
@@ -78,23 +77,17 @@ const AuthenticatedBirdsNewRoute = AuthenticatedBirdsNewRouteImport.update({
   path: '/birds/new',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedBirdsBirdIdRoute =
-  AuthenticatedBirdsBirdIdRouteImport.update({
-    id: '/birds/$birdId',
-    path: '/birds/$birdId',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedBirdsBirdIdIndexRoute =
   AuthenticatedBirdsBirdIdIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
+    id: '/birds/$birdId/',
+    path: '/birds/$birdId/',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedBirdsBirdIdSetupRoute =
   AuthenticatedBirdsBirdIdSetupRouteImport.update({
-    id: '/setup',
-    path: '/setup',
-    getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
+    id: '/birds/$birdId/setup',
+    path: '/birds/$birdId/setup',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -103,7 +96,6 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/sitter/$token': typeof SitterTokenRouteRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
-  '/birds/$birdId': typeof AuthenticatedBirdsBirdIdRouteWithChildren
   '/birds/new': typeof AuthenticatedBirdsNewRoute
   '/sitter/$token/emergency': typeof SitterTokenEmergencyRoute
   '/sitter/$token/guide': typeof SitterTokenGuideRoute
@@ -133,7 +125,6 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/sitter/$token': typeof SitterTokenRouteRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
-  '/_authenticated/birds/$birdId': typeof AuthenticatedBirdsBirdIdRouteWithChildren
   '/_authenticated/birds/new': typeof AuthenticatedBirdsNewRoute
   '/sitter/$token/emergency': typeof SitterTokenEmergencyRoute
   '/sitter/$token/guide': typeof SitterTokenGuideRoute
@@ -150,7 +141,6 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/sitter/$token'
     | '/dashboard'
-    | '/birds/$birdId'
     | '/birds/new'
     | '/sitter/$token/emergency'
     | '/sitter/$token/guide'
@@ -179,7 +169,6 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/sitter/$token'
     | '/_authenticated/dashboard'
-    | '/_authenticated/birds/$birdId'
     | '/_authenticated/birds/new'
     | '/sitter/$token/emergency'
     | '/sitter/$token/guide'
@@ -276,56 +265,35 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBirdsNewRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/birds/$birdId': {
-      id: '/_authenticated/birds/$birdId'
-      path: '/birds/$birdId'
-      fullPath: '/birds/$birdId'
-      preLoaderRoute: typeof AuthenticatedBirdsBirdIdRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/birds/$birdId/': {
       id: '/_authenticated/birds/$birdId/'
-      path: '/'
+      path: '/birds/$birdId'
       fullPath: '/birds/$birdId/'
       preLoaderRoute: typeof AuthenticatedBirdsBirdIdIndexRouteImport
-      parentRoute: typeof AuthenticatedBirdsBirdIdRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/birds/$birdId/setup': {
       id: '/_authenticated/birds/$birdId/setup'
-      path: '/setup'
+      path: '/birds/$birdId/setup'
       fullPath: '/birds/$birdId/setup'
       preLoaderRoute: typeof AuthenticatedBirdsBirdIdSetupRouteImport
-      parentRoute: typeof AuthenticatedBirdsBirdIdRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
   }
 }
 
-interface AuthenticatedBirdsBirdIdRouteChildren {
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedBirdsNewRoute: typeof AuthenticatedBirdsNewRoute
   AuthenticatedBirdsBirdIdSetupRoute: typeof AuthenticatedBirdsBirdIdSetupRoute
   AuthenticatedBirdsBirdIdIndexRoute: typeof AuthenticatedBirdsBirdIdIndexRoute
 }
 
-const AuthenticatedBirdsBirdIdRouteChildren: AuthenticatedBirdsBirdIdRouteChildren =
-  {
-    AuthenticatedBirdsBirdIdSetupRoute: AuthenticatedBirdsBirdIdSetupRoute,
-    AuthenticatedBirdsBirdIdIndexRoute: AuthenticatedBirdsBirdIdIndexRoute,
-  }
-
-const AuthenticatedBirdsBirdIdRouteWithChildren =
-  AuthenticatedBirdsBirdIdRoute._addFileChildren(
-    AuthenticatedBirdsBirdIdRouteChildren,
-  )
-
-interface AuthenticatedRouteRouteChildren {
-  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
-  AuthenticatedBirdsBirdIdRoute: typeof AuthenticatedBirdsBirdIdRouteWithChildren
-  AuthenticatedBirdsNewRoute: typeof AuthenticatedBirdsNewRoute
-}
-
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
-  AuthenticatedBirdsBirdIdRoute: AuthenticatedBirdsBirdIdRouteWithChildren,
   AuthenticatedBirdsNewRoute: AuthenticatedBirdsNewRoute,
+  AuthenticatedBirdsBirdIdSetupRoute: AuthenticatedBirdsBirdIdSetupRoute,
+  AuthenticatedBirdsBirdIdIndexRoute: AuthenticatedBirdsBirdIdIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
