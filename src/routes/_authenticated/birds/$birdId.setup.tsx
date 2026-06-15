@@ -583,7 +583,7 @@ function FoodWaterStep({
   }, [routine]);
 
   // form state — initialized once from plan
-  type DietItem = { name: string; amount: string; unit: string };
+  type DietItem = { name: string; amount: string; unit: string; times?: string[] };
   const [diet, setDiet] = useState<string[]>([]);
   const [dietOther, setDietOther] = useState("");
   const [dietDetails, setDietDetails] = useState<Record<string, DietItem[]>>({});
