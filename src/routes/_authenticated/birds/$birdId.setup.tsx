@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -13,6 +13,47 @@ import { AgePicker, BirdField, SpeciesPicker } from "@/components/BirdPickers";
 const setupSearch = z.object({
   step: z.coerce.number().int().min(1).max(TOTAL_STEPS).optional(),
 });
+
+
+/**
+ * Debounced autosave that ALSO supports an imperative flush from the parent
+ * wizard. When the user clicks Next/Back, the wizard calls the registered
+ * flush function so pending edits are persisted before the step unmounts.
+ */
+function useDebouncedAutosave(
+  save: () => Promise<void>,
+  deps: React.DependencyList,
+  enabled: boolean,
+  registerFlush?: (fn: (() => Promise<void>) | null) => void,
+  delay = 500,
+) {
+  const saveRef = useRef(save);
+  saveRef.current = save;
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!enabled) return;
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      timerRef.current = null;
+      void saveRef.current();
+    }, delay);
+    return () => {
+      if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled, ...deps]);
+
+  useEffect(() => {
+    if (!registerFlush) return;
+    const flush = async () => {
+      if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
+      await saveRef.current();
+    };
+    registerFlush(flush);
+    return () => registerFlush(null);
+  }, [registerFlush]);
+}
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/setup")({
   head: () => ({ meta: [{ title: "Set up bird — Parrot Care Co-Pilot" }] }),
@@ -43,6 +84,16 @@ function BirdSetup() {
   useEffect(() => { setBlockNext(false); }, [step]);
   const [saving, setSaving] = useState(false);
 
+  // Imperative flush registered by the current step's autosave hook.
+  // Called before any navigation so pending edits persist immediately.
+  const flushRef = useRef<(() => Promise<void>) | null>(null);
+  const registerFlush = useCallback((fn: (() => Promise<void>) | null) => {
+    flushRef.current = fn;
+  }, []);
+  async function flushPending() {
+    try { await flushRef.current?.(); } catch { /* surfaced by per-row toasts */ }
+  }
+
   // Start at step one unless this bird has an unfinished saved position.
   // Explicit ?step= links still open the requested step.
   useEffect(() => {
@@ -67,6 +118,7 @@ function BirdSetup() {
   }
 
   async function onNext() {
+    await flushPending();
     if (step >= TOTAL_STEPS) {
       const ok = await persistStep(TOTAL_STEPS, true);
       if (ok) {
@@ -82,12 +134,14 @@ function BirdSetup() {
 
   async function onBack() {
     if (step <= 1) return;
+    await flushPending();
     const prev = step - 1;
     const ok = await persistStep(prev);
     if (ok) setStep(prev);
   }
 
   async function onSaveAndExit() {
+    await flushPending();
     const ok = await persistStep(step);
     if (ok) {
       toast.success("Progress saved.");
@@ -96,12 +150,14 @@ function BirdSetup() {
   }
 
   async function jumpToStep(target: number) {
+    await flushPending();
     const clamped = Math.min(TOTAL_STEPS, Math.max(1, target));
     const ok = await persistStep(clamped);
     if (ok) setStep(clamped);
   }
 
   async function finishAndGo(opts: { to: "dashboard-newsit" | "tabs" }) {
+    await flushPending();
     const ok = await persistStep(TOTAL_STEPS, true);
     if (!ok) return;
     if (opts.to === "dashboard-newsit") {
@@ -145,6 +201,7 @@ function BirdSetup() {
         onBlockNext={setBlockNext}
         onJumpToStep={jumpToStep}
         onFinish={finishAndGo}
+        registerFlush={registerFlush}
       />
     </SetupShell>
   );
@@ -157,6 +214,7 @@ function StepBody({
   onBlockNext,
   onJumpToStep,
   onFinish,
+  registerFlush,
 }: {
   step: number;
   birdId: string;
@@ -164,15 +222,16 @@ function StepBody({
   onBlockNext: (block: boolean) => void;
   onJumpToStep: (target: number) => void;
   onFinish: (opts: { to: "dashboard-newsit" | "tabs" }) => void;
+  registerFlush: (fn: (() => Promise<void>) | null) => void;
 }) {
-  if (step === 1) return <BasicsStep birdId={birdId} onBlockNext={onBlockNext} />;
+  if (step === 1) return <BasicsStep birdId={birdId} onBlockNext={onBlockNext} registerFlush={registerFlush} />;
   if (step === 2) return <DayInLifeStep birdId={birdId} />;
-  if (step === 3) return <FoodWaterStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} />;
-  if (step === 4) return <PersonalityStep birdId={birdId} birdName={birdName} />;
-  if (step === 5) return <EnvironmentStep birdId={birdId} />;
-  if (step === 6) return <HealthBaselineStep birdId={birdId} birdName={birdName} />;
+  if (step === 3) return <FoodWaterStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} registerFlush={registerFlush} />;
+  if (step === 4) return <PersonalityStep birdId={birdId} birdName={birdName} registerFlush={registerFlush} />;
+  if (step === 5) return <EnvironmentStep birdId={birdId} registerFlush={registerFlush} />;
+  if (step === 6) return <HealthBaselineStep birdId={birdId} birdName={birdName} registerFlush={registerFlush} />;
   if (step === 7) return <WatchFirstClipsStep birdId={birdId} />;
-  if (step === 8) return <EmergencyStep birdId={birdId} onBlockNext={onBlockNext} />;
+  if (step === 8) return <EmergencyStep birdId={birdId} onBlockNext={onBlockNext} registerFlush={registerFlush} />;
   if (step === 9) return <ReviewStep birdId={birdId} birdName={birdName} onJumpToStep={onJumpToStep} onFinish={onFinish} />;
 
 
@@ -221,7 +280,7 @@ const COMMON_TASKS = [
   "Cover for night",
 ];
 
-function BasicsStep({ birdId, onBlockNext }: { birdId: string; onBlockNext: (block: boolean) => void }) {
+function BasicsStep({ birdId, onBlockNext, registerFlush }: { birdId: string; onBlockNext: (block: boolean) => void; registerFlush?: (fn: (() => Promise<void>) | null) => void }) {
   const qc = useQueryClient();
   const { data: bird, isLoading } = useQuery({
     queryKey: ["bird-basics", birdId],
@@ -244,16 +303,18 @@ function BasicsStep({ birdId, onBlockNext }: { birdId: string; onBlockNext: (blo
     onBlockNext(!form?.name?.trim() || !form?.species?.trim());
   }, [form?.name, form?.species, onBlockNext]);
 
-  useEffect(() => {
-    if (!form || !hydrated) return;
-    const handle = setTimeout(async () => {
+  useDebouncedAutosave(
+    async () => {
+      if (!form) return;
       const { id, owner_id, created_at, updated_at, ...patch } = form;
       await supabase.from("birds").update(patch).eq("id", birdId);
       qc.invalidateQueries({ queryKey: ["bird", birdId] });
       qc.invalidateQueries({ queryKey: ["bird-setup", birdId] });
-    }, 500);
-    return () => clearTimeout(handle);
-  }, [form, hydrated, birdId, qc]);
+    },
+    [form, birdId, qc],
+    !!form && hydrated,
+    registerFlush,
+  );
 
   if (isLoading || !form) return <div className="h-32 animate-pulse rounded-2xl bg-sage-100" />;
 
@@ -540,10 +601,12 @@ function FoodWaterStep({
   birdId,
   birdName,
   onBlockNext,
+  registerFlush,
 }: {
   birdId: string;
   birdName: string;
   onBlockNext: (block: boolean) => void;
+  registerFlush?: (fn: (() => Promise<void>) | null) => void;
 }) {
   const qc = useQueryClient();
 
@@ -648,9 +711,9 @@ function FoodWaterStep({
   useEffect(() => { onBlockNext(!dietRowsValid); }, [dietRowsValid, onBlockNext]);
 
   // Persist (debounced) whenever form changes after hydration.
-  useEffect(() => {
-    if (!plan || !hydrated) return;
-    const handle = setTimeout(async () => {
+  useDebouncedAutosave(
+    async () => {
+      if (!plan) return;
       const dietLabels = diet.map((d) => DIET_OPTIONS.find((o) => o.value === d)?.label).filter(Boolean) as string[];
       if (diet.includes("other") && dietOther.trim()) dietLabels.push(dietOther.trim());
 
@@ -719,10 +782,11 @@ function FoodWaterStep({
         } as any)
         .eq("id", plan.id);
       qc.invalidateQueries({ queryKey: ["plan", birdId] });
-    }, 500);
-    return () => clearTimeout(handle);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [diet, dietOther, dietDetails, brand, amountValue, amountUnit, feedingTimes, fresh, freshOther, treatsNotes, treatsFreq, never, waterFreq, waterNotes, storage, hydrated]);
+    },
+    [diet, dietOther, dietDetails, brand, amountValue, amountUnit, feedingTimes, fresh, freshOther, treatsNotes, treatsFreq, never, waterFreq, waterNotes, storage],
+    !!plan && hydrated,
+    registerFlush,
+  );
 
   if (isLoading || !plan) return <div className="h-32 animate-pulse rounded-2xl bg-sage-100" />;
 
@@ -1063,7 +1127,7 @@ const STEP_UP_OPTIONS = [
   { value: "no", label: "No — cage-only is fine" },
 ];
 
-function PersonalityStep({ birdId, birdName }: { birdId: string; birdName: string }) {
+function PersonalityStep({ birdId, birdName, registerFlush }: { birdId: string; birdName: string; registerFlush?: (fn: (() => Promise<void>) | null) => void }) {
   const qc = useQueryClient();
   const { data: plan, isLoading } = useQuery({
     queryKey: ["plan-personality", birdId],
@@ -1093,9 +1157,9 @@ function PersonalityStep({ birdId, birdName }: { birdId: string; birdName: strin
     setHydrated(true);
   }, [plan, hydrated]);
 
-  useEffect(() => {
-    if (!plan || !hydrated) return;
-    const handle = setTimeout(async () => {
+  useDebouncedAutosave(
+    async () => {
+      if (!plan) return;
       const stepUpLabel = STEP_UP_OPTIONS.find((o) => o.value === stepUp)?.label;
       const handlingSummary = [
         stepUpLabel ? `Step up: ${stepUpLabel}` : "",
@@ -1118,10 +1182,11 @@ function PersonalityStep({ birdId, birdName }: { birdId: string; birdName: strin
         } as any)
         .eq("id", plan.id);
       qc.invalidateQueries({ queryKey: ["plan", birdId] });
-    }, 500);
-    return () => clearTimeout(handle);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stepUp, stepUpNotes, handlers, likes, fears, bite, hydrated]);
+    },
+    [stepUp, stepUpNotes, handlers, likes, fears, bite],
+    !!plan && hydrated,
+    registerFlush,
+  );
 
   if (isLoading || !plan) return <div className="h-32 animate-pulse rounded-2xl bg-sage-100" />;
 
@@ -1209,7 +1274,7 @@ const HAZARD_OPTIONS = [
   "Candles or diffusers",
 ];
 
-function EnvironmentStep({ birdId }: { birdId: string }) {
+function EnvironmentStep({ birdId, registerFlush }: { birdId: string; registerFlush?: (fn: (() => Promise<void>) | null) => void }) {
   const qc = useQueryClient();
   const { data: plan, isLoading } = useQuery({
     queryKey: ["plan-environment", birdId],
@@ -1239,9 +1304,9 @@ function EnvironmentStep({ birdId }: { birdId: string }) {
     setHydrated(true);
   }, [plan, hydrated]);
 
-  useEffect(() => {
-    if (!plan || !hydrated) return;
-    const handle = setTimeout(async () => {
+  useDebouncedAutosave(
+    async () => {
+      if (!plan) return;
       const modeLabel = OUT_OF_CAGE_OPTIONS.find((o) => o.value === oocMode)?.label;
       const oocSummary = [modeLabel ?? "", oocNotes.trim()].filter(Boolean).join(" — ");
       const allHazards = [...hazards, ...(hazardsOther.trim() ? [hazardsOther.trim()] : [])];
@@ -1262,10 +1327,11 @@ function EnvironmentStep({ birdId }: { birdId: string }) {
         } as any)
         .eq("id", plan.id);
       qc.invalidateQueries({ queryKey: ["plan", birdId] });
-    }, 500);
-    return () => clearTimeout(handle);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cageLoc, oocMode, oocNotes, hazards, hazardsOther, offLimits, hydrated]);
+    },
+    [cageLoc, oocMode, oocNotes, hazards, hazardsOther, offLimits],
+    !!plan && hydrated,
+    registerFlush,
+  );
 
   if (isLoading || !plan) return <div className="h-32 animate-pulse rounded-2xl bg-sage-100" />;
 
@@ -1337,7 +1403,7 @@ function EnvironmentStep({ birdId }: { birdId: string }) {
 
 const MED_TASK_PREFIX = "Medication";
 
-function HealthBaselineStep({ birdId, birdName }: { birdId: string; birdName: string }) {
+function HealthBaselineStep({ birdId, birdName, registerFlush }: { birdId: string; birdName: string; registerFlush?: (fn: (() => Promise<void>) | null) => void }) {
   const qc = useQueryClient();
 
   const { data: bird } = useQuery({
@@ -1403,9 +1469,9 @@ function HealthBaselineStep({ birdId, birdName }: { birdId: string; birdName: st
   }, [droppingsPath, clipPath]);
 
   // Debounced persist of text/numeric fields. Also feeds the weight log on change.
-  useEffect(() => {
-    if (!plan || !bird || !hydrated) return;
-    const handle = setTimeout(async () => {
+  useDebouncedAutosave(
+    async () => {
+      if (!plan || !bird) return;
       const newWeight = weight.trim() ? Number(weight) : null;
       await supabase
         .from("birds")
@@ -1439,10 +1505,12 @@ function HealthBaselineStep({ birdId, birdName }: { birdId: string; birdName: st
 
       qc.invalidateQueries({ queryKey: ["plan", birdId] });
       qc.invalidateQueries({ queryKey: ["tasks", plan.id] });
-    }, 600);
-    return () => clearTimeout(handle);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [weight, conditions, meds, medSchedule, whatsNormal, droppingsPath, clipPath, hydrated]);
+    },
+    [weight, conditions, meds, medSchedule, whatsNormal, droppingsPath, clipPath],
+    !!plan && !!bird && hydrated,
+    registerFlush,
+    600,
+  );
 
   async function uploadPhoto(file: File) {
     if (!bird) return;
@@ -1806,9 +1874,11 @@ const ASPCA_POISON_CONTROL = "(888) 426-4435";
 function EmergencyStep({
   birdId,
   onBlockNext,
+  registerFlush,
 }: {
   birdId: string;
   onBlockNext: (block: boolean) => void;
+  registerFlush?: (fn: (() => Promise<void>) | null) => void;
 }) {
   const qc = useQueryClient();
 
@@ -1875,9 +1945,8 @@ function EmergencyStep({
   useEffect(() => { onBlockNext(missing.length > 0); }, [missing.length, onBlockNext]);
 
   // Debounced persistence to emergency_contacts (upsert by bird_id).
-  useEffect(() => {
-    if (!hydrated) return;
-    const handle = setTimeout(async () => {
+  useDebouncedAutosave(
+    async () => {
       const payload: Record<string, any> = { bird_id: birdId };
       for (const f of EMERGENCY_FIELDS) payload[f] = values[f].trim() || null;
       const { error } = await supabase
@@ -1885,10 +1954,11 @@ function EmergencyStep({
         .upsert(payload, { onConflict: "bird_id" });
       if (error) toast.error(error.message);
       qc.invalidateQueries({ queryKey: ["emergency-contacts", birdId] });
-    }, 500);
-    return () => clearTimeout(handle);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [values, hydrated]);
+    },
+    [values, birdId],
+    hydrated,
+    registerFlush,
+  );
 
   if (isLoading || !bird) return <div className="h-32 animate-pulse rounded-2xl bg-sage-100" />;
 
