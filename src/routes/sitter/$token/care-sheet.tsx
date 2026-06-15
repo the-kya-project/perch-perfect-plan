@@ -176,7 +176,6 @@ function CareSheet() {
               {has(plan.food_hygiene_notes) && <p className="mt-2 text-xs text-sage-700 whitespace-pre-line">{plan.food_hygiene_notes}</p>}
             </div>
             {has(plan.food_storage) && <Field label="Food storage" value={plan.food_storage} />}
-            {has(plan.food_instructions) && <Field label="Owner's feeding notes" value={plan.food_instructions} />}
             <p className="rounded bg-warn-amber/10 p-2 text-[11px] font-semibold text-warn-amber">Do not introduce new foods while the owner is away.</p>
           </Section>
         )}
