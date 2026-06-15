@@ -21,9 +21,6 @@ function NewBird() {
   const [flight, setFlight] = useState("unknown");
   const [photo, setPhoto] = useState<string | null>(null);
   const [photoPos, setPhotoPos] = useState<string>("50% 50%");
-  const [normal, setNormal] = useState("");
-  const [min, setMin] = useState("");
-  const [max, setMax] = useState("");
   const [saving, setSaving] = useState(false);
 
   function onPhoto(e: React.ChangeEvent<HTMLInputElement>) {
