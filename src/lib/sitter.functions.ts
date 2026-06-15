@@ -10,6 +10,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { computeTriage, type ScanAnswer, type ScanFieldKey } from "./triage";
+import { mergeEmergency } from "./emergency";
 
 async function getAdmin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -70,6 +71,16 @@ export const getSitterContext = createServerFn({ method: "GET" })
     ]);
     if (birdRes.error || !birdRes.data) throw new Error("Bird not found.");
 
+    const { data: defaultsRow } = await sb
+      .from("owner_emergency_defaults")
+      .select("*")
+      .eq("owner_id", birdRes.data.owner_id)
+      .maybeSingle();
+    const mergedContacts = {
+      ...(contactsRes.data ?? { bird_id: activeId }),
+      ...mergeEmergency(contactsRes.data, defaultsRow),
+    };
+
     const tasksRes = planRes.data
       ? await sb
           .from("routine_tasks")
@@ -102,7 +113,7 @@ export const getSitterContext = createServerFn({ method: "GET" })
       activeBirdId: activeId,
       bird: birdRes.data,
       plan: planRes.data,
-      contacts: contactsRes.data,
+      contacts: mergedContacts,
       tasks: tasksRes.data ?? [],
       completions: completionsRes.data ?? [],
       todayLog: todayLogRes.data ?? null,

@@ -103,6 +103,10 @@ function Dashboard() {
           )}
         </section>
 
+        {birds.length > 0 && <DefaultsPanel />}
+
+
+
         {birds.length > 0 && (
           <section className="space-y-3">
             <h2 className="text-base font-bold">Sits</h2>
@@ -165,33 +169,42 @@ function SitForm({ birds, onCreated }: { birds: any[]; onCreated: () => void }) 
     setSaving(true);
     try {
       const birdIds = Array.from(selected);
-      const { data: contacts, error: ecErr } = await supabase
-        .from("emergency_contacts")
-        .select("bird_id, owner_phone, avian_vet_phone")
-        .in("bird_id", birdIds);
+      const [{ data: contacts, error: ecErr }, { data: u }] = await Promise.all([
+        supabase
+          .from("emergency_contacts")
+          .select("bird_id, owner_phone, avian_vet_phone")
+          .in("bird_id", birdIds),
+        supabase.auth.getUser(),
+      ]);
       if (ecErr) { toast.error(ecErr.message); setSaving(false); return; }
+      if (!u.user) { toast.error("You're signed out."); setSaving(false); return; }
+      const { data: defaults } = await supabase
+        .from("owner_emergency_defaults")
+        .select("owner_phone, avian_vet_phone")
+        .eq("owner_id", u.user.id)
+        .maybeSingle();
       const contactByBird = new Map((contacts ?? []).map((c: any) => [c.bird_id, c]));
+      const eff = (c: any, k: string) =>
+        (c?.[k]?.trim?.() || (defaults as any)?.[k]?.trim?.() || "");
       const missing = birdIds
         .map((id) => {
           const c = contactByBird.get(id);
           const needs: string[] = [];
-          if (!c?.owner_phone?.trim()) needs.push("your phone");
-          if (!c?.avian_vet_phone?.trim()) needs.push("avian vet phone");
+          if (!eff(c, "owner_phone")) needs.push("your phone");
+          if (!eff(c, "avian_vet_phone")) needs.push("avian vet phone");
           return needs.length ? { bird: birds.find((b: any) => b.id === id), needs } : null;
         })
         .filter(Boolean) as { bird: any; needs: string[] }[];
       if (missing.length) {
         const details = missing.map((m) => `${m.bird?.name ?? "Bird"}: ${m.needs.join(" & ")}`).join("; ");
         toast.error(
-          `Add the required emergency contacts before sharing a sitter link — ${details}. Open the bird's profile → Emergency contacts to fill them in.`,
+          `Add the required emergency contacts before sharing a sitter link — ${details}. Set account defaults below, or open the bird's Emergency tab.`,
           { duration: 8000 },
         );
         setSaving(false);
         return;
       }
 
-      const { data: u } = await supabase.auth.getUser();
-      if (!u.user) { toast.error("You're signed out."); setSaving(false); return; }
       const expires = new Date(end + "T23:59:59Z").toISOString();
       const { data: sit, error } = await supabase.from("sits").insert({
         owner_id: u.user.id,
@@ -279,5 +292,103 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-sage-600">{label}</span>
       {children}
     </label>
+  );
+}
+
+function DefaultsPanel() {
+  const qc = useQueryClient();
+  const [open, setOpen] = useState(false);
+  const { data: defaults } = useQuery({
+    queryKey: ["owner-defaults"],
+    queryFn: async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return null;
+      const { data } = await supabase
+        .from("owner_emergency_defaults")
+        .select("*")
+        .eq("owner_id", u.user.id)
+        .maybeSingle();
+      return data ?? { owner_id: u.user.id };
+    },
+  });
+  const [d, setD] = useState<any>(defaults ?? {});
+  const [saving, setSaving] = useState(false);
+  const fields: [string, string, boolean?][] = [
+    ["owner_phone", "Owner phone", true],
+    ["backup_name", "Backup contact name"],
+    ["backup_phone", "Backup contact phone"],
+    ["avian_vet_name", "Avian vet name"],
+    ["avian_vet_phone", "Avian vet phone", true],
+    ["avian_vet_address", "Avian vet address"],
+    ["emergency_vet_name", "Emergency vet name"],
+    ["emergency_vet_phone", "Emergency vet phone"],
+    ["emergency_vet_address", "Emergency vet address"],
+    ["poison_control", "Poison control number"],
+    ["carrier_location", "Carrier location"],
+    ["first_aid_kit_location", "First-aid kit location"],
+    ["emergency_authorization", "Emergency-care authorization"],
+    ["spending_limit", "Approved spending limit"],
+  ];
+  const filledCount = defaults
+    ? fields.filter(([k]) => typeof (defaults as any)[k] === "string" && (defaults as any)[k].trim()).length
+    : 0;
+
+  async function save() {
+    setSaving(true);
+    const { data: u } = await supabase.auth.getUser();
+    if (!u.user) { toast.error("Signed out."); setSaving(false); return; }
+    const row: Record<string, any> = { owner_id: u.user.id };
+    for (const [k] of fields) {
+      const v = d[k];
+      row[k] = typeof v === "string" && v.trim() === "" ? null : v ?? null;
+    }
+    const { error } = await supabase
+      .from("owner_emergency_defaults")
+      .upsert(row, { onConflict: "owner_id" });
+    setSaving(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Defaults saved. New and existing birds inherit any empty fields.");
+    setOpen(false);
+    qc.invalidateQueries({ queryKey: ["owner-defaults"] });
+  }
+
+  return (
+    <section className="space-y-3">
+      <div className="flex items-end justify-between">
+        <h2 className="text-base font-bold">Account emergency defaults</h2>
+        <button
+          type="button"
+          onClick={() => { setD(defaults ?? {}); setOpen((o) => !o); }}
+          className="text-xs font-semibold text-sage-700 underline"
+        >
+          {open ? "Close" : filledCount > 0 ? "Edit" : "Set up"}
+        </button>
+      </div>
+      <p className="text-xs text-sage-600">
+        Set owner phone, avian vet, and other emergency info <em>once</em>. Every bird inherits these unless its Emergency tab overrides a field.
+      </p>
+      {!open ? (
+        <div className="rounded-2xl bg-white p-4 ring-1 ring-sage-100 text-xs text-sage-700">
+          {filledCount === 0
+            ? "No defaults set yet — each bird needs its own contacts until you fill these in."
+            : `${filledCount} of ${fields.length} default fields set.`}
+        </div>
+      ) : (
+        <div className="space-y-3 rounded-2xl bg-white p-4 ring-1 ring-sage-100">
+          {fields.map(([k, l, required]) => (
+            <Field key={k} label={required ? `${l} *` : l}>
+              <input
+                className="input"
+                value={d[k] ?? ""}
+                onChange={(e) => setD({ ...d, [k]: e.target.value })}
+              />
+            </Field>
+          ))}
+          <button disabled={saving} onClick={save} className="mt-2 w-full rounded-xl bg-sage-600 py-3 text-sm font-semibold text-white disabled:opacity-50">
+            {saving ? "Saving..." : "Save account defaults"}
+          </button>
+        </div>
+      )}
+    </section>
   );
 }
