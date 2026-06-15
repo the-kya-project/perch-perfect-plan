@@ -53,8 +53,13 @@ function BirdEditor() {
   const { data: sits = [] } = useQuery({
     queryKey: ["sits", birdId],
     queryFn: async () => {
-      const { data } = await supabase.from("sits").select("*").eq("bird_id", birdId).order("start_date", { ascending: false });
-      return data ?? [];
+      const { data } = await supabase
+        .from("sit_birds")
+        .select("sit:sits(*)")
+        .eq("bird_id", birdId);
+      const rows = (data ?? []).map((r: any) => r.sit).filter(Boolean);
+      rows.sort((a: any, b: any) => (a.start_date < b.start_date ? 1 : -1));
+      return rows;
     },
   });
 
