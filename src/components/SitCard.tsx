@@ -1,6 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Calendar, Link2, Copy } from "lucide-react";
 import { toast } from "sonner";
+import { SitChecklist } from "@/components/SitChecklist";
 
 type Bird = { id: string; name: string };
 
@@ -87,6 +88,9 @@ export function SitCard({ sit, birds = [], onChange }: { sit: any; birds?: Bird[
           <span className="flex-1 truncate text-[11px] text-sage-700">{url}</span>
           <button onClick={copy} className="rounded p-1 text-sage-600" aria-label="Copy link"><Copy className="size-3.5" /></button>
         </div>
+      )}
+      {!sit.revoked && (
+        <SitChecklist sitId={sit.id} birds={birds} />
       )}
       <div className="mt-3 flex gap-3 text-xs font-semibold">
         {!sit.revoked && !expired && (
