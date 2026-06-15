@@ -32,10 +32,55 @@ function Dashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("birds")
-        .select("id, name, species, photo_url, photo_position, setup_complete, setup_step")
+        .select("id, owner_id, name, species, photo_url, photo_position, setup_complete, setup_step, normal_weight")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data ?? [];
+    },
+  });
+
+  const birdIds = useMemo(() => birds.map((b: any) => b.id), [birds]);
+  const ownerId = birds[0]?.owner_id as string | undefined;
+
+  // Pull every input feeding the per-bird completeness indicator in one shot
+  // per table to avoid N+1 round trips on the dashboard.
+  const { data: completenessData } = useQuery({
+    queryKey: ["birds-completeness", birdIds, ownerId],
+    enabled: birdIds.length > 0,
+    queryFn: async () => {
+      const [plansRes, contactsRes, defaultsRes] = await Promise.all([
+        supabase.from("care_plans").select("*").in("bird_id", birdIds),
+        supabase.from("emergency_contacts").select("*").in("bird_id", birdIds),
+        ownerId
+          ? supabase
+              .from("owner_emergency_defaults")
+              .select("*")
+              .eq("owner_id", ownerId)
+              .maybeSingle()
+          : Promise.resolve({ data: null, error: null } as any),
+      ]);
+      const plans = (plansRes.data ?? []) as any[];
+      const planIds = plans.map((p) => p.id);
+      const tasksRes = planIds.length
+        ? await supabase
+            .from("routine_tasks")
+            .select("care_plan_id")
+            .in("care_plan_id", planIds)
+        : { data: [] as any[] };
+      const tasksByPlan = new Map<string, number>();
+      for (const row of (tasksRes.data ?? []) as any[]) {
+        tasksByPlan.set(row.care_plan_id, (tasksByPlan.get(row.care_plan_id) ?? 0) + 1);
+      }
+      const planByBird = new Map(plans.map((p) => [p.bird_id, p]));
+      const contactByBird = new Map(
+        ((contactsRes.data ?? []) as any[]).map((c) => [c.bird_id, c]),
+      );
+      return {
+        planByBird,
+        tasksByPlan,
+        contactByBird,
+        defaults: (defaultsRes as any)?.data ?? null,
+      };
     },
   });
 
