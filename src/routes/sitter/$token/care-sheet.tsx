@@ -176,24 +176,32 @@ function CareSheet() {
               {has(plan.food_hygiene_notes) && <p className="mt-2 text-xs text-sage-700 whitespace-pre-line">{plan.food_hygiene_notes}</p>}
             </div>
             {has(plan.food_storage) && <Field label="Food storage" value={plan.food_storage} />}
-            {has(plan.food_instructions) && <Field label="Owner's feeding notes" value={plan.food_instructions} />}
             <p className="rounded bg-warn-amber/10 p-2 text-[11px] font-semibold text-warn-amber">Do not introduce new foods while the owner is away.</p>
           </Section>
         )}
 
         {showHandling && (
           <>
-            {handlingDangerous && (
+            {(handlingDangerous || has(plan.bite_risk) || neverFeed.length > 0) && (
               <Section title="Handling — read first" danger>
-                {has(plan.handling_rules) && <Field label="Handling rules" value={plan.handling_rules} />}
-                {has(plan.step_up) && <Field label="Step up" value={plan.step_up} />}
+                <ul className="space-y-1.5 text-sm text-sage-900">
+                  {handlingDangerous && (
+                    <li className="flex gap-2"><ShieldAlert className="mt-0.5 size-4 shrink-0 text-warn-red" /><span>Handling restrictions apply — see the rules below before any contact.</span></li>
+                  )}
+                  {has(plan.bite_risk) && (
+                    <li className="flex gap-2"><AlertTriangle className="mt-0.5 size-4 shrink-0 text-warn-red" /><span>Watch for bite warning signs — full list in Handling & personality.</span></li>
+                  )}
+                  {neverFeed.length > 0 && (
+                    <li className="flex gap-2"><AlertTriangle className="mt-0.5 size-4 shrink-0 text-warn-red" /><span>Never feed the toxic items listed above.</span></li>
+                  )}
+                </ul>
               </Section>
             )}
             <Section title="Handling & personality">
-              {!handlingDangerous && has(plan.step_up) && <Field label="Step up" value={plan.step_up} />}
+              {has(plan.step_up) && <Field label="Step up" value={plan.step_up} />}
               {has(plan.step_up_notes) && <Field label="Step up notes" value={plan.step_up_notes} />}
               {has(plan.handlers) && <Field label="Who can handle" value={plan.handlers} />}
-              {!handlingDangerous && has(plan.handling_rules) && <Field label="Handling rules" value={plan.handling_rules} />}
+              {has(plan.handling_rules) && <Field label="Handling rules" value={plan.handling_rules} />}
               {has(plan.likes) && <Field label="Likes" value={plan.likes} />}
               {(has(plan.fears_triggers) || has(plan.known_triggers)) && (
                 <div className="rounded-lg bg-warn-amber/10 p-3 ring-1 ring-warn-amber/20">
