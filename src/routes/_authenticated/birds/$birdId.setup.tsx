@@ -1867,9 +1867,11 @@ const ASPCA_POISON_CONTROL = "(888) 426-4435";
 function EmergencyStep({
   birdId,
   onBlockNext,
+  registerFlush,
 }: {
   birdId: string;
   onBlockNext: (block: boolean) => void;
+  registerFlush?: (fn: (() => Promise<void>) | null) => void;
 }) {
   const qc = useQueryClient();
 
