@@ -15,7 +15,7 @@ const birdSearch = z.object({
   tab: z.enum(["plan", "routine", "emergency", "sits", "logs"]).optional(),
 });
 
-export const Route = createFileRoute("/_authenticated/birds/$birdId")({
+export const Route = createFileRoute("/_authenticated/birds/$birdId/")({
   head: () => ({ meta: [{ title: "Care plan — Parrot Care Companion" }] }),
   validateSearch: birdSearch,
   component: BirdEditor,
