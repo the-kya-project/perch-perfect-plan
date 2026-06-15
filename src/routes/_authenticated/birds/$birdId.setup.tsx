@@ -117,7 +117,7 @@ function BirdSetup() {
     }
   }
 
-  if (isLoading || !bird || bird.setup_complete) {
+  if (isLoading || !bird || (bird.setup_complete && !stepParam)) {
     return (
       <SetupShell step={step} title="Loading…">
         <div className="h-32 animate-pulse rounded-2xl bg-sage-100" />
