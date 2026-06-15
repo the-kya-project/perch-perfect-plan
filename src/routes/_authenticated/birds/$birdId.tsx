@@ -151,38 +151,36 @@ function SpeciesPicker({ value, onChange }: { value: string; onChange: (v: strin
 }
 
 function AgePicker({ age, birthDate, onChange }: { age: string; birthDate: string; onChange: (next: { age: string; birthDate: string | null }) => void }) {
-  const [mode, setMode] = useState<"approx" | "exact">(birthDate ? "exact" : "approx");
   const computed = ageFromBirthDate(birthDate);
+  const hasBirth = !!birthDate;
   return (
     <div className="grid grid-cols-2 gap-3">
-      <Field label="Age">
+      <Field label="Age" hint={hasBirth ? "From birthdate" : undefined}>
         <select
-          className="input"
-          value={mode === "exact" ? "__exact__" : age}
-          onChange={(e) => {
-            if (e.target.value === "__exact__") { setMode("exact"); }
-            else { setMode("approx"); onChange({ age: e.target.value, birthDate: null }); }
-          }}
+          className="input disabled:opacity-60"
+          disabled={hasBirth}
+          value={hasBirth ? (computed ?? "") : age}
+          onChange={(e) => onChange({ age: e.target.value, birthDate: null })}
         >
           <option value="">Unknown</option>
           {AGE_OPTIONS.map((a) => <option key={a} value={a}>{a}</option>)}
-          <option value="__exact__">Use exact birthdate…</option>
         </select>
       </Field>
-      {mode === "exact" && (
-        <Field label="Birth date" hint={computed ? `Currently ${computed}` : undefined}>
-          <input
-            className="input"
-            type="date"
-            max={new Date().toISOString().slice(0, 10)}
-            value={birthDate ?? ""}
-            onChange={(e) => {
-              const bd = e.target.value || null;
-              onChange({ age: ageFromBirthDate(bd) ?? "", birthDate: bd });
-            }}
-          />
-        </Field>
-      )}
+      <Field label="Birth date" hint="Optional — sets age automatically">
+        <input
+          className="input"
+          type="date"
+          max={new Date().toISOString().slice(0, 10)}
+          value={birthDate ?? ""}
+          onChange={(e) => {
+            const bd = e.target.value || null;
+            onChange({ age: ageFromBirthDate(bd) ?? age, birthDate: bd });
+          }}
+        />
+      </Field>
+    </div>
+  );
+}
     </div>
   );
 }
