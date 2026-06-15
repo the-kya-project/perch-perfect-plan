@@ -1,0 +1,15 @@
+ALTER TABLE public.care_plans
+  ADD COLUMN IF NOT EXISTS diet_types text[] NOT NULL DEFAULT '{}',
+  ADD COLUMN IF NOT EXISTS diet_other text,
+  ADD COLUMN IF NOT EXISTS food_brand text,
+  ADD COLUMN IF NOT EXISTS amount_value numeric,
+  ADD COLUMN IF NOT EXISTS amount_unit text,
+  ADD COLUMN IF NOT EXISTS feeding_times text[] NOT NULL DEFAULT '{}',
+  ADD COLUMN IF NOT EXISTS fresh_foods text[] NOT NULL DEFAULT '{}',
+  ADD COLUMN IF NOT EXISTS fresh_foods_other text,
+  ADD COLUMN IF NOT EXISTS treats_notes text,
+  ADD COLUMN IF NOT EXISTS treats_frequency text,
+  ADD COLUMN IF NOT EXISTS never_feed text[] NOT NULL DEFAULT '{}',
+  ADD COLUMN IF NOT EXISTS water_frequency text,
+  ADD COLUMN IF NOT EXISTS water_notes text,
+  ADD COLUMN IF NOT EXISTS food_storage text;

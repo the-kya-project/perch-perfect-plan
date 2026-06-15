@@ -85,15 +85,25 @@ export type Database = {
       }
       care_plans: {
         Row: {
+          amount_unit: string | null
+          amount_value: number | null
           bird_id: string
           cleaning_instructions: string | null
           created_at: string
+          diet_other: string | null
+          diet_types: string[]
+          feeding_times: string[]
+          food_brand: string | null
           food_instructions: string | null
+          food_storage: string | null
           foods_never_allowed: string | null
           fresh_food_removal: string | null
+          fresh_foods: string[]
+          fresh_foods_other: string | null
           handling_rules: string | null
           id: string
           known_triggers: string | null
+          never_feed: string[]
           normal_activity: string | null
           normal_appetite: string | null
           normal_behavior_with_strangers: string | null
@@ -105,21 +115,35 @@ export type Database = {
           out_of_cage_rules: string | null
           safety_rules: string | null
           treats_allowed: string | null
+          treats_frequency: string | null
+          treats_notes: string | null
           updated_at: string
+          water_frequency: string | null
           water_instructions: string | null
+          water_notes: string | null
           when_to_call_owner: string | null
           when_to_call_vet: string | null
         }
         Insert: {
+          amount_unit?: string | null
+          amount_value?: number | null
           bird_id: string
           cleaning_instructions?: string | null
           created_at?: string
+          diet_other?: string | null
+          diet_types?: string[]
+          feeding_times?: string[]
+          food_brand?: string | null
           food_instructions?: string | null
+          food_storage?: string | null
           foods_never_allowed?: string | null
           fresh_food_removal?: string | null
+          fresh_foods?: string[]
+          fresh_foods_other?: string | null
           handling_rules?: string | null
           id?: string
           known_triggers?: string | null
+          never_feed?: string[]
           normal_activity?: string | null
           normal_appetite?: string | null
           normal_behavior_with_strangers?: string | null
@@ -131,21 +155,35 @@ export type Database = {
           out_of_cage_rules?: string | null
           safety_rules?: string | null
           treats_allowed?: string | null
+          treats_frequency?: string | null
+          treats_notes?: string | null
           updated_at?: string
+          water_frequency?: string | null
           water_instructions?: string | null
+          water_notes?: string | null
           when_to_call_owner?: string | null
           when_to_call_vet?: string | null
         }
         Update: {
+          amount_unit?: string | null
+          amount_value?: number | null
           bird_id?: string
           cleaning_instructions?: string | null
           created_at?: string
+          diet_other?: string | null
+          diet_types?: string[]
+          feeding_times?: string[]
+          food_brand?: string | null
           food_instructions?: string | null
+          food_storage?: string | null
           foods_never_allowed?: string | null
           fresh_food_removal?: string | null
+          fresh_foods?: string[]
+          fresh_foods_other?: string | null
           handling_rules?: string | null
           id?: string
           known_triggers?: string | null
+          never_feed?: string[]
           normal_activity?: string | null
           normal_appetite?: string | null
           normal_behavior_with_strangers?: string | null
@@ -157,8 +195,12 @@ export type Database = {
           out_of_cage_rules?: string | null
           safety_rules?: string | null
           treats_allowed?: string | null
+          treats_frequency?: string | null
+          treats_notes?: string | null
           updated_at?: string
+          water_frequency?: string | null
           water_instructions?: string | null
+          water_notes?: string | null
           when_to_call_owner?: string | null
           when_to_call_vet?: string | null
         }
