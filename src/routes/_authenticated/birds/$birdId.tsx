@@ -122,6 +122,18 @@ function BirdEditor() {
       </header>
 
       <main className="mx-auto max-w-md space-y-4 px-4 py-5">
+        <Link
+          to="/birds/$birdId/setup"
+          params={{ birdId }}
+          search={{ step: 2 }}
+          className="flex items-center justify-between gap-3 rounded-2xl bg-sage-900 px-4 py-3 text-white shadow-sm active:scale-[0.99]"
+        >
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-wider text-sage-300">Guided walkthrough</p>
+            <p className="text-sm font-semibold">Build {bird.name}'s care plan step by step</p>
+          </div>
+          <span className="rounded-lg bg-white/10 px-2.5 py-1 text-[11px] font-bold">Start</span>
+        </Link>
         {tab === "plan" && plan && <PlanForm birdId={birdId} bird={bird} plan={plan} onSaved={() => { qc.invalidateQueries({ queryKey: ["plan", birdId] }); qc.invalidateQueries({ queryKey: ["bird", birdId] }); }} />}
         {tab === "routine" && plan && <RoutineEditor planId={plan.id} tasks={tasks} onChange={() => qc.invalidateQueries({ queryKey: ["tasks", plan.id] })} />}
         {tab === "emergency" && contacts && <ContactsForm birdId={birdId} contacts={contacts} defaults={defaults ?? null} onSaved={() => qc.invalidateQueries({ queryKey: ["contacts", birdId] })} />}
