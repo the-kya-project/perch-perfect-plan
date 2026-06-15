@@ -313,6 +313,52 @@ function PlanForm({ birdId, bird, plan, onSaved }: { birdId: string; bird: any; 
       <button disabled={saving} onClick={save} className="sticky bottom-4 w-full rounded-xl bg-sage-600 py-3 text-sm font-semibold text-white shadow-lg disabled:opacity-50">
         {saving ? "Saving..." : "Save care plan"}
       </button>
+
+      <section className="rounded-2xl border-2 border-warn-red/30 bg-warn-red/5 p-4 space-y-3">
+        <h2 className="text-sm font-bold text-warn-red">Danger zone</h2>
+        <p className="text-xs text-sage-700">
+          Permanently delete {bird.name} and all of their care plan, routine, emergency info, weight logs, daily scans, and photos. This cannot be undone.
+        </p>
+        {!confirmDelete ? (
+          <button
+            type="button"
+            onClick={() => setConfirmDelete(true)}
+            className="inline-flex items-center gap-2 rounded-xl border border-warn-red/40 bg-white px-3 py-2 text-xs font-semibold text-warn-red"
+          >
+            <Trash2 className="size-4" /> Delete {bird.name}
+          </button>
+        ) : (
+          <div className="space-y-2">
+            <label className="block text-[11px] font-semibold text-sage-700">
+              Type <span className="font-bold">{bird.name}</span> to confirm
+            </label>
+            <input
+              className="input"
+              value={deleteText}
+              onChange={(e) => setDeleteText(e.target.value)}
+              placeholder={bird.name}
+              autoFocus
+            />
+            <div className="flex gap-2">
+              <button
+                type="button"
+                disabled={deleting || deleteText.trim() !== (bird.name ?? "").trim()}
+                onClick={deleteBird}
+                className="flex-1 rounded-xl bg-warn-red py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                {deleting ? "Deleting..." : `Permanently delete ${bird.name}`}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setConfirmDelete(false); setDeleteText(""); }}
+                className="rounded-xl border border-sage-200 px-3 py-2.5 text-sm"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+      </section>
     </>
   );
 }
