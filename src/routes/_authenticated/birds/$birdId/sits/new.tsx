@@ -21,20 +21,26 @@ function NewSit() {
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (!start || !end) { toast.error("Pick a start and end date."); return; }
+    if (end < start) { toast.error("End date must be on or after start date."); return; }
     setLoading(true);
-    const { data: u } = await supabase.auth.getUser();
-    if (!u.user) return;
-    // Token expires at end of end_date (UTC end of day)
-    const expires = new Date(end + "T23:59:59Z").toISOString();
-    const { error } = await supabase.from("sits").insert({
-      bird_id: birdId, owner_id: u.user.id,
-      sitter_name: sitterName, sitter_email: sitterEmail,
-      start_date: start, end_date: end, notes,
-      token_expires_at: expires, status: "upcoming",
-    });
-    if (error) { toast.error(error.message); setLoading(false); return; }
-    toast.success("Sit created. Share the link from the Sits tab.");
-    navigate({ to: "/birds/$birdId", params: { birdId } });
+    try {
+      const { data: u, error: uerr } = await supabase.auth.getUser();
+      if (uerr || !u.user) { toast.error("You're signed out. Please sign in again."); setLoading(false); return; }
+      const expires = new Date(end + "T23:59:59Z").toISOString();
+      const { error } = await supabase.from("sits").insert({
+        bird_id: birdId, owner_id: u.user.id,
+        sitter_name: sitterName || null, sitter_email: sitterEmail || null,
+        start_date: start, end_date: end, notes: notes || null,
+        token_expires_at: expires, status: "upcoming",
+      });
+      if (error) { toast.error(error.message); setLoading(false); return; }
+      toast.success("Sit created. Share the link from the Sits tab.");
+      navigate({ to: "/birds/$birdId", params: { birdId } });
+    } catch (err: any) {
+      toast.error(err?.message ?? "Could not create sit.");
+      setLoading(false);
+    }
   }
 
   return (

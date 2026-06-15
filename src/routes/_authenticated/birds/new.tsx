@@ -77,11 +77,15 @@ function NewBird() {
             </select>
           </Field>
         </div>
-        <div className="grid grid-cols-3 gap-3">
-          <Field label="Normal (g)"><input className="input" inputMode="decimal" value={normal} onChange={(e) => setNormal(e.target.value)} /></Field>
-          <Field label="Min (g)"><input className="input" inputMode="decimal" value={min} onChange={(e) => setMin(e.target.value)} /></Field>
-          <Field label="Max (g)"><input className="input" inputMode="decimal" value={max} onChange={(e) => setMax(e.target.value)} /></Field>
-        </div>
+        <fieldset className="rounded-xl border border-sage-200 bg-white/60 p-3">
+          <legend className="px-1 text-xs font-semibold uppercase tracking-wider text-sage-600">Weight (grams)</legend>
+          <p className="mb-2 text-xs text-sage-600">Used by the sitter's daily health scan to flag weight loss. You can fill this in later.</p>
+          <div className="grid grid-cols-3 gap-3">
+            <Field label="Normal"><input className="input" inputMode="decimal" placeholder="e.g. 110" value={normal} onChange={(e) => setNormal(e.target.value)} /></Field>
+            <Field label="Min"><input className="input" inputMode="decimal" placeholder="105" value={min} onChange={(e) => setMin(e.target.value)} /></Field>
+            <Field label="Max"><input className="input" inputMode="decimal" placeholder="115" value={max} onChange={(e) => setMax(e.target.value)} /></Field>
+          </div>
+        </fieldset>
         <button disabled={loading} className="mt-3 w-full rounded-xl bg-sage-600 py-3 text-sm font-semibold text-white disabled:opacity-50">
           {loading ? "Saving..." : "Save and continue"}
         </button>
