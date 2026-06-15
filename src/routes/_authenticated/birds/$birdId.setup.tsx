@@ -1131,6 +1131,52 @@ function FoodWaterStep({
         />
       </Card>
 
+      <Card title="Freshness & hygiene" hint="General defaults — adjust to fit your bird and routine.">
+        <label className="text-xs font-semibold text-sage-700">Remove fresh or wet food after</label>
+        <select
+          className="input mt-1"
+          value={String(removalMinutes)}
+          onChange={(e) => setRemovalMinutes(Number(e.target.value))}
+        >
+          {REMOVAL_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
+        </select>
+        <p className="mt-1 text-[11px] text-sage-600">Fresh food spoils fast and can grow bacteria. This tells your sitter when to take it out.</p>
+
+        <label className="mt-3 block text-xs font-semibold text-sage-700">Wash food bowls</label>
+        <select
+          className="input mt-1"
+          value={foodBowlWash}
+          onChange={(e) => setFoodBowlWash(e.target.value)}
+        >
+          {FOOD_BOWL_WASH_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
+        </select>
+
+        <label className="mt-3 block text-xs font-semibold text-sage-700">Wash water bowl or bottle</label>
+        <select
+          className="input mt-1"
+          value={waterBowlWash}
+          onChange={(e) => setWaterBowlWash(e.target.value)}
+        >
+          {WATER_BOWL_WASH_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
+        </select>
+        <p className="mt-1 text-[11px] text-sage-600">This is washing the bowl itself — separate from how often you change the water.</p>
+
+        <label className="mt-3 block text-xs font-semibold text-sage-700">Other food hygiene notes</label>
+        <textarea
+          className="input area mt-1"
+          placeholder="Optional — anything else the sitter should know about food/water hygiene."
+          value={hygieneNotes}
+          maxLength={500}
+          onChange={(e) => setHygieneNotes(e.target.value)}
+        />
+      </Card>
+
       <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.65rem .8rem;font-size:16px;outline:none}.input:focus{border-color:var(--sage-600);box-shadow:0 0 0 3px rgb(74 103 65 / .15)}.area{min-height:60px;line-height:1.4}`}</style>
     </div>
   );
