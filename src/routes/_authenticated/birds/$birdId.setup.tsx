@@ -1157,9 +1157,9 @@ function PersonalityStep({ birdId, birdName, registerFlush }: { birdId: string; 
     setHydrated(true);
   }, [plan, hydrated]);
 
-  useEffect(() => {
-    if (!plan || !hydrated) return;
-    const handle = setTimeout(async () => {
+  useDebouncedAutosave(
+    async () => {
+      if (!plan) return;
       const stepUpLabel = STEP_UP_OPTIONS.find((o) => o.value === stepUp)?.label;
       const handlingSummary = [
         stepUpLabel ? `Step up: ${stepUpLabel}` : "",
@@ -1182,10 +1182,11 @@ function PersonalityStep({ birdId, birdName, registerFlush }: { birdId: string; 
         } as any)
         .eq("id", plan.id);
       qc.invalidateQueries({ queryKey: ["plan", birdId] });
-    }, 500);
-    return () => clearTimeout(handle);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stepUp, stepUpNotes, handlers, likes, fears, bite, hydrated]);
+    },
+    [stepUp, stepUpNotes, handlers, likes, fears, bite],
+    !!plan && hydrated,
+    registerFlush,
+  );
 
   if (isLoading || !plan) return <div className="h-32 animate-pulse rounded-2xl bg-sage-100" />;
 
