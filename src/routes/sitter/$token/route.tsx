@@ -78,14 +78,6 @@ export function useSitterContext(token: string) {
   });
 }
 
-function SpinnerDot() {
-  return (
-    <span
-      className="ml-1 inline-block size-2 shrink-0 animate-pulse rounded-full bg-sage-400"
-      aria-hidden="true"
-    />
-  );
-}
 
 function SkeletonLine({ className = "" }: { className?: string }) {
   return <div className={`animate-pulse rounded-md bg-sage-200/70 ${className}`} />;
