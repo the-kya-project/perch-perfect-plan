@@ -1,10 +1,10 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { PhotoCropper } from "@/components/PhotoCropper";
 import { SpeciesPicker, AgePicker, BirdField } from "@/components/BirdPickers";
+import { SetupShell } from "@/components/SetupShell";
 
 export const Route = createFileRoute("/_authenticated/birds/new")({
   head: () => ({ meta: [{ title: "Add a bird — Parrot Care Companion" }] }),
@@ -24,7 +24,7 @@ function NewBird() {
   const [normal, setNormal] = useState("");
   const [min, setMin] = useState("");
   const [max, setMax] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   function onPhoto(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -35,12 +35,11 @@ function NewBird() {
     reader.readAsDataURL(file);
   }
 
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!name.trim()) { toast.error("Give your bird a name."); return; }
-    setLoading(true);
+  async function createBird(targetStep: number): Promise<string | null> {
+    if (!name.trim()) { toast.error("Give your bird a name."); return null; }
+    setSaving(true);
     const { data: u } = await supabase.auth.getUser();
-    if (!u.user) { setLoading(false); return; }
+    if (!u.user) { setSaving(false); return null; }
     const { data: bird, error } = await supabase.from("birds").insert({
       owner_id: u.user.id,
       name,
@@ -54,81 +53,96 @@ function NewBird() {
       normal_weight: normal ? Number(normal) : null,
       normal_weight_min: min ? Number(min) : null,
       normal_weight_max: max ? Number(max) : null,
+      setup_complete: false,
+      setup_step: targetStep,
     } as any).select().single();
-    if (error || !bird) { toast.error(error?.message ?? "Could not create bird."); setLoading(false); return; }
+    if (error || !bird) {
+      toast.error(error?.message ?? "Could not create bird.");
+      setSaving(false);
+      return null;
+    }
     await supabase.from("care_plans").insert({ bird_id: bird.id });
     await supabase.from("emergency_contacts").insert({ bird_id: bird.id });
-    toast.success(`${name} added.`);
-    navigate({ to: "/birds/$birdId", params: { birdId: bird.id } });
+    setSaving(false);
+    return bird.id;
+  }
+
+  async function onNext() {
+    const id = await createBird(2);
+    if (id) navigate({ to: "/birds/$birdId/setup", params: { birdId: id } });
+  }
+
+  async function onSaveAndExit() {
+    const id = await createBird(1);
+    if (id) {
+      toast.success(`${name} saved. Finish setup any time.`);
+      navigate({ to: "/dashboard" });
+    }
   }
 
   return (
-    <div className="min-h-screen bg-sage-50 pb-20">
-      <header className="border-b border-sage-100 bg-white">
-        <div className="mx-auto flex max-w-md items-center gap-3 px-4 py-3">
-          <Link to="/dashboard" className="rounded p-1 text-sage-600"><ArrowLeft className="size-5" /></Link>
-          <h1 className="text-sm font-bold">Add a bird</h1>
-        </div>
-      </header>
-      <form onSubmit={submit} noValidate className="mx-auto max-w-md space-y-4 px-4 py-6">
-        <p className="text-sm text-sage-600">Start with the basics. You can enrich the full care plan after.</p>
-
-        <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
-          <div className="flex items-start gap-3">
-            {photo ? (
-              <PhotoCropper src={photo} position={photoPos} onChange={setPhotoPos} size={120} />
-            ) : (
-              <div className="flex size-[120px] items-center justify-center rounded-xl bg-sage-100 text-[10px] uppercase tracking-wider text-sage-600">No photo</div>
+    <SetupShell
+      step={1}
+      title="The basics"
+      subtitle="Start with your bird's name and the details a sitter needs at a glance."
+      backDisabled
+      saving={saving}
+      onNext={onNext}
+      onSaveAndExit={onSaveAndExit}
+      nextDisabled={!name.trim()}
+    >
+      <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
+        <div className="flex items-start gap-3">
+          {photo ? (
+            <PhotoCropper src={photo} position={photoPos} onChange={setPhotoPos} size={120} />
+          ) : (
+            <div className="flex size-[120px] items-center justify-center rounded-xl bg-sage-100 text-[10px] uppercase tracking-wider text-sage-600">No photo</div>
+          )}
+          <div className="flex-1 space-y-2 pt-1">
+            <label className="inline-block cursor-pointer rounded-lg bg-sage-100 px-3 py-1.5 text-xs font-semibold text-sage-700">
+              {photo ? "Change photo" : "Add photo"}
+              <input type="file" accept="image/*" className="hidden" onChange={onPhoto} />
+            </label>
+            {photo && (
+              <button type="button" onClick={() => { setPhoto(null); setPhotoPos("50% 50%"); }} className="ml-2 text-xs font-semibold text-warn-red underline">Remove</button>
             )}
-            <div className="flex-1 space-y-2 pt-1">
-              <label className="inline-block cursor-pointer rounded-lg bg-sage-100 px-3 py-1.5 text-xs font-semibold text-sage-700">
-                {photo ? "Change photo" : "Add photo"}
-                <input type="file" accept="image/*" className="hidden" onChange={onPhoto} />
-              </label>
-              {photo && (
-                <button type="button" onClick={() => { setPhoto(null); setPhotoPos("50% 50%"); }} className="ml-2 text-xs font-semibold text-warn-red underline">Remove</button>
-              )}
-            </div>
           </div>
-          <BirdField label="Name"><input className="input" value={name} onChange={(e) => setName(e.target.value)} /></BirdField>
-          <SpeciesPicker value={species} onChange={setSpecies} />
-          <AgePicker
-            age={age}
-            birthDate={birthDate}
-            onChange={(next) => { setAge(next.age); setBirthDate(next.birthDate ?? ""); }}
-          />
-          <div className="grid grid-cols-2 gap-3">
-            <BirdField label="Sex">
-              <select className="input" value={sex} onChange={(e) => setSex(e.target.value)}>
-                <option value="">Unknown</option><option>Male</option><option>Female</option>
-              </select>
-            </BirdField>
-            <BirdField label="Flight">
-              <select className="input" value={flight} onChange={(e) => setFlight(e.target.value)}>
-                <option value="unknown">Unknown</option>
-                <option value="fully_flighted">Fully flighted</option>
-                <option value="clipped">Clipped</option>
-                <option value="partially_clipped">Partially clipped</option>
-              </select>
-            </BirdField>
-          </div>
-        </section>
+        </div>
+        <BirdField label="Name"><input className="input" value={name} onChange={(e) => setName(e.target.value)} /></BirdField>
+        <SpeciesPicker value={species} onChange={setSpecies} />
+        <AgePicker
+          age={age}
+          birthDate={birthDate}
+          onChange={(next) => { setAge(next.age); setBirthDate(next.birthDate ?? ""); }}
+        />
+        <div className="grid grid-cols-2 gap-3">
+          <BirdField label="Sex">
+            <select className="input" value={sex} onChange={(e) => setSex(e.target.value)}>
+              <option value="">Unknown</option><option>Male</option><option>Female</option>
+            </select>
+          </BirdField>
+          <BirdField label="Flight">
+            <select className="input" value={flight} onChange={(e) => setFlight(e.target.value)}>
+              <option value="unknown">Unknown</option>
+              <option value="fully_flighted">Fully flighted</option>
+              <option value="clipped">Clipped</option>
+              <option value="partially_clipped">Partially clipped</option>
+            </select>
+          </BirdField>
+        </div>
+      </section>
 
-        <fieldset className="rounded-2xl border border-sage-200 bg-white/60 p-3">
-          <legend className="px-1 text-xs font-semibold uppercase tracking-wider text-sage-600">Weight (grams)</legend>
-          <p className="mb-2 text-xs text-sage-600">Used by the sitter's daily health scan to flag weight loss. You can fill this in later.</p>
-          <div className="grid grid-cols-3 gap-3">
-            <BirdField label="Normal"><input className="input" inputMode="decimal" placeholder="e.g. 110" value={normal} onChange={(e) => setNormal(e.target.value)} /></BirdField>
-            <BirdField label="Min"><input className="input" inputMode="decimal" placeholder="105" value={min} onChange={(e) => setMin(e.target.value)} /></BirdField>
-            <BirdField label="Max"><input className="input" inputMode="decimal" placeholder="115" value={max} onChange={(e) => setMax(e.target.value)} /></BirdField>
-          </div>
-        </fieldset>
+      <fieldset className="rounded-2xl border border-sage-200 bg-white/60 p-3">
+        <legend className="px-1 text-xs font-semibold uppercase tracking-wider text-sage-600">Weight (grams)</legend>
+        <p className="mb-2 text-xs text-sage-600">Used by the sitter's daily health scan to flag weight loss. You can fill this in later.</p>
+        <div className="grid grid-cols-3 gap-3">
+          <BirdField label="Normal"><input className="input" inputMode="decimal" placeholder="e.g. 110" value={normal} onChange={(e) => setNormal(e.target.value)} /></BirdField>
+          <BirdField label="Min"><input className="input" inputMode="decimal" placeholder="105" value={min} onChange={(e) => setMin(e.target.value)} /></BirdField>
+          <BirdField label="Max"><input className="input" inputMode="decimal" placeholder="115" value={max} onChange={(e) => setMax(e.target.value)} /></BirdField>
+        </div>
+      </fieldset>
 
-        <button type="submit" disabled={loading} className="mt-3 w-full rounded-xl bg-sage-600 py-3 text-sm font-semibold text-white disabled:opacity-50">
-          {loading ? "Saving..." : "Save and continue"}
-        </button>
-      </form>
       <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.65rem .8rem;font-size:16px;outline:none}.input:focus{border-color:var(--sage-600);box-shadow:0 0 0 3px rgb(74 103 65 / .15)}`}</style>
-    </div>
+    </SetupShell>
   );
 }
