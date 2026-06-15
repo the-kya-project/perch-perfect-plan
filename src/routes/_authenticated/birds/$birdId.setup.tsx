@@ -85,6 +85,25 @@ function BirdSetup() {
     }
   }
 
+  async function jumpToStep(target: number) {
+    const clamped = Math.min(TOTAL_STEPS, Math.max(2, target));
+    const ok = await persistStep(clamped);
+    if (ok) setStep(clamped);
+  }
+
+  async function finishAndGo(opts: { to: "dashboard-newsit" | "tabs" }) {
+    const ok = await persistStep(TOTAL_STEPS, true);
+    if (!ok) return;
+    if (opts.to === "dashboard-newsit") {
+      navigate({
+        to: "/dashboard",
+        search: { newSit: true, preselectBirdId: birdId },
+      });
+    } else {
+      navigate({ to: "/birds/$birdId", params: { birdId } });
+    }
+  }
+
   if (isLoading || !bird || bird.setup_complete) {
     return (
       <SetupShell step={step} title="Loading…">
