@@ -82,23 +82,37 @@ function Dashboard() {
             </div>
           ) : (
             <div className="space-y-3">
-              {birds.map((b: any) => (
-                <Link
-                  key={b.id}
-                  to="/birds/$birdId"
-                  params={{ birdId: b.id }}
-                  className="block rounded-2xl bg-white p-4 ring-1 ring-sage-100 shadow-sm active:scale-[0.99]"
-                >
-                  <div className="flex items-center gap-3">
-                    <Avatar name={b.name} photo={b.photo_url} position={b.photo_position} />
-                    <div className="flex-1">
-                      <p className="font-semibold">{b.name}</p>
-                      <p className="text-[11px] uppercase tracking-wider text-sage-600">{b.species ?? "Parrot"}</p>
-                    </div>
-                    <ChevronRight className="size-4 text-sage-400" />
+              {birds.map((b: any) => {
+                const incomplete = b.setup_complete === false;
+                return (
+                  <div key={b.id} className="rounded-2xl bg-white ring-1 ring-sage-100 shadow-sm overflow-hidden">
+                    <Link
+                      to="/birds/$birdId"
+                      params={{ birdId: b.id }}
+                      className="block p-4 active:scale-[0.99]"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Avatar name={b.name} photo={b.photo_url} position={b.photo_position} />
+                        <div className="flex-1">
+                          <p className="font-semibold">{b.name}</p>
+                          <p className="text-[11px] uppercase tracking-wider text-sage-600">{b.species ?? "Parrot"}</p>
+                        </div>
+                        <ChevronRight className="size-4 text-sage-400" />
+                      </div>
+                    </Link>
+                    {incomplete && (
+                      <Link
+                        to="/birds/$birdId/setup"
+                        params={{ birdId: b.id }}
+                        className="flex items-center justify-between gap-2 border-t border-amber-200 bg-amber-50 px-4 py-2.5 text-xs font-semibold text-amber-900"
+                      >
+                        <span>Setup incomplete · resume at step {Math.max(2, Number(b.setup_step ?? 2))} of 5</span>
+                        <span className="rounded-lg bg-amber-600 px-3 py-1 text-white">Finish setup</span>
+                      </Link>
+                    )}
                   </div>
-                </Link>
-              ))}
+                );
+              })}
             </div>
           )}
         </section>
