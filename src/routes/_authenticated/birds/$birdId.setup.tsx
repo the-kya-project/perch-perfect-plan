@@ -690,6 +690,10 @@ function FoodWaterStep({
   const [waterFreq, setWaterFreq] = useState("");
   const [waterNotes, setWaterNotes] = useState("");
   const [storage, setStorage] = useState("");
+  const [removalMinutes, setRemovalMinutes] = useState<number>(120);
+  const [foodBowlWash, setFoodBowlWash] = useState<string>("after_each_fresh");
+  const [waterBowlWash, setWaterBowlWash] = useState<string>("once_daily");
+  const [hygieneNotes, setHygieneNotes] = useState<string>("");
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
