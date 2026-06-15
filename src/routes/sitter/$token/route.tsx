@@ -51,7 +51,7 @@ function SitterLayout() {
               <button
                 key={b.id}
                 onClick={() => navigate({ to: ".", search: { birdId: b.id } })}
-                className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition ${b.id === ctx.activeBirdId ? "bg-sage-900 text-white" : "bg-sage-100 text-sage-700"} ${isFetching ? "opacity-70" : ""}`}
+                className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition ${b.id === ctx.activeBirdId ? "bg-sage-900 text-white" : "bg-sage-100 text-sage-700"}`}
               >
                 {b.name}
               </button>
