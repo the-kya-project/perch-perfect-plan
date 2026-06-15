@@ -51,6 +51,10 @@ function Guide() {
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-sage-400" />
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search: droppings, fumes, biting, sleep…" className="w-full rounded-xl border border-sage-100 bg-white py-3 pl-9 pr-3 text-sm shadow-sm" />
         </div>
+        <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-sage-600">
+          <span className="inline-flex items-center gap-1.5"><span className="size-2 rounded-full bg-warn-red" /> Red = critical, act now.</span>
+          <span className="inline-flex items-center gap-1.5"><span className="size-2 rounded-full bg-sage-300" /> Gray = general guidance.</span>
+        </p>
         {Object.entries(grouped).map(([cat, list]) => (
           <section key={cat} className="space-y-2">
             <p className="text-[10px] font-bold uppercase tracking-widest text-sage-600">{cat.replace(/^\d+-/, "").replace(/-/g, " ")}</p>

@@ -82,6 +82,28 @@ function AuthPage() {
     }
   }
 
+  async function handleForgotPassword() {
+    const trimmed = email.trim();
+    if (!trimmed) {
+      toast.error("Enter your email above first, then tap Forgot password.");
+      return;
+    }
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(trimmed, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      toast.success("Password reset email sent. Check your inbox.");
+    } catch (err: any) {
+      toast.error(err.message ?? "Could not send reset email.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+
+
   return (
     <div className="min-h-screen bg-sage-50">
       <main className="mx-auto max-w-md px-5 py-8">
@@ -152,6 +174,18 @@ function AuthPage() {
               placeholder="••••••••"
             />
           </Field>
+          {mode === "signin" && (
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={handleForgotPassword}
+                disabled={loading}
+                className="text-xs font-semibold text-sage-700 underline disabled:opacity-50"
+              >
+                Forgot password?
+              </button>
+            </div>
+          )}
           <button
             type="submit"
             disabled={loading}

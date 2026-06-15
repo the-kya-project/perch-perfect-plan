@@ -186,16 +186,36 @@ function Emergency() {
   );
 }
 
+function formatPhone(raw?: string): string {
+  if (!raw) return "";
+  const digits = raw.replace(/\D/g, "");
+  if (digits.length === 10) {
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+  }
+  if (digits.length === 11 && digits.startsWith("1")) {
+    return `+1 (${digits.slice(1, 4)}) ${digits.slice(4, 7)}-${digits.slice(7)}`;
+  }
+  // Unknown shape: return original trimmed so it stays human-readable.
+  return raw.trim();
+}
+
+function telHref(raw?: string): string {
+  if (!raw) return "";
+  const digits = raw.replace(/\D/g, "");
+  return digits ? `tel:${digits}` : `tel:${raw.trim()}`;
+}
+
 function CallBtn({ label, name, phone, urgent }: { label: string; name?: string; phone?: string; urgent?: boolean }) {
   if (!phone) return (
     <div className="rounded-2xl bg-white/5 p-4 text-sm text-white/50">{label}: not provided by owner.</div>
   );
+  const display = formatPhone(phone);
   return (
-    <a href={`tel:${phone}`} className={`flex items-center justify-between rounded-2xl p-4 ${urgent ? "bg-warn-red" : "bg-white"} ${urgent ? "text-white" : "text-sage-900"} active:scale-[0.99]`}>
+    <a href={telHref(phone)} className={`flex items-center justify-between rounded-2xl p-4 ${urgent ? "bg-warn-red" : "bg-white"} ${urgent ? "text-white" : "text-sage-900"} active:scale-[0.99]`}>
       <div>
         <p className="text-[10px] font-bold uppercase tracking-widest opacity-70">{label}</p>
         {name && <p className="text-xs opacity-80">{name}</p>}
-        <p className="text-lg font-bold">{phone}</p>
+        <p className="text-lg font-bold">{display}</p>
       </div>
       <Phone className="size-5" />
     </a>
