@@ -8,6 +8,7 @@ export const SETUP_STEPS = [
   { key: "food", title: "Food & water" },
   { key: "personality", title: "Personality & handling" },
   { key: "environment", title: "Environment & safety" },
+  { key: "health", title: "Health baseline" },
   { key: "emergency", title: "Emergency info" },
   { key: "review", title: "Review & finish" },
 ] as const;
