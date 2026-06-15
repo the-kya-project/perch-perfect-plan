@@ -170,7 +170,7 @@ function ScanPage() {
         )}
 
         <button
-          onClick={() => m.mutate()}
+          onClick={handleSubmit}
           disabled={m.isPending}
           className="w-full rounded-xl bg-sage-900 py-3.5 text-sm font-semibold text-white disabled:opacity-60"
         >
