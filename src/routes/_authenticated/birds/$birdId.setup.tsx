@@ -128,7 +128,14 @@ function BirdSetup() {
       nextDisabled={blockNext}
       hideFooter={step === TOTAL_STEPS}
     >
-      <StepBody step={step} birdId={birdId} birdName={bird.name} onBlockNext={setBlockNext} />
+      <StepBody
+        step={step}
+        birdId={birdId}
+        birdName={bird.name}
+        onBlockNext={setBlockNext}
+        onJumpToStep={jumpToStep}
+        onFinish={finishAndGo}
+      />
     </SetupShell>
   );
 }
@@ -138,11 +145,15 @@ function StepBody({
   birdId,
   birdName,
   onBlockNext,
+  onJumpToStep,
+  onFinish,
 }: {
   step: number;
   birdId: string;
   birdName: string;
   onBlockNext: (block: boolean) => void;
+  onJumpToStep: (target: number) => void;
+  onFinish: (opts: { to: "dashboard-newsit" | "tabs" }) => void;
 }) {
   if (step === 2) return <DayInLifeStep birdId={birdId} />;
   if (step === 3) return <FoodWaterStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} />;
@@ -151,8 +162,8 @@ function StepBody({
   if (step === 6) return <HealthBaselineStep birdId={birdId} birdName={birdName} />;
   if (step === 7) return <WatchFirstClipsStep birdId={birdId} />;
   if (step === 8) return <EmergencyStep birdId={birdId} onBlockNext={onBlockNext} />;
+  if (step === 9) return <ReviewStep birdId={birdId} birdName={birdName} onJumpToStep={onJumpToStep} onFinish={onFinish} />;
 
-  if (step === 9) return <ReviewStep birdId={birdId} birdName={birdName} />;
 
 
   const blurbs: Record<number, { lead: string; hint: string }> = {
