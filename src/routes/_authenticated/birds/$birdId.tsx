@@ -116,7 +116,7 @@ function BirdEditor() {
       <main className="mx-auto max-w-md space-y-4 px-4 py-5">
         {tab === "plan" && plan && <PlanForm birdId={birdId} bird={bird} plan={plan} onSaved={() => { qc.invalidateQueries({ queryKey: ["plan", birdId] }); qc.invalidateQueries({ queryKey: ["bird", birdId] }); }} />}
         {tab === "routine" && plan && <RoutineEditor planId={plan.id} tasks={tasks} onChange={() => qc.invalidateQueries({ queryKey: ["tasks", plan.id] })} />}
-        {tab === "emergency" && contacts && <ContactsForm birdId={birdId} contacts={contacts} onSaved={() => qc.invalidateQueries({ queryKey: ["contacts", birdId] })} />}
+        {tab === "emergency" && contacts && <ContactsForm birdId={birdId} contacts={contacts} defaults={defaults ?? null} onSaved={() => qc.invalidateQueries({ queryKey: ["contacts", birdId] })} />}
         {tab === "sits" && <SitsPanel birdId={birdId} sits={sits} onChange={() => qc.invalidateQueries({ queryKey: ["sits", birdId] })} />}
         {tab === "logs" && <LogsPanel birdId={birdId} />}
       </main>
