@@ -1,19 +1,26 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
+import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { SetupShell, SETUP_STEPS, TOTAL_STEPS } from "@/components/SetupShell";
 import { EMERGENCY_FIELDS, EMERGENCY_LABELS, REQUIRED_FIELDS, mergeEmergency, type EmergencyField } from "@/lib/emergency";
 import { Plus, X } from "lucide-react";
 
+const setupSearch = z.object({
+  step: z.coerce.number().int().min(2).max(TOTAL_STEPS).optional(),
+});
+
 export const Route = createFileRoute("/_authenticated/birds/$birdId/setup")({
   head: () => ({ meta: [{ title: "Set up bird — Parrot Care Companion" }] }),
+  validateSearch: setupSearch,
   component: BirdSetup,
 });
 
 function BirdSetup() {
   const { birdId } = Route.useParams();
+  const { step: stepParam } = Route.useSearch();
   const navigate = useNavigate();
 
   const { data: bird, isLoading } = useQuery({
@@ -34,16 +41,22 @@ function BirdSetup() {
   useEffect(() => { setBlockNext(false); }, [step]);
   const [saving, setSaving] = useState(false);
 
-  // Initialise step from stored progress; clamp to 2..TOTAL_STEPS (step 1 lives in new.tsx)
+  // Initialise step from URL (?step=) when present, else from stored progress.
+  // Skip the auto-redirect when the URL explicitly asks for a step, so owners
+  // can revisit any incomplete step from the dashboard completeness indicator.
   useEffect(() => {
     if (!bird) return;
+    if (stepParam) {
+      setStep(Math.min(TOTAL_STEPS, Math.max(2, stepParam)));
+      return;
+    }
     if (bird.setup_complete) {
       navigate({ to: "/birds/$birdId", params: { birdId }, replace: true });
       return;
     }
     const stored = Number(bird.setup_step ?? 0);
     setStep(Math.min(TOTAL_STEPS, Math.max(2, stored || 2)));
-  }, [bird, birdId, navigate]);
+  }, [bird, birdId, navigate, stepParam]);
 
   async function persistStep(nextStep: number, complete = false) {
     setSaving(true);
