@@ -360,6 +360,63 @@ export type Database = {
         }
         Relationships: []
       }
+      owner_emergency_defaults: {
+        Row: {
+          avian_vet_address: string | null
+          avian_vet_name: string | null
+          avian_vet_phone: string | null
+          backup_name: string | null
+          backup_phone: string | null
+          carrier_location: string | null
+          emergency_authorization: string | null
+          emergency_vet_address: string | null
+          emergency_vet_name: string | null
+          emergency_vet_phone: string | null
+          first_aid_kit_location: string | null
+          owner_id: string
+          owner_phone: string | null
+          poison_control: string | null
+          spending_limit: string | null
+          updated_at: string
+        }
+        Insert: {
+          avian_vet_address?: string | null
+          avian_vet_name?: string | null
+          avian_vet_phone?: string | null
+          backup_name?: string | null
+          backup_phone?: string | null
+          carrier_location?: string | null
+          emergency_authorization?: string | null
+          emergency_vet_address?: string | null
+          emergency_vet_name?: string | null
+          emergency_vet_phone?: string | null
+          first_aid_kit_location?: string | null
+          owner_id: string
+          owner_phone?: string | null
+          poison_control?: string | null
+          spending_limit?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avian_vet_address?: string | null
+          avian_vet_name?: string | null
+          avian_vet_phone?: string | null
+          backup_name?: string | null
+          backup_phone?: string | null
+          carrier_location?: string | null
+          emergency_authorization?: string | null
+          emergency_vet_address?: string | null
+          emergency_vet_name?: string | null
+          emergency_vet_phone?: string | null
+          first_aid_kit_location?: string | null
+          owner_id?: string
+          owner_phone?: string | null
+          poison_control?: string | null
+          spending_limit?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       photo_logs: {
         Row: {
           bird_id: string
