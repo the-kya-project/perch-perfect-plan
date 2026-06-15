@@ -71,6 +71,7 @@ function BirdEditor() {
         <div className="mx-auto max-w-md px-4 py-3">
           <div className="flex items-center gap-3">
             <Link to="/dashboard" className="rounded p-1 text-sage-600"><ArrowLeft className="size-5" /></Link>
+            {bird.photo_url && <img src={bird.photo_url} alt={bird.name} className="size-9 rounded-full object-cover ring-1 ring-sage-200" />}
             <div className="flex-1">
               <h1 className="text-sm font-bold">{bird.name}</h1>
               <p className="text-[10px] uppercase tracking-wider text-sage-600">{bird.species ?? "Parrot"}</p>
@@ -129,9 +130,67 @@ function PlanForm({ birdId, bird, plan, onSaved }: { birdId: string; bird: any; 
     toast.success("Care plan saved.");
     onSaved();
   }
+  async function onPhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2_000_000) { toast.error("Photo must be under 2MB."); return; }
+    const reader = new FileReader();
+    reader.onload = () => setB({ ...b, photo_url: reader.result as string });
+    reader.readAsDataURL(file);
+  }
   return (
     <>
       <Disclaimer compact />
+      <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
+        <h2 className="text-sm font-bold">Basics</h2>
+        <div className="flex items-center gap-3">
+          {b.photo_url ? (
+            <img src={b.photo_url} alt={b.name} className="size-20 rounded-xl object-cover ring-1 ring-sage-200" />
+          ) : (
+            <div className="flex size-20 items-center justify-center rounded-xl bg-sage-100 text-[10px] uppercase tracking-wider text-sage-600">No photo</div>
+          )}
+          <div className="flex-1 space-y-2">
+            <label className="inline-block cursor-pointer rounded-lg bg-sage-100 px-3 py-1.5 text-xs font-semibold text-sage-700">
+              {b.photo_url ? "Change photo" : "Add photo"}
+              <input type="file" accept="image/*" className="hidden" onChange={onPhoto} />
+            </label>
+            {b.photo_url && (
+              <button type="button" onClick={() => setB({ ...b, photo_url: null })} className="ml-2 text-xs font-semibold text-warn-red underline">Remove</button>
+            )}
+          </div>
+        </div>
+        <Field label="Name"><input className="input" value={b.name ?? ""} onChange={(e) => setB({ ...b, name: e.target.value })} /></Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Species"><input className="input" value={b.species ?? ""} onChange={(e) => setB({ ...b, species: e.target.value })} /></Field>
+          <Field label="Age"><input className="input" value={b.age ?? ""} onChange={(e) => setB({ ...b, age: e.target.value })} /></Field>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Sex">
+            <select className="input" value={b.sex ?? ""} onChange={(e) => setB({ ...b, sex: e.target.value || null })}>
+              <option value="">Unknown</option><option>Male</option><option>Female</option>
+            </select>
+          </Field>
+          <Field label="Flight">
+            <select className="input" value={b.flight_status ?? "unknown"} onChange={(e) => setB({ ...b, flight_status: e.target.value })}>
+              <option value="unknown">Unknown</option>
+              <option value="fully_flighted">Fully flighted</option>
+              <option value="clipped">Clipped</option>
+              <option value="partially_clipped">Partially clipped</option>
+            </select>
+          </Field>
+        </div>
+      </section>
+
+      <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
+        <h2 className="text-sm font-bold">Baseline weight (grams)</h2>
+        <p className="text-xs text-sage-600">Used by the sitter's daily health scan to flag weight loss.</p>
+        <div className="grid grid-cols-3 gap-3">
+          <Field label="Normal"><input className="input" inputMode="decimal" value={b.normal_weight ?? ""} onChange={(e) => setB({ ...b, normal_weight: e.target.value === "" ? null : Number(e.target.value) })} /></Field>
+          <Field label="Min"><input className="input" inputMode="decimal" value={b.normal_weight_min ?? ""} onChange={(e) => setB({ ...b, normal_weight_min: e.target.value === "" ? null : Number(e.target.value) })} /></Field>
+          <Field label="Max"><input className="input" inputMode="decimal" value={b.normal_weight_max ?? ""} onChange={(e) => setB({ ...b, normal_weight_max: e.target.value === "" ? null : Number(e.target.value) })} /></Field>
+        </div>
+      </section>
+
       <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
         <h2 className="text-sm font-bold">Profile</h2>
         <Field label="Medical conditions"><textarea className="input area" value={b.medical_conditions ?? ""} onChange={(e) => setB({ ...b, medical_conditions: e.target.value })} /></Field>
