@@ -1,0 +1,3 @@
+CREATE POLICY "task_completions owner write" ON public.task_completions FOR INSERT TO authenticated WITH CHECK (EXISTS (SELECT 1 FROM public.sits s WHERE s.id = task_completions.sit_id AND s.owner_id = auth.uid()));
+CREATE POLICY "task_completions owner update" ON public.task_completions FOR UPDATE TO authenticated USING (EXISTS (SELECT 1 FROM public.sits s WHERE s.id = task_completions.sit_id AND s.owner_id = auth.uid())) WITH CHECK (EXISTS (SELECT 1 FROM public.sits s WHERE s.id = task_completions.sit_id AND s.owner_id = auth.uid()));
+CREATE POLICY "task_completions owner delete" ON public.task_completions FOR DELETE TO authenticated USING (EXISTS (SELECT 1 FROM public.sits s WHERE s.id = task_completions.sit_id AND s.owner_id = auth.uid()));
