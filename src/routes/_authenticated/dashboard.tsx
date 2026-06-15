@@ -34,6 +34,8 @@ function Dashboard() {
       const { data, error } = await supabase
         .from("sits")
         .select("*, sit_birds(bird_id)")
+        // Hide internal preview sits used by the setup flow's review screen.
+        .neq("sitter_name", "__preview__")
         .order("start_date", { ascending: false });
       if (error) throw error;
       return data ?? [];
