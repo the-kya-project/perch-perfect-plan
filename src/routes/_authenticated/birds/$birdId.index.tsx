@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { z } from "zod";
@@ -159,6 +159,34 @@ function PlanForm({ birdId, bird, plan, onSaved }: { birdId: string; bird: any; 
   const [b, setB] = useState(bird);
   const [p, setP] = useState(plan);
   const [saving, setSaving] = useState(false);
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleteText, setDeleteText] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  async function deleteBird() {
+    if (deleteText.trim() !== (bird.name ?? "").trim()) {
+      toast.error(`Type "${bird.name}" exactly to confirm.`);
+      return;
+    }
+    setDeleting(true);
+    // Clean up dependents that may not cascade.
+    await supabase.from("sit_birds").delete().eq("bird_id", birdId);
+    await supabase.from("weight_logs").delete().eq("bird_id", birdId);
+    await supabase.from("photo_logs").delete().eq("bird_id", birdId);
+    await supabase.from("daily_logs").delete().eq("bird_id", birdId);
+    await supabase.from("emergency_contacts").delete().eq("bird_id", birdId);
+    if (plan?.id) {
+      await supabase.from("routine_tasks").delete().eq("care_plan_id", plan.id);
+      await supabase.from("care_plans").delete().eq("id", plan.id);
+    }
+    const { error } = await supabase.from("birds").delete().eq("id", birdId);
+    setDeleting(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`${bird.name} removed.`);
+    qc.invalidateQueries({ queryKey: ["birds"] });
+    navigate({ to: "/dashboard" });
+  }
   async function save() {
     setSaving(true);
     const { id: bId, owner_id, created_at, updated_at, ...birdPatch } = b;
@@ -285,6 +313,52 @@ function PlanForm({ birdId, bird, plan, onSaved }: { birdId: string; bird: any; 
       <button disabled={saving} onClick={save} className="sticky bottom-4 w-full rounded-xl bg-sage-600 py-3 text-sm font-semibold text-white shadow-lg disabled:opacity-50">
         {saving ? "Saving..." : "Save care plan"}
       </button>
+
+      <section className="rounded-2xl border-2 border-warn-red/30 bg-warn-red/5 p-4 space-y-3">
+        <h2 className="text-sm font-bold text-warn-red">Danger zone</h2>
+        <p className="text-xs text-sage-700">
+          Permanently delete {bird.name} and all of their care plan, routine, emergency info, weight logs, daily scans, and photos. This cannot be undone.
+        </p>
+        {!confirmDelete ? (
+          <button
+            type="button"
+            onClick={() => setConfirmDelete(true)}
+            className="inline-flex items-center gap-2 rounded-xl border border-warn-red/40 bg-white px-3 py-2 text-xs font-semibold text-warn-red"
+          >
+            <Trash2 className="size-4" /> Delete {bird.name}
+          </button>
+        ) : (
+          <div className="space-y-2">
+            <label className="block text-[11px] font-semibold text-sage-700">
+              Type <span className="font-bold">{bird.name}</span> to confirm
+            </label>
+            <input
+              className="input"
+              value={deleteText}
+              onChange={(e) => setDeleteText(e.target.value)}
+              placeholder={bird.name}
+              autoFocus
+            />
+            <div className="flex gap-2">
+              <button
+                type="button"
+                disabled={deleting || deleteText.trim() !== (bird.name ?? "").trim()}
+                onClick={deleteBird}
+                className="flex-1 rounded-xl bg-warn-red py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                {deleting ? "Deleting..." : `Permanently delete ${bird.name}`}
+              </button>
+              <button
+                type="button"
+                onClick={() => { setConfirmDelete(false); setDeleteText(""); }}
+                className="rounded-xl border border-sage-200 px-3 py-2.5 text-sm"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+      </section>
     </>
   );
 }
