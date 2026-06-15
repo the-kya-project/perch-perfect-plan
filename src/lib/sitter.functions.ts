@@ -107,6 +107,25 @@ export const getSitterContext = createServerFn({ method: "GET" })
       .limit(1)
       .maybeSingle();
 
+    // Generate signed URLs for owner-recorded "Watch first" clips on the active bird.
+    // Clips are stored in the private bird-photos bucket; signed URLs ensure only
+    // the assigned sitter (holding this token) can play them.
+    const watchClipSlots: { key: string; column: string; label: string }[] = [
+      { key: "step_up", column: "clip_step_up_path", label: "How she steps up" },
+      { key: "food_water", column: "clip_food_water_path", label: "How to refill food & water safely" },
+      { key: "locations", column: "clip_locations_path", label: "Where everything is" },
+      { key: "bedtime", column: "clip_bedtime_path", label: "Settling her for the night" },
+    ];
+    const watchClips: { key: string; label: string; url: string }[] = [];
+    if (planRes.data) {
+      for (const slot of watchClipSlots) {
+        const path = (planRes.data as any)[slot.column] as string | null;
+        if (!path) continue;
+        const { data: signed } = await sb.storage.from("bird-photos").createSignedUrl(path, 3600);
+        if (signed?.signedUrl) watchClips.push({ key: slot.key, label: slot.label, url: signed.signedUrl });
+      }
+    }
+
     return {
       sit,
       birds: birds ?? [],
@@ -117,6 +136,7 @@ export const getSitterContext = createServerFn({ method: "GET" })
       tasks: tasksRes.data ?? [],
       completions: completionsRes.data ?? [],
       todayLog: todayLogRes.data ?? null,
+      watchClips,
     };
   });
 
