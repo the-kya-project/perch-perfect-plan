@@ -724,6 +724,10 @@ function FoodWaterStep({
     setWaterFreq(plan.water_frequency ?? "");
     setWaterNotes(plan.water_notes ?? "");
     setStorage(plan.food_storage ?? "");
+    setRemovalMinutes(plan.fresh_food_removal_minutes ?? 120);
+    setFoodBowlWash(plan.food_bowl_wash_cadence ?? "after_each_fresh");
+    setWaterBowlWash(plan.water_bowl_wash_cadence ?? "once_daily");
+    setHygieneNotes(plan.food_hygiene_notes ?? "");
     setHydrated(true);
   }, [plan, suggestedTimes, hydrated]);
 
