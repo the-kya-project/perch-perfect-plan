@@ -103,6 +103,10 @@ function Dashboard() {
           )}
         </section>
 
+        {birds.length > 0 && <DefaultsPanel />}
+
+
+
         {birds.length > 0 && (
           <section className="space-y-3">
             <h2 className="text-base font-bold">Sits</h2>
