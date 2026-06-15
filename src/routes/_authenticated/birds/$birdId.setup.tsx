@@ -10,6 +10,7 @@ import { Plus, X } from "lucide-react";
 import { PhotoCropper } from "@/components/PhotoCropper";
 import { AgePicker, BirdField, SpeciesPicker } from "@/components/BirdPickers";
 import { convertToMp4H264, probeDuration, MAX_CLIP_SECONDS, MAX_CLIP_BYTES } from "@/lib/videoConvert";
+import { formatAmountUnit } from "@/lib/labels";
 
 const setupSearch = z.object({
   step: z.coerce.number().int().min(1).max(TOTAL_STEPS).optional(),
@@ -749,7 +750,7 @@ function FoodWaterStep({
         const items = (dietDetails[t] ?? []).filter((it) => it.name.trim() || it.amount.trim());
         if (!items.length) continue;
         const parts = items.map((it) => {
-          const amt = it.amount.trim() && it.unit ? `${it.amount.trim()} ${it.unit}` : "";
+          const amt = formatAmountUnit(it.amount, it.unit);
           const when = it.freeFed
             ? "available all day"
             : (it.times ?? []).length ? `@ ${(it.times ?? []).join(", ")}` : "";
@@ -764,7 +765,7 @@ function FoodWaterStep({
       const legacyBrand = (firstItem?.name?.trim() || brand) ?? "";
       const legacyAmtVal = (firstItem?.amount?.trim() || amountValue) ?? "";
       const legacyAmtUnit = firstItem?.unit || amountUnit;
-      const amountStr = legacyAmtVal && legacyAmtUnit ? `${legacyAmtVal} ${legacyAmtUnit}` : "";
+      const amountStr = formatAmountUnit(legacyAmtVal, legacyAmtUnit);
 
       const removalLabel = REMOVAL_OPTIONS.find((o) => o.value === removalMinutes)?.label ?? `${removalMinutes} min`;
       const foodWashLabel = FOOD_BOWL_WASH_OPTIONS.find((o) => o.value === foodBowlWash)?.label ?? foodBowlWash;
@@ -1904,7 +1905,7 @@ async function syncFeedingTasks(planId: string, items: FeedingItem[]) {
   for (const it of items) {
     const name = (it.name ?? "").trim();
     if (!name) continue;
-    const amt = it.amount?.trim() && it.unit ? `${it.amount.trim()} ${it.unit}` : "";
+    const amt = formatAmountUnit(it.amount, it.unit);
     const baseInstr = amt ? `Serve ${amt}.` : "";
     if (it.freeFed) {
       rows.push({
