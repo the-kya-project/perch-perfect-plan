@@ -29,6 +29,8 @@ function BirdSetup() {
   });
 
   const [step, setStep] = useState<number>(2);
+  const [blockNext, setBlockNext] = useState(false);
+  useEffect(() => { setBlockNext(false); }, [step]);
   const [saving, setSaving] = useState(false);
 
   // Initialise step from stored progress; clamp to 2..TOTAL_STEPS (step 1 lives in new.tsx)
