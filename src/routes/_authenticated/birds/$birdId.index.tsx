@@ -126,10 +126,9 @@ function BirdEditor() {
         {(() => {
           const completeness = computeSetupCompleteness({ bird, plan, tasksCount: tasks.length, contacts, defaults });
           const isComplete = completeness.firstIncompleteStep === null;
-          const showBigBanner = tab !== "plan" || !isComplete;
           return (
             <>
-              {showBigBanner && (
+              {tab !== "plan" && (
                 <Link
                   to="/birds/$birdId/setup"
                   params={{ birdId }}
@@ -149,23 +148,24 @@ function BirdEditor() {
                 </Link>
               )}
               {tab === "plan" && plan && (
-                isComplete ? (
-                  <>
-                    <div className="flex items-center justify-between rounded-xl bg-white px-3 py-2 ring-1 ring-sage-100">
-                      <p className="text-xs text-sage-600">Editing fields directly. Changes save to the same care plan.</p>
-                      <Link
-                        to="/birds/$birdId/setup"
-                        params={{ birdId }}
-                        className="inline-flex items-center gap-1 text-xs font-semibold text-sage-900 underline"
-                      >
-                        <Wand2 className="size-3.5" /> Edit step by step
-                      </Link>
-                    </div>
-                    <PlanForm birdId={birdId} bird={bird} plan={plan} onSaved={() => { qc.invalidateQueries({ queryKey: ["plan", birdId] }); qc.invalidateQueries({ queryKey: ["bird", birdId] }); }} />
-                  </>
-                ) : (
-                  <PlanFormCollapsible birdId={birdId} bird={bird} plan={plan} onSaved={() => { qc.invalidateQueries({ queryKey: ["plan", birdId] }); qc.invalidateQueries({ queryKey: ["bird", birdId] }); }} />
-                )
+                <>
+                  <div className="flex items-center justify-between gap-3 rounded-xl bg-white px-3 py-2 ring-1 ring-sage-100">
+                    <p className="text-[11px] text-sage-600">
+                      {isComplete
+                        ? "All sections done."
+                        : `${completeness.doneCount} of ${completeness.total} done`}
+                    </p>
+                    <Link
+                      to="/birds/$birdId/setup"
+                      params={{ birdId }}
+                      search={completeness.firstIncompleteStep ? { step: completeness.firstIncompleteStep } : undefined}
+                      className="inline-flex items-center gap-1 text-xs font-semibold text-sage-900 underline"
+                    >
+                      <Wand2 className="size-3.5" /> Guided setup
+                    </Link>
+                  </div>
+                  <PlanForm birdId={birdId} bird={bird} plan={plan} onSaved={() => { qc.invalidateQueries({ queryKey: ["plan", birdId] }); qc.invalidateQueries({ queryKey: ["bird", birdId] }); }} />
+                </>
               )}
               {tab === "routine" && plan && <RoutineEditor planId={plan.id} tasks={tasks} onChange={() => qc.invalidateQueries({ queryKey: ["tasks", plan.id] })} />}
               {tab === "emergency" && contacts && <ContactsForm birdId={birdId} contacts={contacts} defaults={defaults ?? null} onSaved={() => qc.invalidateQueries({ queryKey: ["contacts", birdId] })} />}
