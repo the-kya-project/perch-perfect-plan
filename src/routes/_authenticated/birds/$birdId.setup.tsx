@@ -771,6 +771,10 @@ function FoodWaterStep({
       const legacyAmtUnit = firstItem?.unit || amountUnit;
       const amountStr = legacyAmtVal && legacyAmtUnit ? `${legacyAmtVal} ${legacyAmtUnit}` : "";
 
+      const removalLabel = REMOVAL_OPTIONS.find((o) => o.value === removalMinutes)?.label ?? `${removalMinutes} min`;
+      const foodWashLabel = FOOD_BOWL_WASH_OPTIONS.find((o) => o.value === foodBowlWash)?.label ?? foodBowlWash;
+      const waterWashLabel = WATER_BOWL_WASH_OPTIONS.find((o) => o.value === waterBowlWash)?.label ?? waterBowlWash;
+
       const foodSummaryParts = [
         dietLabels.length ? `Diet: ${dietLabels.join(", ")}` : "",
         ...perTypeLines,
@@ -781,15 +785,23 @@ function FoodWaterStep({
           ? `Fresh foods: ${[...fresh, ...(freshOther.trim() ? [freshOther.trim()] : [])].join(", ")}`
           : "",
         storage.trim() ? `Stored: ${storage.trim()}` : "",
+        `Freshness & hygiene:\n  • Remove fresh/wet food after ${removalLabel}\n  • Wash food bowls: ${foodWashLabel}\n  • Wash water bowl/bottle: ${waterWashLabel}${hygieneNotes.trim() ? `\n  • Notes: ${hygieneNotes.trim()}` : ""}`,
       ].filter(Boolean);
       const treatLabel = TREAT_FREQ.find((f) => f.value === treatsFreq)?.label;
       const treatsSummary = [treatsNotes.trim(), treatLabel ? `Frequency: ${treatLabel}` : ""].filter(Boolean).join(" — ");
       const waterLabel = WATER_FREQ.find((f) => f.value === waterFreq)?.label;
-      const waterSummary = [waterLabel ?? "", waterNotes.trim()].filter(Boolean).join(" — ");
+      const waterSummary = [
+        waterLabel ?? "",
+        waterNotes.trim(),
+        `Wash bowl/bottle ${waterWashLabel.toLowerCase()}`,
+      ].filter(Boolean).join(" — ");
 
       // Persist only currently-selected diet types' details.
       const detailsToSave: Record<string, DietItem[]> = {};
       for (const t of diet) if ((dietDetails[t] ?? []).length) detailsToSave[t] = dietDetails[t];
+
+      // Mirror to the legacy text field too so the sitter view stays consistent.
+      const freshRemovalSummary = `Remove fresh / wet food after ${removalLabel}. Fresh food spoils fast and can grow bacteria.`;
 
       await supabase
         .from("care_plans")
@@ -809,15 +821,31 @@ function FoodWaterStep({
           water_frequency: waterFreq || null,
           water_notes: waterNotes || null,
           food_storage: storage || null,
+          fresh_food_removal_minutes: removalMinutes,
+          food_bowl_wash_cadence: foodBowlWash,
+          water_bowl_wash_cadence: waterBowlWash,
+          food_hygiene_notes: hygieneNotes || null,
           food_instructions: foodSummaryParts.join("\n") || null,
           treats_allowed: treatsSummary || null,
           foods_never_allowed: never.join(", ") || null,
           water_instructions: waterSummary || null,
+          fresh_food_removal: freshRemovalSummary,
         } as any)
         .eq("id", plan.id);
+
+      // Keep the auto-generated hygiene routine tasks in sync.
+      const hasFresh = diet.includes("chop") || fresh.length > 0 || freshOther.trim().length > 0;
+      await syncHygieneTasks(plan.id, {
+        removalLabel,
+        foodWashLabel,
+        waterWashLabel,
+        hasFresh,
+      });
+
       qc.invalidateQueries({ queryKey: ["plan", birdId] });
+      qc.invalidateQueries({ queryKey: ["tasks", plan.id] });
     },
-    [diet, dietOther, dietDetails, brand, amountValue, amountUnit, feedingTimes, fresh, freshOther, treatsNotes, treatsFreq, never, waterFreq, waterNotes, storage],
+    [diet, dietOther, dietDetails, brand, amountValue, amountUnit, feedingTimes, fresh, freshOther, treatsNotes, treatsFreq, never, waterFreq, waterNotes, storage, removalMinutes, foodBowlWash, waterBowlWash, hygieneNotes],
     !!plan && hydrated,
     registerFlush,
   );
