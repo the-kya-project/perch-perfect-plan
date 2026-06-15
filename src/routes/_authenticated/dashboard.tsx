@@ -22,6 +22,9 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 function Dashboard() {
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const { newSit, preselectBirdId } = Route.useSearch();
+
+
 
   const { data: birds = [] } = useQuery({
     queryKey: ["birds"],
