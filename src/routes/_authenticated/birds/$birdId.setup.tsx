@@ -133,25 +133,8 @@ function StepBody({
   if (step === 7) return <WatchFirstClipsStep birdId={birdId} />;
   if (step === 8) return <EmergencyStep birdId={birdId} onBlockNext={onBlockNext} />;
 
-  if (step === 9) {
-    return (
-      <div className="space-y-4">
-        <div className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
-          <p className="text-sm font-semibold">You're ready to finish setup for {birdName}.</p>
-          <p className="mt-1 text-sm text-sage-600">
-            Tap <strong>Finish setup</strong> to mark this bird's plan complete. You can edit anything later from the tabs.
-          </p>
-        </div>
-        <Link
-          to="/birds/$birdId"
-          params={{ birdId }}
-          className="block rounded-xl border border-sage-200 bg-white p-3 text-center text-sm font-semibold text-sage-700"
-        >
-          Jump to full editor
-        </Link>
-      </div>
-    );
-  }
+  if (step === 9) return <ReviewStep birdId={birdId} birdName={birdName} />;
+
 
   const blurbs: Record<number, { lead: string; hint: string }> = {
     8: {
