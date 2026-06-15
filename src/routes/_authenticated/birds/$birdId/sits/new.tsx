@@ -51,16 +51,16 @@ function NewSit() {
           <h1 className="text-sm font-bold">Create a sit</h1>
         </div>
       </header>
-      <form onSubmit={submit} className="mx-auto max-w-md space-y-4 px-4 py-6">
+      <form onSubmit={submit} noValidate className="mx-auto max-w-md space-y-4 px-4 py-6">
         <p className="text-sm text-sage-600">We'll generate a secure invite link that expires at the end of the sit. You can revoke it any time.</p>
         <Field label="Sitter name"><input className="input" value={sitterName} onChange={(e) => setSitterName(e.target.value)} /></Field>
         <Field label="Sitter email"><input className="input" type="email" value={sitterEmail} onChange={(e) => setSitterEmail(e.target.value)} /></Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Start"><input className="input" type="date" required value={start} onChange={(e) => setStart(e.target.value)} /></Field>
-          <Field label="End"><input className="input" type="date" required value={end} onChange={(e) => setEnd(e.target.value)} /></Field>
+          <Field label="Start"><input className="input" type="date" value={start} onChange={(e) => setStart(e.target.value)} /></Field>
+          <Field label="End"><input className="input" type="date" value={end} onChange={(e) => setEnd(e.target.value)} /></Field>
         </div>
         <Field label="Notes for this sit"><textarea className="input area" value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
-        <button disabled={loading} className="w-full rounded-xl bg-sage-600 py-3 text-sm font-semibold text-white disabled:opacity-50">{loading ? "Creating..." : "Create sit & generate link"}</button>
+        <button type="submit" disabled={loading} className="w-full rounded-xl bg-sage-600 py-3 text-sm font-semibold text-white disabled:opacity-50">{loading ? "Creating..." : "Create sit & generate link"}</button>
       </form>
       <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.65rem .8rem;font-size:16px;outline:none}.input:focus{border-color:var(--sage-600);box-shadow:0 0 0 3px rgb(74 103 65 / .15)}.area{min-height:80px}`}</style>
     </div>
