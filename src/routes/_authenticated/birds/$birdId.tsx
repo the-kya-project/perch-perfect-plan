@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, ChevronDown, AlertTriangle } from "lucide-react";
 import { SitCard } from "@/components/SitCard";
 import { toast } from "sonner";
 import { Disclaimer, VetReviewBanner } from "@/components/Disclaimer";
@@ -382,6 +382,7 @@ function LogsPanel({ birdId }: { birdId: string }) {
   const [weight, setWeight] = useState("");
   const [wNotes, setWNotes] = useState("");
   const [saving, setSaving] = useState(false);
+  const [expandedScan, setExpandedScan] = useState<string | null>(null);
 
   const { data: weights = [] } = useQuery({
     queryKey: ["weights", birdId],
@@ -427,6 +428,30 @@ function LogsPanel({ birdId }: { birdId: string }) {
     s === "red" ? "bg-warn-red/10 text-warn-red"
     : s === "yellow" ? "bg-warn-amber/10 text-warn-amber"
     : "bg-warn-green/10 text-warn-green";
+  const SCAN_COLS: { col: string; label: string }[] = [
+    { col: "alertness_status", label: "Alert and responsive" },
+    { col: "food_status", label: "Eating normally" },
+    { col: "droppings_status", label: "Droppings look normal" },
+    { col: "breathing_status", label: "Breathing normally" },
+    { col: "posture_status", label: "Perched normally" },
+    { col: "behavior_status", label: "Vocalizing as usual" },
+    { col: "energy_status", label: "Not fluffed for long stretches" },
+    { col: "injury_status", label: "No injury, fall, bite, or scratch" },
+    { col: "exposure_status", label: "No exposure to fumes / unsafe items" },
+  ];
+  const severityRank = (s: string) => (s === "red" ? 0 : s === "yellow" ? 1 : 2);
+  const sortedDaily = [...daily].sort((a: any, b: any) => {
+    const r = severityRank(a.triage_status) - severityRank(b.triage_status);
+    if (r !== 0) return r;
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  });
+  const answerStyle = (a: string | null) =>
+    a === "concerning" ? "bg-warn-red/10 text-warn-red"
+    : a === "not_sure" ? "bg-warn-amber/10 text-warn-amber"
+    : a === "normal" ? "bg-warn-green/10 text-warn-green"
+    : "bg-sage-100 text-sage-500";
+  const answerLabel = (a: string | null) =>
+    a === "concerning" ? "Concerning" : a === "not_sure" ? "Not sure" : a === "normal" ? "Normal" : "—";
 
   return (
     <>
@@ -460,16 +485,83 @@ function LogsPanel({ birdId }: { birdId: string }) {
           <p className="mt-2 text-sm text-sage-600">No scans logged yet.</p>
         ) : (
           <ul className="mt-3 space-y-3">
-            {daily.map((d: any) => (
-              <li key={d.id} className="rounded-xl bg-sage-50 p-3">
-                <div className="flex items-center justify-between">
-                  <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${triageColor(d.triage_status)}`}>{d.triage_status}</span>
-                  <span className="text-[11px] text-sage-600">{new Date(d.created_at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
-                </div>
-                {d.triage_reasons && <p className="mt-2 text-xs text-sage-700">{d.triage_reasons}</p>}
-                {d.notes && <p className="mt-1 text-xs italic text-sage-600">"{d.notes}"</p>}
-              </li>
-            ))}
+            {sortedDaily.map((d: any) => {
+              const isOpen = expandedScan === d.id;
+              const needsAttention = d.triage_status === "red" || d.triage_status === "yellow";
+              const linkedPhotos = photos.filter((p: any) => p.daily_log_id === d.id);
+              const wrap = d.triage_status === "red"
+                ? "border-2 border-warn-red bg-warn-red/5"
+                : d.triage_status === "yellow"
+                ? "border-2 border-warn-amber bg-warn-amber/5"
+                : "border border-sage-100 bg-sage-50";
+              return (
+                <li key={d.id} className={`rounded-xl ${wrap}`}>
+                  <button
+                    type="button"
+                    onClick={() => setExpandedScan(isOpen ? null : d.id)}
+                    className="flex w-full items-center justify-between gap-2 p-3 text-left"
+                    aria-expanded={isOpen}
+                  >
+                    <div className="flex min-w-0 flex-1 items-center gap-2">
+                      {needsAttention && <AlertTriangle className={`size-4 shrink-0 ${d.triage_status === "red" ? "text-warn-red" : "text-warn-amber"}`} />}
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${triageColor(d.triage_status)}`}>{d.triage_status}</span>
+                          {needsAttention && (
+                            <span className={`text-[11px] font-bold uppercase tracking-wide ${d.triage_status === "red" ? "text-warn-red" : "text-warn-amber"}`}>
+                              Needs attention
+                            </span>
+                          )}
+                        </div>
+                        <p className="mt-1 text-[11px] text-sage-600">{new Date(d.created_at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</p>
+                      </div>
+                    </div>
+                    <ChevronDown className={`size-4 shrink-0 text-sage-500 transition ${isOpen ? "rotate-180" : ""}`} />
+                  </button>
+                  {isOpen && (
+                    <div className="space-y-3 border-t border-sage-100 px-3 py-3">
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-sage-600">Per-question answers</p>
+                        <ul className="mt-2 space-y-1.5">
+                          {SCAN_COLS.map((f) => (
+                            <li key={f.col} className="flex items-center justify-between gap-3 text-xs">
+                              <span className="text-sage-800">{f.label}</span>
+                              <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${answerStyle(d[f.col])}`}>
+                                {answerLabel(d[f.col])}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      {d.triage_reasons && (
+                        <div>
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-sage-600">Flagged</p>
+                          <p className="mt-1 whitespace-pre-line text-xs text-sage-800">{d.triage_reasons}</p>
+                        </div>
+                      )}
+                      {d.notes && (
+                        <div>
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-sage-600">Sitter notes</p>
+                          <p className="mt-1 text-xs italic text-sage-700">"{d.notes}"</p>
+                        </div>
+                      )}
+                      {linkedPhotos.length > 0 && (
+                        <div>
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-sage-600">Photos</p>
+                          <div className="mt-2 grid grid-cols-3 gap-2">
+                            {linkedPhotos.map((p: any) => (
+                              <a key={p.id} href={p.photo_url} target="_blank" rel="noreferrer" className="block aspect-square overflow-hidden rounded-lg bg-sage-100">
+                                <img src={p.photo_url} alt={p.photo_type} className="size-full object-cover" />
+                              </a>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>
