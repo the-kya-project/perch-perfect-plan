@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSitterContext } from "./route";
 import { toggleTaskCompletion } from "@/lib/sitter.functions";
 import { Disclaimer } from "@/components/Disclaimer";
-import { Stethoscope, Calendar } from "lucide-react";
+import { Stethoscope, Calendar, PlayCircle } from "lucide-react";
 
 export const Route = createFileRoute("/sitter/$token/")({
   component: SitterHome,
