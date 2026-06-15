@@ -175,9 +175,34 @@ function Avatar({ name, photo, position }: { name: string; photo?: string | null
   );
 }
 
-function SitForm({ birds, onCreated }: { birds: any[]; onCreated: () => void }) {
-  const [open, setOpen] = useState(false);
-  const [selected, setSelected] = useState<Set<string>>(new Set(birds.length === 1 ? [birds[0].id] : []));
+function SitForm({
+  birds,
+  onCreated,
+  initialOpen = false,
+  preselectBirdId,
+}: {
+  birds: any[];
+  onCreated: () => void;
+  initialOpen?: boolean;
+  preselectBirdId?: string;
+}) {
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(initialOpen);
+  const initialSelection = preselectBirdId
+    ? new Set([preselectBirdId])
+    : new Set<string>(birds.length === 1 ? [birds[0].id] : []);
+  const [selected, setSelected] = useState<Set<string>>(initialSelection);
+
+  // When the dashboard is opened with ?newSit=1, auto-open the form once and
+  // clear the search params so refreshes don't keep re-triggering it.
+  useEffect(() => {
+    if (initialOpen) {
+      setOpen(true);
+      navigate({ to: "/dashboard", search: {}, replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const [sitterName, setSitterName] = useState("");
   const [sitterEmail, setSitterEmail] = useState("");
   const [start, setStart] = useState("");
