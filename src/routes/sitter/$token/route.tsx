@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, useNavigate, useSearch } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useNavigate, useSearch, retainSearchParams } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -10,6 +10,7 @@ const searchSchema = z.object({ birdId: z.string().uuid().optional() });
 export const Route = createFileRoute("/sitter/$token")({
   ssr: false,
   validateSearch: searchSchema,
+  search: { middlewares: [retainSearchParams(["birdId"])] },
   head: () => ({ meta: [
     { title: "Sitter access — Parrot Care Companion" },
     { name: "robots", content: "noindex,nofollow" },
