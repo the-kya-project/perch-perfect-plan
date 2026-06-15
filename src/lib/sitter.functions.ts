@@ -117,12 +117,24 @@ export const getSitterContext = createServerFn({ method: "GET" })
       { key: "bedtime", column: "clip_bedtime_path", label: "Settling her for the night" },
     ];
     const watchClips: { key: string; label: string; url: string }[] = [];
+    let baselineDroppingsUrl: string | null = null;
+    let baselineClipUrl: string | null = null;
     if (planRes.data) {
       for (const slot of watchClipSlots) {
         const path = (planRes.data as any)[slot.column] as string | null;
         if (!path) continue;
         const { data: signed } = await sb.storage.from("bird-photos").createSignedUrl(path, 3600);
         if (signed?.signedUrl) watchClips.push({ key: slot.key, label: slot.label, url: signed.signedUrl });
+      }
+      const bdp = (planRes.data as any).baseline_droppings_path as string | null;
+      if (bdp) {
+        const { data: signed } = await sb.storage.from("bird-photos").createSignedUrl(bdp, 3600);
+        baselineDroppingsUrl = signed?.signedUrl ?? null;
+      }
+      const bcp = (planRes.data as any).baseline_clip_path as string | null;
+      if (bcp) {
+        const { data: signed } = await sb.storage.from("bird-photos").createSignedUrl(bcp, 3600);
+        baselineClipUrl = signed?.signedUrl ?? null;
       }
     }
 
