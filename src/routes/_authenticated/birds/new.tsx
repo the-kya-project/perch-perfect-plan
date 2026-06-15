@@ -126,15 +126,6 @@ function NewBird() {
         </div>
       </section>
 
-      <fieldset className="rounded-2xl border border-sage-200 bg-white/60 p-3">
-        <legend className="px-1 text-xs font-semibold uppercase tracking-wider text-sage-600">Weight (grams)</legend>
-        <p className="mb-2 text-xs text-sage-600">Used by the sitter's daily health scan to flag weight loss. You can fill this in later.</p>
-        <div className="grid grid-cols-3 gap-3">
-          <BirdField label="Normal"><input className="input" inputMode="decimal" placeholder="e.g. 110" value={normal} onChange={(e) => setNormal(e.target.value)} /></BirdField>
-          <BirdField label="Min"><input className="input" inputMode="decimal" placeholder="105" value={min} onChange={(e) => setMin(e.target.value)} /></BirdField>
-          <BirdField label="Max"><input className="input" inputMode="decimal" placeholder="115" value={max} onChange={(e) => setMax(e.target.value)} /></BirdField>
-        </div>
-      </fieldset>
 
       <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.65rem .8rem;font-size:16px;outline:none}.input:focus{border-color:var(--sage-600);box-shadow:0 0 0 3px rgb(74 103 65 / .15)}`}</style>
     </SetupShell>
