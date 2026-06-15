@@ -191,27 +191,6 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
   );
 }
 
-function PlanFormCollapsible(props: { birdId: string; bird: any; plan: any; onSaved: () => void }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div className="rounded-2xl bg-white/60 ring-1 ring-sage-100">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
-      >
-        <span className="text-xs font-semibold text-sage-700">or edit fields directly</span>
-        <ChevronDown className={`size-4 text-sage-600 transition-transform ${open ? "rotate-180" : ""}`} />
-      </button>
-      {open && (
-        <div className="space-y-4 border-t border-sage-100 p-4">
-          <p className="text-[11px] text-sage-600">These fields write to the same care plan as the walkthrough.</p>
-          <PlanForm {...props} />
-        </div>
-      )}
-    </div>
-  );
-}
 
 function PlanForm({ birdId, bird, plan, onSaved }: { birdId: string; bird: any; plan: any; onSaved: () => void }) {
   const [b, setB] = useState(bird);
