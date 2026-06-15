@@ -1304,9 +1304,9 @@ function EnvironmentStep({ birdId, registerFlush }: { birdId: string; registerFl
     setHydrated(true);
   }, [plan, hydrated]);
 
-  useEffect(() => {
-    if (!plan || !hydrated) return;
-    const handle = setTimeout(async () => {
+  useDebouncedAutosave(
+    async () => {
+      if (!plan) return;
       const modeLabel = OUT_OF_CAGE_OPTIONS.find((o) => o.value === oocMode)?.label;
       const oocSummary = [modeLabel ?? "", oocNotes.trim()].filter(Boolean).join(" — ");
       const allHazards = [...hazards, ...(hazardsOther.trim() ? [hazardsOther.trim()] : [])];
@@ -1327,10 +1327,11 @@ function EnvironmentStep({ birdId, registerFlush }: { birdId: string; registerFl
         } as any)
         .eq("id", plan.id);
       qc.invalidateQueries({ queryKey: ["plan", birdId] });
-    }, 500);
-    return () => clearTimeout(handle);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cageLoc, oocMode, oocNotes, hazards, hazardsOther, offLimits, hydrated]);
+    },
+    [cageLoc, oocMode, oocNotes, hazards, hazardsOther, offLimits],
+    !!plan && hydrated,
+    registerFlush,
+  );
 
   if (isLoading || !plan) return <div className="h-32 animate-pulse rounded-2xl bg-sage-100" />;
 
