@@ -7,9 +7,11 @@ import { toast } from "sonner";
 import { SetupShell, SETUP_STEPS, TOTAL_STEPS } from "@/components/SetupShell";
 import { EMERGENCY_FIELDS, EMERGENCY_LABELS, REQUIRED_FIELDS, mergeEmergency, type EmergencyField } from "@/lib/emergency";
 import { Plus, X } from "lucide-react";
+import { PhotoCropper } from "@/components/PhotoCropper";
+import { AgePicker, BirdField, SpeciesPicker } from "@/components/BirdPickers";
 
 const setupSearch = z.object({
-  step: z.coerce.number().int().min(2).max(TOTAL_STEPS).optional(),
+  step: z.coerce.number().int().min(1).max(TOTAL_STEPS).optional(),
 });
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/setup")({
@@ -28,7 +30,7 @@ function BirdSetup() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("birds")
-        .select("id, name, setup_complete, setup_step")
+        .select("*")
         .eq("id", birdId)
         .single();
       if (error) throw error;
@@ -36,27 +38,22 @@ function BirdSetup() {
     },
   });
 
-  const [step, setStep] = useState<number>(2);
+  const [step, setStep] = useState<number>(1);
   const [blockNext, setBlockNext] = useState(false);
   useEffect(() => { setBlockNext(false); }, [step]);
   const [saving, setSaving] = useState(false);
 
-  // Initialise step from URL (?step=) when present, else from stored progress.
-  // Skip the auto-redirect when the URL explicitly asks for a step, so owners
-  // can revisit any incomplete step from the dashboard completeness indicator.
+  // Start at step one unless this bird has an unfinished saved position.
+  // Explicit ?step= links still open the requested step.
   useEffect(() => {
     if (!bird) return;
-    if (stepParam) {
-      setStep(Math.min(TOTAL_STEPS, Math.max(2, stepParam)));
-      return;
-    }
-    if (bird.setup_complete) {
-      navigate({ to: "/birds/$birdId", params: { birdId }, replace: true });
+    if (stepParam != null) {
+      setStep(Math.min(TOTAL_STEPS, Math.max(1, stepParam)));
       return;
     }
     const stored = Number(bird.setup_step ?? 0);
-    setStep(Math.min(TOTAL_STEPS, Math.max(2, stored || 2)));
-  }, [bird, birdId, navigate, stepParam]);
+    setStep(!bird.setup_complete && stored > 1 ? Math.min(TOTAL_STEPS, stored) : 1);
+  }, [bird, stepParam]);
 
   async function persistStep(nextStep: number, complete = false) {
     setSaving(true);
@@ -84,7 +81,7 @@ function BirdSetup() {
   }
 
   async function onBack() {
-    if (step <= 2) return; // Step 1 lives in /birds/new; basics are editable via the tabs.
+    if (step <= 1) return;
     const prev = step - 1;
     const ok = await persistStep(prev);
     if (ok) setStep(prev);
@@ -99,7 +96,7 @@ function BirdSetup() {
   }
 
   async function jumpToStep(target: number) {
-    const clamped = Math.min(TOTAL_STEPS, Math.max(2, target));
+    const clamped = Math.min(TOTAL_STEPS, Math.max(1, target));
     const ok = await persistStep(clamped);
     if (ok) setStep(clamped);
   }
@@ -117,7 +114,7 @@ function BirdSetup() {
     }
   }
 
-  if (isLoading || !bird || (bird.setup_complete && !stepParam)) {
+  if (isLoading || !bird) {
     return (
       <SetupShell step={step} title="Loading…">
         <div className="h-32 animate-pulse rounded-2xl bg-sage-100" />
@@ -137,7 +134,7 @@ function BirdSetup() {
       onNext={onNext}
       onSaveAndExit={onSaveAndExit}
       nextLabel={isLast ? "Finish setup" : "Next"}
-      backDisabled={step <= 2}
+      backDisabled={step <= 1}
       nextDisabled={blockNext}
       hideFooter={step === TOTAL_STEPS}
     >
@@ -168,6 +165,7 @@ function StepBody({
   onJumpToStep: (target: number) => void;
   onFinish: (opts: { to: "dashboard-newsit" | "tabs" }) => void;
 }) {
+  if (step === 1) return <BasicsStep birdId={birdId} onBlockNext={onBlockNext} />;
   if (step === 2) return <DayInLifeStep birdId={birdId} />;
   if (step === 3) return <FoodWaterStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} />;
   if (step === 4) return <PersonalityStep birdId={birdId} birdName={birdName} />;
@@ -222,6 +220,94 @@ const COMMON_TASKS = [
   "Medication",
   "Cover for night",
 ];
+
+function BasicsStep({ birdId, onBlockNext }: { birdId: string; onBlockNext: (block: boolean) => void }) {
+  const qc = useQueryClient();
+  const { data: bird, isLoading } = useQuery({
+    queryKey: ["bird-basics", birdId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("birds").select("*").eq("id", birdId).single();
+      if (error) throw error;
+      return data as any;
+    },
+  });
+  const [form, setForm] = useState<any>(null);
+  const [hydrated, setHydrated] = useState(false);
+
+  useEffect(() => {
+    if (!bird || hydrated) return;
+    setForm(bird);
+    setHydrated(true);
+  }, [bird, hydrated]);
+
+  useEffect(() => {
+    onBlockNext(!form?.name?.trim() || !form?.species?.trim());
+  }, [form?.name, form?.species, onBlockNext]);
+
+  useEffect(() => {
+    if (!form || !hydrated) return;
+    const handle = setTimeout(async () => {
+      const { id, owner_id, created_at, updated_at, ...patch } = form;
+      await supabase.from("birds").update(patch).eq("id", birdId);
+      qc.invalidateQueries({ queryKey: ["bird", birdId] });
+      qc.invalidateQueries({ queryKey: ["bird-setup", birdId] });
+    }, 500);
+    return () => clearTimeout(handle);
+  }, [form, hydrated, birdId, qc]);
+
+  if (isLoading || !form) return <div className="h-32 animate-pulse rounded-2xl bg-sage-100" />;
+
+  function onPhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 2_000_000) { toast.error("Photo must be under 2MB."); return; }
+    const reader = new FileReader();
+    reader.onload = () => setForm({ ...form, photo_url: reader.result as string });
+    reader.readAsDataURL(file);
+  }
+
+  return (
+    <div className="space-y-4">
+      <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
+        <div className="flex items-start gap-3">
+          {form.photo_url ? (
+            <PhotoCropper src={form.photo_url} position={form.photo_position} onChange={(pos) => setForm({ ...form, photo_position: pos })} size={120} />
+          ) : (
+            <div className="flex size-[120px] items-center justify-center rounded-xl bg-sage-100 text-[10px] uppercase tracking-wider text-sage-600">No photo</div>
+          )}
+          <div className="flex-1 space-y-2 pt-1">
+            <label className="inline-block cursor-pointer rounded-lg bg-sage-100 px-3 py-1.5 text-xs font-semibold text-sage-700">
+              {form.photo_url ? "Change photo" : "Add photo"}
+              <input type="file" accept="image/*" className="hidden" onChange={onPhoto} />
+            </label>
+            {form.photo_url && (
+              <button type="button" onClick={() => setForm({ ...form, photo_url: null, photo_position: null })} className="ml-2 text-xs font-semibold text-warn-red underline">Remove</button>
+            )}
+          </div>
+        </div>
+        <BirdField label="Name"><input className="input" value={form.name ?? ""} onChange={(e) => setForm({ ...form, name: e.target.value })} /></BirdField>
+        <SpeciesPicker value={form.species ?? ""} onChange={(v) => setForm({ ...form, species: v })} />
+        <AgePicker age={form.age ?? ""} birthDate={form.birth_date ?? ""} onChange={(next) => setForm({ ...form, age: next.age, birth_date: next.birthDate })} />
+        <div className="grid grid-cols-2 gap-3">
+          <BirdField label="Sex">
+            <select className="input" value={form.sex ?? ""} onChange={(e) => setForm({ ...form, sex: e.target.value || null })}>
+              <option value="">Unknown</option><option>Male</option><option>Female</option>
+            </select>
+          </BirdField>
+          <BirdField label="Flight">
+            <select className="input" value={form.flight_status ?? "unknown"} onChange={(e) => setForm({ ...form, flight_status: e.target.value })}>
+              <option value="unknown">Unknown</option>
+              <option value="fully_flighted">Fully flighted</option>
+              <option value="clipped">Clipped</option>
+              <option value="partially_clipped">Partially clipped</option>
+            </select>
+          </BirdField>
+        </div>
+      </section>
+      <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.65rem .8rem;font-size:16px;outline:none}.input:focus{border-color:var(--sage-600);box-shadow:0 0 0 3px rgb(74 103 65 / .15)}`}</style>
+    </div>
+  );
+}
 
 function DayInLifeStep({ birdId }: { birdId: string }) {
   const qc = useQueryClient();

@@ -21,6 +21,7 @@ import { Route as SitterTokenGuideRouteImport } from './routes/sitter/$token/gui
 import { Route as SitterTokenEmergencyRouteImport } from './routes/sitter/$token/emergency'
 import { Route as AuthenticatedBirdsNewRouteImport } from './routes/_authenticated/birds/new'
 import { Route as AuthenticatedBirdsBirdIdRouteImport } from './routes/_authenticated/birds/$birdId'
+import { Route as AuthenticatedBirdsBirdIdIndexRouteImport } from './routes/_authenticated/birds/$birdId.index'
 import { Route as AuthenticatedBirdsBirdIdSetupRouteImport } from './routes/_authenticated/birds/$birdId.setup'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -83,6 +84,12 @@ const AuthenticatedBirdsBirdIdRoute =
     path: '/birds/$birdId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedBirdsBirdIdIndexRoute =
+  AuthenticatedBirdsBirdIdIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
+  } as any)
 const AuthenticatedBirdsBirdIdSetupRoute =
   AuthenticatedBirdsBirdIdSetupRouteImport.update({
     id: '/setup',
@@ -103,19 +110,20 @@ export interface FileRoutesByFullPath {
   '/sitter/$token/scan': typeof SitterTokenScanRoute
   '/sitter/$token/': typeof SitterTokenIndexRoute
   '/birds/$birdId/setup': typeof AuthenticatedBirdsBirdIdSetupRoute
+  '/birds/$birdId/': typeof AuthenticatedBirdsBirdIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/reset-password': typeof ResetPasswordRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
-  '/birds/$birdId': typeof AuthenticatedBirdsBirdIdRouteWithChildren
   '/birds/new': typeof AuthenticatedBirdsNewRoute
   '/sitter/$token/emergency': typeof SitterTokenEmergencyRoute
   '/sitter/$token/guide': typeof SitterTokenGuideRoute
   '/sitter/$token/scan': typeof SitterTokenScanRoute
   '/sitter/$token': typeof SitterTokenIndexRoute
   '/birds/$birdId/setup': typeof AuthenticatedBirdsBirdIdSetupRoute
+  '/birds/$birdId': typeof AuthenticatedBirdsBirdIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -132,6 +140,7 @@ export interface FileRoutesById {
   '/sitter/$token/scan': typeof SitterTokenScanRoute
   '/sitter/$token/': typeof SitterTokenIndexRoute
   '/_authenticated/birds/$birdId/setup': typeof AuthenticatedBirdsBirdIdSetupRoute
+  '/_authenticated/birds/$birdId/': typeof AuthenticatedBirdsBirdIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -148,19 +157,20 @@ export interface FileRouteTypes {
     | '/sitter/$token/scan'
     | '/sitter/$token/'
     | '/birds/$birdId/setup'
+    | '/birds/$birdId/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
     | '/reset-password'
     | '/dashboard'
-    | '/birds/$birdId'
     | '/birds/new'
     | '/sitter/$token/emergency'
     | '/sitter/$token/guide'
     | '/sitter/$token/scan'
     | '/sitter/$token'
     | '/birds/$birdId/setup'
+    | '/birds/$birdId'
   id:
     | '__root__'
     | '/'
@@ -176,6 +186,7 @@ export interface FileRouteTypes {
     | '/sitter/$token/scan'
     | '/sitter/$token/'
     | '/_authenticated/birds/$birdId/setup'
+    | '/_authenticated/birds/$birdId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -272,6 +283,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBirdsBirdIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/birds/$birdId/': {
+      id: '/_authenticated/birds/$birdId/'
+      path: '/'
+      fullPath: '/birds/$birdId/'
+      preLoaderRoute: typeof AuthenticatedBirdsBirdIdIndexRouteImport
+      parentRoute: typeof AuthenticatedBirdsBirdIdRoute
+    }
     '/_authenticated/birds/$birdId/setup': {
       id: '/_authenticated/birds/$birdId/setup'
       path: '/setup'
@@ -284,11 +302,13 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedBirdsBirdIdRouteChildren {
   AuthenticatedBirdsBirdIdSetupRoute: typeof AuthenticatedBirdsBirdIdSetupRoute
+  AuthenticatedBirdsBirdIdIndexRoute: typeof AuthenticatedBirdsBirdIdIndexRoute
 }
 
 const AuthenticatedBirdsBirdIdRouteChildren: AuthenticatedBirdsBirdIdRouteChildren =
   {
     AuthenticatedBirdsBirdIdSetupRoute: AuthenticatedBirdsBirdIdSetupRoute,
+    AuthenticatedBirdsBirdIdIndexRoute: AuthenticatedBirdsBirdIdIndexRoute,
   }
 
 const AuthenticatedBirdsBirdIdRouteWithChildren =
