@@ -30,7 +30,7 @@ function BirdSetup() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("birds")
-        .select("id, name, setup_complete, setup_step")
+        .select("*")
         .eq("id", birdId)
         .single();
       if (error) throw error;
@@ -96,7 +96,7 @@ function BirdSetup() {
   }
 
   async function jumpToStep(target: number) {
-    const clamped = Math.min(TOTAL_STEPS, Math.max(2, target));
+    const clamped = Math.min(TOTAL_STEPS, Math.max(1, target));
     const ok = await persistStep(clamped);
     if (ok) setStep(clamped);
   }
@@ -165,6 +165,7 @@ function StepBody({
   onJumpToStep: (target: number) => void;
   onFinish: (opts: { to: "dashboard-newsit" | "tabs" }) => void;
 }) {
+  if (step === 1) return <BasicsStep birdId={birdId} onBlockNext={onBlockNext} />;
   if (step === 2) return <DayInLifeStep birdId={birdId} />;
   if (step === 3) return <FoodWaterStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} />;
   if (step === 4) return <PersonalityStep birdId={birdId} birdName={birdName} />;
