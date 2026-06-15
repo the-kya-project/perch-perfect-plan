@@ -1904,7 +1904,7 @@ async function syncFeedingTasks(planId: string, items: FeedingItem[]) {
   for (const it of items) {
     const name = (it.name ?? "").trim();
     if (!name) continue;
-    const amt = it.amount?.trim() && it.unit ? `${it.amount.trim()} ${it.unit}` : "";
+    const amt = formatAmountUnit(it.amount, it.unit);
     const baseInstr = amt ? `Serve ${amt}.` : "";
     if (it.freeFed) {
       rows.push({
