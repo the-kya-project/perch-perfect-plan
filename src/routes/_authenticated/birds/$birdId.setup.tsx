@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { SetupShell, SETUP_STEPS, TOTAL_STEPS } from "@/components/SetupShell";
+import { EMERGENCY_FIELDS, EMERGENCY_LABELS, REQUIRED_FIELDS, mergeEmergency, isInherited, type EmergencyField } from "@/lib/emergency";
 import { Plus, X } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/setup")({
