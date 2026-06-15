@@ -1,6 +1,7 @@
 import { createFileRoute, Outlet, useNavigate, useSearch, retainSearchParams } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { Suspense } from "react";
 import { z } from "zod";
 import { getSitterContext } from "@/lib/sitter.functions";
 import { EmergencyBar } from "@/components/EmergencyBar";
@@ -24,8 +25,16 @@ export const Route = createFileRoute("/sitter/$token")({
       </div>
     </div>
   ),
-  component: SitterLayout,
+  component: SitterRoot,
 });
+
+function SitterRoot() {
+  return (
+    <Suspense fallback={<FullPageSkeleton />}>
+      <SitterLayout />
+    </Suspense>
+  );
+}
 
 function SitterLayout() {
   const { token } = Route.useParams();
@@ -42,15 +51,18 @@ function SitterLayout() {
               <button
                 key={b.id}
                 onClick={() => navigate({ to: ".", search: { birdId: b.id } })}
-                className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${b.id === ctx.activeBirdId ? "bg-sage-900 text-white" : "bg-sage-100 text-sage-700"}`}
+                className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition ${b.id === ctx.activeBirdId ? "bg-sage-900 text-white" : "bg-sage-100 text-sage-700"}`}
               >
                 {b.name}
               </button>
             ))}
           </div>
+
         </div>
       )}
-      <Outlet />
+      <Suspense fallback={<TabSkeleton />}>
+        <Outlet />
+      </Suspense>
       <EmergencyBar token={token} />
     </div>
   );
@@ -64,4 +76,61 @@ export function useSitterContext(token: string) {
     queryKey: ["sitter-ctx", token, birdId ?? null],
     queryFn: () => fn({ data: { token, birdId } }),
   });
+}
+
+
+function SkeletonLine({ className = "" }: { className?: string }) {
+  return <div className={`animate-pulse rounded-md bg-sage-200/70 ${className}`} />;
+}
+
+function TabSkeleton() {
+  return (
+    <div
+      className="mx-auto max-w-md space-y-4 px-4 py-5"
+      role="status"
+      aria-live="polite"
+      aria-label="Loading"
+    >
+      <span className="sr-only">Loading…</span>
+      <div className="space-y-3 rounded-2xl bg-white p-4 ring-1 ring-sage-100">
+        <SkeletonLine className="h-4 w-1/2" />
+        <SkeletonLine className="h-3 w-3/4" />
+        <SkeletonLine className="h-3 w-2/3" />
+      </div>
+      <div className="space-y-3 rounded-2xl bg-white p-4 ring-1 ring-sage-100">
+        <SkeletonLine className="h-4 w-2/5" />
+        <SkeletonLine className="h-10 w-full" />
+        <SkeletonLine className="h-10 w-full" />
+        <SkeletonLine className="h-10 w-5/6" />
+      </div>
+      <div className="space-y-3 rounded-2xl bg-white p-4 ring-1 ring-sage-100">
+        <SkeletonLine className="h-4 w-1/3" />
+        <SkeletonLine className="h-10 w-full" />
+        <SkeletonLine className="h-10 w-full" />
+      </div>
+    </div>
+  );
+}
+
+function FullPageSkeleton() {
+  return (
+    <div
+      className="min-h-screen bg-sage-50 pb-32"
+      role="status"
+      aria-live="polite"
+      aria-label="Loading sitter view"
+    >
+      <span className="sr-only">Loading sitter view…</span>
+      <div className="border-b border-sage-100 bg-white">
+        <div className="mx-auto flex max-w-md items-center gap-2 px-4 py-3">
+          <SkeletonLine className="size-9 rounded-full" />
+          <div className="flex-1 space-y-1.5">
+            <SkeletonLine className="h-3 w-1/3" />
+            <SkeletonLine className="h-2 w-1/4" />
+          </div>
+        </div>
+      </div>
+      <TabSkeleton />
+    </div>
+  );
 }
