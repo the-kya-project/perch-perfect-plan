@@ -692,25 +692,34 @@ export type Database = {
           checked: boolean
           checked_at: string
           created_at: string
+          custom_label: string | null
           id: string
+          is_custom: boolean
           item_key: string
           sit_id: string
+          tag: string
         }
         Insert: {
           checked?: boolean
           checked_at?: string
           created_at?: string
+          custom_label?: string | null
           id?: string
+          is_custom?: boolean
           item_key: string
           sit_id: string
+          tag?: string
         }
         Update: {
           checked?: boolean
           checked_at?: string
           created_at?: string
+          custom_label?: string | null
           id?: string
+          is_custom?: boolean
           item_key?: string
           sit_id?: string
+          tag?: string
         }
         Relationships: [
           {
@@ -728,6 +737,7 @@ export type Database = {
           end_date: string
           id: string
           invite_token: string
+          marked_ready_at: string | null
           notes: string | null
           owner_id: string
           revoked: boolean
@@ -742,6 +752,7 @@ export type Database = {
           end_date: string
           id?: string
           invite_token?: string
+          marked_ready_at?: string | null
           notes?: string | null
           owner_id: string
           revoked?: boolean
@@ -756,6 +767,7 @@ export type Database = {
           end_date?: string
           id?: string
           invite_token?: string
+          marked_ready_at?: string | null
           notes?: string | null
           owner_id?: string
           revoked?: boolean
