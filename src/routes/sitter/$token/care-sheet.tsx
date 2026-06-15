@@ -120,16 +120,13 @@ function CareSheet() {
 
         {clips.length > 0 && (
           <Section title="Watch-first clips">
-            <p className="text-xs text-sage-600">Short clips from the owner. Tap to play.</p>
-            <div className="-mx-1 grid grid-cols-2 gap-2">
+            <p className="text-xs text-sage-600">Short clips from the owner.</p>
+            <div className="-mx-1 grid grid-cols-1 gap-3">
               {clips.map((c: any) => (
-                <a key={c.key} href={c.url} target="_blank" rel="noreferrer" className="group overflow-hidden rounded-xl bg-white ring-1 ring-sage-100">
-                  <div className="relative aspect-video bg-sage-900">
-                    <video src={c.url} className="size-full object-cover opacity-90" preload="metadata" muted playsInline />
-                    <div className="absolute inset-0 grid place-items-center"><PlayCircle className="size-8 text-white drop-shadow" /></div>
-                  </div>
-                  <p className="px-2 py-1.5 text-[11px] font-semibold leading-tight">{c.label}</p>
-                </a>
+                <div key={c.key} className="overflow-hidden rounded-xl bg-white ring-1 ring-sage-100">
+                  <ClipPlayer src={c.url} label={c.label} className="aspect-video" />
+                  <p className="px-2 py-1.5 text-[12px] font-semibold leading-tight">{c.label}</p>
+                </div>
               ))}
             </div>
           </Section>
