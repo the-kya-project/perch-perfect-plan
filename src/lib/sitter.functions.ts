@@ -149,6 +149,8 @@ export const getSitterContext = createServerFn({ method: "GET" })
       completions: completionsRes.data ?? [],
       todayLog: todayLogRes.data ?? null,
       watchClips,
+      baselineDroppingsUrl,
+      baselineClipUrl,
     };
   });
 
