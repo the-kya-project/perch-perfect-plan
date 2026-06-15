@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, useSearch, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useNavigate, useSearch } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { z } from "zod";
@@ -28,9 +28,8 @@ export const Route = createFileRoute("/sitter/$token")({
 
 function SitterLayout() {
   const { token } = Route.useParams();
-  const search = useSearch({ from: "/sitter/$token" });
   const navigate = useNavigate();
-  const { data: ctx } = useSitterContext(token, search.birdId);
+  const { data: ctx } = useSitterContext(token);
 
   return (
     <div className="min-h-screen bg-sage-50 pb-32">
@@ -41,7 +40,7 @@ function SitterLayout() {
             {ctx.birds.map((b: any) => (
               <button
                 key={b.id}
-                onClick={() => navigate({ to: "/sitter/$token", params: { token }, search: { birdId: b.id } })}
+                onClick={() => navigate({ to: ".", search: { birdId: b.id } })}
                 className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${b.id === ctx.activeBirdId ? "bg-sage-900 text-white" : "bg-sage-100 text-sage-700"}`}
               >
                 {b.name}
@@ -56,7 +55,9 @@ function SitterLayout() {
   );
 }
 
-export function useSitterContext(token: string, birdId?: string) {
+export function useSitterContext(token: string) {
+  const search = useSearch({ from: "/sitter/$token" });
+  const birdId = search.birdId;
   const fn = useServerFn(getSitterContext);
   return useSuspenseQuery({
     queryKey: ["sitter-ctx", token, birdId ?? null],
