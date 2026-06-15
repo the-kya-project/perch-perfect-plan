@@ -110,8 +110,13 @@ function ScanPage() {
 
         {SCAN_FIELDS.map((f) => {
           const a = answers[f.key];
+          const missing = showErrors && !a;
           return (
-            <section key={f.key} className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
+            <section
+              key={f.key}
+              id={`scan-field-${f.key}`}
+              className={`rounded-2xl bg-white p-4 ring-1 ${missing ? "ring-2 ring-warn-red" : "ring-sage-100"}`}
+            >
               <p className="text-sm font-semibold">{f.question}</p>
               <div className="mt-3 grid grid-cols-3 gap-2">
                 {(["normal", "not_sure", "concerning"] as ScanAnswer[]).map((opt) => (
@@ -128,6 +133,9 @@ function ScanPage() {
                   </button>
                 ))}
               </div>
+              {missing && (
+                <p className="mt-3 text-[11px] font-semibold text-warn-red">Please answer this before submitting.</p>
+              )}
               {a === "not_sure" && (
                 <p className="mt-3 rounded bg-warn-amber/10 p-2 text-[11px] leading-relaxed text-sage-900"><b>Look again: </b>{f.helpNotSure}</p>
               )}
