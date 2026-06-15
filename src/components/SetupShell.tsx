@@ -9,6 +9,7 @@ export const SETUP_STEPS = [
   { key: "personality", title: "Personality & handling" },
   { key: "environment", title: "Environment & safety" },
   { key: "health", title: "Health baseline" },
+  { key: "clips", title: "Watch-first clips" },
   { key: "emergency", title: "Emergency info" },
   { key: "review", title: "Review & finish" },
 ] as const;
