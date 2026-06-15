@@ -84,7 +84,7 @@ function NewBird() {
       saving={saving}
       onNext={onNext}
       onSaveAndExit={onSaveAndExit}
-      nextDisabled={!name.trim()}
+      nextDisabled={!name.trim() || !species.trim()}
     >
       <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
         <div className="flex items-start gap-3">
