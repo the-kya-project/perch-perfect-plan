@@ -135,6 +135,7 @@ function Dashboard() {
             <h2 className="text-base font-bold">Sits</h2>
             <p className="text-xs text-sage-600">Create one sit that covers any combination of your birds. The sitter gets a single secure invite link.</p>
             <SitForm birds={birds} onCreated={refreshSits} />
+
             {sits.length === 0 ? (
               <p className="text-sm text-sage-600">No sits yet.</p>
             ) : (
