@@ -90,7 +90,7 @@ export function SitCard({ sit, birds = [], onChange }: { sit: any; birds?: Bird[
         </div>
       )}
       {!sit.revoked && (
-        <SitChecklist sitId={sit.id} birds={birds} />
+        <SitChecklist sit={sit} birds={birds} />
       )}
       <div className="mt-3 flex gap-3 text-xs font-semibold">
         {!sit.revoked && !expired && (
