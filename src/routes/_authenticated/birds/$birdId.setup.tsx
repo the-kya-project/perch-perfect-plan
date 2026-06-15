@@ -1398,7 +1398,7 @@ function EnvironmentStep({ birdId, registerFlush }: { birdId: string; registerFl
 
 const MED_TASK_PREFIX = "Medication";
 
-function HealthBaselineStep({ birdId, birdName }: { birdId: string; birdName: string }) {
+function HealthBaselineStep({ birdId, birdName, registerFlush }: { birdId: string; birdName: string; registerFlush?: (fn: (() => Promise<void>) | null) => void }) {
   const qc = useQueryClient();
 
   const { data: bird } = useQuery({
