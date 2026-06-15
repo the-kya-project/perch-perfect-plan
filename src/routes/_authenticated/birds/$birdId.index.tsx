@@ -295,6 +295,48 @@ function PlanForm({ birdId, bird, plan, onSaved }: { birdId: string; bird: any; 
         {[["food_instructions", "Food instructions (pellets, fresh, treats)"], ["water_instructions", "Water"], ["fresh_food_removal", "Fresh food removal timing"], ["treats_allowed", "Treats allowed"], ["foods_never_allowed", "Foods NEVER allowed for this bird"]].map(([k, l]) => (
           <Field key={k} label={l}><textarea className="input area" value={p[k] ?? ""} onChange={(e) => setP({ ...p, [k]: e.target.value })} /></Field>
         ))}
+        <div className="rounded-xl bg-sage-50/60 p-3 ring-1 ring-sage-100 space-y-3">
+          <p className="text-xs font-bold uppercase tracking-wider text-sage-700">Freshness & hygiene</p>
+          <Field label="Remove fresh or wet food after" hint="Fresh food spoils fast and can grow bacteria.">
+            <select
+              className="input"
+              value={String(p.fresh_food_removal_minutes ?? 120)}
+              onChange={(e) => setP({ ...p, fresh_food_removal_minutes: Number(e.target.value) })}
+            >
+              <option value="60">1 hour</option>
+              <option value="120">2 hours</option>
+              <option value="180">3 hours</option>
+            </select>
+          </Field>
+          <Field label="Wash food bowls">
+            <select
+              className="input"
+              value={p.food_bowl_wash_cadence ?? "after_each_fresh"}
+              onChange={(e) => setP({ ...p, food_bowl_wash_cadence: e.target.value })}
+            >
+              <option value="after_each_fresh">After every fresh-food serving</option>
+              <option value="once_daily">Once a day</option>
+              <option value="every_few_days">Every few days</option>
+            </select>
+          </Field>
+          <Field label="Wash water bowl or bottle" hint="Separate from how often water is changed.">
+            <select
+              className="input"
+              value={p.water_bowl_wash_cadence ?? "once_daily"}
+              onChange={(e) => setP({ ...p, water_bowl_wash_cadence: e.target.value })}
+            >
+              <option value="once_daily">Once a day</option>
+              <option value="twice_daily">Twice a day</option>
+            </select>
+          </Field>
+          <Field label="Other food hygiene notes">
+            <textarea
+              className="input area"
+              value={p.food_hygiene_notes ?? ""}
+              onChange={(e) => setP({ ...p, food_hygiene_notes: e.target.value })}
+            />
+          </Field>
+        </div>
       </section>
 
       <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
