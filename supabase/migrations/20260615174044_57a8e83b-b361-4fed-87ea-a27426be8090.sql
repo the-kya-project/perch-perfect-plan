@@ -1,0 +1,1 @@
+ALTER TABLE public.care_plans ADD COLUMN IF NOT EXISTS diet_details jsonb NOT NULL DEFAULT '{}'::jsonb;

@@ -98,6 +98,7 @@ export type Database = {
           clip_locations_path: string | null
           clip_step_up_path: string | null
           created_at: string
+          diet_details: Json
           diet_other: string | null
           diet_types: string[]
           fears_triggers: string | null
@@ -158,6 +159,7 @@ export type Database = {
           clip_locations_path?: string | null
           clip_step_up_path?: string | null
           created_at?: string
+          diet_details?: Json
           diet_other?: string | null
           diet_types?: string[]
           fears_triggers?: string | null
@@ -218,6 +220,7 @@ export type Database = {
           clip_locations_path?: string | null
           clip_step_up_path?: string | null
           created_at?: string
+          diet_details?: Json
           diet_other?: string | null
           diet_types?: string[]
           fears_triggers?: string | null
