@@ -2,7 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Plus, Trash2, Link2, Copy, Calendar } from "lucide-react";
+import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { SitCard } from "@/components/SitCard";
 import { toast } from "sonner";
 import { Disclaimer, VetReviewBanner } from "@/components/Disclaimer";
 import { PhotoCropper } from "@/components/PhotoCropper";
@@ -367,49 +368,12 @@ function ContactsForm({ birdId, contacts, onSaved }: { birdId: string; contacts:
 function SitsPanel({ birdId, sits, onChange }: { birdId: string; sits: any[]; onChange: () => void }) {
   return (
     <>
-      <Link to="/birds/$birdId/sits/new" params={{ birdId }} className="flex items-center justify-center gap-2 rounded-xl bg-sage-600 px-4 py-3 text-sm font-semibold text-white">
-        <Plus className="size-4" /> Create a sit
-      </Link>
-      {sits.length === 0 && <p className="text-sm text-sage-600">No sits yet. Create one to generate a secure invite link for your sitter.</p>}
+      <div className="rounded-xl bg-sage-100/60 p-3 text-xs text-sage-700">
+        Sits are created from the <Link to="/dashboard" className="font-semibold underline">owner dashboard</Link>, where you can include multiple birds in one sit.
+      </div>
+      {sits.length === 0 && <p className="text-sm text-sage-600">This bird isn't part of any sit yet.</p>}
       {sits.map((s) => <SitCard key={s.id} sit={s} onChange={onChange} />)}
     </>
-  );
-}
-
-function SitCard({ sit, onChange }: { sit: any; onChange: () => void }) {
-  const expired = new Date(sit.token_expires_at) < new Date();
-  const status = sit.revoked ? "Revoked" : expired ? "Expired" : "Active";
-  const url = typeof window !== "undefined" ? `${window.location.origin}/sitter/${sit.invite_token}` : "";
-  async function revoke() {
-    await supabase.from("sits").update({ revoked: true }).eq("id", sit.id);
-    toast.success("Link revoked.");
-    onChange();
-  }
-  async function copy() {
-    await navigator.clipboard.writeText(url);
-    toast.success("Link copied.");
-  }
-  return (
-    <div className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-sm font-semibold">
-          <Calendar className="size-4 text-sage-600" />
-          {sit.start_date} → {sit.end_date}
-        </div>
-        <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${sit.revoked || expired ? "bg-sage-100 text-sage-600" : "bg-warn-green/10 text-warn-green"}`}>{status}</span>
-      </div>
-      <p className="mt-1 text-xs text-sage-600">Sitter: {sit.sitter_name ?? "—"} {sit.sitter_email && `(${sit.sitter_email})`}</p>
-      {!sit.revoked && !expired && (
-        <div className="mt-3 flex items-center gap-2 rounded-lg bg-sage-50 p-2">
-          <Link2 className="size-3.5 text-sage-600" />
-          <span className="flex-1 truncate text-[11px] text-sage-700">{url}</span>
-          <button onClick={copy} className="rounded p-1 text-sage-600"><Copy className="size-3.5" /></button>
-        </div>
-      )}
-      {!sit.revoked && !expired && (
-        <button onClick={revoke} className="mt-3 text-xs font-semibold text-warn-red underline">Revoke link</button>
-      )}
-    </div>
   );
 }
 
