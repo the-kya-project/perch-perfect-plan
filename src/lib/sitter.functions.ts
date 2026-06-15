@@ -113,7 +113,7 @@ export const getSitterContext = createServerFn({ method: "GET" })
       activeBirdId: activeId,
       bird: birdRes.data,
       plan: planRes.data,
-      contacts: contactsRes.data,
+      contacts: mergedContacts,
       tasks: tasksRes.data ?? [],
       completions: completionsRes.data ?? [],
       todayLog: todayLogRes.data ?? null,
