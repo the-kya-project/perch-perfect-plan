@@ -777,7 +777,7 @@ function FoodWaterStep({
                     <p className="text-sm font-semibold text-sage-800">{label}</p>
                     <button
                       type="button"
-                      onClick={() => update([...items, { name: "", amount: "", unit: "" }])}
+                      onClick={() => update([...items, { name: "", amount: "", unit: "", times: [] }])}
                       className="inline-flex items-center gap-1 rounded-lg bg-sage-100 px-2.5 py-1 text-xs font-semibold text-sage-700 hover:bg-sage-200"
                     >
                       <Plus className="size-3.5" /> Add item
