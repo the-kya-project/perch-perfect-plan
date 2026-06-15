@@ -687,6 +687,41 @@ export type Database = {
           },
         ]
       }
+      sit_checklist_items: {
+        Row: {
+          checked: boolean
+          checked_at: string
+          created_at: string
+          id: string
+          item_key: string
+          sit_id: string
+        }
+        Insert: {
+          checked?: boolean
+          checked_at?: string
+          created_at?: string
+          id?: string
+          item_key: string
+          sit_id: string
+        }
+        Update: {
+          checked?: boolean
+          checked_at?: string
+          created_at?: string
+          id?: string
+          item_key?: string
+          sit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sit_checklist_items_sit_id_fkey"
+            columns: ["sit_id"]
+            isOneToOne: false
+            referencedRelation: "sits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sits: {
         Row: {
           created_at: string
