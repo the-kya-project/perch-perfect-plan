@@ -583,8 +583,10 @@ function FoodWaterStep({
   }, [routine]);
 
   // form state — initialized once from plan
+  type DietItem = { name: string; amount: string; unit: string };
   const [diet, setDiet] = useState<string[]>([]);
   const [dietOther, setDietOther] = useState("");
+  const [dietDetails, setDietDetails] = useState<Record<string, DietItem[]>>({});
   const [brand, setBrand] = useState("");
   const [amountValue, setAmountValue] = useState("");
   const [amountUnit, setAmountUnit] = useState("");
@@ -603,11 +605,21 @@ function FoodWaterStep({
 
   useEffect(() => {
     if (!plan || hydrated) return;
-    setDiet(plan.diet_types ?? []);
+    const dietTypes = (plan.diet_types ?? []) as string[];
+    setDiet(dietTypes);
     setDietOther(plan.diet_other ?? "");
-    setBrand(plan.food_brand ?? "");
-    setAmountValue(plan.amount_value != null ? String(plan.amount_value) : "");
-    setAmountUnit(plan.amount_unit ?? "");
+    const seedBrand = plan.food_brand ?? "";
+    const seedAmt = plan.amount_value != null ? String(plan.amount_value) : "";
+    const seedUnit = plan.amount_unit ?? "";
+    setBrand(seedBrand);
+    setAmountValue(seedAmt);
+    setAmountUnit(seedUnit);
+    const dd = { ...((plan.diet_details ?? {}) as Record<string, DietItem[]>) };
+    const hasAny = Object.values(dd).some((arr) => Array.isArray(arr) && arr.length);
+    if (!hasAny && dietTypes.length && (seedBrand || seedAmt || seedUnit)) {
+      dd[dietTypes[0]] = [{ name: seedBrand, amount: seedAmt, unit: seedUnit }];
+    }
+    setDietDetails(dd);
     const ft = (plan.feeding_times ?? []) as string[];
     setFeedingTimes(ft.length ? ft : suggestedTimes);
     setFresh(plan.fresh_foods ?? []);
@@ -622,23 +634,50 @@ function FoodWaterStep({
     setHydrated(true);
   }, [plan, suggestedTimes, hydrated]);
 
-  // Validation: never allow amount without unit (or vice versa).
-  const amountValid = (amountValue.trim() === "" && amountUnit === "") ||
-    (amountValue.trim() !== "" && amountUnit !== "");
-  useEffect(() => { onBlockNext(!amountValid); }, [amountValid, onBlockNext]);
+  // Validation: each filled row must have both amount and unit (or neither).
+  const dietRowsValid = useMemo(() => {
+    for (const t of diet) {
+      for (const it of dietDetails[t] ?? []) {
+        const a = (it.amount ?? "").trim();
+        const u = (it.unit ?? "").trim();
+        if ((a === "") !== (u === "")) return false;
+      }
+    }
+    return true;
+  }, [diet, dietDetails]);
+  useEffect(() => { onBlockNext(!dietRowsValid); }, [dietRowsValid, onBlockNext]);
 
   // Persist (debounced) whenever form changes after hydration.
   useEffect(() => {
     if (!plan || !hydrated) return;
     const handle = setTimeout(async () => {
-      // Build mirrored text summaries for the existing Care plan tab.
       const dietLabels = diet.map((d) => DIET_OPTIONS.find((o) => o.value === d)?.label).filter(Boolean) as string[];
       if (diet.includes("other") && dietOther.trim()) dietLabels.push(dietOther.trim());
-      const amountStr = amountValue && amountUnit ? `${amountValue} ${amountUnit}` : "";
+
+      const perTypeLines: string[] = [];
+      for (const t of diet) {
+        const label = DIET_OPTIONS.find((o) => o.value === t)?.label ?? t;
+        const items = (dietDetails[t] ?? []).filter((it) => it.name.trim() || it.amount.trim());
+        if (!items.length) continue;
+        const parts = items.map((it) => {
+          const amt = it.amount.trim() && it.unit ? `${it.amount.trim()} ${it.unit}` : "";
+          return [it.name.trim(), amt].filter(Boolean).join(" — ");
+        }).filter(Boolean);
+        if (parts.length) perTypeLines.push(`${label}: ${parts.join("; ")}`);
+      }
+
+      // Back-compat: derive legacy single brand/amount from the first filled item.
+      const firstItem = diet.flatMap((t) => dietDetails[t] ?? []).find((it) => it.name.trim() || it.amount.trim());
+      const legacyBrand = (firstItem?.name?.trim() || brand) ?? "";
+      const legacyAmtVal = (firstItem?.amount?.trim() || amountValue) ?? "";
+      const legacyAmtUnit = firstItem?.unit || amountUnit;
+      const amountStr = legacyAmtVal && legacyAmtUnit ? `${legacyAmtVal} ${legacyAmtUnit}` : "";
+
       const foodSummaryParts = [
         dietLabels.length ? `Diet: ${dietLabels.join(", ")}` : "",
-        brand.trim() ? `Brand: ${brand.trim()}` : "",
-        amountStr ? `Amount per serving: ${amountStr}` : "",
+        ...perTypeLines,
+        perTypeLines.length === 0 && legacyBrand.trim() ? `Brand: ${legacyBrand.trim()}` : "",
+        perTypeLines.length === 0 && amountStr ? `Amount per serving: ${amountStr}` : "",
         feedingTimes.length ? `Feeding times: ${feedingTimes.join(", ")}` : "",
         fresh.length || freshOther.trim()
           ? `Fresh foods: ${[...fresh, ...(freshOther.trim() ? [freshOther.trim()] : [])].join(", ")}`
@@ -650,14 +689,19 @@ function FoodWaterStep({
       const waterLabel = WATER_FREQ.find((f) => f.value === waterFreq)?.label;
       const waterSummary = [waterLabel ?? "", waterNotes.trim()].filter(Boolean).join(" — ");
 
+      // Persist only currently-selected diet types' details.
+      const detailsToSave: Record<string, DietItem[]> = {};
+      for (const t of diet) if ((dietDetails[t] ?? []).length) detailsToSave[t] = dietDetails[t];
+
       await supabase
         .from("care_plans")
         .update({
           diet_types: diet,
           diet_other: dietOther || null,
-          food_brand: brand || null,
-          amount_value: amountValue ? Number(amountValue) : null,
-          amount_unit: amountUnit || null,
+          diet_details: detailsToSave,
+          food_brand: legacyBrand || null,
+          amount_value: legacyAmtVal ? Number(legacyAmtVal) : null,
+          amount_unit: legacyAmtUnit || null,
           feeding_times: feedingTimes,
           fresh_foods: fresh,
           fresh_foods_other: freshOther || null,
@@ -667,7 +711,6 @@ function FoodWaterStep({
           water_frequency: waterFreq || null,
           water_notes: waterNotes || null,
           food_storage: storage || null,
-          // Mirror to legacy text fields so the Care plan tab reflects the flow.
           food_instructions: foodSummaryParts.join("\n") || null,
           treats_allowed: treatsSummary || null,
           foods_never_allowed: never.join(", ") || null,
@@ -678,7 +721,7 @@ function FoodWaterStep({
     }, 500);
     return () => clearTimeout(handle);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [diet, dietOther, brand, amountValue, amountUnit, feedingTimes, fresh, freshOther, treatsNotes, treatsFreq, never, waterFreq, waterNotes, storage, hydrated]);
+  }, [diet, dietOther, dietDetails, brand, amountValue, amountUnit, feedingTimes, fresh, freshOther, treatsNotes, treatsFreq, never, waterFreq, waterNotes, storage, hydrated]);
 
   if (isLoading || !plan) return <div className="h-32 animate-pulse rounded-2xl bg-sage-100" />;
 
@@ -713,28 +756,99 @@ function FoodWaterStep({
         )}
       </Card>
 
-      <Card title="Brand or product (optional)">
-        <input className="input" value={brand} maxLength={120} onChange={(e) => setBrand(e.target.value)} placeholder="e.g. Harrison's High Potency Fine" />
-      </Card>
-
-      <Card title="Amount per serving" hint="Always include a unit.">
-        <div className="grid grid-cols-[1fr,1.4fr] gap-2">
-          <input
-            className="input"
-            inputMode="decimal"
-            placeholder="e.g. 2"
-            value={amountValue}
-            onChange={(e) => setAmountValue(e.target.value.replace(/[^0-9.]/g, ""))}
-          />
-          <select className="input" value={amountUnit} onChange={(e) => setAmountUnit(e.target.value)}>
-            <option value="">Pick a unit…</option>
-            {UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
-          </select>
-        </div>
-        {!amountValid && (
-          <p className="mt-2 text-xs font-semibold text-warn-red">Add both an amount and a unit, or clear both.</p>
-        )}
-      </Card>
+      {/* Per-diet-type items & amounts */}
+      {diet.length > 0 && (
+        <Card
+          title={diet.length === 1 ? "Brand / items & amount" : "Items & amounts per food type"}
+          hint={diet.length === 1
+            ? "Add the brand or item name and how much to serve."
+            : "For each food type you picked, list the specific items and how much of each."}
+        >
+          <div className="space-y-4">
+            {diet.map((t) => {
+              const label = DIET_OPTIONS.find((o) => o.value === t)?.label ?? t;
+              const items = dietDetails[t] ?? [];
+              const update = (next: DietItem[]) =>
+                setDietDetails({ ...dietDetails, [t]: next });
+              return (
+                <div key={t} className="rounded-xl bg-sage-50/60 p-3 ring-1 ring-sage-100">
+                  <div className="mb-2 flex items-center justify-between">
+                    <p className="text-sm font-semibold text-sage-800">{label}</p>
+                    <button
+                      type="button"
+                      onClick={() => update([...items, { name: "", amount: "", unit: "" }])}
+                      className="inline-flex items-center gap-1 rounded-lg bg-sage-100 px-2.5 py-1 text-xs font-semibold text-sage-700 hover:bg-sage-200"
+                    >
+                      <Plus className="size-3.5" /> Add item
+                    </button>
+                  </div>
+                  {items.length === 0 && (
+                    <p className="text-xs text-sage-500">No items yet. Tap “Add item” to list a brand or food.</p>
+                  )}
+                  <div className="space-y-2">
+                    {items.map((it, idx) => {
+                      const rowInvalid = ((it.amount?.trim() === "") !== (it.unit === ""));
+                      return (
+                        <div key={idx} className="rounded-lg bg-white p-2 ring-1 ring-sage-100">
+                          <div className="grid grid-cols-[1fr,auto] gap-2">
+                            <input
+                              className="input"
+                              placeholder={t === "chop" ? "e.g. Morning chop mix" : "Brand or item name"}
+                              value={it.name}
+                              maxLength={120}
+                              onChange={(e) => {
+                                const next = items.slice();
+                                next[idx] = { ...it, name: e.target.value };
+                                update(next);
+                              }}
+                            />
+                            <button
+                              type="button"
+                              aria-label="Remove item"
+                              onClick={() => update(items.filter((_, i) => i !== idx))}
+                              className="rounded-lg p-2 text-sage-500 hover:bg-sage-100"
+                            >
+                              <X className="size-4" />
+                            </button>
+                          </div>
+                          <div className="mt-2 grid grid-cols-[1fr,1.4fr] gap-2">
+                            <input
+                              className="input"
+                              inputMode="decimal"
+                              placeholder="Amount (e.g. 2)"
+                              value={it.amount}
+                              onChange={(e) => {
+                                const next = items.slice();
+                                next[idx] = { ...it, amount: e.target.value.replace(/[^0-9.]/g, "") };
+                                update(next);
+                              }}
+                            />
+                            <select
+                              className="input"
+                              value={it.unit}
+                              onChange={(e) => {
+                                const next = items.slice();
+                                next[idx] = { ...it, unit: e.target.value };
+                                update(next);
+                              }}
+                            >
+                              <option value="">Pick a unit…</option>
+                              {UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
+                            </select>
+                          </div>
+                          {rowInvalid && (
+                            <p className="mt-1.5 text-xs font-semibold text-warn-red">Add both an amount and a unit, or clear both.</p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      )}
 
       <Card
         title="Feeding schedule"
