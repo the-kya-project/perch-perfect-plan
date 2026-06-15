@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSitterContext } from "./route";
 import { toggleTaskCompletion } from "@/lib/sitter.functions";
 import { Disclaimer } from "@/components/Disclaimer";
+import { BrandLogo } from "@/components/BrandLogo";
 import { Stethoscope, Calendar, PlayCircle } from "lucide-react";
 
 export const Route = createFileRoute("/sitter/$token/")({
@@ -33,7 +34,7 @@ function SitterHome() {
       <header className="sticky top-0 z-10 border-b border-sage-100 bg-white">
         <div className="mx-auto max-w-md px-4 py-3">
           <div className="flex items-center justify-between gap-3">
-            <BrandLogoInline />
+            <BrandLogo size="sm" showTagline={false} />
             <div className="rounded bg-sage-50 px-2 py-1 text-[10px] font-bold uppercase">Sit active</div>
           </div>
           <div className="mt-3 flex items-center gap-3">
