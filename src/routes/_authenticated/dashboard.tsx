@@ -15,7 +15,7 @@ const dashboardSearch = z.object({
 });
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
-  head: () => ({ meta: [{ title: "Your birds — Parrot Care Companion" }] }),
+  head: () => ({ meta: [{ title: "Your birds — Parrot Care Co-Pilot" }] }),
   validateSearch: dashboardSearch,
   component: Dashboard,
 });
@@ -110,11 +110,8 @@ function Dashboard() {
   return (
     <div className="min-h-screen bg-sage-50 pb-20">
       <header className="sticky top-0 z-10 border-b border-sage-100 bg-white/90 backdrop-blur">
-        <div className="mx-auto flex max-w-md items-center justify-between px-4 py-3">
-          <div>
-            <h1 className="text-sm font-bold tracking-tight">Owner dashboard</h1>
-            <p className="text-[10px] uppercase tracking-wider text-sage-600">Parrot Care Companion</p>
-          </div>
+        <div className="mx-auto flex max-w-md items-center justify-between gap-3 px-4 py-3">
+          <BrandLogo size="sm" />
           <button onClick={signOut} className="rounded-full p-2 text-sage-600 hover:bg-sage-100" aria-label="Sign out">
             <LogOut className="size-4" />
           </button>
