@@ -136,15 +136,22 @@ function Emergency() {
         </div>
       </header>
       <main className="mx-auto max-w-md space-y-4 px-4 py-5 pb-28">
-        <p className="text-sm leading-relaxed text-white/80">
-          Call the appropriate number now. Keep {ctx.bird.name} warm, quiet, and minimize handling.
-        </p>
+        <section className="rounded-2xl border border-warn-amber/40 bg-warn-amber/10 p-4">
+          <p className="text-[11px] font-bold uppercase tracking-widest text-warn-amber">The four emergency rules</p>
+          <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm text-white">
+            <li>Stay calm.</li>
+            <li>Keep {ctx.bird.name} warm — about 85–90°F if sick or shocky. Heat on one side only.</li>
+            <li>Keep the bird quiet, dim, and minimally handled.</li>
+            <li>Call the avian vet and prepare to transport.</li>
+          </ol>
+          <p className="mt-2 text-xs text-white/70">You will never be in trouble for calling too soon.</p>
+        </section>
 
         <CallBtn label="Call avian vet" name={c.avian_vet_name} phone={c.avian_vet_phone} urgent />
         <CallBtn label="Call emergency vet" name={c.emergency_vet_name} phone={c.emergency_vet_phone} urgent />
         <CallBtn label="Call owner" phone={c.owner_phone} />
         <CallBtn label="Call backup contact" name={c.backup_name} phone={c.backup_phone} />
-        <CallBtn label="Poison control" phone={c.poison_control} />
+        <CallBtn label="Poison control" name={c.poison_control ? undefined : "ASPCA Animal Poison Control"} phone={c.poison_control || "8884264435"} />
 
         <section className="rounded-xl bg-white/5 p-4">
           <p className="text-[11px] font-bold uppercase tracking-widest text-white/60">Critical info</p>
@@ -161,12 +168,19 @@ function Emergency() {
           {playbooks.map((p) => (
             <details key={p.title} className="rounded-xl bg-white/5 p-4">
               <summary className="cursor-pointer text-sm font-semibold">{p.title}</summary>
+              {p.signs && (
+                <p className="mt-2 text-xs italic text-white/60"><span className="font-bold not-italic uppercase tracking-widest">Signs:</span> {p.signs}</p>
+              )}
               <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm text-white/80">
                 {p.steps.map((s, i) => <li key={i}>{s}</li>)}
               </ol>
             </details>
           ))}
         </section>
+
+        <p className="pt-2 text-center text-[11px] text-white/40">
+          Care guidance from The Kya Project · Parrot Care Bible for Pet Sitters.
+        </p>
       </main>
     </div>
   );
