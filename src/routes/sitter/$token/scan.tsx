@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation } from "@tanstack/react-query";
 import { useSitterContext } from "./route";
@@ -21,6 +21,16 @@ function ScanPage() {
   const [photo, setPhoto] = useState<string | null>(null);
   const [result, setResult] = useState<{ status: string; message: string; reasons: string[] } | null>(null);
   const [showErrors, setShowErrors] = useState(false);
+
+  // Reset all scan state when the selected bird changes — a fresh scan should
+  // never inherit validation errors or answers from a previous bird/attempt.
+  useEffect(() => {
+    setAnswers({});
+    setNotes("");
+    setPhoto(null);
+    setResult(null);
+    setShowErrors(false);
+  }, [ctx.activeBirdId]);
 
   const submit = useServerFn(submitHealthScan);
   const upload = useServerFn(uploadDroppingsPhoto);
