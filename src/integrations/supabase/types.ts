@@ -93,6 +93,10 @@ export type Database = {
           bite_risk: string | null
           cage_location: string | null
           cleaning_instructions: string | null
+          clip_bedtime_path: string | null
+          clip_food_water_path: string | null
+          clip_locations_path: string | null
+          clip_step_up_path: string | null
           created_at: string
           diet_other: string | null
           diet_types: string[]
@@ -149,6 +153,10 @@ export type Database = {
           bite_risk?: string | null
           cage_location?: string | null
           cleaning_instructions?: string | null
+          clip_bedtime_path?: string | null
+          clip_food_water_path?: string | null
+          clip_locations_path?: string | null
+          clip_step_up_path?: string | null
           created_at?: string
           diet_other?: string | null
           diet_types?: string[]
@@ -205,6 +213,10 @@ export type Database = {
           bite_risk?: string | null
           cage_location?: string | null
           cleaning_instructions?: string | null
+          clip_bedtime_path?: string | null
+          clip_food_water_path?: string | null
+          clip_locations_path?: string | null
+          clip_step_up_path?: string | null
           created_at?: string
           diet_other?: string | null
           diet_types?: string[]

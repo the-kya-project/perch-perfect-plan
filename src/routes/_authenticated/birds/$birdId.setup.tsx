@@ -128,8 +128,9 @@ function StepBody({
   if (step === 4) return <PersonalityStep birdId={birdId} birdName={birdName} />;
   if (step === 5) return <EnvironmentStep birdId={birdId} />;
   if (step === 6) return <HealthBaselineStep birdId={birdId} birdName={birdName} />;
+  if (step === 7) return <WatchFirstClipsStep birdId={birdId} />;
 
-  if (step === 8) {
+  if (step === 9) {
     return (
       <div className="space-y-4">
         <div className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
@@ -150,7 +151,7 @@ function StepBody({
   }
 
   const blurbs: Record<number, { lead: string; hint: string }> = {
-    7: {
+    8: {
       lead: "Emergency info — vets, contacts, and home info for sitters.",
       hint: "Most of this is inherited from your account defaults. The full form lives on the Emergency tab.",
     },
@@ -1371,4 +1372,149 @@ async function syncMedicationTask(planId: string, meds: string, schedule: string
     await supabase.from("routine_tasks").update({ title, instructions } as any).eq("id", first.id);
     if (rest.length) await supabase.from("routine_tasks").delete().in("id", rest.map((t) => t.id));
   }
+}
+
+// ---------- Step 7: Watch-first clips ----------
+
+type ClipSlot = {
+  key: "step_up" | "food_water" | "locations" | "bedtime";
+  column: "clip_step_up_path" | "clip_food_water_path" | "clip_locations_path" | "clip_bedtime_path";
+  label: string;
+  hint: string;
+};
+
+const CLIP_SLOTS: ClipSlot[] = [
+  { key: "step_up", column: "clip_step_up_path", label: "How she steps up", hint: "Hand position, cue word, what works." },
+  { key: "food_water", column: "clip_food_water_path", label: "How to refill food & water safely", hint: "Show the bowls, fill amount, and any cage-door routine." },
+  { key: "locations", column: "clip_locations_path", label: "Where everything is", hint: "Walkthrough: food, treats, towels, carrier, first aid." },
+  { key: "bedtime", column: "clip_bedtime_path", label: "Settling her for the night", hint: "Cover routine, lights, sounds." },
+];
+
+function WatchFirstClipsStep({ birdId }: { birdId: string }) {
+  const qc = useQueryClient();
+
+  const { data: bird } = useQuery({
+    queryKey: ["bird-owner", birdId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("birds").select("id, owner_id").eq("id", birdId).single();
+      if (error) throw error;
+      return data as any;
+    },
+  });
+
+  const { data: plan, isLoading } = useQuery({
+    queryKey: ["plan-clips", birdId],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("care_plans").select("*").eq("bird_id", birdId).maybeSingle();
+      if (error) throw error;
+      return data as any;
+    },
+  });
+
+  if (isLoading || !plan || !bird) return <div className="h-32 animate-pulse rounded-2xl bg-sage-100" />;
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
+        <p className="text-sm font-semibold">Record a few short clips so your sitter can see how things are done.</p>
+        <p className="mt-1 text-sm text-sage-600">All clips are private — only your assigned sitter can play them.</p>
+      </div>
+
+      {CLIP_SLOTS.map((slot) => (
+        <ClipSlotCard
+          key={slot.key}
+          slot={slot}
+          path={plan[slot.column] ?? null}
+          ownerId={bird.owner_id}
+          birdId={birdId}
+          planId={plan.id}
+          onChange={() => qc.invalidateQueries({ queryKey: ["plan-clips", birdId] })}
+        />
+      ))}
+
+      <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.65rem .8rem;font-size:16px;outline:none}`}</style>
+    </div>
+  );
+}
+
+function ClipSlotCard({
+  slot, path, ownerId, birdId, planId, onChange,
+}: {
+  slot: ClipSlot;
+  path: string | null;
+  ownerId: string;
+  birdId: string;
+  planId: string;
+  onChange: () => void;
+}) {
+  const [preview, setPreview] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function sign() {
+      if (!path) { setPreview(null); return; }
+      const { data } = await supabase.storage.from("bird-photos").createSignedUrl(path, 3600);
+      if (!cancelled) setPreview(data?.signedUrl ?? null);
+    }
+    sign();
+    return () => { cancelled = true; };
+  }, [path]);
+
+  async function upload(file: File) {
+    if (file.size > 25 * 1024 * 1024) { toast.error("Clip must be under 25 MB."); return; }
+    setBusy(true);
+    try {
+      const ext = (file.name.split(".").pop() || "mp4").toLowerCase();
+      const newPath = `${ownerId}/baselines/${birdId}/clip-${slot.key}-${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from("bird-photos").upload(newPath, file, {
+        contentType: file.type || "video/mp4",
+        upsert: true,
+      });
+      if (error) throw error;
+      if (path) await supabase.storage.from("bird-photos").remove([path]);
+      await supabase.from("care_plans").update({ [slot.column]: newPath } as any).eq("id", planId);
+      toast.success(`${slot.label} saved.`);
+      onChange();
+    } catch (e: any) {
+      toast.error(e.message ?? "Upload failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function remove() {
+    setBusy(true);
+    try {
+      if (path) await supabase.storage.from("bird-photos").remove([path]);
+      await supabase.from("care_plans").update({ [slot.column]: null } as any).eq("id", planId);
+      onChange();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Card title={slot.label} hint={slot.hint}>
+      {preview ? (
+        <div className="space-y-2">
+          <video src={preview} controls className="h-44 w-full rounded-xl bg-black object-contain ring-1 ring-sage-200" />
+          <div className="flex gap-2">
+            <label className="flex-1 cursor-pointer rounded-xl border border-sage-200 bg-white py-2 text-center text-xs font-semibold text-sage-700">
+              {busy ? "Working…" : "Replace"}
+              <input type="file" accept="video/*" className="hidden" disabled={busy} onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
+            </label>
+            <button type="button" disabled={busy} onClick={remove} className="flex-1 rounded-xl border border-sage-200 bg-white py-2 text-xs font-semibold text-warn-red disabled:opacity-50">
+              Remove
+            </button>
+          </div>
+        </div>
+      ) : (
+        <label className="block cursor-pointer rounded-xl border-2 border-dashed border-sage-200 bg-sage-50 p-4 text-center">
+          <span className="text-sm font-semibold text-sage-700">{busy ? "Uploading…" : "Tap to upload a clip"}</span>
+          <input type="file" accept="video/*" className="hidden" disabled={busy} onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
+        </label>
+      )}
+    </Card>
+  );
 }
