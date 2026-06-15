@@ -74,7 +74,7 @@ function Guide() {
         </div>
         {Object.entries(grouped).map(([cat, list]) => (
           <section key={cat} className="space-y-2">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-sage-600">{cat.replace(/-/g, " ")}</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-sage-600">{cat.replace(/^\d+-/, "").replace(/-/g, " ")}</p>
             {list.map((c: any) => (
               <button key={c.id} onClick={() => setOpen(c.id)} className="flex w-full items-start justify-between gap-2 rounded-xl bg-white p-3 text-left ring-1 ring-sage-100 active:scale-[0.99]">
                 <div className="flex-1">
