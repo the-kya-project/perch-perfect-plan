@@ -583,8 +583,10 @@ function FoodWaterStep({
   }, [routine]);
 
   // form state — initialized once from plan
+  type DietItem = { name: string; amount: string; unit: string };
   const [diet, setDiet] = useState<string[]>([]);
   const [dietOther, setDietOther] = useState("");
+  const [dietDetails, setDietDetails] = useState<Record<string, DietItem[]>>({});
   const [brand, setBrand] = useState("");
   const [amountValue, setAmountValue] = useState("");
   const [amountUnit, setAmountUnit] = useState("");
@@ -603,11 +605,21 @@ function FoodWaterStep({
 
   useEffect(() => {
     if (!plan || hydrated) return;
-    setDiet(plan.diet_types ?? []);
+    const dietTypes = (plan.diet_types ?? []) as string[];
+    setDiet(dietTypes);
     setDietOther(plan.diet_other ?? "");
-    setBrand(plan.food_brand ?? "");
-    setAmountValue(plan.amount_value != null ? String(plan.amount_value) : "");
-    setAmountUnit(plan.amount_unit ?? "");
+    const seedBrand = plan.food_brand ?? "";
+    const seedAmt = plan.amount_value != null ? String(plan.amount_value) : "";
+    const seedUnit = plan.amount_unit ?? "";
+    setBrand(seedBrand);
+    setAmountValue(seedAmt);
+    setAmountUnit(seedUnit);
+    const dd = { ...((plan.diet_details ?? {}) as Record<string, DietItem[]>) };
+    const hasAny = Object.values(dd).some((arr) => Array.isArray(arr) && arr.length);
+    if (!hasAny && dietTypes.length && (seedBrand || seedAmt || seedUnit)) {
+      dd[dietTypes[0]] = [{ name: seedBrand, amount: seedAmt, unit: seedUnit }];
+    }
+    setDietDetails(dd);
     const ft = (plan.feeding_times ?? []) as string[];
     setFeedingTimes(ft.length ? ft : suggestedTimes);
     setFresh(plan.fresh_foods ?? []);
@@ -622,23 +634,50 @@ function FoodWaterStep({
     setHydrated(true);
   }, [plan, suggestedTimes, hydrated]);
 
-  // Validation: never allow amount without unit (or vice versa).
-  const amountValid = (amountValue.trim() === "" && amountUnit === "") ||
-    (amountValue.trim() !== "" && amountUnit !== "");
-  useEffect(() => { onBlockNext(!amountValid); }, [amountValid, onBlockNext]);
+  // Validation: each filled row must have both amount and unit (or neither).
+  const dietRowsValid = useMemo(() => {
+    for (const t of diet) {
+      for (const it of dietDetails[t] ?? []) {
+        const a = (it.amount ?? "").trim();
+        const u = (it.unit ?? "").trim();
+        if ((a === "") !== (u === "")) return false;
+      }
+    }
+    return true;
+  }, [diet, dietDetails]);
+  useEffect(() => { onBlockNext(!dietRowsValid); }, [dietRowsValid, onBlockNext]);
 
   // Persist (debounced) whenever form changes after hydration.
   useEffect(() => {
     if (!plan || !hydrated) return;
     const handle = setTimeout(async () => {
-      // Build mirrored text summaries for the existing Care plan tab.
       const dietLabels = diet.map((d) => DIET_OPTIONS.find((o) => o.value === d)?.label).filter(Boolean) as string[];
       if (diet.includes("other") && dietOther.trim()) dietLabels.push(dietOther.trim());
-      const amountStr = amountValue && amountUnit ? `${amountValue} ${amountUnit}` : "";
+
+      const perTypeLines: string[] = [];
+      for (const t of diet) {
+        const label = DIET_OPTIONS.find((o) => o.value === t)?.label ?? t;
+        const items = (dietDetails[t] ?? []).filter((it) => it.name.trim() || it.amount.trim());
+        if (!items.length) continue;
+        const parts = items.map((it) => {
+          const amt = it.amount.trim() && it.unit ? `${it.amount.trim()} ${it.unit}` : "";
+          return [it.name.trim(), amt].filter(Boolean).join(" — ");
+        }).filter(Boolean);
+        if (parts.length) perTypeLines.push(`${label}: ${parts.join("; ")}`);
+      }
+
+      // Back-compat: derive legacy single brand/amount from the first filled item.
+      const firstItem = diet.flatMap((t) => dietDetails[t] ?? []).find((it) => it.name.trim() || it.amount.trim());
+      const legacyBrand = (firstItem?.name?.trim() || brand) ?? "";
+      const legacyAmtVal = (firstItem?.amount?.trim() || amountValue) ?? "";
+      const legacyAmtUnit = firstItem?.unit || amountUnit;
+      const amountStr = legacyAmtVal && legacyAmtUnit ? `${legacyAmtVal} ${legacyAmtUnit}` : "";
+
       const foodSummaryParts = [
         dietLabels.length ? `Diet: ${dietLabels.join(", ")}` : "",
-        brand.trim() ? `Brand: ${brand.trim()}` : "",
-        amountStr ? `Amount per serving: ${amountStr}` : "",
+        ...perTypeLines,
+        perTypeLines.length === 0 && legacyBrand.trim() ? `Brand: ${legacyBrand.trim()}` : "",
+        perTypeLines.length === 0 && amountStr ? `Amount per serving: ${amountStr}` : "",
         feedingTimes.length ? `Feeding times: ${feedingTimes.join(", ")}` : "",
         fresh.length || freshOther.trim()
           ? `Fresh foods: ${[...fresh, ...(freshOther.trim() ? [freshOther.trim()] : [])].join(", ")}`
@@ -650,14 +689,19 @@ function FoodWaterStep({
       const waterLabel = WATER_FREQ.find((f) => f.value === waterFreq)?.label;
       const waterSummary = [waterLabel ?? "", waterNotes.trim()].filter(Boolean).join(" — ");
 
+      // Persist only currently-selected diet types' details.
+      const detailsToSave: Record<string, DietItem[]> = {};
+      for (const t of diet) if ((dietDetails[t] ?? []).length) detailsToSave[t] = dietDetails[t];
+
       await supabase
         .from("care_plans")
         .update({
           diet_types: diet,
           diet_other: dietOther || null,
-          food_brand: brand || null,
-          amount_value: amountValue ? Number(amountValue) : null,
-          amount_unit: amountUnit || null,
+          diet_details: detailsToSave,
+          food_brand: legacyBrand || null,
+          amount_value: legacyAmtVal ? Number(legacyAmtVal) : null,
+          amount_unit: legacyAmtUnit || null,
           feeding_times: feedingTimes,
           fresh_foods: fresh,
           fresh_foods_other: freshOther || null,
@@ -667,7 +711,6 @@ function FoodWaterStep({
           water_frequency: waterFreq || null,
           water_notes: waterNotes || null,
           food_storage: storage || null,
-          // Mirror to legacy text fields so the Care plan tab reflects the flow.
           food_instructions: foodSummaryParts.join("\n") || null,
           treats_allowed: treatsSummary || null,
           foods_never_allowed: never.join(", ") || null,
@@ -678,7 +721,7 @@ function FoodWaterStep({
     }, 500);
     return () => clearTimeout(handle);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [diet, dietOther, brand, amountValue, amountUnit, feedingTimes, fresh, freshOther, treatsNotes, treatsFreq, never, waterFreq, waterNotes, storage, hydrated]);
+  }, [diet, dietOther, dietDetails, brand, amountValue, amountUnit, feedingTimes, fresh, freshOther, treatsNotes, treatsFreq, never, waterFreq, waterNotes, storage, hydrated]);
 
   if (isLoading || !plan) return <div className="h-32 animate-pulse rounded-2xl bg-sage-100" />;
 
