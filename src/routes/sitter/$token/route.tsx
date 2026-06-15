@@ -39,7 +39,7 @@ function SitterRoot() {
 function SitterLayout() {
   const { token } = Route.useParams();
   const navigate = useNavigate();
-  const { data: ctx, isFetching } = useSitterContext(token);
+  const { data: ctx } = useSitterContext(token);
 
   return (
     <div className="min-h-screen bg-sage-50 pb-32">
