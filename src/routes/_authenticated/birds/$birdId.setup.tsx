@@ -583,7 +583,7 @@ function FoodWaterStep({
   }, [routine]);
 
   // form state — initialized once from plan
-  type DietItem = { name: string; amount: string; unit: string };
+  type DietItem = { name: string; amount: string; unit: string; times?: string[] };
   const [diet, setDiet] = useState<string[]>([]);
   const [dietOther, setDietOther] = useState("");
   const [dietDetails, setDietDetails] = useState<Record<string, DietItem[]>>({});
@@ -661,7 +661,8 @@ function FoodWaterStep({
         if (!items.length) continue;
         const parts = items.map((it) => {
           const amt = it.amount.trim() && it.unit ? `${it.amount.trim()} ${it.unit}` : "";
-          return [it.name.trim(), amt].filter(Boolean).join(" — ");
+          const timesStr = (it.times ?? []).length ? `@ ${(it.times ?? []).join(", ")}` : "";
+          return [it.name.trim(), amt, timesStr].filter(Boolean).join(" — ");
         }).filter(Boolean);
         if (parts.length) perTypeLines.push(`${label}: ${parts.join("; ")}`);
       }
@@ -776,7 +777,7 @@ function FoodWaterStep({
                     <p className="text-sm font-semibold text-sage-800">{label}</p>
                     <button
                       type="button"
-                      onClick={() => update([...items, { name: "", amount: "", unit: "" }])}
+                      onClick={() => update([...items, { name: "", amount: "", unit: "", times: [] }])}
                       className="inline-flex items-center gap-1 rounded-lg bg-sage-100 px-2.5 py-1 text-xs font-semibold text-sage-700 hover:bg-sage-200"
                     >
                       <Plus className="size-3.5" /> Add item
@@ -839,6 +840,39 @@ function FoodWaterStep({
                           {rowInvalid && (
                             <p className="mt-1.5 text-xs font-semibold text-warn-red">Add both an amount and a unit, or clear both.</p>
                           )}
+                          {/* Per-item feeding times */}
+                          <div className="mt-2">
+                            <p className="mb-1 text-xs font-semibold text-sage-600">Served at</p>
+                            {feedingTimes.length === 0 && (it.times ?? []).length === 0 ? (
+                              <p className="text-xs text-sage-500">Add feeding times below, then tap to assign.</p>
+                            ) : (
+                              <div className="flex flex-wrap gap-1.5">
+                                {Array.from(new Set([...(feedingTimes ?? []), ...((it.times ?? []))])).map((tm) => {
+                                  const on = (it.times ?? []).includes(tm);
+                                  return (
+                                    <button
+                                      key={tm}
+                                      type="button"
+                                      onClick={() => {
+                                        const cur = it.times ?? [];
+                                        const nextTimes = on ? cur.filter((x) => x !== tm) : [...cur, tm];
+                                        const next = items.slice();
+                                        next[idx] = { ...it, times: nextTimes };
+                                        update(next);
+                                      }}
+                                      className={`rounded-full px-2.5 py-1 text-xs font-semibold ring-1 transition ${
+                                        on
+                                          ? "bg-sage-600 text-white ring-sage-600"
+                                          : "bg-white text-sage-700 ring-sage-200 hover:bg-sage-50"
+                                      }`}
+                                    >
+                                      {tm}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       );
                     })}
