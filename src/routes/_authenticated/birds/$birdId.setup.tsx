@@ -599,10 +599,12 @@ function FoodWaterStep({
   birdId,
   birdName,
   onBlockNext,
+  registerFlush,
 }: {
   birdId: string;
   birdName: string;
   onBlockNext: (block: boolean) => void;
+  registerFlush?: (fn: (() => Promise<void>) | null) => void;
 }) {
   const qc = useQueryClient();
 
