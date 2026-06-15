@@ -711,9 +711,9 @@ function FoodWaterStep({
   useEffect(() => { onBlockNext(!dietRowsValid); }, [dietRowsValid, onBlockNext]);
 
   // Persist (debounced) whenever form changes after hydration.
-  useEffect(() => {
-    if (!plan || !hydrated) return;
-    const handle = setTimeout(async () => {
+  useDebouncedAutosave(
+    async () => {
+      if (!plan) return;
       const dietLabels = diet.map((d) => DIET_OPTIONS.find((o) => o.value === d)?.label).filter(Boolean) as string[];
       if (diet.includes("other") && dietOther.trim()) dietLabels.push(dietOther.trim());
 
@@ -782,10 +782,11 @@ function FoodWaterStep({
         } as any)
         .eq("id", plan.id);
       qc.invalidateQueries({ queryKey: ["plan", birdId] });
-    }, 500);
-    return () => clearTimeout(handle);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [diet, dietOther, dietDetails, brand, amountValue, amountUnit, feedingTimes, fresh, freshOther, treatsNotes, treatsFreq, never, waterFreq, waterNotes, storage, hydrated]);
+    },
+    [diet, dietOther, dietDetails, brand, amountValue, amountUnit, feedingTimes, fresh, freshOther, treatsNotes, treatsFreq, never, waterFreq, waterNotes, storage],
+    !!plan && hydrated,
+    registerFlush,
+  );
 
   if (isLoading || !plan) return <div className="h-32 animate-pulse rounded-2xl bg-sage-100" />;
 
