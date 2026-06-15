@@ -6,7 +6,8 @@ import { ArrowLeft, Plus, Trash2, Link2, Copy, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { Disclaimer, VetReviewBanner } from "@/components/Disclaimer";
 import { PhotoCropper } from "@/components/PhotoCropper";
-import { PARROT_SPECIES, PARROT_SPECIES_GROUPS, AGE_OPTIONS, ageFromBirthDate } from "@/lib/parrot-data";
+import { SpeciesPicker, AgePicker } from "@/components/BirdPickers";
+import { ageFromBirthDate } from "@/lib/parrot-data";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId")({
   head: () => ({ meta: [{ title: "Care plan — Parrot Care Companion" }] }),
@@ -115,8 +116,6 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
     </label>
   );
 }
-
-import { SpeciesPicker, AgePicker } from "@/components/BirdPickers";
 
 function PlanForm({ birdId, bird, plan, onSaved }: { birdId: string; bird: any; plan: any; onSaved: () => void }) {
   const [b, setB] = useState(bird);
