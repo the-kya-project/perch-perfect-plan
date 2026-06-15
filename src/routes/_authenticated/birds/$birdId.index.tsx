@@ -165,22 +165,7 @@ function BirdEditor() {
           </div>
         </Link>
 
-          </div>
-          <div className="-mx-1 mt-3 flex gap-1 overflow-x-auto pb-1">
-            {tabs.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => setTab(t.id)}
-                className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold ${tab === t.id ? "bg-sage-900 text-white" : "bg-sage-100 text-sage-700"}`}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </header>
 
-      <main className="mx-auto max-w-md space-y-4 px-4 py-5">
         {["basics", "food", "behavior", "home", "health", "clips"].includes(tab) && plan && (
           <PlanFormSection
             section={tab as PlanSection}
