@@ -1,12 +1,13 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Bird as BirdIcon, LogOut, ChevronRight, Calendar } from "lucide-react";
 import { Disclaimer } from "@/components/Disclaimer";
 import { SitCard } from "@/components/SitCard";
 import { toast } from "sonner";
+import { computeSetupCompleteness } from "@/lib/setupCompleteness";
 
 const dashboardSearch = z.object({
   newSit: z.coerce.boolean().optional(),
