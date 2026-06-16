@@ -107,6 +107,25 @@ export const getSitterContext = createServerFn({ method: "GET" })
       .limit(1)
       .maybeSingle();
 
+    // First-open trigger: push the owner the very first time a sitter
+    // opens the care sheet for this sit. Uses sit_open_events as a unique
+    // marker so we never double-notify.
+    void (async () => {
+      const ins = await sb
+        .from("sit_open_events")
+        .insert({ sit_id: sit.id })
+        .select("sit_id")
+        .maybeSingle();
+      if (!ins.data) return; // already opened before
+      const { sendPushToOwner } = await import("./pushSender.server");
+      await sendPushToOwner(birdRes.data.owner_id, "sitter_opened", {
+        title: "Your sitter is on it",
+        body: `${birdRes.data.name ?? "Your bird"}'s sitter just opened the care sheet.`,
+        url: "/dashboard",
+        tag: `sitter-opened-${sit.id}`,
+      });
+    })();
+
     // Generate signed URLs for owner-recorded "Watch first" clips on the active bird.
     // Clips are stored in the private bird-photos bucket; signed URLs ensure only
     // the assigned sitter (holding this token) can play them.
@@ -222,6 +241,35 @@ export const submitHealthScan = createServerFn({ method: "POST" })
       .select()
       .single();
     if (error) throw new Error(error.message);
+
+    // Notify the owner: always-on safety push for concerning triage,
+    // toggleable "daily log added" push otherwise.
+    void (async () => {
+      const { data: birdRow } = await sb
+        .from("birds")
+        .select("owner_id, name")
+        .eq("id", data.birdId)
+        .maybeSingle();
+      if (!birdRow?.owner_id) return;
+      const { sendPushToOwner } = await import("./pushSender.server");
+      if (triage.status === "concerning") {
+        await sendPushToOwner(birdRow.owner_id, "health_concern", {
+          title: "Health concern flagged",
+          body: `${birdRow.name ?? "Your bird"}'s sitter logged a concerning result. Tap to review.`,
+          url: "/dashboard",
+          tag: `health-concern-${row.id}`,
+          requireInteraction: true,
+        });
+      } else {
+        await sendPushToOwner(birdRow.owner_id, "sitter_log", {
+          title: "New daily log",
+          body: `${birdRow.name ?? "Your bird"}'s sitter posted today's health log.`,
+          url: "/dashboard",
+          tag: `sitter-log-${row.id}`,
+        });
+      }
+    })();
+
     return { log: row, triage };
   });
 
