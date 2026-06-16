@@ -58,9 +58,10 @@ function NotificationsPage() {
     try {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) throw new Error("Not signed in.");
+      const patch: Partial<Prefs> = { [key]: next } as Partial<Prefs>;
       const { error } = await supabase
         .from("profiles")
-        .update({ [key]: next })
+        .update(patch)
         .eq("id", u.user.id);
       if (error) throw error;
     } catch (e: any) {

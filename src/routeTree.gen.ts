@@ -15,6 +15,7 @@ import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as SitterTokenRouteRouteImport } from './routes/sitter/$token/route'
@@ -57,6 +58,12 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedNotificationsRoute =
+  AuthenticatedNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -130,6 +137,7 @@ export interface FileRoutesByFullPath {
   '/sitter/$token': typeof SitterTokenRouteRouteWithChildren
   '/account': typeof AuthenticatedAccountRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/notifications': typeof AuthenticatedNotificationsRoute
   '/birds/$birdId': typeof AuthenticatedBirdsBirdIdRouteWithChildren
   '/birds/new': typeof AuthenticatedBirdsNewRoute
   '/sitter/$token/care-sheet': typeof SitterTokenCareSheetRoute
@@ -148,6 +156,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/account': typeof AuthenticatedAccountRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/notifications': typeof AuthenticatedNotificationsRoute
   '/birds/new': typeof AuthenticatedBirdsNewRoute
   '/sitter/$token/care-sheet': typeof SitterTokenCareSheetRoute
   '/sitter/$token/emergency': typeof SitterTokenEmergencyRoute
@@ -168,6 +177,7 @@ export interface FileRoutesById {
   '/sitter/$token': typeof SitterTokenRouteRouteWithChildren
   '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
   '/_authenticated/birds/$birdId': typeof AuthenticatedBirdsBirdIdRouteWithChildren
   '/_authenticated/birds/new': typeof AuthenticatedBirdsNewRoute
   '/sitter/$token/care-sheet': typeof SitterTokenCareSheetRoute
@@ -189,6 +199,7 @@ export interface FileRouteTypes {
     | '/sitter/$token'
     | '/account'
     | '/dashboard'
+    | '/notifications'
     | '/birds/$birdId'
     | '/birds/new'
     | '/sitter/$token/care-sheet'
@@ -207,6 +218,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/account'
     | '/dashboard'
+    | '/notifications'
     | '/birds/new'
     | '/sitter/$token/care-sheet'
     | '/sitter/$token/emergency'
@@ -226,6 +238,7 @@ export interface FileRouteTypes {
     | '/sitter/$token'
     | '/_authenticated/account'
     | '/_authenticated/dashboard'
+    | '/_authenticated/notifications'
     | '/_authenticated/birds/$birdId'
     | '/_authenticated/birds/new'
     | '/sitter/$token/care-sheet'
@@ -290,6 +303,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/notifications': {
+      id: '/_authenticated/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof AuthenticatedNotificationsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
@@ -397,6 +417,7 @@ const AuthenticatedBirdsBirdIdRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountRoute: typeof AuthenticatedAccountRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
   AuthenticatedBirdsBirdIdRoute: typeof AuthenticatedBirdsBirdIdRouteWithChildren
   AuthenticatedBirdsNewRoute: typeof AuthenticatedBirdsNewRoute
 }
@@ -404,6 +425,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAccountRoute: AuthenticatedAccountRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
   AuthenticatedBirdsBirdIdRoute: AuthenticatedBirdsBirdIdRouteWithChildren,
   AuthenticatedBirdsNewRoute: AuthenticatedBirdsNewRoute,
 }
