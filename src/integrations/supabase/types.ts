@@ -602,6 +602,9 @@ export type Database = {
           email: string | null
           id: string
           marketing_opt_in: boolean
+          notify_care_plan_reminder: boolean
+          notify_sitter_log: boolean
+          notify_sitter_opened: boolean
           updated_at: string
         }
         Insert: {
@@ -610,6 +613,9 @@ export type Database = {
           email?: string | null
           id: string
           marketing_opt_in?: boolean
+          notify_care_plan_reminder?: boolean
+          notify_sitter_log?: boolean
+          notify_sitter_opened?: boolean
           updated_at?: string
         }
         Update: {
@@ -618,6 +624,9 @@ export type Database = {
           email?: string | null
           id?: string
           marketing_opt_in?: boolean
+          notify_care_plan_reminder?: boolean
+          notify_sitter_log?: boolean
+          notify_sitter_opened?: boolean
           updated_at?: string
         }
         Relationships: []
