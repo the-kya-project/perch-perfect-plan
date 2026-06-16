@@ -8,6 +8,7 @@ import { SCAN_FIELDS, type ScanAnswer, type ScanFieldKey, computeTriage } from "
 import { ArrowLeft, Camera } from "lucide-react";
 import { VetReviewBanner } from "@/components/Disclaimer";
 import { toast } from "sonner";
+import { track } from "@/lib/analytics";
 
 export const Route = createFileRoute("/sitter/$token/scan")({
   component: ScanPage,
