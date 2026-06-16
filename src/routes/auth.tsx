@@ -6,6 +6,7 @@ import { lovable } from "@/integrations/lovable";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
 import { BrandLogo } from "@/components/BrandLogo";
+import { track } from "@/lib/analytics";
 
 const search = z.object({
   mode: z.enum(["signin", "signup"]).default("signin"),
