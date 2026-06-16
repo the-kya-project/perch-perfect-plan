@@ -1594,7 +1594,7 @@ function HealthBaselineStep({ birdId, birdName, registerFlush }: { birdId: strin
   const [clipPreview, setClipPreview] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const [uploading, setUploading] = useState<"photo" | "clip" | null>(null);
-  const [convertPct, setConvertPct] = useState<number>(0);
+  
   const [initialWeight, setInitialWeight] = useState<string>("");
 
   useEffect(() => {
