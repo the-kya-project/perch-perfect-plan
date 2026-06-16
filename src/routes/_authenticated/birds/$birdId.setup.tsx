@@ -126,9 +126,12 @@ function BirdSetup() {
 
   async function onNext() {
     await flushPending();
+    const completedSection = SETUP_STEPS[step - 1]?.key;
     if (step >= TOTAL_STEPS) {
       const ok = await persistStep(TOTAL_STEPS, true);
       if (ok) {
+        track("care_plan_section_completed", { section: completedSection, step });
+        track("care_plan_progress", { percent_complete: 100, sections_complete: TOTAL_STEPS, total: TOTAL_STEPS });
         toast.success(`${bird?.name ?? "Bird"} setup complete.`);
         navigate({ to: "/birds/$birdId", params: { birdId } });
       }
@@ -136,7 +139,15 @@ function BirdSetup() {
     }
     const next = step + 1;
     const ok = await persistStep(next);
-    if (ok) setStep(next);
+    if (ok) {
+      track("care_plan_section_completed", { section: completedSection, step });
+      track("care_plan_progress", {
+        percent_complete: Math.round(((next - 1) / TOTAL_STEPS) * 100),
+        sections_complete: next - 1,
+        total: TOTAL_STEPS,
+      });
+      setStep(next);
+    }
   }
 
   async function onBack() {
