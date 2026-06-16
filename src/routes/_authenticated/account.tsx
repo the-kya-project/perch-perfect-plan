@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { deleteMyAccount } from "@/lib/account.functions";
+import { captureLead } from "@/lib/captureLead";
 import { ArrowLeft, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
@@ -48,6 +49,11 @@ function AccountPage() {
         .update({ marketing_opt_in: next })
         .eq("id", u.user.id);
       if (error) throw error;
+      void captureLead({
+        email: u.user.email ?? "",
+        source: "account-settings",
+        marketingConsent: next,
+      });
       toast.success(next ? "You'll receive community updates." : "You've opted out of updates.");
     } catch (e: any) {
       setMarketing(!next);
