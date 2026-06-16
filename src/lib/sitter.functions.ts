@@ -110,6 +110,8 @@ export const getSitterContext = createServerFn({ method: "GET" })
     // First-open trigger: push the owner the very first time a sitter
     // opens the care sheet for this sit. Uses sit_open_events as a unique
     // marker so we never double-notify.
+    const ownerId = birdRes.data.owner_id as string;
+    const birdName = birdRes.data.name as string | null;
     void (async () => {
       const ins = await sb
         .from("sit_open_events")
@@ -118,9 +120,9 @@ export const getSitterContext = createServerFn({ method: "GET" })
         .maybeSingle();
       if (!ins.data) return; // already opened before
       const { sendPushToOwner } = await import("./pushSender.server");
-      await sendPushToOwner(birdRes.data.owner_id, "sitter_opened", {
+      await sendPushToOwner(ownerId, "sitter_opened", {
         title: "Your sitter is on it",
-        body: `${birdRes.data.name ?? "Your bird"}'s sitter just opened the care sheet.`,
+        body: `${birdName ?? "Your bird"}'s sitter just opened the care sheet.`,
         url: "/dashboard",
         tag: `sitter-opened-${sit.id}`,
       });
@@ -252,7 +254,7 @@ export const submitHealthScan = createServerFn({ method: "POST" })
         .maybeSingle();
       if (!birdRow?.owner_id) return;
       const { sendPushToOwner } = await import("./pushSender.server");
-      if (triage.status === "concerning") {
+      if (triage.status === "red") {
         await sendPushToOwner(birdRow.owner_id, "health_concern", {
           title: "Health concern flagged",
           body: `${birdRow.name ?? "Your bird"}'s sitter logged a concerning result. Tap to review.`,
