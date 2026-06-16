@@ -87,6 +87,10 @@ function BirdSetup() {
   useEffect(() => { setBlockNext(false); }, [step]);
   const [saving, setSaving] = useState(false);
 
+  useEffect(() => {
+    track("guided_editor_opened", { entry_step: stepParam ?? 1 });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Imperative flush registered by the current step's autosave hook.
   // Called before any navigation so pending edits persist immediately.
   const flushRef = useRef<(() => Promise<void>) | null>(null);
