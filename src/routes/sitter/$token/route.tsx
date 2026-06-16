@@ -16,15 +16,26 @@ export const Route = createFileRoute("/sitter/$token")({
     { title: "Sitter access — Parrot Care Co-Pilot" },
     { name: "robots", content: "noindex,nofollow" },
   ]}),
-  errorComponent: ({ error }) => (
-    <div className="grid min-h-screen place-items-center bg-sage-50 p-6 text-center">
-      <div className="max-w-sm">
-        <h1 className="text-lg font-bold">This sitter link can't be opened</h1>
-        <p className="mt-2 text-sm text-sage-600">{error.message}</p>
-        <p className="mt-4 text-xs text-sage-600">Ask the owner to send you a new link.</p>
+  errorComponent: ({ error }) => {
+    const code = error.message;
+    const copy =
+      code === "SITTER_LINK_EXPIRED"
+        ? { title: "This sitter link has expired", body: "The sit it was created for has ended, so it no longer opens the care plan." }
+        : code === "SITTER_LINK_REVOKED"
+        ? { title: "This sitter link was turned off", body: "The owner revoked access to this link." }
+        : code === "SITTER_LINK_INVALID"
+        ? { title: "This sitter link isn't valid", body: "Double-check the link, or ask the owner to resend it." }
+        : { title: "This sitter link can't be opened", body: error.message };
+    return (
+      <div className="grid min-h-screen place-items-center bg-sage-50 p-6 text-center">
+        <div className="max-w-sm">
+          <h1 className="text-lg font-bold">{copy.title}</h1>
+          <p className="mt-2 text-sm text-sage-600">{copy.body}</p>
+          <p className="mt-4 text-xs text-sage-600">Ask the owner to send you a new link.</p>
+        </div>
       </div>
-    </div>
-  ),
+    );
+  },
   component: SitterRoot,
 });
 

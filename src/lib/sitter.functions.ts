@@ -25,10 +25,10 @@ async function loadSitByToken(token: string) {
     .eq("invite_token", token)
     .maybeSingle();
   if (error) throw new Error(error.message);
-  if (!sit) throw new Error("This sitter link is not valid.");
-  if (sit.revoked) throw new Error("This sitter link has been revoked by the owner.");
+  if (!sit) throw new Error("SITTER_LINK_INVALID");
+  if (sit.revoked) throw new Error("SITTER_LINK_REVOKED");
   if (new Date(sit.token_expires_at) < new Date()) {
-    throw new Error("This sitter link has expired.");
+    throw new Error("SITTER_LINK_EXPIRED");
   }
   return sit;
 }
