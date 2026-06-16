@@ -1,7 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { ArrowLeft, AlertTriangle, ShieldAlert } from "lucide-react";
 import { useSitterContext } from "./route";
 import { ClipPlayer } from "@/components/ClipPlayer";
+import { track } from "@/lib/analytics";
 import {
   WATER_FREQ_LABELS,
   TREATS_FREQ_LABELS,
