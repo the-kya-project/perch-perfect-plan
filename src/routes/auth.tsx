@@ -36,12 +36,38 @@ function AuthPage() {
     });
   }, [navigate]);
 
+  // Client-side cooldowns on top of Supabase Auth's built-in rate limits,
+  // to discourage brute-force loops from the same browser session.
+  function readCooldown(key: string): number {
+    if (typeof window === "undefined") return 0;
+    const v = Number(window.sessionStorage.getItem(key) ?? "0");
+    return Number.isFinite(v) ? v : 0;
+  }
+  function setCooldown(key: string, seconds: number) {
+    if (typeof window === "undefined") return;
+    window.sessionStorage.setItem(key, String(Date.now() + seconds * 1000));
+  }
+  function remainingCooldown(key: string): number {
+    const until = readCooldown(key);
+    return Math.max(0, Math.ceil((until - Date.now()) / 1000));
+  }
+  function bumpAttempts(key: string): number {
+    if (typeof window === "undefined") return 1;
+    const n = Number(window.sessionStorage.getItem(key) ?? "0") + 1;
+    window.sessionStorage.setItem(key, String(n));
+    return n;
+  }
+  function clearAttempts(key: string) {
+    if (typeof window === "undefined") return;
+    window.sessionStorage.removeItem(key);
+  }
+
   async function handleEmail(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -50,11 +76,35 @@ function AuthPage() {
           },
         });
         if (error) throw error;
-        toast.success("Account created. You're signed in.");
-        navigate({ to: "/dashboard" });
+        // With email confirmation required, no session is returned until the
+        // user clicks the verification link.
+        if (!data.session) {
+          toast.success("Check your inbox to confirm your email, then sign in.");
+          navigate({ to: "/auth", search: { mode: "signin" } });
+        } else {
+          navigate({ to: "/dashboard" });
+        }
       } else {
+        const cooldownKey = `signin:cooldown:${email.toLowerCase()}`;
+        const attemptsKey = `signin:attempts:${email.toLowerCase()}`;
+        const wait = remainingCooldown(cooldownKey);
+        if (wait > 0) {
+          toast.error(`Too many attempts. Try again in ${wait}s.`);
+          return;
+        }
         const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
+        if (error) {
+          const n = bumpAttempts(attemptsKey);
+          if (n >= 5) {
+            setCooldown(cooldownKey, 60);
+            clearAttempts(attemptsKey);
+            toast.error("Too many failed attempts. Try again in 60s, or reset your password.");
+          } else {
+            toast.error(error.message);
+          }
+          return;
+        }
+        clearAttempts(attemptsKey);
         navigate({ to: "/dashboard" });
       }
     } catch (err: any) {
@@ -89,13 +139,20 @@ function AuthPage() {
       toast.error("Enter your email above first, then tap Forgot password.");
       return;
     }
+    const cooldownKey = `reset:cooldown:${trimmed.toLowerCase()}`;
+    const wait = remainingCooldown(cooldownKey);
+    if (wait > 0) {
+      toast.error(`Please wait ${wait}s before requesting another reset email.`);
+      return;
+    }
     setLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(trimmed, {
         redirectTo: `${window.location.origin}/reset-password`,
       });
       if (error) throw error;
-      toast.success("Password reset email sent. Check your inbox.");
+      setCooldown(cooldownKey, 60);
+      toast.success("If that email is registered, a reset link is on its way.");
     } catch (err: any) {
       toast.error(err.message ?? "Could not send reset email.");
     } finally {
