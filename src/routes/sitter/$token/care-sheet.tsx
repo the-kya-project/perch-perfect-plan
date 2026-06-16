@@ -1,7 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { ArrowLeft, AlertTriangle, ShieldAlert } from "lucide-react";
 import { useSitterContext } from "./route";
 import { ClipPlayer } from "@/components/ClipPlayer";
+import { track } from "@/lib/analytics";
 import {
   WATER_FREQ_LABELS,
   TREATS_FREQ_LABELS,
@@ -70,6 +72,9 @@ function CareSheet() {
   const bird = ctx.bird as any;
   const plan = (ctx.plan ?? {}) as any;
   const clips = ctx.watchClips ?? [];
+
+  useEffect(() => { track("care_sheet_viewed", { surface: "sitter" }); }, []);
+
 
   const diet = (plan.diet_types ?? []) as string[];
   const dietDetails = (plan.diet_details ?? {}) as Record<string, { brand?: string; amount?: string; notes?: string }>;

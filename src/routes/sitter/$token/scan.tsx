@@ -8,6 +8,7 @@ import { SCAN_FIELDS, type ScanAnswer, type ScanFieldKey, computeTriage } from "
 import { ArrowLeft, Camera } from "lucide-react";
 import { VetReviewBanner } from "@/components/Disclaimer";
 import { toast } from "sonner";
+import { track } from "@/lib/analytics";
 
 export const Route = createFileRoute("/sitter/$token/scan")({
   component: ScanPage,
@@ -45,6 +46,7 @@ function ScanPage() {
     },
     onSuccess: (res) => {
       setResult(res.triage as any);
+      track("health_scan_run", { severity: (res.triage as any)?.status ?? "unknown", had_photo: !!photo });
       toast.success("Health scan logged.");
     },
     onError: (e: any) => toast.error(e.message ?? "Could not log scan."),

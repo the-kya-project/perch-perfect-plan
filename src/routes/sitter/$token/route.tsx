@@ -1,10 +1,11 @@
 import { createFileRoute, Outlet, useNavigate, useSearch, retainSearchParams } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Suspense } from "react";
+import { Suspense, useEffect, useRef } from "react";
 import { z } from "zod";
 import { getSitterContext } from "@/lib/sitter.functions";
 import { EmergencyBar } from "@/components/EmergencyBar";
+import { track } from "@/lib/analytics";
 
 const searchSchema = z.object({ birdId: z.string().uuid().optional() });
 
@@ -51,6 +52,12 @@ function SitterLayout() {
   const { token } = Route.useParams();
   const navigate = useNavigate();
   const { data: ctx } = useSitterContext(token);
+  const firedRef = useRef(false);
+  useEffect(() => {
+    if (firedRef.current) return;
+    firedRef.current = true;
+    track("sitter_link_opened", { bird_count: ctx.birds?.length ?? 0 });
+  }, [ctx]);
 
   return (
     <div className="min-h-screen bg-sage-50 pb-32">

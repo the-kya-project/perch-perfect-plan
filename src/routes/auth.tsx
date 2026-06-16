@@ -6,6 +6,7 @@ import { lovable } from "@/integrations/lovable";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
 import { BrandLogo } from "@/components/BrandLogo";
+import { track } from "@/lib/analytics";
 
 const search = z.object({
   mode: z.enum(["signin", "signup"]).default("signin"),
@@ -77,6 +78,8 @@ function AuthPage() {
           },
         });
         if (error) throw error;
+        track("owner_signup", { marketing_opt_in: marketingOptIn, verification_required: !data.session });
+        if (marketingOptIn) track("marketing_opt_in_checked", { context: "signup" });
         // With email confirmation required, no session is returned until the
         // user clicks the verification link.
         if (!data.session) {
@@ -247,7 +250,7 @@ function AuthPage() {
               <input
                 type="checkbox"
                 checked={marketingOptIn}
-                onChange={(e) => setMarketingOptIn(e.target.checked)}
+                onChange={(e) => { setMarketingOptIn(e.target.checked); if (e.target.checked) track("marketing_opt_in_checked", { context: "checkbox" }); }}
                 className="mt-0.5 size-4 rounded border-sage-300"
               />
               <span>Email me about The Kya Project community and updates. (Optional)</span>

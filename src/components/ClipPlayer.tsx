@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Loader2, AlertTriangle } from "lucide-react";
+import { track } from "@/lib/analytics";
 
 /**
  * Inline HTML5 video player for owner-recorded clips.
@@ -21,6 +22,7 @@ export function ClipPlayer({
   poster?: string;
 }) {
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
+  const firedRef = useRef(false);
 
   return (
     <div className={`relative overflow-hidden bg-black ${className}`}>
@@ -35,6 +37,7 @@ export function ClipPlayer({
         onLoadedMetadata={() => setState("ready")}
         onCanPlay={() => setState("ready")}
         onError={() => setState("error")}
+        onPlay={() => { if (!firedRef.current) { firedRef.current = true; track("clip_viewed", { has_label: !!label }); } }}
         aria-label={label}
       />
       {state === "loading" && (
