@@ -109,6 +109,7 @@ function RootComponent() {
 
   useEffect(() => {
     initAnalytics();
+    registerServiceWorker();
     supabase.auth.getUser().then(({ data }) => {
       if (data.user?.id) identifyUser(data.user.id);
     });
