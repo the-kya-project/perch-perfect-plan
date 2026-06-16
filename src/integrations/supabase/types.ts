@@ -605,6 +605,9 @@ export type Database = {
           notify_care_plan_reminder: boolean
           notify_sitter_log: boolean
           notify_sitter_opened: boolean
+          push_care_plan_reminder: boolean
+          push_sitter_log: boolean
+          push_sitter_opened: boolean
           updated_at: string
         }
         Insert: {
@@ -616,6 +619,9 @@ export type Database = {
           notify_care_plan_reminder?: boolean
           notify_sitter_log?: boolean
           notify_sitter_opened?: boolean
+          push_care_plan_reminder?: boolean
+          push_sitter_log?: boolean
+          push_sitter_opened?: boolean
           updated_at?: string
         }
         Update: {
@@ -627,7 +633,43 @@ export type Database = {
           notify_care_plan_reminder?: boolean
           notify_sitter_log?: boolean
           notify_sitter_opened?: boolean
+          push_care_plan_reminder?: boolean
+          push_sitter_log?: boolean
+          push_sitter_opened?: boolean
           updated_at?: string
+        }
+        Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          last_used_at: string | null
+          p256dh: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          last_used_at?: string | null
+          p256dh: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          last_used_at?: string | null
+          p256dh?: string
+          user_agent?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -753,6 +795,29 @@ export type Database = {
             foreignKeyName: "sit_checklist_items_sit_id_fkey"
             columns: ["sit_id"]
             isOneToOne: false
+            referencedRelation: "sits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sit_open_events: {
+        Row: {
+          opened_at: string
+          sit_id: string
+        }
+        Insert: {
+          opened_at?: string
+          sit_id: string
+        }
+        Update: {
+          opened_at?: string
+          sit_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sit_open_events_sit_id_fkey"
+            columns: ["sit_id"]
+            isOneToOne: true
             referencedRelation: "sits"
             referencedColumns: ["id"]
           },

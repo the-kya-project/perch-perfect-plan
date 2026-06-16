@@ -10,6 +10,7 @@ import { SitCard } from "@/components/SitCard";
 import { toast } from "sonner";
 import { computeSetupCompleteness } from "@/lib/setupCompleteness";
 import { track } from "@/lib/analytics";
+import { AddToHomeScreenPrompt } from "@/components/AddToHomeScreenPrompt";
 
 const dashboardSearch = z.object({
   newSit: z.coerce.boolean().optional(),
@@ -235,6 +236,8 @@ function Dashboard() {
             )}
           </section>
         )}
+
+        <AddToHomeScreenPrompt />
       </main>
 
       <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.65rem .8rem;font-size:16px;outline:none}.input:focus{border-color:var(--sage-600);box-shadow:0 0 0 3px rgb(74 103 65 / .15)}.area{min-height:70px}`}</style>
