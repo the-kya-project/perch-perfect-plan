@@ -27,6 +27,7 @@ import { Route as SitterTokenCareSheetRouteImport } from './routes/sitter/$token
 import { Route as AuthenticatedBirdsNewRouteImport } from './routes/_authenticated/birds/new'
 import { Route as AuthenticatedBirdsBirdIdRouteImport } from './routes/_authenticated/birds/$birdId'
 import { Route as AuthenticatedBirdsBirdIdIndexRouteImport } from './routes/_authenticated/birds/$birdId.index'
+import { Route as ApiPublicHooksCarePlanRemindersRouteImport } from './routes/api/public/hooks/care-plan-reminders'
 import { Route as AuthenticatedBirdsBirdIdSetupRouteImport } from './routes/_authenticated/birds/$birdId.setup'
 
 const TermsRoute = TermsRouteImport.update({
@@ -121,6 +122,12 @@ const AuthenticatedBirdsBirdIdIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
   } as any)
+const ApiPublicHooksCarePlanRemindersRoute =
+  ApiPublicHooksCarePlanRemindersRouteImport.update({
+    id: '/api/public/hooks/care-plan-reminders',
+    path: '/api/public/hooks/care-plan-reminders',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedBirdsBirdIdSetupRoute =
   AuthenticatedBirdsBirdIdSetupRouteImport.update({
     id: '/setup',
@@ -146,6 +153,7 @@ export interface FileRoutesByFullPath {
   '/sitter/$token/scan': typeof SitterTokenScanRoute
   '/sitter/$token/': typeof SitterTokenIndexRoute
   '/birds/$birdId/setup': typeof AuthenticatedBirdsBirdIdSetupRoute
+  '/api/public/hooks/care-plan-reminders': typeof ApiPublicHooksCarePlanRemindersRoute
   '/birds/$birdId/': typeof AuthenticatedBirdsBirdIdIndexRoute
 }
 export interface FileRoutesByTo {
@@ -164,6 +172,7 @@ export interface FileRoutesByTo {
   '/sitter/$token/scan': typeof SitterTokenScanRoute
   '/sitter/$token': typeof SitterTokenIndexRoute
   '/birds/$birdId/setup': typeof AuthenticatedBirdsBirdIdSetupRoute
+  '/api/public/hooks/care-plan-reminders': typeof ApiPublicHooksCarePlanRemindersRoute
   '/birds/$birdId': typeof AuthenticatedBirdsBirdIdIndexRoute
 }
 export interface FileRoutesById {
@@ -186,6 +195,7 @@ export interface FileRoutesById {
   '/sitter/$token/scan': typeof SitterTokenScanRoute
   '/sitter/$token/': typeof SitterTokenIndexRoute
   '/_authenticated/birds/$birdId/setup': typeof AuthenticatedBirdsBirdIdSetupRoute
+  '/api/public/hooks/care-plan-reminders': typeof ApiPublicHooksCarePlanRemindersRoute
   '/_authenticated/birds/$birdId/': typeof AuthenticatedBirdsBirdIdIndexRoute
 }
 export interface FileRouteTypes {
@@ -208,6 +218,7 @@ export interface FileRouteTypes {
     | '/sitter/$token/scan'
     | '/sitter/$token/'
     | '/birds/$birdId/setup'
+    | '/api/public/hooks/care-plan-reminders'
     | '/birds/$birdId/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -226,6 +237,7 @@ export interface FileRouteTypes {
     | '/sitter/$token/scan'
     | '/sitter/$token'
     | '/birds/$birdId/setup'
+    | '/api/public/hooks/care-plan-reminders'
     | '/birds/$birdId'
   id:
     | '__root__'
@@ -247,6 +259,7 @@ export interface FileRouteTypes {
     | '/sitter/$token/scan'
     | '/sitter/$token/'
     | '/_authenticated/birds/$birdId/setup'
+    | '/api/public/hooks/care-plan-reminders'
     | '/_authenticated/birds/$birdId/'
   fileRoutesById: FileRoutesById
 }
@@ -258,6 +271,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   TermsRoute: typeof TermsRoute
   SitterTokenRouteRoute: typeof SitterTokenRouteRouteWithChildren
+  ApiPublicHooksCarePlanRemindersRoute: typeof ApiPublicHooksCarePlanRemindersRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -388,6 +402,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBirdsBirdIdIndexRouteImport
       parentRoute: typeof AuthenticatedBirdsBirdIdRoute
     }
+    '/api/public/hooks/care-plan-reminders': {
+      id: '/api/public/hooks/care-plan-reminders'
+      path: '/api/public/hooks/care-plan-reminders'
+      fullPath: '/api/public/hooks/care-plan-reminders'
+      preLoaderRoute: typeof ApiPublicHooksCarePlanRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/birds/$birdId/setup': {
       id: '/_authenticated/birds/$birdId/setup'
       path: '/setup'
@@ -460,6 +481,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   TermsRoute: TermsRoute,
   SitterTokenRouteRoute: SitterTokenRouteRouteWithChildren,
+  ApiPublicHooksCarePlanRemindersRoute: ApiPublicHooksCarePlanRemindersRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

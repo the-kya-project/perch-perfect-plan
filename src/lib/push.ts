@@ -63,9 +63,13 @@ export async function subscribeToPush(vapidPublicKey: string): Promise<{
   if (permission !== "granted") return null;
 
   const reg = await ensureRegistration();
+  const key = urlBase64ToUint8Array(vapidPublicKey);
+  // Copy into a fresh ArrayBuffer so the type matches BufferSource exactly
+  // (Uint8Array<ArrayBufferLike> from atob is not assignable in strict TS).
+  const appServerKey = new Uint8Array(key).buffer;
   const sub = await reg.pushManager.subscribe({
     userVisibleOnly: true,
-    applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+    applicationServerKey: appServerKey,
   });
   const json = sub.toJSON() as { endpoint?: string; keys?: { p256dh?: string; auth?: string } };
   if (!json.endpoint || !json.keys?.p256dh || !json.keys?.auth) {

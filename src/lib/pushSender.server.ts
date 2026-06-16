@@ -54,7 +54,7 @@ export async function sendPushToOwner(
       .select(col)
       .eq("id", ownerId)
       .maybeSingle();
-    if (!profile || !(profile as Record<string, unknown>)[col]) {
+    if (!profile || !(profile as unknown as Record<string, unknown>)[col]) {
       return { sent: 0, pruned: 0, skipped: "toggle-off" };
     }
   }
