@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Bird as BirdIcon, LogOut, ChevronRight, Calendar } from "lucide-react";
+import { Plus, Bird as BirdIcon, LogOut, ChevronRight, Calendar, Settings } from "lucide-react";
 import { Disclaimer } from "@/components/Disclaimer";
 import { BrandLogo } from "@/components/BrandLogo";
 import { SitCard } from "@/components/SitCard";
@@ -113,9 +113,14 @@ function Dashboard() {
       <header className="sticky top-0 z-10 border-b border-sage-100 bg-white/90 backdrop-blur">
         <div className="mx-auto flex max-w-md items-center justify-between gap-3 px-4 py-3">
           <BrandLogo size="sm" />
-          <button onClick={signOut} className="rounded-full p-2 text-sage-600 hover:bg-sage-100" aria-label="Sign out">
-            <LogOut className="size-4" />
-          </button>
+          <div className="flex items-center gap-1">
+            <Link to="/account" className="rounded-full p-2 text-sage-600 hover:bg-sage-100" aria-label="Account settings">
+              <Settings className="size-4" />
+            </Link>
+            <button onClick={signOut} className="rounded-full p-2 text-sage-600 hover:bg-sage-100" aria-label="Sign out">
+              <LogOut className="size-4" />
+            </button>
+          </div>
         </div>
       </header>
 

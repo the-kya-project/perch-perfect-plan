@@ -242,6 +242,17 @@ function AuthPage() {
               </button>
             </div>
           )}
+          {mode === "signup" && (
+            <label className="mt-2 flex items-start gap-2 text-xs text-sage-700">
+              <input
+                type="checkbox"
+                checked={marketingOptIn}
+                onChange={(e) => setMarketingOptIn(e.target.checked)}
+                className="mt-0.5 size-4 rounded border-sage-300"
+              />
+              <span>Email me about The Kya Project community and updates. (Optional)</span>
+            </label>
+          )}
           <button
             type="submit"
             disabled={loading}
@@ -249,6 +260,13 @@ function AuthPage() {
           >
             {loading ? "..." : mode === "signup" ? "Create account" : "Sign in"}
           </button>
+          {mode === "signup" && (
+            <p className="text-center text-[11px] text-sage-600">
+              By creating an account you agree to our{" "}
+              <Link to="/terms" className="underline">Terms</Link> and{" "}
+              <Link to="/privacy" className="underline">Privacy Policy</Link>.
+            </p>
+          )}
         </form>
 
         <p className="mt-6 text-center text-sm text-sage-600">
@@ -262,7 +280,14 @@ function AuthPage() {
             </Link>
           )}
         </p>
+
+        <p className="mt-4 text-center text-[11px] text-sage-600">
+          <Link to="/privacy" className="underline">Privacy</Link>
+          {" · "}
+          <Link to="/terms" className="underline">Terms</Link>
+        </p>
       </main>
+
 
       <style>{`
         .input {
