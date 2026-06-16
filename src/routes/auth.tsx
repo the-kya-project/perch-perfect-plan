@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
 import { BrandLogo } from "@/components/BrandLogo";
 import { track } from "@/lib/analytics";
+import { captureLead } from "@/lib/captureLead";
 
 const search = z.object({
   mode: z.enum(["signin", "signup"]).default("signin"),
@@ -29,7 +30,7 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
-  const [marketingOptIn, setMarketingOptIn] = useState(false);
+  const [marketingOptIn, setMarketingOptIn] = useState(true);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -80,6 +81,12 @@ function AuthPage() {
         if (error) throw error;
         track("owner_signup", { marketing_opt_in: marketingOptIn, verification_required: !data.session });
         if (marketingOptIn) track("marketing_opt_in_checked", { context: "signup" });
+        void captureLead({
+          email,
+          name: displayName || undefined,
+          source: "owner-signup",
+          marketingConsent: marketingOptIn,
+        });
         // With email confirmation required, no session is returned until the
         // user clicks the verification link.
         if (!data.session) {
