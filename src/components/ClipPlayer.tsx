@@ -32,7 +32,6 @@ export function ClipPlayer({
         controls
         playsInline
         preload="metadata"
-        crossOrigin="anonymous"
         className="size-full object-contain"
         onLoadedMetadata={() => setState("ready")}
         onCanPlay={() => setState("ready")}

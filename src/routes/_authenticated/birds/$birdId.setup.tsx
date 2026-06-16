@@ -9,7 +9,7 @@ import { EMERGENCY_FIELDS, EMERGENCY_LABELS, REQUIRED_FIELDS, mergeEmergency, ty
 import { Plus, X } from "lucide-react";
 import { PhotoCropper } from "@/components/PhotoCropper";
 import { AgePicker, BirdField, SpeciesPicker } from "@/components/BirdPickers";
-import { convertToMp4H264, probeDuration, MAX_CLIP_SECONDS, MAX_CLIP_BYTES } from "@/lib/videoConvert";
+import { ClipRecorder, MAX_SECONDS as CLIP_MAX_SECONDS, MAX_BYTES as CLIP_MAX_BYTES } from "@/components/ClipRecorder";
 import { formatAmountUnit } from "@/lib/labels";
 import { track } from "@/lib/analytics";
 
@@ -1594,7 +1594,7 @@ function HealthBaselineStep({ birdId, birdName, registerFlush }: { birdId: strin
   const [clipPreview, setClipPreview] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const [uploading, setUploading] = useState<"photo" | "clip" | null>(null);
-  const [convertPct, setConvertPct] = useState<number>(0);
+  
   const [initialWeight, setInitialWeight] = useState<string>("");
 
   useEffect(() => {
@@ -1691,39 +1691,26 @@ function HealthBaselineStep({ birdId, birdName, registerFlush }: { birdId: strin
 
   async function uploadClip(file: File) {
     if (!bird) return;
-    if (file.size > MAX_CLIP_BYTES) {
-      toast.error("Clip must be under 25 MB.");
-      return;
-    }
-    const duration = await probeDuration(file);
-    if (duration > MAX_CLIP_SECONDS) {
-      toast.error(`Clip is ${Math.round(duration)}s — keep it under ${MAX_CLIP_SECONDS}s so it converts quickly.`);
+    if (file.size > CLIP_MAX_BYTES) {
+      toast.error("Clip is too large. Try a shorter recording.");
       return;
     }
     setUploading("clip");
-    setConvertPct(0);
     try {
-      const { file: outFile, converted, reason } = await convertToMp4H264(file, setConvertPct);
-      if (!converted) {
-        toast.message("Couldn't convert in browser — uploading original.", {
-          description: `${reason ?? "Conversion failed"}. It may not play on every device.`,
-        });
-      }
-      const ext = (outFile.name.split(".").pop() || "mp4").toLowerCase();
+      const ext = (file.name.split(".").pop() || "mp4").toLowerCase();
       const path = `${bird.owner_id}/baselines/${birdId}/clip-${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("bird-photos").upload(path, outFile, {
-        contentType: outFile.type || "video/mp4",
+      const { error } = await supabase.storage.from("bird-photos").upload(path, file, {
+        contentType: file.type || (ext === "webm" ? "video/webm" : "video/mp4"),
         upsert: true,
       });
       if (error) throw error;
       if (clipPath) await supabase.storage.from("bird-photos").remove([clipPath]);
       setClipPath(path);
-      toast.success(converted ? "Baseline clip converted & saved." : "Baseline clip saved.");
+      toast.success("Baseline clip saved.");
     } catch (e: any) {
       toast.error(e.message ?? "Upload failed");
     } finally {
       setUploading(null);
-      setConvertPct(0);
     }
   }
 
@@ -1776,30 +1763,26 @@ function HealthBaselineStep({ birdId, birdName, registerFlush }: { birdId: strin
         )}
       </Card>
 
-      <Card title="Short clip of normal behavior or vocalizing" hint={`Optional, up to ${MAX_CLIP_SECONDS}s and 25 MB. Converted in your browser so every sitter can play it. Private — only your assigned sitter can view it.`}>
+      <Card title="Short clip of normal behavior or vocalizing" hint={`Optional, up to ${Math.floor(CLIP_MAX_SECONDS / 60)} min. Recorded right in your browser at 720p. Private — only your assigned sitter can view it.`}>
         {clipPreview ? (
           <div className="space-y-2">
             <video src={clipPreview} controls playsInline className="h-48 w-full rounded-xl bg-black object-contain ring-1 ring-sage-200" />
             <div className="flex gap-2">
-              <label className="flex-1 cursor-pointer rounded-xl border border-sage-200 bg-white py-2 text-center text-xs font-semibold text-sage-700">
-                {uploading === "clip" ? `Converting ${Math.round(convertPct * 100)}%…` : "Replace"}
-                <input type="file" accept="video/*" className="hidden" disabled={uploading === "clip"} onChange={(e) => e.target.files?.[0] && uploadClip(e.target.files[0])} />
-              </label>
-              <button type="button" onClick={removeClip} disabled={uploading === "clip"} className="flex-1 rounded-xl border border-sage-200 bg-white py-2 text-xs font-semibold text-warn-red disabled:opacity-50">
+              <button
+                type="button"
+                onClick={removeClip}
+                disabled={uploading === "clip"}
+                className="flex-1 rounded-xl border border-sage-200 bg-white py-2 text-xs font-semibold text-warn-red disabled:opacity-50"
+              >
                 Remove
               </button>
             </div>
+            <ClipRecorder baseName={`clip-baseline-${Date.now()}`} disabled={uploading === "clip"} onRecorded={uploadClip} />
           </div>
         ) : (
-          <label className="block cursor-pointer rounded-xl border-2 border-dashed border-sage-200 bg-sage-50 p-4 text-center">
-            <span className="text-sm font-semibold text-sage-700">
-              {uploading === "clip"
-                ? (convertPct > 0 ? `Converting ${Math.round(convertPct * 100)}%…` : "Preparing converter…")
-                : "Tap to upload a clip"}
-            </span>
-            <input type="file" accept="video/*" className="hidden" disabled={uploading === "clip"} onChange={(e) => e.target.files?.[0] && uploadClip(e.target.files[0])} />
-          </label>
+          <ClipRecorder baseName={`clip-baseline-${Date.now()}`} disabled={uploading === "clip"} onRecorded={uploadClip} />
         )}
+        {uploading === "clip" && <p className="mt-2 text-xs font-semibold text-sage-600">Uploading…</p>}
       </Card>
 
       <Card title="Known conditions">
@@ -2084,8 +2067,7 @@ function ClipSlotCard({
   onChange: () => void;
 }) {
   const [preview, setPreview] = useState<string | null>(null);
-  const [busy, setBusy] = useState<"converting" | "uploading" | null>(null);
-  const [convertPct, setConvertPct] = useState(0);
+  const [busy, setBusy] = useState<"uploading" | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -2099,38 +2081,24 @@ function ClipSlotCard({
   }, [path]);
 
   async function upload(file: File) {
-    if (file.size > MAX_CLIP_BYTES) { toast.error("Clip must be under 25 MB."); return; }
-    const duration = await probeDuration(file);
-    if (duration > MAX_CLIP_SECONDS) {
-      toast.error(`Clip is ${Math.round(duration)}s — keep it under ${MAX_CLIP_SECONDS}s.`);
-      return;
-    }
-    setBusy("converting");
-    setConvertPct(0);
+    if (file.size > CLIP_MAX_BYTES) { toast.error("Clip is too large. Try a shorter recording."); return; }
+    setBusy("uploading");
     try {
-      const { file: outFile, converted, reason } = await convertToMp4H264(file, setConvertPct);
-      if (!converted) {
-        toast.message("Couldn't convert in browser — uploading original.", {
-          description: `${reason ?? "Conversion failed"}. It may not play on every device.`,
-        });
-      }
-      setBusy("uploading");
-      const ext = (outFile.name.split(".").pop() || "mp4").toLowerCase();
+      const ext = (file.name.split(".").pop() || "mp4").toLowerCase();
       const newPath = `${ownerId}/baselines/${birdId}/clip-${slot.key}-${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("bird-photos").upload(newPath, outFile, {
-        contentType: outFile.type || "video/mp4",
+      const { error } = await supabase.storage.from("bird-photos").upload(newPath, file, {
+        contentType: file.type || (ext === "webm" ? "video/webm" : "video/mp4"),
         upsert: true,
       });
       if (error) throw error;
       if (path) await supabase.storage.from("bird-photos").remove([path]);
       await supabase.from("care_plans").update({ [slot.column]: newPath } as any).eq("id", planId);
-      toast.success(`${slot.label} saved${converted ? " (converted)" : ""}.`);
+      toast.success(`${slot.label} saved.`);
       onChange();
     } catch (e: any) {
       toast.error(e.message ?? "Upload failed");
     } finally {
       setBusy(null);
-      setConvertPct(0);
     }
   }
 
@@ -2145,32 +2113,22 @@ function ClipSlotCard({
     }
   }
 
-  const busyLabel =
-    busy === "converting"
-      ? (convertPct > 0 ? `Converting ${Math.round(convertPct * 100)}%…` : "Preparing converter…")
-      : busy === "uploading" ? "Uploading…" : null;
-
   return (
     <Card title={slot.label} hint={slot.hint}>
       {preview ? (
         <div className="space-y-2">
           <video src={preview} controls playsInline className="h-44 w-full rounded-xl bg-black object-contain ring-1 ring-sage-200" />
           <div className="flex gap-2">
-            <label className="flex-1 cursor-pointer rounded-xl border border-sage-200 bg-white py-2 text-center text-xs font-semibold text-sage-700">
-              {busyLabel ?? "Replace"}
-              <input type="file" accept="video/*" className="hidden" disabled={!!busy} onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
-            </label>
             <button type="button" disabled={!!busy} onClick={remove} className="flex-1 rounded-xl border border-sage-200 bg-white py-2 text-xs font-semibold text-warn-red disabled:opacity-50">
               Remove
             </button>
           </div>
+          <ClipRecorder baseName={`clip-${slot.key}-${Date.now()}`} disabled={!!busy} onRecorded={upload} />
         </div>
       ) : (
-        <label className="block cursor-pointer rounded-xl border-2 border-dashed border-sage-200 bg-sage-50 p-4 text-center">
-          <span className="text-sm font-semibold text-sage-700">{busyLabel ?? `Tap to upload a clip (up to ${MAX_CLIP_SECONDS}s)`}</span>
-          <input type="file" accept="video/*" className="hidden" disabled={!!busy} onChange={(e) => e.target.files?.[0] && upload(e.target.files[0])} />
-        </label>
+        <ClipRecorder baseName={`clip-${slot.key}-${Date.now()}`} disabled={!!busy} onRecorded={upload} />
       )}
+      {busy === "uploading" && <p className="mt-2 text-xs font-semibold text-sage-600">Uploading…</p>}
     </Card>
   );
 }
