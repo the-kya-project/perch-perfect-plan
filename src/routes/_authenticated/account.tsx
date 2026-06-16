@@ -40,8 +40,8 @@ function AccountPage() {
       setUserId(user.id);
       setEmail(user.email ?? "");
       setEmailInput(user.email ?? "");
-      // @ts-expect-error - new_email exists on the user object when a change is pending
-      setPendingEmail(user.new_email ?? null);
+      const newEmail = (user as { new_email?: string | null }).new_email ?? null;
+      setPendingEmail(newEmail);
 
       const { data: p } = await supabase
         .from("profiles")
