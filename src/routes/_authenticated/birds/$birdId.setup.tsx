@@ -11,6 +11,7 @@ import { PhotoCropper } from "@/components/PhotoCropper";
 import { AgePicker, BirdField, SpeciesPicker } from "@/components/BirdPickers";
 import { convertToMp4H264, probeDuration, MAX_CLIP_SECONDS, MAX_CLIP_BYTES } from "@/lib/videoConvert";
 import { formatAmountUnit } from "@/lib/labels";
+import { track } from "@/lib/analytics";
 
 const setupSearch = z.object({
   step: z.coerce.number().int().min(1).max(TOTAL_STEPS).optional(),
