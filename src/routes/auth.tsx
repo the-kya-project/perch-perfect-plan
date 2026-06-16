@@ -72,7 +72,7 @@ function AuthPage() {
           email,
           password,
           options: {
-            data: { display_name: displayName || email.split("@")[0] },
+            data: { display_name: displayName || email.split("@")[0], marketing_opt_in: marketingOptIn },
             emailRedirectTo: window.location.origin,
           },
         });
