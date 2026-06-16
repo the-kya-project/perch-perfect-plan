@@ -78,6 +78,8 @@ function AuthPage() {
           },
         });
         if (error) throw error;
+        track("owner_signup", { marketing_opt_in: marketingOptIn, verification_required: !data.session });
+        if (marketingOptIn) track("marketing_opt_in_checked", { context: "signup" });
         // With email confirmation required, no session is returned until the
         // user clicks the verification link.
         if (!data.session) {
