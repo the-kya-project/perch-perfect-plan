@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Loader2, AlertTriangle } from "lucide-react";
+import { track } from "@/lib/analytics";
 
 /**
  * Inline HTML5 video player for owner-recorded clips.
