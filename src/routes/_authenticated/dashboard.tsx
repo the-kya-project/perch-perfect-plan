@@ -355,6 +355,8 @@ function SitForm({
       const rows = birdIds.map((bird_id) => ({ sit_id: sit.id, bird_id }));
       const { error: linkErr } = await supabase.from("sit_birds").insert(rows);
       if (linkErr) { toast.error(linkErr.message); setSaving(false); return; }
+      const days = Math.max(1, Math.round((new Date(end).getTime() - new Date(start).getTime()) / 86_400_000) + 1);
+      track("sit_created", { bird_count: birdIds.length, days, has_email: !!sitterEmail });
       toast.success("Sit created.");
       setOpen(false);
       setSitterName(""); setSitterEmail(""); setStart(""); setEnd(""); setNotes("");
