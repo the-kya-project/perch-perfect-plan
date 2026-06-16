@@ -250,7 +250,7 @@ function AuthPage() {
               <input
                 type="checkbox"
                 checked={marketingOptIn}
-                onChange={(e) => setMarketingOptIn(e.target.checked)}
+                onChange={(e) => { setMarketingOptIn(e.target.checked); if (e.target.checked) track("marketing_opt_in_checked", { context: "checkbox" }); }}
                 className="mt-0.5 size-4 rounded border-sage-300"
               />
               <span>Email me about The Kya Project community and updates. (Optional)</span>
