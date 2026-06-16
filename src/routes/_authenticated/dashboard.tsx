@@ -9,6 +9,7 @@ import { BrandLogo } from "@/components/BrandLogo";
 import { SitCard } from "@/components/SitCard";
 import { toast } from "sonner";
 import { computeSetupCompleteness } from "@/lib/setupCompleteness";
+import { track } from "@/lib/analytics";
 
 const dashboardSearch = z.object({
   newSit: z.coerce.boolean().optional(),
