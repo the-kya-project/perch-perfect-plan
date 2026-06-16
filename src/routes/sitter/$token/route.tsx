@@ -52,6 +52,12 @@ function SitterLayout() {
   const { token } = Route.useParams();
   const navigate = useNavigate();
   const { data: ctx } = useSitterContext(token);
+  const firedRef = useRef(false);
+  useEffect(() => {
+    if (firedRef.current) return;
+    firedRef.current = true;
+    track("sitter_link_opened", { bird_count: ctx.birds?.length ?? 0 });
+  }, [ctx]);
 
   return (
     <div className="min-h-screen bg-sage-50 pb-32">
