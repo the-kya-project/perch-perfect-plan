@@ -46,6 +46,7 @@ function ScanPage() {
     },
     onSuccess: (res) => {
       setResult(res.triage as any);
+      track("health_scan_run", { severity: (res.triage as any)?.status ?? "unknown", had_photo: !!photo });
       toast.success("Health scan logged.");
     },
     onError: (e: any) => toast.error(e.message ?? "Could not log scan."),
