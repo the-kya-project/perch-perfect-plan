@@ -73,6 +73,9 @@ function CareSheet() {
   const plan = (ctx.plan ?? {}) as any;
   const clips = ctx.watchClips ?? [];
 
+  useEffect(() => { track("care_sheet_viewed", { surface: "sitter" }); }, []);
+
+
   const diet = (plan.diet_types ?? []) as string[];
   const dietDetails = (plan.diet_details ?? {}) as Record<string, { brand?: string; amount?: string; notes?: string }>;
   const freshFoods = (plan.fresh_foods ?? []) as string[];
