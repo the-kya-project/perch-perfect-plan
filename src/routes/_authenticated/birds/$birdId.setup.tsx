@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -19,9 +19,17 @@ const setupSearch = z.object({
 
 
 /**
+ * Lets the current step signal unsaved edits up to the wizard so the
+ * back-to-profile arrow can warn before discarding them. Defaults to a no-op
+ * so steps work outside the wizard too.
+ */
+const SetupDirtyContext = createContext<(dirty: boolean) => void>(() => {});
+
+/**
  * Debounced autosave that ALSO supports an imperative flush from the parent
  * wizard. When the user clicks Next/Back, the wizard calls the registered
  * flush function so pending edits are persisted before the step unmounts.
+ * While a save is pending the step is reported "dirty" via SetupDirtyContext.
  */
 function useDebouncedAutosave(
   save: () => Promise<void>,
@@ -33,13 +41,21 @@ function useDebouncedAutosave(
   const saveRef = useRef(save);
   saveRef.current = save;
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const setDirty = useContext(SetupDirtyContext);
+  const setDirtyRef = useRef(setDirty);
+  setDirtyRef.current = setDirty;
+  // The first run is hydration (seeding the form), not a user edit.
+  const hydratedOnce = useRef(false);
 
   useEffect(() => {
     if (!enabled) return;
     if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => {
+    if (hydratedOnce.current) setDirtyRef.current(true);
+    else hydratedOnce.current = true;
+    timerRef.current = setTimeout(async () => {
       timerRef.current = null;
-      void saveRef.current();
+      await saveRef.current();
+      setDirtyRef.current(false);
     }, delay);
     return () => {
       if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
@@ -52,6 +68,7 @@ function useDebouncedAutosave(
     const flush = async () => {
       if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
       await saveRef.current();
+      setDirtyRef.current(false);
     };
     registerFlush(flush);
     return () => registerFlush(null);
@@ -84,7 +101,8 @@ function BirdSetup() {
 
   const [step, setStep] = useState<number>(1);
   const [blockNext, setBlockNext] = useState(false);
-  useEffect(() => { setBlockNext(false); }, [step]);
+  const [dirty, setDirty] = useState(false);
+  useEffect(() => { setBlockNext(false); setDirty(false); }, [step]);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -175,10 +193,17 @@ function BirdSetup() {
   }
 
   async function jumpToStep(target: number) {
-    await flushPending();
     const clamped = Math.min(TOTAL_STEPS, Math.max(1, target));
+    if (clamped === step) return;
+    await flushPending();
     const ok = await persistStep(clamped);
     if (ok) setStep(clamped);
+  }
+
+  // Header back arrow: return to the bird's profile, discarding any unsaved
+  // edits on the current step (the SetupShell confirms first when dirty).
+  function exitToProfile() {
+    navigate({ to: "/birds/$birdId", params: { birdId } });
   }
 
   async function finishAndGo(opts: { to: "dashboard-newsit" | "tabs" }) {
@@ -210,7 +235,12 @@ function BirdSetup() {
     <SetupShell
       step={step}
       title={meta.title}
+      birdName={bird.name}
+      birdSpecies={bird.species}
       saving={saving}
+      isDirty={dirty}
+      onExit={exitToProfile}
+      onNavigateStep={jumpToStep}
       onBack={onBack}
       onNext={onNext}
       onSaveAndExit={onSaveAndExit}
@@ -219,15 +249,17 @@ function BirdSetup() {
       nextDisabled={blockNext}
       hideFooter={step === TOTAL_STEPS}
     >
-      <StepBody
-        step={step}
-        birdId={birdId}
-        birdName={bird.name}
-        onBlockNext={setBlockNext}
-        onJumpToStep={jumpToStep}
-        onFinish={finishAndGo}
-        registerFlush={registerFlush}
-      />
+      <SetupDirtyContext.Provider value={setDirty}>
+        <StepBody
+          step={step}
+          birdId={birdId}
+          birdName={bird.name}
+          onBlockNext={setBlockNext}
+          onJumpToStep={jumpToStep}
+          onFinish={finishAndGo}
+          registerFlush={registerFlush}
+        />
+      </SetupDirtyContext.Provider>
     </SetupShell>
   );
 }
