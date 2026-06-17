@@ -43,6 +43,8 @@ Deno.serve(async (req) => {
   let payload: {
     email?: unknown;
     name?: unknown;
+    firstName?: unknown;
+    lastName?: unknown;
     source?: unknown;
     marketingConsent?: unknown;
   };
@@ -57,6 +59,14 @@ Deno.serve(async (req) => {
     return json(400, { error: "email is required" });
   }
   const name = typeof payload.name === "string" ? payload.name.trim() : "";
+  let firstName = typeof payload.firstName === "string" ? payload.firstName.trim() : "";
+  let lastName = typeof payload.lastName === "string" ? payload.lastName.trim() : "";
+  // Fallback: if only a single name came through, split it on the first space.
+  if (!firstName && !lastName && name) {
+    const firstSpace = name.indexOf(" ");
+    firstName = firstSpace === -1 ? name : name.slice(0, firstSpace);
+    lastName = firstSpace === -1 ? "" : name.slice(firstSpace + 1);
+  }
   const source = typeof payload.source === "string" ? payload.source : "";
   const marketingConsent = Boolean(payload.marketingConsent);
 
@@ -65,11 +75,6 @@ Deno.serve(async (req) => {
     console.error("capture-lead: BREVO_API_KEY is not configured");
     return json(500, { error: "Server is not configured" });
   }
-
-  // Split a single display name into first / last for Brevo's built-in fields.
-  const firstSpace = name.indexOf(" ");
-  const firstName = firstSpace === -1 ? name : name.slice(0, firstSpace);
-  const lastName = firstSpace === -1 ? "" : name.slice(firstSpace + 1);
 
   const contact: Record<string, unknown> = {
     email,
