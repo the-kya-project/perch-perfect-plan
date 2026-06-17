@@ -2,7 +2,8 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type CaptureLeadInput = {
   email: string;
-  name?: string;
+  firstName?: string;
+  lastName?: string;
   source: string;
   marketingConsent: boolean;
 };
@@ -16,7 +17,8 @@ export async function captureLead(input: CaptureLeadInput): Promise<void> {
     const { error } = await supabase.functions.invoke("capture-lead", {
       body: {
         email: input.email,
-        name: input.name ?? "",
+        firstName: input.firstName ?? "",
+        lastName: input.lastName ?? "",
         source: input.source,
         marketingConsent: input.marketingConsent,
       },
