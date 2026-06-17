@@ -101,14 +101,21 @@ function BirdSetup() {
     try { await flushRef.current?.(); } catch { /* surfaced by per-row toasts */ }
   }
 
-  // Start at step one unless this bird has an unfinished saved position.
-  // Explicit ?step= links still open the requested step.
+  // Honor an explicit ?step= link, but only when it actually changes — not on
+  // every refetch of `bird`. Re-applying a stale stepParam was bouncing users
+  // back to the linked step (e.g. from the Review step back to step 4) whenever
+  // the bird query refetched.
   useEffect(() => {
-    if (!bird) return;
-    if (stepParam != null) {
-      setStep(Math.min(TOTAL_STEPS, Math.max(1, stepParam)));
-      return;
-    }
+    if (stepParam != null) setStep(Math.min(TOTAL_STEPS, Math.max(1, stepParam)));
+  }, [stepParam]);
+
+  // Resume at the saved position once, when the bird first loads, unless an
+  // explicit ?step= link is driving the position.
+  const initializedRef = useRef(false);
+  useEffect(() => {
+    if (!bird || initializedRef.current) return;
+    initializedRef.current = true;
+    if (stepParam != null) return;
     const stored = Number(bird.setup_step ?? 0);
     setStep(!bird.setup_complete && stored > 1 ? Math.min(TOTAL_STEPS, stored) : 1);
   }, [bird, stepParam]);
@@ -1763,7 +1770,7 @@ function HealthBaselineStep({ birdId, birdName, registerFlush }: { birdId: strin
         )}
       </Card>
 
-      <Card title="Short clip of normal behavior or vocalizing" hint={`Optional, up to ${Math.floor(CLIP_MAX_SECONDS / 60)} min. Recorded right in your browser at 720p. Private — only your assigned sitter can view it.`}>
+      <Card title="Short clip of normal behavior or vocalizing" hint={`Optional, up to ${Math.floor(CLIP_MAX_SECONDS / 60)} min. Record at 720p in your browser or upload an existing video. Private — only your assigned sitter can view it.`}>
         {clipPreview ? (
           <div className="space-y-2">
             <video src={clipPreview} controls playsInline className="h-48 w-full rounded-xl bg-black object-contain ring-1 ring-sage-200" />
