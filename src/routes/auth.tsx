@@ -29,7 +29,8 @@ function AuthPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [displayName, setDisplayName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [marketingOptIn, setMarketingOptIn] = useState(true);
   const [loading, setLoading] = useState(false);
 
@@ -74,7 +75,10 @@ function AuthPage() {
           email,
           password,
           options: {
-            data: { display_name: displayName || email.split("@")[0], marketing_opt_in: marketingOptIn },
+            data: {
+              display_name: [firstName, lastName].filter(Boolean).join(" ") || email.split("@")[0],
+              marketing_opt_in: marketingOptIn,
+            },
             emailRedirectTo: window.location.origin,
           },
         });
@@ -83,7 +87,8 @@ function AuthPage() {
         if (marketingOptIn) track("marketing_opt_in_checked", { context: "signup" });
         void captureLead({
           email,
-          name: displayName || undefined,
+          firstName: firstName || undefined,
+          lastName: lastName || undefined,
           source: "owner-signup",
           marketingConsent: marketingOptIn,
         });
@@ -207,15 +212,26 @@ function AuthPage() {
 
         <form onSubmit={handleEmail} className="space-y-3">
           {mode === "signup" && (
-            <Field label="Your name">
-              <input
-                type="text"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                className="input"
-                placeholder="Maya"
-              />
-            </Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="First name">
+                <input
+                  type="text"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  className="input"
+                  placeholder="Maya"
+                />
+              </Field>
+              <Field label="Last name">
+                <input
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  className="input"
+                  placeholder="Lopez"
+                />
+              </Field>
+            </div>
           )}
           <Field label="Email">
             <input
