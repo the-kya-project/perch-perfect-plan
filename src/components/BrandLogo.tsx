@@ -1,5 +1,7 @@
-import parrotTeal from "@/assets/kya_parrot_icon_teal.png.asset.json";
-import parrotWhite from "@/assets/kya_parrot_icon_white.png.asset.json";
+// Served from the public/ folder at the site root, so the production
+// domain serves them directly (no dependency on Lovable asset hosting).
+const PARROT_TEAL = "/kya_parrot_icon_teal.png";
+const PARROT_WHITE = "/kya_parrot_icon_white.png";
 
 type Variant = "light" | "dark";
 type Size = "sm" | "md" | "lg";
@@ -38,7 +40,7 @@ export function BrandLogo({
   className?: string;
 }) {
   const isDark = variant === "dark";
-  const iconSrc = isDark ? parrotWhite.url : parrotTeal.url;
+  const iconSrc = isDark ? PARROT_WHITE : PARROT_TEAL;
   const titleColor = isDark ? "text-white" : "text-sage-900";
   const taglineColor = isDark ? "text-white/75" : "text-sage-600";
 
