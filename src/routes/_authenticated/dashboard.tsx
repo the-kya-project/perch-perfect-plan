@@ -3,9 +3,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Bird as BirdIcon, LogOut, ChevronRight, Calendar, Settings } from "lucide-react";
+import { Plus, Bird as BirdIcon, LogOut, Calendar, Settings, Bell, Feather } from "lucide-react";
 import { Disclaimer } from "@/components/Disclaimer";
-import { BrandLogo } from "@/components/BrandLogo";
 import { SitCard } from "@/components/SitCard";
 import { toast } from "sonner";
 import { computeSetupCompleteness } from "@/lib/setupCompleteness";
@@ -28,7 +27,17 @@ function Dashboard() {
   const qc = useQueryClient();
   const { newSit, preselectBirdId } = Route.useSearch();
 
-
+  const { data: profile } = useQuery({
+    queryKey: ["owner-profile-name"],
+    queryFn: async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return null;
+      const { data } = await supabase.from("profiles").select("display_name").eq("id", u.user.id).maybeSingle();
+      return data ?? null;
+    },
+  });
+  const firstName = (profile?.display_name ?? "").trim().split(/\s+/)[0] || "";
+  const greeting = firstName ? `Welcome, ${firstName}!` : "Welcome!";
 
   const { data: birds = [] } = useQuery({
     queryKey: ["birds"],
@@ -110,17 +119,24 @@ function Dashboard() {
   const refreshSits = () => qc.invalidateQueries({ queryKey: ["all-sits"] });
   const birdLookup = Object.fromEntries(birds.map((b: any) => [b.id, b]));
 
+  const today = new Date().toISOString().slice(0, 10);
+  const activeSit = (sits as any[]).find((s) => s.start_date <= today && s.end_date >= today) ?? null;
+
   return (
-    <div className="min-h-screen bg-sage-50 pb-20">
-      <header className="sticky top-0 z-10 border-b border-sage-100 bg-white/90 backdrop-blur">
-        <div className="mx-auto flex max-w-md items-center justify-between gap-3 px-4 py-3">
-          <BrandLogo size="sm" />
-          <div className="flex items-center gap-1">
-            <Link to="/account" className="rounded-full p-2 text-sage-600 hover:bg-sage-100" aria-label="Account settings">
-              <Settings className="size-4" />
+    <div className="min-h-screen bg-[#f4f1e8] pb-20">
+      {/* Green brand band */}
+      <header className="bg-[#1a3d2e] pt-[max(env(safe-area-inset-top),1rem)]">
+        <div className="mx-auto flex max-w-md items-center justify-between gap-3 px-5 pb-6 pt-3">
+          <h1 className="text-[27px] font-medium leading-tight text-white">{greeting}</h1>
+          <div className="flex items-center gap-1 text-white">
+            <Link to="/notifications" className="rounded-full p-2 hover:bg-white/10" aria-label="Notifications">
+              <Bell className="size-5" />
             </Link>
-            <button onClick={signOut} className="rounded-full p-2 text-sage-600 hover:bg-sage-100" aria-label="Sign out">
-              <LogOut className="size-4" />
+            <Link to="/account" className="rounded-full p-2 hover:bg-white/10" aria-label="Account settings">
+              <Settings className="size-5" />
+            </Link>
+            <button onClick={signOut} className="rounded-full p-2 hover:bg-white/10" aria-label="Sign out">
+              <LogOut className="size-5" />
             </button>
           </div>
         </div>
@@ -131,111 +147,59 @@ function Dashboard() {
 
         <section className="space-y-3">
           <div className="flex items-end justify-between">
-            <h2 className="text-base font-bold">Your birds</h2>
-            <Link to="/birds/new" className="text-xs font-semibold text-sage-700 underline">+ Add bird</Link>
+            <h2 className="text-[21px] font-medium text-[#1a3d2e]">Your birds</h2>
+            <Link to="/birds/new" className="text-sm font-medium text-[#1a3d2e]">+ Add bird</Link>
           </div>
           {birds.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-sage-200 bg-white p-8 text-center">
-              <BirdIcon className="mx-auto size-8 text-sage-400" />
-              <p className="mt-3 font-semibold">Add your first bird</p>
-              <p className="mt-1 text-sm text-sage-600">Build a care plan once. Reuse and enrich it across every sit.</p>
-              <Link to="/birds/new" className="mt-4 inline-flex items-center gap-2 rounded-xl bg-sage-600 px-4 py-2.5 text-sm font-semibold text-white">
+            <div className="rounded-[20px] border border-dashed border-[#d8cfb8] bg-[#efe9da] p-8 text-center">
+              <BirdIcon className="mx-auto size-8 text-[#2d6a4f]" />
+              <p className="mt-3 font-medium text-[#1a3d2e]">Add your first bird</p>
+              <p className="mt-1 text-sm text-[#5f5e5a]">Build a care plan once. Reuse and enrich it across every sit.</p>
+              <Link to="/birds/new" className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#1a3d2e] px-4 py-2.5 text-sm font-medium text-white">
                 <Plus className="size-4" /> Add bird
               </Link>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {birds.map((b: any) => {
                 const plan = completenessData?.planByBird.get(b.id) ?? null;
                 const tasksCount = plan ? completenessData?.tasksByPlan.get(plan.id) ?? 0 : 0;
                 const contacts = completenessData?.contactByBird.get(b.id) ?? null;
                 const defaults = completenessData?.defaults ?? null;
-                const completeness = computeSetupCompleteness({
-                  bird: b,
-                  plan,
-                  tasksCount,
-                  contacts,
-                  defaults,
-                });
-                const resumeStep =
-                  completeness.firstIncompleteStep ??
-                  Math.max(2, Number(b.setup_step ?? 2));
-                const showIndicator = completeness.pct < 100;
+                const completeness = computeSetupCompleteness({ bird: b, plan, tasksCount, contacts, defaults });
+                const resumeStep = completeness.firstIncompleteStep ?? Math.max(2, Number(b.setup_step ?? 2));
                 return (
-                  <div key={b.id} className="rounded-2xl bg-white ring-1 ring-sage-100 shadow-sm overflow-hidden">
-                    <Link
-                      to="/birds/$birdId"
-                      params={{ birdId: b.id }}
-                      className="block p-4 active:scale-[0.99]"
-                    >
-                      <div className="flex items-center gap-3">
-                        <Avatar name={b.name} photo={b.photo_url} position={b.photo_position} />
-                        <div className="flex-1">
-                          <p className="font-semibold">{b.name}</p>
-                          <p className="text-[11px] uppercase tracking-wider text-sage-600">{b.species ?? "Parrot"}</p>
-                        </div>
-                        <ChevronRight className="size-4 text-sage-400" />
-                      </div>
-                    </Link>
-                    {showIndicator && (
-                      <Link
-                        to="/birds/$birdId/setup"
-                        params={{ birdId: b.id }}
-                        search={{ step: resumeStep }}
-                        aria-label={`Care plan ${completeness.pct}% complete — open setup at step ${resumeStep}`}
-                        className="block border-t border-sage-100 px-4 py-2.5 transition-colors hover:bg-sage-50 active:bg-sage-100"
-                      >
-                        <div className="flex items-center justify-between gap-3 text-[11px] font-semibold text-sage-700">
-                          <span>
-                            Care plan {completeness.pct}% complete
-                          </span>
-                          <span className="text-sage-600">
-                            {completeness.doneCount}/{completeness.total} steps
-                          </span>
-                        </div>
-                        <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-sage-100">
-                          <div
-                            className="h-full rounded-full bg-sage-600 transition-all"
-                            style={{ width: `${Math.max(4, completeness.pct)}%` }}
-                          />
-                        </div>
-                      </Link>
-                    )}
-                  </div>
+                  <BirdCard key={b.id} bird={b} completeness={completeness} resumeStep={resumeStep} />
                 );
               })}
             </div>
           )}
         </section>
 
-        {birds.length > 0 && <DefaultsPanel />}
-
-
-
+        {/* Sit prompt — the one bright accent moment */}
         {birds.length > 0 && (
-          <section className="space-y-3">
-            <h2 className="text-base font-bold">Sits</h2>
-            <p className="text-xs text-sage-600">Create one sit that covers any combination of your birds. The sitter gets a single secure invite link.</p>
-            <SitForm
-              birds={birds}
-              onCreated={refreshSits}
-              initialOpen={!!newSit}
-              preselectBirdId={preselectBirdId}
-            />
+          <SitForm
+            birds={birds}
+            onCreated={refreshSits}
+            initialOpen={!!newSit}
+            preselectBirdId={preselectBirdId}
+            activeSit={activeSit}
+          />
+        )}
 
-
-            {sits.length === 0 ? (
-              <p className="text-sm text-sage-600">No sits yet.</p>
-            ) : (
-              sits.map((s: any) => {
-                const sitBirds = (s.sit_birds ?? [])
-                  .map((sb: any) => birdLookup[sb.bird_id])
-                  .filter(Boolean);
-                return <SitCard key={s.id} sit={s} birds={sitBirds} onChange={refreshSits} />;
-              })
-            )}
+        {birds.length > 0 && sits.length > 0 && (
+          <section id="sits" className="scroll-mt-4 space-y-3">
+            <h2 className="text-[21px] font-medium text-[#1a3d2e]">Sits</h2>
+            {(sits as any[]).map((s) => {
+              const sitBirds = (s.sit_birds ?? [])
+                .map((sb: any) => birdLookup[sb.bird_id])
+                .filter(Boolean);
+              return <SitCard key={s.id} sit={s} birds={sitBirds} onChange={refreshSits} />;
+            })}
           </section>
         )}
+
+        {birds.length > 0 && <DefaultsPanel />}
 
         <AddToHomeScreenPrompt />
       </main>
@@ -245,13 +209,61 @@ function Dashboard() {
   );
 }
 
-function Avatar({ name, photo, position }: { name: string; photo?: string | null; position?: string | null }) {
-  if (photo) {
-    return <img src={photo} alt={name} className="size-12 rounded-full object-cover ring-1 ring-sage-200" style={{ objectPosition: position ?? "50% 50%" }} />;
-  }
+function BirdCard({ bird, completeness, resumeStep }: { bird: any; completeness: any; resumeStep: number }) {
+  const ready = completeness.pct >= 100;
+  const missing = (completeness.checks ?? []).filter((c: any) => !c.done).map((c: any) => c.label);
+  const needCount = missing.length;
+  const initial = (bird.name?.slice(0, 1) ?? "?").toUpperCase();
+
   return (
-    <div className="grid size-12 place-items-center rounded-full bg-sage-100 text-sage-700 font-bold">
-      {name.slice(0, 1).toUpperCase()}
+    <div className="overflow-hidden rounded-[20px] bg-[#efe9da] shadow-sm">
+      <Link to="/birds/$birdId" params={{ birdId: bird.id }} className="block active:scale-[0.99]">
+        {/* Photo hero */}
+        <div className="relative grid h-[150px] w-full place-items-center bg-[#e3dcc9]">
+          {bird.photo_url ? (
+            <img
+              src={bird.photo_url}
+              alt={bird.name}
+              loading="lazy"
+              style={{ objectPosition: bird.photo_position ?? "50% 50%" }}
+              className="absolute inset-0 size-full object-cover"
+            />
+          ) : (
+            <Feather className="size-9 text-[#2d6a4f]" />
+          )}
+          <span className="absolute left-3 top-3 rounded-full bg-white/[0.92] px-2.5 py-1 text-[11px] font-medium text-[#1a3d2e] shadow-sm">
+            Care plan {completeness.pct}%
+          </span>
+        </div>
+        {/* Name + readiness */}
+        <div className="p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[18px] font-medium leading-tight text-[#1a3d2e]">{bird.name}</p>
+              <p className="mt-0.5 text-sm text-[#5f5e5a]">{bird.species ?? "Parrot"}</p>
+            </div>
+            {ready ? (
+              <span className="shrink-0 rounded-full bg-[#d6e8dc] px-3 py-1 text-xs font-medium text-[#1a5e3f]">Ready to share</span>
+            ) : (
+              <span className="shrink-0 rounded-full bg-[#f4e4c4] px-3 py-1 text-xs font-medium text-[#84600f]">Needs {needCount} {needCount === 1 ? "thing" : "things"}</span>
+            )}
+          </div>
+        </div>
+      </Link>
+      {!ready && (
+        <Link
+          to="/birds/$birdId/setup"
+          params={{ birdId: bird.id }}
+          search={{ step: resumeStep }}
+          aria-label={`Care plan ${completeness.pct}% complete — open setup at step ${resumeStep}`}
+          className="block border-t border-[#e0d8c4] px-4 py-2.5 transition-colors hover:bg-black/[0.03]"
+        >
+          <p className="text-xs text-[#5f5e5a]">Add {missing.slice(0, 2).join(" and ").toLowerCase()} to be sitter-ready.</p>
+          <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-[#e0d8c4]">
+            <div className="h-full rounded-full bg-[#2d6a4f] transition-all" style={{ width: `${Math.max(4, completeness.pct)}%` }} />
+          </div>
+        </Link>
+      )}
     </div>
   );
 }
@@ -261,11 +273,13 @@ function SitForm({
   onCreated,
   initialOpen = false,
   preselectBirdId,
+  activeSit,
 }: {
   birds: any[];
   onCreated: () => void;
   initialOpen?: boolean;
   preselectBirdId?: string;
+  activeSit?: any;
 }) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(initialOpen);
@@ -371,25 +385,43 @@ function SitForm({
   }
 
   if (!open) {
+    // Active-sit state — reflect rather than prompt.
+    if (activeSit) {
+      return (
+        <div className="rounded-[20px] bg-[#cdeab0] p-5">
+          <p className="text-lg font-medium text-[#1f3d12]">Sit active</p>
+          <p className="mt-1 text-sm text-[#3f5e22]">A sit is underway right now. Your sitter has their private link.</p>
+          <a href="#sits" className="mt-4 inline-flex items-center gap-2 rounded-[14px] bg-[#1a3d2e] px-4 py-2.5 text-sm font-medium text-white">
+            View details
+          </a>
+        </div>
+      );
+    }
+    // The screen's one accent moment.
     return (
-      <button onClick={() => setOpen(true)} className="flex w-full items-center justify-center gap-2 rounded-xl bg-sage-600 px-4 py-3 text-sm font-semibold text-white">
-        <Plus className="size-4" /> Create a sit
-      </button>
+      <div className="relative overflow-hidden rounded-[20px] bg-[#cdeab0] p-5">
+        <Feather className="pointer-events-none absolute -right-3 -top-3 size-20 rotate-12 text-[#1f3d12]/10" />
+        <p className="text-lg font-medium text-[#1f3d12]">Going away soon?</p>
+        <p className="mt-1 max-w-[18rem] text-sm text-[#3f5e22]">Create a sit and send your sitter a private link with everything they need.</p>
+        <button onClick={() => setOpen(true)} className="mt-4 inline-flex items-center gap-2 rounded-[14px] bg-[#1a3d2e] px-4 py-2.5 text-sm font-medium text-white">
+          <Plus className="size-4" /> New sit
+        </button>
+      </div>
     );
   }
 
   return (
-    <form onSubmit={submit} noValidate className="space-y-3 rounded-2xl bg-white p-4 ring-1 ring-sage-100">
+    <form onSubmit={submit} noValidate className="space-y-3 rounded-[20px] bg-[#efe9da] p-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm font-bold">New sit</p>
-        <button type="button" onClick={() => setOpen(false)} className="text-xs text-sage-600 underline">Cancel</button>
+        <p className="text-sm font-medium text-[#1a3d2e]">New sit</p>
+        <button type="button" onClick={() => setOpen(false)} className="text-xs text-[#5f5e5a] underline">Cancel</button>
       </div>
 
       <div>
         <div className="flex items-center justify-between">
-          <p className="text-[11px] font-bold uppercase tracking-wider text-sage-600">Birds included</p>
+          <p className="text-[11px] font-medium uppercase tracking-wider text-[#5f5e5a]">Birds included</p>
           {birds.length > 1 && (
-            <button type="button" onClick={selectAll} className="text-[11px] font-semibold text-sage-700 underline">Select all</button>
+            <button type="button" onClick={selectAll} className="text-[11px] font-medium text-[#1a3d2e] underline">Select all</button>
           )}
         </div>
         <div className="mt-2 grid grid-cols-2 gap-2">
@@ -400,12 +432,12 @@ function SitForm({
                 key={b.id}
                 type="button"
                 onClick={() => toggle(b.id)}
-                className={`flex items-center gap-2 rounded-lg border px-2 py-2 text-left text-sm ${on ? "border-sage-600 bg-sage-50" : "border-sage-100 bg-white"}`}
+                className={`flex items-center gap-2 rounded-lg border px-2 py-2 text-left text-sm ${on ? "border-[#2d6a4f] bg-[#e8f0ec]" : "border-[#e0d8c4] bg-white"}`}
               >
-                <span className={`grid size-4 shrink-0 place-items-center rounded border-2 ${on ? "border-sage-600 bg-sage-600" : "border-sage-300"}`}>
+                <span className={`grid size-4 shrink-0 place-items-center rounded border-2 ${on ? "border-[#2d6a4f] bg-[#2d6a4f]" : "border-[#bcb6a3]"}`}>
                   {on && <svg viewBox="0 0 20 20" className="size-3 text-white"><path fill="currentColor" d="M7.629 13.314 4.4 10.085l1.214-1.214 2.015 2.015 5.757-5.757 1.214 1.214z"/></svg>}
                 </span>
-                <span className="truncate">{b.name}</span>
+                <span className="truncate text-[#1a3d2e]">{b.name}</span>
               </button>
             );
           })}
@@ -420,7 +452,7 @@ function SitForm({
       </div>
       <Field label="Notes for this sit"><textarea className="input area" value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
 
-      <button type="submit" disabled={saving} className="w-full rounded-xl bg-sage-600 py-3 text-sm font-semibold text-white disabled:opacity-50">
+      <button type="submit" disabled={saving} className="w-full rounded-[14px] bg-[#1a3d2e] py-3 text-sm font-medium text-white disabled:opacity-50">
         {saving ? "Creating..." : "Create sit & generate link"}
       </button>
     </form>
@@ -430,7 +462,7 @@ function SitForm({
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-sage-600">{label}</span>
+      <span className="mb-1 block text-xs font-medium uppercase tracking-wider text-[#5f5e5a]">{label}</span>
       {children}
     </label>
   );
@@ -496,26 +528,26 @@ function DefaultsPanel() {
   return (
     <section className="space-y-3">
       <div className="flex items-end justify-between">
-        <h2 className="text-base font-bold">Account emergency defaults</h2>
+        <h2 className="text-[21px] font-medium text-[#1a3d2e]">Account emergency defaults</h2>
         <button
           type="button"
           onClick={() => { setD(defaults ?? {}); setOpen((o) => !o); }}
-          className="text-xs font-semibold text-sage-700 underline"
+          className="text-sm font-medium text-[#1a3d2e] underline"
         >
           {open ? "Close" : filledCount > 0 ? "Edit" : "Set up"}
         </button>
       </div>
-      <p className="text-xs text-sage-600">
+      <p className="text-xs text-[#5f5e5a]">
         Set owner phone, avian vet, and other emergency info <em>once</em>. Every bird inherits these unless its Emergency tab overrides a field.
       </p>
       {!open ? (
-        <div className="rounded-2xl bg-white p-4 ring-1 ring-sage-100 text-xs text-sage-700">
+        <div className="rounded-[20px] bg-[#efe9da] p-4 text-xs text-[#5f5e5a]">
           {filledCount === 0
             ? "No defaults set yet — each bird needs its own contacts until you fill these in."
             : `${filledCount} of ${fields.length} default fields set.`}
         </div>
       ) : (
-        <div className="space-y-3 rounded-2xl bg-white p-4 ring-1 ring-sage-100">
+        <div className="space-y-3 rounded-[20px] bg-[#efe9da] p-4">
           {fields.map(([k, l, required]) => (
             <Field key={k} label={required ? `${l} *` : l}>
               <input
@@ -525,7 +557,7 @@ function DefaultsPanel() {
               />
             </Field>
           ))}
-          <button disabled={saving} onClick={save} className="mt-2 w-full rounded-xl bg-sage-600 py-3 text-sm font-semibold text-white disabled:opacity-50">
+          <button disabled={saving} onClick={save} className="mt-2 w-full rounded-[14px] bg-[#1a3d2e] py-3 text-sm font-medium text-white disabled:opacity-50">
             {saving ? "Saving..." : "Save account defaults"}
           </button>
         </div>
