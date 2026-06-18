@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useSitterContext } from "./route";
@@ -28,7 +28,7 @@ function objectPronoun(sex: string | null | undefined): string {
 // underlying content stays intact and the mapping is easy to adjust.
 type Topic = { key: string; label: string; icon: LucideIcon };
 const TOPICS: Topic[] = [
-  { key: "golden", label: "Golden rules", icon: Star },
+  { key: "golden", label: "10 things to know", icon: Star },
   { key: "eating", label: "Eating", icon: Utensils },
   { key: "behavior", label: "Behavior", icon: Smile },
   { key: "health", label: "Health", icon: Heart },
@@ -37,7 +37,7 @@ const TOPICS: Topic[] = [
 ];
 
 const TOPIC_SUBHEAD: Record<string, string> = {
-  golden: "The ones marked watch closely matter most.",
+  golden: "The essentials, in one place.",
 };
 
 const CATEGORY_TOPIC: Record<string, string> = {
@@ -121,8 +121,19 @@ function Guide() {
 
   const activeTopic = TOPICS.find((t) => t.key === topic);
 
-  const isWatch = (c: any) => c.emergency_level === "red" || c.emergency_level === "yellow";
   const isDroppings = (c: any) => /dropping|poop|stool/i.test(`${c.slug ?? ""} ${c.title ?? ""} ${c.search_keywords ?? ""}`);
+
+  // Chip-row edge fades reflect scroll position so it's clear the row continues.
+  const chipScrollRef = useRef<HTMLDivElement>(null);
+  const [chipAtStart, setChipAtStart] = useState(true);
+  const [chipAtEnd, setChipAtEnd] = useState(false);
+  function updateChipFades() {
+    const el = chipScrollRef.current;
+    if (!el) return;
+    setChipAtStart(el.scrollLeft <= 1);
+    setChipAtEnd(el.scrollLeft + el.clientWidth >= el.scrollWidth - 1);
+  }
+  useEffect(() => { updateChipFades(); }, [searching]);
 
   return (
     <div className="min-h-screen bg-[#f4f1e8] pb-28">
@@ -155,24 +166,38 @@ function Guide() {
         {/* Topic chips + section label give way to search results when typing */}
         {!searching && (
           <>
-            <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {TOPICS.map((t) => {
-                const on = topic === t.key;
-                const CIcon = t.icon;
-                return (
-                  <button
-                    key={t.key}
-                    onClick={() => setTopic(t.key)}
-                    aria-pressed={on}
-                    className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition ${
-                      on ? "bg-[#1a3d2e] text-white" : "bg-[#efe9da] text-[#1a3d2e]"
-                    }`}
-                  >
-                    <CIcon className="size-3.5" />
-                    {t.label}
-                  </button>
-                );
-              })}
+            <div className="relative -mx-4">
+              <div
+                ref={chipScrollRef}
+                onScroll={updateChipFades}
+                className="flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+              >
+                {TOPICS.map((t) => {
+                  const on = topic === t.key;
+                  const CIcon = t.icon;
+                  return (
+                    <button
+                      key={t.key}
+                      onClick={() => setTopic(t.key)}
+                      aria-pressed={on}
+                      className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition ${
+                        on ? "bg-[#1a3d2e] text-white" : "bg-[#efe9da] text-[#1a3d2e]"
+                      }`}
+                    >
+                      <CIcon className="size-3.5" />
+                      {t.label}
+                    </button>
+                  );
+                })}
+                {/* trailing spacer so the last chip can scroll clear of the fade */}
+                <span aria-hidden className="shrink-0 pl-1" />
+              </div>
+              {!chipAtStart && (
+                <div className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-[#f4f1e8] to-transparent" />
+              )}
+              {!chipAtEnd && (
+                <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-[#f4f1e8] to-transparent" />
+              )}
             </div>
 
             <div>
@@ -187,16 +212,10 @@ function Guide() {
         {/* Entries — collapsed by default, one open at a time */}
         <div className="space-y-2.5">
           {list.map((c: any) => {
-            const watch = isWatch(c);
             const isOpen = open === c.id;
             const hasDeeper = !!(c.what_to_check || c.what_to_do || c.when_to_call_vet);
             return (
-              <div
-                key={c.id}
-                className={`overflow-hidden bg-[#efe9da] ${
-                  watch ? "rounded-2xl rounded-l-none border-l-[3px] border-[#BA7517]" : "rounded-2xl"
-                }`}
-              >
+              <div key={c.id} className="overflow-hidden rounded-2xl bg-[#efe9da]">
                 <button
                   onClick={() => setOpen(isOpen ? null : c.id)}
                   aria-expanded={isOpen}
@@ -204,11 +223,6 @@ function Guide() {
                 >
                   <EntryIcon card={c} />
                   <span className="flex-1 text-sm font-medium text-[#1a3d2e]">{c.title}</span>
-                  {watch && (
-                    <span className="shrink-0 rounded-full bg-[#f4e4c4] px-2 py-0.5 text-[10px] font-medium text-[#84600f]">
-                      watch closely
-                    </span>
-                  )}
                   <ChevronDown className={`size-4 shrink-0 text-[#8a897f] transition-transform ${isOpen ? "rotate-180" : ""}`} />
                 </button>
 
@@ -242,7 +256,7 @@ function Guide() {
 
         {/* Quiet disclaimer */}
         <p className="flex items-start gap-1.5 px-1 pt-2 text-[11px] leading-snug text-[#8a897f]">
-          <Info className="mt-px size-3.5 shrink-0 text-[#BA7517]" />
+          <Info className="mt-px size-3.5 shrink-0 text-[#8a897f]" />
           <span>General guidance, not vet-reviewed. For anything urgent, use {bird.name}'s emergency info.</span>
         </p>
       </main>
