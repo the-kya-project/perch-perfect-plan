@@ -115,6 +115,25 @@ function CareSheet() {
   const showFeeding = diet.length || plan.food_brand || plan.amount_value || feedingTimes.length || freshFoods.length || plan.fresh_foods_other || plan.treats_notes || plan.treats_frequency || plan.water_frequency || plan.water_notes || plan.food_storage || plan.food_hygiene_notes || plan.food_instructions || plan.water_instructions || plan.fresh_food_removal_minutes;
   const showHandling = has(plan.step_up) || has(plan.step_up_notes) || has(plan.handlers) || has(plan.likes) || has(plan.fears_triggers) || has(plan.bite_risk) || has(plan.handling_rules) || has(plan.known_triggers);
   const showHome = has(plan.cage_location) || has(plan.out_of_cage_mode) || has(plan.out_of_cage_notes) || has(plan.out_of_cage_rules) || hazards.length || has(plan.hazards_other) || has(plan.off_limits) || has(plan.off_limits_rooms) || has(plan.safety_rules) || has(plan.other_pets);
+
+  // Several fields have a combined "summary" sibling (food_instructions,
+  // water_instructions, handling_rules, out_of_cage_rules, safety_rules) that
+  // the walkthrough auto-assembles from the structured fields below. To avoid
+  // showing the same info twice, render the structured/individual fields and
+  // fall back to the combined summary only when the individuals are empty.
+  const hasStructuredFood =
+    diet.length > 0 ||
+    has(plan.diet_other) ||
+    Object.values(dietDetails).some((d: any) => has(d?.brand) || has(d?.amount) || has(d?.notes)) ||
+    has(plan.food_brand) ||
+    has(plan.amount_value) ||
+    feedingTimes.length > 0 ||
+    freshFoods.length > 0 ||
+    has(plan.fresh_foods_other) ||
+    has(plan.treats_notes) ||
+    has(plan.water_frequency) ||
+    has(plan.water_notes) ||
+    has(plan.food_storage);
   const showHealth = has(bird.normal_weight) || has(bird.normal_weight_min) || has(bird.normal_weight_max) || has(plan.whats_normal) || has(plan.normal_appetite) || has(plan.normal_droppings) || has(plan.normal_noise) || has(plan.normal_activity) || has(plan.normal_sleep) || has(plan.normal_behavior_with_strangers) || has(bird.medical_conditions) || has(bird.medications) || has(plan.medication_schedule) || ctx.baselineDroppingsUrl || ctx.baselineClipUrl;
 
   const handlingDangerous = /\b(no|do not|don'?t|never)\b/i.test(plan.handling_rules ?? "") || /\b(no|do not|don'?t|never)\b/i.test(plan.step_up ?? "");
@@ -180,7 +199,7 @@ function CareSheet() {
         {showFeeding && (
           <Section title="Feeding & food">
             <p className="rounded bg-warn-amber/10 p-2 text-[11px] font-medium text-warn-amber">Do not introduce new foods while the owner is away.</p>
-            {has(plan.food_instructions) && <Field label="Diet overview" value={<RichText text={plan.food_instructions} />} />}
+            {!hasStructuredFood && has(plan.food_instructions) && <Field label="Diet overview" value={<RichText text={plan.food_instructions} />} />}
             {diet.length > 0 && <Field label="Diet types" value={<Chips items={diet} />} />}
             {has(plan.diet_other) && <Field label="Other diet" value={plan.diet_other} />}
             {Object.entries(dietDetails).map(([k, d]) => (
@@ -205,11 +224,14 @@ function CareSheet() {
             {(has(plan.water_frequency) || has(plan.water_notes) || has(plan.water_instructions)) && (
               <Field
                 label="Water"
-                value={[
-                  plan.water_frequency && `Water ${prettyLabel(plan.water_frequency, WATER_FREQ_LABELS)}`,
-                  plan.water_notes,
-                  plan.water_instructions,
-                ].filter(Boolean).join("\n")}
+                value={
+                  has(plan.water_frequency) || has(plan.water_notes)
+                    ? [
+                        plan.water_frequency && `Water ${prettyLabel(plan.water_frequency, WATER_FREQ_LABELS)}`,
+                        plan.water_notes,
+                      ].filter(Boolean).join("\n")
+                    : plan.water_instructions
+                }
               />
             )}
             <div className="rounded-lg bg-[#e8e1d0] p-3">
@@ -246,7 +268,9 @@ function CareSheet() {
               {has(plan.step_up) && <Field label="Step up" value={plan.step_up} />}
               {has(plan.step_up_notes) && <Field label="Step up notes" value={plan.step_up_notes} />}
               {has(plan.handlers) && <Field label="Who can handle" value={plan.handlers} />}
-              {has(plan.handling_rules) && <Field label="Handling rules" value={plan.handling_rules} />}
+              {!has(plan.step_up) && !has(plan.step_up_notes) && !has(plan.handlers) && has(plan.handling_rules) && (
+                <Field label="Handling rules" value={plan.handling_rules} />
+              )}
               {has(plan.likes) && <Field label="Likes" value={plan.likes} />}
               {(has(plan.fears_triggers) || has(plan.known_triggers)) && (
                 <div className="rounded-lg bg-warn-amber/10 p-3 ring-1 ring-warn-amber/20">
@@ -275,12 +299,19 @@ function CareSheet() {
           <Section title="Home & safety">
             {has(plan.cage_location) && <Field label="Cage location" value={plan.cage_location} />}
             {(has(plan.out_of_cage_mode) || has(plan.out_of_cage_notes) || has(plan.out_of_cage_rules)) && (
-              <Field label="Out-of-cage rules" value={[prettyLabel(plan.out_of_cage_mode, OUT_OF_CAGE_LABELS), plan.out_of_cage_notes, plan.out_of_cage_rules].filter(Boolean).join("\n")} />
+              <Field
+                label="Out-of-cage rules"
+                value={
+                  has(plan.out_of_cage_mode) || has(plan.out_of_cage_notes)
+                    ? [prettyLabel(plan.out_of_cage_mode, OUT_OF_CAGE_LABELS), plan.out_of_cage_notes].filter(Boolean).join("\n")
+                    : plan.out_of_cage_rules
+                }
+              />
             )}
             {(has(plan.off_limits) || has(plan.off_limits_rooms)) && (
               <Field label="Off-limits areas" value={[plan.off_limits, plan.off_limits_rooms].filter(Boolean).join("\n")} />
             )}
-            {has(plan.safety_rules) && <Field label="Safety rules" value={plan.safety_rules} />}
+            {hazards.length === 0 && has(plan.safety_rules) && <Field label="Safety rules" value={plan.safety_rules} />}
             {has(plan.other_pets) && <Field label="Other pets" value={plan.other_pets} />}
           </Section>
         )}
