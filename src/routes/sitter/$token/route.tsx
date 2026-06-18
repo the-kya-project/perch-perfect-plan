@@ -28,11 +28,11 @@ export const Route = createFileRoute("/sitter/$token")({
         ? { title: "This sitter link isn't valid", body: "Double-check the link, or ask the owner to resend it." }
         : { title: "This sitter link can't be opened", body: error.message };
     return (
-      <div className="grid min-h-screen place-items-center bg-sage-50 p-6 text-center">
+      <div className="grid min-h-screen place-items-center bg-[#f4f1e8] p-6 text-center">
         <div className="max-w-sm">
-          <h1 className="text-lg font-bold">{copy.title}</h1>
-          <p className="mt-2 text-sm text-sage-600">{copy.body}</p>
-          <p className="mt-4 text-xs text-sage-600">Ask the owner to send you a new link.</p>
+          <h1 className="text-lg font-medium">{copy.title}</h1>
+          <p className="mt-2 text-sm text-[#5f5e5a]">{copy.body}</p>
+          <p className="mt-4 text-xs text-[#5f5e5a]">Ask the owner to send you a new link.</p>
         </div>
       </div>
     );
@@ -60,12 +60,12 @@ function SitterLayout() {
   }, [ctx]);
 
   return (
-    <div className="min-h-screen bg-sage-50 pb-32">
-      <div className="sticky top-0 z-30 border-b border-sage-200 bg-white/95 backdrop-blur">
+    <div className="min-h-screen bg-[#f4f1e8] pb-32">
+      <div className="sticky top-0 z-30 border-b border-[#e3ded0] bg-[#f4f1e8]/95 backdrop-blur">
         <div className="mx-auto flex max-w-md items-center gap-2 px-4 py-2.5">
           {ctx.birds.length > 1 && (
             <>
-              <span className="shrink-0 text-xs font-semibold text-sage-500">Caring for</span>
+              <span className="shrink-0 text-xs font-medium text-[#5f5e5a]">Caring for</span>
               <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto">
                 {ctx.birds.map((b: any) => {
                   const active = b.id === ctx.activeBirdId;
@@ -76,8 +76,8 @@ function SitterLayout() {
                       aria-pressed={active}
                       className={`shrink-0 rounded-full px-4 py-1.5 text-sm transition ${
                         active
-                          ? "bg-[#1a3d2e] font-bold text-white shadow-sm ring-1 ring-[#1a3d2e]"
-                          : "bg-white font-medium text-sage-500 ring-1 ring-sage-200"
+                          ? "bg-[#1a3d2e] font-medium text-white shadow-sm ring-1 ring-[#1a3d2e]"
+                          : "bg-[#efe9da] font-medium text-[#5f5e5a] ring-1 ring-sage-200"
                       }`}
                     >
                       {b.name}
@@ -87,7 +87,7 @@ function SitterLayout() {
               </div>
             </>
           )}
-          <span className="ml-auto shrink-0 rounded bg-sage-100 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-sage-700">
+          <span className="ml-auto shrink-0 rounded-full bg-[#d6e8dc] px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-[#1a5e3f]">
             Sit active
           </span>
         </div>
@@ -124,18 +124,18 @@ function TabSkeleton() {
       aria-label="Loading"
     >
       <span className="sr-only">Loading…</span>
-      <div className="space-y-3 rounded-2xl bg-white p-4 ring-1 ring-sage-100">
+      <div className="space-y-3 rounded-2xl bg-[#efe9da] p-4">
         <SkeletonLine className="h-4 w-1/2" />
         <SkeletonLine className="h-3 w-3/4" />
         <SkeletonLine className="h-3 w-2/3" />
       </div>
-      <div className="space-y-3 rounded-2xl bg-white p-4 ring-1 ring-sage-100">
+      <div className="space-y-3 rounded-2xl bg-[#efe9da] p-4">
         <SkeletonLine className="h-4 w-2/5" />
         <SkeletonLine className="h-10 w-full" />
         <SkeletonLine className="h-10 w-full" />
         <SkeletonLine className="h-10 w-5/6" />
       </div>
-      <div className="space-y-3 rounded-2xl bg-white p-4 ring-1 ring-sage-100">
+      <div className="space-y-3 rounded-2xl bg-[#efe9da] p-4">
         <SkeletonLine className="h-4 w-1/3" />
         <SkeletonLine className="h-10 w-full" />
         <SkeletonLine className="h-10 w-full" />
@@ -147,13 +147,13 @@ function TabSkeleton() {
 function FullPageSkeleton() {
   return (
     <div
-      className="min-h-screen bg-sage-50 pb-32"
+      className="min-h-screen bg-[#f4f1e8] pb-32"
       role="status"
       aria-live="polite"
       aria-label="Loading sitter view"
     >
       <span className="sr-only">Loading sitter view…</span>
-      <div className="border-b border-sage-100 bg-white">
+      <div className="border-b border-[#e3ded0] bg-[#f4f1e8]">
         <div className="mx-auto flex max-w-md items-center gap-2 px-4 py-3">
           <SkeletonLine className="size-9 rounded-full" />
           <div className="flex-1 space-y-1.5">

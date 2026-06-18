@@ -17,15 +17,15 @@ export const Route = createFileRoute("/")({
 
 function Welcome() {
   return (
-    <div className="min-h-screen bg-sage-50">
+    <div className="min-h-screen bg-[#f4f1e8]">
       <main className="mx-auto flex min-h-screen max-w-md flex-col px-5 py-10">
         <BrandLogo size="md" />
 
         <div className="mt-12 space-y-3">
-          <h1 className="text-balance text-4xl font-bold leading-[1.05] tracking-tight">
+          <h1 className="text-balance text-4xl font-medium leading-[1.05] tracking-tight">
             Calm, clear care for your bird — even when you can't be there.
           </h1>
-          <p className="text-pretty text-base text-sage-600">
+          <p className="text-pretty text-base text-[#5f5e5a]">
             Owners build a thorough care plan once. Sitters get a secure link with today's routine, a daily health scan, and one-tap emergency contacts.
           </p>
         </div>
@@ -34,20 +34,20 @@ function Welcome() {
           <Link
             to="/auth"
             search={{ mode: "signup" as const }}
-            className="block rounded-2xl bg-sage-600 px-5 py-5 text-white shadow-sm active:scale-[0.99]"
+            className="block rounded-2xl bg-[#1a3d2e] px-5 py-5 text-white shadow-sm active:scale-[0.99]"
           >
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-widest opacity-80">I'm an owner</p>
-                <p className="mt-1 text-lg font-semibold">Build my bird's care plan</p>
+                <p className="text-[11px] font-medium uppercase tracking-widest opacity-80">I'm an owner</p>
+                <p className="mt-1 text-lg font-medium">Build my bird's care plan</p>
               </div>
               <ClipboardList className="size-6 shrink-0 opacity-80" />
             </div>
           </Link>
-          <div className="rounded-2xl bg-white p-5 ring-1 ring-sage-100">
-            <p className="text-[11px] font-bold uppercase tracking-widest text-sage-600">I'm a sitter</p>
-            <p className="mt-1 text-lg font-semibold">Open the link from the owner</p>
-            <p className="mt-2 text-sm text-sage-600">
+          <div className="rounded-[20px] bg-[#efe9da] p-5">
+            <p className="text-[11px] font-medium uppercase tracking-widest text-[#5f5e5a]">I'm a sitter</p>
+            <p className="mt-1 text-lg font-medium">Open the link from the owner</p>
+            <p className="mt-2 text-sm text-[#5f5e5a]">
               No signup needed — your sitter link unlocks today's routine, the health scan, the care guide, and emergency contacts.
             </p>
           </div>
@@ -55,8 +55,8 @@ function Welcome() {
 
         <div className="mt-auto pt-10">
           <Disclaimer compact />
-          <p className="mt-3 text-center text-[11px] text-sage-600">
-            <Link to="/auth" search={{ mode: "signin" as const }} className="font-semibold underline">
+          <p className="mt-3 text-center text-[11px] text-[#5f5e5a]">
+            <Link to="/auth" search={{ mode: "signin" as const }} className="font-medium underline">
               Already have an account? Sign in
             </Link>
           </p>

@@ -179,13 +179,13 @@ function SitterHome() {
             onClick={() => m.mutate({ taskId: t.id, completed: !done, title: t.title })}
             className="flex flex-1 items-start gap-3 text-left"
           >
-            <span className={`mt-0.5 grid size-6 shrink-0 place-items-center rounded border-2 ${done ? "border-warn-green bg-warn-green" : "border-sage-300 bg-white"}`}>
+            <span className={`mt-0.5 grid size-6 shrink-0 place-items-center rounded border-2 ${done ? "border-warn-green bg-warn-green" : "border-[#bcb6a3] bg-white"}`}>
               {done && <svg viewBox="0 0 20 20" className="size-4 text-white"><path fill="currentColor" d="M7.629 13.314 4.4 10.085l1.214-1.214 2.015 2.015 5.757-5.757 1.214 1.214z"/></svg>}
             </span>
             <span className="flex-1">
               <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
                 <span className={done ? "text-sm text-sage-400 line-through" : "text-sm font-medium text-sage-900"}>{t.title}</span>
-                {showPill && <span className="rounded-full bg-[#e8f0ec] px-2 py-0.5 text-[10px] font-semibold text-[#2d6a4f]">{t.time_of_day}</span>}
+                {showPill && <span className="rounded-full bg-[#e8f0ec] px-2 py-0.5 text-[10px] font-medium text-[#2d6a4f]">{t.time_of_day}</span>}
               </span>
               {showCaution && <span className="mt-1 block text-[11px] font-semibold text-warn-amber">Don't introduce new foods while the owner is away.</span>}
             </span>
@@ -196,7 +196,7 @@ function SitterHome() {
               onClick={() => toggleExpanded(t.id)}
               aria-expanded={open}
               aria-label={open ? "Hide details" : "Show details"}
-              className="grid shrink-0 place-items-center p-1 text-sage-400"
+              className="grid shrink-0 place-items-center p-1 text-[#8a897f]"
             >
               <ChevronDown className={`size-4 transition-transform ${open ? "rotate-180" : ""}`} />
             </button>
@@ -222,7 +222,7 @@ function SitterHome() {
       </div>
 
       {ctx.tasks.length === 0 ? (
-        <p className="rounded-2xl bg-white p-4 text-sm text-sage-600 ring-1 ring-sage-100">The owner hasn't added any routine tasks yet.</p>
+        <p className="rounded-2xl bg-[#efe9da] p-4 text-sm text-sage-600">The owner hasn't added any routine tasks yet.</p>
       ) : (
         <>
           {/* Progress for the current daypart */}
@@ -237,11 +237,11 @@ function SitterHome() {
 
           {/* Due-now card — the one heavily-bordered element on screen */}
           <section className="rounded-2xl border-2 border-[#1a3d2e] bg-white p-4 shadow-sm">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-[#1a3d2e]">Due now — {nowDp}</p>
+            <p className="text-[10px] font-medium uppercase tracking-widest text-[#1a3d2e]">Due now — {nowDp}</p>
             {currentList.length === 0 ? (
               <p className="mt-2 text-sm text-sage-600">Nothing scheduled for this {nowDp}.</p>
             ) : allCurrentDone ? (
-              <p className="mt-2 text-sm font-semibold text-[#2d6a4f]">All done for this {nowDp} — nicely done.</p>
+              <p className="mt-2 text-sm font-medium text-[#2d6a4f]">All done for this {nowDp} — nicely done.</p>
             ) : (
               <div className="mt-2 divide-y divide-sage-100">
                 {currentList.map(renderTask)}
@@ -259,19 +259,19 @@ function SitterHome() {
                 <button
                   onClick={() => toggleSection(dp)}
                   aria-expanded={open}
-                  className="flex w-full items-center justify-between rounded-2xl bg-white p-4 ring-1 ring-sage-100 shadow-sm"
+                  className="flex w-full items-center justify-between rounded-2xl bg-[#efe9da] p-4 shadow-sm"
                 >
                   <span className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-sage-900">{DAYPART_LABEL[dp]}</span>
-                    <span className="text-xs text-sage-500">{done}/{list.length} done</span>
+                    <span className="text-sm font-medium text-sage-900">{DAYPART_LABEL[dp]}</span>
+                    <span className="text-xs text-[#5f5e5a]">{done}/{list.length} done</span>
                   </span>
-                  <ChevronDown className={`size-5 shrink-0 text-sage-400 transition-transform ${open ? "rotate-180" : ""}`} />
+                  <ChevronDown className={`size-5 shrink-0 text-[#8a897f] transition-transform ${open ? "rotate-180" : ""}`} />
                 </button>
                 {!open && dp === nextUp && (
-                  <p className="mt-1 truncate px-4 text-xs text-sage-500">Next: {list.map((t) => t.title).join(", ")}</p>
+                  <p className="mt-1 truncate px-4 text-xs text-[#5f5e5a]">Next: {list.map((t) => t.title).join(", ")}</p>
                 )}
                 {open && (
-                  <div className="mt-2 rounded-2xl bg-white px-4 ring-1 ring-sage-100 shadow-sm">
+                  <div className="mt-2 rounded-2xl bg-[#efe9da] px-4 shadow-sm">
                     <div className="divide-y divide-sage-100 py-2">
                       {list.map(renderTask)}
                     </div>
@@ -286,36 +286,36 @@ function SitterHome() {
       {/* Health scan strip — distinct from a checklist item; always shown */}
       <Link
         to="/sitter/$token/scan" params={{ token }}
-        className="flex items-stretch overflow-hidden rounded-2xl bg-white ring-1 ring-sage-200 shadow-sm active:scale-[0.99]"
+        className="flex items-stretch overflow-hidden rounded-2xl bg-[#efe9da] shadow-sm active:scale-[0.99]"
       >
         <span className="w-1.5 shrink-0 bg-[#2d6a4f]" />
         <span className="flex flex-1 items-center justify-between gap-3 p-4">
           <span className="flex items-center gap-3">
             <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[#e8f0ec] text-[#2d6a4f]"><Stethoscope className="size-5" /></span>
             <span className="block">
-              <span className="block text-[10px] font-bold uppercase tracking-widest text-sage-500">Daily requirement</span>
-              <span className="block text-base font-semibold leading-tight text-sage-900">Run today's health scan</span>
+              <span className="block text-[10px] font-medium uppercase tracking-widest text-sage-500">Daily requirement</span>
+              <span className="block text-base font-medium leading-tight text-sage-900">Run today's health scan</span>
               {ctx.todayLog && <span className="mt-0.5 block text-xs text-sage-600">Latest scan: <TriagePill status={ctx.todayLog.triage_status} /></span>}
             </span>
           </span>
-          <span className="shrink-0 rounded-xl bg-[#1a3d2e] px-4 py-2 text-sm font-semibold text-white">Start</span>
+          <span className="shrink-0 rounded-xl bg-[#1a3d2e] px-4 py-2 text-sm font-medium text-white">Start</span>
         </span>
       </Link>
 
       {/* Watch-first clips */}
       {ctx.watchClips && ctx.watchClips.length > 0 && (
         <section className="space-y-2">
-          <h2 className="text-lg font-bold tracking-tight">Watch first</h2>
+          <h2 className="text-lg font-medium tracking-tight">Watch first</h2>
           <p className="text-xs text-sage-600">Short clips from {ctx.bird.name}'s owner. These are private to you.</p>
           <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1">
             {ctx.watchClips.map((c: any) => (
               <div
                 key={c.key}
-                className="flex w-60 shrink-0 snap-start flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-sage-100 shadow-sm"
+                className="flex w-60 shrink-0 snap-start flex-col overflow-hidden rounded-2xl bg-[#efe9da] shadow-sm"
               >
                 <ClipPlayer src={c.url} label={c.label} className="aspect-video" />
                 <div className="p-3">
-                  <p className="text-sm font-semibold leading-tight">{c.label}</p>
+                  <p className="text-sm font-medium leading-tight">{c.label}</p>
                   <p className="mt-0.5 text-[11px] uppercase tracking-wider text-sage-600">Owner-recorded</p>
                 </div>
               </div>
@@ -333,7 +333,7 @@ function SitterHome() {
       >
         <BookOpen className="size-5 shrink-0 text-[#1a3d2e]" />
         <span className="flex-1">
-          <span className="block text-base font-semibold leading-tight text-[#1a3d2e]">View {ctx.bird.name}'s full care plan</span>
+          <span className="block text-base font-medium leading-tight text-[#1a3d2e]">View {ctx.bird.name}'s full care plan</span>
           <span className="mt-0.5 block text-xs text-sage-600">Diet, behavior, home, health — the source of truth</span>
         </span>
         <ChevronRight className="size-5 shrink-0 text-[#1a3d2e]" />

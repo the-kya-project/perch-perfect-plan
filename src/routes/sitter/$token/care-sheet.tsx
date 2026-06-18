@@ -28,8 +28,8 @@ function has(v: any): boolean {
 
 function Section({ title, children, danger = false }: { title: string; children: React.ReactNode; danger?: boolean }) {
   return (
-    <section className={`rounded-2xl p-4 ring-1 ${danger ? "bg-warn-red/5 ring-warn-red/30" : "bg-white ring-sage-100"}`}>
-      <h2 className={`text-[11px] font-bold uppercase tracking-widest ${danger ? "text-warn-red" : "text-sage-600"}`}>{title}</h2>
+    <section className={`rounded-2xl p-4 ${danger ? "bg-warn-red/5 ring-1 ring-warn-red/30" : "bg-[#efe9da] shadow-sm"}`}>
+      <h2 className={`text-[11px] font-medium uppercase tracking-widest ${danger ? "text-warn-red" : "text-[#5f5e5a]"}`}>{title}</h2>
       <div className="mt-3 space-y-3">{children}</div>
     </section>
   );
@@ -45,7 +45,7 @@ function RichText({ text }: { text: string }) {
   const flushBullets = (key: string) => {
     if (!bullets.length) return;
     blocks.push(
-      <ul key={key} className="list-disc space-y-1 pl-5 marker:text-sage-400">
+      <ul key={key} className="list-disc space-y-1 pl-5 marker:text-[#5f5e5a]">
         {bullets.map((b, i) => (
           <li key={i} className="pl-0.5">{b}</li>
         ))}
@@ -67,8 +67,8 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
   if (!has(value as any)) return null;
   return (
     <div>
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-sage-500">{label}</p>
-      <div className="mt-0.5 text-sm text-sage-900 whitespace-pre-line">{value}</div>
+      <p className="text-[10px] font-medium uppercase tracking-wider text-[#5f5e5a]">{label}</p>
+      <div className="mt-0.5 text-sm text-[#1a3d2e] whitespace-pre-line">{value}</div>
     </div>
   );
 }
@@ -77,7 +77,7 @@ function Chips({ items }: { items: string[] }) {
   return (
     <div className="flex flex-wrap gap-1.5">
       {items.map((s) => (
-        <span key={s} className="rounded-full bg-sage-100 px-2.5 py-0.5 text-xs font-medium text-sage-800">{s}</span>
+        <span key={s} className="rounded-full bg-[#d6e8dc] px-2.5 py-0.5 text-xs font-medium text-[#1a5e3f]">{s}</span>
       ))}
     </div>
   );
@@ -127,12 +127,12 @@ function CareSheet() {
 
   return (
     <>
-      <header className="border-b border-sage-100 bg-white">
+      <header className="bg-[#1a3d2e]">
         <div className="mx-auto flex max-w-md items-center gap-3 px-4 py-3">
-          <Link to="/sitter/$token" params={{ token }} search={{ birdId: ctx.activeBirdId }} className="rounded p-1 text-sage-600"><ArrowLeft className="size-5" /></Link>
+          <Link to="/sitter/$token" params={{ token }} search={{ birdId: ctx.activeBirdId }} className="rounded p-1 text-white/90"><ArrowLeft className="size-5" /></Link>
           <div>
-            <h1 className="text-sm font-bold">{bird.name}'s care sheet</h1>
-            <p className="text-[10px] uppercase tracking-wider text-sage-600">Owner-entered reference</p>
+            <h1 className="text-sm font-medium text-white">{bird.name}'s care sheet</h1>
+            <p className="text-[10px] uppercase tracking-wider text-[#cdeab0]">Owner-entered reference</p>
           </div>
         </div>
       </header>
@@ -142,14 +142,14 @@ function CareSheet() {
           <Section title="Basics">
             <div className="flex items-center gap-4">
               {bird.photo_url ? (
-                <img src={bird.photo_url} alt={bird.name} className="size-16 rounded-2xl object-cover ring-1 ring-sage-200" style={{ objectPosition: bird.photo_position ?? "50% 50%" }} />
+                <img src={bird.photo_url} alt={bird.name} className="size-16 rounded-2xl object-cover ring-1 ring-[#e0d8c4]" style={{ objectPosition: bird.photo_position ?? "50% 50%" }} />
               ) : (
-                <div className="grid size-16 place-items-center rounded-2xl bg-sage-100 text-xl font-bold text-sage-700">{bird.name.slice(0,1).toUpperCase()}</div>
+                <div className="grid size-16 place-items-center rounded-2xl bg-[#e3dcc9] text-xl font-medium text-[#2d6a4f]">{bird.name.slice(0,1).toUpperCase()}</div>
               )}
               <div className="flex-1">
-                <p className="text-lg font-bold leading-tight">{bird.name}</p>
-                {has(bird.species) && <p className="text-sm text-sage-700">{bird.species}</p>}
-                {has(bird.age) && <p className="text-xs text-sage-600">{bird.age}</p>}
+                <p className="text-lg font-medium leading-tight">{bird.name}</p>
+                {has(bird.species) && <p className="text-sm text-[#5f5e5a]">{bird.species}</p>}
+                {has(bird.age) && <p className="text-xs text-[#5f5e5a]">{bird.age}</p>}
               </div>
             </div>
           </Section>
@@ -157,12 +157,12 @@ function CareSheet() {
 
         {clips.length > 0 && (
           <Section title="Watch-first clips">
-            <p className="text-xs text-sage-600">Short clips from the owner.</p>
+            <p className="text-xs text-[#5f5e5a]">Short clips from the owner.</p>
             <div className="-mx-1 grid grid-cols-1 gap-3">
               {clips.map((c: any) => (
-                <div key={c.key} className="overflow-hidden rounded-xl bg-white ring-1 ring-sage-100">
+                <div key={c.key} className="overflow-hidden rounded-xl bg-[#e8e1d0] ring-1 ring-[#e0d8c4]">
                   <ClipPlayer src={c.url} label={c.label} className="aspect-video" />
-                  <p className="px-2 py-1.5 text-[12px] font-semibold leading-tight">{c.label}</p>
+                  <p className="px-2 py-1.5 text-[12px] font-medium leading-tight">{c.label}</p>
                 </div>
               ))}
             </div>
@@ -179,17 +179,17 @@ function CareSheet() {
 
         {showFeeding && (
           <Section title="Feeding & food">
-            <p className="rounded bg-warn-amber/10 p-2 text-[11px] font-semibold text-warn-amber">Do not introduce new foods while the owner is away.</p>
+            <p className="rounded bg-warn-amber/10 p-2 text-[11px] font-medium text-warn-amber">Do not introduce new foods while the owner is away.</p>
             {has(plan.food_instructions) && <Field label="Diet overview" value={<RichText text={plan.food_instructions} />} />}
             {diet.length > 0 && <Field label="Diet types" value={<Chips items={diet} />} />}
             {has(plan.diet_other) && <Field label="Other diet" value={plan.diet_other} />}
             {Object.entries(dietDetails).map(([k, d]) => (
               has(d?.brand) || has(d?.amount) || has(d?.notes) ? (
-                <div key={k} className="rounded-lg bg-sage-50 p-3">
-                  <p className="text-xs font-bold uppercase tracking-wider text-sage-700">{k.replace(/_/g, " ")}</p>
-                  {has(d.brand) && <p className="mt-1 text-sm"><span className="text-sage-500">Brand: </span>{d.brand}</p>}
-                  {has(d.amount) && <p className="text-sm"><span className="text-sage-500">Amount: </span>{(d as any).unit ? formatAmountUnit(d.amount, (d as any).unit) : d.amount}</p>}
-                  {has(d.notes) && <p className="text-sm whitespace-pre-line"><span className="text-sage-500">Notes: </span>{d.notes}</p>}
+                <div key={k} className="rounded-lg bg-[#e8e1d0] p-3">
+                  <p className="text-xs font-medium uppercase tracking-wider text-[#5f5e5a]">{k.replace(/_/g, " ")}</p>
+                  {has(d.brand) && <p className="mt-1 text-sm"><span className="text-[#5f5e5a]">Brand: </span>{d.brand}</p>}
+                  {has(d.amount) && <p className="text-sm"><span className="text-[#5f5e5a]">Amount: </span>{(d as any).unit ? formatAmountUnit(d.amount, (d as any).unit) : d.amount}</p>}
+                  {has(d.notes) && <p className="text-sm whitespace-pre-line"><span className="text-[#5f5e5a]">Notes: </span>{d.notes}</p>}
                 </div>
               ) : null
             ))}
@@ -212,14 +212,14 @@ function CareSheet() {
                 ].filter(Boolean).join("\n")}
               />
             )}
-            <div className="rounded-lg bg-sage-50 p-3">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-sage-600">Freshness & hygiene</p>
-              <ul className="mt-1.5 space-y-1 text-sm text-sage-900">
+            <div className="rounded-lg bg-[#e8e1d0] p-3">
+              <p className="text-[10px] font-medium uppercase tracking-wider text-[#5f5e5a]">Freshness & hygiene</p>
+              <ul className="mt-1.5 space-y-1 text-sm text-[#1a3d2e]">
                 <li>Remove fresh food within <strong>{formatRemovalMinutes(plan.fresh_food_removal_minutes)}</strong> of serving.</li>
                 <li>Wash food bowls: <strong>{prettyLabel(plan.food_bowl_wash_cadence, BOWL_WASH_LABELS) || "—"}</strong>.</li>
                 <li>Wash water bowl: <strong>{prettyLabel(plan.water_bowl_wash_cadence, BOWL_WASH_LABELS) || "—"}</strong>.</li>
               </ul>
-              {has(plan.food_hygiene_notes) && <p className="mt-2 text-xs text-sage-700 whitespace-pre-line">{plan.food_hygiene_notes}</p>}
+              {has(plan.food_hygiene_notes) && <p className="mt-2 text-xs text-[#5f5e5a] whitespace-pre-line">{plan.food_hygiene_notes}</p>}
             </div>
             {has(plan.food_storage) && <Field label="Food storage" value={plan.food_storage} />}
           </Section>
@@ -229,7 +229,7 @@ function CareSheet() {
           <>
             {(handlingDangerous || has(plan.bite_risk) || neverFeed.length > 0) && (
               <Section title="Handling — read first" danger>
-                <ul className="space-y-1.5 text-sm text-sage-900">
+                <ul className="space-y-1.5 text-sm text-[#1a3d2e]">
                   {handlingDangerous && (
                     <li className="flex gap-2"><ShieldAlert className="mt-0.5 size-4 shrink-0 text-warn-red" /><span>Handling restrictions apply — see the rules below before any contact.</span></li>
                   )}
@@ -250,7 +250,7 @@ function CareSheet() {
               {has(plan.likes) && <Field label="Likes" value={plan.likes} />}
               {(has(plan.fears_triggers) || has(plan.known_triggers)) && (
                 <div className="rounded-lg bg-warn-amber/10 p-3 ring-1 ring-warn-amber/20">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-warn-amber">Fears & triggers</p>
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-warn-amber">Fears & triggers</p>
                   <p className="mt-1 text-sm whitespace-pre-line">{[plan.fears_triggers, plan.known_triggers].filter(Boolean).join("\n")}</p>
                 </div>
               )}
@@ -302,15 +302,15 @@ function CareSheet() {
             {(ctx.baselineDroppingsUrl || ctx.baselineClipUrl) && (
               <div className="grid grid-cols-1 gap-2">
                 {ctx.baselineDroppingsUrl && (
-                  <div className="overflow-hidden rounded-xl ring-1 ring-sage-100">
+                  <div className="overflow-hidden rounded-xl ring-1 ring-[#e0d8c4]">
                     <img src={ctx.baselineDroppingsUrl} alt="Baseline droppings" className="aspect-video w-full object-cover" />
-                    <p className="bg-white px-2 py-1 text-[11px] font-semibold">Baseline droppings</p>
+                    <p className="bg-white px-2 py-1 text-[11px] font-medium">Baseline droppings</p>
                   </div>
                 )}
                 {ctx.baselineClipUrl && (
-                  <div className="overflow-hidden rounded-xl ring-1 ring-sage-100">
+                  <div className="overflow-hidden rounded-xl ring-1 ring-[#e0d8c4]">
                     <ClipPlayer src={ctx.baselineClipUrl} label="Normal-behavior clip" className="aspect-video" />
-                    <p className="bg-white px-2 py-1 text-[11px] font-semibold">Normal-behavior clip</p>
+                    <p className="bg-white px-2 py-1 text-[11px] font-medium">Normal-behavior clip</p>
                   </div>
                 )}
               </div>
@@ -325,7 +325,7 @@ function CareSheet() {
           </Section>
         )}
 
-        <p className="px-1 text-center text-[11px] text-sage-500">Owner-provided reference. For general care guidance, see the <Link to="/sitter/$token/guide" params={{ token }} className="underline">Care guide</Link>.</p>
+        <p className="px-1 text-center text-[11px] text-[#5f5e5a]">Owner-provided reference. For general care guidance, see the <Link to="/sitter/$token/guide" params={{ token }} className="underline">Care guide</Link>.</p>
       </main>
     </>
   );
