@@ -62,18 +62,26 @@ function SitterLayout() {
   return (
     <div className="min-h-screen bg-sage-50 pb-32">
       {ctx.birds.length > 1 && (
-        <div className="sticky top-0 z-30 border-b border-sage-100 bg-white/95 backdrop-blur">
-          <div className="mx-auto flex max-w-md items-center gap-2 overflow-x-auto px-4 py-2">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-sage-600">Bird:</span>
-            {ctx.birds.map((b: any) => (
-              <button
-                key={b.id}
-                onClick={() => navigate({ to: ".", search: { birdId: b.id } })}
-                className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition ${b.id === ctx.activeBirdId ? "bg-sage-900 text-white" : "bg-sage-100 text-sage-700"}`}
-              >
-                {b.name}
-              </button>
-            ))}
+        <div className="sticky top-0 z-30 border-b border-sage-200 bg-white/95 backdrop-blur">
+          <div className="mx-auto flex max-w-md items-center gap-2 overflow-x-auto px-4 py-2.5">
+            <span className="shrink-0 text-xs font-semibold text-sage-500">Viewing</span>
+            {ctx.birds.map((b: any) => {
+              const active = b.id === ctx.activeBirdId;
+              return (
+                <button
+                  key={b.id}
+                  onClick={() => navigate({ to: ".", search: { birdId: b.id } })}
+                  aria-pressed={active}
+                  className={`shrink-0 rounded-full px-4 py-1.5 text-sm transition ${
+                    active
+                      ? "bg-[#1a3d2e] font-bold text-white shadow-sm ring-1 ring-[#1a3d2e]"
+                      : "bg-white font-medium text-sage-500 ring-1 ring-sage-200"
+                  }`}
+                >
+                  {b.name}
+                </button>
+              );
+            })}
           </div>
         </div>
       )}

@@ -6,7 +6,7 @@ import { useSitterContext } from "./route";
 import { toggleTaskCompletion } from "@/lib/sitter.functions";
 import { Disclaimer } from "@/components/Disclaimer";
 import { BrandLogo } from "@/components/BrandLogo";
-import { Stethoscope, Calendar, Clock, X, BookOpen, ChevronRight } from "lucide-react";
+import { Stethoscope, Calendar, Clock, X, BookOpen, ChevronRight, ChevronDown } from "lucide-react";
 import { ClipPlayer } from "@/components/ClipPlayer";
 
 export const Route = createFileRoute("/sitter/$token/")({
@@ -15,6 +15,9 @@ export const Route = createFileRoute("/sitter/$token/")({
 
 const FRESH_FOOD_TASK_PATTERN = /\b(fresh|chop|veg|veggies|salad|sprout)\b/i;
 const REMOVAL_TASK_PATTERN = /^remove fresh food/i;
+// Used only to attach the one-line "don't introduce new foods" caution to the
+// first feeding item on the Today tab. Removal tasks are excluded.
+const FEEDING_TASK_PATTERN = /\b(feed|food|pellet|seed|chop|veg|veggies|salad|sprout|fruit|breakfast|dinner|harrison)\b/i;
 
 type FreshTimer = { startedAt: number; taskTitle: string };
 
@@ -44,6 +47,15 @@ function SitterHome() {
   const removalMinutes = (ctx.plan?.fresh_food_removal_minutes ?? 120) as number;
 
   const [timers, setTimers] = useState<Record<string, FreshTimer>>(() => loadTimers(sitId, birdId));
+  // Per-item expandable detail on the checklist (collapsed by default).
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set());
+  function toggleExpanded(id: string) {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
   // Re-render every 30s so countdowns and "Time to remove" surfaces update.
   const [, setTick] = useState(0);
   useEffect(() => {
@@ -94,6 +106,17 @@ function SitterHome() {
   const grouped: Record<string, any[]> = {};
   for (const t of ctx.tasks) (grouped[t.category] ??= []).push(t);
   const todayLabel = new Date().toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+
+  // The first feeding item carries the one "don't introduce new foods" caution,
+  // in chronological (category) order. Removal tasks are not feeding items.
+  let firstFeedingId: string | null = null;
+  for (const cat of CATS) {
+    for (const t of grouped[cat] ?? []) {
+      if (!firstFeedingId && FEEDING_TASK_PATTERN.test(t.title) && !REMOVAL_TASK_PATTERN.test(t.title)) {
+        firstFeedingId = t.id;
+      }
+    }
+  }
 
   const now = Date.now();
   const activeTimers = Object.entries(timers).map(([taskId, t]) => {
@@ -184,33 +207,49 @@ function SitterHome() {
               <p className="text-[10px] font-bold uppercase tracking-widest text-sage-600">{cat}</p>
               {grouped[cat].map((t: any) => {
                 const done = completedIds.has(t.id);
+                const open = expandedIds.has(t.id);
+                const detail = typeof t.instructions === "string" ? t.instructions.trim() : "";
+                const hasDetail = detail.length > 0;
+                const showCaution = t.id === firstFeedingId;
                 return (
-                  <button
+                  <div
                     key={t.id}
-                    onClick={() => m.mutate({ taskId: t.id, completed: !done, title: t.title })}
-                    className={`flex w-full items-start gap-4 rounded-xl p-4 text-left ring-1 transition ${done ? "bg-sage-50 ring-sage-100 opacity-70" : "bg-white ring-sage-100 shadow-sm"}`}
+                    className={`rounded-xl ring-1 transition ${done ? "bg-sage-50 ring-sage-100 opacity-70" : "bg-white ring-sage-100 shadow-sm"}`}
                   >
-                    <div className={`mt-0.5 size-6 shrink-0 rounded border-2 ${done ? "border-warn-green bg-warn-green" : "border-sage-200 bg-white"} grid place-items-center`}>
-                      {done && <svg viewBox="0 0 20 20" className="size-4 text-white"><path fill="currentColor" d="M7.629 13.314 4.4 10.085l1.214-1.214 2.015 2.015 5.757-5.757 1.214 1.214z"/></svg>}
+                    <div className="flex items-stretch">
+                      <button
+                        onClick={() => m.mutate({ taskId: t.id, completed: !done, title: t.title })}
+                        className="flex flex-1 items-start gap-4 p-4 text-left"
+                      >
+                        <div className={`mt-0.5 size-6 shrink-0 rounded border-2 ${done ? "border-warn-green bg-warn-green" : "border-sage-200 bg-white"} grid place-items-center`}>
+                          {done && <svg viewBox="0 0 20 20" className="size-4 text-white"><path fill="currentColor" d="M7.629 13.314 4.4 10.085l1.214-1.214 2.015 2.015 5.757-5.757 1.214 1.214z"/></svg>}
+                        </div>
+                        <div className="flex-1">
+                          <p className={`text-sm font-semibold ${done && "line-through"}`}>{t.title}{t.time_of_day && <span className="ml-2 text-[10px] font-normal uppercase text-sage-600">{t.time_of_day}</span>}</p>
+                          {showCaution && <p className="mt-1 text-[11px] font-semibold text-warn-amber">Don't introduce new foods while the owner is away.</p>}
+                        </div>
+                      </button>
+                      {hasDetail && (
+                        <button
+                          type="button"
+                          onClick={() => toggleExpanded(t.id)}
+                          aria-expanded={open}
+                          aria-label={open ? "Hide details" : "Show details"}
+                          className="grid shrink-0 place-items-center px-3 text-sage-400"
+                        >
+                          <ChevronDown className={`size-4 transition-transform ${open ? "rotate-180" : ""}`} />
+                        </button>
+                      )}
                     </div>
-                    <div className="flex-1">
-                      <p className={`text-sm font-semibold ${done && "line-through"}`}>{t.title}{t.time_of_day && <span className="ml-2 text-[10px] font-normal uppercase text-sage-600">{t.time_of_day}</span>}</p>
-                      {t.instructions && <p className="mt-1 text-xs leading-relaxed text-sage-600">{t.instructions}</p>}
-                    </div>
-                  </button>
+                    {hasDetail && open && (
+                      <p className="-mt-1 pb-4 pl-14 pr-4 text-xs leading-relaxed text-sage-600 whitespace-pre-line">{detail}</p>
+                    )}
+                  </div>
                 );
               })}
             </div>
           ) : null)}
         </section>
-
-        {ctx.plan?.food_instructions && (
-          <section className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
-            <h3 className="text-[11px] font-bold uppercase tracking-widest text-sage-600">Food & water reminder</h3>
-            <p className="mt-2 text-sm whitespace-pre-line text-sage-900">{ctx.plan.food_instructions}</p>
-            <p className="mt-3 rounded bg-warn-amber/10 p-2 text-[11px] font-semibold text-warn-amber">Do not introduce new foods while the owner is away.</p>
-          </section>
-        )}
       </main>
     </>
   );
