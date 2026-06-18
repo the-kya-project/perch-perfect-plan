@@ -218,10 +218,10 @@ function BirdCard({ bird, completeness, resumeStep }: { bird: any; completeness:
   return (
     <div className="overflow-hidden rounded-[20px] bg-[#efe9da] shadow-sm">
       <Link to="/birds/$birdId" params={{ birdId: bird.id }} className="block active:scale-[0.99]">
-        {/* Photo hero — 4:3 keeps a vertical bird subject in frame; the crop
-            biases toward the top (head/face) when the owner hasn't set a focal
-            point via PhotoCropper. */}
-        <div className="relative grid aspect-[4/3] w-full place-items-center bg-[#e3dcc9]">
+        {/* Photo hero — a filled photo gets a 4:3 frame with a top-biased crop
+            so a vertical bird stays in view. The empty state uses a shorter
+            band with the bird's initial so it doesn't read as dead space. */}
+        <div className={`relative grid w-full place-items-center bg-[#e3dcc9] ${bird.photo_url ? "aspect-[4/3]" : "h-24"}`}>
           {bird.photo_url ? (
             <img
               src={bird.photo_url}
@@ -231,7 +231,10 @@ function BirdCard({ bird, completeness, resumeStep }: { bird: any; completeness:
               className="absolute inset-0 size-full object-cover"
             />
           ) : (
-            <Feather className="size-9 text-[#2d6a4f]" />
+            <span className="flex items-center gap-2 text-[#2d6a4f]">
+              <span className="text-3xl font-medium">{initial}</span>
+              <Feather className="size-5 opacity-70" />
+            </span>
           )}
           <span className="absolute left-3 top-3 rounded-full bg-white/[0.92] px-2.5 py-1 text-[11px] font-medium text-[#1a3d2e] shadow-sm">
             Care plan {completeness.pct}%
