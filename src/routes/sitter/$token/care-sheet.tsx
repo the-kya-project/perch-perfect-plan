@@ -120,11 +120,26 @@ function CareSheet() {
 
 
   const diet = (plan.diet_types ?? []) as string[];
-  const dietDetails = (plan.diet_details ?? {}) as Record<string, { brand?: string; amount?: string; notes?: string }>;
+  // diet_details is keyed by diet type -> array of { name, amount, unit, times[] }.
+  const dietDetails = (plan.diet_details ?? {}) as Record<string, any[]>;
   const freshFoods = (plan.fresh_foods ?? []) as string[];
   const neverFeed = (plan.never_feed ?? []) as string[];
   const hazards = (plan.hazards ?? []) as string[];
   const feedingTimes = (plan.feeding_times ?? []) as string[];
+
+  // Flatten every food (across diet types) into its own row so each food's
+  // brand, amount, and its own feeding times all render — not just the first.
+  const foodRows = Object.entries(dietDetails).flatMap(([type, items]) =>
+    (Array.isArray(items) ? items : []).map((it: any) => ({
+      type,
+      name: (it?.name ?? "").toString().trim(),
+      amount: it?.amount,
+      unit: it?.unit,
+      times: Array.isArray(it?.times) ? (it.times as string[]) : [],
+      freeFed: !!it?.freeFed,
+    })),
+  ).filter((f) => f.name || has(f.amount) || f.times.length);
+  const hasPerFoodDetails = foodRows.length > 0;
 
   const showBasics = has(bird.name) || has(bird.species) || has(bird.age) || has(bird.photo_url);
   const showFeeding = diet.length || plan.food_brand || plan.amount_value || feedingTimes.length || freshFoods.length || plan.fresh_foods_other || plan.treats_notes || plan.treats_frequency || plan.water_frequency || plan.water_notes || plan.food_storage || plan.food_hygiene_notes || plan.food_instructions || plan.water_instructions || plan.fresh_food_removal_minutes;
@@ -139,7 +154,7 @@ function CareSheet() {
   const hasStructuredFood =
     diet.length > 0 ||
     has(plan.diet_other) ||
-    Object.values(dietDetails).some((d: any) => has(d?.brand) || has(d?.amount) || has(d?.notes)) ||
+    hasPerFoodDetails ||
     has(plan.food_brand) ||
     has(plan.amount_value) ||
     feedingTimes.length > 0 ||
@@ -220,20 +235,32 @@ function CareSheet() {
             {!hasStructuredFood && has(plan.food_instructions) && <Field label="Diet overview" value={<RichText text={plan.food_instructions} />} />}
             {diet.length > 0 && <Field label="Diet types" value={<Chips items={diet} />} />}
             {has(plan.diet_other) && <Field label="Other diet" value={plan.diet_other} />}
-            {Object.entries(dietDetails).map(([k, d]) => (
-              has(d?.brand) || has(d?.amount) || has(d?.notes) ? (
-                <div key={k} className="rounded-lg bg-[#e8e1d0] p-3">
-                  <p className="text-xs font-medium uppercase tracking-wider text-[#5f5e5a]">{k.replace(/_/g, " ")}</p>
-                  {has(d.brand) && <p className="mt-1 text-sm"><span className="text-[#5f5e5a]">Brand: </span>{d.brand}</p>}
-                  {has(d.amount) && <p className="text-sm"><span className="text-[#5f5e5a]">Amount: </span>{(d as any).unit ? formatAmountUnit(d.amount, (d as any).unit) : d.amount}</p>}
-                  {has(d.notes) && <p className="text-sm whitespace-pre-line"><span className="text-[#5f5e5a]">Notes: </span>{d.notes}</p>}
+            {hasPerFoodDetails ? (
+              // One block per food, so each food's amount and its own feeding
+              // times stay attached to the right food (chop in the morning,
+              // pellets in the evening) — not collapsed into a single line.
+              foodRows.map((f, i) => (
+                <div key={`${f.type}-${i}`} className="rounded-lg bg-[#e8e1d0] p-3">
+                  <p className="text-xs font-medium uppercase tracking-wider text-[#5f5e5a]">
+                    {f.type.charAt(0).toUpperCase() + f.type.slice(1).replace(/_/g, " ")}{f.name ? ` (${f.name})` : ""}
+                  </p>
+                  {has(f.amount) && (
+                    <p className="mt-1 text-sm"><span className="text-[#5f5e5a]">Amount: </span>{f.unit ? formatAmountUnit(f.amount, f.unit) : f.amount}{f.freeFed ? " · free-fed" : ""}</p>
+                  )}
+                  {f.times.length > 0 && (
+                    <p className="text-sm"><span className="text-[#5f5e5a]">When: </span>{f.times.join(", ")}</p>
+                  )}
                 </div>
-              ) : null
-            ))}
-            {(has(plan.food_brand) || has(plan.amount_value)) && (
-              <Field label="Brand & amount" value={`${plan.food_brand ?? ""}${has(plan.amount_value) ? ` — ${formatAmountUnit(plan.amount_value, plan.amount_unit)}` : ""}`.trim()} />
+              ))
+            ) : (
+              (has(plan.food_brand) || has(plan.amount_value)) && (
+                <Field label="Brand & amount" value={`${plan.food_brand ?? ""}${has(plan.amount_value) ? ` — ${formatAmountUnit(plan.amount_value, plan.amount_unit)}` : ""}`.trim()} />
+              )
             )}
-            {feedingTimes.length > 0 && <Field label="Feeding times" value={<Chips items={feedingTimes} />} />}
+            {/* Global feeding times only when no per-food times exist (legacy data). */}
+            {!foodRows.some((f) => f.times.length > 0) && feedingTimes.length > 0 && (
+              <Field label="Feeding times" value={<Chips items={feedingTimes} />} />
+            )}
             {freshFoods.length > 0 && <Field label="Fresh foods" value={<Chips items={freshFoods} />} />}
             {has(plan.fresh_foods_other) && <Field label="Other fresh foods" value={plan.fresh_foods_other} />}
             {(has(plan.treats_notes) || has(plan.treats_frequency)) && (
