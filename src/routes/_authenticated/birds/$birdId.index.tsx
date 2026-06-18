@@ -10,6 +10,7 @@ import { Disclaimer, VetReviewBanner } from "@/components/Disclaimer";
 import { PhotoCropper } from "@/components/PhotoCropper";
 import { SpeciesPicker, AgePicker } from "@/components/BirdPickers";
 import { computeSetupCompleteness } from "@/lib/setupCompleteness";
+import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
 
 
 const TAB_IDS = ["basics", "routine", "food", "behavior", "home", "health", "clips", "emergency", "sits", "logs"] as const;
@@ -271,13 +272,24 @@ function PlanFormSection({ section, birdId, bird, plan, onSaved }: { section: Pl
     toast.success("Saved.");
     onSaved();
   }
+  const [photoBusy, setPhotoBusy] = useState(false);
   async function onPhoto(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (!file) return;
-    if (file.size > 2_000_000) { toast.error("Photo must be under 2MB."); return; }
-    const reader = new FileReader();
-    reader.onload = () => setB({ ...b, photo_url: reader.result as string });
-    reader.readAsDataURL(file);
+    setPhotoBusy(true);
+    try {
+      const dataUrl = await compressImageToDataUrl(file);
+      if (dataUrlBytes(dataUrl) > MAX_UPLOAD_BYTES) {
+        toast.error("That photo's a bit too large even after resizing. Try a different photo.");
+        return;
+      }
+      setB({ ...b, photo_url: dataUrl });
+    } catch {
+      toast.error("Couldn't process that photo. Try a different one.");
+    } finally {
+      setPhotoBusy(false);
+    }
   }
 
   const guidedHint = (
@@ -308,9 +320,9 @@ function PlanFormSection({ section, birdId, bird, plan, onSaved }: { section: Pl
               <div className="flex size-[120px] items-center justify-center rounded-xl bg-sage-100 text-[10px] uppercase tracking-wider text-sage-600">No photo</div>
             )}
             <div className="flex-1 space-y-2 pt-1">
-              <label className="inline-block cursor-pointer rounded-lg bg-sage-100 px-3 py-1.5 text-xs font-semibold text-sage-700">
-                {b.photo_url ? "Change photo" : "Add photo"}
-                <input type="file" accept="image/*" className="hidden" onChange={onPhoto} />
+              <label className={`inline-block rounded-lg bg-sage-100 px-3 py-1.5 text-xs font-semibold text-sage-700 ${photoBusy ? "cursor-default opacity-60" : "cursor-pointer"}`}>
+                {photoBusy ? "Processing…" : b.photo_url ? "Change photo" : "Add photo"}
+                <input type="file" accept="image/*,.heic,.heif" disabled={photoBusy} className="hidden" onChange={onPhoto} />
               </label>
               {b.photo_url && (
                 <button type="button" onClick={() => setB({ ...b, photo_url: null, photo_position: null })} className="ml-2 text-xs font-semibold text-warn-red underline">Remove</button>

@@ -13,6 +13,7 @@ import { ClipRecorder, MAX_SECONDS as CLIP_MAX_SECONDS, MAX_BYTES as CLIP_MAX_BY
 import { formatAmountUnit } from "@/lib/labels";
 import { track } from "@/lib/analytics";
 import { recomputeSitterIntro } from "@/lib/sitterIntro";
+import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
 
 const setupSearch = z.object({
   step: z.coerce.number().int().min(1).max(TOTAL_STEPS).optional(),
@@ -350,6 +351,7 @@ function BasicsStep({ birdId, onBlockNext, registerFlush }: { birdId: string; on
   });
   const [form, setForm] = useState<any>(null);
   const [hydrated, setHydrated] = useState(false);
+  const [photoBusy, setPhotoBusy] = useState(false);
 
   useEffect(() => {
     if (!bird || hydrated) return;
@@ -378,13 +380,23 @@ function BasicsStep({ birdId, onBlockNext, registerFlush }: { birdId: string; on
 
   if (isLoading || !form) return <div className="h-32 animate-pulse rounded-2xl bg-sage-100" />;
 
-  function onPhoto(e: React.ChangeEvent<HTMLInputElement>) {
+  async function onPhoto(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
+    e.target.value = ""; // allow re-selecting the same file
     if (!file) return;
-    if (file.size > 2_000_000) { toast.error("Photo must be under 2MB."); return; }
-    const reader = new FileReader();
-    reader.onload = () => setForm({ ...form, photo_url: reader.result as string });
-    reader.readAsDataURL(file);
+    setPhotoBusy(true);
+    try {
+      const dataUrl = await compressImageToDataUrl(file);
+      if (dataUrlBytes(dataUrl) > MAX_UPLOAD_BYTES) {
+        toast.error("That photo's a bit too large even after resizing. Try a different photo.");
+        return;
+      }
+      setForm({ ...form, photo_url: dataUrl });
+    } catch {
+      toast.error("Couldn't process that photo. Try a different one.");
+    } finally {
+      setPhotoBusy(false);
+    }
   }
 
   return (
@@ -397,9 +409,9 @@ function BasicsStep({ birdId, onBlockNext, registerFlush }: { birdId: string; on
             <div className="flex size-[120px] items-center justify-center rounded-xl bg-sage-100 text-[10px] uppercase tracking-wider text-sage-600">No photo</div>
           )}
           <div className="flex-1 space-y-2 pt-1">
-            <label className="inline-block cursor-pointer rounded-lg bg-sage-100 px-3 py-1.5 text-xs font-semibold text-sage-700">
-              {form.photo_url ? "Change photo" : "Add photo"}
-              <input type="file" accept="image/*" className="hidden" onChange={onPhoto} />
+            <label className={`inline-block rounded-lg bg-sage-100 px-3 py-1.5 text-xs font-semibold text-sage-700 ${photoBusy ? "cursor-default opacity-60" : "cursor-pointer"}`}>
+              {photoBusy ? "Processing…" : form.photo_url ? "Change photo" : "Add photo"}
+              <input type="file" accept="image/*,.heic,.heif" disabled={photoBusy} className="hidden" onChange={onPhoto} />
             </label>
             {form.photo_url && (
               <button type="button" onClick={() => setForm({ ...form, photo_url: null, photo_position: null })} className="ml-2 text-xs font-semibold text-warn-red underline">Remove</button>
