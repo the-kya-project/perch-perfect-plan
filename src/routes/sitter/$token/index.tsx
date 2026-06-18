@@ -5,8 +5,7 @@ import { useEffect, useState } from "react";
 import { useSitterContext } from "./route";
 import { toggleTaskCompletion } from "@/lib/sitter.functions";
 import { Disclaimer } from "@/components/Disclaimer";
-import { BrandLogo } from "@/components/BrandLogo";
-import { Stethoscope, Calendar, Clock, X, BookOpen, ChevronRight, ChevronDown } from "lucide-react";
+import { Stethoscope, Calendar, Clock, X, BookOpen, ChevronRight, ChevronDown, Hand, Volume2 } from "lucide-react";
 import { ClipPlayer } from "@/components/ClipPlayer";
 
 export const Route = createFileRoute("/sitter/$token/")({
@@ -126,25 +125,8 @@ function SitterHome() {
 
   return (
     <>
-      <header className="border-b border-sage-100 bg-white">
-        <div className="mx-auto max-w-md px-4 py-3">
-          <div className="flex items-center justify-between gap-3">
-            <BrandLogo size="sm" showTagline={false} />
-            <div className="rounded bg-sage-50 px-2 py-1 text-[10px] font-bold uppercase">Sit active</div>
-          </div>
-          <div className="mt-3 flex items-center gap-3">
-            <div className="grid size-10 place-items-center rounded-full bg-sage-100 font-bold text-sage-700">
-              {ctx.bird.name.slice(0, 1).toUpperCase()}
-            </div>
-            <div>
-              <h1 className="text-sm font-semibold">Care for {ctx.bird.name}</h1>
-              <p className="text-[11px] uppercase tracking-wider text-sage-600">{ctx.bird.species ?? "Parrot"}</p>
-            </div>
-          </div>
-        </div>
-      </header>
-
       <main className="mx-auto max-w-md space-y-5 px-4 py-5">
+        <WelcomeCard bird={ctx.bird} plan={ctx.plan} />
         <Disclaimer compact />
 
         <Link
@@ -258,4 +240,64 @@ function SitterHome() {
 function TriagePill({ status }: { status: string }) {
   const map: Record<string, string> = { green: "bg-warn-green", yellow: "bg-warn-amber", red: "bg-warn-red" };
   return <span className={`inline-block size-2 rounded-full ${map[status] ?? "bg-sage-300"}`} />;
+}
+
+// Permanent identity card at the top of the sitter Today tab. Always shown,
+// full size, for the active bird. The intro paragraph is the owner-facing
+// assembled sitter_intro (or owner_edited_intro override); the must-know lines
+// render directly from structured care-plan fields so they never drift from
+// what the intro copy happens to say.
+function WelcomeCard({ bird, plan }: { bird: any; plan: any }) {
+  const p = plan ?? {};
+  const species = (bird.species ?? "").trim() || "Parrot";
+  const age = (bird.age ?? "").trim();
+  const speciesAge = [species, age].filter(Boolean).join(" · ");
+  const intro = (p.owner_edited_intro ?? p.sitter_intro ?? bird.owner_edited_intro ?? bird.sitter_intro ?? "").toString().trim();
+  const handling = (p.step_up ?? p.handling_rules ?? "").toString().trim();
+  const noise = (p.normal_noise ?? "").toString().trim();
+  const initial = (bird.name?.slice(0, 1) ?? "?").toUpperCase();
+
+  return (
+    <section className="rounded-2xl bg-[#1a3d2e] p-5 text-white">
+      <p className="text-[10px] font-bold uppercase tracking-widest text-[#9FE1CB]">
+        Welcome — here's who you're caring for
+      </p>
+
+      <div className="relative mt-3 grid size-[72px] place-items-center overflow-hidden rounded-full bg-white/10">
+        {bird.photo_url ? (
+          <img
+            src={bird.photo_url}
+            alt={bird.name}
+            loading="lazy"
+            style={{ objectPosition: bird.photo_position ?? "50% 50%" }}
+            className="absolute inset-0 size-full object-cover"
+          />
+        ) : (
+          <span className="text-2xl font-semibold text-white/90">{initial}</span>
+        )}
+      </div>
+
+      <h1 className="mt-3 text-[22px] font-medium leading-tight">{bird.name}</h1>
+      {speciesAge && <p className="mt-0.5 text-sm text-[#9FE1CB]">{speciesAge}</p>}
+
+      {intro && <p className="mt-3 text-[13px] leading-relaxed text-white/85">{intro}</p>}
+
+      {(handling || noise) && (
+        <div className="mt-4 space-y-2">
+          {handling && (
+            <p className="flex gap-2 text-sm leading-snug">
+              <Hand className="mt-0.5 size-4 shrink-0 text-[#9FE1CB]" />
+              <span><span className="font-semibold">Handling:</span> {handling}</span>
+            </p>
+          )}
+          {noise && (
+            <p className="flex gap-2 text-sm leading-snug">
+              <Volume2 className="mt-0.5 size-4 shrink-0 text-[#9FE1CB]" />
+              <span><span className="font-semibold">Noise:</span> {noise}</span>
+            </p>
+          )}
+        </div>
+      )}
+    </section>
+  );
 }

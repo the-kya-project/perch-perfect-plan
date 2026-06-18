@@ -61,30 +61,37 @@ function SitterLayout() {
 
   return (
     <div className="min-h-screen bg-sage-50 pb-32">
-      {ctx.birds.length > 1 && (
-        <div className="sticky top-0 z-30 border-b border-sage-200 bg-white/95 backdrop-blur">
-          <div className="mx-auto flex max-w-md items-center gap-2 overflow-x-auto px-4 py-2.5">
-            <span className="shrink-0 text-xs font-semibold text-sage-500">Viewing</span>
-            {ctx.birds.map((b: any) => {
-              const active = b.id === ctx.activeBirdId;
-              return (
-                <button
-                  key={b.id}
-                  onClick={() => navigate({ to: ".", search: { birdId: b.id } })}
-                  aria-pressed={active}
-                  className={`shrink-0 rounded-full px-4 py-1.5 text-sm transition ${
-                    active
-                      ? "bg-[#1a3d2e] font-bold text-white shadow-sm ring-1 ring-[#1a3d2e]"
-                      : "bg-white font-medium text-sage-500 ring-1 ring-sage-200"
-                  }`}
-                >
-                  {b.name}
-                </button>
-              );
-            })}
-          </div>
+      <div className="sticky top-0 z-30 border-b border-sage-200 bg-white/95 backdrop-blur">
+        <div className="mx-auto flex max-w-md items-center gap-2 px-4 py-2.5">
+          {ctx.birds.length > 1 && (
+            <>
+              <span className="shrink-0 text-xs font-semibold text-sage-500">Caring for</span>
+              <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto">
+                {ctx.birds.map((b: any) => {
+                  const active = b.id === ctx.activeBirdId;
+                  return (
+                    <button
+                      key={b.id}
+                      onClick={() => navigate({ to: ".", search: { birdId: b.id } })}
+                      aria-pressed={active}
+                      className={`shrink-0 rounded-full px-4 py-1.5 text-sm transition ${
+                        active
+                          ? "bg-[#1a3d2e] font-bold text-white shadow-sm ring-1 ring-[#1a3d2e]"
+                          : "bg-white font-medium text-sage-500 ring-1 ring-sage-200"
+                      }`}
+                    >
+                      {b.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
+          <span className="ml-auto shrink-0 rounded bg-sage-100 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-sage-700">
+            Sit active
+          </span>
         </div>
-      )}
+      </div>
       <Suspense fallback={<TabSkeleton />}>
         <Outlet />
       </Suspense>
