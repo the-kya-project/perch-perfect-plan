@@ -35,6 +35,34 @@ function Section({ title, children, danger = false }: { title: string; children:
   );
 }
 
+// Renders owner free-text where some lines are prefixed with a literal "•"
+// (legacy food_instructions formatting) as proper sage-styled list markup,
+// so no raw bullet glyphs leak into the sitter view.
+function RichText({ text }: { text: string }) {
+  const lines = text.split("\n");
+  const blocks: React.ReactNode[] = [];
+  let bullets: string[] = [];
+  const flushBullets = (key: string) => {
+    if (!bullets.length) return;
+    blocks.push(
+      <ul key={key} className="list-disc space-y-1 pl-5 marker:text-sage-400">
+        {bullets.map((b, i) => (
+          <li key={i} className="pl-0.5">{b}</li>
+        ))}
+      </ul>,
+    );
+    bullets = [];
+  };
+  lines.forEach((raw, i) => {
+    const m = raw.match(/^\s*•\s+(.*)$/);
+    if (m) { bullets.push(m[1]); return; }
+    flushBullets(`ul-${i}`);
+    if (raw.trim()) blocks.push(<p key={i}>{raw}</p>);
+  });
+  flushBullets("ul-end");
+  return <div className="space-y-1.5">{blocks}</div>;
+}
+
 function Field({ label, value }: { label: string; value: React.ReactNode }) {
   if (!has(value as any)) return null;
   return (
@@ -151,6 +179,8 @@ function CareSheet() {
 
         {showFeeding && (
           <Section title="Feeding & food">
+            <p className="rounded bg-warn-amber/10 p-2 text-[11px] font-semibold text-warn-amber">Do not introduce new foods while the owner is away.</p>
+            {has(plan.food_instructions) && <Field label="Diet overview" value={<RichText text={plan.food_instructions} />} />}
             {diet.length > 0 && <Field label="Diet types" value={<Chips items={diet} />} />}
             {has(plan.diet_other) && <Field label="Other diet" value={plan.diet_other} />}
             {Object.entries(dietDetails).map(([k, d]) => (
@@ -192,7 +222,6 @@ function CareSheet() {
               {has(plan.food_hygiene_notes) && <p className="mt-2 text-xs text-sage-700 whitespace-pre-line">{plan.food_hygiene_notes}</p>}
             </div>
             {has(plan.food_storage) && <Field label="Food storage" value={plan.food_storage} />}
-            <p className="rounded bg-warn-amber/10 p-2 text-[11px] font-semibold text-warn-amber">Do not introduce new foods while the owner is away.</p>
           </Section>
         )}
 
