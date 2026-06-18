@@ -16,8 +16,8 @@ self.addEventListener("push", (event) => {
   const title = payload.title || "Parrot Care Co-Pilot";
   const options = {
     body: payload.body || "",
-    icon: payload.icon || "/__l5e/assets-v1/9ff5e2dc-f264-49a0-8d38-75b4993798df/kya_appicon_tile_512.png",
-    badge: payload.badge || "/__l5e/assets-v1/9ff5e2dc-f264-49a0-8d38-75b4993798df/kya_appicon_tile_512.png",
+    icon: payload.icon || "/appicon-192.png",
+    badge: payload.badge || "/appicon-192.png",
     data: { url: payload.url || "/dashboard" },
     tag: payload.tag,
     requireInteraction: !!payload.requireInteraction,
