@@ -150,6 +150,26 @@ export function assembleSitterIntro(bird: IntroBird, plan: IntroPlan): string {
     .trim();
 }
 
+// Sitter-friendly one-liner for the welcome card's "Handling:" must-know line,
+// mapped from the structured step-up field (never the raw "yes"/"sometimes"
+// value). Uses the same pronoun + owner-only logic as the assembled intro.
+export function handlingMustKnow(bird: IntroBird, plan: IntroPlan): string {
+  const p = pronoun(bird.sex);
+  if (OWNER_ONLY.test(`${plan.handlers ?? ""} ${plan.step_up_notes ?? ""}`)) {
+    return `talk to ${p.obj} and keep ${p.obj} company — only ${p.poss} owner does the handling.`;
+  }
+  switch ((plan.step_up ?? "").trim().toLowerCase()) {
+    case "yes":
+      return `${p.subj}${isC(p)} happy to step up onto a familiar hand.`;
+    case "sometimes":
+      return `${p.subj}'ll step up sometimes — no pressure if ${p.subj} won't.`;
+    case "no":
+      return `talk to ${p.obj}, don't pick ${p.obj} up.`;
+    default:
+      return "";
+  }
+}
+
 // Recompute and persist sitter_intro for a bird. Called after the relevant
 // setup steps save (Basics, Behavior). Pulls the full inputs (split across the
 // bird and its care plan) so a single-step save still produces a complete

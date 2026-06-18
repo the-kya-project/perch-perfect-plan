@@ -388,7 +388,6 @@ function PlanFormSection({ section, birdId, bird, plan, onSaved }: { section: Pl
           <Field label="Likes"><textarea className="input area" value={p.likes ?? ""} onChange={(e) => setP({ ...p, likes: e.target.value })} /></Field>
           <Field label="Fears & triggers"><textarea className="input area" value={p.fears_triggers ?? ""} onChange={(e) => setP({ ...p, fears_triggers: e.target.value })} /></Field>
           <Field label="Bite warning signs"><textarea className="input area" value={p.known_triggers ?? ""} onChange={(e) => setP({ ...p, known_triggers: e.target.value })} /></Field>
-          <Field label="Handling rules summary"><textarea className="input area" value={p.handling_rules ?? ""} onChange={(e) => setP({ ...p, handling_rules: e.target.value })} /></Field>
         </section>
       )}
 

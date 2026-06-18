@@ -1357,13 +1357,6 @@ function PersonalityStep({ birdId, birdName, registerFlush }: { birdId: string; 
   useDebouncedAutosave(
     async () => {
       if (!plan) return;
-      const stepUpLabel = STEP_UP_OPTIONS.find((o) => o.value === stepUp)?.label;
-      const handlingSummary = [
-        stepUpLabel ? `Step up: ${stepUpLabel}` : "",
-        stepUpNotes.trim() ? `Step-up notes: ${stepUpNotes.trim()}` : "",
-        handlers.trim() ? `Who can handle: ${handlers.trim()}` : "",
-        bite.trim() ? `Bite risk: ${bite.trim()}` : "",
-      ].filter(Boolean).join("\n");
       await supabase
         .from("care_plans")
         .update({
@@ -1373,9 +1366,9 @@ function PersonalityStep({ birdId, birdName, registerFlush }: { birdId: string; 
           likes: likes || null,
           fears_triggers: fears || null,
           bite_risk: bite || null,
-          // Mirror to legacy fields visible in the Care plan tab
-          handling_rules: handlingSummary || null,
           known_triggers: fears || null,
+          // handling_rules is no longer stored — the sitter view derives the
+          // handling summary from the structured fields above.
         } as any)
         .eq("id", plan.id);
       qc.invalidateQueries({ queryKey: ["plan", birdId] });
@@ -1496,7 +1489,10 @@ function EnvironmentStep({ birdId, registerFlush }: { birdId: string; registerFl
     if (!plan || hydrated) return;
     setCageLoc(plan.cage_location ?? "");
     setOocMode(plan.out_of_cage_mode ?? "");
-    setOocNotes(plan.out_of_cage_notes ?? plan.out_of_cage_rules ?? "");
+    // Seed notes only from the structured notes field — never from the assembled
+    // out_of_cage_rules summary, which would fold the summary back in on re-save
+    // and produce "Supervised only — Supervised only".
+    setOocNotes(plan.out_of_cage_notes ?? "");
     setHazards(plan.hazards ?? []);
     setHazardsOther(plan.hazards_other ?? "");
     setOffLimits(plan.off_limits ?? plan.off_limits_rooms ?? "");
@@ -1507,7 +1503,8 @@ function EnvironmentStep({ birdId, registerFlush }: { birdId: string; registerFl
     async () => {
       if (!plan) return;
       const modeLabel = OUT_OF_CAGE_OPTIONS.find((o) => o.value === oocMode)?.label;
-      const oocSummary = [modeLabel ?? "", oocNotes.trim()].filter(Boolean).join(" — ");
+      // De-dupe so an empty/identical notes value can't repeat the mode label.
+      const oocSummary = [...new Set([modeLabel ?? "", oocNotes.trim()].filter(Boolean))].join(" — ");
       const allHazards = [...hazards, ...(hazardsOther.trim() ? [hazardsOther.trim()] : [])];
       const safetySummary = allHazards.length ? `Hazards: ${allHazards.join(", ")}` : "";
       await supabase

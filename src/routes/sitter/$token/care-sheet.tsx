@@ -151,7 +151,10 @@ function CareSheet() {
     has(plan.food_storage);
   const showHealth = has(bird.normal_weight) || has(bird.normal_weight_min) || has(bird.normal_weight_max) || has(plan.whats_normal) || has(plan.normal_appetite) || has(plan.normal_droppings) || has(plan.normal_noise) || has(plan.normal_activity) || has(plan.normal_sleep) || has(plan.normal_behavior_with_strangers) || has(bird.medical_conditions) || has(bird.medications) || has(plan.medication_schedule) || ctx.baselineDroppingsUrl || ctx.baselineClipUrl;
 
-  const handlingDangerous = /\b(no|do not|don'?t|never)\b/i.test(plan.handling_rules ?? "") || /\b(no|do not|don'?t|never)\b/i.test(plan.step_up ?? "");
+  // Derive restriction detection from the structured fields (not a stored summary).
+  const handlingDangerous = /\b(no|do not|don'?t|never|owner.?only)\b/i.test(
+    `${plan.step_up ?? ""} ${plan.step_up_notes ?? ""} ${plan.handlers ?? ""}`,
+  );
 
   const weightStr = (() => {
     if (has(bird.normal_weight_min) && has(bird.normal_weight_max)) return `${bird.normal_weight_min}–${bird.normal_weight_max} g`;
