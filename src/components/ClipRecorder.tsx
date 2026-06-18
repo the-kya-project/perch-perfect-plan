@@ -1,5 +1,25 @@
 import { useEffect, useRef, useState } from "react";
-import { Video, Square, RotateCcw, Check, AlertTriangle, Upload } from "lucide-react";
+import { Video, Square, RotateCcw, Check, AlertTriangle, Upload, Loader2 } from "lucide-react";
+
+/** Prominent, labeled progress block shared by the checking/uploading states. */
+export function UploadProgress({ label, hint }: { label: string; hint?: string }) {
+  return (
+    <div className="rounded-xl border-2 border-sage-200 bg-sage-50 p-4">
+      <div className="flex items-center gap-2 text-sm font-semibold text-sage-700">
+        <Loader2 className="size-4 animate-spin" />
+        {label}
+      </div>
+      <div className="mt-2.5 h-2 w-full overflow-hidden rounded-full bg-sage-200">
+        <div
+          className="h-full w-2/5 rounded-full bg-sage-600"
+          style={{ animation: "clip-indeterminate 1.2s ease-in-out infinite" }}
+        />
+      </div>
+      {hint && <p className="mt-2 text-xs text-sage-500">{hint}</p>}
+      <style>{`@keyframes clip-indeterminate{0%{transform:translateX(-110%)}100%{transform:translateX(260%)}}`}</style>
+    </div>
+  );
+}
 
 /**
  * Clip recorder + uploader.
@@ -19,8 +39,11 @@ import { Video, Square, RotateCcw, Check, AlertTriangle, Upload } from "lucide-r
  * Both paths hand the same File to onRecorded, so storage and playback are
  * identical regardless of source.
  */
-export const MAX_SECONDS = 180; // 3 min cap
-export const MAX_BYTES = 150 * 1024 * 1024;
+export const MAX_SECONDS = 60; // 1 min cap — bounds file size and keeps clips short
+// Generous raw limit so a 1-minute iPhone original (HEVC .mov, often 60–150MB)
+// is accepted. NOTE: until server-side transcoding is added, this raw file is
+// what gets stored — see the transcoding flag in the upload handlers.
+export const MAX_BYTES = 200 * 1024 * 1024;
 
 type Candidate = { mime: string; ext: "mp4" | "webm"; contentType: "video/mp4" | "video/webm" };
 
@@ -69,11 +92,14 @@ function readDuration(file: File): Promise<number | null> {
 export function ClipRecorder({
   baseName,
   disabled,
+  uploading,
   onRecorded,
 }: {
   /** File base name (without extension), e.g. "clip-feeding". */
   baseName: string;
   disabled?: boolean;
+  /** Parent is uploading the handed-off file to storage — show a prominent bar. */
+  uploading?: boolean;
   onRecorded: (file: File) => void | Promise<void>;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -191,30 +217,50 @@ export function ClipRecorder({
     e.target.value = ""; // allow re-picking the same file later
     if (!file) return;
     setError(null);
-    if (!file.type.startsWith("video/")) {
-      setError("Please choose a video file.");
+    // Accept by MIME or extension. iPhone clips are often video/quicktime (.mov,
+    // frequently HEVC); some browsers report an empty type for .mov/.m4v, so fall
+    // back to the file extension before rejecting.
+    const isVideo =
+      file.type.startsWith("video/") || /\.(mov|mp4|m4v|hevc|3gp|webm)$/i.test(file.name);
+    if (!isVideo) {
+      setError("Please choose a video file (.mov or .mp4).");
       return;
     }
     if (file.size > MAX_BYTES) {
-      setError(`That video is too large (max ${Math.round(MAX_BYTES / (1024 * 1024))}MB). Try a shorter clip.`);
+      setError(`That video is too large (max ${Math.round(MAX_BYTES / (1024 * 1024))}MB). Please record a shorter clip.`);
       return;
     }
     setChecking(true);
     const duration = await readDuration(file);
     setChecking(false);
     if (duration != null && duration > MAX_SECONDS + 1) {
-      setError(`That video is ${fmt(Math.round(duration))} long. Please trim it to ${Math.floor(MAX_SECONDS / 60)} minutes or less first.`);
+      setError(`That clip is ${fmt(Math.round(duration))} long. Please keep clips under 1 minute.`);
       return;
     }
     await onRecorded(file);
   }
 
   if (phase === "idle") {
+    // While the parent is uploading the handed-off file (or we're reading a
+    // picked file's duration), take over the whole control with one prominent,
+    // labeled progress bar \u2014 no record/upload affordances to re-trigger.
+    if (uploading || checking) {
+      return (
+        <UploadProgress
+          label={uploading ? "Uploading your clip\u2026" : "Checking video\u2026"}
+          hint={
+            uploading
+              ? "This can take a moment on slower connections. Please keep this screen open."
+              : "Making sure the clip is under 1 minute."
+          }
+        />
+      );
+    }
     return (
       <div className="space-y-2">
         <button
           type="button"
-          disabled={disabled || checking}
+          disabled={disabled}
           onClick={start}
           className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-sage-200 bg-sage-50 p-4 text-sm font-semibold text-sage-700 disabled:opacity-50"
         >
@@ -228,16 +274,16 @@ export function ClipRecorder({
         </div>
 
         <label
-          className={`flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-sage-200 bg-sage-50 p-4 text-sm font-semibold text-sage-700 ${disabled || checking ? "pointer-events-none opacity-50" : ""}`}
+          className={`flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-sage-200 bg-sage-50 p-4 text-sm font-semibold text-sage-700 ${disabled ? "pointer-events-none opacity-50" : ""}`}
         >
           <Upload className="size-4" />
-          {checking ? "Checking video\u2026" : "Upload a video"}
+          Upload a video
           <input
             ref={fileInputRef}
             type="file"
-            accept="video/*"
+            accept="video/*,video/quicktime,.mov,.mp4,.m4v,.hevc"
             className="hidden"
-            disabled={disabled || checking}
+            disabled={disabled}
             onChange={onPick}
           />
         </label>

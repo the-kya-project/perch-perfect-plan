@@ -6,10 +6,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { SetupShell, SETUP_STEPS, TOTAL_STEPS } from "@/components/SetupShell";
 import { EMERGENCY_FIELDS, EMERGENCY_LABELS, REQUIRED_FIELDS, mergeEmergency, type EmergencyField } from "@/lib/emergency";
-import { Plus, X } from "lucide-react";
+import { Plus, X, Check } from "lucide-react";
 import { PhotoCropper } from "@/components/PhotoCropper";
 import { AgePicker, BirdField, SpeciesPicker } from "@/components/BirdPickers";
-import { ClipRecorder, MAX_SECONDS as CLIP_MAX_SECONDS, MAX_BYTES as CLIP_MAX_BYTES } from "@/components/ClipRecorder";
+import { ClipRecorder, UploadProgress, MAX_SECONDS as CLIP_MAX_SECONDS, MAX_BYTES as CLIP_MAX_BYTES } from "@/components/ClipRecorder";
 import { formatAmountUnit } from "@/lib/labels";
 import { track } from "@/lib/analytics";
 import { recomputeSitterIntro } from "@/lib/sitterIntro";
@@ -288,8 +288,8 @@ function StepBody({
   if (step === 3) return <FoodWaterStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} registerFlush={registerFlush} />;
   if (step === 4) return <PersonalityStep birdId={birdId} birdName={birdName} registerFlush={registerFlush} />;
   if (step === 5) return <EnvironmentStep birdId={birdId} registerFlush={registerFlush} />;
-  if (step === 6) return <HealthBaselineStep birdId={birdId} birdName={birdName} registerFlush={registerFlush} />;
-  if (step === 7) return <WatchFirstClipsStep birdId={birdId} />;
+  if (step === 6) return <HealthBaselineStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} registerFlush={registerFlush} />;
+  if (step === 7) return <WatchFirstClipsStep birdId={birdId} onBlockNext={onBlockNext} />;
   if (step === 8) return <EmergencyStep birdId={birdId} onBlockNext={onBlockNext} registerFlush={registerFlush} />;
   if (step === 9) return <ReviewStep birdId={birdId} birdName={birdName} onJumpToStep={onJumpToStep} onFinish={onFinish} />;
 
@@ -1611,7 +1611,7 @@ function EnvironmentStep({ birdId, registerFlush }: { birdId: string; registerFl
 
 const MED_TASK_PREFIX = "Medication";
 
-function HealthBaselineStep({ birdId, birdName, registerFlush }: { birdId: string; birdName: string; registerFlush?: (fn: (() => Promise<void>) | null) => void }) {
+function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlush }: { birdId: string; birdName: string; onBlockNext: (block: boolean) => void; registerFlush?: (fn: (() => Promise<void>) | null) => void }) {
   const qc = useQueryClient();
 
   const { data: bird } = useQuery({
@@ -1647,8 +1647,14 @@ function HealthBaselineStep({ birdId, birdName, registerFlush }: { birdId: strin
   const [clipPreview, setClipPreview] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const [uploading, setUploading] = useState<"photo" | "clip" | null>(null);
-  
+  // When a clip already exists, the recorder stays collapsed behind a "Replace"
+  // button so the saved clip doesn't look like an unfinished upload prompt.
+  const [replacingClip, setReplacingClip] = useState(false);
+
   const [initialWeight, setInitialWeight] = useState<string>("");
+
+  // Don't let the owner advance mid-upload (prevents re-trigger / partial saves).
+  useEffect(() => { onBlockNext(uploading !== null); }, [uploading, onBlockNext]);
 
   useEffect(() => {
     if (!plan || !bird || hydrated) return;
@@ -1759,6 +1765,7 @@ function HealthBaselineStep({ birdId, birdName, registerFlush }: { birdId: strin
       if (error) throw error;
       if (clipPath) await supabase.storage.from("bird-photos").remove([clipPath]);
       setClipPath(path);
+      setReplacingClip(false);
       toast.success("Baseline clip saved.");
     } catch (e: any) {
       toast.error(e.message ?? "Upload failed");
@@ -1795,13 +1802,16 @@ function HealthBaselineStep({ birdId, birdName, registerFlush }: { birdId: strin
       </Card>
 
       <Card title="Photo of normal droppings" hint="Optional. Private — only your assigned sitter can view it.">
-        {droppingsPreview ? (
+        {uploading === "photo" ? (
+          <UploadProgress label="Uploading photo…" hint="Please keep this screen open." />
+        ) : droppingsPreview ? (
           <div className="space-y-2">
             <img src={droppingsPreview} alt="Baseline droppings" className="h-40 w-full rounded-xl object-cover ring-1 ring-sage-200" />
+            <p className="flex items-center gap-1 text-xs font-semibold text-sage-600"><Check className="size-3.5" /> Photo saved</p>
             <div className="flex gap-2">
               <label className="flex-1 cursor-pointer rounded-xl border border-sage-200 bg-white py-2 text-center text-xs font-semibold text-sage-700">
                 Replace
-                <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadPhoto(e.target.files[0])} />
+                <input type="file" accept="image/*,.heic,.heif" className="hidden" onChange={(e) => e.target.files?.[0] && uploadPhoto(e.target.files[0])} />
               </label>
               <button type="button" onClick={removePhoto} className="flex-1 rounded-xl border border-sage-200 bg-white py-2 text-xs font-semibold text-warn-red">
                 Remove
@@ -1810,32 +1820,46 @@ function HealthBaselineStep({ birdId, birdName, registerFlush }: { birdId: strin
           </div>
         ) : (
           <label className="block cursor-pointer rounded-xl border-2 border-dashed border-sage-200 bg-sage-50 p-4 text-center">
-            <span className="text-sm font-semibold text-sage-700">{uploading === "photo" ? "Uploading…" : "Tap to upload a photo"}</span>
-            <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && uploadPhoto(e.target.files[0])} />
+            <span className="text-sm font-semibold text-sage-700">Tap to upload a photo</span>
+            <input type="file" accept="image/*,.heic,.heif" className="hidden" onChange={(e) => e.target.files?.[0] && uploadPhoto(e.target.files[0])} />
           </label>
         )}
       </Card>
 
       <Card title="Short clip of normal behavior or vocalizing" hint={`Optional, up to ${Math.floor(CLIP_MAX_SECONDS / 60)} min. Record at 720p in your browser or upload an existing video. Private — only your assigned sitter can view it.`}>
-        {clipPreview ? (
+        {uploading === "clip" ? (
+          <UploadProgress label="Uploading your clip…" hint="This can take a moment on slower connections. Please keep this screen open." />
+        ) : clipPreview && !replacingClip ? (
           <div className="space-y-2">
             <video src={clipPreview} controls playsInline className="h-48 w-full rounded-xl bg-black object-contain ring-1 ring-sage-200" />
+            <p className="flex items-center gap-1 text-xs font-semibold text-sage-600"><Check className="size-3.5" /> Clip saved</p>
             <div className="flex gap-2">
               <button
                 type="button"
+                onClick={() => setReplacingClip(true)}
+                className="flex-1 rounded-xl border border-sage-200 bg-white py-2 text-xs font-semibold text-sage-700"
+              >
+                Replace
+              </button>
+              <button
+                type="button"
                 onClick={removeClip}
-                disabled={uploading === "clip"}
-                className="flex-1 rounded-xl border border-sage-200 bg-white py-2 text-xs font-semibold text-warn-red disabled:opacity-50"
+                className="flex-1 rounded-xl border border-sage-200 bg-white py-2 text-xs font-semibold text-warn-red"
               >
                 Remove
               </button>
             </div>
-            <ClipRecorder baseName={`clip-baseline-${Date.now()}`} disabled={uploading === "clip"} onRecorded={uploadClip} />
           </div>
         ) : (
-          <ClipRecorder baseName={`clip-baseline-${Date.now()}`} disabled={uploading === "clip"} onRecorded={uploadClip} />
+          <div className="space-y-2">
+            <ClipRecorder baseName={`clip-baseline-${Date.now()}`} onRecorded={uploadClip} />
+            {clipPreview && replacingClip && (
+              <button type="button" onClick={() => setReplacingClip(false)} className="w-full rounded-xl border border-sage-200 bg-white py-2 text-xs font-semibold text-sage-700">
+                Keep current clip
+              </button>
+            )}
+          </div>
         )}
-        {uploading === "clip" && <p className="mt-2 text-xs font-semibold text-sage-600">Uploading…</p>}
       </Card>
 
       <Card title="Known conditions">
@@ -2062,8 +2086,17 @@ const CLIP_SLOTS: ClipSlot[] = [
   { key: "bedtime", column: "clip_bedtime_path", label: "Settling her for the night", hint: "Cover routine, lights, sounds." },
 ];
 
-function WatchFirstClipsStep({ birdId }: { birdId: string }) {
+function WatchFirstClipsStep({ birdId, onBlockNext }: { birdId: string; onBlockNext: (block: boolean) => void }) {
   const qc = useQueryClient();
+  // Track which slots are mid-upload so Next is disabled until all settle.
+  const busyRef = useRef<Set<string>>(new Set());
+  const [anyBusy, setAnyBusy] = useState(false);
+  function reportBusy(key: string, busy: boolean) {
+    if (busy) busyRef.current.add(key);
+    else busyRef.current.delete(key);
+    setAnyBusy(busyRef.current.size > 0);
+  }
+  useEffect(() => { onBlockNext(anyBusy); }, [anyBusy, onBlockNext]);
 
   const { data: bird } = useQuery({
     queryKey: ["bird-owner", birdId],
@@ -2100,6 +2133,7 @@ function WatchFirstClipsStep({ birdId }: { birdId: string }) {
           ownerId={bird.owner_id}
           birdId={birdId}
           planId={plan.id}
+          onBusy={reportBusy}
           onChange={() => qc.invalidateQueries({ queryKey: ["plan-clips", birdId] })}
         />
       ))}
@@ -2110,17 +2144,19 @@ function WatchFirstClipsStep({ birdId }: { birdId: string }) {
 }
 
 function ClipSlotCard({
-  slot, path, ownerId, birdId, planId, onChange,
+  slot, path, ownerId, birdId, planId, onBusy, onChange,
 }: {
   slot: ClipSlot;
   path: string | null;
   ownerId: string;
   birdId: string;
   planId: string;
+  onBusy: (key: string, busy: boolean) => void;
   onChange: () => void;
 }) {
   const [preview, setPreview] = useState<string | null>(null);
   const [busy, setBusy] = useState<"uploading" | null>(null);
+  const [replacing, setReplacing] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -2134,8 +2170,9 @@ function ClipSlotCard({
   }, [path]);
 
   async function upload(file: File) {
-    if (file.size > CLIP_MAX_BYTES) { toast.error("Clip is too large. Try a shorter recording."); return; }
+    if (file.size > CLIP_MAX_BYTES) { toast.error("That video is too large. Please record a shorter clip."); return; }
     setBusy("uploading");
+    onBusy(slot.key, true);
     try {
       const ext = (file.name.split(".").pop() || "mp4").toLowerCase();
       const newPath = `${ownerId}/baselines/${birdId}/clip-${slot.key}-${Date.now()}.${ext}`;
@@ -2146,42 +2183,57 @@ function ClipSlotCard({
       if (error) throw error;
       if (path) await supabase.storage.from("bird-photos").remove([path]);
       await supabase.from("care_plans").update({ [slot.column]: newPath } as any).eq("id", planId);
+      setReplacing(false);
       toast.success(`${slot.label} saved.`);
       onChange();
     } catch (e: any) {
-      toast.error(e.message ?? "Upload failed");
+      toast.error(e.message ?? "Upload failed. Please try again.");
     } finally {
       setBusy(null);
+      onBusy(slot.key, false);
     }
   }
 
   async function remove() {
     setBusy("uploading");
+    onBusy(slot.key, true);
     try {
       if (path) await supabase.storage.from("bird-photos").remove([path]);
       await supabase.from("care_plans").update({ [slot.column]: null } as any).eq("id", planId);
       onChange();
     } finally {
       setBusy(null);
+      onBusy(slot.key, false);
     }
   }
 
   return (
     <Card title={slot.label} hint={slot.hint}>
-      {preview ? (
+      {busy === "uploading" ? (
+        <UploadProgress label="Uploading your clip…" hint="This can take a moment on slower connections. Please keep this screen open." />
+      ) : preview && !replacing ? (
         <div className="space-y-2">
           <video src={preview} controls playsInline className="h-44 w-full rounded-xl bg-black object-contain ring-1 ring-sage-200" />
+          <p className="flex items-center gap-1 text-xs font-semibold text-sage-600"><Check className="size-3.5" /> Clip saved</p>
           <div className="flex gap-2">
-            <button type="button" disabled={!!busy} onClick={remove} className="flex-1 rounded-xl border border-sage-200 bg-white py-2 text-xs font-semibold text-warn-red disabled:opacity-50">
+            <button type="button" onClick={() => setReplacing(true)} className="flex-1 rounded-xl border border-sage-200 bg-white py-2 text-xs font-semibold text-sage-700">
+              Replace
+            </button>
+            <button type="button" onClick={remove} className="flex-1 rounded-xl border border-sage-200 bg-white py-2 text-xs font-semibold text-warn-red">
               Remove
             </button>
           </div>
-          <ClipRecorder baseName={`clip-${slot.key}-${Date.now()}`} disabled={!!busy} onRecorded={upload} />
         </div>
       ) : (
-        <ClipRecorder baseName={`clip-${slot.key}-${Date.now()}`} disabled={!!busy} onRecorded={upload} />
+        <div className="space-y-2">
+          <ClipRecorder baseName={`clip-${slot.key}-${Date.now()}`} onRecorded={upload} />
+          {preview && replacing && (
+            <button type="button" onClick={() => setReplacing(false)} className="w-full rounded-xl border border-sage-200 bg-white py-2 text-xs font-semibold text-sage-700">
+              Keep current clip
+            </button>
+          )}
+        </div>
       )}
-      {busy === "uploading" && <p className="mt-2 text-xs font-semibold text-sage-600">Uploading…</p>}
     </Card>
   );
 }
