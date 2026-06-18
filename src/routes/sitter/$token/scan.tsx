@@ -76,22 +76,22 @@ function ScanPage() {
     return (
       <main className="mx-auto max-w-md space-y-4 px-4 py-6">
         <div className={`rounded-2xl ${color} p-6 text-white`}>
-          <p className="text-[11px] font-bold uppercase tracking-widest opacity-80">{result.status === "red" ? "Call vet now" : result.status === "yellow" ? "Monitor & message owner" : "All clear logged"}</p>
-          <h1 className="mt-1 text-2xl font-bold leading-tight">{result.message}</h1>
+          <p className="text-[11px] font-medium uppercase tracking-widest opacity-80">{result.status === "red" ? "Call vet now" : result.status === "yellow" ? "Monitor & message owner" : "All clear logged"}</p>
+          <h1 className="mt-1 text-2xl font-medium leading-tight">{result.message}</h1>
         </div>
         {result.reasons.length > 0 && (
-          <div className="rounded-xl bg-white p-4 ring-1 ring-sage-100">
-            <p className="text-[11px] font-bold uppercase tracking-widest text-sage-600">What you flagged</p>
-            <ul className="mt-2 list-disc pl-5 text-sm text-sage-900">
+          <div className="rounded-xl bg-[#efe9da] p-4">
+            <p className="text-[11px] font-medium uppercase tracking-widest text-[#5f5e5a]">What you flagged</p>
+            <ul className="mt-2 list-disc pl-5 text-sm text-[#1a3d2e]">
               {result.reasons.map((r, i) => <li key={i}>{r}</li>)}
             </ul>
           </div>
         )}
         <div className="flex gap-2">
           {result.status !== "green" && (
-            <Link to="/sitter/$token/emergency" params={{ token }} className="flex-1 rounded-xl bg-sage-900 py-3 text-center text-sm font-semibold text-white">Open emergency contacts</Link>
+            <Link to="/sitter/$token/emergency" params={{ token }} className="flex-1 rounded-xl bg-[#1a3d2e] py-3 text-center text-sm font-medium text-white">Open emergency contacts</Link>
           )}
-          <Link to="/sitter/$token" params={{ token }} className="flex-1 rounded-xl border border-sage-200 py-3 text-center text-sm font-semibold">Back to today</Link>
+          <Link to="/sitter/$token" params={{ token }} className="flex-1 rounded-xl border border-[#e0d8c4] py-3 text-center text-sm font-medium">Back to today</Link>
         </div>
       </main>
     );
@@ -109,11 +109,11 @@ function ScanPage() {
   }
 
   return (
-    <>
-      <header className="border-b border-sage-100 bg-white">
+    <div className="min-h-screen bg-[#f4f1e8]">
+      <header className="border-b border-[#e0d8c4] bg-[#f4f1e8]">
         <div className="mx-auto flex max-w-md items-center gap-3 px-4 py-3">
-          <Link to="/sitter/$token" params={{ token }} className="rounded p-1 text-sage-600"><ArrowLeft className="size-5" /></Link>
-          <h1 className="text-sm font-bold">Daily health scan — {ctx.bird.name}</h1>
+          <Link to="/sitter/$token" params={{ token }} className="rounded p-1 text-[#5f5e5a]"><ArrowLeft className="size-5" /></Link>
+          <h1 className="text-sm font-medium">Daily health scan — {ctx.bird.name}</h1>
         </div>
       </header>
       <main className="mx-auto max-w-md space-y-4 px-4 py-5 pb-32">
@@ -126,56 +126,56 @@ function ScanPage() {
             <section
               key={f.key}
               id={`scan-field-${f.key}`}
-              className={`rounded-2xl bg-white p-4 ring-1 ${missing ? "ring-2 ring-warn-red" : "ring-sage-100"}`}
+              className={`rounded-2xl bg-[#efe9da] p-4 ${missing ? "ring-2 ring-warn-red" : ""}`}
             >
-              <p className="text-sm font-semibold">{f.question}</p>
+              <p className="text-sm font-medium">{f.question}</p>
               <div className="mt-3 grid grid-cols-3 gap-2">
                 {(["normal", "not_sure", "concerning"] as ScanAnswer[]).map((opt) => (
                   <button
                     key={opt}
                     onClick={() => setAnswers({ ...answers, [f.key]: opt })}
-                    className={`rounded-lg border px-1 py-2.5 text-[11px] font-bold uppercase ${a === opt
+                    className={`rounded-lg border px-1 py-2.5 text-[11px] font-medium ${a === opt
                       ? opt === "concerning" ? "border-warn-red bg-warn-red/10 text-warn-red"
                       : opt === "not_sure" ? "border-warn-amber bg-warn-amber/10 text-warn-amber"
                       : "border-warn-green bg-warn-green/10 text-warn-green"
-                      : "border-sage-100 text-sage-700"}`}
+                      : "border-[#e0d8c4] text-[#5f5e5a]"}`}
                   >
-                    {opt === "not_sure" ? "Not sure" : opt}
+                    {opt === "not_sure" ? "Not sure" : opt === "concerning" ? "Concerning" : "Normal"}
                   </button>
                 ))}
               </div>
               {missing && (
-                <p className="mt-3 text-[11px] font-semibold text-warn-red">Please answer this before submitting.</p>
+                <p className="mt-3 text-[11px] font-medium text-warn-red">Please answer this before submitting.</p>
               )}
               {a === "not_sure" && (
-                <p className="mt-3 rounded bg-warn-amber/10 p-2 text-[11px] leading-relaxed text-sage-900"><b>Look again: </b>{f.helpNotSure}</p>
+                <p className="mt-3 rounded bg-warn-amber/10 p-2 text-[11px] leading-relaxed text-[#1a3d2e]"><b>Look again: </b>{f.helpNotSure}</p>
               )}
               {a === "concerning" && (
-                <p className="mt-3 rounded bg-warn-red/10 p-2 text-[11px] leading-relaxed text-sage-900"><b>Watch for: </b>{f.helpConcerning}</p>
+                <p className="mt-3 rounded bg-warn-red/10 p-2 text-[11px] leading-relaxed text-[#1a3d2e]"><b>Watch for: </b>{f.helpConcerning}</p>
               )}
             </section>
           );
         })}
 
-        <section className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
-          <p className="text-sm font-semibold">Optional: photo of droppings</p>
-          <p className="mt-1 text-xs text-sage-600">Take a photo against white paper if anything looks off.</p>
-          <label className="mt-3 flex cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-sage-200 py-3 text-sm font-semibold text-sage-700">
+        <section className="rounded-2xl bg-[#efe9da] p-4">
+          <p className="text-sm font-medium">Optional: photo of droppings</p>
+          <p className="mt-1 text-xs text-[#5f5e5a]">Take a photo against white paper if anything looks off.</p>
+          <label className="mt-3 flex cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#e0d8c4] py-3 text-sm font-medium text-[#5f5e5a]">
             <Camera className="size-4" /> {photo ? "Replace photo" : "Add photo"}
             <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhoto} />
           </label>
           {photo && <img src={photo} alt="droppings preview" className="mt-2 max-h-40 rounded-lg" />}
         </section>
 
-        <section className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
+        <section className="rounded-2xl bg-[#efe9da] p-4">
           <label className="block">
-            <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-sage-600">Notes for the owner</span>
-            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} className="w-full rounded-xl border border-sage-100 bg-sage-50 p-3 text-sm" />
+            <span className="mb-1 block text-xs font-medium uppercase tracking-wider text-[#5f5e5a]">Notes for the owner</span>
+            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} className="w-full rounded-xl border border-[#e0d8c4] bg-white p-3 text-sm" />
           </label>
         </section>
 
         {allAnswered && (
-          <div className="rounded-xl bg-sage-100 p-3 text-xs text-sage-700">
+          <div className="rounded-xl bg-[#efe9da] p-3 text-xs text-[#5f5e5a]">
             Preview: <b className="uppercase">{previewTriage().status}</b> — {previewTriage().message}
           </div>
         )}
@@ -183,11 +183,11 @@ function ScanPage() {
         <button
           onClick={handleSubmit}
           disabled={m.isPending}
-          className="w-full rounded-xl bg-sage-900 py-3.5 text-sm font-semibold text-white disabled:opacity-60"
+          className="w-full rounded-xl bg-[#1a3d2e] py-3.5 text-sm font-medium text-white disabled:opacity-60"
         >
           {m.isPending ? "Logging..." : "Submit health scan"}
         </button>
       </main>
-    </>
+    </div>
   );
 }

@@ -64,9 +64,9 @@ function ResetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen bg-sage-50">
+    <div className="min-h-screen bg-[#f4f1e8]">
       <main className="mx-auto max-w-md px-5 py-8">
-        <Link to="/auth" search={{ mode: "signin" }} className="inline-flex items-center gap-1 text-sm text-sage-600">
+        <Link to="/auth" search={{ mode: "signin" }} className="inline-flex items-center gap-1 text-sm text-[#5f5e5a]">
           <ArrowLeft className="size-4" /> Back to sign in
         </Link>
 
@@ -74,8 +74,8 @@ function ResetPasswordPage() {
           <BrandLogo size="md" />
         </div>
 
-        <h1 className="mt-8 text-2xl font-bold tracking-tight">Set a new password</h1>
-        <p className="mt-1 text-sm text-sage-600">
+        <h1 className="mt-8 text-2xl font-medium tracking-tight">Set a new password</h1>
+        <p className="mt-1 text-sm text-[#5f5e5a]">
           {ready
             ? "Choose a new password for your account."
             : "Open this page from the password reset email you received."}
@@ -83,7 +83,7 @@ function ResetPasswordPage() {
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-3">
           <label className="block">
-            <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-sage-600">New password</span>
+            <span className="mb-1 block text-xs font-medium uppercase tracking-wider text-[#5f5e5a]">New password</span>
             <input
               type="password"
               required
@@ -96,7 +96,7 @@ function ResetPasswordPage() {
             />
           </label>
           <label className="block">
-            <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-sage-600">Confirm password</span>
+            <span className="mb-1 block text-xs font-medium uppercase tracking-wider text-[#5f5e5a]">Confirm password</span>
             <input
               type="password"
               required
@@ -111,7 +111,7 @@ function ResetPasswordPage() {
           <button
             type="submit"
             disabled={loading || !ready}
-            className="mt-2 w-full rounded-xl bg-sage-600 px-4 py-3 text-sm font-semibold text-white active:scale-[0.99] disabled:opacity-50"
+            className="mt-2 w-full rounded-xl bg-[#1a3d2e] px-4 py-3 text-sm font-medium text-white active:scale-[0.99] disabled:opacity-50"
           >
             {loading ? "..." : "Update password"}
           </button>

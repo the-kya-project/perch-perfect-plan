@@ -9,7 +9,7 @@ export function SitCard({ sit, birds = [], onChange }: { sit: any; birds?: Bird[
   const expired = new Date(sit.token_expires_at) < new Date();
   const upcoming = new Date(sit.start_date) > new Date(new Date().toDateString());
   const status = sit.revoked ? "Revoked" : expired ? "Expired" : upcoming ? "Upcoming" : "Active";
-  const tone = sit.revoked || expired ? "bg-sage-100 text-sage-600" : upcoming ? "bg-warn-amber/10 text-warn-amber" : "bg-warn-green/10 text-warn-green";
+  const tone = sit.revoked || expired ? "bg-[#e8e1d0] text-[#5f5e5a]" : upcoming ? "bg-[#f4e4c4] text-[#84600f]" : "bg-[#d6e8dc] text-[#1a5e3f]";
   const url = typeof window !== "undefined" ? `${window.location.origin}/sitter/${sit.invite_token}` : "";
 
   async function revoke() {
@@ -66,37 +66,37 @@ export function SitCard({ sit, birds = [], onChange }: { sit: any; birds?: Bird[
   }
 
   return (
-    <div className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
+    <div className="rounded-[20px] bg-[#efe9da] p-4 shadow-sm">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-sm font-semibold">
-          <Calendar className="size-4 text-sage-600" />
+        <div className="flex items-center gap-2 text-sm font-medium">
+          <Calendar className="size-4 text-[#5f5e5a]" />
           {sit.start_date} → {sit.end_date}
         </div>
-        <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${tone}`}>{status}</span>
+        <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${tone}`}>{status}</span>
       </div>
-      <p className="mt-1 text-xs text-sage-600">
+      <p className="mt-1 text-xs text-[#5f5e5a]">
         Sitter: {sit.sitter_name ?? "—"} {sit.sitter_email && `(${sit.sitter_email})`}
       </p>
       {birds.length > 0 && (
         <p className="mt-1 text-xs text-sage-700">
-          Birds: <span className="font-semibold">{birds.map((b) => b.name).join(", ")}</span>
+          Birds: <span className="font-medium">{birds.map((b) => b.name).join(", ")}</span>
         </p>
       )}
       {!sit.revoked && !expired && (
-        <div className="mt-3 flex items-center gap-2 rounded-lg bg-sage-50 p-2">
-          <Link2 className="size-3.5 text-sage-600" />
+        <div className="mt-3 flex items-center gap-2 rounded-[12px] bg-[#e8e1d0] p-2">
+          <Link2 className="size-3.5 text-[#5f5e5a]" />
           <span className="flex-1 truncate text-[11px] text-sage-700">{url}</span>
-          <button onClick={copy} className="rounded p-1 text-sage-600" aria-label="Copy link"><Copy className="size-3.5" /></button>
+          <button onClick={copy} className="rounded p-1 text-[#5f5e5a]" aria-label="Copy link"><Copy className="size-3.5" /></button>
         </div>
       )}
       {!sit.revoked && (
         <SitChecklist sit={sit} birds={birds} onSitChanged={onChange} />
       )}
-      <div className="mt-3 flex gap-3 text-xs font-semibold">
+      <div className="mt-3 flex gap-3 text-xs font-medium">
         {!sit.revoked && !expired && (
-          <button onClick={revoke} className="text-warn-red underline">Revoke link</button>
+          <button onClick={revoke} className="text-[#5f5e5a] underline">Revoke link</button>
         )}
-        <button onClick={remove} className="ml-auto text-sage-600 underline">Delete</button>
+        <button onClick={remove} className="ml-auto text-[#5f5e5a] underline">Delete</button>
       </div>
     </div>
   );

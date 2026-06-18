@@ -177,9 +177,9 @@ function AuthPage() {
 
 
   return (
-    <div className="min-h-screen bg-sage-50">
+    <div className="min-h-screen bg-[#f4f1e8]">
       <main className="mx-auto max-w-md px-5 py-8">
-        <Link to="/" className="inline-flex items-center gap-1 text-sm text-sage-600">
+        <Link to="/" className="inline-flex items-center gap-1 text-sm text-[#5f5e5a]">
           <ArrowLeft className="size-4" /> Back
         </Link>
 
@@ -187,10 +187,10 @@ function AuthPage() {
           <BrandLogo size="md" />
         </div>
 
-        <h1 className="mt-8 text-2xl font-bold tracking-tight">
+        <h1 className="mt-8 text-2xl font-medium tracking-tight">
           {mode === "signup" ? "Create your owner account" : "Sign in"}
         </h1>
-        <p className="mt-1 text-sm text-sage-600">
+        <p className="mt-1 text-sm text-[#5f5e5a]">
           {mode === "signup"
             ? "We'll save your bird profiles and care plans across trips."
             : "Welcome back."}
@@ -199,12 +199,12 @@ function AuthPage() {
         <button
           onClick={handleGoogle}
           disabled={loading}
-          className="mt-6 flex w-full items-center justify-center gap-3 rounded-xl border border-sage-200 bg-white px-4 py-3 text-sm font-semibold shadow-sm active:scale-[0.99] disabled:opacity-50"
+          className="mt-6 flex w-full items-center justify-center gap-3 rounded-xl border border-[#e0d8c4] bg-white px-4 py-3 text-sm font-medium shadow-sm active:scale-[0.99] disabled:opacity-50"
         >
           <GoogleIcon /> Continue with Google
         </button>
 
-        <div className="my-5 flex items-center gap-3 text-[11px] uppercase tracking-widest text-sage-600">
+        <div className="my-5 flex items-center gap-3 text-[11px] uppercase tracking-widest text-[#5f5e5a]">
           <div className="h-px flex-1 bg-sage-200" />
           or with email
           <div className="h-px flex-1 bg-sage-200" />
@@ -260,7 +260,7 @@ function AuthPage() {
                 type="button"
                 onClick={handleForgotPassword}
                 disabled={loading}
-                className="text-xs font-semibold text-sage-700 underline disabled:opacity-50"
+                className="text-xs font-medium text-sage-700 underline disabled:opacity-50"
               >
                 Forgot password?
               </button>
@@ -280,12 +280,12 @@ function AuthPage() {
           <button
             type="submit"
             disabled={loading}
-            className="mt-2 w-full rounded-xl bg-sage-600 px-4 py-3 text-sm font-semibold text-white active:scale-[0.99] disabled:opacity-50"
+            className="mt-2 w-full rounded-xl bg-[#1a3d2e] px-4 py-3 text-sm font-medium text-white active:scale-[0.99] disabled:opacity-50"
           >
             {loading ? "..." : mode === "signup" ? "Create account" : "Sign in"}
           </button>
           {mode === "signup" && (
-            <p className="text-center text-[11px] text-sage-600">
+            <p className="text-center text-[11px] text-[#5f5e5a]">
               By creating an account you agree to our{" "}
               <Link to="/terms" className="underline">Terms</Link> and{" "}
               <Link to="/privacy" className="underline">Privacy Policy</Link>.
@@ -293,19 +293,19 @@ function AuthPage() {
           )}
         </form>
 
-        <p className="mt-6 text-center text-sm text-sage-600">
+        <p className="mt-6 text-center text-sm text-[#5f5e5a]">
           {mode === "signup" ? (
-            <Link to="/auth" search={{ mode: "signin" }} className="font-semibold underline">
+            <Link to="/auth" search={{ mode: "signin" }} className="font-medium underline">
               Already have an account? Sign in
             </Link>
           ) : (
-            <Link to="/auth" search={{ mode: "signup" }} className="font-semibold underline">
+            <Link to="/auth" search={{ mode: "signup" }} className="font-medium underline">
               Need an account? Sign up
             </Link>
           )}
         </p>
 
-        <p className="mt-4 text-center text-[11px] text-sage-600">
+        <p className="mt-4 text-center text-[11px] text-[#5f5e5a]">
           <Link to="/privacy" className="underline">Privacy</Link>
           {" · "}
           <Link to="/terms" className="underline">Terms</Link>
@@ -332,7 +332,7 @@ function AuthPage() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-sage-600">{label}</span>
+      <span className="mb-1 block text-xs font-medium uppercase tracking-wider text-[#5f5e5a]">{label}</span>
       {children}
     </label>
   );

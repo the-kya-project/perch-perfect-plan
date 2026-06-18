@@ -1,0 +1,1 @@
+import{Q as s,U as r,f as u}from"./index-CDQVxlvj.js";function n(e,t){return s(e,r)}const a=[["path",{d:"M5 12h14",key:"1ays0h"}],["path",{d:"M12 5v14",key:"s699le"}]],c=u("plus",a);export{c as P,n as u};

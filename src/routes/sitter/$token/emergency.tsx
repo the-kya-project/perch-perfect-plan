@@ -128,16 +128,16 @@ function Emergency() {
     },
   ];
   return (
-    <div className="min-h-screen bg-sage-900 text-white">
-      <header className="sticky top-0 border-b border-white/10 bg-sage-900">
+    <div className="min-h-screen bg-[#1a3d2e] text-white">
+      <header className="sticky top-0 border-b border-white/10 bg-[#1a3d2e]">
         <div className="mx-auto flex max-w-md items-center gap-3 px-4 py-3">
           <Link to="/sitter/$token" params={{ token }} className="rounded p-1 text-white/70"><ArrowLeft className="size-5" /></Link>
-          <h1 className="flex items-center gap-2 text-sm font-bold"><AlertTriangle className="size-4 text-warn-amber" /> Emergency mode</h1>
+          <h1 className="flex items-center gap-2 text-sm font-medium"><AlertTriangle className="size-4 text-warn-amber" /> Emergency mode</h1>
         </div>
       </header>
       <main className="mx-auto max-w-md space-y-4 px-4 py-5 pb-28">
         <section className="rounded-2xl border border-warn-amber/40 bg-warn-amber/10 p-4">
-          <p className="text-[11px] font-bold uppercase tracking-widest text-warn-amber">The four emergency rules</p>
+          <p className="text-[11px] font-medium uppercase tracking-widest text-warn-amber">The four emergency rules</p>
           <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm text-white">
             <li>Stay calm.</li>
             <li>Keep {ctx.bird.name} warm — about 85–90°F if sick or shocky. Heat on one side only.</li>
@@ -153,8 +153,8 @@ function Emergency() {
         <CallBtn label="Call backup contact" name={c.backup_name} phone={c.backup_phone} />
         <CallBtn label="Poison control" name={c.poison_control ? undefined : "ASPCA Animal Poison Control"} phone={c.poison_control || "8884264435"} />
 
-        <section className="rounded-xl bg-white/5 p-4">
-          <p className="text-[11px] font-bold uppercase tracking-widest text-white/60">Critical info</p>
+        <section className="rounded-2xl bg-white/5 p-4">
+          <p className="text-[11px] font-medium uppercase tracking-widest text-white/60">Critical info</p>
           <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
             <Info label="Carrier" value={c.carrier_location} />
             <Info label="First-aid kit" value={c.first_aid_kit_location} />
@@ -164,12 +164,12 @@ function Emergency() {
         </section>
 
         <section className="space-y-3">
-          <p className="text-[11px] font-bold uppercase tracking-widest text-white/60">Quick playbooks</p>
+          <p className="text-[11px] font-medium uppercase tracking-widest text-white/60">Quick playbooks</p>
           {playbooks.map((p) => (
-            <details key={p.title} className="rounded-xl bg-white/5 p-4">
-              <summary className="cursor-pointer text-sm font-semibold">{p.title}</summary>
+            <details key={p.title} className="rounded-2xl bg-white/5 p-4">
+              <summary className="cursor-pointer text-sm font-medium">{p.title}</summary>
               {p.signs && (
-                <p className="mt-2 text-xs italic text-white/60"><span className="font-bold not-italic uppercase tracking-widest">Signs:</span> {p.signs}</p>
+                <p className="mt-2 text-xs italic text-white/60"><span className="font-medium not-italic uppercase tracking-widest">Signs:</span> {p.signs}</p>
               )}
               <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm text-white/80">
                 {p.steps.map((s, i) => <li key={i}>{s}</li>)}
@@ -211,11 +211,11 @@ function CallBtn({ label, name, phone, urgent }: { label: string; name?: string;
   );
   const display = formatPhone(phone);
   return (
-    <a href={telHref(phone)} className={`flex items-center justify-between rounded-2xl p-4 ${urgent ? "bg-warn-red" : "bg-white"} ${urgent ? "text-white" : "text-sage-900"} active:scale-[0.99]`}>
+    <a href={telHref(phone)} className={`flex items-center justify-between rounded-2xl p-4 ${urgent ? "bg-warn-red" : "bg-white"} ${urgent ? "text-white" : "text-[#1a3d2e]"} active:scale-[0.99]`}>
       <div>
-        <p className="text-[10px] font-bold uppercase tracking-widest opacity-70">{label}</p>
+        <p className="text-[10px] font-medium uppercase tracking-widest opacity-70">{label}</p>
         {name && <p className="text-xs opacity-80">{name}</p>}
-        <p className="text-lg font-bold">{display}</p>
+        <p className="text-lg font-medium">{display}</p>
       </div>
       <Phone className="size-5" />
     </a>
@@ -225,7 +225,7 @@ function CallBtn({ label, name, phone, urgent }: { label: string; name?: string;
 function Info({ label, value }: { label: string; value?: string }) {
   return (
     <div>
-      <p className="text-[10px] font-bold uppercase text-white/40">{label}</p>
+      <p className="text-[10px] font-medium uppercase text-white/40">{label}</p>
       <p className="text-sm text-white">{value || "—"}</p>
     </div>
   );

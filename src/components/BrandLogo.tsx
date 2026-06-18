@@ -42,7 +42,7 @@ export function BrandLogo({
   const isDark = variant === "dark";
   const iconSrc = isDark ? PARROT_WHITE : PARROT_TEAL;
   const titleColor = isDark ? "text-white" : "text-sage-900";
-  const taglineColor = isDark ? "text-white/75" : "text-sage-600";
+  const taglineColor = isDark ? "text-white/75" : "text-[#5f5e5a]";
 
   return (
     <div className={`flex items-center gap-2.5 ${className}`}>
@@ -52,7 +52,7 @@ export function BrandLogo({
         className={`${ICON_SIZE[size]} shrink-0 object-contain`}
       />
       <div className="leading-tight">
-        <div className={`${TITLE_SIZE[size]} font-bold tracking-tight ${titleColor}`}>
+        <div className={`${TITLE_SIZE[size]} font-medium tracking-tight ${titleColor}`}>
           Parrot Care Co-Pilot
         </div>
         {showTagline && (
