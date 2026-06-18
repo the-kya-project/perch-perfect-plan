@@ -363,43 +363,51 @@ function WelcomeCard({ bird, plan }: { bird: any; plan: any }) {
   const initial = (bird.name?.slice(0, 1) ?? "?").toUpperCase();
 
   return (
-    <section className="rounded-2xl bg-[#1a3d2e] p-5 text-white">
-      <p className="text-[10px] font-bold uppercase tracking-widest text-[#9FE1CB]">
-        Welcome — here's who you're caring for
-      </p>
-
-      <div className="relative mt-3 grid size-[52px] place-items-center overflow-hidden rounded-full bg-white/10">
+    <section className="overflow-hidden rounded-2xl bg-[#1a3d2e] text-white">
+      {/* Photo hero — 4:3 keeps a vertical bird subject in frame; the crop
+          biases toward the top (head/face) unless the owner set a focal point.
+          Bird name is overlaid on a bottom gradient. */}
+      <div className="relative aspect-[4/3] w-full bg-white/10">
         {bird.photo_url ? (
           <img
             src={bird.photo_url}
             alt={bird.name}
             loading="lazy"
-            style={{ objectPosition: bird.photo_position ?? "50% 50%" }}
+            style={{ objectPosition: bird.photo_position ?? "50% 20%" }}
             className="absolute inset-0 size-full object-cover"
           />
         ) : (
-          <span className="text-xl font-semibold text-white/90">{initial}</span>
+          <div className="grid size-full place-items-center">
+            <span className="text-4xl font-semibold text-white/90">{initial}</span>
+          </div>
         )}
+        <div className="absolute inset-x-0 top-0 bg-gradient-to-b from-black/30 to-transparent px-4 pb-8 pt-3">
+          <p className="text-[10px] font-medium uppercase tracking-widest text-[#cdeab0]">Welcome — here's who you're caring for</p>
+        </div>
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#1a3d2e] via-[#1a3d2e]/70 to-transparent px-5 pb-3 pt-12">
+          <h1 className="text-[22px] font-medium leading-tight text-white">{bird.name}</h1>
+          {speciesAge && <p className="mt-0.5 text-sm text-[#cdeab0]">{speciesAge}</p>}
+        </div>
       </div>
 
-      <h1 className="mt-3 text-[22px] font-medium leading-tight">{bird.name}</h1>
-      {speciesAge && <p className="mt-0.5 text-sm text-[#9FE1CB]">{speciesAge}</p>}
-
-      {intro && <p className="mt-3 text-[13px] leading-relaxed text-white/85">{intro}</p>}
-
-      {(handling || noise) && (
-        <div className="mt-4 space-y-2">
-          {handling && (
-            <p className="flex gap-2 text-sm leading-snug">
-              <Hand className="mt-0.5 size-4 shrink-0 text-[#9FE1CB]" />
-              <span><span className="font-semibold">Handling:</span> {handling}</span>
-            </p>
-          )}
-          {noise && (
-            <p className="flex gap-2 text-sm leading-snug">
-              <Volume2 className="mt-0.5 size-4 shrink-0 text-[#9FE1CB]" />
-              <span><span className="font-semibold">Noise:</span> {noise}</span>
-            </p>
+      {(intro || handling || noise) && (
+        <div className="space-y-4 p-5">
+          {intro && <p className="text-[13px] leading-relaxed text-white/85">{intro}</p>}
+          {(handling || noise) && (
+            <div className="space-y-2">
+              {handling && (
+                <p className="flex gap-2 text-sm leading-snug">
+                  <Hand className="mt-0.5 size-4 shrink-0 text-[#cdeab0]" />
+                  <span><span className="font-semibold">Handling:</span> {handling}</span>
+                </p>
+              )}
+              {noise && (
+                <p className="flex gap-2 text-sm leading-snug">
+                  <Volume2 className="mt-0.5 size-4 shrink-0 text-[#cdeab0]" />
+                  <span><span className="font-semibold">Noise:</span> {noise}</span>
+                </p>
+              )}
+            </div>
           )}
         </div>
       )}

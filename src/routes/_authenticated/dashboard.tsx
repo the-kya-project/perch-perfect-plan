@@ -218,14 +218,16 @@ function BirdCard({ bird, completeness, resumeStep }: { bird: any; completeness:
   return (
     <div className="overflow-hidden rounded-[20px] bg-[#efe9da] shadow-sm">
       <Link to="/birds/$birdId" params={{ birdId: bird.id }} className="block active:scale-[0.99]">
-        {/* Photo hero */}
-        <div className="relative grid h-[150px] w-full place-items-center bg-[#e3dcc9]">
+        {/* Photo hero — 4:3 keeps a vertical bird subject in frame; the crop
+            biases toward the top (head/face) when the owner hasn't set a focal
+            point via PhotoCropper. */}
+        <div className="relative grid aspect-[4/3] w-full place-items-center bg-[#e3dcc9]">
           {bird.photo_url ? (
             <img
               src={bird.photo_url}
               alt={bird.name}
               loading="lazy"
-              style={{ objectPosition: bird.photo_position ?? "50% 50%" }}
+              style={{ objectPosition: bird.photo_position ?? "50% 20%" }}
               className="absolute inset-0 size-full object-cover"
             />
           ) : (
