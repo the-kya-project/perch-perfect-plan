@@ -74,10 +74,10 @@ function SitterLayout() {
                       key={b.id}
                       onClick={() => navigate({ to: ".", search: { birdId: b.id } })}
                       aria-pressed={active}
-                      className={`shrink-0 rounded-full px-4 py-1.5 text-sm transition ${
+                      className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition ${
                         active
-                          ? "bg-[#1a3d2e] font-medium text-white shadow-sm ring-1 ring-[#1a3d2e]"
-                          : "bg-[#efe9da] font-medium text-[#5f5e5a] ring-1 ring-sage-200"
+                          ? "bg-[#1a3d2e] text-white"
+                          : "bg-[#e8f0ec] text-[#1a3d2e]"
                       }`}
                     >
                       {b.name}
