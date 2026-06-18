@@ -6,7 +6,7 @@ import { useSitterContext } from "./route";
 import { getGuideCards } from "@/lib/sitter.functions";
 import {
   Search, ArrowLeft, ChevronDown, Info,
-  Star, Utensils, Smile, Heart,
+  Star, Utensils, Smile, Heart, AlertTriangle, Home,
   Hand, Droplet, Activity, Moon, Wind,
   type LucideIcon,
 } from "lucide-react";
@@ -22,18 +22,47 @@ function objectPronoun(sex: string | null | undefined): string {
   return "them";
 }
 
-function cleanLabel(category: string): string {
-  const s = category.replace(/^\d+[-_]/, "").replace(/[-_]/g, " ").trim();
-  return s ? s.charAt(0).toUpperCase() + s.slice(1) : category;
-}
+// Topic chips. The stored guide_cards categories are book chapters (01-…, 02-…);
+// these map them to a small, sitter-friendly topic set. Per-entry overrides
+// pull a few rules into a better-fitting topic. Done in the frontend so the
+// underlying content stays intact and the mapping is easy to adjust.
+type Topic = { key: string; label: string; icon: LucideIcon };
+const TOPICS: Topic[] = [
+  { key: "golden", label: "Golden rules", icon: Star },
+  { key: "eating", label: "Eating", icon: Utensils },
+  { key: "behavior", label: "Behavior", icon: Smile },
+  { key: "health", label: "Health", icon: Heart },
+  { key: "worry", label: "When to worry", icon: AlertTriangle },
+  { key: "home", label: "Home", icon: Home },
+];
 
-// Icon chosen per topic chip from its label/keywords.
-function chipIcon(category: string): LucideIcon {
-  const s = category.toLowerCase();
-  if (/eat|food|feed|diet|water/.test(s)) return Utensils;
-  if (/behav|mood|personal/.test(s)) return Smile;
-  if (/health|medical|vet|sick/.test(s)) return Heart;
-  return Star;
+const TOPIC_SUBHEAD: Record<string, string> = {
+  golden: "The ones marked watch closely matter most.",
+};
+
+const CATEGORY_TOPIC: Record<string, string> = {
+  "01-the-10-rules": "golden",
+  "02-the-daily-health-scan": "health",
+  "03-healthy-vs-sick": "worry",
+  "04-droppings": "health",
+  "05-body-language": "behavior",
+  "06-trust-and-handling": "behavior",
+  "07-food-and-water": "eating",
+  "08-enrichment": "behavior",
+  "09-the-safe-home": "home",
+  "10-emergencies": "worry",
+  "11-special-situations": "health",
+  "12-keeping-the-owner-informed": "health",
+};
+
+// Per-entry overrides: these belong out of the golden-rules list.
+const ENTRY_TOPIC: Record<string, string> = {
+  "rule-emergency": "worry",
+  "rule-doors-windows": "home",
+};
+
+function topicForCard(c: any): string {
+  return ENTRY_TOPIC[c.slug] ?? CATEGORY_TOPIC[c.category] ?? "golden";
 }
 
 // Leading entry icon. Kept as its own component so the muted Tabler-style icon
@@ -41,13 +70,14 @@ function chipIcon(category: string): LucideIcon {
 // list — change only this component.
 function iconForEntry(card: any): LucideIcon {
   const s = `${card.slug ?? ""} ${card.title ?? ""} ${card.category ?? ""} ${card.search_keywords ?? ""}`.toLowerCase();
+  if (/emergenc|first.?aid|gets? out/.test(s)) return AlertTriangle;
   if (/hand|step.?up|handl|bite|perch/.test(s)) return Hand;
-  if (/dropping|poop|stool|droppings/.test(s)) return Droplet;
+  if (/dropping|poop|stool/.test(s)) return Droplet;
   if (/breath|lung|respir|wheez|tail.?bob/.test(s)) return Activity;
   if (/sleep|night|bed|cover|rest/.test(s)) return Moon;
-  if (/air|fume|smoke|ventil|teflon|candle|scent/.test(s)) return Wind;
+  if (/air|fume|smoke|ventil|teflon|candle|scent|window|door/.test(s)) return Wind;
   if (/eat|food|feed|diet|bowl|water|treat/.test(s)) return Utensils;
-  if (/behav|mood|fear|stress|pluck/.test(s)) return Smile;
+  if (/behav|mood|fear|stress|pluck|enrich|toy/.test(s)) return Smile;
   if (/health|sick|ill|weight|vet|molt/.test(s)) return Heart;
   return Star;
 }
@@ -68,7 +98,7 @@ function Guide() {
   const { data: cards } = useSuspenseQuery({ queryKey: ["guide-cards"], queryFn: () => fn() });
 
   const [q, setQ] = useState("");
-  const [topic, setTopic] = useState<string | null>(null);
+  const [topic, setTopic] = useState<string>("golden"); // golden rules is the default view
   const [open, setOpen] = useState<string | null>(null);
 
   const bird = ctx.bird as any;
@@ -83,11 +113,13 @@ function Guide() {
       .toLowerCase()
       .includes(ql);
 
-  const categories = Array.from(new Set((cards as any[]).map((c) => c.category))).sort();
+  // Search overrides the active chip and spans every category; otherwise show
+  // only the active topic's entries.
+  const list = searching
+    ? (cards as any[]).filter(matches)
+    : (cards as any[]).filter((c) => topicForCard(c) === topic);
 
-  let list = cards as any[];
-  if (searching) list = list.filter(matches);
-  else if (topic) list = list.filter((c) => c.category === topic);
+  const activeTopic = TOPICS.find((t) => t.key === topic);
 
   const isWatch = (c: any) => c.emergency_level === "red" || c.emergency_level === "yellow";
   const isDroppings = (c: any) => /dropping|poop|stool/i.test(`${c.slug ?? ""} ${c.title ?? ""} ${c.search_keywords ?? ""}`);
@@ -120,32 +152,34 @@ function Guide() {
           />
         </div>
 
-        {/* Topic chips + golden-rules label give way to search results when typing */}
+        {/* Topic chips + section label give way to search results when typing */}
         {!searching && (
           <>
             <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {categories.map((cat) => {
-                const on = topic === cat;
-                const CIcon = chipIcon(cat);
+              {TOPICS.map((t) => {
+                const on = topic === t.key;
+                const CIcon = t.icon;
                 return (
                   <button
-                    key={cat}
-                    onClick={() => setTopic(on ? null : cat)}
+                    key={t.key}
+                    onClick={() => setTopic(t.key)}
                     aria-pressed={on}
                     className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition ${
                       on ? "bg-[#1a3d2e] text-white" : "bg-[#efe9da] text-[#1a3d2e]"
                     }`}
                   >
                     <CIcon className="size-3.5" />
-                    {cleanLabel(cat)}
+                    {t.label}
                   </button>
                 );
               })}
             </div>
 
             <div>
-              <p className="text-[11px] font-medium uppercase tracking-widest text-[#8a897f]">The golden rules</p>
-              <p className="mt-0.5 text-xs text-[#5f5e5a]">The ones marked watch closely matter most.</p>
+              <p className="text-[11px] font-medium uppercase tracking-widest text-[#8a897f]">{activeTopic?.label}</p>
+              {TOPIC_SUBHEAD[topic] && (
+                <p className="mt-0.5 text-xs text-[#5f5e5a]">{TOPIC_SUBHEAD[topic]}</p>
+              )}
             </div>
           </>
         )}
