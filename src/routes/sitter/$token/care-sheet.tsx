@@ -26,6 +26,21 @@ function has(v: any): boolean {
   return true;
 }
 
+// Join distinct, non-empty parts with newlines — drops blanks and case-
+// insensitive duplicates so a field never prints the same value twice (e.g.
+// out-of-cage mode + notes that hold the same string).
+function joinUnique(parts: (string | null | undefined | false)[]): string {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const p of parts) {
+    const v = (p ?? "").toString().trim();
+    if (!v || seen.has(v.toLowerCase())) continue;
+    seen.add(v.toLowerCase());
+    out.push(v);
+  }
+  return out.join("\n");
+}
+
 function Section({ title, children, danger = false }: { title: string; children: React.ReactNode; danger?: boolean }) {
   return (
     <section className={`rounded-2xl p-4 ${danger ? "bg-warn-red/5 ring-1 ring-warn-red/30" : "bg-[#efe9da] shadow-sm"}`}>
@@ -226,10 +241,10 @@ function CareSheet() {
                 label="Water"
                 value={
                   has(plan.water_frequency) || has(plan.water_notes)
-                    ? [
+                    ? joinUnique([
                         plan.water_frequency && `Water ${prettyLabel(plan.water_frequency, WATER_FREQ_LABELS)}`,
                         plan.water_notes,
-                      ].filter(Boolean).join("\n")
+                      ])
                     : plan.water_instructions
                 }
               />
@@ -249,20 +264,13 @@ function CareSheet() {
 
         {showHandling && (
           <>
-            {(handlingDangerous || has(plan.bite_risk) || neverFeed.length > 0) && (
-              <Section title="Handling — read first" danger>
-                <ul className="space-y-1.5 text-sm text-[#1a3d2e]">
-                  {handlingDangerous && (
-                    <li className="flex gap-2"><ShieldAlert className="mt-0.5 size-4 shrink-0 text-warn-red" /><span>Handling restrictions apply — see the rules below before any contact.</span></li>
-                  )}
-                  {has(plan.bite_risk) && (
-                    <li className="flex gap-2"><AlertTriangle className="mt-0.5 size-4 shrink-0 text-warn-red" /><span>Watch for bite warning signs — full list in Handling & personality.</span></li>
-                  )}
-                  {neverFeed.length > 0 && (
-                    <li className="flex gap-2"><AlertTriangle className="mt-0.5 size-4 shrink-0 text-warn-red" /><span>Never feed the toxic items listed above.</span></li>
-                  )}
-                </ul>
-              </Section>
+            {(handlingDangerous || has(plan.bite_risk)) && (
+              <div className="rounded-2xl bg-[#f4ead2] p-4 ring-1 ring-[#BA7517]/40">
+                <p className="flex items-start gap-2 text-sm text-[#854F0B]">
+                  <AlertTriangle className="mt-0.5 size-4 shrink-0 text-[#BA7517]" />
+                  <span>This bird has handling restrictions — read the handling section below before any contact.</span>
+                </p>
+              </div>
             )}
             <Section title="Handling & personality">
               {has(plan.step_up) && <Field label="Step up" value={plan.step_up} />}
@@ -275,7 +283,7 @@ function CareSheet() {
               {(has(plan.fears_triggers) || has(plan.known_triggers)) && (
                 <div className="rounded-lg bg-warn-amber/10 p-3 ring-1 ring-warn-amber/20">
                   <p className="text-[10px] font-medium uppercase tracking-wider text-warn-amber">Fears & triggers</p>
-                  <p className="mt-1 text-sm whitespace-pre-line">{[plan.fears_triggers, plan.known_triggers].filter(Boolean).join("\n")}</p>
+                  <p className="mt-1 text-sm whitespace-pre-line">{joinUnique([plan.fears_triggers, plan.known_triggers])}</p>
                 </div>
               )}
               {has(plan.bite_risk) && (
@@ -303,13 +311,13 @@ function CareSheet() {
                 label="Out-of-cage rules"
                 value={
                   has(plan.out_of_cage_mode) || has(plan.out_of_cage_notes)
-                    ? [prettyLabel(plan.out_of_cage_mode, OUT_OF_CAGE_LABELS), plan.out_of_cage_notes].filter(Boolean).join("\n")
+                    ? joinUnique([prettyLabel(plan.out_of_cage_mode, OUT_OF_CAGE_LABELS), plan.out_of_cage_notes])
                     : plan.out_of_cage_rules
                 }
               />
             )}
             {(has(plan.off_limits) || has(plan.off_limits_rooms)) && (
-              <Field label="Off-limits areas" value={[plan.off_limits, plan.off_limits_rooms].filter(Boolean).join("\n")} />
+              <Field label="Off-limits areas" value={joinUnique([plan.off_limits, plan.off_limits_rooms])} />
             )}
             {hazards.length === 0 && has(plan.safety_rules) && <Field label="Safety rules" value={plan.safety_rules} />}
             {has(plan.other_pets) && <Field label="Other pets" value={plan.other_pets} />}
@@ -328,7 +336,7 @@ function CareSheet() {
             {has(plan.normal_behavior_with_strangers) && <Field label="With strangers" value={plan.normal_behavior_with_strangers} />}
             {has(bird.medical_conditions) && <Field label="Medical conditions" value={bird.medical_conditions} />}
             {(has(bird.medications) || has(plan.medication_schedule)) && (
-              <Field label="Medications" value={[bird.medications, plan.medication_schedule].filter(Boolean).join("\n")} />
+              <Field label="Medications" value={joinUnique([bird.medications, plan.medication_schedule])} />
             )}
             {(ctx.baselineDroppingsUrl || ctx.baselineClipUrl) && (
               <div className="grid grid-cols-1 gap-2">
