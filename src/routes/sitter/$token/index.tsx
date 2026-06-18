@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useSitterContext } from "./route";
 import { toggleTaskCompletion } from "@/lib/sitter.functions";
+import { handlingMustKnow } from "@/lib/sitterIntro";
 import { Disclaimer } from "@/components/Disclaimer";
 import { Stethoscope, Calendar, BookOpen, ChevronRight, ChevronDown, Hand, Volume2 } from "lucide-react";
 import { ClipPlayer } from "@/components/ClipPlayer";
@@ -358,7 +359,7 @@ function WelcomeCard({ bird, plan }: { bird: any; plan: any }) {
   const age = (bird.age ?? "").trim();
   const speciesAge = [species, age].filter(Boolean).join(" · ");
   const intro = (bird.owner_edited_intro ?? bird.sitter_intro ?? p.owner_edited_intro ?? p.sitter_intro ?? "").toString().trim();
-  const handling = (p.step_up ?? p.handling_rules ?? "").toString().trim();
+  const handling = handlingMustKnow(bird, p);
   const noise = (p.normal_noise ?? "").toString().trim();
   const initial = (bird.name?.slice(0, 1) ?? "?").toUpperCase();
 
