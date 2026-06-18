@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Plus, Trash2, ChevronDown, AlertTriangle, Wand2 } from "lucide-react";
@@ -31,6 +31,18 @@ function BirdEditor() {
   const qc = useQueryClient();
   const [tab, setTab] = useState<Tab>(tabParam ?? "basics");
   useEffect(() => { if (tabParam) setTab(tabParam); }, [tabParam]);
+
+  // Edge fades so the tab strip reads as scrollable.
+  const tabStripRef = useRef<HTMLDivElement>(null);
+  const [tabAtStart, setTabAtStart] = useState(true);
+  const [tabAtEnd, setTabAtEnd] = useState(false);
+  function updateTabFades() {
+    const el = tabStripRef.current;
+    if (!el) return;
+    setTabAtStart(el.scrollLeft <= 1);
+    setTabAtEnd(el.scrollLeft + el.clientWidth >= el.scrollWidth - 1);
+  }
+  useEffect(() => { updateTabFades(); }, []);
 
   const { data: bird } = useQuery({
     queryKey: ["bird", birdId],
@@ -116,22 +128,27 @@ function BirdEditor() {
         <div className="mx-auto max-w-md px-4 py-3">
           <div className="flex items-center gap-3">
             <Link to="/dashboard" className="rounded p-1 text-sage-600"><ArrowLeft className="size-5" /></Link>
-            {bird.photo_url && <img src={bird.photo_url} alt={bird.name} className="size-9 rounded-full object-cover ring-1 ring-sage-200" style={{ objectPosition: bird.photo_position ?? "50% 50%" }} />}
+            {bird.photo_url && <img src={bird.photo_url} alt={bird.name} className="size-9 shrink-0 rounded-full object-cover ring-1 ring-sage-200" style={{ objectPosition: bird.photo_position ?? "50% 20%" }} />}
             <div className="flex-1 min-w-0">
               <h1 className="text-sm font-bold truncate">{bird.name}</h1>
               <p className="text-[10px] uppercase tracking-wider text-sage-600">{bird.species ?? "Parrot"}</p>
             </div>
           </div>
-          <div className="-mx-1 mt-3 flex gap-1 overflow-x-auto pb-1">
-            {tabs.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => setTab(t.id)}
-                className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold ${tab === t.id ? "bg-sage-900 text-white" : "bg-sage-100 text-sage-700"}`}
-              >
-                {t.label}
-              </button>
-            ))}
+          <div className="relative mt-3">
+            <div ref={tabStripRef} onScroll={updateTabFades} className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {tabs.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => setTab(t.id)}
+                  className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold ${tab === t.id ? "bg-sage-900 text-white" : "bg-sage-100 text-sage-700"}`}
+                >
+                  {t.label}
+                </button>
+              ))}
+              <span aria-hidden className="shrink-0 pl-1" />
+            </div>
+            {!tabAtStart && <div className="pointer-events-none absolute inset-y-0 left-0 w-5 bg-gradient-to-r from-white to-transparent" />}
+            {!tabAtEnd && <div className="pointer-events-none absolute inset-y-0 right-0 w-7 bg-gradient-to-l from-white to-transparent" />}
           </div>
         </div>
       </header>
