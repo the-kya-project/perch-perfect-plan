@@ -1649,11 +1649,13 @@ function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlush }: { 
   // When a clip already exists, the recorder stays collapsed behind a "Replace"
   // button so the saved clip doesn't look like an unfinished upload prompt.
   const [replacingClip, setReplacingClip] = useState(false);
+  // True while the recorder is framing/recording/compressing (before upload).
+  const [clipBusy, setClipBusy] = useState(false);
 
   const [initialWeight, setInitialWeight] = useState<string>("");
 
   // Don't let the owner advance mid-upload (prevents re-trigger / partial saves).
-  useEffect(() => { onBlockNext(uploading !== null); }, [uploading, onBlockNext]);
+  useEffect(() => { onBlockNext(uploading !== null || clipBusy); }, [uploading, clipBusy, onBlockNext]);
 
   useEffect(() => {
     if (!plan || !bird || hydrated) return;
@@ -1825,7 +1827,7 @@ function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlush }: { 
         )}
       </Card>
 
-      <Card title="Short clip of normal behavior or vocalizing" hint={`Optional, up to ${Math.floor(CLIP_MAX_SECONDS / 60)} min. Record at 720p in your browser or upload an existing video. Private — only your assigned sitter can view it.`}>
+      <Card title="Short clip of normal behavior or vocalizing" hint={`Optional, up to 60 seconds. Record at 720p in your browser or upload an existing video. Private — only your assigned sitter can view it.`}>
         {uploading === "clip" ? (
           <UploadProgress label="Uploading your clip…" hint="This can take a moment on slower connections. Please keep this screen open." />
         ) : clipPreview && !replacingClip ? (
@@ -1851,7 +1853,7 @@ function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlush }: { 
           </div>
         ) : (
           <div className="space-y-2">
-            <ClipRecorder baseName={`clip-baseline-${Date.now()}`} onRecorded={uploadClip} />
+            <ClipRecorder baseName={`clip-baseline-${Date.now()}`} onBusy={setClipBusy} onRecorded={uploadClip} />
             {clipPreview && replacingClip && (
               <button type="button" onClick={() => setReplacingClip(false)} className="w-full rounded-xl border border-sage-200 bg-white py-2 text-xs font-semibold text-sage-700">
                 Keep current clip
@@ -2225,7 +2227,7 @@ function ClipSlotCard({
         </div>
       ) : (
         <div className="space-y-2">
-          <ClipRecorder baseName={`clip-${slot.key}-${Date.now()}`} onRecorded={upload} />
+          <ClipRecorder baseName={`clip-${slot.key}-${Date.now()}`} onBusy={(b) => onBusy(`${slot.key}:rec`, b)} onRecorded={upload} />
           {preview && replacing && (
             <button type="button" onClick={() => setReplacing(false)} className="w-full rounded-xl border border-sage-200 bg-white py-2 text-xs font-semibold text-sage-700">
               Keep current clip
