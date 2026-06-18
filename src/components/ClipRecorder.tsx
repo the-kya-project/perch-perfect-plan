@@ -1,49 +1,31 @@
 import { useEffect, useRef, useState } from "react";
 import { Video, Square, RotateCcw, Check, AlertTriangle, Upload, Loader2 } from "lucide-react";
-
-/** Prominent, labeled progress block shared by the checking/uploading states. */
-export function UploadProgress({ label, hint }: { label: string; hint?: string }) {
-  return (
-    <div className="rounded-xl border-2 border-sage-200 bg-sage-50 p-4">
-      <div className="flex items-center gap-2 text-sm font-semibold text-sage-700">
-        <Loader2 className="size-4 animate-spin" />
-        {label}
-      </div>
-      <div className="mt-2.5 h-2 w-full overflow-hidden rounded-full bg-sage-200">
-        <div
-          className="h-full w-2/5 rounded-full bg-sage-600"
-          style={{ animation: "clip-indeterminate 1.2s ease-in-out infinite" }}
-        />
-      </div>
-      {hint && <p className="mt-2 text-xs text-sage-500">{hint}</p>}
-      <style>{`@keyframes clip-indeterminate{0%{transform:translateX(-110%)}100%{transform:translateX(260%)}}`}</style>
-    </div>
-  );
-}
+import { compressVideo, type CompressStage } from "@/lib/videoCompress";
 
 /**
  * Clip recorder + uploader.
  *
  * Record path (MediaRecorder):
- * - 720p (1280x720) rear camera + audio.
- * - Negotiates an inline-playable MIME: prefers MP4 (Safari/iOS), falls back to
- *   WebM (Chrome/Firefox/Android). The resulting File carries the matching
- *   extension and Content-Type so signed-URL playback "just works".
- * - Shows a live MM:SS timer and auto-stops at MAX_SECONDS.
+ * - Live 720p rear-camera preview (with audio) the owner can frame and watch
+ *   while recording — the stream is attached to the <video> after it mounts, and
+ *   the element is muted + playsinline so iOS Safari shows it instead of a black
+ *   box. Auto-stops at MAX_SECONDS. After "Stop & save" the owner reviews a
+ *   playback of the captured clip and can keep it or re-record.
  *
  * Upload path (file picker):
- * - Accepts an existing video file (e.g. from the camera roll).
- * - Validates type and size, and rejects clips longer than MAX_SECONDS when the
- *   browser can read the duration.
+ * - Accepts an existing video (incl. iPhone HEVC .mov), validates type/duration,
+ *   then COMPRESSES it in-browser to a small H.264 MP4 (ffmpeg.wasm, loaded
+ *   lazily) before handing it off. If compression can't run, the original is
+ *   uploaded instead (subject to the raw size limit).
  *
  * Both paths hand the same File to onRecorded, so storage and playback are
  * identical regardless of source.
  */
 export const MAX_SECONDS = 60; // 1 min cap — bounds file size and keeps clips short
-// Generous raw limit so a 1-minute iPhone original (HEVC .mov, often 60–150MB)
-// is accepted. NOTE: until server-side transcoding is added, this raw file is
-// what gets stored — see the transcoding flag in the upload handlers.
-export const MAX_BYTES = 200 * 1024 * 1024;
+// Generous raw limit so a 1-minute iPhone original (HEVC .mov, often 80–150MB at
+// 4K) is accepted as a compression fallback. NOTE: the Supabase bucket's
+// file_size_limit must be raised to match — see the bucket migration.
+export const MAX_BYTES = 250 * 1024 * 1024;
 
 type Candidate = { mime: string; ext: "mp4" | "webm"; contentType: "video/mp4" | "video/webm" };
 
@@ -72,6 +54,10 @@ function fmt(s: number) {
   return `${m}:${r.toString().padStart(2, "0")}`;
 }
 
+function mb(bytes: number) {
+  return `${Math.round(bytes / (1024 * 1024))} MB`;
+}
+
 /** Best-effort read of a video file's duration in seconds; null if unreadable. */
 function readDuration(file: File): Promise<number | null> {
   return new Promise((resolve) => {
@@ -89,10 +75,36 @@ function readDuration(file: File): Promise<number | null> {
   });
 }
 
+/** Prominent, labeled progress block shared by the checking/compressing/uploading states. */
+export function UploadProgress({ label, hint, ratio }: { label: string; hint?: string; ratio?: number }) {
+  const pct = typeof ratio === "number" ? Math.max(0, Math.min(100, Math.round(ratio * 100))) : null;
+  return (
+    <div className="rounded-xl border-2 border-sage-200 bg-sage-50 p-4">
+      <div className="flex items-center justify-between gap-2 text-sm font-semibold text-sage-700">
+        <span className="flex items-center gap-2">
+          <Loader2 className="size-4 animate-spin" />
+          {label}
+        </span>
+        {pct != null && <span className="tabular-nums text-sage-600">{pct}%</span>}
+      </div>
+      <div className="mt-2.5 h-2 w-full overflow-hidden rounded-full bg-sage-200">
+        {pct != null ? (
+          <div className="h-full rounded-full bg-sage-600 transition-[width] duration-200" style={{ width: `${pct}%` }} />
+        ) : (
+          <div className="h-full w-2/5 rounded-full bg-sage-600" style={{ animation: "clip-indeterminate 1.2s ease-in-out infinite" }} />
+        )}
+      </div>
+      {hint && <p className="mt-2 text-xs text-sage-500">{hint}</p>}
+      <style>{`@keyframes clip-indeterminate{0%{transform:translateX(-110%)}100%{transform:translateX(260%)}}`}</style>
+    </div>
+  );
+}
+
 export function ClipRecorder({
   baseName,
   disabled,
   uploading,
+  onBusy,
   onRecorded,
 }: {
   /** File base name (without extension), e.g. "clip-feeding". */
@@ -100,6 +112,9 @@ export function ClipRecorder({
   disabled?: boolean;
   /** Parent is uploading the handed-off file to storage — show a prominent bar. */
   uploading?: boolean;
+  /** Fires true while the recorder is mid-flow (framing, recording, compressing)
+   *  so the parent can disable Next / re-trigger. */
+  onBusy?: (busy: boolean) => void;
   onRecorded: (file: File) => void | Promise<void>;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -109,16 +124,48 @@ export function ClipRecorder({
   const candidateRef = useRef<Candidate | null>(null);
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const recordedFileRef = useRef<File | null>(null);
+  const recordedUrlRef = useRef<string | null>(null);
 
-  const [phase, setPhase] = useState<"idle" | "ready" | "recording" | "stopping">("idle");
+  const [phase, setPhase] = useState<"idle" | "ready" | "recording" | "stopping" | "review">("idle");
   const [elapsed, setElapsed] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [note, setNote] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
+  const [compress, setCompress] = useState<{ stage: CompressStage; progress: number } | null>(null);
+  const [recordedUrl, setRecordedUrl] = useState<string | null>(null);
 
   useEffect(() => {
-    return () => stopAll();
+    return () => { stopAll(); revokeRecorded(); onBusy?.(false); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Attach the live stream once the <video> is actually mounted (it only renders
+  // outside the "idle" phase). Doing this in start() failed because the element
+  // wasn't in the DOM yet — the classic black-preview bug.
+  useEffect(() => {
+    if ((phase === "ready" || phase === "recording") && streamRef.current && videoRef.current) {
+      const v = videoRef.current;
+      if (v.srcObject !== streamRef.current) {
+        v.srcObject = streamRef.current;
+        v.muted = true;
+        v.play().catch(() => {}); // autoplay promise can reject on iOS — safe to ignore
+      }
+    }
+  }, [phase]);
+
+  // Let the parent disable Next while the recorder is busy (camera live,
+  // recording, or compressing). Upload-to-storage is signalled separately via
+  // the `uploading` prop the parent already controls.
+  useEffect(() => {
+    const busy = checking || !!compress || phase === "ready" || phase === "recording" || phase === "stopping" || phase === "review";
+    onBusy?.(busy);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [checking, compress, phase]);
+
+  function revokeRecorded() {
+    if (recordedUrlRef.current) { try { URL.revokeObjectURL(recordedUrlRef.current); } catch {} recordedUrlRef.current = null; }
+  }
 
   function stopAll() {
     if (tickRef.current) { clearInterval(tickRef.current); tickRef.current = null; }
@@ -131,8 +178,9 @@ export function ClipRecorder({
 
   async function start() {
     setError(null);
+    setNote(null);
     const cand = pickCandidate();
-    if (!cand) { setError("Your browser can't record video here. Try Safari (iOS) or Chrome."); return; }
+    if (!cand) { setError("Your browser can't record video here. Try Safari on iPhone or Chrome."); return; }
     candidateRef.current = cand;
 
     try {
@@ -144,15 +192,20 @@ export function ClipRecorder({
         },
         audio: true,
       });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.muted = true;
-        await videoRef.current.play().catch(() => {});
+      if (!stream.getVideoTracks().length) {
+        stream.getTracks().forEach((t) => t.stop());
+        setError("No camera was found. Check that another app isn't using it.");
+        return;
       }
-      setPhase("ready");
+      streamRef.current = stream;
+      setPhase("ready"); // mounts the <video>; the effect above attaches the stream
     } catch (e: any) {
-      setError(e?.message ?? "Couldn't access the camera. Check your browser permissions.");
+      const denied = e?.name === "NotAllowedError" || e?.name === "SecurityError";
+      setError(
+        denied
+          ? "Camera access was blocked. Allow camera access in your browser settings, then try again."
+          : (e?.message ?? "Couldn't access the camera. Check your browser permissions."),
+      );
       setPhase("idle");
     }
   }
@@ -193,16 +246,51 @@ export function ClipRecorder({
     try { recorderRef.current?.stop(); } catch {}
   }
 
-  async function finalize() {
+  // Build the captured file and move to the review step (playback) — don't hand
+  // off until the owner confirms.
+  function finalize() {
     const cand = candidateRef.current!;
     const blob = new Blob(chunksRef.current, { type: cand.contentType });
     chunksRef.current = [];
-    stopAll();
-    setPhase("idle");
-    if (!blob.size) { setError("No video captured. Please try again."); return; }
-    if (blob.size > MAX_BYTES) { setError("Clip is too large. Try a shorter recording."); return; }
-    const file = new File([blob], `${baseName}.${cand.ext}`, { type: cand.contentType });
-    await onRecorded(file);
+    if (tickRef.current) { clearInterval(tickRef.current); tickRef.current = null; }
+    recorderRef.current = null;
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current = null;
+    if (videoRef.current) videoRef.current.srcObject = null;
+
+    if (!blob.size) { setPhase("idle"); setError("No video was captured. Please try recording again."); return; }
+    if (blob.size > MAX_BYTES) { setPhase("idle"); setError("That recording is too large. Please record a shorter clip."); return; }
+
+    recordedFileRef.current = new File([blob], `${baseName}.${cand.ext}`, { type: cand.contentType });
+    revokeRecorded();
+    const url = URL.createObjectURL(blob);
+    recordedUrlRef.current = url;
+    setRecordedUrl(url);
+    setPhase("review");
+  }
+
+  async function useRecorded() {
+    const file = recordedFileRef.current;
+    if (!file) return;
+    // Recordings are already 720p and modestly sized, so they skip the ffmpeg
+    // compression step and go straight to upload.
+    onBusy?.(true);
+    try {
+      await onRecorded(file);
+    } finally {
+      onBusy?.(false);
+      revokeRecorded();
+      setRecordedUrl(null);
+      recordedFileRef.current = null;
+      setPhase("idle");
+    }
+  }
+
+  function reRecord() {
+    revokeRecorded();
+    setRecordedUrl(null);
+    recordedFileRef.current = null;
+    start();
   }
 
   function cancel() {
@@ -217,45 +305,120 @@ export function ClipRecorder({
     e.target.value = ""; // allow re-picking the same file later
     if (!file) return;
     setError(null);
+    setNote(null);
+
     // Accept by MIME or extension. iPhone clips are often video/quicktime (.mov,
     // frequently HEVC); some browsers report an empty type for .mov/.m4v, so fall
     // back to the file extension before rejecting.
     const isVideo =
       file.type.startsWith("video/") || /\.(mov|mp4|m4v|hevc|3gp|webm)$/i.test(file.name);
     if (!isVideo) {
-      setError("Please choose a video file (.mov or .mp4).");
+      setError("Please choose a video file, such as a .mov or .mp4.");
       return;
     }
-    if (file.size > MAX_BYTES) {
-      setError(`That video is too large (max ${Math.round(MAX_BYTES / (1024 * 1024))}MB). Please record a shorter clip.`);
-      return;
-    }
+
     setChecking(true);
     const duration = await readDuration(file);
     setChecking(false);
     if (duration != null && duration > MAX_SECONDS + 1) {
-      setError(`That clip is ${fmt(Math.round(duration))} long. Please keep clips under 1 minute.`);
+      setError(`That clip is ${fmt(Math.round(duration))} long. Please keep clips under 60 seconds.`);
       return;
     }
-    await onRecorded(file);
+    if (file.size > MAX_BYTES) {
+      setError(`That video is too large (over ${mb(MAX_BYTES)}). Please record a shorter clip.`);
+      return;
+    }
+
+    // Compress in-browser (HEVC/.mov → small H.264 .mp4) before upload. Best
+    // effort: any failure falls back to uploading the original.
+    onBusy?.(true);
+    let out = file;
+    try {
+      setCompress({ stage: "loading", progress: 0 });
+      const compressed = await compressVideo(file, {
+        baseName,
+        onStage: (s) => setCompress((c) => ({ stage: s, progress: s === "loading" ? 0 : (c?.progress ?? 0) })),
+        onProgress: (r) => setCompress({ stage: "compressing", progress: r }),
+      });
+      // Prefer the re-encoded MP4 (plays everywhere) as long as it fits.
+      out = compressed.size > 0 && compressed.size <= MAX_BYTES ? compressed : file;
+    } catch (err) {
+      console.error("[videoCompress] failed; uploading original instead", err);
+      out = file;
+      setNote("Couldn't compress this video on your device — uploading the original instead, which may take a bit longer.");
+    } finally {
+      setCompress(null);
+    }
+
+    try {
+      await onRecorded(out);
+    } finally {
+      onBusy?.(false);
+    }
+  }
+
+  // ---- Render ----------------------------------------------------------------
+
+  const noteEl = note && (
+    <p className="flex items-start gap-1.5 text-xs text-warn-amber">
+      <AlertTriangle className="size-3.5 shrink-0" />
+      <span>{note}</span>
+    </p>
+  );
+  const errorEl = error && (
+    <p className="flex items-start gap-1.5 text-xs text-warn-red">
+      <AlertTriangle className="size-3.5 shrink-0" />
+      <span>{error}</span>
+    </p>
+  );
+
+  // Progress states take over the whole control (no record/upload affordances to
+  // re-trigger). Order: compressing → uploading → checking.
+  if (compress) {
+    return (
+      <div className="space-y-2">
+        <UploadProgress
+          label={compress.stage === "loading" ? "Preparing video tools…" : "Compressing video…"}
+          ratio={compress.stage === "compressing" ? compress.progress : undefined}
+          hint="This can take a moment, especially on older phones. Please keep this screen open."
+        />
+        {noteEl}
+      </div>
+    );
+  }
+  if (uploading) {
+    return (
+      <div className="space-y-2">
+        <UploadProgress label="Uploading…" hint="Almost there — please keep this screen open." />
+        {noteEl}
+      </div>
+    );
+  }
+  if (checking) {
+    return <UploadProgress label="Checking video…" hint="Making sure the clip is under 60 seconds." />;
+  }
+
+  if (phase === "review") {
+    return (
+      <div className="space-y-2">
+        <div className="overflow-hidden rounded-xl bg-black ring-1 ring-sage-200">
+          {recordedUrl && <video src={recordedUrl} controls playsInline className="aspect-video w-full object-contain" />}
+        </div>
+        <p className="flex items-center gap-1 text-xs font-semibold text-sage-600"><Check className="size-3.5" /> Clip recorded — review it below.</p>
+        <div className="flex gap-2">
+          <button type="button" onClick={useRecorded} disabled={disabled} className="flex-1 rounded-xl bg-sage-900 py-2 text-sm font-semibold text-white disabled:opacity-50">
+            <span className="inline-flex items-center justify-center gap-1.5"><Check className="size-4" /> Use this clip</span>
+          </button>
+          <button type="button" onClick={reRecord} disabled={disabled} className="rounded-xl border border-sage-200 bg-white px-3 py-2 text-sm font-semibold text-sage-700 disabled:opacity-50">
+            <span className="inline-flex items-center gap-1.5"><RotateCcw className="size-4" /> Re-record</span>
+          </button>
+        </div>
+        {errorEl}
+      </div>
+    );
   }
 
   if (phase === "idle") {
-    // While the parent is uploading the handed-off file (or we're reading a
-    // picked file's duration), take over the whole control with one prominent,
-    // labeled progress bar \u2014 no record/upload affordances to re-trigger.
-    if (uploading || checking) {
-      return (
-        <UploadProgress
-          label={uploading ? "Uploading your clip\u2026" : "Checking video\u2026"}
-          hint={
-            uploading
-              ? "This can take a moment on slower connections. Please keep this screen open."
-              : "Making sure the clip is under 1 minute."
-          }
-        />
-      );
-    }
     return (
       <div className="space-y-2">
         <button
@@ -264,7 +427,7 @@ export function ClipRecorder({
           onClick={start}
           className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-sage-200 bg-sage-50 p-4 text-sm font-semibold text-sage-700 disabled:opacity-50"
         >
-          <Video className="size-4" /> Record a clip (up to {Math.floor(MAX_SECONDS / 60)} min)
+          <Video className="size-4" /> Record a clip (up to 60 seconds)
         </button>
 
         <div className="flex items-center gap-3 text-[11px] uppercase tracking-widest text-sage-500">
@@ -288,24 +451,33 @@ export function ClipRecorder({
           />
         </label>
 
-        {error && (
-          <p className="flex items-start gap-1.5 text-xs text-warn-red">
-            <AlertTriangle className="size-3.5 shrink-0" />
-            <span>{error}</span>
-          </p>
-        )}
+        {errorEl}
+        {noteEl}
       </div>
     );
   }
 
+  // ready | recording | stopping — live camera preview
   return (
     <div className="space-y-2">
       <div className="relative overflow-hidden rounded-xl bg-black ring-1 ring-sage-200">
-        <video ref={videoRef} playsInline muted className="aspect-video w-full object-contain" />
+        <video
+          ref={videoRef}
+          autoPlay
+          playsInline
+          muted
+          webkit-playsinline="true"
+          className="aspect-video w-full object-contain"
+        />
         {phase === "recording" && (
           <div className="absolute left-2 top-2 flex items-center gap-1.5 rounded-full bg-warn-red/90 px-2 py-0.5 text-[11px] font-bold text-white">
             <span className="size-1.5 animate-pulse rounded-full bg-white" />
             REC {fmt(elapsed)} / {fmt(MAX_SECONDS)}
+          </div>
+        )}
+        {phase === "ready" && (
+          <div className="absolute left-2 top-2 rounded-full bg-black/60 px-2 py-0.5 text-[11px] font-semibold text-white">
+            Live preview
           </div>
         )}
       </div>
@@ -340,17 +512,12 @@ export function ClipRecorder({
         )}
         {phase === "stopping" && (
           <div className="flex-1 rounded-xl bg-sage-100 py-2 text-center text-sm font-semibold text-sage-700">
-            <span className="inline-flex items-center gap-1.5"><Check className="size-4" /> Finalizing\u2026</span>
+            <span className="inline-flex items-center gap-1.5"><Loader2 className="size-4 animate-spin" /> Finalizing…</span>
           </div>
         )}
       </div>
 
-      {error && (
-        <p className="flex items-start gap-1.5 text-xs text-warn-red">
-          <AlertTriangle className="size-3.5 shrink-0" />
-          <span>{error}</span>
-        </p>
-      )}
+      {errorEl}
     </div>
   );
 }
