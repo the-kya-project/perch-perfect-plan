@@ -12,6 +12,7 @@ import { AgePicker, BirdField, SpeciesPicker } from "@/components/BirdPickers";
 import { ClipRecorder, MAX_SECONDS as CLIP_MAX_SECONDS, MAX_BYTES as CLIP_MAX_BYTES } from "@/components/ClipRecorder";
 import { formatAmountUnit } from "@/lib/labels";
 import { track } from "@/lib/analytics";
+import { recomputeSitterIntro } from "@/lib/sitterIntro";
 
 const setupSearch = z.object({
   step: z.coerce.number().int().min(1).max(TOTAL_STEPS).optional(),
@@ -367,6 +368,8 @@ function BasicsStep({ birdId, onBlockNext, registerFlush }: { birdId: string; on
       await supabase.from("birds").update(patch).eq("id", birdId);
       qc.invalidateQueries({ queryKey: ["bird", birdId] });
       qc.invalidateQueries({ queryKey: ["bird-setup", birdId] });
+      // Basics changes name/sex/species/age — refresh the assembled sitter intro.
+      void recomputeSitterIntro(birdId);
     },
     [form, birdId, qc],
     !!form && hydrated,
@@ -1376,6 +1379,8 @@ function PersonalityStep({ birdId, birdName, registerFlush }: { birdId: string; 
         } as any)
         .eq("id", plan.id);
       qc.invalidateQueries({ queryKey: ["plan", birdId] });
+      // Behavior changes step-up/handlers/likes — refresh the assembled sitter intro.
+      void recomputeSitterIntro(birdId);
     },
     [stepUp, stepUpNotes, handlers, likes, fears, bite],
     !!plan && hydrated,
