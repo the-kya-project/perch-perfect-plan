@@ -41,7 +41,7 @@ Project context for Claude Code. This app is "Parrot Care Co-Pilot" by The Kya P
 - Static assets must live in `public/` and be referenced by root path, e.g. `/kya_parrot_icon_teal.png`. Do not use Lovable `__l5e/...asset.json` pointers — they resolve only on Lovable's host and 404 in production. Some dead `src/assets/*.png.asset.json` files remain from the Lovable origin and can be ignored or removed.
 - Product copy uses sentence case for titles, headings, and subheadings (only the first letter capitalized). Avoid the phrasing "it's not about X, it's about Y."
 - The guided walkthrough reads its starting step from the `?step=` URL param. Apply that value only when it actually changes, not on every data refetch, or the wizard bounces back to the linked step.
-- `ClipRecorder` supports recording in-browser or uploading an existing video (up to 3 minutes, up to 150 MB); both paths store to the `bird-photos` bucket.
+- `ClipRecorder` supports recording in-browser or uploading an existing video (capped at 1 minute; raw upload limit 200 MB to accept a 1-minute iPhone HEVC original); both paths store to the `bird-photos` bucket. NOTE: there is no server-side transcoding yet — the raw original is stored as-is, so HEVC/.mov clips won't play in non-Safari browsers until a transcoding step is added. The clip-upload UI (progress bar, disable-during-upload, collapse-after-save) lives in `ClipRecorder` (`UploadProgress`) and the wizard clip steps.
 
 ## Preview server (Claude Code desktop)
 - Dev command is `npm run dev` (Vite). If the embedded preview needs an explicit config, `.claude/launch.json` should run `vite dev`.
