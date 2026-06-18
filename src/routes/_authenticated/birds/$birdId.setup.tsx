@@ -896,11 +896,10 @@ function FoodWaterStep({
           food_bowl_wash_cadence: foodBowlWash,
           water_bowl_wash_cadence: waterBowlWash,
           food_hygiene_notes: hygieneNotes || null,
-          food_instructions: foodSummaryParts.join("\n") || null,
-          treats_allowed: treatsSummary || null,
-          foods_never_allowed: never.join(", ") || null,
-          water_instructions: waterSummary || null,
-          fresh_food_removal: freshRemovalSummary,
+          // Free-text food summary blobs (food_instructions, treats_allowed,
+          // foods_never_allowed, water_instructions, fresh_food_removal) are no
+          // longer written — the sitter view assembles food display from the
+          // structured columns above. See FoodEditor / care-sheet.tsx.
         } as any)
         .eq("id", plan.id);
 
@@ -1528,9 +1527,9 @@ function EnvironmentStep({ birdId, registerFlush }: { birdId: string; registerFl
           hazards,
           hazards_other: hazardsOther || null,
           off_limits: offLimits || null,
-          // Mirror to legacy fields visible in the Care plan tab
-          out_of_cage_rules: oocSummary || null,
-          safety_rules: safetySummary || null,
+          // Denormalized mirror the sitter view reads as a fallback. The
+          // out_of_cage_rules / safety_rules free-text blobs are no longer
+          // written — the sitter assembles those from the structured fields.
           off_limits_rooms: offLimits || null,
         } as any)
         .eq("id", plan.id);

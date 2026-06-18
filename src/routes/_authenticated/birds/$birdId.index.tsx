@@ -11,6 +11,7 @@ import { PhotoCropper } from "@/components/PhotoCropper";
 import { SpeciesPicker, AgePicker } from "@/components/BirdPickers";
 import { computeSetupCompleteness } from "@/lib/setupCompleteness";
 import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
+import { FoodEditor, foodValueFromPlan, deriveFoodLegacyFields } from "@/components/careEditors/FoodEditor";
 
 
 const TAB_IDS = ["basics", "routine", "food", "behavior", "home", "health", "clips", "emergency", "sits", "logs"] as const;
@@ -217,6 +218,23 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
 
 type PlanSection = "basics" | "food" | "behavior" | "home" | "health" | "clips";
 
+// Structured option sets — identical to the guided setup wizard so both editors
+// write the same enum/array columns (one data model, two views).
+const STEP_UP_OPTIONS = [
+  { value: "yes", label: "Yes" },
+  { value: "sometimes", label: "Sometimes" },
+  { value: "no", label: "No — cage-only is fine" },
+];
+const OUT_OF_CAGE_OPTIONS = [
+  { value: "supervised", label: "Supervised only" },
+  { value: "specific_room", label: "Specific room only" },
+  { value: "not_while_sitting", label: "Not while sitting" },
+];
+const HAZARD_OPTIONS = [
+  "Other pets", "Ceiling fans", "Open windows", "Young children",
+  "Houseplants", "Kitchen & nonstick cookware", "Candles or diffusers",
+];
+
 const CLIP_FIELDS: { key: string; label: string; hint: string }[] = [
   { key: "clip_step_up_path", label: "How she steps up", hint: "Hand position, cue word, what works." },
   { key: "clip_food_water_path", label: "Refilling food & water", hint: "Bowls, fill amount, cage-door routine." },
@@ -264,6 +282,26 @@ function PlanFormSection({ section, birdId, bird, plan, onSaved }: { section: Pl
     setSaving(true);
     const { id: bId, owner_id, created_at, updated_at, ...birdPatch } = b;
     const { id: pId, bird_id, created_at: pc, updated_at: pu, ...planPatch } = p;
+    // Deprecated free-text summary blobs: every tab now uses structured inputs,
+    // and the sitter view assembles its display from the structured columns, so
+    // stop writing these. Removing the key from the patch leaves any existing DB
+    // value untouched (non-destructive) while preventing fresh writes.
+    for (const k of [
+      "food_instructions", "water_instructions", "fresh_food_removal", "treats_allowed", "foods_never_allowed",
+      "handling_rules", "out_of_cage_rules", "safety_rules",
+    ]) {
+      delete (planPatch as any)[k];
+    }
+    // When the Food tab was edited, keep the denormalized fallback columns
+    // (feeding_times, fresh_foods, food_brand/amount) consistent with the
+    // structured data so switching to the guided flow shows identical values.
+    if (section === "food") {
+      Object.assign(planPatch, deriveFoodLegacyFields(foodValueFromPlan(p)));
+    }
+    // Keep denormalized sibling columns the sitter view reads as fallbacks in
+    // sync with the structured field they mirror (matches the wizard's writes).
+    if (section === "behavior") (planPatch as any).known_triggers = p.fears_triggers ?? null;
+    if (section === "home") (planPatch as any).off_limits_rooms = p.off_limits ?? null;
     await Promise.all([
       supabase.from("birds").update(birdPatch).eq("id", birdId),
       supabase.from("care_plans").update(planPatch).eq("id", plan.id),
@@ -359,51 +397,7 @@ function PlanFormSection({ section, birdId, bird, plan, onSaved }: { section: Pl
           <h2 className="text-sm font-bold">Food & water</h2>
           <div className="rounded-lg bg-warn-amber/10 p-2 text-[11px] font-semibold text-warn-amber">Reminder: do not introduce new foods while the owner is away.</div>
           {guidedHint}
-          {[["food_instructions", "Food instructions (pellets, fresh, treats)"], ["water_instructions", "Water"], ["fresh_food_removal", "Fresh food removal timing"], ["treats_allowed", "Treats allowed"], ["foods_never_allowed", "Foods NEVER allowed for this bird"]].map(([k, l]) => (
-            <Field key={k} label={l}><textarea className="input area" value={p[k] ?? ""} onChange={(e) => setP({ ...p, [k]: e.target.value })} /></Field>
-          ))}
-          <div className="rounded-xl bg-sage-50/60 p-3 ring-1 ring-sage-100 space-y-3">
-            <p className="text-xs font-bold uppercase tracking-wider text-sage-700">Freshness & hygiene</p>
-            <Field label="Remove fresh or wet food after" hint="Fresh food spoils fast and can grow bacteria.">
-              <select
-                className="input"
-                value={String(p.fresh_food_removal_minutes ?? 120)}
-                onChange={(e) => setP({ ...p, fresh_food_removal_minutes: Number(e.target.value) })}
-              >
-                <option value="60">1 hour</option>
-                <option value="120">2 hours</option>
-                <option value="180">3 hours</option>
-              </select>
-            </Field>
-            <Field label="Wash food bowls">
-              <select
-                className="input"
-                value={p.food_bowl_wash_cadence ?? "after_each_fresh"}
-                onChange={(e) => setP({ ...p, food_bowl_wash_cadence: e.target.value })}
-              >
-                <option value="after_each_fresh">After every fresh-food serving</option>
-                <option value="once_daily">Once a day</option>
-                <option value="every_few_days">Every few days</option>
-              </select>
-            </Field>
-            <Field label="Wash water bowl or bottle" hint="Separate from how often water is changed.">
-              <select
-                className="input"
-                value={p.water_bowl_wash_cadence ?? "once_daily"}
-                onChange={(e) => setP({ ...p, water_bowl_wash_cadence: e.target.value })}
-              >
-                <option value="once_daily">Once a day</option>
-                <option value="twice_daily">Twice a day</option>
-              </select>
-            </Field>
-            <Field label="Other food hygiene notes">
-              <textarea
-                className="input area"
-                value={p.food_hygiene_notes ?? ""}
-                onChange={(e) => setP({ ...p, food_hygiene_notes: e.target.value })}
-              />
-            </Field>
-          </div>
+          <FoodEditor value={foodValueFromPlan(p)} onChange={(patch) => setP({ ...p, ...patch })} />
         </section>
       )}
 
@@ -411,12 +405,17 @@ function PlanFormSection({ section, birdId, bird, plan, onSaved }: { section: Pl
         <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
           <h2 className="text-sm font-bold">Personality & handling</h2>
           {guidedHint}
-          <Field label="Step-up cue & technique"><textarea className="input area" value={p.step_up ?? ""} onChange={(e) => setP({ ...p, step_up: e.target.value })} /></Field>
+          <Field label="Does the bird step up?">
+            <select className="input" value={p.step_up ?? ""} onChange={(e) => setP({ ...p, step_up: e.target.value || null })}>
+              <option value="">Not specified</option>
+              {STEP_UP_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </Field>
           <Field label="Step-up notes (refusal, exceptions)"><textarea className="input area" value={p.step_up_notes ?? ""} onChange={(e) => setP({ ...p, step_up_notes: e.target.value })} /></Field>
-          <Field label="Who can handle her"><textarea className="input area" value={p.handlers ?? ""} onChange={(e) => setP({ ...p, handlers: e.target.value })} /></Field>
-          <Field label="Likes"><textarea className="input area" value={p.likes ?? ""} onChange={(e) => setP({ ...p, likes: e.target.value })} /></Field>
+          <Field label="Who can handle, and how"><textarea className="input area" value={p.handlers ?? ""} onChange={(e) => setP({ ...p, handlers: e.target.value })} /></Field>
+          <Field label="Likes"><input className="input" value={p.likes ?? ""} onChange={(e) => setP({ ...p, likes: e.target.value })} /></Field>
           <Field label="Fears & triggers"><textarea className="input area" value={p.fears_triggers ?? ""} onChange={(e) => setP({ ...p, fears_triggers: e.target.value })} /></Field>
-          <Field label="Bite warning signs"><textarea className="input area" value={p.known_triggers ?? ""} onChange={(e) => setP({ ...p, known_triggers: e.target.value })} /></Field>
+          <Field label="Bite risk & warning signs"><textarea className="input area" value={p.bite_risk ?? ""} onChange={(e) => setP({ ...p, bite_risk: e.target.value })} /></Field>
         </section>
       )}
 
@@ -424,12 +423,36 @@ function PlanFormSection({ section, birdId, bird, plan, onSaved }: { section: Pl
         <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
           <h2 className="text-sm font-bold">Environment & safety</h2>
           {guidedHint}
-          <Field label="Cage location"><textarea className="input area" value={p.cage_location ?? ""} onChange={(e) => setP({ ...p, cage_location: e.target.value })} /></Field>
-          <Field label="Out-of-cage rules"><textarea className="input area" value={p.out_of_cage_rules ?? ""} onChange={(e) => setP({ ...p, out_of_cage_rules: e.target.value })} /></Field>
-          <Field label="Home hazards (windows, fans, appliances)"><textarea className="input area" value={p.safety_rules ?? ""} onChange={(e) => setP({ ...p, safety_rules: e.target.value })} /></Field>
+          <Field label="Cage location & setup"><textarea className="input area" value={p.cage_location ?? ""} onChange={(e) => setP({ ...p, cage_location: e.target.value })} /></Field>
+          <Field label="Out-of-cage rules">
+            <select className="input" value={p.out_of_cage_mode ?? ""} onChange={(e) => setP({ ...p, out_of_cage_mode: e.target.value || null })}>
+              <option value="">Not specified</option>
+              {OUT_OF_CAGE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </Field>
+          <Field label="Out-of-cage notes (which room? how long? what to watch for?)"><textarea className="input area" value={p.out_of_cage_notes ?? ""} onChange={(e) => setP({ ...p, out_of_cage_notes: e.target.value })} /></Field>
+          <Field label="Household hazards" hint="Tap all that apply.">
+            <div className="flex flex-wrap gap-2">
+              {HAZARD_OPTIONS.map((h) => {
+                const sel = (p.hazards ?? []) as string[];
+                const on = sel.includes(h);
+                return (
+                  <button
+                    key={h}
+                    type="button"
+                    onClick={() => setP({ ...p, hazards: on ? sel.filter((x) => x !== h) : [...sel, h] })}
+                    className={"rounded-full border px-3 py-1.5 text-xs font-semibold transition " + (on ? "border-sage-600 bg-sage-600 text-white" : "border-sage-200 bg-white text-sage-700 hover:bg-sage-50")}
+                  >
+                    {on ? "✓ " : "+ "}{h}
+                  </button>
+                );
+              })}
+            </div>
+          </Field>
+          <Field label="Other hazards"><input className="input" value={p.hazards_other ?? ""} onChange={(e) => setP({ ...p, hazards_other: e.target.value || null })} /></Field>
+          <Field label="Off-limits areas"><textarea className="input area" value={p.off_limits ?? ""} onChange={(e) => setP({ ...p, off_limits: e.target.value || null })} /></Field>
           <Field label="Other pets & separation rules"><textarea className="input area" value={p.other_pets ?? ""} onChange={(e) => setP({ ...p, other_pets: e.target.value })} /></Field>
           <Field label="Cleaning products / instructions"><textarea className="input area" value={p.cleaning_instructions ?? ""} onChange={(e) => setP({ ...p, cleaning_instructions: e.target.value })} /></Field>
-          <Field label="Off-limits rooms"><textarea className="input area" value={p.off_limits_rooms ?? ""} onChange={(e) => setP({ ...p, off_limits_rooms: e.target.value })} /></Field>
         </section>
       )}
 
