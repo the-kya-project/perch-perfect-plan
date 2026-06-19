@@ -106,12 +106,12 @@ export function FeedTimePicker({
         </div>
       )}
 
-      {/* Optional per-food note, e.g. "sprinkle a little Harrisons on it". */}
+      {/* Optional per-food note — any prep or serving detail. */}
       <div className="mt-2">
         <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-sage-600">Note (optional)</label>
         <textarea
           className="input area text-sm"
-          placeholder="e.g. sprinkle a little Harrisons on it"
+          placeholder="e.g. any prep or serving details"
           maxLength={300}
           value={note ?? ""}
           onChange={(e) => onChange({ note: e.target.value || null })}
