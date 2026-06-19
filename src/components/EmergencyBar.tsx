@@ -9,21 +9,22 @@ export function EmergencyBar({ token }: { token: string }) {
   return (
     <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-[#e3ded0] bg-[#f4f1e8]/95 px-4 pb-[max(env(safe-area-inset-bottom),0.75rem)] pt-2.5 backdrop-blur">
       <div className="mx-auto flex max-w-md items-center justify-between gap-2">
-        <Link to="/sitter/$token" params={{ token }} activeOptions={{ exact: true }} className={item}>
+        <Link to="/sitter/$token" params={{ token }} activeOptions={{ exact: true }} className={item} data-coach="nav-today">
           <ClipboardList className="size-5" />
           <span className="text-[11px] font-medium">Today</span>
         </Link>
-        <Link to="/sitter/$token/scan" params={{ token }} className={item}>
+        <Link to="/sitter/$token/scan" params={{ token }} className={item} data-coach="nav-scan">
           <Stethoscope className="size-5" />
           <span className="text-[11px] font-medium">Scan</span>
         </Link>
-        <Link to="/sitter/$token/guide" params={{ token }} className={item}>
+        <Link to="/sitter/$token/guide" params={{ token }} className={item} data-coach="nav-guide">
           <BookOpen className="size-5" />
           <span className="text-[11px] font-medium">Guide</span>
         </Link>
         <Link
           to="/sitter/$token/emergency"
           params={{ token }}
+          data-coach="nav-emergency"
           className="flex items-center gap-2 rounded-full bg-[#993C1D] px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#993C1D]/20 active:scale-95"
         >
           <AlertTriangle className="size-4 shrink-0" />
