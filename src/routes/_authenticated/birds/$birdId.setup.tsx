@@ -14,6 +14,9 @@ import { ClipPlayer } from "@/components/ClipPlayer";
 import { resolveOwnerClipUrl } from "@/lib/clipUrl";
 import { isCfClip } from "@/lib/clipRef";
 import { FEED_PREFIX, HYG_REMOVE_PREFIX, HYG_WASH_FOOD_PREFIX, HYG_WASH_WATER_PREFIX, WATER_CHANGE_PREFIX, MED_TASK_PREFIX, isDerivedTask, derivedSource, feedTimeToDaypart } from "@/lib/routineTasks";
+import { FeedTimePicker } from "@/components/careEditors/FeedTimePicker";
+import { normalizeFeedTimes, feedTimeLabel, type FeedTime } from "@/lib/feedTimes";
+import { syncFeedingTasks } from "@/lib/feedingSync";
 import { formatAmountUnit } from "@/lib/labels";
 import { track } from "@/lib/analytics";
 import { recomputeSitterIntro } from "@/lib/sitterIntro";
@@ -722,7 +725,7 @@ const WATER_BOWL_WASH_OPTIONS = [
 // itself is excluded — checking the removal task should NOT start a new timer.
 export const FRESH_FOOD_TASK_PATTERN = /\b(fresh|chop|veg|veggies|salad|sprout)\b/i;
 
-type DietItem = { name: string; amount: string; unit: string; times?: string[]; freeFed?: boolean };
+type DietItem = { name: string; amount: string; unit: string; times?: FeedTime[]; freeFed?: boolean };
 
 function FoodWaterStep({
   birdId,
@@ -770,7 +773,6 @@ function FoodWaterStep({
   const [waterBowlWash, setWaterBowlWash] = useState<string>("once_daily");
   const [hygieneNotes, setHygieneNotes] = useState<string>("");
   // Per-row in-flight "add a time" input, keyed by `${type}:${index}`.
-  const [timeDraft, setTimeDraft] = useState<Record<string, string>>({});
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -847,10 +849,14 @@ function FoodWaterStep({
         if (!items.length) continue;
         const parts = items.map((it) => {
           const amt = formatAmountUnit(it.amount, it.unit);
-          const when = it.freeFed
-            ? "available all day"
-            : (it.times ?? []).length ? `@ ${(it.times ?? []).join(", ")}` : "";
-          (it.times ?? []).forEach((tm) => allFeedingTimes.add(tm));
+          let when = "";
+          if (it.freeFed) {
+            when = "available all day";
+          } else {
+            const labels = normalizeFeedTimes(it.times).map((ft) => feedTimeLabel(ft, "period"));
+            labels.forEach((l) => allFeedingTimes.add(l));
+            when = labels.length ? `@ ${labels.join(", ")}` : "";
+          }
           return [it.name.trim(), amt, when].filter(Boolean).join(" — ");
         }).filter(Boolean);
         if (parts.length) perTypeLines.push(`${label}: ${parts.join("; ")}`);
@@ -1059,19 +1065,6 @@ function FoodWaterStep({
                   <div className="space-y-2">
                     {items.map((it, idx) => {
                       const rowInvalid = ((it.amount?.trim() === "") !== (it.unit === ""));
-                      const rowKey = `${t}:${idx}`;
-                      const draft = timeDraft[rowKey] ?? "";
-                      const setDraft = (v: string) => setTimeDraft({ ...timeDraft, [rowKey]: v });
-                      const addRowTime = () => {
-                        const v = draft.trim();
-                        if (!v) return;
-                        const cur = it.times ?? [];
-                        if (cur.includes(v)) { setDraft(""); return; }
-                        const next = items.slice();
-                        next[idx] = { ...it, times: [...cur, v], freeFed: false };
-                        update(next);
-                        setDraft("");
-                      };
                       return (
                         <div key={idx} className="rounded-lg bg-white p-2 ring-1 ring-sage-100">
                           <div className="grid grid-cols-[1fr,auto] gap-2">
@@ -1124,70 +1117,16 @@ function FoodWaterStep({
                             <p className="mt-1.5 text-xs font-semibold text-warn-red">Add both an amount and a unit, or clear both.</p>
                           )}
 
-                          {/* Per-item feed time(s) */}
-                          <div className="mt-2 rounded-md bg-sage-50/70 p-2">
-                            <label className="flex items-center gap-2 text-xs font-semibold text-sage-700">
-                              <input
-                                type="checkbox"
-                                className="size-4 accent-sage-600"
-                                checked={!!it.freeFed}
-                                onChange={(e) => {
-                                  const next = items.slice();
-                                  next[idx] = {
-                                    ...it,
-                                    freeFed: e.target.checked,
-                                    times: e.target.checked ? [] : (it.times ?? []),
-                                  };
-                                  update(next);
-                                }}
-                              />
-                              Available all day / free-fed
-                            </label>
-                            {!it.freeFed && (
-                              <div className="mt-2">
-                                <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-sage-600">Feed time(s)</p>
-                                <div className="flex flex-wrap gap-1.5">
-                                  {(it.times ?? []).map((tm) => (
-                                    <span key={tm} className="inline-flex items-center gap-1 rounded-full bg-sage-100 px-2.5 py-1 text-xs font-semibold text-sage-700">
-                                      {tm}
-                                      <button
-                                        type="button"
-                                        aria-label={`Remove ${tm}`}
-                                        onClick={() => {
-                                          const next = items.slice();
-                                          next[idx] = { ...it, times: (it.times ?? []).filter((x) => x !== tm) };
-                                          update(next);
-                                        }}
-                                        className="rounded-full p-0.5 text-sage-600 hover:bg-sage-200"
-                                      >
-                                        <X className="size-3" />
-                                      </button>
-                                    </span>
-                                  ))}
-                                  {(it.times ?? []).length === 0 && <span className="text-[11px] text-sage-400">No times yet.</span>}
-                                </div>
-                                <div className="mt-2 flex gap-2">
-                                  <input
-                                    className="input flex-1 text-sm"
-                                    placeholder="e.g. 8:00 AM, Morning, Bedtime"
-                                    value={draft}
-                                    maxLength={40}
-                                    onChange={(e) => setDraft(e.target.value)}
-                                    onKeyDown={(e) => {
-                                      if (e.key === "Enter") { e.preventDefault(); addRowTime(); }
-                                    }}
-                                  />
-                                  <button
-                                    type="button"
-                                    onClick={addRowTime}
-                                    disabled={!draft.trim()}
-                                    className="rounded-xl bg-sage-100 px-3 text-sm font-semibold text-sage-700 disabled:opacity-50"
-                                  >
-                                    <Plus className="size-4" />
-                                  </button>
-                                </div>
-                              </div>
-                            )}
+                          {/* Per-item feed time(s) — structured period picker. */}
+                          <div className="mt-2">
+                            <FeedTimePicker
+                              value={{ times: normalizeFeedTimes(it.times), freeFed: !!it.freeFed }}
+                              onChange={(patch) => {
+                                const next = items.slice();
+                                next[idx] = { ...it, ...patch };
+                                update(next);
+                              }}
+                            />
                           </div>
                         </div>
                       );
@@ -1972,54 +1911,8 @@ function inferFeedingCategory(time: string): string {
   return dp === "anytime" ? "custom" : dp;
 }
 
-type FeedingItem = { name: string; amount: string; unit: string; times?: string[]; freeFed?: boolean };
-
-async function syncFeedingTasks(planId: string, items: FeedingItem[]) {
-  // Wipe and rebuild all auto-generated feeding rows on every save. Keeps the
-  // logic dead-simple and matches how the owner expects per-item edits to
-  // flow through to the sitter view.
-  const { data: existing } = await supabase
-    .from("routine_tasks")
-    .select("id")
-    .eq("care_plan_id", planId)
-    .ilike("title", `${FEED_PREFIX}%`);
-  const oldIds = ((existing ?? []) as any[]).map((r) => r.id);
-  if (oldIds.length) await supabase.from("routine_tasks").delete().in("id", oldIds);
-
-  const rows: any[] = [];
-  let order = 100;
-  for (const it of items) {
-    const name = (it.name ?? "").trim();
-    if (!name) continue;
-    const amt = formatAmountUnit(it.amount, it.unit);
-    const baseInstr = amt ? `Serve ${amt}.` : "";
-    if (it.freeFed) {
-      rows.push({
-        care_plan_id: planId,
-        title: `${FEED_PREFIX} ${name} (available all day)`,
-        instructions: [baseInstr, "Keep topped up — this is free-fed in the cage."].filter(Boolean).join(" "),
-        category: "custom",
-        time_of_day: "Available all day",
-        sort_order: order++,
-      });
-      continue;
-    }
-    const times = (it.times ?? []).filter((t) => t.trim());
-    if (times.length === 0) continue;
-    for (const tm of times) {
-      rows.push({
-        care_plan_id: planId,
-        title: `${FEED_PREFIX} ${name}`,
-        instructions: baseInstr,
-        category: inferFeedingCategory(tm),
-        time_of_day: tm,
-        sort_order: order++,
-      });
-    }
-  }
-
-  if (rows.length) await supabase.from("routine_tasks").insert(rows as any);
-}
+// syncFeedingTasks now lives in @/lib/feedingSync (shared with the tabbed editor)
+// and builds tasks from the structured per-food periods.
 
 async function syncHygieneTasks(
   planId: string,
