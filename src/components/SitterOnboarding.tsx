@@ -1,151 +1,294 @@
-import { useEffect, useRef, useState } from "react";
-import { Link } from "@tanstack/react-router";
-import { ClipboardList, Stethoscope, BookOpen, AlertTriangle, ChevronLeft } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { AlertTriangle, ChevronLeft } from "lucide-react";
 
-// First-visit welcome + a short, skippable walkthrough for sitters. Additive
-// overlay only — it never changes the underlying tabs and is always dismissible,
-// with the Emergency screen reachable at all times (so a sitter is never trapped
-// in onboarding while a bird may be in distress).
+// First-visit sitter onboarding: a two-screen welcome, then a coach-mark bubble
+// walkthrough that points at the REAL on-screen elements (tagged with
+// data-coach="..."). Additive only — it never changes the underlying screens.
+// Skippable, non-blocking (Emergency always reachable), first-visit-only via
+// localStorage, and replayable via replaySitterOnboarding().
 
 const SEEN_KEY = "ppc_sitter_onboarded"; // per-device; fine if it re-shows after clearing data
 const REPLAY_EVENT = "sitter:replay-onboarding";
 
-/** Re-run the walkthrough on demand (e.g. the Guide's "How this works" link). */
 export function replaySitterOnboarding() {
   if (typeof window !== "undefined") window.dispatchEvent(new Event(REPLAY_EVENT));
 }
 
-type Phase = null | "welcome" | number; // number = walkthrough card index
+// "Willow" / "Willow and Moxie" / "Willow, Moxie, and Kiwi"
+function formatNames(names: string[]): string {
+  const n = names.filter(Boolean);
+  if (n.length === 0) return "your bird";
+  if (n.length === 1) return n[0];
+  if (n.length === 2) return `${n[0]} and ${n[1]}`;
+  return `${n.slice(0, -1).join(", ")}, and ${n[n.length - 1]}`;
+}
 
-export function SitterOnboarding({ bird, token }: { bird: any; token: string }) {
+type CoachStep = { target: string; text: string; place: "top" | "bottom" | "auto"; emphasis?: boolean };
+type Phase = null | "welcome" | "overview" | "coach";
+type Spot = { rect: { top: number; left: number; width: number; height: number; bottom: number } | null; vw: number; vh: number };
+
+const PAD = 6;
+const GAP = 12;
+
+export function SitterOnboarding({ birds, bird, token }: { birds: any[]; bird: any; token: string }) {
   const [phase, setPhase] = useState<Phase>(null);
-  const startXRef = useRef<number | null>(null);
+  const [step, setStep] = useState(0);
+  const [spot, setSpot] = useState<Spot | null>(null);
+  const navigate = useNavigate();
+  const stepRef = useRef(0);
+
+  const list = Array.isArray(birds) && birds.length ? birds : bird ? [bird] : [];
+  const names = list.map((b) => (b?.name ?? "").toString().trim()).filter(Boolean);
+  const allNames = formatNames(names);
+  const activeName = (bird?.name ?? names[0] ?? "your bird").toString().trim() || "your bird";
+
+  const steps = useMemo<CoachStep[]>(() => {
+    const s: CoachStep[] = [];
+    if (list.length > 1) {
+      s.push({
+        target: "bird-switcher",
+        text: `You're caring for more than one bird. Tap here to switch between ${allNames} — each has their own routine and care plan.`,
+        place: "bottom",
+      });
+    }
+    s.push({ target: "daily-checklist", text: `Each day, work through ${activeName}'s tasks here and check them off as you go.`, place: "auto" });
+    s.push({ target: "nav-today", text: "Your home base — the daily routine and what needs doing.", place: "top" });
+    s.push({ target: "nav-scan", text: "A quick daily health check. We'll walk you through it.", place: "top" });
+    s.push({ target: "nav-guide", text: `General parrot care, anytime you want to understand something. ${activeName}'s specific needs live in the care plan.`, place: "top" });
+    s.push({ target: "nav-emergency", text: "If something's ever wrong, this is always here. You'll never be in trouble for using it.", place: "top", emphasis: true });
+    return s;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [list.length, allNames, activeName]);
 
   useEffect(() => {
     try {
       if (!window.localStorage.getItem(SEEN_KEY)) setPhase("welcome");
     } catch {}
-    const onReplay = () => setPhase(0); // replay jumps straight into the cards
+    const onReplay = () => { setStep(0); stepRef.current = 0; setPhase("welcome"); };
     window.addEventListener(REPLAY_EVENT, onReplay);
     return () => window.removeEventListener(REPLAY_EVENT, onReplay);
   }, []);
 
-  function finish() {
+  // Measure + track the current coach target. Retries until the element renders
+  // (it may be on a route we just navigated to), and re-measures on resize/scroll.
+  useEffect(() => {
+    if (phase !== "coach") return;
+    const cur = steps[step];
+    if (!cur) return;
+    let raf = 0;
+    let tries = 0;
+
+    const measure = (): boolean => {
+      const el = document.querySelector(`[data-coach="${cur.target}"]`);
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      if (!el) {
+        setSpot({ rect: null, vw, vh });
+        return false;
+      }
+      const r = el.getBoundingClientRect();
+      setSpot({ rect: { top: r.top, left: r.left, width: r.width, height: r.height, bottom: r.bottom }, vw, vh });
+      return true;
+    };
+
+    const tick = () => {
+      const el = document.querySelector(`[data-coach="${cur.target}"]`);
+      if (el) el.scrollIntoView({ block: "nearest", behavior: "auto" });
+      const ok = measure();
+      if (!ok && tries < 40) {
+        tries += 1;
+        raf = requestAnimationFrame(tick);
+      }
+    };
+    tick();
+
+    const onChange = () => measure();
+    window.addEventListener("resize", onChange);
+    window.addEventListener("scroll", onChange, true);
+    return () => {
+      if (raf) cancelAnimationFrame(raf);
+      window.removeEventListener("resize", onChange);
+      window.removeEventListener("scroll", onChange, true);
+    };
+  }, [phase, step, steps]);
+
+  // Close without navigating — used by the Emergency link so it keeps its own
+  // navigation to the emergency screen.
+  function markSeenAndClose() {
     try { window.localStorage.setItem(SEEN_KEY, "1"); } catch {}
     setPhase(null);
+  }
+  // Skip / Done: dismiss and land on the Today tab (matters when replayed from
+  // another tab like the Guide).
+  function dismissToToday() {
+    markSeenAndClose();
+    navigate({ to: "/sitter/$token", params: { token } });
+  }
+
+  function startCoach() {
+    // Coach targets (checklist, switcher) live on the Today tab — make sure we're
+    // there before pointing at them.
+    navigate({ to: "/sitter/$token", params: { token } });
+    setStep(0);
+    stepRef.current = 0;
+    setPhase("coach");
+  }
+
+  function next() {
+    if (step < steps.length - 1) {
+      const n = step + 1;
+      stepRef.current = n;
+      setStep(n);
+    } else {
+      dismissToToday();
+    }
+  }
+  function back() {
+    if (step > 0) {
+      const n = step - 1;
+      stepRef.current = n;
+      setStep(n);
+    } else {
+      setPhase("overview");
+    }
   }
 
   if (phase === null) return null;
 
-  const name = (bird?.name ?? "your bird").toString().trim() || "your bird";
-  const photo = bird?.photo_url as string | undefined;
-  const initial = name.slice(0, 1).toUpperCase();
+  const EmergencyLink = (
+    <Link
+      to="/sitter/$token/emergency"
+      params={{ token }}
+      onClick={markSeenAndClose}
+      className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full bg-[#993C1D] px-3 py-1.5 text-xs font-semibold text-white shadow"
+    >
+      <AlertTriangle className="size-3.5" /> Emergency
+    </Link>
+  );
 
-  const cards = [
-    { Icon: ClipboardList, label: "Today", text: "Each day, work through the routine here and run the quick health check." },
-    { Icon: Stethoscope, label: "Scan", text: `A daily health scan — a few quick checks to make sure ${name} is doing well. We'll guide you.` },
-    { Icon: BookOpen, label: "Guide", text: `General parrot care basics, anytime you want to understand something. ${name}'s specific needs are in the care plan.` },
-    { Icon: AlertTriangle, label: "Emergency", text: "If something's wrong, the red Emergency button is always here. You'll never be in trouble for using it.", emphasis: true },
-  ];
+  // ---- Welcome + overview (full-screen warm cards) ----
+  if (phase === "welcome" || phase === "overview") {
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col bg-[#1a3d2e] text-white">
+        <div className="flex items-center justify-between px-5 pt-[max(env(safe-area-inset-top),0.9rem)] pb-2">
+          {EmergencyLink}
+          <button onClick={dismissToToday} className="text-sm font-medium text-[#cdeab0] underline">Skip</button>
+        </div>
 
-  const idx = typeof phase === "number" ? phase : -1;
-  const onCards = idx >= 0;
+        {phase === "welcome" ? (
+          <div className="flex flex-1 flex-col items-center justify-center px-6 pb-10 text-center">
+            <div className="flex items-center justify-center -space-x-3">
+              {list.slice(0, 4).map((b, i) =>
+                b?.photo_url ? (
+                  <img
+                    key={b.id ?? i}
+                    src={b.photo_url}
+                    alt={b.name ?? ""}
+                    style={{ objectPosition: b.photo_position ?? "50% 20%" }}
+                    className="size-16 rounded-2xl object-cover ring-2 ring-[#1a3d2e]"
+                  />
+                ) : (
+                  <div key={b?.id ?? i} className="grid size-16 place-items-center rounded-2xl bg-white/10 text-2xl font-medium ring-2 ring-[#1a3d2e]">
+                    {(b?.name?.slice(0, 1) ?? "?").toUpperCase()}
+                  </div>
+                ),
+              )}
+            </div>
+            <h1 className="mt-5 text-[22px] font-medium leading-tight">You're caring for {allNames}.</h1>
+            <p className="mt-2 max-w-xs text-sm leading-relaxed text-white/85">
+              Everything you need is right here. Let's take a minute to show you around.
+            </p>
+            <button onClick={() => setPhase("overview")} className="mt-7 w-full max-w-xs rounded-2xl bg-[#cdeab0] py-3 text-sm font-semibold text-[#1a3d2e]">
+              Show me around
+            </button>
+            <button onClick={dismissToToday} className="mt-3 text-sm font-medium text-[#cdeab0] underline">Skip</button>
+          </div>
+        ) : (
+          <div className="flex flex-1 flex-col items-center justify-center px-6 pb-10 text-center">
+            <h1 className="text-[22px] font-medium leading-tight">How this app works</h1>
+            <p className="mt-3 max-w-sm text-sm leading-relaxed text-white/85">
+              This app has everything you need to care for {allNames}: a daily routine and a quick health
+              check, a parrot care guide, and an emergency button if anything's ever wrong. It takes about a
+              minute to learn — we'll point out each part.
+            </p>
+            <button onClick={startCoach} className="mt-7 w-full max-w-xs rounded-2xl bg-[#cdeab0] py-3 text-sm font-semibold text-[#1a3d2e]">
+              Got it, show me around
+            </button>
+            <button onClick={dismissToToday} className="mt-3 text-sm font-medium text-[#cdeab0] underline">Skip</button>
+          </div>
+        )}
+      </div>
+    );
+  }
 
-  function next() { if (idx < cards.length - 1) setPhase(idx + 1); else finish(); }
-  function back() { if (idx > 0) setPhase(idx - 1); else setPhase("welcome"); }
+  // ---- Coach-mark walkthrough ----
+  const cur = steps[step];
+  const rect = spot?.rect ?? null;
+  const vw = spot?.vw ?? (typeof window !== "undefined" ? window.innerWidth : 360);
+  const vh = spot?.vh ?? (typeof window !== "undefined" ? window.innerHeight : 640);
+  const BW = Math.min(300, vw - 24);
 
-  function onTouchStart(e: React.TouchEvent) { startXRef.current = e.touches[0]?.clientX ?? null; }
-  function onTouchEnd(e: React.TouchEvent) {
-    if (startXRef.current == null || !onCards) return;
-    const dx = (e.changedTouches[0]?.clientX ?? startXRef.current) - startXRef.current;
-    startXRef.current = null;
-    if (dx < -45) next();
-    else if (dx > 45) back();
+  // Bubble placement: anchor by bottom for "top" placement so we never need to
+  // know the bubble height; clamp horizontally to stay fully on-screen.
+  let bubbleStyle: React.CSSProperties;
+  if (!rect) {
+    bubbleStyle = { left: (vw - BW) / 2, top: Math.round(vh * 0.4), width: BW };
+  } else {
+    const left = Math.min(Math.max(rect.left + rect.width / 2 - BW / 2, 12), vw - BW - 12);
+    const placeTop = cur.place === "top" || (cur.place === "auto" && rect.top > vh / 2);
+    bubbleStyle = placeTop
+      ? { left, bottom: vh - rect.top + GAP, width: BW }
+      : { left, top: rect.bottom + GAP, width: BW };
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex flex-col bg-[#1a3d2e] text-white"
-      role="dialog"
-      aria-label={`Welcome — caring for ${name}`}
-    >
-      {/* Always-available Emergency + Skip so the sitter is never trapped. */}
-      <div className="flex items-center justify-between px-5 pt-[max(env(safe-area-inset-top),0.9rem)] pb-2">
-        <Link
-          to="/sitter/$token/emergency"
-          params={{ token }}
-          onClick={finish}
-          className="inline-flex items-center gap-1.5 rounded-full bg-[#993C1D] px-3 py-1.5 text-xs font-semibold text-white"
-        >
-          <AlertTriangle className="size-3.5" /> Emergency
-        </Link>
-        {onCards && (
-          <button onClick={finish} className="text-sm font-medium text-[#cdeab0] underline">Skip</button>
-        )}
+    <div className="fixed inset-0 z-50">
+      {/* Transparent capture layer — keeps the app behind inert during the tour. */}
+      <div className="absolute inset-0" />
+
+      {/* Spotlight: a transparent hole over the target with a huge dimming shadow. */}
+      {rect && (
+        <div
+          className={`pointer-events-none absolute rounded-xl ring-2 transition-all duration-200 ${cur.emphasis ? "ring-[#f4a259]" : "ring-[#cdeab0]"}`}
+          style={{
+            top: rect.top - PAD,
+            left: rect.left - PAD,
+            width: rect.width + PAD * 2,
+            height: rect.height + PAD * 2,
+            boxShadow: "0 0 0 9999px rgba(20,40,30,0.6)",
+          }}
+        />
+      )}
+      {/* When the target isn't found, dim the whole screen so the bubble still reads. */}
+      {!rect && <div className="absolute inset-0 bg-[#1a3d2e]/60" />}
+
+      {/* Persistent Emergency (top-left) + Skip (top-right). */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 flex items-center justify-between px-5 pt-[max(env(safe-area-inset-top),0.9rem)]">
+        {EmergencyLink}
+        <button onClick={dismissToToday} className="pointer-events-auto rounded-full bg-white/90 px-3 py-1.5 text-xs font-semibold text-[#1a3d2e] shadow">
+          Skip
+        </button>
       </div>
 
-      {phase === "welcome" ? (
-        <div className="flex flex-1 flex-col items-center justify-center px-6 pb-10 text-center">
-          {photo ? (
-            <img src={photo} alt={name} className="size-24 rounded-2xl object-cover ring-2 ring-white/20" />
-          ) : (
-            <div className="grid size-24 place-items-center rounded-2xl bg-white/10 text-3xl font-medium text-white">{initial}</div>
-          )}
-          <h1 className="mt-5 text-[22px] font-medium leading-tight">You're caring for {name}.</h1>
-          <p className="mt-2 max-w-xs text-sm leading-relaxed text-white/85">
-            Everything you need is right here — let's take 20 seconds to show you around.
-          </p>
-          <button
-            onClick={() => setPhase(0)}
-            className="mt-7 w-full max-w-xs rounded-2xl bg-[#cdeab0] py-3 text-sm font-semibold text-[#1a3d2e]"
-          >
-            Show me around
+      {/* Bubble */}
+      <div className="pointer-events-auto absolute rounded-2xl bg-white p-4 shadow-xl" style={bubbleStyle}>
+        <p className="text-[11px] font-semibold uppercase tracking-widest text-[#5f5e5a]">Step {step + 1} of {steps.length}</p>
+        <p className="mt-1.5 text-sm font-medium leading-snug text-[#1a3d2e]">{cur.text}</p>
+        <div className="mt-3 flex items-center justify-between gap-2">
+          <button onClick={back} className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-[#5f5e5a]">
+            <ChevronLeft className="size-4" /> Back
           </button>
-          <button onClick={finish} className="mt-3 text-sm font-medium text-[#cdeab0] underline">Skip</button>
-        </div>
-      ) : (
-        <div
-          className="flex flex-1 flex-col"
-          onTouchStart={onTouchStart}
-          onTouchEnd={onTouchEnd}
-        >
-          {(() => {
-            const c = cards[idx];
-            return (
-              <div className="flex flex-1 flex-col items-center justify-center px-6 text-center">
-                <div className={`grid size-16 place-items-center rounded-full ${c.emphasis ? "bg-[#993C1D]" : "bg-white/10"}`}>
-                  <c.Icon className="size-7 text-white" />
-                </div>
-                <p className="mt-5 text-[11px] font-semibold uppercase tracking-widest text-[#cdeab0]">{c.label}</p>
-                <p className="mt-2 max-w-sm text-lg font-medium leading-snug">{c.text}</p>
-              </div>
-            );
-          })()}
-
-          {/* Progress dots */}
-          <div className="flex items-center justify-center gap-2 pb-4">
-            {cards.map((_, i) => (
-              <span key={i} className={`size-2 rounded-full transition ${i === idx ? "bg-[#cdeab0]" : "bg-white/25"}`} />
+          <div className="flex items-center gap-1.5">
+            {steps.map((_, i) => (
+              <span key={i} className={`size-1.5 rounded-full ${i === step ? "bg-[#1a3d2e]" : "bg-[#d8d2c2]"}`} />
             ))}
           </div>
-
-          {/* Back / Next (Got it on last card) */}
-          <div className="flex items-center gap-3 px-6 pb-[max(env(safe-area-inset-bottom),1.25rem)]">
-            <button
-              onClick={back}
-              className="inline-flex items-center gap-1 rounded-2xl border border-white/25 px-4 py-3 text-sm font-medium text-white"
-            >
-              <ChevronLeft className="size-4" /> Back
-            </button>
-            <button
-              onClick={next}
-              className="flex-1 rounded-2xl bg-[#cdeab0] py-3 text-sm font-semibold text-[#1a3d2e]"
-            >
-              {idx === cards.length - 1 ? "Got it" : "Next"}
-            </button>
-          </div>
+          <button onClick={next} className="rounded-lg bg-[#1a3d2e] px-4 py-1.5 text-xs font-semibold text-white">
+            {step === steps.length - 1 ? "Done" : "Next"}
+          </button>
         </div>
-      )}
+      </div>
     </div>
   );
 }

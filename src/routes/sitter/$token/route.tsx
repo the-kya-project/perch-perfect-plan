@@ -67,7 +67,7 @@ function SitterLayout() {
           {ctx.birds.length > 1 && (
             <>
               <span className="shrink-0 text-xs font-medium text-[#5f5e5a]">Caring for</span>
-              <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto">
+              <div data-coach="bird-switcher" className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto">
                 {ctx.birds.map((b: any) => {
                   const active = b.id === ctx.activeBirdId;
                   return (
@@ -97,7 +97,7 @@ function SitterLayout() {
         <Outlet />
       </Suspense>
       <EmergencyBar token={token} />
-      <SitterOnboarding bird={ctx.bird} token={token} />
+      <SitterOnboarding birds={ctx.birds} bird={ctx.bird} token={token} />
     </div>
   );
 }

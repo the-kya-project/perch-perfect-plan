@@ -229,7 +229,7 @@ function SitterHome() {
           )}
 
           {/* Due-now card — the one heavily-bordered element on screen */}
-          <section className="rounded-2xl border-2 border-[#1a3d2e] bg-white p-4 shadow-sm">
+          <section data-coach="daily-checklist" className="rounded-2xl border-2 border-[#1a3d2e] bg-white p-4 shadow-sm">
             <p className="text-[10px] font-medium uppercase tracking-widest text-[#1a3d2e]">Due now — {nowDp}</p>
             {currentList.length === 0 ? (
               <p className="mt-2 text-sm text-sage-600">Nothing scheduled for this {nowDp}.</p>
