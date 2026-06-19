@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import type { Attribution } from "./attribution";
 
 export type CaptureLeadInput = {
   email: string;
@@ -6,6 +7,8 @@ export type CaptureLeadInput = {
   lastName?: string;
   source: string;
   marketingConsent: boolean;
+  /** First-touch traffic attribution → Brevo SIGNUP_* attributes. */
+  attribution?: Attribution | null;
 };
 
 /**
@@ -21,6 +24,7 @@ export async function captureLead(input: CaptureLeadInput): Promise<void> {
         lastName: input.lastName ?? "",
         source: input.source,
         marketingConsent: input.marketingConsent,
+        attribution: input.attribution ?? null,
       },
     });
     if (error) {

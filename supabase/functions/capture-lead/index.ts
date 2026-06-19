@@ -32,6 +32,15 @@ function json(status: number, body: unknown) {
   });
 }
 
+const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");
+
+// Brevo date-type attributes expect YYYY-MM-DD, not free text.
+function toBrevoDate(iso: string): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? "" : d.toISOString().slice(0, 10);
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: corsHeaders });
@@ -47,6 +56,7 @@ Deno.serve(async (req) => {
     lastName?: unknown;
     source?: unknown;
     marketingConsent?: unknown;
+    attribution?: unknown;
   };
   try {
     payload = await req.json();
@@ -76,14 +86,33 @@ Deno.serve(async (req) => {
     return json(500, { error: "Server is not configured" });
   }
 
+  const attributes: Record<string, unknown> = {
+    FIRSTNAME: firstName,
+    LASTNAME: lastName,
+    SOURCE: source,
+  };
+
+  // First-touch signup attribution → existing Brevo custom attributes. Names are
+  // case-sensitive and must match the attributes already created in Brevo; a
+  // mismatch silently fails to populate. SIGNUP_DATE is a Brevo date attribute.
+  const a = payload.attribution;
+  if (a && typeof a === "object") {
+    const at = a as Record<string, unknown>;
+    attributes.SIGNUP_SOURCE = str(at.source) || "direct";
+    attributes.SIGNUP_MEDIUM = str(at.medium);
+    attributes.SIGNUP_CAMPAIGN = str(at.campaign);
+    attributes.SIGNUP_TERM = str(at.term);
+    attributes.SIGNUP_CONTENT = str(at.content);
+    attributes.SIGNUP_REFERRER = str(at.referrer);
+    attributes.SIGNUP_LANDING_PAGE = str(at.landing_page);
+    const signupDate = toBrevoDate(str(at.first_seen_at));
+    if (signupDate) attributes.SIGNUP_DATE = signupDate; // omit if unparseable so the date attr isn't rejected
+  }
+
   const contact: Record<string, unknown> = {
     email,
     updateEnabled: true, // re-submits update the contact instead of erroring
-    attributes: {
-      FIRSTNAME: firstName,
-      LASTNAME: lastName,
-      SOURCE: source,
-    },
+    attributes,
   };
 
   // Only add consenting contacts to the marketing list.
