@@ -19,6 +19,20 @@ import { derivedSource, taskDaypart, DAYPARTS, DAYPART_LABEL } from "@/lib/routi
 const TAB_IDS = ["basics", "routine", "food", "behavior", "home", "health", "clips", "emergency", "sits", "logs"] as const;
 type Tab = (typeof TAB_IDS)[number];
 
+// Map each editor tab to its matching guided-setup wizard step (see
+// birds/$birdId.setup.tsx StepBody: 1 Basics, 2 Day-in-life/Routine, 3 Food,
+// 4 Behavior, 5 Home, 6 Health, 7 Clips, 8 Emergency). sits/logs have no step.
+const TAB_TO_SETUP_STEP: Partial<Record<Tab, number>> = {
+  basics: 1,
+  routine: 2,
+  food: 3,
+  behavior: 4,
+  home: 5,
+  health: 6,
+  clips: 7,
+  emergency: 8,
+};
+
 const birdSearch = z.object({
   tab: z.enum(TAB_IDS).optional(),
   scan: z.string().uuid().optional(), // deep-link from a notification to a scan
@@ -122,6 +136,10 @@ function BirdEditor() {
   const completeness = computeSetupCompleteness({ bird, plan, tasksCount: tasks.length, contacts, defaults });
   const isComplete = completeness.firstIncompleteStep === null;
 
+  // Open the guided wizard on the step matching the current tab; for tabs with no
+  // wizard step (sits/logs) fall back to the first incomplete step.
+  const setupStep = TAB_TO_SETUP_STEP[tab] ?? completeness.firstIncompleteStep ?? undefined;
+
   const onPlanSaved = () => {
     qc.invalidateQueries({ queryKey: ["plan", birdId] });
     qc.invalidateQueries({ queryKey: ["bird", birdId] });
@@ -162,7 +180,7 @@ function BirdEditor() {
         <Link
           to="/birds/$birdId/setup"
           params={{ birdId }}
-          search={completeness.firstIncompleteStep ? { step: completeness.firstIncompleteStep } : undefined}
+          search={setupStep ? { step: setupStep } : undefined}
           className="block rounded-2xl bg-sage-900 p-4 text-white shadow-sm ring-1 ring-sage-900/10 active:scale-[0.99]"
         >
           <div className="flex items-start gap-3">
@@ -246,6 +264,8 @@ const CLIP_FIELDS: { key: string; label: string; hint: string }[] = [
 ];
 
 function PlanFormSection({ section, birdId, bird, plan, onSaved }: { section: PlanSection; birdId: string; bird: any; plan: any; onSaved: () => void }) {
+  // Open the guided wizard on this section's matching step.
+  const guidedStep = TAB_TO_SETUP_STEP[section];
   const [b, setB] = useState(bird);
   const [p, setP] = useState(plan);
   const [saving, setSaving] = useState(false);
@@ -347,7 +367,7 @@ function PlanFormSection({ section, birdId, bird, plan, onSaved }: { section: Pl
   const guidedHint = (
     <p className="text-[11px] text-sage-600">
       Need to capture richer details?{" "}
-      <Link to="/birds/$birdId/setup" params={{ birdId }} className="font-semibold text-sage-800 underline">
+      <Link to="/birds/$birdId/setup" params={{ birdId }} search={guidedStep ? { step: guidedStep } : undefined} className="font-semibold text-sage-800 underline">
         Open guided setup
       </Link>.
     </p>
@@ -508,7 +528,7 @@ function PlanFormSection({ section, birdId, bird, plan, onSaved }: { section: Pl
             <MediaRow label="Normal-behavior clip" path={p.baseline_clip_path} onClear={() => setP({ ...p, baseline_clip_path: null })} />
             <p className="text-[11px] text-sage-600">
               Record or replace in{" "}
-              <Link to="/birds/$birdId/setup" params={{ birdId }} className="font-semibold text-sage-800 underline">guided setup</Link>.
+              <Link to="/birds/$birdId/setup" params={{ birdId }} search={guidedStep ? { step: guidedStep } : undefined} className="font-semibold text-sage-800 underline">guided setup</Link>.
             </p>
           </section>
           <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
@@ -524,7 +544,7 @@ function PlanFormSection({ section, birdId, bird, plan, onSaved }: { section: Pl
           <h2 className="text-sm font-bold">Watch-first clips</h2>
           <p className="text-[11px] text-sage-600">
             Short videos sitters watch first. Record or replace in{" "}
-            <Link to="/birds/$birdId/setup" params={{ birdId }} className="font-semibold text-sage-800 underline">guided setup</Link>.
+            <Link to="/birds/$birdId/setup" params={{ birdId }} search={guidedStep ? { step: guidedStep } : undefined} className="font-semibold text-sage-800 underline">guided setup</Link>.
           </p>
           {CLIP_FIELDS.map((c) => (
             <div key={c.key} className="rounded-xl bg-sage-50/60 p-3 ring-1 ring-sage-100 space-y-1">
