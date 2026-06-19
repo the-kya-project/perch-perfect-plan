@@ -42,9 +42,9 @@ function joinUnique(parts: (string | null | undefined | false)[]): string {
   return out.join("\n");
 }
 
-function Section({ title, children, danger = false }: { title: string; children: React.ReactNode; danger?: boolean }) {
+function Section({ title, children, danger = false, coach }: { title: string; children: React.ReactNode; danger?: boolean; coach?: string }) {
   return (
-    <section className={`rounded-2xl p-4 ${danger ? "bg-warn-red/5 ring-1 ring-warn-red/30" : "bg-[#efe9da] shadow-sm"}`}>
+    <section data-coach={coach} className={`rounded-2xl p-4 ${danger ? "bg-warn-red/5 ring-1 ring-warn-red/30" : "bg-[#efe9da] shadow-sm"}`}>
       <h2 className={`text-[11px] font-medium uppercase tracking-widest ${danger ? "text-warn-red" : "text-[#5f5e5a]"}`}>{title}</h2>
       <div className="mt-3 space-y-3">{children}</div>
     </section>
@@ -181,7 +181,7 @@ function CareSheet() {
 
   return (
     <>
-      <header className="bg-[#1a3d2e]">
+      <header className="bg-[#1a3d2e]" data-coach="cp-header">
         <div className="mx-auto flex max-w-md items-center gap-3 px-4 py-3">
           <Link to="/sitter/$token" params={{ token }} search={{ birdId: ctx.activeBirdId }} className="rounded p-1 text-white/90"><ArrowLeft className="size-5" /></Link>
           <div>
@@ -232,7 +232,7 @@ function CareSheet() {
         )}
 
         {showFeeding && (
-          <Section title="Feeding & food">
+          <Section title="Feeding & food" coach="cp-food">
             <p className="rounded bg-warn-amber/10 p-2 text-[11px] font-medium text-warn-amber">Do not introduce new foods while the owner is away.</p>
             {!hasStructuredFood && has(plan.food_instructions) && <Field label="Diet overview" value={<RichText text={plan.food_instructions} />} />}
             {diet.length > 0 && <Field label="Diet types" value={<Chips items={diet} />} />}
@@ -307,7 +307,7 @@ function CareSheet() {
                 </p>
               </div>
             )}
-            <Section title="Handling & personality">
+            <Section title="Handling & personality" coach="cp-handling">
               {has(plan.step_up) && <Field label="Step up" value={plan.step_up} />}
               {has(plan.step_up_notes) && <Field label="Step up notes" value={plan.step_up_notes} />}
               {has(plan.handlers) && <Field label="Who can handle" value={plan.handlers} />}
@@ -339,7 +339,7 @@ function CareSheet() {
         )}
 
         {showHome && (
-          <Section title="Home & safety">
+          <Section title="Home & safety" coach="cp-home">
             {has(plan.cage_location) && <Field label="Cage location" value={plan.cage_location} />}
             {(has(plan.out_of_cage_mode) || has(plan.out_of_cage_notes) || has(plan.out_of_cage_rules)) && (
               <Field
@@ -360,7 +360,7 @@ function CareSheet() {
         )}
 
         {showHealth && (
-          <Section title="What's normal & health">
+          <Section title="What's normal & health" coach="cp-health">
             {weightStr && <Field label="Normal weight" value={weightStr} />}
             {has(plan.whats_normal) && <Field label="What's normal (overall)" value={plan.whats_normal} />}
             {has(plan.normal_appetite) && <Field label="Normal appetite" value={plan.normal_appetite} />}
@@ -393,7 +393,7 @@ function CareSheet() {
         )}
 
         {(has(plan.when_to_call_owner) || has(plan.when_to_call_vet)) && (
-          <Section title="When to call" danger>
+          <Section title="When to call" danger coach="cp-emergency">
             {has(plan.when_to_call_owner) && <Field label="Call the owner" value={plan.when_to_call_owner} />}
             {has(plan.when_to_call_vet) && <Field label="Call the vet" value={plan.when_to_call_vet} />}
           </Section>

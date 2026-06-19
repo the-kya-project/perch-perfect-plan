@@ -6,6 +6,7 @@ import { z } from "zod";
 import { getSitterContext } from "@/lib/sitter.functions";
 import { EmergencyBar } from "@/components/EmergencyBar";
 import { SitterOnboarding } from "@/components/SitterOnboarding";
+import { presentCareSections } from "@/lib/sitterCareSections";
 import { track } from "@/lib/analytics";
 
 const searchSchema = z.object({ birdId: z.string().uuid().optional() });
@@ -104,7 +105,7 @@ function SitterLayout() {
         <Outlet />
       </Suspense>
       <EmergencyBar token={token} activeBirdId={ctx.activeBirdId} />
-      <SitterOnboarding birds={ctx.birds} bird={ctx.bird} token={token} />
+      <SitterOnboarding birds={ctx.birds} bird={ctx.bird} careSections={presentCareSections(ctx)} token={token} />
     </div>
   );
 }
