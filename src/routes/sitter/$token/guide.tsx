@@ -146,7 +146,7 @@ function Guide() {
   return (
     <div className="min-h-screen bg-[#f4f1e8] pb-28">
       <header data-coach="guide-header" className="bg-[#1a3d2e] pt-[max(env(safe-area-inset-top),0.75rem)]">
-        <div className="mx-auto max-w-md px-4 pb-5 pt-2">
+        <div className="mx-auto max-w-md px-5 pb-5 pt-2">
           <div className="flex items-center gap-2">
             <Link to="/sitter/$token" params={{ token }} className="-ml-1 rounded-full p-1 text-white/90 hover:bg-white/10" aria-label="Back">
               <ArrowLeft className="size-5" />
@@ -159,7 +159,7 @@ function Guide() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-md space-y-4 px-4 py-5">
+      <main className="mx-auto max-w-md space-y-4 px-5 py-5">
         {/* Search — the hero */}
         <div data-coach="guide-search" className="relative">
           <Search className="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-[#8a897f]" />
@@ -174,11 +174,11 @@ function Guide() {
         {/* Topic chips + section label give way to search results when typing */}
         {!searching && (
           <>
-            <div data-coach="guide-topics" className="relative -mx-4">
+            <div data-coach="guide-topics" className="relative -mx-5">
               <div
                 ref={chipScrollRef}
                 onScroll={updateChipFades}
-                className="flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                className="flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
               >
                 {TOPICS.map((t) => {
                   const on = topic === t.key;

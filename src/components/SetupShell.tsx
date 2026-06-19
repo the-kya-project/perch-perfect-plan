@@ -85,7 +85,7 @@ export function SetupShell({
     <div className={`min-h-screen bg-sage-50 ${hideFooter ? "pb-10" : "pb-32"}`}>
       <header className="sticky top-0 z-10 border-b border-sage-100 bg-white/95 backdrop-blur">
         {/* Top bar: back-to-profile link + context */}
-        <div className="mx-auto flex max-w-md items-center gap-3 px-4 py-3">
+        <div className="mx-auto flex max-w-md items-center gap-3 px-5 py-3">
           <button
             type="button"
             onClick={handleExit}
@@ -108,7 +108,7 @@ export function SetupShell({
 
         {/* Desktop: clickable pill tabs */}
         <div className="hidden md:block">
-          <div className="mx-auto max-w-md px-4 pb-2">
+          <div className="mx-auto max-w-md px-5 pb-2">
             <div className="flex gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {SETUP_STEPS.map((s, i) => {
                 const state = stepState(i, step);
@@ -186,14 +186,14 @@ export function SetupShell({
         </div>
       </header>
 
-      <main className="mx-auto max-w-md space-y-4 px-4 py-5">
+      <main className="mx-auto max-w-md space-y-4 px-5 py-5">
         {subtitle && <p className="text-sm text-sage-600">{subtitle}</p>}
         {children}
       </main>
 
       {!hideFooter && (
         <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-sage-100 bg-white/95 backdrop-blur">
-          <div className="mx-auto flex max-w-md items-center gap-2 px-4 py-3">
+          <div className="mx-auto flex max-w-md items-center gap-2 px-5 py-3">
             <button
               type="button"
               onClick={onBack}

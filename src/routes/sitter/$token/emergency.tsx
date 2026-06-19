@@ -130,12 +130,12 @@ function Emergency() {
   return (
     <div className="min-h-screen bg-[#1a3d2e] text-white">
       <header className="sticky top-0 border-b border-white/10 bg-[#1a3d2e]">
-        <div className="mx-auto flex max-w-md items-center gap-3 px-4 py-3">
+        <div className="mx-auto flex max-w-md items-center gap-3 px-5 py-3">
           <Link to="/sitter/$token" params={{ token }} className="rounded p-1 text-white/70"><ArrowLeft className="size-5" /></Link>
           <h1 className="flex items-center gap-2 text-sm font-medium"><AlertTriangle className="size-4 text-warn-amber" /> Emergency mode</h1>
         </div>
       </header>
-      <main className="mx-auto max-w-md space-y-4 px-4 py-5 pb-28">
+      <main className="mx-auto max-w-md space-y-4 px-5 py-5 pb-28">
         <section className="rounded-2xl border border-warn-amber/40 bg-warn-amber/10 p-4">
           <p className="text-[11px] font-medium uppercase tracking-widest text-warn-amber">The four emergency rules</p>
           <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm text-white">

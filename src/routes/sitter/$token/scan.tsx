@@ -141,7 +141,7 @@ function ScanPage() {
   if (result) {
     const color = result.status === "red" ? "bg-warn-red" : result.status === "yellow" ? "bg-warn-amber" : "bg-warn-green";
     return (
-      <main className="mx-auto max-w-md space-y-4 px-4 py-6">
+      <main className="mx-auto max-w-md space-y-4 px-5 py-6">
         <div className={`rounded-2xl ${color} p-6 text-white`}>
           <p className="text-[11px] font-medium uppercase tracking-widest opacity-80">{result.status === "red" ? "Call vet now" : result.status === "yellow" ? "Monitor & message owner" : "All clear logged"}</p>
           <h1 className="mt-1 text-2xl font-medium leading-tight">{result.message}</h1>
@@ -172,7 +172,7 @@ function ScanPage() {
   return (
     <div className="min-h-screen bg-[#f4f1e8]">
       <header className="border-b border-[#e0d8c4] bg-[#f4f1e8]">
-        <div className="mx-auto flex max-w-md items-center gap-3 px-4 py-3">
+        <div className="mx-auto flex max-w-md items-center gap-3 px-5 py-3">
           <Link to="/sitter/$token" params={{ token }} className="rounded p-1 text-[#5f5e5a]"><ArrowLeft className="size-5" /></Link>
           <h1 className="flex-1 text-sm font-medium">Daily health scan — {ctx.bird.name}</h1>
           <button
@@ -183,7 +183,7 @@ function ScanPage() {
           </button>
         </div>
       </header>
-      <main className="mx-auto max-w-md space-y-4 px-4 py-5 pb-32">
+      <main className="mx-auto max-w-md space-y-4 px-5 py-5 pb-32">
         <VetReviewBanner />
 
         {SCAN_FIELDS.map((f) => {
@@ -271,12 +271,12 @@ function ScanHistory({ token, birdId, birdName, onBack }: { token: string; birdI
   return (
     <div className="min-h-screen bg-[#f4f1e8]">
       <header className="border-b border-[#e0d8c4] bg-[#f4f1e8]">
-        <div className="mx-auto flex max-w-md items-center gap-3 px-4 py-3">
+        <div className="mx-auto flex max-w-md items-center gap-3 px-5 py-3">
           <button onClick={onBack} className="rounded p-1 text-[#5f5e5a]"><ArrowLeft className="size-5" /></button>
           <h1 className="text-sm font-medium">Past scans — {birdName}</h1>
         </div>
       </header>
-      <main className="mx-auto max-w-md space-y-3 px-4 py-5 pb-32">
+      <main className="mx-auto max-w-md space-y-3 px-5 py-5 pb-32">
         <p className="text-xs text-[#5f5e5a]">Scans you've logged during this sit, newest first.</p>
         {isLoading ? (
           <div className="flex items-center gap-2 rounded-xl bg-[#efe9da] p-4 text-sm text-[#5f5e5a]"><Loader2 className="size-4 animate-spin" /> Loading…</div>

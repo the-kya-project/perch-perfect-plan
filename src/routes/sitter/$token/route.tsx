@@ -72,7 +72,7 @@ function SitterLayout() {
   return (
     <div className="min-h-screen bg-[#f4f1e8] pb-32">
       <div className="sticky top-0 z-30 border-b border-[#e3ded0] bg-[#f4f1e8]/95 backdrop-blur">
-        <div className="mx-auto flex max-w-md items-center gap-2 px-4 py-2.5">
+        <div className="mx-auto flex max-w-md items-center gap-2 px-5 py-2.5">
           {showSwitcher && (
             <>
               <span className="shrink-0 text-xs font-medium text-[#5f5e5a]">Caring for</span>
@@ -142,7 +142,7 @@ function SkeletonLine({ className = "" }: { className?: string }) {
 function TabSkeleton() {
   return (
     <div
-      className="mx-auto max-w-md space-y-4 px-4 py-5"
+      className="mx-auto max-w-md space-y-4 px-5 py-5"
       role="status"
       aria-live="polite"
       aria-label="Loading"
@@ -178,7 +178,7 @@ function FullPageSkeleton() {
     >
       <span className="sr-only">Loading sitter view…</span>
       <div className="border-b border-[#e3ded0] bg-[#f4f1e8]">
-        <div className="mx-auto flex max-w-md items-center gap-2 px-4 py-3">
+        <div className="mx-auto flex max-w-md items-center gap-2 px-5 py-3">
           <SkeletonLine className="size-9 rounded-full" />
           <div className="flex-1 space-y-1.5">
             <SkeletonLine className="h-3 w-1/3" />
