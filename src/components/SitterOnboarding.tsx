@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { AlertTriangle, ChevronLeft } from "lucide-react";
 
@@ -33,6 +33,17 @@ function possessivePronoun(sex: string | null | undefined): string {
   return s.startsWith("f") ? "her" : s.startsWith("m") ? "his" : "their";
 }
 
+// A fixed-position element (the bottom nav) shouldn't be scrolled to — only
+// in-page targets (cards, care-plan sections) need the page scrolled.
+function isFixedEl(el: HTMLElement | null): boolean {
+  let n: HTMLElement | null = el;
+  while (n && n !== document.body) {
+    if (window.getComputedStyle(n).position === "fixed") return true;
+    n = n.parentElement;
+  }
+  return false;
+}
+
 const CP_TARGET: Record<string, string> = {
   food: "cp-food",
   handling: "cp-handling",
@@ -55,6 +66,8 @@ export function SitterOnboarding({ birds, bird, careSections, token }: { birds: 
   const navigate = useNavigate();
   const router = useRouter();
   const stepRef = useRef(0);
+  const bubbleRef = useRef<HTMLDivElement | null>(null);
+  const [bubbleH, setBubbleH] = useState(150);
   // When replayed from a header chip / "?" icon, remember where the sitter was so
   // we can return them there when the walkthrough ends (first-run has no origin).
   const replayReturnRef = useRef<string | null>(null);
@@ -184,8 +197,14 @@ export function SitterOnboarding({ birds, bird, careSections, token }: { birds: 
     };
 
     const tick = () => {
-      const el = document.querySelector(`[data-coach="${cur.target}"]`);
-      if (el) el.scrollIntoView({ block: "nearest", behavior: "auto" });
+      const el = document.querySelector(`[data-coach="${cur.target}"]`) as HTMLElement | null;
+      // Scroll in-page targets so their top sits ~25% down — keeps the section's
+      // heading visible with room for the bubble. Fixed nav items aren't scrolled.
+      if (el && !isFixedEl(el)) {
+        const r = el.getBoundingClientRect();
+        const delta = r.top - window.innerHeight * 0.25;
+        if (Math.abs(delta) > 4) window.scrollBy({ top: delta, behavior: "auto" });
+      }
       const ok = measure();
       if (!ok && tries < 40) {
         tries += 1;
@@ -203,6 +222,13 @@ export function SitterOnboarding({ birds, bird, careSections, token }: { birds: 
       window.removeEventListener("scroll", onChange, true);
     };
   }, [phase, step, steps]);
+
+  // Track the bubble's real height so the clamp above can keep it on-screen.
+  useLayoutEffect(() => {
+    if (phase !== "coach") return;
+    const h = bubbleRef.current?.offsetHeight;
+    if (h && Math.abs(h - bubbleH) > 2) setBubbleH(h);
+  });
 
   // Close without navigating — used by the Emergency link so it keeps its own
   // navigation to the emergency screen.
@@ -322,17 +348,27 @@ export function SitterOnboarding({ birds, bird, careSections, token }: { birds: 
   const vh = spot?.vh ?? (typeof window !== "undefined" ? window.innerHeight : 640);
   const BW = Math.min(300, vw - 24);
 
-  // Bubble placement: anchor by bottom for "top" placement so we never need to
-  // know the bubble height; clamp horizontally to stay fully on-screen.
+  // Bubble placement: always position by `top` (computed from the measured bubble
+  // height) and CLAMP it fully on-screen between the sticky header and the bottom
+  // nav — so the Next button is always reachable without scrolling, no matter
+  // where the target is.
+  const SAFE_TOP = 58; // clears the sticky layout header
+  const safeBottom = vh - 84; // clears the bottom nav + safe area
   let bubbleStyle: React.CSSProperties;
   if (!rect) {
-    bubbleStyle = { left: (vw - BW) / 2, top: Math.round(vh * 0.4), width: BW };
+    const top = Math.max(SAFE_TOP, Math.min((vh - bubbleH) / 2, safeBottom - bubbleH));
+    bubbleStyle = { left: (vw - BW) / 2, top, width: BW };
   } else {
     const left = Math.min(Math.max(rect.left + rect.width / 2 - BW / 2, 12), vw - BW - 12);
-    const placeTop = cur.place === "top" || (cur.place === "auto" && rect.top > vh / 2);
-    bubbleStyle = placeTop
-      ? { left, bottom: vh - rect.top + GAP, width: BW }
-      : { left, top: rect.bottom + GAP, width: BW };
+    const fitsBelow = rect.bottom + GAP + bubbleH <= safeBottom;
+    const fitsAbove = rect.top - GAP - bubbleH >= SAFE_TOP;
+    let top: number;
+    if (cur.place === "top" && fitsAbove) top = rect.top - GAP - bubbleH;
+    else if (fitsBelow) top = rect.bottom + GAP;
+    else if (fitsAbove) top = rect.top - GAP - bubbleH;
+    else top = rect.top + GAP; // target taller than the gap — sit near its top
+    top = Math.max(SAFE_TOP, Math.min(top, safeBottom - bubbleH));
+    bubbleStyle = { left, top, width: BW };
   }
 
   return (
@@ -365,7 +401,7 @@ export function SitterOnboarding({ birds, bird, careSections, token }: { birds: 
       </div>
 
       {/* Bubble */}
-      <div className="pointer-events-auto absolute rounded-2xl bg-white p-4 shadow-xl" style={bubbleStyle}>
+      <div ref={bubbleRef} className="pointer-events-auto absolute rounded-2xl bg-white p-4 shadow-xl" style={bubbleStyle}>
         <p className="text-[11px] font-semibold uppercase tracking-widest text-[#5f5e5a]">Step {step + 1} of {steps.length}</p>
         <p className="mt-1.5 text-sm font-medium leading-snug text-[#1a3d2e]">{cur.text}</p>
         <div className="mt-3 flex items-center justify-between gap-2">
