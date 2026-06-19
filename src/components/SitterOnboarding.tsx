@@ -89,11 +89,11 @@ export function SitterOnboarding({ birds, bird, careSections, hasClips, token }:
 
     const single = list.length <= 1;
 
-    // Home — the all-birds overview, then tapping into a bird.
+    // Home — intro the Home nav tab, then the birds, then tapping into one.
     s.push({
-      target: "home-overview",
+      target: "nav-home",
       route: "home",
-      place: "auto",
+      place: "top",
       text: "This is your home base — every bird you're caring for and what each one still needs today.",
     });
     s.push({
@@ -158,11 +158,11 @@ export function SitterOnboarding({ birds, bird, careSections, hasClips, token }:
       if (CP_TARGET[key]) s.push({ target: CP_TARGET[key], route: "careplan", place: "auto", text: cpText[key] });
     }
 
-    // Parrots 101 — in-context.
+    // Parrots 101 — intro the nav tab, then the on-screen search + topics.
     s.push({
-      target: "guide-header",
+      target: "nav-guide",
       route: "guide",
-      place: "bottom",
+      place: "top",
       text: "The basics of parrot care, in plain language — general info for all parrots.",
     });
     s.push({
@@ -463,15 +463,15 @@ export function SitterOnboarding({ birds, bird, careSections, hasClips, token }:
         <p className="text-[11px] font-semibold uppercase tracking-widest text-[#5f5e5a]">Step {step + 1} of {steps.length}</p>
         <p className="mt-1.5 text-sm font-medium leading-snug text-[#1a3d2e]">{cur.text}</p>
         <div className="mt-3 flex items-center justify-between gap-2">
-          <button onClick={back} className="inline-flex items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-[#5f5e5a]">
+          <button onClick={back} className="inline-flex shrink-0 items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-[#5f5e5a]">
             <ChevronLeft className="size-4" /> Back
           </button>
-          <div className="flex items-center gap-1.5">
-            {steps.map((_, i) => (
-              <span key={i} className={`size-1.5 rounded-full ${i === step ? "bg-[#1a3d2e]" : "bg-[#d8d2c2]"}`} />
-            ))}
+          {/* Slim progress bar (scales to any step count, unlike per-step dots
+              which overflowed the bubble and pushed Next off the edge). */}
+          <div className="mx-1 h-1 flex-1 overflow-hidden rounded-full bg-[#e8e1d0]">
+            <div className="h-full rounded-full bg-[#1a3d2e] transition-[width]" style={{ width: `${Math.round(((step + 1) / steps.length) * 100)}%` }} />
           </div>
-          <button onClick={next} className="rounded-lg bg-[#1a3d2e] px-4 py-1.5 text-xs font-semibold text-white">
+          <button onClick={next} className="shrink-0 rounded-lg bg-[#1a3d2e] px-4 py-1.5 text-xs font-semibold text-white">
             Next
           </button>
         </div>
