@@ -8,6 +8,7 @@ import { ArrowLeft } from "lucide-react";
 import { BrandLogo } from "@/components/BrandLogo";
 import { track } from "@/lib/analytics";
 import { captureLead } from "@/lib/captureLead";
+import { attributionMetadata, getFirstTouch } from "@/lib/attribution";
 
 const search = z.object({
   mode: z.enum(["signin", "signup"]).default("signin"),
@@ -78,6 +79,9 @@ function AuthPage() {
             data: {
               display_name: [firstName, lastName].filter(Boolean).join(" ") || email.split("@")[0],
               marketing_opt_in: marketingOptIn,
+              // First-touch attribution → handle_new_user trigger writes it onto
+              // the profile (works even when email confirmation defers the session).
+              ...attributionMetadata(),
             },
             emailRedirectTo: window.location.origin,
           },
@@ -91,6 +95,7 @@ function AuthPage() {
           lastName: lastName || undefined,
           source: "owner-signup",
           marketingConsent: marketingOptIn,
+          attribution: getFirstTouch(),
         });
         // With email confirmation required, no session is returned until the
         // user clicks the verification link.

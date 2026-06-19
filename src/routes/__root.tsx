@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
 import { initAnalytics, identifyUser, resetUser } from "@/lib/analytics";
 import { registerServiceWorker } from "@/lib/sw-register";
+import { captureFirstTouch } from "@/lib/attribution";
 
 function NotFoundComponent() {
   return (
@@ -112,6 +113,7 @@ function RootComponent() {
   const router = useRouter();
 
   useEffect(() => {
+    captureFirstTouch(); // first-touch attribution — record source before signup
     initAnalytics();
     registerServiceWorker();
     supabase.auth.getUser().then(({ data }) => {
