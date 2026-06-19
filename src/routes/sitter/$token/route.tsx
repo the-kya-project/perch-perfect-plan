@@ -5,6 +5,7 @@ import { Suspense, useEffect, useRef } from "react";
 import { z } from "zod";
 import { getSitterContext } from "@/lib/sitter.functions";
 import { EmergencyBar } from "@/components/EmergencyBar";
+import { SitterOnboarding } from "@/components/SitterOnboarding";
 import { track } from "@/lib/analytics";
 
 const searchSchema = z.object({ birdId: z.string().uuid().optional() });
@@ -96,6 +97,7 @@ function SitterLayout() {
         <Outlet />
       </Suspense>
       <EmergencyBar token={token} />
+      <SitterOnboarding bird={ctx.bird} token={token} />
     </div>
   );
 }
