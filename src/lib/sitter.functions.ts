@@ -151,7 +151,7 @@ export const getSitterContext = createServerFn({ method: "GET" })
       console.error("[sitter-opened] notify failed", e);
     }
 
-    // Generate signed URLs for owner-recorded "Watch first" clips on the active bird.
+    // Generate signed URLs for the owner-recorded "Tips from the owner" clips on the active bird.
     // Clips are stored in the private bird-photos bucket; signed URLs ensure only
     // the assigned sitter (holding this token) can play them.
     const watchClipSlots: { key: string; column: string; label: string }[] = [

@@ -140,10 +140,10 @@ export function SitterOnboarding({ birds, bird, careSections, hasClips, token }:
     });
     if (hasClips) {
       s.push({
-        target: "watch-first",
+        target: "owner-tips",
         route: "today",
         place: "auto",
-        text: `Watch these short clips from the owner first — they show how things are done for ${activeName}.`,
+        text: `Tips from the owner — short clips showing how things are done for ${activeName}.`,
       });
     }
     s.push({

@@ -210,8 +210,8 @@ function CareSheet() {
         )}
 
         {clips.length > 0 && (
-          <Section title="Watch-first clips">
-            <p className="text-xs text-[#5f5e5a]">Short clips from the owner.</p>
+          <Section title="Tips from the owner">
+            <p className="text-xs text-[#5f5e5a]">See how it's done — short clips from the owner.</p>
             <div className="-mx-1 grid grid-cols-1 gap-3">
               {clips.map((c: any) => (
                 <div key={c.key} className="overflow-hidden rounded-xl bg-[#e8e1d0] ring-1 ring-[#e0d8c4]">

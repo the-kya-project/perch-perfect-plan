@@ -289,11 +289,11 @@ function SitterToday() {
         </>
       )}
 
-      {/* Watch-first clips */}
+      {/* Tips from the owner — owner-recorded clips */}
       {ctx.watchClips && ctx.watchClips.length > 0 && (
-        <section data-coach="watch-first" className="space-y-2">
-          <h2 className="text-lg font-medium tracking-tight">Watch first</h2>
-          <p className="text-xs text-sage-600">Short clips from {ctx.bird.name}'s owner. These are private to you.</p>
+        <section data-coach="owner-tips" className="space-y-2">
+          <h2 className="text-lg font-medium tracking-tight">Tips from the owner</h2>
+          <p className="text-xs text-sage-600">See how it's done — short clips from {ctx.bird.name}'s owner, private to you.</p>
           <div className="-mx-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-1">
             {ctx.watchClips.map((c: any) => (
               <div
