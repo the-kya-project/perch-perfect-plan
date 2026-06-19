@@ -380,6 +380,7 @@ export const submitHealthScan = createServerFn({ method: "POST" })
           sb.from("sits").select("sitter_name, sitter_email").eq("id", sit.id).maybeSingle(),
         ]);
         const to = profile?.email;
+        console.log("[scan] flagged email", { status: triage.status, ownerHasEmail: !!to });
         if (to) {
           const appUrl = process.env.APP_URL || "https://app.thekyaproject.com";
           const sitterName = sitRow?.sitter_name || sitRow?.sitter_email || "Your sitter";
