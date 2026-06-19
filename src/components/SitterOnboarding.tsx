@@ -24,7 +24,7 @@ function formatNames(names: string[]): string {
   return `${n.slice(0, -1).join(", ")}, and ${n[n.length - 1]}`;
 }
 
-type CoachStep = { target: string; text: string; place: "top" | "bottom" | "auto"; emphasis?: boolean };
+type CoachStep = { target: string; text: string; place: "top" | "bottom" | "auto"; route: "home" | "today"; emphasis?: boolean };
 type Phase = null | "welcome" | "overview" | "coach";
 type Spot = { rect: { top: number; left: number; width: number; height: number; bottom: number } | null; vw: number; vh: number };
 
@@ -45,18 +45,40 @@ export function SitterOnboarding({ birds, bird, token }: { birds: any[]; bird: a
 
   const steps = useMemo<CoachStep[]>(() => {
     const s: CoachStep[] = [];
+    s.push({
+      target: "nav-home",
+      route: "home",
+      place: "top",
+      text: "This is your home base. You'll see all the birds you're caring for and what each one still needs today.",
+    });
     if (list.length > 1) {
       s.push({
-        target: "bird-switcher",
-        text: `You're caring for more than one bird. Tap here to switch between ${allNames} — each has their own routine and care plan.`,
-        place: "bottom",
+        target: "bird-card",
+        route: "home",
+        place: "auto",
+        text: `Tap a bird to see their day and check in on them. You can switch between ${allNames} anytime.`,
       });
     }
-    s.push({ target: "daily-checklist", text: `Each day, work through ${activeName}'s tasks here and check them off as you go.`, place: "auto" });
-    s.push({ target: "scan-card", text: `A quick daily health check for ${activeName} — tap here. We'll walk you through it.`, place: "auto" });
-    s.push({ target: "nav-today", text: "Your home base — the daily routine and what needs doing.", place: "top" });
-    s.push({ target: "nav-guide", text: `General parrot care, anytime you want to understand something. ${activeName}'s specific needs live in the care plan.`, place: "top" });
-    s.push({ target: "nav-emergency", text: "If something's ever wrong, this is always here. You'll never be in trouble for using it.", place: "top", emphasis: true });
+    s.push({
+      target: "scan-card",
+      route: "today",
+      place: "auto",
+      text: `A quick daily health check for ${activeName}. Tap here when you're ready; we'll walk you through it.`,
+    });
+    s.push({ target: "nav-today", route: "today", place: "top", text: "The current bird's daily routine and tasks." });
+    s.push({
+      target: "nav-guide",
+      route: "today",
+      place: "top",
+      text: `General parrot care, anytime you want to understand something. ${activeName}'s specific needs live in their care plan.`,
+    });
+    s.push({
+      target: "nav-emergency",
+      route: "today",
+      place: "top",
+      emphasis: true,
+      text: "If something's ever wrong, this is always here. You'll never be in trouble for using it.",
+    });
     return s;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [list.length, allNames, activeName]);
@@ -76,6 +98,16 @@ export function SitterOnboarding({ birds, bird, token }: { birds: any[]; bird: a
     if (phase !== "coach") return;
     const cur = steps[step];
     if (!cur) return;
+
+    // Targets live on different screens — the bird card on Home, the scan card on
+    // a bird's Today — so make sure we're on the right screen before pointing at
+    // the target. The retry loop below waits for it to render after navigation.
+    if (cur.route === "home") {
+      navigate({ to: "/sitter/$token/home", params: { token } });
+    } else {
+      navigate({ to: "/sitter/$token", params: { token }, search: { birdId: bird?.id } });
+    }
+
     let raf = 0;
     let tries = 0;
 
@@ -127,10 +159,8 @@ export function SitterOnboarding({ birds, bird, token }: { birds: any[]; bird: a
   }
 
   function startCoach() {
-    // Coach targets (switcher, checklist, scan card) live on a bird's Today —
-    // select the active bird so multi-bird sits show Today (not the dashboard)
-    // and every target is rendered before we point at it.
-    navigate({ to: "/sitter/$token", params: { token }, search: { birdId: bird?.id } });
+    // The per-step effect navigates to the screen each target lives on (Home
+    // first, then a bird's Today), so we just enter the coach at step 0.
     setStep(0);
     stepRef.current = 0;
     setPhase("coach");
