@@ -59,7 +59,7 @@ type Spot = { rect: { top: number; left: number; width: number; height: number; 
 const PAD = 6;
 const GAP = 12;
 
-export function SitterOnboarding({ birds, bird, careSections, token }: { birds: any[]; bird: any; careSections?: string[]; token: string }) {
+export function SitterOnboarding({ birds, bird, careSections, hasClips, token }: { birds: any[]; bird: any; careSections?: string[]; hasClips?: boolean; token: string }) {
   const [phase, setPhase] = useState<Phase>(null);
   const [step, setStep] = useState(0);
   const [spot, setSpot] = useState<Spot | null>(null);
@@ -89,31 +89,43 @@ export function SitterOnboarding({ birds, bird, careSections, token }: { birds: 
 
     const single = list.length <= 1;
 
-    // Home — the all-birds overview.
+    // Home — the all-birds overview, then tapping into a bird.
     s.push({
       target: "home-overview",
       route: "home",
       place: "auto",
       text: "This is your home base — every bird you're caring for and what each one still needs today.",
     });
+    s.push({
+      target: "bird-card",
+      route: "home",
+      place: "auto",
+      text: single ? `Tap ${activeName} to open ${poss} day.` : "Tap a bird to open their day and check in on them.",
+    });
 
-    // Today — a full, in-context tour of one bird's day.
-    if (!single) {
-      s.push({
-        target: "bird-switcher",
-        route: "today",
-        place: "bottom",
-        text: "Switch between the birds you're caring for up here. This screen shows everything for the bird you've selected — their whole day in one place.",
-      });
-    }
+    // Today — intro the tab, then tour the screen top to bottom.
+    s.push({
+      target: "nav-today",
+      route: "today",
+      place: "top",
+      text: `The Today tab — ${activeName}'s daily routine and health check, all in one place.`,
+    });
     s.push({
       target: "welcome-card",
       route: "today",
       place: "auto",
       text: single
-        ? `This screen shows ${activeName}'s whole day in one place — starting with ${poss} card and the key info at a glance.`
-        : `Here's ${activeName}'s card — the key info about ${obj} at a glance.`,
+        ? `This is ${activeName}'s card — photo and key info at a glance. This screen shows everything for ${obj}.`
+        : `This is ${activeName}'s card — photo and key info at a glance. This screen shows everything for the bird you've selected.`,
     });
+    if (!single) {
+      s.push({
+        target: "bird-switcher",
+        route: "today",
+        place: "bottom",
+        text: "Switch between the birds you're caring for up here — each has their own day and care plan.",
+      });
+    }
     s.push({
       target: "scan-card",
       route: "today",
@@ -124,20 +136,21 @@ export function SitterOnboarding({ birds, bird, careSections, token }: { birds: 
       target: "daily-checklist",
       route: "today",
       place: "auto",
-      text: `Work through ${activeName}'s tasks for the day here and check them off as you go.`,
+      text: `Work through ${activeName}'s tasks here — grouped by morning, midday, and evening — and check them off as you go.`,
     });
-    s.push({
-      target: "nav-emergency",
-      route: "today",
-      place: "top",
-      emphasis: true,
-      text: "And if something's ever wrong, the Emergency button is always here. When in doubt, reach out — it's better to check.",
-    });
+    if (hasClips) {
+      s.push({
+        target: "watch-first",
+        route: "today",
+        place: "auto",
+        text: `Watch these short clips from the owner first — they show how things are done for ${activeName}.`,
+      });
+    }
     s.push({
       target: "care-plan-link",
       route: "today",
       place: "auto",
-      text: `For everything specific to ${activeName}, tap here for ${poss} full care plan. It's your source of truth for caring for ${obj}.`,
+      text: `For everything specific to ${activeName}, tap here for ${poss} full care plan — your source of truth for caring for ${obj}.`,
     });
 
     // Full care plan — section by section, the bird-specific source of truth.
@@ -165,9 +178,18 @@ export function SitterOnboarding({ birds, bird, careSections, token }: { birds: 
       text: "Or tab through these topics to browse by subject.",
     });
 
+    // Emergency — last, on the always-present nav button.
+    s.push({
+      target: "nav-emergency",
+      route: "guide",
+      place: "top",
+      emphasis: true,
+      text: "And if something's ever wrong, the Emergency button is always here. When in doubt, reach out — it's better to check.",
+    });
+
     return s;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [list.length, activeName, obj, poss, careKey]);
+  }, [list.length, activeName, obj, poss, careKey, hasClips]);
 
   useEffect(() => {
     try {

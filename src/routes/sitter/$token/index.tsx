@@ -291,7 +291,7 @@ function SitterToday() {
 
       {/* Watch-first clips */}
       {ctx.watchClips && ctx.watchClips.length > 0 && (
-        <section className="space-y-2">
+        <section data-coach="watch-first" className="space-y-2">
           <h2 className="text-lg font-medium tracking-tight">Watch first</h2>
           <p className="text-xs text-sage-600">Short clips from {ctx.bird.name}'s owner. These are private to you.</p>
           <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1">
