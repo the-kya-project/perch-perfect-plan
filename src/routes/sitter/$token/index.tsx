@@ -386,6 +386,7 @@ function WelcomeCard({ bird, plan, token }: { bird: any; plan: any; token: strin
     <Link
       to="/sitter/$token/care-sheet"
       params={{ token }}
+      data-coach="welcome-card"
       className="block overflow-hidden rounded-2xl bg-[#1a3d2e] text-white active:scale-[0.99]"
     >
       {/* Photo hero — 4:3 keeps a vertical bird subject in frame; the crop

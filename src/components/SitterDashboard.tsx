@@ -48,7 +48,7 @@ export function SitterDashboard({ token }: { token: string }) {
         </button>
       </header>
 
-      <section>
+      <section data-coach="home-overview">
         <h2 className="text-base font-medium text-[#1a3d2e]">Birds in your care</h2>
         {isLoading ? (
           <p className="mt-3 rounded-2xl bg-[#efe9da] p-4 text-sm text-[#5f5e5a]">Loading…</p>
