@@ -204,7 +204,7 @@ function SitterHome() {
 
   return (
     <main className="mx-auto max-w-md space-y-5 px-4 py-5">
-      <WelcomeCard bird={ctx.bird} plan={ctx.plan} />
+      <WelcomeCard bird={ctx.bird} plan={ctx.plan} token={token} />
 
       {/* Today header: daypart chip + date */}
       <div className="flex items-center justify-between gap-2">
@@ -345,7 +345,7 @@ function TriagePill({ status }: { status: string }) {
 // assembled sitter_intro (or owner_edited_intro override); the must-know lines
 // render directly from structured care-plan fields so they never drift from
 // what the intro copy happens to say.
-function WelcomeCard({ bird, plan }: { bird: any; plan: any }) {
+function WelcomeCard({ bird, plan, token }: { bird: any; plan: any; token: string }) {
   const p = plan ?? {};
   const species = (bird.species ?? "").trim() || "Parrot";
   const age = (bird.age ?? "").trim();
@@ -356,7 +356,11 @@ function WelcomeCard({ bird, plan }: { bird: any; plan: any }) {
   const initial = (bird.name?.slice(0, 1) ?? "?").toUpperCase();
 
   return (
-    <section className="overflow-hidden rounded-2xl bg-[#1a3d2e] text-white">
+    <Link
+      to="/sitter/$token/care-sheet"
+      params={{ token }}
+      className="block overflow-hidden rounded-2xl bg-[#1a3d2e] text-white active:scale-[0.99]"
+    >
       {/* Photo hero — 4:3 keeps a vertical bird subject in frame; the crop
           biases toward the top (head/face) unless the owner set a focal point.
           Bird name is overlaid on a bottom gradient. */}
@@ -404,6 +408,11 @@ function WelcomeCard({ bird, plan }: { bird: any; plan: any }) {
           )}
         </div>
       )}
-    </section>
+      {/* Visible CTA so it's clearly an action, for sitters who don't tap the card. */}
+      <div className="flex items-center justify-between gap-3 border-t border-white/10 px-5 py-3">
+        <span className="text-sm font-medium text-[#cdeab0]">View {bird.name}'s full care plan</span>
+        <ChevronRight className="size-5 shrink-0 text-[#cdeab0]" />
+      </div>
+    </Link>
   );
 }

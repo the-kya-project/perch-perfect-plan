@@ -686,8 +686,20 @@ function RoutineEditor({ planId, tasks, onChange }: { planId: string; tasks: any
   );
 }
 
+// ASPCA Animal Poison Control — pre-filled as an editable default so the number
+// is present without the owner looking it up.
+const ASPCA_POISON_CONTROL = "(888) 426-4435";
+
 function ContactsForm({ birdId, contacts, defaults, onSaved }: { birdId: string; contacts: any; defaults: any | null; onSaved: () => void }) {
-  const [c, setC] = useState(contacts);
+  const [c, setC] = useState(() => {
+    const init = { ...contacts };
+    // Default poison control to ASPCA when this bird has none and there's no
+    // account default. Editable + persists on save (owners can override it).
+    const hasOwn = typeof init.poison_control === "string" && init.poison_control.trim();
+    const hasDefault = typeof defaults?.poison_control === "string" && defaults.poison_control.trim();
+    if (!hasOwn && !hasDefault) init.poison_control = ASPCA_POISON_CONTROL;
+    return init;
+  });
   const [saving, setSaving] = useState(false);
   async function save() {
     setSaving(true);
@@ -723,12 +735,12 @@ function ContactsForm({ birdId, contacts, defaults, onSaved }: { birdId: string;
     <section className="space-y-3 rounded-2xl bg-white p-4 ring-1 ring-sage-100">
       <h2 className="text-sm font-bold">Emergency contacts & home info</h2>
       <p className="text-xs text-sage-600">
-        Empty fields use your <Link to="/dashboard" className="font-semibold underline">account defaults</Link>.
+        Empty fields use your <Link to="/dashboard" search={{ emergencyDefaults: true }} className="font-semibold underline">account defaults</Link>.
         Type anything here to override the default for this bird. Owner phone and avian vet phone are required (default or override) before you can share a sitter link.
       </p>
       {!hasAnyDefault && (
         <p className="rounded-lg bg-sage-50 px-3 py-2 text-[11px] text-sage-700">
-          No account defaults set yet. Add them once on the <Link to="/dashboard" className="font-semibold underline">dashboard</Link> and every bird will inherit them.
+          No account defaults set yet. <Link to="/dashboard" search={{ emergencyDefaults: true }} className="font-semibold underline">Set account defaults</Link> once and every bird will inherit them.
         </p>
       )}
       {fields.map(([k, l, required]) => {

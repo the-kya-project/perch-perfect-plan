@@ -22,6 +22,13 @@ function objectPronoun(sex: string | null | undefined): string {
   return "them";
 }
 
+function possessivePronoun(sex: string | null | undefined): string {
+  const s = (sex ?? "").trim().toLowerCase();
+  if (s.startsWith("f")) return "her";
+  if (s.startsWith("m")) return "his";
+  return "their";
+}
+
 // Topic chips. The stored guide_cards categories are book chapters (01-…, 02-…);
 // these map them to a small, sitter-friendly topic set. Per-entry overrides
 // pull a few rules into a better-fitting topic. Done in the frontend so the
@@ -103,6 +110,7 @@ function Guide() {
 
   const bird = ctx.bird as any;
   const pron = objectPronoun(bird.sex);
+  const poss = possessivePronoun(bird.sex);
 
   const searching = q.trim().length > 0;
   const ql = q.trim().toLowerCase();
@@ -143,10 +151,10 @@ function Guide() {
             <Link to="/sitter/$token" params={{ token }} className="-ml-1 rounded-full p-1 text-white/90 hover:bg-white/10" aria-label="Back">
               <ArrowLeft className="size-5" />
             </Link>
-            <h1 className="text-lg font-medium text-white">Care guide</h1>
+            <h1 className="text-lg font-medium text-white">Parrots 101</h1>
           </div>
           <p className="mt-2 text-sm leading-relaxed text-[#cdeab0]">
-            The why behind the what. {bird.name}'s care sheet is the source of truth for {pron} — this is here when you want to understand something.
+            General parrot care basics — not specific to {bird.name}. For {poss} actual needs, follow {poss} care plan.
           </p>
         </div>
       </header>
