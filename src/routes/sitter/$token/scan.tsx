@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSitterContext } from "./route";
 import { submitHealthScan, getSitterScans } from "@/lib/sitter.functions";
 import { SCAN_FIELDS, type ScanAnswer, type ScanFieldKey, computeTriage } from "@/lib/triage";
@@ -66,6 +66,7 @@ function ScanPage() {
   }, [ctx.activeBirdId]);
 
   const submit = useServerFn(submitHealthScan);
+  const qc = useQueryClient();
   const m = useMutation({
     mutationFn: async () => {
       const filled = Object.fromEntries(
@@ -85,6 +86,10 @@ function ScanPage() {
       setResult(res.triage as any);
       track("health_scan_run", { severity: (res.triage as any)?.status ?? "unknown", had_photo: !!photo });
       toast.success("Health scan logged.");
+      // Refresh the Today scan card + the multi-bird dashboard so the new
+      // done/flagged state shows immediately.
+      qc.invalidateQueries({ queryKey: ["sitter-ctx", token] });
+      qc.invalidateQueries({ queryKey: ["sitter-dashboard", token] });
     },
     onError: (e: any) => toast.error(e.message ?? "Could not log scan."),
   });

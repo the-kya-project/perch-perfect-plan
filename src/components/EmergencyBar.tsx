@@ -1,9 +1,11 @@
 import { Link } from "@tanstack/react-router";
-import { ClipboardList, Stethoscope, BookOpen, AlertTriangle } from "lucide-react";
+import { ClipboardList, BookOpen, AlertTriangle } from "lucide-react";
 
-// Persistent sitter bottom nav. Today / Scan / Guide are icon-above-label
-// (active = dark green, inactive = readable muted gray). Emergency is always a
-// solid red pill — the loudest item, never muted, independent of active tab.
+// Persistent sitter bottom nav: Today / Parrots 101, plus the always-present
+// Emergency pill. The scan lives inside each bird's Today (per-bird), so it's no
+// longer a global nav tab. Today / Parrots 101 are icon-above-label (active =
+// dark green, inactive = readable muted gray). Emergency is always a solid red
+// pill — the loudest item, never muted, independent of active tab.
 export function EmergencyBar({ token }: { token: string }) {
   const item = "flex flex-col items-center gap-0.5 text-[#8a897f] [&.active]:text-[#1a3d2e]";
   return (
@@ -13,13 +15,9 @@ export function EmergencyBar({ token }: { token: string }) {
           <ClipboardList className="size-5" />
           <span className="text-[11px] font-medium">Today</span>
         </Link>
-        <Link to="/sitter/$token/scan" params={{ token }} className={item} data-coach="nav-scan">
-          <Stethoscope className="size-5" />
-          <span className="text-[11px] font-medium">Scan</span>
-        </Link>
         <Link to="/sitter/$token/guide" params={{ token }} className={item} data-coach="nav-guide">
           <BookOpen className="size-5" />
-          <span className="text-[11px] font-medium">Guide</span>
+          <span className="text-[11px] font-medium">Parrots 101</span>
         </Link>
         <Link
           to="/sitter/$token/emergency"

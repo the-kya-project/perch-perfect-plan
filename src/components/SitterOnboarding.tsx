@@ -53,8 +53,8 @@ export function SitterOnboarding({ birds, bird, token }: { birds: any[]; bird: a
       });
     }
     s.push({ target: "daily-checklist", text: `Each day, work through ${activeName}'s tasks here and check them off as you go.`, place: "auto" });
+    s.push({ target: "scan-card", text: `A quick daily health check for ${activeName} — tap here. We'll walk you through it.`, place: "auto" });
     s.push({ target: "nav-today", text: "Your home base — the daily routine and what needs doing.", place: "top" });
-    s.push({ target: "nav-scan", text: "A quick daily health check. We'll walk you through it.", place: "top" });
     s.push({ target: "nav-guide", text: `General parrot care, anytime you want to understand something. ${activeName}'s specific needs live in the care plan.`, place: "top" });
     s.push({ target: "nav-emergency", text: "If something's ever wrong, this is always here. You'll never be in trouble for using it.", place: "top", emphasis: true });
     return s;
@@ -127,9 +127,10 @@ export function SitterOnboarding({ birds, bird, token }: { birds: any[]; bird: a
   }
 
   function startCoach() {
-    // Coach targets (checklist, switcher) live on the Today tab — make sure we're
-    // there before pointing at them.
-    navigate({ to: "/sitter/$token", params: { token } });
+    // Coach targets (switcher, checklist, scan card) live on a bird's Today —
+    // select the active bird so multi-bird sits show Today (not the dashboard)
+    // and every target is rendered before we point at it.
+    navigate({ to: "/sitter/$token", params: { token }, search: { birdId: bird?.id } });
     setStep(0);
     stepRef.current = 0;
     setPhase("coach");

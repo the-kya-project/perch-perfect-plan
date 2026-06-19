@@ -1,8 +1,9 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useSearch } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useSitterContext } from "./route";
+import { SitterDashboard } from "@/components/SitterDashboard";
 import { toggleTaskCompletion } from "@/lib/sitter.functions";
 import { handlingMustKnow } from "@/lib/sitterIntro";
 import { Disclaimer } from "@/components/Disclaimer";
@@ -54,6 +55,16 @@ function parseTaskMinutes(s: string | null | undefined): number | null {
 }
 
 function SitterHome() {
+  const { token } = Route.useParams();
+  const { data: ctx } = useSitterContext(token);
+  const { birdId } = useSearch({ from: "/sitter/$token" });
+  // Multi-bird sits land on the all-birds dashboard until a bird is picked;
+  // single-bird sits go straight to that bird's Today (no dashboard).
+  if (ctx.birds.length > 1 && !birdId) return <SitterDashboard token={token} />;
+  return <SitterToday />;
+}
+
+function SitterToday() {
   const { token } = Route.useParams();
   const { data: ctx } = useSitterContext(token);
   const qc = useQueryClient();
@@ -206,6 +217,8 @@ function SitterHome() {
     <main className="mx-auto max-w-md space-y-5 px-4 py-5">
       <WelcomeCard bird={ctx.bird} plan={ctx.plan} token={token} />
 
+      <ScanCard bird={ctx.bird} todayLog={ctx.todayLog} token={token} />
+
       {/* Today header: daypart chip + date */}
       <div className="flex items-center justify-between gap-2">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-[#e8f0ec] px-3 py-1 text-xs font-semibold text-[#2d6a4f]">
@@ -276,25 +289,6 @@ function SitterHome() {
         </>
       )}
 
-      {/* Health scan strip — distinct from a checklist item; always shown */}
-      <Link
-        to="/sitter/$token/scan" params={{ token }}
-        className="flex items-stretch overflow-hidden rounded-2xl bg-[#efe9da] shadow-sm active:scale-[0.99]"
-      >
-        <span className="w-1.5 shrink-0 bg-[#2d6a4f]" />
-        <span className="flex flex-1 items-center justify-between gap-3 p-4">
-          <span className="flex items-center gap-3">
-            <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[#e8f0ec] text-[#2d6a4f]"><Stethoscope className="size-5" /></span>
-            <span className="block">
-              <span className="block text-[10px] font-medium uppercase tracking-widest text-sage-500">Daily requirement</span>
-              <span className="block text-base font-medium leading-tight text-sage-900">Run today's health scan</span>
-              {ctx.todayLog && <span className="mt-0.5 block text-xs text-sage-600">Latest scan: <TriagePill status={ctx.todayLog.triage_status} /></span>}
-            </span>
-          </span>
-          <span className="shrink-0 rounded-xl bg-[#1a3d2e] px-4 py-2 text-sm font-medium text-white">Start</span>
-        </span>
-      </Link>
-
       {/* Watch-first clips */}
       {ctx.watchClips && ctx.watchClips.length > 0 && (
         <section className="space-y-2">
@@ -335,9 +329,42 @@ function SitterHome() {
   );
 }
 
-function TriagePill({ status }: { status: string }) {
-  const map: Record<string, string> = { green: "bg-warn-green", yellow: "bg-warn-amber", red: "bg-warn-red" };
-  return <span className={`inline-block size-2 rounded-full ${map[status] ?? "bg-sage-300"}`} />;
+// Prominent, status-aware entry to the per-bird daily scan. This is the sole
+// entry point to the scan now that it's not a nav tab, so it stays unmissable
+// and shows today's done/not-done state at a glance (amber = not done yet,
+// green = done; red/amber if today's scan was flagged).
+function ScanCard({ bird, todayLog, token }: { bird: any; todayLog: any; token: string }) {
+  const done = !!todayLog;
+  const status = (todayLog?.triage_status ?? "") as string;
+  const flagged = status === "red" || status === "yellow";
+  const accent = !done ? "amber" : status === "red" ? "red" : flagged ? "amber" : "green";
+  const styles = {
+    green: { wrap: "border-warn-green bg-warn-green/5", chip: "bg-warn-green/15 text-warn-green" },
+    amber: { wrap: "border-warn-amber bg-warn-amber/5", chip: "bg-warn-amber/15 text-warn-amber" },
+    red: { wrap: "border-warn-red bg-warn-red/5", chip: "bg-warn-red/15 text-warn-red" },
+  }[accent];
+  const heading = !done
+    ? "Today's health check — not done yet"
+    : flagged
+    ? "Health check done — flagged for review"
+    : "Health check done today ✓";
+  return (
+    <Link
+      to="/sitter/$token/scan"
+      params={{ token }}
+      data-coach="scan-card"
+      className={`flex items-center gap-3 rounded-2xl border-2 ${styles.wrap} p-4 shadow-sm active:scale-[0.99]`}
+    >
+      <span className={`grid size-11 shrink-0 place-items-center rounded-full ${styles.chip}`}>
+        <Stethoscope className="size-5" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[10px] font-semibold uppercase tracking-widest text-sage-500">Daily health check · {bird.name}</span>
+        <span className="block text-base font-medium leading-tight text-sage-900">{heading}</span>
+      </span>
+      <span className="shrink-0 rounded-xl bg-[#1a3d2e] px-4 py-2 text-sm font-medium text-white">{done ? "Redo" : "Start"}</span>
+    </Link>
+  );
 }
 
 // Permanent identity card at the top of the sitter Today tab. Always shown,
