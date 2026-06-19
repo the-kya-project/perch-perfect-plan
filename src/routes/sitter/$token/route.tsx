@@ -119,7 +119,7 @@ function SitterLayout() {
         <Outlet />
       </Suspense>
       <EmergencyBar token={token} activeBirdId={ctx.activeBirdId} />
-      <SitterOnboarding birds={ctx.birds} bird={ctx.bird} careSections={presentCareSections(ctx)} token={token} />
+      <SitterOnboarding birds={ctx.birds} bird={ctx.bird} careSections={presentCareSections(ctx)} hasClips={(ctx.watchClips?.length ?? 0) > 0} token={token} />
     </div>
   );
 }
