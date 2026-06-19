@@ -1,9 +1,8 @@
-import { createFileRoute, Link, useSearch } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate, useSearch } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useSitterContext } from "./route";
-import { SitterDashboard } from "@/components/SitterDashboard";
 import { toggleTaskCompletion } from "@/lib/sitter.functions";
 import { handlingMustKnow } from "@/lib/sitterIntro";
 import { Disclaimer } from "@/components/Disclaimer";
@@ -58,9 +57,10 @@ function SitterHome() {
   const { token } = Route.useParams();
   const { data: ctx } = useSitterContext(token);
   const { birdId } = useSearch({ from: "/sitter/$token" });
-  // Multi-bird sits land on the all-birds dashboard until a bird is picked;
-  // single-bird sits go straight to that bird's Today (no dashboard).
-  if (ctx.birds.length > 1 && !birdId) return <SitterDashboard token={token} />;
+  // Multi-bird sits land on the Home tab until a bird is picked; the Today nav
+  // item always carries a birdId, so this only fires on the initial open.
+  // Single-bird sits go straight to that bird's Today.
+  if (ctx.birds.length > 1 && !birdId) return <Navigate to="/sitter/$token/home" params={{ token }} />;
   return <SitterToday />;
 }
 

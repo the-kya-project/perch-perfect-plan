@@ -2,7 +2,6 @@ import { createFileRoute, Outlet, useNavigate, useSearch, useLocation, retainSea
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { Suspense, useEffect, useRef } from "react";
-import { ArrowLeft } from "lucide-react";
 import { z } from "zod";
 import { getSitterContext } from "@/lib/sitter.functions";
 import { EmergencyBar } from "@/components/EmergencyBar";
@@ -61,29 +60,20 @@ function SitterLayout() {
     track("sitter_link_opened", { bird_count: ctx.birds?.length ?? 0 });
   }, [ctx]);
 
-  // Header adapts: multi-bird with no bird picked on the index route = the
-  // all-birds dashboard (no switcher); inside a bird = "All birds" return
-  // control + the per-bird switcher; single-bird = neither.
-  const { birdId } = Route.useSearch();
+  // Dashboard access is the Home nav tab now (no top "All birds" affordance).
+  // The per-bird switcher stays inside a bird so the sitter can change birds
+  // without returning Home; it's hidden on Home itself.
   const pathname = useLocation({ select: (l) => l.pathname });
-  const isIndex = pathname.replace(/\/$/, "") === `/sitter/${token}`;
-  const isMulti = ctx.birds.length > 1;
-  const onDashboard = isMulti && !birdId && isIndex;
+  const onHome = pathname.replace(/\/$/, "") === `/sitter/${token}/home`;
+  const showSwitcher = ctx.birds.length > 1 && !onHome;
 
   return (
     <div className="min-h-screen bg-[#f4f1e8] pb-32">
       <div className="sticky top-0 z-30 border-b border-[#e3ded0] bg-[#f4f1e8]/95 backdrop-blur">
         <div className="mx-auto flex max-w-md items-center gap-2 px-4 py-2.5">
-          {onDashboard ? (
-            <span className="text-sm font-medium text-[#1a3d2e]">All birds</span>
-          ) : isMulti ? (
+          {showSwitcher && (
             <>
-              <button
-                onClick={() => navigate({ to: "/sitter/$token", params: { token }, search: { birdId: undefined } })}
-                className="flex shrink-0 items-center gap-1 rounded-full bg-[#e8f0ec] px-3 py-1.5 text-xs font-medium text-[#1a3d2e]"
-              >
-                <ArrowLeft className="size-3.5" /> All birds
-              </button>
+              <span className="shrink-0 text-xs font-medium text-[#5f5e5a]">Caring for</span>
               <div data-coach="bird-switcher" className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto">
                 {ctx.birds.map((b: any) => {
                   const active = b.id === ctx.activeBirdId;
@@ -104,7 +94,7 @@ function SitterLayout() {
                 })}
               </div>
             </>
-          ) : null}
+          )}
           <span className="ml-auto shrink-0 rounded-full bg-[#d6e8dc] px-2.5 py-1 text-[11px] font-medium text-[#1a5e3f]">
             Sit active
           </span>
@@ -113,7 +103,7 @@ function SitterLayout() {
       <Suspense fallback={<TabSkeleton />}>
         <Outlet />
       </Suspense>
-      <EmergencyBar token={token} />
+      <EmergencyBar token={token} activeBirdId={ctx.activeBirdId} />
       <SitterOnboarding birds={ctx.birds} bird={ctx.bird} token={token} />
     </div>
   );

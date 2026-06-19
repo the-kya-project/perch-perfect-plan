@@ -22,6 +22,7 @@ import { Route as SitterTokenRouteRouteImport } from './routes/sitter/$token/rou
 import { Route as SitterTokenIndexRouteImport } from './routes/sitter/$token/index'
 import { Route as AuthenticatedNotificationsIndexRouteImport } from './routes/_authenticated/notifications.index'
 import { Route as SitterTokenScanRouteImport } from './routes/sitter/$token/scan'
+import { Route as SitterTokenHomeRouteImport } from './routes/sitter/$token/home'
 import { Route as SitterTokenGuideRouteImport } from './routes/sitter/$token/guide'
 import { Route as SitterTokenEmergencyRouteImport } from './routes/sitter/$token/emergency'
 import { Route as SitterTokenCareSheetRouteImport } from './routes/sitter/$token/care-sheet'
@@ -98,6 +99,11 @@ const SitterTokenScanRoute = SitterTokenScanRouteImport.update({
   path: '/scan',
   getParentRoute: () => SitterTokenRouteRoute,
 } as any)
+const SitterTokenHomeRoute = SitterTokenHomeRouteImport.update({
+  id: '/home',
+  path: '/home',
+  getParentRoute: () => SitterTokenRouteRoute,
+} as any)
 const SitterTokenGuideRoute = SitterTokenGuideRouteImport.update({
   id: '/guide',
   path: '/guide',
@@ -165,6 +171,7 @@ export interface FileRoutesByFullPath {
   '/sitter/$token/care-sheet': typeof SitterTokenCareSheetRoute
   '/sitter/$token/emergency': typeof SitterTokenEmergencyRoute
   '/sitter/$token/guide': typeof SitterTokenGuideRoute
+  '/sitter/$token/home': typeof SitterTokenHomeRoute
   '/sitter/$token/scan': typeof SitterTokenScanRoute
   '/notifications/': typeof AuthenticatedNotificationsIndexRoute
   '/sitter/$token/': typeof SitterTokenIndexRoute
@@ -185,6 +192,7 @@ export interface FileRoutesByTo {
   '/sitter/$token/care-sheet': typeof SitterTokenCareSheetRoute
   '/sitter/$token/emergency': typeof SitterTokenEmergencyRoute
   '/sitter/$token/guide': typeof SitterTokenGuideRoute
+  '/sitter/$token/home': typeof SitterTokenHomeRoute
   '/sitter/$token/scan': typeof SitterTokenScanRoute
   '/notifications': typeof AuthenticatedNotificationsIndexRoute
   '/sitter/$token': typeof SitterTokenIndexRoute
@@ -210,6 +218,7 @@ export interface FileRoutesById {
   '/sitter/$token/care-sheet': typeof SitterTokenCareSheetRoute
   '/sitter/$token/emergency': typeof SitterTokenEmergencyRoute
   '/sitter/$token/guide': typeof SitterTokenGuideRoute
+  '/sitter/$token/home': typeof SitterTokenHomeRoute
   '/sitter/$token/scan': typeof SitterTokenScanRoute
   '/_authenticated/notifications/': typeof AuthenticatedNotificationsIndexRoute
   '/sitter/$token/': typeof SitterTokenIndexRoute
@@ -235,6 +244,7 @@ export interface FileRouteTypes {
     | '/sitter/$token/care-sheet'
     | '/sitter/$token/emergency'
     | '/sitter/$token/guide'
+    | '/sitter/$token/home'
     | '/sitter/$token/scan'
     | '/notifications/'
     | '/sitter/$token/'
@@ -255,6 +265,7 @@ export interface FileRouteTypes {
     | '/sitter/$token/care-sheet'
     | '/sitter/$token/emergency'
     | '/sitter/$token/guide'
+    | '/sitter/$token/home'
     | '/sitter/$token/scan'
     | '/notifications'
     | '/sitter/$token'
@@ -279,6 +290,7 @@ export interface FileRouteTypes {
     | '/sitter/$token/care-sheet'
     | '/sitter/$token/emergency'
     | '/sitter/$token/guide'
+    | '/sitter/$token/home'
     | '/sitter/$token/scan'
     | '/_authenticated/notifications/'
     | '/sitter/$token/'
@@ -389,6 +401,13 @@ declare module '@tanstack/react-router' {
       path: '/scan'
       fullPath: '/sitter/$token/scan'
       preLoaderRoute: typeof SitterTokenScanRouteImport
+      parentRoute: typeof SitterTokenRouteRoute
+    }
+    '/sitter/$token/home': {
+      id: '/sitter/$token/home'
+      path: '/home'
+      fullPath: '/sitter/$token/home'
+      preLoaderRoute: typeof SitterTokenHomeRouteImport
       parentRoute: typeof SitterTokenRouteRoute
     }
     '/sitter/$token/guide': {
@@ -513,6 +532,7 @@ interface SitterTokenRouteRouteChildren {
   SitterTokenCareSheetRoute: typeof SitterTokenCareSheetRoute
   SitterTokenEmergencyRoute: typeof SitterTokenEmergencyRoute
   SitterTokenGuideRoute: typeof SitterTokenGuideRoute
+  SitterTokenHomeRoute: typeof SitterTokenHomeRoute
   SitterTokenScanRoute: typeof SitterTokenScanRoute
   SitterTokenIndexRoute: typeof SitterTokenIndexRoute
 }
@@ -521,6 +541,7 @@ const SitterTokenRouteRouteChildren: SitterTokenRouteRouteChildren = {
   SitterTokenCareSheetRoute: SitterTokenCareSheetRoute,
   SitterTokenEmergencyRoute: SitterTokenEmergencyRoute,
   SitterTokenGuideRoute: SitterTokenGuideRoute,
+  SitterTokenHomeRoute: SitterTokenHomeRoute,
   SitterTokenScanRoute: SitterTokenScanRoute,
   SitterTokenIndexRoute: SitterTokenIndexRoute,
 }
