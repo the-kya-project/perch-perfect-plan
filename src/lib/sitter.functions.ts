@@ -124,26 +124,32 @@ export const getSitterContext = createServerFn({ method: "GET" })
       .limit(1)
       .maybeSingle();
 
-    // First-open trigger: push the owner the very first time a sitter
-    // opens the care sheet for this sit. Uses sit_open_events as a unique
-    // marker so we never double-notify.
+    // First-open trigger: push the owner the very first time a sitter opens the
+    // care sheet for this sit. sit_open_events is a unique marker so we never
+    // double-notify. Run inline (serverless freezes the lambda after the
+    // response, so fire-and-forget work never executes) and isolated in
+    // try/catch so it can never break loading the sitter view.
     const ownerId = birdRes.data.owner_id as string;
     const birdName = birdRes.data.name as string | null;
-    void (async () => {
+    try {
       const ins = await sb
         .from("sit_open_events")
         .insert({ sit_id: sit.id })
         .select("sit_id")
         .maybeSingle();
-      if (!ins.data) return; // already opened before
-      const { sendPushToOwner } = await import("./pushSender.server");
-      await sendPushToOwner(ownerId, "sitter_opened", {
-        title: "Your sitter is on it",
-        body: `${birdName ?? "Your bird"}'s sitter just opened the care sheet.`,
-        url: "/dashboard",
-        tag: `sitter-opened-${sit.id}`,
-      });
-    })();
+      if (ins.data) { // newly inserted → first open
+        const { sendPushToOwner } = await import("./pushSender.server");
+        const res = await sendPushToOwner(ownerId, "sitter_opened", {
+          title: "Your sitter is on it",
+          body: `${birdName ?? "Your bird"}'s sitter just opened the care sheet.`,
+          url: "/dashboard",
+          tag: `sitter-opened-${sit.id}`,
+        });
+        console.log("[sitter-opened] push", res);
+      }
+    } catch (e) {
+      console.error("[sitter-opened] notify failed", e);
+    }
 
     // Generate signed URLs for owner-recorded "Watch first" clips on the active bird.
     // Clips are stored in the private bird-photos bucket; signed URLs ensure only
