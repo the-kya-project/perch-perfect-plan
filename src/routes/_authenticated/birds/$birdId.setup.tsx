@@ -480,6 +480,11 @@ function BasicsStep({ birdId, onBlockNext, registerFlush }: { birdId: string; on
           </BirdField>
         </div>
       </section>
+      {(!form.name?.trim() || !form.species?.trim()) && (
+        <p className="rounded-xl bg-warn-amber/10 px-3 py-2 text-xs font-medium text-warn-amber">
+          Add a name and species to continue.
+        </p>
+      )}
       <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.65rem .8rem;font-size:16px;outline:none}.input:focus{border-color:var(--sage-600);box-shadow:0 0 0 3px rgb(74 103 65 / .15)}`}</style>
     </div>
   );

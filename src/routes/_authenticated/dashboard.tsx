@@ -48,7 +48,7 @@ function Dashboard() {
   const [notifSeenAt] = useState(() => getNotifSeenAt());
   const unreadNotifs = scanFeed.filter((n) => new Date(n.created_at).getTime() > notifSeenAt).length;
 
-  const { data: birds = [] } = useQuery({
+  const { data: birds = [], isLoading: birdsLoading } = useQuery({
     queryKey: ["birds"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -156,15 +156,30 @@ function Dashboard() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-md space-y-6 px-5 py-6">
+      <main className="mx-auto max-w-md px-5 pb-6 pt-3">
         <Disclaimer compact />
 
+        <div className="mt-4 space-y-6">
         <section className="space-y-3">
           <div className="flex items-end justify-between">
             <h2 className="text-[21px] font-medium text-[#1a3d2e]">Your birds</h2>
             <Link to="/birds/new" className="text-sm font-medium text-[#1a3d2e]">+ Add bird</Link>
           </div>
-          {birds.length === 0 ? (
+          {birdsLoading ? (
+            // Skeleton while loading so an owner with birds never sees the empty
+            // state flash before their birds render.
+            <div className="space-y-4">
+              {[0, 1].map((i) => (
+                <div key={i} className="overflow-hidden rounded-[20px] bg-[#efe9da] shadow-sm">
+                  <div className="h-24 w-full animate-pulse bg-[#e3dcc9]" />
+                  <div className="space-y-2 p-4">
+                    <div className="h-4 w-1/3 animate-pulse rounded bg-[#e3dcc9]" />
+                    <div className="h-3 w-1/4 animate-pulse rounded bg-[#e3dcc9]" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : birds.length === 0 ? (
             <div className="rounded-[20px] border border-dashed border-[#d8cfb8] bg-[#efe9da] p-8 text-center">
               <BirdIcon className="mx-auto size-8 text-[#2d6a4f]" />
               <p className="mt-3 font-medium text-[#1a3d2e]">Add your first bird</p>
@@ -216,6 +231,7 @@ function Dashboard() {
         {birds.length > 0 && <DefaultsPanel />}
 
         <AddToHomeScreenPrompt />
+        </div>
       </main>
 
       <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.65rem .8rem;font-size:16px;outline:none}.input:focus{border-color:var(--sage-600);box-shadow:0 0 0 3px rgb(74 103 65 / .15)}.area{min-height:70px}`}</style>
