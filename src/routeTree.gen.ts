@@ -20,10 +20,12 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as SitterTokenRouteRouteImport } from './routes/sitter/$token/route'
 import { Route as SitterTokenIndexRouteImport } from './routes/sitter/$token/index'
+import { Route as AuthenticatedNotificationsIndexRouteImport } from './routes/_authenticated/notifications.index'
 import { Route as SitterTokenScanRouteImport } from './routes/sitter/$token/scan'
 import { Route as SitterTokenGuideRouteImport } from './routes/sitter/$token/guide'
 import { Route as SitterTokenEmergencyRouteImport } from './routes/sitter/$token/emergency'
 import { Route as SitterTokenCareSheetRouteImport } from './routes/sitter/$token/care-sheet'
+import { Route as AuthenticatedNotificationsSettingsRouteImport } from './routes/_authenticated/notifications.settings'
 import { Route as AuthenticatedBirdsNewRouteImport } from './routes/_authenticated/birds/new'
 import { Route as AuthenticatedBirdsBirdIdRouteImport } from './routes/_authenticated/birds/$birdId'
 import { Route as AuthenticatedBirdsBirdIdIndexRouteImport } from './routes/_authenticated/birds/$birdId.index'
@@ -85,6 +87,12 @@ const SitterTokenIndexRoute = SitterTokenIndexRouteImport.update({
   path: '/',
   getParentRoute: () => SitterTokenRouteRoute,
 } as any)
+const AuthenticatedNotificationsIndexRoute =
+  AuthenticatedNotificationsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedNotificationsRoute,
+  } as any)
 const SitterTokenScanRoute = SitterTokenScanRouteImport.update({
   id: '/scan',
   path: '/scan',
@@ -105,6 +113,12 @@ const SitterTokenCareSheetRoute = SitterTokenCareSheetRouteImport.update({
   path: '/care-sheet',
   getParentRoute: () => SitterTokenRouteRoute,
 } as any)
+const AuthenticatedNotificationsSettingsRoute =
+  AuthenticatedNotificationsSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedNotificationsRoute,
+  } as any)
 const AuthenticatedBirdsNewRoute = AuthenticatedBirdsNewRouteImport.update({
   id: '/birds/new',
   path: '/birds/new',
@@ -144,13 +158,15 @@ export interface FileRoutesByFullPath {
   '/sitter/$token': typeof SitterTokenRouteRouteWithChildren
   '/account': typeof AuthenticatedAccountRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
-  '/notifications': typeof AuthenticatedNotificationsRoute
+  '/notifications': typeof AuthenticatedNotificationsRouteWithChildren
   '/birds/$birdId': typeof AuthenticatedBirdsBirdIdRouteWithChildren
   '/birds/new': typeof AuthenticatedBirdsNewRoute
+  '/notifications/settings': typeof AuthenticatedNotificationsSettingsRoute
   '/sitter/$token/care-sheet': typeof SitterTokenCareSheetRoute
   '/sitter/$token/emergency': typeof SitterTokenEmergencyRoute
   '/sitter/$token/guide': typeof SitterTokenGuideRoute
   '/sitter/$token/scan': typeof SitterTokenScanRoute
+  '/notifications/': typeof AuthenticatedNotificationsIndexRoute
   '/sitter/$token/': typeof SitterTokenIndexRoute
   '/birds/$birdId/setup': typeof AuthenticatedBirdsBirdIdSetupRoute
   '/api/public/hooks/care-plan-reminders': typeof ApiPublicHooksCarePlanRemindersRoute
@@ -164,12 +180,13 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/account': typeof AuthenticatedAccountRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
-  '/notifications': typeof AuthenticatedNotificationsRoute
   '/birds/new': typeof AuthenticatedBirdsNewRoute
+  '/notifications/settings': typeof AuthenticatedNotificationsSettingsRoute
   '/sitter/$token/care-sheet': typeof SitterTokenCareSheetRoute
   '/sitter/$token/emergency': typeof SitterTokenEmergencyRoute
   '/sitter/$token/guide': typeof SitterTokenGuideRoute
   '/sitter/$token/scan': typeof SitterTokenScanRoute
+  '/notifications': typeof AuthenticatedNotificationsIndexRoute
   '/sitter/$token': typeof SitterTokenIndexRoute
   '/birds/$birdId/setup': typeof AuthenticatedBirdsBirdIdSetupRoute
   '/api/public/hooks/care-plan-reminders': typeof ApiPublicHooksCarePlanRemindersRoute
@@ -186,13 +203,15 @@ export interface FileRoutesById {
   '/sitter/$token': typeof SitterTokenRouteRouteWithChildren
   '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
-  '/_authenticated/notifications': typeof AuthenticatedNotificationsRoute
+  '/_authenticated/notifications': typeof AuthenticatedNotificationsRouteWithChildren
   '/_authenticated/birds/$birdId': typeof AuthenticatedBirdsBirdIdRouteWithChildren
   '/_authenticated/birds/new': typeof AuthenticatedBirdsNewRoute
+  '/_authenticated/notifications/settings': typeof AuthenticatedNotificationsSettingsRoute
   '/sitter/$token/care-sheet': typeof SitterTokenCareSheetRoute
   '/sitter/$token/emergency': typeof SitterTokenEmergencyRoute
   '/sitter/$token/guide': typeof SitterTokenGuideRoute
   '/sitter/$token/scan': typeof SitterTokenScanRoute
+  '/_authenticated/notifications/': typeof AuthenticatedNotificationsIndexRoute
   '/sitter/$token/': typeof SitterTokenIndexRoute
   '/_authenticated/birds/$birdId/setup': typeof AuthenticatedBirdsBirdIdSetupRoute
   '/api/public/hooks/care-plan-reminders': typeof ApiPublicHooksCarePlanRemindersRoute
@@ -212,10 +231,12 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/birds/$birdId'
     | '/birds/new'
+    | '/notifications/settings'
     | '/sitter/$token/care-sheet'
     | '/sitter/$token/emergency'
     | '/sitter/$token/guide'
     | '/sitter/$token/scan'
+    | '/notifications/'
     | '/sitter/$token/'
     | '/birds/$birdId/setup'
     | '/api/public/hooks/care-plan-reminders'
@@ -229,12 +250,13 @@ export interface FileRouteTypes {
     | '/terms'
     | '/account'
     | '/dashboard'
-    | '/notifications'
     | '/birds/new'
+    | '/notifications/settings'
     | '/sitter/$token/care-sheet'
     | '/sitter/$token/emergency'
     | '/sitter/$token/guide'
     | '/sitter/$token/scan'
+    | '/notifications'
     | '/sitter/$token'
     | '/birds/$birdId/setup'
     | '/api/public/hooks/care-plan-reminders'
@@ -253,10 +275,12 @@ export interface FileRouteTypes {
     | '/_authenticated/notifications'
     | '/_authenticated/birds/$birdId'
     | '/_authenticated/birds/new'
+    | '/_authenticated/notifications/settings'
     | '/sitter/$token/care-sheet'
     | '/sitter/$token/emergency'
     | '/sitter/$token/guide'
     | '/sitter/$token/scan'
+    | '/_authenticated/notifications/'
     | '/sitter/$token/'
     | '/_authenticated/birds/$birdId/setup'
     | '/api/public/hooks/care-plan-reminders'
@@ -353,6 +377,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SitterTokenIndexRouteImport
       parentRoute: typeof SitterTokenRouteRoute
     }
+    '/_authenticated/notifications/': {
+      id: '/_authenticated/notifications/'
+      path: '/'
+      fullPath: '/notifications/'
+      preLoaderRoute: typeof AuthenticatedNotificationsIndexRouteImport
+      parentRoute: typeof AuthenticatedNotificationsRoute
+    }
     '/sitter/$token/scan': {
       id: '/sitter/$token/scan'
       path: '/scan'
@@ -380,6 +411,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/sitter/$token/care-sheet'
       preLoaderRoute: typeof SitterTokenCareSheetRouteImport
       parentRoute: typeof SitterTokenRouteRoute
+    }
+    '/_authenticated/notifications/settings': {
+      id: '/_authenticated/notifications/settings'
+      path: '/settings'
+      fullPath: '/notifications/settings'
+      preLoaderRoute: typeof AuthenticatedNotificationsSettingsRouteImport
+      parentRoute: typeof AuthenticatedNotificationsRoute
     }
     '/_authenticated/birds/new': {
       id: '/_authenticated/birds/new'
@@ -419,6 +457,23 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedNotificationsRouteChildren {
+  AuthenticatedNotificationsSettingsRoute: typeof AuthenticatedNotificationsSettingsRoute
+  AuthenticatedNotificationsIndexRoute: typeof AuthenticatedNotificationsIndexRoute
+}
+
+const AuthenticatedNotificationsRouteChildren: AuthenticatedNotificationsRouteChildren =
+  {
+    AuthenticatedNotificationsSettingsRoute:
+      AuthenticatedNotificationsSettingsRoute,
+    AuthenticatedNotificationsIndexRoute: AuthenticatedNotificationsIndexRoute,
+  }
+
+const AuthenticatedNotificationsRouteWithChildren =
+  AuthenticatedNotificationsRoute._addFileChildren(
+    AuthenticatedNotificationsRouteChildren,
+  )
+
 interface AuthenticatedBirdsBirdIdRouteChildren {
   AuthenticatedBirdsBirdIdSetupRoute: typeof AuthenticatedBirdsBirdIdSetupRoute
   AuthenticatedBirdsBirdIdIndexRoute: typeof AuthenticatedBirdsBirdIdIndexRoute
@@ -438,7 +493,7 @@ const AuthenticatedBirdsBirdIdRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountRoute: typeof AuthenticatedAccountRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
-  AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRoute
+  AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRouteWithChildren
   AuthenticatedBirdsBirdIdRoute: typeof AuthenticatedBirdsBirdIdRouteWithChildren
   AuthenticatedBirdsNewRoute: typeof AuthenticatedBirdsNewRoute
 }
@@ -446,7 +501,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAccountRoute: AuthenticatedAccountRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
-  AuthenticatedNotificationsRoute: AuthenticatedNotificationsRoute,
+  AuthenticatedNotificationsRoute: AuthenticatedNotificationsRouteWithChildren,
   AuthenticatedBirdsBirdIdRoute: AuthenticatedBirdsBirdIdRouteWithChildren,
   AuthenticatedBirdsNewRoute: AuthenticatedBirdsNewRoute,
 }
@@ -486,3 +541,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

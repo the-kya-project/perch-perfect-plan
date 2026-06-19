@@ -21,6 +21,7 @@ type Tab = (typeof TAB_IDS)[number];
 
 const birdSearch = z.object({
   tab: z.enum(TAB_IDS).optional(),
+  scan: z.string().uuid().optional(), // deep-link from a notification to a scan
 });
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/")({
@@ -31,10 +32,10 @@ export const Route = createFileRoute("/_authenticated/birds/$birdId/")({
 
 function BirdEditor() {
   const { birdId } = Route.useParams();
-  const { tab: tabParam } = Route.useSearch();
+  const { tab: tabParam, scan: scanParam } = Route.useSearch();
   const qc = useQueryClient();
-  const [tab, setTab] = useState<Tab>(tabParam ?? "basics");
-  useEffect(() => { if (tabParam) setTab(tabParam); }, [tabParam]);
+  const [tab, setTab] = useState<Tab>(tabParam ?? (scanParam ? "logs" : "basics"));
+  useEffect(() => { if (tabParam) setTab(tabParam); else if (scanParam) setTab("logs"); }, [tabParam, scanParam]);
 
   // Edge fades so the tab strip reads as scrollable.
   const tabStripRef = useRef<HTMLDivElement>(null);
@@ -199,7 +200,7 @@ function BirdEditor() {
         {tab === "routine" && plan && <RoutineEditor planId={plan.id} tasks={tasks} onChange={() => qc.invalidateQueries({ queryKey: ["tasks", plan.id] })} />}
         {tab === "emergency" && contacts && <ContactsForm birdId={birdId} contacts={contacts} defaults={defaults ?? null} onSaved={() => qc.invalidateQueries({ queryKey: ["contacts", birdId] })} />}
         {tab === "sits" && <SitsPanel birdId={birdId} sits={sits} onChange={() => qc.invalidateQueries({ queryKey: ["sits", birdId] })} />}
-        {tab === "logs" && <LogsPanel birdId={birdId} />}
+        {tab === "logs" && <LogsPanel birdId={birdId} initialScan={scanParam} />}
       </main>
 
       <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.65rem .8rem;font-size:16px;outline:none}.input:focus{border-color:var(--sage-600);box-shadow:0 0 0 3px rgb(74 103 65 / .15)}.area{min-height:80px;line-height:1.4}`}</style>
@@ -803,12 +804,22 @@ function SitsPanel({ birdId, sits, onChange }: { birdId: string; sits: any[]; on
   );
 }
 
-function LogsPanel({ birdId }: { birdId: string }) {
+function LogsPanel({ birdId, initialScan }: { birdId: string; initialScan?: string }) {
   const qc = useQueryClient();
   const [weight, setWeight] = useState("");
   const [wNotes, setWNotes] = useState("");
   const [saving, setSaving] = useState(false);
-  const [expandedScan, setExpandedScan] = useState<string | null>(null);
+  const [expandedScan, setExpandedScan] = useState<string | null>(initialScan ?? null);
+
+  // Deep link from a notification: expand and scroll to that scan once rendered.
+  useEffect(() => {
+    if (!initialScan) return;
+    setExpandedScan(initialScan);
+    const t = setTimeout(() => {
+      document.getElementById(`scan-${initialScan}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 150);
+    return () => clearTimeout(t);
+  }, [initialScan]);
 
   const { data: weights = [] } = useQuery({
     queryKey: ["weights", birdId],
@@ -820,7 +831,12 @@ function LogsPanel({ birdId }: { birdId: string }) {
   const { data: daily = [] } = useQuery({
     queryKey: ["daily-logs", birdId],
     queryFn: async () => {
-      const { data } = await supabase.from("daily_logs").select("*").eq("bird_id", birdId).order("created_at", { ascending: false }).limit(30);
+      const { data } = await supabase
+        .from("daily_logs")
+        .select("*, sit:sits(sitter_name, sitter_email)")
+        .eq("bird_id", birdId)
+        .order("created_at", { ascending: false })
+        .limit(30);
       return data ?? [];
     },
   });
@@ -862,9 +878,11 @@ function LogsPanel({ birdId }: { birdId: string }) {
     { col: "posture_status", label: "Perched normally" },
     { col: "behavior_status", label: "Vocalizing as usual" },
     { col: "energy_status", label: "Not fluffed for long stretches" },
+    { col: "vomiting_status", label: "Face clean, no vomiting" },
     { col: "injury_status", label: "No injury, fall, bite, or scratch" },
     { col: "exposure_status", label: "No exposure to fumes / unsafe items" },
   ];
+  const sitterLabel = (d: any) => d.sit?.sitter_name || d.sit?.sitter_email || "Sitter";
   const severityRank = (s: string) => (s === "red" ? 0 : s === "yellow" ? 1 : 2);
   const sortedDaily = [...daily].sort((a: any, b: any) => {
     const r = severityRank(a.triage_status) - severityRank(b.triage_status);
@@ -914,6 +932,7 @@ function LogsPanel({ birdId }: { birdId: string }) {
             {sortedDaily.map((d: any) => {
               const isOpen = expandedScan === d.id;
               const needsAttention = d.triage_status === "red" || d.triage_status === "yellow";
+              const notSureItems = SCAN_COLS.filter((f) => d[f.col] === "not_sure");
               const linkedPhotos = photos.filter((p: any) => p.daily_log_id === d.id);
               const wrap = d.triage_status === "red"
                 ? "border-2 border-warn-red bg-warn-red/5"
@@ -921,7 +940,7 @@ function LogsPanel({ birdId }: { birdId: string }) {
                 ? "border-2 border-warn-amber bg-warn-amber/5"
                 : "border border-sage-100 bg-sage-50";
               return (
-                <li key={d.id} className={`rounded-xl ${wrap}`}>
+                <li key={d.id} id={`scan-${d.id}`} className={`rounded-xl ${wrap}`}>
                   <button
                     type="button"
                     onClick={() => setExpandedScan(isOpen ? null : d.id)}
@@ -938,14 +957,30 @@ function LogsPanel({ birdId }: { birdId: string }) {
                               Needs attention
                             </span>
                           )}
+                          {notSureItems.length > 0 && (
+                            <span className="rounded-full bg-warn-amber/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-warn-amber">
+                              {notSureItems.length} need{notSureItems.length === 1 ? "s" : ""} your input
+                            </span>
+                          )}
                         </div>
-                        <p className="mt-1 text-[11px] text-sage-600">{new Date(d.created_at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</p>
+                        <p className="mt-1 text-[11px] text-sage-600">
+                          {new Date(d.created_at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })} · {sitterLabel(d)}
+                        </p>
                       </div>
                     </div>
                     <ChevronDown className={`size-4 shrink-0 text-sage-500 transition ${isOpen ? "rotate-180" : ""}`} />
                   </button>
                   {isOpen && (
                     <div className="space-y-3 border-t border-sage-100 px-3 py-3">
+                      {notSureItems.length > 0 && (
+                        <div className="rounded-xl border border-warn-amber/40 bg-warn-amber/10 p-3">
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-warn-amber">Awaiting your response</p>
+                          <p className="mt-1 text-[11px] text-sage-700">{sitterLabel(d)} wasn't sure about these and is looking for your input:</p>
+                          <ul className="mt-2 list-disc space-y-0.5 pl-5 text-xs font-medium text-sage-800">
+                            {notSureItems.map((f) => <li key={f.col}>{f.label}</li>)}
+                          </ul>
+                        </div>
+                      )}
                       <div>
                         <p className="text-[10px] font-bold uppercase tracking-widest text-sage-600">Per-question answers</p>
                         <ul className="mt-2 space-y-1.5">

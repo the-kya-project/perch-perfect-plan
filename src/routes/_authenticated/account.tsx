@@ -203,7 +203,7 @@ function AccountPage() {
         </section>
 
         <Link
-          to="/notifications"
+          to="/notifications/settings"
           className="mt-4 flex items-center justify-between gap-3 rounded-2xl bg-white p-4 ring-1 ring-sage-100"
         >
           <div className="flex items-center gap-3">
