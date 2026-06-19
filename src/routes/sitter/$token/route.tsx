@@ -4,8 +4,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { Suspense, useEffect, useRef } from "react";
 import { z } from "zod";
 import { getSitterContext } from "@/lib/sitter.functions";
+import { HelpCircle } from "lucide-react";
 import { EmergencyBar } from "@/components/EmergencyBar";
-import { SitterOnboarding } from "@/components/SitterOnboarding";
+import { SitterOnboarding, replaySitterOnboarding } from "@/components/SitterOnboarding";
 import { presentCareSections } from "@/lib/sitterCareSections";
 import { track } from "@/lib/analytics";
 
@@ -96,9 +97,22 @@ function SitterLayout() {
               </div>
             </>
           )}
-          <span className="ml-auto shrink-0 rounded-full bg-[#d6e8dc] px-2.5 py-1 text-[11px] font-medium text-[#1a5e3f]">
-            Sit active
-          </span>
+          <div className="ml-auto flex shrink-0 items-center gap-2">
+            <span className="shrink-0 rounded-full bg-[#d6e8dc] px-2.5 py-1 text-[11px] font-medium text-[#1a5e3f]">
+              Sit active
+            </span>
+            {/* Persistent walkthrough replay — consistent top-right on every screen
+                except Home, where the labeled "Walkthrough" chip serves this role. */}
+            {!onHome && (
+              <button
+                onClick={replaySitterOnboarding}
+                aria-label="Replay walkthrough"
+                className="grid size-7 shrink-0 place-items-center rounded-full bg-[#e8f0ec] text-[#2d6a4f] active:scale-95"
+              >
+                <HelpCircle className="size-4" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
       <Suspense fallback={<TabSkeleton />}>

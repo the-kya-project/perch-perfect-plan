@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate, useRouter } from "@tanstack/react-router";
 import { AlertTriangle, ChevronLeft } from "lucide-react";
 
 // First-visit sitter onboarding: a two-screen welcome, then a coach-mark bubble
@@ -53,7 +53,11 @@ export function SitterOnboarding({ birds, bird, careSections, token }: { birds: 
   const [step, setStep] = useState(0);
   const [spot, setSpot] = useState<Spot | null>(null);
   const navigate = useNavigate();
+  const router = useRouter();
   const stepRef = useRef(0);
+  // When replayed from a header chip / "?" icon, remember where the sitter was so
+  // we can return them there when the walkthrough ends (first-run has no origin).
+  const replayReturnRef = useRef<string | null>(null);
 
   const list = Array.isArray(birds) && birds.length ? birds : bird ? [bird] : [];
   const names = list.map((b) => (b?.name ?? "").toString().trim()).filter(Boolean);
@@ -134,7 +138,12 @@ export function SitterOnboarding({ birds, bird, careSections, token }: { birds: 
     try {
       if (!window.localStorage.getItem(SEEN_KEY)) setPhase("welcome");
     } catch {}
-    const onReplay = () => { setStep(0); stepRef.current = 0; setPhase("welcome"); };
+    const onReplay = () => {
+      replayReturnRef.current = router.state.location.href;
+      setStep(0);
+      stepRef.current = 0;
+      setPhase("welcome");
+    };
     window.addEventListener(REPLAY_EVENT, onReplay);
     return () => window.removeEventListener(REPLAY_EVENT, onReplay);
   }, []);
@@ -201,11 +210,14 @@ export function SitterOnboarding({ birds, bird, careSections, token }: { birds: 
     try { window.localStorage.setItem(SEEN_KEY, "1"); } catch {}
     setPhase(null);
   }
-  // Skip / Done: dismiss and land on the Today tab (matters when replayed from
-  // another tab like the Guide).
+  // Skip / Done: dismiss. On replay, return the sitter to where they launched it;
+  // on first run, land on the Today tab.
   function dismissToToday() {
     markSeenAndClose();
-    navigate({ to: "/sitter/$token", params: { token } });
+    const ret = replayReturnRef.current;
+    replayReturnRef.current = null;
+    if (ret) router.history.push(ret);
+    else navigate({ to: "/sitter/$token", params: { token } });
   }
 
   function startCoach() {
