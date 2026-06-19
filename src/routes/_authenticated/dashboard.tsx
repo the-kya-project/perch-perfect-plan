@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { computeSetupCompleteness } from "@/lib/setupCompleteness";
 import { track } from "@/lib/analytics";
 import { AddToHomeScreenPrompt } from "@/components/AddToHomeScreenPrompt";
+import { fetchScanFeed, getNotifSeenAt } from "@/lib/notificationsFeed";
 
 const dashboardSearch = z.object({
   newSit: z.coerce.boolean().optional(),
@@ -40,6 +41,11 @@ function Dashboard() {
   });
   const firstName = (profile?.display_name ?? "").trim().split(/\s+/)[0] || "";
   const greeting = firstName ? `Welcome, ${firstName}!` : "Welcome!";
+
+  // Unread scan notifications for the bell badge (seen state is per-device).
+  const { data: scanFeed = [] } = useQuery({ queryKey: ["scan-feed"], queryFn: fetchScanFeed });
+  const [notifSeenAt] = useState(() => getNotifSeenAt());
+  const unreadNotifs = scanFeed.filter((n) => new Date(n.created_at).getTime() > notifSeenAt).length;
 
   const { data: birds = [] } = useQuery({
     queryKey: ["birds"],
@@ -131,8 +137,13 @@ function Dashboard() {
         <div className="mx-auto flex max-w-md items-center justify-between gap-3 px-5 pb-6 pt-3">
           <h1 className="text-[27px] font-medium leading-tight text-white">{greeting}</h1>
           <div className="flex items-center gap-1 text-white">
-            <Link to="/notifications" className="rounded-full p-2 hover:bg-white/10" aria-label="Notifications">
+            <Link to="/notifications" className="relative rounded-full p-2 hover:bg-white/10" aria-label="Notifications">
               <Bell className="size-5" />
+              {unreadNotifs > 0 && (
+                <span className="absolute right-0.5 top-0.5 flex min-w-[16px] items-center justify-center rounded-full bg-warn-red px-1 text-[10px] font-bold leading-4 text-white">
+                  {unreadNotifs > 9 ? "9+" : unreadNotifs}
+                </span>
+              )}
             </Link>
             <Link to="/account" className="rounded-full p-2 hover:bg-white/10" aria-label="Account settings">
               <Settings className="size-5" />
