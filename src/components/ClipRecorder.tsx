@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Video, Square, RotateCcw, Check, AlertTriangle, Upload, Loader2 } from "lucide-react";
-import { compressVideo, type CompressStage } from "@/lib/videoCompress";
+import { createClipUpload, getClipStatus } from "@/lib/clips.functions";
+import { cfRef } from "@/lib/clipRef";
 
 /**
  * Clip recorder + uploader.
@@ -13,13 +14,13 @@ import { compressVideo, type CompressStage } from "@/lib/videoCompress";
  *   playback of the captured clip and can keep it or re-record.
  *
  * Upload path (file picker):
- * - Accepts an existing video (incl. iPhone HEVC .mov), validates type/duration,
- *   then COMPRESSES it in-browser to a small H.264 MP4 (ffmpeg.wasm, loaded
- *   lazily) before handing it off. If compression can't run, the original is
- *   uploaded instead (subject to the raw size limit).
+ * - Accepts an existing video (incl. iPhone HEVC .mov), validates type/duration.
  *
- * Both paths hand the same File to onRecorded, so storage and playback are
- * identical regardless of source.
+ * Both paths upload the raw clip to Cloudflare Stream (direct upload), which
+ * transcodes it server-side to H.264 that plays everywhere — no slow on-device
+ * compression. The recorder shows "Uploading…" then "Processing…", then hands
+ * the resulting "cfstream:<uid>" reference to onUploaded for the parent to
+ * persist on the clip column.
  */
 export const MAX_SECONDS = 60; // 1 min cap — bounds file size and keeps clips short
 // Generous raw limit so a 1-minute iPhone original (HEVC .mov, often 80–150MB at
@@ -75,7 +76,48 @@ function readDuration(file: File): Promise<number | null> {
   });
 }
 
-/** Prominent, labeled progress block shared by the checking/compressing/uploading states. */
+/** POST a file to a Cloudflare one-time upload URL with upload progress. */
+function xhrUpload(url: string, file: File, onProgress: (pct: number) => void): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", url, true);
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
+    };
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) resolve();
+      else reject(new Error(`Upload failed (${xhr.status})`));
+    };
+    xhr.onerror = () => reject(new Error("Network error during upload"));
+    xhr.ontimeout = () => reject(new Error("Upload timed out"));
+    const fd = new FormData();
+    fd.append("file", file, file.name || "clip");
+    xhr.send(fd);
+  });
+}
+
+/** Poll the transcode status until ready (best-effort; resolves on timeout so a
+ *  still-processing clip's reference is still saved). Throws on transcode error. */
+async function waitForReady(uid: string): Promise<void> {
+  const deadline = Date.now() + 150000; // ~2.5 min
+  while (Date.now() < deadline) {
+    let s: any = null;
+    try { s = await getClipStatus({ data: { uid } }); } catch {}
+    if (s?.readyToStream) return;
+    if (s?.state === "error") throw new Error("This video couldn't be processed. Please try a different clip.");
+    await new Promise((r) => setTimeout(r, 2500));
+  }
+}
+
+function friendlyUploadError(err: any): string {
+  const m = String(err?.message ?? "");
+  if (/not configured/i.test(m)) return "Video uploads aren't set up yet — please try again later.";
+  if (/processed/i.test(m)) return m;
+  if (/network|timed out|failed \(/i.test(m)) return "Upload failed — check your connection and try again.";
+  return "Upload failed. Please try again.";
+}
+
+/** Prominent, labeled progress block shared by the checking/uploading/processing states. */
 export function UploadProgress({ label, hint, ratio }: { label: string; hint?: string; ratio?: number }) {
   const pct = typeof ratio === "number" ? Math.max(0, Math.min(100, Math.round(ratio * 100))) : null;
   return (
@@ -103,19 +145,18 @@ export function UploadProgress({ label, hint, ratio }: { label: string; hint?: s
 export function ClipRecorder({
   baseName,
   disabled,
-  uploading,
   onBusy,
-  onRecorded,
+  onUploaded,
 }: {
-  /** File base name (without extension), e.g. "clip-feeding". */
-  baseName: string;
+  /** Unused label retained for call-site compatibility. */
+  baseName?: string;
   disabled?: boolean;
-  /** Parent is uploading the handed-off file to storage — show a prominent bar. */
-  uploading?: boolean;
-  /** Fires true while the recorder is mid-flow (framing, recording, compressing)
-   *  so the parent can disable Next / re-trigger. */
+  /** Fires true while the recorder is mid-flow (framing, recording, uploading,
+   *  processing) so the parent can disable Next / re-trigger. */
   onBusy?: (busy: boolean) => void;
-  onRecorded: (file: File) => void | Promise<void>;
+  /** Receives the persisted clip reference ("cfstream:<uid>") once the upload
+   *  to Cloudflare Stream completes; the parent saves it on the clip column. */
+  onUploaded: (ref: string) => void | Promise<void>;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -132,7 +173,7 @@ export function ClipRecorder({
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
-  const [compress, setCompress] = useState<{ stage: CompressStage; progress: number } | null>(null);
+  const [stage, setStage] = useState<{ kind: "uploading" | "processing"; pct?: number } | null>(null);
   const [recordedUrl, setRecordedUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -158,10 +199,10 @@ export function ClipRecorder({
   // recording, or compressing). Upload-to-storage is signalled separately via
   // the `uploading` prop the parent already controls.
   useEffect(() => {
-    const busy = checking || !!compress || phase === "ready" || phase === "recording" || phase === "stopping" || phase === "review";
+    const busy = checking || !!stage || phase === "ready" || phase === "recording" || phase === "stopping" || phase === "review";
     onBusy?.(busy);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [checking, compress, phase]);
+  }, [checking, stage, phase]);
 
   function revokeRecorded() {
     if (recordedUrlRef.current) { try { URL.revokeObjectURL(recordedUrlRef.current); } catch {} recordedUrlRef.current = null; }
@@ -261,7 +302,7 @@ export function ClipRecorder({
     if (!blob.size) { setPhase("idle"); setError("No video was captured. Please try recording again."); return; }
     if (blob.size > MAX_BYTES) { setPhase("idle"); setError("That recording is too large. Please record a shorter clip."); return; }
 
-    recordedFileRef.current = new File([blob], `${baseName}.${cand.ext}`, { type: cand.contentType });
+    recordedFileRef.current = new File([blob], `${baseName ?? "clip"}.${cand.ext}`, { type: cand.contentType });
     revokeRecorded();
     const url = URL.createObjectURL(blob);
     recordedUrlRef.current = url;
@@ -269,21 +310,41 @@ export function ClipRecorder({
     setPhase("review");
   }
 
+  // Upload the raw clip to Cloudflare Stream, wait for transcode, hand the
+  // "cfstream:<uid>" reference to the parent. Returns true on success.
+  async function uploadToStream(file: File): Promise<boolean> {
+    setError(null);
+    setNote(null);
+    onBusy?.(true);
+    try {
+      setStage({ kind: "uploading", pct: 0 });
+      const { uploadURL, uid } = await createClipUpload();
+      await xhrUpload(uploadURL, file, (pct) => setStage({ kind: "uploading", pct }));
+      setStage({ kind: "processing" });
+      await waitForReady(uid);
+      await onUploaded(cfRef(uid));
+      return true;
+    } catch (err) {
+      console.error("[clip] upload failed", err);
+      setError(friendlyUploadError(err));
+      return false;
+    } finally {
+      setStage(null);
+      onBusy?.(false);
+    }
+  }
+
   async function useRecorded() {
     const file = recordedFileRef.current;
     if (!file) return;
-    // Recordings are already 720p and modestly sized, so they skip the ffmpeg
-    // compression step and go straight to upload.
-    onBusy?.(true);
-    try {
-      await onRecorded(file);
-    } finally {
-      onBusy?.(false);
+    const ok = await uploadToStream(file);
+    if (ok) {
       revokeRecorded();
       setRecordedUrl(null);
       recordedFileRef.current = null;
       setPhase("idle");
     }
+    // On failure, stay on the review screen so they can retry "Use this clip".
   }
 
   function reRecord() {
@@ -329,32 +390,8 @@ export function ClipRecorder({
       return;
     }
 
-    // Compress in-browser (HEVC/.mov → small H.264 .mp4) before upload. Best
-    // effort: any failure falls back to uploading the original.
-    onBusy?.(true);
-    let out = file;
-    try {
-      setCompress({ stage: "loading", progress: 0 });
-      const compressed = await compressVideo(file, {
-        baseName,
-        onStage: (s) => setCompress((c) => ({ stage: s, progress: s === "loading" ? 0 : (c?.progress ?? 0) })),
-        onProgress: (r) => setCompress({ stage: "compressing", progress: r }),
-      });
-      // Prefer the re-encoded MP4 (plays everywhere) as long as it fits.
-      out = compressed.size > 0 && compressed.size <= MAX_BYTES ? compressed : file;
-    } catch (err) {
-      console.error("[videoCompress] failed; uploading original instead", err);
-      out = file;
-      setNote("Couldn't compress this video on your device — uploading the original instead, which may take a bit longer.");
-    } finally {
-      setCompress(null);
-    }
-
-    try {
-      await onRecorded(out);
-    } finally {
-      onBusy?.(false);
-    }
+    // Upload the raw clip straight to Cloudflare Stream (it transcodes server-side).
+    await uploadToStream(file);
   }
 
   // ---- Render ----------------------------------------------------------------
@@ -373,23 +410,19 @@ export function ClipRecorder({
   );
 
   // Progress states take over the whole control (no record/upload affordances to
-  // re-trigger). Order: compressing → uploading → checking.
-  if (compress) {
+  // re-trigger). Order: uploading/processing → checking.
+  if (stage) {
     return (
       <div className="space-y-2">
         <UploadProgress
-          label={compress.stage === "loading" ? "Preparing video tools…" : "Compressing video…"}
-          ratio={compress.stage === "compressing" ? compress.progress : undefined}
-          hint="This can take a moment, especially on older phones. Please keep this screen open."
+          label={stage.kind === "uploading" ? "Uploading…" : "Processing video…"}
+          ratio={stage.kind === "uploading" ? (stage.pct ?? 0) / 100 : undefined}
+          hint={
+            stage.kind === "uploading"
+              ? "Sending your clip to be converted. Please keep this screen open."
+              : "Converting your clip so it plays on every device — usually just a few seconds. Please keep this screen open."
+          }
         />
-        {noteEl}
-      </div>
-    );
-  }
-  if (uploading) {
-    return (
-      <div className="space-y-2">
-        <UploadProgress label="Uploading…" hint="Almost there — please keep this screen open." />
         {noteEl}
       </div>
     );
