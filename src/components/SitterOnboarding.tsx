@@ -24,14 +24,31 @@ function formatNames(names: string[]): string {
   return `${n.slice(0, -1).join(", ")}, and ${n[n.length - 1]}`;
 }
 
-type CoachStep = { target: string; text: string; place: "top" | "bottom" | "auto"; route: "home" | "today"; emphasis?: boolean };
+function objectPronoun(sex: string | null | undefined): string {
+  const s = (sex ?? "").toString().trim().toLowerCase();
+  return s.startsWith("f") ? "her" : s.startsWith("m") ? "him" : "them";
+}
+function possessivePronoun(sex: string | null | undefined): string {
+  const s = (sex ?? "").toString().trim().toLowerCase();
+  return s.startsWith("f") ? "her" : s.startsWith("m") ? "his" : "their";
+}
+
+const CP_TARGET: Record<string, string> = {
+  food: "cp-food",
+  handling: "cp-handling",
+  home: "cp-home",
+  health: "cp-health",
+  emergency: "cp-emergency",
+};
+
+type CoachStep = { target: string; text: string; place: "top" | "bottom" | "auto"; route: "home" | "today" | "careplan"; emphasis?: boolean };
 type Phase = null | "welcome" | "overview" | "coach";
 type Spot = { rect: { top: number; left: number; width: number; height: number; bottom: number } | null; vw: number; vh: number };
 
 const PAD = 6;
 const GAP = 12;
 
-export function SitterOnboarding({ birds, bird, token }: { birds: any[]; bird: any; token: string }) {
+export function SitterOnboarding({ birds, bird, careSections, token }: { birds: any[]; bird: any; careSections?: string[]; token: string }) {
   const [phase, setPhase] = useState<Phase>(null);
   const [step, setStep] = useState(0);
   const [spot, setSpot] = useState<Spot | null>(null);
@@ -42,9 +59,21 @@ export function SitterOnboarding({ birds, bird, token }: { birds: any[]; bird: a
   const names = list.map((b) => (b?.name ?? "").toString().trim()).filter(Boolean);
   const allNames = formatNames(names);
   const activeName = (bird?.name ?? names[0] ?? "your bird").toString().trim() || "your bird";
+  const obj = objectPronoun(bird?.sex);
+  const poss = possessivePronoun(bird?.sex);
+  // Stable key so a new careSections array ref each render doesn't rebuild steps.
+  const careKey = (careSections ?? []).join(",");
 
   const steps = useMemo<CoachStep[]>(() => {
     const s: CoachStep[] = [];
+    const cpText: Record<string, string> = {
+      food: `What ${activeName} eats, how much, and when.`,
+      handling: `How to interact with ${activeName} safely.`,
+      home: `${activeName}'s environment and what to watch for.`,
+      health: `${activeName}'s normal baseline and any conditions.`,
+      emergency: "Vet and owner contacts if something's wrong.",
+    };
+
     s.push({
       target: "nav-home",
       route: "home",
@@ -59,18 +88,36 @@ export function SitterOnboarding({ birds, bird, token }: { birds: any[]; bird: a
         text: `Tap a bird to see their day and check in on them. You can switch between ${allNames} anytime.`,
       });
     }
+
+    // Full care plan: the bird-specific source of truth (distinct from Parrots 101).
+    s.push({
+      target: "care-plan-link",
+      route: "today",
+      place: "auto",
+      text: `This is ${activeName}'s full care plan — everything specific to ${obj}: ${poss} food, routine, handling, home, and emergency info. This is your source of truth for caring for ${obj}.`,
+    });
+    for (const key of careSections ?? []) {
+      if (CP_TARGET[key]) s.push({ target: CP_TARGET[key], route: "careplan", place: "auto", text: cpText[key] });
+    }
+    s.push({
+      target: "cp-header",
+      route: "careplan",
+      place: "auto",
+      text: `Remember — this care plan is specific to ${activeName}. Parrots 101 is general parrot care; come here for what's true for ${obj}.`,
+    });
+
+    // The daily scan — the most important thing a sitter does.
     s.push({
       target: "scan-card",
       route: "today",
       place: "auto",
-      text: `A quick daily health check for ${activeName}. Tap here when you're ready; we'll walk you through it.`,
+      text: `Do this every day. It's a quick health check, and ${activeName}'s results are shared with the owner — it's how you both catch any early signs of illness, since birds tend to hide when they're unwell.`,
     });
-    s.push({ target: "nav-today", route: "today", place: "top", text: "The current bird's daily routine and tasks." });
     s.push({
       target: "nav-guide",
       route: "today",
       place: "top",
-      text: `General parrot care, anytime you want to understand something. ${activeName}'s specific needs live in their care plan.`,
+      text: `General parrot care, for when you want to understand something. For ${activeName}'s specific needs, use ${poss} care plan.`,
     });
     s.push({
       target: "nav-emergency",
@@ -81,7 +128,7 @@ export function SitterOnboarding({ birds, bird, token }: { birds: any[]; bird: a
     });
     return s;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [list.length, allNames, activeName]);
+  }, [list.length, allNames, activeName, obj, poss, careKey]);
 
   useEffect(() => {
     try {
@@ -99,11 +146,14 @@ export function SitterOnboarding({ birds, bird, token }: { birds: any[]; bird: a
     const cur = steps[step];
     if (!cur) return;
 
-    // Targets live on different screens — the bird card on Home, the scan card on
-    // a bird's Today — so make sure we're on the right screen before pointing at
-    // the target. The retry loop below waits for it to render after navigation.
+    // Targets live on different screens — the bird card on Home, the care-plan
+    // sections inside the care sheet, the scan card on a bird's Today — so make
+    // sure we're on the right screen before pointing at the target. The retry
+    // loop below waits for it to render after navigation.
     if (cur.route === "home") {
       navigate({ to: "/sitter/$token/home", params: { token } });
+    } else if (cur.route === "careplan") {
+      navigate({ to: "/sitter/$token/care-sheet", params: { token }, search: { birdId: bird?.id } });
     } else {
       navigate({ to: "/sitter/$token", params: { token }, search: { birdId: bird?.id } });
     }

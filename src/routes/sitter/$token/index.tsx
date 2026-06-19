@@ -436,7 +436,7 @@ function WelcomeCard({ bird, plan, token }: { bird: any; plan: any; token: strin
         </div>
       )}
       {/* Visible CTA so it's clearly an action, for sitters who don't tap the card. */}
-      <div className="flex items-center justify-between gap-3 border-t border-white/10 px-5 py-3">
+      <div data-coach="care-plan-link" className="flex items-center justify-between gap-3 border-t border-white/10 px-5 py-3">
         <span className="text-sm font-medium text-[#cdeab0]">View {bird.name}'s full care plan</span>
         <ChevronRight className="size-5 shrink-0 text-[#cdeab0]" />
       </div>
