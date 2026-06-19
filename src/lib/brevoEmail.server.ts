@@ -30,9 +30,9 @@ export async function sendTransactionalEmail(
   const apiKey = process.env.BREVO_API_KEY;
   const senderEmail = process.env.BREVO_SENDER_EMAIL;
   const senderName = process.env.BREVO_SENDER_NAME || "The Kya Project";
-  if (!apiKey) return { ok: false, skipped: "brevo-api-key-not-configured" };
-  if (!senderEmail) return { ok: false, skipped: "brevo-sender-not-configured" };
-  if (!email.to) return { ok: false, skipped: "no-recipient" };
+  if (!apiKey) { console.warn("[brevoEmail] skipped: BREVO_API_KEY not set"); return { ok: false, skipped: "brevo-api-key-not-configured" }; }
+  if (!senderEmail) { console.warn("[brevoEmail] skipped: BREVO_SENDER_EMAIL not set"); return { ok: false, skipped: "brevo-sender-not-configured" }; }
+  if (!email.to) { console.warn("[brevoEmail] skipped: no recipient"); return { ok: false, skipped: "no-recipient" }; }
 
   try {
     const res = await fetch(BREVO_SMTP_URL, {
@@ -55,6 +55,7 @@ export async function sendTransactionalEmail(
       console.error("[brevoEmail] send failed", res.status, text);
       return { ok: false, status: res.status };
     }
+    console.log("[brevoEmail] sent ok", res.status, "to", email.to);
     return { ok: true, status: res.status };
   } catch (err) {
     console.error("[brevoEmail] network error", err);
