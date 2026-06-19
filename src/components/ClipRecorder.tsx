@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Video, Square, RotateCcw, Check, AlertTriangle, Upload, Loader2 } from "lucide-react";
+import * as tus from "tus-js-client";
 import { createClipUpload, getClipStatus } from "@/lib/clips.functions";
 import { cfRef } from "@/lib/clipRef";
 
@@ -76,27 +77,28 @@ function readDuration(file: File): Promise<number | null> {
   });
 }
 
-/** POST a file to a Cloudflare one-time upload URL with upload progress. */
-function xhrUpload(url: string, file: File, onProgress: (pct: number) => void): Promise<void> {
+/**
+ * Resumable upload of a file to a Cloudflare Stream tus upload URL. tus retries
+ * and resumes on transient network drops (common on mobile) instead of failing
+ * the whole transfer — which is what the old single multipart POST did.
+ */
+function tusUpload(uploadURL: string, file: File, onProgress: (pct: number) => void): Promise<void> {
   return new Promise<void>((resolve, reject) => {
-    const xhr = new XMLHttpRequest();
-    xhr.open("POST", url, true);
-    xhr.upload.onprogress = (e) => {
-      if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
-    };
-    xhr.onload = () => {
-      if (xhr.status >= 200 && xhr.status < 300) resolve();
-      else {
-        const body = (xhr.responseText || "").replace(/\s+/g, " ").trim().slice(0, 160);
-        reject(new Error(`CF upload HTTP ${xhr.status}${body ? `: ${body}` : ""}`));
-      }
-    };
-    // status 0 here is almost always a CORS/network block on the browser→CF POST.
-    xhr.onerror = () => reject(new Error("CF upload blocked (status 0 — CORS/network)"));
-    xhr.ontimeout = () => reject(new Error("CF upload timed out"));
-    const fd = new FormData();
-    fd.append("file", file, file.name || "clip");
-    xhr.send(fd);
+    const upload = new tus.Upload(file, {
+      // The upload was already created server-side; PATCH directly to its URL.
+      uploadUrl: uploadURL,
+      endpoint: uploadURL,
+      // Multiple of 256 KiB (Cloudflare requirement); 16 MB chunks resume well on mobile.
+      chunkSize: 16 * 1024 * 1024,
+      retryDelays: [0, 1000, 3000, 5000, 10000, 20000],
+      removeFingerprintOnSuccess: true,
+      onError: (err) => reject(err instanceof Error ? err : new Error(String(err))),
+      onProgress: (sent, total) => {
+        if (total > 0) onProgress(Math.round((sent / total) * 100));
+      },
+      onSuccess: () => resolve(),
+    });
+    upload.start();
   });
 }
 
@@ -117,12 +119,13 @@ function friendlyUploadError(err: any): string {
   const m = String(err?.message ?? "");
   if (/not configured/i.test(m)) return "Video uploads aren't set up yet — please try again later.";
   if (/processed/i.test(m)) return m;
-  // Surface the raw Cloudflare upload failure (status + message) so it can be
-  // diagnosed from the phone without a console.
-  if (/CF upload/i.test(m)) return `Couldn't send the video to the converter — ${m}`;
   // Surface the real Cloudflare error (e.g. auth/subscription) instead of hiding it.
   if (/cloudflare stream/i.test(m)) return `Video service error — ${m}`;
-  if (/network|timed out/i.test(m)) return "Upload failed — check your connection and try again.";
+  // tus exhausted its retries (the connection kept dropping). Show the raw
+  // detail so a flaky-network failure can be diagnosed from the phone.
+  if (/tus|http|network|request|connection|timed out|aborted/i.test(m)) {
+    return `Upload failed after retrying — check your connection and try again.${m ? ` (${m.slice(0, 120)})` : ""}`;
+  }
   return "Upload failed. Please try again.";
 }
 
@@ -265,11 +268,14 @@ export function ClipRecorder({
     const cand = candidateRef.current;
     if (!stream || !cand) return;
     chunksRef.current = [];
+    // Cap the bitrate so a 60s 720p clip stays small (~2.5 Mbps ≈ ~19 MB),
+    // keeping uploads fast; Cloudflare transcodes to its own renditions anyway.
+    const recOpts: MediaRecorderOptions = { videoBitsPerSecond: 2_500_000 };
     let rec: MediaRecorder;
     try {
-      rec = new MediaRecorder(stream, { mimeType: cand.mime });
+      rec = new MediaRecorder(stream, { mimeType: cand.mime, ...recOpts });
     } catch {
-      try { rec = new MediaRecorder(stream); } catch (e: any) {
+      try { rec = new MediaRecorder(stream, recOpts); } catch (e: any) {
         setError(e?.message ?? "Couldn't start the recorder.");
         return;
       }
@@ -327,8 +333,8 @@ export function ClipRecorder({
     onBusy?.(true);
     try {
       setStage({ kind: "uploading", pct: 0 });
-      const { uploadURL, uid } = await createClipUpload();
-      await xhrUpload(uploadURL, file, (pct) => setStage({ kind: "uploading", pct }));
+      const { uploadURL, uid } = await createClipUpload({ data: { uploadLength: file.size } });
+      await tusUpload(uploadURL, file, (pct) => setStage({ kind: "uploading", pct }));
       setStage({ kind: "processing" });
       await waitForReady(uid);
       await onUploaded(cfRef(uid));

@@ -42,22 +42,46 @@ async function cf(path: string, init?: RequestInit): Promise<any> {
 }
 
 /**
- * One-time direct-upload URL. The browser POSTs the raw video to `uploadURL`
- * (multipart/form-data, field "file") — no token needed there. Cloudflare
- * transcodes automatically. `requireSignedURLs` keeps clips private (playback
- * needs a signed token, minted per viewer below).
+ * Create a resumable (tus) direct-creator upload. We make the tus creation POST
+ * server-side (so the API token stays here) with `?direct_user=true`, which
+ * returns a `Location` the browser can upload to via the tus protocol WITHOUT
+ * the token. Resumable uploads survive flaky mobile connections — they retry and
+ * resume on drops instead of failing the whole transfer.
+ *
+ * `Upload-Length` (the file's byte size) must be known up front, so the browser
+ * passes it in. `requiresignedurls` keeps clips private (signed playback below).
  */
-export async function createDirectUpload(opts: { maxDurationSeconds?: number; creator?: string } = {}) {
-  const result = await cf(`/stream/direct_upload`, {
+export async function createTusDirectUpload(opts: { uploadLength: number; maxDurationSeconds?: number; creator?: string }) {
+  const { accountId, token } = creds();
+  const b64 = (s: string) => Buffer.from(s, "utf8").toString("base64");
+  // tus Upload-Metadata: comma-separated "key b64value" pairs; flags are key-only.
+  const metadata = [
+    "requiresignedurls",
+    `maxdurationseconds ${b64(String(opts.maxDurationSeconds ?? 60))}`,
+    ...(opts.creator ? [`creator ${b64(opts.creator)}`] : []),
+  ].join(",");
+
+  const res = await fetch(`${API_BASE}/accounts/${accountId}/stream?direct_user=true`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      maxDurationSeconds: opts.maxDurationSeconds ?? 60,
-      requireSignedURLs: true,
-      ...(opts.creator ? { creator: opts.creator } : {}),
-    }),
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Tus-Resumable": "1.0.0",
+      "Upload-Length": String(opts.uploadLength),
+      "Upload-Metadata": metadata,
+    },
   });
-  return { uploadURL: result.uploadURL as string, uid: result.uid as string };
+  if (res.status !== 201) {
+    const text = await res.text().catch(() => "");
+    console.error(`[cloudflareStream] tus create HTTP ${res.status}:`, text.slice(0, 300));
+    throw new Error(`Cloudflare Stream: couldn't start upload (HTTP ${res.status}).`);
+  }
+  const uploadURL = res.headers.get("Location");
+  const uid = res.headers.get("stream-media-id");
+  if (!uploadURL || !uid) {
+    console.error("[cloudflareStream] tus create missing Location/stream-media-id");
+    throw new Error("Cloudflare Stream: upload URL missing from response.");
+  }
+  return { uploadURL, uid };
 }
 
 export type StreamStatus = {
