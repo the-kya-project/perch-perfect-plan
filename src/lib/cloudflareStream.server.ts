@@ -32,6 +32,10 @@ async function cf(path: string, init?: RequestInit): Promise<any> {
   const json: any = await res.json().catch(() => ({}));
   if (!res.ok || json?.success === false) {
     const msg = json?.errors?.[0]?.message || res.statusText || "request failed";
+    // Log the full Cloudflare error server-side so it shows in runtime logs —
+    // a thrown serverFn error comes back as a 200 envelope and is otherwise
+    // invisible. Includes the HTTP status and Cloudflare's error array.
+    console.error(`[cloudflareStream] ${path} HTTP ${res.status}:`, JSON.stringify(json?.errors ?? json));
     throw new Error(`Cloudflare Stream: ${msg}`);
   }
   return json.result;
