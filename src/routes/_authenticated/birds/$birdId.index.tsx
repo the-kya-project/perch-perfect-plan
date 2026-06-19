@@ -793,13 +793,21 @@ function ContactsForm({ birdId, contacts, defaults, onSaved }: { birdId: string;
 }
 
 function SitsPanel({ birdId, sits, onChange }: { birdId: string; sits: any[]; onChange: () => void }) {
+  // All the owner's birds, so editing a sit here can add/remove any of them.
+  const { data: allBirds = [] } = useQuery({
+    queryKey: ["owner-birds-min"],
+    queryFn: async () => {
+      const { data } = await supabase.from("birds").select("id, name").order("created_at");
+      return data ?? [];
+    },
+  });
   return (
     <>
       <div className="rounded-xl bg-sage-100/60 p-3 text-xs text-sage-700">
         Sits are created from the <Link to="/dashboard" className="font-semibold underline">owner dashboard</Link>, where you can include multiple birds in one sit.
       </div>
       {sits.length === 0 && <p className="text-sm text-sage-600">This bird isn't part of any sit yet.</p>}
-      {sits.map((s) => <SitCard key={s.id} sit={s} onChange={onChange} />)}
+      {sits.map((s) => <SitCard key={s.id} sit={s} allBirds={allBirds} onChange={onChange} />)}
     </>
   );
 }

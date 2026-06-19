@@ -39,6 +39,7 @@ export type AnalyticsEventName =
   | "care_plan_section_completed"
   | "care_plan_progress"
   | "sit_created"
+  | "sit_edited"
   | "sitter_link_opened"
   | "health_scan_run"
   | "clip_viewed"

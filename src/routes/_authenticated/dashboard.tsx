@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Plus, Bird as BirdIcon, LogOut, Calendar, Settings, Bell, Feather } from "lucide-react";
 import { Disclaimer } from "@/components/Disclaimer";
 import { SitCard } from "@/components/SitCard";
+import { SitForm } from "@/components/SitForm";
 import { toast } from "sonner";
 import { computeSetupCompleteness } from "@/lib/setupCompleteness";
 import { track } from "@/lib/analytics";
@@ -193,7 +194,7 @@ function Dashboard() {
         {birds.length > 0 && (
           <SitForm
             birds={birds}
-            onCreated={refreshSits}
+            onSaved={refreshSits}
             initialOpen={!!newSit}
             preselectBirdId={preselectBirdId}
             activeSit={activeSit}
@@ -207,7 +208,7 @@ function Dashboard() {
               const sitBirds = (s.sit_birds ?? [])
                 .map((sb: any) => birdLookup[sb.bird_id])
                 .filter(Boolean);
-              return <SitCard key={s.id} sit={s} birds={sitBirds} onChange={refreshSits} />;
+              return <SitCard key={s.id} sit={s} birds={sitBirds} allBirds={birds} onChange={refreshSits} />;
             })}
           </section>
         )}
@@ -286,196 +287,6 @@ function BirdCard({ bird, completeness, resumeStep }: { bird: any; completeness:
   );
 }
 
-function SitForm({
-  birds,
-  onCreated,
-  initialOpen = false,
-  preselectBirdId,
-  activeSit,
-}: {
-  birds: any[];
-  onCreated: () => void;
-  initialOpen?: boolean;
-  preselectBirdId?: string;
-  activeSit?: any;
-}) {
-  const navigate = useNavigate();
-  const [open, setOpen] = useState(initialOpen);
-  const initialSelection = preselectBirdId
-    ? new Set([preselectBirdId])
-    : new Set<string>(birds.length === 1 ? [birds[0].id] : []);
-  const [selected, setSelected] = useState<Set<string>>(initialSelection);
-
-  // When the dashboard is opened with ?newSit=1, auto-open the form once and
-  // clear the search params so refreshes don't keep re-triggering it.
-  useEffect(() => {
-    if (initialOpen) {
-      setOpen(true);
-      navigate({ to: "/dashboard", search: {}, replace: true });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const [sitterName, setSitterName] = useState("");
-  const [sitterEmail, setSitterEmail] = useState("");
-  const [start, setStart] = useState("");
-  const [end, setEnd] = useState("");
-  const [notes, setNotes] = useState("");
-  const [saving, setSaving] = useState(false);
-
-  function toggle(id: string) {
-    const next = new Set(selected);
-    next.has(id) ? next.delete(id) : next.add(id);
-    setSelected(next);
-  }
-  function selectAll() {
-    setSelected(new Set(birds.map((b) => b.id)));
-  }
-
-  async function submit(e: React.FormEvent) {
-    e.preventDefault();
-    if (selected.size === 0) { toast.error("Pick at least one bird."); return; }
-    if (!start || !end) { toast.error("Pick a start and end date."); return; }
-    if (end < start) { toast.error("End date must be on or after start date."); return; }
-    setSaving(true);
-    try {
-      const birdIds = Array.from(selected);
-      const [{ data: contacts, error: ecErr }, { data: u }] = await Promise.all([
-        supabase
-          .from("emergency_contacts")
-          .select("bird_id, owner_phone, avian_vet_phone")
-          .in("bird_id", birdIds),
-        supabase.auth.getUser(),
-      ]);
-      if (ecErr) { toast.error(ecErr.message); setSaving(false); return; }
-      if (!u.user) { toast.error("You're signed out."); setSaving(false); return; }
-      const { data: defaults } = await supabase
-        .from("owner_emergency_defaults")
-        .select("owner_phone, avian_vet_phone")
-        .eq("owner_id", u.user.id)
-        .maybeSingle();
-      const contactByBird = new Map((contacts ?? []).map((c: any) => [c.bird_id, c]));
-      const eff = (c: any, k: string) =>
-        (c?.[k]?.trim?.() || (defaults as any)?.[k]?.trim?.() || "");
-      const missing = birdIds
-        .map((id) => {
-          const c = contactByBird.get(id);
-          const needs: string[] = [];
-          if (!eff(c, "owner_phone")) needs.push("your phone");
-          if (!eff(c, "avian_vet_phone")) needs.push("avian vet phone");
-          return needs.length ? { bird: birds.find((b: any) => b.id === id), needs } : null;
-        })
-        .filter(Boolean) as { bird: any; needs: string[] }[];
-      if (missing.length) {
-        const details = missing.map((m) => `${m.bird?.name ?? "Bird"}: ${m.needs.join(" & ")}`).join("; ");
-        toast.error(
-          `Add the required emergency contacts before sharing a sitter link — ${details}. Set account defaults below, or open the bird's Emergency tab.`,
-          { duration: 8000 },
-        );
-        setSaving(false);
-        return;
-      }
-
-      const expires = new Date(end + "T23:59:59Z").toISOString();
-      const { data: sit, error } = await supabase.from("sits").insert({
-        owner_id: u.user.id,
-        sitter_name: sitterName || null,
-        sitter_email: sitterEmail || null,
-        start_date: start, end_date: end,
-        notes: notes || null,
-        token_expires_at: expires,
-        status: "upcoming",
-      }).select().single();
-      if (error || !sit) { toast.error(error?.message ?? "Could not create sit."); setSaving(false); return; }
-      const rows = birdIds.map((bird_id) => ({ sit_id: sit.id, bird_id }));
-      const { error: linkErr } = await supabase.from("sit_birds").insert(rows);
-      if (linkErr) { toast.error(linkErr.message); setSaving(false); return; }
-      const days = Math.max(1, Math.round((new Date(end).getTime() - new Date(start).getTime()) / 86_400_000) + 1);
-      track("sit_created", { bird_count: birdIds.length, days, has_email: !!sitterEmail });
-      toast.success("Sit created.");
-      setOpen(false);
-      setSitterName(""); setSitterEmail(""); setStart(""); setEnd(""); setNotes("");
-      setSelected(new Set(birds.length === 1 ? [birds[0].id] : []));
-      onCreated();
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  if (!open) {
-    // Active-sit state — reflect rather than prompt.
-    if (activeSit) {
-      return (
-        <div className="rounded-[20px] bg-[#cdeab0] p-5">
-          <p className="text-lg font-medium text-[#1f3d12]">Sit active</p>
-          <p className="mt-1 text-sm text-[#3f5e22]">A sit is underway right now. Your sitter has their private link.</p>
-          <a href="#sits" className="mt-4 inline-flex items-center gap-2 rounded-[14px] bg-[#1a3d2e] px-4 py-2.5 text-sm font-medium text-white">
-            View details
-          </a>
-        </div>
-      );
-    }
-    // The screen's one accent moment.
-    return (
-      <div className="relative overflow-hidden rounded-[20px] bg-[#cdeab0] p-5">
-        <Feather className="pointer-events-none absolute -right-3 -top-3 size-20 rotate-12 text-[#1f3d12]/10" />
-        <p className="text-lg font-medium text-[#1f3d12]">Going away soon?</p>
-        <p className="mt-1 max-w-[18rem] text-sm text-[#3f5e22]">Create a sit and send your sitter a private link with everything they need.</p>
-        <button onClick={() => setOpen(true)} className="mt-4 inline-flex items-center gap-2 rounded-[14px] bg-[#1a3d2e] px-4 py-2.5 text-sm font-medium text-white">
-          <Plus className="size-4" /> New sit
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <form onSubmit={submit} noValidate className="space-y-3 rounded-[20px] bg-[#efe9da] p-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-medium text-[#1a3d2e]">New sit</p>
-        <button type="button" onClick={() => setOpen(false)} className="text-xs text-[#5f5e5a] underline">Cancel</button>
-      </div>
-
-      <div>
-        <div className="flex items-center justify-between">
-          <p className="text-[11px] font-medium uppercase tracking-wider text-[#5f5e5a]">Birds included</p>
-          {birds.length > 1 && (
-            <button type="button" onClick={selectAll} className="text-[11px] font-medium text-[#1a3d2e] underline">Select all</button>
-          )}
-        </div>
-        <div className="mt-2 grid grid-cols-2 gap-2">
-          {birds.map((b: any) => {
-            const on = selected.has(b.id);
-            return (
-              <button
-                key={b.id}
-                type="button"
-                onClick={() => toggle(b.id)}
-                className={`flex items-center gap-2 rounded-lg border px-2 py-2 text-left text-sm ${on ? "border-[#2d6a4f] bg-[#e8f0ec]" : "border-[#e0d8c4] bg-white"}`}
-              >
-                <span className={`grid size-4 shrink-0 place-items-center rounded border-2 ${on ? "border-[#2d6a4f] bg-[#2d6a4f]" : "border-[#bcb6a3]"}`}>
-                  {on && <svg viewBox="0 0 20 20" className="size-3 text-white"><path fill="currentColor" d="M7.629 13.314 4.4 10.085l1.214-1.214 2.015 2.015 5.757-5.757 1.214 1.214z"/></svg>}
-                </span>
-                <span className="truncate text-[#1a3d2e]">{b.name}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      <Field label="Sitter name"><input className="input" value={sitterName} onChange={(e) => setSitterName(e.target.value)} /></Field>
-      <Field label="Sitter email"><input className="input" type="email" value={sitterEmail} onChange={(e) => setSitterEmail(e.target.value)} /></Field>
-      <div className="grid grid-cols-2 gap-3">
-        <Field label="Start"><input className="input" type="date" value={start} onChange={(e) => setStart(e.target.value)} /></Field>
-        <Field label="End"><input className="input" type="date" value={end} onChange={(e) => setEnd(e.target.value)} /></Field>
-      </div>
-      <Field label="Notes for this sit"><textarea className="input area" value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
-
-      <button type="submit" disabled={saving} className="w-full rounded-[14px] bg-[#1a3d2e] py-3 text-sm font-medium text-white disabled:opacity-50">
-        {saving ? "Creating..." : "Create sit & generate link"}
-      </button>
-    </form>
-  );
-}
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (

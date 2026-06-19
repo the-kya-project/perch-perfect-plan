@@ -1,11 +1,14 @@
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Calendar, Link2, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { SitChecklist } from "@/components/SitChecklist";
+import { SitForm } from "@/components/SitForm";
 
 type Bird = { id: string; name: string };
 
-export function SitCard({ sit, birds = [], onChange }: { sit: any; birds?: Bird[]; onChange: () => void }) {
+export function SitCard({ sit, birds = [], allBirds, onChange }: { sit: any; birds?: Bird[]; allBirds?: any[]; onChange: () => void }) {
+  const [editing, setEditing] = useState(false);
   const expired = new Date(sit.token_expires_at) < new Date();
   const upcoming = new Date(sit.start_date) > new Date(new Date().toDateString());
   const status = sit.revoked ? "Revoked" : expired ? "Expired" : upcoming ? "Upcoming" : "Active";
@@ -65,6 +68,17 @@ export function SitCard({ sit, birds = [], onChange }: { sit: any; birds?: Bird[
     toast.success("Link copied.");
   }
 
+  if (editing && allBirds) {
+    return (
+      <SitForm
+        birds={allBirds}
+        editSit={sit}
+        onSaved={onChange}
+        onCancel={() => setEditing(false)}
+      />
+    );
+  }
+
   return (
     <div className="rounded-[20px] bg-[#efe9da] p-4 shadow-sm">
       <div className="flex items-center justify-between">
@@ -93,6 +107,9 @@ export function SitCard({ sit, birds = [], onChange }: { sit: any; birds?: Bird[
         <SitChecklist sit={sit} birds={birds} onSitChanged={onChange} />
       )}
       <div className="mt-3 flex gap-3 text-xs font-medium">
+        {allBirds && !sit.revoked && (
+          <button onClick={() => setEditing(true)} className="text-[#1a3d2e] underline">Edit</button>
+        )}
         {!sit.revoked && !expired && (
           <button onClick={revoke} className="text-[#5f5e5a] underline">Revoke link</button>
         )}
