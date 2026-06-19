@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useRouter } from "@tanstack/react-router";
-import { AlertTriangle, ChevronLeft } from "lucide-react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { AlertTriangle, ChevronLeft, Check } from "lucide-react";
 
 // First-visit sitter onboarding: a two-screen welcome, then a coach-mark bubble
 // walkthrough that points at the REAL on-screen elements (tagged with
@@ -53,7 +53,7 @@ const CP_TARGET: Record<string, string> = {
 };
 
 type CoachStep = { target: string; text: string; place: "top" | "bottom" | "auto"; route: "home" | "today" | "careplan"; emphasis?: boolean };
-type Phase = null | "welcome" | "overview" | "coach";
+type Phase = null | "welcome" | "overview" | "coach" | "closing";
 type Spot = { rect: { top: number; left: number; width: number; height: number; bottom: number } | null; vw: number; vh: number };
 
 const PAD = 6;
@@ -64,13 +64,9 @@ export function SitterOnboarding({ birds, bird, careSections, token }: { birds: 
   const [step, setStep] = useState(0);
   const [spot, setSpot] = useState<Spot | null>(null);
   const navigate = useNavigate();
-  const router = useRouter();
   const stepRef = useRef(0);
   const bubbleRef = useRef<HTMLDivElement | null>(null);
   const [bubbleH, setBubbleH] = useState(150);
-  // When replayed from a header chip / "?" icon, remember where the sitter was so
-  // we can return them there when the walkthrough ends (first-run has no origin).
-  const replayReturnRef = useRef<string | null>(null);
 
   const list = Array.isArray(birds) && birds.length ? birds : bird ? [bird] : [];
   const names = list.map((b) => (b?.name ?? "").toString().trim()).filter(Boolean);
@@ -111,17 +107,11 @@ export function SitterOnboarding({ birds, bird, careSections, token }: { birds: 
       target: "care-plan-link",
       route: "today",
       place: "auto",
-      text: `This is ${activeName}'s full care plan — everything specific to ${obj}: ${poss} food, routine, handling, home, and emergency info. This is your source of truth for caring for ${obj}.`,
+      text: `This is ${activeName}'s full care plan — ${poss} food, routine, handling, home, and emergency info. Everything specific to ${obj} lives here. This is your source of truth for caring for ${obj}.`,
     });
     for (const key of careSections ?? []) {
       if (CP_TARGET[key]) s.push({ target: CP_TARGET[key], route: "careplan", place: "auto", text: cpText[key] });
     }
-    s.push({
-      target: "cp-header",
-      route: "careplan",
-      place: "auto",
-      text: `Remember — this care plan is specific to ${activeName}. Parrots 101 is general parrot care; come here for what's true for ${obj}.`,
-    });
 
     // The daily scan — the most important thing a sitter does.
     s.push({
@@ -134,14 +124,14 @@ export function SitterOnboarding({ birds, bird, careSections, token }: { birds: 
       target: "nav-guide",
       route: "today",
       place: "top",
-      text: `General parrot care, for when you want to understand something. For ${activeName}'s specific needs, use ${poss} care plan.`,
+      text: "The basics of parrot care, in plain language. General info for all parrots.",
     });
     s.push({
       target: "nav-emergency",
       route: "today",
       place: "top",
       emphasis: true,
-      text: "If something's ever wrong, this is always here. You'll never be in trouble for using it.",
+      text: "If something's ever wrong, this is always here. When in doubt, reach out — it's better to check.",
     });
     return s;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -152,7 +142,6 @@ export function SitterOnboarding({ birds, bird, careSections, token }: { birds: 
       if (!window.localStorage.getItem(SEEN_KEY)) setPhase("welcome");
     } catch {}
     const onReplay = () => {
-      replayReturnRef.current = router.state.location.href;
       setStep(0);
       stepRef.current = 0;
       setPhase("welcome");
@@ -236,14 +225,12 @@ export function SitterOnboarding({ birds, bird, careSections, token }: { birds: 
     try { window.localStorage.setItem(SEEN_KEY, "1"); } catch {}
     setPhase(null);
   }
-  // Skip / Done: dismiss. On replay, return the sitter to where they launched it;
-  // on first run, land on the Today tab.
-  function dismissToToday() {
+  // Skip or finish: dismiss and land on the home base — Home for multi-bird sits,
+  // the bird's Today for single-bird sits.
+  function finishWalkthrough() {
     markSeenAndClose();
-    const ret = replayReturnRef.current;
-    replayReturnRef.current = null;
-    if (ret) router.history.push(ret);
-    else navigate({ to: "/sitter/$token", params: { token } });
+    if (list.length > 1) navigate({ to: "/sitter/$token/home", params: { token } });
+    else navigate({ to: "/sitter/$token", params: { token }, search: { birdId: bird?.id } });
   }
 
   function startCoach() {
@@ -260,7 +247,7 @@ export function SitterOnboarding({ birds, bird, careSections, token }: { birds: 
       stepRef.current = n;
       setStep(n);
     } else {
-      dismissToToday();
+      setPhase("closing"); // after the last bubble, show the warm closing screen
     }
   }
   function back() {
@@ -287,12 +274,14 @@ export function SitterOnboarding({ birds, bird, careSections, token }: { birds: 
   );
 
   // ---- Welcome + overview (full-screen warm cards) ----
-  if (phase === "welcome" || phase === "overview") {
+  if (phase === "welcome" || phase === "overview" || phase === "closing") {
     return (
       <div className="fixed inset-0 z-50 flex flex-col bg-[#1a3d2e] text-white">
         <div className="flex items-center justify-between px-5 pt-[max(env(safe-area-inset-top),0.9rem)] pb-2">
           {EmergencyLink}
-          <button onClick={dismissToToday} className="text-sm font-medium text-[#cdeab0] underline">Skip</button>
+          {phase !== "closing" && (
+            <button onClick={finishWalkthrough} className="text-sm font-medium text-[#cdeab0] underline">Skip</button>
+          )}
         </div>
 
         {phase === "welcome" ? (
@@ -321,9 +310,9 @@ export function SitterOnboarding({ birds, bird, careSections, token }: { birds: 
             <button onClick={() => setPhase("overview")} className="mt-7 w-full max-w-xs rounded-2xl bg-[#cdeab0] py-3 text-sm font-semibold text-[#1a3d2e]">
               Show me around
             </button>
-            <button onClick={dismissToToday} className="mt-3 text-sm font-medium text-[#cdeab0] underline">Skip</button>
+            <button onClick={finishWalkthrough} className="mt-3 text-sm font-medium text-[#cdeab0] underline">Skip</button>
           </div>
-        ) : (
+        ) : phase === "overview" ? (
           <div className="flex flex-1 flex-col items-center justify-center px-6 pb-10 text-center">
             <h1 className="text-[22px] font-medium leading-tight">How this app works</h1>
             <p className="mt-3 max-w-sm text-sm leading-relaxed text-white/85">
@@ -334,7 +323,20 @@ export function SitterOnboarding({ birds, bird, careSections, token }: { birds: 
             <button onClick={startCoach} className="mt-7 w-full max-w-xs rounded-2xl bg-[#cdeab0] py-3 text-sm font-semibold text-[#1a3d2e]">
               Got it, show me around
             </button>
-            <button onClick={dismissToToday} className="mt-3 text-sm font-medium text-[#cdeab0] underline">Skip</button>
+            <button onClick={finishWalkthrough} className="mt-3 text-sm font-medium text-[#cdeab0] underline">Skip</button>
+          </div>
+        ) : (
+          <div className="flex flex-1 flex-col items-center justify-center px-6 pb-10 text-center">
+            <div className="grid size-14 place-items-center rounded-2xl bg-[#cdeab0]/15 text-[#cdeab0]">
+              <Check className="size-7" />
+            </div>
+            <h1 className="mt-5 text-[22px] font-medium leading-tight">That's everything! You're all set to care for {allNames}.</h1>
+            <p className="mt-3 max-w-xs text-sm leading-relaxed text-white/85">
+              Want to see this again? Tap the question mark in the upper right anytime.
+            </p>
+            <button onClick={finishWalkthrough} className="mt-7 w-full max-w-xs rounded-2xl bg-[#cdeab0] py-3 text-sm font-semibold text-[#1a3d2e]">
+              Let's go
+            </button>
           </div>
         )}
       </div>
@@ -395,7 +397,7 @@ export function SitterOnboarding({ birds, bird, careSections, token }: { birds: 
       {/* Persistent Emergency (top-left) + Skip (top-right). */}
       <div className="pointer-events-none absolute inset-x-0 top-0 flex items-center justify-between px-5 pt-[max(env(safe-area-inset-top),0.9rem)]">
         {EmergencyLink}
-        <button onClick={dismissToToday} className="pointer-events-auto rounded-full bg-white/90 px-3 py-1.5 text-xs font-semibold text-[#1a3d2e] shadow">
+        <button onClick={finishWalkthrough} className="pointer-events-auto rounded-full bg-white/90 px-3 py-1.5 text-xs font-semibold text-[#1a3d2e] shadow">
           Skip
         </button>
       </div>
@@ -414,7 +416,7 @@ export function SitterOnboarding({ birds, bird, careSections, token }: { birds: 
             ))}
           </div>
           <button onClick={next} className="rounded-lg bg-[#1a3d2e] px-4 py-1.5 text-xs font-semibold text-white">
-            {step === steps.length - 1 ? "Done" : "Next"}
+            Next
           </button>
         </div>
       </div>
