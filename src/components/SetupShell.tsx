@@ -1,4 +1,4 @@
-import { ReactNode, useState } from "react";
+import { ReactNode, useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft, Check, ChevronDown } from "lucide-react";
 
@@ -64,6 +64,23 @@ export function SetupShell({
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [confirmExit, setConfirmExit] = useState(false);
 
+  // Edge fades so the desktop step-pill strip reads as scrollable.
+  const pillStripRef = useRef<HTMLDivElement>(null);
+  const [pillAtStart, setPillAtStart] = useState(true);
+  const [pillAtEnd, setPillAtEnd] = useState(false);
+  function updatePillFades() {
+    const el = pillStripRef.current;
+    if (!el) return;
+    setPillAtStart(el.scrollLeft <= 1);
+    setPillAtEnd(el.scrollLeft + el.clientWidth >= el.scrollWidth - 1);
+  }
+  useEffect(() => {
+    const raf = requestAnimationFrame(updatePillFades);
+    window.addEventListener("resize", updatePillFades);
+    return () => { cancelAnimationFrame(raf); window.removeEventListener("resize", updatePillFades); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
+
   const completedCount = Math.max(0, step - 1);
   const pct = Math.round((completedCount / TOTAL_STEPS) * 100);
   const current = SETUP_STEPS[step - 1];
@@ -109,7 +126,8 @@ export function SetupShell({
         {/* Desktop: clickable pill tabs */}
         <div className="hidden md:block">
           <div className="mx-auto max-w-md px-5 pb-2">
-            <div className="flex gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="relative">
+            <div ref={pillStripRef} onScroll={updatePillFades} className="flex gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {SETUP_STEPS.map((s, i) => {
                 const state = stepState(i, step);
                 const base =
@@ -137,6 +155,11 @@ export function SetupShell({
                   </button>
                 );
               })}
+              {/* trailing spacer so the last pill scrolls clear of the fade */}
+              <span aria-hidden className="shrink-0 pl-1" />
+            </div>
+            {!pillAtStart && <div className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-white to-transparent" />}
+            {!pillAtEnd && <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-white to-transparent" />}
             </div>
           </div>
         </div>

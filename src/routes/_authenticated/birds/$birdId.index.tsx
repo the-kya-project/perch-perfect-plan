@@ -61,7 +61,6 @@ function BirdEditor() {
     setTabAtStart(el.scrollLeft <= 1);
     setTabAtEnd(el.scrollLeft + el.clientWidth >= el.scrollWidth - 1);
   }
-  useEffect(() => { updateTabFades(); }, []);
 
   const { data: bird } = useQuery({
     queryKey: ["bird", birdId],
@@ -70,6 +69,15 @@ function BirdEditor() {
       if (error) throw error; return data;
     },
   });
+
+  // Re-measure after the strip mounts (it only renders once the bird loads) and
+  // on resize, so the right fade reliably shows when the tabs overflow.
+  useEffect(() => {
+    const raf = requestAnimationFrame(updateTabFades);
+    window.addEventListener("resize", updateTabFades);
+    return () => { cancelAnimationFrame(raf); window.removeEventListener("resize", updateTabFades); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bird]);
   const { data: plan } = useQuery({
     queryKey: ["plan", birdId],
     queryFn: async () => {
@@ -170,8 +178,8 @@ function BirdEditor() {
               ))}
               <span aria-hidden className="shrink-0 pl-1" />
             </div>
-            {!tabAtStart && <div className="pointer-events-none absolute inset-y-0 left-0 w-5 bg-gradient-to-r from-white to-transparent" />}
-            {!tabAtEnd && <div className="pointer-events-none absolute inset-y-0 right-0 w-7 bg-gradient-to-l from-white to-transparent" />}
+            {!tabAtStart && <div className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-white to-transparent" />}
+            {!tabAtEnd && <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-white to-transparent" />}
           </div>
         </div>
       </header>
