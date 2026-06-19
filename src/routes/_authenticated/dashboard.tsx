@@ -156,7 +156,7 @@ function Dashboard() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-md space-y-6 px-4 py-6">
+      <main className="mx-auto max-w-md space-y-6 px-5 py-6">
         <Disclaimer compact />
 
         <section className="space-y-3">

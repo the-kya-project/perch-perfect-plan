@@ -30,7 +30,7 @@ export function SitterDashboard({ token }: { token: string }) {
   const allNames = formatNames(birds.map((b) => b.name));
 
   return (
-    <main className="mx-auto max-w-md space-y-6 px-4 py-6">
+    <main className="mx-auto max-w-md space-y-6 px-5 py-6">
       <header className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h1 className="text-2xl font-medium leading-tight text-[#1a3d2e]">Welcome back</h1>

@@ -182,7 +182,7 @@ function CareSheet() {
   return (
     <>
       <header className="bg-[#1a3d2e]" data-coach="cp-header">
-        <div className="mx-auto flex max-w-md items-center gap-3 px-4 py-3">
+        <div className="mx-auto flex max-w-md items-center gap-3 px-5 py-3">
           <Link to="/sitter/$token" params={{ token }} search={{ birdId: ctx.activeBirdId }} className="rounded p-1 text-white/90"><ArrowLeft className="size-5" /></Link>
           <div>
             <h1 className="text-sm font-medium text-white">{bird.name}'s care sheet</h1>
@@ -191,7 +191,7 @@ function CareSheet() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-md space-y-4 px-4 py-5">
+      <main className="mx-auto max-w-md space-y-4 px-5 py-5">
         {showBasics && (
           <Section title="Basics">
             <div className="flex items-center gap-4">

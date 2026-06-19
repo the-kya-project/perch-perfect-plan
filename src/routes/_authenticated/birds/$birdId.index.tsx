@@ -148,7 +148,7 @@ function BirdEditor() {
   return (
     <div className="min-h-screen bg-sage-50 pb-20">
       <header className="sticky top-0 z-10 border-b border-sage-100 bg-white">
-        <div className="mx-auto max-w-md px-4 py-3">
+        <div className="mx-auto max-w-md px-5 py-3">
           <div className="flex items-center gap-3">
             <Link to="/dashboard" className="rounded p-1 text-sage-600"><ArrowLeft className="size-5" /></Link>
             {bird.photo_url && <img src={bird.photo_url} alt={bird.name} className="size-9 shrink-0 rounded-full object-cover ring-1 ring-sage-200" style={{ objectPosition: bird.photo_position ?? "50% 20%" }} />}
@@ -176,7 +176,7 @@ function BirdEditor() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-md space-y-4 px-4 py-5">
+      <main className="mx-auto max-w-md space-y-4 px-5 py-5">
         <Link
           to="/birds/$birdId/setup"
           params={{ birdId }}

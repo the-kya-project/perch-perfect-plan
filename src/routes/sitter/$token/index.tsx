@@ -214,7 +214,7 @@ function SitterToday() {
   }
 
   return (
-    <main className="mx-auto max-w-md space-y-5 px-4 py-5">
+    <main className="mx-auto max-w-md space-y-5 px-5 py-5">
       <WelcomeCard bird={ctx.bird} plan={ctx.plan} token={token} />
 
       <ScanCard bird={ctx.bird} todayLog={ctx.todayLog} token={token} />
@@ -294,7 +294,7 @@ function SitterToday() {
         <section data-coach="watch-first" className="space-y-2">
           <h2 className="text-lg font-medium tracking-tight">Watch first</h2>
           <p className="text-xs text-sage-600">Short clips from {ctx.bird.name}'s owner. These are private to you.</p>
-          <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1">
+          <div className="-mx-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-1">
             {ctx.watchClips.map((c: any) => (
               <div
                 key={c.key}
