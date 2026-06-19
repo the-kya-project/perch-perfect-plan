@@ -343,68 +343,85 @@ export const submitHealthScan = createServerFn({ method: "POST" })
 
     // Notify the owner across channels. Run BEFORE returning: on serverless the
     // lambda can freeze the moment the response is sent, so fire-and-forget work
-    // may never execute. Wrapped so a notification failure never breaks the scan.
-    try {
-      const { data: birdRow } = await sb
-        .from("birds")
-        .select("owner_id, name")
-        .eq("id", data.birdId)
-        .maybeSingle();
-      if (birdRow?.owner_id) {
+    // may never execute. Push and email are isolated in separate try/catch blocks
+    // so a failure in one (e.g. a bad VAPID_SUBJECT throwing in web-push) can
+    // never prevent the other — email is the must-work channel.
+    const { data: birdRow } = await sb
+      .from("birds")
+      .select("owner_id, name")
+      .eq("id", data.birdId)
+      .maybeSingle();
+    if (birdRow?.owner_id) {
+      const ownerId = birdRow.owner_id as string;
       const birdName = birdRow.name ?? "Your bird";
       const flagged = triage.status === "red" || triage.status === "yellow";
       const url = `/birds/${data.birdId}?tab=logs&scan=${row.id}`;
 
-      const { sendPushToOwner } = await import("./pushSender.server");
-      if (flagged) {
-        await sendPushToOwner(birdRow.owner_id, "health_concern", {
-          title: triage.status === "red" ? "Health concern flagged" : "Sitter flagged something to check",
-          body: `${birdName}'s sitter logged ${triage.status === "red" ? "a concerning" : "an uncertain"} result. Tap to review.`,
-          url,
-          tag: `scan-${row.id}`,
-          requireInteraction: triage.status === "red",
-        });
-      } else {
-        await sendPushToOwner(birdRow.owner_id, "sitter_log", {
-          title: "New daily scan",
-          body: `${birdName}'s sitter logged an all-clear health scan.`,
-          url,
-          tag: `scan-${row.id}`,
-        });
+      // Push (best-effort).
+      try {
+        const { sendPushToOwner } = await import("./pushSender.server");
+        if (flagged) {
+          const res = await sendPushToOwner(ownerId, "health_concern", {
+            title: triage.status === "red" ? "Health concern flagged" : "Sitter flagged something to check",
+            body: `${birdName}'s sitter logged ${triage.status === "red" ? "a concerning" : "an uncertain"} result. Tap to review.`,
+            url,
+            tag: `scan-${row.id}`,
+            requireInteraction: triage.status === "red",
+          });
+          console.log("[scan] push", res);
+        } else {
+          const res = await sendPushToOwner(ownerId, "sitter_log", {
+            title: "New daily scan",
+            body: `${birdName}'s sitter logged an all-clear health scan.`,
+            url,
+            tag: `scan-${row.id}`,
+          });
+          console.log("[scan] push", res);
+        }
+      } catch (e) {
+        console.error("[scan] push failed", e);
       }
 
       // Email — flagged scans only. Most reliable channel; always fires.
       if (flagged) {
-        const [{ data: profile }, { data: sitRow }] = await Promise.all([
-          sb.from("profiles").select("email, display_name").eq("id", birdRow.owner_id).maybeSingle(),
-          sb.from("sits").select("sitter_name, sitter_email").eq("id", sit.id).maybeSingle(),
-        ]);
-        const to = profile?.email;
-        console.log("[scan] flagged email", { status: triage.status, ownerHasEmail: !!to });
-        if (to) {
-          const appUrl = process.env.APP_URL || "https://app.thekyaproject.com";
-          const sitterName = sitRow?.sitter_name || sitRow?.sitter_email || "Your sitter";
-          const { subject, html, text } = buildScanAlertEmail({
-            birdName,
-            sitterName,
-            status: triage.status as "red" | "yellow",
-            reasons: triage.reasons,
-            notes: data.notes ?? null,
-            link: `${appUrl}${url}`,
-          });
-          const { sendTransactionalEmail } = await import("./brevoEmail.server");
-          await sendTransactionalEmail({
-            to,
-            toName: profile?.display_name ?? undefined,
-            subject,
-            htmlContent: html,
-            textContent: text,
-          });
+        try {
+          const [{ data: profile }, { data: sitRow }] = await Promise.all([
+            sb.from("profiles").select("email, display_name").eq("id", ownerId).maybeSingle(),
+            sb.from("sits").select("sitter_name, sitter_email").eq("id", sit.id).maybeSingle(),
+          ]);
+          // profiles.email can be empty for older accounts — fall back to the
+          // authoritative auth.users email so the alert always has a recipient.
+          let to = profile?.email ?? null;
+          if (!to) {
+            const { data: authUser } = await sb.auth.admin.getUserById(ownerId);
+            to = authUser?.user?.email ?? null;
+          }
+          console.log("[scan] flagged email", { status: triage.status, ownerHasEmail: !!to });
+          if (to) {
+            const appUrl = process.env.APP_URL || "https://app.thekyaproject.com";
+            const sitterName = sitRow?.sitter_name || sitRow?.sitter_email || "Your sitter";
+            const { subject, html, text } = buildScanAlertEmail({
+              birdName,
+              sitterName,
+              status: triage.status as "red" | "yellow",
+              reasons: triage.reasons,
+              notes: data.notes ?? null,
+              link: `${appUrl}${url}`,
+            });
+            const { sendTransactionalEmail } = await import("./brevoEmail.server");
+            const sent = await sendTransactionalEmail({
+              to,
+              toName: profile?.display_name ?? undefined,
+              subject,
+              htmlContent: html,
+              textContent: text,
+            });
+            console.log("[scan] email result", sent);
+          }
+        } catch (e) {
+          console.error("[scan] email failed", e);
         }
       }
-      }
-    } catch (e) {
-      console.error("[scan] notify failed", e);
     }
 
     return { log: row, triage };
