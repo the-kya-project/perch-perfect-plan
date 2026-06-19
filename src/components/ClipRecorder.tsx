@@ -120,6 +120,8 @@ function friendlyUploadError(err: any): string {
   // Surface the raw Cloudflare upload failure (status + message) so it can be
   // diagnosed from the phone without a console.
   if (/CF upload/i.test(m)) return `Couldn't send the video to the converter — ${m}`;
+  // Surface the real Cloudflare error (e.g. auth/subscription) instead of hiding it.
+  if (/cloudflare stream/i.test(m)) return `Video service error — ${m}`;
   if (/network|timed out/i.test(m)) return "Upload failed — check your connection and try again.";
   return "Upload failed. Please try again.";
 }
