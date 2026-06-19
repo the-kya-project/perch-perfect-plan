@@ -4,7 +4,6 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useSitterContext } from "./route";
 import { getGuideCards } from "@/lib/sitter.functions";
-import { replaySitterOnboarding } from "@/components/SitterOnboarding";
 import {
   Search, ArrowLeft, ChevronDown, Info,
   Star, Utensils, Smile, Heart, AlertTriangle, Home,
@@ -157,13 +156,6 @@ function Guide() {
           <p className="mt-2 text-sm leading-relaxed text-[#cdeab0]">
             General parrot care basics — not specific to {bird.name}. For {poss} actual needs, follow {poss} care plan.
           </p>
-          <button
-            type="button"
-            onClick={replaySitterOnboarding}
-            className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-[#cdeab0] underline underline-offset-2"
-          >
-            <Info className="size-3.5" /> How this works
-          </button>
         </div>
       </header>
 

@@ -2,7 +2,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { getSitterDashboard } from "@/lib/sitter.functions";
-import { Stethoscope, ChevronRight } from "lucide-react";
+import { replaySitterOnboarding } from "@/components/SitterOnboarding";
+import { Stethoscope, ChevronRight, HelpCircle } from "lucide-react";
 
 // Sitter Home tab: the all-birds home base. Warm welcome + an overview naming
 // every bird, then a card per bird with today's task progress and health-scan
@@ -30,13 +31,21 @@ export function SitterDashboard({ token }: { token: string }) {
 
   return (
     <main className="mx-auto max-w-md space-y-6 px-4 py-6">
-      <header>
-        <h1 className="text-2xl font-medium leading-tight text-[#1a3d2e]">Welcome back</h1>
-        <p className="mt-1.5 text-sm leading-relaxed text-[#5f5e5a]">
-          {isLoading
-            ? "Loading the birds in your care…"
-            : `You're caring for ${allNames}. Tap any bird to see their day and check in on how they're doing.`}
-        </p>
+      <header className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-medium leading-tight text-[#1a3d2e]">Welcome back</h1>
+          <p className="mt-1.5 text-sm leading-relaxed text-[#5f5e5a]">
+            {isLoading
+              ? "Loading the birds in your care…"
+              : `You're caring for ${allNames}. Tap any bird to see their day and check in on how they're doing.`}
+          </p>
+        </div>
+        <button
+          onClick={replaySitterOnboarding}
+          className="mt-0.5 inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[#e8f0ec] px-3 py-1.5 text-xs font-medium text-[#2d6a4f] active:scale-95"
+        >
+          <HelpCircle className="size-3.5" /> Walkthrough
+        </button>
       </header>
 
       <section>
