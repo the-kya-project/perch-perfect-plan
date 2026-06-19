@@ -116,11 +116,15 @@ export function categoryToDaypart(category: string | null | undefined): Daypart 
   }
 }
 
-/** The day-part a routine task belongs in. Feed-time string wins (so feedings
- *  place by their actual time, consistently everywhere); otherwise fall back to
- *  the stored category (hygiene / water / medication / manual rhythm items). */
+/** The day-part a routine task belongs in. The stored category is authoritative
+ *  (feeding tasks store their fixed period directly), so it wins. Only fall back
+ *  to parsing the feed-time string for legacy rows whose category isn't a clean
+ *  day-part. */
 export function taskDaypart(task: { time_of_day?: string | null; category?: string | null }): Daypart {
+  const cat = (task?.category ?? "").trim().toLowerCase();
+  if (cat === "morning" || cat === "midday" || cat === "evening") return cat;
+  if (cat === "bedtime") return "evening";
   const t = (task?.time_of_day ?? "").trim();
-  if (t) return feedTimeToDaypart(t);
-  return categoryToDaypart(task?.category);
+  if (t) return feedTimeToDaypart(t); // legacy free-text feed times
+  return "anytime"; // "custom", unknown, empty
 }

@@ -4,6 +4,7 @@ import { ArrowLeft, AlertTriangle, ShieldAlert } from "lucide-react";
 import { useSitterContext } from "./route";
 import { ClipPlayer } from "@/components/ClipPlayer";
 import { track } from "@/lib/analytics";
+import { normalizeFeedTimes, feedTimeLabel } from "@/lib/feedTimes";
 import {
   WATER_FREQ_LABELS,
   TREATS_FREQ_LABELS,
@@ -135,7 +136,7 @@ function CareSheet() {
       name: (it?.name ?? "").toString().trim(),
       amount: it?.amount,
       unit: it?.unit,
-      times: Array.isArray(it?.times) ? (it.times as string[]) : [],
+      times: normalizeFeedTimes(it?.times),
       freeFed: !!it?.freeFed,
     })),
   ).filter((f) => f.name || has(f.amount) || f.times.length);
@@ -248,7 +249,7 @@ function CareSheet() {
                     <p className="mt-1 text-sm"><span className="text-[#5f5e5a]">Amount: </span>{f.unit ? formatAmountUnit(f.amount, f.unit) : f.amount}{f.freeFed ? " · free-fed" : ""}</p>
                   )}
                   {f.times.length > 0 && (
-                    <p className="text-sm"><span className="text-[#5f5e5a]">When: </span>{f.times.join(", ")}</p>
+                    <p className="text-sm"><span className="text-[#5f5e5a]">When: </span>{f.times.map((ft) => feedTimeLabel(ft)).join(", ")}</p>
                   )}
                 </div>
               ))

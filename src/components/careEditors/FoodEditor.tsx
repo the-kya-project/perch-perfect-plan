@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { Plus, X } from "lucide-react";
+import { FeedTimePicker } from "./FeedTimePicker";
+import { normalizeFeedTimes, feedTimeLabel, type FeedTime } from "@/lib/feedTimes";
 
 /**
  * Shared, controlled structured food editor.
@@ -17,7 +19,7 @@ import { Plus, X } from "lucide-react";
  * fields instead.
  */
 
-export type DietItem = { name: string; amount: string; unit: string; times?: string[]; freeFed?: boolean };
+export type DietItem = { name: string; amount: string; unit: string; times?: FeedTime[]; freeFed?: boolean };
 
 /** The structured food columns this editor owns. */
 export type FoodValue = {
@@ -118,8 +120,9 @@ export function deriveFoodLegacyFields(v: FoodValue): {
   amount_unit: string | null;
 } {
   const allItems: DietItem[] = v.diet_types.flatMap((t) => v.diet_details[t] ?? []);
+  // Denormalized fallback shown to the sitter only when no per-food data exists.
   const feeding_times = Array.from(
-    new Set(allItems.flatMap((it) => (Array.isArray(it.times) ? it.times : [])).map((t) => t.trim()).filter(Boolean)),
+    new Set(allItems.flatMap((it) => normalizeFeedTimes(it.times).map((ft) => feedTimeLabel(ft, "period")))),
   );
   const fresh_foods = (v.diet_details["chop"] ?? []).map((i) => i.name.trim()).filter(Boolean);
   const first = allItems.find((it) => it.name.trim() || it.amount.trim());
@@ -159,7 +162,6 @@ function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; chi
 }
 
 export function FoodEditor({ value, onChange }: { value: FoodValue; onChange: (patch: Partial<FoodValue>) => void }) {
-  const [timeDraft, setTimeDraft] = useState<Record<string, string>>({});
   const [newNever, setNewNever] = useState("");
 
   const diet = value.diet_types;
@@ -266,19 +268,6 @@ export function FoodEditor({ value, onChange }: { value: FoodValue; onChange: (p
                   <div className="space-y-2">
                     {items.map((it, idx) => {
                       const rowInvalid = ((it.amount?.trim() === "") !== (it.unit === ""));
-                      const rowKey = `${t}:${idx}`;
-                      const draft = timeDraft[rowKey] ?? "";
-                      const setDraft = (v: string) => setTimeDraft({ ...timeDraft, [rowKey]: v });
-                      const addRowTime = () => {
-                        const v = draft.trim();
-                        if (!v) return;
-                        const cur = it.times ?? [];
-                        if (cur.includes(v)) { setDraft(""); return; }
-                        const next = items.slice();
-                        next[idx] = { ...it, times: [...cur, v], freeFed: false };
-                        update(next);
-                        setDraft("");
-                      };
                       return (
                         <div key={idx} className="rounded-lg bg-sage-50/60 p-2 ring-1 ring-sage-100">
                           <div className="grid grid-cols-[1fr,auto] gap-2">
@@ -331,68 +320,16 @@ export function FoodEditor({ value, onChange }: { value: FoodValue; onChange: (p
                             <p className="mt-1.5 text-xs font-semibold text-warn-red">Add both an amount and a unit, or clear both.</p>
                           )}
 
-                          {/* Per-item feed time(s) */}
-                          <div className="mt-2 rounded-md bg-white p-2 ring-1 ring-sage-100">
-                            <label className="flex items-center gap-2 text-xs font-semibold text-sage-700">
-                              <input
-                                type="checkbox"
-                                className="size-4 accent-sage-600"
-                                checked={!!it.freeFed}
-                                onChange={(e) => {
-                                  const next = items.slice();
-                                  next[idx] = {
-                                    ...it,
-                                    freeFed: e.target.checked,
-                                    times: e.target.checked ? [] : (it.times ?? []),
-                                  };
-                                  update(next);
-                                }}
-                              />
-                              Available all day / free-fed
-                            </label>
-                            {!it.freeFed && (
-                              <div className="mt-2">
-                                <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-sage-600">Feed time(s)</p>
-                                <div className="flex flex-wrap gap-1.5">
-                                  {(it.times ?? []).map((tm) => (
-                                    <span key={tm} className="inline-flex items-center gap-1 rounded-full bg-sage-100 px-2.5 py-1 text-xs font-semibold text-sage-700">
-                                      {tm}
-                                      <button
-                                        type="button"
-                                        aria-label={`Remove ${tm}`}
-                                        onClick={() => {
-                                          const next = items.slice();
-                                          next[idx] = { ...it, times: (it.times ?? []).filter((x) => x !== tm) };
-                                          update(next);
-                                        }}
-                                        className="rounded-full p-0.5 text-sage-600 hover:bg-sage-200"
-                                      >
-                                        <X className="size-3" />
-                                      </button>
-                                    </span>
-                                  ))}
-                                  {(it.times ?? []).length === 0 && <span className="text-[11px] text-sage-400">No times yet.</span>}
-                                </div>
-                                <div className="mt-2 flex gap-2">
-                                  <input
-                                    className="input flex-1 text-sm"
-                                    placeholder="e.g. 8:00 AM, Morning, Bedtime"
-                                    value={draft}
-                                    maxLength={40}
-                                    onChange={(e) => setDraft(e.target.value)}
-                                    onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addRowTime(); } }}
-                                  />
-                                  <button
-                                    type="button"
-                                    onClick={addRowTime}
-                                    disabled={!draft.trim()}
-                                    className="rounded-xl bg-sage-100 px-3 text-sm font-semibold text-sage-700 disabled:opacity-50"
-                                  >
-                                    <Plus className="size-4" />
-                                  </button>
-                                </div>
-                              </div>
-                            )}
+                          {/* Per-item feed time(s) — structured period picker. */}
+                          <div className="mt-2">
+                            <FeedTimePicker
+                              value={{ times: normalizeFeedTimes(it.times), freeFed: !!it.freeFed }}
+                              onChange={(patch) => {
+                                const next = items.slice();
+                                next[idx] = { ...it, ...patch };
+                                update(next);
+                              }}
+                            />
                           </div>
                         </div>
                       );

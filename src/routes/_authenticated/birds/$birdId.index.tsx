@@ -12,6 +12,7 @@ import { SpeciesPicker, AgePicker } from "@/components/BirdPickers";
 import { computeSetupCompleteness } from "@/lib/setupCompleteness";
 import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
 import { FoodEditor, foodValueFromPlan, deriveFoodLegacyFields } from "@/components/careEditors/FoodEditor";
+import { syncFeedingTasks, dietItemsFromDetails } from "@/lib/feedingSync";
 import { derivedSource, taskDaypart, DAYPARTS, DAYPART_LABEL } from "@/lib/routineTasks";
 
 
@@ -307,6 +308,17 @@ function PlanFormSection({ section, birdId, bird, plan, onSaved }: { section: Pl
       supabase.from("birds").update(birdPatch).eq("id", birdId),
       supabase.from("care_plans").update(planPatch).eq("id", plan.id),
     ]);
+    // Regenerate the derived feeding routine tasks from the structured Food data
+    // (same as the guided wizard) so feed-time edits here flow to the routine and
+    // the sitter checklist — closes the gap where the tabbed editor didn't sync.
+    if (section === "food") {
+      try {
+        await syncFeedingTasks(plan.id, dietItemsFromDetails(p.diet_details));
+        qc.invalidateQueries({ queryKey: ["tasks", plan.id] });
+      } catch (e) {
+        console.error("[feeding] sync failed", e);
+      }
+    }
     setSaving(false);
     toast.success("Saved.");
     onSaved();
