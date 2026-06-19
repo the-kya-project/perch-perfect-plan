@@ -250,9 +250,11 @@ export function SitForm({
 
       <Field label="Sitter name"><input className="input" value={sitterName} onChange={(e) => setSitterName(e.target.value)} /></Field>
       <Field label="Sitter email"><input className="input" type="email" value={sitterEmail} onChange={(e) => setSitterEmail(e.target.value)} /></Field>
+      {/* min-w-0 on the grid items AND the native date inputs lets them shrink to
+          the column so the two fields never overlap on narrow phones. */}
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Start"><input className="input" type="date" value={start} onChange={(e) => setStart(e.target.value)} /></Field>
-        <Field label="End"><input className="input" type="date" value={end} onChange={(e) => setEnd(e.target.value)} /></Field>
+        <div className="min-w-0"><Field label="Start"><input className="input min-w-0" type="date" value={start} onChange={(e) => setStart(e.target.value)} /></Field></div>
+        <div className="min-w-0"><Field label="End"><input className="input min-w-0" type="date" value={end} onChange={(e) => setEnd(e.target.value)} /></Field></div>
       </div>
       <Field label="Notes for this sit"><textarea className="input area" value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
 
