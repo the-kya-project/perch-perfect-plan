@@ -19,7 +19,7 @@ import { normalizeFeedTimes, feedTimeLabel, type FeedTime } from "@/lib/feedTime
  * fields instead.
  */
 
-export type DietItem = { name: string; amount: string; unit: string; times?: FeedTime[]; freeFed?: boolean };
+export type DietItem = { name: string; amount: string; unit: string; times?: FeedTime[]; freeFed?: boolean; note?: string | null };
 
 /** The structured food columns this editor owns. */
 export type FoodValue = {
@@ -323,7 +323,7 @@ export function FoodEditor({ value, onChange }: { value: FoodValue; onChange: (p
                           {/* Per-item feed time(s) — structured period picker. */}
                           <div className="mt-2">
                             <FeedTimePicker
-                              value={{ times: normalizeFeedTimes(it.times), freeFed: !!it.freeFed }}
+                              value={{ times: normalizeFeedTimes(it.times), freeFed: !!it.freeFed, note: it.note ?? null }}
                               onChange={(patch) => {
                                 const next = items.slice();
                                 next[idx] = { ...it, ...patch };

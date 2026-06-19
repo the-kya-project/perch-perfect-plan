@@ -14,6 +14,7 @@ export type FeedingItem = {
   unit: string;
   times?: unknown; // FeedTime[] (or legacy string[]) — normalized internally
   freeFed?: boolean;
+  note?: string | null; // optional per-food instruction, e.g. "sprinkle Harrisons on it"
 };
 
 /** Flatten a care_plan's diet_details ({ type: DietItem[] }) into a flat item list. */
@@ -41,12 +42,13 @@ export async function syncFeedingTasks(planId: string, items: FeedingItem[]): Pr
     if (!name) continue;
     const amt = formatAmountUnit(it.amount, it.unit);
     const baseInstr = amt ? `Serve ${amt}.` : "";
+    const note = (it.note ?? "").trim();
 
     if (it.freeFed) {
       rows.push({
         care_plan_id: planId,
         title: `${FEED_PREFIX} ${name} (available all day)`,
-        instructions: [baseInstr, "Keep topped up — this is free-fed in the cage."].filter(Boolean).join(" "),
+        instructions: [baseInstr, "Keep topped up — this is free-fed in the cage.", note].filter(Boolean).join(" "),
         category: "custom", // → "Anytime" section; placed once, not repeated
         time_of_day: "Available all day",
         sort_order: order++,
@@ -60,7 +62,7 @@ export async function syncFeedingTasks(planId: string, items: FeedingItem[]): Pr
       rows.push({
         care_plan_id: planId,
         title: `${FEED_PREFIX} ${name}`,
-        instructions: baseInstr,
+        instructions: [baseInstr, note].filter(Boolean).join(" "),
         category: periodToDaypart(ft.period), // direct period → section, no parsing
         time_of_day: formatAt(ft.at), // optional clock for display, else null
         sort_order: order++,

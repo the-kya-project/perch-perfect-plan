@@ -138,8 +138,9 @@ function CareSheet() {
       unit: it?.unit,
       times: normalizeFeedTimes(it?.times),
       freeFed: !!it?.freeFed,
+      note: (it?.note ?? "").toString().trim(),
     })),
-  ).filter((f) => f.name || has(f.amount) || f.times.length);
+  ).filter((f) => f.name || has(f.amount) || f.times.length || f.note);
   const hasPerFoodDetails = foodRows.length > 0;
 
   const showBasics = has(bird.name) || has(bird.species) || has(bird.age) || has(bird.photo_url);
@@ -250,6 +251,9 @@ function CareSheet() {
                   )}
                   {f.times.length > 0 && (
                     <p className="text-sm"><span className="text-[#5f5e5a]">When: </span>{f.times.map((ft) => feedTimeLabel(ft)).join(", ")}</p>
+                  )}
+                  {f.note && (
+                    <p className="mt-1 text-sm"><span className="text-[#5f5e5a]">Note: </span>{f.note}</p>
                   )}
                 </div>
               ))
