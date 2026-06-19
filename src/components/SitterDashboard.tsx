@@ -45,7 +45,7 @@ export function SitterDashboard({ token }: { token: string }) {
           <p className="mt-3 rounded-2xl bg-[#efe9da] p-4 text-sm text-[#5f5e5a]">Loading…</p>
         ) : (
           <ul className="mt-3 space-y-3">
-            {birds.map((b) => {
+            {birds.map((b, i) => {
               const pct = b.tasksTotal > 0 ? Math.round((b.tasksDone / b.tasksTotal) * 100) : 0;
               const allDone = b.tasksTotal > 0 && b.tasksDone === b.tasksTotal;
               const initial = (b.name?.slice(0, 1) ?? "?").toUpperCase();
@@ -60,6 +60,7 @@ export function SitterDashboard({ token }: { token: string }) {
                 <li key={b.id}>
                   <button
                     onClick={() => navigate({ to: "/sitter/$token", params: { token }, search: { birdId: b.id } })}
+                    data-coach={i === 0 ? "bird-card" : undefined}
                     className="flex w-full items-center gap-3 rounded-2xl bg-[#efe9da] p-3 text-left shadow-sm active:scale-[0.99]"
                   >
                     {b.photo_url ? (
