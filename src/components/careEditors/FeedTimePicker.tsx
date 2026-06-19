@@ -16,10 +16,10 @@ export function FeedTimePicker({
   value,
   onChange,
 }: {
-  value: { times: FeedTime[]; freeFed: boolean };
-  onChange: (patch: { times?: FeedTime[]; freeFed?: boolean }) => void;
+  value: { times: FeedTime[]; freeFed: boolean; note?: string | null };
+  onChange: (patch: { times?: FeedTime[]; freeFed?: boolean; note?: string | null }) => void;
 }) {
-  const { times, freeFed } = value;
+  const { times, freeFed, note } = value;
   const selected = new Map<FeedPeriod, FeedTime>(times.map((t) => [t.period, t]));
 
   function togglePeriod(p: FeedPeriod) {
@@ -73,24 +73,50 @@ export function FeedTimePicker({
 
           {times.length > 0 && (
             <div className="mt-2 space-y-1.5">
-              {FEED_PERIODS.filter((p) => selected.has(p.value)).map((p) => (
-                <div key={p.value} className="flex items-center gap-2 text-xs text-sage-700">
-                  <span className="w-16 shrink-0 font-medium">{p.label}</span>
-                  <input
-                    type="time"
-                    className="input flex-1 text-sm"
-                    value={selected.get(p.value)?.at ?? ""}
-                    onChange={(e) => setAt(p.value, e.target.value)}
-                  />
-                  <span className="shrink-0 text-[11px] text-sage-400">optional time</span>
-                </div>
-              ))}
+              {FEED_PERIODS.filter((p) => selected.has(p.value)).map((p) => {
+                const at = selected.get(p.value)?.at ?? "";
+                return (
+                  <div key={p.value} className="flex items-center gap-2 text-xs text-sage-700">
+                    <span className="w-16 shrink-0 font-medium">{p.label}</span>
+                    <input
+                      type="time"
+                      className="input flex-1 text-sm"
+                      value={at}
+                      onChange={(e) => setAt(p.value, e.target.value)}
+                    />
+                    {at ? (
+                      <button
+                        type="button"
+                        onClick={() => setAt(p.value, "")}
+                        className="shrink-0 rounded-md px-2 py-1 text-[11px] font-semibold text-warn-red hover:bg-warn-red/10"
+                        aria-label={`Clear ${p.label} time`}
+                      >
+                        Clear
+                      </button>
+                    ) : (
+                      <span className="shrink-0 text-[11px] text-sage-400">optional time</span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
 
           {times.length === 0 && <p className="mt-1 text-[11px] text-sage-400">Pick at least one period.</p>}
         </div>
       )}
+
+      {/* Optional per-food note, e.g. "sprinkle a little Harrisons on it". */}
+      <div className="mt-2">
+        <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-sage-600">Note (optional)</label>
+        <textarea
+          className="input area text-sm"
+          placeholder="e.g. sprinkle a little Harrisons on it"
+          maxLength={300}
+          value={note ?? ""}
+          onChange={(e) => onChange({ note: e.target.value || null })}
+        />
+      </div>
     </div>
   );
 }

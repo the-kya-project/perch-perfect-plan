@@ -725,7 +725,7 @@ const WATER_BOWL_WASH_OPTIONS = [
 // itself is excluded — checking the removal task should NOT start a new timer.
 export const FRESH_FOOD_TASK_PATTERN = /\b(fresh|chop|veg|veggies|salad|sprout)\b/i;
 
-type DietItem = { name: string; amount: string; unit: string; times?: FeedTime[]; freeFed?: boolean };
+type DietItem = { name: string; amount: string; unit: string; times?: FeedTime[]; freeFed?: boolean; note?: string | null };
 
 function FoodWaterStep({
   birdId,
@@ -1120,7 +1120,7 @@ function FoodWaterStep({
                           {/* Per-item feed time(s) — structured period picker. */}
                           <div className="mt-2">
                             <FeedTimePicker
-                              value={{ times: normalizeFeedTimes(it.times), freeFed: !!it.freeFed }}
+                              value={{ times: normalizeFeedTimes(it.times), freeFed: !!it.freeFed, note: it.note ?? null }}
                               onChange={(patch) => {
                                 const next = items.slice();
                                 next[idx] = { ...it, ...patch };
