@@ -329,7 +329,7 @@ function StepBody({
   if (step === 4) return <PersonalityStep birdId={birdId} birdName={birdName} registerFlush={registerFlush} />;
   if (step === 5) return <EnvironmentStep birdId={birdId} registerFlush={registerFlush} />;
   if (step === 6) return <HealthBaselineStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} registerFlush={registerFlush} />;
-  if (step === 7) return <WatchFirstClipsStep birdId={birdId} onBlockNext={onBlockNext} />;
+  if (step === 7) return <OwnerTipsClipsStep birdId={birdId} onBlockNext={onBlockNext} />;
   if (step === 8) return <EmergencyStep birdId={birdId} onBlockNext={onBlockNext} registerFlush={registerFlush} />;
   if (step === 9) return <ReviewStep birdId={birdId} birdName={birdName} onJumpToStep={onJumpToStep} onFinish={onFinish} />;
 
@@ -2016,7 +2016,7 @@ async function syncHygieneTasks(
   }
 }
 
-// ---------- Step 7: Watch-first clips ----------
+// ---------- Step 7: Tips from the owner ----------
 
 type ClipSlot = {
   key: "step_up" | "food_water" | "locations" | "bedtime";
@@ -2032,7 +2032,7 @@ const CLIP_SLOTS: ClipSlot[] = [
   { key: "bedtime", column: "clip_bedtime_path", label: "Settling her for the night", hint: "Cover routine, lights, sounds." },
 ];
 
-function WatchFirstClipsStep({ birdId, onBlockNext }: { birdId: string; onBlockNext: (block: boolean) => void }) {
+function OwnerTipsClipsStep({ birdId, onBlockNext }: { birdId: string; onBlockNext: (block: boolean) => void }) {
   const qc = useQueryClient();
   // Track which slots are mid-upload so Next is disabled until all settle.
   const busyRef = useRef<Set<string>>(new Set());
@@ -2511,7 +2511,7 @@ function ReviewStep({
       list.push({ label: "No health baseline (weight, photo, clip, or notes)", step: 6 });
     }
     if (!plan?.clip_step_up_path && !plan?.clip_food_water_path && !plan?.clip_locations_path && !plan?.clip_bedtime_path) {
-      list.push({ label: "No watch-first clips", step: 7 });
+      list.push({ label: "No tips-from-the-owner clips", step: 7 });
     }
     const eff = (k: string) => ((contacts?.[k] ?? "").toString().trim() || (defaults?.[k] ?? "").toString().trim());
     if (!eff("owner_phone") || !eff("avian_vet_phone")) {

@@ -541,9 +541,9 @@ function PlanFormSection({ section, birdId, bird, plan, onSaved }: { section: Pl
 
       {section === "clips" && (
         <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
-          <h2 className="text-sm font-bold">Watch-first clips</h2>
+          <h2 className="text-sm font-bold">Tips from the owner</h2>
           <p className="text-[11px] text-sage-600">
-            Short videos sitters watch first. Record or replace in{" "}
+            Short videos with tips for your sitter. Record or replace in{" "}
             <Link to="/birds/$birdId/setup" params={{ birdId }} search={guidedStep ? { step: guidedStep } : undefined} className="font-semibold text-sage-800 underline">guided setup</Link>.
           </p>
           {CLIP_FIELDS.map((c) => (

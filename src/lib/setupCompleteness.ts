@@ -77,7 +77,7 @@ export function computeSetupCompleteness(args: {
     },
     {
       step: 7,
-      label: "Watch-first clips",
+      label: "Tips from the owner",
       done:
         nonEmpty(plan?.clip_step_up_path) ||
         nonEmpty(plan?.clip_food_water_path) ||
