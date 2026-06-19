@@ -1,0 +1,273 @@
+import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { track } from "@/lib/analytics";
+import { Feather, Plus } from "lucide-react";
+
+// Create OR edit a sit. In edit mode (`editSit` set) it preserves the existing
+// invite_token — the same sitter link keeps working; editing changes what it
+// grants (dates → access window, and which birds are included), not the link.
+export function SitForm({
+  birds,
+  onSaved,
+  initialOpen = false,
+  preselectBirdId,
+  activeSit,
+  editSit,
+  onCancel,
+}: {
+  birds: any[];
+  onSaved: () => void;
+  initialOpen?: boolean;
+  preselectBirdId?: string;
+  activeSit?: any;
+  editSit?: any;
+  onCancel?: () => void;
+}) {
+  const editing = !!editSit;
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(initialOpen || editing);
+
+  const [selected, setSelected] = useState<Set<string>>(() => {
+    if (editing) return new Set<string>(((editSit.sit_birds ?? []) as any[]).map((sb) => sb.bird_id));
+    return preselectBirdId
+      ? new Set([preselectBirdId])
+      : new Set<string>(birds.length === 1 ? [birds[0].id] : []);
+  });
+  // Authoritative current bird list for reconcile (SitCard in the bird editor
+  // doesn't pass sit_birds, so we fetch it below).
+  const currentBirdIds = useRef<string[]>(editing ? Array.from(selected) : []);
+
+  const [sitterName, setSitterName] = useState(editing ? (editSit.sitter_name ?? "") : "");
+  const [sitterEmail, setSitterEmail] = useState(editing ? (editSit.sitter_email ?? "") : "");
+  const [start, setStart] = useState(editing ? (editSit.start_date ?? "") : "");
+  const [end, setEnd] = useState(editing ? (editSit.end_date ?? "") : "");
+  const [notes, setNotes] = useState(editing ? (editSit.notes ?? "") : "");
+  const [saving, setSaving] = useState(false);
+
+  // Create-only: ?newSit=1 auto-opens the form once, then clears the param.
+  useEffect(() => {
+    if (initialOpen && !editing) {
+      setOpen(true);
+      navigate({ to: "/dashboard", search: {}, replace: true });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Edit: load the sit's authoritative current birds (prefill + reconcile).
+  useEffect(() => {
+    if (!editing) return;
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase.from("sit_birds").select("bird_id").eq("sit_id", editSit.id);
+      if (cancelled) return;
+      const ids = (data ?? []).map((r: any) => r.bird_id);
+      currentBirdIds.current = ids;
+      setSelected(new Set(ids));
+    })();
+    return () => { cancelled = true; };
+  }, [editing, editSit?.id]);
+
+  function toggle(id: string) {
+    const next = new Set(selected);
+    next.has(id) ? next.delete(id) : next.add(id);
+    setSelected(next);
+  }
+  function selectAll() {
+    setSelected(new Set(birds.map((b) => b.id)));
+  }
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (selected.size === 0) { toast.error("Pick at least one bird."); return; }
+    if (!start || !end) { toast.error("Pick a start and end date."); return; }
+    if (end < start) { toast.error("End date must be on or after start date."); return; }
+    setSaving(true);
+    try {
+      const birdIds = Array.from(selected);
+      const [{ data: contacts, error: ecErr }, { data: u }] = await Promise.all([
+        supabase
+          .from("emergency_contacts")
+          .select("bird_id, owner_phone, avian_vet_phone")
+          .in("bird_id", birdIds),
+        supabase.auth.getUser(),
+      ]);
+      if (ecErr) { toast.error(ecErr.message); setSaving(false); return; }
+      if (!u.user) { toast.error("You're signed out."); setSaving(false); return; }
+      const { data: defaults } = await supabase
+        .from("owner_emergency_defaults")
+        .select("owner_phone, avian_vet_phone")
+        .eq("owner_id", u.user.id)
+        .maybeSingle();
+      const contactByBird = new Map((contacts ?? []).map((c: any) => [c.bird_id, c]));
+      const eff = (c: any, k: string) =>
+        (c?.[k]?.trim?.() || (defaults as any)?.[k]?.trim?.() || "");
+      const missing = birdIds
+        .map((id) => {
+          const c = contactByBird.get(id);
+          const needs: string[] = [];
+          if (!eff(c, "owner_phone")) needs.push("your phone");
+          if (!eff(c, "avian_vet_phone")) needs.push("avian vet phone");
+          return needs.length ? { bird: birds.find((b: any) => b.id === id), needs } : null;
+        })
+        .filter(Boolean) as { bird: any; needs: string[] }[];
+      if (missing.length) {
+        const details = missing.map((m) => `${m.bird?.name ?? "Bird"}: ${m.needs.join(" & ")}`).join("; ");
+        toast.error(
+          `Add the required emergency contacts before sharing a sitter link — ${details}. Set account defaults below, or open the bird's Emergency tab.`,
+          { duration: 8000 },
+        );
+        setSaving(false);
+        return;
+      }
+
+      // Access window ends at end-of-day on the end date (same as create).
+      const expires = new Date(end + "T23:59:59Z").toISOString();
+
+      if (editing) {
+        // Preserve invite_token — the same link keeps working.
+        const { error } = await supabase
+          .from("sits")
+          .update({
+            sitter_name: sitterName || null,
+            sitter_email: sitterEmail || null,
+            start_date: start,
+            end_date: end,
+            notes: notes || null,
+            token_expires_at: expires,
+          })
+          .eq("id", editSit.id);
+        if (error) { toast.error(error.message); setSaving(false); return; }
+
+        // Reconcile which birds the token grants access to.
+        const cur = new Set(currentBirdIds.current);
+        const toAdd = birdIds.filter((id) => !cur.has(id));
+        const toRemove = currentBirdIds.current.filter((id) => !selected.has(id));
+        if (toAdd.length) {
+          const { error: addErr } = await supabase
+            .from("sit_birds")
+            .insert(toAdd.map((bird_id) => ({ sit_id: editSit.id, bird_id })));
+          if (addErr) { toast.error(addErr.message); setSaving(false); return; }
+        }
+        if (toRemove.length) {
+          const { error: remErr } = await supabase
+            .from("sit_birds")
+            .delete()
+            .eq("sit_id", editSit.id)
+            .in("bird_id", toRemove);
+          if (remErr) { toast.error(remErr.message); setSaving(false); return; }
+        }
+        track("sit_edited", { bird_count: birdIds.length });
+        toast.success("Sit updated.");
+        onSaved();
+        onCancel?.();
+      } else {
+        const { data: sit, error } = await supabase.from("sits").insert({
+          owner_id: u.user.id,
+          sitter_name: sitterName || null,
+          sitter_email: sitterEmail || null,
+          start_date: start, end_date: end,
+          notes: notes || null,
+          token_expires_at: expires,
+          status: "upcoming",
+        }).select().single();
+        if (error || !sit) { toast.error(error?.message ?? "Could not create sit."); setSaving(false); return; }
+        const rows = birdIds.map((bird_id) => ({ sit_id: sit.id, bird_id }));
+        const { error: linkErr } = await supabase.from("sit_birds").insert(rows);
+        if (linkErr) { toast.error(linkErr.message); setSaving(false); return; }
+        const days = Math.max(1, Math.round((new Date(end).getTime() - new Date(start).getTime()) / 86_400_000) + 1);
+        track("sit_created", { bird_count: birdIds.length, days, has_email: !!sitterEmail });
+        toast.success("Sit created.");
+        setOpen(false);
+        setSitterName(""); setSitterEmail(""); setStart(""); setEnd(""); setNotes("");
+        setSelected(new Set(birds.length === 1 ? [birds[0].id] : []));
+        onSaved();
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  // Closed prompt (create mode only).
+  if (!open && !editing) {
+    if (activeSit) {
+      return (
+        <div className="rounded-[20px] bg-[#cdeab0] p-5">
+          <p className="text-lg font-medium text-[#1f3d12]">Sit active</p>
+          <p className="mt-1 text-sm text-[#3f5e22]">A sit is underway right now. Your sitter has their private link.</p>
+          <a href="#sits" className="mt-4 inline-flex items-center gap-2 rounded-[14px] bg-[#1a3d2e] px-4 py-2.5 text-sm font-medium text-white">
+            View details
+          </a>
+        </div>
+      );
+    }
+    return (
+      <div className="relative overflow-hidden rounded-[20px] bg-[#cdeab0] p-5">
+        <Feather className="pointer-events-none absolute -right-3 -top-3 size-20 rotate-12 text-[#1f3d12]/10" />
+        <p className="text-lg font-medium text-[#1f3d12]">Going away soon?</p>
+        <p className="mt-1 max-w-[18rem] text-sm text-[#3f5e22]">Create a sit and send your sitter a private link with everything they need.</p>
+        <button onClick={() => setOpen(true)} className="mt-4 inline-flex items-center gap-2 rounded-[14px] bg-[#1a3d2e] px-4 py-2.5 text-sm font-medium text-white">
+          <Plus className="size-4" /> New sit
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <form onSubmit={submit} noValidate className="space-y-3 rounded-[20px] bg-[#efe9da] p-4">
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-medium text-[#1a3d2e]">{editing ? "Edit sit" : "New sit"}</p>
+        <button type="button" onClick={() => (editing ? onCancel?.() : setOpen(false))} className="text-xs text-[#5f5e5a] underline">Cancel</button>
+      </div>
+
+      <div>
+        <div className="flex items-center justify-between">
+          <p className="text-[11px] font-medium uppercase tracking-wider text-[#5f5e5a]">Birds included</p>
+          {birds.length > 1 && (
+            <button type="button" onClick={selectAll} className="text-[11px] font-medium text-[#1a3d2e] underline">Select all</button>
+          )}
+        </div>
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          {birds.map((b: any) => {
+            const on = selected.has(b.id);
+            return (
+              <button
+                key={b.id}
+                type="button"
+                onClick={() => toggle(b.id)}
+                className={`flex items-center gap-2 rounded-lg border px-2 py-2 text-left text-sm ${on ? "border-[#2d6a4f] bg-[#e8f0ec]" : "border-[#e0d8c4] bg-white"}`}
+              >
+                <span className={`grid size-4 shrink-0 place-items-center rounded border-2 ${on ? "border-[#2d6a4f] bg-[#2d6a4f]" : "border-[#bcb6a3]"}`}>
+                  {on && <svg viewBox="0 0 20 20" className="size-3 text-white"><path fill="currentColor" d="M7.629 13.314 4.4 10.085l1.214-1.214 2.015 2.015 5.757-5.757 1.214 1.214z"/></svg>}
+                </span>
+                <span className="truncate text-[#1a3d2e]">{b.name}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <Field label="Sitter name"><input className="input" value={sitterName} onChange={(e) => setSitterName(e.target.value)} /></Field>
+      <Field label="Sitter email"><input className="input" type="email" value={sitterEmail} onChange={(e) => setSitterEmail(e.target.value)} /></Field>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Start"><input className="input" type="date" value={start} onChange={(e) => setStart(e.target.value)} /></Field>
+        <Field label="End"><input className="input" type="date" value={end} onChange={(e) => setEnd(e.target.value)} /></Field>
+      </div>
+      <Field label="Notes for this sit"><textarea className="input area" value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
+
+      <button type="submit" disabled={saving} className="w-full rounded-[14px] bg-[#1a3d2e] py-3 text-sm font-medium text-white disabled:opacity-50">
+        {saving ? (editing ? "Saving..." : "Creating...") : editing ? "Save changes" : "Create sit & generate link"}
+      </button>
+    </form>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-xs font-medium uppercase tracking-wider text-[#5f5e5a]">{label}</span>
+      {children}
+    </label>
+  );
+}
