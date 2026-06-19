@@ -63,8 +63,13 @@ function useDebouncedAutosave(
     else hydratedOnce.current = true;
     timerRef.current = setTimeout(async () => {
       timerRef.current = null;
-      await saveRef.current();
-      setDirtyRef.current(false);
+      try {
+        await saveRef.current();
+        setDirtyRef.current(false);
+      } catch (e: any) {
+        // Never fail silently — the owner must know their input didn't save.
+        toast.error(`Couldn't save your changes: ${e?.message ?? "please try again."}`);
+      }
     }, delay);
     return () => {
       if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
@@ -76,8 +81,13 @@ function useDebouncedAutosave(
     if (!registerFlush) return;
     const flush = async () => {
       if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
-      await saveRef.current();
-      setDirtyRef.current(false);
+      try {
+        await saveRef.current();
+        setDirtyRef.current(false);
+      } catch (e: any) {
+        toast.error(`Couldn't save your changes: ${e?.message ?? "please try again."}`);
+        throw e; // surface to flushPending so navigation can be blocked
+      }
     };
     registerFlush(flush);
     return () => registerFlush(null);
@@ -113,6 +123,25 @@ function BirdSetup() {
   const [dirty, setDirty] = useState(false);
   useEffect(() => { setBlockNext(false); setDirty(false); }, [step]);
   const [saving, setSaving] = useState(false);
+  const qc = useQueryClient();
+
+  // Self-heal: guarantee a care_plan exists for this bird so no setup step can
+  // silently no-op and lose the owner's input. The original creation in new.tsx
+  // can fail; this also repairs any bird that ended up without a plan.
+  const planEnsuredRef = useRef(false);
+  useEffect(() => {
+    if (!bird || planEnsuredRef.current) return;
+    planEnsuredRef.current = true;
+    (async () => {
+      const { data, error } = await supabase
+        .from("care_plans").select("id").eq("bird_id", birdId).maybeSingle();
+      if (error || data) return; // already exists, or transient — steps will retry
+      const { error: upErr } = await supabase
+        .from("care_plans").upsert({ bird_id: birdId }, { onConflict: "bird_id" });
+      if (upErr) { toast.error(`Couldn't load this bird's care plan: ${upErr.message}`); return; }
+      qc.invalidateQueries(); // plan now exists — refetch the per-step queries
+    })();
+  }, [bird, birdId, qc]);
 
   useEffect(() => {
     track("guided_editor_opened", { entry_step: stepParam ?? 1 });
@@ -124,8 +153,12 @@ function BirdSetup() {
   const registerFlush = useCallback((fn: (() => Promise<void>) | null) => {
     flushRef.current = fn;
   }, []);
-  async function flushPending() {
-    try { await flushRef.current?.(); } catch { /* surfaced by per-row toasts */ }
+  // Returns false if the current step's pending save failed, so callers can stay
+  // put rather than navigate away and lose the owner's input. The error toast is
+  // raised by the autosave hook.
+  async function flushPending(): Promise<boolean> {
+    try { await flushRef.current?.(); return true; }
+    catch { return false; }
   }
 
   // Honor an explicit ?step= link, but only when it actually changes — not on
@@ -159,7 +192,7 @@ function BirdSetup() {
   }
 
   async function onNext() {
-    await flushPending();
+    if (!(await flushPending())) return;
     const completedSection = SETUP_STEPS[step - 1]?.key;
     if (step >= TOTAL_STEPS) {
       const ok = await persistStep(TOTAL_STEPS, true);
@@ -186,14 +219,14 @@ function BirdSetup() {
 
   async function onBack() {
     if (step <= 1) return;
-    await flushPending();
+    if (!(await flushPending())) return;
     const prev = step - 1;
     const ok = await persistStep(prev);
     if (ok) setStep(prev);
   }
 
   async function onSaveAndExit() {
-    await flushPending();
+    if (!(await flushPending())) return;
     const ok = await persistStep(step);
     if (ok) {
       toast.success("Progress saved.");
@@ -204,7 +237,7 @@ function BirdSetup() {
   async function jumpToStep(target: number) {
     const clamped = Math.min(TOTAL_STEPS, Math.max(1, target));
     if (clamped === step) return;
-    await flushPending();
+    if (!(await flushPending())) return;
     const ok = await persistStep(clamped);
     if (ok) setStep(clamped);
   }
@@ -216,7 +249,7 @@ function BirdSetup() {
   }
 
   async function finishAndGo(opts: { to: "dashboard-newsit" | "tabs" }) {
-    await flushPending();
+    if (!(await flushPending())) return;
     const ok = await persistStep(TOTAL_STEPS, true);
     if (!ok) return;
     if (opts.to === "dashboard-newsit") {

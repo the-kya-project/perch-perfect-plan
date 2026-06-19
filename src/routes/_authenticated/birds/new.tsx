@@ -68,8 +68,27 @@ function NewBird() {
       setSaving(false);
       return null;
     }
-    await supabase.from("care_plans").insert({ bird_id: bird.id });
-    await supabase.from("emergency_contacts").insert({ bird_id: bird.id });
+    // Create the related rows the guided setup writes into. Use upsert
+    // (idempotent on bird_id) AND check the error: if the care_plan isn't
+    // created, every wizard step silently no-ops and the owner loses all their
+    // input. Don't proceed on failure — surface it instead of dropping them into
+    // a broken setup.
+    const { error: planErr } = await supabase
+      .from("care_plans")
+      .upsert({ bird_id: bird.id }, { onConflict: "bird_id" });
+    if (planErr) {
+      toast.error(`Couldn't set up the care plan: ${planErr.message}`);
+      setSaving(false);
+      return null;
+    }
+    const { error: ecErr } = await supabase
+      .from("emergency_contacts")
+      .upsert({ bird_id: bird.id }, { onConflict: "bird_id" });
+    if (ecErr) {
+      toast.error(`Couldn't set up emergency info: ${ecErr.message}`);
+      setSaving(false);
+      return null;
+    }
     setSaving(false);
     return bird.id;
   }
