@@ -7,12 +7,20 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const MAX_CLIP_SECONDS = 60;
 
-/** Create a one-time direct-upload URL + video uid for the owner to upload to. */
+/** Create a resumable (tus) direct-upload URL + video uid for the owner's
+ *  browser to upload to. uploadLength is the file's byte size (tus needs it). */
 export const createClipUpload = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const { createDirectUpload } = await import("@/lib/cloudflareStream.server");
-    return await createDirectUpload({ maxDurationSeconds: MAX_CLIP_SECONDS, creator: (context as any).userId });
+  .inputValidator((d: { uploadLength: number }) =>
+    z.object({ uploadLength: z.number().int().positive().max(2_000_000_000) }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { createTusDirectUpload } = await import("@/lib/cloudflareStream.server");
+    return await createTusDirectUpload({
+      uploadLength: data.uploadLength,
+      maxDurationSeconds: MAX_CLIP_SECONDS,
+      creator: (context as any).userId,
+    });
   });
 
 /** Poll a video's transcode status (owner shows "Processing…" until ready). */
