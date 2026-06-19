@@ -86,10 +86,14 @@ function xhrUpload(url: string, file: File, onProgress: (pct: number) => void): 
     };
     xhr.onload = () => {
       if (xhr.status >= 200 && xhr.status < 300) resolve();
-      else reject(new Error(`Upload failed (${xhr.status})`));
+      else {
+        const body = (xhr.responseText || "").replace(/\s+/g, " ").trim().slice(0, 160);
+        reject(new Error(`CF upload HTTP ${xhr.status}${body ? `: ${body}` : ""}`));
+      }
     };
-    xhr.onerror = () => reject(new Error("Network error during upload"));
-    xhr.ontimeout = () => reject(new Error("Upload timed out"));
+    // status 0 here is almost always a CORS/network block on the browser→CF POST.
+    xhr.onerror = () => reject(new Error("CF upload blocked (status 0 — CORS/network)"));
+    xhr.ontimeout = () => reject(new Error("CF upload timed out"));
     const fd = new FormData();
     fd.append("file", file, file.name || "clip");
     xhr.send(fd);
@@ -113,7 +117,10 @@ function friendlyUploadError(err: any): string {
   const m = String(err?.message ?? "");
   if (/not configured/i.test(m)) return "Video uploads aren't set up yet — please try again later.";
   if (/processed/i.test(m)) return m;
-  if (/network|timed out|failed \(/i.test(m)) return "Upload failed — check your connection and try again.";
+  // Surface the raw Cloudflare upload failure (status + message) so it can be
+  // diagnosed from the phone without a console.
+  if (/CF upload/i.test(m)) return `Couldn't send the video to the converter — ${m}`;
+  if (/network|timed out/i.test(m)) return "Upload failed — check your connection and try again.";
   return "Upload failed. Please try again.";
 }
 
