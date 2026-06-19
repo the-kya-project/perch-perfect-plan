@@ -12,6 +12,7 @@ import { SpeciesPicker, AgePicker } from "@/components/BirdPickers";
 import { computeSetupCompleteness } from "@/lib/setupCompleteness";
 import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
 import { FoodEditor, foodValueFromPlan, deriveFoodLegacyFields } from "@/components/careEditors/FoodEditor";
+import { derivedSource } from "@/lib/routineTasks";
 
 
 const TAB_IDS = ["basics", "routine", "food", "behavior", "home", "health", "clips", "emergency", "sits", "logs"] as const;
@@ -625,15 +626,22 @@ function RoutineEditor({ planId, tasks, onChange }: { planId: string; tasks: any
         <section key={cat} className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
           <h2 className="text-[11px] font-bold uppercase tracking-widest text-sage-600">{cat}</h2>
           <ul className="mt-2 space-y-2">
-            {(grouped[cat] ?? []).map((t) => (
-              <li key={t.id} className="flex items-start gap-3 rounded-lg bg-sage-50 p-3">
-                <div className="flex-1">
-                  <p className="text-sm font-semibold">{t.title}{t.time_of_day && <span className="ml-2 text-[10px] uppercase text-sage-600">{t.time_of_day}</span>}</p>
-                  {t.instructions && <p className="mt-0.5 text-xs text-sage-600">{t.instructions}</p>}
-                </div>
-                <button onClick={() => remove(t.id)} className="rounded p-1 text-sage-600"><Trash2 className="size-4" /></button>
-              </li>
-            ))}
+            {(grouped[cat] ?? []).map((t) => {
+              const derived = derivedSource(t.title);
+              return (
+                <li key={t.id} className="flex items-start gap-3 rounded-lg bg-sage-50 p-3">
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold">{t.title}{t.time_of_day && <span className="ml-2 text-[10px] uppercase text-sage-600">{t.time_of_day}</span>}</p>
+                    {t.instructions && <p className="mt-0.5 text-xs text-sage-600">{t.instructions}</p>}
+                  </div>
+                  {derived ? (
+                    <span className="mt-0.5 shrink-0 rounded-full bg-sage-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-sage-600">from {derived}</span>
+                  ) : (
+                    <button onClick={() => remove(t.id)} className="rounded p-1 text-sage-600"><Trash2 className="size-4" /></button>
+                  )}
+                </li>
+              );
+            })}
             {(grouped[cat] ?? []).length === 0 && <li className="text-xs text-sage-400">No tasks yet.</li>}
           </ul>
         </section>

@@ -10,6 +10,7 @@ import { Plus, X, Check } from "lucide-react";
 import { PhotoCropper } from "@/components/PhotoCropper";
 import { AgePicker, BirdField, SpeciesPicker } from "@/components/BirdPickers";
 import { ClipRecorder, UploadProgress, MAX_SECONDS as CLIP_MAX_SECONDS, MAX_BYTES as CLIP_MAX_BYTES } from "@/components/ClipRecorder";
+import { FEED_PREFIX, HYG_REMOVE_PREFIX, HYG_WASH_FOOD_PREFIX, HYG_WASH_WATER_PREFIX, WATER_CHANGE_PREFIX, MED_TASK_PREFIX, isDerivedTask, derivedSource } from "@/lib/routineTasks";
 import { formatAmountUnit } from "@/lib/labels";
 import { track } from "@/lib/analytics";
 import { recomputeSitterIntro } from "@/lib/sitterIntro";
@@ -328,14 +329,17 @@ const TIME_BLOCKS: { key: string; label: string }[] = [
   { key: "custom", label: "Custom" },
 ];
 
+// Pure-rhythm chips only — items with NO structured source elsewhere. Feedings,
+// water, cleaning, and medication are auto-derived from the Food / Health tabs
+// (see syncFeedingTasks / syncHygieneTasks / syncMedicationTask) and must not be
+// re-entered here, or they drift out of sync.
 const COMMON_TASKS = [
   "Uncover cage",
-  "Fresh food",
-  "Fresh water",
+  "Open curtains",
   "Out-of-cage time",
-  "Misting or bath",
   "Training or play",
-  "Medication",
+  "Misting or bath",
+  "Close curtains",
   "Cover for night",
 ];
 
@@ -484,8 +488,8 @@ function DayInLifeStep({ birdId }: { birdId: string }) {
   return (
     <div className="space-y-4">
       <div className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
-        <p className="text-sm font-semibold">Walk through a normal day.</p>
-        <p className="mt-1 text-sm text-sage-600">What happens, and when? Tap chips to add the usual tasks to each block — they'll appear in the Routine tab.</p>
+        <p className="text-sm font-semibold">Add the daily rhythm.</p>
+        <p className="mt-1 text-sm text-sage-600">Feedings, water, cleaning, and medication come in automatically from the Food and Health tabs — add anything else here. Auto-added items show a small tag and are edited in their own section.</p>
       </div>
 
       {TIME_BLOCKS.map((block) => (
@@ -514,7 +518,11 @@ function TimeBlockSection({
 }) {
   const [custom, setCustom] = useState("");
   const [busy, setBusy] = useState(false);
-  const present = new Map(tasks.map((t) => [t.title.trim().toLowerCase(), t]));
+  // Derived tasks (feeding/water/hygiene/medication) are read-only here — they
+  // come from the Food / Health tabs. Only manual rhythm items are editable.
+  const derivedTasks = tasks.filter((t) => isDerivedTask(t.title));
+  const manualTasks = tasks.filter((t) => !isDerivedTask(t.title));
+  const present = new Map(manualTasks.map((t) => [t.title.trim().toLowerCase(), t]));
 
   async function add(title: string) {
     if (busy) return;
@@ -596,9 +604,28 @@ function TimeBlockSection({
         </button>
       </div>
 
-      {tasks.length > 0 && (
+      {/* Auto-derived items, read-only — managed in their source section. */}
+      {derivedTasks.length > 0 && (
         <ul className="mt-4 space-y-2">
-          {tasks.map((t) => (
+          {derivedTasks.map((t) => (
+            <li key={t.id} className="rounded-lg bg-sage-50/70 p-3 ring-1 ring-sage-100">
+              <div className="flex items-start justify-between gap-2">
+                <p className="flex-1 text-sm font-semibold text-sage-700">{t.title}</p>
+                <span className="mt-0.5 shrink-0 rounded-full bg-sage-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-sage-600">
+                  from {derivedSource(t.title)}
+                </span>
+              </div>
+              {t.time_of_day && <p className="mt-0.5 text-[11px] font-medium text-sage-500">{t.time_of_day}</p>}
+              {t.instructions && <p className="mt-1 whitespace-pre-line text-xs text-sage-600">{t.instructions}</p>}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {/* Manual rhythm items, editable here. */}
+      {manualTasks.length > 0 && (
+        <ul className="mt-3 space-y-2">
+          {manualTasks.map((t) => (
             <li key={t.id} className="rounded-lg bg-sage-50 p-3">
               <div className="flex items-start gap-2">
                 <p className="flex-1 text-sm font-semibold">{t.title}</p>
@@ -684,12 +711,8 @@ const WATER_BOWL_WASH_OPTIONS = [
   { value: "twice_daily", label: "Twice a day" },
 ];
 
-// Prefixes used by syncHygieneTasks / syncFeedingTasks so we can update/delete
-// the auto-generated rows.
-const HYG_REMOVE_PREFIX = "Remove fresh food";
-const HYG_WASH_FOOD_PREFIX = "Wash food bowls";
-const HYG_WASH_WATER_PREFIX = "Wash water bowl";
-const FEED_PREFIX = "Feed:";
+// Prefixes used by the sync functions to find/replace their auto-generated rows
+// (and by the builder to mark derived items read-only) live in @/lib/routineTasks.
 
 // A user-checked sitter task counts as "fresh food served" when the title
 // looks like a fresh-food / chop meal task. The auto-generated removal task
@@ -908,10 +931,16 @@ function FoodWaterStep({
       await syncFeedingTasks(plan.id, allItems);
 
       const hasFresh = diet.includes("chop") || freshList.length > 0 || freshOther.trim().length > 0;
+      const waterChangeLabel =
+        waterFreq === "once" ? "once daily"
+        : waterFreq === "twice" ? "twice daily"
+        : waterFreq === "more" ? "more than twice daily"
+        : null;
       await syncHygieneTasks(plan.id, {
         removalLabel,
         foodWashLabel,
         waterWashLabel,
+        waterChangeLabel,
         hasFresh,
       });
 
@@ -1608,8 +1637,6 @@ function EnvironmentStep({ birdId, registerFlush }: { birdId: string; registerFl
 
 // ---------- Step 6: Health baseline ----------
 
-const MED_TASK_PREFIX = "Medication";
-
 function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlush }: { birdId: string; birdName: string; onBlockNext: (block: boolean) => void; registerFlush?: (fn: (() => Promise<void>) | null) => void }) {
   const qc = useQueryClient();
 
@@ -1916,6 +1943,10 @@ async function syncMedicationTask(planId: string, meds: string, schedule: string
   const sched = schedule.trim();
   const title = med ? `${MED_TASK_PREFIX}: ${med}` : "";
   const instructions = sched || null;
+  // Medication is free text (name+dose combined, free-text schedule), so we
+  // infer the day-part from the schedule wording when we can, else default to
+  // morning. NOTE: there is no discrete scheduled-time field — see summary flag.
+  const category = sched ? inferFeedingCategory(sched) : "morning";
 
   if (!med) {
     if (existing && existing.length) {
@@ -1929,12 +1960,12 @@ async function syncMedicationTask(planId: string, meds: string, schedule: string
       care_plan_id: planId,
       title,
       instructions,
-      category: "morning",
+      category,
       sort_order: 999,
     } as any);
   } else {
     const [first, ...rest] = existing as any[];
-    await supabase.from("routine_tasks").update({ title, instructions } as any).eq("id", first.id);
+    await supabase.from("routine_tasks").update({ title, instructions, category } as any).eq("id", first.id);
     if (rest.length) await supabase.from("routine_tasks").delete().in("id", rest.map((t) => t.id));
   }
 }
@@ -2014,10 +2045,20 @@ async function syncFeedingTasks(planId: string, items: FeedingItem[]) {
 
 async function syncHygieneTasks(
   planId: string,
-  args: { removalLabel: string; foodWashLabel: string; waterWashLabel: string; hasFresh: boolean },
+  args: { removalLabel: string; foodWashLabel: string; waterWashLabel: string; waterChangeLabel: string | null; hasFresh: boolean },
 ) {
   type Spec = { prefix: string; title: string; instructions: string; category: string; sort_order: number; skip: boolean };
   const specs: Spec[] = [
+    {
+      // Fresh drinking water — derived from the Food tab's water frequency.
+      // Placed in the morning block (start-of-day water change).
+      prefix: WATER_CHANGE_PREFIX,
+      title: `${WATER_CHANGE_PREFIX} (${args.waterChangeLabel ?? ""})`.replace(" ()", ""),
+      instructions: "Give fresh drinking water.",
+      category: "morning",
+      sort_order: 989,
+      skip: !args.waterChangeLabel,
+    },
     {
       prefix: HYG_REMOVE_PREFIX,
       title: `${HYG_REMOVE_PREFIX} (within ${args.removalLabel} of serving)`,
