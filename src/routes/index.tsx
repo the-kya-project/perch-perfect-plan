@@ -39,7 +39,7 @@ function Welcome() {
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-[11px] font-medium uppercase tracking-widest opacity-80">I'm an owner</p>
-                <p className="mt-1 text-lg font-medium">Build my bird's care plan</p>
+                <p className="mt-1 text-lg font-medium">Manage my bird's care plan</p>
               </div>
               <ClipboardList className="size-6 shrink-0 opacity-80" />
             </div>
