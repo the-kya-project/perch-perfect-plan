@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { Loader2, AlertTriangle } from "lucide-react";
 import { track } from "@/lib/analytics";
+import { isStreamUrl } from "@/lib/clipRef";
 
 /**
  * Inline HTML5 video player for owner-recorded clips.
@@ -23,6 +24,25 @@ export function ClipPlayer({
 }) {
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
   const firedRef = useRef(false);
+
+  // Cloudflare Stream clips play through the Stream iframe player (handles HLS +
+  // signed playback across all browsers). Legacy Supabase clips use <video>.
+  if (isStreamUrl(src)) {
+    return (
+      <div className={`relative overflow-hidden bg-black ${className}`}>
+        <iframe
+          src={src}
+          title={label ?? "Clip"}
+          loading="lazy"
+          className="size-full"
+          style={{ border: 0 }}
+          allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+          allowFullScreen
+          onLoad={() => { if (!firedRef.current) { firedRef.current = true; track("clip_viewed", { has_label: !!label }); } }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className={`relative overflow-hidden bg-black ${className}`}>

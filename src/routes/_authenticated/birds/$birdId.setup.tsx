@@ -10,6 +10,9 @@ import { Plus, X, Check } from "lucide-react";
 import { PhotoCropper } from "@/components/PhotoCropper";
 import { AgePicker, BirdField, SpeciesPicker } from "@/components/BirdPickers";
 import { ClipRecorder, UploadProgress, MAX_SECONDS as CLIP_MAX_SECONDS, MAX_BYTES as CLIP_MAX_BYTES } from "@/components/ClipRecorder";
+import { ClipPlayer } from "@/components/ClipPlayer";
+import { resolveOwnerClipUrl } from "@/lib/clipUrl";
+import { isCfClip } from "@/lib/clipRef";
 import { FEED_PREFIX, HYG_REMOVE_PREFIX, HYG_WASH_FOOD_PREFIX, HYG_WASH_WATER_PREFIX, WATER_CHANGE_PREFIX, MED_TASK_PREFIX, isDerivedTask, derivedSource } from "@/lib/routineTasks";
 import { formatAmountUnit } from "@/lib/labels";
 import { track } from "@/lib/analytics";
@@ -1701,13 +1704,14 @@ function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlush }: { 
   // Resolve signed preview URLs for any saved baseline media.
   useEffect(() => {
     let cancelled = false;
-    async function sign(path: string | null, setter: (u: string | null) => void) {
+    async function signImage(path: string | null, setter: (u: string | null) => void) {
       if (!path) { setter(null); return; }
       const { data } = await supabase.storage.from("bird-photos").createSignedUrl(path, 3600);
       if (!cancelled) setter(data?.signedUrl ?? null);
     }
-    sign(droppingsPath, setDroppingsPreview);
-    sign(clipPath, setClipPreview);
+    signImage(droppingsPath, setDroppingsPreview);
+    // The clip can be a Cloudflare Stream ref or a legacy Supabase path.
+    resolveOwnerClipUrl(clipPath).then((u) => { if (!cancelled) setClipPreview(u); });
     return () => { cancelled = true; };
   }, [droppingsPath, clipPath]);
 
@@ -1776,30 +1780,15 @@ function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlush }: { 
     }
   }
 
-  async function uploadClip(file: File) {
-    if (!bird) return;
-    if (file.size > CLIP_MAX_BYTES) {
-      toast.error("Clip is too large. Try a shorter recording.");
-      return;
+  // The ClipRecorder uploads to Cloudflare Stream and hands back a
+  // "cfstream:<uid>" reference; we persist it (autosave writes baseline_clip_path).
+  async function uploadClip(ref: string) {
+    if (clipPath && !isCfClip(clipPath)) {
+      try { await supabase.storage.from("bird-photos").remove([clipPath]); } catch {}
     }
-    setUploading("clip");
-    try {
-      const ext = (file.name.split(".").pop() || "mp4").toLowerCase();
-      const path = `${bird.owner_id}/baselines/${birdId}/clip-${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("bird-photos").upload(path, file, {
-        contentType: file.type || (ext === "webm" ? "video/webm" : "video/mp4"),
-        upsert: true,
-      });
-      if (error) throw error;
-      if (clipPath) await supabase.storage.from("bird-photos").remove([clipPath]);
-      setClipPath(path);
-      setReplacingClip(false);
-      toast.success("Baseline clip saved.");
-    } catch (e: any) {
-      toast.error(e.message ?? "Upload failed");
-    } finally {
-      setUploading(null);
-    }
+    setClipPath(ref);
+    setReplacingClip(false);
+    toast.success("Baseline clip saved.");
   }
 
   async function removePhoto() {
@@ -1807,7 +1796,9 @@ function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlush }: { 
     setDroppingsPath(null);
   }
   async function removeClip() {
-    if (clipPath) await supabase.storage.from("bird-photos").remove([clipPath]);
+    if (clipPath && !isCfClip(clipPath)) {
+      try { await supabase.storage.from("bird-photos").remove([clipPath]); } catch {}
+    }
     setClipPath(null);
   }
 
@@ -1859,7 +1850,7 @@ function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlush }: { 
           <UploadProgress label="Uploading your clip…" hint="This can take a moment on slower connections. Please keep this screen open." />
         ) : clipPreview && !replacingClip ? (
           <div className="space-y-2">
-            <video src={clipPreview} controls playsInline className="h-48 w-full rounded-xl bg-black object-contain ring-1 ring-sage-200" />
+            <ClipPlayer src={clipPreview} className="aspect-video w-full rounded-xl ring-1 ring-sage-200" />
             <p className="flex items-center gap-1 text-xs font-semibold text-sage-600"><Check className="size-3.5" /> Clip saved</p>
             <div className="flex gap-2">
               <button
@@ -1880,7 +1871,7 @@ function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlush }: { 
           </div>
         ) : (
           <div className="space-y-2">
-            <ClipRecorder baseName={`clip-baseline-${Date.now()}`} onBusy={setClipBusy} onRecorded={uploadClip} />
+            <ClipRecorder onBusy={setClipBusy} onUploaded={uploadClip} />
             {clipPreview && replacingClip && (
               <button type="button" onClick={() => setReplacingClip(false)} className="w-full rounded-xl border border-sage-200 bg-white py-2 text-xs font-semibold text-sage-700">
                 Keep current clip
@@ -2202,34 +2193,24 @@ function ClipSlotCard({
 
   useEffect(() => {
     let cancelled = false;
-    async function sign() {
-      if (!path) { setPreview(null); return; }
-      const { data } = await supabase.storage.from("bird-photos").createSignedUrl(path, 3600);
-      if (!cancelled) setPreview(data?.signedUrl ?? null);
-    }
-    sign();
+    resolveOwnerClipUrl(path).then((u) => { if (!cancelled) setPreview(u); });
     return () => { cancelled = true; };
   }, [path]);
 
-  async function upload(file: File) {
-    if (file.size > CLIP_MAX_BYTES) { toast.error("That video is too large. Please record a shorter clip."); return; }
+  // The recorder uploads to Cloudflare Stream and returns a "cfstream:<uid>" ref.
+  async function upload(ref: string) {
     setBusy("uploading");
     onBusy(slot.key, true);
     try {
-      const ext = (file.name.split(".").pop() || "mp4").toLowerCase();
-      const newPath = `${ownerId}/baselines/${birdId}/clip-${slot.key}-${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("bird-photos").upload(newPath, file, {
-        contentType: file.type || (ext === "webm" ? "video/webm" : "video/mp4"),
-        upsert: true,
-      });
-      if (error) throw error;
-      if (path) await supabase.storage.from("bird-photos").remove([path]);
-      await supabase.from("care_plans").update({ [slot.column]: newPath } as any).eq("id", planId);
+      if (path && !isCfClip(path)) {
+        try { await supabase.storage.from("bird-photos").remove([path]); } catch {}
+      }
+      await supabase.from("care_plans").update({ [slot.column]: ref } as any).eq("id", planId);
       setReplacing(false);
       toast.success(`${slot.label} saved.`);
       onChange();
     } catch (e: any) {
-      toast.error(e.message ?? "Upload failed. Please try again.");
+      toast.error(e.message ?? "Couldn't save the clip. Please try again.");
     } finally {
       setBusy(null);
       onBusy(slot.key, false);
@@ -2240,7 +2221,9 @@ function ClipSlotCard({
     setBusy("uploading");
     onBusy(slot.key, true);
     try {
-      if (path) await supabase.storage.from("bird-photos").remove([path]);
+      if (path && !isCfClip(path)) {
+        try { await supabase.storage.from("bird-photos").remove([path]); } catch {}
+      }
       await supabase.from("care_plans").update({ [slot.column]: null } as any).eq("id", planId);
       onChange();
     } finally {
@@ -2255,7 +2238,7 @@ function ClipSlotCard({
         <UploadProgress label="Uploading your clip…" hint="This can take a moment on slower connections. Please keep this screen open." />
       ) : preview && !replacing ? (
         <div className="space-y-2">
-          <video src={preview} controls playsInline className="h-44 w-full rounded-xl bg-black object-contain ring-1 ring-sage-200" />
+          <ClipPlayer src={preview} className="aspect-video w-full rounded-xl ring-1 ring-sage-200" />
           <p className="flex items-center gap-1 text-xs font-semibold text-sage-600"><Check className="size-3.5" /> Clip saved</p>
           <div className="flex gap-2">
             <button type="button" onClick={() => setReplacing(true)} className="flex-1 rounded-xl border border-sage-200 bg-white py-2 text-xs font-semibold text-sage-700">
@@ -2268,7 +2251,7 @@ function ClipSlotCard({
         </div>
       ) : (
         <div className="space-y-2">
-          <ClipRecorder baseName={`clip-${slot.key}-${Date.now()}`} onBusy={(b) => onBusy(`${slot.key}:rec`, b)} onRecorded={upload} />
+          <ClipRecorder onBusy={(b) => onBusy(`${slot.key}:rec`, b)} onUploaded={upload} />
           {preview && replacing && (
             <button type="button" onClick={() => setReplacing(false)} className="w-full rounded-xl border border-sage-200 bg-white py-2 text-xs font-semibold text-sage-700">
               Keep current clip

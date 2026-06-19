@@ -11,6 +11,23 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { computeTriage, type ScanAnswer, type ScanFieldKey } from "./triage";
 import { mergeEmergency } from "./emergency";
+import { isCfClip, cfUid } from "./clipRef";
+
+// Resolve a clip column value to a playable URL: a signed Cloudflare Stream
+// iframe URL for "cfstream:<uid>" refs, or a signed Supabase Storage URL for
+// legacy clips. Returns null if it can't be resolved.
+async function resolveClipUrl(sb: any, ref: string): Promise<string | null> {
+  if (isCfClip(ref)) {
+    try {
+      const { signedIframeUrl } = await import("@/lib/cloudflareStream.server");
+      return await signedIframeUrl(cfUid(ref));
+    } catch {
+      return null;
+    }
+  }
+  const { data } = await sb.storage.from("bird-photos").createSignedUrl(ref, 3600);
+  return data?.signedUrl ?? null;
+}
 
 async function getAdmin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -144,19 +161,17 @@ export const getSitterContext = createServerFn({ method: "GET" })
       for (const slot of watchClipSlots) {
         const path = (planRes.data as any)[slot.column] as string | null;
         if (!path) continue;
-        const { data: signed } = await sb.storage.from("bird-photos").createSignedUrl(path, 3600);
-        if (signed?.signedUrl) watchClips.push({ key: slot.key, label: slot.label, url: signed.signedUrl });
+        const url = await resolveClipUrl(sb, path);
+        if (url) watchClips.push({ key: slot.key, label: slot.label, url });
       }
+      // Droppings is a still image — always a Supabase Storage object.
       const bdp = (planRes.data as any).baseline_droppings_path as string | null;
       if (bdp) {
         const { data: signed } = await sb.storage.from("bird-photos").createSignedUrl(bdp, 3600);
         baselineDroppingsUrl = signed?.signedUrl ?? null;
       }
       const bcp = (planRes.data as any).baseline_clip_path as string | null;
-      if (bcp) {
-        const { data: signed } = await sb.storage.from("bird-photos").createSignedUrl(bcp, 3600);
-        baselineClipUrl = signed?.signedUrl ?? null;
-      }
+      if (bcp) baselineClipUrl = await resolveClipUrl(sb, bcp);
     }
 
     return {
