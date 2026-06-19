@@ -341,16 +341,16 @@ export const submitHealthScan = createServerFn({ method: "POST" })
       if (pErr) console.error("[submitHealthScan] photo insert failed", pErr.message);
     }
 
-    // Notify the owner across channels. Flagged scans (concerning OR not-sure →
-    // red/yellow) always notify by push + email; all-clear scans get a lighter,
-    // toggleable push and still appear in the in-app feed.
-    void (async () => {
+    // Notify the owner across channels. Run BEFORE returning: on serverless the
+    // lambda can freeze the moment the response is sent, so fire-and-forget work
+    // may never execute. Wrapped so a notification failure never breaks the scan.
+    try {
       const { data: birdRow } = await sb
         .from("birds")
         .select("owner_id, name")
         .eq("id", data.birdId)
         .maybeSingle();
-      if (!birdRow?.owner_id) return;
+      if (birdRow?.owner_id) {
       const birdName = birdRow.name ?? "Your bird";
       const flagged = triage.status === "red" || triage.status === "yellow";
       const url = `/birds/${data.birdId}?tab=logs&scan=${row.id}`;
@@ -402,7 +402,10 @@ export const submitHealthScan = createServerFn({ method: "POST" })
           });
         }
       }
-    })();
+      }
+    } catch (e) {
+      console.error("[scan] notify failed", e);
+    }
 
     return { log: row, triage };
   });
