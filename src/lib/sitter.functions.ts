@@ -462,6 +462,61 @@ export const getSitterScans = createServerFn({ method: "GET" })
     }));
   });
 
+// Per-bird status for the multi-bird landing dashboard: tasks done/total today
+// and today's health-scan status. Same underlying data as the Today tab, so the
+// dashboard and a bird's Today card always agree.
+export const getSitterDashboard = createServerFn({ method: "GET" })
+  .inputValidator((d: { token: string }) => z.object({ token: z.string().min(8) }).parse(d))
+  .handler(async ({ data }) => {
+    const sb = await getAdmin();
+    const sit = await loadSitByToken(data.token);
+    const birdIds = await loadSitBirdIds(sit.id);
+    const today = new Date().toISOString().slice(0, 10);
+
+    const [birdsRes, plansRes, compsRes, scansRes] = await Promise.all([
+      sb.from("birds").select("id, name, species, photo_url, photo_position").in("id", birdIds),
+      sb.from("care_plans").select("id, bird_id").in("bird_id", birdIds),
+      sb.from("task_completions").select("routine_task_id").eq("sit_id", sit.id).eq("completed_date", today),
+      sb.from("daily_logs").select("bird_id, triage_status").eq("sit_id", sit.id).eq("log_date", today).in("bird_id", birdIds),
+    ]);
+
+    const plans = plansRes.data ?? [];
+    const planByBird = new Map(plans.map((p: any) => [p.bird_id, p.id]));
+    const planIds = plans.map((p: any) => p.id);
+    const tasksRes = planIds.length
+      ? await sb.from("routine_tasks").select("id, care_plan_id").in("care_plan_id", planIds)
+      : { data: [] as any[] };
+    const tasks = tasksRes.data ?? [];
+    const doneTaskIds = new Set((compsRes.data ?? []).map((c: any) => c.routine_task_id));
+    const scans = scansRes.data ?? [];
+    const rank = (s: string) => (s === "red" ? 0 : s === "yellow" ? 1 : 2);
+    const order = new Map(birdIds.map((id, i) => [id, i]));
+
+    const summary = (birdsRes.data ?? [])
+      .map((b: any) => {
+        const planId = planByBird.get(b.id);
+        const birdTasks = tasks.filter((t: any) => t.care_plan_id === planId);
+        const birdScans = scans.filter((s: any) => s.bird_id === b.id);
+        const scanStatus = birdScans.length
+          ? birdScans.slice().sort((x: any, y: any) => rank(x.triage_status) - rank(y.triage_status))[0].triage_status
+          : null;
+        return {
+          id: b.id,
+          name: b.name,
+          species: b.species,
+          photo_url: b.photo_url,
+          photo_position: b.photo_position,
+          tasksDone: birdTasks.filter((t: any) => doneTaskIds.has(t.id)).length,
+          tasksTotal: birdTasks.length,
+          scanDone: birdScans.length > 0,
+          scanStatus,
+        };
+      })
+      .sort((a: any, b: any) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
+
+    return { birds: summary };
+  });
+
 export const getGuideCards = createServerFn({ method: "GET" }).handler(async () => {
   const sb = await getAdmin();
   const { data, error } = await sb
