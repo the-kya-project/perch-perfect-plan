@@ -8,6 +8,7 @@ import { handlingMustKnow } from "@/lib/sitterIntro";
 import { Disclaimer } from "@/components/Disclaimer";
 import { Stethoscope, Calendar, BookOpen, ChevronRight, ChevronDown, Hand, Volume2 } from "lucide-react";
 import { ClipPlayer } from "@/components/ClipPlayer";
+import { taskDaypart, hourToDaypart, DAYPARTS, DAYPART_LABEL, type Daypart } from "@/lib/routineTasks";
 
 export const Route = createFileRoute("/sitter/$token/")({
   component: SitterHome,
@@ -31,19 +32,10 @@ function saveTimers(sitId: string, birdId: string, t: Record<string, FreshTimer>
   try { localStorage.setItem(`freshTimers:${sitId}:${birdId}`, JSON.stringify(t)); } catch {}
 }
 
-// Daypart structure for the now-focused Today tab.
-type Daypart = "morning" | "midday" | "evening" | "anytime";
-const DAYPARTS: Daypart[] = ["morning", "midday", "evening", "anytime"];
-const DAYPART_LABEL: Record<Daypart, string> = { morning: "Morning", midday: "Midday", evening: "Evening", anytime: "Anytime" };
-const CATEGORY_DAYPART: Record<string, Daypart> = {
-  morning: "morning", midday: "midday", evening: "evening", bedtime: "evening", custom: "anytime",
-};
-
+// Day-part structure for the now-focused Today tab. Placement uses the shared
+// taskDaypart() so the sitter checklist and the owner Routine tab always agree.
 function currentDaypart(d: Date): Daypart {
-  const h = d.getHours();
-  if (h < 11) return "morning";
-  if (h < 16) return "midday";
-  return "evening";
+  return hourToDaypart(d.getHours());
 }
 
 // Parse a free-text time ("4 p.m.", "8 am", "7:30", "Available all day") to
@@ -134,7 +126,7 @@ function SitterHome() {
   // out-of-order bug for timed items within a section.
   const byDaypart: Record<string, any[]> = {};
   for (const t of ctx.tasks) {
-    const dp = CATEGORY_DAYPART[t.category] ?? "anytime";
+    const dp = taskDaypart(t);
     (byDaypart[dp] ??= []).push(t);
   }
   for (const dp of Object.keys(byDaypart)) {

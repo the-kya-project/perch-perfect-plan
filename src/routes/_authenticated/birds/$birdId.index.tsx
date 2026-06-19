@@ -12,7 +12,7 @@ import { SpeciesPicker, AgePicker } from "@/components/BirdPickers";
 import { computeSetupCompleteness } from "@/lib/setupCompleteness";
 import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
 import { FoodEditor, foodValueFromPlan, deriveFoodLegacyFields } from "@/components/careEditors/FoodEditor";
-import { derivedSource } from "@/lib/routineTasks";
+import { derivedSource, taskDaypart, DAYPARTS, DAYPART_LABEL } from "@/lib/routineTasks";
 
 
 const TAB_IDS = ["basics", "routine", "food", "behavior", "home", "health", "clips", "emergency", "sits", "logs"] as const;
@@ -616,17 +616,19 @@ function RoutineEditor({ planId, tasks, onChange }: { planId: string; tasks: any
     onChange();
   }
 
+  // Place each task by the shared normalization (feed-time wins, else category)
+  // so this tab and the sitter Today checklist always agree.
   const grouped: Record<string, any[]> = {};
-  for (const t of tasks) (grouped[t.category] ??= []).push(t);
+  for (const t of tasks) (grouped[taskDaypart(t)] ??= []).push(t);
 
   return (
     <>
       <p className="text-sm text-sage-600">Tasks the sitter will check off each day, grouped by time of day.</p>
-      {["morning", "midday", "evening", "bedtime", "custom"].map((cat) => (
-        <section key={cat} className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
-          <h2 className="text-[11px] font-bold uppercase tracking-widest text-sage-600">{cat}</h2>
+      {DAYPARTS.map((dp) => (
+        <section key={dp} className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
+          <h2 className="text-[11px] font-bold uppercase tracking-widest text-sage-600">{DAYPART_LABEL[dp]}</h2>
           <ul className="mt-2 space-y-2">
-            {(grouped[cat] ?? []).map((t) => {
+            {(grouped[dp] ?? []).map((t) => {
               const derived = derivedSource(t.title);
               return (
                 <li key={t.id} className="flex items-start gap-3 rounded-lg bg-sage-50 p-3">
@@ -642,7 +644,7 @@ function RoutineEditor({ planId, tasks, onChange }: { planId: string; tasks: any
                 </li>
               );
             })}
-            {(grouped[cat] ?? []).length === 0 && <li className="text-xs text-sage-400">No tasks yet.</li>}
+            {(grouped[dp] ?? []).length === 0 && <li className="text-xs text-sage-400">No tasks yet.</li>}
           </ul>
         </section>
       ))}
@@ -656,7 +658,7 @@ function RoutineEditor({ planId, tasks, onChange }: { planId: string; tasks: any
           <div className="grid grid-cols-2 gap-3">
             <Field label="Time of day">
               <select className="input" value={category} onChange={(e) => setCategory(e.target.value)}>
-                <option value="morning">Morning</option><option value="midday">Midday</option><option value="evening">Evening</option><option value="bedtime">Bedtime</option><option value="custom">Custom</option>
+                <option value="morning">Morning</option><option value="midday">Midday</option><option value="evening">Evening</option><option value="anytime">Anytime</option>
               </select>
             </Field>
             <Field label="Time (optional)"><input className="input" value={time} onChange={(e) => setTime(e.target.value)} placeholder="8:00 AM" /></Field>

@@ -13,7 +13,7 @@ import { ClipRecorder, UploadProgress, MAX_SECONDS as CLIP_MAX_SECONDS, MAX_BYTE
 import { ClipPlayer } from "@/components/ClipPlayer";
 import { resolveOwnerClipUrl } from "@/lib/clipUrl";
 import { isCfClip } from "@/lib/clipRef";
-import { FEED_PREFIX, HYG_REMOVE_PREFIX, HYG_WASH_FOOD_PREFIX, HYG_WASH_WATER_PREFIX, WATER_CHANGE_PREFIX, MED_TASK_PREFIX, isDerivedTask, derivedSource } from "@/lib/routineTasks";
+import { FEED_PREFIX, HYG_REMOVE_PREFIX, HYG_WASH_FOOD_PREFIX, HYG_WASH_WATER_PREFIX, WATER_CHANGE_PREFIX, MED_TASK_PREFIX, isDerivedTask, derivedSource, feedTimeToDaypart } from "@/lib/routineTasks";
 import { formatAmountUnit } from "@/lib/labels";
 import { track } from "@/lib/analytics";
 import { recomputeSitterIntro } from "@/lib/sitterIntro";
@@ -1964,25 +1964,12 @@ async function syncMedicationTask(planId: string, meds: string, schedule: string
 // Keep the auto-generated freshness & hygiene tasks (one per prefix) in sync
 // with the owner-selected cadences. Tasks are matched by title prefix so the
 // owner can still rename them inline without losing the sync target.
+// Stored category for a feeding task. Placement is ultimately decided at render
+// time by feedTimeToDaypart (so it's robust to mixed formats and existing data),
+// but we still store a sensible category for consistency. "anytime" → "custom".
 function inferFeedingCategory(time: string): string {
-  const s = time.toLowerCase();
-  if (/morning|breakfast|am\b|sunrise|wake/.test(s)) return "morning";
-  if (/midday|noon|lunch/.test(s)) return "midday";
-  if (/evening|dinner|supper|pm\b/.test(s)) return "evening";
-  if (/bedtime|night|cover|sleep/.test(s)) return "bedtime";
-  // Numeric "8:00 AM" / "14:00" — try to parse the hour.
-  const m = s.match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/);
-  if (m) {
-    let h = parseInt(m[1], 10);
-    const ampm = m[3];
-    if (ampm === "pm" && h < 12) h += 12;
-    if (ampm === "am" && h === 12) h = 0;
-    if (h < 11) return "morning";
-    if (h < 14) return "midday";
-    if (h < 20) return "evening";
-    return "bedtime";
-  }
-  return "custom";
+  const dp = feedTimeToDaypart(time);
+  return dp === "anytime" ? "custom" : dp;
 }
 
 type FeedingItem = { name: string; amount: string; unit: string; times?: string[]; freeFed?: boolean };
