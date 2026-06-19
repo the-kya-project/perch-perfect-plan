@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Bird as BirdIcon, LogOut, Calendar, Settings, Bell, Feather } from "lucide-react";
@@ -14,6 +14,8 @@ import { AddToHomeScreenPrompt } from "@/components/AddToHomeScreenPrompt";
 const dashboardSearch = z.object({
   newSit: z.coerce.boolean().optional(),
   preselectBirdId: z.string().uuid().optional(),
+  // Deep-link from a bird's Emergency tab → open + scroll to account defaults.
+  emergencyDefaults: z.coerce.boolean().optional(),
 });
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -476,6 +478,8 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 function DefaultsPanel() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
+  const { emergencyDefaults: deepLink } = Route.useSearch();
+  const sectionRef = useRef<HTMLElement>(null);
   const { data: defaults } = useQuery({
     queryKey: ["owner-defaults"],
     queryFn: async () => {
@@ -511,6 +515,16 @@ function DefaultsPanel() {
     ? fields.filter(([k]) => typeof (defaults as any)[k] === "string" && (defaults as any)[k].trim()).length
     : 0;
 
+  // Opened via the Emergency-tab "account defaults" link: expand + scroll here.
+  const seededRef = useRef(false);
+  useEffect(() => {
+    if (!deepLink || seededRef.current || defaults === undefined) return;
+    seededRef.current = true;
+    setD(defaults ?? {});
+    setOpen(true);
+    setTimeout(() => sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
+  }, [deepLink, defaults]);
+
   async function save() {
     setSaving(true);
     const { data: u } = await supabase.auth.getUser();
@@ -531,7 +545,7 @@ function DefaultsPanel() {
   }
 
   return (
-    <section className="space-y-3">
+    <section ref={sectionRef} id="emergency-defaults" className="scroll-mt-4 space-y-3">
       <div className="flex items-end justify-between">
         <h2 className="text-[21px] font-medium text-[#1a3d2e]">Account emergency defaults</h2>
         <button
