@@ -55,6 +55,10 @@ function Dashboard() {
 
   const { data: birds = [], isLoading: birdsLoading, isError: birdsError, refetch: refetchBirds } = useQuery({
     queryKey: ["birds"],
+    // Always refetch when Home is (re)mounted so a bird just created/edited in
+    // setup appears immediately — the global staleTime would otherwise serve a
+    // cached list missing the new bird until something else forced a reload.
+    refetchOnMount: "always",
     queryFn: async () => {
       const { data, error } = await supabase
         .from("birds")
@@ -75,6 +79,7 @@ function Dashboard() {
   const { data: completenessData } = useQuery({
     queryKey: ["birds-completeness", birdIds, ownerId],
     enabled: birdIds.length > 0,
+    refetchOnMount: "always",
     queryFn: async () => {
       const [plansRes, contactsRes, defaultsRes] = await Promise.all([
         supabase.from("care_plans").select("*").in("bird_id", birdIds),
@@ -114,6 +119,7 @@ function Dashboard() {
 
   const { data: sits = [] } = useQuery({
     queryKey: ["all-sits"],
+    refetchOnMount: "always",
     queryFn: async () => {
       const { data, error } = await supabase
         .from("sits")

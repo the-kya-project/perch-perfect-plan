@@ -158,6 +158,8 @@ function BirdEditor() {
   const onPlanSaved = () => {
     qc.invalidateQueries({ queryKey: ["plan", birdId] });
     qc.invalidateQueries({ queryKey: ["bird", birdId] });
+    // Reflect basics/setup changes (name, species, photo, progress) on Home.
+    qc.invalidateQueries({ queryKey: ["birds"] });
   };
 
   return (
