@@ -231,7 +231,7 @@ function BirdEditor() {
           />
         )}
         {tab === "routine" && plan && <RoutineEditor planId={plan.id} tasks={tasks} onChange={() => qc.invalidateQueries({ queryKey: ["tasks", plan.id] })} />}
-        {tab === "emergency" && contacts && <ContactsForm birdId={birdId} contacts={contacts} defaults={defaults ?? null} onSaved={() => qc.invalidateQueries({ queryKey: ["contacts", birdId] })} />}
+        {tab === "emergency" && contacts && <ContactsForm birdId={birdId} birdName={bird.name ?? "this bird"} contacts={contacts} defaults={defaults ?? null} onSaved={() => qc.invalidateQueries({ queryKey: ["contacts", birdId] })} />}
         {tab === "sits" && <SitsPanel birdId={birdId} sits={sits} onChange={() => qc.invalidateQueries({ queryKey: ["sits", birdId] })} />}
         {tab === "logs" && <LogsPanel birdId={birdId} initialScan={scanParam} />}
       </main>
@@ -745,103 +745,158 @@ function RoutineEditor({ planId, tasks, onChange }: { planId: string; tasks: any
 // is present without the owner looking it up.
 const ASPCA_POISON_CONTROL = "(888) 426-4435";
 
-function ContactsForm({ birdId, contacts, defaults, onSaved }: { birdId: string; contacts: any; defaults: any | null; onSaved: () => void }) {
-  const [c, setC] = useState(() => {
-    const init = { ...contacts };
-    // Default poison control to ASPCA when this bird has none and there's no
-    // account default. Editable + persists on save (owners can override it).
-    const hasOwn = typeof init.poison_control === "string" && init.poison_control.trim();
-    const hasDefault = typeof defaults?.poison_control === "string" && defaults.poison_control.trim();
-    if (!hasOwn && !hasDefault) init.poison_control = ASPCA_POISON_CONTROL;
-    return init;
-  });
+// Emergency info sections shown on a bird's Emergency tab. Each section displays
+// the owner's ACCOUNT emergency info read-only; "Edit for {bird}" creates a
+// per-bird override (written to that bird's emergency_contacts row), which never
+// touches the account default or any other bird. A field is overridden when the
+// bird's stored value differs from the account default.
+const EMERGENCY_SECTIONS: { key: string; title: string; fields: [string, string][] }[] = [
+  { key: "avian_vet", title: "Avian vet", fields: [["avian_vet_name", "Clinic or vet name"], ["avian_vet_phone", "Phone"], ["avian_vet_address", "Address"]] },
+  { key: "emergency_vet", title: "Emergency vet", fields: [["emergency_vet_name", "Clinic name"], ["emergency_vet_phone", "Phone"], ["emergency_vet_address", "Address"]] },
+  { key: "your_contact", title: "Your contact", fields: [["owner_phone", "Your phone"], ["backup_name", "Backup contact"], ["backup_phone", "Backup phone"]] },
+  { key: "poison_control", title: "Poison control", fields: [["poison_control", "Phone"]] },
+  { key: "transport", title: "Transport & spending", fields: [["carrier_location", "Carrier location"], ["first_aid_kit_location", "First-aid kit location"], ["spending_limit", "Approved spending limit"]] },
+];
+const REQUIRED_EMERGENCY = new Set(["owner_phone", "avian_vet_phone"]);
+
+function ContactsForm({ birdId, birdName, contacts, defaults, onSaved }: { birdId: string; birdName: string; contacts: any; defaults: any | null; onSaved: () => void }) {
+  const [editing, setEditing] = useState<string | null>(null);
+  const [form, setForm] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
-  async function save() {
+
+  const trim = (v: any) => (v ?? "").toString().trim();
+  const ownVal = (k: string) => trim(contacts?.[k]);
+  const defVal = (k: string) => trim(defaults?.[k]);
+  // The bird's value if it has one, else the account default.
+  const rawEff = (k: string) => ownVal(k) || defVal(k);
+  // What to display: poison control always falls back to ASPCA so it's never blank.
+  const display = (k: string) => rawEff(k) || (k === "poison_control" ? ASPCA_POISON_CONTROL : "");
+  // A field is overridden for this bird when its stored value differs from the account default.
+  const isOverridden = (k: string) => ownVal(k) !== "" && ownVal(k) !== defVal(k);
+
+  const hasAnyDefault = !!defaults && EMERGENCY_SECTIONS.some((s) => s.fields.some(([k]) => defVal(k)));
+
+  function startEdit(section: (typeof EMERGENCY_SECTIONS)[number]) {
+    const f: Record<string, string> = {};
+    for (const [k] of section.fields) f[k] = rawEff(k); // start from what's shown
+    setForm(f);
+    setEditing(section.key);
+  }
+
+  async function saveSection(section: (typeof EMERGENCY_SECTIONS)[number]) {
     setSaving(true);
-    const { id, bird_id, updated_at, ...rest } = c;
-    // Empty strings → null so per-bird value "falls back" to the owner default.
     const patch: Record<string, any> = {};
-    for (const [k, v] of Object.entries(rest)) {
-      patch[k] = typeof v === "string" && v.trim() === "" ? null : v;
+    for (const [k] of section.fields) {
+      const v = trim(form[k]);
+      // Store an override only when it differs from the account default; otherwise
+      // null so the field keeps using the account value (and updates if it changes).
+      patch[k] = v === "" || v === defVal(k) ? null : v;
     }
     await supabase.from("emergency_contacts").update(patch as any).eq("bird_id", birdId);
     setSaving(false);
-    toast.success("Emergency info saved.");
+    setEditing(null);
+    toast.success(`Saved for ${birdName}.`);
     onSaved();
   }
-  const fields: [string, string, boolean?][] = [
-    ["owner_phone", "Owner phone", true],
-    ["backup_name", "Backup contact name"],
-    ["backup_phone", "Backup contact phone"],
-    ["avian_vet_name", "Avian vet name"],
-    ["avian_vet_phone", "Avian vet phone", true],
-    ["avian_vet_address", "Avian vet address"],
-    ["emergency_vet_name", "Emergency vet name"],
-    ["emergency_vet_phone", "Emergency vet phone"],
-    ["emergency_vet_address", "Emergency vet address"],
-    ["poison_control", "Poison control number"],
-    ["carrier_location", "Carrier location"],
-    ["first_aid_kit_location", "First-aid kit location"],
-    ["spending_limit", "Approved spending limit"],
-  ];
-  const hasAnyDefault = defaults && Object.values(defaults).some((v) => typeof v === "string" && v.trim());
+
+  async function resetSection(section: (typeof EMERGENCY_SECTIONS)[number]) {
+    setSaving(true);
+    const patch: Record<string, any> = {};
+    for (const [k] of section.fields) patch[k] = null;
+    await supabase.from("emergency_contacts").update(patch as any).eq("bird_id", birdId);
+    setSaving(false);
+    toast.success(`${section.title} reset to your account info.`);
+    onSaved();
+  }
+
   return (
-    <section className="space-y-3 rounded-2xl bg-white p-4 ring-1 ring-sage-100">
-      <h2 className="text-sm font-bold">Emergency contacts & home info</h2>
-      <p className="text-xs text-sage-600">
-        Empty fields use your <Link to="/dashboard" search={{ emergencyDefaults: true }} className="font-semibold underline">account defaults</Link>.
-        Type anything here to override the default for this bird. Owner phone and avian vet phone are required (default or override) before you can share a sitter link.
-      </p>
+    <div className="space-y-3">
+      {/* Plain-language source banner */}
+      <section className="rounded-2xl bg-[#e8f0ec] p-4 ring-1 ring-[#1a3d2e]/10">
+        <p className="text-sm font-medium text-[#1a3d2e]">Using your account emergency info</p>
+        <p className="mt-1 text-xs leading-relaxed text-[#436055]">
+          This is the vet and emergency info you set for your account. You can change it just for {birdName} if it's different.
+        </p>
+      </section>
+
       {!hasAnyDefault && (
-        <p className="rounded-lg bg-sage-50 px-3 py-2 text-[11px] text-sage-700">
-          No account defaults set yet. <Link to="/dashboard" search={{ emergencyDefaults: true }} className="font-semibold underline">Set account defaults</Link> once and every bird will inherit them.
+        <p className="rounded-xl bg-[#efe9da] px-3 py-2 text-[11px] text-[#5f5e5a]">
+          You haven't set your account emergency info yet. <Link to="/dashboard" search={{ emergencyDefaults: true }} className="font-semibold text-[#1a3d2e] underline">Set it once</Link> and every bird uses it.
         </p>
       )}
-      {fields.map(([k, l, required]) => {
-        const raw = c[k];
-        const isOverride = typeof raw === "string" && raw.trim() !== "";
-        const defaultVal: string = (defaults?.[k] ?? "").toString();
-        const inheriting = !isOverride && defaultVal.trim() !== "";
+
+      {EMERGENCY_SECTIONS.map((section) => {
+        const overridden = section.fields.some(([k]) => isOverridden(k));
+        const isEditing = editing === section.key;
         return (
-          <div key={k} className="space-y-1">
+          <section key={section.key} className="rounded-[20px] bg-[#efe9da] p-4">
             <div className="flex items-center justify-between gap-2">
-              <label className="block text-xs font-semibold text-sage-700">
-                {l}{required && <span className="text-warn-red"> *</span>}
-              </label>
-              {isOverride ? (
-                <button
-                  type="button"
-                  onClick={() => setC({ ...c, [k]: "" })}
-                  className="rounded-full bg-warn-amber/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-warn-amber"
-                  title="Clear override and use account default"
-                >
-                  Override · reset
-                </button>
-              ) : inheriting ? (
-                <span className="rounded-full bg-sage-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-sage-700">
-                  Default
-                </span>
-              ) : required ? (
-                <span className="rounded-full bg-warn-red/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-warn-red">
-                  Missing
-                </span>
-              ) : (
-                <span className="rounded-full bg-sage-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-sage-500">
-                  Empty
+              <h3 className="text-sm font-medium text-[#1a3d2e]">{section.title}</h3>
+              {overridden && !isEditing && (
+                <span className="shrink-0 rounded-full bg-[#cdeab0] px-2 py-0.5 text-[10px] font-semibold text-[#1f3d12]">
+                  Edited for {birdName}
                 </span>
               )}
             </div>
-            <input
-              className="input"
-              value={raw ?? ""}
-              placeholder={inheriting ? `Default: ${defaultVal}` : required ? "Required" : "Optional"}
-              onChange={(e) => setC({ ...c, [k]: e.target.value })}
-            />
-          </div>
+
+            {isEditing ? (
+              <div className="mt-3 space-y-2.5">
+                {section.fields.map(([k, label]) => (
+                  <label key={k} className="block">
+                    <span className="mb-1 block text-xs font-medium text-[#5f5e5a]">{label}</span>
+                    <input
+                      className="input"
+                      value={form[k] ?? ""}
+                      placeholder={defVal(k) ? `Account: ${defVal(k)}` : "Not provided"}
+                      onChange={(e) => setForm({ ...form, [k]: e.target.value })}
+                    />
+                  </label>
+                ))}
+                <div className="flex gap-2 pt-1">
+                  <button disabled={saving} onClick={() => saveSection(section)} className="flex-1 rounded-xl bg-[#1a3d2e] py-2.5 text-sm font-medium text-white disabled:opacity-50">
+                    {saving ? "Saving…" : `Save for ${birdName}`}
+                  </button>
+                  <button disabled={saving} onClick={() => setEditing(null)} className="rounded-xl border border-[#d8cfb8] px-4 py-2.5 text-sm font-medium text-[#5f5e5a]">
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <dl className="mt-3 space-y-2">
+                  {section.fields.map(([k, label]) => {
+                    const val = display(k);
+                    const missingRequired = !val && REQUIRED_EMERGENCY.has(k);
+                    return (
+                      <div key={k} className="flex items-baseline justify-between gap-3">
+                        <dt className="shrink-0 text-xs text-[#5f5e5a]">{label}</dt>
+                        <dd className={`text-right text-sm ${val ? "text-[#1a3d2e]" : missingRequired ? "text-warn-red" : "text-[#9a978c]"}`}>
+                          {val || "Not provided"}
+                        </dd>
+                      </div>
+                    );
+                  })}
+                </dl>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button onClick={() => startEdit(section)} className="rounded-xl bg-white px-3.5 py-2 text-xs font-semibold text-[#1a3d2e] ring-1 ring-[#d8cfb8]">
+                    Edit for {birdName}
+                  </button>
+                  {overridden && (
+                    <button onClick={() => resetSection(section)} disabled={saving} className="rounded-xl px-3.5 py-2 text-xs font-semibold text-[#5f5e5a] underline disabled:opacity-50">
+                      Reset to account
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
+          </section>
         );
       })}
-      <button disabled={saving} onClick={save} className="mt-2 w-full rounded-xl bg-sage-600 py-3 text-sm font-semibold text-white disabled:opacity-50">{saving ? "Saving..." : "Save emergency info"}</button>
-    </section>
+
+      <p className="px-1 pt-1 text-[11px] text-[#5f5e5a]">
+        Need to change this for every bird? <Link to="/dashboard" search={{ emergencyDefaults: true }} className="font-semibold text-[#1a3d2e] underline">Edit your account emergency info</Link>.
+      </p>
+    </div>
   );
 }
 
