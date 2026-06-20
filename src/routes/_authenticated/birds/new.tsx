@@ -116,6 +116,14 @@ function NewBird() {
     }
   }
 
+  // Cancel adding — nothing is created until Save & exit / Next, so just leave.
+  // Confirm first only if they've started entering details, so a stray tap
+  // doesn't discard their work.
+  const hasInput = !!(name.trim() || species.trim() || age || birthDate || sex || photo || flight !== "unknown");
+  function onCancel() {
+    navigate({ to: "/dashboard" });
+  }
+
   return (
     <SetupShell
       step={1}
@@ -125,6 +133,12 @@ function NewBird() {
       saving={saving}
       onNext={onNext}
       onSaveAndExit={onSaveAndExit}
+      onExit={onCancel}
+      exitLabel="Cancel"
+      isDirty={hasInput}
+      exitConfirmTitle="Discard this bird?"
+      exitConfirmBody="You haven't saved this bird yet — leaving will discard what you've entered."
+      exitConfirmCta="Discard"
       nextDisabled={!name.trim() || !species.trim()}
     >
       <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">

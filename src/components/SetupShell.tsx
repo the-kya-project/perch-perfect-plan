@@ -36,6 +36,10 @@ export function SetupShell({
   birdSpecies,
   onNavigateStep,
   onExit,
+  exitLabel,
+  exitConfirmTitle = "Leave this step?",
+  exitConfirmBody = "Your progress is saved — you can pick up right where you left off.",
+  exitConfirmCta = "Leave",
   isDirty,
   onBack,
   onNext,
@@ -53,7 +57,11 @@ export function SetupShell({
   birdName?: string;
   birdSpecies?: string;
   onNavigateStep?: (target: number) => void; // tab / drawer navigation (1-indexed)
-  onExit?: () => void; // header back arrow -> bird profile
+  onExit?: () => void; // header back arrow -> bird profile (or cancel, on the new-bird screen)
+  exitLabel?: string; // header arrow label; defaults to the bird name. Pass "Cancel" when exiting discards.
+  exitConfirmTitle?: string;
+  exitConfirmBody?: string;
+  exitConfirmCta?: string;
   isDirty?: boolean;
   onBack?: () => void; // footer: previous step
   onNext?: () => void;
@@ -99,7 +107,7 @@ export function SetupShell({
     onNavigateStep?.(target);
   }
 
-  const birdLabel = birdName?.trim() || "Bird";
+  const birdLabel = exitLabel ?? (birdName?.trim() || "Bird");
 
   return (
     <div className={`min-h-screen bg-[#f4f1e8] ${hideFooter ? "pb-28" : "pb-44"}`}>
@@ -111,7 +119,7 @@ export function SetupShell({
             onClick={handleExit}
             disabled={!onExit}
             className="-ml-1 flex items-center gap-1 rounded p-1 text-sm font-semibold text-sage-700 disabled:opacity-40"
-            aria-label={`Back to ${birdLabel}`}
+            aria-label={exitLabel ?? `Back to ${birdLabel}`}
           >
             <ArrowLeft className="size-5 shrink-0" />
             <span className="max-w-[8rem] truncate">{birdLabel}</span>
@@ -325,8 +333,8 @@ export function SetupShell({
             aria-label="Leave this step"
             className="relative w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl"
           >
-            <h2 className="text-base font-bold text-sage-900">Leave this step?</h2>
-            <p className="mt-1 text-sm text-sage-600">Your progress is saved — you can pick up right where you left off.</p>
+            <h2 className="text-base font-bold text-sage-900">{exitConfirmTitle}</h2>
+            <p className="mt-1 text-sm text-sage-600">{exitConfirmBody}</p>
             <div className="mt-4 flex gap-2">
               <button
                 type="button"
@@ -343,7 +351,7 @@ export function SetupShell({
                 }}
                 className="flex-1 rounded-xl bg-sage-600 py-2.5 text-sm font-semibold text-white"
               >
-                Leave
+                {exitConfirmCta}
               </button>
             </div>
           </div>
