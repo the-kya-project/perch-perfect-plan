@@ -40,6 +40,7 @@ export function OwnerTabBar({ active, embedded }: { active?: OwnerTab; embedded?
             <Link
               key={key}
               to={to}
+              data-coach={`owner-tab-${key}`}
               aria-current={on ? "page" : undefined}
               className={`flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] font-medium transition-colors ${
                 on ? "text-[#1a3d2e]" : "text-[#8a897f]"
