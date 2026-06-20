@@ -1,7 +1,9 @@
-// Client-side image preprocessing for bird photos. Bird photos are stored as
-// data URLs and only ever shown as card heroes / avatars, so we downscale and
-// re-encode before upload: phones routinely produce 3–5 MB+ images (and HEICs)
-// that don't need to ship at full resolution.
+// Client-side image preprocessing for bird photos. We produce a compressed JPEG
+// data URL for the live editor preview; on save it's uploaded to the bird-photos
+// Storage bucket (see lib/birdPhoto.ts) rather than persisted inline. Photos are
+// only ever shown as card heroes / avatars, so we downscale and re-encode first:
+// phones routinely produce 3–5 MB+ images (and HEICs) that needn't ship at full
+// resolution.
 
 export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // 10 MB hard limit (safety net)
 const MAX_EDGE = 1600; // longest edge after resize

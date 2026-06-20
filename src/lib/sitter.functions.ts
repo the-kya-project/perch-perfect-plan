@@ -29,6 +29,15 @@ async function resolveClipUrl(sb: any, ref: string): Promise<string | null> {
   return data?.signedUrl ?? null;
 }
 
+// Resolve a bird's photo_url for display: sign Storage object paths, pass
+// through legacy inline data: URLs and absolute URLs unchanged.
+async function signBirdPhotoPath(sb: any, value: string | null | undefined): Promise<string | null> {
+  if (!value) return null;
+  if (value.startsWith("data:") || value.startsWith("http")) return value;
+  const { data } = await sb.storage.from("bird-photos").createSignedUrl(value, 3600);
+  return data?.signedUrl ?? null;
+}
+
 async function getAdmin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   return supabaseAdmin;
@@ -180,11 +189,21 @@ export const getSitterContext = createServerFn({ method: "GET" })
       if (bcp) baselineClipUrl = await resolveClipUrl(sb, bcp);
     }
 
+    // Sign bird profile photos (paths → signed URLs) so the sitter can load them
+    // from the private bucket; legacy inline data: URLs pass through.
+    const signedBirds = await Promise.all(
+      (birds ?? []).map(async (b: any) => ({ ...b, photo_url: await signBirdPhotoPath(sb, b.photo_url) })),
+    );
+    const signedActiveBird = {
+      ...birdRes.data,
+      photo_url: await signBirdPhotoPath(sb, (birdRes.data as any).photo_url),
+    };
+
     return {
       sit,
-      birds: birds ?? [],
+      birds: signedBirds,
       activeBirdId: activeId,
-      bird: birdRes.data,
+      bird: signedActiveBird,
       plan: planRes.data,
       contacts: mergedContacts,
       tasks: tasksRes.data ?? [],
@@ -514,7 +533,12 @@ export const getSitterDashboard = createServerFn({ method: "GET" })
       })
       .sort((a: any, b: any) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
 
-    return { birds: summary };
+    // Sign photo paths → URLs (legacy data: URLs pass through).
+    const signedSummary = await Promise.all(
+      summary.map(async (b: any) => ({ ...b, photo_url: await signBirdPhotoPath(sb, b.photo_url) })),
+    );
+
+    return { birds: signedSummary };
   });
 
 export const getGuideCards = createServerFn({ method: "GET" }).handler(async () => {

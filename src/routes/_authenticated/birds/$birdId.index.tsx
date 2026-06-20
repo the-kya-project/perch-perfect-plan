@@ -12,6 +12,8 @@ import { PhotoCropper } from "@/components/PhotoCropper";
 import { SpeciesPicker, AgePicker } from "@/components/BirdPickers";
 import { computeSetupCompleteness } from "@/lib/setupCompleteness";
 import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
+import { persistBirdPhoto, signBirdPhoto, isStoragePath } from "@/lib/birdPhoto";
+import { useBirdPhotos } from "@/lib/useBirdPhotos";
 import { FoodEditor, foodValueFromPlan, deriveFoodLegacyFields } from "@/components/careEditors/FoodEditor";
 import { syncFeedingTasks, dietItemsFromDetails } from "@/lib/feedingSync";
 import { derivedSource, taskDaypart, DAYPARTS, DAYPART_LABEL } from "@/lib/routineTasks";
@@ -127,6 +129,8 @@ function BirdEditor() {
     },
   });
 
+  const resolvePhoto = useBirdPhotos([bird?.photo_url]);
+
   if (!bird) return <div className="p-6 text-sm text-sage-600">Loading...</div>;
 
   const tabs: { id: Tab; label: string }[] = [
@@ -160,7 +164,7 @@ function BirdEditor() {
         <div className="mx-auto max-w-md px-5 py-3">
           <div className="flex items-center gap-3">
             <Link to="/dashboard" className="rounded p-1 text-sage-600"><ArrowLeft className="size-5" /></Link>
-            {bird.photo_url && <img src={bird.photo_url} alt={bird.name} className="size-9 shrink-0 rounded-full object-cover ring-1 ring-sage-200" style={{ objectPosition: bird.photo_position ?? "50% 20%" }} />}
+            {resolvePhoto(bird.photo_url) && <img src={resolvePhoto(bird.photo_url)!} alt={bird.name} className="size-9 shrink-0 rounded-full object-cover ring-1 ring-sage-200" style={{ objectPosition: bird.photo_position ?? "50% 20%" }} />}
             <div className="flex-1 min-w-0">
               <h1 className="text-sm font-bold truncate">{bird.name}</h1>
               <p className="text-[10px] uppercase tracking-wider text-sage-600">{bird.species ?? "Parrot"}</p>
@@ -283,9 +287,19 @@ function PlanFormSection({ section, birdId, bird, plan, onSaved }: { section: Pl
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleteText, setDeleteText] = useState("");
   const [deleting, setDeleting] = useState(false);
+  // `b.photo_url` holds a DISPLAYABLE value; `photoRef` holds what to PERSIST
+  // (Storage path / legacy data URL / null). See the same pattern in setup.tsx.
+  const [photoRef, setPhotoRef] = useState<string | null>(bird?.photo_url ?? null);
 
-  // Re-sync local state when the section changes or fresh data arrives.
-  useEffect(() => { setB(bird); }, [bird, section]);
+  // Re-sync local state when the section changes or fresh data arrives. For a
+  // Storage-path photo, blank the preview until the signed URL resolves (avoids
+  // a broken-image flash); legacy data URLs render immediately.
+  useEffect(() => {
+    const isPath = isStoragePath(bird?.photo_url);
+    setB({ ...bird, photo_url: isPath ? null : bird?.photo_url ?? null });
+    setPhotoRef(bird?.photo_url ?? null);
+    if (isPath) signBirdPhoto(bird.photo_url).then((url) => setB((cur: any) => (cur ? { ...cur, photo_url: url } : cur)));
+  }, [bird, section]);
   useEffect(() => { setP(plan); }, [plan, section]);
 
   async function deleteBird() {
@@ -312,7 +326,15 @@ function PlanFormSection({ section, birdId, bird, plan, onSaved }: { section: Pl
   }
   async function save() {
     setSaving(true);
-    const { id: bId, owner_id, created_at, updated_at, ...birdPatch } = b;
+    const { id: bId, owner_id, created_at, updated_at, photo_url, ...birdPatch } = b;
+    // Persist the Storage path, not the displayable signed/data URL. Upload a
+    // freshly-picked photo (data: URL) once, then reuse its path.
+    let photoToSave = photoRef;
+    if (typeof photoToSave === "string" && photoToSave.startsWith("data:")) {
+      photoToSave = await persistBirdPhoto(owner_id, photoToSave);
+      setPhotoRef(photoToSave);
+    }
+    (birdPatch as any).photo_url = photoToSave;
     const { id: pId, bird_id, created_at: pc, updated_at: pu, ...planPatch } = p;
     // Deprecated free-text summary blobs: every tab now uses structured inputs,
     // and the sitter view assembles its display from the structured columns, so
@@ -366,6 +388,7 @@ function PlanFormSection({ section, birdId, bird, plan, onSaved }: { section: Pl
         return;
       }
       setB({ ...b, photo_url: dataUrl });
+      setPhotoRef(dataUrl);
     } catch {
       toast.error("Couldn't process that photo. Try a different one.");
     } finally {
@@ -406,7 +429,7 @@ function PlanFormSection({ section, birdId, bird, plan, onSaved }: { section: Pl
                 <input type="file" accept="image/*,.heic,.heif" disabled={photoBusy} className="hidden" onChange={onPhoto} />
               </label>
               {b.photo_url && (
-                <button type="button" onClick={() => setB({ ...b, photo_url: null, photo_position: null })} className="ml-2 text-xs font-semibold text-warn-red underline">Remove</button>
+                <button type="button" onClick={() => { setB({ ...b, photo_url: null, photo_position: null }); setPhotoRef(null); }} className="ml-2 text-xs font-semibold text-warn-red underline">Remove</button>
               )}
             </div>
           </div>
