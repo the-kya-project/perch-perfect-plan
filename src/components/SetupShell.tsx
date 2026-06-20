@@ -1,6 +1,7 @@
 import { ReactNode, useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft, Check, ChevronDown } from "lucide-react";
+import { OwnerTabBar } from "@/components/OwnerTabBar";
 
 export const SETUP_STEPS = [
   { key: "basics", title: "The basics", short: "Basics" },
@@ -99,7 +100,7 @@ export function SetupShell({
   const birdLabel = birdName?.trim() || "Bird";
 
   return (
-    <div className={`min-h-screen bg-sage-50 ${hideFooter ? "pb-10" : "pb-32"}`}>
+    <div className={`min-h-screen bg-sage-50 ${hideFooter ? "pb-28" : "pb-44"}`}>
       <header className="sticky top-0 z-10 border-b border-sage-100 bg-white/95 backdrop-blur">
         {/* Top bar: back-to-profile link + context */}
         <div className="mx-auto flex max-w-md items-center gap-3 px-5 py-3">
@@ -214,39 +215,45 @@ export function SetupShell({
         {children}
       </main>
 
-      {!hideFooter && (
-        <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-sage-100 bg-white/95 backdrop-blur">
-          <div className="mx-auto flex max-w-md items-center gap-2 px-5 py-3">
-            <button
-              type="button"
-              onClick={onBack}
-              disabled={backDisabled || saving}
-              aria-label="Previous step"
-              className="grid size-11 shrink-0 place-items-center rounded-xl border border-sage-200 bg-white text-sage-700 disabled:opacity-40"
-            >
-              <ArrowLeft className="size-5" />
-            </button>
-            {onSaveAndExit && (
+      {/* Bottom region: the flow's own controls (Back / Save & exit / Next)
+          stacked above the owner bottom nav. The nav is additive — leaving via
+          it preserves the current step (autosave flushes on unmount). */}
+      <div className="fixed inset-x-0 bottom-0 z-40">
+        {!hideFooter && (
+          <div className="border-t border-sage-100 bg-white/95 backdrop-blur">
+            <div className="mx-auto flex max-w-md items-center gap-2 px-5 py-3">
               <button
                 type="button"
-                onClick={onSaveAndExit}
-                disabled={saving}
-                className="shrink-0 px-2 text-xs font-semibold text-sage-700 underline disabled:opacity-50"
+                onClick={onBack}
+                disabled={backDisabled || saving}
+                aria-label="Previous step"
+                className="grid size-11 shrink-0 place-items-center rounded-xl border border-sage-200 bg-white text-sage-700 disabled:opacity-40"
               >
-                Save &amp; exit
+                <ArrowLeft className="size-5" />
               </button>
-            )}
-            <button
-              type="button"
-              onClick={onNext}
-              disabled={nextDisabled || saving}
-              className="flex-1 rounded-xl bg-sage-600 py-3 text-sm font-semibold text-white disabled:opacity-50"
-            >
-              {saving ? "Saving…" : nextLabel}
-            </button>
+              {onSaveAndExit && (
+                <button
+                  type="button"
+                  onClick={onSaveAndExit}
+                  disabled={saving}
+                  className="shrink-0 px-2 text-xs font-semibold text-sage-700 underline disabled:opacity-50"
+                >
+                  Save &amp; exit
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={onNext}
+                disabled={nextDisabled || saving}
+                className="flex-1 rounded-xl bg-sage-600 py-3 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                {saving ? "Saving…" : nextLabel}
+              </button>
+            </div>
           </div>
-        </nav>
-      )}
+        )}
+        <OwnerTabBar embedded />
+      </div>
 
       {/* Mobile "All steps" bottom sheet */}
       <div
@@ -317,7 +324,7 @@ export function SetupShell({
             className="relative w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl"
           >
             <h2 className="text-base font-bold text-sage-900">Leave this step?</h2>
-            <p className="mt-1 text-sm text-sage-600">Your progress on this step won't be saved.</p>
+            <p className="mt-1 text-sm text-sage-600">Your progress is saved — you can pick up right where you left off.</p>
             <div className="mt-4 flex gap-2">
               <button
                 type="button"
