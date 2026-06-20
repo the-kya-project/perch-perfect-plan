@@ -9,6 +9,7 @@ import { EmergencyBar } from "@/components/EmergencyBar";
 import { SitterOnboarding, replaySitterOnboarding } from "@/components/SitterOnboarding";
 import { presentCareSections } from "@/lib/sitterCareSections";
 import { track } from "@/lib/analytics";
+import { PullToRefresh } from "@/components/PullToRefresh";
 
 const searchSchema = z.object({ birdId: z.string().uuid().optional() });
 
@@ -70,6 +71,7 @@ function SitterLayout() {
   const showSwitcher = ctx.birds.length > 1 && !onHome;
 
   return (
+    <PullToRefresh>
     <div className="min-h-screen bg-[#f4f1e8] pb-32">
       <div className="sticky top-0 z-30 border-b border-[#e3ded0] bg-[#f4f1e8]/95 backdrop-blur">
         <div className="mx-auto flex max-w-md items-center gap-2 px-5 py-2.5">
@@ -121,6 +123,7 @@ function SitterLayout() {
       <EmergencyBar token={token} activeBirdId={ctx.activeBirdId} />
       <SitterOnboarding birds={ctx.birds} bird={ctx.bird} careSections={presentCareSections(ctx)} hasClips={(ctx.watchClips?.length ?? 0) > 0} token={token} />
     </div>
+    </PullToRefresh>
   );
 }
 

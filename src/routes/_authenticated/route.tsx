@@ -2,6 +2,7 @@ import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { applyOAuthAttribution } from "@/lib/attribution";
+import { PullToRefresh } from "@/components/PullToRefresh";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -31,5 +32,9 @@ function AuthenticatedLayout() {
     return () => { cancelled = true; };
   }, []);
 
-  return <Outlet />;
+  return (
+    <PullToRefresh>
+      <Outlet />
+    </PullToRefresh>
+  );
 }
