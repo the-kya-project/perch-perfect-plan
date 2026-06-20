@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
-import { ArrowLeft, Plus, Trash2, ChevronDown, AlertTriangle, Wand2 } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, ChevronDown, AlertTriangle, Wand2, ShieldCheck, Pencil, RotateCcw } from "lucide-react";
 import { SitCard } from "@/components/SitCard";
 import { toast } from "sonner";
 import { Disclaimer, VetReviewBanner } from "@/components/Disclaimer";
@@ -753,11 +753,11 @@ const ASPCA_POISON_CONTROL = "(888) 426-4435";
 // touches the account default or any other bird. A field is overridden when the
 // bird's stored value differs from the account default.
 const EMERGENCY_SECTIONS: { key: string; title: string; fields: [string, string][] }[] = [
-  { key: "avian_vet", title: "Avian vet", fields: [["avian_vet_name", "Clinic or vet name"], ["avian_vet_phone", "Phone"], ["avian_vet_address", "Address"]] },
-  { key: "emergency_vet", title: "Emergency vet", fields: [["emergency_vet_name", "Clinic name"], ["emergency_vet_phone", "Phone"], ["emergency_vet_address", "Address"]] },
-  { key: "your_contact", title: "Your contact", fields: [["owner_phone", "Your phone"], ["backup_name", "Backup contact"], ["backup_phone", "Backup phone"]] },
+  { key: "avian_vet", title: "Avian vet", fields: [["avian_vet_name", "Clinic"], ["avian_vet_phone", "Phone"], ["avian_vet_address", "Address"]] },
+  { key: "emergency_vet", title: "Emergency vet", fields: [["emergency_vet_name", "Clinic"], ["emergency_vet_phone", "Phone"], ["emergency_vet_address", "Address"]] },
+  { key: "your_contact", title: "Your contact", fields: [["owner_phone", "Phone"], ["backup_name", "Backup name"], ["backup_phone", "Backup phone"]] },
   { key: "poison_control", title: "Poison control", fields: [["poison_control", "Phone"]] },
-  { key: "transport", title: "Transport & spending", fields: [["carrier_location", "Carrier location"], ["first_aid_kit_location", "First-aid kit location"], ["spending_limit", "Approved spending limit"]] },
+  { key: "transport", title: "Transport & spending", fields: [["carrier_location", "Carrier"], ["first_aid_kit_location", "First-aid kit"], ["spending_limit", "Spending limit"]] },
 ];
 const REQUIRED_EMERGENCY = new Set(["owner_phone", "avian_vet_phone"]);
 
@@ -813,12 +813,17 @@ function ContactsForm({ birdId, birdName, contacts, defaults, onSaved }: { birdI
 
   return (
     <div className="space-y-3">
-      {/* Plain-language source banner */}
-      <section className="rounded-2xl bg-[#e8f0ec] p-4 ring-1 ring-[#1a3d2e]/10">
-        <p className="text-sm font-medium text-[#1a3d2e]">Using your account emergency info</p>
-        <p className="mt-1 text-xs leading-relaxed text-[#436055]">
-          This is the vet and emergency info you set for your account. You can change it just for {birdName} if it's different.
-        </p>
+      {/* Source banner — calm info card with an icon */}
+      <section className="flex items-start gap-3 rounded-2xl bg-[#e8f0ec] p-4">
+        <div className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-full bg-[#1a3d2e]/10">
+          <ShieldCheck className="size-4 text-[#1a3d2e]" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-[#1a3d2e]">Using your account emergency info</p>
+          <p className="mt-1 text-xs leading-relaxed text-[#436055]">
+            This is the vet and emergency info you set for your account. You can change it just for {birdName} if it's different.
+          </p>
+        </div>
       </section>
 
       {!hasAnyDefault && (
@@ -831,13 +836,24 @@ function ContactsForm({ birdId, birdName, contacts, defaults, onSaved }: { birdI
         const overridden = section.fields.some(([k]) => isOverridden(k));
         const isEditing = editing === section.key;
         return (
-          <section key={section.key} className="rounded-[20px] bg-[#efe9da] p-4">
+          <section key={section.key} className="rounded-2xl bg-[#efe9da] p-4">
             <div className="flex items-center justify-between gap-2">
-              <h3 className="text-sm font-medium text-[#1a3d2e]">{section.title}</h3>
-              {overridden && !isEditing && (
-                <span className="shrink-0 rounded-full bg-[#cdeab0] px-2 py-0.5 text-[10px] font-semibold text-[#1f3d12]">
-                  Edited for {birdName}
-                </span>
+              <div className="flex min-w-0 items-center gap-2">
+                <h3 className="text-sm font-medium text-[#1a3d2e]">{section.title}</h3>
+                {overridden && !isEditing && (
+                  <span className="shrink-0 rounded-full bg-warn-amber/15 px-2 py-0.5 text-[10px] font-semibold text-warn-amber">
+                    Edited for {birdName}
+                  </span>
+                )}
+              </div>
+              {!isEditing && (
+                <button
+                  type="button"
+                  onClick={() => startEdit(section)}
+                  className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#e8f0ec] px-2.5 py-1 text-xs font-semibold text-[#1a3d2e] active:scale-95"
+                >
+                  <Pencil className="size-3" /> Edit for {birdName}
+                </button>
               )}
             </div>
 
@@ -865,30 +881,30 @@ function ContactsForm({ birdId, birdName, contacts, defaults, onSaved }: { birdI
               </div>
             ) : (
               <>
-                <dl className="mt-3 space-y-2">
-                  {section.fields.map(([k, label]) => {
+                <dl className="mt-3">
+                  {section.fields.map(([k, label], i) => {
                     const val = display(k);
                     const missingRequired = !val && REQUIRED_EMERGENCY.has(k);
                     return (
-                      <div key={k} className="flex items-baseline justify-between gap-3">
-                        <dt className="shrink-0 text-xs text-[#5f5e5a]">{label}</dt>
-                        <dd className={`text-right text-sm ${val ? "text-[#1a3d2e]" : missingRequired ? "text-warn-red" : "text-[#9a978c]"}`}>
+                      <div key={k} className={i > 0 ? "mt-2.5 border-t border-[#e3dcc9] pt-2.5" : ""}>
+                        <dt className="text-[10px] font-semibold uppercase tracking-wider text-[#8a897f]">{label}</dt>
+                        <dd className={`mt-0.5 text-sm ${val ? "text-[#1a3d2e]" : missingRequired ? "text-warn-red" : "text-[#9a978c]"}`}>
                           {val || "Not provided"}
                         </dd>
                       </div>
                     );
                   })}
                 </dl>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <button onClick={() => startEdit(section)} className="rounded-xl bg-white px-3.5 py-2 text-xs font-semibold text-[#1a3d2e] ring-1 ring-[#d8cfb8]">
-                    Edit for {birdName}
+                {overridden && (
+                  <button
+                    type="button"
+                    onClick={() => resetSection(section)}
+                    disabled={saving}
+                    className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-warn-amber disabled:opacity-50"
+                  >
+                    <RotateCcw className="size-3" /> Reset to account
                   </button>
-                  {overridden && (
-                    <button onClick={() => resetSection(section)} disabled={saving} className="rounded-xl px-3.5 py-2 text-xs font-semibold text-[#5f5e5a] underline disabled:opacity-50">
-                      Reset to account
-                    </button>
-                  )}
-                </div>
+                )}
               </>
             )}
           </section>
