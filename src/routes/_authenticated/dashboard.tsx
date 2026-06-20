@@ -51,7 +51,7 @@ function Dashboard() {
   const [notifSeenAt] = useState(() => getNotifSeenAt());
   const unreadNotifs = scanFeed.filter((n) => new Date(n.created_at).getTime() > notifSeenAt).length;
 
-  const { data: birds = [], isLoading: birdsLoading } = useQuery({
+  const { data: birds = [], isLoading: birdsLoading, isError: birdsError, refetch: refetchBirds } = useQuery({
     queryKey: ["birds"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -185,6 +185,17 @@ function Dashboard() {
                   </div>
                 </div>
               ))}
+            </div>
+          ) : birdsError ? (
+            // A failed fetch must NOT look like "no birds" — that empty state
+            // flashed for owners who actually have birds on flaky connections.
+            <div className="rounded-[20px] border border-dashed border-[#d8cfb8] bg-[#efe9da] p-8 text-center">
+              <BirdIcon className="mx-auto size-8 text-[#2d6a4f]" />
+              <p className="mt-3 font-medium text-[#1a3d2e]">Couldn't load your birds</p>
+              <p className="mt-1 text-sm text-[#5f5e5a]">Check your connection and try again.</p>
+              <button onClick={() => refetchBirds()} className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#1a3d2e] px-4 py-2.5 text-sm font-medium text-white">
+                Retry
+              </button>
             </div>
           ) : birds.length === 0 ? (
             <div className="rounded-[20px] border border-dashed border-[#d8cfb8] bg-[#efe9da] p-8 text-center">
