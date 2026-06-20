@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useRouter, useCanGoBack, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Settings, AlertTriangle, CheckCircle2, Feather } from "lucide-react";
@@ -23,6 +23,12 @@ function relativeTime(iso: string): string {
 }
 
 function NotificationsInbox() {
+  const router = useRouter();
+  const canGoBack = useCanGoBack();
+  const navigate = useNavigate();
+  // Reachable from the Activity tab and the header bell on any screen, so return
+  // to wherever the user came from; fall back to Home if there's no history.
+  const goBack = () => (canGoBack ? router.history.back() : navigate({ to: "/dashboard" }));
   const seenAt = getNotifSeenAt();
   const { data: feed = [], isLoading } = useQuery({ queryKey: ["scan-feed"], queryFn: fetchScanFeed });
 
@@ -35,9 +41,9 @@ function NotificationsInbox() {
     <div className="min-h-screen bg-sage-50 pb-24">
       <main className="mx-auto max-w-md px-5 py-6">
         <div className="flex items-center justify-between">
-          <Link to="/dashboard" className="inline-flex items-center gap-1 text-sm text-sage-600">
-            <ArrowLeft className="size-4" /> Dashboard
-          </Link>
+          <button type="button" onClick={goBack} className="inline-flex items-center gap-1 text-sm text-sage-600">
+            <ArrowLeft className="size-4" /> Back
+          </button>
           <Link
             to="/notifications/settings"
             className="inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-sage-700 ring-1 ring-sage-100"
