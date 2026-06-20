@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { getSitterContext } from "@/lib/sitter.functions";
-import { HelpCircle, ChevronLeft, ChevronRight } from "lucide-react";
+import { HelpCircle } from "lucide-react";
 import { EmergencyBar } from "@/components/EmergencyBar";
 import { SitterOnboarding, replaySitterOnboarding } from "@/components/SitterOnboarding";
 import { presentCareSections } from "@/lib/sitterCareSections";
@@ -70,8 +70,8 @@ function SitterLayout() {
   const onHome = pathname.replace(/\/$/, "") === `/sitter/${token}/home`;
   const showSwitcher = ctx.birds.length > 1 && !onHome;
 
-  // Scroll affordances for the bird switcher when it overflows (4+ birds):
-  // edge fades + chevrons appear only on the side(s) with more birds off-screen.
+  // Subtle edge fades on the switcher when the pills overflow (the carousel
+  // dots are the primary "there's more — swipe" cue; no arrows).
   const switcherRef = useRef<HTMLDivElement>(null);
   const [atStart, setAtStart] = useState(true);
   const [atEnd, setAtEnd] = useState(true);
@@ -80,9 +80,6 @@ function SitterLayout() {
     if (!el) return;
     setAtStart(el.scrollLeft <= 1);
     setAtEnd(el.scrollLeft + el.clientWidth >= el.scrollWidth - 1);
-  }
-  function scrollSwitcher(dir: 1 | -1) {
-    switcherRef.current?.scrollBy({ left: dir * switcherRef.current.clientWidth * 0.7, behavior: "smooth" });
   }
   useEffect(() => {
     const raf = requestAnimationFrame(updateSwitcherFades);
@@ -94,11 +91,39 @@ function SitterLayout() {
     <PullToRefresh>
     <div className="min-h-screen bg-[#f4f1e8] pb-32">
       <div className="sticky top-0 z-30 border-b border-[#e3ded0] bg-[#f4f1e8]/95 backdrop-blur">
-        <div className="mx-auto flex max-w-md items-center gap-2 px-5 py-2.5">
+        <div className="mx-auto max-w-md px-5 py-2.5">
+          {/* Top line: who you're caring for (left) · status + help (right) */}
+          <div className="flex items-center justify-between gap-2">
+            <div className="min-w-0 flex-1">
+              {!onHome && (ctx.birds.length > 1 ? (
+                <span className="text-xs font-medium text-[#5f5e5a]">Caring for {ctx.birds.length} birds</span>
+              ) : (
+                <span className="block truncate text-sm font-medium text-[#1a3d2e]">{ctx.bird?.name}</span>
+              ))}
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+              <span className="shrink-0 rounded-full bg-[#d6e8dc] px-2.5 py-1 text-[11px] font-medium text-[#1a5e3f]">
+                Sit active
+              </span>
+              {/* Persistent walkthrough replay — the question mark in the upper
+                  right on every screen except Home, where the labeled
+                  "Walkthrough" chip serves this role. */}
+              {!onHome && (
+                <button
+                  onClick={replaySitterOnboarding}
+                  aria-label="Replay walkthrough"
+                  className="grid size-7 shrink-0 place-items-center rounded-full bg-[#e8f0ec] text-[#2d6a4f] active:scale-95"
+                >
+                  <HelpCircle className="size-4" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Switcher row (pills only) + carousel dots — multiple birds only */}
           {showSwitcher && (
-            <>
-              <span className="shrink-0 text-xs font-medium text-[#5f5e5a]">Caring for</span>
-              <div className="relative min-w-0 flex-1">
+            <div className="mt-2">
+              <div className="relative">
                 <div
                   ref={switcherRef}
                   onScroll={updateSwitcherFades}
@@ -113,9 +138,7 @@ function SitterLayout() {
                         onClick={() => navigate({ to: ".", search: { birdId: b.id } })}
                         aria-pressed={active}
                         className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition ${
-                          active
-                            ? "bg-[#1a3d2e] text-white"
-                            : "bg-[#e8f0ec] text-[#1a3d2e]"
+                          active ? "bg-[#1a3d2e] text-white" : "bg-[#e8f0ec] text-[#1a3d2e]"
                         }`}
                       >
                         {b.name}
@@ -123,53 +146,26 @@ function SitterLayout() {
                     );
                   })}
                 </div>
-                {/* Left affordance — appears once scrolled right */}
-                {!atStart && (
-                  <>
-                    <div className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-[#f4f1e8] to-transparent" />
-                    <button
-                      type="button"
-                      onClick={() => scrollSwitcher(-1)}
-                      aria-label="Show earlier birds"
-                      className="absolute inset-y-0 left-0 flex items-center pr-3 text-[#1a3d2e] active:scale-95"
-                    >
-                      <ChevronLeft className="size-4" />
-                    </button>
-                  </>
-                )}
-                {/* Right affordance — appears when more birds are off-screen */}
-                {!atEnd && (
-                  <>
-                    <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-[#f4f1e8] to-transparent" />
-                    <button
-                      type="button"
-                      onClick={() => scrollSwitcher(1)}
-                      aria-label="Show more birds"
-                      className="absolute inset-y-0 right-0 flex items-center pl-3 text-[#1a3d2e] active:scale-95"
-                    >
-                      <ChevronRight className="size-4" />
-                    </button>
-                  </>
-                )}
+                {/* Subtle edge fades when the pills overflow (no arrows) */}
+                {!atStart && <div className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-[#f4f1e8] to-transparent" />}
+                {!atEnd && <div className="pointer-events-none absolute inset-y-0 right-0 w-6 bg-gradient-to-l from-[#f4f1e8] to-transparent" />}
               </div>
-            </>
+
+              {/* Carousel dots — count + current position (full set, any scroll) */}
+              <div className="mt-2 flex items-center justify-center gap-1.5">
+                {ctx.birds.map((b: any) => {
+                  const active = b.id === ctx.activeBirdId;
+                  return (
+                    <span
+                      key={b.id}
+                      aria-hidden
+                      className={`h-1.5 rounded-full transition-all ${active ? "w-4 bg-[#1a3d2e]" : "w-1.5 bg-[#1a3d2e]/25"}`}
+                    />
+                  );
+                })}
+              </div>
+            </div>
           )}
-          <div className="ml-auto flex shrink-0 items-center gap-2">
-            <span className="shrink-0 rounded-full bg-[#d6e8dc] px-2.5 py-1 text-[11px] font-medium text-[#1a5e3f]">
-              Sit active
-            </span>
-            {/* Persistent walkthrough replay — consistent top-right on every screen
-                except Home, where the labeled "Walkthrough" chip serves this role. */}
-            {!onHome && (
-              <button
-                onClick={replaySitterOnboarding}
-                aria-label="Replay walkthrough"
-                className="grid size-7 shrink-0 place-items-center rounded-full bg-[#e8f0ec] text-[#2d6a4f] active:scale-95"
-              >
-                <HelpCircle className="size-4" />
-              </button>
-            )}
-          </div>
         </div>
       </div>
       <Suspense fallback={<TabSkeleton />}>
