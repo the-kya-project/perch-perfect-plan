@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { SetupShell, SETUP_STEPS, TOTAL_STEPS } from "@/components/SetupShell";
 import { EmergencyInfo } from "@/components/EmergencyInfo";
-import { Plus, X, Check } from "lucide-react";
+import { Plus, X, Check, Lightbulb, GripVertical, Sparkles } from "lucide-react";
 import { PhotoCropper } from "@/components/PhotoCropper";
 import { AgePicker, BirdField, SpeciesPicker } from "@/components/BirdPickers";
 import { ClipRecorder, UploadProgress, MAX_SECONDS as CLIP_MAX_SECONDS, MAX_BYTES as CLIP_MAX_BYTES } from "@/components/ClipRecorder";
@@ -41,6 +41,17 @@ const SetupDirtyContext = createContext<(dirty: boolean) => void>(() => {});
  * flush function so pending edits are persisted before the step unmounts.
  * While a save is pending the step is reported "dirty" via SetupDirtyContext.
  */
+// Standout step instruction — a dark-green banner so the "here's what this step
+// is for" guidance never blends into the form. Used at the top of every step.
+function StepInstruction({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mb-4 flex items-start gap-2.5 rounded-2xl bg-[#1a3d2e] p-3.5">
+      <Lightbulb className="mt-0.5 size-4 shrink-0 text-[#cdeab0]" />
+      <p className="text-[13px] leading-relaxed text-white">{children}</p>
+    </div>
+  );
+}
+
 function useDebouncedAutosave(
   save: () => Promise<void>,
   deps: React.DependencyList,
@@ -347,8 +358,9 @@ function StepBody({
   registerFlush: (fn: (() => Promise<void>) | null) => void;
 }) {
   if (step === 1) return <BasicsStep birdId={birdId} onBlockNext={onBlockNext} registerFlush={registerFlush} />;
-  if (step === 2) return <DayInLifeStep birdId={birdId} />;
-  if (step === 3) return <FoodWaterStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} registerFlush={registerFlush} />;
+  // Food before Routine (step order set in SetupShell.SETUP_STEPS).
+  if (step === 2) return <FoodWaterStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} registerFlush={registerFlush} />;
+  if (step === 3) return <DayInLifeStep birdId={birdId} />;
   if (step === 4) return <PersonalityStep birdId={birdId} birdName={birdName} registerFlush={registerFlush} />;
   if (step === 5) return <EnvironmentStep birdId={birdId} registerFlush={registerFlush} />;
   if (step === 6) return <HealthBaselineStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} registerFlush={registerFlush} />;
@@ -459,7 +471,8 @@ function BasicsStep({ birdId, onBlockNext, registerFlush }: { birdId: string; on
 
   return (
     <div className="space-y-4">
-      <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
+      <StepInstruction>Start with the essentials — who your bird is, and a photo so your sitter recognizes them right away.</StepInstruction>
+      <section className="rounded-2xl bg-[#efe9da] p-4 space-y-3">
         <div className="flex items-start gap-3">
           {form.photo_url ? (
             <PhotoCropper src={form.photo_url} position={form.photo_position} onChange={(pos) => setForm({ ...form, photo_position: pos })} size={120} />
@@ -546,10 +559,7 @@ function DayInLifeStep({ birdId }: { birdId: string }) {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
-        <p className="text-sm font-semibold">Add the daily rhythm.</p>
-        <p className="mt-1 text-sm text-sage-600">Feedings, water, cleaning, and medication come in automatically from the Food and Health tabs — add anything else here. Auto-added items show a small tag and are edited in their own section.</p>
-      </div>
+      <StepInstruction>Build the daily rhythm. Feedings, water, cleaning, and medication come in automatically from the Food and Health steps — add anything else here, like uncovering the cage or playtime. Auto-added items are tagged and edited in their own step.</StepInstruction>
 
       {TIME_BLOCKS.map((block) => (
         <TimeBlockSection
@@ -576,12 +586,17 @@ function TimeBlockSection({
   onChange: () => void;
 }) {
   const [custom, setCustom] = useState("");
+  const [addingCustom, setAddingCustom] = useState(false);
   const [busy, setBusy] = useState(false);
   // Derived tasks (feeding/water/hygiene/medication) are read-only here — they
   // come from the Food / Health tabs. Only manual rhythm items are editable.
   const derivedTasks = tasks.filter((t) => isDerivedTask(t.title));
   const manualTasks = tasks.filter((t) => !isDerivedTask(t.title));
   const present = new Map(manualTasks.map((t) => [t.title.trim().toLowerCase(), t]));
+  const hasItems = derivedTasks.length > 0 || manualTasks.length > 0;
+  // One-place rule: a common task is offered as an "add" chip only while it is
+  // NOT yet in the routine. Once added it moves into the "In the routine" list.
+  const availableChips = COMMON_TASKS.filter((t) => !present.has(t.trim().toLowerCase()));
 
   async function add(title: string) {
     if (busy) return;
@@ -602,16 +617,12 @@ function TimeBlockSection({
     setBusy(false);
     onChange();
   }
-  async function toggle(title: string) {
-    const existing = present.get(title.trim().toLowerCase());
-    if (existing) await remove(existing.id);
-    else await add(title);
-  }
   async function addCustom() {
     const t = custom.trim();
     if (!t) return;
     await add(t);
     setCustom("");
+    setAddingCustom(false);
   }
   async function saveNote(id: string, value: string) {
     await supabase.from("routine_tasks").update({ instructions: value || null } as any).eq("id", id);
@@ -619,97 +630,113 @@ function TimeBlockSection({
   }
 
   return (
-    <section className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
-      <h2 className="text-[11px] font-bold uppercase tracking-widest text-sage-600">{block.label}</h2>
+    <section className="rounded-[18px] bg-[#efe9da] p-4">
+      <h2 className="text-[11px] font-medium uppercase tracking-[0.05em] text-[#1a3d2e]">{block.label}</h2>
 
-      <div className="mt-3 flex flex-wrap gap-2">
-        {COMMON_TASKS.map((t) => {
-          const isOn = present.has(t.trim().toLowerCase());
-          return (
-            <button
-              key={t}
-              type="button"
-              onClick={() => toggle(t)}
-              disabled={busy}
-              className={
-                "rounded-full border px-3 py-1.5 text-xs font-semibold transition disabled:opacity-50 " +
-                (isOn
-                  ? "border-sage-600 bg-sage-600 text-white"
-                  : "border-sage-200 bg-white text-sage-700 hover:bg-sage-50")
-              }
-            >
-              {isOn ? "✓ " : "+ "}{t}
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="mt-3 flex gap-2">
-        <input
-          className="input flex-1"
-          value={custom}
-          onChange={(e) => setCustom(e.target.value)}
-          placeholder="Add your own…"
-          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCustom(); } }}
-        />
-        <button
-          type="button"
-          onClick={addCustom}
-          disabled={!custom.trim() || busy}
-          className="rounded-xl bg-sage-100 px-3 text-sm font-semibold text-sage-700 disabled:opacity-50"
-          aria-label="Add custom task"
-        >
-          <Plus className="size-4" />
-        </button>
-      </div>
-
-      {/* Auto-derived items, read-only — managed in their source section. */}
-      {derivedTasks.length > 0 && (
-        <ul className="mt-4 space-y-2">
-          {derivedTasks.map((t) => (
-            <li key={t.id} className="rounded-lg bg-sage-50/70 p-3 ring-1 ring-sage-100">
-              <div className="flex items-start justify-between gap-2">
-                <p className="flex-1 text-sm font-semibold text-sage-700">{t.title}</p>
-                <span className="mt-0.5 shrink-0 rounded-full bg-sage-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-sage-600">
+      {/* In the routine — everything currently scheduled for this day-part. */}
+      {hasItems ? (
+        <>
+          <p className="mt-3 text-[11px] font-medium text-[#6b6a60]">In the routine</p>
+          <ul className="mt-2 space-y-2">
+            {/* Auto-derived items, read-only — managed in their source step. */}
+            {derivedTasks.map((t) => (
+              <li key={t.id} className="flex items-start gap-2.5 rounded-[11px] bg-[#e8f0ec] px-3 py-2.5">
+                <Sparkles className="mt-0.5 size-3.5 shrink-0 text-[#2d6a4f]" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm text-[#1f1f1d]">
+                    {t.title}
+                    {t.time_of_day && <span className="text-sage-500"> · {t.time_of_day}</span>}
+                  </p>
+                  {t.instructions && <p className="mt-0.5 whitespace-pre-line text-xs text-sage-600">{t.instructions}</p>}
+                </div>
+                <span className="mt-0.5 shrink-0 rounded-full bg-[#d2e6d9] px-2 py-0.5 text-[9px] font-medium uppercase tracking-wider text-[#2d6a4f]">
                   from {derivedSource(t.title)}
                 </span>
-              </div>
-              {t.time_of_day && <p className="mt-0.5 text-[11px] font-medium text-sage-500">{t.time_of_day}</p>}
-              {t.instructions && <p className="mt-1 whitespace-pre-line text-xs text-sage-600">{t.instructions}</p>}
-            </li>
-          ))}
-        </ul>
+              </li>
+            ))}
+            {/* Manual rhythm items, editable here. */}
+            {manualTasks.map((t) => (
+              <li key={t.id} className="rounded-[11px] bg-white px-3 py-2.5">
+                <div className="flex items-center gap-2.5">
+                  <GripVertical className="size-4 shrink-0 text-[#c0bba8]" />
+                  <p className="flex-1 text-sm text-[#1f1f1d]">{t.title}</p>
+                  <button
+                    type="button"
+                    onClick={() => remove(t.id)}
+                    className="shrink-0 rounded p-0.5 text-[#b0aea2] hover:bg-sage-100"
+                    aria-label={`Remove ${t.title}`}
+                  >
+                    <X className="size-4" />
+                  </button>
+                </div>
+                <textarea
+                  className="input area mt-2 text-xs"
+                  placeholder="Add a note (optional)"
+                  defaultValue={t.instructions ?? ""}
+                  onBlur={(e) => {
+                    if ((e.target.value ?? "") !== (t.instructions ?? "")) {
+                      saveNote(t.id, e.target.value);
+                    }
+                  }}
+                />
+              </li>
+            ))}
+          </ul>
+        </>
+      ) : (
+        <p className="mt-3 text-[13px] text-[#a8a596]">Nothing added yet</p>
       )}
 
-      {/* Manual rhythm items, editable here. */}
-      {manualTasks.length > 0 && (
-        <ul className="mt-3 space-y-2">
-          {manualTasks.map((t) => (
-            <li key={t.id} className="rounded-lg bg-sage-50 p-3">
-              <div className="flex items-start gap-2">
-                <p className="flex-1 text-sm font-semibold">{t.title}</p>
-                <button
-                  type="button"
-                  onClick={() => remove(t.id)}
-                  className="rounded p-1 text-sage-600 hover:bg-sage-100"
-                  aria-label={`Remove ${t.title}`}
-                >
-                  <X className="size-4" />
-                </button>
-              </div>
-              <textarea
-                className="input area mt-2 text-xs"
-                placeholder="Add a note (optional)"
-                defaultValue={t.instructions ?? ""}
-                onBlur={(e) => {
-                  if ((e.target.value ?? "") !== (t.instructions ?? "")) {
-                    saveNote(t.id, e.target.value);
-                  }
-                }}
-              />
-            </li>
-          ))}
-        </ul>
+      {/* Add to [day-part] — clearly separated "tap to add" chips. */}
+      <div className="mb-2.5 mt-4 flex items-center gap-2">
+        <span className="text-[11px] font-medium text-[#8a897f]">Add to {block.label.toLowerCase()}</span>
+        <span className="h-px flex-1 bg-black/10" />
+      </div>
+
+      <div className="flex flex-wrap gap-2">
+        {availableChips.map((t) => (
+          <button
+            key={t}
+            type="button"
+            onClick={() => add(t)}
+            disabled={busy}
+            className="flex items-center gap-1 rounded-full border border-dashed border-[#b9c7bd] px-3 py-1.5 text-[13px] text-[#1a3d2e] transition hover:bg-white/50 disabled:opacity-50"
+          >
+            <Plus className="size-3.5 text-[#5f7a6e]" /> {t}
+          </button>
+        ))}
+        {!addingCustom && (
+          <button
+            type="button"
+            onClick={() => setAddingCustom(true)}
+            className="flex items-center gap-1 rounded-full border border-dashed border-[#b9c7bd] px-3 py-1.5 text-[13px] text-[#1a3d2e] transition hover:bg-white/50"
+          >
+            <Plus className="size-3.5 text-[#5f7a6e]" /> Add your own
+          </button>
+        )}
+      </div>
+
+      {addingCustom && (
+        <div className="mt-2.5 flex gap-2">
+          <input
+            className="input flex-1"
+            value={custom}
+            autoFocus
+            onChange={(e) => setCustom(e.target.value)}
+            placeholder="Add your own…"
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCustom(); } }}
+            onBlur={() => { if (!custom.trim()) setAddingCustom(false); }}
+          />
+          <button
+            type="button"
+            onClick={addCustom}
+            disabled={!custom.trim() || busy}
+            className="rounded-xl bg-[#1a3d2e] px-3 text-sm font-semibold text-white disabled:opacity-50"
+            aria-label="Add custom task"
+          >
+            <Plus className="size-4" />
+          </button>
+        </div>
       )}
 
       <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.55rem .7rem;font-size:14px;outline:none}.input:focus{border-color:var(--sage-600);box-shadow:0 0 0 3px rgb(74 103 65 / .15)}.area{min-height:50px;line-height:1.4}`}</style>
@@ -1032,10 +1059,7 @@ function FoodWaterStep({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
-        <p className="text-sm font-semibold">What does {birdName} eat, and how much?</p>
-        <p className="mt-1 text-sm text-sage-600">Structured answers help the sitter know exactly what to serve and when.</p>
-      </div>
+      <StepInstruction>What does {birdName} eat, and how much? Structured answers help the sitter know exactly what to serve and when.</StepInstruction>
 
       {/* Primary diet */}
       <Card title="Primary diet" hint="Choose all that apply.">
@@ -1321,8 +1345,8 @@ function FoodWaterStep({
 
 function Card({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
-      <h2 className="text-sm font-bold">{title}</h2>
+    <section className="rounded-2xl bg-[#efe9da] p-4">
+      <h2 className="text-sm font-medium">{title}</h2>
       {hint && <p className="mt-1 text-xs text-sage-600">{hint}</p>}
       <div className="mt-3">{children}</div>
     </section>
@@ -1419,10 +1443,7 @@ function PersonalityStep({ birdId, birdName, registerFlush }: { birdId: string; 
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
-        <p className="text-sm font-semibold">How does {birdName} like to be treated?</p>
-        <p className="mt-1 text-sm text-sage-600">What should a sitter expect?</p>
-      </div>
+      <StepInstruction>How does {birdName} like to be treated? What should a sitter expect?</StepInstruction>
 
       <Card title="Does the bird step up?">
         <select className="input" value={stepUp} onChange={(e) => setStepUp(e.target.value)}>
@@ -1572,9 +1593,7 @@ function EnvironmentStep({ birdId, registerFlush }: { birdId: string; registerFl
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
-        <p className="text-sm font-semibold">What does a sitter need to know about your home?</p>
-      </div>
+      <StepInstruction>What does a sitter need to know about your home?</StepInstruction>
 
       <Card title="Cage location & setup notes">
         <textarea
@@ -1798,9 +1817,7 @@ function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlush }: { 
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
-        <p className="text-sm font-semibold">Help your sitter know what's normal for {birdName}, so they can spot what isn't.</p>
-      </div>
+      <StepInstruction>Help your sitter know what's normal for {birdName}, so they can spot what isn't.</StepInstruction>
 
       <Card title="Normal weight (grams)" hint="Optional. Updating this adds an entry to the weight log.">
         <input
@@ -2086,10 +2103,7 @@ function OwnerTipsClipsStep({ birdId, onBlockNext }: { birdId: string; onBlockNe
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
-        <p className="text-sm font-semibold">Record a few short clips so your sitter can see how things are done.</p>
-        <p className="mt-1 text-sm text-sage-600">All clips are private — only your assigned sitter can play them.</p>
-      </div>
+      <StepInstruction>Record a few short clips so your sitter can see how things are done. All clips are private — only your assigned sitter can play them.</StepInstruction>
 
       {CLIP_SLOTS.map((slot) => (
         <ClipSlotCard
@@ -2399,10 +2413,7 @@ function ReviewStep({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
-        <p className="text-sm font-semibold">Here's exactly what your sitter will see for {birdName}.</p>
-        <p className="mt-1 text-sm text-sage-600">Scroll inside the preview to explore the sitter's Today screen.</p>
-      </div>
+      <StepInstruction>Here's exactly what your sitter will see for {birdName}. Scroll inside the preview to explore the sitter's Today screen.</StepInstruction>
 
       {issues.length > 0 && (
         <section className="rounded-2xl bg-warn-amber/10 p-4 ring-1 ring-warn-amber/30">
