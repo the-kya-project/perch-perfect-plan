@@ -1,10 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { toast } from "sonner";
 import { ArrowRight, ArrowUpRight, Headphones, Compass } from "lucide-react";
 import { OwnerHeaderIcons } from "@/components/OwnerHeader";
 import { OwnerTabBar } from "@/components/OwnerTabBar";
+import { WaitlistCard } from "@/components/WaitlistCard";
 import { getBlogPosts, type BlogPost } from "@/lib/webflow.functions";
 
 // The Kya Project marketing links.
@@ -51,20 +51,7 @@ function Explore() {
 
       <main className="mx-auto max-w-md space-y-8 px-5 pt-7">
         {/* Community waitlist — the single lime accent moment. */}
-        <section className="rounded-[22px] bg-[#cdeab0] p-5">
-          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#3f5e22]">Coming soon</p>
-          <h2 className="mt-1.5 text-xl font-medium text-[#1f3d12]">Join the community</h2>
-          <p className="mt-2 text-sm leading-relaxed text-[#3f5e22]">
-            A place for parrot people. Experience expert AMAs, local chapters, and a community that gives back to rescue.
-          </p>
-          <button
-            type="button"
-            onClick={() => toast.success("We'll let you know the moment the waitlist opens.")}
-            className="mt-4 w-full rounded-[14px] bg-[#1a3d2e] py-3 text-sm font-medium text-white active:scale-[0.99]"
-          >
-            Join the waitlist
-          </button>
-        </section>
+        <WaitlistCard />
 
         {/* Latest from the blog — live pull from Webflow. */}
         <section className="space-y-3">
