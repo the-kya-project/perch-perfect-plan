@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { Calendar, Link2, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { SitChecklist } from "@/components/SitChecklist";
@@ -35,7 +36,7 @@ export function SitCard({ sit, birds = [], allBirds, onChange }: { sit: any; bir
           .from("emergency_contacts")
           .select("bird_id, owner_phone, avian_vet_phone")
           .in("bird_id", birdIds),
-        supabase.auth.getUser(),
+        getLocalUser(),
       ]);
       const { data: defaults } = u.user
         ? await supabase

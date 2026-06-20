@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { deleteMyAccount } from "@/lib/account.functions";
 import { ArrowLeft, AlertTriangle, Bell, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
@@ -34,7 +35,7 @@ function AccountPage() {
 
   useEffect(() => {
     (async () => {
-      const { data: u } = await supabase.auth.getUser();
+      const { data: u } = await getLocalUser();
       const user = u.user;
       if (!user) return;
       setUserId(user.id);

@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { toast } from "sonner";
 import { PhotoCropper } from "@/components/PhotoCropper";
 import { SpeciesPicker, AgePicker, BirdField } from "@/components/BirdPickers";
@@ -48,7 +49,7 @@ function NewBird() {
     if (!name.trim()) { toast.error("Give your bird a name."); return null; }
     if (!species.trim()) { toast.error("Choose a species."); return null; }
     setSaving(true);
-    const { data: u } = await supabase.auth.getUser();
+    const { data: u } = await getLocalUser();
     if (!u.user) { setSaving(false); return null; }
     const { data: bird, error } = await supabase.from("birds").insert({
       owner_id: u.user.id,

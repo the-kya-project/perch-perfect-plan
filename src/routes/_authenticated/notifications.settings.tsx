@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
+import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { ArrowLeft, ShieldAlert, Bell, Smartphone } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -75,7 +76,7 @@ function NotificationsSettingsPage() {
     // Visiting/reviewing notification preferences checks off that getting-started step.
     markNotificationsReviewed();
     (async () => {
-      const { data: u } = await supabase.auth.getUser();
+      const { data: u } = await getLocalUser();
       if (!u.user) return;
       const { data } = await supabase
         .from("profiles")
@@ -96,7 +97,7 @@ function NotificationsSettingsPage() {
     setPrefs({ ...prefs, [key]: next });
     setSaving(key);
     try {
-      const { data: u } = await supabase.auth.getUser();
+      const { data: u } = await getLocalUser();
       if (!u.user) throw new Error("Not signed in.");
       const patch: Partial<Prefs> = { [key]: next } as Partial<Prefs>;
       const { error } = await supabase.from("profiles").update(patch).eq("id", u.user.id);
