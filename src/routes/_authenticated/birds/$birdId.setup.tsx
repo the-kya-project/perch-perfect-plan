@@ -21,6 +21,7 @@ import { formatAmountUnit } from "@/lib/labels";
 import { track } from "@/lib/analytics";
 import { recomputeSitterIntro } from "@/lib/sitterIntro";
 import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
+import { persistBirdPhoto, signBirdPhoto } from "@/lib/birdPhoto";
 
 const setupSearch = z.object({
   step: z.coerce.number().int().min(1).max(TOTAL_STEPS).optional(),
@@ -395,11 +396,19 @@ function BasicsStep({ birdId, onBlockNext, registerFlush }: { birdId: string; on
   const [form, setForm] = useState<any>(null);
   const [hydrated, setHydrated] = useState(false);
   const [photoBusy, setPhotoBusy] = useState(false);
+  // `form.photo_url` holds a DISPLAYABLE value (signed URL or freshly-picked
+  // data: URL); `photoRef` holds what to PERSIST (Storage path, legacy data URL,
+  // or null). Keeping them separate avoids writing a transient signed URL to the
+  // DB and avoids re-uploading an unchanged photo on every autosave.
+  const [photoRef, setPhotoRef] = useState<string | null>(null);
 
   useEffect(() => {
     if (!bird || hydrated) return;
-    setForm(bird);
     setHydrated(true);
+    setPhotoRef(bird.photo_url ?? null);
+    signBirdPhoto(bird.photo_url).then((url) => {
+      setForm({ ...bird, photo_url: url });
+    });
   }, [bird, hydrated]);
 
   useEffect(() => {
@@ -409,14 +418,21 @@ function BasicsStep({ birdId, onBlockNext, registerFlush }: { birdId: string; on
   useDebouncedAutosave(
     async () => {
       if (!form) return;
-      const { id, owner_id, created_at, updated_at, ...patch } = form;
-      await supabase.from("birds").update(patch).eq("id", birdId);
+      const { id, owner_id, created_at, updated_at, photo_url, ...patch } = form;
+      // Persist the Storage path, not the displayable signed/data URL. Upload a
+      // freshly-picked photo (data: URL) on first save, then reuse its path.
+      let ref = photoRef;
+      if (typeof ref === "string" && ref.startsWith("data:")) {
+        ref = await persistBirdPhoto(owner_id, ref);
+        setPhotoRef(ref);
+      }
+      await supabase.from("birds").update({ ...patch, photo_url: ref }).eq("id", birdId);
       qc.invalidateQueries({ queryKey: ["bird", birdId] });
       qc.invalidateQueries({ queryKey: ["bird-setup", birdId] });
       // Basics changes name/sex/species/age — refresh the assembled sitter intro.
       void recomputeSitterIntro(birdId);
     },
-    [form, birdId, qc],
+    [form, photoRef, birdId, qc],
     !!form && hydrated,
     registerFlush,
   );
@@ -435,6 +451,7 @@ function BasicsStep({ birdId, onBlockNext, registerFlush }: { birdId: string; on
         return;
       }
       setForm({ ...form, photo_url: dataUrl });
+      setPhotoRef(dataUrl);
     } catch {
       toast.error("Couldn't process that photo. Try a different one.");
     } finally {
@@ -457,7 +474,7 @@ function BasicsStep({ birdId, onBlockNext, registerFlush }: { birdId: string; on
               <input type="file" accept="image/*,.heic,.heif" disabled={photoBusy} className="hidden" onChange={onPhoto} />
             </label>
             {form.photo_url && (
-              <button type="button" onClick={() => setForm({ ...form, photo_url: null, photo_position: null })} className="ml-2 text-xs font-semibold text-warn-red underline">Remove</button>
+              <button type="button" onClick={() => { setForm({ ...form, photo_url: null, photo_position: null }); setPhotoRef(null); }} className="ml-2 text-xs font-semibold text-warn-red underline">Remove</button>
             )}
           </div>
         </div>

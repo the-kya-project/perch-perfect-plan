@@ -7,6 +7,7 @@ import { PhotoCropper } from "@/components/PhotoCropper";
 import { SpeciesPicker, AgePicker, BirdField } from "@/components/BirdPickers";
 import { SetupShell } from "@/components/SetupShell";
 import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
+import { persistBirdPhoto } from "@/lib/birdPhoto";
 
 export const Route = createFileRoute("/_authenticated/birds/new")({
   head: () => ({ meta: [{ title: "Add a bird — Parrot Care Co-Pilot" }] }),
@@ -51,6 +52,9 @@ function NewBird() {
     setSaving(true);
     const { data: u } = await getLocalUser();
     if (!u.user) { setSaving(false); return null; }
+    // Upload the picked photo to Storage and store the path (not the inline
+    // base64), so list queries stay small. Legacy/empty values pass through.
+    const photoRef = await persistBirdPhoto(u.user.id, photo);
     const { data: bird, error } = await supabase.from("birds").insert({
       owner_id: u.user.id,
       name,
@@ -59,8 +63,8 @@ function NewBird() {
       birth_date: birthDate || null,
       sex: sex || null,
       flight_status: flight,
-      photo_url: photo,
-      photo_position: photo ? photoPos : null,
+      photo_url: photoRef,
+      photo_position: photoRef ? photoPos : null,
       setup_complete: false,
       setup_step: targetStep,
     } as any).select().single();
