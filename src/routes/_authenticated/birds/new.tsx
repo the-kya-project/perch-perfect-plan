@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
@@ -16,6 +17,7 @@ export const Route = createFileRoute("/_authenticated/birds/new")({
 
 function NewBird() {
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const [name, setName] = useState("");
   const [species, setSpecies] = useState("");
   const [age, setAge] = useState("");
@@ -95,6 +97,9 @@ function NewBird() {
       return null;
     }
     setSaving(false);
+    // Mark Home's bird list stale so it shows this bird the moment the owner
+    // lands there (setup finish / Save & exit), with no manual refresh.
+    qc.invalidateQueries({ queryKey: ["birds"] });
     return bird.id;
   }
 
