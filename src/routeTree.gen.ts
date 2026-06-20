@@ -17,7 +17,9 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedWelcomeRouteImport } from './routes/_authenticated/welcome'
+import { Route as AuthenticatedSitsRouteImport } from './routes/_authenticated/sits'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
+import { Route as AuthenticatedExploreRouteImport } from './routes/_authenticated/explore'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as SitterTokenRouteRouteImport } from './routes/sitter/$token/route'
@@ -74,12 +76,22 @@ const AuthenticatedWelcomeRoute = AuthenticatedWelcomeRouteImport.update({
   path: '/welcome',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSitsRoute = AuthenticatedSitsRouteImport.update({
+  id: '/sits',
+  path: '/sits',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedNotificationsRoute =
   AuthenticatedNotificationsRouteImport.update({
     id: '/notifications',
     path: '/notifications',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedExploreRoute = AuthenticatedExploreRouteImport.update({
+  id: '/explore',
+  path: '/explore',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -177,7 +189,9 @@ export interface FileRoutesByFullPath {
   '/sitter/$token': typeof SitterTokenRouteRouteWithChildren
   '/account': typeof AuthenticatedAccountRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/explore': typeof AuthenticatedExploreRoute
   '/notifications': typeof AuthenticatedNotificationsRouteWithChildren
+  '/sits': typeof AuthenticatedSitsRoute
   '/welcome': typeof AuthenticatedWelcomeRoute
   '/birds/$birdId': typeof AuthenticatedBirdsBirdIdRouteWithChildren
   '/birds/new': typeof AuthenticatedBirdsNewRoute
@@ -202,6 +216,8 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/account': typeof AuthenticatedAccountRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/explore': typeof AuthenticatedExploreRoute
+  '/sits': typeof AuthenticatedSitsRoute
   '/welcome': typeof AuthenticatedWelcomeRoute
   '/birds/new': typeof AuthenticatedBirdsNewRoute
   '/notifications/settings': typeof AuthenticatedNotificationsSettingsRoute
@@ -228,7 +244,9 @@ export interface FileRoutesById {
   '/sitter/$token': typeof SitterTokenRouteRouteWithChildren
   '/_authenticated/account': typeof AuthenticatedAccountRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/explore': typeof AuthenticatedExploreRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRouteWithChildren
+  '/_authenticated/sits': typeof AuthenticatedSitsRoute
   '/_authenticated/welcome': typeof AuthenticatedWelcomeRoute
   '/_authenticated/birds/$birdId': typeof AuthenticatedBirdsBirdIdRouteWithChildren
   '/_authenticated/birds/new': typeof AuthenticatedBirdsNewRoute
@@ -256,7 +274,9 @@ export interface FileRouteTypes {
     | '/sitter/$token'
     | '/account'
     | '/dashboard'
+    | '/explore'
     | '/notifications'
+    | '/sits'
     | '/welcome'
     | '/birds/$birdId'
     | '/birds/new'
@@ -281,6 +301,8 @@ export interface FileRouteTypes {
     | '/terms'
     | '/account'
     | '/dashboard'
+    | '/explore'
+    | '/sits'
     | '/welcome'
     | '/birds/new'
     | '/notifications/settings'
@@ -306,7 +328,9 @@ export interface FileRouteTypes {
     | '/sitter/$token'
     | '/_authenticated/account'
     | '/_authenticated/dashboard'
+    | '/_authenticated/explore'
     | '/_authenticated/notifications'
+    | '/_authenticated/sits'
     | '/_authenticated/welcome'
     | '/_authenticated/birds/$birdId'
     | '/_authenticated/birds/new'
@@ -393,11 +417,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWelcomeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/sits': {
+      id: '/_authenticated/sits'
+      path: '/sits'
+      fullPath: '/sits'
+      preLoaderRoute: typeof AuthenticatedSitsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/notifications': {
       id: '/_authenticated/notifications'
       path: '/notifications'
       fullPath: '/notifications'
       preLoaderRoute: typeof AuthenticatedNotificationsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/explore': {
+      id: '/_authenticated/explore'
+      path: '/explore'
+      fullPath: '/explore'
+      preLoaderRoute: typeof AuthenticatedExploreRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/dashboard': {
@@ -551,7 +589,9 @@ const AuthenticatedBirdsBirdIdRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountRoute: typeof AuthenticatedAccountRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedExploreRoute: typeof AuthenticatedExploreRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRouteWithChildren
+  AuthenticatedSitsRoute: typeof AuthenticatedSitsRoute
   AuthenticatedWelcomeRoute: typeof AuthenticatedWelcomeRoute
   AuthenticatedBirdsBirdIdRoute: typeof AuthenticatedBirdsBirdIdRouteWithChildren
   AuthenticatedBirdsNewRoute: typeof AuthenticatedBirdsNewRoute
@@ -560,7 +600,9 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAccountRoute: AuthenticatedAccountRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedExploreRoute: AuthenticatedExploreRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRouteWithChildren,
+  AuthenticatedSitsRoute: AuthenticatedSitsRoute,
   AuthenticatedWelcomeRoute: AuthenticatedWelcomeRoute,
   AuthenticatedBirdsBirdIdRoute: AuthenticatedBirdsBirdIdRouteWithChildren,
   AuthenticatedBirdsNewRoute: AuthenticatedBirdsNewRoute,

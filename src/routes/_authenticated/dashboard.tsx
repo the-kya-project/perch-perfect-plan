@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { computeSetupCompleteness } from "@/lib/setupCompleteness";
 import { track } from "@/lib/analytics";
 import { AddToHomeScreenPrompt } from "@/components/AddToHomeScreenPrompt";
+import { OwnerTabBar } from "@/components/OwnerTabBar";
 import { fetchScanFeed, getNotifSeenAt } from "@/lib/notificationsFeed";
 
 const dashboardSearch = z.object({
@@ -137,7 +138,7 @@ function Dashboard() {
   const activeSit = (sits as any[]).find((s) => s.start_date <= today && s.end_date >= today) ?? null;
 
   return (
-    <div className="min-h-screen bg-[#f4f1e8] pb-20">
+    <div className="min-h-screen bg-[#f4f1e8] pb-24">
       {/* Green brand band */}
       <header className="bg-[#1a3d2e] pt-[max(env(safe-area-inset-top),1rem)]">
         <div className="mx-auto flex max-w-md items-center justify-between gap-3 px-5 pb-6 pt-3">
@@ -258,6 +259,8 @@ function Dashboard() {
       </main>
 
       <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.65rem .8rem;font-size:16px;outline:none}.input:focus{border-color:var(--sage-600);box-shadow:0 0 0 3px rgb(74 103 65 / .15)}.area{min-height:70px}`}</style>
+
+      <OwnerTabBar active="home" />
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Settings, AlertTriangle, CheckCircle2, Feather } from "lucide-react";
 import { fetchScanFeed, markNotifsSeen, getNotifSeenAt, type ScanFeedItem } from "@/lib/notificationsFeed";
+import { OwnerTabBar } from "@/components/OwnerTabBar";
 
 export const Route = createFileRoute("/_authenticated/notifications/")({
   head: () => ({ meta: [{ title: "Notifications — Parrot Care Co-Pilot" }] }),
@@ -32,7 +33,7 @@ function NotificationsInbox() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-sage-50">
+    <div className="min-h-screen bg-sage-50 pb-24">
       <main className="mx-auto max-w-md px-5 py-6">
         <div className="flex items-center justify-between">
           <Link to="/dashboard" className="inline-flex items-center gap-1 text-sm text-sage-600">
@@ -100,6 +101,8 @@ function NotificationsInbox() {
           </ul>
         )}
       </main>
+
+      <OwnerTabBar active="activity" />
     </div>
   );
 }
