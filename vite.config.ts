@@ -35,6 +35,14 @@ export default defineConfig({
           globPatterns: ["**/*.{js,css,html,svg,ico,woff2}"],
           runtimeCaching: [
             {
+              // Sitter pages (including the owner's preview iframe, which the
+              // active SW still controls) must always boot from the live build —
+              // never a cached shell that could reference purged JS chunks. This
+              // must come before the generic navigate rule below to win the match.
+              urlPattern: ({ url, request }) => request.mode === "navigate" && url.pathname.startsWith("/sitter/"),
+              handler: "NetworkOnly",
+            },
+            {
               urlPattern: ({ request }) => request.mode === "navigate",
               handler: "NetworkFirst",
               options: { cacheName: "html-shell", networkTimeoutSeconds: 4 },

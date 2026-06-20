@@ -14,7 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
 import { initAnalytics, identifyUser, resetUser } from "@/lib/analytics";
-import { registerServiceWorker } from "@/lib/sw-register";
+import { registerServiceWorker, installChunkErrorRecovery } from "@/lib/sw-register";
 import { captureFirstTouch } from "@/lib/attribution";
 
 function NotFoundComponent() {
@@ -115,6 +115,7 @@ function RootComponent() {
   useEffect(() => {
     captureFirstTouch(); // first-touch attribution — record source before signup
     initAnalytics();
+    installChunkErrorRecovery(); // self-heal stale-build chunk 404s (incl. the sitter preview iframe)
     registerServiceWorker();
     supabase.auth.getSession().then(({ data }) => {
       if (data.session?.user?.id) identifyUser(data.session.user.id);
