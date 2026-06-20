@@ -1,10 +1,10 @@
 import { createFileRoute, Outlet, useNavigate, useSearch, useLocation, retainSearchParams } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Suspense, useEffect, useRef } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { getSitterContext } from "@/lib/sitter.functions";
-import { HelpCircle } from "lucide-react";
+import { HelpCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import { EmergencyBar } from "@/components/EmergencyBar";
 import { SitterOnboarding, replaySitterOnboarding } from "@/components/SitterOnboarding";
 import { presentCareSections } from "@/lib/sitterCareSections";
@@ -70,6 +70,26 @@ function SitterLayout() {
   const onHome = pathname.replace(/\/$/, "") === `/sitter/${token}/home`;
   const showSwitcher = ctx.birds.length > 1 && !onHome;
 
+  // Scroll affordances for the bird switcher when it overflows (4+ birds):
+  // edge fades + chevrons appear only on the side(s) with more birds off-screen.
+  const switcherRef = useRef<HTMLDivElement>(null);
+  const [atStart, setAtStart] = useState(true);
+  const [atEnd, setAtEnd] = useState(true);
+  function updateSwitcherFades() {
+    const el = switcherRef.current;
+    if (!el) return;
+    setAtStart(el.scrollLeft <= 1);
+    setAtEnd(el.scrollLeft + el.clientWidth >= el.scrollWidth - 1);
+  }
+  function scrollSwitcher(dir: 1 | -1) {
+    switcherRef.current?.scrollBy({ left: dir * switcherRef.current.clientWidth * 0.7, behavior: "smooth" });
+  }
+  useEffect(() => {
+    const raf = requestAnimationFrame(updateSwitcherFades);
+    window.addEventListener("resize", updateSwitcherFades);
+    return () => { cancelAnimationFrame(raf); window.removeEventListener("resize", updateSwitcherFades); };
+  }, [showSwitcher, ctx.birds.length, pathname]);
+
   return (
     <PullToRefresh>
     <div className="min-h-screen bg-[#f4f1e8] pb-32">
@@ -78,24 +98,59 @@ function SitterLayout() {
           {showSwitcher && (
             <>
               <span className="shrink-0 text-xs font-medium text-[#5f5e5a]">Caring for</span>
-              <div data-coach="bird-switcher" className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto">
-                {ctx.birds.map((b: any) => {
-                  const active = b.id === ctx.activeBirdId;
-                  return (
+              <div className="relative min-w-0 flex-1">
+                <div
+                  ref={switcherRef}
+                  onScroll={updateSwitcherFades}
+                  data-coach="bird-switcher"
+                  className="flex items-center gap-2 overflow-x-auto scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                >
+                  {ctx.birds.map((b: any) => {
+                    const active = b.id === ctx.activeBirdId;
+                    return (
+                      <button
+                        key={b.id}
+                        onClick={() => navigate({ to: ".", search: { birdId: b.id } })}
+                        aria-pressed={active}
+                        className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition ${
+                          active
+                            ? "bg-[#1a3d2e] text-white"
+                            : "bg-[#e8f0ec] text-[#1a3d2e]"
+                        }`}
+                      >
+                        {b.name}
+                      </button>
+                    );
+                  })}
+                </div>
+                {/* Left affordance — appears once scrolled right */}
+                {!atStart && (
+                  <>
+                    <div className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-[#f4f1e8] to-transparent" />
                     <button
-                      key={b.id}
-                      onClick={() => navigate({ to: ".", search: { birdId: b.id } })}
-                      aria-pressed={active}
-                      className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition ${
-                        active
-                          ? "bg-[#1a3d2e] text-white"
-                          : "bg-[#e8f0ec] text-[#1a3d2e]"
-                      }`}
+                      type="button"
+                      onClick={() => scrollSwitcher(-1)}
+                      aria-label="Show earlier birds"
+                      className="absolute inset-y-0 left-0 flex items-center pr-3 text-[#1a3d2e] active:scale-95"
                     >
-                      {b.name}
+                      <ChevronLeft className="size-4" />
                     </button>
-                  );
-                })}
+                  </>
+                )}
+                {/* Right affordance — appears when more birds are off-screen */}
+                {!atEnd && (
+                  <>
+                    <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-[#f4f1e8] to-transparent" />
+                    <button
+                      type="button"
+                      onClick={() => scrollSwitcher(1)}
+                      aria-label="Show more birds"
+                      className="absolute inset-y-0 right-0 flex items-center pl-3 text-[#1a3d2e] active:scale-95"
+                    >
+                      <ChevronRight className="size-4" />
+                    </button>
+                  </>
+                )}
               </div>
             </>
           )}
