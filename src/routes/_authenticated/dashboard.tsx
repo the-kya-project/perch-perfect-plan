@@ -235,7 +235,12 @@ function Dashboard() {
           </section>
         )}
 
-        {birds.length > 0 && <DefaultsPanel />}
+        {/* Always rendered: emergency defaults are the checklist's first step,
+            taken before any bird exists. Gating on birds.length left the
+            "Set your emergency defaults" Start button (and the Emergency-tab
+            account-defaults link, when no bird yet) navigating to a panel that
+            wasn't on the page, so nothing happened. */}
+        <DefaultsPanel />
 
         <AddToHomeScreenPrompt />
         </div>
