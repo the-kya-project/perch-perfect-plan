@@ -192,6 +192,11 @@ export function SitterOnboarding({ birds, bird, careSections, hasClips, token }:
   }, [list.length, activeName, obj, poss, careKey, hasClips]);
 
   useEffect(() => {
+    // The owner's setup "sitter preview" iframe loads the real sitter view with
+    // ?preview — don't run onboarding there (it would cover the preview).
+    const isPreview =
+      typeof window !== "undefined" && new URLSearchParams(window.location.search).has("preview");
+    if (isPreview) return;
     try {
       if (!window.localStorage.getItem(SEEN_KEY)) setPhase("welcome");
     } catch {}

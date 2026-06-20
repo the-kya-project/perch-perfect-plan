@@ -2525,7 +2525,7 @@ function ReviewStep({
     return list;
   }, [tasks, plan, bird, contacts, defaults]);
 
-  const previewSrc = previewToken ? `/sitter/${previewToken}?birdId=${birdId}` : null;
+  const previewSrc = previewToken ? `/sitter/${previewToken}?birdId=${birdId}&preview=1` : null;
 
   return (
     <div className="space-y-4">

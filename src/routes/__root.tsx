@@ -116,8 +116,8 @@ function RootComponent() {
     captureFirstTouch(); // first-touch attribution — record source before signup
     initAnalytics();
     registerServiceWorker();
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user?.id) identifyUser(data.user.id);
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session?.user?.id) identifyUser(data.session.user.id);
     });
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
