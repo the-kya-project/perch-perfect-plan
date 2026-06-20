@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
+import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { toast } from "sonner";
 import { track } from "@/lib/analytics";
 import { Feather, Plus } from "lucide-react";
@@ -91,7 +92,7 @@ export function SitForm({
           .from("emergency_contacts")
           .select("bird_id, owner_phone, avian_vet_phone")
           .in("bird_id", birdIds),
-        supabase.auth.getUser(),
+        getLocalUser(),
       ]);
       if (ecErr) { toast.error(ecErr.message); setSaving(false); return; }
       if (!u.user) { toast.error("You're signed out."); setSaving(false); return; }

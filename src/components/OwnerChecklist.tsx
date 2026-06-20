@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { Check, ChevronRight, Share, Sparkles } from "lucide-react";
 
 // Persistent getting-started checklist on the owner dashboard. Steps auto-check
@@ -29,7 +30,7 @@ export function OwnerChecklist({ birds, sits }: { birds: any[]; sits: any[] }) {
   const { data: defaults } = useQuery({
     queryKey: ["owner-defaults"],
     queryFn: async () => {
-      const { data: u } = await supabase.auth.getUser();
+      const { data: u } = await getLocalUser();
       if (!u.user) return null;
       const { data } = await supabase
         .from("owner_emergency_defaults")

@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
+import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { Plus, Bird as BirdIcon, LogOut, Calendar, Settings, Bell, Feather } from "lucide-react";
 import { Disclaimer } from "@/components/Disclaimer";
 import { SitCard } from "@/components/SitCard";
@@ -35,7 +36,7 @@ function Dashboard() {
   const { data: profile } = useQuery({
     queryKey: ["owner-profile-name"],
     queryFn: async () => {
-      const { data: u } = await supabase.auth.getUser();
+      const { data: u } = await getLocalUser();
       if (!u.user) return null;
       const { data } = await supabase.from("profiles").select("display_name").eq("id", u.user.id).maybeSingle();
       return data ?? null;
@@ -324,7 +325,7 @@ function DefaultsPanel() {
   const { data: defaults } = useQuery({
     queryKey: ["owner-defaults"],
     queryFn: async () => {
-      const { data: u } = await supabase.auth.getUser();
+      const { data: u } = await getLocalUser();
       if (!u.user) return null;
       const { data } = await supabase
         .from("owner_emergency_defaults")
@@ -367,7 +368,7 @@ function DefaultsPanel() {
 
   async function save() {
     setSaving(true);
-    const { data: u } = await supabase.auth.getUser();
+    const { data: u } = await getLocalUser();
     if (!u.user) { toast.error("Signed out."); setSaving(false); return; }
     const row: Record<string, any> = { owner_id: u.user.id };
     for (const [k] of fields) {

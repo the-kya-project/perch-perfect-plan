@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
+import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { ArrowLeft, Plus, Trash2, ChevronDown, AlertTriangle, Wand2 } from "lucide-react";
 import { SitCard } from "@/components/SitCard";
 import { toast } from "sonner";
@@ -95,7 +96,7 @@ function BirdEditor() {
   const { data: defaults } = useQuery({
     queryKey: ["owner-defaults"],
     queryFn: async () => {
-      const { data: u } = await supabase.auth.getUser();
+      const { data: u } = await getLocalUser();
       if (!u.user) return null;
       const { data } = await supabase
         .from("owner_emergency_defaults")
