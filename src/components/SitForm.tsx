@@ -200,9 +200,6 @@ export function SitForm({
         <div className="rounded-[20px] bg-[#cdeab0] p-5">
           <p className="text-lg font-medium text-[#1f3d12]">Sit active</p>
           <p className="mt-1 text-sm text-[#3f5e22]">A sit is underway right now. Your sitter has their private link.</p>
-          <a href="#sits" className="mt-4 inline-flex items-center gap-2 rounded-[14px] bg-[#1a3d2e] px-4 py-2.5 text-sm font-medium text-white">
-            View details
-          </a>
         </div>
       );
     }

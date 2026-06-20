@@ -89,7 +89,7 @@ function SitsPage() {
                 ))}
               </div>
             ) : sits.length > 0 ? (
-              <section id="sits" className="scroll-mt-4 space-y-3">
+              <section className="space-y-3">
                 <h2 className="text-[21px] font-medium text-[#1a3d2e]">Your sits</h2>
                 {(sits as any[]).map((s) => {
                   const sitBirds = (s.sit_birds ?? [])
