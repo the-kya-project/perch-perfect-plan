@@ -86,7 +86,7 @@ function Explore() {
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <h3 className="text-base font-medium text-[#1a3d2e]">The Kya Project Podcast</h3>
-                <span className="shrink-0 rounded-full bg-[#e3dcc9] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#5f5e5a]">Soon</span>
+                <span className="shrink-0 rounded-full bg-[#e3dcc9] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#5f5e5a]">Coming soon</span>
               </div>
               <p className="mt-1 text-sm text-[#5f5e5a]">Conversations on parrots, rescue, and the wild.</p>
             </div>
