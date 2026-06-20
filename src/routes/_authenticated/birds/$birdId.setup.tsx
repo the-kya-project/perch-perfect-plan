@@ -51,6 +51,11 @@ function useDebouncedAutosave(
   const saveRef = useRef(save);
   saveRef.current = save;
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // True while there are debounced edits not yet persisted. Lets us flush on
+  // unmount (e.g. the owner taps the bottom nav to leave mid-step) so their
+  // input is never dropped, while avoiding a redundant save when a deliberate
+  // flush (Next/Back/Save & exit) already persisted.
+  const pendingRef = useRef(false);
   const setDirty = useContext(SetupDirtyContext);
   const setDirtyRef = useRef(setDirty);
   setDirtyRef.current = setDirty;
@@ -60,12 +65,13 @@ function useDebouncedAutosave(
   useEffect(() => {
     if (!enabled) return;
     if (timerRef.current) clearTimeout(timerRef.current);
-    if (hydratedOnce.current) setDirtyRef.current(true);
+    if (hydratedOnce.current) { setDirtyRef.current(true); pendingRef.current = true; }
     else hydratedOnce.current = true;
     timerRef.current = setTimeout(async () => {
       timerRef.current = null;
       try {
         await saveRef.current();
+        pendingRef.current = false;
         setDirtyRef.current(false);
       } catch (e: any) {
         // Never fail silently — the owner must know their input didn't save.
@@ -84,6 +90,7 @@ function useDebouncedAutosave(
       if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
       try {
         await saveRef.current();
+        pendingRef.current = false;
         setDirtyRef.current(false);
       } catch (e: any) {
         toast.error(`Couldn't save your changes: ${e?.message ?? "please try again."}`);
@@ -93,6 +100,19 @@ function useDebouncedAutosave(
     registerFlush(flush);
     return () => registerFlush(null);
   }, [registerFlush]);
+
+  // Persist pending edits when this step unmounts by any path that didn't
+  // already flush — notably leaving setup via the bottom nav. Fire-and-forget:
+  // client-side navigation keeps the request alive. No-op (so no double save)
+  // when a deliberate flush already cleared pendingRef.
+  useEffect(() => {
+    return () => {
+      if (pendingRef.current) {
+        pendingRef.current = false;
+        void saveRef.current().catch(() => {});
+      }
+    };
+  }, []);
 }
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/setup")({
@@ -249,7 +269,7 @@ function BirdSetup() {
     navigate({ to: "/birds/$birdId", params: { birdId } });
   }
 
-  async function finishAndGo(opts: { to: "dashboard-newsit" | "tabs" }) {
+  async function finishAndGo(opts: { to: "dashboard-newsit" | "home" }) {
     if (!(await flushPending())) return;
     const ok = await persistStep(TOTAL_STEPS, true);
     if (!ok) return;
@@ -259,7 +279,9 @@ function BirdSetup() {
         search: { newSit: true, preselectBirdId: birdId },
       });
     } else {
-      navigate({ to: "/birds/$birdId", params: { birdId } });
+      // After finishing setup, land on Home so the owner sees their bird and the
+      // getting-started checklist — not back at the start of the wizard.
+      navigate({ to: "/dashboard" });
     }
   }
 
@@ -321,7 +343,7 @@ function StepBody({
   birdName: string;
   onBlockNext: (block: boolean) => void;
   onJumpToStep: (target: number) => void;
-  onFinish: (opts: { to: "dashboard-newsit" | "tabs" }) => void;
+  onFinish: (opts: { to: "dashboard-newsit" | "home" }) => void;
   registerFlush: (fn: (() => Promise<void>) | null) => void;
 }) {
   if (step === 1) return <BasicsStep birdId={birdId} onBlockNext={onBlockNext} registerFlush={registerFlush} />;
@@ -2414,7 +2436,7 @@ function ReviewStep({
   birdId: string;
   birdName: string;
   onJumpToStep: (target: number) => void;
-  onFinish: (opts: { to: "dashboard-newsit" | "tabs" }) => void;
+  onFinish: (opts: { to: "dashboard-newsit" | "home" }) => void;
 }) {
   // Pull the same shape used elsewhere so the warning list reflects real data.
   const { data: bird } = useQuery({
@@ -2593,7 +2615,7 @@ function ReviewStep({
       <div className="space-y-2">
         <button
           type="button"
-          onClick={() => onFinish({ to: "tabs" })}
+          onClick={() => onFinish({ to: "home" })}
           className="w-full rounded-xl bg-sage-600 py-3 text-sm font-semibold text-white"
         >
           Looks good — save

@@ -14,11 +14,14 @@ const TABS: { key: OwnerTab; label: string; to: string; Icon: typeof Home }[] = 
   { key: "explore", label: "Explore", to: "/explore", Icon: Compass },
 ];
 
-export function OwnerTabBar({ active }: { active: OwnerTab }) {
+// `active` is optional — during the setup flow no tab is highlighted. Pass
+// `embedded` to drop the fixed positioning so it can be stacked inside another
+// fixed container (e.g. above the setup footer).
+export function OwnerTabBar({ active, embedded }: { active?: OwnerTab; embedded?: boolean }) {
   return (
     <nav
       aria-label="Primary"
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-[#e3dcc9] bg-[#f4f1e8]/95 backdrop-blur-sm pb-[env(safe-area-inset-bottom)]"
+      className={`${embedded ? "" : "fixed inset-x-0 bottom-0 z-40 "}border-t border-[#e3dcc9] bg-[#f4f1e8]/95 backdrop-blur-sm pb-[env(safe-area-inset-bottom)]`}
     >
       <div className="mx-auto flex max-w-md items-stretch justify-around">
         {TABS.map(({ key, label, to, Icon }) => {
