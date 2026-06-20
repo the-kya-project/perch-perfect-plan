@@ -3,7 +3,7 @@
   "short_name": "Parrot Care",
   "description": "Parrot Care Co-Pilot, by The Kya Project — care plans, daily health scans, and emergency guidance for parrot sitters.",
   "id": "/",
-  "start_url": "/",
+  "start_url": "/dashboard",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",

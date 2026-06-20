@@ -1,9 +1,18 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { ShieldCheck, ClipboardList } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { Disclaimer } from "@/components/Disclaimer";
 import { BrandLogo } from "@/components/BrandLogo";
 
 export const Route = createFileRoute("/")({
+  // Returning owners shouldn't land on the marketing page — send them home.
+  // Client-only: the session lives in localStorage, so during SSR/prerender
+  // there's no session and new visitors/crawlers still get the landing page.
+  beforeLoad: async () => {
+    if (typeof window === "undefined") return;
+    const { data } = await supabase.auth.getSession();
+    if (data.session) throw redirect({ to: "/dashboard" });
+  },
   head: () => ({
     meta: [
       { title: "Parrot Care Co-Pilot — by The Kya Project" },
