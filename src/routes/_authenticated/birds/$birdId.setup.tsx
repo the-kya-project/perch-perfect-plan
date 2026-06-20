@@ -2391,20 +2391,23 @@ function ReviewStep({
 
   // "Before you share" thin/empty checks. Each links to its step.
   const issues = useMemo(() => {
+    // Map by section key, not hardcoded numbers, so these links stay correct
+    // regardless of step order (Food/Routine were reordered).
+    const stepOf = (key: string) => SETUP_STEPS.findIndex((s) => s.key === key) + 1;
     const list: { label: string; step: number }[] = [];
-    if ((tasks?.length ?? 0) === 0) list.push({ label: "No routine tasks yet", step: 2 });
-    if (!plan?.diet_types?.length && !plan?.food_instructions) list.push({ label: "No food & water details", step: 3 });
-    if (!plan?.handlers && !plan?.likes && !plan?.fears_triggers) list.push({ label: "No personality & handling notes", step: 4 });
-    if (!plan?.cage_location && !plan?.out_of_cage_mode && !(plan?.hazards?.length)) list.push({ label: "No environment & safety details", step: 5 });
+    if ((tasks?.length ?? 0) === 0) list.push({ label: "No routine tasks yet", step: stepOf("day") });
+    if (!plan?.diet_types?.length && !plan?.food_instructions) list.push({ label: "No food & water details", step: stepOf("food") });
+    if (!plan?.handlers && !plan?.likes && !plan?.fears_triggers) list.push({ label: "No personality & handling notes", step: stepOf("personality") });
+    if (!plan?.cage_location && !plan?.out_of_cage_mode && !(plan?.hazards?.length)) list.push({ label: "No environment & safety details", step: stepOf("environment") });
     if (!bird?.normal_weight && !plan?.baseline_droppings_path && !plan?.baseline_clip_path && !plan?.whats_normal) {
-      list.push({ label: "No health baseline (weight, photo, clip, or notes)", step: 6 });
+      list.push({ label: "No health baseline (weight, photo, clip, or notes)", step: stepOf("health") });
     }
     if (!plan?.clip_step_up_path && !plan?.clip_food_water_path && !plan?.clip_locations_path && !plan?.clip_bedtime_path) {
-      list.push({ label: "No tips-from-the-owner clips", step: 7 });
+      list.push({ label: "No tips-from-the-owner clips", step: stepOf("clips") });
     }
     const eff = (k: string) => ((contacts?.[k] ?? "").toString().trim() || (defaults?.[k] ?? "").toString().trim());
     if (!eff("owner_phone") || !eff("avian_vet_phone")) {
-      list.push({ label: "Required emergency contacts missing", step: 8 });
+      list.push({ label: "Required emergency contacts missing", step: stepOf("emergency") });
     }
     return list;
   }, [tasks, plan, bird, contacts, defaults]);

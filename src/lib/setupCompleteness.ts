@@ -43,15 +43,18 @@ export function computeSetupCompleteness(args: {
       // Species is the only optional basics field, but a bird row always means basics submitted.
       done: !!bird,
     },
+    // Order/numbers mirror SETUP_STEPS: Food comes before Routine, since the
+    // Routine step auto-derives feeding/water items from Food. Keep this list in
+    // the same order so firstIncompleteStep resumes at the right step.
     {
       step: 2,
-      label: "A day in the life",
-      done: (tasksCount ?? 0) > 0,
+      label: "Food & water",
+      done: nonEmpty(plan?.diet_types) || nonEmpty(plan?.food_instructions),
     },
     {
       step: 3,
-      label: "Food & water",
-      done: nonEmpty(plan?.diet_types) || nonEmpty(plan?.food_instructions),
+      label: "A day in the life",
+      done: (tasksCount ?? 0) > 0,
     },
     {
       step: 4,
