@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, useRouter, useCanGoBack, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
@@ -62,6 +62,13 @@ const ROWS: Row[] = [
 ];
 
 function NotificationsSettingsPage() {
+  const router = useRouter();
+  const canGoBack = useCanGoBack();
+  const navigate = useNavigate();
+  // Return to the actual previous screen (account, the notifications inbox, …)
+  // rather than a hardcoded target. Fall back to account if opened with no
+  // history (e.g. a direct deep link / push).
+  const goBack = () => (canGoBack ? router.history.back() : navigate({ to: "/account" }));
   const [prefs, setPrefs] = useState<Prefs | null>(null);
   const [saving, setSaving] = useState<keyof Prefs | null>(null);
   const [support, setSupport] = useState<PushSupport | null>(null);
@@ -154,9 +161,9 @@ function NotificationsSettingsPage() {
   return (
     <div className="min-h-screen bg-sage-50 pb-24">
       <main className="mx-auto max-w-md px-5 py-6">
-        <Link to="/notifications" className="inline-flex items-center gap-1 text-sm text-sage-600">
-          <ArrowLeft className="size-4" /> Notifications
-        </Link>
+        <button type="button" onClick={goBack} className="inline-flex items-center gap-1 text-sm text-sage-600">
+          <ArrowLeft className="size-4" /> Back
+        </button>
 
         <h1 className="mt-4 text-2xl font-bold tracking-tight">Notification settings</h1>
         <p className="mt-1 text-sm text-sage-600">
