@@ -1473,7 +1473,7 @@ function PersonalityStep({ birdId, birdName, registerFlush }: { birdId: string; 
 const OUT_OF_CAGE_OPTIONS = [
   { value: "supervised", label: "Supervised only" },
   { value: "specific_room", label: "Specific room only" },
-  { value: "not_while_sitting", label: "Not while sitting" },
+  { value: "not_while_sitting", label: "Keep in cage" },
 ];
 
 const HAZARD_OPTIONS = [
@@ -2197,7 +2197,6 @@ const MULTI_LINE: EmergencyField[] = [
   "emergency_vet_address",
   "carrier_location",
   "first_aid_kit_location",
-  "emergency_authorization",
 ];
 
 const ASPCA_POISON_CONTROL = "(888) 426-4435";

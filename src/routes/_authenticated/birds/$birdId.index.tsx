@@ -257,7 +257,7 @@ const STEP_UP_OPTIONS = [
 const OUT_OF_CAGE_OPTIONS = [
   { value: "supervised", label: "Supervised only" },
   { value: "specific_room", label: "Specific room only" },
-  { value: "not_while_sitting", label: "Not while sitting" },
+  { value: "not_while_sitting", label: "Keep in cage" },
 ];
 const HAZARD_OPTIONS = [
   "Other pets", "Ceiling fans", "Open windows", "Young children",
@@ -756,7 +756,6 @@ function ContactsForm({ birdId, contacts, defaults, onSaved }: { birdId: string;
     ["poison_control", "Poison control number"],
     ["carrier_location", "Carrier location"],
     ["first_aid_kit_location", "First-aid kit location"],
-    ["emergency_authorization", "Emergency-care authorization"],
     ["spending_limit", "Approved spending limit"],
   ];
   const hasAnyDefault = defaults && Object.values(defaults).some((v) => typeof v === "string" && v.trim());
