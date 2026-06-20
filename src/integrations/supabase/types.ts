@@ -609,6 +609,7 @@ export type Database = {
           push_sitter_log: boolean
           push_sitter_opened: boolean
           updated_at: string
+          welcome_seen_at: string | null
         }
         Insert: {
           created_at?: string
@@ -623,6 +624,7 @@ export type Database = {
           push_sitter_log?: boolean
           push_sitter_opened?: boolean
           updated_at?: string
+          welcome_seen_at?: string | null
         }
         Update: {
           created_at?: string
@@ -637,6 +639,7 @@ export type Database = {
           push_sitter_log?: boolean
           push_sitter_opened?: boolean
           updated_at?: string
+          welcome_seen_at?: string | null
         }
         Relationships: []
       }
