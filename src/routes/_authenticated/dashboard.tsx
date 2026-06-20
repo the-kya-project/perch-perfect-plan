@@ -7,6 +7,7 @@ import { Plus, Bird as BirdIcon, LogOut, Calendar, Settings, Bell, Feather } fro
 import { Disclaimer } from "@/components/Disclaimer";
 import { SitCard } from "@/components/SitCard";
 import { SitForm } from "@/components/SitForm";
+import { OwnerChecklist } from "@/components/OwnerChecklist";
 import { toast } from "sonner";
 import { computeSetupCompleteness } from "@/lib/setupCompleteness";
 import { track } from "@/lib/analytics";
@@ -160,6 +161,8 @@ function Dashboard() {
         <Disclaimer compact />
 
         <div className="mt-4 space-y-6">
+        <OwnerChecklist birds={birds} sits={sits as any[]} />
+
         <section className="space-y-3">
           <div className="flex items-end justify-between">
             <h2 className="text-[21px] font-medium text-[#1a3d2e]">Your birds</h2>

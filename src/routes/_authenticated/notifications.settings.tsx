@@ -16,6 +16,7 @@ import {
   savePushSubscription,
   deletePushSubscription,
 } from "@/lib/push.functions";
+import { markNotificationsReviewed } from "@/components/OwnerChecklist";
 
 export const Route = createFileRoute("/_authenticated/notifications/settings")({
   head: () => ({ meta: [{ title: "Notification settings — Parrot Care Co-Pilot" }] }),
@@ -71,6 +72,8 @@ function NotificationsSettingsPage() {
   const deleteSub = useServerFn(deletePushSubscription);
 
   useEffect(() => {
+    // Visiting/reviewing notification preferences checks off that getting-started step.
+    markNotificationsReviewed();
     (async () => {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user) return;

@@ -103,7 +103,8 @@ function AuthPage() {
           toast.success("Check your inbox to confirm your email, then sign in.");
           navigate({ to: "/auth", search: { mode: "signin" } });
         } else {
-          navigate({ to: "/dashboard" });
+          // New owner with a session → one-time welcome screen, then dashboard.
+          navigate({ to: "/welcome" });
         }
       } else {
         const cooldownKey = `signin:cooldown:${email.toLowerCase()}`;
@@ -140,7 +141,9 @@ function AuthPage() {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: window.location.origin + "/dashboard" },
+        // Land on the one-time welcome; it redirects returning owners straight to
+        // the dashboard (gated per-device), so only new owners see it.
+        options: { redirectTo: window.location.origin + "/welcome" },
       });
       if (error) {
         toast.error(error.message ?? "Google sign-in failed.");
