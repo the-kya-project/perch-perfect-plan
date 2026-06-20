@@ -39,11 +39,14 @@ function SitsPage() {
 
   const { data: sits = [], isLoading: sitsLoading } = useQuery({
     queryKey: ["all-sits"],
+    refetchOnMount: "always",
     queryFn: async () => {
       const { data, error } = await supabase
         .from("sits")
         .select("*, sit_birds(bird_id)")
-        .neq("sitter_name", "__preview__")
+        // Keep unnamed sits (is.null); a bare .neq would drop them because
+        // NULL != '__preview__' is unknown, not true, in Postgres.
+        .or("sitter_name.is.null,sitter_name.neq.__preview__")
         .order("start_date", { ascending: false });
       if (error) throw error;
       return data ?? [];
