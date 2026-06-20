@@ -349,7 +349,6 @@ function DefaultsPanel() {
     ["poison_control", "Poison control number"],
     ["carrier_location", "Carrier location"],
     ["first_aid_kit_location", "First-aid kit location"],
-    ["emergency_authorization", "Emergency-care authorization"],
     ["spending_limit", "Approved spending limit"],
   ];
   const filledCount = defaults

@@ -158,7 +158,6 @@ function Emergency() {
           <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
             <Info label="Carrier" value={c.carrier_location} />
             <Info label="First-aid kit" value={c.first_aid_kit_location} />
-            <Info label="Care authorization" value={c.emergency_authorization} />
             <Info label="Spending limit" value={c.spending_limit} />
           </div>
         </section>

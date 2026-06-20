@@ -18,7 +18,7 @@ export const TREATS_FREQ_LABELS: Record<string, string> = {
 export const OUT_OF_CAGE_LABELS: Record<string, string> = {
   supervised: "Supervised only",
   specific_room: "Specific room only",
-  not_while_sitting: "Not while sitting",
+  not_while_sitting: "Keep in cage",
 };
 
 export const BOWL_WASH_LABELS: Record<string, string> = {

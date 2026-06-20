@@ -11,7 +11,6 @@ export const EMERGENCY_FIELDS = [
   "poison_control",
   "carrier_location",
   "first_aid_kit_location",
-  "emergency_authorization",
   "spending_limit",
 ] as const;
 
@@ -30,7 +29,6 @@ export const EMERGENCY_LABELS: Record<EmergencyField, string> = {
   poison_control: "Poison control number",
   carrier_location: "Carrier location",
   first_aid_kit_location: "First-aid kit location",
-  emergency_authorization: "Emergency-care authorization",
   spending_limit: "Approved spending limit",
 };
 
