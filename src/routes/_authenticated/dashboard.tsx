@@ -410,7 +410,7 @@ function DefaultsPanel() {
       .upsert(row, { onConflict: "owner_id" });
     setSaving(false);
     if (error) { toast.error(error.message); return; }
-    toast.success("Defaults saved. New and existing birds inherit any empty fields.");
+    toast.success("Saved. Every bird uses this account info unless you edit it for that bird.");
     setOpen(false);
     qc.invalidateQueries({ queryKey: ["owner-defaults"] });
   }
@@ -428,7 +428,7 @@ function DefaultsPanel() {
         </button>
       </div>
       <p className="text-xs text-[#5f5e5a]">
-        Set owner phone, avian vet, and other emergency info <em>once</em>. Every bird inherits these unless its Emergency tab overrides a field.
+        Set owner phone, avian vet, and other emergency info <em>once</em>. Every bird uses this unless you edit it for that bird on its Emergency tab.
       </p>
       {!open ? (
         <div className="rounded-[20px] bg-[#efe9da] p-4 text-xs text-[#5f5e5a]">

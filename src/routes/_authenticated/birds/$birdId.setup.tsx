@@ -339,7 +339,7 @@ function StepBody({
   const blurbs: Record<number, { lead: string; hint: string }> = {
     8: {
       lead: "Emergency info — vets, contacts, and home info for sitters.",
-      hint: "Most of this is inherited from your account defaults. The full form lives on the Emergency tab.",
+      hint: "Most of this comes from your account emergency info. The full form lives on the Emergency tab.",
     },
   };
   const b = blurbs[step] ?? { lead: "", hint: "" };
@@ -2318,7 +2318,7 @@ function EmergencyStep({
       <div className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
         <p className="text-sm font-semibold">If something goes wrong, who does your sitter call?</p>
         <p className="mt-1 text-sm text-sage-600">
-          Owner phone and avian vet phone are required. Fields with a default from your account are marked <em>inherited</em> — typing in them creates a per-bird override.
+          Owner phone and avian vet phone are required. Fields that already have a value from your account are shown below — typing in one changes it just for this bird.
         </p>
       </div>
 
@@ -2328,7 +2328,7 @@ function EmergencyStep({
         const inherited = !isOverride && !!defaults?.[f];
         const inheritedValue = (defaults?.[f] ?? "") as string;
         const placeholder = inherited && inheritedValue
-          ? `Inherited: ${inheritedValue}`
+          ? `From your account: ${inheritedValue}`
           : (FIELD_PLACEHOLDERS[f] ?? "");
         const required = REQUIRED_FIELDS.includes(f);
         const isMissing = required && (!merged[f] || !merged[f]!.trim());
@@ -2342,11 +2342,11 @@ function EmergencyStep({
               </h2>
               {isOverride ? (
                 <span className="rounded-full bg-sage-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-sage-700">
-                  Override
+                  Edited for this bird
                 </span>
               ) : inherited ? (
                 <span className="rounded-full bg-sage-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-sage-600">
-                  Inherited
+                  From account
                 </span>
               ) : null}
             </div>
@@ -2375,7 +2375,7 @@ function EmergencyStep({
                 className="mt-2 text-[11px] font-semibold text-sage-600 underline"
                 onClick={() => set(f, "")}
               >
-                Clear override (use account default)
+                Reset to account
               </button>
             )}
 
