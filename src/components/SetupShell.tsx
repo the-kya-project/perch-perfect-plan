@@ -5,8 +5,10 @@ import { OwnerTabBar } from "@/components/OwnerTabBar";
 
 export const SETUP_STEPS = [
   { key: "basics", title: "The basics", short: "Basics" },
-  { key: "day", title: "A day in the life", short: "Routine" },
+  // Food before Routine: the Routine step auto-derives feeding/water items from
+  // Food, so Food must be filled first for those derived items to exist.
   { key: "food", title: "Food & water", short: "Food" },
+  { key: "day", title: "A day in the life", short: "Routine" },
   { key: "personality", title: "Personality & handling", short: "Behavior" },
   { key: "environment", title: "Environment & safety", short: "Home" },
   { key: "health", title: "Health baseline", short: "Health" },
@@ -100,8 +102,8 @@ export function SetupShell({
   const birdLabel = birdName?.trim() || "Bird";
 
   return (
-    <div className={`min-h-screen bg-sage-50 ${hideFooter ? "pb-28" : "pb-44"}`}>
-      <header className="sticky top-0 z-10 border-b border-sage-100 bg-white/95 backdrop-blur">
+    <div className={`min-h-screen bg-[#f4f1e8] ${hideFooter ? "pb-28" : "pb-44"}`}>
+      <header className="sticky top-0 z-10 border-b border-[#e3ded0] bg-[#f4f1e8]/95 backdrop-blur">
         {/* Top bar: back-to-profile link + context */}
         <div className="mx-auto flex max-w-md items-center gap-3 px-5 py-3">
           <button
@@ -159,8 +161,8 @@ export function SetupShell({
               {/* trailing spacer so the last pill scrolls clear of the fade */}
               <span aria-hidden className="shrink-0 pl-1" />
             </div>
-            {!pillAtStart && <div className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-white to-transparent" />}
-            {!pillAtEnd && <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-white to-transparent" />}
+            {!pillAtStart && <div className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-[#f4f1e8] to-transparent" />}
+            {!pillAtEnd && <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-[#f4f1e8] to-transparent" />}
             </div>
           </div>
         </div>
@@ -176,10 +178,10 @@ export function SetupShell({
                     key={s.key}
                     className={`h-1.5 rounded-full transition-all ${
                       state === "active"
-                        ? "w-4 bg-sage-600"
+                        ? "w-4 bg-[#2d6a4f]"
                         : state === "completed"
-                          ? "w-1.5 bg-sage-600"
-                          : "w-1.5 bg-sage-200"
+                          ? "w-1.5 bg-[#2d6a4f]"
+                          : "w-1.5 bg-[#d8d2c2]"
                     }`}
                   />
                 );
@@ -205,8 +207,8 @@ export function SetupShell({
         </div>
 
         {/* Thin progress bar */}
-        <div className="h-[3px] w-full bg-sage-100">
-          <div className="h-full bg-sage-600 transition-all" style={{ width: `${pct}%` }} />
+        <div className="h-[3px] w-full bg-[#e0dcce]">
+          <div className="h-full bg-[#2d6a4f] transition-all" style={{ width: `${pct}%` }} />
         </div>
       </header>
 
@@ -220,7 +222,7 @@ export function SetupShell({
           it preserves the current step (autosave flushes on unmount). */}
       <div className="fixed inset-x-0 bottom-0 z-40">
         {!hideFooter && (
-          <div className="border-t border-sage-100 bg-white/95 backdrop-blur">
+          <div className="border-t border-[#e3ded0] bg-[#f4f1e8]/95 backdrop-blur">
             <div className="mx-auto flex max-w-md items-center gap-2 px-5 py-3">
               <button
                 type="button"
@@ -245,7 +247,7 @@ export function SetupShell({
                 type="button"
                 onClick={onNext}
                 disabled={nextDisabled || saving}
-                className="flex-1 rounded-xl bg-sage-600 py-3 text-sm font-semibold text-white disabled:opacity-50"
+                className="flex-1 rounded-xl bg-[#1a3d2e] py-3 text-sm font-semibold text-white disabled:opacity-50"
               >
                 {saving ? "Saving…" : nextLabel}
               </button>

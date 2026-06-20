@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { ArrowLeft, Plus, Trash2, ChevronDown, AlertTriangle, Wand2 } from "lucide-react";
 import { EmergencyInfo } from "@/components/EmergencyInfo";
+import { SETUP_STEPS } from "@/components/SetupShell";
 import { SitCard } from "@/components/SitCard";
 import { toast } from "sonner";
 import { Disclaimer, VetReviewBanner } from "@/components/Disclaimer";
@@ -23,19 +24,26 @@ import { derivedSource, taskDaypart, DAYPARTS, DAYPART_LABEL } from "@/lib/routi
 const TAB_IDS = ["basics", "routine", "food", "behavior", "home", "health", "clips", "emergency", "sits", "logs"] as const;
 type Tab = (typeof TAB_IDS)[number];
 
-// Map each editor tab to its matching guided-setup wizard step (see
-// birds/$birdId.setup.tsx StepBody: 1 Basics, 2 Day-in-life/Routine, 3 Food,
-// 4 Behavior, 5 Home, 6 Health, 7 Clips, 8 Emergency). sits/logs have no step.
-const TAB_TO_SETUP_STEP: Partial<Record<Tab, number>> = {
-  basics: 1,
-  routine: 2,
-  food: 3,
-  behavior: 4,
-  home: 5,
-  health: 6,
-  clips: 7,
-  emergency: 8,
+// Map each editor tab to its matching guided-setup SECTION (by SETUP_STEPS key),
+// then derive the step NUMBER from the SETUP_STEPS order. Deriving by identity
+// (not hardcoded numbers) keeps deep-links correct if the steps are reordered.
+// sits/logs have no setup step.
+const TAB_TO_STEP_KEY: Partial<Record<Tab, string>> = {
+  basics: "basics",
+  routine: "day",
+  food: "food",
+  behavior: "personality",
+  home: "environment",
+  health: "health",
+  clips: "clips",
+  emergency: "emergency",
 };
+const TAB_TO_SETUP_STEP: Partial<Record<Tab, number>> = Object.fromEntries(
+  Object.entries(TAB_TO_STEP_KEY).flatMap(([tab, key]) => {
+    const idx = SETUP_STEPS.findIndex((s) => s.key === key);
+    return idx >= 0 ? [[tab, idx + 1]] : [];
+  }),
+);
 
 const birdSearch = z.object({
   tab: z.enum(TAB_IDS).optional(),
