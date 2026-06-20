@@ -83,6 +83,63 @@ function formatDate(iso?: string): string | null {
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 }
 
+// Build an id → name map for the category reference field. We discover the
+// referenced collection from the blog collection's schema (no extra config),
+// then fetch its items. Best-effort: returns an empty map on any failure.
+async function resolveCategoryNames(
+  headers: Record<string, string>,
+  blogCollectionId: string,
+): Promise<Map<string, string>> {
+  const map = new Map<string, string>();
+  try {
+    const schemaRes = await fetch(`https://api.webflow.com/v2/collections/${blogCollectionId}`, { headers });
+    if (!schemaRes.ok) return map;
+    const schema = await schemaRes.json();
+    const fields: any[] = Array.isArray(schema?.fields) ? schema.fields : [];
+    const catField = fields.find(
+      (fl) => fl?.type === "Reference" && /categor/i.test(fl?.slug ?? fl?.displayName ?? ""),
+    );
+    const catCollectionId = catField?.validations?.collectionId;
+    if (!catCollectionId) return map;
+
+    const catRes = await fetch(
+      `https://api.webflow.com/v2/collections/${catCollectionId}/items?limit=100`,
+      { headers },
+    );
+    if (!catRes.ok) return map;
+    const catData = await catRes.json();
+    for (const c of catData?.items ?? []) {
+      const name = c?.fieldData?.name;
+      if (c?.id && typeof name === "string") map.set(String(c.id), name);
+    }
+  } catch {
+    /* best-effort */
+  }
+  return map;
+}
+
+// Resolve a post's category to a display name. The reference field holds an
+// item id (or array of ids); map it via `names`. If the value is already a
+// plain string (non-reference setups), use it directly.
+function resolveCategory(f: Record<string, any>, names: Map<string, string>): string | null {
+  let raw: any;
+  for (const [k, v] of Object.entries(f)) {
+    if (/categor|tag/i.test(k) && v != null && v !== "") {
+      raw = v;
+      break;
+    }
+  }
+  if (raw == null) return null;
+  const id = Array.isArray(raw) ? raw[0] : raw;
+  if (typeof id !== "string") return null;
+  const resolved = names.get(id);
+  if (resolved) return resolved;
+  // Not resolvable: hide a raw Webflow item id rather than show it; pass
+  // through a genuine plain-text category (non-reference setups).
+  const looksLikeId = id.length > 24 || /^[a-f0-9]{16,}$/i.test(id);
+  return looksLikeId ? null : id;
+}
+
 export const getBlogPosts = createServerFn({ method: "GET" }).handler(async (): Promise<BlogResult> => {
   const token = process.env.WEBFLOW_API_TOKEN;
   const collectionId = process.env.WEBFLOW_BLOG_COLLECTION_ID;
@@ -91,15 +148,22 @@ export const getBlogPosts = createServerFn({ method: "GET" }).handler(async (): 
   // Not configured yet → render the tasteful "coming soon" state, not an error.
   if (!token || !collectionId) return { connected: false, posts: [] };
 
+  const headers = { Authorization: `Bearer ${token}`, "accept-version": "2.0.0" };
+
   try {
     const res = await fetch(
       `https://api.webflow.com/v2/collections/${collectionId}/items?limit=5&sortBy=lastPublished&sortOrder=desc`,
-      { headers: { Authorization: `Bearer ${token}`, "accept-version": "2.0.0" } },
+      { headers },
     );
     // Connected but the call failed → empty, never a broken section.
     if (!res.ok) return { connected: true, posts: [] };
     const data = await res.json();
     const items: any[] = Array.isArray(data?.items) ? data.items : [];
+
+    // Category is a Webflow Reference field, so items carry a category ITEM ID,
+    // not a name. Resolve id → name (best-effort; cards just omit the category
+    // if this fails).
+    const categoryNames = await resolveCategoryNames(headers, collectionId);
 
     const posts: BlogPost[] = items
       .filter((it) => !it.isDraft && !it.isArchived)
@@ -108,17 +172,13 @@ export const getBlogPosts = createServerFn({ method: "GET" }).handler(async (): 
         const f: Record<string, any> = it.fieldData ?? {};
         const slug = f.slug ?? it.slug ?? null;
         const readTime = pick(f, ["read-time", "read-time-minutes", "reading-time"]);
-        const category = pick(f, ["category-name", "tag", "category"]);
         const dateMeta = formatDate(pick(f, ["published-on", "publish-date", "date"]) ?? it.lastPublished);
         return {
           id: String(it.id),
           title: pick(f, ["name", "title", "post-title"]) ?? "Untitled",
           url: blogBase && slug ? `${blogBase}/${slug}` : null,
           image: findImage(f),
-          // Only show a category when it's a plain string. In Webflow v2 a
-          // reference field returns an id, not a name — that needs the owner to
-          // confirm the field and (if a reference) a follow-up resolve.
-          category: typeof category === "string" ? category : null,
+          category: resolveCategory(f, categoryNames),
           meta: readTime ? `${readTime} min read` : dateMeta,
         };
       });
