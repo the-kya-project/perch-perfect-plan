@@ -5,6 +5,7 @@ import { Calendar, Link2, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { SitChecklist } from "@/components/SitChecklist";
 import { SitForm } from "@/components/SitForm";
+import { formatDateRangeUS } from "@/lib/dates";
 
 type Bird = { id: string; name: string };
 
@@ -85,7 +86,7 @@ export function SitCard({ sit, birds = [], allBirds, onChange }: { sit: any; bir
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-sm font-medium">
           <Calendar className="size-4 text-[#5f5e5a]" />
-          {sit.start_date} → {sit.end_date}
+          {formatDateRangeUS(sit.start_date, sit.end_date)}
         </div>
         <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${tone}`}>{status}</span>
       </div>
