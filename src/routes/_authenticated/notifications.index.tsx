@@ -3,7 +3,6 @@ import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Settings, AlertTriangle, CheckCircle2, Feather } from "lucide-react";
 import { fetchScanFeed, markNotifsSeen, getNotifSeenAt, type ScanFeedItem } from "@/lib/notificationsFeed";
-import { OwnerTabBar } from "@/components/OwnerTabBar";
 
 export const Route = createFileRoute("/_authenticated/notifications/")({
   head: () => ({ meta: [{ title: "Notifications — Parrot Care Co-Pilot" }] }),
@@ -101,8 +100,6 @@ function NotificationsInbox() {
           </ul>
         )}
       </main>
-
-      <OwnerTabBar active="activity" />
     </div>
   );
 }

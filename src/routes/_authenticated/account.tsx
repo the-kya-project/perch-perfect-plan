@@ -134,7 +134,7 @@ function AccountPage() {
     emailInput.trim().toLowerCase() !== email.toLowerCase() && emailInput.trim().length > 0;
 
   return (
-    <div className="min-h-screen bg-sage-50">
+    <div className="min-h-screen bg-sage-50 pb-24">
       <main className="mx-auto max-w-md px-5 py-6">
         <Link to="/dashboard" className="inline-flex items-center gap-1 text-sm text-sage-600">
           <ArrowLeft className="size-4" /> Back

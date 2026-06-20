@@ -163,7 +163,7 @@ function BirdEditor() {
   };
 
   return (
-    <div className="min-h-screen bg-sage-50 pb-20">
+    <div className="min-h-screen bg-sage-50 pb-24">
       <header className="sticky top-0 z-10 border-b border-sage-100 bg-white">
         <div className="mx-auto max-w-md px-5 py-3">
           <div className="flex items-center gap-3">

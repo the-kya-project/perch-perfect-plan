@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useLocation } from "@tanstack/react-router";
 import { Home, Calendar, Activity, Compass } from "lucide-react";
 
 // Owner bottom navigation. Four primary destinations; settings (gear) and
@@ -17,7 +17,17 @@ const TABS: { key: OwnerTab; label: string; to: string; Icon: typeof Home }[] = 
 // `active` is optional — during the setup flow no tab is highlighted. Pass
 // `embedded` to drop the fixed positioning so it can be stacked inside another
 // fixed container (e.g. above the setup footer).
+function tabForPath(pathname: string): OwnerTab | undefined {
+  if (pathname.startsWith("/dashboard")) return "home";
+  if (pathname.startsWith("/sits")) return "sits";
+  if (pathname.startsWith("/notifications")) return "activity";
+  if (pathname.startsWith("/explore")) return "explore";
+  return undefined; // deeper screens (bird editor, account, …) highlight nothing
+}
+
 export function OwnerTabBar({ active, embedded }: { active?: OwnerTab; embedded?: boolean }) {
+  const pathname = useLocation({ select: (l) => l.pathname });
+  const current = active ?? tabForPath(pathname);
   return (
     <nav
       aria-label="Primary"
@@ -25,7 +35,7 @@ export function OwnerTabBar({ active, embedded }: { active?: OwnerTab; embedded?
     >
       <div className="mx-auto flex max-w-md items-stretch justify-around">
         {TABS.map(({ key, label, to, Icon }) => {
-          const on = key === active;
+          const on = key === current;
           return (
             <Link
               key={key}

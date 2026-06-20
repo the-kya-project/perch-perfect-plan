@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ArrowRight, ArrowUpRight, Headphones, Compass } from "lucide-react";
 import { OwnerHeaderIcons } from "@/components/OwnerHeader";
-import { OwnerTabBar } from "@/components/OwnerTabBar";
 import { WaitlistCard } from "@/components/WaitlistCard";
 import { getBlogPosts, type BlogPost } from "@/lib/webflow.functions";
 
@@ -89,8 +88,6 @@ function Explore() {
           </p>
         </section>
       </main>
-
-      <OwnerTabBar active="explore" />
     </div>
   );
 }

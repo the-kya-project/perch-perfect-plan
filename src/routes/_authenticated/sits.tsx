@@ -4,7 +4,6 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Calendar } from "lucide-react";
 import { OwnerHeader } from "@/components/OwnerHeader";
-import { OwnerTabBar } from "@/components/OwnerTabBar";
 import { SitForm } from "@/components/SitForm";
 import { SitCard } from "@/components/SitCard";
 
@@ -106,8 +105,6 @@ function SitsPage() {
           </>
         )}
       </main>
-
-      <OwnerTabBar active="sits" />
     </div>
   );
 }
