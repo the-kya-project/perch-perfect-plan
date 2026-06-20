@@ -397,6 +397,10 @@ function BasicsStep({ birdId, onBlockNext, registerFlush }: { birdId: string; on
   const qc = useQueryClient();
   const { data: bird, isLoading } = useQuery({
     queryKey: ["bird-basics", birdId],
+    // Drop the cache when the step unmounts so navigating Back refetches the
+    // just-saved values, rather than re-hydrating the form from a stale (still
+    // "fresh" under the 60s global staleTime) pre-edit snapshot.
+    gcTime: 0,
     queryFn: async () => {
       const { data, error } = await supabase.from("birds").select("*").eq("id", birdId).single();
       if (error) throw error;
@@ -822,6 +826,7 @@ function FoodWaterStep({
 
   const { data: plan, isLoading } = useQuery({
     queryKey: ["plan-food", birdId],
+    gcTime: 0, // drop cache on unmount so Back refetches saved values (see BasicsStep)
     queryFn: async () => {
       const { data, error } = await supabase
         .from("care_plans")
@@ -1387,6 +1392,7 @@ function PersonalityStep({ birdId, birdName, registerFlush }: { birdId: string; 
   const qc = useQueryClient();
   const { data: plan, isLoading } = useQuery({
     queryKey: ["plan-personality", birdId],
+    gcTime: 0, // drop cache on unmount so Back refetches saved values (see BasicsStep)
     queryFn: async () => {
       const { data, error } = await supabase.from("care_plans").select("*").eq("bird_id", birdId).maybeSingle();
       if (error) throw error;
@@ -1526,6 +1532,7 @@ function EnvironmentStep({ birdId, registerFlush }: { birdId: string; registerFl
   const qc = useQueryClient();
   const { data: plan, isLoading } = useQuery({
     queryKey: ["plan-environment", birdId],
+    gcTime: 0, // drop cache on unmount so Back refetches saved values (see BasicsStep)
     queryFn: async () => {
       const { data, error } = await supabase.from("care_plans").select("*").eq("bird_id", birdId).maybeSingle();
       if (error) throw error;
@@ -1656,6 +1663,7 @@ function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlush }: { 
 
   const { data: bird } = useQuery({
     queryKey: ["bird-health", birdId],
+    gcTime: 0, // drop cache on unmount so Back refetches saved values (see BasicsStep)
     queryFn: async () => {
       const { data, error } = await supabase
         .from("birds")
@@ -1669,6 +1677,7 @@ function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlush }: { 
 
   const { data: plan, isLoading } = useQuery({
     queryKey: ["plan-health", birdId],
+    gcTime: 0, // drop cache on unmount so Back refetches saved values (see BasicsStep)
     queryFn: async () => {
       const { data, error } = await supabase.from("care_plans").select("*").eq("bird_id", birdId).maybeSingle();
       if (error) throw error;
