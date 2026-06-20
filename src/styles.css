@@ -97,3 +97,36 @@
     font-size: 16px; /* prevent iOS zoom */
   }
 }
+
+/* Shared owner-form input styling. Defined globally (was previously only inline
+   on a few routes) so every screen that renders these forms — including the
+   Sits tab — styles them consistently. */
+.input {
+  width: 100%;
+  border-radius: 0.75rem;
+  background: #fff;
+  border: 1px solid var(--sage-200);
+  padding: 0.65rem 0.8rem;
+  font-size: 16px;
+  outline: none;
+}
+.input:focus {
+  border-color: var(--sage-600);
+  box-shadow: 0 0 0 3px rgb(74 103 65 / 0.15);
+}
+.area { min-height: 70px; }
+
+/* Native <input type="date"> on iOS keeps an intrinsic min-width and a quirky
+   internal layout that overflowed the two-column Start/End row (END floated
+   higher and overlapped Start). Normalizing the appearance lets width:100% +
+   min-width:0 actually constrain it, so the fields sit level and side by side.
+   The native date picker still opens on tap. */
+input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
+  min-width: 0;
+}
+input[type="date"]::-webkit-date-and-time-value {
+  text-align: left;
+  margin: 0; /* iOS adds a margin here that skews height/alignment */
+}
