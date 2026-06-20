@@ -6,11 +6,15 @@ import { applyOAuthAttribution } from "@/lib/attribution";
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async () => {
-    const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user) {
+    // Read the session from local storage (no network round-trip): fast on every
+    // authenticated navigation, and it immediately reflects a session just set by
+    // signup/sign-in. getUser()'s network call raced that and bounced new owners
+    // back to sign-in right after signup.
+    const { data, error } = await supabase.auth.getSession();
+    if (error || !data.session) {
       throw redirect({ to: "/auth", search: { mode: "signin" as const } });
     }
-    return { user: data.user };
+    return { user: data.session.user };
   },
   component: AuthenticatedLayout,
 });
@@ -21,8 +25,8 @@ function AuthenticatedLayout() {
   // have attribution or aren't freshly created (see applyOAuthAttribution).
   useEffect(() => {
     let cancelled = false;
-    supabase.auth.getUser().then(({ data }) => {
-      if (!cancelled && data.user) void applyOAuthAttribution(data.user as any);
+    supabase.auth.getSession().then(({ data }) => {
+      if (!cancelled && data.session?.user) void applyOAuthAttribution(data.session.user as any);
     });
     return () => { cancelled = true; };
   }, []);
