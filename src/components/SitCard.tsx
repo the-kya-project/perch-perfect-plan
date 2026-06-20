@@ -83,12 +83,17 @@ export function SitCard({ sit, birds = [], allBirds, onChange }: { sit: any; bir
 
   return (
     <div className="rounded-[20px] bg-[#efe9da] p-4 shadow-sm">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-sm font-medium">
-          <Calendar className="size-4 text-[#5f5e5a]" />
-          {formatDateRangeUS(sit.start_date, sit.end_date)}
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          {sit.title?.trim() && (
+            <p className="truncate text-[15px] font-medium text-[#1a3d2e]">{sit.title}</p>
+          )}
+          <div className={`flex items-center gap-2 ${sit.title?.trim() ? "mt-0.5 text-xs text-[#5f5e5a]" : "text-sm font-medium"}`}>
+            <Calendar className="size-4 shrink-0 text-[#5f5e5a]" />
+            {formatDateRangeUS(sit.start_date, sit.end_date)}
+          </div>
         </div>
-        <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${tone}`}>{status}</span>
+        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${tone}`}>{status}</span>
       </div>
       <p className="mt-1 text-xs text-[#5f5e5a]">
         Sitter: {sit.sitter_name?.trim() || "Not named yet"}{sit.sitter_email && ` (${sit.sitter_email})`}

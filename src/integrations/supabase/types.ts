@@ -840,6 +840,7 @@ export type Database = {
           sitter_name: string | null
           start_date: string
           status: string
+          title: string | null
           token_expires_at: string
         }
         Insert: {
@@ -855,6 +856,7 @@ export type Database = {
           sitter_name?: string | null
           start_date: string
           status?: string
+          title?: string | null
           token_expires_at: string
         }
         Update: {
@@ -870,6 +872,7 @@ export type Database = {
           sitter_name?: string | null
           start_date?: string
           status?: string
+          title?: string | null
           token_expires_at?: string
         }
         Relationships: []

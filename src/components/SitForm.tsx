@@ -40,6 +40,7 @@ export function SitForm({
   // doesn't pass sit_birds, so we fetch it below).
   const currentBirdIds = useRef<string[]>(editing ? Array.from(selected) : []);
 
+  const [title, setTitle] = useState(editing ? (editSit.title ?? "") : "");
   const [sitterName, setSitterName] = useState(editing ? (editSit.sitter_name ?? "") : "");
   const [sitterEmail, setSitterEmail] = useState(editing ? (editSit.sitter_email ?? "") : "");
   const [start, setStart] = useState(editing ? (editSit.start_date ?? "") : "");
@@ -131,6 +132,7 @@ export function SitForm({
         const { error } = await supabase
           .from("sits")
           .update({
+            title: title || null,
             sitter_name: sitterName || null,
             sitter_email: sitterEmail || null,
             start_date: start,
@@ -166,6 +168,7 @@ export function SitForm({
       } else {
         const { data: sit, error } = await supabase.from("sits").insert({
           owner_id: u.user.id,
+          title: title || null,
           sitter_name: sitterName || null,
           sitter_email: sitterEmail || null,
           start_date: start, end_date: end,
@@ -181,7 +184,7 @@ export function SitForm({
         track("sit_created", { bird_count: birdIds.length, days, has_email: !!sitterEmail });
         toast.success("Sit created.");
         setOpen(false);
-        setSitterName(""); setSitterEmail(""); setStart(""); setEnd(""); setNotes("");
+        setTitle(""); setSitterName(""); setSitterEmail(""); setStart(""); setEnd(""); setNotes("");
         setSelected(new Set(birds.length === 1 ? [birds[0].id] : []));
         onSaved();
       }
@@ -220,6 +223,14 @@ export function SitForm({
       <div className="flex items-center justify-between">
         <p className="text-sm font-medium text-[#1a3d2e]">{editing ? "Edit sit" : "New sit"}</p>
         <button type="button" onClick={() => (editing ? onCancel?.() : setOpen(false))} className="text-xs text-[#5f5e5a] underline">Cancel</button>
+      </div>
+
+      <div>
+        <label className="block">
+          <span className="mb-1 block text-xs font-medium uppercase tracking-wider text-[#5f5e5a]">Sit name</span>
+          <input className="input" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. June vacation" />
+        </label>
+        <p className="mt-1 text-[11px] text-[#8a897f]">A label to recognize this sit, e.g. June vacation, August work trip.</p>
       </div>
 
       <div>
