@@ -37,10 +37,42 @@ function pick(obj: Record<string, any>, keys: string[]): any {
   return undefined;
 }
 
-function asImageUrl(v: any): string | null {
+// Resolve a single value to an image URL. Webflow image fields come back as an
+// object { fileId, url, alt } (or an array of them for galleries); we also
+// accept a bare image-looking URL string.
+function imageUrlFrom(v: any): string | null {
   if (!v) return null;
-  if (typeof v === "string") return v;
-  if (typeof v === "object") return v.url ?? v.src ?? null;
+  if (Array.isArray(v)) {
+    for (const x of v) {
+      const u = imageUrlFrom(x);
+      if (u) return u;
+    }
+    return null;
+  }
+  if (typeof v === "object") {
+    const u = v.url ?? v.src;
+    return typeof u === "string" ? u : null;
+  }
+  if (typeof v === "string" && /\.(jpe?g|png|webp|gif|avif)(\?|#|$)/i.test(v)) return v;
+  return null;
+}
+
+// Find the post's image WITHOUT hard-coding the field slug (it varies per
+// collection). Prefer fields whose slug looks image-ish; otherwise fall back to
+// the first field that resolves to an image URL.
+const IMAGE_KEY_HINTS = ["featured", "thumbnail", "hero", "cover", "main-image", "image", "photo"];
+function findImage(f: Record<string, any>): string | null {
+  const entries = Object.entries(f);
+  for (const [k, v] of entries) {
+    if (IMAGE_KEY_HINTS.some((h) => k.toLowerCase().includes(h))) {
+      const u = imageUrlFrom(v);
+      if (u) return u;
+    }
+  }
+  for (const [, v] of entries) {
+    const u = imageUrlFrom(v);
+    if (u) return u;
+  }
   return null;
 }
 
@@ -82,7 +114,7 @@ export const getBlogPosts = createServerFn({ method: "GET" }).handler(async (): 
           id: String(it.id),
           title: pick(f, ["name", "title", "post-title"]) ?? "Untitled",
           url: blogBase && slug ? `${blogBase}/${slug}` : null,
-          image: asImageUrl(pick(f, ["featured-image", "main-image", "thumbnail", "image", "hero-image"])),
+          image: findImage(f),
           // Only show a category when it's a plain string. In Webflow v2 a
           // reference field returns an id, not a name — that needs the owner to
           // confirm the field and (if a reference) a follow-up resolve.
