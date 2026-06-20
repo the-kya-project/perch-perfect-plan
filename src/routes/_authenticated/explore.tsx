@@ -134,12 +134,28 @@ function BlogSection({ loading, connected, posts }: { loading: boolean; connecte
   );
 }
 
+// Webflow's CMS API only returns the full-size original image, which is far
+// bigger than the ~450px card needs. Route it through the weserv image proxy to
+// serve a card-sized WebP; the <img> onError falls back to the original if the
+// proxy is ever unavailable, so blog images always load.
+function sizedImage(url: string, width = 820): string {
+  return `https://images.weserv.nl/?url=${encodeURIComponent(url)}&w=${width}&q=72&output=webp&we`;
+}
+
 function BlogCard({ post }: { post: BlogPost }) {
+  const img = post.image;
   const inner = (
     <>
-      {post.image ? (
+      {img ? (
         <div className="aspect-[16/9] w-full overflow-hidden bg-[#e3dcc9]">
-          <img src={post.image} alt={post.title} loading="lazy" className="size-full object-cover" />
+          <img
+            src={sizedImage(img)}
+            onError={(e) => { if (e.currentTarget.src !== img) e.currentTarget.src = img; }}
+            alt={post.title}
+            loading="lazy"
+            decoding="async"
+            className="size-full object-cover"
+          />
         </div>
       ) : (
         <div className="grid aspect-[16/9] w-full place-items-center bg-[#e3dcc9]">
