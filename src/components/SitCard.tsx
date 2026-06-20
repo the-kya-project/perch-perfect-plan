@@ -90,7 +90,7 @@ export function SitCard({ sit, birds = [], allBirds, onChange }: { sit: any; bir
         <span className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${tone}`}>{status}</span>
       </div>
       <p className="mt-1 text-xs text-[#5f5e5a]">
-        Sitter: {sit.sitter_name ?? "—"} {sit.sitter_email && `(${sit.sitter_email})`}
+        Sitter: {sit.sitter_name?.trim() || "Not named yet"}{sit.sitter_email && ` (${sit.sitter_email})`}
       </p>
       {birds.length > 0 && (
         <p className="mt-1 text-xs text-sage-700">

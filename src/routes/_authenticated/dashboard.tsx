@@ -124,7 +124,9 @@ function Dashboard() {
         .from("sits")
         .select("*, sit_birds(bird_id)")
         // Hide internal preview sits used by the setup flow's review screen.
-        .neq("sitter_name", "__preview__")
+        // (is.null keeps unnamed sits — a bare .neq would drop them, since
+        // NULL != '__preview__' is unknown, not true, in Postgres.)
+        .or("sitter_name.is.null,sitter_name.neq.__preview__")
         .order("start_date", { ascending: false });
       if (error) throw error;
       return data ?? [];
