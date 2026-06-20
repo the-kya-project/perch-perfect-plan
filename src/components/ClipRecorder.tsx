@@ -335,9 +335,17 @@ export function ClipRecorder({
       setStage({ kind: "uploading", pct: 0 });
       const { uploadURL, uid } = await createClipUpload({ data: { uploadLength: file.size } });
       await tusUpload(uploadURL, file, (pct) => setStage({ kind: "uploading", pct }));
-      setStage({ kind: "processing" });
-      await waitForReady(uid);
+      // The clip reference is valid the moment the bytes are up. Hand it off now
+      // instead of blocking the owner on Cloudflare's server-side transcode
+      // (previously up to ~2.5 min on "Processing…"). The clip keeps transcoding
+      // in the background; the Stream player shows a brief loading state if it's
+      // opened before it's ready. Best-effort: surface a transcode failure (rare)
+      // without blocking — if the recorder is still open the owner sees it.
       await onUploaded(cfRef(uid));
+      void waitForReady(uid).catch((err) => {
+        console.error("[clip] transcode failed", err);
+        setError(friendlyUploadError(err));
+      });
       return true;
     } catch (err) {
       console.error("[clip] upload failed", err);
