@@ -6,7 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { useBirdPhotos } from "@/lib/useBirdPhotos";
 import type { SignedPhoto } from "@/lib/birdPhoto";
-import { Plus, Bird as BirdIcon, LogOut, Calendar, Settings, Bell, Feather } from "lucide-react";
+import { Plus, Bird as BirdIcon, LogOut, Calendar, Settings, Bell, Feather, HelpCircle } from "lucide-react";
+import { OwnerOnboarding, replayOwnerOnboarding } from "@/components/OwnerOnboarding";
 import { Disclaimer } from "@/components/Disclaimer";
 import { SitCard } from "@/components/SitCard";
 import { SitForm } from "@/components/SitForm";
@@ -160,6 +161,9 @@ function Dashboard() {
                 </span>
               )}
             </Link>
+            <button onClick={replayOwnerOnboarding} className="rounded-full p-2 hover:bg-white/10" aria-label="Replay walkthrough">
+              <HelpCircle className="size-5" />
+            </button>
             <Link to="/account" className="rounded-full p-2 hover:bg-white/10" aria-label="Account settings">
               <Settings className="size-5" />
             </Link>
@@ -265,6 +269,8 @@ function Dashboard() {
         <AddToHomeScreenPrompt />
         </div>
       </main>
+
+      <OwnerOnboarding />
 
       <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.65rem .8rem;font-size:16px;outline:none}.input:focus{border-color:var(--sage-600);box-shadow:0 0 0 3px rgb(74 103 65 / .15)}.area{min-height:70px}`}</style>
     </div>

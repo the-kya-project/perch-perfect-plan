@@ -86,7 +86,7 @@ export function OwnerChecklist({ birds, sits }: { birds: any[]; sits: any[] }) {
   }
 
   return (
-    <section className="rounded-[20px] bg-[#efe9da] p-4 shadow-sm">
+    <section data-coach="owner-checklist" className="rounded-[20px] bg-[#efe9da] p-4 shadow-sm">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="text-[17px] font-medium text-[#1a3d2e]">Let's get you set up</h2>
