@@ -129,9 +129,11 @@ function BirdEditor() {
     },
   });
 
-  const resolvePhoto = useBirdPhotos([bird?.photo_url]);
+  const resolvePhoto = useBirdPhotos([bird?.photo_url], 96);
 
   if (!bird) return <div className="p-6 text-sm text-sage-600">Loading...</div>;
+
+  const headerPhoto = resolvePhoto(bird.photo_url);
 
   const tabs: { id: Tab; label: string }[] = [
     { id: "basics", label: "Basics" },
@@ -164,7 +166,7 @@ function BirdEditor() {
         <div className="mx-auto max-w-md px-5 py-3">
           <div className="flex items-center gap-3">
             <Link to="/dashboard" className="rounded p-1 text-sage-600"><ArrowLeft className="size-5" /></Link>
-            {resolvePhoto(bird.photo_url) && <img src={resolvePhoto(bird.photo_url)!} alt={bird.name} className="size-9 shrink-0 rounded-full object-cover ring-1 ring-sage-200" style={{ objectPosition: bird.photo_position ?? "50% 20%" }} />}
+            {headerPhoto && <img src={headerPhoto.url} alt={bird.name} loading="lazy" decoding="async" onError={(e) => { if (headerPhoto.original && e.currentTarget.src !== headerPhoto.original) e.currentTarget.src = headerPhoto.original; }} className="size-9 shrink-0 rounded-full object-cover ring-1 ring-sage-200" style={{ objectPosition: bird.photo_position ?? "50% 20%" }} />}
             <div className="flex-1 min-w-0">
               <h1 className="text-sm font-bold truncate">{bird.name}</h1>
               <p className="text-[10px] uppercase tracking-wider text-sage-600">{bird.species ?? "Parrot"}</p>

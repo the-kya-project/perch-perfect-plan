@@ -70,26 +70,54 @@ export async function signBirdPhoto(value: string | null | undefined): Promise<s
   return data?.signedUrl ?? null;
 }
 
+/** A display URL plus the full-size original to fall back to if it fails to load. */
+export type SignedPhoto = { url: string; original: string };
+
 /**
- * Batch-resolve many bird photo values to displayable URLs in one round-trip.
- * Returns a map keyed by the ORIGINAL value so callers can look up per bird.
- * Legacy data:/absolute URLs are echoed back unchanged.
+ * Batch-resolve many bird photo values for display. When `width` is given, the
+ * `url` is a Supabase image-transform URL sized for the display slot (much
+ * smaller bytes); `original` is the untransformed signed URL kept as an onError
+ * fallback. Without `width`, both are the plain signed URL.
+ *
+ * Returns a map keyed by the ORIGINAL value. Legacy data:/absolute URLs are
+ * echoed back unchanged.
  */
 export async function signBirdPhotos(
   values: Array<string | null | undefined>,
-): Promise<Map<string, string>> {
-  const out = new Map<string, string>();
+  opts?: { width?: number; quality?: number },
+): Promise<Map<string, SignedPhoto>> {
+  const out = new Map<string, SignedPhoto>();
   const paths: string[] = [];
   for (const v of values) {
     if (!v) continue;
     if (isStoragePath(v)) paths.push(v);
-    else out.set(v, v); // passthrough
+    else out.set(v, { url: v, original: v }); // passthrough (legacy data: URL)
   }
-  if (paths.length) {
-    const { data } = await supabase.storage.from("bird-photos").createSignedUrls(paths, 3600);
-    for (const row of data ?? []) {
-      if (row.path && row.signedUrl) out.set(row.path, row.signedUrl);
-    }
+  if (!paths.length) return out;
+
+  // Originals in one batched round-trip (the fallback source).
+  const originals = new Map<string, string>();
+  const { data: batch } = await supabase.storage.from("bird-photos").createSignedUrls(paths, 3600);
+  for (const row of batch ?? []) {
+    if (row.path && row.signedUrl) originals.set(row.path, row.signedUrl);
   }
+
+  const width = opts?.width;
+  const quality = opts?.quality ?? 60;
+  await Promise.all(
+    paths.map(async (p) => {
+      const original = originals.get(p) ?? "";
+      let url = original;
+      if (width) {
+        // createSignedUrls (batch) doesn't accept transforms, so sign per-path
+        // with the transform. These are tiny (no image bytes) and cached.
+        const { data } = await supabase.storage
+          .from("bird-photos")
+          .createSignedUrl(p, 3600, { transform: { width, quality } });
+        if (data?.signedUrl) url = data.signedUrl;
+      }
+      if (url) out.set(p, { url, original: original || url });
+    }),
+  );
   return out;
 }

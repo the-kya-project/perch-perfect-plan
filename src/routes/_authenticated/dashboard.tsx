@@ -5,6 +5,7 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { useBirdPhotos } from "@/lib/useBirdPhotos";
+import type { SignedPhoto } from "@/lib/birdPhoto";
 import { Plus, Bird as BirdIcon, LogOut, Calendar, Settings, Bell, Feather } from "lucide-react";
 import { Disclaimer } from "@/components/Disclaimer";
 import { SitCard } from "@/components/SitCard";
@@ -66,8 +67,8 @@ function Dashboard() {
 
   const birdIds = useMemo(() => birds.map((b: any) => b.id), [birds]);
   const ownerId = birds[0]?.owner_id as string | undefined;
-  // Batch-resolve every bird's photo path to a signed URL in one round-trip.
-  const resolvePhoto = useBirdPhotos(birds.map((b: any) => b.photo_url));
+  // Batch-resolve every bird's photo to a card-sized transform URL.
+  const resolvePhoto = useBirdPhotos(birds.map((b: any) => b.photo_url), 800);
 
   // Pull every input feeding the per-bird completeness indicator in one shot
   // per table to avoid N+1 round trips on the dashboard.
@@ -217,7 +218,7 @@ function Dashboard() {
                 const completeness = computeSetupCompleteness({ bird: b, plan, tasksCount, contacts, defaults });
                 const resumeStep = completeness.firstIncompleteStep ?? Math.max(2, Number(b.setup_step ?? 2));
                 return (
-                  <BirdCard key={b.id} bird={b} photoUrl={resolvePhoto(b.photo_url)} completeness={completeness} resumeStep={resumeStep} />
+                  <BirdCard key={b.id} bird={b} photo={resolvePhoto(b.photo_url)} completeness={completeness} resumeStep={resumeStep} />
                 );
               })}
             </div>
@@ -265,7 +266,7 @@ function Dashboard() {
   );
 }
 
-function BirdCard({ bird, photoUrl, completeness, resumeStep }: { bird: any; photoUrl: string | null; completeness: any; resumeStep: number }) {
+function BirdCard({ bird, photo, completeness, resumeStep }: { bird: any; photo: SignedPhoto | null; completeness: any; resumeStep: number }) {
   const ready = completeness.pct >= 100;
   const missing = (completeness.checks ?? []).filter((c: any) => !c.done).map((c: any) => c.label);
   const needCount = missing.length;
@@ -280,12 +281,15 @@ function BirdCard({ bird, photoUrl, completeness, resumeStep }: { bird: any; pho
         <div className={`relative grid w-full place-items-center bg-[#e3dcc9] ${bird.photo_url ? "aspect-[4/3]" : "h-24"}`}>
           {bird.photo_url ? (
             // Frame shape is fixed by the path (known immediately); the image
-            // fills in once its signed URL resolves — no layout shift.
-            photoUrl ? (
+            // fills in once its signed URL resolves — no layout shift. On a
+            // transform failure, fall back to the full-size original.
+            photo ? (
               <img
-                src={photoUrl}
+                src={photo.url}
                 alt={bird.name}
                 loading="lazy"
+                decoding="async"
+                onError={(e) => { if (photo.original && e.currentTarget.src !== photo.original) e.currentTarget.src = photo.original; }}
                 style={{ objectPosition: bird.photo_position ?? "50% 20%" }}
                 className="absolute inset-0 size-full object-cover"
               />
