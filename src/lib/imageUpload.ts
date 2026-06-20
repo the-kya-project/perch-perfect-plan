@@ -6,8 +6,12 @@
 // resolution.
 
 export const MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // 10 MB hard limit (safety net)
-const MAX_EDGE = 1600; // longest edge after resize
-const TARGET_BYTES = 1.5 * 1024 * 1024; // aim for ~1.5 MB or less
+// Origin size: bird photos are only ever shown small (≤~450px cards, avatars),
+// and display URLs are resized further via Supabase image transforms, so the
+// stored origin can be modest. Smaller origin = faster uploads + cheaper/faster
+// transforms.
+const MAX_EDGE = 1280; // longest edge after resize
+const TARGET_BYTES = 0.5 * 1024 * 1024; // aim for ~500 KB or less
 
 function readAsDataUrl(file: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
