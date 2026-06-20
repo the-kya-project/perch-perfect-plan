@@ -1,8 +1,9 @@
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect, useLocation } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { applyOAuthAttribution } from "@/lib/attribution";
 import { PullToRefresh } from "@/components/PullToRefresh";
+import { OwnerTabBar } from "@/components/OwnerTabBar";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -32,9 +33,19 @@ function AuthenticatedLayout() {
     return () => { cancelled = true; };
   }, []);
 
+  // Persistent owner bottom nav on every authenticated screen. Two deliberate
+  // exceptions: the add-bird/setup wizard (SetupShell renders its own nav stacked
+  // with the wizard footer), and the one-time welcome splash.
+  const pathname = useLocation({ select: (l) => l.pathname });
+  const hideNav =
+    pathname === "/welcome" || pathname === "/birds/new" || pathname.endsWith("/setup");
+
   return (
-    <PullToRefresh>
-      <Outlet />
-    </PullToRefresh>
+    <>
+      <PullToRefresh>
+        <Outlet />
+      </PullToRefresh>
+      {!hideNav && <OwnerTabBar />}
+    </>
   );
 }
