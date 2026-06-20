@@ -7,9 +7,8 @@ import { OwnerHeaderIcons } from "@/components/OwnerHeader";
 import { OwnerTabBar } from "@/components/OwnerTabBar";
 import { getBlogPosts, type BlogPost } from "@/lib/webflow.functions";
 
-// PLACEHOLDER external links — owner to confirm/finalize the real URLs.
-// (Flagged in the PR: "Our mission" page and the blog index.)
-const MISSION_URL = "https://www.thekyaproject.com/mission";
+// The Kya Project marketing links.
+const MISSION_URL = "https://www.thekyaproject.com/about";
 const BLOG_URL = "https://www.thekyaproject.com/blog";
 
 export const Route = createFileRoute("/_authenticated/explore")({
