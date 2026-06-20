@@ -9,6 +9,7 @@ import { BrandLogo } from "@/components/BrandLogo";
 import { track } from "@/lib/analytics";
 import { captureLead } from "@/lib/captureLead";
 import { attributionMetadata, getFirstTouch } from "@/lib/attribution";
+import { PENDING_EMAIL_KEY } from "./confirm-email";
 
 const search = z.object({
   mode: z.enum(["signin", "signup"]).default("signin"),
@@ -83,7 +84,9 @@ function AuthPage() {
               // the profile (works even when email confirmation defers the session).
               ...attributionMetadata(),
             },
-            emailRedirectTo: window.location.origin,
+            // Land confirmed owners on the one-time welcome (first sign-in),
+            // which then routes returning owners straight to the dashboard.
+            emailRedirectTo: window.location.origin + "/welcome",
           },
         });
         if (error) throw error;
@@ -98,10 +101,12 @@ function AuthPage() {
           attribution: getFirstTouch(),
         });
         // With email confirmation required, no session is returned until the
-        // user clicks the verification link.
+        // user clicks the verification link. Send them to a persistent screen
+        // (not a disappearing toast) that waits for confirmation. Stash the
+        // email in sessionStorage — it's personal data, so keep it out of the URL.
         if (!data.session) {
-          toast.success("Check your inbox to confirm your email, then sign in.");
-          navigate({ to: "/auth", search: { mode: "signin" } });
+          try { window.sessionStorage.setItem(PENDING_EMAIL_KEY, email); } catch {}
+          navigate({ to: "/confirm-email" });
         } else {
           // New owner with a session → one-time welcome screen, then dashboard.
           navigate({ to: "/welcome" });
@@ -127,7 +132,10 @@ function AuthPage() {
           return;
         }
         clearAttempts(attemptsKey);
-        navigate({ to: "/dashboard" });
+        // Route through the welcome screen, which shows only on the owner's
+        // first sign-in (gated by an account flag) and otherwise redirects
+        // straight to the dashboard.
+        navigate({ to: "/welcome" });
       }
     } catch (err: any) {
       toast.error(err.message ?? "Something went wrong.");
@@ -142,7 +150,7 @@ function AuthPage() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         // Land on the one-time welcome; it redirects returning owners straight to
-        // the dashboard (gated per-device), so only new owners see it.
+        // the dashboard (gated by an account flag), so only new owners see it.
         options: { redirectTo: window.location.origin + "/welcome" },
       });
       if (error) {
