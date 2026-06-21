@@ -58,8 +58,8 @@ export function OwnerChecklist({ birds, sits }: { birds: any[]; sits: any[] }) {
   const steps: Step[] = [
     { key: "defaults", name: "Set your emergency defaults", desc: "Account-level vet & emergency contacts — they carry over to every bird.", done: defaultsDone, to: "/dashboard", search: { emergencyDefaults: true } },
     { key: "bird", name: "Add your first bird", desc: "Build their care plan.", done: birds.length > 0, to: "/birds/new" },
-    { key: "notif", name: "Set notification preferences", desc: "How you hear about scans and updates.", done: notifDone, to: "/notifications/settings" },
     { key: "home", name: "Add the app to your home screen", desc: "Open it like a native app.", done: homeDone, home: true },
+    { key: "notif", name: "Set notification preferences", desc: "How you hear about scans and updates.", done: notifDone, to: "/notifications/settings" },
     { key: "sit", name: "Create your first sit", desc: "Send a sitter a private link.", done: sits.length > 0, to: "/dashboard", search: { newSit: true } },
   ];
 
