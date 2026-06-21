@@ -522,7 +522,7 @@ function BasicsStep({ birdId, onBlockNext, registerFlush }: { birdId: string; on
   );
 }
 
-function DayInLifeStep({ birdId }: { birdId: string }) {
+export function DayInLifeStep({ birdId }: { birdId: string }) {
   const qc = useQueryClient();
 
   const { data: plan } = useQuery({
@@ -1388,7 +1388,7 @@ const STEP_UP_OPTIONS = [
   { value: "no", label: "No — cage-only is fine" },
 ];
 
-function PersonalityStep({ birdId, birdName, registerFlush }: { birdId: string; birdName: string; registerFlush?: (fn: (() => Promise<void>) | null) => void }) {
+export function PersonalityStep({ birdId, birdName, registerFlush }: { birdId: string; birdName: string; registerFlush?: (fn: (() => Promise<void>) | null) => void }) {
   const qc = useQueryClient();
   const { data: plan, isLoading } = useQuery({
     queryKey: ["plan-personality", birdId],
@@ -2015,7 +2015,7 @@ const CLIP_SLOTS: ClipSlot[] = [
   { key: "bedtime", column: "clip_bedtime_path", label: "Settling her for the night", hint: "Cover routine, lights, sounds." },
 ];
 
-function OwnerTipsClipsStep({ birdId, onBlockNext }: { birdId: string; onBlockNext: (block: boolean) => void }) {
+export function OwnerTipsClipsStep({ birdId, onBlockNext }: { birdId: string; onBlockNext: (block: boolean) => void }) {
   const qc = useQueryClient();
   // Track which slots are mid-upload so Next is disabled until all settle.
   const busyRef = useRef<Set<string>>(new Set());
