@@ -1684,7 +1684,22 @@ export function EnvironmentStep({ birdId, registerFlush }: { birdId: string; reg
 
 // ---------- Step 6: Health baseline ----------
 
-function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlush }: { birdId: string; birdName: string; onBlockNext: (block: boolean) => void; registerFlush?: (fn: (() => Promise<void>) | null) => void }) {
+// Granular "what's normal" + when-to-call care-plan text fields. Shown under the
+// summary so a sitter can spot specifics; all optional.
+const HEALTH_DETAIL_FIELDS: [string, string, string][] = [
+  ["normal_appetite", "Normal appetite", "e.g. Eats most of the chop by midday; pellets all day."],
+  ["normal_droppings", "Normal droppings", "e.g. Formed, dark with white urates; greener after veggies."],
+  ["normal_noise", "Normal noise level", "e.g. Loud at sunrise/sunset; quiet midday."],
+  ["normal_activity", "Normal activity", "e.g. Active and climbing in the morning; naps mid-afternoon."],
+  ["normal_sleep", "Sleep / nap habits", "e.g. Covered by 8pm, sleeps ~12 hrs; short afternoon nap."],
+  ["normal_behavior_with_strangers", "Behavior with strangers", "e.g. Shy at first; warms up after an hour."],
+];
+const HEALTH_CALL_FIELDS: [string, string, string][] = [
+  ["when_to_call_owner", "When to call the owner", "e.g. Any change in droppings, eating less, or seems off."],
+  ["when_to_call_vet", "When to call the vet", "e.g. Trouble breathing, bleeding, fall, or fluffed all day."],
+];
+
+export function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlush }: { birdId: string; birdName: string; onBlockNext: (block: boolean) => void; registerFlush?: (fn: (() => Promise<void>) | null) => void }) {
   const qc = useQueryClient();
 
   const { data: bird } = useQuery({
@@ -1693,7 +1708,7 @@ function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlush }: { 
     queryFn: async () => {
       const { data, error } = await supabase
         .from("birds")
-        .select("id, owner_id, normal_weight, medical_conditions, medications")
+        .select("id, owner_id, normal_weight, normal_weight_min, normal_weight_max, notes, medical_conditions, medications")
         .eq("id", birdId)
         .single();
       if (error) throw error;
@@ -1712,10 +1727,15 @@ function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlush }: { 
   });
 
   const [weight, setWeight] = useState("");
+  const [weightMin, setWeightMin] = useState("");
+  const [weightMax, setWeightMax] = useState("");
   const [conditions, setConditions] = useState("");
   const [meds, setMeds] = useState("");
   const [medSchedule, setMedSchedule] = useState("");
   const [whatsNormal, setWhatsNormal] = useState("");
+  const [notes, setNotes] = useState("");
+  // Granular "what's normal" + when-to-call fields, keyed by care_plans column.
+  const [detail, setDetail] = useState<Record<string, string>>({});
   const [clipPath, setClipPath] = useState<string | null>(null);
   const [clipPreview, setClipPreview] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
@@ -1735,10 +1755,16 @@ function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlush }: { 
     const w = bird.normal_weight != null ? String(bird.normal_weight) : "";
     setWeight(w);
     setInitialWeight(w);
+    setWeightMin(bird.normal_weight_min != null ? String(bird.normal_weight_min) : "");
+    setWeightMax(bird.normal_weight_max != null ? String(bird.normal_weight_max) : "");
     setConditions(bird.medical_conditions ?? "");
     setMeds(bird.medications ?? "");
     setMedSchedule(plan.medication_schedule ?? "");
     setWhatsNormal(plan.whats_normal ?? "");
+    setNotes(bird.notes ?? "");
+    setDetail(Object.fromEntries(
+      [...HEALTH_DETAIL_FIELDS, ...HEALTH_CALL_FIELDS].map(([k]) => [k, plan[k] ?? ""]),
+    ));
     setClipPath(plan.baseline_clip_path ?? null);
     setHydrated(true);
   }, [plan, bird, hydrated]);
@@ -1756,10 +1782,14 @@ function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlush }: { 
     async () => {
       if (!plan || !bird) return;
       const newWeight = weight.trim() ? Number(weight) : null;
+      const num = (v: string) => (v.trim() ? Number(v) : null);
       await supabase
         .from("birds")
         .update({
           normal_weight: newWeight,
+          normal_weight_min: num(weightMin),
+          normal_weight_max: num(weightMax),
+          notes: notes || null,
           medical_conditions: conditions || null,
           medications: meds || null,
         } as any)
@@ -1771,6 +1801,9 @@ function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlush }: { 
           medication_schedule: medSchedule || null,
           whats_normal: whatsNormal || null,
           baseline_clip_path: clipPath,
+          ...Object.fromEntries(
+            [...HEALTH_DETAIL_FIELDS, ...HEALTH_CALL_FIELDS].map(([k]) => [k, (detail[k] ?? "").trim() || null]),
+          ),
         } as any)
         .eq("id", plan.id);
 
@@ -1788,7 +1821,7 @@ function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlush }: { 
       qc.invalidateQueries({ queryKey: ["plan", birdId] });
       qc.invalidateQueries({ queryKey: ["tasks", plan.id] });
     },
-    [weight, conditions, meds, medSchedule, whatsNormal, clipPath],
+    [weight, weightMin, weightMax, conditions, meds, medSchedule, whatsNormal, notes, detail, clipPath],
     !!plan && !!bird && hydrated,
     registerFlush,
     600,
@@ -1818,14 +1851,21 @@ function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlush }: { 
     <div className="space-y-4">
       <StepInstruction>Help your sitter know what's normal for {birdName}, so they can spot what isn't.</StepInstruction>
 
-      <Card title="Normal weight (grams)" hint="Optional. Updating this adds an entry to the weight log.">
-        <input
-          className="input"
-          inputMode="decimal"
-          placeholder="e.g. 410"
-          value={weight}
-          onChange={(e) => setWeight(e.target.value.replace(/[^0-9.]/g, ""))}
-        />
+      <Card title="Normal weight (grams)" hint="Optional. Updating the normal weight adds an entry to the weight log.">
+        <div className="grid grid-cols-3 gap-2">
+          <label className="block">
+            <span className="mb-1 block text-[11px] font-medium text-[#5f5e5a]">Normal</span>
+            <input className="input" inputMode="decimal" placeholder="410" value={weight} onChange={(e) => setWeight(e.target.value.replace(/[^0-9.]/g, ""))} />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-[11px] font-medium text-[#5f5e5a]">Min</span>
+            <input className="input" inputMode="decimal" placeholder="395" value={weightMin} onChange={(e) => setWeightMin(e.target.value.replace(/[^0-9.]/g, ""))} />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-[11px] font-medium text-[#5f5e5a]">Max</span>
+            <input className="input" inputMode="decimal" placeholder="425" value={weightMax} onChange={(e) => setWeightMax(e.target.value.replace(/[^0-9.]/g, ""))} />
+          </label>
+        </div>
       </Card>
 
       <Card title="Short clip of normal behavior or vocalizing" hint={`Optional, up to ${CLIP_MAX_SECONDS} seconds and ${Math.round(CLIP_MAX_BYTES / (1024 * 1024))} MB. Record at 720p in your browser or upload an existing video. Private — only your assigned sitter can view it.`}>
@@ -1896,6 +1936,50 @@ function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlush }: { 
           value={whatsNormal}
           maxLength={800}
           onChange={(e) => setWhatsNormal(e.target.value)}
+        />
+      </Card>
+
+      <Card title="More detail (optional)" hint="Specifics help a sitter spot when something's off.">
+        <div className="space-y-3">
+          {HEALTH_DETAIL_FIELDS.map(([k, label, ph]) => (
+            <label key={k} className="block">
+              <span className="mb-1 block text-xs font-medium text-[#5f5e5a]">{label}</span>
+              <textarea
+                className="input area"
+                placeholder={ph}
+                value={detail[k] ?? ""}
+                maxLength={500}
+                onChange={(e) => setDetail((d) => ({ ...d, [k]: e.target.value }))}
+              />
+            </label>
+          ))}
+        </div>
+      </Card>
+
+      <Card title="When to call">
+        <div className="space-y-3">
+          {HEALTH_CALL_FIELDS.map(([k, label, ph]) => (
+            <label key={k} className="block">
+              <span className="mb-1 block text-xs font-medium text-[#5f5e5a]">{label}</span>
+              <textarea
+                className="input area"
+                placeholder={ph}
+                value={detail[k] ?? ""}
+                maxLength={500}
+                onChange={(e) => setDetail((d) => ({ ...d, [k]: e.target.value }))}
+              />
+            </label>
+          ))}
+        </div>
+      </Card>
+
+      <Card title="Other notes">
+        <textarea
+          className="input area"
+          placeholder="Anything else a sitter should know."
+          value={notes}
+          maxLength={800}
+          onChange={(e) => setNotes(e.target.value)}
         />
       </Card>
 
