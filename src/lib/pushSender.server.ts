@@ -8,13 +8,11 @@
  */
 
 type EventKey =
-  | "sitter_opened"
   | "sitter_log"
   | "care_plan_reminder"
   | "health_concern";
 
 const TOGGLE_COLUMN: Record<Exclude<EventKey, "health_concern">, string> = {
-  sitter_opened: "push_sitter_opened",
   sitter_log: "push_sitter_log",
   care_plan_reminder: "push_care_plan_reminder",
 };

@@ -43,12 +43,6 @@ type Row = {
 
 const ROWS: Row[] = [
   {
-    emailKey: "notify_sitter_opened",
-    pushKey: "push_sitter_opened",
-    title: "Sitter opened the care sheet",
-    desc: "Tell me when a sitter first opens or starts using the shared care sheet.",
-  },
-  {
     emailKey: "notify_sitter_log",
     pushKey: "push_sitter_log",
     title: "Sitter added a daily log",
