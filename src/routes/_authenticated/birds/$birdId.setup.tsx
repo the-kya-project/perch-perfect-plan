@@ -1528,7 +1528,7 @@ const HAZARD_OPTIONS = [
   "Candles or diffusers",
 ];
 
-function EnvironmentStep({ birdId, registerFlush }: { birdId: string; registerFlush?: (fn: (() => Promise<void>) | null) => void }) {
+export function EnvironmentStep({ birdId, registerFlush }: { birdId: string; registerFlush?: (fn: (() => Promise<void>) | null) => void }) {
   const qc = useQueryClient();
   const { data: plan, isLoading } = useQuery({
     queryKey: ["plan-environment", birdId],
@@ -1546,6 +1546,8 @@ function EnvironmentStep({ birdId, registerFlush }: { birdId: string; registerFl
   const [hazards, setHazards] = useState<string[]>([]);
   const [hazardsOther, setHazardsOther] = useState("");
   const [offLimits, setOffLimits] = useState("");
+  const [otherPets, setOtherPets] = useState("");
+  const [cleaning, setCleaning] = useState("");
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -1559,6 +1561,8 @@ function EnvironmentStep({ birdId, registerFlush }: { birdId: string; registerFl
     setHazards(plan.hazards ?? []);
     setHazardsOther(plan.hazards_other ?? "");
     setOffLimits(plan.off_limits ?? plan.off_limits_rooms ?? "");
+    setOtherPets(plan.other_pets ?? "");
+    setCleaning(plan.cleaning_instructions ?? "");
     setHydrated(true);
   }, [plan, hydrated]);
 
@@ -1583,11 +1587,13 @@ function EnvironmentStep({ birdId, registerFlush }: { birdId: string; registerFl
           // out_of_cage_rules / safety_rules free-text blobs are no longer
           // written — the sitter assembles those from the structured fields.
           off_limits_rooms: offLimits || null,
+          other_pets: otherPets || null,
+          cleaning_instructions: cleaning || null,
         } as any)
         .eq("id", plan.id);
       qc.invalidateQueries({ queryKey: ["plan", birdId] });
     },
-    [cageLoc, oocMode, oocNotes, hazards, hazardsOther, offLimits],
+    [cageLoc, oocMode, oocNotes, hazards, hazardsOther, offLimits, otherPets, cleaning],
     !!plan && hydrated,
     registerFlush,
   );
@@ -1648,6 +1654,26 @@ function EnvironmentStep({ birdId, registerFlush }: { birdId: string; registerFl
           value={offLimits}
           maxLength={400}
           onChange={(e) => setOffLimits(e.target.value)}
+        />
+      </Card>
+
+      <Card title="Other pets & separation rules">
+        <textarea
+          className="input area"
+          placeholder="e.g. A cat and a dog — keep them out of the bird room; never leave them together."
+          value={otherPets}
+          maxLength={500}
+          onChange={(e) => setOtherPets(e.target.value)}
+        />
+      </Card>
+
+      <Card title="Cleaning products & instructions">
+        <textarea
+          className="input area"
+          placeholder="e.g. Wipe the cage tray daily; use only bird-safe cleaner under the sink. No aerosols near the bird."
+          value={cleaning}
+          maxLength={500}
+          onChange={(e) => setCleaning(e.target.value)}
         />
       </Card>
 
