@@ -54,7 +54,10 @@ function PrivacyPage() {
             birds, care plans, sits, logs, photos, and marketing-contact record.
           </p>
           <h2 className="text-base font-bold text-sage-900">Contact</h2>
-          <p>Email the team at the address shown on the marketing site.</p>
+          <p>
+            Questions about your data? Email us at{" "}
+            <a href="mailto:brittany@thekyaproject.com" className="font-medium text-sage-900 underline">brittany@thekyaproject.com</a>.
+          </p>
         </div>
       </main>
     </div>
