@@ -9,7 +9,7 @@ import { EmergencyInfo } from "@/components/EmergencyInfo";
 import { SETUP_STEPS } from "@/components/SetupShell";
 // The editor renders the guided-setup step components directly so the two UIs
 // are identical (same fields, pickers, autosave, clip recording).
-import { DayInLifeStep, PersonalityStep, OwnerTipsClipsStep, FoodWaterStep, EnvironmentStep } from "./$birdId.setup";
+import { DayInLifeStep, PersonalityStep, OwnerTipsClipsStep, FoodWaterStep, EnvironmentStep, HealthBaselineStep } from "./$birdId.setup";
 import { SitCard } from "@/components/SitCard";
 import { toast } from "sonner";
 import { Disclaimer } from "@/components/Disclaimer";
@@ -238,7 +238,7 @@ function BirdEditor() {
         </Link>
 
 
-        {["basics", "health"].includes(tab) && plan && (
+        {tab === "basics" && plan && (
           <PlanFormSection
             section={tab as PlanSection}
             birdId={birdId}
@@ -251,6 +251,7 @@ function BirdEditor() {
             editor and the setup wizard are the exact same UI. */}
         {tab === "food" && <FoodWaterStep birdId={birdId} birdName={bird.name ?? "this bird"} onBlockNext={() => {}} />}
         {tab === "home" && <EnvironmentStep birdId={birdId} />}
+        {tab === "health" && <HealthBaselineStep birdId={birdId} birdName={bird.name ?? "this bird"} onBlockNext={() => {}} />}
         {tab === "routine" && <DayInLifeStep birdId={birdId} />}
         {tab === "behavior" && <PersonalityStep birdId={birdId} birdName={bird.name ?? "this bird"} />}
         {tab === "clips" && <OwnerTipsClipsStep birdId={birdId} onBlockNext={() => {}} />}
