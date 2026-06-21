@@ -9,7 +9,7 @@ import { EmergencyInfo } from "@/components/EmergencyInfo";
 import { SETUP_STEPS } from "@/components/SetupShell";
 // The editor renders the guided-setup step components directly so the two UIs
 // are identical (same fields, pickers, autosave, clip recording).
-import { BasicsStep, DayInLifeStep, PersonalityStep, OwnerTipsClipsStep, FoodWaterStep, EnvironmentStep, HealthBaselineStep } from "./$birdId.setup";
+import { BasicsStep, DayInLifeStep, PersonalityStep, OwnerTipsClipsStep, FoodWaterStep, EnvironmentStep, HealthBaselineStep, HideStepInstruction } from "./$birdId.setup";
 import { SitCard } from "@/components/SitCard";
 import { toast } from "sonner";
 import { Disclaimer } from "@/components/Disclaimer";
@@ -232,22 +232,26 @@ function BirdEditor() {
 
 
         {/* Every section tab renders the guided-setup step component directly, so
-            the editor and the setup wizard are the exact same UI. */}
-        {tab === "basics" && (
-          <div className="space-y-4">
-            <BasicsStep birdId={birdId} onBlockNext={() => {}} />
-            <DeleteBirdCard birdId={birdId} bird={bird} plan={plan} />
-          </div>
-        )}
-        {tab === "food" && <FoodWaterStep birdId={birdId} birdName={bird.name ?? "this bird"} onBlockNext={() => {}} />}
-        {tab === "home" && <EnvironmentStep birdId={birdId} />}
-        {tab === "health" && <HealthBaselineStep birdId={birdId} birdName={bird.name ?? "this bird"} onBlockNext={() => {}} />}
-        {tab === "routine" && <DayInLifeStep birdId={birdId} />}
-        {tab === "behavior" && <PersonalityStep birdId={birdId} birdName={bird.name ?? "this bird"} />}
-        {tab === "clips" && <OwnerTipsClipsStep birdId={birdId} onBlockNext={() => {}} />}
-        {tab === "emergency" && contacts && <EmergencyInfo birdId={birdId} birdName={bird.name ?? "this bird"} contacts={contacts} defaults={defaults ?? null} onSaved={() => qc.invalidateQueries({ queryKey: ["contacts", birdId] })} />}
-        {tab === "sits" && <SitsPanel birdId={birdId} sits={sits} onChange={() => qc.invalidateQueries({ queryKey: ["sits", birdId] })} />}
-        {tab === "logs" && <LogsPanel birdId={birdId} initialScan={scanParam} />}
+            the editor and the setup wizard are the exact same UI — except the
+            green per-step instruction banner, hidden here via HideStepInstruction
+            (it shows only in the guided setup). */}
+        <HideStepInstruction.Provider value={true}>
+          {tab === "basics" && (
+            <div className="space-y-4">
+              <BasicsStep birdId={birdId} onBlockNext={() => {}} />
+              <DeleteBirdCard birdId={birdId} bird={bird} plan={plan} />
+            </div>
+          )}
+          {tab === "food" && <FoodWaterStep birdId={birdId} birdName={bird.name ?? "this bird"} onBlockNext={() => {}} />}
+          {tab === "home" && <EnvironmentStep birdId={birdId} />}
+          {tab === "health" && <HealthBaselineStep birdId={birdId} birdName={bird.name ?? "this bird"} onBlockNext={() => {}} />}
+          {tab === "routine" && <DayInLifeStep birdId={birdId} />}
+          {tab === "behavior" && <PersonalityStep birdId={birdId} birdName={bird.name ?? "this bird"} />}
+          {tab === "clips" && <OwnerTipsClipsStep birdId={birdId} onBlockNext={() => {}} />}
+          {tab === "emergency" && contacts && <EmergencyInfo birdId={birdId} birdName={bird.name ?? "this bird"} contacts={contacts} defaults={defaults ?? null} onSaved={() => qc.invalidateQueries({ queryKey: ["contacts", birdId] })} />}
+          {tab === "sits" && <SitsPanel birdId={birdId} sits={sits} onChange={() => qc.invalidateQueries({ queryKey: ["sits", birdId] })} />}
+          {tab === "logs" && <LogsPanel birdId={birdId} initialScan={scanParam} />}
+        </HideStepInstruction.Provider>
       </main>
 
       <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.65rem .8rem;font-size:16px;outline:none}.input:focus{border-color:var(--sage-600);box-shadow:0 0 0 3px rgb(74 103 65 / .15)}.area{min-height:80px;line-height:1.4}`}</style>

@@ -36,14 +36,23 @@ const setupSearch = z.object({
 const SetupDirtyContext = createContext<(dirty: boolean) => void>(() => {});
 
 /**
+ * Hides the per-step instruction banner. The bird editor renders these same step
+ * components but wraps them with this set to true, so the green "here's what this
+ * step is for" guidance shows only in the guided setup, not on the editor tabs.
+ */
+export const HideStepInstruction = createContext(false);
+
+/**
  * Debounced autosave that ALSO supports an imperative flush from the parent
  * wizard. When the user clicks Next/Back, the wizard calls the registered
  * flush function so pending edits are persisted before the step unmounts.
  * While a save is pending the step is reported "dirty" via SetupDirtyContext.
  */
 // Standout step instruction — a dark-green banner so the "here's what this step
-// is for" guidance never blends into the form. Used at the top of every step.
+// is for" guidance never blends into the form. Shown in the guided setup; hidden
+// on the editor tabs (via HideStepInstruction).
 function StepInstruction({ children }: { children: React.ReactNode }) {
+  if (useContext(HideStepInstruction)) return null;
   return (
     <div className="mb-4 flex items-start gap-2.5 rounded-2xl bg-[#1a3d2e] p-3.5">
       <Lightbulb className="mt-0.5 size-4 shrink-0 text-[#cdeab0]" />
