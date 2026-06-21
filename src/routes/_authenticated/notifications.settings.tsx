@@ -18,6 +18,7 @@ import {
   deletePushSubscription,
 } from "@/lib/push.functions";
 import { markNotificationsReviewed } from "@/components/OwnerChecklist";
+import { AddToHomeModal } from "@/components/AddToHomeModal";
 
 export const Route = createFileRoute("/_authenticated/notifications/settings")({
   head: () => ({ meta: [{ title: "Notification settings — Parrot Care Co-Pilot" }] }),
@@ -73,6 +74,7 @@ function NotificationsSettingsPage() {
   const [saving, setSaving] = useState<keyof Prefs | null>(null);
   const [support, setSupport] = useState<PushSupport | null>(null);
   const [pushEndpoint, setPushEndpoint] = useState<string | null>(null);
+  const [a2hsOpen, setA2hsOpen] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const getVapidKey = useServerFn(getVapidPublicKey);
@@ -178,12 +180,12 @@ function NotificationsSettingsPage() {
               <div className="text-sm font-semibold text-sage-900">Push on this device</div>
               {pushBlocked && support?.reason === "ios-not-installed" ? (
                 <p className="mt-1 text-xs text-sage-600">
-                  On iPhone, add this app to your Home Screen first (Safari Share menu → Add
-                  to Home Screen), then come back here.
+                  On iPhone, add this app to your Home Screen first, then come back here.
                 </p>
               ) : pushBlocked ? (
                 <p className="mt-1 text-xs text-sage-600">
-                  This browser doesn't support push notifications.
+                  This browser doesn't support push notifications. Add the app to your home
+                  screen to turn push on.
                 </p>
               ) : pushEnabled ? (
                 <p className="mt-1 text-xs text-sage-600">
@@ -193,6 +195,15 @@ function NotificationsSettingsPage() {
                 <p className="mt-1 text-xs text-sage-600">
                   Get instant alerts for sitter activity without needing to check email.
                 </p>
+              )}
+              {pushBlocked && (
+                <button
+                  type="button"
+                  onClick={() => setA2hsOpen(true)}
+                  className="mt-2 text-xs font-semibold text-sage-700 underline"
+                >
+                  How to add this app to your home screen
+                </button>
               )}
             </div>
             {!pushBlocked && (
@@ -271,6 +282,8 @@ function NotificationsSettingsPage() {
           Flagged scans always send email; all other events follow the toggles above.
         </p>
       </main>
+
+      {a2hsOpen && <AddToHomeModal onClose={() => setA2hsOpen(false)} />}
     </div>
   );
 }

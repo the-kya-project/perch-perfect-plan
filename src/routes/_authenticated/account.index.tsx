@@ -6,9 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { deleteMyAccount } from "@/lib/account.functions";
 import { APP_VERSION } from "@/lib/version";
-import {
-  ArrowLeft, ChevronRight, ShieldAlert, Bell, Smartphone, Lock, X, Share, Plus, MoreVertical,
-} from "lucide-react";
+import { ArrowLeft, ChevronRight, ShieldAlert, Bell, Smartphone, Lock, X } from "lucide-react";
+import { AddToHomeModal } from "@/components/AddToHomeModal";
 import { toast } from "sonner";
 
 // Support inbox for the "Help & support" row. If this address changes, update it
@@ -306,33 +305,6 @@ function EditIdentityModal({
       >
         {saving ? "Saving…" : "Save changes"}
       </button>
-    </ModalShell>
-  );
-}
-
-function AddToHomeModal({ onClose }: { onClose: () => void }) {
-  return (
-    <ModalShell title="Add to home screen" onClose={onClose}>
-      <p className="text-sm text-[#5f5e5a]">Install Parrot Care Co-Pilot to open it like an app and receive alerts.</p>
-      <div className="mt-4 space-y-4">
-        <div className="rounded-2xl bg-[#efe9da] p-4">
-          <p className="text-sm font-medium text-[#1a3d2e]">iPhone &amp; iPad (Safari)</p>
-          <ol className="mt-2 space-y-1.5 text-sm text-[#5f5e5a]">
-            <li className="flex items-center gap-2"><Share className="size-4 shrink-0 text-[#2d6a4f]" /> Tap the Share button.</li>
-            <li className="flex items-center gap-2"><Plus className="size-4 shrink-0 text-[#2d6a4f]" /> Choose “Add to Home Screen.”</li>
-            <li>Tap “Add” to confirm.</li>
-          </ol>
-        </div>
-        <div className="rounded-2xl bg-[#efe9da] p-4">
-          <p className="text-sm font-medium text-[#1a3d2e]">Android (Chrome)</p>
-          <ol className="mt-2 space-y-1.5 text-sm text-[#5f5e5a]">
-            <li className="flex items-center gap-2"><MoreVertical className="size-4 shrink-0 text-[#2d6a4f]" /> Tap the menu (three dots).</li>
-            <li className="flex items-center gap-2"><Plus className="size-4 shrink-0 text-[#2d6a4f]" /> Choose “Add to Home screen” / “Install app.”</li>
-            <li>Tap “Add” / “Install” to confirm.</li>
-          </ol>
-        </div>
-      </div>
-      <button onClick={onClose} className="mt-4 w-full rounded-[14px] bg-[#1a3d2e] py-3 text-sm font-medium text-white">Got it</button>
     </ModalShell>
   );
 }
