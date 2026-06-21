@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,11 +7,15 @@ import { Check, ChevronRight, Share, Sparkles } from "lucide-react";
 
 // Persistent getting-started checklist on the owner dashboard. Steps auto-check
 // from real state (defaults saved, bird added, sit created); notifications +
-// home-screen are self-attested (per-device localStorage). Dismissible.
+// home-screen are self-attested. The self-attested flags + the dismissal live in
+// localStorage scoped BY ACCOUNT (`<key>:<uid>`) so a second account on a shared
+// browser gets a fresh checklist instead of inheriting the first account's state.
 
 const DISMISS_KEY = "ppc_owner_checklist_dismissed";
 const NOTIF_KEY = "ppc_owner_notif_reviewed";
 const HOMESCREEN_KEY = "ppc_owner_homescreen";
+
+const scoped = (k: string, uid: string) => `${k}:${uid}`;
 
 function readFlag(k: string): boolean {
   if (typeof window === "undefined") return false;
@@ -22,10 +26,32 @@ function setFlag(k: string) {
 }
 
 export function OwnerChecklist({ birds, sits }: { birds: any[]; sits: any[] }) {
-  const [dismissed, setDismissed] = useState(() => readFlag(DISMISS_KEY));
-  const [notifDone, setNotifDone] = useState(() => readFlag(NOTIF_KEY));
-  const [homeDone, setHomeDone] = useState(() => readFlag(HOMESCREEN_KEY));
+  const [uid, setUid] = useState<string | null>(null);
+  const [flagsLoaded, setFlagsLoaded] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+  const [notifDone, setNotifDone] = useState(false);
+  const [homeDone, setHomeDone] = useState(false);
   const [showHome, setShowHome] = useState(false);
+
+  // Resolve the current account, then read its per-account flags. Until that
+  // resolves we render nothing (avoids a flash of the checklist for an owner
+  // who already dismissed it).
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data: u } = await getLocalUser();
+      if (cancelled) return;
+      const id = u.user?.id ?? null;
+      if (id) {
+        setUid(id);
+        setDismissed(readFlag(scoped(DISMISS_KEY, id)));
+        setNotifDone(readFlag(scoped(NOTIF_KEY, id)));
+        setHomeDone(readFlag(scoped(HOMESCREEN_KEY, id)));
+      }
+      setFlagsLoaded(true);
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   const { data: defaults } = useQuery({
     queryKey: ["owner-defaults"],
@@ -41,6 +67,7 @@ export function OwnerChecklist({ birds, sits }: { birds: any[]; sits: any[] }) {
     },
   });
 
+  if (!flagsLoaded) return null;
   if (dismissed) return null;
 
   const eff = (k: string) => ((defaults as any)?.[k] ?? "").toString().trim();
@@ -68,7 +95,7 @@ export function OwnerChecklist({ birds, sits }: { birds: any[]; sits: any[] }) {
   const nextKey = steps.find((s) => !s.done)?.key;
 
   function dismiss() {
-    setFlag(DISMISS_KEY);
+    if (uid) setFlag(scoped(DISMISS_KEY, uid));
     setDismissed(true);
   }
 
@@ -135,8 +162,8 @@ export function OwnerChecklist({ birds, sits }: { birds: any[]; sits: any[] }) {
                     </p>
                     <p className="text-xs text-[#1a3d2e]"><span className="font-semibold">Android:</span> Open the browser menu (⋮) and choose <span className="font-semibold">Install app</span> / Add to Home screen.</p>
                     <div className="flex gap-2 pt-1">
-                      <button onClick={() => { setFlag(HOMESCREEN_KEY); setHomeDone(true); setShowHome(false); }} className="rounded-lg bg-[#1a3d2e] px-3 py-1.5 text-xs font-semibold text-white">Done</button>
-                      <button onClick={() => { setFlag(HOMESCREEN_KEY); setHomeDone(true); setShowHome(false); }} className="rounded-lg border border-[#e0d8c4] px-3 py-1.5 text-xs font-semibold text-[#5f5e5a]">Skip</button>
+                      <button onClick={() => { if (uid) setFlag(scoped(HOMESCREEN_KEY, uid)); setHomeDone(true); setShowHome(false); }} className="rounded-lg bg-[#1a3d2e] px-3 py-1.5 text-xs font-semibold text-white">Done</button>
+                      <button onClick={() => { if (uid) setFlag(scoped(HOMESCREEN_KEY, uid)); setHomeDone(true); setShowHome(false); }} className="rounded-lg border border-[#e0d8c4] px-3 py-1.5 text-xs font-semibold text-[#5f5e5a]">Skip</button>
                     </div>
                   </div>
                 )}
@@ -155,6 +182,10 @@ export function OwnerChecklist({ birds, sits }: { birds: any[]; sits: any[] }) {
 }
 
 // Mark the notification-preferences step done (call from the settings page).
-export function markNotificationsReviewed() {
-  setFlag(NOTIF_KEY);
+// Scoped to the current account so it only checks off that step for this owner.
+export async function markNotificationsReviewed() {
+  try {
+    const { data: u } = await getLocalUser();
+    if (u.user) setFlag(scoped(NOTIF_KEY, u.user.id));
+  } catch { /* ignore */ }
 }

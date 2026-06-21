@@ -9,11 +9,14 @@ import { ChevronLeft } from "lucide-react";
 // getting-started checklist. Lighter than the sitter walkthrough — it explains
 // "where things live," then the checklist drives the actual setup.
 //
-// Gated account-level by profiles.welcome_seen_at (so it never re-shows, even on
-// a new device); localStorage is just a same-device fast-path. Replayable via the
-// "?" in the dashboard header (replayOwnerOnboarding). Non-blocking + skippable.
+// Gated account-level by profiles.welcome_seen_at — the DB flag is authoritative
+// and per-account, so it shows once for every account (incl. a second account on
+// a shared browser) and never re-shows across devices. No localStorage gate: a
+// device flag isn't account-scoped, so it would wrongly suppress the welcome for
+// a new account that signs in on a browser that already onboarded a different one.
+// Replayable via the "?" in the dashboard header (replayOwnerOnboarding).
+// Non-blocking + skippable.
 
-const SEEN_KEY = "ppc_owner_welcomed"; // same-device fast-path; DB flag is authoritative
 const REPLAY_EVENT = "owner:replay-onboarding";
 
 export function replayOwnerOnboarding() {
@@ -53,20 +56,18 @@ export function OwnerOnboarding() {
   const bubbleRef = useRef<HTMLDivElement | null>(null);
   const [bubbleH, setBubbleH] = useState(150);
 
-  // Decide whether to auto-run, and wire up replay.
+  // Decide whether to auto-run, and wire up replay. The account's
+  // profiles.welcome_seen_at is the single source of truth — show the welcome
+  // whenever it's null for the signed-in user.
   useEffect(() => {
     let cancelled = false;
-    const seenLocal = (() => { try { return window.localStorage.getItem(SEEN_KEY) === "1"; } catch { return false; } })();
-    if (!seenLocal) {
-      (async () => {
-        const { data: u } = await getLocalUser();
-        if (!u.user || cancelled) return;
-        const { data } = await supabase.from("profiles").select("welcome_seen_at").eq("id", u.user.id).maybeSingle();
-        if (cancelled) return;
-        if (data?.welcome_seen_at) { try { window.localStorage.setItem(SEEN_KEY, "1"); } catch {} }
-        else setPhase("welcome");
-      })();
-    }
+    (async () => {
+      const { data: u } = await getLocalUser();
+      if (!u.user || cancelled) return;
+      const { data } = await supabase.from("profiles").select("welcome_seen_at").eq("id", u.user.id).maybeSingle();
+      if (cancelled) return;
+      if (!data?.welcome_seen_at) setPhase("welcome");
+    })();
     const onReplay = () => { setStep(0); setPhase("welcome"); };
     window.addEventListener(REPLAY_EVENT, onReplay);
     return () => { cancelled = true; window.removeEventListener(REPLAY_EVENT, onReplay); };
@@ -120,7 +121,6 @@ export function OwnerOnboarding() {
   });
 
   function finish() {
-    try { window.localStorage.setItem(SEEN_KEY, "1"); } catch {}
     (async () => {
       try {
         const { data: u } = await getLocalUser();
