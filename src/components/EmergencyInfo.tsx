@@ -3,6 +3,8 @@ import { Link } from "@tanstack/react-router";
 import { ShieldCheck, Pencil, RotateCcw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { ASPCA_POISON_CONTROL, isPhoneField, phoneWarning, formatPhoneOnBlur } from "@/lib/emergency";
+import { isAddressField } from "@/lib/address";
+import { AddressInput } from "@/components/AddressInput";
 import { toast } from "sonner";
 
 // Shared emergency UI used by BOTH the bird editor's Emergency tab and the
@@ -126,14 +128,18 @@ export function EmergencyInfo({ birdId, birdName, contacts, defaults, onSaved }:
                   return (
                     <label key={k} className="block">
                       <span className="mb-1 block text-xs font-medium text-[#5f5e5a]">{label}</span>
-                      <input
-                        className="input"
-                        inputMode={isPhoneField(k) ? "tel" : undefined}
-                        value={form[k] ?? ""}
-                        placeholder={defVal(k) ? `Account: ${defVal(k)}` : "Not provided"}
-                        onChange={(e) => setForm({ ...form, [k]: e.target.value })}
-                        onBlur={isPhoneField(k) ? (e) => setForm((f) => ({ ...f, [k]: formatPhoneOnBlur(e.target.value) })) : undefined}
-                      />
+                      {isAddressField(k) ? (
+                        <AddressInput value={form[k] ?? ""} onChange={(v) => setForm((f) => ({ ...f, [k]: v }))} />
+                      ) : (
+                        <input
+                          className="input"
+                          inputMode={isPhoneField(k) ? "tel" : undefined}
+                          value={form[k] ?? ""}
+                          placeholder={defVal(k) ? `Account: ${defVal(k)}` : "Not provided"}
+                          onChange={(e) => setForm({ ...form, [k]: e.target.value })}
+                          onBlur={isPhoneField(k) ? (e) => setForm((f) => ({ ...f, [k]: formatPhoneOnBlur(e.target.value) })) : undefined}
+                        />
+                      )}
                       {warn && <span className="mt-1 block text-[11px] text-warn-red">{warn}</span>}
                     </label>
                   );

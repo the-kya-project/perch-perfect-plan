@@ -15,6 +15,8 @@ import { OwnerChecklist } from "@/components/OwnerChecklist";
 import { toast } from "sonner";
 import { computeSetupCompleteness } from "@/lib/setupCompleteness";
 import { ASPCA_POISON_CONTROL, isPhoneField, phoneWarning, formatPhoneOnBlur } from "@/lib/emergency";
+import { isAddressField } from "@/lib/address";
+import { AddressInput } from "@/components/AddressInput";
 import { track } from "@/lib/analytics";
 import { AddToHomeScreenPrompt } from "@/components/AddToHomeScreenPrompt";
 import { fetchScanFeed, getNotifSeenAt } from "@/lib/notificationsFeed";
@@ -463,13 +465,17 @@ function DefaultsPanel() {
             const warn = isPhoneField(k) ? phoneWarning(d[k]) : null;
             return (
               <Field key={k} label={required ? `${l} *` : l}>
-                <input
-                  className="input"
-                  inputMode={isPhoneField(k) ? "tel" : undefined}
-                  value={d[k] ?? ""}
-                  onChange={(e) => setD({ ...d, [k]: e.target.value })}
-                  onBlur={isPhoneField(k) ? (e) => setD((prev: any) => ({ ...prev, [k]: formatPhoneOnBlur(e.target.value) })) : undefined}
-                />
+                {isAddressField(k) ? (
+                  <AddressInput value={d[k] ?? ""} onChange={(v) => setD((prev: any) => ({ ...prev, [k]: v }))} />
+                ) : (
+                  <input
+                    className="input"
+                    inputMode={isPhoneField(k) ? "tel" : undefined}
+                    value={d[k] ?? ""}
+                    onChange={(e) => setD({ ...d, [k]: e.target.value })}
+                    onBlur={isPhoneField(k) ? (e) => setD((prev: any) => ({ ...prev, [k]: formatPhoneOnBlur(e.target.value) })) : undefined}
+                  />
+                )}
                 {warn && <span className="mt-1 block text-[11px] text-warn-red">{warn}</span>}
               </Field>
             );
