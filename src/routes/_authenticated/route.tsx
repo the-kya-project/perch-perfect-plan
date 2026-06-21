@@ -5,6 +5,28 @@ import { applyOAuthAttribution } from "@/lib/attribution";
 import { PullToRefresh } from "@/components/PullToRefresh";
 import { OwnerTabBar } from "@/components/OwnerTabBar";
 
+// Per-device owner onboarding/checklist flags (the welcome splash, the checklist
+// dismissal, the self-attested checklist steps) live in localStorage and are NOT
+// account-scoped. When a different account signs in on the same browser, clear
+// them so the new account gets the first-run flow — otherwise a second account
+// created on a device that already onboarded sees no welcome and no checklist.
+// Account-level state (welcome_seen_at) still prevents re-showing for the SAME
+// account across devices. Runs in beforeLoad so it completes before the dashboard
+// (and OwnerOnboarding/OwnerChecklist) mount and read these flags.
+const LAST_UID_KEY = "ppc_last_uid";
+function resetOwnerDeviceFlagsOnAccountChange(uid: string) {
+  if (typeof window === "undefined") return;
+  try {
+    const prev = window.localStorage.getItem(LAST_UID_KEY);
+    if (prev && prev !== uid) {
+      for (const k of Object.keys(window.localStorage)) {
+        if (k.startsWith("ppc_owner_")) window.localStorage.removeItem(k);
+      }
+    }
+    if (prev !== uid) window.localStorage.setItem(LAST_UID_KEY, uid);
+  } catch { /* storage blocked — first-run flow still gated by welcome_seen_at */ }
+}
+
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async () => {
@@ -16,6 +38,7 @@ export const Route = createFileRoute("/_authenticated")({
     if (error || !data.session) {
       throw redirect({ to: "/auth", search: { mode: "signin" as const } });
     }
+    resetOwnerDeviceFlagsOnAccountChange(data.session.user.id);
     return { user: data.session.user };
   },
   component: AuthenticatedLayout,
