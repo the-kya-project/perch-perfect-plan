@@ -34,6 +34,10 @@ export const EMERGENCY_LABELS: Record<EmergencyField, string> = {
 
 export const REQUIRED_FIELDS: EmergencyField[] = ["owner_phone", "avian_vet_phone"];
 
+// ASPCA Animal Poison Control — the poison-control default, auto-filled so the
+// number is always present without the owner looking it up.
+export const ASPCA_POISON_CONTROL = "(888) 426-4435";
+
 function clean(v: unknown): string | null {
   if (typeof v !== "string") return v == null ? null : String(v);
   const t = v.trim();
