@@ -66,6 +66,26 @@ export function phoneWarning(v: string | null | undefined): string | null {
   return null;
 }
 
+/**
+ * Tidy a US phone number into "(555) 555-5555" (or "+1 (555) 555-5555" with a
+ * country code) once the owner leaves the field. Only touches plain 10-digit or
+ * 1+10-digit US numbers — anything with an extension or a non-US format (e.g. a
+ * leading + with another country code) is left exactly as typed.
+ */
+export function formatPhoneOnBlur(v: string | null | undefined): string {
+  const s = (v ?? "").trim();
+  if (!s) return s;
+  const digits = s.replace(/\D/g, "");
+  if (/^\d{10}$/.test(digits)) {
+    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+  }
+  if (/^1\d{10}$/.test(digits)) {
+    const d = digits.slice(1);
+    return `+1 (${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
+  }
+  return s;
+}
+
 // ASPCA Animal Poison Control — the poison-control default, auto-filled so the
 // number is always present without the owner looking it up.
 export const ASPCA_POISON_CONTROL = "(888) 426-4435";

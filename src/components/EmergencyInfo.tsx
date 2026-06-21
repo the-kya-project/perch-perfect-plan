@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { ShieldCheck, Pencil, RotateCcw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { ASPCA_POISON_CONTROL, isPhoneField, phoneWarning } from "@/lib/emergency";
+import { ASPCA_POISON_CONTROL, isPhoneField, phoneWarning, formatPhoneOnBlur } from "@/lib/emergency";
 import { toast } from "sonner";
 
 // Shared emergency UI used by BOTH the bird editor's Emergency tab and the
@@ -132,6 +132,7 @@ export function EmergencyInfo({ birdId, birdName, contacts, defaults, onSaved }:
                         value={form[k] ?? ""}
                         placeholder={defVal(k) ? `Account: ${defVal(k)}` : "Not provided"}
                         onChange={(e) => setForm({ ...form, [k]: e.target.value })}
+                        onBlur={isPhoneField(k) ? (e) => setForm((f) => ({ ...f, [k]: formatPhoneOnBlur(e.target.value) })) : undefined}
                       />
                       {warn && <span className="mt-1 block text-[11px] text-warn-red">{warn}</span>}
                     </label>
