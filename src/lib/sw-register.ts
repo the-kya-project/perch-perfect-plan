@@ -63,6 +63,35 @@ export function installChunkErrorRecovery() {
   });
 }
 
+/**
+ * Last-resort recovery from a stuck/stale client. Unregisters the app's service
+ * worker, deletes every Cache Storage entry it left behind, then hard-reloads so
+ * the browser re-fetches the current build's HTML + chunks from the network.
+ *
+ * Used by the root error boundary: a crash on a stale bundle (old code still
+ * running from cache after a deploy) otherwise survives a plain reload, because
+ * the worker keeps serving the same cached assets. Clearing the worker + caches
+ * first guarantees the reload lands on fresh code. Best-effort throughout — any
+ * step can fail (private mode, blocked storage) without stopping the reload.
+ */
+export async function hardResetAndReload(): Promise<void> {
+  await unregisterAppWorkers();
+  try {
+    if ("caches" in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((k) => caches.delete(k)));
+    }
+  } catch { /* ignore */ }
+  // Cache-bust the document fetch too, in case an intermediary cached the HTML.
+  try {
+    const u = new URL(window.location.href);
+    u.searchParams.set("_r", String(Date.now()));
+    window.location.replace(u.toString());
+  } catch {
+    window.location.reload();
+  }
+}
+
 export function registerServiceWorker() {
   if (typeof window === "undefined") return;
   if (!("serviceWorker" in navigator)) return;
