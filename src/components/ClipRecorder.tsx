@@ -507,6 +507,10 @@ export function ClipRecorder({
           />
         </label>
 
+        <p className="text-center text-[11px] text-sage-500">
+          Up to {MAX_SECONDS} seconds and {mb(MAX_BYTES)} per clip.
+        </p>
+
         {errorEl}
         {noteEl}
       </div>

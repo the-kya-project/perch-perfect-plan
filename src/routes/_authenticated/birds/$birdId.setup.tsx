@@ -1802,7 +1802,7 @@ function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlush }: { 
         />
       </Card>
 
-      <Card title="Short clip of normal behavior or vocalizing" hint={`Optional, up to 60 seconds. Record at 720p in your browser or upload an existing video. Private — only your assigned sitter can view it.`}>
+      <Card title="Short clip of normal behavior or vocalizing" hint={`Optional, up to ${CLIP_MAX_SECONDS} seconds and ${Math.round(CLIP_MAX_BYTES / (1024 * 1024))} MB. Record at 720p in your browser or upload an existing video. Private — only your assigned sitter can view it.`}>
         {clipPreview && !replacingClip ? (
           <div className="space-y-2">
             <ClipPlayer src={clipPreview} className="aspect-video w-full rounded-xl ring-1 ring-sage-200" />
