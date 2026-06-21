@@ -25,6 +25,7 @@ import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticate
 import { Route as SitterTokenRouteRouteImport } from './routes/sitter/$token/route'
 import { Route as SitterTokenIndexRouteImport } from './routes/sitter/$token/index'
 import { Route as AuthenticatedNotificationsIndexRouteImport } from './routes/_authenticated/notifications.index'
+import { Route as AuthenticatedAccountIndexRouteImport } from './routes/_authenticated/account.index'
 import { Route as SitterTokenScanRouteImport } from './routes/sitter/$token/scan'
 import { Route as SitterTokenHomeRouteImport } from './routes/sitter/$token/home'
 import { Route as SitterTokenGuideRouteImport } from './routes/sitter/$token/guide'
@@ -119,6 +120,12 @@ const AuthenticatedNotificationsIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedNotificationsRoute,
   } as any)
+const AuthenticatedAccountIndexRoute =
+  AuthenticatedAccountIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedAccountRoute,
+  } as any)
 const SitterTokenScanRoute = SitterTokenScanRouteImport.update({
   id: '/scan',
   path: '/scan',
@@ -209,6 +216,7 @@ export interface FileRoutesByFullPath {
   '/sitter/$token/guide': typeof SitterTokenGuideRoute
   '/sitter/$token/home': typeof SitterTokenHomeRoute
   '/sitter/$token/scan': typeof SitterTokenScanRoute
+  '/account/': typeof AuthenticatedAccountIndexRoute
   '/notifications/': typeof AuthenticatedNotificationsIndexRoute
   '/sitter/$token/': typeof SitterTokenIndexRoute
   '/birds/$birdId/setup': typeof AuthenticatedBirdsBirdIdSetupRoute
@@ -222,7 +230,6 @@ export interface FileRoutesByTo {
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
   '/terms': typeof TermsRoute
-  '/account': typeof AuthenticatedAccountRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/explore': typeof AuthenticatedExploreRoute
   '/sits': typeof AuthenticatedSitsRoute
@@ -235,6 +242,7 @@ export interface FileRoutesByTo {
   '/sitter/$token/guide': typeof SitterTokenGuideRoute
   '/sitter/$token/home': typeof SitterTokenHomeRoute
   '/sitter/$token/scan': typeof SitterTokenScanRoute
+  '/account': typeof AuthenticatedAccountIndexRoute
   '/notifications': typeof AuthenticatedNotificationsIndexRoute
   '/sitter/$token': typeof SitterTokenIndexRoute
   '/birds/$birdId/setup': typeof AuthenticatedBirdsBirdIdSetupRoute
@@ -266,6 +274,7 @@ export interface FileRoutesById {
   '/sitter/$token/guide': typeof SitterTokenGuideRoute
   '/sitter/$token/home': typeof SitterTokenHomeRoute
   '/sitter/$token/scan': typeof SitterTokenScanRoute
+  '/_authenticated/account/': typeof AuthenticatedAccountIndexRoute
   '/_authenticated/notifications/': typeof AuthenticatedNotificationsIndexRoute
   '/sitter/$token/': typeof SitterTokenIndexRoute
   '/_authenticated/birds/$birdId/setup': typeof AuthenticatedBirdsBirdIdSetupRoute
@@ -297,6 +306,7 @@ export interface FileRouteTypes {
     | '/sitter/$token/guide'
     | '/sitter/$token/home'
     | '/sitter/$token/scan'
+    | '/account/'
     | '/notifications/'
     | '/sitter/$token/'
     | '/birds/$birdId/setup'
@@ -310,7 +320,6 @@ export interface FileRouteTypes {
     | '/privacy'
     | '/reset-password'
     | '/terms'
-    | '/account'
     | '/dashboard'
     | '/explore'
     | '/sits'
@@ -323,6 +332,7 @@ export interface FileRouteTypes {
     | '/sitter/$token/guide'
     | '/sitter/$token/home'
     | '/sitter/$token/scan'
+    | '/account'
     | '/notifications'
     | '/sitter/$token'
     | '/birds/$birdId/setup'
@@ -353,6 +363,7 @@ export interface FileRouteTypes {
     | '/sitter/$token/guide'
     | '/sitter/$token/home'
     | '/sitter/$token/scan'
+    | '/_authenticated/account/'
     | '/_authenticated/notifications/'
     | '/sitter/$token/'
     | '/_authenticated/birds/$birdId/setup'
@@ -486,6 +497,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedNotificationsIndexRouteImport
       parentRoute: typeof AuthenticatedNotificationsRoute
     }
+    '/_authenticated/account/': {
+      id: '/_authenticated/account/'
+      path: '/'
+      fullPath: '/account/'
+      preLoaderRoute: typeof AuthenticatedAccountIndexRouteImport
+      parentRoute: typeof AuthenticatedAccountRoute
+    }
     '/sitter/$token/scan': {
       id: '/sitter/$token/scan'
       path: '/scan'
@@ -575,10 +593,12 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedAccountRouteChildren {
   AuthenticatedAccountSecurityRoute: typeof AuthenticatedAccountSecurityRoute
+  AuthenticatedAccountIndexRoute: typeof AuthenticatedAccountIndexRoute
 }
 
 const AuthenticatedAccountRouteChildren: AuthenticatedAccountRouteChildren = {
   AuthenticatedAccountSecurityRoute: AuthenticatedAccountSecurityRoute,
+  AuthenticatedAccountIndexRoute: AuthenticatedAccountIndexRoute,
 }
 
 const AuthenticatedAccountRouteWithChildren =

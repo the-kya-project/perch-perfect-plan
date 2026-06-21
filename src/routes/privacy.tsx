@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useRouter, useCanGoBack } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 
 export const Route = createFileRoute("/privacy")({
@@ -13,22 +13,19 @@ export const Route = createFileRoute("/privacy")({
 });
 
 function PrivacyPage() {
+  const router = useRouter();
+  const canGoBack = useCanGoBack();
+  const navigate = useNavigate();
+  const goBack = () => (canGoBack ? router.history.back() : navigate({ to: "/" }));
   return (
     <div className="min-h-screen bg-sage-50">
       <main className="mx-auto max-w-2xl px-5 py-8">
-        <Link to="/auth" search={{ mode: "signin" }} className="inline-flex items-center gap-1 text-sm text-sage-600">
+        <button onClick={goBack} className="inline-flex items-center gap-1 text-sm text-sage-600">
           <ArrowLeft className="size-4" /> Back
-        </Link>
+        </button>
         <h1 className="mt-6 text-2xl font-bold tracking-tight">Privacy Policy</h1>
-        <p className="mt-2 inline-block rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-amber-800">
-          DRAFT — replace with reviewed copy
-        </p>
 
         <div className="prose prose-sage mt-6 space-y-4 text-sm leading-relaxed text-sage-700">
-          <p>
-            <strong>DRAFT — replace with reviewed copy.</strong> This page is placeholder text.
-            Before launch, replace it with a privacy policy reviewed by your legal counsel.
-          </p>
           <h2 className="text-base font-bold text-sage-900">What we collect</h2>
           <p>
             Account details (email, display name), bird profiles and care plans you create,
