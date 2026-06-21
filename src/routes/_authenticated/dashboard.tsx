@@ -14,7 +14,7 @@ import { SitForm } from "@/components/SitForm";
 import { OwnerChecklist } from "@/components/OwnerChecklist";
 import { toast } from "sonner";
 import { computeSetupCompleteness } from "@/lib/setupCompleteness";
-import { ASPCA_POISON_CONTROL } from "@/lib/emergency";
+import { ASPCA_POISON_CONTROL, isPhoneField, phoneWarning } from "@/lib/emergency";
 import { track } from "@/lib/analytics";
 import { AddToHomeScreenPrompt } from "@/components/AddToHomeScreenPrompt";
 import { fetchScanFeed, getNotifSeenAt } from "@/lib/notificationsFeed";
@@ -459,16 +459,21 @@ function DefaultsPanel() {
         </div>
       ) : (
         <div className="space-y-3 rounded-[20px] bg-[#efe9da] p-4">
-          {fields.map(([k, l, required]) => (
-            <Field key={k} label={required ? `${l} *` : l}>
-              <input
-                className="input"
-                value={d[k] ?? ""}
-                onChange={(e) => setD({ ...d, [k]: e.target.value })}
-              />
-            </Field>
-          ))}
-          <button disabled={saving} onClick={save} className="mt-2 w-full rounded-[14px] bg-[#1a3d2e] py-3 text-sm font-medium text-white disabled:opacity-50">
+          {fields.map(([k, l, required]) => {
+            const warn = isPhoneField(k) ? phoneWarning(d[k]) : null;
+            return (
+              <Field key={k} label={required ? `${l} *` : l}>
+                <input
+                  className="input"
+                  inputMode={isPhoneField(k) ? "tel" : undefined}
+                  value={d[k] ?? ""}
+                  onChange={(e) => setD({ ...d, [k]: e.target.value })}
+                />
+                {warn && <span className="mt-1 block text-[11px] text-warn-red">{warn}</span>}
+              </Field>
+            );
+          })}
+          <button disabled={saving || fields.some(([k]) => isPhoneField(k) && !!phoneWarning(d[k]))} onClick={save} className="mt-2 w-full rounded-[14px] bg-[#1a3d2e] py-3 text-sm font-medium text-white disabled:opacity-50">
             {saving ? "Saving..." : "Save account defaults"}
           </button>
         </div>

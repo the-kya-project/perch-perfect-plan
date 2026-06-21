@@ -34,6 +34,38 @@ export const EMERGENCY_LABELS: Record<EmergencyField, string> = {
 
 export const REQUIRED_FIELDS: EmergencyField[] = ["owner_phone", "avian_vet_phone"];
 
+// Emergency fields that hold a phone number (validated as the owner types).
+export const PHONE_FIELDS: EmergencyField[] = [
+  "owner_phone",
+  "backup_phone",
+  "avian_vet_phone",
+  "emergency_vet_phone",
+  "poison_control",
+];
+
+export function isPhoneField(field: string): boolean {
+  return (PHONE_FIELDS as string[]).includes(field);
+}
+
+// Lenient "looks like a phone number" check: common separators, an optional
+// country code, and an optional extension, with a sane digit count (7–15, per
+// E.164). Empty is treated as valid here — required-ness is handled separately.
+const PHONE_RE = /^\+?[\d\s().-]{6,}(?:\s*(?:x|ext\.?)\s*\d+)?$/i;
+
+/**
+ * A short reason a phone value looks wrong, or null if it's fine (or empty).
+ * Used to flag typos / wrong digit counts at the emergency-number inputs.
+ */
+export function phoneWarning(v: string | null | undefined): string | null {
+  const s = (v ?? "").trim();
+  if (!s) return null;
+  const digits = (s.match(/\d/g) || []).length;
+  if (digits < 7) return "That looks too short for a phone number.";
+  if (digits > 15) return "That looks too long for a phone number.";
+  if (!PHONE_RE.test(s)) return "That doesn't look like a valid phone number.";
+  return null;
+}
+
 // ASPCA Animal Poison Control — the poison-control default, auto-filled so the
 // number is always present without the owner looking it up.
 export const ASPCA_POISON_CONTROL = "(888) 426-4435";
