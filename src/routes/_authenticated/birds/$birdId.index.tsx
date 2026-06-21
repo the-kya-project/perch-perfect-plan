@@ -7,6 +7,9 @@ import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { ArrowLeft, Plus, Trash2, ChevronDown, AlertTriangle, Wand2 } from "lucide-react";
 import { EmergencyInfo } from "@/components/EmergencyInfo";
 import { SETUP_STEPS } from "@/components/SetupShell";
+// The editor renders the guided-setup step components directly so the two UIs
+// are identical (same fields, pickers, autosave, clip recording).
+import { DayInLifeStep, PersonalityStep, OwnerTipsClipsStep } from "./$birdId.setup";
 import { SitCard } from "@/components/SitCard";
 import { toast } from "sonner";
 import { Disclaimer } from "@/components/Disclaimer";
@@ -235,7 +238,7 @@ function BirdEditor() {
         </Link>
 
 
-        {["basics", "food", "behavior", "home", "health", "clips"].includes(tab) && plan && (
+        {["basics", "food", "home", "health"].includes(tab) && plan && (
           <PlanFormSection
             section={tab as PlanSection}
             birdId={birdId}
@@ -244,7 +247,11 @@ function BirdEditor() {
             onSaved={onPlanSaved}
           />
         )}
-        {tab === "routine" && plan && <RoutineEditor planId={plan.id} tasks={tasks} onChange={() => qc.invalidateQueries({ queryKey: ["tasks", plan.id] })} />}
+        {/* These tabs render the guided-setup step components directly, so the
+            editor and the setup wizard are the exact same UI. */}
+        {tab === "routine" && <DayInLifeStep birdId={birdId} />}
+        {tab === "behavior" && <PersonalityStep birdId={birdId} birdName={bird.name ?? "this bird"} />}
+        {tab === "clips" && <OwnerTipsClipsStep birdId={birdId} onBlockNext={() => {}} />}
         {tab === "emergency" && contacts && <EmergencyInfo birdId={birdId} birdName={bird.name ?? "this bird"} contacts={contacts} defaults={defaults ?? null} onSaved={() => qc.invalidateQueries({ queryKey: ["contacts", birdId] })} />}
         {tab === "sits" && <SitsPanel birdId={birdId} sits={sits} onChange={() => qc.invalidateQueries({ queryKey: ["sits", birdId] })} />}
         {tab === "logs" && <LogsPanel birdId={birdId} initialScan={scanParam} />}
