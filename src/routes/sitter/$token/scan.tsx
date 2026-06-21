@@ -6,7 +6,7 @@ import { useSitterContext } from "./route";
 import { submitHealthScan, getSitterScans } from "@/lib/sitter.functions";
 import { SCAN_FIELDS, type ScanAnswer, type ScanFieldKey, computeTriage } from "@/lib/triage";
 import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
-import { ArrowLeft, Camera, History, ChevronDown, Loader2 } from "lucide-react";
+import { ArrowLeft, Camera, History, ChevronDown, Loader2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { track } from "@/lib/analytics";
 
@@ -223,12 +223,25 @@ function ScanPage() {
 
         <section className="rounded-2xl bg-[#efe9da] p-4">
           <p className="text-sm font-medium">Optional: add a photo</p>
-          <p className="mt-1 text-xs text-[#5f5e5a]">Attach a photo if anything looks off.</p>
-          <label className={`mt-3 flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#e0d8c4] py-3 text-sm font-medium text-[#5f5e5a] ${photoBusy ? "opacity-60" : "cursor-pointer"}`}>
-            {photoBusy ? <Loader2 className="size-4 animate-spin" /> : <Camera className="size-4" />}
-            {photoBusy ? "Processing…" : photo ? "Replace photo" : "Add photo"}
-            <input type="file" accept="image/*" capture="environment" className="hidden" disabled={photoBusy} onChange={handlePhoto} />
-          </label>
+          <p className="mt-1 text-xs text-[#5f5e5a]">{photo ? "Take a new photo or upload a different one." : "Take a photo or upload one if anything looks off."}</p>
+          {photoBusy ? (
+            <div className="mt-3 flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#e0d8c4] py-3 text-sm font-medium text-[#5f5e5a] opacity-60">
+              <Loader2 className="size-4 animate-spin" /> Processing…
+            </div>
+          ) : (
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              {/* Take photo: capture="environment" opens the camera directly. */}
+              <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#e0d8c4] py-3 text-sm font-medium text-[#5f5e5a]">
+                <Camera className="size-4" /> Take photo
+                <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhoto} />
+              </label>
+              {/* Upload: no capture attr so the OS offers the photo library / files. */}
+              <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#e0d8c4] py-3 text-sm font-medium text-[#5f5e5a]">
+                <Upload className="size-4" /> Upload photo
+                <input type="file" accept="image/*" className="hidden" onChange={handlePhoto} />
+              </label>
+            </div>
+          )}
           {photo && !photoBusy && <img src={photo} alt="Scan photo preview" className="mt-2 max-h-40 rounded-lg" />}
         </section>
 
