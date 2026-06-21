@@ -7,7 +7,6 @@ import { submitHealthScan, getSitterScans } from "@/lib/sitter.functions";
 import { SCAN_FIELDS, type ScanAnswer, type ScanFieldKey, computeTriage } from "@/lib/triage";
 import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
 import { ArrowLeft, Camera, History, ChevronDown, Loader2 } from "lucide-react";
-import { VetReviewBanner } from "@/components/Disclaimer";
 import { toast } from "sonner";
 import { track } from "@/lib/analytics";
 
@@ -184,8 +183,6 @@ function ScanPage() {
         </div>
       </header>
       <main className="mx-auto max-w-md space-y-4 px-5 py-5 pb-32">
-        <VetReviewBanner />
-
         {SCAN_FIELDS.map((f) => {
           const a = answers[f.key];
           const missing = showErrors && !a;
