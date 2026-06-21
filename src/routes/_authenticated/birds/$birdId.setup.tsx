@@ -11,7 +11,7 @@ import { PhotoCropper } from "@/components/PhotoCropper";
 import { AgePicker, BirdField, SpeciesPicker } from "@/components/BirdPickers";
 import { ClipRecorder, UploadProgress, MAX_SECONDS as CLIP_MAX_SECONDS, MAX_BYTES as CLIP_MAX_BYTES } from "@/components/ClipRecorder";
 import { ClipPlayer } from "@/components/ClipPlayer";
-import { resolveOwnerClipUrl } from "@/lib/clipUrl";
+import { useOwnerClipPreview } from "@/lib/useOwnerClipPreview";
 import { isCfClip } from "@/lib/clipRef";
 import { FEED_PREFIX, HYG_REMOVE_PREFIX, HYG_WASH_FOOD_PREFIX, HYG_WASH_WATER_PREFIX, WATER_CHANGE_PREFIX, MED_TASK_PREFIX, isDerivedTask, derivedSource, feedTimeToDaypart } from "@/lib/routineTasks";
 import { FeedTimePicker } from "@/components/careEditors/FeedTimePicker";
@@ -1746,7 +1746,7 @@ export function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlus
   // Granular "what's normal" + when-to-call fields, keyed by care_plans column.
   const [detail, setDetail] = useState<Record<string, string>>({});
   const [clipPath, setClipPath] = useState<string | null>(null);
-  const [clipPreview, setClipPreview] = useState<string | null>(null);
+  const clipPreview = useOwnerClipPreview(clipPath);
   const [hydrated, setHydrated] = useState(false);
   // When a clip already exists, the recorder stays collapsed behind a "Replace"
   // button so the saved clip doesn't look like an unfinished upload prompt.
@@ -1777,14 +1777,6 @@ export function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlus
     setClipPath(plan.baseline_clip_path ?? null);
     setHydrated(true);
   }, [plan, bird, hydrated]);
-
-  // Resolve signed preview URLs for any saved baseline media.
-  useEffect(() => {
-    let cancelled = false;
-    // The clip can be a Cloudflare Stream ref or a legacy Supabase path.
-    resolveOwnerClipUrl(clipPath).then((u) => { if (!cancelled) setClipPreview(u); });
-    return () => { cancelled = true; };
-  }, [clipPath]);
 
   // Debounced persist of text/numeric fields. Also feeds the weight log on change.
   useDebouncedAutosave(
@@ -1878,9 +1870,11 @@ export function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlus
       </Card>
 
       <Card title="Short clip of normal behavior or vocalizing" hint={`Optional, up to ${CLIP_MAX_SECONDS} seconds and ${Math.round(CLIP_MAX_BYTES / (1024 * 1024))} MB. Record at 720p in your browser or upload an existing video. Private — only your assigned sitter can view it.`}>
-        {clipPreview && !replacingClip ? (
+        {clipPreview.status === "processing" && !replacingClip ? (
+          <UploadProgress label="Processing video…" hint="Your clip is saved. It'll be viewable here once it finishes converting — usually under a minute." />
+        ) : clipPreview.url && !replacingClip ? (
           <div className="space-y-2">
-            <ClipPlayer src={clipPreview} className="aspect-video w-full rounded-xl ring-1 ring-sage-200" />
+            <ClipPlayer src={clipPreview.url} className="aspect-video w-full rounded-xl ring-1 ring-sage-200" />
             <p className="flex items-center gap-1 text-xs font-semibold text-sage-600"><Check className="size-3.5" /> Clip saved</p>
             <div className="flex gap-2">
               <button
@@ -1902,7 +1896,7 @@ export function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlus
         ) : (
           <div className="space-y-2">
             <ClipRecorder onBusy={setClipBusy} onUploaded={uploadClip} />
-            {clipPreview && replacingClip && (
+            {clipPath && replacingClip && (
               <button type="button" onClick={() => setReplacingClip(false)} className="w-full rounded-xl border border-sage-200 bg-white py-2 text-xs font-semibold text-sage-700">
                 Keep current clip
               </button>
@@ -2199,15 +2193,9 @@ function ClipSlotCard({
   onBusy: (key: string, busy: boolean) => void;
   onChange: () => void;
 }) {
-  const [preview, setPreview] = useState<string | null>(null);
+  const preview = useOwnerClipPreview(path);
   const [busy, setBusy] = useState<"uploading" | null>(null);
   const [replacing, setReplacing] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    resolveOwnerClipUrl(path).then((u) => { if (!cancelled) setPreview(u); });
-    return () => { cancelled = true; };
-  }, [path]);
 
   // The recorder uploads to Cloudflare Stream and returns a "cfstream:<uid>" ref.
   async function upload(ref: string) {
@@ -2248,9 +2236,11 @@ function ClipSlotCard({
     <Card title={slot.label} hint={slot.hint}>
       {busy === "uploading" ? (
         <UploadProgress label="Uploading your clip…" hint="This can take a moment on slower connections. Please keep this screen open." />
-      ) : preview && !replacing ? (
+      ) : preview.status === "processing" && !replacing ? (
+        <UploadProgress label="Processing video…" hint="Your clip is saved. It'll be viewable here once it finishes converting — usually under a minute." />
+      ) : preview.url && !replacing ? (
         <div className="space-y-2">
-          <ClipPlayer src={preview} className="aspect-video w-full rounded-xl ring-1 ring-sage-200" />
+          <ClipPlayer src={preview.url} className="aspect-video w-full rounded-xl ring-1 ring-sage-200" />
           <p className="flex items-center gap-1 text-xs font-semibold text-sage-600"><Check className="size-3.5" /> Clip saved</p>
           <div className="flex gap-2">
             <button type="button" onClick={() => setReplacing(true)} className="flex-1 rounded-xl border border-sage-200 bg-white py-2 text-xs font-semibold text-sage-700">
@@ -2264,7 +2254,7 @@ function ClipSlotCard({
       ) : (
         <div className="space-y-2">
           <ClipRecorder onBusy={(b) => onBusy(`${slot.key}:rec`, b)} onUploaded={upload} />
-          {preview && replacing && (
+          {path && replacing && (
             <button type="button" onClick={() => setReplacing(false)} className="w-full rounded-xl border border-sage-200 bg-white py-2 text-xs font-semibold text-sage-700">
               Keep current clip
             </button>
