@@ -71,6 +71,27 @@ async function assertBirdInSit(sitId: string, birdId: string) {
   if (!ids.includes(birdId)) throw new Error("Bird not in this sit.");
 }
 
+// A routine task is "in" a sit only if it belongs to a care plan of one of the
+// sit's birds. Without this, a valid-token sitter could pass an arbitrary
+// routine_task_id; the row would be harmless (scoped to their own sit_id and
+// only readable by that sit's owner), but we reject it so completions can only
+// reference this sit's real tasks.
+async function assertTaskInSit(sitId: string, taskId: string) {
+  const sb = await getAdmin();
+  const birdIds = await loadSitBirdIds(sitId);
+  if (birdIds.length === 0) throw new Error("Task not in this sit.");
+  const { data: plans } = await sb.from("care_plans").select("id").in("bird_id", birdIds);
+  const planIds = (plans ?? []).map((p: any) => p.id);
+  if (planIds.length === 0) throw new Error("Task not in this sit.");
+  const { data: task } = await sb
+    .from("routine_tasks")
+    .select("id")
+    .eq("id", taskId)
+    .in("care_plan_id", planIds)
+    .maybeSingle();
+  if (!task) throw new Error("Task not in this sit.");
+}
+
 export const getSitterContext = createServerFn({ method: "GET" })
   .inputValidator((d: { token: string; birdId?: string }) =>
     z.object({ token: z.string().min(8), birdId: z.string().uuid().optional() }).parse(d),
@@ -226,6 +247,7 @@ export const toggleTaskCompletion = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const sb = await getAdmin();
     const sit = await loadSitByToken(data.token);
+    await assertTaskInSit(sit.id, data.taskId);
     const today = new Date().toISOString().slice(0, 10);
     if (data.completed) {
       await sb.from("task_completions").upsert(
