@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { ShieldCheck, Pencil, RotateCcw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { ASPCA_POISON_CONTROL } from "@/lib/emergency";
 import { toast } from "sonner";
 
 // Shared emergency UI used by BOTH the bird editor's Emergency tab and the
@@ -10,10 +11,6 @@ import { toast } from "sonner";
 // override (written to that bird's emergency_contacts row) that never touches
 // the account default or any other bird. A field is overridden when the bird's
 // stored value differs from the account default.
-
-// ASPCA Animal Poison Control — shown as the poison-control default so the
-// number is always present without the owner looking it up.
-const ASPCA_POISON_CONTROL = "(888) 426-4435";
 
 const EMERGENCY_SECTIONS: { key: string; title: string; fields: [string, string][] }[] = [
   { key: "avian_vet", title: "Avian vet", fields: [["avian_vet_name", "Clinic"], ["avian_vet_phone", "Phone"], ["avian_vet_address", "Address"]] },
@@ -43,7 +40,9 @@ export function EmergencyInfo({ birdId, birdName, contacts, defaults, onSaved }:
 
   function startEdit(section: (typeof EMERGENCY_SECTIONS)[number]) {
     const f: Record<string, string> = {};
-    for (const [k] of section.fields) f[k] = rawEff(k); // start from what's shown
+    // Start from what's shown — for poison control that's the ASPCA fallback, so
+    // the field is pre-filled rather than blank.
+    for (const [k] of section.fields) f[k] = display(k);
     setForm(f);
     setEditing(section.key);
   }

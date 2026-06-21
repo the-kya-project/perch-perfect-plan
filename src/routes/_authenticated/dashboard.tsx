@@ -14,6 +14,7 @@ import { SitForm } from "@/components/SitForm";
 import { OwnerChecklist } from "@/components/OwnerChecklist";
 import { toast } from "sonner";
 import { computeSetupCompleteness } from "@/lib/setupCompleteness";
+import { ASPCA_POISON_CONTROL } from "@/lib/emergency";
 import { track } from "@/lib/analytics";
 import { AddToHomeScreenPrompt } from "@/components/AddToHomeScreenPrompt";
 import { fetchScanFeed, getNotifSeenAt } from "@/lib/notificationsFeed";
@@ -376,7 +377,16 @@ function DefaultsPanel() {
       return data ?? { owner_id: u.user.id };
     },
   });
-  const [d, setD] = useState<any>(defaults ?? {});
+  // Auto-fill poison control with the ASPCA default when the owner hasn't set
+  // one, so the number is present without them looking it up.
+  const seedDefaults = (base: any) => {
+    const v = { ...(base ?? {}) };
+    if (!(typeof v.poison_control === "string" && v.poison_control.trim())) {
+      v.poison_control = ASPCA_POISON_CONTROL;
+    }
+    return v;
+  };
+  const [d, setD] = useState<any>(() => seedDefaults(defaults));
   const [saving, setSaving] = useState(false);
   const fields: [string, string, boolean?][] = [
     ["owner_phone", "Owner phone", true],
@@ -402,7 +412,7 @@ function DefaultsPanel() {
   useEffect(() => {
     if (!deepLink || seededRef.current || defaults === undefined) return;
     seededRef.current = true;
-    setD(defaults ?? {});
+    setD(seedDefaults(defaults));
     setOpen(true);
     setTimeout(() => sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
   }, [deepLink, defaults]);
@@ -432,7 +442,7 @@ function DefaultsPanel() {
         <h2 className="text-[21px] font-medium text-[#1a3d2e]">Account emergency defaults</h2>
         <button
           type="button"
-          onClick={() => { setD(defaults ?? {}); setOpen((o) => !o); }}
+          onClick={() => { setD(seedDefaults(defaults)); setOpen((o) => !o); }}
           className="text-sm font-medium text-[#1a3d2e] underline"
         >
           {open ? "Close" : filledCount > 0 ? "Edit" : "Set up"}
