@@ -10,6 +10,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { computeTriage, type ScanAnswer, type ScanFieldKey } from "./triage";
+import { buildDailyLogEmail } from "./emailTemplates";
 import { mergeEmergency } from "./emergency";
 import { isCfClip, cfUid } from "./clipRef";
 
@@ -394,45 +395,51 @@ export const submitHealthScan = createServerFn({ method: "POST" })
         console.error("[scan] push failed", e);
       }
 
-      // Email — flagged scans only. Most reliable channel; always fires.
-      if (flagged) {
-        try {
-          const [{ data: profile }, { data: sitRow }] = await Promise.all([
-            sb.from("profiles").select("email, display_name").eq("id", ownerId).maybeSingle(),
-            sb.from("sits").select("sitter_name, sitter_email").eq("id", sit.id).maybeSingle(),
-          ]);
+      // Email: a flagged scan ALWAYS emails (safety alert, can't be turned off).
+      // An all-clear scan emails only if the owner opted into "sitter added a
+      // daily log" emails (profiles.notify_sitter_log).
+      try {
+        const [{ data: profile }, { data: sitRow }] = await Promise.all([
+          sb.from("profiles").select("email, display_name, notify_sitter_log").eq("id", ownerId).maybeSingle(),
+          sb.from("sits").select("sitter_name, sitter_email").eq("id", sit.id).maybeSingle(),
+        ]);
+        const wantsLogEmail = (profile?.notify_sitter_log ?? true) === true;
+        if (flagged || wantsLogEmail) {
           // profiles.email can be empty for older accounts — fall back to the
-          // authoritative auth.users email so the alert always has a recipient.
+          // authoritative auth.users email so there's always a recipient.
           let to = profile?.email ?? null;
           if (!to) {
             const { data: authUser } = await sb.auth.admin.getUserById(ownerId);
             to = authUser?.user?.email ?? null;
           }
-          console.log("[scan] flagged email", { status: triage.status, ownerHasEmail: !!to });
+          console.log("[scan] email", { status: triage.status, flagged, wantsLogEmail, ownerHasEmail: !!to });
           if (to) {
             const appUrl = process.env.APP_URL || "https://app.thekyaproject.com";
             const sitterName = sitRow?.sitter_name || sitRow?.sitter_email || "Your sitter";
-            const { subject, html, text } = buildScanAlertEmail({
-              birdName,
-              sitterName,
-              status: triage.status as "red" | "yellow",
-              reasons: triage.reasons,
-              notes: data.notes ?? null,
-              link: `${appUrl}${url}`,
-            });
+            const link = `${appUrl}${url}`;
+            const built = flagged
+              ? buildScanAlertEmail({
+                  birdName,
+                  sitterName,
+                  status: triage.status as "red" | "yellow",
+                  reasons: triage.reasons,
+                  notes: data.notes ?? null,
+                  link,
+                })
+              : buildDailyLogEmail({ birdName, sitterName, link });
             const { sendTransactionalEmail } = await import("./brevoEmail.server");
             const sent = await sendTransactionalEmail({
               to,
               toName: profile?.display_name ?? undefined,
-              subject,
-              htmlContent: html,
-              textContent: text,
+              subject: built.subject,
+              htmlContent: built.html,
+              textContent: built.text,
             });
             console.log("[scan] email result", sent);
           }
-        } catch (e) {
-          console.error("[scan] email failed", e);
         }
+      } catch (e) {
+        console.error("[scan] email failed", e);
       }
     }
 

@@ -36,9 +36,10 @@ export const Route = createFileRoute("/api/public/hooks/care-plan-reminders")({
           return Response.json({ ok: false, error: error.message }, { status: 500 });
         }
 
-        // Dedupe owners we've already pushed in this run.
+        // Dedupe owners we've already nudged in this run.
         const pushed = new Set<string>();
         let total = 0;
+        let emailed = 0;
 
         for (const sit of sits ?? []) {
           const links = (sit as { sit_birds?: Array<{ birds?: { owner_id?: string; name?: string; care_plans?: { updated_at?: string } } }> })
@@ -61,10 +62,44 @@ export const Route = createFileRoute("/api/public/hooks/care-plan-reminders")({
               tag: `care-plan-reminder-${sit.id}`,
             });
             total += res.sent;
+
+            // Email the reminder too, if the owner opted in (more reliable than
+            // push, which needs the app installed). Isolated so one failure
+            // can't stop the run.
+            try {
+              const { data: profile } = await supabaseAdmin
+                .from("profiles")
+                .select("email, display_name, notify_care_plan_reminder")
+                .eq("id", ownerId)
+                .maybeSingle();
+              if ((profile?.notify_care_plan_reminder ?? true) === true) {
+                let to = profile?.email ?? null;
+                if (!to) {
+                  const { data: au } = await supabaseAdmin.auth.admin.getUserById(ownerId);
+                  to = au?.user?.email ?? null;
+                }
+                if (to) {
+                  const appUrl = process.env.APP_URL || "https://app.thekyaproject.com";
+                  const { buildCarePlanReminderEmail } = await import("@/lib/emailTemplates");
+                  const { sendTransactionalEmail } = await import("@/lib/brevoEmail.server");
+                  const built = buildCarePlanReminderEmail({ birdName: bird?.name ?? "your bird", link: `${appUrl}/dashboard` });
+                  await sendTransactionalEmail({
+                    to,
+                    toName: profile?.display_name ?? undefined,
+                    subject: built.subject,
+                    htmlContent: built.html,
+                    textContent: built.text,
+                  });
+                  emailed += 1;
+                }
+              }
+            } catch (e) {
+              console.error("[care-plan-reminder] email failed", e);
+            }
           }
         }
 
-        return Response.json({ ok: true, sits: sits?.length ?? 0, pushed: total });
+        return Response.json({ ok: true, sits: sits?.length ?? 0, pushed: total, emailed });
       },
     },
   },
