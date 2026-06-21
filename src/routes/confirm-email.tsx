@@ -122,6 +122,9 @@ function ConfirmEmail() {
         <p className="mt-3 text-sm leading-relaxed text-[#5f5e5a]">
           Click it to activate your account. Keep this tab open — once you confirm, we'll take you straight in.
         </p>
+        <p className="mt-3 text-xs leading-relaxed text-[#5f5e5a]">
+          Don't see it? Check your spam or junk folder — and give it a minute to arrive.
+        </p>
 
         <button
           onClick={resend}
