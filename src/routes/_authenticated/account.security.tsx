@@ -1,7 +1,6 @@
 import { createFileRoute, useNavigate, useRouter, useCanGoBack } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { OwnerTabBar } from "@/components/OwnerTabBar";
 import { ArrowLeft, Check, Mail } from "lucide-react";
 import { toast } from "sonner";
 
@@ -164,8 +163,6 @@ function SecurityPage() {
           )}
         </div>
       </main>
-
-      <OwnerTabBar />
     </div>
   );
 }
