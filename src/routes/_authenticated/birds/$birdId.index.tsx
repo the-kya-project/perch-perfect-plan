@@ -9,7 +9,7 @@ import { EmergencyInfo } from "@/components/EmergencyInfo";
 import { SETUP_STEPS } from "@/components/SetupShell";
 import { SitCard } from "@/components/SitCard";
 import { toast } from "sonner";
-import { Disclaimer, VetReviewBanner } from "@/components/Disclaimer";
+import { Disclaimer } from "@/components/Disclaimer";
 import { PhotoCropper } from "@/components/PhotoCropper";
 import { SpeciesPicker, AgePicker } from "@/components/BirdPickers";
 import { computeSetupCompleteness } from "@/lib/setupCompleteness";
