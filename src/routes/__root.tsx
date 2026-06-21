@@ -14,7 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
 import { initAnalytics, identifyUser, resetUser } from "@/lib/analytics";
-import { registerServiceWorker, installChunkErrorRecovery } from "@/lib/sw-register";
+import { registerServiceWorker, installChunkErrorRecovery, hardResetAndReload } from "@/lib/sw-register";
 import { captureFirstTouch } from "@/lib/attribution";
 
 function NotFoundComponent() {
@@ -45,15 +45,26 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
+  const detail = error.message && !/unknown error/i.test(error.message) ? error.message : null;
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold">This page didn't load</h1>
-        <p className="mt-2 text-sm text-muted-foreground">{error.message}</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          This is usually an out-of-date copy of the app cached on this device. Reloading
+          it pulls the latest version and normally fixes it.
+        </p>
+        {detail && <p className="mt-2 text-xs text-muted-foreground/80">{detail}</p>}
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
-            onClick={() => { router.invalidate(); reset(); }}
+            onClick={() => { void hardResetAndReload(); }}
             className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+          >
+            Reload the app
+          </button>
+          <button
+            onClick={() => { router.invalidate(); reset(); }}
+            className="rounded-md border border-input bg-background px-4 py-2 text-sm font-medium"
           >
             Try again
           </button>
