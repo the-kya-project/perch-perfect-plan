@@ -191,7 +191,6 @@ export const getSitterContext = createServerFn({ method: "GET" })
       { key: "bedtime", column: "clip_bedtime_path", label: "Settling her for the night" },
     ];
     const watchClips: { key: string; label: string; url: string }[] = [];
-    let baselineDroppingsUrl: string | null = null;
     let baselineClipUrl: string | null = null;
     if (planRes.data) {
       for (const slot of watchClipSlots) {
@@ -199,12 +198,6 @@ export const getSitterContext = createServerFn({ method: "GET" })
         if (!path) continue;
         const url = await resolveClipUrl(sb, path);
         if (url) watchClips.push({ key: slot.key, label: slot.label, url });
-      }
-      // Droppings is a still image — always a Supabase Storage object.
-      const bdp = (planRes.data as any).baseline_droppings_path as string | null;
-      if (bdp) {
-        const { data: signed } = await sb.storage.from("bird-photos").createSignedUrl(bdp, 3600);
-        baselineDroppingsUrl = signed?.signedUrl ?? null;
       }
       const bcp = (planRes.data as any).baseline_clip_path as string | null;
       if (bcp) baselineClipUrl = await resolveClipUrl(sb, bcp);
@@ -231,7 +224,6 @@ export const getSitterContext = createServerFn({ method: "GET" })
       completions: completionsRes.data ?? [],
       todayLog: todayLogRes.data ?? null,
       watchClips,
-      baselineDroppingsUrl,
       baselineClipUrl,
     };
   });
@@ -333,7 +325,7 @@ export const submitHealthScan = createServerFn({ method: "POST" })
           birdId: z.string().uuid(),
           answers: z.record(z.string(), AnswerEnum),
           notes: z.string().max(2000).optional(),
-          // Droppings photo, already compressed client-side to a small JPEG.
+          // Optional scan photo, already compressed client-side to a small JPEG.
           photoDataUrl: z.string().startsWith("data:image/").max(4_000_000).optional(),
         })
         .parse(d),
@@ -374,14 +366,14 @@ export const submitHealthScan = createServerFn({ method: "POST" })
       await sb.from("daily_logs").update({ vomiting_status: a.vomiting } as any).eq("id", row.id);
     }
 
-    // Attach the droppings photo to THIS scan record (daily_log_id) so it shows
+    // Attach the optional photo to THIS scan record (daily_log_id) so it shows
     // inline in both the owner and sitter scan detail views.
     if (data.photoDataUrl) {
       const { error: pErr } = await sb.from("photo_logs").insert({
         sit_id: sit.id,
         bird_id: data.birdId,
         daily_log_id: row.id,
-        photo_type: "droppings",
+        photo_type: "other",
         photo_url: data.photoDataUrl,
         notes: "Attached to health scan",
       });

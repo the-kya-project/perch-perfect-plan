@@ -74,7 +74,6 @@ export function computeSetupCompleteness(args: {
       label: "Health baseline",
       done:
         nonEmpty(bird?.normal_weight) ||
-        nonEmpty(plan?.baseline_droppings_path) ||
         nonEmpty(plan?.baseline_clip_path) ||
         nonEmpty(plan?.whats_normal),
     },

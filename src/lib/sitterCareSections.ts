@@ -51,7 +51,7 @@ export function presentCareSections(ctx: any): CareSectionKey[] {
     has(plan.whats_normal) || has(plan.normal_appetite) || has(plan.normal_droppings) ||
     has(plan.normal_noise) || has(plan.normal_activity) || has(plan.normal_sleep) ||
     has(plan.normal_behavior_with_strangers) || has(bird.medical_conditions) || has(bird.medications) ||
-    has(plan.medication_schedule) || !!ctx?.baselineDroppingsUrl || !!ctx?.baselineClipUrl;
+    has(plan.medication_schedule) || !!ctx?.baselineClipUrl;
   const showEmergency = has(plan.when_to_call_owner) || has(plan.when_to_call_vet);
 
   const out: CareSectionKey[] = [];
