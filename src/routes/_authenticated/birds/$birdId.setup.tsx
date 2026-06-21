@@ -393,7 +393,7 @@ const COMMON_TASKS = [
   "Cover for night",
 ];
 
-function BasicsStep({ birdId, onBlockNext, registerFlush }: { birdId: string; onBlockNext: (block: boolean) => void; registerFlush?: (fn: (() => Promise<void>) | null) => void }) {
+export function BasicsStep({ birdId, onBlockNext, registerFlush }: { birdId: string; onBlockNext: (block: boolean) => void; registerFlush?: (fn: (() => Promise<void>) | null) => void }) {
   const qc = useQueryClient();
   const { data: bird, isLoading } = useQuery({
     queryKey: ["bird-basics", birdId],

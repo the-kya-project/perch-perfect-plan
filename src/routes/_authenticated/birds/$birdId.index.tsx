@@ -4,24 +4,17 @@ import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
-import { ArrowLeft, Plus, Trash2, ChevronDown, AlertTriangle, Wand2 } from "lucide-react";
+import { ArrowLeft, Trash2, ChevronDown, AlertTriangle, Wand2 } from "lucide-react";
 import { EmergencyInfo } from "@/components/EmergencyInfo";
 import { SETUP_STEPS } from "@/components/SetupShell";
 // The editor renders the guided-setup step components directly so the two UIs
 // are identical (same fields, pickers, autosave, clip recording).
-import { DayInLifeStep, PersonalityStep, OwnerTipsClipsStep, FoodWaterStep, EnvironmentStep, HealthBaselineStep } from "./$birdId.setup";
+import { BasicsStep, DayInLifeStep, PersonalityStep, OwnerTipsClipsStep, FoodWaterStep, EnvironmentStep, HealthBaselineStep } from "./$birdId.setup";
 import { SitCard } from "@/components/SitCard";
 import { toast } from "sonner";
 import { Disclaimer } from "@/components/Disclaimer";
-import { PhotoCropper } from "@/components/PhotoCropper";
-import { SpeciesPicker, AgePicker } from "@/components/BirdPickers";
 import { computeSetupCompleteness } from "@/lib/setupCompleteness";
-import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
-import { persistBirdPhoto, signBirdPhoto, isStoragePath } from "@/lib/birdPhoto";
 import { useBirdPhotos } from "@/lib/useBirdPhotos";
-import { FoodEditor, foodValueFromPlan, deriveFoodLegacyFields } from "@/components/careEditors/FoodEditor";
-import { syncFeedingTasks, dietItemsFromDetails } from "@/lib/feedingSync";
-import { derivedSource, taskDaypart, DAYPARTS, DAYPART_LABEL } from "@/lib/routineTasks";
 
 
 const TAB_IDS = ["basics", "routine", "food", "behavior", "home", "health", "clips", "emergency", "sits", "logs"] as const;
@@ -238,17 +231,14 @@ function BirdEditor() {
         </Link>
 
 
-        {tab === "basics" && plan && (
-          <PlanFormSection
-            section={tab as PlanSection}
-            birdId={birdId}
-            bird={bird}
-            plan={plan}
-            onSaved={onPlanSaved}
-          />
+        {/* Every section tab renders the guided-setup step component directly, so
+            the editor and the setup wizard are the exact same UI. */}
+        {tab === "basics" && (
+          <div className="space-y-4">
+            <BasicsStep birdId={birdId} onBlockNext={() => {}} />
+            <DeleteBirdCard birdId={birdId} bird={bird} plan={plan} />
+          </div>
         )}
-        {/* These tabs render the guided-setup step components directly, so the
-            editor and the setup wizard are the exact same UI. */}
         {tab === "food" && <FoodWaterStep birdId={birdId} birdName={bird.name ?? "this bird"} onBlockNext={() => {}} />}
         {tab === "home" && <EnvironmentStep birdId={birdId} />}
         {tab === "health" && <HealthBaselineStep birdId={birdId} birdName={bird.name ?? "this bird"} onBlockNext={() => {}} />}
@@ -265,68 +255,14 @@ function BirdEditor() {
   );
 }
 
-function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
-  return (
-    <label className="block">
-      <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-sage-600">{label}</span>
-      {hint && <span className="mb-1 block text-[11px] text-sage-600">{hint}</span>}
-      {children}
-    </label>
-  );
-}
-
-
-type PlanSection = "basics" | "food" | "behavior" | "home" | "health" | "clips";
-
-// Structured option sets — identical to the guided setup wizard so both editors
-// write the same enum/array columns (one data model, two views).
-const STEP_UP_OPTIONS = [
-  { value: "yes", label: "Yes" },
-  { value: "sometimes", label: "Sometimes" },
-  { value: "no", label: "No — cage-only is fine" },
-];
-const OUT_OF_CAGE_OPTIONS = [
-  { value: "supervised", label: "Supervised only" },
-  { value: "specific_room", label: "Specific room only" },
-  { value: "not_while_sitting", label: "Keep in cage" },
-];
-const HAZARD_OPTIONS = [
-  "Other pets", "Ceiling fans", "Open windows", "Young children",
-  "Houseplants", "Kitchen & nonstick cookware", "Candles or diffusers",
-];
-
-const CLIP_FIELDS: { key: string; label: string; hint: string }[] = [
-  { key: "clip_step_up_path", label: "How she steps up", hint: "Hand position, cue word, what works." },
-  { key: "clip_food_water_path", label: "Refilling food & water", hint: "Bowls, fill amount, cage-door routine." },
-  { key: "clip_locations_path", label: "Where everything is", hint: "Food, treats, towels, carrier, first aid." },
-  { key: "clip_bedtime_path", label: "Settling for the night", hint: "Cover, lights, sounds." },
-];
-
-function PlanFormSection({ section, birdId, bird, plan, onSaved }: { section: PlanSection; birdId: string; bird: any; plan: any; onSaved: () => void }) {
-  // Open the guided wizard on this section's matching step.
-  const guidedStep = TAB_TO_SETUP_STEP[section];
-  const [b, setB] = useState(bird);
-  const [p, setP] = useState(plan);
-  const [saving, setSaving] = useState(false);
+// Delete-bird control shown under the Basics tab (the only editor-only extra in
+// the section tabs — the rest render the shared setup step components).
+function DeleteBirdCard({ birdId, bird, plan }: { birdId: string; bird: any; plan: any }) {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleteText, setDeleteText] = useState("");
   const [deleting, setDeleting] = useState(false);
-  // `b.photo_url` holds a DISPLAYABLE value; `photoRef` holds what to PERSIST
-  // (Storage path / legacy data URL / null). See the same pattern in setup.tsx.
-  const [photoRef, setPhotoRef] = useState<string | null>(bird?.photo_url ?? null);
-
-  // Re-sync local state when the section changes or fresh data arrives. For a
-  // Storage-path photo, blank the preview until the signed URL resolves (avoids
-  // a broken-image flash); legacy data URLs render immediately.
-  useEffect(() => {
-    const isPath = isStoragePath(bird?.photo_url);
-    setB({ ...bird, photo_url: isPath ? null : bird?.photo_url ?? null });
-    setPhotoRef(bird?.photo_url ?? null);
-    if (isPath) signBirdPhoto(bird.photo_url).then((url) => setB((cur: any) => (cur ? { ...cur, photo_url: url } : cur)));
-  }, [bird, section]);
-  useEffect(() => { setP(plan); }, [plan, section]);
 
   async function deleteBird() {
     if (deleteText.trim() !== (bird.name ?? "").trim()) {
@@ -350,420 +286,55 @@ function PlanFormSection({ section, birdId, bird, plan, onSaved }: { section: Pl
     qc.invalidateQueries({ queryKey: ["birds"] });
     navigate({ to: "/dashboard" });
   }
-  async function save() {
-    setSaving(true);
-    const { id: bId, owner_id, created_at, updated_at, photo_url, ...birdPatch } = b;
-    // Persist the Storage path, not the displayable signed/data URL. Upload a
-    // freshly-picked photo (data: URL) once, then reuse its path.
-    let photoToSave = photoRef;
-    if (typeof photoToSave === "string" && photoToSave.startsWith("data:")) {
-      photoToSave = await persistBirdPhoto(owner_id, photoToSave);
-      setPhotoRef(photoToSave);
-    }
-    (birdPatch as any).photo_url = photoToSave;
-    const { id: pId, bird_id, created_at: pc, updated_at: pu, ...planPatch } = p;
-    // Deprecated free-text summary blobs: every tab now uses structured inputs,
-    // and the sitter view assembles its display from the structured columns, so
-    // stop writing these. Removing the key from the patch leaves any existing DB
-    // value untouched (non-destructive) while preventing fresh writes.
-    for (const k of [
-      "food_instructions", "water_instructions", "fresh_food_removal", "treats_allowed", "foods_never_allowed",
-      "handling_rules", "out_of_cage_rules", "safety_rules",
-    ]) {
-      delete (planPatch as any)[k];
-    }
-    // When the Food tab was edited, keep the denormalized fallback columns
-    // (feeding_times, fresh_foods, food_brand/amount) consistent with the
-    // structured data so switching to the guided flow shows identical values.
-    if (section === "food") {
-      Object.assign(planPatch, deriveFoodLegacyFields(foodValueFromPlan(p)));
-    }
-    // Keep denormalized sibling columns the sitter view reads as fallbacks in
-    // sync with the structured field they mirror (matches the wizard's writes).
-    if (section === "behavior") (planPatch as any).known_triggers = p.fears_triggers ?? null;
-    if (section === "home") (planPatch as any).off_limits_rooms = p.off_limits ?? null;
-    await Promise.all([
-      supabase.from("birds").update(birdPatch).eq("id", birdId),
-      supabase.from("care_plans").update(planPatch).eq("id", plan.id),
-    ]);
-    // Regenerate the derived feeding routine tasks from the structured Food data
-    // (same as the guided wizard) so feed-time edits here flow to the routine and
-    // the sitter checklist — closes the gap where the tabbed editor didn't sync.
-    if (section === "food") {
-      try {
-        await syncFeedingTasks(plan.id, dietItemsFromDetails(p.diet_details));
-        qc.invalidateQueries({ queryKey: ["tasks", plan.id] });
-      } catch (e) {
-        console.error("[feeding] sync failed", e);
-      }
-    }
-    setSaving(false);
-    toast.success("Saved.");
-    onSaved();
-  }
-  const [photoBusy, setPhotoBusy] = useState(false);
-  async function onPhoto(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-    setPhotoBusy(true);
-    try {
-      const dataUrl = await compressImageToDataUrl(file);
-      if (dataUrlBytes(dataUrl) > MAX_UPLOAD_BYTES) {
-        toast.error("That photo's a bit too large even after resizing. Try a different photo.");
-        return;
-      }
-      setB({ ...b, photo_url: dataUrl });
-      setPhotoRef(dataUrl);
-    } catch {
-      toast.error("Couldn't process that photo. Try a different one.");
-    } finally {
-      setPhotoBusy(false);
-    }
-  }
-
-  const guidedHint = (
-    <p className="text-[11px] text-sage-600">
-      Need to capture richer details?{" "}
-      <Link to="/birds/$birdId/setup" params={{ birdId }} search={guidedStep ? { step: guidedStep } : undefined} className="font-semibold text-sage-800 underline">
-        Open guided setup
-      </Link>.
-    </p>
-  );
 
   return (
-    <>
-      <Disclaimer compact />
-
-      {section === "basics" && (
-        <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
-          <h2 className="text-sm font-bold">Basics</h2>
-          <div className="flex items-start gap-3">
-            {b.photo_url ? (
-              <PhotoCropper
-                src={b.photo_url}
-                position={b.photo_position}
-                onChange={(pos) => setB({ ...b, photo_position: pos })}
-                size={120}
-              />
-            ) : (
-              <div className="flex size-[120px] items-center justify-center rounded-xl bg-sage-100 text-[10px] uppercase tracking-wider text-sage-600">No photo</div>
-            )}
-            <div className="flex-1 space-y-2 pt-1">
-              <label className={`inline-block rounded-lg bg-sage-100 px-3 py-1.5 text-xs font-semibold text-sage-700 ${photoBusy ? "cursor-default opacity-60" : "cursor-pointer"}`}>
-                {photoBusy ? "Processing…" : b.photo_url ? "Change photo" : "Add photo"}
-                <input type="file" accept="image/*,.heic,.heif" disabled={photoBusy} className="hidden" onChange={onPhoto} />
-              </label>
-              {b.photo_url && (
-                <button type="button" onClick={() => { setB({ ...b, photo_url: null, photo_position: null }); setPhotoRef(null); }} className="ml-2 text-xs font-semibold text-warn-red underline">Remove</button>
-              )}
-            </div>
-          </div>
-          <Field label="Name"><input className="input" value={b.name ?? ""} onChange={(e) => setB({ ...b, name: e.target.value })} /></Field>
-          <SpeciesPicker value={b.species ?? ""} onChange={(v) => setB({ ...b, species: v })} />
-          <AgePicker
-            age={b.age ?? ""}
-            birthDate={b.birth_date ?? ""}
-            onChange={(next) => setB({ ...b, age: next.age, birth_date: next.birthDate })}
-          />
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Sex">
-              <select className="input" value={b.sex ?? ""} onChange={(e) => setB({ ...b, sex: e.target.value || null })}>
-                <option value="">Unknown</option><option>Male</option><option>Female</option>
-              </select>
-            </Field>
-            <Field label="Flight">
-              <select className="input" value={b.flight_status ?? "unknown"} onChange={(e) => setB({ ...b, flight_status: e.target.value })}>
-                <option value="unknown">Unknown</option>
-                <option value="fully_flighted">Fully flighted</option>
-                <option value="clipped">Clipped</option>
-                <option value="partially_clipped">Partially clipped</option>
-              </select>
-            </Field>
-          </div>
-        </section>
-      )}
-
-      {section === "food" && (
-        <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
-          <h2 className="text-sm font-bold">Food & water</h2>
-          <div className="rounded-lg bg-warn-amber/10 p-2 text-[11px] font-semibold text-warn-amber">Reminder: do not introduce new foods while the owner is away.</div>
-          {guidedHint}
-          <FoodEditor value={foodValueFromPlan(p)} onChange={(patch) => setP({ ...p, ...patch })} />
-        </section>
-      )}
-
-      {section === "behavior" && (
-        <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
-          <h2 className="text-sm font-bold">Personality & handling</h2>
-          {guidedHint}
-          <Field label="Does the bird step up?">
-            <select className="input" value={p.step_up ?? ""} onChange={(e) => setP({ ...p, step_up: e.target.value || null })}>
-              <option value="">Not specified</option>
-              {STEP_UP_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
-          </Field>
-          <Field label="Step-up notes (refusal, exceptions)"><textarea className="input area" value={p.step_up_notes ?? ""} onChange={(e) => setP({ ...p, step_up_notes: e.target.value })} /></Field>
-          <Field label="Who can handle, and how"><textarea className="input area" value={p.handlers ?? ""} onChange={(e) => setP({ ...p, handlers: e.target.value })} /></Field>
-          <Field label="Likes"><input className="input" value={p.likes ?? ""} onChange={(e) => setP({ ...p, likes: e.target.value })} /></Field>
-          <Field label="Fears & triggers"><textarea className="input area" value={p.fears_triggers ?? ""} onChange={(e) => setP({ ...p, fears_triggers: e.target.value })} /></Field>
-          <Field label="Bite risk & warning signs"><textarea className="input area" value={p.bite_risk ?? ""} onChange={(e) => setP({ ...p, bite_risk: e.target.value })} /></Field>
-        </section>
-      )}
-
-      {section === "home" && (
-        <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
-          <h2 className="text-sm font-bold">Environment & safety</h2>
-          {guidedHint}
-          <Field label="Cage location & setup"><textarea className="input area" value={p.cage_location ?? ""} onChange={(e) => setP({ ...p, cage_location: e.target.value })} /></Field>
-          <Field label="Out-of-cage rules">
-            <select className="input" value={p.out_of_cage_mode ?? ""} onChange={(e) => setP({ ...p, out_of_cage_mode: e.target.value || null })}>
-              <option value="">Not specified</option>
-              {OUT_OF_CAGE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
-          </Field>
-          <Field label="Out-of-cage notes (which room? how long? what to watch for?)"><textarea className="input area" value={p.out_of_cage_notes ?? ""} onChange={(e) => setP({ ...p, out_of_cage_notes: e.target.value })} /></Field>
-          <Field label="Household hazards" hint="Tap all that apply.">
-            <div className="flex flex-wrap gap-2">
-              {HAZARD_OPTIONS.map((h) => {
-                const sel = (p.hazards ?? []) as string[];
-                const on = sel.includes(h);
-                return (
-                  <button
-                    key={h}
-                    type="button"
-                    onClick={() => setP({ ...p, hazards: on ? sel.filter((x) => x !== h) : [...sel, h] })}
-                    className={"rounded-full border px-3 py-1.5 text-xs font-semibold transition " + (on ? "border-sage-600 bg-sage-600 text-white" : "border-sage-200 bg-white text-sage-700 hover:bg-sage-50")}
-                  >
-                    {on ? "✓ " : "+ "}{h}
-                  </button>
-                );
-              })}
-            </div>
-          </Field>
-          <Field label="Other hazards"><input className="input" value={p.hazards_other ?? ""} onChange={(e) => setP({ ...p, hazards_other: e.target.value || null })} /></Field>
-          <Field label="Off-limits areas"><textarea className="input area" value={p.off_limits ?? ""} onChange={(e) => setP({ ...p, off_limits: e.target.value || null })} /></Field>
-          <Field label="Other pets & separation rules"><textarea className="input area" value={p.other_pets ?? ""} onChange={(e) => setP({ ...p, other_pets: e.target.value })} /></Field>
-          <Field label="Cleaning products / instructions"><textarea className="input area" value={p.cleaning_instructions ?? ""} onChange={(e) => setP({ ...p, cleaning_instructions: e.target.value })} /></Field>
-        </section>
-      )}
-
-      {section === "health" && (
-        <>
-          <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
-            <h2 className="text-sm font-bold">Baseline weight (grams)</h2>
-            <p className="text-xs text-sage-600">Used by the sitter's daily health scan to flag weight loss.</p>
-            <div className="grid grid-cols-3 gap-3">
-              <Field label="Normal"><input className="input" inputMode="decimal" value={b.normal_weight ?? ""} onChange={(e) => setB({ ...b, normal_weight: e.target.value === "" ? null : Number(e.target.value) })} /></Field>
-              <Field label="Min"><input className="input" inputMode="decimal" value={b.normal_weight_min ?? ""} onChange={(e) => setB({ ...b, normal_weight_min: e.target.value === "" ? null : Number(e.target.value) })} /></Field>
-              <Field label="Max"><input className="input" inputMode="decimal" value={b.normal_weight_max ?? ""} onChange={(e) => setB({ ...b, normal_weight_max: e.target.value === "" ? null : Number(e.target.value) })} /></Field>
-            </div>
-          </section>
-          <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
-            <h2 className="text-sm font-bold">Conditions & medications</h2>
-            <Field label="Medical conditions"><textarea className="input area" value={b.medical_conditions ?? ""} onChange={(e) => setB({ ...b, medical_conditions: e.target.value })} /></Field>
-            <Field label="Medications"><textarea className="input area" value={b.medications ?? ""} onChange={(e) => setB({ ...b, medications: e.target.value })} /></Field>
-            <Field label="Notes"><textarea className="input area" value={b.notes ?? ""} onChange={(e) => setB({ ...b, notes: e.target.value })} /></Field>
-          </section>
-          <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
-            <h2 className="text-sm font-bold">What's normal</h2>
-            {guidedHint}
-            <Field label="Normal appetite & behavior summary"><textarea className="input area" value={p.whats_normal ?? ""} onChange={(e) => setP({ ...p, whats_normal: e.target.value })} /></Field>
-            {[
-              ["normal_appetite", "Normal appetite"],
-              ["normal_droppings", "Normal droppings"],
-              ["normal_noise", "Normal noise level"],
-              ["normal_activity", "Normal activity"],
-              ["normal_sleep", "Sleep / nap habits"],
-              ["normal_behavior_with_strangers", "Behavior with strangers"],
-            ].map(([k, l]) => (
-              <Field key={k} label={l}><textarea className="input area" value={p[k] ?? ""} onChange={(e) => setP({ ...p, [k]: e.target.value })} /></Field>
-            ))}
-          </section>
-          <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
-            <h2 className="text-sm font-bold">Baseline media</h2>
-            <MediaRow label="Normal-behavior clip" path={p.baseline_clip_path} onClear={() => setP({ ...p, baseline_clip_path: null })} />
-            <p className="text-[11px] text-sage-600">
-              Record or replace in{" "}
-              <Link to="/birds/$birdId/setup" params={{ birdId }} search={guidedStep ? { step: guidedStep } : undefined} className="font-semibold text-sage-800 underline">guided setup</Link>.
-            </p>
-          </section>
-          <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
-            <h2 className="text-sm font-bold">When to call</h2>
-            <Field label="When to call the owner"><textarea className="input area" value={p.when_to_call_owner ?? ""} onChange={(e) => setP({ ...p, when_to_call_owner: e.target.value })} /></Field>
-            <Field label="When to call the vet"><textarea className="input area" value={p.when_to_call_vet ?? ""} onChange={(e) => setP({ ...p, when_to_call_vet: e.target.value })} /></Field>
-          </section>
-        </>
-      )}
-
-      {section === "clips" && (
-        <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
-          <h2 className="text-sm font-bold">Tips from the owner</h2>
-          <p className="text-[11px] text-sage-600">
-            Short videos with tips for your sitter. Record or replace in{" "}
-            <Link to="/birds/$birdId/setup" params={{ birdId }} search={guidedStep ? { step: guidedStep } : undefined} className="font-semibold text-sage-800 underline">guided setup</Link>.
-          </p>
-          {CLIP_FIELDS.map((c) => (
-            <div key={c.key} className="rounded-xl bg-sage-50/60 p-3 ring-1 ring-sage-100 space-y-1">
-              <p className="text-xs font-semibold text-sage-800">{c.label}</p>
-              <p className="text-[11px] text-sage-600">{c.hint}</p>
-              <MediaRow label="" path={p[c.key]} onClear={() => setP({ ...p, [c.key]: null })} />
-            </div>
-          ))}
-        </section>
-      )}
-
-      <button disabled={saving} onClick={save} className="sticky bottom-4 w-full rounded-xl bg-sage-600 py-3 text-sm font-semibold text-white shadow-lg disabled:opacity-50">
-        {saving ? "Saving..." : "Save changes"}
-      </button>
-
-      {section === "basics" && (
-        <section className="rounded-2xl border-2 border-warn-red/30 bg-warn-red/5 p-4 space-y-3">
-          <h2 className="text-sm font-bold text-warn-red">Danger zone</h2>
-          <p className="text-xs text-sage-700">
-            Permanently delete {bird.name} and all of their care plan, routine, emergency info, weight logs, daily scans, and photos. This cannot be undone.
-          </p>
-          {!confirmDelete ? (
-            <button
-              type="button"
-              onClick={() => setConfirmDelete(true)}
-              className="inline-flex items-center gap-2 rounded-xl border border-warn-red/40 bg-white px-3 py-2 text-xs font-semibold text-warn-red"
-            >
-              <Trash2 className="size-4" /> Delete {bird.name}
-            </button>
-          ) : (
-            <div className="space-y-2">
-              <label className="block text-[11px] font-semibold text-sage-700">
-                Type <span className="font-bold">{bird.name}</span> to confirm
-              </label>
-              <input
-                className="input"
-                value={deleteText}
-                onChange={(e) => setDeleteText(e.target.value)}
-                placeholder={bird.name}
-                autoFocus
-              />
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  disabled={deleting || deleteText.trim() !== (bird.name ?? "").trim()}
-                  onClick={deleteBird}
-                  className="flex-1 rounded-xl bg-warn-red py-2.5 text-sm font-semibold text-white disabled:opacity-50"
-                >
-                  {deleting ? "Deleting..." : `Permanently delete ${bird.name}`}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setConfirmDelete(false); setDeleteText(""); }}
-                  className="rounded-xl border border-sage-200 px-3 py-2.5 text-sm"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          )}
-        </section>
-      )}
-    </>
-  );
-}
-
-function MediaRow({ label, path, onClear }: { label: string; path: string | null | undefined; onClear: () => void }) {
-  return (
-    <div className="flex items-center justify-between gap-2">
-      {label && <span className="text-xs font-semibold text-sage-700">{label}</span>}
-      <div className="ml-auto flex items-center gap-2">
-        {path ? (
-          <>
-            <span className="rounded-full bg-warn-green/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-warn-green">Recorded</span>
-            <button type="button" onClick={onClear} className="text-[11px] font-semibold text-warn-red underline">Clear</button>
-          </>
-        ) : (
-          <span className="rounded-full bg-sage-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-sage-600">Not recorded</span>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function RoutineEditor({ planId, tasks, onChange }: { planId: string; tasks: any[]; onChange: () => void }) {
-  const [adding, setAdding] = useState(false);
-  const [title, setTitle] = useState("");
-  const [category, setCategory] = useState("morning");
-  const [time, setTime] = useState("");
-  const [instructions, setInstructions] = useState("");
-
-  async function add(e: React.FormEvent) {
-    e.preventDefault();
-    await supabase.from("routine_tasks").insert({
-      care_plan_id: planId, title, category, time_of_day: time, instructions,
-    });
-    setTitle(""); setTime(""); setInstructions(""); setAdding(false);
-    onChange();
-  }
-  async function remove(id: string) {
-    await supabase.from("routine_tasks").delete().eq("id", id);
-    onChange();
-  }
-
-  // Place each task by the shared normalization (feed-time wins, else category)
-  // so this tab and the sitter Today checklist always agree.
-  const grouped: Record<string, any[]> = {};
-  for (const t of tasks) (grouped[taskDaypart(t)] ??= []).push(t);
-
-  return (
-    <>
-      <p className="text-sm text-sage-600">Tasks the sitter will check off each day, grouped by time of day.</p>
-      {DAYPARTS.map((dp) => (
-        <section key={dp} className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
-          <h2 className="text-[11px] font-bold uppercase tracking-widest text-sage-600">{DAYPART_LABEL[dp]}</h2>
-          <ul className="mt-2 space-y-2">
-            {(grouped[dp] ?? []).map((t) => {
-              const derived = derivedSource(t.title);
-              return (
-                <li key={t.id} className="flex items-start gap-3 rounded-lg bg-sage-50 p-3">
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold">{t.title}{t.time_of_day && <span className="ml-2 text-[10px] uppercase text-sage-600">{t.time_of_day}</span>}</p>
-                    {t.instructions && <p className="mt-0.5 text-xs text-sage-600">{t.instructions}</p>}
-                  </div>
-                  {derived ? (
-                    <span className="mt-0.5 shrink-0 rounded-full bg-sage-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-sage-600">from {derived}</span>
-                  ) : (
-                    <button onClick={() => remove(t.id)} className="rounded p-1 text-sage-600"><Trash2 className="size-4" /></button>
-                  )}
-                </li>
-              );
-            })}
-            {(grouped[dp] ?? []).length === 0 && <li className="text-xs text-sage-400">No tasks yet.</li>}
-          </ul>
-        </section>
-      ))}
-      {!adding ? (
-        <button onClick={() => setAdding(true)} className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-sage-200 py-3 text-sm font-semibold text-sage-700">
-          <Plus className="size-4" /> Add task
+    <section className="rounded-2xl border-2 border-warn-red/30 bg-warn-red/5 p-4 space-y-3">
+      <h2 className="text-sm font-bold text-warn-red">Danger zone</h2>
+      <p className="text-xs text-sage-700">
+        Permanently delete {bird.name} and all of their care plan, routine, emergency info, weight logs, daily scans, and photos. This cannot be undone.
+      </p>
+      {!confirmDelete ? (
+        <button
+          type="button"
+          onClick={() => setConfirmDelete(true)}
+          className="inline-flex items-center gap-2 rounded-xl border border-warn-red/40 bg-white px-3 py-2 text-xs font-semibold text-warn-red"
+        >
+          <Trash2 className="size-4" /> Delete {bird.name}
         </button>
       ) : (
-        <form onSubmit={add} className="space-y-3 rounded-2xl bg-white p-4 ring-1 ring-sage-100">
-          <Field label="Title"><input className="input" required value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Fresh water & chop" /></Field>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Time of day">
-              <select className="input" value={category} onChange={(e) => setCategory(e.target.value)}>
-                <option value="morning">Morning</option><option value="midday">Midday</option><option value="evening">Evening</option><option value="anytime">Anytime</option>
-              </select>
-            </Field>
-            <Field label="Time (optional)"><input className="input" value={time} onChange={(e) => setTime(e.target.value)} placeholder="8:00 AM" /></Field>
-          </div>
-          <Field label="Instructions"><textarea className="input area" value={instructions} onChange={(e) => setInstructions(e.target.value)} /></Field>
+        <div className="space-y-2">
+          <label className="block text-[11px] font-semibold text-sage-700">
+            Type <span className="font-bold">{bird.name}</span> to confirm
+          </label>
+          <input
+            className="input"
+            value={deleteText}
+            onChange={(e) => setDeleteText(e.target.value)}
+            placeholder={bird.name}
+            autoFocus
+          />
           <div className="flex gap-2">
-            <button type="submit" className="flex-1 rounded-xl bg-sage-600 py-2.5 text-sm font-semibold text-white">Add</button>
-            <button type="button" onClick={() => setAdding(false)} className="rounded-xl border border-sage-200 px-3 py-2.5 text-sm">Cancel</button>
+            <button
+              type="button"
+              disabled={deleting || deleteText.trim() !== (bird.name ?? "").trim()}
+              onClick={deleteBird}
+              className="flex-1 rounded-xl bg-warn-red py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+            >
+              {deleting ? "Deleting..." : `Permanently delete ${bird.name}`}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setConfirmDelete(false); setDeleteText(""); }}
+              className="rounded-xl border border-sage-200 px-3 py-2.5 text-sm"
+            >
+              Cancel
+            </button>
           </div>
-        </form>
+        </div>
       )}
-    </>
+    </section>
   );
 }
-
 
 function SitsPanel({ birdId, sits, onChange }: { birdId: string; sits: any[]; onChange: () => void }) {
   // All the owner's birds, so editing a sit here can add/remove any of them.
