@@ -166,7 +166,7 @@ function CareSheet() {
     has(plan.water_frequency) ||
     has(plan.water_notes) ||
     has(plan.food_storage);
-  const showHealth = has(bird.normal_weight) || has(bird.normal_weight_min) || has(bird.normal_weight_max) || has(plan.whats_normal) || has(plan.normal_appetite) || has(plan.normal_droppings) || has(plan.normal_noise) || has(plan.normal_activity) || has(plan.normal_sleep) || has(plan.normal_behavior_with_strangers) || has(bird.medical_conditions) || has(bird.medications) || has(plan.medication_schedule) || ctx.baselineDroppingsUrl || ctx.baselineClipUrl;
+  const showHealth = has(bird.normal_weight) || has(bird.normal_weight_min) || has(bird.normal_weight_max) || has(plan.whats_normal) || has(plan.normal_appetite) || has(plan.normal_droppings) || has(plan.normal_noise) || has(plan.normal_activity) || has(plan.normal_sleep) || has(plan.normal_behavior_with_strangers) || has(bird.medical_conditions) || has(bird.medications) || has(plan.medication_schedule) || ctx.baselineClipUrl;
 
   // Derive restriction detection from the structured fields (not a stored summary).
   const handlingDangerous = /\b(no|do not|don'?t|never|owner.?only)\b/i.test(
@@ -373,14 +373,8 @@ function CareSheet() {
             {(has(bird.medications) || has(plan.medication_schedule)) && (
               <Field label="Medications" value={joinUnique([bird.medications, plan.medication_schedule])} />
             )}
-            {(ctx.baselineDroppingsUrl || ctx.baselineClipUrl) && (
+            {ctx.baselineClipUrl && (
               <div className="grid grid-cols-1 gap-2">
-                {ctx.baselineDroppingsUrl && (
-                  <div className="overflow-hidden rounded-xl ring-1 ring-[#e0d8c4]">
-                    <img src={ctx.baselineDroppingsUrl} alt="Baseline droppings" className="aspect-video w-full object-cover" />
-                    <p className="bg-white px-2 py-1 text-[11px] font-medium">Baseline droppings</p>
-                  </div>
-                )}
                 {ctx.baselineClipUrl && (
                   <div className="overflow-hidden rounded-xl ring-1 ring-[#e0d8c4]">
                     <ClipPlayer src={ctx.baselineClipUrl} label="Normal-behavior clip" className="aspect-video" />

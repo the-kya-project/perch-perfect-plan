@@ -48,7 +48,7 @@ export const SCAN_FIELDS: ScanField[] = [
     key: "droppings",
     question: "Do the droppings look normal?",
     helpNormal: "Three parts visible: formed dark feces, white urates, clear urine.",
-    helpNotSure: "Color may shift with food. Take a photo against white paper and check the guide.",
+    helpNotSure: "Color may shift with food. Compare against the owner's notes and the care guide.",
     helpConcerning: "Bright red blood, black/tarry stool, yellow or lime urates.",
     redOnConcerning: true,
   },

@@ -1690,12 +1690,9 @@ function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlush }: { 
   const [meds, setMeds] = useState("");
   const [medSchedule, setMedSchedule] = useState("");
   const [whatsNormal, setWhatsNormal] = useState("");
-  const [droppingsPath, setDroppingsPath] = useState<string | null>(null);
   const [clipPath, setClipPath] = useState<string | null>(null);
-  const [droppingsPreview, setDroppingsPreview] = useState<string | null>(null);
   const [clipPreview, setClipPreview] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
-  const [uploading, setUploading] = useState<"photo" | "clip" | null>(null);
   // When a clip already exists, the recorder stays collapsed behind a "Replace"
   // button so the saved clip doesn't look like an unfinished upload prompt.
   const [replacingClip, setReplacingClip] = useState(false);
@@ -1705,7 +1702,7 @@ function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlush }: { 
   const [initialWeight, setInitialWeight] = useState<string>("");
 
   // Don't let the owner advance mid-upload (prevents re-trigger / partial saves).
-  useEffect(() => { onBlockNext(uploading !== null || clipBusy); }, [uploading, clipBusy, onBlockNext]);
+  useEffect(() => { onBlockNext(clipBusy); }, [clipBusy, onBlockNext]);
 
   useEffect(() => {
     if (!plan || !bird || hydrated) return;
@@ -1716,7 +1713,6 @@ function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlush }: { 
     setMeds(bird.medications ?? "");
     setMedSchedule(plan.medication_schedule ?? "");
     setWhatsNormal(plan.whats_normal ?? "");
-    setDroppingsPath(plan.baseline_droppings_path ?? null);
     setClipPath(plan.baseline_clip_path ?? null);
     setHydrated(true);
   }, [plan, bird, hydrated]);
@@ -1724,16 +1720,10 @@ function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlush }: { 
   // Resolve signed preview URLs for any saved baseline media.
   useEffect(() => {
     let cancelled = false;
-    async function signImage(path: string | null, setter: (u: string | null) => void) {
-      if (!path) { setter(null); return; }
-      const { data } = await supabase.storage.from("bird-photos").createSignedUrl(path, 3600);
-      if (!cancelled) setter(data?.signedUrl ?? null);
-    }
-    signImage(droppingsPath, setDroppingsPreview);
     // The clip can be a Cloudflare Stream ref or a legacy Supabase path.
     resolveOwnerClipUrl(clipPath).then((u) => { if (!cancelled) setClipPreview(u); });
     return () => { cancelled = true; };
-  }, [droppingsPath, clipPath]);
+  }, [clipPath]);
 
   // Debounced persist of text/numeric fields. Also feeds the weight log on change.
   useDebouncedAutosave(
@@ -1754,7 +1744,6 @@ function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlush }: { 
         .update({
           medication_schedule: medSchedule || null,
           whats_normal: whatsNormal || null,
-          baseline_droppings_path: droppingsPath,
           baseline_clip_path: clipPath,
         } as any)
         .eq("id", plan.id);
@@ -1773,32 +1762,11 @@ function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlush }: { 
       qc.invalidateQueries({ queryKey: ["plan", birdId] });
       qc.invalidateQueries({ queryKey: ["tasks", plan.id] });
     },
-    [weight, conditions, meds, medSchedule, whatsNormal, droppingsPath, clipPath],
+    [weight, conditions, meds, medSchedule, whatsNormal, clipPath],
     !!plan && !!bird && hydrated,
     registerFlush,
     600,
   );
-
-  async function uploadPhoto(file: File) {
-    if (!bird) return;
-    setUploading("photo");
-    try {
-      const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
-      const path = `${bird.owner_id}/baselines/${birdId}/droppings-${Date.now()}.${ext}`;
-      const { error } = await supabase.storage.from("bird-photos").upload(path, file, {
-        contentType: file.type || "image/jpeg",
-        upsert: true,
-      });
-      if (error) throw error;
-      if (droppingsPath) await supabase.storage.from("bird-photos").remove([droppingsPath]);
-      setDroppingsPath(path);
-      toast.success("Baseline photo saved.");
-    } catch (e: any) {
-      toast.error(e.message ?? "Upload failed");
-    } finally {
-      setUploading(null);
-    }
-  }
 
   // The ClipRecorder uploads to Cloudflare Stream and hands back a
   // "cfstream:<uid>" reference; we persist it (autosave writes baseline_clip_path).
@@ -1811,10 +1779,6 @@ function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlush }: { 
     toast.success("Baseline clip saved.");
   }
 
-  async function removePhoto() {
-    if (droppingsPath) await supabase.storage.from("bird-photos").remove([droppingsPath]);
-    setDroppingsPath(null);
-  }
   async function removeClip() {
     if (clipPath && !isCfClip(clipPath)) {
       try { await supabase.storage.from("bird-photos").remove([clipPath]); } catch {}
@@ -1838,35 +1802,8 @@ function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlush }: { 
         />
       </Card>
 
-      <Card title="Photo of normal droppings" hint="Optional. Private — only your assigned sitter can view it.">
-        {uploading === "photo" ? (
-          <UploadProgress label="Uploading photo…" hint="Please keep this screen open." />
-        ) : droppingsPreview ? (
-          <div className="space-y-2">
-            <img src={droppingsPreview} alt="Baseline droppings" className="h-40 w-full rounded-xl object-cover ring-1 ring-sage-200" />
-            <p className="flex items-center gap-1 text-xs font-semibold text-sage-600"><Check className="size-3.5" /> Photo saved</p>
-            <div className="flex gap-2">
-              <label className="flex-1 cursor-pointer rounded-xl border border-sage-200 bg-white py-2 text-center text-xs font-semibold text-sage-700">
-                Replace
-                <input type="file" accept="image/*,.heic,.heif" className="hidden" onChange={(e) => e.target.files?.[0] && uploadPhoto(e.target.files[0])} />
-              </label>
-              <button type="button" onClick={removePhoto} className="flex-1 rounded-xl border border-sage-200 bg-white py-2 text-xs font-semibold text-warn-red">
-                Remove
-              </button>
-            </div>
-          </div>
-        ) : (
-          <label className="block cursor-pointer rounded-xl border-2 border-dashed border-sage-200 bg-sage-50 p-4 text-center">
-            <span className="text-sm font-semibold text-sage-700">Tap to upload a photo</span>
-            <input type="file" accept="image/*,.heic,.heif" className="hidden" onChange={(e) => e.target.files?.[0] && uploadPhoto(e.target.files[0])} />
-          </label>
-        )}
-      </Card>
-
       <Card title="Short clip of normal behavior or vocalizing" hint={`Optional, up to 60 seconds. Record at 720p in your browser or upload an existing video. Private — only your assigned sitter can view it.`}>
-        {uploading === "clip" ? (
-          <UploadProgress label="Uploading your clip…" hint="This can take a moment on slower connections. Please keep this screen open." />
-        ) : clipPreview && !replacingClip ? (
+        {clipPreview && !replacingClip ? (
           <div className="space-y-2">
             <ClipPlayer src={clipPreview} className="aspect-video w-full rounded-xl ring-1 ring-sage-200" />
             <p className="flex items-center gap-1 text-xs font-semibold text-sage-600"><Check className="size-3.5" /> Clip saved</p>
@@ -2408,7 +2345,7 @@ function ReviewStep({
     if (!plan?.diet_types?.length && !plan?.food_instructions) list.push({ label: "No food & water details", step: stepOf("food") });
     if (!plan?.handlers && !plan?.likes && !plan?.fears_triggers) list.push({ label: "No personality & handling notes", step: stepOf("personality") });
     if (!plan?.cage_location && !plan?.out_of_cage_mode && !(plan?.hazards?.length)) list.push({ label: "No environment & safety details", step: stepOf("environment") });
-    if (!bird?.normal_weight && !plan?.baseline_droppings_path && !plan?.baseline_clip_path && !plan?.whats_normal) {
+    if (!bird?.normal_weight && !plan?.baseline_clip_path && !plan?.whats_normal) {
       list.push({ label: "No health baseline (weight, photo, clip, or notes)", step: stepOf("health") });
     }
     if (!plan?.clip_step_up_path && !plan?.clip_food_water_path && !plan?.clip_locations_path && !plan?.clip_bedtime_path) {

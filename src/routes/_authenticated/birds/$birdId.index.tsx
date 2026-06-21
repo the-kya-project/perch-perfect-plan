@@ -569,7 +569,6 @@ function PlanFormSection({ section, birdId, bird, plan, onSaved }: { section: Pl
           </section>
           <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
             <h2 className="text-sm font-bold">Baseline media</h2>
-            <MediaRow label="Baseline droppings photo" path={p.baseline_droppings_path} onClear={() => setP({ ...p, baseline_droppings_path: null })} />
             <MediaRow label="Normal-behavior clip" path={p.baseline_clip_path} onClear={() => setP({ ...p, baseline_clip_path: null })} />
             <p className="text-[11px] text-sage-600">
               Record or replace in{" "}
@@ -981,7 +980,7 @@ function LogsPanel({ birdId, initialScan }: { birdId: string; initialScan?: stri
                           <div className="mt-2 grid grid-cols-3 gap-2">
                             {linkedPhotos.map((p: any) => (
                               <a key={p.id} href={p.photo_url} target="_blank" rel="noreferrer" className="block aspect-square overflow-hidden rounded-lg bg-sage-100">
-                                <img src={p.photo_url} alt={p.photo_type} className="size-full object-cover" />
+                                <img src={p.photo_url} alt="Sitter photo" className="size-full object-cover" />
                               </a>
                             ))}
                           </div>
@@ -1004,7 +1003,7 @@ function LogsPanel({ birdId, initialScan }: { birdId: string; initialScan?: stri
           <div className="mt-3 grid grid-cols-3 gap-2">
             {photos.map((p: any) => (
               <a key={p.id} href={p.photo_url} target="_blank" rel="noreferrer" className="block aspect-square overflow-hidden rounded-lg bg-sage-100">
-                <img src={p.photo_url} alt={p.photo_type} className="size-full object-cover" />
+                <img src={p.photo_url} alt="Sitter photo" className="size-full object-cover" />
               </a>
             ))}
           </div>
