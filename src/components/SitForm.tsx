@@ -47,15 +47,21 @@ export function SitForm({
   const [end, setEnd] = useState(editing ? (editSit.end_date ?? "") : "");
   const [notes, setNotes] = useState(editing ? (editSit.notes ?? "") : "");
   const [saving, setSaving] = useState(false);
+  const rootRef = useRef<HTMLFormElement>(null);
 
-  // Create-only: ?newSit=1 auto-opens the form once, then clears the param.
+  // Create-only: opens the form when ?newSit is set, then clears the param.
+  // Keyed on initialOpen (not just mount) so it also fires when the param flips
+  // true while the dashboard is already mounted — e.g. the checklist's "Create
+  // your first sit", which links to /dashboard?newSit while already there.
   useEffect(() => {
     if (initialOpen && !editing) {
       setOpen(true);
       navigate({ to: "/dashboard", search: {}, replace: true });
+      // The form can be below the fold on the dashboard — bring it into view.
+      setTimeout(() => rootRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [initialOpen]);
 
   // Edit: load the sit's authoritative current birds (prefill + reconcile).
   useEffect(() => {
@@ -219,7 +225,7 @@ export function SitForm({
   }
 
   return (
-    <form onSubmit={submit} noValidate className="space-y-3 rounded-[20px] bg-[#efe9da] p-4">
+    <form ref={rootRef} onSubmit={submit} noValidate className="space-y-3 rounded-[20px] bg-[#efe9da] p-4">
       <div className="flex items-center justify-between">
         <p className="text-sm font-medium text-[#1a3d2e]">{editing ? "Edit sit" : "New sit"}</p>
         <button type="button" onClick={() => (editing ? onCancel?.() : setOpen(false))} className="text-xs text-[#5f5e5a] underline">Cancel</button>
