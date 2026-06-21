@@ -45,6 +45,20 @@ const TAB_TO_SETUP_STEP: Partial<Record<Tab, number>> = Object.fromEntries(
   }),
 );
 
+const TAB_LABELS: Record<Tab, string> = {
+  basics: "Basics", food: "Food", routine: "Routine", behavior: "Behavior",
+  home: "Home", health: "Health", clips: "Clips", emergency: "Emergency",
+  sits: "Sits", logs: "Logs",
+};
+// Section tabs in the SAME order as the guided setup flow — derived from
+// SETUP_STEPS so the editor and the wizard can never drift — then the
+// editor-only tabs (sits, logs) after.
+const ORDERED_TABS: Tab[] = (() => {
+  const keyToTab = new Map(Object.entries(TAB_TO_STEP_KEY).map(([tab, key]) => [key, tab as Tab]));
+  const section = SETUP_STEPS.map((s) => keyToTab.get(s.key)).filter((t): t is Tab => !!t);
+  return [...section, "sits", "logs"];
+})();
+
 const birdSearch = z.object({
   tab: z.enum(TAB_IDS).optional(),
   scan: z.string().uuid().optional(), // deep-link from a notification to a scan
@@ -144,18 +158,7 @@ function BirdEditor() {
 
   const headerPhoto = resolvePhoto(bird.photo_url);
 
-  const tabs: { id: Tab; label: string }[] = [
-    { id: "basics", label: "Basics" },
-    { id: "routine", label: "Routine" },
-    { id: "food", label: "Food" },
-    { id: "behavior", label: "Behavior" },
-    { id: "home", label: "Home" },
-    { id: "health", label: "Health" },
-    { id: "clips", label: "Clips" },
-    { id: "emergency", label: "Emergency" },
-    { id: "sits", label: "Sits" },
-    { id: "logs", label: "Logs" },
-  ];
+  const tabs = ORDERED_TABS.map((id) => ({ id, label: TAB_LABELS[id] }));
 
   const completeness = computeSetupCompleteness({ bird, plan, tasksCount: tasks.length, contacts, defaults });
   const isComplete = completeness.firstIncompleteStep === null;
@@ -172,8 +175,8 @@ function BirdEditor() {
   };
 
   return (
-    <div className="min-h-screen bg-sage-50 pb-24">
-      <header className="sticky top-0 z-10 border-b border-sage-100 bg-white">
+    <div className="min-h-screen bg-[#f4f1e8] pb-24">
+      <header className="sticky top-0 z-10 border-b border-[#e3ded0] bg-[#f4f1e8]/95 backdrop-blur">
         <div className="mx-auto max-w-md px-5 py-3">
           <div className="flex items-center gap-3">
             <Link to="/dashboard" className="rounded p-1 text-sage-600"><ArrowLeft className="size-5" /></Link>
@@ -189,15 +192,15 @@ function BirdEditor() {
                 <button
                   key={t.id}
                   onClick={() => setTab(t.id)}
-                  className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold ${tab === t.id ? "bg-sage-900 text-white" : "bg-sage-100 text-sage-700"}`}
+                  className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold ${tab === t.id ? "bg-[#1a3d2e] text-white" : "bg-[#efe9da] text-[#5f5e5a]"}`}
                 >
                   {t.label}
                 </button>
               ))}
               <span aria-hidden className="shrink-0 pl-1" />
             </div>
-            {!tabAtStart && <div className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-white to-transparent" />}
-            {!tabAtEnd && <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-white to-transparent" />}
+            {!tabAtStart && <div className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-[#f4f1e8] to-transparent" />}
+            {!tabAtEnd && <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-[#f4f1e8] to-transparent" />}
           </div>
         </div>
       </header>
