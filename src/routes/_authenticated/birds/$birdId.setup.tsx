@@ -811,7 +811,7 @@ export const FRESH_FOOD_TASK_PATTERN = /\b(fresh|chop|veg|veggies|salad|sprout)\
 
 type DietItem = { name: string; amount: string; unit: string; times?: FeedTime[]; freeFed?: boolean; note?: string | null };
 
-function FoodWaterStep({
+export function FoodWaterStep({
   birdId,
   birdName,
   onBlockNext,
