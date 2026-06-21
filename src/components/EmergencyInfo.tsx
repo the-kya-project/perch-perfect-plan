@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { ShieldCheck, Pencil, RotateCcw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { ASPCA_POISON_CONTROL } from "@/lib/emergency";
+import { ASPCA_POISON_CONTROL, isPhoneField, phoneWarning } from "@/lib/emergency";
 import { toast } from "sonner";
 
 // Shared emergency UI used by BOTH the bird editor's Emergency tab and the
@@ -121,19 +121,24 @@ export function EmergencyInfo({ birdId, birdName, contacts, defaults, onSaved }:
 
             {isEditing ? (
               <div className="mt-3 space-y-2.5">
-                {section.fields.map(([k, label]) => (
-                  <label key={k} className="block">
-                    <span className="mb-1 block text-xs font-medium text-[#5f5e5a]">{label}</span>
-                    <input
-                      className="input"
-                      value={form[k] ?? ""}
-                      placeholder={defVal(k) ? `Account: ${defVal(k)}` : "Not provided"}
-                      onChange={(e) => setForm({ ...form, [k]: e.target.value })}
-                    />
-                  </label>
-                ))}
+                {section.fields.map(([k, label]) => {
+                  const warn = isPhoneField(k) ? phoneWarning(form[k]) : null;
+                  return (
+                    <label key={k} className="block">
+                      <span className="mb-1 block text-xs font-medium text-[#5f5e5a]">{label}</span>
+                      <input
+                        className="input"
+                        inputMode={isPhoneField(k) ? "tel" : undefined}
+                        value={form[k] ?? ""}
+                        placeholder={defVal(k) ? `Account: ${defVal(k)}` : "Not provided"}
+                        onChange={(e) => setForm({ ...form, [k]: e.target.value })}
+                      />
+                      {warn && <span className="mt-1 block text-[11px] text-warn-red">{warn}</span>}
+                    </label>
+                  );
+                })}
                 <div className="flex gap-2 pt-1">
-                  <button disabled={saving} onClick={() => saveSection(section)} className="flex-1 rounded-xl bg-[#1a3d2e] py-2.5 text-sm font-medium text-white disabled:opacity-50">
+                  <button disabled={saving || section.fields.some(([k]) => isPhoneField(k) && !!phoneWarning(form[k]))} onClick={() => saveSection(section)} className="flex-1 rounded-xl bg-[#1a3d2e] py-2.5 text-sm font-medium text-white disabled:opacity-50">
                     {saving ? "Saving…" : `Save for ${birdName}`}
                   </button>
                   <button disabled={saving} onClick={() => setEditing(null)} className="rounded-xl border border-[#d8cfb8] px-4 py-2.5 text-sm font-medium text-[#5f5e5a]">
