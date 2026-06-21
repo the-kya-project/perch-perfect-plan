@@ -1,5 +1,5 @@
 import { TRIAGE_DISCLAIMER } from "@/lib/triage";
-import { AlertTriangle, Info } from "lucide-react";
+import { Info } from "lucide-react";
 
 export function Disclaimer({ compact = false }: { compact?: boolean }) {
   if (compact) {
@@ -19,14 +19,5 @@ export function Disclaimer({ compact = false }: { compact?: boolean }) {
         {TRIAGE_DISCLAIMER}
       </p>
     </div>
-  );
-}
-
-export function VetReviewBanner() {
-  return (
-    <p className="flex items-center gap-1.5 rounded-full border border-warn-amber/40 bg-warn-amber/10 px-2 py-1 text-[11px] font-medium text-warn-amber">
-      <AlertTriangle className="size-3 shrink-0" aria-hidden />
-      Not vet-reviewed — placeholder guidance pending licensed avian-vet review.
-    </p>
   );
 }
