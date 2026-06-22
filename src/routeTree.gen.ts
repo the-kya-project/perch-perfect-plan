@@ -38,6 +38,7 @@ import { Route as AuthenticatedAccountSecurityRouteImport } from './routes/_auth
 import { Route as AuthenticatedBirdsBirdIdIndexRouteImport } from './routes/_authenticated/birds/$birdId.index'
 import { Route as ApiPublicHooksCarePlanRemindersRouteImport } from './routes/api/public/hooks/care-plan-reminders'
 import { Route as AuthenticatedBirdsBirdIdWeightRouteImport } from './routes/_authenticated/birds/$birdId.weight'
+import { Route as AuthenticatedBirdsBirdIdViewAsSitterRouteImport } from './routes/_authenticated/birds/$birdId.view-as-sitter'
 import { Route as AuthenticatedBirdsBirdIdVetSummaryRouteImport } from './routes/_authenticated/birds/$birdId.vet-summary'
 import { Route as AuthenticatedBirdsBirdIdSetupRouteImport } from './routes/_authenticated/birds/$birdId.setup'
 import { Route as AuthenticatedBirdsBirdIdPlanRouteImport } from './routes/_authenticated/birds/$birdId.plan'
@@ -198,6 +199,12 @@ const AuthenticatedBirdsBirdIdWeightRoute =
     path: '/weight',
     getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
   } as any)
+const AuthenticatedBirdsBirdIdViewAsSitterRoute =
+  AuthenticatedBirdsBirdIdViewAsSitterRouteImport.update({
+    id: '/view-as-sitter',
+    path: '/view-as-sitter',
+    getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
+  } as any)
 const AuthenticatedBirdsBirdIdVetSummaryRoute =
   AuthenticatedBirdsBirdIdVetSummaryRouteImport.update({
     id: '/vet-summary',
@@ -267,6 +274,7 @@ export interface FileRoutesByFullPath {
   '/birds/$birdId/plan': typeof AuthenticatedBirdsBirdIdPlanRoute
   '/birds/$birdId/setup': typeof AuthenticatedBirdsBirdIdSetupRoute
   '/birds/$birdId/vet-summary': typeof AuthenticatedBirdsBirdIdVetSummaryRoute
+  '/birds/$birdId/view-as-sitter': typeof AuthenticatedBirdsBirdIdViewAsSitterRoute
   '/birds/$birdId/weight': typeof AuthenticatedBirdsBirdIdWeightRoute
   '/api/public/hooks/care-plan-reminders': typeof ApiPublicHooksCarePlanRemindersRoute
   '/birds/$birdId/': typeof AuthenticatedBirdsBirdIdIndexRoute
@@ -299,6 +307,7 @@ export interface FileRoutesByTo {
   '/birds/$birdId/plan': typeof AuthenticatedBirdsBirdIdPlanRoute
   '/birds/$birdId/setup': typeof AuthenticatedBirdsBirdIdSetupRoute
   '/birds/$birdId/vet-summary': typeof AuthenticatedBirdsBirdIdVetSummaryRoute
+  '/birds/$birdId/view-as-sitter': typeof AuthenticatedBirdsBirdIdViewAsSitterRoute
   '/birds/$birdId/weight': typeof AuthenticatedBirdsBirdIdWeightRoute
   '/api/public/hooks/care-plan-reminders': typeof ApiPublicHooksCarePlanRemindersRoute
   '/birds/$birdId': typeof AuthenticatedBirdsBirdIdIndexRoute
@@ -337,6 +346,7 @@ export interface FileRoutesById {
   '/_authenticated/birds/$birdId/plan': typeof AuthenticatedBirdsBirdIdPlanRoute
   '/_authenticated/birds/$birdId/setup': typeof AuthenticatedBirdsBirdIdSetupRoute
   '/_authenticated/birds/$birdId/vet-summary': typeof AuthenticatedBirdsBirdIdVetSummaryRoute
+  '/_authenticated/birds/$birdId/view-as-sitter': typeof AuthenticatedBirdsBirdIdViewAsSitterRoute
   '/_authenticated/birds/$birdId/weight': typeof AuthenticatedBirdsBirdIdWeightRoute
   '/api/public/hooks/care-plan-reminders': typeof ApiPublicHooksCarePlanRemindersRoute
   '/_authenticated/birds/$birdId/': typeof AuthenticatedBirdsBirdIdIndexRoute
@@ -375,6 +385,7 @@ export interface FileRouteTypes {
     | '/birds/$birdId/plan'
     | '/birds/$birdId/setup'
     | '/birds/$birdId/vet-summary'
+    | '/birds/$birdId/view-as-sitter'
     | '/birds/$birdId/weight'
     | '/api/public/hooks/care-plan-reminders'
     | '/birds/$birdId/'
@@ -407,6 +418,7 @@ export interface FileRouteTypes {
     | '/birds/$birdId/plan'
     | '/birds/$birdId/setup'
     | '/birds/$birdId/vet-summary'
+    | '/birds/$birdId/view-as-sitter'
     | '/birds/$birdId/weight'
     | '/api/public/hooks/care-plan-reminders'
     | '/birds/$birdId'
@@ -444,6 +456,7 @@ export interface FileRouteTypes {
     | '/_authenticated/birds/$birdId/plan'
     | '/_authenticated/birds/$birdId/setup'
     | '/_authenticated/birds/$birdId/vet-summary'
+    | '/_authenticated/birds/$birdId/view-as-sitter'
     | '/_authenticated/birds/$birdId/weight'
     | '/api/public/hooks/care-plan-reminders'
     | '/_authenticated/birds/$birdId/'
@@ -666,6 +679,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBirdsBirdIdWeightRouteImport
       parentRoute: typeof AuthenticatedBirdsBirdIdRoute
     }
+    '/_authenticated/birds/$birdId/view-as-sitter': {
+      id: '/_authenticated/birds/$birdId/view-as-sitter'
+      path: '/view-as-sitter'
+      fullPath: '/birds/$birdId/view-as-sitter'
+      preLoaderRoute: typeof AuthenticatedBirdsBirdIdViewAsSitterRouteImport
+      parentRoute: typeof AuthenticatedBirdsBirdIdRoute
+    }
     '/_authenticated/birds/$birdId/vet-summary': {
       id: '/_authenticated/birds/$birdId/vet-summary'
       path: '/vet-summary'
@@ -748,6 +768,7 @@ interface AuthenticatedBirdsBirdIdRouteChildren {
   AuthenticatedBirdsBirdIdPlanRoute: typeof AuthenticatedBirdsBirdIdPlanRoute
   AuthenticatedBirdsBirdIdSetupRoute: typeof AuthenticatedBirdsBirdIdSetupRoute
   AuthenticatedBirdsBirdIdVetSummaryRoute: typeof AuthenticatedBirdsBirdIdVetSummaryRoute
+  AuthenticatedBirdsBirdIdViewAsSitterRoute: typeof AuthenticatedBirdsBirdIdViewAsSitterRoute
   AuthenticatedBirdsBirdIdWeightRoute: typeof AuthenticatedBirdsBirdIdWeightRoute
   AuthenticatedBirdsBirdIdIndexRoute: typeof AuthenticatedBirdsBirdIdIndexRoute
 }
@@ -762,6 +783,8 @@ const AuthenticatedBirdsBirdIdRouteChildren: AuthenticatedBirdsBirdIdRouteChildr
     AuthenticatedBirdsBirdIdSetupRoute: AuthenticatedBirdsBirdIdSetupRoute,
     AuthenticatedBirdsBirdIdVetSummaryRoute:
       AuthenticatedBirdsBirdIdVetSummaryRoute,
+    AuthenticatedBirdsBirdIdViewAsSitterRoute:
+      AuthenticatedBirdsBirdIdViewAsSitterRoute,
     AuthenticatedBirdsBirdIdWeightRoute: AuthenticatedBirdsBirdIdWeightRoute,
     AuthenticatedBirdsBirdIdIndexRoute: AuthenticatedBirdsBirdIdIndexRoute,
   }

@@ -38,7 +38,8 @@ function AuthenticatedLayout() {
   // with the wizard footer), and the one-time welcome splash.
   const pathname = useLocation({ select: (l) => l.pathname });
   const hideNav =
-    pathname === "/welcome" || pathname === "/birds/new" || pathname.endsWith("/setup");
+    pathname === "/welcome" || pathname === "/birds/new" ||
+    pathname.endsWith("/setup") || pathname.endsWith("/view-as-sitter");
 
   return (
     <>

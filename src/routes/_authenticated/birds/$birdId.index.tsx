@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useBirdPhotos } from "@/lib/useBirdPhotos";
 import {
   ArrowLeft, Feather, Scale, BookOpen, IdCard, CalendarHeart, ClipboardList,
-  ChevronRight, Plus, FileText, TrendingUp, TrendingDown, Minus,
+  ChevronRight, Plus, FileText, TrendingUp, TrendingDown, Minus, Eye,
 } from "lucide-react";
 
 // Bird-record home — the new landing when you tap a bird. A glanceable hub for
@@ -167,6 +167,13 @@ function BirdRecordHome() {
             <FacetRow to="/birds/$birdId/identity" birdId={birdId} icon={<IdCard className="size-5" />} label="Identity" sub="Chip, band, origin" />
             <FacetRow to="/birds/$birdId/moments" birdId={birdId} icon={<CalendarHeart className="size-5" />} label="Moments" sub="Mark the days worth remembering" last />
           </div>
+          <Link
+            to="/birds/$birdId/view-as-sitter"
+            params={{ birdId }}
+            className="mt-2 flex min-h-[44px] items-center justify-center gap-2 rounded-[14px] border border-[#c8bfa6] bg-white text-sm font-medium text-[#1a3d2e] active:scale-[0.99]"
+          >
+            <Eye className="size-4" /> View as sitter
+          </Link>
         </section>
 
         {/* Recent feed */}
