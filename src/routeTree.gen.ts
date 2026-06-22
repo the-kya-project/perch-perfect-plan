@@ -37,7 +37,13 @@ import { Route as AuthenticatedBirdsBirdIdRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAccountSecurityRouteImport } from './routes/_authenticated/account.security'
 import { Route as AuthenticatedBirdsBirdIdIndexRouteImport } from './routes/_authenticated/birds/$birdId.index'
 import { Route as ApiPublicHooksCarePlanRemindersRouteImport } from './routes/api/public/hooks/care-plan-reminders'
+import { Route as AuthenticatedBirdsBirdIdWeightRouteImport } from './routes/_authenticated/birds/$birdId.weight'
+import { Route as AuthenticatedBirdsBirdIdVetSummaryRouteImport } from './routes/_authenticated/birds/$birdId.vet-summary'
 import { Route as AuthenticatedBirdsBirdIdSetupRouteImport } from './routes/_authenticated/birds/$birdId.setup'
+import { Route as AuthenticatedBirdsBirdIdPlanRouteImport } from './routes/_authenticated/birds/$birdId.plan'
+import { Route as AuthenticatedBirdsBirdIdMomentsRouteImport } from './routes/_authenticated/birds/$birdId.moments'
+import { Route as AuthenticatedBirdsBirdIdJournalRouteImport } from './routes/_authenticated/birds/$birdId.journal'
+import { Route as AuthenticatedBirdsBirdIdIdentityRouteImport } from './routes/_authenticated/birds/$birdId.identity'
 
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
@@ -186,10 +192,46 @@ const ApiPublicHooksCarePlanRemindersRoute =
     path: '/api/public/hooks/care-plan-reminders',
     getParentRoute: () => rootRouteImport,
   } as any)
+const AuthenticatedBirdsBirdIdWeightRoute =
+  AuthenticatedBirdsBirdIdWeightRouteImport.update({
+    id: '/weight',
+    path: '/weight',
+    getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
+  } as any)
+const AuthenticatedBirdsBirdIdVetSummaryRoute =
+  AuthenticatedBirdsBirdIdVetSummaryRouteImport.update({
+    id: '/vet-summary',
+    path: '/vet-summary',
+    getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
+  } as any)
 const AuthenticatedBirdsBirdIdSetupRoute =
   AuthenticatedBirdsBirdIdSetupRouteImport.update({
     id: '/setup',
     path: '/setup',
+    getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
+  } as any)
+const AuthenticatedBirdsBirdIdPlanRoute =
+  AuthenticatedBirdsBirdIdPlanRouteImport.update({
+    id: '/plan',
+    path: '/plan',
+    getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
+  } as any)
+const AuthenticatedBirdsBirdIdMomentsRoute =
+  AuthenticatedBirdsBirdIdMomentsRouteImport.update({
+    id: '/moments',
+    path: '/moments',
+    getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
+  } as any)
+const AuthenticatedBirdsBirdIdJournalRoute =
+  AuthenticatedBirdsBirdIdJournalRouteImport.update({
+    id: '/journal',
+    path: '/journal',
+    getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
+  } as any)
+const AuthenticatedBirdsBirdIdIdentityRoute =
+  AuthenticatedBirdsBirdIdIdentityRouteImport.update({
+    id: '/identity',
+    path: '/identity',
     getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
   } as any)
 
@@ -219,7 +261,13 @@ export interface FileRoutesByFullPath {
   '/account/': typeof AuthenticatedAccountIndexRoute
   '/notifications/': typeof AuthenticatedNotificationsIndexRoute
   '/sitter/$token/': typeof SitterTokenIndexRoute
+  '/birds/$birdId/identity': typeof AuthenticatedBirdsBirdIdIdentityRoute
+  '/birds/$birdId/journal': typeof AuthenticatedBirdsBirdIdJournalRoute
+  '/birds/$birdId/moments': typeof AuthenticatedBirdsBirdIdMomentsRoute
+  '/birds/$birdId/plan': typeof AuthenticatedBirdsBirdIdPlanRoute
   '/birds/$birdId/setup': typeof AuthenticatedBirdsBirdIdSetupRoute
+  '/birds/$birdId/vet-summary': typeof AuthenticatedBirdsBirdIdVetSummaryRoute
+  '/birds/$birdId/weight': typeof AuthenticatedBirdsBirdIdWeightRoute
   '/api/public/hooks/care-plan-reminders': typeof ApiPublicHooksCarePlanRemindersRoute
   '/birds/$birdId/': typeof AuthenticatedBirdsBirdIdIndexRoute
 }
@@ -245,7 +293,13 @@ export interface FileRoutesByTo {
   '/account': typeof AuthenticatedAccountIndexRoute
   '/notifications': typeof AuthenticatedNotificationsIndexRoute
   '/sitter/$token': typeof SitterTokenIndexRoute
+  '/birds/$birdId/identity': typeof AuthenticatedBirdsBirdIdIdentityRoute
+  '/birds/$birdId/journal': typeof AuthenticatedBirdsBirdIdJournalRoute
+  '/birds/$birdId/moments': typeof AuthenticatedBirdsBirdIdMomentsRoute
+  '/birds/$birdId/plan': typeof AuthenticatedBirdsBirdIdPlanRoute
   '/birds/$birdId/setup': typeof AuthenticatedBirdsBirdIdSetupRoute
+  '/birds/$birdId/vet-summary': typeof AuthenticatedBirdsBirdIdVetSummaryRoute
+  '/birds/$birdId/weight': typeof AuthenticatedBirdsBirdIdWeightRoute
   '/api/public/hooks/care-plan-reminders': typeof ApiPublicHooksCarePlanRemindersRoute
   '/birds/$birdId': typeof AuthenticatedBirdsBirdIdIndexRoute
 }
@@ -277,7 +331,13 @@ export interface FileRoutesById {
   '/_authenticated/account/': typeof AuthenticatedAccountIndexRoute
   '/_authenticated/notifications/': typeof AuthenticatedNotificationsIndexRoute
   '/sitter/$token/': typeof SitterTokenIndexRoute
+  '/_authenticated/birds/$birdId/identity': typeof AuthenticatedBirdsBirdIdIdentityRoute
+  '/_authenticated/birds/$birdId/journal': typeof AuthenticatedBirdsBirdIdJournalRoute
+  '/_authenticated/birds/$birdId/moments': typeof AuthenticatedBirdsBirdIdMomentsRoute
+  '/_authenticated/birds/$birdId/plan': typeof AuthenticatedBirdsBirdIdPlanRoute
   '/_authenticated/birds/$birdId/setup': typeof AuthenticatedBirdsBirdIdSetupRoute
+  '/_authenticated/birds/$birdId/vet-summary': typeof AuthenticatedBirdsBirdIdVetSummaryRoute
+  '/_authenticated/birds/$birdId/weight': typeof AuthenticatedBirdsBirdIdWeightRoute
   '/api/public/hooks/care-plan-reminders': typeof ApiPublicHooksCarePlanRemindersRoute
   '/_authenticated/birds/$birdId/': typeof AuthenticatedBirdsBirdIdIndexRoute
 }
@@ -309,7 +369,13 @@ export interface FileRouteTypes {
     | '/account/'
     | '/notifications/'
     | '/sitter/$token/'
+    | '/birds/$birdId/identity'
+    | '/birds/$birdId/journal'
+    | '/birds/$birdId/moments'
+    | '/birds/$birdId/plan'
     | '/birds/$birdId/setup'
+    | '/birds/$birdId/vet-summary'
+    | '/birds/$birdId/weight'
     | '/api/public/hooks/care-plan-reminders'
     | '/birds/$birdId/'
   fileRoutesByTo: FileRoutesByTo
@@ -335,7 +401,13 @@ export interface FileRouteTypes {
     | '/account'
     | '/notifications'
     | '/sitter/$token'
+    | '/birds/$birdId/identity'
+    | '/birds/$birdId/journal'
+    | '/birds/$birdId/moments'
+    | '/birds/$birdId/plan'
     | '/birds/$birdId/setup'
+    | '/birds/$birdId/vet-summary'
+    | '/birds/$birdId/weight'
     | '/api/public/hooks/care-plan-reminders'
     | '/birds/$birdId'
   id:
@@ -366,7 +438,13 @@ export interface FileRouteTypes {
     | '/_authenticated/account/'
     | '/_authenticated/notifications/'
     | '/sitter/$token/'
+    | '/_authenticated/birds/$birdId/identity'
+    | '/_authenticated/birds/$birdId/journal'
+    | '/_authenticated/birds/$birdId/moments'
+    | '/_authenticated/birds/$birdId/plan'
     | '/_authenticated/birds/$birdId/setup'
+    | '/_authenticated/birds/$birdId/vet-summary'
+    | '/_authenticated/birds/$birdId/weight'
     | '/api/public/hooks/care-plan-reminders'
     | '/_authenticated/birds/$birdId/'
   fileRoutesById: FileRoutesById
@@ -581,11 +659,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksCarePlanRemindersRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/birds/$birdId/weight': {
+      id: '/_authenticated/birds/$birdId/weight'
+      path: '/weight'
+      fullPath: '/birds/$birdId/weight'
+      preLoaderRoute: typeof AuthenticatedBirdsBirdIdWeightRouteImport
+      parentRoute: typeof AuthenticatedBirdsBirdIdRoute
+    }
+    '/_authenticated/birds/$birdId/vet-summary': {
+      id: '/_authenticated/birds/$birdId/vet-summary'
+      path: '/vet-summary'
+      fullPath: '/birds/$birdId/vet-summary'
+      preLoaderRoute: typeof AuthenticatedBirdsBirdIdVetSummaryRouteImport
+      parentRoute: typeof AuthenticatedBirdsBirdIdRoute
+    }
     '/_authenticated/birds/$birdId/setup': {
       id: '/_authenticated/birds/$birdId/setup'
       path: '/setup'
       fullPath: '/birds/$birdId/setup'
       preLoaderRoute: typeof AuthenticatedBirdsBirdIdSetupRouteImport
+      parentRoute: typeof AuthenticatedBirdsBirdIdRoute
+    }
+    '/_authenticated/birds/$birdId/plan': {
+      id: '/_authenticated/birds/$birdId/plan'
+      path: '/plan'
+      fullPath: '/birds/$birdId/plan'
+      preLoaderRoute: typeof AuthenticatedBirdsBirdIdPlanRouteImport
+      parentRoute: typeof AuthenticatedBirdsBirdIdRoute
+    }
+    '/_authenticated/birds/$birdId/moments': {
+      id: '/_authenticated/birds/$birdId/moments'
+      path: '/moments'
+      fullPath: '/birds/$birdId/moments'
+      preLoaderRoute: typeof AuthenticatedBirdsBirdIdMomentsRouteImport
+      parentRoute: typeof AuthenticatedBirdsBirdIdRoute
+    }
+    '/_authenticated/birds/$birdId/journal': {
+      id: '/_authenticated/birds/$birdId/journal'
+      path: '/journal'
+      fullPath: '/birds/$birdId/journal'
+      preLoaderRoute: typeof AuthenticatedBirdsBirdIdJournalRouteImport
+      parentRoute: typeof AuthenticatedBirdsBirdIdRoute
+    }
+    '/_authenticated/birds/$birdId/identity': {
+      id: '/_authenticated/birds/$birdId/identity'
+      path: '/identity'
+      fullPath: '/birds/$birdId/identity'
+      preLoaderRoute: typeof AuthenticatedBirdsBirdIdIdentityRouteImport
       parentRoute: typeof AuthenticatedBirdsBirdIdRoute
     }
   }
@@ -622,13 +742,27 @@ const AuthenticatedNotificationsRouteWithChildren =
   )
 
 interface AuthenticatedBirdsBirdIdRouteChildren {
+  AuthenticatedBirdsBirdIdIdentityRoute: typeof AuthenticatedBirdsBirdIdIdentityRoute
+  AuthenticatedBirdsBirdIdJournalRoute: typeof AuthenticatedBirdsBirdIdJournalRoute
+  AuthenticatedBirdsBirdIdMomentsRoute: typeof AuthenticatedBirdsBirdIdMomentsRoute
+  AuthenticatedBirdsBirdIdPlanRoute: typeof AuthenticatedBirdsBirdIdPlanRoute
   AuthenticatedBirdsBirdIdSetupRoute: typeof AuthenticatedBirdsBirdIdSetupRoute
+  AuthenticatedBirdsBirdIdVetSummaryRoute: typeof AuthenticatedBirdsBirdIdVetSummaryRoute
+  AuthenticatedBirdsBirdIdWeightRoute: typeof AuthenticatedBirdsBirdIdWeightRoute
   AuthenticatedBirdsBirdIdIndexRoute: typeof AuthenticatedBirdsBirdIdIndexRoute
 }
 
 const AuthenticatedBirdsBirdIdRouteChildren: AuthenticatedBirdsBirdIdRouteChildren =
   {
+    AuthenticatedBirdsBirdIdIdentityRoute:
+      AuthenticatedBirdsBirdIdIdentityRoute,
+    AuthenticatedBirdsBirdIdJournalRoute: AuthenticatedBirdsBirdIdJournalRoute,
+    AuthenticatedBirdsBirdIdMomentsRoute: AuthenticatedBirdsBirdIdMomentsRoute,
+    AuthenticatedBirdsBirdIdPlanRoute: AuthenticatedBirdsBirdIdPlanRoute,
     AuthenticatedBirdsBirdIdSetupRoute: AuthenticatedBirdsBirdIdSetupRoute,
+    AuthenticatedBirdsBirdIdVetSummaryRoute:
+      AuthenticatedBirdsBirdIdVetSummaryRoute,
+    AuthenticatedBirdsBirdIdWeightRoute: AuthenticatedBirdsBirdIdWeightRoute,
     AuthenticatedBirdsBirdIdIndexRoute: AuthenticatedBirdsBirdIdIndexRoute,
   }
 
