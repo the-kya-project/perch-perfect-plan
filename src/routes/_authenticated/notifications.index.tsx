@@ -1,8 +1,9 @@
 import { createFileRoute, Link, useRouter, useCanGoBack, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Settings, AlertTriangle, CheckCircle2, Feather } from "lucide-react";
-import { fetchScanFeed, markNotifsSeen, getNotifSeenAt, type ScanFeedItem } from "@/lib/notificationsFeed";
+import { ArrowLeft, Settings, AlertTriangle, CheckCircle2, Feather, Activity, ChevronRight } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { fetchScanFeed, markNotifsSeen, getNotifSeenAt, scanRunBy, type ScanFeedItem } from "@/lib/notificationsFeed";
 
 export const Route = createFileRoute("/_authenticated/notifications/")({
   head: () => ({ meta: [{ title: "Scans — Parrot Care Co-Pilot" }] }),
@@ -30,7 +31,15 @@ function NotificationsInbox() {
   // to wherever the user came from; fall back to Home if there's no history.
   const goBack = () => (canGoBack ? router.history.back() : navigate({ to: "/dashboard" }));
   const seenAt = getNotifSeenAt();
-  const { data: feed = [], isLoading } = useQuery({ queryKey: ["scan-feed"], queryFn: fetchScanFeed });
+  const { data: feed = [], isLoading } = useQuery({ queryKey: ["scan-feed"], queryFn: fetchScanFeed, refetchOnWindowFocus: true });
+  const { data: birds = [] } = useQuery({
+    queryKey: ["owner-birds-min"],
+    queryFn: async () => {
+      const { data } = await supabase.from("birds").select("id, name").order("name");
+      return (data ?? []) as { id: string; name: string }[];
+    },
+  });
+  const [picking, setPicking] = useState(false);
 
   // Mark everything seen on open so the bell badge clears.
   useEffect(() => {
@@ -53,7 +62,29 @@ function NotificationsInbox() {
         </div>
 
         <h1 className="mt-4 text-2xl font-bold tracking-tight">Scans</h1>
-        <p className="mt-1 text-sm text-sage-600">Health scans your sitters have submitted, newest first.</p>
+        <p className="mt-1 text-sm text-sage-600">Daily health scans for your birds — run by you or a sitter, newest first.</p>
+
+        {/* Run a scan — pick a bird (or go straight there with one bird) */}
+        {birds.length === 1 ? (
+          <Link to="/birds/$birdId/scan" params={{ birdId: birds[0].id }} className="mt-4 flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-[#1a3d2e] text-sm font-medium text-white">
+            <Activity className="size-4" /> Run a scan
+          </Link>
+        ) : birds.length > 1 ? (
+          <div className="mt-4">
+            <button type="button" onClick={() => setPicking((v) => !v)} className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-[#1a3d2e] text-sm font-medium text-white">
+              <Activity className="size-4" /> Run a scan
+            </button>
+            {picking && (
+              <div className="mt-2 overflow-hidden rounded-xl bg-white ring-1 ring-sage-100">
+                {birds.map((b, i) => (
+                  <Link key={b.id} to="/birds/$birdId/scan" params={{ birdId: b.id }} className={`flex min-h-[48px] items-center justify-between px-4 text-sm font-medium text-[#1a3d2e] ${i ? "border-t border-[#ece6d6]" : ""}`}>
+                    {b.name} <ChevronRight className="size-4 text-[#bcb6a3]" />
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : null}
 
         {isLoading ? (
           <p className="mt-6 text-sm text-sage-600">Loading…</p>
@@ -61,7 +92,7 @@ function NotificationsInbox() {
           <div className="mt-6 rounded-2xl bg-white p-6 text-center ring-1 ring-sage-100">
             <Feather className="mx-auto size-6 text-sage-400" />
             <p className="mt-2 text-sm font-semibold text-sage-800">No scans yet</p>
-            <p className="mt-1 text-xs text-sage-600">When a sitter submits a daily health scan, it shows up here.</p>
+            <p className="mt-1 text-xs text-sage-600">Run a scan above, or a sitter's daily scans will show up here.</p>
           </div>
         ) : (
           <ul className="mt-5 space-y-2.5">
@@ -69,7 +100,7 @@ function NotificationsInbox() {
               const flagged = n.triage_status === "red" || n.triage_status === "yellow";
               const unread = new Date(n.created_at).getTime() > seenAt;
               const birdName = n.bird?.name ?? "Your bird";
-              const sitter = n.sit?.sitter_name || n.sit?.sitter_email || "Sitter";
+              const runBy = scanRunBy(n);
               const dotColor = n.triage_status === "red" ? "text-warn-red" : n.triage_status === "yellow" ? "text-warn-amber" : "text-warn-green";
               const title = n.triage_status === "red"
                 ? `${birdName}: health concern flagged`
@@ -94,7 +125,7 @@ function NotificationsInbox() {
                         <p className={`truncate text-sm ${unread ? "font-bold text-sage-900" : "font-semibold text-sage-700"}`}>{title}</p>
                         {unread && <span className="size-2 shrink-0 rounded-full bg-sage-700" aria-label="Unread" />}
                       </div>
-                      <p className="mt-0.5 text-xs text-sage-600">Submitted by {sitter} · {relativeTime(n.created_at)}</p>
+                      <p className="mt-0.5 text-xs text-sage-600">{runBy === "You" ? "Run by you" : `Run by ${runBy}`} · {relativeTime(n.created_at)}</p>
                       {flagged && n.triage_reasons && (
                         <p className="mt-1 line-clamp-2 text-xs text-sage-700">{n.triage_reasons.replace(/ \| /g, " · ")}</p>
                       )}

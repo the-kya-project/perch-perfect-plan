@@ -26,17 +26,25 @@ export type ScanFeedItem = {
   triage_reasons: string | null;
   notes: string | null;
   created_at: string;
+  source?: string | null; // 'owner' | 'sitter'
   bird?: { name: string | null; photo_url: string | null; photo_position: string | null } | null;
   sit?: { sitter_name: string | null; sitter_email: string | null } | null;
 };
 
 export async function fetchScanFeed(): Promise<ScanFeedItem[]> {
-  const { data } = await supabase
-    .from("daily_logs")
-    .select(
-      "id, bird_id, triage_status, triage_reasons, notes, created_at, bird:birds(name, photo_url, photo_position), sit:sits(sitter_name, sitter_email)",
-    )
-    .order("created_at", { ascending: false })
-    .limit(40);
+  // Cast: daily_logs.source lands in the generated types after the owner-scans
+  // migration is applied + types regenerated. Fall back without `source` so the
+  // tab keeps working if the migration hasn't run yet.
+  const base = "id, bird_id, triage_status, triage_reasons, notes, created_at, bird:birds(name, photo_url, photo_position), sit:sits(sitter_name, sitter_email)";
+  const run = (sel: string) =>
+    (supabase as any).from("daily_logs").select(sel).order("created_at", { ascending: false }).limit(40);
+  let { data, error } = await run(`${base}, source`);
+  if (error) ({ data } = await run(base));
   return (data ?? []) as unknown as ScanFeedItem[];
+}
+
+/** Who ran a scan: "You" for owner scans, else the sitter's name/email. */
+export function scanRunBy(n: ScanFeedItem): string {
+  if (n.source === "owner") return "You";
+  return n.sit?.sitter_name?.trim() || n.sit?.sitter_email?.trim() || "Your sitter";
 }
