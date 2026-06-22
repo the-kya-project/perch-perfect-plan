@@ -3,7 +3,11 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, IdCard, Pencil, Check, X } from "lucide-react";
+import { ArrowLeft, Pencil, Check, X } from "lucide-react";
+import { PhotoCropper } from "@/components/PhotoCropper";
+import { useBirdPhotos } from "@/lib/useBirdPhotos";
+import { signBirdPhoto, persistBirdPhoto } from "@/lib/birdPhoto";
+import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/identity")({
   head: () => ({ meta: [{ title: "Identity — Parrot Care Co-Pilot" }] }),
@@ -11,8 +15,12 @@ export const Route = createFileRoute("/_authenticated/birds/$birdId/identity")({
 });
 
 type Identity = {
+  owner_id: string;
   name: string;
   species: string | null;
+  age: string | null;
+  photo_url: string | null;
+  photo_position: string | null;
   sex: string | null;
   sex_method: string | null;
   birth_date: string | null;   // reused as hatch date
@@ -21,6 +29,9 @@ type Identity = {
   origin: string | null;
   acquired_on: string | null;
 };
+
+// Shared core (photo, name, species, age) lives in the same birds columns the
+// Basics tab edits — one source, two views. The deeper fields below stay here.
 
 const SEX_LABEL: Record<string, string> = { female: "Female", male: "Male", unknown: "Unknown" };
 const METHOD_LABEL: Record<string, string> = { dna: "DNA confirmed", surgical: "Surgically sexed", visual: "Visual", unknown: "" };
@@ -36,7 +47,7 @@ function IdentityFacet() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("birds")
-        .select("name, species, sex, sex_method, birth_date, microchip, band_number, origin, acquired_on")
+        .select("owner_id, name, species, age, photo_url, photo_position, sex, sex_method, birth_date, microchip, band_number, origin, acquired_on")
         .eq("id", birdId)
         .maybeSingle();
       if (error) throw error;
@@ -45,7 +56,14 @@ function IdentityFacet() {
   });
 
   const name = bird?.name ?? "this bird";
-  const hasAny = bird && [bird.species, bird.sex, bird.birth_date, bird.microchip, bird.band_number, bird.origin, bird.acquired_on].some((v) => !blank(v));
+  const photoOf = useBirdPhotos([bird?.photo_url], 96);
+  const photo = photoOf(bird?.photo_url);
+  const initial = (bird?.name?.slice(0, 1) ?? "?").toUpperCase();
+
+  // An edit here must show in Basics, the bird-record home, and the vet summary.
+  const crossInvalidate = () =>
+    ["bird-identity", "bird-basics", "bird", "bird-setup", "bird-record", "vet-bird"].forEach((k) =>
+      qc.invalidateQueries({ queryKey: [k, birdId] }));
 
   return (
     <div className="min-h-screen bg-[#f4f1e8] pb-24">
@@ -67,24 +85,26 @@ function IdentityFacet() {
         {!bird ? (
           <div className="h-40 animate-pulse rounded-[16px] bg-[#efe9da]" />
         ) : editing ? (
-          <IdentityForm birdId={birdId} bird={bird} onClose={() => setEditing(false)} onSaved={() => {
-            setEditing(false);
-            qc.invalidateQueries({ queryKey: ["bird-identity", birdId] });
-            qc.invalidateQueries({ queryKey: ["vet-bird", birdId] });   // feeds the vet summary
-            qc.invalidateQueries({ queryKey: ["bird-record", birdId] }); // record-home identity strip
-          }} />
-        ) : !hasAny ? (
-          <section className="rounded-[16px] bg-[#efe9da] p-8 text-center">
-            <IdCard className="mx-auto size-7 text-[#2d6a4f]" />
-            <p className="mt-3 text-sm text-[#1a3d2e]">Who is {name}, on paper? Microchip and band, sex, hatch date, and where they came from.</p>
-            <button type="button" onClick={() => setEditing(true)} className="mt-4 inline-flex min-h-[44px] items-center gap-2 rounded-[14px] bg-[#1a3d2e] px-5 text-sm font-medium text-white">
-              <Pencil className="size-4" /> Add identity details
-            </button>
-          </section>
+          <IdentityForm birdId={birdId} bird={bird} onClose={() => setEditing(false)} onSaved={() => { setEditing(false); crossInvalidate(); }} />
         ) : (
           <>
+            {/* Shared core (same birds columns the Basics tab edits) */}
+            <section className="flex items-center gap-4 rounded-[16px] bg-white p-4 ring-1 ring-[#e3dcc9]">
+              <div className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-full bg-[#e3dcc9] ring-1 ring-[#d8cfb8]">
+                {photo ? (
+                  <img src={photo.url} alt={name} onError={(e) => { if (photo.original && e.currentTarget.src !== photo.original) e.currentTarget.src = photo.original; }} style={{ objectPosition: bird.photo_position ?? "50% 20%" }} className="size-full object-cover" />
+                ) : (
+                  <span className="text-2xl font-medium text-[#2d6a4f]">{initial}</span>
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="truncate text-lg font-medium text-[#1a3d2e]">{bird.name}</p>
+                <p className="mt-0.5 truncate text-sm text-[#5f5e5a]">{[bird.species || "Parrot", bird.age].filter(Boolean).join(" · ")}</p>
+              </div>
+            </section>
+
+            {/* Deeper record (Identity only) */}
             <section className="overflow-hidden rounded-[16px] bg-white ring-1 ring-[#e3dcc9]">
-              <Row label="Species" value={bird.species} />
               <Row label="Sex" value={sexValue(bird)} />
               <Row label="Hatch date" value={bird.birth_date ? `${fmtDate(bird.birth_date)} (≈ ${approxAge(bird.birth_date)})` : null} />
               <Row label="Microchip" value={bird.microchip} />
@@ -121,7 +141,9 @@ function Row({ label, value, emptyText = "—", last }: { label: string; value: 
 
 function IdentityForm({ birdId, bird, onClose, onSaved }: { birdId: string; bird: Identity; onClose: () => void; onSaved: () => void }) {
   const [f, setF] = useState({
+    name: bird.name ?? "",
     species: bird.species ?? "",
+    age: bird.age ?? "",
     sex: bird.sex ?? "",
     sex_method: bird.sex_method ?? "",
     birth_date: bird.birth_date ?? "",
@@ -130,15 +152,43 @@ function IdentityForm({ birdId, bird, onClose, onSaved }: { birdId: string; bird
     origin: bird.origin ?? "",
     acquired_on: bird.acquired_on ?? "",
   });
+  // Photo: display value (signed/data URL) vs the value to persist (path/data/null).
+  const [photoDisplay, setPhotoDisplay] = useState<string | null>(null);
+  const [photoRef, setPhotoRef] = useState<string | null>(bird.photo_url ?? null);
+  const [photoPosition, setPhotoPosition] = useState<string | null>(bird.photo_position ?? null);
+  const [photoBusy, setPhotoBusy] = useState(false);
   const [saving, setSaving] = useState(false);
   const set = (k: keyof typeof f, v: string) => setF((p) => ({ ...p, [k]: v }));
+
+  useEffect(() => { signBirdPhoto(bird.photo_url).then(setPhotoDisplay); }, [bird.photo_url]);
+
+  async function onPhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setPhotoBusy(true);
+    try {
+      const dataUrl = await compressImageToDataUrl(file);
+      if (dataUrlBytes(dataUrl) > MAX_UPLOAD_BYTES) { toast.error("That photo's a bit too large even after resizing. Try a different one."); return; }
+      setPhotoDisplay(dataUrl);
+      setPhotoRef(dataUrl);
+    } catch {
+      toast.error("Couldn't process that photo. Try a different one.");
+    } finally {
+      setPhotoBusy(false);
+    }
+  }
 
   async function save() {
     setSaving(true);
     try {
       const clean = (v: string) => (v.trim() ? v.trim() : null);
+      let ref = photoRef;
+      if (typeof ref === "string" && ref.startsWith("data:")) ref = await persistBirdPhoto(bird.owner_id, ref);
       const { error } = await supabase.from("birds").update({
+        name: clean(f.name) ?? bird.name, // name is required — keep the old one if blanked
         species: clean(f.species),
+        age: clean(f.age),
         sex: clean(f.sex),
         sex_method: clean(f.sex_method),
         birth_date: f.birth_date || null,
@@ -146,6 +196,8 @@ function IdentityForm({ birdId, bird, onClose, onSaved }: { birdId: string; bird
         band_number: clean(f.band_number),
         origin: clean(f.origin),
         acquired_on: f.acquired_on || null,
+        photo_url: ref,
+        photo_position: photoPosition,
       } as any).eq("id", birdId);
       if (error) throw error;
       toast.success("Identity saved.");
@@ -160,7 +212,27 @@ function IdentityForm({ birdId, bird, onClose, onSaved }: { birdId: string; bird
   const today = new Date().toISOString().slice(0, 10);
   return (
     <section className="space-y-3 rounded-[16px] bg-white p-4 ring-1 ring-[#e3dcc9]">
+      {/* Shared core: photo, name, species, age — same columns as the Basics tab */}
+      <div className="flex items-start gap-3">
+        {photoDisplay ? (
+          <PhotoCropper src={photoDisplay} position={photoPosition ?? undefined} onChange={setPhotoPosition} size={96} />
+        ) : (
+          <div className="grid size-24 place-items-center rounded-xl bg-[#efe9da] text-[10px] uppercase tracking-wider text-[#8a897f]">No photo</div>
+        )}
+        <div className="flex-1 space-y-2 pt-1">
+          <label className={`inline-block rounded-lg bg-[#e8f0ec] px-3 py-1.5 text-xs font-semibold text-[#1a3d2e] ${photoBusy ? "cursor-default opacity-60" : "cursor-pointer"}`}>
+            {photoBusy ? "Processing…" : photoDisplay ? "Change photo" : "Add photo"}
+            <input type="file" accept="image/*,.heic,.heif" disabled={photoBusy} className="hidden" onChange={onPhoto} />
+          </label>
+          {photoDisplay && (
+            <button type="button" onClick={() => { setPhotoDisplay(null); setPhotoRef(null); setPhotoPosition(null); }} className="ml-2 text-xs font-semibold text-[#854F0B] underline">Remove</button>
+          )}
+        </div>
+      </div>
+
+      <Field label="Name"><input className={INPUT} value={f.name} maxLength={80} onChange={(e) => set("name", e.target.value)} /></Field>
       <Field label="Species"><input className={INPUT} value={f.species} maxLength={80} onChange={(e) => set("species", e.target.value)} /></Field>
+      <Field label="Age"><input className={INPUT} value={f.age} maxLength={40} placeholder="e.g. 6 years" onChange={(e) => set("age", e.target.value)} /></Field>
 
       <Field label="Sex">
         <div className="grid grid-cols-2 gap-2">

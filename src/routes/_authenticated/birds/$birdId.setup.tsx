@@ -441,9 +441,10 @@ export function BasicsStep({ birdId, onBlockNext, registerFlush }: { birdId: str
     if (!bird || hydrated) return;
     setHydrated(true);
     setPhotoRef(bird.photo_url ?? null);
-    signBirdPhoto(bird.photo_url).then((url) => {
-      setForm({ ...bird, photo_url: url });
-    });
+    // Show the inputs immediately; the photo's signed URL fills in async so a
+    // slow or failed Storage sign never blocks (or hides) the rest of the form.
+    setForm({ ...bird, photo_url: null });
+    signBirdPhoto(bird.photo_url).then((url) => setForm((f: any) => ({ ...(f ?? bird), photo_url: url })));
   }, [bird, hydrated]);
 
   useEffect(() => {
@@ -453,17 +454,32 @@ export function BasicsStep({ birdId, onBlockNext, registerFlush }: { birdId: str
   useDebouncedAutosave(
     async () => {
       if (!form) return;
-      const { id, owner_id, created_at, updated_at, photo_url, ...patch } = form;
       // Persist the Storage path, not the displayable signed/data URL. Upload a
       // freshly-picked photo (data: URL) on first save, then reuse its path.
       let ref = photoRef;
       if (typeof ref === "string" && ref.startsWith("data:")) {
-        ref = await persistBirdPhoto(owner_id, ref);
+        ref = await persistBirdPhoto(form.owner_id, ref);
         setPhotoRef(ref);
       }
-      await supabase.from("birds").update({ ...patch, photo_url: ref }).eq("id", birdId);
-      qc.invalidateQueries({ queryKey: ["bird", birdId] });
-      qc.invalidateQueries({ queryKey: ["bird-setup", birdId] });
+      // Write ONLY the columns Basics owns. Never spread the whole row — that
+      // would re-write the Identity-only columns (microchip, band_number,
+      // sex_method, origin, acquired_on, lineage_notes) with Basics's possibly
+      // stale copy and clobber edits made in the Identity facet.
+      await supabase.from("birds").update({
+        name: form.name ?? null,
+        species: form.species ?? null,
+        age: form.age ?? null,
+        birth_date: form.birth_date || null,
+        sex: form.sex || null,
+        flight_status: form.flight_status ?? null,
+        photo_url: ref,
+        photo_position: form.photo_position ?? null,
+      }).eq("id", birdId);
+      // Refresh every view of the shared bird record so an edit here shows up in
+      // Identity, the bird-record home, and the vet summary immediately.
+      ["bird", "bird-setup", "bird-identity", "bird-record", "vet-bird"].forEach((k) =>
+        qc.invalidateQueries({ queryKey: [k, birdId] }));
+      qc.invalidateQueries({ queryKey: ["birds"] });
       // Basics changes name/sex/species/age — refresh the assembled sitter intro.
       void recomputeSitterIntro(birdId);
     },
