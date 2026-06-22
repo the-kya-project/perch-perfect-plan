@@ -320,6 +320,17 @@ function NotificationsSettingsPage() {
           <Bell className="size-3.5" />
           Flagged scans always send email; all other events follow the toggles above.
         </p>
+
+        {/* Changes save automatically as each toggle flips; this is just a clear
+            way to finish and leave the screen on phones. */}
+        <button
+          type="button"
+          onClick={goBack}
+          className="mt-6 w-full rounded-xl bg-sage-700 py-3 text-sm font-semibold text-white hover:bg-sage-800"
+        >
+          Done
+        </button>
+        <p className="mt-2 text-center text-[11px] text-sage-500">Your choices save automatically.</p>
       </main>
 
       {a2hsOpen && <AddToHomeModal onClose={() => setA2hsOpen(false)} />}
