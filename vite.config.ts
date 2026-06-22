@@ -6,8 +6,17 @@
 //     error logger plugins, and sandbox detection (port/host/strictPort).
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import { VitePWA } from "vite-plugin-pwa";
+
+// The app never uses Supabase Realtime (no channels/subscriptions), but
+// supabase-js always bundles realtime-js + phoenix (~54KB minified) on every
+// screen. Alias it to a no-op stub to drop that weight. See the stub file for
+// why this is safe (auth refresh is independent of realtime).
+const realtimeStub = fileURLToPath(
+  new URL("./src/integrations/supabase/realtime-stub.ts", import.meta.url),
+);
 
 // Surface the package.json version to the app (shown on the Account screen) so
 // there's a single source of truth rather than a hardcoded string in the UI.
@@ -23,6 +32,11 @@ export default defineConfig({
   vite: {
     define: {
       __APP_VERSION__: JSON.stringify(pkgVersion),
+    },
+    resolve: {
+      alias: [
+        { find: /^@supabase\/realtime-js$/, replacement: realtimeStub },
+      ],
     },
     plugins: [
       VitePWA({

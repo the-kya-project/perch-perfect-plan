@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { Video, Square, RotateCcw, Check, AlertTriangle, Upload, Loader2 } from "lucide-react";
-import * as tus from "tus-js-client";
 import { createClipUpload, getClipStatus } from "@/lib/clips.functions";
 import { cfRef } from "@/lib/clipRef";
 
@@ -82,7 +81,10 @@ function readDuration(file: File): Promise<number | null> {
  * and resumes on transient network drops (common on mobile) instead of failing
  * the whole transfer — which is what the old single multipart POST did.
  */
-function tusUpload(uploadURL: string, file: File, onProgress: (pct: number) => void): Promise<void> {
+async function tusUpload(uploadURL: string, file: File, onProgress: (pct: number) => void): Promise<void> {
+  // Load tus only when an upload actually starts — it's ~100KB and otherwise
+  // would sit in the main bundle that loads on every screen.
+  const tus = await import("tus-js-client");
   return new Promise<void>((resolve, reject) => {
     const upload = new tus.Upload(file, {
       // The upload was already created server-side; PATCH directly to its URL.
