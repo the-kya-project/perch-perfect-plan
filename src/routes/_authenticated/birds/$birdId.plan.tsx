@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
-import { ArrowLeft, Trash2, ChevronDown, AlertTriangle, Wand2 } from "lucide-react";
+import { ArrowLeft, Trash2, ChevronDown, AlertTriangle, Wand2, Eye } from "lucide-react";
 import { EmergencyInfo } from "@/components/EmergencyInfo";
 import { SETUP_STEPS } from "@/components/SetupShell";
 // The editor renders the guided-setup step components directly so the two UIs
@@ -181,6 +181,13 @@ function BirdEditor() {
               <h1 className="text-sm font-bold truncate">{bird.name}</h1>
               <p className="text-[10px] uppercase tracking-wider text-sage-600">{bird.species ?? "Parrot"}</p>
             </div>
+            <Link
+              to="/birds/$birdId/view-as-sitter"
+              params={{ birdId }}
+              className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#e8f0ec] px-2.5 py-1.5 text-xs font-semibold text-[#1a3d2e]"
+            >
+              <Eye className="size-3.5" /> View as sitter
+            </Link>
           </div>
           <div className="relative mt-3">
             <div ref={tabStripRef} onScroll={updateTabFades} className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">

@@ -1,7 +1,8 @@
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
-import { Calendar, Link2, Copy } from "lucide-react";
+import { Calendar, Link2, Copy, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { SitChecklist } from "@/components/SitChecklist";
 import { SitForm } from "@/components/SitForm";
@@ -112,6 +113,16 @@ export function SitCard({ sit, birds = [], allBirds, onChange }: { sit: any; bir
       )}
       {!sit.revoked && (
         <SitChecklist sit={sit} birds={birds} onSitChanged={onChange} />
+      )}
+      {birds.length > 0 && (
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-medium">
+          <span className="text-[#5f5e5a]">Preview as your sitter:</span>
+          {birds.map((b) => (
+            <Link key={b.id} to="/birds/$birdId/view-as-sitter" params={{ birdId: b.id }} className="inline-flex items-center gap-1 text-[#1a3d2e] underline">
+              <Eye className="size-3" /> {birds.length === 1 ? "View" : b.name}
+            </Link>
+          ))}
+        </div>
       )}
       <div className="mt-3 flex gap-3 text-xs font-medium">
         {allBirds && !sit.revoked && (
