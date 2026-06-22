@@ -13,6 +13,7 @@ export type TimelineItem = {
   badge?: ReactNode;     // small marker (e.g. the sitter chip)
   icon?: ReactNode;      // dot contents; defaults to a plain dot
   onClick?: () => void;  // makes the row tappable (e.g. open for editing)
+  dateLabel?: string;    // override the right-hand date label (e.g. include a time)
 };
 
 function fmt(iso: string): string {
@@ -44,7 +45,7 @@ export function DatedTimeline({ items, empty }: { items: TimelineItem[]; empty?:
                   </div>
                   {it.subtitle && <div className="mt-0.5 text-xs text-[#8a897f]">{it.subtitle}</div>}
                 </div>
-                <span className="shrink-0 text-xs text-[#8a897f]">{fmt(it.at)}</span>
+                <span className="shrink-0 text-xs text-[#8a897f]">{it.dateLabel ?? fmt(it.at)}</span>
               </>
             );
             const cls = "flex w-full items-start justify-between gap-3 rounded-[14px] bg-white p-3 text-left ring-1 ring-[#e3dcc9]";
