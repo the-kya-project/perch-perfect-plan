@@ -13,7 +13,12 @@ export type FoodItem = {
   times?: FeedTime[];      // when: morning/midday/evening (required unless free-fed)
   freeFed?: boolean;
   note?: string | null;    // optional
+  // Homemade chop: the item is a single auto-named "Homemade chop" whose
+  // ingredients live in the fresh-foods checklist — so no brand is required.
+  homemade?: boolean;
 };
+
+export const HOMEMADE_CHOP_NAME = "Homemade chop";
 
 // Units offered in the dropdown. Free strings in jsonb, so legacy values
 // (e.g. "tablespoons") still display fine even though they're not listed.
@@ -36,9 +41,10 @@ export function foodItemHasContent(it: FoodItem): boolean {
   );
 }
 
-/** complete = brand AND (freeFed OR (qty AND unit AND ≥1 when chip)). */
+/** complete = brand AND (freeFed OR (qty AND unit AND ≥1 when chip)).
+ *  Homemade chop is exempt from the brand requirement (auto-named). */
 export function isFoodItemComplete(it: FoodItem): boolean {
-  if (!(it.name ?? "").trim()) return false;
+  if (!it.homemade && !(it.name ?? "").trim()) return false;
   if (it.freeFed) return true;
   return (
     !!(it.amount ?? "").trim() &&
@@ -51,7 +57,7 @@ export type FoodItemMissing = { brand: boolean; qty: boolean; unit: boolean; whe
 
 /** Which required fields are still missing — drives the amber field highlights. */
 export function foodItemMissing(it: FoodItem): FoodItemMissing {
-  const brand = !(it.name ?? "").trim();
+  const brand = !it.homemade && !(it.name ?? "").trim();
   if (it.freeFed) return { brand, qty: false, unit: false, when: false };
   return {
     brand,

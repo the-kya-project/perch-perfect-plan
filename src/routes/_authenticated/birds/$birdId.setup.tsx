@@ -15,7 +15,7 @@ import { useOwnerClipPreview } from "@/lib/useOwnerClipPreview";
 import { isCfClip } from "@/lib/clipRef";
 import { FEED_PREFIX, HYG_REMOVE_PREFIX, HYG_WASH_FOOD_PREFIX, HYG_WASH_WATER_PREFIX, WATER_CHANGE_PREFIX, MED_TASK_PREFIX, isDerivedTask, derivedSource, feedTimeToDaypart } from "@/lib/routineTasks";
 import { FoodItemsEditor } from "@/components/careEditors/FoodItemsEditor";
-import { blankFoodItem, isFoodItemComplete, foodItemHasContent, type FoodItem } from "@/lib/foodItems";
+import { blankFoodItem, isFoodItemComplete, foodItemHasContent, HOMEMADE_CHOP_NAME, type FoodItem } from "@/lib/foodItems";
 import { normalizeFeedTimes, feedTimeLabel, type FeedTime } from "@/lib/feedTimes";
 import { syncFeedingTasks } from "@/lib/feedingSync";
 import { formatAmountUnit } from "@/lib/labels";
@@ -870,6 +870,8 @@ export function FoodWaterStep({
   const [amountValue, setAmountValue] = useState("");
   const [amountUnit, setAmountUnit] = useState("");
   const [freshOther, setFreshOther] = useState("");
+  // Homemade-chop ingredient checklist (stored in the existing fresh_foods column).
+  const [chopIngredients, setChopIngredients] = useState<string[]>([]);
   const [treatsNotes, setTreatsNotes] = useState("");
   const [treatsFreq, setTreatsFreq] = useState("");
   const [never, setNever] = useState<string[]>([]);
@@ -900,23 +902,36 @@ export function FoodWaterStep({
     if (!hasAny && dietTypes.length && (seedBrand || seedAmt || seedUnit)) {
       dd[dietTypes[0]] = [{ name: seedBrand, amount: seedAmt, unit: seedUnit, times: [] }];
     }
-    // Back-compat: seed chop items from legacy fresh_foods list.
+    // Chop: pre-made (branded items) vs homemade (ingredient checklist + one
+    // auto-named item). Reading legacy data: items already tagged with `homemade`
+    // are used as-is; older chop data (veggie items / a populated fresh_foods
+    // list) is inferred as homemade and collapsed into one "Homemade chop" item.
+    const legacyFresh = (plan.fresh_foods ?? []) as string[];
     if (dietTypes.includes("chop")) {
       const existing = (dd["chop"] ?? []) as DietItem[];
-      const existingNames = new Set(existing.map((i) => i.name.trim().toLowerCase()));
-      const legacyFresh = (plan.fresh_foods ?? []) as string[];
-      const seeded: DietItem[] = [...existing];
-      for (const f of legacyFresh) {
-        if (!existingNames.has(f.trim().toLowerCase())) {
-          seeded.push({ name: f, amount: "", unit: "", times: [] });
-          existingNames.add(f.trim().toLowerCase());
+      const alreadyTagged = existing.length > 0 && existing[0].homemade !== undefined;
+      if (alreadyTagged) {
+        if (existing[0].homemade) setChopIngredients(legacyFresh);
+      } else if (existing.length > 0 || legacyFresh.length > 0) {
+        const looksHomemade =
+          legacyFresh.length > 0 ||
+          existing.some((i) => FRESH_FOOD_OPTIONS.some((f) => f.toLowerCase() === i.name.trim().toLowerCase()));
+        if (looksHomemade) {
+          const names = Array.from(new Set([...legacyFresh, ...existing.map((i) => i.name.trim()).filter(Boolean)]));
+          setChopIngredients(names);
+          const first = existing[0];
+          dd["chop"] = [{ ...blankFoodItem(), name: HOMEMADE_CHOP_NAME, homemade: true, amount: first?.amount ?? "", unit: first?.unit ?? "", times: first?.times ?? [], freeFed: first?.freeFed ?? false, note: first?.note ?? null }];
+        } else {
+          dd["chop"] = existing.map((i) => ({ ...i, homemade: false }));
         }
       }
-      dd["chop"] = seeded;
+      // else chop selected but empty → leave with no items so the owner chooses a mode.
     }
-    // Every selected type shows at least one (needs-details) item card, so the
-    // editable box is never hidden behind an "Add item" tap.
+    // Every selected type EXCEPT chop shows at least one (needs-details) item
+    // card, so the editable box is never hidden behind an "Add item" tap. Chop
+    // waits for the pre-made/homemade choice before showing an item.
     for (const t of dietTypes) {
+      if (t === "chop") continue;
       if (!Array.isArray(dd[t]) || dd[t].length === 0) dd[t] = [blankFoodItem()];
     }
     setDietDetails(dd);
@@ -945,12 +960,22 @@ export function FoodWaterStep({
     [dietOther],
   );
 
-  // Incomplete items across all selected types (recomputed live).
+  // Chop mode is derived from its items: tagged homemade → homemade, any items →
+  // premade, no items yet → not chosen (the owner must pick).
+  const chopItemsState = dietDetails["chop"] ?? [];
+  const chopMode: "premade" | "homemade" | null = chopItemsState.length
+    ? (chopItemsState[0].homemade ? "homemade" : "premade")
+    : null;
+
+  // Incomplete items across all selected types (recomputed live). For chop, not
+  // having chosen a mode yet also counts as incomplete.
   const incomplete = useMemo(() => {
     const labels: string[] = [];
     let count = 0;
     for (const t of diet) {
-      const bad = (dietDetails[t] ?? []).filter((it) => !isFoodItemComplete(it));
+      const items = dietDetails[t] ?? [];
+      if (t === "chop" && items.length === 0) { count += 1; labels.push(typeLabel(t)); continue; }
+      const bad = items.filter((it) => !isFoodItemComplete(it));
       if (bad.length) { count += bad.length; labels.push(typeLabel(t)); }
     }
     return { labels, count };
@@ -1019,11 +1044,9 @@ export function FoodWaterStep({
       const foodWashLabel = FOOD_BOWL_WASH_OPTIONS.find((o) => o.value === foodBowlWash)?.label ?? foodBowlWash;
       const waterWashLabel = WATER_BOWL_WASH_OPTIONS.find((o) => o.value === waterBowlWash)?.label ?? waterBowlWash;
 
-      // Fresh foods list (only meaningful when chop is selected) — derived
-      // from chop item names so the care sheet and legacy `fresh_foods`
-      // column stay in sync.
-      const chopItems = diet.includes("chop") ? (dietDetails["chop"] ?? []) : [];
-      const freshList = chopItems.map((it) => it.name.trim()).filter(Boolean);
+      // Fresh foods list — the homemade-chop ingredient checklist. Pre-made and
+      // non-chop diets contribute no ingredient list.
+      const freshList = chopMode === "homemade" ? chopIngredients.map((s) => s.trim()).filter(Boolean) : [];
 
       const feedingTimesArr = Array.from(allFeedingTimes);
 
@@ -1063,7 +1086,7 @@ export function FoodWaterStep({
           amount_unit: legacyAmtUnit || null,
           feeding_times: feedingTimesArr,
           fresh_foods: freshList,
-          fresh_foods_other: diet.includes("chop") ? (freshOther || null) : null,
+          fresh_foods_other: chopMode === "homemade" ? (freshOther || null) : null,
           treats_notes: treatsNotes || null,
           treats_frequency: treatsFreq || null,
           never_feed: never,
@@ -1102,7 +1125,7 @@ export function FoodWaterStep({
       qc.invalidateQueries({ queryKey: ["plan", birdId] });
       qc.invalidateQueries({ queryKey: ["tasks", plan.id] });
     },
-    [diet, dietOther, dietDetails, brand, amountValue, amountUnit, freshOther, treatsNotes, treatsFreq, never, waterFreq, waterNotes, storage, removalMinutes, foodBowlWash, waterBowlWash, hygieneNotes],
+    [diet, dietOther, dietDetails, brand, amountValue, amountUnit, freshOther, chopIngredients, treatsNotes, treatsFreq, never, waterFreq, waterNotes, storage, removalMinutes, foodBowlWash, waterBowlWash, hygieneNotes],
     !!plan && hydrated,
     registerFlush,
   );
@@ -1113,17 +1136,38 @@ export function FoodWaterStep({
     setDietDetails((prev) => ({ ...prev, [type]: items }));
 
   // Selecting a type creates its card with one auto-expanded "needs details"
-  // item; deselecting a type that has filled-in items confirms before discarding.
+  // item (chop waits for the pre-made/homemade choice instead). Deselecting a
+  // type that has filled-in content confirms before discarding.
   function toggleDietType(value: string) {
     if (diet.includes(value)) {
       const items = dietDetails[value] ?? [];
-      if (items.some(foodItemHasContent) && !window.confirm(`Remove ${typeLabel(value)} and the items you've added to it?`)) return;
+      const hasContent = items.some(foodItemHasContent) || (value === "chop" && chopIngredients.length > 0);
+      if (hasContent && !window.confirm(`Remove ${typeLabel(value)} and the items you've added to it?`)) return;
       setDiet(diet.filter((d) => d !== value));
       setDietDetails((prev) => { const next = { ...prev }; delete next[value]; return next; });
+      if (value === "chop") setChopIngredients([]);
     } else {
       setDiet([...diet, value]);
-      setDietDetails((prev) => (prev[value]?.length ? prev : { ...prev, [value]: [blankFoodItem()] }));
+      if (value !== "chop") setDietDetails((prev) => (prev[value]?.length ? prev : { ...prev, [value]: [blankFoodItem()] }));
     }
+  }
+
+  // Chop: choose pre-made / homemade. Switching modes with content confirms,
+  // since it replaces the chop item(s).
+  function chooseChopMode(mode: "premade" | "homemade") {
+    if (chopMode === mode) return;
+    if (chopMode && chopItemsState.some(foodItemHasContent) && !window.confirm(`Switch to ${mode === "homemade" ? "homemade" : "pre-made"}? This clears the chop items you've added.`)) return;
+    setItemsForType("chop", mode === "homemade"
+      ? [{ ...blankFoodItem(), name: HOMEMADE_CHOP_NAME, homemade: true }]
+      : [{ ...blankFoodItem(), homemade: false }]);
+  }
+
+  function toggleChopIngredient(label: string) {
+    setChopIngredients((prev) =>
+      prev.some((x) => x.toLowerCase() === label.toLowerCase())
+        ? prev.filter((x) => x.toLowerCase() !== label.toLowerCase())
+        : [...prev, label],
+    );
   }
 
   return (
@@ -1175,9 +1219,15 @@ export function FoodWaterStep({
               onChangeType={setItemsForType}
               validationActive={validationActive}
               expandSignal={expandSignal}
-              freshFoodOptions={FRESH_FOOD_OPTIONS}
-              freshOther={freshOther}
-              onFreshOtherChange={setFreshOther}
+              chop={{
+                mode: chopMode,
+                onChooseMode: chooseChopMode,
+                ingredients: chopIngredients,
+                onToggleIngredient: toggleChopIngredient,
+                options: FRESH_FOOD_OPTIONS,
+                other: freshOther,
+                onOtherChange: setFreshOther,
+              }}
             />
           </Card>
         </>
