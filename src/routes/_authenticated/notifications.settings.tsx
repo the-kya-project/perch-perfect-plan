@@ -10,8 +10,10 @@ import {
   subscribeToPush,
   unsubscribeFromPush,
   getCurrentEndpoint,
+  getNotificationPermission,
   type PushSupport,
 } from "@/lib/push";
+import { NotificationsBlockedModal } from "@/components/NotificationsBlockedModal";
 import {
   getVapidPublicKey,
   savePushSubscription,
@@ -68,7 +70,9 @@ function NotificationsSettingsPage() {
   const [saving, setSaving] = useState<keyof Prefs | null>(null);
   const [support, setSupport] = useState<PushSupport | null>(null);
   const [pushEndpoint, setPushEndpoint] = useState<string | null>(null);
+  const [permission, setPermission] = useState<NotificationPermission | "unsupported">("default");
   const [a2hsOpen, setA2hsOpen] = useState(false);
+  const [blockedOpen, setBlockedOpen] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const getVapidKey = useServerFn(getVapidPublicKey);
@@ -90,8 +94,22 @@ function NotificationsSettingsPage() {
         .maybeSingle();
       if (data) setPrefs(data as Prefs);
       setSupport(detectPushSupport());
+      setPermission(getNotificationPermission());
       setPushEndpoint(await getCurrentEndpoint());
     })();
+
+    // Re-check permission when the user comes back to the tab — e.g. after they
+    // flip the toggle in their phone's settings — so the blocked banner clears.
+    const recheck = async () => {
+      setPermission(getNotificationPermission());
+      setPushEndpoint(await getCurrentEndpoint());
+    };
+    window.addEventListener("visibilitychange", recheck);
+    window.addEventListener("focus", recheck);
+    return () => {
+      window.removeEventListener("visibilitychange", recheck);
+      window.removeEventListener("focus", recheck);
+    };
   }, []);
 
   async function toggle(key: keyof Prefs, next: boolean) {
@@ -114,12 +132,23 @@ function NotificationsSettingsPage() {
   }
 
   async function enablePush() {
+    // Already blocked at the OS/browser level — requestPermission() won't prompt,
+    // so send them to the settings instructions instead of a dead-end toast.
+    if (getNotificationPermission() === "denied") {
+      setPermission("denied");
+      setBlockedOpen(true);
+      return;
+    }
     setBusy(true);
     try {
       const { publicKey } = await getVapidKey();
       const sub = await subscribeToPush(publicKey);
+      setPermission(getNotificationPermission());
       if (!sub) {
-        toast.error("Notification permission was not granted.");
+        // The prompt was dismissed or denied. If it's now hard-denied, guide them
+        // to settings; otherwise they just dismissed it and can try again.
+        if (getNotificationPermission() === "denied") setBlockedOpen(true);
+        else toast.error("Notification permission was not granted.");
         return;
       }
       await saveSub({ data: sub });
@@ -153,6 +182,8 @@ function NotificationsSettingsPage() {
 
   const pushEnabled = !!pushEndpoint;
   const pushBlocked = support && !support.ok;
+  // Supported here, but the user/phone has blocked notifications in settings.
+  const permissionDenied = !!support?.ok && permission === "denied" && !pushEnabled;
 
   return (
     <div className="min-h-screen bg-sage-50 pb-24">
@@ -181,6 +212,11 @@ function NotificationsSettingsPage() {
                   This browser doesn't support push notifications. Add the app to your home
                   screen to turn push on.
                 </p>
+              ) : permissionDenied ? (
+                <p className="mt-1 text-xs text-sage-600">
+                  Notifications are turned off for this app in your device settings. Turn them
+                  on there to get sitter alerts on this device.
+                </p>
               ) : pushEnabled ? (
                 <p className="mt-1 text-xs text-sage-600">
                   Enabled. Per-event push toggles below control what reaches this device.
@@ -199,8 +235,17 @@ function NotificationsSettingsPage() {
                   How to add this app to your home screen
                 </button>
               )}
+              {permissionDenied && (
+                <button
+                  type="button"
+                  onClick={() => setBlockedOpen(true)}
+                  className="mt-2 text-xs font-semibold text-sage-700 underline"
+                >
+                  How to turn on notifications
+                </button>
+              )}
             </div>
-            {!pushBlocked && (
+            {!pushBlocked && !permissionDenied && (
               <button
                 onClick={pushEnabled ? disablePush : enablePush}
                 disabled={busy}
@@ -278,6 +323,7 @@ function NotificationsSettingsPage() {
       </main>
 
       {a2hsOpen && <AddToHomeModal onClose={() => setA2hsOpen(false)} />}
+      {blockedOpen && <NotificationsBlockedModal onClose={() => setBlockedOpen(false)} />}
     </div>
   );
 }

@@ -34,6 +34,14 @@ export function detectPushSupport(): PushSupport {
   return { ok: true };
 }
 
+/** Current OS/browser notification permission for this app. "denied" means the
+ *  user (or the phone's system settings) blocked it — requestPermission() won't
+ *  re-prompt, so the only way back is the device/browser settings. */
+export function getNotificationPermission(): NotificationPermission | "unsupported" {
+  if (typeof window === "undefined" || !("Notification" in window)) return "unsupported";
+  return Notification.permission;
+}
+
 function urlBase64ToUint8Array(base64: string): Uint8Array {
   const padding = "=".repeat((4 - (base64.length % 4)) % 4);
   const b64 = (base64 + padding).replace(/-/g, "+").replace(/_/g, "/");
