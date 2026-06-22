@@ -14,70 +14,123 @@ export type Database = {
   }
   public: {
     Tables: {
+      bird_members: {
+        Row: {
+          bird_id: string
+          created_at: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          bird_id: string
+          created_at?: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          bird_id?: string
+          created_at?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bird_members_bird_id_fkey"
+            columns: ["bird_id"]
+            isOneToOne: false
+            referencedRelation: "birds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       birds: {
         Row: {
+          acquired_on: string | null
           age: string | null
+          band_number: string | null
           birth_date: string | null
           created_at: string
           flight_status: string | null
           id: string
+          lineage_notes: string | null
           medical_conditions: string | null
           medications: string | null
+          microchip: string | null
           name: string
           normal_weight: number | null
           normal_weight_max: number | null
           normal_weight_min: number | null
           notes: string | null
+          origin: string | null
+          owner_edited_intro: string | null
           owner_id: string
           photo_position: string | null
           photo_url: string | null
           setup_complete: boolean
           setup_step: number
           sex: string | null
+          sex_method: string | null
+          sitter_intro: string | null
           species: string | null
           updated_at: string
         }
         Insert: {
+          acquired_on?: string | null
           age?: string | null
+          band_number?: string | null
           birth_date?: string | null
           created_at?: string
           flight_status?: string | null
           id?: string
+          lineage_notes?: string | null
           medical_conditions?: string | null
           medications?: string | null
+          microchip?: string | null
           name: string
           normal_weight?: number | null
           normal_weight_max?: number | null
           normal_weight_min?: number | null
           notes?: string | null
+          origin?: string | null
+          owner_edited_intro?: string | null
           owner_id: string
           photo_position?: string | null
           photo_url?: string | null
           setup_complete?: boolean
           setup_step?: number
           sex?: string | null
+          sex_method?: string | null
+          sitter_intro?: string | null
           species?: string | null
           updated_at?: string
         }
         Update: {
+          acquired_on?: string | null
           age?: string | null
+          band_number?: string | null
           birth_date?: string | null
           created_at?: string
           flight_status?: string | null
           id?: string
+          lineage_notes?: string | null
           medical_conditions?: string | null
           medications?: string | null
+          microchip?: string | null
           name?: string
           normal_weight?: number | null
           normal_weight_max?: number | null
           normal_weight_min?: number | null
           notes?: string | null
+          origin?: string | null
+          owner_edited_intro?: string | null
           owner_id?: string
           photo_position?: string | null
           photo_url?: string | null
           setup_complete?: boolean
           setup_step?: number
           sex?: string | null
+          sex_method?: string | null
+          sitter_intro?: string | null
           species?: string | null
           updated_at?: string
         }
@@ -483,6 +536,91 @@ export type Database = {
         }
         Relationships: []
       }
+      journal_entries: {
+        Row: {
+          bird_id: string
+          body: string | null
+          created_at: string
+          id: string
+          kind: string
+          logged_by: string | null
+          occurred_on: string
+          photo_path: string | null
+          title: string | null
+        }
+        Insert: {
+          bird_id: string
+          body?: string | null
+          created_at?: string
+          id?: string
+          kind: string
+          logged_by?: string | null
+          occurred_on: string
+          photo_path?: string | null
+          title?: string | null
+        }
+        Update: {
+          bird_id?: string
+          body?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          logged_by?: string | null
+          occurred_on?: string
+          photo_path?: string | null
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journal_entries_bird_id_fkey"
+            columns: ["bird_id"]
+            isOneToOne: false
+            referencedRelation: "birds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      moments: {
+        Row: {
+          auto_generated: boolean
+          bird_id: string
+          created_at: string
+          id: string
+          kind: string
+          on_date: string | null
+          recurs: boolean
+          title: string | null
+        }
+        Insert: {
+          auto_generated?: boolean
+          bird_id: string
+          created_at?: string
+          id?: string
+          kind: string
+          on_date?: string | null
+          recurs?: boolean
+          title?: string | null
+        }
+        Update: {
+          auto_generated?: boolean
+          bird_id?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          on_date?: string | null
+          recurs?: boolean
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "moments_bird_id_fkey"
+            columns: ["bird_id"]
+            isOneToOne: false
+            referencedRelation: "birds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       owner_emergency_defaults: {
         Row: {
           avian_vet_address: string | null
@@ -608,6 +746,14 @@ export type Database = {
           push_care_plan_reminder: boolean
           push_sitter_log: boolean
           push_sitter_opened: boolean
+          signup_campaign: string | null
+          signup_content: string | null
+          signup_first_seen_at: string | null
+          signup_landing_page: string | null
+          signup_medium: string | null
+          signup_referrer: string | null
+          signup_source: string | null
+          signup_term: string | null
           updated_at: string
           welcome_seen_at: string | null
         }
@@ -623,6 +769,14 @@ export type Database = {
           push_care_plan_reminder?: boolean
           push_sitter_log?: boolean
           push_sitter_opened?: boolean
+          signup_campaign?: string | null
+          signup_content?: string | null
+          signup_first_seen_at?: string | null
+          signup_landing_page?: string | null
+          signup_medium?: string | null
+          signup_referrer?: string | null
+          signup_source?: string | null
+          signup_term?: string | null
           updated_at?: string
           welcome_seen_at?: string | null
         }
@@ -638,6 +792,14 @@ export type Database = {
           push_care_plan_reminder?: boolean
           push_sitter_log?: boolean
           push_sitter_opened?: boolean
+          signup_campaign?: string | null
+          signup_content?: string | null
+          signup_first_seen_at?: string | null
+          signup_landing_page?: string | null
+          signup_medium?: string | null
+          signup_referrer?: string | null
+          signup_source?: string | null
+          signup_term?: string | null
           updated_at?: string
           welcome_seen_at?: string | null
         }
@@ -919,6 +1081,47 @@ export type Database = {
           },
         ]
       }
+      weight_entries: {
+        Row: {
+          bird_id: string
+          created_at: string
+          grams: number
+          id: string
+          logged_by: string | null
+          measured_at: string
+          note: string | null
+          source: string
+        }
+        Insert: {
+          bird_id: string
+          created_at?: string
+          grams: number
+          id?: string
+          logged_by?: string | null
+          measured_at?: string
+          note?: string | null
+          source?: string
+        }
+        Update: {
+          bird_id?: string
+          created_at?: string
+          grams?: number
+          id?: string
+          logged_by?: string | null
+          measured_at?: string
+          note?: string | null
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "weight_entries_bird_id_fkey"
+            columns: ["bird_id"]
+            isOneToOne: false
+            referencedRelation: "birds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       weight_logs: {
         Row: {
           bird_id: string
@@ -966,7 +1169,8 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_bird_access: { Args: { b_id: string; u_id: string }; Returns: string }
+      safe_uuid: { Args: { t: string }; Returns: string }
     }
     Enums: {
       [_ in never]: never
