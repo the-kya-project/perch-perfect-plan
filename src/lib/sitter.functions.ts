@@ -292,7 +292,7 @@ function escapeHtml(s: string): string {
 
 export const submitHealthScan = createServerFn({ method: "POST" })
   .inputValidator(
-    (d: { token: string; birdId: string; answers: Record<string, ScanAnswer>; notes?: string; photoDataUrl?: string }) =>
+    (d: { token: string; birdId: string; answers: Record<string, ScanAnswer>; notes?: string; photoDataUrl?: string; weightGrams?: number }) =>
       z
         .object({
           token: z.string().min(8),
@@ -301,6 +301,8 @@ export const submitHealthScan = createServerFn({ method: "POST" })
           notes: z.string().max(2000).optional(),
           // Optional scan photo, already compressed client-side to a small JPEG.
           photoDataUrl: z.string().startsWith("data:image/").max(4_000_000).optional(),
+          // Optional weigh-in — flows into the owner's weight timeline.
+          weightGrams: z.number().positive().max(5000).optional(),
         })
         .parse(d),
   )
@@ -352,6 +354,19 @@ export const submitHealthScan = createServerFn({ method: "POST" })
         notes: "Attached to health scan",
       });
       if (pErr) console.error("[submitHealthScan] photo insert failed", pErr.message);
+    }
+
+    // Optional sitter weigh-in → the owner's shared weight timeline (source
+    // 'sitter'). Isolated so a weight failure never breaks the scan itself.
+    if (typeof data.weightGrams === "number") {
+      const { error: wErr } = await sb.from("weight_entries").insert({
+        bird_id: data.birdId,
+        grams: data.weightGrams,
+        source: "sitter",
+        // No auth user for a token-based sitter; note carries who logged it.
+        note: sit.sitter_name ? `Logged by ${sit.sitter_name}` : null,
+      });
+      if (wErr) console.error("[submitHealthScan] weight insert failed", wErr.message);
     }
 
     // Notify the owner across channels. Run BEFORE returning: on serverless the
