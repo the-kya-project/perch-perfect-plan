@@ -44,6 +44,13 @@ async function getAdmin() {
   return supabaseAdmin;
 }
 
+// Owner-side "View as sitter" preview sits carry this sentinel name. They render
+// the real read-only sitter view but must never accept writes.
+export const PREVIEW_SITTER_NAME = "__preview__";
+function assertNotPreview(sit: { sitter_name?: string | null }) {
+  if (sit.sitter_name === PREVIEW_SITTER_NAME) throw new Error("This is a read-only preview — changes aren't saved.");
+}
+
 async function loadSitByToken(token: string) {
   const sb = await getAdmin();
   const { data: sit, error } = await sb
@@ -213,6 +220,7 @@ export const toggleTaskCompletion = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const sb = await getAdmin();
     const sit = await loadSitByToken(data.token);
+    assertNotPreview(sit);
     await assertTaskInSit(sit.id, data.taskId);
     const today = new Date().toISOString().slice(0, 10);
     if (data.completed) {
@@ -309,6 +317,7 @@ export const submitHealthScan = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const sb = await getAdmin();
     const sit = await loadSitByToken(data.token);
+    assertNotPreview(sit);
     await assertBirdInSit(sit.id, data.birdId);
     const triage = computeTriage(data.answers as Record<ScanFieldKey, ScanAnswer>);
     const today = new Date().toISOString().slice(0, 10);

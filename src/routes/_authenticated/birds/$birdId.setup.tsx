@@ -21,6 +21,7 @@ import { syncFeedingTasks } from "@/lib/feedingSync";
 import { formatAmountUnit } from "@/lib/labels";
 import { track } from "@/lib/analytics";
 import { recomputeSitterIntro } from "@/lib/sitterIntro";
+import { ensureSitterPreviewToken } from "@/lib/sitterPreview";
 import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
 import { persistBirdPhoto, signBirdPhoto } from "@/lib/birdPhoto";
 
@@ -2416,50 +2417,15 @@ function ReviewStep({
 
   useEffect(() => {
     let cancelled = false;
-    async function ensurePreviewSit() {
+    (async () => {
       if (!bird?.owner_id) return;
       try {
-        // Look for an existing, valid preview sit that already includes this bird.
-        const { data: existing } = await supabase
-          .from("sits")
-          .select("id, invite_token, token_expires_at, revoked, sit_birds(bird_id)")
-          .eq("owner_id", bird.owner_id)
-          .eq("sitter_name", "__preview__")
-          .eq("revoked", false);
-        const match = (existing ?? []).find((s: any) =>
-          (s.sit_birds ?? []).some((sb: any) => sb.bird_id === birdId) &&
-          new Date(s.token_expires_at) > new Date(),
-        );
-        if (match) {
-          if (!cancelled) setPreviewToken(match.invite_token);
-          return;
-        }
-        // Otherwise create a fresh one. Far-future expiry so the owner can revisit.
-        const expires = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
-        const today = new Date().toISOString().slice(0, 10);
-        const { data: sit, error } = await supabase
-          .from("sits")
-          .insert({
-            owner_id: bird.owner_id,
-            sitter_name: "__preview__",
-            sitter_email: null,
-            start_date: today,
-            end_date: today,
-            notes: "Preview from setup flow",
-            token_expires_at: expires,
-            status: "upcoming",
-          })
-          .select()
-          .single();
-        if (error || !sit) throw new Error(error?.message ?? "Could not build preview");
-        const { error: linkErr } = await supabase.from("sit_birds").insert({ sit_id: sit.id, bird_id: birdId });
-        if (linkErr) throw new Error(linkErr.message);
-        if (!cancelled) setPreviewToken(sit.invite_token);
+        const token = await ensureSitterPreviewToken(birdId, bird.owner_id);
+        if (!cancelled) setPreviewToken(token);
       } catch (e: any) {
         if (!cancelled) setPreviewError(e.message ?? "Could not build preview");
       }
-    }
-    ensurePreviewSit();
+    })();
     return () => { cancelled = true; };
   }, [bird?.owner_id, birdId]);
 
