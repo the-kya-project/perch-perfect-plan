@@ -4,7 +4,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { toast } from "sonner";
-import { ArrowLeft, Scale, Plus, Minus, Check } from "lucide-react";
+import { ArrowLeft, Scale, Plus, Check } from "lucide-react";
 import { WeightTrendChart, type WeightPoint } from "@/components/WeightTrendChart";
 import { DatedTimeline, type TimelineItem } from "@/components/DatedTimeline";
 import { computeWeightTrend } from "@/lib/weightTrend";
@@ -14,7 +14,7 @@ export const Route = createFileRoute("/_authenticated/birds/$birdId/weight")({
   component: WeightFacet,
 });
 
-type Entry = { id: string; grams: number; measured_at: string; source: string };
+type Entry = { id: string; grams: number; measured_at: string; source: string; meal_relation: string | null };
 type WindowDays = 30 | 90 | 365;
 
 const WINDOWS: { days: WindowDays; label: string }[] = [
@@ -24,7 +24,14 @@ const WINDOWS: { days: WindowDays; label: string }[] = [
 ];
 const MIN_G = 1;
 const MAX_G = 5000;
-const todayStr = () => new Date().toISOString().slice(0, 10);
+const pad = (x: number) => String(x).padStart(2, "0");
+// "YYYY-MM-DDTHH:MM" in local time, for <input type="datetime-local"> + its max.
+const nowLocal = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+const fmtDateTime = (iso: string) => new Date(iso).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+const mealLabel = (m: string | null | undefined): string | null => (m === "before_meal" ? "before meal" : m === "after_meal" ? "after meal" : null);
 
 function WeightFacet() {
   const { birdId } = Route.useParams();
@@ -49,12 +56,12 @@ function WeightFacet() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("weight_entries")
-        .select("id, grams, measured_at, source")
+        .select("*") // includes meal_relation (added by migration); typed via cast
         .eq("bird_id", birdId)
         .order("measured_at", { ascending: false })
         .limit(500);
       if (error) throw error;
-      return (data ?? []) as Entry[];
+      return (data ?? []) as unknown as Entry[];
     },
   });
 
@@ -70,11 +77,13 @@ function WeightFacet() {
     const prev = all[i + 1]; // chronological previous (array is newest-first)
     const d = prev ? e.grams - prev.grams : null;
     const sitter = e.source === "sitter";
+    const deltaText = d == null ? "First weight" : `${d > 0 ? "+" : ""}${d} g from previous`;
     return {
       id: e.id,
       at: e.measured_at,
+      dateLabel: fmtDateTime(e.measured_at),
       title: `${e.grams} g`,
-      subtitle: d == null ? "First weight" : `${d > 0 ? "+" : ""}${d} g from previous`,
+      subtitle: [deltaText, mealLabel(e.meal_relation)].filter(Boolean).join(" · "),
       icon: <Scale className="size-3" />,
       badge: sitter ? (
         <span className="rounded-full bg-[#f6e7c4] px-1.5 py-0.5 text-[10px] font-medium text-[#854F0B] ring-1 ring-[#BA7517]/40">Sitter</span>
@@ -197,29 +206,30 @@ function TrendPill({ trend, delta }: { trend: "steady" | "up" | "down"; delta: n
   return <span className="rounded-full bg-[#d6e8dc] px-3 py-1 text-xs font-medium text-[#1a3d2e]">Steady</span>;
 }
 
+type Meal = "before_meal" | "after_meal" | null;
+
 function LogPanel({ birdId, lastGrams, onClose, onSaved }: { birdId: string; lastGrams?: number; onClose: () => void; onSaved: () => void }) {
   const [grams, setGrams] = useState<string>(lastGrams ? String(lastGrams) : "");
-  const [date, setDate] = useState<string>(todayStr());
+  const [when, setWhen] = useState<string>(nowLocal()); // datetime-local: date + time
+  const [meal, setMeal] = useState<Meal>(null);
   const [saving, setSaving] = useState(false);
 
   const n = Number(grams);
-  const valid = grams !== "" && Number.isFinite(n) && n >= MIN_G && n <= MAX_G;
-  const step = (by: number) => setGrams((g) => String(Math.max(MIN_G, Math.min(MAX_G, (Number(g) || lastGrams || 0) + by))));
+  const valid = grams !== "" && Number.isFinite(n) && n >= MIN_G && n <= MAX_G && !!when;
 
   async function save() {
     if (!valid) return;
     setSaving(true);
     try {
       const { data: u } = await getLocalUser();
-      // Store at noon to avoid a timezone date-shift; "today" is the default.
-      const measured_at = new Date(`${date}T12:00:00`).toISOString();
-      const { error } = await supabase.from("weight_entries").insert({
-        bird_id: birdId,
-        grams: n,
-        measured_at,
-        source: "owner",
-        logged_by: u.user?.id ?? null,
-      });
+      const measured_at = new Date(when).toISOString(); // local datetime → UTC
+      // Only send meal_relation when chosen, so logging still works if the
+      // additive migration hasn't been applied yet (then the column is absent).
+      const payload: Record<string, unknown> = {
+        bird_id: birdId, grams: n, measured_at, source: "owner", logged_by: u.user?.id ?? null,
+      };
+      if (meal) payload.meal_relation = meal;
+      const { error } = await supabase.from("weight_entries").insert(payload as any);
       if (error) throw error;
       toast.success("Weight logged.");
       onSaved();
@@ -233,35 +243,48 @@ function LogPanel({ birdId, lastGrams, onClose, onSaved }: { birdId: string; las
   return (
     <section className="rounded-[16px] border border-[#cdeab0] bg-white p-4">
       <p className="text-sm font-medium text-[#1a3d2e]">Log weight</p>
+
       <div className="mt-3">
         <label className="mb-1 block text-xs font-medium text-[#5f5e5a]">Weight (grams)</label>
-        <div className="flex items-center gap-2">
-          <button type="button" onClick={() => step(-1)} aria-label="Decrease" className="grid size-11 shrink-0 place-items-center rounded-xl border border-[#c8bfa6] bg-[#fbfaf2] text-[#1a3d2e]">
-            <Minus className="size-4" />
-          </button>
-          <input
-            className="h-11 w-full rounded-xl border border-[#c8bfa6] bg-[#fbfaf2] px-3 text-center text-lg font-medium text-[#1a3d2e] outline-none focus:border-[#2d6a4f]"
-            inputMode="decimal"
-            value={grams}
-            placeholder={lastGrams ? String(lastGrams) : "e.g. 410"}
-            onChange={(e) => setGrams(e.target.value.replace(/[^0-9.]/g, ""))}
-          />
-          <button type="button" onClick={() => step(1)} aria-label="Increase" className="grid size-11 shrink-0 place-items-center rounded-xl border border-[#c8bfa6] bg-[#fbfaf2] text-[#1a3d2e]">
-            <Plus className="size-4" />
-          </button>
-        </div>
-        {grams !== "" && !valid && <p className="mt-1 text-[11px] text-[#854F0B]">Enter a weight between {MIN_G} and {MAX_G} grams.</p>}
-      </div>
-      <div className="mt-3">
-        <label className="mb-1 block text-xs font-medium text-[#5f5e5a]">Date</label>
         <input
-          type="date"
+          className="h-11 w-full rounded-xl border border-[#c8bfa6] bg-[#fbfaf2] px-3 text-lg font-medium text-[#1a3d2e] outline-none focus:border-[#2d6a4f]"
+          inputMode="decimal"
+          value={grams}
+          placeholder={lastGrams ? String(lastGrams) : "e.g. 410"}
+          onChange={(e) => setGrams(e.target.value.replace(/[^0-9.]/g, ""))}
+        />
+        {grams !== "" && !valid && grams && (Number(grams) < MIN_G || Number(grams) > MAX_G) && (
+          <p className="mt-1 text-[11px] text-[#854F0B]">Enter a weight between {MIN_G} and {MAX_G} grams.</p>
+        )}
+      </div>
+
+      <div className="mt-3">
+        <label className="mb-1 block text-xs font-medium text-[#5f5e5a]">When</label>
+        <input
+          type="datetime-local"
           className="h-11 w-full rounded-xl border border-[#c8bfa6] bg-[#fbfaf2] px-3 text-sm text-[#1a3d2e] outline-none focus:border-[#2d6a4f]"
-          value={date}
-          max={todayStr()}
-          onChange={(e) => setDate(e.target.value)}
+          value={when}
+          max={nowLocal()}
+          onChange={(e) => setWhen(e.target.value)}
         />
       </div>
+
+      <div className="mt-3">
+        <label className="mb-1 block text-xs font-medium text-[#5f5e5a]">Relative to a meal (optional)</label>
+        <div className="grid grid-cols-2 gap-2">
+          {(["before_meal", "after_meal"] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => setMeal((cur) => (cur === m ? null : m))}
+              className={`min-h-[44px] rounded-xl border text-sm font-medium ${meal === m ? "border-[#2d6a4f] bg-[#1a3d2e] text-white" : "border-[#c8bfa6] bg-[#fbfaf2] text-[#1a3d2e]"}`}
+            >
+              {m === "before_meal" ? "Before meal" : "After meal"}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="mt-4 flex gap-2">
         <button
           type="button"
