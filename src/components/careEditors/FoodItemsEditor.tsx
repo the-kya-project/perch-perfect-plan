@@ -15,20 +15,30 @@ import {
  * Food step and the tabbed editor's Food tab (both via FoodWaterStep) — one
  * source of truth so the two surfaces can't drift.
  *
- * Each selected food type gets a card with one or more item cards. An item card
- * is a clear white editable surface that's auto-expanded in a "needs details"
- * state, shows a live status pill (amber "Needs details" → green "Ready"), and
- * collapses to a one-line summary once complete. The wizard passes
- * `validationActive` (amber field highlights) and bumps `expandSignal` to force
- * every incomplete item open when Next is blocked. The tabbed editor passes
- * neither — same component, no gate.
+ * Each selected type gets a card with one or more clear white item cards that
+ * auto-expand in a "needs details" state, show a live status pill, and collapse
+ * to a one-line summary once complete. `validationActive` turns on amber field
+ * highlights; bumping `expandSignal` force-opens every incomplete item.
+ *
+ * "Fresh chop / formulated" is special: the owner first picks Pre-made (brand
+ * required) or Homemade (an ingredient checklist + a single auto-named
+ * "Homemade chop" item with no brand required).
  */
 
-// Field styling per the design system (light fill, warm border, green focus).
 const FIELD =
   "w-full rounded-xl border bg-[#fbfaf2] px-3 py-2.5 text-sm text-[#1a3d2e] outline-none focus:border-[#2d6a4f] focus:ring-2 focus:ring-[#2d6a4f]/15";
 const BORDER_OK = "border-[#c8bfa6]";
 const BORDER_AMBER = "border-[#BA7517]";
+
+export type ChopConfig = {
+  mode: "premade" | "homemade" | null;
+  onChooseMode: (mode: "premade" | "homemade") => void;
+  ingredients: string[];
+  onToggleIngredient: (label: string) => void;
+  options: string[];
+  other: string;
+  onOtherChange: (v: string) => void;
+};
 
 function whenLabels(it: FoodItem): string {
   return normalizeFeedTimes(it.times)
@@ -59,33 +69,28 @@ export function FoodItemsEditor({
   onChangeType,
   validationActive = false,
   expandSignal = 0,
-  freshFoodOptions,
-  freshOther,
-  onFreshOtherChange,
+  chop,
 }: {
   types: { value: string; label: string }[];
   details: Record<string, FoodItem[]>;
   onChangeType: (type: string, items: FoodItem[]) => void;
   validationActive?: boolean;
   expandSignal?: number;
-  freshFoodOptions?: string[];
-  freshOther?: string;
-  onFreshOtherChange?: (v: string) => void;
+  chop?: ChopConfig;
 }) {
-  // Explicit expand/collapse overrides; default = expanded while incomplete.
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-  const key = (type: string, idx: number) => `${type}:${idx}`;
-  const isOpen = (type: string, idx: number, it: FoodItem) =>
-    expanded[key(type, idx)] ?? !isFoodItemComplete(it);
+  const k = (type: string, idx: number) => `${type}:${idx}`;
+  const isOpen = (type: string, idx: number, it: FoodItem) => expanded[k(type, idx)] ?? !isFoodItemComplete(it);
+  const setOpen = (type: string, idx: number, open: boolean) =>
+    setExpanded((p) => ({ ...p, [k(type, idx)]: open }));
 
-  // When the wizard blocks Next, force every incomplete item open.
   useEffect(() => {
     if (!expandSignal) return;
     setExpanded((prev) => {
       const next = { ...prev };
       for (const t of types) {
         (details[t.value] ?? []).forEach((it, idx) => {
-          if (!isFoodItemComplete(it)) next[key(t.value, idx)] = true;
+          if (!isFoodItemComplete(it)) next[k(t.value, idx)] = true;
         });
       }
       return next;
@@ -97,216 +102,291 @@ export function FoodItemsEditor({
     <div className="space-y-4">
       {types.map(({ value: type, label }) => {
         const items = details[type] ?? [];
-        const isChop = !!freshFoodOptions && type === "chop";
-        const selectedFresh = new Set(items.map((i) => i.name.trim().toLowerCase()));
-
         const setItem = (idx: number, patch: Partial<FoodItem>) =>
           onChangeType(type, items.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
-
         const addItem = () => {
           onChangeType(type, [...items, blankFoodItem()]);
-          // Collapse existing items; the new one (last) defaults open (incomplete).
-          setExpanded((prev) => {
-            const next = { ...prev };
-            items.forEach((_, i) => { next[key(type, i)] = false; });
-            return next;
-          });
+          setExpanded((prev) => { const n = { ...prev }; items.forEach((_, i) => { n[k(type, i)] = false; }); return n; });
         };
-
         const removeItem = (idx: number) => onChangeType(type, items.filter((_, i) => i !== idx));
 
+        if (type === "chop" && chop) {
+          return (
+            <div key={type} className="rounded-2xl bg-[#efe9da] p-4">
+              <p className="text-sm font-medium text-[#1a3d2e]">{label}</p>
+
+              {/* Pre-made / homemade toggle */}
+              <div
+                className={`mt-2 inline-flex rounded-xl border p-0.5 ${validationActive && chop.mode === null ? BORDER_AMBER : "border-[#c8bfa6]"}`}
+              >
+                {(["premade", "homemade"] as const).map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => chop.onChooseMode(m)}
+                    className={
+                      "min-h-[40px] rounded-[10px] px-4 text-sm font-medium transition " +
+                      (chop.mode === m ? "bg-[#1a3d2e] text-white" : "text-[#1a3d2e]")
+                    }
+                  >
+                    {m === "premade" ? "Pre-made" : "Homemade"}
+                  </button>
+                ))}
+              </div>
+              {chop.mode === null && (
+                <p className={`mt-1.5 text-xs ${validationActive ? "text-[#854F0B]" : "text-[#5f5e5a]"}`}>
+                  Is this a store-bought chop (pick Pre-made) or your own mix (Homemade)?
+                </p>
+              )}
+
+              {/* Homemade: ingredient checklist + single auto-named item */}
+              {chop.mode === "homemade" && (
+                <>
+                  <div className="mt-3 rounded-xl bg-white/70 p-3" style={{ borderWidth: "0.5px", borderColor: "#d8cfb8" }}>
+                    <p className="mb-1.5 text-xs font-medium text-[#5f5e5a]">What's in it? Tap the ingredients.</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {chop.options.map((f) => {
+                        const on = chop.ingredients.some((x) => x.toLowerCase() === f.toLowerCase());
+                        return (
+                          <button
+                            key={f}
+                            type="button"
+                            onClick={() => chop.onToggleIngredient(f)}
+                            className={
+                              "min-h-[40px] rounded-full px-3 text-xs font-medium transition " +
+                              (on ? "bg-[#1a3d2e] text-white" : "border border-[#c8bfa6] bg-white text-[#1a3d2e]")
+                            }
+                          >
+                            {f}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <input
+                      className={`mt-2 ${FIELD} ${BORDER_OK}`}
+                      placeholder="Other ingredients (free text)"
+                      value={chop.other}
+                      maxLength={300}
+                      onChange={(e) => chop.onOtherChange(e.target.value)}
+                    />
+                  </div>
+                  {items.length > 0 && (
+                    <div className="mt-3">
+                      <ItemCard
+                        item={items[0]}
+                        label={label}
+                        hideBrand
+                        validationActive={validationActive}
+                        open={isOpen(type, 0, items[0])}
+                        onToggle={() => setOpen(type, 0, !isOpen(type, 0, items[0]))}
+                        onChange={(patch) => setItem(0, patch)}
+                        setWhen={(period) => setItem(0, { times: toggleWhen(items[0], period) })}
+                      />
+                    </div>
+                  )}
+                </>
+              )}
+
+              {/* Pre-made: brand-required item cards */}
+              {chop.mode === "premade" && (
+                <>
+                  <div className="mt-3 space-y-2">
+                    {items.map((it, idx) => (
+                      <ItemCard
+                        key={idx}
+                        item={it}
+                        label={label}
+                        validationActive={validationActive}
+                        open={isOpen(type, idx, it)}
+                        onToggle={() => setOpen(type, idx, !isOpen(type, idx, it))}
+                        onChange={(patch) => setItem(idx, patch)}
+                        setWhen={(period) => setItem(idx, { times: toggleWhen(it, period) })}
+                        onRemove={items.length > 1 ? () => removeItem(idx) : undefined}
+                      />
+                    ))}
+                  </div>
+                  <AddButton label={label} onClick={addItem} />
+                </>
+              )}
+            </div>
+          );
+        }
+
+        // Generic type (pelleted, seed, blend, other)
         return (
           <div key={type} className="rounded-2xl bg-[#efe9da] p-4">
             <p className="text-sm font-medium text-[#1a3d2e]">{label}</p>
-
-            {isChop && (
-              <div className="mt-2 rounded-xl bg-white/70 p-3" style={{ borderWidth: "0.5px", borderColor: "#d8cfb8" }}>
-                <p className="mb-1.5 text-xs font-medium text-[#5f5e5a]">Fresh foods offered — tap to add as items</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {freshFoodOptions!.map((f) => {
-                    const on = selectedFresh.has(f.trim().toLowerCase());
-                    return (
-                      <button
-                        key={f}
-                        type="button"
-                        onClick={() =>
-                          on
-                            ? onChangeType(type, items.filter((i) => i.name.trim().toLowerCase() !== f.trim().toLowerCase()))
-                            : onChangeType(type, [...items, { ...blankFoodItem(), name: f }])
-                        }
-                        className={
-                          "min-h-[40px] rounded-full px-3 text-xs font-medium transition " +
-                          (on ? "bg-[#1a3d2e] text-white" : "border border-[#c8bfa6] bg-white text-[#1a3d2e]")
-                        }
-                      >
-                        {f}
-                      </button>
-                    );
-                  })}
-                </div>
-                <input
-                  className={`mt-2 ${FIELD} ${BORDER_OK}`}
-                  placeholder="Other fresh foods (free text)"
-                  value={freshOther ?? ""}
-                  maxLength={300}
-                  onChange={(e) => onFreshOtherChange?.(e.target.value)}
-                />
-              </div>
-            )}
-
             <div className="mt-3 space-y-2">
-              {items.map((it, idx) => {
-                const complete = isFoodItemComplete(it);
-                const miss = foodItemMissing(it);
-                const open = isOpen(type, idx, it);
-                const amber = (on: boolean) => (validationActive && on ? BORDER_AMBER : BORDER_OK);
-                return (
-                  <div
-                    key={idx}
-                    className="overflow-hidden rounded-xl bg-white"
-                    style={{ borderWidth: "0.5px", borderColor: "#c8bfa6" }}
-                  >
-                    {/* Header — tap to expand/collapse */}
-                    <button
-                      type="button"
-                      onClick={() => setExpanded((p) => ({ ...p, [key(type, idx)]: !open }))}
-                      className="flex w-full items-center gap-2 px-3 py-3 text-left"
-                    >
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate text-sm font-medium text-[#1a3d2e]">
-                          {it.name.trim() || label}
-                        </span>
-                        <span className={`mt-0.5 block truncate text-xs ${complete ? "text-[#5f5e5a]" : "text-[#854F0B]"}`}>
-                          {complete ? summaryLine(it) : "Tap to add the details your sitter needs."}
-                        </span>
-                      </span>
-                      <StatusPill complete={complete} />
-                      <ChevronDown className={`size-4 shrink-0 text-[#8a897f] transition-transform ${open ? "rotate-180" : ""}`} />
-                    </button>
-
-                    {open && (
-                      <div className="space-y-3 border-t border-[#ece6d6] px-3 pb-3 pt-3">
-                        {/* Brand / name — required */}
-                        <Field label="Brand or name" required>
-                          <input
-                            className={`${FIELD} ${amber(miss.brand)}`}
-                            placeholder="e.g. Harrison's High Potency"
-                            value={it.name}
-                            maxLength={120}
-                            onChange={(e) => setItem(idx, { name: e.target.value })}
-                          />
-                          {validationActive && miss.brand && <Helper>Add the brand or food name.</Helper>}
-                        </Field>
-
-                        {!it.freeFed && (
-                          <>
-                            {/* How much — number + unit, required */}
-                            <Field label="How much?" required>
-                              <div className="grid grid-cols-[1fr,1.3fr] gap-2">
-                                <input
-                                  className={`${FIELD} ${amber(miss.qty)}`}
-                                  inputMode="decimal"
-                                  placeholder="Amount"
-                                  value={it.amount}
-                                  onChange={(e) => setItem(idx, { amount: e.target.value.replace(/[^0-9.]/g, "") })}
-                                />
-                                <select
-                                  className={`${FIELD} ${amber(miss.unit)} appearance-none`}
-                                  value={it.unit}
-                                  onChange={(e) => setItem(idx, { unit: e.target.value })}
-                                >
-                                  <option value="">Unit…</option>
-                                  {/* keep any legacy unit selectable */}
-                                  {it.unit && !FOOD_UNITS.includes(it.unit as any) && (
-                                    <option value={it.unit}>{it.unit}</option>
-                                  )}
-                                  {FOOD_UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
-                                </select>
-                              </div>
-                              {validationActive && (miss.qty || miss.unit) && <Helper>Add the amount and pick a unit.</Helper>}
-                            </Field>
-
-                            {/* When — period chips, required */}
-                            <Field label="When?" required>
-                              <div className="flex flex-wrap gap-1.5">
-                                {FEED_PERIODS.map((p) => {
-                                  const on = normalizeFeedTimes(it.times).some((t) => t.period === p.value);
-                                  return (
-                                    <button
-                                      key={p.value}
-                                      type="button"
-                                      onClick={() => setItem(idx, { times: toggleWhen(it, p.value) })}
-                                      className={
-                                        "min-h-[44px] rounded-full px-4 text-sm font-medium transition " +
-                                        (on
-                                          ? "bg-[#1a3d2e] text-white"
-                                          : `border bg-white text-[#1a3d2e] ${validationActive && miss.when ? BORDER_AMBER : "border-[#c8bfa6]"}`)
-                                      }
-                                    >
-                                      {on ? "✓ " : ""}{p.label}
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                              {validationActive && miss.when && <Helper>Pick at least one feeding time.</Helper>}
-                            </Field>
-                          </>
-                        )}
-
-                        {/* Free-fed */}
-                        <label className="flex min-h-[44px] cursor-pointer items-center gap-2.5 text-sm font-medium text-[#1a3d2e]">
-                          <input
-                            type="checkbox"
-                            className="size-5 accent-[#1a3d2e]"
-                            checked={!!it.freeFed}
-                            onChange={(e) => setItem(idx, { freeFed: e.target.checked, ...(e.target.checked ? { times: [] } : {}) })}
-                          />
-                          Available all day / free-fed
-                        </label>
-                        {it.freeFed && (
-                          <p className="rounded-xl bg-[#d6e8dc] px-3 py-2 text-xs text-[#1a3d2e]">
-                            Left in the cage — no set amount or times needed.
-                          </p>
-                        )}
-
-                        {/* Optional note */}
-                        <Field label="Anything else?">
-                          <textarea
-                            className={`${FIELD} ${BORDER_OK} min-h-[64px] leading-relaxed`}
-                            placeholder="Optional — any prep or serving details"
-                            maxLength={300}
-                            value={it.note ?? ""}
-                            onChange={(e) => setItem(idx, { note: e.target.value || null })}
-                          />
-                        </Field>
-
-                        {items.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => removeItem(idx)}
-                            className="text-xs font-medium text-[#854F0B] underline"
-                          >
-                            Remove this item
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+              {items.map((it, idx) => (
+                <ItemCard
+                  key={idx}
+                  item={it}
+                  label={label}
+                  validationActive={validationActive}
+                  open={isOpen(type, idx, it)}
+                  onToggle={() => setOpen(type, idx, !isOpen(type, idx, it))}
+                  onChange={(patch) => setItem(idx, patch)}
+                  setWhen={(period) => setItem(idx, { times: toggleWhen(it, period) })}
+                  onRemove={items.length > 1 ? () => removeItem(idx) : undefined}
+                />
+              ))}
             </div>
-
-            <button
-              type="button"
-              onClick={addItem}
-              className="mt-3 flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-[#2d6a4f] bg-transparent text-sm font-medium text-[#2d6a4f]"
-            >
-              <Plus className="size-4" /> Add another {label.toLowerCase()} item
-            </button>
+            <AddButton label={label} onClick={addItem} />
           </div>
         );
       })}
     </div>
+  );
+}
+
+function ItemCard({
+  item,
+  label,
+  hideBrand,
+  validationActive,
+  open,
+  onToggle,
+  onChange,
+  setWhen,
+  onRemove,
+}: {
+  item: FoodItem;
+  label: string;
+  hideBrand?: boolean;
+  validationActive: boolean;
+  open: boolean;
+  onToggle: () => void;
+  onChange: (patch: Partial<FoodItem>) => void;
+  setWhen: (period: FeedPeriod) => void;
+  onRemove?: () => void;
+}) {
+  const complete = isFoodItemComplete(item);
+  const miss = foodItemMissing(item);
+  const amber = (on: boolean) => (validationActive && on ? BORDER_AMBER : BORDER_OK);
+
+  return (
+    <div className="overflow-hidden rounded-xl bg-white" style={{ borderWidth: "0.5px", borderColor: "#c8bfa6" }}>
+      <button type="button" onClick={onToggle} className="flex w-full items-center gap-2 px-3 py-3 text-left">
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-sm font-medium text-[#1a3d2e]">{item.name.trim() || label}</span>
+          <span className={`mt-0.5 block truncate text-xs ${complete ? "text-[#5f5e5a]" : "text-[#854F0B]"}`}>
+            {complete ? summaryLine(item) : "Tap to add the details your sitter needs."}
+          </span>
+        </span>
+        <StatusPill complete={complete} />
+        <ChevronDown className={`size-4 shrink-0 text-[#8a897f] transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+
+      {open && (
+        <div className="space-y-3 border-t border-[#ece6d6] px-3 pb-3 pt-3">
+          {!hideBrand && (
+            <Field label="Brand or name" required>
+              <input
+                className={`${FIELD} ${amber(miss.brand)}`}
+                placeholder="e.g. Harrison's High Potency"
+                value={item.name}
+                maxLength={120}
+                onChange={(e) => onChange({ name: e.target.value })}
+              />
+              {validationActive && miss.brand && <Helper>Add the brand or food name.</Helper>}
+            </Field>
+          )}
+
+          {!item.freeFed && (
+            <>
+              <Field label="How much?" required>
+                <div className="grid grid-cols-[1fr,1.3fr] gap-2">
+                  <input
+                    className={`${FIELD} ${amber(miss.qty)}`}
+                    inputMode="decimal"
+                    placeholder="Amount"
+                    value={item.amount}
+                    onChange={(e) => onChange({ amount: e.target.value.replace(/[^0-9.]/g, "") })}
+                  />
+                  <select
+                    className={`${FIELD} ${amber(miss.unit)} appearance-none`}
+                    value={item.unit}
+                    onChange={(e) => onChange({ unit: e.target.value })}
+                  >
+                    <option value="">Unit…</option>
+                    {item.unit && !FOOD_UNITS.includes(item.unit as any) && <option value={item.unit}>{item.unit}</option>}
+                    {FOOD_UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
+                  </select>
+                </div>
+                {validationActive && (miss.qty || miss.unit) && <Helper>Add the amount and pick a unit.</Helper>}
+              </Field>
+
+              <Field label="When?" required>
+                <div className="flex flex-wrap gap-1.5">
+                  {FEED_PERIODS.map((p) => {
+                    const on = normalizeFeedTimes(item.times).some((t) => t.period === p.value);
+                    return (
+                      <button
+                        key={p.value}
+                        type="button"
+                        onClick={() => setWhen(p.value)}
+                        className={
+                          "min-h-[44px] rounded-full px-4 text-sm font-medium transition " +
+                          (on
+                            ? "bg-[#1a3d2e] text-white"
+                            : `border bg-white text-[#1a3d2e] ${validationActive && miss.when ? BORDER_AMBER : "border-[#c8bfa6]"}`)
+                        }
+                      >
+                        {on ? "✓ " : ""}{p.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                {validationActive && miss.when && <Helper>Pick at least one feeding time.</Helper>}
+              </Field>
+            </>
+          )}
+
+          <label className="flex min-h-[44px] cursor-pointer items-center gap-2.5 text-sm font-medium text-[#1a3d2e]">
+            <input
+              type="checkbox"
+              className="size-5 accent-[#1a3d2e]"
+              checked={!!item.freeFed}
+              onChange={(e) => onChange({ freeFed: e.target.checked, ...(e.target.checked ? { times: [] } : {}) })}
+            />
+            Available all day / free-fed
+          </label>
+          {item.freeFed && (
+            <p className="rounded-xl bg-[#d6e8dc] px-3 py-2 text-xs text-[#1a3d2e]">
+              Left in the cage — no set amount or times needed.
+            </p>
+          )}
+
+          <Field label="Anything else?">
+            <textarea
+              className={`${FIELD} ${BORDER_OK} min-h-[64px] leading-relaxed`}
+              placeholder="Optional — any prep or serving details"
+              maxLength={300}
+              value={item.note ?? ""}
+              onChange={(e) => onChange({ note: e.target.value || null })}
+            />
+          </Field>
+
+          {onRemove && (
+            <button type="button" onClick={onRemove} className="text-xs font-medium text-[#854F0B] underline">
+              Remove this item
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AddButton({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="mt-3 flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-[#2d6a4f] bg-transparent text-sm font-medium text-[#2d6a4f]"
+    >
+      <Plus className="size-4" /> Add another {label.toLowerCase()} item
+    </button>
   );
 }
 
