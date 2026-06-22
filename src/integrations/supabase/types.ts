@@ -393,7 +393,9 @@ export type Database = {
           log_date: string
           notes: string | null
           posture_status: string | null
+          run_by: string | null
           sit_id: string | null
+          source: string
           triage_reasons: string | null
           triage_status: string
           water_status: string | null
@@ -413,7 +415,9 @@ export type Database = {
           log_date?: string
           notes?: string | null
           posture_status?: string | null
+          run_by?: string | null
           sit_id?: string | null
+          source?: string
           triage_reasons?: string | null
           triage_status?: string
           water_status?: string | null
@@ -433,7 +437,9 @@ export type Database = {
           log_date?: string
           notes?: string | null
           posture_status?: string | null
+          run_by?: string | null
           sit_id?: string | null
+          source?: string
           triage_reasons?: string | null
           triage_status?: string
           water_status?: string | null

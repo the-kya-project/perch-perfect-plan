@@ -60,18 +60,18 @@ function OwnerScan() {
           notes: p.notes ?? null,
           triage_status: triage.status,
           triage_reasons: triage.reasons.join(" | "),
-        } as any)
+        })
         .select()
         .single();
       if (error) throw error;
 
       // vomiting_status / photo / weight — best-effort, never block the scan.
-      if (a.vomiting) await supabase.from("daily_logs").update({ vomiting_status: a.vomiting } as any).eq("id", (row as any).id);
+      if (a.vomiting) await supabase.from("daily_logs").update({ vomiting_status: a.vomiting } as any).eq("id", row.id);
       if (p.photoDataUrl) {
-        await supabase.from("photo_logs").insert({ bird_id: birdId, daily_log_id: (row as any).id, photo_type: "other", photo_url: p.photoDataUrl, notes: "Attached to health scan" } as any);
+        await supabase.from("photo_logs").insert({ bird_id: birdId, daily_log_id: row.id, photo_type: "other", photo_url: p.photoDataUrl, notes: "Attached to health scan" });
       }
       if (typeof p.weightGrams === "number") {
-        await supabase.from("weight_entries").insert({ bird_id: birdId, grams: p.weightGrams, source: "owner", logged_by: u.user?.id ?? null } as any);
+        await supabase.from("weight_entries").insert({ bird_id: birdId, grams: p.weightGrams, source: "owner", logged_by: u.user?.id ?? null });
       }
 
       track("health_scan_run", { severity: triage.status, had_photo: !!p.photoDataUrl, source: "owner" });
