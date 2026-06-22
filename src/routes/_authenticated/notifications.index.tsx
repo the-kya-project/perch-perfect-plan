@@ -5,7 +5,7 @@ import { ArrowLeft, Settings, AlertTriangle, CheckCircle2, Feather } from "lucid
 import { fetchScanFeed, markNotifsSeen, getNotifSeenAt, type ScanFeedItem } from "@/lib/notificationsFeed";
 
 export const Route = createFileRoute("/_authenticated/notifications/")({
-  head: () => ({ meta: [{ title: "Notifications — Parrot Care Co-Pilot" }] }),
+  head: () => ({ meta: [{ title: "Scans — Parrot Care Co-Pilot" }] }),
   component: NotificationsInbox,
 });
 
@@ -52,7 +52,7 @@ function NotificationsInbox() {
           </Link>
         </div>
 
-        <h1 className="mt-4 text-2xl font-bold tracking-tight">Notifications</h1>
+        <h1 className="mt-4 text-2xl font-bold tracking-tight">Scans</h1>
         <p className="mt-1 text-sm text-sage-600">Health scans your sitters have submitted, newest first.</p>
 
         {isLoading ? (

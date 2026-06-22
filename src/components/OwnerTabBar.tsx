@@ -10,7 +10,7 @@ export type OwnerTab = "home" | "sits" | "activity" | "explore";
 const TABS: { key: OwnerTab; label: string; to: string; Icon: typeof Home }[] = [
   { key: "home", label: "Home", to: "/dashboard", Icon: Home },
   { key: "sits", label: "Sits", to: "/sits", Icon: Calendar },
-  { key: "activity", label: "Activity", to: "/notifications", Icon: Activity },
+  { key: "activity", label: "Scans", to: "/notifications", Icon: Activity },
   { key: "explore", label: "Explore", to: "/explore", Icon: Compass },
 ];
 

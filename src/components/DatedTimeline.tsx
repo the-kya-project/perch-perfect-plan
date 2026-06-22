@@ -23,18 +23,20 @@ function fmt(iso: string): string {
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric", ...(sameYear ? {} : { year: "numeric" }) });
 }
 
-export function DatedTimeline({ items, empty }: { items: TimelineItem[]; empty?: ReactNode }) {
+export function DatedTimeline({ items, empty, rail = true }: { items: TimelineItem[]; empty?: ReactNode; rail?: boolean }) {
   if (items.length === 0) {
     return <>{empty ?? <p className="rounded-[14px] bg-[#efe9da] p-6 text-center text-sm text-[#5f5e5a]">Nothing logged yet.</p>}</>;
   }
   const sorted = [...items].sort((a, b) => +new Date(b.at) - +new Date(a.at));
   return (
-    <ol className="relative ml-1 space-y-3 border-l border-[#e3dcc9] pl-4">
+    <ol className={rail ? "relative ml-1 space-y-3 border-l border-[#e3dcc9] pl-4" : "space-y-2"}>
       {sorted.map((it) => (
         <li key={it.id} className="relative">
-          <span className="absolute -left-[1.30rem] top-1 grid size-5 place-items-center rounded-full bg-[#efe9da] text-[#2d6a4f] ring-2 ring-[#f4f1e8]">
-            {it.icon ?? <span className="size-1.5 rounded-full bg-[#2d6a4f]" />}
-          </span>
+          {rail && (
+            <span className="absolute -left-[1.30rem] top-1 grid size-5 place-items-center rounded-full bg-[#efe9da] text-[#2d6a4f] ring-2 ring-[#f4f1e8]">
+              {it.icon ?? <span className="size-1.5 rounded-full bg-[#2d6a4f]" />}
+            </span>
+          )}
           {(() => {
             const inner = (
               <>

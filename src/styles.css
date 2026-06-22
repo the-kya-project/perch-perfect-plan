@@ -87,6 +87,16 @@
   * {
     border-color: var(--color-border);
   }
+  /* Never let content widen the layout past the device width. On an installed
+     iOS PWA, a single overflowing element makes the standalone shell "shrink to
+     fit" — the whole app renders tiny and the user has to pinch-zoom to read it.
+     `overflow-x: clip` caps the width WITHOUT creating a scroll container (so
+     sticky headers keep working) and WITHOUT disabling zoom. */
+  html,
+  body {
+    max-width: 100%;
+    overflow-x: clip;
+  }
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
@@ -95,6 +105,8 @@
     /* Keep the native scroll-chaining rubber-band from competing with the
        custom pull-to-refresh (and from bouncing the installed PWA shell). */
     overscroll-behavior-y: contain;
+    /* Long unbroken strings (emails, URLs, IDs) wrap instead of forcing width. */
+    overflow-wrap: break-word;
   }
   input, textarea, select {
     font-size: 16px; /* prevent iOS zoom */
