@@ -12,6 +12,7 @@ export type TimelineItem = {
   subtitle?: ReactNode;  // secondary line (e.g. "+3 g from previous")
   badge?: ReactNode;     // small marker (e.g. the sitter chip)
   icon?: ReactNode;      // dot contents; defaults to a plain dot
+  onClick?: () => void;  // makes the row tappable (e.g. open for editing)
 };
 
 function fmt(iso: string): string {
@@ -33,16 +34,26 @@ export function DatedTimeline({ items, empty }: { items: TimelineItem[]; empty?:
           <span className="absolute -left-[1.30rem] top-1 grid size-5 place-items-center rounded-full bg-[#efe9da] text-[#2d6a4f] ring-2 ring-[#f4f1e8]">
             {it.icon ?? <span className="size-1.5 rounded-full bg-[#2d6a4f]" />}
           </span>
-          <div className="flex items-start justify-between gap-3 rounded-[14px] bg-white p-3 ring-1 ring-[#e3dcc9]">
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-[#1a3d2e]">{it.title}</span>
-                {it.badge}
-              </div>
-              {it.subtitle && <div className="mt-0.5 text-xs text-[#8a897f]">{it.subtitle}</div>}
-            </div>
-            <span className="shrink-0 text-xs text-[#8a897f]">{fmt(it.at)}</span>
-          </div>
+          {(() => {
+            const inner = (
+              <>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-[#1a3d2e]">{it.title}</span>
+                    {it.badge}
+                  </div>
+                  {it.subtitle && <div className="mt-0.5 text-xs text-[#8a897f]">{it.subtitle}</div>}
+                </div>
+                <span className="shrink-0 text-xs text-[#8a897f]">{fmt(it.at)}</span>
+              </>
+            );
+            const cls = "flex w-full items-start justify-between gap-3 rounded-[14px] bg-white p-3 text-left ring-1 ring-[#e3dcc9]";
+            return it.onClick ? (
+              <button type="button" onClick={it.onClick} className={`${cls} active:bg-[#f4f1e8]`}>{inner}</button>
+            ) : (
+              <div className={cls}>{inner}</div>
+            );
+          })()}
         </li>
       ))}
     </ol>
