@@ -50,6 +50,7 @@ function ScanPage() {
   const [notes, setNotes] = useState("");
   const [photo, setPhoto] = useState<string | null>(null);
   const [photoBusy, setPhotoBusy] = useState(false);
+  const [weight, setWeight] = useState("");
   const [result, setResult] = useState<{ status: string; message: string; reasons: string[] } | null>(null);
   const [showErrors, setShowErrors] = useState(false);
 
@@ -78,6 +79,7 @@ function ScanPage() {
           answers: filled,
           notes: notes || undefined,
           photoDataUrl: photo || undefined,
+          weightGrams: weight.trim() && Number.isFinite(Number(weight)) ? Number(weight) : undefined,
         },
       });
     },
@@ -243,6 +245,23 @@ function ScanPage() {
             </div>
           )}
           {photo && !photoBusy && <img src={photo} alt="Scan photo preview" className="mt-2 max-h-40 rounded-lg" />}
+        </section>
+
+        <section className="rounded-2xl bg-[#efe9da] p-4">
+          <label className="block">
+            <span className="text-sm font-medium">Optional: weigh-in</span>
+            <span className="mt-1 block text-xs text-[#5f5e5a]">If you weighed them, add the grams — it goes straight to the owner's weight tracker.</span>
+            <div className="mt-3 flex items-center gap-2">
+              <input
+                inputMode="decimal"
+                value={weight}
+                onChange={(e) => setWeight(e.target.value.replace(/[^0-9.]/g, ""))}
+                placeholder="e.g. 410"
+                className="h-11 w-32 rounded-xl border border-[#e0d8c4] bg-white px-3 text-center text-sm"
+              />
+              <span className="text-sm text-[#5f5e5a]">grams</span>
+            </div>
+          </label>
         </section>
 
         <section className="rounded-2xl bg-[#efe9da] p-4">
