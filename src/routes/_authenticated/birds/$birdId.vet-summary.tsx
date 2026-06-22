@@ -1,10 +1,272 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { FacetStub } from "@/components/FacetStub";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { ArrowLeft, FileText, Share2, Printer } from "lucide-react";
+import { computeWeightTrend } from "@/lib/weightTrend";
+import { mergeEmergency, ASPCA_POISON_CONTROL } from "@/lib/emergency";
+import { formatAmountUnit } from "@/lib/labels";
+import { normalizeFeedTimes, feedTimeLabel } from "@/lib/feedTimes";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/vet-summary")({
   head: () => ({ meta: [{ title: "Vet summary — Parrot Care Co-Pilot" }] }),
-  component: () => {
-    const { birdId } = Route.useParams();
-    return <FacetStub birdId={birdId} title="Vet summary" blurb="A printable snapshot for the vet — identity, weight trend, meds, and history." />;
-  },
+  component: VetSummary,
 });
+
+const NONE = "none on file";
+const DIET_LABELS: Record<string, string> = {
+  pelleted: "Pelleted", seed: "Seed mix", pellet_seed: "Pellet & seed", chop: "Fresh chop / formulated", other: "Other",
+};
+const SEX_METHOD: Record<string, string> = { dna: "DNA", surgical: "surgical", visual: "visual", unknown: "" };
+
+function VetSummary() {
+  const { birdId } = Route.useParams();
+  const [generated, setGenerated] = useState(false);
+
+  const { data: bird } = useQuery({
+    queryKey: ["vet-bird", birdId],
+    queryFn: async () => {
+      const { data } = await supabase.from("birds")
+        .select("name, species, sex, sex_method, age, microchip, band_number, origin, medications, medical_conditions, owner_id")
+        .eq("id", birdId).maybeSingle();
+      return data as any;
+    },
+  });
+  const { data: plan } = useQuery({
+    queryKey: ["vet-plan", birdId],
+    queryFn: async () => {
+      const { data } = await supabase.from("care_plans").select("*").eq("bird_id", birdId).maybeSingle();
+      return data as any;
+    },
+  });
+  const { data: weights } = useQuery({
+    queryKey: ["weight-entries", birdId],
+    queryFn: async () => {
+      const { data } = await supabase.from("weight_entries")
+        .select("grams, measured_at").eq("bird_id", birdId)
+        .order("measured_at", { ascending: false }).limit(500);
+      return (data ?? []) as { grams: number; measured_at: string }[];
+    },
+  });
+  const { data: contacts } = useQuery({
+    queryKey: ["contacts", birdId],
+    queryFn: async () => {
+      const { data } = await supabase.from("emergency_contacts").select("*").eq("bird_id", birdId).maybeSingle();
+      return data as any;
+    },
+  });
+  const { data: defaults } = useQuery({
+    queryKey: ["owner-defaults"],
+    enabled: !!bird?.owner_id,
+    queryFn: async () => {
+      const { data } = await supabase.from("owner_emergency_defaults").select("*").eq("owner_id", bird.owner_id).maybeSingle();
+      return data as any;
+    },
+  });
+
+  const name = bird?.name ?? "This bird";
+  const { current, trend, delta } = computeWeightTrend(weights ?? [], 90);
+  const em = mergeEmergency(contacts ?? null, defaults ?? null);
+
+  // ---- assemble field values (string | null) ----
+  const sexText = bird?.sex
+    ? `${cap(bird.sex)}${bird.sex_method && SEX_METHOD[bird.sex_method] ? ` (${SEX_METHOD[bird.sex_method]})` : ""}`
+    : null;
+  const identity: [string, string | null][] = [
+    ["Species", bird?.species ?? null],
+    ["Sex", sexText],
+    ["Age", bird?.age ?? null],
+    ["Microchip", bird?.microchip ?? null],
+    ["Band", bird?.band_number ?? null],
+    ["Origin", bird?.origin ?? null],
+  ];
+
+  const weightText = current
+    ? `${current.grams} g · ${trendLabel(trend, delta)} · last weighed ${fmtDate(current.measured_at)}`
+    : null;
+
+  const dietText = buildDiet(plan);
+  const meds = [
+    val(bird?.medications) && `Medications: ${bird.medications.trim()}`,
+    val(bird?.medical_conditions) && `Conditions: ${bird.medical_conditions.trim()}`,
+    val(plan?.when_to_call_vet) && `Call the vet if: ${plan.when_to_call_vet.trim()}`,
+  ].filter(Boolean).join("\n");
+  const handling = [
+    val(plan?.handling_rules) && plan.handling_rules.trim(),
+    val(plan?.out_of_cage_rules) && `Out of cage: ${plan.out_of_cage_rules.trim()}`,
+  ].filter(Boolean).join("\n");
+
+  function shareText(): string {
+    const lines = [
+      `${name} — vet & emergency summary`,
+      bird?.species ? `Species: ${bird.species}` : "",
+      `Generated ${fmtDate(new Date().toISOString())}`,
+      "",
+      "IDENTITY",
+      ...identity.map(([l, v]) => `  ${l}: ${v ?? NONE}`),
+      "",
+      `WEIGHT: ${weightText ?? NONE}`,
+      "",
+      `DIET: ${dietText ?? NONE}`,
+      "",
+      `MEDS & HEALTH FLAGS: ${meds || NONE}`,
+      "",
+      `HANDLING: ${handling || NONE}`,
+      "",
+      "EMERGENCY CONTACTS",
+      `  Avian vet: ${[em.avian_vet_name, em.avian_vet_phone].filter(Boolean).join(" · ") || NONE}`,
+      `  Emergency vet: ${[em.emergency_vet_name, em.emergency_vet_phone].filter(Boolean).join(" · ") || NONE}`,
+      `  Owner: ${em.owner_phone || NONE}`,
+      `  Backup: ${[em.backup_name, em.backup_phone].filter(Boolean).join(" · ") || NONE}`,
+      `  Poison control: ${em.poison_control || ASPCA_POISON_CONTROL}`,
+    ];
+    return lines.filter((l) => l !== undefined).join("\n");
+  }
+
+  async function share() {
+    const text = shareText();
+    try {
+      if (navigator.share) { await navigator.share({ title: `${name} — vet summary`, text }); return; }
+      await navigator.clipboard.writeText(text);
+      toast.success("Summary copied to clipboard.");
+    } catch { /* user cancelled share — ignore */ }
+  }
+
+  return (
+    <div className="min-h-screen bg-[#f4f1e8] pb-24">
+      <header data-noprint className="sticky top-0 z-10 border-b border-[#e3ded0] bg-[#f4f1e8]/95 backdrop-blur">
+        <div className="mx-auto flex max-w-md items-center gap-3 px-5 py-3">
+          <Link to="/birds/$birdId" params={{ birdId }} aria-label="Back to bird record" className="-ml-1 rounded p-1 text-[#1a3d2e]">
+            <ArrowLeft className="size-5" />
+          </Link>
+          <h1 className="text-base font-medium text-[#1a3d2e]">Vet summary</h1>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-md px-5 py-5">
+        {!generated ? (
+          <section className="rounded-[16px] bg-[#efe9da] p-8 text-center">
+            <FileText className="mx-auto size-7 text-[#2d6a4f]" />
+            <p className="mt-3 text-sm text-[#1a3d2e]">A clean one-page snapshot for the vet — identity, weight, diet, meds, handling, and emergency contacts, pulled from {name}'s record.</p>
+            <button type="button" onClick={() => setGenerated(true)} className="mt-4 inline-flex min-h-[44px] items-center gap-2 rounded-[14px] bg-[#1a3d2e] px-5 text-sm font-medium text-white">
+              <FileText className="size-4" /> Generate summary
+            </button>
+          </section>
+        ) : (
+          <>
+            {/* Actions */}
+            <div data-noprint className="mb-4 flex gap-2">
+              <button type="button" onClick={share} className="flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-[14px] border border-[#c8bfa6] bg-white text-sm font-medium text-[#1a3d2e]">
+                <Share2 className="size-4" /> Share
+              </button>
+              <button type="button" onClick={() => window.print()} className="flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-[14px] bg-[#1a3d2e] text-sm font-medium text-white">
+                <Printer className="size-4" /> Save as PDF
+              </button>
+            </div>
+
+            {/* The sheet */}
+            <article id="vet-sheet" className="rounded-[14px] border border-[#d8d0bd] bg-white p-5">
+              <header className="border-b border-[#e3dcc9] pb-3">
+                <h2 className="text-xl font-medium text-[#1a3d2e]">{name}</h2>
+                {bird?.species && <p className="mt-0.5 text-sm italic text-[#5f5e5a]">{bird.species}</p>}
+                <p className="mt-1 text-xs text-[#8a897f]">Generated {fmtDate(new Date().toISOString())}</p>
+              </header>
+
+              <Section label="Identity">
+                <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+                  {identity.map(([l, v]) => (
+                    <div key={l}>
+                      <dt className="text-[10px] font-semibold uppercase tracking-wider text-[#8a897f]">{l}</dt>
+                      <dd className={`text-sm ${v ? "text-[#1a3d2e]" : "italic text-[#9a978c]"}`}>{v ?? NONE}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </Section>
+
+              <Section label="Weight"><Value text={weightText} /></Section>
+              <Section label="Diet"><Value text={dietText} multiline /></Section>
+              <Section label="Meds & health flags"><Value text={meds} multiline /></Section>
+              <Section label="Handling"><Value text={handling} multiline /></Section>
+
+              {/* Emergency — the one red block (legitimate emergency use) */}
+              <section className="mt-4 rounded-[12px] border p-3" style={{ borderColor: "#E24B4A", backgroundColor: "#FCEBEB" }}>
+                <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#A32D2D" }}>Emergency contacts</p>
+                <dl className="mt-1.5 space-y-1 text-sm" style={{ color: "#791F1F" }}>
+                  <EmRow label="Avian vet" value={[em.avian_vet_name, em.avian_vet_phone].filter(Boolean).join(" · ")} />
+                  <EmRow label="Emergency vet" value={[em.emergency_vet_name, em.emergency_vet_phone].filter(Boolean).join(" · ")} />
+                  <EmRow label="Owner" value={em.owner_phone ?? ""} />
+                  <EmRow label="Backup" value={[em.backup_name, em.backup_phone].filter(Boolean).join(" · ")} />
+                  <EmRow label="Poison control" value={em.poison_control || ASPCA_POISON_CONTROL} />
+                </dl>
+              </section>
+            </article>
+          </>
+        )}
+      </main>
+
+      {/* Print only the sheet, regardless of app chrome. */}
+      <style>{`@media print {
+        body * { visibility: hidden !important; }
+        #vet-sheet, #vet-sheet * { visibility: visible !important; }
+        #vet-sheet { position: absolute; left: 0; top: 0; width: 100%; border: none !important; }
+        [data-noprint] { display: none !important; }
+      }`}</style>
+    </div>
+  );
+}
+
+function Section({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <section className="mt-4">
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-[#BA7517]">{label}</p>
+      <div className="mt-1">{children}</div>
+    </section>
+  );
+}
+
+function Value({ text, multiline }: { text: string | null | undefined; multiline?: boolean }) {
+  if (!text) return <p className="text-sm italic text-[#9a978c]">{NONE}</p>;
+  return <p className={`text-sm text-[#1a3d2e] ${multiline ? "whitespace-pre-line" : ""}`}>{text}</p>;
+}
+
+function EmRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex gap-2">
+      <dt className="w-28 shrink-0 font-medium">{label}</dt>
+      <dd className={value ? "" : "italic opacity-70"}>{value || NONE}</dd>
+    </div>
+  );
+}
+
+function cap(s: string): string { return s.charAt(0).toUpperCase() + s.slice(1); }
+function val(s: unknown): s is string { return typeof s === "string" && s.trim().length > 0; }
+function fmtDate(iso: string): string {
+  return new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+}
+function trendLabel(trend: "steady" | "up" | "down", delta: number): string {
+  if (trend === "down") return `down ${Math.abs(delta)} g`;
+  if (trend === "up") return `up ${delta} g`;
+  return "steady";
+}
+
+function buildDiet(plan: any): string | null {
+  if (!plan) return null;
+  const types = (plan.diet_types ?? []) as string[];
+  const details = (plan.diet_details ?? {}) as Record<string, any[]>;
+  const lines: string[] = [];
+  for (const t of types) {
+    const label = DIET_LABELS[t] ?? t;
+    const items = (details[t] ?? []).filter((it) => (it.name ?? "").trim() || it.freeFed);
+    if (!items.length) { lines.push(label); continue; }
+    const parts = items.map((it) => {
+      const amt = it.freeFed ? "free-fed" : formatAmountUnit(it.amount, it.unit);
+      const when = it.freeFed ? "" : normalizeFeedTimes(it.times).map((ft) => feedTimeLabel(ft, "period")).join(", ");
+      return [it.name?.trim() || label, [amt, when].filter(Boolean).join(" @ ")].filter(Boolean).join(" — ");
+    });
+    lines.push(`${label}: ${parts.join("; ")}`);
+  }
+  const never = (plan.never_feed ?? []) as string[];
+  if (never.length) lines.push(`Never feed: ${never.join(", ")}`);
+  return lines.length ? lines.join("\n") : null;
+}

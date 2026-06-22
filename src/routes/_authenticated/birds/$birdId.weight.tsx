@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { ArrowLeft, Scale, Plus, Minus, Check } from "lucide-react";
 import { WeightTrendChart, type WeightPoint } from "@/components/WeightTrendChart";
 import { DatedTimeline, type TimelineItem } from "@/components/DatedTimeline";
+import { computeWeightTrend } from "@/lib/weightTrend";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/weight")({
   head: () => ({ meta: [{ title: "Weight — Parrot Care Co-Pilot" }] }),
@@ -58,15 +59,10 @@ function WeightFacet() {
   });
 
   const all = entries ?? [];
-  const current = all[0];
+  // Shared trend computation (kept identical to the vet summary).
+  const { current, trend, delta } = computeWeightTrend(all, win);
   const cutoff = Date.now() - win * 86_400_000;
   const inWindow = all.filter((e) => +new Date(e.measured_at) >= cutoff);
-
-  // Trend over the selected window: current vs the earliest point in-window.
-  const baseline = inWindow.length > 1 ? inWindow[inWindow.length - 1] : undefined;
-  const delta = current && baseline ? current.grams - baseline.grams : 0;
-  const pct = baseline ? delta / baseline.grams : 0;
-  const trend: "steady" | "up" | "down" = !baseline || Math.abs(pct) <= 0.025 ? "steady" : delta < 0 ? "down" : "up";
 
   const chartPoints: WeightPoint[] = inWindow.map((e) => ({ at: e.measured_at, grams: e.grams, sitter: e.source === "sitter" }));
 
@@ -117,9 +113,9 @@ function WeightFacet() {
               <div className="flex items-end justify-between gap-3">
                 <div>
                   <p className="text-4xl font-medium leading-none text-[#1a3d2e]">
-                    {current.grams}<span className="ml-1 text-lg font-normal text-[#5f5e5a]">g</span>
+                    {current!.grams}<span className="ml-1 text-lg font-normal text-[#5f5e5a]">g</span>
                   </p>
-                  <p className="mt-2 text-xs text-[#8a897f]">Last weighed {new Date(current.measured_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</p>
+                  <p className="mt-2 text-xs text-[#8a897f]">Last weighed {new Date(current!.measured_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</p>
                 </div>
                 <TrendPill trend={trend} delta={delta} />
               </div>
