@@ -130,7 +130,7 @@ function JournalFacet() {
         ) : shown.length === 0 ? (
           <p className="rounded-[14px] bg-[#efe9da] p-6 text-center text-sm text-[#5f5e5a]">No {FILTERS.find((f) => f.value === filter)!.label.toLowerCase()} entries yet.</p>
         ) : (
-          <DatedTimeline items={items} />
+          <DatedTimeline items={items} rail={false} />
         )}
       </main>
 
