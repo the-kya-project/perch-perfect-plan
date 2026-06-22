@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { SetupShell, SETUP_STEPS, TOTAL_STEPS } from "@/components/SetupShell";
 import { EmergencyInfo } from "@/components/EmergencyInfo";
-import { Plus, X, Check, Lightbulb, GripVertical, Sparkles } from "lucide-react";
+import { Plus, X, Check, Lightbulb, GripVertical, Sparkles, AlertTriangle } from "lucide-react";
 import { PhotoCropper } from "@/components/PhotoCropper";
 import { AgePicker, BirdField, SpeciesPicker } from "@/components/BirdPickers";
 import { ClipRecorder, UploadProgress, MAX_SECONDS as CLIP_MAX_SECONDS, MAX_BYTES as CLIP_MAX_BYTES } from "@/components/ClipRecorder";
@@ -14,7 +14,8 @@ import { ClipPlayer } from "@/components/ClipPlayer";
 import { useOwnerClipPreview } from "@/lib/useOwnerClipPreview";
 import { isCfClip } from "@/lib/clipRef";
 import { FEED_PREFIX, HYG_REMOVE_PREFIX, HYG_WASH_FOOD_PREFIX, HYG_WASH_WATER_PREFIX, WATER_CHANGE_PREFIX, MED_TASK_PREFIX, isDerivedTask, derivedSource, feedTimeToDaypart } from "@/lib/routineTasks";
-import { FeedTimePicker } from "@/components/careEditors/FeedTimePicker";
+import { FoodItemsEditor } from "@/components/careEditors/FoodItemsEditor";
+import { blankFoodItem, isFoodItemComplete, foodItemHasContent, type FoodItem } from "@/lib/foodItems";
 import { normalizeFeedTimes, feedTimeLabel, type FeedTime } from "@/lib/feedTimes";
 import { syncFeedingTasks } from "@/lib/feedingSync";
 import { formatAmountUnit } from "@/lib/labels";
@@ -194,6 +195,12 @@ function BirdSetup() {
   const registerFlush = useCallback((fn: (() => Promise<void>) | null) => {
     flushRef.current = fn;
   }, []);
+  // A step can register a forward-navigation gate (currently the Food step). It
+  // returns false to BLOCK Next and surface its own validation UI.
+  const validateRef = useRef<(() => boolean) | null>(null);
+  const registerValidate = useCallback((fn: (() => boolean) | null) => {
+    validateRef.current = fn;
+  }, []);
   // Returns false if the current step's pending save failed, so callers can stay
   // put rather than navigate away and lose the owner's input. The error toast is
   // raised by the autosave hook.
@@ -233,6 +240,8 @@ function BirdSetup() {
   }
 
   async function onNext() {
+    // Forward-navigation gate (Food step): block + show validation if incomplete.
+    if (validateRef.current && !validateRef.current()) return;
     if (!(await flushPending())) return;
     const completedSection = SETUP_STEPS[step - 1]?.key;
     if (step >= TOTAL_STEPS) {
@@ -343,6 +352,7 @@ function BirdSetup() {
           onJumpToStep={jumpToStep}
           onFinish={finishAndGo}
           registerFlush={registerFlush}
+          registerValidate={registerValidate}
         />
       </SetupDirtyContext.Provider>
     </SetupShell>
@@ -357,6 +367,7 @@ function StepBody({
   onJumpToStep,
   onFinish,
   registerFlush,
+  registerValidate,
 }: {
   step: number;
   birdId: string;
@@ -365,10 +376,11 @@ function StepBody({
   onJumpToStep: (target: number) => void;
   onFinish: (opts: { to: "dashboard-newsit" | "home" }) => void;
   registerFlush: (fn: (() => Promise<void>) | null) => void;
+  registerValidate: (fn: (() => boolean) | null) => void;
 }) {
   if (step === 1) return <BasicsStep birdId={birdId} onBlockNext={onBlockNext} registerFlush={registerFlush} />;
   // Food before Routine (step order set in SetupShell.SETUP_STEPS).
-  if (step === 2) return <FoodWaterStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} registerFlush={registerFlush} />;
+  if (step === 2) return <FoodWaterStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} registerFlush={registerFlush} registerValidate={registerValidate} />;
   if (step === 3) return <DayInLifeStep birdId={birdId} />;
   if (step === 4) return <PersonalityStep birdId={birdId} birdName={birdName} registerFlush={registerFlush} />;
   if (step === 5) return <EnvironmentStep birdId={birdId} registerFlush={registerFlush} />;
@@ -767,7 +779,6 @@ const DIET_OPTIONS = [
   { value: "other", label: "Other" },
 ];
 
-const UNITS = ["tablespoons", "cups", "grams", "scoops", "pieces"];
 
 const FRESH_FOOD_OPTIONS = [
   "Pre-made chop", "Leafy greens", "Carrot", "Bell pepper", "Broccoli", "Sweet potato",
@@ -818,18 +829,22 @@ const WATER_BOWL_WASH_OPTIONS = [
 // itself is excluded — checking the removal task should NOT start a new timer.
 export const FRESH_FOOD_TASK_PATTERN = /\b(fresh|chop|veg|veggies|salad|sprout)\b/i;
 
-type DietItem = { name: string; amount: string; unit: string; times?: FeedTime[]; freeFed?: boolean; note?: string | null };
+type DietItem = FoodItem;
 
 export function FoodWaterStep({
   birdId,
   birdName,
   onBlockNext,
   registerFlush,
+  registerValidate,
 }: {
   birdId: string;
   birdName: string;
   onBlockNext: (block: boolean) => void;
   registerFlush?: (fn: (() => Promise<void>) | null) => void;
+  // Wizard-only: register a gate run on "Next". Returns true to proceed; on false
+  // the step shows its validation banner/flags. The tabbed editor omits this.
+  registerValidate?: (fn: (() => boolean) | null) => void;
 }) {
   const qc = useQueryClient();
 
@@ -899,6 +914,11 @@ export function FoodWaterStep({
       }
       dd["chop"] = seeded;
     }
+    // Every selected type shows at least one (needs-details) item card, so the
+    // editable box is never hidden behind an "Add item" tap.
+    for (const t of dietTypes) {
+      if (!Array.isArray(dd[t]) || dd[t].length === 0) dd[t] = [blankFoodItem()];
+    }
     setDietDetails(dd);
     setFreshOther(plan.fresh_foods_other ?? "");
     setTreatsNotes(plan.treats_notes ?? "");
@@ -915,18 +935,50 @@ export function FoodWaterStep({
     setHydrated(true);
   }, [plan, hydrated]);
 
-  // Validation: each filled row must have both amount and unit (or neither).
-  const dietRowsValid = useMemo(() => {
+  // ---- Completeness + wizard validation gate ----
+  const [validationActive, setValidationActive] = useState(false);
+  const [expandSignal, setExpandSignal] = useState(0);
+  const bannerRef = useRef<HTMLDivElement | null>(null);
+
+  const typeLabel = useCallback(
+    (t: string) => (t === "other" ? (dietOther.trim() || "Other") : DIET_OPTIONS.find((o) => o.value === t)?.label ?? t),
+    [dietOther],
+  );
+
+  // Incomplete items across all selected types (recomputed live).
+  const incomplete = useMemo(() => {
+    const labels: string[] = [];
+    let count = 0;
     for (const t of diet) {
-      for (const it of dietDetails[t] ?? []) {
-        const a = (it.amount ?? "").trim();
-        const u = (it.unit ?? "").trim();
-        if ((a === "") !== (u === "")) return false;
-      }
+      const bad = (dietDetails[t] ?? []).filter((it) => !isFoodItemComplete(it));
+      if (bad.length) { count += bad.length; labels.push(typeLabel(t)); }
     }
-    return true;
-  }, [diet, dietDetails]);
-  useEffect(() => { onBlockNext(!dietRowsValid); }, [dietRowsValid, onBlockNext]);
+    return { labels, count };
+  }, [diet, dietDetails, typeLabel]);
+
+  // The tabbed editor navigates tabs freely — never disable Next here. The wizard
+  // gates forward navigation through registerValidate (a Next-click check) so it
+  // can show the banner + field flags instead of a silently-disabled button.
+  useEffect(() => { onBlockNext(false); }, [onBlockNext]);
+
+  // Once everything is complete, drop the active validation styling.
+  useEffect(() => {
+    if (validationActive && incomplete.count === 0) setValidationActive(false);
+  }, [validationActive, incomplete.count]);
+
+  // Register the wizard's Next gate (no-op in the tabbed editor, which doesn't
+  // pass registerValidate). Re-registered each render so it sees latest state.
+  useEffect(() => {
+    if (!registerValidate) return;
+    registerValidate(() => {
+      if (incomplete.count === 0) return true;
+      setValidationActive(true);
+      setExpandSignal((n) => n + 1);
+      requestAnimationFrame(() => bannerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+      return false;
+    });
+    return () => registerValidate(null);
+  });
 
   // Persist (debounced) whenever form changes after hydration.
   useDebouncedAutosave(
@@ -1057,18 +1109,21 @@ export function FoodWaterStep({
 
   if (isLoading || !plan) return <div className="h-32 animate-pulse rounded-2xl bg-sage-100" />;
 
-  function toggleArr<T>(arr: T[], v: T, setter: (a: T[]) => void) {
-    setter(arr.includes(v) ? arr.filter((x) => x !== v) : [...arr, v]);
-  }
+  const setItemsForType = (type: string, items: DietItem[]) =>
+    setDietDetails((prev) => ({ ...prev, [type]: items }));
 
-  function toggleFreshFood(label: string) {
-    const items = dietDetails["chop"] ?? [];
-    const lower = label.trim().toLowerCase();
-    const exists = items.some((i) => i.name.trim().toLowerCase() === lower);
-    const next = exists
-      ? items.filter((i) => i.name.trim().toLowerCase() !== lower)
-      : [...items, { name: label, amount: "", unit: "", times: [] }];
-    setDietDetails({ ...dietDetails, chop: next });
+  // Selecting a type creates its card with one auto-expanded "needs details"
+  // item; deselecting a type that has filled-in items confirms before discarding.
+  function toggleDietType(value: string) {
+    if (diet.includes(value)) {
+      const items = dietDetails[value] ?? [];
+      if (items.some(foodItemHasContent) && !window.confirm(`Remove ${typeLabel(value)} and the items you've added to it?`)) return;
+      setDiet(diet.filter((d) => d !== value));
+      setDietDetails((prev) => { const next = { ...prev }; delete next[value]; return next; });
+    } else {
+      setDiet([...diet, value]);
+      setDietDetails((prev) => (prev[value]?.length ? prev : { ...prev, [value]: [blankFoodItem()] }));
+    }
   }
 
   return (
@@ -1079,7 +1134,7 @@ export function FoodWaterStep({
       <Card title="Primary diet" hint="Choose all that apply.">
         <div className="flex flex-wrap gap-2">
           {DIET_OPTIONS.map((o) => (
-            <Chip key={o.value} on={diet.includes(o.value)} onClick={() => toggleArr(diet, o.value, setDiet)}>
+            <Chip key={o.value} on={diet.includes(o.value)} onClick={() => toggleDietType(o.value)}>
               {o.label}
             </Chip>
           ))}
@@ -1095,139 +1150,37 @@ export function FoodWaterStep({
         )}
       </Card>
 
-      {/* Per-diet-type items, amounts & feed times */}
+      {/* Per-diet-type items, amounts & feed times — shared FoodItemsEditor */}
       {diet.length > 0 && (
-        <Card
-          title={diet.length === 1 ? "Items, amounts & feed time(s)" : "Items & amounts per food type"}
-          hint="For each item, add the amount and when it's served. Use “Available all day” for food left in the cage."
-        >
-          <div className="space-y-4">
-            {diet.map((t) => {
-              const label = DIET_OPTIONS.find((o) => o.value === t)?.label ?? t;
-              const items = dietDetails[t] ?? [];
-              const update = (next: DietItem[]) =>
-                setDietDetails({ ...dietDetails, [t]: next });
-              const isChop = t === "chop";
-              const selectedFreshNames = new Set(items.map((i) => i.name.trim().toLowerCase()));
-              return (
-                <div key={t} className="rounded-xl bg-sage-50/60 p-3 ring-1 ring-sage-100">
-                  <div className="mb-2 flex items-center justify-between">
-                    <p className="text-sm font-semibold text-sage-800">{label}</p>
-                    <button
-                      type="button"
-                      onClick={() => update([...items, { name: "", amount: "", unit: "", times: [] }])}
-                      className="inline-flex items-center gap-1 rounded-lg bg-sage-100 px-2.5 py-1 text-xs font-semibold text-sage-700 hover:bg-sage-200"
-                    >
-                      <Plus className="size-3.5" /> Add item
-                    </button>
-                  </div>
-
-                  {isChop && (
-                    <div className="mb-3 rounded-lg bg-white p-2 ring-1 ring-sage-100">
-                      <p className="mb-1.5 text-xs font-semibold text-sage-600">Fresh foods offered — tap to add as items</p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {FRESH_FOOD_OPTIONS.map((f) => (
-                          <Chip
-                            key={f}
-                            on={selectedFreshNames.has(f.trim().toLowerCase())}
-                            onClick={() => toggleFreshFood(f)}
-                          >
-                            {f}
-                          </Chip>
-                        ))}
-                      </div>
-                      <input
-                        className="input mt-2 text-sm"
-                        placeholder="Other fresh foods (free text)"
-                        value={freshOther}
-                        maxLength={300}
-                        onChange={(e) => setFreshOther(e.target.value)}
-                      />
-                    </div>
-                  )}
-
-                  {items.length === 0 && (
-                    <p className="text-xs text-sage-500">
-                      {isChop
-                        ? "Pick fresh foods above or tap “Add item” to list your own."
-                        : "No items yet. Tap “Add item” to list a brand or food."}
-                    </p>
-                  )}
-                  <div className="space-y-2">
-                    {items.map((it, idx) => {
-                      const rowInvalid = ((it.amount?.trim() === "") !== (it.unit === ""));
-                      return (
-                        <div key={idx} className="rounded-lg bg-white p-2 ring-1 ring-sage-100">
-                          <div className="grid grid-cols-[1fr,auto] gap-2">
-                            <input
-                              className="input"
-                              placeholder={isChop ? "e.g. Morning chop mix" : "Brand or item name"}
-                              value={it.name}
-                              maxLength={120}
-                              onChange={(e) => {
-                                const next = items.slice();
-                                next[idx] = { ...it, name: e.target.value };
-                                update(next);
-                              }}
-                            />
-                            <button
-                              type="button"
-                              aria-label="Remove item"
-                              onClick={() => update(items.filter((_, i) => i !== idx))}
-                              className="rounded-lg p-2 text-sage-500 hover:bg-sage-100"
-                            >
-                              <X className="size-4" />
-                            </button>
-                          </div>
-                          <div className="mt-2 grid grid-cols-[1fr,1.4fr] gap-2">
-                            <input
-                              className="input"
-                              inputMode="decimal"
-                              placeholder="Amount (e.g. 2)"
-                              value={it.amount}
-                              onChange={(e) => {
-                                const next = items.slice();
-                                next[idx] = { ...it, amount: e.target.value.replace(/[^0-9.]/g, "") };
-                                update(next);
-                              }}
-                            />
-                            <select
-                              className="input"
-                              value={it.unit}
-                              onChange={(e) => {
-                                const next = items.slice();
-                                next[idx] = { ...it, unit: e.target.value };
-                                update(next);
-                              }}
-                            >
-                              <option value="">Pick a unit…</option>
-                              {UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
-                            </select>
-                          </div>
-                          {rowInvalid && (
-                            <p className="mt-1.5 text-xs font-semibold text-warn-red">Add both an amount and a unit, or clear both.</p>
-                          )}
-
-                          {/* Per-item feed time(s) — structured period picker. */}
-                          <div className="mt-2">
-                            <FeedTimePicker
-                              value={{ times: normalizeFeedTimes(it.times), freeFed: !!it.freeFed, note: it.note ?? null }}
-                              onChange={(patch) => {
-                                const next = items.slice();
-                                next[idx] = { ...it, ...patch };
-                                update(next);
-                              }}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </Card>
+        <>
+          {validationActive && incomplete.count > 0 && (
+            <div
+              ref={bannerRef}
+              className="flex scroll-mt-24 items-start gap-2 rounded-2xl border p-4"
+              style={{ borderColor: "#BA7517", backgroundColor: "#f6e7c4" }}
+            >
+              <AlertTriangle className="mt-0.5 size-5 shrink-0 text-[#854F0B]" />
+              <p className="text-sm text-[#854F0B]">
+                {incomplete.count} item{incomplete.count > 1 ? "s" : ""} need details. Add the brand, amount, and timing for: {incomplete.labels.join(", ")}.
+              </p>
+            </div>
+          )}
+          <Card
+            title={diet.length === 1 ? "Item, amount & timing" : "Items, amounts & timing per food type"}
+            hint="Add the brand, how much, and when it's served. Use “Available all day” for food left in the cage."
+          >
+            <FoodItemsEditor
+              types={diet.map((t) => ({ value: t, label: typeLabel(t) }))}
+              details={dietDetails}
+              onChangeType={setItemsForType}
+              validationActive={validationActive}
+              expandSignal={expandSignal}
+              freshFoodOptions={FRESH_FOOD_OPTIONS}
+              freshOther={freshOther}
+              onFreshOtherChange={setFreshOther}
+            />
+          </Card>
+        </>
       )}
 
       <Card title="Treats">
