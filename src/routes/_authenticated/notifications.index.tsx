@@ -79,7 +79,7 @@ function NotificationsInbox() {
               return (
                 <li key={n.id}>
                   <Link
-                    to="/birds/$birdId"
+                    to="/birds/$birdId/plan"
                     params={{ birdId: n.bird_id }}
                     search={{ tab: "logs", scan: n.id }}
                     className={`flex items-start gap-3 rounded-2xl p-4 ring-1 transition ${
