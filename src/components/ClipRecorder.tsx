@@ -500,7 +500,12 @@ export function ClipRecorder({
           <input
             ref={fileInputRef}
             type="file"
-            accept="video/*,video/quicktime,.mov,.mp4,.m4v,.hevc"
+            // Plain "video/*" only. Adding specific MIME types (video/quicktime)
+            // and raw extensions (.mov/.hevc) makes Android's chooser drop the
+            // Gallery/Photos option and offer only Camcorder + Files. "video/*"
+            // still includes .mov on both platforms; onPick validates by
+            // MIME-or-extension so iPhone .mov/HEVC clips are still accepted.
+            accept="video/*"
             className="hidden"
             disabled={disabled}
             onChange={onPick}
