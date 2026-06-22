@@ -368,10 +368,6 @@ function SitsPanel({ birdId, sits, onChange }: { birdId: string; sits: any[]; on
 }
 
 function LogsPanel({ birdId, initialScan }: { birdId: string; initialScan?: string }) {
-  const qc = useQueryClient();
-  const [weight, setWeight] = useState("");
-  const [wNotes, setWNotes] = useState("");
-  const [saving, setSaving] = useState(false);
   const [expandedScan, setExpandedScan] = useState<string | null>(initialScan ?? null);
 
   // Deep link from a notification: expand and scroll to that scan once rendered.
@@ -384,13 +380,6 @@ function LogsPanel({ birdId, initialScan }: { birdId: string; initialScan?: stri
     return () => clearTimeout(t);
   }, [initialScan]);
 
-  const { data: weights = [] } = useQuery({
-    queryKey: ["weights", birdId],
-    queryFn: async () => {
-      const { data } = await supabase.from("weight_logs").select("*").eq("bird_id", birdId).order("logged_at", { ascending: false }).limit(30);
-      return data ?? [];
-    },
-  });
   const { data: daily = [] } = useQuery({
     queryKey: ["daily-logs", birdId],
     queryFn: async () => {
@@ -410,24 +399,6 @@ function LogsPanel({ birdId, initialScan }: { birdId: string; initialScan?: stri
       return data ?? [];
     },
   });
-
-  async function addWeight(e: React.FormEvent) {
-    e.preventDefault();
-    const grams = parseFloat(weight);
-    if (!grams || grams <= 0) { toast.error("Enter a weight in grams."); return; }
-    setSaving(true);
-    const { error } = await supabase.from("weight_logs").insert({
-      bird_id: birdId,
-      weight: grams,
-      notes: wNotes || null,
-      logged_at: new Date().toISOString(),
-    });
-    setSaving(false);
-    if (error) { toast.error(error.message); return; }
-    setWeight(""); setWNotes("");
-    qc.invalidateQueries({ queryKey: ["weights", birdId] });
-    toast.success("Weight logged.");
-  }
 
   const triageColor = (s: string) =>
     s === "red" ? "bg-warn-red/10 text-warn-red"
@@ -463,28 +434,6 @@ function LogsPanel({ birdId, initialScan }: { birdId: string; initialScan?: stri
   return (
     <>
       <Disclaimer compact />
-
-      <section className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
-        <h2 className="text-sm font-bold">Log weight</h2>
-        <p className="mt-1 text-[11px] text-sage-600">Weigh at the same time of day on the same scale for trustworthy trends.</p>
-        <form onSubmit={addWeight} className="mt-3 space-y-2">
-          <div className="flex gap-2">
-            <input className="input" type="number" step="0.1" placeholder="Weight (g)" value={weight} onChange={(e) => setWeight(e.target.value)} />
-            <button disabled={saving} className="rounded-xl bg-sage-600 px-4 text-sm font-semibold text-white disabled:opacity-50">Add</button>
-          </div>
-          <input className="input" placeholder="Notes (optional)" value={wNotes} onChange={(e) => setWNotes(e.target.value)} />
-        </form>
-        {weights.length > 0 && (
-          <ul className="mt-3 divide-y divide-sage-100 text-sm">
-            {weights.map((w: any) => (
-              <li key={w.id} className="flex items-center justify-between py-2">
-                <span className="font-semibold">{w.weight} g</span>
-                <span className="text-[11px] text-sage-600">{new Date(w.logged_at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
 
       <section className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
         <h2 className="text-sm font-bold">Health scans from sitters</h2>
