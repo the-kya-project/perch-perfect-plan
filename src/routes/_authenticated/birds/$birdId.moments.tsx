@@ -56,10 +56,8 @@ function MomentsFacet() {
     queryKey: ["anchor-photos", birdId],
     refetchOnWindowFocus: true,
     queryFn: async () => {
-      // Cast: anchor_photos + moments.photo_path land in the generated types only
-      // after the migration is applied and types are regenerated.
-      const { data, error } = await (supabase as any).from("anchor_photos").select("anchor, year, photo_path").eq("bird_id", birdId);
-      if (error) return []; // table may not exist until the migration is applied
+      const { data, error } = await supabase.from("anchor_photos").select("anchor, year, photo_path").eq("bird_id", birdId);
+      if (error) return [];
       return (data ?? []) as AnchorPhoto[];
     },
   });
@@ -68,7 +66,7 @@ function MomentsFacet() {
     queryKey: ["moments", birdId],
     refetchOnWindowFocus: true,
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("moments")
         .select("id, title, on_date, photo_path")
         .eq("bird_id", birdId).eq("auto_generated", false)
@@ -119,7 +117,7 @@ function MomentsFacet() {
       const dataUrl = await compressImageToDataUrl(file);
       if (dataUrlBytes(dataUrl) > MAX_UPLOAD_BYTES) { toast.error("That photo's a bit too large even after resizing. Try a different one."); return; }
       const path = await uploadJournalPhoto(birdId, dataUrl);
-      const { error } = await (supabase as any).from("anchor_photos").upsert({ bird_id: birdId, anchor, year, photo_path: path }, { onConflict: "bird_id,anchor,year" });
+      const { error } = await supabase.from("anchor_photos").upsert({ bird_id: birdId, anchor, year, photo_path: path }, { onConflict: "bird_id,anchor,year" });
       if (error) throw error;
       toast.success("Photo saved.");
       qc.invalidateQueries({ queryKey: ["anchor-photos", birdId] });
@@ -301,7 +299,7 @@ function AddMilestone({ birdId, onClose, onSaved }: { birdId: string; onClose: (
     try {
       let photo_path: string | null = null;
       if (photoData) photo_path = await uploadJournalPhoto(birdId, photoData);
-      const { error } = await (supabase as any).from("moments").insert({
+      const { error } = await supabase.from("moments").insert({
         bird_id: birdId, kind: "custom", title: title.trim(), on_date: date, recurs: false, auto_generated: false, photo_path,
       });
       if (error) throw error;

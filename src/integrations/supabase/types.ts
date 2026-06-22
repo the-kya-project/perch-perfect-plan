@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      anchor_photos: {
+        Row: {
+          anchor: string
+          bird_id: string
+          created_at: string
+          id: string
+          photo_path: string
+          year: number
+        }
+        Insert: {
+          anchor: string
+          bird_id: string
+          created_at?: string
+          id?: string
+          photo_path: string
+          year: number
+        }
+        Update: {
+          anchor?: string
+          bird_id?: string
+          created_at?: string
+          id?: string
+          photo_path?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anchor_photos_bird_id_fkey"
+            columns: ["bird_id"]
+            isOneToOne: false
+            referencedRelation: "birds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bird_members: {
         Row: {
           bird_id: string
@@ -588,6 +623,7 @@ export type Database = {
           id: string
           kind: string
           on_date: string | null
+          photo_path: string | null
           recurs: boolean
           title: string | null
         }
@@ -598,6 +634,7 @@ export type Database = {
           id?: string
           kind: string
           on_date?: string | null
+          photo_path?: string | null
           recurs?: boolean
           title?: string | null
         }
@@ -608,6 +645,7 @@ export type Database = {
           id?: string
           kind?: string
           on_date?: string | null
+          photo_path?: string | null
           recurs?: boolean
           title?: string | null
         }
