@@ -5,8 +5,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSitterContext } from "./route";
 import { submitHealthScan, getSitterScans } from "@/lib/sitter.functions";
 import { SCAN_FIELDS, type ScanAnswer, type ScanFieldKey, computeTriage } from "@/lib/triage";
-import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
-import { ArrowLeft, Camera, History, ChevronDown, Loader2, Upload } from "lucide-react";
+import { ScanForm, type ScanSubmit } from "@/components/ScanForm";
+import { ArrowLeft, History, ChevronDown, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { track } from "@/lib/analytics";
 
@@ -46,46 +46,29 @@ function ScanPage() {
   const { token } = Route.useParams();
   const { data: ctx } = useSitterContext(token);
   const [mode, setMode] = useState<"form" | "history">("form");
-  const [answers, setAnswers] = useState<Partial<Record<ScanFieldKey, ScanAnswer>>>({});
-  const [notes, setNotes] = useState("");
-  const [photo, setPhoto] = useState<string | null>(null);
-  const [photoBusy, setPhotoBusy] = useState(false);
-  const [weight, setWeight] = useState("");
   const [result, setResult] = useState<{ status: string; message: string; reasons: string[] } | null>(null);
-  const [showErrors, setShowErrors] = useState(false);
 
-  // Reset all scan state when the selected bird changes — a fresh scan should
-  // never inherit validation errors or answers from a previous bird/attempt.
-  useEffect(() => {
-    setAnswers({});
-    setNotes("");
-    setPhoto(null);
-    setResult(null);
-    setShowErrors(false);
-    setMode("form");
-  }, [ctx.activeBirdId]);
+  // Reset when the selected bird changes; the form's own state lives in ScanForm
+  // and is reset by re-keying it on activeBirdId.
+  useEffect(() => { setResult(null); setMode("form"); }, [ctx.activeBirdId]);
 
   const submit = useServerFn(submitHealthScan);
   const qc = useQueryClient();
   const m = useMutation({
-    mutationFn: async () => {
-      const filled = Object.fromEntries(
-        SCAN_FIELDS.map((f) => [f.key, answers[f.key]!]),
-      ) as Record<ScanFieldKey, ScanAnswer>;
-      return submit({
+    mutationFn: async (p: ScanSubmit) =>
+      submit({
         data: {
           token,
           birdId: ctx.activeBirdId,
-          answers: filled,
-          notes: notes || undefined,
-          photoDataUrl: photo || undefined,
-          weightGrams: weight.trim() && Number.isFinite(Number(weight)) ? Number(weight) : undefined,
+          answers: p.answers,
+          notes: p.notes,
+          photoDataUrl: p.photoDataUrl,
+          weightGrams: p.weightGrams,
         },
-      });
-    },
-    onSuccess: (res) => {
+      }),
+    onSuccess: (res, p) => {
       setResult(res.triage as any);
-      track("health_scan_run", { severity: (res.triage as any)?.status ?? "unknown", had_photo: !!photo });
+      track("health_scan_run", { severity: (res.triage as any)?.status ?? "unknown", had_photo: !!p.photoDataUrl });
       toast.success("Health scan logged.");
       // Refresh the Today scan card + the multi-bird dashboard so the new
       // done/flagged state shows immediately.
@@ -94,46 +77,6 @@ function ScanPage() {
     },
     onError: (e: any) => toast.error(e.message ?? "Could not log scan."),
   });
-
-  function previewTriage() {
-    const filled = Object.fromEntries(
-      SCAN_FIELDS.map((f) => [f.key, answers[f.key]!]),
-    ) as Record<ScanFieldKey, ScanAnswer>;
-    return computeTriage(filled);
-  }
-
-  function handleSubmit() {
-    const firstMissing = SCAN_FIELDS.find((f) => !answers[f.key]);
-    if (firstMissing) {
-      setShowErrors(true);
-      const el = document.getElementById(`scan-field-${firstMissing.key}`);
-      el?.scrollIntoView({ behavior: "smooth", block: "center" });
-      toast.error("Please answer every question before submitting.");
-      return;
-    }
-    m.mutate();
-  }
-
-  async function handlePhoto(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    e.target.value = ""; // allow re-selecting the same file
-    if (!file) return;
-    setPhotoBusy(true);
-    try {
-      // Resize + re-encode (handles big iPhone photos and HEIC on Safari) so the
-      // upload doesn't fail with "too large".
-      const dataUrl = await compressImageToDataUrl(file);
-      if (dataUrlBytes(dataUrl) > MAX_UPLOAD_BYTES) {
-        toast.error("That photo's a bit too large even after resizing. Try a different one.");
-        return;
-      }
-      setPhoto(dataUrl);
-    } catch {
-      toast.error("Couldn't process that photo. Try a different one.");
-    } finally {
-      setPhotoBusy(false);
-    }
-  }
 
   if (mode === "history") {
     return <ScanHistory token={token} birdId={ctx.activeBirdId} birdName={ctx.bird.name} onBack={() => setMode("form")} />;
@@ -168,8 +111,6 @@ function ScanPage() {
     );
   }
 
-  const allAnswered = SCAN_FIELDS.every((f) => answers[f.key]);
-
   return (
     <div className="min-h-screen bg-[#f4f1e8]">
       <header className="border-b border-[#e0d8c4] bg-[#f4f1e8]">
@@ -184,107 +125,7 @@ function ScanPage() {
           </button>
         </div>
       </header>
-      <main className="mx-auto max-w-md space-y-4 px-5 py-5 pb-32">
-        {SCAN_FIELDS.map((f) => {
-          const a = answers[f.key];
-          const missing = showErrors && !a;
-          return (
-            <section
-              key={f.key}
-              id={`scan-field-${f.key}`}
-              className={`rounded-2xl bg-[#efe9da] p-4 ${missing ? "ring-2 ring-warn-red" : ""}`}
-            >
-              <p className="text-sm font-medium">{f.question}</p>
-              <div className="mt-3 grid grid-cols-3 gap-2">
-                {(["normal", "not_sure", "concerning"] as ScanAnswer[]).map((opt) => (
-                  <button
-                    key={opt}
-                    onClick={() => setAnswers({ ...answers, [f.key]: opt })}
-                    className={`rounded-lg border px-1 py-2.5 text-[11px] font-medium ${a === opt
-                      ? opt === "concerning" ? "border-warn-red bg-warn-red/10 text-warn-red"
-                      : opt === "not_sure" ? "border-warn-amber bg-warn-amber/10 text-warn-amber"
-                      : "border-warn-green bg-warn-green/10 text-warn-green"
-                      : "border-[#e0d8c4] text-[#5f5e5a]"}`}
-                  >
-                    {opt === "not_sure" ? "Not sure" : opt === "concerning" ? "Concerning" : "Normal"}
-                  </button>
-                ))}
-              </div>
-              {missing && (
-                <p className="mt-3 text-[11px] font-medium text-warn-red">Please answer this before submitting.</p>
-              )}
-              {a === "not_sure" && (
-                <p className="mt-3 rounded bg-warn-amber/10 p-2 text-[11px] leading-relaxed text-[#1a3d2e]"><b>Look again: </b>{f.helpNotSure}</p>
-              )}
-              {a === "concerning" && (
-                <p className="mt-3 rounded bg-warn-red/10 p-2 text-[11px] leading-relaxed text-[#1a3d2e]"><b>Watch for: </b>{f.helpConcerning}</p>
-              )}
-            </section>
-          );
-        })}
-
-        <section className="rounded-2xl bg-[#efe9da] p-4">
-          <p className="text-sm font-medium">Optional: add a photo</p>
-          <p className="mt-1 text-xs text-[#5f5e5a]">{photo ? "Take a new photo or upload a different one." : "Take a photo or upload one if anything looks off."}</p>
-          {photoBusy ? (
-            <div className="mt-3 flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#e0d8c4] py-3 text-sm font-medium text-[#5f5e5a] opacity-60">
-              <Loader2 className="size-4 animate-spin" /> Processing…
-            </div>
-          ) : (
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              {/* Take photo: capture="environment" opens the camera directly. */}
-              <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#e0d8c4] py-3 text-sm font-medium text-[#5f5e5a]">
-                <Camera className="size-4" /> Take photo
-                <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhoto} />
-              </label>
-              {/* Upload: no capture attr so the OS offers the photo library / files. */}
-              <label className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#e0d8c4] py-3 text-sm font-medium text-[#5f5e5a]">
-                <Upload className="size-4" /> Upload photo
-                <input type="file" accept="image/*" className="hidden" onChange={handlePhoto} />
-              </label>
-            </div>
-          )}
-          {photo && !photoBusy && <img src={photo} alt="Scan photo preview" className="mt-2 max-h-40 rounded-lg" />}
-        </section>
-
-        <section className="rounded-2xl bg-[#efe9da] p-4">
-          <label className="block">
-            <span className="text-sm font-medium">Optional: weigh-in</span>
-            <span className="mt-1 block text-xs text-[#5f5e5a]">If you weighed them, add the grams — it goes straight to the owner's weight tracker.</span>
-            <div className="mt-3 flex items-center gap-2">
-              <input
-                inputMode="decimal"
-                value={weight}
-                onChange={(e) => setWeight(e.target.value.replace(/[^0-9.]/g, ""))}
-                placeholder="e.g. 410"
-                className="h-11 w-32 rounded-xl border border-[#e0d8c4] bg-white px-3 text-center text-sm"
-              />
-              <span className="text-sm text-[#5f5e5a]">grams</span>
-            </div>
-          </label>
-        </section>
-
-        <section className="rounded-2xl bg-[#efe9da] p-4">
-          <label className="block">
-            <span className="mb-1 block text-xs font-medium uppercase tracking-wider text-[#5f5e5a]">Notes for the owner</span>
-            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} className="w-full rounded-xl border border-[#e0d8c4] bg-white p-3 text-sm" />
-          </label>
-        </section>
-
-        {allAnswered && (
-          <div className="rounded-xl bg-[#efe9da] p-3 text-xs text-[#5f5e5a]">
-            Preview: <b className="uppercase">{previewTriage().status}</b> — {previewTriage().message}
-          </div>
-        )}
-
-        <button
-          onClick={handleSubmit}
-          disabled={m.isPending || photoBusy}
-          className="w-full rounded-xl bg-[#1a3d2e] py-3.5 text-sm font-medium text-white disabled:opacity-60"
-        >
-          {m.isPending ? "Logging..." : "Submit health scan"}
-        </button>
-      </main>
+      <ScanForm key={ctx.activeBirdId} submitting={m.isPending} onSubmit={(p) => m.mutate(p)} />
     </div>
   );
 }
