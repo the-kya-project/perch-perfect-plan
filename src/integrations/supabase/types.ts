@@ -1088,6 +1088,7 @@ export type Database = {
           grams: number
           id: string
           logged_by: string | null
+          meal_relation: string | null
           measured_at: string
           note: string | null
           source: string
@@ -1098,6 +1099,7 @@ export type Database = {
           grams: number
           id?: string
           logged_by?: string | null
+          meal_relation?: string | null
           measured_at?: string
           note?: string | null
           source?: string
@@ -1108,6 +1110,7 @@ export type Database = {
           grams?: number
           id?: string
           logged_by?: string | null
+          meal_relation?: string | null
           measured_at?: string
           note?: string | null
           source?: string
