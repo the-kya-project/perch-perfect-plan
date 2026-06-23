@@ -45,11 +45,11 @@ export function SpeciesPicker({ value, onChange }: { value: string; onChange: (v
   );
 }
 
-export function AgePicker({ age, birthDate, onChange }: { age: string; birthDate: string; onChange: (next: { age: string; birthDate: string | null }) => void }) {
+export function AgePicker({ age, birthDate, onChange, layout = "grid" }: { age: string; birthDate: string; onChange: (next: { age: string; birthDate: string | null }) => void; layout?: "grid" | "stacked" }) {
   const computed = ageFromBirthDate(birthDate);
   const hasBirth = !!birthDate;
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className={layout === "stacked" ? "space-y-3" : "grid grid-cols-2 gap-3"}>
       <BirdField label="Age" hint={hasBirth ? "From birthdate" : undefined}>
         <select
           className="input disabled:opacity-60"
