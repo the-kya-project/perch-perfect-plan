@@ -108,9 +108,21 @@
     /* Long unbroken strings (emails, URLs, IDs) wrap instead of forcing width. */
     overflow-wrap: break-word;
   }
-  input, textarea, select {
-    font-size: 16px; /* prevent iOS zoom */
-  }
+}
+
+/* iOS Safari zooms into any focused form field whose font-size is < 16px and
+   does NOT zoom back out, so the whole app looks "oversized" until you pinch to
+   shrink it. A 16px floor prevents the zoom. This MUST be unlayered: a rule
+   inside `@layer base` loses to Tailwind's `text-sm`/`text-xs` utilities (the
+   utilities layer outranks base), but an UNLAYERED rule outranks every @layer
+   regardless of specificity — so a `text-sm` input still renders at 16px. The
+   `.input` class fields were already safe; this covers the fields that use
+   bespoke `text-sm` styling (journal, moments, the sitter ScanForm notes, etc.).
+   Affects both the owner and sitter apps via this shared stylesheet. */
+input,
+textarea,
+select {
+  font-size: 16px;
 }
 
 /* Shared owner-form input styling. Defined globally (was previously only inline
