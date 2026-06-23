@@ -83,10 +83,13 @@ export type Database = {
           acquired_on: string | null
           age: string | null
           band_number: string | null
+          became_permanent_on: string | null
           birth_date: string | null
           created_at: string
           flight_status: string | null
           id: string
+          intake_date: string | null
+          is_foster: boolean
           lineage_notes: string | null
           medical_conditions: string | null
           medications: string | null
@@ -113,10 +116,13 @@ export type Database = {
           acquired_on?: string | null
           age?: string | null
           band_number?: string | null
+          became_permanent_on?: string | null
           birth_date?: string | null
           created_at?: string
           flight_status?: string | null
           id?: string
+          intake_date?: string | null
+          is_foster?: boolean
           lineage_notes?: string | null
           medical_conditions?: string | null
           medications?: string | null
@@ -143,10 +149,13 @@ export type Database = {
           acquired_on?: string | null
           age?: string | null
           band_number?: string | null
+          became_permanent_on?: string | null
           birth_date?: string | null
           created_at?: string
           flight_status?: string | null
           id?: string
+          intake_date?: string | null
+          is_foster?: boolean
           lineage_notes?: string | null
           medical_conditions?: string | null
           medications?: string | null
@@ -577,6 +586,59 @@ export type Database = {
         }
         Relationships: []
       }
+      handoffs: {
+        Row: {
+          accepted_user_id: string | null
+          bird_id: string
+          completed_at: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          mode: string
+          recipient_email: string | null
+          recipient_name: string | null
+          sender_user_id: string
+          status: string
+          token: string | null
+        }
+        Insert: {
+          accepted_user_id?: string | null
+          bird_id: string
+          completed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          mode: string
+          recipient_email?: string | null
+          recipient_name?: string | null
+          sender_user_id: string
+          status?: string
+          token?: string | null
+        }
+        Update: {
+          accepted_user_id?: string | null
+          bird_id?: string
+          completed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          mode?: string
+          recipient_email?: string | null
+          recipient_name?: string | null
+          sender_user_id?: string
+          status?: string
+          token?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "handoffs_bird_id_fkey"
+            columns: ["bird_id"]
+            isOneToOne: false
+            referencedRelation: "birds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       household_invites: {
         Row: {
           accepted_user_id: string | null
@@ -758,6 +820,45 @@ export type Database = {
           poison_control?: string | null
           spending_limit?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      past_birds: {
+        Row: {
+          bird_name: string
+          created_at: string
+          departed_on: string
+          id: string
+          intake_date: string | null
+          mode: string
+          original_owner_id: string
+          recipient_name: string | null
+          species: string | null
+          was_foster: boolean
+        }
+        Insert: {
+          bird_name: string
+          created_at?: string
+          departed_on: string
+          id?: string
+          intake_date?: string | null
+          mode: string
+          original_owner_id: string
+          recipient_name?: string | null
+          species?: string | null
+          was_foster?: boolean
+        }
+        Update: {
+          bird_name?: string
+          created_at?: string
+          departed_on?: string
+          id?: string
+          intake_date?: string | null
+          mode?: string
+          original_owner_id?: string
+          recipient_name?: string | null
+          species?: string | null
+          was_foster?: boolean
         }
         Relationships: []
       }

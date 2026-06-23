@@ -96,3 +96,67 @@ export function buildHouseholdInviteEmail(opts: {
       `If you didn't expect this, you can ignore this email.`,
   };
 }
+
+// "<sender> is handing off <bird> to you" — in-app handoff invitation.
+export function buildHandoffInviteEmail(opts: { senderName: string; birdName: string; link: string }): BuiltEmail {
+  const sender = escapeHtml(opts.senderName);
+  const bird = escapeHtml(opts.birdName);
+  return {
+    subject: `${opts.senderName} is handing off ${opts.birdName} to you`,
+    html: shell({
+      kicker: "Bird handoff",
+      heading: `${sender} is handing off ${bird} to you`,
+      body:
+        `${sender} wants to pass ${bird}'s full record to you on Parrot Care Co-Pilot — ` +
+        `care plan, identity, weight history, journal, and moments, so you have everything they learned while caring for ${bird}. ` +
+        `Once you accept, the record is yours and ${sender} no longer has access. This link expires in 14 days.`,
+      cta: "Review the handoff",
+      link: opts.link,
+      foot: "If you weren't expecting this, you can ignore this email — nothing transfers until you accept.",
+    }),
+    text:
+      `${opts.senderName} is handing off ${opts.birdName} to you on Parrot Care Co-Pilot.\n\n` +
+      `You'll receive ${opts.birdName}'s full record (care plan, identity, weights, journal, moments). ` +
+      `Once you accept, it's yours and ${opts.senderName} no longer has access.\n\n` +
+      `Review (expires in 14 days): ${opts.link}`,
+  };
+}
+
+// "<recipient> accepted — <bird> is theirs now" — notify the sender it's done.
+export function buildHandoffAcceptedEmail(opts: { birdName: string; recipientLabel: string }): BuiltEmail {
+  const bird = escapeHtml(opts.birdName);
+  const who = escapeHtml(opts.recipientLabel);
+  return {
+    subject: `${opts.birdName}'s handoff is complete`,
+    html: shell({
+      kicker: "Handoff complete",
+      heading: `${bird} has a new home`,
+      body:
+        `${who} accepted the handoff, so ${bird}'s record is now theirs and has left your account. ` +
+        `You'll find a memory of ${bird} in Past birds. Thank you for taking such good care of them.`,
+      cta: "View Past birds",
+      link: opts.recipientLabel ? "https://app.thekyaproject.com/account" : "https://app.thekyaproject.com/account",
+      foot: "This is a one-time confirmation. There's nothing else to do.",
+    }),
+    text: `${who} accepted the handoff. ${opts.birdName}'s record is now theirs and has left your account. A memory is saved in Past birds.`,
+  };
+}
+
+// "<bird>'s handoff was declined" — notify the sender, gently.
+export function buildHandoffDeclinedEmail(opts: { birdName: string }): BuiltEmail {
+  const bird = escapeHtml(opts.birdName);
+  return {
+    subject: `${opts.birdName}'s handoff was declined`,
+    html: shell({
+      kicker: "Handoff declined",
+      heading: `${bird}'s handoff wasn't accepted`,
+      body:
+        `The handoff for ${bird} was declined, so nothing changed — ${bird} is still in your account and you still have full access. ` +
+        `You can start a new handoff whenever you're ready.`,
+      cta: "Open Parrot Care",
+      link: "https://app.thekyaproject.com",
+      foot: "No action needed.",
+    }),
+    text: `${opts.birdName}'s handoff was declined. Nothing changed — ${opts.birdName} is still in your account.`,
+  };
+}
