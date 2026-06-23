@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useBirdPhotos } from "@/lib/useBirdPhotos";
 import {
   ArrowLeft, Feather, Scale, BookOpen, IdCard, CalendarHeart, ClipboardList,
-  ChevronRight, Plus, FileText, TrendingUp, TrendingDown, Minus, Activity,
+  ChevronRight, Plus, FileText, TrendingUp, TrendingDown, Minus, Activity, Pencil,
 } from "lucide-react";
 
 // Bird-record home — the new landing when you tap a bird. A glanceable hub for
@@ -97,8 +97,16 @@ function BirdRecordHome() {
       </header>
 
       <main className="mx-auto max-w-md space-y-4 px-5 py-5">
-        {/* Identity strip */}
-        <section className="flex items-center gap-4">
+        {/* Identity strip — tap anywhere on it to edit the bird's basics
+            (name, photo, age, sex, flight, chip, band, origin…). The Pencil
+            cue makes the affordance discoverable; the full edit form lives on
+            the Identity facet. */}
+        <Link
+          to="/birds/$birdId/identity"
+          params={{ birdId }}
+          aria-label={`Edit ${name}'s basics`}
+          className="flex items-center gap-4 rounded-[14px] -mx-2 px-2 py-1 active:bg-[#efe9da]"
+        >
           <div className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-full bg-[#e3dcc9] ring-1 ring-[#d8cfb8]">
             {photo ? (
               <img
@@ -112,13 +120,16 @@ function BirdRecordHome() {
               <span className="text-2xl font-medium text-[#2d6a4f]">{initial}</span>
             )}
           </div>
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <h2 className="truncate text-xl font-medium text-[#1a3d2e]">{name}</h2>
             <p className="mt-0.5 truncate text-sm text-[#5f5e5a]">
               {[bird?.species || "Parrot", bird?.age].filter(Boolean).join(" · ")}
             </p>
           </div>
-        </section>
+          <span aria-hidden="true" className="shrink-0 inline-flex items-center gap-1 rounded-full bg-[#efe9da] px-2.5 py-1 text-[11px] font-medium text-[#1a3d2e]">
+            <Pencil className="size-3" /> Edit
+          </span>
+        </Link>
 
         {/* Glance tile: Weight (Next reminder hidden until reminders ship) */}
         <section className="grid grid-cols-2 gap-3">
@@ -189,7 +200,7 @@ function BirdRecordHome() {
             )}
             <FacetRow to="/birds/$birdId/weight" birdId={birdId} icon={<Scale className="size-5" />} label="Weight" sub={weightCount > 0 ? `${weightCount} ${weightCount === 1 ? "entry" : "entries"} · ${trend}` : "Not started"} />
             <FacetRow to="/birds/$birdId/journal" birdId={birdId} icon={<BookOpen className="size-5" />} label="Journal" sub="Molt, meds, vet visits" />
-            <FacetRow to="/birds/$birdId/identity" birdId={birdId} icon={<IdCard className="size-5" />} label="Identity" sub="Chip, band, origin" />
+            <FacetRow to="/birds/$birdId/identity" birdId={birdId} icon={<IdCard className="size-5" />} label="Identity" sub="Name, photo, age, sex, flight, chip, band, origin" />
             <FacetRow to="/birds/$birdId/moments" birdId={birdId} icon={<CalendarHeart className="size-5" />} label="Moments" sub="Mark the days worth remembering" last />
           </div>
         </section>
