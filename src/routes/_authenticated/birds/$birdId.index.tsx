@@ -4,11 +4,13 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useBirdPhotos } from "@/lib/useBirdPhotos";
 import { AgePicker } from "@/components/BirdPickers";
+import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
+import { persistBirdPhoto } from "@/lib/birdPhoto";
 import { toast } from "sonner";
 import {
   ArrowLeft, Feather, Scale, BookOpen, IdCard, CalendarHeart, ClipboardList,
   ChevronRight, Plus, FileText, TrendingUp, TrendingDown, Minus, Activity, Pencil,
-  Check, X,
+  Check, X, Camera, Loader2,
 } from "lucide-react";
 
 // Bird-record home — the new landing when you tap a bird. A glanceable hub for
@@ -24,13 +26,14 @@ type Trend = "steady" | "up" | "down";
 
 function BirdRecordHome() {
   const { birdId } = Route.useParams();
+  const qc = useQueryClient();
 
   const { data: bird } = useQuery({
     queryKey: ["bird-record", birdId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("birds")
-        .select("id, name, species, age, sex, flight_status, birth_date, photo_url, photo_position, setup_complete")
+        .select("id, owner_id, name, species, age, sex, flight_status, birth_date, photo_url, photo_position, setup_complete")
         .eq("id", birdId)
         .maybeSingle();
       if (error) throw error;
@@ -89,6 +92,36 @@ function BirdRecordHome() {
   const name = bird?.name ?? "This bird";
   const initial = (bird?.name?.slice(0, 1) ?? "?").toUpperCase();
 
+  // Photo upload right from the strip on the bird main page. Compress, persist
+  // to Storage, save birds.photo_url, invalidate the surfaces that show it.
+  const [photoBusy, setPhotoBusy] = useState(false);
+  async function onPickPhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !bird?.owner_id) return;
+    setPhotoBusy(true);
+    try {
+      const dataUrl = await compressImageToDataUrl(file);
+      if (dataUrlBytes(dataUrl) > MAX_UPLOAD_BYTES) {
+        toast.error("That photo's a bit too large even after resizing. Try a different one.");
+        return;
+      }
+      const path = await persistBirdPhoto(bird.owner_id, dataUrl);
+      const { error } = await supabase.from("birds").update({ photo_url: path } as any).eq("id", birdId);
+      if (error) { toast.error(error.message); return; }
+      qc.invalidateQueries({ queryKey: ["bird-record", birdId] });
+      qc.invalidateQueries({ queryKey: ["bird-identity", birdId] });
+      qc.invalidateQueries({ queryKey: ["bird", birdId] });
+      qc.invalidateQueries({ queryKey: ["birds"] });
+      qc.invalidateQueries({ queryKey: ["bird-photo-urls"] });
+      toast.success(bird.photo_url ? "Photo updated." : "Photo added.");
+    } catch {
+      toast.error("Couldn't process that photo. Try a different one.");
+    } finally {
+      setPhotoBusy(false);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[#f4f1e8] pb-24">
       <header className="sticky top-0 z-10 border-b border-[#e3ded0] bg-[#f4f1e8]/95 backdrop-blur">
@@ -101,11 +134,15 @@ function BirdRecordHome() {
       </header>
 
       <main className="mx-auto max-w-md space-y-4 px-5 py-5">
-        {/* Identity strip — photo + name + species/age. Basic info (species,
-            age, sex, flight) is edited via the BASIC INFO card below; photo
-            and name edits live on the Identity facet. */}
+        {/* Identity strip — photo + name + species/age. Tap the photo to pick
+            or replace it; the camera badge cues the affordance, and a spinner
+            covers the bubble during upload. Basic info edits live on the
+            BASIC INFO card below; name edits on the Identity facet. */}
         <section className="flex items-center gap-4">
-          <div className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-full bg-[#e3dcc9] ring-1 ring-[#d8cfb8]">
+          <label
+            className={`relative grid size-16 shrink-0 place-items-center overflow-hidden rounded-full bg-[#e3dcc9] ring-1 ring-[#d8cfb8] ${photoBusy ? "cursor-default" : "cursor-pointer"}`}
+            aria-label={bird?.photo_url ? `Change ${name}'s photo` : `Add a photo for ${name}`}
+          >
             {photo ? (
               <img
                 src={photo.url}
@@ -117,7 +154,19 @@ function BirdRecordHome() {
             ) : (
               <span className="text-2xl font-medium text-[#2d6a4f]">{initial}</span>
             )}
-          </div>
+            {/* Camera badge — visible cue that the photo is tappable. */}
+            <span aria-hidden="true" className="absolute -bottom-0.5 -right-0.5 grid size-6 place-items-center rounded-full bg-[#1a3d2e] text-white ring-2 ring-[#f4f1e8]">
+              {photoBusy ? <Loader2 className="size-3 animate-spin" /> : <Camera className="size-3" />}
+            </span>
+            {photoBusy && <span className="absolute inset-0 grid place-items-center bg-black/30" />}
+            <input
+              type="file"
+              accept="image/*,.heic,.heif"
+              className="hidden"
+              disabled={photoBusy}
+              onChange={onPickPhoto}
+            />
+          </label>
           <div className="min-w-0 flex-1">
             <h2 className="truncate text-xl font-medium text-[#1a3d2e]">{name}</h2>
             <p className="mt-0.5 truncate text-sm text-[#5f5e5a]">
@@ -377,8 +426,10 @@ function BasicInfoCard({ birdId, bird }: { birdId: string; bird: { species?: str
             <input className="input" value={f.species} maxLength={80} onChange={(e) => setF((p) => ({ ...p, species: e.target.value }))} />
           </BasicField>
           {/* Age + Hatch date are coupled — AgePicker disables Age when a
-              hatch date is set and derives age from it. */}
+              hatch date is set and derives age from it. Stacked so each gets
+              its own line (the wizard uses the default grid layout). */}
           <AgePicker
+            layout="stacked"
             age={f.age}
             birthDate={f.birth_date}
             onChange={(next) => setF((p) => ({ ...p, age: next.age, birth_date: next.birthDate ?? "" }))}
