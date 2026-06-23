@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useBirdPhotos } from "@/lib/useBirdPhotos";
+import { AgePicker } from "@/components/BirdPickers";
 import { toast } from "sonner";
 import {
   ArrowLeft, Feather, Scale, BookOpen, IdCard, CalendarHeart, ClipboardList,
@@ -29,7 +30,7 @@ function BirdRecordHome() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("birds")
-        .select("id, name, species, age, sex, flight_status, photo_url, photo_position, setup_complete")
+        .select("id, name, species, age, sex, flight_status, birth_date, photo_url, photo_position, setup_complete")
         .eq("id", birdId)
         .maybeSingle();
       if (error) throw error;
@@ -290,10 +291,12 @@ const FLIGHT_LABEL: Record<string, string> = {
   partially_clipped: "Partially clipped",
 };
 
-// Basic info card — the bird's species/age/sex/flight, editable inline. The
-// fields write to the same birds.* columns the Identity facet reads, so any
-// edit here auto-fills the Identity tab and vice versa (no fork).
-function BasicInfoCard({ birdId, bird }: { birdId: string; bird: { species?: string | null; age?: string | null; sex?: string | null; flight_status?: string | null } }) {
+// Basic info card — the bird's species, age, hatch date, sex, and flight,
+// editable inline. The fields write to the same birds.* columns the Identity
+// facet reads, so any edit here auto-fills the Identity tab and vice versa
+// (no fork). Age and Hatch date are coupled via the shared AgePicker — picking
+// a hatch date auto-derives age; clearing it re-enables the Age dropdown.
+function BasicInfoCard({ birdId, bird }: { birdId: string; bird: { species?: string | null; age?: string | null; sex?: string | null; flight_status?: string | null; birth_date?: string | null } }) {
   const qc = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -302,6 +305,7 @@ function BasicInfoCard({ birdId, bird }: { birdId: string; bird: { species?: str
     age: bird.age ?? "",
     sex: bird.sex ?? "",
     flight_status: bird.flight_status ?? "unknown",
+    birth_date: bird.birth_date ?? "",
   });
 
   function openEdit() {
@@ -312,6 +316,7 @@ function BasicInfoCard({ birdId, bird }: { birdId: string; bird: { species?: str
       age: bird.age ?? "",
       sex: bird.sex ?? "",
       flight_status: bird.flight_status ?? "unknown",
+      birth_date: bird.birth_date ?? "",
     });
     setEditing(true);
   }
@@ -324,6 +329,7 @@ function BasicInfoCard({ birdId, bird }: { birdId: string; bird: { species?: str
       age: clean(f.age),
       sex: clean(f.sex),
       flight_status: f.flight_status || "unknown",
+      birth_date: f.birth_date || null,
     } as any).eq("id", birdId);
     setSaving(false);
     if (error) { toast.error(error.message); return; }
@@ -341,6 +347,9 @@ function BasicInfoCard({ birdId, bird }: { birdId: string; bird: { species?: str
   const ageView = bird.age?.trim() || "Not set";
   const sexView = bird.sex && SEX_LABEL[bird.sex] ? SEX_LABEL[bird.sex] : (bird.sex || "Not set");
   const flightView = FLIGHT_LABEL[bird.flight_status ?? "unknown"] ?? "Unknown";
+  const hatchView = bird.birth_date
+    ? new Date(bird.birth_date).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
+    : "Not set";
 
   return (
     <section className="overflow-hidden rounded-[16px] bg-white ring-1 ring-[#e3dcc9]">
@@ -367,9 +376,13 @@ function BasicInfoCard({ birdId, bird }: { birdId: string; bird: { species?: str
           <BasicField label="Species">
             <input className="input" value={f.species} maxLength={80} onChange={(e) => setF((p) => ({ ...p, species: e.target.value }))} />
           </BasicField>
-          <BasicField label="Age">
-            <input className="input" value={f.age} maxLength={40} placeholder="e.g. 10 years" onChange={(e) => setF((p) => ({ ...p, age: e.target.value }))} />
-          </BasicField>
+          {/* Age + Hatch date are coupled — AgePicker disables Age when a
+              hatch date is set and derives age from it. */}
+          <AgePicker
+            age={f.age}
+            birthDate={f.birth_date}
+            onChange={(next) => setF((p) => ({ ...p, age: next.age, birth_date: next.birthDate ?? "" }))}
+          />
           <BasicField label="Sex">
             <select className="input" value={f.sex} onChange={(e) => setF((p) => ({ ...p, sex: e.target.value }))}>
               <option value="">Not set</option>
@@ -391,6 +404,7 @@ function BasicInfoCard({ birdId, bird }: { birdId: string; bird: { species?: str
         <dl>
           <BasicRow label="Species" value={speciesView} />
           <BasicRow label="Age" value={ageView} />
+          <BasicRow label="Hatch date" value={hatchView} />
           <BasicRow label="Sex" value={sexView} />
           <BasicRow label="Flight" value={flightView} last />
         </dl>
