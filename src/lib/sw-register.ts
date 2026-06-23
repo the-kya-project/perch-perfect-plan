@@ -109,8 +109,38 @@ export function registerServiceWorker() {
     return;
   }
 
+  // Whether this page is already controlled by an existing worker. If so, a
+  // later controllerchange means a NEW build took over → reload to drop the
+  // stale cached assets. If not (first install), the initial claim is not an
+  // update and must NOT trigger a reload.
+  const hadController = !!navigator.serviceWorker.controller;
+  let reloading = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (reloading || !hadController) return;
+    reloading = true;
+    // A new build is now in control; reload once to run its fresh JS/CSS.
+    window.location.reload();
+  });
+
   // Register after load so it never competes with first paint.
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register(SW_URL, { scope: "/" }).catch(() => { /* swallow */ });
+    navigator.serviceWorker
+      .register(SW_URL, { scope: "/" })
+      .then((reg) => {
+        // An installed PWA can stay open for days, so it must actively re-check
+        // for new deploys — otherwise it serves the build it was opened with
+        // forever (CacheFirst assets). Check on registration, hourly, and every
+        // time the app returns to the foreground (the common case on iOS: the
+        // user reopens the home-screen app). When workbox (autoUpdate →
+        // skipWaiting + clientsClaim) finds a new build, it activates and the
+        // controllerchange handler above reloads to apply it.
+        const check = () => { reg.update().catch(() => {}); };
+        check();
+        setInterval(check, 60 * 60 * 1000);
+        document.addEventListener("visibilitychange", () => {
+          if (document.visibilityState === "visible") check();
+        });
+      })
+      .catch(() => { /* swallow */ });
   });
 }
