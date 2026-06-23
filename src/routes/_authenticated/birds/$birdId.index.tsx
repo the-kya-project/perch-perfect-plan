@@ -4,13 +4,12 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useBirdPhotos } from "@/lib/useBirdPhotos";
 import { AgePicker } from "@/components/BirdPickers";
-import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
-import { persistBirdPhoto } from "@/lib/birdPhoto";
+import { PhotoCropper } from "@/components/PhotoCropper";
 import { toast } from "sonner";
 import {
   ArrowLeft, Feather, Scale, BookOpen, IdCard, CalendarHeart, ClipboardList,
   ChevronRight, Plus, FileText, TrendingUp, TrendingDown, Minus, Activity, Pencil,
-  Check, X, Loader2,
+  Check, X,
 } from "lucide-react";
 
 // Bird-record home — the new landing when you tap a bird. A glanceable hub for
@@ -94,34 +93,16 @@ function BirdRecordHome() {
   const name = bird?.name ?? "This bird";
   const initial = (bird?.name?.slice(0, 1) ?? "?").toUpperCase();
 
-  // Photo upload right from the strip on the bird main page. Compress, persist
-  // to Storage, save birds.photo_url, invalidate the surfaces that show it.
-  const [photoBusy, setPhotoBusy] = useState(false);
-  async function onPickPhoto(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file || !bird?.owner_id) return;
-    setPhotoBusy(true);
-    try {
-      const dataUrl = await compressImageToDataUrl(file);
-      if (dataUrlBytes(dataUrl) > MAX_UPLOAD_BYTES) {
-        toast.error("That photo's a bit too large even after resizing. Try a different one.");
-        return;
-      }
-      const path = await persistBirdPhoto(bird.owner_id, dataUrl);
-      const { error } = await supabase.from("birds").update({ photo_url: path } as any).eq("id", birdId);
-      if (error) { toast.error(error.message); return; }
-      qc.invalidateQueries({ queryKey: ["bird-record", birdId] });
-      qc.invalidateQueries({ queryKey: ["bird-identity", birdId] });
-      qc.invalidateQueries({ queryKey: ["bird", birdId] });
-      qc.invalidateQueries({ queryKey: ["birds"] });
-      qc.invalidateQueries({ queryKey: ["bird-photo-urls"] });
-      toast.success(bird.photo_url ? "Photo updated." : "Photo added.");
-    } catch {
-      toast.error("Couldn't process that photo. Try a different one.");
-    } finally {
-      setPhotoBusy(false);
-    }
+  // Reframe-in-place: dragging the strip photo saves its crop position. Upload
+  // of a new photo lives on the Identity facet, not here.
+  async function savePhotoPosition(pos: string) {
+    if (!bird) return;
+    const { error } = await supabase.from("birds").update({ photo_position: pos } as any).eq("id", birdId);
+    if (error) { toast.error(error.message); return; }
+    qc.invalidateQueries({ queryKey: ["bird-record", birdId] });
+    qc.invalidateQueries({ queryKey: ["bird-identity", birdId] });
+    qc.invalidateQueries({ queryKey: ["bird", birdId] });
+    qc.invalidateQueries({ queryKey: ["birds"] });
   }
 
   return (
@@ -136,40 +117,27 @@ function BirdRecordHome() {
       </header>
 
       <main className="mx-auto max-w-md space-y-4 px-5 py-5">
-        {/* Identity strip — photo + name + species/age. The photo circle is a
-            silent tap target (no badge); tapping it opens the file picker.
-            The bubble auto-scales the bird's main photo via useBirdPhotos.
-            A spinner overlays the bubble while uploading. Basic info edits
-            live on the BASIC INFO card below; name edits on Identity. */}
+        {/* Identity strip — photo + name + species/age. When a photo is set the
+            circle scales the whole photo to fit (centered) and is draggable to
+            reframe; the crop position auto-saves. Adding/replacing the photo
+            itself lives on the Identity facet. */}
         <section className="flex items-center gap-4">
-          <label
-            className={`relative grid size-16 shrink-0 place-items-center overflow-hidden rounded-full bg-[#e3dcc9] ring-1 ring-[#d8cfb8] ${photoBusy ? "cursor-default" : "cursor-pointer active:scale-[0.97]"}`}
-            aria-label={bird?.photo_url ? `Change ${name}'s photo` : `Add a photo for ${name}`}
-          >
-            {photo ? (
-              <img
-                src={photo.url}
-                alt={name}
-                onError={(e) => { if (photo.original && e.currentTarget.src !== photo.original) e.currentTarget.src = photo.original; }}
-                style={{ objectPosition: bird?.photo_position ?? "50% 20%" }}
-                className="size-full object-cover"
-              />
-            ) : (
-              <span className="text-2xl font-medium text-[#2d6a4f]">{initial}</span>
-            )}
-            {photoBusy && (
-              <span aria-hidden="true" className="absolute inset-0 grid place-items-center bg-black/30">
-                <Loader2 className="size-4 animate-spin text-white" />
-              </span>
-            )}
-            <input
-              type="file"
-              accept="image/*,.heic,.heif"
-              className="hidden"
-              disabled={photoBusy}
-              onChange={onPickPhoto}
+          {photo ? (
+            <PhotoCropper
+              src={photo.url}
+              position={bird?.photo_position}
+              shape="circle"
+              fit="contain"
+              size={64}
+              showHint={false}
+              onChange={() => {}}
+              onCommit={savePhotoPosition}
             />
-          </label>
+          ) : (
+            <div className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-full bg-[#e3dcc9] ring-1 ring-[#d8cfb8]">
+              <span className="text-2xl font-medium text-[#2d6a4f]">{initial}</span>
+            </div>
+          )}
           <div className="min-w-0 flex-1">
             <h2 className="truncate text-xl font-medium text-[#1a3d2e]">{name}</h2>
             <p className="mt-0.5 truncate text-sm text-[#5f5e5a]">

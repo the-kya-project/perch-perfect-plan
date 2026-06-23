@@ -4,7 +4,15 @@ type Props = {
   src: string;
   position: string | null | undefined; // e.g. "50% 30%"
   onChange: (pos: string) => void;
+  /** Fires once when a drag ends — use to persist without a write per pointer move. */
+  onCommit?: (pos: string) => void;
   size?: number; // px
+  shape?: "square" | "circle";
+  /** "cover" fills the frame (approved setup/identity look); "contain" scales the
+      whole photo to fit, centered. Default "cover". */
+  fit?: "cover" | "contain";
+  /** Show the "Drag inside the frame…" caption. Default true. */
+  showHint?: boolean;
 };
 
 function parsePos(p: string | null | undefined): { x: number; y: number } {
@@ -15,7 +23,7 @@ function parsePos(p: string | null | undefined): { x: number; y: number } {
 }
 function clamp(n: number, min = 0, max = 100) { return Math.max(min, Math.min(max, n)); }
 
-export function PhotoCropper({ src, position, onChange, size = 160 }: Props) {
+export function PhotoCropper({ src, position, onChange, onCommit, size = 160, shape = "square", fit = "cover", showHint = true }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState(() => parsePos(position));
   const [dragging, setDragging] = useState(false);
@@ -42,6 +50,7 @@ export function PhotoCropper({ src, position, onChange, size = 160 }: Props) {
   }
   function onPointerUp(e: React.PointerEvent) {
     (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+    if (dragging) onCommit?.(`${pos.x.toFixed(0)}% ${pos.y.toFixed(0)}%`);
     setDragging(false);
   }
 
@@ -53,20 +62,24 @@ export function PhotoCropper({ src, position, onChange, size = 160 }: Props) {
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
-        className="touch-none select-none overflow-hidden rounded-xl ring-1 ring-sage-200"
+        className={`touch-none select-none overflow-hidden ring-1 ring-sage-200 ${shape === "circle" ? "rounded-full" : "rounded-xl"}`}
         style={{
           width: size,
           height: size,
           backgroundImage: `url(${src})`,
-          backgroundSize: "cover",
+          // "contain" scales the WHOLE photo to fit the frame (no aggressive
+          // crop), centered; "cover" fills the frame. Either way, dragging
+          // nudges what shows.
+          backgroundSize: fit,
           backgroundRepeat: "no-repeat",
+          backgroundColor: "#e3dcc9",
           backgroundPosition: `${pos.x}% ${pos.y}%`,
           cursor: dragging ? "grabbing" : "grab",
         }}
         role="img"
         aria-label="Drag to reposition photo"
       />
-      <p className="text-[10px] text-sage-600">Drag inside the frame to adjust what shows.</p>
+      {showHint && <p className="text-[10px] text-sage-600">Drag inside the frame to adjust what shows.</p>}
     </div>
   );
 }

@@ -273,10 +273,10 @@ function IdentityForm({ birdId, bird, onClose, onSaved }: { birdId: string; bird
 
       <Field label="Hatch date">
         <div className="flex items-center gap-2">
-          <input type="date" className={INPUT} value={f.birth_date} max={today} onChange={(e) => set("birth_date", e.target.value)} />
-          {/* iOS Safari's native date picker has a 'Clear' button that does NOT
-              reliably fire onChange on the controlled input, leaving the field
-              looking populated. An explicit Clear button always works. */}
+          <input key={f.birth_date ? "has-date" : "no-date"} type="date" className={INPUT} value={f.birth_date} max={today} onChange={(e) => set("birth_date", e.target.value)} />
+          {/* iOS Safari's native date picker 'Clear' doesn't reliably fire
+              onChange; the explicit button always works, and the `key` remount
+              forces the input to actually show empty once cleared. */}
           {f.birth_date && (
             <button type="button" onClick={() => set("birth_date", "")} className="shrink-0 rounded-lg border border-[#c8bfa6] px-2.5 py-2 text-xs font-medium text-[#5f5e5a]">Clear</button>
           )}
@@ -287,7 +287,7 @@ function IdentityForm({ birdId, bird, onClose, onSaved }: { birdId: string; bird
       <Field label="Origin"><input className={INPUT} value={f.origin} maxLength={200} placeholder="e.g. captive-bred, wild-hatched / rescued" onChange={(e) => set("origin", e.target.value)} /></Field>
       <Field label="Came home">
         <div className="flex items-center gap-2">
-          <input type="date" className={INPUT} value={f.acquired_on} max={today} onChange={(e) => set("acquired_on", e.target.value)} />
+          <input key={f.acquired_on ? "has-date" : "no-date"} type="date" className={INPUT} value={f.acquired_on} max={today} onChange={(e) => set("acquired_on", e.target.value)} />
           {f.acquired_on && (
             <button type="button" onClick={() => set("acquired_on", "")} className="shrink-0 rounded-lg border border-[#c8bfa6] px-2.5 py-2 text-xs font-medium text-[#5f5e5a]">Clear</button>
           )}

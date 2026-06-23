@@ -64,6 +64,10 @@ export function AgePicker({ age, birthDate, onChange, layout = "grid" }: { age: 
       <BirdField label="Birth date" hint="Optional — sets age automatically">
         <div className="flex items-center gap-2">
           <input
+            // Remount when crossing the empty boundary so a cleared value
+            // actually disappears — a controlled <input type="date"> set back
+            // to "" doesn't reliably re-render empty otherwise.
+            key={birthDate ? "has-date" : "no-date"}
             className="input"
             type="date"
             max={new Date().toISOString().slice(0, 10)}
