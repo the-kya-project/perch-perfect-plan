@@ -100,7 +100,7 @@ export function feedTimeToDaypart(raw: string | null | undefined): Daypart {
 
   // Unrecognized: don't drop it — bucket as "anytime" and log so the value can
   // be added to the mapping later.
-  // eslint-disable-next-line no-console
+   
   console.warn(`[routine] unrecognized feed time, placing in Anytime: ${JSON.stringify(raw)}`);
   return "anytime";
 }

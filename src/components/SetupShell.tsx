@@ -89,7 +89,7 @@ export function SetupShell({
     const raf = requestAnimationFrame(updatePillFades);
     window.addEventListener("resize", updatePillFades);
     return () => { cancelAnimationFrame(raf); window.removeEventListener("resize", updatePillFades); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [step]);
 
   const completedCount = Math.max(0, step - 1);

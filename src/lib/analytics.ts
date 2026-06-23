@@ -177,8 +177,8 @@ async function bootPostHog(key: string, host: string) {
 async function bootPlausible(domain: string, host: string) {
   (window as any).plausible =
     (window as any).plausible ||
-    function () {
-      ((window as any).plausible.q = (window as any).plausible.q || []).push(arguments);
+    function (...args: unknown[]) {
+      ((window as any).plausible.q = (window as any).plausible.q || []).push(args);
     };
   await loadScript(`${host}/js/script.js`, { "data-domain": domain });
   flush();
