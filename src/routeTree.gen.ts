@@ -16,6 +16,7 @@ import { Route as ConfirmEmailRouteImport } from './routes/confirm-email'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as AuthenticatedWelcomeRouteImport } from './routes/_authenticated/welcome'
 import { Route as AuthenticatedSitsRouteImport } from './routes/_authenticated/sits'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
@@ -46,6 +47,7 @@ import { Route as AuthenticatedBirdsBirdIdPlanRouteImport } from './routes/_auth
 import { Route as AuthenticatedBirdsBirdIdMomentsRouteImport } from './routes/_authenticated/birds/$birdId.moments'
 import { Route as AuthenticatedBirdsBirdIdJournalRouteImport } from './routes/_authenticated/birds/$birdId.journal'
 import { Route as AuthenticatedBirdsBirdIdIdentityRouteImport } from './routes/_authenticated/birds/$birdId.identity'
+import { Route as AuthenticatedBirdsBirdIdAccessRouteImport } from './routes/_authenticated/birds/$birdId.access'
 import { Route as AuthenticatedBirdsBirdIdPlanEditorRouteImport } from './routes/_authenticated/birds/$birdId.plan.editor'
 
 const TermsRoute = TermsRouteImport.update({
@@ -80,6 +82,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InviteTokenRoute = InviteTokenRouteImport.update({
+  id: '/invite/$token',
+  path: '/invite/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedWelcomeRoute = AuthenticatedWelcomeRouteImport.update({
@@ -249,6 +256,12 @@ const AuthenticatedBirdsBirdIdIdentityRoute =
     path: '/identity',
     getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
   } as any)
+const AuthenticatedBirdsBirdIdAccessRoute =
+  AuthenticatedBirdsBirdIdAccessRouteImport.update({
+    id: '/access',
+    path: '/access',
+    getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
+  } as any)
 const AuthenticatedBirdsBirdIdPlanEditorRoute =
   AuthenticatedBirdsBirdIdPlanEditorRouteImport.update({
     id: '/editor',
@@ -270,6 +283,7 @@ export interface FileRoutesByFullPath {
   '/notifications': typeof AuthenticatedNotificationsRouteWithChildren
   '/sits': typeof AuthenticatedSitsRoute
   '/welcome': typeof AuthenticatedWelcomeRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/account/security': typeof AuthenticatedAccountSecurityRoute
   '/birds/$birdId': typeof AuthenticatedBirdsBirdIdRouteWithChildren
   '/birds/new': typeof AuthenticatedBirdsNewRoute
@@ -282,6 +296,7 @@ export interface FileRoutesByFullPath {
   '/account/': typeof AuthenticatedAccountIndexRoute
   '/notifications/': typeof AuthenticatedNotificationsIndexRoute
   '/sitter/$token/': typeof SitterTokenIndexRoute
+  '/birds/$birdId/access': typeof AuthenticatedBirdsBirdIdAccessRoute
   '/birds/$birdId/identity': typeof AuthenticatedBirdsBirdIdIdentityRoute
   '/birds/$birdId/journal': typeof AuthenticatedBirdsBirdIdJournalRoute
   '/birds/$birdId/moments': typeof AuthenticatedBirdsBirdIdMomentsRoute
@@ -306,6 +321,7 @@ export interface FileRoutesByTo {
   '/explore': typeof AuthenticatedExploreRoute
   '/sits': typeof AuthenticatedSitsRoute
   '/welcome': typeof AuthenticatedWelcomeRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/account/security': typeof AuthenticatedAccountSecurityRoute
   '/birds/new': typeof AuthenticatedBirdsNewRoute
   '/notifications/settings': typeof AuthenticatedNotificationsSettingsRoute
@@ -317,6 +333,7 @@ export interface FileRoutesByTo {
   '/account': typeof AuthenticatedAccountIndexRoute
   '/notifications': typeof AuthenticatedNotificationsIndexRoute
   '/sitter/$token': typeof SitterTokenIndexRoute
+  '/birds/$birdId/access': typeof AuthenticatedBirdsBirdIdAccessRoute
   '/birds/$birdId/identity': typeof AuthenticatedBirdsBirdIdIdentityRoute
   '/birds/$birdId/journal': typeof AuthenticatedBirdsBirdIdJournalRoute
   '/birds/$birdId/moments': typeof AuthenticatedBirdsBirdIdMomentsRoute
@@ -346,6 +363,7 @@ export interface FileRoutesById {
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRouteWithChildren
   '/_authenticated/sits': typeof AuthenticatedSitsRoute
   '/_authenticated/welcome': typeof AuthenticatedWelcomeRoute
+  '/invite/$token': typeof InviteTokenRoute
   '/_authenticated/account/security': typeof AuthenticatedAccountSecurityRoute
   '/_authenticated/birds/$birdId': typeof AuthenticatedBirdsBirdIdRouteWithChildren
   '/_authenticated/birds/new': typeof AuthenticatedBirdsNewRoute
@@ -358,6 +376,7 @@ export interface FileRoutesById {
   '/_authenticated/account/': typeof AuthenticatedAccountIndexRoute
   '/_authenticated/notifications/': typeof AuthenticatedNotificationsIndexRoute
   '/sitter/$token/': typeof SitterTokenIndexRoute
+  '/_authenticated/birds/$birdId/access': typeof AuthenticatedBirdsBirdIdAccessRoute
   '/_authenticated/birds/$birdId/identity': typeof AuthenticatedBirdsBirdIdIdentityRoute
   '/_authenticated/birds/$birdId/journal': typeof AuthenticatedBirdsBirdIdJournalRoute
   '/_authenticated/birds/$birdId/moments': typeof AuthenticatedBirdsBirdIdMomentsRoute
@@ -387,6 +406,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/sits'
     | '/welcome'
+    | '/invite/$token'
     | '/account/security'
     | '/birds/$birdId'
     | '/birds/new'
@@ -399,6 +419,7 @@ export interface FileRouteTypes {
     | '/account/'
     | '/notifications/'
     | '/sitter/$token/'
+    | '/birds/$birdId/access'
     | '/birds/$birdId/identity'
     | '/birds/$birdId/journal'
     | '/birds/$birdId/moments'
@@ -423,6 +444,7 @@ export interface FileRouteTypes {
     | '/explore'
     | '/sits'
     | '/welcome'
+    | '/invite/$token'
     | '/account/security'
     | '/birds/new'
     | '/notifications/settings'
@@ -434,6 +456,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/notifications'
     | '/sitter/$token'
+    | '/birds/$birdId/access'
     | '/birds/$birdId/identity'
     | '/birds/$birdId/journal'
     | '/birds/$birdId/moments'
@@ -462,6 +485,7 @@ export interface FileRouteTypes {
     | '/_authenticated/notifications'
     | '/_authenticated/sits'
     | '/_authenticated/welcome'
+    | '/invite/$token'
     | '/_authenticated/account/security'
     | '/_authenticated/birds/$birdId'
     | '/_authenticated/birds/new'
@@ -474,6 +498,7 @@ export interface FileRouteTypes {
     | '/_authenticated/account/'
     | '/_authenticated/notifications/'
     | '/sitter/$token/'
+    | '/_authenticated/birds/$birdId/access'
     | '/_authenticated/birds/$birdId/identity'
     | '/_authenticated/birds/$birdId/journal'
     | '/_authenticated/birds/$birdId/moments'
@@ -497,6 +522,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   TermsRoute: typeof TermsRoute
   SitterTokenRouteRoute: typeof SitterTokenRouteRouteWithChildren
+  InviteTokenRoute: typeof InviteTokenRoute
   ApiPublicHooksCarePlanRemindersRoute: typeof ApiPublicHooksCarePlanRemindersRoute
 }
 
@@ -549,6 +575,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/invite/$token': {
+      id: '/invite/$token'
+      path: '/invite/$token'
+      fullPath: '/invite/$token'
+      preLoaderRoute: typeof InviteTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/welcome': {
@@ -761,6 +794,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBirdsBirdIdIdentityRouteImport
       parentRoute: typeof AuthenticatedBirdsBirdIdRoute
     }
+    '/_authenticated/birds/$birdId/access': {
+      id: '/_authenticated/birds/$birdId/access'
+      path: '/access'
+      fullPath: '/birds/$birdId/access'
+      preLoaderRoute: typeof AuthenticatedBirdsBirdIdAccessRouteImport
+      parentRoute: typeof AuthenticatedBirdsBirdIdRoute
+    }
     '/_authenticated/birds/$birdId/plan/editor': {
       id: '/_authenticated/birds/$birdId/plan/editor'
       path: '/editor'
@@ -817,6 +857,7 @@ const AuthenticatedBirdsBirdIdPlanRouteWithChildren =
   )
 
 interface AuthenticatedBirdsBirdIdRouteChildren {
+  AuthenticatedBirdsBirdIdAccessRoute: typeof AuthenticatedBirdsBirdIdAccessRoute
   AuthenticatedBirdsBirdIdIdentityRoute: typeof AuthenticatedBirdsBirdIdIdentityRoute
   AuthenticatedBirdsBirdIdJournalRoute: typeof AuthenticatedBirdsBirdIdJournalRoute
   AuthenticatedBirdsBirdIdMomentsRoute: typeof AuthenticatedBirdsBirdIdMomentsRoute
@@ -831,6 +872,7 @@ interface AuthenticatedBirdsBirdIdRouteChildren {
 
 const AuthenticatedBirdsBirdIdRouteChildren: AuthenticatedBirdsBirdIdRouteChildren =
   {
+    AuthenticatedBirdsBirdIdAccessRoute: AuthenticatedBirdsBirdIdAccessRoute,
     AuthenticatedBirdsBirdIdIdentityRoute:
       AuthenticatedBirdsBirdIdIdentityRoute,
     AuthenticatedBirdsBirdIdJournalRoute: AuthenticatedBirdsBirdIdJournalRoute,
@@ -907,6 +949,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   TermsRoute: TermsRoute,
   SitterTokenRouteRoute: SitterTokenRouteRouteWithChildren,
+  InviteTokenRoute: InviteTokenRoute,
   ApiPublicHooksCarePlanRemindersRoute: ApiPublicHooksCarePlanRemindersRoute,
 }
 export const routeTree = rootRouteImport

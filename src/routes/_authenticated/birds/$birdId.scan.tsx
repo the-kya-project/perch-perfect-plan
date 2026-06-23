@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
+import { useBirdRole } from "@/lib/useBirdRole";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
 import { computeTriage, type ScanFieldKey, type ScanAnswer } from "@/lib/triage";
@@ -22,6 +23,8 @@ function OwnerScan() {
   const { birdId } = Route.useParams();
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const role = useBirdRole(birdId);
+  const scanSource = role === "household" ? "household" : "owner";
   const [result, setResult] = useState<{ status: string; message: string; reasons: string[] } | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -45,7 +48,7 @@ function OwnerScan() {
         .insert({
           bird_id: birdId,
           sit_id: null,
-          source: "owner",
+          source: scanSource,
           run_by: u.user?.id ?? null,
           log_date: new Date().toISOString().slice(0, 10),
           alertness_status: a.alertness,
@@ -71,10 +74,10 @@ function OwnerScan() {
         await supabase.from("photo_logs").insert({ bird_id: birdId, daily_log_id: row.id, photo_type: "other", photo_url: p.photoDataUrl, notes: "Attached to health scan" });
       }
       if (typeof p.weightGrams === "number") {
-        await supabase.from("weight_entries").insert({ bird_id: birdId, grams: p.weightGrams, source: "owner", logged_by: u.user?.id ?? null });
+        await supabase.from("weight_entries").insert({ bird_id: birdId, grams: p.weightGrams, source: scanSource, logged_by: u.user?.id ?? null });
       }
 
-      track("health_scan_run", { severity: triage.status, had_photo: !!p.photoDataUrl, source: "owner" });
+      track("health_scan_run", { severity: triage.status, had_photo: !!p.photoDataUrl, source: scanSource });
       setResult(triage);
       // Show up immediately in the Scans tab, the record-home recent feed, and the weight timeline.
       ["scan-feed", "bird-checkins", "weight-entries", "bird-weights"].forEach((k) =>

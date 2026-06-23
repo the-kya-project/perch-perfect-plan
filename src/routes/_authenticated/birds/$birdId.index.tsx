@@ -3,13 +3,14 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useBirdPhotos } from "@/lib/useBirdPhotos";
+import { useBirdRole } from "@/lib/useBirdRole";
 import { AgePicker } from "@/components/BirdPickers";
 import { PhotoCropper } from "@/components/PhotoCropper";
 import { toast } from "sonner";
 import {
   ArrowLeft, Feather, Scale, BookOpen, IdCard, CalendarHeart, ClipboardList,
   ChevronRight, Plus, FileText, TrendingUp, TrendingDown, Minus, Activity, Pencil,
-  Check, X,
+  Check, X, Users,
 } from "lucide-react";
 
 // Bird-record home — the new landing when you tap a bird. A glanceable hub for
@@ -26,6 +27,9 @@ type Trend = "steady" | "up" | "down";
 function BirdRecordHome() {
   const { birdId } = Route.useParams();
   const qc = useQueryClient();
+  const role = useBirdRole(birdId);
+  const isOwner = role === "owner";
+  const isHousehold = role === "household";
 
   const { data: bird } = useQuery({
     queryKey: ["bird-record", birdId],
@@ -59,7 +63,7 @@ function BirdRecordHome() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("daily_logs")
-        .select("id, log_date, triage_status, created_at")
+        .select("id, log_date, triage_status, created_at, source")
         .eq("bird_id", birdId)
         .order("created_at", { ascending: false })
         .limit(15);
@@ -84,8 +88,8 @@ function BirdRecordHome() {
 
   // Merge weight entries + sitter check-ins into one newest-first feed.
   const recent = [
-    ...(weights ?? []).map((w) => ({ kind: "weight" as const, at: w.measured_at, id: `w-${w.id}`, grams: w.grams, sitter: w.source === "sitter" })),
-    ...(checkins ?? []).map((c) => ({ kind: "checkin" as const, at: c.created_at, id: `c-${c.id}`, status: c.triage_status, sitter: true })),
+    ...(weights ?? []).map((w) => ({ kind: "weight" as const, at: w.measured_at, id: `w-${w.id}`, grams: w.grams, source: w.source as string | null })),
+    ...(checkins ?? []).map((c: any) => ({ kind: "checkin" as const, at: c.created_at, id: `c-${c.id}`, status: c.triage_status, source: (c.source as string | null) ?? "sitter" })),
   ]
     .sort((a, b) => +new Date(b.at) - +new Date(a.at))
     .slice(0, 12);
@@ -122,7 +126,7 @@ function BirdRecordHome() {
             to reframe which part shows; the crop position auto-saves. Adding or
             replacing the photo itself lives on the Identity facet. */}
         <section className="flex items-center gap-4">
-          {photo ? (
+          {photo && isOwner ? (
             <PhotoCropper
               src={photo.url}
               position={bird?.photo_position}
@@ -132,6 +136,11 @@ function BirdRecordHome() {
               onChange={() => {}}
               onCommit={savePhotoPosition}
             />
+          ) : photo ? (
+            // Household members view the photo but can't reframe it (owner-only).
+            <div className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-full bg-[#e3dcc9] ring-1 ring-[#d8cfb8]">
+              <img src={photo.url} alt={name} style={{ objectPosition: bird?.photo_position ?? "50% 50%" }} className="size-full object-cover" />
+            </div>
           ) : (
             <div className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-full bg-[#e3dcc9] ring-1 ring-[#d8cfb8]">
               <span className="text-2xl font-medium text-[#2d6a4f]">{initial}</span>
@@ -142,6 +151,11 @@ function BirdRecordHome() {
             <p className="mt-0.5 truncate text-sm text-[#5f5e5a]">
               {[bird?.species || "Parrot", bird?.age].filter(Boolean).join(" · ")}
             </p>
+            {isHousehold && (
+              <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-[#cfe3dc] px-2 py-0.5 text-[10px] font-medium text-[#1a5e3f]">
+                Household · view &amp; log
+              </span>
+            )}
           </div>
         </section>
 
@@ -191,15 +205,14 @@ function BirdRecordHome() {
           <Activity className="size-4" /> Run a health scan
         </Link>
 
-        {/* Basic info — edit Species / Age / Sex / Flight inline. Saves to the
-            same birds.* columns the Identity facet reads, so opening the
-            Identity tab afterwards shows the same values (no fork). */}
-        {bird && <BasicInfoCard birdId={birdId} bird={bird} />}
+        {/* Basic info — Species / Age / Sex / Flight. Editable only by the
+            owner; household members see it read-only. */}
+        {bird && <BasicInfoCard birdId={birdId} bird={bird} editable={isOwner} />}
 
-        {/* "Create care plan" CTA for brand-new birds: launches the wizard at
-            Food (step 1). Once the wizard finishes (setup_complete=true), this
-            collapses into the Care plan facet row that opens the overview. */}
-        {bird && !bird.setup_complete && (
+        {/* "Create care plan" CTA for brand-new birds (owner only) — launches the
+            wizard at Food (step 1). Collapses into the Care plan facet row once
+            setup_complete. Household members can't create/edit the care plan. */}
+        {bird && !bird.setup_complete && isOwner && (
           <Link
             to="/birds/$birdId/setup"
             params={{ birdId }}
@@ -243,7 +256,9 @@ function BirdRecordHome() {
                       {r.kind === "weight" ? `Weight logged — ${r.grams} g` : `Daily check-in — ${checkinLabel(r.status)}`}
                     </p>
                     <p className="mt-0.5 text-xs text-[#8a897f]">
-                      {fmtDate(r.at)}{r.sitter && <span className="ml-1.5 rounded-full bg-[#d6e8dc] px-1.5 py-0.5 text-[10px] font-medium text-[#1a3d2e]">Sitter</span>}
+                      {fmtDate(r.at)}
+                      {r.source === "sitter" && <span className="ml-1.5 rounded-full bg-[#d6e8dc] px-1.5 py-0.5 text-[10px] font-medium text-[#1a3d2e]">Sitter</span>}
+                      {r.source === "household" && <span className="ml-1.5 rounded-full bg-[#cfe3dc] px-1.5 py-0.5 text-[10px] font-medium text-[#1a5e3f] ring-1 ring-[#1a5e3f]/25">Household</span>}
                     </p>
                   </div>
                 </li>
@@ -251,6 +266,17 @@ function BirdRecordHome() {
             </ul>
           )}
         </section>
+
+        {/* Access hub — owner only. Household members manage nothing here. */}
+        {isOwner && (
+          <Link
+            to="/birds/$birdId/access"
+            params={{ birdId }}
+            className="flex min-h-[44px] items-center justify-center gap-2 text-sm font-medium text-[#5f5e5a] active:scale-[0.99]"
+          >
+            <Users className="size-4" /> Who can see {name}'s record
+          </Link>
+        )}
       </main>
     </div>
   );
@@ -315,7 +341,7 @@ const FLIGHT_LABEL: Record<string, string> = {
 // facet reads, so any edit here auto-fills the Identity tab and vice versa
 // (no fork). Age and Hatch date are coupled via the shared AgePicker — picking
 // a hatch date auto-derives age; clearing it re-enables the Age dropdown.
-function BasicInfoCard({ birdId, bird }: { birdId: string; bird: { species?: string | null; age?: string | null; sex?: string | null; flight_status?: string | null; birth_date?: string | null } }) {
+function BasicInfoCard({ birdId, bird, editable = true }: { birdId: string; bird: { species?: string | null; age?: string | null; sex?: string | null; flight_status?: string | null; birth_date?: string | null }; editable?: boolean }) {
   const qc = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -383,11 +409,11 @@ function BasicInfoCard({ birdId, bird }: { birdId: string; bird: { species?: str
               <Check className="size-3.5" /> {saving ? "Saving…" : "Save"}
             </button>
           </div>
-        ) : (
+        ) : editable ? (
           <button type="button" onClick={openEdit} className="inline-flex min-h-[36px] items-center gap-1 rounded-full px-2 py-1 text-xs font-medium text-[#1a3d2e]">
             <Pencil className="size-3.5" /> Edit
           </button>
-        )}
+        ) : null}
       </div>
 
       {editing ? (
