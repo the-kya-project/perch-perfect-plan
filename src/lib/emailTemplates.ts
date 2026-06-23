@@ -61,3 +61,38 @@ export function buildCarePlanReminderEmail(opts: { birdName: string; link: strin
     text: `${opts.birdName} has a sit coming up — review the care plan: ${opts.link}`,
   };
 }
+
+// "You've been invited to help care for <birds>" — household sharing invite.
+// inviterName is the owner's display name; birdNames is a human list already
+// joined ("Willow and Moxie"). Warm and dignified; expiry note included.
+export function buildHouseholdInviteEmail(opts: {
+  inviterName: string;
+  birdNames: string;
+  link: string;
+}): BuiltEmail {
+  const inviter = escapeHtml(opts.inviterName);
+  const birds = escapeHtml(opts.birdNames);
+  const body =
+    `${inviter} invited you to help care for ${birds} on Parrot Care Co-Pilot. ` +
+    `You'll be able to see each bird's care plan, weight, journal, and health scans — ` +
+    `and log weights, journal entries, and daily scans alongside ${inviter}. ` +
+    `You won't be able to change the care plan or who has access; ${inviter} stays the owner. ` +
+    `This invite expires in 14 days.`;
+  return {
+    subject: `${opts.inviterName} invited you to help care for ${opts.birdNames}`,
+    html: shell({
+      kicker: "Household invite",
+      heading: `${inviter} invited you to help care for ${birds}`,
+      body,
+      cta: "Accept the invite",
+      link: opts.link,
+      foot: "If you didn't expect this, you can ignore this email — nothing happens until you accept. The invite link expires in 14 days.",
+    }),
+    text:
+      `${opts.inviterName} invited you to help care for ${opts.birdNames} on Parrot Care Co-Pilot.\n\n` +
+      `You'll be able to view each bird's record and log weights, journal entries, and scans. ` +
+      `You can't change the care plan or access; ${opts.inviterName} stays the owner.\n\n` +
+      `Accept (expires in 14 days): ${opts.link}\n\n` +
+      `If you didn't expect this, you can ignore this email.`,
+  };
+}

@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
+import { useBirdRole } from "@/lib/useBirdRole";
 import { toast } from "sonner";
 import { ArrowLeft, Scale, Plus, Check } from "lucide-react";
 import { WeightTrendChart, type WeightPoint } from "@/components/WeightTrendChart";
@@ -14,7 +15,7 @@ export const Route = createFileRoute("/_authenticated/birds/$birdId/weight")({
   component: WeightFacet,
 });
 
-type Entry = { id: string; grams: number; measured_at: string; source: string; meal_relation: string | null };
+type Entry = { id: string; grams: number; measured_at: string; source: string; meal_relation: string | null; logged_by: string | null };
 type WindowDays = 30 | 90 | 365;
 
 const WINDOWS: { days: WindowDays; label: string }[] = [
@@ -73,11 +74,31 @@ function WeightFacet() {
 
   const chartPoints: WeightPoint[] = inWindow.map((e) => ({ at: e.measured_at, grams: e.grams, sitter: e.source === "sitter" }));
 
+  // Resolve names for household-logged entries (e.g. "Daniel · household").
+  const householdIds = Array.from(new Set(all.filter((e) => e.source === "household" && e.logged_by).map((e) => e.logged_by as string)));
+  const { data: householdNames } = useQuery({
+    queryKey: ["member-names", birdId, householdIds.sort().join(",")],
+    enabled: householdIds.length > 0,
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const { data } = await supabase.from("profiles").select("id, display_name").in("id", householdIds);
+      const m: Record<string, string> = {};
+      for (const p of data ?? []) m[p.id] = (p.display_name ?? "").toString().trim();
+      return m;
+    },
+  });
+
   const timeline: TimelineItem[] = all.map((e, i) => {
     const prev = all[i + 1]; // chronological previous (array is newest-first)
     const d = prev ? e.grams - prev.grams : null;
-    const sitter = e.source === "sitter";
     const deltaText = d == null ? "First weight" : `${d > 0 ? "+" : ""}${d} g from previous`;
+    let badge: ReactNode;
+    if (e.source === "sitter") {
+      badge = <span className="rounded-full bg-[#f6e7c4] px-1.5 py-0.5 text-[10px] font-medium text-[#854F0B] ring-1 ring-[#BA7517]/40">Sitter</span>;
+    } else if (e.source === "household") {
+      const nm = (e.logged_by && householdNames?.[e.logged_by]) || "";
+      badge = <span className="rounded-full bg-[#cfe3dc] px-1.5 py-0.5 text-[10px] font-medium text-[#1a5e3f] ring-1 ring-[#1a5e3f]/25">{nm ? `${nm} · household` : "Household"}</span>;
+    }
     return {
       id: e.id,
       at: e.measured_at,
@@ -85,9 +106,7 @@ function WeightFacet() {
       title: `${e.grams} g`,
       subtitle: [deltaText, mealLabel(e.meal_relation)].filter(Boolean).join(" · "),
       icon: <Scale className="size-3" />,
-      badge: sitter ? (
-        <span className="rounded-full bg-[#f6e7c4] px-1.5 py-0.5 text-[10px] font-medium text-[#854F0B] ring-1 ring-[#BA7517]/40">Sitter</span>
-      ) : undefined,
+      badge,
     };
   });
 
@@ -209,6 +228,7 @@ function TrendPill({ trend, delta }: { trend: "steady" | "up" | "down"; delta: n
 type Meal = "before_meal" | "after_meal" | null;
 
 function LogPanel({ birdId, lastGrams, onClose, onSaved }: { birdId: string; lastGrams?: number; onClose: () => void; onSaved: () => void }) {
+  const role = useBirdRole(birdId);
   const [grams, setGrams] = useState<string>(lastGrams ? String(lastGrams) : "");
   const [when, setWhen] = useState<string>(nowLocal()); // datetime-local: date + time
   const [meal, setMeal] = useState<Meal>(null);
@@ -226,7 +246,7 @@ function LogPanel({ birdId, lastGrams, onClose, onSaved }: { birdId: string; las
       // Only send meal_relation when chosen, so logging still works if the
       // additive migration hasn't been applied yet (then the column is absent).
       const payload: Record<string, unknown> = {
-        bird_id: birdId, grams: n, measured_at, source: "owner", logged_by: u.user?.id ?? null,
+        bird_id: birdId, grams: n, measured_at, source: role === "household" ? "household" : "owner", logged_by: u.user?.id ?? null,
       };
       if (meal) payload.meal_relation = meal;
       const { error } = await supabase.from("weight_entries").insert(payload as any);

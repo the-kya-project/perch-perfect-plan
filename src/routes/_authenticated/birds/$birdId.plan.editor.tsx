@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { Disclaimer } from "@/components/Disclaimer";
 import { computeSetupCompleteness } from "@/lib/setupCompleteness";
 import { useBirdPhotos } from "@/lib/useBirdPhotos";
+import { useBirdRole } from "@/lib/useBirdRole";
 
 
 // The care-plan editor is reached via the new overview front door (/plan).
@@ -80,6 +81,13 @@ function BirdEditor() {
   const { birdId } = Route.useParams();
   const { tab: tabParam, scan: scanParam } = Route.useSearch();
   const qc = useQueryClient();
+  const navigate = useNavigate();
+  // The care-plan editor is owner-only (edits are RLS-restricted to the owner).
+  // Household members are routed to the read-only overview.
+  const role = useBirdRole(birdId);
+  useEffect(() => {
+    if (role === "household") navigate({ to: "/birds/$birdId/plan", params: { birdId }, replace: true });
+  }, [role, birdId, navigate]);
   const [tab, setTab] = useState<Tab>(tabParam ?? (scanParam ? "logs" : "food"));
   useEffect(() => { if (tabParam) setTab(tabParam); else if (scanParam) setTab("logs"); }, [tabParam, scanParam]);
 

@@ -7,6 +7,7 @@ import { ArrowLeft, Pencil, Check, X } from "lucide-react";
 import { PhotoCropper } from "@/components/PhotoCropper";
 import { OptionalDate } from "@/components/BirdPickers";
 import { useBirdPhotos } from "@/lib/useBirdPhotos";
+import { useBirdRole } from "@/lib/useBirdRole";
 import { signBirdPhoto, persistBirdPhoto } from "@/lib/birdPhoto";
 import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
 
@@ -49,6 +50,8 @@ function IdentityFacet() {
   const { birdId } = Route.useParams();
   const qc = useQueryClient();
   const [editing, setEditing] = useState(false);
+  const role = useBirdRole(birdId);
+  const isOwner = role === "owner"; // household members view identity read-only
 
   const { data: bird } = useQuery({
     queryKey: ["bird-identity", birdId],
@@ -81,7 +84,7 @@ function IdentityFacet() {
             <ArrowLeft className="size-5" />
           </Link>
           <h1 className="flex-1 text-base font-medium text-[#1a3d2e]">Identity</h1>
-          {bird && !editing && (
+          {bird && !editing && isOwner && (
             <button type="button" onClick={() => setEditing(true)} className="inline-flex min-h-[40px] items-center gap-1.5 rounded-full bg-[#e8f0ec] px-3.5 text-sm font-medium text-[#1a3d2e]">
               <Pencil className="size-3.5" /> Edit
             </button>

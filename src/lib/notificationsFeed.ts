@@ -26,26 +26,37 @@ export type ScanFeedItem = {
   triage_reasons: string | null;
   notes: string | null;
   created_at: string;
-  source?: string | null; // 'owner' | 'sitter'
+  source?: string | null; // 'owner' | 'sitter' | 'household'
+  run_by?: string | null; // user id for owner/household scans
+  runner_name?: string | null; // resolved display name for household scans
   bird?: { name: string | null; photo_url: string | null; photo_position: string | null } | null;
   sit?: { sitter_name: string | null; sitter_email: string | null } | null;
 };
 
 export async function fetchScanFeed(): Promise<ScanFeedItem[]> {
-  // Cast: daily_logs.source lands in the generated types after the owner-scans
-  // migration is applied + types regenerated. Fall back without `source` so the
-  // tab keeps working if the migration hasn't run yet.
+  // Cast: daily_logs.source/run_by land in the generated types after the
+  // owner-scans migration. Fall back without them if not present.
   const base = "id, bird_id, triage_status, triage_reasons, notes, created_at, bird:birds(name, photo_url, photo_position), sit:sits(sitter_name, sitter_email)";
   const run = (sel: string) =>
     (supabase as any).from("daily_logs").select(sel).order("created_at", { ascending: false }).limit(40);
-  const first = await run(`${base}, source`);
+  const first = await run(`${base}, source, run_by`);
   let data = first.data;
   if (first.error) ({ data } = await run(base));
-  return (data ?? []) as unknown as ScanFeedItem[];
+  const items = (data ?? []) as unknown as ScanFeedItem[];
+
+  // Resolve names for household-run scans ("Daniel · household").
+  const ids = Array.from(new Set(items.filter((n) => n.source === "household" && n.run_by).map((n) => n.run_by as string)));
+  if (ids.length) {
+    const { data: profs } = await supabase.from("profiles").select("id, display_name").in("id", ids);
+    const byId = new Map((profs ?? []).map((p: any) => [p.id, (p.display_name ?? "").toString().trim()]));
+    for (const n of items) if (n.source === "household" && n.run_by) n.runner_name = byId.get(n.run_by) || null;
+  }
+  return items;
 }
 
-/** Who ran a scan: "You" for owner scans, else the sitter's name/email. */
+/** Who ran a scan: "You" for owner scans, the member's name for household, else the sitter. */
 export function scanRunBy(n: ScanFeedItem): string {
   if (n.source === "owner") return "You";
+  if (n.source === "household") return n.runner_name?.trim() || "A household member";
   return n.sit?.sitter_name?.trim() || n.sit?.sitter_email?.trim() || "Your sitter";
 }

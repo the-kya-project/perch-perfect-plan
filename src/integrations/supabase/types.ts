@@ -577,6 +577,45 @@ export type Database = {
         }
         Relationships: []
       }
+      household_invites: {
+        Row: {
+          accepted_user_id: string | null
+          bird_ids: string[]
+          created_at: string
+          expires_at: string
+          id: string
+          invitee_email: string
+          invitee_name: string | null
+          owner_id: string
+          status: string
+          token: string
+        }
+        Insert: {
+          accepted_user_id?: string | null
+          bird_ids: string[]
+          created_at?: string
+          expires_at?: string
+          id?: string
+          invitee_email: string
+          invitee_name?: string | null
+          owner_id: string
+          status?: string
+          token: string
+        }
+        Update: {
+          accepted_user_id?: string | null
+          bird_ids?: string[]
+          created_at?: string
+          expires_at?: string
+          id?: string
+          invitee_email?: string
+          invitee_name?: string | null
+          owner_id?: string
+          status?: string
+          token?: string
+        }
+        Relationships: []
+      }
       journal_entries: {
         Row: {
           bird_id: string
