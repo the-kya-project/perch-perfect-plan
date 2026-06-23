@@ -379,13 +379,15 @@ function StepBody({
   registerFlush: (fn: (() => Promise<void>) | null) => void;
   registerValidate: (fn: (() => boolean) | null) => void;
 }) {
-  // Basics moved to the bird main page; the wizard now starts at Food.
-  // Step numbers match SETUP_STEPS in SetupShell (1=food … 8=review).
+  // Basics moved to the bird main page; the wizard is now pure care instructions.
+  // Step numbers match SETUP_STEPS in SetupShell — daily rhythm sits after the
+  // descriptive sections, with Food still first (Routine auto-derives feeding
+  // items from Food).
   if (step === 1) return <FoodWaterStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} registerFlush={registerFlush} registerValidate={registerValidate} />;
-  if (step === 2) return <DayInLifeStep birdId={birdId} />;
-  if (step === 3) return <PersonalityStep birdId={birdId} birdName={birdName} registerFlush={registerFlush} />;
-  if (step === 4) return <EnvironmentStep birdId={birdId} registerFlush={registerFlush} />;
-  if (step === 5) return <HealthBaselineStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} registerFlush={registerFlush} />;
+  if (step === 2) return <PersonalityStep birdId={birdId} birdName={birdName} registerFlush={registerFlush} />;
+  if (step === 3) return <EnvironmentStep birdId={birdId} registerFlush={registerFlush} />;
+  if (step === 4) return <HealthBaselineStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} registerFlush={registerFlush} />;
+  if (step === 5) return <DayInLifeStep birdId={birdId} />;
   if (step === 6) return <OwnerTipsClipsStep birdId={birdId} onBlockNext={onBlockNext} />;
   if (step === 7) return <EmergencyStep birdId={birdId} onBlockNext={onBlockNext} registerFlush={registerFlush} />;
   if (step === 8) return <ReviewStep birdId={birdId} birdName={birdName} onJumpToStep={onJumpToStep} onFinish={onFinish} />;

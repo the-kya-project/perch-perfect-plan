@@ -37,10 +37,10 @@ export function computeSetupCompleteness(args: {
     (contacts?.[k] ?? "").toString().trim() ||
     (defaults?.[k] ?? "").toString().trim();
 
-  // Basics has moved to the bird main page; the care plan is now pure care
-  // instructions. Step numbers mirror SETUP_STEPS in SetupShell (food=1 … emergency=7).
-  // Food comes before Routine because Routine auto-derives feeding/water items
-  // from Food. `key` lets callers map a check to a section icon/row.
+  // Step numbers mirror SETUP_STEPS in SetupShell (food=1 … emergency=7).
+  // Daily rhythm is placed after the descriptive sections so it can synthesize
+  // the full care picture; Food still comes first because Routine auto-derives
+  // feeding/water items from Food. `key` lets callers map a check to a section.
   const checks: SetupCheck[] = [
     {
       step: 1,
@@ -50,18 +50,12 @@ export function computeSetupCompleteness(args: {
     },
     {
       step: 2,
-      key: "day",
-      label: "A day in the life",
-      done: (tasksCount ?? 0) > 0,
-    },
-    {
-      step: 3,
       key: "personality",
       label: "Personality & handling",
       done: nonEmpty(plan?.handlers) || nonEmpty(plan?.likes) || nonEmpty(plan?.fears_triggers),
     },
     {
-      step: 4,
+      step: 3,
       key: "environment",
       label: "Environment & safety",
       done:
@@ -70,13 +64,19 @@ export function computeSetupCompleteness(args: {
         nonEmpty(plan?.hazards),
     },
     {
-      step: 5,
+      step: 4,
       key: "health",
       label: "Health baseline",
       done:
         nonEmpty(bird?.normal_weight) ||
         nonEmpty(plan?.baseline_clip_path) ||
         nonEmpty(plan?.whats_normal),
+    },
+    {
+      step: 5,
+      key: "day",
+      label: "A day in the life",
+      done: (tasksCount ?? 0) > 0,
     },
     {
       step: 6,

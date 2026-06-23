@@ -62,16 +62,29 @@ export function AgePicker({ age, birthDate, onChange }: { age: string; birthDate
         </select>
       </BirdField>
       <BirdField label="Birth date" hint="Optional — sets age automatically">
-        <input
-          className="input"
-          type="date"
-          max={new Date().toISOString().slice(0, 10)}
-          value={birthDate ?? ""}
-          onChange={(e) => {
-            const bd = e.target.value || null;
-            onChange({ age: ageFromBirthDate(bd) ?? age, birthDate: bd });
-          }}
-        />
+        <div className="flex items-center gap-2">
+          <input
+            className="input"
+            type="date"
+            max={new Date().toISOString().slice(0, 10)}
+            value={birthDate ?? ""}
+            onChange={(e) => {
+              const bd = e.target.value || null;
+              onChange({ age: ageFromBirthDate(bd) ?? age, birthDate: bd });
+            }}
+          />
+          {/* iOS Safari's date-picker Clear doesn't reliably fire onChange on
+              the controlled input; this explicit button always clears. */}
+          {birthDate && (
+            <button
+              type="button"
+              onClick={() => onChange({ age, birthDate: null })}
+              className="shrink-0 rounded-lg border border-sage-200 bg-white px-2.5 py-2 text-xs font-medium text-sage-700"
+            >
+              Clear
+            </button>
+          )}
+        </div>
       </BirdField>
     </div>
   );
