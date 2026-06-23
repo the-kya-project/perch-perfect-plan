@@ -8,9 +8,6 @@ type Props = {
   onCommit?: (pos: string) => void;
   size?: number; // px
   shape?: "square" | "circle";
-  /** "cover" fills the frame (approved setup/identity look); "contain" scales the
-      whole photo to fit, centered. Default "cover". */
-  fit?: "cover" | "contain";
   /** Show the "Drag inside the frame…" caption. Default true. */
   showHint?: boolean;
 };
@@ -23,7 +20,7 @@ function parsePos(p: string | null | undefined): { x: number; y: number } {
 }
 function clamp(n: number, min = 0, max = 100) { return Math.max(min, Math.min(max, n)); }
 
-export function PhotoCropper({ src, position, onChange, onCommit, size = 160, shape = "square", fit = "cover", showHint = true }: Props) {
+export function PhotoCropper({ src, position, onChange, onCommit, size = 160, shape = "square", showHint = true }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState(() => parsePos(position));
   const [dragging, setDragging] = useState(false);
@@ -67,10 +64,8 @@ export function PhotoCropper({ src, position, onChange, onCommit, size = 160, sh
           width: size,
           height: size,
           backgroundImage: `url(${src})`,
-          // "contain" scales the WHOLE photo to fit the frame (no aggressive
-          // crop), centered; "cover" fills the frame. Either way, dragging
-          // nudges what shows.
-          backgroundSize: fit,
+          // Fill the frame; dragging nudges which part of the photo shows.
+          backgroundSize: "cover",
           backgroundRepeat: "no-repeat",
           backgroundColor: "#e3dcc9",
           backgroundPosition: `${pos.x}% ${pos.y}%`,
