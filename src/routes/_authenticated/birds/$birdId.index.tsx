@@ -1,16 +1,18 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useBirdPhotos } from "@/lib/useBirdPhotos";
 import { useBirdRole } from "@/lib/useBirdRole";
 import { AgePicker } from "@/components/BirdPickers";
 import { PhotoCropper } from "@/components/PhotoCropper";
+import { useServerFn } from "@tanstack/react-start";
+import { getPendingHandoff, cancelHandoff, makePermanent } from "@/lib/handoff.functions";
 import { toast } from "sonner";
 import {
   ArrowLeft, Feather, Scale, BookOpen, IdCard, CalendarHeart, ClipboardList,
   ChevronRight, Plus, FileText, TrendingUp, TrendingDown, Minus, Activity, Pencil,
-  Check, X, Users,
+  Check, X, Users, ArrowRightLeft, Heart, Loader2,
 } from "lucide-react";
 
 // Bird-record home — the new landing when you tap a bird. A glanceable hub for
@@ -36,7 +38,7 @@ function BirdRecordHome() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("birds")
-        .select("id, owner_id, name, species, age, sex, flight_status, birth_date, photo_url, photo_position, setup_complete")
+        .select("id, owner_id, name, species, age, sex, flight_status, birth_date, photo_url, photo_position, setup_complete, is_foster, became_permanent_on, intake_date")
         .eq("id", birdId)
         .maybeSingle();
       if (error) throw error;
@@ -147,7 +149,12 @@ function BirdRecordHome() {
             </div>
           )}
           <div className="min-w-0 flex-1">
-            <h2 className="truncate text-xl font-medium text-[#1a3d2e]">{name}</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="truncate text-xl font-medium text-[#1a3d2e]">{name}</h2>
+              {bird?.is_foster && (
+                <span className="shrink-0 rounded-full bg-[#cfe3dc] px-2 py-0.5 text-[10px] font-medium text-[#1a5e3f]">Foster</span>
+              )}
+            </div>
             <p className="mt-0.5 truncate text-sm text-[#5f5e5a]">
               {[bird?.species || "Parrot", bird?.age].filter(Boolean).join(" · ")}
             </p>
@@ -204,6 +211,9 @@ function BirdRecordHome() {
         >
           <Activity className="size-4" /> Run a health scan
         </Link>
+
+        {/* Handoff — prominent for fosters (this is the point of fostering). */}
+        {isOwner && bird?.is_foster && <HandoffSection birdId={birdId} name={name} isFoster prominent />}
 
         {/* Basic info — Species / Age / Sex / Flight. Editable only by the
             owner; household members see it read-only. */}
@@ -277,6 +287,10 @@ function BirdRecordHome() {
             <Users className="size-4" /> Who can see {name}'s record
           </Link>
         )}
+
+        {/* Handoff — quiet for non-foster birds (life happens, but don't tempt
+            accidental use). */}
+        {isOwner && bird && !bird.is_foster && <HandoffSection birdId={birdId} name={name} isFoster={false} prominent={false} />}
       </main>
     </div>
   );
@@ -326,6 +340,84 @@ function checkinLabel(status: string): string {
 function fmtDate(iso: string): string {
   const d = new Date(iso);
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+// Handoff + foster-fail actions. Shows a pending-handoff banner with cancel,
+// otherwise a "Hand off" entry (prominent for fosters) and, for fosters, the
+// quiet "Welcome to the flock" action.
+function HandoffSection({ birdId, name, isFoster, prominent }: { birdId: string; name: string; isFoster: boolean; prominent: boolean }) {
+  const qc = useQueryClient();
+  const getPending = useServerFn(getPendingHandoff);
+  const cancel = useServerFn(cancelHandoff);
+  const permanent = useServerFn(makePermanent);
+  const navigate = useNavigate();
+
+  const { data: pending } = useQuery({
+    queryKey: ["pending-handoff", birdId],
+    queryFn: () => getPending({ data: { birdId } }),
+  });
+
+  const cancelM = useMutation({
+    mutationFn: (id: string) => cancel({ data: { handoffId: id } }),
+    onSuccess: () => { toast.success("Handoff canceled."); qc.invalidateQueries({ queryKey: ["pending-handoff", birdId] }); },
+    onError: (e: any) => toast.error(e?.message ?? "Couldn't cancel."),
+  });
+  const permanentM = useMutation({
+    mutationFn: () => permanent({ data: { birdId } }),
+    onSuccess: () => {
+      toast.success(`${name} joined the flock! 🎉`);
+      ["bird-record", "moments", "birds", "bird-role"].forEach((k) => qc.invalidateQueries({ queryKey: k === "birds" ? ["birds"] : [k, birdId] }));
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Couldn't update."),
+  });
+
+  if (pending?.pending) {
+    return (
+      <div className="flex items-center gap-3 rounded-[14px] border border-dashed bg-[#f6e7c4]/30 p-3" style={{ borderColor: "#d8b25a" }}>
+        <Loader2 className="size-4 shrink-0 text-[#854F0B]" />
+        <p className="min-w-0 flex-1 text-xs text-[#854F0B]">
+          Handoff pending — to <span className="font-medium">{pending.pending.email}</span>
+        </p>
+        <button type="button" disabled={cancelM.isPending} onClick={() => cancelM.mutate(pending.pending!.id)} className="shrink-0 text-xs font-medium text-[#854F0B] underline disabled:opacity-50">
+          Cancel
+        </button>
+      </div>
+    );
+  }
+
+  const handoffBtn = (
+    <button
+      type="button"
+      onClick={() => navigate({ to: "/birds/$birdId/handoff", params: { birdId } })}
+      className={prominent
+        ? "flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[14px] border border-[#c8bfa6] bg-white text-sm font-medium text-[#1a3d2e] active:scale-[0.99]"
+        : "flex min-h-[44px] w-full items-center justify-center gap-2 text-sm font-medium text-[#5f5e5a] active:scale-[0.99]"}
+    >
+      <ArrowRightLeft className="size-4" /> Hand off {name}
+    </button>
+  );
+
+  if (!isFoster) return handoffBtn;
+
+  return (
+    <div className="grid grid-cols-2 gap-3">
+      <button
+        type="button"
+        disabled={permanentM.isPending}
+        onClick={() => { if (window.confirm(`Make ${name} a permanent member of your flock? You can change your mind later.`)) permanentM.mutate(); }}
+        className="flex min-h-[44px] items-center justify-center gap-2 rounded-[14px] border border-[#c8bfa6] bg-white text-sm font-medium text-[#1a3d2e] active:scale-[0.99] disabled:opacity-50"
+      >
+        <Heart className="size-4" /> Welcome to the flock
+      </button>
+      <button
+        type="button"
+        onClick={() => navigate({ to: "/birds/$birdId/handoff", params: { birdId } })}
+        className="flex min-h-[44px] items-center justify-center gap-2 rounded-[14px] border border-[#c8bfa6] bg-white text-sm font-medium text-[#1a3d2e] active:scale-[0.99]"
+      >
+        <ArrowRightLeft className="size-4" /> Hand off
+      </button>
+    </div>
+  );
 }
 
 const SEX_LABEL: Record<string, string> = { male: "Male", female: "Female", unknown: "Unknown" };

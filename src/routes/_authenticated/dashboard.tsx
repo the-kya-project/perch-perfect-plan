@@ -65,7 +65,7 @@ function Dashboard() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("birds")
-        .select("id, owner_id, name, species, photo_url, photo_position, setup_complete, setup_step, normal_weight")
+        .select("id, owner_id, name, species, photo_url, photo_position, setup_complete, setup_step, normal_weight, is_foster")
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data ?? [];
@@ -322,7 +322,10 @@ function BirdCard({ bird, photo, completeness, resumeStep }: { bird: any; photo:
         <div className="p-4">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-[18px] font-medium leading-tight text-[#1a3d2e]">{bird.name}</p>
+              <div className="flex items-center gap-2">
+                <p className="text-[18px] font-medium leading-tight text-[#1a3d2e]">{bird.name}</p>
+                {bird.is_foster && <span className="shrink-0 rounded-full bg-[#cfe3dc] px-2 py-0.5 text-[10px] font-medium text-[#1a5e3f]">Foster</span>}
+              </div>
               <p className="mt-0.5 text-sm text-[#5f5e5a]">{bird.species ?? "Parrot"}</p>
             </div>
             {ready ? (

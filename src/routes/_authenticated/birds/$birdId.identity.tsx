@@ -31,6 +31,8 @@ type Identity = {
   band_number: string | null;
   origin: string | null;
   acquired_on: string | null;
+  is_foster: boolean | null;
+  intake_date: string | null;
 };
 
 // Shared core (photo, name, species, age) lives in the same birds columns the
@@ -58,7 +60,7 @@ function IdentityFacet() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("birds")
-        .select("owner_id, name, species, age, photo_url, photo_position, sex, sex_method, flight_status, birth_date, microchip, band_number, origin, acquired_on")
+        .select("owner_id, name, species, age, photo_url, photo_position, sex, sex_method, flight_status, birth_date, microchip, band_number, origin, acquired_on, is_foster, intake_date")
         .eq("id", birdId)
         .maybeSingle();
       if (error) throw error;
@@ -164,6 +166,8 @@ function IdentityForm({ birdId, bird, onClose, onSaved }: { birdId: string; bird
     band_number: bird.band_number ?? "",
     origin: bird.origin ?? "",
     acquired_on: bird.acquired_on ?? "",
+    is_foster: !!bird.is_foster,
+    intake_date: bird.intake_date ?? "",
   });
   // Photo: display value (signed/data URL) vs the value to persist (path/data/null).
   const [photoDisplay, setPhotoDisplay] = useState<string | null>(null);
@@ -210,6 +214,8 @@ function IdentityForm({ birdId, bird, onClose, onSaved }: { birdId: string; bird
         band_number: clean(f.band_number),
         origin: clean(f.origin),
         acquired_on: f.acquired_on || null,
+        is_foster: f.is_foster,
+        intake_date: f.intake_date || null,
         photo_url: ref,
         photo_position: photoPosition,
       } as any).eq("id", birdId);
@@ -284,6 +290,21 @@ function IdentityForm({ birdId, bird, onClose, onSaved }: { birdId: string; bird
       <Field label="Came home">
         <OptionalDate value={f.acquired_on} max={today} addLabel="Add date" inputClassName={INPUT} onChange={(v) => set("acquired_on", v)} />
       </Field>
+
+      <div className="rounded-xl border border-[#e3dcc9] bg-[#fbfaf2] p-3">
+        <label className="flex cursor-pointer items-start gap-3">
+          <input type="checkbox" checked={f.is_foster} onChange={(e) => setF((p) => ({ ...p, is_foster: e.target.checked }))} className="mt-0.5 size-5 shrink-0 accent-[#1a3d2e]" />
+          <span className="min-w-0">
+            <span className="block text-sm font-medium text-[#1a3d2e]">This is a foster</span>
+            <span className="mt-0.5 block text-xs leading-relaxed text-[#5f5e5a]">You're caring for them while they find a permanent home.</span>
+          </span>
+        </label>
+        {f.is_foster && (
+          <div className="mt-3 border-t border-[#ece6d6] pt-3">
+            <Field label="Came to you"><input className={INPUT} type="date" max={today} value={f.intake_date} onChange={(e) => set("intake_date", e.target.value)} /></Field>
+          </div>
+        )}
+      </div>
 
       <p className="text-[11px] text-[#8a897f]">All fields are optional — partial records are fine.</p>
 

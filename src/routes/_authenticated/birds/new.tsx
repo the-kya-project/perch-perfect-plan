@@ -28,6 +28,9 @@ function NewBird() {
   const [photoPos, setPhotoPos] = useState<string>("50% 50%");
   const [saving, setSaving] = useState(false);
   const [photoBusy, setPhotoBusy] = useState(false);
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const [isFoster, setIsFoster] = useState(false);
+  const [intakeDate, setIntakeDate] = useState<string>(todayStr);
 
   async function onPhoto(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -67,6 +70,8 @@ function NewBird() {
       flight_status: flight,
       photo_url: photoRef,
       photo_position: photoRef ? photoPos : null,
+      is_foster: isFoster,
+      intake_date: intakeDate || null,
       setup_complete: false,
       setup_step: targetStep,
     } as any).select().single();
@@ -141,6 +146,30 @@ function NewBird() {
       exitConfirmCta="Discard"
       nextDisabled={!name.trim() || !species.trim()}
     >
+      {/* Foster intake toggle */}
+      <section className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
+        <label className="flex cursor-pointer items-start gap-3">
+          <input type="checkbox" checked={isFoster} onChange={(e) => setIsFoster(e.target.checked)} className="mt-0.5 size-5 shrink-0 accent-[#1a3d2e]" />
+          <span className="min-w-0">
+            <span className="block text-sm font-medium text-[#1a3d2e]">This is a foster</span>
+            <span className="mt-0.5 block text-xs leading-relaxed text-[#5f5e5a]">
+              You're caring for them while they find a permanent home. You'll be able to hand off their record to the adopter.
+            </span>
+          </span>
+        </label>
+        <div className="mt-3 border-t border-[#ece6d6] pt-3">
+          <BirdField label="Came to you">
+            <input className="input" type="date" max={todayStr} value={intakeDate} onChange={(e) => setIntakeDate(e.target.value)} />
+          </BirdField>
+        </div>
+      </section>
+
+      <div className="rounded-2xl bg-[#efe9da] p-4">
+        <p className="text-sm leading-relaxed text-[#5f5e5a]">
+          It's okay if you don't know much yet — add what you know now, fill the rest in as you learn.
+        </p>
+      </div>
+
       <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
         <div className="flex items-start gap-3">
           {photo ? (

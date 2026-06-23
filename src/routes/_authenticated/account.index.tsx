@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { deleteMyAccount } from "@/lib/account.functions";
 import { APP_VERSION } from "@/lib/version";
-import { ArrowLeft, ChevronRight, ShieldAlert, Bell, Smartphone, Lock, X } from "lucide-react";
+import { ArrowLeft, ChevronRight, ShieldAlert, Bell, Smartphone, Lock, X, Archive } from "lucide-react";
 import { AddToHomeModal } from "@/components/AddToHomeModal";
 import { toast } from "sonner";
 
@@ -120,6 +120,10 @@ function AccountPage() {
           <div className="overflow-hidden rounded-[20px] bg-[#efe9da]">
             <Link to="/account/security">
               <Row icon={Lock} title="Password & sign-in" desc="Manage how you log in." />
+            </Link>
+            <Divider />
+            <Link to="/past-birds">
+              <Row icon={Archive} iconBg="#dde8df" iconColor="#2d6a4f" title="Past birds" desc="Birds you've handed off — who they were, where they went." />
             </Link>
           </div>
         </div>
