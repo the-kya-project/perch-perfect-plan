@@ -23,6 +23,7 @@ type Identity = {
   photo_position: string | null;
   sex: string | null;
   sex_method: string | null;
+  flight_status: string | null;
   birth_date: string | null;   // reused as hatch date
   microchip: string | null;
   band_number: string | null;
@@ -35,6 +36,12 @@ type Identity = {
 
 const SEX_LABEL: Record<string, string> = { female: "Female", male: "Male", unknown: "Unknown" };
 const METHOD_LABEL: Record<string, string> = { dna: "DNA confirmed", surgical: "Surgically sexed", visual: "Visual", unknown: "" };
+const FLIGHT_LABEL: Record<string, string> = { fully_flighted: "Fully flighted", clipped: "Clipped", partially_clipped: "Partially clipped", unknown: "Unknown" };
+function flightLabel(v: string | null | undefined): string | null {
+  const k = (v ?? "").trim();
+  if (!k || k === "unknown") return null; // hide the row when unset / Unknown
+  return FLIGHT_LABEL[k] ?? null;
+}
 const blank = (v: string | null | undefined) => !((v ?? "").trim());
 
 function IdentityFacet() {
@@ -47,7 +54,7 @@ function IdentityFacet() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("birds")
-        .select("owner_id, name, species, age, photo_url, photo_position, sex, sex_method, birth_date, microchip, band_number, origin, acquired_on")
+        .select("owner_id, name, species, age, photo_url, photo_position, sex, sex_method, flight_status, birth_date, microchip, band_number, origin, acquired_on")
         .eq("id", birdId)
         .maybeSingle();
       if (error) throw error;
@@ -106,6 +113,7 @@ function IdentityFacet() {
             {/* Deeper record (Identity only) */}
             <section className="overflow-hidden rounded-[16px] bg-white ring-1 ring-[#e3dcc9]">
               <Row label="Sex" value={sexValue(bird)} />
+              <Row label="Flight" value={flightLabel(bird.flight_status)} />
               <Row label="Hatch date" value={bird.birth_date ? `${fmtDate(bird.birth_date)} (≈ ${approxAge(bird.birth_date)})` : null} />
               <Row label="Microchip" value={bird.microchip} />
               <Row label="Leg band" value={bird.band_number} emptyText="None" />
@@ -146,6 +154,7 @@ function IdentityForm({ birdId, bird, onClose, onSaved }: { birdId: string; bird
     age: bird.age ?? "",
     sex: bird.sex ?? "",
     sex_method: bird.sex_method ?? "",
+    flight_status: bird.flight_status ?? "unknown",
     birth_date: bird.birth_date ?? "",
     microchip: bird.microchip ?? "",
     band_number: bird.band_number ?? "",
@@ -191,6 +200,7 @@ function IdentityForm({ birdId, bird, onClose, onSaved }: { birdId: string; bird
         age: clean(f.age),
         sex: clean(f.sex),
         sex_method: clean(f.sex_method),
+        flight_status: f.flight_status || "unknown",
         birth_date: f.birth_date || null,
         microchip: clean(f.microchip),
         band_number: clean(f.band_number),
@@ -250,6 +260,15 @@ function IdentityForm({ birdId, bird, onClose, onSaved }: { birdId: string; bird
             <option value="unknown">Unknown</option>
           </select>
         </div>
+      </Field>
+
+      <Field label="Flight">
+        <select className={INPUT} value={f.flight_status} onChange={(e) => set("flight_status", e.target.value)}>
+          <option value="unknown">Unknown</option>
+          <option value="fully_flighted">Fully flighted</option>
+          <option value="clipped">Clipped</option>
+          <option value="partially_clipped">Partially clipped</option>
+        </select>
       </Field>
 
       <Field label="Hatch date">
