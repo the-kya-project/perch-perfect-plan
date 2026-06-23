@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import {
   ArrowLeft, Feather, Scale, BookOpen, IdCard, CalendarHeart, ClipboardList,
   ChevronRight, Plus, FileText, TrendingUp, TrendingDown, Minus, Activity, Pencil,
-  Check, X, Camera, Loader2,
+  Check, X, Loader2,
 } from "lucide-react";
 
 // Bird-record home — the new landing when you tap a bird. A glanceable hub for
@@ -69,7 +69,9 @@ function BirdRecordHome() {
     },
   });
 
-  const photoOf = useBirdPhotos([bird?.photo_url], 96);
+  // Strip avatar is rendered at 64px (size-16); request 256px so it stays sharp
+  // on retina/3x devices when scaled down from the bird's main photo source.
+  const photoOf = useBirdPhotos([bird?.photo_url], 256);
   const photo = photoOf(bird?.photo_url);
 
   const weightCount = weights?.length ?? 0;
@@ -134,13 +136,14 @@ function BirdRecordHome() {
       </header>
 
       <main className="mx-auto max-w-md space-y-4 px-5 py-5">
-        {/* Identity strip — photo + name + species/age. Tap the photo to pick
-            or replace it; the camera badge cues the affordance, and a spinner
-            covers the bubble during upload. Basic info edits live on the
-            BASIC INFO card below; name edits on the Identity facet. */}
+        {/* Identity strip — photo + name + species/age. The photo circle is a
+            silent tap target (no badge); tapping it opens the file picker.
+            The bubble auto-scales the bird's main photo via useBirdPhotos.
+            A spinner overlays the bubble while uploading. Basic info edits
+            live on the BASIC INFO card below; name edits on Identity. */}
         <section className="flex items-center gap-4">
           <label
-            className={`relative grid size-16 shrink-0 place-items-center overflow-hidden rounded-full bg-[#e3dcc9] ring-1 ring-[#d8cfb8] ${photoBusy ? "cursor-default" : "cursor-pointer"}`}
+            className={`relative grid size-16 shrink-0 place-items-center overflow-hidden rounded-full bg-[#e3dcc9] ring-1 ring-[#d8cfb8] ${photoBusy ? "cursor-default" : "cursor-pointer active:scale-[0.97]"}`}
             aria-label={bird?.photo_url ? `Change ${name}'s photo` : `Add a photo for ${name}`}
           >
             {photo ? (
@@ -154,11 +157,11 @@ function BirdRecordHome() {
             ) : (
               <span className="text-2xl font-medium text-[#2d6a4f]">{initial}</span>
             )}
-            {/* Camera badge — visible cue that the photo is tappable. */}
-            <span aria-hidden="true" className="absolute -bottom-0.5 -right-0.5 grid size-6 place-items-center rounded-full bg-[#1a3d2e] text-white ring-2 ring-[#f4f1e8]">
-              {photoBusy ? <Loader2 className="size-3 animate-spin" /> : <Camera className="size-3" />}
-            </span>
-            {photoBusy && <span className="absolute inset-0 grid place-items-center bg-black/30" />}
+            {photoBusy && (
+              <span aria-hidden="true" className="absolute inset-0 grid place-items-center bg-black/30">
+                <Loader2 className="size-4 animate-spin text-white" />
+              </span>
+            )}
             <input
               type="file"
               accept="image/*,.heic,.heif"
