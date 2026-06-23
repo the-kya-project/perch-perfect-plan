@@ -98,7 +98,7 @@ function BirdEditor() {
     const raf = requestAnimationFrame(updateTabFades);
     window.addEventListener("resize", updateTabFades);
     return () => { cancelAnimationFrame(raf); window.removeEventListener("resize", updateTabFades); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [bird]);
   const { data: plan } = useQuery({
     queryKey: ["plan", birdId],

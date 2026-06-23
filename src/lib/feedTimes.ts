@@ -35,7 +35,7 @@ export function formatAt(at: string | null | undefined): string | null {
   if (!at) return null;
   const m = String(at).match(/^(\d{1,2}):(\d{2})$/);
   if (!m) return at; // already display-formatted or unknown — show as-is
-  let h = parseInt(m[1], 10);
+  const h = parseInt(m[1], 10);
   const min = parseInt(m[2], 10);
   if (h > 23 || min > 59) return null;
   const ap = h < 12 ? "AM" : "PM";

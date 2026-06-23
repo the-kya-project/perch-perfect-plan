@@ -38,8 +38,9 @@ export async function fetchScanFeed(): Promise<ScanFeedItem[]> {
   const base = "id, bird_id, triage_status, triage_reasons, notes, created_at, bird:birds(name, photo_url, photo_position), sit:sits(sitter_name, sitter_email)";
   const run = (sel: string) =>
     (supabase as any).from("daily_logs").select(sel).order("created_at", { ascending: false }).limit(40);
-  let { data, error } = await run(`${base}, source`);
-  if (error) ({ data } = await run(base));
+  const first = await run(`${base}, source`);
+  let data = first.data;
+  if (first.error) ({ data } = await run(base));
   return (data ?? []) as unknown as ScanFeedItem[];
 }
 
