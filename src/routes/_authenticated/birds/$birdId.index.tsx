@@ -118,16 +118,15 @@ function BirdRecordHome() {
 
       <main className="mx-auto max-w-md space-y-4 px-5 py-5">
         {/* Identity strip — photo + name + species/age. When a photo is set the
-            circle scales the whole photo to fit (centered) and is draggable to
-            reframe; the crop position auto-saves. Adding/replacing the photo
-            itself lives on the Identity facet. */}
+            circle is filled by the photo (centered by default) and is draggable
+            to reframe which part shows; the crop position auto-saves. Adding or
+            replacing the photo itself lives on the Identity facet. */}
         <section className="flex items-center gap-4">
           {photo ? (
             <PhotoCropper
               src={photo.url}
               position={bird?.photo_position}
               shape="circle"
-              fit="contain"
               size={64}
               showHint={false}
               onChange={() => {}}
