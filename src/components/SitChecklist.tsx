@@ -259,7 +259,7 @@ export function SitChecklist({
                       {birds.map((b) => (
                         <Link
                           key={b.id}
-                          to="/birds/$birdId/plan"
+                          to="/birds/$birdId/plan/editor"
                           params={{ birdId: b.id }}
                           search={{ tab: "emergency" }}
                           className="inline-flex items-center gap-1 rounded-md bg-sage-100 px-1.5 py-0.5 text-[10px] font-semibold text-sage-700 hover:bg-sage-200"

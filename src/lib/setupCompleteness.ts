@@ -3,6 +3,8 @@
 
 export type SetupCheck = {
   step: number;
+  /** Matches the SETUP_STEPS key in SetupShell — lets callers map a check to a section icon/row. */
+  key: "food" | "day" | "personality" | "environment" | "health" | "clips" | "emergency";
   label: string;
   done: boolean;
 };
@@ -35,34 +37,32 @@ export function computeSetupCompleteness(args: {
     (contacts?.[k] ?? "").toString().trim() ||
     (defaults?.[k] ?? "").toString().trim();
 
+  // Basics has moved to the bird main page; the care plan is now pure care
+  // instructions. Step numbers mirror SETUP_STEPS in SetupShell (food=1 … emergency=7).
+  // Food comes before Routine because Routine auto-derives feeding/water items
+  // from Food. `key` lets callers map a check to a section icon/row.
   const checks: SetupCheck[] = [
     {
       step: 1,
-      label: "The basics",
-      // Bird record exists by definition once we're past /birds/new.
-      // Species is the only optional basics field, but a bird row always means basics submitted.
-      done: !!bird,
-    },
-    // Order/numbers mirror SETUP_STEPS: Food comes before Routine, since the
-    // Routine step auto-derives feeding/water items from Food. Keep this list in
-    // the same order so firstIncompleteStep resumes at the right step.
-    {
-      step: 2,
+      key: "food",
       label: "Food & water",
       done: nonEmpty(plan?.diet_types) || nonEmpty(plan?.food_instructions),
     },
     {
-      step: 3,
+      step: 2,
+      key: "day",
       label: "A day in the life",
       done: (tasksCount ?? 0) > 0,
     },
     {
-      step: 4,
+      step: 3,
+      key: "personality",
       label: "Personality & handling",
       done: nonEmpty(plan?.handlers) || nonEmpty(plan?.likes) || nonEmpty(plan?.fears_triggers),
     },
     {
-      step: 5,
+      step: 4,
+      key: "environment",
       label: "Environment & safety",
       done:
         nonEmpty(plan?.cage_location) ||
@@ -70,7 +70,8 @@ export function computeSetupCompleteness(args: {
         nonEmpty(plan?.hazards),
     },
     {
-      step: 6,
+      step: 5,
+      key: "health",
       label: "Health baseline",
       done:
         nonEmpty(bird?.normal_weight) ||
@@ -78,7 +79,8 @@ export function computeSetupCompleteness(args: {
         nonEmpty(plan?.whats_normal),
     },
     {
-      step: 7,
+      step: 6,
+      key: "clips",
       label: "Tips from the owner",
       done:
         nonEmpty(plan?.clip_step_up_path) ||
@@ -87,7 +89,8 @@ export function computeSetupCompleteness(args: {
         nonEmpty(plan?.clip_bedtime_path),
     },
     {
-      step: 8,
+      step: 7,
+      key: "emergency",
       label: "Emergency info",
       done: !!eff("owner_phone") && !!eff("avian_vet_phone"),
     },

@@ -26,7 +26,7 @@ function BirdRecordHome() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("birds")
-        .select("id, name, species, age, photo_url, photo_position")
+        .select("id, name, species, age, photo_url, photo_position, setup_complete")
         .eq("id", birdId)
         .maybeSingle();
       if (error) throw error;
@@ -166,11 +166,27 @@ function BirdRecordHome() {
           <Activity className="size-4" /> Run a health scan
         </Link>
 
+        {/* "Create care plan" CTA for brand-new birds: launches the wizard at
+            Food (step 1). Once the wizard finishes (setup_complete=true), this
+            collapses into the Care plan facet row that opens the overview. */}
+        {bird && !bird.setup_complete && (
+          <Link
+            to="/birds/$birdId/setup"
+            params={{ birdId }}
+            search={{ step: 1 }}
+            className="flex min-h-[44px] items-center justify-center gap-2 rounded-[14px] bg-[#1a3d2e] py-3 text-sm font-medium text-white active:scale-[0.99]"
+          >
+            <ClipboardList className="size-4" /> Create care plan
+          </Link>
+        )}
+
         {/* Record facets */}
         <section>
           <h3 className="mb-2 px-1 text-sm font-medium text-[#1a3d2e]">{name}'s record</h3>
           <div className="overflow-hidden rounded-[16px] bg-white ring-1 ring-[#e3dcc9]">
-            <FacetRow to="/birds/$birdId/plan" birdId={birdId} icon={<ClipboardList className="size-5" />} label="Care plan" sub="Food, routine, behavior, home, health" />
+            {bird?.setup_complete && (
+              <FacetRow to="/birds/$birdId/plan" birdId={birdId} icon={<ClipboardList className="size-5" />} label="Care plan" sub="Food, routine, behavior, home, health" />
+            )}
             <FacetRow to="/birds/$birdId/weight" birdId={birdId} icon={<Scale className="size-5" />} label="Weight" sub={weightCount > 0 ? `${weightCount} ${weightCount === 1 ? "entry" : "entries"} · ${trend}` : "Not started"} />
             <FacetRow to="/birds/$birdId/journal" birdId={birdId} icon={<BookOpen className="size-5" />} label="Journal" sub="Molt, meds, vet visits" />
             <FacetRow to="/birds/$birdId/identity" birdId={birdId} icon={<IdCard className="size-5" />} label="Identity" sub="Chip, band, origin" />

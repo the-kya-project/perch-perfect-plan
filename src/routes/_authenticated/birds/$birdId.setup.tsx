@@ -379,18 +379,18 @@ function StepBody({
   registerFlush: (fn: (() => Promise<void>) | null) => void;
   registerValidate: (fn: (() => boolean) | null) => void;
 }) {
-  if (step === 1) return <BasicsStep birdId={birdId} onBlockNext={onBlockNext} registerFlush={registerFlush} />;
-  // Food before Routine (step order set in SetupShell.SETUP_STEPS).
-  if (step === 2) return <FoodWaterStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} registerFlush={registerFlush} registerValidate={registerValidate} />;
-  if (step === 3) return <DayInLifeStep birdId={birdId} />;
-  if (step === 4) return <PersonalityStep birdId={birdId} birdName={birdName} registerFlush={registerFlush} />;
-  if (step === 5) return <EnvironmentStep birdId={birdId} registerFlush={registerFlush} />;
-  if (step === 6) return <HealthBaselineStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} registerFlush={registerFlush} />;
-  if (step === 7) return <OwnerTipsClipsStep birdId={birdId} onBlockNext={onBlockNext} />;
-  if (step === 8) return <EmergencyStep birdId={birdId} onBlockNext={onBlockNext} registerFlush={registerFlush} />;
-  if (step === 9) return <ReviewStep birdId={birdId} birdName={birdName} onJumpToStep={onJumpToStep} onFinish={onFinish} />;
+  // Basics moved to the bird main page; the wizard now starts at Food.
+  // Step numbers match SETUP_STEPS in SetupShell (1=food … 8=review).
+  if (step === 1) return <FoodWaterStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} registerFlush={registerFlush} registerValidate={registerValidate} />;
+  if (step === 2) return <DayInLifeStep birdId={birdId} />;
+  if (step === 3) return <PersonalityStep birdId={birdId} birdName={birdName} registerFlush={registerFlush} />;
+  if (step === 4) return <EnvironmentStep birdId={birdId} registerFlush={registerFlush} />;
+  if (step === 5) return <HealthBaselineStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} registerFlush={registerFlush} />;
+  if (step === 6) return <OwnerTipsClipsStep birdId={birdId} onBlockNext={onBlockNext} />;
+  if (step === 7) return <EmergencyStep birdId={birdId} onBlockNext={onBlockNext} registerFlush={registerFlush} />;
+  if (step === 8) return <ReviewStep birdId={birdId} birdName={birdName} onJumpToStep={onJumpToStep} onFinish={onFinish} />;
 
-  return null; // every step (1–9) is handled above
+  return null; // every step (1–8) is handled above
 }
 
 const TIME_BLOCKS: { key: string; label: string }[] = [
