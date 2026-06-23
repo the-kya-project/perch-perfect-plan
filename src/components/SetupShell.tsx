@@ -5,13 +5,14 @@ import { OwnerTabBar } from "@/components/OwnerTabBar";
 
 export const SETUP_STEPS = [
   // Basics has moved to the bird main page; the wizard is now pure care
-  // instructions. Food before Routine because Routine auto-derives feeding/
-  // water items from Food, so Food must be filled first for those to exist.
+  // instructions. Daily rhythm sits after the descriptive sections so it can
+  // be reviewed against the full care picture — Food still comes first because
+  // the Routine step auto-derives feeding/water items from Food.
   { key: "food", title: "Food & water", short: "Food" },
-  { key: "day", title: "A day in the life", short: "Routine" },
   { key: "personality", title: "Personality & handling", short: "Behavior" },
   { key: "environment", title: "Environment & safety", short: "Home" },
   { key: "health", title: "Health baseline", short: "Health" },
+  { key: "day", title: "A day in the life", short: "Routine" },
   { key: "clips", title: "Tips from the owner", short: "Clips" },
   { key: "emergency", title: "Emergency info", short: "Emergency" },
   { key: "review", title: "Review & finish", short: "Review" },

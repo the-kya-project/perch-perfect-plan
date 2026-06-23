@@ -22,10 +22,10 @@ type SectionKey = "food" | "day" | "personality" | "environment" | "health" | "e
 
 const SECTIONS: { key: SectionKey; tab: "food" | "routine" | "behavior" | "home" | "health" | "emergency"; label: string; icon: React.ReactNode; needsInfoHint: string; readyHint: string }[] = [
   { key: "food",        tab: "food",      label: "Food",      icon: <Utensils className="size-5" />,     needsInfoHint: "Diet and food instructions", readyHint: "Diet and food instructions" },
-  { key: "day",         tab: "routine",   label: "Routine",   icon: <CalendarClock className="size-5" />,needsInfoHint: "Daily schedule and tasks",   readyHint: "Daily schedule and tasks" },
   { key: "personality", tab: "behavior",  label: "Behavior",  icon: <Smile className="size-5" />,        needsInfoHint: "Handling, likes, triggers",  readyHint: "Handling, likes, triggers" },
   { key: "environment", tab: "home",      label: "Home",      icon: <HomeIcon className="size-5" />,     needsInfoHint: "Cage, out-of-cage, hazards", readyHint: "Cage, out-of-cage, hazards" },
   { key: "health",      tab: "health",    label: "Health",    icon: <Stethoscope className="size-5" />,  needsInfoHint: "Baseline and what's normal", readyHint: "Baseline and what's normal" },
+  { key: "day",         tab: "routine",   label: "Routine",   icon: <CalendarClock className="size-5" />,needsInfoHint: "Daily schedule and tasks",   readyHint: "Daily schedule and tasks" },
   { key: "emergency",   tab: "emergency", label: "Emergency", icon: <Siren className="size-5" />,        needsInfoHint: "Owner and vet contacts",     readyHint: "Owner and vet contacts" },
 ];
 
