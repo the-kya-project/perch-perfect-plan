@@ -44,8 +44,7 @@ function ViewAsSitter() {
           <Eye className="size-4 shrink-0" /> Viewing as your sitter — read only
         </span>
         <Link
-          to="/birds/$birdId"
-          params={{ birdId }}
+          to="/dashboard"
           className="inline-flex items-center gap-1 rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white"
         >
           <X className="size-3.5" /> Exit
@@ -56,8 +55,8 @@ function ViewAsSitter() {
         <div className="grid flex-1 place-items-center p-6 text-center">
           <div>
             <p className="text-sm text-[#854F0B]">{error}</p>
-            <button type="button" onClick={() => navigate({ to: "/birds/$birdId", params: { birdId } })} className="mt-4 rounded-xl bg-[#1a3d2e] px-4 py-2 text-sm font-medium text-white">
-              Back to the record
+            <button type="button" onClick={() => navigate({ to: "/dashboard" })} className="mt-4 rounded-xl bg-[#1a3d2e] px-4 py-2 text-sm font-medium text-white">
+              Back to home
             </button>
           </div>
         </div>
