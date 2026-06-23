@@ -12,10 +12,31 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { buildHouseholdInviteEmail } from "./emailTemplates";
+import { mergeEmergency } from "./emergency";
+import { isCfClip, cfUid } from "./clipRef";
 
 async function getAdmin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   return supabaseAdmin;
+}
+
+// Sign a clip ref to a playable URL (Cloudflare Stream iframe or signed Storage
+// URL). Mirrors the sitter helper — household reads need signed media too.
+async function resolveClipUrl(sb: any, ref: string): Promise<string | null> {
+  if (isCfClip(ref)) {
+    try {
+      const { signedIframeUrl } = await import("@/lib/cloudflareStream.server");
+      return await signedIframeUrl(cfUid(ref));
+    } catch { return null; }
+  }
+  const { data } = await sb.storage.from("bird-photos").createSignedUrl(ref, 3600);
+  return data?.signedUrl ?? null;
+}
+async function signBirdPhotoPath(sb: any, value: string | null | undefined): Promise<string | null> {
+  if (!value) return null;
+  if (value.startsWith("data:") || value.startsWith("http")) return value;
+  const { data } = await sb.storage.from("bird-photos").createSignedUrl(value, 3600);
+  return data?.signedUrl ?? null;
 }
 
 function appUrl() {
@@ -321,4 +342,73 @@ export const declineHouseholdInvite = createServerFn({ method: "POST" })
       .eq("token", data.token)
       .eq("status", "pending");
     return { ok: true };
+  });
+
+// ---- Member: read-only care-plan view (household or owner) ------------------
+// Returns the same shape CareSheetView consumes (signed photo + clips, merged
+// contacts) plus routine tasks. Access is verified via bird_members; data is
+// read with the service role only after that check.
+export const getHouseholdCarePlanView = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { birdId: string }) => z.object({ birdId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const sb = await getAdmin();
+    const userId = context.userId as string;
+
+    // Must have a membership row on this bird (owner or household).
+    const { data: membership } = await sb
+      .from("bird_members")
+      .select("role")
+      .eq("bird_id", data.birdId)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (!membership) throw new Error("Not found.");
+
+    const { data: bird } = await sb.from("birds").select("*").eq("id", data.birdId).maybeSingle();
+    if (!bird) throw new Error("Not found.");
+    const { data: plan } = await sb.from("care_plans").select("*").eq("bird_id", data.birdId).maybeSingle();
+
+    // Routine tasks for the schedule section.
+    let tasks: any[] = [];
+    if (plan?.id) {
+      const { data: t } = await sb
+        .from("routine_tasks")
+        .select("id, title, instructions, category, time_of_day, sort_order")
+        .eq("care_plan_id", plan.id)
+        .order("sort_order");
+      tasks = t ?? [];
+    }
+
+    // Emergency contacts merged with the owner's account defaults (household may
+    // view them — see the household-sharing decision).
+    const { data: contacts } = await sb.from("emergency_contacts").select("*").eq("bird_id", data.birdId).maybeSingle();
+    const { data: defaults } = await sb
+      .from("owner_emergency_defaults")
+      .select("*")
+      .eq("owner_id", (bird as any).owner_id)
+      .maybeSingle();
+    const mergedContacts = { ...mergeEmergency(contacts, defaults) };
+
+    // Sign photo + clips.
+    const signedBird = { ...bird, photo_url: await signBirdPhotoPath(sb, (bird as any).photo_url) };
+    const watchClipSlots = [
+      { key: "step_up", column: "clip_step_up_path", label: "How they step up" },
+      { key: "food_water", column: "clip_food_water_path", label: "How to refill food & water safely" },
+      { key: "locations", column: "clip_locations_path", label: "Where everything is" },
+      { key: "bedtime", column: "clip_bedtime_path", label: "Settling them for the night" },
+    ];
+    const watchClips: { key: string; label: string; url: string }[] = [];
+    let baselineClipUrl: string | null = null;
+    if (plan) {
+      for (const slot of watchClipSlots) {
+        const path = (plan as any)[slot.column] as string | null;
+        if (!path) continue;
+        const url = await resolveClipUrl(sb, path);
+        if (url) watchClips.push({ key: slot.key, label: slot.label, url });
+      }
+      const bcp = (plan as any).baseline_clip_path as string | null;
+      if (bcp) baselineClipUrl = await resolveClipUrl(sb, bcp);
+    }
+
+    return { bird: signedBird, plan: plan ?? null, contacts: mergedContacts, tasks, watchClips, baselineClipUrl };
   });
