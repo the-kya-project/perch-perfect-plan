@@ -46,6 +46,7 @@ import { Route as AuthenticatedBirdsBirdIdPlanRouteImport } from './routes/_auth
 import { Route as AuthenticatedBirdsBirdIdMomentsRouteImport } from './routes/_authenticated/birds/$birdId.moments'
 import { Route as AuthenticatedBirdsBirdIdJournalRouteImport } from './routes/_authenticated/birds/$birdId.journal'
 import { Route as AuthenticatedBirdsBirdIdIdentityRouteImport } from './routes/_authenticated/birds/$birdId.identity'
+import { Route as AuthenticatedBirdsBirdIdPlanEditorRouteImport } from './routes/_authenticated/birds/$birdId.plan.editor'
 
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
@@ -248,6 +249,12 @@ const AuthenticatedBirdsBirdIdIdentityRoute =
     path: '/identity',
     getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
   } as any)
+const AuthenticatedBirdsBirdIdPlanEditorRoute =
+  AuthenticatedBirdsBirdIdPlanEditorRouteImport.update({
+    id: '/editor',
+    path: '/editor',
+    getParentRoute: () => AuthenticatedBirdsBirdIdPlanRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -278,7 +285,7 @@ export interface FileRoutesByFullPath {
   '/birds/$birdId/identity': typeof AuthenticatedBirdsBirdIdIdentityRoute
   '/birds/$birdId/journal': typeof AuthenticatedBirdsBirdIdJournalRoute
   '/birds/$birdId/moments': typeof AuthenticatedBirdsBirdIdMomentsRoute
-  '/birds/$birdId/plan': typeof AuthenticatedBirdsBirdIdPlanRoute
+  '/birds/$birdId/plan': typeof AuthenticatedBirdsBirdIdPlanRouteWithChildren
   '/birds/$birdId/scan': typeof AuthenticatedBirdsBirdIdScanRoute
   '/birds/$birdId/setup': typeof AuthenticatedBirdsBirdIdSetupRoute
   '/birds/$birdId/vet-summary': typeof AuthenticatedBirdsBirdIdVetSummaryRoute
@@ -286,6 +293,7 @@ export interface FileRoutesByFullPath {
   '/birds/$birdId/weight': typeof AuthenticatedBirdsBirdIdWeightRoute
   '/api/public/hooks/care-plan-reminders': typeof ApiPublicHooksCarePlanRemindersRoute
   '/birds/$birdId/': typeof AuthenticatedBirdsBirdIdIndexRoute
+  '/birds/$birdId/plan/editor': typeof AuthenticatedBirdsBirdIdPlanEditorRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -312,7 +320,7 @@ export interface FileRoutesByTo {
   '/birds/$birdId/identity': typeof AuthenticatedBirdsBirdIdIdentityRoute
   '/birds/$birdId/journal': typeof AuthenticatedBirdsBirdIdJournalRoute
   '/birds/$birdId/moments': typeof AuthenticatedBirdsBirdIdMomentsRoute
-  '/birds/$birdId/plan': typeof AuthenticatedBirdsBirdIdPlanRoute
+  '/birds/$birdId/plan': typeof AuthenticatedBirdsBirdIdPlanRouteWithChildren
   '/birds/$birdId/scan': typeof AuthenticatedBirdsBirdIdScanRoute
   '/birds/$birdId/setup': typeof AuthenticatedBirdsBirdIdSetupRoute
   '/birds/$birdId/vet-summary': typeof AuthenticatedBirdsBirdIdVetSummaryRoute
@@ -320,6 +328,7 @@ export interface FileRoutesByTo {
   '/birds/$birdId/weight': typeof AuthenticatedBirdsBirdIdWeightRoute
   '/api/public/hooks/care-plan-reminders': typeof ApiPublicHooksCarePlanRemindersRoute
   '/birds/$birdId': typeof AuthenticatedBirdsBirdIdIndexRoute
+  '/birds/$birdId/plan/editor': typeof AuthenticatedBirdsBirdIdPlanEditorRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -352,7 +361,7 @@ export interface FileRoutesById {
   '/_authenticated/birds/$birdId/identity': typeof AuthenticatedBirdsBirdIdIdentityRoute
   '/_authenticated/birds/$birdId/journal': typeof AuthenticatedBirdsBirdIdJournalRoute
   '/_authenticated/birds/$birdId/moments': typeof AuthenticatedBirdsBirdIdMomentsRoute
-  '/_authenticated/birds/$birdId/plan': typeof AuthenticatedBirdsBirdIdPlanRoute
+  '/_authenticated/birds/$birdId/plan': typeof AuthenticatedBirdsBirdIdPlanRouteWithChildren
   '/_authenticated/birds/$birdId/scan': typeof AuthenticatedBirdsBirdIdScanRoute
   '/_authenticated/birds/$birdId/setup': typeof AuthenticatedBirdsBirdIdSetupRoute
   '/_authenticated/birds/$birdId/vet-summary': typeof AuthenticatedBirdsBirdIdVetSummaryRoute
@@ -360,6 +369,7 @@ export interface FileRoutesById {
   '/_authenticated/birds/$birdId/weight': typeof AuthenticatedBirdsBirdIdWeightRoute
   '/api/public/hooks/care-plan-reminders': typeof ApiPublicHooksCarePlanRemindersRoute
   '/_authenticated/birds/$birdId/': typeof AuthenticatedBirdsBirdIdIndexRoute
+  '/_authenticated/birds/$birdId/plan/editor': typeof AuthenticatedBirdsBirdIdPlanEditorRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -400,6 +410,7 @@ export interface FileRouteTypes {
     | '/birds/$birdId/weight'
     | '/api/public/hooks/care-plan-reminders'
     | '/birds/$birdId/'
+    | '/birds/$birdId/plan/editor'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -434,6 +445,7 @@ export interface FileRouteTypes {
     | '/birds/$birdId/weight'
     | '/api/public/hooks/care-plan-reminders'
     | '/birds/$birdId'
+    | '/birds/$birdId/plan/editor'
   id:
     | '__root__'
     | '/'
@@ -473,6 +485,7 @@ export interface FileRouteTypes {
     | '/_authenticated/birds/$birdId/weight'
     | '/api/public/hooks/care-plan-reminders'
     | '/_authenticated/birds/$birdId/'
+    | '/_authenticated/birds/$birdId/plan/editor'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -748,6 +761,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBirdsBirdIdIdentityRouteImport
       parentRoute: typeof AuthenticatedBirdsBirdIdRoute
     }
+    '/_authenticated/birds/$birdId/plan/editor': {
+      id: '/_authenticated/birds/$birdId/plan/editor'
+      path: '/editor'
+      fullPath: '/birds/$birdId/plan/editor'
+      preLoaderRoute: typeof AuthenticatedBirdsBirdIdPlanEditorRouteImport
+      parentRoute: typeof AuthenticatedBirdsBirdIdPlanRoute
+    }
   }
 }
 
@@ -781,11 +801,26 @@ const AuthenticatedNotificationsRouteWithChildren =
     AuthenticatedNotificationsRouteChildren,
   )
 
+interface AuthenticatedBirdsBirdIdPlanRouteChildren {
+  AuthenticatedBirdsBirdIdPlanEditorRoute: typeof AuthenticatedBirdsBirdIdPlanEditorRoute
+}
+
+const AuthenticatedBirdsBirdIdPlanRouteChildren: AuthenticatedBirdsBirdIdPlanRouteChildren =
+  {
+    AuthenticatedBirdsBirdIdPlanEditorRoute:
+      AuthenticatedBirdsBirdIdPlanEditorRoute,
+  }
+
+const AuthenticatedBirdsBirdIdPlanRouteWithChildren =
+  AuthenticatedBirdsBirdIdPlanRoute._addFileChildren(
+    AuthenticatedBirdsBirdIdPlanRouteChildren,
+  )
+
 interface AuthenticatedBirdsBirdIdRouteChildren {
   AuthenticatedBirdsBirdIdIdentityRoute: typeof AuthenticatedBirdsBirdIdIdentityRoute
   AuthenticatedBirdsBirdIdJournalRoute: typeof AuthenticatedBirdsBirdIdJournalRoute
   AuthenticatedBirdsBirdIdMomentsRoute: typeof AuthenticatedBirdsBirdIdMomentsRoute
-  AuthenticatedBirdsBirdIdPlanRoute: typeof AuthenticatedBirdsBirdIdPlanRoute
+  AuthenticatedBirdsBirdIdPlanRoute: typeof AuthenticatedBirdsBirdIdPlanRouteWithChildren
   AuthenticatedBirdsBirdIdScanRoute: typeof AuthenticatedBirdsBirdIdScanRoute
   AuthenticatedBirdsBirdIdSetupRoute: typeof AuthenticatedBirdsBirdIdSetupRoute
   AuthenticatedBirdsBirdIdVetSummaryRoute: typeof AuthenticatedBirdsBirdIdVetSummaryRoute
@@ -800,7 +835,8 @@ const AuthenticatedBirdsBirdIdRouteChildren: AuthenticatedBirdsBirdIdRouteChildr
       AuthenticatedBirdsBirdIdIdentityRoute,
     AuthenticatedBirdsBirdIdJournalRoute: AuthenticatedBirdsBirdIdJournalRoute,
     AuthenticatedBirdsBirdIdMomentsRoute: AuthenticatedBirdsBirdIdMomentsRoute,
-    AuthenticatedBirdsBirdIdPlanRoute: AuthenticatedBirdsBirdIdPlanRoute,
+    AuthenticatedBirdsBirdIdPlanRoute:
+      AuthenticatedBirdsBirdIdPlanRouteWithChildren,
     AuthenticatedBirdsBirdIdScanRoute: AuthenticatedBirdsBirdIdScanRoute,
     AuthenticatedBirdsBirdIdSetupRoute: AuthenticatedBirdsBirdIdSetupRoute,
     AuthenticatedBirdsBirdIdVetSummaryRoute:

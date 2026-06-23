@@ -111,7 +111,7 @@ function OwnerScan() {
           )}
           <div className="flex gap-2">
             {result.status !== "green" && (
-              <Link to="/birds/$birdId/plan" params={{ birdId }} search={{ tab: "emergency" }} className="flex-1 rounded-xl bg-[#1a3d2e] py-3 text-center text-sm font-medium text-white">Emergency contacts</Link>
+              <Link to="/birds/$birdId/plan/editor" params={{ birdId }} search={{ tab: "emergency" }} className="flex-1 rounded-xl bg-[#1a3d2e] py-3 text-center text-sm font-medium text-white">Emergency contacts</Link>
             )}
             <button type="button" onClick={() => navigate({ to: "/birds/$birdId", params: { birdId } })} className="flex-1 rounded-xl border border-[#c8bfa6] py-3 text-center text-sm font-medium text-[#1a3d2e]">Back to record</button>
           </div>

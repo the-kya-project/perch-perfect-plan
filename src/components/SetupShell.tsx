@@ -4,9 +4,9 @@ import { ArrowLeft, Check, ChevronDown } from "lucide-react";
 import { OwnerTabBar } from "@/components/OwnerTabBar";
 
 export const SETUP_STEPS = [
-  { key: "basics", title: "The basics", short: "Basics" },
-  // Food before Routine: the Routine step auto-derives feeding/water items from
-  // Food, so Food must be filled first for those derived items to exist.
+  // Basics has moved to the bird main page; the wizard is now pure care
+  // instructions. Food before Routine because Routine auto-derives feeding/
+  // water items from Food, so Food must be filled first for those to exist.
   { key: "food", title: "Food & water", short: "Food" },
   { key: "day", title: "A day in the life", short: "Routine" },
   { key: "personality", title: "Personality & handling", short: "Behavior" },
