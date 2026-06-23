@@ -1,10 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useBirdPhotos } from "@/lib/useBirdPhotos";
+import { toast } from "sonner";
 import {
   ArrowLeft, Feather, Scale, BookOpen, IdCard, CalendarHeart, ClipboardList,
   ChevronRight, Plus, FileText, TrendingUp, TrendingDown, Minus, Activity, Pencil,
+  Check, X,
 } from "lucide-react";
 
 // Bird-record home — the new landing when you tap a bird. A glanceable hub for
@@ -26,7 +29,7 @@ function BirdRecordHome() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("birds")
-        .select("id, name, species, age, photo_url, photo_position, setup_complete")
+        .select("id, name, species, age, sex, flight_status, photo_url, photo_position, setup_complete")
         .eq("id", birdId)
         .maybeSingle();
       if (error) throw error;
@@ -97,16 +100,10 @@ function BirdRecordHome() {
       </header>
 
       <main className="mx-auto max-w-md space-y-4 px-5 py-5">
-        {/* Identity strip — tap anywhere on it to edit the bird's basics
-            (name, photo, age, sex, flight, chip, band, origin…). The Pencil
-            cue makes the affordance discoverable; the full edit form lives on
-            the Identity facet. */}
-        <Link
-          to="/birds/$birdId/identity"
-          params={{ birdId }}
-          aria-label={`Edit ${name}'s basics`}
-          className="flex items-center gap-4 rounded-[14px] -mx-2 px-2 py-1 active:bg-[#efe9da]"
-        >
+        {/* Identity strip — photo + name + species/age. Basic info (species,
+            age, sex, flight) is edited via the BASIC INFO card below; photo
+            and name edits live on the Identity facet. */}
+        <section className="flex items-center gap-4">
           <div className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-full bg-[#e3dcc9] ring-1 ring-[#d8cfb8]">
             {photo ? (
               <img
@@ -126,10 +123,7 @@ function BirdRecordHome() {
               {[bird?.species || "Parrot", bird?.age].filter(Boolean).join(" · ")}
             </p>
           </div>
-          <span aria-hidden="true" className="shrink-0 inline-flex items-center gap-1 rounded-full bg-[#efe9da] px-2.5 py-1 text-[11px] font-medium text-[#1a3d2e]">
-            <Pencil className="size-3" /> Edit
-          </span>
-        </Link>
+        </section>
 
         {/* Glance tile: Weight (Next reminder hidden until reminders ship) */}
         <section className="grid grid-cols-2 gap-3">
@@ -177,6 +171,11 @@ function BirdRecordHome() {
           <Activity className="size-4" /> Run a health scan
         </Link>
 
+        {/* Basic info — edit Species / Age / Sex / Flight inline. Saves to the
+            same birds.* columns the Identity facet reads, so opening the
+            Identity tab afterwards shows the same values (no fork). */}
+        {bird && <BasicInfoCard birdId={birdId} bird={bird} />}
+
         {/* "Create care plan" CTA for brand-new birds: launches the wizard at
             Food (step 1). Once the wizard finishes (setup_complete=true), this
             collapses into the Care plan facet row that opens the overview. */}
@@ -200,7 +199,7 @@ function BirdRecordHome() {
             )}
             <FacetRow to="/birds/$birdId/weight" birdId={birdId} icon={<Scale className="size-5" />} label="Weight" sub={weightCount > 0 ? `${weightCount} ${weightCount === 1 ? "entry" : "entries"} · ${trend}` : "Not started"} />
             <FacetRow to="/birds/$birdId/journal" birdId={birdId} icon={<BookOpen className="size-5" />} label="Journal" sub="Molt, meds, vet visits" />
-            <FacetRow to="/birds/$birdId/identity" birdId={birdId} icon={<IdCard className="size-5" />} label="Identity" sub="Name, photo, age, sex, flight, chip, band, origin" />
+            <FacetRow to="/birds/$birdId/identity" birdId={birdId} icon={<IdCard className="size-5" />} label="Identity" sub="Chip, band, hatch date, origin, photo" />
             <FacetRow to="/birds/$birdId/moments" birdId={birdId} icon={<CalendarHeart className="size-5" />} label="Moments" sub="Mark the days worth remembering" last />
           </div>
         </section>
@@ -281,4 +280,139 @@ function checkinLabel(status: string): string {
 function fmtDate(iso: string): string {
   const d = new Date(iso);
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+const SEX_LABEL: Record<string, string> = { male: "Male", female: "Female", unknown: "Unknown" };
+const FLIGHT_LABEL: Record<string, string> = {
+  unknown: "Unknown",
+  fully_flighted: "Fully flighted",
+  clipped: "Clipped",
+  partially_clipped: "Partially clipped",
+};
+
+// Basic info card — the bird's species/age/sex/flight, editable inline. The
+// fields write to the same birds.* columns the Identity facet reads, so any
+// edit here auto-fills the Identity tab and vice versa (no fork).
+function BasicInfoCard({ birdId, bird }: { birdId: string; bird: { species?: string | null; age?: string | null; sex?: string | null; flight_status?: string | null } }) {
+  const qc = useQueryClient();
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [f, setF] = useState({
+    species: bird.species ?? "",
+    age: bird.age ?? "",
+    sex: bird.sex ?? "",
+    flight_status: bird.flight_status ?? "unknown",
+  });
+
+  function openEdit() {
+    // Re-seed from latest props so the form shows current values, not stale state
+    // from a previous edit cycle.
+    setF({
+      species: bird.species ?? "",
+      age: bird.age ?? "",
+      sex: bird.sex ?? "",
+      flight_status: bird.flight_status ?? "unknown",
+    });
+    setEditing(true);
+  }
+
+  async function save() {
+    setSaving(true);
+    const clean = (v: string) => (v.trim() ? v.trim() : null);
+    const { error } = await supabase.from("birds").update({
+      species: clean(f.species),
+      age: clean(f.age),
+      sex: clean(f.sex),
+      flight_status: f.flight_status || "unknown",
+    } as any).eq("id", birdId);
+    setSaving(false);
+    if (error) { toast.error(error.message); return; }
+    // Refresh every surface that displays these fields so changes appear
+    // immediately on the Identity tab, the dashboard cards, and elsewhere.
+    qc.invalidateQueries({ queryKey: ["bird-record", birdId] });
+    qc.invalidateQueries({ queryKey: ["bird-identity", birdId] });
+    qc.invalidateQueries({ queryKey: ["bird", birdId] });
+    qc.invalidateQueries({ queryKey: ["birds"] });
+    toast.success("Saved.");
+    setEditing(false);
+  }
+
+  const speciesView = bird.species?.trim() || "Not set";
+  const ageView = bird.age?.trim() || "Not set";
+  const sexView = bird.sex && SEX_LABEL[bird.sex] ? SEX_LABEL[bird.sex] : (bird.sex || "Not set");
+  const flightView = FLIGHT_LABEL[bird.flight_status ?? "unknown"] ?? "Unknown";
+
+  return (
+    <section className="overflow-hidden rounded-[16px] bg-white ring-1 ring-[#e3dcc9]">
+      <div className="flex items-center justify-between gap-3 border-b border-[#ece6d6] px-4 py-3">
+        <h3 className="text-[11px] font-semibold uppercase tracking-widest text-[#5f5e5a]">Basic info</h3>
+        {editing ? (
+          <div className="flex gap-2">
+            <button type="button" onClick={() => setEditing(false)} disabled={saving} className="inline-flex min-h-[36px] items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium text-[#5f5e5a]">
+              <X className="size-3.5" /> Cancel
+            </button>
+            <button type="button" onClick={save} disabled={saving} className="inline-flex min-h-[36px] items-center gap-1 rounded-full bg-[#1a3d2e] px-3 py-1 text-xs font-medium text-white disabled:opacity-50">
+              <Check className="size-3.5" /> {saving ? "Saving…" : "Save"}
+            </button>
+          </div>
+        ) : (
+          <button type="button" onClick={openEdit} className="inline-flex min-h-[36px] items-center gap-1 rounded-full px-2 py-1 text-xs font-medium text-[#1a3d2e]">
+            <Pencil className="size-3.5" /> Edit
+          </button>
+        )}
+      </div>
+
+      {editing ? (
+        <div className="space-y-3 p-4">
+          <BasicField label="Species">
+            <input className="input" value={f.species} maxLength={80} onChange={(e) => setF((p) => ({ ...p, species: e.target.value }))} />
+          </BasicField>
+          <BasicField label="Age">
+            <input className="input" value={f.age} maxLength={40} placeholder="e.g. 10 years" onChange={(e) => setF((p) => ({ ...p, age: e.target.value }))} />
+          </BasicField>
+          <BasicField label="Sex">
+            <select className="input" value={f.sex} onChange={(e) => setF((p) => ({ ...p, sex: e.target.value }))}>
+              <option value="">Not set</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="unknown">Unknown</option>
+            </select>
+          </BasicField>
+          <BasicField label="Flight">
+            <select className="input" value={f.flight_status} onChange={(e) => setF((p) => ({ ...p, flight_status: e.target.value }))}>
+              <option value="unknown">Unknown</option>
+              <option value="fully_flighted">Fully flighted</option>
+              <option value="clipped">Clipped</option>
+              <option value="partially_clipped">Partially clipped</option>
+            </select>
+          </BasicField>
+        </div>
+      ) : (
+        <dl>
+          <BasicRow label="Species" value={speciesView} />
+          <BasicRow label="Age" value={ageView} />
+          <BasicRow label="Sex" value={sexView} />
+          <BasicRow label="Flight" value={flightView} last />
+        </dl>
+      )}
+    </section>
+  );
+}
+
+function BasicRow({ label, value, last }: { label: string; value: string; last?: boolean }) {
+  return (
+    <div className={`flex items-baseline justify-between gap-3 px-4 py-3 ${last ? "" : "border-b border-[#ece6d6]"}`}>
+      <dt className="text-sm text-[#5f5e5a]">{label}</dt>
+      <dd className="min-w-0 truncate text-right text-sm font-medium text-[#1a3d2e]">{value}</dd>
+    </div>
+  );
+}
+
+function BasicField({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#5f5e5a]">{label}</span>
+      {children}
+    </label>
+  );
 }
