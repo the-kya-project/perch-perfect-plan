@@ -184,18 +184,20 @@ function CarePlanOverview() {
                       <AlertTriangle className="size-3" /> Needs info
                     </span>
                   )}
-                  {isOwner && <ChevronRight className="size-4 shrink-0 text-[#bcb6a3]" />}
+                  <ChevronRight className="size-4 shrink-0 text-[#bcb6a3]" />
                 </>
               );
-              const rowCls = `flex min-h-[56px] items-center gap-3 px-4 py-3 ${i === SECTIONS.length - 1 ? "" : "border-b border-[#ece6d6]"}`;
-              // Owner opens the editor; household sees status only (editing is
-              // owner-only, enforced by RLS too).
+              const rowCls = `flex min-h-[56px] items-center gap-3 px-4 py-3 active:bg-[#f4f1e8] ${i === SECTIONS.length - 1 ? "" : "border-b border-[#ece6d6]"}`;
+              // Owner opens the editor for that section; household opens the
+              // read-only care-plan view (editing is owner-only, RLS-enforced).
               return isOwner ? (
-                <Link key={s.key} to="/birds/$birdId/plan/editor" params={{ birdId }} search={{ tab: s.tab }} className={`${rowCls} active:bg-[#f4f1e8]`}>
+                <Link key={s.key} to="/birds/$birdId/plan/editor" params={{ birdId }} search={{ tab: s.tab }} className={rowCls}>
                   {rowInner}
                 </Link>
               ) : (
-                <div key={s.key} className={rowCls}>{rowInner}</div>
+                <Link key={s.key} to="/birds/$birdId/care-plan" params={{ birdId }} className={rowCls}>
+                  {rowInner}
+                </Link>
               );
             })}
           </div>
