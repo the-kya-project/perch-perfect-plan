@@ -187,7 +187,7 @@ function NotificationsSettingsPage() {
   const permissionDenied = !!support?.ok && permission === "denied" && !pushEnabled;
 
   return (
-    <div className="min-h-screen bg-[var(--cream)] pb-24">
+    <div className="min-h-screen bg-[var(--cream)] pb-nav">
       <div className="mx-auto max-w-md">
         <InkHero
           backIcon={<ArrowLeft className="size-5" />}

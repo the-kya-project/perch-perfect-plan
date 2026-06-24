@@ -88,7 +88,7 @@ function ExportRecord() {
   ].filter(Boolean).join("\n");
 
   return (
-    <div className="min-h-screen bg-[#f4f1e8] pb-28">
+    <div className="min-h-screen bg-[#f4f1e8] pb-[calc(var(--nav-spacer)+6rem)]">
       <header data-noprint className="sticky top-0 z-10 border-b border-[#e3ded0] bg-[#f4f1e8]/95 backdrop-blur">
         <div className="mx-auto flex max-w-md items-center gap-3 px-5 py-3">
           <Link to="/birds/$birdId/handoff" params={{ birdId }} aria-label="Back" className="-ml-1 rounded p-1 text-[#1a3d2e]"><ArrowLeft className="size-5" /></Link>
@@ -152,7 +152,7 @@ function ExportRecord() {
         </article>
       </main>
 
-      <footer data-noprint className="fixed inset-x-0 bottom-0 border-t border-[#e3ded0] bg-[#f4f1e8] px-5 py-3 pb-[max(env(safe-area-inset-bottom),0.75rem)]">
+      <footer data-noprint className="fixed inset-x-0 bottom-[var(--nav-spacer)] border-t border-[#e3ded0] bg-[#f4f1e8] px-5 py-3">
         <div className="mx-auto max-w-md">
           {!confirming ? (
             <button type="button" onClick={() => setConfirming(true)} className="min-h-[48px] w-full rounded-[14px] border border-[#c8bfa6] bg-white text-sm font-medium text-[#1a3d2e]">

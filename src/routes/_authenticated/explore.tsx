@@ -24,7 +24,7 @@ function Explore() {
   });
 
   return (
-    <div className="min-h-screen bg-[#f4f1e8] pb-24">
+    <div className="min-h-screen bg-[#f4f1e8] pb-nav">
       {/* Mission band — full-bleed dark green, leads the page and carries the
           header icons (bell + gear) top-right. */}
       <section className="bg-[#1a3d2e] pt-[max(env(safe-area-inset-top),1rem)]">

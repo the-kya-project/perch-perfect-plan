@@ -139,7 +139,7 @@ function Dashboard() {
       : undefined;
 
   return (
-    <div className="min-h-screen bg-[var(--cream)] pb-24">
+    <div className="min-h-screen bg-[var(--cream)] pb-nav">
       <div className="mx-auto max-w-md">
       <HomeHeader firstName={firstName} unreadNotifs={unreadNotifs} stateCopy={stateCopy} cta={heroCta} />
 

@@ -107,6 +107,15 @@
   --red-ink: #a32d2d;
   --red-line: #e24b4a;
   --red-deep: #791f1f;
+
+  /* Bottom-nav reserved space. ONE source of truth for the persistent owner
+     OwnerTabBar height + iPhone home-indicator safe area. Use the .pb-nav
+     utility on every scroll container under _authenticated (where the nav is
+     shown), and bottom-[var(--nav-spacer)] for fixed footers that need to sit
+     ABOVE the nav (e.g. the Hand off and Export action bars). The nav height
+     itself is intrinsic (~56px from py-2 + content); the spacer adds safe-area. */
+  --nav-h: 56px;
+  --nav-spacer: calc(var(--nav-h) + env(safe-area-inset-bottom));
 }
 
 @layer base {
@@ -168,6 +177,13 @@ select {
   box-shadow: 0 0 0 3px rgb(74 103 65 / 0.15);
 }
 .area { min-height: 70px; }
+
+/* Reserved bottom space for every owner scroll container under _authenticated.
+   Equals nav height + iPhone home-indicator safe area + a comfortable buffer,
+   so the last actionable element is never clipped by the OwnerTabBar. */
+.pb-nav {
+  padding-bottom: calc(var(--nav-spacer) + 1rem);
+}
 
 /* ---- Typography tokens (weights 400/500 only — never 600/700) ----------
    Used across every owner screen via the shared component system. */

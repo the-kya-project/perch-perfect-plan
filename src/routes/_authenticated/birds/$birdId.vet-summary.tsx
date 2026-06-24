@@ -136,7 +136,7 @@ function VetSummary() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--cream)] pb-24">
+    <div className="min-h-screen bg-[var(--cream)] pb-nav">
       <div className="mx-auto max-w-md">
         <div data-noprint>
           <InkHero

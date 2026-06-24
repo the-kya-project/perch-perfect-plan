@@ -131,7 +131,7 @@ function ScanDetail() {
 
 function Shell({ eyebrow, headline, body, onBack, children }: { eyebrow: string; headline: string; body?: string; onBack: () => void; children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-[var(--cream)] pb-24">
+    <div className="min-h-screen bg-[var(--cream)] pb-nav">
       <div className="mx-auto max-w-md">
         <InkHero backIcon={<ArrowLeft className="size-5" />} onBack={onBack} eyebrow={eyebrow} headline={headline} body={body} />
         <main className="space-y-4 px-5 pt-5">{children}</main>
