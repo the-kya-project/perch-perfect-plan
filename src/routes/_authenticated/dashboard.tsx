@@ -345,8 +345,8 @@ function PhotoTile({ photo, name, species, position }: { photo: SignedPhoto | nu
         <img
           src={photo.url} alt={name} loading="lazy" decoding="async"
           onError={(e) => { if (photo.original && e.currentTarget.src !== photo.original) e.currentTarget.src = photo.original; }}
-          style={{ objectPosition: position ?? "50% 50%" }}
-          className="size-full object-cover"
+          style={{ objectPosition: position ?? "50% 20%" }}
+          className="block size-full object-cover"
         />
       ) : (
         <div className="grid size-full place-items-center">
