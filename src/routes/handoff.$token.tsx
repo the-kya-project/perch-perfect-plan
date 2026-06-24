@@ -95,7 +95,7 @@ function Shell({ hero, children }: { hero: React.ReactNode; children: React.Reac
     <div className="min-h-[100dvh] bg-[var(--cream)]">
       <div className="mx-auto max-w-md">
         <div className="flex justify-center bg-[var(--ink)] pt-[max(env(safe-area-inset-top),24px)]">
-          <BrandLockup orientation="stacked" variant="ink" size={220} />
+          <BrandLockup orientation="horizontal" variant="ink" size={220} />
         </div>
         {hero}
         <main className="px-5 py-6">{children}</main>

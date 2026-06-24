@@ -97,10 +97,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:title", content: "Kya & Co. — Calm, clear care for your bird" },
       { property: "og:description", content: "Everything they need, everything you've learned, everything the people helping should know." },
       { property: "og:type", content: "website" },
-      { property: "og:image", content: "https://app.thekyaproject.com/brand/lockups/stacked-ink.png" },
+      { property: "og:image", content: "https://app.thekyaproject.com/brand/lockups/horizontal-ink.png" },
       { name: "twitter:title", content: "Kya & Co. — Calm, clear care for your bird" },
       { name: "twitter:description", content: "Everything they need, everything you've learned, everything the people helping should know." },
-      { name: "twitter:image", content: "https://app.thekyaproject.com/brand/lockups/stacked-ink.png" },
+      { name: "twitter:image", content: "https://app.thekyaproject.com/brand/lockups/horizontal-ink.png" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
