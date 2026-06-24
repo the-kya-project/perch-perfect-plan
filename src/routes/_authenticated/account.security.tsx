@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Check, Mail } from "lucide-react";
 import { toast } from "sonner";
+import { InkHero, Card, RecordRow, StatusPill, IconTile, PrimaryButton, CtaLink } from "@/components/system";
 
 export const Route = createFileRoute("/_authenticated/account/security")({
   head: () => ({ meta: [{ title: "Password & sign-in — Parrot Care Co-Pilot" }] }),
@@ -79,101 +80,97 @@ function SecurityPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f4f1e8] pb-24">
-      <header className="bg-[#1a3d2e] pt-[max(env(safe-area-inset-top),0.75rem)]">
-        <div className="mx-auto flex max-w-md items-center gap-2 px-4 pb-5 pt-1">
-          <button onClick={goBack} aria-label="Back" className="-ml-1 rounded-full p-1.5 text-white hover:bg-white/10">
-            <ArrowLeft className="size-6" />
-          </button>
-          <h1 className="text-[22px] font-medium leading-tight text-white">Password &amp; sign-in</h1>
-        </div>
-      </header>
+    <div className="min-h-screen bg-[var(--cream)] pb-24">
+      <div className="mx-auto max-w-md">
+        <InkHero
+          backIcon={<ArrowLeft className="size-5" />}
+          onBack={goBack}
+          eyebrow="Account"
+          headline="Password & sign-in."
+        />
 
-      <main className="mx-auto max-w-md space-y-6 px-5 pt-5">
-        {/* Password */}
-        <section className="rounded-[20px] bg-[#efe9da] p-4">
-          <h2 className="text-sm font-medium text-[#1a3d2e]">{hasPassword ? "Change password" : "Set a password"}</h2>
-          <p className="mt-1 text-xs text-[#5f5e5a]">
-            {hasPassword
-              ? "Choose a new password for signing in with your email."
-              : "Add a password so you can sign in with your email as well as Google."}
-          </p>
+        <main className="space-y-4 px-5 pt-5">
+          {/* Password */}
+          <Card className="p-4">
+            <h2 className="t-item">{hasPassword ? "Change password" : "Set a password"}</h2>
+            <p className="t-body mt-1 text-[var(--mute)]">
+              {hasPassword
+                ? "Choose a new password for signing in with your email."
+                : "Add a password so you can sign in with your email as well as Google."}
+            </p>
 
-          <label className="mt-4 block text-[11px] font-medium uppercase tracking-wider text-[#5f5e5a]">New password</label>
-          <input
-            type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="new-password"
-            placeholder="At least 6 characters"
-            className="mt-1 w-full rounded-xl border border-[#d8cfb8] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#2d6a4f]"
-          />
-          <label className="mt-3 block text-[11px] font-medium uppercase tracking-wider text-[#5f5e5a]">Confirm new password</label>
-          <input
-            type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password"
-            placeholder="Re-enter password"
-            className="mt-1 w-full rounded-xl border border-[#d8cfb8] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#2d6a4f]"
-          />
-          <button
-            onClick={savePassword}
-            disabled={saving || !pw || !confirm}
-            className="mt-4 w-full rounded-[14px] bg-[#1a3d2e] py-3 text-sm font-medium text-white disabled:opacity-50"
-          >
-            {saving ? "Saving…" : hasPassword ? "Update password" : "Set password"}
-          </button>
+            <label className="t-eyebrow mt-4 block text-[var(--mute)]">New password</label>
+            <input
+              type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="new-password"
+              placeholder="At least 6 characters"
+              className="input mt-1"
+            />
+            <label className="t-eyebrow mt-3 block text-[var(--mute)]">Confirm new password</label>
+            <input
+              type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password"
+              placeholder="Re-enter password"
+              className="input mt-1"
+            />
 
-          {hasPassword && (
-            <button
-              onClick={emailResetLink}
-              disabled={sendingReset}
-              className="mt-2 w-full py-2 text-center text-sm font-medium text-[#1a3d2e] underline disabled:opacity-50"
-            >
-              {sendingReset ? "Sending…" : "Email me a reset link instead"}
-            </button>
-          )}
-        </section>
-
-        {/* Connected accounts */}
-        <div>
-          <p className="mb-2 px-1 text-[11px] font-medium uppercase tracking-wider text-[#8a897f]">Sign-in methods</p>
-          <div className="overflow-hidden rounded-[20px] bg-[#efe9da]">
-            <div className="flex items-center gap-3 px-4 py-3.5">
-              <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#e8f0ec]">
-                <Mail className="size-5 text-[#2d6a4f]" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-[#1a3d2e]">Email &amp; password</p>
-                <p className="truncate text-xs text-[#5f5e5a]">{email}</p>
-              </div>
-              <StatusChip on={hasPassword} onLabel="Password set" offLabel="No password" />
+            <div className="mt-4">
+              <PrimaryButton
+                tone="ink"
+                onPress={savePassword}
+                disabled={saving || !pw || !confirm}
+                type="button"
+              >
+                {saving ? "Saving…" : hasPassword ? "Update password" : "Set password"}
+              </PrimaryButton>
             </div>
-            <div className="h-px bg-[#e3dcc9]" />
-            <div className="flex items-center gap-3 px-4 py-3.5">
-              <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-white ring-1 ring-[#e3dcc9]">
-                <GoogleGlyph />
+
+            {hasPassword && (
+              <div className="mt-3 flex justify-center">
+                <CtaLink
+                  label={sendingReset ? "Sending…" : "Email me a reset link instead"}
+                  icon={<span />}
+                  onPress={() => { if (!sendingReset) emailResetLink(); }}
+                />
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-[#1a3d2e]">Google</p>
-                <p className="truncate text-xs text-[#5f5e5a]">
-                  {googleConnected ? (googleEmail ?? "Connected") : "Not connected"}
-                </p>
-              </div>
-              <StatusChip on={googleConnected} onLabel="Connected" offLabel="Not connected" />
-            </div>
+            )}
+          </Card>
+
+          {/* Connected accounts */}
+          <div>
+            <p className="t-eyebrow mb-2 px-1 text-[var(--mute2)]">Sign-in methods</p>
+            <Card>
+              <RecordRow
+                leading={<IconTile tone="pale" size={40} icon={<Mail className="size-5" />} />}
+                title="Email & password"
+                subtitle={email}
+                trailing={
+                  hasPassword
+                    ? <StatusPill tone="good"><Check className="size-3" /> Password set</StatusPill>
+                    : <StatusPill tone="off">No password</StatusPill>
+                }
+              />
+              <RecordRow
+                last
+                leading={
+                  <span className="grid size-10 shrink-0 place-items-center rounded-[11px] bg-white ring-1 ring-[var(--line2)]">
+                    <GoogleGlyph />
+                  </span>
+                }
+                title="Google"
+                subtitle={googleConnected ? (googleEmail ?? "Connected") : "Not connected"}
+                trailing={
+                  googleConnected
+                    ? <StatusPill tone="good"><Check className="size-3" /> Connected</StatusPill>
+                    : <StatusPill tone="off">Not connected</StatusPill>
+                }
+              />
+            </Card>
+            {loaded && !hasPassword && !googleConnected && (
+              <p className="t-body mt-2 px-1 text-[var(--mute)]">No sign-in method detected — set a password above to be safe.</p>
+            )}
           </div>
-          {loaded && !hasPassword && !googleConnected && (
-            <p className="mt-2 px-1 text-xs text-[#5f5e5a]">No sign-in method detected — set a password above to be safe.</p>
-          )}
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
-  );
-}
-
-function StatusChip({ on, onLabel, offLabel }: { on: boolean; onLabel: string; offLabel: string }) {
-  return on ? (
-    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#d6e8dc] px-2.5 py-1 text-[11px] font-medium text-[#1a5e3f]">
-      <Check className="size-3" /> {onLabel}
-    </span>
-  ) : (
-    <span className="shrink-0 rounded-full bg-[#e8e1d0] px-2.5 py-1 text-[11px] font-medium text-[#5f5e5a]">{offLabel}</span>
   );
 }
 

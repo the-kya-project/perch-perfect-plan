@@ -6,8 +6,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { deleteMyAccount } from "@/lib/account.functions";
 import { APP_VERSION } from "@/lib/version";
-import { ArrowLeft, ChevronRight, ShieldAlert, Bell, Smartphone, Lock, X, Archive, Users } from "lucide-react";
+import { ArrowLeft, ShieldAlert, Bell, Smartphone, Lock, X, Archive, Users } from "lucide-react";
 import { AddToHomeModal } from "@/components/AddToHomeModal";
+import { InkHero, Card, RecordRow, IconTile, SectionHead, PrimaryButton } from "@/components/system";
 import { toast } from "sonner";
 
 // Support inbox for the "Help & support" row. If this address changes, update it
@@ -64,101 +65,118 @@ function AccountPage() {
   const emailPending = pendingEmail && pendingEmail.toLowerCase() !== email.toLowerCase();
 
   return (
-    <div className="min-h-screen bg-[#f4f1e8] pb-24">
-      <header className="bg-[#1a3d2e] pt-[max(env(safe-area-inset-top),0.75rem)]">
-        <div className="mx-auto flex max-w-md items-center gap-2 px-4 pb-5 pt-1">
-          <button onClick={goBack} aria-label="Back" className="-ml-1 rounded-full p-1.5 text-white hover:bg-white/10">
-            <ArrowLeft className="size-6" />
-          </button>
-          <h1 className="text-[27px] font-medium leading-tight text-white">Account</h1>
-        </div>
-      </header>
+    <div className="min-h-screen bg-[var(--cream)] pb-24">
+      <div className="mx-auto max-w-md">
+        <InkHero
+          backIcon={<ArrowLeft className="size-5" />}
+          onBack={goBack}
+          eyebrow="Account"
+          headline="Your account."
+        />
 
-      <main className="mx-auto max-w-md space-y-6 px-5 pt-5">
-        {/* Identity */}
-        <section className="rounded-[20px] bg-[#efe9da] p-4">
-          <div className="flex items-center gap-3">
-            <div className="grid size-14 shrink-0 place-items-center rounded-full bg-[#1a3d2e] text-xl font-medium text-white">
-              {initial}
+        <main className="space-y-6 px-5 pt-5">
+          {/* Identity */}
+          <Card>
+            <div className="flex items-center gap-3 p-4">
+              <div className="grid size-14 shrink-0 place-items-center rounded-full bg-[var(--ink)] text-xl font-[500] text-white">
+                {initial}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="t-item truncate">{name.trim() || "Your name"}</p>
+                <p className="t-meta truncate">{email}</p>
+                {emailPending && (
+                  <p className="mt-0.5 truncate text-[11px] text-[var(--amber-ink)]">Change to {pendingEmail} pending — confirm the emailed links.</p>
+                )}
+              </div>
+              <button onClick={() => setEditOpen(true)} className="shrink-0 text-[13px] font-[500] text-[var(--moss)] active:opacity-70">Edit</button>
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[15px] font-medium text-[#1a3d2e]">{name.trim() || "Your name"}</p>
-              <p className="truncate text-xs text-[#5f5e5a]">{email}</p>
-              {emailPending && (
-                <p className="mt-0.5 truncate text-[11px] text-[#84600f]">Change to {pendingEmail} pending — confirm the emailed links.</p>
-              )}
-            </div>
-            <button onClick={() => setEditOpen(true)} className="shrink-0 text-sm font-medium text-[#1a3d2e] underline">Edit</button>
-          </div>
-        </section>
+          </Card>
 
-        {/* Care settings */}
-        <div>
-          <GroupLabel>Care settings</GroupLabel>
-          <div className="overflow-hidden rounded-[20px] bg-[#efe9da]">
-            <Link to="/dashboard" search={{ emergencyDefaults: true }}>
-              <Row
-                icon={ShieldAlert} iconBg="#d6e8dc" iconColor="#1a5e3f" emphasized
-                title="Emergency defaults"
-                desc="Vet, contacts & spend limit — used for every bird."
+          {/* Care settings */}
+          <div>
+            <SectionHead title="Care settings" />
+            <Card>
+              <Link to="/dashboard" search={{ emergencyDefaults: true }} className="block">
+                <RecordRow
+                  leading={<IconTile tone="pale" icon={<ShieldAlert className="size-5" />} />}
+                  title="Emergency defaults"
+                  subtitle="Vet, contacts & spend limit — used for every bird."
+                />
+              </Link>
+              <Link to="/notifications/settings" className="block">
+                <RecordRow
+                  leading={<IconTile icon={<Bell className="size-5" />} />}
+                  title="Notifications"
+                  subtitle="How you hear about scans and updates."
+                />
+              </Link>
+              <Link to="/household" className="block">
+                <RecordRow
+                  leading={<IconTile icon={<Users className="size-5" />} />}
+                  title="Household"
+                  subtitle="People who help care for your birds."
+                />
+              </Link>
+              <RecordRow
+                onClick={() => setA2hsOpen(true)}
+                leading={<IconTile icon={<Smartphone className="size-5" />} />}
+                title="Add to home screen"
+                subtitle="Open it like an app, get alerts."
+                last
               />
-            </Link>
-            <Divider />
-            <Link to="/notifications/settings">
-              <Row icon={Bell} title="Notifications" desc="How you hear about scans and updates." />
-            </Link>
-            <Divider />
-            <Link to="/household">
-              <Row icon={Users} iconBg="#cfe3dc" iconColor="#1a5e3f" title="Household" desc="People who help care for your birds." />
-            </Link>
-            <Divider />
-            <button type="button" onClick={() => setA2hsOpen(true)} className="block w-full text-left">
-              <Row icon={Smartphone} title="Add to home screen" desc="Open it like an app, get alerts." />
-            </button>
+            </Card>
           </div>
-        </div>
 
-        {/* Account */}
-        <div>
-          <GroupLabel>Account</GroupLabel>
-          <div className="overflow-hidden rounded-[20px] bg-[#efe9da]">
-            <Link to="/account/security">
-              <Row icon={Lock} title="Password & sign-in" desc="Manage how you log in." />
-            </Link>
-            <Divider />
-            <Link to="/past-birds">
-              <Row icon={Archive} iconBg="#dde8df" iconColor="#2d6a4f" title="Past birds" desc="Birds you've handed off — who they were, where they went." />
-            </Link>
+          {/* Account */}
+          <div>
+            <SectionHead title="Account" />
+            <Card>
+              <Link to="/account/security" className="block">
+                <RecordRow
+                  leading={<IconTile icon={<Lock className="size-5" />} />}
+                  title="Password & sign-in"
+                  subtitle="Manage how you log in."
+                />
+              </Link>
+              <Link to="/past-birds" className="block">
+                <RecordRow
+                  leading={<IconTile icon={<Archive className="size-5" />} />}
+                  title="Past birds"
+                  subtitle="Birds you've handed off — who they were, where they went."
+                  last
+                />
+              </Link>
+            </Card>
           </div>
-        </div>
 
-        {/* Legal / meta */}
-        <div className="overflow-hidden rounded-[20px] bg-[#efe9da]">
-          <a href={`mailto:${SUPPORT_EMAIL}?subject=Parrot%20Care%20Co-Pilot%20support`}>
-            <SimpleRow title="Help & support" />
-          </a>
-          <Divider />
-          <Link to="/privacy"><SimpleRow title="Privacy policy" /></Link>
-          <Divider />
-          <Link to="/terms"><SimpleRow title="Terms of service" /></Link>
-        </div>
+          {/* Legal / meta */}
+          <div>
+            <SectionHead title="Legal" />
+            <Card>
+              <a href={`mailto:${SUPPORT_EMAIL}?subject=Parrot%20Care%20Co-Pilot%20support`} className="block">
+                <RecordRow title="Help & support" chevron />
+              </a>
+              <Link to="/privacy" className="block">
+                <RecordRow title="Privacy policy" chevron />
+              </Link>
+              <Link to="/terms" className="block">
+                <RecordRow title="Terms of service" chevron last />
+              </Link>
+            </Card>
+          </div>
 
-        <p className="text-center text-xs text-[#a8a596]">Version {APP_VERSION}</p>
+          <p className="t-meta text-center">Version {APP_VERSION}</p>
 
-        <button
-          onClick={signOut}
-          className="w-full rounded-[16px] border border-[#d8cfb8] bg-[#efe9da] py-3 text-sm font-medium text-[#1a3d2e] active:scale-[.99]"
-        >
-          Sign out
-        </button>
+          <PrimaryButton tone="outline" onPress={signOut}>Sign out</PrimaryButton>
 
-        <button
-          onClick={() => setDeleteOpen(true)}
-          className="block w-full py-1 text-center text-sm font-medium text-[#993C1D]"
-        >
-          Delete account
-        </button>
-      </main>
+          <button
+            onClick={() => setDeleteOpen(true)}
+            className="block w-full min-h-[44px] py-1 text-center text-[13px] font-[500] text-[var(--red-ink)] active:opacity-70"
+          >
+            Delete account
+          </button>
+        </main>
+      </div>
 
       {editOpen && (
         <EditIdentityModal
@@ -188,54 +206,16 @@ function AccountPage() {
   );
 }
 
-// ---------- Rows ----------
-
-function GroupLabel({ children }: { children: React.ReactNode }) {
-  return <p className="mb-2 px-1 text-[11px] font-medium uppercase tracking-wider text-[#8a897f]">{children}</p>;
-}
-
-function Divider() {
-  return <div className="h-px bg-[#e3dcc9]" />;
-}
-
-function Row({
-  icon: Icon, title, desc, iconBg = "#e8f0ec", iconColor = "#2d6a4f", emphasized = false,
-}: {
-  icon: typeof Bell; title: string; desc: string; iconBg?: string; iconColor?: string; emphasized?: boolean;
-}) {
-  return (
-    <div className={`flex items-center gap-3 px-4 py-3.5 ${emphasized ? "bg-[#f0ede1]" : ""}`}>
-      <div className="grid size-10 shrink-0 place-items-center rounded-xl" style={{ background: iconBg }}>
-        <Icon className="size-5" style={{ color: iconColor }} />
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-[#1a3d2e]">{title}</p>
-        <p className="text-xs leading-snug text-[#5f5e5a]">{desc}</p>
-      </div>
-      <ChevronRight className="size-4 shrink-0 text-[#a8a596]" />
-    </div>
-  );
-}
-
-function SimpleRow({ title }: { title: string }) {
-  return (
-    <div className="flex items-center justify-between px-4 py-3.5">
-      <p className="text-sm font-medium text-[#1a3d2e]">{title}</p>
-      <ChevronRight className="size-4 shrink-0 text-[#a8a596]" />
-    </div>
-  );
-}
-
 // ---------- Modals ----------
 
 function ModalShell({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   return (
     <div className="fixed inset-0 z-50 grid place-items-end sm:place-items-center">
       <div className="absolute inset-0 bg-black/30" onClick={onClose} />
-      <div className="relative w-full max-w-md rounded-t-2xl bg-[#f4f1e8] p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-xl sm:rounded-2xl">
+      <div className="relative w-full max-w-md rounded-t-2xl bg-[var(--cream)] p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-xl sm:rounded-2xl">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-medium text-[#1a3d2e]">{title}</h2>
-          <button onClick={onClose} aria-label="Close" className="rounded-full p-1 text-[#5f5e5a] hover:bg-black/5">
+          <h2 className="text-lg font-[500] text-[var(--ink)]">{title}</h2>
+          <button onClick={onClose} aria-label="Close" className="rounded-full p-1 text-[var(--mute)] hover:bg-black/5">
             <X className="size-5" />
           </button>
         </div>
@@ -290,29 +270,27 @@ function EditIdentityModal({
 
   return (
     <ModalShell title="Edit your details" onClose={onClose}>
-      <label className="block text-[11px] font-medium uppercase tracking-wider text-[#5f5e5a]">Name</label>
+      <label className="t-eyebrow block text-[var(--mute)]">Name</label>
       <input
         value={nameInput}
         onChange={(e) => setNameInput(e.target.value)}
         placeholder="Your name"
-        className="mt-1 w-full rounded-xl border border-[#d8cfb8] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#2d6a4f]"
+        className="mt-1 w-full rounded-xl border border-[var(--line)] bg-white px-3 py-2.5 text-sm outline-none focus:border-[var(--moss)]"
       />
-      <label className="mt-4 block text-[11px] font-medium uppercase tracking-wider text-[#5f5e5a]">Email address</label>
+      <label className="t-eyebrow mt-4 block text-[var(--mute)]">Email address</label>
       <input
         type="email"
         value={emailInput}
         onChange={(e) => setEmailInput(e.target.value)}
         placeholder="you@example.com"
-        className="mt-1 w-full rounded-xl border border-[#d8cfb8] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#2d6a4f]"
+        className="mt-1 w-full rounded-xl border border-[var(--line)] bg-white px-3 py-2.5 text-sm outline-none focus:border-[var(--moss)]"
       />
-      <p className="mt-1.5 text-xs text-[#5f5e5a]">Changing your email sends a confirmation link to both your current and new address. Both must be confirmed.</p>
-      <button
-        onClick={save}
-        disabled={saving || (!nameDirty && !emailDirty)}
-        className="mt-4 w-full rounded-[14px] bg-[#1a3d2e] py-3 text-sm font-medium text-white disabled:opacity-50"
-      >
-        {saving ? "Saving…" : "Save changes"}
-      </button>
+      <p className="t-meta mt-1.5">Changing your email sends a confirmation link to both your current and new address. Both must be confirmed.</p>
+      <div className="mt-4">
+        <PrimaryButton tone="ink" onPress={save} disabled={saving || (!nameDirty && !emailDirty)}>
+          {saving ? "Saving…" : "Save changes"}
+        </PrimaryButton>
+      </div>
     </ModalShell>
   );
 }
@@ -335,26 +313,26 @@ function DeleteAccountModal({ onClose, onConfirm }: { onClose: () => void; onCon
 
   return (
     <ModalShell title="Delete account" onClose={deleting ? () => {} : onClose}>
-      <p className="text-sm text-[#5f5e5a]">
-        This permanently deletes your account and <strong className="text-[#1a3d2e]">everything in it</strong> — your birds,
+      <p className="t-body text-[var(--mute)]">
+        This permanently deletes your account and <strong className="text-[var(--ink)]">everything in it</strong> — your birds,
         care plans, clips, sits, sitter logs, and your contact record. Sitter links stop working. This cannot be undone.
       </p>
-      <label className="mt-4 block text-[11px] font-medium uppercase tracking-wider text-[#5f5e5a]">Type DELETE to confirm</label>
+      <label className="t-eyebrow mt-4 block text-[var(--mute)]">Type DELETE to confirm</label>
       <input
         value={confirmText}
         onChange={(e) => setConfirmText(e.target.value)}
         placeholder="DELETE"
         autoCapitalize="characters"
-        className="mt-1 w-full rounded-xl border border-[#d8cfb8] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#993C1D]"
+        className="mt-1 w-full rounded-xl border border-[var(--line)] bg-white px-3 py-2.5 text-sm outline-none focus:border-[var(--red-line)]"
       />
       <button
         onClick={run}
         disabled={!ready || deleting}
-        className="mt-4 w-full rounded-[14px] bg-[#993C1D] py-3 text-sm font-medium text-white disabled:opacity-50"
+        className="mt-4 w-full min-h-[44px] rounded-[12px] bg-[var(--red-deep)] py-3 text-[15px] font-[500] text-white disabled:opacity-50"
       >
         {deleting ? "Deleting…" : "Permanently delete my account"}
       </button>
-      <button onClick={onClose} disabled={deleting} className="mt-2 w-full py-2 text-center text-sm font-medium text-[#5f5e5a] disabled:opacity-50">
+      <button onClick={onClose} disabled={deleting} className="mt-2 w-full min-h-[44px] py-2 text-center text-[13px] font-[500] text-[var(--mute)] disabled:opacity-50">
         Cancel
       </button>
     </ModalShell>
