@@ -169,14 +169,6 @@ select {
 }
 .area { min-height: 70px; }
 
-/* Transitional alias — the old serif display face is gone; `.font-display` now
-   resolves to the single sans family at medium weight. Remaining usages are
-   stripped as each screen adopts the typography tokens below. */
-.font-display {
-  font-family: var(--font-sans);
-  font-weight: 500;
-}
-
 /* ---- Typography tokens (weights 400/500 only — never 600/700) ----------
    Used across every owner screen via the shared component system. */
 .t-hero {

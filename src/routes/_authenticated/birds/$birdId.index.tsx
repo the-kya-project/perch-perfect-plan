@@ -400,7 +400,7 @@ function BasicInfoCard({ birdId, bird, editable = true }: { birdId: string; bird
   return (
     <section className="overflow-hidden rounded-[16px] bg-white ring-1 ring-[#e3dcc9]">
       <div className="flex items-center justify-between gap-3 border-b border-[#ece6d6] px-4 py-3">
-        <h3 className="text-[11px] font-semibold uppercase tracking-widest text-[#5f5e5a]">Basic info</h3>
+        <h3 className="t-eyebrow text-[var(--mute2)]">Basic info</h3>
         {editing ? (
           <div className="flex gap-2">
             <button type="button" onClick={() => setEditing(false)} disabled={saving} className="inline-flex min-h-[36px] items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium text-[#5f5e5a]">
@@ -473,7 +473,7 @@ function BasicRow({ label, value, last }: { label: string; value: string; last?:
 function BasicField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#5f5e5a]">{label}</span>
+      <span className="t-eyebrow mb-1 block text-[var(--mute2)]">{label}</span>
       {children}
     </label>
   );
