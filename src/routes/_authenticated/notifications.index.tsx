@@ -142,7 +142,7 @@ function NotificationsInbox() {
                         {runnerPill}
                       </span>
                     }
-                    onClick={() => navigate({ to: "/birds/$birdId/plan/editor", params: { birdId: n.bird_id }, search: { tab: "logs", scan: n.id } })}
+                    onClick={() => navigate({ to: "/birds/$birdId/scans/$scanId", params: { birdId: n.bird_id, scanId: n.id } })}
                   />
                 );
               })}

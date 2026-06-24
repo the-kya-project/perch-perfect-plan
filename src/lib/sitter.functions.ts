@@ -392,7 +392,7 @@ export const submitHealthScan = createServerFn({ method: "POST" })
       const ownerId = birdRow.owner_id as string;
       const birdName = birdRow.name ?? "Your bird";
       const flagged = triage.status === "red" || triage.status === "yellow";
-      const url = `/birds/${data.birdId}?tab=logs&scan=${row.id}`;
+      const url = `/birds/${data.birdId}/scans/${row.id}`;
 
       // Push (best-effort).
       try {
