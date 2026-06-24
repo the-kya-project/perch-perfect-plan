@@ -261,12 +261,9 @@ function BirdEditor() {
             green per-step instruction banner, hidden here via HideStepInstruction
             (it shows only in the guided setup). */}
         <HideStepInstruction.Provider value={true}>
-          {tab === "basics" && (
-            <div className="space-y-4">
-              <BasicsStep birdId={birdId} onBlockNext={() => {}} />
-              <DeleteBirdCard birdId={birdId} bird={bird} plan={plan} />
-            </div>
-          )}
+          {/* Delete bird moved to the bird main page's "More" group (grouped with
+              Hand off). The editor's basics tab is just the basics fields now. */}
+          {tab === "basics" && <BasicsStep birdId={birdId} onBlockNext={() => {}} />}
           {tab === "food" && <FoodWaterStep birdId={birdId} birdName={bird.name ?? "this bird"} onBlockNext={() => {}} />}
           {tab === "home" && <EnvironmentStep birdId={birdId} />}
           {tab === "health" && <HealthBaselineStep birdId={birdId} birdName={bird.name ?? "this bird"} onBlockNext={() => {}} />}

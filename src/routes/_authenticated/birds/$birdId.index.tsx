@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import {
   Feather, Scale, BookOpen, IdCard, CalendarHeart, ClipboardList,
   Plus, FileText, Activity, Pencil,
-  Check, X, Users, ArrowRightLeft, Heart, Loader2,
+  Check, X, Users, ArrowRightLeft, Heart, Loader2, Trash2,
 } from "lucide-react";
 
 // Bird-record home — the new landing when you tap a bird. A glanceable hub for
@@ -200,8 +200,9 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
         </PrimaryButton>
       )}
 
-      {/* Handoff — prominent for fosters (this is the point of fostering). */}
-      {isOwner && bird?.is_foster && <HandoffSection birdId={birdId} name={name} isFoster prominent />}
+      {/* Welcome to the flock — foster-fail, near the top (not destructive, so
+          it's kept out of the More group). */}
+      {isOwner && bird?.is_foster && <HandoffSection birdId={birdId} name={name} part="welcome" />}
 
       {/* Basic info — Species / Age / Sex / Flight (owner-editable). */}
       {bird && <BasicInfoCard birdId={birdId} bird={bird} editable={isOwner} />}
@@ -253,8 +254,20 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
         </Card>
       )}
 
-      {/* Handoff — quiet for non-foster birds. */}
-      {isOwner && bird && !bird.is_foster && <HandoffSection birdId={birdId} name={name} isFoster={false} prominent={false} />}
+      {/* More — the two major bird-status actions grouped together, low
+          emphasis: hand off (record goes elsewhere) and delete (record is gone).
+          For fosters the handoff reads a touch more prominent, above Delete. */}
+      {isOwner && bird && (
+        <section className="pt-1">
+          <div className="border-t border-[var(--line2)] pt-4">
+            <p className="t-eyebrow mb-2 px-0.5 text-[var(--mute2)]">More</p>
+            <div className="space-y-2">
+              <HandoffSection birdId={birdId} name={name} part="handoff" prominent={!!bird.is_foster} />
+              <DeleteBirdButton birdId={birdId} name={name} />
+            </div>
+          </div>
+        </section>
+      )}
     </>
   );
 }
@@ -276,10 +289,13 @@ function fmtMonthYear(iso: string): string {
   return new Date(`${iso.slice(0, 10)}T12:00:00`).toLocaleDateString(undefined, { month: "short", year: "numeric" });
 }
 
-// Handoff + foster-fail actions. Shows a pending-handoff banner with cancel,
-// otherwise a "Hand off" entry (prominent for fosters) and, for fosters, the
-// quiet "Welcome to the flock" action.
-function HandoffSection({ birdId, name, isFoster, prominent }: { birdId: string; name: string; isFoster: boolean; prominent: boolean }) {
+// Handoff + foster-fail actions, split by `part`:
+//   "welcome"  → the foster-fail "Welcome to the flock" button (stays near the
+//                top; it's not destructive, so it's separate from the More group).
+//   "handoff"  → the pending-handoff banner, else a "Hand off [name]" button
+//                (outline when prominent — fosters; quiet otherwise). Lives in
+//                the bottom "More" group alongside Delete.
+function HandoffSection({ birdId, name, part, prominent }: { birdId: string; name: string; part: "welcome" | "handoff"; prominent?: boolean }) {
   const qc = useQueryClient();
   const getPending = useServerFn(getPendingHandoff);
   const cancel = useServerFn(cancelHandoff);
@@ -305,8 +321,22 @@ function HandoffSection({ birdId, name, isFoster, prominent }: { birdId: string;
     onError: (e: any) => toast.error(e?.message ?? "Couldn't update."),
   });
 
-  const outlineBtn = "flex min-h-[44px] items-center justify-center gap-2 rounded-[12px] bg-white text-[15px] font-[500] text-[var(--ink)] ring-1 ring-[var(--line)] active:scale-[0.99] disabled:opacity-50";
+  const outlineBtn = "flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[12px] bg-white text-[15px] font-[500] text-[var(--ink)] ring-1 ring-[var(--line)] active:scale-[0.99] disabled:opacity-50";
 
+  if (part === "welcome") {
+    return (
+      <button
+        type="button"
+        disabled={permanentM.isPending}
+        onClick={() => { if (window.confirm(`Make ${name} a permanent member of your flock? You can change your mind later.`)) permanentM.mutate(); }}
+        className={outlineBtn}
+      >
+        <Heart className="size-4" /> Welcome to the flock
+      </button>
+    );
+  }
+
+  // part === "handoff"
   if (pending?.pending) {
     return (
       <div className="flex items-center gap-3 rounded-[14px] p-3" style={{ background: "var(--amber-fill)", border: "1px solid var(--amber-line)" }}>
@@ -320,32 +350,76 @@ function HandoffSection({ birdId, name, isFoster, prominent }: { birdId: string;
       </div>
     );
   }
-
-  const handoffBtn = (
+  return (
     <button
       type="button"
       onClick={() => navigate({ to: "/birds/$birdId/handoff", params: { birdId } })}
-      className={prominent ? `w-full ${outlineBtn}` : "flex min-h-[44px] w-full items-center justify-center gap-2 text-[14px] font-[500] text-[var(--mute)] active:scale-[0.99]"}
+      className={prominent ? outlineBtn : "flex min-h-[44px] w-full items-center justify-center gap-2 text-[14px] font-[500] text-[var(--mute)] active:scale-[0.99]"}
     >
       <ArrowRightLeft className="size-4" /> Hand off {name}
     </button>
   );
+}
 
-  if (!isFoster) return handoffBtn;
+// Quiet "Delete [name]" for the bottom More group — red text, expands to the
+// type-the-name confirmation before the destructive cascade (same flow as the
+// editor's Danger zone). No accidental taps: delete is gated on an exact match.
+function DeleteBirdButton({ birdId, name }: { birdId: string; name: string }) {
+  const navigate = useNavigate();
+  const qc = useQueryClient();
+  const [confirming, setConfirming] = useState(false);
+  const [text, setText] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const ready = text.trim() === name.trim();
 
-  return (
-    <div className="grid grid-cols-2 gap-3">
+  async function del() {
+    if (!ready) { toast.error(`Type "${name}" exactly to confirm.`); return; }
+    setDeleting(true);
+    try {
+      const { data: plans } = await supabase.from("care_plans").select("id").eq("bird_id", birdId);
+      const planIds = (plans ?? []).map((p: any) => p.id);
+      await supabase.from("sit_birds").delete().eq("bird_id", birdId);
+      await supabase.from("weight_logs").delete().eq("bird_id", birdId);
+      await supabase.from("photo_logs").delete().eq("bird_id", birdId);
+      await supabase.from("daily_logs").delete().eq("bird_id", birdId);
+      await supabase.from("emergency_contacts").delete().eq("bird_id", birdId);
+      if (planIds.length) await supabase.from("routine_tasks").delete().in("care_plan_id", planIds);
+      await supabase.from("care_plans").delete().eq("bird_id", birdId);
+      const { error } = await supabase.from("birds").delete().eq("id", birdId);
+      if (error) throw error;
+      toast.success(`${name} removed.`);
+      qc.invalidateQueries({ queryKey: ["birds"] });
+      navigate({ to: "/dashboard" });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Couldn't delete.");
+      setDeleting(false);
+    }
+  }
+
+  if (!confirming) {
+    return (
       <button
         type="button"
-        disabled={permanentM.isPending}
-        onClick={() => { if (window.confirm(`Make ${name} a permanent member of your flock? You can change your mind later.`)) permanentM.mutate(); }}
-        className={outlineBtn}
+        onClick={() => setConfirming(true)}
+        className="flex min-h-[44px] w-full items-center justify-center gap-2 text-[14px] font-[500] text-[var(--red-ink)] active:scale-[0.99]"
       >
-        <Heart className="size-4" /> Welcome to the flock
+        <Trash2 className="size-4" /> Delete {name}
       </button>
-      <button type="button" onClick={() => navigate({ to: "/birds/$birdId/handoff", params: { birdId } })} className={outlineBtn}>
-        <ArrowRightLeft className="size-4" /> Hand off
-      </button>
+    );
+  }
+  return (
+    <div className="rounded-[12px] p-3" style={{ background: "var(--red-fill)", border: "1px solid var(--red-line)" }}>
+      <p className="text-[13px] leading-relaxed" style={{ color: "var(--red-deep)" }}>
+        Permanently delete {name} and everything in their record — care plan, weights, scans, journal, and photos. This can't be undone.
+      </p>
+      <label className="mt-2 block text-[11px] font-[500]" style={{ color: "var(--red-deep)" }}>Type {name} to confirm</label>
+      <input className="input mt-1" value={text} onChange={(e) => setText(e.target.value)} placeholder={name} autoFocus />
+      <div className="mt-2 flex gap-2">
+        <button type="button" disabled={deleting} onClick={() => { setConfirming(false); setText(""); }} className="min-h-[44px] flex-1 rounded-[10px] border border-[var(--line)] bg-white text-[14px] font-[500] text-[var(--ink)] disabled:opacity-50">Cancel</button>
+        <button type="button" disabled={deleting || !ready} onClick={del} className="min-h-[44px] flex-1 rounded-[10px] text-[14px] font-[500] text-white disabled:opacity-50" style={{ background: "var(--red-ink)" }}>
+          {deleting ? "Deleting…" : `Delete ${name}`}
+        </button>
+      </div>
     </div>
   );
 }
