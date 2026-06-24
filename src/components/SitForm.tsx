@@ -1,10 +1,11 @@
-import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { toast } from "sonner";
 import { track } from "@/lib/analytics";
-import { Feather, Plus } from "lucide-react";
+import { Feather, Plus, Mail, Check, Users } from "lucide-react";
 
 // Create OR edit a sit. In edit mode (`editSit` set) it preserves the existing
 // invite_token — the same sitter link keeps working; editing changes what it
@@ -57,6 +58,48 @@ export function SitForm({
   const [saving, setSaving] = useState(false);
   const rootRef = useRef<HTMLFormElement>(null);
 
+  // Caregiver kind:
+  //   "household" + householdUserId = no token, no email — assigns a household
+  //                                    member who already has bird access.
+  //   "external" + sitterName/Email = the existing per-trip token flow.
+  // Defaults to whichever was set on the row when editing; null on a fresh form
+  // (the owner picks during creation). PR 1 doesn't allow swapping the kind in
+  // edit mode — surfaced as a small note in the UI; a follow-up will add it.
+  type CaregiverKind = "household" | "external";
+  const initialKind: CaregiverKind | null = editing
+    ? (editSit.caregiver_user_id ? "household" : "external")
+    : null;
+  const [caregiverKind, setCaregiverKind] = useState<CaregiverKind | null>(initialKind);
+  const [householdUserId, setHouseholdUserId] = useState<string | null>(editing ? (editSit.caregiver_user_id ?? null) : null);
+
+  // Household members eligible to cover this sit = anyone who has household
+  // access to EVERY currently-selected bird. Re-runs when the selection
+  // changes; the owner can only pick a member who covers all of it. Owner
+  // reads bird_members via the existing owner RLS — no new permission.
+  const birdIdsKey = useMemo(() => Array.from(selected).sort().join(","), [selected]);
+  const { data: eligibleMembers = [] } = useQuery({
+    queryKey: ["sit-eligible-household", birdIdsKey],
+    enabled: !editing && selected.size > 0,
+    queryFn: async () => {
+      const ids = Array.from(selected);
+      const { data: rows } = await supabase
+        .from("bird_members").select("user_id, bird_id, created_at")
+        .in("bird_id", ids).eq("role", "household");
+      const byUser = new Map<string, Set<string>>();
+      for (const r of (rows ?? []) as any[]) {
+        const s = byUser.get(r.user_id) ?? new Set<string>();
+        s.add(r.bird_id);
+        byUser.set(r.user_id, s);
+      }
+      // Filter to members on EVERY selected bird.
+      const userIds = [...byUser.entries()].filter(([, s]) => s.size === ids.length).map(([id]) => id);
+      if (!userIds.length) return [];
+      const { data: profs } = await supabase.from("profiles").select("id, display_name").in("id", userIds);
+      const nameById = new Map((profs ?? []).map((p: any) => [p.id, (p.display_name ?? "").trim()]));
+      return userIds.map((id) => ({ userId: id, name: nameById.get(id) || "Household member" })).sort((a, b) => a.name.localeCompare(b.name));
+    },
+  });
+
   // Create-only: opens the form when ?newSit is set, then clears the param.
   // Keyed on initialOpen (not just mount) so it also fires when the param flips
   // true while the dashboard is already mounted — e.g. the checklist's "Create
@@ -99,6 +142,12 @@ export function SitForm({
     if (selected.size === 0) { toast.error("Pick at least one bird."); return; }
     if (!start || !end) { toast.error("Pick a start and end date."); return; }
     if (end < start) { toast.error("End date must be on or after start date."); return; }
+    // Validate the caregiver choice — required on create; preserved on edit.
+    if (!editing) {
+      if (!caregiverKind) { toast.error("Pick who's covering this sit."); return; }
+      if (caregiverKind === "household" && !householdUserId) { toast.error("Pick a household member."); return; }
+      if (caregiverKind === "external" && !sitterEmail.trim()) { toast.error("Add the sitter's email."); return; }
+    }
     setSaving(true);
     try {
       const birdIds = Array.from(selected);
@@ -111,50 +160,62 @@ export function SitForm({
       ]);
       if (ecErr) { toast.error(ecErr.message); setSaving(false); return; }
       if (!u.user) { toast.error("You're signed out."); setSaving(false); return; }
-      const { data: defaults } = await supabase
-        .from("owner_emergency_defaults")
-        .select("owner_phone, avian_vet_phone")
-        .eq("owner_id", u.user.id)
-        .maybeSingle();
-      const contactByBird = new Map((contacts ?? []).map((c: any) => [c.bird_id, c]));
-      const eff = (c: any, k: string) =>
-        (c?.[k]?.trim?.() || (defaults as any)?.[k]?.trim?.() || "");
-      const missing = birdIds
-        .map((id) => {
-          const c = contactByBird.get(id);
-          const needs: string[] = [];
-          if (!eff(c, "owner_phone")) needs.push("your phone");
-          if (!eff(c, "avian_vet_phone")) needs.push("avian vet phone");
-          return needs.length ? { bird: birds.find((b: any) => b.id === id), needs } : null;
-        })
-        .filter(Boolean) as { bird: any; needs: string[] }[];
-      if (missing.length) {
-        const details = missing.map((m) => `${m.bird?.name ?? "Bird"}: ${m.needs.join(" & ")}`).join("; ");
-        toast.error(
-          `Add the required emergency contacts before sharing a sitter link — ${details}. Set account defaults below, or open the bird's Emergency tab.`,
-          { duration: 8000 },
-        );
-        setSaving(false);
-        return;
+      // Emergency-contact preflight is for the external-sitter share — the
+      // sitter has no other access, so the contacts must be on file before we
+      // mint a link. A household caregiver already has bird access and the
+      // contacts via existing membership; skip the gate for that path.
+      const kind: CaregiverKind = editing ? (initialKind as CaregiverKind) : (caregiverKind as CaregiverKind);
+      if (kind === "external") {
+        const { data: defaults } = await supabase
+          .from("owner_emergency_defaults")
+          .select("owner_phone, avian_vet_phone")
+          .eq("owner_id", u.user.id)
+          .maybeSingle();
+        const contactByBird = new Map((contacts ?? []).map((c: any) => [c.bird_id, c]));
+        const eff = (c: any, k: string) =>
+          (c?.[k]?.trim?.() || (defaults as any)?.[k]?.trim?.() || "");
+        const missing = birdIds
+          .map((id) => {
+            const c = contactByBird.get(id);
+            const needs: string[] = [];
+            if (!eff(c, "owner_phone")) needs.push("your phone");
+            if (!eff(c, "avian_vet_phone")) needs.push("avian vet phone");
+            return needs.length ? { bird: birds.find((b: any) => b.id === id), needs } : null;
+          })
+          .filter(Boolean) as { bird: any; needs: string[] }[];
+        if (missing.length) {
+          const details = missing.map((m) => `${m.bird?.name ?? "Bird"}: ${m.needs.join(" & ")}`).join("; ");
+          toast.error(
+            `Add the required emergency contacts before sharing a sitter link — ${details}. Set account defaults below, or open the bird's Emergency tab.`,
+            { duration: 8000 },
+          );
+          setSaving(false);
+          return;
+        }
       }
 
-      // Access window ends at end-of-day on the end date (same as create).
+      // External sits keep a token window ending at end-of-day on the end
+      // date. Household sits have no token — token_expires_at stays null.
       const expires = new Date(end + "T23:59:59Z").toISOString();
 
       if (editing) {
-        // Preserve invite_token — the same link keeps working.
-        const { error } = await supabase
-          .from("sits")
-          .update({
-            title: title || null,
-            sitter_name: sitterName || null,
-            sitter_email: sitterEmail || null,
-            start_date: start,
-            end_date: end,
-            notes: notes || null,
-            token_expires_at: expires,
-          })
-          .eq("id", editSit.id);
+        // PR 1: caregiver KIND is locked on edit (UI disables the picker too).
+        // The fields that update depend on which kind this row already is:
+        //   external → bird-set, dates, sitter_name/email + the token window.
+        //   household → bird-set, dates only (sitter_* + token stay null per
+        //               the sits_one_caregiver_chk constraint).
+        const update: any = {
+          title: title || null,
+          start_date: start,
+          end_date: end,
+          notes: notes || null,
+        };
+        if (kind === "external") {
+          update.sitter_name = sitterName || null;
+          update.sitter_email = sitterEmail || null;
+          update.token_expires_at = expires;
+        }
+        const { error } = await supabase.from("sits").update(update).eq("id", editSit.id);
         if (error) { toast.error(error.message); setSaving(false); return; }
 
         // Reconcile which birds the token grants access to.
@@ -180,25 +241,39 @@ export function SitForm({
         onSaved();
         onCancel?.();
       } else {
-        const { data: sit, error } = await supabase.from("sits").insert({
+        // Insert shape depends on caregiver kind. The check constraint
+        // sits_one_caregiver_chk requires EITHER (invite_token + no caregiver)
+        // OR (caregiver_user_id + no token), so the household path explicitly
+        // nulls the token columns to override the table default.
+        const insert: any = {
           owner_id: u.user.id,
           title: title || null,
-          sitter_name: sitterName || null,
-          sitter_email: sitterEmail || null,
           start_date: start, end_date: end,
           notes: notes || null,
-          token_expires_at: expires,
           status: "upcoming",
-        }).select().single();
+        };
+        if (kind === "external") {
+          insert.sitter_name = sitterName || null;
+          insert.sitter_email = sitterEmail || null;
+          insert.token_expires_at = expires;
+        } else {
+          insert.caregiver_user_id = householdUserId;
+          insert.invite_token = null;
+          insert.token_expires_at = null;
+          insert.sitter_name = null;
+          insert.sitter_email = null;
+        }
+        const { data: sit, error } = await supabase.from("sits").insert(insert).select().single();
         if (error || !sit) { toast.error(error?.message ?? "Could not create sit."); setSaving(false); return; }
         const rows = birdIds.map((bird_id) => ({ sit_id: sit.id, bird_id }));
         const { error: linkErr } = await supabase.from("sit_birds").insert(rows);
         if (linkErr) { toast.error(linkErr.message); setSaving(false); return; }
         const days = Math.max(1, Math.round((new Date(end).getTime() - new Date(start).getTime()) / 86_400_000) + 1);
-        track("sit_created", { bird_count: birdIds.length, days, has_email: !!sitterEmail });
-        toast.success("Sit created.");
+        track("sit_created", { bird_count: birdIds.length, days, has_email: !!sitterEmail, caregiver_kind: kind });
+        toast.success(kind === "household" ? "Sit created — your household member is set." : "Sit created.");
         setOpen(false);
         setTitle(""); setSitterName(""); setSitterEmail(""); setStart(""); setEnd(""); setNotes("");
+        setCaregiverKind(null); setHouseholdUserId(null);
         setSelected(new Set(birds.length === 1 ? [birds[0].id] : []));
         onSaved();
       }
@@ -275,8 +350,6 @@ export function SitForm({
         </div>
       </div>
 
-      <Field label="Sitter name"><input className="input" value={sitterName} onChange={(e) => setSitterName(e.target.value)} /></Field>
-      <Field label="Sitter email"><input className="input" type="email" value={sitterEmail} onChange={(e) => setSitterEmail(e.target.value)} /></Field>
       {/* Two equal columns, top-aligned. min-w-0 lets the cells shrink to the
           column; the global input[type=date] appearance reset (styles.css) stops
           the native iOS date control from overflowing/overlapping. */}
@@ -284,10 +357,48 @@ export function SitForm({
         <div className="min-w-0"><Field label="Start"><input className="input min-w-0" type="date" value={start} onChange={(e) => setStart(e.target.value)} /></Field></div>
         <div className="min-w-0"><Field label="End"><input className="input min-w-0" type="date" value={end} onChange={(e) => setEnd(e.target.value)} /></Field></div>
       </div>
+
+      {/* Who's covering — household member (no token, already has access) OR
+          an external sitter (the existing per-trip link flow). Edit mode keeps
+          the row's existing kind (PR 1 doesn't swap caregiver type yet). */}
+      {editing ? (
+        <div className="rounded-[14px] border border-[#e0d8c4] bg-white p-3">
+          <p className="text-[11px] font-medium uppercase tracking-wider text-[#5f5e5a]">Who's covering</p>
+          <p className="mt-1 text-[13px] text-[#1a3d2e]">
+            {initialKind === "household"
+              ? `A household member is assigned. Swapping caregiver type isn't available yet — delete this sit and create a new one to change it.`
+              : `An external sitter has the link. ${sitterName?.trim() || sitterEmail || "Their info"} is current; you can edit the name or email below.`}
+          </p>
+          {initialKind === "external" && (
+            <div className="mt-2 space-y-2">
+              <Field label="Sitter name"><input className="input" value={sitterName} onChange={(e) => setSitterName(e.target.value)} /></Field>
+              <Field label="Sitter email"><input className="input" type="email" value={sitterEmail} onChange={(e) => setSitterEmail(e.target.value)} /></Field>
+            </div>
+          )}
+        </div>
+      ) : (
+        <CaregiverPicker
+          eligibleMembers={eligibleMembers}
+          selectedBirdCount={selected.size}
+          caregiverKind={caregiverKind}
+          householdUserId={householdUserId}
+          sitterName={sitterName}
+          sitterEmail={sitterEmail}
+          onPickHousehold={(id) => { setCaregiverKind("household"); setHouseholdUserId(id); }}
+          onPickExternal={() => { setCaregiverKind("external"); setHouseholdUserId(null); }}
+          onChangeSitterName={setSitterName}
+          onChangeSitterEmail={setSitterEmail}
+        />
+      )}
+
       <Field label="Notes for this sit"><textarea className="input area" value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
 
       <button type="submit" disabled={saving} className="w-full rounded-[14px] bg-[#1a3d2e] py-3 text-sm font-medium text-white disabled:opacity-50">
-        {saving ? (editing ? "Saving..." : "Creating...") : editing ? "Save changes" : "Create sit & generate link"}
+        {saving
+          ? (editing ? "Saving..." : "Creating...")
+          : editing
+            ? "Save changes"
+            : caregiverKind === "household" ? "Create sit" : "Create sit & generate link"}
       </button>
     </form>
   );
@@ -299,5 +410,100 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <span className="mb-1 block text-xs font-medium uppercase tracking-wider text-[#5f5e5a]">{label}</span>
       {children}
     </label>
+  );
+}
+
+// "Who's covering" — household member cards (filtered to people on every
+// selected bird) above an "or" divider and the external-sitter expander. Picks
+// are mutually exclusive: choosing a household member collapses the external
+// fields; opening external clears any household selection.
+function CaregiverPicker({
+  eligibleMembers, selectedBirdCount,
+  caregiverKind, householdUserId,
+  sitterName, sitterEmail,
+  onPickHousehold, onPickExternal,
+  onChangeSitterName, onChangeSitterEmail,
+}: {
+  eligibleMembers: { userId: string; name: string }[];
+  selectedBirdCount: number;
+  caregiverKind: "household" | "external" | null;
+  householdUserId: string | null;
+  sitterName: string;
+  sitterEmail: string;
+  onPickHousehold: (id: string) => void;
+  onPickExternal: () => void;
+  onChangeSitterName: (v: string) => void;
+  onChangeSitterEmail: (v: string) => void;
+}) {
+  const noBirdsPicked = selectedBirdCount === 0;
+  const noEligible = !noBirdsPicked && eligibleMembers.length === 0;
+  return (
+    <div className="space-y-3 rounded-[14px] border border-[#e0d8c4] bg-white p-3">
+      <p className="text-[11px] font-medium uppercase tracking-wider text-[#5f5e5a]">Who's covering</p>
+
+      {noBirdsPicked ? (
+        <p className="text-[13px] text-[#5f5e5a]">Pick a bird above first.</p>
+      ) : noEligible ? (
+        <div className="rounded-[10px] bg-[#f4f1e8] p-3 text-[13px] text-[#5f5e5a]">
+          No household yet — <Link to="/household" className="underline">invite someone</Link> or send a link to a sitter below.
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {eligibleMembers.map((m) => {
+            const on = caregiverKind === "household" && householdUserId === m.userId;
+            const initial = (m.name?.slice(0, 1) ?? "?").toUpperCase();
+            return (
+              <button
+                key={m.userId}
+                type="button"
+                onClick={() => onPickHousehold(m.userId)}
+                aria-pressed={on}
+                className={`flex w-full items-center gap-3 rounded-[12px] border p-3 text-left active:scale-[0.99] ${
+                  on ? "border-[#2d6a4f] bg-[#e8f0ec] ring-1 ring-[#2d6a4f]" : "border-[#e0d8c4] bg-white"
+                }`}
+              >
+                <span className={`grid size-10 shrink-0 place-items-center rounded-full text-sm font-medium ${on ? "bg-[#1a3d2e] text-white" : "bg-[#cfe3dc] text-[#1a5e3f]"}`}>{initial}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center gap-2">
+                    <span className="truncate text-[14px] font-medium text-[#1a3d2e]">{m.name}</span>
+                    <span className="shrink-0 rounded-full bg-[#cfe3dc] px-2 py-0.5 text-[10px] font-medium text-[#1a5e3f]">Household</span>
+                  </span>
+                  <span className="mt-0.5 block text-[11.5px] text-[#5f5e5a]">Already has access · they'll see the daily checklist while you're away.</span>
+                </span>
+                {on && <Check className="size-4 shrink-0 text-[#2d6a4f]" aria-hidden />}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      <div className="flex items-center gap-2 py-1 text-[11px] uppercase tracking-widest text-[#8a897f]">
+        <span className="h-px flex-1 bg-[#e0d8c4]" /> or <span className="h-px flex-1 bg-[#e0d8c4]" />
+      </div>
+
+      {caregiverKind === "external" ? (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Mail className="size-4 text-[#5f5e5a]" />
+            <p className="flex-1 text-[13px] font-medium text-[#1a3d2e]">Send a link to someone else</p>
+          </div>
+          <Field label="Sitter name"><input className="input" value={sitterName} onChange={(e) => onChangeSitterName(e.target.value)} /></Field>
+          <Field label="Sitter email"><input className="input" type="email" value={sitterEmail} onChange={(e) => onChangeSitterEmail(e.target.value)} placeholder="sitter@example.com" /></Field>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={onPickExternal}
+          className="flex w-full items-center gap-3 rounded-[12px] border border-dashed border-[#c8bfa6] bg-[#fbfaf2] p-3 text-left active:scale-[0.99]"
+        >
+          <Mail className="size-4 shrink-0 text-[#5f5e5a]" />
+          <span className="min-w-0 flex-1">
+            <span className="block text-[14px] font-medium text-[#1a3d2e]">Send a link to someone else</span>
+            <span className="mt-0.5 block text-[11.5px] text-[#5f5e5a]">An email + a per-trip link, no account needed.</span>
+          </span>
+          <Users className="size-4 shrink-0 text-[#8a897f]" aria-hidden />
+        </button>
+      )}
+    </div>
   );
 }

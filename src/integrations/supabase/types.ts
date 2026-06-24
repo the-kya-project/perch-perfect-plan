@@ -688,6 +688,7 @@ export type Database = {
           logged_by: string | null
           occurred_on: string
           photo_path: string | null
+          sit_id: string | null
           title: string | null
         }
         Insert: {
@@ -699,6 +700,7 @@ export type Database = {
           logged_by?: string | null
           occurred_on: string
           photo_path?: string | null
+          sit_id?: string | null
           title?: string | null
         }
         Update: {
@@ -710,6 +712,7 @@ export type Database = {
           logged_by?: string | null
           occurred_on?: string
           photo_path?: string | null
+          sit_id?: string | null
           title?: string | null
         }
         Relationships: [
@@ -718,6 +721,13 @@ export type Database = {
             columns: ["bird_id"]
             isOneToOne: false
             referencedRelation: "birds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_entries_sit_id_fkey"
+            columns: ["sit_id"]
+            isOneToOne: false
+            referencedRelation: "sits"
             referencedColumns: ["id"]
           },
         ]
@@ -1174,10 +1184,11 @@ export type Database = {
       }
       sits: {
         Row: {
+          caregiver_user_id: string | null
           created_at: string
           end_date: string
           id: string
-          invite_token: string
+          invite_token: string | null
           marked_ready_at: string | null
           notes: string | null
           owner_id: string
@@ -1187,13 +1198,14 @@ export type Database = {
           start_date: string
           status: string
           title: string | null
-          token_expires_at: string
+          token_expires_at: string | null
         }
         Insert: {
+          caregiver_user_id?: string | null
           created_at?: string
           end_date: string
           id?: string
-          invite_token?: string
+          invite_token?: string | null
           marked_ready_at?: string | null
           notes?: string | null
           owner_id: string
@@ -1203,13 +1215,14 @@ export type Database = {
           start_date: string
           status?: string
           title?: string | null
-          token_expires_at: string
+          token_expires_at?: string | null
         }
         Update: {
+          caregiver_user_id?: string | null
           created_at?: string
           end_date?: string
           id?: string
-          invite_token?: string
+          invite_token?: string | null
           marked_ready_at?: string | null
           notes?: string | null
           owner_id?: string
@@ -1219,7 +1232,7 @@ export type Database = {
           start_date?: string
           status?: string
           title?: string | null
-          token_expires_at?: string
+          token_expires_at?: string | null
         }
         Relationships: []
       }
@@ -1275,6 +1288,7 @@ export type Database = {
           meal_relation: string | null
           measured_at: string
           note: string | null
+          sit_id: string | null
           source: string
         }
         Insert: {
@@ -1286,6 +1300,7 @@ export type Database = {
           meal_relation?: string | null
           measured_at?: string
           note?: string | null
+          sit_id?: string | null
           source?: string
         }
         Update: {
@@ -1297,6 +1312,7 @@ export type Database = {
           meal_relation?: string | null
           measured_at?: string
           note?: string | null
+          sit_id?: string | null
           source?: string
         }
         Relationships: [
@@ -1305,6 +1321,13 @@ export type Database = {
             columns: ["bird_id"]
             isOneToOne: false
             referencedRelation: "birds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "weight_entries_sit_id_fkey"
+            columns: ["sit_id"]
+            isOneToOne: false
+            referencedRelation: "sits"
             referencedColumns: ["id"]
           },
         ]

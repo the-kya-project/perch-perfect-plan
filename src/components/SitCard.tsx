@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { Calendar, Link2, Copy, Eye } from "lucide-react";
@@ -12,11 +13,27 @@ type Bird = { id: string; name: string };
 
 export function SitCard({ sit, birds = [], allBirds, onChange }: { sit: any; birds?: Bird[]; allBirds?: any[]; onChange: () => void }) {
   const [editing, setEditing] = useState(false);
-  const expired = new Date(sit.token_expires_at) < new Date();
+  // Two caregiver kinds — see migration sits_one_caregiver_chk. A household sit
+  // has no token (and never expires by a token window); it just runs from
+  // start_date through end_date.
+  const isHousehold = !!sit.caregiver_user_id;
+  const expired = !isHousehold && sit.token_expires_at && new Date(sit.token_expires_at) < new Date();
+  const ended = new Date(sit.end_date + "T23:59:59") < new Date();
   const upcoming = new Date(sit.start_date) > new Date(new Date().toDateString());
-  const status = sit.revoked ? "Revoked" : expired ? "Expired" : upcoming ? "Upcoming" : "Active";
-  const tone = sit.revoked || expired ? "bg-[#e8e1d0] text-[#5f5e5a]" : upcoming ? "bg-[#f4e4c4] text-[#84600f]" : "bg-[#d6e8dc] text-[#1a5e3f]";
-  const url = typeof window !== "undefined" ? `${window.location.origin}/sitter/${sit.invite_token}` : "";
+  const status = sit.revoked ? "Revoked" : expired || ended ? (isHousehold && ended ? "Ended" : "Expired") : upcoming ? "Upcoming" : "Active";
+  const tone = sit.revoked || expired || ended ? "bg-[#e8e1d0] text-[#5f5e5a]" : upcoming ? "bg-[#f4e4c4] text-[#84600f]" : "bg-[#d6e8dc] text-[#1a5e3f]";
+  const url = !isHousehold && typeof window !== "undefined" ? `${window.location.origin}/sitter/${sit.invite_token}` : "";
+
+  // Resolve the household caregiver's display name for the card.
+  const { data: caregiverName } = useQuery({
+    queryKey: ["sit-caregiver-name", sit.caregiver_user_id],
+    enabled: isHousehold,
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const { data } = await supabase.from("profiles").select("display_name").eq("id", sit.caregiver_user_id).maybeSingle();
+      return (data?.display_name ?? "").toString().trim() || "Household member";
+    },
+  });
 
   async function revoke() {
     if (!confirm("Revoke this invite link? The sitter will lose access.")) return;
@@ -96,15 +113,26 @@ export function SitCard({ sit, birds = [], allBirds, onChange }: { sit: any; bir
         </div>
         <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${tone}`}>{status}</span>
       </div>
-      <p className="mt-1 text-xs text-[#5f5e5a]">
-        Sitter: {sit.sitter_name?.trim() || "Not named yet"}{sit.sitter_email && ` (${sit.sitter_email})`}
-      </p>
+      {isHousehold ? (
+        <div className="mt-1 flex items-center gap-2 text-xs text-[#5f5e5a]">
+          <span className="grid size-5 shrink-0 place-items-center rounded-full bg-[#cfe3dc] text-[10px] font-medium text-[#1a5e3f]">
+            {((caregiverName ?? "?").slice(0, 1) || "?").toUpperCase()}
+          </span>
+          <span>Covered by <span className="font-medium text-[#1a3d2e]">{caregiverName ?? "household member"}</span></span>
+          <span className="rounded-full bg-[#cfe3dc] px-1.5 py-0.5 text-[10px] font-medium text-[#1a5e3f]">Household</span>
+        </div>
+      ) : (
+        <p className="mt-1 text-xs text-[#5f5e5a]">
+          Sitter: {sit.sitter_name?.trim() || "Not named yet"}{sit.sitter_email && ` (${sit.sitter_email})`}
+        </p>
+      )}
       {birds.length > 0 && (
         <p className="mt-1 text-xs text-sage-700">
           Birds: <span className="font-medium">{birds.map((b) => b.name).join(", ")}</span>
         </p>
       )}
-      {!sit.revoked && !expired && (
+      {/* Per-trip link strip — external sitter only; household has no token. */}
+      {!isHousehold && !sit.revoked && !expired && (
         <div className="mt-3 flex items-center gap-2 rounded-[12px] bg-[#e8e1d0] p-2">
           <Link2 className="size-3.5 text-[#5f5e5a]" />
           <span className="flex-1 truncate text-[11px] text-sage-700">{url}</span>
@@ -128,7 +156,7 @@ export function SitCard({ sit, birds = [], allBirds, onChange }: { sit: any; bir
         {allBirds && !sit.revoked && (
           <button onClick={() => setEditing(true)} className="text-[#1a3d2e] underline">Edit</button>
         )}
-        {!sit.revoked && !expired && (
+        {!isHousehold && !sit.revoked && !expired && (
           <button onClick={revoke} className="text-[#5f5e5a] underline">Revoke link</button>
         )}
         <button onClick={remove} className="ml-auto text-[#5f5e5a] underline">Delete</button>
