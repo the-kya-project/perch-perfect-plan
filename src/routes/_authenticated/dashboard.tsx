@@ -25,7 +25,7 @@ import { BirdRecordBody } from "./birds/$birdId.index";
 import { getHouseholdHome, type HomeHousehold } from "@/lib/home.functions";
 import { getPastBirds } from "@/lib/handoff.functions";
 import {
-  groupWeights, weightGlance, upcomingMoments, buildTodayItems, daysSince,
+  groupWeights, weightGlance, upcomingMoments, buildTodayItems, buildHomeStateCopy, daysSince,
   type HomeBird, type WeightEntry, type TodayItem, type WeightGlance, type UpcomingSit,
 } from "@/lib/homeData";
 
@@ -43,7 +43,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 });
 
 const BIRD_SELECT =
-  "id, owner_id, name, species, photo_url, photo_position, is_foster, intake_date, birth_date, acquired_on, became_permanent_on";
+  "id, owner_id, name, species, photo_url, photo_position, is_foster, intake_date, birth_date, acquired_on, became_permanent_on, created_at";
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -95,7 +95,7 @@ function Dashboard() {
   const { data: sits = [] } = useQuery({
     queryKey: ["all-sits"],
     queryFn: async () => {
-      const { data } = await supabase.from("sits").select("id, sitter_name, start_date")
+      const { data } = await supabase.from("sits").select("id, sitter_name, caregiver_user_id, start_date")
         .or("sitter_name.is.null,sitter_name.neq.__preview__").order("start_date", { ascending: false });
       return (data ?? []) as any[];
     },
@@ -133,10 +133,25 @@ function Dashboard() {
   const { data: caregiver } = useActiveCaregiver();
   const caregiverActive = !!caregiver?.sits?.length;
 
+  // Home body line — state-aware (stale weigh-in → sit imminent → celebration
+  // → new bird → weekend → default). Caregiver names for imminent sits come
+  // from the household member list already loaded; sitter names from the row.
+  const householdNameById = useMemo(
+    () => new Map((household?.members ?? []).map((m) => [m.userId, m.name?.trim() || ""])),
+    [household],
+  );
+  const sitsForStateCopy = useMemo(
+    () => (sits as any[]).map((s) => ({
+      sitterName: s.sitter_name as string | null,
+      caregiverName: s.caregiver_user_id ? (householdNameById.get(s.caregiver_user_id) || null) : null,
+      startDate: s.start_date as string,
+      daysUntil: -daysSince(s.start_date),
+    })),
+    [sits, householdNameById],
+  );
   const stateCopy = birdsLoading ? undefined
     : birds.length === 0 ? "Add your first bird to start their record."
-    : birds.length === 1 ? `${birds[0].name}'s record.`
-    : `${birds.length} birds with you.`;
+    : buildHomeStateCopy(homeBirds, weightsByBird, sitsForStateCopy, moments);
   const heroCta: HeroCta | undefined =
     !birdsLoading && birds.length === 0
       ? { label: "Add a bird", tone: "lime", icon: <Plus className="size-4" />, onPress: () => navigate({ to: "/birds/new" }) }
@@ -231,8 +246,9 @@ function Dashboard() {
 // ---------------------------------------------------------------------------
 function HomeHeader({ firstName, unreadNotifs, stateCopy, cta }: { firstName: string; unreadNotifs: number; stateCopy?: string; cta?: HeroCta }) {
   const h = new Date().getHours();
-  const part = h < 12 ? "Morning" : h < 18 ? "Afternoon" : "Evening";
-  const greeting = firstName ? `${part}, ${firstName}.` : `${part}.`;
+  // Greetings are spoken-to-the-user copy: no terminal period.
+  const part = h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
+  const greeting = firstName ? `${part}, ${firstName}` : part;
   const dateLabel = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
   return (
     <InkHero

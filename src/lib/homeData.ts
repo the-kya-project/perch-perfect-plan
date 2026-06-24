@@ -18,6 +18,7 @@ export type HomeBird = {
   photo_url: string | null;
   photo_position: string | null;
   is_foster: boolean | null;
+  created_at?: string | null;
   intake_date: string | null;
   birth_date: string | null;
   acquired_on: string | null;
@@ -148,4 +149,75 @@ export function buildTodayItems(
   }
 
   return items.sort((a, b) => a.rank - b.rank).slice(0, 4);
+}
+
+// ---- Home greeting body line (state-aware) --------------------------------
+// Returns the body line that sits under the "Good morning, X" greeting on Home.
+// Priority order — first match wins:
+//   1) Stale weigh-in:  "[Bird] is due for a weigh-in."
+//   2) Sit imminent:    "[Caregiver] arrives [day]." (≤ SIT_SOON_DAYS)
+//   3) Celebration:     hatch / foster-fail anniversary within MOMENT_SOON_DAYS
+//   4) New bird:        bird.created_at within last 7 days — "[Bird] is settling in."
+//   5) Weekend, calm:   "Hope it's a slow one."
+//   6) Default:         "A quiet day across the flock."
+
+export function buildHomeStateCopy(
+  birds: HomeBird[],
+  weightsByBird: Map<string, WeightEntry[]>,
+  sits: { sitterName: string | null; caregiverName: string | null; startDate: string; daysUntil: number }[],
+  moments: UpcomingMoment[],
+  now = new Date(),
+): string | undefined {
+  if (!birds.length) return undefined;
+
+  // 1) Stale weigh-in — first bird overdue.
+  for (const b of birds) {
+    const entries = weightsByBird.get(b.id) ?? [];
+    if (!entries.length) continue;
+    if (daysSince(entries[0].measured_at, now) > staleThreshold(b.is_foster)) {
+      return `${b.name} is due for a weigh-in.`;
+    }
+  }
+
+  // 2) Sit imminent — within SIT_SOON_DAYS.
+  const sitSoon = sits.find((s) => s.daysUntil >= 0 && s.daysUntil <= SIT_SOON_DAYS);
+  if (sitSoon) {
+    const who = sitSoon.caregiverName?.trim() || sitSoon.sitterName?.trim() || "Your caregiver";
+    const when = sitSoon.daysUntil === 0 ? "today" : sitSoon.daysUntil === 1 ? "tomorrow" : dayName(sitSoon.startDate, now);
+    return `${who} arrives ${when}.`;
+  }
+
+  // 3) Celebration — soonest hatch / foster-fail anniversary within window.
+  const m = moments.find((x) => x.days >= 0 && x.days <= MOMENT_SOON_DAYS);
+  if (m) {
+    const when = m.days === 0 ? "today" : m.days === 1 ? "tomorrow" : `on ${dayName(m.date.toISOString(), now)}`;
+    if (m.label === "Hatch day" && m.years > 0) return `${m.birdName} turns ${m.years} ${when}.`;
+    if (m.label === "Joined the flock" && m.years === 1) return `One year since ${m.birdName} joined the flock.`;
+    if (m.label === "Joined the flock" && m.years > 1) return `${m.years} years since ${m.birdName} joined the flock.`;
+    if (m.label === "Gotcha day" && m.years > 0) return `${m.years} ${m.years === 1 ? "year" : "years"} with ${m.birdName} ${when}.`;
+    // Fallback for any anchor without a tailored line.
+    return `${m.birdName}'s ${m.label.toLowerCase()} is ${when}.`;
+  }
+
+  // 4) New bird this week — most recently added within 7 days.
+  const newOne = birds
+    .filter((b) => b.created_at && daysSince(b.created_at, now) <= 7)
+    .sort((a, b) => +new Date(b.created_at!) - +new Date(a.created_at!))[0];
+  if (newOne) return `${newOne.name} is settling in.`;
+
+  // 5) Weekend with nothing pressing.
+  const wd = now.getDay();
+  if (wd === 0 || wd === 6) return "Hope it's a slow one.";
+
+  // 6) Default.
+  return "A quiet day across the flock.";
+}
+
+function dayName(iso: string, now = new Date()): string {
+  const d = new Date(iso.slice(0, 10) + "T12:00:00");
+  const days = Math.round((+midnight(d) - +midnight(now)) / DAY_MS);
+  if (days === 0) return "today";
+  if (days === 1) return "tomorrow";
+  if (days > 1 && days < 7) return d.toLocaleDateString(undefined, { weekday: "long" });
+  return d.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
 }

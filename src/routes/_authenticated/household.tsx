@@ -56,7 +56,7 @@ function HouseholdScreen() {
           backIcon={<ArrowLeft className="size-5" />}
           onBack={goBack}
           eyebrow="Household"
-          headline="Your household."
+          headline="Your household"
           body="People you've given access to your birds. By default they can help with all your birds — you can scope it to specific ones if you'd like."
         />
 

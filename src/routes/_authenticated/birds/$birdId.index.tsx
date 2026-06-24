@@ -84,7 +84,7 @@ function BirdRecordHero({ birdId }: { birdId: string }) {
       />
       <InkHero
         eyebrow={bird?.is_foster ? "In your care" : undefined}
-        headline={name}
+        headline={`${name}.`}
         body={[meta, since].filter(Boolean).join(" · ")}
         cta={{ label: "View identity", tone: "arrow", onPress: () => navigate({ to: "/birds/$birdId/identity", params: { birdId } }) }}
       />

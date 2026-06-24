@@ -1,5 +1,5 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
-import { ShieldCheck, ClipboardList } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Disclaimer } from "@/components/Disclaimer";
 import { BrandLogo } from "@/components/BrandLogo";
@@ -39,7 +39,8 @@ function Welcome() {
           </p>
         </div>
 
-        <div className="mt-10 space-y-3">
+        {/* One primary action — the dark-green card routes to sign-up. */}
+        <div className="mt-10">
           <Link
             to="/auth"
             search={{ mode: "signup" as const }}
@@ -47,28 +48,33 @@ function Welcome() {
           >
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-[11px] font-medium uppercase tracking-widest opacity-80">I'm an owner</p>
-                <p className="mt-1 text-lg font-medium">Manage my bird's care plan</p>
+                <p className="text-[11px] font-medium uppercase tracking-widest text-[#cdeab0]">Start here</p>
+                <p className="mt-1 text-lg font-medium">Set up your bird's record</p>
               </div>
-              <ClipboardList className="size-6 shrink-0 opacity-80" />
+              <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[#cdeab0] text-[#1a3d2e]">
+                <ArrowRight className="size-5" strokeWidth={2.2} />
+              </span>
             </div>
           </Link>
-          <div className="rounded-[20px] bg-[#efe9da] p-5">
-            <p className="text-[11px] font-medium uppercase tracking-widest text-[#5f5e5a]">I'm a sitter</p>
-            <p className="mt-1 text-lg font-medium">Open the link from the owner</p>
-            <p className="mt-2 text-sm text-[#5f5e5a]">
-              No signup needed — your sitter link unlocks today's routine, the health scan, the care guide, and emergency contacts.
-            </p>
-          </div>
+        </div>
+
+        {/* Two quiet exits below the primary, with a small breathing space.
+            Exit 1 is a link to sign-in for returning users. Exit 2 is an
+            INFORMATIONAL line for anyone who arrived via marketing while
+            holding an invite — it answers the "where does my link go" question
+            without pretending to be interactive (no button, no underline). */}
+        <div className="mt-6 text-center">
+          <p className="text-[13px] text-[#5f5e5a]">
+            Already have an account?{" "}
+            <Link to="/auth" search={{ mode: "signin" as const }} className="font-medium text-[#2d6a4f]">Sign in</Link>
+          </p>
+          <p className="mt-4 text-[13px] leading-relaxed text-[#8a897f]">
+            Were you invited by someone? Open the link they sent you.
+          </p>
         </div>
 
         <div className="mt-auto pt-10">
           <Disclaimer compact />
-          <p className="mt-3 text-center text-[11px] text-[#5f5e5a]">
-            <Link to="/auth" search={{ mode: "signin" as const }} className="font-medium underline">
-              Already have an account? Sign in
-            </Link>
-          </p>
         </div>
       </main>
     </div>
