@@ -4,6 +4,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { useBirdRole } from "@/lib/useBirdRole";
+import { useActiveSitIdForBird } from "@/components/CaregiverHome";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
 import { computeTriage, type ScanFieldKey, type ScanAnswer } from "@/lib/triage";
@@ -25,6 +26,10 @@ function OwnerScan() {
   const qc = useQueryClient();
   const role = useBirdRole(birdId);
   const scanSource = role === "household" ? "household" : "owner";
+  // When the household member is the assigned caregiver covering this bird,
+  // tag the daily_log, the inline photo_log, and the inline weight_entry with
+  // the sit_id so the sit's activity view can pull them by attribution.
+  const activeSitId = useActiveSitIdForBird(birdId);
   const [result, setResult] = useState<{ status: string; message: string; reasons: string[] } | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -47,7 +52,7 @@ function OwnerScan() {
         .from("daily_logs")
         .insert({
           bird_id: birdId,
-          sit_id: null,
+          sit_id: activeSitId,
           source: scanSource,
           run_by: u.user?.id ?? null,
           log_date: new Date().toISOString().slice(0, 10),
@@ -71,10 +76,10 @@ function OwnerScan() {
       // vomiting_status / photo / weight — best-effort, never block the scan.
       if (a.vomiting) await supabase.from("daily_logs").update({ vomiting_status: a.vomiting } as any).eq("id", row.id);
       if (p.photoDataUrl) {
-        await supabase.from("photo_logs").insert({ bird_id: birdId, daily_log_id: row.id, photo_type: "other", photo_url: p.photoDataUrl, notes: "Attached to health scan" });
+        await supabase.from("photo_logs").insert({ bird_id: birdId, daily_log_id: row.id, photo_type: "other", photo_url: p.photoDataUrl, notes: "Attached to health scan", ...(activeSitId ? { sit_id: activeSitId } : {}) });
       }
       if (typeof p.weightGrams === "number") {
-        await supabase.from("weight_entries").insert({ bird_id: birdId, grams: p.weightGrams, source: scanSource, logged_by: u.user?.id ?? null });
+        await supabase.from("weight_entries").insert({ bird_id: birdId, grams: p.weightGrams, source: scanSource, logged_by: u.user?.id ?? null, ...(activeSitId ? { sit_id: activeSitId } : {}) });
       }
 
       track("health_scan_run", { severity: triage.status, had_photo: !!p.photoDataUrl, source: scanSource });

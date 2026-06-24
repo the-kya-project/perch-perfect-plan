@@ -6,6 +6,7 @@ import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { toast } from "sonner";
 import { ArrowLeft, Plus, BookOpen, ImagePlus, Check, X, Loader2 } from "lucide-react";
 import { InkHero, PhotoHero, StatusPill, Card, PrimaryButton } from "@/components/system";
+import { useActiveSitIdForBird } from "@/components/CaregiverHome";
 import { uploadJournalPhoto, signJournalPhotos } from "@/lib/journalPhoto";
 import { compressImageToDataUrl } from "@/lib/imageUpload";
 
@@ -173,6 +174,8 @@ function fmtDate(iso: string): string {
 }
 
 function EntryForm({ birdId, entry, onClose, onSaved }: { birdId: string; entry: Entry | null; onClose: () => void; onSaved: () => void }) {
+  // Attribution for entries created during an active caregiver assignment.
+  const activeSitId = useActiveSitIdForBird(birdId);
   const [kind, setKind] = useState<Kind>(entry?.kind ?? "note");
   const [title, setTitle] = useState(entry?.title ?? "");
   const [body, setBody] = useState(entry?.body ?? "");
@@ -217,6 +220,7 @@ function EntryForm({ birdId, entry, onClose, onSaved }: { birdId: string; entry:
         const { error } = await supabase.from("journal_entries").insert({
           bird_id: birdId, kind, title: title.trim(), body: body.trim() || null,
           occurred_on: date, photo_path, logged_by: u.user?.id ?? null,
+          ...(activeSitId ? { sit_id: activeSitId } : {}),
         });
         if (error) throw error;
       }

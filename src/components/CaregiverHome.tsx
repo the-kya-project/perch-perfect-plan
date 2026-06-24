@@ -30,6 +30,20 @@ export function useActiveCaregiver() {
   });
 }
 
+// Returns the sit id the current user is actively covering for the given bird
+// today, or null otherwise. Used by the weight / journal / scan write paths to
+// tag rows with sit_id so the sit's activity view can derive its feed from
+// attribution (rather than guessing by date overlap, which would over-include
+// non-caregiver entries from the same household member during the window).
+export function useActiveSitIdForBird(birdId: string | null | undefined): string | null {
+  const { data } = useActiveCaregiver();
+  if (!birdId || !data?.sits?.length) return null;
+  for (const s of data.sits) {
+    if (s.birds.some((b) => b.id === birdId)) return s.id;
+  }
+  return null;
+}
+
 export function CaregiverHome({ data }: { data: { sits: ActiveCaregiverSit[]; upcoming: any } }) {
   const sits = data.sits;
   if (sits.length === 0) return null;

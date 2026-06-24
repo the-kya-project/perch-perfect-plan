@@ -156,6 +156,7 @@ export function SitCard({ sit, birds = [], allBirds, onChange }: { sit: any; bir
         {allBirds && !sit.revoked && (
           <button onClick={() => setEditing(true)} className="text-[#1a3d2e] underline">Edit</button>
         )}
+        <Link to="/sits/$sitId" params={{ sitId: sit.id }} className="text-[#1a3d2e] underline">Activity</Link>
         {!isHousehold && !sit.revoked && !expired && (
           <button onClick={revoke} className="text-[#5f5e5a] underline">Revoke link</button>
         )}
