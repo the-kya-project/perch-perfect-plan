@@ -1,11 +1,12 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, Calendar } from "lucide-react";
-import { OwnerHeader } from "@/components/OwnerHeader";
+import { OwnerHeaderIcons } from "@/components/OwnerHeader";
 import { SitForm } from "@/components/SitForm";
 import { SitCard } from "@/components/SitCard";
+import { InkHero, SectionHead, Card, type HeroCta } from "@/components/system";
 
 // Dedicated Sits tab: create / manage / edit sits. Reuses the same query keys
 // as the dashboard (["birds"], ["all-sits"]) so the cache is shared and edits
@@ -23,6 +24,7 @@ export const Route = createFileRoute("/_authenticated/sits")({
 
 function SitsPage() {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const { newSit, preselectBirdId } = Route.useSearch();
 
   const { data: birds = [] } = useQuery({
@@ -58,56 +60,134 @@ function SitsPage() {
   const today = new Date().toISOString().slice(0, 10);
   const activeSit = (sits as any[]).find((s) => s.start_date <= today && s.end_date >= today) ?? null;
 
+  // ----- group the existing sits for Next up / Later / Past (data unchanged) --
+  // "Next up" = the imminent/active sit (active if one is underway, else the
+  // soonest upcoming). "Later" = remaining upcoming sits. "Past" = everything
+  // that has already ended. Ordering still comes from the start_date-desc query.
+  const allSits = sits as any[];
+  const upcoming = allSits
+    .filter((s) => s.end_date >= today)
+    .sort((a, b) => a.start_date.localeCompare(b.start_date));
+  const past = allSits.filter((s) => s.end_date < today);
+  const nextUp = upcoming[0] ?? null;
+  const later = upcoming.slice(1);
+
+  const birdsFor = (s: any) =>
+    ((s.sit_birds ?? []) as any[]).map((sb: any) => birdLookup[sb.bird_id]).filter(Boolean);
+
+  const heroCta: HeroCta = {
+    label: "Set up a sit",
+    tone: "lime",
+    icon: <Plus className="size-4" />,
+    // Opens SitForm via the existing initialOpen/?newSit flow.
+    onPress: () => navigate({ to: "/sits", search: { newSit: true } }),
+  };
+
   return (
-    <div className="min-h-screen bg-[#f4f1e8] pb-24">
-      <OwnerHeader title="Sits" />
+    <div className="min-h-screen bg-[var(--cream)] pb-24">
+      <div className="mx-auto max-w-md">
+        <InkHero
+          eyebrow="Sits"
+          headline="Going away?"
+          body="Share a private, read-only care plan with whoever's watching your birds."
+          cta={birds.length > 0 ? heroCta : undefined}
+          trailingIcons={<OwnerHeaderIcons />}
+        />
 
-      <main className="mx-auto max-w-md space-y-6 px-5 pt-5">
-        {birds.length === 0 ? (
-          <div className="rounded-[20px] border border-dashed border-[#d8cfb8] bg-[#efe9da] p-8 text-center">
-            <Calendar className="mx-auto size-8 text-[#2d6a4f]" />
-            <p className="mt-3 font-medium text-[#1a3d2e]">Add a bird first</p>
-            <p className="mt-1 text-sm text-[#5f5e5a]">A sit shares one or more birds' care plans with a sitter. Add a bird to create your first sit.</p>
-            <Link to="/birds/new" className="mt-4 inline-flex items-center gap-2 rounded-xl bg-[#1a3d2e] px-4 py-2.5 text-sm font-medium text-white">
-              <Plus className="size-4" /> Add bird
-            </Link>
-          </div>
-        ) : (
-          <>
-            <SitForm
-              birds={birds}
-              onSaved={refreshSits}
-              initialOpen={!!newSit}
-              preselectBirdId={preselectBirdId}
-              activeSit={activeSit}
-            />
+        <main className="space-y-4 px-5 pt-5">
+          {birds.length === 0 ? (
+            <Card>
+              <div className="p-8 text-center">
+                <div className="flex justify-center">
+                  <span className="grid size-12 place-items-center rounded-[14px] bg-[var(--pale2)] text-[var(--moss)]">
+                    <Calendar className="size-6" />
+                  </span>
+                </div>
+                <p className="t-section mt-3">Add a bird first</p>
+                <p className="t-body mx-auto mt-1.5 max-w-[34ch] text-[var(--ink2)]">
+                  A sit shares one or more birds' care plans with a sitter. Add a bird to create your first sit.
+                </p>
+                <Link
+                  to="/birds/new"
+                  className="mt-4 inline-flex min-h-[44px] items-center gap-2 rounded-[12px] bg-[var(--ink)] px-[18px] py-[11px] text-[15px] font-[500] text-white active:scale-[0.99]"
+                >
+                  <Plus className="size-4" /> Add bird
+                </Link>
+              </div>
+            </Card>
+          ) : (
+            <>
+              {/* Open/save flow preserved exactly — SitForm owns its own open
+                  state (initialOpen/?newSit) and renders the create form inline. */}
+              <SitForm
+                birds={birds}
+                onSaved={refreshSits}
+                initialOpen={!!newSit}
+                preselectBirdId={preselectBirdId}
+                activeSit={activeSit}
+                returnTo="/sits"
+                hidePrompt
+              />
 
-            {sitsLoading ? (
-              <div className="space-y-3">
-                {[0, 1].map((i) => (
-                  <div key={i} className="h-28 animate-pulse rounded-[20px] bg-[#efe9da]" />
-                ))}
-              </div>
-            ) : sits.length > 0 ? (
-              <section className="space-y-3">
-                <h2 className="text-[21px] font-medium text-[#1a3d2e]">Your sits</h2>
-                {(sits as any[]).map((s) => {
-                  const sitBirds = (s.sit_birds ?? [])
-                    .map((sb: any) => birdLookup[sb.bird_id])
-                    .filter(Boolean);
-                  return <SitCard key={s.id} sit={s} birds={sitBirds} allBirds={birds} onChange={refreshSits} />;
-                })}
-              </section>
-            ) : (
-              <div className="rounded-[20px] border border-dashed border-[#d8cfb8] bg-[#efe9da] p-8 text-center">
-                <Calendar className="mx-auto size-8 text-[#2d6a4f]" />
-                <p className="mt-3 font-medium text-[#1a3d2e]">No sits yet</p>
-                <p className="mt-1 text-sm text-[#5f5e5a]">Create a sit above to send a sitter a private, read-only link to your bird's care plan.</p>
-              </div>
-            )}
-          </>
-        )}
-      </main>
+              {sitsLoading ? (
+                <div className="space-y-3">
+                  {[0, 1].map((i) => (
+                    <div key={i} className="h-28 animate-pulse rounded-[18px] bg-[var(--cream2)]" />
+                  ))}
+                </div>
+              ) : allSits.length > 0 ? (
+                <>
+                  {nextUp && (
+                    <section className="space-y-3">
+                      <SectionHead title="Next up" />
+                      <SitCard
+                        sit={nextUp}
+                        birds={birdsFor(nextUp)}
+                        allBirds={birds}
+                        onChange={refreshSits}
+                      />
+                    </section>
+                  )}
+
+                  {later.length > 0 && (
+                    <section className="space-y-3">
+                      <SectionHead title="Later" />
+                      {later.map((s) => (
+                        <SitCard key={s.id} sit={s} birds={birdsFor(s)} allBirds={birds} onChange={refreshSits} />
+                      ))}
+                    </section>
+                  )}
+
+                  {past.length > 0 && (
+                    <section className="space-y-3">
+                      <SectionHead title="Past" />
+                      {past.map((s) => (
+                        <SitCard key={s.id} sit={s} birds={birdsFor(s)} allBirds={birds} onChange={refreshSits} />
+                      ))}
+                    </section>
+                  )}
+                </>
+              ) : (
+                <Card>
+                  <div className="p-8 text-center">
+                    <div className="flex justify-center">
+                      <span className="grid size-12 place-items-center rounded-[14px] bg-[var(--pale2)] text-[var(--moss)]">
+                        <Calendar className="size-6" />
+                      </span>
+                    </div>
+                    <p className="t-section mt-3">No sits yet</p>
+                    <p className="t-body mx-auto mt-1.5 max-w-[34ch] text-[var(--ink2)]">
+                      Set up a sit to send a sitter a private, read-only link to your bird's care plan.
+                    </p>
+                  </div>
+                </Card>
+              )}
+
+              <p className="t-meta pt-1 text-center">For permanent help, see Household in settings.</p>
+            </>
+          )}
+        </main>
+      </div>
     </div>
   );
 }

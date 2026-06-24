@@ -167,14 +167,18 @@ export function PrimaryButton({
   children, tone = "ink", icon, onPress, disabled, type = "button", full = true,
 }: {
   children: ReactNode;
-  tone?: "lime" | "ink";
+  tone?: "lime" | "ink" | "outline";
   icon?: ReactNode;
   onPress?: () => void;
   disabled?: boolean;
   type?: "button" | "submit";
   full?: boolean;
 }) {
-  const cls = tone === "lime" ? "bg-[var(--lime)] text-[var(--ink)]" : "bg-[var(--ink)] text-white";
+  const cls = tone === "lime"
+    ? "bg-[var(--lime)] text-[var(--ink)]"
+    : tone === "outline"
+      ? "bg-white text-[var(--ink)] ring-1 ring-[var(--line)]"
+      : "bg-[var(--ink)] text-white";
   return (
     <button
       type={type}
