@@ -100,7 +100,7 @@ function JournalFacet() {
           {all.length === 0 ? (
             <section className="rounded-[18px] bg-[var(--cream2)] p-8 text-center ring-1 ring-[var(--line2)]">
               <BookOpen className="mx-auto size-7 text-[var(--moss)]" />
-              <p className="t-body mt-3 text-[var(--ink)]">Nothing here yet. The journal is for the things worth remembering — a molt, a med, a vet visit, a milestone.</p>
+              <p className="t-body mt-3 text-[var(--ink)]">Nothing here yet. The journal is where you track health and behavior over time — molts, meds, vet visits, a new word, an off day. Add an entry whenever something's worth noting for the record.</p>
               <div className="mt-4">
                 <PrimaryButton tone="lime" icon={<Plus className="size-4" />} onPress={() => setEditing("new")} full={false}>
                   Add first entry
