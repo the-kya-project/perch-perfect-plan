@@ -12,7 +12,7 @@ import { Camera, Image as ImageIcon, Crop, Trash2, X } from "lucide-react";
 // correctly at any aspect via object-fit: cover (no destructive crop, no new
 // columns). Existing photos already carry a position; null falls back to center.
 export function BirdPhotoSheet({
-  birdId, ownerId, currentPhoto, currentPosition, displayUrl, onClose,
+  birdId, ownerId, currentPhoto, currentPosition, displayUrl, onClose, startAdjusting = false,
 }: {
   birdId: string;
   ownerId: string;
@@ -20,14 +20,18 @@ export function BirdPhotoSheet({
   currentPosition: string | null;     // stored photo_position
   displayUrl: string | null;          // signed URL for previewing the current photo
   onClose: () => void;
+  // Open straight into the reposition step on the existing photo (the "Adjust
+  // crop" nudge uses this so it's one tap to the crop UI).
+  startAdjusting?: boolean;
 }) {
   const qc = useQueryClient();
-  const [mode, setMode] = useState<"menu" | "reposition">("menu");
+  const adjustNow = startAdjusting && !!currentPhoto && !!displayUrl;
+  const [mode, setMode] = useState<"menu" | "reposition">(adjustNow ? "reposition" : "menu");
   // The image being repositioned: a freshly-picked data URL, or the current
   // signed URL when adjusting the existing crop. `pending` is the value to
   // persist on save (data URL → uploaded; existing path → kept).
-  const [editUrl, setEditUrl] = useState<string | null>(null);
-  const [pendingPhoto, setPendingPhoto] = useState<string | null>(null);
+  const [editUrl, setEditUrl] = useState<string | null>(adjustNow ? displayUrl : null);
+  const [pendingPhoto, setPendingPhoto] = useState<string | null>(adjustNow ? currentPhoto : null);
   const [pos, setPos] = useState<string>(currentPosition ?? "50% 50%");
   const [busy, setBusy] = useState(false);
 
@@ -175,7 +179,7 @@ function RepositionBox({ src, position, onChange }: { src: string; position: str
       onPointerMove={onMove}
       onPointerUp={onUp}
       onPointerCancel={onUp}
-      className="aspect-[3/2] w-full touch-none select-none overflow-hidden rounded-[14px] ring-1 ring-[var(--line)]"
+      className="relative aspect-[3/2] w-full touch-none select-none overflow-hidden rounded-[14px] ring-1 ring-[var(--line)]"
       style={{
         backgroundImage: `url(${src})`,
         backgroundSize: "cover",
@@ -186,7 +190,18 @@ function RepositionBox({ src, position, onChange }: { src: string; position: str
       }}
       role="img"
       aria-label="Drag to reposition photo"
-    />
+    >
+      {/* Two crop guides so one focal point can be judged for both contexts at
+          once: the full frame is the bird-record hero (3:2); the centred portrait
+          band is the flock/foster card tile (~9:10). Drag so the face sits inside
+          both. */}
+      <div className="pointer-events-none absolute inset-0">
+        <span className="absolute left-2 top-2 rounded-full bg-black/45 px-2 py-0.5 text-[10px] font-[500] text-white">Hero</span>
+        <div className="absolute inset-y-0 left-1/2 aspect-[9/10] -translate-x-1/2 border-x-2 border-dashed border-white/85">
+          <span className="absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-black/45 px-2 py-0.5 text-[10px] font-[500] text-white">Card</span>
+        </div>
+      </div>
+    </div>
   );
 }
 

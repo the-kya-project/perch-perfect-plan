@@ -306,7 +306,7 @@ function gradientFor(seed: string) {
 function PhotoTile({ photo, name, species, position }: { photo: SignedPhoto | null; name: string; species: string | null; position?: string | null }) {
   const initial = (name?.slice(0, 1) ?? "?").toUpperCase();
   return (
-    <div className="size-[62px] shrink-0 overflow-hidden rounded-[14px]" style={{ background: gradientFor(species || name) }}>
+    <div className="h-[80px] w-[72px] shrink-0 overflow-hidden rounded-[14px]" style={{ background: gradientFor(species || name) }}>
       {photo ? (
         <img
           src={photo.url} alt={name} loading="lazy" decoding="async"
@@ -474,7 +474,7 @@ function HomeSkeleton() {
     <div className="space-y-3">
       {[0, 1].map((i) => (
         <div key={i} className="flex items-center gap-3 rounded-[18px] bg-white p-3 ring-1 ring-[var(--line2)]">
-          <div className="size-[62px] shrink-0 animate-pulse rounded-[14px] bg-[var(--cream2)]" />
+          <div className="h-[80px] w-[72px] shrink-0 animate-pulse rounded-[14px] bg-[var(--cream2)]" />
           <div className="flex-1 space-y-2">
             <div className="h-4 w-1/3 animate-pulse rounded bg-[var(--cream2)]" />
             <div className="h-3 w-1/4 animate-pulse rounded bg-[var(--cream2)]" />
