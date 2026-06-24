@@ -2,9 +2,10 @@ import { Link, useLocation } from "@tanstack/react-router";
 import { Home, Calendar, Activity, Compass } from "lucide-react";
 
 // Owner bottom navigation. Four primary destinations; settings (gear) and
-// notifications (bell) stay as header icons, not tabs. Render this on each of
-// the four tab screens and give the page a bottom pad (pb-24) so the fixed bar
-// never covers content.
+// notifications (bell) stay as header icons, not tabs. Every owner scroll
+// container under _authenticated uses the `.pb-nav` utility (= --nav-spacer +
+// buffer) so the fixed bar never clips content. Fixed footers on top of the
+// nav (Hand off, Export) sit at `bottom-[var(--nav-spacer)]`.
 export type OwnerTab = "home" | "sits" | "activity" | "explore";
 
 const TABS: { key: OwnerTab; label: string; to: string; Icon: typeof Home }[] = [

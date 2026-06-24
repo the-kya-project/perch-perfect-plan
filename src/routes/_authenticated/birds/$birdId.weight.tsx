@@ -102,7 +102,7 @@ function WeightFacet() {
   const heroBody = current ? trendContext(trend, delta, win) : `No weights yet — pop ${name} on a scale and log the first one.`;
 
   return (
-    <div className="min-h-screen bg-[var(--cream)] pb-24">
+    <div className="min-h-screen bg-[var(--cream)] pb-nav">
       <div className="mx-auto max-w-md">
         <InkHero
           backIcon={<ArrowLeft className="size-5" />}

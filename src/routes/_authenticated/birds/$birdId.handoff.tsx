@@ -50,7 +50,7 @@ function HandoffFlow() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f4f1e8] pb-28">
+    <div className="min-h-screen bg-[#f4f1e8] pb-[calc(var(--nav-spacer)+6rem)]">
       <header className="sticky top-0 z-10 border-b border-[#e3ded0] bg-[#f4f1e8]/95 backdrop-blur">
         <div className="mx-auto flex max-w-md items-center gap-3 px-5 py-3">
           <Link to="/birds/$birdId" params={{ birdId }} aria-label="Back" className="-ml-1 rounded p-1 text-[#1a3d2e]"><ArrowLeft className="size-5" /></Link>
@@ -95,7 +95,7 @@ function HandoffFlow() {
         </div>
       </main>
 
-      <footer className="fixed inset-x-0 bottom-0 border-t border-[#e3ded0] bg-[#f4f1e8] px-5 py-3 pb-[max(env(safe-area-inset-bottom),0.75rem)]">
+      <footer className="fixed inset-x-0 bottom-[var(--nav-spacer)] border-t border-[#e3ded0] bg-[#f4f1e8] px-5 py-3">
         <div className="mx-auto max-w-md space-y-2">
           <button type="button" disabled={!emailOk || m.isPending} onClick={() => m.mutate()} className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-[14px] bg-[#1a3d2e] text-sm font-medium text-white disabled:opacity-50">
             <ArrowRightLeft className="size-4" /> {m.isPending ? "Sending…" : "Send handoff"}

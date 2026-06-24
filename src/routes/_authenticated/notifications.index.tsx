@@ -51,7 +51,7 @@ function NotificationsInbox() {
   // straight to that bird's scan; with several it toggles an in-body bird picker
   // (InkHero's single onPress can't host the picker), and with none it's omitted.
   return (
-    <div className="min-h-screen bg-[var(--cream)] pb-24">
+    <div className="min-h-screen bg-[var(--cream)] pb-nav">
       <div className="mx-auto max-w-md">
         <InkHero
           eyebrow="Scans"

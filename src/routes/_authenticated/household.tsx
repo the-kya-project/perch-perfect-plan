@@ -50,7 +50,7 @@ function HouseholdScreen() {
   const isEmpty = !isLoading && members.length === 0 && pending.length === 0;
 
   return (
-    <div className="min-h-screen bg-[var(--cream)] pb-24">
+    <div className="min-h-screen bg-[var(--cream)] pb-nav">
       <div className="mx-auto max-w-md">
         <InkHero
           backIcon={<ArrowLeft className="size-5" />}

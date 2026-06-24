@@ -48,7 +48,7 @@ export function useBirdRecord(birdId: string) {
 function BirdRecordHome() {
   const { birdId } = Route.useParams();
   return (
-    <div className="min-h-screen bg-[var(--cream)] pb-24">
+    <div className="min-h-screen bg-[var(--cream)] pb-nav">
       <div className="mx-auto max-w-md">
         <BirdRecordHero birdId={birdId} />
         <main className="space-y-4 px-5 pt-5">

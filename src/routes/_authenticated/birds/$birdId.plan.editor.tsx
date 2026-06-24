@@ -189,7 +189,7 @@ function BirdEditor() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f4f1e8] pb-24">
+    <div className="min-h-screen bg-[#f4f1e8] pb-nav">
       <header className="sticky top-0 z-10 border-b border-[#e3ded0] bg-[#f4f1e8]/95 backdrop-blur">
         <div className="mx-auto max-w-md px-5 py-3">
           <div className="flex items-center gap-3">

@@ -65,7 +65,7 @@ function AccountPage() {
   const emailPending = pendingEmail && pendingEmail.toLowerCase() !== email.toLowerCase();
 
   return (
-    <div className="min-h-screen bg-[var(--cream)] pb-24">
+    <div className="min-h-screen bg-[var(--cream)] pb-nav">
       <div className="mx-auto max-w-md">
         <InkHero
           backIcon={<ArrowLeft className="size-5" />}

@@ -71,7 +71,7 @@ function JournalFacet() {
   const shown = all.filter((e) => FILTERS.find((f) => f.value === filter)!.kinds.includes(e.kind));
 
   return (
-    <div className="min-h-screen bg-[var(--cream)] pb-24">
+    <div className="min-h-screen bg-[var(--cream)] pb-nav">
       <div className="mx-auto max-w-md">
         <InkHero
           backIcon={<ArrowLeft className="size-5" />}
