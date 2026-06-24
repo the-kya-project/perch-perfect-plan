@@ -224,9 +224,14 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
 
       {/* Create care plan (fresh birds, owner only) — the screen's lime primary */}
       {bird && !bird.setup_complete && isOwner && (
-        <PrimaryButton tone="lime" icon={<ClipboardList className="size-4" />} onPress={() => navigate({ to: "/birds/$birdId/setup", params: { birdId }, search: { step: 1 } })}>
-          Create care plan
-        </PrimaryButton>
+        <div className="space-y-3">
+          <p className="t-body text-[var(--ink2)]">
+            Build {name}'s care plan so anyone caring for {name} — sitters, household — knows what to do.
+          </p>
+          <PrimaryButton tone="lime" icon={<ClipboardList className="size-4" />} onPress={() => navigate({ to: "/birds/$birdId/setup", params: { birdId }, search: { step: 1 } })}>
+            Create care plan
+          </PrimaryButton>
+        </div>
       )}
 
       {/* Welcome to the flock — foster-fail, near the top (not destructive, so

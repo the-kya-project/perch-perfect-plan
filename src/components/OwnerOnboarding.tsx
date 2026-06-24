@@ -155,7 +155,7 @@ export function OwnerOnboarding() {
           <BrandLogo variant="dark" size="lg" />
           <h1 className="mt-8 text-[22px] font-medium leading-tight">Welcome to Parrot Care Co-Pilot</h1>
           <p className="mt-3 max-w-xs text-sm leading-relaxed text-white/85">
-            Build a care plan once, share it with your sitter when you're away, and stay connected to your birds while you're gone.
+            Build a care plan once, share it with the people who help — sitters and household — and stay connected to your birds.
           </p>
           <button
             onClick={() => { setStep(0); setPhase("coach"); }}
