@@ -143,6 +143,14 @@ select {
 }
 .area { min-height: 70px; }
 
+/* Fraunces serif display face — applied to Home headings (greeting, section
+   titles, bird names, screen titles, foster footer). Falls back to the system
+   serif if Fraunces hasn't loaded yet (display=swap), so text is never blank. */
+.font-display {
+  font-family: "Fraunces", ui-serif, Georgia, "Times New Roman", serif;
+  font-optical-sizing: auto;
+}
+
 /* Native <input type="date"> on iOS keeps an intrinsic min-width and a quirky
    internal layout that overflowed the two-column Start/End row (END floated
    higher and overlapped Start). Normalizing the appearance lets width:100% +
