@@ -191,7 +191,7 @@ function BirdEditor() {
   return (
     <div className="min-h-screen bg-[#f4f1e8] pb-nav">
       <header className="sticky top-0 z-10 border-b border-[#e3ded0] bg-[#f4f1e8]/95 backdrop-blur">
-        <div className="mx-auto max-w-md px-5 py-3">
+        <div className="mx-auto max-w-md px-5 pt-safe pb-3">
           <div className="flex items-center gap-3">
             <Link to="/birds/$birdId/plan" params={{ birdId }} className="rounded p-1 text-sage-600" aria-label="Back to care plan overview"><ArrowLeft className="size-5" /></Link>
             {headerPhoto && <img src={headerPhoto.url} alt={bird.name} loading="lazy" decoding="async" onError={(e) => { if (headerPhoto.original && e.currentTarget.src !== headerPhoto.original) e.currentTarget.src = headerPhoto.original; }} className="size-9 shrink-0 rounded-full object-cover ring-1 ring-sage-200" style={{ objectPosition: bird.photo_position ?? "50% 20%" }} />}

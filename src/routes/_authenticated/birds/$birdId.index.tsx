@@ -439,8 +439,8 @@ function DeleteBirdButton({ birdId, name }: { birdId: string; name: string }) {
     }
   }
 
-  if (!confirming) {
-    return (
+  return (
+    <>
       <button
         type="button"
         onClick={() => setConfirming(true)}
@@ -448,22 +448,62 @@ function DeleteBirdButton({ birdId, name }: { birdId: string; name: string }) {
       >
         <Trash2 className="size-4" /> Delete {name}
       </button>
-    );
-  }
-  return (
-    <div className="rounded-[12px] p-3" style={{ background: "var(--red-fill)", border: "1px solid var(--red-line)" }}>
-      <p className="text-[13px] leading-relaxed" style={{ color: "var(--red-deep)" }}>
-        Permanently delete {name} and everything in their record — care plan, weights, scans, journal, and photos. This can't be undone.
-      </p>
-      <label className="mt-2 block text-[11px] font-[500]" style={{ color: "var(--red-deep)" }}>Type {name} to confirm</label>
-      <input className="input mt-1" value={text} onChange={(e) => setText(e.target.value)} placeholder={name} autoFocus />
-      <div className="mt-2 flex gap-2">
-        <button type="button" disabled={deleting} onClick={() => { setConfirming(false); setText(""); }} className="min-h-[44px] flex-1 rounded-[10px] border border-[var(--line)] bg-white text-[14px] font-[500] text-[var(--ink)] disabled:opacity-50">Cancel</button>
-        <button type="button" disabled={deleting || !ready} onClick={del} className="min-h-[44px] flex-1 rounded-[10px] text-[14px] font-[500] text-white disabled:opacity-50" style={{ background: "var(--red-ink)" }}>
-          {deleting ? "Deleting…" : `Delete ${name}`}
-        </button>
-      </div>
-    </div>
+      {confirming && (
+        // Modal renders ABOVE the bottom nav (z-50 vs nav's z-40), backdrop
+        // does NOT dismiss (destructive + irreversible — explicit choice only),
+        // and the sheet is bottom-anchored with max-h-[100dvh]: on iOS Safari
+        // the dynamic viewport shrinks when the keyboard appears so the action
+        // buttons (sticky-bottom inside the modal) ride up with it instead of
+        // disappearing behind the keyboard. The status-bar inset is also
+        // honoured so the top of the modal isn't hidden under the notch.
+        <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-labelledby="delete-bird-title">
+          <div className="absolute inset-0 bg-[var(--ink)]/55" aria-hidden="true" />
+          <div className="absolute inset-0 flex flex-col justify-end p-3">
+            <div
+              className="mx-auto flex w-full max-w-md flex-col overflow-hidden rounded-[18px] bg-white shadow-xl"
+              style={{ maxHeight: "calc(100dvh - max(env(safe-area-inset-top), 12px) - 1.5rem)" }}
+            >
+              <div className="overflow-y-auto p-5" style={{ background: "var(--red-fill)", borderBottom: "1px solid var(--red-line)" }}>
+                <h2 id="delete-bird-title" className="t-section" style={{ color: "var(--red-deep)" }}>Delete {name}?</h2>
+                <p className="t-body mt-2" style={{ color: "var(--red-deep)" }}>
+                  Permanently delete {name} and everything in their record — care plan, weights, scans, journal, and photos. This can't be undone.
+                </p>
+                <label htmlFor="delete-confirm" className="t-eyebrow mt-4 block" style={{ color: "var(--red-deep)" }}>Type {name} to confirm</label>
+                <input
+                  id="delete-confirm"
+                  className="input mt-1"
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  placeholder={name}
+                  autoFocus
+                  autoCapitalize="off"
+                  autoCorrect="off"
+                />
+              </div>
+              <div className="flex shrink-0 gap-2 bg-white p-3 pb-[max(env(safe-area-inset-bottom),0.75rem)]">
+                <button
+                  type="button"
+                  disabled={deleting}
+                  onClick={() => { setConfirming(false); setText(""); }}
+                  className="min-h-[48px] flex-1 rounded-[12px] border border-[var(--line)] bg-white text-[15px] font-[500] text-[var(--ink)] disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={deleting || !ready}
+                  onClick={del}
+                  className="min-h-[48px] flex-1 rounded-[12px] text-[15px] font-[500] text-white disabled:opacity-50"
+                  style={{ background: "var(--red-ink)" }}
+                >
+                  {deleting ? "Deleting…" : `Delete ${name}`}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
