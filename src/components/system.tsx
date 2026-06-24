@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { ArrowRight, ChevronRight, Feather, Camera } from "lucide-react";
+import { BrandLockup } from "@/components/BrandLogo";
 
 // ===========================================================================
 // Owner visual system ("Explore-grade"). Build once, reuse everywhere.
@@ -17,7 +18,7 @@ export type HeroCta = { label: string; icon?: ReactNode; onPress?: () => void; t
 
 // 1) InkHero — the dark-green anchor block at the top of (almost) every screen.
 export function InkHero({
-  eyebrow, headline, body, cta, backIcon, onBack, trailingIcons, children,
+  eyebrow, headline, body, cta, backIcon, onBack, trailingIcons, children, showBrand,
 }: {
   eyebrow?: ReactNode;
   headline: ReactNode;
@@ -27,6 +28,12 @@ export function InkHero({
   onBack?: () => void;
   trailingIcons?: ReactNode;
   children?: ReactNode;
+  // Show the Kya & Co. horizontal lockup at the top of the hero (default on).
+  // Set false on screens where it'd be redundant (e.g. landing already has its
+  // own cream lockup in the page chrome). Sized 260px (≈10% larger than the
+  // previous 240px standalone use); horizontal-ink variant blends with the
+  // ink hero background.
+  showBrand?: boolean;
 }) {
   const hasTopBar = !!(backIcon || trailingIcons);
   return (
@@ -37,6 +44,11 @@ export function InkHero({
             <button type="button" onClick={onBack} aria-label="Back" className="-ml-1.5 grid size-9 place-items-center rounded-full text-white/90 active:bg-white/10">{backIcon}</button>
           ) : <span className="size-9" />}
           {trailingIcons && <div className="flex items-center gap-2">{trailingIcons}</div>}
+        </div>
+      )}
+      {(showBrand ?? true) && (
+        <div className="mb-5 mt-1 flex justify-center">
+          <BrandLockup orientation="horizontal" variant="ink" size={260} />
         </div>
       )}
       {eyebrow && <p className="t-eyebrow text-[var(--lime)]">{eyebrow}</p>}

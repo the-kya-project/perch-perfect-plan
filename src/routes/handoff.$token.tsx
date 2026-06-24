@@ -7,7 +7,6 @@ import { getHandoff, acceptHandoff, declineHandoff } from "@/lib/handoff.functio
 import { toast } from "sonner";
 import { Loader2, Check } from "lucide-react";
 import { InkHero, Card, PrimaryButton, CtaLink } from "@/components/system";
-import { BrandLockup } from "@/components/BrandLogo";
 
 // Public handoff-accept screen. Renders for logged-out visitors; the token is
 // the access check. Invalid/expired/used → clean message, no data exposed.
@@ -94,9 +93,6 @@ function Shell({ hero, children }: { hero: React.ReactNode; children: React.Reac
   return (
     <div className="min-h-[100dvh] bg-[var(--cream)]">
       <div className="mx-auto max-w-md">
-        <div className="flex justify-center bg-[var(--ink)] pt-[max(env(safe-area-inset-top),24px)]">
-          <BrandLockup orientation="horizontal" variant="ink" size={220} />
-        </div>
         {hero}
         <main className="px-5 py-6">{children}</main>
       </div>
