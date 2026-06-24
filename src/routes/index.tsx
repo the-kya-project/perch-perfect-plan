@@ -27,8 +27,10 @@ export const Route = createFileRoute("/")({
 function Welcome() {
   return (
     <div className="min-h-screen bg-[#f4f1e8]">
-      <main className="mx-auto flex min-h-screen max-w-md flex-col px-5 py-10">
-        <BrandLockup orientation="horizontal" variant="cream" size={200} />
+      <main className="mx-auto flex min-h-screen max-w-md flex-col px-5 pb-10 pt-[calc(env(safe-area-inset-top)+44px)]">
+        <div className="flex justify-center">
+          <BrandLockup orientation="horizontal" variant="cream" size={260} />
+        </div>
 
         <div className="mt-12 space-y-3">
           <h1 className="text-balance text-4xl font-medium leading-[1.05] tracking-tight">

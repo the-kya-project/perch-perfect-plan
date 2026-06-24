@@ -10,7 +10,6 @@ import { captureLead } from "@/lib/captureLead";
 import { attributionMetadata, getFirstTouch } from "@/lib/attribution";
 import { PENDING_EMAIL_KEY } from "./confirm-email";
 import { InkHero, PrimaryButton, CtaLink, Card } from "@/components/system";
-import { BrandLockup } from "@/components/BrandLogo";
 
 const search = z.object({
   mode: z.enum(["signin", "signup"]).default("signin"),
@@ -196,11 +195,6 @@ function AuthPage() {
   return (
     <div className="min-h-screen bg-[var(--cream)]">
       <div className="mx-auto max-w-md">
-        {/* Stacked-ink lockup over the ink hero, centered. SVG carries the
-            serif wordmark + attribution. Body content sits below the hero. */}
-        <div className="flex justify-center bg-[var(--ink)] pt-[max(env(safe-area-inset-top),24px)]">
-          <BrandLockup orientation="horizontal" variant="ink" size={240} />
-        </div>
         <InkHero
           headline={mode === "signup" ? "A living record for a long-lived bird." : "Welcome back"}
           body={

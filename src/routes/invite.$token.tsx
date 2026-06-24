@@ -8,7 +8,6 @@ import { getHouseholdInvite, acceptHouseholdInvite, declineHouseholdInvite } fro
 import { toast } from "sonner";
 import { Loader2, Check } from "lucide-react";
 import { InkHero, Card, PrimaryButton, CtaLink } from "@/components/system";
-import { BrandLockup } from "@/components/BrandLogo";
 
 // Public household-invite accept screen. Renders for logged-out visitors too;
 // the token is the access check. Never reveals bird/owner data for an
@@ -106,9 +105,6 @@ function InviteAccept() {
 function Shell({ eyebrow, headline, body, children }: { eyebrow: string; headline: string; body?: string; children: React.ReactNode }) {
   return (
     <div className="min-h-[100dvh] bg-[var(--cream)]">
-      <div className="flex justify-center bg-[var(--ink)] pt-[max(env(safe-area-inset-top),24px)]">
-        <BrandLockup orientation="horizontal" variant="ink" size={220} />
-      </div>
       <InkHero eyebrow={eyebrow} headline={headline} body={body} />
       <main className="mx-auto max-w-md px-5 py-6">{children}</main>
     </div>

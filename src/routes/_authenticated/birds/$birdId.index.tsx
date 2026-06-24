@@ -82,7 +82,10 @@ function BirdRecordHero({ birdId }: { birdId: string }) {
         onBack={() => navigate({ to: "/dashboard" })}
         onEditPhoto={isOwner && bird ? () => setPhotoSheet(true) : undefined}
       />
+      {/* showBrand off — the PhotoHero above already serves as the brand
+          anchor; the lockup is shown on every OTHER InkHero in the app. */}
       <InkHero
+        showBrand={false}
         eyebrow={bird?.is_foster ? "In your care" : undefined}
         headline={`${name}.`}
         body={[meta, since].filter(Boolean).join(" · ")}
