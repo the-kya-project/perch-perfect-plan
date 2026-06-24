@@ -150,30 +150,6 @@ function NewBird() {
       exitConfirmCta="Discard"
       nextDisabled={!name.trim() || !species.trim()}
     >
-      {/* Foster intake toggle */}
-      <section className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
-        <label className="flex cursor-pointer items-start gap-3">
-          <input type="checkbox" checked={isFoster} onChange={(e) => setIsFoster(e.target.checked)} className="mt-0.5 size-5 shrink-0 accent-[#1a3d2e]" />
-          <span className="min-w-0">
-            <span className="block text-sm font-medium text-[#1a3d2e]">This is a foster</span>
-            <span className="mt-0.5 block text-xs leading-relaxed text-[#5f5e5a]">
-              You're caring for them while they find a permanent home. You'll be able to hand off their record to the adopter.
-            </span>
-          </span>
-        </label>
-        <div className="mt-3 border-t border-[#ece6d6] pt-3">
-          <BirdField label="Came to you">
-            <input className="input" type="date" max={todayStr} value={intakeDate} onChange={(e) => setIntakeDate(e.target.value)} />
-          </BirdField>
-        </div>
-      </section>
-
-      <div className="rounded-2xl bg-[#efe9da] p-4">
-        <p className="text-sm leading-relaxed text-[#5f5e5a]">
-          It's okay if you don't know much yet — add what you know now, fill the rest in as you learn.
-        </p>
-      </div>
-
       <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
         <div className="flex items-start gap-3">
           {photo ? (
@@ -215,6 +191,31 @@ function NewBird() {
         </div>
       </section>
 
+      {/* Foster status — a meta-question about your relationship with the bird,
+          not basic info, so it sits last after all the actual bird details. */}
+      <section className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
+        <label className="flex cursor-pointer items-start gap-3">
+          <input type="checkbox" checked={isFoster} onChange={(e) => setIsFoster(e.target.checked)} className="mt-0.5 size-5 shrink-0 accent-[#1a3d2e]" />
+          <span className="min-w-0">
+            <span className="block text-sm font-medium text-[#1a3d2e]">This is a foster</span>
+            <span className="mt-0.5 block text-xs leading-relaxed text-[#5f5e5a]">
+              You're caring for them while they find a permanent home. You'll be able to hand off their record to the adopter.
+            </span>
+          </span>
+        </label>
+        {isFoster && (
+          <div className="mt-3 space-y-3 border-t border-[#ece6d6] pt-3">
+            <BirdField label="Came to you">
+              <input className="input" type="date" max={todayStr} value={intakeDate} onChange={(e) => setIntakeDate(e.target.value)} />
+            </BirdField>
+            <div className="rounded-xl bg-[#efe9da] p-3">
+              <p className="text-sm leading-relaxed text-[#5f5e5a]">
+                It's okay if you don't know much yet — add what you know now, fill the rest in as you learn.
+              </p>
+            </div>
+          </div>
+        )}
+      </section>
 
       <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.65rem .8rem;font-size:16px;outline:none}.input:focus{border-color:var(--sage-600);box-shadow:0 0 0 3px rgb(74 103 65 / .15)}`}</style>
     </SetupShell>
