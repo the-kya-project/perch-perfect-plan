@@ -7,7 +7,7 @@ import { fetchScanFeed, markNotifsSeen, getNotifSeenAt, scanRunBy, type ScanFeed
 import { InkHero, IconTile, StatusPill, RecordRow, Card } from "@/components/system";
 
 export const Route = createFileRoute("/_authenticated/notifications/")({
-  head: () => ({ meta: [{ title: "Scans — Parrot Care Co-Pilot" }] }),
+  head: () => ({ meta: [{ title: "Scans — Kya & Co." }] }),
   component: NotificationsInbox,
 });
 

@@ -18,7 +18,7 @@ export const Route = createFileRoute("/sitter/$token")({
   validateSearch: searchSchema,
   search: { middlewares: [retainSearchParams(["birdId"])] },
   head: () => ({ meta: [
-    { title: "Sitter access — Parrot Care Co-Pilot" },
+    { title: "Sitter access — Kya & Co." },
     { name: "robots", content: "noindex,nofollow" },
   ]}),
   errorComponent: ({ error }) => {

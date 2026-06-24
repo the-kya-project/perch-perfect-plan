@@ -13,7 +13,7 @@ import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/im
 import { InkHero, Card, PrimaryButton } from "@/components/system";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/identity")({
-  head: () => ({ meta: [{ title: "Identity — Parrot Care Co-Pilot" }] }),
+  head: () => ({ meta: [{ title: "Identity — Kya & Co." }] }),
   component: IdentityFacet,
 });
 

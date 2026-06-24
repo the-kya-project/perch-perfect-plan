@@ -11,7 +11,7 @@ import { normalizeFeedTimes, feedTimeLabel } from "@/lib/feedTimes";
 import { InkHero, PrimaryButton, Card } from "@/components/system";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/vet-summary")({
-  head: () => ({ meta: [{ title: "Vet summary — Parrot Care Co-Pilot" }] }),
+  head: () => ({ meta: [{ title: "Vet summary — Kya & Co." }] }),
   component: VetSummary,
 });
 

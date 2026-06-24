@@ -8,7 +8,7 @@ export const Route = createFileRoute("/reset-password")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Reset password — Parrot Care Co-Pilot" },
+      { title: "Reset password — Kya & Co." },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),
@@ -65,7 +65,7 @@ function ResetPasswordPage() {
   return (
     <div className="min-h-screen bg-[var(--cream)]">
       <InkHero
-        eyebrow="Parrot Care Co-Pilot"
+        eyebrow="Kya & Co."
         headline="Set a new password."
         body={
           ready

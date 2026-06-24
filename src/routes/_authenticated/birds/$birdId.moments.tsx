@@ -11,7 +11,7 @@ import { shareMomentCard } from "@/lib/momentCard";
 import { InkHero, IconTile, SectionHead, Card, RecordRow } from "@/components/system";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/moments")({
-  head: () => ({ meta: [{ title: "Moments — Parrot Care Co-Pilot" }] }),
+  head: () => ({ meta: [{ title: "Moments — Kya & Co." }] }),
   component: MomentsFacet,
 });
 

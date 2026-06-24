@@ -11,7 +11,7 @@ import { formatDateRangeUS } from "@/lib/dates";
 // sit_id attribution on the logs that ran inside the window. Reachable from a
 // SitCard "Activity" link; owner-only (RLS on sits enforces). Read-only.
 export const Route = createFileRoute("/_authenticated/sits/$sitId")({
-  head: () => ({ meta: [{ title: "Sit activity — Parrot Care Co-Pilot" }] }),
+  head: () => ({ meta: [{ title: "Sit activity — Kya & Co." }] }),
   component: SitDetail,
 });
 

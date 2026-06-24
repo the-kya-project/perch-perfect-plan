@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { ArrowLeft, Plus, ChevronRight, Calendar, MoreHorizontal, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/access")({
-  head: () => ({ meta: [{ title: "Who can see this record — Parrot Care Co-Pilot" }] }),
+  head: () => ({ meta: [{ title: "Who can see this record — Kya & Co." }] }),
   component: AccessHub,
 });
 

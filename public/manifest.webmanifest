@@ -1,32 +1,17 @@
 {
-  "name": "Parrot Care Co-Pilot",
-  "short_name": "Parrot Care",
-  "description": "Parrot Care Co-Pilot, by The Kya Project — care plans, daily health scans, and emergency guidance for parrot sitters.",
+  "name": "Kya & Co.",
+  "short_name": "Kya & Co.",
+  "description": "Calm, clear care for your bird — even when you can't be there.",
   "id": "/",
   "start_url": "/dashboard",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#f4f7f4",
-  "theme_color": "#2d5754",
+  "background_color": "#1a3d2e",
+  "theme_color": "#1a3d2e",
   "icons": [
-    {
-      "src": "/appicon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/appicon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/appicon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
-    }
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }

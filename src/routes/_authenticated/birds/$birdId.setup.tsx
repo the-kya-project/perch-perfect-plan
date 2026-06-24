@@ -138,7 +138,7 @@ function useDebouncedAutosave(
 }
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/setup")({
-  head: () => ({ meta: [{ title: "Set up bird — Parrot Care Co-Pilot" }] }),
+  head: () => ({ meta: [{ title: "Set up bird — Kya & Co." }] }),
   validateSearch: setupSearch,
   component: BirdSetup,
 });

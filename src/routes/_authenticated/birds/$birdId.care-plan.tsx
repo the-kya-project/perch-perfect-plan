@@ -9,7 +9,7 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 // same CareSheetView the sitter care-sheet renders, then adds the daily routine
 // and emergency contacts. No edit affordances — editing is owner-only.
 export const Route = createFileRoute("/_authenticated/birds/$birdId/care-plan")({
-  head: () => ({ meta: [{ title: "Care plan — Parrot Care Co-Pilot" }] }),
+  head: () => ({ meta: [{ title: "Care plan — Kya & Co." }] }),
   component: HouseholdCarePlan,
 });
 

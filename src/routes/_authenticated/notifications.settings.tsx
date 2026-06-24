@@ -24,7 +24,7 @@ import { AddToHomeModal } from "@/components/AddToHomeModal";
 import { InkHero, IconTile, Card, PrimaryButton, CtaLink } from "@/components/system";
 
 export const Route = createFileRoute("/_authenticated/notifications/settings")({
-  head: () => ({ meta: [{ title: "Notification settings — Parrot Care Co-Pilot" }] }),
+  head: () => ({ meta: [{ title: "Notification settings — Kya & Co." }] }),
   component: NotificationsSettingsPage,
 });
 

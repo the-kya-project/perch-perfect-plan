@@ -24,7 +24,7 @@ export function NotificationsBlockedModal({ onClose }: { onClose: () => void }) 
             <p className="text-sm font-medium text-[#1a3d2e]">iPhone &amp; iPad</p>
             <ol className="mt-2 space-y-1.5 text-sm text-[#5f5e5a]">
               <li className="flex items-center gap-2"><Settings className="size-4 shrink-0 text-[#2d6a4f]" /> Open the Settings app.</li>
-              <li className="flex items-center gap-2"><Bell className="size-4 shrink-0 text-[#2d6a4f]" /> Tap Notifications, then find “Parrot Care.”</li>
+              <li className="flex items-center gap-2"><Bell className="size-4 shrink-0 text-[#2d6a4f]" /> Tap Notifications, then find “Kya & Co.”</li>
               <li>Turn on “Allow Notifications.”</li>
             </ol>
           </div>

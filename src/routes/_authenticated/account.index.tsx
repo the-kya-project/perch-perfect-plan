@@ -16,7 +16,7 @@ import { toast } from "sonner";
 const SUPPORT_EMAIL = "brittany@thekyaproject.com";
 
 export const Route = createFileRoute("/_authenticated/account/")({
-  head: () => ({ meta: [{ title: "Account — Parrot Care Co-Pilot" }] }),
+  head: () => ({ meta: [{ title: "Account — Kya & Co." }] }),
   component: AccountPage,
 });
 
@@ -153,7 +153,7 @@ function AccountPage() {
           <div>
             <SectionHead title="Legal" />
             <Card>
-              <a href={`mailto:${SUPPORT_EMAIL}?subject=Parrot%20Care%20Co-Pilot%20support`} className="block">
+              <a href={`mailto:${SUPPORT_EMAIL}?subject=Kya%20%26%20Co.%20support`} className="block">
                 <RecordRow title="Help & support" chevron />
               </a>
               <Link to="/privacy" className="block">

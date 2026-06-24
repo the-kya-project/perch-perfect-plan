@@ -13,7 +13,7 @@ import { ArrowLeft } from "lucide-react";
 import { z } from "zod";
 
 export const Route = createFileRoute("/_authenticated/birds/new")({
-  head: () => ({ meta: [{ title: "Add a bird — Parrot Care Co-Pilot" }] }),
+  head: () => ({ meta: [{ title: "Add a bird — Kya & Co." }] }),
   // `?foster=true` arrives from Home's "Take in a bird" CTA → toggle starts ON.
   validateSearch: z.object({ foster: z.coerce.boolean().optional() }),
   component: NewBird,

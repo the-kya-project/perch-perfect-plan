@@ -16,7 +16,7 @@ import { track } from "@/lib/analytics";
 // weight_entries(source='owner') via the authenticated client under has_bird_access
 // RLS. No notifications (the owner ran it themselves).
 export const Route = createFileRoute("/_authenticated/birds/$birdId/scan")({
-  head: () => ({ meta: [{ title: "Health scan — Parrot Care Co-Pilot" }] }),
+  head: () => ({ meta: [{ title: "Health scan — Kya & Co." }] }),
   component: OwnerScan,
 });
 

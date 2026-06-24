@@ -12,7 +12,7 @@ import { computeWeightTrend } from "@/lib/weightTrend";
 import { InkHero, IconTile, StatusPill, SectionHead, Card, RecordRow } from "@/components/system";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/weight")({
-  head: () => ({ meta: [{ title: "Weight — Parrot Care Co-Pilot" }] }),
+  head: () => ({ meta: [{ title: "Weight — Kya & Co." }] }),
   component: WeightFacet,
 });
 

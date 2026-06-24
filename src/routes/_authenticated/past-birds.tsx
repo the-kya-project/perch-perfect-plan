@@ -8,7 +8,7 @@ import { InkHero, Card, RecordRow, IconTile, StatusPill, PrimaryButton } from "@
 // Past birds archive — read-only, sender-side memory of birds handed off.
 // Snapshots only (not linked to live records). Newest departures first.
 export const Route = createFileRoute("/_authenticated/past-birds")({
-  head: () => ({ meta: [{ title: "Past birds — Parrot Care Co-Pilot" }] }),
+  head: () => ({ meta: [{ title: "Past birds — Kya & Co." }] }),
   component: PastBirds,
 });
 

@@ -17,7 +17,7 @@ const sitsSearch = z.object({
 });
 
 export const Route = createFileRoute("/_authenticated/sits")({
-  head: () => ({ meta: [{ title: "Sits — Parrot Care Co-Pilot" }] }),
+  head: () => ({ meta: [{ title: "Sits — Kya & Co." }] }),
   validateSearch: sitsSearch,
   component: SitsPage,
 });

@@ -37,7 +37,7 @@ const dashboardSearch = z.object({
 });
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
-  head: () => ({ meta: [{ title: "Home — Parrot Care Co-Pilot" }] }),
+  head: () => ({ meta: [{ title: "Home — Kya & Co." }] }),
   validateSearch: dashboardSearch,
   component: Dashboard,
 });

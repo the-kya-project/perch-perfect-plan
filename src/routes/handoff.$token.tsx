@@ -7,13 +7,14 @@ import { getHandoff, acceptHandoff, declineHandoff } from "@/lib/handoff.functio
 import { toast } from "sonner";
 import { Loader2, Check } from "lucide-react";
 import { InkHero, Card, PrimaryButton, CtaLink } from "@/components/system";
+import { BrandLockup } from "@/components/BrandLogo";
 
 // Public handoff-accept screen. Renders for logged-out visitors; the token is
 // the access check. Invalid/expired/used → clean message, no data exposed.
 export const Route = createFileRoute("/handoff/$token")({
   ssr: false,
   head: () => ({ meta: [
-    { title: "A bird is being handed off to you — Parrot Care Co-Pilot" },
+    { title: "A bird is being handed off to you — Kya & Co." },
     { name: "robots", content: "noindex,nofollow" },
   ]}),
   component: HandoffAccept,
@@ -45,7 +46,7 @@ function HandoffAccept() {
       <Shell hero={<InkHero eyebrow="Bird handoff" headline="This handoff isn't active anymore" body="Ask the sender to start a new one." />}>
         <Card className="p-6 text-center">
           <p className="t-body text-[var(--mute)]">Ask the sender to start a new one.</p>
-          <a href="/" className="mt-5 inline-flex min-h-[44px] items-center justify-center rounded-[12px] bg-[var(--ink)] px-[18px] py-[11px] text-[15px] font-[500] text-white">Go to Parrot Care</a>
+          <a href="/" className="mt-5 inline-flex min-h-[44px] items-center justify-center rounded-[12px] bg-[var(--ink)] px-[18px] py-[11px] text-[15px] font-[500] text-white">Go to Kya & Co.</a>
         </Card>
       </Shell>
     );
@@ -93,6 +94,9 @@ function Shell({ hero, children }: { hero: React.ReactNode; children: React.Reac
   return (
     <div className="min-h-[100dvh] bg-[var(--cream)]">
       <div className="mx-auto max-w-md">
+        <div className="flex justify-center bg-[var(--ink)] pt-[max(env(safe-area-inset-top),24px)]">
+          <BrandLockup orientation="stacked" variant="ink" size={220} />
+        </div>
         {hero}
         <main className="px-5 py-6">{children}</main>
       </div>

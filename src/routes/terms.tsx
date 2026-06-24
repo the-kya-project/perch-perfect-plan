@@ -4,8 +4,8 @@ import { ArrowLeft } from "lucide-react";
 export const Route = createFileRoute("/terms")({
   head: () => ({
     meta: [
-      { title: "Terms of Use — Parrot Care Co-Pilot" },
-      { name: "description", content: "Terms of use for Parrot Care Co-Pilot." },
+      { title: "Terms of Use — Kya & Co." },
+      { name: "description", content: "Terms of use for Kya & Co.." },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),
@@ -28,7 +28,7 @@ function TermsPage() {
         <div className="prose prose-sage mt-6 space-y-4 text-sm leading-relaxed text-sage-700">
           <h2 className="text-base font-bold text-sage-900">Using the service</h2>
           <p>
-            Parrot Care Co-Pilot is a tool to help you organise your bird's care and share it
+            Kya & Co. is a tool to help you organise your bird's care and share it
             with sitters. It is not veterinary advice. In an emergency, contact an avian vet.
           </p>
           <h2 className="text-base font-bold text-sage-900">Your account</h2>

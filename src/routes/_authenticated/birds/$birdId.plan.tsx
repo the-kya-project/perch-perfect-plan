@@ -16,7 +16,7 @@ import {
 // "Walk through it again" launches the guided wizard with answers prefilled.
 // Per design: page #f4f1e8, white section list card, sentence case, AA contrast.
 export const Route = createFileRoute("/_authenticated/birds/$birdId/plan")({
-  head: () => ({ meta: [{ title: "Care plan — Parrot Care Co-Pilot" }] }),
+  head: () => ({ meta: [{ title: "Care plan — Kya & Co." }] }),
   component: CarePlanOverview,
 });
 

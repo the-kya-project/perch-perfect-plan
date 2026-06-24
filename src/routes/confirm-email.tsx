@@ -14,7 +14,7 @@ const RESEND_UNTIL_KEY = "ppc_confirm_resend_until";
 const RESEND_COOLDOWN_S = 30;
 
 export const Route = createFileRoute("/confirm-email")({
-  head: () => ({ meta: [{ title: "Confirm your email — Parrot Care Co-Pilot" }] }),
+  head: () => ({ meta: [{ title: "Confirm your email — Kya & Co." }] }),
   component: ConfirmEmail,
 });
 

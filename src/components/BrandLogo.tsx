@@ -1,66 +1,104 @@
-// Served from the public/ folder at the site root, so the production
-// domain serves them directly (no dependency on Lovable asset hosting).
-const PARROT_TEAL = "/kya_parrot_icon_teal.png";
-const PARROT_WHITE = "/kya_parrot_icon_white.png";
+// Kya & Co. brand components — the ONLY way the brand renders in the app.
+// No ad-hoc <img> tags pointing at /brand/*, no recreating the wordmark in
+// HTML/CSS. The serif typography lives inside the SVG assets; the rest of
+// the interface stays sans (Inter) per the visual system.
 
-type Variant = "light" | "dark";
-type Size = "sm" | "md" | "lg";
+type MarkVariant = "cream" | "white" | "ink" | "lime";
+type LockupVariant = "cream" | "ink" | "transparent";
+type LockupOrientation = "horizontal" | "stacked";
 
-const ICON_SIZE: Record<Size, string> = {
-  sm: "size-8",
-  md: "size-10",
-  lg: "size-14",
+const MARK_SRC: Record<MarkVariant, string> = {
+  cream: "/brand/parrot-cream.svg",
+  white: "/brand/parrot-white.svg",
+  ink: "/brand/parrot-ink.svg",
+  lime: "/brand/parrot-lime.svg",
 };
 
-const TITLE_SIZE: Record<Size, string> = {
-  sm: "text-sm",
-  md: "text-base",
-  lg: "text-xl",
-};
+function lockupSrc(orientation: LockupOrientation, variant: LockupVariant): string {
+  return `/brand/lockups/${orientation}-${variant}.svg`;
+}
 
-const TAGLINE_SIZE: Record<Size, string> = {
-  sm: "text-[10px]",
-  md: "text-[11px]",
-  lg: "text-xs",
-};
+// Just the parrot illustration — used wherever a single mark is appropriate
+// (icon-only headers, tight badges). Pick a variant whose tone reads against
+// the surrounding background: "ink" on cream/light, "lime"/"cream" on ink.
+export function BrandMark({
+  variant = "ink",
+  size = 40,
+  className = "",
+  alt = "",
+}: {
+  variant?: MarkVariant;
+  size?: number;
+  className?: string;
+  alt?: string;
+}) {
+  return (
+    <img
+      src={MARK_SRC[variant]}
+      width={size}
+      height={size}
+      alt={alt}
+      className={`shrink-0 ${className}`}
+      style={{ width: size, height: size }}
+    />
+  );
+}
 
-/**
- * Full brand lockup: parrot icon + "Parrot Care Co-Pilot" / "by The Kya Project".
- * Use variant="dark" on dark/teal surfaces (renders white icon and white text).
- */
+// Full lockup: parrot + "Kya & Co." wordmark + "by The Kya Project" attribution.
+// `orientation` picks horizontal (header use) or stacked (hero/splash use);
+// `variant` picks the SVG variant matched to the surface (cream on light,
+// ink on cream-light, transparent over imagery). `size` is the width in
+// pixels — the SVG's intrinsic aspect ratio handles height.
+export function BrandLockup({
+  orientation = "horizontal",
+  variant = "ink",
+  size = 200,
+  className = "",
+  alt = "Kya & Co.",
+}: {
+  orientation?: LockupOrientation;
+  variant?: LockupVariant;
+  size?: number;
+  className?: string;
+  alt?: string;
+}) {
+  return (
+    <img
+      src={lockupSrc(orientation, variant)}
+      width={size}
+      alt={alt}
+      className={`shrink-0 ${className}`}
+      style={{ width: size, height: "auto" }}
+    />
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Back-compat: the older BrandLogo component (variant: "light"|"dark", size:
+// "sm"|"md"|"lg") was used in OwnerOnboarding and a few other places. Map it
+// onto BrandLockup so nothing breaks while we sweep callers over to the new
+// API. New code should import BrandMark/BrandLockup directly and stop using
+// this default export.
+type LegacyVariant = "light" | "dark";
+type LegacySize = "sm" | "md" | "lg";
+const LEGACY_WIDTH: Record<LegacySize, number> = { sm: 180, md: 220, lg: 280 };
+
 export function BrandLogo({
   variant = "light",
   size = "md",
-  showTagline = true,
   className = "",
 }: {
-  variant?: Variant;
-  size?: Size;
-  showTagline?: boolean;
+  variant?: LegacyVariant;
+  size?: LegacySize;
+  showTagline?: boolean; // accepted for back-compat; the SVG always carries the attribution
   className?: string;
 }) {
-  const isDark = variant === "dark";
-  const iconSrc = isDark ? PARROT_WHITE : PARROT_TEAL;
-  const titleColor = isDark ? "text-white" : "text-sage-900";
-  const taglineColor = isDark ? "text-white/75" : "text-[#5f5e5a]";
-
   return (
-    <div className={`flex items-center gap-2.5 ${className}`}>
-      <img
-        src={iconSrc}
-        alt=""
-        className={`${ICON_SIZE[size]} shrink-0 object-contain`}
-      />
-      <div className="leading-tight">
-        <div className={`${TITLE_SIZE[size]} font-medium tracking-tight ${titleColor}`}>
-          Parrot Care Co-Pilot
-        </div>
-        {showTagline && (
-          <div className={`${TAGLINE_SIZE[size]} ${taglineColor}`}>
-            by The Kya Project
-          </div>
-        )}
-      </div>
-    </div>
+    <BrandLockup
+      orientation="horizontal"
+      variant={variant === "dark" ? "transparent" : "ink"}
+      size={LEGACY_WIDTH[size]}
+      className={className}
+    />
   );
 }
