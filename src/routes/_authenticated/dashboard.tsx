@@ -125,8 +125,6 @@ function Dashboard() {
     else navigate({ to: "/birds/$birdId/moments", params: { birdId: item.to.birdId } });
   };
 
-  const firstOwnedBirdId = (birds.find((b) => b.owner_id === me?.id) ?? birds[0])?.id as string | undefined;
-
   const fosterBirds = homeBirds.filter((b) => b.is_foster);
   const flockBirds = homeBirds.filter((b) => !b.is_foster);
 
@@ -146,7 +144,7 @@ function Dashboard() {
             <TodayPanel items={todayItems} onNavigate={onTodayNavigate} />
             <div className="space-y-4"><BirdRecordBody birdId={birds[0].id} /></div>
             <HouseholdActivity household={household} />
-            <HouseholdRow household={household} firstName={firstName} birdId={firstOwnedBirdId} />
+            <HouseholdRow household={household} firstName={firstName} />
             <FosterFooter count={pastCount} />
           </>
         ) : (
@@ -183,7 +181,7 @@ function Dashboard() {
             )}
 
             <HouseholdActivity household={household} />
-            <HouseholdRow household={household} firstName={firstName} birdId={firstOwnedBirdId} />
+            <HouseholdRow household={household} firstName={firstName} />
             <FosterFooter count={pastCount} />
           </>
         )}
@@ -392,9 +390,9 @@ function HouseholdActivity({ household }: { household?: HomeHousehold }) {
 }
 
 // ---------------------------------------------------------------------------
-// Quiet Household row (account-level entry → per-bird access hub)
+// Quiet Household row → account-level /household screen
 // ---------------------------------------------------------------------------
-function HouseholdRow({ household, firstName, birdId }: { household?: HomeHousehold; firstName: string; birdId?: string }) {
+function HouseholdRow({ household, firstName }: { household?: HomeHousehold; firstName: string }) {
   const members = household?.members ?? [];
   const youInitial = (firstName.slice(0, 1) || "Y").toUpperCase();
   const hasMembers = members.length > 0;
@@ -430,9 +428,8 @@ function HouseholdRow({ household, firstName, birdId }: { household?: HomeHouseh
     </div>
   );
 
-  if (!birdId) return <div className="px-1">{inner}</div>;
   return (
-    <Link to="/birds/$birdId/access" params={{ birdId }} className="block px-1 active:opacity-80">{inner}</Link>
+    <Link to="/household" className="block px-1 active:opacity-80">{inner}</Link>
   );
 }
 function Avatar({ initial, dim }: { initial: string; dim?: boolean }) {
