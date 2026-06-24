@@ -56,7 +56,7 @@ function NotificationsInbox() {
         <InkHero
           eyebrow="Scans"
           headline="A daily check, archived."
-          body="Daily health scans for your birds — run by you or a sitter, newest first."
+          body="A small daily look that adds up to a record."
           backIcon={<ArrowLeft className="size-5" />}
           onBack={goBack}
           cta={

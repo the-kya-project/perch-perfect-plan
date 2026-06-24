@@ -153,6 +153,7 @@ function MomentsFacet() {
         <InkHero
           eyebrow="Moments"
           headline="Days worth marking."
+          body="Worth coming back to."
           backIcon={<ArrowLeft className="size-5" />}
           onBack={() => navigate({ to: "/birds/$birdId", params: { birdId } })}
           trailingIcons={busy ? <Loader2 className="size-4 animate-spin text-white/80" /> : undefined}

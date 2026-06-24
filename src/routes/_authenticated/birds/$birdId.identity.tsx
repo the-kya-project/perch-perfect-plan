@@ -49,6 +49,16 @@ function flightLabel(v: string | null | undefined): string | null {
 }
 const blank = (v: string | null | undefined) => !((v ?? "").trim());
 
+// Pronoun-aware identity hero — "Who she is on paper." / "Who he is on paper."
+// / "Who they are on paper." Defaults to "they" when sex is unknown or null
+// (which matches the rest of the app's gender-neutral language for unknowns).
+function identityHeadline(sex: string | null | undefined): string {
+  const s = (sex ?? "").trim().toLowerCase();
+  if (s === "female") return "Who she is on paper.";
+  if (s === "male") return "Who he is on paper.";
+  return "Who they are on paper.";
+}
+
 function IdentityFacet() {
   const { birdId } = Route.useParams();
   const navigate = useNavigate();
@@ -87,7 +97,8 @@ function IdentityFacet() {
       <div className="mx-auto max-w-md">
         <InkHero
           eyebrow="Identity"
-          headline="On paper."
+          headline={identityHeadline(bird?.sex)}
+          body="The part of the record that never changes."
           backIcon={<ArrowLeft className="size-5" />}
           onBack={goBack}
           trailingIcons={

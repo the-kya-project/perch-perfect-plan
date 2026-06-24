@@ -71,7 +71,7 @@ function AccountPage() {
           backIcon={<ArrowLeft className="size-5" />}
           onBack={goBack}
           eyebrow="Account"
-          headline="Your account."
+          headline="Your account"
         />
 
         <main className="space-y-6 px-5 pt-5">

@@ -89,7 +89,7 @@ function SitsPage() {
         <InkHero
           eyebrow="Sits"
           headline="Going away?"
-          body="Share a private, read-only care plan with whoever's watching your birds."
+          body="For when you can't be there — set up a sit and share what they need to know."
           cta={birds.length > 0 ? heroCta : undefined}
           trailingIcons={<OwnerHeaderIcons />}
         />

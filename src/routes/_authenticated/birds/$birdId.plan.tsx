@@ -133,7 +133,7 @@ function CarePlanOverview() {
           onBack={() => navigate({ to: "/birds/$birdId", params: { birdId } })}
           eyebrow="Care plan"
           headline="Everything a caregiver needs."
-          body={fmtUpdated(updatedAt)}
+          body="What you've taught yourself about how they're cared for."
           cta={
             isOwner
               ? {

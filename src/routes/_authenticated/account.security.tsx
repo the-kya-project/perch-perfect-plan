@@ -86,7 +86,7 @@ function SecurityPage() {
           backIcon={<ArrowLeft className="size-5" />}
           onBack={goBack}
           eyebrow="Account"
-          headline="Password & sign-in."
+          headline="Password & sign-in"
         />
 
         <main className="space-y-4 px-5 pt-5">

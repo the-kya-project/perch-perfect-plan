@@ -29,7 +29,7 @@ function PastBirds() {
           backIcon={<ArrowLeft className="size-5" />}
           onBack={goBack}
           eyebrow="Past birds"
-          headline="Birds you've helped."
+          headline="Past birds"
         />
 
         <main className="space-y-4 px-5 pt-5">

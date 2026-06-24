@@ -193,7 +193,7 @@ function NotificationsSettingsPage() {
           backIcon={<ArrowLeft className="size-5" />}
           onBack={goBack}
           eyebrow="Notifications"
-          headline="Notifications."
+          headline="Notifications"
           body="Choose which sitter activity reaches you, by email and on this device."
         />
 

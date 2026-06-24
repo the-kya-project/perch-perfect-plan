@@ -79,6 +79,7 @@ function JournalFacet() {
           onBack={() => navigate({ to: "/birds/$birdId", params: { birdId } })}
           eyebrow="Journal"
           headline="What's been happening."
+          body="Small things noted now become signals later."
           cta={{ label: "Add an entry", tone: "lime", icon: <Plus className="size-4" />, onPress: () => setEditing("new") }}
         />
 

@@ -197,7 +197,7 @@ function AuthPage() {
       <div className="mx-auto max-w-md">
         <InkHero
           eyebrow="Parrot Care Co-Pilot"
-          headline={mode === "signup" ? "Start their record." : "Welcome back."}
+          headline={mode === "signup" ? "A living record for a long-lived bird." : "Welcome back"}
           body={
             mode === "signup"
               ? "Create an owner account to save bird profiles and care plans across trips."
