@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { ArrowLeft, Camera, Plus, Share2, Check, X, Loader2, CalendarHeart } from "lucide-react";
 import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
 import { uploadJournalPhoto, signJournalPhotos } from "@/lib/journalPhoto";
+import { useBirdPhotos } from "@/lib/useBirdPhotos";
 import { shareMomentCard } from "@/lib/momentCard";
 import { InkHero, IconTile, SectionHead, Card, RecordRow } from "@/components/system";
 
@@ -49,8 +50,8 @@ function MomentsFacet() {
   const { data: bird } = useQuery({
     queryKey: ["bird-moments-id", birdId],
     queryFn: async () => {
-      const { data } = await supabase.from("birds").select("name, birth_date, acquired_on").eq("id", birdId).maybeSingle();
-      return data as { name: string; birth_date: string | null; acquired_on: string | null } | null;
+      const { data } = await supabase.from("birds").select("name, birth_date, acquired_on, photo_url, photo_position").eq("id", birdId).maybeSingle();
+      return data as { name: string; birth_date: string | null; acquired_on: string | null; photo_url: string | null; photo_position: string | null } | null;
     },
   });
 
@@ -89,6 +90,8 @@ function MomentsFacet() {
   const urlFor = (p: string | null | undefined) => (p ? (urls as Record<string, string>)[p] ?? null : null);
 
   const name = bird?.name ?? "This bird";
+  const birdPhotoOf = useBirdPhotos([bird?.photo_url], 800);
+  const birdPhoto = birdPhotoOf(bird?.photo_url);
   const photoByYear = new Map(anchorPhotos.map((a) => [`${a.anchor}:${a.year}`, a.photo_path]));
 
   // Derived anchors (only when the identity date exists).
@@ -103,9 +106,14 @@ function MomentsFacet() {
   const featured = anchors
     .map((a) => ({ a, occ: nextOccurrence(a.baseISO) }))
     .sort((x, y) => +x.occ.date - +y.occ.date)[0];
-  const featuredPhoto = featured
+  const featuredAnchorPhoto = featured
     ? urlFor(photoByYear.get(`${featured.a.key}:${featured.occ.date.getFullYear()}`) ?? [...anchorPhotos].filter((p) => p.anchor === featured.a.key).sort((m, n) => n.year - m.year)[0]?.photo_path)
     : null;
+  // Fall back to the bird's profile photo (focal-point framed) instead of a bare
+  // gradient when there's no milestone photo for the featured anchor.
+  const featuredFromBird = !featuredAnchorPhoto && !!birdPhoto?.url;
+  const featuredPhoto = featuredAnchorPhoto ?? birdPhoto?.url ?? null;
+  const featuredPosition = featuredFromBird ? (bird?.photo_position ?? "50% 50%") : "50% 50%";
 
   // Nudge = an anchor within ~7 days.
   const nudge = anchors
@@ -176,7 +184,7 @@ function MomentsFacet() {
             <section>
               <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[18px]">
                 {featuredPhoto ? (
-                  <img src={featuredPhoto} alt="" className="absolute inset-0 size-full object-cover" />
+                  <img src={featuredPhoto} alt="" className="absolute inset-0 size-full object-cover" style={{ objectPosition: featuredPosition }} />
                 ) : (
                   <div className="absolute inset-0" style={{ background: "linear-gradient(135deg,var(--moss),var(--lime))" }} />
                 )}

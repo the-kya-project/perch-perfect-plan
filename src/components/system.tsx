@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { ArrowRight, ChevronRight, Feather } from "lucide-react";
+import { ArrowRight, ChevronRight, Feather, Camera } from "lucide-react";
 
 // ===========================================================================
 // Owner visual system ("Explore-grade"). Build once, reuse everywhere.
@@ -58,20 +58,25 @@ export function InkHero({
 // empty/broken state). Top controls float in translucent round buttons.
 const SAGE_FALLBACK = "linear-gradient(150deg,#cdeab0,#9ec694 55%,#7fae7e)";
 export function PhotoHero({
-  src, fallbackGradient = SAGE_FALLBACK, height = 280, alt = "", onBack, onShare, onDots,
+  src, fallbackGradient = SAGE_FALLBACK, height = 280, alt = "", objectPosition, onBack, onShare, onDots, onEditPhoto,
 }: {
   src?: string | null;
   fallbackGradient?: string;
   height?: number;
   alt?: string;
+  // CSS object-position (the bird's stored focal point, e.g. "50% 30%") so the
+  // same photo frames correctly here and on small tiles via object-fit: cover.
+  objectPosition?: string;
   onBack?: () => void;
   onShare?: () => void;
   onDots?: () => void;
+  // Renders a camera button bottom-right → open the photo-management sheet.
+  onEditPhoto?: () => void;
 }) {
   return (
     <div className="relative w-full overflow-hidden" style={{ height, background: fallbackGradient }}>
       {src ? (
-        <img src={src} alt={alt} loading="eager" decoding="async" className="absolute inset-0 size-full object-cover" />
+        <img src={src} alt={alt} loading="eager" decoding="async" className="absolute inset-0 size-full object-cover" style={{ objectPosition: objectPosition ?? "50% 50%" }} />
       ) : (
         <div className="absolute inset-0 grid place-items-center"><Feather className="size-10 text-white/70" /></div>
       )}
@@ -83,6 +88,11 @@ export function PhotoHero({
             {onDots && <CircleControl label="More" onPress={onDots}><DotsGlyph /></CircleControl>}
           </div>
         </div>
+      )}
+      {onEditPhoto && (
+        <button type="button" aria-label="Change photo" onClick={onEditPhoto} className="absolute bottom-3 right-3 grid size-11 place-items-center rounded-full text-white active:scale-95" style={{ background: "rgba(0,0,0,0.32)" }}>
+          <Camera className="size-5" />
+        </button>
       )}
     </div>
   );

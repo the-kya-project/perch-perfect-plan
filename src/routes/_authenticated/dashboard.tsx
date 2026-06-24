@@ -303,7 +303,7 @@ function gradientFor(seed: string) {
   return `linear-gradient(135deg,${a},${b})`;
 }
 
-function PhotoTile({ photo, name, species }: { photo: SignedPhoto | null; name: string; species: string | null; }) {
+function PhotoTile({ photo, name, species, position }: { photo: SignedPhoto | null; name: string; species: string | null; position?: string | null }) {
   const initial = (name?.slice(0, 1) ?? "?").toUpperCase();
   return (
     <div className="size-[62px] shrink-0 overflow-hidden rounded-[14px]" style={{ background: gradientFor(species || name) }}>
@@ -311,7 +311,7 @@ function PhotoTile({ photo, name, species }: { photo: SignedPhoto | null; name: 
         <img
           src={photo.url} alt={name} loading="lazy" decoding="async"
           onError={(e) => { if (photo.original && e.currentTarget.src !== photo.original) e.currentTarget.src = photo.original; }}
-          style={{ objectPosition: undefined }}
+          style={{ objectPosition: position ?? "50% 50%" }}
           className="size-full object-cover"
         />
       ) : (
@@ -346,7 +346,7 @@ function BirdRow({ bird, photo, glance, foster }: { bird: HomeBird; photo: Signe
       className="flex items-center gap-3 rounded-[18px] bg-white p-3 ring-1 ring-[var(--line2)] active:scale-[0.995]"
       style={{ boxShadow: "0 1px 0 rgba(40,50,40,.02), 0 6px 14px -8px rgba(40,50,40,.08)" }}
     >
-      <PhotoTile photo={photo} name={bird.name} species={bird.species} />
+      <PhotoTile photo={photo} name={bird.name} species={bird.species} position={bird.photo_position} />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <h3 className="t-item truncate text-[17px]">{bird.name}</h3>
