@@ -10,9 +10,16 @@ export function escapeHtml(s: string): string {
 export type BuiltEmail = { subject: string; html: string; text: string };
 
 function shell(opts: { kicker: string; heading: string; body: string; cta: string; link: string; foot: string }): string {
+  // Email header: horizontal-cream lockup served from production via an
+  // ABSOLUTE URL (relative paths can't resolve inside a recipient's inbox).
+  // Plain-text fallback line "Kya & Co. — by The Kya Project" lives in the
+  // text/* bodies and the footer.
   return `
 <div style="background:#f4f1e8;padding:24px;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">
   <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;border:1px solid #e3ded0;">
+    <div style="background:#f4f1e8;padding:20px 24px;text-align:left;border-bottom:1px solid #eee6d4;">
+      <img src="https://app.thekyaproject.com/brand/lockups/horizontal-cream.png" width="280" alt="Kya & Co. — by The Kya Project" style="display:block;width:280px;max-width:100%;height:auto;" />
+    </div>
     <div style="background:#1a3d2e;padding:20px 24px;">
       <p style="margin:0;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.85);">${opts.kicker}</p>
       <h1 style="margin:6px 0 0;font-size:20px;font-weight:500;color:#fff;">${opts.heading}</h1>
@@ -21,6 +28,7 @@ function shell(opts: { kicker: string; heading: string; body: string; cta: strin
       <p style="margin:0 0 8px;font-size:15px;color:#1a3d2e;">${opts.body}</p>
       <a href="${opts.link}" style="display:inline-block;margin-top:12px;background:#1a3d2e;color:#fff;text-decoration:none;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:600;">${opts.cta}</a>
       <p style="margin:20px 0 0;font-size:12px;color:#8a897f;line-height:1.5;">${opts.foot}</p>
+      <p style="margin:18px 0 0;font-size:11px;color:#8a897f;text-align:center;border-top:1px solid #eee6d4;padding-top:12px;">Kya &amp; Co. — by The Kya Project</p>
     </div>
   </div>
 </div>`;
@@ -73,7 +81,7 @@ export function buildHouseholdInviteEmail(opts: {
   const inviter = escapeHtml(opts.inviterName);
   const birds = escapeHtml(opts.birdNames);
   const body =
-    `${inviter} invited you to help care for ${birds} on Parrot Care Co-Pilot. ` +
+    `${inviter} invited you to help care for ${birds} on Kya & Co.. ` +
     `You'll be able to see each bird's care plan, weight, journal, and health scans — ` +
     `and log weights, journal entries, and daily scans alongside ${inviter}. ` +
     `You won't be able to change the care plan or who has access; ${inviter} stays the owner. ` +
@@ -89,7 +97,7 @@ export function buildHouseholdInviteEmail(opts: {
       foot: "If you didn't expect this, you can ignore this email — nothing happens until you accept. The invite link expires in 14 days.",
     }),
     text:
-      `${opts.inviterName} invited you to help care for ${opts.birdNames} on Parrot Care Co-Pilot.\n\n` +
+      `${opts.inviterName} invited you to help care for ${opts.birdNames} on Kya & Co..\n\n` +
       `You'll be able to view each bird's record and log weights, journal entries, and scans. ` +
       `You can't change the care plan or access; ${opts.inviterName} stays the owner.\n\n` +
       `Accept (expires in 14 days): ${opts.link}\n\n` +
@@ -107,7 +115,7 @@ export function buildHandoffInviteEmail(opts: { senderName: string; birdName: st
       kicker: "Bird handoff",
       heading: `${sender} is handing off ${bird} to you`,
       body:
-        `${sender} wants to pass ${bird}'s full record to you on Parrot Care Co-Pilot — ` +
+        `${sender} wants to pass ${bird}'s full record to you on Kya & Co. — ` +
         `care plan, identity, weight history, journal, and moments, so you have everything they learned while caring for ${bird}. ` +
         `Once you accept, the record is yours and ${sender} no longer has access. This link expires in 14 days.`,
       cta: "Review the handoff",
@@ -115,7 +123,7 @@ export function buildHandoffInviteEmail(opts: { senderName: string; birdName: st
       foot: "If you weren't expecting this, you can ignore this email — nothing transfers until you accept.",
     }),
     text:
-      `${opts.senderName} is handing off ${opts.birdName} to you on Parrot Care Co-Pilot.\n\n` +
+      `${opts.senderName} is handing off ${opts.birdName} to you on Kya & Co..\n\n` +
       `You'll receive ${opts.birdName}'s full record (care plan, identity, weights, journal, moments). ` +
       `Once you accept, it's yours and ${opts.senderName} no longer has access.\n\n` +
       `Review (expires in 14 days): ${opts.link}`,
@@ -153,7 +161,7 @@ export function buildHandoffDeclinedEmail(opts: { birdName: string }): BuiltEmai
       body:
         `The handoff for ${bird} was declined, so nothing changed — ${bird} is still in your account and you still have full access. ` +
         `You can start a new handoff whenever you're ready.`,
-      cta: "Open Parrot Care",
+      cta: "Open Kya & Co.",
       link: "https://app.thekyaproject.com",
       foot: "No action needed.",
     }),

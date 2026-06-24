@@ -12,7 +12,7 @@ import { ArrowLeft, Printer, Loader2, AlertTriangle } from "lucide-react";
 // can "Save as PDF" and give to an adopter who isn't on the app. Confirming the
 // handoff snapshots Past birds and removes the bird (completePdfHandoff).
 export const Route = createFileRoute("/_authenticated/birds/$birdId/export")({
-  head: () => ({ meta: [{ title: "Export record — Parrot Care Co-Pilot" }] }),
+  head: () => ({ meta: [{ title: "Export record — Kya & Co." }] }),
   component: ExportRecord,
 });
 

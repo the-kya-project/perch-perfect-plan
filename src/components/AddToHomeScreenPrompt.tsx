@@ -54,7 +54,7 @@ export function AddToHomeScreenPrompt() {
       <div className="flex items-start gap-3">
         <div className="flex-1">
           <div className="text-sm font-semibold text-sage-900">
-            Add Parrot Care to your Home Screen
+            Add Kya & Co. to your Home Screen
           </div>
           <p className="mt-1 text-xs text-sage-600">
             Tap <Share className="inline size-3.5 align-text-bottom" /> in Safari, then

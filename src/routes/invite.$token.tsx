@@ -8,6 +8,7 @@ import { getHouseholdInvite, acceptHouseholdInvite, declineHouseholdInvite } fro
 import { toast } from "sonner";
 import { Loader2, Check } from "lucide-react";
 import { InkHero, Card, PrimaryButton, CtaLink } from "@/components/system";
+import { BrandLockup } from "@/components/BrandLogo";
 
 // Public household-invite accept screen. Renders for logged-out visitors too;
 // the token is the access check. Never reveals bird/owner data for an
@@ -15,7 +16,7 @@ import { InkHero, Card, PrimaryButton, CtaLink } from "@/components/system";
 export const Route = createFileRoute("/invite/$token")({
   ssr: false,
   head: () => ({ meta: [
-    { title: "You're invited — Parrot Care Co-Pilot" },
+    { title: "You're invited — Kya & Co." },
     { name: "robots", content: "noindex,nofollow" },
   ]}),
   component: InviteAccept,
@@ -59,7 +60,7 @@ function InviteAccept() {
         <Card className="p-6 text-center">
           <p className="t-body text-[var(--ink2)]">This link has expired or already been used. Ask the owner to send you a new one.</p>
           <div className="mt-5">
-            <a href="/"><PrimaryButton tone="ink">Go to Parrot Care</PrimaryButton></a>
+            <a href="/"><PrimaryButton tone="ink">Go to Kya & Co.</PrimaryButton></a>
           </div>
         </Card>
       </Shell>
@@ -105,20 +106,10 @@ function InviteAccept() {
 function Shell({ eyebrow, headline, body, children }: { eyebrow: string; headline: string; body?: string; children: React.ReactNode }) {
   return (
     <div className="min-h-[100dvh] bg-[var(--cream)]">
-      <InkHero
-        eyebrow={eyebrow}
-        headline={headline}
-        body={body}
-        trailingIcons={
-          <div className="flex items-center gap-2.5">
-            <img src="/kya_parrot_icon_teal.png" alt="" className="size-7 object-contain" />
-            <div className="leading-tight">
-              <div className="text-[13px] font-[500] tracking-tight text-white">Parrot Care Co-Pilot</div>
-              <div className="text-[11px] text-white/70">by The Kya Project</div>
-            </div>
-          </div>
-        }
-      />
+      <div className="flex justify-center bg-[var(--ink)] pt-[max(env(safe-area-inset-top),24px)]">
+        <BrandLockup orientation="stacked" variant="ink" size={220} />
+      </div>
+      <InkHero eyebrow={eyebrow} headline={headline} body={body} />
       <main className="mx-auto max-w-md px-5 py-6">{children}</main>
     </div>
   );

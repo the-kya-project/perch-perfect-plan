@@ -22,7 +22,7 @@ import {
 // (weight, journal, identity, moments, vet summary) are stubs for now.
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/")({
-  head: () => ({ meta: [{ title: "Bird record — Parrot Care Co-Pilot" }] }),
+  head: () => ({ meta: [{ title: "Bird record — Kya & Co." }] }),
   component: BirdRecordHome,
 });
 

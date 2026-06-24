@@ -2,7 +2,7 @@ import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Disclaimer } from "@/components/Disclaimer";
-import { BrandLogo } from "@/components/BrandLogo";
+import { BrandLockup } from "@/components/BrandLogo";
 
 export const Route = createFileRoute("/")({
   // Returning owners shouldn't land on the marketing page — send them home.
@@ -15,10 +15,10 @@ export const Route = createFileRoute("/")({
   },
   head: () => ({
     meta: [
-      { title: "Parrot Care Co-Pilot — by The Kya Project" },
-      { name: "description", content: "Owners build a complete bird care plan. Sitters open a secure link, follow the routine, run a daily health scan, and reach emergency help fast." },
-      { property: "og:title", content: "Parrot Care Co-Pilot — by The Kya Project" },
-      { property: "og:description", content: "Care plans, daily health scans, and emergency guidance for parrot sitters." },
+      { title: "Kya & Co. — Calm, clear care for your bird" },
+      { name: "description", content: "Calm, clear care for your bird — even when you can't be there." },
+      { property: "og:title", content: "Kya & Co. — Calm, clear care for your bird" },
+      { property: "og:description", content: "Everything they need, everything you've learned, everything the people helping should know." },
     ],
   }),
   component: Welcome,
@@ -28,7 +28,7 @@ function Welcome() {
   return (
     <div className="min-h-screen bg-[#f4f1e8]">
       <main className="mx-auto flex min-h-screen max-w-md flex-col px-5 py-10">
-        <BrandLogo size="md" />
+        <BrandLockup orientation="horizontal" variant="ink" size={200} />
 
         <div className="mt-12 space-y-3">
           <h1 className="text-balance text-4xl font-medium leading-[1.05] tracking-tight">

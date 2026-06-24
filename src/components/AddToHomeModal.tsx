@@ -14,7 +14,7 @@ export function AddToHomeModal({ onClose }: { onClose: () => void }) {
             <X className="size-5" />
           </button>
         </div>
-        <p className="text-sm text-[#5f5e5a]">Install Parrot Care Co-Pilot to open it like an app and receive push alerts.</p>
+        <p className="text-sm text-[#5f5e5a]">Install Kya & Co. to open it like an app and receive push alerts.</p>
         <div className="mt-4 space-y-4">
           <div className="rounded-2xl bg-[#efe9da] p-4">
             <p className="text-sm font-medium text-[#1a3d2e]">iPhone &amp; iPad (Safari)</p>

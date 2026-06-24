@@ -11,7 +11,7 @@ import { uploadJournalPhoto, signJournalPhotos } from "@/lib/journalPhoto";
 import { compressImageToDataUrl } from "@/lib/imageUpload";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/journal")({
-  head: () => ({ meta: [{ title: "Journal — Parrot Care Co-Pilot" }] }),
+  head: () => ({ meta: [{ title: "Journal — Kya & Co." }] }),
   component: JournalFacet,
 });
 

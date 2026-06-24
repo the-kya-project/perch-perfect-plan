@@ -13,7 +13,7 @@ self.addEventListener("activate", (event) => event.waitUntil(self.clients.claim(
 self.addEventListener("push", (event) => {
   let payload = {};
   try { payload = event.data ? event.data.json() : {}; } catch { payload = {}; }
-  const title = payload.title || "Parrot Care Co-Pilot";
+  const title = payload.title || "Kya & Co.";
   const options = {
     body: payload.body || "",
     icon: payload.icon || "/appicon-192.png",

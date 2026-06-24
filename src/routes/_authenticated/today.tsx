@@ -7,7 +7,7 @@ import { InkHero } from "@/components/system";
 // When no assignment is active, falls back to a calm empty state with the
 // upcoming-assignment countdown ("Today's check starts in N days").
 export const Route = createFileRoute("/_authenticated/today")({
-  head: () => ({ meta: [{ title: "Today — Parrot Care Co-Pilot" }] }),
+  head: () => ({ meta: [{ title: "Today — Kya & Co." }] }),
   component: TodayPage,
 });
 

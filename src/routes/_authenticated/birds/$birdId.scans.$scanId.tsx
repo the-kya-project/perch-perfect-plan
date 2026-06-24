@@ -8,7 +8,7 @@ import { InkHero, Card, StatusPill, SectionHead, IconTile } from "@/components/s
 // inbox (replaces the old deep-link into the care-plan editor's logs tab, which
 // read as "the care plan"). Owner/household read via RLS on daily_logs.
 export const Route = createFileRoute("/_authenticated/birds/$birdId/scans/$scanId")({
-  head: () => ({ meta: [{ title: "Health scan — Parrot Care Co-Pilot" }] }),
+  head: () => ({ meta: [{ title: "Health scan — Kya & Co." }] }),
   component: ScanDetail,
 });
 

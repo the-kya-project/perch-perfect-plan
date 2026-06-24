@@ -4,8 +4,8 @@ import { ArrowLeft } from "lucide-react";
 export const Route = createFileRoute("/privacy")({
   head: () => ({
     meta: [
-      { title: "Privacy Policy — Parrot Care Co-Pilot" },
-      { name: "description", content: "How Parrot Care Co-Pilot handles your data." },
+      { title: "Privacy Policy — Kya & Co." },
+      { name: "description", content: "How Kya & Co. handles your data." },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),

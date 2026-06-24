@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { ArrowLeft, ArrowRightLeft, AlertTriangle } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/handoff")({
-  head: () => ({ meta: [{ title: "Hand off — Parrot Care Co-Pilot" }] }),
+  head: () => ({ meta: [{ title: "Hand off — Kya & Co." }] }),
   component: HandoffFlow,
 });
 

@@ -15,7 +15,7 @@ import { InkHero, Card, RecordRow, IconTile } from "@/components/system";
 // email). Per-bird scoping/removal reuses removeHouseholdMember; the per-bird
 // access hub (/birds/$id/access) is unchanged.
 export const Route = createFileRoute("/_authenticated/household")({
-  head: () => ({ meta: [{ title: "Your household — Parrot Care Co-Pilot" }] }),
+  head: () => ({ meta: [{ title: "Your household — Kya & Co." }] }),
   component: HouseholdScreen,
 });
 

@@ -8,7 +8,7 @@ import { ensureSitterPreviewToken } from "@/lib/sitterPreview";
 // iframe (the exact same renderer a sitter gets), provisioned via a disposable
 // preview sit. A banner makes the mode obvious with an exit back to the record.
 export const Route = createFileRoute("/_authenticated/birds/$birdId/view-as-sitter")({
-  head: () => ({ meta: [{ title: "View as sitter — Parrot Care Co-Pilot" }] }),
+  head: () => ({ meta: [{ title: "View as sitter — Kya & Co." }] }),
   component: ViewAsSitter,
 });
 

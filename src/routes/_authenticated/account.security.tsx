@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { InkHero, Card, RecordRow, StatusPill, IconTile, PrimaryButton, CtaLink } from "@/components/system";
 
 export const Route = createFileRoute("/_authenticated/account/security")({
-  head: () => ({ meta: [{ title: "Password & sign-in — Parrot Care Co-Pilot" }] }),
+  head: () => ({ meta: [{ title: "Password & sign-in — Kya & Co." }] }),
   component: SecurityPage,
 });
 
