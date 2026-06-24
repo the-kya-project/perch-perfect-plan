@@ -28,7 +28,7 @@ function Welcome() {
   return (
     <div className="min-h-screen bg-[#f4f1e8]">
       <main className="mx-auto flex min-h-screen max-w-md flex-col px-5 py-10">
-        <BrandLockup orientation="horizontal" variant="ink" size={200} />
+        <BrandLockup orientation="horizontal" variant="cream" size={200} />
 
         <div className="mt-12 space-y-3">
           <h1 className="text-balance text-4xl font-medium leading-[1.05] tracking-tight">

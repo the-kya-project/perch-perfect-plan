@@ -107,7 +107,7 @@ function Shell({ eyebrow, headline, body, children }: { eyebrow: string; headlin
   return (
     <div className="min-h-[100dvh] bg-[var(--cream)]">
       <div className="flex justify-center bg-[var(--ink)] pt-[max(env(safe-area-inset-top),24px)]">
-        <BrandLockup orientation="stacked" variant="ink" size={220} />
+        <BrandLockup orientation="horizontal" variant="ink" size={220} />
       </div>
       <InkHero eyebrow={eyebrow} headline={headline} body={body} />
       <main className="mx-auto max-w-md px-5 py-6">{children}</main>

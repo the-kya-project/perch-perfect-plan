@@ -152,7 +152,7 @@ export function OwnerOnboarding() {
           <button onClick={finish} className="text-sm font-medium text-[#cdeab0] underline">Skip</button>
         </div>
         <div className="flex flex-1 flex-col items-center justify-center px-6 pb-12 text-center">
-          <BrandLockup orientation="stacked" variant="ink" size={280} />
+          <BrandLockup orientation="horizontal" variant="ink" size={280} />
           <h1 className="mt-8 text-[22px] font-medium leading-tight">Welcome to Kya & Co.</h1>
           <p className="mt-3 max-w-xs text-sm leading-relaxed text-white/85">
             Build a care plan once, share it with the people who help — sitters and household — and stay connected to your birds.
