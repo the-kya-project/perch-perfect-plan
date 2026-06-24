@@ -26,14 +26,10 @@ export const Route = createFileRoute("/_authenticated/birds/$birdId/")({
 
 type Trend = "steady" | "up" | "down";
 
-function BirdRecordHome() {
-  const { birdId } = Route.useParams();
-  const qc = useQueryClient();
-  const role = useBirdRole(birdId);
-  const isOwner = role === "owner";
-  const isHousehold = role === "household";
-
-  const { data: bird } = useQuery({
+// Shared bird-record query — used by the route header and the body. Same
+// queryKey/select, so calling it in both places is deduped by React Query.
+export function useBirdRecord(birdId: string) {
+  return useQuery({
     queryKey: ["bird-record", birdId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -45,6 +41,38 @@ function BirdRecordHome() {
       return data as any;
     },
   });
+}
+
+function BirdRecordHome() {
+  const { birdId } = Route.useParams();
+  const { data: bird } = useBirdRecord(birdId);
+  const name = bird?.name ?? "This bird";
+  return (
+    <div className="min-h-screen bg-[#f4f1e8] pb-24">
+      <header className="sticky top-0 z-10 border-b border-[#e3ded0] bg-[#f4f1e8]/95 backdrop-blur">
+        <div className="mx-auto flex max-w-md items-center gap-3 px-5 py-3">
+          <Link to="/dashboard" aria-label="Back to home" className="-ml-1 rounded p-1 text-[#1a3d2e]">
+            <ArrowLeft className="size-5" />
+          </Link>
+          <h1 className="text-base font-medium text-[#1a3d2e]">{name}</h1>
+        </div>
+      </header>
+      <main className="mx-auto max-w-md space-y-4 px-5 py-5">
+        <BirdRecordBody birdId={birdId} />
+      </main>
+    </div>
+  );
+}
+
+// The bird-record body without page chrome — reused as solo Home (with the
+// global header + Today panel + Household row wrapped around it on /dashboard).
+export function BirdRecordBody({ birdId }: { birdId: string }) {
+  const qc = useQueryClient();
+  const role = useBirdRole(birdId);
+  const isOwner = role === "owner";
+  const isHousehold = role === "household";
+
+  const { data: bird } = useBirdRecord(birdId);
 
   const { data: weights } = useQuery({
     queryKey: ["bird-weights", birdId],
@@ -112,17 +140,7 @@ function BirdRecordHome() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f4f1e8] pb-24">
-      <header className="sticky top-0 z-10 border-b border-[#e3ded0] bg-[#f4f1e8]/95 backdrop-blur">
-        <div className="mx-auto flex max-w-md items-center gap-3 px-5 py-3">
-          <Link to="/dashboard" aria-label="Back to home" className="-ml-1 rounded p-1 text-[#1a3d2e]">
-            <ArrowLeft className="size-5" />
-          </Link>
-          <h1 className="text-base font-medium text-[#1a3d2e]">{name}</h1>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-md space-y-4 px-5 py-5">
+    <>
         {/* Identity strip — photo + name + species/age. When a photo is set the
             circle is filled by the photo (centered by default) and is draggable
             to reframe which part shows; the crop position auto-saves. Adding or
@@ -291,8 +309,7 @@ function BirdRecordHome() {
         {/* Handoff — quiet for non-foster birds (life happens, but don't tempt
             accidental use). */}
         {isOwner && bird && !bird.is_foster && <HandoffSection birdId={birdId} name={name} isFoster={false} prominent={false} />}
-      </main>
-    </div>
+    </>
   );
 }
 

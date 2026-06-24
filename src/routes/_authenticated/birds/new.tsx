@@ -9,15 +9,19 @@ import { SpeciesPicker, AgePicker, BirdField } from "@/components/BirdPickers";
 import { SetupShell } from "@/components/SetupShell";
 import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
 import { persistBirdPhoto } from "@/lib/birdPhoto";
+import { z } from "zod";
 
 export const Route = createFileRoute("/_authenticated/birds/new")({
   head: () => ({ meta: [{ title: "Add a bird — Parrot Care Co-Pilot" }] }),
+  // `?foster=true` arrives from Home's "Take in a bird" CTA → toggle starts ON.
+  validateSearch: z.object({ foster: z.coerce.boolean().optional() }),
   component: NewBird,
 });
 
 function NewBird() {
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const { foster: fosterParam } = Route.useSearch();
   const [name, setName] = useState("");
   const [species, setSpecies] = useState("");
   const [age, setAge] = useState("");
@@ -29,7 +33,7 @@ function NewBird() {
   const [saving, setSaving] = useState(false);
   const [photoBusy, setPhotoBusy] = useState(false);
   const todayStr = new Date().toISOString().slice(0, 10);
-  const [isFoster, setIsFoster] = useState(false);
+  const [isFoster, setIsFoster] = useState(!!fosterParam);
   const [intakeDate, setIntakeDate] = useState<string>(todayStr);
 
   async function onPhoto(e: React.ChangeEvent<HTMLInputElement>) {
