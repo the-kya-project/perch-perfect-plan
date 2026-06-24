@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getHandoff, acceptHandoff, declineHandoff } from "@/lib/handoff.functions";
 import { toast } from "sonner";
 import { Loader2, Check } from "lucide-react";
+import { InkHero, Card, PrimaryButton, CtaLink } from "@/components/system";
 
 // Public handoff-accept screen. Renders for logged-out visitors; the token is
 // the access check. Invalid/expired/used → clean message, no data exposed.
@@ -31,16 +32,21 @@ function HandoffAccept() {
     },
   });
 
-  if (isLoading) return <Shell><div className="flex items-center justify-center gap-2 py-10 text-sm text-[#5f5e5a]"><Loader2 className="size-4 animate-spin" /> Loading…</div></Shell>;
+  if (isLoading) {
+    return (
+      <Shell hero={<InkHero eyebrow="Bird handoff" headline="Loading…" />}>
+        <div className="flex items-center justify-center gap-2 py-10 text-sm text-[var(--mute)]"><Loader2 className="size-4 animate-spin" /> Loading…</div>
+      </Shell>
+    );
+  }
 
   if (!handoff?.valid) {
     return (
-      <Shell>
-        <div className="rounded-2xl bg-white p-6 text-center ring-1 ring-[#e3dcc9]">
-          <h1 className="text-lg font-medium text-[#1a3d2e]">This handoff isn't active anymore</h1>
-          <p className="mt-2 text-sm text-[#5f5e5a]">Ask the sender to start a new one.</p>
-          <a href="/" className="mt-5 inline-block rounded-xl bg-[#1a3d2e] px-4 py-2.5 text-sm font-medium text-white">Go to Parrot Care</a>
-        </div>
+      <Shell hero={<InkHero eyebrow="Bird handoff" headline="This handoff isn't active anymore" body="Ask the sender to start a new one." />}>
+        <Card className="p-6 text-center">
+          <p className="t-body text-[var(--mute)]">Ask the sender to start a new one.</p>
+          <a href="/" className="mt-5 inline-flex min-h-[44px] items-center justify-center rounded-[12px] bg-[var(--ink)] px-[18px] py-[11px] text-[15px] font-[500] text-white">Go to Parrot Care</a>
+        </Card>
       </Shell>
     );
   }
@@ -50,24 +56,26 @@ function HandoffAccept() {
   const wrongAccount = session?.signedIn && session.email !== inviteEmail;
 
   return (
-    <Shell>
+    <Shell
+      hero={
+        <InkHero
+          eyebrow="Bird handoff"
+          headline={`${handoff.senderName} is handing ${handoff.birdName} to you.`}
+          body={`So you have everything they learned while caring for ${handoff.birdName}.`}
+        />
+      }
+    >
       <div className="space-y-5">
-        <div>
-          <p className="text-[11px] font-semibold uppercase tracking-widest text-[#5f5e5a]">Bird handoff</p>
-          <h1 className="mt-1 text-2xl font-medium leading-tight text-[#1a3d2e]">{handoff.senderName} is handing off {handoff.birdName} to you</h1>
-          <p className="mt-2 text-sm text-[#5f5e5a]">So you have everything they learned while caring for {handoff.birdName}.</p>
-        </div>
-
-        <div className="rounded-2xl bg-white p-5 ring-1 ring-[#e3dcc9]">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e5a]">You'll receive</p>
-          <ul className="mt-3 space-y-2 text-sm text-[#1a3d2e]">
+        <Card className="p-5">
+          <p className="t-eyebrow text-[var(--moss)]">You'll receive</p>
+          <ul className="mt-3 space-y-2">
             <Li>{handoff.birdName}'s care plan and identity</Li>
             <Li>Weight history, journal, and moments</Li>
             <Li>The photos in those records</Li>
           </ul>
-        </div>
+        </Card>
 
-        <p className="text-xs leading-relaxed text-[#5f5e5a]">Once you accept, {handoff.birdName}'s record is yours and {handoff.senderName} no longer has access.</p>
+        <p className="t-body text-[var(--mute)]">Once you accept, {handoff.birdName}'s record is yours and {handoff.senderName} no longer has access.</p>
 
         {wrongAccount ? (
           <WrongAccount inviteEmail={handoff.recipientEmail} token={token} />
@@ -81,24 +89,18 @@ function HandoffAccept() {
   );
 }
 
-function Shell({ children }: { children: React.ReactNode }) {
+function Shell({ hero, children }: { hero: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="min-h-[100dvh] bg-[#f4f1e8]">
-      <header className="border-b border-[#e3ded0] px-5 py-3 pt-[max(env(safe-area-inset-top),0.75rem)]">
-        <div className="mx-auto flex max-w-md items-center gap-2.5">
-          <img src="/kya_parrot_icon_teal.png" alt="" className="size-8 object-contain" />
-          <div className="leading-tight">
-            <div className="text-sm font-medium tracking-tight text-[#1a3d2e]">Parrot Care Co-Pilot</div>
-            <div className="text-[11px] text-[#5f5e5a]">by The Kya Project</div>
-          </div>
-        </div>
-      </header>
-      <main className="mx-auto max-w-md px-5 py-6">{children}</main>
+    <div className="min-h-[100dvh] bg-[var(--cream)]">
+      <div className="mx-auto max-w-md">
+        {hero}
+        <main className="px-5 py-6">{children}</main>
+      </div>
     </div>
   );
 }
 function Li({ children }: { children: React.ReactNode }) {
-  return <li className="flex items-start gap-2"><Check className="mt-0.5 size-4 shrink-0 text-[#2d8a5d]" /><span>{children}</span></li>;
+  return <li className="flex items-start gap-2 t-body text-[var(--ink)]"><Check className="mt-0.5 size-4 shrink-0 text-[var(--moss)]" /><span>{children}</span></li>;
 }
 
 function useAcceptDecline(token: string, onDone: () => void) {
@@ -121,8 +123,12 @@ function SignedInAccept({ token, onDone }: { token: string; onDone: () => void }
   const { busy, doAccept, doDecline } = useAcceptDecline(token, onDone);
   return (
     <div className="flex gap-2">
-      <button type="button" disabled={!!busy} onClick={doDecline} className="min-h-[48px] flex-1 rounded-xl border border-[#c8bfa6] text-sm font-medium text-[#1a3d2e] disabled:opacity-50">Decline</button>
-      <button type="button" disabled={!!busy} onClick={doAccept} className="min-h-[48px] flex-1 rounded-xl bg-[#1a3d2e] text-sm font-medium text-white disabled:opacity-50">{busy === "accept" ? "Accepting…" : "Accept"}</button>
+      <div className="flex-1">
+        <PrimaryButton tone="outline" disabled={!!busy} onPress={doDecline}>Decline</PrimaryButton>
+      </div>
+      <div className="flex-1">
+        <PrimaryButton tone="ink" disabled={!!busy} onPress={doAccept}>{busy === "accept" ? "Accepting…" : "Accept"}</PrimaryButton>
+      </div>
     </div>
   );
 }
@@ -130,10 +136,12 @@ function SignedInAccept({ token, onDone }: { token: string; onDone: () => void }
 function WrongAccount({ inviteEmail, token }: { inviteEmail: string; token: string }) {
   async function switchAccount() { await supabase.auth.signOut(); window.location.href = `/handoff/${token}`; }
   return (
-    <div className="rounded-2xl bg-[#f6e7c4]/40 p-4 ring-1 ring-[#e3dcc9]">
-      <p className="text-sm text-[#1a3d2e]">This handoff was sent to <span className="font-medium">{inviteEmail}</span>, but you're signed in with a different account.</p>
-      <button type="button" onClick={switchAccount} className="mt-3 min-h-[44px] w-full rounded-xl bg-[#1a3d2e] text-sm font-medium text-white">Sign out and accept as {inviteEmail}</button>
-    </div>
+    <Card className="bg-[var(--amber-fill)] p-4 ring-[var(--line)]">
+      <p className="t-body text-[var(--ink)]">This handoff was sent to <span className="font-[500]">{inviteEmail}</span>, but you're signed in with a different account.</p>
+      <div className="mt-3">
+        <PrimaryButton tone="ink" onPress={switchAccount}>Sign out and accept as {inviteEmail}</PrimaryButton>
+      </div>
+    </Card>
   );
 }
 
@@ -159,28 +167,27 @@ function LoggedOutAccept({ token, inviteEmail }: { token: string; inviteEmail: s
 
   if (confirmSent) {
     return (
-      <div className="rounded-2xl bg-white p-5 text-center ring-1 ring-[#e3dcc9]">
-        <h2 className="text-base font-medium text-[#1a3d2e]">Confirm your email to finish</h2>
-        <p className="mt-2 text-sm text-[#5f5e5a]">We sent a confirmation link to <span className="font-medium">{inviteEmail}</span>. Open it and you'll come right back here to accept.</p>
-      </div>
+      <Card className="p-5 text-center">
+        <h2 className="t-section">Confirm your email to finish</h2>
+        <p className="t-body mt-2 text-[var(--mute)]">We sent a confirmation link to <span className="font-[500]">{inviteEmail}</span>. Open it and you'll come right back here to accept.</p>
+      </Card>
     );
   }
   if (!creating) {
     return (
       <div className="space-y-2">
-        <button type="button" onClick={() => setCreating(true)} className="min-h-[48px] w-full rounded-xl bg-[#1a3d2e] text-sm font-medium text-white">Accept &amp; create account</button>
-        <button type="button" disabled={!!busy} onClick={doDecline} className="min-h-[48px] w-full rounded-xl border border-[#c8bfa6] text-sm font-medium text-[#1a3d2e] disabled:opacity-50">Decline</button>
+        <PrimaryButton tone="lime" onPress={() => setCreating(true)}>Accept &amp; create account</PrimaryButton>
+        <PrimaryButton tone="outline" disabled={!!busy} onPress={doDecline}>Decline</PrimaryButton>
       </div>
     );
   }
   return (
-    <div className="space-y-3 rounded-2xl bg-white p-5 ring-1 ring-[#e3dcc9]">
-      <label className="block"><span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#5f5e5a]">Email</span><input className="input" value={inviteEmail} readOnly disabled /></label>
-      <label className="block"><span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#5f5e5a]">Create a password</span><input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters" autoComplete="new-password" /></label>
-      <button type="button" disabled={pending} onClick={createAndAccept} className="min-h-[48px] w-full rounded-xl bg-[#1a3d2e] text-sm font-medium text-white disabled:opacity-50">{pending ? "Creating…" : "Create account & accept"}</button>
-      <div className="flex items-center gap-3 text-[11px] uppercase tracking-widest text-[#8a897f]"><div className="h-px flex-1 bg-[#e3dcc9]" /> or <div className="h-px flex-1 bg-[#e3dcc9]" /></div>
-      <button type="button" onClick={google} className="min-h-[48px] w-full rounded-xl border border-[#c8bfa6] bg-white text-sm font-medium text-[#1a3d2e]">Continue with Google</button>
-      <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.65rem .8rem;font-size:16px;outline:none}.input:disabled{background:#f4f1e8;color:#5f5e5a}`}</style>
-    </div>
+    <Card className="space-y-3 p-5">
+      <label className="block"><span className="t-eyebrow mb-1 block text-[var(--mute)]">Email</span><input className="input" value={inviteEmail} readOnly disabled /></label>
+      <label className="block"><span className="t-eyebrow mb-1 block text-[var(--mute)]">Create a password</span><input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters" autoComplete="new-password" /></label>
+      <PrimaryButton tone="ink" type="button" disabled={pending} onPress={createAndAccept}>{pending ? "Creating…" : "Create account & accept"}</PrimaryButton>
+      <div className="t-eyebrow flex items-center gap-3 text-[var(--mute2)]"><div className="h-px flex-1 bg-[var(--line)]" /> or <div className="h-px flex-1 bg-[var(--line)]" /></div>
+      <PrimaryButton tone="outline" onPress={google}>Continue with Google</PrimaryButton>
+    </Card>
   );
 }
