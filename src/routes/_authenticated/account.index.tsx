@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { deleteMyAccount } from "@/lib/account.functions";
 import { APP_VERSION } from "@/lib/version";
-import { ArrowLeft, ChevronRight, ShieldAlert, Bell, Smartphone, Lock, X, Archive } from "lucide-react";
+import { ArrowLeft, ChevronRight, ShieldAlert, Bell, Smartphone, Lock, X, Archive, Users } from "lucide-react";
 import { AddToHomeModal } from "@/components/AddToHomeModal";
 import { toast } from "sonner";
 
@@ -106,6 +106,10 @@ function AccountPage() {
             <Divider />
             <Link to="/notifications/settings">
               <Row icon={Bell} title="Notifications" desc="How you hear about scans and updates." />
+            </Link>
+            <Divider />
+            <Link to="/household">
+              <Row icon={Users} iconBg="#cfe3dc" iconColor="#1a5e3f" title="Household" desc="People who help care for your birds." />
             </Link>
             <Divider />
             <button type="button" onClick={() => setA2hsOpen(true)} className="block w-full text-left">
