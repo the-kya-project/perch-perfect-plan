@@ -4,6 +4,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { useBirdRole } from "@/lib/useBirdRole";
+import { useActiveSitIdForBird } from "@/components/CaregiverHome";
 import { toast } from "sonner";
 import { ArrowLeft, Scale, Check } from "lucide-react";
 import { WeightTrendChart, type WeightPoint } from "@/components/WeightTrendChart";
@@ -195,6 +196,11 @@ function WeightFacet() {
 type Meal = "before_meal" | "after_meal" | null;
 
 function LogPanel({ birdId, lastGrams, onClose, onSaved }: { birdId: string; lastGrams?: number; onClose: () => void; onSaved: () => void }) {
+  // sit_id attribution: when the household member is the assigned caregiver on
+  // an active sit covering this bird, every weight they log during the window
+  // is tagged with that sit_id, so the sit's activity view can derive its feed
+  // from attribution. Null otherwise (no over-tagging).
+  const activeSitId = useActiveSitIdForBird(birdId);
   const role = useBirdRole(birdId);
   const [grams, setGrams] = useState<string>(lastGrams ? String(lastGrams) : "");
   const [when, setWhen] = useState<string>(nowLocal()); // datetime-local: date + time
@@ -216,6 +222,7 @@ function LogPanel({ birdId, lastGrams, onClose, onSaved }: { birdId: string; las
         bird_id: birdId, grams: n, measured_at, source: role === "household" ? "household" : "owner", logged_by: u.user?.id ?? null,
       };
       if (meal) payload.meal_relation = meal;
+      if (activeSitId) payload.sit_id = activeSitId;
       const { error } = await supabase.from("weight_entries").insert(payload as any);
       if (error) throw error;
       toast.success("Weight logged.");

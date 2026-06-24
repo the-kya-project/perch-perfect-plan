@@ -36,6 +36,7 @@ import { Route as SitterTokenHomeRouteImport } from './routes/sitter/$token/home
 import { Route as SitterTokenGuideRouteImport } from './routes/sitter/$token/guide'
 import { Route as SitterTokenEmergencyRouteImport } from './routes/sitter/$token/emergency'
 import { Route as SitterTokenCareSheetRouteImport } from './routes/sitter/$token/care-sheet'
+import { Route as AuthenticatedSitsSitIdRouteImport } from './routes/_authenticated/sits.$sitId'
 import { Route as AuthenticatedNotificationsSettingsRouteImport } from './routes/_authenticated/notifications.settings'
 import { Route as AuthenticatedBirdsNewRouteImport } from './routes/_authenticated/birds/new'
 import { Route as AuthenticatedBirdsBirdIdRouteImport } from './routes/_authenticated/birds/$birdId'
@@ -195,6 +196,11 @@ const SitterTokenCareSheetRoute = SitterTokenCareSheetRouteImport.update({
   path: '/care-sheet',
   getParentRoute: () => SitterTokenRouteRoute,
 } as any)
+const AuthenticatedSitsSitIdRoute = AuthenticatedSitsSitIdRouteImport.update({
+  id: '/$sitId',
+  path: '/$sitId',
+  getParentRoute: () => AuthenticatedSitsRoute,
+} as any)
 const AuthenticatedNotificationsSettingsRoute =
   AuthenticatedNotificationsSettingsRouteImport.update({
     id: '/settings',
@@ -335,7 +341,7 @@ export interface FileRoutesByFullPath {
   '/household': typeof AuthenticatedHouseholdRoute
   '/notifications': typeof AuthenticatedNotificationsRouteWithChildren
   '/past-birds': typeof AuthenticatedPastBirdsRoute
-  '/sits': typeof AuthenticatedSitsRoute
+  '/sits': typeof AuthenticatedSitsRouteWithChildren
   '/today': typeof AuthenticatedTodayRoute
   '/welcome': typeof AuthenticatedWelcomeRoute
   '/handoff/$token': typeof HandoffTokenRoute
@@ -344,6 +350,7 @@ export interface FileRoutesByFullPath {
   '/birds/$birdId': typeof AuthenticatedBirdsBirdIdRouteWithChildren
   '/birds/new': typeof AuthenticatedBirdsNewRoute
   '/notifications/settings': typeof AuthenticatedNotificationsSettingsRoute
+  '/sits/$sitId': typeof AuthenticatedSitsSitIdRoute
   '/sitter/$token/care-sheet': typeof SitterTokenCareSheetRoute
   '/sitter/$token/emergency': typeof SitterTokenEmergencyRoute
   '/sitter/$token/guide': typeof SitterTokenGuideRoute
@@ -381,7 +388,7 @@ export interface FileRoutesByTo {
   '/explore': typeof AuthenticatedExploreRoute
   '/household': typeof AuthenticatedHouseholdRoute
   '/past-birds': typeof AuthenticatedPastBirdsRoute
-  '/sits': typeof AuthenticatedSitsRoute
+  '/sits': typeof AuthenticatedSitsRouteWithChildren
   '/today': typeof AuthenticatedTodayRoute
   '/welcome': typeof AuthenticatedWelcomeRoute
   '/handoff/$token': typeof HandoffTokenRoute
@@ -389,6 +396,7 @@ export interface FileRoutesByTo {
   '/account/security': typeof AuthenticatedAccountSecurityRoute
   '/birds/new': typeof AuthenticatedBirdsNewRoute
   '/notifications/settings': typeof AuthenticatedNotificationsSettingsRoute
+  '/sits/$sitId': typeof AuthenticatedSitsSitIdRoute
   '/sitter/$token/care-sheet': typeof SitterTokenCareSheetRoute
   '/sitter/$token/emergency': typeof SitterTokenEmergencyRoute
   '/sitter/$token/guide': typeof SitterTokenGuideRoute
@@ -431,7 +439,7 @@ export interface FileRoutesById {
   '/_authenticated/household': typeof AuthenticatedHouseholdRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRouteWithChildren
   '/_authenticated/past-birds': typeof AuthenticatedPastBirdsRoute
-  '/_authenticated/sits': typeof AuthenticatedSitsRoute
+  '/_authenticated/sits': typeof AuthenticatedSitsRouteWithChildren
   '/_authenticated/today': typeof AuthenticatedTodayRoute
   '/_authenticated/welcome': typeof AuthenticatedWelcomeRoute
   '/handoff/$token': typeof HandoffTokenRoute
@@ -440,6 +448,7 @@ export interface FileRoutesById {
   '/_authenticated/birds/$birdId': typeof AuthenticatedBirdsBirdIdRouteWithChildren
   '/_authenticated/birds/new': typeof AuthenticatedBirdsNewRoute
   '/_authenticated/notifications/settings': typeof AuthenticatedNotificationsSettingsRoute
+  '/_authenticated/sits/$sitId': typeof AuthenticatedSitsSitIdRoute
   '/sitter/$token/care-sheet': typeof SitterTokenCareSheetRoute
   '/sitter/$token/emergency': typeof SitterTokenEmergencyRoute
   '/sitter/$token/guide': typeof SitterTokenGuideRoute
@@ -491,6 +500,7 @@ export interface FileRouteTypes {
     | '/birds/$birdId'
     | '/birds/new'
     | '/notifications/settings'
+    | '/sits/$sitId'
     | '/sitter/$token/care-sheet'
     | '/sitter/$token/emergency'
     | '/sitter/$token/guide'
@@ -536,6 +546,7 @@ export interface FileRouteTypes {
     | '/account/security'
     | '/birds/new'
     | '/notifications/settings'
+    | '/sits/$sitId'
     | '/sitter/$token/care-sheet'
     | '/sitter/$token/emergency'
     | '/sitter/$token/guide'
@@ -586,6 +597,7 @@ export interface FileRouteTypes {
     | '/_authenticated/birds/$birdId'
     | '/_authenticated/birds/new'
     | '/_authenticated/notifications/settings'
+    | '/_authenticated/sits/$sitId'
     | '/sitter/$token/care-sheet'
     | '/sitter/$token/emergency'
     | '/sitter/$token/guide'
@@ -818,6 +830,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SitterTokenCareSheetRouteImport
       parentRoute: typeof SitterTokenRouteRoute
     }
+    '/_authenticated/sits/$sitId': {
+      id: '/_authenticated/sits/$sitId'
+      path: '/$sitId'
+      fullPath: '/sits/$sitId'
+      preLoaderRoute: typeof AuthenticatedSitsSitIdRouteImport
+      parentRoute: typeof AuthenticatedSitsRoute
+    }
     '/_authenticated/notifications/settings': {
       id: '/_authenticated/notifications/settings'
       path: '/settings'
@@ -998,6 +1017,17 @@ const AuthenticatedNotificationsRouteWithChildren =
     AuthenticatedNotificationsRouteChildren,
   )
 
+interface AuthenticatedSitsRouteChildren {
+  AuthenticatedSitsSitIdRoute: typeof AuthenticatedSitsSitIdRoute
+}
+
+const AuthenticatedSitsRouteChildren: AuthenticatedSitsRouteChildren = {
+  AuthenticatedSitsSitIdRoute: AuthenticatedSitsSitIdRoute,
+}
+
+const AuthenticatedSitsRouteWithChildren =
+  AuthenticatedSitsRoute._addFileChildren(AuthenticatedSitsRouteChildren)
+
 interface AuthenticatedBirdsBirdIdPlanRouteChildren {
   AuthenticatedBirdsBirdIdPlanEditorRoute: typeof AuthenticatedBirdsBirdIdPlanEditorRoute
 }
@@ -1068,7 +1098,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedHouseholdRoute: typeof AuthenticatedHouseholdRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRouteWithChildren
   AuthenticatedPastBirdsRoute: typeof AuthenticatedPastBirdsRoute
-  AuthenticatedSitsRoute: typeof AuthenticatedSitsRoute
+  AuthenticatedSitsRoute: typeof AuthenticatedSitsRouteWithChildren
   AuthenticatedTodayRoute: typeof AuthenticatedTodayRoute
   AuthenticatedWelcomeRoute: typeof AuthenticatedWelcomeRoute
   AuthenticatedBirdsBirdIdRoute: typeof AuthenticatedBirdsBirdIdRouteWithChildren
@@ -1082,7 +1112,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedHouseholdRoute: AuthenticatedHouseholdRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRouteWithChildren,
   AuthenticatedPastBirdsRoute: AuthenticatedPastBirdsRoute,
-  AuthenticatedSitsRoute: AuthenticatedSitsRoute,
+  AuthenticatedSitsRoute: AuthenticatedSitsRouteWithChildren,
   AuthenticatedTodayRoute: AuthenticatedTodayRoute,
   AuthenticatedWelcomeRoute: AuthenticatedWelcomeRoute,
   AuthenticatedBirdsBirdIdRoute: AuthenticatedBirdsBirdIdRouteWithChildren,
