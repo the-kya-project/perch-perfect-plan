@@ -61,7 +61,10 @@ async function loadSitByToken(token: string) {
   if (error) throw new Error(error.message);
   if (!sit) throw new Error("SITTER_LINK_INVALID");
   if (sit.revoked) throw new Error("SITTER_LINK_REVOKED");
-  if (new Date(sit.token_expires_at) < new Date()) {
+  // Token-bearing rows always carry token_expires_at (sits_one_caregiver_chk
+  // enforces token + expiry on the external-sitter path); household sits have
+  // no token and won't match the lookup above, so the non-null assert is safe.
+  if (new Date(sit.token_expires_at as string) < new Date()) {
     throw new Error("SITTER_LINK_EXPIRED");
   }
   return sit;
