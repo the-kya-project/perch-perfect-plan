@@ -92,7 +92,7 @@ function OwnerScan() {
   return (
     <div className="min-h-screen bg-[#f4f1e8] pb-nav">
       <header className="sticky top-0 z-10 border-b border-[#e3ded0] bg-[#f4f1e8]/95 backdrop-blur">
-        <div className="mx-auto flex max-w-md items-center gap-3 px-5 py-3">
+        <div className="mx-auto flex max-w-md items-center gap-3 px-5 pt-safe pb-3">
           <Link to="/birds/$birdId" params={{ birdId }} aria-label="Back to bird record" className="-ml-1 rounded p-1 text-[#1a3d2e]">
             <ArrowLeft className="size-5" />
           </Link>

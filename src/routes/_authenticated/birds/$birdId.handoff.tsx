@@ -52,7 +52,7 @@ function HandoffFlow() {
   return (
     <div className="min-h-screen bg-[#f4f1e8] pb-[calc(var(--nav-spacer)+6rem)]">
       <header className="sticky top-0 z-10 border-b border-[#e3ded0] bg-[#f4f1e8]/95 backdrop-blur">
-        <div className="mx-auto flex max-w-md items-center gap-3 px-5 py-3">
+        <div className="mx-auto flex max-w-md items-center gap-3 px-5 pt-safe pb-3">
           <Link to="/birds/$birdId" params={{ birdId }} aria-label="Back" className="-ml-1 rounded p-1 text-[#1a3d2e]"><ArrowLeft className="size-5" /></Link>
           <h1 className="truncate text-base font-medium text-[#1a3d2e]">Hand off {name}</h1>
         </div>
