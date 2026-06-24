@@ -19,6 +19,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as HandoffTokenRouteImport } from './routes/handoff.$token'
 import { Route as AuthenticatedWelcomeRouteImport } from './routes/_authenticated/welcome'
+import { Route as AuthenticatedTodayRouteImport } from './routes/_authenticated/today'
 import { Route as AuthenticatedSitsRouteImport } from './routes/_authenticated/sits'
 import { Route as AuthenticatedPastBirdsRouteImport } from './routes/_authenticated/past-birds'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
@@ -104,6 +105,11 @@ const HandoffTokenRoute = HandoffTokenRouteImport.update({
 const AuthenticatedWelcomeRoute = AuthenticatedWelcomeRouteImport.update({
   id: '/welcome',
   path: '/welcome',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedTodayRoute = AuthenticatedTodayRouteImport.update({
+  id: '/today',
+  path: '/today',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedSitsRoute = AuthenticatedSitsRouteImport.update({
@@ -330,6 +336,7 @@ export interface FileRoutesByFullPath {
   '/notifications': typeof AuthenticatedNotificationsRouteWithChildren
   '/past-birds': typeof AuthenticatedPastBirdsRoute
   '/sits': typeof AuthenticatedSitsRoute
+  '/today': typeof AuthenticatedTodayRoute
   '/welcome': typeof AuthenticatedWelcomeRoute
   '/handoff/$token': typeof HandoffTokenRoute
   '/invite/$token': typeof InviteTokenRoute
@@ -375,6 +382,7 @@ export interface FileRoutesByTo {
   '/household': typeof AuthenticatedHouseholdRoute
   '/past-birds': typeof AuthenticatedPastBirdsRoute
   '/sits': typeof AuthenticatedSitsRoute
+  '/today': typeof AuthenticatedTodayRoute
   '/welcome': typeof AuthenticatedWelcomeRoute
   '/handoff/$token': typeof HandoffTokenRoute
   '/invite/$token': typeof InviteTokenRoute
@@ -424,6 +432,7 @@ export interface FileRoutesById {
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRouteWithChildren
   '/_authenticated/past-birds': typeof AuthenticatedPastBirdsRoute
   '/_authenticated/sits': typeof AuthenticatedSitsRoute
+  '/_authenticated/today': typeof AuthenticatedTodayRoute
   '/_authenticated/welcome': typeof AuthenticatedWelcomeRoute
   '/handoff/$token': typeof HandoffTokenRoute
   '/invite/$token': typeof InviteTokenRoute
@@ -474,6 +483,7 @@ export interface FileRouteTypes {
     | '/notifications'
     | '/past-birds'
     | '/sits'
+    | '/today'
     | '/welcome'
     | '/handoff/$token'
     | '/invite/$token'
@@ -519,6 +529,7 @@ export interface FileRouteTypes {
     | '/household'
     | '/past-birds'
     | '/sits'
+    | '/today'
     | '/welcome'
     | '/handoff/$token'
     | '/invite/$token'
@@ -567,6 +578,7 @@ export interface FileRouteTypes {
     | '/_authenticated/notifications'
     | '/_authenticated/past-birds'
     | '/_authenticated/sits'
+    | '/_authenticated/today'
     | '/_authenticated/welcome'
     | '/handoff/$token'
     | '/invite/$token'
@@ -685,6 +697,13 @@ declare module '@tanstack/react-router' {
       path: '/welcome'
       fullPath: '/welcome'
       preLoaderRoute: typeof AuthenticatedWelcomeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/today': {
+      id: '/_authenticated/today'
+      path: '/today'
+      fullPath: '/today'
+      preLoaderRoute: typeof AuthenticatedTodayRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/sits': {
@@ -1050,6 +1069,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRouteWithChildren
   AuthenticatedPastBirdsRoute: typeof AuthenticatedPastBirdsRoute
   AuthenticatedSitsRoute: typeof AuthenticatedSitsRoute
+  AuthenticatedTodayRoute: typeof AuthenticatedTodayRoute
   AuthenticatedWelcomeRoute: typeof AuthenticatedWelcomeRoute
   AuthenticatedBirdsBirdIdRoute: typeof AuthenticatedBirdsBirdIdRouteWithChildren
   AuthenticatedBirdsNewRoute: typeof AuthenticatedBirdsNewRoute
@@ -1063,6 +1083,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRouteWithChildren,
   AuthenticatedPastBirdsRoute: AuthenticatedPastBirdsRoute,
   AuthenticatedSitsRoute: AuthenticatedSitsRoute,
+  AuthenticatedTodayRoute: AuthenticatedTodayRoute,
   AuthenticatedWelcomeRoute: AuthenticatedWelcomeRoute,
   AuthenticatedBirdsBirdIdRoute: AuthenticatedBirdsBirdIdRouteWithChildren,
   AuthenticatedBirdsNewRoute: AuthenticatedBirdsNewRoute,

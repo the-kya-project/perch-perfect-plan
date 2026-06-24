@@ -20,6 +20,7 @@ import { isAddressField } from "@/lib/address";
 import { AddressInput } from "@/components/AddressInput";
 import { fetchScanFeed, getNotifSeenAt } from "@/lib/notificationsFeed";
 import { InkHero, IconTile, StatusPill, SectionHead, CtaLink, type HeroCta } from "@/components/system";
+import { CaregiverHome, useActiveCaregiver } from "@/components/CaregiverHome";
 import { BirdRecordBody } from "./birds/$birdId.index";
 import { getHouseholdHome, type HomeHousehold } from "@/lib/home.functions";
 import { getPastBirds } from "@/lib/handoff.functions";
@@ -129,6 +130,9 @@ function Dashboard() {
   const fosterBirds = homeBirds.filter((b) => b.is_foster);
   const flockBirds = homeBirds.filter((b) => !b.is_foster);
 
+  const { data: caregiver } = useActiveCaregiver();
+  const caregiverActive = !!caregiver?.sits?.length;
+
   const stateCopy = birdsLoading ? undefined
     : birds.length === 0 ? "Add your first bird to start their record."
     : birds.length === 1 ? `${birds[0].name}'s record.`
@@ -137,6 +141,20 @@ function Dashboard() {
     !birdsLoading && birds.length === 0
       ? { label: "Add a bird", tone: "lime", icon: <Plus className="size-4" />, onPress: () => navigate({ to: "/birds/new" }) }
       : undefined;
+
+  // Active-caregiver shift: when the signed-in user is the assigned caregiver
+  // on a sit covering today, Home takes over the active-caregiver experience
+  // (hero + Today's check + Birds you're covering). The normal Home returns
+  // automatically when end_date < today (the hook's query no longer matches).
+  if (caregiverActive && caregiver?.sits?.length) {
+    return (
+      <div className="min-h-screen bg-[var(--cream)] pb-nav">
+        <div className="mx-auto max-w-md">
+          <CaregiverHome data={caregiver} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[var(--cream)] pb-nav">
