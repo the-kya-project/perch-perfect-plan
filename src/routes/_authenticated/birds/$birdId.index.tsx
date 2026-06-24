@@ -9,6 +9,7 @@ import { PhotoCropper } from "@/components/PhotoCropper";
 import { useServerFn } from "@tanstack/react-start";
 import { getPendingHandoff, cancelHandoff, makePermanent } from "@/lib/handoff.functions";
 import { InkHero, PhotoHero, IconTile, LimeStat, StatusPill, SectionHead, RecordRow, Card, PrimaryButton } from "@/components/system";
+import { BirdPhotoSheet } from "@/components/BirdPhotoSheet";
 import { toast } from "sonner";
 import {
   Feather, Scale, BookOpen, IdCard, CalendarHeart, ClipboardList,
@@ -62,21 +63,41 @@ function BirdRecordHome() {
 // only BirdRecordBody, under its own greeting hero, so this isn't doubled.)
 function BirdRecordHero({ birdId }: { birdId: string }) {
   const navigate = useNavigate();
+  const role = useBirdRole(birdId);
+  const isOwner = role === "owner";
   const { data: bird } = useBirdRecord(birdId);
   const photoOf = useBirdPhotos([bird?.photo_url], 800);
   const photo = photoOf(bird?.photo_url);
   const name = bird?.name ?? "This bird";
   const meta = [bird?.species || "Parrot", bird?.age].filter(Boolean).join(" · ");
   const since = bird?.is_foster && bird?.intake_date ? `With you since ${fmtMonthYear(bird.intake_date)}` : null;
+  const [photoSheet, setPhotoSheet] = useState(false);
   return (
     <>
-      <PhotoHero src={photo?.url ?? undefined} height={232} alt={name} onBack={() => navigate({ to: "/dashboard" })} />
+      <PhotoHero
+        src={photo?.url ?? undefined}
+        height={232}
+        alt={name}
+        objectPosition={bird?.photo_position ?? "50% 50%"}
+        onBack={() => navigate({ to: "/dashboard" })}
+        onEditPhoto={isOwner && bird ? () => setPhotoSheet(true) : undefined}
+      />
       <InkHero
         eyebrow={bird?.is_foster ? "In your care" : undefined}
         headline={name}
         body={[meta, since].filter(Boolean).join(" · ")}
         cta={{ label: "View identity", tone: "arrow", onPress: () => navigate({ to: "/birds/$birdId/identity", params: { birdId } }) }}
       />
+      {photoSheet && bird && (
+        <BirdPhotoSheet
+          birdId={birdId}
+          ownerId={bird.owner_id}
+          currentPhoto={bird.photo_url ?? null}
+          currentPosition={bird.photo_position ?? null}
+          displayUrl={photo?.url ?? null}
+          onClose={() => setPhotoSheet(false)}
+        />
+      )}
     </>
   );
 }
