@@ -588,7 +588,7 @@ function DefaultsPanel() {
   return (
     <section ref={sectionRef} id="emergency-defaults" className="scroll-mt-4 space-y-3">
       <div className="flex items-end justify-between">
-        <h2 className="font-display text-[19px] font-medium text-[#1a3d2e]">Account emergency defaults</h2>
+        <h2 className="t-section">Account emergency defaults</h2>
         <button type="button" onClick={() => { setD(seedDefaults(defaults)); setOpen((o) => !o); }} className="text-sm font-medium text-[#1a3d2e] underline">
           {open ? "Close" : filledCount > 0 ? "Edit" : "Set up"}
         </button>

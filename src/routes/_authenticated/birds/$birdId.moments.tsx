@@ -1,12 +1,13 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, Camera, Plus, Share2, Check, X, Loader2 } from "lucide-react";
+import { ArrowLeft, Camera, Plus, Share2, Check, X, Loader2, CalendarHeart } from "lucide-react";
 import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
 import { uploadJournalPhoto, signJournalPhotos } from "@/lib/journalPhoto";
 import { shareMomentCard } from "@/lib/momentCard";
+import { InkHero, IconTile, SectionHead, Card, RecordRow } from "@/components/system";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/moments")({
   head: () => ({ meta: [{ title: "Moments — Parrot Care Co-Pilot" }] }),
@@ -40,6 +41,7 @@ const monthDay = (iso: string) => new Date(`${iso}T12:00:00`).toLocaleDateString
 
 function MomentsFacet() {
   const { birdId } = Route.useParams();
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const [adding, setAdding] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -138,132 +140,152 @@ function MomentsFacet() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f4f1e8] pb-24">
-      <header className="sticky top-0 z-10 border-b border-[#e3ded0] bg-[#f4f1e8]/95 backdrop-blur">
-        <div className="mx-auto flex max-w-md items-center gap-3 px-5 py-3">
-          <Link to="/birds/$birdId" params={{ birdId }} aria-label="Back to bird record" className="-ml-1 rounded p-1 text-[#1a3d2e]">
-            <ArrowLeft className="size-5" />
-          </Link>
-          <h1 className="text-base font-medium text-[#1a3d2e]">Moments</h1>
-          {busy && <Loader2 className="ml-auto size-4 animate-spin text-[#5f5e5a]" />}
-        </div>
-      </header>
+    <div className="min-h-screen bg-[var(--cream)] pb-24">
+      <div className="mx-auto max-w-md">
+        <InkHero
+          eyebrow="Moments"
+          headline="Days worth marking."
+          backIcon={<ArrowLeft className="size-5" />}
+          onBack={() => navigate({ to: "/birds/$birdId", params: { birdId } })}
+          trailingIcons={busy ? <Loader2 className="size-4 animate-spin text-white/80" /> : undefined}
+          cta={{ label: "Add custom milestone", tone: "lime", icon: <Plus className="size-4" />, onPress: () => setAdding(true) }}
+        />
 
-      <main className="mx-auto max-w-md space-y-5 px-5 py-5">
-        {/* Upcoming nudge — only within ~7 days */}
-        {nudge && (
-          <section className="flex items-center gap-3 rounded-[16px] bg-[#efe9da] p-4">
-            <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[#f6e7c4] text-[#854F0B]"><Camera className="size-5" /></span>
-            <p className="min-w-0 flex-1 text-sm text-[#1a3d2e]">
-              {anchorTitle(nudge.a, nudge.occ.years)} {relDay(nudge.occ.date)} — mark it with a photo.
-            </p>
-            <label className="inline-flex min-h-[44px] shrink-0 cursor-pointer items-center gap-1.5 rounded-[14px] bg-[#cdeab0] px-4 text-sm font-medium text-[#1a3d2e]">
-              <Plus className="size-4" /> Add
-              <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) addAnchorPhoto(nudge.a.key, nudge.occ.date.getFullYear(), f); }} />
-            </label>
-          </section>
-        )}
+        <main className="space-y-4 px-5 pt-5">
+          {/* Upcoming nudge — only within ~7 days */}
+          {nudge && (
+            <section>
+              <SectionHead title="Upcoming" />
+              <Card>
+                <div className="flex items-center gap-3 px-4 py-3">
+                  <IconTile size={38} tone="pale" icon={<CalendarHeart className="size-5" />} />
+                  <p className="min-w-0 flex-1 t-body text-[var(--ink)]">
+                    {anchorTitle(nudge.a, nudge.occ.years)} {relDay(nudge.occ.date)} — mark it with a photo.
+                  </p>
+                  <label className="inline-flex min-h-[44px] shrink-0 cursor-pointer items-center gap-1.5 rounded-[12px] bg-[var(--ink)] px-4 text-[15px] font-[500] text-white active:scale-[0.99]">
+                    <Plus className="size-4" /> Add
+                    <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) addAnchorPhoto(nudge.a.key, nudge.occ.date.getFullYear(), f); }} />
+                  </label>
+                </div>
+              </Card>
+            </section>
+          )}
 
-        {/* Featured keepsake card */}
-        {featured && (
-          <section>
-            <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[18px]">
-              {featuredPhoto ? (
-                <img src={featuredPhoto} alt="" className="absolute inset-0 size-full object-cover" />
-              ) : (
-                <div className="absolute inset-0" style={{ background: "linear-gradient(135deg,#7fa890,#cdeab0)" }} />
-              )}
-              <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(26,61,46,.92) 0%, rgba(26,61,46,0) 48%)" }} />
-              <span className="absolute right-4 top-4 text-[10px] font-semibold uppercase tracking-[0.2em] text-white/90">The Kya Project</span>
-              <div className="absolute inset-x-0 bottom-0 p-5">
-                <p className="text-xl font-medium leading-tight text-white">{anchorTitle(featured.a, featured.occ.years)}</p>
-                <p className="mt-1 text-sm text-white/85">{name} · {monthDay(featured.a.baseISO)}</p>
+          {/* Featured keepsake card — photo gradient with the Kya Project mark */}
+          {featured && (
+            <section>
+              <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[18px]">
+                {featuredPhoto ? (
+                  <img src={featuredPhoto} alt="" className="absolute inset-0 size-full object-cover" />
+                ) : (
+                  <div className="absolute inset-0" style={{ background: "linear-gradient(135deg,var(--moss),var(--lime))" }} />
+                )}
+                <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(26,61,46,.92) 0%, rgba(26,61,46,0) 48%)" }} />
+                <span className="absolute right-4 top-4 t-eyebrow text-white/90">The Kya Project</span>
+                <div className="absolute inset-x-0 bottom-0 p-5">
+                  <p className="text-[22px] font-[500] leading-tight tracking-[-0.01em] text-white">{anchorTitle(featured.a, featured.occ.years)}</p>
+                  <p className="mt-1 t-body text-white/85">{name} · {monthDay(featured.a.baseISO)}</p>
+                </div>
               </div>
-            </div>
-            <div className="mt-2 flex items-center justify-between gap-3 px-1">
-              <p className="text-xs text-[#5f5e5a]">Save to your photos or share anywhere.</p>
-              <button
-                type="button"
-                onClick={() => share({ photoUrl: featuredPhoto, title: anchorTitle(featured.a, featured.occ.years), context: `${name} · ${monthDay(featured.a.baseISO)}` })}
-                className="inline-flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-full bg-[#1a3d2e] px-3.5 text-sm font-medium text-white"
-              >
-                <Share2 className="size-4" /> Share
-              </button>
-            </div>
-          </section>
-        )}
-
-        {/* Milestones — auto anchors with year-over-year photo slots */}
-        {anchors.map((a) => {
-          const baseYear = new Date(`${a.baseISO}T12:00:00`).getFullYear();
-          const thisYear = todayMid().getFullYear();
-          const years: number[] = [];
-          for (let y = baseYear; y <= thisYear; y++) years.push(y);
-          return (
-            <section key={a.key} className="rounded-[16px] bg-white p-4 ring-1 ring-[#e3dcc9]">
-              <div className="flex items-baseline justify-between">
-                <p className="text-sm font-medium text-[#1a3d2e]">{a.label}</p>
-                <p className="text-xs text-[#8a897f]">{monthDay(a.baseISO)} · yearly</p>
+              <div className="mt-2 flex items-center justify-between gap-3 px-1">
+                <p className="t-meta">Save to your photos or share anywhere.</p>
+                <button
+                  type="button"
+                  onClick={() => share({ photoUrl: featuredPhoto, title: anchorTitle(featured.a, featured.occ.years), context: `${name} · ${monthDay(featured.a.baseISO)}` })}
+                  className="inline-flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-full bg-[var(--ink)] px-4 text-[15px] font-[500] text-white active:scale-[0.99]"
+                >
+                  <Share2 className="size-4" /> Share
+                </button>
               </div>
-              <div className="mt-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                {years.map((y) => {
-                  const path = photoByYear.get(`${a.key}:${y}`);
-                  const url = urlFor(path);
-                  const isCurrent = y === thisYear;
+            </section>
+          )}
+
+          {/* Milestones — auto anchors with year-over-year photo slots */}
+          {anchors.length > 0 && (
+            <section>
+              <SectionHead title="Milestones" />
+              <div className="space-y-4">
+                {anchors.map((a) => {
+                  const baseYear = new Date(`${a.baseISO}T12:00:00`).getFullYear();
+                  const thisYear = todayMid().getFullYear();
+                  const years: number[] = [];
+                  for (let y = baseYear; y <= thisYear; y++) years.push(y);
                   return (
-                    <div key={y} className="shrink-0 text-center">
-                      {url ? (
-                        <button type="button" onClick={() => share({ photoUrl: url, title: anchorTitle(a, y - baseYear), context: `${name} · ${y}` })} className="block size-16 overflow-hidden rounded-xl ring-1 ring-[#e3dcc9]">
-                          <img src={url} alt="" className="size-full object-cover" />
-                        </button>
-                      ) : (
-                        <label className={`grid size-16 cursor-pointer place-items-center rounded-xl ${isCurrent ? "border-2 border-dashed border-[#2d6a4f] text-[#2d6a4f]" : "text-white/80"}`} style={isCurrent ? undefined : { background: "linear-gradient(135deg,#7fa890,#cdeab0)" }}>
-                          <Plus className="size-5" />
-                          <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) addAnchorPhoto(a.key, y, f); }} />
-                        </label>
-                      )}
-                      <span className="mt-1 block text-[10px] text-[#8a897f]">{y}</span>
-                    </div>
+                    <Card key={a.key} className="p-4">
+                      <div className="flex items-baseline justify-between">
+                        <p className="t-item">{a.label}</p>
+                        <p className="t-meta">{monthDay(a.baseISO)} · yearly</p>
+                      </div>
+                      <div className="mt-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                        {years.map((y) => {
+                          const path = photoByYear.get(`${a.key}:${y}`);
+                          const url = urlFor(path);
+                          const isCurrent = y === thisYear;
+                          return (
+                            <div key={y} className="shrink-0 text-center">
+                              {url ? (
+                                <button type="button" onClick={() => share({ photoUrl: url, title: anchorTitle(a, y - baseYear), context: `${name} · ${y}` })} className="block size-16 overflow-hidden rounded-xl ring-1 ring-[var(--line2)]">
+                                  <img src={url} alt="" className="size-full object-cover" />
+                                </button>
+                              ) : (
+                                <label className={`grid size-16 cursor-pointer place-items-center rounded-xl ${isCurrent ? "border-2 border-dashed border-[var(--moss)] text-[var(--moss)]" : "text-white/80"}`} style={isCurrent ? undefined : { background: "linear-gradient(135deg,var(--moss),var(--lime))" }}>
+                                  <Plus className="size-5" />
+                                  <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) addAnchorPhoto(a.key, y, f); }} />
+                                </label>
+                              )}
+                              <span className="mt-1 block t-meta">{y}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </Card>
                   );
                 })}
               </div>
             </section>
-          );
-        })}
-
-        {anchors.length === 0 && (
-          <p className="rounded-[16px] bg-[#efe9da] p-6 text-center text-sm text-[#5f5e5a]">
-            Add {name}'s hatch date and the day they came home in Identity, and their yearly moments will appear here.
-          </p>
-        )}
-
-        {/* Your own — secondary */}
-        <section>
-          <h2 className="mb-2 px-1 text-xs font-semibold uppercase tracking-wider text-[#8a897f]">Your own</h2>
-          {customs.length > 0 && (
-            <ul className="space-y-2">
-              {customs.map((c) => {
-                const url = urlFor(c.photo_path);
-                return (
-                  <li key={c.id} className="flex items-center gap-3 rounded-[14px] bg-white p-3 ring-1 ring-[#e3dcc9]">
-                    {url ? <img src={url} alt="" className="size-11 shrink-0 rounded-lg object-cover" /> : <span className="size-11 shrink-0 rounded-lg" style={{ background: "linear-gradient(135deg,#7fa890,#cdeab0)" }} />}
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-medium text-[#1a3d2e]">{c.title || "Milestone"}</p>
-                      <p className="truncate text-xs text-[#8a897f]">{c.on_date ? fmtDate(c.on_date) : ""}</p>
-                    </div>
-                    <button type="button" onClick={() => share({ photoUrl: url, title: c.title || "Milestone", context: `${name}${c.on_date ? ` · ${monthDay(c.on_date)}` : ""}` })} aria-label="Share" className="grid size-9 shrink-0 place-items-center rounded-full text-[#2d6a4f]">
-                      <Share2 className="size-4" />
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
           )}
-          <button type="button" onClick={() => setAdding(true)} className="mt-2 flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[14px] border border-dashed border-[#c8bfa6] text-sm font-medium text-[#5f5e5a]">
-            <Plus className="size-4" /> Add a milestone
-          </button>
-        </section>
-      </main>
+
+          {anchors.length === 0 && (
+            <p className="rounded-[16px] bg-[var(--cream2)] p-6 text-center t-body text-[var(--mute)]">
+              Add {name}'s hatch date and the day they came home in Identity, and their yearly moments will appear here.
+            </p>
+          )}
+
+          {/* Your own — secondary */}
+          <section>
+            <SectionHead title="Your own" />
+            {customs.length > 0 && (
+              <Card className="mb-2">
+                {customs.map((c, i) => {
+                  const url = urlFor(c.photo_path);
+                  return (
+                    <RecordRow
+                      key={c.id}
+                      leading={
+                        url
+                          ? <img src={url} alt="" className="size-11 shrink-0 rounded-[11px] object-cover" />
+                          : <span className="size-11 shrink-0 rounded-[11px]" style={{ background: "linear-gradient(135deg,var(--moss),var(--lime))" }} />
+                      }
+                      title={c.title || "Milestone"}
+                      subtitle={c.on_date ? fmtDate(c.on_date) : undefined}
+                      trailing={
+                        <button type="button" onClick={() => share({ photoUrl: url, title: c.title || "Milestone", context: `${name}${c.on_date ? ` · ${monthDay(c.on_date)}` : ""}` })} aria-label="Share" className="grid size-11 place-items-center rounded-full text-[var(--moss)] active:scale-95">
+                          <Share2 className="size-4" />
+                        </button>
+                      }
+                      chevron={false}
+                      last={i === customs.length - 1}
+                    />
+                  );
+                })}
+              </Card>
+            )}
+            <button type="button" onClick={() => setAdding(true)} className="mt-2 flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[12px] border border-dashed border-[var(--line)] t-item text-[var(--mute)] active:scale-[0.99]">
+              <Plus className="size-4" /> Add a milestone
+            </button>
+          </section>
+        </main>
+      </div>
 
       {adding && (
         <AddMilestone birdId={birdId} onClose={() => setAdding(false)} onSaved={() => { setAdding(false); qc.invalidateQueries({ queryKey: ["moments", birdId] }); }} />

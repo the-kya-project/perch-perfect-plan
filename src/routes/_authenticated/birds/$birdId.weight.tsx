@@ -1,14 +1,14 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { useBirdRole } from "@/lib/useBirdRole";
 import { toast } from "sonner";
-import { ArrowLeft, Scale, Plus, Check } from "lucide-react";
+import { ArrowLeft, Scale, Check } from "lucide-react";
 import { WeightTrendChart, type WeightPoint } from "@/components/WeightTrendChart";
-import { DatedTimeline, type TimelineItem } from "@/components/DatedTimeline";
 import { computeWeightTrend } from "@/lib/weightTrend";
+import { InkHero, IconTile, StatusPill, SectionHead, Card, RecordRow } from "@/components/system";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/weight")({
   head: () => ({ meta: [{ title: "Weight — Parrot Care Co-Pilot" }] }),
@@ -34,8 +34,18 @@ const nowLocal = () => {
 const fmtDateTime = (iso: string) => new Date(iso).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 const mealLabel = (m: string | null | undefined): string | null => (m === "before_meal" ? "before meal" : m === "after_meal" ? "after meal" : null);
 
+// Window-aware steady/trend context line for the hero (no emergency framing —
+// weight is never "red" on this screen).
+function trendContext(trend: "steady" | "up" | "down", delta: number, win: WindowDays): string {
+  const span = win === 30 ? "the last month" : win === 90 ? "the last 90 days" : "the last year";
+  if (trend === "up") return `Up ${delta} g over ${span}.`;
+  if (trend === "down") return `Down ${Math.abs(delta)} g over ${span}.`;
+  return `Steady over ${span}.`;
+}
+
 function WeightFacet() {
   const { birdId } = Route.useParams();
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const [win, setWin] = useState<WindowDays>(90);
   const [logOpen, setLogOpen] = useState(false);
@@ -88,141 +98,98 @@ function WeightFacet() {
     },
   });
 
-  const timeline: TimelineItem[] = all.map((e, i) => {
-    const prev = all[i + 1]; // chronological previous (array is newest-first)
-    const d = prev ? e.grams - prev.grams : null;
-    const deltaText = d == null ? "First weight" : `${d > 0 ? "+" : ""}${d} g from previous`;
-    let badge: ReactNode;
-    if (e.source === "sitter") {
-      badge = <span className="rounded-full bg-[#f6e7c4] px-1.5 py-0.5 text-[10px] font-medium text-[#854F0B] ring-1 ring-[#BA7517]/40">Sitter</span>;
-    } else if (e.source === "household") {
-      const nm = (e.logged_by && householdNames?.[e.logged_by]) || "";
-      badge = <span className="rounded-full bg-[#cfe3dc] px-1.5 py-0.5 text-[10px] font-medium text-[#1a5e3f] ring-1 ring-[#1a5e3f]/25">{nm ? `${nm} · household` : "Household"}</span>;
-    }
-    return {
-      id: e.id,
-      at: e.measured_at,
-      dateLabel: fmtDateTime(e.measured_at),
-      title: `${e.grams} g`,
-      subtitle: [deltaText, mealLabel(e.meal_relation)].filter(Boolean).join(" · "),
-      icon: <Scale className="size-3" />,
-      badge,
-    };
-  });
+  const heroHeadline = current ? `${current.grams} g.` : "Weight.";
+  const heroBody = current ? trendContext(trend, delta, win) : `No weights yet — pop ${name} on a scale and log the first one.`;
 
   return (
-    <div className="min-h-screen bg-[#f4f1e8] pb-24">
-      <header className="sticky top-0 z-10 border-b border-[#e3ded0] bg-[#f4f1e8]/95 backdrop-blur">
-        <div className="mx-auto flex max-w-md items-center gap-3 px-5 py-3">
-          <Link to="/birds/$birdId" params={{ birdId }} aria-label="Back to bird record" className="-ml-1 rounded p-1 text-[#1a3d2e]">
-            <ArrowLeft className="size-5" />
-          </Link>
-          <h1 className="text-base font-medium text-[#1a3d2e]">Weight</h1>
-        </div>
-      </header>
+    <div className="min-h-screen bg-[var(--cream)] pb-24">
+      <div className="mx-auto max-w-md">
+        <InkHero
+          backIcon={<ArrowLeft className="size-5" />}
+          onBack={() => navigate({ to: "/birds/$birdId", params: { birdId } })}
+          eyebrow="Weight"
+          headline={heroHeadline}
+          body={heroBody}
+          cta={{ label: "Log today's weight", tone: "lime", onPress: () => setLogOpen(true) }}
+        />
 
-      <main className="mx-auto max-w-md space-y-4 px-5 py-5">
-        {all.length === 0 ? (
-          <section className="rounded-[16px] bg-[#efe9da] p-8 text-center">
-            <Scale className="mx-auto size-7 text-[#2d6a4f]" />
-            <p className="mt-3 text-sm text-[#1a3d2e]">No weights yet. Pop {name} on a scale and log the first one — it takes seconds.</p>
-            <button
-              type="button"
-              onClick={() => setLogOpen(true)}
-              className="mt-4 inline-flex min-h-[44px] items-center gap-2 rounded-[14px] bg-[#cdeab0] px-5 text-sm font-medium text-[#1a3d2e]"
-            >
-              <Plus className="size-4" /> Log first weight
-            </button>
-          </section>
-        ) : (
-          <>
-            {/* Current + trend */}
-            <section className="rounded-[16px] bg-[#efe9da] p-5">
-              <div className="flex items-end justify-between gap-3">
-                <div>
-                  <p className="text-4xl font-medium leading-none text-[#1a3d2e]">
-                    {current!.grams}<span className="ml-1 text-lg font-normal text-[#5f5e5a]">g</span>
-                  </p>
-                  <p className="mt-2 text-xs text-[#8a897f]">Last weighed {new Date(current!.measured_at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}</p>
+        <main className="space-y-4 px-5 pt-5">
+          {/* Log weight */}
+          {logOpen && (
+            <LogPanel
+              birdId={birdId}
+              lastGrams={current?.grams}
+              onClose={() => setLogOpen(false)}
+              onSaved={() => {
+                setLogOpen(false);
+                qc.invalidateQueries({ queryKey: ["weight-entries", birdId] });
+                qc.invalidateQueries({ queryKey: ["bird-weights", birdId] }); // record-home glance + recent feed
+              }}
+            />
+          )}
+
+          {all.length > 0 && (
+            <>
+              {/* Trend + chart */}
+              <Card className="p-4">
+                <SectionHead title="Trend" />
+                <div className="mb-3 flex justify-end">
+                  <div className="inline-flex rounded-xl ring-1 ring-[var(--line)] p-0.5">
+                    {WINDOWS.map((w) => (
+                      <button
+                        key={w.days}
+                        type="button"
+                        onClick={() => setWin(w.days)}
+                        className={`min-h-[36px] rounded-[10px] px-3 text-xs font-[500] ${win === w.days ? "bg-[var(--ink)] text-white" : "text-[var(--ink)]"}`}
+                      >
+                        {w.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-                <TrendPill trend={trend} delta={delta} />
-              </div>
-              <p className="mt-3 border-t border-[#e3dcc9] pt-3 text-xs leading-relaxed text-[#5f5e5a]">
-                A steady weight is one of the earliest signs all is well — small daily wobbles are normal.
-              </p>
-            </section>
+                <WeightTrendChart points={chartPoints} />
+                <p className="mt-2 flex items-center gap-3 t-meta">
+                  <span className="inline-flex items-center gap-1"><span className="size-2 rounded-full bg-[var(--ink)]" /> You</span>
+                  <span className="inline-flex items-center gap-1"><span className="size-2 rounded-full bg-white ring-2 ring-[var(--amber-line)]" /> Sitter</span>
+                </p>
+              </Card>
 
-            {/* Chart + window toggle */}
-            <section className="rounded-[16px] bg-[#efe9da] p-4">
-              <div className="mb-3 flex justify-end">
-                <div className="inline-flex rounded-xl border border-[#c8bfa6] p-0.5">
-                  {WINDOWS.map((w) => (
-                    <button
-                      key={w.days}
-                      type="button"
-                      onClick={() => setWin(w.days)}
-                      className={`min-h-[36px] rounded-[10px] px-3 text-xs font-medium ${win === w.days ? "bg-[#1a3d2e] text-white" : "text-[#1a3d2e]"}`}
-                    >
-                      {w.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <WeightTrendChart points={chartPoints} />
-              <p className="mt-2 flex items-center gap-3 text-[10px] text-[#8a897f]">
-                <span className="inline-flex items-center gap-1"><span className="size-2 rounded-full bg-[#1a3d2e]" /> You</span>
-                <span className="inline-flex items-center gap-1"><span className="size-2 rounded-full bg-white ring-2 ring-[#BA7517]" /> Sitter</span>
-              </p>
-            </section>
-          </>
-        )}
-
-        {/* Log weight */}
-        {logOpen ? (
-          <LogPanel
-            birdId={birdId}
-            lastGrams={current?.grams}
-            onClose={() => setLogOpen(false)}
-            onSaved={() => {
-              setLogOpen(false);
-              qc.invalidateQueries({ queryKey: ["weight-entries", birdId] });
-              qc.invalidateQueries({ queryKey: ["bird-weights", birdId] }); // record-home glance + recent feed
-            }}
-          />
-        ) : all.length > 0 ? (
-          <button
-            type="button"
-            onClick={() => setLogOpen(true)}
-            className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-[14px] bg-[#cdeab0] text-sm font-medium text-[#1a3d2e] active:scale-[0.99]"
-          >
-            <Plus className="size-4" /> Log weight
-          </button>
-        ) : null}
-
-        {/* History */}
-        {all.length > 0 && (
-          <section>
-            <h3 className="mb-2 px-1 text-sm font-medium text-[#1a3d2e]">History</h3>
-            <DatedTimeline items={timeline} />
-          </section>
-        )}
-      </main>
+              {/* History */}
+              <section>
+                <SectionHead title="History" />
+                <Card>
+                  {all.map((e, i) => {
+                    const prev = all[i + 1]; // chronological previous (array is newest-first)
+                    const d = prev ? e.grams - prev.grams : null;
+                    const deltaText = d == null ? "First weight" : `${d > 0 ? "+" : ""}${d} g from previous`;
+                    const subtitle = [fmtDateTime(e.measured_at), deltaText, mealLabel(e.meal_relation)].filter(Boolean).join(" · ");
+                    let marker: React.ReactNode;
+                    if (e.source === "sitter") {
+                      marker = <StatusPill tone="off">Sitter</StatusPill>;
+                    } else if (e.source === "household") {
+                      const nm = (e.logged_by && householdNames?.[e.logged_by]) || "";
+                      marker = <StatusPill tone="household">{nm ? `${nm} · household` : "Household"}</StatusPill>;
+                    }
+                    return (
+                      <RecordRow
+                        key={e.id}
+                        leading={<IconTile size={34} tone="pale" icon={<Scale className="size-4" />} />}
+                        title={`${e.grams} g`}
+                        subtitle={subtitle}
+                        trailing={marker}
+                        chevron={false}
+                        last={i === all.length - 1}
+                      />
+                    );
+                  })}
+                </Card>
+              </section>
+            </>
+          )}
+        </main>
+      </div>
     </div>
   );
-}
-
-function TrendPill({ trend, delta }: { trend: "steady" | "up" | "down"; delta: number }) {
-  if (trend === "down") {
-    return (
-      <span className="rounded-full bg-[#f6e7c4] px-3 py-1 text-xs font-medium text-[#854F0B]">
-        Down {Math.abs(delta)} g — watch
-      </span>
-    );
-  }
-  if (trend === "up") {
-    return <span className="rounded-full bg-[#e8e1d0] px-3 py-1 text-xs font-medium text-[#5f5e5a]">Up {delta} g</span>;
-  }
-  return <span className="rounded-full bg-[#d6e8dc] px-3 py-1 text-xs font-medium text-[#1a3d2e]">Steady</span>;
 }
 
 type Meal = "before_meal" | "after_meal" | null;
@@ -261,28 +228,28 @@ function LogPanel({ birdId, lastGrams, onClose, onSaved }: { birdId: string; las
   }
 
   return (
-    <section className="rounded-[16px] border border-[#cdeab0] bg-white p-4">
-      <p className="text-sm font-medium text-[#1a3d2e]">Log weight</p>
+    <Card className="p-4">
+      <p className="t-item">Log weight</p>
 
       <div className="mt-3">
-        <label className="mb-1 block text-xs font-medium text-[#5f5e5a]">Weight (grams)</label>
+        <label className="mb-1 block text-xs font-[500] text-[var(--mute)]">Weight (grams)</label>
         <input
-          className="h-11 w-full rounded-xl border border-[#c8bfa6] bg-[#fbfaf2] px-3 text-lg font-medium text-[#1a3d2e] outline-none focus:border-[#2d6a4f]"
+          className="h-11 w-full rounded-xl bg-white ring-1 ring-[var(--line)] px-3 text-lg font-[500] text-[var(--ink)] outline-none focus:ring-[var(--moss)]"
           inputMode="decimal"
           value={grams}
           placeholder={lastGrams ? String(lastGrams) : "e.g. 410"}
           onChange={(e) => setGrams(e.target.value.replace(/[^0-9.]/g, ""))}
         />
         {grams !== "" && !valid && grams && (Number(grams) < MIN_G || Number(grams) > MAX_G) && (
-          <p className="mt-1 text-[11px] text-[#854F0B]">Enter a weight between {MIN_G} and {MAX_G} grams.</p>
+          <p className="mt-1 text-[11px] text-[var(--amber-ink)]">Enter a weight between {MIN_G} and {MAX_G} grams.</p>
         )}
       </div>
 
       <div className="mt-3">
-        <label className="mb-1 block text-xs font-medium text-[#5f5e5a]">When</label>
+        <label className="mb-1 block text-xs font-[500] text-[var(--mute)]">When</label>
         <input
           type="datetime-local"
-          className="h-11 w-full rounded-xl border border-[#c8bfa6] bg-[#fbfaf2] px-3 text-sm text-[#1a3d2e] outline-none focus:border-[#2d6a4f]"
+          className="h-11 w-full rounded-xl bg-white ring-1 ring-[var(--line)] px-3 text-sm text-[var(--ink)] outline-none focus:ring-[var(--moss)]"
           value={when}
           max={nowLocal()}
           onChange={(e) => setWhen(e.target.value)}
@@ -290,14 +257,14 @@ function LogPanel({ birdId, lastGrams, onClose, onSaved }: { birdId: string; las
       </div>
 
       <div className="mt-3">
-        <label className="mb-1 block text-xs font-medium text-[#5f5e5a]">Relative to a meal (optional)</label>
+        <label className="mb-1 block text-xs font-[500] text-[var(--mute)]">Relative to a meal (optional)</label>
         <div className="grid grid-cols-2 gap-2">
           {(["before_meal", "after_meal"] as const).map((m) => (
             <button
               key={m}
               type="button"
               onClick={() => setMeal((cur) => (cur === m ? null : m))}
-              className={`min-h-[44px] rounded-xl border text-sm font-medium ${meal === m ? "border-[#2d6a4f] bg-[#1a3d2e] text-white" : "border-[#c8bfa6] bg-[#fbfaf2] text-[#1a3d2e]"}`}
+              className={`min-h-[44px] rounded-xl text-sm font-[500] ${meal === m ? "bg-[var(--ink)] text-white ring-1 ring-[var(--moss)]" : "bg-white text-[var(--ink)] ring-1 ring-[var(--line)]"}`}
             >
               {m === "before_meal" ? "Before meal" : "After meal"}
             </button>
@@ -310,14 +277,14 @@ function LogPanel({ birdId, lastGrams, onClose, onSaved }: { birdId: string; las
           type="button"
           onClick={save}
           disabled={!valid || saving}
-          className="flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-[14px] bg-[#cdeab0] text-sm font-medium text-[#1a3d2e] disabled:opacity-50"
+          className="flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-[12px] bg-[var(--lime)] text-sm font-[500] text-[var(--ink)] disabled:opacity-50"
         >
           <Check className="size-4" /> {saving ? "Saving…" : "Save"}
         </button>
-        <button type="button" onClick={onClose} disabled={saving} className="min-h-[44px] rounded-[14px] border border-[#c8bfa6] px-4 text-sm font-medium text-[#5f5e5a]">
+        <button type="button" onClick={onClose} disabled={saving} className="min-h-[44px] rounded-[12px] px-4 text-sm font-[500] text-[var(--mute)] ring-1 ring-[var(--line)]">
           Cancel
         </button>
       </div>
-    </section>
+    </Card>
   );
 }

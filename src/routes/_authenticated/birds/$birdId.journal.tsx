@@ -1,11 +1,11 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { toast } from "sonner";
 import { ArrowLeft, Plus, BookOpen, ImagePlus, Check, X, Loader2 } from "lucide-react";
-import { DatedTimeline, type TimelineItem } from "@/components/DatedTimeline";
+import { InkHero, PhotoHero, StatusPill, Card, PrimaryButton } from "@/components/system";
 import { uploadJournalPhoto, signJournalPhotos } from "@/lib/journalPhoto";
 import { compressImageToDataUrl } from "@/lib/imageUpload";
 
@@ -18,12 +18,12 @@ type Kind = "molt" | "meds" | "vet" | "behavior" | "note" | "other";
 type Entry = { id: string; kind: Kind; title: string | null; body: string | null; occurred_on: string; photo_path: string | null };
 
 const KINDS: { value: Kind; label: string; pill: string }[] = [
-  { value: "molt", label: "Molt", pill: "bg-[#f6e7c4] text-[#854F0B]" },
-  { value: "meds", label: "Meds", pill: "bg-[#d6e8dc] text-[#1a3d2e]" },
-  { value: "vet", label: "Vet visit", pill: "bg-[#d6e8dc] text-[#1a3d2e]" },
-  { value: "behavior", label: "Behavior", pill: "bg-[#e8f0ec] text-[#1a3d2e]" },
-  { value: "note", label: "Note", pill: "bg-[#e8e1d0] text-[#5f5e5a]" },
-  { value: "other", label: "Other", pill: "bg-[#e8e1d0] text-[#5f5e5a]" },
+  { value: "molt", label: "Molt", pill: "bg-[var(--amber-fill)] text-[var(--amber-ink)]" },
+  { value: "meds", label: "Meds", pill: "bg-[var(--pale)] text-[var(--ink)]" },
+  { value: "vet", label: "Vet visit", pill: "bg-[var(--pale)] text-[var(--ink)]" },
+  { value: "behavior", label: "Behavior", pill: "bg-[var(--pale2)] text-[var(--ink)]" },
+  { value: "note", label: "Note", pill: "bg-[var(--cream2)] text-[var(--mute)]" },
+  { value: "other", label: "Other", pill: "bg-[var(--cream2)] text-[var(--mute)]" },
 ];
 const KIND = Object.fromEntries(KINDS.map((k) => [k.value, k])) as Record<Kind, (typeof KINDS)[number]>;
 
@@ -38,6 +38,7 @@ const todayStr = () => new Date().toISOString().slice(0, 10);
 
 function JournalFacet() {
   const { birdId } = Route.useParams();
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const [filter, setFilter] = useState<Filter>("all");
   const [editing, setEditing] = useState<Entry | null | "new">(null);
@@ -69,70 +70,61 @@ function JournalFacet() {
 
   const shown = all.filter((e) => FILTERS.find((f) => f.value === filter)!.kinds.includes(e.kind));
 
-  const items: TimelineItem[] = shown.map((e) => {
-    const url = e.photo_path ? photoUrls?.[e.photo_path] : null;
-    return {
-      id: e.id,
-      at: e.occurred_on,
-      title: e.title || KIND[e.kind].label,
-      badge: <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${KIND[e.kind].pill}`}>{KIND[e.kind].label}</span>,
-      subtitle: (
-        <span>
-          {e.body && <span className="line-clamp-2 block">{e.body}</span>}
-          {url && <img src={url} alt="" loading="lazy" className="mt-1.5 h-16 w-16 rounded-lg object-cover ring-1 ring-[#e3dcc9]" />}
-        </span>
-      ),
-      onClick: () => setEditing(e),
-    };
-  });
-
   return (
-    <div className="min-h-screen bg-[#f4f1e8] pb-24">
-      <header className="sticky top-0 z-10 border-b border-[#e3ded0] bg-[#f4f1e8]/95 backdrop-blur">
-        <div className="mx-auto flex max-w-md items-center gap-3 px-5 py-3">
-          <Link to="/birds/$birdId" params={{ birdId }} aria-label="Back to bird record" className="-ml-1 rounded p-1 text-[#1a3d2e]">
-            <ArrowLeft className="size-5" />
-          </Link>
-          <h1 className="flex-1 text-base font-medium text-[#1a3d2e]">Journal</h1>
-          <button
-            type="button"
-            onClick={() => setEditing("new")}
-            className="inline-flex min-h-[40px] items-center gap-1.5 rounded-full bg-[#cdeab0] px-3.5 text-sm font-medium text-[#1a3d2e]"
-          >
-            <Plus className="size-4" /> Add entry
-          </button>
-        </div>
-      </header>
+    <div className="min-h-screen bg-[var(--cream)] pb-24">
+      <div className="mx-auto max-w-md">
+        <InkHero
+          backIcon={<ArrowLeft className="size-5" />}
+          onBack={() => navigate({ to: "/birds/$birdId", params: { birdId } })}
+          eyebrow="Journal"
+          headline="Things worth remembering."
+          cta={{ label: "Add an entry", tone: "lime", icon: <Plus className="size-4" />, onPress: () => setEditing("new") }}
+        />
 
-      <main className="mx-auto max-w-md space-y-4 px-5 py-5">
-        {/* Filter chips */}
-        <div className="flex flex-wrap gap-2">
-          {FILTERS.map((f) => (
-            <button
-              key={f.value}
-              type="button"
-              onClick={() => setFilter(f.value)}
-              className={`min-h-[36px] rounded-full px-3.5 text-sm font-medium ${filter === f.value ? "bg-[#1a3d2e] text-white" : "border border-[#c8bfa6] bg-white text-[#1a3d2e]"}`}
-            >
-              {f.label}
-            </button>
-          ))}
-        </div>
+        <main className="space-y-4 px-5 pt-5">
+          {/* Filter chips */}
+          <div className="flex flex-wrap gap-2">
+            {FILTERS.map((f) => (
+              <button
+                key={f.value}
+                type="button"
+                onClick={() => setFilter(f.value)}
+                aria-pressed={filter === f.value}
+                className="inline-flex min-h-[44px] items-center"
+              >
+                <StatusPill tone={filter === f.value ? "on" : "off"}>{f.label}</StatusPill>
+              </button>
+            ))}
+          </div>
 
-        {all.length === 0 ? (
-          <section className="rounded-[16px] bg-[#efe9da] p-8 text-center">
-            <BookOpen className="mx-auto size-7 text-[#2d6a4f]" />
-            <p className="mt-3 text-sm text-[#1a3d2e]">Nothing here yet. The journal is for the things worth remembering — a molt, a med, a vet visit, a milestone.</p>
-            <button type="button" onClick={() => setEditing("new")} className="mt-4 inline-flex min-h-[44px] items-center gap-2 rounded-[14px] bg-[#cdeab0] px-5 text-sm font-medium text-[#1a3d2e]">
-              <Plus className="size-4" /> Add first entry
-            </button>
-          </section>
-        ) : shown.length === 0 ? (
-          <p className="rounded-[14px] bg-[#efe9da] p-6 text-center text-sm text-[#5f5e5a]">No {FILTERS.find((f) => f.value === filter)!.label.toLowerCase()} entries yet.</p>
-        ) : (
-          <DatedTimeline items={items} rail={false} />
-        )}
-      </main>
+          {all.length === 0 ? (
+            <section className="rounded-[18px] bg-[var(--cream2)] p-8 text-center ring-1 ring-[var(--line2)]">
+              <BookOpen className="mx-auto size-7 text-[var(--moss)]" />
+              <p className="t-body mt-3 text-[var(--ink)]">Nothing here yet. The journal is for the things worth remembering — a molt, a med, a vet visit, a milestone.</p>
+              <div className="mt-4">
+                <PrimaryButton tone="lime" icon={<Plus className="size-4" />} onPress={() => setEditing("new")} full={false}>
+                  Add first entry
+                </PrimaryButton>
+              </div>
+            </section>
+          ) : shown.length === 0 ? (
+            <p className="t-body rounded-[18px] bg-[var(--cream2)] p-6 text-center text-[var(--mute)] ring-1 ring-[var(--line2)]">
+              No {FILTERS.find((f) => f.value === filter)!.label.toLowerCase()} entries yet.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {shown.map((e) => (
+                <EntryCard
+                  key={e.id}
+                  entry={e}
+                  photoUrl={e.photo_path ? photoUrls?.[e.photo_path] ?? null : null}
+                  onOpen={() => setEditing(e)}
+                />
+              ))}
+            </div>
+          )}
+        </main>
+      </div>
 
       {editing && (
         <EntryForm
@@ -147,6 +139,37 @@ function JournalFacet() {
       )}
     </div>
   );
+}
+
+// One journal entry as a tokenized white card. If the entry has a photo it
+// renders as a PhotoHero-style band across the top; tapping anywhere opens the
+// existing edit flow.
+function EntryCard({ entry, photoUrl, onOpen }: { entry: Entry; photoUrl: string | null; onOpen: () => void }) {
+  const k = KIND[entry.kind];
+  return (
+    <Card>
+      <button type="button" onClick={onOpen} className="block w-full text-left active:bg-black/[0.02]">
+        {photoUrl && <PhotoHero src={photoUrl} height={160} alt="" />}
+        <div className="p-4">
+          <div className="flex items-start justify-between gap-3">
+            <h3 className="t-item min-w-0 flex-1">{entry.title || k.label}</h3>
+            <span className="t-meta shrink-0">{fmtDate(entry.occurred_on)}</span>
+          </div>
+          <div className="mt-1.5">
+            <span className={`inline-flex items-center rounded-full px-[9px] py-[3px] text-[11.5px] font-[500] ${k.pill}`}>{k.label}</span>
+          </div>
+          {entry.body && <p className="t-body mt-2 line-clamp-3 text-[var(--ink2)]">{entry.body}</p>}
+        </div>
+      </button>
+    </Card>
+  );
+}
+
+function fmtDate(iso: string): string {
+  const d = new Date(`${iso.slice(0, 10)}T12:00:00`);
+  const now = new Date();
+  const sameYear = d.getFullYear() === now.getFullYear();
+  return d.toLocaleDateString(undefined, { month: "short", day: "numeric", ...(sameYear ? {} : { year: "numeric" }) });
 }
 
 function EntryForm({ birdId, entry, onClose, onSaved }: { birdId: string; entry: Entry | null; onClose: () => void; onSaved: () => void }) {
@@ -211,43 +234,43 @@ function EntryForm({ birdId, entry, onClose, onSaved }: { birdId: string; entry:
   return (
     <div className="fixed inset-0 z-50 grid place-items-end sm:place-items-center">
       <div className="absolute inset-0 bg-black/30" onClick={saving ? undefined : onClose} />
-      <div className="relative max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-2xl bg-[#f4f1e8] p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-xl sm:rounded-2xl">
+      <div className="relative max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-2xl bg-[var(--cream)] p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-xl sm:rounded-2xl">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-medium text-[#1a3d2e]">{entry ? "Edit entry" : "Add entry"}</h2>
-          <button onClick={onClose} aria-label="Close" className="rounded-full p-1 text-[#5f5e5a]"><X className="size-5" /></button>
+          <h2 className="t-section">{entry ? "Edit entry" : "Add entry"}</h2>
+          <button onClick={onClose} aria-label="Close" className="grid size-9 place-items-center rounded-full text-[var(--mute)]"><X className="size-5" /></button>
         </div>
 
         <label className="block">
-          <span className="mb-1 block text-xs font-medium text-[#5f5e5a]">Kind *</span>
-          <select value={kind} onChange={(e) => setKind(e.target.value as Kind)} className="h-11 w-full rounded-xl border border-[#c8bfa6] bg-[#fbfaf2] px-3 text-sm text-[#1a3d2e]">
+          <span className="mb-1 block text-xs font-[500] text-[var(--mute)]">Kind *</span>
+          <select value={kind} onChange={(e) => setKind(e.target.value as Kind)} className="h-11 w-full rounded-xl border border-[var(--line)] bg-white px-3 text-sm text-[var(--ink)]">
             {KINDS.map((k) => <option key={k.value} value={k.value}>{k.label}</option>)}
           </select>
         </label>
 
         <label className="mt-3 block">
-          <span className="mb-1 block text-xs font-medium text-[#5f5e5a]">Title *</span>
-          <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120} placeholder="e.g. Started wing molt" className="h-11 w-full rounded-xl border border-[#c8bfa6] bg-[#fbfaf2] px-3 text-sm text-[#1a3d2e]" />
+          <span className="mb-1 block text-xs font-[500] text-[var(--mute)]">Title *</span>
+          <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120} placeholder="e.g. Started wing molt" className="h-11 w-full rounded-xl border border-[var(--line)] bg-white px-3 text-sm text-[var(--ink)]" />
         </label>
 
         <label className="mt-3 block">
-          <span className="mb-1 block text-xs font-medium text-[#5f5e5a]">Details</span>
-          <textarea value={body} onChange={(e) => setBody(e.target.value)} maxLength={2000} rows={3} placeholder="Optional" className="w-full rounded-xl border border-[#c8bfa6] bg-[#fbfaf2] p-3 text-sm text-[#1a3d2e]" />
+          <span className="mb-1 block text-xs font-[500] text-[var(--mute)]">Details</span>
+          <textarea value={body} onChange={(e) => setBody(e.target.value)} maxLength={2000} rows={3} placeholder="Optional" className="w-full rounded-xl border border-[var(--line)] bg-white p-3 text-sm text-[var(--ink)]" />
         </label>
 
         <label className="mt-3 block">
-          <span className="mb-1 block text-xs font-medium text-[#5f5e5a]">Date *</span>
-          <input type="date" value={date} max={todayStr()} onChange={(e) => setDate(e.target.value)} className="h-11 w-full rounded-xl border border-[#c8bfa6] bg-[#fbfaf2] px-3 text-sm text-[#1a3d2e]" />
+          <span className="mb-1 block text-xs font-[500] text-[var(--mute)]">Date *</span>
+          <input type="date" value={date} max={todayStr()} onChange={(e) => setDate(e.target.value)} className="h-11 w-full rounded-xl border border-[var(--line)] bg-white px-3 text-sm text-[var(--ink)]" />
         </label>
 
         <div className="mt-3">
-          <span className="mb-1 block text-xs font-medium text-[#5f5e5a]">Photo</span>
+          <span className="mb-1 block text-xs font-[500] text-[var(--mute)]">Photo</span>
           {showPhoto ? (
             <div className="flex items-center gap-3">
-              {photoData ? <img src={photoData} alt="" className="h-16 w-16 rounded-lg object-cover" /> : <span className="grid h-16 w-16 place-items-center rounded-lg bg-[#efe9da] text-[10px] text-[#8a897f]">Saved photo</span>}
-              <button type="button" onClick={() => { setPhotoData(null); setKeepPhoto(false); }} className="text-xs font-medium text-[#854F0B] underline">Remove photo</button>
+              {photoData ? <img src={photoData} alt="" className="h-16 w-16 rounded-lg object-cover" /> : <span className="grid h-16 w-16 place-items-center rounded-lg bg-[var(--cream2)] text-[10px] text-[var(--mute2)]">Saved photo</span>}
+              <button type="button" onClick={() => { setPhotoData(null); setKeepPhoto(false); }} className="text-xs font-[500] text-[var(--amber-ink)] underline">Remove photo</button>
             </div>
           ) : (
-            <label className="flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#c8bfa6] bg-[#fbfaf2] text-sm font-medium text-[#5f5e5a]">
+            <label className="flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[var(--line)] bg-white text-sm font-[500] text-[var(--mute)]">
               {photoBusy ? <Loader2 className="size-4 animate-spin" /> : <ImagePlus className="size-4" />}
               {photoBusy ? "Processing…" : "Add a photo"}
               <input type="file" accept="image/*" className="hidden" disabled={photoBusy} onChange={pickPhoto} />
@@ -256,10 +279,10 @@ function EntryForm({ birdId, entry, onClose, onSaved }: { birdId: string; entry:
         </div>
 
         <div className="mt-5 flex gap-2">
-          <button type="button" onClick={save} disabled={!valid || saving || photoBusy} className="flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-[14px] bg-[#cdeab0] text-sm font-medium text-[#1a3d2e] disabled:opacity-50">
-            <Check className="size-4" /> {saving ? "Saving…" : "Save"}
-          </button>
-          <button type="button" onClick={onClose} disabled={saving} className="min-h-[44px] rounded-[14px] border border-[#c8bfa6] px-4 text-sm font-medium text-[#5f5e5a]">Cancel</button>
+          <PrimaryButton tone="lime" type="button" icon={<Check className="size-4" />} onPress={save} disabled={!valid || saving || photoBusy}>
+            {saving ? "Saving…" : "Save"}
+          </PrimaryButton>
+          <button type="button" onClick={onClose} disabled={saving} className="min-h-[44px] rounded-[12px] border border-[var(--line)] px-4 text-[15px] font-[500] text-[var(--mute)] disabled:opacity-50">Cancel</button>
         </div>
       </div>
     </div>
