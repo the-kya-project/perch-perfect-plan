@@ -412,3 +412,108 @@ export const getHouseholdCarePlanView = createServerFn({ method: "GET" })
 
     return { bird: signedBird, plan: plan ?? null, contacts: mergedContacts, tasks, watchClips, baselineClipUrl };
   });
+
+// ---- Owner: account-level household (aggregate across all owned birds) ------
+// Powers the /household screen. Each person appears ONCE: memberships are
+// grouped by user_id and pending invites by email, with scope derived from how
+// many of the owner's birds they cover. Read-only (admin client after the
+// owner-scoped bird filter).
+export const getHouseholdAccount = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const sb = await getAdmin();
+    const ownerId = context.userId as string;
+
+    const { data: birds } = await sb.from("birds").select("id, name").eq("owner_id", ownerId).order("name");
+    const birdRows = (birds ?? []) as { id: string; name: string }[];
+    const totalBirds = birdRows.length;
+    if (!totalBirds) return { totalBirds: 0, birds: [] as { id: string; name: string }[], members: [], pending: [] };
+    const birdIds = birdRows.map((b) => b.id);
+    const nameByBird = new Map(birdRows.map((b) => [b.id, b.name]));
+
+    // Active memberships across every owned bird, grouped per person.
+    const { data: memberRows } = await sb
+      .from("bird_members").select("user_id, bird_id, created_at, role")
+      .in("bird_id", birdIds).eq("role", "household");
+    const byUser = new Map<string, { birdIds: string[]; since: string }>();
+    for (const r of (memberRows ?? []) as any[]) {
+      const e = byUser.get(r.user_id) ?? { birdIds: [] as string[], since: r.created_at as string };
+      e.birdIds.push(r.bird_id);
+      if (new Date(r.created_at) < new Date(e.since)) e.since = r.created_at;
+      byUser.set(r.user_id, e);
+    }
+    const memberIds = [...byUser.keys()];
+
+    const nameByUser = new Map<string, string>();
+    const emailByUser = new Map<string, string>();
+    if (memberIds.length) {
+      const { data: profs } = await sb.from("profiles").select("id, display_name").in("id", memberIds);
+      for (const p of (profs ?? []) as any[]) nameByUser.set(p.id, (p.display_name ?? "").toString());
+      await Promise.all(memberIds.map(async (id) => {
+        try { const { data: u } = await sb.auth.admin.getUserById(id); if (u?.user?.email) emailByUser.set(id, u.user.email); } catch { /* ignore */ }
+      }));
+    }
+
+    const members = memberIds.map((id) => {
+      const e = byUser.get(id)!;
+      const scope: "all" | "scoped" = e.birdIds.length >= totalBirds ? "all" : "scoped";
+      return {
+        userId: id,
+        name: nameByUser.get(id)?.trim() || null,
+        email: emailByUser.get(id) ?? null,
+        birdIds: e.birdIds,
+        birdNames: e.birdIds.map((b) => nameByBird.get(b)!).filter(Boolean),
+        scope,
+        since: e.since,
+      };
+    }).sort((a, b) => (a.name || a.email || "").localeCompare(b.name || b.email || ""));
+
+    // Pending invites grouped by email (union their birds; keep every invite id
+    // so Cancel can clear them all via the existing cancel fn).
+    const now = Date.now();
+    const { data: invites } = await sb
+      .from("household_invites")
+      .select("id, invitee_email, invitee_name, bird_ids, status, expires_at, created_at")
+      .eq("owner_id", ownerId).eq("status", "pending").order("created_at", { ascending: false });
+    const pendingByEmail = new Map<string, { inviteIds: string[]; name: string | null; birdIds: Set<string>; expiresAt: string }>();
+    for (const iv of (invites ?? []) as any[]) {
+      if (new Date(iv.expires_at).getTime() <= now) continue;
+      const key = iv.invitee_email.toString().toLowerCase();
+      const e = pendingByEmail.get(key) ?? { inviteIds: [] as string[], name: iv.invitee_name as string | null, birdIds: new Set<string>(), expiresAt: iv.expires_at as string };
+      e.inviteIds.push(iv.id);
+      for (const bid of (iv.bird_ids ?? []) as string[]) if (nameByBird.has(bid)) e.birdIds.add(bid);
+      if (!e.name && iv.invitee_name) e.name = iv.invitee_name;
+      pendingByEmail.set(key, e);
+    }
+    const pending = [...pendingByEmail.entries()].map(([email, e]) => ({
+      email,
+      inviteIds: e.inviteIds,
+      name: e.name,
+      birdIds: [...e.birdIds],
+      birdNames: [...e.birdIds].map((b) => nameByBird.get(b)!).filter(Boolean),
+      scope: (e.birdIds.size >= totalBirds ? "all" : "scoped") as "all" | "scoped",
+      expiresAt: e.expiresAt,
+    }));
+
+    return { totalBirds, birds: birdRows, members, pending };
+  });
+
+// ---- Owner: remove a person from the household ENTIRELY ---------------------
+// Drops all of that user's household memberships across every owned bird (RLS
+// access stops immediately). Per-bird removal stays in removeHouseholdMember.
+export const removeHouseholdMemberEverywhere = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { userId: string }) => z.object({ userId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const sb = await getAdmin();
+    const ownerId = context.userId as string;
+    if (data.userId === ownerId) throw new Error("The owner can't be removed.");
+    const { data: birds } = await sb.from("birds").select("id").eq("owner_id", ownerId);
+    const birdIds = (birds ?? []).map((b: any) => b.id);
+    if (!birdIds.length) return { ok: true };
+    const { error } = await sb
+      .from("bird_members").delete()
+      .in("bird_id", birdIds).eq("user_id", data.userId).eq("role", "household");
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });

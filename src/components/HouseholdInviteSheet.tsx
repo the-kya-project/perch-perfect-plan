@@ -1,0 +1,104 @@
+import { useEffect, useState } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { supabase } from "@/integrations/supabase/client";
+import { getLocalUser } from "@/integrations/supabase/currentUser";
+import { createHouseholdInvite } from "@/lib/household.functions";
+import { toast } from "sonner";
+
+// Shared household invite flow — used by the per-bird access hub and the
+// account-level /household screen. The invite defaults to ALL of the owner's
+// birds (the common case); pass `initialBirdIds` to preselect a subset (the
+// per-bird hub passes just that bird). Single source — don't fork this.
+export function HouseholdInviteSheet({
+  initialBirdIds,
+  onClose,
+  onSent,
+}: {
+  initialBirdIds?: string[];
+  onClose: () => void;
+  onSent: () => void;
+}) {
+  const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
+  const [selected, setSelected] = useState<Set<string>>(new Set(initialBirdIds ?? []));
+  const [seeded, setSeeded] = useState(!!initialBirdIds?.length);
+
+  const { data: birds = [] } = useQuery({
+    queryKey: ["owner-birds-min-access"],
+    queryFn: async () => {
+      const { data: u } = await getLocalUser();
+      const { data } = await supabase.from("birds").select("id, name").eq("owner_id", u.user?.id ?? "").order("name");
+      return (data ?? []) as { id: string; name: string }[];
+    },
+  });
+
+  // With no explicit preselection, default to every bird once the list loads.
+  useEffect(() => {
+    if (!seeded && birds.length) { setSelected(new Set(birds.map((b) => b.id))); setSeeded(true); }
+  }, [birds, seeded]);
+
+  const create = useServerFn(createHouseholdInvite);
+  const m = useMutation({
+    mutationFn: () => create({ data: { inviteeEmail: email.trim(), inviteeName: name.trim() || undefined, birdIds: [...selected] } }),
+    onSuccess: () => { toast.success("Invite sent."); onSent(); },
+    onError: (e: any) => toast.error(e?.message ?? "Couldn't send the invite."),
+  });
+
+  const emailOk = /\S+@\S+\.\S+/.test(email.trim());
+  const canSend = emailOk && selected.size > 0 && !m.isPending;
+  const toggle = (id: string) => setSelected((p) => { const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n; });
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col bg-[#f4f1e8]">
+      <header className="flex items-center justify-between border-b border-[#e3ded0] px-5 py-3 pt-[max(env(safe-area-inset-top),0.75rem)]">
+        <button type="button" onClick={onClose} className="text-sm font-medium text-[#5f5e5a]">Cancel</button>
+        <h2 className="text-base font-medium text-[#1a3d2e]">Invite a household member</h2>
+        <span className="w-12" />
+      </header>
+
+      <div className="mx-auto w-full max-w-md flex-1 space-y-4 overflow-y-auto px-5 py-5">
+        <p className="text-sm text-[#5f5e5a]">They'll get an email invite to create an account and help care for your birds.</p>
+
+        <label className="block">
+          <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#5f5e5a]">Email</span>
+          <input className="input" type="email" inputMode="email" autoCapitalize="off" autoCorrect="off" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="partner@example.com" />
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#5f5e5a]">Their name (optional)</span>
+          <input className="input" value={name} maxLength={120} onChange={(e) => setName(e.target.value)} placeholder="e.g. Daniel" />
+        </label>
+
+        <div>
+          <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#5f5e5a]">Which birds can they access?</span>
+          <div className="overflow-hidden rounded-[14px] bg-white ring-1 ring-[#e3dcc9]">
+            {birds.map((b, i) => (
+              <label key={b.id} className={`flex min-h-[48px] cursor-pointer items-center gap-3 px-4 ${i ? "border-t border-[#ece6d6]" : ""}`}>
+                <input type="checkbox" checked={selected.has(b.id)} onChange={() => toggle(b.id)} className="size-4 accent-[#1a3d2e]" />
+                <span className="text-sm text-[#1a3d2e]">{b.name}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-[14px] bg-[#f6e7c4]/40 p-4 ring-1 ring-[#e3dcc9]">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-[#854F0B]">What they'll see</p>
+          <ul className="mt-2 space-y-1 text-xs text-[#5f5e5a]">
+            <li>Each bird's care plan, weight, journal, identity</li>
+            <li>Can log weights and journal entries</li>
+            <li>Won't see your private notes or other people's contact info</li>
+          </ul>
+        </div>
+      </div>
+
+      <footer className="border-t border-[#e3ded0] px-5 py-3 pb-[max(env(safe-area-inset-bottom),0.75rem)]">
+        <div className="mx-auto flex max-w-md gap-2">
+          <button type="button" onClick={onClose} className="min-h-[44px] flex-1 rounded-[14px] border border-[#c8bfa6] text-sm font-medium text-[#1a3d2e]">Cancel</button>
+          <button type="button" disabled={!canSend} onClick={() => m.mutate()} className="min-h-[44px] flex-1 rounded-[14px] bg-[#1a3d2e] text-sm font-medium text-white disabled:opacity-50">
+            {m.isPending ? "Sending…" : "Send invite"}
+          </button>
+        </div>
+      </footer>
+    </div>
+  );
+}

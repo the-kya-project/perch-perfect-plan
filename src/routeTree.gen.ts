@@ -22,6 +22,7 @@ import { Route as AuthenticatedWelcomeRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedSitsRouteImport } from './routes/_authenticated/sits'
 import { Route as AuthenticatedPastBirdsRouteImport } from './routes/_authenticated/past-birds'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
+import { Route as AuthenticatedHouseholdRouteImport } from './routes/_authenticated/household'
 import { Route as AuthenticatedExploreRouteImport } from './routes/_authenticated/explore'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
@@ -120,6 +121,11 @@ const AuthenticatedNotificationsRoute =
     path: '/notifications',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedHouseholdRoute = AuthenticatedHouseholdRouteImport.update({
+  id: '/household',
+  path: '/household',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedExploreRoute = AuthenticatedExploreRouteImport.update({
   id: '/explore',
   path: '/explore',
@@ -313,6 +319,7 @@ export interface FileRoutesByFullPath {
   '/account': typeof AuthenticatedAccountRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/explore': typeof AuthenticatedExploreRoute
+  '/household': typeof AuthenticatedHouseholdRoute
   '/notifications': typeof AuthenticatedNotificationsRouteWithChildren
   '/past-birds': typeof AuthenticatedPastBirdsRoute
   '/sits': typeof AuthenticatedSitsRoute
@@ -357,6 +364,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/explore': typeof AuthenticatedExploreRoute
+  '/household': typeof AuthenticatedHouseholdRoute
   '/past-birds': typeof AuthenticatedPastBirdsRoute
   '/sits': typeof AuthenticatedSitsRoute
   '/welcome': typeof AuthenticatedWelcomeRoute
@@ -403,6 +411,7 @@ export interface FileRoutesById {
   '/_authenticated/account': typeof AuthenticatedAccountRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/explore': typeof AuthenticatedExploreRoute
+  '/_authenticated/household': typeof AuthenticatedHouseholdRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRouteWithChildren
   '/_authenticated/past-birds': typeof AuthenticatedPastBirdsRoute
   '/_authenticated/sits': typeof AuthenticatedSitsRoute
@@ -451,6 +460,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/dashboard'
     | '/explore'
+    | '/household'
     | '/notifications'
     | '/past-birds'
     | '/sits'
@@ -495,6 +505,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/dashboard'
     | '/explore'
+    | '/household'
     | '/past-birds'
     | '/sits'
     | '/welcome'
@@ -540,6 +551,7 @@ export interface FileRouteTypes {
     | '/_authenticated/account'
     | '/_authenticated/dashboard'
     | '/_authenticated/explore'
+    | '/_authenticated/household'
     | '/_authenticated/notifications'
     | '/_authenticated/past-birds'
     | '/_authenticated/sits'
@@ -681,6 +693,13 @@ declare module '@tanstack/react-router' {
       path: '/notifications'
       fullPath: '/notifications'
       preLoaderRoute: typeof AuthenticatedNotificationsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/household': {
+      id: '/_authenticated/household'
+      path: '/household'
+      fullPath: '/household'
+      preLoaderRoute: typeof AuthenticatedHouseholdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/explore': {
@@ -1004,6 +1023,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountRoute: typeof AuthenticatedAccountRouteWithChildren
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedExploreRoute: typeof AuthenticatedExploreRoute
+  AuthenticatedHouseholdRoute: typeof AuthenticatedHouseholdRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRouteWithChildren
   AuthenticatedPastBirdsRoute: typeof AuthenticatedPastBirdsRoute
   AuthenticatedSitsRoute: typeof AuthenticatedSitsRoute
@@ -1016,6 +1036,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAccountRoute: AuthenticatedAccountRouteWithChildren,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedExploreRoute: AuthenticatedExploreRoute,
+  AuthenticatedHouseholdRoute: AuthenticatedHouseholdRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRouteWithChildren,
   AuthenticatedPastBirdsRoute: AuthenticatedPastBirdsRoute,
   AuthenticatedSitsRoute: AuthenticatedSitsRoute,
