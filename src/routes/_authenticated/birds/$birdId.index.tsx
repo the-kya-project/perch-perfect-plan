@@ -14,7 +14,7 @@ import { toast } from "sonner";
 import {
   Feather, Scale, BookOpen, IdCard, CalendarHeart, ClipboardList,
   Plus, FileText, Activity, Pencil,
-  Check, X, Users, ArrowRightLeft, Heart, Loader2, Trash2,
+  Check, X, Users, ArrowRightLeft, Heart, Loader2, Trash2, Crop,
 } from "lucide-react";
 
 // Bird-record home — the new landing when you tap a bird. A glanceable hub for
@@ -145,6 +145,21 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
   const photoOf = useBirdPhotos([bird?.photo_url], 256);
   const photo = photoOf(bird?.photo_url);
 
+  // One-time "adjust crop" nudge for photos with no explicit focal point yet
+  // (photo_position null = predates focal points / never repositioned → renders
+  // centered, which crops off-centre birds poorly). Repositioning sets a
+  // position (clearing the condition); dismissing is remembered per bird.
+  const [photoSheet, setPhotoSheet] = useState(false);
+  const nudgeKey = `focal-nudge:${birdId}`;
+  const [nudgeDismissed, setNudgeDismissed] = useState(() => {
+    try { return typeof window !== "undefined" && window.localStorage.getItem(nudgeKey) === "1"; } catch { return false; }
+  });
+  const showFocalNudge = isOwner && !!bird?.photo_url && !bird?.photo_position && !nudgeDismissed;
+  function dismissNudge() {
+    try { window.localStorage.setItem(nudgeKey, "1"); } catch { /* ignore */ }
+    setNudgeDismissed(true);
+  }
+
   const weightCount = weights?.length ?? 0;
   const current = weights?.[0];
   const trend: Trend = (() => {
@@ -179,6 +194,20 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
 
   return (
     <>
+      {/* One-time "adjust crop" nudge for photos that have no focal point yet. */}
+      {showFocalNudge && (
+        <div className="flex items-center gap-3 rounded-[14px] p-3" style={{ background: "var(--amber-fill)", border: "1px solid var(--amber-line)" }}>
+          <Crop className="size-5 shrink-0" style={{ color: "var(--amber-ink)" }} />
+          <button type="button" onClick={() => setPhotoSheet(true)} className="min-w-0 flex-1 text-left">
+            <span className="block text-[14px] font-[500]" style={{ color: "var(--amber-ink)" }}>Adjust crop</span>
+            <span className="block text-[12.5px]" style={{ color: "var(--amber-ink)" }}>Make sure the bird's face is centered.</span>
+          </button>
+          <button type="button" onClick={dismissNudge} aria-label="Dismiss" className="grid min-h-[44px] min-w-[44px] shrink-0 place-items-center rounded-full" style={{ color: "var(--amber-ink)" }}>
+            <X className="size-4" />
+          </button>
+        </div>
+      )}
+
       {/* Latest weight */}
       <LimeStat
         eyebrow="Latest weight"
@@ -267,6 +296,20 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
             </div>
           </div>
         </section>
+      )}
+
+      {/* Reposition the bird's photo (opened from the adjust-crop nudge). The
+          camera on the hero opens its own sheet; on solo Home this is the entry. */}
+      {photoSheet && bird && (
+        <BirdPhotoSheet
+          birdId={birdId}
+          ownerId={bird.owner_id}
+          currentPhoto={bird.photo_url ?? null}
+          currentPosition={bird.photo_position ?? null}
+          displayUrl={photo?.url ?? null}
+          startAdjusting
+          onClose={() => setPhotoSheet(false)}
+        />
       )}
     </>
   );
