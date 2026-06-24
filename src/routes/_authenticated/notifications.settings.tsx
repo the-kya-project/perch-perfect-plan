@@ -21,6 +21,7 @@ import {
 } from "@/lib/push.functions";
 import { markNotificationsReviewed } from "@/components/OwnerChecklist";
 import { AddToHomeModal } from "@/components/AddToHomeModal";
+import { InkHero, IconTile, Card, PrimaryButton, CtaLink } from "@/components/system";
 
 export const Route = createFileRoute("/_authenticated/notifications/settings")({
   head: () => ({ meta: [{ title: "Notification settings — Parrot Care Co-Pilot" }] }),
@@ -186,152 +187,138 @@ function NotificationsSettingsPage() {
   const permissionDenied = !!support?.ok && permission === "denied" && !pushEnabled;
 
   return (
-    <div className="min-h-screen bg-sage-50 pb-24">
-      <main className="mx-auto max-w-md px-5 py-6">
-        <button type="button" onClick={goBack} className="inline-flex items-center gap-1 text-sm text-sage-600">
-          <ArrowLeft className="size-4" /> Back
-        </button>
+    <div className="min-h-screen bg-[var(--cream)] pb-24">
+      <div className="mx-auto max-w-md">
+        <InkHero
+          backIcon={<ArrowLeft className="size-5" />}
+          onBack={goBack}
+          eyebrow="Notifications"
+          headline="Notifications."
+          body="Choose which sitter activity reaches you, by email and on this device."
+        />
 
-        <h1 className="mt-4 text-2xl font-bold tracking-tight">Notification settings</h1>
-        <p className="mt-1 text-sm text-sage-600">
-          Choose which sitter activity reaches you, by email and on this device.
-        </p>
-
-        {/* Push enable banner */}
-        <section className="mt-6 rounded-2xl bg-white p-4 ring-1 ring-sage-100">
-          <div className="flex items-start gap-3">
-            <Smartphone className="mt-0.5 size-5 shrink-0 text-sage-700" />
-            <div className="flex-1">
-              <div className="text-sm font-semibold text-sage-900">Push on this device</div>
-              {pushBlocked && support?.reason === "ios-not-installed" ? (
-                <p className="mt-1 text-xs text-sage-600">
-                  On iPhone, add this app to your Home Screen first, then come back here.
-                </p>
-              ) : pushBlocked ? (
-                <p className="mt-1 text-xs text-sage-600">
-                  This browser doesn't support push notifications. Add the app to your home
-                  screen to turn push on.
-                </p>
-              ) : permissionDenied ? (
-                <p className="mt-1 text-xs text-sage-600">
-                  Notifications are turned off for this app in your device settings. Turn them
-                  on there to get sitter alerts on this device.
-                </p>
-              ) : pushEnabled ? (
-                <p className="mt-1 text-xs text-sage-600">
-                  Enabled. Per-event push toggles below control what reaches this device.
-                </p>
-              ) : (
-                <p className="mt-1 text-xs text-sage-600">
-                  Get instant alerts for sitter activity without needing to check email.
-                </p>
-              )}
-              {pushBlocked && (
-                <button
-                  type="button"
-                  onClick={() => setA2hsOpen(true)}
-                  className="mt-2 text-xs font-semibold text-sage-700 underline"
-                >
-                  How to add this app to your home screen
-                </button>
-              )}
-              {permissionDenied && (
-                <button
-                  type="button"
-                  onClick={() => setBlockedOpen(true)}
-                  className="mt-2 text-xs font-semibold text-sage-700 underline"
-                >
-                  How to turn on notifications
-                </button>
-              )}
-            </div>
-            {!pushBlocked && !permissionDenied && (
-              <button
-                onClick={pushEnabled ? disablePush : enablePush}
-                disabled={busy}
-                className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold ${
-                  pushEnabled
-                    ? "bg-sage-100 text-sage-800 hover:bg-sage-200"
-                    : "bg-sage-700 text-white hover:bg-sage-800"
-                } disabled:opacity-50`}
-              >
-                {pushEnabled ? "Turn off" : "Enable push"}
-              </button>
-            )}
-          </div>
-        </section>
-
-        {/* Per-event toggles: email | push */}
-        <section className="mt-4">
-          <div className="mb-2 flex items-center gap-6 px-4 text-[10px] font-bold uppercase tracking-widest text-sage-500">
-            <span className="flex-1">Event</span>
-            <span className="w-12 text-center">Email</span>
-            <span className="w-12 text-center">Push</span>
-          </div>
-          <div className="space-y-3">
-            {ROWS.map((row) => {
-              const emailChecked = prefs ? Boolean(prefs[row.emailKey]) : false;
-              const pushChecked = prefs ? Boolean(prefs[row.pushKey]) : false;
-              return (
-                <div
-                  key={row.emailKey}
-                  className="flex items-start gap-4 rounded-2xl bg-white p-4 ring-1 ring-sage-100"
-                >
-                  <div className="flex-1">
-                    <div className="text-sm font-semibold text-sage-900">{row.title}</div>
-                    <p className="mt-1 text-xs text-sage-600">{row.desc}</p>
+        <main className="space-y-4 px-5 pt-5">
+          {/* Push enable banner */}
+          <Card>
+            <div className="flex items-start gap-3 p-4">
+              <IconTile size={38} icon={<Smartphone className="size-5" />} />
+              <div className="min-w-0 flex-1">
+                <div className="t-item">Push on this device</div>
+                {pushBlocked && support?.reason === "ios-not-installed" ? (
+                  <p className="t-body mt-1 text-[var(--mute)]">
+                    On iPhone, add this app to your home screen first, then come back here.
+                  </p>
+                ) : pushBlocked ? (
+                  <p className="t-body mt-1 text-[var(--mute)]">
+                    This browser doesn't support push notifications. Add the app to your home
+                    screen to turn push on.
+                  </p>
+                ) : permissionDenied ? (
+                  <p className="t-body mt-1 text-[var(--mute)]">
+                    Notifications are turned off for this app in your device settings. Turn them
+                    on there to get sitter alerts on this device.
+                  </p>
+                ) : pushEnabled ? (
+                  <p className="t-body mt-1 text-[var(--mute)]">
+                    Enabled. Per-event push toggles below control what reaches this device.
+                  </p>
+                ) : (
+                  <p className="t-body mt-1 text-[var(--mute)]">
+                    Get instant alerts for sitter activity without needing to check email.
+                  </p>
+                )}
+                {pushBlocked && (
+                  <div className="mt-2">
+                    <CtaLink label="How to add this app to your home screen" onPress={() => setA2hsOpen(true)} />
                   </div>
-                  <input
-                    type="checkbox"
-                    aria-label={`Email: ${row.title}`}
-                    className="mt-1 size-5 w-12 rounded border-sage-300"
-                    checked={emailChecked}
-                    disabled={!prefs || saving === row.emailKey}
-                    onChange={(e) => toggle(row.emailKey, e.target.checked)}
-                  />
-                  <input
-                    type="checkbox"
-                    aria-label={`Push: ${row.title}`}
-                    className="mt-1 size-5 w-12 rounded border-sage-300 disabled:opacity-40"
-                    checked={pushChecked}
-                    disabled={!prefs || saving === row.pushKey || !pushEnabled}
-                    onChange={(e) => toggle(row.pushKey, e.target.checked)}
-                  />
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-        <section className="mt-4 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4">
-          <ShieldAlert className="mt-0.5 size-5 shrink-0 text-amber-700" />
-          <div>
-            <div className="text-sm font-semibold text-amber-900">
-              Health &amp; behavior alerts are always on
+                )}
+                {permissionDenied && (
+                  <div className="mt-2">
+                    <CtaLink label="How to turn on notifications" onPress={() => setBlockedOpen(true)} />
+                  </div>
+                )}
+                {!pushBlocked && !permissionDenied && (
+                  <div className="mt-3">
+                    <PrimaryButton
+                      tone={pushEnabled ? "outline" : "ink"}
+                      full={false}
+                      onPress={pushEnabled ? disablePush : enablePush}
+                      disabled={busy}
+                    >
+                      {pushEnabled ? "Turn off" : "Enable push"}
+                    </PrimaryButton>
+                  </div>
+                )}
+              </div>
             </div>
-            <p className="mt-1 text-xs text-amber-800">
-              If a sitter flags a health or behavior concern, we'll always send the alert by
-              email and (if enabled) push. This safety alert can't be turned off.
-            </p>
+          </Card>
+
+          {/* Per-event toggles: email | push */}
+          <div>
+            <div className="mb-2 flex items-center gap-6 px-4">
+              <span className="t-eyebrow flex-1 text-[var(--mute2)]">Event</span>
+              <span className="t-eyebrow w-12 text-center text-[var(--mute2)]">Email</span>
+              <span className="t-eyebrow w-12 text-center text-[var(--mute2)]">Push</span>
+            </div>
+            <Card>
+              {ROWS.map((row, i) => {
+                const emailChecked = prefs ? Boolean(prefs[row.emailKey]) : false;
+                const pushChecked = prefs ? Boolean(prefs[row.pushKey]) : false;
+                return (
+                  <div
+                    key={row.emailKey}
+                    className={`flex items-start gap-4 px-4 py-3 ${i < ROWS.length - 1 ? "border-b border-[var(--line2)]" : ""}`}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="t-item">{row.title}</div>
+                      <p className="t-meta mt-0.5">{row.desc}</p>
+                    </div>
+                    <input
+                      type="checkbox"
+                      aria-label={`Email: ${row.title}`}
+                      className="mt-1 size-5 w-12 rounded border-[var(--line)] accent-[var(--moss)]"
+                      checked={emailChecked}
+                      disabled={!prefs || saving === row.emailKey}
+                      onChange={(e) => toggle(row.emailKey, e.target.checked)}
+                    />
+                    <input
+                      type="checkbox"
+                      aria-label={`Push: ${row.title}`}
+                      className="mt-1 size-5 w-12 rounded border-[var(--line)] accent-[var(--moss)] disabled:opacity-40"
+                      checked={pushChecked}
+                      disabled={!prefs || saving === row.pushKey || !pushEnabled}
+                      onChange={(e) => toggle(row.pushKey, e.target.checked)}
+                    />
+                  </div>
+                );
+              })}
+            </Card>
           </div>
-        </section>
 
-        <p className="mt-8 flex items-center justify-center gap-1.5 text-center text-xs text-sage-600">
-          <Bell className="size-3.5" />
-          Flagged scans always send email; all other events follow the toggles above.
-        </p>
+          <div className="flex items-start gap-3 rounded-[18px] border border-[var(--amber-line)] bg-[var(--amber-fill)] p-4">
+            <IconTile size={38} tone="amber" icon={<ShieldAlert className="size-5" />} />
+            <div className="min-w-0 flex-1">
+              <div className="t-item text-[var(--amber-ink)]">
+                Health &amp; behavior alerts are always on
+              </div>
+              <p className="t-body mt-1 text-[var(--amber-ink)]">
+                If a sitter flags a health or behavior concern, we'll always send the alert by
+                email and (if enabled) push. This safety alert can't be turned off.
+              </p>
+            </div>
+          </div>
 
-        {/* Changes save automatically as each toggle flips; this is just a clear
-            way to finish and leave the screen on phones. */}
-        <button
-          type="button"
-          onClick={goBack}
-          className="mt-6 w-full rounded-xl bg-sage-700 py-3 text-sm font-semibold text-white hover:bg-sage-800"
-        >
-          Done
-        </button>
-        <p className="mt-2 text-center text-[11px] text-sage-500">Your choices save automatically.</p>
-      </main>
+          <p className="t-meta flex items-center justify-center gap-1.5 pt-2 text-center">
+            <Bell className="size-3.5" />
+            Flagged scans always send email; all other events follow the toggles above.
+          </p>
+
+          {/* Changes save automatically as each toggle flips; this is just a clear
+              way to finish and leave the screen on phones. */}
+          <PrimaryButton tone="ink" onPress={goBack}>Done</PrimaryButton>
+          <p className="t-meta text-center">Your choices save automatically.</p>
+        </main>
+      </div>
 
       {a2hsOpen && <AddToHomeModal onClose={() => setA2hsOpen(false)} />}
       {blockedOpen && <NotificationsBlockedModal onClose={() => setBlockedOpen(false)} />}

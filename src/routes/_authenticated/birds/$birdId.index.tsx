@@ -8,10 +8,11 @@ import { AgePicker } from "@/components/BirdPickers";
 import { PhotoCropper } from "@/components/PhotoCropper";
 import { useServerFn } from "@tanstack/react-start";
 import { getPendingHandoff, cancelHandoff, makePermanent } from "@/lib/handoff.functions";
+import { InkHero, PhotoHero, IconTile, LimeStat, StatusPill, SectionHead, RecordRow, Card, PrimaryButton } from "@/components/system";
 import { toast } from "sonner";
 import {
-  ArrowLeft, Feather, Scale, BookOpen, IdCard, CalendarHeart, ClipboardList,
-  ChevronRight, Plus, FileText, TrendingUp, TrendingDown, Minus, Activity, Pencil,
+  Feather, Scale, BookOpen, IdCard, CalendarHeart, ClipboardList,
+  Plus, FileText, Activity, Pencil,
   Check, X, Users, ArrowRightLeft, Heart, Loader2,
 } from "lucide-react";
 
@@ -45,22 +46,38 @@ export function useBirdRecord(birdId: string) {
 
 function BirdRecordHome() {
   const { birdId } = Route.useParams();
-  const { data: bird } = useBirdRecord(birdId);
-  const name = bird?.name ?? "This bird";
   return (
-    <div className="min-h-screen bg-[#f4f1e8] pb-24">
-      <header className="sticky top-0 z-10 border-b border-[#e3ded0] bg-[#f4f1e8]/95 backdrop-blur">
-        <div className="mx-auto flex max-w-md items-center gap-3 px-5 py-3">
-          <Link to="/dashboard" aria-label="Back to home" className="-ml-1 rounded p-1 text-[#1a3d2e]">
-            <ArrowLeft className="size-5" />
-          </Link>
-          <h1 className="text-base font-medium text-[#1a3d2e]">{name}</h1>
-        </div>
-      </header>
-      <main className="mx-auto max-w-md space-y-4 px-5 py-5">
-        <BirdRecordBody birdId={birdId} />
-      </main>
+    <div className="min-h-screen bg-[var(--cream)] pb-24">
+      <div className="mx-auto max-w-md">
+        <BirdRecordHero birdId={birdId} />
+        <main className="space-y-4 px-5 pt-5">
+          <BirdRecordBody birdId={birdId} />
+        </main>
+      </div>
     </div>
+  );
+}
+
+// PhotoHero + InkHero combo — the bird-record route's anchor. (Solo Home embeds
+// only BirdRecordBody, under its own greeting hero, so this isn't doubled.)
+function BirdRecordHero({ birdId }: { birdId: string }) {
+  const navigate = useNavigate();
+  const { data: bird } = useBirdRecord(birdId);
+  const photoOf = useBirdPhotos([bird?.photo_url], 800);
+  const photo = photoOf(bird?.photo_url);
+  const name = bird?.name ?? "This bird";
+  const meta = [bird?.species || "Parrot", bird?.age].filter(Boolean).join(" · ");
+  const since = bird?.is_foster && bird?.intake_date ? `With you since ${fmtMonthYear(bird.intake_date)}` : null;
+  return (
+    <>
+      <PhotoHero src={photo?.url ?? undefined} height={232} alt={name} onBack={() => navigate({ to: "/dashboard" })} />
+      <InkHero
+        eyebrow={bird?.is_foster ? "In your care" : undefined}
+        headline={name}
+        body={[meta, since].filter(Boolean).join(" · ")}
+        cta={{ label: "View identity", tone: "arrow", onPress: () => navigate({ to: "/birds/$birdId/identity", params: { birdId } }) }}
+      />
+    </>
   );
 }
 
@@ -68,9 +85,9 @@ function BirdRecordHome() {
 // global header + Today panel + Household row wrapped around it on /dashboard).
 export function BirdRecordBody({ birdId }: { birdId: string }) {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const role = useBirdRole(birdId);
   const isOwner = role === "owner";
-  const isHousehold = role === "household";
 
   const { data: bird } = useBirdRecord(birdId);
 
@@ -141,213 +158,88 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
 
   return (
     <>
-        {/* Identity strip — photo + name + species/age. When a photo is set the
-            circle is filled by the photo (centered by default) and is draggable
-            to reframe which part shows; the crop position auto-saves. Adding or
-            replacing the photo itself lives on the Identity facet. */}
-        <section className="flex items-center gap-4">
-          {photo && isOwner ? (
-            <PhotoCropper
-              src={photo.url}
-              position={bird?.photo_position}
-              shape="circle"
-              size={64}
-              showHint={false}
-              onChange={() => {}}
-              onCommit={savePhotoPosition}
-            />
-          ) : photo ? (
-            // Household members view the photo but can't reframe it (owner-only).
-            <div className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-full bg-[#e3dcc9] ring-1 ring-[#d8cfb8]">
-              <img src={photo.url} alt={name} style={{ objectPosition: bird?.photo_position ?? "50% 50%" }} className="size-full object-cover" />
-            </div>
-          ) : (
-            <div className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-full bg-[#e3dcc9] ring-1 ring-[#d8cfb8]">
-              <span className="text-2xl font-medium text-[#2d6a4f]">{initial}</span>
-            </div>
+      {/* Latest weight */}
+      <LimeStat
+        eyebrow="Latest weight"
+        value={current ? <>{current.grams}<span className="text-[16px] font-[400] text-[var(--moss)]"> g</span></> : "—"}
+        meta={current
+          ? <><StatusPill tone={trend === "down" ? "attention" : "good"}>{trendLabel(trend)}</StatusPill><span className="t-meta">last weighed {fmtDate(current.measured_at)}</span></>
+          : <span className="text-[13px] text-[var(--ink2)]">No weight yet — log the first</span>}
+        action={
+          <button type="button" aria-label="Log weight" onClick={() => navigate({ to: "/birds/$birdId/weight", params: { birdId } })} className="grid size-11 place-items-center rounded-full bg-[var(--ink)] text-[var(--lime)] active:scale-95">
+            <Plus className="size-5" />
+          </button>
+        }
+      />
+
+      {/* Create care plan (fresh birds, owner only) — the screen's lime primary */}
+      {bird && !bird.setup_complete && isOwner && (
+        <PrimaryButton tone="lime" icon={<ClipboardList className="size-4" />} onPress={() => navigate({ to: "/birds/$birdId/setup", params: { birdId }, search: { step: 1 } })}>
+          Create care plan
+        </PrimaryButton>
+      )}
+
+      {/* Handoff — prominent for fosters (this is the point of fostering). */}
+      {isOwner && bird?.is_foster && <HandoffSection birdId={birdId} name={name} isFoster prominent />}
+
+      {/* Basic info — Species / Age / Sex / Flight (owner-editable). */}
+      {bird && <BasicInfoCard birdId={birdId} bird={bird} editable={isOwner} />}
+
+      {/* Record list */}
+      <section>
+        <SectionHead title={`${name}'s record`} />
+        <Card>
+          {bird?.setup_complete && (
+            <RecordRow leading={<IconTile size={38} icon={<ClipboardList className="size-5" />} />} title="Care plan" subtitle="Food, routine, behavior, home, health" onClick={() => navigate({ to: "/birds/$birdId/plan", params: { birdId } })} />
           )}
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <h2 className="truncate text-xl font-medium text-[#1a3d2e]">{name}</h2>
-              {bird?.is_foster && (
-                <span className="shrink-0 rounded-full bg-[#cfe3dc] px-2 py-0.5 text-[10px] font-medium text-[#1a5e3f]">Foster</span>
-              )}
-            </div>
-            <p className="mt-0.5 truncate text-sm text-[#5f5e5a]">
-              {[bird?.species || "Parrot", bird?.age].filter(Boolean).join(" · ")}
-            </p>
-            {isHousehold && (
-              <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-[#cfe3dc] px-2 py-0.5 text-[10px] font-medium text-[#1a5e3f]">
-                Household · view &amp; log
-              </span>
-            )}
+          <RecordRow leading={<IconTile size={38} icon={<Scale className="size-5" />} />} title="Weight" subtitle={weightCount > 0 ? `${weightCount} ${weightCount === 1 ? "entry" : "entries"} · ${trendLabel(trend).toLowerCase()}` : "Not started"} onClick={() => navigate({ to: "/birds/$birdId/weight", params: { birdId } })} />
+          <RecordRow leading={<IconTile size={38} icon={<BookOpen className="size-5" />} />} title="Journal" subtitle="Molt, meds, vet visits" onClick={() => navigate({ to: "/birds/$birdId/journal", params: { birdId } })} />
+          <RecordRow leading={<IconTile size={38} icon={<IdCard className="size-5" />} />} title="Identity" subtitle="Chip, band, hatch date, origin, photo" onClick={() => navigate({ to: "/birds/$birdId/identity", params: { birdId } })} />
+          <RecordRow leading={<IconTile size={38} icon={<CalendarHeart className="size-5" />} />} title="Moments" subtitle="Mark the days worth remembering" onClick={() => navigate({ to: "/birds/$birdId/moments", params: { birdId } })} />
+          <RecordRow leading={<IconTile size={38} icon={<FileText className="size-5" />} />} title="Vet summary" subtitle="One clean sheet for the vet" onClick={() => navigate({ to: "/birds/$birdId/vet-summary", params: { birdId } })} />
+          <RecordRow leading={<IconTile size={38} icon={<Activity className="size-5" />} />} title="Run a health scan" subtitle="The same daily check a sitter runs" onClick={() => navigate({ to: "/birds/$birdId/scan", params: { birdId } })} last />
+        </Card>
+      </section>
+
+      {/* Recent */}
+      <section>
+        <SectionHead title="Recent" />
+        {recent.length === 0 ? (
+          <div className="rounded-[16px] bg-[var(--cream2)] p-6 text-center text-[14px] text-[var(--mute)]">
+            Nothing logged yet. Weights and sitter check-ins will show up here.
           </div>
-        </section>
-
-        {/* Glance tile: Weight (Next reminder hidden until reminders ship) */}
-        <section className="grid grid-cols-2 gap-3">
-          <Link to="/birds/$birdId/weight" params={{ birdId }} className="rounded-[16px] bg-[#efe9da] p-4 active:scale-[0.99]">
-            <div className="flex items-center gap-1.5 text-xs font-medium text-[#5f5e5a]">
-              <Scale className="size-3.5" /> Weight
-            </div>
-            {current ? (
-              <>
-                <p className="mt-1.5 text-2xl font-medium leading-none text-[#1a3d2e]">
-                  {current.grams}<span className="ml-1 text-sm font-normal text-[#5f5e5a]">g</span>
-                </p>
-                <TrendPill trend={trend} />
-              </>
-            ) : (
-              <p className="mt-2 text-sm text-[#5f5e5a]">Log the first weight</p>
-            )}
-          </Link>
-        </section>
-
-        {/* Quick actions */}
-        <section className="grid grid-cols-2 gap-3">
-          <Link
-            to="/birds/$birdId/weight"
-            params={{ birdId }}
-            className="flex min-h-[44px] items-center justify-center gap-2 rounded-[14px] bg-[#cdeab0] py-3 text-sm font-medium text-[#1a3d2e] active:scale-[0.99]"
-          >
-            <Plus className="size-4" /> Log weight
-          </Link>
-          <Link
-            to="/birds/$birdId/vet-summary"
-            params={{ birdId }}
-            className="flex min-h-[44px] items-center justify-center gap-2 rounded-[14px] bg-[#1a3d2e] py-3 text-sm font-medium text-white active:scale-[0.99]"
-          >
-            <FileText className="size-4" /> Vet summary
-          </Link>
-        </section>
-
-        {/* Run a health scan — the same scan a sitter runs */}
-        <Link
-          to="/birds/$birdId/scan"
-          params={{ birdId }}
-          className="flex min-h-[44px] items-center justify-center gap-2 rounded-[14px] border border-[#c8bfa6] bg-white text-sm font-medium text-[#1a3d2e] active:scale-[0.99]"
-        >
-          <Activity className="size-4" /> Run a health scan
-        </Link>
-
-        {/* Handoff — prominent for fosters (this is the point of fostering). */}
-        {isOwner && bird?.is_foster && <HandoffSection birdId={birdId} name={name} isFoster prominent />}
-
-        {/* Basic info — Species / Age / Sex / Flight. Editable only by the
-            owner; household members see it read-only. */}
-        {bird && <BasicInfoCard birdId={birdId} bird={bird} editable={isOwner} />}
-
-        {/* "Create care plan" CTA for brand-new birds (owner only) — launches the
-            wizard at Food (step 1). Collapses into the Care plan facet row once
-            setup_complete. Household members can't create/edit the care plan. */}
-        {bird && !bird.setup_complete && isOwner && (
-          <Link
-            to="/birds/$birdId/setup"
-            params={{ birdId }}
-            search={{ step: 1 }}
-            className="flex min-h-[44px] items-center justify-center gap-2 rounded-[14px] bg-[#1a3d2e] py-3 text-sm font-medium text-white active:scale-[0.99]"
-          >
-            <ClipboardList className="size-4" /> Create care plan
-          </Link>
+        ) : (
+          <Card>
+            {recent.map((r, i) => (
+              <RecordRow
+                key={r.id}
+                leading={<IconTile size={34} tone="pale" icon={r.kind === "weight" ? <Scale className="size-4" /> : <Feather className="size-4" />} />}
+                title={r.kind === "weight" ? `Weight logged — ${r.grams} g` : `Daily check-in — ${checkinLabel(r.status)}`}
+                subtitle={fmtDate(r.at)}
+                trailing={r.source === "household" ? <StatusPill tone="household">Household</StatusPill> : r.source === "sitter" ? <StatusPill tone="off">Sitter</StatusPill> : undefined}
+                chevron={false}
+                last={i === recent.length - 1}
+              />
+            ))}
+          </Card>
         )}
+      </section>
 
-        {/* Record facets */}
-        <section>
-          <h3 className="mb-2 px-1 text-sm font-medium text-[#1a3d2e]">{name}'s record</h3>
-          <div className="overflow-hidden rounded-[16px] bg-white ring-1 ring-[#e3dcc9]">
-            {bird?.setup_complete && (
-              <FacetRow to="/birds/$birdId/plan" birdId={birdId} icon={<ClipboardList className="size-5" />} label="Care plan" sub="Food, routine, behavior, home, health" />
-            )}
-            <FacetRow to="/birds/$birdId/weight" birdId={birdId} icon={<Scale className="size-5" />} label="Weight" sub={weightCount > 0 ? `${weightCount} ${weightCount === 1 ? "entry" : "entries"} · ${trend}` : "Not started"} />
-            <FacetRow to="/birds/$birdId/journal" birdId={birdId} icon={<BookOpen className="size-5" />} label="Journal" sub="Molt, meds, vet visits" />
-            <FacetRow to="/birds/$birdId/identity" birdId={birdId} icon={<IdCard className="size-5" />} label="Identity" sub="Chip, band, hatch date, origin, photo" />
-            <FacetRow to="/birds/$birdId/moments" birdId={birdId} icon={<CalendarHeart className="size-5" />} label="Moments" sub="Mark the days worth remembering" last />
-          </div>
-        </section>
+      {/* Sharing — owner only */}
+      {isOwner && (
+        <Card>
+          <RecordRow leading={<IconTile size={38} tone="pale" icon={<Users className="size-5" />} />} title={`Who can see ${name}'s record`} subtitle="Household & sitters" onClick={() => navigate({ to: "/birds/$birdId/access", params: { birdId } })} last />
+        </Card>
+      )}
 
-        {/* Recent feed */}
-        <section>
-          <h3 className="mb-2 px-1 text-sm font-medium text-[#1a3d2e]">Recent</h3>
-          {recent.length === 0 ? (
-            <div className="rounded-[16px] bg-[#efe9da] p-6 text-center text-sm text-[#5f5e5a]">
-              Nothing logged yet. Weights and sitter check-ins will show up here.
-            </div>
-          ) : (
-            <ul className="space-y-2">
-              {recent.map((r) => (
-                <li key={r.id} className="flex items-center gap-3 rounded-[14px] bg-white p-3 ring-1 ring-[#e3dcc9]">
-                  <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[#efe9da] text-[#1a3d2e]">
-                    {r.kind === "weight" ? <Scale className="size-4" /> : <Feather className="size-4" />}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm text-[#1a3d2e]">
-                      {r.kind === "weight" ? `Weight logged — ${r.grams} g` : `Daily check-in — ${checkinLabel(r.status)}`}
-                    </p>
-                    <p className="mt-0.5 text-xs text-[#8a897f]">
-                      {fmtDate(r.at)}
-                      {r.source === "sitter" && <span className="ml-1.5 rounded-full bg-[#d6e8dc] px-1.5 py-0.5 text-[10px] font-medium text-[#1a3d2e]">Sitter</span>}
-                      {r.source === "household" && <span className="ml-1.5 rounded-full bg-[#cfe3dc] px-1.5 py-0.5 text-[10px] font-medium text-[#1a5e3f] ring-1 ring-[#1a5e3f]/25">Household</span>}
-                    </p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-
-        {/* Access hub — owner only. Household members manage nothing here. */}
-        {isOwner && (
-          <Link
-            to="/birds/$birdId/access"
-            params={{ birdId }}
-            className="flex min-h-[44px] items-center justify-center gap-2 text-sm font-medium text-[#5f5e5a] active:scale-[0.99]"
-          >
-            <Users className="size-4" /> Who can see {name}'s record
-          </Link>
-        )}
-
-        {/* Handoff — quiet for non-foster birds (life happens, but don't tempt
-            accidental use). */}
-        {isOwner && bird && !bird.is_foster && <HandoffSection birdId={birdId} name={name} isFoster={false} prominent={false} />}
+      {/* Handoff — quiet for non-foster birds. */}
+      {isOwner && bird && !bird.is_foster && <HandoffSection birdId={birdId} name={name} isFoster={false} prominent={false} />}
     </>
   );
 }
 
-function TrendPill({ trend }: { trend: Trend }) {
-  const map = {
-    steady: { label: "Steady", icon: <Minus className="size-3" />, cls: "bg-[#d6e8dc] text-[#1a3d2e]" },
-    up: { label: "Up", icon: <TrendingUp className="size-3" />, cls: "bg-[#e8e1d0] text-[#5f5e5a]" },
-    down: { label: "Down", icon: <TrendingDown className="size-3" />, cls: "bg-[#e8e1d0] text-[#5f5e5a]" },
-  }[trend];
-  return (
-    <span className={`mt-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${map.cls}`}>
-      {map.icon} {map.label}
-    </span>
-  );
-}
-
-type FacetTo =
-  | "/birds/$birdId/plan"
-  | "/birds/$birdId/weight"
-  | "/birds/$birdId/journal"
-  | "/birds/$birdId/identity"
-  | "/birds/$birdId/moments";
-
-function FacetRow({ to, birdId, icon, label, sub, last }: { to: FacetTo; birdId: string; icon: React.ReactNode; label: string; sub: string; last?: boolean }) {
-  return (
-    <Link
-      to={to}
-      params={{ birdId }}
-      className={`flex min-h-[56px] items-center gap-3 px-4 py-3 active:bg-[#f4f1e8] ${last ? "" : "border-b border-[#ece6d6]"}`}
-    >
-      <span className="shrink-0 text-[#2d6a4f]">{icon}</span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-sm font-medium text-[#1a3d2e]">{label}</span>
-        <span className="block truncate text-xs text-[#8a897f]">{sub}</span>
-      </span>
-      <ChevronRight className="size-4 shrink-0 text-[#bcb6a3]" />
-    </Link>
-  );
+function trendLabel(trend: Trend): string {
+  return trend === "up" ? "Up" : trend === "down" ? "Down" : "Steady";
 }
 
 function checkinLabel(status: string): string {
@@ -357,6 +249,10 @@ function checkinLabel(status: string): string {
 function fmtDate(iso: string): string {
   const d = new Date(iso);
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function fmtMonthYear(iso: string): string {
+  return new Date(`${iso.slice(0, 10)}T12:00:00`).toLocaleDateString(undefined, { month: "short", year: "numeric" });
 }
 
 // Handoff + foster-fail actions. Shows a pending-handoff banner with cancel,
@@ -388,14 +284,16 @@ function HandoffSection({ birdId, name, isFoster, prominent }: { birdId: string;
     onError: (e: any) => toast.error(e?.message ?? "Couldn't update."),
   });
 
+  const outlineBtn = "flex min-h-[44px] items-center justify-center gap-2 rounded-[12px] bg-white text-[15px] font-[500] text-[var(--ink)] ring-1 ring-[var(--line)] active:scale-[0.99] disabled:opacity-50";
+
   if (pending?.pending) {
     return (
-      <div className="flex items-center gap-3 rounded-[14px] border border-dashed bg-[#f6e7c4]/30 p-3" style={{ borderColor: "#d8b25a" }}>
-        <Loader2 className="size-4 shrink-0 text-[#854F0B]" />
-        <p className="min-w-0 flex-1 text-xs text-[#854F0B]">
-          Handoff pending — to <span className="font-medium">{pending.pending.email}</span>
+      <div className="flex items-center gap-3 rounded-[14px] p-3" style={{ background: "var(--amber-fill)", border: "1px solid var(--amber-line)" }}>
+        <Loader2 className="size-4 shrink-0 text-[var(--amber-ink)]" />
+        <p className="min-w-0 flex-1 text-[12.5px] text-[var(--amber-ink)]">
+          Handoff pending — to <span className="font-[500]">{pending.pending.email}</span>
         </p>
-        <button type="button" disabled={cancelM.isPending} onClick={() => cancelM.mutate(pending.pending!.id)} className="shrink-0 text-xs font-medium text-[#854F0B] underline disabled:opacity-50">
+        <button type="button" disabled={cancelM.isPending} onClick={() => cancelM.mutate(pending.pending!.id)} className="shrink-0 text-[12.5px] font-[500] text-[var(--amber-ink)] underline disabled:opacity-50">
           Cancel
         </button>
       </div>
@@ -406,9 +304,7 @@ function HandoffSection({ birdId, name, isFoster, prominent }: { birdId: string;
     <button
       type="button"
       onClick={() => navigate({ to: "/birds/$birdId/handoff", params: { birdId } })}
-      className={prominent
-        ? "flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[14px] border border-[#c8bfa6] bg-white text-sm font-medium text-[#1a3d2e] active:scale-[0.99]"
-        : "flex min-h-[44px] w-full items-center justify-center gap-2 text-sm font-medium text-[#5f5e5a] active:scale-[0.99]"}
+      className={prominent ? `w-full ${outlineBtn}` : "flex min-h-[44px] w-full items-center justify-center gap-2 text-[14px] font-[500] text-[var(--mute)] active:scale-[0.99]"}
     >
       <ArrowRightLeft className="size-4" /> Hand off {name}
     </button>
@@ -422,15 +318,11 @@ function HandoffSection({ birdId, name, isFoster, prominent }: { birdId: string;
         type="button"
         disabled={permanentM.isPending}
         onClick={() => { if (window.confirm(`Make ${name} a permanent member of your flock? You can change your mind later.`)) permanentM.mutate(); }}
-        className="flex min-h-[44px] items-center justify-center gap-2 rounded-[14px] border border-[#c8bfa6] bg-white text-sm font-medium text-[#1a3d2e] active:scale-[0.99] disabled:opacity-50"
+        className={outlineBtn}
       >
         <Heart className="size-4" /> Welcome to the flock
       </button>
-      <button
-        type="button"
-        onClick={() => navigate({ to: "/birds/$birdId/handoff", params: { birdId } })}
-        className="flex min-h-[44px] items-center justify-center gap-2 rounded-[14px] border border-[#c8bfa6] bg-white text-sm font-medium text-[#1a3d2e] active:scale-[0.99]"
-      >
+      <button type="button" onClick={() => navigate({ to: "/birds/$birdId/handoff", params: { birdId } })} className={outlineBtn}>
         <ArrowRightLeft className="size-4" /> Hand off
       </button>
     </div>
@@ -508,7 +400,7 @@ function BasicInfoCard({ birdId, bird, editable = true }: { birdId: string; bird
   return (
     <section className="overflow-hidden rounded-[16px] bg-white ring-1 ring-[#e3dcc9]">
       <div className="flex items-center justify-between gap-3 border-b border-[#ece6d6] px-4 py-3">
-        <h3 className="text-[11px] font-semibold uppercase tracking-widest text-[#5f5e5a]">Basic info</h3>
+        <h3 className="t-eyebrow text-[var(--mute2)]">Basic info</h3>
         {editing ? (
           <div className="flex gap-2">
             <button type="button" onClick={() => setEditing(false)} disabled={saving} className="inline-flex min-h-[36px] items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium text-[#5f5e5a]">
@@ -581,7 +473,7 @@ function BasicRow({ label, value, last }: { label: string; value: string; last?:
 function BasicField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#5f5e5a]">{label}</span>
+      <span className="t-eyebrow mb-1 block text-[var(--mute2)]">{label}</span>
       {children}
     </label>
   );

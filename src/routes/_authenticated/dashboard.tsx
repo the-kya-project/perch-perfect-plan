@@ -19,6 +19,7 @@ import { ASPCA_POISON_CONTROL, isPhoneField, phoneWarning, formatPhoneOnBlur } f
 import { isAddressField } from "@/lib/address";
 import { AddressInput } from "@/components/AddressInput";
 import { fetchScanFeed, getNotifSeenAt } from "@/lib/notificationsFeed";
+import { InkHero, IconTile, StatusPill, SectionHead, CtaLink, type HeroCta } from "@/components/system";
 import { BirdRecordBody } from "./birds/$birdId.index";
 import { getHouseholdHome, type HomeHousehold } from "@/lib/home.functions";
 import { getPastBirds } from "@/lib/handoff.functions";
@@ -128,11 +129,21 @@ function Dashboard() {
   const fosterBirds = homeBirds.filter((b) => b.is_foster);
   const flockBirds = homeBirds.filter((b) => !b.is_foster);
 
-  return (
-    <div className="min-h-screen bg-[#f4f1e8] pb-24">
-      <HomeHeader firstName={firstName} unreadNotifs={unreadNotifs} />
+  const stateCopy = birdsLoading ? undefined
+    : birds.length === 0 ? "Add your first bird to start their record."
+    : birds.length === 1 ? `${birds[0].name}'s record.`
+    : `${birds.length} birds with you.`;
+  const heroCta: HeroCta | undefined =
+    !birdsLoading && birds.length === 0
+      ? { label: "Add a bird", tone: "lime", icon: <Plus className="size-4" />, onPress: () => navigate({ to: "/birds/new" }) }
+      : undefined;
 
-      <main className="mx-auto max-w-md space-y-6 px-5 pb-6 pt-1">
+  return (
+    <div className="min-h-screen bg-[var(--cream)] pb-24">
+      <div className="mx-auto max-w-md">
+      <HomeHeader firstName={firstName} unreadNotifs={unreadNotifs} stateCopy={stateCopy} cta={heroCta} />
+
+      <main className="space-y-6 px-5 pb-6 pt-5">
         {emergencyDefaults && <DefaultsPanel />}
 
         {birdsLoading ? (
@@ -189,6 +200,7 @@ function Dashboard() {
         <Disclaimer compact />
         <AddToHomeScreenPrompt />
       </main>
+      </div>
 
       <OwnerOnboarding />
       <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.65rem .8rem;font-size:16px;outline:none}.input:focus{border-color:var(--sage-600);box-shadow:0 0 0 3px rgb(74 103 65 / .15)}`}</style>
@@ -199,50 +211,45 @@ function Dashboard() {
 // ---------------------------------------------------------------------------
 // Header
 // ---------------------------------------------------------------------------
-function HomeHeader({ firstName, unreadNotifs }: { firstName: string; unreadNotifs: number }) {
+function HomeHeader({ firstName, unreadNotifs, stateCopy, cta }: { firstName: string; unreadNotifs: number; stateCopy?: string; cta?: HeroCta }) {
   const h = new Date().getHours();
   const part = h < 12 ? "Morning" : h < 18 ? "Afternoon" : "Evening";
   const greeting = firstName ? `${part}, ${firstName}.` : `${part}.`;
   const dateLabel = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
   return (
-    <header className="pt-[max(env(safe-area-inset-top),1rem)]">
-      <div className="mx-auto flex max-w-md items-start justify-between gap-3 px-5 pb-2 pt-2">
-        <div className="min-w-0">
-          <p className="text-xs font-medium text-[#8a8270]">{dateLabel}</p>
-          <h1 className="font-display mt-0.5 text-[25px] font-medium leading-tight text-[#1a3d2e]">{greeting}</h1>
-        </div>
-        <div className="flex shrink-0 items-center gap-2 pt-1">
-          <Link to="/notifications" aria-label="Notifications" className="relative grid size-[34px] place-items-center rounded-full bg-[#efe9da] text-[#1a3d2e]">
+    <InkHero
+      eyebrow={dateLabel}
+      headline={greeting}
+      body={stateCopy}
+      cta={cta}
+      trailingIcons={
+        <>
+          <Link to="/notifications" aria-label="Notifications" className="relative grid size-9 place-items-center rounded-full text-white active:scale-95" style={{ background: "rgba(255,255,255,0.12)" }}>
             <Bell className="size-[18px]" />
             {unreadNotifs > 0 && (
-              <span className="absolute -right-0.5 -top-0.5 grid min-w-[16px] place-items-center rounded-full bg-[#854F0B] px-1 text-[10px] font-bold leading-4 text-white">
+              <span className="absolute -right-0.5 -top-0.5 grid min-w-[16px] place-items-center rounded-full bg-[var(--lime)] px-1 text-[10px] font-medium leading-4 text-[var(--ink)]">
                 {unreadNotifs > 9 ? "9+" : unreadNotifs}
               </span>
             )}
           </Link>
-          <Link to="/account" aria-label="Settings" className="grid size-[34px] place-items-center rounded-full bg-[#efe9da] text-[#1a3d2e]">
+          <Link to="/account" aria-label="Settings" className="grid size-9 place-items-center rounded-full text-white active:scale-95" style={{ background: "rgba(255,255,255,0.12)" }}>
             <Settings className="size-[18px]" />
           </Link>
-        </div>
-      </div>
-    </header>
+        </>
+      }
+    />
   );
 }
 
 // ---------------------------------------------------------------------------
-// Shared section header with a text-link CTA (NEW reusable pattern)
+// Section header with a text-link CTA — SectionHead + CtaLink from the system.
 // ---------------------------------------------------------------------------
 function SectionHeaderCTA({ title, pill, ctaLabel, onCta }: { title: string; pill?: string; ctaLabel: string; onCta: () => void }) {
   return (
-    <div className="flex items-center justify-between gap-3">
-      <div className="flex items-center gap-2">
-        <h2 className="font-display text-[14.5px] font-medium text-[#1a3d2e]">{title}</h2>
-        {pill && <span className="rounded-full bg-[#e8f0ec] px-2 py-[3px] text-[11px] font-medium text-[#2d6a4f]">{pill}</span>}
-      </div>
-      <button type="button" onClick={onCta} className="flex items-center gap-1 text-[13px] font-medium text-[#2d6a4f] active:opacity-70">
-        <Plus className="size-3.5" strokeWidth={2.4} /> {ctaLabel}
-      </button>
-    </div>
+    <SectionHead
+      title={pill ? <span className="inline-flex items-center gap-2">{title}<StatusPill tone="good">{pill}</StatusPill></span> : title}
+      trailing={<CtaLink label={ctaLabel} icon={<Plus className="size-3.5" strokeWidth={2.2} />} onPress={onCta} />}
+    />
   );
 }
 
@@ -257,24 +264,23 @@ function TodayPanel({ items, onNavigate }: { items: TodayItem[]; onNavigate: (i:
       style={{ background: "linear-gradient(180deg,#efe9da,#e7e0c8)" }}
     >
       <div className="flex items-baseline justify-between px-4 pb-1.5 pt-3.5">
-        <h2 className="font-display text-[17px] font-medium text-[#1a3d2e]">Today</h2>
-        <span className="text-[11px] font-medium text-[#8a8270]">{items.length} {items.length === 1 ? "thing" : "things"}</span>
+        <h2 className="t-section">Today</h2>
+        <span className="t-meta">{items.length} {items.length === 1 ? "thing" : "things"}</span>
       </div>
       <ul>
         {items.map((it) => (
-          <li key={it.id} className="border-t border-[#e0d8c4]/70 first:border-t-0">
-            <button type="button" onClick={() => onNavigate(it)} className="flex w-full items-center gap-3 px-4 py-3 text-left active:bg-black/[0.03]">
-              <span
-                className="grid size-8 shrink-0 place-items-center rounded-full"
-                style={it.tone === "amber" ? { background: "#f6e7c4", color: "#854F0B" } : { background: "#d6e8dc", color: "#2d6a4f" }}
-              >
-                {it.tone === "amber" ? <AlertCircle className="size-4" /> : it.to.kind === "sits" ? <Calendar className="size-4" /> : <CalendarHeart className="size-4" />}
-              </span>
+          <li key={it.id} className="border-t border-[var(--line)]/70 first:border-t-0">
+            <button type="button" onClick={() => onNavigate(it)} className="flex min-h-[44px] w-full items-center gap-3 px-4 py-3 text-left active:bg-black/[0.03]">
+              <IconTile
+                size={34}
+                tone={it.tone === "amber" ? "amber" : "ink-lime"}
+                icon={it.tone === "amber" ? <AlertCircle className="size-4" /> : it.to.kind === "sits" ? <Calendar className="size-4" /> : <CalendarHeart className="size-4" />}
+              />
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-medium text-[#1a3d2e]">{it.title}</span>
-                <span className="block truncate text-xs text-[#5b6b61]">{it.meta}</span>
+                <span className="t-item block truncate">{it.title}</span>
+                <span className="t-meta block truncate">{it.meta}</span>
               </span>
-              <ChevronRight className="size-4 shrink-0 text-[#8a8270]" />
+              <ChevronRight className="size-4 shrink-0 text-[var(--mute2)]" />
             </button>
           </li>
         ))}
@@ -310,7 +316,7 @@ function PhotoTile({ photo, name, species }: { photo: SignedPhoto | null; name: 
         />
       ) : (
         <div className="grid size-full place-items-center">
-          <span className="font-display text-2xl font-medium text-white/90">{initial}</span>
+          <span className="text-2xl font-[500] text-white/90">{initial}</span>
         </div>
       )}
     </div>
@@ -318,15 +324,12 @@ function PhotoTile({ photo, name, species }: { photo: SignedPhoto | null; name: 
 }
 
 function GlancePill({ glance }: { glance: WeightGlance }) {
-  if (glance.state === "none") return <span className="text-xs text-[#8a8270]">No weights yet</span>;
+  if (glance.state === "none") return <span className="t-meta">No weights yet</span>;
   const pill = glance.pill;
-  const cls = pill.tone === "good"
-    ? "bg-[#d6e8dc] text-[#1a5e3f]"
-    : "bg-[#f6e7c4] text-[#854F0B]";
   return (
-    <span className="inline-flex items-center gap-1 text-sm text-[#1a3d2e]">
-      {glance.current}<span className="text-xs text-[#5b6b61]">g</span>
-      <span className={`ml-1 rounded-full px-2 py-[3px] text-[11.5px] font-medium ${cls}`}>{pill.label}</span>
+    <span className="inline-flex items-center gap-1.5 text-[15px] text-[var(--ink)]">
+      {glance.current}<span className="t-meta">g</span>
+      <StatusPill tone={pill.tone === "good" ? "good" : "attention"}>{pill.label}</StatusPill>
     </span>
   );
 }
@@ -340,22 +343,22 @@ function BirdRow({ bird, photo, glance, foster }: { bird: HomeBird; photo: Signe
   return (
     <Link
       to="/birds/$birdId" params={{ birdId: bird.id }}
-      className="flex items-center gap-3 rounded-[18px] border border-[#e0d8c4] bg-white p-3 active:scale-[0.995]"
+      className="flex items-center gap-3 rounded-[18px] bg-white p-3 ring-1 ring-[var(--line2)] active:scale-[0.995]"
       style={{ boxShadow: "0 1px 0 rgba(40,50,40,.02), 0 6px 14px -8px rgba(40,50,40,.08)" }}
     >
       <PhotoTile photo={photo} name={bird.name} species={bird.species} />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <h3 className="font-display truncate text-[17px] font-medium leading-tight text-[#1a3d2e]">{bird.name}</h3>
-          {foster && <span className="shrink-0 rounded-full bg-[#cfe3dc] px-2 py-0.5 text-[10px] font-medium text-[#1a5e3f]">Foster</span>}
+          <h3 className="t-item truncate text-[17px]">{bird.name}</h3>
+          {foster && <StatusPill tone="good">Foster</StatusPill>}
         </div>
-        <p className="truncate text-xs text-[#5b6b61]">{bird.species || "Parrot"}</p>
+        <p className="t-meta truncate">{bird.species || "Parrot"}</p>
         {foster && bird.intake_date && (
-          <p className="text-xs text-[#8a8270]">With you since {fmtShort(bird.intake_date)}</p>
+          <p className="t-meta">With you since {fmtShort(bird.intake_date)}</p>
         )}
         <div className="mt-1">
           {fosterStatus ? (
-            <span className={`text-xs font-medium ${fosterStatus.tone === "good" ? "text-[#2d6a4f]" : "text-[#854F0B]"}`}>{fosterStatus.label}</span>
+            <span className={`text-[13px] font-[500] ${fosterStatus.tone === "good" ? "text-[var(--moss)]" : "text-[var(--amber-ink)]"}`}>{fosterStatus.label}</span>
           ) : (
             <GlancePill glance={glance} />
           )}
@@ -373,14 +376,14 @@ function HouseholdActivity({ household }: { household?: HomeHousehold }) {
   if (!household || household.members.length === 0 || activity.length === 0) return null;
   return (
     <section className="space-y-2">
-      <h2 className="font-display text-[14.5px] font-medium text-[#1a3d2e]">From your household</h2>
+      <SectionHead title="From your household" />
       <ul className="space-y-1.5">
         {activity.map((a) => (
-          <li key={a.id} className="flex items-start gap-2.5 rounded-[14px] bg-white px-3 py-2.5 ring-1 ring-[#eee6d4]">
-            <span className="mt-1.5 size-2 shrink-0 rounded-full" style={{ background: "var(--house,#4a7c95)" }} />
+          <li key={a.id} className="flex items-start gap-2.5 rounded-[14px] bg-white px-3 py-2.5 ring-1 ring-[var(--line2)]">
+            <span className="mt-1.5 size-2 shrink-0 rounded-full" style={{ background: "var(--house)" }} />
             <div className="min-w-0 flex-1">
-              <p className="text-sm text-[#1a3d2e]"><span className="font-medium">{a.actorName}</span> {a.summary} for {a.birdName}</p>
-              <p className="text-xs text-[#8a8270]">{fmtAgo(a.at)}</p>
+              <p className="text-[14px] text-[var(--ink)]"><span className="font-[500]">{a.actorName}</span> {a.summary} for {a.birdName}</p>
+              <p className="t-meta">{fmtAgo(a.at)}</p>
             </div>
           </li>
         ))}
@@ -418,13 +421,13 @@ function HouseholdRow({ household, firstName }: { household?: HomeHousehold; fir
           {members.slice(0, 2).map((m, i) => <Avatar key={m.userId} initial={(m.name?.slice(0, 1) || "?").toUpperCase()} dim={i === 1 && members.length > 2} />)}
         </div>
       ) : (
-        <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[#efe9da] text-[#8a8270]"><Users className="size-[18px]" /></span>
+        <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[var(--cream2)] text-[var(--mute2)]"><Users className="size-[18px]" /></span>
       )}
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-[#1a3d2e]">{primary}</p>
-        <p className="truncate text-xs text-[#5b6b61]">{secondary}</p>
+        <p className="t-item truncate">{primary}</p>
+        <p className="t-meta truncate">{secondary}</p>
       </div>
-      <ChevronRight className="size-4 shrink-0 text-[#8a8270]" />
+      <ChevronRight className="size-4 shrink-0 text-[var(--mute2)]" />
     </div>
   );
 
@@ -434,7 +437,7 @@ function HouseholdRow({ household, firstName }: { household?: HomeHousehold; fir
 }
 function Avatar({ initial, dim }: { initial: string; dim?: boolean }) {
   return (
-    <span className={`grid size-9 place-items-center rounded-full ring-2 ring-[#f4f1e8] text-[11px] font-medium text-white ${dim ? "bg-[#8a8270]" : "bg-[#2d6a4f]"}`}>
+    <span className={`grid size-9 place-items-center rounded-full text-[11px] font-[500] text-white ring-2 ring-[var(--cream)] ${dim ? "bg-[var(--mute2)]" : "bg-[var(--moss)]"}`}>
       {initial}
     </span>
   );
@@ -446,24 +449,22 @@ function Avatar({ initial, dim }: { initial: string; dim?: boolean }) {
 function FosterFooter({ count }: { count: number }) {
   if (count <= 0) return null;
   return (
-    <p className="font-display text-center text-[13px] italic text-[#8a8270]">
+    <p className="text-center text-[13px] italic text-[var(--mute2)]">
       You've helped {count} {count === 1 ? "bird" : "birds"} find a home.
     </p>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Empty + skeleton
+// Empty + skeleton — the InkHero already carries the "Add a bird" lime primary,
+// so this is a calm explanatory card, no competing button.
 // ---------------------------------------------------------------------------
 function EmptyHome() {
   return (
-    <section className="rounded-[18px] border border-[#e0d8c4] bg-white p-8 text-center" style={{ boxShadow: "0 6px 14px -8px rgba(40,50,40,.08)" }}>
-      <span className="mx-auto grid size-12 place-items-center rounded-full bg-[#e8f0ec] text-[#2d6a4f]"><Feather className="size-6" /></span>
-      <h2 className="font-display mt-3 text-[19px] font-medium text-[#1a3d2e]">Welcome to your flock</h2>
-      <p className="mt-1.5 text-sm text-[#5b6b61]">Add your first bird to start their living record — care plan, weight, moments, and more.</p>
-      <Link to="/birds/new" className="mt-5 inline-flex min-h-[44px] items-center gap-2 rounded-[14px] bg-[#1a3d2e] px-5 text-sm font-medium text-white">
-        <Plus className="size-4" /> Add a bird
-      </Link>
+    <section className="rounded-[18px] bg-white p-8 text-center ring-1 ring-[var(--line2)]" style={{ boxShadow: "0 6px 14px -8px rgba(40,50,40,.08)" }}>
+      <div className="flex justify-center"><IconTile size={48} icon={<Feather className="size-6" />} /></div>
+      <h2 className="t-section mt-3">Welcome to your flock</h2>
+      <p className="t-body mx-auto mt-1.5 max-w-[34ch] text-[var(--ink2)]">Start their living record — care plan, weight, moments, and more. Tap Add a bird above to begin.</p>
     </section>
   );
 }
@@ -472,11 +473,11 @@ function HomeSkeleton() {
   return (
     <div className="space-y-3">
       {[0, 1].map((i) => (
-        <div key={i} className="flex items-center gap-3 rounded-[18px] border border-[#e0d8c4] bg-white p-3">
-          <div className="size-[62px] shrink-0 animate-pulse rounded-[14px] bg-[#e7e0c8]" />
+        <div key={i} className="flex items-center gap-3 rounded-[18px] bg-white p-3 ring-1 ring-[var(--line2)]">
+          <div className="size-[62px] shrink-0 animate-pulse rounded-[14px] bg-[var(--cream2)]" />
           <div className="flex-1 space-y-2">
-            <div className="h-4 w-1/3 animate-pulse rounded bg-[#e7e0c8]" />
-            <div className="h-3 w-1/4 animate-pulse rounded bg-[#e7e0c8]" />
+            <div className="h-4 w-1/3 animate-pulse rounded bg-[var(--cream2)]" />
+            <div className="h-3 w-1/4 animate-pulse rounded bg-[var(--cream2)]" />
           </div>
         </div>
       ))}
@@ -587,7 +588,7 @@ function DefaultsPanel() {
   return (
     <section ref={sectionRef} id="emergency-defaults" className="scroll-mt-4 space-y-3">
       <div className="flex items-end justify-between">
-        <h2 className="font-display text-[19px] font-medium text-[#1a3d2e]">Account emergency defaults</h2>
+        <h2 className="t-section">Account emergency defaults</h2>
         <button type="button" onClick={() => { setD(seedDefaults(defaults)); setOpen((o) => !o); }} className="text-sm font-medium text-[#1a3d2e] underline">
           {open ? "Close" : filledCount > 0 ? "Edit" : "Set up"}
         </button>

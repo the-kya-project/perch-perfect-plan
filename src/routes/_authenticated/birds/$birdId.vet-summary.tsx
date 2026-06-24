@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,6 +8,7 @@ import { computeWeightTrend } from "@/lib/weightTrend";
 import { mergeEmergency, ASPCA_POISON_CONTROL } from "@/lib/emergency";
 import { formatAmountUnit } from "@/lib/labels";
 import { normalizeFeedTimes, feedTimeLabel } from "@/lib/feedTimes";
+import { InkHero, PrimaryButton, Card } from "@/components/system";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/vet-summary")({
   head: () => ({ meta: [{ title: "Vet summary — Parrot Care Co-Pilot" }] }),
@@ -22,6 +23,7 @@ const SEX_METHOD: Record<string, string> = { dna: "DNA", surgical: "surgical", v
 
 function VetSummary() {
   const { birdId } = Route.useParams();
+  const navigate = useNavigate();
   const [generated, setGenerated] = useState(false);
 
   const { data: bird } = useQuery({
@@ -134,82 +136,87 @@ function VetSummary() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f4f1e8] pb-24">
-      <header data-noprint className="sticky top-0 z-10 border-b border-[#e3ded0] bg-[#f4f1e8]/95 backdrop-blur">
-        <div className="mx-auto flex max-w-md items-center gap-3 px-5 py-3">
-          <Link to="/birds/$birdId" params={{ birdId }} aria-label="Back to bird record" className="-ml-1 rounded p-1 text-[#1a3d2e]">
-            <ArrowLeft className="size-5" />
-          </Link>
-          <h1 className="text-base font-medium text-[#1a3d2e]">Vet summary</h1>
+    <div className="min-h-screen bg-[var(--cream)] pb-24">
+      <div className="mx-auto max-w-md">
+        <div data-noprint>
+          <InkHero
+            backIcon={<ArrowLeft className="size-5" />}
+            onBack={() => navigate({ to: "/birds/$birdId", params: { birdId } })}
+            eyebrow="Vet summary"
+            headline="One sheet for the vet."
+          />
         </div>
-      </header>
 
-      <main className="mx-auto max-w-md px-5 py-5">
-        {!generated ? (
-          <section className="rounded-[16px] bg-[#efe9da] p-8 text-center">
-            <FileText className="mx-auto size-7 text-[#2d6a4f]" />
-            <p className="mt-3 text-sm text-[#1a3d2e]">A clean one-page snapshot for the vet — identity, weight, diet, meds, handling, and emergency contacts, pulled from {name}'s record.</p>
-            <button type="button" onClick={() => setGenerated(true)} className="mt-4 inline-flex min-h-[44px] items-center gap-2 rounded-[14px] bg-[#1a3d2e] px-5 text-sm font-medium text-white">
-              <FileText className="size-4" /> Generate summary
-            </button>
-          </section>
-        ) : (
-          <>
-            {/* Actions */}
-            <div data-noprint className="mb-4 flex gap-2">
-              <button type="button" onClick={share} className="flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-[14px] border border-[#c8bfa6] bg-white text-sm font-medium text-[#1a3d2e]">
-                <Share2 className="size-4" /> Share
-              </button>
-              <button type="button" onClick={() => window.print()} className="flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-[14px] bg-[#1a3d2e] text-sm font-medium text-white">
-                <Printer className="size-4" /> Save as PDF
-              </button>
-            </div>
+        <main className="px-5 pt-5">
+          {!generated ? (
+            <Card className="px-8 py-8 text-center">
+              <FileText className="mx-auto size-7 text-[var(--moss)]" />
+              <p className="t-body mx-auto mt-3 text-[var(--ink)]">A clean one-page snapshot for the vet — identity, weight, diet, meds, handling, and emergency contacts, pulled from {name}'s record.</p>
+              <div className="mt-4">
+                <PrimaryButton tone="ink" icon={<FileText className="size-4" />} onPress={() => setGenerated(true)}>Generate summary</PrimaryButton>
+              </div>
+            </Card>
+          ) : (
+            <>
+              {/* Actions */}
+              <div data-noprint className="mb-4 flex gap-2">
+                <button type="button" onClick={share} className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-[12px] bg-white px-[18px] py-[11px] text-[15px] font-[500] text-[var(--ink)] ring-1 ring-[var(--line)] active:scale-[0.99]">
+                  <Share2 className="size-4" /> Share
+                </button>
+                <div className="flex-1">
+                  <PrimaryButton tone="lime" icon={<Printer className="size-4" />} onPress={() => window.print()}>Save as PDF</PrimaryButton>
+                </div>
+              </div>
 
-            {/* The sheet */}
-            <article id="vet-sheet" className="rounded-[14px] border border-[#d8d0bd] bg-white p-5">
-              <header className="border-b border-[#e3dcc9] pb-3">
-                <h2 className="text-xl font-medium text-[#1a3d2e]">{name}</h2>
-                {bird?.species && <p className="mt-0.5 text-sm italic text-[#5f5e5a]">{bird.species}</p>}
-                <p className="mt-1 text-xs text-[#8a897f]">Generated {fmtDate(new Date().toISOString())}</p>
-              </header>
+              {/* The sheet */}
+              <article id="vet-sheet">
+                <Card className="p-5">
+                  <header className="border-b border-[var(--line2)] pb-3">
+                    <h2 className="t-section text-[20px]">{name}</h2>
+                    {bird?.species && <p className="t-body mt-0.5 italic text-[var(--mute)]">{bird.species}</p>}
+                    <p className="t-meta mt-1">Generated {fmtDate(new Date().toISOString())}</p>
+                  </header>
 
-              <Section label="Identity">
-                <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5">
-                  {identity.map(([l, v]) => (
-                    <div key={l}>
-                      <dt className="text-[10px] font-semibold uppercase tracking-wider text-[#8a897f]">{l}</dt>
-                      <dd className={`text-sm ${v ? "text-[#1a3d2e]" : "italic text-[#9a978c]"}`}>{v ?? NONE}</dd>
-                    </div>
-                  ))}
-                </dl>
-              </Section>
+                  <Section label="Identity">
+                    <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+                      {identity.map(([l, v]) => (
+                        <div key={l}>
+                          <dt className="t-eyebrow text-[var(--mute2)]">{l}</dt>
+                          <dd className={`t-body ${v ? "text-[var(--ink)]" : "italic text-[var(--mute2)]"}`}>{v ?? NONE}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </Section>
 
-              <Section label="Weight"><Value text={weightText} /></Section>
-              <Section label="Diet"><Value text={dietText} multiline /></Section>
-              <Section label="Meds & health flags"><Value text={meds} multiline /></Section>
-              <Section label="Handling"><Value text={handling} multiline /></Section>
+                  <Section label="Weight"><Value text={weightText} /></Section>
+                  <Section label="Diet"><Value text={dietText} multiline /></Section>
+                  <Section label="Meds & health flags"><Value text={meds} multiline /></Section>
+                  <Section label="Handling"><Value text={handling} multiline /></Section>
 
-              {/* Emergency — the one red block (legitimate emergency use) */}
-              <section className="mt-4 rounded-[12px] border p-3" style={{ borderColor: "#E24B4A", backgroundColor: "#FCEBEB" }}>
-                <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#A32D2D" }}>Emergency contacts</p>
-                <dl className="mt-1.5 space-y-1 text-sm" style={{ color: "#791F1F" }}>
-                  <EmRow label="Avian vet" value={[em.avian_vet_name, em.avian_vet_phone].filter(Boolean).join(" · ")} />
-                  <EmRow label="Emergency vet" value={[em.emergency_vet_name, em.emergency_vet_phone].filter(Boolean).join(" · ")} />
-                  <EmRow label="Owner" value={em.owner_phone ?? ""} />
-                  <EmRow label="Backup" value={[em.backup_name, em.backup_phone].filter(Boolean).join(" · ")} />
-                  <EmRow label="Poison control" value={em.poison_control || ASPCA_POISON_CONTROL} />
-                </dl>
-              </section>
-            </article>
-          </>
-        )}
-      </main>
+                  {/* Emergency — the one red block (legitimate emergency use) */}
+                  <section className="mt-4 rounded-[12px] border p-3" style={{ borderColor: "var(--red-line)", backgroundColor: "var(--red-fill)" }}>
+                    <p className="t-eyebrow" style={{ color: "var(--red-ink)" }}>Emergency contacts</p>
+                    <dl className="mt-1.5 space-y-1" style={{ color: "var(--red-deep)" }}>
+                      <EmRow label="Avian vet" value={[em.avian_vet_name, em.avian_vet_phone].filter(Boolean).join(" · ")} />
+                      <EmRow label="Emergency vet" value={[em.emergency_vet_name, em.emergency_vet_phone].filter(Boolean).join(" · ")} />
+                      <EmRow label="Owner" value={em.owner_phone ?? ""} />
+                      <EmRow label="Backup" value={[em.backup_name, em.backup_phone].filter(Boolean).join(" · ")} />
+                      <EmRow label="Poison control" value={em.poison_control || ASPCA_POISON_CONTROL} />
+                    </dl>
+                  </section>
+                </Card>
+              </article>
+            </>
+          )}
+        </main>
+      </div>
 
       {/* Print only the sheet, regardless of app chrome. */}
       <style>{`@media print {
         body * { visibility: hidden !important; }
         #vet-sheet, #vet-sheet * { visibility: visible !important; }
         #vet-sheet { position: absolute; left: 0; top: 0; width: 100%; border: none !important; }
+        #vet-sheet > div { box-shadow: none !important; }
         [data-noprint] { display: none !important; }
       }`}</style>
     </div>
@@ -219,21 +226,21 @@ function VetSummary() {
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <section className="mt-4">
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-[#BA7517]">{label}</p>
+      <p className="t-eyebrow text-[var(--amber-line)]">{label}</p>
       <div className="mt-1">{children}</div>
     </section>
   );
 }
 
 function Value({ text, multiline }: { text: string | null | undefined; multiline?: boolean }) {
-  if (!text) return <p className="text-sm italic text-[#9a978c]">{NONE}</p>;
-  return <p className={`text-sm text-[#1a3d2e] ${multiline ? "whitespace-pre-line" : ""}`}>{text}</p>;
+  if (!text) return <p className="t-body italic text-[var(--mute2)]">{NONE}</p>;
+  return <p className={`t-body text-[var(--ink)] ${multiline ? "whitespace-pre-line" : ""}`}>{text}</p>;
 }
 
 function EmRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex gap-2">
-      <dt className="w-28 shrink-0 font-medium">{label}</dt>
+    <div className="flex gap-2 text-[14px] font-[400]">
+      <dt className="w-28 shrink-0 font-[500]">{label}</dt>
       <dd className={value ? "" : "italic opacity-70"}>{value || NONE}</dd>
     </div>
   );

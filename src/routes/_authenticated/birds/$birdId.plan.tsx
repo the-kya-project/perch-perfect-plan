@@ -1,11 +1,12 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { computeSetupCompleteness, type SetupCheck } from "@/lib/setupCompleteness";
 import { useBirdRole } from "@/lib/useBirdRole";
+import { InkHero, IconTile, StatusPill, CtaLink, Card, RecordRow } from "@/components/system";
 import {
-  ArrowLeft, Eye, ChevronRight, Check, AlertTriangle, Wand2,
+  ArrowLeft, Eye, Check, AlertTriangle, Wand2,
   Utensils, CalendarClock, Smile, Home as HomeIcon, Stethoscope, Siren,
 } from "lucide-react";
 
@@ -125,37 +126,28 @@ function CarePlanOverview() {
   })();
 
   return (
-    <div className="min-h-screen bg-[#f4f1e8] pb-24">
-      <header className="sticky top-0 z-10 border-b border-[#e3ded0] bg-[#f4f1e8]/95 backdrop-blur">
-        <div className="mx-auto flex max-w-md items-center gap-3 px-5 py-3">
-          <Link to="/birds/$birdId" params={{ birdId }} aria-label="Back to bird record" className="-ml-1 rounded p-1 text-[#1a3d2e]">
-            <ArrowLeft className="size-5" />
-          </Link>
-          <div className="min-w-0">
-            <h1 className="truncate text-base font-medium text-[#1a3d2e]">Care plan</h1>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-[var(--cream)] pb-24">
+      <div className="mx-auto max-w-md">
+        <InkHero
+          backIcon={<ArrowLeft className="size-5" />}
+          onBack={() => navigate({ to: "/birds/$birdId", params: { birdId } })}
+          eyebrow="Care plan"
+          headline="Everything a sitter needs."
+          body={fmtUpdated(updatedAt)}
+          cta={
+            isOwner
+              ? {
+                  label: "View as your sitter",
+                  tone: "lime",
+                  icon: <Eye className="size-4" />,
+                  onPress: () => navigate({ to: "/birds/$birdId/view-as-sitter", params: { birdId } }),
+                }
+              : undefined
+          }
+        />
 
-      <main className="mx-auto max-w-md space-y-5 px-5 py-5">
-        <section>
-          <p className="text-sm text-[#5f5e5a]">Everything a sitter needs · {fmtUpdated(updatedAt)}</p>
-        </section>
-
-        {/* Primary action: preview as the sitter sees it (owner only) */}
-        {isOwner && (
-          <Link
-            to="/birds/$birdId/view-as-sitter"
-            params={{ birdId }}
-            className="flex min-h-[44px] items-center justify-center gap-2 rounded-[14px] bg-[#1a3d2e] text-sm font-medium text-white active:scale-[0.99]"
-          >
-            <Eye className="size-4" /> View as your sitter
-          </Link>
-        )}
-
-        <section>
-          <h2 className="mb-2 px-1 text-sm font-medium text-[#1a3d2e]">Sections</h2>
-          <div className="overflow-hidden rounded-[16px] bg-white ring-1 ring-[#e3dcc9]">
+        <main className="space-y-4 px-5 pt-5">
+          <Card>
             {SECTIONS.map((s, i) => {
               const check = checksByKey.get(s.key);
               const done = !!check?.done;
@@ -168,58 +160,47 @@ function CarePlanOverview() {
                 : done
                   ? s.readyHint
                   : s.needsInfoHint;
-              const rowInner = (
-                <>
-                  <span className={`shrink-0 ${isEmergency ? "text-[#a32a2a]" : "text-[#2d6a4f]"}`}>{s.icon}</span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-medium text-[#1a3d2e]">{s.label}</span>
-                    <span className="block truncate text-xs text-[#8a897f]">{subtitle}</span>
-                  </span>
-                  {done ? (
-                    <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-[#d6e8dc] px-2 py-0.5 text-[10px] font-medium text-[#1a5e3f]">
-                      <Check className="size-3" /> Ready
-                    </span>
-                  ) : (
-                    <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-[#f4e4c4] px-2 py-0.5 text-[10px] font-medium text-[#854F0B]">
-                      <AlertTriangle className="size-3" /> Needs info
-                    </span>
-                  )}
-                  <ChevronRight className="size-4 shrink-0 text-[#bcb6a3]" />
-                </>
-              );
-              const rowCls = `flex min-h-[56px] items-center gap-3 px-4 py-3 active:bg-[#f4f1e8] ${i === SECTIONS.length - 1 ? "" : "border-b border-[#ece6d6]"}`;
               // Owner opens the editor for that section; household opens the
               // read-only care-plan view (editing is owner-only, RLS-enforced).
-              return isOwner ? (
-                <Link key={s.key} to="/birds/$birdId/plan/editor" params={{ birdId }} search={{ tab: s.tab }} className={rowCls}>
-                  {rowInner}
-                </Link>
-              ) : (
-                <Link key={s.key} to="/birds/$birdId/care-plan" params={{ birdId }} className={rowCls}>
-                  {rowInner}
-                </Link>
+              const onRow = isOwner
+                ? () => navigate({ to: "/birds/$birdId/plan/editor", params: { birdId }, search: { tab: s.tab } })
+                : () => navigate({ to: "/birds/$birdId/care-plan", params: { birdId } });
+              return (
+                <RecordRow
+                  key={s.key}
+                  leading={<IconTile size={38} tone={isEmergency ? "red" : "ink-lime"} icon={s.icon} />}
+                  title={s.label}
+                  subtitle={subtitle}
+                  trailing={
+                    done ? (
+                      <StatusPill tone="ready"><Check className="size-3" /> Ready</StatusPill>
+                    ) : (
+                      <StatusPill tone="attention"><AlertTriangle className="size-3" /> Needs info</StatusPill>
+                    )
+                  }
+                  onClick={onRow}
+                  last={i === SECTIONS.length - 1}
+                />
               );
             })}
-          </div>
-        </section>
+          </Card>
 
-        {/* Quiet action — re-run the guided wizard (owner only) */}
-        {isOwner && (
-          <button
-            type="button"
-            onClick={() => navigate({ to: "/birds/$birdId/setup", params: { birdId }, search: { step: walkthroughStep } })}
-            className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[14px] border border-[#c8bfa6] bg-white text-sm font-medium text-[#1a3d2e] active:scale-[0.99]"
-          >
-            <Wand2 className="size-4" /> Walk through it again
-          </button>
-        )}
+          {/* Quiet action — re-run the guided wizard (owner only) */}
+          {isOwner && (
+            <CtaLink
+              label="Walk through it again"
+              icon={<Wand2 className="size-3.5" />}
+              onPress={() => navigate({ to: "/birds/$birdId/setup", params: { birdId }, search: { step: walkthroughStep } })}
+            />
+          )}
 
-        <p className="px-1 text-xs leading-relaxed text-[#5f5e5a]">
-          {isOwner
-            ? `This is what a sitter sees when you share ${name}'s plan. Set up a sit from the Sits tab to share it.`
-            : `Only ${name}'s owner can edit the care plan. You can view it and log weights, journal entries, and scans.`}
-        </p>
-      </main>
+          <p className="t-body px-1 text-[var(--mute)]">
+            {isOwner
+              ? `This is what a sitter sees when you share ${name}'s plan. Set up a sit from the Sits tab to share it.`
+              : `Only ${name}'s owner can edit the care plan. You can view it and log weights, journal entries, and scans.`}
+          </p>
+        </main>
+      </div>
     </div>
   );
 }

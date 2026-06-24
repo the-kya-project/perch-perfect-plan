@@ -1,9 +1,8 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft } from "lucide-react";
-import { BrandLogo } from "@/components/BrandLogo";
+import { InkHero, PrimaryButton, CtaLink } from "@/components/system";
 
 export const Route = createFileRoute("/reset-password")({
   ssr: false,
@@ -64,26 +63,21 @@ function ResetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f4f1e8]">
-      <main className="mx-auto max-w-md px-5 py-8">
-        <Link to="/auth" search={{ mode: "signin" }} className="inline-flex items-center gap-1 text-sm text-[#5f5e5a]">
-          <ArrowLeft className="size-4" /> Back to sign in
-        </Link>
-
-        <div className="mt-6">
-          <BrandLogo size="md" />
-        </div>
-
-        <h1 className="mt-8 text-2xl font-medium tracking-tight">Set a new password</h1>
-        <p className="mt-1 text-sm text-[#5f5e5a]">
-          {ready
+    <div className="min-h-screen bg-[var(--cream)]">
+      <InkHero
+        eyebrow="Parrot Care Co-Pilot"
+        headline="Set a new password."
+        body={
+          ready
             ? "Choose a new password for your account."
-            : "Open this page from the password reset email you received."}
-        </p>
+            : "Open this page from the password reset email you received."
+        }
+      />
 
-        <form onSubmit={handleSubmit} className="mt-6 space-y-3">
+      <main className="mx-auto max-w-md px-5 py-8">
+        <form onSubmit={handleSubmit} className="space-y-3">
           <label className="block">
-            <span className="mb-1 block text-xs font-medium uppercase tracking-wider text-[#5f5e5a]">New password</span>
+            <span className="t-eyebrow mb-1 block text-[var(--mute)]">New password</span>
             <input
               type="password"
               required
@@ -96,7 +90,7 @@ function ResetPasswordPage() {
             />
           </label>
           <label className="block">
-            <span className="mb-1 block text-xs font-medium uppercase tracking-wider text-[#5f5e5a]">Confirm password</span>
+            <span className="t-eyebrow mb-1 block text-[var(--mute)]">Confirm password</span>
             <input
               type="password"
               required
@@ -108,28 +102,20 @@ function ResetPasswordPage() {
               disabled={!ready}
             />
           </label>
-          <button
-            type="submit"
-            disabled={loading || !ready}
-            className="mt-2 w-full rounded-xl bg-[#1a3d2e] px-4 py-3 text-sm font-medium text-white active:scale-[0.99] disabled:opacity-50"
-          >
-            {loading ? "..." : "Update password"}
-          </button>
+          <div className="pt-2">
+            <PrimaryButton tone="ink" type="submit" disabled={loading || !ready}>
+              {loading ? "..." : "Update password"}
+            </PrimaryButton>
+          </div>
         </form>
-      </main>
 
-      <style>{`
-        .input {
-          width: 100%;
-          border-radius: 0.75rem;
-          background: white;
-          border: 1px solid var(--sage-200);
-          padding: 0.75rem 0.875rem;
-          font-size: 16px;
-          outline: none;
-        }
-        .input:focus { border-color: var(--sage-600); box-shadow: 0 0 0 3px rgb(74 103 65 / 0.15); }
-      `}</style>
+        <div className="mt-6">
+          <CtaLink
+            label="Back to sign in"
+            onPress={() => navigate({ to: "/auth", search: { mode: "signin" } })}
+          />
+        </div>
+      </main>
     </div>
   );
 }

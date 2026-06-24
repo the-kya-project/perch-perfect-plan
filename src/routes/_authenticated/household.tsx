@@ -8,6 +8,7 @@ import {
 import { HouseholdInviteSheet } from "@/components/HouseholdInviteSheet";
 import { toast } from "sonner";
 import { ArrowLeft, Plus, Mail, MoreHorizontal, Loader2, X, Check } from "lucide-react";
+import { InkHero, Card, RecordRow, IconTile } from "@/components/system";
 
 // Account-level household management — every person who can help with the
 // owner's birds, each shown ONCE (memberships grouped by user, invites by
@@ -49,69 +50,69 @@ function HouseholdScreen() {
   const isEmpty = !isLoading && members.length === 0 && pending.length === 0;
 
   return (
-    <div className="min-h-screen bg-[#f4f1e8] pb-24">
-      <header className="pt-[max(env(safe-area-inset-top),0.75rem)]">
-        <div className="mx-auto flex max-w-md items-center gap-2 px-4 py-3">
-          <button onClick={goBack} aria-label="Back" className="-ml-1 rounded-full p-1.5 text-[#1a3d2e] active:bg-black/5"><ArrowLeft className="size-5" /></button>
-        </div>
-      </header>
+    <div className="min-h-screen bg-[var(--cream)] pb-24">
+      <div className="mx-auto max-w-md">
+        <InkHero
+          backIcon={<ArrowLeft className="size-5" />}
+          onBack={goBack}
+          eyebrow="Household"
+          headline="Your household."
+          body="People you've given access to your birds. By default they can help with all your birds — you can scope it to specific ones if you'd like."
+        />
 
-      <main className="mx-auto max-w-md space-y-5 px-5 pb-6">
-        <div>
-          <h1 className="font-display text-[25px] font-medium leading-tight text-[#1a3d2e]">Your household</h1>
-          <p className="mt-1.5 text-sm leading-relaxed text-[#5b6b61]">
-            People you've given access to your birds. By default they can help with all your birds — you can scope it to specific ones if you'd like.
-          </p>
-        </div>
+        <main className="space-y-5 px-5 pt-5">
+          {isLoading ? (
+            <Card>
+              <div className="flex items-center gap-2 px-4 py-4 text-sm text-[var(--mute2)]">
+                <Loader2 className="size-4 animate-spin" /> Loading…
+              </div>
+            </Card>
+          ) : (
+            <>
+              <Card>
+                {isEmpty ? (
+                  <p className="t-body px-4 py-5 text-[var(--mute)]">No one yet. Invite a partner or family member who helps care for your birds.</p>
+                ) : (
+                  <>
+                    {members.map((m, i) => (
+                      <MemberRow
+                        key={m.userId}
+                        member={m}
+                        last={i === members.length - 1 && pending.length === 0}
+                        onManage={() => setManageUserId(m.userId)}
+                      />
+                    ))}
+                    {pending.map((p, i) => (
+                      <PendingRow key={p.email} invite={p} last={i === pending.length - 1} onChanged={refresh} />
+                    ))}
+                  </>
+                )}
+              </Card>
 
-        {isLoading ? (
-          <div className="flex items-center gap-2 rounded-[16px] bg-white p-4 text-sm text-[#8a897f] ring-1 ring-[#eee6d4]">
-            <Loader2 className="size-4 animate-spin" /> Loading…
-          </div>
-        ) : (
-          <>
-            <section className="overflow-hidden rounded-[16px] bg-white" style={{ boxShadow: "0 1px 0 rgba(40,50,40,.02), 0 6px 14px -8px rgba(40,50,40,.08)" }}>
-              {isEmpty ? (
-                <p className="px-4 py-5 text-sm text-[#5b6b61]">No one yet. Invite a partner or family member who helps care for your birds.</p>
-              ) : (
-                <ul>
-                  {members.map((m, i) => (
-                    <li key={m.userId} className={i ? "border-t border-[#eee6d4]" : ""}>
-                      <MemberRow member={m} onManage={() => setManageUserId(m.userId)} />
-                    </li>
-                  ))}
-                  {pending.map((p, i) => (
-                    <li key={p.email} className={members.length || i ? "border-t border-[#eee6d4]" : ""}>
-                      <PendingRow invite={p} onChanged={refresh} />
-                    </li>
-                  ))}
+              <button
+                type="button"
+                onClick={() => setInviting(true)}
+                className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-[16px] border border-dashed border-[var(--line)] bg-white/40 text-[15px] font-[500] text-[var(--moss)] active:scale-[0.99]"
+              >
+                <Plus className="size-4" /> Invite a household member
+              </button>
+
+              <Card className="p-4">
+                <h2 className="t-section text-[14.5px]">What they can do</h2>
+                <ul className="mt-2 space-y-1.5">
+                  <Can yes>View care plans, identity, weight, journal, moments</Can>
+                  <Can yes>Log weights, journal entries, and scans</Can>
+                  <Can>They can't edit the care plan, manage sharing, or remove birds</Can>
                 </ul>
-              )}
-            </section>
+              </Card>
 
-            <button
-              type="button"
-              onClick={() => setInviting(true)}
-              className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-[16px] border border-dashed border-[#c8bfa6] bg-[#fbfaf2] text-sm font-medium text-[#2d6a4f] active:scale-[0.99]"
-            >
-              <Plus className="size-4" /> Invite a household member
-            </button>
-
-            <section className="rounded-[16px] bg-white p-4 ring-1 ring-[#eee6d4]">
-              <h2 className="font-display text-[14.5px] font-medium text-[#1a3d2e]">What they can do</h2>
-              <ul className="mt-2 space-y-1.5 text-sm text-[#5b6b61]">
-                <Can yes>View care plans, identity, weight, journal, moments</Can>
-                <Can yes>Log weights, journal entries, and scans</Can>
-                <Can>They can't edit the care plan, manage sharing, or remove birds</Can>
-              </ul>
-            </section>
-
-            <p className="font-display text-center text-[13px] italic text-[#8a8270]">
-              Sitters are managed per-trip from the Sits tab.
-            </p>
-          </>
-        )}
-      </main>
+              <p className="t-meta text-center italic">
+                Sitters are managed per-trip from the Sits tab.
+              </p>
+            </>
+          )}
+        </main>
+      </div>
 
       {inviting && (
         <HouseholdInviteSheet onClose={() => setInviting(false)} onSent={() => { setInviting(false); refresh(); }} />
@@ -130,33 +131,43 @@ function HouseholdScreen() {
 
 function Can({ children, yes }: { children: React.ReactNode; yes?: boolean }) {
   return (
-    <li className="flex items-start gap-2">
+    <li className="flex items-start gap-2 text-[14px] leading-relaxed text-[var(--mute)]">
       {yes
-        ? <Check className="mt-0.5 size-4 shrink-0 text-[#2d8a5d]" />
-        : <X className="mt-0.5 size-4 shrink-0 text-[#9a978c]" />}
+        ? <Check className="mt-0.5 size-4 shrink-0 text-[var(--moss)]" />
+        : <X className="mt-0.5 size-4 shrink-0 text-[var(--mute2)]" />}
       <span>{children}</span>
     </li>
   );
 }
 
-function MemberRow({ member, onManage }: { member: AccountMember; onManage: () => void }) {
+function MemberRow({ member, last, onManage }: { member: AccountMember; last?: boolean; onManage: () => void }) {
   const label = member.name?.trim() || member.email || "Household member";
   const scopeLabel = member.scope === "all" ? "All birds" : `Sharing ${truncNames(member.birdNames)}`;
   return (
-    <div className="flex items-center gap-3 px-4 py-3.5">
-      <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[#cfe3dc] text-sm font-medium text-[#1a5e3f]">{initialOf(member.name || member.email)}</span>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-[#1a3d2e]">{label}</p>
-        <p className="truncate text-xs text-[#8a8270]">{scopeLabel} · since {fmtMonth(member.since)}</p>
-      </div>
-      <button type="button" aria-label={`Manage ${label}`} onClick={onManage} className="-mr-1 grid size-9 shrink-0 place-items-center rounded-full text-[#5b6b61] active:bg-[#f4f1e8]">
-        <MoreHorizontal className="size-5" />
-      </button>
-    </div>
+    <RecordRow
+      leading={
+        <span className="grid size-10 place-items-center rounded-full bg-[var(--pale)] text-sm font-[500] text-[var(--moss)]">
+          {initialOf(member.name || member.email)}
+        </span>
+      }
+      title={label}
+      subtitle={`${scopeLabel} · since ${fmtMonth(member.since)}`}
+      last={last}
+      trailing={
+        <button
+          type="button"
+          aria-label={`Manage ${label}`}
+          onClick={onManage}
+          className="-mr-1 grid size-9 shrink-0 place-items-center rounded-full text-[var(--mute)] active:bg-[var(--cream)]"
+        >
+          <MoreHorizontal className="size-5" />
+        </button>
+      }
+    />
   );
 }
 
-function PendingRow({ invite, onChanged }: { invite: AccountPending; onChanged: () => void }) {
+function PendingRow({ invite, last, onChanged }: { invite: AccountPending; last?: boolean; onChanged: () => void }) {
   const cancel = useServerFn(cancelHouseholdInvite);
   const m = useMutation({
     mutationFn: async () => { for (const id of invite.inviteIds) await cancel({ data: { inviteId: id } }); },
@@ -164,13 +175,20 @@ function PendingRow({ invite, onChanged }: { invite: AccountPending; onChanged: 
     onError: (e: any) => toast.error(e?.message ?? "Couldn't cancel."),
   });
   return (
-    <div className="flex items-center gap-3 bg-[#f6e7c4]/30 px-4 py-3.5">
-      <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[#f6e7c4] text-[#854F0B]"><Mail className="size-[18px]" /></span>
+    <div className={`flex min-h-[44px] items-center gap-3 bg-[var(--amber-fill)]/30 px-4 py-3 ${last ? "" : "border-b border-[var(--line2)]"}`}>
+      <IconTile tone="amber" size={40} icon={<Mail className="size-[18px]" />} />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-[#1a3d2e]">{invite.name?.trim() || invite.email}</p>
-        <p className="truncate text-xs font-medium text-[#854F0B]">Invited · pending</p>
+        <p className="t-item truncate">{invite.name?.trim() || invite.email}</p>
+        <p className="t-meta mt-0.5 truncate font-[500] text-[var(--amber-ink)]">Invited · pending</p>
       </div>
-      <button type="button" disabled={m.isPending} onClick={() => m.mutate()} className="shrink-0 px-2 py-1 text-xs font-medium text-[#854F0B] underline disabled:opacity-50">Cancel</button>
+      <button
+        type="button"
+        disabled={m.isPending}
+        onClick={() => m.mutate()}
+        className="min-h-[44px] shrink-0 px-2 text-xs font-[500] text-[var(--amber-ink)] underline disabled:opacity-50"
+      >
+        Cancel
+      </button>
     </div>
   );
 }
@@ -201,18 +219,18 @@ function MemberManageSheet({ member, allBirds, onClose, onChanged }: {
   return (
     <div className="fixed inset-0 z-50 grid place-items-end sm:place-items-center" role="dialog" aria-modal="true">
       <button type="button" aria-label="Close" className="absolute inset-0 bg-black/30" onClick={onClose} />
-      <div className="relative w-full max-w-md rounded-t-2xl bg-[#f4f1e8] p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-xl sm:rounded-2xl">
+      <div className="relative w-full max-w-md rounded-t-2xl bg-[var(--cream)] p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-xl sm:rounded-2xl">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-display text-[19px] font-medium text-[#1a3d2e]">{label}</h2>
-          <button onClick={onClose} aria-label="Close" className="rounded-full p-1 text-[#5b6b61] active:bg-black/5"><X className="size-5" /></button>
+          <h2 className="t-section text-[19px]">{label}</h2>
+          <button onClick={onClose} aria-label="Close" className="grid size-9 place-items-center rounded-full text-[var(--mute)] active:bg-black/5"><X className="size-5" /></button>
         </div>
 
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-[#8a8270]">Can help with</p>
-        <div className="mt-1.5 overflow-hidden rounded-[14px] bg-white ring-1 ring-[#eee6d4]">
+        <p className="t-eyebrow text-[var(--mute2)]">Can help with</p>
+        <Card className="mt-1.5">
           {accessibleBirds.map((b, i) => (
-            <div key={b.id} className={`flex min-h-[48px] items-center gap-3 px-4 ${i ? "border-t border-[#eee6d4]" : ""}`}>
-              <Check className="size-4 shrink-0 text-[#2d8a5d]" />
-              <span className="flex-1 text-sm text-[#1a3d2e]">{b.name}</span>
+            <div key={b.id} className={`flex min-h-[48px] items-center gap-3 px-4 ${i ? "border-t border-[var(--line2)]" : ""}`}>
+              <Check className="size-4 shrink-0 text-[var(--moss)]" />
+              <span className="t-item flex-1 font-[400]">{b.name}</span>
               <button
                 type="button"
                 disabled={removeBird.isPending}
@@ -223,20 +241,20 @@ function MemberManageSheet({ member, allBirds, onClose, onChanged }: {
                   }
                   removeBird.mutate(b.id);
                 }}
-                className="shrink-0 px-2 py-1 text-xs font-medium text-warn-red underline disabled:opacity-50"
+                className="min-h-[44px] shrink-0 px-2 text-xs font-[500] text-[var(--red-ink)] underline disabled:opacity-50"
               >
                 Remove
               </button>
             </div>
           ))}
-        </div>
-        <p className="mt-2 px-1 text-xs text-[#8a8270]">To add another bird, use “Invite a household member” and choose that bird.</p>
+        </Card>
+        <p className="t-meta mt-2 px-1">To add another bird, use “Invite a household member” and choose that bird.</p>
 
         <button
           type="button"
           disabled={removeEverywhere.isPending}
           onClick={() => { if (window.confirm(`Remove ${label} from your household? They'll lose access to all your birds. Their past logs stay in the record.`)) removeEverywhere.mutate(); }}
-          className="mt-4 flex min-h-[48px] w-full items-center justify-center rounded-[14px] border border-[#e3b3ad] bg-white text-sm font-medium text-warn-red disabled:opacity-50"
+          className="mt-4 flex min-h-[48px] w-full items-center justify-center rounded-[14px] border border-[var(--red-line)] bg-white text-[15px] font-[500] text-[var(--red-ink)] disabled:opacity-50"
         >
           {removeEverywhere.isPending ? "Removing…" : "Remove from household"}
         </button>

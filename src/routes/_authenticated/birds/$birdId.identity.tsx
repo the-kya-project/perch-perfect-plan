@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,6 +10,7 @@ import { useBirdPhotos } from "@/lib/useBirdPhotos";
 import { useBirdRole } from "@/lib/useBirdRole";
 import { signBirdPhoto, persistBirdPhoto } from "@/lib/birdPhoto";
 import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
+import { InkHero, Card, PrimaryButton } from "@/components/system";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/identity")({
   head: () => ({ meta: [{ title: "Identity — Parrot Care Co-Pilot" }] }),
@@ -50,6 +51,7 @@ const blank = (v: string | null | undefined) => !((v ?? "").trim());
 
 function IdentityFacet() {
   const { birdId } = Route.useParams();
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const [editing, setEditing] = useState(false);
   const role = useBirdRole(birdId);
@@ -78,60 +80,64 @@ function IdentityFacet() {
     ["bird-identity", "bird-basics", "bird", "bird-setup", "bird-record", "vet-bird"].forEach((k) =>
       qc.invalidateQueries({ queryKey: [k, birdId] }));
 
+  const goBack = () => navigate({ to: "/birds/$birdId", params: { birdId } });
+
   return (
-    <div className="min-h-screen bg-[#f4f1e8] pb-24">
-      <header className="sticky top-0 z-10 border-b border-[#e3ded0] bg-[#f4f1e8]/95 backdrop-blur">
-        <div className="mx-auto flex max-w-md items-center gap-3 px-5 py-3">
-          <Link to="/birds/$birdId" params={{ birdId }} aria-label="Back to bird record" className="-ml-1 rounded p-1 text-[#1a3d2e]">
-            <ArrowLeft className="size-5" />
-          </Link>
-          <h1 className="flex-1 text-base font-medium text-[#1a3d2e]">Identity</h1>
-          {bird && !editing && isOwner && (
-            <button type="button" onClick={() => setEditing(true)} className="inline-flex min-h-[40px] items-center gap-1.5 rounded-full bg-[#e8f0ec] px-3.5 text-sm font-medium text-[#1a3d2e]">
-              <Pencil className="size-3.5" /> Edit
-            </button>
+    <div className="min-h-screen bg-[var(--cream)] pb-24">
+      <div className="mx-auto max-w-md">
+        <InkHero
+          eyebrow="Identity"
+          headline="On paper."
+          backIcon={<ArrowLeft className="size-5" />}
+          onBack={goBack}
+          trailingIcons={
+            bird && !editing && isOwner ? (
+              <button type="button" onClick={() => setEditing(true)} className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full bg-white/10 px-3.5 text-[14px] font-[500] text-white active:bg-white/15">
+                <Pencil className="size-3.5" /> Edit
+              </button>
+            ) : undefined
+          }
+        />
+
+        <main className="space-y-4 px-5 pt-5">
+          {!bird ? (
+            <div className="h-40 animate-pulse rounded-[18px] bg-[var(--cream2)]" />
+          ) : editing ? (
+            <IdentityForm birdId={birdId} bird={bird} onClose={() => setEditing(false)} onSaved={() => { setEditing(false); crossInvalidate(); }} />
+          ) : (
+            <>
+              {/* Shared core (same birds columns the Basics tab edits) */}
+              <Card className="flex items-center gap-4 p-4">
+                <div className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-full bg-[var(--cream2)] ring-1 ring-[var(--line)]">
+                  {photo ? (
+                    <img src={photo.url} alt={name} onError={(e) => { if (photo.original && e.currentTarget.src !== photo.original) e.currentTarget.src = photo.original; }} style={{ objectPosition: bird.photo_position ?? "50% 20%" }} className="size-full object-cover" />
+                  ) : (
+                    <span className="text-2xl font-[500] text-[var(--moss)]">{initial}</span>
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <p className="t-item truncate text-[17px]">{bird.name}</p>
+                  <p className="t-meta mt-0.5 truncate">{[bird.species || "Parrot", bird.age].filter(Boolean).join(" · ")}</p>
+                </div>
+              </Card>
+
+              {/* Deeper record (Identity only) */}
+              <Card>
+                <Row label="Sex" value={sexValue(bird)} />
+                <Row label="Flight" value={flightLabel(bird.flight_status)} />
+                <Row label="Hatch date" value={bird.birth_date ? `${fmtDate(bird.birth_date)} (≈ ${approxAge(bird.birth_date)})` : null} />
+                <Row label="Microchip" value={bird.microchip} />
+                <Row label="Leg band" value={bird.band_number} emptyText="None" />
+                <Row label="Origin" value={bird.origin} />
+                <Row label="Came home" value={bird.acquired_on ? fmtDate(bird.acquired_on) : null} last />
+              </Card>
+              <p className="t-meta px-1 text-center leading-relaxed">
+                These details build the vet summary and travel with {name} if she's ever rehomed.
+              </p>
+            </>
           )}
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-md space-y-4 px-5 py-5">
-        {!bird ? (
-          <div className="h-40 animate-pulse rounded-[16px] bg-[#efe9da]" />
-        ) : editing ? (
-          <IdentityForm birdId={birdId} bird={bird} onClose={() => setEditing(false)} onSaved={() => { setEditing(false); crossInvalidate(); }} />
-        ) : (
-          <>
-            {/* Shared core (same birds columns the Basics tab edits) */}
-            <section className="flex items-center gap-4 rounded-[16px] bg-white p-4 ring-1 ring-[#e3dcc9]">
-              <div className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-full bg-[#e3dcc9] ring-1 ring-[#d8cfb8]">
-                {photo ? (
-                  <img src={photo.url} alt={name} onError={(e) => { if (photo.original && e.currentTarget.src !== photo.original) e.currentTarget.src = photo.original; }} style={{ objectPosition: bird.photo_position ?? "50% 20%" }} className="size-full object-cover" />
-                ) : (
-                  <span className="text-2xl font-medium text-[#2d6a4f]">{initial}</span>
-                )}
-              </div>
-              <div className="min-w-0">
-                <p className="truncate text-lg font-medium text-[#1a3d2e]">{bird.name}</p>
-                <p className="mt-0.5 truncate text-sm text-[#5f5e5a]">{[bird.species || "Parrot", bird.age].filter(Boolean).join(" · ")}</p>
-              </div>
-            </section>
-
-            {/* Deeper record (Identity only) */}
-            <section className="overflow-hidden rounded-[16px] bg-white ring-1 ring-[#e3dcc9]">
-              <Row label="Sex" value={sexValue(bird)} />
-              <Row label="Flight" value={flightLabel(bird.flight_status)} />
-              <Row label="Hatch date" value={bird.birth_date ? `${fmtDate(bird.birth_date)} (≈ ${approxAge(bird.birth_date)})` : null} />
-              <Row label="Microchip" value={bird.microchip} />
-              <Row label="Leg band" value={bird.band_number} emptyText="None" />
-              <Row label="Origin" value={bird.origin} />
-              <Row label="Came home" value={bird.acquired_on ? fmtDate(bird.acquired_on) : null} last />
-            </section>
-            <p className="px-1 text-xs leading-relaxed text-[#8a897f]">
-              These details build the vet summary and travel with {name} if she's ever rehomed.
-            </p>
-          </>
-        )}
-      </main>
+        </main>
+      </div>
     </div>
   );
 }
@@ -146,9 +152,9 @@ function sexValue(b: Identity): string | null {
 function Row({ label, value, emptyText = "—", last }: { label: string; value: string | null | undefined; emptyText?: string; last?: boolean }) {
   const filled = !blank(value);
   return (
-    <div className={`flex items-baseline gap-3 px-4 py-3 ${last ? "" : "border-b border-[#ece6d6]"}`}>
-      <span className="w-28 shrink-0 text-[10px] font-semibold uppercase tracking-wider text-[#8a897f]">{label}</span>
-      <span className={`min-w-0 flex-1 text-sm ${filled ? "text-[#1a3d2e]" : "italic text-[#9a978c]"}`}>{filled ? value : emptyText}</span>
+    <div className={`flex min-h-[44px] items-baseline gap-3 px-4 py-3 ${last ? "" : "border-b border-[var(--line2)]"}`}>
+      <span className="t-eyebrow w-28 shrink-0 text-[var(--mute2)]">{label}</span>
+      <span className={`min-w-0 flex-1 text-[14px] ${filled ? "text-[var(--ink)]" : "italic text-[var(--mute2)]"}`}>{filled ? value : emptyText}</span>
     </div>
   );
 }
@@ -231,21 +237,21 @@ function IdentityForm({ birdId, bird, onClose, onSaved }: { birdId: string; bird
 
   const today = new Date().toISOString().slice(0, 10);
   return (
-    <section className="space-y-3 rounded-[16px] bg-white p-4 ring-1 ring-[#e3dcc9]">
+    <Card className="space-y-3 p-4">
       {/* Shared core: photo, name, species, age — same columns as the Basics tab */}
       <div className="flex items-start gap-3">
         {photoDisplay ? (
           <PhotoCropper src={photoDisplay} position={photoPosition ?? undefined} onChange={setPhotoPosition} size={96} />
         ) : (
-          <div className="grid size-24 place-items-center rounded-xl bg-[#efe9da] text-[10px] uppercase tracking-wider text-[#8a897f]">No photo</div>
+          <div className="t-eyebrow grid size-24 place-items-center rounded-xl bg-[var(--cream2)] text-[var(--mute2)]">No photo</div>
         )}
         <div className="flex-1 space-y-2 pt-1">
-          <label className={`inline-block rounded-lg bg-[#e8f0ec] px-3 py-1.5 text-xs font-semibold text-[#1a3d2e] ${photoBusy ? "cursor-default opacity-60" : "cursor-pointer"}`}>
+          <label className={`inline-flex min-h-[44px] items-center rounded-lg bg-[var(--pale2)] px-3 text-[13px] font-[500] text-[var(--ink)] ${photoBusy ? "cursor-default opacity-60" : "cursor-pointer"}`}>
             {photoBusy ? "Processing…" : photoDisplay ? "Change photo" : "Add photo"}
             <input type="file" accept="image/*,.heic,.heif" disabled={photoBusy} className="hidden" onChange={onPhoto} />
           </label>
           {photoDisplay && (
-            <button type="button" onClick={() => { setPhotoDisplay(null); setPhotoRef(null); setPhotoPosition(null); }} className="ml-2 text-xs font-semibold text-[#854F0B] underline">Remove</button>
+            <button type="button" onClick={() => { setPhotoDisplay(null); setPhotoRef(null); setPhotoPosition(null); }} className="ml-2 text-[13px] font-[500] text-[var(--amber-ink)] underline">Remove</button>
           )}
         </div>
       </div>
@@ -291,41 +297,43 @@ function IdentityForm({ birdId, bird, onClose, onSaved }: { birdId: string; bird
         <OptionalDate value={f.acquired_on} max={today} addLabel="Add date" inputClassName={INPUT} onChange={(v) => set("acquired_on", v)} />
       </Field>
 
-      <div className="rounded-xl border border-[#e3dcc9] bg-[#fbfaf2] p-3">
+      <div className="rounded-xl border border-[var(--line)] bg-[var(--cream2)] p-3">
         <label className="flex cursor-pointer items-start gap-3">
-          <input type="checkbox" checked={f.is_foster} onChange={(e) => setF((p) => ({ ...p, is_foster: e.target.checked }))} className="mt-0.5 size-5 shrink-0 accent-[#1a3d2e]" />
+          <input type="checkbox" checked={f.is_foster} onChange={(e) => setF((p) => ({ ...p, is_foster: e.target.checked }))} className="mt-0.5 size-5 shrink-0 accent-[var(--ink)]" />
           <span className="min-w-0">
-            <span className="block text-sm font-medium text-[#1a3d2e]">This is a foster</span>
-            <span className="mt-0.5 block text-xs leading-relaxed text-[#5f5e5a]">You're caring for them while they find a permanent home.</span>
+            <span className="t-item block">This is a foster</span>
+            <span className="t-meta mt-0.5 block leading-relaxed">You're caring for them while they find a permanent home.</span>
           </span>
         </label>
         {f.is_foster && (
-          <div className="mt-3 border-t border-[#ece6d6] pt-3">
+          <div className="mt-3 border-t border-[var(--line2)] pt-3">
             <Field label="Came to you"><input className={INPUT} type="date" max={today} value={f.intake_date} onChange={(e) => set("intake_date", e.target.value)} /></Field>
           </div>
         )}
       </div>
 
-      <p className="text-[11px] text-[#8a897f]">All fields are optional — partial records are fine.</p>
+      <p className="t-meta">All fields are optional — partial records are fine.</p>
 
       <div className="flex gap-2 pt-1">
-        <button type="button" onClick={save} disabled={saving} className="flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-[14px] bg-[#1a3d2e] text-sm font-medium text-white disabled:opacity-50">
-          <Check className="size-4" /> {saving ? "Saving…" : "Save"}
-        </button>
-        <button type="button" onClick={onClose} disabled={saving} className="min-h-[44px] rounded-[14px] border border-[#c8bfa6] px-4 text-sm font-medium text-[#5f5e5a]">
+        <div className="flex-1">
+          <PrimaryButton tone="ink" type="button" onPress={save} disabled={saving} icon={<Check className="size-4" />}>
+            {saving ? "Saving…" : "Save"}
+          </PrimaryButton>
+        </div>
+        <button type="button" onClick={onClose} disabled={saving} className="grid min-h-[44px] min-w-[44px] place-items-center rounded-[12px] border border-[var(--line)] px-4 text-[var(--mute)] disabled:opacity-50">
           <X className="size-4" />
         </button>
       </div>
-    </section>
+    </Card>
   );
 }
 
-const INPUT = "h-11 w-full rounded-xl border border-[#c8bfa6] bg-[#fbfaf2] px-3 text-sm text-[#1a3d2e] outline-none focus:border-[#2d6a4f]";
+const INPUT = "h-11 w-full rounded-xl border border-[var(--line)] bg-[var(--cream2)] px-3 text-sm text-[var(--ink)] outline-none focus:border-[var(--moss)]";
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-xs font-medium text-[#5f5e5a]">{label}</span>
+      <span className="mb-1 block text-[13px] font-[500] text-[var(--mute)]">{label}</span>
       {children}
     </label>
   );

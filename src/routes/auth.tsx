@@ -5,11 +5,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
-import { BrandLogo } from "@/components/BrandLogo";
 import { track } from "@/lib/analytics";
 import { captureLead } from "@/lib/captureLead";
 import { attributionMetadata, getFirstTouch } from "@/lib/attribution";
 import { PENDING_EMAIL_KEY } from "./confirm-email";
+import { InkHero, PrimaryButton, CtaLink, Card } from "@/components/system";
 
 const search = z.object({
   mode: z.enum(["signin", "signup"]).default("signin"),
@@ -193,141 +193,139 @@ function AuthPage() {
 
 
   return (
-    <div className="min-h-screen bg-[#f4f1e8]">
-      <main className="mx-auto max-w-md px-5 py-8">
-        <Link to="/" className="inline-flex items-center gap-1 text-sm text-[#5f5e5a]">
-          <ArrowLeft className="size-4" /> Back
-        </Link>
+    <div className="min-h-screen bg-[var(--cream)]">
+      <div className="mx-auto max-w-md">
+        <InkHero
+          eyebrow="Parrot Care Co-Pilot"
+          headline={mode === "signup" ? "Start their record." : "Welcome back."}
+          body={
+            mode === "signup"
+              ? "Create an owner account to save bird profiles and care plans across trips."
+              : "Sign in to pick up your birds' care plans where you left off."
+          }
+          backIcon={<ArrowLeft className="size-5" />}
+          onBack={() => navigate({ to: "/" })}
+        />
 
-        <div className="mt-6">
-          <BrandLogo size="md" />
-        </div>
+        <main className="px-5 py-7">
+          <Card className="p-5">
+            <PrimaryButton
+              tone="outline"
+              icon={<GoogleIcon />}
+              onPress={handleGoogle}
+              disabled={loading}
+            >
+              Continue with Google
+            </PrimaryButton>
 
-        <h1 className="mt-8 text-2xl font-medium tracking-tight">
-          {mode === "signup" ? "Create your owner account" : "Sign in"}
-        </h1>
-        <p className="mt-1 text-sm text-[#5f5e5a]">
-          {mode === "signup"
-            ? "We'll save your bird profiles and care plans across trips."
-            : "Welcome back."}
-        </p>
+            <div className="my-5 flex items-center gap-3">
+              <div className="h-px flex-1 bg-[var(--line2)]" />
+              <span className="t-eyebrow text-[var(--mute2)]">Or with email</span>
+              <div className="h-px flex-1 bg-[var(--line2)]" />
+            </div>
 
-        <button
-          onClick={handleGoogle}
-          disabled={loading}
-          className="mt-6 flex w-full items-center justify-center gap-3 rounded-xl border border-[#e0d8c4] bg-white px-4 py-3 text-sm font-medium shadow-sm active:scale-[0.99] disabled:opacity-50"
-        >
-          <GoogleIcon /> Continue with Google
-        </button>
-
-        <div className="my-5 flex items-center gap-3 text-[11px] uppercase tracking-widest text-[#5f5e5a]">
-          <div className="h-px flex-1 bg-sage-200" />
-          or with email
-          <div className="h-px flex-1 bg-sage-200" />
-        </div>
-
-        <form onSubmit={handleEmail} className="space-y-3">
-          {mode === "signup" && (
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="First name">
+            <form onSubmit={handleEmail} className="space-y-3">
+              {mode === "signup" && (
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="First name">
+                    <input
+                      type="text"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      className="input"
+                      placeholder="Maya"
+                    />
+                  </Field>
+                  <Field label="Last name">
+                    <input
+                      type="text"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      className="input"
+                      placeholder="Lopez"
+                    />
+                  </Field>
+                </div>
+              )}
+              <Field label="Email">
                 <input
-                  type="text"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="input"
-                  placeholder="Maya"
+                  placeholder="you@example.com"
                 />
               </Field>
-              <Field label="Last name">
+              <Field label="Password">
                 <input
-                  type="text"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
+                  type="password"
+                  required
+                  minLength={6}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   className="input"
-                  placeholder="Lopez"
+                  placeholder="••••••••"
                 />
               </Field>
-            </div>
-          )}
-          <Field label="Email">
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="input"
-              placeholder="you@example.com"
-            />
-          </Field>
-          <Field label="Password">
-            <input
-              type="password"
-              required
-              minLength={6}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="input"
-              placeholder="••••••••"
-            />
-          </Field>
-          {mode === "signin" && (
-            <div className="flex justify-end">
-              <button
-                type="button"
-                onClick={handleForgotPassword}
-                disabled={loading}
-                className="text-xs font-medium text-sage-700 underline disabled:opacity-50"
-              >
-                Forgot password?
-              </button>
-            </div>
-          )}
-          {mode === "signup" && (
-            <label className="mt-2 flex items-start gap-2 text-xs text-sage-700">
-              <input
-                type="checkbox"
-                checked={marketingOptIn}
-                onChange={(e) => { setMarketingOptIn(e.target.checked); if (e.target.checked) track("marketing_opt_in_checked", { context: "checkbox" }); }}
-                className="mt-0.5 size-4 rounded border-sage-300"
-              />
-              <span>Email me about The Kya Project community and updates. (Optional)</span>
-            </label>
-          )}
-          <button
-            type="submit"
-            disabled={loading}
-            className="mt-2 w-full rounded-xl bg-[#1a3d2e] px-4 py-3 text-sm font-medium text-white active:scale-[0.99] disabled:opacity-50"
-          >
-            {loading ? "..." : mode === "signup" ? "Create account" : "Sign in"}
-          </button>
-          {mode === "signup" && (
-            <p className="text-center text-[11px] text-[#5f5e5a]">
-              By creating an account you agree to our{" "}
-              <Link to="/terms" className="underline">Terms</Link> and{" "}
-              <Link to="/privacy" className="underline">Privacy Policy</Link>.
-            </p>
-          )}
-        </form>
+              {mode === "signin" && (
+                <div className="flex justify-end">
+                  <CtaLink
+                    label="Forgot password?"
+                    icon={<span />}
+                    onPress={() => { if (!loading) handleForgotPassword(); }}
+                  />
+                </div>
+              )}
+              {mode === "signup" && (
+                <label className="mt-2 flex items-start gap-2 text-[13px] text-[var(--mute)]">
+                  <input
+                    type="checkbox"
+                    checked={marketingOptIn}
+                    onChange={(e) => { setMarketingOptIn(e.target.checked); if (e.target.checked) track("marketing_opt_in_checked", { context: "checkbox" }); }}
+                    className="mt-0.5 size-4 rounded border-[var(--line)]"
+                  />
+                  <span>Email me about The Kya Project community and updates. (Optional)</span>
+                </label>
+              )}
+              <div className="pt-1">
+                <PrimaryButton
+                  tone="lime"
+                  type="submit"
+                  disabled={loading}
+                >
+                  {loading ? "..." : mode === "signup" ? "Create account" : "Sign in"}
+                </PrimaryButton>
+              </div>
+              {mode === "signup" && (
+                <p className="text-center text-[11px] text-[var(--mute2)]">
+                  By creating an account you agree to our{" "}
+                  <Link to="/terms" className="text-[var(--moss)] underline">Terms</Link> and{" "}
+                  <Link to="/privacy" className="text-[var(--moss)] underline">Privacy Policy</Link>.
+                </p>
+              )}
+            </form>
+          </Card>
 
-        <p className="mt-6 text-center text-sm text-[#5f5e5a]">
-          {mode === "signup" ? (
-            <Link to="/auth" search={{ mode: "signin" }} className="font-medium underline">
-              Already have an account? Sign in
-            </Link>
-          ) : (
-            <Link to="/auth" search={{ mode: "signup" }} className="font-medium underline">
-              Need an account? Sign up
-            </Link>
-          )}
-        </p>
+          <p className="mt-6 text-center text-[14px] text-[var(--mute)]">
+            {mode === "signup" ? (
+              <Link to="/auth" search={{ mode: "signin" }} className="font-[500] text-[var(--moss)] underline">
+                Already have an account? Sign in
+              </Link>
+            ) : (
+              <Link to="/auth" search={{ mode: "signup" }} className="font-[500] text-[var(--moss)] underline">
+                Need an account? Sign up
+              </Link>
+            )}
+          </p>
 
-        <p className="mt-4 text-center text-[11px] text-[#5f5e5a]">
-          <Link to="/privacy" className="underline">Privacy</Link>
-          {" · "}
-          <Link to="/terms" className="underline">Terms</Link>
-        </p>
-      </main>
-
+          <p className="mt-4 text-center text-[11px] text-[var(--mute2)]">
+            <Link to="/privacy" className="text-[var(--moss)] underline">Privacy</Link>
+            {" · "}
+            <Link to="/terms" className="text-[var(--moss)] underline">Terms</Link>
+          </p>
+        </main>
+      </div>
 
       <style>{`
         .input {
@@ -348,7 +346,7 @@ function AuthPage() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-xs font-medium uppercase tracking-wider text-[#5f5e5a]">{label}</span>
+      <span className="mb-1 block text-[11px] font-[500] uppercase tracking-wider text-[var(--mute)]">{label}</span>
       {children}
     </label>
   );

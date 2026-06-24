@@ -111,118 +111,50 @@ export function SetupShell({
   const birdLabel = exitLabel ?? (birdName?.trim() || "Bird");
 
   return (
-    <div className={`min-h-screen bg-[#f4f1e8] ${hideFooter ? "pb-28" : "pb-44"}`}>
-      <header className="sticky top-0 z-10 border-b border-[#e3ded0] bg-[#f4f1e8]/95 backdrop-blur">
-        {/* Top bar: back-to-profile link + context */}
-        <div className="mx-auto flex max-w-md items-center gap-3 px-5 py-3">
-          <button
-            type="button"
-            onClick={handleExit}
-            disabled={!onExit}
-            className="-ml-1 flex items-center gap-1 rounded p-1 text-sm font-semibold text-sage-700 disabled:opacity-40"
-            aria-label={exitLabel ?? `Back to ${birdLabel}`}
-          >
-            <ArrowLeft className="size-5 shrink-0" />
-            <span className="max-w-[8rem] truncate">{birdLabel}</span>
-          </button>
-          <div className="min-w-0 flex-1 text-right">
-            <p className="truncate text-sm font-semibold leading-tight text-sage-900">
-              Care plan setup
-            </p>
-            {birdSpecies?.trim() && (
-              <p className="truncate text-[11px] text-sage-600">{birdSpecies}</p>
-            )}
+    <div className={`min-h-screen bg-[var(--cream)] ${hideFooter ? "pb-28" : "pb-44"}`}>
+      {/* InkHero-style wizard header: Step N of 8 + section name + lime dots. */}
+      <header className="bg-[var(--ink)] text-white">
+        <div className="mx-auto max-w-md px-[22px] pb-[20px] pt-[max(env(safe-area-inset-top),18px)]">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <button
+              type="button"
+              onClick={handleExit}
+              disabled={!onExit}
+              aria-label={exitLabel ?? `Back to ${birdLabel}`}
+              className="-ml-1.5 flex items-center gap-1 text-white/90 disabled:opacity-40"
+            >
+              <ArrowLeft className="size-5 shrink-0" />
+              <span className="max-w-[8rem] truncate text-[14px] font-[500]">{birdLabel}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setDrawerOpen(true)}
+              className="flex shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-[12px] font-[500] text-white"
+              style={{ background: "rgba(255,255,255,0.12)" }}
+            >
+              All steps <ChevronDown className="size-4" />
+            </button>
           </div>
-        </div>
-
-        {/* Desktop: clickable pill tabs */}
-        <div className="hidden md:block">
-          <div className="mx-auto max-w-md px-5 pb-2">
-            <div className="relative">
-            <div ref={pillStripRef} onScroll={updatePillFades} className="flex gap-1.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {SETUP_STEPS.map((s, i) => {
-                const state = stepState(i, step);
-                const base =
-                  "flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-xs transition";
-                const cls =
-                  state === "completed"
-                    ? "bg-sage-100 text-sage-700 hover:bg-sage-200"
-                    : state === "active"
-                      ? "bg-white font-medium text-sage-900 shadow-sm ring-1 ring-sage-300"
-                      : "bg-transparent text-sage-400 hover:text-sage-600";
-                return (
-                  <button
-                    key={s.key}
-                    type="button"
-                    onClick={() => goToStep(i + 1)}
-                    aria-current={state === "active" ? "step" : undefined}
-                    className={`${base} ${cls}`}
-                  >
-                    {state === "completed" ? (
-                      <Check className="size-3.5" />
-                    ) : state === "upcoming" ? (
-                      <span className="text-[10px] font-semibold">{i + 1}</span>
-                    ) : null}
-                    {s.short}
-                  </button>
-                );
-              })}
-              {/* trailing spacer so the last pill scrolls clear of the fade */}
-              <span aria-hidden className="shrink-0 pl-1" />
-            </div>
-            {!pillAtStart && <div className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-[#f4f1e8] to-transparent" />}
-            {!pillAtEnd && <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-[#f4f1e8] to-transparent" />}
-            </div>
+          <p className="t-eyebrow text-[var(--lime)]">Step {step} of {TOTAL_STEPS}</p>
+          <h1 className="t-hero mt-1 text-white">{title}</h1>
+          <div className="mt-3 flex items-center gap-1" aria-hidden="true">
+            {SETUP_STEPS.map((s, i) => {
+              const state = stepState(i, step);
+              return (
+                <span
+                  key={s.key}
+                  className={`h-1.5 rounded-full transition-all ${
+                    state === "active" ? "w-5 bg-[var(--lime)]" : state === "completed" ? "w-1.5 bg-[var(--lime)]" : "w-1.5 bg-white/30"
+                  }`}
+                />
+              );
+            })}
           </div>
-        </div>
-
-        {/* Mobile: compact step bar with "All steps" drawer trigger */}
-        <div className="mx-auto flex max-w-md items-stretch md:hidden">
-          <div className="flex min-w-0 flex-1 items-center gap-3 px-4 py-2">
-            <div className="flex shrink-0 items-center gap-1" aria-hidden="true">
-              {SETUP_STEPS.map((s, i) => {
-                const state = stepState(i, step);
-                return (
-                  <span
-                    key={s.key}
-                    className={`h-1.5 rounded-full transition-all ${
-                      state === "active"
-                        ? "w-4 bg-[#2d6a4f]"
-                        : state === "completed"
-                          ? "w-1.5 bg-[#2d6a4f]"
-                          : "w-1.5 bg-[#d8d2c2]"
-                    }`}
-                  />
-                );
-              })}
-            </div>
-            <div className="min-w-0">
-              <p className="truncate text-sm font-medium leading-tight text-sage-900">
-                {current?.short}
-              </p>
-              <p className="text-[11px] leading-tight text-sage-600">
-                Step {step} of {TOTAL_STEPS}
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={() => setDrawerOpen(true)}
-            className="flex shrink-0 items-center gap-1 border-l border-sage-100 px-4 text-xs font-semibold text-sage-700"
-          >
-            All steps
-            <ChevronDown className="size-4" />
-          </button>
-        </div>
-
-        {/* Thin progress bar */}
-        <div className="h-[3px] w-full bg-[#e0dcce]">
-          <div className="h-full bg-[#2d6a4f] transition-all" style={{ width: `${pct}%` }} />
         </div>
       </header>
 
       <main className="mx-auto max-w-md space-y-4 px-5 py-5">
-        {subtitle && <p className="text-sm text-sage-600">{subtitle}</p>}
+        {subtitle && <p className="t-body text-[var(--ink2)]">{subtitle}</p>}
         {children}
       </main>
 
@@ -231,14 +163,14 @@ export function SetupShell({
           it preserves the current step (autosave flushes on unmount). */}
       <div className="fixed inset-x-0 bottom-0 z-40">
         {!hideFooter && (
-          <div className="border-t border-[#e3ded0] bg-[#f4f1e8]/95 backdrop-blur">
+          <div className="border-t border-[var(--line)] bg-[var(--cream)]/95 backdrop-blur">
             <div className="mx-auto flex max-w-md items-center gap-2 px-5 py-3">
               <button
                 type="button"
                 onClick={onBack}
                 disabled={backDisabled || saving}
                 aria-label="Previous step"
-                className="grid size-11 shrink-0 place-items-center rounded-xl border border-sage-200 bg-white text-sage-700 disabled:opacity-40"
+                className="grid size-11 shrink-0 place-items-center rounded-xl border border-[var(--line)] bg-white text-[var(--ink)] disabled:opacity-40"
               >
                 <ArrowLeft className="size-5" />
               </button>
@@ -247,7 +179,7 @@ export function SetupShell({
                   type="button"
                   onClick={onSaveAndExit}
                   disabled={saving}
-                  className="shrink-0 px-2 text-xs font-semibold text-sage-700 underline disabled:opacity-50"
+                  className="shrink-0 px-2 text-[12px] font-[500] text-[var(--mute)] underline disabled:opacity-50"
                 >
                   Save &amp; exit
                 </button>
@@ -256,7 +188,7 @@ export function SetupShell({
                 type="button"
                 onClick={onNext}
                 disabled={nextDisabled || saving}
-                className="flex-1 rounded-xl bg-[#1a3d2e] py-3 text-sm font-semibold text-white disabled:opacity-50"
+                className="min-h-[44px] flex-1 rounded-xl bg-[var(--ink)] py-3 text-[15px] font-[500] text-white disabled:opacity-50"
               >
                 {saving ? "Saving…" : nextLabel}
               </button>
@@ -266,30 +198,28 @@ export function SetupShell({
         <OwnerTabBar embedded />
       </div>
 
-      {/* Mobile "All steps" bottom sheet */}
+      {/* "All steps" bottom sheet */}
       <div
-        className={`fixed inset-0 z-50 md:hidden ${drawerOpen ? "" : "pointer-events-none"}`}
+        className={`fixed inset-0 z-50 ${drawerOpen ? "" : "pointer-events-none"}`}
         aria-hidden={!drawerOpen}
       >
         <div
           onClick={() => setDrawerOpen(false)}
-          className={`absolute inset-0 bg-sage-900/40 transition-opacity ${
+          className={`absolute inset-0 bg-[var(--ink)]/40 transition-opacity ${
             drawerOpen ? "opacity-100" : "opacity-0"
           }`}
         />
         <div
           role="dialog"
           aria-label="All steps"
-          className={`absolute inset-x-0 bottom-0 rounded-t-2xl bg-white pb-[max(1rem,env(safe-area-inset-bottom))] shadow-xl transition-transform duration-200 ${
+          className={`absolute inset-x-0 bottom-0 mx-auto max-w-md rounded-t-2xl bg-white pb-[max(1rem,env(safe-area-inset-bottom))] shadow-xl transition-transform duration-200 ${
             drawerOpen ? "translate-y-0" : "translate-y-full"
           }`}
         >
           <div className="flex justify-center pt-3">
-            <span className="h-1 w-10 rounded-full bg-sage-200" />
+            <span className="h-1 w-10 rounded-full bg-[var(--line)]" />
           </div>
-          <p className="px-5 pb-2 pt-3 text-[10px] font-semibold uppercase tracking-widest text-sage-600">
-            All steps
-          </p>
+          <p className="t-eyebrow px-5 pb-2 pt-3 text-[var(--mute2)]">All steps</p>
           <ul className="max-h-[60vh] overflow-y-auto px-2 pb-2">
             {SETUP_STEPS.map((s, i) => {
               const state = stepState(i, step);
@@ -298,23 +228,23 @@ export function SetupShell({
                   <button
                     type="button"
                     onClick={() => goToStep(i + 1)}
-                    className="flex min-h-[48px] w-full items-center gap-3 rounded-xl px-3 text-left hover:bg-sage-50"
+                    className="flex min-h-[48px] w-full items-center gap-3 rounded-xl px-3 text-left hover:bg-[var(--cream)]"
                   >
                     {state === "completed" ? (
-                      <span className="grid size-7 shrink-0 place-items-center rounded-full bg-sage-600 text-white">
+                      <span className="grid size-7 shrink-0 place-items-center rounded-full bg-[var(--ink)] text-[var(--lime)]">
                         <Check className="size-4" />
                       </span>
                     ) : state === "active" ? (
-                      <span className="grid size-7 shrink-0 place-items-center rounded-full bg-sage-900 text-xs font-semibold text-white">
+                      <span className="grid size-7 shrink-0 place-items-center rounded-full bg-[var(--ink)] text-xs font-[500] text-white">
                         {i + 1}
                       </span>
                     ) : (
-                      <span className="grid size-7 shrink-0 place-items-center rounded-full bg-sage-100 text-xs font-semibold text-sage-500">
+                      <span className="grid size-7 shrink-0 place-items-center rounded-full bg-[var(--pale2)] text-xs font-[500] text-[var(--mute)]">
                         {i + 1}
                       </span>
                     )}
-                    <span className="flex-1 text-sm font-medium text-sage-900">{s.short}</span>
-                    <span className="text-[11px] font-semibold uppercase tracking-wide text-sage-500">
+                    <span className="t-item flex-1">{s.short}</span>
+                    <span className="t-eyebrow text-[var(--mute2)]">
                       {state === "completed" ? "Done" : state === "active" ? "Here now" : ""}
                     </span>
                   </button>
@@ -328,19 +258,19 @@ export function SetupShell({
       {/* Unsaved-changes confirmation before exiting to the bird profile */}
       {confirmExit && (
         <div className="fixed inset-0 z-[60] grid place-items-center p-6">
-          <div className="absolute inset-0 bg-sage-900/40" onClick={() => setConfirmExit(false)} />
+          <div className="absolute inset-0 bg-[var(--ink)]/40" onClick={() => setConfirmExit(false)} />
           <div
             role="alertdialog"
             aria-label="Leave this step"
             className="relative w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl"
           >
-            <h2 className="text-base font-bold text-sage-900">{exitConfirmTitle}</h2>
-            <p className="mt-1 text-sm text-sage-600">{exitConfirmBody}</p>
+            <h2 className="t-section">{exitConfirmTitle}</h2>
+            <p className="t-body mt-1 text-[var(--ink2)]">{exitConfirmBody}</p>
             <div className="mt-4 flex gap-2">
               <button
                 type="button"
                 onClick={() => setConfirmExit(false)}
-                className="flex-1 rounded-xl border border-sage-200 bg-white py-2.5 text-sm font-semibold text-sage-700"
+                className="min-h-[44px] flex-1 rounded-xl border border-[var(--line)] bg-white py-2.5 text-[15px] font-[500] text-[var(--ink)]"
               >
                 Cancel
               </button>
@@ -350,7 +280,7 @@ export function SetupShell({
                   setConfirmExit(false);
                   onExit?.();
                 }}
-                className="flex-1 rounded-xl bg-sage-600 py-2.5 text-sm font-semibold text-white"
+                className="min-h-[44px] flex-1 rounded-xl bg-[var(--ink)] py-2.5 text-[15px] font-[500] text-white"
               >
                 {exitConfirmCta}
               </button>

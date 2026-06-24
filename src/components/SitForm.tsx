@@ -17,6 +17,8 @@ export function SitForm({
   activeSit,
   editSit,
   onCancel,
+  returnTo = "/dashboard",
+  hidePrompt = false,
 }: {
   birds: any[];
   onSaved: () => void;
@@ -25,6 +27,12 @@ export function SitForm({
   activeSit?: any;
   editSit?: any;
   onCancel?: () => void;
+  // Where to clear the ?newSit param back to after opening (the screen hosting
+  // the form). Defaults to /dashboard for back-compat.
+  returnTo?: string;
+  // Suppress the closed-state "New sit / Going away?" prompt card when the host
+  // screen already provides the open CTA (e.g. the Sits tab hero button).
+  hidePrompt?: boolean;
 }) {
   const editing = !!editSit;
   const navigate = useNavigate();
@@ -56,7 +64,7 @@ export function SitForm({
   useEffect(() => {
     if (initialOpen && !editing) {
       setOpen(true);
-      navigate({ to: "/dashboard", search: {}, replace: true });
+      navigate({ to: returnTo, search: {}, replace: true } as any);
       // The form can be below the fold on the dashboard — bring it into view.
       setTimeout(() => rootRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
     }
@@ -201,6 +209,7 @@ export function SitForm({
 
   // Closed prompt (create mode only).
   if (!open && !editing) {
+    if (hidePrompt) return null;
     if (activeSit) {
       return (
         <div className="rounded-[20px] bg-[#cdeab0] p-5">
