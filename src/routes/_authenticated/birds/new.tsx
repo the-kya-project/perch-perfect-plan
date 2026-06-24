@@ -6,9 +6,10 @@ import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { toast } from "sonner";
 import { PhotoCropper } from "@/components/PhotoCropper";
 import { SpeciesPicker, AgePicker, BirdField } from "@/components/BirdPickers";
-import { SetupShell } from "@/components/SetupShell";
+import { InkHero, PrimaryButton } from "@/components/system";
 import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
 import { persistBirdPhoto } from "@/lib/birdPhoto";
+import { ArrowLeft } from "lucide-react";
 import { z } from "zod";
 
 export const Route = createFileRoute("/_authenticated/birds/new")({
@@ -112,44 +113,40 @@ function NewBird() {
     return bird.id;
   }
 
-  async function onNext() {
-    const id = await createBird(2);
-    if (id) navigate({ to: "/birds/$birdId/setup", params: { birdId: id } });
-  }
-
-  async function onSaveAndExit() {
+  // Add the bird, then go to its main page — that's where the "No care plan yet
+  // — Create care plan" invite opens the actual wizard (Food · Step 1 of 8).
+  // Adding a bird is NOT the care-plan wizard, so this flow has no step chrome.
+  async function onAddBird() {
     const id = await createBird(1);
     if (id) {
-      toast.success(`${name} saved. Finish setup any time.`);
+      toast.success(`${name} added.`);
+      navigate({ to: "/birds/$birdId", params: { birdId: id } });
+    }
+  }
+
+  // Cancel — nothing is created until Add bird, so just leave. Confirm first only
+  // if they've started entering details, so a stray tap doesn't discard work.
+  const hasInput = !!(name.trim() || species.trim() || age || birthDate || sex || photo || flight !== "unknown");
+  function onCancel() {
+    if (!hasInput || window.confirm("Discard this bird? You haven't saved it yet.")) {
       navigate({ to: "/dashboard" });
     }
   }
 
-  // Cancel adding — nothing is created until Save & exit / Next, so just leave.
-  // Confirm first only if they've started entering details, so a stray tap
-  // doesn't discard their work.
-  const hasInput = !!(name.trim() || species.trim() || age || birthDate || sex || photo || flight !== "unknown");
-  function onCancel() {
-    navigate({ to: "/dashboard" });
-  }
+  const canAdd = !!name.trim() && !!species.trim();
 
   return (
-    <SetupShell
-      step={1}
-      title="The basics"
-      subtitle="Start with your bird's name and the details a sitter needs at a glance."
-      backDisabled
-      saving={saving}
-      onNext={onNext}
-      onSaveAndExit={onSaveAndExit}
-      onExit={onCancel}
-      exitLabel="Cancel"
-      isDirty={hasInput}
-      exitConfirmTitle="Discard this bird?"
-      exitConfirmBody="You haven't saved this bird yet — leaving will discard what you've entered."
-      exitConfirmCta="Discard"
-      nextDisabled={!name.trim() || !species.trim()}
-    >
+    <div className="min-h-screen bg-[var(--cream)] pb-28">
+      <div className="mx-auto max-w-md">
+        <InkHero
+          backIcon={<ArrowLeft className="size-5" />}
+          onBack={onCancel}
+          eyebrow="New bird"
+          headline={fosterParam ? "Take in a bird." : "Add a bird."}
+          body="Start with the basics — a sitter-ready care plan comes next."
+        />
+
+        <main className="space-y-4 px-5 pt-5">
       <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
         <div className="flex items-start gap-3">
           {photo ? (
@@ -218,6 +215,16 @@ function NewBird() {
       </section>
 
       <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.65rem .8rem;font-size:16px;outline:none}.input:focus{border-color:var(--sage-600);box-shadow:0 0 0 3px rgb(74 103 65 / .15)}`}</style>
-    </SetupShell>
+        </main>
+      </div>
+
+      <footer className="fixed inset-x-0 bottom-0 border-t border-[var(--line)] bg-[var(--cream)]/95 px-5 py-3 pb-[max(env(safe-area-inset-bottom),0.75rem)] backdrop-blur">
+        <div className="mx-auto max-w-md">
+          <PrimaryButton tone="lime" disabled={saving || !canAdd} onPress={onAddBird}>
+            {saving ? "Adding…" : "Add bird"}
+          </PrimaryButton>
+        </div>
+      </footer>
+    </div>
   );
 }
