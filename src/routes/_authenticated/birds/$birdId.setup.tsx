@@ -218,15 +218,17 @@ function BirdSetup() {
     if (stepParam != null) setStep(Math.min(TOTAL_STEPS, Math.max(1, stepParam)));
   }, [stepParam]);
 
-  // Resume at the saved position once, when the bird first loads, unless an
-  // explicit ?step= link is driving the position.
+  // A bare wizard entry (no explicit ?step) ALWAYS opens at Food (step 1). The
+  // wizard must never skip Food. Resume is driven only by an explicit ?step
+  // ("Walk through it again" passes the saved step; "Create care plan" passes 1)
+  // — so a stale setup_step (older birds carry 2 from the pre-standalone
+  // Add-a-bird flow) can no longer strand a new owner on Behavior.
   const initializedRef = useRef(false);
   useEffect(() => {
     if (!bird || initializedRef.current) return;
     initializedRef.current = true;
     if (stepParam != null) return;
-    const stored = Number(bird.setup_step ?? 0);
-    setStep(!bird.setup_complete && stored > 1 ? Math.min(TOTAL_STEPS, stored) : 1);
+    setStep(1);
   }, [bird, stepParam]);
 
   async function persistStep(nextStep: number, complete = false) {
