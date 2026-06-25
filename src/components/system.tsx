@@ -28,40 +28,41 @@ export function InkHero({
   onBack?: () => void;
   trailingIcons?: ReactNode;
   children?: ReactNode;
-  // Show the Kya & Co. horizontal lockup at the top of the hero (default on).
-  // Set false on screens where it'd be redundant (e.g. landing already has its
-  // own cream lockup in the page chrome). Sized 260px (≈10% larger than the
-  // previous 240px standalone use); horizontal-ink variant blends with the
-  // ink hero background.
+  // Show the Kya & Co. lockup as quiet chrome in the top row (default on). The
+  // lockup is small (~31px tall) and sits as a peer to any icon controls — it's
+  // chrome, not the focal point; the eyebrow/headline below carry the screen.
+  // Set false on screens that supply their own brand treatment.
   showBrand?: boolean;
 }) {
-  const hasTopBar = !!(backIcon || trailingIcons);
+  const showLockup = showBrand ?? true;
   return (
     <header className="bg-[var(--ink)] px-[22px] pb-[26px] pt-[max(env(safe-area-inset-top),18px)] text-white">
-      {hasTopBar && (
-        <div className="mb-3 flex items-center justify-between">
-          {backIcon ? (
-            <button type="button" onClick={onBack} aria-label="Back" className="-ml-1.5 grid size-9 place-items-center rounded-full text-white/90 active:bg-white/10">{backIcon}</button>
-          ) : <span className="size-9" />}
-          {trailingIcons && <div className="flex items-center gap-2">{trailingIcons}</div>}
-        </div>
-      )}
-      {(showBrand ?? true) && (
-        <div className="mb-5 mt-1 flex justify-start">
-          <BrandLockup orientation="horizontal" variant="ink" size={260} />
-        </div>
-      )}
-      {eyebrow && <p className="t-eyebrow text-[var(--lime)]">{eyebrow}</p>}
-      <h1 className="t-hero mt-1 text-white">{headline}</h1>
-      {body && <p className="t-body mt-2 text-white/85">{body}</p>}
-      {children && <div className="mt-4">{children}</div>}
-      {cta && (
-        <div className="mt-4">
-          {cta.tone === "arrow"
-            ? <CtaLink label={cta.label} icon={cta.icon} onPress={cta.onPress} onInk />
-            : <PrimaryButton tone="lime" icon={cta.icon} onPress={cta.onPress} disabled={cta.disabled}>{cta.label}</PrimaryButton>}
-        </div>
-      )}
+      {/* Brand-as-chrome row: small lockup left, icon controls right — peers on
+          one baseline. A small chrome size (~31px tall via size 100; the lockup
+          is ~3.27:1) keeps the brand quiet so it never competes with content. */}
+      <div className="flex min-h-9 items-center gap-2">
+        {showLockup ? <BrandLockup orientation="horizontal" variant="ink" size={100} /> : <span />}
+        <div className="flex-1" />
+        {backIcon && (
+          <button type="button" onClick={onBack} aria-label="Back" className="grid size-9 place-items-center rounded-full text-white/90 active:bg-white/10">{backIcon}</button>
+        )}
+        {trailingIcons && <div className="flex items-center gap-2">{trailingIcons}</div>}
+      </div>
+      {/* Generous gap so the brand chrome and the hero content read as separate
+          layers, not one composed block. */}
+      <div className="mt-12">
+        {eyebrow && <p className="t-eyebrow text-[var(--lime)]">{eyebrow}</p>}
+        <h1 className="t-hero mt-1 text-white">{headline}</h1>
+        {body && <p className="t-body mt-2 text-white/85">{body}</p>}
+        {children && <div className="mt-4">{children}</div>}
+        {cta && (
+          <div className="mt-4">
+            {cta.tone === "arrow"
+              ? <CtaLink label={cta.label} icon={cta.icon} onPress={cta.onPress} onInk />
+              : <PrimaryButton tone="lime" icon={cta.icon} onPress={cta.onPress} disabled={cta.disabled}>{cta.label}</PrimaryButton>}
+          </div>
+        )}
+      </div>
     </header>
   );
 }
