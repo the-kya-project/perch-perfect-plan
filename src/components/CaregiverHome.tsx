@@ -112,7 +112,6 @@ function CaregiverSitBlock({ sit }: { sit: ActiveCaregiverSit }) {
   return (
     <>
       <InkHero
-        brandAlign="left"
         eyebrow={eyebrow}
         headline={`${greeting}.`}
         body={body}
