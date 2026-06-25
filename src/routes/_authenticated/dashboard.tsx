@@ -14,6 +14,7 @@ import {
 import { OwnerOnboarding } from "@/components/OwnerOnboarding";
 import { Disclaimer } from "@/components/Disclaimer";
 import { AddToHomeScreenPrompt } from "@/components/AddToHomeScreenPrompt";
+import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 import { toast } from "sonner";
 import { ASPCA_POISON_CONTROL, isPhoneField, phoneWarning, formatPhoneOnBlur } from "@/lib/emergency";
 import { isAddressField } from "@/lib/address";
@@ -77,7 +78,10 @@ function Dashboard() {
     },
   });
   const birdIds = useMemo(() => birds.map((b) => b.id), [birds]);
-  const resolvePhoto = useBirdPhotos(birds.map((b) => b.photo_url), 256);
+  // 800px (not 256) so the flock-card crop is byte-for-byte the same image the
+  // reposition "Flock card" preview and the bird-record hero use — a smaller
+  // transform cropped to a different aspect and broke the WYSIWYG promise.
+  const resolvePhoto = useBirdPhotos(birds.map((b) => b.photo_url), 800);
 
   // Latest weights for every accessible bird — pills, stale detection, Today.
   const { data: allWeights = [] } = useQuery({
@@ -340,14 +344,9 @@ function gradientFor(seed: string) {
 function PhotoTile({ photo, name, species, position }: { photo: SignedPhoto | null; name: string; species: string | null; position?: string | null }) {
   const initial = (name?.slice(0, 1) ?? "?").toUpperCase();
   return (
-    <div className="h-[80px] w-[72px] shrink-0 overflow-hidden rounded-[14px]" style={{ background: gradientFor(species || name) }}>
+    <div className="relative h-[80px] w-[72px] shrink-0 overflow-hidden rounded-[14px]" style={{ background: gradientFor(species || name) }}>
       {photo ? (
-        <img
-          src={photo.url} alt={name} loading="lazy" decoding="async"
-          onError={(e) => { if (photo.original && e.currentTarget.src !== photo.original) e.currentTarget.src = photo.original; }}
-          style={{ objectPosition: position ?? "50% 50%" }}
-          className="block size-full object-cover"
-        />
+        <BirdPhotoCrop url={photo.url} original={photo.original} position={position} alt={name} />
       ) : (
         <div className="grid size-full place-items-center">
           <span className="text-2xl font-[500] text-white/90">{initial}</span>

@@ -6,6 +6,7 @@ import { getActiveCaregiverSits, caregiverToggleTaskCompletion, type ActiveCareg
 import { signBirdPhotos, type SignedPhoto } from "@/lib/birdPhoto";
 import { taskDaypart, DAYPARTS, DAYPART_LABEL, isDerivedTask, type Daypart } from "@/lib/routineTasks";
 import { InkHero, SectionHead, Card, IconTile, StatusPill } from "@/components/system";
+import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 import { Check, CalendarHeart, Sun, ChevronRight, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -72,7 +73,8 @@ function CaregiverSitBlock({ sit }: { sit: ActiveCaregiverSit }) {
     queryKey: ["caregiver-bird-photos", paths.sort().join(",")],
     enabled: paths.length > 0,
     staleTime: 50 * 60_000,
-    queryFn: async () => Object.fromEntries(await signBirdPhotos(paths, { width: 256 })),
+    // 800 (not 256) so the tile matches the reposition preview / hero exactly.
+    queryFn: async () => Object.fromEntries(await signBirdPhotos(paths, { width: 800 })),
   });
   const photoFor = (b: ActiveCaregiverSit["birds"][number]): SignedPhoto | null => (b.photo_url ? (photoMap as any)?.[b.photo_url] ?? null : null);
 
@@ -210,17 +212,9 @@ function CaregiverSitBlock({ sit }: { sit: ActiveCaregiverSit }) {
 function BirdTile({ bird, photo }: { bird: ActiveCaregiverSit["birds"][number]; photo: SignedPhoto | null }) {
   const initial = (bird.name?.slice(0, 1) ?? "?").toUpperCase();
   return (
-    <div className="h-[80px] w-[72px] shrink-0 overflow-hidden rounded-[14px]" style={{ background: "linear-gradient(135deg,#cdeab0,#a7d68f)" }}>
+    <div className="relative h-[80px] w-[72px] shrink-0 overflow-hidden rounded-[14px]" style={{ background: "linear-gradient(135deg,#cdeab0,#a7d68f)" }}>
       {photo ? (
-        <img
-          src={photo.url}
-          alt={bird.name}
-          loading="lazy"
-          decoding="async"
-          onError={(e) => { if (photo.original && e.currentTarget.src !== photo.original) e.currentTarget.src = photo.original; }}
-          style={{ objectPosition: bird.photo_position ?? "50% 50%" }}
-          className="block size-full object-cover"
-        />
+        <BirdPhotoCrop url={photo.url} original={photo.original} position={bird.photo_position} alt={bird.name} />
       ) : (
         <div className="grid size-full place-items-center"><span className="text-2xl font-[500] text-white/90">{initial}</span></div>
       )}
