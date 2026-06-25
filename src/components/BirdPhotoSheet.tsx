@@ -5,6 +5,7 @@ import { persistBirdPhoto } from "@/lib/birdPhoto";
 import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
 import { toast } from "sonner";
 import { Camera, Image as ImageIcon, Crop, Trash2, X } from "lucide-react";
+import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 
 // First-class bird-photo management. Opened from the camera button on the bird
 // main page hero. Menu → reposition step → save. The "focal point" is stored in
@@ -206,10 +207,12 @@ function RepositionBox({ src, position, onChange }: { src: string; position: str
         </div>
         <p className="t-meta text-center">Bird-record header</p>
       </div>
-      {/* The real flock-tile preview at the actual 9:10 card aspect. Same
-          object-position + cover as PhotoTile, so this IS the tile. */}
+      {/* The real flock-tile preview at the actual 9:10 card aspect, rendered
+          through the SAME BirdPhotoCrop component (img + object-cover) the Home
+          tile uses — so this is byte-for-byte what the card will draw. */}
       <div className="shrink-0 space-y-1">
-        <div className="relative aspect-[9/10] w-28 overflow-hidden rounded-[14px] ring-2 ring-[var(--moss)]" style={coverStyle}>
+        <div className="relative aspect-[9/10] w-28 overflow-hidden rounded-[14px] bg-[var(--cream2)] ring-2 ring-[var(--moss)]">
+          <BirdPhotoCrop url={src} position={`${pos.x}% ${pos.y}%`} eager />
           <span className="absolute bottom-1 left-1/2 -translate-x-1/2 rounded-full bg-[var(--moss)] px-2 py-0.5 text-[10px] font-[500] text-white">Flock card</span>
         </div>
         <p className="t-meta text-center">What the tile shows</p>
