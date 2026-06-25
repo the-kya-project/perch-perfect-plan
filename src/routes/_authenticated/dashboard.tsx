@@ -256,6 +256,7 @@ function HomeHeader({ firstName, unreadNotifs, stateCopy, cta }: { firstName: st
   const dateLabel = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
   return (
     <InkHero
+      brandAlign="left"
       eyebrow={dateLabel}
       headline={greeting}
       body={stateCopy}

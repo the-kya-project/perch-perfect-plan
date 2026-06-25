@@ -18,7 +18,7 @@ export type HeroCta = { label: string; icon?: ReactNode; onPress?: () => void; t
 
 // 1) InkHero — the dark-green anchor block at the top of (almost) every screen.
 export function InkHero({
-  eyebrow, headline, body, cta, backIcon, onBack, trailingIcons, children, showBrand,
+  eyebrow, headline, body, cta, backIcon, onBack, trailingIcons, children, showBrand, brandAlign = "center",
 }: {
   eyebrow?: ReactNode;
   headline: ReactNode;
@@ -34,6 +34,10 @@ export function InkHero({
   // previous 240px standalone use); horizontal-ink variant blends with the
   // ink hero background.
   showBrand?: boolean;
+  // Horizontal alignment of the brand lockup. Default "center" (auth/invite/
+  // handoff full-page moments). "left" on Home so the lockup sits flush with the
+  // left-aligned eyebrow/headline beneath it instead of a center→left axis shift.
+  brandAlign?: "center" | "left";
 }) {
   const hasTopBar = !!(backIcon || trailingIcons);
   return (
@@ -47,7 +51,7 @@ export function InkHero({
         </div>
       )}
       {(showBrand ?? true) && (
-        <div className="mb-5 mt-1 flex justify-center">
+        <div className={`mb-5 mt-1 flex ${brandAlign === "left" ? "justify-start" : "justify-center"}`}>
           <BrandLockup orientation="horizontal" variant="ink" size={260} />
         </div>
       )}
