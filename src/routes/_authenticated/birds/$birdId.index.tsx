@@ -116,7 +116,7 @@ function BirdRecordHero({ birdId }: { birdId: string }) {
 
           {/* Name + identity pinned to the bottom, over the gradient/ink. */}
           <div className="absolute inset-x-0 bottom-0 px-5 pb-5">
-            {bird?.is_foster && <p className="t-eyebrow mb-1 text-[var(--lime)]">In your care</p>}
+            {bird?.is_foster && <p className="t-eyebrow mb-1 text-[var(--teal)]">In your care</p>}
             <h1 className="text-[34px] font-[400] leading-[1.05] text-white">{name}.</h1>
             {identity && <p className="mt-1 text-[13.5px] text-white/85">{identity}</p>}
             <button
@@ -351,7 +351,7 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
       {isOwner && bird && (
         <section className="pt-1">
           <div className="border-t border-[var(--line2)] pt-4">
-            <p className="t-eyebrow mb-2 px-0.5 text-[var(--mute2)]">More</p>
+            <p className="t-eyebrow mb-2 px-0.5 text-[var(--teal-on-cream)]">More</p>
             <div className="space-y-2">
               <HandoffSection birdId={birdId} name={name} part="handoff" prominent={!!bird.is_foster} />
               <DeleteBirdButton birdId={birdId} name={name} />
@@ -640,7 +640,7 @@ function BasicInfoCard({ birdId, bird, editable = true }: { birdId: string; bird
   return (
     <section className="overflow-hidden rounded-[16px] bg-white ring-1 ring-[#e3dcc9]">
       <div className="flex items-center justify-between gap-3 border-b border-[#ece6d6] px-4 py-3">
-        <h3 className="t-eyebrow text-[var(--mute2)]">Basic info</h3>
+        <h3 className="t-eyebrow text-[var(--teal-on-cream)]">Basic info</h3>
         {editing ? (
           <div className="flex gap-2">
             <button type="button" onClick={() => setEditing(false)} disabled={saving} className="inline-flex min-h-[36px] items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium text-[#5f5e5a]">

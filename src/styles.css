@@ -92,6 +92,11 @@
   --ink2: #2b3a31;
   --moss: #2d6a4f;
   --lime: #cdeab0;
+  /* Teal — the second accent: content labeling (eyebrows, section labels), so
+     lime is freed to mean "act on this". --teal on dark/ink surfaces; the
+     darker --teal-on-cream on white/cream where the bright teal washes out. */
+  --teal: #9bcab8;
+  --teal-on-cream: #5a8c7a;
   --line: #e0d8c4;
   --line2: #eee6d4;
   --mute: #5b6b61;

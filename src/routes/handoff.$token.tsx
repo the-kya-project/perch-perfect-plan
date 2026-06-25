@@ -67,7 +67,7 @@ function HandoffAccept() {
     >
       <div className="space-y-5">
         <Card className="p-5">
-          <p className="t-eyebrow text-[var(--moss)]">You'll receive</p>
+          <p className="t-eyebrow text-[var(--teal-on-cream)]">You'll receive</p>
           <ul className="mt-3 space-y-2">
             <Li>{handoff.birdName}'s care plan and identity</Li>
             <Li>Weight history, journal, and moments</Li>

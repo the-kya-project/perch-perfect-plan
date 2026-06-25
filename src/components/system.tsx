@@ -51,7 +51,7 @@ export function InkHero({
       {/* Generous gap so the brand chrome and the hero content read as separate
           layers, not one composed block. */}
       <div className="mt-12">
-        {eyebrow && <p className="t-eyebrow text-[var(--lime)]">{eyebrow}</p>}
+        {eyebrow && <p className="t-eyebrow text-[var(--teal)]">{eyebrow}</p>}
         <h1 className="t-hero mt-1 text-white">{headline}</h1>
         {body && <p className="t-body mt-2 text-white/85">{body}</p>}
         {children && <div className="mt-4">{children}</div>}
