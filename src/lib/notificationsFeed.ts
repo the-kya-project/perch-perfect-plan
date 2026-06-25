@@ -29,6 +29,7 @@ export type ScanFeedItem = {
   source?: string | null; // 'owner' | 'sitter' | 'household'
   run_by?: string | null; // user id for owner/household scans
   runner_name?: string | null; // resolved display name for household scans
+  resolved_at?: string | null; // set when a flagged scan is explicitly resolved
   bird?: { name: string | null; photo_url: string | null; photo_position: string | null } | null;
   sit?: { sitter_name: string | null; sitter_email: string | null } | null;
 };
@@ -39,9 +40,16 @@ export async function fetchScanFeed(): Promise<ScanFeedItem[]> {
   const base = "id, bird_id, triage_status, triage_reasons, notes, created_at, bird:birds(name, photo_url, photo_position), sit:sits(sitter_name, sitter_email)";
   const run = (sel: string) =>
     (supabase as any).from("daily_logs").select(sel).order("created_at", { ascending: false }).limit(40);
-  const first = await run(`${base}, source, run_by`);
-  let data = first.data;
-  if (first.error) ({ data } = await run(base));
+  // 3-tier fallback so a missing column never breaks the feed: full (with the
+  // new resolved_at), then source/run_by only (pre-resolved_at migration), then
+  // the bare base.
+  const full = await run(`${base}, source, run_by, resolved_at`);
+  let data = full.data;
+  if (full.error) {
+    const mid = await run(`${base}, source, run_by`);
+    data = mid.data;
+    if (mid.error) ({ data } = await run(base));
+  }
   const items = (data ?? []) as unknown as ScanFeedItem[];
 
   // Resolve names for household-run scans ("Daniel · household").

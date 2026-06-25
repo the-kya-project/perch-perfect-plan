@@ -1,0 +1,11 @@
+-- Concerning-scan resolution.
+-- A bird's "concerning" status is DERIVED from scan history (no stored flag on
+-- the bird): concerning when the most recent flagged scan (triage_status red /
+-- yellow) has no later all-clear scan and hasn't been explicitly resolved.
+-- "Mark resolved" stamps this column; a later all-clear scan implicitly clears
+-- everything older. Nullable, no backfill — existing flagged scans read as
+-- unresolved until a green scan or an explicit resolve.
+--
+-- No new RLS: the existing "daily_logs owner all" / "daily_logs author or owner
+-- update" policies already let the owner update their birds' scan rows.
+alter table public.daily_logs add column if not exists resolved_at timestamptz;

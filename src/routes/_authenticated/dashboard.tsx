@@ -9,10 +9,11 @@ import { useBirdPhotos } from "@/lib/useBirdPhotos";
 import type { SignedPhoto } from "@/lib/birdPhoto";
 import {
   Plus, Settings, Bell, Users, ChevronRight, Scale, CalendarHeart, Calendar,
-  Feather, AlertCircle, HelpCircle,
+  Feather, AlertCircle, HelpCircle, AlertTriangle,
 } from "lucide-react";
 import { OwnerOnboarding, replayOwnerOnboarding } from "@/components/OwnerOnboarding";
 import { useTourDemo, DEMO_FLOCK, DEMO_FOSTERS, DEMO_HOUSEHOLD, demoGlanceFor, getDemoToday } from "@/lib/tourDemo";
+import { deriveConcernByBird, daysAgo } from "@/lib/scanConcern";
 import { Disclaimer } from "@/components/Disclaimer";
 import { AddToHomeScreenPrompt } from "@/components/AddToHomeScreenPrompt";
 import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
@@ -121,13 +122,25 @@ function Dashboard() {
     [sits],
   );
   const moments = useMemo(() => upcomingMoments(homeBirds), [homeBirds]);
+
+  // Derived concerning-health status per bird (from the scan feed) → flock-card
+  // pill + Today rows. Cleared by a later all-clear scan or an explicit resolve.
+  const concernByBird = useMemo(() => deriveConcernByBird(scanFeed as any), [scanFeed]);
+  const todayConcerns = useMemo(
+    () => homeBirds.flatMap((b) => {
+      const c = concernByBird.get(b.id);
+      return c ? [{ birdId: b.id, birdName: b.name, scanId: c.scanId, daysAgo: daysAgo(c.createdAt), runByName: c.runByName }] : [];
+    }),
+    [homeBirds, concernByBird],
+  );
   const todayItems = useMemo(
-    () => buildTodayItems(homeBirds, weightsByBird, upcomingSits, moments),
-    [homeBirds, weightsByBird, upcomingSits, moments],
+    () => buildTodayItems(homeBirds, weightsByBird, upcomingSits, moments, todayConcerns),
+    [homeBirds, weightsByBird, upcomingSits, moments, todayConcerns],
   );
 
   const onTodayNavigate = (item: TodayItem) => {
-    if (item.to.kind === "sits") navigate({ to: "/sits" });
+    if (item.to.kind === "scan") navigate({ to: "/birds/$birdId/scans/$scanId", params: { birdId: item.to.birdId, scanId: item.to.scanId } });
+    else if (item.to.kind === "sits") navigate({ to: "/sits" });
     else if (item.to.kind === "weight") navigate({ to: "/birds/$birdId/weight", params: { birdId: item.to.birdId } });
     else navigate({ to: "/birds/$birdId/moments", params: { birdId: item.to.birdId } });
   };
@@ -218,7 +231,7 @@ function Dashboard() {
               ) : (
                 <div className="space-y-3">
                   {flockBirds.map((b) => (
-                    <BirdRow key={b.id} bird={b} photo={photoFor(b)} glance={glanceFor(b)} />
+                    <BirdRow key={b.id} bird={b} photo={photoFor(b)} glance={glanceFor(b)} concern={concernByBird.has(b.id)} />
                   ))}
                 </div>
               )}
@@ -234,7 +247,7 @@ function Dashboard() {
                 />
                 <div className="space-y-3">
                   {fosterBirds.map((b) => (
-                    <BirdRow key={b.id} bird={b} photo={photoFor(b)} glance={glanceFor(b)} foster />
+                    <BirdRow key={b.id} bird={b} photo={photoFor(b)} glance={glanceFor(b)} foster concern={concernByBird.has(b.id)} />
                   ))}
                 </div>
               </section>
@@ -329,7 +342,7 @@ function TodayPanel({ items, onNavigate }: { items: TodayItem[]; onNavigate: (i:
               <IconTile
                 size={34}
                 tone={it.tone === "amber" ? "amber" : "ink-lime"}
-                icon={it.tone === "amber" ? <AlertCircle className="size-4" /> : it.to.kind === "sits" ? <Calendar className="size-4" /> : <CalendarHeart className="size-4" />}
+                icon={it.to.kind === "scan" ? <AlertTriangle className="size-4" /> : it.tone === "amber" ? <AlertCircle className="size-4" /> : it.to.kind === "sits" ? <Calendar className="size-4" /> : <CalendarHeart className="size-4" />}
               />
               <span className="min-w-0 flex-1">
                 <span className="t-item block truncate">{it.title}</span>
@@ -384,7 +397,15 @@ function GlancePill({ glance }: { glance: WeightGlance }) {
   );
 }
 
-function BirdRow({ bird, photo, glance, foster }: { bird: HomeBird; photo: SignedPhoto | null; glance: WeightGlance; foster?: boolean }) {
+function ConcernPill() {
+  return (
+    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--amber-fill)] px-2 py-0.5 text-[11px] font-[500] text-[var(--amber-ink)]">
+      <AlertTriangle className="size-3" /> Concern flagged
+    </span>
+  );
+}
+
+function BirdRow({ bird, photo, glance, foster, concern }: { bird: HomeBird; photo: SignedPhoto | null; glance: WeightGlance; foster?: boolean; concern?: boolean }) {
   const fosterStatus = foster
     ? glance.state === "stale"
       ? { tone: "attention" as const, label: "Needs a weigh-in" }
@@ -406,7 +427,10 @@ function BirdRow({ bird, photo, glance, foster }: { bird: HomeBird; photo: Signe
         {foster && bird.intake_date && (
           <p className="t-meta">With you since {fmtShort(bird.intake_date)}</p>
         )}
-        <div className="mt-1">
+        {/* Concern pill takes priority; the weight/foster status wraps to a
+            second line on narrow screens (flex-wrap). */}
+        <div className="mt-1 flex flex-wrap items-center gap-1.5">
+          {concern && <ConcernPill />}
           {fosterStatus ? (
             <span className={`text-[13px] font-[500] ${fosterStatus.tone === "good" ? "text-[var(--moss)]" : "text-[var(--amber-ink)]"}`}>{fosterStatus.label}</span>
           ) : (
