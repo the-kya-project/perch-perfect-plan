@@ -9,9 +9,9 @@ import { useBirdPhotos } from "@/lib/useBirdPhotos";
 import type { SignedPhoto } from "@/lib/birdPhoto";
 import {
   Plus, Settings, Bell, Users, ChevronRight, Scale, CalendarHeart, Calendar,
-  Feather, AlertCircle,
+  Feather, AlertCircle, HelpCircle,
 } from "lucide-react";
-import { OwnerOnboarding } from "@/components/OwnerOnboarding";
+import { OwnerOnboarding, replayOwnerOnboarding } from "@/components/OwnerOnboarding";
 import { Disclaimer } from "@/components/Disclaimer";
 import { AddToHomeScreenPrompt } from "@/components/AddToHomeScreenPrompt";
 import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
@@ -199,7 +199,7 @@ function Dashboard() {
           <>
             <TodayPanel items={todayItems} onNavigate={onTodayNavigate} />
 
-            <section className="space-y-3">
+            <section className="space-y-3" data-coach="owner-flock">
               <SectionHeaderCTA title="Your flock" ctaLabel="Add a bird" onCta={() => navigate({ to: "/birds/new" })} />
               {flockBirds.length === 0 ? (
                 <p className="px-1 text-sm text-[#5b6b61]">No birds yet — start with your first.</p>
@@ -213,7 +213,7 @@ function Dashboard() {
             </section>
 
             {fosterBirds.length > 0 && (
-              <section className="space-y-3">
+              <section className="space-y-3" data-coach="owner-fosters">
                 <SectionHeaderCTA
                   title="In your care"
                   pill={`${fosterBirds.length} ${fosterBirds.length === 1 ? "foster" : "fosters"}`}
@@ -263,6 +263,9 @@ function HomeHeader({ firstName, unreadNotifs, stateCopy, cta }: { firstName: st
       cta={cta}
       trailingIcons={
         <>
+          <button type="button" onClick={() => replayOwnerOnboarding()} aria-label="Replay app tour" className="grid size-9 place-items-center rounded-full text-white active:scale-95" style={{ background: "rgba(255,255,255,0.12)" }}>
+            <HelpCircle className="size-[18px]" />
+          </button>
           <Link to="/notifications" aria-label="Notifications" className="relative grid size-9 place-items-center rounded-full text-white active:scale-95" style={{ background: "rgba(255,255,255,0.12)" }}>
             <Bell className="size-[18px]" />
             {unreadNotifs > 0 && (
@@ -299,6 +302,7 @@ function TodayPanel({ items, onNavigate }: { items: TodayItem[]; onNavigate: (i:
   if (items.length === 0) return null;
   return (
     <section
+      data-coach="owner-today"
       className="overflow-hidden rounded-[18px] border border-[#dccfa8]"
       style={{ background: "linear-gradient(180deg,#efe9da,#e7e0c8)" }}
     >
@@ -466,7 +470,7 @@ function HouseholdRow({ household, firstName }: { household?: HomeHousehold; fir
   );
 
   return (
-    <Link to="/household" className="block px-1 active:opacity-80">{inner}</Link>
+    <Link to="/household" data-coach="owner-household" className="block px-1 active:opacity-80">{inner}</Link>
   );
 }
 function Avatar({ initial, dim }: { initial: string; dim?: boolean }) {
