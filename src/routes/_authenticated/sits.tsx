@@ -2,15 +2,16 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
-import { Plus, Calendar } from "lucide-react";
+import { Plus, Calendar, CalendarPlus, ChevronRight } from "lucide-react";
 import { OwnerHeaderIcons } from "@/components/OwnerHeader";
 import { SitForm } from "@/components/SitForm";
-import { SitCard } from "@/components/SitCard";
-import { InkHero, SectionHead, Card, type HeroCta } from "@/components/system";
+import { ActiveSitCard, UpcomingSitCard, type SitBird, type ListSit } from "@/components/SitListCards";
+import { InkHero, SectionHead, Card, IconTile } from "@/components/system";
+import { weekdayMonthDay, monthDay, daysUntil } from "@/lib/dates";
 
-// Dedicated Sits tab: create / manage / edit sits. Reuses the same query keys
-// as the dashboard (["birds"], ["all-sits"]) so the cache is shared and edits
-// here reflect on Home and vice-versa.
+// Dedicated Sits tab: create / manage sits. Reuses the same query keys as the
+// dashboard (["birds"], ["all-sits"]) so the cache is shared. Past sits live on
+// their own screen (/sits/past), reached from the link below.
 const sitsSearch = z.object({
   newSit: z.coerce.boolean().optional(),
   preselectBirdId: z.string().uuid().optional(),
@@ -21,6 +22,13 @@ export const Route = createFileRoute("/_authenticated/sits")({
   validateSearch: sitsSearch,
   component: SitsPage,
 });
+
+function joinNames(names: string[]): string {
+  if (names.length === 0) return "";
+  if (names.length === 1) return names[0];
+  if (names.length === 2) return `${names[0]} and ${names[1]}`;
+  return `${names.slice(0, -1).join(", ")}, and ${names[names.length - 1]}`;
+}
 
 function SitsPage() {
   const qc = useQueryClient();
@@ -46,8 +54,6 @@ function SitsPage() {
       const { data, error } = await supabase
         .from("sits")
         .select("*, sit_birds(bird_id)")
-        // Keep unnamed sits (is.null); a bare .neq would drop them because
-        // NULL != '__preview__' is unknown, not true, in Postgres.
         .or("sitter_name.is.null,sitter_name.neq.__preview__")
         .order("start_date", { ascending: false });
       if (error) throw error;
@@ -58,39 +64,62 @@ function SitsPage() {
   const refreshSits = () => qc.invalidateQueries({ queryKey: ["all-sits"] });
   const birdLookup = Object.fromEntries(birds.map((b: any) => [b.id, b]));
   const today = new Date().toISOString().slice(0, 10);
-  const activeSit = (sits as any[]).find((s) => s.start_date <= today && s.end_date >= today) ?? null;
-
-  // ----- group the existing sits for Next up / Later / Past (data unchanged) --
-  // "Next up" = the imminent/active sit (active if one is underway, else the
-  // soonest upcoming). "Later" = remaining upcoming sits. "Past" = everything
-  // that has already ended. Ordering still comes from the start_date-desc query.
   const allSits = sits as any[];
-  const upcoming = allSits
-    .filter((s) => s.end_date >= today)
-    .sort((a, b) => a.start_date.localeCompare(b.start_date));
-  const past = allSits.filter((s) => s.end_date < today);
-  const nextUp = upcoming[0] ?? null;
-  const later = upcoming.slice(1);
 
-  const birdsFor = (s: any) =>
+  // State buckets. Active = underway today (most-recently-started first).
+  // Upcoming = strictly future. Past lives on its own screen.
+  const actives = allSits
+    .filter((s) => s.start_date <= today && s.end_date >= today)
+    .sort((a, b) => b.start_date.localeCompare(a.start_date));
+  const upcoming = allSits
+    .filter((s) => s.start_date > today)
+    .sort((a, b) => a.start_date.localeCompare(b.start_date));
+  const pastCount = allSits.filter((s) => s.end_date < today).length;
+
+  // Batch-resolve household caregiver display names.
+  const householdIds = [...new Set(allSits.filter((s) => s.caregiver_user_id).map((s) => s.caregiver_user_id as string))];
+  const { data: profiles = [] } = useQuery({
+    queryKey: ["sit-caregiver-names", householdIds.slice().sort().join(",")],
+    enabled: householdIds.length > 0,
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const { data } = await supabase.from("profiles").select("id, display_name").in("id", householdIds);
+      return data ?? [];
+    },
+  });
+  const nameById = new Map((profiles as any[]).map((p) => [p.id, (p.display_name ?? "").toString().trim() || "Household member"]));
+  const caregiverName = (s: any): string =>
+    s.caregiver_user_id ? (nameById.get(s.caregiver_user_id) ?? "Household member") : (s.sitter_name?.trim() || "Your sitter");
+
+  const birdsFor = (s: any): SitBird[] =>
     ((s.sit_birds ?? []) as any[]).map((sb: any) => birdLookup[sb.bird_id]).filter(Boolean);
 
-  const heroCta: HeroCta = {
-    label: "Set up a sit",
-    tone: "lime",
-    icon: <Plus className="size-4" />,
-    // Opens SitForm via the existing initialOpen/?newSit flow.
-    onPress: () => navigate({ to: "/sits", search: { newSit: true } }),
-  };
+  // ---- Adaptive hero copy ---------------------------------------------------
+  let heroHeadline = "Going away?";
+  let heroBody = "For when you can't be there — set up a sit and share what they need to know.";
+  if (actives.length > 0) {
+    const a = actives[0];
+    heroHeadline = `${caregiverName(a)} is sitting now.`;
+    heroBody = `Through ${weekdayMonthDay(a.end_date)}.`;
+  } else if (upcoming.length > 0) {
+    const n = upcoming[0];
+    const d = daysUntil(n.start_date);
+    const when = d <= 0 ? "today" : d === 1 ? "tomorrow" : `in ${d} days`;
+    heroHeadline = `${caregiverName(n)} arrives ${when}.`;
+    const names = birdsFor(n).map((b) => b.name);
+    heroBody = `${monthDay(n.start_date)} → ${monthDay(n.end_date)}.${names.length ? ` ${joinNames(names)}.` : ""}`;
+  }
+
+  const noSits = actives.length === 0 && upcoming.length === 0;
 
   return (
     <div className="min-h-screen bg-[var(--cream)] pb-nav">
       <div className="mx-auto max-w-md">
         <InkHero
+          showBrand
           eyebrow="Sits"
-          headline="Going away?"
-          body="For when you can't be there — set up a sit and share what they need to know."
-          cta={birds.length > 0 ? heroCta : undefined}
+          headline={heroHeadline}
+          body={heroBody}
           trailingIcons={<OwnerHeaderIcons />}
         />
 
@@ -117,73 +146,87 @@ function SitsPage() {
             </Card>
           ) : (
             <>
-              {/* Open/save flow preserved exactly — SitForm owns its own open
-                  state (initialOpen/?newSit) and renders the create form inline. */}
+              {/* Create flow unchanged — SitForm owns its open state (?newSit). */}
               <SitForm
                 birds={birds}
                 onSaved={refreshSits}
                 initialOpen={!!newSit}
                 preselectBirdId={preselectBirdId}
-                activeSit={activeSit}
+                activeSit={actives[0] ?? null}
                 returnTo="/sits"
                 hidePrompt
               />
 
               {sitsLoading ? (
                 <div className="space-y-3">
-                  {[0, 1].map((i) => (
-                    <div key={i} className="h-28 animate-pulse rounded-[18px] bg-[var(--cream2)]" />
-                  ))}
+                  {[0, 1].map((i) => <div key={i} className="h-28 animate-pulse rounded-[18px] bg-[var(--cream2)]" />)}
                 </div>
-              ) : allSits.length > 0 ? (
+              ) : (
                 <>
-                  {nextUp && (
+                  {/* Active cards first (priority order). */}
+                  {actives.map((s) => (
+                    <ActiveSitCard
+                      key={s.id}
+                      sit={s as ListSit}
+                      birds={birdsFor(s)}
+                      allBirdsCount={birds.length}
+                      caregiverName={caregiverName(s)}
+                    />
+                  ))}
+
+                  {upcoming.length > 0 && (
                     <section className="space-y-3">
-                      <SectionHead title="Next up" />
-                      <SitCard
-                        sit={nextUp}
-                        birds={birdsFor(nextUp)}
-                        allBirds={birds}
-                        onChange={refreshSits}
+                      <SectionHead
+                        title="Coming up"
+                        trailing={<span className="t-eyebrow text-[var(--teal-on-cream)]">{upcoming.length} {upcoming.length === 1 ? "sit" : "sits"}</span>}
                       />
-                    </section>
-                  )}
-
-                  {later.length > 0 && (
-                    <section className="space-y-3">
-                      <SectionHead title="Later" />
-                      {later.map((s) => (
-                        <SitCard key={s.id} sit={s} birds={birdsFor(s)} allBirds={birds} onChange={refreshSits} />
+                      {upcoming.map((s, i) => (
+                        <UpcomingSitCard
+                          key={s.id}
+                          sit={s as ListSit}
+                          birds={birdsFor(s)}
+                          allBirdsCount={birds.length}
+                          caregiverName={caregiverName(s)}
+                          // First upcoming is always expanded; the rest collapse
+                          // to a header (tap to expand).
+                          collapsible={i > 0}
+                        />
                       ))}
                     </section>
                   )}
 
-                  {past.length > 0 && (
-                    <section className="space-y-3">
-                      <SectionHead title="Past" />
-                      {past.map((s) => (
-                        <SitCard key={s.id} sit={s} birds={birdsFor(s)} allBirds={birds} onChange={refreshSits} />
-                      ))}
-                    </section>
+                  {noSits && (
+                    <Card>
+                      <div className="p-8 text-center">
+                        <div className="flex justify-center">
+                          <IconTile tone="ink-lime" size={48} icon={<CalendarPlus className="size-6" />} />
+                        </div>
+                        <p className="t-section mt-3">No sits scheduled.</p>
+                        <p className="t-body mx-auto mt-1.5 max-w-[34ch] text-[var(--ink2)]">
+                          A sit shares today's routine, a daily health scan, and one-tap emergency contacts with whoever's covering.
+                        </p>
+                      </div>
+                    </Card>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => navigate({ to: "/sits", search: { newSit: true } })}
+                    className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-[14px] bg-[var(--lime)] text-[15px] font-[500] text-[var(--ink)] active:scale-[0.99]"
+                  >
+                    <Plus className="size-4" /> Set up a sit
+                  </button>
+
+                  {pastCount > 0 && (
+                    <Link
+                      to="/sits/past"
+                      className="flex items-center justify-center gap-1 py-1 text-[14px] font-[500] text-[var(--moss)] active:opacity-80"
+                    >
+                      Past sits ({pastCount}) <ChevronRight className="size-4" />
+                    </Link>
                   )}
                 </>
-              ) : (
-                <Card>
-                  <div className="p-8 text-center">
-                    <div className="flex justify-center">
-                      <span className="grid size-12 place-items-center rounded-[14px] bg-[var(--pale2)] text-[var(--moss)]">
-                        <Calendar className="size-6" />
-                      </span>
-                    </div>
-                    <p className="t-section mt-3">No sits yet</p>
-                    <p className="t-body mx-auto mt-1.5 max-w-[34ch] text-[var(--ink2)]">
-                      Set up a sit to send a sitter a private, read-only link to your bird's care plan.
-                    </p>
-                  </div>
-                </Card>
               )}
-
-              <p className="t-meta pt-1 text-center">For permanent help, see Household in settings.</p>
             </>
           )}
         </main>

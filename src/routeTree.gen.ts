@@ -36,6 +36,7 @@ import { Route as SitterTokenHomeRouteImport } from './routes/sitter/$token/home
 import { Route as SitterTokenGuideRouteImport } from './routes/sitter/$token/guide'
 import { Route as SitterTokenEmergencyRouteImport } from './routes/sitter/$token/emergency'
 import { Route as SitterTokenCareSheetRouteImport } from './routes/sitter/$token/care-sheet'
+import { Route as AuthenticatedSitsPastRouteImport } from './routes/_authenticated/sits.past'
 import { Route as AuthenticatedSitsSitIdRouteImport } from './routes/_authenticated/sits.$sitId'
 import { Route as AuthenticatedNotificationsSettingsRouteImport } from './routes/_authenticated/notifications.settings'
 import { Route as AuthenticatedBirdsNewRouteImport } from './routes/_authenticated/birds/new'
@@ -196,6 +197,11 @@ const SitterTokenCareSheetRoute = SitterTokenCareSheetRouteImport.update({
   path: '/care-sheet',
   getParentRoute: () => SitterTokenRouteRoute,
 } as any)
+const AuthenticatedSitsPastRoute = AuthenticatedSitsPastRouteImport.update({
+  id: '/past',
+  path: '/past',
+  getParentRoute: () => AuthenticatedSitsRoute,
+} as any)
 const AuthenticatedSitsSitIdRoute = AuthenticatedSitsSitIdRouteImport.update({
   id: '/$sitId',
   path: '/$sitId',
@@ -351,6 +357,7 @@ export interface FileRoutesByFullPath {
   '/birds/new': typeof AuthenticatedBirdsNewRoute
   '/notifications/settings': typeof AuthenticatedNotificationsSettingsRoute
   '/sits/$sitId': typeof AuthenticatedSitsSitIdRoute
+  '/sits/past': typeof AuthenticatedSitsPastRoute
   '/sitter/$token/care-sheet': typeof SitterTokenCareSheetRoute
   '/sitter/$token/emergency': typeof SitterTokenEmergencyRoute
   '/sitter/$token/guide': typeof SitterTokenGuideRoute
@@ -397,6 +404,7 @@ export interface FileRoutesByTo {
   '/birds/new': typeof AuthenticatedBirdsNewRoute
   '/notifications/settings': typeof AuthenticatedNotificationsSettingsRoute
   '/sits/$sitId': typeof AuthenticatedSitsSitIdRoute
+  '/sits/past': typeof AuthenticatedSitsPastRoute
   '/sitter/$token/care-sheet': typeof SitterTokenCareSheetRoute
   '/sitter/$token/emergency': typeof SitterTokenEmergencyRoute
   '/sitter/$token/guide': typeof SitterTokenGuideRoute
@@ -449,6 +457,7 @@ export interface FileRoutesById {
   '/_authenticated/birds/new': typeof AuthenticatedBirdsNewRoute
   '/_authenticated/notifications/settings': typeof AuthenticatedNotificationsSettingsRoute
   '/_authenticated/sits/$sitId': typeof AuthenticatedSitsSitIdRoute
+  '/_authenticated/sits/past': typeof AuthenticatedSitsPastRoute
   '/sitter/$token/care-sheet': typeof SitterTokenCareSheetRoute
   '/sitter/$token/emergency': typeof SitterTokenEmergencyRoute
   '/sitter/$token/guide': typeof SitterTokenGuideRoute
@@ -501,6 +510,7 @@ export interface FileRouteTypes {
     | '/birds/new'
     | '/notifications/settings'
     | '/sits/$sitId'
+    | '/sits/past'
     | '/sitter/$token/care-sheet'
     | '/sitter/$token/emergency'
     | '/sitter/$token/guide'
@@ -547,6 +557,7 @@ export interface FileRouteTypes {
     | '/birds/new'
     | '/notifications/settings'
     | '/sits/$sitId'
+    | '/sits/past'
     | '/sitter/$token/care-sheet'
     | '/sitter/$token/emergency'
     | '/sitter/$token/guide'
@@ -598,6 +609,7 @@ export interface FileRouteTypes {
     | '/_authenticated/birds/new'
     | '/_authenticated/notifications/settings'
     | '/_authenticated/sits/$sitId'
+    | '/_authenticated/sits/past'
     | '/sitter/$token/care-sheet'
     | '/sitter/$token/emergency'
     | '/sitter/$token/guide'
@@ -830,6 +842,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SitterTokenCareSheetRouteImport
       parentRoute: typeof SitterTokenRouteRoute
     }
+    '/_authenticated/sits/past': {
+      id: '/_authenticated/sits/past'
+      path: '/past'
+      fullPath: '/sits/past'
+      preLoaderRoute: typeof AuthenticatedSitsPastRouteImport
+      parentRoute: typeof AuthenticatedSitsRoute
+    }
     '/_authenticated/sits/$sitId': {
       id: '/_authenticated/sits/$sitId'
       path: '/$sitId'
@@ -1019,10 +1038,12 @@ const AuthenticatedNotificationsRouteWithChildren =
 
 interface AuthenticatedSitsRouteChildren {
   AuthenticatedSitsSitIdRoute: typeof AuthenticatedSitsSitIdRoute
+  AuthenticatedSitsPastRoute: typeof AuthenticatedSitsPastRoute
 }
 
 const AuthenticatedSitsRouteChildren: AuthenticatedSitsRouteChildren = {
   AuthenticatedSitsSitIdRoute: AuthenticatedSitsSitIdRoute,
+  AuthenticatedSitsPastRoute: AuthenticatedSitsPastRoute,
 }
 
 const AuthenticatedSitsRouteWithChildren =
