@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
-import { ArrowLeft, Trash2, ChevronDown, AlertTriangle, Wand2, Eye } from "lucide-react";
+import { ArrowLeft, Trash2, ChevronDown, AlertTriangle, Eye } from "lucide-react";
 import { EmergencyInfo } from "@/components/EmergencyInfo";
 import { SETUP_STEPS } from "@/components/SetupShell";
 // The editor renders the guided-setup step components directly so the two UIs
@@ -13,7 +13,6 @@ import { BasicsStep, DayInLifeStep, PersonalityStep, OwnerTipsClipsStep, FoodWat
 import { SitCard } from "@/components/SitCard";
 import { toast } from "sonner";
 import { Disclaimer } from "@/components/Disclaimer";
-import { computeSetupCompleteness } from "@/lib/setupCompleteness";
 import { useBirdPhotos } from "@/lib/useBirdPhotos";
 import { useBirdRole } from "@/lib/useBirdRole";
 import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
@@ -45,13 +44,6 @@ const TAB_TO_STEP_KEY: Partial<Record<Tab, string>> = {
   clips: "clips",
   emergency: "emergency",
 };
-const TAB_TO_SETUP_STEP: Partial<Record<Tab, number>> = Object.fromEntries(
-  Object.entries(TAB_TO_STEP_KEY).flatMap(([tab, key]) => {
-    const idx = SETUP_STEPS.findIndex((s) => s.key === key);
-    return idx >= 0 ? [[tab, idx + 1]] : [];
-  }),
-);
-
 const TAB_LABELS: Record<Tab, string> = {
   basics: "Basics", food: "Food", routine: "Routine", behavior: "Behavior",
   home: "Home", health: "Health", clips: "Clips", emergency: "Emergency",
@@ -175,13 +167,6 @@ function BirdEditor() {
 
   const tabs = ORDERED_TABS.map((id) => ({ id, label: TAB_LABELS[id] }));
 
-  const completeness = computeSetupCompleteness({ bird, plan, tasksCount: tasks.length, contacts, defaults });
-  const isComplete = completeness.firstIncompleteStep === null;
-
-  // Open the guided wizard on the step matching the current tab; for tabs with no
-  // wizard step (sits/logs) fall back to the first incomplete step.
-  const setupStep = TAB_TO_SETUP_STEP[tab] ?? completeness.firstIncompleteStep ?? undefined;
-
   const onPlanSaved = () => {
     qc.invalidateQueries({ queryKey: ["plan", birdId] });
     qc.invalidateQueries({ queryKey: ["bird", birdId] });
@@ -232,35 +217,6 @@ function BirdEditor() {
       </header>
 
       <main className="mx-auto max-w-md space-y-4 px-5 py-5">
-        <Link
-          to="/birds/$birdId/setup"
-          params={{ birdId }}
-          search={setupStep ? { step: setupStep } : undefined}
-          className="block rounded-2xl bg-sage-900 p-4 text-white shadow-sm ring-1 ring-sage-900/10 active:scale-[0.99]"
-        >
-          <div className="flex items-start gap-3">
-            <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl bg-white/10">
-              <Wand2 className="size-5" />
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-sage-300">Guided care plan editor</p>
-              <p className="mt-0.5 text-sm font-semibold leading-snug">Build and edit {bird.name}'s full care plan</p>
-              <p className="mt-1 text-[11px] leading-snug text-sage-200">
-                Step through every section — feeding, behavior, home, health, clips, emergency — and update it anytime.
-              </p>
-              <p className="mt-2 text-[11px] font-semibold text-sage-300">
-                {isComplete
-                  ? `All ${completeness.total} sections complete.`
-                  : `${completeness.doneCount} of ${completeness.total} sections complete.`}
-              </p>
-            </div>
-            <span className="shrink-0 self-center rounded-lg bg-white px-3 py-1.5 text-[11px] font-bold text-sage-900">
-              {isComplete ? "Open editor" : completeness.doneCount === 0 ? "Open editor" : "Continue"}
-            </span>
-          </div>
-        </Link>
-
-
         {/* Every section tab renders the guided-setup step component directly, so
             the editor and the setup wizard are the exact same UI — except the
             green per-step instruction banner, hidden here via HideStepInstruction
