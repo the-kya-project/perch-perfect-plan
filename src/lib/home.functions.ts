@@ -53,7 +53,10 @@ export const getHouseholdHome = createServerFn({ method: "GET" })
       .from("bird_members")
       .select("user_id, bird_id, role")
       .in("bird_id", birdIds)
-      .eq("role", "household");
+      .eq("role", "household")
+      // Never list the owner as a household member of her OWN household — if her
+      // id is self-recorded in bird_members it must not render as "You and <self>".
+      .neq("user_id", ownerId);
     const rows = (memberRows ?? []) as { user_id: string; bird_id: string }[];
     if (!rows.length) return empty;
 
