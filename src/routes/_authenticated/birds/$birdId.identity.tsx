@@ -9,6 +9,7 @@ import { OptionalDate } from "@/components/BirdPickers";
 import { useBirdPhotos } from "@/lib/useBirdPhotos";
 import { useBirdRole } from "@/lib/useBirdRole";
 import { signBirdPhoto, persistBirdPhoto } from "@/lib/birdPhoto";
+import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
 import { InkHero, Card, PrimaryButton } from "@/components/system";
 
@@ -49,14 +50,22 @@ function flightLabel(v: string | null | undefined): string | null {
 }
 const blank = (v: string | null | undefined) => !((v ?? "").trim());
 
-// Pronoun-aware identity hero — "Who she is on paper." / "Who he is on paper."
-// / "Who they are on paper." Defaults to "they" when sex is unknown or null
-// (which matches the rest of the app's gender-neutral language for unknowns).
-function identityHeadline(sex: string | null | undefined): string {
+// Subject pronoun + its matching copy forms, derived ONCE from the bird's sex so
+// the identity hero headline and the footer line always agree (the footer used
+// to be hardcoded "she's"). Defaults to "they" when sex is unknown or null,
+// matching the rest of the app's gender-neutral language for unknowns.
+function birdPronoun(sex: string | null | undefined): { subject: string; be: string; contraction: string } {
   const s = (sex ?? "").trim().toLowerCase();
-  if (s === "female") return "Who she is on paper.";
-  if (s === "male") return "Who he is on paper.";
-  return "Who they are on paper.";
+  if (s === "female") return { subject: "she", be: "is", contraction: "she's" };
+  if (s === "male") return { subject: "he", be: "is", contraction: "he's" };
+  return { subject: "they", be: "are", contraction: "they're" };
+}
+
+// Pronoun-aware identity hero — "Who she is on paper." / "Who he is on paper."
+// / "Who they are on paper."
+function identityHeadline(sex: string | null | undefined): string {
+  const p = birdPronoun(sex);
+  return `Who ${p.subject} ${p.be} on paper.`;
 }
 
 function IdentityFacet() {
@@ -81,7 +90,9 @@ function IdentityFacet() {
   });
 
   const name = bird?.name ?? "this bird";
-  const photoOf = useBirdPhotos([bird?.photo_url], 96);
+  // 256px for a 64px (size-16) circle — same width the bird-record strip avatar
+  // uses, so it stays sharp on retina.
+  const photoOf = useBirdPhotos([bird?.photo_url], 256);
   const photo = photoOf(bird?.photo_url);
   const initial = (bird?.name?.slice(0, 1) ?? "?").toUpperCase();
 
@@ -119,9 +130,12 @@ function IdentityFacet() {
             <>
               {/* Shared core (same birds columns the Basics tab edits) */}
               <Card className="flex items-center gap-4 p-4">
-                <div className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-full bg-[var(--cream2)] ring-1 ring-[var(--line)]">
+                {/* Same shared crop the flock card uses, so the circle frames
+                    the bird's face (stored focal point, or top-biased default
+                    for birds never repositioned) instead of centering on feet. */}
+                <div className="relative grid size-16 shrink-0 place-items-center overflow-hidden rounded-full bg-[var(--cream2)] ring-1 ring-[var(--line)]">
                   {photo ? (
-                    <img src={photo.url} alt={name} onError={(e) => { if (photo.original && e.currentTarget.src !== photo.original) e.currentTarget.src = photo.original; }} style={{ objectPosition: bird.photo_position ?? "50% 50%" }} className="block size-full object-cover" />
+                    <BirdPhotoCrop url={photo.url} original={photo.original} position={bird.photo_position ?? "50% 20%"} alt={name} />
                   ) : (
                     <span className="text-2xl font-[500] text-[var(--moss)]">{initial}</span>
                   )}
@@ -143,7 +157,7 @@ function IdentityFacet() {
                 <Row label="Came home" value={bird.acquired_on ? fmtDate(bird.acquired_on) : null} last />
               </Card>
               <p className="t-meta px-1 text-center leading-relaxed">
-                These details build the vet summary and travel with {name} if she's ever rehomed.
+                These details build the vet summary and travel with {name} if {birdPronoun(bird.sex).contraction} ever rehomed.
               </p>
             </>
           )}
