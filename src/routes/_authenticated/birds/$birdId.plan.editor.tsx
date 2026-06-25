@@ -16,6 +16,7 @@ import { Disclaimer } from "@/components/Disclaimer";
 import { computeSetupCompleteness } from "@/lib/setupCompleteness";
 import { useBirdPhotos } from "@/lib/useBirdPhotos";
 import { useBirdRole } from "@/lib/useBirdRole";
+import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 
 
 // The care-plan editor is reached via the new overview front door (/plan).
@@ -194,7 +195,11 @@ function BirdEditor() {
         <div className="mx-auto max-w-md px-5 pt-safe pb-3">
           <div className="flex items-center gap-3">
             <Link to="/birds/$birdId/plan" params={{ birdId }} className="rounded p-1 text-sage-600" aria-label="Back to care plan overview"><ArrowLeft className="size-5" /></Link>
-            {headerPhoto && <img src={headerPhoto.url} alt={bird.name} loading="lazy" decoding="async" onError={(e) => { if (headerPhoto.original && e.currentTarget.src !== headerPhoto.original) e.currentTarget.src = headerPhoto.original; }} className="block size-9 shrink-0 rounded-full object-cover ring-1 ring-sage-200" style={{ objectPosition: bird.photo_position ?? "50% 20%" }} />}
+            {headerPhoto && (
+              <div className="relative size-9 shrink-0 overflow-hidden rounded-full ring-1 ring-sage-200">
+                <BirdPhotoCrop url={headerPhoto.url} original={headerPhoto.original} position={bird.photo_position ?? "50% 20%"} alt={bird.name} />
+              </div>
+            )}
             <div className="flex-1 min-w-0">
               <h1 className="text-sm font-bold truncate">{bird.name}</h1>
               <p className="text-[10px] uppercase tracking-wider text-sage-600">{bird.species ?? "Parrot"}</p>

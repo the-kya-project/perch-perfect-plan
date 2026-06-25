@@ -99,7 +99,12 @@ function SitsPage() {
     ((s.sit_birds ?? []) as any[])
       .map((sb: any) => birdLookup[sb.bird_id])
       .filter(Boolean)
-      .map((b: any) => ({ id: b.id, name: b.name, photo_url: resolvePhoto(b.photo_url)?.url ?? null, photo_position: b.photo_position }));
+      .map((b: any) => {
+        // Pass BOTH the transformed url and the untransformed original so the
+        // chip can fall back if the width-transform fails (else: blank dot).
+        const sp = resolvePhoto(b.photo_url);
+        return { id: b.id, name: b.name, photo_url: sp?.url ?? null, photo_original: sp?.original ?? null, photo_position: b.photo_position };
+      });
 
   // ---- Adaptive hero copy ---------------------------------------------------
   let heroHeadline = "Going away?";

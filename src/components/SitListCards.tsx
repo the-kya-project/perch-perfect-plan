@@ -9,8 +9,9 @@ import { compactRange, monthDay, durationDays, daysUntil } from "@/lib/dates";
 import { copySitterLink } from "@/lib/sitLink";
 import { SitForm } from "@/components/SitForm";
 import { SitChecklist } from "@/components/SitChecklist";
+import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 
-export type SitBird = { id: string; name: string; photo_url?: string | null; photo_position?: string | null };
+export type SitBird = { id: string; name: string; photo_url?: string | null; photo_original?: string | null; photo_position?: string | null };
 export type ListSit = {
   id: string;
   start_date: string;
@@ -63,9 +64,9 @@ function BirdChip({ bird, onDark }: { bird: SitBird; onDark?: boolean }) {
         onDark ? "bg-white/12 text-white" : "bg-[var(--cream2)] text-[var(--ink)]"
       }`}
     >
-      <span className="grid size-[18px] shrink-0 place-items-center overflow-hidden rounded-full bg-[var(--moss)] text-[9px] font-[600] text-white">
+      <span className="relative grid size-[18px] shrink-0 place-items-center overflow-hidden rounded-full bg-[var(--moss)] text-[9px] font-[600] text-white">
         {bird.photo_url ? (
-          <img src={bird.photo_url} alt="" className="size-full object-cover" style={{ objectPosition: bird.photo_position ?? "50% 20%" }} />
+          <BirdPhotoCrop url={bird.photo_url} original={bird.photo_original} position={bird.photo_position ?? "50% 20%"} alt="" />
         ) : (
           initial
         )}
