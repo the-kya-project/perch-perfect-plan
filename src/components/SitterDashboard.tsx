@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { getSitterDashboard } from "@/lib/sitter.functions";
 import { replaySitterOnboarding } from "@/components/SitterOnboarding";
+import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 import { Stethoscope, ChevronRight, HelpCircle } from "lucide-react";
 
 // Sitter Home tab: the all-birds home base. Warm welcome + an overview naming
@@ -73,12 +74,9 @@ export function SitterDashboard({ token }: { token: string }) {
                     className="flex w-full items-center gap-3 rounded-2xl bg-[#efe9da] p-3 text-left shadow-sm active:scale-[0.99]"
                   >
                     {b.photo_url ? (
-                      <img
-                        src={b.photo_url}
-                        alt={b.name}
-                        style={{ objectPosition: b.photo_position ?? "50% 20%" }}
-                        className="block size-16 shrink-0 rounded-xl object-cover ring-1 ring-[#e3ded0]"
-                      />
+                      <div className="relative size-16 shrink-0 overflow-hidden rounded-xl ring-1 ring-[#e3ded0]">
+                        <BirdPhotoCrop url={b.photo_url} original={b.photo_url} position={b.photo_position ?? "50% 20%"} alt={b.name} />
+                      </div>
                     ) : (
                       <div className="grid size-16 shrink-0 place-items-center rounded-xl bg-[#1a3d2e] text-2xl font-medium text-white">{initial}</div>
                     )}
