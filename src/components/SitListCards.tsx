@@ -144,6 +144,7 @@ export function ActiveSitCard({ sit, birds, allBirdsCount, caregiverName, allBir
         <Link
           to="/sit-preview/$sitId"
           params={{ sitId: sit.id }}
+          state={{ previewToken: sit.invite_token ?? null, previewLabel: caregiverName, previewHousehold: household } as any}
           className="inline-flex min-h-[42px] flex-1 items-center justify-center gap-1.5 rounded-[12px] border border-white/35 text-[14px] font-[500] text-white active:scale-[0.99]"
         >
           <Eye className="size-4" /> {household ? "View as caregiver" : "View as sitter"}
@@ -211,6 +212,7 @@ export function UpcomingSitCard({
             <Link
               to="/sit-preview/$sitId"
               params={{ sitId: sit.id }}
+              state={{ previewToken: sit.invite_token ?? null, previewLabel: caregiverName, previewHousehold: household } as any}
               className="inline-flex min-h-[42px] flex-1 items-center justify-center gap-1.5 rounded-[12px] border border-[var(--line)] text-[14px] font-[500] text-[var(--ink)] active:scale-[0.99]"
             >
               <Eye className="size-4" /> {household ? "View as caregiver" : "View as sitter"}

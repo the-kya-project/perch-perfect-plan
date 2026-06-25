@@ -1,5 +1,6 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useLocation } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Eye, ArrowLeft, Loader2 } from "lucide-react";
 
@@ -13,12 +14,22 @@ export const Route = createFileRoute("/_authenticated/sit-preview/$sitId")({
   component: SitPreview,
 });
 
+type PreviewState = { previewToken?: string | null; previewLabel?: string; previewHousehold?: boolean };
+
 function SitPreview() {
   const { sitId } = Route.useParams();
   const navigate = useNavigate();
+  // Fast path: the sit card already holds the sit's token, caregiver label, and
+  // household flag, so it hands them over via router *state* (not the URL — the
+  // token is a capability we keep out of browser history). That lets the iframe
+  // start loading at mount with zero round-trips. On a hard reload state is
+  // lost, so we fall back to a one-shot query.
+  const state = useLocation({ select: (l) => l.state as PreviewState });
+  const hasState = state?.previewToken !== undefined || state?.previewHousehold !== undefined;
 
   const { data, isLoading } = useQuery({
     queryKey: ["sit-preview", sitId],
+    enabled: !hasState,
     queryFn: async () => {
       const { data: sit } = await supabase
         .from("sits")
@@ -34,16 +45,22 @@ function SitPreview() {
     },
   });
 
-  const household = !!data?.sit?.caregiver_user_id;
-  const token = data?.sit?.invite_token as string | undefined;
+  const household = hasState ? !!state.previewHousehold : !!data?.sit?.caregiver_user_id;
+  const token = (hasState ? state.previewToken : data?.sit?.invite_token) as string | null | undefined;
+  const label = (hasState ? state.previewLabel : data?.label) || "they";
   const src = token ? `/sitter/${token}?preview=1` : null;
+  const resolving = !hasState && isLoading;
+
+  // Keep a spinner over the iframe until the sitter SPA inside it finishes
+  // booting, so the load reads as progress instead of a frozen blank frame.
+  const [frameReady, setFrameReady] = useState(false);
 
   return (
     <div className="flex h-[100dvh] flex-col bg-[var(--cream)]">
       <div className="flex items-center justify-between gap-3 bg-[var(--ink)] px-4 py-2.5 pt-[max(env(safe-area-inset-top),0.625rem)] text-white">
         <span className="flex min-w-0 items-center gap-2 text-[13.5px] font-[500]">
           <Eye className="size-4 shrink-0 text-[var(--lime)]" />
-          <span className="truncate">{household ? "Caregiver" : "Sitter"} preview · how {data?.label ?? "they"} will see this sit</span>
+          <span className="truncate">{household ? "Caregiver" : "Sitter"} preview · how {label} will see this sit</span>
         </span>
         <Link
           to="/sits"
@@ -53,12 +70,24 @@ function SitPreview() {
         </Link>
       </div>
 
-      {isLoading ? (
+      {resolving ? (
         <div className="flex flex-1 items-center justify-center gap-2 text-[14px] text-[var(--mute)]">
           <Loader2 className="size-4 animate-spin" /> Loading preview…
         </div>
       ) : src ? (
-        <iframe src={src} title="Sitter view preview" className="w-full flex-1 border-0 bg-[var(--cream)]" />
+        <div className="relative flex-1">
+          <iframe
+            src={src}
+            title="Sitter view preview"
+            onLoad={() => setFrameReady(true)}
+            className="absolute inset-0 size-full border-0 bg-[var(--cream)]"
+          />
+          {!frameReady && (
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center gap-2 bg-[var(--cream)] text-[14px] text-[var(--mute)]">
+              <Loader2 className="size-4 animate-spin" /> Loading preview…
+            </div>
+          )}
+        </div>
       ) : (
         // Household caregivers don't use a token view — they see the in-app
         // caregiver Today screen when signed in. Point the owner to the sit's
