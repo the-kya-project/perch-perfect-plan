@@ -1,18 +1,32 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Bell, Settings } from "lucide-react";
+import { Bell, Settings, HelpCircle } from "lucide-react";
 import { fetchScanFeed, getNotifSeenAt } from "@/lib/notificationsFeed";
+import { replayOwnerOnboarding } from "@/components/OwnerOnboarding";
 
 // The two owner header icons — notifications (bell, with unread badge) and
 // settings (gear). Reused in OwnerHeader and inline in the Explore mission band.
 // `tone` adapts the hover tint for dark vs light backgrounds.
 export function OwnerHeaderIcons() {
+  const navigate = useNavigate();
   const { data: scanFeed = [] } = useQuery({ queryKey: ["scan-feed"], queryFn: fetchScanFeed });
   const seenAt = getNotifSeenAt();
   const unread = (scanFeed as any[]).filter((n) => new Date(n.created_at).getTime() > seenAt).length;
 
+  // "?" replays the onboarding tour. It navigates Home first (the tour lives on
+  // the dashboard); replayOwnerOnboarding sets a session flag so the tour
+  // re-triggers once the dashboard mounts, plus dispatches an event for the
+  // already-on-Home case.
+  function replayTour() {
+    navigate({ to: "/dashboard" });
+    replayOwnerOnboarding();
+  }
+
   return (
     <div className="flex items-center gap-1 text-white">
+      <button type="button" onClick={replayTour} className="rounded-full p-2 hover:bg-white/10" aria-label="Replay app tour">
+        <HelpCircle className="size-5" />
+      </button>
       <Link to="/notifications" className="relative rounded-full p-2 hover:bg-white/10" aria-label="Notifications">
         <Bell className="size-5" />
         {unread > 0 && (

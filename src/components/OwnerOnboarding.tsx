@@ -1,42 +1,55 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { BrandLockup } from "@/components/BrandLogo";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, ArrowRight, Feather } from "lucide-react";
 
-// First-run owner orientation: a warm welcome screen, then four light coach-mark
-// bubbles pointing at the real bottom-nav tabs, then a hand-off bubble on the
-// getting-started checklist. Lighter than the sitter walkthrough — it explains
-// "where things live," then the checklist drives the actual setup.
+// First-run owner orientation: a warm welcome, then a 10-step guided tour of the
+// real Home (nav tabs + content sections) with coach-mark bubbles, ending on a
+// "set up your first bird" CTA. Lighter than the sitter walkthrough — it explains
+// "where things live," then hands off to bird setup.
 //
-// Gated account-level by profiles.welcome_seen_at — the DB flag is authoritative
-// and per-account, so it shows once for every account (incl. a second account on
-// a shared browser) and never re-shows across devices. No localStorage gate: a
-// device flag isn't account-scoped, so it would wrongly suppress the welcome for
-// a new account that signs in on a browser that already onboarded a different one.
-// Replayable via the "?" in the dashboard header (replayOwnerOnboarding).
-// Non-blocking + skippable.
+// Gated account-level by profiles.welcome_seen_at (authoritative, per-account,
+// cross-device). Replayable from the "?" in the header (replayOwnerOnboarding):
+// it sets a session flag + dispatches an event so it works from any screen
+// (the flag re-triggers once the dashboard mounts). Non-blocking + skippable.
+//
+// Targets resolve via [data-coach="…"]; a step with no target (or whose target
+// isn't on screen — e.g. a brand-new owner with no flock yet) renders as a
+// centered concept bubble over a dimmed backdrop.
 
 const REPLAY_EVENT = "owner:replay-onboarding";
+const REPLAY_FLAG = "owner-replay-tour";
 
 export function replayOwnerOnboarding() {
+  try { sessionStorage.setItem(REPLAY_FLAG, "1"); } catch { /* ignore */ }
   if (typeof window !== "undefined") window.dispatchEvent(new Event(REPLAY_EVENT));
 }
 
-const NAV_STEPS: { target: string; text: string }[] = [
-  { target: "owner-tab-home", text: "Your birds live here. Build and manage each one's care plan." },
-  { target: "owner-tab-sits", text: "Heading out? Create a sit and send your sitter a private link with everything they need." },
-  { target: "owner-tab-activity", text: "While you're away, your sitter's daily health checks and updates show up here." },
-  { target: "owner-tab-explore", text: "The bigger Kya Project — care tips, the community, and our conservation mission." },
+type Step = {
+  target?: string; // data-coach key; absent = centered concept bubble
+  headline: string;
+  body: string;
+};
+
+// 9 explained steps; step index 9 is the wrap-up CTA (rendered specially).
+const STEPS: Step[] = [
+  { target: "owner-tab-home", headline: "Home is where you land.", body: "Daily check-ins, your flock, anything happening soon — it's the screen you'll open most." },
+  { target: "owner-today", headline: "Today, at a glance.", body: "Sits starting, hatch days, a foster settling in — whatever's worth knowing today shows up here first." },
+  { target: "owner-flock", headline: "Each bird gets a record.", body: "Tap a bird to see their care plan, weight history, journal, identity, photos — the works." },
+  { target: "owner-fosters", headline: "Fostering a bird?", body: "They live here while they're with you — until they're adopted, or until you decide they're staying. (It happens.)" },
+  { headline: "Saying goodbye? Hand off the record.", body: "When a bird moves to a new home — adopter, friend, family — their full record can transfer with them. Care plan, history, identity, everything." },
+  { target: "owner-household", headline: "Family who shares the care?", body: "Spouse, partner, kids, roommates — add them as household. They keep access between trips, not just when you're away." },
+  { target: "owner-tab-sits", headline: "Going away? Set up a sit.", body: "Sitters get a temporary link — just for the trip. Household members already have access. Either can be assigned to a sit." },
+  { target: "owner-tab-activity", headline: "Daily health checks.", body: "Mostly your sitters running them — quick questions, archived for you. Flags show up fast when something's off." },
+  { target: "owner-tab-explore", headline: "Stories, education, conservation.", body: "What The Kya Project is up to. Field notes, deep dives, ways to get involved. Read when you have a minute." },
 ];
-const HANDOFF_TARGET = "owner-checklist";
-const HANDOFF_TEXT = "Start here. We'll walk you through getting set up — it only takes a few minutes.";
+const TOTAL = STEPS.length + 1; // + wrap-up = 10
 
 const PAD = 6;
 const GAP = 12;
 
-// A fixed element (the bottom nav) shouldn't be scrolled to — only in-page
-// targets (the checklist card) need the page scrolled into view.
 function isFixedEl(el: HTMLElement | null): boolean {
   let n: HTMLElement | null = el;
   while (n && n !== document.body) {
@@ -46,42 +59,46 @@ function isFixedEl(el: HTMLElement | null): boolean {
   return false;
 }
 
-type Phase = null | "welcome" | "coach" | "handoff";
+type Phase = null | "welcome" | "coach";
 type Spot = { rect: { top: number; left: number; width: number; height: number; bottom: number } | null; vw: number; vh: number };
 
 export function OwnerOnboarding() {
+  const navigate = useNavigate();
   const [phase, setPhase] = useState<Phase>(null);
-  const [step, setStep] = useState(0); // 0..3 over NAV_STEPS
+  const [step, setStep] = useState(0); // 0..STEPS.length (last index = wrap-up)
+  const [firstName, setFirstName] = useState("");
   const [spot, setSpot] = useState<Spot | null>(null);
   const bubbleRef = useRef<HTMLDivElement | null>(null);
-  const [bubbleH, setBubbleH] = useState(150);
+  const [bubbleH, setBubbleH] = useState(160);
 
-  // Decide whether to auto-run, and wire up replay. The account's
-  // profiles.welcome_seen_at is the single source of truth — show the welcome
-  // whenever it's null for the signed-in user.
+  const isWrapUp = step === STEPS.length;
+  const stepDef = !isWrapUp ? STEPS[step] : null;
+  const activeTarget = phase === "coach" ? stepDef?.target ?? null : null;
+  const isNavTarget = !!activeTarget && activeTarget.startsWith("owner-tab-");
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
       const { data: u } = await getLocalUser();
       if (!u.user || cancelled) return;
-      const { data } = await supabase.from("profiles").select("welcome_seen_at").eq("id", u.user.id).maybeSingle();
+      const { data } = await supabase.from("profiles").select("welcome_seen_at, display_name").eq("id", u.user.id).maybeSingle();
       if (cancelled) return;
-      if (!data?.welcome_seen_at) setPhase("welcome");
+      setFirstName(((data?.display_name ?? "").toString().trim().split(/\s+/)[0]) || "");
+      let replay = false;
+      try { replay = sessionStorage.getItem(REPLAY_FLAG) === "1"; } catch { /* ignore */ }
+      if (replay) { try { sessionStorage.removeItem(REPLAY_FLAG); } catch { /* ignore */ } setStep(0); setPhase("welcome"); return; }
+      if (!data?.welcome_seen_at) { setStep(0); setPhase("welcome"); }
     })();
-    const onReplay = () => { setStep(0); setPhase("welcome"); };
+    const onReplay = () => { try { sessionStorage.removeItem(REPLAY_FLAG); } catch { /* ignore */ } setStep(0); setPhase("welcome"); };
     window.addEventListener(REPLAY_EVENT, onReplay);
     return () => { cancelled = true; window.removeEventListener(REPLAY_EVENT, onReplay); };
   }, []);
 
-  const activeTarget = phase === "handoff" ? HANDOFF_TARGET : phase === "coach" ? NAV_STEPS[step]?.target : null;
-
   // Measure + track the current target; retry until it renders, re-measure on
-  // resize/scroll so bubbles stay aligned across widths.
+  // resize/scroll. Centered steps (no target) skip this.
   useEffect(() => {
-    if (phase !== "coach" && phase !== "handoff") return;
+    if (phase !== "coach" || !activeTarget) { setSpot(null); return; }
     const target = activeTarget;
-    if (!target) return;
-
     let raf = 0;
     let tries = 0;
     const measure = (): boolean => {
@@ -97,7 +114,7 @@ export function OwnerOnboarding() {
       const el = document.querySelector(`[data-coach="${target}"]`) as HTMLElement | null;
       if (el && !isFixedEl(el)) {
         const r = el.getBoundingClientRect();
-        const delta = r.top - window.innerHeight * 0.25;
+        const delta = r.top - window.innerHeight * 0.28;
         if (Math.abs(delta) > 4) window.scrollBy({ top: delta, behavior: "auto" });
       }
       const ok = measure();
@@ -115,82 +132,79 @@ export function OwnerOnboarding() {
   }, [phase, step, activeTarget]);
 
   useLayoutEffect(() => {
-    if (phase !== "coach" && phase !== "handoff") return;
+    if (phase !== "coach") return;
     const h = bubbleRef.current?.offsetHeight;
     if (h && Math.abs(h - bubbleH) > 2) setBubbleH(h);
   });
 
-  function finish() {
+  function markSeen() {
     (async () => {
       try {
         const { data: u } = await getLocalUser();
-        if (u.user) {
-          await supabase.from("profiles").update({ welcome_seen_at: new Date().toISOString() }).eq("id", u.user.id);
-        }
-      } catch {}
+        if (u.user) await supabase.from("profiles").update({ welcome_seen_at: new Date().toISOString() }).eq("id", u.user.id);
+      } catch { /* ignore */ }
     })();
-    setPhase(null);
   }
-
-  function next() {
-    if (step < NAV_STEPS.length - 1) setStep(step + 1);
-    else setPhase("handoff");
-  }
+  function finish() { markSeen(); setPhase(null); }
+  function addBird() { markSeen(); setPhase(null); navigate({ to: "/birds/new" }); }
+  function next() { setStep((s) => Math.min(s + 1, STEPS.length)); }
   function back() {
-    if (phase === "handoff") setPhase("coach");
-    else if (step > 0) setStep(step - 1);
+    if (step > 0) setStep((s) => s - 1);
     else setPhase("welcome");
   }
 
   if (phase === null) return null;
 
-  // ---- Welcome (full-screen warm panel) ----
+  // ---- Welcome ----
   if (phase === "welcome") {
     return (
-      <div className="fixed inset-0 z-50 flex flex-col bg-[#1a3d2e] text-white">
-        <div className="flex items-center justify-end px-5 pt-[max(env(safe-area-inset-top),0.9rem)] pb-2">
-          <button onClick={finish} className="text-sm font-medium text-[#cdeab0] underline">Skip</button>
+      <div className="fixed inset-0 z-[60] flex flex-col bg-[var(--ink)] text-white">
+        <div className="px-[22px] pt-[max(env(safe-area-inset-top),18px)]">
+          <BrandLockup orientation="horizontal" variant="ink" size={100} />
         </div>
-        <div className="flex flex-1 flex-col items-center justify-center px-6 pb-12 text-center">
-          <BrandLockup orientation="horizontal" variant="ink" size={280} />
-          <h1 className="mt-8 text-[22px] font-medium leading-tight">Welcome to Kya & Co.</h1>
-          <p className="mt-3 max-w-xs text-sm leading-relaxed text-white/85">
-            Build a care plan once, share it with the people who help — sitters and household — and stay connected to your birds.
-          </p>
+        <div className="flex-1 px-6 pt-[80px]">
+          <p className="t-eyebrow text-[var(--teal)]">Welcome</p>
+          <h1 className="mt-3 text-[38px] font-[400] leading-[1.05] tracking-[-0.02em]">{firstName ? `Hi, ${firstName}.` : "Welcome."}</h1>
+          <p className="mt-3.5 max-w-[30ch] text-[15px] leading-[1.55] text-white/80">A quick walkthrough first, then we'll set up your bird.</p>
+        </div>
+        <div className="px-6 pb-[max(env(safe-area-inset-bottom),24px)]">
           <button
             onClick={() => { setStep(0); setPhase("coach"); }}
-            className="mt-8 w-full max-w-xs rounded-2xl bg-[#cdeab0] py-3 text-sm font-semibold text-[#1a3d2e]"
+            className="flex w-full items-center justify-center gap-2 rounded-[13px] bg-[var(--lime)] py-3.5 text-[14.5px] font-[500] text-[var(--ink)] active:scale-[0.99]"
           >
-            Show me around
+            <ArrowRight className="size-4" /> Show me around
           </button>
-          <button onClick={finish} className="mt-3 text-sm font-medium text-[#cdeab0] underline">Skip</button>
+          <div className="mt-3.5 text-center">
+            <button onClick={addBird} className="text-[13px] font-[500] text-white/60 underline underline-offset-[3px]">Skip and add my bird</button>
+          </div>
         </div>
       </div>
     );
   }
 
-  // ---- Coach + hand-off bubbles ----
-  const isHandoff = phase === "handoff";
-  const text = isHandoff ? HANDOFF_TEXT : NAV_STEPS[step].text;
+  // ---- Coach + wrap-up ----
   const rect = spot?.rect ?? null;
   const vw = spot?.vw ?? (typeof window !== "undefined" ? window.innerWidth : 360);
   const vh = spot?.vh ?? (typeof window !== "undefined" ? window.innerHeight : 640);
   const BW = Math.min(300, vw - 24);
-
   const SAFE_TOP = 58;
   const safeBottom = vh - 84;
+
+  // Centered bubble when there's no target (concept steps, wrap-up, or a target
+  // that isn't on screen yet — e.g. a new owner with no flock).
+  const centered = isWrapUp || !activeTarget || !rect;
+
   let bubbleStyle: React.CSSProperties;
-  if (!rect) {
+  if (centered) {
     const top = Math.max(SAFE_TOP, Math.min((vh - bubbleH) / 2, safeBottom - bubbleH));
     bubbleStyle = { left: (vw - BW) / 2, top, width: BW };
   } else {
     const left = Math.min(Math.max(rect.left + rect.width / 2 - BW / 2, 12), vw - BW - 12);
     const fitsBelow = rect.bottom + GAP + bubbleH <= safeBottom;
     const fitsAbove = rect.top - GAP - bubbleH >= SAFE_TOP;
-    // Nav tabs sit at the bottom, so prefer placing the bubble above them.
-    const preferTop = !isHandoff;
+    // Nav tabs sit at the bottom — prefer placing the bubble above them.
     let top: number;
-    if (preferTop && fitsAbove) top = rect.top - GAP - bubbleH;
+    if (isNavTarget && fitsAbove) top = rect.top - GAP - bubbleH;
     else if (fitsBelow) top = rect.bottom + GAP;
     else if (fitsAbove) top = rect.top - GAP - bubbleH;
     else top = rect.top + GAP;
@@ -199,59 +213,58 @@ export function OwnerOnboarding() {
   }
 
   return (
-    <div className="fixed inset-0 z-50">
-      <div className="absolute inset-0" />
-
-      {rect && (
+    <div className="fixed inset-0 z-[60]">
+      {!centered ? (
         <div
-          className="pointer-events-none absolute rounded-xl ring-2 ring-[#cdeab0] transition-all duration-200"
+          className="pointer-events-none absolute rounded-[14px] ring-2 ring-[var(--lime)] transition-all duration-200"
           style={{
-            top: rect.top - PAD,
-            left: rect.left - PAD,
-            width: rect.width + PAD * 2,
-            height: rect.height + PAD * 2,
+            top: rect!.top - PAD,
+            left: rect!.left - PAD,
+            width: rect!.width + PAD * 2,
+            height: rect!.height + PAD * 2,
             boxShadow: "0 0 0 9999px rgba(20,40,30,0.6)",
           }}
         />
+      ) : (
+        <div className="absolute inset-0 bg-[var(--ink)]/55" />
       )}
-      {!rect && <div className="absolute inset-0 bg-[#1a3d2e]/60" />}
 
-      {/* Skip — always available, top-right. */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-end px-5 pt-[max(env(safe-area-inset-top),0.9rem)]">
-        <button onClick={finish} className="pointer-events-auto rounded-full bg-white/90 px-3 py-1.5 text-xs font-semibold text-[#1a3d2e] shadow">
-          Skip
-        </button>
-      </div>
+      {/* Skip — always available, top-right (hidden on wrap-up, which has its own actions). */}
+      {!isWrapUp && (
+        <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-end px-5 pt-[max(env(safe-area-inset-top),0.9rem)]">
+          <button onClick={finish} className="pointer-events-auto rounded-full bg-white/90 px-3 py-1.5 text-xs font-[500] text-[var(--ink)] shadow">Skip tour</button>
+        </div>
+      )}
 
-      {/* Bubble */}
-      <div ref={bubbleRef} className="pointer-events-auto absolute rounded-2xl bg-white p-4 shadow-xl" style={bubbleStyle}>
-        {isHandoff ? (
-          <>
-            <p className="text-sm font-medium leading-snug text-[#1a3d2e]">{text}</p>
-            <p className="mt-2 text-xs leading-snug text-[#5f5e5a]">Want this tour again? Tap the question mark up top anytime.</p>
-            <div className="mt-3 flex items-center justify-between gap-2">
-              <button onClick={back} className="inline-flex shrink-0 items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-[#5f5e5a]">
-                <ChevronLeft className="size-4" /> Back
-              </button>
-              <button onClick={finish} className="shrink-0 rounded-lg bg-[#1a3d2e] px-4 py-1.5 text-xs font-semibold text-white">
-                Let's go
-              </button>
-            </div>
-          </>
+      <div ref={bubbleRef} className="pointer-events-auto absolute rounded-[18px] border border-[var(--line)] bg-[var(--cream)] p-4 shadow-xl" style={bubbleStyle}>
+        {isWrapUp ? (
+          <div className="text-center">
+            <p className="t-eyebrow text-[var(--mute2)]">{TOTAL} of {TOTAL}</p>
+            <h2 className="mt-1.5 text-[18px] font-[500] text-[var(--ink)]">That's the tour.</h2>
+            <p className="mt-2 text-[13px] leading-[1.5] text-[var(--ink2)]">Now the fun part — let's set up your first bird.</p>
+            <button onClick={addBird} className="mt-3.5 flex w-full items-center justify-center gap-2 rounded-[13px] bg-[var(--lime)] py-3 text-[14px] font-[500] text-[var(--ink)] active:scale-[0.99]">
+              <Feather className="size-4" /> Add my first bird
+            </button>
+            <p className="mt-2.5 text-[11.5px] leading-[1.45] text-[var(--mute)]">Tap the ? in the top bar anytime to revisit the tour.</p>
+          </div>
         ) : (
           <>
-            <p className="text-[11px] font-semibold uppercase tracking-widest text-[#5f5e5a]">Step {step + 1} of {NAV_STEPS.length}</p>
-            <p className="mt-1.5 text-sm font-medium leading-snug text-[#1a3d2e]">{text}</p>
+            <p className="t-eyebrow text-[var(--mute2)]">{step + 1} of {TOTAL}</p>
+            <h2 className="mt-1.5 text-[15px] font-[500] leading-[1.2] text-[var(--ink)]">{stepDef!.headline}</h2>
+            <p className="mt-1.5 text-[13px] leading-[1.5] text-[var(--ink2)]">{stepDef!.body}</p>
             <div className="mt-3 flex items-center justify-between gap-2">
-              <button onClick={back} className="inline-flex shrink-0 items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-[#5f5e5a]">
+              <button onClick={back} className="inline-flex shrink-0 items-center gap-1 rounded-lg px-1.5 py-1.5 text-xs font-[500] text-[var(--mute)]">
                 <ChevronLeft className="size-4" /> Back
               </button>
               <div className="mx-1 h-1 flex-1 overflow-hidden rounded-full bg-[#e8e1d0]">
-                <div className="h-full rounded-full bg-[#1a3d2e] transition-[width]" style={{ width: `${Math.round(((step + 1) / NAV_STEPS.length) * 100)}%` }} />
+                <div className="h-full rounded-full bg-[var(--ink)] transition-[width]" style={{ width: `${Math.round(((step + 1) / TOTAL) * 100)}%` }} />
               </div>
-              <button onClick={next} className="shrink-0 rounded-lg bg-[#1a3d2e] px-4 py-1.5 text-xs font-semibold text-white">
-                Next
+              <button onClick={next} className="inline-flex shrink-0 items-center gap-1 rounded-[10px] bg-[var(--lime)] px-4 py-2 text-[13px] font-[500] text-[var(--ink)]">
+                Next <ArrowRight className="size-3.5" />
               </button>
+            </div>
+            <div className="mt-2 text-center">
+              <button onClick={finish} className="text-[12px] font-[500] text-[var(--mute)] underline underline-offset-2">Skip tour</button>
             </div>
           </>
         )}
