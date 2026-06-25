@@ -21,6 +21,7 @@ import { Route as HandoffTokenRouteImport } from './routes/handoff.$token'
 import { Route as AuthenticatedWelcomeRouteImport } from './routes/_authenticated/welcome'
 import { Route as AuthenticatedTodayRouteImport } from './routes/_authenticated/today'
 import { Route as AuthenticatedSitsRouteImport } from './routes/_authenticated/sits'
+import { Route as AuthenticatedScansRouteImport } from './routes/_authenticated/scans'
 import { Route as AuthenticatedPastBirdsRouteImport } from './routes/_authenticated/past-birds'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
 import { Route as AuthenticatedHouseholdRouteImport } from './routes/_authenticated/household'
@@ -29,6 +30,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as SitterTokenRouteRouteImport } from './routes/sitter/$token/route'
 import { Route as SitterTokenIndexRouteImport } from './routes/sitter/$token/index'
+import { Route as AuthenticatedScansIndexRouteImport } from './routes/_authenticated/scans.index'
 import { Route as AuthenticatedNotificationsIndexRouteImport } from './routes/_authenticated/notifications.index'
 import { Route as AuthenticatedAccountIndexRouteImport } from './routes/_authenticated/account.index'
 import { Route as SitterTokenScanRouteImport } from './routes/sitter/$token/scan'
@@ -39,6 +41,7 @@ import { Route as SitterTokenCareSheetRouteImport } from './routes/sitter/$token
 import { Route as AuthenticatedSitsPastRouteImport } from './routes/_authenticated/sits.past'
 import { Route as AuthenticatedSitsSitIdRouteImport } from './routes/_authenticated/sits.$sitId'
 import { Route as AuthenticatedSitPreviewSitIdRouteImport } from './routes/_authenticated/sit-preview.$sitId'
+import { Route as AuthenticatedScansSettingsRouteImport } from './routes/_authenticated/scans.settings'
 import { Route as AuthenticatedNotificationsSettingsRouteImport } from './routes/_authenticated/notifications.settings'
 import { Route as AuthenticatedBirdsNewRouteImport } from './routes/_authenticated/birds/new'
 import { Route as AuthenticatedBirdsBirdIdRouteImport } from './routes/_authenticated/birds/$birdId'
@@ -121,6 +124,11 @@ const AuthenticatedSitsRoute = AuthenticatedSitsRouteImport.update({
   path: '/sits',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedScansRoute = AuthenticatedScansRouteImport.update({
+  id: '/scans',
+  path: '/scans',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedPastBirdsRoute = AuthenticatedPastBirdsRouteImport.update({
   id: '/past-birds',
   path: '/past-birds',
@@ -161,6 +169,11 @@ const SitterTokenIndexRoute = SitterTokenIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => SitterTokenRouteRoute,
+} as any)
+const AuthenticatedScansIndexRoute = AuthenticatedScansIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedScansRoute,
 } as any)
 const AuthenticatedNotificationsIndexRoute =
   AuthenticatedNotificationsIndexRouteImport.update({
@@ -214,6 +227,12 @@ const AuthenticatedSitPreviewSitIdRoute =
     id: '/sit-preview/$sitId',
     path: '/sit-preview/$sitId',
     getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedScansSettingsRoute =
+  AuthenticatedScansSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedScansRoute,
   } as any)
 const AuthenticatedNotificationsSettingsRoute =
   AuthenticatedNotificationsSettingsRouteImport.update({
@@ -361,6 +380,7 @@ export interface FileRoutesByFullPath {
   '/household': typeof AuthenticatedHouseholdRoute
   '/notifications': typeof AuthenticatedNotificationsRouteWithChildren
   '/past-birds': typeof AuthenticatedPastBirdsRoute
+  '/scans': typeof AuthenticatedScansRouteWithChildren
   '/sits': typeof AuthenticatedSitsRouteWithChildren
   '/today': typeof AuthenticatedTodayRoute
   '/welcome': typeof AuthenticatedWelcomeRoute
@@ -370,6 +390,7 @@ export interface FileRoutesByFullPath {
   '/birds/$birdId': typeof AuthenticatedBirdsBirdIdRouteWithChildren
   '/birds/new': typeof AuthenticatedBirdsNewRoute
   '/notifications/settings': typeof AuthenticatedNotificationsSettingsRoute
+  '/scans/settings': typeof AuthenticatedScansSettingsRoute
   '/sit-preview/$sitId': typeof AuthenticatedSitPreviewSitIdRoute
   '/sits/$sitId': typeof AuthenticatedSitsSitIdRoute
   '/sits/past': typeof AuthenticatedSitsPastRoute
@@ -380,6 +401,7 @@ export interface FileRoutesByFullPath {
   '/sitter/$token/scan': typeof SitterTokenScanRoute
   '/account/': typeof AuthenticatedAccountIndexRoute
   '/notifications/': typeof AuthenticatedNotificationsIndexRoute
+  '/scans/': typeof AuthenticatedScansIndexRoute
   '/sitter/$token/': typeof SitterTokenIndexRoute
   '/birds/$birdId/access': typeof AuthenticatedBirdsBirdIdAccessRoute
   '/birds/$birdId/care-plan': typeof AuthenticatedBirdsBirdIdCarePlanRoute
@@ -419,6 +441,7 @@ export interface FileRoutesByTo {
   '/account/security': typeof AuthenticatedAccountSecurityRoute
   '/birds/new': typeof AuthenticatedBirdsNewRoute
   '/notifications/settings': typeof AuthenticatedNotificationsSettingsRoute
+  '/scans/settings': typeof AuthenticatedScansSettingsRoute
   '/sit-preview/$sitId': typeof AuthenticatedSitPreviewSitIdRoute
   '/sits/$sitId': typeof AuthenticatedSitsSitIdRoute
   '/sits/past': typeof AuthenticatedSitsPastRoute
@@ -429,6 +452,7 @@ export interface FileRoutesByTo {
   '/sitter/$token/scan': typeof SitterTokenScanRoute
   '/account': typeof AuthenticatedAccountIndexRoute
   '/notifications': typeof AuthenticatedNotificationsIndexRoute
+  '/scans': typeof AuthenticatedScansIndexRoute
   '/sitter/$token': typeof SitterTokenIndexRoute
   '/birds/$birdId/access': typeof AuthenticatedBirdsBirdIdAccessRoute
   '/birds/$birdId/care-plan': typeof AuthenticatedBirdsBirdIdCarePlanRoute
@@ -464,6 +488,7 @@ export interface FileRoutesById {
   '/_authenticated/household': typeof AuthenticatedHouseholdRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRouteWithChildren
   '/_authenticated/past-birds': typeof AuthenticatedPastBirdsRoute
+  '/_authenticated/scans': typeof AuthenticatedScansRouteWithChildren
   '/_authenticated/sits': typeof AuthenticatedSitsRouteWithChildren
   '/_authenticated/today': typeof AuthenticatedTodayRoute
   '/_authenticated/welcome': typeof AuthenticatedWelcomeRoute
@@ -473,6 +498,7 @@ export interface FileRoutesById {
   '/_authenticated/birds/$birdId': typeof AuthenticatedBirdsBirdIdRouteWithChildren
   '/_authenticated/birds/new': typeof AuthenticatedBirdsNewRoute
   '/_authenticated/notifications/settings': typeof AuthenticatedNotificationsSettingsRoute
+  '/_authenticated/scans/settings': typeof AuthenticatedScansSettingsRoute
   '/_authenticated/sit-preview/$sitId': typeof AuthenticatedSitPreviewSitIdRoute
   '/_authenticated/sits/$sitId': typeof AuthenticatedSitsSitIdRoute
   '/_authenticated/sits/past': typeof AuthenticatedSitsPastRoute
@@ -483,6 +509,7 @@ export interface FileRoutesById {
   '/sitter/$token/scan': typeof SitterTokenScanRoute
   '/_authenticated/account/': typeof AuthenticatedAccountIndexRoute
   '/_authenticated/notifications/': typeof AuthenticatedNotificationsIndexRoute
+  '/_authenticated/scans/': typeof AuthenticatedScansIndexRoute
   '/sitter/$token/': typeof SitterTokenIndexRoute
   '/_authenticated/birds/$birdId/access': typeof AuthenticatedBirdsBirdIdAccessRoute
   '/_authenticated/birds/$birdId/care-plan': typeof AuthenticatedBirdsBirdIdCarePlanRoute
@@ -519,6 +546,7 @@ export interface FileRouteTypes {
     | '/household'
     | '/notifications'
     | '/past-birds'
+    | '/scans'
     | '/sits'
     | '/today'
     | '/welcome'
@@ -528,6 +556,7 @@ export interface FileRouteTypes {
     | '/birds/$birdId'
     | '/birds/new'
     | '/notifications/settings'
+    | '/scans/settings'
     | '/sit-preview/$sitId'
     | '/sits/$sitId'
     | '/sits/past'
@@ -538,6 +567,7 @@ export interface FileRouteTypes {
     | '/sitter/$token/scan'
     | '/account/'
     | '/notifications/'
+    | '/scans/'
     | '/sitter/$token/'
     | '/birds/$birdId/access'
     | '/birds/$birdId/care-plan'
@@ -577,6 +607,7 @@ export interface FileRouteTypes {
     | '/account/security'
     | '/birds/new'
     | '/notifications/settings'
+    | '/scans/settings'
     | '/sit-preview/$sitId'
     | '/sits/$sitId'
     | '/sits/past'
@@ -587,6 +618,7 @@ export interface FileRouteTypes {
     | '/sitter/$token/scan'
     | '/account'
     | '/notifications'
+    | '/scans'
     | '/sitter/$token'
     | '/birds/$birdId/access'
     | '/birds/$birdId/care-plan'
@@ -621,6 +653,7 @@ export interface FileRouteTypes {
     | '/_authenticated/household'
     | '/_authenticated/notifications'
     | '/_authenticated/past-birds'
+    | '/_authenticated/scans'
     | '/_authenticated/sits'
     | '/_authenticated/today'
     | '/_authenticated/welcome'
@@ -630,6 +663,7 @@ export interface FileRouteTypes {
     | '/_authenticated/birds/$birdId'
     | '/_authenticated/birds/new'
     | '/_authenticated/notifications/settings'
+    | '/_authenticated/scans/settings'
     | '/_authenticated/sit-preview/$sitId'
     | '/_authenticated/sits/$sitId'
     | '/_authenticated/sits/past'
@@ -640,6 +674,7 @@ export interface FileRouteTypes {
     | '/sitter/$token/scan'
     | '/_authenticated/account/'
     | '/_authenticated/notifications/'
+    | '/_authenticated/scans/'
     | '/sitter/$token/'
     | '/_authenticated/birds/$birdId/access'
     | '/_authenticated/birds/$birdId/care-plan'
@@ -761,6 +796,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSitsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/scans': {
+      id: '/_authenticated/scans'
+      path: '/scans'
+      fullPath: '/scans'
+      preLoaderRoute: typeof AuthenticatedScansRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/past-birds': {
       id: '/_authenticated/past-birds'
       path: '/past-birds'
@@ -816,6 +858,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/sitter/$token/'
       preLoaderRoute: typeof SitterTokenIndexRouteImport
       parentRoute: typeof SitterTokenRouteRoute
+    }
+    '/_authenticated/scans/': {
+      id: '/_authenticated/scans/'
+      path: '/'
+      fullPath: '/scans/'
+      preLoaderRoute: typeof AuthenticatedScansIndexRouteImport
+      parentRoute: typeof AuthenticatedScansRoute
     }
     '/_authenticated/notifications/': {
       id: '/_authenticated/notifications/'
@@ -886,6 +935,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/sit-preview/$sitId'
       preLoaderRoute: typeof AuthenticatedSitPreviewSitIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/scans/settings': {
+      id: '/_authenticated/scans/settings'
+      path: '/settings'
+      fullPath: '/scans/settings'
+      preLoaderRoute: typeof AuthenticatedScansSettingsRouteImport
+      parentRoute: typeof AuthenticatedScansRoute
     }
     '/_authenticated/notifications/settings': {
       id: '/_authenticated/notifications/settings'
@@ -1074,6 +1130,19 @@ const AuthenticatedNotificationsRouteWithChildren =
     AuthenticatedNotificationsRouteChildren,
   )
 
+interface AuthenticatedScansRouteChildren {
+  AuthenticatedScansSettingsRoute: typeof AuthenticatedScansSettingsRoute
+  AuthenticatedScansIndexRoute: typeof AuthenticatedScansIndexRoute
+}
+
+const AuthenticatedScansRouteChildren: AuthenticatedScansRouteChildren = {
+  AuthenticatedScansSettingsRoute: AuthenticatedScansSettingsRoute,
+  AuthenticatedScansIndexRoute: AuthenticatedScansIndexRoute,
+}
+
+const AuthenticatedScansRouteWithChildren =
+  AuthenticatedScansRoute._addFileChildren(AuthenticatedScansRouteChildren)
+
 interface AuthenticatedSitsRouteChildren {
   AuthenticatedSitsSitIdRoute: typeof AuthenticatedSitsSitIdRoute
   AuthenticatedSitsPastRoute: typeof AuthenticatedSitsPastRoute
@@ -1160,6 +1229,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedHouseholdRoute: typeof AuthenticatedHouseholdRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRouteWithChildren
   AuthenticatedPastBirdsRoute: typeof AuthenticatedPastBirdsRoute
+  AuthenticatedScansRoute: typeof AuthenticatedScansRouteWithChildren
   AuthenticatedSitsRoute: typeof AuthenticatedSitsRouteWithChildren
   AuthenticatedTodayRoute: typeof AuthenticatedTodayRoute
   AuthenticatedWelcomeRoute: typeof AuthenticatedWelcomeRoute
@@ -1175,6 +1245,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedHouseholdRoute: AuthenticatedHouseholdRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRouteWithChildren,
   AuthenticatedPastBirdsRoute: AuthenticatedPastBirdsRoute,
+  AuthenticatedScansRoute: AuthenticatedScansRouteWithChildren,
   AuthenticatedSitsRoute: AuthenticatedSitsRouteWithChildren,
   AuthenticatedTodayRoute: AuthenticatedTodayRoute,
   AuthenticatedWelcomeRoute: AuthenticatedWelcomeRoute,

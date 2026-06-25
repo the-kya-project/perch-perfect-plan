@@ -17,7 +17,7 @@ type TabSpec = { key: OwnerTab; label: string; to: string; Icon: typeof Home };
 const HOME_TAB: TabSpec = { key: "home", label: "Home", to: "/dashboard", Icon: Home };
 const SITS_TAB: TabSpec = { key: "sits", label: "Sits", to: "/sits", Icon: Calendar };
 const TODAY_TAB: TabSpec = { key: "sits", label: "Today", to: "/today", Icon: CheckSquare };
-const ACTIVITY_TAB: TabSpec = { key: "activity", label: "Scans", to: "/notifications", Icon: Activity };
+const ACTIVITY_TAB: TabSpec = { key: "activity", label: "Scans", to: "/scans", Icon: Activity };
 const EXPLORE_TAB: TabSpec = { key: "explore", label: "Explore", to: "/explore", Icon: Compass };
 
 // `active` is optional — during the setup flow no tab is highlighted. Pass
@@ -27,7 +27,7 @@ function tabForPath(pathname: string): OwnerTab | undefined {
   if (pathname.startsWith("/dashboard")) return "home";
   if (pathname.startsWith("/today")) return "sits";
   if (pathname.startsWith("/sits")) return "sits";
-  if (pathname.startsWith("/notifications")) return "activity";
+  if (pathname.startsWith("/scans")) return "activity";
   if (pathname.startsWith("/explore")) return "explore";
   return undefined; // deeper screens (bird editor, account, …) highlight nothing
 }
