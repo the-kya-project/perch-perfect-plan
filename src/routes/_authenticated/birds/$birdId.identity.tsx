@@ -90,9 +90,11 @@ function IdentityFacet() {
   });
 
   const name = bird?.name ?? "this bird";
-  // 256px for a 64px (size-16) circle — same width the bird-record strip avatar
-  // uses, so it stays sharp on retina.
-  const photoOf = useBirdPhotos([bird?.photo_url], 256);
+  // 800px — the SAME width the Home flock card / bird-record hero resolve at, so
+  // the Identity circle gets byte-for-byte the same cropped image they do. A
+  // smaller transform (e.g. 256) crops to a different effective aspect on this
+  // bucket, which made the circle frame a different part of the bird than Home.
+  const photoOf = useBirdPhotos([bird?.photo_url], 800);
   const photo = photoOf(bird?.photo_url);
   const initial = (bird?.name?.slice(0, 1) ?? "?").toUpperCase();
 
