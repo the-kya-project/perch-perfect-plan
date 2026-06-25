@@ -7,6 +7,7 @@ import { OwnerHeaderIcons } from "@/components/OwnerHeader";
 import { SitForm } from "@/components/SitForm";
 import { ActiveSitCard, UpcomingSitCard, type SitBird, type ListSit } from "@/components/SitListCards";
 import { InkHero, SectionHead, Card, IconTile } from "@/components/system";
+import { useBirdPhotos } from "@/lib/useBirdPhotos";
 import { weekdayMonthDay, monthDay, daysUntil } from "@/lib/dates";
 
 // Dedicated Sits tab: create / manage sits. Reuses the same query keys as the
@@ -91,8 +92,14 @@ function SitsPage() {
   const caregiverName = (s: any): string =>
     s.caregiver_user_id ? (nameById.get(s.caregiver_user_id) ?? "Household member") : (s.sitter_name?.trim() || "Your sitter");
 
+  // Bird photos are stored as bucket PATHS; resolve them to signed URLs (small
+  // transform — the chips are tiny dots) so the chip <img> actually loads.
+  const resolvePhoto = useBirdPhotos(birds.map((b: any) => b.photo_url), 96);
   const birdsFor = (s: any): SitBird[] =>
-    ((s.sit_birds ?? []) as any[]).map((sb: any) => birdLookup[sb.bird_id]).filter(Boolean);
+    ((s.sit_birds ?? []) as any[])
+      .map((sb: any) => birdLookup[sb.bird_id])
+      .filter(Boolean)
+      .map((b: any) => ({ id: b.id, name: b.name, photo_url: resolvePhoto(b.photo_url)?.url ?? null, photo_position: b.photo_position }));
 
   // ---- Adaptive hero copy ---------------------------------------------------
   let heroHeadline = "Going away?";
