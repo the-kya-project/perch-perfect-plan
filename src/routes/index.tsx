@@ -27,12 +27,14 @@ export const Route = createFileRoute("/")({
 function Welcome() {
   return (
     <div className="min-h-screen bg-[#f4f1e8]">
-      <main className="mx-auto flex min-h-screen max-w-md flex-col px-5 pb-10 pt-[calc(env(safe-area-inset-top)+44px)]">
-        <div className="flex justify-center">
-          <BrandLockup orientation="horizontal" variant="cream" size={260} />
+      <main className="mx-auto flex min-h-screen max-w-md flex-col px-5 pb-10 pt-[calc(env(safe-area-inset-top)+36px)]">
+        {/* Left-aligned lockup anchors the page's reading axis (lockup →
+            headline → subhead → primary card). ~42px tall via size 137. */}
+        <div className="flex justify-start">
+          <BrandLockup orientation="horizontal" variant="cream" size={137} />
         </div>
 
-        <div className="mt-12 space-y-3">
+        <div className="mt-[42px] space-y-3">
           <h1 className="text-balance text-4xl font-medium leading-[1.05] tracking-tight">
             Calm, clear care for your bird — even when you can't be there.
           </h1>
