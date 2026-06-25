@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
-import { createHouseholdInvite } from "@/lib/household.functions";
+import { createHouseholdInvite, getHouseholdAccount, addExistingHouseholdMember } from "@/lib/household.functions";
 import { toast } from "sonner";
+import { Loader2, Plus } from "lucide-react";
 
 // Shared household invite flow — used by the per-bird access hub and the
 // account-level /household screen. The invite defaults to ALL of the owner's
@@ -19,10 +20,42 @@ export function HouseholdInviteSheet({
   onClose: () => void;
   onSent: () => void;
 }) {
+  const qc = useQueryClient();
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set(initialBirdIds ?? []));
   const [seeded, setSeeded] = useState(!!initialBirdIds?.length);
+
+  // When adding to a single bird (the per-bird access hub), offer people already
+  // in the household — they can be added directly, no email round-trip.
+  const targetBirdId = initialBirdIds?.length === 1 ? initialBirdIds[0] : null;
+  const householdAccount = useServerFn(getHouseholdAccount);
+  const { data: account, isLoading: accountLoading } = useQuery({
+    queryKey: ["household-account"],
+    enabled: !!targetBirdId,
+    queryFn: () => householdAccount(),
+  });
+  const eligible = targetBirdId
+    ? ((account?.members ?? []) as any[]).filter((m) => !m.birdIds?.includes(targetBirdId))
+    : [];
+
+  const addExisting = useServerFn(addExistingHouseholdMember);
+  const [addingId, setAddingId] = useState<string | null>(null);
+  async function quickAdd(member: { userId: string; name: string | null; email: string | null }) {
+    if (!targetBirdId) return;
+    setAddingId(member.userId);
+    try {
+      await addExisting({ data: { birdId: targetBirdId, userId: member.userId } });
+      toast.success(`${member.name?.trim() || member.email || "Member"} added.`);
+      // Refresh the eligible list (in place) and the access hub behind the sheet.
+      qc.invalidateQueries({ queryKey: ["household-account"] });
+      qc.invalidateQueries({ queryKey: ["household", targetBirdId] });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Couldn't add them.");
+    } finally {
+      setAddingId(null);
+    }
+  }
 
   const { data: birds = [] } = useQuery({
     queryKey: ["owner-birds-min-access"],
@@ -58,6 +91,46 @@ export function HouseholdInviteSheet({
       </header>
 
       <div className="mx-auto w-full max-w-md flex-1 space-y-4 overflow-y-auto px-5 py-5">
+        {/* Quick-add from people already in the household (single-bird context). */}
+        {targetBirdId && (accountLoading || eligible.length > 0) && (
+          <div>
+            <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#5f5e5a]">Already in your household</span>
+            <div className="overflow-hidden rounded-[14px] bg-white ring-1 ring-[#e3dcc9]">
+              {accountLoading ? (
+                <div className="flex items-center gap-2 px-4 py-4 text-sm text-[#8a897f]"><Loader2 className="size-4 animate-spin" /> Loading…</div>
+              ) : (
+                eligible.map((m, i) => {
+                  const label = m.name?.trim() || m.email || "Household member";
+                  return (
+                    <div key={m.userId} className={`flex min-h-[56px] items-center gap-3 px-4 ${i ? "border-t border-[#ece6d6]" : ""}`}>
+                      <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[#cfe3dc] text-sm font-medium text-[#1a5e3f]">
+                        {(label.slice(0, 1) || "?").toUpperCase()}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-[#1a3d2e]">{label}</p>
+                        {m.email && m.name && <p className="truncate text-xs text-[#8a897f]">{m.email}</p>}
+                      </div>
+                      <button
+                        type="button"
+                        disabled={addingId === m.userId}
+                        onClick={() => quickAdd(m)}
+                        className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#1a3d2e] px-3 py-1.5 text-xs font-medium text-white active:scale-95 disabled:opacity-50"
+                      >
+                        {addingId === m.userId ? <Loader2 className="size-3.5 animate-spin" /> : <Plus className="size-3.5" />} Add
+                      </button>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+            <div className="mt-4 flex items-center gap-3">
+              <div className="h-px flex-1 bg-[#e3ded0]" />
+              <span className="text-[11px] font-medium uppercase tracking-wider text-[#8a897f]">or invite someone new</span>
+              <div className="h-px flex-1 bg-[#e3ded0]" />
+            </div>
+          </div>
+        )}
+
         <p className="text-sm text-[#5f5e5a]">They'll get an email invite to create an account and help care for your birds.</p>
 
         <label className="block">

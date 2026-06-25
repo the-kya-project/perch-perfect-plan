@@ -235,6 +235,44 @@ export const removeHouseholdMember = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// ---- Owner: add someone ALREADY in the household to another bird ------------
+// No email/invite round-trip — the person already has an account and is already
+// trusted in the household, so grant access directly. Guard: the target user
+// must already be a household member on at least one OTHER bird the caller owns
+// (you can't add an arbitrary user id this way).
+export const addExistingHouseholdMember = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { birdId: string; userId: string }) =>
+    z.object({ birdId: z.string().uuid(), userId: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const sb = await getAdmin();
+    const ownerId = context.userId as string;
+
+    const { data: bird } = await sb.from("birds").select("id, owner_id").eq("id", data.birdId).maybeSingle();
+    if (!bird || bird.owner_id !== ownerId) throw new Error("Not allowed.");
+    if (data.userId === ownerId) throw new Error("You already have access.");
+
+    // The user must already be in the caller's household (on some owned bird).
+    const { data: ownedBirds } = await sb.from("birds").select("id").eq("owner_id", ownerId);
+    const ownedIds = (ownedBirds ?? []).map((b: any) => b.id);
+    const { data: existing } = await sb
+      .from("bird_members")
+      .select("bird_id")
+      .eq("user_id", data.userId)
+      .eq("role", "household")
+      .in("bird_id", ownedIds);
+    if (!existing || existing.length === 0) {
+      throw new Error("That person isn't in your household yet — invite them by email.");
+    }
+
+    const { error } = await sb
+      .from("bird_members")
+      .upsert({ bird_id: data.birdId, user_id: data.userId, role: "household" }, { onConflict: "bird_id,user_id", ignoreDuplicates: true });
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 // ---- Member: leave a bird's household --------------------------------------
 export const leaveHousehold = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
