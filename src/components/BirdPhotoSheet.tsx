@@ -184,23 +184,28 @@ function RepositionBox({ src, position, onChange }: { src: string; position: str
   } as const;
 
   return (
-    <div className="flex items-stretch gap-3">
+    // items-start + a fixed-width card so each box sizes from its OWN aspect
+    // ratio. (flex-1 + aspect + items-stretch left the card with no definite
+    // width and it overflowed off-screen.) min-w-0 lets the hero shrink to
+    // make room for the 96px card.
+    <div className="flex items-start gap-3">
       <div
         ref={ref}
         onPointerDown={onDown}
         onPointerMove={onMove}
         onPointerUp={onUp}
         onPointerCancel={onUp}
-        className="relative aspect-[3/2] flex-1 touch-none select-none overflow-hidden rounded-[14px] ring-1 ring-[var(--line)]"
+        className="relative aspect-[3/2] min-w-0 flex-1 touch-none select-none overflow-hidden rounded-[14px] ring-1 ring-[var(--line)]"
         style={{ ...coverStyle, cursor: dragging ? "grabbing" : "grab" }}
         role="img"
         aria-label="Drag to reposition photo"
       >
         <span className="absolute left-2 top-2 rounded-full bg-black/45 px-2 py-0.5 text-[10px] font-[500] text-white">Hero</span>
       </div>
-      {/* Tile preview at the actual 9:10 aspect so the user sees the same
-          object-position cropped the way a flock/foster card will render it. */}
-      <div className="relative aspect-[9/10] shrink-0 overflow-hidden rounded-[14px] ring-1 ring-[var(--line)]" style={coverStyle}>
+      {/* Tile preview at the actual 9:10 card aspect, fixed 96px wide, so the
+          user sees the same object-position cropped the way a flock/foster
+          card will render it. */}
+      <div className="relative aspect-[9/10] w-24 shrink-0 overflow-hidden rounded-[14px] ring-1 ring-[var(--line)]" style={coverStyle}>
         <span className="absolute bottom-1 left-1/2 -translate-x-1/2 rounded-full bg-black/45 px-2 py-0.5 text-[10px] font-[500] text-white">Card</span>
       </div>
     </div>
