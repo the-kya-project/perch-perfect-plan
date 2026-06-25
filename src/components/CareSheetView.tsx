@@ -199,7 +199,7 @@ export function CareSheetView({ data }: { data: CareSheetData }) {
         <Section title="Basics">
           <div className="flex items-center gap-4">
             {bird.photo_url ? (
-              <img src={bird.photo_url} alt={bird.name} className="block size-16 rounded-2xl object-cover ring-1 ring-[#e0d8c4]" style={{ objectPosition: bird.photo_position ?? "50% 50%" }} />
+              <img src={bird.photo_url} alt={bird.name} className="block size-16 rounded-2xl object-cover ring-1 ring-[#e0d8c4]" style={{ objectPosition: bird.photo_position ?? "50% 20%" }} />
             ) : (
               <div className="grid size-16 place-items-center rounded-2xl bg-[#e3dcc9] text-xl font-medium text-[#2d6a4f]">{bird.name.slice(0,1).toUpperCase()}</div>
             )}
