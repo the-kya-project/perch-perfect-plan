@@ -90,6 +90,18 @@ function AuthPage() {
           },
         });
         if (error) throw error;
+        // Already-registered email: with email confirmation on, Supabase does
+        // NOT error here (anti-enumeration) — it returns a user with an EMPTY
+        // identities array and no session. Without this guard we'd send an
+        // existing owner to the "check your email to confirm" screen for a
+        // confirmation that never comes. Bounce them to sign-in (the email they
+        // typed persists — same /auth route), and skip the signup analytics/lead.
+        const identities = (data.user as { identities?: unknown[] } | null)?.identities;
+        if (Array.isArray(identities) && identities.length === 0) {
+          toast.error("That email already has an account — sign in instead.");
+          navigate({ to: "/auth", search: { mode: "signin" } });
+          return;
+        }
         track("owner_signup", { marketing_opt_in: marketingOptIn, verification_required: !data.session });
         if (marketingOptIn) track("marketing_opt_in_checked", { context: "signup" });
         void captureLead({
