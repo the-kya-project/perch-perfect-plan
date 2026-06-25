@@ -127,7 +127,7 @@ export function BirdPhotoSheet({
         ) : (
           <div className="space-y-3">
             {editUrl && <RepositionBox src={editUrl} position={pos} onChange={setPos} />}
-            <p className="t-meta text-center">Drag to choose what shows. The bird's face stays centered everywhere.</p>
+            <p className="t-meta text-center">Drag the hero. The tile preview shows exactly what your flock card will display.</p>
             <div className="flex gap-2">
               <button type="button" disabled={busy} onClick={() => setMode("menu")} className="min-h-[44px] flex-1 rounded-[12px] border border-[var(--line)] bg-white text-[15px] font-[500] text-[var(--ink)] disabled:opacity-50">Back</button>
               <button type="button" disabled={busy} onClick={save} className="min-h-[44px] flex-1 rounded-[12px] bg-[var(--lime)] text-[15px] font-[500] text-[var(--ink)] disabled:opacity-50">{busy ? "Saving…" : "Save photo"}</button>
@@ -153,8 +153,11 @@ function SheetRow({ icon, label, onClick, disabled, destructive }: { icon: React
   );
 }
 
-// Responsive 3:2 reposition frame (the hero aspect). Drag nudges object-position;
-// the chosen focal point then frames the same photo correctly on square tiles.
+// Reposition frame: drag the 3:2 hero preview to nudge object-position. A real
+// tile-aspect preview sits beside it and renders the exact crop the flock card
+// will show — because the hero (3:2 landscape) and the tile (~9:10 portrait)
+// crop a single object-position to wildly different portions of the source,
+// so a dashed-guide overlay can't honestly preview both at once.
 function RepositionBox({ src, position, onChange }: { src: string; position: string; onChange: (pos: string) => void }) {
   const ref = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState(() => parse(position));
@@ -172,34 +175,33 @@ function RepositionBox({ src, position, onChange }: { src: string; position: str
   }
   function onUp(e: React.PointerEvent) { (e.target as HTMLElement).releasePointerCapture(e.pointerId); setDragging(false); }
 
+  const coverStyle = {
+    backgroundImage: `url(${src})`,
+    backgroundSize: "cover",
+    backgroundRepeat: "no-repeat",
+    backgroundColor: "var(--cream2)",
+    backgroundPosition: `${pos.x}% ${pos.y}%`,
+  } as const;
+
   return (
-    <div
-      ref={ref}
-      onPointerDown={onDown}
-      onPointerMove={onMove}
-      onPointerUp={onUp}
-      onPointerCancel={onUp}
-      className="relative aspect-[3/2] w-full touch-none select-none overflow-hidden rounded-[14px] ring-1 ring-[var(--line)]"
-      style={{
-        backgroundImage: `url(${src})`,
-        backgroundSize: "cover",
-        backgroundRepeat: "no-repeat",
-        backgroundColor: "var(--cream2)",
-        backgroundPosition: `${pos.x}% ${pos.y}%`,
-        cursor: dragging ? "grabbing" : "grab",
-      }}
-      role="img"
-      aria-label="Drag to reposition photo"
-    >
-      {/* Two crop guides so one focal point can be judged for both contexts at
-          once: the full frame is the bird-record hero (3:2); the centred portrait
-          band is the flock/foster card tile (~9:10). Drag so the face sits inside
-          both. */}
-      <div className="pointer-events-none absolute inset-0">
+    <div className="flex items-stretch gap-3">
+      <div
+        ref={ref}
+        onPointerDown={onDown}
+        onPointerMove={onMove}
+        onPointerUp={onUp}
+        onPointerCancel={onUp}
+        className="relative aspect-[3/2] flex-1 touch-none select-none overflow-hidden rounded-[14px] ring-1 ring-[var(--line)]"
+        style={{ ...coverStyle, cursor: dragging ? "grabbing" : "grab" }}
+        role="img"
+        aria-label="Drag to reposition photo"
+      >
         <span className="absolute left-2 top-2 rounded-full bg-black/45 px-2 py-0.5 text-[10px] font-[500] text-white">Hero</span>
-        <div className="absolute inset-y-0 left-1/2 aspect-[9/10] -translate-x-1/2 border-x-2 border-dashed border-white/85">
-          <span className="absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-black/45 px-2 py-0.5 text-[10px] font-[500] text-white">Card</span>
-        </div>
+      </div>
+      {/* Tile preview at the actual 9:10 aspect so the user sees the same
+          object-position cropped the way a flock/foster card will render it. */}
+      <div className="relative aspect-[9/10] shrink-0 overflow-hidden rounded-[14px] ring-1 ring-[var(--line)]" style={coverStyle}>
+        <span className="absolute bottom-1 left-1/2 -translate-x-1/2 rounded-full bg-black/45 px-2 py-0.5 text-[10px] font-[500] text-white">Card</span>
       </div>
     </div>
   );

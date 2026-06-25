@@ -76,7 +76,7 @@ export function SitterDashboard({ token }: { token: string }) {
                       <img
                         src={b.photo_url}
                         alt={b.name}
-                        style={{ objectPosition: b.photo_position ?? "50% 15%" }}
+                        style={{ objectPosition: b.photo_position ?? "50% 50%" }}
                         className="block size-16 shrink-0 rounded-xl object-cover ring-1 ring-[#e3ded0]"
                       />
                     ) : (

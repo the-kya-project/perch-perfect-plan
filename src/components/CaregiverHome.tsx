@@ -218,7 +218,7 @@ function BirdTile({ bird, photo }: { bird: ActiveCaregiverSit["birds"][number]; 
           loading="lazy"
           decoding="async"
           onError={(e) => { if (photo.original && e.currentTarget.src !== photo.original) e.currentTarget.src = photo.original; }}
-          style={{ objectPosition: bird.photo_position ?? "50% 15%" }}
+          style={{ objectPosition: bird.photo_position ?? "50% 50%" }}
           className="block size-full object-cover"
         />
       ) : (
