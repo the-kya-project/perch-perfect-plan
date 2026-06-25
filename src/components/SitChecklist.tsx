@@ -14,10 +14,10 @@ export const CHECKLIST_ITEMS: StandardItem[] = [
   { key: "carrier", label: "Carrier clean and accessible" },
   { key: "food_portioned", label: "Enough food portioned for the full sit, plus extra" },
   { key: "enrichment", label: "Foraging toys and enrichment set up" },
-  { key: "cage_clean", label: "Cage cleaned with fresh substrate" },
+  { key: "cage_clean", label: "Cage cleaned" },
   { key: "sitter_access", label: "Sitter has access (key, code, or entry plan)" },
-  { key: "temperature", label: "Temperature and heating plan set" },
   { key: "hazards", label: "Hazards handled (rooms closed, pets secured, windows checked)" },
+  { key: "care_plans", label: "Care plans up to date" },
   { key: "emergency_contacts", label: "Emergency contacts confirmed current" },
   { key: "invite_tested", label: "Sitter invite link tested" },
 ];
@@ -254,20 +254,32 @@ export function SitChecklist({
                 {renderItem(
                   item.key,
                   item.label,
-                  item.key === "emergency_contacts" && birds.length > 0 ? (
+                  (item.key === "emergency_contacts" || item.key === "care_plans") && birds.length > 0 ? (
                     <div className="mt-1 flex flex-wrap gap-1.5">
-                      {birds.map((b) => (
-                        <Link
-                          key={b.id}
-                          to="/birds/$birdId/plan/editor"
-                          params={{ birdId: b.id }}
-                          search={{ tab: "emergency" }}
-                          className="inline-flex items-center gap-1 rounded-md bg-sage-100 px-1.5 py-0.5 text-[10px] font-semibold text-sage-700 hover:bg-sage-200"
-                        >
-                          {b.name}
-                          <ExternalLink className="size-2.5" />
-                        </Link>
-                      ))}
+                      {birds.map((b) =>
+                        item.key === "emergency_contacts" ? (
+                          <Link
+                            key={b.id}
+                            to="/birds/$birdId/plan/editor"
+                            params={{ birdId: b.id }}
+                            search={{ tab: "emergency" }}
+                            className="inline-flex items-center gap-1 rounded-md bg-sage-100 px-1.5 py-0.5 text-[10px] font-semibold text-sage-700 hover:bg-sage-200"
+                          >
+                            {b.name}
+                            <ExternalLink className="size-2.5" />
+                          </Link>
+                        ) : (
+                          <Link
+                            key={b.id}
+                            to="/birds/$birdId/plan"
+                            params={{ birdId: b.id }}
+                            className="inline-flex items-center gap-1 rounded-md bg-sage-100 px-1.5 py-0.5 text-[10px] font-semibold text-sage-700 hover:bg-sage-200"
+                          >
+                            {b.name}
+                            <ExternalLink className="size-2.5" />
+                          </Link>
+                        ),
+                      )}
                     </div>
                   ) : null,
                 )}
