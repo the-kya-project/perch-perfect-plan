@@ -276,6 +276,9 @@ export function SitForm({
         setCaregiverKind(null); setHouseholdUserId(null);
         setSelected(new Set(birds.length === 1 ? [birds[0].id] : []));
         onSaved();
+        // Land the owner on the Sits tab, where the sit they just created is
+        // the focal element — not back on Home. (No-op when already on /sits.)
+        navigate({ to: "/sits" });
       }
     } finally {
       setSaving(false);
