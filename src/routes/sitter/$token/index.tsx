@@ -4,9 +4,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useSitterContext } from "./route";
 import { toggleTaskCompletion } from "@/lib/sitter.functions";
-import { handlingMustKnow } from "@/lib/sitterIntro";
 import { Disclaimer } from "@/components/Disclaimer";
-import { Stethoscope, Calendar, BookOpen, ChevronRight, ChevronDown, Hand, Volume2 } from "lucide-react";
+import { Stethoscope, Calendar, BookOpen, ChevronRight, ChevronDown } from "lucide-react";
 import { ClipPlayer } from "@/components/ClipPlayer";
 import { taskDaypart, hourToDaypart, DAYPARTS, DAYPART_LABEL, type Daypart } from "@/lib/routineTasks";
 
@@ -215,7 +214,7 @@ function SitterToday() {
 
   return (
     <main className="mx-auto max-w-md space-y-5 px-5 py-5">
-      <WelcomeCard bird={ctx.bird} plan={ctx.plan} token={token} />
+      <WelcomeCard bird={ctx.bird} token={token} />
 
       <ScanCard bird={ctx.bird} todayLog={ctx.todayLog} token={token} />
 
@@ -368,18 +367,15 @@ function ScanCard({ bird, todayLog, token }: { bird: any; todayLog: any; token: 
 }
 
 // Permanent identity card at the top of the sitter Today tab. Always shown,
-// full size, for the active bird. The intro paragraph is the owner-facing
-// assembled sitter_intro (or owner_edited_intro override); the must-know lines
-// render directly from structured care-plan fields so they never drift from
-// what the intro copy happens to say.
-function WelcomeCard({ bird, plan, token }: { bird: any; plan: any; token: string }) {
-  const p = plan ?? {};
+// full size, for the active bird. FACTS ONLY — name + species/age. No generated
+// prose: paraphrasing the care plan into sentences flattened/contradicted the
+// owner's actual input (e.g. step-up "yes" + "Only I can handle" rendered as
+// "happy to step up onto a familiar hand" — a safety bug). The owner's exact
+// words live in the structured "Full care plan" view this card links to.
+function WelcomeCard({ bird, token }: { bird: any; token: string }) {
   const species = (bird.species ?? "").trim() || "Parrot";
   const age = (bird.age ?? "").trim();
   const speciesAge = [species, age].filter(Boolean).join(" · ");
-  const intro = (bird.owner_edited_intro ?? bird.sitter_intro ?? p.owner_edited_intro ?? p.sitter_intro ?? "").toString().trim();
-  const handling = handlingMustKnow(bird, p);
-  const noise = (p.normal_noise ?? "").toString().trim();
   const initial = (bird.name?.slice(0, 1) ?? "?").toUpperCase();
 
   return (
@@ -415,27 +411,6 @@ function WelcomeCard({ bird, plan, token }: { bird: any; plan: any; token: strin
         </div>
       </div>
 
-      {(intro || handling || noise) && (
-        <div className="space-y-4 p-5">
-          {intro && <p className="text-[13px] leading-relaxed text-white/85">{intro}</p>}
-          {(handling || noise) && (
-            <div className="space-y-2">
-              {handling && (
-                <p className="flex gap-2 text-sm leading-snug">
-                  <Hand className="mt-0.5 size-4 shrink-0 text-[#cdeab0]" />
-                  <span><span className="font-semibold">Handling:</span> {handling}</span>
-                </p>
-              )}
-              {noise && (
-                <p className="flex gap-2 text-sm leading-snug">
-                  <Volume2 className="mt-0.5 size-4 shrink-0 text-[#cdeab0]" />
-                  <span><span className="font-semibold">Noise:</span> {noise}</span>
-                </p>
-              )}
-            </div>
-          )}
-        </div>
-      )}
       {/* Visible CTA so it's clearly an action, for sitters who don't tap the card. */}
       <div data-coach="care-plan-link" className="flex items-center justify-between gap-3 border-t border-white/10 px-5 py-3">
         <span className="text-sm font-medium text-[#cdeab0]">View {bird.name}'s full care plan</span>

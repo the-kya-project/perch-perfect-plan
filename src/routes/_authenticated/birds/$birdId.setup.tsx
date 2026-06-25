@@ -20,7 +20,6 @@ import { normalizeFeedTimes, feedTimeLabel, type FeedTime } from "@/lib/feedTime
 import { syncFeedingTasks } from "@/lib/feedingSync";
 import { formatAmountUnit } from "@/lib/labels";
 import { track } from "@/lib/analytics";
-import { recomputeSitterIntro } from "@/lib/sitterIntro";
 import { ensureSitterPreviewToken } from "@/lib/sitterPreview";
 import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
 import { persistBirdPhoto, signBirdPhoto } from "@/lib/birdPhoto";
@@ -485,8 +484,6 @@ export function BasicsStep({ birdId, onBlockNext, registerFlush }: { birdId: str
       ["bird", "bird-setup", "bird-identity", "bird-record", "vet-bird"].forEach((k) =>
         qc.invalidateQueries({ queryKey: [k, birdId] }));
       qc.invalidateQueries({ queryKey: ["birds"] });
-      // Basics changes name/sex/species/age — refresh the assembled sitter intro.
-      void recomputeSitterIntro(birdId);
     },
     [form, photoRef, birdId, qc],
     !!form && hydrated,
@@ -1470,8 +1467,6 @@ export function PersonalityStep({ birdId, birdName, registerFlush }: { birdId: s
         } as any)
         .eq("id", plan.id);
       qc.invalidateQueries({ queryKey: ["plan", birdId] });
-      // Behavior changes step-up/handlers/likes — refresh the assembled sitter intro.
-      void recomputeSitterIntro(birdId);
     },
     [stepUp, stepUpNotes, handlers, likes, fears, bite],
     !!plan && hydrated,
