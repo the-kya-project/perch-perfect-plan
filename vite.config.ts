@@ -47,6 +47,11 @@ export default defineConfig({
         manifest: false,
         devOptions: { enabled: false },
         workbox: {
+          // New SW takes over on the next page load instead of waiting for every
+          // controlled PWA window to close — without this, fixes can sit stuck
+          // behind the old SW for days on iOS where the user never fully quits.
+          skipWaiting: true,
+          clientsClaim: true,
           // Serve the app shell network-first so updates land without forcing reloads.
           navigateFallback: "/",
           navigateFallbackDenylist: [
