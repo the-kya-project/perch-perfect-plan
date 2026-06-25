@@ -35,7 +35,7 @@ function ScanDetail() {
   const qc = useQueryClient();
   const canGoBack = useCanGoBack();
   const [resolving, setResolving] = useState(false);
-  const goBack = () => (canGoBack ? router.history.back() : navigate({ to: "/notifications" }));
+  const goBack = () => (canGoBack ? router.history.back() : navigate({ to: "/scans" }));
 
   async function markResolved() {
     if (!window.confirm("Mark this concern as resolved? Caregivers will see the bird's status return to normal.")) return;

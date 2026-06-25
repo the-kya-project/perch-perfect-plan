@@ -32,7 +32,7 @@ export function OwnerHeaderIcons() {
       <button type="button" onClick={replayTour} className={HERO_ICON_BTN} style={HERO_ICON_BG} aria-label="Replay app tour">
         <HelpCircle className="size-[18px]" />
       </button>
-      <Link to="/notifications" className={`relative ${HERO_ICON_BTN}`} style={HERO_ICON_BG} aria-label="Scans">
+      <Link to="/scans" className={`relative ${HERO_ICON_BTN}`} style={HERO_ICON_BG} aria-label="Scans">
         <Bell className="size-[18px]" />
         {/* Unread badge: lime fill, ink text, no border — the ONE canonical
             treatment, tied to count not to which page you're on. */}

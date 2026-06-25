@@ -103,7 +103,7 @@ function AccountPage() {
                   subtitle="Vet, contacts & spend limit — used for every bird."
                 />
               </Link>
-              <Link to="/notifications/settings" className="block">
+              <Link to="/scans/settings" className="block">
                 <RecordRow
                   leading={<IconTile icon={<Bell className="size-5" />} />}
                   title="Notifications"
