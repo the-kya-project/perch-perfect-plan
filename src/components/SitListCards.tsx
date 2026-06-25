@@ -142,7 +142,7 @@ export function ActiveSitCard({ sit, birds, allBirdsCount, caregiverName, allBir
           <Activity className="size-4" /> View scans
         </Link>
         <Link
-          to="/sits/$sitId/preview"
+          to="/sit-preview/$sitId"
           params={{ sitId: sit.id }}
           className="inline-flex min-h-[42px] flex-1 items-center justify-center gap-1.5 rounded-[12px] border border-white/35 text-[14px] font-[500] text-white active:scale-[0.99]"
         >
@@ -209,7 +209,7 @@ export function UpcomingSitCard({
 
           <div className="mt-3.5 flex gap-2">
             <Link
-              to="/sits/$sitId/preview"
+              to="/sit-preview/$sitId"
               params={{ sitId: sit.id }}
               className="inline-flex min-h-[42px] flex-1 items-center justify-center gap-1.5 rounded-[12px] border border-[var(--line)] text-[14px] font-[500] text-[var(--ink)] active:scale-[0.99]"
             >

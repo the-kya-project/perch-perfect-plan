@@ -8,7 +8,7 @@ import { Eye, ArrowLeft, Loader2 } from "lucide-react";
 // inside the owner's authenticated session. `?preview=1` tells the sitter
 // loader not to count it as a sitter visit. A banner makes the mode obvious and
 // links back to the Sits page (not the sitter view's own back target).
-export const Route = createFileRoute("/_authenticated/sits/$sitId/preview")({
+export const Route = createFileRoute("/_authenticated/sit-preview/$sitId")({
   head: () => ({ meta: [{ title: "Sitter preview — Kya & Co." }] }),
   component: SitPreview,
 });
