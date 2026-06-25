@@ -59,6 +59,10 @@ function SitterLayout() {
   const firedRef = useRef(false);
   useEffect(() => {
     if (firedRef.current) return;
+    // Owner "View as sitter" preview (?preview=1) must NOT count as a sitter
+    // visit — skip the analytics entirely.
+    const isPreview = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("preview") === "1";
+    if (isPreview) return;
     firedRef.current = true;
     track("sitter_link_opened", { bird_count: ctx.birds?.length ?? 0 });
   }, [ctx]);
