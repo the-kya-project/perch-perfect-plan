@@ -89,6 +89,35 @@ function Field({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
+// Step-up: a binary outcome pill + the owner's exact qualifier text verbatim.
+// "with caveats" signals the binary is only part of the story — so a sitter who
+// reads only the pill still knows to read the note (e.g. yes + "Only I can
+// handle" → "Yes, with caveats" + the note verbatim). No paraphrasing.
+function StepUpField({ stepUp, notes }: { stepUp?: string | null; notes?: string | null }) {
+  const raw = (stepUp ?? "").trim().toLowerCase();
+  const qualifier = (notes ?? "").trim();
+  const base = raw === "yes" ? "Yes" : raw === "no" ? "No" : raw === "sometimes" ? "Sometimes" : null;
+  if (!base && !qualifier) return null;
+  const label = base ? (qualifier ? `${base}, with caveats` : base) : null;
+  // Caveats / "no" lean cautionary (amber); a clean "yes" is reassuring (lime).
+  const cautionary = !base || raw === "no" || !!qualifier;
+  return (
+    <div>
+      <p className="text-[10px] font-medium uppercase tracking-wider text-[#5f5e5a]">Step up</p>
+      {label && (
+        <span
+          className={`mt-1 inline-flex items-center rounded-full px-2.5 py-1 text-[11.5px] font-medium ${
+            cautionary ? "bg-[#f6e7c4] text-[#854F0B]" : "bg-[#d6e8dc] text-[#1a5e3f]"
+          }`}
+        >
+          {label}
+        </span>
+      )}
+      {qualifier && <p className="mt-1.5 text-sm text-[#1a3d2e] whitespace-pre-line">{qualifier}</p>}
+    </div>
+  );
+}
+
 function Chips({ items }: { items: string[] }) {
   return (
     <div className="flex flex-wrap gap-1.5">
@@ -277,8 +306,7 @@ export function CareSheetView({ data }: { data: CareSheetData }) {
             </div>
           )}
           <Section title="Handling & personality" coach="cp-handling">
-            {has(plan.step_up) && <Field label="Step up" value={plan.step_up} />}
-            {has(plan.step_up_notes) && <Field label="Step up notes" value={plan.step_up_notes} />}
+            <StepUpField stepUp={plan.step_up} notes={plan.step_up_notes} />
             {has(plan.handlers) && <Field label="Who can handle" value={plan.handlers} />}
             {!has(plan.step_up) && !has(plan.step_up_notes) && !has(plan.handlers) && has(plan.handling_rules) && (
               <Field label="Handling rules" value={plan.handling_rules} />
