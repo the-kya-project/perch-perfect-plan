@@ -303,7 +303,7 @@ function TodayPanel({ items, onNavigate }: { items: TodayItem[]; onNavigate: (i:
     >
       <div className="flex items-baseline justify-between px-4 pb-1.5 pt-3.5">
         <h2 className="t-section">Today</h2>
-        <span className="t-meta">{items.length} {items.length === 1 ? "thing" : "things"}</span>
+        <span className="t-eyebrow text-[var(--teal-on-cream)]">{items.length} {items.length === 1 ? "thing" : "things"}</span>
       </div>
       <ul>
         {items.map((it) => (
