@@ -3,7 +3,7 @@
 // past-sit scan counts in batch and passes them in. (The older SitCard stays
 // in the bird plan editor; this file is only the Sits tab list.)
 import { useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { Activity, Eye, Link2, Home, ChevronDown, Pencil } from "lucide-react";
 import { compactRange, monthDay, durationDays, daysUntil } from "@/lib/dates";
 import { copySitterLink } from "@/lib/sitLink";
@@ -95,7 +95,6 @@ function BirdChips({ birds, allBirdsCount, onDark }: { birds: SitBird[]; allBird
 // ACTIVE — full ink card, the focal element.
 // ---------------------------------------------------------------------------
 export function ActiveSitCard({ sit, birds, allBirdsCount, caregiverName, allBirds, onChange }: { sit: ListSit; birds: SitBird[]; allBirdsCount: number; caregiverName: string; allBirds?: any[]; onChange?: () => void }) {
-  const navigate = useNavigate();
   const [editing, setEditing] = useState(false);
   if (editing && allBirds) {
     return <SitForm birds={allBirds} editSit={sit as any} onSaved={onChange ?? (() => {})} onCancel={() => setEditing(false)} />;
@@ -104,7 +103,6 @@ export function ActiveSitCard({ sit, birds, allBirdsCount, caregiverName, allBir
   const dayOf = -daysUntil(sit.start_date) + 1;
   const total = durationDays(sit.start_date, sit.end_date);
   const meta = household ? "Caregiver during trip" : `Sitter · day ${dayOf} of ${total}`;
-  const firstBird = birds[0];
 
   return (
     <div className="rounded-[20px] bg-[var(--ink)] p-4 text-white shadow-[0_12px_28px_-14px_rgba(20,40,30,0.6)]">
@@ -136,22 +134,20 @@ export function ActiveSitCard({ sit, birds, allBirdsCount, caregiverName, allBir
       </div>
 
       <div className="mt-3.5 flex gap-2">
-        <button
-          type="button"
-          onClick={() => navigate({ to: "/notifications", search: { sitId: sit.id } })}
+        <Link
+          to="/notifications"
+          search={{ sitId: sit.id }}
           className="inline-flex min-h-[42px] flex-1 items-center justify-center gap-1.5 rounded-[12px] bg-[var(--lime)] text-[14px] font-[500] text-[var(--ink)] active:scale-[0.99]"
         >
           <Activity className="size-4" /> View scans
-        </button>
-        {firstBird && (
-          <button
-            type="button"
-            onClick={() => navigate({ to: "/sits/$sitId/preview", params: { sitId: sit.id } })}
-            className="inline-flex min-h-[42px] flex-1 items-center justify-center gap-1.5 rounded-[12px] border border-white/35 text-[14px] font-[500] text-white active:scale-[0.99]"
-          >
-            <Eye className="size-4" /> {household ? "View as caregiver" : "View as sitter"}
-          </button>
-        )}
+        </Link>
+        <Link
+          to="/sits/$sitId/preview"
+          params={{ sitId: sit.id }}
+          className="inline-flex min-h-[42px] flex-1 items-center justify-center gap-1.5 rounded-[12px] border border-white/35 text-[14px] font-[500] text-white active:scale-[0.99]"
+        >
+          <Eye className="size-4" /> {household ? "View as caregiver" : "View as sitter"}
+        </Link>
       </div>
 
       {allBirds && (
@@ -171,11 +167,9 @@ export function ActiveSitCard({ sit, birds, allBirdsCount, caregiverName, allBir
 export function UpcomingSitCard({
   sit, birds, allBirdsCount, caregiverName, collapsible = false, allBirds, onChange,
 }: { sit: ListSit; birds: SitBird[]; allBirdsCount: number; caregiverName: string; collapsible?: boolean; allBirds?: any[]; onChange?: () => void }) {
-  const navigate = useNavigate();
   const household = !!sit.caregiver_user_id;
   const [open, setOpen] = useState(!collapsible);
   const [editing, setEditing] = useState(false);
-  const firstBird = birds[0];
 
   if (editing && allBirds) {
     return <SitForm birds={allBirds} editSit={sit as any} onSaved={onChange ?? (() => {})} onCancel={() => setEditing(false)} />;
@@ -214,15 +208,13 @@ export function UpcomingSitCard({
           <SitChecklist sit={sit as any} birds={birds} onSitChanged={onChange} />
 
           <div className="mt-3.5 flex gap-2">
-            {firstBird && (
-              <button
-                type="button"
-                onClick={() => navigate({ to: "/sits/$sitId/preview", params: { sitId: sit.id } })}
-                className="inline-flex min-h-[42px] flex-1 items-center justify-center gap-1.5 rounded-[12px] border border-[var(--line)] text-[14px] font-[500] text-[var(--ink)] active:scale-[0.99]"
-              >
-                <Eye className="size-4" /> {household ? "View as caregiver" : "View as sitter"}
-              </button>
-            )}
+            <Link
+              to="/sits/$sitId/preview"
+              params={{ sitId: sit.id }}
+              className="inline-flex min-h-[42px] flex-1 items-center justify-center gap-1.5 rounded-[12px] border border-[var(--line)] text-[14px] font-[500] text-[var(--ink)] active:scale-[0.99]"
+            >
+              <Eye className="size-4" /> {household ? "View as caregiver" : "View as sitter"}
+            </Link>
             {!household && (
               <button
                 type="button"
