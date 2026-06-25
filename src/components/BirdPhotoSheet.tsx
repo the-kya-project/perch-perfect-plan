@@ -127,7 +127,7 @@ export function BirdPhotoSheet({
         ) : (
           <div className="space-y-3">
             {editUrl && <RepositionBox src={editUrl} position={pos} onChange={setPos} />}
-            <p className="t-meta text-center">Drag the hero. The tile preview shows exactly what your flock card will display.</p>
+            <p className="t-meta text-center">Drag to frame the photo. The green <span className="font-[600] text-[var(--moss)]">Flock card</span> preview is exactly what your Home tile will show — frame the bird inside it, then save.</p>
             <div className="flex gap-2">
               <button type="button" disabled={busy} onClick={() => setMode("menu")} className="min-h-[44px] flex-1 rounded-[12px] border border-[var(--line)] bg-white text-[15px] font-[500] text-[var(--ink)] disabled:opacity-50">Back</button>
               <button type="button" disabled={busy} onClick={save} className="min-h-[44px] flex-1 rounded-[12px] bg-[var(--lime)] text-[15px] font-[500] text-[var(--ink)] disabled:opacity-50">{busy ? "Saving…" : "Save photo"}</button>
@@ -187,26 +187,32 @@ function RepositionBox({ src, position, onChange }: { src: string; position: str
     // items-start + a fixed-width card so each box sizes from its OWN aspect
     // ratio. (flex-1 + aspect + items-stretch left the card with no definite
     // width and it overflowed off-screen.) min-w-0 lets the hero shrink to
-    // make room for the 96px card.
+    // make room for the card. The card is the real WYSIWYG flock-tile preview,
+    // so it's sized prominently — what you frame here is what the tile shows.
     <div className="flex items-start gap-3">
-      <div
-        ref={ref}
-        onPointerDown={onDown}
-        onPointerMove={onMove}
-        onPointerUp={onUp}
-        onPointerCancel={onUp}
-        className="relative aspect-[3/2] min-w-0 flex-1 touch-none select-none overflow-hidden rounded-[14px] ring-1 ring-[var(--line)]"
-        style={{ ...coverStyle, cursor: dragging ? "grabbing" : "grab" }}
-        role="img"
-        aria-label="Drag to reposition photo"
-      >
-        <span className="absolute left-2 top-2 rounded-full bg-black/45 px-2 py-0.5 text-[10px] font-[500] text-white">Hero</span>
+      <div className="min-w-0 flex-1 space-y-1">
+        <div
+          ref={ref}
+          onPointerDown={onDown}
+          onPointerMove={onMove}
+          onPointerUp={onUp}
+          onPointerCancel={onUp}
+          className="relative aspect-[3/2] w-full touch-none select-none overflow-hidden rounded-[14px] ring-1 ring-[var(--line)]"
+          style={{ ...coverStyle, cursor: dragging ? "grabbing" : "grab" }}
+          role="img"
+          aria-label="Drag to reposition photo"
+        >
+          <span className="absolute left-2 top-2 rounded-full bg-black/45 px-2 py-0.5 text-[10px] font-[500] text-white">Drag to reposition</span>
+        </div>
+        <p className="t-meta text-center">Bird-record header</p>
       </div>
-      {/* Tile preview at the actual 9:10 card aspect, fixed 96px wide, so the
-          user sees the same object-position cropped the way a flock/foster
-          card will render it. */}
-      <div className="relative aspect-[9/10] w-24 shrink-0 overflow-hidden rounded-[14px] ring-1 ring-[var(--line)]" style={coverStyle}>
-        <span className="absolute bottom-1 left-1/2 -translate-x-1/2 rounded-full bg-black/45 px-2 py-0.5 text-[10px] font-[500] text-white">Card</span>
+      {/* The real flock-tile preview at the actual 9:10 card aspect. Same
+          object-position + cover as PhotoTile, so this IS the tile. */}
+      <div className="shrink-0 space-y-1">
+        <div className="relative aspect-[9/10] w-28 overflow-hidden rounded-[14px] ring-2 ring-[var(--moss)]" style={coverStyle}>
+          <span className="absolute bottom-1 left-1/2 -translate-x-1/2 rounded-full bg-[var(--moss)] px-2 py-0.5 text-[10px] font-[500] text-white">Flock card</span>
+        </div>
+        <p className="t-meta text-center">What the tile shows</p>
       </div>
     </div>
   );
