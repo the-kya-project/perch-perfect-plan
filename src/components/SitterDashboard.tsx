@@ -33,7 +33,7 @@ export function SitterDashboard({ token }: { token: string }) {
     <main className="mx-auto max-w-md space-y-6 px-5 py-6">
       <header className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-2xl font-medium leading-tight text-[#1a3d2e]">Welcome back</h1>
+          <h1 className="text-2xl font-medium leading-tight text-[#1a3d2e]">Welcome</h1>
           <p className="mt-1.5 text-sm leading-relaxed text-[#5f5e5a]">
             {isLoading
               ? "Loading the birds in your care…"

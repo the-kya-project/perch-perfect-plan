@@ -233,7 +233,7 @@ function SitterToday() {
           {/* Progress for the current daypart */}
           {currentList.length > 0 && (
             <div>
-              <p className="text-xs text-sage-600">{currentDone} of {currentList.length} done this {nowDp}</p>
+              <p className="text-xs text-sage-600">{currentDone} of {currentList.length} daily tasks done this {nowDp}</p>
               <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-sage-100">
                 <div className="h-full rounded-full bg-[#2d6a4f] transition-all" style={{ width: `${Math.round((currentDone / currentList.length) * 100)}%` }} />
               </div>
