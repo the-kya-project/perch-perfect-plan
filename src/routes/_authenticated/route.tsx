@@ -39,7 +39,10 @@ function AuthenticatedLayout() {
   const pathname = useLocation({ select: (l) => l.pathname });
   const hideNav =
     pathname === "/welcome" || pathname === "/birds/new" ||
-    pathname.endsWith("/setup") || pathname.endsWith("/view-as-sitter");
+    pathname.endsWith("/setup") || pathname.endsWith("/view-as-sitter") ||
+    // The sitter preview renders the sitter's OWN chrome (its iframe) — the
+    // owner's bottom nav must not show under it.
+    pathname.startsWith("/sit-preview");
 
   return (
     <>

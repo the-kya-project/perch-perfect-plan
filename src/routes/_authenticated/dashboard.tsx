@@ -8,9 +8,10 @@ import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { useBirdPhotos } from "@/lib/useBirdPhotos";
 import type { SignedPhoto } from "@/lib/birdPhoto";
 import {
-  Plus, Settings, Bell, Users, ChevronRight, Scale, CalendarHeart, Calendar,
-  Feather, AlertCircle, HelpCircle, AlertTriangle,
+  Plus, Settings, Users, ChevronRight, Scale, CalendarHeart, Calendar,
+  Feather, AlertCircle, AlertTriangle,
 } from "lucide-react";
+import { OwnerHeaderIcons } from "@/components/OwnerHeader";
 import { OwnerOnboarding, replayOwnerOnboarding } from "@/components/OwnerOnboarding";
 import { useTourDemo, DEMO_FLOCK, DEMO_FOSTERS, DEMO_HOUSEHOLD, demoGlanceFor, getDemoToday } from "@/lib/tourDemo";
 import { deriveConcernByBird, daysAgo } from "@/lib/scanConcern";
@@ -286,24 +287,7 @@ function HomeHeader({ firstName, unreadNotifs, stateCopy, cta }: { firstName: st
       headline={greeting}
       body={stateCopy}
       cta={cta}
-      trailingIcons={
-        <>
-          <button type="button" onClick={() => replayOwnerOnboarding()} aria-label="Replay app tour" className="grid size-9 place-items-center rounded-full text-white active:scale-95" style={{ background: "rgba(255,255,255,0.12)" }}>
-            <HelpCircle className="size-[18px]" />
-          </button>
-          <Link to="/notifications" aria-label="Notifications" className="relative grid size-9 place-items-center rounded-full text-white active:scale-95" style={{ background: "rgba(255,255,255,0.12)" }}>
-            <Bell className="size-[18px]" />
-            {unreadNotifs > 0 && (
-              <span className="absolute -right-0.5 -top-0.5 grid min-w-[16px] place-items-center rounded-full bg-[var(--lime)] px-1 text-[10px] font-medium leading-4 text-[var(--ink)]">
-                {unreadNotifs > 9 ? "9+" : unreadNotifs}
-              </span>
-            )}
-          </Link>
-          <Link to="/account" aria-label="Settings" className="grid size-9 place-items-center rounded-full text-white active:scale-95" style={{ background: "rgba(255,255,255,0.12)" }}>
-            <Settings className="size-[18px]" />
-          </Link>
-        </>
-      }
+      trailingIcons={<OwnerHeaderIcons />}
     />
   );
 }

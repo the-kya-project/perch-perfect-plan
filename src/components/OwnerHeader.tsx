@@ -4,9 +4,14 @@ import { Bell, Settings, HelpCircle } from "lucide-react";
 import { fetchScanFeed, getNotifSeenAt } from "@/lib/notificationsFeed";
 import { replayOwnerOnboarding } from "@/components/OwnerOnboarding";
 
-// The two owner header icons — notifications (bell, with unread badge) and
-// settings (gear). Reused in OwnerHeader and inline in the Explore mission band.
-// `tone` adapts the hover tint for dark vs light backgrounds.
+// THE single shared top-right hero icon cluster — help (replay tour), bell
+// (with unread badge), settings (gear) — in a consistent dark-circle treatment.
+// Used on every in-app hero (Home, Sits, Scans, scan detail, Explore). Keeping
+// it in one place means the unread badge is ALWAYS the same lime-on-ink chip,
+// not red on one screen and lime on another.
+const HERO_ICON_BTN = "grid size-9 place-items-center rounded-full text-white active:scale-95";
+const HERO_ICON_BG = { background: "rgba(255,255,255,0.12)" } as const;
+
 export function OwnerHeaderIcons() {
   const navigate = useNavigate();
   const { data: scanFeed = [] } = useQuery({ queryKey: ["scan-feed"], queryFn: fetchScanFeed });
@@ -23,20 +28,22 @@ export function OwnerHeaderIcons() {
   }
 
   return (
-    <div className="flex items-center gap-1 text-white">
-      <button type="button" onClick={replayTour} className="rounded-full p-2 hover:bg-white/10" aria-label="Replay app tour">
-        <HelpCircle className="size-5" />
+    <div className="flex items-center gap-2 text-white">
+      <button type="button" onClick={replayTour} className={HERO_ICON_BTN} style={HERO_ICON_BG} aria-label="Replay app tour">
+        <HelpCircle className="size-[18px]" />
       </button>
-      <Link to="/notifications" className="relative rounded-full p-2 hover:bg-white/10" aria-label="Notifications">
-        <Bell className="size-5" />
+      <Link to="/notifications" className={`relative ${HERO_ICON_BTN}`} style={HERO_ICON_BG} aria-label="Scans">
+        <Bell className="size-[18px]" />
+        {/* Unread badge: lime fill, ink text, no border — the ONE canonical
+            treatment, tied to count not to which page you're on. */}
         {unread > 0 && (
-          <span className="absolute right-0.5 top-0.5 flex min-w-[16px] items-center justify-center rounded-full bg-warn-red px-1 text-[10px] font-bold leading-4 text-white">
+          <span className="absolute -right-0.5 -top-0.5 grid min-w-[16px] place-items-center rounded-full bg-[var(--lime)] px-1 text-[10px] font-medium leading-4 text-[var(--ink)]">
             {unread > 9 ? "9+" : unread}
           </span>
         )}
       </Link>
-      <Link to="/account" className="rounded-full p-2 hover:bg-white/10" aria-label="Account settings">
-        <Settings className="size-5" />
+      <Link to="/account" className={HERO_ICON_BTN} style={HERO_ICON_BG} aria-label="Account settings">
+        <Settings className="size-[18px]" />
       </Link>
     </div>
   );

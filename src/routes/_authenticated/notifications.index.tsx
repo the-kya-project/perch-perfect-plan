@@ -6,6 +6,7 @@ import { ArrowLeft, Settings, AlertTriangle, CheckCircle2, Feather, Activity, X 
 import { supabase } from "@/integrations/supabase/client";
 import { fetchScanFeed, markNotifsSeen, getNotifSeenAt, scanRunBy, type ScanFeedItem } from "@/lib/notificationsFeed";
 import { InkHero, IconTile, StatusPill, RecordRow, Card } from "@/components/system";
+import { OwnerHeaderIcons } from "@/components/OwnerHeader";
 import { monthDay } from "@/lib/dates";
 
 export const Route = createFileRoute("/_authenticated/notifications/")({
@@ -89,16 +90,7 @@ function NotificationsInbox() {
               ? { label: "Run a scan", tone: "lime", icon: <Activity className="size-4" />, onPress: () => setPicking((v) => !v) }
               : undefined
           }
-          trailingIcons={
-            <Link
-              to="/notifications/settings"
-              aria-label="Settings"
-              className="grid size-9 place-items-center rounded-full text-white active:scale-95"
-              style={{ background: "rgba(255,255,255,0.12)" }}
-            >
-              <Settings className="size-[18px]" />
-            </Link>
-          }
+          trailingIcons={<OwnerHeaderIcons />}
         />
 
         <main className="space-y-4 px-5 pt-5">

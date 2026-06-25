@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ArrowLeft, Check, AlertTriangle, HelpCircle, Minus, Loader2, Siren } from "lucide-react";
 import { InkHero, Card, StatusPill, SectionHead, IconTile } from "@/components/system";
+import { OwnerHeaderIcons } from "@/components/OwnerHeader";
 
 // Focused, read-only view of one submitted health scan. Reached from the Scans
 // inbox (replaces the old deep-link into the care-plan editor's logs tab, which
@@ -113,7 +114,10 @@ function ScanDetail() {
             </p>
           )}
           {notSure.length > 0 && (
-            <p className="mt-1 text-[13px] text-[var(--amber-ink)]">{notSure.length} item{notSure.length === 1 ? "" : "s"} the sitter wasn't sure about.</p>
+            <p className="mt-1 text-[13px] text-[var(--amber-ink)]">
+              {notSure.length} item{notSure.length === 1 ? "" : "s"}{" "}
+              {data!.actor === "You" ? "you weren't" : `${data!.actor.split(/\s+/)[0]} wasn't`} sure about.
+            </p>
           )}
         </div>
       </div>
@@ -176,7 +180,7 @@ function Shell({ eyebrow, headline, body, onBack, children }: { eyebrow: string;
   return (
     <div className="min-h-screen bg-[var(--cream)] pb-nav">
       <div className="mx-auto max-w-md">
-        <InkHero backIcon={<ArrowLeft className="size-5" />} onBack={onBack} eyebrow={eyebrow} headline={headline} body={body} />
+        <InkHero backIcon={<ArrowLeft className="size-5" />} onBack={onBack} eyebrow={eyebrow} headline={headline} body={body} trailingIcons={<OwnerHeaderIcons />} />
         <main className="space-y-4 px-5 pt-5">{children}</main>
       </div>
     </div>
