@@ -1,7 +1,9 @@
-import { createFileRoute, useNavigate, useRouter, useCanGoBack } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { createFileRoute, useNavigate, useRouter, useCanGoBack, Link } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Check, AlertTriangle, HelpCircle, Minus, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { ArrowLeft, Check, AlertTriangle, HelpCircle, Minus, Loader2, Siren } from "lucide-react";
 import { InkHero, Card, StatusPill, SectionHead, IconTile } from "@/components/system";
 
 // Focused, read-only view of one submitted health scan. Reached from the Scans
@@ -29,8 +31,21 @@ function ScanDetail() {
   const { birdId, scanId } = Route.useParams();
   const navigate = useNavigate();
   const router = useRouter();
+  const qc = useQueryClient();
   const canGoBack = useCanGoBack();
+  const [resolving, setResolving] = useState(false);
   const goBack = () => (canGoBack ? router.history.back() : navigate({ to: "/notifications" }));
+
+  async function markResolved() {
+    if (!window.confirm("Mark this concern as resolved? Caregivers will see the bird's status return to normal.")) return;
+    setResolving(true);
+    const { error } = await supabase.from("daily_logs").update({ resolved_at: new Date().toISOString() } as any).eq("id", scanId);
+    setResolving(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Concern marked resolved.");
+    qc.invalidateQueries({ queryKey: ["scan-detail", scanId] });
+    qc.invalidateQueries({ queryKey: ["scan-feed"] });
+  }
 
   const { data, isLoading } = useQuery({
     queryKey: ["scan-detail", scanId],
@@ -102,6 +117,34 @@ function ScanDetail() {
           )}
         </div>
       </div>
+
+      {/* Concern actions — emergency contacts + explicit resolve. */}
+      {concern && (
+        <div className="space-y-2">
+          <Link
+            to="/birds/$birdId/plan/editor"
+            params={{ birdId }}
+            search={{ tab: "emergency" }}
+            className="flex min-h-[48px] items-center justify-center gap-2 rounded-[13px] bg-[var(--ink)] text-[15px] font-[500] text-white active:scale-[0.99]"
+          >
+            <Siren className="size-4" /> Emergency contacts
+          </Link>
+          {row.resolved_at ? (
+            <p className="flex items-center justify-center gap-1.5 py-1 text-[13px] font-[500] text-[var(--moss)]">
+              <Check className="size-4" /> Marked resolved
+            </p>
+          ) : (
+            <button
+              type="button"
+              onClick={markResolved}
+              disabled={resolving}
+              className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-[13px] border border-[var(--ink)] text-[15px] font-[500] text-[var(--ink)] active:scale-[0.99] disabled:opacity-50"
+            >
+              {resolving ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />} Mark resolved
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Per-item checklist */}
       <section>

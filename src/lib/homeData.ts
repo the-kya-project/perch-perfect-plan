@@ -101,9 +101,12 @@ export type TodayItem = {
   tone: "amber" | "pale";
   title: string;
   meta: string;
-  to: { kind: "weight" | "moments"; birdId: string } | { kind: "sits" };
+  to: { kind: "weight" | "moments"; birdId: string } | { kind: "sits" } | { kind: "scan"; birdId: string; scanId: string };
   rank: number; // lower = higher priority
 };
+
+// A bird's active concern, surfaced at the very top of Today.
+export type TodayConcern = { birdId: string; birdName: string; scanId: string; daysAgo: number; runByName: string };
 
 export type UpcomingSit = { id: string; sitterName: string | null; startDate: string; daysUntil: number };
 
@@ -112,7 +115,18 @@ export function buildTodayItems(
   weightsByBird: Map<string, WeightEntry[]>,
   sits: UpcomingSit[],
   moments: UpcomingMoment[],
+  concerns: TodayConcern[] = [],
 ): TodayItem[] {
+  // Health concerns sit ABOVE everything else and never get capped away.
+  const concernItems: TodayItem[] = concerns.map((c, i) => ({
+    id: `concern-${c.birdId}`,
+    tone: "amber",
+    title: `${c.birdName} — concern flagged`,
+    meta: `${c.daysAgo === 0 ? "Today" : `${c.daysAgo} day${c.daysAgo === 1 ? "" : "s"} ago`} · Run by ${c.runByName}`,
+    to: { kind: "scan", birdId: c.birdId, scanId: c.scanId },
+    rank: -1000 + i,
+  }));
+
   const items: TodayItem[] = [];
 
   // a. Stale weigh-ins (most urgent). Rank by how overdue.
@@ -148,7 +162,9 @@ export function buildTodayItems(
     });
   }
 
-  return items.sort((a, b) => a.rank - b.rank).slice(0, 4);
+  // Concerns always show; other items fill the remaining slots (min 4 total).
+  const rest = items.sort((a, b) => a.rank - b.rank).slice(0, Math.max(0, 4 - concernItems.length));
+  return [...concernItems, ...rest];
 }
 
 // ---- Home greeting body line (state-aware) --------------------------------
