@@ -39,8 +39,13 @@ export async function fetchScanFeed(): Promise<ScanFeedItem[]> {
   // Cast: daily_logs.source/run_by land in the generated types after the
   // owner-scans migration. Fall back without them if not present.
   const base = "id, bird_id, sit_id, triage_status, triage_reasons, notes, created_at, bird:birds(name, photo_url, photo_position), sit:sits(sitter_name, sitter_email)";
+  // 200 (not 40): the dashboard derives each bird's concern status from this
+  // same feed, so an older still-unresolved flagged scan must stay in the window
+  // even after many newer scans on other birds — otherwise a real concern reads
+  // as "All good". 200 covers realistic multi-bird history; the feed is still
+  // bounded.
   const run = (sel: string) =>
-    (supabase as any).from("daily_logs").select(sel).order("created_at", { ascending: false }).limit(40);
+    (supabase as any).from("daily_logs").select(sel).order("created_at", { ascending: false }).limit(200);
   // 3-tier fallback so a missing column never breaks the feed: full (with the
   // new resolved_at), then source/run_by only (pre-resolved_at migration), then
   // the bare base.
