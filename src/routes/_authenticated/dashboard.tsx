@@ -12,6 +12,7 @@ import {
   Feather, AlertCircle, HelpCircle,
 } from "lucide-react";
 import { OwnerOnboarding, replayOwnerOnboarding } from "@/components/OwnerOnboarding";
+import { useTourDemo, DEMO_FLOCK, DEMO_FOSTERS, DEMO_HOUSEHOLD, demoGlanceFor, getDemoToday } from "@/lib/tourDemo";
 import { Disclaimer } from "@/components/Disclaimer";
 import { AddToHomeScreenPrompt } from "@/components/AddToHomeScreenPrompt";
 import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
@@ -131,8 +132,16 @@ function Dashboard() {
     else navigate({ to: "/birds/$birdId/moments", params: { birdId: item.to.birdId } });
   };
 
-  const fosterBirds = homeBirds.filter((b) => b.is_foster);
-  const flockBirds = homeBirds.filter((b) => !b.is_foster);
+  // During the onboarding tour, Home shows fixed demo content so every bubble
+  // has something to point at (never the user's empty state). Nothing is
+  // persisted; real data returns the instant the tour ends.
+  const demo = useTourDemo();
+  const fosterBirds = demo ? DEMO_FOSTERS : homeBirds.filter((b) => b.is_foster);
+  const flockBirds = demo ? DEMO_FLOCK : homeBirds.filter((b) => !b.is_foster);
+  const todayItemsView = demo ? getDemoToday() : todayItems;
+  const householdView = demo ? DEMO_HOUSEHOLD : household;
+  const glanceFor = (b: HomeBird) => (demo ? demoGlanceFor(b.id) : weightGlance(weightsByBird.get(b.id) ?? [], b.is_foster));
+  const photoFor = (b: HomeBird) => (demo ? null : resolvePhoto(b.photo_url));
 
   const { data: caregiver } = useActiveCaregiver();
   const caregiverActive = !!caregiver?.sits?.length;
@@ -165,12 +174,15 @@ function Dashboard() {
   // on a sit covering today, Home takes over the active-caregiver experience
   // (hero + Today's check + Birds you're covering). The normal Home returns
   // automatically when end_date < today (the hook's query no longer matches).
-  if (caregiverActive && caregiver?.sits?.length) {
+  if (!demo && caregiverActive && caregiver?.sits?.length) {
     return (
       <div className="min-h-screen bg-[var(--cream)] pb-nav">
         <div className="mx-auto max-w-md">
           <CaregiverHome data={caregiver} />
         </div>
+        {/* Keep the tour mountable here so the "?" replay can flip demo mode on,
+            which then drops back into the normal demo Home via the guard above. */}
+        <OwnerOnboarding />
       </div>
     );
   }
@@ -183,21 +195,21 @@ function Dashboard() {
       <main className="space-y-6 px-5 pb-6 pt-5">
         {emergencyDefaults && <DefaultsPanel />}
 
-        {birdsLoading ? (
+        {birdsLoading && !demo ? (
           <HomeSkeleton />
-        ) : birds.length === 0 ? (
+        ) : !demo && birds.length === 0 ? (
           <EmptyHome />
-        ) : birds.length === 1 ? (
+        ) : !demo && birds.length === 1 ? (
           <>
-            <TodayPanel items={todayItems} onNavigate={onTodayNavigate} />
+            <TodayPanel items={todayItemsView} onNavigate={onTodayNavigate} />
             <div className="space-y-4"><BirdRecordBody birdId={birds[0].id} /></div>
-            <HouseholdActivity household={household} />
-            <HouseholdRow household={household} firstName={firstName} />
+            <HouseholdActivity household={householdView} />
+            <HouseholdRow household={householdView} firstName={firstName} />
             <FosterFooter count={pastCount} />
           </>
         ) : (
           <>
-            <TodayPanel items={todayItems} onNavigate={onTodayNavigate} />
+            <TodayPanel items={todayItemsView} onNavigate={onTodayNavigate} />
 
             <section className="space-y-3" data-coach="owner-flock">
               <SectionHeaderCTA title="Your flock" ctaLabel="Add a bird" onCta={() => navigate({ to: "/birds/new" })} />
@@ -206,7 +218,7 @@ function Dashboard() {
               ) : (
                 <div className="space-y-3">
                   {flockBirds.map((b) => (
-                    <BirdRow key={b.id} bird={b} photo={resolvePhoto(b.photo_url)} glance={weightGlance(weightsByBird.get(b.id) ?? [], b.is_foster)} />
+                    <BirdRow key={b.id} bird={b} photo={photoFor(b)} glance={glanceFor(b)} />
                   ))}
                 </div>
               )}
@@ -222,14 +234,14 @@ function Dashboard() {
                 />
                 <div className="space-y-3">
                   {fosterBirds.map((b) => (
-                    <BirdRow key={b.id} bird={b} photo={resolvePhoto(b.photo_url)} glance={weightGlance(weightsByBird.get(b.id) ?? [], b.is_foster)} foster />
+                    <BirdRow key={b.id} bird={b} photo={photoFor(b)} glance={glanceFor(b)} foster />
                   ))}
                 </div>
               </section>
             )}
 
-            <HouseholdActivity household={household} />
-            <HouseholdRow household={household} firstName={firstName} />
+            <HouseholdActivity household={householdView} />
+            <HouseholdRow household={householdView} firstName={firstName} />
             <FosterFooter count={pastCount} />
           </>
         )}

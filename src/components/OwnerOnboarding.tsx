@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { BrandLockup } from "@/components/BrandLogo";
 import { ChevronLeft, ArrowRight, Feather } from "lucide-react";
+import { setTourDemo } from "@/lib/tourDemo";
 
 // First-run owner orientation: a warm welcome, then a 10-step guided tour of the
 // real Home (nav tabs + content sections) with coach-mark bubbles, ending on a
@@ -35,15 +36,15 @@ type Step = {
 
 // 9 explained steps; step index 9 is the wrap-up CTA (rendered specially).
 const STEPS: Step[] = [
-  { target: "owner-tab-home", headline: "Home is where you land.", body: "Daily check-ins, your flock, anything happening soon — it's the screen you'll open most." },
+  { target: "owner-tab-home", headline: "Home is where you land.", body: "Here you'll find daily check-ins, your flock, and anything happening soon. It's the screen you'll open most." },
   { target: "owner-today", headline: "Today, at a glance.", body: "Sits starting, hatch days, a foster settling in — whatever's worth knowing today shows up here first." },
-  { target: "owner-flock", headline: "Each bird gets a record.", body: "Tap a bird to see their care plan, weight history, journal, identity, photos — the works." },
+  { target: "owner-flock", headline: "Each bird gets a record.", body: "Tap a bird to see their care plan, weight history, journal, identity, and photos. The works." },
   { target: "owner-fosters", headline: "Fostering a bird?", body: "They live here while they're with you — until they're adopted, or until you decide they're staying. (It happens.)" },
-  { headline: "Saying goodbye? Hand off the record.", body: "When a bird moves to a new home — adopter, friend, family — their full record can transfer with them. Care plan, history, identity, everything." },
-  { target: "owner-household", headline: "Family who shares the care?", body: "Spouse, partner, kids, roommates — add them as household. They keep access between trips, not just when you're away." },
-  { target: "owner-tab-sits", headline: "Going away? Set up a sit.", body: "Sitters get a temporary link — just for the trip. Household members already have access. Either can be assigned to a sit." },
-  { target: "owner-tab-activity", headline: "Daily health checks.", body: "Mostly your sitters running them — quick questions, archived for you. Flags show up fast when something's off." },
-  { target: "owner-tab-explore", headline: "Stories, education, conservation.", body: "What The Kya Project is up to. Field notes, deep dives, ways to get involved. Read when you have a minute." },
+  { headline: "Saying goodbye? Hand off the record.", body: "When a bird moves to a new home their full record can transfer with them. Care plan, history, identity, everything." },
+  { target: "owner-household", headline: "Family who shares the care?", body: "Spouse, partner, kids, roommates — add them as household. They get access to your care plan and health scans so they can step in when needed." },
+  { target: "owner-tab-sits", headline: "Going away? Set up a sit.", body: "Pet sitters get a temporary link — just for the trip. Household members get more details and a daily checklist." },
+  { target: "owner-tab-activity", headline: "Daily health checks.", body: "Quick questions to track health. Pet sitters are asked to scan daily. Flags show up fast when something's off." },
+  { target: "owner-tab-explore", headline: "Stories, education, conservation.", body: "What The Kya Project is up to. Field notes, deep dives, community and other ways to get involved. Read when you have a minute." },
 ];
 const TOTAL = STEPS.length + 1; // + wrap-up = 10
 
@@ -67,6 +68,8 @@ export function OwnerOnboarding() {
   const [phase, setPhase] = useState<Phase>(null);
   const [step, setStep] = useState(0); // 0..STEPS.length (last index = wrap-up)
   const [firstName, setFirstName] = useState("");
+  // Actual owned-bird count (NOT demo) — decides the wrap-up variant.
+  const [birdCount, setBirdCount] = useState(0);
   const [spot, setSpot] = useState<Spot | null>(null);
   const bubbleRef = useRef<HTMLDivElement | null>(null);
   const [bubbleH, setBubbleH] = useState(160);
@@ -76,6 +79,16 @@ export function OwnerOnboarding() {
   const activeTarget = phase === "coach" ? stepDef?.target ?? null : null;
   const isNavTarget = !!activeTarget && activeTarget.startsWith("owner-tab-");
 
+  // Owned-bird count from the DB (owner_id = me) — refreshed at every tour start.
+  async function loadBirdCount() {
+    try {
+      const { data: u } = await getLocalUser();
+      if (!u.user) return;
+      const { count } = await supabase.from("birds").select("id", { count: "exact", head: true }).eq("owner_id", u.user.id);
+      setBirdCount(count ?? 0);
+    } catch { /* ignore — defaults to 0 (variant A) */ }
+  }
+
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -84,14 +97,16 @@ export function OwnerOnboarding() {
       const { data } = await supabase.from("profiles").select("welcome_seen_at, display_name").eq("id", u.user.id).maybeSingle();
       if (cancelled) return;
       setFirstName(((data?.display_name ?? "").toString().trim().split(/\s+/)[0]) || "");
+      void loadBirdCount();
       let replay = false;
       try { replay = sessionStorage.getItem(REPLAY_FLAG) === "1"; } catch { /* ignore */ }
       if (replay) { try { sessionStorage.removeItem(REPLAY_FLAG); } catch { /* ignore */ } setStep(0); setPhase("welcome"); return; }
       if (!data?.welcome_seen_at) { setStep(0); setPhase("welcome"); }
     })();
-    const onReplay = () => { try { sessionStorage.removeItem(REPLAY_FLAG); } catch { /* ignore */ } setStep(0); setPhase("welcome"); };
+    const onReplay = () => { try { sessionStorage.removeItem(REPLAY_FLAG); } catch { /* ignore */ } void loadBirdCount(); setStep(0); setPhase("welcome"); };
     window.addEventListener(REPLAY_EVENT, onReplay);
-    return () => { cancelled = true; window.removeEventListener(REPLAY_EVENT, onReplay); };
+    // Safety: never leave demo mode on if this unmounts mid-tour.
+    return () => { cancelled = true; setTourDemo(false); window.removeEventListener(REPLAY_EVENT, onReplay); };
   }, []);
 
   // Measure + track the current target; retry until it renders, re-measure on
@@ -145,8 +160,9 @@ export function OwnerOnboarding() {
       } catch { /* ignore */ }
     })();
   }
-  function finish() { markSeen(); setPhase(null); }
-  function addBird() { markSeen(); setPhase(null); navigate({ to: "/birds/new" }); }
+  function startCoach() { setTourDemo(true); setStep(0); setPhase("coach"); }
+  function finish() { setTourDemo(false); markSeen(); setPhase(null); }
+  function addBird() { setTourDemo(false); markSeen(); setPhase(null); navigate({ to: "/birds/new" }); }
   function next() { setStep((s) => Math.min(s + 1, STEPS.length)); }
   function back() {
     if (step > 0) setStep((s) => s - 1);
@@ -169,7 +185,7 @@ export function OwnerOnboarding() {
         </div>
         <div className="px-6 pb-[max(env(safe-area-inset-bottom),24px)]">
           <button
-            onClick={() => { setStep(0); setPhase("coach"); }}
+            onClick={startCoach}
             className="flex w-full items-center justify-center gap-2 rounded-[13px] bg-[var(--lime)] py-3.5 text-[14.5px] font-[500] text-[var(--ink)] active:scale-[0.99]"
           >
             <ArrowRight className="size-4" /> Show me around
@@ -241,11 +257,22 @@ export function OwnerOnboarding() {
           <div className="text-center">
             <p className="t-eyebrow text-[var(--mute2)]">{TOTAL} of {TOTAL}</p>
             <h2 className="mt-1.5 text-[18px] font-[500] text-[var(--ink)]">That's the tour.</h2>
-            <p className="mt-2 text-[13px] leading-[1.5] text-[var(--ink2)]">Now the fun part — let's set up your first bird.</p>
-            <button onClick={addBird} className="mt-3.5 flex w-full items-center justify-center gap-2 rounded-[13px] bg-[var(--lime)] py-3 text-[14px] font-[500] text-[var(--ink)] active:scale-[0.99]">
-              <Feather className="size-4" /> Add my first bird
-            </button>
-            <p className="mt-2.5 text-[11.5px] leading-[1.45] text-[var(--mute)]">Tap the ? in the top bar anytime to revisit the tour.</p>
+            {birdCount === 0 ? (
+              <>
+                <p className="mt-2 text-[13px] leading-[1.5] text-[var(--ink2)]">Now the fun part — let's set up your first bird.</p>
+                <button onClick={addBird} className="mt-3.5 flex w-full items-center justify-center gap-2 rounded-[13px] bg-[var(--lime)] py-3 text-[14px] font-[500] text-[var(--ink)] active:scale-[0.99]">
+                  <Feather className="size-4" /> Add my first bird
+                </button>
+                <p className="mt-2.5 text-[11.5px] leading-[1.45] text-[var(--mute)]">Tap the ? in the top bar anytime to revisit the tour.</p>
+              </>
+            ) : (
+              <>
+                <p className="mt-2 text-[13px] leading-[1.5] text-[var(--ink2)]">Anytime you need a refresher, the ? is right up top.</p>
+                <button onClick={finish} className="mt-3.5 flex w-full items-center justify-center rounded-[13px] bg-[var(--lime)] py-3 text-[14px] font-[500] text-[var(--ink)] active:scale-[0.99]">
+                  Got it
+                </button>
+              </>
+            )}
           </div>
         ) : (
           <>
