@@ -138,7 +138,7 @@ export function ActiveSitCard({ sit, birds, allBirdsCount, caregiverName, allBir
       <div className="mt-3.5 flex gap-2">
         <button
           type="button"
-          onClick={() => navigate({ to: "/sits/$sitId", params: { sitId: sit.id } })}
+          onClick={() => navigate({ to: "/notifications", search: { sitId: sit.id } })}
           className="inline-flex min-h-[42px] flex-1 items-center justify-center gap-1.5 rounded-[12px] bg-[var(--lime)] text-[14px] font-[500] text-[var(--ink)] active:scale-[0.99]"
         >
           <Activity className="size-4" /> View scans
