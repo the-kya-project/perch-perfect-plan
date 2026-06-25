@@ -22,6 +22,7 @@ export function markNotifsSeen() {
 export type ScanFeedItem = {
   id: string;
   bird_id: string;
+  sit_id?: string | null; // the sit this scan was run under (sitter/caregiver scans)
   triage_status: "red" | "yellow" | "green" | string;
   triage_reasons: string | null;
   notes: string | null;
@@ -37,7 +38,7 @@ export type ScanFeedItem = {
 export async function fetchScanFeed(): Promise<ScanFeedItem[]> {
   // Cast: daily_logs.source/run_by land in the generated types after the
   // owner-scans migration. Fall back without them if not present.
-  const base = "id, bird_id, triage_status, triage_reasons, notes, created_at, bird:birds(name, photo_url, photo_position), sit:sits(sitter_name, sitter_email)";
+  const base = "id, bird_id, sit_id, triage_status, triage_reasons, notes, created_at, bird:birds(name, photo_url, photo_position), sit:sits(sitter_name, sitter_email)";
   const run = (sel: string) =>
     (supabase as any).from("daily_logs").select(sel).order("created_at", { ascending: false }).limit(40);
   // 3-tier fallback so a missing column never breaks the feed: full (with the
