@@ -121,7 +121,7 @@ function IdentityFacet() {
               <Card className="flex items-center gap-4 p-4">
                 <div className="grid size-16 shrink-0 place-items-center overflow-hidden rounded-full bg-[var(--cream2)] ring-1 ring-[var(--line)]">
                   {photo ? (
-                    <img src={photo.url} alt={name} onError={(e) => { if (photo.original && e.currentTarget.src !== photo.original) e.currentTarget.src = photo.original; }} style={{ objectPosition: bird.photo_position ?? "50% 50%" }} className="block size-full object-contain" />
+                    <img src={photo.url} alt={name} onError={(e) => { if (photo.original && e.currentTarget.src !== photo.original) e.currentTarget.src = photo.original; }} style={{ objectPosition: bird.photo_position ?? "50% 15%" }} className="block size-full object-cover" />
                   ) : (
                     <span className="text-2xl font-[500] text-[var(--moss)]">{initial}</span>
                   )}
