@@ -427,11 +427,13 @@ function BirdRow({ bird, photo, glance, foster, concern }: { bird: HomeBird; pho
         {foster && bird.intake_date && (
           <p className="t-meta">With you since {fmtShort(bird.intake_date)}</p>
         )}
-        {/* Concern pill takes priority; the weight/foster status wraps to a
-            second line on narrow screens (flex-wrap). */}
+        {/* One status at a time. An active concern is mutually exclusive with
+            the normal status — show ONLY the concern pill (never alongside
+            "All good" or the weight pill, which would contradict it). */}
         <div className="mt-1 flex flex-wrap items-center gap-1.5">
-          {concern && <ConcernPill />}
-          {fosterStatus ? (
+          {concern ? (
+            <ConcernPill />
+          ) : fosterStatus ? (
             <span className={`text-[13px] font-[500] ${fosterStatus.tone === "good" ? "text-[var(--moss)]" : "text-[var(--amber-ink)]"}`}>{fosterStatus.label}</span>
           ) : (
             <GlancePill glance={glance} />
