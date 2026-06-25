@@ -8,12 +8,13 @@ import { AgePicker } from "@/components/BirdPickers";
 import { PhotoCropper } from "@/components/PhotoCropper";
 import { useServerFn } from "@tanstack/react-start";
 import { getPendingHandoff, cancelHandoff, makePermanent } from "@/lib/handoff.functions";
-import { InkHero, PhotoHero, IconTile, LimeStat, StatusPill, SectionHead, RecordRow, Card, PrimaryButton } from "@/components/system";
+import { IconTile, LimeStat, StatusPill, SectionHead, RecordRow, Card, PrimaryButton } from "@/components/system";
 import { BirdPhotoSheet } from "@/components/BirdPhotoSheet";
+import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 import { toast } from "sonner";
 import {
   Feather, Scale, BookOpen, IdCard, CalendarHeart, ClipboardList,
-  Plus, FileText, Activity, Pencil,
+  Plus, FileText, Activity, Pencil, ArrowLeft, ArrowRight, Camera,
   Check, X, Users, ArrowRightLeft, Heart, Loader2, Trash2, Crop,
 } from "lucide-react";
 
@@ -51,7 +52,7 @@ function BirdRecordHome() {
     <div className="min-h-screen bg-[var(--cream)] pb-nav">
       <div className="mx-auto max-w-md">
         <BirdRecordHero birdId={birdId} />
-        <main className="space-y-4 px-5 pt-5">
+        <main className="space-y-4 px-5 pt-[14px]">
           <BirdRecordBody birdId={birdId} />
         </main>
       </div>
@@ -59,8 +60,11 @@ function BirdRecordHome() {
   );
 }
 
-// PhotoHero + InkHero combo — the bird-record route's anchor. (Solo Home embeds
-// only BirdRecordBody, under its own greeting hero, so this isn't doubled.)
+// Contained hero card — the bird's photo lives inside a single rounded card
+// with an ink gradient overlay holding the name + identity (matching the sitter
+// view). Replaces the old full-bleed photo block, which clipped into the iOS
+// status bar. (Solo Home embeds only BirdRecordBody, under its own greeting
+// hero, so this isn't doubled.)
 function BirdRecordHero({ birdId }: { birdId: string }) {
   const navigate = useNavigate();
   const role = useBirdRole(birdId);
@@ -71,26 +75,61 @@ function BirdRecordHero({ birdId }: { birdId: string }) {
   const name = bird?.name ?? "This bird";
   const meta = [bird?.species || "Parrot", bird?.age].filter(Boolean).join(" · ");
   const since = bird?.is_foster && bird?.intake_date ? `With you since ${fmtMonthYear(bird.intake_date)}` : null;
+  const identity = [meta, since].filter(Boolean).join(" · ");
   const [photoSheet, setPhotoSheet] = useState(false);
+
   return (
     <>
-      <PhotoHero
-        src={photo?.url ?? undefined}
-        height={232}
-        alt={name}
-        objectPosition={bird?.photo_position ?? "50% 50%"}
-        onBack={() => navigate({ to: "/dashboard" })}
-        onEditPhoto={isOwner && bird ? () => setPhotoSheet(true) : undefined}
-      />
-      {/* showBrand off — the PhotoHero above already serves as the brand
-          anchor; the lockup is shown on every OTHER InkHero in the app. */}
-      <InkHero
-        showBrand={false}
-        eyebrow={bird?.is_foster ? "In your care" : undefined}
-        headline={`${name}.`}
-        body={[meta, since].filter(Boolean).join(" · ")}
-        cta={{ label: "View identity", tone: "arrow", onPress: () => navigate({ to: "/birds/$birdId/identity", params: { birdId } }) }}
-      />
+      {/* 16px gutters + status-bar-safe top padding so the card never clips. */}
+      <div className="px-[16px] pt-[max(env(safe-area-inset-top),14px)]">
+        <div className="relative h-[380px] w-full overflow-hidden rounded-[22px] bg-[#1a3d2e]">
+          {photo?.url ? (
+            <>
+              <BirdPhotoCrop url={photo.url} original={photo.original} position={bird?.photo_position} alt={name} eager />
+              {/* Ink gradient over the bottom 60% so the name stays readable on
+                  any photo. */}
+              <div
+                className="pointer-events-none absolute inset-x-0 bottom-0 h-[60%]"
+                style={{ background: "linear-gradient(to top, rgba(26,61,46,0.96), transparent)" }}
+              />
+            </>
+          ) : (
+            // No photo: solid ink card with a muted parrot mark centered.
+            <div className="absolute inset-0 grid place-items-center">
+              <img src="/brand/parrot-lime.svg" alt="" aria-hidden className="w-20 opacity-25" />
+            </div>
+          )}
+
+          {/* Floating controls over the photo. */}
+          <div className="absolute inset-x-0 top-[14px] flex items-center justify-between px-[14px]">
+            <HeroCircleBtn label="Back" onPress={() => navigate({ to: "/dashboard" })}>
+              <ArrowLeft className="size-5" />
+            </HeroCircleBtn>
+            {isOwner && bird ? (
+              <HeroCircleBtn label="Edit photo" onPress={() => setPhotoSheet(true)}>
+                <Camera className="size-5" />
+              </HeroCircleBtn>
+            ) : (
+              <span className="size-9" />
+            )}
+          </div>
+
+          {/* Name + identity pinned to the bottom, over the gradient/ink. */}
+          <div className="absolute inset-x-0 bottom-0 px-5 pb-5">
+            {bird?.is_foster && <p className="t-eyebrow mb-1 text-[var(--lime)]">In your care</p>}
+            <h1 className="text-[34px] font-[400] leading-[1.05] text-white">{name}.</h1>
+            {identity && <p className="mt-1 text-[13.5px] text-white/85">{identity}</p>}
+            <button
+              type="button"
+              onClick={() => navigate({ to: "/birds/$birdId/identity", params: { birdId } })}
+              className="mt-2 inline-flex items-center gap-1 text-[14px] font-[500] text-[var(--lime)] active:opacity-80"
+            >
+              View identity <ArrowRight className="size-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+
       {photoSheet && bird && (
         <BirdPhotoSheet
           birdId={birdId}
@@ -102,6 +141,21 @@ function BirdRecordHero({ birdId }: { birdId: string }) {
         />
       )}
     </>
+  );
+}
+
+// Floating circular control over the hero photo: cream-tinted glass, ink icon.
+function HeroCircleBtn({ label, onPress, children }: { label: string; onPress: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      onClick={onPress}
+      className="grid size-9 place-items-center rounded-full text-[var(--ink)] backdrop-blur active:scale-95"
+      style={{ background: "rgba(244,241,232,0.8)" }}
+    >
+      {children}
+    </button>
   );
 }
 
