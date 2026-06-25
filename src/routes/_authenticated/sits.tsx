@@ -171,6 +171,8 @@ function SitsPage() {
                       birds={birdsFor(s)}
                       allBirdsCount={birds.length}
                       caregiverName={caregiverName(s)}
+                      allBirds={birds}
+                      onChange={refreshSits}
                     />
                   ))}
 
@@ -187,6 +189,8 @@ function SitsPage() {
                           birds={birdsFor(s)}
                           allBirdsCount={birds.length}
                           caregiverName={caregiverName(s)}
+                          allBirds={birds}
+                          onChange={refreshSits}
                           // First upcoming is always expanded; the rest collapse
                           // to a header (tap to expand).
                           collapsible={i > 0}

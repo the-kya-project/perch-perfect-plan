@@ -4,9 +4,11 @@
 // in the bird plan editor; this file is only the Sits tab list.)
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { Activity, Eye, Link2, Home, ChevronDown } from "lucide-react";
+import { Activity, Eye, Link2, Home, ChevronDown, Pencil } from "lucide-react";
 import { compactRange, monthDay, durationDays, daysUntil } from "@/lib/dates";
 import { copySitterLink } from "@/lib/sitLink";
+import { SitForm } from "@/components/SitForm";
+import { SitChecklist } from "@/components/SitChecklist";
 
 export type SitBird = { id: string; name: string; photo_url?: string | null; photo_position?: string | null };
 export type ListSit = {
@@ -17,6 +19,7 @@ export type ListSit = {
   caregiver_user_id?: string | null;
   invite_token?: string | null;
   revoked?: boolean;
+  marked_ready_at?: string | null;
 };
 
 function initialsOf(name: string): string {
@@ -91,8 +94,12 @@ function BirdChips({ birds, allBirdsCount, onDark }: { birds: SitBird[]; allBird
 // ---------------------------------------------------------------------------
 // ACTIVE — full ink card, the focal element.
 // ---------------------------------------------------------------------------
-export function ActiveSitCard({ sit, birds, allBirdsCount, caregiverName }: { sit: ListSit; birds: SitBird[]; allBirdsCount: number; caregiverName: string }) {
+export function ActiveSitCard({ sit, birds, allBirdsCount, caregiverName, allBirds, onChange }: { sit: ListSit; birds: SitBird[]; allBirdsCount: number; caregiverName: string; allBirds?: any[]; onChange?: () => void }) {
   const navigate = useNavigate();
+  const [editing, setEditing] = useState(false);
+  if (editing && allBirds) {
+    return <SitForm birds={allBirds} editSit={sit as any} onSaved={onChange ?? (() => {})} onCancel={() => setEditing(false)} />;
+  }
   const household = !!sit.caregiver_user_id;
   const dayOf = -daysUntil(sit.start_date) + 1;
   const total = durationDays(sit.start_date, sit.end_date);
@@ -146,6 +153,14 @@ export function ActiveSitCard({ sit, birds, allBirdsCount, caregiverName }: { si
           </button>
         )}
       </div>
+
+      {allBirds && (
+        <div className="mt-2.5 text-center">
+          <button type="button" onClick={() => setEditing(true)} className="inline-flex items-center gap-1 text-[13px] font-[500] text-white/60 active:opacity-80">
+            <Pencil className="size-3.5" /> Edit sit
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -154,12 +169,17 @@ export function ActiveSitCard({ sit, birds, allBirdsCount, caregiverName }: { si
 // UPCOMING — white card. First one is expanded; the rest collapse to a header.
 // ---------------------------------------------------------------------------
 export function UpcomingSitCard({
-  sit, birds, allBirdsCount, caregiverName, collapsible = false,
-}: { sit: ListSit; birds: SitBird[]; allBirdsCount: number; caregiverName: string; collapsible?: boolean }) {
+  sit, birds, allBirdsCount, caregiverName, collapsible = false, allBirds, onChange,
+}: { sit: ListSit; birds: SitBird[]; allBirdsCount: number; caregiverName: string; collapsible?: boolean; allBirds?: any[]; onChange?: () => void }) {
   const navigate = useNavigate();
   const household = !!sit.caregiver_user_id;
   const [open, setOpen] = useState(!collapsible);
+  const [editing, setEditing] = useState(false);
   const firstBird = birds[0];
+
+  if (editing && allBirds) {
+    return <SitForm birds={allBirds} editSit={sit as any} onSaved={onChange ?? (() => {})} onCancel={() => setEditing(false)} />;
+  }
 
   return (
     <div className="rounded-[16px] border border-[var(--line)] bg-white p-4">
@@ -190,6 +210,9 @@ export function UpcomingSitCard({
               <div className="min-w-0"><BirdChips birds={birds} allBirdsCount={allBirdsCount} /></div>
             </div>
           )}
+          {/* Pre-leaving checklist (collapsible, self-contained). */}
+          <SitChecklist sit={sit as any} birds={birds} onSitChanged={onChange} />
+
           <div className="mt-3.5 flex gap-2">
             {firstBird && (
               <button
@@ -210,6 +233,14 @@ export function UpcomingSitCard({
               </button>
             )}
           </div>
+
+          {allBirds && (
+            <div className="mt-2.5 text-center">
+              <button type="button" onClick={() => setEditing(true)} className="inline-flex items-center gap-1 text-[13px] font-[500] text-[var(--moss)] active:opacity-80">
+                <Pencil className="size-3.5" /> Edit sit
+              </button>
+            </div>
+          )}
         </>
       )}
     </div>
