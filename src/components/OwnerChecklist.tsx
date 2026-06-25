@@ -87,7 +87,7 @@ export function OwnerChecklist({ birds, sits }: { birds: any[]; sits: any[] }) {
     { key: "bird", name: "Add your first bird", desc: "Build their care plan.", done: birds.length > 0, to: "/birds/new" },
     { key: "home", name: "Add the app to your home screen", desc: "Open it like a native app.", done: homeDone, home: true },
     { key: "notif", name: "Set notification preferences", desc: "How you hear about scans and updates.", done: notifDone, to: "/notifications/settings" },
-    { key: "sit", name: "Create your first sit", desc: "Send a sitter a private link.", done: sits.length > 0, to: "/dashboard", search: { newSit: true } },
+    { key: "sit", name: "Create your first sit", desc: "Send a sitter a private link.", done: sits.length > 0, to: "/sits", search: { newSit: true } },
   ];
 
   const doneCount = steps.filter((s) => s.done).length;
