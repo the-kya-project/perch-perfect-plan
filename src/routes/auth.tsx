@@ -196,11 +196,15 @@ function AuthPage() {
     <div className="min-h-screen bg-[var(--cream)]">
       <div className="mx-auto max-w-md">
         <InkHero
-          headline={mode === "signup" ? "A living record for a long-lived bird." : "Welcome back"}
+          // Sign-up keeps the lockup as chrome; sign-in removes it so the
+          // welcome carries the screen.
+          showBrand={mode === "signup"}
+          eyebrow={mode === "signup" ? "Get started" : "Welcome back"}
+          headline={mode === "signup" ? "Create your account." : "Pick up where you left off."}
           body={
             mode === "signup"
-              ? "Create an owner account to save bird profiles and care plans across trips."
-              : "Sign in to pick up your birds' care plans where you left off."
+              ? "Save bird profiles and care plans across trips, sitters, and the people who help."
+              : "Sign in to your bird's record."
           }
           backIcon={<ArrowLeft className="size-5" />}
           onBack={() => navigate({ to: "/" })}

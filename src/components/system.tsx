@@ -18,7 +18,7 @@ export type HeroCta = { label: string; icon?: ReactNode; onPress?: () => void; t
 
 // 1) InkHero — the dark-green anchor block at the top of (almost) every screen.
 export function InkHero({
-  eyebrow, headline, body, cta, backIcon, onBack, trailingIcons, children, showBrand,
+  eyebrow, headline, body, cta, backIcon, onBack, trailingIcons, children, showBrand, brandSize = 118,
 }: {
   eyebrow?: ReactNode;
   headline: ReactNode;
@@ -28,29 +28,34 @@ export function InkHero({
   onBack?: () => void;
   trailingIcons?: ReactNode;
   children?: ReactNode;
-  // Show the Kya & Co. lockup as quiet chrome in the top row (default on). The
-  // lockup is small (~31px tall) and sits as a peer to any icon controls — it's
-  // chrome, not the focal point; the eyebrow/headline below carry the screen.
-  // Set false on screens that supply their own brand treatment.
+  // Brand lockup as quiet chrome in the top-left. OFF by default: per the
+  // brand-placement principle the lockup appears in-app only on Home (where it
+  // confirms which app you're in during normal use) and on sign-up; everywhere
+  // else the screen's own content carries the moment. Opt in with showBrand.
   showBrand?: boolean;
+  // Lockup width; default 118 ≈ 36px tall (the asset is ~3.27:1).
+  brandSize?: number;
 }) {
-  const showLockup = showBrand ?? true;
+  const showLockup = !!showBrand;
+  // Only render the top chrome row when there's something in it (a lockup or
+  // icon controls). On screens with neither (accept-invite/handoff), the hero
+  // content sits directly under the safe-area inset.
+  const hasChrome = showLockup || !!backIcon || !!trailingIcons;
   return (
     <header className="bg-[var(--ink)] px-[22px] pb-[26px] pt-[max(env(safe-area-inset-top),18px)] text-white">
-      {/* Brand-as-chrome row: small lockup left, icon controls right — peers on
-          one baseline. A small chrome size (~31px tall via size 100; the lockup
-          is ~3.27:1) keeps the brand quiet so it never competes with content. */}
-      <div className="flex min-h-9 items-center gap-2">
-        {showLockup ? <BrandLockup orientation="horizontal" variant="ink" size={100} /> : <span />}
-        <div className="flex-1" />
-        {backIcon && (
-          <button type="button" onClick={onBack} aria-label="Back" className="grid size-9 place-items-center rounded-full text-white/90 active:bg-white/10">{backIcon}</button>
-        )}
-        {trailingIcons && <div className="flex items-center gap-2">{trailingIcons}</div>}
-      </div>
-      {/* Generous gap so the brand chrome and the hero content read as separate
-          layers, not one composed block. */}
-      <div className="mt-12">
+      {hasChrome && (
+        <div className="flex min-h-9 items-center gap-2">
+          {showLockup ? <BrandLockup orientation="horizontal" variant="ink" size={brandSize} /> : <span />}
+          <div className="flex-1" />
+          {backIcon && (
+            <button type="button" onClick={onBack} aria-label="Back" className="grid size-9 place-items-center rounded-full text-white/90 active:bg-white/10">{backIcon}</button>
+          )}
+          {trailingIcons && <div className="flex items-center gap-2">{trailingIcons}</div>}
+        </div>
+      )}
+      {/* Generous gap below the chrome row so brand and content read as separate
+          layers; no gap when there's no chrome row. */}
+      <div className={hasChrome ? "mt-12" : undefined}>
         {eyebrow && <p className="t-eyebrow text-[var(--teal)]">{eyebrow}</p>}
         <h1 className="t-hero mt-1 text-white">{headline}</h1>
         {body && <p className="t-body mt-2 text-white/85">{body}</p>}
