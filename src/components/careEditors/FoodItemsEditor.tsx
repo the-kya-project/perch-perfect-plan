@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Check, ChevronDown, Plus, AlertTriangle } from "lucide-react";
+import { Check, ChevronDown, Plus, AlertTriangle, AlertCircle } from "lucide-react";
 import { FEED_PERIODS, normalizeFeedTimes, type FeedPeriod, type FeedTime } from "@/lib/feedTimes";
 import { formatAmountUnit } from "@/lib/labels";
 import {
@@ -102,8 +102,14 @@ export function FoodItemsEditor({
     <div className="space-y-4">
       {types.map(({ value: type, label }) => {
         const items = details[type] ?? [];
-        const setItem = (idx: number, patch: Partial<FoodItem>) =>
+        // Editing an item PINS it open — feed cards never auto-collapse from
+        // internal interactions (a timing tap that completes the item used to
+        // flip the derived open state shut). Collapse happens only via the
+        // explicit "Looks good" button (or tapping the header).
+        const setItem = (idx: number, patch: Partial<FoodItem>) => {
           onChangeType(type, items.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
+          setOpen(type, idx, true);
+        };
         const addItem = () => {
           onChangeType(type, [...items, blankFoodItem()]);
           setExpanded((prev) => { const n = { ...prev }; items.forEach((_, i) => { n[k(type, i)] = false; }); return n; });
@@ -111,35 +117,50 @@ export function FoodItemsEditor({
         const removeItem = (idx: number) => onChangeType(type, items.filter((_, i) => i !== idx));
 
         if (type === "chop" && chop) {
+          const picked = chop.mode !== null;
           return (
-            <div key={type} className="rounded-2xl bg-[#efe9da] p-4">
-              <p className="text-sm font-medium text-[#1a3d2e]">{label}</p>
-
-              {/* Pre-made / homemade toggle */}
-              <div
-                className={`mt-2 inline-flex rounded-xl border p-0.5 ${validationActive && chop.mode === null ? BORDER_AMBER : "border-[#c8bfa6]"}`}
-              >
-                {(["premade", "homemade"] as const).map((m) => (
-                  <button
-                    key={m}
-                    type="button"
-                    onClick={() => chop.onChooseMode(m)}
-                    className={
-                      "min-h-[40px] rounded-[10px] px-4 text-sm font-medium transition " +
-                      (chop.mode === m ? "bg-[#1a3d2e] text-white" : "text-[#1a3d2e]")
-                    }
-                  >
-                    {m === "premade" ? "Pre-made" : "Homemade"}
-                  </button>
-                ))}
+            <div key={type} className="rounded-[16px] border border-[var(--line)] bg-[var(--cream2)] p-4">
+              {/* Question header + status pill */}
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-[16px] font-[500] text-[var(--ink)]">What kind of fresh chop?</p>
+                {picked ? (
+                  <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--lime)] px-2.5 py-1 text-[11px] font-[500] text-[var(--ink)]">
+                    <Check className="size-3" /> Set
+                  </span>
+                ) : (
+                  <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--amber-fill)] px-2.5 py-1 text-[11px] font-[500] text-[var(--amber-ink)]">
+                    <AlertCircle className="size-3" /> Pick one
+                  </span>
+                )}
               </div>
-              {chop.mode === null && (
-                <p className={`mt-1.5 text-xs ${validationActive ? "text-[#854F0B]" : "text-[#5f5e5a]"}`}>
-                  Is this a store-bought chop (pick Pre-made) or your own mix (Homemade)?
-                </p>
-              )}
+              <p className="mt-1 text-[12.5px] leading-[1.5] text-[var(--mute)]">So the caregiver knows what to prep.</p>
 
-              {/* Homemade: ingredient checklist + single auto-named item */}
+              {/* Two compact option cards */}
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                {(["premade", "homemade"] as const).map((m) => {
+                  const sel = chop.mode === m;
+                  return (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => chop.onChooseMode(m)}
+                      className={
+                        "relative grid min-h-[52px] place-items-center rounded-[13px] p-[14px] text-[14px] font-[500] text-[var(--ink)] transition " +
+                        (sel ? "border-2 border-[var(--ink)] bg-[var(--lime)]" : "border border-[var(--line)] bg-white")
+                      }
+                    >
+                      {m === "premade" ? "Pre-made" : "Homemade"}
+                      {sel && (
+                        <span className="absolute -right-1.5 -top-1.5 grid size-[18px] place-items-center rounded-full bg-[var(--ink)] text-[var(--lime)]">
+                          <Check className="size-3" />
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Homemade follow-up: ingredient checklist + single auto-named item */}
               {chop.mode === "homemade" && (
                 <>
                   <div className="mt-3 rounded-xl bg-white/70 p-3" style={{ borderWidth: "0.5px", borderColor: "#d8cfb8" }}>
@@ -179,6 +200,7 @@ export function FoodItemsEditor({
                         validationActive={validationActive}
                         open={isOpen(type, 0, items[0])}
                         onToggle={() => setOpen(type, 0, !isOpen(type, 0, items[0]))}
+                        onLooksGood={() => setOpen(type, 0, false)}
                         onChange={(patch) => setItem(0, patch)}
                         setWhen={(period) => setItem(0, { times: toggleWhen(items[0], period) })}
                       />
@@ -187,7 +209,7 @@ export function FoodItemsEditor({
                 </>
               )}
 
-              {/* Pre-made: brand-required item cards */}
+              {/* Pre-made follow-up: brand-required item cards */}
               {chop.mode === "premade" && (
                 <>
                   <div className="mt-3 space-y-2">
@@ -199,6 +221,7 @@ export function FoodItemsEditor({
                         validationActive={validationActive}
                         open={isOpen(type, idx, it)}
                         onToggle={() => setOpen(type, idx, !isOpen(type, idx, it))}
+                        onLooksGood={() => setOpen(type, idx, false)}
                         onChange={(patch) => setItem(idx, patch)}
                         setWhen={(period) => setItem(idx, { times: toggleWhen(it, period) })}
                         onRemove={items.length > 1 ? () => removeItem(idx) : undefined}
@@ -225,6 +248,7 @@ export function FoodItemsEditor({
                   validationActive={validationActive}
                   open={isOpen(type, idx, it)}
                   onToggle={() => setOpen(type, idx, !isOpen(type, idx, it))}
+                  onLooksGood={() => setOpen(type, idx, false)}
                   onChange={(patch) => setItem(idx, patch)}
                   setWhen={(period) => setItem(idx, { times: toggleWhen(it, period) })}
                   onRemove={items.length > 1 ? () => removeItem(idx) : undefined}
@@ -246,6 +270,7 @@ function ItemCard({
   validationActive,
   open,
   onToggle,
+  onLooksGood,
   onChange,
   setWhen,
   onRemove,
@@ -256,6 +281,7 @@ function ItemCard({
   validationActive: boolean;
   open: boolean;
   onToggle: () => void;
+  onLooksGood: () => void;
   onChange: (patch: Partial<FoodItem>) => void;
   setWhen: (period: FeedPeriod) => void;
   onRemove?: () => void;
@@ -372,6 +398,15 @@ function ItemCard({
               Remove this item
             </button>
           )}
+
+          {/* Explicit collapse — feed cards never auto-collapse from edits. */}
+          <button
+            type="button"
+            onClick={onLooksGood}
+            className="flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-[11px] bg-[var(--ink)] px-3 py-2.5 text-[14px] font-[500] text-white active:scale-[0.99]"
+          >
+            <Check className="size-4" /> Looks good
+          </button>
         </div>
       )}
     </div>
