@@ -64,6 +64,11 @@ export function OptionalDate({
 }) {
   const [picking, setPicking] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  // iOS renders an empty <input type=date> as TODAY; tapping Clear blurs the
+  // input and iOS commits that displayed today as a change — which would undo
+  // the clear (the "Clear reverts to today" bug). Set on Clear's pointerdown
+  // (before the blur) so we can swallow exactly that spurious today-commit.
+  const ignoreTodayRef = useRef(false);
   useEffect(() => {
     if (picking) { try { (inputRef.current as any)?.showPicker?.(); } catch { /* fall back to tap */ } }
   }, [picking]);
@@ -78,11 +83,18 @@ export function OptionalDate({
           type="date"
           max={max}
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => {
+            if (ignoreTodayRef.current) {
+              ignoreTodayRef.current = false;
+              if (max && e.target.value === max) return; // swallow the Clear-blur today-commit
+            }
+            onChange(e.target.value);
+          }}
         />
         <button
           type="button"
-          onClick={() => { setPicking(false); onChange(""); }}
+          onPointerDown={() => { ignoreTodayRef.current = true; }}
+          onClick={() => { setPicking(false); onChange(""); requestAnimationFrame(() => { ignoreTodayRef.current = false; }); }}
           className="shrink-0 rounded-lg border border-[#c8bfa6] bg-white px-2.5 py-2 text-xs font-medium text-[#5f5e5a]"
         >
           Clear
@@ -108,6 +120,10 @@ export function AgePicker({ age, birthDate, onChange, layout = "grid" }: { age: 
   // input only appears once a date exists or the user is actively picking.
   const [picking, setPicking] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  // iOS renders an empty <input type=date> as TODAY; tapping Clear blurs it and
+  // iOS commits that displayed today, undoing the clear ("Clear reverts to
+  // today"). Set on Clear's pointerdown so we can swallow that spurious commit.
+  const ignoreTodayRef = useRef(false);
   useEffect(() => {
     if (picking) {
       // Open the native picker straight away if the browser supports it.
@@ -119,7 +135,7 @@ export function AgePicker({ age, birthDate, onChange, layout = "grid" }: { age: 
 
   return (
     <div className={layout === "stacked" ? "space-y-3" : "grid grid-cols-2 gap-3"}>
-      <BirdField label="Age" hint={hasBirth ? "From birthdate" : undefined}>
+      <BirdField label="Age" hint={hasBirth ? "From hatch date" : undefined}>
         <select
           className="input disabled:opacity-60"
           disabled={hasBirth}
@@ -130,7 +146,7 @@ export function AgePicker({ age, birthDate, onChange, layout = "grid" }: { age: 
           {AGE_OPTIONS.map((a) => <option key={a} value={a}>{a}</option>)}
         </select>
       </BirdField>
-      <BirdField label="Birth date" hint="Optional — sets age automatically">
+      <BirdField label="Hatch date" hint="Optional — sets age automatically">
         {showInput ? (
           <div className="flex items-center gap-2">
             <input
@@ -141,18 +157,24 @@ export function AgePicker({ age, birthDate, onChange, layout = "grid" }: { age: 
               max={max}
               value={birthDate ?? ""}
               onChange={(e) => {
+                if (ignoreTodayRef.current) {
+                  ignoreTodayRef.current = false;
+                  if (e.target.value === max) return; // swallow the Clear-blur today-commit
+                }
                 const bd = e.target.value || null;
                 onChange({ age: ageFromBirthDate(bd) ?? age, birthDate: bd });
               }}
             />
             <button
               type="button"
-              // Clearing the hatch/birth date must also drop the age that was
+              // Clearing the hatch date must also drop the age that was
               // auto-derived from it — otherwise a stale derived age is left
               // behind and the Age dropdown reopens pre-filled with it. Reset
               // both: the date unbinds and Age returns to an empty, editable
               // dropdown (no stale derived state, persisted as null on save).
-              onClick={() => { setPicking(false); onChange({ age: "", birthDate: null }); }}
+              // pointerdown sets the today-guard before iOS's blur-commit fires.
+              onPointerDown={() => { ignoreTodayRef.current = true; }}
+              onClick={() => { setPicking(false); onChange({ age: "", birthDate: null }); requestAnimationFrame(() => { ignoreTodayRef.current = false; }); }}
               className="shrink-0 rounded-lg border border-sage-200 bg-white px-2.5 py-2 text-xs font-medium text-sage-700"
             >
               Clear
@@ -165,7 +187,7 @@ export function AgePicker({ age, birthDate, onChange, layout = "grid" }: { age: 
             onClick={() => setPicking(true)}
             className="input flex items-center justify-between text-left text-sage-500"
           >
-            Add birth date
+            Add hatch date
           </button>
         )}
       </BirdField>
