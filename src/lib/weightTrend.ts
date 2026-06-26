@@ -9,6 +9,23 @@ export type WeightTrend = {
   delta: number;                    // current - baseline (g)
 };
 
+// THE canonical Home/record trend pill: the latest entry vs the IMMEDIATELY
+// PREVIOUS one (by measured_at). The Home flock card and the bird-record pill
+// both render this, so they can never disagree (the old bug: window-baseline on
+// Home said "Up 349 g" while latest-vs-previous on the record said "Down").
+// Colors are fixed here: up/steady → lime-light ("good"), down → amber
+// ("attention"), first/only entry → mute ("off"). `entriesDesc` is newest-first.
+export type WeightPillTone = "good" | "attention" | "off";
+export function weightTrendPill(entriesDesc: { grams: number }[]): { label: string; tone: WeightPillTone } {
+  if (entriesDesc.length < 2) return { label: "First weight", tone: "off" };
+  const raw = entriesDesc[0].grams - entriesDesc[1].grams;
+  if (Math.abs(raw) < 1) return { label: "Steady", tone: "good" };
+  const delta = Math.round(Math.abs(raw));
+  return raw > 0
+    ? { label: `Up ${delta} g`, tone: "good" }
+    : { label: `Down ${delta} g`, tone: "attention" };
+}
+
 /** `entriesDesc` must be newest-first. */
 export function computeWeightTrend(entriesDesc: WeightEntryLite[], windowDays = 90): WeightTrend {
   const current = entriesDesc[0];
