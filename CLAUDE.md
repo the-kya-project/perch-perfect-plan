@@ -35,6 +35,16 @@ Project context for Claude Code. This app is "Parrot Care Co-Pilot" by The Kya P
 - Edge Functions: `capture-lead` adds signup leads to Brevo (first name, last name, source, consent) and, when the person opts in, to the marketing list. Secrets (Brevo API key, list id) live in Supabase function secrets, never in the repo.
 - Edge Functions deploy through Supabase, separately from the Vercel app deploy.
 
+## Database migrations (migration-first — never the dashboard)
+Schema changes are migration-first. **Do NOT edit the schema in the Supabase dashboard SQL editor.**
+
+- Every schema change is a new timestamped file in `supabase/migrations/` (`<YYYYMMDDHHMMSS>_<name>.sql`). Keep them forward-only and idempotent where practical (`if not exists`, `drop policy if exists`, `NOT EXISTS` guards on backfills).
+- Apply changes with the CLI: `supabase db push` — never by pasting into the dashboard.
+- The CLI links to project ref `koyqdyamazuuwvqbttnj`. `supabase link --project-ref koyqdyamazuuwvqbttnj` is a one-time setup that prompts for the **database password** and sets up the IPv4/pooler connection (`migration list`/`db pull`/`db push` all need it).
+- The repo's pre-existing migrations were originally applied via the dashboard, so they're registered with the CLI as **already-applied** via a one-time `supabase migration repair --status applied <version>` (so `db push` runs only NEW files). These files ARE the baseline — do not `db pull` a fresh baseline on top of them.
+- Workflow for a change: write the migration file → `supabase db push` → commit the file. Verify against `supabase migration list` (Local and Remote columns should match).
+- Never commit an access token or the service-role key. `supabase login` (CLI auth) is separate from the per-project DB password; neither belongs in the repo.
+
 ## Deploy
 - Pushing to `main` auto-deploys the web app to Vercel at https://app.thekyaproject.com.
 - Changing an Edge Function requires a separate Supabase deploy; it does not ship with the Vercel build.
