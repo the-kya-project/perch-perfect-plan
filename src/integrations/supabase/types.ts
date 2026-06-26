@@ -678,6 +678,33 @@ export type Database = {
         }
         Relationships: []
       }
+      household_member_permissions: {
+        Row: {
+          capabilities: string[]
+          created_at: string
+          member_user_id: string
+          owner_id: string
+          preset: string
+          updated_at: string
+        }
+        Insert: {
+          capabilities?: string[]
+          created_at?: string
+          member_user_id: string
+          owner_id: string
+          preset?: string
+          updated_at?: string
+        }
+        Update: {
+          capabilities?: string[]
+          created_at?: string
+          member_user_id?: string
+          owner_id?: string
+          preset?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       journal_entries: {
         Row: {
           bird_id: string
