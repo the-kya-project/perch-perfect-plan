@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
+import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { Plus, Calendar, CalendarPlus, ChevronRight } from "lucide-react";
 import { OwnerHeaderIcons } from "@/components/OwnerHeader";
 import { SitForm } from "@/components/SitForm";
@@ -64,6 +65,16 @@ function SitsPage() {
 
   const refreshSits = () => qc.invalidateQueries({ queryKey: ["all-sits"] });
   const birdLookup = Object.fromEntries(birds.map((b: any) => [b.id, b]));
+
+  // Only a bird's OWNER may set up / edit a sit. `birds` includes birds the user
+  // only has household access to (RLS), so gate creation + editing on actual
+  // ownership (birds.owner_id). Household members get a read-only Sits tab.
+  const { data: myId } = useQuery({
+    queryKey: ["me-id"],
+    queryFn: async () => (await getLocalUser()).data.user?.id ?? null,
+  });
+  const ownedBirds = birds.filter((b: any) => b.owner_id === myId);
+  const canManageSits = !!myId && ownedBirds.length > 0;
   const today = new Date().toISOString().slice(0, 10);
   const allSits = sits as any[];
 
@@ -158,16 +169,19 @@ function SitsPage() {
             </Card>
           ) : (
             <>
-              {/* Create flow unchanged — SitForm owns its open state (?newSit). */}
-              <SitForm
-                birds={birds}
-                onSaved={refreshSits}
-                initialOpen={!!newSit}
-                preselectBirdId={preselectBirdId}
-                activeSit={actives[0] ?? null}
-                returnTo="/sits"
-                hidePrompt
-              />
+              {/* Create flow — owners only, and only over birds they own.
+                  SitForm owns its open state (?newSit). */}
+              {canManageSits && (
+                <SitForm
+                  birds={ownedBirds}
+                  onSaved={refreshSits}
+                  initialOpen={!!newSit}
+                  preselectBirdId={preselectBirdId}
+                  activeSit={actives[0] ?? null}
+                  returnTo="/sits"
+                  hidePrompt
+                />
+              )}
 
               {sitsLoading ? (
                 <div className="space-y-3">
@@ -183,7 +197,7 @@ function SitsPage() {
                       birds={birdsFor(s)}
                       allBirdsCount={birds.length}
                       caregiverName={caregiverName(s)}
-                      allBirds={birds}
+                      allBirds={s.owner_id === myId ? ownedBirds : undefined}
                       onChange={refreshSits}
                     />
                   ))}
@@ -201,7 +215,7 @@ function SitsPage() {
                           birds={birdsFor(s)}
                           allBirdsCount={birds.length}
                           caregiverName={caregiverName(s)}
-                          allBirds={birds}
+                          allBirds={s.owner_id === myId ? ownedBirds : undefined}
                           onChange={refreshSits}
                           // First upcoming is always expanded; the rest collapse
                           // to a header (tap to expand).
@@ -225,13 +239,19 @@ function SitsPage() {
                     </Card>
                   )}
 
-                  <button
-                    type="button"
-                    onClick={() => navigate({ to: "/sits", search: { newSit: true } })}
-                    className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-[14px] bg-[var(--lime)] text-[15px] font-[500] text-[var(--ink)] active:scale-[0.99]"
-                  >
-                    <Plus className="size-4" /> Set up a sit
-                  </button>
+                  {canManageSits ? (
+                    <button
+                      type="button"
+                      onClick={() => navigate({ to: "/sits", search: { newSit: true } })}
+                      className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-[14px] bg-[var(--lime)] text-[15px] font-[500] text-[var(--ink)] active:scale-[0.99]"
+                    >
+                      <Plus className="size-4" /> Set up a sit
+                    </button>
+                  ) : (
+                    // Household members can view sits they're covering, but only a
+                    // bird's owner can set one up.
+                    <p className="px-1 text-center t-meta">Only a bird's owner can set up a sit.</p>
+                  )}
 
                   {pastCount > 0 && (
                     <Link
