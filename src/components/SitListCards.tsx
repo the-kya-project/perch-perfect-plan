@@ -18,10 +18,23 @@ export type ListSit = {
   end_date: string;
   sitter_name?: string | null;
   caregiver_user_id?: string | null;
+  lead_user_id?: string | null;
+  owner_id?: string | null;
   invite_token?: string | null;
   revoked?: boolean;
   marked_ready_at?: string | null;
 };
+
+// "IN CHARGE · [name]" content-label eyebrow. Teal per surface: bright --teal on
+// the ink active card, darker --teal-on-cream on cream cards.
+function InChargeEyebrow({ name, onDark }: { name: string; onDark?: boolean }) {
+  return (
+    <p className="mt-1">
+      <span className="t-eyebrow" style={{ color: onDark ? "var(--teal)" : "var(--teal-on-cream)" }}>In charge · </span>
+      <span className="t-eyebrow" style={{ color: onDark ? "rgba(255,255,255,0.85)" : "var(--ink)" }}>{name}</span>
+    </p>
+  );
+}
 
 function initialsOf(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -95,7 +108,7 @@ function BirdChips({ birds, allBirdsCount, onDark }: { birds: SitBird[]; allBird
 // ---------------------------------------------------------------------------
 // ACTIVE — full ink card, the focal element.
 // ---------------------------------------------------------------------------
-export function ActiveSitCard({ sit, birds, allBirdsCount, caregiverName, allBirds, onChange }: { sit: ListSit; birds: SitBird[]; allBirdsCount: number; caregiverName: string; allBirds?: any[]; onChange?: () => void }) {
+export function ActiveSitCard({ sit, birds, allBirdsCount, caregiverName, leadName, allBirds, onChange }: { sit: ListSit; birds: SitBird[]; allBirdsCount: number; caregiverName: string; leadName?: string | null; allBirds?: any[]; onChange?: () => void }) {
   const [editing, setEditing] = useState(false);
   if (editing && allBirds) {
     return <SitForm birds={allBirds} editSit={sit as any} onSaved={onChange ?? (() => {})} onCancel={() => setEditing(false)} />;
@@ -115,6 +128,7 @@ export function ActiveSitCard({ sit, birds, allBirdsCount, caregiverName, allBir
             {household && <HouseholdTag />}
           </div>
           <p className="mt-0.5 text-[12.5px] text-white/65">{meta}</p>
+          {leadName && <InChargeEyebrow name={leadName} onDark />}
         </div>
         <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[var(--lime)] px-2.5 py-1 text-[11.5px] font-[500] text-[var(--ink)]">
           <span className="size-1.5 rounded-full bg-[var(--ink)]" /> Active
@@ -167,8 +181,8 @@ export function ActiveSitCard({ sit, birds, allBirdsCount, caregiverName, allBir
 // UPCOMING — white card. First one is expanded; the rest collapse to a header.
 // ---------------------------------------------------------------------------
 export function UpcomingSitCard({
-  sit, birds, allBirdsCount, caregiverName, collapsible = false, allBirds, onChange,
-}: { sit: ListSit; birds: SitBird[]; allBirdsCount: number; caregiverName: string; collapsible?: boolean; allBirds?: any[]; onChange?: () => void }) {
+  sit, birds, allBirdsCount, caregiverName, leadName, collapsible = false, allBirds, onChange,
+}: { sit: ListSit; birds: SitBird[]; allBirdsCount: number; caregiverName: string; leadName?: string | null; collapsible?: boolean; allBirds?: any[]; onChange?: () => void }) {
   const household = !!sit.caregiver_user_id;
   const [open, setOpen] = useState(!collapsible);
   const [editing, setEditing] = useState(false);
@@ -191,6 +205,7 @@ export function UpcomingSitCard({
             {household && <HouseholdTag />}
           </div>
           <p className="mt-0.5 text-[12.5px] text-[var(--mute)]">{household ? "Caregiver during trip" : "Sitter"}</p>
+          {leadName && <InChargeEyebrow name={leadName} />}
         </div>
         <span className="inline-flex shrink-0 items-center rounded-full border border-[var(--line)] bg-[var(--cream2)] px-2.5 py-1 text-[11.5px] font-[500] text-[var(--ink)]">
           {compactRange(sit.start_date, sit.end_date)}
@@ -246,8 +261,8 @@ export function UpcomingSitCard({
 // PAST — cream2 archival card. No actions; the whole card opens the archive.
 // ---------------------------------------------------------------------------
 export function PastSitCard({
-  sit, caregiverName, scans, flagged,
-}: { sit: ListSit; caregiverName: string; scans: number; flagged: number }) {
+  sit, caregiverName, leadName, scans, flagged,
+}: { sit: ListSit; caregiverName: string; leadName?: string | null; scans: number; flagged: number }) {
   const navigate = useNavigate();
   const household = !!sit.caregiver_user_id;
   const days = durationDays(sit.start_date, sit.end_date);
@@ -267,6 +282,7 @@ export function PastSitCard({
             {household && <HouseholdTag />}
           </div>
           <p className="mt-0.5 text-[12.5px] text-[var(--mute)]">{meta}</p>
+          {leadName && <InChargeEyebrow name={leadName} />}
         </div>
         <span className="inline-flex shrink-0 items-center rounded-full border border-[var(--line)] px-2.5 py-1 text-[11.5px] font-[500] text-[var(--mute)]">
           Past

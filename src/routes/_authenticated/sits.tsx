@@ -7,6 +7,7 @@ import { Plus, Calendar, CalendarPlus, ChevronRight } from "lucide-react";
 import { OwnerHeaderIcons } from "@/components/OwnerHeader";
 import { SitForm } from "@/components/SitForm";
 import { ActiveSitCard, UpcomingSitCard, type SitBird, type ListSit } from "@/components/SitListCards";
+import { firstName } from "@/components/LeadPicker";
 import { InkHero, SectionHead, Card, IconTile } from "@/components/system";
 import { useBirdPhotos } from "@/lib/useBirdPhotos";
 import { weekdayMonthDay, monthDay, daysUntil } from "@/lib/dates";
@@ -75,6 +76,22 @@ function SitsPage() {
   });
   const ownedBirds = birds.filter((b: any) => b.owner_id === myId);
   const canManageSits = !!myId && ownedBirds.length > 0;
+
+  // "In charge" is only meaningful in a multi-member household — for a solo owner
+  // the lead is trivially them, so don't badge every card. True when the owner
+  // has any household member across their birds.
+  const { data: hasHousehold = false } = useQuery({
+    queryKey: ["owner-has-household", myId, ownedBirds.map((b: any) => b.id).sort().join(",")],
+    enabled: canManageSits,
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("bird_members")
+        .select("user_id", { count: "exact", head: true })
+        .in("bird_id", ownedBirds.map((b: any) => b.id))
+        .eq("role", "household");
+      return (count ?? 0) > 0;
+    },
+  });
   const today = new Date().toISOString().slice(0, 10);
   const allSits = sits as any[];
 
@@ -88,18 +105,21 @@ function SitsPage() {
     .sort((a, b) => a.start_date.localeCompare(b.start_date));
   const pastCount = allSits.filter((s) => s.end_date < today).length;
 
-  // Batch-resolve household caregiver display names.
-  const householdIds = [...new Set(allSits.filter((s) => s.caregiver_user_id).map((s) => s.caregiver_user_id as string))];
+  // Batch-resolve display names for caregivers AND sit leads ("in charge").
+  const personIds = [...new Set(allSits.flatMap((s) => [s.caregiver_user_id, s.lead_user_id]).filter(Boolean) as string[])];
   const { data: profiles = [] } = useQuery({
-    queryKey: ["sit-caregiver-names", householdIds.slice().sort().join(",")],
-    enabled: householdIds.length > 0,
+    queryKey: ["sit-person-names", personIds.slice().sort().join(",")],
+    enabled: personIds.length > 0,
     staleTime: 5 * 60_000,
     queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("id, display_name").in("id", householdIds);
+      const { data } = await supabase.from("profiles").select("id, display_name").in("id", personIds);
       return data ?? [];
     },
   });
   const nameById = new Map((profiles as any[]).map((p) => [p.id, (p.display_name ?? "").toString().trim() || "Household member"]));
+  // Lead = who's in charge. First name only, per the content-label treatment.
+  const leadFirstName = (s: any): string | null =>
+    s.lead_user_id ? firstName(nameById.get(s.lead_user_id) || "") || null : null;
   const caregiverName = (s: any): string =>
     s.caregiver_user_id ? (nameById.get(s.caregiver_user_id) ?? "Household member") : (s.sitter_name?.trim() || "Your sitter");
 
@@ -197,6 +217,7 @@ function SitsPage() {
                       birds={birdsFor(s)}
                       allBirdsCount={birds.length}
                       caregiverName={caregiverName(s)}
+                      leadName={hasHousehold ? leadFirstName(s) : null}
                       allBirds={s.owner_id === myId ? ownedBirds : undefined}
                       onChange={refreshSits}
                     />
@@ -215,6 +236,7 @@ function SitsPage() {
                           birds={birdsFor(s)}
                           allBirdsCount={birds.length}
                           caregiverName={caregiverName(s)}
+                          leadName={hasHousehold ? leadFirstName(s) : null}
                           allBirds={s.owner_id === myId ? ownedBirds : undefined}
                           onChange={refreshSits}
                           // First upcoming is always expanded; the rest collapse

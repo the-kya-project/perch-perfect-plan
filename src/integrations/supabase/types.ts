@@ -1185,6 +1185,7 @@ export type Database = {
       sits: {
         Row: {
           caregiver_user_id: string | null
+          lead_user_id: string | null
           created_at: string
           end_date: string
           id: string
@@ -1202,6 +1203,7 @@ export type Database = {
         }
         Insert: {
           caregiver_user_id?: string | null
+          lead_user_id?: string | null
           created_at?: string
           end_date: string
           id?: string
@@ -1219,6 +1221,7 @@ export type Database = {
         }
         Update: {
           caregiver_user_id?: string | null
+          lead_user_id?: string | null
           created_at?: string
           end_date?: string
           id?: string
