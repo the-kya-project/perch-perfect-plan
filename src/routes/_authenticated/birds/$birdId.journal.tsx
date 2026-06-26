@@ -6,6 +6,7 @@ import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { toast } from "sonner";
 import { ArrowLeft, Plus, BookOpen, ImagePlus, Check, X, Loader2 } from "lucide-react";
 import { InkHero, PhotoHero, StatusPill, Card, PrimaryButton } from "@/components/system";
+import { useCapability } from "@/lib/useCapability";
 import { useActiveSitIdForBird } from "@/components/CaregiverHome";
 import { uploadJournalPhoto, signJournalPhotos } from "@/lib/journalPhoto";
 import { compressImageToDataUrl } from "@/lib/imageUpload";
@@ -39,6 +40,7 @@ const todayStr = () => new Date().toISOString().slice(0, 10);
 
 function JournalFacet() {
   const { birdId } = Route.useParams();
+  const canHealth = useCapability("record_health", { birdId });
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [filter, setFilter] = useState<Filter>("all");
@@ -80,7 +82,7 @@ function JournalFacet() {
           eyebrow="Journal"
           headline="What's been happening."
           body="Small things noted now become signals later."
-          cta={{ label: "Add an entry", tone: "lime", icon: <Plus className="size-4" />, onPress: () => setEditing("new") }}
+          cta={canHealth ? { label: "Add an entry", tone: "lime", icon: <Plus className="size-4" />, onPress: () => setEditing("new") } : undefined}
         />
 
         <main className="space-y-4 px-5 pt-5">

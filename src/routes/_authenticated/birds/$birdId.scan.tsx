@@ -1,9 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { useBirdRole } from "@/lib/useBirdRole";
+import { useCapability, useMyPermissions } from "@/lib/useCapability";
 import { useActiveSitIdForBird } from "@/components/CaregiverHome";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
@@ -25,6 +26,15 @@ function OwnerScan() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const role = useBirdRole(birdId);
+  // Running a scan needs record_health. Entries are gated, but redirect on
+  // direct nav too (wait for perms so the owner/cap member isn't bounced).
+  const canHealth = useCapability("record_health", { birdId });
+  const { data: perms } = useMyPermissions();
+  useEffect(() => {
+    if (role === "owner") return;
+    if (role == null || !perms) return;
+    if (!canHealth) navigate({ to: "/birds/$birdId", params: { birdId }, replace: true });
+  }, [role, perms, canHealth, birdId, navigate]);
   const scanSource = role === "household" ? "household" : "owner";
   // When the household member is the assigned caregiver covering this bird,
   // tag the daily_log, the inline photo_log, and the inline weight_entry with

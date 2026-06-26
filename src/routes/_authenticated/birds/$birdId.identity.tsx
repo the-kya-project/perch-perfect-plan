@@ -8,6 +8,7 @@ import { PhotoCropper } from "@/components/PhotoCropper";
 import { OptionalDate } from "@/components/BirdPickers";
 import { useBirdPhotos } from "@/lib/useBirdPhotos";
 import { useBirdRole } from "@/lib/useBirdRole";
+import { useCapability } from "@/lib/useCapability";
 import { signBirdPhoto, persistBirdPhoto } from "@/lib/birdPhoto";
 import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
@@ -75,6 +76,8 @@ function IdentityFacet() {
   const [editing, setEditing] = useState(false);
   const role = useBirdRole(birdId);
   const isOwner = role === "owner"; // household members view identity read-only
+  // Editing the bird's identity is part of managing the flock (RLS: birds → manage_flock).
+  const canEditIdentity = useCapability("manage_flock", { birdId });
 
   const { data: bird } = useQuery({
     queryKey: ["bird-identity", birdId],
@@ -115,7 +118,7 @@ function IdentityFacet() {
           backIcon={<ArrowLeft className="size-5" />}
           onBack={goBack}
           trailingIcons={
-            bird && !editing && isOwner ? (
+            bird && !editing && canEditIdentity ? (
               <button type="button" onClick={() => setEditing(true)} className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full bg-white/10 px-3.5 text-[14px] font-[500] text-white active:bg-white/15">
                 <Pencil className="size-3.5" /> Edit
               </button>

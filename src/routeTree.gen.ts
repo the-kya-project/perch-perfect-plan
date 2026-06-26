@@ -24,6 +24,7 @@ import { Route as AuthenticatedSitsRouteImport } from './routes/_authenticated/s
 import { Route as AuthenticatedScansRouteImport } from './routes/_authenticated/scans'
 import { Route as AuthenticatedPastBirdsRouteImport } from './routes/_authenticated/past-birds'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
+import { Route as AuthenticatedHouseholdPermissionsRouteImport } from './routes/_authenticated/household-permissions'
 import { Route as AuthenticatedHouseholdRouteImport } from './routes/_authenticated/household'
 import { Route as AuthenticatedExploreRouteImport } from './routes/_authenticated/explore'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -138,6 +139,12 @@ const AuthenticatedNotificationsRoute =
   AuthenticatedNotificationsRouteImport.update({
     id: '/notifications',
     path: '/notifications',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedHouseholdPermissionsRoute =
+  AuthenticatedHouseholdPermissionsRouteImport.update({
+    id: '/household-permissions',
+    path: '/household-permissions',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedHouseholdRoute = AuthenticatedHouseholdRouteImport.update({
@@ -378,6 +385,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/explore': typeof AuthenticatedExploreRoute
   '/household': typeof AuthenticatedHouseholdRoute
+  '/household-permissions': typeof AuthenticatedHouseholdPermissionsRoute
   '/notifications': typeof AuthenticatedNotificationsRouteWithChildren
   '/past-birds': typeof AuthenticatedPastBirdsRoute
   '/scans': typeof AuthenticatedScansRouteWithChildren
@@ -432,6 +440,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/explore': typeof AuthenticatedExploreRoute
   '/household': typeof AuthenticatedHouseholdRoute
+  '/household-permissions': typeof AuthenticatedHouseholdPermissionsRoute
   '/past-birds': typeof AuthenticatedPastBirdsRoute
   '/sits': typeof AuthenticatedSitsRouteWithChildren
   '/today': typeof AuthenticatedTodayRoute
@@ -486,6 +495,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/explore': typeof AuthenticatedExploreRoute
   '/_authenticated/household': typeof AuthenticatedHouseholdRoute
+  '/_authenticated/household-permissions': typeof AuthenticatedHouseholdPermissionsRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRouteWithChildren
   '/_authenticated/past-birds': typeof AuthenticatedPastBirdsRoute
   '/_authenticated/scans': typeof AuthenticatedScansRouteWithChildren
@@ -544,6 +554,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/explore'
     | '/household'
+    | '/household-permissions'
     | '/notifications'
     | '/past-birds'
     | '/scans'
@@ -598,6 +609,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/explore'
     | '/household'
+    | '/household-permissions'
     | '/past-birds'
     | '/sits'
     | '/today'
@@ -651,6 +663,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/explore'
     | '/_authenticated/household'
+    | '/_authenticated/household-permissions'
     | '/_authenticated/notifications'
     | '/_authenticated/past-birds'
     | '/_authenticated/scans'
@@ -815,6 +828,13 @@ declare module '@tanstack/react-router' {
       path: '/notifications'
       fullPath: '/notifications'
       preLoaderRoute: typeof AuthenticatedNotificationsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/household-permissions': {
+      id: '/_authenticated/household-permissions'
+      path: '/household-permissions'
+      fullPath: '/household-permissions'
+      preLoaderRoute: typeof AuthenticatedHouseholdPermissionsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/household': {
@@ -1227,6 +1247,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedExploreRoute: typeof AuthenticatedExploreRoute
   AuthenticatedHouseholdRoute: typeof AuthenticatedHouseholdRoute
+  AuthenticatedHouseholdPermissionsRoute: typeof AuthenticatedHouseholdPermissionsRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRouteWithChildren
   AuthenticatedPastBirdsRoute: typeof AuthenticatedPastBirdsRoute
   AuthenticatedScansRoute: typeof AuthenticatedScansRouteWithChildren
@@ -1243,6 +1264,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedExploreRoute: AuthenticatedExploreRoute,
   AuthenticatedHouseholdRoute: AuthenticatedHouseholdRoute,
+  AuthenticatedHouseholdPermissionsRoute:
+    AuthenticatedHouseholdPermissionsRoute,
   AuthenticatedNotificationsRoute: AuthenticatedNotificationsRouteWithChildren,
   AuthenticatedPastBirdsRoute: AuthenticatedPastBirdsRoute,
   AuthenticatedScansRoute: AuthenticatedScansRouteWithChildren,

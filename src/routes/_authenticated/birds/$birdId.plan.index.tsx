@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { computeSetupCompleteness, type SetupCheck } from "@/lib/setupCompleteness";
 import { useBirdRole } from "@/lib/useBirdRole";
+import { useCapability } from "@/lib/useCapability";
 import { InkHero, IconTile, StatusPill, CtaLink, Card, RecordRow } from "@/components/system";
 import {
   ArrowLeft, Eye, Check, AlertTriangle, Wand2,
@@ -40,7 +41,10 @@ function CarePlanOverview() {
   const { birdId } = Route.useParams();
   const navigate = useNavigate();
   const role = useBirdRole(birdId);
-  const isOwner = role !== "household"; // owner (or still-loading) edits; household views
+  // Edit access is capability-based now: owner OR a member with edit_care_plans
+  // can open the section editor; everyone else sees the read-only care plan.
+  const canEdit = useCapability("edit_care_plans", { birdId });
+  const isOwner = role === "owner";
 
   const { data: bird } = useQuery({
     queryKey: ["bird", birdId],
@@ -148,9 +152,9 @@ function CarePlanOverview() {
                 : done
                   ? s.readyHint
                   : s.needsInfoHint;
-              // Owner opens the editor for that section; household opens the
-              // read-only care-plan view (editing is owner-only, RLS-enforced).
-              const onRow = isOwner
+              // edit_care_plans opens the section editor; everyone else opens the
+              // read-only care-plan view (RLS-enforced).
+              const onRow = canEdit
                 ? () => navigate({ to: "/birds/$birdId/plan/editor", params: { birdId }, search: { tab: s.tab } })
                 : () => navigate({ to: "/birds/$birdId/care-plan", params: { birdId } });
               return (
@@ -173,8 +177,8 @@ function CarePlanOverview() {
             })}
           </Card>
 
-          {/* Quiet action — re-run the guided wizard (owner only) */}
-          {isOwner && (
+          {/* Quiet action — re-run the guided wizard (needs edit_care_plans) */}
+          {canEdit && (
             <CtaLink
               label="Walk through it again"
               icon={<Wand2 className="size-3.5" />}

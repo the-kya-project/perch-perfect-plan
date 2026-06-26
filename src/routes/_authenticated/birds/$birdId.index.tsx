@@ -4,6 +4,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useBirdPhotos } from "@/lib/useBirdPhotos";
 import { useBirdRole } from "@/lib/useBirdRole";
+import { useCapability } from "@/lib/useCapability";
 import { weightTrendPill } from "@/lib/weightTrend";
 import { AgePicker } from "@/components/BirdPickers";
 import { PhotoCropper } from "@/components/PhotoCropper";
@@ -166,6 +167,11 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
   const navigate = useNavigate();
   const role = useBirdRole(birdId);
   const isOwner = role === "owner";
+  // Capability gates (mirror RLS): show write affordances members actually have.
+  const canLogCare = useCapability("log_daily_care", { birdId });
+  const canHealth = useCapability("record_health", { birdId });
+  const canEditPlan = useCapability("edit_care_plans", { birdId });
+  const canFlock = useCapability("manage_flock", { birdId });
 
   const { data: bird } = useBirdRecord(birdId);
 
@@ -271,14 +277,16 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
           ? <><StatusPill tone={wtPill.tone}>{wtPill.label}</StatusPill><span className="t-meta">last weighed {fmtDate(current.measured_at)}</span></>
           : <span className="text-[13px] text-[var(--ink2)]">No weight yet — log the first</span>}
         action={
-          <button type="button" aria-label="Log weight" onClick={() => navigate({ to: "/birds/$birdId/weight", params: { birdId } })} className="grid size-11 place-items-center rounded-full bg-[var(--ink)] text-[var(--lime)] active:scale-95">
-            <Plus className="size-5" />
-          </button>
+          canLogCare ? (
+            <button type="button" aria-label="Log weight" onClick={() => navigate({ to: "/birds/$birdId/weight", params: { birdId } })} className="grid size-11 place-items-center rounded-full bg-[var(--ink)] text-[var(--lime)] active:scale-95">
+              <Plus className="size-5" />
+            </button>
+          ) : undefined
         }
       />
 
-      {/* Create care plan (fresh birds, owner only) — the screen's lime primary */}
-      {bird && !bird.setup_complete && isOwner && (
+      {/* Create care plan (fresh birds) — needs edit_care_plans */}
+      {bird && !bird.setup_complete && canEditPlan && (
         <div className="space-y-3">
           <p className="t-body text-[var(--ink2)]">
             Build {name}'s care plan so anyone caring for {name} — sitters, household — knows what to do.
@@ -291,10 +299,10 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
 
       {/* Welcome to the flock — foster-fail, near the top (not destructive, so
           it's kept out of the More group). */}
-      {isOwner && bird?.is_foster && <HandoffSection birdId={birdId} name={name} part="welcome" />}
+      {canFlock && bird?.is_foster && <HandoffSection birdId={birdId} name={name} part="welcome" />}
 
       {/* Basic info — Species / Age / Sex / Flight (owner-editable). */}
-      {bird && <BasicInfoCard birdId={birdId} bird={bird} editable={isOwner} />}
+      {bird && <BasicInfoCard birdId={birdId} bird={bird} editable={canFlock} />}
 
       {/* Record list */}
       <section>
@@ -308,7 +316,7 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
           <RecordRow leading={<IconTile size={38} icon={<IdCard className="size-5" />} />} title="Identity" subtitle="Chip, band, hatch date, origin, photo" onClick={() => navigate({ to: "/birds/$birdId/identity", params: { birdId } })} />
           <RecordRow leading={<IconTile size={38} icon={<CalendarHeart className="size-5" />} />} title="Moments" subtitle="Mark the days worth remembering" onClick={() => navigate({ to: "/birds/$birdId/moments", params: { birdId } })} />
           <RecordRow leading={<IconTile size={38} icon={<FileText className="size-5" />} />} title="Vet summary" subtitle="One clean sheet for the vet" onClick={() => navigate({ to: "/birds/$birdId/vet-summary", params: { birdId } })} />
-          <RecordRow leading={<IconTile size={38} icon={<Activity className="size-5" />} />} title="Run a health scan" subtitle="The same daily check a sitter runs" onClick={() => navigate({ to: "/birds/$birdId/scan", params: { birdId } })} last />
+          {canHealth && <RecordRow leading={<IconTile size={38} icon={<Activity className="size-5" />} />} title="Run a health scan" subtitle="The same daily check a sitter runs" onClick={() => navigate({ to: "/birds/$birdId/scan", params: { birdId } })} last />}
         </Card>
       </section>
 
@@ -346,7 +354,7 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
       {/* More — the two major bird-status actions grouped together, low
           emphasis: hand off (record goes elsewhere) and delete (record is gone).
           For fosters the handoff reads a touch more prominent, above Delete. */}
-      {isOwner && bird && (
+      {canFlock && bird && (
         <section className="pt-1">
           <div className="border-t border-[var(--line2)] pt-4">
             <p className="t-eyebrow mb-2 px-0.5 text-[var(--teal-on-cream)]">More</p>
