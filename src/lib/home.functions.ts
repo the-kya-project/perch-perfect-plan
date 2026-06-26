@@ -6,6 +6,7 @@
 // has. Read-only. No writes, no notifications.
 
 import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 async function getAdmin() {
@@ -133,4 +134,44 @@ export const getHouseholdHome = createServerFn({ method: "GET" })
     activity.sort((a, b) => +new Date(b.at) - +new Date(a.at));
 
     return { members, scope, sharedBirdNames, activity: activity.slice(0, 4) };
+  });
+
+// Resolve household member user_ids -> { name, email } via the service role.
+// The authenticated client can't read other users' profiles (profiles RLS is
+// self-only), so name-display surfaces (sit cover picker, sit card/detail
+// "in charge"/caregiver) must resolve through here. Scoped for safety: only
+// returns names for the caller themselves + members of birds the caller owns,
+// so it can't be used to look up arbitrary users.
+export type ResolvedName = { name: string | null; email: string | null };
+export const resolveHouseholdNames = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { userIds: string[] }) =>
+    z.object({ userIds: z.array(z.string().uuid()).max(200) }).parse(d),
+  )
+  .handler(async ({ data, context }): Promise<Record<string, ResolvedName>> => {
+    const sb = await getAdmin();
+    const ownerId = (context as any).userId as string;
+    const want = Array.from(new Set((data.userIds ?? []).filter(Boolean)));
+    if (!want.length) return {};
+
+    // Allowed = the caller + everyone who is a member of a bird the caller owns.
+    const allowed = new Set<string>([ownerId]);
+    const { data: ownedBirds } = await sb.from("birds").select("id").eq("owner_id", ownerId);
+    const birdIds = (ownedBirds ?? []).map((b: any) => b.id);
+    if (birdIds.length) {
+      const { data: mem } = await sb.from("bird_members").select("user_id").in("bird_id", birdIds);
+      for (const m of (mem ?? []) as any[]) allowed.add(m.user_id);
+    }
+    const ids = want.filter((id) => allowed.has(id));
+    if (!ids.length) return {};
+
+    const { data: profs } = await sb.from("profiles").select("id, display_name, email").in("id", ids);
+    const out: Record<string, ResolvedName> = {};
+    for (const p of (profs ?? []) as any[]) {
+      out[p.id] = {
+        name: (p.display_name ?? "").toString().trim() || null,
+        email: (p.email ?? "").toString().trim() || null,
+      };
+    }
+    return out;
   });

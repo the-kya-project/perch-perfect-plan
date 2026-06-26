@@ -5,7 +5,9 @@ import {
   ArrowLeft, Calendar, Activity, Scale, BookOpen, CheckSquare, Image as ImageIcon, Loader2, Users, Mail,
 } from "lucide-react";
 import { InkHero, SectionHead, Card, IconTile, StatusPill } from "@/components/system";
-import { firstName } from "@/components/LeadPicker";
+import { useServerFn } from "@tanstack/react-start";
+import { resolveHouseholdNames } from "@/lib/home.functions";
+import { memberDisplayName, firstName } from "@/lib/memberDisplay";
 import { formatDateRangeUS } from "@/lib/dates";
 
 // Past Sits detail view — the sit's own activity feed, derived strictly from
@@ -29,6 +31,7 @@ function SitDetail() {
   const router = useRouter();
   const canGoBack = useCanGoBack();
   const goBack = () => (canGoBack ? router.history.back() : navigate({ to: "/sits" }));
+  const resolveNames = useServerFn(resolveHouseholdNames);
 
   const { data, isLoading } = useQuery({
     queryKey: ["sit-detail", sitId],
@@ -39,15 +42,14 @@ function SitDetail() {
         .eq("id", sitId).maybeSingle();
       if (!sit) return { sit: null as any, birds: [], caregiver: null as null | { name: string }, leadName: null as string | null, activity: [] as Activity[], counts: { scans: 0, weights: 0, journals: 0, photos: 0, tasks: 0 } };
 
-      // Resolve caregiver + lead display names in one batch.
+      // Resolve caregiver + lead display names via the service role (the
+      // authenticated client can't read other users' profiles — RLS self-only).
       const personIds = [sit.caregiver_user_id, sit.lead_user_id].filter(Boolean) as string[];
-      const [birdsJoin, profsRes] = await Promise.all([
+      const [birdsJoin, nameMap] = await Promise.all([
         supabase.from("sit_birds").select("bird_id, birds(id, name)").eq("sit_id", sitId),
-        personIds.length
-          ? supabase.from("profiles").select("id, display_name").in("id", personIds)
-          : Promise.resolve({ data: [] as any[] }),
+        personIds.length ? resolveNames({ data: { userIds: personIds } }) : Promise.resolve({} as Record<string, any>),
       ]);
-      const nameById = new Map(((profsRes.data ?? []) as any[]).map((p) => [p.id, (p.display_name ?? "").toString().trim()]));
+      const displayFor = (id: string) => memberDisplayName((nameMap as Record<string, any>)[id]);
       const birds = ((birdsJoin.data ?? []) as any[])
         .map((r) => r.birds)
         .filter(Boolean)
@@ -80,8 +82,8 @@ function SitDetail() {
       return {
         sit,
         birds,
-        caregiver: sit.caregiver_user_id ? { name: nameById.get(sit.caregiver_user_id) || "Household member" } : null,
-        leadName: sit.lead_user_id ? (nameById.get(sit.lead_user_id) || null) : null,
+        caregiver: sit.caregiver_user_id ? { name: displayFor(sit.caregiver_user_id) } : null,
+        leadName: sit.lead_user_id ? displayFor(sit.lead_user_id) : null,
         activity,
         counts,
       };

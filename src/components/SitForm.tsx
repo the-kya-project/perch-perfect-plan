@@ -5,7 +5,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { toast } from "sonner";
 import { track } from "@/lib/analytics";
-import { LeadPicker } from "@/components/LeadPicker";
+import { useServerFn } from "@tanstack/react-start";
+import { resolveHouseholdNames } from "@/lib/home.functions";
+import { memberDisplayName, memberInitials } from "@/lib/memberDisplay";
 import { Feather, Plus, Mail, Check, Users } from "lucide-react";
 
 // Create OR edit a sit. In edit mode (`editSit` set) it preserves the existing
@@ -73,20 +75,16 @@ export function SitForm({
   const [caregiverKind, setCaregiverKind] = useState<CaregiverKind | null>(initialKind);
   const [householdUserId, setHouseholdUserId] = useState<string | null>(editing ? (editSit.caregiver_user_id ?? null) : null);
 
-  // Who's IN CHARGE (lead). Defaults to the owner; the picker only shows when
-  // the household has 2+ eligible people (owner + member). Current user is the
-  // owner here (only owners reach this form), so they're the create-mode owner.
-  const { data: meId } = useQuery({ queryKey: ["me-id"], queryFn: async () => (await getLocalUser()).data.user?.id ?? null });
-  const ownerId = editing ? (editSit.owner_id as string | null) : meId;
-  const [leadUserId, setLeadUserId] = useState<string | null>(editing ? (editSit.lead_user_id ?? editSit.owner_id ?? null) : null);
-  // Create mode: default the lead to the owner once we know who that is.
-  useEffect(() => { if (!editing && !leadUserId && meId) setLeadUserId(meId); }, [editing, leadUserId, meId]);
+  // The lead ("in charge") is DERIVED from who's covering at save time — no
+  // separate picker: a household cover IS the lead; an external sitter leaves
+  // the owner as the responsible point of contact. (See the insert/update.)
 
   // Household members eligible to cover this sit = anyone who has household
   // access to EVERY currently-selected bird. Re-runs when the selection
   // changes; the owner can only pick a member who covers all of it. Owner
   // reads bird_members via the existing owner RLS — no new permission.
   const birdIdsKey = useMemo(() => Array.from(selected).sort().join(","), [selected]);
+  const resolveNames = useServerFn(resolveHouseholdNames);
   const { data: eligibleMembers = [] } = useQuery({
     queryKey: ["sit-eligible-household", birdIdsKey],
     enabled: !editing && selected.size > 0,
@@ -104,9 +102,12 @@ export function SitForm({
       // Filter to members on EVERY selected bird.
       const userIds = [...byUser.entries()].filter(([, s]) => s.size === ids.length).map(([id]) => id);
       if (!userIds.length) return [];
-      const { data: profs } = await supabase.from("profiles").select("id, display_name").in("id", userIds);
-      const nameById = new Map((profs ?? []).map((p: any) => [p.id, (p.display_name ?? "").trim()]));
-      return userIds.map((id) => ({ userId: id, name: nameById.get(id) || "Household member" })).sort((a, b) => a.name.localeCompare(b.name));
+      // Resolve real names + emails via the service role (the authenticated
+      // client can't read other users' profiles).
+      const names = await resolveNames({ data: { userIds } });
+      return userIds
+        .map((id) => ({ userId: id, name: names[id]?.name ?? null, email: names[id]?.email ?? null }))
+        .sort((a, b) => memberDisplayName(a).localeCompare(memberDisplayName(b)));
     },
   });
 
@@ -175,6 +176,10 @@ export function SitForm({
       // mint a link. A household caregiver already has bird access and the
       // contacts via existing membership; skip the gate for that path.
       const kind: CaregiverKind = editing ? (initialKind as CaregiverKind) : (caregiverKind as CaregiverKind);
+      // Lead ("in charge") is DERIVED from the cover: a household cover IS the
+      // lead; an external sitter leaves the owner (you) as responsible contact.
+      // Never null (household path is validated to have a member above).
+      const leadUserId: string = kind === "household" ? (householdUserId as string) : u.user.id;
       if (kind === "external") {
         const { data: defaults } = await supabase
           .from("owner_emergency_defaults")
@@ -219,7 +224,7 @@ export function SitForm({
           start_date: start,
           end_date: end,
           notes: notes || null,
-          lead_user_id: leadUserId ?? editSit.owner_id,
+          lead_user_id: leadUserId,
         };
         if (kind === "external") {
           update.sitter_name = sitterName || null;
@@ -262,8 +267,7 @@ export function SitForm({
           start_date: start, end_date: end,
           notes: notes || null,
           status: "upcoming",
-          // Lead defaults to the owner (single-member households auto-assign).
-          lead_user_id: leadUserId ?? u.user.id,
+          lead_user_id: leadUserId,
         };
         if (kind === "external") {
           insert.sitter_name = sitterName || null;
@@ -407,15 +411,6 @@ export function SitForm({
         />
       )}
 
-      {/* Who's in charge (lead) — hidden when the owner is the only eligible
-          person; otherwise lists owner + household members, owner pre-selected. */}
-      <LeadPicker
-        birdIds={Array.from(selected)}
-        ownerId={ownerId}
-        value={leadUserId}
-        onChange={setLeadUserId}
-      />
-
       <Field label="Notes for this sit"><textarea className="input area" value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
 
       <button type="submit" disabled={saving} className="w-full rounded-[14px] bg-[#1a3d2e] py-3 text-sm font-medium text-white disabled:opacity-50">
@@ -449,7 +444,7 @@ function CaregiverPicker({
   onPickHousehold, onPickExternal,
   onChangeSitterName, onChangeSitterEmail,
 }: {
-  eligibleMembers: { userId: string; name: string }[];
+  eligibleMembers: { userId: string; name: string | null; email: string | null }[];
   selectedBirdCount: number;
   caregiverKind: "household" | "external" | null;
   householdUserId: string | null;
@@ -476,7 +471,8 @@ function CaregiverPicker({
         <div className="space-y-2">
           {eligibleMembers.map((m) => {
             const on = caregiverKind === "household" && householdUserId === m.userId;
-            const initial = (m.name?.slice(0, 1) ?? "?").toUpperCase();
+            const display = memberDisplayName(m);
+            const initial = memberInitials(display);
             return (
               <button
                 key={m.userId}
@@ -490,7 +486,7 @@ function CaregiverPicker({
                 <span className={`grid size-10 shrink-0 place-items-center rounded-full text-sm font-medium ${on ? "bg-[#1a3d2e] text-white" : "bg-[#cfe3dc] text-[#1a5e3f]"}`}>{initial}</span>
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-2">
-                    <span className="truncate text-[14px] font-medium text-[#1a3d2e]">{m.name}</span>
+                    <span className="truncate text-[14px] font-medium text-[#1a3d2e]">{display}</span>
                     <span className="shrink-0 rounded-full bg-[#cfe3dc] px-2 py-0.5 text-[10px] font-medium text-[#1a5e3f]">Household</span>
                   </span>
                   <span className="mt-0.5 block text-[11.5px] text-[#5f5e5a]">Already has access · they'll see the daily checklist while you're away.</span>
