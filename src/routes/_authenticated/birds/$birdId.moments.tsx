@@ -7,6 +7,7 @@ import { ArrowLeft, Camera, Plus, Share2, Check, X, Loader2, CalendarHeart } fro
 import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
 import { uploadJournalPhoto, signJournalPhotos } from "@/lib/journalPhoto";
 import { useBirdPhotos } from "@/lib/useBirdPhotos";
+import { useBirdRole } from "@/lib/useBirdRole";
 import { shareMomentCard } from "@/lib/momentCard";
 import { InkHero, IconTile, SectionHead, Card, RecordRow } from "@/components/system";
 
@@ -46,6 +47,11 @@ function MomentsFacet() {
   const qc = useQueryClient();
   const [adding, setAdding] = useState(false);
   const [busy, setBusy] = useState(false);
+  // Moments/anchor photos are owner-curated (RLS: owner-write, member-read).
+  // Household members view them but can't add — gate every write affordance so
+  // they're never shown a form/upload that RLS will reject on save.
+  const role = useBirdRole(birdId);
+  const isOwner = role === "owner";
 
   const { data: bird } = useQuery({
     queryKey: ["bird-moments-id", birdId],
@@ -157,12 +163,12 @@ function MomentsFacet() {
           backIcon={<ArrowLeft className="size-5" />}
           onBack={() => navigate({ to: "/birds/$birdId", params: { birdId } })}
           trailingIcons={busy ? <Loader2 className="size-4 animate-spin text-white/80" /> : undefined}
-          cta={{ label: "Add custom milestone", tone: "lime", icon: <Plus className="size-4" />, onPress: () => setAdding(true) }}
+          cta={isOwner ? { label: "Add custom milestone", tone: "lime", icon: <Plus className="size-4" />, onPress: () => setAdding(true) } : undefined}
         />
 
         <main className="space-y-4 px-5 pt-5">
-          {/* Upcoming nudge — only within ~7 days */}
-          {nudge && (
+          {/* Upcoming nudge — only within ~7 days, owner-only (it's an upload prompt) */}
+          {nudge && isOwner && (
             <section>
               <SectionHead title="Upcoming" />
               <Card>
@@ -236,11 +242,14 @@ function MomentsFacet() {
                                 <button type="button" onClick={() => share({ photoUrl: url, title: anchorTitle(a, y - baseYear), context: `${name} · ${y}` })} className="block size-16 overflow-hidden rounded-xl ring-1 ring-[var(--line2)]">
                                   <img src={url} alt="" className="size-full object-cover" />
                                 </button>
-                              ) : (
+                              ) : isOwner ? (
                                 <label className={`grid size-16 cursor-pointer place-items-center rounded-xl ${isCurrent ? "border-2 border-dashed border-[var(--moss)] text-[var(--moss)]" : "text-white/80"}`} style={isCurrent ? undefined : { background: "linear-gradient(135deg,var(--moss),var(--lime))" }}>
                                   <Plus className="size-5" />
                                   <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) addAnchorPhoto(a.key, y, f); }} />
                                 </label>
+                              ) : (
+                                // Members: non-interactive placeholder for a year with no photo yet.
+                                <span aria-hidden className={`grid size-16 place-items-center rounded-xl ${isCurrent ? "border border-dashed border-[var(--line)]" : "opacity-60"}`} style={isCurrent ? undefined : { background: "linear-gradient(135deg,var(--moss),var(--lime))" }} />
                               )}
                               <span className="mt-1 block t-meta">{y}</span>
                             </div>
@@ -260,7 +269,8 @@ function MomentsFacet() {
             </p>
           )}
 
-          {/* Your own — secondary */}
+          {/* Your own — secondary. Members see it only when there are entries to view. */}
+          {(customs.length > 0 || isOwner) && (
           <section>
             <SectionHead title="Your own" />
             {customs.length > 0 && (
@@ -289,10 +299,13 @@ function MomentsFacet() {
                 })}
               </Card>
             )}
-            <button type="button" onClick={() => setAdding(true)} className="mt-2 flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[12px] border border-dashed border-[var(--line)] t-item text-[var(--mute)] active:scale-[0.99]">
-              <Plus className="size-4" /> Add a milestone
-            </button>
+            {isOwner && (
+              <button type="button" onClick={() => setAdding(true)} className="mt-2 flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[12px] border border-dashed border-[var(--line)] t-item text-[var(--mute)] active:scale-[0.99]">
+                <Plus className="size-4" /> Add a milestone
+              </button>
+            )}
           </section>
+          )}
         </main>
       </div>
 
