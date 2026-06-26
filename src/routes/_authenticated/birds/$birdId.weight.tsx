@@ -4,6 +4,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { useBirdRole } from "@/lib/useBirdRole";
+import { useCapability } from "@/lib/useCapability";
 import { useActiveSitIdForBird } from "@/components/CaregiverHome";
 import { toast } from "sonner";
 import { ArrowLeft, Scale, Check } from "lucide-react";
@@ -46,6 +47,7 @@ function trendContext(trend: "steady" | "up" | "down", delta: number, win: Windo
 
 function WeightFacet() {
   const { birdId } = Route.useParams();
+  const canLogCare = useCapability("log_daily_care", { birdId });
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [win, setWin] = useState<WindowDays>(90);
@@ -111,7 +113,7 @@ function WeightFacet() {
           eyebrow="Weight"
           headline={heroHeadline}
           body={heroBody}
-          cta={{ label: "Log today's weight", tone: "lime", onPress: () => setLogOpen(true) }}
+          cta={canLogCare ? { label: "Log today's weight", tone: "lime", onPress: () => setLogOpen(true) } : undefined}
         />
 
         <main className="space-y-4 px-5 pt-5">

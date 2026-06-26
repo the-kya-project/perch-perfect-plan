@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ArrowLeft, Check, AlertTriangle, HelpCircle, Minus, Loader2, Siren } from "lucide-react";
 import { InkHero, Card, StatusPill, SectionHead, IconTile } from "@/components/system";
+import { useCapability } from "@/lib/useCapability";
 import { OwnerHeaderIcons } from "@/components/OwnerHeader";
 
 // Focused, read-only view of one submitted health scan. Reached from the Scans
@@ -30,6 +31,8 @@ const SCAN_COLS: { col: string; label: string }[] = [
 
 function ScanDetail() {
   const { birdId, scanId } = Route.useParams();
+  const canHealth = useCapability("record_health", { birdId });
+  const canEmergency = useCapability("manage_emergency", { birdId });
   const navigate = useNavigate();
   const router = useRouter();
   const qc = useQueryClient();
@@ -122,9 +125,11 @@ function ScanDetail() {
         </div>
       </div>
 
-      {/* Concern actions — emergency contacts + explicit resolve. */}
+      {/* Concern actions — emergency contacts (manage_emergency) + resolve
+          (record_health). Each gated so members don't see controls that fail. */}
       {concern && (
         <div className="space-y-2">
+          {canEmergency && (
           <Link
             to="/birds/$birdId/plan/editor"
             params={{ birdId }}
@@ -133,11 +138,12 @@ function ScanDetail() {
           >
             <Siren className="size-4" /> Emergency contacts
           </Link>
+          )}
           {row.resolved_at ? (
             <p className="flex items-center justify-center gap-1.5 py-1 text-[13px] font-[500] text-[var(--moss)]">
               <Check className="size-4" /> Marked resolved
             </p>
-          ) : (
+          ) : canHealth ? (
             <button
               type="button"
               onClick={markResolved}
@@ -146,7 +152,7 @@ function ScanDetail() {
             >
               {resolving ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />} Mark resolved
             </button>
-          )}
+          ) : null}
         </div>
       )}
 

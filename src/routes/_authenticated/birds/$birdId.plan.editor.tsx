@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { Disclaimer } from "@/components/Disclaimer";
 import { useBirdPhotos } from "@/lib/useBirdPhotos";
 import { useBirdRole } from "@/lib/useBirdRole";
+import { useCapability, useMyPermissions } from "@/lib/useCapability";
 import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 
 
@@ -75,12 +76,19 @@ function BirdEditor() {
   const { tab: tabParam, scan: scanParam } = Route.useSearch();
   const qc = useQueryClient();
   const navigate = useNavigate();
-  // The care-plan editor is owner-only (edits are RLS-restricted to the owner).
-  // Household members are routed to the read-only overview.
+  // Editor access is capability-based: edit_care_plans (the five care sections)
+  // and/or manage_emergency (the Emergency tab). Members with neither are routed
+  // to the read-only overview. (Wait for perms to load before redirecting so we
+  // don't bounce the owner/editor mid-load.)
   const role = useBirdRole(birdId);
+  const canEdit = useCapability("edit_care_plans", { birdId });
+  const canEmergency = useCapability("manage_emergency", { birdId });
+  const { data: perms } = useMyPermissions();
   useEffect(() => {
-    if (role === "household") navigate({ to: "/birds/$birdId/plan", params: { birdId }, replace: true });
-  }, [role, birdId, navigate]);
+    if (role === "owner") return;
+    if (role == null || !perms) return; // still loading
+    if (!canEdit && !canEmergency) navigate({ to: "/birds/$birdId/plan", params: { birdId }, replace: true });
+  }, [role, perms, canEdit, canEmergency, birdId, navigate]);
   const [tab, setTab] = useState<Tab>(tabParam ?? (scanParam ? "logs" : "food"));
   useEffect(() => { if (tabParam) setTab(tabParam); else if (scanParam) setTab("logs"); }, [tabParam, scanParam]);
 
@@ -165,7 +173,11 @@ function BirdEditor() {
 
   const headerPhoto = resolvePhoto(bird.photo_url);
 
-  const tabs = ORDERED_TABS.map((id) => ({ id, label: TAB_LABELS[id] }));
+  // Only show tabs the user can actually edit: the Emergency tab needs
+  // manage_emergency; the other five need edit_care_plans. (Owner has both.)
+  const tabs = ORDERED_TABS
+    .filter((id) => (id === "emergency" ? canEmergency : canEdit))
+    .map((id) => ({ id, label: TAB_LABELS[id] }));
 
   const onPlanSaved = () => {
     qc.invalidateQueries({ queryKey: ["plan", birdId] });
