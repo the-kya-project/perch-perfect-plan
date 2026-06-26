@@ -7,7 +7,9 @@ import { Plus, Calendar, CalendarPlus, ChevronRight } from "lucide-react";
 import { OwnerHeaderIcons } from "@/components/OwnerHeader";
 import { SitForm } from "@/components/SitForm";
 import { ActiveSitCard, UpcomingSitCard, type SitBird, type ListSit } from "@/components/SitListCards";
-import { firstName } from "@/components/LeadPicker";
+import { useServerFn } from "@tanstack/react-start";
+import { resolveHouseholdNames } from "@/lib/home.functions";
+import { memberDisplayName, firstName } from "@/lib/memberDisplay";
 import { InkHero, SectionHead, Card, IconTile } from "@/components/system";
 import { useBirdPhotos } from "@/lib/useBirdPhotos";
 import { weekdayMonthDay, monthDay, daysUntil } from "@/lib/dates";
@@ -106,22 +108,22 @@ function SitsPage() {
   const pastCount = allSits.filter((s) => s.end_date < today).length;
 
   // Batch-resolve display names for caregivers AND sit leads ("in charge").
+  // Resolve caregiver + lead names via the service role (the authenticated
+  // client can't read other users' profiles — profiles RLS is self-only).
   const personIds = [...new Set(allSits.flatMap((s) => [s.caregiver_user_id, s.lead_user_id]).filter(Boolean) as string[])];
-  const { data: profiles = [] } = useQuery({
+  const resolveNames = useServerFn(resolveHouseholdNames);
+  const { data: nameMap = {} } = useQuery({
     queryKey: ["sit-person-names", personIds.slice().sort().join(",")],
     enabled: personIds.length > 0,
     staleTime: 5 * 60_000,
-    queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("id, display_name").in("id", personIds);
-      return data ?? [];
-    },
+    queryFn: () => resolveNames({ data: { userIds: personIds } }),
   });
-  const nameById = new Map((profiles as any[]).map((p) => [p.id, (p.display_name ?? "").toString().trim() || "Household member"]));
+  const displayFor = (id: string): string => memberDisplayName((nameMap as Record<string, any>)[id]);
   // Lead = who's in charge. First name only, per the content-label treatment.
   const leadFirstName = (s: any): string | null =>
-    s.lead_user_id ? firstName(nameById.get(s.lead_user_id) || "") || null : null;
+    s.lead_user_id ? firstName(displayFor(s.lead_user_id)) || null : null;
   const caregiverName = (s: any): string =>
-    s.caregiver_user_id ? (nameById.get(s.caregiver_user_id) ?? "Household member") : (s.sitter_name?.trim() || "Your sitter");
+    s.caregiver_user_id ? displayFor(s.caregiver_user_id) : (s.sitter_name?.trim() || "Your sitter");
 
   // Bird photos are stored as bucket PATHS; resolve them to signed URLs (small
   // transform — the chips are tiny dots) so the chip <img> actually loads.
