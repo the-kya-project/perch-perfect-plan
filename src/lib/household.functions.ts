@@ -10,6 +10,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { PRESET_CAPABILITIES } from "@/lib/capabilities";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { buildHouseholdInviteEmail } from "./emailTemplates";
 import { mergeEmergency } from "./emergency";
@@ -360,6 +361,19 @@ export const acceptHouseholdInvite = createServerFn({ method: "POST" })
     const rows = (invite.bird_ids as string[]).map((bird_id) => ({ bird_id, user_id: userId, role: "household" }));
     const { error: insErr } = await sb.from("bird_members").upsert(rows, { onConflict: "bird_id,user_id", ignoreDuplicates: true });
     if (insErr) throw new Error(insErr.message);
+
+    // Default permissions: every accepted member starts as Caregiver; the owner
+    // adjusts on the Permissions screen. Idempotent — don't clobber an existing
+    // row (e.g. re-accept after a prior membership).
+    await sb.from("household_member_permissions").upsert(
+      {
+        owner_id: invite.owner_id,
+        member_user_id: userId,
+        capabilities: PRESET_CAPABILITIES.caregiver,
+        preset: "caregiver",
+      } as any,
+      { onConflict: "owner_id,member_user_id", ignoreDuplicates: true },
+    );
 
     await sb
       .from("household_invites")

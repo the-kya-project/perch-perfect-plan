@@ -7,7 +7,7 @@ import {
 } from "@/lib/household.functions";
 import { HouseholdInviteSheet } from "@/components/HouseholdInviteSheet";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, Mail, MoreHorizontal, Loader2, X, Check } from "lucide-react";
+import { ArrowLeft, Plus, Mail, MoreHorizontal, Loader2, X, Check, SlidersHorizontal } from "lucide-react";
 import { InkHero, Card, RecordRow, IconTile } from "@/components/system";
 
 // Account-level household management — every person who can help with the
@@ -96,6 +96,17 @@ function HouseholdScreen() {
               >
                 <Plus className="size-4" /> Invite a household member
               </button>
+
+              {members.length > 0 && (
+                <Card>
+                  <RecordRow
+                    leading={<IconTile tone="pale" icon={<SlidersHorizontal className="size-5" />} />}
+                    title="Permissions"
+                    subtitle="Choose what each member can do"
+                    onClick={() => navigate({ to: "/household-permissions" })}
+                  />
+                </Card>
+              )}
 
               <Card className="p-4">
                 <h2 className="t-section text-[14.5px]">What they can do</h2>
