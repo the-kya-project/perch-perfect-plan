@@ -4,6 +4,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useBirdPhotos } from "@/lib/useBirdPhotos";
 import { useBirdRole } from "@/lib/useBirdRole";
+import { weightTrendPill } from "@/lib/weightTrend";
 import { AgePicker } from "@/components/BirdPickers";
 import { PhotoCropper } from "@/components/PhotoCropper";
 import { useServerFn } from "@tanstack/react-start";
@@ -27,7 +28,6 @@ export const Route = createFileRoute("/_authenticated/birds/$birdId/")({
   component: BirdRecordHome,
 });
 
-type Trend = "steady" | "up" | "down";
 
 // Shared bird-record query — used by the route header and the body. Same
 // queryKey/select, so calling it in both places is deduped by React Query.
@@ -219,12 +219,10 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
 
   const weightCount = weights?.length ?? 0;
   const current = weights?.[0];
-  const trend: Trend = (() => {
-    if (!weights || weights.length < 2) return "steady";
-    const diff = weights[0].grams - weights[1].grams;
-    if (Math.abs(diff) < 1) return "steady";
-    return diff > 0 ? "up" : "down";
-  })();
+  // ONE trend computation, shared with the Home flock card (weightTrendPill):
+  // latest entry vs the immediately previous one. The two pills are now
+  // guaranteed identical.
+  const wtPill = weightTrendPill(weights ?? []);
 
   // Merge weight entries + sitter check-ins into one newest-first feed.
   const recent = [
@@ -270,7 +268,7 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
         eyebrow="Latest weight"
         value={current ? <>{current.grams}<span className="text-[16px] font-[400] text-[var(--moss)]"> g</span></> : "—"}
         meta={current
-          ? <><StatusPill tone={trend === "down" ? "attention" : "good"}>{trendLabel(trend)}</StatusPill><span className="t-meta">last weighed {fmtDate(current.measured_at)}</span></>
+          ? <><StatusPill tone={wtPill.tone}>{wtPill.label}</StatusPill><span className="t-meta">last weighed {fmtDate(current.measured_at)}</span></>
           : <span className="text-[13px] text-[var(--ink2)]">No weight yet — log the first</span>}
         action={
           <button type="button" aria-label="Log weight" onClick={() => navigate({ to: "/birds/$birdId/weight", params: { birdId } })} className="grid size-11 place-items-center rounded-full bg-[var(--ink)] text-[var(--lime)] active:scale-95">
@@ -305,7 +303,7 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
           {bird?.setup_complete && (
             <RecordRow leading={<IconTile size={38} icon={<ClipboardList className="size-5" />} />} title="Care plan" subtitle="Food, routine, behavior, home, health" onClick={() => navigate({ to: "/birds/$birdId/plan", params: { birdId } })} />
           )}
-          <RecordRow leading={<IconTile size={38} icon={<Scale className="size-5" />} />} title="Weight" subtitle={weightCount > 0 ? `${weightCount} ${weightCount === 1 ? "entry" : "entries"} · ${trendLabel(trend).toLowerCase()}` : "Not started"} onClick={() => navigate({ to: "/birds/$birdId/weight", params: { birdId } })} />
+          <RecordRow leading={<IconTile size={38} icon={<Scale className="size-5" />} />} title="Weight" subtitle={weightCount > 0 ? `${weightCount} ${weightCount === 1 ? "entry" : "entries"} · ${wtPill.label.toLowerCase()}` : "Not started"} onClick={() => navigate({ to: "/birds/$birdId/weight", params: { birdId } })} />
           <RecordRow leading={<IconTile size={38} icon={<BookOpen className="size-5" />} />} title="Journal" subtitle="Molt, meds, vet visits" onClick={() => navigate({ to: "/birds/$birdId/journal", params: { birdId } })} />
           <RecordRow leading={<IconTile size={38} icon={<IdCard className="size-5" />} />} title="Identity" subtitle="Chip, band, hatch date, origin, photo" onClick={() => navigate({ to: "/birds/$birdId/identity", params: { birdId } })} />
           <RecordRow leading={<IconTile size={38} icon={<CalendarHeart className="size-5" />} />} title="Moments" subtitle="Mark the days worth remembering" onClick={() => navigate({ to: "/birds/$birdId/moments", params: { birdId } })} />
@@ -377,9 +375,6 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
   );
 }
 
-function trendLabel(trend: Trend): string {
-  return trend === "up" ? "Up" : trend === "down" ? "Down" : "Steady";
-}
 
 function checkinLabel(status: string): string {
   return status === "red" ? "concern flagged" : status === "yellow" ? "something to check" : "all clear";

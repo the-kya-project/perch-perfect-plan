@@ -1,6 +1,7 @@
 // Pure helpers for the owner Home — weight pills, stale-weigh-in detection,
 // upcoming-Moment anniversaries, and the adaptive Today list. Kept free of React
 // /  network so it's trivially testable and the dashboard stays declarative.
+import { weightTrendPill } from "./weightTrend";
 
 // ---- Tunable thresholds (surfaced as named constants) ----------------------
 export const STALE_DAYS_PERMANENT = 5; // permanent birds: nudge a weigh-in after 5 days
@@ -25,7 +26,7 @@ export type HomeBird = {
   became_permanent_on: string | null;
 };
 
-export type Pill = { tone: "good" | "attention"; label: string };
+export type Pill = { tone: "good" | "attention" | "off"; label: string };
 export type WeightGlance =
   | { state: "none" }                                  // never weighed → "No weights yet", no pill
   | { state: "stale"; current: number; days: number; pill: Pill }
@@ -47,16 +48,10 @@ export function weightGlance(entriesDesc: WeightEntry[], isFoster: boolean | nul
   if (days > staleThreshold(isFoster)) {
     return { state: "stale", current, days, pill: { tone: "attention", label: `${days} days` } };
   }
-  // Trend over the last 30 days: compare current to the oldest reading still in
-  // the window (the baseline). One reading in-window → steady.
-  const cutoff = +new Date() - 30 * DAY_MS;
-  const inWindow = entriesDesc.filter((e) => +new Date(e.measured_at) >= cutoff);
-  const baseline = inWindow.length > 1 ? inWindow[inWindow.length - 1].grams : current;
-  const delta = current - baseline;
-  const pct = baseline > 0 ? (Math.abs(delta) / baseline) * 100 : 0;
-  if (pct <= STEADY_PCT) return { state: "trend", current, pill: { tone: "good", label: "Steady" } };
-  if (delta > 0) return { state: "trend", current, pill: { tone: "good", label: `Up ${Math.round(delta)} g` } };
-  return { state: "trend", current, pill: { tone: "attention", label: `Down ${Math.round(-delta)} g — watch` } };
+  // Trend = latest entry vs the immediately previous one — the ONE canonical
+  // computation shared with the bird-record pill (weightTrendPill), so the two
+  // surfaces can never disagree.
+  return { state: "trend", current, pill: weightTrendPill(entriesDesc) };
 }
 
 // Group newest-first entries by bird.

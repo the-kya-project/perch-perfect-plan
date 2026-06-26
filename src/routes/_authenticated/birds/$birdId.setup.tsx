@@ -1830,11 +1830,13 @@ export function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlus
         } as any)
         .eq("id", plan.id);
 
-      // Feed weight log when the normal weight changes.
+      // Feed a weight entry when the normal weight changes. weight_entries is
+      // the single source of truth (was legacy weight_logs — the last stray
+      // writer pointed there).
       if (newWeight != null && weight !== initialWeight) {
         await supabase
-          .from("weight_logs")
-          .insert({ bird_id: birdId, weight: newWeight, notes: "Baseline weight" } as any);
+          .from("weight_entries")
+          .insert({ bird_id: birdId, grams: newWeight, source: "owner", note: "Baseline weight" } as any);
         setInitialWeight(weight);
       }
 

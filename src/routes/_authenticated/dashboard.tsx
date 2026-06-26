@@ -376,7 +376,7 @@ function GlancePill({ glance }: { glance: WeightGlance }) {
   return (
     <span className="inline-flex items-center gap-1.5 text-[15px] text-[var(--ink)]">
       {glance.current}<span className="t-meta">g</span>
-      <StatusPill tone={pill.tone === "good" ? "good" : "attention"}>{pill.label}</StatusPill>
+      <StatusPill tone={pill.tone}>{pill.label}</StatusPill>
     </span>
   );
 }
