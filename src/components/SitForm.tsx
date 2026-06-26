@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { toast } from "sonner";
 import { track } from "@/lib/analytics";
+import { LeadPicker } from "@/components/LeadPicker";
 import { Feather, Plus, Mail, Check, Users } from "lucide-react";
 
 // Create OR edit a sit. In edit mode (`editSit` set) it preserves the existing
@@ -71,6 +72,15 @@ export function SitForm({
     : null;
   const [caregiverKind, setCaregiverKind] = useState<CaregiverKind | null>(initialKind);
   const [householdUserId, setHouseholdUserId] = useState<string | null>(editing ? (editSit.caregiver_user_id ?? null) : null);
+
+  // Who's IN CHARGE (lead). Defaults to the owner; the picker only shows when
+  // the household has 2+ eligible people (owner + member). Current user is the
+  // owner here (only owners reach this form), so they're the create-mode owner.
+  const { data: meId } = useQuery({ queryKey: ["me-id"], queryFn: async () => (await getLocalUser()).data.user?.id ?? null });
+  const ownerId = editing ? (editSit.owner_id as string | null) : meId;
+  const [leadUserId, setLeadUserId] = useState<string | null>(editing ? (editSit.lead_user_id ?? editSit.owner_id ?? null) : null);
+  // Create mode: default the lead to the owner once we know who that is.
+  useEffect(() => { if (!editing && !leadUserId && meId) setLeadUserId(meId); }, [editing, leadUserId, meId]);
 
   // Household members eligible to cover this sit = anyone who has household
   // access to EVERY currently-selected bird. Re-runs when the selection
@@ -209,6 +219,7 @@ export function SitForm({
           start_date: start,
           end_date: end,
           notes: notes || null,
+          lead_user_id: leadUserId ?? editSit.owner_id,
         };
         if (kind === "external") {
           update.sitter_name = sitterName || null;
@@ -251,6 +262,8 @@ export function SitForm({
           start_date: start, end_date: end,
           notes: notes || null,
           status: "upcoming",
+          // Lead defaults to the owner (single-member households auto-assign).
+          lead_user_id: leadUserId ?? u.user.id,
         };
         if (kind === "external") {
           insert.sitter_name = sitterName || null;
@@ -393,6 +406,15 @@ export function SitForm({
           onChangeSitterEmail={setSitterEmail}
         />
       )}
+
+      {/* Who's in charge (lead) — hidden when the owner is the only eligible
+          person; otherwise lists owner + household members, owner pre-selected. */}
+      <LeadPicker
+        birdIds={Array.from(selected)}
+        ownerId={ownerId}
+        value={leadUserId}
+        onChange={setLeadUserId}
+      />
 
       <Field label="Notes for this sit"><textarea className="input area" value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
 

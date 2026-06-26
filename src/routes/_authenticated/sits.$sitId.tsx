@@ -5,6 +5,7 @@ import {
   ArrowLeft, Calendar, Activity, Scale, BookOpen, CheckSquare, Image as ImageIcon, Loader2, Users, Mail,
 } from "lucide-react";
 import { InkHero, SectionHead, Card, IconTile, StatusPill } from "@/components/system";
+import { firstName } from "@/components/LeadPicker";
 import { formatDateRangeUS } from "@/lib/dates";
 
 // Past Sits detail view — the sit's own activity feed, derived strictly from
@@ -34,16 +35,19 @@ function SitDetail() {
     queryFn: async () => {
       const { data: sit } = await supabase
         .from("sits")
-        .select("id, title, start_date, end_date, sitter_name, sitter_email, caregiver_user_id, notes, revoked")
+        .select("id, title, start_date, end_date, sitter_name, sitter_email, caregiver_user_id, lead_user_id, notes, revoked")
         .eq("id", sitId).maybeSingle();
-      if (!sit) return { sit: null as any, birds: [], caregiver: null as null | { name: string }, activity: [] as Activity[], counts: { scans: 0, weights: 0, journals: 0, photos: 0, tasks: 0 } };
+      if (!sit) return { sit: null as any, birds: [], caregiver: null as null | { name: string }, leadName: null as string | null, activity: [] as Activity[], counts: { scans: 0, weights: 0, journals: 0, photos: 0, tasks: 0 } };
 
-      const [birdsJoin, caregiverProf] = await Promise.all([
+      // Resolve caregiver + lead display names in one batch.
+      const personIds = [sit.caregiver_user_id, sit.lead_user_id].filter(Boolean) as string[];
+      const [birdsJoin, profsRes] = await Promise.all([
         supabase.from("sit_birds").select("bird_id, birds(id, name)").eq("sit_id", sitId),
-        sit.caregiver_user_id
-          ? supabase.from("profiles").select("display_name").eq("id", sit.caregiver_user_id).maybeSingle()
-          : Promise.resolve({ data: null }),
+        personIds.length
+          ? supabase.from("profiles").select("id, display_name").in("id", personIds)
+          : Promise.resolve({ data: [] as any[] }),
       ]);
+      const nameById = new Map(((profsRes.data ?? []) as any[]).map((p) => [p.id, (p.display_name ?? "").toString().trim()]));
       const birds = ((birdsJoin.data ?? []) as any[])
         .map((r) => r.birds)
         .filter(Boolean)
@@ -76,7 +80,8 @@ function SitDetail() {
       return {
         sit,
         birds,
-        caregiver: sit.caregiver_user_id ? { name: ((caregiverProf as any)?.data?.display_name ?? "").toString().trim() || "Household member" } : null,
+        caregiver: sit.caregiver_user_id ? { name: nameById.get(sit.caregiver_user_id) || "Household member" } : null,
+        leadName: sit.lead_user_id ? (nameById.get(sit.lead_user_id) || null) : null,
         activity,
         counts,
       };
@@ -115,6 +120,12 @@ function SitDetail() {
             <p className="t-meta truncate">
               {isHousehold ? "Household" : "External sitter"} · {formatDateRangeUS(sit.start_date, sit.end_date)}
             </p>
+            {data.leadName && (
+              <p className="mt-0.5">
+                <span className="t-eyebrow text-[var(--teal-on-cream)]">In charge · </span>
+                <span className="t-eyebrow text-[var(--ink)]">{firstName(data.leadName)}</span>
+              </p>
+            )}
           </div>
           {isHousehold && <StatusPill tone="household">Household</StatusPill>}
         </div>
