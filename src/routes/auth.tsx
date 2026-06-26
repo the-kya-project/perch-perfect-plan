@@ -89,19 +89,25 @@ function AuthPage() {
             emailRedirectTo: window.location.origin + "/welcome",
           },
         });
-        if (error) throw error;
-        // Already-registered email: with email confirmation on, Supabase does
-        // NOT error here (anti-enumeration) — it returns a user with an EMPTY
-        // identities array and no session. Without this guard we'd send an
-        // existing owner to the "check your email to confirm" screen for a
-        // confirmation that never comes. Bounce them to sign-in (the email they
-        // typed persists — same /auth route), and skip the signup analytics/lead.
-        const identities = (data.user as { identities?: unknown[] } | null)?.identities;
-        if (Array.isArray(identities) && identities.length === 0) {
+        // Already-registered email — handle BOTH Supabase configs the same way
+        // (bounce to sign-in, email persists on the same /auth route):
+        //   • Confirm-email OFF → signUp returns an error ("User already
+        //     registered"). Without this we'd just toast a raw error and leave
+        //     them on the form, free to keep retrying.
+        //   • Confirm-email ON → no error (anti-enumeration), but an obfuscated
+        //     user with an EMPTY identities array and no session — otherwise
+        //     we'd send them to "check your email to confirm" for a mail that
+        //     never comes.
+        const identities = (data?.user as { identities?: unknown[] } | null)?.identities;
+        const alreadyRegistered =
+          (!!error && /already\s*(registered|exist)/i.test(error.message ?? "")) ||
+          (!error && Array.isArray(identities) && identities.length === 0);
+        if (alreadyRegistered) {
           toast.error("That email already has an account — sign in instead.");
           navigate({ to: "/auth", search: { mode: "signin" } });
           return;
         }
+        if (error) throw error; // any other signup error
         track("owner_signup", { marketing_opt_in: marketingOptIn, verification_required: !data.session });
         if (marketingOptIn) track("marketing_opt_in_checked", { context: "signup" });
         void captureLead({
