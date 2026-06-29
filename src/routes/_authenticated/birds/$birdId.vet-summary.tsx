@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, FileText, Share2, Printer } from "lucide-react";
+import { ArrowLeft, FileText, Share2, FileDown } from "lucide-react";
 import { computeWeightTrend } from "@/lib/weightTrend";
 import { mergeEmergency, ASPCA_POISON_CONTROL } from "@/lib/emergency";
 import { formatAmountUnit } from "@/lib/labels";
@@ -20,6 +20,12 @@ const DIET_LABELS: Record<string, string> = {
   pelleted: "Pelleted", seed: "Seed mix", pellet_seed: "Pellet & seed", chop: "Fresh chop / formulated", other: "Other",
 };
 const SEX_METHOD: Record<string, string> = { dna: "DNA", surgical: "surgical", visual: "visual", unknown: "" };
+const KIND_LABEL: Record<string, string> = {
+  molt: "Molt", meds: "Meds", vet: "Vet visit", behavior: "Behavior", note: "Note", other: "Other",
+};
+// before/after-meal label — show only what's recorded; never inferred.
+const mealLabel = (m: string | null | undefined): string | null =>
+  m === "before_meal" ? "before meal" : m === "after_meal" ? "after meal" : null;
 
 function VetSummary() {
   const { birdId } = Route.useParams();
@@ -46,9 +52,18 @@ function VetSummary() {
     queryKey: ["weight-entries", birdId],
     queryFn: async () => {
       const { data } = await supabase.from("weight_entries")
-        .select("grams, measured_at").eq("bird_id", birdId)
-        .order("measured_at", { ascending: false }).limit(500);
-      return (data ?? []) as { grams: number; measured_at: string }[];
+        .select("grams, measured_at, meal_relation").eq("bird_id", birdId)
+        .order("measured_at", { ascending: false }).limit(1000);
+      return (data ?? []) as { grams: number; measured_at: string; meal_relation: string | null }[];
+    },
+  });
+  const { data: journal } = useQuery({
+    queryKey: ["vet-journal", birdId],
+    queryFn: async () => {
+      const { data } = await supabase.from("journal_entries")
+        .select("kind, title, body, occurred_on").eq("bird_id", birdId)
+        .order("occurred_on", { ascending: true }).limit(1000);
+      return (data ?? []) as { kind: string; title: string | null; body: string | null; occurred_on: string }[];
     },
   });
   const { data: contacts } = useQuery({
@@ -98,6 +113,63 @@ function VetSummary() {
     val(plan?.handling_rules) && plan.handling_rules.trim(),
     val(plan?.out_of_cage_rules) && `Out of cage: ${plan.out_of_cage_rules.trim()}`,
   ].filter(Boolean).join("\n");
+
+  // ---- appendix: weights + journal (all-time, oldest-first to read as a trend) ----
+  const weightsAsc = [...(weights ?? [])].sort((a, b) => a.measured_at.localeCompare(b.measured_at));
+  const appendixWeights = weightsAsc.map((w) => ({
+    date: fmtDate(w.measured_at), time: fmtTime(w.measured_at), grams: w.grams, meal: mealLabel(w.meal_relation),
+  }));
+  const weightSummary = (() => {
+    if (!weightsAsc.length) return null;
+    const g = weightsAsc.map((w) => w.grams);
+    const min = Math.min(...g), max = Math.max(...g);
+    const recent = weightsAsc[weightsAsc.length - 1];
+    const range = min === max ? `${min} g` : `${min}–${max} g`;
+    return `${weightsAsc.length} ${weightsAsc.length === 1 ? "entry" : "entries"} · ${range} · most recent ${recent.grams} g (${fmtDate(recent.measured_at)})`;
+  })();
+  const appendixJournal = (journal ?? []).map((j) => ({
+    date: fmtDate(j.occurred_on),
+    kind: KIND_LABEL[j.kind] ?? null,
+    title: val(j.title) ? j.title!.trim() : null,
+    body: val(j.body) ? j.body!.trim() : "",
+  }));
+
+  const [downloading, setDownloading] = useState(false);
+  function buildPdfData() {
+    return {
+      name,
+      species: bird?.species ?? null,
+      generated: fmtDate(new Date().toISOString()),
+      fileDate: new Date().toISOString().slice(0, 10),
+      identity,
+      weightText,
+      dietText,
+      meds: meds || null,
+      handling: handling || null,
+      emergency: [
+        { label: "Avian vet", value: [em.avian_vet_name, em.avian_vet_phone].filter(Boolean).join(" · ") },
+        { label: "Emergency vet", value: [em.emergency_vet_name, em.emergency_vet_phone].filter(Boolean).join(" · ") },
+        { label: "Owner", value: em.owner_phone ?? "" },
+        { label: "Backup", value: [em.backup_name, em.backup_phone].filter(Boolean).join(" · ") },
+        { label: "Poison control", value: em.poison_control || ASPCA_POISON_CONTROL },
+      ],
+      weightSummary,
+      weights: appendixWeights,
+      journal: appendixJournal,
+    };
+  }
+  async function savePdf() {
+    setDownloading(true);
+    try {
+      // Lazy-load the renderer so @react-pdf stays out of the entry bundle.
+      const { downloadVetSummaryPdf } = await import("@/lib/vetSummaryPdf");
+      await downloadVetSummaryPdf(buildPdfData());
+    } catch {
+      toast.error("Couldn't generate the PDF. Please try again.");
+    } finally {
+      setDownloading(false);
+    }
+  }
 
   function shareText(): string {
     const lines = [
@@ -164,7 +236,7 @@ function VetSummary() {
                   <Share2 className="size-4" /> Share
                 </button>
                 <div className="flex-1">
-                  <PrimaryButton tone="lime" icon={<Printer className="size-4" />} onPress={() => window.print()}>Save as PDF</PrimaryButton>
+                  <PrimaryButton tone="lime" icon={<FileDown className="size-4" />} onPress={savePdf} disabled={downloading}>{downloading ? "Saving…" : "Save as PDF"}</PrimaryButton>
                 </div>
               </div>
 
@@ -204,21 +276,56 @@ function VetSummary() {
                       <EmRow label="Poison control" value={em.poison_control || ASPCA_POISON_CONTROL} />
                     </dl>
                   </section>
+
+                  {/* Appendix — full weight log + journal, all-time, oldest-first */}
+                  <section className="mt-6 border-t border-[var(--line)] pt-4">
+                    <p className="t-eyebrow text-[var(--teal-on-cream)]">Appendix · Weight log</p>
+                    {weightSummary && <p className="t-meta mt-1">{weightSummary}</p>}
+                    {appendixWeights.length === 0 ? (
+                      <p className="t-body mt-2 italic text-[var(--mute2)]">No weight entries recorded.</p>
+                    ) : (
+                      <div className="mt-2">
+                        <div className="flex border-b border-[var(--ink)] pb-1.5">
+                          <span className="t-eyebrow w-[30%] text-[var(--mute)]">Date</span>
+                          <span className="t-eyebrow w-[22%] text-[var(--mute)]">Time</span>
+                          <span className="t-eyebrow w-[20%] text-[var(--mute)]">Weight</span>
+                          <span className="t-eyebrow w-[28%] text-[var(--mute)]">Context</span>
+                        </div>
+                        {appendixWeights.map((w, i) => (
+                          <div key={i} className="flex border-b border-[var(--line2)] py-1.5 text-[13px] text-[var(--ink)]">
+                            <span className="w-[30%]">{w.date}</span>
+                            <span className="w-[22%]">{w.time}</span>
+                            <span className="w-[20%]">{w.grams} g</span>
+                            <span className={`w-[28%] ${w.meal ? "" : "text-[var(--mute2)]"}`}>{w.meal ?? "—"}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <p className="t-eyebrow mt-6 text-[var(--teal-on-cream)]">Appendix · Journal</p>
+                    {appendixJournal.length === 0 ? (
+                      <p className="t-body mt-2 italic text-[var(--mute2)]">No journal entries recorded.</p>
+                    ) : (
+                      <div className="mt-2 space-y-3">
+                        {appendixJournal.map((j, i) => (
+                          <div key={i}>
+                            <p className="text-[13px] font-[500] text-[var(--ink)]">
+                              {j.date}
+                              {j.kind && <span className="font-[400] text-[var(--mute)]">{"  ·  "}{j.kind}</span>}
+                              {j.title ? `  —  ${j.title}` : ""}
+                            </p>
+                            {j.body && <p className="t-body mt-0.5 whitespace-pre-line text-[var(--ink)]">{j.body}</p>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </section>
                 </Card>
               </article>
             </>
           )}
         </main>
       </div>
-
-      {/* Print only the sheet, regardless of app chrome. */}
-      <style>{`@media print {
-        body * { visibility: hidden !important; }
-        #vet-sheet, #vet-sheet * { visibility: visible !important; }
-        #vet-sheet { position: absolute; left: 0; top: 0; width: 100%; border: none !important; }
-        #vet-sheet > div { box-shadow: none !important; }
-        [data-noprint] { display: none !important; }
-      }`}</style>
     </div>
   );
 }
@@ -250,6 +357,9 @@ function cap(s: string): string { return s.charAt(0).toUpperCase() + s.slice(1);
 function val(s: unknown): s is string { return typeof s === "string" && s.trim().length > 0; }
 function fmtDate(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+}
+function fmtTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
 }
 function trendLabel(trend: "steady" | "up" | "down", delta: number): string {
   if (trend === "down") return `down ${Math.abs(delta)} g`;

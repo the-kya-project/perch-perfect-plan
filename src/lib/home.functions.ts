@@ -175,3 +175,78 @@ export const resolveHouseholdNames = createServerFn({ method: "GET" })
     }
     return out;
   });
+
+// ---- Consolidated owner-Home above-the-fold payload (single round trip) -----
+// Replaces the dashboard's separate profile-name + birds + weights + sits loads
+// with ONE server fn. Data is read through the USER-SCOPED (RLS) client so owner
+// AND member access is enforced exactly as before; only caregiver display names
+// use the admin client (profiles RLS is self-only). Secondary panels (full
+// household roster, past birds) stay lazy on the client.
+const DASHBOARD_BIRD_SELECT =
+  "id, owner_id, name, species, photo_url, photo_position, is_foster, intake_date, birth_date, acquired_on, became_permanent_on, created_at";
+
+export type DashboardSit = {
+  id: string;
+  sitter_name: string | null;
+  caregiver_user_id: string | null;
+  caregiverName: string | null;
+  start_date: string;
+};
+export type DashboardHome = {
+  profile: { displayName: string };
+  birds: any[];
+  weights: { bird_id: string; grams: number; measured_at: string }[];
+  sits: DashboardSit[];
+};
+
+export const getDashboardHome = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<DashboardHome> => {
+    const sb = (context as any).supabase; // RLS-enforced (owner + member access)
+    const uid = (context as any).userId as string;
+
+    const [profileRes, birdsRes, sitsRes] = await Promise.all([
+      sb.from("profiles").select("display_name").eq("id", uid).maybeSingle(),
+      sb.from("birds").select(DASHBOARD_BIRD_SELECT).order("created_at", { ascending: false }),
+      sb.from("sits").select("id, sitter_name, caregiver_user_id, start_date")
+        .or("sitter_name.is.null,sitter_name.neq.__preview__").order("start_date", { ascending: false }),
+    ]);
+
+    const birds = (birdsRes.data ?? []) as any[];
+    const birdIds = birds.map((b) => b.id);
+
+    let weights: DashboardHome["weights"] = [];
+    if (birdIds.length) {
+      const { data } = await sb.from("weight_entries").select("bird_id, grams, measured_at")
+        .in("bird_id", birdIds).order("measured_at", { ascending: false }).limit(600);
+      weights = (data ?? []) as DashboardHome["weights"];
+    }
+
+    // Caregiver display names (admin — profiles RLS is self-only). The sits are
+    // already RLS-scoped to the caller, so their caregivers are the caller's own
+    // household members; resolving their names here is safe.
+    const sitsRaw = (sitsRes.data ?? []) as any[];
+    const caregiverIds = Array.from(new Set(sitsRaw.map((s) => s.caregiver_user_id).filter(Boolean))) as string[];
+    const nameById = new Map<string, string>();
+    if (caregiverIds.length) {
+      const admin = await getAdmin();
+      const { data: profs } = await admin.from("profiles").select("id, display_name").in("id", caregiverIds);
+      for (const p of (profs ?? []) as any[]) nameById.set(p.id, (p.display_name ?? "").toString().trim());
+      await Promise.all(caregiverIds.map(async (id) => {
+        if (nameById.get(id)) return;
+        try {
+          const { data: u } = await admin.auth.admin.getUserById(id);
+          nameById.set(id, u?.user?.user_metadata?.display_name?.toString().trim() || u?.user?.email?.split("@")[0] || "");
+        } catch { /* ignore */ }
+      }));
+    }
+    const sits: DashboardSit[] = sitsRaw.map((s) => ({
+      id: s.id,
+      sitter_name: s.sitter_name ?? null,
+      caregiver_user_id: s.caregiver_user_id ?? null,
+      start_date: s.start_date,
+      caregiverName: s.caregiver_user_id ? (nameById.get(s.caregiver_user_id) || null) : null,
+    }));
+
+    return { profile: { displayName: (profileRes.data?.display_name ?? "").toString() }, birds, weights, sits };
+  });

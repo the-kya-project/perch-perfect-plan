@@ -14,6 +14,7 @@ import { SitCard } from "@/components/SitCard";
 import { toast } from "sonner";
 import { Disclaimer } from "@/components/Disclaimer";
 import { useBirdPhotos } from "@/lib/useBirdPhotos";
+import { signScanPhotos } from "@/lib/scanPhoto";
 import { useBirdRole } from "@/lib/useBirdRole";
 import { useCapability, useMyPermissions } from "@/lib/useCapability";
 import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
@@ -383,10 +384,20 @@ function LogsPanel({ birdId, initialScan }: { birdId: string; initialScan?: stri
   const { data: photos = [] } = useQuery({
     queryKey: ["photo-logs", birdId],
     queryFn: async () => {
-      const { data } = await supabase.from("photo_logs").select("*").eq("bird_id", birdId).order("created_at", { ascending: false }).limit(20);
+      const { data } = await supabase.from("photo_logs")
+        .select("id, bird_id, daily_log_id, photo_url, photo_type, notes, created_at")
+        .eq("bird_id", birdId).order("created_at", { ascending: false }).limit(20);
       return data ?? [];
     },
   });
+  // Resolve scan-photo object paths to signed URLs (legacy base64 passes through).
+  const { data: signedPhotos } = useQuery({
+    queryKey: ["scan-photo-urls", birdId, (photos as any[]).map((p) => p.photo_url)],
+    enabled: (photos as any[]).length > 0,
+    staleTime: 50 * 60 * 1000,
+    queryFn: () => signScanPhotos((photos as any[]).map((p) => p.photo_url)),
+  });
+  const photoSrc = (v: string) => signedPhotos?.get(v) ?? v;
 
   const triageColor = (s: string) =>
     s === "red" ? "bg-warn-red/10 text-warn-red"
@@ -511,8 +522,8 @@ function LogsPanel({ birdId, initialScan }: { birdId: string; initialScan?: stri
                           <p className="text-[10px] font-bold uppercase tracking-widest text-sage-600">Photos</p>
                           <div className="mt-2 grid grid-cols-3 gap-2">
                             {linkedPhotos.map((p: any) => (
-                              <a key={p.id} href={p.photo_url} target="_blank" rel="noreferrer" className="block aspect-square overflow-hidden rounded-lg bg-sage-100">
-                                <img src={p.photo_url} alt="Sitter photo" className="size-full object-cover" />
+                              <a key={p.id} href={photoSrc(p.photo_url)} target="_blank" rel="noreferrer" className="block aspect-square overflow-hidden rounded-lg bg-sage-100">
+                                <img src={photoSrc(p.photo_url)} alt="Sitter photo" className="size-full object-cover" />
                               </a>
                             ))}
                           </div>
@@ -534,8 +545,8 @@ function LogsPanel({ birdId, initialScan }: { birdId: string; initialScan?: stri
         ) : (
           <div className="mt-3 grid grid-cols-3 gap-2">
             {photos.map((p: any) => (
-              <a key={p.id} href={p.photo_url} target="_blank" rel="noreferrer" className="block aspect-square overflow-hidden rounded-lg bg-sage-100">
-                <img src={p.photo_url} alt="Sitter photo" className="size-full object-cover" />
+              <a key={p.id} href={photoSrc(p.photo_url)} target="_blank" rel="noreferrer" className="block aspect-square overflow-hidden rounded-lg bg-sage-100">
+                <img src={photoSrc(p.photo_url)} alt="Sitter photo" className="size-full object-cover" />
               </a>
             ))}
           </div>

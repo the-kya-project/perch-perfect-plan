@@ -24,6 +24,7 @@ export function PullToRefresh({
   const qc = useQueryClient();
   const ref = useRef<HTMLDivElement>(null);
   const startY = useRef<number | null>(null);
+  const startX = useRef(0);
   const pullRef = useRef(0);
   const refreshingRef = useRef(false);
   const onRefreshRef = useRef(onRefresh);
@@ -39,15 +40,37 @@ export function PullToRefresh({
 
     const reset = () => { startY.current = null; pullRef.current = 0; setPull(0); setDragging(false); };
 
+    // The gesture belongs to something else (don't hijack it for PTR) when the
+    // touch is on a form/media control, an opt-out region (data-no-ptr), or
+    // inside a nested vertical scroller that isn't at its own top.
+    const ownedByOther = (target: EventTarget | null): boolean => {
+      let n = target as HTMLElement | null;
+      while (n && n !== el && n !== document.body) {
+        const tag = n.tagName;
+        if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || tag === "VIDEO" || n.isContentEditable) return true;
+        if (n.dataset && "noPtr" in n.dataset) return true;
+        const oy = getComputedStyle(n).overflowY;
+        if ((oy === "auto" || oy === "scroll") && n.scrollHeight > n.clientHeight && n.scrollTop > 0) return true;
+        n = n.parentElement;
+      }
+      return false;
+    };
+
     const onStart = (e: TouchEvent) => {
       if (refreshingRef.current || e.touches.length !== 1) { startY.current = null; return; }
-      // Only arm the gesture at the very top of the page.
-      startY.current = window.scrollY <= 0 ? e.touches[0].clientY : null;
+      // Only arm at the very top of the page, and never when the touch belongs
+      // to a nested scroller / form / media control.
+      if (window.scrollY > 0 || ownedByOther(e.target)) { startY.current = null; return; }
+      startY.current = e.touches[0].clientY;
+      startX.current = e.touches[0].clientX;
     };
 
     const onMove = (e: TouchEvent) => {
       if (startY.current === null || refreshingRef.current) return;
       const dy = e.touches[0].clientY - startY.current;
+      const dx = e.touches[0].clientX - startX.current;
+      // Horizontal intent (carousels, the sitter bird switcher) → let it scroll.
+      if (Math.abs(dx) > Math.abs(dy)) { reset(); return; }
       // Pulling up, or no longer at the top → hand back to native scrolling.
       if (dy <= 0 || window.scrollY > 0) { reset(); return; }
       const dist = Math.min(MAX, dy * 0.5); // resistance

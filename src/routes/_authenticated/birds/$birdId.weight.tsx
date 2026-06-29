@@ -1,19 +1,24 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { useBirdRole } from "@/lib/useBirdRole";
 import { useCapability } from "@/lib/useCapability";
 import { useActiveSitIdForBird } from "@/components/CaregiverHome";
 import { toast } from "sonner";
-import { ArrowLeft, Scale, Check } from "lucide-react";
+import { ArrowLeft, Scale, Check, Trash2 } from "lucide-react";
 import { WeightTrendChart, type WeightPoint } from "@/components/WeightTrendChart";
 import { computeWeightTrend } from "@/lib/weightTrend";
 import { InkHero, IconTile, StatusPill, SectionHead, Card, RecordRow } from "@/components/system";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/weight")({
   head: () => ({ meta: [{ title: "Weight — Kya & Co." }] }),
+  // ?log=1 (from the bird record's weight "+") opens the log-weight entry
+  // straight away — one tap to the field, no intermediate CTA.
+  validateSearch: (search: Record<string, unknown>): { log?: boolean } => ({
+    log: search.log === true || search.log === "true" || search.log === 1 ? true : undefined,
+  }),
   component: WeightFacet,
 });
 
@@ -29,10 +34,11 @@ const MIN_G = 1;
 const MAX_G = 5000;
 const pad = (x: number) => String(x).padStart(2, "0");
 // "YYYY-MM-DDTHH:MM" in local time, for <input type="datetime-local"> + its max.
-const nowLocal = () => {
-  const d = new Date();
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-};
+const nowLocal = () => toLocalInput(new Date());
+// A stored UTC timestamp → "YYYY-MM-DDTHH:MM" in local time for datetime-local.
+const toLocalInput = (d: Date) =>
+  `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+const isoToLocal = (iso: string) => toLocalInput(new Date(iso));
 const fmtDateTime = (iso: string) => new Date(iso).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 const mealLabel = (m: string | null | undefined): string | null => (m === "before_meal" ? "before meal" : m === "after_meal" ? "after meal" : null);
 
@@ -47,11 +53,25 @@ function trendContext(trend: "steady" | "up" | "down", delta: number, win: Windo
 
 function WeightFacet() {
   const { birdId } = Route.useParams();
+  const { log } = Route.useSearch();
   const canLogCare = useCapability("log_daily_care", { birdId });
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [win, setWin] = useState<WindowDays>(90);
   const [logOpen, setLogOpen] = useState(false);
+  const [editEntry, setEditEntry] = useState<Entry | null>(null);
+
+  // ?log=1 deep-link → open the entry once we know the caller may log.
+  useEffect(() => {
+    if (log && canLogCare) setLogOpen(true);
+  }, [log, canLogCare]);
+
+  // Refetch all weight surfaces (this list + vet appendix share this key; the
+  // record-home glance + recent feed use bird-weights) after a save/edit/delete.
+  const refreshWeights = () => {
+    qc.invalidateQueries({ queryKey: ["weight-entries", birdId] });
+    qc.invalidateQueries({ queryKey: ["bird-weights", birdId] });
+  };
 
   const { data: bird } = useQuery({
     queryKey: ["bird-name", birdId],
@@ -113,21 +133,26 @@ function WeightFacet() {
           eyebrow="Weight"
           headline={heroHeadline}
           body={heroBody}
-          cta={canLogCare ? { label: "Log today's weight", tone: "lime", onPress: () => setLogOpen(true) } : undefined}
+          cta={canLogCare ? { label: "Log today's weight", tone: "lime", onPress: () => { setEditEntry(null); setLogOpen(true); } } : undefined}
         />
 
         <main className="space-y-4 px-5 pt-5">
-          {/* Log weight */}
-          {logOpen && (
+          {/* Log a new weight */}
+          {logOpen && canLogCare && (
             <LogPanel
               birdId={birdId}
               lastGrams={current?.grams}
               onClose={() => setLogOpen(false)}
-              onSaved={() => {
-                setLogOpen(false);
-                qc.invalidateQueries({ queryKey: ["weight-entries", birdId] });
-                qc.invalidateQueries({ queryKey: ["bird-weights", birdId] }); // record-home glance + recent feed
-              }}
+              onSaved={() => { setLogOpen(false); refreshWeights(); }}
+            />
+          )}
+          {/* Edit / delete an existing weight */}
+          {editEntry && canLogCare && (
+            <LogPanel
+              birdId={birdId}
+              entry={editEntry}
+              onClose={() => setEditEntry(null)}
+              onSaved={() => { setEditEntry(null); refreshWeights(); }}
             />
           )}
 
@@ -180,7 +205,9 @@ function WeightFacet() {
                         title={`${e.grams} g`}
                         subtitle={subtitle}
                         trailing={marker}
-                        chevron={false}
+                        // Tap to edit/delete — only when the caller can log_daily_care.
+                        onClick={canLogCare ? () => { setLogOpen(false); setEditEntry(e); window.scrollTo({ top: 0, behavior: "smooth" }); } : undefined}
+                        chevron={canLogCare}
                         last={i === all.length - 1}
                       />
                     );
@@ -197,17 +224,19 @@ function WeightFacet() {
 
 type Meal = "before_meal" | "after_meal" | null;
 
-function LogPanel({ birdId, lastGrams, onClose, onSaved }: { birdId: string; lastGrams?: number; onClose: () => void; onSaved: () => void }) {
+function LogPanel({ birdId, entry, lastGrams, onClose, onSaved }: { birdId: string; entry?: Entry; lastGrams?: number; onClose: () => void; onSaved: () => void }) {
+  const isEdit = !!entry;
   // sit_id attribution: when the household member is the assigned caregiver on
   // an active sit covering this bird, every weight they log during the window
   // is tagged with that sit_id, so the sit's activity view can derive its feed
   // from attribution. Null otherwise (no over-tagging).
   const activeSitId = useActiveSitIdForBird(birdId);
   const role = useBirdRole(birdId);
-  const [grams, setGrams] = useState<string>(lastGrams ? String(lastGrams) : "");
-  const [when, setWhen] = useState<string>(nowLocal()); // datetime-local: date + time
-  const [meal, setMeal] = useState<Meal>(null);
+  const [grams, setGrams] = useState<string>(entry ? String(entry.grams) : lastGrams ? String(lastGrams) : "");
+  const [when, setWhen] = useState<string>(entry ? isoToLocal(entry.measured_at) : nowLocal()); // datetime-local
+  const [meal, setMeal] = useState<Meal>(entry ? ((entry.meal_relation as Meal) ?? null) : null);
   const [saving, setSaving] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   const n = Number(grams);
   const valid = grams !== "" && Number.isFinite(n) && n >= MIN_G && n <= MAX_G && !!when;
@@ -216,18 +245,28 @@ function LogPanel({ birdId, lastGrams, onClose, onSaved }: { birdId: string; las
     if (!valid) return;
     setSaving(true);
     try {
-      const { data: u } = await getLocalUser();
       const measured_at = new Date(when).toISOString(); // local datetime → UTC
-      // Only send meal_relation when chosen, so logging still works if the
-      // additive migration hasn't been applied yet (then the column is absent).
-      const payload: Record<string, unknown> = {
-        bird_id: birdId, grams: n, measured_at, source: role === "household" ? "household" : "owner", logged_by: u.user?.id ?? null,
-      };
-      if (meal) payload.meal_relation = meal;
-      if (activeSitId) payload.sit_id = activeSitId;
-      const { error } = await supabase.from("weight_entries").insert(payload as any);
-      if (error) throw error;
-      toast.success("Weight logged.");
+      if (isEdit) {
+        // Edit: update only the fields the user can change; preserve the
+        // original source / logged_by / sit_id attribution. meal_relation is
+        // sent explicitly (null clears it).
+        const { error } = await supabase
+          .from("weight_entries")
+          .update({ grams: n, measured_at, meal_relation: meal ?? null } as any)
+          .eq("id", entry!.id);
+        if (error) throw error;
+        toast.success("Weight updated.");
+      } else {
+        const { data: u } = await getLocalUser();
+        const payload: Record<string, unknown> = {
+          bird_id: birdId, grams: n, measured_at, source: role === "household" ? "household" : "owner", logged_by: u.user?.id ?? null,
+        };
+        if (meal) payload.meal_relation = meal;
+        if (activeSitId) payload.sit_id = activeSitId;
+        const { error } = await supabase.from("weight_entries").insert(payload as any);
+        if (error) throw error;
+        toast.success("Weight logged.");
+      }
       onSaved();
     } catch (e: any) {
       toast.error(e?.message ?? "Couldn't save the weight.");
@@ -236,9 +275,23 @@ function LogPanel({ birdId, lastGrams, onClose, onSaved }: { birdId: string; las
     }
   }
 
+  async function del() {
+    if (!isEdit) return;
+    setSaving(true);
+    try {
+      const { error } = await supabase.from("weight_entries").delete().eq("id", entry!.id);
+      if (error) throw error;
+      toast.success("Weight deleted.");
+      onSaved();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Couldn't delete the weight.");
+      setSaving(false);
+    }
+  }
+
   return (
     <Card className="p-4">
-      <p className="t-item">Log weight</p>
+      <p className="t-item">{isEdit ? "Edit weight" : "Log weight"}</p>
 
       <div className="mt-3">
         <label className="mb-1 block text-xs font-[500] text-[var(--mute)]">Weight (grams)</label>
@@ -288,12 +341,45 @@ function LogPanel({ birdId, lastGrams, onClose, onSaved }: { birdId: string; las
           disabled={!valid || saving}
           className="flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-[12px] bg-[var(--lime)] text-sm font-[500] text-[var(--ink)] disabled:opacity-50"
         >
-          <Check className="size-4" /> {saving ? "Saving…" : "Save"}
+          <Check className="size-4" /> {saving ? "Saving…" : isEdit ? "Save changes" : "Save"}
         </button>
         <button type="button" onClick={onClose} disabled={saving} className="min-h-[44px] rounded-[12px] px-4 text-sm font-[500] text-[var(--mute)] ring-1 ring-[var(--line)]">
           Cancel
         </button>
       </div>
+
+      {/* Delete (edit only) — destructive, so it takes a confirm step. */}
+      {isEdit && (
+        <div className="mt-3 border-t border-[var(--line2)] pt-3">
+          {!confirmingDelete ? (
+            <button
+              type="button"
+              onClick={() => setConfirmingDelete(true)}
+              disabled={saving}
+              className="inline-flex min-h-[44px] items-center gap-1.5 text-sm font-[500] text-[var(--red-deep)] disabled:opacity-50"
+            >
+              <Trash2 className="size-4" /> Delete this weight
+            </button>
+          ) : (
+            <div className="rounded-[12px] bg-[var(--red-fill)] p-3 ring-1 ring-[var(--red-deep)]/15">
+              <p className="text-sm text-[var(--red-deep)]">Delete this weight entry? This can't be undone.</p>
+              <div className="mt-2 flex gap-2">
+                <button
+                  type="button"
+                  onClick={del}
+                  disabled={saving}
+                  className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-[12px] bg-[var(--red-deep)] text-sm font-[500] text-white disabled:opacity-50"
+                >
+                  <Trash2 className="size-4" /> {saving ? "Deleting…" : "Delete"}
+                </button>
+                <button type="button" onClick={() => setConfirmingDelete(false)} disabled={saving} className="min-h-[44px] rounded-[12px] px-4 text-sm font-[500] text-[var(--ink)] ring-1 ring-[var(--line)]">
+                  Keep
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </Card>
   );
 }

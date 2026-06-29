@@ -1,9 +1,18 @@
-import { X, Share, Plus, MoreVertical } from "lucide-react";
+import { X, Share, Plus, MoreVertical, Download } from "lucide-react";
+import { useCanInstall, promptInstall } from "@/lib/installPrompt";
 
-// Install instructions popup (iOS + Android). Shown from the Account screen and
-// from the notification settings when push isn't available until the app is
-// added to the home screen. Self-attested — just instructions.
+// Install popup (iOS + Android). On Android/Chrome, where the browser fired
+// `beforeinstallprompt`, this offers a real "Install app" button that opens the
+// native install dialog; everywhere else (iOS, unsupported) it falls back to
+// the per-OS instructions below. Shown from Account + notification settings.
 export function AddToHomeModal({ onClose }: { onClose: () => void }) {
+  const canInstall = useCanInstall();
+
+  async function install() {
+    const outcome = await promptInstall();
+    if (outcome === "accepted") onClose();
+  }
+
   return (
     <div className="fixed inset-0 z-50 grid place-items-end sm:place-items-center">
       <div className="absolute inset-0 bg-black/30" onClick={onClose} />
@@ -15,7 +24,20 @@ export function AddToHomeModal({ onClose }: { onClose: () => void }) {
           </button>
         </div>
         <p className="text-sm text-[#5f5e5a]">Install Kya & Co. to open it like an app and receive push alerts.</p>
+
+        {canInstall && (
+          <button
+            onClick={install}
+            className="mt-4 flex min-h-[48px] w-full items-center justify-center gap-2 rounded-[14px] bg-[#1a3d2e] text-sm font-medium text-white active:scale-[0.99]"
+          >
+            <Download className="size-4" /> Install app
+          </button>
+        )}
+
         <div className="mt-4 space-y-4">
+          {canInstall && (
+            <p className="text-center text-xs text-[#8a897f]">Or add it manually:</p>
+          )}
           <div className="rounded-2xl bg-[#efe9da] p-4">
             <p className="text-sm font-medium text-[#1a3d2e]">iPhone &amp; iPad (Safari)</p>
             <ol className="mt-2 space-y-1.5 text-sm text-[#5f5e5a]">

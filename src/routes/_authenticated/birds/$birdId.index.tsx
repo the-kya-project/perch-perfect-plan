@@ -278,7 +278,7 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
           : <span className="text-[13px] text-[var(--ink2)]">No weight yet — log the first</span>}
         action={
           canLogCare ? (
-            <button type="button" aria-label="Log weight" onClick={() => navigate({ to: "/birds/$birdId/weight", params: { birdId } })} className="grid size-11 place-items-center rounded-full bg-[var(--ink)] text-[var(--lime)] active:scale-95">
+            <button type="button" aria-label="Log weight" onClick={() => navigate({ to: "/birds/$birdId/weight", params: { birdId }, search: { log: true } })} className="grid size-11 place-items-center rounded-full bg-[var(--ink)] text-[var(--lime)] active:scale-95">
               <Plus className="size-5" />
             </button>
           ) : undefined

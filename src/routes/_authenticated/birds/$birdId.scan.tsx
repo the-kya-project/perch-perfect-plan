@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
 import { computeTriage, type ScanFieldKey, type ScanAnswer } from "@/lib/triage";
 import { ScanForm, type ScanSubmit } from "@/components/ScanForm";
+import { uploadScanPhoto } from "@/lib/scanPhoto";
 import { track } from "@/lib/analytics";
 
 // Owner-run health scan. Uses the SAME ScanForm + triage as the sitter; on submit
@@ -86,7 +87,11 @@ function OwnerScan() {
       // vomiting_status / photo / weight — best-effort, never block the scan.
       if (a.vomiting) await supabase.from("daily_logs").update({ vomiting_status: a.vomiting } as any).eq("id", row.id);
       if (p.photoDataUrl) {
-        await supabase.from("photo_logs").insert({ bird_id: birdId, daily_log_id: row.id, photo_type: "other", photo_url: p.photoDataUrl, notes: "Attached to health scan", ...(activeSitId ? { sit_id: activeSitId } : {}) });
+        // Upload to the private scan-photos bucket and store the PATH, not base64.
+        // Best-effort fallback to inline so a Storage hiccup never loses the photo.
+        let photoRef = p.photoDataUrl;
+        try { photoRef = await uploadScanPhoto(birdId, p.photoDataUrl); } catch { /* keep inline */ }
+        await supabase.from("photo_logs").insert({ bird_id: birdId, daily_log_id: row.id, photo_type: "other", photo_url: photoRef, notes: "Attached to health scan", ...(activeSitId ? { sit_id: activeSitId } : {}) });
       }
       if (typeof p.weightGrams === "number") {
         await supabase.from("weight_entries").insert({ bird_id: birdId, grams: p.weightGrams, source: scanSource, logged_by: u.user?.id ?? null, ...(activeSitId ? { sit_id: activeSitId } : {}) });

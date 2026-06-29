@@ -16,6 +16,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { initAnalytics, identifyUser, resetUser } from "@/lib/analytics";
 import { registerServiceWorker, installChunkErrorRecovery, hardResetAndReload } from "@/lib/sw-register";
 import { captureFirstTouch } from "@/lib/attribution";
+import { initInstallPrompt } from "@/lib/installPrompt";
 
 function NotFoundComponent() {
   return (
@@ -92,14 +93,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       // spec — ampersand and period included.
       { name: "apple-mobile-web-app-title", content: "Kya & Co." },
       { title: "Kya & Co. — Calm, clear care for your bird" },
-      { name: "description", content: "Calm, clear care for your bird — even when you can't be there." },
+      { name: "description", content: "Shared care for your bird. Build one care plan, then share it so family, pet sitters, and household members all stay on the same page." },
       { property: "og:site_name", content: "Kya & Co." },
       { property: "og:title", content: "Kya & Co. — Calm, clear care for your bird" },
-      { property: "og:description", content: "Everything they need, everything you've learned, everything the people helping should know." },
+      { property: "og:description", content: "Shared care for your bird. Build one care plan, then share it so family, pet sitters, and household members all stay on the same page." },
       { property: "og:type", content: "website" },
       { property: "og:image", content: "https://app.thekyaproject.com/brand/lockups/horizontal-ink.png" },
       { name: "twitter:title", content: "Kya & Co. — Calm, clear care for your bird" },
-      { name: "twitter:description", content: "Everything they need, everything you've learned, everything the people helping should know." },
+      { name: "twitter:description", content: "Shared care for your bird. Build one care plan, then share it so family, pet sitters, and household members all stay on the same page." },
       { name: "twitter:image", content: "https://app.thekyaproject.com/brand/lockups/horizontal-ink.png" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -137,6 +138,7 @@ function RootComponent() {
     initAnalytics();
     installChunkErrorRecovery(); // self-heal stale-build chunk 404s (incl. the sitter preview iframe)
     registerServiceWorker();
+    initInstallPrompt(); // capture Android beforeinstallprompt for a native install button
     supabase.auth.getSession().then(({ data }) => {
       if (data.session?.user?.id) identifyUser(data.session.user.id);
     });

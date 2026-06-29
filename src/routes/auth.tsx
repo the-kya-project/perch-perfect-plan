@@ -17,12 +17,20 @@ const search = z.object({
 
 export const Route = createFileRoute("/auth")({
   validateSearch: search,
-  head: () => ({
-    meta: [
-      { title: "Sign in — Kya & Co." },
-      { name: "description", content: "Sign in or create an owner account to build a bird care plan." },
-    ],
-  }),
+  head: ({ match }) => {
+    const isSignup = match.search.mode === "signup";
+    return {
+      meta: [
+        { title: isSignup ? "Create your account — Kya & Co." : "Sign in — Kya & Co." },
+        {
+          name: "description",
+          content: isSignup
+            ? "Create an owner account to build your bird's care plan."
+            : "Sign in to your bird's care plan.",
+        },
+      ],
+    };
+  },
   component: AuthPage,
 });
 

@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>You're offline — Kya &amp; Co.</title>
+    <link rel="icon" href="/favicon.ico" />
+    <style>
+      :root { color-scheme: light; }
+      html, body { margin: 0; height: 100%; }
+      body {
+        display: grid; place-items: center; min-height: 100%;
+        background: #f4f1e8; color: #1a3d2e;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        padding: 24px; text-align: center;
+      }
+      .card { max-width: 22rem; }
+      img { width: 56px; height: 56px; border-radius: 14px; }
+      h1 { font-size: 20px; font-weight: 500; margin: 16px 0 6px; }
+      p { font-size: 14px; line-height: 1.5; color: #5b6b61; margin: 0 0 20px; }
+      button {
+        min-height: 44px; padding: 11px 18px; border: 0; border-radius: 12px;
+        background: #1a3d2e; color: #fff; font-size: 15px; font-weight: 500;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <img src="/icon-192.png" alt="Kya & Co." />
+      <h1>You're offline</h1>
+      <p>This screen needs a connection. Check your signal and try again — anything you already opened may still be available.</p>
+      <button onclick="location.reload()">Try again</button>
+    </div>
+  </body>
+</html>

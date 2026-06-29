@@ -1768,7 +1768,7 @@ export function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlus
   // Granular "what's normal" + when-to-call fields, keyed by care_plans column.
   const [detail, setDetail] = useState<Record<string, string>>({});
   const [clipPath, setClipPath] = useState<string | null>(null);
-  const clipPreview = useOwnerClipPreview(clipPath);
+  const clipPreview = useOwnerClipPreview(clipPath, birdId);
   const [hydrated, setHydrated] = useState(false);
   // When a clip already exists, the recorder stays collapsed behind a "Replace"
   // button so the saved clip doesn't look like an unfinished upload prompt.
@@ -2217,7 +2217,7 @@ function ClipSlotCard({
   onBusy: (key: string, busy: boolean) => void;
   onChange: () => void;
 }) {
-  const preview = useOwnerClipPreview(path);
+  const preview = useOwnerClipPreview(path, birdId);
   const [busy, setBusy] = useState<"uploading" | null>(null);
   const [replacing, setReplacing] = useState(false);
 

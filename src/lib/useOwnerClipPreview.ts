@@ -20,7 +20,7 @@ export type ClipPreview = {
 const TRANSCODE_BUDGET_MS = 150_000; // ~2.5 min, matches the recorder's wait
 const POLL_INTERVAL_MS = 3_000;
 
-export function useOwnerClipPreview(path: string | null | undefined): ClipPreview {
+export function useOwnerClipPreview(path: string | null | undefined, birdId?: string): ClipPreview {
   const [preview, setPreview] = useState<ClipPreview>({ status: path ? "processing" : "none", url: null });
 
   useEffect(() => {
@@ -35,7 +35,7 @@ export function useOwnerClipPreview(path: string | null | undefined): ClipPrevie
     // Legacy clips (Supabase Storage paths) have no transcode step — resolve now.
     if (!isCfClip(path)) {
       setPreview({ status: "processing", url: null });
-      resolveOwnerClipUrl(path).then((url) => {
+      resolveOwnerClipUrl(path, birdId).then((url) => {
         if (!cancelled) setPreview({ status: url ? "ready" : "none", url });
       });
       return () => { cancelled = true; };
@@ -45,14 +45,14 @@ export function useOwnerClipPreview(path: string | null | undefined): ClipPrevie
     const deadline = Date.now() + TRANSCODE_BUDGET_MS;
 
     const showReady = async () => {
-      const url = await resolveOwnerClipUrl(path);
+      const url = await resolveOwnerClipUrl(path, birdId);
       if (!cancelled) setPreview({ status: url ? "ready" : "none", url });
     };
 
     const poll = async () => {
       let ready = false;
       try {
-        const s = await getClipStatus({ data: { uid } });
+        const s = await getClipStatus({ data: { uid, birdId } });
         ready = !!s?.readyToStream;
       } catch {
         ready = true; // status unknown — don't trap the clip in "processing"
@@ -68,7 +68,7 @@ export function useOwnerClipPreview(path: string | null | undefined): ClipPrevie
     setPreview({ status: "processing", url: null });
     poll();
     return () => { cancelled = true; if (timer) clearTimeout(timer); };
-  }, [path]);
+  }, [path, birdId]);
 
   return preview;
 }

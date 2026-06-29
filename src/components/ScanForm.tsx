@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Camera, Upload, Loader2 } from "lucide-react";
 import { SCAN_FIELDS, computeTriage, type ScanAnswer, type ScanFieldKey } from "@/lib/triage";
 import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
@@ -31,6 +31,8 @@ export function ScanForm({
   const [photoBusy, setPhotoBusy] = useState(false);
   const [weight, setWeight] = useState("");
   const [showErrors, setShowErrors] = useState(false);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const uploadInputRef = useRef<HTMLInputElement>(null);
 
   const allAnswered = SCAN_FIELDS.every((f) => answers[f.key]);
   const preview = () =>
@@ -77,27 +79,37 @@ export function ScanForm({
         const a = answers[f.key];
         const missing = showErrors && !a;
         return (
-          <section key={f.key} id={`scan-field-${f.key}`} className={`rounded-2xl bg-[#efe9da] p-4 ${missing ? "ring-2 ring-warn-red" : ""}`}>
-            <p className="text-sm font-medium">{f.question}</p>
+          <fieldset key={f.key} id={`scan-field-${f.key}`} className={`min-w-0 rounded-2xl bg-[#efe9da] p-4 ${missing ? "ring-2 ring-warn-red" : ""}`}>
+            <legend className="float-none text-sm font-medium">{f.question}</legend>
+            {/* Native radio group: Tab into it, arrow keys to choose, Space to
+                select — and screen readers announce "X of 3, checked". The radio
+                input is visually hidden; the label carries the segmented look. */}
             <div className="mt-3 grid grid-cols-3 gap-2">
               {(["normal", "not_sure", "concerning"] as ScanAnswer[]).map((opt) => (
-                <button
+                <label
                   key={opt}
-                  onClick={() => setAnswers({ ...answers, [f.key]: opt })}
-                  className={`min-h-[44px] rounded-lg border px-1 py-2.5 text-[11px] font-medium ${a === opt
+                  className={`flex min-h-[44px] cursor-pointer items-center justify-center rounded-lg border px-1 py-2.5 text-center text-[11px] font-medium has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-[#1a3d2e] ${a === opt
                     ? opt === "concerning" ? "border-warn-red bg-warn-red/10 text-warn-red"
                     : opt === "not_sure" ? "border-warn-amber bg-warn-amber/10 text-warn-amber"
                     : "border-warn-green bg-warn-green/10 text-warn-green"
                     : "border-[#e0d8c4] text-[#5f5e5a]"}`}
                 >
+                  <input
+                    type="radio"
+                    name={`scan-${f.key}`}
+                    value={opt}
+                    checked={a === opt}
+                    onChange={() => setAnswers({ ...answers, [f.key]: opt })}
+                    className="sr-only"
+                  />
                   {opt === "not_sure" ? "Not sure" : opt === "concerning" ? "Concerning" : "Normal"}
-                </button>
+                </label>
               ))}
             </div>
             {missing && <p className="mt-3 text-[11px] font-medium text-warn-red">Please answer this before submitting.</p>}
             {a === "not_sure" && <p className="mt-3 rounded bg-warn-amber/10 p-2 text-[11px] leading-relaxed text-[#1a3d2e]"><b>Look again: </b>{f.helpNotSure}</p>}
             {a === "concerning" && <p className="mt-3 rounded bg-warn-red/10 p-2 text-[11px] leading-relaxed text-[#1a3d2e]"><b>Watch for: </b>{f.helpConcerning}</p>}
-          </section>
+          </fieldset>
         );
       })}
 
@@ -110,14 +122,24 @@ export function ScanForm({
           </div>
         ) : (
           <div className="mt-3 grid grid-cols-2 gap-2">
-            <label className="flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#e0d8c4] py-3 text-sm font-medium text-[#5f5e5a]">
+            {/* Real focusable buttons trigger ref'd inputs — keyboard-operable
+                (the inputs themselves stay hidden but reachable via the button). */}
+            <button
+              type="button"
+              onClick={() => cameraInputRef.current?.click()}
+              className="flex min-h-[44px] items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#e0d8c4] py-3 text-sm font-medium text-[#5f5e5a]"
+            >
               <Camera className="size-4" /> Take photo
-              <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhoto} />
-            </label>
-            <label className="flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#e0d8c4] py-3 text-sm font-medium text-[#5f5e5a]">
+            </button>
+            <button
+              type="button"
+              onClick={() => uploadInputRef.current?.click()}
+              className="flex min-h-[44px] items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#e0d8c4] py-3 text-sm font-medium text-[#5f5e5a]"
+            >
               <Upload className="size-4" /> Upload photo
-              <input type="file" accept="image/*" className="hidden" onChange={handlePhoto} />
-            </label>
+            </button>
+            <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhoto} />
+            <input ref={uploadInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhoto} />
           </div>
         )}
         {photo && !photoBusy && <img src={photo} alt="Scan photo preview" className="mt-2 max-h-40 rounded-lg" />}

@@ -397,9 +397,9 @@ export const declineHouseholdInvite = createServerFn({ method: "POST" })
   });
 
 // ---- Member: read-only care-plan view (household or owner) ------------------
-// Returns the same shape CareSheetView consumes (signed photo + clips, merged
-// contacts) plus routine tasks. Access is verified via bird_members; data is
-// read with the service role only after that check.
+// Returns the shape the shared CarePlanView consumes (signed photo + clips,
+// merged contacts) plus routine tasks. Access is verified via bird_members;
+// data is read with the service role only after that check.
 export const getHouseholdCarePlanView = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { birdId: string }) => z.object({ birdId: z.string().uuid() }).parse(d))

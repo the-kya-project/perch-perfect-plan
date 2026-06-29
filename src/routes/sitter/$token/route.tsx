@@ -8,8 +8,12 @@ import { HelpCircle } from "lucide-react";
 import { EmergencyBar } from "@/components/EmergencyBar";
 import { SitterOnboarding, replaySitterOnboarding } from "@/components/SitterOnboarding";
 import { presentCareSections } from "@/lib/sitterCareSections";
+import { CarePlanView, type CareSection } from "@/components/CarePlanView";
+import { loadCareSnapshot, clearCareSnapshot, type CareSnapshot } from "@/lib/sitterCareSnapshot";
 import { track } from "@/lib/analytics";
 import { PullToRefresh } from "@/components/PullToRefresh";
+
+const OFFLINE_SITTER_SECTIONS: CareSection[] = ["food", "behavior", "home", "health", "emergency"];
 
 const searchSchema = z.object({ birdId: z.string().uuid().optional() });
 
@@ -23,6 +27,22 @@ export const Route = createFileRoute("/sitter/$token")({
   ]}),
   errorComponent: ({ error }) => {
     const code = error.message;
+    const dead = code === "SITTER_LINK_EXPIRED" || code === "SITTER_LINK_REVOKED" || code === "SITTER_LINK_INVALID";
+    const token = (typeof window !== "undefined" && window.location.pathname.match(/^\/sitter\/([^/]+)/)?.[1]) || "";
+    const offline = typeof navigator !== "undefined" && navigator.onLine === false;
+
+    // A link confirmed dead WHILE ONLINE purges any offline snapshot, so a
+    // revoked/expired link can never be read offline afterward.
+    if (token && dead && !offline) clearCareSnapshot(token);
+
+    // Offline (Part B): if we saved this sit's care sheet, show it read-only,
+    // clearly marked stale, instead of a network error.
+    const snap = token && offline ? loadCareSnapshot(token) : null;
+    if (snap) return <OfflineCareSheet snap={snap} />;
+
+    // Map ONLY known sitter-link errors to specific copy. Anything else (missing
+    // env var, server-function failure, unexpected) gets one safe generic
+    // message — never the raw error.message or any internal/config detail.
     const copy =
       code === "SITTER_LINK_EXPIRED"
         ? { title: "This sitter link has expired", body: "The sit it was created for has ended, so it no longer opens the care plan." }
@@ -30,13 +50,15 @@ export const Route = createFileRoute("/sitter/$token")({
         ? { title: "This sitter link was turned off", body: "The owner revoked access to this link." }
         : code === "SITTER_LINK_INVALID"
         ? { title: "This sitter link isn't valid", body: "Double-check the link, or ask the owner to resend it." }
-        : { title: "This sitter link can't be opened", body: error.message };
+        : offline
+        ? { title: "You're offline", body: "This needs a connection. Reconnect and try again." }
+        : { title: "This link can't be opened right now", body: "Please try again in a little while, or ask the owner to resend it." };
     return (
       <div className="grid min-h-screen place-items-center bg-[#f4f1e8] p-6 text-center">
         <div className="max-w-sm">
           <h1 className="text-lg font-medium">{copy.title}</h1>
           <p className="mt-2 text-sm text-[#5f5e5a]">{copy.body}</p>
-          <p className="mt-4 text-xs text-[#5f5e5a]">Ask the owner to send you a new link.</p>
+          {!offline && <p className="mt-4 text-xs text-[#5f5e5a]">Ask the owner to send you a new link.</p>}
         </div>
       </div>
     );
@@ -49,6 +71,28 @@ function SitterRoot() {
     <Suspense fallback={<FullPageSkeleton />}>
       <SitterLayout />
     </Suspense>
+  );
+}
+
+// Part B: read-only offline care sheet from the saved snapshot, marked stale.
+// Same shared CarePlanView the online sitter care-sheet renders (sitter curation:
+// no routine, no emergency contacts). No clips/photos (signed media isn't saved).
+function OfflineCareSheet({ snap }: { snap: CareSnapshot }) {
+  const updated = new Date(snap.savedAt).toLocaleString(undefined, {
+    month: "short", day: "numeric", hour: "numeric", minute: "2-digit",
+  });
+  return (
+    <div className="min-h-screen bg-[#f4f1e8] pb-16">
+      <div className="bg-[var(--amber-fill)] px-5 py-2.5 text-center text-[13px] text-[var(--amber-ink)]">
+        Offline — showing the care sheet last updated {updated}. Reconnect for the latest.
+      </div>
+      <CarePlanView
+        data={{ bird: snap.bird, plan: snap.plan }}
+        visibleSections={OFFLINE_SITTER_SECTIONS}
+        showEmergencyContacts={false}
+        canEdit={false}
+      />
+    </div>
   );
 }
 
@@ -94,7 +138,7 @@ function SitterLayout() {
   return (
     <PullToRefresh>
     <div className="min-h-screen bg-[#f4f1e8] pb-32">
-      <div className="sticky top-0 z-30 border-b border-[#e3ded0] bg-[#f4f1e8]/95 backdrop-blur">
+      <div id="sitter-topbar" className="sticky top-0 z-30 border-b border-[#e3ded0] bg-[#f4f1e8]/95 backdrop-blur">
         <div className="mx-auto max-w-md px-5 py-2.5">
           {/* Top line: who you're caring for (left) · status + help (right) */}
           <div className="flex items-center justify-between gap-2">

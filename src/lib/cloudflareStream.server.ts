@@ -91,6 +91,9 @@ export type StreamStatus = {
   errorReason: string | undefined;
   thumbnail: string | undefined;
   duration: number | undefined;
+  // The `creator` we stamped at upload time (= the uploader's user id). Used by
+  // the ownership gate to confirm a caller may act on a not-yet-persisted clip.
+  creator: string | undefined;
 };
 
 export async function getVideoStatus(uid: string): Promise<StreamStatus> {
@@ -102,6 +105,7 @@ export async function getVideoStatus(uid: string): Promise<StreamStatus> {
     errorReason: r.status?.errReasonText,
     thumbnail: r.thumbnail,
     duration: r.duration,
+    creator: r.creator ?? undefined,
   };
 }
 

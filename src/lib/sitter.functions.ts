@@ -13,21 +13,56 @@ import { computeTriage, type ScanAnswer, type ScanFieldKey } from "./triage";
 import { buildDailyLogEmail } from "./emailTemplates";
 import { mergeEmergency } from "./emergency";
 import { isCfClip, cfUid } from "./clipRef";
+import {
+  mediaCache, MEDIA_TTL_MS, contextCache, CONTEXT_TTL_MS, sitBirdsCache, SITBIRDS_TTL_MS,
+  guideCache, GUIDE_TTL_MS, purgeSit, overLimit,
+} from "./sitterCache.server";
+
+// Best-effort client IP for rate limiting (dynamic import keeps the server-only
+// request accessor out of the client bundle, matching the getAdmin pattern).
+async function clientIp(): Promise<string> {
+  try {
+    const { getRequest } = await import("@tanstack/react-start/server");
+    const req = getRequest();
+    const xff = req?.headers?.get("x-forwarded-for") ?? "";
+    return xff.split(",")[0]!.trim() || "unknown";
+  } catch {
+    return "unknown";
+  }
+}
+
+// Per-token + per-IP fixed-window limits. Generous so a normal sitter (a handful
+// of loads per minute) never trips; only abusive volumes do. Per warm instance
+// (see sitterCache.server caveat) — durable cross-instance limiting belongs at
+// the Vercel edge. Throws RATE_LIMITED (denies the request) on exceed.
+async function rateGate(token?: string): Promise<void> {
+  const ip = await clientIp();
+  const tripped =
+    (token ? overLimit(`t:${token}`, 90, 60_000) : false) ||
+    overLimit(`ip:${ip}`, 240, 60_000);
+  if (tripped) throw new Error("RATE_LIMITED: too many requests — wait a moment and reload.");
+}
 
 // Resolve a clip column value to a playable URL: a signed Cloudflare Stream
 // iframe URL for "cfstream:<uid>" refs, or a signed Supabase Storage URL for
 // legacy clips. Returns null if it can't be resolved.
 async function resolveClipUrl(sb: any, ref: string): Promise<string | null> {
+  const cached = mediaCache.get(`clip:${ref}`);
+  if (cached) return cached;
+  let url: string | null = null;
   if (isCfClip(ref)) {
     try {
       const { signedIframeUrl } = await import("@/lib/cloudflareStream.server");
-      return await signedIframeUrl(cfUid(ref));
+      url = await signedIframeUrl(cfUid(ref));
     } catch {
-      return null;
+      url = null;
     }
+  } else {
+    const { data } = await sb.storage.from("bird-photos").createSignedUrl(ref, 3600);
+    url = data?.signedUrl ?? null;
   }
-  const { data } = await sb.storage.from("bird-photos").createSignedUrl(ref, 3600);
-  return data?.signedUrl ?? null;
+  if (url) mediaCache.set(`clip:${ref}`, url, MEDIA_TTL_MS); // only cache successes
+  return url;
 }
 
 // Resolve a bird's photo_url for display: sign Storage object paths, pass
@@ -35,13 +70,40 @@ async function resolveClipUrl(sb: any, ref: string): Promise<string | null> {
 async function signBirdPhotoPath(sb: any, value: string | null | undefined): Promise<string | null> {
   if (!value) return null;
   if (value.startsWith("data:") || value.startsWith("http")) return value;
+  const cached = mediaCache.get(`bp:${value}`);
+  if (cached) return cached;
   const { data } = await sb.storage.from("bird-photos").createSignedUrl(value, 3600);
-  return data?.signedUrl ?? null;
+  const url = data?.signedUrl ?? null;
+  if (url) mediaCache.set(`bp:${value}`, url, MEDIA_TTL_MS);
+  return url;
 }
 
 async function getAdmin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   return supabaseAdmin;
+}
+
+// Scan photos: store the object PATH in photo_logs.photo_url, not base64.
+// Upload via the admin client (the sitter has no Storage RLS grant), then sign
+// for display. Legacy inline data:/absolute URLs pass through unchanged.
+async function uploadScanPhotoAdmin(sb: any, birdId: string, dataUrl: string): Promise<string> {
+  const comma = dataUrl.indexOf(",");
+  const mime = /data:([^;]+)/.exec(dataUrl.slice(0, comma))?.[1] ?? "image/jpeg";
+  const bytes = Buffer.from(dataUrl.slice(comma + 1), "base64");
+  const path = `${birdId}/${crypto.randomUUID()}.jpg`;
+  const { error } = await sb.storage.from("scan-photos").upload(path, bytes, { contentType: mime, upsert: false });
+  if (error) throw new Error(error.message);
+  return path;
+}
+async function signScanPhotoPath(sb: any, value: string | null | undefined): Promise<string | null> {
+  if (!value) return null;
+  if (value.startsWith("data:") || value.startsWith("http")) return value;
+  const cached = mediaCache.get(`sp:${value}`);
+  if (cached) return cached;
+  const { data } = await sb.storage.from("scan-photos").createSignedUrl(value, 3600);
+  const url = data?.signedUrl ?? null;
+  if (url) mediaCache.set(`sp:${value}`, url, MEDIA_TTL_MS);
+  return url;
 }
 
 // Owner-side "View as sitter" preview sits carry this sentinel name. They render
@@ -60,21 +122,29 @@ async function loadSitByToken(token: string) {
     .maybeSingle();
   if (error) throw new Error(error.message);
   if (!sit) throw new Error("SITTER_LINK_INVALID");
-  if (sit.revoked) throw new Error("SITTER_LINK_REVOKED");
+  // Token validation is ALWAYS fresh (this row is never cached), so revoke/
+  // expiry hard-fails immediately. Purge any cached data for the sit so nothing
+  // can be served for a now-dead link.
+  if (sit.revoked) { purgeSit(sit.id); throw new Error("SITTER_LINK_REVOKED"); }
   // Token-bearing rows always carry token_expires_at (sits_one_caregiver_chk
   // enforces token + expiry on the external-sitter path); household sits have
   // no token and won't match the lookup above, so the non-null assert is safe.
   if (new Date(sit.token_expires_at as string) < new Date()) {
+    purgeSit(sit.id);
     throw new Error("SITTER_LINK_EXPIRED");
   }
   return sit;
 }
 
 async function loadSitBirdIds(sitId: string): Promise<string[]> {
+  const cached = sitBirdsCache.get(sitId);
+  if (cached) return cached;
   const sb = await getAdmin();
   const { data, error } = await sb.from("sit_birds").select("bird_id").eq("sit_id", sitId);
   if (error) throw new Error(error.message);
-  return (data ?? []).map((r: any) => r.bird_id);
+  const ids = (data ?? []).map((r: any) => r.bird_id);
+  sitBirdsCache.set(sitId, ids, SITBIRDS_TTL_MS);
+  return ids;
 }
 
 async function assertBirdInSit(sitId: string, birdId: string) {
@@ -108,107 +178,108 @@ export const getSitterContext = createServerFn({ method: "GET" })
     z.object({ token: z.string().min(8), birdId: z.string().uuid().optional() }).parse(d),
   )
   .handler(async ({ data }) => {
+    await rateGate(data.token);
     const sb = await getAdmin();
-    const sit = await loadSitByToken(data.token);
+    const sit = await loadSitByToken(data.token); // always fresh → revoke/expiry immediate
 
     const birdIds = await loadSitBirdIds(sit.id);
     if (birdIds.length === 0) throw new Error("This sit has no birds.");
-
-    const { data: birds, error: bErr } = await sb
-      .from("birds")
-      .select("id, name, species, photo_url, photo_position")
-      .in("id", birdIds);
-    if (bErr) throw new Error(bErr.message);
-
     const activeId = data.birdId && birdIds.includes(data.birdId) ? data.birdId : birdIds[0];
 
-    const [birdRes, planRes, contactsRes] = await Promise.all([
-      sb.from("birds").select("*").eq("id", activeId).maybeSingle(),
-      sb.from("care_plans").select("*").eq("bird_id", activeId).maybeSingle(),
-      sb.from("emergency_contacts").select("*").eq("bird_id", activeId).maybeSingle(),
-    ]);
-    if (birdRes.error || !birdRes.data) throw new Error("Bird not found.");
+    // Slow-changing payload (flock, active bird, plan, contacts, tasks, signed
+    // media) is cached per sit+bird with a short TTL. Token was already validated
+    // fresh above, so a revoked/expired link never reaches this cache.
+    const slowKey = `${sit.id}:${activeId}`;
+    let slow = contextCache.get(slowKey);
+    if (!slow) {
+      const { data: birds, error: bErr } = await sb
+        .from("birds")
+        .select("id, name, species, photo_url, photo_position")
+        .in("id", birdIds);
+      if (bErr) throw new Error(bErr.message);
 
-    const { data: defaultsRow } = await sb
-      .from("owner_emergency_defaults")
-      .select("*")
-      .eq("owner_id", birdRes.data.owner_id)
-      .maybeSingle();
-    const mergedContacts = {
-      ...(contactsRes.data ?? { bird_id: activeId }),
-      ...mergeEmergency(contactsRes.data, defaultsRow),
-    };
+      const [birdRes, planRes, contactsRes] = await Promise.all([
+        sb.from("birds").select("*").eq("id", activeId).maybeSingle(),
+        sb.from("care_plans").select("*").eq("bird_id", activeId).maybeSingle(),
+        sb.from("emergency_contacts").select("*").eq("bird_id", activeId).maybeSingle(),
+      ]);
+      if (birdRes.error || !birdRes.data) throw new Error("Bird not found.");
 
-    const tasksRes = planRes.data
-      ? await sb
-          .from("routine_tasks")
-          .select("*")
-          .eq("care_plan_id", planRes.data.id)
-          .order("category")
-          .order("sort_order")
-      : { data: [] as any[], error: null };
+      const { data: defaultsRow } = await sb
+        .from("owner_emergency_defaults")
+        .select("*")
+        .eq("owner_id", birdRes.data.owner_id)
+        .maybeSingle();
+      const mergedContacts = {
+        ...(contactsRes.data ?? { bird_id: activeId }),
+        ...mergeEmergency(contactsRes.data, defaultsRow),
+      };
 
-    const today = new Date().toISOString().slice(0, 10);
-    const completionsRes = await sb
-      .from("task_completions")
-      .select("*")
-      .eq("sit_id", sit.id)
-      .eq("completed_date", today);
+      const tasksRes = planRes.data
+        ? await sb
+            .from("routine_tasks")
+            .select("*")
+            .eq("care_plan_id", planRes.data.id)
+            .order("category")
+            .order("sort_order")
+        : { data: [] as any[], error: null };
 
-    const todayLogRes = await sb
-      .from("daily_logs")
-      .select("*")
-      .eq("sit_id", sit.id)
-      .eq("bird_id", activeId)
-      .eq("log_date", today)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    // Generate signed URLs for the owner-recorded "Tips from the owner" clips on the active bird.
-    // Clips are stored in the private bird-photos bucket; signed URLs ensure only
-    // the assigned sitter (holding this token) can play them.
-    const watchClipSlots: { key: string; column: string; label: string }[] = [
-      { key: "step_up", column: "clip_step_up_path", label: "How she steps up" },
-      { key: "food_water", column: "clip_food_water_path", label: "How to refill food & water safely" },
-      { key: "locations", column: "clip_locations_path", label: "Where everything is" },
-      { key: "bedtime", column: "clip_bedtime_path", label: "Settling her for the night" },
-    ];
-    const watchClips: { key: string; label: string; url: string }[] = [];
-    let baselineClipUrl: string | null = null;
-    if (planRes.data) {
-      for (const slot of watchClipSlots) {
-        const path = (planRes.data as any)[slot.column] as string | null;
-        if (!path) continue;
-        const url = await resolveClipUrl(sb, path);
-        if (url) watchClips.push({ key: slot.key, label: slot.label, url });
+      // Signed URLs for the owner-recorded "Tips from the owner" clips on the
+      // active bird (cached by ref in mediaCache — no re-signing per request).
+      const watchClipSlots: { key: string; column: string; label: string }[] = [
+        { key: "step_up", column: "clip_step_up_path", label: "How she steps up" },
+        { key: "food_water", column: "clip_food_water_path", label: "How to refill food & water safely" },
+        { key: "locations", column: "clip_locations_path", label: "Where everything is" },
+        { key: "bedtime", column: "clip_bedtime_path", label: "Settling her for the night" },
+      ];
+      const watchClips: { key: string; label: string; url: string }[] = [];
+      let baselineClipUrl: string | null = null;
+      if (planRes.data) {
+        for (const slot of watchClipSlots) {
+          const path = (planRes.data as any)[slot.column] as string | null;
+          if (!path) continue;
+          const url = await resolveClipUrl(sb, path);
+          if (url) watchClips.push({ key: slot.key, label: slot.label, url });
+        }
+        const bcp = (planRes.data as any).baseline_clip_path as string | null;
+        if (bcp) baselineClipUrl = await resolveClipUrl(sb, bcp);
       }
-      const bcp = (planRes.data as any).baseline_clip_path as string | null;
-      if (bcp) baselineClipUrl = await resolveClipUrl(sb, bcp);
+
+      const signedBirds = await Promise.all(
+        (birds ?? []).map(async (b: any) => ({ ...b, photo_url: await signBirdPhotoPath(sb, b.photo_url) })),
+      );
+      const signedActiveBird = {
+        ...birdRes.data,
+        photo_url: await signBirdPhotoPath(sb, (birdRes.data as any).photo_url),
+      };
+
+      slow = {
+        birds: signedBirds,
+        activeBirdId: activeId,
+        bird: signedActiveBird,
+        plan: planRes.data,
+        contacts: mergedContacts,
+        tasks: tasksRes.data ?? [],
+        watchClips,
+        baselineClipUrl,
+      };
+      contextCache.set(slowKey, slow, CONTEXT_TTL_MS);
     }
 
-    // Sign bird profile photos (paths → signed URLs) so the sitter can load them
-    // from the private bucket; legacy inline data: URLs pass through.
-    const signedBirds = await Promise.all(
-      (birds ?? []).map(async (b: any) => ({ ...b, photo_url: await signBirdPhotoPath(sb, b.photo_url) })),
-    );
-    const signedActiveBird = {
-      ...birdRes.data,
-      photo_url: await signBirdPhotoPath(sb, (birdRes.data as any).photo_url),
-    };
+    // Mutable parts — always fresh (the sitter changes these as they work, so
+    // they must never be served stale): today's completions + today's scan log.
+    const today = new Date().toISOString().slice(0, 10);
+    const [completionsRes, todayLogRes] = await Promise.all([
+      sb.from("task_completions").select("*").eq("sit_id", sit.id).eq("completed_date", today),
+      sb.from("daily_logs").select("*").eq("sit_id", sit.id).eq("bird_id", activeId)
+        .eq("log_date", today).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+    ]);
 
     return {
       sit,
-      birds: signedBirds,
-      activeBirdId: activeId,
-      bird: signedActiveBird,
-      plan: planRes.data,
-      contacts: mergedContacts,
-      tasks: tasksRes.data ?? [],
+      ...slow,
       completions: completionsRes.data ?? [],
       todayLog: todayLogRes.data ?? null,
-      watchClips,
-      baselineClipUrl,
     };
   });
 
@@ -221,6 +292,7 @@ export const toggleTaskCompletion = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data }) => {
+    await rateGate(data.token);
     const sb = await getAdmin();
     const sit = await loadSitByToken(data.token);
     assertNotPreview(sit);
@@ -318,6 +390,7 @@ export const submitHealthScan = createServerFn({ method: "POST" })
         .parse(d),
   )
   .handler(async ({ data }) => {
+    await rateGate(data.token);
     const sb = await getAdmin();
     const sit = await loadSitByToken(data.token);
     assertNotPreview(sit);
@@ -357,12 +430,17 @@ export const submitHealthScan = createServerFn({ method: "POST" })
     // Attach the optional photo to THIS scan record (daily_log_id) so it shows
     // inline in both the owner and sitter scan detail views.
     if (data.photoDataUrl) {
+      // Upload to the private scan-photos bucket; store the PATH, not base64.
+      // Best-effort fallback to inline so a Storage hiccup never loses the photo.
+      let photoRef = data.photoDataUrl;
+      try { photoRef = await uploadScanPhotoAdmin(sb, data.birdId, data.photoDataUrl); }
+      catch (e) { console.error("[submitHealthScan] photo upload failed, keeping inline", e); }
       const { error: pErr } = await sb.from("photo_logs").insert({
         sit_id: sit.id,
         bird_id: data.birdId,
         daily_log_id: row.id,
         photo_type: "other",
-        photo_url: data.photoDataUrl,
+        photo_url: photoRef,
         notes: "Attached to health scan",
       });
       if (pErr) console.error("[submitHealthScan] photo insert failed", pErr.message);
@@ -481,6 +559,7 @@ export const getSitterScans = createServerFn({ method: "GET" })
     z.object({ token: z.string().min(8), birdId: z.string().uuid() }).parse(d),
   )
   .handler(async ({ data }) => {
+    await rateGate(data.token);
     const sb = await getAdmin();
     const sit = await loadSitByToken(data.token);
     await assertBirdInSit(sit.id, data.birdId);
@@ -493,8 +572,8 @@ export const getSitterScans = createServerFn({ method: "GET" })
     const ids = (scans ?? []).map((s: any) => s.id);
     let photos: any[] = [];
     if (ids.length) {
-      const { data: p } = await sb.from("photo_logs").select("*").in("daily_log_id", ids);
-      photos = p ?? [];
+      const { data: p } = await sb.from("photo_logs").select("id, daily_log_id, photo_url, created_at").in("daily_log_id", ids);
+      photos = await Promise.all((p ?? []).map(async (ph: any) => ({ ...ph, photo_url: await signScanPhotoPath(sb, ph.photo_url) })));
     }
     return (scans ?? []).map((s: any) => ({
       ...s,
@@ -508,6 +587,7 @@ export const getSitterScans = createServerFn({ method: "GET" })
 export const getSitterDashboard = createServerFn({ method: "GET" })
   .inputValidator((d: { token: string }) => z.object({ token: z.string().min(8) }).parse(d))
   .handler(async ({ data }) => {
+    await rateGate(data.token);
     const sb = await getAdmin();
     const sit = await loadSitByToken(data.token);
     const birdIds = await loadSitBirdIds(sit.id);
@@ -563,6 +643,9 @@ export const getSitterDashboard = createServerFn({ method: "GET" })
   });
 
 export const getGuideCards = createServerFn({ method: "GET" }).handler(async () => {
+  await rateGate(); // IP-only (no token); static content
+  const cached = guideCache.get("all");
+  if (cached) return cached;
   const sb = await getAdmin();
   const { data, error } = await sb
     .from("guide_cards")
@@ -570,5 +653,6 @@ export const getGuideCards = createServerFn({ method: "GET" }).handler(async () 
     .order("category")
     .order("title");
   if (error) throw new Error(error.message);
+  guideCache.set("all", data, GUIDE_TTL_MS);
   return data;
 });

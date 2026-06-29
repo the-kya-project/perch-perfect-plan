@@ -1,17 +1,26 @@
 {
   "name": "Kya & Co.",
   "short_name": "Kya & Co.",
-  "description": "Calm, clear care for your bird — even when you can't be there.",
+  "description": "Shared care for your bird. Build one care plan, then share it so family, pet sitters, and household members all stay on the same page.",
   "id": "/",
   "start_url": "/dashboard",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone"],
   "orientation": "portrait",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["lifestyle", "health", "medical"],
   "background_color": "#1a3d2e",
   "theme_color": "#1a3d2e",
   "icons": [
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
     { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Add a bird", "short_name": "Add bird", "url": "/birds/new", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Sits", "short_name": "Sits", "url": "/sits", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Health scans", "short_name": "Scans", "url": "/scans", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] }
   ]
 }

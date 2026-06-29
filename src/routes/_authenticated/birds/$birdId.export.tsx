@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
@@ -26,6 +26,8 @@ function ExportRecord() {
   const navigate = useNavigate();
   const [confirming, setConfirming] = useState(false);
   const [recipientName, setRecipientName] = useState("");
+  const [busy, setBusy] = useState(false);
+  const complete = useServerFn(completePdfHandoff);
 
   const { data: bird } = useQuery({
     queryKey: ["export-bird", birdId],
@@ -56,11 +58,14 @@ function ExportRecord() {
 
   const row = bird?.row;
   const name = row?.name ?? "This bird";
-  const notOwner = row && bird?.uid && row.owner_id !== bird.uid;
-  if (notOwner) { navigate({ to: "/birds/$birdId", params: { birdId }, replace: true }); return null; }
+  const notOwner = !!(row && bird?.uid && row.owner_id !== bird.uid);
 
-  const complete = useServerFn(completePdfHandoff);
-  const [busy, setBusy] = useState(false);
+  // Redirect non-owners via an effect — never call hooks below a conditional
+  // return, and never navigate during render.
+  useEffect(() => {
+    if (notOwner) navigate({ to: "/birds/$birdId", params: { birdId }, replace: true });
+  }, [notOwner, birdId, navigate]);
+
   async function confirmHandoff() {
     setBusy(true);
     try {
@@ -86,6 +91,8 @@ function ExportRecord() {
     val(plan?.out_of_cage_rules) && `Out of cage: ${plan.out_of_cage_rules.trim()}`,
     val(plan?.sleep_routine) && `Sleep: ${plan.sleep_routine.trim()}`,
   ].filter(Boolean).join("\n");
+
+  if (notOwner) return null;
 
   return (
     <div className="min-h-screen bg-[#f4f1e8] pb-[calc(var(--nav-spacer)+6rem)]">

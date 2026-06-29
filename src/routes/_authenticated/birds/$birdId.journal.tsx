@@ -4,7 +4,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, BookOpen, ImagePlus, Check, X, Loader2 } from "lucide-react";
+import { ArrowLeft, Plus, BookOpen, ImagePlus, Check, X, Loader2, Trash2 } from "lucide-react";
 import { InkHero, PhotoHero, StatusPill, Card, PrimaryButton } from "@/components/system";
 import { useCapability } from "@/lib/useCapability";
 import { useActiveSitIdForBird } from "@/components/CaregiverHome";
@@ -134,10 +134,14 @@ function JournalFacet() {
         <EntryForm
           birdId={birdId}
           entry={editing === "new" ? null : editing}
+          canDelete={canHealth}
           onClose={() => setEditing(null)}
           onSaved={() => {
             setEditing(null);
             qc.invalidateQueries({ queryKey: ["journal-entries", birdId] });
+            // The vet summary + export appendices read the same entries under their own keys.
+            qc.invalidateQueries({ queryKey: ["vet-journal", birdId] });
+            qc.invalidateQueries({ queryKey: ["export-journal", birdId] });
           }}
         />
       )}
@@ -176,7 +180,7 @@ function fmtDate(iso: string): string {
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric", ...(sameYear ? {} : { year: "numeric" }) });
 }
 
-function EntryForm({ birdId, entry, onClose, onSaved }: { birdId: string; entry: Entry | null; onClose: () => void; onSaved: () => void }) {
+function EntryForm({ birdId, entry, canDelete, onClose, onSaved }: { birdId: string; entry: Entry | null; canDelete: boolean; onClose: () => void; onSaved: () => void }) {
   // Attribution for entries created during an active caregiver assignment.
   const activeSitId = useActiveSitIdForBird(birdId);
   const [kind, setKind] = useState<Kind>(entry?.kind ?? "note");
@@ -187,6 +191,8 @@ function EntryForm({ birdId, entry, onClose, onSaved }: { birdId: string; entry:
   const [keepPhoto, setKeepPhoto] = useState(true); // existing photo retained?
   const [photoBusy, setPhotoBusy] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const valid = !!kind && !!date && title.trim().length > 0;
   const existingPhoto = entry?.photo_path ?? null;
@@ -236,11 +242,28 @@ function EntryForm({ birdId, entry, onClose, onSaved }: { birdId: string; entry:
     }
   }
 
+  async function del() {
+    if (!entry) return;
+    setDeleting(true);
+    try {
+      // The photo object (if any) is left in storage — cheap, and other code paths
+      // already tolerate orphaned journal photos. RLS gates this by record_health.
+      const { error } = await supabase.from("journal_entries").delete().eq("id", entry.id);
+      if (error) throw error;
+      toast.success("Entry deleted.");
+      onSaved();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Couldn't delete the entry.");
+      setDeleting(false);
+    }
+  }
+
   const showPhoto = photoData ?? (keepPhoto && existingPhoto ? "existing" : null);
+  const busy = saving || deleting || photoBusy;
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-end sm:place-items-center">
-      <div className="absolute inset-0 bg-black/30" onClick={saving ? undefined : onClose} />
+      <div className="absolute inset-0 bg-black/30" onClick={busy ? undefined : onClose} />
       <div className="relative max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-2xl bg-[var(--cream)] p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-xl sm:rounded-2xl">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="t-section">{entry ? "Edit entry" : "Add entry"}</h2>
@@ -286,11 +309,31 @@ function EntryForm({ birdId, entry, onClose, onSaved }: { birdId: string; entry:
         </div>
 
         <div className="mt-5 flex gap-2">
-          <PrimaryButton tone="lime" type="button" icon={<Check className="size-4" />} onPress={save} disabled={!valid || saving || photoBusy}>
+          <PrimaryButton tone="lime" type="button" icon={<Check className="size-4" />} onPress={save} disabled={!valid || busy}>
             {saving ? "Saving…" : "Save"}
           </PrimaryButton>
-          <button type="button" onClick={onClose} disabled={saving} className="min-h-[44px] rounded-[12px] border border-[var(--line)] px-4 text-[15px] font-[500] text-[var(--mute)] disabled:opacity-50">Cancel</button>
+          <button type="button" onClick={onClose} disabled={busy} className="min-h-[44px] rounded-[12px] border border-[var(--line)] px-4 text-[15px] font-[500] text-[var(--mute)] disabled:opacity-50">Cancel</button>
         </div>
+
+        {entry && canDelete && (
+          <div className="mt-4 border-t border-[var(--line)] pt-4">
+            {confirmingDelete ? (
+              <div className="rounded-xl bg-[var(--red-fill)] p-3 ring-1 ring-[var(--red-deep)]/15">
+                <p className="text-sm text-[var(--ink)]">Delete this entry? This can't be undone, and it's removed from the vet summary too.</p>
+                <div className="mt-3 flex gap-2">
+                  <button type="button" onClick={del} disabled={deleting} className="min-h-[44px] flex-1 rounded-[12px] bg-[var(--red-deep)] px-4 text-[15px] font-[600] text-white disabled:opacity-50">
+                    {deleting ? "Deleting…" : "Delete"}
+                  </button>
+                  <button type="button" onClick={() => setConfirmingDelete(false)} disabled={deleting} className="min-h-[44px] rounded-[12px] border border-[var(--line)] px-4 text-[15px] font-[500] text-[var(--mute)] disabled:opacity-50">Keep</button>
+                </div>
+              </div>
+            ) : (
+              <button type="button" onClick={() => setConfirmingDelete(true)} disabled={busy} className="inline-flex min-h-[44px] items-center gap-2 text-[15px] font-[500] text-[var(--red-deep)] disabled:opacity-50">
+                <Trash2 className="size-4" /> Delete this entry
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

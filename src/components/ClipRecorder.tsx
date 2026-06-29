@@ -58,21 +58,44 @@ function fmt(s: number) {
 function mb(bytes: number) {
   return `${Math.round(bytes / (1024 * 1024))} MB`;
 }
+// Live-counter formatting (one decimal so the number visibly moves during upload).
+function mb1(bytes: number) {
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+function speedStr(bps: number) {
+  if (bps >= 1024 * 1024) return `${(bps / (1024 * 1024)).toFixed(1)} MB/s`;
+  return `${Math.max(1, Math.round(bps / 1024))} KB/s`;
+}
+function etaStr(seconds: number) {
+  if (!Number.isFinite(seconds) || seconds <= 0) return "—";
+  return seconds < 60 ? `${Math.ceil(seconds)}s` : fmt(Math.round(seconds));
+}
+// Above this, warn the user the upload may take a while on cellular.
+const LARGE_CLIP_BYTES = 50 * 1024 * 1024;
 
-/** Best-effort read of a video file's duration in seconds; null if unreadable. */
+/** Best-effort read of a video file's duration in seconds; null if unreadable.
+ *  Hard 5s cap: a .mov whose metadata can't be probed (common for iPhone HEVC)
+ *  must NEVER block the upload — on timeout we resolve null and proceed. */
 function readDuration(file: File): Promise<number | null> {
   return new Promise((resolve) => {
+    let settled = false;
+    let url: string | null = null;
+    const finish = (val: number | null) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      if (url) URL.revokeObjectURL(url);
+      resolve(val);
+    };
+    const timer = setTimeout(() => finish(null), 5000);
     try {
-      const url = URL.createObjectURL(file);
+      url = URL.createObjectURL(file);
       const v = document.createElement("video");
       v.preload = "metadata";
-      v.onloadedmetadata = () => {
-        URL.revokeObjectURL(url);
-        resolve(Number.isFinite(v.duration) ? v.duration : null);
-      };
-      v.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
+      v.onloadedmetadata = () => finish(Number.isFinite(v.duration) ? v.duration : null);
+      v.onerror = () => finish(null);
       v.src = url;
-    } catch { resolve(null); }
+    } catch { finish(null); }
   });
 }
 
@@ -81,22 +104,40 @@ function readDuration(file: File): Promise<number | null> {
  * and resumes on transient network drops (common on mobile) instead of failing
  * the whole transfer — which is what the old single multipart POST did.
  */
-async function tusUpload(uploadURL: string, file: File, onProgress: (pct: number) => void): Promise<void> {
+async function tusUpload(
+  uploadURL: string,
+  file: File,
+  onProgress: (sent: number, total: number, speedBps: number) => void,
+): Promise<void> {
   // Load tus only when an upload actually starts — it's ~100KB and otherwise
   // would sit in the main bundle that loads on every screen.
   const tus = await import("tus-js-client");
   return new Promise<void>((resolve, reject) => {
+    let lastSent = 0;
+    let lastTime = Date.now();
+    let speed = 0; // bytes/sec, smoothed
     const upload = new tus.Upload(file, {
       // The upload was already created server-side; PATCH directly to its URL.
       uploadUrl: uploadURL,
       endpoint: uploadURL,
-      // Multiple of 256 KiB (Cloudflare requirement); 16 MB chunks resume well on mobile.
-      chunkSize: 16 * 1024 * 1024,
-      retryDelays: [0, 1000, 3000, 5000, 10000, 20000],
+      // 4 MB chunks (multiple of 256 KiB, Cloudflare requirement): a dropped
+      // chunk on a bad connection re-sends only ~4 MB and progress feels smoother.
+      chunkSize: 4 * 1024 * 1024,
+      // Finite retry schedule (~4 attempts). When it's exhausted we surface a
+      // "try Wi-Fi" message instead of retrying forever and draining the battery.
+      retryDelays: [0, 2000, 6000, 15000],
       removeFingerprintOnSuccess: true,
       onError: (err) => reject(err instanceof Error ? err : new Error(String(err))),
       onProgress: (sent, total) => {
-        if (total > 0) onProgress(Math.round((sent / total) * 100));
+        const now = Date.now();
+        const dt = (now - lastTime) / 1000;
+        if (dt >= 0.25) {
+          const inst = (sent - lastSent) / dt;
+          speed = speed > 0 ? speed * 0.7 + inst * 0.3 : inst; // EMA smoothing
+          lastSent = sent;
+          lastTime = now;
+        }
+        if (total > 0) onProgress(sent, total, speed);
       },
       onSuccess: () => resolve(),
     });
@@ -123,16 +164,16 @@ function friendlyUploadError(err: any): string {
   if (/processed/i.test(m)) return m;
   // Surface the real Cloudflare error (e.g. auth/subscription) instead of hiding it.
   if (/cloudflare stream/i.test(m)) return `Video service error — ${m}`;
-  // tus exhausted its retries (the connection kept dropping). Show the raw
-  // detail so a flaky-network failure can be diagnosed from the phone.
+  // tus exhausted its (finite) retries — the connection kept dropping. Stop and
+  // point the user at Wi-Fi rather than looping forever / draining the battery.
   if (/tus|http|network|request|connection|timed out|aborted/i.test(m)) {
-    return `Upload failed after retrying — check your connection and try again.${m ? ` (${m.slice(0, 120)})` : ""}`;
+    return "This clip is having trouble uploading — try again on Wi-Fi?";
   }
   return "Upload failed. Please try again.";
 }
 
 /** Prominent, labeled progress block shared by the checking/uploading/processing states. */
-export function UploadProgress({ label, hint, ratio }: { label: string; hint?: string; ratio?: number }) {
+export function UploadProgress({ label, hint, ratio, detail }: { label: string; hint?: string; ratio?: number; detail?: string }) {
   const pct = typeof ratio === "number" ? Math.max(0, Math.min(100, Math.round(ratio * 100))) : null;
   return (
     <div className="rounded-xl border-2 border-sage-200 bg-sage-50 p-4">
@@ -150,6 +191,7 @@ export function UploadProgress({ label, hint, ratio }: { label: string; hint?: s
           <div className="h-full w-2/5 rounded-full bg-sage-600" style={{ animation: "clip-indeterminate 1.2s ease-in-out infinite" }} />
         )}
       </div>
+      {detail && <p className="mt-2 text-xs tabular-nums text-sage-600">{detail}</p>}
       {hint && <p className="mt-2 text-xs text-sage-500">{hint}</p>}
       <style>{`@keyframes clip-indeterminate{0%{transform:translateX(-110%)}100%{transform:translateX(260%)}}`}</style>
     </div>
@@ -187,7 +229,7 @@ export function ClipRecorder({
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
-  const [stage, setStage] = useState<{ kind: "uploading" | "processing"; pct?: number } | null>(null);
+  const [stage, setStage] = useState<{ kind: "uploading" | "processing"; pct?: number; sent?: number; total?: number; speed?: number } | null>(null);
   const [recordedUrl, setRecordedUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -334,9 +376,12 @@ export function ClipRecorder({
     setNote(null);
     onBusy?.(true);
     try {
-      setStage({ kind: "uploading", pct: 0 });
+      setStage({ kind: "uploading", pct: 0, sent: 0, total: file.size, speed: 0 });
+      // Acknowledge a long iPhone clip so the wait isn't a mystery on cellular.
+      if (file.size > LARGE_CLIP_BYTES) setNote("Large clip — this may take a minute on cell.");
       const { uploadURL, uid } = await createClipUpload({ data: { uploadLength: file.size } });
-      await tusUpload(uploadURL, file, (pct) => setStage({ kind: "uploading", pct }));
+      await tusUpload(uploadURL, file, (sent, total, speed) =>
+        setStage({ kind: "uploading", pct: Math.round((sent / total) * 100), sent, total, speed }));
       // The clip reference is valid the moment the bytes are up. Hand it off now
       // instead of blocking the owner on Cloudflare's server-side transcode
       // (previously up to ~2.5 min on "Processing…"). The clip keeps transcoding
@@ -442,6 +487,15 @@ export function ClipRecorder({
         <UploadProgress
           label={stage.kind === "uploading" ? "Uploading…" : "Processing video…"}
           ratio={stage.kind === "uploading" ? (stage.pct ?? 0) / 100 : undefined}
+          detail={
+            stage.kind === "uploading" && stage.total
+              ? [
+                  `${mb1(stage.sent ?? 0)} / ${mb1(stage.total)}`,
+                  stage.speed ? `${speedStr(stage.speed)}` : null,
+                  stage.speed ? `~${etaStr((stage.total - (stage.sent ?? 0)) / stage.speed)} left` : null,
+                ].filter(Boolean).join(" · ")
+              : undefined
+          }
           hint={
             stage.kind === "uploading"
               ? "Sending your clip to be converted. Please keep this screen open."

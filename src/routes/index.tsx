@@ -16,9 +16,9 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Kya & Co. — Calm, clear care for your bird" },
-      { name: "description", content: "Calm, clear care for your bird — even when you can't be there." },
+      { name: "description", content: "Shared care for your bird. Build one care plan, then share it so family, pet sitters, and household members all stay on the same page." },
       { property: "og:title", content: "Kya & Co. — Calm, clear care for your bird" },
-      { property: "og:description", content: "Everything they need, everything you've learned, everything the people helping should know." },
+      { property: "og:description", content: "Shared care for your bird. Build one care plan, then share it so family, pet sitters, and household members all stay on the same page." },
     ],
   }),
   component: Welcome,
@@ -34,12 +34,15 @@ function Welcome() {
           <BrandLockup orientation="horizontal" variant="cream" size={137} />
         </div>
 
-        <div className="mt-[42px] space-y-3">
+        <div className="mt-[42px] space-y-6">
           <h1 className="text-balance text-4xl font-medium leading-[1.05] tracking-tight">
-            Calm, clear care for your bird — even when you can't be there.
+            Calm, clear care for your bird, shared with everyone who helps.
           </h1>
           <p className="text-pretty text-base text-[#5f5e5a]">
-            Owners build a thorough care plan once. Sitters get a secure link with today's routine, a daily health scan, and one-tap emergency contacts.
+            Build one thorough care plan, then share it with the people you trust.
+            <br />
+            <br />
+            That means family, pet sitters, and household members all stay on the same page and know exactly what to do.
           </p>
         </div>
 

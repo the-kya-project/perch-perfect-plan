@@ -6,11 +6,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { isCfClip, cfUid } from "./clipRef";
 import { getOwnerClipUrl } from "./clips.functions";
 
-export async function resolveOwnerClipUrl(ref: string | null | undefined): Promise<string | null> {
+export async function resolveOwnerClipUrl(ref: string | null | undefined, birdId?: string): Promise<string | null> {
   if (!ref) return null;
   if (isCfClip(ref)) {
     try {
-      const { url } = await getOwnerClipUrl({ data: { uid: cfUid(ref) } });
+      const { url } = await getOwnerClipUrl({ data: { uid: cfUid(ref), birdId } });
       return url ?? null;
     } catch {
       return null;

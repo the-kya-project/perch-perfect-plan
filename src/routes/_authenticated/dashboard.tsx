@@ -12,7 +12,7 @@ import {
   Feather, AlertCircle, AlertTriangle,
 } from "lucide-react";
 import { OwnerHeaderIcons } from "@/components/OwnerHeader";
-import { OwnerOnboarding, replayOwnerOnboarding } from "@/components/OwnerOnboarding";
+import { AppOnboarding } from "@/components/AppOnboarding";
 import { useTourDemo, DEMO_FLOCK, DEMO_FOSTERS, DEMO_HOUSEHOLD, demoGlanceFor, getDemoToday } from "@/lib/tourDemo";
 import { deriveConcernByBird, daysAgo } from "@/lib/scanConcern";
 import { Disclaimer } from "@/components/Disclaimer";
@@ -26,7 +26,7 @@ import { fetchScanFeed, getNotifSeenAt } from "@/lib/notificationsFeed";
 import { InkHero, IconTile, StatusPill, SectionHead, CtaLink, type HeroCta } from "@/components/system";
 import { CaregiverHome, useActiveCaregiver } from "@/components/CaregiverHome";
 import { BirdRecordBody } from "./birds/$birdId.index";
-import { getHouseholdHome, type HomeHousehold } from "@/lib/home.functions";
+import { getDashboardHome, getHouseholdHome, type HomeHousehold } from "@/lib/home.functions";
 import { getPastBirds } from "@/lib/handoff.functions";
 import {
   groupWeights, weightGlance, upcomingMoments, buildTodayItems, buildHomeStateCopy, daysSince,
@@ -46,73 +46,47 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
 });
 
-const BIRD_SELECT =
-  "id, owner_id, name, species, photo_url, photo_position, is_foster, intake_date, birth_date, acquired_on, became_permanent_on, created_at";
-
 function Dashboard() {
   const navigate = useNavigate();
   const { emergencyDefaults } = Route.useSearch();
 
-  const { data: me } = useQuery({
-    queryKey: ["owner-profile-name"],
-    queryFn: async () => {
-      const { data: u } = await getLocalUser();
-      if (!u.user) return null;
-      const { data } = await supabase.from("profiles").select("display_name").eq("id", u.user.id).maybeSingle();
-      return { id: u.user.id, displayName: data?.display_name ?? "" };
-    },
+  // ABOVE-THE-FOLD: one consolidated round trip (profile name + flock + weights
+  // + sits, with caregiver names resolved server-side). refetchOnMount mirrors
+  // the old per-query behavior so a bird added/handed-off elsewhere flips
+  // solo↔flock on return, and a logged weight refreshes the pills.
+  const dashFn = useServerFn(getDashboardHome);
+  const { data: home, isLoading: birdsLoading } = useQuery({
+    queryKey: ["dashboard-home"],
+    refetchOnMount: "always",
+    queryFn: () => dashFn(),
   });
-  const firstName = (me?.displayName ?? "").trim().split(/\s+/)[0] || "";
+  const firstName = (home?.profile?.displayName ?? "").trim().split(/\s+/)[0] || "";
+  // Stable references per `home` so the derived useMemos don't recompute every render.
+  const birds = useMemo(() => (home?.birds ?? []) as any[], [home]);
+  const allWeights = useMemo(() => (home?.weights ?? []) as WeightEntry[], [home]);
+  const sits = useMemo(() => (home?.sits ?? []) as any[], [home]);
 
-  // Bell badge — unread scans (seen state is per-device).
+  // Bell badge — unread scans. Shared ["scan-feed"] query (also powers the
+  // header bell), so this is a single deduped request, not a dashboard-only one.
   const { data: scanFeed = [] } = useQuery({ queryKey: ["scan-feed"], queryFn: fetchScanFeed });
   const [notifSeenAt] = useState(() => getNotifSeenAt());
   const unreadNotifs = scanFeed.filter((n) => new Date(n.created_at).getTime() > notifSeenAt).length;
 
-  const { data: birds = [], isLoading: birdsLoading } = useQuery({
-    queryKey: ["birds"],
-    // Refetch on mount so a bird just added/handed-off flips solo↔flock without a
-    // manual reload (and a logged weight elsewhere refreshes the pills).
-    refetchOnMount: "always",
-    queryFn: async () => {
-      const { data, error } = await supabase.from("birds").select(BIRD_SELECT).order("created_at", { ascending: false });
-      if (error) throw error;
-      return (data ?? []) as any[];
-    },
-  });
   const birdIds = useMemo(() => birds.map((b) => b.id), [birds]);
   // 800px (not 256) so the flock-card crop is byte-for-byte the same image the
-  // reposition "Flock card" preview and the bird-record hero use — a smaller
-  // transform cropped to a different aspect and broke the WYSIWYG promise.
+  // reposition "Flock card" preview and the bird-record hero use. Signed URLs
+  // are batched + cached by useBirdPhotos; this is the one media call.
   const resolvePhoto = useBirdPhotos(birds.map((b) => b.photo_url), 800);
 
-  // Latest weights for every accessible bird — pills, stale detection, Today.
-  const { data: allWeights = [] } = useQuery({
-    queryKey: ["home-weights", birdIds],
-    enabled: birdIds.length > 0,
-    refetchOnMount: "always",
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("weight_entries").select("bird_id, grams, measured_at")
-        .in("bird_id", birdIds).order("measured_at", { ascending: false }).limit(600);
-      return (data ?? []) as WeightEntry[];
-    },
-  });
-
-  const { data: sits = [] } = useQuery({
-    queryKey: ["all-sits"],
-    queryFn: async () => {
-      const { data } = await supabase.from("sits").select("id, sitter_name, caregiver_user_id, start_date")
-        .or("sitter_name.is.null,sitter_name.neq.__preview__").order("start_date", { ascending: false });
-      return (data ?? []) as any[];
-    },
-  });
-
+  // SECONDARY panels (full household roster + activity, past-birds footer) are
+  // deferred until after first paint — they don't block the above-the-fold load.
+  // Slow-changing, so they carry a longer staleTime.
+  const [showSecondary, setShowSecondary] = useState(false);
+  useEffect(() => { setShowSecondary(true); }, []);
   const householdFn = useServerFn(getHouseholdHome);
-  const { data: household } = useQuery({ queryKey: ["home-household"], queryFn: () => householdFn() });
-
+  const { data: household } = useQuery({ queryKey: ["home-household"], enabled: showSecondary, staleTime: 5 * 60_000, queryFn: () => householdFn() });
   const pastBirdsFn = useServerFn(getPastBirds);
-  const { data: pastBirds } = useQuery({ queryKey: ["past-birds"], queryFn: () => pastBirdsFn() });
+  const { data: pastBirds } = useQuery({ queryKey: ["past-birds"], enabled: showSecondary, staleTime: 5 * 60_000, queryFn: () => pastBirdsFn() });
   const pastCount = pastBirds?.birds?.length ?? 0;
 
   // ---- derived ----
@@ -161,20 +135,17 @@ function Dashboard() {
   const caregiverActive = !!caregiver?.sits?.length;
 
   // Home body line — state-aware (stale weigh-in → sit imminent → celebration
-  // → new bird → weekend → default). Caregiver names for imminent sits come
-  // from the household member list already loaded; sitter names from the row.
-  const householdNameById = useMemo(
-    () => new Map((household?.members ?? []).map((m) => [m.userId, m.name?.trim() || ""])),
-    [household],
-  );
+  // → new bird → weekend → default). Caregiver names are resolved server-side in
+  // getDashboardHome (so the hero line doesn't wait on the lazy household load);
+  // sitter names come from the row.
   const sitsForStateCopy = useMemo(
     () => (sits as any[]).map((s) => ({
       sitterName: s.sitter_name as string | null,
-      caregiverName: s.caregiver_user_id ? (householdNameById.get(s.caregiver_user_id) || null) : null,
+      caregiverName: (s.caregiverName as string | null) ?? null,
       startDate: s.start_date as string,
       daysUntil: -daysSince(s.start_date),
     })),
-    [sits, householdNameById],
+    [sits],
   );
   const stateCopy = birdsLoading ? undefined
     : birds.length === 0 ? "Add your first bird to start their record."
@@ -195,8 +166,9 @@ function Dashboard() {
           <CaregiverHome data={caregiver} />
         </div>
         {/* Keep the tour mountable here so the "?" replay can flip demo mode on,
-            which then drops back into the normal demo Home via the guard above. */}
-        <OwnerOnboarding />
+            which then drops back into the normal demo Home via the guard above.
+            AppOnboarding picks the owner vs member flow by role. */}
+        <AppOnboarding />
       </div>
     );
   }
@@ -265,7 +237,7 @@ function Dashboard() {
       </main>
       </div>
 
-      <OwnerOnboarding />
+      <AppOnboarding />
       <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.65rem .8rem;font-size:16px;outline:none}.input:focus{border-color:var(--sage-600);box-shadow:0 0 0 3px rgb(74 103 65 / .15)}`}</style>
     </div>
   );

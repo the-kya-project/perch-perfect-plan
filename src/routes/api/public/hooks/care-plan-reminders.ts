@@ -2,20 +2,38 @@
  * Cron-triggered reminder: nudges owners whose care plan hasn't been
  * touched in a while AND who have a sit starting within the next 3 days.
  *
- * Called by pg_cron (see scheduled-jobs setup). The `/api/public/*` prefix
- * bypasses Lovable's published-site auth, so the handler validates the
- * incoming `apikey` header against the project's anon key before doing
- * anything.
+ * Called by pg_cron (the in-database cron.schedule + net.http_post job). The
+ * `/api/public/*` prefix bypasses the published-site auth, so this handler is
+ * the only gate on a service-role-backed action — it MUST authenticate.
+ *
+ * Auth: a dedicated server-only secret, NOT the publishable anon key. The
+ * caller must send `Authorization: Bearer <CARE_PLAN_REMINDER_SECRET>`; the
+ * token is compared in constant time. Missing/wrong → 401 with no work done.
+ *
+ * Set `CARE_PLAN_REMINDER_SECRET` in the Vercel project env (server-only — no
+ * VITE_/public prefix), and update the pg_cron job to send it as the
+ * Authorization header instead of the old `apikey`.
  */
 import { createFileRoute } from "@tanstack/react-router";
+import { timingSafeEqual } from "node:crypto";
+
+// Constant-time string compare. Length is checked first (timingSafeEqual throws
+// on unequal-length buffers); the length leak is standard and acceptable.
+function secretMatches(provided: string, expected: string): boolean {
+  const a = Buffer.from(provided);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length) return false;
+  return timingSafeEqual(a, b);
+}
 
 export const Route = createFileRoute("/api/public/hooks/care-plan-reminders")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const apiKey = request.headers.get("apikey");
-        const expected = process.env.SUPABASE_ANON_KEY;
-        if (!expected || apiKey !== expected) {
+        const expected = process.env.CARE_PLAN_REMINDER_SECRET;
+        const auth = request.headers.get("authorization") ?? "";
+        const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
+        if (!expected || !token || !secretMatches(token, expected)) {
           return new Response("Unauthorized", { status: 401 });
         }
 
