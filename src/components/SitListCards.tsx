@@ -4,7 +4,7 @@
 // in the bird plan editor; this file is only the Sits tab list.)
 import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Activity, Eye, Link2, Home, ChevronDown, Pencil } from "lucide-react";
+import { Activity, Eye, Link2, Home, ChevronDown, Pencil, Settings2 } from "lucide-react";
 import { compactRange, monthDay, durationDays, daysUntil } from "@/lib/dates";
 import { copySitterLink } from "@/lib/sitLink";
 import { SitForm } from "@/components/SitForm";
@@ -166,13 +166,20 @@ export function ActiveSitCard({ sit, birds, allBirdsCount, caregiverName, leadNa
         </Link>
       </div>
 
-      {allBirds && (
-        <div className="mt-2.5 text-center">
+      <div className="mt-2.5 flex items-center justify-center gap-4">
+        <Link
+          to="/sits/$sitId"
+          params={{ sitId: sit.id }}
+          className="inline-flex items-center gap-1 text-[13px] font-[500] text-white/60 active:opacity-80"
+        >
+          <Settings2 className="size-3.5" /> Sit details
+        </Link>
+        {allBirds && (
           <button type="button" onClick={() => setEditing(true)} className="inline-flex items-center gap-1 text-[13px] font-[500] text-white/60 active:opacity-80">
             <Pencil className="size-3.5" /> Edit sit
           </button>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
@@ -244,13 +251,20 @@ export function UpcomingSitCard({
             )}
           </div>
 
-          {allBirds && (
-            <div className="mt-2.5 text-center">
+          <div className="mt-2.5 flex items-center justify-center gap-4">
+            <Link
+              to="/sits/$sitId"
+              params={{ sitId: sit.id }}
+              className="inline-flex items-center gap-1 text-[13px] font-[500] text-[var(--moss)] active:opacity-80"
+            >
+              <Settings2 className="size-3.5" /> Sit details
+            </Link>
+            {allBirds && (
               <button type="button" onClick={() => setEditing(true)} className="inline-flex items-center gap-1 text-[13px] font-[500] text-[var(--moss)] active:opacity-80">
                 <Pencil className="size-3.5" /> Edit sit
               </button>
-            </div>
-          )}
+            )}
+          </div>
         </>
       )}
     </div>
