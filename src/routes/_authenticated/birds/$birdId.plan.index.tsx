@@ -5,6 +5,7 @@ import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { computeSetupCompleteness, type SetupCheck } from "@/lib/setupCompleteness";
 import { useBirdRole } from "@/lib/useBirdRole";
 import { useCapability } from "@/lib/useCapability";
+import { MemberContextBanner } from "@/components/MemberContextBanner";
 import { InkHero, IconTile, StatusPill, CtaLink, Card, RecordRow } from "@/components/system";
 import {
   ArrowLeft, Eye, Check, AlertTriangle, Wand2,
@@ -145,6 +146,7 @@ function CarePlanOverview() {
         />
 
         <main className="space-y-4 px-5 pt-5">
+          <MemberContextBanner birdId={birdId} />
           <Card>
             {SECTIONS.map((s, i) => {
               const check = checksByKey.get(s.key);

@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { useBirdRole } from "@/lib/useBirdRole";
 import { useCapability } from "@/lib/useCapability";
+import { MemberContextBanner } from "@/components/MemberContextBanner";
 import { useActiveSitIdForBird } from "@/components/CaregiverHome";
 import { toast } from "sonner";
 import { ArrowLeft, Scale, Check, Trash2 } from "lucide-react";
@@ -133,10 +134,11 @@ function WeightFacet() {
           eyebrow="Weight"
           headline={heroHeadline}
           body={heroBody}
-          cta={canLogCare ? { label: "Log today's weight", tone: "lime", onPress: () => { setEditEntry(null); setLogOpen(true); } } : undefined}
+          cta={canLogCare && !logOpen ? { label: "Log today's weight", tone: "lime", onPress: () => { setEditEntry(null); setLogOpen(true); } } : undefined}
         />
 
         <main className="space-y-4 px-5 pt-5">
+          <MemberContextBanner birdId={birdId} />
           {/* Log a new weight */}
           {logOpen && canLogCare && (
             <LogPanel

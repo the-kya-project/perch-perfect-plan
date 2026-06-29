@@ -176,6 +176,44 @@ export const resolveHouseholdNames = createServerFn({ method: "GET" })
     return out;
   });
 
+// Resolve OWNER user_ids -> display name (the member->owner mirror of
+// resolveHouseholdNames). A member can't read an owner's profile (profiles RLS
+// is self-only), so "Sarah's household" labels + the per-bird context banner
+// resolve through here. Scoped for safety: only returns a name for an owner
+// whose household the caller actually belongs to (a bird_members row on one of
+// that owner's birds) — never an arbitrary user.
+export const resolveOwnerNames = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { ownerIds: string[] }) =>
+    z.object({ ownerIds: z.array(z.string().uuid()).max(50) }).parse(d),
+  )
+  .handler(async ({ data, context }): Promise<Record<string, string>> => {
+    const sb = await getAdmin();
+    const userId = (context as any).userId as string;
+    const want = Array.from(new Set((data.ownerIds ?? []).filter(Boolean))).filter((id) => id !== userId);
+    if (!want.length) return {};
+
+    // Which of the requested owners does the caller share a household with?
+    const { data: ownerBirds } = await sb.from("birds").select("id, owner_id").in("owner_id", want);
+    const birdToOwner = new Map((ownerBirds ?? []).map((b: any) => [b.id, b.owner_id as string]));
+    const birdIds = [...birdToOwner.keys()];
+    const allowed = new Set<string>();
+    if (birdIds.length) {
+      const { data: mem } = await sb.from("bird_members").select("bird_id").eq("user_id", userId).in("bird_id", birdIds);
+      for (const m of (mem ?? []) as any[]) { const o = birdToOwner.get(m.bird_id); if (o) allowed.add(o); }
+    }
+    if (!allowed.size) return {};
+
+    const { data: profs } = await sb.from("profiles").select("id, display_name, email").in("id", [...allowed]);
+    const out: Record<string, string> = {};
+    for (const p of (profs ?? []) as any[]) {
+      const name = (p.display_name ?? "").toString().trim();
+      const email = (p.email ?? "").toString().trim();
+      out[p.id] = name || (email ? email.split("@")[0] : "An owner");
+    }
+    return out;
+  });
+
 // ---- Consolidated owner-Home above-the-fold payload (single round trip) -----
 // Replaces the dashboard's separate profile-name + birds + weights + sits loads
 // with ONE server fn. Data is read through the USER-SCOPED (RLS) client so owner

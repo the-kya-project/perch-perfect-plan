@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { ArrowLeft, Plus, BookOpen, ImagePlus, Check, X, Loader2, Trash2 } from "lucide-react";
 import { InkHero, PhotoHero, StatusPill, Card, PrimaryButton } from "@/components/system";
 import { useCapability } from "@/lib/useCapability";
+import { MemberContextBanner } from "@/components/MemberContextBanner";
 import { useActiveSitIdForBird } from "@/components/CaregiverHome";
 import { uploadJournalPhoto, signJournalPhotos } from "@/lib/journalPhoto";
 import { compressImageToDataUrl } from "@/lib/imageUpload";
@@ -86,6 +87,7 @@ function JournalFacet() {
         />
 
         <main className="space-y-4 px-5 pt-5">
+          <MemberContextBanner birdId={birdId} />
           {/* Filter chips */}
           <div className="flex flex-wrap gap-2">
             {FILTERS.map((f) => (

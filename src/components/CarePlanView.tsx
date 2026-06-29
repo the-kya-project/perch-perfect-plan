@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ClipPlayer } from "@/components/ClipPlayer";
 import { IconTile, CtaLink } from "@/components/system";
+import { ViewOnlyTag } from "@/components/MemberContextBanner";
 import { normalizeFeedTimes, feedTimeLabel } from "@/lib/feedTimes";
 import {
   WATER_FREQ_LABELS,
@@ -104,6 +105,8 @@ export function CarePlanView({
   stickyTopPx = 0,
   header,
   footer,
+  contextBanner,
+  showViewOnlyTag = false,
 }: {
   data: CarePlanData;
   /** Which sections this surface may show (in addition to data-presence gating). */
@@ -121,6 +124,11 @@ export function CarePlanView({
   header?: React.ReactNode;
   /** Optional content rendered after the section cards. */
   footer?: React.ReactNode;
+  /** Optional context banner (member "you help here") rendered atop the content. */
+  contextBanner?: React.ReactNode;
+  /** When the viewer lacks edit access, show a quiet "View only" tag where the
+   *  Edit entry would be (member surfaces only — never the sitter). */
+  showViewOnlyTag?: boolean;
 }) {
   const bird = (data.bird ?? {}) as any;
   const plan = (data.plan ?? {}) as any;
@@ -269,11 +277,16 @@ export function CarePlanView({
       )}
 
       <main className="mx-auto max-w-md space-y-4 px-5 py-5">
-        {canEdit && onEdit && (
+        {contextBanner}
+        {canEdit && onEdit ? (
           <div className="-mb-1 flex justify-end">
             <CtaLink label="Edit care plan" icon={<Pencil className="size-3.5" />} onPress={onEdit} />
           </div>
-        )}
+        ) : showViewOnlyTag ? (
+          <div className="-mb-1 flex justify-end">
+            <ViewOnlyTag />
+          </div>
+        ) : null}
 
         {/* ------------------------------------------------------------ FOOD */}
         {present.food && (

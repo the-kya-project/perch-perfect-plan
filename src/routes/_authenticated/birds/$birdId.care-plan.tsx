@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getHouseholdCarePlanView } from "@/lib/household.functions";
 import { useCapability } from "@/lib/useCapability";
+import { MemberContextBanner } from "@/components/MemberContextBanner";
 import { CarePlanView, CARE_PLAN_SECTIONS, type CareSection } from "@/components/CarePlanView";
 import { ArrowLeft, Loader2 } from "lucide-react";
 
@@ -55,6 +56,8 @@ function HouseholdCarePlan() {
           targetSection={section}
           canEdit={canEdit}
           onEdit={() => navigate({ to: "/birds/$birdId/plan/editor", params: { birdId }, search: { tab: "food" } })}
+          contextBanner={<MemberContextBanner birdId={birdId} />}
+          showViewOnlyTag={!canEdit}
           header={
             <div className="flex items-center gap-3">
               <Link to="/birds/$birdId/plan" params={{ birdId }} aria-label="Back to care plan" className="-ml-1 rounded p-1 text-[var(--ink)]">

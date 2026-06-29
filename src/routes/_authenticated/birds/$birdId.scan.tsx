@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { useBirdRole } from "@/lib/useBirdRole";
 import { useCapability, useMyPermissions } from "@/lib/useCapability";
+import { MemberContextBanner } from "@/components/MemberContextBanner";
 import { useActiveSitIdForBird } from "@/components/CaregiverHome";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
@@ -140,7 +141,10 @@ function OwnerScan() {
           </div>
         </main>
       ) : (
+        <>
+        <div className="mx-auto max-w-md px-5 pt-4"><MemberContextBanner birdId={birdId} /></div>
         <ScanForm submitting={submitting} submitLabel="Log scan" onSubmit={onSubmit} />
+        </>
       )}
     </div>
   );

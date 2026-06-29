@@ -7,7 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { useBirdRole } from "@/lib/useBirdRole";
-import type { Capability } from "@/lib/capabilities";
+import type { Capability, Preset } from "@/lib/capabilities";
 
 export type CapabilityCheck = Capability | "view";
 
@@ -22,22 +22,26 @@ export function useMyPermissions() {
       const { data: u } = await getLocalUser();
       const myId = u.user?.id ?? null;
       const byOwner = new Map<string, Set<Capability>>();
+      // Stored preset per household (for role chips / the context banner). Kept
+      // parallel to byOwner so existing capability checks are untouched.
+      const presetByOwner = new Map<string, Preset>();
       if (myId) {
         const { data } = await supabase
           .from("household_member_permissions")
-          .select("owner_id, capabilities")
+          .select("owner_id, capabilities, preset")
           .eq("member_user_id", myId);
         for (const r of (data ?? []) as any[]) {
           byOwner.set(r.owner_id, new Set(((r.capabilities ?? []) as string[]) as Capability[]));
+          if (r.preset) presetByOwner.set(r.owner_id, r.preset as Preset);
         }
       }
-      return { myId, byOwner };
+      return { myId, byOwner, presetByOwner };
     },
   });
 }
 
 // The bird's household owner (mirrors has_capability resolving birds.owner_id).
-function useBirdOwner(birdId: string | undefined) {
+export function useBirdOwner(birdId: string | undefined) {
   return useQuery({
     queryKey: ["bird-owner", birdId],
     enabled: !!birdId,
