@@ -25,6 +25,7 @@ import { AddressInput } from "@/components/AddressInput";
 import { fetchScanFeed, getNotifSeenAt } from "@/lib/notificationsFeed";
 import { InkHero, IconTile, StatusPill, SectionHead, CtaLink, type HeroCta } from "@/components/system";
 import { CaregiverHome, useActiveCaregiver } from "@/components/CaregiverHome";
+import { HomeChecklist } from "@/components/HomeChecklist";
 import { getHouseholdHome, type HomeHousehold } from "@/lib/home.functions";
 import { getPastBirds } from "@/lib/handoff.functions";
 import {
@@ -215,6 +216,10 @@ function Dashboard() {
 
       <main className="space-y-6 px-5 pb-6 pt-5">
         {emergencyDefaults && <DefaultsPanel />}
+
+        {/* One-time post-setup checklist for new accounts (any type). Self-hides
+            when done / dismissed / no longer a new account — see HomeChecklist. */}
+        {!demo && <HomeChecklist />}
 
         {birdsLoading && !demo ? (
           <HomeSkeleton />
