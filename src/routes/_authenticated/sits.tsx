@@ -54,7 +54,9 @@ function SitsPage() {
 
   const { data: sits = [], isLoading: sitsLoading } = useQuery({
     queryKey: ["all-sits"],
-    refetchOnMount: "always",
+    // Paint from cache, revalidate in background (stale-while-revalidate). Sit
+    // mutations invalidate ["all-sits"] (refreshSits + the detail delete), so
+    // changes still show — no need to force a blocking refetch every visit.
     queryFn: async () => {
       const { data, error } = await supabase
         .from("sits")
@@ -66,7 +68,10 @@ function SitsPage() {
     },
   });
 
-  const refreshSits = () => qc.invalidateQueries({ queryKey: ["all-sits"] });
+  const refreshSits = () => {
+    qc.invalidateQueries({ queryKey: ["all-sits"] });
+    qc.invalidateQueries({ queryKey: ["dashboard-home"] }); // Home's upcoming-sit/today rows
+  };
   const birdLookup = Object.fromEntries(birds.map((b: any) => [b.id, b]));
 
   // Only a bird's OWNER may set up / edit a sit. `birds` includes birds the user

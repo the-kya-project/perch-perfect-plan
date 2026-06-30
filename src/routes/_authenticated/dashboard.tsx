@@ -53,13 +53,15 @@ function Dashboard() {
   const { emergencyDefaults } = Route.useSearch();
 
   // ABOVE-THE-FOLD: one consolidated round trip (profile name + flock + weights
-  // + sits, with caregiver names resolved server-side). refetchOnMount mirrors
-  // the old per-query behavior so a bird added/handed-off elsewhere flips
-  // solo↔flock on return, and a logged weight refreshes the pills.
+  // + sits, with caregiver names resolved server-side). Stale-while-revalidate:
+  // paints cached data instantly and revalidates in the background (global 60s
+  // staleTime). Cross-screen mutations that change what Home shows explicitly
+  // invalidate ["dashboard-home"] (add/delete bird, identity edit, foster→flock,
+  // weight log, sit create/delete) so those changes surface immediately; other
+  // edits refresh on the next background revalidation within 60s.
   const dashFn = useServerFn(getDashboardHome);
   const { data: home, isLoading: birdsLoading } = useQuery({
     queryKey: ["dashboard-home"],
-    refetchOnMount: "always",
     queryFn: () => dashFn(),
   });
   const firstName = (home?.profile?.displayName ?? "").trim().split(/\s+/)[0] || "";

@@ -110,6 +110,7 @@ function NewBird() {
     // Mark Home's bird list stale so it shows this bird the moment the owner
     // lands there (setup finish / Save & exit), with no manual refresh.
     qc.invalidateQueries({ queryKey: ["birds"] });
+    qc.invalidateQueries({ queryKey: ["dashboard-home"] }); // Home flock list
     return bird.id;
   }
 

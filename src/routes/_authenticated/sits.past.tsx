@@ -18,7 +18,8 @@ function PastSitsPage() {
 
   const { data: sits = [], isLoading } = useQuery({
     queryKey: ["all-sits"],
-    refetchOnMount: "always",
+    // Stale-while-revalidate: paint cached sits, revalidate in background. Sit
+    // mutations invalidate ["all-sits"], so changes still surface.
     queryFn: async () => {
       const { data, error } = await supabase
         .from("sits")

@@ -121,6 +121,7 @@ function SitDetail() {
       // (["all-sits"]) and the caregiver home (["active-caregiver-sits"]).
       qc.invalidateQueries({ queryKey: ["all-sits"] });
       qc.invalidateQueries({ queryKey: ["active-caregiver-sits"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-home"] }); // Home's upcoming-sit/today rows
       navigate({ to: "/sits" });
     } catch (e: any) {
       toast.error(e?.message ?? "Couldn't delete the sit.");

@@ -427,6 +427,7 @@ function HandoffSection({ birdId, name, part, prominent }: { birdId: string; nam
     onSuccess: () => {
       toast.success(`${name} joined the flock! 🎉`);
       ["bird-record", "moments", "birds", "bird-role"].forEach((k) => qc.invalidateQueries({ queryKey: k === "birds" ? ["birds"] : [k, birdId] }));
+      qc.invalidateQueries({ queryKey: ["dashboard-home"] }); // foster → flock on Home
     },
     onError: (e: any) => toast.error(e?.message ?? "Couldn't update."),
   });
@@ -499,6 +500,7 @@ function DeleteBirdButton({ birdId, name }: { birdId: string; name: string }) {
       if (error) throw error;
       toast.success(`${name} removed.`);
       qc.invalidateQueries({ queryKey: ["birds"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-home"] }); // drop from Home flock
       navigate({ to: "/dashboard" });
     } catch (e: any) {
       toast.error(e?.message ?? "Couldn't delete.");
@@ -630,6 +632,7 @@ function BasicInfoCard({ birdId, bird, editable = true }: { birdId: string; bird
     qc.invalidateQueries({ queryKey: ["bird-identity", birdId] });
     qc.invalidateQueries({ queryKey: ["bird", birdId] });
     qc.invalidateQueries({ queryKey: ["birds"] });
+    qc.invalidateQueries({ queryKey: ["dashboard-home"] }); // identity edits show on Home cards
     toast.success("Saved.");
     setEditing(false);
   }

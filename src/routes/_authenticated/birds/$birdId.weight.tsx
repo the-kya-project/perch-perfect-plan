@@ -72,6 +72,9 @@ function WeightFacet() {
   const refreshWeights = () => {
     qc.invalidateQueries({ queryKey: ["weight-entries", birdId] });
     qc.invalidateQueries({ queryKey: ["bird-weights", birdId] });
+    // Home's flock weight pills come from ["dashboard-home"] — keep them in sync
+    // now that the dashboard no longer force-refetches on every visit.
+    qc.invalidateQueries({ queryKey: ["dashboard-home"] });
   };
 
   const { data: bird } = useQuery({
