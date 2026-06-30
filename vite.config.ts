@@ -24,8 +24,41 @@ const pkgVersion = JSON.parse(
   readFileSync(new URL("./package.json", import.meta.url), "utf-8"),
 ).version as string;
 
+// Baseline security headers, applied via Nitro routeRules (written into
+// .vercel/output/config.json — a root vercel.json headers block is ignored by
+// this build). CSP ships REPORT-ONLY first: it observes and reports violations
+// but never blocks, so we can verify the real flows before flipping to enforce.
+const SUPABASE_ORIGIN = "https://koyqdyamazuuwvqbttnj.supabase.co";
+const CSP = [
+  "default-src 'self'",
+  "base-uri 'self'",
+  "object-src 'none'",
+  "frame-ancestors 'self'",
+  `form-action 'self' ${SUPABASE_ORIGIN}`,
+  `img-src 'self' data: blob: ${SUPABASE_ORIGIN} https://images.weserv.nl`,
+  `media-src 'self' blob: ${SUPABASE_ORIGIN} https://*.videodelivery.net https://*.cloudflarestream.com`,
+  "font-src 'self' data:",
+  "style-src 'self' 'unsafe-inline'",
+  "script-src 'self' 'unsafe-inline' https://us.i.posthog.com https://eu.i.posthog.com https://plausible.io",
+  `connect-src 'self' ${SUPABASE_ORIGIN} https://*.videodelivery.net https://*.cloudflarestream.com https://us.i.posthog.com https://eu.i.posthog.com https://plausible.io`,
+  "frame-src 'self' https://*.videodelivery.net",
+  "worker-src 'self' blob:",
+  "manifest-src 'self'",
+].join("; ");
+
+const SECURITY_HEADERS = {
+  "X-Content-Type-Options": "nosniff",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  // Same-origin framing only (the owner "View as sitter" iframe is same-origin).
+  "X-Frame-Options": "SAMEORIGIN",
+  // Camera + mic are used for photos/clips; geolocation is not. Lock the rest down.
+  "Permissions-Policy": "camera=(self), microphone=(self), geolocation=(), browsing-topics=()",
+  // Report-only until verified on a deploy — then rename to Content-Security-Policy.
+  "Content-Security-Policy-Report-Only": CSP,
+};
+
 export default defineConfig({
-  nitro: { preset: "vercel" },
+  nitro: { preset: "vercel", routeRules: { "/**": { headers: SECURITY_HEADERS } } } as any,
   tanstackStart: {
     server: { entry: "server" },
   },
