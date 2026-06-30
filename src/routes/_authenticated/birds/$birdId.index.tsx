@@ -7,6 +7,7 @@ import { useBirdRole } from "@/lib/useBirdRole";
 import { useCapability } from "@/lib/useCapability";
 import { weightTrendPill } from "@/lib/weightTrend";
 import { AgePicker } from "@/components/BirdPickers";
+import { MemberContextBanner } from "@/components/MemberContextBanner";
 import { PhotoCropper } from "@/components/PhotoCropper";
 import { useServerFn } from "@tanstack/react-start";
 import { getPendingHandoff, cancelHandoff, makePermanent } from "@/lib/handoff.functions";
@@ -54,6 +55,7 @@ function BirdRecordHome() {
       <div className="mx-auto max-w-md">
         <BirdRecordHero birdId={birdId} />
         <main className="space-y-4 px-5 pt-[14px]">
+          <MemberContextBanner birdId={birdId} />
           <BirdRecordBody birdId={birdId} />
         </main>
       </div>

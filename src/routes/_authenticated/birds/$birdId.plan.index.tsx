@@ -6,6 +6,7 @@ import { computeSetupCompleteness, type SetupCheck } from "@/lib/setupCompletene
 import { useBirdRole } from "@/lib/useBirdRole";
 import { useCapability } from "@/lib/useCapability";
 import { InkHero, IconTile, StatusPill, CtaLink, Card, RecordRow } from "@/components/system";
+import { MemberContextBanner } from "@/components/MemberContextBanner";
 import {
   ArrowLeft, Eye, Check, AlertTriangle, Wand2,
   Utensils, CalendarClock, Smile, Home as HomeIcon, Stethoscope, Siren,
@@ -145,6 +146,7 @@ function CarePlanOverview() {
         />
 
         <main className="space-y-4 px-5 pt-5">
+          <MemberContextBanner birdId={birdId} />
           <Card>
             {SECTIONS.map((s, i) => {
               const check = checksByKey.get(s.key);

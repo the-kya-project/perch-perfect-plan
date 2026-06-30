@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
 import { computeTriage, type ScanFieldKey, type ScanAnswer } from "@/lib/triage";
 import { ScanForm, type ScanSubmit } from "@/components/ScanForm";
+import { MemberContextBanner } from "@/components/MemberContextBanner";
 import { track } from "@/lib/analytics";
 
 // Owner-run health scan. Uses the SAME ScanForm + triage as the sitter; on submit
@@ -135,7 +136,10 @@ function OwnerScan() {
           </div>
         </main>
       ) : (
+        <>
+        <div className="mx-auto max-w-md px-5 pt-4"><MemberContextBanner birdId={birdId} /></div>
         <ScanForm submitting={submitting} submitLabel="Log scan" onSubmit={onSubmit} />
+        </>
       )}
     </div>
   );

@@ -11,6 +11,7 @@ import { ArrowLeft, Scale, Check } from "lucide-react";
 import { WeightTrendChart, type WeightPoint } from "@/components/WeightTrendChart";
 import { computeWeightTrend } from "@/lib/weightTrend";
 import { InkHero, IconTile, StatusPill, SectionHead, Card, RecordRow } from "@/components/system";
+import { MemberContextBanner } from "@/components/MemberContextBanner";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/weight")({
   head: () => ({ meta: [{ title: "Weight — Kya & Co." }] }),
@@ -128,6 +129,7 @@ function WeightFacet() {
         />
 
         <main className="space-y-4 px-5 pt-5">
+          <MemberContextBanner birdId={birdId} />
           {/* Log weight */}
           {logOpen && (
             <LogPanel
