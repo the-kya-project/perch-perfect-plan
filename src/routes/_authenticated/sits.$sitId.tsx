@@ -1,13 +1,16 @@
 import { createFileRoute, Link, useNavigate, useRouter, useCanGoBack } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  ArrowLeft, Calendar, Activity, Scale, BookOpen, CheckSquare, Image as ImageIcon, Loader2, Users, Mail,
+  ArrowLeft, Calendar, Activity, Scale, BookOpen, CheckSquare, Image as ImageIcon, Loader2, Users, Mail, Trash2, AlertTriangle,
 } from "lucide-react";
 import { InkHero, SectionHead, Card, IconTile, StatusPill } from "@/components/system";
 import { useServerFn } from "@tanstack/react-start";
 import { resolveHouseholdNames } from "@/lib/home.functions";
 import { memberDisplayName, firstName } from "@/lib/memberDisplay";
+import { useHouseholdCapability, useMyPermissions } from "@/lib/useCapability";
 import { formatDateRangeUS } from "@/lib/dates";
 
 // Past Sits detail view — the sit's own activity feed, derived strictly from
@@ -38,7 +41,7 @@ function SitDetail() {
     queryFn: async () => {
       const { data: sit } = await supabase
         .from("sits")
-        .select("id, title, start_date, end_date, sitter_name, sitter_email, caregiver_user_id, lead_user_id, notes, revoked")
+        .select("id, owner_id, title, start_date, end_date, sitter_name, sitter_email, caregiver_user_id, lead_user_id, notes, revoked")
         .eq("id", sitId).maybeSingle();
       if (!sit) return { sit: null as any, birds: [], caregiver: null as null | { name: string }, leadName: null as string | null, activity: [] as Activity[], counts: { scans: 0, weights: 0, journals: 0, photos: 0, tasks: 0 } };
 
@@ -90,10 +93,48 @@ function SitDetail() {
     },
   });
 
+  // Delete a sit — owner always; a household member only with manage_sits (RLS
+  // "sits delete" mirrors this). Deleting the row cascades its children via FK
+  // (sit_birds / task_completions / sit_checklist_items removed; logged
+  // daily_logs / weight_entries / photo_logs keep their rows with sit_id nulled).
+  const qc = useQueryClient();
+  const canManageSits = useHouseholdCapability("manage_sits", data?.sit?.owner_id);
+  const { data: perms } = useMyPermissions();
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+
   if (isLoading) return <Shell goBack={goBack} eyebrow="Sit activity" headline="Loading…"><Loader /></Shell>;
   if (!data?.sit) return <Shell goBack={goBack} eyebrow="Sit activity" headline="Sit not found."><Card className="p-6 text-center"><p className="t-body text-[var(--ink2)]">This sit isn't available.</p></Card></Shell>;
 
   const sit = data.sit;
+  // Owner ALWAYS sees delete — detected explicitly here so a slow/empty
+  // permissions fetch (or a missing owner_id) can never hide it. Members need
+  // manage_sits. RLS ("sits delete") enforces the same rule server-side.
+  const isOwner = !!perms?.myId && perms.myId === sit.owner_id;
+  const canDelete = isOwner || canManageSits;
+  const today = new Date().toISOString().slice(0, 10);
+  // Active = a sitter is currently covering: live window (today between the
+  // dates) and not revoked. Deleting one mid-sit pulls coverage out from under them.
+  const isActiveSit = !sit.revoked && sit.start_date <= today && sit.end_date >= today;
+
+  async function deleteSit() {
+    setDeleting(true);
+    try {
+      const { error } = await supabase.from("sits").delete().eq("id", sitId);
+      if (error) throw error;
+      toast.success("Sit deleted.");
+      // Refresh every surface that lists sits: the Sits list + Past list
+      // (["all-sits"]) and the caregiver home (["active-caregiver-sits"]).
+      qc.invalidateQueries({ queryKey: ["all-sits"] });
+      qc.invalidateQueries({ queryKey: ["active-caregiver-sits"] });
+      qc.invalidateQueries({ queryKey: ["dashboard-home"] }); // Home's upcoming-sit/today rows
+      navigate({ to: "/sits" });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Couldn't delete the sit.");
+      setDeleting(false);
+    }
+  }
+
   const isHousehold = !!sit.caregiver_user_id;
   const eyebrow = sit.title?.trim() || "Sit";
   const headline = formatDateRangeUS(sit.start_date, sit.end_date);
@@ -167,6 +208,39 @@ function SitDetail() {
           </Card>
         )}
       </section>
+
+      {/* Delete — owner (always) or a manage_sits member (RLS enforces the same). */}
+      {canDelete && (
+        <section>
+          <SectionHead title="Danger zone" />
+          <Card className="p-4">
+            {confirmingDelete ? (
+              <div className="rounded-xl bg-[var(--red-fill)] p-3 ring-1 ring-[var(--red-deep)]/15">
+                {isActiveSit && (
+                  <p className="mb-2 flex items-start gap-2 text-sm font-[500] text-[var(--red-deep)]">
+                    <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+                    This sit is active right now — a sitter is covering. Deleting it ends their access immediately.
+                  </p>
+                )}
+                <p className="text-sm text-[var(--ink)]">
+                  Delete this sit? This can't be undone. Logs recorded during it (scans, weights, photos) are kept but
+                  no longer tied to the sit; its checklist and task completions are removed.
+                </p>
+                <div className="mt-3 flex gap-2">
+                  <button type="button" onClick={deleteSit} disabled={deleting} className="min-h-[44px] flex-1 rounded-[12px] bg-[var(--red-deep)] px-4 text-[15px] font-[600] text-white disabled:opacity-50">
+                    {deleting ? "Deleting…" : "Delete sit"}
+                  </button>
+                  <button type="button" onClick={() => setConfirmingDelete(false)} disabled={deleting} className="min-h-[44px] rounded-[12px] border border-[var(--line)] px-4 text-[15px] font-[500] text-[var(--mute)] disabled:opacity-50">Keep</button>
+                </div>
+              </div>
+            ) : (
+              <button type="button" onClick={() => setConfirmingDelete(true)} className="inline-flex min-h-[44px] items-center gap-2 text-[15px] font-[500] text-[var(--red-deep)]">
+                <Trash2 className="size-4" /> Delete this sit
+              </button>
+            )}
+          </Card>
+        </section>
+      )}
     </Shell>
   );
 }

@@ -8,7 +8,8 @@ import { track } from "@/lib/analytics";
 import { useServerFn } from "@tanstack/react-start";
 import { resolveHouseholdNames } from "@/lib/home.functions";
 import { memberDisplayName, memberInitials } from "@/lib/memberDisplay";
-import { Feather, Plus, Mail, Check, Users } from "lucide-react";
+import { useHouseholdCapability, useMyPermissions } from "@/lib/useCapability";
+import { Feather, Plus, Mail, Check, Users, Trash2, AlertTriangle } from "lucide-react";
 
 // Create OR edit a sit. In edit mode (`editSit` set) it preserves the existing
 // invite_token — the same sitter link keeps working; editing changes what it
@@ -59,7 +60,32 @@ export function SitForm({
   const [end, setEnd] = useState(editing ? (editSit.end_date ?? "") : "");
   const [notes, setNotes] = useState(editing ? (editSit.notes ?? "") : "");
   const [saving, setSaving] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const rootRef = useRef<HTMLFormElement>(null);
+
+  // Delete a sit — owner always; a household member only with manage_sits (RLS
+  // "sits delete" mirrors this). FK cascade cleans children: sit_birds,
+  // sit_checklist_items, task_completions are removed; daily_logs / weight_entries
+  // / photo_logs keep their rows with sit_id nulled. The sitter link
+  // (sits.invite_token) and lead_user_id are columns on the row, gone with it.
+  // Owner ALWAYS sees delete — detected explicitly so a slow/empty permissions
+  // fetch can't hide it; members need manage_sits. RLS enforces the same.
+  const canManageSits = useHouseholdCapability("manage_sits", editing ? (editSit.owner_id as string | undefined) : undefined);
+  const { data: perms } = useMyPermissions();
+  const isOwner = editing && !!perms?.myId && perms.myId === editSit.owner_id;
+  const canDelete = isOwner || canManageSits;
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const isActiveSit = editing && !editSit.revoked && (editSit.start_date ?? "") <= todayStr && (editSit.end_date ?? "") >= todayStr;
+  async function deleteSit() {
+    if (!editing) return;
+    setDeleting(true);
+    const { error } = await supabase.from("sits").delete().eq("id", editSit.id);
+    if (error) { toast.error(error.message); setDeleting(false); return; }
+    toast.success("Sit deleted.");
+    onSaved();      // parent refreshes ["all-sits"]
+    onCancel?.();   // close the form
+  }
 
   // Caregiver kind:
   //   "household" + householdUserId = no token, no email — assigns a household
@@ -420,6 +446,35 @@ export function SitForm({
             ? "Save changes"
             : caregiverKind === "household" ? "Create sit" : "Create sit & generate link"}
       </button>
+
+      {/* Delete sit — edit mode only, gated by manage_sits (RLS enforces). */}
+      {editing && canDelete && (
+        <div className="border-t border-[#e0d8c4] pt-3">
+          {confirmingDelete ? (
+            <div className="rounded-[12px] bg-[var(--red-fill)] p-3 ring-1 ring-[var(--red-deep)]/15">
+              {isActiveSit && (
+                <p className="mb-2 flex items-start gap-1.5 text-[13px] font-[500] text-[var(--red-deep)]">
+                  <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+                  This sit is active right now — a sitter is covering. Deleting it ends their access immediately.
+                </p>
+              )}
+              <p className="text-[13px] text-[#1a3d2e]">
+                Delete this sit? This can't be undone. Its checklist and task completions are removed; logged scans, weights, and photos are kept but no longer tied to the sit.
+              </p>
+              <div className="mt-3 flex gap-2">
+                <button type="button" onClick={deleteSit} disabled={deleting} className="min-h-[44px] flex-1 rounded-[12px] bg-[var(--red-deep)] px-4 text-sm font-[600] text-white disabled:opacity-50">
+                  {deleting ? "Deleting…" : "Delete sit"}
+                </button>
+                <button type="button" onClick={() => setConfirmingDelete(false)} disabled={deleting} className="min-h-[44px] rounded-[12px] border border-[#c8bfa6] px-4 text-sm font-[500] text-[#5f5e5a] disabled:opacity-50">Keep</button>
+              </div>
+            </div>
+          ) : (
+            <button type="button" onClick={() => setConfirmingDelete(true)} className="inline-flex min-h-[44px] items-center gap-2 text-sm font-[500] text-[var(--red-deep)]">
+              <Trash2 className="size-4" /> Delete sit
+            </button>
+          )}
+        </div>
+      )}
     </form>
   );
 }

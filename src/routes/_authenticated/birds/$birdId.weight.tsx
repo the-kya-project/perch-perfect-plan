@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { useBirdRole } from "@/lib/useBirdRole";
@@ -14,6 +14,11 @@ import { InkHero, IconTile, StatusPill, SectionHead, Card, RecordRow } from "@/c
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/weight")({
   head: () => ({ meta: [{ title: "Weight — Kya & Co." }] }),
+  // ?log=1 (from the bird record's weight "+") opens the log-weight entry
+  // straight away — one tap to the field, no intermediate CTA.
+  validateSearch: (search: Record<string, unknown>): { log?: boolean } => ({
+    log: search.log === true || search.log === "true" || search.log === 1 ? true : undefined,
+  }),
   component: WeightFacet,
 });
 
@@ -47,11 +52,17 @@ function trendContext(trend: "steady" | "up" | "down", delta: number, win: Windo
 
 function WeightFacet() {
   const { birdId } = Route.useParams();
+  const { log } = Route.useSearch();
   const canLogCare = useCapability("log_daily_care", { birdId });
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [win, setWin] = useState<WindowDays>(90);
   const [logOpen, setLogOpen] = useState(false);
+
+  // ?log=1 deep-link → open the entry once we know the caller may log.
+  useEffect(() => {
+    if (log && canLogCare) setLogOpen(true);
+  }, [log, canLogCare]);
 
   const { data: bird } = useQuery({
     queryKey: ["bird-name", birdId],
