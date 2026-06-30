@@ -12,7 +12,7 @@ import {
   Feather, AlertCircle, AlertTriangle,
 } from "lucide-react";
 import { OwnerHeaderIcons } from "@/components/OwnerHeader";
-import { OwnerOnboarding, replayOwnerOnboarding } from "@/components/OwnerOnboarding";
+import { AppOnboarding } from "@/components/AppOnboarding";
 import { useTourDemo, DEMO_FLOCK, DEMO_FOSTERS, DEMO_HOUSEHOLD, demoGlanceFor, getDemoToday } from "@/lib/tourDemo";
 import { deriveConcernByBird, daysAgo } from "@/lib/scanConcern";
 import { Disclaimer } from "@/components/Disclaimer";
@@ -203,8 +203,9 @@ function Dashboard() {
           <CaregiverHome data={caregiver} />
         </div>
         {/* Keep the tour mountable here so the "?" replay can flip demo mode on,
-            which then drops back into the normal demo Home via the guard above. */}
-        <OwnerOnboarding />
+            which then drops back into the normal demo Home via the guard above.
+            AppOnboarding picks the owner vs member flow by role. */}
+        <AppOnboarding />
       </div>
     );
   }
@@ -274,7 +275,7 @@ function Dashboard() {
       </main>
       </div>
 
-      <OwnerOnboarding />
+      <AppOnboarding />
       <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.65rem .8rem;font-size:16px;outline:none}.input:focus{border-color:var(--sage-600);box-shadow:0 0 0 3px rgb(74 103 65 / .15)}`}</style>
     </div>
   );
