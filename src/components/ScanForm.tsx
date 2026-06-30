@@ -78,25 +78,38 @@ export function ScanForm({
         const missing = showErrors && !a;
         return (
           <section key={f.key} id={`scan-field-${f.key}`} className={`rounded-2xl bg-[#efe9da] p-4 ${missing ? "ring-2 ring-warn-red" : ""}`}>
-            <p className="text-sm font-medium">{f.question}</p>
-            <div className="mt-3 grid grid-cols-3 gap-2">
-              {(["normal", "not_sure", "concerning"] as ScanAnswer[]).map((opt) => (
-                <button
-                  key={opt}
-                  onClick={() => setAnswers({ ...answers, [f.key]: opt })}
-                  className={`min-h-[44px] rounded-lg border px-1 py-2.5 text-[11px] font-medium ${a === opt
-                    ? opt === "concerning" ? "border-warn-red bg-warn-red/10 text-warn-red"
-                    : opt === "not_sure" ? "border-warn-amber bg-warn-amber/10 text-warn-amber"
-                    : "border-warn-green bg-warn-green/10 text-warn-green"
-                    : "border-[#e0d8c4] text-[#5f5e5a]"}`}
-                >
-                  {opt === "not_sure" ? "Not sure" : opt === "concerning" ? "Concerning" : "Normal"}
-                </button>
-              ))}
+            <p id={`scan-q-${f.key}`} className="text-sm font-medium">{f.question}</p>
+            {/* Semantic radio group: one answer per question. role+aria-checked
+                give it radio semantics for assistive tech; tap behavior is unchanged. */}
+            <div role="radiogroup" aria-labelledby={`scan-q-${f.key}`} className="mt-3 grid grid-cols-3 gap-2">
+              {(["normal", "not_sure", "concerning"] as ScanAnswer[]).map((opt) => {
+                const selected = a === opt;
+                // SELECTED = solid fill in the state's color + white text, so all
+                // three read equally "chosen" and Concerning (red) reads strongest.
+                // UNSELECTED = quiet neutral outline.
+                return (
+                  <button
+                    key={opt}
+                    type="button"
+                    role="radio"
+                    aria-checked={selected}
+                    onClick={() => setAnswers({ ...answers, [f.key]: opt })}
+                    className={`min-h-[44px] rounded-lg border px-1 py-2.5 text-[11px] font-medium ${selected
+                      ? opt === "concerning" ? "border-warn-red bg-warn-red text-white"
+                      : opt === "not_sure" ? "border-warn-amber bg-warn-amber text-white"
+                      : "border-warn-green bg-warn-green text-white"
+                      : "border-[#e0d8c4] bg-white text-[#5f5e5a]"}`}
+                  >
+                    {opt === "not_sure" ? "Not sure" : opt === "concerning" ? "Concerning" : "Normal"}
+                  </button>
+                );
+              })}
             </div>
             {missing && <p className="mt-3 text-[11px] font-medium text-warn-red">Please answer this before submitting.</p>}
-            {a === "not_sure" && <p className="mt-3 rounded bg-warn-amber/10 p-2 text-[11px] leading-relaxed text-[#1a3d2e]"><b>Look again: </b>{f.helpNotSure}</p>}
-            {a === "concerning" && <p className="mt-3 rounded bg-warn-red/10 p-2 text-[11px] leading-relaxed text-[#1a3d2e]"><b>Watch for: </b>{f.helpConcerning}</p>}
+            {/* Both help notes use the app's amber warning treatment (same as the
+                never-feed callout) — never the off-brand red-on-cream "muddy pink." */}
+            {a === "not_sure" && <p className="mt-3 rounded bg-warn-amber/10 p-2 ring-1 ring-warn-amber/30 text-[11px] leading-relaxed text-warn-amber"><b>Look again: </b>{f.helpNotSure}</p>}
+            {a === "concerning" && <p className="mt-3 rounded bg-warn-amber/10 p-2 ring-1 ring-warn-amber/30 text-[11px] leading-relaxed text-warn-amber"><b>Watch for: </b>{f.helpConcerning}</p>}
           </section>
         );
       })}
@@ -148,7 +161,7 @@ export function ScanForm({
       </section>
 
       {allAnswered && (
-        <div className="rounded-xl bg-[#efe9da] p-3 text-xs text-[#5f5e5a]">
+        <div className="rounded-2xl bg-[#efe9da] p-4 text-xs text-[#5f5e5a]">
           Preview: <b className="uppercase">{preview().status}</b> — {preview().message}
         </div>
       )}
