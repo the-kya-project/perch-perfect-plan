@@ -441,26 +441,31 @@ export const getHouseholdCarePlanView = createServerFn({ method: "GET" })
       .maybeSingle();
     const mergedContacts = { ...mergeEmergency(contacts, defaults) };
 
-    // Sign photo + clips.
-    const signedBird = { ...bird, photo_url: await signBirdPhotoPath(sb, (bird as any).photo_url) };
+    // Sign photo + clips. These are all independent paths, so sign them
+    // concurrently (was a sequential for...await over up to 6 sign calls).
     const watchClipSlots = [
       { key: "step_up", column: "clip_step_up_path", label: "How they step up" },
       { key: "food_water", column: "clip_food_water_path", label: "How to refill food & water safely" },
       { key: "locations", column: "clip_locations_path", label: "Where everything is" },
       { key: "bedtime", column: "clip_bedtime_path", label: "Settling them for the night" },
     ];
-    const watchClips: { key: string; label: string; url: string }[] = [];
-    let baselineClipUrl: string | null = null;
-    if (plan) {
-      for (const slot of watchClipSlots) {
-        const path = (plan as any)[slot.column] as string | null;
-        if (!path) continue;
-        const url = await resolveClipUrl(sb, path);
-        if (url) watchClips.push({ key: slot.key, label: slot.label, url });
-      }
-      const bcp = (plan as any).baseline_clip_path as string | null;
-      if (bcp) baselineClipUrl = await resolveClipUrl(sb, bcp);
-    }
+    const planAny = plan as any;
+    const photoP = signBirdPhotoPath(sb, (bird as any).photo_url);
+    const baselineP: Promise<string | null> =
+      plan && planAny.baseline_clip_path ? resolveClipUrl(sb, planAny.baseline_clip_path as string) : Promise.resolve(null);
+    // Preserve slot order: map every slot to a promise (null for an empty slot or
+    // a sign failure), then filter — identical output to the old loop.
+    const watchSlotP: Promise<{ key: string; label: string; url: string } | null>[] = plan
+      ? watchClipSlots.map((slot) => {
+          const path = planAny[slot.column] as string | null;
+          return path
+            ? resolveClipUrl(sb, path).then((url) => (url ? { key: slot.key, label: slot.label, url } : null))
+            : Promise.resolve(null);
+        })
+      : [];
+    const [photoUrl, baselineClipUrl, ...watchResolved] = await Promise.all([photoP, baselineP, ...watchSlotP]);
+    const signedBird = { ...bird, photo_url: photoUrl };
+    const watchClips = watchResolved.filter(Boolean) as { key: string; label: string; url: string }[];
 
     return { bird: signedBird, plan: plan ?? null, contacts: mergedContacts, tasks, watchClips, baselineClipUrl };
   });

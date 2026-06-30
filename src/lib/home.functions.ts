@@ -253,20 +253,24 @@ export const getDashboardHome = createServerFn({ method: "GET" })
     const birds = (birdsRes.data ?? []) as any[];
     const birdIds = birds.map((b) => b.id);
 
-    let weights: DashboardHome["weights"] = [];
-    if (birdIds.length) {
-      const { data } = await sb.from("weight_entries").select("bird_id, grams, measured_at")
-        .in("bird_id", birdIds).order("measured_at", { ascending: false }).limit(600);
-      weights = (data ?? []) as DashboardHome["weights"];
-    }
-
-    // Caregiver display names (admin — profiles RLS is self-only). The sits are
-    // already RLS-scoped to the caller, so their caregivers are the caller's own
-    // household members; resolving their names here is safe.
+    // weights (needs birdIds) and caregiver names (needs caregiverIds) are
+    // independent of each other — resolve them concurrently instead of serially.
     const sitsRaw = (sitsRes.data ?? []) as any[];
     const caregiverIds = Array.from(new Set(sitsRaw.map((s) => s.caregiver_user_id).filter(Boolean))) as string[];
     const nameById = new Map<string, string>();
-    if (caregiverIds.length) {
+
+    const weightsP: Promise<DashboardHome["weights"]> = birdIds.length
+      ? sb.from("weight_entries").select("bird_id, grams, measured_at")
+          .in("bird_id", birdIds).order("measured_at", { ascending: false }).limit(600)
+          .then((r: any) => (r.data ?? []) as DashboardHome["weights"])
+      : Promise.resolve([] as DashboardHome["weights"]);
+
+    // Caregiver display names (admin — profiles RLS is self-only). The sits are
+    // already RLS-scoped to the caller, so their caregivers are the caller's own
+    // household members; resolving their names here is safe. (Already batched
+    // into one profiles query + a parallel getUserById fallback.)
+    const namesP = (async () => {
+      if (!caregiverIds.length) return;
       const admin = await getAdmin();
       const { data: profs } = await admin.from("profiles").select("id, display_name").in("id", caregiverIds);
       for (const p of (profs ?? []) as any[]) nameById.set(p.id, (p.display_name ?? "").toString().trim());
@@ -277,7 +281,10 @@ export const getDashboardHome = createServerFn({ method: "GET" })
           nameById.set(id, u?.user?.user_metadata?.display_name?.toString().trim() || u?.user?.email?.split("@")[0] || "");
         } catch { /* ignore */ }
       }));
-    }
+    })();
+
+    const [weights] = await Promise.all([weightsP, namesP]);
+
     const sits: DashboardSit[] = sitsRaw.map((s) => ({
       id: s.id,
       sitter_name: s.sitter_name ?? null,
