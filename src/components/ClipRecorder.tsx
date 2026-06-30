@@ -120,12 +120,14 @@ async function tusUpload(
       // The upload was already created server-side; PATCH directly to its URL.
       uploadUrl: uploadURL,
       endpoint: uploadURL,
-      // 4 MB chunks (multiple of 256 KiB, Cloudflare requirement): a dropped
-      // chunk on a bad connection re-sends only ~4 MB and progress feels smoother.
-      chunkSize: 4 * 1024 * 1024,
-      // Finite retry schedule (~4 attempts). When it's exhausted we surface a
-      // "try Wi-Fi" message instead of retrying forever and draining the battery.
-      retryDelays: [0, 2000, 6000, 15000],
+      // 16 MB chunks. Cloudflare Stream's tus endpoint requires each non-final
+      // chunk to be a multiple of 256 KiB AND >= 5 MiB — the 4 MB value shipped in
+      // 43fd077 was BELOW that minimum, so Cloudflare rejected the first chunk and
+      // every real (multi-chunk) upload failed with "unknown error". Reverted.
+      chunkSize: 16 * 1024 * 1024,
+      // Finite retry schedule for flaky mobile (restored from the pre-43fd077
+      // 6-attempt ramp; the trimmed 4-attempt version gave up too soon).
+      retryDelays: [0, 1000, 3000, 5000, 10000, 20000],
       removeFingerprintOnSuccess: true,
       onError: (err) => reject(err instanceof Error ? err : new Error(String(err))),
       onProgress: (sent, total) => {
@@ -164,12 +166,13 @@ function friendlyUploadError(err: any): string {
   if (/processed/i.test(m)) return m;
   // Surface the real Cloudflare error (e.g. auth/subscription) instead of hiding it.
   if (/cloudflare stream/i.test(m)) return `Video service error — ${m}`;
-  // tus exhausted its (finite) retries — the connection kept dropping. Stop and
-  // point the user at Wi-Fi rather than looping forever / draining the battery.
+  // tus exhausted its (finite) retries. Surface the actual error detail (not a
+  // generic "try Wi-Fi") so a real failure — e.g. a Cloudflare chunk rejection —
+  // is visible instead of masked.
   if (/tus|http|network|request|connection|timed out|aborted/i.test(m)) {
-    return "This clip is having trouble uploading — try again on Wi-Fi?";
+    return `Upload failed after retrying — check your connection and try again.${m ? ` (${m.slice(0, 120)})` : ""}`;
   }
-  return "Upload failed. Please try again.";
+  return `Upload failed. Please try again.${m ? ` (${m.slice(0, 120)})` : ""}`;
 }
 
 /** Prominent, labeled progress block shared by the checking/uploading/processing states. */
