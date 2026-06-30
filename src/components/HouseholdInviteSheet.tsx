@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { createHouseholdInvite, getHouseholdAccount, addExistingHouseholdMember } from "@/lib/household.functions";
+import { ASSIGNABLE_PRESETS, PRESET_LABELS, PRESET_DESCRIPTIONS, type AssignablePreset } from "@/lib/capabilities";
 import { toast } from "sonner";
 import { Loader2, Plus } from "lucide-react";
 
@@ -25,6 +26,7 @@ export function HouseholdInviteSheet({
   const [name, setName] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set(initialBirdIds ?? []));
   const [seeded, setSeeded] = useState(!!initialBirdIds?.length);
+  const [preset, setPreset] = useState<AssignablePreset>("caregiver");
 
   // When adding to a single bird (the per-bird access hub), offer people already
   // in the household — they can be added directly, no email round-trip.
@@ -73,7 +75,7 @@ export function HouseholdInviteSheet({
 
   const create = useServerFn(createHouseholdInvite);
   const m = useMutation({
-    mutationFn: () => create({ data: { inviteeEmail: email.trim(), inviteeName: name.trim() || undefined, birdIds: [...selected] } }),
+    mutationFn: () => create({ data: { inviteeEmail: email.trim(), inviteeName: name.trim() || undefined, birdIds: [...selected], preset } }),
     onSuccess: () => { toast.success("Invite sent."); onSent(); },
     onError: (e: any) => toast.error(e?.message ?? "Couldn't send the invite."),
   });
@@ -154,12 +156,27 @@ export function HouseholdInviteSheet({
           </div>
         </div>
 
+        <div>
+          <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#5f5e5a]">Permission level</span>
+          <div className="overflow-hidden rounded-[14px] bg-white ring-1 ring-[#e3dcc9]">
+            {ASSIGNABLE_PRESETS.map((p, i) => (
+              <label key={p} className={`flex min-h-[56px] cursor-pointer items-start gap-3 px-4 py-3 ${i ? "border-t border-[#ece6d6]" : ""}`}>
+                <input type="radio" name="preset" checked={preset === p} onChange={() => setPreset(p)} className="mt-0.5 size-4 shrink-0 accent-[#1a3d2e]" />
+                <span className="min-w-0">
+                  <span className="block text-sm font-medium text-[#1a3d2e]">{PRESET_LABELS[p]}</span>
+                  <span className="mt-0.5 block text-xs leading-relaxed text-[#5f5e5a]">{PRESET_DESCRIPTIONS[p]}</span>
+                </span>
+              </label>
+            ))}
+          </div>
+          <p className="mt-1.5 px-1 text-[11px] text-[#8a897f]">You can fine-tune this anytime on the permissions screen.</p>
+        </div>
+
         <div className="rounded-[14px] bg-[#f6e7c4]/40 p-4 ring-1 ring-[#e3dcc9]">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-[#854F0B]">What they'll see</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-[#854F0B]">Always</p>
           <ul className="mt-2 space-y-1 text-xs text-[#5f5e5a]">
-            <li>Each bird's care plan, weight, journal, identity</li>
-            <li>Can log weights and journal entries</li>
-            <li>Won't see your private notes or other people's contact info</li>
+            <li>They can view each selected bird's care plan, weight, journal, and identity</li>
+            <li>They won't see your private notes or other people's contact info</li>
           </ul>
         </div>
       </div>

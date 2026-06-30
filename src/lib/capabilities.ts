@@ -40,6 +40,19 @@ export const PRESET_LABELS: Record<Preset, string> = {
   custom: "Custom",
 };
 
+// The presets an owner can ASSIGN (e.g. the invite picker / permissions screen).
+// "custom" is a derived state, not a thing you pick, so it's excluded.
+export const ASSIGNABLE_PRESETS = ["viewer", "caregiver", "care_manager", "co_owner"] as const;
+export type AssignablePreset = (typeof ASSIGNABLE_PRESETS)[number];
+
+// One-line description per assignable preset — keep in sync with PRESET_CAPABILITIES.
+export const PRESET_DESCRIPTIONS: Record<AssignablePreset, string> = {
+  viewer: "Can see everything; can't make changes.",
+  caregiver: "Can log daily care and record health.",
+  care_manager: "Caregiver, plus edit care plans, emergency info, and sits.",
+  co_owner: "Full access, like a second owner.",
+};
+
 // Preset → granted capabilities. "custom" is arbitrary (no fixed bundle).
 export const PRESET_CAPABILITIES: Record<Exclude<Preset, "custom">, Capability[]> = {
   viewer: [],

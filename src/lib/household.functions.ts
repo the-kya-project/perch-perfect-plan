@@ -10,7 +10,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { PRESET_CAPABILITIES } from "@/lib/capabilities";
+import { PRESET_CAPABILITIES, ASSIGNABLE_PRESETS, type AssignablePreset } from "@/lib/capabilities";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { buildHouseholdInviteEmail } from "./emailTemplates";
 import { mergeEmergency } from "./emergency";
@@ -74,12 +74,13 @@ async function ownerDisplayName(sb: any, ownerId: string): Promise<string> {
 // ---- Owner: create an invite -----------------------------------------------
 export const createHouseholdInvite = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { inviteeEmail: string; inviteeName?: string; birdIds: string[] }) =>
+  .inputValidator((d: { inviteeEmail: string; inviteeName?: string; birdIds: string[]; preset?: AssignablePreset }) =>
     z
       .object({
         inviteeEmail: z.string().email(),
         inviteeName: z.string().trim().max(120).optional(),
         birdIds: z.array(z.string().uuid()).min(1),
+        preset: z.enum([...ASSIGNABLE_PRESETS] as [AssignablePreset, ...AssignablePreset[]]).default("caregiver"),
       })
       .parse(d),
   )
@@ -101,9 +102,11 @@ export const createHouseholdInvite = createServerFn({ method: "POST" })
         invitee_email: data.inviteeEmail,
         invitee_name: data.inviteeName?.trim() || null,
         bird_ids: data.birdIds,
+        // preset column added in 20260630160000; cast until generated types catch up.
+        preset: data.preset,
         token,
         status: "pending",
-      })
+      } as any)
       .select("id, invitee_email, invitee_name, bird_ids, status, created_at, expires_at")
       .single();
     if (error) throw new Error(error.message);
@@ -343,9 +346,11 @@ export const acceptHouseholdInvite = createServerFn({ method: "POST" })
       } catch { /* ignore */ }
     }
 
-    const { data: invite } = await sb
+    // Cast the builder: `preset` (migration 20260630160000) isn't in the
+    // generated types yet, which would otherwise poison the whole select type.
+    const { data: invite } = await (sb as any)
       .from("household_invites")
-      .select("id, owner_id, invitee_email, bird_ids, status, expires_at")
+      .select("id, owner_id, invitee_email, bird_ids, status, expires_at, preset")
       .eq("token", data.token)
       .maybeSingle();
     if (!invite) throw new Error("This invite isn't active anymore.");
@@ -362,15 +367,17 @@ export const acceptHouseholdInvite = createServerFn({ method: "POST" })
     const { error: insErr } = await sb.from("bird_members").upsert(rows, { onConflict: "bird_id,user_id", ignoreDuplicates: true });
     if (insErr) throw new Error(insErr.message);
 
-    // Default permissions: every accepted member starts as Caregiver; the owner
-    // adjusts on the Permissions screen. Idempotent — don't clobber an existing
+    // Starting permissions: the preset the owner chose at invite time (defaults
+    // to Caregiver for older invites with no stored preset). The owner can still
+    // adjust on the Permissions screen. Idempotent — don't clobber an existing
     // row (e.g. re-accept after a prior membership).
+    const preset = (((invite as any).preset ?? "caregiver") as AssignablePreset);
     await sb.from("household_member_permissions").upsert(
       {
         owner_id: invite.owner_id,
         member_user_id: userId,
-        capabilities: PRESET_CAPABILITIES.caregiver,
-        preset: "caregiver",
+        capabilities: PRESET_CAPABILITIES[preset],
+        preset,
       } as any,
       { onConflict: "owner_id,member_user_id", ignoreDuplicates: true },
     );
