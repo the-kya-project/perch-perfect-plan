@@ -337,7 +337,7 @@ function IdentityForm({ birdId, bird, onClose, onSaved }: { birdId: string; bird
         </label>
         {f.is_foster && (
           <div className="mt-3 border-t border-[var(--line2)] pt-3">
-            <Field label="Came to you"><input className={INPUT} type="date" max={today} value={f.intake_date} onChange={(e) => set("intake_date", e.target.value)} /></Field>
+            <Field label="Came to you"><OptionalDate value={f.intake_date} max={today} addLabel="Add date" inputClassName={INPUT} onChange={(v) => set("intake_date", v)} /></Field>
           </div>
         )}
       </div>

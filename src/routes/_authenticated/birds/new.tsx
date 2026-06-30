@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { toast } from "sonner";
 import { PhotoCropper } from "@/components/PhotoCropper";
-import { SpeciesPicker, AgePicker, BirdField } from "@/components/BirdPickers";
+import { SpeciesPicker, AgePicker, BirdField, OptionalDate } from "@/components/BirdPickers";
 import { InkHero, PrimaryButton } from "@/components/system";
 import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
 import { persistBirdPhoto } from "@/lib/birdPhoto";
@@ -203,7 +203,7 @@ function NewBird() {
         {isFoster && (
           <div className="mt-3 space-y-3 border-t border-[#ece6d6] pt-3">
             <BirdField label="Came to you">
-              <input className="input" type="date" max={todayStr} value={intakeDate} onChange={(e) => setIntakeDate(e.target.value)} />
+              <OptionalDate value={intakeDate} max={todayStr} addLabel="Add date" onChange={(v) => setIntakeDate(v)} />
             </BirdField>
             <div className="rounded-xl bg-[#efe9da] p-3">
               <p className="text-sm leading-relaxed text-[#5f5e5a]">
