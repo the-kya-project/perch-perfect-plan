@@ -242,11 +242,16 @@ export const getDashboardHome = createServerFn({ method: "GET" })
   .handler(async ({ context }): Promise<DashboardHome> => {
     const sb = (context as any).supabase; // RLS-enforced (owner + member access)
     const uid = (context as any).userId as string;
+    const today = new Date().toISOString().slice(0, 10);
 
     const [profileRes, birdsRes, sitsRes] = await Promise.all([
       sb.from("profiles").select("display_name").eq("id", uid).maybeSingle(),
       sb.from("birds").select(DASHBOARD_BIRD_SELECT).order("created_at", { ascending: false }),
+      // Home only renders current/upcoming sits (Today panel + hero copy use
+      // daysUntil >= 0; it never shows past sits). Bound to end_date >= today so
+      // this doesn't grow with every completed sit. The Sits tab keeps the full list.
       sb.from("sits").select("id, sitter_name, caregiver_user_id, start_date")
+        .gte("end_date", today)
         .or("sitter_name.is.null,sitter_name.neq.__preview__").order("start_date", { ascending: false }),
     ]);
 
@@ -259,10 +264,20 @@ export const getDashboardHome = createServerFn({ method: "GET" })
     const caregiverIds = Array.from(new Set(sitsRaw.map((s) => s.caregiver_user_id).filter(Boolean))) as string[];
     const nameById = new Map<string, string>();
 
+    // Home's flock pill needs only the latest weight vs the immediately previous
+    // one (weightTrendPill) + the latest date for staleness — i.e. the latest
+    // ~2 per bird. The old flat .limit(600) across all birds both grew unbounded
+    // AND could starve a bird when another had hundreds of entries. Fetch the
+    // latest few PER bird (small parallel queries) — bounded at birds × N rows.
+    const HOME_WEIGHTS_PER_BIRD = 3;
     const weightsP: Promise<DashboardHome["weights"]> = birdIds.length
-      ? sb.from("weight_entries").select("bird_id, grams, measured_at")
-          .in("bird_id", birdIds).order("measured_at", { ascending: false }).limit(600)
-          .then((r: any) => (r.data ?? []) as DashboardHome["weights"])
+      ? Promise.all(
+          birdIds.map((id) =>
+            sb.from("weight_entries").select("bird_id, grams, measured_at")
+              .eq("bird_id", id).order("measured_at", { ascending: false }).limit(HOME_WEIGHTS_PER_BIRD)
+              .then((r: any) => (r.data ?? []) as DashboardHome["weights"]),
+          ),
+        ).then((perBird) => perBird.flat())
       : Promise.resolve([] as DashboardHome["weights"]);
 
     // Caregiver display names (admin — profiles RLS is self-only). The sits are

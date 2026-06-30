@@ -84,10 +84,19 @@ function Dashboard() {
   const resolvePhoto = useBirdPhotos(birds.map((b) => b.photo_url), 800);
 
   // SECONDARY panels (full household roster + activity, past-birds footer) are
-  // deferred until after first paint — they don't block the above-the-fold load.
-  // Slow-changing, so they carry a longer staleTime.
+  // deferred until the browser is IDLE — so their two serverFn round trips don't
+  // compete with the above-the-fold load. (Was firing on the next tick after
+  // paint, racing the primary queries.) Slow-changing, so longer staleTime.
   const [showSecondary, setShowSecondary] = useState(false);
-  useEffect(() => { setShowSecondary(true); }, []);
+  useEffect(() => {
+    const ric = (window as any).requestIdleCallback as undefined | ((cb: () => void, opts?: { timeout: number }) => number);
+    if (ric) {
+      const id = ric(() => setShowSecondary(true), { timeout: 3000 });
+      return () => (window as any).cancelIdleCallback?.(id);
+    }
+    const t = setTimeout(() => setShowSecondary(true), 800);
+    return () => clearTimeout(t);
+  }, []);
   const householdFn = useServerFn(getHouseholdHome);
   const { data: household } = useQuery({ queryKey: ["home-household"], enabled: showSecondary, staleTime: 5 * 60_000, queryFn: () => householdFn() });
   const pastBirdsFn = useServerFn(getPastBirds);
