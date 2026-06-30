@@ -58,11 +58,19 @@ function Dashboard() {
     queryFn: async () => {
       const { data: u } = await getLocalUser();
       if (!u.user) return null;
-      const { data } = await supabase.from("profiles").select("display_name").eq("id", u.user.id).maybeSingle();
-      return { id: u.user.id, displayName: data?.display_name ?? "" };
+      // select("*") so reading first_name is safe even before its migration is
+      // applied (the column is simply absent until then — no query error).
+      const { data } = await supabase.from("profiles").select("*").eq("id", u.user.id).maybeSingle();
+      return {
+        id: u.user.id,
+        displayName: (data as any)?.display_name ?? "",
+        firstName: ((data as any)?.first_name ?? "").toString().trim(),
+      };
     },
   });
-  const firstName = (me?.displayName ?? "").trim().split(/\s+/)[0] || "";
+  // Prefer the stored first name; fall back to the first token of the full name
+  // (existing accounts, or before the migration populates first_name).
+  const firstName = (me?.firstName || (me?.displayName ?? "").trim().split(/\s+/)[0]) || "";
 
   // Bell badge — unread scans (seen state is per-device).
   const { data: scanFeed = [] } = useQuery({ queryKey: ["scan-feed"], queryFn: fetchScanFeed });

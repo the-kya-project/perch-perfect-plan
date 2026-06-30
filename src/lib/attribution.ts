@@ -126,13 +126,17 @@ export async function applyOAuthAttribution(user: { id: string; email?: string |
       if (!Number.isNaN(age) && age > FRESH_SIGNUP_WINDOW_MS) return; // not a fresh signup
     }
     const { data: prof } = await supabase.from("profiles").select("signup_source").eq("id", user.id).maybeSingle();
-    if (!prof || (prof as any).signup_source) return; // missing row, or already attributed
+    if (!prof || (prof as any).signup_source) return; // missing row, or already handled
 
     const d = getFirstTouch();
-    if (!d) return;
+    // Attribution columns only when we actually captured first-touch data.
+    if (d) await supabase.from("profiles").update(attributionColumns(d) as any).eq("id", user.id);
 
-    await supabase.from("profiles").update(attributionColumns(d) as any).eq("id", user.id);
-
+    // Capture the lead in Brevo for EVERY fresh OAuth signup with their full
+    // name — not only ones that arrived with attribution. (Bounded to the 30-min
+    // fresh-signup window above; the capture-lead function upserts by email
+    // — updateEnabled — so any repeat within that window is a harmless update,
+    // never a duplicate contact.)
     if (user.email) {
       const fullName = (user.user_metadata?.full_name ?? user.user_metadata?.name ?? "").toString().trim();
       const sp = fullName.indexOf(" ");
@@ -142,7 +146,7 @@ export async function applyOAuthAttribution(user: { id: string; email?: string |
         lastName: sp === -1 ? "" : fullName.slice(sp + 1),
         source: "owner-signup",
         marketingConsent: false,
-        attribution: d,
+        attribution: d ?? null,
       });
     }
   } catch (err) {
