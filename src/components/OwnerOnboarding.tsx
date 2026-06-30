@@ -263,7 +263,10 @@ export function OwnerOnboarding() {
                 <button onClick={addBird} className="mt-3.5 flex w-full items-center justify-center gap-2 rounded-[13px] bg-[var(--lime)] py-3 text-[14px] font-[500] text-[var(--ink)] active:scale-[0.99]">
                   <Feather className="size-4" /> Add my first bird
                 </button>
-                <p className="mt-2.5 text-[11.5px] leading-[1.45] text-[var(--mute)]">Tap the ? in the top bar anytime to revisit the tour.</p>
+                <button onClick={finish} className="mt-2 w-full rounded-[13px] py-2.5 text-[13px] font-[500] text-[var(--mute)] active:scale-[0.99]">
+                  Skip for now
+                </button>
+                <p className="mt-2.5 text-[11.5px] leading-[1.45] text-[var(--mute)]">You can add a bird anytime from Home — tap the ? to revisit the tour.</p>
               </>
             ) : (
               <>
