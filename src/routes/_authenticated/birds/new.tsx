@@ -113,14 +113,15 @@ function NewBird() {
     return bird.id;
   }
 
-  // Add the bird, then go to its main page — that's where the "No care plan yet
-  // — Create care plan" invite opens the actual wizard (Food · Step 1 of 8).
-  // Adding a bird is NOT the care-plan wizard, so this flow has no step chrome.
+  // Add the bird, then guide straight into the care-plan wizard (Food · Step 1
+  // of 8) — the obvious next step instead of leaving the owner to find the CTA.
+  // Skippable: the wizard's "Save & exit" drops onto the bird's record, which
+  // keeps a "Set up <name>'s care plan" invite until setup is complete.
   async function onAddBird() {
     const id = await createBird(1);
     if (id) {
       toast.success(`${name} added.`);
-      navigate({ to: "/birds/$birdId", params: { birdId: id } });
+      navigate({ to: "/birds/$birdId/setup", params: { birdId: id }, search: { step: 1 } });
     }
   }
 
