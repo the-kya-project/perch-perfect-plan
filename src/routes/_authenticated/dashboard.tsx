@@ -25,7 +25,6 @@ import { AddressInput } from "@/components/AddressInput";
 import { fetchScanFeed, getNotifSeenAt } from "@/lib/notificationsFeed";
 import { InkHero, IconTile, StatusPill, SectionHead, CtaLink, type HeroCta } from "@/components/system";
 import { CaregiverHome, useActiveCaregiver } from "@/components/CaregiverHome";
-import { BirdRecordBody } from "./birds/$birdId.index";
 import { getHouseholdHome, type HomeHousehold } from "@/lib/home.functions";
 import { getPastBirds } from "@/lib/handoff.functions";
 import {
@@ -221,15 +220,12 @@ function Dashboard() {
           <HomeSkeleton />
         ) : !demo && birds.length === 0 ? (
           <EmptyHome />
-        ) : !demo && birds.length === 1 ? (
-          <>
-            <TodayPanel items={todayItemsView} onNavigate={onTodayNavigate} />
-            <div className="space-y-4"><BirdRecordBody birdId={birds[0].id} /></div>
-            <HouseholdActivity household={householdView} />
-            <HouseholdRow household={householdView} firstName={firstName} />
-            <FosterFooter count={pastCount} />
-          </>
         ) : (
+          // ONE Home for everyone — one bird or twenty. (Previously birds.length
+          // === 1 rendered the bird record inline, which stripped the flock list,
+          // broke the onboarding tour's owner-flock anchor, and made Home
+          // indistinguishable from the bird record. A single bird now shows as one
+          // card in the flock, with the same Today / household / guidance.)
           <>
             <TodayPanel items={todayItemsView} onNavigate={onTodayNavigate} />
 
