@@ -26,8 +26,10 @@ import { fetchScanFeed, getNotifSeenAt } from "@/lib/notificationsFeed";
 import { InkHero, IconTile, StatusPill, SectionHead, CtaLink, type HeroCta } from "@/components/system";
 import { CaregiverHome, useActiveCaregiver } from "@/components/CaregiverHome";
 import { HomeChecklist } from "@/components/HomeChecklist";
-import { getHouseholdHome, type HomeHousehold } from "@/lib/home.functions";
+import { getHouseholdHome, resolveOwnerNames, type HomeHousehold } from "@/lib/home.functions";
 import { getPastBirds } from "@/lib/handoff.functions";
+import { useMyPermissions } from "@/lib/useCapability";
+import { PRESET_LABELS, presetForCapabilities } from "@/lib/capabilities";
 import {
   groupWeights, weightGlance, upcomingMoments, buildTodayItems, buildHomeStateCopy, daysSince,
   type HomeBird, type WeightEntry, type TodayItem, type WeightGlance, type UpcomingSit,
@@ -158,8 +160,47 @@ function Dashboard() {
   // has something to point at (never the user's empty state). Nothing is
   // persisted; real data returns the instant the tour ends.
   const demo = useTourDemo();
-  const fosterBirds = demo ? DEMO_FOSTERS : homeBirds.filter((b) => b.is_foster);
-  const flockBirds = demo ? DEMO_FLOCK : homeBirds.filter((b) => !b.is_foster);
+
+  // Both-roles grouping: split the RLS-scoped flock into the user's OWN birds
+  // (owner_id === me) and birds they help with as a household MEMBER (owner_id
+  // !== me). homeBirds carries owner_id (BIRD_SELECT). We only group when BOTH
+  // contexts exist, so single-context users see the plain flock unchanged.
+  const { data: perms } = useMyPermissions();
+  const myId = perms?.myId ?? null;
+  const ownedBirds = useMemo(() => (myId ? homeBirds.filter((b) => (b as any).owner_id === myId) : homeBirds), [homeBirds, myId]);
+  const memberBirds = useMemo(() => (myId ? homeBirds.filter((b) => (b as any).owner_id !== myId) : []), [homeBirds, myId]);
+  const hasGrouping = !demo && ownedBirds.length > 0 && memberBirds.length > 0;
+
+  // Resolve owner display names for the helped-with households (members can't
+  // read owner profiles via RLS — goes through the server fn). Role chip comes
+  // from the stored preset, or is derived from capabilities as a fallback.
+  const memberOwnerIds = useMemo(() => [...new Set(memberBirds.map((b) => (b as any).owner_id as string))], [memberBirds]);
+  const resolveOwners = useServerFn(resolveOwnerNames);
+  const { data: ownerNames } = useQuery({
+    queryKey: ["owner-names", memberOwnerIds.slice().sort().join(",")],
+    enabled: memberOwnerIds.length > 0,
+    staleTime: 5 * 60_000,
+    queryFn: () => resolveOwners({ data: { ownerIds: memberOwnerIds } }),
+  });
+  const memberGroups = useMemo(() => {
+    const m = new Map<string, HomeBird[]>();
+    for (const b of memberBirds as HomeBird[]) {
+      const o = (b as any).owner_id as string;
+      const arr = m.get(o) ?? [];
+      arr.push(b);
+      m.set(o, arr);
+    }
+    return [...m.entries()].map(([ownerId, birds]) => {
+      const caps = perms?.byOwner.get(ownerId);
+      const preset = perms?.presetByOwner.get(ownerId) ?? (caps ? presetForCapabilities([...caps]) : null);
+      return { ownerId, birds, ownerName: ownerNames?.[ownerId] ?? null, chip: preset ? PRESET_LABELS[preset] : null };
+    });
+  }, [memberBirds, perms, ownerNames]);
+
+  // Fosters are an owner concept; member birds stay in the helped-with groups.
+  const fosterBirds = demo ? DEMO_FOSTERS : ownedBirds.filter((b) => b.is_foster);
+  // Non-grouped path keeps the original single flock (all non-foster birds).
+  const flockBirds = demo ? DEMO_FLOCK : (hasGrouping ? ownedBirds : homeBirds).filter((b) => !b.is_foster);
   const todayItemsView = demo ? getDemoToday() : todayItems;
   const householdView = demo ? DEMO_HOUSEHOLD : household;
   const glanceFor = (b: HomeBird) => (demo ? demoGlanceFor(b.id) : weightGlance(weightsByBird.get(b.id) ?? [], b.is_foster));
@@ -236,7 +277,7 @@ function Dashboard() {
             <TodayPanel items={todayItemsView} onNavigate={onTodayNavigate} />
 
             <section className="space-y-3" data-coach="owner-flock">
-              <SectionHeaderCTA title="Your flock" ctaLabel="Add a bird" onCta={() => navigate({ to: "/birds/new" })} />
+              <SectionHeaderCTA title={hasGrouping ? "Your birds" : "Your flock"} ctaLabel="Add a bird" onCta={() => navigate({ to: "/birds/new" })} />
               {flockBirds.length === 0 ? (
                 <p className="px-1 text-sm text-[#5b6b61]">No birds yet — start with your first.</p>
               ) : (
@@ -247,6 +288,21 @@ function Dashboard() {
                 </div>
               )}
             </section>
+
+            {/* Birds you help with, one section per household (both-roles only). */}
+            {hasGrouping && memberGroups.map((g) => (
+              <section key={g.ownerId} className="space-y-3">
+                <div className="px-1">
+                  <h2 className="t-section">{g.ownerName ? `${possessive(g.ownerName)} household` : "A household you help with"}</h2>
+                  <p className="t-meta text-[var(--teal-on-cream)]">You help here</p>
+                </div>
+                <div className="space-y-3">
+                  {g.birds.map((b) => (
+                    <BirdRow key={b.id} bird={b} photo={photoFor(b)} glance={glanceFor(b)} concern={concernByBird.has(b.id)} chip={g.chip ?? undefined} />
+                  ))}
+                </div>
+              </section>
+            ))}
 
             {fosterBirds.length > 0 && (
               <section className="space-y-3" data-coach="owner-fosters">
@@ -399,7 +455,13 @@ function ConcernPill() {
   );
 }
 
-function BirdRow({ bird, photo, glance, foster, concern }: { bird: HomeBird; photo: SignedPhoto | null; glance: WeightGlance; foster?: boolean; concern?: boolean }) {
+/** "Sarah" -> "Sarah's", "Chris" -> "Chris'". */
+function possessive(name: string): string {
+  const n = name.trim();
+  return /s$/i.test(n) ? `${n}'` : `${n}'s`;
+}
+
+function BirdRow({ bird, photo, glance, foster, concern, chip }: { bird: HomeBird; photo: SignedPhoto | null; glance: WeightGlance; foster?: boolean; concern?: boolean; chip?: string }) {
   const fosterStatus = foster
     ? glance.state === "stale"
       ? { tone: "attention" as const, label: "Needs a weigh-in" }
@@ -416,6 +478,7 @@ function BirdRow({ bird, photo, glance, foster, concern }: { bird: HomeBird; pho
         <div className="flex items-center gap-2">
           <h3 className="t-item truncate text-[17px]">{bird.name}</h3>
           {foster && <StatusPill tone="good">Foster</StatusPill>}
+          {chip && <StatusPill tone="household">{chip}</StatusPill>}
         </div>
         <p className="t-meta truncate">{bird.species || "Parrot"}</p>
         {foster && bird.intake_date && (
