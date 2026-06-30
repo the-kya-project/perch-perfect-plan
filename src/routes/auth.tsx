@@ -221,7 +221,7 @@ function AuthPage() {
           headline={mode === "signup" ? "Create your account." : "Pick up where you left off."}
           body={
             mode === "signup"
-              ? "Save bird profiles and care plans across trips, sitters, and the people who help."
+              ? "Build one care plan and share it with the family, pet sitters, and household members who help."
               : "Sign in to your bird's record."
           }
           backIcon={<ArrowLeft className="size-5" />}

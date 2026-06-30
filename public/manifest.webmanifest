@@ -1,7 +1,7 @@
 {
   "name": "Kya & Co.",
   "short_name": "Kya & Co.",
-  "description": "Calm, clear care for your bird — even when you can't be there.",
+  "description": "Shared care for your bird. Build one care plan, then share it so family, pet sitters, and household members all stay on the same page.",
   "id": "/",
   "start_url": "/dashboard",
   "scope": "/",
