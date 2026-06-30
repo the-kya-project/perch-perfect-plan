@@ -247,9 +247,18 @@ function EditIdentityModal({
     setSaving(true);
     try {
       if (nameDirty) {
-        const { error } = await supabase.from("profiles").update({ display_name: nameInput.trim() || null }).eq("id", userId);
+        // Keep all three name fields consistent so the first_name-preferring
+        // greeting reflects the edit (display_name alone would leave a stale
+        // first_name winning). full_name + display_name = the entered name;
+        // first_name = its first token.
+        const trimmed = nameInput.trim();
+        const first = trimmed.split(/\s+/)[0] || null;
+        const { error } = await supabase
+          .from("profiles")
+          .update({ display_name: trimmed || null, full_name: trimmed || null, first_name: first } as any)
+          .eq("id", userId);
         if (error) throw error;
-        onName(nameInput.trim());
+        onName(trimmed);
       }
       if (emailDirty) {
         const next = emailInput.trim().toLowerCase();
