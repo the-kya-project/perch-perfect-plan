@@ -49,6 +49,7 @@ function ScanDetail() {
     toast.success("Concern marked resolved.");
     qc.invalidateQueries({ queryKey: ["scan-detail", scanId] });
     qc.invalidateQueries({ queryKey: ["scan-feed"] });
+    qc.invalidateQueries({ queryKey: ["scan-feed-lean"] }); // dashboard concern clears + bell
   }
 
   const { data, isLoading } = useQuery({

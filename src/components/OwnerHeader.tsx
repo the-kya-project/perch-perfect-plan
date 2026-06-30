@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Bell, Settings, HelpCircle } from "lucide-react";
-import { fetchScanFeed, getNotifSeenAt } from "@/lib/notificationsFeed";
+import { fetchScanConcern, getNotifSeenAt } from "@/lib/notificationsFeed";
 import { replayOwnerOnboarding } from "@/components/OwnerOnboarding";
 
 // THE single shared top-right hero icon cluster — help (replay tour), bell
@@ -14,7 +14,8 @@ const HERO_ICON_BG = { background: "rgba(255,255,255,0.12)" } as const;
 
 export function OwnerHeaderIcons() {
   const navigate = useNavigate();
-  const { data: scanFeed = [] } = useQuery({ queryKey: ["scan-feed"], queryFn: fetchScanFeed });
+  // Bell count uses the lean feed (shared with the dashboard), not the full one.
+  const { data: scanFeed = [] } = useQuery({ queryKey: ["scan-feed-lean"], queryFn: fetchScanConcern });
   const seenAt = getNotifSeenAt();
   const unread = (scanFeed as any[]).filter((n) => new Date(n.created_at).getTime() > seenAt).length;
 

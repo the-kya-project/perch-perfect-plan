@@ -22,7 +22,7 @@ import { toast } from "sonner";
 import { ASPCA_POISON_CONTROL, isPhoneField, phoneWarning, formatPhoneOnBlur } from "@/lib/emergency";
 import { isAddressField } from "@/lib/address";
 import { AddressInput } from "@/components/AddressInput";
-import { fetchScanFeed, getNotifSeenAt } from "@/lib/notificationsFeed";
+import { fetchScanConcern, getNotifSeenAt } from "@/lib/notificationsFeed";
 import { InkHero, IconTile, StatusPill, SectionHead, CtaLink, type HeroCta } from "@/components/system";
 import { CaregiverHome, useActiveCaregiver } from "@/components/CaregiverHome";
 import { BirdRecordBody } from "./birds/$birdId.index";
@@ -70,9 +70,10 @@ function Dashboard() {
   const allWeights = useMemo(() => (home?.weights ?? []) as WeightEntry[], [home]);
   const sits = useMemo(() => (home?.sits ?? []) as any[], [home]);
 
-  // Bell badge — unread scans. Shared ["scan-feed"] query (also powers the
-  // header bell), so this is a single deduped request, not a dashboard-only one.
-  const { data: scanFeed = [] } = useQuery({ queryKey: ["scan-feed"], queryFn: fetchScanFeed });
+  // Bell badge + per-bird concern derivation. Uses the LEAN feed (no bird join,
+  // no notes) under ["scan-feed-lean"], shared/deduped with the header bell. The
+  // scans screen keeps the full ["scan-feed"] (it renders bird name/photo).
+  const { data: scanFeed = [] } = useQuery({ queryKey: ["scan-feed-lean"], queryFn: fetchScanConcern });
   const [notifSeenAt] = useState(() => getNotifSeenAt());
   const unreadNotifs = scanFeed.filter((n) => new Date(n.created_at).getTime() > notifSeenAt).length;
 

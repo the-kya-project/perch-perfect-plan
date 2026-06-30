@@ -103,6 +103,8 @@ function OwnerScan() {
       // Show up immediately in the Scans tab, the record-home recent feed, and the weight timeline.
       ["scan-feed", "bird-checkins", "weight-entries", "bird-weights"].forEach((k) =>
         qc.invalidateQueries({ queryKey: k === "scan-feed" ? ["scan-feed"] : [k, birdId] }));
+      qc.invalidateQueries({ queryKey: ["scan-feed-lean"] }); // dashboard concern + bell
+      qc.invalidateQueries({ queryKey: ["dashboard-home"] }); // Today concern rows
     } catch (e: any) {
       toast.error(e?.message ?? "Couldn't log the scan.");
     } finally {

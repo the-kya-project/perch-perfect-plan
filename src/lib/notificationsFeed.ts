@@ -25,20 +25,26 @@ export type ScanFeedItem = {
   sit_id?: string | null; // the sit this scan was run under (sitter/caregiver scans)
   triage_status: "red" | "yellow" | "green" | string;
   triage_reasons: string | null;
-  notes: string | null;
+  notes?: string | null; // not fetched by the feed anymore (rendered nowhere)
   created_at: string;
   source?: string | null; // 'owner' | 'sitter' | 'household'
   run_by?: string | null; // user id for owner/household scans
   runner_name?: string | null; // resolved display name for household scans
   resolved_at?: string | null; // set when a flagged scan is explicitly resolved
-  bird?: { name: string | null; photo_url: string | null; photo_position: string | null } | null;
+  bird?: { name: string | null; photo_url: string | null; photo_position: string | null } | null; // full feed only
   sit?: { sitter_name: string | null; sitter_email: string | null } | null;
 };
 
-export async function fetchScanFeed(): Promise<ScanFeedItem[]> {
-  // Cast: daily_logs.source/run_by land in the generated types after the
-  // owner-scans migration. Fall back without them if not present.
-  const base = "id, bird_id, sit_id, triage_status, triage_reasons, notes, created_at, bird:birds(name, photo_url, photo_position), sit:sits(sitter_name, sitter_email)";
+// Columns the dashboard concern logic + the bell badge need. NO bird join (the
+// dashboard reads bird names from its own flock list, not the feed) and no
+// `notes` (rendered nowhere) — keep the sit join, since concern's "run by" label
+// reads sit.sitter_name/email (see deriveConcernByBird).
+const CONCERN_SELECT =
+  "id, bird_id, sit_id, triage_status, triage_reasons, created_at, sit:sits(sitter_name, sitter_email)";
+// The scans screen also renders each bird (name + photo), so it adds the bird join.
+const FULL_SELECT = `${CONCERN_SELECT}, bird:birds(name, photo_url, photo_position)`;
+
+async function runFeed(baseSelect: string): Promise<ScanFeedItem[]> {
   // 200 (not 40): the dashboard derives each bird's concern status from this
   // same feed, so an older still-unresolved flagged scan must stay in the window
   // even after many newer scans on other birds — otherwise a real concern reads
@@ -49,12 +55,12 @@ export async function fetchScanFeed(): Promise<ScanFeedItem[]> {
   // 3-tier fallback so a missing column never breaks the feed: full (with the
   // new resolved_at), then source/run_by only (pre-resolved_at migration), then
   // the bare base.
-  const full = await run(`${base}, source, run_by, resolved_at`);
+  const full = await run(`${baseSelect}, source, run_by, resolved_at`);
   let data = full.data;
   if (full.error) {
-    const mid = await run(`${base}, source, run_by`);
+    const mid = await run(`${baseSelect}, source, run_by`);
     data = mid.data;
-    if (mid.error) ({ data } = await run(base));
+    if (mid.error) ({ data } = await run(baseSelect));
   }
   const items = (data ?? []) as unknown as ScanFeedItem[];
 
@@ -66,6 +72,18 @@ export async function fetchScanFeed(): Promise<ScanFeedItem[]> {
     for (const n of items) if (n.source === "household" && n.run_by) n.runner_name = byId.get(n.run_by) || null;
   }
   return items;
+}
+
+/** Full feed (with the bird join) — for the scans screen, which renders birds. */
+export function fetchScanFeed(): Promise<ScanFeedItem[]> {
+  return runFeed(FULL_SELECT);
+}
+
+/** Lean feed (no bird join, no notes) — for the dashboard concern derivation +
+ *  the bell unread count. Lighter query (one fewer join → fewer per-row RLS
+ *  checks) and payload; same rows/order. */
+export function fetchScanConcern(): Promise<ScanFeedItem[]> {
+  return runFeed(CONCERN_SELECT);
 }
 
 /** Who ran a scan: "You" for owner scans, the member's name for household, else the sitter. */
