@@ -117,6 +117,11 @@ export function ActiveSitCard({ sit, birds, allBirdsCount, caregiverName, leadNa
   const dayOf = -daysUntil(sit.start_date) + 1;
   const total = durationDays(sit.start_date, sit.end_date);
   const meta = household ? "Caregiver during trip" : `Sitter · day ${dayOf} of ${total}`;
+  // Surface the per-trip link on an ACTIVE sit so the owner can re-send it if the
+  // sitter loses it. Only external link-covered sits have a link, and only while
+  // it's live (not revoked); the token persists for the trip, so an active sit's
+  // link is valid. Household sits have no external link. Reuses the existing token.
+  const showCopyLink = !household && !sit.revoked && !!sit.invite_token;
 
   return (
     <div className="rounded-[20px] bg-[var(--ink)] p-4 text-white shadow-[0_12px_28px_-14px_rgba(20,40,30,0.6)]">
@@ -166,11 +171,18 @@ export function ActiveSitCard({ sit, birds, allBirdsCount, caregiverName, leadNa
         </Link>
       </div>
 
-      {allBirds && (
-        <div className="mt-2.5 text-center">
-          <button type="button" onClick={() => setEditing(true)} className="inline-flex items-center gap-1 text-[13px] font-[500] text-white/60 active:opacity-80">
-            <Pencil className="size-3.5" /> Edit sit
-          </button>
+      {(showCopyLink || allBirds) && (
+        <div className="mt-2.5 flex items-center justify-center gap-4">
+          {showCopyLink && (
+            <button type="button" onClick={() => copySitterLink(sit, birds)} className="inline-flex items-center gap-1 text-[13px] font-[500] text-white/60 active:opacity-80">
+              <Link2 className="size-3.5" /> Copy link
+            </button>
+          )}
+          {allBirds && (
+            <button type="button" onClick={() => setEditing(true)} className="inline-flex items-center gap-1 text-[13px] font-[500] text-white/60 active:opacity-80">
+              <Pencil className="size-3.5" /> Edit sit
+            </button>
+          )}
         </div>
       )}
     </div>
