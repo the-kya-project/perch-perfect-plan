@@ -20,17 +20,18 @@ import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 
 
 // The care-plan editor is reached via the new overview front door (/plan).
-// Basics moved to the bird main page; clips/sits/logs are not care-plan content
-// and are no longer in the visible tab strip. The route still ACCEPTS those tab
-// values in the search param so existing notification deep-links keep working,
-// and the strip filters to the six care-plan sections via VISIBLE_TABS.
+// Basics moved to the bird main page; sits/logs are not care-plan content and
+// are not in the visible tab strip. The route still ACCEPTS those tab values in
+// the search param so existing notification deep-links keep working.
 const TAB_IDS = ["basics", "routine", "food", "behavior", "home", "health", "clips", "emergency", "sits", "logs"] as const;
 type Tab = (typeof TAB_IDS)[number];
-// Visible care-plan section tabs. basics/clips/sits/logs are still accepted via
-// `?tab=…` for back-compat (DeleteBirdCard lives under basics; notifications
-// deep-link to logs; sit-management lives under sits), but they don't appear in
-// the strip.
-const VISIBLE_TABS: Tab[] = ["food", "routine", "behavior", "home", "health", "emergency"];
+// Visible care-plan section tabs. "clips" is here so owners/editors can add or
+// replace watch clips ANY time (not only in the setup wizard) — it renders the
+// same OwnerTipsClipsStep + Cloudflare upload, gated by edit_care_plans like the
+// other care sections. basics/sits/logs stay accessible only via `?tab=…`
+// back-compat (DeleteBirdCard under basics; notifications deep-link to logs;
+// sit-management under sits), not shown in the strip.
+const VISIBLE_TABS: Tab[] = ["food", "routine", "behavior", "home", "health", "clips", "emergency"];
 
 // Map each editor tab to its matching guided-setup SECTION (by SETUP_STEPS key),
 // then derive the step NUMBER from the SETUP_STEPS order. Deriving by identity
