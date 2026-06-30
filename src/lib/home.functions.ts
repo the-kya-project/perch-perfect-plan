@@ -175,3 +175,38 @@ export const resolveHouseholdNames = createServerFn({ method: "GET" })
     }
     return out;
   });
+
+// Resolve owner display names for the per-bird member context banner. A member
+// can't read other users' profiles (RLS self-only), so this admin-client lookup
+// is gated to owners the caller actually shares a household with (bird_members).
+export const resolveOwnerNames = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { ownerIds: string[] }) =>
+    z.object({ ownerIds: z.array(z.string().uuid()).max(50) }).parse(d),
+  )
+  .handler(async ({ data, context }): Promise<Record<string, string>> => {
+    const sb = await getAdmin();
+    const userId = (context as any).userId as string;
+    const want = Array.from(new Set((data.ownerIds ?? []).filter(Boolean))).filter((id) => id !== userId);
+    if (!want.length) return {};
+
+    // Which of the requested owners does the caller share a household with?
+    const { data: ownerBirds } = await sb.from("birds").select("id, owner_id").in("owner_id", want);
+    const birdToOwner = new Map((ownerBirds ?? []).map((b: any) => [b.id, b.owner_id as string]));
+    const birdIds = [...birdToOwner.keys()];
+    const allowed = new Set<string>();
+    if (birdIds.length) {
+      const { data: mem } = await sb.from("bird_members").select("bird_id").eq("user_id", userId).in("bird_id", birdIds);
+      for (const m of (mem ?? []) as any[]) { const o = birdToOwner.get(m.bird_id); if (o) allowed.add(o); }
+    }
+    if (!allowed.size) return {};
+
+    const { data: profs } = await sb.from("profiles").select("id, display_name, email").in("id", [...allowed]);
+    const out: Record<string, string> = {};
+    for (const p of (profs ?? []) as any[]) {
+      const name = (p.display_name ?? "").toString().trim();
+      const email = (p.email ?? "").toString().trim();
+      out[p.id] = name || (email ? email.split("@")[0] : "An owner");
+    }
+    return out;
+  });

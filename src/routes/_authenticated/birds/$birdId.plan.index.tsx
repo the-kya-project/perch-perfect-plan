@@ -28,6 +28,12 @@ export const Route = createFileRoute("/_authenticated/birds/$birdId/plan/")({
 
 type SectionKey = "food" | "day" | "personality" | "environment" | "health" | "emergency";
 
+// Maps an overview row to the read-only care-plan's anchor id so a member who
+// can't edit deep-links straight to that section (?section=) instead of the top.
+const READ_SECTION: Record<SectionKey, "food" | "behavior" | "home" | "health" | "routine" | "emergency"> = {
+  food: "food", personality: "behavior", environment: "home", health: "health", day: "routine", emergency: "emergency",
+};
+
 const SECTIONS: { key: SectionKey; tab: "food" | "routine" | "behavior" | "home" | "health" | "emergency"; label: string; icon: React.ReactNode; needsInfoHint: string; readyHint: string }[] = [
   { key: "food",        tab: "food",      label: "Food",      icon: <Utensils className="size-5" />,     needsInfoHint: "Diet and food instructions", readyHint: "Diet and food instructions" },
   { key: "personality", tab: "behavior",  label: "Behavior",  icon: <Smile className="size-5" />,        needsInfoHint: "Handling, likes, triggers",  readyHint: "Handling, likes, triggers" },
@@ -156,7 +162,7 @@ function CarePlanOverview() {
               // read-only care-plan view (RLS-enforced).
               const onRow = canEdit
                 ? () => navigate({ to: "/birds/$birdId/plan/editor", params: { birdId }, search: { tab: s.tab } })
-                : () => navigate({ to: "/birds/$birdId/care-plan", params: { birdId } });
+                : () => navigate({ to: "/birds/$birdId/care-plan", params: { birdId }, search: { section: READ_SECTION[s.key] } });
               return (
                 <RecordRow
                   key={s.key}
