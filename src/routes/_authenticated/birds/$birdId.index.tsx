@@ -255,6 +255,23 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
 
   return (
     <>
+      {/* Fresh bird → guide straight into the care plan. Sits at the very top of
+          the record (above the empty weight card) so creating a bird leads to an
+          obvious next step instead of a hunt. Prominent but skippable. */}
+      {bird && !bird.setup_complete && canEditPlan && (
+        <section className="rounded-[18px] bg-white p-4 ring-1 ring-[var(--line2)]" style={{ boxShadow: "0 6px 14px -8px rgba(40,50,40,.08)" }}>
+          <p className="t-section">Set up {name}'s care plan</p>
+          <p className="t-body mt-1 text-[var(--ink2)]">
+            Build {name}'s care plan so sitters and household members know exactly what to do. You can skip and set it up later.
+          </p>
+          <div className="mt-3">
+            <PrimaryButton tone="lime" icon={<ClipboardList className="size-4" />} onPress={() => navigate({ to: "/birds/$birdId/setup", params: { birdId }, search: { step: 1 } })}>
+              Create care plan
+            </PrimaryButton>
+          </div>
+        </section>
+      )}
+
       {/* One-time "adjust crop" nudge for photos that have no focal point yet. */}
       {showFocalNudge && (
         <div className="flex items-center gap-3 rounded-[14px] p-3" style={{ background: "var(--amber-fill)", border: "1px solid var(--amber-line)" }}>
@@ -284,18 +301,6 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
           ) : undefined
         }
       />
-
-      {/* Create care plan (fresh birds) — needs edit_care_plans */}
-      {bird && !bird.setup_complete && canEditPlan && (
-        <div className="space-y-3">
-          <p className="t-body text-[var(--ink2)]">
-            Build {name}'s care plan so anyone caring for {name} — sitters, household — knows what to do.
-          </p>
-          <PrimaryButton tone="lime" icon={<ClipboardList className="size-4" />} onPress={() => navigate({ to: "/birds/$birdId/setup", params: { birdId }, search: { step: 1 } })}>
-            Create care plan
-          </PrimaryButton>
-        </div>
-      )}
 
       {/* Welcome to the flock — foster-fail, near the top (not destructive, so
           it's kept out of the More group). */}
