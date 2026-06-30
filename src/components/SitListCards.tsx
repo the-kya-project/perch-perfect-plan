@@ -4,7 +4,7 @@
 // in the bird plan editor; this file is only the Sits tab list.)
 import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Activity, Eye, Link2, Home, ChevronDown, Pencil } from "lucide-react";
+import { Activity, Eye, Link2, Home, ChevronDown, Pencil, Star } from "lucide-react";
 import { compactRange, monthDay, durationDays, daysUntil } from "@/lib/dates";
 import { copySitterLink } from "@/lib/sitLink";
 import { SitForm } from "@/components/SitForm";
@@ -33,6 +33,43 @@ function InChargeEyebrow({ name, onDark }: { name: string; onDark?: boolean }) {
       <span className="t-eyebrow" style={{ color: onDark ? "var(--teal)" : "var(--teal-on-cream)" }}>In charge · </span>
       <span className="t-eyebrow" style={{ color: onDark ? "rgba(255,255,255,0.85)" : "var(--ink)" }}>{name}</span>
     </p>
+  );
+}
+
+/** "Sarah" -> "Sarah's", "Chris" -> "Chris'". */
+function possessive(name: string): string {
+  const n = name.trim();
+  return /s$/i.test(n) ? `${n}'` : `${n}'s`;
+}
+
+export type SitContextTag = { kind: "own" | "household"; ownerName?: string | null };
+
+// Whose-birds context tag — mirrors the flock grouping / MemberContextBanner
+// language and colors: "Your birds" (moss) vs "[Owner]'s household" (house-blue).
+// The page only passes this when the user has sits in BOTH contexts.
+function ContextTag({ tag, onDark }: { tag: SitContextTag; onDark?: boolean }) {
+  if (tag.kind === "own") {
+    return (
+      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-[500] ${onDark ? "bg-white/12 text-[var(--lime)]" : "bg-[var(--pale2)] text-[var(--moss)]"}`}>
+        Your birds
+      </span>
+    );
+  }
+  const label = tag.ownerName ? `${possessive(tag.ownerName)} household` : "A household you help with";
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-[500] ${onDark ? "bg-white/12 text-[#bcd9e6]" : "bg-[#dbe9ef] text-[var(--house)]"}`}>
+      <Home className="size-3" /> {label}
+    </span>
+  );
+}
+
+// "You're in charge" — the strongest marker on the card; lime action treatment.
+// Shown when the signed-in user is the sit's lead (lead_user_id === me).
+function IAmLeadPill() {
+  return (
+    <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-[var(--lime)] px-2 py-0.5 text-[11.5px] font-[600] text-[var(--ink)]">
+      <Star className="size-3" /> You're in charge
+    </span>
   );
 }
 
@@ -108,7 +145,7 @@ function BirdChips({ birds, allBirdsCount, onDark }: { birds: SitBird[]; allBird
 // ---------------------------------------------------------------------------
 // ACTIVE — full ink card, the focal element.
 // ---------------------------------------------------------------------------
-export function ActiveSitCard({ sit, birds, allBirdsCount, caregiverName, leadName, allBirds, onChange }: { sit: ListSit; birds: SitBird[]; allBirdsCount: number; caregiverName: string; leadName?: string | null; allBirds?: any[]; onChange?: () => void }) {
+export function ActiveSitCard({ sit, birds, allBirdsCount, caregiverName, leadName, iAmLead, contextTag, allBirds, onChange }: { sit: ListSit; birds: SitBird[]; allBirdsCount: number; caregiverName: string; leadName?: string | null; iAmLead?: boolean; contextTag?: SitContextTag; allBirds?: any[]; onChange?: () => void }) {
   const [editing, setEditing] = useState(false);
   if (editing && allBirds) {
     return <SitForm birds={allBirds} editSit={sit as any} onSaved={onChange ?? (() => {})} onCancel={() => setEditing(false)} />;
@@ -128,12 +165,13 @@ export function ActiveSitCard({ sit, birds, allBirdsCount, caregiverName, leadNa
       <div className="flex items-center gap-3">
         <CaregiverAvatar name={caregiverName} household={household} />
         <div className="min-w-0 flex-1">
+          {contextTag && <div className="mb-1"><ContextTag tag={contextTag} onDark /></div>}
           <div className="flex items-center gap-2">
             <p className="truncate text-[15px] font-[500] text-white">{caregiverName}</p>
             {household && <HouseholdTag />}
           </div>
           <p className="mt-0.5 text-[12.5px] text-white/65">{meta}</p>
-          {leadName && <InChargeEyebrow name={leadName} onDark />}
+          {iAmLead ? <IAmLeadPill /> : leadName ? <InChargeEyebrow name={leadName} onDark /> : null}
         </div>
         <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[var(--lime)] px-2.5 py-1 text-[11.5px] font-[500] text-[var(--ink)]">
           <span className="size-1.5 rounded-full bg-[var(--ink)]" /> Active
@@ -193,8 +231,8 @@ export function ActiveSitCard({ sit, birds, allBirdsCount, caregiverName, leadNa
 // UPCOMING — white card. First one is expanded; the rest collapse to a header.
 // ---------------------------------------------------------------------------
 export function UpcomingSitCard({
-  sit, birds, allBirdsCount, caregiverName, leadName, collapsible = false, allBirds, onChange,
-}: { sit: ListSit; birds: SitBird[]; allBirdsCount: number; caregiverName: string; leadName?: string | null; collapsible?: boolean; allBirds?: any[]; onChange?: () => void }) {
+  sit, birds, allBirdsCount, caregiverName, leadName, iAmLead, contextTag, collapsible = false, allBirds, onChange,
+}: { sit: ListSit; birds: SitBird[]; allBirdsCount: number; caregiverName: string; leadName?: string | null; iAmLead?: boolean; contextTag?: SitContextTag; collapsible?: boolean; allBirds?: any[]; onChange?: () => void }) {
   const household = !!sit.caregiver_user_id;
   const [open, setOpen] = useState(!collapsible);
   const [editing, setEditing] = useState(false);
@@ -212,12 +250,13 @@ export function UpcomingSitCard({
       >
         <CaregiverAvatar name={caregiverName} household={household} />
         <div className="min-w-0 flex-1">
+          {contextTag && <div className="mb-1"><ContextTag tag={contextTag} /></div>}
           <div className="flex items-center gap-2">
             <p className="truncate text-[15px] font-[500] text-[var(--ink)]">{caregiverName}</p>
             {household && <HouseholdTag />}
           </div>
           <p className="mt-0.5 text-[12.5px] text-[var(--mute)]">{household ? "Caregiver during trip" : "Sitter"}</p>
-          {leadName && <InChargeEyebrow name={leadName} />}
+          {iAmLead ? <IAmLeadPill /> : leadName ? <InChargeEyebrow name={leadName} /> : null}
         </div>
         <span className="inline-flex shrink-0 items-center rounded-full border border-[var(--line)] bg-[var(--cream2)] px-2.5 py-1 text-[11.5px] font-[500] text-[var(--ink)]">
           {compactRange(sit.start_date, sit.end_date)}

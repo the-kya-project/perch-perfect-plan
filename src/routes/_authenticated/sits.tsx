@@ -8,7 +8,7 @@ import { OwnerHeaderIcons } from "@/components/OwnerHeader";
 import { SitForm } from "@/components/SitForm";
 import { ActiveSitCard, UpcomingSitCard, type SitBird, type ListSit } from "@/components/SitListCards";
 import { useServerFn } from "@tanstack/react-start";
-import { resolveHouseholdNames } from "@/lib/home.functions";
+import { resolveHouseholdNames, resolveOwnerNames } from "@/lib/home.functions";
 import { memberDisplayName, firstName } from "@/lib/memberDisplay";
 import { InkHero, SectionHead, Card, IconTile } from "@/components/system";
 import { useBirdPhotos } from "@/lib/useBirdPhotos";
@@ -125,6 +125,29 @@ function SitsPage() {
   const caregiverName = (s: any): string =>
     s.caregiver_user_id ? displayFor(s.caregiver_user_id) : (s.sitter_name?.trim() || "Your sitter");
 
+  // Context markers (mirrors the flock grouping): whose-birds tag shows ONLY when
+  // the user has sits in BOTH their own birds AND a household they help with. A
+  // sit is single-owner (sit.owner_id), so we label by that. Owner display names
+  // for helped-with households come via resolveOwnerNames (RLS-gated server fn);
+  // resolveHouseholdNames only resolves the user's OWN household members.
+  const bothContexts =
+    !!myId && allSits.some((s) => s.owner_id === myId) && allSits.some((s) => s.owner_id && s.owner_id !== myId);
+  const sitOwnerIds = [...new Set(allSits.map((s) => s.owner_id).filter((o) => !!o && o !== myId) as string[])];
+  const resolveOwners = useServerFn(resolveOwnerNames);
+  const { data: ownerNames = {} } = useQuery({
+    queryKey: ["sit-owner-names", sitOwnerIds.slice().sort().join(",")],
+    enabled: sitOwnerIds.length > 0,
+    staleTime: 5 * 60_000,
+    queryFn: () => resolveOwners({ data: { ownerIds: sitOwnerIds } }),
+  });
+  const contextTagFor = (s: any): { kind: "own" | "household"; ownerName?: string | null } | undefined =>
+    !bothContexts
+      ? undefined
+      : s.owner_id === myId
+        ? { kind: "own" }
+        : { kind: "household", ownerName: (ownerNames as Record<string, string>)[s.owner_id] ?? null };
+  const iAmLead = (s: any): boolean => !!myId && s.lead_user_id === myId;
+
   // Bird photos are stored as bucket PATHS; resolve them to signed URLs (small
   // transform — the chips are tiny dots) so the chip <img> actually loads.
   const resolvePhoto = useBirdPhotos(birds.map((b: any) => b.photo_url), 96);
@@ -220,6 +243,8 @@ function SitsPage() {
                       allBirdsCount={birds.length}
                       caregiverName={caregiverName(s)}
                       leadName={hasHousehold ? leadFirstName(s) : null}
+                      iAmLead={iAmLead(s)}
+                      contextTag={contextTagFor(s)}
                       allBirds={s.owner_id === myId ? ownedBirds : undefined}
                       onChange={refreshSits}
                     />
@@ -239,6 +264,8 @@ function SitsPage() {
                           allBirdsCount={birds.length}
                           caregiverName={caregiverName(s)}
                           leadName={hasHousehold ? leadFirstName(s) : null}
+                          iAmLead={iAmLead(s)}
+                          contextTag={contextTagFor(s)}
                           allBirds={s.owner_id === myId ? ownedBirds : undefined}
                           onChange={refreshSits}
                           // First upcoming is always expanded; the rest collapse
