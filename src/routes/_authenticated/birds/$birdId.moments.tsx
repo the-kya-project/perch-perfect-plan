@@ -158,8 +158,8 @@ function MomentsFacet() {
       <div className="mx-auto max-w-md">
         <InkHero
           eyebrow="Moments"
-          headline="Days worth marking."
-          body="Worth coming back to."
+          headline={`${name} being ${name}.`}
+          body="The highlight reel."
           backIcon={<ArrowLeft className="size-5" />}
           onBack={() => navigate({ to: "/birds/$birdId", params: { birdId } })}
           trailingIcons={busy ? <Loader2 className="size-4 animate-spin text-white/80" /> : undefined}

@@ -125,6 +125,7 @@ function ScanPage() {
           </button>
         </div>
       </header>
+      <p className="mx-auto max-w-md px-5 pt-4 text-sm leading-relaxed text-[#5f5e5a]">A quick once-over to make sure {ctx.bird.name}'s doing well.</p>
       <ScanForm key={ctx.activeBirdId} submitting={m.isPending} onSubmit={(p) => m.mutate(p)} />
     </div>
   );

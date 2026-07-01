@@ -47,6 +47,15 @@ function JournalFacet() {
   const [filter, setFilter] = useState<Filter>("all");
   const [editing, setEditing] = useState<Entry | null | "new">(null);
 
+  const { data: bird } = useQuery({
+    queryKey: ["bird-name", birdId],
+    queryFn: async () => {
+      const { data } = await supabase.from("birds").select("name").eq("id", birdId).maybeSingle();
+      return data as { name: string } | null;
+    },
+  });
+  const name = bird?.name ?? "this bird";
+
   const { data: entries } = useQuery({
     queryKey: ["journal-entries", birdId],
     refetchOnWindowFocus: true,
@@ -81,8 +90,8 @@ function JournalFacet() {
           backIcon={<ArrowLeft className="size-5" />}
           onBack={() => navigate({ to: "/birds/$birdId", params: { birdId } })}
           eyebrow="Journal"
-          headline="What's been happening."
-          body="Small things noted now become signals later."
+          headline={`What ${name}'s been up to.`}
+          body="The little things you notice now can matter later."
           cta={canHealth ? { label: "Add an entry", tone: "lime", icon: <Plus className="size-4" />, onPress: () => setEditing("new") } : undefined}
         />
 

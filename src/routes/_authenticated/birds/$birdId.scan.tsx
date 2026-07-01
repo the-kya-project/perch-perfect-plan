@@ -119,7 +119,7 @@ function OwnerScan() {
       {result ? (
         <main className="mx-auto max-w-md space-y-4 px-5 py-6">
           <div className={`rounded-2xl p-6 text-white ${result.status === "red" ? "bg-warn-red" : result.status === "yellow" ? "bg-warn-amber" : "bg-warn-green"}`}>
-            <p className="text-[11px] font-medium uppercase tracking-widest opacity-80">{result.status === "red" ? "Call your vet now" : result.status === "yellow" ? "Keep a close eye" : "All clear logged"}</p>
+            <p className="text-[11px] font-medium uppercase tracking-widest opacity-80">{result.status === "red" ? "Call your vet now" : result.status === "yellow" ? "Keep a close eye" : "All good today"}</p>
             <h2 className="mt-1 text-2xl font-medium leading-tight">{result.message}</h2>
           </div>
           {result.reasons.length > 0 && (
@@ -138,6 +138,7 @@ function OwnerScan() {
       ) : (
         <>
         <div className="mx-auto max-w-md px-5 pt-4"><MemberContextBanner birdId={birdId} /></div>
+        <p className="mx-auto max-w-md px-5 pt-2 text-sm leading-relaxed text-[#5f5e5a]">A quick once-over to make sure {name}'s feeling like themselves.</p>
         <ScanForm submitting={submitting} submitLabel="Log health check" onSubmit={onSubmit} />
         </>
       )}

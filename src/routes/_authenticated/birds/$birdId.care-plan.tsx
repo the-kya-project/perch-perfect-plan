@@ -72,7 +72,7 @@ function HouseholdCarePlan() {
           footer={
             !canEdit ? (
               <p className="px-1 text-center text-[11px] text-[var(--mute)]">
-                Read-only. Only {name}'s owner can edit the care plan.
+                Read-only. Only {name}'s owner can make changes.
               </p>
             ) : undefined
           }

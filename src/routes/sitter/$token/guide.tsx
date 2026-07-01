@@ -154,7 +154,7 @@ function Guide() {
             <h1 className="text-lg font-medium text-white">Parrots 101</h1>
           </div>
           <p className="mt-2 text-sm leading-relaxed text-[#cdeab0]">
-            General parrot care basics — not specific to {bird.name}. For {poss} actual needs, follow {poss} care plan.
+            The basics of parrot care. For {bird.name}'s own needs, always follow {poss} care plan.
           </p>
         </div>
       </header>

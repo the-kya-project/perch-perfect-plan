@@ -113,8 +113,8 @@ function IdentityFacet() {
       <div className="mx-auto max-w-md">
         <InkHero
           eyebrow="Identity"
-          headline={identityHeadline(bird?.sex)}
-          body="The part of the record that never changes."
+          headline={`${name}, on paper.`}
+          body={`The details that make ${name} officially ${name}.`}
           backIcon={<ArrowLeft className="size-5" />}
           onBack={goBack}
           trailingIcons={

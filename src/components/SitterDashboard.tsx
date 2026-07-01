@@ -37,8 +37,8 @@ export function SitterDashboard({ token }: { token: string }) {
           <h1 className="text-2xl font-medium leading-tight text-[#1a3d2e]">Welcome</h1>
           <p className="mt-1.5 text-sm leading-relaxed text-[#5f5e5a]">
             {isLoading
-              ? "Loading the birds in your care…"
-              : `You're caring for ${allNames}. Tap any bird to see their day and check in on how they're doing.`}
+              ? "Getting the birds ready for you…"
+              : `You're looking after ${allNames}. Tap any bird to see their day and how they're doing.`}
           </p>
         </div>
         <button

@@ -403,7 +403,7 @@ function WelcomeCard({ bird, token }: { bird: any; token: string }) {
           </div>
         )}
         <div className="absolute inset-x-0 top-0 bg-gradient-to-b from-black/30 to-transparent px-4 pb-8 pt-3">
-          <p className="text-[10px] font-medium uppercase tracking-widest text-[#cdeab0]">Welcome — here's who you're caring for</p>
+          <p className="text-[10px] font-medium uppercase tracking-widest text-[#cdeab0]">Say hi to who you're caring for</p>
         </div>
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#1a3d2e] via-[#1a3d2e]/70 to-transparent px-5 pb-3 pt-12">
           <h1 className="text-[22px] font-medium leading-tight text-white">{bird.name}</h1>

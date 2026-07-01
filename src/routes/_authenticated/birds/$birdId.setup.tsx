@@ -389,10 +389,10 @@ function StepBody({
   // items from Food).
   if (step === 1) return <FoodWaterStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} registerFlush={registerFlush} registerValidate={registerValidate} />;
   if (step === 2) return <PersonalityStep birdId={birdId} birdName={birdName} registerFlush={registerFlush} />;
-  if (step === 3) return <EnvironmentStep birdId={birdId} registerFlush={registerFlush} />;
+  if (step === 3) return <EnvironmentStep birdId={birdId} birdName={birdName} registerFlush={registerFlush} />;
   if (step === 4) return <HealthBaselineStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} registerFlush={registerFlush} />;
-  if (step === 5) return <DayInLifeStep birdId={birdId} />;
-  if (step === 6) return <OwnerTipsClipsStep birdId={birdId} onBlockNext={onBlockNext} />;
+  if (step === 5) return <DayInLifeStep birdId={birdId} birdName={birdName} />;
+  if (step === 6) return <OwnerTipsClipsStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} />;
   if (step === 7) return <EmergencyStep birdId={birdId} onBlockNext={onBlockNext} registerFlush={registerFlush} />;
   if (step === 8) return <ReviewStep birdId={birdId} birdName={birdName} onJumpToStep={onJumpToStep} onFinish={onFinish} />;
 
@@ -564,7 +564,7 @@ export function BasicsStep({ birdId, onBlockNext, registerFlush }: { birdId: str
   );
 }
 
-export function DayInLifeStep({ birdId }: { birdId: string }) {
+export function DayInLifeStep({ birdId, birdName }: { birdId: string; birdName: string }) {
   const qc = useQueryClient();
 
   const { data: plan } = useQuery({
@@ -605,7 +605,7 @@ export function DayInLifeStep({ birdId }: { birdId: string }) {
 
   return (
     <div className="space-y-4">
-      <StepInstruction>Build the daily rhythm. Feedings, water, cleaning, and medication come in automatically from the Food and Health steps — add anything else here, like uncovering the cage or playtime. Auto-added items are tagged and edited in their own step.</StepInstruction>
+      <StepInstruction>Build {birdName}'s daily rhythm. Feedings, water, cleaning, and meds carry over automatically from the Food and Health steps. Add anything else here, like uncovering the cage or playtime. Auto-added items are tagged and live in their own step.</StepInstruction>
 
       {TIME_BLOCKS.map((block) => (
         <TimeBlockSection
@@ -1193,7 +1193,7 @@ export function FoodWaterStep({
 
   return (
     <div className="space-y-4">
-      <StepInstruction>What does {birdName} eat, and how much? Structured answers help the sitter know exactly what to serve and when.</StepInstruction>
+      <StepInstruction>What does {birdName} eat, and how much? Clear answers mean anyone caring for {birdName} knows exactly what to serve, and when.</StepInstruction>
 
       {/* Primary diet */}
       <Card title="Primary diet" hint="Choose all that apply.">
@@ -1480,7 +1480,7 @@ export function PersonalityStep({ birdId, birdName, registerFlush }: { birdId: s
 
   return (
     <div className="space-y-4">
-      <StepInstruction>How does {birdName} like to be treated? What should a sitter expect?</StepInstruction>
+      <StepInstruction>How does {birdName} like to be treated? Give whoever's helping a feel for {birdName}'s quirks.</StepInstruction>
 
       <Card title="Does the bird step up?">
         <select className="input" value={stepUp} onChange={(e) => setStepUp(e.target.value)}>
@@ -1559,7 +1559,7 @@ const HAZARD_OPTIONS = [
   "Candles or diffusers",
 ];
 
-export function EnvironmentStep({ birdId, registerFlush }: { birdId: string; registerFlush?: (fn: (() => Promise<void>) | null) => void }) {
+export function EnvironmentStep({ birdId, birdName, registerFlush }: { birdId: string; birdName: string; registerFlush?: (fn: (() => Promise<void>) | null) => void }) {
   const qc = useQueryClient();
   const { data: plan, isLoading } = useQuery({
     queryKey: ["plan-environment", birdId],
@@ -1637,7 +1637,7 @@ export function EnvironmentStep({ birdId, registerFlush }: { birdId: string; reg
 
   return (
     <div className="space-y-4">
-      <StepInstruction>What does a sitter need to know about your home?</StepInstruction>
+      <StepInstruction>What should someone know about your home to keep {birdName} safe?</StepInstruction>
 
       <Card title="Cage location & setup notes">
         <textarea
@@ -1874,7 +1874,7 @@ export function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlus
 
   return (
     <div className="space-y-4">
-      <StepInstruction>Help your sitter know what's normal for {birdName}, so they can spot what isn't.</StepInstruction>
+      <StepInstruction>Help anyone caring for {birdName} know what's normal, so they can spot what isn't.</StepInstruction>
 
       <Card title="Normal weight (grams)" hint="Optional. Updating the normal weight adds an entry to the weight log.">
         <div className="grid grid-cols-3 gap-2">
@@ -2152,7 +2152,7 @@ const CLIP_SLOTS: ClipSlot[] = [
   { key: "bedtime", column: "clip_bedtime_path", label: "Settling her for the night", hint: "Cover routine, lights, sounds." },
 ];
 
-export function OwnerTipsClipsStep({ birdId, onBlockNext }: { birdId: string; onBlockNext: (block: boolean) => void }) {
+export function OwnerTipsClipsStep({ birdId, birdName, onBlockNext }: { birdId: string; birdName: string; onBlockNext: (block: boolean) => void }) {
   const qc = useQueryClient();
   // Track which slots are mid-upload so Next is disabled until all settle.
   const busyRef = useRef<Set<string>>(new Set());
@@ -2186,7 +2186,7 @@ export function OwnerTipsClipsStep({ birdId, onBlockNext }: { birdId: string; on
 
   return (
     <div className="space-y-4">
-      <StepInstruction>Record a few short clips so your sitter can see how things are done. All clips are private — only your assigned sitter can play them.</StepInstruction>
+      <StepInstruction>Record a few short clips so anyone helping can see how it's done. Clips stay private, shared only with the people you trust with {birdName}.</StepInstruction>
 
       {CLIP_SLOTS.map((slot) => (
         <ClipSlotCard
@@ -2340,13 +2340,16 @@ function EmergencyStep({
   if (isLoading || !bird) return <div className="h-32 animate-pulse rounded-2xl bg-sage-100" />;
 
   return (
-    <EmergencyInfo
-      birdId={birdId}
-      birdName={bird.name ?? "this bird"}
-      contacts={contacts ?? null}
-      defaults={defaults ?? null}
-      onSaved={() => qc.invalidateQueries({ queryKey: ["emergency-contacts", birdId] })}
-    />
+    <>
+      <StepInstruction>The stuff you hope no one needs, but everyone should have.</StepInstruction>
+      <EmergencyInfo
+        birdId={birdId}
+        birdName={bird.name ?? "this bird"}
+        contacts={contacts ?? null}
+        defaults={defaults ?? null}
+        onSaved={() => qc.invalidateQueries({ queryKey: ["emergency-contacts", birdId] })}
+      />
+    </>
   );
 }
 
@@ -2460,7 +2463,7 @@ function ReviewStep({
 
   return (
     <div className="space-y-4">
-      <StepInstruction>Here's exactly what your sitter will see for {birdName}. Scroll inside the preview to explore the sitter's Today screen.</StepInstruction>
+      <StepInstruction>Here's exactly what everyone helping will see for {birdName}. Scroll inside the preview to explore the Today screen.</StepInstruction>
 
       {issues.length > 0 && (
         <section className="rounded-2xl bg-warn-amber/10 p-4 ring-1 ring-warn-amber/30">

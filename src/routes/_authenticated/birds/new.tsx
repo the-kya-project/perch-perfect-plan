@@ -144,7 +144,7 @@ function NewBird() {
           onBack={onCancel}
           eyebrow="New bird"
           headline={fosterParam ? "Take in a bird." : "Add a bird."}
-          body="Start with the basics — a sitter-ready care plan comes next."
+          body="Start with the basics. The full care plan comes next."
         />
 
         <main className="space-y-4 px-5 pt-5">

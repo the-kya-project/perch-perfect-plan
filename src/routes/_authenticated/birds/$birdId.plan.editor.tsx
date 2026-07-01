@@ -239,11 +239,11 @@ function BirdEditor() {
               Hand off). The editor's basics tab is just the basics fields now. */}
           {tab === "basics" && <BasicsStep birdId={birdId} onBlockNext={() => {}} />}
           {tab === "food" && <FoodWaterStep birdId={birdId} birdName={bird.name ?? "this bird"} onBlockNext={() => {}} />}
-          {tab === "home" && <EnvironmentStep birdId={birdId} />}
+          {tab === "home" && <EnvironmentStep birdId={birdId} birdName={bird.name ?? "this bird"} />}
           {tab === "health" && <HealthBaselineStep birdId={birdId} birdName={bird.name ?? "this bird"} onBlockNext={() => {}} />}
-          {tab === "routine" && <DayInLifeStep birdId={birdId} />}
+          {tab === "routine" && <DayInLifeStep birdId={birdId} birdName={bird.name ?? "this bird"} />}
           {tab === "behavior" && <PersonalityStep birdId={birdId} birdName={bird.name ?? "this bird"} />}
-          {tab === "clips" && <OwnerTipsClipsStep birdId={birdId} onBlockNext={() => {}} />}
+          {tab === "clips" && <OwnerTipsClipsStep birdId={birdId} birdName={bird.name ?? "this bird"} onBlockNext={() => {}} />}
           {tab === "emergency" && contacts && <EmergencyInfo birdId={birdId} birdName={bird.name ?? "this bird"} contacts={contacts} defaults={defaults ?? null} onSaved={() => qc.invalidateQueries({ queryKey: ["contacts", birdId] })} />}
           {tab === "sits" && <SitsPanel birdId={birdId} sits={sits} onChange={() => qc.invalidateQueries({ queryKey: ["sits", birdId] })} />}
           {tab === "logs" && <LogsPanel birdId={birdId} initialScan={scanParam} />}

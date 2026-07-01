@@ -132,7 +132,10 @@ function Emergency() {
       <header className="sticky top-0 border-b border-white/10 bg-[#1a3d2e]">
         <div className="mx-auto flex max-w-md items-center gap-3 px-5 py-3">
           <Link to="/sitter/$token" params={{ token }} className="rounded p-1 text-white/70"><ArrowLeft className="size-5" /></Link>
-          <h1 className="flex items-center gap-2 text-sm font-medium"><AlertTriangle className="size-4 text-warn-amber" /> Emergency mode</h1>
+          <div>
+            <h1 className="flex items-center gap-2 text-sm font-medium"><AlertTriangle className="size-4 text-warn-amber" /> Emergency mode</h1>
+            <p className="mt-0.5 text-xs leading-relaxed text-white/70">Take a breath. Here's exactly what to do.</p>
+          </div>
         </div>
       </header>
       <main className="mx-auto max-w-md space-y-4 px-5 py-5 pb-28">

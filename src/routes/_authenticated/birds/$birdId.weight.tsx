@@ -114,7 +114,7 @@ function WeightFacet() {
   });
 
   const heroHeadline = current ? `${current.grams} g.` : "Weight.";
-  const heroBody = current ? trendContext(trend, delta, win) : `No weights yet — pop ${name} on a scale and log the first one.`;
+  const heroBody = current ? trendContext(trend, delta, win) : `No weights yet. Pop ${name} on a scale and log the first one.`;
 
   return (
     <div className="min-h-screen bg-[var(--cream)] pb-nav">

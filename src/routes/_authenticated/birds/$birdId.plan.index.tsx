@@ -131,8 +131,12 @@ function CarePlanOverview() {
           backIcon={<ArrowLeft className="size-5" />}
           onBack={() => navigate({ to: "/birds/$birdId", params: { birdId } })}
           eyebrow="Care plan"
-          headline="Everything a caregiver needs."
-          body="What you've taught yourself about how they're cared for."
+          headline={`Everything that makes ${name}, ${name}.`}
+          body={
+            isOwner
+              ? "All the little things you know by heart, written down."
+              : `All the little things ${name}'s owner knows by heart, so you can care for ${name} just right.`
+          }
           cta={
             isOwner
               ? {
@@ -196,8 +200,8 @@ function CarePlanOverview() {
 
           <p className="t-body px-1 text-[var(--mute)]">
             {isOwner
-              ? `This is what a caregiver sees. Sitters get a per-trip link from the Sits tab; household members can view it any time.`
-              : `Only ${name}'s owner can edit the care plan. You can view it and log weights, journal entries, and health checks.`}
+              ? `This is what everyone helping with ${name} sees. Sitters get a per-trip link from the Sits tab; household members can view it any time.`
+              : `Only ${name}'s owner can make changes. You can view the plan and log weights, journal entries, and health checks.`}
           </p>
         </main>
       </div>

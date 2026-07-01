@@ -22,8 +22,8 @@ function CareSheet() {
         <div className="mx-auto flex max-w-md items-center gap-3 px-5 py-3">
           <Link to="/sitter/$token" params={{ token }} search={{ birdId: ctx.activeBirdId }} className="rounded p-1 text-white/90"><ArrowLeft className="size-5" /></Link>
           <div>
-            <h1 className="text-sm font-medium text-white">{bird.name}'s care sheet</h1>
-            <p className="text-[10px] uppercase tracking-wider text-[#cdeab0]">Owner-entered reference</p>
+            <h1 className="text-sm font-medium text-white">{bird.name}'s care sheet.</h1>
+            <p className="text-[10px] uppercase tracking-wider text-[#cdeab0]">Everything the owner wants you to know.</p>
           </div>
         </div>
       </header>
