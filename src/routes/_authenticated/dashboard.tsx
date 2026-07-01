@@ -102,9 +102,12 @@ function Dashboard() {
     enabled: birdIds.length > 0,
     refetchOnMount: "always",
     queryFn: async () => {
+      // Newest-first + capped: the pills / stale detection / Today only use the
+      // most recent weights per bird, so the cap trims old history we never read.
+      // 300 comfortably covers recent weights across a realistic flock (was 600).
       const { data } = await supabase
         .from("weight_entries").select("bird_id, grams, measured_at")
-        .in("bird_id", birdIds).order("measured_at", { ascending: false }).limit(600);
+        .in("bird_id", birdIds).order("measured_at", { ascending: false }).limit(300);
       return (data ?? []) as WeightEntry[];
     },
   });

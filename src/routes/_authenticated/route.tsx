@@ -1,5 +1,6 @@
 import { createFileRoute, Outlet, redirect, useLocation } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { applyOAuthAttribution } from "@/lib/attribution";
 import { PullToRefresh } from "@/components/PullToRefresh";
@@ -18,8 +19,24 @@ export const Route = createFileRoute("/_authenticated")({
     }
     return { user: data.session.user };
   },
+  // With ssr:false, the session check (and any redirect) is resolved on the
+  // client. The server renders THIS pending component for the boundary, and the
+  // client renders the same thing during hydration before beforeLoad resolves —
+  // so server and client produce identical initial output (no hydration
+  // mismatch / React #418, which otherwise flashes the root errorComponent —
+  // "This page didn't load" — for ~1s on every navigation). It must be
+  // deterministic: no window/Date/auth reads.
+  pendingComponent: AuthPending,
   component: AuthenticatedLayout,
 });
+
+function AuthPending() {
+  return (
+    <div className="grid min-h-screen place-items-center bg-[var(--cream)]" aria-hidden>
+      <Loader2 className="size-5 animate-spin text-[var(--moss)]" />
+    </div>
+  );
+}
 
 function AuthenticatedLayout() {
   // OAuth signups can't carry attribution metadata through the provider
