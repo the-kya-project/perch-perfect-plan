@@ -145,7 +145,7 @@ function BirdChips({ birds, allBirdsCount, onDark }: { birds: SitBird[]; allBird
 // ---------------------------------------------------------------------------
 // ACTIVE — full ink card, the focal element.
 // ---------------------------------------------------------------------------
-export function ActiveSitCard({ sit, birds, allBirdsCount, caregiverName, leadName, iAmLead, contextTag, allBirds, onChange }: { sit: ListSit; birds: SitBird[]; allBirdsCount: number; caregiverName: string; leadName?: string | null; iAmLead?: boolean; contextTag?: SitContextTag; allBirds?: any[]; onChange?: () => void }) {
+export function ActiveSitCard({ sit, birds, allBirdsCount, caregiverName, leadName, iAmLead, iOwnSit, contextTag, allBirds, onChange }: { sit: ListSit; birds: SitBird[]; allBirdsCount: number; caregiverName: string; leadName?: string | null; iAmLead?: boolean; iOwnSit?: boolean; contextTag?: SitContextTag; allBirds?: any[]; onChange?: () => void }) {
   const [editing, setEditing] = useState(false);
   if (editing && allBirds) {
     return <SitForm birds={allBirds} editSit={sit as any} onSaved={onChange ?? (() => {})} onCancel={() => setEditing(false)} />;
@@ -199,14 +199,25 @@ export function ActiveSitCard({ sit, birds, allBirdsCount, caregiverName, leadNa
         >
           <Activity className="size-4" /> View scans
         </Link>
-        <Link
-          to="/sit-preview/$sitId"
-          params={{ sitId: sit.id }}
-          state={{ previewToken: sit.invite_token ?? null, previewLabel: caregiverName, previewHousehold: household } as any}
-          className="inline-flex min-h-[42px] flex-1 items-center justify-center gap-1.5 rounded-[12px] border border-white/35 text-[14px] font-[500] text-white active:scale-[0.99]"
-        >
-          <Eye className="size-4" /> {household ? "View as caregiver" : "View as sitter"}
-        </Link>
+        {iOwnSit ? (
+          <Link
+            to="/sit-preview/$sitId"
+            params={{ sitId: sit.id }}
+            state={{ previewToken: sit.invite_token ?? null, previewLabel: caregiverName, previewHousehold: household } as any}
+            className="inline-flex min-h-[42px] flex-1 items-center justify-center gap-1.5 rounded-[12px] border border-white/35 text-[14px] font-[500] text-white active:scale-[0.99]"
+          >
+            <Eye className="size-4" /> {household ? "View as caregiver" : "View as sitter"}
+          </Link>
+        ) : birds.length > 0 ? (
+          // Covering caregiver: their actual care view, not the owner's preview.
+          <Link
+            to="/birds/$birdId/care-plan"
+            params={{ birdId: birds[0].id }}
+            className="inline-flex min-h-[42px] flex-1 items-center justify-center gap-1.5 rounded-[12px] border border-white/35 text-[14px] font-[500] text-white active:scale-[0.99]"
+          >
+            <Eye className="size-4" /> View care plan
+          </Link>
+        ) : null}
       </div>
 
       {(showCopyLink || allBirds) && (
@@ -231,8 +242,8 @@ export function ActiveSitCard({ sit, birds, allBirdsCount, caregiverName, leadNa
 // UPCOMING — white card. First one is expanded; the rest collapse to a header.
 // ---------------------------------------------------------------------------
 export function UpcomingSitCard({
-  sit, birds, allBirdsCount, caregiverName, leadName, iAmLead, contextTag, collapsible = false, allBirds, onChange,
-}: { sit: ListSit; birds: SitBird[]; allBirdsCount: number; caregiverName: string; leadName?: string | null; iAmLead?: boolean; contextTag?: SitContextTag; collapsible?: boolean; allBirds?: any[]; onChange?: () => void }) {
+  sit, birds, allBirdsCount, caregiverName, leadName, iAmLead, iOwnSit, contextTag, collapsible = false, allBirds, onChange,
+}: { sit: ListSit; birds: SitBird[]; allBirdsCount: number; caregiverName: string; leadName?: string | null; iAmLead?: boolean; iOwnSit?: boolean; contextTag?: SitContextTag; collapsible?: boolean; allBirds?: any[]; onChange?: () => void }) {
   const household = !!sit.caregiver_user_id;
   const [open, setOpen] = useState(!collapsible);
   const [editing, setEditing] = useState(false);
@@ -272,35 +283,54 @@ export function UpcomingSitCard({
               <div className="min-w-0"><BirdChips birds={birds} allBirdsCount={allBirdsCount} /></div>
             </div>
           )}
-          {/* Pre-leaving checklist (collapsible, self-contained). */}
-          <SitChecklist sit={sit as any} birds={birds} onSitChanged={onChange} />
+          {iOwnSit ? (
+            <>
+              {/* Owner departure prep — the pre-leaving checklist. Owner-only:
+                  it's the person LEAVING, not the caregiver arriving to cover. */}
+              <SitChecklist sit={sit as any} birds={birds} onSitChanged={onChange} />
 
-          <div className="mt-3.5 flex gap-2">
-            <Link
-              to="/sit-preview/$sitId"
-              params={{ sitId: sit.id }}
-              state={{ previewToken: sit.invite_token ?? null, previewLabel: caregiverName, previewHousehold: household } as any}
-              className="inline-flex min-h-[42px] flex-1 items-center justify-center gap-1.5 rounded-[12px] border border-[var(--line)] text-[14px] font-[500] text-[var(--ink)] active:scale-[0.99]"
-            >
-              <Eye className="size-4" /> {household ? "View as caregiver" : "View as sitter"}
-            </Link>
-            {!household && (
-              <button
-                type="button"
-                onClick={() => copySitterLink(sit, birds)}
-                className="inline-flex min-h-[42px] flex-1 items-center justify-center gap-1.5 rounded-[12px] border border-[var(--line)] text-[14px] font-[500] text-[var(--ink)] active:scale-[0.99]"
-              >
-                <Link2 className="size-4" /> Copy link
-              </button>
-            )}
-          </div>
+              <div className="mt-3.5 flex gap-2">
+                <Link
+                  to="/sit-preview/$sitId"
+                  params={{ sitId: sit.id }}
+                  state={{ previewToken: sit.invite_token ?? null, previewLabel: caregiverName, previewHousehold: household } as any}
+                  className="inline-flex min-h-[42px] flex-1 items-center justify-center gap-1.5 rounded-[12px] border border-[var(--line)] text-[14px] font-[500] text-[var(--ink)] active:scale-[0.99]"
+                >
+                  <Eye className="size-4" /> {household ? "View as caregiver" : "View as sitter"}
+                </Link>
+                {!household && (
+                  <button
+                    type="button"
+                    onClick={() => copySitterLink(sit, birds)}
+                    className="inline-flex min-h-[42px] flex-1 items-center justify-center gap-1.5 rounded-[12px] border border-[var(--line)] text-[14px] font-[500] text-[var(--ink)] active:scale-[0.99]"
+                  >
+                    <Link2 className="size-4" /> Copy link
+                  </button>
+                )}
+              </div>
 
-          {allBirds && (
-            <div className="mt-2.5 text-center">
-              <button type="button" onClick={() => setEditing(true)} className="inline-flex items-center gap-1 text-[13px] font-[500] text-[var(--moss)] active:opacity-80">
-                <Pencil className="size-3.5" /> Edit sit
-              </button>
-            </div>
+              {allBirds && (
+                <div className="mt-2.5 text-center">
+                  <button type="button" onClick={() => setEditing(true)} className="inline-flex items-center gap-1 text-[13px] font-[500] text-[var(--moss)] active:opacity-80">
+                    <Pencil className="size-3.5" /> Edit sit
+                  </button>
+                </div>
+              )}
+            </>
+          ) : (
+            // Covering caregiver / member: their care view — NOT the owner's
+            // pre-leaving prep, and no "view as caregiver" (they ARE the caregiver).
+            birds.length > 0 && (
+              <div className="mt-3.5">
+                <Link
+                  to="/birds/$birdId/care-plan"
+                  params={{ birdId: birds[0].id }}
+                  className="inline-flex min-h-[42px] w-full items-center justify-center gap-1.5 rounded-[12px] border border-[var(--line)] text-[14px] font-[500] text-[var(--ink)] active:scale-[0.99]"
+                >
+                  <Eye className="size-4" /> View care plan
+                </Link>
+              </div>
+            )
           )}
         </>
       )}

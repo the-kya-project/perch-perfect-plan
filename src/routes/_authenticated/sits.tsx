@@ -244,6 +244,7 @@ function SitsPage() {
                       caregiverName={caregiverName(s)}
                       leadName={hasHousehold ? leadFirstName(s) : null}
                       iAmLead={iAmLead(s)}
+                      iOwnSit={s.owner_id === myId}
                       contextTag={contextTagFor(s)}
                       allBirds={s.owner_id === myId ? ownedBirds : undefined}
                       onChange={refreshSits}
@@ -265,6 +266,7 @@ function SitsPage() {
                           caregiverName={caregiverName(s)}
                           leadName={hasHousehold ? leadFirstName(s) : null}
                           iAmLead={iAmLead(s)}
+                          iOwnSit={s.owner_id === myId}
                           contextTag={contextTagFor(s)}
                           allBirds={s.owner_id === myId ? ownedBirds : undefined}
                           onChange={refreshSits}
