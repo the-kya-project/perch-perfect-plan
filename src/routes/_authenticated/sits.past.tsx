@@ -16,25 +16,26 @@ function PastSitsPage() {
   const navigate = useNavigate();
   const today = new Date().toISOString().slice(0, 10);
 
-  // Own dedicated key + server-side scope to PAST sits (end_date < today). NOT
-  // the shared ["all-sits"] key: the dashboard populates that with minimal
-  // columns (no end_date), which made the client-side `end_date < today` filter
-  // evaluate `undefined < today` → empty, so this page rendered blank. Scoping
-  // the query here makes it self-sufficient (and lighter — past sits only).
-  const { data: past = [], isLoading } = useQuery({
-    queryKey: ["past-sits"],
+  // Mirror the /sits count EXACTLY: fetch the full-column sit rows (own dedicated
+  // key so the dashboard's minimal-column ["all-sits"] cache can't poison it —
+  // that shared cache lacked end_date and blanked this page), then filter "past"
+  // CLIENT-SIDE with the same definition the count uses (end_date < today). A
+  // server-side .lt() here returned 0 despite a correct count; matching the
+  // count's own path guarantees count N → N cards.
+  const { data: allSits = [], isLoading } = useQuery({
+    queryKey: ["sits-archive"],
     refetchOnMount: "always",
     queryFn: async () => {
       const { data, error } = await supabase
         .from("sits")
         .select("*, sit_birds(bird_id)")
         .or("sitter_name.is.null,sitter_name.neq.__preview__")
-        .lt("end_date", today)
         .order("start_date", { ascending: false });
       if (error) throw error;
       return (data ?? []) as any[];
     },
   });
+  const past = allSits.filter((s) => s.end_date < today); // same rule as the count
 
   // Batch-resolve household caregiver names.
   const householdIds = [...new Set(past.filter((s) => s.caregiver_user_id).map((s) => s.caregiver_user_id as string))];
