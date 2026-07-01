@@ -123,8 +123,11 @@ function SitDetail() {
       const { error } = await supabase.from("sits").delete().eq("id", sitId);
       if (error) throw error;
       toast.success("Sit deleted.");
-      // Refresh every surface that lists sits: the Sits list + Past list
-      // (["all-sits"]) and the caregiver home (["active-caregiver-sits"]).
+      // Refresh every surface that lists sits: the Sits list (["sits-full"]), the
+      // Past archive (["sits-archive"]), the dashboard's upcoming row (["all-sits"]),
+      // and the caregiver home (["active-caregiver-sits"]).
+      qc.invalidateQueries({ queryKey: ["sits-full"] });
+      qc.invalidateQueries({ queryKey: ["sits-archive"] });
       qc.invalidateQueries({ queryKey: ["all-sits"] });
       qc.invalidateQueries({ queryKey: ["active-caregiver-sits"] });
       qc.invalidateQueries({ queryKey: ["dashboard-home"] }); // Home's upcoming-sit/today rows

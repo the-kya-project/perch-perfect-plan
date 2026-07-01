@@ -23,8 +23,11 @@ function PastSitsPage() {
   // server-side .lt() here returned 0 despite a correct count; matching the
   // count's own path guarantees count N → N cards.
   const { data: allSits = [], isLoading } = useQuery({
+    // Dedicated key (never the dashboard's ["all-sits"]) so its minimal columns
+    // can't blank this page. No per-mount refetch: 60s staleTime paints from cache
+    // on revisit, and sit create/edit/delete invalidate ["sits-archive"] so a
+    // changed/ended sit still updates here.
     queryKey: ["sits-archive"],
-    refetchOnMount: "always",
     queryFn: async () => {
       const { data, error } = await supabase
         .from("sits")

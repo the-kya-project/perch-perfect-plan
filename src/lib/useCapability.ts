@@ -18,12 +18,13 @@ export function useMyPermissions() {
   return useQuery({
     queryKey: ["my-permissions"],
     // Permissions can change on the OWNER's device at any time; the member's app
-    // must pick that up without a reinstall. So refetch on focus (reopening the
-    // app/tab) and on mount (navigation) — overriding the global focus-off
-    // default for this query. Cached data still shows instantly; the refetch runs
-    // in the background and updates capability gating when it lands.
+    // must pick that up without a reinstall. refetchOnWindowFocus (reopening the
+    // app/tab) catches that, and with a 30s staleTime, navigation still refetches
+    // whenever the data is older than 30s (default refetchOnMount respects
+    // staleTime). We deliberately DON'T force refetchOnMount:"always" — that fired
+    // a blocking fetch on every single bird-screen navigation. Cached data shows
+    // instantly; focus + the 30s window keep gating fresh without a reinstall.
     staleTime: 30_000,
-    refetchOnMount: "always",
     refetchOnWindowFocus: true,
     queryFn: async () => {
       const { data: u } = await getLocalUser();

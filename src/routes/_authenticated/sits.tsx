@@ -12,11 +12,15 @@ import { resolveHouseholdNames, resolveOwnerNames } from "@/lib/home.functions";
 import { memberDisplayName, firstName } from "@/lib/memberDisplay";
 import { InkHero, SectionHead, Card, IconTile } from "@/components/system";
 import { useBirdPhotos } from "@/lib/useBirdPhotos";
+import { BIRD_LIST_SELECT } from "@/lib/birdListSelect";
 import { weekdayMonthDay, monthDay, daysUntil } from "@/lib/dates";
 
-// Dedicated Sits tab: create / manage sits. Reuses the same query keys as the
-// dashboard (["birds"], ["all-sits"]) so the cache is shared. Past sits live on
-// their own screen (/sits/past), reached from the link below.
+// Dedicated Sits tab: create / manage sits. Shares the ["birds"] cache with the
+// dashboard via BIRD_LIST_SELECT (identical shape, so neither poisons the other).
+// Its OWN ["sits-full"] key holds the full sit rows (+ sit_birds join) it needs —
+// separate from the dashboard's minimal ["all-sits"] so the two shapes don't
+// collide. Sit mutations invalidate both. Past sits live on their own screen
+// (/sits/past, ["sits-archive"]).
 const sitsSearch = z.object({
   newSit: z.coerce.boolean().optional(),
   preselectBirdId: z.string().uuid().optional(),
@@ -45,7 +49,7 @@ function SitsPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("birds")
-        .select("id, owner_id, name, species, photo_url, photo_position, setup_complete, setup_step, normal_weight")
+        .select(BIRD_LIST_SELECT)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data ?? [];
@@ -53,8 +57,10 @@ function SitsPage() {
   });
 
   const { data: sits = [], isLoading: sitsLoading } = useQuery({
-    queryKey: ["all-sits"],
-    refetchOnMount: "always",
+    // Own key (not the dashboard's ["all-sits"]) — different shape, so no cache
+    // collision. No per-mount refetch: 60s staleTime paints from cache; sit
+    // create/edit/delete calls refreshSits() to update immediately.
+    queryKey: ["sits-full"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("sits")
@@ -66,7 +72,13 @@ function SitsPage() {
     },
   });
 
-  const refreshSits = () => qc.invalidateQueries({ queryKey: ["all-sits"] });
+  // A sit change affects this screen (["sits-full"]), the dashboard's upcoming-sit
+  // row (["all-sits"]), and the past-sits archive (["sits-archive"]).
+  const refreshSits = () => {
+    qc.invalidateQueries({ queryKey: ["sits-full"] });
+    qc.invalidateQueries({ queryKey: ["all-sits"] });
+    qc.invalidateQueries({ queryKey: ["sits-archive"] });
+  };
   const birdLookup = Object.fromEntries(birds.map((b: any) => [b.id, b]));
 
   // Only a bird's OWNER may set up / edit a sit. `birds` includes birds the user

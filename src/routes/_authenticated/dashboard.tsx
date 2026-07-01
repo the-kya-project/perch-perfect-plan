@@ -6,6 +6,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { useBirdPhotos } from "@/lib/useBirdPhotos";
+import { BIRD_LIST_SELECT } from "@/lib/birdListSelect";
 import type { SignedPhoto } from "@/lib/birdPhoto";
 import {
   Plus, Settings, Users, ChevronRight, Scale, CalendarHeart, Calendar,
@@ -47,9 +48,6 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   component: Dashboard,
 });
 
-const BIRD_SELECT =
-  "id, owner_id, name, species, photo_url, photo_position, is_foster, intake_date, birth_date, acquired_on, became_permanent_on, created_at";
-
 function Dashboard() {
   const navigate = useNavigate();
   const { emergencyDefaults } = Route.useSearch();
@@ -80,11 +78,12 @@ function Dashboard() {
 
   const { data: birds = [], isLoading: birdsLoading } = useQuery({
     queryKey: ["birds"],
-    // Refetch on mount so a bird just added/handed-off flips solo↔flock without a
-    // manual reload (and a logged weight elsewhere refreshes the pills).
-    refetchOnMount: "always",
+    // No per-mount refetch: the 60s staleTime paints from cache on revisit, and
+    // every bird mutation (add / hand-off / edit / delete) invalidates ["birds"],
+    // so a solo↔flock change still appears immediately without a blocking fetch on
+    // every Home visit. Shape is shared with the Sits screen via BIRD_LIST_SELECT.
     queryFn: async () => {
-      const { data, error } = await supabase.from("birds").select(BIRD_SELECT).order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("birds").select(BIRD_LIST_SELECT).order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as any[];
     },
@@ -99,7 +98,10 @@ function Dashboard() {
   const { data: allWeights = [] } = useQuery({
     queryKey: ["home-weights", birdIds],
     enabled: birdIds.length > 0,
-    refetchOnMount: "always",
+    // No per-mount refetch: 60s staleTime paints the pills from cache on revisit;
+    // weight logging (manual log + health-check weigh-in) invalidates
+    // ["home-weights"], so a new weight refreshes Home immediately without a
+    // blocking fetch on every visit.
     queryFn: async () => {
       // Newest-first + capped: the pills / stale detection / Today only use the
       // most recent weights per bird, so the cap trims old history we never read.

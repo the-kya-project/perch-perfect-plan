@@ -140,6 +140,7 @@ function WeightFacet() {
                 setLogOpen(false);
                 qc.invalidateQueries({ queryKey: ["weight-entries", birdId] });
                 qc.invalidateQueries({ queryKey: ["bird-weights", birdId] }); // record-home glance + recent feed
+                qc.invalidateQueries({ queryKey: ["home-weights"] }); // Home pills / stale detection (no longer refetch-on-mount)
               }}
             />
           )}
