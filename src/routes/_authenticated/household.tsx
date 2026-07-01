@@ -112,7 +112,7 @@ function HouseholdScreen() {
                 <h2 className="t-section text-[14.5px]">What they can do</h2>
                 <ul className="mt-2 space-y-1.5">
                   <Can yes>View care plans, identity, weight, journal, moments</Can>
-                  <Can yes>Log weights, journal entries, and scans</Can>
+                  <Can yes>Log weights, journal entries, and health checks</Can>
                   <Can>They can't edit the care plan, manage sharing, or remove birds</Can>
                 </ul>
               </Card>

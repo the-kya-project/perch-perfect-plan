@@ -197,7 +197,7 @@ export function ActiveSitCard({ sit, birds, allBirdsCount, caregiverName, leadNa
           search={{ sitId: sit.id }}
           className="inline-flex min-h-[42px] flex-1 items-center justify-center gap-1.5 rounded-[12px] bg-[var(--lime)] text-[14px] font-[500] text-[var(--ink)] active:scale-[0.99]"
         >
-          <Activity className="size-4" /> View scans
+          <Activity className="size-4" /> View health checks
         </Link>
         {iOwnSit ? (
           <Link
@@ -371,9 +371,9 @@ export function PastSitCard({
       </div>
       {scans > 0 && (
         <div className="mt-3 flex items-center justify-between gap-3 border-t border-[var(--line2)] pt-3">
-          <span className="text-[12.5px] text-[var(--mute)]">Scans</span>
+          <span className="text-[12.5px] text-[var(--mute)]">Health checks</span>
           <span className="text-[13.5px] text-[var(--ink)]">
-            {scans} {scans === 1 ? "scan" : "scans"} · {flagged > 0 ? `${flagged} flagged` : "all clear"}
+            {scans} {scans === 1 ? "health check" : "health checks"} · {flagged > 0 ? `${flagged} flagged` : "all clear"}
           </span>
         </div>
       )}

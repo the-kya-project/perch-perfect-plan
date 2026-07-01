@@ -40,16 +40,16 @@ export function buildDailyLogEmail(opts: { birdName: string; sitterName: string;
   const bird = escapeHtml(opts.birdName);
   const sitter = escapeHtml(opts.sitterName);
   return {
-    subject: `${opts.birdName}: daily scan logged — all clear`,
+    subject: `${opts.birdName}: daily health check logged — all clear`,
     html: shell({
       kicker: "Daily update",
-      heading: `${bird}'s sitter logged an all-clear scan`,
-      body: `${sitter} just completed ${bird}'s daily health scan and nothing was flagged.`,
-      cta: "View the scan",
+      heading: `${bird}'s sitter logged an all-clear health check`,
+      body: `${sitter} just completed ${bird}'s daily health check and nothing was flagged.`,
+      cta: "View the health check",
       link: opts.link,
-      foot: "You're getting this because daily-scan emails are on. You can turn them off in the app's notification settings.",
+      foot: "You're getting this because daily health-check emails are on. You can turn them off in the app's notification settings.",
     }),
-    text: `${opts.birdName}'s sitter logged an all-clear daily scan.\n\nView it: ${opts.link}`,
+    text: `${opts.birdName}'s sitter logged an all-clear daily health check.\n\nView it: ${opts.link}`,
   };
 }
 
@@ -82,8 +82,8 @@ export function buildHouseholdInviteEmail(opts: {
   const birds = escapeHtml(opts.birdNames);
   const body =
     `${inviter} invited you to help care for ${birds} on Kya & Co.. ` +
-    `You'll be able to see each bird's care plan, weight, journal, and health scans — ` +
-    `and log weights, journal entries, and daily scans alongside ${inviter}. ` +
+    `You'll be able to see each bird's care plan, weight, journal, and health checks — ` +
+    `and log weights, journal entries, and daily health checks alongside ${inviter}. ` +
     `You won't be able to change the care plan or who has access; ${inviter} stays the owner. ` +
     `This invite expires in 14 days.`;
   return {
@@ -98,7 +98,7 @@ export function buildHouseholdInviteEmail(opts: {
     }),
     text:
       `${opts.inviterName} invited you to help care for ${opts.birdNames} on Kya & Co..\n\n` +
-      `You'll be able to view each bird's record and log weights, journal entries, and scans. ` +
+      `You'll be able to view each bird's record and log weights, journal entries, and health checks. ` +
       `You can't change the care plan or access; ${opts.inviterName} stays the owner.\n\n` +
       `Accept (expires in 14 days): ${opts.link}\n\n` +
       `If you didn't expect this, you can ignore this email.`,

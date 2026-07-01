@@ -18,7 +18,7 @@ export type ScanSubmit = {
 
 export function ScanForm({
   submitting,
-  submitLabel = "Submit health scan",
+  submitLabel = "Submit health check",
   onSubmit,
 }: {
   submitting: boolean;
@@ -133,7 +133,7 @@ export function ScanForm({
             </label>
           </div>
         )}
-        {photo && !photoBusy && <img src={photo} alt="Scan photo preview" className="mt-2 max-h-40 rounded-lg" />}
+        {photo && !photoBusy && <img src={photo} alt="Health check photo preview" className="mt-2 max-h-40 rounded-lg" />}
       </section>
 
       <section className="rounded-2xl bg-[#efe9da] p-4">

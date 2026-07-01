@@ -425,9 +425,9 @@ function LogsPanel({ birdId, initialScan }: { birdId: string; initialScan?: stri
       <Disclaimer compact />
 
       <section className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
-        <h2 className="text-sm font-bold">Health scans from sitters</h2>
+        <h2 className="text-sm font-bold">Health checks from sitters</h2>
         {daily.length === 0 ? (
-          <p className="mt-2 text-sm text-sage-600">No scans logged yet.</p>
+          <p className="mt-2 text-sm text-sage-600">No health checks logged yet.</p>
         ) : (
           <ul className="mt-3 space-y-3">
             {sortedDaily.map((d: any) => {

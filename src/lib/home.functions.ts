@@ -119,7 +119,7 @@ export const getHouseholdHome = createServerFn({ method: "GET" })
     for (const s of (scansRes.data ?? []) as any[]) {
       activity.push({
         id: `s-${s.id}`, kind: "scan", birdName: nameByBird.get(s.bird_id) ?? "A bird",
-        actorName: displayName(s.run_by), at: s.created_at, summary: "ran a health scan",
+        actorName: displayName(s.run_by), at: s.created_at, summary: "ran a health check",
       });
     }
     for (const j of (journalRes.data ?? []) as any[]) {

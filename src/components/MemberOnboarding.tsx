@@ -96,7 +96,7 @@ export function MemberOnboarding() {
     steps.push({ headline: "Pitch in on daily care.", body: "Open a bird to check off today's tasks, log a weight, or add a moment as you go." });
   }
   if (caps.has("record_health")) {
-    steps.push({ target: "owner-tab-activity", headline: "Daily health checks.", body: "Run a quick health scan here. Anything worth a closer look gets flagged fast." });
+    steps.push({ target: "owner-tab-activity", headline: "Daily health checks.", body: "Run a quick health check here. Anything worth a closer look gets flagged fast." });
   }
   if (caps.has("manage_sits")) {
     steps.push({ target: "owner-tab-sits", headline: "Sits live here.", body: "See who's covering each bird and when." });

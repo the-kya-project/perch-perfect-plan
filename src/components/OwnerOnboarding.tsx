@@ -41,9 +41,9 @@ const STEPS: Step[] = [
   { target: "owner-flock", headline: "Each bird gets a record.", body: "Tap a bird to see their care plan, weight history, journal, identity, and photos. The works." },
   { target: "owner-fosters", headline: "Fostering a bird?", body: "They live here while they're with you — until they're adopted, or until you decide they're staying. (It happens.)" },
   { headline: "Saying goodbye? Hand off the record.", body: "When a bird moves to a new home their full record can transfer with them. Care plan, history, identity, everything." },
-  { target: "owner-household", headline: "Family who shares the care?", body: "Spouse, partner, kids, roommates — add them as household. They get access to your care plan and health scans so they can step in when needed." },
+  { target: "owner-household", headline: "Family who shares the care?", body: "Spouse, partner, kids, roommates — add them as household. They get access to your care plan and health checks so they can step in when needed." },
   { target: "owner-tab-sits", headline: "Going away? Set up a sit.", body: "Pet sitters get a temporary link — just for the trip. Household members get more details and a daily checklist." },
-  { target: "owner-tab-activity", headline: "Daily health checks.", body: "Quick questions to track health. Pet sitters are asked to scan daily. Flags show up fast when something's off." },
+  { target: "owner-tab-activity", headline: "Daily health checks.", body: "Quick questions to track health. Pet sitters are asked to run a health check daily. Flags show up fast when something's off." },
   { target: "owner-tab-explore", headline: "Stories, education, conservation.", body: "What The Kya Project is up to. Field notes, deep dives, community and other ways to get involved. Read when you have a minute." },
 ];
 const TOTAL = STEPS.length + 1; // + wrap-up = 10

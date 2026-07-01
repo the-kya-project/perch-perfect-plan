@@ -75,7 +75,7 @@ function ScanPage() {
       qc.invalidateQueries({ queryKey: ["sitter-ctx", token] });
       qc.invalidateQueries({ queryKey: ["sitter-dashboard", token] });
     },
-    onError: (e: any) => toast.error(e.message ?? "Could not log scan."),
+    onError: (e: any) => toast.error(e.message ?? "Could not log health check."),
   });
 
   if (mode === "history") {
@@ -105,7 +105,7 @@ function ScanPage() {
           <Link to="/sitter/$token" params={{ token }} className="flex-1 rounded-xl border border-[#e0d8c4] py-3 text-center text-sm font-medium">Back to today</Link>
         </div>
         <button onClick={() => setMode("history")} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#efe9da] py-3 text-sm font-medium text-[#1a3d2e]">
-          <History className="size-4" /> See past scans for this sit
+          <History className="size-4" /> See past health checks for this sit
         </button>
       </main>
     );
@@ -116,12 +116,12 @@ function ScanPage() {
       <header className="border-b border-[#e0d8c4] bg-[#f4f1e8]">
         <div className="mx-auto flex max-w-md items-center gap-3 px-5 py-3">
           <Link to="/sitter/$token" params={{ token }} className="rounded p-1 text-[#5f5e5a]"><ArrowLeft className="size-5" /></Link>
-          <h1 className="flex-1 text-sm font-medium">Daily health scan — {ctx.bird.name}</h1>
+          <h1 className="flex-1 text-sm font-medium">Daily health check — {ctx.bird.name}</h1>
           <button
             onClick={() => setMode("history")}
             className="inline-flex items-center gap-1.5 rounded-full bg-[#efe9da] px-3 py-1.5 text-xs font-medium text-[#1a3d2e]"
           >
-            <History className="size-3.5" /> Past scans
+            <History className="size-3.5" /> Past health checks
           </button>
         </div>
       </header>

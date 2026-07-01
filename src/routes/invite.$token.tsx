@@ -81,8 +81,8 @@ function InviteAccept() {
         <Card className="p-5">
           <p className="t-eyebrow text-[var(--teal-on-cream)]">You'll be able to</p>
           <ul className="mt-3 space-y-2.5">
-            <Li>See each bird's care plan, weight, journal, identity, and health scans</Li>
-            <Li>Log weights, journal entries, and daily health scans</Li>
+            <Li>See each bird's care plan, weight, journal, identity, and health checks</Li>
+            <Li>Log weights, journal entries, and daily health checks</Li>
             <Li>Help care for {invite.birdNames} alongside {invite.inviterName}</Li>
           </ul>
         </Card>

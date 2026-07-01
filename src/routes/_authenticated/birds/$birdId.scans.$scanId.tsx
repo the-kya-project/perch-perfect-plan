@@ -12,7 +12,7 @@ import { OwnerHeaderIcons } from "@/components/OwnerHeader";
 // inbox (replaces the old deep-link into the care-plan editor's logs tab, which
 // read as "the care plan"). Owner/household read via RLS on daily_logs.
 export const Route = createFileRoute("/_authenticated/birds/$birdId/scans/$scanId")({
-  head: () => ({ meta: [{ title: "Health scan — Kya & Co." }] }),
+  head: () => ({ meta: [{ title: "Health check — Kya & Co." }] }),
   component: ScanDetail,
 });
 
@@ -76,16 +76,16 @@ function ScanDetail() {
 
   if (isLoading) {
     return (
-      <Shell eyebrow="Health scan" headline="Loading…" onBack={goBack}>
+      <Shell eyebrow="Health check" headline="Loading…" onBack={goBack}>
         <div className="flex items-center justify-center gap-2 py-10 text-[14px] text-[var(--mute)]"><Loader2 className="size-4 animate-spin" /> Loading…</div>
       </Shell>
     );
   }
   if (!row) {
     return (
-      <Shell eyebrow="Health scan" headline="Scan not found." onBack={goBack}>
+      <Shell eyebrow="Health check" headline="Health check not found." onBack={goBack}>
         <Card className="p-6 text-center">
-          <p className="t-body text-[var(--ink2)]">This scan isn't available — it may have been removed.</p>
+          <p className="t-body text-[var(--ink2)]">This health check isn't available — it may have been removed.</p>
         </Card>
       </Shell>
     );
@@ -99,7 +99,7 @@ function ScanDetail() {
   const notSure = SCAN_COLS.filter((f) => row[f.col] === "not_sure");
 
   return (
-    <Shell eyebrow="Health scan" headline={headline} body={`${data!.birdName} · ${runBy} · ${when}`} onBack={goBack}>
+    <Shell eyebrow="Health check" headline={headline} body={`${data!.birdName} · ${runBy} · ${when}`} onBack={goBack}>
       {/* Summary banner — amber for concern, pale-green for clear (no red: a
           flagged scan is attention, not an emergency-contact block). */}
       <div

@@ -10,7 +10,7 @@ import { OwnerHeaderIcons } from "@/components/OwnerHeader";
 import { monthDay } from "@/lib/dates";
 
 export const Route = createFileRoute("/_authenticated/scans/")({
-  head: () => ({ meta: [{ title: "Scans — Kya & Co." }] }),
+  head: () => ({ meta: [{ title: "Health checks — Kya & Co." }] }),
   validateSearch: (s: Record<string, unknown>) => z.object({ sitId: z.string().uuid().optional() }).parse(s),
   component: NotificationsInbox,
 });
@@ -78,16 +78,16 @@ function NotificationsInbox() {
     <div className="min-h-screen bg-[var(--cream)] pb-nav">
       <div className="mx-auto max-w-md">
         <InkHero
-          eyebrow="Scans"
+          eyebrow="Health checks"
           headline="A daily check, archived."
           body="A small daily look that adds up to a record."
           backIcon={<ArrowLeft className="size-5" />}
           onBack={goBack}
           cta={
             birds.length === 1
-              ? { label: "Run a scan", tone: "lime", icon: <Activity className="size-4" />, onPress: () => navigate({ to: "/birds/$birdId/scan", params: { birdId: birds[0].id } }) }
+              ? { label: "Run a health check", tone: "lime", icon: <Activity className="size-4" />, onPress: () => navigate({ to: "/birds/$birdId/scan", params: { birdId: birds[0].id } }) }
               : birds.length > 1
-              ? { label: "Run a scan", tone: "lime", icon: <Activity className="size-4" />, onPress: () => setPicking((v) => !v) }
+              ? { label: "Run a health check", tone: "lime", icon: <Activity className="size-4" />, onPress: () => setPicking((v) => !v) }
               : undefined
           }
           trailingIcons={<OwnerHeaderIcons />}
@@ -126,9 +126,9 @@ function NotificationsInbox() {
           ) : shownFeed.length === 0 ? (
             <section className="rounded-[18px] bg-white p-8 text-center ring-1 ring-[var(--line2)]" style={{ boxShadow: "0 6px 14px -8px rgba(40,50,40,.08)" }}>
               <div className="flex justify-center"><IconTile size={48} tone="pale" icon={<Feather className="size-6" />} /></div>
-              <h2 className="t-section mt-3">No scans yet{sitId ? " for this sit" : ""}</h2>
+              <h2 className="t-section mt-3">No health checks yet{sitId ? " for this sit" : ""}</h2>
               <p className="t-body mx-auto mt-1.5 max-w-[34ch] text-[var(--ink2)]">
-                {sitId ? `${filterLabel} is asked to scan daily — their checks will show up here.` : "Run a scan above, or a sitter's daily scans will show up here."}
+                {sitId ? `${filterLabel} is asked to run a health check daily — their checks will show up here.` : "Run a health check above, or a sitter's daily health checks will show up here."}
               </p>
             </section>
           ) : (

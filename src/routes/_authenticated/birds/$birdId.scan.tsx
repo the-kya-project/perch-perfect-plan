@@ -18,7 +18,7 @@ import { track } from "@/lib/analytics";
 // weight_entries(source='owner') via the authenticated client under has_bird_access
 // RLS. No notifications (the owner ran it themselves).
 export const Route = createFileRoute("/_authenticated/birds/$birdId/scan")({
-  head: () => ({ meta: [{ title: "Health scan — Kya & Co." }] }),
+  head: () => ({ meta: [{ title: "Health check — Kya & Co." }] }),
   component: OwnerScan,
 });
 
@@ -87,7 +87,7 @@ function OwnerScan() {
       // vomiting_status / photo / weight — best-effort, never block the scan.
       if (a.vomiting) await supabase.from("daily_logs").update({ vomiting_status: a.vomiting } as any).eq("id", row.id);
       if (p.photoDataUrl) {
-        await supabase.from("photo_logs").insert({ bird_id: birdId, daily_log_id: row.id, photo_type: "other", photo_url: p.photoDataUrl, notes: "Attached to health scan", ...(activeSitId ? { sit_id: activeSitId } : {}) });
+        await supabase.from("photo_logs").insert({ bird_id: birdId, daily_log_id: row.id, photo_type: "other", photo_url: p.photoDataUrl, notes: "Attached to health check", ...(activeSitId ? { sit_id: activeSitId } : {}) });
       }
       if (typeof p.weightGrams === "number") {
         await supabase.from("weight_entries").insert({ bird_id: birdId, grams: p.weightGrams, source: scanSource, logged_by: u.user?.id ?? null, ...(activeSitId ? { sit_id: activeSitId } : {}) });
@@ -99,7 +99,7 @@ function OwnerScan() {
       ["scan-feed", "bird-checkins", "weight-entries", "bird-weights"].forEach((k) =>
         qc.invalidateQueries({ queryKey: k === "scan-feed" ? ["scan-feed"] : [k, birdId] }));
     } catch (e: any) {
-      toast.error(e?.message ?? "Couldn't log the scan.");
+      toast.error(e?.message ?? "Couldn't log the health check.");
     } finally {
       setSubmitting(false);
     }
@@ -112,7 +112,7 @@ function OwnerScan() {
           <Link to="/birds/$birdId" params={{ birdId }} aria-label="Back to bird record" className="-ml-1 rounded p-1 text-[#1a3d2e]">
             <ArrowLeft className="size-5" />
           </Link>
-          <h1 className="text-base font-medium text-[#1a3d2e]">Health scan — {name}</h1>
+          <h1 className="text-base font-medium text-[#1a3d2e]">Health check — {name}</h1>
         </div>
       </header>
 
@@ -138,7 +138,7 @@ function OwnerScan() {
       ) : (
         <>
         <div className="mx-auto max-w-md px-5 pt-4"><MemberContextBanner birdId={birdId} /></div>
-        <ScanForm submitting={submitting} submitLabel="Log scan" onSubmit={onSubmit} />
+        <ScanForm submitting={submitting} submitLabel="Log health check" onSubmit={onSubmit} />
         </>
       )}
     </div>

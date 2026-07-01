@@ -197,7 +197,7 @@ function CarePlanOverview() {
           <p className="t-body px-1 text-[var(--mute)]">
             {isOwner
               ? `This is what a caregiver sees. Sitters get a per-trip link from the Sits tab; household members can view it any time.`
-              : `Only ${name}'s owner can edit the care plan. You can view it and log weights, journal entries, and scans.`}
+              : `Only ${name}'s owner can edit the care plan. You can view it and log weights, journal entries, and health checks.`}
           </p>
         </main>
       </div>

@@ -12,7 +12,7 @@ export type OwnerTab = "home" | "sits" | "activity" | "explore";
 type TabSpec = { key: OwnerTab; label: string; to: string; Icon: typeof Home };
 const HOME_TAB: TabSpec = { key: "home", label: "Home", to: "/dashboard", Icon: Home };
 const SITS_TAB: TabSpec = { key: "sits", label: "Sits", to: "/sits", Icon: Calendar };
-const ACTIVITY_TAB: TabSpec = { key: "activity", label: "Scans", to: "/scans", Icon: Activity };
+const ACTIVITY_TAB: TabSpec = { key: "activity", label: "Health", to: "/scans", Icon: Activity };
 const EXPLORE_TAB: TabSpec = { key: "explore", label: "Explore", to: "/explore", Icon: Compass };
 
 // `active` is optional — during the setup flow no tab is highlighted. Pass

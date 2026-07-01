@@ -286,7 +286,7 @@ function SitsPage() {
                         </div>
                         <p className="t-section mt-3">No sits scheduled.</p>
                         <p className="t-body mx-auto mt-1.5 max-w-[34ch] text-[var(--ink2)]">
-                          A sit shares today's routine, a daily health scan, and one-tap emergency contacts with whoever's covering.
+                          A sit shares today's routine, a daily health check, and one-tap emergency contacts with whoever's covering.
                         </p>
                       </div>
                     </Card>

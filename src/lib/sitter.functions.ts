@@ -260,7 +260,7 @@ function buildScanAlertEmail(opts: {
     : `${opts.birdName}: your sitter flagged something to check`;
   const reasonItems = opts.reasons.length
     ? opts.reasons.map((r) => `<li style="margin:4px 0;">${escapeHtml(r)}</li>`).join("")
-    : "<li>See the full scan in the app.</li>";
+    : "<li>See the full health check in the app.</li>";
   const notesBlock = opts.notes
     ? `<p style="margin:16px 0 4px;font-size:13px;color:#5f5e5a;text-transform:uppercase;letter-spacing:.08em;">Sitter notes</p>
        <p style="margin:0;font-size:15px;color:#1a3d2e;font-style:italic;">"${escapeHtml(opts.notes)}"</p>`
@@ -273,17 +273,17 @@ function buildScanAlertEmail(opts: {
         ${urgent ? "Health concern" : "Worth a check"}
       </p>
       <h1 style="margin:6px 0 0;font-size:20px;font-weight:500;color:#fff;">
-        ${escapeHtml(opts.birdName)}'s daily scan needs your eyes
+        ${escapeHtml(opts.birdName)}'s daily health check needs your eyes
       </h1>
     </div>
     <div style="padding:24px;">
       <p style="margin:0 0 12px;font-size:15px;color:#1a3d2e;">
-        ${escapeHtml(opts.sitterName)} just submitted a health scan and flagged the following:
+        ${escapeHtml(opts.sitterName)} just submitted a health check and flagged the following:
       </p>
       <ul style="margin:0;padding-left:20px;font-size:15px;color:#1a3d2e;">${reasonItems}</ul>
       ${notesBlock}
       <a href="${opts.link}" style="display:inline-block;margin-top:20px;background:#1a3d2e;color:#fff;text-decoration:none;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:600;">
-        View the full scan
+        View the full health check
       </a>
       <p style="margin:20px 0 0;font-size:12px;color:#8a897f;line-height:1.5;">
         This app doesn't diagnose illness and isn't a substitute for veterinary care. If something seems off, contact an avian veterinarian.
@@ -291,7 +291,7 @@ function buildScanAlertEmail(opts: {
     </div>
   </div>
 </div>`;
-  const text = `${opts.birdName}'s daily scan needs your eyes.\n\n${opts.sitterName} flagged:\n${opts.reasons.map((r) => `- ${r}`).join("\n")}${opts.notes ? `\n\nSitter notes: "${opts.notes}"` : ""}\n\nView the full scan: ${opts.link}`;
+  const text = `${opts.birdName}'s daily health check needs your eyes.\n\n${opts.sitterName} flagged:\n${opts.reasons.map((r) => `- ${r}`).join("\n")}${opts.notes ? `\n\nSitter notes: "${opts.notes}"` : ""}\n\nView the full health check: ${opts.link}`;
   return { subject, html, text };
 }
 
@@ -363,7 +363,7 @@ export const submitHealthScan = createServerFn({ method: "POST" })
         daily_log_id: row.id,
         photo_type: "other",
         photo_url: data.photoDataUrl,
-        notes: "Attached to health scan",
+        notes: "Attached to health check",
       });
       if (pErr) console.error("[submitHealthScan] photo insert failed", pErr.message);
     }
@@ -411,8 +411,8 @@ export const submitHealthScan = createServerFn({ method: "POST" })
           console.log("[scan] push", res);
         } else {
           const res = await sendPushToOwner(ownerId, "sitter_log", {
-            title: "New daily scan",
-            body: `${birdName}'s sitter logged an all-clear health scan.`,
+            title: "New daily health check",
+            body: `${birdName}'s sitter logged an all-clear health check.`,
             url,
             tag: `scan-${row.id}`,
           });

@@ -107,7 +107,7 @@ function AccountPage() {
                 <RecordRow
                   leading={<IconTile icon={<Bell className="size-5" />} />}
                   title="Notifications"
-                  subtitle="How you hear about scans and updates."
+                  subtitle="How you hear about health checks and updates."
                 />
               </Link>
               <Link to="/household" className="block">

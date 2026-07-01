@@ -186,7 +186,7 @@ function SitDetail() {
       {/* Activity summary tiles */}
       <Card>
         <div className="grid grid-cols-5 divide-x divide-[var(--line2)]">
-          <SummaryTile label="Scans" value={data.counts.scans} />
+          <SummaryTile label="Health checks" value={data.counts.scans} />
           <SummaryTile label="Weights" value={data.counts.weights} />
           <SummaryTile label="Journal" value={data.counts.journals} />
           <SummaryTile label="Photos" value={data.counts.photos} />
@@ -251,7 +251,7 @@ function ActivityRow({ a, last, birdLabel }: { a: Activity; last: boolean; birdL
     const triage = a.status === "red" || a.status === "yellow";
     return (
       <Row last={last} leading={<IconTile size={34} tone={triage ? "amber" : "pale"} icon={<Activity className="size-4" />} />}
-        title={`${birdLabel(a.bird_id)} · scan — ${a.status === "red" ? "concern flagged" : a.status === "yellow" ? "something to check" : "all clear"}`}
+        title={`${birdLabel(a.bird_id)} · health check — ${a.status === "red" ? "concern flagged" : a.status === "yellow" ? "something to check" : "all clear"}`}
         subtitle={`${when}${a.reasons ? ` · ${a.reasons.replace(/ \| /g, " · ")}` : ""}`}
       />
     );
