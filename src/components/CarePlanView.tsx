@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ClipPlayer } from "@/components/ClipPlayer";
 import { IconTile, CtaLink } from "@/components/system";
 import { ViewOnlyTag } from "@/components/MemberContextBanner";
-import { normalizeFeedTimes, feedTimeLabel } from "@/lib/feedTimes";
+import { normalizeFeedTimes, FEED_PERIODS, formatAt, type FeedTime } from "@/lib/feedTimes";
 import {
   WATER_FREQ_LABELS,
   TREATS_FREQ_LABELS,
@@ -13,7 +13,7 @@ import {
   formatRemovalMinutes,
 } from "@/lib/labels";
 import {
-  AlertTriangle, ShieldAlert, Phone, Pencil,
+  AlertTriangle, AlertOctagon, ShieldAlert, Phone, Pencil,
   Utensils, Smile, Home as HomeIcon, Stethoscope, CalendarClock, Siren,
 } from "lucide-react";
 
@@ -24,6 +24,12 @@ import {
 // takes the plan DATA + context as props and never fetches. Rendered by all
 // three surfaces — owner, household member/caregiver, and the external sitter
 // care-sheet — each supplying its own data, visibleSections, and canEdit.
+//
+// Card anatomy (consistent across all six sections): section header (moss icon
+// + teal eyebrow + title) → callouts that interrupt → key facts that pop
+// (feeding amounts as moss figures, weight as a metric) → key-value rows (muted
+// label / emphasized value, hairline dividers) → prose. Two label tiers: teal
+// eyebrows mark structure; muted micro-labels mark leaf fields.
 //
 // Section anchors carry BOTH a stable `id` (food/behavior/home/health/routine/
 // emergency, for deep-linking) and the sitter-onboarding `data-coach` keys
@@ -93,6 +99,15 @@ function joinUnique(parts: (string | null | undefined | false)[]): string {
     out.push(v);
   }
   return out.join("\n");
+}
+
+// A food's feeding period as a compact pill label. Built from FEED_PERIODS (not
+// feedTimeLabel, which joins with an em dash) so labels stay em-dash-free.
+function mealPillLabel(ft: FeedTime): string {
+  const def = FEED_PERIODS.find((p) => p.value === ft.period);
+  const base = def?.meal ?? "Feeding";
+  const at = formatAt(ft.at);
+  return at ? `${base} · ${at}` : base;
 }
 
 export function CarePlanView({
@@ -290,11 +305,11 @@ export function CarePlanView({
 
         {/* ------------------------------------------------------------ FOOD */}
         {present.food && (
-          <SectionCard id="food" coach={COACH.food} setRef={setRef("food")} icon={<Utensils className="size-5" />} title={`What ${name} eats`}>
+          <SectionCard id="food" coach={COACH.food} setRef={setRef("food")} icon={<Utensils className="size-5" />} eyebrow="Food" title={`What ${name} eats`}>
             {neverFeed.length > 0 && (
-              <DangerCallout title="Never feed — toxic to this bird">
+              <DangerCallout title="Never feed · toxic to this bird">
                 <DangerChips items={neverFeed} />
-                <p className="mt-2 flex items-start gap-1.5 text-xs"><AlertTriangle className="mt-0.5 size-3.5 shrink-0" />Keep these completely out of reach.</p>
+                <p className="mt-2 text-xs font-medium">Keep these completely out of reach.</p>
               </DangerCallout>
             )}
             {showFeeding && <Callout>Don't introduce new foods while the owner is away.</Callout>}
@@ -302,23 +317,22 @@ export function CarePlanView({
             {diet.length > 0 && <Field label="Diet types"><Chips items={diet} /></Field>}
             {has(plan.diet_other) && <Field label="Other diet">{plan.diet_other}</Field>}
             {hasPerFoodDetails ? (
-              foodRows.map((f, i) => (
-                <div key={`${f.type}-${i}`} className="rounded-[12px] bg-[var(--cream)] p-3">
-                  <p className="t-eyebrow text-[var(--teal-on-cream)]">
-                    {f.type.charAt(0).toUpperCase() + f.type.slice(1).replace(/_/g, " ")}{f.name ? ` (${f.name})` : ""}
-                  </p>
-                  {has(f.amount) && (
-                    <p className="mt-1 text-sm text-[var(--ink)]"><span className="text-[var(--mute)]">Amount: </span>{f.unit ? formatAmountUnit(f.amount, f.unit) : f.amount}{f.freeFed ? " · free-fed" : ""}</p>
-                  )}
-                  {f.times.length > 0 && (
-                    <p className="text-sm text-[var(--ink)]"><span className="text-[var(--mute)]">When: </span>{f.times.map((ft) => feedTimeLabel(ft)).join(", ")}</p>
-                  )}
-                  {f.note && <p className="mt-1 text-sm text-[var(--ink)]"><span className="text-[var(--mute)]">Note: </span>{f.note}</p>}
-                </div>
-              ))
+              <div className="space-y-2">
+                {foodRows.map((f, i) => (
+                  <FeedingItem
+                    key={`${f.type}-${i}`}
+                    typeLabel={f.type.charAt(0).toUpperCase() + f.type.slice(1).replace(/_/g, " ")}
+                    name={f.name}
+                    amountStr={has(f.amount) ? (f.unit ? formatAmountUnit(f.amount, f.unit) : String(f.amount)) : ""}
+                    times={f.times}
+                    freeFed={f.freeFed}
+                    note={f.note}
+                  />
+                ))}
+              </div>
             ) : (
               (has(plan.food_brand) || has(plan.amount_value)) && (
-                <Field label="Brand & amount">{`${plan.food_brand ?? ""}${has(plan.amount_value) ? ` — ${formatAmountUnit(plan.amount_value, plan.amount_unit)}` : ""}`.trim()}</Field>
+                <Field label="Brand & amount">{`${plan.food_brand ?? ""}${has(plan.amount_value) ? ` · ${formatAmountUnit(plan.amount_value, plan.amount_unit)}` : ""}`.trim()}</Field>
               )
             )}
             {!foodRows.some((f) => f.times.length > 0) && feedingTimes.length > 0 && (
@@ -327,24 +341,37 @@ export function CarePlanView({
             {freshFoods.length > 0 && <Field label="Fresh foods"><Chips items={freshFoods} /></Field>}
             {has(plan.fresh_foods_other) && <Field label="Other fresh foods">{plan.fresh_foods_other}</Field>}
             {(has(plan.treats_notes) || has(plan.treats_frequency)) && (
-              <Field label="Treats">{`${plan.treats_notes ?? ""}${has(plan.treats_frequency) ? `\nFrequency: ${prettyLabel(plan.treats_frequency, TREATS_FREQ_LABELS)}` : ""}`.trim()}</Field>
+              <Field label="Treats">
+                {has(plan.treats_frequency) && (
+                  <KVList rows={[{ label: "Frequency", value: prettyLabel(plan.treats_frequency, TREATS_FREQ_LABELS) }]} />
+                )}
+                {has(plan.treats_notes) && (
+                  <p className={`text-sm text-[var(--ink)] whitespace-pre-line ${has(plan.treats_frequency) ? "mt-2" : ""}`}>{plan.treats_notes}</p>
+                )}
+              </Field>
             )}
             {(has(plan.water_frequency) || has(plan.water_notes) || has(plan.water_instructions)) && (
               <Field label="Water">
-                {has(plan.water_frequency) || has(plan.water_notes)
-                  ? joinUnique([plan.water_frequency && `Water ${prettyLabel(plan.water_frequency, WATER_FREQ_LABELS)}`, plan.water_notes])
-                  : plan.water_instructions}
+                {has(plan.water_frequency) && (
+                  <KVList rows={[{ label: "Change water", value: prettyLabel(plan.water_frequency, WATER_FREQ_LABELS) }]} />
+                )}
+                {(has(plan.water_notes) || (!has(plan.water_frequency) && has(plan.water_instructions))) && (
+                  <p className={`text-sm text-[var(--ink)] whitespace-pre-line ${has(plan.water_frequency) ? "mt-2" : ""}`}>
+                    {has(plan.water_notes) ? plan.water_notes : plan.water_instructions}
+                  </p>
+                )}
               </Field>
             )}
-            <div className="rounded-[12px] bg-[var(--cream)] p-3">
-              <p className="t-eyebrow text-[var(--teal-on-cream)]">Freshness & hygiene</p>
-              <ul className="mt-1.5 space-y-1 text-sm text-[var(--ink)]">
-                <li>Remove fresh food within <strong className="font-medium">{formatRemovalMinutes(plan.fresh_food_removal_minutes)}</strong> of serving.</li>
-                <li>Wash food bowls: <strong className="font-medium">{prettyLabel(plan.food_bowl_wash_cadence, BOWL_WASH_LABELS) || "—"}</strong>.</li>
-                <li>Wash water bowl: <strong className="font-medium">{prettyLabel(plan.water_bowl_wash_cadence, BOWL_WASH_LABELS) || "—"}</strong>.</li>
-              </ul>
+            <Field label="Freshness & hygiene">
+              <KVList
+                rows={[
+                  { label: "Remove fresh food", value: `Within ${formatRemovalMinutes(plan.fresh_food_removal_minutes)}` },
+                  { label: "Wash food bowls", value: prettyLabel(plan.food_bowl_wash_cadence, BOWL_WASH_LABELS) },
+                  { label: "Wash water bowl", value: prettyLabel(plan.water_bowl_wash_cadence, BOWL_WASH_LABELS) },
+                ]}
+              />
               {has(plan.food_hygiene_notes) && <p className="mt-2 text-xs text-[var(--mute)] whitespace-pre-line">{plan.food_hygiene_notes}</p>}
-            </div>
+            </Field>
             {has(plan.food_storage) && <Field label="Food storage">{plan.food_storage}</Field>}
             <ClipField clip={clipByKey("food_water")} />
           </SectionCard>
@@ -352,9 +379,9 @@ export function CarePlanView({
 
         {/* -------------------------------------------------------- BEHAVIOR */}
         {present.behavior && (
-          <SectionCard id="behavior" coach={COACH.behavior} setRef={setRef("behavior")} icon={<Smile className="size-5" />} title={`Handling ${name}`}>
+          <SectionCard id="behavior" coach={COACH.behavior} setRef={setRef("behavior")} icon={<Smile className="size-5" />} eyebrow="Behavior" title={`Handling ${name}`}>
             {(handlingDangerous || has(plan.bite_risk)) && (
-              <Callout><AlertTriangle className="mt-0.5 size-4 shrink-0" /><span>This bird has handling restrictions — read this section before any contact.</span></Callout>
+              <Callout>This bird has handling restrictions — read this section before any contact.</Callout>
             )}
             <StepUpField stepUp={plan.step_up} notes={plan.step_up_notes} />
             {has(plan.handlers) && <Field label="Who can handle">{plan.handlers}</Field>}
@@ -376,9 +403,9 @@ export function CarePlanView({
 
         {/* ------------------------------------------------------------ HOME */}
         {present.home && (
-          <SectionCard id="home" coach={COACH.home} setRef={setRef("home")} icon={<HomeIcon className="size-5" />} title={`${name}'s home & safety`}>
+          <SectionCard id="home" coach={COACH.home} setRef={setRef("home")} icon={<HomeIcon className="size-5" />} eyebrow="Home & safety" title={`${name}'s home & safety`}>
             {hazards.length > 0 && (
-              <DangerCallout title="Household hazards — keep away">
+              <DangerCallout title="Household hazards · keep away">
                 <DangerChips items={hazards} />
                 {has(plan.hazards_other) && <p className="mt-2 text-sm whitespace-pre-line">{plan.hazards_other}</p>}
               </DangerCallout>
@@ -402,8 +429,8 @@ export function CarePlanView({
 
         {/* ---------------------------------------------------------- HEALTH */}
         {present.health && (
-          <SectionCard id="health" coach={COACH.health} setRef={setRef("health")} icon={<Stethoscope className="size-5" />} title={`What's normal for ${name}`}>
-            {weightStr && <Field label="Normal weight">{weightStr}</Field>}
+          <SectionCard id="health" coach={COACH.health} setRef={setRef("health")} icon={<Stethoscope className="size-5" />} eyebrow="Health" title={`What's normal for ${name}`}>
+            {weightStr && <Metric value={weightStr} caption="Normal weight" />}
             {has(plan.whats_normal) && <Field label="What's normal (overall)">{plan.whats_normal}</Field>}
             {has(plan.normal_appetite) && <Field label="Normal appetite">{plan.normal_appetite}</Field>}
             {has(plan.normal_droppings) && <Field label="Normal droppings">{plan.normal_droppings}</Field>}
@@ -426,15 +453,15 @@ export function CarePlanView({
 
         {/* --------------------------------------------------------- ROUTINE */}
         {present.routine && (
-          <SectionCard id="routine" setRef={setRef("routine")} icon={<CalendarClock className="size-5" />} title="Daily rhythm">
+          <SectionCard id="routine" setRef={setRef("routine")} icon={<CalendarClock className="size-5" />} eyebrow="Routine" title="Daily rhythm">
             {groups.map((g) => (
               <div key={g.t}>
                 <p className="t-eyebrow text-[var(--teal-on-cream)]">{TIME_LABEL[g.t] ?? g.t}</p>
-                <ul className="mt-1 space-y-1.5">
+                <ul className="mt-1.5 space-y-1.5">
                   {g.items.map((it) => (
-                    <li key={it.id} className="text-sm text-[var(--ink)]">
+                    <li key={it.id} className="text-sm font-medium text-[var(--ink)]">
                       {it.title}
-                      {it.instructions && <span className="block text-xs text-[var(--mute)] whitespace-pre-line">{it.instructions}</span>}
+                      {it.instructions && <span className="mt-0.5 block text-xs font-normal text-[var(--mute)] whitespace-pre-line">{it.instructions}</span>}
                     </li>
                   ))}
                 </ul>
@@ -446,7 +473,7 @@ export function CarePlanView({
 
         {/* ------------------------------------------------------- EMERGENCY */}
         {present.emergency && (
-          <SectionCard id="emergency" coach={COACH.emergency} setRef={setRef("emergency")} icon={<Siren className="size-5" />} title="Emergency" tone="red">
+          <SectionCard id="emergency" coach={COACH.emergency} setRef={setRef("emergency")} icon={<Siren className="size-5" />} eyebrow="Emergency" title="Emergency" tone="red">
             {hasWhenToCall && (
               <Callout label="When to call">
                 {joinUnique([
@@ -455,19 +482,26 @@ export function CarePlanView({
                 ])}
               </Callout>
             )}
-            {contactRows.map((r) => {
-              const v = (contacts[r.key] ?? "").toString();
-              const isPhone = /phone|control|owner/.test(r.key) && /[0-9]/.test(v);
-              return (
-                <Field key={r.key} label={r.label}>
-                  {isPhone ? (
-                    <a href={`tel:${v.replace(/[^0-9+]/g, "")}`} className="inline-flex items-center gap-1.5 font-medium text-[var(--ink)] underline">
-                      <Phone className="size-3.5" />{v}
-                    </a>
-                  ) : v}
-                </Field>
-              );
-            })}
+            {contactRows.length > 0 && (
+              <div className="rounded-[12px] bg-[var(--cream)] px-3">
+                {contactRows.map((r, i) => {
+                  const v = (contacts[r.key] ?? "").toString();
+                  const isPhone = /phone|control|owner/.test(r.key) && /[0-9]/.test(v);
+                  return (
+                    <div key={r.key} className={`flex items-baseline justify-between gap-4 py-2 ${i > 0 ? "border-t border-[var(--line)]" : ""}`}>
+                      <span className="shrink-0 text-[13px] text-[var(--mute)]">{r.label}</span>
+                      <span className="min-w-0 text-right text-sm font-medium text-[var(--ink)]">
+                        {isPhone ? (
+                          <a href={`tel:${v.replace(/[^0-9+]/g, "")}`} className="inline-flex items-center gap-1.5 text-[var(--ink)] underline">
+                            <Phone className="size-3.5 shrink-0" />{v}
+                          </a>
+                        ) : v}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </SectionCard>
         )}
 
@@ -480,17 +514,24 @@ export function CarePlanView({
 // ---------------------------------------------------------------------------
 // Presentational primitives.
 // ---------------------------------------------------------------------------
+
+// Muted micro-label for leaf fields (tier 2). Teal eyebrows (tier 1) mark
+// structure — section headers and routine dayparts — so the two never blur.
+const FIELD_LABEL = "text-[10.5px] font-medium uppercase tracking-[0.09em] text-[var(--mute)]";
+
 function SectionCard({
-  id, coach, setRef, icon, title, tone = "ink", children,
+  id, coach, setRef, icon, eyebrow, title, tone = "ink", children,
 }: {
   id: CareSection;
   coach?: string;
   setRef: (el: HTMLElement | null) => void;
   icon: React.ReactNode;
+  eyebrow: string;
   title: string;
   tone?: "ink" | "red";
   children: React.ReactNode;
 }) {
+  const danger = tone === "red";
   return (
     <section
       id={id}
@@ -500,8 +541,11 @@ function SectionCard({
       style={{ boxShadow: "0 1px 0 rgba(40,50,40,.02), 0 6px 14px -8px rgba(40,50,40,.08)" }}
     >
       <div className="flex items-center gap-3">
-        <IconTile size={38} tone={tone === "red" ? "red" : "ink-lime"} icon={icon} />
-        <h2 className="t-section">{title}</h2>
+        <IconTile size={38} tone={danger ? "red" : "pale"} icon={icon} />
+        <div className="min-w-0">
+          <p className={`t-eyebrow ${danger ? "text-[var(--red-deep)]" : "text-[var(--teal-on-cream)]"}`}>{eyebrow}</p>
+          <h2 className="t-section leading-tight">{title}</h2>
+        </div>
       </div>
       <div className="mt-3 space-y-3">{children}</div>
     </section>
@@ -512,27 +556,97 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   if (!has(children as any)) return null;
   return (
     <div>
-      <p className="t-eyebrow text-[var(--teal-on-cream)]">{label}</p>
-      <div className="mt-0.5 text-sm text-[var(--ink)] whitespace-pre-line">{children}</div>
+      <p className={FIELD_LABEL}>{label}</p>
+      <div className="mt-1 text-sm text-[var(--ink)] whitespace-pre-line">{children}</div>
+    </div>
+  );
+}
+
+// Scannable label:value rows — muted label left, emphasized value right, hairline
+// dividers between. Empty-value rows are dropped (no placeholder dashes).
+function KVList({ rows }: { rows: { label: string; value: React.ReactNode }[] }) {
+  const shown = rows.filter((r) => has(r.value as any));
+  if (!shown.length) return null;
+  return (
+    <div className="rounded-[12px] bg-[var(--cream)] px-3">
+      {shown.map((r, i) => (
+        <div key={r.label} className={`flex items-baseline justify-between gap-4 py-2 ${i > 0 ? "border-t border-[var(--line)]" : ""}`}>
+          <span className="shrink-0 text-[13px] text-[var(--mute)]">{r.label}</span>
+          <span className="min-w-0 text-right text-sm font-medium text-[var(--ink)] whitespace-pre-line">{r.value}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// A single prominent figure with a muted caption (e.g. normal weight).
+function Metric({ value, caption }: { value: React.ReactNode; caption: string }) {
+  return (
+    <div className="rounded-[12px] bg-[var(--cream)] p-3">
+      <p className="text-[26px] font-medium leading-none text-[var(--moss)]">{value}</p>
+      <p className={`mt-1.5 ${FIELD_LABEL}`}>{caption}</p>
+    </div>
+  );
+}
+
+// Timing / attribute pill (moss on pale) — matches Chips.
+function Pill({ children }: { children: React.ReactNode }) {
+  return <span className="rounded-full bg-[var(--pale)] px-2.5 py-0.5 text-xs font-medium text-[var(--moss)]">{children}</span>;
+}
+
+// One food: name left, amount as a moss figure right, feeding times as pills.
+function FeedingItem({
+  typeLabel, name, amountStr, times, freeFed, note,
+}: {
+  typeLabel: string;
+  name: string;
+  amountStr: string;
+  times: FeedTime[];
+  freeFed: boolean;
+  note: string;
+}) {
+  return (
+    <div className="rounded-[12px] bg-[var(--cream)] p-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-[var(--ink)]">{name || typeLabel}</p>
+          {name && <p className="mt-0.5 text-[11px] text-[var(--mute)]">{typeLabel}</p>}
+        </div>
+        {amountStr && <p className="shrink-0 text-[19px] font-medium leading-none text-[var(--moss)]">{amountStr}</p>}
+      </div>
+      {(times.length > 0 || freeFed) && (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {times.map((ft, i) => <Pill key={i}>{mealPillLabel(ft)}</Pill>)}
+          {freeFed && <Pill>Free-fed</Pill>}
+        </div>
+      )}
+      {note && <p className="mt-2 text-[13px] text-[var(--mute)] whitespace-pre-line">{note}</p>}
     </div>
   );
 }
 
 // Amber callout — soft hard-rules / warnings (no new foods, fears, when-to-call).
+// Always leads with a warning icon so it reads as a warning at a glance.
 function Callout({ label, children }: { label?: string; children: React.ReactNode }) {
   return (
     <div className="rounded-[12px] bg-[var(--amber-fill)] p-3 text-[var(--amber-ink)]">
-      {label && <p className="t-eyebrow">{label}</p>}
-      <div className={`flex items-start gap-1.5 text-sm whitespace-pre-line ${label ? "mt-1" : ""}`}>{children}</div>
+      <div className="flex items-start gap-2">
+        <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+        <div className="min-w-0 flex-1">
+          {label && <p className="t-eyebrow">{label}</p>}
+          <div className={`text-sm whitespace-pre-line ${label ? "mt-1" : ""}`}>{children}</div>
+        </div>
+      </div>
     </div>
   );
 }
 
-// Red callout — true danger (toxic foods, hazards, bite risk).
+// Red callout — true danger (toxic foods, hazards, bite risk). Leads with a
+// danger icon and carries a distinct card identity (red fill + ring).
 function DangerCallout({ title, icon, children }: { title: string; icon?: React.ReactNode; children: React.ReactNode }) {
   return (
     <div className="rounded-[12px] bg-[var(--red-fill)] p-3 text-[var(--red-deep)] ring-1 ring-[var(--red-deep)]/15">
-      <p className="t-eyebrow flex items-center gap-1.5">{icon}{title}</p>
+      <p className="t-eyebrow flex items-center gap-1.5">{icon ?? <AlertOctagon className="size-3.5" />}{title}</p>
       <div className="mt-2">{children}</div>
     </div>
   );
@@ -587,7 +701,7 @@ function StepUpField({ stepUp, notes }: { stepUp?: string | null; notes?: string
   const cautionary = !base || raw === "no" || !!qualifier;
   return (
     <div>
-      <p className="t-eyebrow text-[var(--teal-on-cream)]">Step up</p>
+      <p className={FIELD_LABEL}>Step up</p>
       {label && (
         <span className={`mt-1 inline-flex items-center rounded-full px-2.5 py-1 text-[11.5px] font-medium ${cautionary ? "bg-[var(--amber-fill)] text-[var(--amber-ink)]" : "bg-[var(--pale)] text-[var(--moss)]"}`}>{label}</span>
       )}
@@ -601,7 +715,7 @@ function ClipField({ clip }: { clip: { key: string; label: string; url: string }
   if (!clip) return null;
   return (
     <div>
-      <p className="t-eyebrow text-[var(--teal-on-cream)]">Show me</p>
+      <p className={FIELD_LABEL}>Show me</p>
       <div className="mt-1 overflow-hidden rounded-[12px] bg-[var(--cream)] ring-1 ring-[var(--line2)]">
         <ClipPlayer src={clip.url} label={clip.label} className="aspect-video" />
         <p className="px-2 py-1.5 text-[12px] font-medium leading-tight text-[var(--ink)]">{clip.label}</p>
