@@ -16,21 +16,25 @@ function PastSitsPage() {
   const navigate = useNavigate();
   const today = new Date().toISOString().slice(0, 10);
 
-  const { data: sits = [], isLoading } = useQuery({
-    queryKey: ["all-sits"],
+  // Own dedicated key + server-side scope to PAST sits (end_date < today). NOT
+  // the shared ["all-sits"] key: the dashboard populates that with minimal
+  // columns (no end_date), which made the client-side `end_date < today` filter
+  // evaluate `undefined < today` → empty, so this page rendered blank. Scoping
+  // the query here makes it self-sufficient (and lighter — past sits only).
+  const { data: past = [], isLoading } = useQuery({
+    queryKey: ["past-sits"],
     refetchOnMount: "always",
     queryFn: async () => {
       const { data, error } = await supabase
         .from("sits")
         .select("*, sit_birds(bird_id)")
         .or("sitter_name.is.null,sitter_name.neq.__preview__")
+        .lt("end_date", today)
         .order("start_date", { ascending: false });
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as any[];
     },
   });
-
-  const past = (sits as any[]).filter((s) => s.end_date < today); // already start_date desc
 
   // Batch-resolve household caregiver names.
   const householdIds = [...new Set(past.filter((s) => s.caregiver_user_id).map((s) => s.caregiver_user_id as string))];
