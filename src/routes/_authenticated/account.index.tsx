@@ -235,11 +235,15 @@ function EditIdentityModal({
   onPendingEmail: (v: string | null) => void;
   onClose: () => void;
 }) {
-  const [nameInput, setNameInput] = useState(name);
+  // Split the stored full name into first + last for editing; recombine on save.
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  const [firstInput, setFirstInput] = useState(parts[0] ?? "");
+  const [lastInput, setLastInput] = useState(parts.slice(1).join(" "));
   const [emailInput, setEmailInput] = useState(email);
   const [saving, setSaving] = useState(false);
 
-  const nameDirty = nameInput.trim() !== name.trim();
+  const fullName = [firstInput.trim(), lastInput.trim()].filter(Boolean).join(" ");
+  const nameDirty = fullName !== name.trim();
   const emailDirty = emailInput.trim().length > 0 && emailInput.trim().toLowerCase() !== email.toLowerCase();
 
   async function save() {
@@ -248,17 +252,15 @@ function EditIdentityModal({
     try {
       if (nameDirty) {
         // Keep all three name fields consistent so the first_name-preferring
-        // greeting reflects the edit (display_name alone would leave a stale
-        // first_name winning). full_name + display_name = the entered name;
-        // first_name = its first token.
-        const trimmed = nameInput.trim();
-        const first = trimmed.split(/\s+/)[0] || null;
+        // greeting reflects the edit. display_name + full_name = "First Last";
+        // first_name = the first name.
+        const first = firstInput.trim() || null;
         const { error } = await supabase
           .from("profiles")
-          .update({ display_name: trimmed || null, full_name: trimmed || null, first_name: first } as any)
+          .update({ display_name: fullName || null, full_name: fullName || null, first_name: first } as any)
           .eq("id", userId);
         if (error) throw error;
-        onName(trimmed);
+        onName(fullName);
       }
       if (emailDirty) {
         const next = emailInput.trim().toLowerCase();
@@ -279,13 +281,28 @@ function EditIdentityModal({
 
   return (
     <ModalShell title="Edit your details" onClose={onClose}>
-      <label className="t-eyebrow block text-[var(--mute)]">Name</label>
-      <input
-        value={nameInput}
-        onChange={(e) => setNameInput(e.target.value)}
-        placeholder="Your name"
-        className="mt-1 w-full rounded-xl border border-[var(--line)] bg-white px-3 py-2.5 text-sm outline-none focus:border-[var(--moss)]"
-      />
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="t-eyebrow block text-[var(--mute)]">First name</label>
+          <input
+            value={firstInput}
+            onChange={(e) => setFirstInput(e.target.value)}
+            placeholder="Brittany"
+            autoComplete="given-name"
+            className="mt-1 w-full rounded-xl border border-[var(--line)] bg-white px-3 py-2.5 text-sm outline-none focus:border-[var(--moss)]"
+          />
+        </div>
+        <div>
+          <label className="t-eyebrow block text-[var(--mute)]">Last name</label>
+          <input
+            value={lastInput}
+            onChange={(e) => setLastInput(e.target.value)}
+            placeholder="King"
+            autoComplete="family-name"
+            className="mt-1 w-full rounded-xl border border-[var(--line)] bg-white px-3 py-2.5 text-sm outline-none focus:border-[var(--moss)]"
+          />
+        </div>
+      </div>
       <label className="t-eyebrow mt-4 block text-[var(--mute)]">Email address</label>
       <input
         type="email"
