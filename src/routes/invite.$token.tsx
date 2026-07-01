@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { getHouseholdInvite, acceptHouseholdInvite, declineHouseholdInvite } from "@/lib/household.functions";
+import { captureLead } from "@/lib/captureLead";
 import { toast } from "sonner";
 import { Loader2, Check } from "lucide-react";
 import { InkHero, Card, PrimaryButton, CtaLink } from "@/components/system";
@@ -184,6 +185,8 @@ function WrongAccount({ inviteEmail, token }: { inviteEmail: string; token: stri
 function LoggedOutAccept({ token, inviteEmail, onDone }: { token: string; inviteEmail: string; onDone: () => void }) {
   const { busy, doDecline } = useAcceptDecline(token, onDone);
   const [creating, setCreating] = useState(false);
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [password, setPassword] = useState("");
   const [pending, setPending] = useState(false);
   const [confirmSent, setConfirmSent] = useState(false);
@@ -191,15 +194,25 @@ function LoggedOutAccept({ token, inviteEmail, onDone }: { token: string; invite
   const redirect = `${window.location.origin}/invite/${token}`;
 
   async function createAndAccept() {
+    const first = firstName.trim();
+    const last = lastName.trim();
+    if (!first) { toast.error("Enter your first name."); return; }
     if (password.length < 8) { toast.error("Use at least 8 characters."); return; }
     setPending(true);
     try {
+      // Store the REAL name (display_name/full_name + given_name/family_name) so
+      // handle_new_user captures it — never the email prefix.
+      const fullName = [first, last].filter(Boolean).join(" ");
       const { data, error } = await supabase.auth.signUp({
         email: inviteEmail,
         password,
-        options: { data: { display_name: inviteEmail.split("@")[0] }, emailRedirectTo: redirect },
+        options: { data: { display_name: fullName, full_name: fullName, given_name: first, family_name: last || undefined }, emailRedirectTo: redirect },
       });
       if (error) { toast.error(error.message); setPending(false); return; }
+      // Land the new member in Brevo with a real name. No marketing consent —
+      // they're joining a household, not opting into marketing (the edge fn still
+      // records the contact + name, just not the marketing list).
+      void captureLead({ email: inviteEmail, firstName: first, lastName: last || undefined, source: "household-invite", marketingConsent: false, attribution: null });
       if (data.session) {
         // Confirmation disabled → reload so the screen sees the matching
         // session and offers one-tap Accept.
@@ -246,6 +259,16 @@ function LoggedOutAccept({ token, inviteEmail, onDone }: { token: string; invite
 
   return (
     <Card className="space-y-3 p-5">
+      <div className="grid grid-cols-2 gap-3">
+        <label className="block">
+          <span className="t-eyebrow mb-1 block text-[var(--mute)]">First name</span>
+          <input className="input" value={firstName} maxLength={60} onChange={(e) => setFirstName(e.target.value)} placeholder="Brittany" autoComplete="given-name" />
+        </label>
+        <label className="block">
+          <span className="t-eyebrow mb-1 block text-[var(--mute)]">Last name</span>
+          <input className="input" value={lastName} maxLength={60} onChange={(e) => setLastName(e.target.value)} placeholder="King" autoComplete="family-name" />
+        </label>
+      </div>
       <label className="block">
         <span className="t-eyebrow mb-1 block text-[var(--mute)]">Email</span>
         <input className="input" value={inviteEmail} readOnly disabled />
