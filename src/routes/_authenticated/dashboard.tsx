@@ -237,7 +237,15 @@ function Dashboard() {
   // on a sit covering today, Home takes over the active-caregiver experience
   // (hero + Today's check + Birds you're covering). The normal Home returns
   // automatically when end_date < today (the hook's query no longer matches).
-  if (!demo && caregiverActive && caregiver?.sits?.length) {
+  //
+  // BUT this takeover is ONLY for pure caregivers who own no birds. An OWNER —
+  // even one who ALSO covers another household's sit — always gets their own
+  // owner Home (their birds, add-bird, grouping); being a member elsewhere must
+  // never demote them to the caregiver view. Fail-safe: if identity (myId) or
+  // the bird list hasn't resolved yet, we do NOT take over, so an owner is never
+  // trapped in caregiver mode during load.
+  const ownsAnyBird = !!myId && homeBirds.some((b) => (b as any).owner_id === myId);
+  if (!demo && !birdsLoading && !!myId && !ownsAnyBird && caregiverActive && caregiver?.sits?.length) {
     return (
       <div className="min-h-screen bg-[var(--cream)] pb-nav">
         <div className="mx-auto max-w-md">
