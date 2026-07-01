@@ -60,7 +60,7 @@ export const getActiveCaregiverSits = createServerFn({ method: "GET" })
     const planIds = ((plansRes.data ?? []) as any[]).map((p: any) => p.id);
     const planToBird = new Map(((plansRes.data ?? []) as any[]).map((p: any) => [p.id, p.bird_id]));
 
-    const [tasksRes, completionsRes] = await Promise.all([
+    const [tasksRes, completionsRes, scansRes] = await Promise.all([
       planIds.length
         ? sb.from("routine_tasks")
             .select("id, care_plan_id, title, instructions, category, time_of_day, sort_order, required, sitter_completable, guide_card_id")
@@ -70,6 +70,12 @@ export const getActiveCaregiverSits = createServerFn({ method: "GET" })
         .select("routine_task_id, sit_id, completed_at")
         .in("sit_id", sitIds)
         .eq("completed_date", today),
+      // Today's health scans for these sits (daily_logs are tagged with sit_id by
+      // the caregiver scan flow), so each bird card can show done/not-done today.
+      sb.from("daily_logs")
+        .select("bird_id, sit_id, triage_status")
+        .in("sit_id", sitIds)
+        .eq("log_date", today),
     ]);
 
     const birdById = new Map(((birdsRes.data ?? []) as any[]).map((b: any) => [b.id, b]));
@@ -92,6 +98,11 @@ export const getActiveCaregiverSits = createServerFn({ method: "GET" })
       list.push({ taskId: c.routine_task_id, at: c.completed_at });
       completionsBySit.set(c.sit_id, list);
     }
+    // Per-bird today-scan status, keyed by sit+bird (a bird can be on >1 sit).
+    const scanByBirdSit = new Map<string, string | null>();
+    for (const r of (scansRes.data ?? []) as any[]) {
+      scanByBirdSit.set(`${r.sit_id}:${r.bird_id}`, (r.triage_status ?? null) as string | null);
+    }
 
     const out: ActiveCaregiverSit[] = rows.map((s) => {
       const birds = (sitBirdsBySit.get(s.id) ?? [])
@@ -104,6 +115,8 @@ export const getActiveCaregiverSits = createServerFn({ method: "GET" })
           photo_url: b.photo_url as string | null,
           photo_position: b.photo_position as string | null,
           tasks: (tasksByBird.get(b.id) ?? []) as any[],
+          scanDone: scanByBirdSit.has(`${s.id}:${b.id}`),
+          scanStatus: scanByBirdSit.get(`${s.id}:${b.id}`) ?? null,
         }));
       return {
         id: s.id as string,
@@ -196,6 +209,8 @@ export type ActiveCaregiverBird = {
   photo_url: string | null;
   photo_position: string | null;
   tasks: { id: string; title: string; instructions: string | null; category: string; time_of_day: string | null; sort_order: number; required: boolean; sitter_completable: boolean; guide_card_id: string | null }[];
+  scanDone: boolean;
+  scanStatus: string | null;
 };
 export type ActiveCaregiverSit = {
   id: string;
