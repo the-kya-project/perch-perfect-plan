@@ -55,6 +55,98 @@ export function CaregiverHome({ data }: { data: { sits: ActiveCaregiverSit[]; up
   );
 }
 
+// The sit's daily-care checklist ("Today's check") — routine tasks grouped by
+// daypart, toggled via the shared caregiver completion path. Reused by the
+// pure-caregiver Home (CaregiverSitBlock / the Today tab) AND the owner Home's
+// "Covering …" section (a member who is also an owner), so there is ONE checklist
+// per sit, not two competing ones.
+export function CaregiverTodayChecklist({ sit }: { sit: ActiveCaregiverSit }) {
+  type Row = { taskId: string; title: string; instructions: string | null; birdId: string; birdName: string };
+  const grouped = useMemo<Record<Daypart, Row[]>>(() => {
+    const out: Record<Daypart, Row[]> = { morning: [], midday: [], evening: [], anytime: [] };
+    for (const b of sit.birds) {
+      for (const t of b.tasks) {
+        const dp = taskDaypart(t);
+        out[dp].push({ taskId: t.id, title: t.title, instructions: t.instructions, birdId: b.id, birdName: b.name });
+      }
+    }
+    for (const dp of DAYPARTS) out[dp].sort((a, b) => a.title.localeCompare(b.title));
+    return out;
+  }, [sit.birds]);
+
+  const doneByTask = useMemo(() => new Set(sit.completionsToday.map((c) => c.taskId)), [sit.completionsToday]);
+  const doneAtByTask = useMemo(() => new Map(sit.completionsToday.map((c) => [c.taskId, c.at])), [sit.completionsToday]);
+  const totalTasks = Object.values(grouped).reduce((n, l) => n + l.length, 0);
+  const doneTotal = sit.completionsToday.filter((c) => grouped.morning.concat(grouped.midday, grouped.evening, grouped.anytime).some((r) => r.taskId === c.taskId)).length;
+
+  const qc = useQueryClient();
+  const toggle = useServerFn(caregiverToggleTaskCompletion);
+  const m = useMutation({
+    mutationFn: (vars: { taskId: string; completed: boolean }) => toggle({ data: { sitId: sit.id, taskId: vars.taskId, completed: vars.completed } }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["active-caregiver-sits"] }),
+    onError: (e: any) => toast.error(e?.message ?? "Couldn't update."),
+  });
+
+  return (
+    <section>
+      <SectionHead
+        title="Today's check"
+        trailing={totalTasks > 0 ? <span className="t-meta">{doneTotal}/{totalTasks}</span> : undefined}
+      />
+      {totalTasks === 0 ? (
+        <Card className="p-5 text-center">
+          <p className="t-body text-[var(--mute)]">No daily routine items yet. Logs you add still flow into the bird's record.</p>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          {DAYPARTS.map((dp) => {
+            const rows = grouped[dp];
+            if (!rows.length) return null;
+            return (
+              <div key={dp} className="space-y-2">
+                <div className="flex items-center gap-2 px-1">
+                  <Sun className="size-4 text-[var(--mute)]" />
+                  <p className="t-eyebrow text-[var(--mute2)]">{DAYPART_LABEL[dp]}</p>
+                </div>
+                <Card>
+                  {rows.map((r, i) => {
+                    const done = doneByTask.has(r.taskId);
+                    const at = doneAtByTask.get(r.taskId);
+                    return (
+                      <button
+                        key={r.taskId}
+                        type="button"
+                        disabled={m.isPending}
+                        onClick={() => m.mutate({ taskId: r.taskId, completed: !done })}
+                        className={`flex min-h-[48px] w-full items-center gap-3 px-4 py-2.5 text-left disabled:opacity-60 ${i === rows.length - 1 ? "" : "border-b border-[var(--line2)]"}`}
+                      >
+                        <span
+                          className={`grid size-6 shrink-0 place-items-center rounded-full ${done ? "bg-[var(--moss)] text-white" : "ring-1 ring-[var(--line)] bg-white"}`}
+                          aria-hidden="true"
+                        >
+                          {done && <Check className="size-3.5" />}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className={`t-item block ${done ? "line-through text-[var(--mute2)]" : ""}`}>{prettyTitle(r.title)}</span>
+                          <span className="t-meta block">
+                            {sit.birds.length > 1 && <span className="font-[500] text-[var(--ink2)]">{r.birdName}{r.instructions ? " · " : ""}</span>}
+                            {r.instructions && <span>{r.instructions}</span>}
+                            {done && at && <span className="ml-1">· done {fmtTime(at)}</span>}
+                          </span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </Card>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </section>
+  );
+}
+
 function CaregiverSitBlock({ sit }: { sit: ActiveCaregiverSit }) {
   const today = new Date();
   const daysLeft = Math.max(0, Math.round((new Date(sit.endDate + "T23:59:59").getTime() - today.getTime()) / 86_400_000));
@@ -78,37 +170,6 @@ function CaregiverSitBlock({ sit }: { sit: ActiveCaregiverSit }) {
   });
   const photoFor = (b: ActiveCaregiverSit["birds"][number]): SignedPhoto | null => (b.photo_url ? (photoMap as any)?.[b.photo_url] ?? null : null);
 
-  // Group every bird's tasks into one daypart map for the sit. Each row carries
-  // its bird so we can show "Willow · Feed: Morning pellets" inline.
-  type Row = { taskId: string; title: string; instructions: string | null; birdId: string; birdName: string };
-  const grouped = useMemo<Record<Daypart, Row[]>>(() => {
-    const out: Record<Daypart, Row[]> = { morning: [], midday: [], evening: [], anytime: [] };
-    for (const b of sit.birds) {
-      for (const t of b.tasks) {
-        const dp = taskDaypart(t);
-        out[dp].push({ taskId: t.id, title: t.title, instructions: t.instructions, birdId: b.id, birdName: b.name });
-      }
-    }
-    for (const dp of DAYPARTS) {
-      out[dp].sort((a, b) => a.title.localeCompare(b.title));
-    }
-    return out;
-  }, [sit.birds]);
-
-  const doneByTask = useMemo(() => new Set(sit.completionsToday.map((c) => c.taskId)), [sit.completionsToday]);
-  const doneAtByTask = useMemo(() => new Map(sit.completionsToday.map((c) => [c.taskId, c.at])), [sit.completionsToday]);
-
-  const totalTasks = Object.values(grouped).reduce((n, l) => n + l.length, 0);
-  const doneTotal = sit.completionsToday.filter((c) => grouped.morning.concat(grouped.midday, grouped.evening, grouped.anytime).some((r) => r.taskId === c.taskId)).length;
-
-  const qc = useQueryClient();
-  const toggle = useServerFn(caregiverToggleTaskCompletion);
-  const m = useMutation({
-    mutationFn: (vars: { taskId: string; completed: boolean }) => toggle({ data: { sitId: sit.id, taskId: vars.taskId, completed: vars.completed } }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["active-caregiver-sits"] }),
-    onError: (e: any) => toast.error(e?.message ?? "Couldn't update."),
-  });
-
   return (
     <>
       <InkHero
@@ -118,62 +179,7 @@ function CaregiverSitBlock({ sit }: { sit: ActiveCaregiverSit }) {
         body={body}
       />
       <div className="px-5 pt-5 space-y-6">
-        <section>
-          <SectionHead
-            title="Today's check"
-            trailing={totalTasks > 0 ? <span className="t-meta">{doneTotal}/{totalTasks}</span> : undefined}
-          />
-          {totalTasks === 0 ? (
-            <Card className="p-5 text-center">
-              <p className="t-body text-[var(--mute)]">No daily routine items yet. Logs you add still flow into the bird's record.</p>
-            </Card>
-          ) : (
-            <div className="space-y-4">
-              {DAYPARTS.map((dp) => {
-                const rows = grouped[dp];
-                if (!rows.length) return null;
-                return (
-                  <div key={dp} className="space-y-2">
-                    <div className="flex items-center gap-2 px-1">
-                      <Sun className="size-4 text-[var(--mute)]" />
-                      <p className="t-eyebrow text-[var(--mute2)]">{DAYPART_LABEL[dp]}</p>
-                    </div>
-                    <Card>
-                      {rows.map((r, i) => {
-                        const done = doneByTask.has(r.taskId);
-                        const at = doneAtByTask.get(r.taskId);
-                        return (
-                          <button
-                            key={r.taskId}
-                            type="button"
-                            disabled={m.isPending}
-                            onClick={() => m.mutate({ taskId: r.taskId, completed: !done })}
-                            className={`flex min-h-[48px] w-full items-center gap-3 px-4 py-2.5 text-left disabled:opacity-60 ${i === rows.length - 1 ? "" : "border-b border-[var(--line2)]"}`}
-                          >
-                            <span
-                              className={`grid size-6 shrink-0 place-items-center rounded-full ${done ? "bg-[var(--moss)] text-white" : "ring-1 ring-[var(--line)] bg-white"}`}
-                              aria-hidden="true"
-                            >
-                              {done && <Check className="size-3.5" />}
-                            </span>
-                            <span className="min-w-0 flex-1">
-                              <span className={`t-item block ${done ? "line-through text-[var(--mute2)]" : ""}`}>{prettyTitle(r.title)}</span>
-                              <span className="t-meta block">
-                                {sit.birds.length > 1 && <span className="font-[500] text-[var(--ink2)]">{r.birdName}{r.instructions ? " · " : ""}</span>}
-                                {r.instructions && <span>{r.instructions}</span>}
-                                {done && at && <span className="ml-1">· done {fmtTime(at)}</span>}
-                              </span>
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </Card>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </section>
+        <CaregiverTodayChecklist sit={sit} />
 
         <section>
           <SectionHead title="Birds you're covering" trailing={<StatusPill tone="household">{sit.birds.length} {sit.birds.length === 1 ? "bird" : "birds"}</StatusPill>} />

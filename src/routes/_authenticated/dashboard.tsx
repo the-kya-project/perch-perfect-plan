@@ -24,7 +24,7 @@ import { isAddressField } from "@/lib/address";
 import { AddressInput } from "@/components/AddressInput";
 import { fetchScanFeed, getNotifSeenAt } from "@/lib/notificationsFeed";
 import { InkHero, IconTile, StatusPill, SectionHead, CtaLink, type HeroCta } from "@/components/system";
-import { CaregiverHome, useActiveCaregiver } from "@/components/CaregiverHome";
+import { CaregiverHome, CaregiverTodayChecklist, useActiveCaregiver } from "@/components/CaregiverHome";
 import { HomeChecklist } from "@/components/HomeChecklist";
 import { getHouseholdHome, resolveOwnerNames, type HomeHousehold } from "@/lib/home.functions";
 import { getPastBirds } from "@/lib/handoff.functions";
@@ -286,6 +286,20 @@ function Dashboard() {
           // card in the flock, with the same Today / household / guidance.)
           <>
             <TodayPanel items={todayItemsView} onNavigate={onTodayNavigate} />
+
+            {/* Covering another household's sit while ALSO an owner: surface that
+                sit's daily-care checklist here (active window only — the hook
+                returns only sits covering today). Pure caregivers get the full
+                CaregiverHome takeover above, so this never double-renders. */}
+            {!demo && caregiver?.sits?.map((s) => (
+              <section key={s.id} className="space-y-3">
+                <div className="px-1">
+                  <h2 className="t-section">Covering {s.ownerName ? `${possessive(s.ownerName)} birds` : "a household's birds"}</h2>
+                  <p className="t-meta text-[var(--teal-on-cream)]">You help here while they're away</p>
+                </div>
+                <CaregiverTodayChecklist sit={s} />
+              </section>
+            ))}
 
             <section className="space-y-3" data-coach="owner-flock">
               <SectionHeaderCTA title={hasGrouping ? "Your birds" : "Your flock"} ctaLabel="Add a bird" onCta={() => navigate({ to: "/birds/new" })} />
