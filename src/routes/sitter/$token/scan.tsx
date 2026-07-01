@@ -143,15 +143,15 @@ function ScanHistory({ token, birdId, birdName, onBack }: { token: string; birdI
       <header className="border-b border-[#e0d8c4] bg-[#f4f1e8]">
         <div className="mx-auto flex max-w-md items-center gap-3 px-5 py-3">
           <button onClick={onBack} className="rounded p-1 text-[#5f5e5a]"><ArrowLeft className="size-5" /></button>
-          <h1 className="text-sm font-medium">Past scans — {birdName}</h1>
+          <h1 className="text-sm font-medium">Past health checks — {birdName}</h1>
         </div>
       </header>
       <main className="mx-auto max-w-md space-y-3 px-5 py-5 pb-32">
-        <p className="text-xs text-[#5f5e5a]">Scans you've logged during this sit, newest first.</p>
+        <p className="text-xs text-[#5f5e5a]">Health checks you've logged during this sit, newest first.</p>
         {isLoading ? (
           <div className="flex items-center gap-2 rounded-xl bg-[#efe9da] p-4 text-sm text-[#5f5e5a]"><Loader2 className="size-4 animate-spin" /> Loading…</div>
         ) : scans.length === 0 ? (
-          <div className="rounded-xl bg-[#efe9da] p-4 text-sm text-[#5f5e5a]">No scans logged yet for this sit.</div>
+          <div className="rounded-xl bg-[#efe9da] p-4 text-sm text-[#5f5e5a]">No health checks logged yet for this sit.</div>
         ) : (
           <ul className="space-y-3">
             {(scans as any[]).map((s) => {
