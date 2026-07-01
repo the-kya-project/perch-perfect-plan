@@ -1,6 +1,7 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { Home, Calendar, Activity, Compass, CheckSquare } from "lucide-react";
 import { useActiveCaregiver } from "@/components/CaregiverHome";
+import { useOwnsBirds } from "@/lib/useOwnsBirds";
 
 // Owner bottom navigation. Four primary destinations; settings (gear) and
 // notifications (bell) stay as header icons, not tabs. Every owner scroll
@@ -35,12 +36,17 @@ function tabForPath(pathname: string): OwnerTab | undefined {
 export function OwnerTabBar({ active, embedded }: { active?: OwnerTab; embedded?: boolean }) {
   const pathname = useLocation({ select: (l) => l.pathname });
   const current = active ?? tabForPath(pathname);
-  // Active-caregiver state drives the Sits ↔ Today swap on the second tab.
-  // Single query, deduped by the existing hook — same key used by /today and
-  // /dashboard. Fails open to "Sits" (the data isn't load-bearing for nav).
+  // Second tab: Sits ↔ Today. Swap to Today ONLY for a PURE caregiver (owns no
+  // birds). An OWNER — even one who also covers a household sit — keeps the Sits
+  // tab; being a member elsewhere never demotes the owner nav. Uses the SAME
+  // owner-vs-member signal (useOwnsBirds) that drives the Home owner/caregiver
+  // routing, so nav and Home can't disagree. Fails toward the OWNER nav (Sits)
+  // until ownership resolves.
   const { data: caregiver } = useActiveCaregiver();
   const isActiveCaregiver = !!caregiver?.sits?.length;
-  const TABS: TabSpec[] = [HOME_TAB, isActiveCaregiver ? TODAY_TAB : SITS_TAB, ACTIVITY_TAB, EXPLORE_TAB];
+  const { ownsBirds, resolved } = useOwnsBirds();
+  const showToday = isActiveCaregiver && resolved && !ownsBirds;
+  const TABS: TabSpec[] = [HOME_TAB, showToday ? TODAY_TAB : SITS_TAB, ACTIVITY_TAB, EXPLORE_TAB];
   return (
     <nav
       aria-label="Primary"
