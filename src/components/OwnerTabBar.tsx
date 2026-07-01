@@ -1,23 +1,17 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Home, Calendar, Activity, Compass, CheckSquare } from "lucide-react";
-import { useActiveCaregiver } from "@/components/CaregiverHome";
-import { useOwnsBirds } from "@/lib/useOwnsBirds";
+import { Home, Calendar, Activity, Compass } from "lucide-react";
 
-// Owner bottom navigation. Four primary destinations; settings (gear) and
-// notifications (bell) stay as header icons, not tabs. Every owner scroll
-// container under _authenticated uses the `.pb-nav` utility (= --nav-spacer +
-// buffer) so the fixed bar never clips content. Fixed footers on top of the
-// nav (Hand off, Export) sit at `bottom-[var(--nav-spacer)]`.
-//
-// During an active household-caregiver assignment the SECOND tab swaps
-// Sits → Today so the daily checklist is one tap away. /sits is still
-// reachable directly. Reverts automatically when the sit window closes.
+// Bottom navigation — ONE set for every authenticated account: Home / Sits /
+// Scans / Explore. Owning a bird is derived (not a signup type), so there's no
+// owner-vs-caregiver nav split; a sit you're covering surfaces as a section on
+// Home, not a separate "Today" tab. Settings (gear) and notifications (bell)
+// stay as header icons. Every scroll container under _authenticated uses the
+// `.pb-nav` utility so the fixed bar never clips content.
 export type OwnerTab = "home" | "sits" | "activity" | "explore";
 
 type TabSpec = { key: OwnerTab; label: string; to: string; Icon: typeof Home };
 const HOME_TAB: TabSpec = { key: "home", label: "Home", to: "/dashboard", Icon: Home };
 const SITS_TAB: TabSpec = { key: "sits", label: "Sits", to: "/sits", Icon: Calendar };
-const TODAY_TAB: TabSpec = { key: "sits", label: "Today", to: "/today", Icon: CheckSquare };
 const ACTIVITY_TAB: TabSpec = { key: "activity", label: "Scans", to: "/scans", Icon: Activity };
 const EXPLORE_TAB: TabSpec = { key: "explore", label: "Explore", to: "/explore", Icon: Compass };
 
@@ -36,17 +30,10 @@ function tabForPath(pathname: string): OwnerTab | undefined {
 export function OwnerTabBar({ active, embedded }: { active?: OwnerTab; embedded?: boolean }) {
   const pathname = useLocation({ select: (l) => l.pathname });
   const current = active ?? tabForPath(pathname);
-  // Second tab: Sits ↔ Today. Swap to Today ONLY for a PURE caregiver (owns no
-  // birds). An OWNER — even one who also covers a household sit — keeps the Sits
-  // tab; being a member elsewhere never demotes the owner nav. Uses the SAME
-  // owner-vs-member signal (useOwnsBirds) that drives the Home owner/caregiver
-  // routing, so nav and Home can't disagree. Fails toward the OWNER nav (Sits)
-  // until ownership resolves.
-  const { data: caregiver } = useActiveCaregiver();
-  const isActiveCaregiver = !!caregiver?.sits?.length;
-  const { ownsBirds, resolved } = useOwnsBirds();
-  const showToday = isActiveCaregiver && resolved && !ownsBirds;
-  const TABS: TabSpec[] = [HOME_TAB, showToday ? TODAY_TAB : SITS_TAB, ACTIVITY_TAB, EXPLORE_TAB];
+  // ONE nav for every authenticated account — owning a bird is derived, not a
+  // signup type, so there's no owner-vs-caregiver nav split (a recurring bug
+  // source). A sit you're covering shows as a section on Home, not a nav tab.
+  const TABS: TabSpec[] = [HOME_TAB, SITS_TAB, ACTIVITY_TAB, EXPLORE_TAB];
   return (
     <nav
       aria-label="Primary"

@@ -24,7 +24,7 @@ import { isAddressField } from "@/lib/address";
 import { AddressInput } from "@/components/AddressInput";
 import { fetchScanFeed, getNotifSeenAt } from "@/lib/notificationsFeed";
 import { InkHero, IconTile, StatusPill, SectionHead, CtaLink, type HeroCta } from "@/components/system";
-import { CaregiverHome, CaregiverCoveringSection, useActiveCaregiver } from "@/components/CaregiverHome";
+import { CaregiverCoveringSection, useActiveCaregiver } from "@/components/CaregiverHome";
 import { HomeChecklist } from "@/components/HomeChecklist";
 import { getHouseholdHome, resolveOwnerNames, type HomeHousehold } from "@/lib/home.functions";
 import { getPastBirds } from "@/lib/handoff.functions";
@@ -210,7 +210,6 @@ function Dashboard() {
   const photoFor = (b: HomeBird) => (demo ? null : resolvePhoto(b.photo_url));
 
   const { data: caregiver } = useActiveCaregiver();
-  const caregiverActive = !!caregiver?.sits?.length;
 
   // Home body line — state-aware (stale weigh-in → sit imminent → celebration
   // → new bird → weekend → default). Caregiver names for imminent sits come
@@ -236,31 +235,12 @@ function Dashboard() {
       ? { label: "Add a bird", tone: "lime", icon: <Plus className="size-4" />, onPress: () => navigate({ to: "/birds/new" }) }
       : undefined;
 
-  // Active-caregiver shift: when the signed-in user is the assigned caregiver
-  // on a sit covering today, Home takes over the active-caregiver experience
-  // (hero + Today's check + Birds you're covering). The normal Home returns
-  // automatically when end_date < today (the hook's query no longer matches).
-  //
-  // BUT this takeover is ONLY for pure caregivers who own no birds. An OWNER —
-  // even one who ALSO covers another household's sit — always gets their own
-  // owner Home (their birds, add-bird, grouping); being a member elsewhere must
-  // never demote them to the caregiver view. Fail-safe: if identity (myId) or
-  // the bird list hasn't resolved yet, we do NOT take over, so an owner is never
-  // trapped in caregiver mode during load.
-  const ownsAnyBird = !!myId && homeBirds.some((b) => (b as any).owner_id === myId);
-  if (!demo && !birdsLoading && !!myId && !ownsAnyBird && caregiverActive && caregiver?.sits?.length) {
-    return (
-      <div className="min-h-screen bg-[var(--cream)] pb-nav">
-        <div className="mx-auto max-w-md">
-          <CaregiverHome data={caregiver} />
-        </div>
-        {/* Keep the tour mountable here so the "?" replay can flip demo mode on,
-            which then drops back into the normal demo Home via the guard above.
-            AppOnboarding picks the owner vs member flow by role. */}
-        <AppOnboarding />
-      </div>
-    );
-  }
+  // No caregiver "takeover": ONE Home for every account. Owning a bird is derived
+  // (birds.owner_id === me), not a signup type — so a caregiver-only account gets
+  // the same Home (with "Add a bird" always available; their own birds appear
+  // under "Your birds" once they add any). A sit they're actively covering shows
+  // as the CaregiverCoveringSection overlay below, never a full-screen takeover
+  // that would hide their birds or the add-bird affordance.
 
   return (
     <div className="min-h-screen bg-[var(--cream)] pb-nav">
@@ -287,11 +267,11 @@ function Dashboard() {
           <>
             <TodayPanel items={todayItemsView} onNavigate={onTodayNavigate} />
 
-            {/* Covering another household's sit while ALSO an owner: the sitter-
-                style "Birds in your care" cards (per-bird progress; tap a bird to
-                open its checklist). Active window only — the hook returns only
-                sits covering today. Pure caregivers get the full CaregiverHome
-                takeover above, so this never double-renders. */}
+            {/* A sit you're covering (any account): the sitter-style "Birds in
+                your care" cards (per-bird progress; tap a bird to open its
+                checklist + health scan). Active window only — the hook returns
+                only sits covering today. This is a section on the one shared Home,
+                not a takeover. */}
             {!demo && caregiver?.sits?.map((s) => (
               <CaregiverCoveringSection key={s.id} sit={s} />
             ))}
