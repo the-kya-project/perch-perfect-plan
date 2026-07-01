@@ -3,8 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { getSitterDashboard } from "@/lib/sitter.functions";
 import { replaySitterOnboarding } from "@/components/SitterOnboarding";
-import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
-import { Stethoscope, ChevronRight, HelpCircle } from "lucide-react";
+import { BirdCareCard } from "@/components/BirdCareCard";
+import { HelpCircle } from "lucide-react";
 
 // Sitter Home tab: the all-birds home base. Warm welcome + an overview naming
 // every bird, then a card per bird with today's task progress and health-scan
@@ -55,59 +55,21 @@ export function SitterDashboard({ token }: { token: string }) {
           <p className="mt-3 rounded-2xl bg-[#efe9da] p-4 text-sm text-[#5f5e5a]">Loading…</p>
         ) : (
           <ul className="mt-3 space-y-3">
-            {birds.map((b, i) => {
-              const pct = b.tasksTotal > 0 ? Math.round((b.tasksDone / b.tasksTotal) * 100) : 0;
-              const allDone = b.tasksTotal > 0 && b.tasksDone === b.tasksTotal;
-              const initial = (b.name?.slice(0, 1) ?? "?").toUpperCase();
-              const scanAccent = !b.scanDone
-                ? { dot: "bg-warn-amber", text: "text-warn-amber", label: "Health check not done yet" }
-                : b.scanStatus === "red"
-                ? { dot: "bg-warn-red", text: "text-warn-red", label: "Health check flagged" }
-                : b.scanStatus === "yellow"
-                ? { dot: "bg-warn-amber", text: "text-warn-amber", label: "Health check flagged" }
-                : { dot: "bg-warn-green", text: "text-warn-green", label: "Health check done today" };
-              return (
-                <li key={b.id}>
-                  <button
-                    onClick={() => navigate({ to: "/sitter/$token", params: { token }, search: { birdId: b.id } })}
-                    data-coach={i === 0 ? "bird-card" : undefined}
-                    className="flex w-full items-center gap-3 rounded-2xl bg-[#efe9da] p-3 text-left shadow-sm active:scale-[0.99]"
-                  >
-                    {b.photo_url ? (
-                      <div className="relative size-16 shrink-0 overflow-hidden rounded-xl ring-1 ring-[#e3ded0]">
-                        <BirdPhotoCrop url={b.photo_url} original={b.photo_url} position={b.photo_position ?? "50% 20%"} alt={b.name} />
-                      </div>
-                    ) : (
-                      <div className="grid size-16 shrink-0 place-items-center rounded-xl bg-[#1a3d2e] text-2xl font-medium text-white">{initial}</div>
-                    )}
-
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="truncate text-base font-medium text-sage-900">{b.name}</p>
-                        {b.species && <span className="truncate text-xs text-[#5f5e5a]">{b.species}</span>}
-                      </div>
-
-                      <p className="mt-1.5 text-xs text-[#5f5e5a]">
-                        {b.tasksTotal === 0 ? "No routine tasks" : allDone ? `All ${b.tasksTotal} done` : `${b.tasksDone} of ${b.tasksTotal} done`}
-                      </p>
-                      {b.tasksTotal > 0 && (
-                        <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-white">
-                          <div className={`h-full rounded-full ${allDone ? "bg-warn-green" : "bg-[#2d6a4f]"}`} style={{ width: `${pct}%` }} />
-                        </div>
-                      )}
-
-                      <p className={`mt-2 inline-flex items-center gap-1.5 text-xs font-medium ${scanAccent.text}`}>
-                        <span className={`size-2 rounded-full ${scanAccent.dot}`} />
-                        <Stethoscope className="size-3.5" />
-                        {scanAccent.label}
-                      </p>
-                    </div>
-
-                    <ChevronRight className="size-5 shrink-0 self-center text-[#8a897f]" />
-                  </button>
-                </li>
-              );
-            })}
+            {birds.map((b, i) => (
+              <li key={b.id}>
+                <BirdCareCard
+                  name={b.name}
+                  species={b.species}
+                  photoUrl={b.photo_url}
+                  photoPosition={b.photo_position}
+                  tasksDone={b.tasksDone}
+                  tasksTotal={b.tasksTotal}
+                  scan={{ done: b.scanDone, status: b.scanStatus }}
+                  coach={i === 0 ? "bird-card" : undefined}
+                  onClick={() => navigate({ to: "/sitter/$token", params: { token }, search: { birdId: b.id } })}
+                />
+              </li>
+            ))}
           </ul>
         )}
       </section>

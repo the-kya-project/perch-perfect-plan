@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getActiveCaregiverSits, caregiverToggleTaskCompletion, type ActiveCaregiverSit } from "@/lib/caregiver.functions";
@@ -7,6 +7,7 @@ import { signBirdPhotos, type SignedPhoto } from "@/lib/birdPhoto";
 import { taskDaypart, DAYPARTS, DAYPART_LABEL, isDerivedTask, type Daypart } from "@/lib/routineTasks";
 import { InkHero, SectionHead, Card, IconTile, StatusPill } from "@/components/system";
 import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
+import { BirdCareCard } from "@/components/BirdCareCard";
 import { Check, CalendarHeart, Sun, ChevronRight, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -55,16 +56,75 @@ export function CaregiverHome({ data }: { data: { sits: ActiveCaregiverSit[]; up
   );
 }
 
+function possessive(name: string): string {
+  const n = name.trim();
+  return /s$/i.test(n) ? `${n}'` : `${n}'s`;
+}
+
+// The covering member's Home section: the sitter-style "Birds in your care" card
+// list (one card per bird with today's task progress), reusing BirdCareCard.
+// Tapping a bird navigates to THAT bird's full-screen checklist
+// (/covering/$sitId/$birdId → CaregiverTodayChecklist scoped to the bird) — the
+// authenticated equivalent of the sitter's per-bird flow, on the same
+// task-completion path. Rendered only for the covering lead while the sit is
+// active (the caller passes only active sits).
+export function CaregiverCoveringSection({ sit }: { sit: ActiveCaregiverSit }) {
+  const navigate = useNavigate();
+  const doneIds = useMemo(() => new Set(sit.completionsToday.map((c) => c.taskId)), [sit.completionsToday]);
+
+  const paths = sit.birds.map((b) => b.photo_url).filter(Boolean) as string[];
+  const { data: photoMap } = useQuery({
+    queryKey: ["covering-bird-photos", paths.slice().sort().join(",")],
+    enabled: paths.length > 0,
+    staleTime: 50 * 60_000,
+    queryFn: async () => Object.fromEntries(await signBirdPhotos(paths, { width: 800 })),
+  });
+  const photoFor = (b: ActiveCaregiverSit["birds"][number]): string | null =>
+    b.photo_url ? ((photoMap as any)?.[b.photo_url]?.url ?? null) : null;
+
+  const where = sit.ownerName ? `${possessive(sit.ownerName)} birds` : "a household's birds";
+
+  return (
+    <section className="space-y-3">
+      <div className="px-1">
+        <h2 className="t-section">Covering {where}</h2>
+        <p className="t-meta text-[var(--teal-on-cream)]">Sit active — daily care while {sit.ownerName || "the owner"}'s away</p>
+      </div>
+      <div className="space-y-3">
+        {sit.birds.map((b) => {
+          const total = b.tasks.length;
+          const done = b.tasks.filter((t) => doneIds.has(t.id)).length;
+          return (
+            <BirdCareCard
+              key={b.id}
+              name={b.name}
+              species={b.species}
+              photoUrl={photoFor(b)}
+              photoPosition={b.photo_position}
+              tasksDone={done}
+              tasksTotal={total}
+              onClick={() => navigate({ to: "/covering/$sitId/$birdId", params: { sitId: sit.id, birdId: b.id } })}
+            />
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 // The sit's daily-care checklist ("Today's check") — routine tasks grouped by
 // daypart, toggled via the shared caregiver completion path. Reused by the
-// pure-caregiver Home (CaregiverSitBlock / the Today tab) AND the owner Home's
-// "Covering …" section (a member who is also an owner), so there is ONE checklist
-// per sit, not two competing ones.
-export function CaregiverTodayChecklist({ sit }: { sit: ActiveCaregiverSit }) {
+// pure-caregiver Home (CaregiverSitBlock / the Today tab) AND, scoped per-bird,
+// by the covering member's "Birds in your care" cards above.
+export function CaregiverTodayChecklist({ sit, birdId }: { sit: ActiveCaregiverSit; birdId?: string }) {
+  // When birdId is set, scope to that one bird (the per-bird checklist a covering
+  // member opens by tapping its card); otherwise show every bird's tasks.
+  const scopedBirds = birdId ? sit.birds.filter((b) => b.id === birdId) : sit.birds;
+  const multiBird = scopedBirds.length > 1;
   type Row = { taskId: string; title: string; instructions: string | null; birdId: string; birdName: string };
   const grouped = useMemo<Record<Daypart, Row[]>>(() => {
     const out: Record<Daypart, Row[]> = { morning: [], midday: [], evening: [], anytime: [] };
-    for (const b of sit.birds) {
+    for (const b of scopedBirds) {
       for (const t of b.tasks) {
         const dp = taskDaypart(t);
         out[dp].push({ taskId: t.id, title: t.title, instructions: t.instructions, birdId: b.id, birdName: b.name });
@@ -72,7 +132,8 @@ export function CaregiverTodayChecklist({ sit }: { sit: ActiveCaregiverSit }) {
     }
     for (const dp of DAYPARTS) out[dp].sort((a, b) => a.title.localeCompare(b.title));
     return out;
-  }, [sit.birds]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sit.birds, birdId]);
 
   const doneByTask = useMemo(() => new Set(sit.completionsToday.map((c) => c.taskId)), [sit.completionsToday]);
   const doneAtByTask = useMemo(() => new Map(sit.completionsToday.map((c) => [c.taskId, c.at])), [sit.completionsToday]);
@@ -129,7 +190,7 @@ export function CaregiverTodayChecklist({ sit }: { sit: ActiveCaregiverSit }) {
                         <span className="min-w-0 flex-1">
                           <span className={`t-item block ${done ? "line-through text-[var(--mute2)]" : ""}`}>{prettyTitle(r.title)}</span>
                           <span className="t-meta block">
-                            {sit.birds.length > 1 && <span className="font-[500] text-[var(--ink2)]">{r.birdName}{r.instructions ? " · " : ""}</span>}
+                            {multiBird && <span className="font-[500] text-[var(--ink2)]">{r.birdName}{r.instructions ? " · " : ""}</span>}
                             {r.instructions && <span>{r.instructions}</span>}
                             {done && at && <span className="ml-1">· done {fmtTime(at)}</span>}
                           </span>
