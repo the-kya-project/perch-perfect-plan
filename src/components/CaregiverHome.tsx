@@ -3,12 +3,11 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getActiveCaregiverSits, caregiverToggleTaskCompletion, type ActiveCaregiverSit } from "@/lib/caregiver.functions";
-import { signBirdPhotos, type SignedPhoto } from "@/lib/birdPhoto";
+import { signBirdPhotos } from "@/lib/birdPhoto";
 import { taskDaypart, DAYPARTS, DAYPART_LABEL, isDerivedTask, type Daypart } from "@/lib/routineTasks";
-import { InkHero, SectionHead, Card, IconTile, StatusPill } from "@/components/system";
-import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
+import { InkHero, SectionHead, Card, IconTile } from "@/components/system";
 import { BirdCareCard } from "@/components/BirdCareCard";
-import { Check, CalendarHeart, Sun, ChevronRight, Loader2 } from "lucide-react";
+import { Check, CalendarHeart, Sun, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 // The active-caregiver Home variant. Rendered when the signed-in user is the
@@ -68,7 +67,7 @@ function possessive(name: string): string {
 // authenticated equivalent of the sitter's per-bird flow, on the same
 // task-completion path. Rendered only for the covering lead while the sit is
 // active (the caller passes only active sits).
-export function CaregiverCoveringSection({ sit }: { sit: ActiveCaregiverSit }) {
+export function CaregiverCoveringSection({ sit, hideHeader }: { sit: ActiveCaregiverSit; hideHeader?: boolean }) {
   const navigate = useNavigate();
   const doneIds = useMemo(() => new Set(sit.completionsToday.map((c) => c.taskId)), [sit.completionsToday]);
 
@@ -86,10 +85,12 @@ export function CaregiverCoveringSection({ sit }: { sit: ActiveCaregiverSit }) {
 
   return (
     <section className="space-y-3">
-      <div className="px-1">
-        <h2 className="t-section">Covering {where}</h2>
-        <p className="t-meta text-[var(--teal-on-cream)]">Sit active — daily care while {sit.ownerName || "the owner"}'s away</p>
-      </div>
+      {!hideHeader && (
+        <div className="px-1">
+          <h2 className="t-section">Covering {where}</h2>
+          <p className="t-meta text-[var(--teal-on-cream)]">Sit active — daily care while {sit.ownerName || "the owner"}'s away</p>
+        </div>
+      )}
       <div className="space-y-3">
         {sit.birds.map((b) => {
           const total = b.tasks.length;
@@ -221,17 +222,6 @@ function CaregiverSitBlock({ sit }: { sit: ActiveCaregiverSit }) {
       ? `${sit.ownerName} is back tomorrow. Here's today's check.`
       : `${sit.ownerName} is back in ${daysLeft} days. Here's today's check.`;
 
-  // Bird photos.
-  const paths = sit.birds.map((b) => b.photo_url).filter(Boolean) as string[];
-  const { data: photoMap } = useQuery({
-    queryKey: ["caregiver-bird-photos", paths.sort().join(",")],
-    enabled: paths.length > 0,
-    staleTime: 50 * 60_000,
-    // 800 (not 256) so the tile matches the reposition preview / hero exactly.
-    queryFn: async () => Object.fromEntries(await signBirdPhotos(paths, { width: 800 })),
-  });
-  const photoFor = (b: ActiveCaregiverSit["birds"][number]): SignedPhoto | null => (b.photo_url ? (photoMap as any)?.[b.photo_url] ?? null : null);
-
   return (
     <>
       <InkHero
@@ -241,29 +231,10 @@ function CaregiverSitBlock({ sit }: { sit: ActiveCaregiverSit }) {
         body={body}
       />
       <div className="px-5 pt-5 space-y-6">
-        <CaregiverTodayChecklist sit={sit} />
-
-        <section>
-          <SectionHead title="Birds you're covering" trailing={<StatusPill tone="household">{sit.birds.length} {sit.birds.length === 1 ? "bird" : "birds"}</StatusPill>} />
-          <div className="space-y-3">
-            {sit.birds.map((b) => (
-              <Link
-                key={b.id}
-                to="/birds/$birdId"
-                params={{ birdId: b.id }}
-                className="flex items-center gap-3 rounded-[18px] bg-white p-3 ring-1 ring-[var(--line2)] active:scale-[0.995]"
-                style={{ boxShadow: "0 1px 0 rgba(40,50,40,.02), 0 6px 14px -8px rgba(40,50,40,.08)" }}
-              >
-                <BirdTile bird={b} photo={photoFor(b)} />
-                <div className="min-w-0 flex-1">
-                  <p className="t-item truncate text-[17px]">{b.name}</p>
-                  <p className="t-meta truncate">{b.species || "Parrot"}</p>
-                </div>
-                <ChevronRight className="size-4 shrink-0 text-[var(--mute2)]" />
-              </Link>
-            ))}
-          </div>
-        </section>
+        {/* Per-bird "Birds in your care" cards → tap opens that bird's checklist +
+            health scan. Same view every covering member gets (any preset), so a
+            pure caregiver / care manager and a covering owner see one thing. */}
+        <CaregiverCoveringSection sit={sit} hideHeader />
 
         {sit.notes && (
           <section>
@@ -275,19 +246,6 @@ function CaregiverSitBlock({ sit }: { sit: ActiveCaregiverSit }) {
         )}
       </div>
     </>
-  );
-}
-
-function BirdTile({ bird, photo }: { bird: ActiveCaregiverSit["birds"][number]; photo: SignedPhoto | null }) {
-  const initial = (bird.name?.slice(0, 1) ?? "?").toUpperCase();
-  return (
-    <div className="relative h-[80px] w-[72px] shrink-0 overflow-hidden rounded-[14px]" style={{ background: "linear-gradient(135deg,#cdeab0,#a7d68f)" }}>
-      {photo ? (
-        <BirdPhotoCrop url={photo.url} original={photo.original} position={bird.photo_position} alt={bird.name} />
-      ) : (
-        <div className="grid size-full place-items-center"><span className="text-2xl font-[500] text-white/90">{initial}</span></div>
-      )}
-    </div>
   );
 }
 
