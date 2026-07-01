@@ -17,7 +17,14 @@ export type CapabilityCheck = Capability | "view";
 export function useMyPermissions() {
   return useQuery({
     queryKey: ["my-permissions"],
-    staleTime: 60_000,
+    // Permissions can change on the OWNER's device at any time; the member's app
+    // must pick that up without a reinstall. So refetch on focus (reopening the
+    // app/tab) and on mount (navigation) — overriding the global focus-off
+    // default for this query. Cached data still shows instantly; the refetch runs
+    // in the background and updates capability gating when it lands.
+    staleTime: 30_000,
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
     queryFn: async () => {
       const { data: u } = await getLocalUser();
       const myId = u.user?.id ?? null;
