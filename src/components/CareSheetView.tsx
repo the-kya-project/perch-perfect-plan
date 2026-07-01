@@ -1,6 +1,6 @@
-import { AlertTriangle, ShieldAlert } from "lucide-react";
+import { ShieldAlert, Utensils, Smile, Home as HomeIcon, Stethoscope, Siren, Video } from "lucide-react";
 import { ClipPlayer } from "@/components/ClipPlayer";
-import { normalizeFeedTimes, feedTimeLabel } from "@/lib/feedTimes";
+import { normalizeFeedTimes } from "@/lib/feedTimes";
 import {
   WATER_FREQ_LABELS,
   TREATS_FREQ_LABELS,
@@ -10,11 +10,23 @@ import {
   formatAmountUnit,
   formatRemovalMinutes,
 } from "@/lib/labels";
+import {
+  has, joinUnique, SectionCard, Field, KVList, Metric, FeedingItem,
+  Callout, DangerCallout, RichText, Chips, DangerChips, StepUpField,
+} from "@/components/carePlanCards";
 
-// Read-only render of a bird's care plan (food, handling, home, health, when to
-// call). Pure presentational + data-driven — no token/sit coupling — so it's
-// shared by the sitter care-sheet and the household read-only care-plan view.
-// Returns a fragment of <Section>s; the caller supplies the page header/main.
+// Read-only render of a bird's care plan for the SITTER care-sheet (token link)
+// and the owner's "view as your sitter" preview. Built from the SAME shared card
+// primitives as the authenticated CarePlanView (see carePlanCards.tsx), so the
+// two surfaces share one card design and can't drift apart.
+//
+// Sitter-specific vs CarePlanView: a Basics identity card and a grouped "Tips
+// from the owner" clip section at the top (the sitter's clips are shown together
+// rather than threaded per-section, so no clip is dropped), and it omits the
+// routine and emergency-contacts sections (the sitter has those on its own tabs).
+// Pure presentational — no token/auth coupling; clip URLs arrive pre-signed.
+
+const CARD_SHADOW = { boxShadow: "0 1px 0 rgba(40,50,40,.02), 0 6px 14px -8px rgba(40,50,40,.08)" };
 
 export type CareSheetData = {
   bird: any;
@@ -23,125 +35,11 @@ export type CareSheetData = {
   baselineClipUrl: string | null;
 };
 
-function has(v: any): boolean {
-  if (v == null) return false;
-  if (Array.isArray(v)) return v.length > 0;
-  if (typeof v === "string") return v.trim().length > 0;
-  if (typeof v === "object") return Object.keys(v).length > 0;
-  return true;
-}
-
-// Join distinct, non-empty parts with newlines — drops blanks and case-
-// insensitive duplicates so a field never prints the same value twice.
-function joinUnique(parts: (string | null | undefined | false)[]): string {
-  const seen = new Set<string>();
-  const out: string[] = [];
-  for (const p of parts) {
-    const v = (p ?? "").toString().trim();
-    if (!v || seen.has(v.toLowerCase())) continue;
-    seen.add(v.toLowerCase());
-    out.push(v);
-  }
-  return out.join("\n");
-}
-
-function Section({ title, children, danger = false, coach }: { title: string; children: React.ReactNode; danger?: boolean; coach?: string }) {
-  return (
-    <section data-coach={coach} className={`rounded-2xl p-4 ${danger ? "bg-warn-red/5 ring-1 ring-warn-red/30" : "bg-[#efe9da] shadow-sm"}`}>
-      <h2 className={`text-[11px] font-medium uppercase tracking-widest ${danger ? "text-warn-red" : "text-[#5f5e5a]"}`}>{title}</h2>
-      <div className="mt-3 space-y-3">{children}</div>
-    </section>
-  );
-}
-
-function RichText({ text }: { text: string }) {
-  const lines = text.split("\n");
-  const blocks: React.ReactNode[] = [];
-  let bullets: string[] = [];
-  const flushBullets = (key: string) => {
-    if (!bullets.length) return;
-    blocks.push(
-      <ul key={key} className="list-disc space-y-1 pl-5 marker:text-[#5f5e5a]">
-        {bullets.map((b, i) => (
-          <li key={i} className="pl-0.5">{b}</li>
-        ))}
-      </ul>,
-    );
-    bullets = [];
-  };
-  lines.forEach((raw, i) => {
-    const m = raw.match(/^\s*•\s+(.*)$/);
-    if (m) { bullets.push(m[1]); return; }
-    flushBullets(`ul-${i}`);
-    if (raw.trim()) blocks.push(<p key={i}>{raw}</p>);
-  });
-  flushBullets("ul-end");
-  return <div className="space-y-1.5">{blocks}</div>;
-}
-
-function Field({ label, value }: { label: string; value: React.ReactNode }) {
-  if (!has(value as any)) return null;
-  return (
-    <div>
-      <p className="text-[10px] font-medium uppercase tracking-wider text-[#5f5e5a]">{label}</p>
-      <div className="mt-0.5 text-sm text-[#1a3d2e] whitespace-pre-line">{value}</div>
-    </div>
-  );
-}
-
-// Step-up: a binary outcome pill + the owner's exact qualifier text verbatim.
-// "with caveats" signals the binary is only part of the story — so a sitter who
-// reads only the pill still knows to read the note (e.g. yes + "Only I can
-// handle" → "Yes, with caveats" + the note verbatim). No paraphrasing.
-function StepUpField({ stepUp, notes }: { stepUp?: string | null; notes?: string | null }) {
-  const raw = (stepUp ?? "").trim().toLowerCase();
-  const qualifier = (notes ?? "").trim();
-  const base = raw === "yes" ? "Yes" : raw === "no" ? "No" : raw === "sometimes" ? "Sometimes" : null;
-  if (!base && !qualifier) return null;
-  const label = base ? (qualifier ? `${base}, with caveats` : base) : null;
-  // Caveats / "no" lean cautionary (amber); a clean "yes" is reassuring (lime).
-  const cautionary = !base || raw === "no" || !!qualifier;
-  return (
-    <div>
-      <p className="text-[10px] font-medium uppercase tracking-wider text-[#5f5e5a]">Step up</p>
-      {label && (
-        <span
-          className={`mt-1 inline-flex items-center rounded-full px-2.5 py-1 text-[11.5px] font-medium ${
-            cautionary ? "bg-[#f6e7c4] text-[#854F0B]" : "bg-[#d6e8dc] text-[#1a5e3f]"
-          }`}
-        >
-          {label}
-        </span>
-      )}
-      {qualifier && <p className="mt-1.5 text-sm text-[#1a3d2e] whitespace-pre-line">{qualifier}</p>}
-    </div>
-  );
-}
-
-function Chips({ items }: { items: string[] }) {
-  return (
-    <div className="flex flex-wrap gap-1.5">
-      {items.map((s) => (
-        <span key={s} className="rounded-full bg-[#d6e8dc] px-2.5 py-0.5 text-xs font-medium text-[#1a5e3f]">{s}</span>
-      ))}
-    </div>
-  );
-}
-
-function DangerChips({ items }: { items: string[] }) {
-  return (
-    <div className="flex flex-wrap gap-1.5">
-      {items.map((s) => (
-        <span key={s} className="rounded-full bg-warn-red px-2.5 py-1 text-xs font-bold text-white">{s}</span>
-      ))}
-    </div>
-  );
-}
-
 export function CareSheetView({ data }: { data: CareSheetData }) {
   const bird = data.bird as any;
   const plan = (data.plan ?? {}) as any;
   const clips = data.clips ?? [];
+  const name = (bird?.name ?? "this bird") as string;
 
   const diet = (plan.diet_types ?? []) as string[];
   const dietDetails = (plan.diet_details ?? {}) as Record<string, any[]>;
@@ -196,196 +94,186 @@ export function CareSheetView({ data }: { data: CareSheetData }) {
   return (
     <>
       {showBasics && (
-        <Section title="Basics">
+        <section className="overflow-hidden rounded-[18px] bg-white p-4 ring-1 ring-[var(--line2)]" style={CARD_SHADOW}>
           <div className="flex items-center gap-4">
             {bird.photo_url ? (
-              <img src={bird.photo_url} alt={bird.name} className="block size-16 rounded-2xl object-cover ring-1 ring-[#e0d8c4]" style={{ objectPosition: bird.photo_position ?? "50% 20%" }} />
+              <img src={bird.photo_url} alt={bird.name} className="block size-16 shrink-0 rounded-2xl object-cover ring-1 ring-[var(--line)]" style={{ objectPosition: bird.photo_position ?? "50% 20%" }} />
             ) : (
-              <div className="grid size-16 place-items-center rounded-2xl bg-[#e3dcc9] text-xl font-medium text-[#2d6a4f]">{bird.name.slice(0,1).toUpperCase()}</div>
+              <div className="grid size-16 shrink-0 place-items-center rounded-2xl bg-[var(--pale2)] text-xl font-medium text-[var(--moss)]">{(bird.name ?? "?").slice(0, 1).toUpperCase()}</div>
             )}
-            <div className="flex-1">
-              <p className="text-lg font-medium leading-tight">{bird.name}</p>
-              {has(bird.species) && <p className="text-sm text-[#5f5e5a]">{bird.species}</p>}
-              {has(bird.age) && <p className="text-xs text-[#5f5e5a]">{bird.age}</p>}
+            <div className="min-w-0">
+              <p className="t-section leading-tight">{bird.name}</p>
+              {has(bird.species) && <p className="text-sm text-[var(--mute)]">{bird.species}</p>}
+              {has(bird.age) && <p className="text-xs text-[var(--mute)]">{bird.age}</p>}
             </div>
           </div>
-        </Section>
+        </section>
       )}
 
       {clips.length > 0 && (
-        <Section title="Tips from the owner">
-          <p className="text-xs text-[#5f5e5a]">See how it's done — short clips from the owner.</p>
-          <div className="-mx-1 grid grid-cols-1 gap-3">
+        <SectionCard icon={<Video className="size-5" />} eyebrow="Tips" title="Tips from the owner">
+          <p className="text-sm text-[var(--mute)]">Short clips from the owner showing how things are done.</p>
+          <div className="space-y-3">
             {clips.map((c: any) => (
-              <div key={c.key} className="overflow-hidden rounded-xl bg-[#e8e1d0] ring-1 ring-[#e0d8c4]">
+              <div key={c.key} className="overflow-hidden rounded-[12px] bg-[var(--cream)] ring-1 ring-[var(--line2)]">
                 <ClipPlayer src={c.url} label={c.label} className="aspect-video" />
-                <p className="px-2 py-1.5 text-[12px] font-medium leading-tight">{c.label}</p>
+                <p className="px-2 py-1.5 text-[12px] font-medium leading-tight text-[var(--ink)]">{c.label}</p>
               </div>
             ))}
           </div>
-        </Section>
-      )}
-
-      {neverFeed.length > 0 && (
-        <Section title="Never feed — toxic to this bird" danger>
-          <DangerChips items={neverFeed} />
-          <p className="flex items-start gap-1.5 text-xs text-warn-red"><AlertTriangle className="mt-0.5 size-3.5 shrink-0" />Keep these completely out of reach.</p>
-        </Section>
+        </SectionCard>
       )}
 
       {showFeeding && (
-        <Section title="Feeding & food" coach="cp-food">
-          <p className="rounded bg-warn-amber/10 p-2 text-[11px] font-medium text-warn-amber">Do not introduce new foods while the owner is away.</p>
-          {!hasStructuredFood && has(plan.food_instructions) && <Field label="Diet overview" value={<RichText text={plan.food_instructions} />} />}
-          {diet.length > 0 && <Field label="Diet types" value={<Chips items={diet} />} />}
-          {has(plan.diet_other) && <Field label="Other diet" value={plan.diet_other} />}
+        <SectionCard icon={<Utensils className="size-5" />} eyebrow="Food" title={`What ${name} eats`} coach="cp-food">
+          {neverFeed.length > 0 && (
+            <DangerCallout title="Never feed · toxic to this bird">
+              <DangerChips items={neverFeed} />
+              <p className="mt-2 text-xs font-medium">Keep these completely out of reach.</p>
+            </DangerCallout>
+          )}
+          <Callout>Don't introduce new foods while the owner is away.</Callout>
+          {!hasStructuredFood && has(plan.food_instructions) && <Field label="Diet overview"><RichText text={plan.food_instructions} /></Field>}
+          {diet.length > 0 && <Field label="Diet types"><Chips items={diet} /></Field>}
+          {has(plan.diet_other) && <Field label="Other diet">{plan.diet_other}</Field>}
           {hasPerFoodDetails ? (
-            foodRows.map((f, i) => (
-              <div key={`${f.type}-${i}`} className="rounded-lg bg-[#e8e1d0] p-3">
-                <p className="text-xs font-medium uppercase tracking-wider text-[#5f5e5a]">
-                  {f.type.charAt(0).toUpperCase() + f.type.slice(1).replace(/_/g, " ")}{f.name ? ` (${f.name})` : ""}
-                </p>
-                {has(f.amount) && (
-                  <p className="mt-1 text-sm"><span className="text-[#5f5e5a]">Amount: </span>{f.unit ? formatAmountUnit(f.amount, f.unit) : f.amount}{f.freeFed ? " · free-fed" : ""}</p>
-                )}
-                {f.times.length > 0 && (
-                  <p className="text-sm"><span className="text-[#5f5e5a]">When: </span>{f.times.map((ft) => feedTimeLabel(ft)).join(", ")}</p>
-                )}
-                {f.note && (
-                  <p className="mt-1 text-sm"><span className="text-[#5f5e5a]">Note: </span>{f.note}</p>
-                )}
-              </div>
-            ))
+            <div className="space-y-2">
+              {foodRows.map((f, i) => (
+                <FeedingItem
+                  key={`${f.type}-${i}`}
+                  typeLabel={f.type.charAt(0).toUpperCase() + f.type.slice(1).replace(/_/g, " ")}
+                  name={f.name}
+                  amountStr={has(f.amount) ? (f.unit ? formatAmountUnit(f.amount, f.unit) : String(f.amount)) : ""}
+                  times={f.times}
+                  freeFed={f.freeFed}
+                  note={f.note}
+                />
+              ))}
+            </div>
           ) : (
             (has(plan.food_brand) || has(plan.amount_value)) && (
-              <Field label="Brand & amount" value={`${plan.food_brand ?? ""}${has(plan.amount_value) ? ` — ${formatAmountUnit(plan.amount_value, plan.amount_unit)}` : ""}`.trim()} />
+              <Field label="Brand & amount">{`${plan.food_brand ?? ""}${has(plan.amount_value) ? ` · ${formatAmountUnit(plan.amount_value, plan.amount_unit)}` : ""}`.trim()}</Field>
             )
           )}
           {!foodRows.some((f) => f.times.length > 0) && feedingTimes.length > 0 && (
-            <Field label="Feeding times" value={<Chips items={feedingTimes} />} />
+            <Field label="Feeding times"><Chips items={feedingTimes} /></Field>
           )}
-          {freshFoods.length > 0 && <Field label="Fresh foods" value={<Chips items={freshFoods} />} />}
-          {has(plan.fresh_foods_other) && <Field label="Other fresh foods" value={plan.fresh_foods_other} />}
+          {freshFoods.length > 0 && <Field label="Fresh foods"><Chips items={freshFoods} /></Field>}
+          {has(plan.fresh_foods_other) && <Field label="Other fresh foods">{plan.fresh_foods_other}</Field>}
           {(has(plan.treats_notes) || has(plan.treats_frequency)) && (
-            <Field label="Treats" value={`${plan.treats_notes ?? ""}${has(plan.treats_frequency) ? `\nFrequency: ${prettyLabel(plan.treats_frequency, TREATS_FREQ_LABELS)}` : ""}`.trim()} />
+            <Field label="Treats">
+              {has(plan.treats_frequency) && (
+                <KVList rows={[{ label: "Frequency", value: prettyLabel(plan.treats_frequency, TREATS_FREQ_LABELS) }]} />
+              )}
+              {has(plan.treats_notes) && (
+                <p className={`text-sm text-[var(--ink)] whitespace-pre-line ${has(plan.treats_frequency) ? "mt-2" : ""}`}>{plan.treats_notes}</p>
+              )}
+            </Field>
           )}
           {(has(plan.water_frequency) || has(plan.water_notes) || has(plan.water_instructions)) && (
-            <Field
-              label="Water"
-              value={
-                has(plan.water_frequency) || has(plan.water_notes)
-                  ? joinUnique([
-                      plan.water_frequency && `Water ${prettyLabel(plan.water_frequency, WATER_FREQ_LABELS)}`,
-                      plan.water_notes,
-                    ])
-                  : plan.water_instructions
-              }
-            />
+            <Field label="Water">
+              {has(plan.water_frequency) && (
+                <KVList rows={[{ label: "Change water", value: prettyLabel(plan.water_frequency, WATER_FREQ_LABELS) }]} />
+              )}
+              {(has(plan.water_notes) || (!has(plan.water_frequency) && has(plan.water_instructions))) && (
+                <p className={`text-sm text-[var(--ink)] whitespace-pre-line ${has(plan.water_frequency) ? "mt-2" : ""}`}>
+                  {has(plan.water_notes) ? plan.water_notes : plan.water_instructions}
+                </p>
+              )}
+            </Field>
           )}
-          <div className="rounded-lg bg-[#e8e1d0] p-3">
-            <p className="text-[10px] font-medium uppercase tracking-wider text-[#5f5e5a]">Freshness & hygiene</p>
-            <ul className="mt-1.5 space-y-1 text-sm text-[#1a3d2e]">
-              <li>Remove fresh food within <strong>{formatRemovalMinutes(plan.fresh_food_removal_minutes)}</strong> of serving.</li>
-              <li>Wash food bowls: <strong>{prettyLabel(plan.food_bowl_wash_cadence, BOWL_WASH_LABELS) || "—"}</strong>.</li>
-              <li>Wash water bowl: <strong>{prettyLabel(plan.water_bowl_wash_cadence, BOWL_WASH_LABELS) || "—"}</strong>.</li>
-            </ul>
-            {has(plan.food_hygiene_notes) && <p className="mt-2 text-xs text-[#5f5e5a] whitespace-pre-line">{plan.food_hygiene_notes}</p>}
-          </div>
-          {has(plan.food_storage) && <Field label="Food storage" value={plan.food_storage} />}
-        </Section>
+          <Field label="Freshness & hygiene">
+            <KVList
+              rows={[
+                { label: "Remove fresh food", value: `Within ${formatRemovalMinutes(plan.fresh_food_removal_minutes)}` },
+                { label: "Wash food bowls", value: prettyLabel(plan.food_bowl_wash_cadence, BOWL_WASH_LABELS) },
+                { label: "Wash water bowl", value: prettyLabel(plan.water_bowl_wash_cadence, BOWL_WASH_LABELS) },
+              ]}
+            />
+            {has(plan.food_hygiene_notes) && <p className="mt-2 text-xs text-[var(--mute)] whitespace-pre-line">{plan.food_hygiene_notes}</p>}
+          </Field>
+          {has(plan.food_storage) && <Field label="Food storage">{plan.food_storage}</Field>}
+        </SectionCard>
       )}
 
       {showHandling && (
-        <>
+        <SectionCard icon={<Smile className="size-5" />} eyebrow="Behavior" title={`Handling ${name}`} coach="cp-handling">
           {(handlingDangerous || has(plan.bite_risk)) && (
-            <div className="rounded-2xl bg-[#f4ead2] p-4 ring-1 ring-[#BA7517]/40">
-              <p className="flex items-start gap-2 text-sm text-[#854F0B]">
-                <AlertTriangle className="mt-0.5 size-4 shrink-0 text-[#BA7517]" />
-                <span>This bird has handling restrictions — read the handling section below before any contact.</span>
-              </p>
-            </div>
+            <Callout>This bird has handling restrictions — read this section before any contact.</Callout>
           )}
-          <Section title="Handling & personality" coach="cp-handling">
-            <StepUpField stepUp={plan.step_up} notes={plan.step_up_notes} />
-            {has(plan.handlers) && <Field label="Who can handle" value={plan.handlers} />}
-            {!has(plan.step_up) && !has(plan.step_up_notes) && !has(plan.handlers) && has(plan.handling_rules) && (
-              <Field label="Handling rules" value={plan.handling_rules} />
-            )}
-            {has(plan.likes) && <Field label="Likes" value={plan.likes} />}
-            {(has(plan.fears_triggers) || has(plan.known_triggers)) && (
-              <div className="rounded-lg bg-warn-amber/10 p-3 ring-1 ring-warn-amber/20">
-                <p className="text-[10px] font-medium uppercase tracking-wider text-warn-amber">Fears & triggers</p>
-                <p className="mt-1 text-sm whitespace-pre-line">{joinUnique([plan.fears_triggers, plan.known_triggers])}</p>
-              </div>
-            )}
-            {has(plan.bite_risk) && (
-              <div className="rounded-lg bg-warn-red/5 p-3 ring-1 ring-warn-red/20">
-                <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-warn-red"><ShieldAlert className="size-3.5" />Bite warning signs</p>
-                <p className="mt-1 text-sm whitespace-pre-line">{plan.bite_risk}</p>
-              </div>
-            )}
-          </Section>
-        </>
-      )}
-
-      {hazards.length > 0 && (
-        <Section title="Household hazards — keep away" danger>
-          <DangerChips items={hazards} />
-          {has(plan.hazards_other) && <p className="text-sm whitespace-pre-line text-warn-red">{plan.hazards_other}</p>}
-        </Section>
+          <StepUpField stepUp={plan.step_up} notes={plan.step_up_notes} />
+          {has(plan.handlers) && <Field label="Who can handle">{plan.handlers}</Field>}
+          {!has(plan.step_up) && !has(plan.step_up_notes) && !has(plan.handlers) && has(plan.handling_rules) && (
+            <Field label="Handling rules">{plan.handling_rules}</Field>
+          )}
+          {has(plan.likes) && <Field label="Likes">{plan.likes}</Field>}
+          {(has(plan.fears_triggers) || has(plan.known_triggers)) && (
+            <Callout label="Fears & triggers">{joinUnique([plan.fears_triggers, plan.known_triggers])}</Callout>
+          )}
+          {has(plan.bite_risk) && (
+            <DangerCallout title="Bite warning signs" icon={<ShieldAlert className="size-3.5" />}>
+              <p className="text-sm whitespace-pre-line">{plan.bite_risk}</p>
+            </DangerCallout>
+          )}
+        </SectionCard>
       )}
 
       {showHome && (
-        <Section title="Home & safety" coach="cp-home">
-          {has(plan.cage_location) && <Field label="Cage location" value={plan.cage_location} />}
+        <SectionCard icon={<HomeIcon className="size-5" />} eyebrow="Home & safety" title={`${name}'s home & safety`} coach="cp-home">
+          {hazards.length > 0 && (
+            <DangerCallout title="Household hazards · keep away">
+              <DangerChips items={hazards} />
+              {has(plan.hazards_other) && <p className="mt-2 text-sm whitespace-pre-line">{plan.hazards_other}</p>}
+            </DangerCallout>
+          )}
+          {has(plan.cage_location) && <Field label="Cage location">{plan.cage_location}</Field>}
           {(has(plan.out_of_cage_mode) || has(plan.out_of_cage_notes) || has(plan.out_of_cage_rules)) && (
-            <Field
-              label="Out-of-cage rules"
-              value={
-                has(plan.out_of_cage_mode) || has(plan.out_of_cage_notes)
-                  ? joinUnique([prettyLabel(plan.out_of_cage_mode, OUT_OF_CAGE_LABELS), plan.out_of_cage_notes])
-                  : plan.out_of_cage_rules
-              }
-            />
+            <Field label="Out-of-cage rules">
+              {has(plan.out_of_cage_mode) || has(plan.out_of_cage_notes)
+                ? joinUnique([prettyLabel(plan.out_of_cage_mode, OUT_OF_CAGE_LABELS), plan.out_of_cage_notes])
+                : plan.out_of_cage_rules}
+            </Field>
           )}
           {(has(plan.off_limits) || has(plan.off_limits_rooms)) && (
-            <Field label="Off-limits areas" value={joinUnique([plan.off_limits, plan.off_limits_rooms])} />
+            <Field label="Off-limits areas">{joinUnique([plan.off_limits, plan.off_limits_rooms])}</Field>
           )}
-          {hazards.length === 0 && has(plan.safety_rules) && <Field label="Safety rules" value={plan.safety_rules} />}
-          {has(plan.other_pets) && <Field label="Other pets" value={plan.other_pets} />}
-        </Section>
+          {hazards.length === 0 && has(plan.safety_rules) && <Field label="Safety rules">{plan.safety_rules}</Field>}
+          {has(plan.other_pets) && <Field label="Other pets">{plan.other_pets}</Field>}
+        </SectionCard>
       )}
 
       {showHealth && (
-        <Section title="What's normal & health" coach="cp-health">
-          {weightStr && <Field label="Normal weight" value={weightStr} />}
-          {has(plan.whats_normal) && <Field label="What's normal (overall)" value={plan.whats_normal} />}
-          {has(plan.normal_appetite) && <Field label="Normal appetite" value={plan.normal_appetite} />}
-          {has(plan.normal_droppings) && <Field label="Normal droppings" value={plan.normal_droppings} />}
-          {has(plan.normal_noise) && <Field label="Normal noise" value={plan.normal_noise} />}
-          {has(plan.normal_activity) && <Field label="Normal activity" value={plan.normal_activity} />}
-          {has(plan.normal_sleep) && <Field label="Normal sleep" value={plan.normal_sleep} />}
-          {has(plan.normal_behavior_with_strangers) && <Field label="With strangers" value={plan.normal_behavior_with_strangers} />}
-          {has(bird.medical_conditions) && <Field label="Medical conditions" value={bird.medical_conditions} />}
+        <SectionCard icon={<Stethoscope className="size-5" />} eyebrow="Health" title={`What's normal for ${name}`} coach="cp-health">
+          {weightStr && <Metric value={weightStr} caption="Normal weight" />}
+          {has(plan.whats_normal) && <Field label="What's normal (overall)">{plan.whats_normal}</Field>}
+          {has(plan.normal_appetite) && <Field label="Normal appetite">{plan.normal_appetite}</Field>}
+          {has(plan.normal_droppings) && <Field label="Normal droppings">{plan.normal_droppings}</Field>}
+          {has(plan.normal_noise) && <Field label="Normal noise">{plan.normal_noise}</Field>}
+          {has(plan.normal_activity) && <Field label="Normal activity">{plan.normal_activity}</Field>}
+          {has(plan.normal_sleep) && <Field label="Normal sleep">{plan.normal_sleep}</Field>}
+          {has(plan.normal_behavior_with_strangers) && <Field label="With strangers">{plan.normal_behavior_with_strangers}</Field>}
+          {has(bird.medical_conditions) && <Field label="Medical conditions">{bird.medical_conditions}</Field>}
           {(has(bird.medications) || has(plan.medication_schedule)) && (
-            <Field label="Medications" value={joinUnique([bird.medications, plan.medication_schedule])} />
+            <Field label="Medications">{joinUnique([bird.medications, plan.medication_schedule])}</Field>
           )}
           {data.baselineClipUrl && (
-            <div className="grid grid-cols-1 gap-2">
-              <div className="overflow-hidden rounded-xl ring-1 ring-[#e0d8c4]">
-                <ClipPlayer src={data.baselineClipUrl} label="Normal-behavior clip" className="aspect-video" />
-                <p className="bg-white px-2 py-1 text-[11px] font-medium">Normal-behavior clip</p>
-              </div>
+            <div className="overflow-hidden rounded-[12px] ring-1 ring-[var(--line2)]">
+              <ClipPlayer src={data.baselineClipUrl} label="Normal-behavior clip" className="aspect-video" />
+              <p className="bg-white px-2 py-1.5 text-[11px] font-medium text-[var(--ink)]">Normal-behavior clip</p>
             </div>
           )}
-        </Section>
+        </SectionCard>
       )}
 
       {(has(plan.when_to_call_owner) || has(plan.when_to_call_vet)) && (
-        <Section title="When to call" danger coach="cp-emergency">
-          {has(plan.when_to_call_owner) && <Field label="Call the owner" value={plan.when_to_call_owner} />}
-          {has(plan.when_to_call_vet) && <Field label="Call the vet" value={plan.when_to_call_vet} />}
-        </Section>
+        <SectionCard icon={<Siren className="size-5" />} eyebrow="Emergency" title="When to call" tone="red" coach="cp-emergency">
+          <Callout label="When to call">
+            {joinUnique([
+              has(plan.when_to_call_owner) && `Call the owner: ${plan.when_to_call_owner}`,
+              has(plan.when_to_call_vet) && `Call the vet: ${plan.when_to_call_vet}`,
+            ])}
+          </Callout>
+        </SectionCard>
       )}
     </>
   );
