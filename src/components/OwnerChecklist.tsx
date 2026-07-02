@@ -3,7 +3,9 @@ import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
-import { Check, ChevronRight, Share, Sparkles } from "lucide-react";
+import { Check, ChevronRight, Sparkles } from "lucide-react";
+import { InstallGuide } from "@/components/InstallGuide";
+import { isStandalone } from "@/lib/pwaInstall";
 
 // Persistent getting-started checklist on the owner dashboard. Steps auto-check
 // from real state (defaults saved, bird added, sit created); notifications +
@@ -46,7 +48,9 @@ export function OwnerChecklist({ birds, sits }: { birds: any[]; sits: any[] }) {
         setUid(id);
         setDismissed(readFlag(scoped(DISMISS_KEY, id)));
         setNotifDone(readFlag(scoped(NOTIF_KEY, id)));
-        setHomeDone(readFlag(scoped(HOMESCREEN_KEY, id)));
+        // Auto-complete when already installed (standalone) — never show the
+        // install step to someone who's already added the app.
+        setHomeDone(readFlag(scoped(HOMESCREEN_KEY, id)) || isStandalone());
       }
       setFlagsLoaded(true);
     })();
@@ -157,10 +161,10 @@ export function OwnerChecklist({ birds, sits }: { birds: any[]; sits: any[] }) {
                 <button type="button" onClick={() => setShowHome((v) => !v)} className={rowClass}>{body}</button>
                 {showHome && (
                   <div className="mt-1 space-y-2 rounded-xl bg-white p-3 ring-1 ring-sage-100">
-                    <p className="flex items-start gap-1.5 text-xs text-[#1a3d2e]">
-                      <span className="font-semibold">iPhone/iPad:</span> Tap <Share className="mx-0.5 inline size-3.5 align-text-bottom" /> in Safari, then choose <span className="font-semibold">Add to Home Screen</span>.
-                    </p>
-                    <p className="text-xs text-[#1a3d2e]"><span className="font-semibold">Android:</span> Open the browser menu (⋮) and choose <span className="font-semibold">Install app</span> / Add to Home screen.</p>
+                    {/* Tailored to the visitor's platform + browser (native
+                        install button where available), instead of showing both
+                        iPhone and Android steps to everyone. */}
+                    <InstallGuide onInstalled={() => { if (uid) setFlag(scoped(HOMESCREEN_KEY, uid)); setHomeDone(true); setShowHome(false); }} />
                     <div className="flex gap-2 pt-1">
                       <button onClick={() => { if (uid) setFlag(scoped(HOMESCREEN_KEY, uid)); setHomeDone(true); setShowHome(false); }} className="rounded-lg bg-[#1a3d2e] px-3 py-1.5 text-xs font-semibold text-white">Done</button>
                       <button onClick={() => { if (uid) setFlag(scoped(HOMESCREEN_KEY, uid)); setHomeDone(true); setShowHome(false); }} className="rounded-lg border border-[#e0d8c4] px-3 py-1.5 text-xs font-semibold text-[#5f5e5a]">Skip</button>

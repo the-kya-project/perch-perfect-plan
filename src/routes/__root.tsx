@@ -20,6 +20,9 @@ import {
   isStaleChunkError, chunkReloadAttemptedRecently, reloadForStaleChunk,
 } from "@/lib/sw-register";
 import { captureFirstTouch } from "@/lib/attribution";
+// Side-effect import: registers the beforeinstallprompt/appinstalled listeners
+// at app start so the native install prompt is captured (it fires once, early).
+import "@/lib/pwaInstall";
 
 function NotFoundComponent() {
   return (

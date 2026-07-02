@@ -13,18 +13,29 @@ import { Check, ChevronRight, X, Download, Bell, ClipboardList, Siren } from "lu
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { getNotificationPermission } from "@/lib/push";
+import { AddToHomeModal } from "@/components/AddToHomeModal";
+import { useInstallState, isStandalone, type InstallBranch } from "@/lib/pwaInstall";
 
 const NEW_ACCOUNT_DAYS = 30;
 const dismissKey = (uid: string) => `ppc_setup_checklist_dismissed_${uid}`;
 
-function isStandalone(): boolean {
-  if (typeof window === "undefined") return false;
-  return !!window.matchMedia?.("(display-mode: standalone)").matches || (navigator as any).standalone === true;
+// Short, branch-appropriate hint under the "Install the app" row (full steps
+// are in the modal it opens). Sentence case, no em dashes.
+function installHint(branch: InstallBranch): string {
+  switch (branch) {
+    case "ios-safari": return "Tap share, then Add to Home Screen. Needed for push alerts.";
+    case "ios-other": return "Open this page in Safari to install. Needed for push alerts.";
+    case "android-native": return "Tap to install the app for push alerts.";
+    case "android-other": return "Add it to your home screen for push alerts.";
+    default: return "Optional on a computer. Push alerts are made for your phone.";
+  }
 }
 
 export function HomeChecklist() {
   const navigate = useNavigate();
   const [dismissed, setDismissed] = useState(false);
+  const [installOpen, setInstallOpen] = useState(false);
+  const { branch: installBranch } = useInstallState();
   // Client-only signals, re-read on mount (and after the notifications tap).
   const [installed, setInstalled] = useState(false);
   const [notifGranted, setNotifGranted] = useState(false);
@@ -80,7 +91,8 @@ export function HomeChecklist() {
       label: "Install the app",
       icon: <Download className="size-4" />,
       done: installed,
-      hint: installed ? undefined : "On iPhone: tap Share, then Add to Home Screen — needed for push alerts.",
+      onAction: installed ? undefined : () => setInstallOpen(true),
+      hint: installed ? undefined : installHint(installBranch),
     },
     {
       key: "notifications",
@@ -164,6 +176,7 @@ export function HomeChecklist() {
           );
         })}
       </ul>
+      {installOpen && <AddToHomeModal onClose={() => setInstallOpen(false)} />}
     </section>
   );
 }
