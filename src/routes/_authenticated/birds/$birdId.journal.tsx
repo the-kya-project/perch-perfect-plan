@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useRouter, useCanGoBack } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -45,6 +45,11 @@ function JournalFacet() {
   const canHealth = useCapability("record_health", { birdId });
   const isOwner = useBirdRole(birdId) === "owner";
   const navigate = useNavigate();
+  const router = useRouter();
+  const canGoBack = useCanGoBack();
+  // Return where the visitor came from (bird record, or a Remembering memorial
+  // card); fall back to the bird record when there's no real history.
+  const goBack = () => (canGoBack && window.history.length > 1 ? router.history.back() : navigate({ to: "/birds/$birdId", params: { birdId } }));
   const qc = useQueryClient();
   const [filter, setFilter] = useState<Filter>("all");
   const [editing, setEditing] = useState<Entry | null | "new">(null);
@@ -90,7 +95,7 @@ function JournalFacet() {
       <div className="mx-auto max-w-md">
         <InkHero
           backIcon={<ArrowLeft className="size-5" />}
-          onBack={() => navigate({ to: "/birds/$birdId", params: { birdId } })}
+          onBack={goBack}
           eyebrow="Journal"
           headline={`What ${name}'s been up to.`}
           body="The little things you notice now can matter later."

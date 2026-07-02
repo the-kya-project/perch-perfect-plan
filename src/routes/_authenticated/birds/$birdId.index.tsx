@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useRouter, useCanGoBack } from "@tanstack/react-router";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -70,6 +70,11 @@ function BirdRecordHome() {
 // hero, so this isn't doubled.)
 function BirdRecordHero({ birdId }: { birdId: string }) {
   const navigate = useNavigate();
+  const router = useRouter();
+  const canGoBack = useCanGoBack();
+  // Return where the visitor came from (Home, Remembering, a memorial card…);
+  // fall back to Home only when there's no real history (deep link, fresh load).
+  const goBack = () => (canGoBack && window.history.length > 1 ? router.history.back() : navigate({ to: "/dashboard" }));
   const role = useBirdRole(birdId);
   const isOwner = role === "owner";
   const { data: bird } = useBirdRecord(birdId);
@@ -105,7 +110,7 @@ function BirdRecordHero({ birdId }: { birdId: string }) {
 
           {/* Floating controls over the photo. */}
           <div className="absolute inset-x-0 top-[14px] flex items-center justify-between px-[14px]">
-            <HeroCircleBtn label="Back" onPress={() => navigate({ to: "/dashboard" })}>
+            <HeroCircleBtn label="Back" onPress={goBack}>
               <ArrowLeft className="size-5" />
             </HeroCircleBtn>
             {isOwner && bird ? (

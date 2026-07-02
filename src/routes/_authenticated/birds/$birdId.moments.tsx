@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useRouter, useCanGoBack } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -44,6 +44,11 @@ const monthDay = (iso: string) => new Date(`${iso}T12:00:00`).toLocaleDateString
 function MomentsFacet() {
   const { birdId } = Route.useParams();
   const navigate = useNavigate();
+  const router = useRouter();
+  const canGoBack = useCanGoBack();
+  // Return where the visitor came from (bird record, or a Remembering memorial
+  // card); fall back to the bird record when there's no real history.
+  const goBack = () => (canGoBack && window.history.length > 1 ? router.history.back() : navigate({ to: "/birds/$birdId", params: { birdId } }));
   const qc = useQueryClient();
   const [adding, setAdding] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -161,7 +166,7 @@ function MomentsFacet() {
           headline={`${name} being ${name}.`}
           body="The highlight reel."
           backIcon={<ArrowLeft className="size-5" />}
-          onBack={() => navigate({ to: "/birds/$birdId", params: { birdId } })}
+          onBack={goBack}
           trailingIcons={busy ? <Loader2 className="size-4 animate-spin text-white/80" /> : undefined}
           cta={isOwner ? { label: "Add custom milestone", tone: "lime", icon: <Plus className="size-4" />, onPress: () => setAdding(true) } : undefined}
         />
