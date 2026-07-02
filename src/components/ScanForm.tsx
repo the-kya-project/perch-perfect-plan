@@ -11,6 +11,9 @@ import { toast } from "sonner";
 
 export type ScanSubmit = {
   answers: Record<ScanFieldKey, ScanAnswer>;
+  // Optional per-item note, keyed by scan field key — only present for items
+  // marked not normal (concerning / not sure) that were given a note.
+  itemNotes?: Partial<Record<ScanFieldKey, string>>;
   notes?: string;
   photoDataUrl?: string;
   weightGrams?: number;
@@ -26,6 +29,7 @@ export function ScanForm({
   onSubmit: (payload: ScanSubmit) => void;
 }) {
   const [answers, setAnswers] = useState<Partial<Record<ScanFieldKey, ScanAnswer>>>({});
+  const [itemNotes, setItemNotes] = useState<Partial<Record<ScanFieldKey, string>>>({});
   const [notes, setNotes] = useState("");
   const [photo, setPhoto] = useState<string | null>(null);
   const [photoBusy, setPhotoBusy] = useState(false);
@@ -63,8 +67,17 @@ export function ScanForm({
       toast.error("Please answer every question before submitting.");
       return;
     }
+    // Keep only notes on items still marked not normal (drop a note if the item
+    // was switched back to Normal). Optional — an empty map is fine.
+    const cleanedItemNotes: Partial<Record<ScanFieldKey, string>> = {};
+    for (const f of SCAN_FIELDS) {
+      const ans = answers[f.key];
+      const note = (itemNotes[f.key] ?? "").trim();
+      if ((ans === "concerning" || ans === "not_sure") && note) cleanedItemNotes[f.key] = note;
+    }
     onSubmit({
       answers: Object.fromEntries(SCAN_FIELDS.map((f) => [f.key, answers[f.key]!])) as Record<ScanFieldKey, ScanAnswer>,
+      itemNotes: Object.keys(cleanedItemNotes).length ? cleanedItemNotes : undefined,
       notes: notes || undefined,
       photoDataUrl: photo || undefined,
       weightGrams: weight.trim() && Number.isFinite(Number(weight)) ? Number(weight) : undefined,
@@ -110,6 +123,20 @@ export function ScanForm({
                 never-feed callout) — never the off-brand red-on-cream "muddy pink." */}
             {a === "not_sure" && <p className="mt-3 rounded bg-warn-amber/10 p-2 ring-1 ring-warn-amber/30 text-[11px] leading-relaxed text-warn-amber"><b>Look again: </b>{f.helpNotSure}</p>}
             {a === "concerning" && <p className="mt-3 rounded bg-warn-amber/10 p-2 ring-1 ring-warn-amber/30 text-[11px] leading-relaxed text-warn-amber"><b>Watch for: </b>{f.helpConcerning}</p>}
+            {/* Optional note — only for a not-normal item, so the owner gets
+                context on the flag. Never required; the check saves without it. */}
+            {(a === "not_sure" || a === "concerning") && (
+              <label className="mt-3 block">
+                <span className="mb-1 block text-[11px] font-medium text-[#5f5e5a]">What did you notice? (optional)</span>
+                <input
+                  type="text"
+                  value={itemNotes[f.key] ?? ""}
+                  onChange={(e) => setItemNotes({ ...itemNotes, [f.key]: e.target.value })}
+                  placeholder="Add a note, e.g. left foot looks swollen"
+                  className="w-full rounded-xl border border-[#e0d8c4] bg-white p-2.5 text-sm"
+                />
+              </label>
+            )}
           </section>
         );
       })}

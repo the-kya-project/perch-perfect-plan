@@ -303,12 +303,14 @@ function escapeHtml(s: string): string {
 
 export const submitHealthScan = createServerFn({ method: "POST" })
   .inputValidator(
-    (d: { token: string; birdId: string; answers: Record<string, ScanAnswer>; notes?: string; photoDataUrl?: string; weightGrams?: number }) =>
+    (d: { token: string; birdId: string; answers: Record<string, ScanAnswer>; itemNotes?: Record<string, string>; notes?: string; photoDataUrl?: string; weightGrams?: number }) =>
       z
         .object({
           token: z.string().min(8),
           birdId: z.string().uuid(),
           answers: z.record(z.string(), AnswerEnum),
+          // Optional per-item note (keyed by scan field key) for not-normal items.
+          itemNotes: z.record(z.string(), z.string().max(2000)).optional(),
           notes: z.string().max(2000).optional(),
           // Optional scan photo, already compressed client-side to a small JPEG.
           photoDataUrl: z.string().startsWith("data:image/").max(4_000_000).optional(),
@@ -341,9 +343,10 @@ export const submitHealthScan = createServerFn({ method: "POST" })
         injury_status: a.injury,
         exposure_status: a.exposure,
         notes: data.notes ?? null,
+        item_notes: data.itemNotes ?? null,
         triage_status: triage.status,
         triage_reasons: triage.reasons.join(" | "),
-      })
+      } as any)
       .select()
       .single();
     if (error) throw new Error(error.message);

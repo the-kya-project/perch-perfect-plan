@@ -61,6 +61,7 @@ function ScanPage() {
           token,
           birdId: ctx.activeBirdId,
           answers: p.answers,
+          itemNotes: p.itemNotes,
           notes: p.notes,
           photoDataUrl: p.photoDataUrl,
           weightGrams: p.weightGrams,

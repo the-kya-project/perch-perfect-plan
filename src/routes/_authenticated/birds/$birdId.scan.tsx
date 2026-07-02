@@ -77,9 +77,10 @@ function OwnerScan() {
           injury_status: a.injury,
           exposure_status: a.exposure,
           notes: p.notes ?? null,
+          item_notes: p.itemNotes ?? null,
           triage_status: triage.status,
           triage_reasons: triage.reasons.join(" | "),
-        })
+        } as any)
         .select()
         .single();
       if (error) throw error;

@@ -17,17 +17,19 @@ export const Route = createFileRoute("/_authenticated/birds/$birdId/scans/$scanI
   component: ScanDetail,
 });
 
-const SCAN_COLS: { col: string; label: string }[] = [
-  { col: "alertness_status", label: "Alert and responsive" },
-  { col: "food_status", label: "Eating normally" },
-  { col: "droppings_status", label: "Droppings look normal" },
-  { col: "breathing_status", label: "Breathing normally" },
-  { col: "posture_status", label: "Perched normally" },
-  { col: "behavior_status", label: "Vocalizing as usual" },
-  { col: "energy_status", label: "Not fluffed for long stretches" },
-  { col: "vomiting_status", label: "Face clean, no vomiting" },
-  { col: "injury_status", label: "No injury, fall, bite, or scratch" },
-  { col: "exposure_status", label: "No exposure to fumes / unsafe items" },
+// `fkey` = the scan FIELD key that item_notes is keyed by (the status column and
+// the field key differ for noise→behavior and fluffed→energy).
+const SCAN_COLS: { col: string; fkey: string; label: string }[] = [
+  { col: "alertness_status", fkey: "alertness", label: "Alert and responsive" },
+  { col: "food_status", fkey: "food", label: "Eating normally" },
+  { col: "droppings_status", fkey: "droppings", label: "Droppings look normal" },
+  { col: "breathing_status", fkey: "breathing", label: "Breathing normally" },
+  { col: "posture_status", fkey: "posture", label: "Perched normally" },
+  { col: "behavior_status", fkey: "noise", label: "Vocalizing as usual" },
+  { col: "energy_status", fkey: "fluffed", label: "Not fluffed for long stretches" },
+  { col: "vomiting_status", fkey: "vomiting", label: "Face clean, no vomiting" },
+  { col: "injury_status", fkey: "injury", label: "No injury, fall, bite, or scratch" },
+  { col: "exposure_status", fkey: "exposure", label: "No exposure to fumes / unsafe items" },
 ];
 
 function ScanDetail() {
@@ -179,13 +181,23 @@ function ScanDetail() {
       <section>
         <SectionHead title="The check" />
         <Card>
-          {SCAN_COLS.map((f, i) => (
-            <div key={f.col} className={`flex min-h-[44px] items-center gap-3 px-4 py-2.5 ${i === SCAN_COLS.length - 1 ? "" : "border-b border-[var(--line2)]"}`}>
-              <AnswerIcon value={row[f.col]} />
-              <span className="t-item flex-1 font-[400]">{f.label}</span>
-              <AnswerPill value={row[f.col]} />
-            </div>
-          ))}
+          {SCAN_COLS.map((f, i) => {
+            const note = (row.item_notes as Record<string, string> | null)?.[f.fkey];
+            return (
+              <div key={f.col} className={`px-4 py-2.5 ${i === SCAN_COLS.length - 1 ? "" : "border-b border-[var(--line2)]"}`}>
+                <div className="flex min-h-[44px] items-center gap-3">
+                  <AnswerIcon value={row[f.col]} />
+                  <span className="t-item flex-1 font-[400]">{f.label}</span>
+                  <AnswerPill value={row[f.col]} />
+                </div>
+                {note && (
+                  <p className="mt-1 rounded-lg px-3 py-2 text-[13px] leading-relaxed" style={{ background: "var(--amber-fill)", color: "var(--amber-ink)" }}>
+                    {note}
+                  </p>
+                )}
+              </div>
+            );
+          })}
         </Card>
       </section>
 
