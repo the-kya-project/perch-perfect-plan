@@ -591,12 +591,19 @@ function Avatar({ initial, dim }: { initial: string; dim?: boolean }) {
 // ---------------------------------------------------------------------------
 // Foster footer
 // ---------------------------------------------------------------------------
+// Tappable when there are past birds — opens the keepsake list of birds handed
+// off (their live records went with them; this is the sender's memory). Renders
+// nothing at 0, so it's never a dead end.
 function FosterFooter({ count }: { count: number }) {
   if (count <= 0) return null;
   return (
-    <p className="text-center text-[13px] italic text-[var(--mute2)]">
+    <Link
+      to="/past-birds"
+      className="mx-auto flex items-center justify-center gap-1 text-center text-[13px] italic text-[var(--mute2)] active:opacity-70"
+    >
       You've helped {count} {count === 1 ? "bird" : "birds"} find a home.
-    </p>
+      <ChevronRight className="size-3.5 not-italic" />
+    </Link>
   );
 }
 
