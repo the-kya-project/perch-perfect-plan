@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { toast } from "sonner";
@@ -32,6 +32,9 @@ function NewBird() {
   const [photo, setPhoto] = useState<string | null>(null);
   const [photoPos, setPhotoPos] = useState<string>("50% 50%");
   const [saving, setSaving] = useState(false);
+  // Set once the bird is created — a retry must never insert a second bird,
+  // even if the post-save navigation failed (see onAddBird).
+  const createdIdRef = useRef<string | null>(null);
   const [photoBusy, setPhotoBusy] = useState(false);
   const todayStr = new Date().toISOString().slice(0, 10);
   const [isFoster, setIsFoster] = useState(!!fosterParam);
@@ -106,7 +109,9 @@ function NewBird() {
       setSaving(false);
       return null;
     }
-    setSaving(false);
+    // NOTE: `saving` stays true on success — the button must remain disabled
+    // through the navigation that follows, or a slow/failed navigation window
+    // lets a second tap create a DUPLICATE bird.
     // Mark Home's bird list stale so it shows this bird the moment the owner
     // lands there (setup finish / Save & exit), with no manual refresh.
     qc.invalidateQueries({ queryKey: ["birds"] });
@@ -117,18 +122,36 @@ function NewBird() {
   // of 8) — the obvious next step instead of leaving the owner to find the CTA.
   // Skippable: the wizard's "Save & exit" drops onto the bird's record, which
   // keeps a "Set up <name>'s care plan" invite until setup is complete.
+  //
+  // Duplicate-proof: the created id is remembered, so if the tap saved the bird
+  // but the navigation didn't land (e.g. a stale build's setup chunk 404ing
+  // right after a deploy), a retry NEVER inserts again — it reuses the id and
+  // just retries the navigation, hard-navigating as a last resort (a full page
+  // load always lands on the fresh build).
   async function onAddBird() {
-    const id = await createBird(1);
-    if (id) {
+    if (saving) return;
+    let id = createdIdRef.current;
+    if (!id) {
+      id = await createBird(1);
+      if (!id) return;
+      createdIdRef.current = id;
       toast.success(`${name} added.`);
-      navigate({ to: "/birds/$birdId/setup", params: { birdId: id }, search: { step: 1 } });
+    }
+    try {
+      await navigate({ to: "/birds/$birdId/setup", params: { birdId: id }, search: { step: 1 } });
+    } catch (e) {
+      console.error("[add-bird] navigation failed — hard-navigating to setup", e);
+      window.location.assign(`/birds/${id}/setup?step=1`);
     }
   }
 
   // Cancel — nothing is created until Add bird, so just leave. Confirm first only
   // if they've started entering details, so a stray tap doesn't discard work.
+  // If the bird WAS created (a prior tap saved it but navigation failed), leaving
+  // is safe — never warn about discarding a bird that's already saved.
   const hasInput = !!(name.trim() || species.trim() || age || birthDate || sex || photo || flight !== "unknown");
   function onCancel() {
+    if (createdIdRef.current) { navigate({ to: "/dashboard" }); return; }
     if (!hasInput || window.confirm("Discard this bird? You haven't saved it yet.")) {
       navigate({ to: "/dashboard" });
     }
