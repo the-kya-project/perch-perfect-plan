@@ -28,7 +28,6 @@ import { InkHero, IconTile, StatusPill, SectionHead, CtaLink, type HeroCta } fro
 import { CaregiverCoveringSection, useActiveCaregiver } from "@/components/CaregiverHome";
 import { HomeChecklist } from "@/components/HomeChecklist";
 import { getHouseholdHome, resolveOwnerNames, type HomeHousehold } from "@/lib/home.functions";
-import { getPastBirds } from "@/lib/handoff.functions";
 import { useMyPermissions } from "@/lib/useCapability";
 import {
   groupWeights, weightGlance, upcomingMoments, buildTodayItems, buildHomeStateCopy, daysSince,
@@ -83,7 +82,9 @@ function Dashboard() {
     // so a solo↔flock change still appears immediately without a blocking fetch on
     // every Home visit. Shape is shared with the Sits screen via BIRD_LIST_SELECT.
     queryFn: async () => {
-      const { data, error } = await supabase.from("birds").select(BIRD_LIST_SELECT).order("created_at", { ascending: false });
+      // Active flock only — a passed bird leaves Home entirely (it lives in the
+      // Remembering menu entry; its record is preserved, just not ambient here).
+      const { data, error } = await supabase.from("birds").select(BIRD_LIST_SELECT).is("passed_at", null).order("created_at", { ascending: false });
       if (error) throw error;
       return (data ?? []) as any[];
     },
@@ -124,10 +125,6 @@ function Dashboard() {
 
   const householdFn = useServerFn(getHouseholdHome);
   const { data: household } = useQuery({ queryKey: ["home-household"], queryFn: () => householdFn() });
-
-  const pastBirdsFn = useServerFn(getPastBirds);
-  const { data: pastBirds } = useQuery({ queryKey: ["past-birds"], queryFn: () => pastBirdsFn() });
-  const pastCount = pastBirds?.birds?.length ?? 0;
 
   // ---- derived ----
   const weightsByBird = useMemo(() => groupWeights(allWeights), [allWeights]);
@@ -335,7 +332,6 @@ function Dashboard() {
 
             <HouseholdActivity household={householdView} />
             <HouseholdRow household={householdView} firstName={firstName} />
-            <FosterFooter count={pastCount} />
           </>
         )}
 
@@ -591,22 +587,6 @@ function Avatar({ initial, dim }: { initial: string; dim?: boolean }) {
 // ---------------------------------------------------------------------------
 // Foster footer
 // ---------------------------------------------------------------------------
-// Tappable when there are past birds — opens the keepsake list of birds handed
-// off (their live records went with them; this is the sender's memory). Renders
-// nothing at 0, so it's never a dead end.
-function FosterFooter({ count }: { count: number }) {
-  if (count <= 0) return null;
-  return (
-    <Link
-      to="/past-birds"
-      className="mx-auto flex items-center justify-center gap-1 text-center text-[13px] italic text-[var(--mute2)] active:opacity-70"
-    >
-      You've helped {count} {count === 1 ? "bird" : "birds"} find a home.
-      <ChevronRight className="size-3.5 not-italic" />
-    </Link>
-  );
-}
-
 // ---------------------------------------------------------------------------
 // Empty + skeleton — the InkHero already carries the "Add a bird" lime primary,
 // so this is a calm explanatory card, no competing button.

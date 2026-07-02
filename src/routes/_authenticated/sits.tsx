@@ -49,9 +49,12 @@ function SitsPage() {
   const { data: birds = [] } = useQuery({
     queryKey: ["birds"],
     queryFn: async () => {
+      // Active flock only (passed birds are excluded everywhere on Home/Sits —
+      // same filter as the dashboard so the shared ["birds"] cache stays consistent).
       const { data, error } = await supabase
         .from("birds")
         .select(BIRD_LIST_SELECT)
+        .is("passed_at", null)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return data ?? [];

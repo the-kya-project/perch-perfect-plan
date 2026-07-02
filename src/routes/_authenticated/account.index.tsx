@@ -6,7 +6,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { deleteMyAccount } from "@/lib/account.functions";
 import { APP_VERSION } from "@/lib/version";
-import { ArrowLeft, ShieldAlert, Bell, Smartphone, Lock, X, Archive, Users } from "lucide-react";
+import { ArrowLeft, ShieldAlert, Bell, Smartphone, Lock, X, Archive, Users, Flower2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { AddToHomeModal } from "@/components/AddToHomeModal";
 import { InkHero, Card, RecordRow, IconTile, SectionHead, PrimaryButton } from "@/components/system";
 import { toast } from "sonner";
@@ -31,6 +32,22 @@ function AccountPage() {
   const [email, setEmail] = useState("");
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const [name, setName] = useState("");
+
+  // The Remembering entry shows only when there's a passed bird to remember.
+  const { data: rememberingCount = 0 } = useQuery({
+    queryKey: ["remembering-count"],
+    queryFn: async () => {
+      const { data: u } = await getLocalUser();
+      if (!u.user) return 0;
+      const { count } = await supabase
+        .from("birds")
+        .select("id", { count: "exact", head: true })
+        .eq("owner_id", u.user.id)
+        .not("passed_at", "is", null);
+      return count ?? 0;
+    },
+  });
+  const hasRemembering = rememberingCount > 0;
 
   const [editOpen, setEditOpen] = useState(false);
   const [a2hsOpen, setA2hsOpen] = useState(false);
@@ -141,11 +158,21 @@ function AccountPage() {
               <Link to="/past-birds" className="block">
                 <RecordRow
                   leading={<IconTile icon={<Archive className="size-5" />} />}
-                  title="Past birds"
-                  subtitle="Birds you've handed off — who they were, where they went."
-                  last
+                  title="Birds you've helped find a home"
+                  last={!hasRemembering}
                 />
               </Link>
+              {/* Remembering — memorials for birds that have passed. Shown only
+                  when there is someone to remember; visited by choice, no count. */}
+              {hasRemembering && (
+                <Link to="/remembering" className="block">
+                  <RecordRow
+                    leading={<IconTile icon={<Flower2 className="size-5" />} />}
+                    title="Remembering"
+                    last
+                  />
+                </Link>
+              )}
             </Card>
           </div>
 

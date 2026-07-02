@@ -201,6 +201,34 @@ export const getSitterContext = createServerFn({ method: "GET" })
       photo_url: await signBirdPhotoPath(sb, (birdRes.data as any).photo_url),
     };
 
+    // Owner's display name for the sitter-facing "something's wrong" flow.
+    // Real name only — never an email prefix.
+    let ownerName = "the owner";
+    {
+      const { data: prof } = await sb.from("profiles").select("display_name").eq("id", birdRes.data.owner_id).maybeSingle();
+      const n = (prof?.display_name ?? "").toString().trim();
+      if (n) ownerName = n;
+      else {
+        try {
+          const { data: u } = await sb.auth.admin.getUserById(birdRes.data.owner_id as string);
+          const m = (u?.user?.user_metadata?.display_name ?? "").toString().trim();
+          if (m) ownerName = m;
+        } catch { /* keep fallback */ }
+      }
+    }
+
+    // Reminders pause state for the active bird: the sitter's own temporary
+    // pause (sit_birds.reminders_paused_at) OR the owner having marked the bird
+    // as passed (birds.passed_at). Either way the daily prompts stop for the
+    // sitter; nothing else about the sit changes.
+    const { data: sitBirdRow } = await sb
+      .from("sit_birds")
+      .select("reminders_paused_at")
+      .eq("sit_id", sit.id)
+      .eq("bird_id", activeId)
+      .maybeSingle();
+    const remindersPaused = !!((sitBirdRow as any)?.reminders_paused_at || (birdRes.data as any).passed_at);
+
     return {
       sit,
       birds: signedBirds,
@@ -208,12 +236,79 @@ export const getSitterContext = createServerFn({ method: "GET" })
       bird: signedActiveBird,
       plan: planRes.data,
       contacts: mergedContacts,
-      tasks: tasksRes.data ?? [],
+      // Paused (sitter pause or owner mark-as-passed) → no daily prompts.
+      tasks: remindersPaused ? [] : (tasksRes.data ?? []),
       completions: completionsRes.data ?? [],
       todayLog: todayLogRes.data ?? null,
       watchClips,
       baselineClipUrl,
+      ownerName,
+      remindersPaused,
     };
+  });
+
+// ---- "Something's wrong" — sitter pauses this bird's reminders ---------------
+// Sets sit_birds.reminders_paused_at for THIS sit + bird only, and urgently
+// notifies the owner (always-on health_concern push + direct email). This is
+// NOT marking the bird as passed — the sitter never changes the bird's record;
+// only the owner marks a bird as passed.
+export const pauseSitterReminders = createServerFn({ method: "POST" })
+  .inputValidator((d: { token: string; birdId: string }) =>
+    z.object({ token: z.string().min(8), birdId: z.string().uuid() }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    const sb = await getAdmin();
+    const sit = await loadSitByToken(data.token);
+    assertNotPreview(sit);
+    const birdIds = await loadSitBirdIds(sit.id);
+    if (!birdIds.includes(data.birdId)) throw new Error("Bird not in this sit.");
+
+    const { error } = await sb
+      .from("sit_birds")
+      .update({ reminders_paused_at: new Date().toISOString() } as any)
+      .eq("sit_id", sit.id)
+      .eq("bird_id", data.birdId);
+    if (error) throw new Error(error.message);
+
+    // Urgent owner notification — best-effort, never blocks the pause.
+    const { data: bird } = await sb.from("birds").select("name, owner_id").eq("id", data.birdId).maybeSingle();
+    const ownerId = (bird as any)?.owner_id as string | undefined;
+    const birdName = ((bird as any)?.name ?? "your bird") as string;
+    const sitterLabel = (sit.sitter_name || "Your sitter") as string;
+    if (ownerId) {
+      try {
+        const { sendPushToOwner } = await import("./pushSender.server");
+        await sendPushToOwner(ownerId, "health_concern", {
+          title: `${sitterLabel} flagged something serious`,
+          body: `${sitterLabel} paused ${birdName}'s reminders and may be trying to reach you. Please call them as soon as you can.`,
+          url: "/scans",
+          tag: `sitter-concern-${data.birdId}`,
+          requireInteraction: true,
+        });
+      } catch (e) { console.error("[sitter-concern] push failed", e); }
+      try {
+        const { data: prof } = await sb.from("profiles").select("email, display_name").eq("id", ownerId).maybeSingle();
+        let email = (prof?.email ?? "").toString();
+        if (!email) {
+          const { data: u } = await sb.auth.admin.getUserById(ownerId);
+          email = u?.user?.email ?? "";
+        }
+        if (email) {
+          const { sendTransactionalEmail } = await import("./brevoEmail.server");
+          const subject = `${sitterLabel} flagged something serious about ${birdName}`;
+          const text = `${sitterLabel} paused ${birdName}'s daily reminders and flagged that something is seriously wrong. Please call ${sitterLabel} as soon as you can. Nothing about ${birdName}'s record has changed.`;
+          await sendTransactionalEmail({
+            to: email,
+            toName: (prof?.display_name ?? undefined) as string | undefined,
+            subject,
+            htmlContent: `<p>${text}</p>`,
+            textContent: text,
+          });
+        }
+      } catch (e) { console.error("[sitter-concern] email failed", e); }
+    }
+
+    return { ok: true };
   });
 
 export const toggleTaskCompletion = createServerFn({ method: "POST" })

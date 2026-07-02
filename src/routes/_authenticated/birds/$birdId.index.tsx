@@ -18,7 +18,7 @@ import { toast } from "sonner";
 import {
   Feather, Scale, BookOpen, IdCard, CalendarHeart, ClipboardList,
   Plus, FileText, Activity, Pencil, ArrowLeft, ArrowRight, Camera,
-  Check, X, Users, ArrowRightLeft, Heart, Loader2, Trash2, Crop,
+  Check, X, Users, ArrowRightLeft, Heart, Loader2, Trash2, Crop, Flower2,
 } from "lucide-react";
 
 // Bird-record home — the new landing when you tap a bird. A glanceable hub for
@@ -367,6 +367,18 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
             <p className="t-eyebrow mb-2 px-0.5 text-[var(--teal-on-cream)]">More</p>
             <div className="space-y-2">
               <HandoffSection birdId={birdId} name={name} part="handoff" prominent={!!bird.is_foster} />
+              {/* Mark as passed — quiet, owner-only. Opens the gentle confirm
+                  flow; the record is preserved as a memorial, never deleted. */}
+              {isOwner && (
+                <button
+                  type="button"
+                  onClick={() => navigate({ to: "/birds/$birdId/farewell", params: { birdId } })}
+                  className="flex min-h-[48px] w-full items-center gap-3 rounded-[13px] bg-white px-4 text-left ring-1 ring-[var(--line2)] active:scale-[0.99]"
+                >
+                  <Flower2 className="size-4 shrink-0 text-[var(--mute2)]" />
+                  <span className="text-[14px] font-[500] text-[var(--ink2)]">Mark as passed</span>
+                </button>
+              )}
               <DeleteBirdButton birdId={birdId} name={name} />
             </div>
           </div>

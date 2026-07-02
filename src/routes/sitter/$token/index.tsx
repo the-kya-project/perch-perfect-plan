@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useSitterContext } from "./route";
 import { toggleTaskCompletion } from "@/lib/sitter.functions";
 import { Disclaimer } from "@/components/Disclaimer";
-import { Stethoscope, Calendar, BookOpen, ChevronRight, ChevronDown } from "lucide-react";
+import { Stethoscope, Calendar, BookOpen, ChevronRight, ChevronDown, HeartCrack } from "lucide-react";
 import { ClipPlayer } from "@/components/ClipPlayer";
 import { taskDaypart, hourToDaypart, DAYPARTS, DAYPART_LABEL, type Daypart } from "@/lib/routineTasks";
 
@@ -226,7 +226,9 @@ function SitterToday() {
         <span className="flex items-center gap-1 text-xs text-sage-600"><Calendar className="size-3.5" />{todayLabel}</span>
       </div>
 
-      {ctx.tasks.length === 0 ? (
+      {(ctx as any).remindersPaused ? (
+        <p className="rounded-2xl bg-[#efe9da] p-4 text-sm text-sage-600">{ctx.bird.name}'s reminders are paused.</p>
+      ) : ctx.tasks.length === 0 ? (
         <p className="rounded-2xl bg-[#efe9da] p-4 text-sm text-sage-600">The owner hasn't added any routine tasks yet.</p>
       ) : (
         <>
@@ -324,6 +326,21 @@ function SitterToday() {
         </span>
         <ChevronRight className="size-5 shrink-0 text-[#1a3d2e]" />
       </Link>
+
+      {/* Something's wrong — quiet, last on the page. Opens the pause + guidance
+          flow (call the owner, pause this bird's reminders). Never marks the
+          bird as passed; only the owner can do that. */}
+      <div>
+        <Link
+          to="/sitter/$token/concern" params={{ token }}
+          className="flex w-full items-center gap-3 rounded-2xl border border-[#e0d8c4] bg-white p-4 text-left active:scale-[0.99]"
+        >
+          <HeartCrack className="size-5 shrink-0 text-sage-600" />
+          <span className="flex-1 text-sm font-medium text-[#1a3d2e]">Something's wrong with {ctx.bird.name}</span>
+          <ChevronRight className="size-4 shrink-0 text-sage-600" />
+        </Link>
+        <p className="mt-1.5 px-1 text-xs text-sage-600">If {ctx.bird.name} has passed or is in serious trouble</p>
+      </div>
     </main>
   );
 }

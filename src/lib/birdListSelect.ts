@@ -8,4 +8,4 @@
 // Superset = the columns either screen reads. A few unused columns per screen are
 // cheap (one small row per bird); a shape mismatch is not.
 export const BIRD_LIST_SELECT =
-  "id, owner_id, name, species, photo_url, photo_position, is_foster, intake_date, birth_date, acquired_on, became_permanent_on, created_at, setup_complete, setup_step, normal_weight";
+  "id, owner_id, name, species, photo_url, photo_position, is_foster, intake_date, birth_date, acquired_on, became_permanent_on, created_at, setup_complete, setup_step, normal_weight, passed_at";

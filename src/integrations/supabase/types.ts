@@ -102,6 +102,7 @@ export type Database = {
           origin: string | null
           owner_edited_intro: string | null
           owner_id: string
+          passed_at: string | null
           photo_position: string | null
           photo_url: string | null
           setup_complete: boolean
@@ -135,6 +136,7 @@ export type Database = {
           origin?: string | null
           owner_edited_intro?: string | null
           owner_id: string
+          passed_at?: string | null
           photo_position?: string | null
           photo_url?: string | null
           setup_complete?: boolean
@@ -168,6 +170,7 @@ export type Database = {
           origin?: string | null
           owner_edited_intro?: string | null
           owner_id?: string
+          passed_at?: string | null
           photo_position?: string | null
           photo_url?: string | null
           setup_complete?: boolean
@@ -1128,16 +1131,19 @@ export type Database = {
         Row: {
           bird_id: string
           created_at: string
+          reminders_paused_at: string | null
           sit_id: string
         }
         Insert: {
           bird_id: string
           created_at?: string
+          reminders_paused_at?: string | null
           sit_id: string
         }
         Update: {
           bird_id?: string
           created_at?: string
+          reminders_paused_at?: string | null
           sit_id?: string
         }
         Relationships: [

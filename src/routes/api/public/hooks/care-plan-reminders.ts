@@ -28,7 +28,7 @@ export const Route = createFileRoute("/api/public/hooks/care-plan-reminders")({
 
         const { data: sits, error } = await supabaseAdmin
           .from("sits")
-          .select("id, start_date, sit_birds(bird_id, birds(name, owner_id, care_plans(updated_at)))")
+          .select("id, start_date, sit_birds(bird_id, birds(name, owner_id, passed_at, care_plans(updated_at)))")
           .gte("start_date", today.toISOString().slice(0, 10))
           .lte("start_date", horizon.toISOString().slice(0, 10))
           .eq("revoked", false);
@@ -42,11 +42,12 @@ export const Route = createFileRoute("/api/public/hooks/care-plan-reminders")({
         let emailed = 0;
 
         for (const sit of sits ?? []) {
-          const links = (sit as { sit_birds?: Array<{ birds?: { owner_id?: string; name?: string; care_plans?: { updated_at?: string } } }> })
+          const links = (sit as { sit_birds?: Array<{ birds?: { owner_id?: string; name?: string; passed_at?: string | null; care_plans?: { updated_at?: string } } }> })
             .sit_birds ?? [];
           for (const link of links) {
             const bird = link.birds;
             const ownerId = bird?.owner_id;
+            if (bird?.passed_at) continue; // passed bird — all reminders pause
             if (!ownerId || pushed.has(`${ownerId}:${sit.id}`)) continue;
             pushed.add(`${ownerId}:${sit.id}`);
 
