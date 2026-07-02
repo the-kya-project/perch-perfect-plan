@@ -238,6 +238,17 @@ function BirdSetup() {
       .eq("id", birdId);
     setSaving(false);
     if (error) { toast.error(error.message); return false; }
+    // setup_complete/setup_step live on the birds row that the bird-record home
+    // (the "Create care plan" CTA gate) and the flock list read from cache. Without
+    // this, finishing setup left ["bird-record"] serving a stale setup_complete=false
+    // for up to its staleTime, so the "Create care plan" CTA lingered on a bird
+    // whose plan is done (the intermittent report). Patch the cache synchronously so
+    // the bird home reads the new value the instant we navigate there (no CTA
+    // flash), then invalidate to confirm against the DB and refresh the flock list.
+    qc.setQueryData(["bird-record", birdId], (old: any) =>
+      old ? { ...old, setup_step: nextStep, setup_complete: complete } : old);
+    qc.invalidateQueries({ queryKey: ["bird-record", birdId] });
+    qc.invalidateQueries({ queryKey: ["birds"] });
     return true;
   }
 
