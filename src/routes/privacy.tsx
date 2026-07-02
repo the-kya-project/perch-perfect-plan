@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate, useRouter, useCanGoBack } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
+import { InkHero } from "@/components/system";
 
 export const Route = createFileRoute("/privacy")({
   head: () => ({
@@ -31,13 +32,9 @@ function PrivacyPage() {
   };
   return (
     <div className="min-h-screen bg-sage-50">
+      <InkHero backIcon={<ArrowLeft className="size-5" />} onBack={goBack} eyebrow="Legal" headline="Privacy Policy" />
       <main className="mx-auto max-w-2xl px-5 py-8">
-        <button onClick={goBack} className="inline-flex items-center gap-1 text-sm text-sage-600">
-          <ArrowLeft className="size-4" /> Back
-        </button>
-        <h1 className="mt-6 text-2xl font-bold tracking-tight">Privacy Policy</h1>
-
-        <div className="prose prose-sage mt-6 space-y-4 text-sm leading-relaxed text-sage-700">
+        <div className="prose prose-sage space-y-4 text-sm leading-relaxed text-sage-700">
           <h2 className="text-base font-bold text-sage-900">What we collect</h2>
           <p>
             Account details (email, display name), bird profiles and care plans you create,
