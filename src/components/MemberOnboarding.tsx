@@ -5,7 +5,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { BrandLockup } from "@/components/BrandLogo";
 import { ChevronLeft, ArrowRight, Check } from "lucide-react";
-import { useMyPermissions } from "@/lib/useCapability";
 import { getMemberOnboardingContext, type MemberHousehold } from "@/lib/onboarding.functions";
 
 // First-run orientation for an ACCOUNT-HOLDING household member (someone added
@@ -77,30 +76,19 @@ export function MemberOnboarding() {
   const households = ctx?.households ?? [];
   const ownerName = households[0]?.ownerName || "Your household's owner";
 
-  // Capability union across every household this member belongs to — show a step
-  // if they can do it ANYWHERE. Mirrors permissions; it does not enforce them.
-  const { data: perms } = useMyPermissions();
-  const caps = (() => {
-    const s = new Set<string>();
-    for (const set of perms?.byOwner.values() ?? []) for (const c of set) s.add(c);
-    return s;
-  })();
-
-  // Steps: baseline always; then capability-gated. Never owner-only concepts
-  // (no add-bird, fosters, handoffs, household/permissions management, invites).
+  // Member tour (owns no birds). Every step anchors to a REAL element on the
+  // member's Home: the "[Owner]'s household" section, a household bird card, the
+  // Sits tab, and the "Add a bird" control (the "Your birds" / owner-flock
+  // section, which shows the add affordance). Fixed 5 steps — welcome (the
+  // full-screen intro above) is step 1; these are steps 2–5. Never anchors the
+  // member's own empty flock or a nonexistent target. {Owner} = the household
+  // owner's real display name (from the onboarding context, first household).
   const steps: Step[] = [
-    { target: "owner-tab-home", headline: "Home is your hub.", body: "Today's needs and the birds you help care for all live here. It's the screen you'll open most." },
-    { target: "owner-flock", headline: "Open any bird to read their plan.", body: "Tap a bird to see their care plan — food, handling, home, health, and emergency info, all in one place." },
+    { target: "member-household", headline: "Here are the birds you help with.", body: `Tap any bird in ${ownerName}'s household to read their care plan: food, handling, home, health, and emergency info, all in one place.` },
+    { target: "member-household-bird", headline: "Pitch in on daily care.", body: "Open a bird to check off today's tasks, log a weight, or add a moment as you go." },
+    { target: "owner-tab-sits", headline: `When ${ownerName}'s away, you've got this.`, body: `If ${ownerName} puts you in charge of a sit, you'll get a simple daily checklist for their birds, so nothing slips while they're gone.` },
+    { target: "owner-flock", headline: "Got your own flock? Add them too.", body: "Have birds of your own? Or will you soon? It's just a matter of time. Add them here whenever and manage everyone in one place." },
   ];
-  if (caps.has("log_daily_care")) {
-    steps.push({ headline: "Pitch in on daily care.", body: "Open a bird to check off today's tasks, log a weight, or add a moment as you go." });
-  }
-  if (caps.has("record_health")) {
-    steps.push({ target: "owner-tab-activity", headline: "Daily health checks.", body: "Run a quick health check here. Anything worth a closer look gets flagged fast." });
-  }
-  if (caps.has("manage_sits")) {
-    steps.push({ target: "owner-tab-sits", headline: "Sits live here.", body: "See who's covering each bird and when." });
-  }
   const TOTAL = steps.length + 1; // + wrap-up
 
   const isWrapUp = step === steps.length;
@@ -194,9 +182,8 @@ export function MemberOnboarding() {
         </div>
         <div className="flex-1 px-6 pt-[80px]">
           <p className="t-eyebrow text-[var(--teal)]">Welcome</p>
-          <h1 className="mt-3 text-[38px] font-[400] leading-[1.05] tracking-[-0.02em]">{firstName ? `Hi, ${firstName}.` : "Welcome."}</h1>
-          <p className="mt-3.5 max-w-[32ch] text-[15px] leading-[1.55] text-white/80">{welcomeBody(households)}</p>
-          <p className="mt-3 max-w-[32ch] text-[14px] leading-[1.5] text-white/65">Here's a quick look at what you can do.</p>
+          <h1 className="mt-3 text-[32px] font-[400] leading-[1.08] tracking-[-0.02em]">Welcome. You're helping with a flock.</h1>
+          <p className="mt-3.5 max-w-[34ch] text-[15px] leading-[1.55] text-white/80">{ownerName} added you to help care for their birds. Here's how everything works.</p>
         </div>
         <div className="px-6 pb-[max(env(safe-area-inset-bottom),24px)]">
           <button
@@ -267,7 +254,7 @@ export function MemberOnboarding() {
           <div className="text-center">
             <p className="t-eyebrow text-[var(--mute2)]">{TOTAL} of {TOTAL}</p>
             <h2 className="mt-1.5 text-[18px] font-[500] text-[var(--ink)]">You're all set.</h2>
-            <p className="mt-2 text-[13px] leading-[1.5] text-[var(--ink2)]">{ownerName} manages everything else — just reach out to them if you ever need to do more.</p>
+            <p className="mt-2 text-[13px] leading-[1.5] text-[var(--ink2)]">{ownerName} manages everything else. Just reach out to them if you ever need to do more.</p>
             <button onClick={finish} className="mt-3.5 flex w-full items-center justify-center gap-2 rounded-[13px] bg-[var(--lime)] py-3 text-[14px] font-[500] text-[var(--ink)] active:scale-[0.99]">
               <Check className="size-4" /> Got it
             </button>

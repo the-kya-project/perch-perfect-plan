@@ -293,16 +293,26 @@ function Dashboard() {
             {/* Birds you help with — one section per distinct owner, shown for
                 ANY member of that household regardless of preset. Grouping/labels
                 are owner_id-derived only; permissions gate ACTIONS on tap, not this. */}
-            {showHouseholds && memberGroups.map((g) => (
-              <section key={g.ownerId} className="space-y-3">
+            {showHouseholds && memberGroups.map((g, gi) => (
+              // The member onboarding tour anchors its "birds you help with" and
+              // "a household bird" steps to the FIRST household group + its first
+              // bird (data-coach). Only the first group is anchored (multi-household
+              // members get one sensible target, not a highlight per household).
+              <section key={g.ownerId} className="space-y-3" data-coach={gi === 0 ? "member-household" : undefined}>
                 <div className="px-1">
                   <h2 className="t-section">{g.ownerName ? `${possessive(g.ownerName)} household` : "A household you help with"}</h2>
                   <p className="t-meta text-[var(--teal-on-cream)]">You help here</p>
                 </div>
                 <div className="space-y-3">
-                  {g.birds.map((b) => (
-                    <BirdRow key={b.id} bird={b} photo={photoFor(b)} glance={glanceFor(b)} concern={concernByBird.has(b.id)} />
-                  ))}
+                  {g.birds.map((b, bi) =>
+                    gi === 0 && bi === 0 ? (
+                      <div key={b.id} data-coach="member-household-bird">
+                        <BirdRow bird={b} photo={photoFor(b)} glance={glanceFor(b)} concern={concernByBird.has(b.id)} />
+                      </div>
+                    ) : (
+                      <BirdRow key={b.id} bird={b} photo={photoFor(b)} glance={glanceFor(b)} concern={concernByBird.has(b.id)} />
+                    ),
+                  )}
                 </div>
               </section>
             ))}
