@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate, useRouter, useCanGoBack } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useLocation } from "@tanstack/react-router";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -71,11 +71,13 @@ function BirdRecordHome() {
 // hero, so this isn't doubled.)
 function BirdRecordHero({ birdId }: { birdId: string }) {
   const navigate = useNavigate();
-  const router = useRouter();
-  const canGoBack = useCanGoBack();
-  // Return where the visitor came from (Home, Remembering, a memorial card…);
-  // fall back to Home only when there's no real history (deep link, fresh load).
-  const goBack = () => (canGoBack && window.history.length > 1 ? router.history.back() : navigate({ to: "/dashboard" }));
+  // Back always moves UP the hierarchy: the home screen, or Remembering when the
+  // visitor came from a memorial card (explicit router state, set by the
+  // Remembering row). NEVER history.back() here — facet pages (care plan,
+  // weight, …) hardcode their back as a PUSH to this page, so popping history
+  // from here would land back ON the facet and bounce forever.
+  const fromRemembering = useLocation({ select: (l) => !!(l.state as any)?.fromRemembering });
+  const goBack = () => navigate({ to: fromRemembering ? "/remembering" : "/dashboard" });
   const role = useBirdRole(birdId);
   const isOwner = role === "owner";
   const { data: bird } = useBirdRecord(birdId);

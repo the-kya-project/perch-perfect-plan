@@ -77,7 +77,9 @@ function Remembering() {
                   <div className="mt-4 overflow-hidden rounded-[13px] ring-1 ring-[var(--line2)]">
                     <RecordRow title="Moments and photos" chevron onClick={() => navigate({ to: "/birds/$birdId/moments", params: { birdId: b.id } })} />
                     <RecordRow title="Journal" chevron onClick={() => navigate({ to: "/birds/$birdId/journal", params: { birdId: b.id } })} />
-                    <RecordRow title="Their record" chevron last onClick={() => navigate({ to: "/birds/$birdId", params: { birdId: b.id } })} />
+                    {/* fromRemembering: the bird page's back returns HERE instead
+                        of the home screen (a passed bird isn't in the flock). */}
+                    <RecordRow title="Their record" chevron last onClick={() => navigate({ to: "/birds/$birdId", params: { birdId: b.id }, state: { fromRemembering: true } as any })} />
                   </div>
                   <p className="t-meta mt-3 leading-relaxed">
                     {b.name}'s daily care is paused. Everything you kept is still here, whenever you'd like to look back.
