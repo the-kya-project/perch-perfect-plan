@@ -260,11 +260,14 @@ function MemberManageSheet({ member, allBirds, onClose, onChanged }: {
         <button
           type="button"
           disabled={removeEverywhere.isPending}
-          onClick={() => { if (window.confirm(`Remove ${label} from your household? They'll lose access to all your birds. Their past logs stay in the record.`)) removeEverywhere.mutate(); }}
+          onClick={() => { if (window.confirm(`Remove ${label} from your household? They'll lose access to all your birds. Their past logs stay in the record.\n\nIf they're currently covering a sit, that sit keeps its own access until it ends — cancel the sit from the Sits tab to end that too.`)) removeEverywhere.mutate(); }}
           className="mt-4 flex min-h-[48px] w-full items-center justify-center rounded-[14px] border border-[var(--red-line)] bg-white text-[15px] font-[500] text-[var(--red-ink)] disabled:opacity-50"
         >
           {removeEverywhere.isPending ? "Removing…" : "Remove from household"}
         </button>
+        <p className="t-meta mt-2 px-1">
+          Removing from the household won't end an active sit they're covering. To end that too, cancel the sit from the Sits tab.
+        </p>
       </div>
     </div>
   );
