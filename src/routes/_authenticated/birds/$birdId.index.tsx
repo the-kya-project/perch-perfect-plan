@@ -4,6 +4,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useBirdPhotos } from "@/lib/useBirdPhotos";
 import { useBirdRole } from "@/lib/useBirdRole";
+import { useActiveSitIdForBird } from "@/components/CaregiverHome";
 import { useCapability } from "@/lib/useCapability";
 import { weightTrendPill } from "@/lib/weightTrend";
 import { AgePicker } from "@/components/BirdPickers";
@@ -18,7 +19,7 @@ import { toast } from "sonner";
 import {
   Feather, Scale, BookOpen, IdCard, CalendarHeart, ClipboardList,
   Plus, FileText, Activity, Pencil, ArrowLeft, ArrowRight, Camera,
-  Check, X, Users, ArrowRightLeft, Heart, Loader2, Trash2, Crop, Flower2,
+  Check, X, Users, ArrowRightLeft, Heart, Loader2, Trash2, Crop, Flower2, HeartCrack,
 } from "lucide-react";
 
 // Bird-record home — the new landing when you tap a bird. A glanceable hub for
@@ -179,6 +180,9 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
   const canHealth = useCapability("record_health", { birdId });
   const canEditPlan = useCapability("edit_care_plans", { birdId });
   const canFlock = useCapability("manage_flock", { birdId });
+  // Covering an active sit for this bird (household caregiver) — gates the
+  // "something's wrong" entry on the SITUATION, not the account type.
+  const activeSitId = useActiveSitIdForBird(birdId);
 
   const { data: bird } = useBirdRecord(birdId);
 
@@ -388,6 +392,26 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
             </div>
           </div>
         </section>
+      )}
+
+      {/* Something's wrong — for whoever is COVERING an active sit for this
+          bird (household member in charge). Gated on the situation, not the
+          account type: same signal the scan/journal/weight write paths use.
+          Sitter-link accounts get the same entry on their own bird page.
+          Hidden for the owner and for members not covering a sit. */}
+      {activeSitId && !isOwner && bird && (
+        <div className="pt-1">
+          <button
+            type="button"
+            onClick={() => navigate({ to: "/birds/$birdId/concern", params: { birdId } })}
+            className="flex min-h-[52px] w-full items-center gap-3 rounded-[13px] border border-[var(--line)] bg-white px-4 text-left active:scale-[0.99]"
+          >
+            <HeartCrack className="size-5 shrink-0 text-[var(--mute2)]" />
+            <span className="flex-1 text-[14px] font-[500] text-[var(--ink)]">Something's wrong with {name}</span>
+            <ArrowRight className="size-4 shrink-0 text-[var(--mute2)]" />
+          </button>
+          <p className="t-meta mt-1.5 px-1">If {name} has passed or is in serious trouble</p>
+        </div>
       )}
 
       {/* Reposition the bird's photo (opened from the adjust-crop nudge). The

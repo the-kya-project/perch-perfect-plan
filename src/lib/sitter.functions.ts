@@ -271,45 +271,53 @@ export const pauseSitterReminders = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
 
     // Urgent owner notification — best-effort, never blocks the pause.
-    const { data: bird } = await sb.from("birds").select("name, owner_id").eq("id", data.birdId).maybeSingle();
-    const ownerId = (bird as any)?.owner_id as string | undefined;
-    const birdName = ((bird as any)?.name ?? "your bird") as string;
-    const sitterLabel = (sit.sitter_name || "Your sitter") as string;
-    if (ownerId) {
-      try {
-        const { sendPushToOwner } = await import("./pushSender.server");
-        await sendPushToOwner(ownerId, "health_concern", {
-          title: `${sitterLabel} flagged something serious`,
-          body: `${sitterLabel} paused ${birdName}'s reminders and may be trying to reach you. Please call them as soon as you can.`,
-          url: "/scans",
-          tag: `sitter-concern-${data.birdId}`,
-          requireInteraction: true,
-        });
-      } catch (e) { console.error("[sitter-concern] push failed", e); }
-      try {
-        const { data: prof } = await sb.from("profiles").select("email, display_name").eq("id", ownerId).maybeSingle();
-        let email = (prof?.email ?? "").toString();
-        if (!email) {
-          const { data: u } = await sb.auth.admin.getUserById(ownerId);
-          email = u?.user?.email ?? "";
-        }
-        if (email) {
-          const { sendTransactionalEmail } = await import("./brevoEmail.server");
-          const subject = `${sitterLabel} flagged something serious about ${birdName}`;
-          const text = `${sitterLabel} paused ${birdName}'s daily reminders and flagged that something is seriously wrong. Please call ${sitterLabel} as soon as you can. Nothing about ${birdName}'s record has changed.`;
-          await sendTransactionalEmail({
-            to: email,
-            toName: (prof?.display_name ?? undefined) as string | undefined,
-            subject,
-            htmlContent: `<p>${text}</p>`,
-            textContent: text,
-          });
-        }
-      } catch (e) { console.error("[sitter-concern] email failed", e); }
-    }
+    await notifyOwnerSomethingWrong(sb, data.birdId, (sit.sitter_name || "Your sitter") as string);
 
     return { ok: true };
   });
+
+/**
+ * Urgently tell the owner that whoever is covering flagged something serious
+ * about this bird. Shared by the sitter-link pause AND the household-caregiver
+ * pause so both paths notify identically: always-on health_concern push
+ * (requireInteraction) + a direct email. Best-effort — never throws.
+ */
+export async function notifyOwnerSomethingWrong(sb: any, birdId: string, coveringLabel: string) {
+  const { data: bird } = await sb.from("birds").select("name, owner_id").eq("id", birdId).maybeSingle();
+  const ownerId = (bird as any)?.owner_id as string | undefined;
+  const birdName = ((bird as any)?.name ?? "your bird") as string;
+  if (!ownerId) return;
+  try {
+    const { sendPushToOwner } = await import("./pushSender.server");
+    await sendPushToOwner(ownerId, "health_concern", {
+      title: `${coveringLabel} flagged something serious`,
+      body: `${coveringLabel} paused ${birdName}'s reminders and may be trying to reach you. Please call them as soon as you can.`,
+      url: "/scans",
+      tag: `sitter-concern-${birdId}`,
+      requireInteraction: true,
+    });
+  } catch (e) { console.error("[sitter-concern] push failed", e); }
+  try {
+    const { data: prof } = await sb.from("profiles").select("email, display_name").eq("id", ownerId).maybeSingle();
+    let email = (prof?.email ?? "").toString();
+    if (!email) {
+      const { data: u } = await sb.auth.admin.getUserById(ownerId);
+      email = u?.user?.email ?? "";
+    }
+    if (email) {
+      const { sendTransactionalEmail } = await import("./brevoEmail.server");
+      const subject = `${coveringLabel} flagged something serious about ${birdName}`;
+      const text = `${coveringLabel} paused ${birdName}'s daily reminders and flagged that something is seriously wrong. Please call ${coveringLabel} as soon as you can. Nothing about ${birdName}'s record has changed.`;
+      await sendTransactionalEmail({
+        to: email,
+        toName: (prof?.display_name ?? undefined) as string | undefined,
+        subject,
+        htmlContent: `<p>${text}</p>`,
+        textContent: text,
+      });
+    }
+  } catch (e) { console.error("[sitter-concern] email failed", e); }
+}
 
 export const toggleTaskCompletion = createServerFn({ method: "POST" })
   .inputValidator((d: { token: string; taskId: string; completed: boolean }) =>

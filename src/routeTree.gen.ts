@@ -63,6 +63,7 @@ import { Route as AuthenticatedBirdsBirdIdIdentityRouteImport } from './routes/_
 import { Route as AuthenticatedBirdsBirdIdHandoffRouteImport } from './routes/_authenticated/birds/$birdId.handoff'
 import { Route as AuthenticatedBirdsBirdIdFarewellRouteImport } from './routes/_authenticated/birds/$birdId.farewell'
 import { Route as AuthenticatedBirdsBirdIdExportRouteImport } from './routes/_authenticated/birds/$birdId.export'
+import { Route as AuthenticatedBirdsBirdIdConcernRouteImport } from './routes/_authenticated/birds/$birdId.concern'
 import { Route as AuthenticatedBirdsBirdIdCarePlanRouteImport } from './routes/_authenticated/birds/$birdId.care-plan'
 import { Route as AuthenticatedBirdsBirdIdAccessRouteImport } from './routes/_authenticated/birds/$birdId.access'
 import { Route as AuthenticatedBirdsBirdIdPlanIndexRouteImport } from './routes/_authenticated/birds/$birdId.plan.index'
@@ -363,6 +364,12 @@ const AuthenticatedBirdsBirdIdExportRoute =
     path: '/export',
     getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
   } as any)
+const AuthenticatedBirdsBirdIdConcernRoute =
+  AuthenticatedBirdsBirdIdConcernRouteImport.update({
+    id: '/concern',
+    path: '/concern',
+    getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
+  } as any)
 const AuthenticatedBirdsBirdIdCarePlanRoute =
   AuthenticatedBirdsBirdIdCarePlanRouteImport.update({
     id: '/care-plan',
@@ -435,6 +442,7 @@ export interface FileRoutesByFullPath {
   '/sitter/$token/': typeof SitterTokenIndexRoute
   '/birds/$birdId/access': typeof AuthenticatedBirdsBirdIdAccessRoute
   '/birds/$birdId/care-plan': typeof AuthenticatedBirdsBirdIdCarePlanRoute
+  '/birds/$birdId/concern': typeof AuthenticatedBirdsBirdIdConcernRoute
   '/birds/$birdId/export': typeof AuthenticatedBirdsBirdIdExportRoute
   '/birds/$birdId/farewell': typeof AuthenticatedBirdsBirdIdFarewellRoute
   '/birds/$birdId/handoff': typeof AuthenticatedBirdsBirdIdHandoffRoute
@@ -490,6 +498,7 @@ export interface FileRoutesByTo {
   '/sitter/$token': typeof SitterTokenIndexRoute
   '/birds/$birdId/access': typeof AuthenticatedBirdsBirdIdAccessRoute
   '/birds/$birdId/care-plan': typeof AuthenticatedBirdsBirdIdCarePlanRoute
+  '/birds/$birdId/concern': typeof AuthenticatedBirdsBirdIdConcernRoute
   '/birds/$birdId/export': typeof AuthenticatedBirdsBirdIdExportRoute
   '/birds/$birdId/farewell': typeof AuthenticatedBirdsBirdIdFarewellRoute
   '/birds/$birdId/handoff': typeof AuthenticatedBirdsBirdIdHandoffRoute
@@ -551,6 +560,7 @@ export interface FileRoutesById {
   '/sitter/$token/': typeof SitterTokenIndexRoute
   '/_authenticated/birds/$birdId/access': typeof AuthenticatedBirdsBirdIdAccessRoute
   '/_authenticated/birds/$birdId/care-plan': typeof AuthenticatedBirdsBirdIdCarePlanRoute
+  '/_authenticated/birds/$birdId/concern': typeof AuthenticatedBirdsBirdIdConcernRoute
   '/_authenticated/birds/$birdId/export': typeof AuthenticatedBirdsBirdIdExportRoute
   '/_authenticated/birds/$birdId/farewell': typeof AuthenticatedBirdsBirdIdFarewellRoute
   '/_authenticated/birds/$birdId/handoff': typeof AuthenticatedBirdsBirdIdHandoffRoute
@@ -613,6 +623,7 @@ export interface FileRouteTypes {
     | '/sitter/$token/'
     | '/birds/$birdId/access'
     | '/birds/$birdId/care-plan'
+    | '/birds/$birdId/concern'
     | '/birds/$birdId/export'
     | '/birds/$birdId/farewell'
     | '/birds/$birdId/handoff'
@@ -668,6 +679,7 @@ export interface FileRouteTypes {
     | '/sitter/$token'
     | '/birds/$birdId/access'
     | '/birds/$birdId/care-plan'
+    | '/birds/$birdId/concern'
     | '/birds/$birdId/export'
     | '/birds/$birdId/farewell'
     | '/birds/$birdId/handoff'
@@ -728,6 +740,7 @@ export interface FileRouteTypes {
     | '/sitter/$token/'
     | '/_authenticated/birds/$birdId/access'
     | '/_authenticated/birds/$birdId/care-plan'
+    | '/_authenticated/birds/$birdId/concern'
     | '/_authenticated/birds/$birdId/export'
     | '/_authenticated/birds/$birdId/farewell'
     | '/_authenticated/birds/$birdId/handoff'
@@ -1142,6 +1155,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBirdsBirdIdExportRouteImport
       parentRoute: typeof AuthenticatedBirdsBirdIdRoute
     }
+    '/_authenticated/birds/$birdId/concern': {
+      id: '/_authenticated/birds/$birdId/concern'
+      path: '/concern'
+      fullPath: '/birds/$birdId/concern'
+      preLoaderRoute: typeof AuthenticatedBirdsBirdIdConcernRouteImport
+      parentRoute: typeof AuthenticatedBirdsBirdIdRoute
+    }
     '/_authenticated/birds/$birdId/care-plan': {
       id: '/_authenticated/birds/$birdId/care-plan'
       path: '/care-plan'
@@ -1255,6 +1275,7 @@ const AuthenticatedBirdsBirdIdPlanRouteWithChildren =
 interface AuthenticatedBirdsBirdIdRouteChildren {
   AuthenticatedBirdsBirdIdAccessRoute: typeof AuthenticatedBirdsBirdIdAccessRoute
   AuthenticatedBirdsBirdIdCarePlanRoute: typeof AuthenticatedBirdsBirdIdCarePlanRoute
+  AuthenticatedBirdsBirdIdConcernRoute: typeof AuthenticatedBirdsBirdIdConcernRoute
   AuthenticatedBirdsBirdIdExportRoute: typeof AuthenticatedBirdsBirdIdExportRoute
   AuthenticatedBirdsBirdIdFarewellRoute: typeof AuthenticatedBirdsBirdIdFarewellRoute
   AuthenticatedBirdsBirdIdHandoffRoute: typeof AuthenticatedBirdsBirdIdHandoffRoute
@@ -1276,6 +1297,7 @@ const AuthenticatedBirdsBirdIdRouteChildren: AuthenticatedBirdsBirdIdRouteChildr
     AuthenticatedBirdsBirdIdAccessRoute: AuthenticatedBirdsBirdIdAccessRoute,
     AuthenticatedBirdsBirdIdCarePlanRoute:
       AuthenticatedBirdsBirdIdCarePlanRoute,
+    AuthenticatedBirdsBirdIdConcernRoute: AuthenticatedBirdsBirdIdConcernRoute,
     AuthenticatedBirdsBirdIdExportRoute: AuthenticatedBirdsBirdIdExportRoute,
     AuthenticatedBirdsBirdIdFarewellRoute:
       AuthenticatedBirdsBirdIdFarewellRoute,

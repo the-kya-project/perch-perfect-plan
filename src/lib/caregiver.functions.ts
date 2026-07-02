@@ -45,13 +45,13 @@ export const getActiveCaregiverSits = createServerFn({ method: "GET" })
     const ownerIds = Array.from(new Set(rows.map((s) => s.owner_id)));
 
     const [sitBirdsRes, ownerProfsRes] = await Promise.all([
-      sb.from("sit_birds").select("sit_id, bird_id").in("sit_id", sitIds),
+      sb.from("sit_birds").select("sit_id, bird_id, reminders_paused_at").in("sit_id", sitIds),
       sb.from("profiles").select("id, display_name").in("id", ownerIds),
     ]);
     const birdIds = Array.from(new Set(((sitBirdsRes.data ?? []) as any[]).map((r) => r.bird_id)));
     const [birdsRes, plansRes] = await Promise.all([
       birdIds.length
-        ? sb.from("birds").select("id, name, species, photo_url, photo_position").in("id", birdIds)
+        ? sb.from("birds").select("id, name, species, photo_url, photo_position, passed_at").in("id", birdIds)
         : Promise.resolve({ data: [] as any[] }),
       birdIds.length
         ? sb.from("care_plans").select("id, bird_id").in("bird_id", birdIds)
@@ -81,10 +81,14 @@ export const getActiveCaregiverSits = createServerFn({ method: "GET" })
     const birdById = new Map(((birdsRes.data ?? []) as any[]).map((b: any) => [b.id, b]));
     const ownerNameById = new Map(((ownerProfsRes.data ?? []) as any[]).map((p: any) => [p.id, (p.display_name ?? "").toString().trim() || "the owner"]));
     const sitBirdsBySit = new Map<string, string[]>();
+    // Paused prompts: the caregiver's own "something's wrong" pause, or the
+    // owner having marked the bird as passed. Either way, no daily tasks.
+    const pausedBySitBird = new Set<string>();
     for (const r of (sitBirdsRes.data ?? []) as any[]) {
       const list = sitBirdsBySit.get(r.sit_id) ?? [];
       list.push(r.bird_id);
       sitBirdsBySit.set(r.sit_id, list);
+      if (r.reminders_paused_at) pausedBySitBird.add(`${r.sit_id}:${r.bird_id}`);
     }
     const tasksByBird = new Map<string, any[]>();
     for (const t of (tasksRes.data ?? []) as any[]) {
@@ -108,16 +112,20 @@ export const getActiveCaregiverSits = createServerFn({ method: "GET" })
       const birds = (sitBirdsBySit.get(s.id) ?? [])
         .map((bid) => birdById.get(bid))
         .filter(Boolean)
-        .map((b: any) => ({
-          id: b.id as string,
-          name: b.name as string,
-          species: b.species as string | null,
-          photo_url: b.photo_url as string | null,
-          photo_position: b.photo_position as string | null,
-          tasks: (tasksByBird.get(b.id) ?? []) as any[],
-          scanDone: scanByBirdSit.has(`${s.id}:${b.id}`),
-          scanStatus: scanByBirdSit.get(`${s.id}:${b.id}`) ?? null,
-        }));
+        .map((b: any) => {
+          const paused = pausedBySitBird.has(`${s.id}:${b.id}`) || !!b.passed_at;
+          return {
+            id: b.id as string,
+            name: b.name as string,
+            species: b.species as string | null,
+            photo_url: b.photo_url as string | null,
+            photo_position: b.photo_position as string | null,
+            // Paused (something's-wrong or the bird passed) → no daily prompts.
+            tasks: paused ? ([] as any[]) : ((tasksByBird.get(b.id) ?? []) as any[]),
+            scanDone: scanByBirdSit.has(`${s.id}:${b.id}`),
+            scanStatus: scanByBirdSit.get(`${s.id}:${b.id}`) ?? null,
+          };
+        });
       return {
         id: s.id as string,
         title: s.title as string | null,
@@ -222,3 +230,92 @@ export type ActiveCaregiverSit = {
   birds: ActiveCaregiverBird[];
   completionsToday: { taskId: string; at: string }[];
 };
+
+// ---- "Something's wrong" — covering household member ------------------------
+// The authenticated twin of the sitter-link concern flow. Authorization is the
+// SITUATION, not the account type: the caller must be the assigned caregiver
+// (sits.caregiver_user_id = me) of an active, unrevoked sit that contains this
+// bird — the same signal the scan/journal/weight write paths key on.
+
+async function findCoveringSit(sb: any, userId: string, birdId: string) {
+  const today = todayISO();
+  const { data: sits } = await sb
+    .from("sits")
+    .select("id, sit_birds!inner(bird_id, reminders_paused_at)")
+    .eq("caregiver_user_id", userId)
+    .eq("revoked", false)
+    .lte("start_date", today)
+    .gte("end_date", today)
+    .eq("sit_birds.bird_id", birdId);
+  const sit = (sits ?? [])[0] as any;
+  if (!sit) return null;
+  return { sitId: sit.id as string, remindersPausedAt: (sit.sit_birds?.[0]?.reminders_paused_at ?? null) as string | null };
+}
+
+async function resolveDisplayName(sb: any, userId: string, fallback: string): Promise<string> {
+  const { data: prof } = await sb.from("profiles").select("display_name").eq("id", userId).maybeSingle();
+  const n = (prof?.display_name ?? "").toString().trim();
+  if (n) return n;
+  try {
+    const { data: u } = await sb.auth.admin.getUserById(userId);
+    const m = (u?.user?.user_metadata?.display_name ?? "").toString().trim();
+    if (m) return m;
+  } catch { /* keep fallback */ }
+  return fallback;
+}
+
+/** Everything the covering member's concern screen needs, gated on covering. */
+export const getCaregiverConcernContext = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { birdId: string }) => z.object({ birdId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const sb = await getAdmin();
+    const userId = context.userId as string;
+    const covering = await findCoveringSit(sb, userId, data.birdId);
+    if (!covering) return { covering: false as const };
+
+    const { data: bird } = await sb.from("birds").select("name, owner_id, passed_at").eq("id", data.birdId).maybeSingle();
+    if (!bird) return { covering: false as const };
+    const [{ data: contacts }, { data: defaults }] = await Promise.all([
+      sb.from("emergency_contacts").select("*").eq("bird_id", data.birdId).maybeSingle(),
+      sb.from("owner_emergency_defaults").select("*").eq("owner_id", (bird as any).owner_id).maybeSingle(),
+    ]);
+    const { mergeEmergency } = await import("./emergency");
+    const merged = { ...(contacts ?? {}), ...mergeEmergency(contacts as any, defaults as any) } as any;
+    const ownerName = await resolveDisplayName(sb, (bird as any).owner_id, "the owner");
+
+    return {
+      covering: true as const,
+      birdName: (bird as any).name as string,
+      ownerName,
+      ownerPhone: (merged?.owner_phone ?? null) as string | null,
+      vetName: (merged?.avian_vet_name ?? merged?.emergency_vet_name ?? null) as string | null,
+      vetPhone: (merged?.avian_vet_phone ?? merged?.emergency_vet_phone ?? null) as string | null,
+      paused: !!(covering.remindersPausedAt || (bird as any).passed_at),
+    };
+  });
+
+/** Pause this bird's reminders for the sit the caller is covering, and urgently
+ *  notify the owner. Same semantics as the sitter-link pause: temporary,
+ *  per-sit per-bird, never a record change. */
+export const pauseCaregiverReminders = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { birdId: string }) => z.object({ birdId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const sb = await getAdmin();
+    const userId = context.userId as string;
+    const covering = await findCoveringSit(sb, userId, data.birdId);
+    if (!covering) throw new Error("You're not covering an active sit for this bird.");
+
+    const { error } = await sb
+      .from("sit_birds")
+      .update({ reminders_paused_at: new Date().toISOString() } as any)
+      .eq("sit_id", covering.sitId)
+      .eq("bird_id", data.birdId);
+    if (error) throw new Error(error.message);
+
+    const label = await resolveDisplayName(sb, userId, "Your caregiver");
+    const { notifyOwnerSomethingWrong } = await import("./sitter.functions");
+    await notifyOwnerSomethingWrong(sb, data.birdId, label);
+    return { ok: true };
+  });
