@@ -881,6 +881,7 @@ export type Database = {
           intake_date: string | null
           mode: string
           original_owner_id: string
+          photo_thumb: string | null
           recipient_name: string | null
           species: string | null
           was_foster: boolean
@@ -893,6 +894,7 @@ export type Database = {
           intake_date?: string | null
           mode: string
           original_owner_id: string
+          photo_thumb?: string | null
           recipient_name?: string | null
           species?: string | null
           was_foster?: boolean
@@ -905,6 +907,7 @@ export type Database = {
           intake_date?: string | null
           mode?: string
           original_owner_id?: string
+          photo_thumb?: string | null
           recipient_name?: string | null
           species?: string | null
           was_foster?: boolean

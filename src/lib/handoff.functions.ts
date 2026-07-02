@@ -33,6 +33,34 @@ async function sendEmail(to: string, toName: string | undefined, built: { subjec
   await sendTransactionalEmail({ to, toName, subject: built.subject, htmlContent: built.html, textContent: built.text });
 }
 
+// Build a small, SELF-CONTAINED keepsake thumbnail (base64 data URL) from a
+// bird's photo, captured at handoff time. The live photo moves to the new owner
+// and the sender loses storage access, so we bake a tiny copy into the past_birds
+// row (owner-read RLS covers it; no storage access needed to display later).
+// Best-effort: any failure returns null and the archive just shows an icon.
+async function keepsakeThumb(sb: any, photoUrl: string | null | undefined): Promise<string | null> {
+  const src = (photoUrl ?? "").toString();
+  if (!src) return null;
+  try {
+    // Legacy inline data: URL — already self-contained; keep it if it's small.
+    if (src.startsWith("data:")) return src.length <= 200_000 ? src : null;
+    if (src.startsWith("http")) return null; // external URL — don't retain
+    // Storage path: transform to a small thumbnail, fetch the bytes, base64 it.
+    const { data } = await sb.storage
+      .from("bird-photos")
+      .createSignedUrl(src, 120, { transform: { width: 200, height: 200, resize: "cover", quality: 60 } });
+    if (!data?.signedUrl) return null;
+    const res = await fetch(data.signedUrl);
+    if (!res.ok) return null;
+    const buf = Buffer.from(await res.arrayBuffer());
+    if (buf.length > 200_000) return null; // safety cap
+    const mime = res.headers.get("content-type") || "image/jpeg";
+    return `data:${mime};base64,${buf.toString("base64")}`;
+  } catch {
+    return null;
+  }
+}
+
 // ---- Owner: start an in-app handoff ----------------------------------------
 export const createHandoff = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -117,8 +145,11 @@ export const completePdfHandoff = createServerFn({ method: "POST" })
     const sb = await getAdmin();
     const senderId = context.userId as string;
     const { data: bird } = await sb.from("birds")
-      .select("id, name, species, intake_date, is_foster, owner_id").eq("id", data.birdId).maybeSingle();
+      .select("id, name, species, intake_date, is_foster, owner_id, photo_url").eq("id", data.birdId).maybeSingle();
     if (!bird || (bird as any).owner_id !== senderId) throw new Error("Not allowed.");
+
+    // Keepsake thumbnail before the record is deleted below.
+    const thumb = await keepsakeThumb(sb, (bird as any).photo_url);
 
     // Snapshot the sender's memory BEFORE removing the record.
     const { error: pbErr } = await sb.from("past_birds").insert({
@@ -130,7 +161,8 @@ export const completePdfHandoff = createServerFn({ method: "POST" })
       recipient_name: data.recipientName?.trim() || null,
       mode: "pdf",
       was_foster: !!(bird as any).is_foster,
-    });
+      photo_thumb: thumb,
+    } as any);
     if (pbErr) throw new Error(pbErr.message);
 
     // The record left as a PDF — delete the DB record (cascades its data).
@@ -172,7 +204,7 @@ export const getPastBirds = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const sb = await getAdmin();
     const { data } = await sb.from("past_birds")
-      .select("id, bird_name, species, intake_date, departed_on, recipient_name, mode, was_foster")
+      .select("id, bird_name, species, intake_date, departed_on, recipient_name, mode, was_foster, photo_thumb")
       .eq("original_owner_id", context.userId as string)
       .order("departed_on", { ascending: false });
     return { birds: data ?? [] };
@@ -220,7 +252,13 @@ export const acceptHandoff = createServerFn({ method: "POST" })
     }
     if (userId === h.sender_user_id) throw new Error("That's your own handoff.");
 
-    const { error } = await (sb as any).rpc("handoff_accept_transfer", { p_handoff_id: h.id, p_new_owner: userId });
+    // Capture a keepsake thumbnail BEFORE the transfer (the photo is about to move
+    // to the new owner's folder). Passed to the RPC so it lands on past_birds in
+    // the same atomic snapshot. Best-effort — null just means an icon in the archive.
+    const { data: preBird } = await sb.from("birds").select("photo_url").eq("id", h.bird_id).maybeSingle();
+    const thumb = await keepsakeThumb(sb, (preBird as any)?.photo_url);
+
+    const { error } = await (sb as any).rpc("handoff_accept_transfer", { p_handoff_id: h.id, p_new_owner: userId, p_photo_thumb: thumb });
     if (error) throw new Error(error.message);
 
     // The RPC revokes the old owner's DB + membership access atomically, but the

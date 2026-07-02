@@ -54,7 +54,13 @@ function PastBirds() {
                   <RecordRow
                     key={b.id}
                     last={i === birds.length - 1}
-                    leading={<IconTile tone="pale" icon={<Feather className="size-5" />} />}
+                    leading={
+                      b.photo_thumb ? (
+                        <img src={b.photo_thumb} alt="" className="size-9 shrink-0 rounded-full object-cover ring-1 ring-[var(--line2)]" />
+                      ) : (
+                        <IconTile tone="pale" icon={<Feather className="size-5" />} />
+                      )
+                    }
                     title={b.bird_name}
                     subtitle={`${b.species ? `${b.species} · ` : ""}With you ${rangeLabel(b.intake_date, b.departed_on)} · ${destinationLabel(b)}`}
                     trailing={b.was_foster ? <StatusPill tone="good">Foster</StatusPill> : undefined}
