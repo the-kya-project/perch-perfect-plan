@@ -567,6 +567,20 @@ export const removeHouseholdMemberEverywhere = createServerFn({ method: "POST" }
     const sb = await getAdmin();
     const ownerId = context.userId as string;
     if (data.userId === ownerId) throw new Error("The owner can't be removed.");
+    // Revoke the household-level permission grant FIRST. The birds SELECT RLS
+    // gates a member's read on has_capability(bird, uid, 'view'), which is TRUE
+    // when an household_member_permissions row exists for (owner, member) — the
+    // owner-level grant created on invite-accept — INDEPENDENT of bird_members.
+    // Deleting only bird_members (below) left this row intact, so removed members
+    // still read every bird record (has_capability('view') → hmp branch), while
+    // photos revoked (storage keys on has_bird_access → bird_members). Deleting
+    // the hmp row makes has_capability('view') false so DB read and storage read
+    // cut off TOGETHER. Keyed by (owner_id, member_user_id) → household-wide.
+    const { error: permErr } = await sb
+      .from("household_member_permissions").delete()
+      .eq("owner_id", ownerId).eq("member_user_id", data.userId);
+    if (permErr) throw new Error(permErr.message);
+
     const { data: birds } = await sb.from("birds").select("id").eq("owner_id", ownerId);
     const birdIds = (birds ?? []).map((b: any) => b.id);
     if (!birdIds.length) return { ok: true };
