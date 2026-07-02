@@ -16,6 +16,13 @@ dist-ssr
 .nitro
 *.local
 
+# Local env — never commit real values (see .env.example for the keys).
+# .env currently holds only client-safe values (Supabase URL + publishable key),
+# but ignore it so a future edit can't accidentally commit a real secret.
+.env
+.env.*
+!.env.example
+
 # Wrangler / Cloudflare
 .wrangler/
 .dev.vars
