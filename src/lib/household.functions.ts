@@ -362,8 +362,18 @@ export const acceptHouseholdInvite = createServerFn({ method: "POST" })
     }
     if (userId === invite.owner_id) throw new Error("That's your own invite.");
 
+    // Only grant birds the inviter STILL owns. invite.bird_ids is a snapshot from
+    // invite time; a bird can leave that flock before accept (handoff/transfer),
+    // and granting it would hand a third party access to someone else's bird.
+    // Filter to currently-owned birds (defense in depth; the handoff RPC also
+    // prunes the bird from pending invites).
+    const requestedIds = (invite.bird_ids as string[]) ?? [];
+    const { data: ownedNow } = await sb.from("birds").select("id").eq("owner_id", invite.owner_id).in("id", requestedIds);
+    const grantIds = (ownedNow ?? []).map((b: any) => b.id as string);
+    if (grantIds.length === 0) throw new Error("This invite is no longer valid — those birds have moved to another owner.");
+
     // Grant household access per bird (don't downgrade an existing owner row).
-    const rows = (invite.bird_ids as string[]).map((bird_id) => ({ bird_id, user_id: userId, role: "household" }));
+    const rows = grantIds.map((bird_id) => ({ bird_id, user_id: userId, role: "household" }));
     const { error: insErr } = await sb.from("bird_members").upsert(rows, { onConflict: "bird_id,user_id", ignoreDuplicates: true });
     if (insErr) throw new Error(insErr.message);
 
@@ -387,7 +397,7 @@ export const acceptHouseholdInvite = createServerFn({ method: "POST" })
       .update({ status: "accepted", accepted_user_id: userId })
       .eq("id", invite.id);
 
-    return { ok: true, birdIds: invite.bird_ids as string[] };
+    return { ok: true, birdIds: grantIds };
   });
 
 // ---- Public: decline an invite ---------------------------------------------
