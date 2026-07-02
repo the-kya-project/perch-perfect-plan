@@ -16,7 +16,19 @@ function PrivacyPage() {
   const router = useRouter();
   const canGoBack = useCanGoBack();
   const navigate = useNavigate();
-  const goBack = () => (canGoBack ? router.history.back() : navigate({ to: "/" }));
+  // Return to the actual previous screen (signup / settings) when we truly can.
+  // canGoBack alone can be true while the browser tab has no prior entry — opened
+  // from an email/deep link or a fresh (PWA) load — where router.history.back() is
+  // a silent no-op (the reported "back does nothing"). Require a real browser
+  // history entry too; otherwise fall back to "/" (which redirects authed users to
+  // the dashboard) so the button is never dead.
+  const goBack = () => {
+    if (canGoBack && typeof window !== "undefined" && window.history.length > 1) {
+      router.history.back();
+    } else {
+      navigate({ to: "/" });
+    }
+  };
   return (
     <div className="min-h-screen bg-sage-50">
       <main className="mx-auto max-w-2xl px-5 py-8">
