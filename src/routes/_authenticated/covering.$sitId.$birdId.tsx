@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { ArrowLeft, Stethoscope, ChevronRight } from "lucide-react";
+import { ArrowLeft, Stethoscope, ChevronRight, HeartCrack } from "lucide-react";
 import { InkHero, Card } from "@/components/system";
 import { useActiveCaregiver, CaregiverTodayChecklist, CaregiverLoading } from "@/components/CaregiverHome";
 import type { ActiveCaregiverBird } from "@/lib/caregiver.functions";
@@ -81,6 +81,23 @@ function CoveringBirdPage() {
                   with the active sit id via useActiveSitIdForBird). */}
               <ScanEntry bird={bird} birdId={birdId} />
               <CaregiverTodayChecklist sit={sit} birdId={birdId} />
+
+              {/* Something's wrong — quiet, last on the page. The covering
+                  member's twin of the sitter's entry: opens the shared pause +
+                  guidance flow (/birds/$birdId/concern). This page only renders
+                  for the active sit's caregiver, so no extra gating needed. */}
+              <div>
+                <Link
+                  to="/birds/$birdId/concern"
+                  params={{ birdId }}
+                  className="flex min-h-[52px] w-full items-center gap-3 rounded-[13px] border border-[var(--line)] bg-white px-4 text-left active:scale-[0.99]"
+                >
+                  <HeartCrack className="size-5 shrink-0 text-[var(--mute2)]" />
+                  <span className="flex-1 text-[14px] font-[500] text-[var(--ink)]">Something's wrong with {bird.name}</span>
+                  <ChevronRight className="size-4 shrink-0 text-[var(--mute2)]" />
+                </Link>
+                <p className="t-meta mt-1.5 px-1">If {bird.name} has passed or is in serious trouble</p>
+              </div>
             </>
           )}
         </main>
