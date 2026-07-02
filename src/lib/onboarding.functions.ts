@@ -35,9 +35,10 @@ export const getMemberOnboardingContext = createServerFn({ method: "GET" })
 
     const { data: birds } = await sb
       .from("birds")
-      .select("id, name, owner_id")
+      .select("id, name, owner_id, passed_at")
       .in("id", birdIds);
-    const birdRows = ((birds ?? []) as any[]).filter((b) => b.owner_id && b.owner_id !== me);
+    // Active birds only — don't tour a new member around a passed bird.
+    const birdRows = ((birds ?? []) as any[]).filter((b) => b.owner_id && b.owner_id !== me && !b.passed_at);
     if (!birdRows.length) return empty;
 
     // Group bird names by owner.

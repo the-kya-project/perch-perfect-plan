@@ -88,8 +88,9 @@ export const createHouseholdInvite = createServerFn({ method: "POST" })
     const sb = await getAdmin();
     const ownerId = context.userId as string;
 
-    // Every selected bird must belong to the caller.
-    const { data: owned } = await sb.from("birds").select("id, name").in("id", data.birdIds).eq("owner_id", ownerId);
+    // Every selected bird must belong to the caller AND be active (a passed
+    // bird can't be granted; it's excluded from the picker and rejected here).
+    const { data: owned } = await sb.from("birds").select("id, name").in("id", data.birdIds).eq("owner_id", ownerId).is("passed_at", null);
     const ownedIds = new Set((owned ?? []).map((b: any) => b.id));
     const missing = data.birdIds.filter((id) => !ownedIds.has(id));
     if (missing.length) throw new Error("You can only invite people to birds you own.");
@@ -368,7 +369,8 @@ export const acceptHouseholdInvite = createServerFn({ method: "POST" })
     // Filter to currently-owned birds (defense in depth; the handoff RPC also
     // prunes the bird from pending invites).
     const requestedIds = (invite.bird_ids as string[]) ?? [];
-    const { data: ownedNow } = await sb.from("birds").select("id").eq("owner_id", invite.owner_id).in("id", requestedIds);
+    // Only active birds the inviter still owns — never grant access to a passed bird.
+    const { data: ownedNow } = await sb.from("birds").select("id").eq("owner_id", invite.owner_id).in("id", requestedIds).is("passed_at", null);
     const grantIds = (ownedNow ?? []).map((b: any) => b.id as string);
     if (grantIds.length === 0) throw new Error("This invite is no longer valid — those birds have moved to another owner.");
 
@@ -497,7 +499,9 @@ export const getHouseholdAccount = createServerFn({ method: "GET" })
     const sb = await getAdmin();
     const ownerId = context.userId as string;
 
-    const { data: birds } = await sb.from("birds").select("id, name").eq("owner_id", ownerId).order("name");
+    // Active birds only — the household/permissions view lists birds members can
+    // be given access to; passed birds live in Remembering.
+    const { data: birds } = await sb.from("birds").select("id, name").eq("owner_id", ownerId).is("passed_at", null).order("name");
     const birdRows = (birds ?? []) as { id: string; name: string }[];
     const totalBirds = birdRows.length;
     if (!totalBirds) return { totalBirds: 0, birds: [] as { id: string; name: string }[], members: [], pending: [] };

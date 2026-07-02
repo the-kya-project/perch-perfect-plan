@@ -361,7 +361,8 @@ function SitsPanel({ birdId, sits, onChange }: { birdId: string; sits: any[]; on
   const { data: allBirds = [] } = useQuery({
     queryKey: ["owner-birds-min"],
     queryFn: async () => {
-      const { data } = await supabase.from("birds").select("id, name").order("created_at");
+      // Active birds only — a sit can't cover a passed bird.
+      const { data } = await supabase.from("birds").select("id, name").is("passed_at", null).order("created_at");
       return data ?? [];
     },
   });

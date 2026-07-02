@@ -42,8 +42,9 @@ export const getHouseholdHome = createServerFn({ method: "GET" })
     const ownerId = context.userId as string;
     const empty: HomeHousehold = { members: [], scope: "all", sharedBirdNames: [], activity: [] };
 
-    // The owner's birds.
-    const { data: birds } = await sb.from("birds").select("id, name").eq("owner_id", ownerId);
+    // The owner's ACTIVE birds (passed birds live in Remembering, not the home
+    // household view).
+    const { data: birds } = await sb.from("birds").select("id, name").eq("owner_id", ownerId).is("passed_at", null);
     const birdRows = (birds ?? []) as { id: string; name: string }[];
     if (!birdRows.length) return empty;
     const birdIds = birdRows.map((b) => b.id);

@@ -20,7 +20,8 @@ export function useOwnsBirds(): { ownsBirds: boolean; resolved: boolean } {
       const { count } = await supabase
         .from("birds")
         .select("id", { count: "exact", head: true })
-        .eq("owner_id", myId!);
+        .eq("owner_id", myId!)
+        .is("passed_at", null); // active birds only
       return count ?? 0;
     },
   });

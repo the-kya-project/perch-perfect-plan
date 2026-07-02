@@ -52,7 +52,9 @@ export function HomeChecklist() {
       const id = u.user.id;
       const [profRes, birdsRes, emerRes] = await Promise.all([
         supabase.from("profiles").select("created_at").eq("id", id).maybeSingle(),
-        supabase.from("birds").select("id, setup_complete").eq("owner_id", id).order("created_at", { ascending: false }),
+        // Active birds only — the checklist's "create a care plan" points at
+        // firstBirdId, which must be an active bird, not a passed one.
+        supabase.from("birds").select("id, setup_complete").eq("owner_id", id).is("passed_at", null).order("created_at", { ascending: false }),
         supabase.from("owner_emergency_defaults").select("owner_phone, avian_vet_phone").eq("owner_id", id).maybeSingle(),
       ]);
       const owned = (birdsRes.data ?? []) as { id: string; setup_complete: boolean | null }[];

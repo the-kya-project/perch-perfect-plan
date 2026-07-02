@@ -63,7 +63,9 @@ export function HouseholdInviteSheet({
     queryKey: ["owner-birds-min-access"],
     queryFn: async () => {
       const { data: u } = await getLocalUser();
-      const { data } = await supabase.from("birds").select("id, name").eq("owner_id", u.user?.id ?? "").order("name");
+      // Active birds only — a passed bird isn't something to grant access to
+      // (it lives in Remembering). Same filter used across all active-bird lists.
+      const { data } = await supabase.from("birds").select("id, name").eq("owner_id", u.user?.id ?? "").is("passed_at", null).order("name");
       return (data ?? []) as { id: string; name: string }[];
     },
   });

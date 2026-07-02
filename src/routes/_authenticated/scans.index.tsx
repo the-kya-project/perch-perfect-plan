@@ -60,7 +60,8 @@ function NotificationsInbox() {
   const { data: birds = [] } = useQuery({
     queryKey: ["owner-birds-min"],
     queryFn: async () => {
-      const { data } = await supabase.from("birds").select("id, name").order("name");
+      // Active birds only — you don't run a health check on a passed bird.
+      const { data } = await supabase.from("birds").select("id, name").is("passed_at", null).order("name");
       return (data ?? []) as { id: string; name: string }[];
     },
   });
