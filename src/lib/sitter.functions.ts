@@ -114,13 +114,19 @@ export const getSitterContext = createServerFn({ method: "GET" })
     const birdIds = await loadSitBirdIds(sit.id);
     if (birdIds.length === 0) throw new Error("This sit has no birds.");
 
-    const { data: birds, error: bErr } = await sb
+    const { data: allBirds, error: bErr } = await sb
       .from("birds")
-      .select("id, name, species, photo_url, photo_position")
+      .select("id, name, species, photo_url, photo_position, passed_at")
       .in("id", birdIds);
     if (bErr) throw new Error(bErr.message);
+    // A bird the owner marked as passed leaves the caregiver's list entirely —
+    // there is nothing left to care for. If every bird in the sit has passed,
+    // the sit is effectively paused (keyed copy in the sitter route).
+    const birds = (allBirds ?? []).filter((b: any) => !b.passed_at);
+    if (birds.length === 0) throw new Error("SITTER_SIT_PAUSED");
+    const activeIds = birds.map((b: any) => b.id as string);
 
-    const activeId = data.birdId && birdIds.includes(data.birdId) ? data.birdId : birdIds[0];
+    const activeId = data.birdId && activeIds.includes(data.birdId) ? data.birdId : activeIds[0];
 
     const [birdRes, planRes, contactsRes] = await Promise.all([
       sb.from("birds").select("*").eq("id", activeId).maybeSingle(),
@@ -624,7 +630,8 @@ export const getSitterDashboard = createServerFn({ method: "GET" })
     const today = new Date().toISOString().slice(0, 10);
 
     const [birdsRes, plansRes, compsRes, scansRes] = await Promise.all([
-      sb.from("birds").select("id, name, species, photo_url, photo_position").in("id", birdIds),
+      // Passed birds leave the caregiver's list entirely (nothing left to care for).
+      sb.from("birds").select("id, name, species, photo_url, photo_position").in("id", birdIds).is("passed_at", null),
       sb.from("care_plans").select("id, bird_id").in("bird_id", birdIds),
       sb.from("task_completions").select("routine_task_id").eq("sit_id", sit.id).eq("completed_date", today),
       sb.from("daily_logs").select("bird_id, triage_status").eq("sit_id", sit.id).eq("log_date", today).in("bird_id", birdIds),

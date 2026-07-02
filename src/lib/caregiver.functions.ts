@@ -112,8 +112,11 @@ export const getActiveCaregiverSits = createServerFn({ method: "GET" })
       const birds = (sitBirdsBySit.get(s.id) ?? [])
         .map((bid) => birdById.get(bid))
         .filter(Boolean)
+        // A bird the owner marked as passed leaves the covering member's list
+        // entirely (nothing left to care for) — same as the sitter view.
+        .filter((b: any) => !b.passed_at)
         .map((b: any) => {
-          const paused = pausedBySitBird.has(`${s.id}:${b.id}`) || !!b.passed_at;
+          const paused = pausedBySitBird.has(`${s.id}:${b.id}`);
           return {
             id: b.id as string,
             name: b.name as string,
@@ -137,7 +140,11 @@ export const getActiveCaregiverSits = createServerFn({ method: "GET" })
         completionsToday: completionsBySit.get(s.id) ?? [],
       };
     });
-    return { sits: out, upcoming: await loadUpcoming(sb, userId, today) };
+    // A sit whose every bird has passed effectively has nothing to cover — drop
+    // it so the member's Home shows no ghost section (their covering page for it
+    // already falls back to a clean "not active" card).
+    const activeSits = out.filter((s) => s.birds.length > 0);
+    return { sits: activeSits, upcoming: await loadUpcoming(sb, userId, today) };
   });
 
 // Soonest upcoming sit assigned to me (today < start_date). Powers the

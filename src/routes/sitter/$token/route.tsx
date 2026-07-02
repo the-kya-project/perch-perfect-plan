@@ -30,13 +30,17 @@ export const Route = createFileRoute("/sitter/$token")({
         ? { title: "This sitter link was turned off", body: "The owner revoked access to this link." }
         : code === "SITTER_LINK_INVALID"
         ? { title: "This sitter link isn't valid", body: "Double-check the link, or ask the owner to resend it." }
+        : code === "SITTER_SIT_PAUSED"
+        ? { title: "This sit is paused", body: "There's nothing that needs doing right now. The owner will be in touch." }
         : { title: "This sitter link can't be opened", body: error.message };
     return (
       <div className="grid min-h-screen place-items-center bg-[#f4f1e8] p-6 text-center">
         <div className="max-w-sm">
           <h1 className="text-lg font-medium">{copy.title}</h1>
           <p className="mt-2 text-sm text-[#5f5e5a]">{copy.body}</p>
-          <p className="mt-4 text-xs text-[#5f5e5a]">Ask the owner to send you a new link.</p>
+          {code !== "SITTER_SIT_PAUSED" && (
+            <p className="mt-4 text-xs text-[#5f5e5a]">Ask the owner to send you a new link.</p>
+          )}
         </div>
       </div>
     );
