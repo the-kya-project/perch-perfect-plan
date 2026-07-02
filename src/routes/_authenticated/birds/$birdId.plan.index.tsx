@@ -8,7 +8,7 @@ import { useCapability } from "@/lib/useCapability";
 import { InkHero, IconTile, StatusPill, CtaLink, Card, RecordRow } from "@/components/system";
 import { MemberContextBanner } from "@/components/MemberContextBanner";
 import {
-  ArrowLeft, Eye, Check, AlertTriangle, Wand2,
+  ArrowLeft, Eye, Check, AlertTriangle, Wand2, Video,
   Utensils, CalendarClock, Smile, Home as HomeIcon, Stethoscope, Siren,
 } from "lucide-react";
 
@@ -183,10 +183,33 @@ function CarePlanOverview() {
                     )
                   }
                   onClick={onRow}
-                  last={i === SECTIONS.length - 1}
+                  last={false}
                 />
               );
             })}
+            {/* Tips-from-the-owner clips (recorded in setup step 6 / the editor's
+                Clips tab). Optional, so no "Needs info" — surfaced here so recorded
+                clips are reachable from the overview like the six sections. */}
+            {(() => {
+              const clipCols = ["clip_food_water_path", "clip_step_up_path", "clip_locations_path", "clip_bedtime_path"];
+              const clipCount = clipCols.filter((c) => (plan as any)?.[c]).length + ((plan as any)?.baseline_clip_path ? 1 : 0);
+              const hasClips = clipCount > 0;
+              return (
+                <RecordRow
+                  key="clips"
+                  leading={<IconTile size={38} tone="ink-lime" icon={<Video className="size-5" />} />}
+                  title="Tips from the owner"
+                  subtitle={hasClips ? `${clipCount} clip${clipCount === 1 ? "" : "s"}` : "Optional — short how-to videos for sitters"}
+                  trailing={hasClips ? <StatusPill tone="ready"><Check className="size-3" /> Added</StatusPill> : undefined}
+                  onClick={
+                    canEdit
+                      ? () => navigate({ to: "/birds/$birdId/plan/editor", params: { birdId }, search: { tab: "clips" } })
+                      : () => navigate({ to: "/birds/$birdId/care-plan", params: { birdId } })
+                  }
+                  last
+                />
+              );
+            })()}
           </Card>
 
           {/* Quiet action — re-run the guided wizard (needs edit_care_plans) */}

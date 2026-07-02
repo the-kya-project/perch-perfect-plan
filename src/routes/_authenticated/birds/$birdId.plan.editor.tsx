@@ -229,7 +229,7 @@ function BirdEditor() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-md space-y-4 px-5 py-5">
+      <main className="mx-auto max-w-md space-y-4 px-5 py-5 pb-28">
         {/* Every section tab renders the guided-setup step component directly, so
             the editor and the setup wizard are the exact same UI — except the
             green per-step instruction banner, hidden here via HideStepInstruction
@@ -249,6 +249,26 @@ function BirdEditor() {
           {tab === "logs" && <LogsPanel birdId={birdId} initialScan={scanParam} />}
         </HideStepInstruction.Provider>
       </main>
+
+      {/* Explicit Done control. Each section autosaves as you edit (that's why
+          there's no per-field Save), but owners/editors expect a clear "I'm
+          finished" button — the affordance dropped in the overview-front-door
+          refactor (#163), which left onPlanSaved orphaned. Sits above the owner
+          nav; autosave has already persisted, so Done just refreshes derived
+          views (via onPlanSaved) and returns to the overview. Everyone who
+          reaches the editor is an editor (others are redirected), so it's shown
+          for editors only. */}
+      <div className="fixed inset-x-0 bottom-[var(--nav-spacer)] z-20 border-t border-[#e3ded0] bg-[#f4f1e8]/95 backdrop-blur">
+        <div className="mx-auto max-w-md px-5 py-3">
+          <button
+            type="button"
+            onClick={() => { onPlanSaved(); navigate({ to: "/birds/$birdId/plan", params: { birdId } }); }}
+            className="min-h-[48px] w-full rounded-[14px] bg-[var(--lime)] text-[15px] font-[500] text-[var(--ink)] active:scale-[0.99]"
+          >
+            Done
+          </button>
+        </div>
+      </div>
 
       <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.65rem .8rem;font-size:16px;outline:none}.input:focus{border-color:var(--sage-600);box-shadow:0 0 0 3px rgb(74 103 65 / .15)}.area{min-height:80px;line-height:1.4}`}</style>
     </div>
