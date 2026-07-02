@@ -8,6 +8,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { activeOwnerBirdsMin } from "@/lib/activeBirds";
 
 async function getAdmin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -44,7 +45,7 @@ export const getHouseholdHome = createServerFn({ method: "GET" })
 
     // The owner's ACTIVE birds (passed birds live in Remembering, not the home
     // household view).
-    const { data: birds } = await sb.from("birds").select("id, name").eq("owner_id", ownerId).is("passed_at", null);
+    const { data: birds } = await activeOwnerBirdsMin(sb, ownerId);
     const birdRows = (birds ?? []) as { id: string; name: string }[];
     if (!birdRows.length) return empty;
     const birdIds = birdRows.map((b) => b.id);

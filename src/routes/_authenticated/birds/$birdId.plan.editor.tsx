@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
+import { activeOwnerBirdsMin } from "@/lib/activeBirds";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { ArrowLeft, Trash2, ChevronDown, AlertTriangle, Eye } from "lucide-react";
 import { EmergencyInfo } from "@/components/EmergencyInfo";
@@ -359,10 +360,10 @@ function DeleteBirdCard({ birdId, bird, plan }: { birdId: string; bird: any; pla
 function SitsPanel({ birdId, sits, onChange }: { birdId: string; sits: any[]; onChange: () => void }) {
   // All the owner's birds, so editing a sit here can add/remove any of them.
   const { data: allBirds = [] } = useQuery({
-    queryKey: ["owner-birds-min"],
+    queryKey: ["owner-birds-min-sit-editor"],
     queryFn: async () => {
       // Active birds only — a sit can't cover a passed bird.
-      const { data } = await supabase.from("birds").select("id, name").is("passed_at", null).order("created_at");
+      const { data } = await activeOwnerBirdsMin(supabase).order("created_at");
       return data ?? [];
     },
   });

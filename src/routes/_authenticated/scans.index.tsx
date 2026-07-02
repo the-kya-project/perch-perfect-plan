@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
 import { ArrowLeft, Settings, AlertTriangle, CheckCircle2, Feather, Activity, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { activeOwnerBirdsMin, type ActiveBirdMin } from "@/lib/activeBirds";
 import { fetchScanFeed, markNotifsSeen, getNotifSeenAt, scanRunBy, type ScanFeedItem } from "@/lib/notificationsFeed";
 import { InkHero, IconTile, StatusPill, RecordRow, Card } from "@/components/system";
 import { OwnerHeaderIcons } from "@/components/OwnerHeader";
@@ -58,11 +59,11 @@ function NotificationsInbox() {
   const filterLabel = filterSit?.label ?? "this sit";
   const shownFeed = sitId ? (feed as ScanFeedItem[]).filter((n) => n.sit_id === sitId) : (feed as ScanFeedItem[]);
   const { data: birds = [] } = useQuery({
-    queryKey: ["owner-birds-min"],
+    queryKey: ["owner-birds-min-scans"],
     queryFn: async () => {
       // Active birds only — you don't run a health check on a passed bird.
-      const { data } = await supabase.from("birds").select("id, name").is("passed_at", null).order("name");
-      return (data ?? []) as { id: string; name: string }[];
+      const { data } = await activeOwnerBirdsMin(supabase).order("name");
+      return (data ?? []) as ActiveBirdMin[];
     },
   });
   const [picking, setPicking] = useState(false);

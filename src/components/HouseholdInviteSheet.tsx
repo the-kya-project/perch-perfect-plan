@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
+import { activeOwnerBirdsMin, type ActiveBirdMin } from "@/lib/activeBirds";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { createHouseholdInvite, getHouseholdAccount, addExistingHouseholdMember } from "@/lib/household.functions";
 import { ASSIGNABLE_PRESETS, PRESET_LABELS, PRESET_DESCRIPTIONS, type AssignablePreset } from "@/lib/capabilities";
@@ -64,9 +65,9 @@ export function HouseholdInviteSheet({
     queryFn: async () => {
       const { data: u } = await getLocalUser();
       // Active birds only — a passed bird isn't something to grant access to
-      // (it lives in Remembering). Same filter used across all active-bird lists.
-      const { data } = await supabase.from("birds").select("id, name").eq("owner_id", u.user?.id ?? "").is("passed_at", null).order("name");
-      return (data ?? []) as { id: string; name: string }[];
+      // (it lives in Remembering). activeOwnerBirdsMin bakes in the filter.
+      const { data } = await activeOwnerBirdsMin(supabase, u.user?.id ?? "").order("name");
+      return (data ?? []) as ActiveBirdMin[];
     },
   });
 

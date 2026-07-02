@@ -11,6 +11,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { PRESET_CAPABILITIES, ASSIGNABLE_PRESETS, type AssignablePreset } from "@/lib/capabilities";
+import { activeOwnerBirdsMin } from "@/lib/activeBirds";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { buildHouseholdInviteEmail } from "./emailTemplates";
 import { mergeEmergency } from "./emergency";
@@ -501,7 +502,7 @@ export const getHouseholdAccount = createServerFn({ method: "GET" })
 
     // Active birds only — the household/permissions view lists birds members can
     // be given access to; passed birds live in Remembering.
-    const { data: birds } = await sb.from("birds").select("id, name").eq("owner_id", ownerId).is("passed_at", null).order("name");
+    const { data: birds } = await activeOwnerBirdsMin(sb, ownerId).order("name");
     const birdRows = (birds ?? []) as { id: string; name: string }[];
     const totalBirds = birdRows.length;
     if (!totalBirds) return { totalBirds: 0, birds: [] as { id: string; name: string }[], members: [], pending: [] };
