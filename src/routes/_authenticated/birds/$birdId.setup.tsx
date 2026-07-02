@@ -232,21 +232,27 @@ function BirdSetup() {
 
   async function persistStep(nextStep: number, complete = false) {
     setSaving(true);
+    // Completion is STICKY: only ever set setup_complete to true (on finishing
+    // the wizard), never write false. Every navigation (Next/Back/Save & exit/
+    // step-jump) calls persistStep without the flag, so writing the default
+    // false here UN-completed finished birds the moment their owner re-entered
+    // "Walk through it again" — which resurrected the "Set up care plan" CTA on
+    // birds with complete plans (the intermittent, some-birds-only report).
+    const patch: Record<string, unknown> = { setup_step: nextStep };
+    if (complete) patch.setup_complete = true;
     const { error } = await supabase
       .from("birds")
-      .update({ setup_step: nextStep, setup_complete: complete } as any)
+      .update(patch as any)
       .eq("id", birdId);
     setSaving(false);
     if (error) { toast.error(error.message); return false; }
     // setup_complete/setup_step live on the birds row that the bird-record home
-    // (the "Create care plan" CTA gate) and the flock list read from cache. Without
-    // this, finishing setup left ["bird-record"] serving a stale setup_complete=false
-    // for up to its staleTime, so the "Create care plan" CTA lingered on a bird
-    // whose plan is done (the intermittent report). Patch the cache synchronously so
-    // the bird home reads the new value the instant we navigate there (no CTA
-    // flash), then invalidate to confirm against the DB and refresh the flock list.
+    // (the "Create care plan" CTA gate) and the flock list read from cache. Patch
+    // the cache synchronously so the bird home reads the new value the instant we
+    // navigate there (no CTA flash), then invalidate to confirm against the DB
+    // and refresh the flock list.
     qc.setQueryData(["bird-record", birdId], (old: any) =>
-      old ? { ...old, setup_step: nextStep, setup_complete: complete } : old);
+      old ? { ...old, ...patch } : old);
     qc.invalidateQueries({ queryKey: ["bird-record", birdId] });
     qc.invalidateQueries({ queryKey: ["birds"] });
     return true;
