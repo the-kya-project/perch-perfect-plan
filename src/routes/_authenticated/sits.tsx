@@ -130,7 +130,7 @@ function SitsPage() {
   // Batch-resolve display names for caregivers AND sit leads ("in charge").
   // Resolve caregiver + lead names via the service role (the authenticated
   // client can't read other users' profiles — profiles RLS is self-only).
-  const personIds = [...new Set(allSits.flatMap((s) => [s.caregiver_user_id, s.lead_user_id]).filter(Boolean) as string[])];
+  const personIds = [...new Set(allSits.map((s) => s.caregiver_user_id).filter(Boolean) as string[])];
   const resolveNames = useServerFn(resolveHouseholdNames);
   const { data: nameMap = {} } = useQuery({
     queryKey: ["sit-person-names", personIds.slice().sort().join(",")],
@@ -139,9 +139,15 @@ function SitsPage() {
     queryFn: () => resolveNames({ data: { userIds: personIds } }),
   });
   const displayFor = (id: string): string => memberDisplayName((nameMap as Record<string, any>)[id]);
-  // Lead = who's in charge. First name only, per the content-label treatment.
+  // "In charge" = who is actually COVERING the sit (doing the sitting), keyed on
+  // caregiver_user_id — NOT lead_user_id. lead_user_id is overloaded: SitForm
+  // sets it to the household cover for a household sit but to the OWNER for an
+  // external sitter (as the responsible contact), so keying "in charge" on it
+  // wrongly flagged an owner as in charge of their own externally-sat sit.
+  // caregiver_user_id is the covering household member (null for external sits,
+  // where the covering person is the external sitter, shown via caregiverName).
   const leadFirstName = (s: any): string | null =>
-    s.lead_user_id ? firstName(displayFor(s.lead_user_id)) || null : null;
+    s.caregiver_user_id ? firstName(displayFor(s.caregiver_user_id)) || null : null;
   const caregiverName = (s: any): string =>
     s.caregiver_user_id ? displayFor(s.caregiver_user_id) : (s.sitter_name?.trim() || "Your sitter");
 
@@ -166,7 +172,9 @@ function SitsPage() {
       : s.owner_id === myId
         ? { kind: "own" }
         : { kind: "household", ownerName: (ownerNames as Record<string, string>)[s.owner_id] ?? null };
-  const iAmLead = (s: any): boolean => !!myId && s.lead_user_id === myId;
+  // "You're in charge" only when the current user is the one COVERING the sit
+  // (the covering caregiver), never merely because they own the birds.
+  const iAmLead = (s: any): boolean => !!myId && s.caregiver_user_id === myId;
 
   // Bird photos are stored as bucket PATHS; resolve them to signed URLs (small
   // transform — the chips are tiny dots) so the chip <img> actually loads.

@@ -47,7 +47,7 @@ function SitDetail() {
 
       // Resolve caregiver + lead display names via the service role (the
       // authenticated client can't read other users' profiles — RLS self-only).
-      const personIds = [sit.caregiver_user_id, sit.lead_user_id].filter(Boolean) as string[];
+      const personIds = [sit.caregiver_user_id].filter(Boolean) as string[];
       const [birdsJoin, nameMap] = await Promise.all([
         supabase.from("sit_birds").select("bird_id, birds(id, name)").eq("sit_id", sitId),
         personIds.length ? resolveNames({ data: { userIds: personIds } }) : Promise.resolve({} as Record<string, any>),
@@ -86,7 +86,11 @@ function SitDetail() {
         sit,
         birds,
         caregiver: sit.caregiver_user_id ? { name: displayFor(sit.caregiver_user_id) } : null,
-        leadName: sit.lead_user_id ? displayFor(sit.lead_user_id) : null,
+        // "In charge" = the covering caregiver (caregiver_user_id), NOT lead_user_id
+        // (which is set to the OWNER for an external sitter, so it wrongly labelled
+        // the owner "in charge" of an externally-sat sit). Null for external sits;
+        // the external sitter is already shown as the caregiver above.
+        leadName: sit.caregiver_user_id ? displayFor(sit.caregiver_user_id) : null,
         activity,
         counts,
       };
