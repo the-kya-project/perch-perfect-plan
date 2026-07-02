@@ -1,12 +1,13 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
-import { Plus, Calendar, CalendarPlus, ChevronRight } from "lucide-react";
+import { Plus, Calendar, CalendarPlus, ChevronDown } from "lucide-react";
 import { OwnerHeaderIcons } from "@/components/OwnerHeader";
 import { SitForm } from "@/components/SitForm";
-import { ActiveSitCard, UpcomingSitCard, type SitBird, type ListSit } from "@/components/SitListCards";
+import { ActiveSitCard, UpcomingSitCard, PastSitCard, type SitBird, type ListSit } from "@/components/SitListCards";
 import { useServerFn } from "@tanstack/react-start";
 import { resolveHouseholdNames, resolveOwnerNames } from "@/lib/home.functions";
 import { memberDisplayName, firstName } from "@/lib/memberDisplay";
@@ -19,8 +20,8 @@ import { weekdayMonthDay, monthDay, daysUntil } from "@/lib/dates";
 // dashboard via BIRD_LIST_SELECT (identical shape, so neither poisons the other).
 // Its OWN ["sits-full"] key holds the full sit rows (+ sit_birds join) it needs —
 // separate from the dashboard's minimal ["all-sits"] so the two shapes don't
-// collide. Sit mutations invalidate both. Past sits live on their own screen
-// (/sits/past, ["sits-archive"]).
+// collide. Sit mutations invalidate both. Past sits (end_date < today) render
+// inline in a collapsible section from this same ["sits-full"] data — no route.
 const sitsSearch = z.object({
   newSit: z.coerce.boolean().optional(),
   preselectBirdId: z.string().uuid().optional(),
@@ -42,6 +43,7 @@ function joinNames(names: string[]): string {
 function SitsPage() {
   const qc = useQueryClient();
   const navigate = useNavigate();
+  const [pastOpen, setPastOpen] = useState(false);
   const { newSit, preselectBirdId } = Route.useSearch();
 
   const { data: birds = [] } = useQuery({
@@ -110,14 +112,17 @@ function SitsPage() {
   const allSits = sits as any[];
 
   // State buckets. Active = underway today (most-recently-started first).
-  // Upcoming = strictly future. Past lives on its own screen.
+  // Upcoming = strictly future. Past = ended (end_date < today) — shown inline in
+  // a collapsible section below, most-recently-ended first (no separate route).
   const actives = allSits
     .filter((s) => s.start_date <= today && s.end_date >= today)
     .sort((a, b) => b.start_date.localeCompare(a.start_date));
   const upcoming = allSits
     .filter((s) => s.start_date > today)
     .sort((a, b) => a.start_date.localeCompare(b.start_date));
-  const pastCount = allSits.filter((s) => s.end_date < today).length;
+  const pastSits = allSits
+    .filter((s) => s.end_date < today)
+    .sort((a, b) => b.end_date.localeCompare(a.end_date));
 
   // Batch-resolve display names for caregivers AND sit leads ("in charge").
   // Resolve caregiver + lead names via the service role (the authenticated
@@ -318,13 +323,35 @@ function SitsPage() {
                     <p className="px-1 text-center t-meta">Only a bird's owner can set up a sit.</p>
                   )}
 
-                  {pastCount > 0 && (
-                    <Link
-                      to="/sits/past"
-                      className="flex items-center justify-center gap-1 py-1 text-[14px] font-[500] text-[var(--moss)] active:opacity-80"
-                    >
-                      Past sits ({pastCount}) <ChevronRight className="size-4" />
-                    </Link>
+                  {/* Past sits — inline collapsible (no route). Hidden entirely
+                      when there are none. */}
+                  {pastSits.length > 0 && (
+                    <section className="pt-1">
+                      <button
+                        type="button"
+                        aria-expanded={pastOpen}
+                        aria-controls="past-sits-list"
+                        onClick={() => setPastOpen((o) => !o)}
+                        className="flex min-h-[44px] w-full items-center justify-between gap-2 text-left"
+                      >
+                        <span className="t-eyebrow text-[var(--mute)]">Past sits ({pastSits.length})</span>
+                        <ChevronDown className={`size-4 text-[var(--mute)] transition-transform ${pastOpen ? "rotate-180" : ""}`} />
+                      </button>
+                      {pastOpen && (
+                        <div id="past-sits-list" className="mt-1 space-y-2">
+                          {pastSits.map((s) => (
+                            <PastSitCard
+                              key={s.id}
+                              sit={s as ListSit}
+                              caregiverName={caregiverName(s)}
+                              leadName={hasHousehold ? leadFirstName(s) : null}
+                              scans={0}
+                              flagged={0}
+                            />
+                          ))}
+                        </div>
+                      )}
+                    </section>
                   )}
                 </>
               )}
