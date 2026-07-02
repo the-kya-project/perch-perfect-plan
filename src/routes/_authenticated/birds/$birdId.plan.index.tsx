@@ -108,10 +108,6 @@ function CarePlanOverview() {
   const completeness = computeSetupCompleteness({ bird, plan, tasksCount: tasks.length, contacts, defaults });
   const checksByKey = new Map<string, SetupCheck>(completeness.checks.map((c) => [c.key, c]));
 
-  // The wizard reads its starting step from `?step=`; without a step it resumes
-  // from the saved setup_step, which is how "Walk through it again" prefills
-  // answers — the same data is loaded by each step's queries.
-  const walkthroughStep = completeness.firstIncompleteStep ?? 1;
 
   const name = bird?.name ?? "this bird";
 
@@ -217,7 +213,10 @@ function CarePlanOverview() {
             <CtaLink
               label="Walk through it again"
               icon={<Wand2 className="size-3.5" />}
-              onPress={() => navigate({ to: "/birds/$birdId/setup", params: { birdId }, search: { step: walkthroughStep } })}
+              // "Walk through it again" is a full re-review — always start at the
+              // beginning (Food · step 1), not the first incomplete step (which
+              // was step 6/Clips whenever the optional clips were empty).
+              onPress={() => navigate({ to: "/birds/$birdId/setup", params: { birdId }, search: { step: 1 } })}
             />
           )}
 
