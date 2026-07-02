@@ -8,13 +8,17 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
+import { Loader2 } from "lucide-react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
 import { initAnalytics, identifyUser, resetUser } from "@/lib/analytics";
-import { registerServiceWorker, installChunkErrorRecovery, hardResetAndReload } from "@/lib/sw-register";
+import {
+  registerServiceWorker, installChunkErrorRecovery, hardResetAndReload,
+  isStaleChunkError, chunkReloadAttemptedRecently, reloadForStaleChunk,
+} from "@/lib/sw-register";
 import { captureFirstTouch } from "@/lib/attribution";
 
 function NotFoundComponent() {
@@ -42,9 +46,25 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
+  // A stale-build chunk 404 (lazy route import after a deploy swapped the
+  // precache) is SELF-HEALING: installChunkErrorRecovery reloads onto the fresh
+  // build within ~1s. Rendering the error screen for that window reads as "the
+  // app broke" — show a calm loader instead and trigger the reload ourselves
+  // (belt-and-braces with the vite:preloadError listener). Only if a recovery
+  // reload was ALREADY attempted moments ago (loop guard) do we fall through to
+  // the real error screen, so a genuinely broken build still surfaces.
+  const recovering = isStaleChunkError(error) && !chunkReloadAttemptedRecently();
   useEffect(() => {
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
-  }, [error]);
+    if (recovering) reloadForStaleChunk();
+    else reportLovableError(error, { boundary: "tanstack_root_error_component" });
+  }, [error, recovering]);
+  if (recovering) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-[var(--cream)]" aria-hidden>
+        <Loader2 className="size-5 animate-spin text-[var(--moss)]" />
+      </div>
+    );
+  }
   const detail = error.message && !/unknown error/i.test(error.message) ? error.message : null;
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">

@@ -46,20 +46,41 @@ async function unregisterAppWorkers() {
  * so the reload lands on fresh chunk names). A short sessionStorage guard stops
  * a reload loop if a refresh somehow doesn't resolve it.
  */
+const CHUNK_RELOAD_KEY = "chunk-reload-at";
+
+/** True if a stale-chunk recovery reload was attempted in the last 10s — the
+ *  loop guard. Pure read (no side effects), safe to call during render. */
+export function chunkReloadAttemptedRecently(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return Date.now() - Number(sessionStorage.getItem(CHUNK_RELOAD_KEY) ?? 0) < 10_000;
+  } catch {
+    return false;
+  }
+}
+
+/** Reload once to recover from a stale-build chunk 404. Respects the loop guard. */
+export function reloadForStaleChunk() {
+  if (typeof window === "undefined") return;
+  try {
+    if (chunkReloadAttemptedRecently()) return; // already tried very recently — avoid a loop
+    sessionStorage.setItem(CHUNK_RELOAD_KEY, String(Date.now()));
+  } catch { /* sessionStorage blocked (e.g. some iframes) — fall through to a single reload */ }
+  window.location.reload();
+}
+
+/** Does this error look like a stale-build lazy-chunk load failure (the
+ *  self-healing kind), rather than a real crash? Message shapes vary by browser. */
+export function isStaleChunkError(error: unknown): boolean {
+  const msg = (error as Error | null)?.message ?? "";
+  return /failed to fetch dynamically imported module|error loading dynamically imported module|importing a module script failed|failed to load module script|unable to preload/i.test(msg);
+}
+
 export function installChunkErrorRecovery() {
   if (typeof window === "undefined") return;
-  const KEY = "chunk-reload-at";
-  const reloadOnce = () => {
-    try {
-      const last = Number(sessionStorage.getItem(KEY) ?? 0);
-      if (Date.now() - last < 10_000) return; // already tried very recently — avoid a loop
-      sessionStorage.setItem(KEY, String(Date.now()));
-    } catch { /* sessionStorage blocked (e.g. some iframes) — fall through to a single reload */ }
-    window.location.reload();
-  };
   window.addEventListener("vite:preloadError", (e) => {
     e.preventDefault(); // don't let it surface as an unhandled error; we handle it by reloading
-    reloadOnce();
+    reloadForStaleChunk();
   });
 }
 
