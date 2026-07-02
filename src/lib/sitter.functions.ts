@@ -128,52 +128,27 @@ export const getSitterContext = createServerFn({ method: "GET" })
 
     const activeId = data.birdId && activeIds.includes(data.birdId) ? data.birdId : activeIds[0];
 
-    const [birdRes, planRes, contactsRes] = await Promise.all([
+    // PERF: two parallel stages instead of ~11 sequential ones. Stage 1 needs
+    // only sit.id / activeId / the birds list; stage 2 needs the bird/plan rows.
+    const today = new Date().toISOString().slice(0, 10);
+    const [birdRes, planRes, contactsRes, completionsRes, todayLogRes, sitBirdRes, signedBirds] = await Promise.all([
       sb.from("birds").select("*").eq("id", activeId).maybeSingle(),
       sb.from("care_plans").select("*").eq("bird_id", activeId).maybeSingle(),
       sb.from("emergency_contacts").select("*").eq("bird_id", activeId).maybeSingle(),
+      sb.from("task_completions").select("*").eq("sit_id", sit.id).eq("completed_date", today),
+      sb.from("daily_logs").select("*").eq("sit_id", sit.id).eq("bird_id", activeId).eq("log_date", today)
+        .order("created_at", { ascending: false }).limit(1).maybeSingle(),
+      // Reminders pause state for the active bird (sitter's temporary pause).
+      sb.from("sit_birds").select("reminders_paused_at").eq("sit_id", sit.id).eq("bird_id", activeId).maybeSingle(),
+      // Sign bird profile photos (paths → signed URLs) so the sitter can load
+      // them from the private bucket; legacy inline data: URLs pass through.
+      Promise.all((birds ?? []).map(async (b: any) => ({ ...b, photo_url: await signBirdPhotoPath(sb, b.photo_url) }))),
     ]);
     if (birdRes.error || !birdRes.data) throw new Error("Bird not found.");
+    const activeBird = birdRes.data;
 
-    const { data: defaultsRow } = await sb
-      .from("owner_emergency_defaults")
-      .select("*")
-      .eq("owner_id", birdRes.data.owner_id)
-      .maybeSingle();
-    const mergedContacts = {
-      ...(contactsRes.data ?? { bird_id: activeId }),
-      ...mergeEmergency(contactsRes.data, defaultsRow),
-    };
-
-    const tasksRes = planRes.data
-      ? await sb
-          .from("routine_tasks")
-          .select("*")
-          .eq("care_plan_id", planRes.data.id)
-          .order("category")
-          .order("sort_order")
-      : { data: [] as any[], error: null };
-
-    const today = new Date().toISOString().slice(0, 10);
-    const completionsRes = await sb
-      .from("task_completions")
-      .select("*")
-      .eq("sit_id", sit.id)
-      .eq("completed_date", today);
-
-    const todayLogRes = await sb
-      .from("daily_logs")
-      .select("*")
-      .eq("sit_id", sit.id)
-      .eq("bird_id", activeId)
-      .eq("log_date", today)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-
-    // Generate signed URLs for the owner-recorded "Tips from the owner" clips on the active bird.
-    // Clips are stored in the private bird-photos bucket; signed URLs ensure only
-    // the assigned sitter (holding this token) can play them.
+    // Owner-recorded "Tips from the owner" clips, signed in PARALLEL (they were
+    // a serial loop — up to 9 sequential Cloudflare/Storage calls per load).
     const watchClipSlots: { key: string; column: string; label: string }[] = [
       { key: "step_up", column: "clip_step_up_path", label: "How she steps up" },
       { key: "food_water", column: "clip_food_water_path", label: "How to refill food & water safely" },
@@ -184,56 +159,61 @@ export const getSitterContext = createServerFn({ method: "GET" })
       { key: "targeting", column: "clip_targeting_path", label: "Targeting & interaction" },
       { key: "anything_else", column: "clip_anything_else_path", label: "Anything else?" },
     ];
-    const watchClips: { key: string; label: string; url: string }[] = [];
-    let baselineClipUrl: string | null = null;
-    if (planRes.data) {
-      for (const slot of watchClipSlots) {
-        const path = (planRes.data as any)[slot.column] as string | null;
-        if (!path) continue;
-        const url = await resolveClipUrl(sb, path);
-        if (url) watchClips.push({ key: slot.key, label: slot.label, url });
-      }
-      const bcp = (planRes.data as any).baseline_clip_path as string | null;
-      if (bcp) baselineClipUrl = await resolveClipUrl(sb, bcp);
-    }
-
-    // Sign bird profile photos (paths → signed URLs) so the sitter can load them
-    // from the private bucket; legacy inline data: URLs pass through.
-    const signedBirds = await Promise.all(
-      (birds ?? []).map(async (b: any) => ({ ...b, photo_url: await signBirdPhotoPath(sb, b.photo_url) })),
-    );
-    const signedActiveBird = {
-      ...birdRes.data,
-      photo_url: await signBirdPhotoPath(sb, (birdRes.data as any).photo_url),
+    const resolveClips = async () => {
+      if (!planRes.data) return { watchClips: [] as { key: string; label: string; url: string }[], baselineClipUrl: null as string | null };
+      const [slotResults, baselineClipUrl] = await Promise.all([
+        Promise.all(watchClipSlots.map(async (slot) => {
+          const path = (planRes.data as any)[slot.column] as string | null;
+          if (!path) return null;
+          const url = await resolveClipUrl(sb, path);
+          return url ? { key: slot.key, label: slot.label, url } : null;
+        })),
+        (async () => {
+          const bcp = (planRes.data as any).baseline_clip_path as string | null;
+          return bcp ? await resolveClipUrl(sb, bcp) : null;
+        })(),
+      ]);
+      return { watchClips: slotResults.filter(Boolean) as { key: string; label: string; url: string }[], baselineClipUrl };
     };
 
     // Owner's display name for the sitter-facing "something's wrong" flow.
     // Real name only — never an email prefix.
-    let ownerName = "the owner";
-    {
-      const { data: prof } = await sb.from("profiles").select("display_name").eq("id", birdRes.data.owner_id).maybeSingle();
+    const resolveOwnerName = async () => {
+      const { data: prof } = await sb.from("profiles").select("display_name").eq("id", activeBird.owner_id).maybeSingle();
       const n = (prof?.display_name ?? "").toString().trim();
-      if (n) ownerName = n;
-      else {
-        try {
-          const { data: u } = await sb.auth.admin.getUserById(birdRes.data.owner_id as string);
-          const m = (u?.user?.user_metadata?.display_name ?? "").toString().trim();
-          if (m) ownerName = m;
-        } catch { /* keep fallback */ }
-      }
-    }
+      if (n) return n;
+      try {
+        const { data: u } = await sb.auth.admin.getUserById(activeBird.owner_id as string);
+        const m = (u?.user?.user_metadata?.display_name ?? "").toString().trim();
+        if (m) return m;
+      } catch { /* keep fallback */ }
+      return "the owner";
+    };
 
-    // Reminders pause state for the active bird: the sitter's own temporary
-    // pause (sit_birds.reminders_paused_at) OR the owner having marked the bird
-    // as passed (birds.passed_at). Either way the daily prompts stop for the
-    // sitter; nothing else about the sit changes.
-    const { data: sitBirdRow } = await sb
-      .from("sit_birds")
-      .select("reminders_paused_at")
-      .eq("sit_id", sit.id)
-      .eq("bird_id", activeId)
-      .maybeSingle();
-    const remindersPaused = !!((sitBirdRow as any)?.reminders_paused_at || (birdRes.data as any).passed_at);
+    const [defaultsRow, tasksRes, clips, ownerName] = await Promise.all([
+      sb.from("owner_emergency_defaults").select("*").eq("owner_id", activeBird.owner_id).maybeSingle().then((r: any) => r.data),
+      planRes.data
+        ? sb.from("routine_tasks").select("*").eq("care_plan_id", planRes.data.id).order("category").order("sort_order")
+        : Promise.resolve({ data: [] as any[], error: null }),
+      resolveClips(),
+      resolveOwnerName(),
+    ]);
+    const { watchClips, baselineClipUrl } = clips;
+
+    const mergedContacts = {
+      ...(contactsRes.data ?? { bird_id: activeId }),
+      ...mergeEmergency(contactsRes.data, defaultsRow),
+    };
+
+    // The active bird is one of the (already signed) list birds — reuse its
+    // signed photo instead of signing the same object again.
+    const signedActiveBird = {
+      ...activeBird,
+      photo_url: (signedBirds as any[]).find((b) => b.id === activeId)?.photo_url ?? null,
+    };
+
+    // Paused = the sitter's own pause OR the owner marked the bird as passed.
+    const remindersPaused = !!((sitBirdRes.data as any)?.reminders_paused_at || (activeBird as any).passed_at);
 
     return {
       sit,

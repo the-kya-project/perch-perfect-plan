@@ -8,6 +8,7 @@ import { Disclaimer } from "@/components/Disclaimer";
 import { Stethoscope, Calendar, BookOpen, ChevronRight, ChevronDown, HeartCrack } from "lucide-react";
 import { ClipPlayer } from "@/components/ClipPlayer";
 import { taskDaypart, hourToDaypart, DAYPARTS, DAYPART_LABEL, type Daypart } from "@/lib/routineTasks";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/sitter/$token/")({
   component: SitterHome,
@@ -103,8 +104,31 @@ function SitterToday() {
   const m = useMutation({
     mutationFn: (vars: { taskId: string; completed: boolean; title: string }) =>
       toggle({ data: { token, taskId: vars.taskId, completed: vars.completed } }),
+    // OPTIMISTIC: flip the checkbox instantly by patching ctx.completions in the
+    // cache, then sync in the background. The old flow waited for the toggle
+    // round trip AND a full sitter-context refetch (a 15-call waterfall) before
+    // the check appeared — 1-3s of lag per tap on mobile.
+    onMutate: (vars) => {
+      const prev = qc.getQueriesData({ queryKey: ["sitter-ctx", token] });
+      qc.setQueriesData({ queryKey: ["sitter-ctx", token] }, (old: any) => {
+        if (!old?.completions) return old;
+        const completions = vars.completed
+          ? [...old.completions, { routine_task_id: vars.taskId, sit_id: old.sit?.id }]
+          : old.completions.filter((c: any) => c.routine_task_id !== vars.taskId);
+        return { ...old, completions };
+      });
+      return { prev };
+    },
+    onError: (_e, _vars, mctx) => {
+      // Roll the checkbox back and say so — never leave a silent mismatch.
+      mctx?.prev?.forEach(([key, data]) => qc.setQueryData(key as any, data));
+      toast.error("That didn't save. Please tap it again.");
+    },
     onSuccess: (_data, vars) => {
-      qc.invalidateQueries({ queryKey: ["sitter-ctx", token] });
+      // Cache is already correct (optimistic patch + confirmed write): no
+      // context refetch. Mark the multi-bird dashboard stale so its done-counts
+      // refresh on next visit (inactive query — marking stale costs nothing now).
+      qc.invalidateQueries({ queryKey: ["sitter-dashboard", token], refetchType: "inactive" });
       // Manage the fresh-food removal timer.
       const isFresh = FRESH_FOOD_TASK_PATTERN.test(vars.title) && !REMOVAL_TASK_PATTERN.test(vars.title);
       if (!isFresh) return;
