@@ -190,10 +190,14 @@ export type Database = {
           bite_risk: string | null
           cage_location: string | null
           cleaning_instructions: string | null
+          clip_anything_else_path: string | null
           clip_bedtime_path: string | null
+          clip_food_prep_path: string | null
           clip_food_water_path: string | null
           clip_locations_path: string | null
           clip_step_up_path: string | null
+          clip_targeting_path: string | null
+          clip_toys_foraging_path: string | null
           created_at: string
           diet_details: Json
           diet_other: string | null
@@ -255,10 +259,14 @@ export type Database = {
           bite_risk?: string | null
           cage_location?: string | null
           cleaning_instructions?: string | null
+          clip_anything_else_path?: string | null
           clip_bedtime_path?: string | null
+          clip_food_prep_path?: string | null
           clip_food_water_path?: string | null
           clip_locations_path?: string | null
           clip_step_up_path?: string | null
+          clip_targeting_path?: string | null
+          clip_toys_foraging_path?: string | null
           created_at?: string
           diet_details?: Json
           diet_other?: string | null
@@ -320,10 +328,14 @@ export type Database = {
           bite_risk?: string | null
           cage_location?: string | null
           cleaning_instructions?: string | null
+          clip_anything_else_path?: string | null
           clip_bedtime_path?: string | null
+          clip_food_prep_path?: string | null
           clip_food_water_path?: string | null
           clip_locations_path?: string | null
           clip_step_up_path?: string | null
+          clip_targeting_path?: string | null
+          clip_toys_foraging_path?: string | null
           created_at?: string
           diet_details?: Json
           diet_other?: string | null

@@ -1392,10 +1392,13 @@ export function FoodWaterStep({
   }
 }
 
-function Card({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
+function Card({ title, hint, badge, children }: { title: string; hint?: string; badge?: React.ReactNode; children: React.ReactNode }) {
   return (
     <section className="rounded-2xl bg-[#efe9da] p-4">
-      <h2 className="text-sm font-medium">{title}</h2>
+      <h2 className="flex items-center gap-2 text-sm font-medium">
+        {title}
+        {badge}
+      </h2>
       {hint && <p className="mt-1 text-xs text-sage-600">{hint}</p>}
       <div className="mt-3">{children}</div>
     </section>
@@ -2150,10 +2153,19 @@ async function syncHygieneTasks(
 // ---------- Step 7: Tips from the owner ----------
 
 type ClipSlot = {
-  key: "step_up" | "food_water" | "locations" | "bedtime";
-  column: "clip_step_up_path" | "clip_food_water_path" | "clip_locations_path" | "clip_bedtime_path";
+  key: "step_up" | "food_water" | "locations" | "bedtime" | "food_prep" | "toys_foraging" | "targeting" | "anything_else";
+  column:
+    | "clip_step_up_path"
+    | "clip_food_water_path"
+    | "clip_locations_path"
+    | "clip_bedtime_path"
+    | "clip_food_prep_path"
+    | "clip_toys_foraging_path"
+    | "clip_targeting_path"
+    | "clip_anything_else_path";
   label: string;
   hint: string;
+  optional?: boolean;
 };
 
 const CLIP_SLOTS: ClipSlot[] = [
@@ -2161,6 +2173,10 @@ const CLIP_SLOTS: ClipSlot[] = [
   { key: "food_water", column: "clip_food_water_path", label: "How to refill food & water safely", hint: "Show the bowls, fill amount, and any cage-door routine." },
   { key: "locations", column: "clip_locations_path", label: "Where everything is", hint: "Walkthrough: food, treats, towels, carrier, first aid." },
   { key: "bedtime", column: "clip_bedtime_path", label: "Settling her for the night", hint: "Cover routine, lights, sounds." },
+  { key: "food_prep", column: "clip_food_prep_path", label: "Food prep", hint: "Making chop, portioning a pre-made mix, or prepping freeze-dried." },
+  { key: "toys_foraging", column: "clip_toys_foraging_path", label: "Toys & foraging", hint: "Setting up foraging toys, rotating enrichment, or hiding treats." },
+  { key: "targeting", column: "clip_targeting_path", label: "Targeting & interaction", hint: "Targeting, tricks, and how you like to hang out together." },
+  { key: "anything_else", column: "clip_anything_else_path", label: "Anything else?", hint: "Showering, nail care, bedtime, or anything that's easier shown than told.", optional: true },
 ];
 
 export function OwnerTipsClipsStep({ birdId, birdName, onBlockNext }: { birdId: string; birdName: string; onBlockNext: (block: boolean) => void }) {
@@ -2268,7 +2284,11 @@ function ClipSlotCard({
   }
 
   return (
-    <Card title={slot.label} hint={slot.hint}>
+    <Card
+      title={slot.label}
+      hint={slot.hint}
+      badge={slot.optional ? <span className="rounded-full bg-sage-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-sage-600">Optional</span> : undefined}
+    >
       {busy === "uploading" ? (
         <UploadProgress label="Uploading your clip…" hint="This can take a moment on slower connections. Please keep this screen open." />
       ) : preview.status === "processing" && !replacing ? (

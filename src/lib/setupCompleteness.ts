@@ -86,7 +86,11 @@ export function computeSetupCompleteness(args: {
         nonEmpty(plan?.clip_step_up_path) ||
         nonEmpty(plan?.clip_food_water_path) ||
         nonEmpty(plan?.clip_locations_path) ||
-        nonEmpty(plan?.clip_bedtime_path),
+        nonEmpty(plan?.clip_bedtime_path) ||
+        nonEmpty(plan?.clip_food_prep_path) ||
+        nonEmpty(plan?.clip_toys_foraging_path) ||
+        nonEmpty(plan?.clip_targeting_path) ||
+        nonEmpty(plan?.clip_anything_else_path),
     },
     {
       step: 7,

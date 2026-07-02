@@ -187,7 +187,7 @@ function CarePlanOverview() {
                 Clips tab). Optional, so no "Needs info" — surfaced here so recorded
                 clips are reachable from the overview like the six sections. */}
             {(() => {
-              const clipCols = ["clip_food_water_path", "clip_step_up_path", "clip_locations_path", "clip_bedtime_path"];
+              const clipCols = ["clip_food_water_path", "clip_step_up_path", "clip_locations_path", "clip_bedtime_path", "clip_food_prep_path", "clip_toys_foraging_path", "clip_targeting_path", "clip_anything_else_path"];
               const clipCount = clipCols.filter((c) => (plan as any)?.[c]).length + ((plan as any)?.baseline_clip_path ? 1 : 0);
               const hasClips = clipCount > 0;
               return (

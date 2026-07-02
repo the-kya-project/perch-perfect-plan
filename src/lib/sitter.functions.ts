@@ -173,6 +173,10 @@ export const getSitterContext = createServerFn({ method: "GET" })
       { key: "food_water", column: "clip_food_water_path", label: "How to refill food & water safely" },
       { key: "locations", column: "clip_locations_path", label: "Where everything is" },
       { key: "bedtime", column: "clip_bedtime_path", label: "Settling her for the night" },
+      { key: "food_prep", column: "clip_food_prep_path", label: "Food prep" },
+      { key: "toys_foraging", column: "clip_toys_foraging_path", label: "Toys & foraging" },
+      { key: "targeting", column: "clip_targeting_path", label: "Targeting & interaction" },
+      { key: "anything_else", column: "clip_anything_else_path", label: "Anything else?" },
     ];
     const watchClips: { key: string; label: string; url: string }[] = [];
     let baselineClipUrl: string | null = null;
