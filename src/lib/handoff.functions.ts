@@ -223,6 +223,28 @@ export const acceptHandoff = createServerFn({ method: "POST" })
     const { error } = await (sb as any).rpc("handoff_accept_transfer", { p_handoff_id: h.id, p_new_owner: userId });
     if (error) throw new Error(error.message);
 
+    // The RPC revokes the old owner's DB + membership access atomically, but the
+    // bird's profile photo object physically lives in the UPLOADER's storage
+    // folder ("<uploader_uid>/<file>.jpg"), and the bird-photos "owner" storage
+    // policies grant read by folder prefix — so without this the previous owner
+    // would keep direct storage access to that one image. Move it into the new
+    // owner's folder so DB and storage revoke together (the new owner still reads
+    // it via has_bird_access; this just strips the old owner's folder-prefix grant).
+    try {
+      const { data: b } = await sb.from("birds").select("photo_url").eq("id", h.bird_id).maybeSingle();
+      const photoUrl = (b?.photo_url ?? "").toString();
+      const slash = photoUrl.indexOf("/");
+      const firstSeg = slash > 0 ? photoUrl.slice(0, slash) : "";
+      // Only relocate real storage objects still under a DIFFERENT user's folder
+      // (skip legacy data:/http URLs and anything already in the new owner's folder).
+      if (slash > 0 && firstSeg !== userId && !photoUrl.startsWith("data:") && !photoUrl.startsWith("http")) {
+        const newPath = `${userId}/${photoUrl.slice(slash + 1)}`;
+        const { error: moveErr } = await sb.storage.from("bird-photos").move(photoUrl, newPath);
+        if (!moveErr) await sb.from("birds").update({ photo_url: newPath }).eq("id", h.bird_id);
+        else console.error("[handoff] profile photo relocate failed", moveErr);
+      }
+    } catch (e) { console.error("[handoff] profile photo relocate error", e); }
+
     // Notify the sender it's done (best-effort).
     try {
       const recipientLabel = await displayName(sb, userId);
