@@ -143,7 +143,7 @@ export function buildHandoffAcceptedEmail(opts: { birdName: string; recipientLab
         `${who} accepted the handoff, so ${bird}'s record is now theirs and has left your account. ` +
         `You'll find a memory of ${bird} in Past birds. Thank you for taking such good care of them.`,
       cta: "View Past birds",
-      link: opts.recipientLabel ? "https://app.thekyaproject.com/account" : "https://app.thekyaproject.com/account",
+      link: "https://app.thekyaproject.com/past-birds",
       foot: "This is a one-time confirmation. There's nothing else to do.",
     }),
     text: `${who} accepted the handoff. ${opts.birdName}'s record is now theirs and has left your account. A memory is saved in Past birds.`,

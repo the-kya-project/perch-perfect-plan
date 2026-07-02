@@ -13,7 +13,17 @@ import { InkHero, PrimaryButton, CtaLink, Card } from "@/components/system";
 
 const search = z.object({
   mode: z.enum(["signin", "signup"]).default("signin"),
+  // Deep-link return path: where to land after auth (e.g. an email link into an
+  // authenticated view). Validated to an internal path at use to avoid open redirects.
+  redirect: z.string().optional(),
 });
+
+// Only honor same-origin absolute paths ("/past-birds") — never protocol-relative
+// ("//evil") or anything else — so `redirect` can't be used as an open redirect.
+function safeInternalPath(p: string | undefined): string | null {
+  if (!p || !p.startsWith("/") || p.startsWith("//") || p.startsWith("/\\")) return null;
+  return p;
+}
 
 export const Route = createFileRoute("/auth")({
   validateSearch: search,
@@ -27,8 +37,9 @@ export const Route = createFileRoute("/auth")({
 });
 
 function AuthPage() {
-  const { mode } = Route.useSearch();
+  const { mode, redirect } = Route.useSearch();
   const navigate = useNavigate();
+  const returnTo = safeInternalPath(redirect);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
@@ -38,9 +49,9 @@ function AuthPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/dashboard" });
+      if (data.session) navigate({ to: (returnTo ?? "/dashboard") as any });
     });
-  }, [navigate]);
+  }, [navigate, returnTo]);
 
   // Client-side cooldowns on top of Supabase Auth's built-in rate limits,
   // to discourage brute-force loops from the same browser session.
@@ -150,10 +161,10 @@ function AuthPage() {
           return;
         }
         clearAttempts(attemptsKey);
-        // Route through the welcome screen, which shows only on the owner's
-        // first sign-in (gated by an account flag) and otherwise redirects
-        // straight to the dashboard.
-        navigate({ to: "/welcome" });
+        // Deep-link return (e.g. the handoff email → Past birds) takes an existing
+        // owner straight there. Otherwise route through the welcome screen, which
+        // shows only on first sign-in and otherwise redirects to the dashboard.
+        navigate({ to: (returnTo ?? "/welcome") as any });
       }
     } catch (err: any) {
       toast.error(err.message ?? "Something went wrong.");
