@@ -7,7 +7,7 @@ import { useBirdRole } from "@/lib/useBirdRole";
 import { useCapability } from "@/lib/useCapability";
 import { useActiveSitIdForBird } from "@/components/CaregiverHome";
 import { toast } from "sonner";
-import { ArrowLeft, Scale, Check } from "lucide-react";
+import { ArrowLeft, Scale, Check, Trash2 } from "lucide-react";
 import { WeightTrendChart, type WeightPoint } from "@/components/WeightTrendChart";
 import { computeWeightTrend } from "@/lib/weightTrend";
 import { InkHero, IconTile, StatusPill, SectionHead, Card, RecordRow } from "@/components/system";
@@ -55,10 +55,31 @@ function WeightFacet() {
   const { birdId } = Route.useParams();
   const { log } = Route.useSearch();
   const canLogCare = useCapability("log_daily_care", { birdId });
+  const isOwner = useBirdRole(birdId) === "owner";
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [win, setWin] = useState<WindowDays>(90);
   const [logOpen, setLogOpen] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  // Owner-only weight-entry delete (RLS also enforces birds.owner_id). Refresh the
+  // list (trend recomputes from it) and the dashboard pills so nothing stale lingers.
+  async function deleteWeight(id: string) {
+    if (!window.confirm("Delete this weight entry? This can't be undone.")) return;
+    setDeletingId(id);
+    try {
+      const { error } = await supabase.from("weight_entries").delete().eq("id", id);
+      if (error) throw error;
+      toast.success("Weight entry deleted.");
+      qc.invalidateQueries({ queryKey: ["weight-entries", birdId] });
+      qc.invalidateQueries({ queryKey: ["bird-weights", birdId] });
+      qc.invalidateQueries({ queryKey: ["home-weights"] });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Couldn't delete the entry.");
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   // ?log=1 deep-link → open the entry once we know the caller may log.
   useEffect(() => {
@@ -193,7 +214,22 @@ function WeightFacet() {
                         leading={<IconTile size={34} tone="pale" icon={<Scale className="size-4" />} />}
                         title={`${e.grams} g`}
                         subtitle={subtitle}
-                        trailing={marker}
+                        trailing={
+                          <div className="flex items-center gap-2">
+                            {marker}
+                            {isOwner && (
+                              <button
+                                type="button"
+                                aria-label="Delete weight entry"
+                                onClick={() => deleteWeight(e.id)}
+                                disabled={deletingId === e.id}
+                                className="grid size-9 shrink-0 place-items-center rounded-full text-[var(--red-ink)] active:bg-black/5 disabled:opacity-50"
+                              >
+                                <Trash2 className="size-4" />
+                              </button>
+                            )}
+                          </div>
+                        }
                         chevron={false}
                         last={i === all.length - 1}
                       />

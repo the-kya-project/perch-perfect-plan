@@ -3,9 +3,10 @@ import { createFileRoute, useNavigate, useRouter, useCanGoBack, Link } from "@ta
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, Check, AlertTriangle, HelpCircle, Minus, Loader2, Siren } from "lucide-react";
+import { ArrowLeft, Check, AlertTriangle, HelpCircle, Minus, Loader2, Siren, Trash2 } from "lucide-react";
 import { InkHero, Card, StatusPill, SectionHead, IconTile } from "@/components/system";
 import { useCapability } from "@/lib/useCapability";
+import { useBirdRole } from "@/lib/useBirdRole";
 import { OwnerHeaderIcons } from "@/components/OwnerHeader";
 
 // Focused, read-only view of one submitted health scan. Reached from the Scans
@@ -33,12 +34,30 @@ function ScanDetail() {
   const { birdId, scanId } = Route.useParams();
   const canHealth = useCapability("record_health", { birdId });
   const canEmergency = useCapability("manage_emergency", { birdId });
+  const isOwner = useBirdRole(birdId) === "owner";
   const navigate = useNavigate();
   const router = useRouter();
   const qc = useQueryClient();
   const canGoBack = useCanGoBack();
   const [resolving, setResolving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const goBack = () => (canGoBack ? router.history.back() : navigate({ to: "/scans" }));
+
+  // Owner-only delete (RLS also enforces birds.owner_id). Removes the health check
+  // and refreshes concern surfacing (scan feed + record check-ins), then leaves
+  // the now-gone detail for the Scans list.
+  async function deleteScan() {
+    if (!window.confirm("Delete this health check? This can't be undone.")) return;
+    setDeleting(true);
+    const { error } = await supabase.from("daily_logs").delete().eq("id", scanId);
+    setDeleting(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Health check deleted.");
+    qc.invalidateQueries({ queryKey: ["scan-feed"] });
+    qc.invalidateQueries({ queryKey: ["bird-checkins", birdId] });
+    qc.invalidateQueries({ queryKey: ["scan-detail", scanId] });
+    navigate({ to: "/scans" });
+  }
 
   async function markResolved() {
     if (!window.confirm("Mark this concern as resolved? Caregivers will see the bird's status return to normal.")) return;
@@ -177,6 +196,18 @@ function ScanDetail() {
             <p className="t-body whitespace-pre-line text-[var(--ink2)]">{row.notes}</p>
           </Card>
         </section>
+      )}
+
+      {/* Delete — owner-only (RLS also enforces birds.owner_id). */}
+      {isOwner && (
+        <button
+          type="button"
+          onClick={deleteScan}
+          disabled={deleting}
+          className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-[13px] border border-[var(--red-line)] text-[15px] font-[500] text-[var(--red-ink)] active:scale-[0.99] disabled:opacity-50"
+        >
+          {deleting ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />} {deleting ? "Deleting…" : "Delete health check"}
+        </button>
       )}
     </Shell>
   );

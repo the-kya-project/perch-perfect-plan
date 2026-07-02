@@ -4,10 +4,11 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, BookOpen, ImagePlus, Check, X, Loader2 } from "lucide-react";
+import { ArrowLeft, Plus, BookOpen, ImagePlus, Check, X, Loader2, Trash2 } from "lucide-react";
 import { InkHero, PhotoHero, StatusPill, Card, PrimaryButton } from "@/components/system";
 import { MemberContextBanner } from "@/components/MemberContextBanner";
 import { useCapability } from "@/lib/useCapability";
+import { useBirdRole } from "@/lib/useBirdRole";
 import { useActiveSitIdForBird } from "@/components/CaregiverHome";
 import { uploadJournalPhoto, signJournalPhotos } from "@/lib/journalPhoto";
 import { compressImageToDataUrl } from "@/lib/imageUpload";
@@ -42,6 +43,7 @@ const todayStr = () => new Date().toISOString().slice(0, 10);
 function JournalFacet() {
   const { birdId } = Route.useParams();
   const canHealth = useCapability("record_health", { birdId });
+  const isOwner = useBirdRole(birdId) === "owner";
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [filter, setFilter] = useState<Filter>("all");
@@ -145,8 +147,13 @@ function JournalFacet() {
         <EntryForm
           birdId={birdId}
           entry={editing === "new" ? null : editing}
+          isOwner={isOwner}
           onClose={() => setEditing(null)}
           onSaved={() => {
+            setEditing(null);
+            qc.invalidateQueries({ queryKey: ["journal-entries", birdId] });
+          }}
+          onDeleted={() => {
             setEditing(null);
             qc.invalidateQueries({ queryKey: ["journal-entries", birdId] });
           }}
@@ -187,7 +194,24 @@ function fmtDate(iso: string): string {
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric", ...(sameYear ? {} : { year: "numeric" }) });
 }
 
-function EntryForm({ birdId, entry, onClose, onSaved }: { birdId: string; entry: Entry | null; onClose: () => void; onSaved: () => void }) {
+function EntryForm({ birdId, entry, isOwner, onClose, onSaved, onDeleted }: { birdId: string; entry: Entry | null; isOwner: boolean; onClose: () => void; onSaved: () => void; onDeleted: () => void }) {
+  const [deleting, setDeleting] = useState(false);
+
+  async function remove() {
+    if (!entry) return;
+    if (!window.confirm("Delete this journal entry? This can't be undone.")) return;
+    setDeleting(true);
+    try {
+      const { error } = await supabase.from("journal_entries").delete().eq("id", entry.id);
+      if (error) throw error;
+      toast.success("Entry deleted.");
+      onDeleted();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Couldn't delete the entry.");
+    } finally {
+      setDeleting(false);
+    }
+  }
   // Attribution for entries created during an active caregiver assignment.
   const activeSitId = useActiveSitIdForBird(birdId);
   const [kind, setKind] = useState<Kind>(entry?.kind ?? "note");
@@ -302,6 +326,19 @@ function EntryForm({ birdId, entry, onClose, onSaved }: { birdId: string; entry:
           </PrimaryButton>
           <button type="button" onClick={onClose} disabled={saving} className="min-h-[44px] rounded-[12px] border border-[var(--line)] px-4 text-[15px] font-[500] text-[var(--mute)] disabled:opacity-50">Cancel</button>
         </div>
+
+        {/* Delete — owner-only (RLS also enforces birds.owner_id). Only for an
+            existing entry, never while adding. */}
+        {entry && isOwner && (
+          <button
+            type="button"
+            onClick={remove}
+            disabled={saving || deleting}
+            className="mt-3 flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[12px] border border-[var(--red-line)] text-[14px] font-[500] text-[var(--red-ink)] disabled:opacity-50"
+          >
+            <Trash2 className="size-4" /> {deleting ? "Deleting…" : "Delete entry"}
+          </button>
+        )}
       </div>
     </div>
   );
