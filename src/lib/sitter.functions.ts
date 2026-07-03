@@ -294,11 +294,15 @@ export async function notifyOwnerSomethingWrong(sb: any, birdId: string, coverin
       const { sendTransactionalEmail } = await import("./brevoEmail.server");
       const subject = `${coveringLabel} flagged something serious about ${birdName}`;
       const text = `${coveringLabel} paused ${birdName}'s daily reminders and flagged that something is seriously wrong. Please call ${coveringLabel} as soon as you can. Nothing about ${birdName}'s record has changed.`;
+      // coveringLabel can carry a member's self-chosen display_name (and
+      // birdName is owner text) — escape EVERYTHING interpolated into the HTML
+      // body so a crafted name renders as inert text, never live markup. The
+      // plain-text part needs no escaping.
       await sendTransactionalEmail({
         to: email,
         toName: (prof?.display_name ?? undefined) as string | undefined,
         subject,
-        htmlContent: `<p>${text}</p>`,
+        htmlContent: `<p>${escapeHtml(text)}</p>`,
         textContent: text,
       });
     }
