@@ -181,8 +181,15 @@ Deno.serve(async (req) => {
   // Only add consenting contacts to the marketing list.
   const listIdRaw = Deno.env.get("BREVO_LIST_ID");
   const listId = listIdRaw ? Number(listIdRaw) : NaN;
-  if (marketingConsent && !Number.isNaN(listId)) {
+  // BREVO_LIST_ID (Edge Function secret) is the numeric id of THE marketing
+  // opt-in list in Brevo — verified 2026-07-02 that consenting signups land in
+  // it. If it's ever missing or non-numeric, that's a config error: log it
+  // loudly instead of silently creating contacts that never reach the list.
+  const addToList = marketingConsent && !Number.isNaN(listId);
+  if (addToList) {
     contact.listIds = [listId];
+  } else if (marketingConsent) {
+    console.error("capture-lead: marketingConsent=true but BREVO_LIST_ID is missing/non-numeric — contact will NOT be added to the marketing list");
   }
 
   try {
@@ -201,6 +208,10 @@ Deno.serve(async (req) => {
       console.error("capture-lead: Brevo error", res.status, text);
       return json(502, { error: "Brevo rejected the request" });
     }
+    // Success log so list additions are visible in the function logs. Email is
+    // masked (first char + domain) — no full PII in logs.
+    const maskedEmail = `${email[0]}***@${email.split("@")[1] ?? ""}`;
+    console.log(`capture-lead: ok email=${maskedEmail} source=${source || "unknown"} consent=${marketingConsent} list=${addToList ? listId : "none"}`);
     return json(200, { ok: true });
   } catch (err) {
     console.error("capture-lead: network error", err);
