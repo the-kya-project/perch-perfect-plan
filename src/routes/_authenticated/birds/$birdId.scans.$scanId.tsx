@@ -89,7 +89,14 @@ function ScanDetail() {
         }
       }
       const { data: bird } = await supabase.from("birds").select("name").eq("id", birdId).maybeSingle();
-      return { row: row as any, actor, birdName: (bird?.name ?? "your bird") as string };
+      // Photos attached to this check. photo_logs.photo_url is an inline data:
+      // URL (see the scan submit flows), so it renders directly — no signing.
+      const { data: photos } = await supabase
+        .from("photo_logs")
+        .select("id, photo_url")
+        .eq("daily_log_id", scanId)
+        .order("created_at", { ascending: true });
+      return { row: row as any, actor, birdName: (bird?.name ?? "your bird") as string, photos: (photos ?? []) as { id: string; photo_url: string }[] };
     },
   });
 
@@ -207,6 +214,20 @@ function ScanDetail() {
           <Card className="p-4">
             <p className="t-body whitespace-pre-line text-[var(--ink2)]">{row.notes}</p>
           </Card>
+        </section>
+      )}
+
+      {/* Photos attached to this check (data: URLs — render directly). */}
+      {(data?.photos?.length ?? 0) > 0 && (
+        <section>
+          <SectionHead title={data!.photos.length === 1 ? "Photo" : "Photos"} />
+          <div className="space-y-3">
+            {data!.photos.map((p) => (
+              <Card key={p.id} className="overflow-hidden">
+                <img src={p.photo_url} alt="Photo attached to this health check" className="block w-full object-contain" />
+              </Card>
+            ))}
+          </div>
         </section>
       )}
 

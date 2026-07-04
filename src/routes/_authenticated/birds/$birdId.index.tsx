@@ -6,7 +6,7 @@ import { useBirdPhotos } from "@/lib/useBirdPhotos";
 import { useBirdRole } from "@/lib/useBirdRole";
 import { useActiveSitIdForBird } from "@/components/CaregiverHome";
 import { useCapability } from "@/lib/useCapability";
-import { weightTrendPill } from "@/lib/weightTrend";
+import { weightTrendPill, computeWeightTrend } from "@/lib/weightTrend";
 import { AgePicker } from "@/components/BirdPickers";
 import { MemberContextBanner } from "@/components/MemberContextBanner";
 import { PhotoCropper } from "@/components/PhotoCropper";
@@ -205,14 +205,19 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
   const { data: checkins } = useQuery({
     queryKey: ["bird-checkins", birdId],
     queryFn: async () => {
+      // Widened for the health-summary block: 60 rows (was 15) reliably covers a
+      // 30-day window at up to 2 checks/day, WITHOUT a date cutoff so the Recent
+      // list below keeps showing a rarely-checked bird's older entries. Also
+      // selects the per-item statuses + resolved_at so the summary can say WHICH
+      // items came back not-normal and whether flags are still open.
       const { data, error } = await supabase
         .from("daily_logs")
-        .select("id, log_date, triage_status, created_at, source")
+        .select("id, log_date, triage_status, resolved_at, created_at, source, alertness_status, food_status, water_status, droppings_status, energy_status, breathing_status, posture_status, behavior_status, injury_status, exposure_status")
         .eq("bird_id", birdId)
         .order("created_at", { ascending: false })
-        .limit(15);
+        .limit(60);
       if (error) throw error;
-      return (data ?? []) as Array<{ id: string; log_date: string; triage_status: string; created_at: string }>;
+      return (data ?? []) as Array<{ id: string; log_date: string; triage_status: string; created_at: string } & Record<string, unknown>>;
     },
   });
 
@@ -245,8 +250,8 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
 
   // Merge weight entries + sitter check-ins into one newest-first feed.
   const recent = [
-    ...(weights ?? []).map((w) => ({ kind: "weight" as const, at: w.measured_at, id: `w-${w.id}`, grams: w.grams, source: w.source as string | null })),
-    ...(checkins ?? []).map((c: any) => ({ kind: "checkin" as const, at: c.created_at, id: `c-${c.id}`, status: c.triage_status, source: (c.source as string | null) ?? "sitter" })),
+    ...(weights ?? []).map((w) => ({ kind: "weight" as const, at: w.measured_at, id: `w-${w.id}`, rawId: w.id, grams: w.grams, source: w.source as string | null })),
+    ...(checkins ?? []).map((c: any) => ({ kind: "checkin" as const, at: c.created_at, id: `c-${c.id}`, rawId: c.id as string, status: c.triage_status, source: (c.source as string | null) ?? "sitter" })),
   ]
     .sort((a, b) => +new Date(b.at) - +new Date(a.at))
     .slice(0, 12);
@@ -284,6 +289,17 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
           </div>
         </section>
       )}
+
+      {/* At-a-glance health summary — compilation only (describes what the data
+          says over the last 30 days; no judgments). Owner + household member
+          surface only; the sitter view has its own screens and is untouched.
+          Renders nothing until data resolves and nothing for a data-less bird. */}
+      <HealthSummary
+        weights={weights}
+        checkins={checkins}
+        onOpenWeight={() => navigate({ to: "/birds/$birdId/weight", params: { birdId } })}
+        onOpenScan={(scanId) => navigate({ to: "/birds/$birdId/scans/$scanId", params: { birdId, scanId } })}
+      />
 
       {/* One-time "adjust crop" nudge for photos that have no focal point yet. */}
       {showFocalNudge && (
@@ -338,8 +354,8 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
         </Card>
       </section>
 
-      {/* Recent */}
-      <section>
+      {/* Recent — id anchors the health-summary block's checks tap-through. */}
+      <section id="bird-recent">
         <SectionHead title="Recent" />
         {recent.length === 0 ? (
           <div className="rounded-[16px] bg-[var(--cream2)] p-6 text-center text-[14px] text-[var(--mute)]">
@@ -354,7 +370,11 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
                 title={r.kind === "weight" ? `Weight logged — ${r.grams} g` : `Daily check-in — ${checkinLabel(r.status)}`}
                 subtitle={fmtDate(r.at)}
                 trailing={r.source === "household" ? <StatusPill tone="household">Household</StatusPill> : r.source === "sitter" ? <StatusPill tone="off">Sitter</StatusPill> : undefined}
-                chevron={false}
+                // Tap into the existing detail: a check-in opens its health-check
+                // detail; a weight opens the weight history.
+                onClick={r.kind === "checkin"
+                  ? () => navigate({ to: "/birds/$birdId/scans/$scanId", params: { birdId, scanId: r.rawId } })
+                  : () => navigate({ to: "/birds/$birdId/weight", params: { birdId } })}
                 last={i === recent.length - 1}
               />
             ))}
@@ -433,6 +453,134 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
   );
 }
 
+
+// ---------------------------------------------------------------------------
+// At-a-glance health summary (30 days) — COMPILATION ONLY. Describes what the
+// data plainly says: weight trend (computeWeightTrend, the shared math), check
+// count + which items came back not-normal, open (unresolved) flags, and
+// recency. No medical judgment, no alerts, no normal-range comparison — that's
+// a deliberate later layer. Computes entirely from the two queries this screen
+// already mounts (["bird-weights"], ["bird-checkins"]); adds no fetches.
+// ---------------------------------------------------------------------------
+
+const SUMMARY_WINDOW_DAYS = 30;
+// Short display nouns per health-check status column (the scan UI's full labels
+// are sentence-length; these are the compact equivalents, same columns).
+const ITEM_NOUNS: Record<string, string> = {
+  alertness_status: "alertness", food_status: "food", water_status: "water",
+  droppings_status: "droppings", energy_status: "energy", breathing_status: "breathing",
+  posture_status: "posture", behavior_status: "behavior", injury_status: "injury",
+  exposure_status: "exposure",
+};
+
+function daysAgoLabel(iso: string): string {
+  const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
+  if (days <= 0) return "today";
+  if (days === 1) return "yesterday";
+  return `${days} days ago`;
+}
+
+export function HealthSummary({
+  weights, checkins, onOpenWeight, onOpenScan,
+}: {
+  weights?: Array<{ grams: number; measured_at: string }>;
+  checkins?: Array<{ id: string; log_date: string; triage_status: string; created_at: string } & Record<string, unknown>>;
+  onOpenWeight: () => void;
+  onOpenScan: (scanId: string) => void;
+}) {
+  // Loading is "unknown", never "no data": render nothing until both resolve.
+  if (!weights || !checkins) return null;
+  if (weights.length === 0 && checkins.length === 0) return null;
+
+  const cutoff = Date.now() - SUMMARY_WINDOW_DAYS * 86_400_000;
+
+  // ---- weight line (shared trend math; window = 30 days) ----
+  const weightsInWindow = weights.filter((w) => +new Date(w.measured_at) >= cutoff);
+  const trend = computeWeightTrend(weights, SUMMARY_WINDOW_DAYS);
+  let weightText: string | null = null;
+  let weightPill: { label: string; tone: "good" | "attention" | "off" } | null = null;
+  if (weightsInWindow.length >= 2) {
+    const g = Math.round(Math.abs(trend.delta));
+    if (trend.trend === "steady") { weightText = `Weight steady over the last ${SUMMARY_WINDOW_DAYS} days`; weightPill = { label: "Steady", tone: "good" }; }
+    else if (trend.trend === "up") { weightText = `Weight up ${g} g over the last ${SUMMARY_WINDOW_DAYS} days`; weightPill = { label: `Up ${g} g`, tone: "good" }; }
+    else { weightText = `Weight down ${g} g over the last ${SUMMARY_WINDOW_DAYS} days`; weightPill = { label: `Down ${g} g`, tone: "attention" }; }
+  } else if (weights.length > 0) {
+    // One (or zero) weigh-ins in the window: state the latest value, no trend.
+    weightText = `Weighed ${weights[0].grams} g`;
+    weightPill = { label: weightsInWindow.length ? "1 weigh-in" : "No recent weights", tone: "off" };
+  }
+
+  // ---- checks line (count + which items came back not-normal) ----
+  const checksInWindow = checkins.filter((c) => +new Date(c.created_at) >= cutoff);
+  const itemCounts = new Map<string, number>();
+  for (const c of checksInWindow) {
+    for (const col of Object.keys(ITEM_NOUNS)) {
+      const v = c[col];
+      if (v === "not_sure" || v === "concerning") itemCounts.set(col, (itemCounts.get(col) ?? 0) + 1);
+    }
+  }
+  const flaggedItems = [...itemCounts.entries()].sort((a, b) => b[1] - a[1]).map(([col]) => ITEM_NOUNS[col]);
+  let checksText: string | null = null;
+  let checksPill: { label: string; tone: "good" | "off" } | null = null;
+  if (checksInWindow.length > 0) {
+    const n = checksInWindow.length;
+    const base = `${n} ${n === 1 ? "check" : "checks"} in the last ${SUMMARY_WINDOW_DAYS} days`;
+    if (flaggedItems.length === 0) {
+      checksText = base;
+      checksPill = { label: "All normal", tone: "good" };
+    } else {
+      const listed = flaggedItems.slice(0, 2).join(", ");
+      const more = flaggedItems.length - 2;
+      checksText = `${base} · flagged ${listed}${more > 0 ? ` +${more} more` : ""}`;
+      checksPill = { label: `${flaggedItems.length} flagged`, tone: "off" };
+    }
+  } else if (checkins.length > 0) {
+    checksText = `No checks in the last ${SUMMARY_WINDOW_DAYS} days`;
+    checksPill = { label: "—", tone: "off" };
+  }
+
+  // ---- open flags (red/yellow, unresolved, in window) — neutral wording ----
+  const openFlags = checksInWindow.filter(
+    (c) => (c.triage_status === "red" || c.triage_status === "yellow") && !c.resolved_at,
+  );
+
+  // ---- recency (quiet footer) ----
+  const recencyBits: string[] = [];
+  if (checkins.length > 0) recencyBits.push(`Last checked ${daysAgoLabel(checkins[0].created_at)}`);
+  if (weights.length > 0) recencyBits.push(`Last weighed ${daysAgoLabel(weights[0].measured_at)}`);
+
+  const scrollToRecent = () => document.getElementById("bird-recent")?.scrollIntoView({ behavior: "smooth", block: "start" });
+
+  const Row = ({ onClick, text, pill }: { onClick: () => void; text: string; pill: { label: string; tone: "good" | "attention" | "off" } }) => (
+    <button type="button" onClick={onClick} className="flex min-h-[44px] w-full items-center gap-3 px-4 py-2 text-left active:bg-black/[0.03]">
+      <span className="min-w-0 flex-1 text-[13.5px] font-[450] text-[var(--ink)]">{text}</span>
+      <StatusPill tone={pill.tone}>{pill.label}</StatusPill>
+      <ArrowRight className="size-3.5 shrink-0 text-[var(--mute2)]" />
+    </button>
+  );
+
+  return (
+    <section className="overflow-hidden rounded-[18px] bg-white ring-1 ring-[var(--line2)]" style={{ boxShadow: "0 6px 14px -8px rgba(40,50,40,.08)" }}>
+      <p className="t-eyebrow px-4 pt-3 text-[var(--teal-on-cream)]">Lately</p>
+      <div className="mt-1 divide-y divide-[var(--line2)]">
+        {weightText && weightPill && (
+          <Row text={weightText} pill={weightPill} onClick={onOpenWeight} />
+        )}
+        {checksText && checksPill && (
+          <Row text={checksText} pill={checksPill} onClick={scrollToRecent} />
+        )}
+        {openFlags.length > 0 && (
+          <Row
+            text={`${openFlags.length} open ${openFlags.length === 1 ? "flag" : "flags"}`}
+            pill={{ label: "View", tone: "off" }}
+            onClick={() => onOpenScan(openFlags[0].id)}
+          />
+        )}
+      </div>
+      {recencyBits.length > 0 && <p className="t-meta px-4 pb-3 pt-2">{recencyBits.join(" · ")}</p>}
+    </section>
+  );
+}
 
 function checkinLabel(status: string): string {
   return status === "red" ? "concern flagged" : status === "yellow" ? "something to check" : "all clear";
