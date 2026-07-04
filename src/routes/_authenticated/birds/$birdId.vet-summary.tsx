@@ -5,10 +5,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ArrowLeft, FileText, Share2, Printer } from "lucide-react";
 import { computeWeightTrend } from "@/lib/weightTrend";
-import { mergeEmergency, ASPCA_POISON_CONTROL } from "@/lib/emergency";
 import { formatAmountUnit } from "@/lib/labels";
 import { normalizeFeedTimes, feedTimeLabel } from "@/lib/feedTimes";
 import { InkHero, PrimaryButton, Card } from "@/components/system";
+import { SCAN_COLS } from "./$birdId.scans.$scanId";
+
+type WeightRow = { id: string; grams: number; measured_at: string; source: string | null; meal_relation: string | null; note: string | null };
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/vet-summary")({
   head: () => ({ meta: [{ title: "Vet summary — Kya & Co." }] }),
@@ -45,31 +47,38 @@ function VetSummary() {
   const { data: weights } = useQuery({
     queryKey: ["weight-entries", birdId],
     queryFn: async () => {
+      // IDENTICAL query to the weight page (same shared key, same shape) — the
+      // two previously selected different columns under one key, so whichever
+      // loaded last poisoned the other's cache. The full row feeds both the
+      // trend line in the body AND the complete weight appendix.
       const { data } = await supabase.from("weight_entries")
-        .select("grams, measured_at").eq("bird_id", birdId)
-        .order("measured_at", { ascending: false }).limit(500);
-      return (data ?? []) as { grams: number; measured_at: string }[];
+        .select("*").eq("bird_id", birdId)
+        .order("measured_at", { ascending: false }).limit(2000);
+      return (data ?? []) as unknown as WeightRow[];
     },
   });
-  const { data: contacts } = useQuery({
-    queryKey: ["contacts", birdId],
+
+  // Flagged for review: every health check in the last 6 months where ANY item
+  // came back not_sure/concerning — regardless of overall triage. Fetch the
+  // window (indexed bird_id + log_date) and filter client-side.
+  const { data: flaggedScans } = useQuery({
+    queryKey: ["vet-flagged", birdId],
     queryFn: async () => {
-      const { data } = await supabase.from("emergency_contacts").select("*").eq("bird_id", birdId).maybeSingle();
-      return data as any;
-    },
-  });
-  const { data: defaults } = useQuery({
-    queryKey: ["owner-defaults"],
-    enabled: !!bird?.owner_id,
-    queryFn: async () => {
-      const { data } = await supabase.from("owner_emergency_defaults").select("*").eq("owner_id", bird.owner_id).maybeSingle();
-      return data as any;
+      const cutoff = new Date(Date.now() - 183 * 86_400_000).toISOString().slice(0, 10);
+      const { data } = await supabase
+        .from("daily_logs")
+        .select("id, log_date, created_at, triage_status, triage_reasons, resolved_at, item_notes, alertness_status, food_status, water_status, droppings_status, energy_status, breathing_status, posture_status, behavior_status, injury_status, exposure_status")
+        .eq("bird_id", birdId)
+        .gte("log_date", cutoff)
+        .order("created_at", { ascending: false });
+      return ((data ?? []) as any[]).filter((r) =>
+        SCAN_COLS.some((c) => r[c.col] === "not_sure" || r[c.col] === "concerning"),
+      );
     },
   });
 
   const name = bird?.name ?? "This bird";
   const { current, trend, delta } = computeWeightTrend(weights ?? [], 90);
-  const em = mergeEmergency(contacts ?? null, defaults ?? null);
 
   // ---- assemble field values (string | null) ----
   const sexText = bird?.sex
@@ -92,16 +101,24 @@ function VetSummary() {
   const meds = [
     val(bird?.medications) && `Medications: ${bird.medications.trim()}`,
     val(bird?.medical_conditions) && `Conditions: ${bird.medical_conditions.trim()}`,
-    val(plan?.when_to_call_vet) && `Call the vet if: ${plan.when_to_call_vet.trim()}`,
   ].filter(Boolean).join("\n");
+  // Handling = is the bird handleable, for the person about to handle it:
+  // steps up (yes/no/sometimes + caveats), who can handle, bite risk, plus any
+  // free-text handling rules. Out-of-cage/home routine is deliberately NOT
+  // pulled in — not relevant to a vet visit.
+  const stepUpRaw = (plan?.step_up ?? "").trim().toLowerCase();
+  const stepUpLabel = stepUpRaw === "yes" ? "Yes" : stepUpRaw === "no" ? "No" : stepUpRaw === "sometimes" ? "Sometimes" : null;
   const handling = [
+    (stepUpLabel || val(plan?.step_up_notes)) &&
+      `Steps up: ${[stepUpLabel, val(plan?.step_up_notes) ? plan.step_up_notes.trim() : null].filter(Boolean).join(" · ")}`,
+    val(plan?.handlers) && `Who can handle: ${plan.handlers.trim()}`,
+    val(plan?.bite_risk) && `Bite risk: ${plan.bite_risk.trim()}`,
     val(plan?.handling_rules) && plan.handling_rules.trim(),
-    val(plan?.out_of_cage_rules) && `Out of cage: ${plan.out_of_cage_rules.trim()}`,
   ].filter(Boolean).join("\n");
 
   function shareText(): string {
     const lines = [
-      `${name} — vet & emergency summary`,
+      `${name} — vet summary`,
       bird?.species ? `Species: ${bird.species}` : "",
       `Generated ${fmtDate(new Date().toISOString())}`,
       "",
@@ -116,12 +133,27 @@ function VetSummary() {
       "",
       `HANDLING: ${handling || NONE}`,
       "",
-      "EMERGENCY CONTACTS",
-      `  Avian vet: ${[em.avian_vet_name, em.avian_vet_phone].filter(Boolean).join(" · ") || NONE}`,
-      `  Emergency vet: ${[em.emergency_vet_name, em.emergency_vet_phone].filter(Boolean).join(" · ") || NONE}`,
-      `  Owner: ${em.owner_phone || NONE}`,
-      `  Backup: ${[em.backup_name, em.backup_phone].filter(Boolean).join(" · ") || NONE}`,
-      `  Poison control: ${em.poison_control || ASPCA_POISON_CONTROL}`,
+      "FLAGGED FOR REVIEW (LAST 6 MONTHS)",
+      ...(!(flaggedScans ?? []).length
+        ? ["  No flagged checks in the last 6 months."]
+        : (flaggedScans ?? []).map((r: any) => {
+            const items = SCAN_COLS
+              .filter((c) => r[c.col] === "not_sure" || r[c.col] === "concerning")
+              .map((c) => `${c.label}: ${r[c.col] === "concerning" ? "concerning" : "not sure"}${((r.item_notes ?? {}) as any)[c.fkey] ? ` ("${((r.item_notes ?? {}) as any)[c.fkey]}")` : ""}`)
+              .join("; ");
+            return `  ${fmtDate(r.created_at)} · triage ${r.triage_status} · ${r.resolved_at ? `resolved ${fmtDate(r.resolved_at)}` : "unresolved"} — ${items}`;
+          })),
+      "",
+      `WEIGHT HISTORY (${(weights ?? []).length} entries, newest first)`,
+      ...(weights ?? []).map((e) => {
+        const bits = [
+          `${e.grams} g`,
+          e.meal_relation === "before_meal" ? "before meal" : e.meal_relation === "after_meal" ? "after meal" : null,
+          e.source ? `by ${e.source}` : null,
+          e.note ? `"${e.note}"` : null,
+        ].filter(Boolean).join(" · ");
+        return `  ${fmtDate(e.measured_at)} — ${bits}`;
+      }),
     ];
     return lines.filter((l) => l !== undefined).join("\n");
   }
@@ -151,7 +183,7 @@ function VetSummary() {
           {!generated ? (
             <Card className="px-8 py-8 text-center">
               <FileText className="mx-auto size-7 text-[var(--moss)]" />
-              <p className="t-body mx-auto mt-3 text-[var(--ink)]">A clean one-page snapshot for the vet — identity, weight, diet, meds, handling, and emergency contacts, pulled from {name}'s record.</p>
+              <p className="t-body mx-auto mt-3 text-[var(--ink)]">A clean snapshot for the vet — identity, weight, diet, meds, handling, and flagged health checks, pulled from {name}'s record.</p>
               <div className="mt-4">
                 <PrimaryButton tone="ink" icon={<FileText className="size-4" />} onPress={() => setGenerated(true)}>Generate summary</PrimaryButton>
               </div>
@@ -171,7 +203,8 @@ function VetSummary() {
               {/* The sheet */}
               <article id="vet-sheet">
                 <Card className="p-5">
-                  <header className="border-b border-[var(--line2)] pb-3">
+                  {/* Sections below each carry their own top hairline. */}
+                  <header className="pb-1">
                     <h2 className="t-section text-[20px]">{name}</h2>
                     {bird?.species && <p className="t-body mt-0.5 italic text-[var(--mute)]">{bird.species}</p>}
                     <p className="t-meta mt-1">Generated {fmtDate(new Date().toISOString())}</p>
@@ -188,23 +221,26 @@ function VetSummary() {
                     </dl>
                   </Section>
 
-                  <Section label="Weight"><Value text={weightText} /></Section>
+                  <Section label="Weight">
+                    {current ? (
+                      <div>
+                        <p className="text-[22px] font-[550] leading-tight text-[var(--moss)]">{current.grams} g</p>
+                        <p className="t-meta mt-0.5">{trendLabel(trend, delta)} · last weighed {fmtDate(current.measured_at)}</p>
+                      </div>
+                    ) : (
+                      <Value text={null} />
+                    )}
+                  </Section>
                   <Section label="Diet"><Value text={dietText} multiline /></Section>
                   <Section label="Meds & health flags"><Value text={meds} multiline /></Section>
+                  <FlaggedForReview scans={flaggedScans ?? []} />
                   <Section label="Handling"><Value text={handling} multiline /></Section>
 
-                  {/* Emergency — the one red block (legitimate emergency use) */}
-                  <section className="mt-4 rounded-[12px] border p-3" style={{ borderColor: "var(--red-line)", backgroundColor: "var(--red-fill)" }}>
-                    <p className="t-eyebrow" style={{ color: "var(--red-ink)" }}>Emergency contacts</p>
-                    <dl className="mt-1.5 space-y-1" style={{ color: "var(--red-deep)" }}>
-                      <EmRow label="Avian vet" value={[em.avian_vet_name, em.avian_vet_phone].filter(Boolean).join(" · ")} />
-                      <EmRow label="Emergency vet" value={[em.emergency_vet_name, em.emergency_vet_phone].filter(Boolean).join(" · ")} />
-                      <EmRow label="Owner" value={em.owner_phone ?? ""} />
-                      <EmRow label="Backup" value={[em.backup_name, em.backup_phone].filter(Boolean).join(" · ")} />
-                      <EmRow label="Poison control" value={em.poison_control || ASPCA_POISON_CONTROL} />
-                    </dl>
-                  </section>
                 </Card>
+
+                {/* Appendix — the complete raw weight series (the body keeps the
+                    summarized trend; this is in addition, for the vet to read). */}
+                <WeightAppendix entries={weights ?? []} />
               </article>
             </>
           )}
@@ -217,34 +253,166 @@ function VetSummary() {
         #vet-sheet, #vet-sheet * { visibility: visible !important; }
         #vet-sheet { position: absolute; left: 0; top: 0; width: 100%; border: none !important; }
         #vet-sheet > div { box-shadow: none !important; }
+        #vet-sheet .avoid-break { break-inside: avoid; page-break-inside: avoid; }
         [data-noprint] { display: none !important; }
       }`}</style>
     </div>
   );
 }
 
+// ---------------------------------------------------------------------------
+// Flagged for review — every check in the last 6 months where any item came
+// back not_sure/concerning. Grouped so the serious ones read first: scans with
+// any 'concerning' item or a red triage, then not-sure-only scans. Purely
+// descriptive: dates, items, the app-recorded triage, owner notes, resolution.
+// ---------------------------------------------------------------------------
+export function FlaggedForReview({ scans }: { scans: any[] }) {
+  const isSerious = (r: any) => r.triage_status === "red" || SCAN_COLS.some((c) => r[c.col] === "concerning");
+  const serious = scans.filter(isSerious);
+  const milder = scans.filter((r) => !isSerious(r));
+
+  // Triage chip — shows the app-RECORDED level in its own color (data, not
+  // editorializing). Red/yellow/green map to the app's red/amber/pale palettes.
+  const TriageChip = ({ level }: { level: string }) => {
+    const style =
+      level === "red"
+        ? { background: "var(--red-fill)", color: "var(--red-ink)" }
+        : level === "yellow"
+          ? { background: "var(--amber-fill)", color: "var(--amber-ink)" }
+          : { background: "var(--pale)", color: "var(--moss)" };
+    return <span className="inline-flex rounded-full px-2 py-0.5 text-[10.5px] font-[600] uppercase tracking-wide" style={style}>{level}</span>;
+  };
+
+  const ScanRow = ({ r, serious: seriousRow }: { r: any; serious: boolean }) => {
+    const flagged = SCAN_COLS.filter((c) => r[c.col] === "not_sure" || r[c.col] === "concerning");
+    const notes = (r.item_notes ?? {}) as Record<string, string>;
+    return (
+      <div
+        className="avoid-break mt-2 rounded-[10px] border border-[var(--line2)] p-2.5"
+        style={{ borderLeft: `3px solid ${seriousRow ? "var(--red-line)" : "var(--line)"}` }}
+      >
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-[14px] font-[550] text-[var(--ink)]">{fmtDate(r.created_at)}</p>
+          <p className="flex shrink-0 items-center gap-1.5">
+            <TriageChip level={r.triage_status} />
+            <span className={`text-[12px] ${r.resolved_at ? "text-[var(--mute)]" : "font-[550] text-[var(--ink)]"}`}>
+              {r.resolved_at ? `resolved ${fmtDate(r.resolved_at)}` : "unresolved"}
+            </span>
+          </p>
+        </div>
+        <ul className="mt-1.5 space-y-1">
+          {flagged.map((c) => (
+            <li key={c.col} className="text-[13px] leading-snug">
+              <span className="font-[550] text-[var(--ink)]">{c.label}</span>
+              <span className="font-[550]" style={{ color: r[c.col] === "concerning" ? "var(--red-ink)" : "var(--amber-ink)" }}>
+                {" "}· {r[c.col] === "concerning" ? "concerning" : "not sure"}
+              </span>
+              {notes[c.fkey] && <span className="block pl-0 text-[12.5px] italic text-[var(--mute)]">"{notes[c.fkey]}"</span>}
+            </li>
+          ))}
+        </ul>
+        {r.triage_reasons && <p className="t-meta mt-1.5">{String(r.triage_reasons).replace(/ \| /g, " · ")}</p>}
+      </div>
+    );
+  };
+
+  return (
+    <Section label="Flagged for review (last 6 months)">
+      {scans.length === 0 ? (
+        <p className="t-body italic text-[var(--mute2)]">No flagged checks in the last 6 months.</p>
+      ) : (
+        <>
+          {serious.length > 0 && (
+            <div className="avoid-break">
+              <p className="mt-1 text-[12px] font-[650] uppercase tracking-wide" style={{ color: "var(--red-ink)" }}>Concerning items or red triage</p>
+              {serious.map((r) => <ScanRow key={r.id} r={r} serious />)}
+            </div>
+          )}
+          {milder.length > 0 && (
+            <div className={serious.length > 0 ? "mt-4" : ""}>
+              <p className="mt-1 text-[12px] font-[650] uppercase tracking-wide text-[var(--mute)]">Marked "not sure" only</p>
+              {milder.map((r) => <ScanRow key={r.id} r={r} serious={false} />)}
+            </div>
+          )}
+        </>
+      )}
+    </Section>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Weight appendix — the complete raw series, most recent first, with the
+// context we capture per entry (date/time, grams, meal relation, who logged,
+// note). Complements the summarized trend in the body.
+// ---------------------------------------------------------------------------
+const mealLabel = (m: string | null | undefined): string | null =>
+  m === "before_meal" ? "before meal" : m === "after_meal" ? "after meal" : null;
+const sourceLabel = (s: string | null | undefined): string | null =>
+  s === "owner" ? "owner" : s === "household" ? "household" : s === "sitter" ? "sitter" : null;
+function fmtDateTime(iso: string): string {
+  return new Date(iso).toLocaleString(undefined, { year: "numeric", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+}
+
+export function WeightAppendix({ entries }: { entries: WeightRow[] }) {
+  if (entries.length === 0) return null;
+  return (
+    <Card className="mt-4 p-5">
+      <p className="t-eyebrow text-[var(--teal-on-cream)]">Appendix · weight history</p>
+      <p className="t-meta mt-0.5">{entries.length} {entries.length === 1 ? "entry" : "entries"}, newest first</p>
+      {/* Column headers so the series reads as a table at a glance. */}
+      <div className="mt-3 flex items-baseline gap-3 border-b border-[var(--line)] pb-1.5">
+        <span className="w-40 shrink-0 text-[10.5px] font-[600] uppercase tracking-wide text-[var(--mute2)]">Date</span>
+        <span className="w-14 shrink-0 text-[10.5px] font-[600] uppercase tracking-wide text-[var(--mute2)]">Weight</span>
+        <span className="min-w-0 flex-1 text-[10.5px] font-[600] uppercase tracking-wide text-[var(--mute2)]">Context</span>
+      </div>
+      <div>
+        {entries.map((e, i) => {
+          const context = [mealLabel(e.meal_relation), sourceLabel(e.source) && `logged by ${sourceLabel(e.source)}`].filter(Boolean).join(" · ");
+          return (
+            <div key={e.id} className={`avoid-break flex items-baseline gap-3 py-1.5 ${i === entries.length - 1 ? "" : "border-b border-[var(--line2)]"}`}>
+              <span className="w-40 shrink-0 text-[12.5px] text-[var(--mute)]">{fmtDateTime(e.measured_at)}</span>
+              <span className="w-14 shrink-0 text-[14px] font-[600] text-[var(--ink)]">{e.grams} g</span>
+              <span className="min-w-0 flex-1 text-[12.5px] leading-snug text-[var(--mute)]">
+                {context}
+                {e.note && <span className="italic text-[var(--ink2)]">{context ? " · " : ""}"{e.note}"</span>}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </Card>
+  );
+}
+
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <section className="mt-4">
-      <p className="t-eyebrow text-[var(--amber-line)]">{label}</p>
-      <div className="mt-1">{children}</div>
+    <section className="mt-5 border-t border-[var(--line2)] pt-4">
+      <p className="t-eyebrow text-[var(--teal-on-cream)]">{label}</p>
+      <div className="mt-1.5">{children}</div>
     </section>
   );
 }
 
 function Value({ text, multiline }: { text: string | null | undefined; multiline?: boolean }) {
   if (!text) return <p className="t-body italic text-[var(--mute2)]">{NONE}</p>;
-  return <p className={`t-body text-[var(--ink)] ${multiline ? "whitespace-pre-line" : ""}`}>{text}</p>;
-}
-
-function EmRow({ label, value }: { label: string; value: string }) {
+  if (!multiline) return <p className="t-body text-[var(--ink)]">{text}</p>;
+  // Multiline values are "Label: detail" lines (Medications:, Conditions:,
+  // Out of cage:, Pelleted:, …) — bold the label before the first colon so
+  // each line's subject reads at a glance.
   return (
-    <div className="flex gap-2 text-[14px] font-[400]">
-      <dt className="w-28 shrink-0 font-[500]">{label}</dt>
-      <dd className={value ? "" : "italic opacity-70"}>{value || NONE}</dd>
+    <div className="space-y-0.5">
+      {text.split("\n").map((line, i) => {
+        const m = line.match(/^([^:]{1,60}):\s*(.*)$/);
+        return (
+          <p key={i} className="t-body text-[var(--ink)]">
+            {m ? (<><span className="font-[600]">{m[1]}:</span> {m[2]}</>) : line}
+          </p>
+        );
+      })}
     </div>
   );
 }
+
 
 function cap(s: string): string { return s.charAt(0).toUpperCase() + s.slice(1); }
 function val(s: unknown): s is string { return typeof s === "string" && s.trim().length > 0; }

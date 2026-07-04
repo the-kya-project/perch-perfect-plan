@@ -19,7 +19,8 @@ export const Route = createFileRoute("/_authenticated/birds/$birdId/scans/$scanI
 
 // `fkey` = the scan FIELD key that item_notes is keyed by (the status column and
 // the field key differ for noise→behavior and fluffed→energy).
-const SCAN_COLS: { col: string; fkey: string; label: string }[] = [
+// Exported: the vet summary's "Flagged for review" section reuses these labels.
+export const SCAN_COLS: { col: string; fkey: string; label: string }[] = [
   { col: "alertness_status", fkey: "alertness", label: "Alert and responsive" },
   { col: "food_status", fkey: "food", label: "Eating normally" },
   { col: "droppings_status", fkey: "droppings", label: "Droppings look normal" },

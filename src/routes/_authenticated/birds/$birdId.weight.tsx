@@ -106,7 +106,9 @@ function WeightFacet() {
         .select("*") // includes meal_relation (added by migration); typed via cast
         .eq("bird_id", birdId)
         .order("measured_at", { ascending: false })
-        .limit(500);
+        // 2000 (~5 years of daily weigh-ins) — IDENTICAL to the vet summary's
+        // query on the same shared key, so the cached shape/bound never diverge.
+        .limit(2000);
       if (error) throw error;
       return (data ?? []) as unknown as Entry[];
     },
