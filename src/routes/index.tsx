@@ -1,6 +1,8 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { loadTikTokPixel } from "@/lib/tiktokPixel";
 import { Disclaimer } from "@/components/Disclaimer";
 import { BrandLockup } from "@/components/BrandLogo";
 
@@ -25,6 +27,11 @@ export const Route = createFileRoute("/")({
 });
 
 function Welcome() {
+  // Ad-traffic pageview for TikTok campaigns (marketing pages only).
+  useEffect(() => {
+    loadTikTokPixel();
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#f4f1e8]">
       <main className="mx-auto flex min-h-screen max-w-md flex-col px-5 pb-10 pt-[calc(env(safe-area-inset-top)+36px)]">

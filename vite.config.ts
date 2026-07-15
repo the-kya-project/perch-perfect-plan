@@ -39,8 +39,10 @@ const CSP = [
   `media-src 'self' blob: ${SUPABASE_ORIGIN} https://*.videodelivery.net https://*.cloudflarestream.com`,
   "font-src 'self' data:",
   "style-src 'self' 'unsafe-inline'",
-  "script-src 'self' 'unsafe-inline' https://us.i.posthog.com https://eu.i.posthog.com https://plausible.io",
-  `connect-src 'self' ${SUPABASE_ORIGIN} https://*.videodelivery.net https://*.cloudflarestream.com https://us.i.posthog.com https://eu.i.posthog.com https://plausible.io`,
+  // analytics.tiktok.com: ads pixel on the marketing pages (src/lib/tiktokPixel.ts);
+  // the -sg host is TikTok's regional fallback for the same script/beacons.
+  "script-src 'self' 'unsafe-inline' https://us.i.posthog.com https://eu.i.posthog.com https://plausible.io https://analytics.tiktok.com https://analytics-sg.tiktok.com",
+  `connect-src 'self' ${SUPABASE_ORIGIN} https://*.videodelivery.net https://*.cloudflarestream.com https://us.i.posthog.com https://eu.i.posthog.com https://plausible.io https://analytics.tiktok.com https://analytics-sg.tiktok.com`,
   "frame-src 'self' https://*.videodelivery.net",
   "worker-src 'self' blob:",
   "manifest-src 'self'",

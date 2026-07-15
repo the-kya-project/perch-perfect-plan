@@ -6,6 +6,7 @@ import { lovable } from "@/integrations/lovable";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
 import { track } from "@/lib/analytics";
+import { loadTikTokPixel, trackTikTokSignup } from "@/lib/tiktokPixel";
 import { captureLead } from "@/lib/captureLead";
 import { attributionMetadata, getFirstTouch } from "@/lib/attribution";
 import { PENDING_EMAIL_KEY } from "./confirm-email";
@@ -52,6 +53,11 @@ function AuthPage() {
       if (data.session) navigate({ to: (returnTo ?? "/dashboard") as any });
     });
   }, [navigate, returnTo]);
+
+  // Ad-traffic pageview for TikTok campaigns (marketing pages only).
+  useEffect(() => {
+    loadTikTokPixel();
+  }, []);
 
   // Client-side cooldowns on top of Supabase Auth's built-in rate limits,
   // to discourage brute-force loops from the same browser session.
@@ -120,6 +126,7 @@ function AuthPage() {
         }
         if (error) throw error; // any other signup error
         track("owner_signup", { marketing_opt_in: marketingOptIn, verification_required: !data.session });
+        trackTikTokSignup();
         if (marketingOptIn) track("marketing_opt_in_checked", { context: "signup" });
         void captureLead({
           email,
