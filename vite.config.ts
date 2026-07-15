@@ -75,57 +75,32 @@ export default defineConfig({
       VitePWA({
         registerType: "autoUpdate",
         injectRegister: null, // our guarded wrapper is the only registrar
-        filename: "sw.js",
+        // The worker is hand-written at src/sw.ts (caching + web push in one
+        // file); the plugin bundles it to /sw.js and injects the precache
+        // manifest. generateSW is off the table: its output filename collided
+        // with the old public/sw.js push worker, which silently clobbered it
+        // at build time and shipped production with no caching at all.
+        strategies: "injectManifest",
+        srcDir: "src",
+        filename: "sw.ts",
         // The manifest is hand-maintained at public/manifest.webmanifest — don't generate one.
         manifest: false,
         devOptions: { enabled: false },
-        workbox: {
-          // New SW takes over on the next page load instead of waiting for every
-          // controlled PWA window to close — without this, fixes can sit stuck
-          // behind the old SW for days on iOS where the user never fully quits.
-          skipWaiting: true,
-          clientsClaim: true,
-          // Serve the app shell network-first so updates land without forcing reloads.
-          navigateFallback: "/",
-          navigateFallbackDenylist: [
-            /^\/__/,        // Lovable infra & asset URLs
-            /^\/api\//,     // server routes
-            /^\/~oauth/,    // OAuth callback
-            /^\/sitter\//,  // sitter pages must always hit network for fresh data
-          ],
-          // Don't precache big media; let runtime caching handle on demand.
+        injectManifest: {
+          // The client build writes straight to .vercel/output/static (nitro
+          // vercel preset), not the root outDir the plugin assumes — glob the
+          // real output or the precache manifest comes out empty.
+          globDirectory: ".vercel/output/static",
+          // Don't precache big media; runtime caching in src/sw.ts picks up
+          // anything not matched here on demand.
           globPatterns: ["**/*.{js,css,html,svg,ico,woff2}"],
-          runtimeCaching: [
-            {
-              // Sitter pages (including the owner's preview iframe, which the
-              // active SW still controls) must always boot from the live build —
-              // never a cached shell that could reference purged JS chunks. This
-              // must come before the generic navigate rule below to win the match.
-              urlPattern: ({ url, request }) => request.mode === "navigate" && url.pathname.startsWith("/sitter/"),
-              handler: "NetworkOnly",
-            },
-            {
-              urlPattern: ({ request }) => request.mode === "navigate",
-              handler: "NetworkFirst",
-              options: { cacheName: "html-shell", networkTimeoutSeconds: 4 },
-            },
-            {
-              urlPattern: ({ url }) => url.pathname.startsWith("/__l5e/assets-v1/"),
-              handler: "CacheFirst",
-              options: {
-                cacheName: "lovable-cdn-assets",
-                expiration: { maxEntries: 80, maxAgeSeconds: 60 * 60 * 24 * 30 },
-              },
-            },
-            {
-              urlPattern: ({ request, sameOrigin }) =>
-                sameOrigin && ["style", "script", "worker", "font"].includes(request.destination),
-              handler: "CacheFirst",
-              options: { cacheName: "static-assets" },
-            },
-          ],
         },
       }),
+      // NOTE: the plugin emits the finished worker to dist/sw.js (the root
+      // outDir), which Vercel never serves — and it injects the precache
+      // manifest as the very last build step, after every plugin hook has
+      // run. scripts/copy-sw.mjs (chained in the npm build script) moves it
+      // into .vercel/output/static once the build is fully done.
     ],
   },
 });

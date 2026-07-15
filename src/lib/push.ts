@@ -1,10 +1,12 @@
 /**
  * Client-side web-push helpers.
  *
- * Service-worker registration here is intentionally separate from
- * `sw-register.ts` (which gates registration on production). The push SW
- * has no fetch handler and no cache, so it's safe to register in any
- * environment — but only on user gesture (when they tap "Enable push").
+ * In production `sw-register.ts` registers the worker on load, so
+ * `ensureRegistration` normally just finds it. The register() fallback only
+ * matters in the brief window before that load handler runs. Outside
+ * production builds /sw.js doesn't exist (src/sw.ts is bundled there by
+ * vite-plugin-pwa, and it now caches assets too), so enabling push in dev or
+ * previews fails — which is fine: push only works on the installed prod PWA.
  */
 
 const SW_URL = "/sw.js";
