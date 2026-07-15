@@ -16,9 +16,9 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Kya & Co. — Calm, clear care for your bird" },
-      { name: "description", content: "Shared care for your bird. Build one care plan, then share it so family, pet sitters, and household members all stay on the same page." },
+      { name: "description", content: "A shared care plan and health record for every bird — routine, diet, weight, and emergency info, shared with everyone who helps." },
       { property: "og:title", content: "Kya & Co. — Calm, clear care for your bird" },
-      { property: "og:description", content: "Shared care for your bird. Build one care plan, then share it so family, pet sitters, and household members all stay on the same page." },
+      { property: "og:description", content: "A shared care plan and health record for every bird — routine, diet, weight, and emergency info, shared with everyone who helps." },
     ],
   }),
   component: Welcome,
@@ -36,10 +36,10 @@ function Welcome() {
 
         <div className="mt-[42px] space-y-3">
           <h1 className="text-balance text-4xl font-medium leading-[1.05] tracking-tight">
-            Calm, clear care for your bird, shared with everyone who helps.
+            Everything it takes to care for your parrots, in one place you can share.
           </h1>
           <p className="text-pretty text-base text-[#5f5e5a]">
-            Build one thorough care plan, then share it with the people you trust. That means family, pet sitters, and household members all stay on the same page and know exactly what to do.
+            Keep a complete care plan and health record for each of your birds — routine, diet, weight, and the little things only you know. Share it with the family, sitters, and household members who help.
           </p>
         </div>
 
@@ -53,7 +53,7 @@ function Welcome() {
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-[11px] font-medium uppercase tracking-widest text-[#cdeab0]">Start here</p>
-                <p className="mt-1 text-lg font-medium">Set up your bird's record</p>
+                <p className="mt-1 text-lg font-medium">Add your first bird</p>
               </div>
               <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[#cdeab0] text-[#1a3d2e]">
                 <ArrowRight className="size-5" strokeWidth={2.2} />
@@ -62,17 +62,19 @@ function Welcome() {
           </Link>
         </div>
 
-        {/* Two quiet exits below the primary, with a small breathing space.
-            Exit 1 is a link to sign-in for returning users. Exit 2 is an
-            INFORMATIONAL line for anyone who arrived via marketing while
-            holding an invite — it answers the "where does my link go" question
-            without pretending to be interactive (no button, no underline). */}
-        <div className="mt-6 text-center">
-          <p className="text-[13px] text-[#5f5e5a]">
-            Already have an account?{" "}
-            <Link to="/auth" search={{ mode: "signin" as const }} className="font-medium text-[#2d6a4f]">Sign in</Link>
-          </p>
-          <p className="mt-4 text-[13px] leading-relaxed text-[#8a897f]">
+        {/* Returning users get a real tap target — an outlined secondary button,
+            visually subordinate to the filled primary card above. The invite
+            line stays informational (no button, no underline). */}
+        <div className="mt-6">
+          <p className="text-center text-[13px] text-[#5f5e5a]">Already have an account?</p>
+          <Link
+            to="/auth"
+            search={{ mode: "signin" as const }}
+            className="mt-2 block w-full rounded-2xl border-[1.5px] border-[#1a3d2e] bg-transparent px-5 py-4 text-center text-base font-medium text-[#1a3d2e] active:scale-[0.99]"
+          >
+            Sign in
+          </Link>
+          <p className="mt-4 text-center text-[13px] leading-relaxed text-[#8a897f]">
             Were you invited by someone? Open the link they sent you.
           </p>
         </div>
