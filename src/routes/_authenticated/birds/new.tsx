@@ -1,6 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { QUICKSTART_ONBOARDING } from "@/lib/flags";
+import { postAddBirdDestination } from "@/lib/onboardingPaths";
+import { ChevronDown } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { toast } from "sonner";
@@ -40,6 +43,19 @@ function NewBird() {
   const todayStr = new Date().toISOString().slice(0, 10);
   const [isFoster, setIsFoster] = useState(!!fosterParam);
   const [intakeDate, setIntakeDate] = useState<string>(todayStr);
+  // Quickstart: optional fields live behind a disclosure. Track whether it was
+  // ever opened — it's the bird_created funnel property.
+  const [extrasOpen, setExtrasOpen] = useState(false);
+  const extrasEverOpened = useRef(false);
+  function toggleExtras() {
+    extrasEverOpened.current = true;
+    setExtrasOpen((v) => !v);
+  }
+
+  useEffect(() => {
+    track("add_bird_opened", { foster_entry: !!fosterParam });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   async function onPhoto(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -119,10 +135,10 @@ function NewBird() {
     return bird.id;
   }
 
-  // Add the bird, then guide straight into the care-plan wizard (Food · Step 1
-  // of 8) — the obvious next step instead of leaving the owner to find the CTA.
-  // Skippable: the wizard's "Save & exit" drops onto the bird's record, which
-  // keeps a "Set up <name>'s care plan" invite until setup is complete.
+  // Quickstart: adding the bird lands on Home, where a three-door invite card
+  // (guided wizard / self-serve profile / later) takes over — the wizard is
+  // never auto-launched. Legacy flow (flag off) guides straight into the
+  // care-plan wizard (Food · Step 1 of 8).
   //
   // Duplicate-proof: the created id is remembered, so if the tap saved the bird
   // but the navigation didn't land (e.g. a stale build's setup chunk 404ing
@@ -137,7 +153,21 @@ function NewBird() {
       if (!id) return;
       createdIdRef.current = id;
       toast.success(`${name} added.`);
-      track("bird_added", { species, is_foster: isFoster, has_photo: !!photo });
+      track("bird_added", {
+        species,
+        is_foster: isFoster,
+        has_photo: !!photo,
+        extra_fields_expanded: QUICKSTART_ONBOARDING ? extrasEverOpened.current : undefined,
+      });
+    }
+    if (postAddBirdDestination(QUICKSTART_ONBOARDING) === "home") {
+      try {
+        await navigate({ to: "/dashboard", search: { added: id } as any });
+      } catch (e) {
+        console.error("[add-bird] navigation failed — hard-navigating home", e);
+        window.location.assign(`/dashboard?added=${id}`);
+      }
+      return;
     }
     try {
       await navigate({ to: "/birds/$birdId/setup", params: { birdId: id }, search: { step: 1 } });
@@ -173,6 +203,84 @@ function NewBird() {
         />
 
         <main className="space-y-4 px-5 pt-5">
+      {QUICKSTART_ONBOARDING ? (
+        <>
+          {/* Quick add: name is the hero, species stays required (same rule as
+              always), everything else waits behind the disclosure below. */}
+          <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
+            <BirdField label="Name">
+              <input
+                className="input font-serif !text-[24px] leading-tight"
+                placeholder="e.g. Nova"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                autoFocus
+              />
+            </BirdField>
+            <div>
+              <SpeciesPicker value={species} onChange={setSpecies} />
+              <p className="mt-1.5 text-xs leading-relaxed text-[#7a857b]">
+                This tailors care tips. Not sure of the exact type? Pick the closest — you can change it anytime.
+              </p>
+            </div>
+          </section>
+
+          <section className="rounded-2xl bg-white ring-1 ring-sage-100">
+            <button
+              type="button"
+              onClick={toggleExtras}
+              aria-expanded={extrasOpen}
+              className="flex w-full items-center justify-between p-4 text-left"
+            >
+              <span>
+                <span className="block text-sm font-medium text-[#1a3d2e]">Add more now (optional)</span>
+                <span className="mt-0.5 block text-xs text-[#7a857b]">Photo, age, sex, flight — or later, from their record.</span>
+              </span>
+              <ChevronDown className={`size-4 shrink-0 text-[#7a857b] transition-transform ${extrasOpen ? "rotate-180" : ""}`} />
+            </button>
+            {extrasOpen && (
+              <div className="space-y-3 border-t border-[#ece6d6] p-4">
+                <div className="flex items-start gap-3">
+                  {photo ? (
+                    <PhotoCropper src={photo} position={photoPos} onChange={setPhotoPos} size={120} />
+                  ) : (
+                    <div className="flex size-[120px] items-center justify-center rounded-xl bg-sage-100 text-[10px] uppercase tracking-wider text-sage-600">No photo</div>
+                  )}
+                  <div className="flex-1 space-y-2 pt-1">
+                    <label className={`inline-block rounded-lg bg-sage-100 px-3 py-1.5 text-xs font-semibold text-sage-700 ${photoBusy ? "cursor-default opacity-60" : "cursor-pointer"}`}>
+                      {photoBusy ? "Processing…" : photo ? "Change photo" : "Add photo"}
+                      <input type="file" accept="image/*,.heic,.heif" disabled={photoBusy} className="hidden" onChange={onPhoto} />
+                    </label>
+                    {photo && (
+                      <button type="button" onClick={() => { setPhoto(null); setPhotoPos("50% 50%"); }} className="ml-2 text-xs font-semibold text-warn-red underline">Remove</button>
+                    )}
+                  </div>
+                </div>
+                <AgePicker
+                  age={age}
+                  birthDate={birthDate}
+                  onChange={(next) => { setAge(next.age); setBirthDate(next.birthDate ?? ""); }}
+                />
+                <div className="grid grid-cols-2 gap-3">
+                  <BirdField label="Sex">
+                    <select className="input" value={sex} onChange={(e) => setSex(e.target.value)}>
+                      <option value="">Unknown</option><option>Male</option><option>Female</option>
+                    </select>
+                  </BirdField>
+                  <BirdField label="Flight">
+                    <select className="input" value={flight} onChange={(e) => setFlight(e.target.value)}>
+                      <option value="unknown">Unknown</option>
+                      <option value="fully_flighted">Fully flighted</option>
+                      <option value="clipped">Clipped</option>
+                      <option value="partially_clipped">Partially clipped</option>
+                    </select>
+                  </BirdField>
+                </div>
+              </div>
+            )}
+          </section>
+        </>
+      ) : (
       <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
         <div className="flex items-start gap-3">
           {photo ? (
@@ -213,6 +321,7 @@ function NewBird() {
           </BirdField>
         </div>
       </section>
+      )}
 
       {/* Foster status — a meta-question about your relationship with the bird,
           not basic info, so it sits last after all the actual bird details. */}
@@ -247,7 +356,7 @@ function NewBird() {
       <footer className="fixed inset-x-0 bottom-0 border-t border-[var(--line)] bg-[var(--cream)]/95 px-5 py-3 pb-[max(env(safe-area-inset-bottom),0.75rem)] backdrop-blur">
         <div className="mx-auto max-w-md">
           <PrimaryButton tone="lime" disabled={saving || !canAdd} onPress={onAddBird}>
-            {saving ? "Adding…" : "Add bird"}
+            {saving ? "Adding…" : QUICKSTART_ONBOARDING && name.trim() ? `Add ${name.trim()} →` : "Add bird"}
           </PrimaryButton>
         </div>
       </footer>

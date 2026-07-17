@@ -112,3 +112,17 @@ export function computeSetupCompleteness(args: {
     firstIncompleteStep: firstIncomplete ? firstIncomplete.step : null,
   };
 }
+
+/**
+ * Quickstart onboarding: should this bird's setup_complete flag be set now?
+ * Pure decision for the ADDITIVE-only write in setupCompleteMark.ts — true only
+ * when the flag isn't already set and every section is done. Never used to
+ * write false, so an existing completed bird can never regress.
+ */
+export function shouldMarkSetupComplete(args: {
+  setupComplete: boolean | null | undefined;
+  doneCount: number;
+  total: number;
+}): boolean {
+  return !args.setupComplete && args.total > 0 && args.doneCount >= args.total;
+}

@@ -16,6 +16,8 @@ import { IconTile, LimeStat, StatusPill, SectionHead, RecordRow, Card, PrimaryBu
 import { BirdPhotoSheet } from "@/components/BirdPhotoSheet";
 import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 import { toast } from "sonner";
+import { QUICKSTART_ONBOARDING } from "@/lib/flags";
+import { incompleteBirdCareCta } from "@/lib/onboardingPaths";
 import {
   Feather, Scale, BookOpen, IdCard, CalendarHeart, ClipboardList,
   Plus, FileText, Activity, Pencil, ArrowLeft, ArrowRight, Camera,
@@ -283,7 +285,17 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
             Build {name}'s care plan so sitters and household members know exactly what to do. You can skip and set it up later.
           </p>
           <div className="mt-3">
-            <PrimaryButton tone="lime" icon={<ClipboardList className="size-4" />} onPress={() => navigate({ to: "/birds/$birdId/setup", params: { birdId }, search: { step: 1 } })}>
+            {/* Quickstart: the profile (section cards) is the front door — the
+                guided wizard is one tap away from there. Legacy: straight in. */}
+            <PrimaryButton
+              tone="lime"
+              icon={<ClipboardList className="size-4" />}
+              onPress={() =>
+                incompleteBirdCareCta(QUICKSTART_ONBOARDING) === "plan"
+                  ? navigate({ to: "/birds/$birdId/plan", params: { birdId } })
+                  : navigate({ to: "/birds/$birdId/setup", params: { birdId }, search: { step: 1 } })
+              }
+            >
               Create care plan
             </PrimaryButton>
           </div>
@@ -342,7 +354,7 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
       <section>
         <SectionHead title={`${name}'s record`} />
         <Card>
-          {bird?.setup_complete && (
+          {(bird?.setup_complete || (QUICKSTART_ONBOARDING && bird)) && (
             <RecordRow leading={<IconTile size={38} icon={<ClipboardList className="size-5" />} />} title="Care plan" subtitle="Food, routine, behavior, home, health" onClick={() => navigate({ to: "/birds/$birdId/plan", params: { birdId } })} />
           )}
           <RecordRow leading={<IconTile size={38} icon={<Scale className="size-5" />} />} title="Weight" subtitle={weightCount > 0 ? `${weightCount} ${weightCount === 1 ? "entry" : "entries"} · ${wtPill.label.toLowerCase()}` : "Not started"} onClick={() => navigate({ to: "/birds/$birdId/weight", params: { birdId } })} />

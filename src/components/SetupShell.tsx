@@ -2,6 +2,7 @@ import { ReactNode, useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { ArrowLeft, Check, ChevronDown } from "lucide-react";
 import { OwnerTabBar } from "@/components/OwnerTabBar";
+import { QUICKSTART_ONBOARDING } from "@/lib/flags";
 
 export const SETUP_STEPS = [
   // Basics has moved to the bird main page; the wizard is now pure care
@@ -50,6 +51,7 @@ export function SetupShell({
   saving,
   backDisabled,
   hideFooter,
+  secondaryAction,
 }: {
   step: number; // 1-indexed
   title: string;
@@ -72,6 +74,9 @@ export function SetupShell({
   saving?: boolean;
   backDisabled?: boolean;
   hideFooter?: boolean;
+  // Quickstart: an optional quiet action under the footer row (e.g. "Finish"
+  // from the last content step, so Review never gates completion).
+  secondaryAction?: { label: string; onPress: () => void };
 }) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [confirmExit, setConfirmExit] = useState(false);
@@ -135,7 +140,7 @@ export function SetupShell({
               All steps <ChevronDown className="size-4" />
             </button>
           </div>
-          <p className="t-eyebrow text-[var(--lime)]">Step {step} of {TOTAL_STEPS}</p>
+          <p className="t-eyebrow text-[var(--lime)]">{QUICKSTART_ONBOARDING ? "Guided setup · " : ""}Step {step} of {TOTAL_STEPS}</p>
           <h1 className="t-hero mt-1 text-white">{title}</h1>
           <div className="mt-3 flex items-center gap-1" aria-hidden="true">
             {SETUP_STEPS.map((s, i) => {
@@ -193,6 +198,18 @@ export function SetupShell({
                 {saving ? "Saving…" : nextLabel}
               </button>
             </div>
+            {secondaryAction && (
+              <div className="mx-auto max-w-md px-5 pb-2 text-center">
+                <button
+                  type="button"
+                  onClick={secondaryAction.onPress}
+                  disabled={saving}
+                  className="py-1 text-[12.5px] font-[500] text-[var(--mute)] underline underline-offset-2 disabled:opacity-50"
+                >
+                  {secondaryAction.label}
+                </button>
+              </div>
+            )}
           </div>
         )}
         <OwnerTabBar embedded />

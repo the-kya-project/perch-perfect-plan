@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { computeSetupCompleteness, type SetupCheck } from "@/lib/setupCompleteness";
@@ -10,9 +10,11 @@ import { track } from "@/lib/analytics";
 import { InkHero, IconTile, StatusPill, CtaLink, Card, RecordRow } from "@/components/system";
 import { MemberContextBanner } from "@/components/MemberContextBanner";
 import {
-  ArrowLeft, Eye, Check, AlertTriangle, Wand2, Video,
+  ArrowLeft, Eye, Check, AlertTriangle, Wand2, Video, ArrowRight,
   Utensils, CalendarClock, Smile, Home as HomeIcon, Stethoscope, Siren,
 } from "lucide-react";
+import { QUICKSTART_ONBOARDING } from "@/lib/flags";
+import { markSetupCompleteIfDone } from "@/lib/setupCompleteMark";
 
 // Care-plan overview — the front door an owner sees when they tap "Care plan"
 // on the bird main page. Lists the six care-plan sections with completion
@@ -114,6 +116,35 @@ function CarePlanOverview() {
     track("care_plan_viewed", {});
   }, []);
 
+  // Quickstart, self-serve completion: (a) fire care_section_completed for any
+  // section that flipped to done since this bird's overview was last seen this
+  // session, and (b) when ALL sections are done, set the same setup_complete
+  // flag the wizard sets on finish (additive-only — see setupCompleteMark).
+  const qc = useQueryClient();
+  useEffect(() => {
+    if (!QUICKSTART_ONBOARDING || !canEdit || !bird || !plan) return;
+    try {
+      const key = `care-sections-done:${birdId}`;
+      const prev = new Set<string>(JSON.parse(sessionStorage.getItem(key) ?? "[]"));
+      const nowDone = completeness.checks.filter((c) => c.done).map((c) => c.key);
+      for (const k of nowDone) if (!prev.has(k)) track("care_section_completed", { section: k });
+      sessionStorage.setItem(key, JSON.stringify(nowDone));
+    } catch { /* ignore */ }
+    if (!bird.setup_complete && completeness.doneCount >= completeness.total) {
+      void markSetupCompleteIfDone(birdId, {
+        setupComplete: bird.setup_complete,
+        doneCount: completeness.doneCount,
+        total: completeness.total,
+      }).then((changed) => {
+        if (!changed) return;
+        qc.invalidateQueries({ queryKey: ["bird", birdId] });
+        qc.invalidateQueries({ queryKey: ["bird-record", birdId] });
+        qc.invalidateQueries({ queryKey: ["birds"] });
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canEdit, bird, plan, completeness.doneCount, birdId]);
+
   const name = bird?.name ?? "this bird";
 
   // Emergency "Using your account defaults" copy: true when no per-bird value
@@ -152,6 +183,22 @@ function CarePlanOverview() {
 
         <main className="space-y-4 px-5 pt-5">
           <MemberContextBanner birdId={birdId} />
+          {/* Quickstart: self-serve and guided stay one tap apart — a quiet
+              banner up top launches the wizard from here. */}
+          {QUICKSTART_ONBOARDING && canEdit && (
+            <button
+              onClick={() => navigate({ to: "/birds/$birdId/setup", params: { birdId }, search: { step: 1 } })}
+              className="flex w-full items-center justify-between rounded-[14px] bg-[#e3ebd9] px-4 py-3 text-left active:scale-[0.995]"
+            >
+              <span className="text-[13.5px] font-[500] text-[var(--ink)]">Prefer to be guided? Walk through all 7</span>
+              <ArrowRight className="size-4 shrink-0 text-[var(--ink)]" />
+            </button>
+          )}
+          {QUICKSTART_ONBOARDING && canEdit && (
+            <p className="px-1 text-[13px] text-[var(--mute)]">
+              {completeness.doneCount} of {completeness.total} added · no pressure — the more you add, the more a sitter can help.
+            </p>
+          )}
           <Card>
             {SECTIONS.map((s, i) => {
               const check = checksByKey.get(s.key);
@@ -170,6 +217,7 @@ function CarePlanOverview() {
               const onRow = canEdit
                 ? () => {
                     track("care_plan_editor_opened", { tab: s.tab, section_ready: done });
+                    if (!done) track("care_section_started", { section: s.key });
                     navigate({ to: "/birds/$birdId/plan/editor", params: { birdId }, search: { tab: s.tab } });
                   }
                 : () => navigate({ to: "/birds/$birdId/care-plan", params: { birdId }, search: { section: READ_SECTION[s.key] } });
@@ -181,7 +229,10 @@ function CarePlanOverview() {
                   subtitle={subtitle}
                   trailing={
                     done ? (
-                      <StatusPill tone="ready"><Check className="size-3" /> Ready</StatusPill>
+                      <StatusPill tone="ready"><Check className="size-3" /> {QUICKSTART_ONBOARDING ? "Added" : "Ready"}</StatusPill>
+                    ) : QUICKSTART_ONBOARDING ? (
+                      // Invitation, not a warning — every section is optional.
+                      <span className="text-[13px] font-[500] text-[var(--teal-on-cream)]">Add</span>
                     ) : (
                       <StatusPill tone="attention"><AlertTriangle className="size-3" /> Needs info</StatusPill>
                     )

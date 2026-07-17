@@ -20,6 +20,7 @@ import { normalizeFeedTimes, feedTimeLabel, type FeedTime } from "@/lib/feedTime
 import { syncFeedingTasks } from "@/lib/feedingSync";
 import { formatAmountUnit } from "@/lib/labels";
 import { track } from "@/lib/analytics";
+import { QUICKSTART_ONBOARDING } from "@/lib/flags";
 import { ensureSitterPreviewToken } from "@/lib/sitterPreview";
 import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
 import { persistBirdPhoto, signBirdPhoto } from "@/lib/birdPhoto";
@@ -268,6 +269,7 @@ function BirdSetup() {
       if (ok) {
         track("care_plan_section_completed", { section: completedSection, step });
         track("care_plan_progress", { percent_complete: 100, sections_complete: TOTAL_STEPS, total: TOTAL_STEPS });
+        track("guided_setup_completed", { from_step: step });
         toast.success(`${bird?.name ?? "Bird"} setup complete.`);
         navigate({ to: "/birds/$birdId", params: { birdId } });
       }
@@ -298,6 +300,7 @@ function BirdSetup() {
     if (!(await flushPending())) return;
     const ok = await persistStep(step);
     if (ok) {
+      track("guided_setup_saved_exit", { step });
       toast.success("Progress saved.");
       navigate({ to: "/dashboard" });
     }
@@ -321,6 +324,7 @@ function BirdSetup() {
     if (!(await flushPending())) return;
     const ok = await persistStep(TOTAL_STEPS, true);
     if (!ok) return;
+    track("guided_setup_completed", { from_step: step });
     if (opts.to === "dashboard-newsit") {
       // The new-sit form lives on the Sits tab (the dashboard stopped hosting it
       // in the Home v3 redesign). Route there with ?newSit so it opens with this
@@ -364,6 +368,13 @@ function BirdSetup() {
       backDisabled={step <= 1}
       nextDisabled={blockNext}
       hideFooter={step === TOTAL_STEPS}
+      // Quickstart: Review is an optional summary, never a gate — the last
+      // content step (Emergency, 7) can finish directly.
+      secondaryAction={
+        QUICKSTART_ONBOARDING && step === TOTAL_STEPS - 1
+          ? { label: "Finish here — review is optional", onPress: () => void finishAndGo({ to: "home" }) }
+          : undefined
+      }
     >
       <SetupDirtyContext.Provider value={setDirty}>
         <StepBody

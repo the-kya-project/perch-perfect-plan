@@ -5,6 +5,8 @@ import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { BrandLockup } from "@/components/BrandLogo";
 import { ChevronLeft, ArrowRight, Feather } from "lucide-react";
 import { setTourDemo } from "@/lib/tourDemo";
+import { QUICKSTART_ONBOARDING } from "@/lib/flags";
+import { track } from "@/lib/analytics";
 
 // First-run owner orientation: a warm welcome, then a 10-step guided tour of the
 // real Home (nav tabs + content sections) with coach-mark bubbles, ending on a
@@ -146,6 +148,10 @@ export function OwnerOnboarding() {
     };
   }, [phase, step, activeTarget]);
 
+  useEffect(() => {
+    if (phase === "welcome") track("onboarding_welcome_viewed");
+  }, [phase]);
+
   useLayoutEffect(() => {
     if (phase !== "coach") return;
     const h = bubbleRef.current?.offsetHeight;
@@ -172,6 +178,9 @@ export function OwnerOnboarding() {
   if (phase === null) return null;
 
   // ---- Welcome ----
+  // Quickstart flag inverts the emphasis: the fast path (add a bird) is the
+  // primary action and the tour becomes an opt-in link. The tour itself is
+  // unchanged and stays replayable from the "?" in the header.
   if (phase === "welcome") {
     return (
       <div className="fixed inset-0 z-[60] flex flex-col bg-[var(--ink)] text-white">
@@ -181,17 +190,27 @@ export function OwnerOnboarding() {
         <div className="flex-1 px-6 pt-[80px]">
           <p className="t-eyebrow text-[var(--teal)]">Welcome</p>
           <h1 className="mt-3 text-[38px] font-[400] leading-[1.05] tracking-[-0.02em]">{firstName ? `Hi, ${firstName}.` : "Welcome."}</h1>
-          <p className="mt-3.5 max-w-[30ch] text-[15px] leading-[1.55] text-white/80">A quick walkthrough first, then we'll set up your bird.</p>
+          <p className="mt-3.5 max-w-[30ch] text-[15px] leading-[1.55] text-white/80">
+            {QUICKSTART_ONBOARDING
+              ? "Takes about a minute. You can fill in the details whenever you like — no rush."
+              : "A quick walkthrough first, then we'll set up your bird."}
+          </p>
         </div>
         <div className="px-6 pb-[max(env(safe-area-inset-bottom),24px)]">
           <button
-            onClick={startCoach}
+            onClick={QUICKSTART_ONBOARDING ? addBird : startCoach}
             className="flex w-full items-center justify-center gap-2 rounded-[13px] bg-[var(--lime)] py-3.5 text-[14.5px] font-[500] text-[var(--ink)] active:scale-[0.99]"
           >
-            <ArrowRight className="size-4" /> Show me around
+            {QUICKSTART_ONBOARDING ? <Feather className="size-4" /> : <ArrowRight className="size-4" />}
+            {QUICKSTART_ONBOARDING ? "Add my bird" : "Show me around"}
           </button>
           <div className="mt-3.5 text-center">
-            <button onClick={addBird} className="text-[13px] font-[500] text-white/60 underline underline-offset-[3px]">Skip and add my bird</button>
+            <button
+              onClick={QUICKSTART_ONBOARDING ? startCoach : addBird}
+              className="text-[13px] font-[500] text-white/60 underline underline-offset-[3px]"
+            >
+              {QUICKSTART_ONBOARDING ? "Take the 2-minute tour instead" : "Skip and add my bird"}
+            </button>
           </div>
         </div>
       </div>

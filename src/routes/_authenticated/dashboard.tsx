@@ -33,12 +33,29 @@ import {
   groupWeights, weightGlance, upcomingMoments, buildTodayItems, buildHomeStateCopy, daysSince,
   type HomeBird, type WeightEntry, type TodayItem, type WeightGlance, type UpcomingSit,
 } from "@/lib/homeData";
+import { QUICKSTART_ONBOARDING } from "@/lib/flags";
+import { track } from "@/lib/analytics";
+
+// Quickstart onboarding: per-bird invite state ("pending" until the owner picks
+// a path or dismisses). localStorage on purpose — additive, no schema change,
+// and worst case (new device) the invite simply doesn't resurface.
+type CareInviteState = "pending" | "done" | null;
+function careInviteKey(birdId: string) { return `care-invite:${birdId}`; }
+function getCareInviteState(birdId: string): CareInviteState {
+  try { return (localStorage.getItem(careInviteKey(birdId)) as CareInviteState) ?? null; } catch { return null; }
+}
+function setCareInviteState(birdId: string, state: "pending" | "done") {
+  try { localStorage.setItem(careInviteKey(birdId), state); } catch { /* ignore */ }
+}
 
 const dashboardSearch = z.object({
   newSit: z.coerce.boolean().optional(),
   preselectBirdId: z.string().uuid().optional(),
   // Deep-link from a bird's Emergency tab / Account → open account defaults.
   emergencyDefaults: z.coerce.boolean().optional(),
+  // Quickstart onboarding: /birds/new lands here with the new bird's id so Home
+  // can confirm the add and offer the three-door care-profile invite.
+  added: z.string().uuid().optional(),
 });
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
@@ -49,7 +66,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 
 function Dashboard() {
   const navigate = useNavigate();
-  const { emergencyDefaults } = Route.useSearch();
+  const { emergencyDefaults, added } = Route.useSearch();
 
   const { data: me } = useQuery({
     queryKey: ["owner-profile-name"],
@@ -209,6 +226,32 @@ function Dashboard() {
 
   const { data: caregiver } = useActiveCaregiver();
 
+  // Quickstart onboarding: arriving with ?added=<id> confirms the add and arms
+  // the three-door care-profile invite (persisted per-bird in localStorage so
+  // it survives a reload until the owner picks a path or dismisses it).
+  const addedToastRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!QUICKSTART_ONBOARDING || !added) return;
+    const b = (birds as any[]).find((x) => x.id === added);
+    if (!b || addedToastRef.current === added) return;
+    addedToastRef.current = added;
+    setCareInviteState(added, "pending");
+    setInviteVersion((v) => v + 1); // the memo below ran before this effect
+    toast.success(`${b.name} is in your flock. You're all set.`);
+  }, [added, birds]);
+  // The invite renders for the newest owned bird whose invite is still pending
+  // and whose setup hasn't been completed — usually the bird just added.
+  const [inviteVersion, setInviteVersion] = useState(0);
+  const inviteBird = useMemo(() => {
+    if (!QUICKSTART_ONBOARDING || demo) return null;
+    void inviteVersion; // recompute after choose/dismiss
+    return (
+      (ownedBirds as any[]).find(
+        (b) => !b.setup_complete && getCareInviteState(b.id) === "pending",
+      ) ?? null
+    );
+  }, [ownedBirds, demo, inviteVersion]);
+
   // Home body line — state-aware (stale weigh-in → sit imminent → celebration
   // → new bird → weekend → default). Caregiver names for imminent sits come
   // from the household member list already loaded; sitter names from the row.
@@ -274,6 +317,22 @@ function Dashboard() {
               <CaregiverCoveringSection key={s.id} sit={s} />
             ))}
 
+            {inviteBird && (
+              <CareProfileInvite
+                bird={inviteBird}
+                onChoose={(path) => {
+                  setCareInviteState(inviteBird.id, "done");
+                  setInviteVersion((v) => v + 1);
+                  track("care_path_chosen", { path });
+                  if (path === "guided") {
+                    navigate({ to: "/birds/$birdId/setup", params: { birdId: inviteBird.id }, search: { step: 1 } });
+                  } else if (path === "self_serve") {
+                    navigate({ to: "/birds/$birdId/plan", params: { birdId: inviteBird.id } });
+                  }
+                }}
+              />
+            )}
+
             <section className="space-y-3" data-coach="owner-flock">
               <SectionHeaderCTA title={showHouseholds ? "Your birds" : "Your flock"} ctaLabel="Add a bird" onCta={() => navigate({ to: "/birds/new" })} />
               {flockBirds.length === 0 ? (
@@ -281,7 +340,7 @@ function Dashboard() {
               ) : (
                 <div className="space-y-3">
                   {flockBirds.map((b) => (
-                    <BirdRow key={b.id} bird={b} photo={photoFor(b)} glance={glanceFor(b)} concern={concernByBird.has(b.id)} />
+                    <BirdRow key={b.id} bird={b} photo={photoFor(b)} glance={glanceFor(b)} concern={concernByBird.has(b.id)} justAdded={inviteBird?.id === b.id} />
                   ))}
                 </div>
               )}
@@ -324,7 +383,7 @@ function Dashboard() {
                 />
                 <div className="space-y-3">
                   {fosterBirds.map((b) => (
-                    <BirdRow key={b.id} bird={b} photo={photoFor(b)} glance={glanceFor(b)} foster concern={concernByBird.has(b.id)} />
+                    <BirdRow key={b.id} bird={b} photo={photoFor(b)} glance={glanceFor(b)} foster concern={concernByBird.has(b.id)} justAdded={inviteBird?.id === b.id} />
                   ))}
                 </div>
               </section>
@@ -464,13 +523,49 @@ function ConcernPill() {
   );
 }
 
+// ---------------------------------------------------------------------------
+// Quickstart onboarding: three-door care-profile invite (Home, post-add)
+// ---------------------------------------------------------------------------
+function CareProfileInvite({ bird, onChoose }: { bird: HomeBird; onChoose: (path: "guided" | "self_serve" | "later") => void }) {
+  return (
+    <section
+      className="rounded-[18px] bg-white p-4 ring-1 ring-[var(--line2)]"
+      style={{ boxShadow: "0 1px 0 rgba(40,50,40,.02), 0 6px 14px -8px rgba(40,50,40,.08)" }}
+    >
+      <h2 className="t-item text-[17px]">Build {possessive(bird.name)} care profile?</h2>
+      <p className="mt-1 text-[13px] leading-[1.5] text-[var(--ink2)]">
+        Feeding, routine, quirks, emergency info — the more you add, the more a sitter can help. No rush.
+      </p>
+      <div className="mt-3.5 space-y-2">
+        <button
+          onClick={() => onChoose("guided")}
+          className="flex w-full items-center justify-center gap-2 rounded-[13px] bg-[var(--ink)] py-3 text-[14px] font-[500] text-white active:scale-[0.99]"
+        >
+          Walk me through it
+        </button>
+        <button
+          onClick={() => onChoose("self_serve")}
+          className="flex w-full items-center justify-center rounded-[13px] border border-[var(--line)] bg-white py-3 text-[14px] font-[500] text-[var(--ink)] active:scale-[0.99]"
+        >
+          I'll add bits as I go
+        </button>
+      </div>
+      <div className="mt-2 text-center">
+        <button onClick={() => onChoose("later")} className="py-1 text-[12.5px] font-[500] text-[var(--mute)] underline underline-offset-2">
+          Maybe later
+        </button>
+      </div>
+    </section>
+  );
+}
+
 /** "Sarah" -> "Sarah's", "Chris" -> "Chris'". */
 function possessive(name: string): string {
   const n = name.trim();
   return /s$/i.test(n) ? `${n}'` : `${n}'s`;
 }
 
-function BirdRow({ bird, photo, glance, foster, concern }: { bird: HomeBird; photo: SignedPhoto | null; glance: WeightGlance; foster?: boolean; concern?: boolean }) {
+function BirdRow({ bird, photo, glance, foster, concern, justAdded }: { bird: HomeBird; photo: SignedPhoto | null; glance: WeightGlance; foster?: boolean; concern?: boolean; justAdded?: boolean }) {
   const fosterStatus = foster
     ? glance.state === "stale"
       ? { tone: "attention" as const, label: "Needs a weigh-in" }
@@ -487,6 +582,7 @@ function BirdRow({ bird, photo, glance, foster, concern }: { bird: HomeBird; pho
         <div className="flex items-center gap-2">
           <h3 className="t-item truncate text-[17px]">{bird.name}</h3>
           {foster && <StatusPill tone="good">Foster</StatusPill>}
+          {justAdded && <StatusPill tone="good">Just added</StatusPill>}
         </div>
         <p className="t-meta truncate">{bird.species || "Parrot"}</p>
         {foster && bird.intake_date && (

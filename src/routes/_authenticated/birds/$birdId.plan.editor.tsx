@@ -18,6 +18,8 @@ import { useBirdPhotos } from "@/lib/useBirdPhotos";
 import { useBirdRole } from "@/lib/useBirdRole";
 import { useCapability, useMyPermissions } from "@/lib/useCapability";
 import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
+import { QUICKSTART_ONBOARDING } from "@/lib/flags";
+import { maybeMarkSetupComplete } from "@/lib/setupCompleteMark";
 
 
 // The care-plan editor is reached via the new overview front door (/plan).
@@ -93,6 +95,29 @@ function BirdEditor() {
   }, [role, perms, canEdit, canEmergency, birdId, navigate]);
   const [tab, setTab] = useState<Tab>(tabParam ?? (scanParam ? "logs" : "food"));
   useEffect(() => { if (tabParam) setTab(tabParam); else if (scanParam) setTab("logs"); }, [tabParam, scanParam]);
+
+  // Quickstart, self-serve completion: leaving a section (tab switch or editor
+  // unmount) is the natural "section saved" moment — best-effort check whether
+  // every section is now filled and, if so, set the wizard's setup_complete
+  // flag (additive-only; see setupCompleteMark). Runs after the step
+  // components' debounced autosaves have had their flush-on-unmount.
+  const markCheck = () => {
+    if (!QUICKSTART_ONBOARDING) return;
+    void maybeMarkSetupComplete(birdId).then((changed) => {
+      if (!changed) return;
+      qc.invalidateQueries({ queryKey: ["bird", birdId] });
+      qc.invalidateQueries({ queryKey: ["bird-record", birdId] });
+      qc.invalidateQueries({ queryKey: ["birds"] });
+    });
+  };
+  const markCheckRef = useRef(markCheck);
+  markCheckRef.current = markCheck;
+  const prevTabRef = useRef<Tab | null>(null);
+  useEffect(() => {
+    if (prevTabRef.current && prevTabRef.current !== tab) markCheckRef.current();
+    prevTabRef.current = tab;
+  }, [tab]);
+  useEffect(() => () => markCheckRef.current(), []);
 
   // Edge fades so the tab strip reads as scrollable.
   const tabStripRef = useRef<HTMLDivElement>(null);

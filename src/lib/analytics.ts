@@ -54,7 +54,16 @@ export type AnalyticsEventName =
   | "view_as_sitter_opened"
   | "concern_flow_started"
   | "household_member_invited"
-  | "bird_handoff_initiated";
+  | "bird_handoff_initiated"
+  // Quickstart onboarding funnel (redesign/onboarding-quickstart). bird_added
+  // doubles as the spec's bird_created, carrying extra_fields_expanded.
+  | "onboarding_welcome_viewed"
+  | "add_bird_opened"
+  | "care_path_chosen"
+  | "care_section_started"
+  | "care_section_completed"
+  | "guided_setup_saved_exit"
+  | "guided_setup_completed";
 
 type EventProps = Record<string, string | number | boolean | null | undefined>;
 
