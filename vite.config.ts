@@ -62,7 +62,19 @@ const SECURITY_HEADERS = {
 };
 
 export default defineConfig({
-  nitro: { preset: "vercel", routeRules: { "/**": { headers: SECURITY_HEADERS } } } as any,
+  nitro: {
+    preset: "vercel",
+    routeRules: {
+      "/**": { headers: SECURITY_HEADERS },
+      // PostHog reverse proxy: analytics flows through our own domain so ad
+      // blockers that blanket-block *.posthog.com don't drop the data. A root
+      // vercel.json rewrite would be ignored by this build (see above), so the
+      // proxy lives here. Most-specific rule wins, so /ingest/static/** (SDK
+      // assets) matches ahead of /ingest/** (event capture + config).
+      "/ingest/static/**": { proxy: "https://us-assets.i.posthog.com/static/**" },
+      "/ingest/**": { proxy: "https://us.i.posthog.com/**" },
+    },
+  } as any,
   tanstackStart: {
     server: { entry: "server" },
   },

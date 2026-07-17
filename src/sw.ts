@@ -71,8 +71,12 @@ registerRoute(
 // filenames make these immutable, so cache-first is safe; the expiration
 // plugin keeps abandoned entries from accumulating forever.
 registerRoute(
-  ({ request, sameOrigin }) =>
-    sameOrigin && ["style", "script", "worker", "font"].includes(request.destination),
+  ({ url, request, sameOrigin }) =>
+    sameOrigin &&
+    // /ingest/* is the PostHog reverse proxy — its SDK script isn't hashed,
+    // so a 30-day cache-first would pin a stale analytics build.
+    !url.pathname.startsWith("/ingest/") &&
+    ["style", "script", "worker", "font"].includes(request.destination),
   new CacheFirst({
     cacheName: "static-assets",
     plugins: [new ExpirationPlugin({ maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 30 })],

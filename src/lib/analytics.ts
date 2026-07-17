@@ -13,7 +13,7 @@
  *
  *   # PostHog
  *   VITE_POSTHOG_KEY=phc_xxx
- *   VITE_POSTHOG_HOST=https://eu.i.posthog.com   # optional, default https://us.i.posthog.com
+ *   VITE_POSTHOG_HOST=https://eu.i.posthog.com   # optional, default /ingest (same-origin reverse proxy)
  *
  *   # Plausible
  *   VITE_PLAUSIBLE_DOMAIN=app.example.com
@@ -95,7 +95,9 @@ function readEnv(): {
   return {
     provider,
     posthogKey,
-    posthogHost: env.VITE_POSTHOG_HOST || "https://us.i.posthog.com",
+    // Default goes through our reverse proxy (Nitro routeRules in
+    // vite.config.ts → us.i.posthog.com) so ad blockers don't drop events.
+    posthogHost: env.VITE_POSTHOG_HOST || "/ingest",
     plausibleDomain: env.VITE_PLAUSIBLE_DOMAIN || undefined,
     plausibleHost: env.VITE_PLAUSIBLE_HOST || "https://plausible.io",
   };
@@ -173,6 +175,9 @@ async function bootPostHog(key: string, host: string) {
   }
   ph.init(key, {
     api_host: host,
+    // Required when api_host is a proxy path: links back to the PostHog app
+    // (toolbar, debugging) still point at the real UI.
+    ui_host: "https://us.posthog.com",
     capture_pageview: true,
     persistence: "localStorage+cookie",
     autocapture: false,
