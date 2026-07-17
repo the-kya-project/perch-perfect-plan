@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { computeSetupCompleteness, type SetupCheck } from "@/lib/setupCompleteness";
@@ -8,9 +9,20 @@ import { useCapability } from "@/lib/useCapability";
 import { InkHero, IconTile, StatusPill, CtaLink, Card, RecordRow } from "@/components/system";
 import { MemberContextBanner } from "@/components/MemberContextBanner";
 import {
-  ArrowLeft, Eye, Check, AlertTriangle, Wand2, Video,
-  Utensils, CalendarClock, Smile, Home as HomeIcon, Stethoscope, Siren,
+  ArrowLeft,
+  Eye,
+  Check,
+  AlertTriangle,
+  Wand2,
+  Video,
+  Utensils,
+  CalendarClock,
+  Smile,
+  Home as HomeIcon,
+  Stethoscope,
+  Siren,
 } from "lucide-react";
+import { track } from "@/lib/analytics";
 
 // Care-plan overview — the front door an owner sees when they tap "Care plan"
 // on the bird main page. Lists the six care-plan sections with completion
@@ -31,17 +43,74 @@ type SectionKey = "food" | "day" | "personality" | "environment" | "health" | "e
 
 // Maps an overview row to the read-only care-plan's anchor id so a member who
 // can't edit deep-links straight to that section (?section=) instead of the top.
-const READ_SECTION: Record<SectionKey, "food" | "behavior" | "home" | "health" | "routine" | "emergency"> = {
-  food: "food", personality: "behavior", environment: "home", health: "health", day: "routine", emergency: "emergency",
+const READ_SECTION: Record<
+  SectionKey,
+  "food" | "behavior" | "home" | "health" | "routine" | "emergency"
+> = {
+  food: "food",
+  personality: "behavior",
+  environment: "home",
+  health: "health",
+  day: "routine",
+  emergency: "emergency",
 };
 
-const SECTIONS: { key: SectionKey; tab: "food" | "routine" | "behavior" | "home" | "health" | "emergency"; label: string; icon: React.ReactNode; needsInfoHint: string; readyHint: string }[] = [
-  { key: "food",        tab: "food",      label: "Food",      icon: <Utensils className="size-5" />,     needsInfoHint: "Diet and food instructions", readyHint: "Diet and food instructions" },
-  { key: "personality", tab: "behavior",  label: "Behavior",  icon: <Smile className="size-5" />,        needsInfoHint: "Handling, likes, triggers",  readyHint: "Handling, likes, triggers" },
-  { key: "environment", tab: "home",      label: "Home",      icon: <HomeIcon className="size-5" />,     needsInfoHint: "Cage, out-of-cage, hazards", readyHint: "Cage, out-of-cage, hazards" },
-  { key: "health",      tab: "health",    label: "Health",    icon: <Stethoscope className="size-5" />,  needsInfoHint: "Baseline and what's normal", readyHint: "Baseline and what's normal" },
-  { key: "day",         tab: "routine",   label: "Routine",   icon: <CalendarClock className="size-5" />,needsInfoHint: "Daily schedule and tasks",   readyHint: "Daily schedule and tasks" },
-  { key: "emergency",   tab: "emergency", label: "Emergency", icon: <Siren className="size-5" />,        needsInfoHint: "Owner and vet contacts",     readyHint: "Owner and vet contacts" },
+const SECTIONS: {
+  key: SectionKey;
+  tab: "food" | "routine" | "behavior" | "home" | "health" | "emergency";
+  label: string;
+  icon: React.ReactNode;
+  needsInfoHint: string;
+  readyHint: string;
+}[] = [
+  {
+    key: "food",
+    tab: "food",
+    label: "Food",
+    icon: <Utensils className="size-5" />,
+    needsInfoHint: "Diet and food instructions",
+    readyHint: "Diet and food instructions",
+  },
+  {
+    key: "personality",
+    tab: "behavior",
+    label: "Behavior",
+    icon: <Smile className="size-5" />,
+    needsInfoHint: "Handling, likes, triggers",
+    readyHint: "Handling, likes, triggers",
+  },
+  {
+    key: "environment",
+    tab: "home",
+    label: "Home",
+    icon: <HomeIcon className="size-5" />,
+    needsInfoHint: "Cage, out-of-cage, hazards",
+    readyHint: "Cage, out-of-cage, hazards",
+  },
+  {
+    key: "health",
+    tab: "health",
+    label: "Health",
+    icon: <Stethoscope className="size-5" />,
+    needsInfoHint: "Baseline and what's normal",
+    readyHint: "Baseline and what's normal",
+  },
+  {
+    key: "day",
+    tab: "routine",
+    label: "Routine",
+    icon: <CalendarClock className="size-5" />,
+    needsInfoHint: "Daily schedule and tasks",
+    readyHint: "Daily schedule and tasks",
+  },
+  {
+    key: "emergency",
+    tab: "emergency",
+    label: "Emergency",
+    icon: <Siren className="size-5" />,
+    needsInfoHint: "Owner and vet contacts",
+    readyHint: "Owner and vet contacts",
+  },
 ];
 
 function CarePlanOverview() {
@@ -69,7 +138,11 @@ function CarePlanOverview() {
   const { data: plan } = useQuery({
     queryKey: ["plan", birdId],
     queryFn: async () => {
-      const { data } = await supabase.from("care_plans").select("*").eq("bird_id", birdId).maybeSingle();
+      const { data } = await supabase
+        .from("care_plans")
+        .select("*")
+        .eq("bird_id", birdId)
+        .maybeSingle();
       return data ?? null;
     },
   });
@@ -78,7 +151,10 @@ function CarePlanOverview() {
     queryKey: ["tasks", plan?.id],
     enabled: !!plan?.id,
     queryFn: async () => {
-      const { data } = await supabase.from("routine_tasks").select("id").eq("care_plan_id", plan!.id);
+      const { data } = await supabase
+        .from("routine_tasks")
+        .select("id")
+        .eq("care_plan_id", plan!.id);
       return data ?? [];
     },
   });
@@ -86,7 +162,11 @@ function CarePlanOverview() {
   const { data: contacts } = useQuery({
     queryKey: ["contacts", birdId],
     queryFn: async () => {
-      const { data } = await supabase.from("emergency_contacts").select("*").eq("bird_id", birdId).maybeSingle();
+      const { data } = await supabase
+        .from("emergency_contacts")
+        .select("*")
+        .eq("bird_id", birdId)
+        .maybeSingle();
       return data ?? null;
     },
   });
@@ -105,9 +185,18 @@ function CarePlanOverview() {
     },
   });
 
-  const completeness = computeSetupCompleteness({ bird, plan, tasksCount: tasks.length, contacts, defaults });
+  const completeness = computeSetupCompleteness({
+    bird,
+    plan,
+    tasksCount: tasks.length,
+    contacts,
+    defaults,
+  });
   const checksByKey = new Map<string, SetupCheck>(completeness.checks.map((c) => [c.key, c]));
 
+  useEffect(() => {
+    track("care_plan_viewed", {});
+  }, []);
 
   const name = bird?.name ?? "this bird";
 
@@ -139,7 +228,8 @@ function CarePlanOverview() {
                   label: "View as your sitter",
                   tone: "lime",
                   icon: <Eye className="size-4" />,
-                  onPress: () => navigate({ to: "/birds/$birdId/view-as-sitter", params: { birdId } }),
+                  onPress: () =>
+                    navigate({ to: "/birds/$birdId/view-as-sitter", params: { birdId } }),
                 }
               : undefined
           }
@@ -155,27 +245,46 @@ function CarePlanOverview() {
               // For Emergency, "done" considers account defaults via the check
               // (eff() in setupCompleteness). The subtitle reflects WHY it's
               // ready: per-bird contacts vs. account defaults.
-              const subtitle = isEmergency && done && emergencyUsesDefaults
-                ? "Using your account defaults"
-                : done
-                  ? s.readyHint
-                  : s.needsInfoHint;
+              const subtitle =
+                isEmergency && done && emergencyUsesDefaults
+                  ? "Using your account defaults"
+                  : done
+                    ? s.readyHint
+                    : s.needsInfoHint;
               // edit_care_plans opens the section editor; everyone else opens the
               // read-only care-plan view (RLS-enforced).
               const onRow = canEdit
-                ? () => navigate({ to: "/birds/$birdId/plan/editor", params: { birdId }, search: { tab: s.tab } })
-                : () => navigate({ to: "/birds/$birdId/care-plan", params: { birdId }, search: { section: READ_SECTION[s.key] } });
+                ? () => {
+                    track("care_plan_editor_opened", { tab: s.tab, section_ready: done });
+                    navigate({
+                      to: "/birds/$birdId/plan/editor",
+                      params: { birdId },
+                      search: { tab: s.tab },
+                    });
+                  }
+                : () =>
+                    navigate({
+                      to: "/birds/$birdId/care-plan",
+                      params: { birdId },
+                      search: { section: READ_SECTION[s.key] },
+                    });
               return (
                 <RecordRow
                   key={s.key}
-                  leading={<IconTile size={38} tone={isEmergency ? "red" : "ink-lime"} icon={s.icon} />}
+                  leading={
+                    <IconTile size={38} tone={isEmergency ? "red" : "ink-lime"} icon={s.icon} />
+                  }
                   title={s.label}
                   subtitle={subtitle}
                   trailing={
                     done ? (
-                      <StatusPill tone="ready"><Check className="size-3" /> Ready</StatusPill>
+                      <StatusPill tone="ready">
+                        <Check className="size-3" /> Ready
+                      </StatusPill>
                     ) : (
-                      <StatusPill tone="attention"><AlertTriangle className="size-3" /> Needs info</StatusPill>
+                      <StatusPill tone="attention">
+                        <AlertTriangle className="size-3" /> Needs info
+                      </StatusPill>
                     )
                   }
                   onClick={onRow}
@@ -187,19 +296,47 @@ function CarePlanOverview() {
                 Clips tab). Optional, so no "Needs info" — surfaced here so recorded
                 clips are reachable from the overview like the six sections. */}
             {(() => {
-              const clipCols = ["clip_food_water_path", "clip_step_up_path", "clip_locations_path", "clip_bedtime_path", "clip_food_prep_path", "clip_toys_foraging_path", "clip_targeting_path", "clip_anything_else_path"];
-              const clipCount = clipCols.filter((c) => (plan as any)?.[c]).length + ((plan as any)?.baseline_clip_path ? 1 : 0);
+              const clipCols = [
+                "clip_food_water_path",
+                "clip_step_up_path",
+                "clip_locations_path",
+                "clip_bedtime_path",
+                "clip_food_prep_path",
+                "clip_toys_foraging_path",
+                "clip_targeting_path",
+                "clip_anything_else_path",
+              ];
+              const clipCount =
+                clipCols.filter((c) => (plan as any)?.[c]).length +
+                ((plan as any)?.baseline_clip_path ? 1 : 0);
               const hasClips = clipCount > 0;
               return (
                 <RecordRow
                   key="clips"
-                  leading={<IconTile size={38} tone="ink-lime" icon={<Video className="size-5" />} />}
+                  leading={
+                    <IconTile size={38} tone="ink-lime" icon={<Video className="size-5" />} />
+                  }
                   title="Tips from the owner"
-                  subtitle={hasClips ? `${clipCount} clip${clipCount === 1 ? "" : "s"}` : "Optional — short how-to videos for sitters"}
-                  trailing={hasClips ? <StatusPill tone="ready"><Check className="size-3" /> Added</StatusPill> : undefined}
+                  subtitle={
+                    hasClips
+                      ? `${clipCount} clip${clipCount === 1 ? "" : "s"}`
+                      : "Optional — short how-to videos for sitters"
+                  }
+                  trailing={
+                    hasClips ? (
+                      <StatusPill tone="ready">
+                        <Check className="size-3" /> Added
+                      </StatusPill>
+                    ) : undefined
+                  }
                   onClick={
                     canEdit
-                      ? () => navigate({ to: "/birds/$birdId/plan/editor", params: { birdId }, search: { tab: "clips" } })
+                      ? () =>
+                          navigate({
+                            to: "/birds/$birdId/plan/editor",
+                            params: { birdId },
+                            search: { tab: "clips" },
+                          })
                       : () => navigate({ to: "/birds/$birdId/care-plan", params: { birdId } })
                   }
                   last
@@ -216,7 +353,9 @@ function CarePlanOverview() {
               // "Walk through it again" is a full re-review — always start at the
               // beginning (Food · step 1), not the first incomplete step (which
               // was step 6/Clips whenever the optional clips were empty).
-              onPress={() => navigate({ to: "/birds/$birdId/setup", params: { birdId }, search: { step: 1 } })}
+              onPress={() =>
+                navigate({ to: "/birds/$birdId/setup", params: { birdId }, search: { step: 1 } })
+              }
             />
           )}
 

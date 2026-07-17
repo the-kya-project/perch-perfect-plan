@@ -9,15 +9,20 @@ import {
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 import { Loader2 } from "lucide-react";
+import { PostHogProvider } from "posthog-js/react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
-import { initAnalytics, identifyUser, resetUser } from "@/lib/analytics";
+import { identifyUser, resetUser } from "@/lib/analytics";
 import {
-  registerServiceWorker, installChunkErrorRecovery, hardResetAndReload,
-  isStaleChunkError, chunkReloadAttemptedRecently, reloadForStaleChunk,
+  registerServiceWorker,
+  installChunkErrorRecovery,
+  hardResetAndReload,
+  isStaleChunkError,
+  chunkReloadAttemptedRecently,
+  reloadForStaleChunk,
 } from "@/lib/sw-register";
 import { captureFirstTouch } from "@/lib/attribution";
 // Side-effect import: registers the beforeinstallprompt/appinstalled listeners
@@ -74,24 +79,34 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold">This page didn't load</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          This is usually an out-of-date copy of the app cached on this device. Reloading
-          it pulls the latest version and normally fixes it.
+          This is usually an out-of-date copy of the app cached on this device. Reloading it pulls
+          the latest version and normally fixes it.
         </p>
         {detail && <p className="mt-2 text-xs text-muted-foreground/80">{detail}</p>}
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
-            onClick={() => { void hardResetAndReload(); }}
+            onClick={() => {
+              void hardResetAndReload();
+            }}
             className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
           >
             Reload the app
           </button>
           <button
-            onClick={() => { router.invalidate(); reset(); }}
+            onClick={() => {
+              router.invalidate();
+              reset();
+            }}
             className="rounded-md border border-input bg-background px-4 py-2 text-sm font-medium"
           >
             Try again
           </button>
-          <a href="/" className="rounded-md border border-input bg-background px-4 py-2 text-sm font-medium">Go home</a>
+          <a
+            href="/"
+            className="rounded-md border border-input bg-background px-4 py-2 text-sm font-medium"
+          >
+            Go home
+          </a>
         </div>
       </div>
     </div>
@@ -115,15 +130,33 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       // spec — ampersand and period included.
       { name: "apple-mobile-web-app-title", content: "Kya & Co." },
       { title: "Kya & Co. — Calm, clear care for your bird" },
-      { name: "description", content: "Shared care for your bird. Build one care plan, then share it so family, pet sitters, and household members all stay on the same page." },
+      {
+        name: "description",
+        content:
+          "Shared care for your bird. Build one care plan, then share it so family, pet sitters, and household members all stay on the same page.",
+      },
       { property: "og:site_name", content: "Kya & Co." },
       { property: "og:title", content: "Kya & Co. — Calm, clear care for your bird" },
-      { property: "og:description", content: "Shared care for your bird. Build one care plan, then share it so family, pet sitters, and household members all stay on the same page." },
+      {
+        property: "og:description",
+        content:
+          "Shared care for your bird. Build one care plan, then share it so family, pet sitters, and household members all stay on the same page.",
+      },
       { property: "og:type", content: "website" },
-      { property: "og:image", content: "https://app.thekyaproject.com/brand/lockups/horizontal-ink.png" },
+      {
+        property: "og:image",
+        content: "https://app.thekyaproject.com/brand/lockups/horizontal-ink.png",
+      },
       { name: "twitter:title", content: "Kya & Co. — Calm, clear care for your bird" },
-      { name: "twitter:description", content: "Shared care for your bird. Build one care plan, then share it so family, pet sitters, and household members all stay on the same page." },
-      { name: "twitter:image", content: "https://app.thekyaproject.com/brand/lockups/horizontal-ink.png" },
+      {
+        name: "twitter:description",
+        content:
+          "Shared care for your bird. Build one care plan, then share it so family, pet sitters, and household members all stay on the same page.",
+      },
+      {
+        name: "twitter:image",
+        content: "https://app.thekyaproject.com/brand/lockups/horizontal-ink.png",
+      },
       { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
@@ -145,8 +178,24 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <head><HeadContent /></head>
-      <body>{children}<Scripts /></body>
+      <head>
+        <HeadContent />
+      </head>
+      <body>
+        <PostHogProvider
+          apiKey={import.meta.env.VITE_POSTHOG_KEY as string}
+          options={{
+            api_host: (import.meta.env.VITE_POSTHOG_HOST as string) || "https://us.i.posthog.com",
+            ui_host: "https://us.posthog.com",
+            capture_exceptions: true,
+            autocapture: false,
+            disable_session_recording: false,
+          }}
+        >
+          {children}
+        </PostHogProvider>
+        <Scripts />
+      </body>
     </html>
   );
 }
@@ -157,7 +206,6 @@ function RootComponent() {
 
   useEffect(() => {
     captureFirstTouch(); // first-touch attribution — record source before signup
-    initAnalytics();
     installChunkErrorRecovery(); // self-heal stale-build chunk 404s (incl. the sitter preview iframe)
     registerServiceWorker();
     supabase.auth.getSession().then(({ data }) => {

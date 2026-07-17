@@ -11,6 +11,7 @@ import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/im
 import { persistBirdPhoto } from "@/lib/birdPhoto";
 import { ArrowLeft } from "lucide-react";
 import { z } from "zod";
+import { track } from "@/lib/analytics";
 
 export const Route = createFileRoute("/_authenticated/birds/new")({
   head: () => ({ meta: [{ title: "Add a bird — Kya & Co." }] }),
@@ -60,29 +61,42 @@ function NewBird() {
   }
 
   async function createBird(targetStep: number): Promise<string | null> {
-    if (!name.trim()) { toast.error("Give your bird a name."); return null; }
-    if (!species.trim()) { toast.error("Choose a species."); return null; }
+    if (!name.trim()) {
+      toast.error("Give your bird a name.");
+      return null;
+    }
+    if (!species.trim()) {
+      toast.error("Choose a species.");
+      return null;
+    }
     setSaving(true);
     const { data: u } = await getLocalUser();
-    if (!u.user) { setSaving(false); return null; }
+    if (!u.user) {
+      setSaving(false);
+      return null;
+    }
     // Upload the picked photo to Storage and store the path (not the inline
     // base64), so list queries stay small. Legacy/empty values pass through.
     const photoRef = await persistBirdPhoto(u.user.id, photo);
-    const { data: bird, error } = await supabase.from("birds").insert({
-      owner_id: u.user.id,
-      name,
-      species: species || null,
-      age: age || null,
-      birth_date: birthDate || null,
-      sex: sex || null,
-      flight_status: flight,
-      photo_url: photoRef,
-      photo_position: photoRef ? photoPos : null,
-      is_foster: isFoster,
-      intake_date: intakeDate || null,
-      setup_complete: false,
-      setup_step: targetStep,
-    } as any).select().single();
+    const { data: bird, error } = await supabase
+      .from("birds")
+      .insert({
+        owner_id: u.user.id,
+        name,
+        species: species || null,
+        age: age || null,
+        birth_date: birthDate || null,
+        sex: sex || null,
+        flight_status: flight,
+        photo_url: photoRef,
+        photo_position: photoRef ? photoPos : null,
+        is_foster: isFoster,
+        intake_date: intakeDate || null,
+        setup_complete: false,
+        setup_step: targetStep,
+      } as any)
+      .select()
+      .single();
     if (error || !bird) {
       toast.error(error?.message ?? "Could not create bird.");
       setSaving(false);
@@ -136,6 +150,7 @@ function NewBird() {
       if (!id) return;
       createdIdRef.current = id;
       toast.success(`${name} added.`);
+      track("bird_added", { species, is_foster: isFoster, has_photo: !!photo });
     }
     try {
       await navigate({ to: "/birds/$birdId/setup", params: { birdId: id }, search: { step: 1 } });
@@ -149,9 +164,20 @@ function NewBird() {
   // if they've started entering details, so a stray tap doesn't discard work.
   // If the bird WAS created (a prior tap saved it but navigation failed), leaving
   // is safe — never warn about discarding a bird that's already saved.
-  const hasInput = !!(name.trim() || species.trim() || age || birthDate || sex || photo || flight !== "unknown");
+  const hasInput = !!(
+    name.trim() ||
+    species.trim() ||
+    age ||
+    birthDate ||
+    sex ||
+    photo ||
+    flight !== "unknown"
+  );
   function onCancel() {
-    if (createdIdRef.current) { navigate({ to: "/dashboard" }); return; }
+    if (createdIdRef.current) {
+      navigate({ to: "/dashboard" });
+      return;
+    }
     if (!hasInput || window.confirm("Discard this bird? You haven't saved it yet.")) {
       navigate({ to: "/dashboard" });
     }
@@ -171,74 +197,116 @@ function NewBird() {
         />
 
         <main className="space-y-4 px-5 pt-5">
-      <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
-        <div className="flex items-start gap-3">
-          {photo ? (
-            <PhotoCropper src={photo} position={photoPos} onChange={setPhotoPos} size={120} />
-          ) : (
-            <div className="flex size-[120px] items-center justify-center rounded-xl bg-sage-100 text-[10px] uppercase tracking-wider text-sage-600">No photo</div>
-          )}
-          <div className="flex-1 space-y-2 pt-1">
-            <label className={`inline-block rounded-lg bg-sage-100 px-3 py-1.5 text-xs font-semibold text-sage-700 ${photoBusy ? "cursor-default opacity-60" : "cursor-pointer"}`}>
-              {photoBusy ? "Processing…" : photo ? "Change photo" : "Add photo"}
-              <input type="file" accept="image/*,.heic,.heif" disabled={photoBusy} className="hidden" onChange={onPhoto} />
-            </label>
-            {photo && (
-              <button type="button" onClick={() => { setPhoto(null); setPhotoPos("50% 50%"); }} className="ml-2 text-xs font-semibold text-warn-red underline">Remove</button>
-            )}
-          </div>
-        </div>
-        <BirdField label="Name"><input className="input" value={name} onChange={(e) => setName(e.target.value)} /></BirdField>
-        <SpeciesPicker value={species} onChange={setSpecies} />
-        <AgePicker
-          age={age}
-          birthDate={birthDate}
-          onChange={(next) => { setAge(next.age); setBirthDate(next.birthDate ?? ""); }}
-        />
-        <div className="grid grid-cols-2 gap-3">
-          <BirdField label="Sex">
-            <select className="input" value={sex} onChange={(e) => setSex(e.target.value)}>
-              <option value="">Unknown</option><option>Male</option><option>Female</option>
-            </select>
-          </BirdField>
-          <BirdField label="Flight">
-            <select className="input" value={flight} onChange={(e) => setFlight(e.target.value)}>
-              <option value="unknown">Unknown</option>
-              <option value="fully_flighted">Fully flighted</option>
-              <option value="clipped">Clipped</option>
-              <option value="partially_clipped">Partially clipped</option>
-            </select>
-          </BirdField>
-        </div>
-      </section>
-
-      {/* Foster status — a meta-question about your relationship with the bird,
-          not basic info, so it sits last after all the actual bird details. */}
-      <section className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
-        <label className="flex cursor-pointer items-start gap-3">
-          <input type="checkbox" checked={isFoster} onChange={(e) => setIsFoster(e.target.checked)} className="mt-0.5 size-5 shrink-0 accent-[#1a3d2e]" />
-          <span className="min-w-0">
-            <span className="block text-sm font-medium text-[#1a3d2e]">This is a foster</span>
-            <span className="mt-0.5 block text-xs leading-relaxed text-[#5f5e5a]">
-              You're caring for them while they find a permanent home. You'll be able to hand off their record to the adopter.
-            </span>
-          </span>
-        </label>
-        {isFoster && (
-          <div className="mt-3 space-y-3 border-t border-[#ece6d6] pt-3">
-            <BirdField label="Came to you">
-              <OptionalDate value={intakeDate} max={todayStr} addLabel="Add date" onChange={(v) => setIntakeDate(v)} />
-            </BirdField>
-            <div className="rounded-xl bg-[#efe9da] p-3">
-              <p className="text-sm leading-relaxed text-[#5f5e5a]">
-                It's okay if you don't know much yet — add what you know now, fill the rest in as you learn.
-              </p>
+          <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
+            <div className="flex items-start gap-3">
+              {photo ? (
+                <PhotoCropper src={photo} position={photoPos} onChange={setPhotoPos} size={120} />
+              ) : (
+                <div className="flex size-[120px] items-center justify-center rounded-xl bg-sage-100 text-[10px] uppercase tracking-wider text-sage-600">
+                  No photo
+                </div>
+              )}
+              <div className="flex-1 space-y-2 pt-1">
+                <label
+                  className={`inline-block rounded-lg bg-sage-100 px-3 py-1.5 text-xs font-semibold text-sage-700 ${photoBusy ? "cursor-default opacity-60" : "cursor-pointer"}`}
+                >
+                  {photoBusy ? "Processing…" : photo ? "Change photo" : "Add photo"}
+                  <input
+                    type="file"
+                    accept="image/*,.heic,.heif"
+                    disabled={photoBusy}
+                    className="hidden"
+                    onChange={onPhoto}
+                  />
+                </label>
+                {photo && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPhoto(null);
+                      setPhotoPos("50% 50%");
+                    }}
+                    className="ml-2 text-xs font-semibold text-warn-red underline"
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
-        )}
-      </section>
+            <BirdField label="Name">
+              <input className="input" value={name} onChange={(e) => setName(e.target.value)} />
+            </BirdField>
+            <SpeciesPicker value={species} onChange={setSpecies} />
+            <AgePicker
+              age={age}
+              birthDate={birthDate}
+              onChange={(next) => {
+                setAge(next.age);
+                setBirthDate(next.birthDate ?? "");
+              }}
+            />
+            <div className="grid grid-cols-2 gap-3">
+              <BirdField label="Sex">
+                <select className="input" value={sex} onChange={(e) => setSex(e.target.value)}>
+                  <option value="">Unknown</option>
+                  <option>Male</option>
+                  <option>Female</option>
+                </select>
+              </BirdField>
+              <BirdField label="Flight">
+                <select
+                  className="input"
+                  value={flight}
+                  onChange={(e) => setFlight(e.target.value)}
+                >
+                  <option value="unknown">Unknown</option>
+                  <option value="fully_flighted">Fully flighted</option>
+                  <option value="clipped">Clipped</option>
+                  <option value="partially_clipped">Partially clipped</option>
+                </select>
+              </BirdField>
+            </div>
+          </section>
 
-      <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.65rem .8rem;font-size:16px;outline:none}.input:focus{border-color:var(--sage-600);box-shadow:0 0 0 3px rgb(74 103 65 / .15)}`}</style>
+          {/* Foster status — a meta-question about your relationship with the bird,
+          not basic info, so it sits last after all the actual bird details. */}
+          <section className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
+            <label className="flex cursor-pointer items-start gap-3">
+              <input
+                type="checkbox"
+                checked={isFoster}
+                onChange={(e) => setIsFoster(e.target.checked)}
+                className="mt-0.5 size-5 shrink-0 accent-[#1a3d2e]"
+              />
+              <span className="min-w-0">
+                <span className="block text-sm font-medium text-[#1a3d2e]">This is a foster</span>
+                <span className="mt-0.5 block text-xs leading-relaxed text-[#5f5e5a]">
+                  You're caring for them while they find a permanent home. You'll be able to hand
+                  off their record to the adopter.
+                </span>
+              </span>
+            </label>
+            {isFoster && (
+              <div className="mt-3 space-y-3 border-t border-[#ece6d6] pt-3">
+                <BirdField label="Came to you">
+                  <OptionalDate
+                    value={intakeDate}
+                    max={todayStr}
+                    addLabel="Add date"
+                    onChange={(v) => setIntakeDate(v)}
+                  />
+                </BirdField>
+                <div className="rounded-xl bg-[#efe9da] p-3">
+                  <p className="text-sm leading-relaxed text-[#5f5e5a]">
+                    It's okay if you don't know much yet — add what you know now, fill the rest in
+                    as you learn.
+                  </p>
+                </div>
+              </div>
+            )}
+          </section>
+
+          <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.65rem .8rem;font-size:16px;outline:none}.input:focus{border-color:var(--sage-600);box-shadow:0 0 0 3px rgb(74 103 65 / .15)}`}</style>
         </main>
       </div>
 

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Eye, X } from "lucide-react";
 import { ensureSitterPreviewToken } from "@/lib/sitterPreview";
+import { track } from "@/lib/analytics";
 
 // "View as sitter" — opens the REAL token-based sitter read-only view in an
 // iframe (the exact same renderer a sitter gets), provisioned via a disposable
@@ -19,11 +20,19 @@ function ViewAsSitter() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    track("view_as_sitter_opened", {});
     let cancelled = false;
     (async () => {
-      const { data: bird, error: bErr } = await supabase.from("birds").select("owner_id").eq("id", birdId).maybeSingle();
+      const { data: bird, error: bErr } = await supabase
+        .from("birds")
+        .select("owner_id")
+        .eq("id", birdId)
+        .maybeSingle();
       if (cancelled) return;
-      if (bErr || !bird?.owner_id) { setError("Couldn't load this bird."); return; }
+      if (bErr || !bird?.owner_id) {
+        setError("Couldn't load this bird.");
+        return;
+      }
       try {
         const t = await ensureSitterPreviewToken(birdId, bird.owner_id);
         if (!cancelled) setToken(t);
@@ -31,7 +40,9 @@ function ViewAsSitter() {
         if (!cancelled) setError(e?.message ?? "Couldn't build the sitter preview.");
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [birdId]);
 
   const src = token ? `/sitter/${token}?birdId=${birdId}&preview=1` : null;
@@ -55,7 +66,11 @@ function ViewAsSitter() {
         <div className="grid flex-1 place-items-center p-6 text-center">
           <div>
             <p className="text-sm text-[#854F0B]">{error}</p>
-            <button type="button" onClick={() => navigate({ to: "/dashboard" })} className="mt-4 rounded-xl bg-[#1a3d2e] px-4 py-2 text-sm font-medium text-white">
+            <button
+              type="button"
+              onClick={() => navigate({ to: "/dashboard" })}
+              className="mt-4 rounded-xl bg-[#1a3d2e] px-4 py-2 text-sm font-medium text-white"
+            >
               Back to home
             </button>
           </div>

@@ -7,6 +7,7 @@ import { pauseSitterReminders } from "@/lib/sitter.functions";
 import { ConcernFlow } from "@/components/ConcernFlow";
 import type { VetContact } from "@/components/PassingGuidance";
 import { toast } from "sonner";
+import { track } from "@/lib/analytics";
 
 // "Something's wrong" — sitter-link entry into the shared ConcernFlow (pause →
 // path choice → path detail). The flow + copy live in ConcernFlow, shared with
@@ -26,25 +27,33 @@ function ConcernPage() {
   const owner = ((ctx as any).ownerName ?? "the owner") as string;
   const ownerPhone = ((ctx.contacts as any)?.owner_phone ?? null) as string | null;
   const vet: VetContact = {
-    name: ((ctx.contacts as any)?.avian_vet_name ?? (ctx.contacts as any)?.emergency_vet_name ?? null) as string | null,
-    phone: ((ctx.contacts as any)?.avian_vet_phone ?? (ctx.contacts as any)?.emergency_vet_phone ?? null) as string | null,
+    name: ((ctx.contacts as any)?.avian_vet_name ??
+      (ctx.contacts as any)?.emergency_vet_name ??
+      null) as string | null,
+    phone: ((ctx.contacts as any)?.avian_vet_phone ??
+      (ctx.contacts as any)?.emergency_vet_phone ??
+      null) as string | null,
   };
 
   const m = useMutation({
     mutationFn: () => pauseFn({ data: { token, birdId: ctx.activeBirdId as string } }),
     onSuccess: () => {
+      track("concern_flow_started", { actor: "sitter" });
       qc.invalidateQueries({ queryKey: ["sitter-ctx", token] });
       qc.invalidateQueries({ queryKey: ["sitter-dashboard", token] });
       window.scrollTo(0, 0);
     },
-    onError: (e: any) => toast.error(e?.message ?? "Couldn't pause the reminders. Please try again."),
+    onError: (e: any) =>
+      toast.error(e?.message ?? "Couldn't pause the reminders. Please try again."),
   });
 
   return (
     <div className="min-h-screen bg-[#f4f1e8]">
       <header className="border-b border-[#e0d8c4] bg-[#f4f1e8]">
         <div className="mx-auto flex max-w-md items-center gap-3 px-5 py-3">
-          <Link to="/sitter/$token" params={{ token }} className="rounded p-1 text-[#5f5e5a]"><ArrowLeft className="size-5" /></Link>
+          <Link to="/sitter/$token" params={{ token }} className="rounded p-1 text-[#5f5e5a]">
+            <ArrowLeft className="size-5" />
+          </Link>
           <h1 className="text-sm font-medium text-[#1a3d2e]">{name}</h1>
         </div>
       </header>

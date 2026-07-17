@@ -12,6 +12,7 @@ import { WeightTrendChart, type WeightPoint } from "@/components/WeightTrendChar
 import { computeWeightTrend } from "@/lib/weightTrend";
 import { InkHero, IconTile, StatusPill, SectionHead, Card, RecordRow } from "@/components/system";
 import { MemberContextBanner } from "@/components/MemberContextBanner";
+import { track } from "@/lib/analytics";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/weight")({
   head: () => ({ meta: [{ title: "Weight — Kya & Co." }] }),
@@ -23,7 +24,14 @@ export const Route = createFileRoute("/_authenticated/birds/$birdId/weight")({
   component: WeightFacet,
 });
 
-type Entry = { id: string; grams: number; measured_at: string; source: string; meal_relation: string | null; logged_by: string | null };
+type Entry = {
+  id: string;
+  grams: number;
+  measured_at: string;
+  source: string;
+  meal_relation: string | null;
+  logged_by: string | null;
+};
 type WindowDays = 30 | 90 | 365;
 
 const WINDOWS: { days: WindowDays; label: string }[] = [
@@ -39,8 +47,15 @@ const nowLocal = () => {
   const d = new Date();
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 };
-const fmtDateTime = (iso: string) => new Date(iso).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
-const mealLabel = (m: string | null | undefined): string | null => (m === "before_meal" ? "before meal" : m === "after_meal" ? "after meal" : null);
+const fmtDateTime = (iso: string) =>
+  new Date(iso).toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+const mealLabel = (m: string | null | undefined): string | null =>
+  m === "before_meal" ? "before meal" : m === "after_meal" ? "after meal" : null;
 
 // Window-aware steady/trend context line for the hero (no emergency framing —
 // weight is never "red" on this screen).
@@ -120,16 +135,27 @@ function WeightFacet() {
   const cutoff = Date.now() - win * 86_400_000;
   const inWindow = all.filter((e) => +new Date(e.measured_at) >= cutoff);
 
-  const chartPoints: WeightPoint[] = inWindow.map((e) => ({ at: e.measured_at, grams: e.grams, sitter: e.source === "sitter" }));
+  const chartPoints: WeightPoint[] = inWindow.map((e) => ({
+    at: e.measured_at,
+    grams: e.grams,
+    sitter: e.source === "sitter",
+  }));
 
   // Resolve names for household-logged entries (e.g. "Daniel · household").
-  const householdIds = Array.from(new Set(all.filter((e) => e.source === "household" && e.logged_by).map((e) => e.logged_by as string)));
+  const householdIds = Array.from(
+    new Set(
+      all.filter((e) => e.source === "household" && e.logged_by).map((e) => e.logged_by as string),
+    ),
+  );
   const { data: householdNames } = useQuery({
     queryKey: ["member-names", birdId, householdIds.sort().join(",")],
     enabled: householdIds.length > 0,
     staleTime: 5 * 60_000,
     queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("id, display_name").in("id", householdIds);
+      const { data } = await supabase
+        .from("profiles")
+        .select("id, display_name")
+        .in("id", householdIds);
       const m: Record<string, string> = {};
       for (const p of data ?? []) m[p.id] = (p.display_name ?? "").toString().trim();
       return m;
@@ -137,7 +163,9 @@ function WeightFacet() {
   });
 
   const heroHeadline = current ? `${current.grams} g.` : "Weight.";
-  const heroBody = current ? trendContext(trend, delta, win) : `No weights yet. Pop ${name} on a scale and log the first one.`;
+  const heroBody = current
+    ? trendContext(trend, delta, win)
+    : `No weights yet. Pop ${name} on a scale and log the first one.`;
 
   return (
     <div className="min-h-screen bg-[var(--cream)] pb-nav">
@@ -148,7 +176,11 @@ function WeightFacet() {
           eyebrow="Weight"
           headline={heroHeadline}
           body={heroBody}
-          cta={canLogCare ? { label: "Log today's weight", tone: "lime", onPress: () => setLogOpen(true) } : undefined}
+          cta={
+            canLogCare
+              ? { label: "Log today's weight", tone: "lime", onPress: () => setLogOpen(true) }
+              : undefined
+          }
         />
 
         <main className="space-y-4 px-5 pt-5">
@@ -189,8 +221,13 @@ function WeightFacet() {
                 </div>
                 <WeightTrendChart points={chartPoints} />
                 <p className="mt-2 flex items-center gap-3 t-meta">
-                  <span className="inline-flex items-center gap-1"><span className="size-2 rounded-full bg-[var(--ink)]" /> You</span>
-                  <span className="inline-flex items-center gap-1"><span className="size-2 rounded-full bg-white ring-2 ring-[var(--amber-line)]" /> Sitter</span>
+                  <span className="inline-flex items-center gap-1">
+                    <span className="size-2 rounded-full bg-[var(--ink)]" /> You
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    <span className="size-2 rounded-full bg-white ring-2 ring-[var(--amber-line)]" />{" "}
+                    Sitter
+                  </span>
                 </p>
               </Card>
 
@@ -201,19 +238,32 @@ function WeightFacet() {
                   {all.map((e, i) => {
                     const prev = all[i + 1]; // chronological previous (array is newest-first)
                     const d = prev ? e.grams - prev.grams : null;
-                    const deltaText = d == null ? "First weight" : `${d > 0 ? "+" : ""}${d} g from previous`;
-                    const subtitle = [fmtDateTime(e.measured_at), deltaText, mealLabel(e.meal_relation)].filter(Boolean).join(" · ");
+                    const deltaText =
+                      d == null ? "First weight" : `${d > 0 ? "+" : ""}${d} g from previous`;
+                    const subtitle = [
+                      fmtDateTime(e.measured_at),
+                      deltaText,
+                      mealLabel(e.meal_relation),
+                    ]
+                      .filter(Boolean)
+                      .join(" · ");
                     let marker: React.ReactNode;
                     if (e.source === "sitter") {
                       marker = <StatusPill tone="off">Sitter</StatusPill>;
                     } else if (e.source === "household") {
                       const nm = (e.logged_by && householdNames?.[e.logged_by]) || "";
-                      marker = <StatusPill tone="household">{nm ? `${nm} · household` : "Household"}</StatusPill>;
+                      marker = (
+                        <StatusPill tone="household">
+                          {nm ? `${nm} · household` : "Household"}
+                        </StatusPill>
+                      );
                     }
                     return (
                       <RecordRow
                         key={e.id}
-                        leading={<IconTile size={34} tone="pale" icon={<Scale className="size-4" />} />}
+                        leading={
+                          <IconTile size={34} tone="pale" icon={<Scale className="size-4" />} />
+                        }
                         title={`${e.grams} g`}
                         subtitle={subtitle}
                         trailing={
@@ -249,7 +299,17 @@ function WeightFacet() {
 
 type Meal = "before_meal" | "after_meal" | null;
 
-function LogPanel({ birdId, lastGrams, onClose, onSaved }: { birdId: string; lastGrams?: number; onClose: () => void; onSaved: () => void }) {
+function LogPanel({
+  birdId,
+  lastGrams,
+  onClose,
+  onSaved,
+}: {
+  birdId: string;
+  lastGrams?: number;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
   // sit_id attribution: when the household member is the assigned caregiver on
   // an active sit covering this bird, every weight they log during the window
   // is tagged with that sit_id, so the sit's activity view can derive its feed
@@ -273,13 +333,22 @@ function LogPanel({ birdId, lastGrams, onClose, onSaved }: { birdId: string; las
       // Only send meal_relation when chosen, so logging still works if the
       // additive migration hasn't been applied yet (then the column is absent).
       const payload: Record<string, unknown> = {
-        bird_id: birdId, grams: n, measured_at, source: role === "household" ? "household" : "owner", logged_by: u.user?.id ?? null,
+        bird_id: birdId,
+        grams: n,
+        measured_at,
+        source: role === "household" ? "household" : "owner",
+        logged_by: u.user?.id ?? null,
       };
       if (meal) payload.meal_relation = meal;
       if (activeSitId) payload.sit_id = activeSitId;
       const { error } = await supabase.from("weight_entries").insert(payload as any);
       if (error) throw error;
       toast.success("Weight logged.");
+      track("weight_logged", {
+        grams: n,
+        has_meal_relation: !!meal,
+        source: role === "household" ? "household" : "owner",
+      });
       onSaved();
     } catch (e: any) {
       toast.error(e?.message ?? "Couldn't save the weight.");
@@ -302,7 +371,9 @@ function LogPanel({ birdId, lastGrams, onClose, onSaved }: { birdId: string; las
           onChange={(e) => setGrams(e.target.value.replace(/[^0-9.]/g, ""))}
         />
         {grams !== "" && !valid && grams && (Number(grams) < MIN_G || Number(grams) > MAX_G) && (
-          <p className="mt-1 text-[11px] text-[var(--amber-ink)]">Enter a weight between {MIN_G} and {MAX_G} grams.</p>
+          <p className="mt-1 text-[11px] text-[var(--amber-ink)]">
+            Enter a weight between {MIN_G} and {MAX_G} grams.
+          </p>
         )}
       </div>
 
@@ -318,7 +389,9 @@ function LogPanel({ birdId, lastGrams, onClose, onSaved }: { birdId: string; las
       </div>
 
       <div className="mt-3">
-        <label className="mb-1 block text-xs font-[500] text-[var(--mute)]">Relative to a meal (optional)</label>
+        <label className="mb-1 block text-xs font-[500] text-[var(--mute)]">
+          Relative to a meal (optional)
+        </label>
         <div className="grid grid-cols-2 gap-2">
           {(["before_meal", "after_meal"] as const).map((m) => (
             <button
@@ -342,7 +415,12 @@ function LogPanel({ birdId, lastGrams, onClose, onSaved }: { birdId: string; las
         >
           <Check className="size-4" /> {saving ? "Saving…" : "Save"}
         </button>
-        <button type="button" onClick={onClose} disabled={saving} className="min-h-[44px] rounded-[12px] px-4 text-sm font-[500] text-[var(--mute)] ring-1 ring-[var(--line)]">
+        <button
+          type="button"
+          onClick={onClose}
+          disabled={saving}
+          className="min-h-[44px] rounded-[12px] px-4 text-sm font-[500] text-[var(--mute)] ring-1 ring-[var(--line)]"
+        >
           Cancel
         </button>
       </div>
