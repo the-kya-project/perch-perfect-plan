@@ -62,6 +62,14 @@ type EventProps = Record<string, string | number | boolean | null | undefined>;
 
 type Provider = "posthog" | "plausible" | null;
 
+// PostHog project key, hardcoded for production. It's a public client
+// identifier (it ships in the page source of every site running PostHog,
+// like the TikTok pixel ID) — not a secret. It lives here rather than in a
+// Vercel env var because adding it as VITE_POSTHOG_KEY reliably broke
+// Vercel's runtime env bundling (EnvFileReadError 500s on every request,
+// reproduced twice on 2026-07-17). An env var still overrides when present.
+const PROD_POSTHOG_KEY = "phc_qkMPyAbqFHDcG6FdXFBQUsiyPsbMjbCX2hNSw2bddPKh";
+
 function readEnv(): {
   provider: Provider;
   posthogKey?: string;
@@ -71,18 +79,22 @@ function readEnv(): {
 } {
   // import.meta.env is statically inlined by Vite at build time.
   const env = (import.meta as any).env ?? {};
+  // The hardcoded key applies in production builds only, so dev and previews
+  // stay silent no-ops exactly as before.
+  const posthogKey: string | undefined =
+    env.VITE_POSTHOG_KEY || (import.meta.env.PROD ? PROD_POSTHOG_KEY : undefined);
   const raw = String(env.VITE_ANALYTICS_PROVIDER ?? "").toLowerCase().trim();
   let provider: Provider = null;
-  if (raw === "posthog" && env.VITE_POSTHOG_KEY) provider = "posthog";
+  if (raw === "posthog" && posthogKey) provider = "posthog";
   else if (raw === "plausible" && env.VITE_PLAUSIBLE_DOMAIN) provider = "plausible";
   else if (!raw) {
     // Auto-detect when provider not explicitly set.
-    if (env.VITE_POSTHOG_KEY) provider = "posthog";
+    if (posthogKey) provider = "posthog";
     else if (env.VITE_PLAUSIBLE_DOMAIN) provider = "plausible";
   }
   return {
     provider,
-    posthogKey: env.VITE_POSTHOG_KEY || undefined,
+    posthogKey,
     posthogHost: env.VITE_POSTHOG_HOST || "https://us.i.posthog.com",
     plausibleDomain: env.VITE_PLAUSIBLE_DOMAIN || undefined,
     plausibleHost: env.VITE_PLAUSIBLE_HOST || "https://plausible.io",
