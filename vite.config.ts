@@ -41,8 +41,10 @@ const CSP = [
   "style-src 'self' 'unsafe-inline'",
   // analytics.tiktok.com: ads pixel on the marketing pages (src/lib/tiktokPixel.ts);
   // the -sg host is TikTok's regional fallback for the same script/beacons.
-  "script-src 'self' 'unsafe-inline' https://us.i.posthog.com https://eu.i.posthog.com https://plausible.io https://analytics.tiktok.com https://analytics-sg.tiktok.com",
-  `connect-src 'self' ${SUPABASE_ORIGIN} https://*.videodelivery.net https://*.cloudflarestream.com https://us.i.posthog.com https://eu.i.posthog.com https://plausible.io https://analytics.tiktok.com https://analytics-sg.tiktok.com`,
+  // us-assets.i.posthog.com serves PostHog's post-init scripts (config.js,
+  // surveys.js) — observed live once analytics actually initialized.
+  "script-src 'self' 'unsafe-inline' https://us.i.posthog.com https://eu.i.posthog.com https://us-assets.i.posthog.com https://plausible.io https://analytics.tiktok.com https://analytics-sg.tiktok.com",
+  `connect-src 'self' ${SUPABASE_ORIGIN} https://*.videodelivery.net https://*.cloudflarestream.com https://us.i.posthog.com https://eu.i.posthog.com https://us-assets.i.posthog.com https://plausible.io https://analytics.tiktok.com https://analytics-sg.tiktok.com`,
   "frame-src 'self' https://*.videodelivery.net",
   "worker-src 'self' blob:",
   "manifest-src 'self'",

@@ -160,29 +160,18 @@ function loadScript(src: string, attrs: Record<string, string> = {}): Promise<vo
 // ---------------- PostHog adapter ----------------
 
 async function bootPostHog(key: string, host: string) {
-  // Inline PostHog snippet (truncated, official loader pattern) so we don't
-  // need to add the npm package.
-  if (!(window as any).posthog) {
-    (function (t: any, e: any) {
-      const o = (t.posthog = t.posthog || []);
-      if (!o.__SV) {
-        const a = e.createElement("script");
-        a.type = "text/javascript";
-        a.async = true;
-        a.src = `${host}/static/array.js`;
-        const n = e.getElementsByTagName("script")[0];
-        n.parentNode!.insertBefore(a, n);
-        const c =
-          "init capture identify alias people.set people.set_once register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures getActiveMatchingSurveys getSurveys".split(" ");
-        for (let r = 0; r < c.length; r++) {
-          const fn = c[r];
-          o[fn] = (...args: any[]) => o.push([fn, ...args]);
-        }
-        o.__SV = 1;
-      }
-    })(window, document);
+  // Load array.js first, then init directly on the loaded library. The old
+  // hand-rolled stub queued ["init", ...] as a generic method call, but
+  // array.js only replays init from its special `_i` queue — so the library
+  // loaded and silently never initialized (empty token, no events). Verified
+  // live on 2026-07-17: direct init on the loaded object beacons correctly.
+  await loadScript(`${host}/static/array.js`);
+  const ph = (window as any).posthog;
+  if (!ph || typeof ph.init !== "function" || ph.__loaded) {
+    flush();
+    return;
   }
-  (window as any).posthog.init(key, {
+  ph.init(key, {
     api_host: host,
     capture_pageview: true,
     persistence: "localStorage+cookie",
