@@ -6,6 +6,7 @@ import { activeOwnerBirdsMin, type ActiveBirdMin } from "@/lib/activeBirds";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { createHouseholdInvite, getHouseholdAccount, addExistingHouseholdMember } from "@/lib/household.functions";
 import { ASSIGNABLE_PRESETS, PRESET_LABELS, PRESET_DESCRIPTIONS, type AssignablePreset } from "@/lib/capabilities";
+import { track } from "@/lib/analytics";
 import { toast } from "sonner";
 import { Loader2, Plus } from "lucide-react";
 
@@ -79,7 +80,11 @@ export function HouseholdInviteSheet({
   const create = useServerFn(createHouseholdInvite);
   const m = useMutation({
     mutationFn: () => create({ data: { inviteeEmail: email.trim(), inviteeName: name.trim() || undefined, birdIds: [...selected], preset } }),
-    onSuccess: () => { toast.success("Invite sent."); onSent(); },
+    onSuccess: () => {
+      toast.success("Invite sent.");
+      track("household_member_invited", { bird_count: selected.size, preset });
+      onSent();
+    },
     onError: (e: any) => toast.error(e?.message ?? "Couldn't send the invite."),
   });
 

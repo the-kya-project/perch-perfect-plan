@@ -44,7 +44,17 @@ export type AnalyticsEventName =
   | "health_scan_run"
   | "clip_viewed"
   | "care_sheet_viewed"
-  | "marketing_opt_in_checked";
+  | "marketing_opt_in_checked"
+  // Journey events cherry-picked from PostHog's wizard PR (#255); sent
+  // through this wrapper rather than its posthog-js provider rewrite.
+  | "bird_added"
+  | "weight_logged"
+  | "care_plan_viewed"
+  | "care_plan_editor_opened"
+  | "view_as_sitter_opened"
+  | "concern_flow_started"
+  | "household_member_invited"
+  | "bird_handoff_initiated";
 
 type EventProps = Record<string, string | number | boolean | null | undefined>;
 

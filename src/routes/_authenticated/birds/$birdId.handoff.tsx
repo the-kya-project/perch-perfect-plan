@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { createHandoff } from "@/lib/handoff.functions";
+import { track } from "@/lib/analytics";
 import { toast } from "sonner";
 import { ArrowLeft, ArrowRightLeft, AlertTriangle } from "lucide-react";
 
@@ -36,6 +37,7 @@ function HandoffFlow() {
     mutationFn: () => create({ data: { birdId, recipientEmail: email.trim(), recipientName: recipientName.trim() || undefined } }),
     onSuccess: () => {
       toast.success("Handoff sent.");
+      track("bird_handoff_initiated", { has_recipient_name: !!recipientName.trim() });
       qc.invalidateQueries({ queryKey: ["pending-handoff", birdId] });
       navigate({ to: "/birds/$birdId", params: { birdId } });
     },

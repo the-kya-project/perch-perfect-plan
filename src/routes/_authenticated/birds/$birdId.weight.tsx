@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { ArrowLeft, Scale, Check, Trash2 } from "lucide-react";
 import { WeightTrendChart, type WeightPoint } from "@/components/WeightTrendChart";
 import { computeWeightTrend } from "@/lib/weightTrend";
+import { track } from "@/lib/analytics";
 import { InkHero, IconTile, StatusPill, SectionHead, Card, RecordRow } from "@/components/system";
 import { MemberContextBanner } from "@/components/MemberContextBanner";
 
@@ -280,6 +281,11 @@ function LogPanel({ birdId, lastGrams, onClose, onSaved }: { birdId: string; las
       const { error } = await supabase.from("weight_entries").insert(payload as any);
       if (error) throw error;
       toast.success("Weight logged.");
+      track("weight_logged", {
+        grams: n,
+        has_meal_relation: !!meal,
+        source: role === "household" ? "household" : "owner",
+      });
       onSaved();
     } catch (e: any) {
       toast.error(e?.message ?? "Couldn't save the weight.");

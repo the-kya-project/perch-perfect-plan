@@ -1,10 +1,12 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { computeSetupCompleteness, type SetupCheck } from "@/lib/setupCompleteness";
 import { useBirdRole } from "@/lib/useBirdRole";
 import { useCapability } from "@/lib/useCapability";
+import { track } from "@/lib/analytics";
 import { InkHero, IconTile, StatusPill, CtaLink, Card, RecordRow } from "@/components/system";
 import { MemberContextBanner } from "@/components/MemberContextBanner";
 import {
@@ -108,6 +110,9 @@ function CarePlanOverview() {
   const completeness = computeSetupCompleteness({ bird, plan, tasksCount: tasks.length, contacts, defaults });
   const checksByKey = new Map<string, SetupCheck>(completeness.checks.map((c) => [c.key, c]));
 
+  useEffect(() => {
+    track("care_plan_viewed", {});
+  }, []);
 
   const name = bird?.name ?? "this bird";
 
@@ -163,7 +168,10 @@ function CarePlanOverview() {
               // edit_care_plans opens the section editor; everyone else opens the
               // read-only care-plan view (RLS-enforced).
               const onRow = canEdit
-                ? () => navigate({ to: "/birds/$birdId/plan/editor", params: { birdId }, search: { tab: s.tab } })
+                ? () => {
+                    track("care_plan_editor_opened", { tab: s.tab, section_ready: done });
+                    navigate({ to: "/birds/$birdId/plan/editor", params: { birdId }, search: { tab: s.tab } });
+                  }
                 : () => navigate({ to: "/birds/$birdId/care-plan", params: { birdId }, search: { section: READ_SECTION[s.key] } });
               return (
                 <RecordRow

@@ -9,6 +9,7 @@ import { SpeciesPicker, AgePicker, BirdField, OptionalDate } from "@/components/
 import { InkHero, PrimaryButton } from "@/components/system";
 import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
 import { persistBirdPhoto } from "@/lib/birdPhoto";
+import { track } from "@/lib/analytics";
 import { ArrowLeft } from "lucide-react";
 import { z } from "zod";
 
@@ -136,6 +137,7 @@ function NewBird() {
       if (!id) return;
       createdIdRef.current = id;
       toast.success(`${name} added.`);
+      track("bird_added", { species, is_foster: isFoster, has_photo: !!photo });
     }
     try {
       await navigate({ to: "/birds/$birdId/setup", params: { birdId: id }, search: { step: 1 } });

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Eye, X } from "lucide-react";
 import { ensureSitterPreviewToken } from "@/lib/sitterPreview";
+import { track } from "@/lib/analytics";
 
 // "View as sitter" — opens the REAL token-based sitter read-only view in an
 // iframe (the exact same renderer a sitter gets), provisioned via a disposable
@@ -19,6 +20,7 @@ function ViewAsSitter() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    track("view_as_sitter_opened", {});
     let cancelled = false;
     (async () => {
       const { data: bird, error: bErr } = await supabase.from("birds").select("owner_id").eq("id", birdId).maybeSingle();
