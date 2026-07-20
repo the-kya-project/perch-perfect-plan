@@ -273,19 +273,20 @@ export function buildOnboardingFirstWeightEmail(opts: { birdName: string; link: 
 export function buildOnboardingHealthScanEmail(opts: { birdName: string; link: string }): BuiltEmail {
   const bird = escapeHtml(opts.birdName);
   return {
-    subject: `Two minutes with ${opts.birdName} — try the daily health check`,
+    subject: `Two minutes a day builds ${opts.birdName}'s health record`,
     html: shell({
       kicker: "Getting set up",
-      heading: `Run ${bird}'s first health check`,
+      heading: `Scan ${bird} every day — off or not`,
       body:
-        `A handful of quick questions — droppings, appetite, energy, breathing — and ${bird}'s day is on the record. ` +
-        `Do it while you change the water. It's the same check a sitter runs, and anything off gets flagged early instead of noticed late.`,
-      cta: "Run a health check",
+        `The daily health check takes about two minutes: droppings, appetite, energy, breathing. Log it every day and document ` +
+        `what you see — the odd days and the completely normal ones both count, because normal is what makes a change visible. ` +
+        `Every check becomes part of ${bird}'s record, so at the vet you're not saying "she's seemed off lately" — you're showing exactly what changed, and when.`,
+      cta: "Run today's health check",
       link: opts.link,
       foot: ONBOARDING_FOOT,
       reading: READING_SIGNS,
     }),
-    text: `A few quick questions and ${opts.birdName}'s day is on the record — the same daily check a sitter runs. Try it: ${opts.link}`,
+    text: `The daily health check takes about two minutes. Document what you see every day — off or completely normal — and it all becomes part of ${opts.birdName}'s record you can bring to the vet.\n\nRun today's check: ${opts.link}`,
   };
 }
 
