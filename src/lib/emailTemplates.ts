@@ -9,7 +9,24 @@ export function escapeHtml(s: string): string {
 
 export type BuiltEmail = { subject: string; html: string; text: string };
 
-function shell(opts: { kicker: string; heading: string; body: string; cta: string; link: string; foot: string }): string {
+function shell(opts: {
+  kicker: string;
+  heading: string;
+  body: string;
+  cta: string;
+  link: string;
+  foot: string;
+  /** Optional "From the field notes" blog block rendered under the CTA. */
+  reading?: { title: string; teaser: string; url: string };
+}): string {
+  const reading = opts.reading
+    ? `
+      <div style="margin-top:20px;padding:14px 16px;background:#f4f1e8;border-radius:12px;">
+        <p style="margin:0;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8a897f;">From the field notes</p>
+        <p style="margin:6px 0 0;font-size:14px;"><a href="${opts.reading.url}" style="color:#1a3d2e;font-weight:600;">${opts.reading.title}</a></p>
+        <p style="margin:4px 0 0;font-size:12.5px;color:#5f5e5a;line-height:1.5;">${opts.reading.teaser}</p>
+      </div>`
+    : "";
   // Email header: horizontal-cream lockup served from production via an
   // ABSOLUTE URL (relative paths can't resolve inside a recipient's inbox).
   // Plain-text fallback line "Kya & Co. — by The Kya Project" lives in the
@@ -26,7 +43,7 @@ function shell(opts: { kicker: string; heading: string; body: string; cta: strin
     </div>
     <div style="padding:24px;">
       <p style="margin:0 0 8px;font-size:15px;color:#1a3d2e;">${opts.body}</p>
-      <a href="${opts.link}" style="display:inline-block;margin-top:12px;background:#1a3d2e;color:#fff;text-decoration:none;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:600;">${opts.cta}</a>
+      <a href="${opts.link}" style="display:inline-block;margin-top:12px;background:#1a3d2e;color:#fff;text-decoration:none;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:600;">${opts.cta}</a>${reading}
       <p style="margin:20px 0 0;font-size:12px;color:#8a897f;line-height:1.5;">${opts.foot}</p>
       <p style="margin:18px 0 0;font-size:11px;color:#8a897f;text-align:center;border-top:1px solid #eee6d4;padding-top:12px;">Kya &amp; Co. — by The Kya Project</p>
     </div>
@@ -166,5 +183,108 @@ export function buildHandoffDeclinedEmail(opts: { birdName: string }): BuiltEmai
       foot: "No action needed.",
     }),
     text: `${opts.birdName}'s handoff was declined. Nothing changed — ${opts.birdName} is still in your account.`,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Onboarding product emails — sent (at most once each, one per day max) by the
+// onboarding-emails cron route based on what the account has actually done.
+// These are core product communication, not marketing.
+// ---------------------------------------------------------------------------
+
+const ONBOARDING_FOOT =
+  "You're getting this because you have a Kya & Co. account and haven't finished setting up. Each of these setup notes is sent at most once.";
+
+// Blog posts linked from the drip (verified live on thekyaproject.com 2026-07-20).
+// When the planned "why weigh your bird" post is published, point the two
+// weight emails at it instead.
+const BLOG = "https://www.thekyaproject.com/blog";
+const READING_THRIVE = {
+  title: "What the research actually says parrots need to thrive",
+  teaser: "The evidence behind good husbandry — the same ground a care plan covers.",
+  url: `${BLOG}/what-the-research-actually-says-parrots-need-to-thrive`,
+};
+const READING_SIGNS = {
+  title: "What parrot welfare research reveals about the signs owners miss",
+  teaser: "Parrots are experts at hiding illness. Research on the quiet signals that matter.",
+  url: `${BLOG}/what-parrot-welfare-research-reveals-about-the-signs-owners-miss`,
+};
+
+// Stage: signed up, no bird yet.
+export function buildOnboardingAddBirdEmail(opts: { firstName?: string; link: string }): BuiltEmail {
+  const hi = opts.firstName ? `${escapeHtml(opts.firstName)}, your` : "Your";
+  return {
+    subject: "Your bird's record is ready when you are",
+    html: shell({
+      kicker: "Getting set up",
+      heading: `${hi} flock page is still empty`,
+      body:
+        "Adding a bird takes about a minute — a name and a species is enough to start. " +
+        "Everything else (care plan, weights, photos) can come whenever you like.",
+      cta: "Add your bird",
+      link: opts.link,
+      foot: ONBOARDING_FOOT,
+    }),
+    text: `Adding a bird takes about a minute — a name and a species is enough to start.\n\nAdd your bird: ${opts.link}`,
+  };
+}
+
+// Stage: has a bird, care plan untouched.
+export function buildOnboardingCarePlanEmail(opts: { birdName: string; link: string }): BuiltEmail {
+  const bird = escapeHtml(opts.birdName);
+  return {
+    subject: `A little about ${opts.birdName} goes a long way`,
+    html: shell({
+      kicker: "Getting set up",
+      heading: `Start ${bird}'s care plan`,
+      body:
+        `You know ${bird}'s routine by heart — food, quirks, the little rules. Writing even one section down means ` +
+        `family, sitters, and anyone helping out can care for ${bird} the way you would. Add a section at a time, in any order.`,
+      cta: `Open ${bird}'s care plan`,
+      link: opts.link,
+      foot: ONBOARDING_FOOT,
+      reading: READING_THRIVE,
+    }),
+    text: `Writing down even one care-plan section means anyone helping out can care for ${opts.birdName} the way you would.\n\nOpen the care plan: ${opts.link}`,
+  };
+}
+
+// Stage: has a bird, no weight logged yet.
+export function buildOnboardingFirstWeightEmail(opts: { birdName: string; link: string }): BuiltEmail {
+  const bird = escapeHtml(opts.birdName);
+  return {
+    subject: `Log ${opts.birdName}'s first weight`,
+    html: shell({
+      kicker: "Getting set up",
+      heading: `${bird}'s weight tells you what words can't`,
+      body:
+        `Birds hide illness — weight is often the first honest signal. Log ${bird}'s weight once and you've started a baseline; ` +
+        `keep it up (a kitchen scale and ten seconds) and the app will show you the trend at a glance.`,
+      cta: "Log a weight",
+      link: opts.link,
+      foot: ONBOARDING_FOOT,
+      reading: READING_SIGNS,
+    }),
+    text: `Weight is often the first honest signal of a bird's health. Log ${opts.birdName}'s first weight to start a baseline: ${opts.link}`,
+  };
+}
+
+// Stage: first weight just logged — show what it unlocked.
+export function buildOnboardingWeightTrendEmail(opts: { birdName: string; link: string }): BuiltEmail {
+  const bird = escapeHtml(opts.birdName);
+  return {
+    subject: `${opts.birdName}'s baseline has begun`,
+    html: shell({
+      kicker: "Nice work",
+      heading: `${bird}'s first weight is on the record`,
+      body:
+        `Every weigh-in from here builds ${bird}'s trend — steady, up, or down — right on the record and in the vet summary. ` +
+        `Weighing at the same time of day (before breakfast works well) keeps the trend honest.`,
+      cta: `See ${bird}'s weight page`,
+      link: opts.link,
+      foot: ONBOARDING_FOOT,
+      reading: READING_SIGNS,
+    }),
+    text: `${opts.birdName}'s first weight is logged. Every weigh-in from here builds the trend on the record and in the vet summary.\n\nSee the weight page: ${opts.link}`,
   };
 }
