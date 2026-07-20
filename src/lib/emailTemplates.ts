@@ -269,6 +269,26 @@ export function buildOnboardingFirstWeightEmail(opts: { birdName: string; link: 
   };
 }
 
+// Stage: has a bird, never run a daily health scan.
+export function buildOnboardingHealthScanEmail(opts: { birdName: string; link: string }): BuiltEmail {
+  const bird = escapeHtml(opts.birdName);
+  return {
+    subject: `Two minutes with ${opts.birdName} — try the daily health check`,
+    html: shell({
+      kicker: "Getting set up",
+      heading: `Run ${bird}'s first health check`,
+      body:
+        `A handful of quick questions — droppings, appetite, energy, breathing — and ${bird}'s day is on the record. ` +
+        `Do it while you change the water. It's the same check a sitter runs, and anything off gets flagged early instead of noticed late.`,
+      cta: "Run a health check",
+      link: opts.link,
+      foot: ONBOARDING_FOOT,
+      reading: READING_SIGNS,
+    }),
+    text: `A few quick questions and ${opts.birdName}'s day is on the record — the same daily check a sitter runs. Try it: ${opts.link}`,
+  };
+}
+
 // Stage: first weight just logged — show what it unlocked.
 export function buildOnboardingWeightTrendEmail(opts: { birdName: string; link: string }): BuiltEmail {
   const bird = escapeHtml(opts.birdName);

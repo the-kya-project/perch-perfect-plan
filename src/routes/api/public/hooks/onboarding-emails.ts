@@ -10,6 +10,7 @@
  *       add_first_bird   — account ≥2 days old, no (living) birds
  *       start_care_plan  — oldest bird ≥3 days old, no care-plan content anywhere
  *       log_first_weight — oldest bird ≥5 days old, zero weight entries
+ *       run_first_scan   — oldest bird ≥7 days old, no daily health scan yet
  *       weight_trend     — first weight was logged within the last 7 days
  *         (the recency guard stops long-time users getting a "first weight!"
  *         email on rollout day)
@@ -32,7 +33,7 @@
  */
 import { createFileRoute } from "@tanstack/react-router";
 
-type Stage = "add_first_bird" | "start_care_plan" | "log_first_weight" | "weight_trend";
+type Stage = "add_first_bird" | "start_care_plan" | "log_first_weight" | "run_first_scan" | "weight_trend";
 
 const DAY = 1000 * 60 * 60 * 24;
 
@@ -80,22 +81,24 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const appUrl = process.env.APP_URL || "https://app.thekyaproject.com";
 
-        // Whole-account snapshot in five queries — fine at this user scale.
-        const [profilesQ, birdsQ, plansQ, weightsQ, logQ] = await Promise.all([
+        // Whole-account snapshot in six queries — fine at this user scale.
+        const [profilesQ, birdsQ, plansQ, weightsQ, scansQ, logQ] = await Promise.all([
           supabaseAdmin.from("profiles").select("id, email, display_name, created_at, marketing_opt_in").limit(2000),
           supabaseAdmin.from("birds").select("id, owner_id, name, created_at, passed_at").limit(5000),
           supabaseAdmin.from("care_plans").select("bird_id, diet_types, food_instructions, handlers, likes, fears_triggers, cage_location, out_of_cage_mode, hazards, whats_normal").limit(5000),
           supabaseAdmin.from("weight_entries").select("bird_id, measured_at").order("measured_at", { ascending: true }).limit(10000),
+          supabaseAdmin.from("daily_logs").select("bird_id").limit(10000),
           // Cast: the table is newer than the generated types (regenerate after
           // the 20260720230000 migration is applied).
           (supabaseAdmin as any).from("onboarding_email_log").select("user_id, stage") as Promise<{ data: any[] | null; error: { message: string } | null }>,
         ]);
-        const firstErr = profilesQ.error || birdsQ.error || plansQ.error || weightsQ.error || logQ.error;
+        const firstErr = profilesQ.error || birdsQ.error || plansQ.error || weightsQ.error || scansQ.error || logQ.error;
         if (firstErr) {
           return Response.json({ ok: false, error: firstErr.message }, { status: 500 });
         }
 
         const planByBird = new Map((plansQ.data ?? []).map((p: any) => [p.bird_id, p]));
+        const scannedBirds = new Set((scansQ.data ?? []).map((s: any) => s.bird_id));
         const firstWeightByBird = new Map<string, string>();
         for (const w of (weightsQ.data ?? []) as any[]) {
           if (!firstWeightByBird.has(w.bird_id)) firstWeightByBird.set(w.bird_id, w.measured_at);
@@ -132,7 +135,7 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
           return Response.json({ ok: true, audit: "no_bird", count: out.length, accounts: out });
         }
 
-        const planned: Array<{ userId: string; stage: Stage; email: string; birdName?: string }> = [];
+        const planned: Array<{ userId: string; stage: Stage; email: string; birdName?: string; birdId?: string }> = [];
 
         for (const profile of (profilesQ.data ?? []) as any[]) {
           const userId = profile.id as string;
@@ -143,22 +146,26 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
           );
           const oldest = birds[0];
           const anyCareContent = birds.some((b) => hasCareContent(planByBird.get(b.id)));
+          const anyScan = birds.some((b) => scannedBirds.has(b.id));
           const firstWeightAt = birds
             .map((b) => firstWeightByBird.get(b.id))
             .filter(Boolean)
             .sort()[0] as string | undefined;
 
-          let stage: Stage | null = null;
+          // Every stage the account currently qualifies for, in funnel order;
+          // the FIRST one not yet sent wins (so a person parked on one stage
+          // doesn't block the later nudges forever).
+          const candidates: Stage[] = [];
           if (birds.length === 0) {
-            if (olderThanDays(profile.created_at, 2)) stage = "add_first_bird";
-          } else if (!anyCareContent && olderThanDays(oldest.created_at, 3)) {
-            stage = "start_care_plan";
-          } else if (!firstWeightAt && olderThanDays(oldest.created_at, 5)) {
-            stage = "log_first_weight";
-          } else if (firstWeightAt && Date.now() - new Date(firstWeightAt).getTime() <= 7 * DAY) {
-            stage = "weight_trend";
+            if (olderThanDays(profile.created_at, 2)) candidates.push("add_first_bird");
+          } else {
+            if (!anyCareContent && olderThanDays(oldest.created_at, 3)) candidates.push("start_care_plan");
+            if (!firstWeightAt && olderThanDays(oldest.created_at, 5)) candidates.push("log_first_weight");
+            if (!anyScan && olderThanDays(oldest.created_at, 7)) candidates.push("run_first_scan");
+            if (firstWeightAt && Date.now() - new Date(firstWeightAt).getTime() <= 7 * DAY) candidates.push("weight_trend");
           }
-          if (!stage || sent.has(`${userId}:${stage}`)) continue;
+          const stage = candidates.find((s) => !sent.has(`${userId}:${s}`));
+          if (!stage) continue;
 
           // Resolve the address: profiles.email, else the auth record.
           let email = (profile.email ?? "").toString().trim();
@@ -168,7 +175,7 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
           }
           if (!email) continue;
 
-          planned.push({ userId, stage, email, birdName: oldest?.name });
+          planned.push({ userId, stage, email, birdName: oldest?.name, birdId: oldest?.id });
         }
 
         if (dryRun) {
@@ -183,12 +190,13 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
           buildOnboardingAddBirdEmail,
           buildOnboardingCarePlanEmail,
           buildOnboardingFirstWeightEmail,
+          buildOnboardingHealthScanEmail,
           buildOnboardingWeightTrendEmail,
         } = await import("@/lib/emailTemplates");
         const { sendTransactionalEmail } = await import("@/lib/brevoEmail.server");
 
         const results: Record<Stage, number> = {
-          add_first_bird: 0, start_care_plan: 0, log_first_weight: 0, weight_trend: 0,
+          add_first_bird: 0, start_care_plan: 0, log_first_weight: 0, run_first_scan: 0, weight_trend: 0,
         };
         let failed = 0;
 
@@ -203,7 +211,9 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
                 ? buildOnboardingCarePlanEmail({ birdName: bird, link: `${appUrl}/dashboard` })
                 : p.stage === "log_first_weight"
                   ? buildOnboardingFirstWeightEmail({ birdName: bird, link: `${appUrl}/dashboard` })
-                  : buildOnboardingWeightTrendEmail({ birdName: bird, link: `${appUrl}/dashboard` });
+                  : p.stage === "run_first_scan"
+                    ? buildOnboardingHealthScanEmail({ birdName: bird, link: p.birdId ? `${appUrl}/birds/${p.birdId}/scan` : `${appUrl}/scans` })
+                    : buildOnboardingWeightTrendEmail({ birdName: bird, link: `${appUrl}/dashboard` });
 
           const res = await sendTransactionalEmail({
             to: p.email,
