@@ -32,13 +32,15 @@ export function WeightTrendChart({ points }: { points: WeightPoint[] }) {
   const y = (g: number) => PAD.top + (1 - (g - gMin) / (gMax - gMin)) * (H - PAD.top - PAD.bottom);
 
   const linePath = pts.map((p, i) => `${i === 0 ? "M" : "L"}${x(times[i]).toFixed(1)},${y(p.grams).toFixed(1)}`).join(" ");
-  const gridYs = [gMaxRaw, gMinRaw];
+  // A single-weight window makes min === max — render one gridline, not two
+  // duplicate-keyed ones (React error loop).
+  const gridYs = gMaxRaw === gMinRaw ? [gMaxRaw] : [gMaxRaw, gMinRaw];
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="h-[150px] w-full" role="img" aria-label="Weight over time">
       {/* gridlines + gram labels at the real min/max */}
-      {gridYs.map((g) => (
-        <g key={g}>
+      {gridYs.map((g, gi) => (
+        <g key={`${g}-${gi}`}>
           <line x1={PAD.left} x2={W - PAD.right} y1={y(g)} y2={y(g)} stroke="#e3dcc9" strokeWidth="1" />
           <text x={PAD.left - 4} y={y(g) + 3} textAnchor="end" fontSize="9" fill="#8a897f">{Math.round(g)}</text>
         </g>

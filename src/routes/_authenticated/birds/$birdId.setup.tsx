@@ -1781,8 +1781,12 @@ export function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlus
   const [weightMin, setWeightMin] = useState("");
   const [weightMax, setWeightMax] = useState("");
   const [conditions, setConditions] = useState("");
-  const [meds, setMeds] = useState("");
-  const [medSchedule, setMedSchedule] = useState("");
+  // Medications: a repeatable list of { name (incl. dose), schedule }. Stored
+  // structured in care_plans.medications_details (jsonb); the legacy text
+  // columns (birds.medications, care_plans.medication_schedule) are kept in
+  // sync as joined summaries so every read surface (care sheet, sitter view,
+  // vet summary, export) keeps working unchanged.
+  const [medRows, setMedRows] = useState<MedRow[]>([{ name: "", schedule: "" }]);
   const [whatsNormal, setWhatsNormal] = useState("");
   const [notes, setNotes] = useState("");
   // Granular "what's normal" + when-to-call fields, keyed by care_plans column.
@@ -1809,8 +1813,16 @@ export function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlus
     setWeightMin(bird.normal_weight_min != null ? String(bird.normal_weight_min) : "");
     setWeightMax(bird.normal_weight_max != null ? String(bird.normal_weight_max) : "");
     setConditions(bird.medical_conditions ?? "");
-    setMeds(bird.medications ?? "");
-    setMedSchedule(plan.medication_schedule ?? "");
+    // Prefer the structured list; fall back to the legacy single-med fields
+    // (lossless upgrade for birds saved before the list existed).
+    const structured = Array.isArray(plan.medications_details)
+      ? (plan.medications_details as any[]).filter((m) => m && typeof m.name === "string")
+      : [];
+    if (structured.length) {
+      setMedRows(structured.map((m) => ({ name: m.name ?? "", schedule: m.schedule ?? "" })));
+    } else if ((bird.medications ?? "").trim()) {
+      setMedRows([{ name: bird.medications ?? "", schedule: plan.medication_schedule ?? "" }]);
+    }
     setWhatsNormal(plan.whats_normal ?? "");
     setNotes(bird.notes ?? "");
     setDetail(Object.fromEntries(
@@ -1826,6 +1838,15 @@ export function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlus
       if (!plan || !bird) return;
       const newWeight = weight.trim() ? Number(weight) : null;
       const num = (v: string) => (v.trim() ? Number(v) : null);
+      // Clean med rows (drop empties) + legacy joined summaries for the read
+      // surfaces that still render the old text columns.
+      const cleanMeds = medRows
+        .map((m) => ({ name: m.name.trim(), schedule: m.schedule.trim() }))
+        .filter((m) => m.name);
+      const medsSummary = cleanMeds.map((m) => m.name).join("; ") || null;
+      const schedSummary = cleanMeds.length <= 1
+        ? cleanMeds[0]?.schedule || null
+        : cleanMeds.map((m) => (m.schedule ? `${m.name}: ${m.schedule}` : m.name)).join(" · ");
       await supabase
         .from("birds")
         .update({
@@ -1834,20 +1855,28 @@ export function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlus
           normal_weight_max: num(weightMax),
           notes: notes || null,
           medical_conditions: conditions || null,
-          medications: meds || null,
+          medications: medsSummary,
         } as any)
         .eq("id", birdId);
 
       await supabase
         .from("care_plans")
         .update({
-          medication_schedule: medSchedule || null,
+          medication_schedule: schedSummary,
           whats_normal: whatsNormal || null,
           baseline_clip_path: clipPath,
           ...Object.fromEntries(
             [...HEALTH_DETAIL_FIELDS, ...HEALTH_CALL_FIELDS].map(([k]) => [k, (detail[k] ?? "").trim() || null]),
           ),
         } as any)
+        .eq("id", plan.id);
+
+      // Structured list saved separately and best-effort: if the additive
+      // medications_details migration isn't applied yet, this single update
+      // fails without taking the rest of the health autosave down with it.
+      await supabase
+        .from("care_plans")
+        .update({ medications_details: cleanMeds } as any)
         .eq("id", plan.id);
 
       // Feed a weight entry when the normal weight changes. weight_entries is
@@ -1860,13 +1889,13 @@ export function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlus
         setInitialWeight(weight);
       }
 
-      // Auto-create / sync the medication routine task.
-      await syncMedicationTask(plan.id, meds, medSchedule);
+      // Auto-create / sync one medication routine task per med.
+      await syncMedicationTasks(plan.id, cleanMeds);
 
       qc.invalidateQueries({ queryKey: ["plan", birdId] });
       qc.invalidateQueries({ queryKey: ["tasks", plan.id] });
     },
-    [weight, weightMin, weightMax, conditions, meds, medSchedule, whatsNormal, notes, detail, clipPath],
+    [weight, weightMin, weightMax, conditions, medRows, whatsNormal, notes, detail, clipPath],
     !!plan && !!bird && hydrated,
     registerFlush,
     600,
@@ -1959,21 +1988,48 @@ export function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlus
         />
       </Card>
 
-      <Card title="Medications" hint="Adding a medication here also creates a matching task in the Routine tab.">
-        <input
-          className="input"
-          placeholder="e.g. Metacam 0.1ml"
-          value={meds}
-          maxLength={300}
-          onChange={(e) => setMeds(e.target.value)}
-        />
-        <input
-          className="input mt-2"
-          placeholder="Schedule (e.g. once daily in the morning with food)"
-          value={medSchedule}
-          maxLength={300}
-          onChange={(e) => setMedSchedule(e.target.value)}
-        />
+      <Card title="Medications" hint="Each medication here also creates a matching task in the Routine tab.">
+        <div className="space-y-3">
+          {medRows.map((m, i) => (
+            <div key={i} className={i > 0 ? "border-t border-[#ece6d6] pt-3" : ""}>
+              <div className="flex items-start gap-2">
+                <div className="min-w-0 flex-1 space-y-2">
+                  <input
+                    className="input"
+                    placeholder="e.g. Metacam 0.1ml"
+                    value={m.name}
+                    maxLength={300}
+                    onChange={(e) => setMedRows((rows) => rows.map((r, j) => (j === i ? { ...r, name: e.target.value } : r)))}
+                  />
+                  <input
+                    className="input"
+                    placeholder="Schedule (e.g. once daily in the morning with food)"
+                    value={m.schedule}
+                    maxLength={300}
+                    onChange={(e) => setMedRows((rows) => rows.map((r, j) => (j === i ? { ...r, schedule: e.target.value } : r)))}
+                  />
+                </div>
+                {medRows.length > 1 && (
+                  <button
+                    type="button"
+                    aria-label="Remove medication"
+                    onClick={() => setMedRows((rows) => rows.filter((_, j) => j !== i))}
+                    className="mt-1 grid size-9 shrink-0 place-items-center rounded-lg text-[var(--mute)] hover:bg-sage-100"
+                  >
+                    <X className="size-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={() => setMedRows((rows) => [...rows, { name: "", schedule: "" }])}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-sage-100 px-3 py-2 text-xs font-semibold text-sage-700"
+          >
+            <Plus className="size-3.5" /> Add another medication
+          </button>
+        </div>
       </Card>
 
       <Card title="What's normal for this bird">
@@ -2035,41 +2091,43 @@ export function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlus
   );
 }
 
-// Keep exactly one Medication routine task in sync with the medication fields.
-async function syncMedicationTask(planId: string, meds: string, schedule: string) {
+type MedRow = { name: string; schedule: string };
+
+// Keep one Medication routine task per med in sync with the medications list.
+// Reconciles by position: updates the first N existing tasks, inserts extras,
+// deletes leftovers — so an edited name or schedule keeps its task id (and any
+// sitter check-off history tied to it) instead of churning rows.
+async function syncMedicationTasks(planId: string, meds: MedRow[]) {
   const { data: existing } = await supabase
     .from("routine_tasks")
-    .select("id, title, instructions")
+    .select("id, title, instructions, sort_order")
     .eq("care_plan_id", planId)
-    .ilike("title", `${MED_TASK_PREFIX}%`);
-  const med = meds.trim();
-  const sched = schedule.trim();
-  const title = med ? `${MED_TASK_PREFIX}: ${med}` : "";
-  const instructions = sched || null;
+    .ilike("title", `${MED_TASK_PREFIX}%`)
+    .order("sort_order", { ascending: true });
+  const current = (existing ?? []) as any[];
+
   // Medication is free text (name+dose combined, free-text schedule), so we
   // infer the day-part from the schedule wording when we can, else default to
   // morning. NOTE: there is no discrete scheduled-time field — see summary flag.
-  const category = sched ? inferFeedingCategory(sched) : "morning";
+  const desired = meds.map((m, i) => ({
+    title: `${MED_TASK_PREFIX}: ${m.name}`,
+    instructions: m.schedule || null,
+    category: m.schedule ? inferFeedingCategory(m.schedule) : "morning",
+    sort_order: 999 + i,
+  }));
 
-  if (!med) {
-    if (existing && existing.length) {
-      await supabase.from("routine_tasks").delete().in("id", existing.map((t: any) => t.id));
-    }
-    return;
+  const updates = desired.slice(0, current.length);
+  const inserts = desired.slice(current.length);
+  const removals = current.slice(desired.length);
+
+  for (let i = 0; i < updates.length; i++) {
+    await supabase.from("routine_tasks").update(updates[i] as any).eq("id", current[i].id);
   }
-
-  if (!existing || existing.length === 0) {
-    await supabase.from("routine_tasks").insert({
-      care_plan_id: planId,
-      title,
-      instructions,
-      category,
-      sort_order: 999,
-    } as any);
-  } else {
-    const [first, ...rest] = existing as any[];
-    await supabase.from("routine_tasks").update({ title, instructions, category } as any).eq("id", first.id);
-    if (rest.length) await supabase.from("routine_tasks").delete().in("id", rest.map((t) => t.id));
+  if (inserts.length) {
+    await supabase.from("routine_tasks").insert(inserts.map((t) => ({ ...t, care_plan_id: planId })) as any);
+  }
+  if (removals.length) {
+    await supabase.from("routine_tasks").delete().in("id", removals.map((t) => t.id));
   }
 }
 
