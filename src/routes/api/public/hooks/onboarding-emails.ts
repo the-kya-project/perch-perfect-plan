@@ -8,9 +8,9 @@
  *   - each stage sends AT MOST ONCE EVER per user (onboarding_email_log)
  *   - stages, in funnel order:
  *       add_first_bird   — account ≥2 days old, no (living) birds
- *       start_care_plan  — oldest bird ≥3 days old, no care-plan content anywhere
- *       log_first_weight — oldest bird ≥5 days old, zero weight entries
- *       run_first_scan   — oldest bird ≥7 days old, no daily health scan yet
+ *       log_first_weight — oldest bird ≥3 days old, zero weight entries
+ *       run_first_scan   — oldest bird ≥5 days old, no daily health scan yet
+ *       start_care_plan  — oldest bird ≥7 days old, no care-plan content anywhere
  *       weight_trend     — first weight was logged within the last 7 days
  *         (the recency guard stops long-time users getting a "first weight!"
  *         email on rollout day)
@@ -159,9 +159,11 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
           if (birds.length === 0) {
             if (olderThanDays(profile.created_at, 2)) candidates.push("add_first_bird");
           } else {
-            if (!anyCareContent && olderThanDays(oldest.created_at, 3)) candidates.push("start_care_plan");
-            if (!firstWeightAt && olderThanDays(oldest.created_at, 5)) candidates.push("log_first_weight");
-            if (!anyScan && olderThanDays(oldest.created_at, 7)) candidates.push("run_first_scan");
+            // Health habits first (weight, then the daily scan), the longer
+            // care-plan ask after — per product decision 2026-07-20.
+            if (!firstWeightAt && olderThanDays(oldest.created_at, 3)) candidates.push("log_first_weight");
+            if (!anyScan && olderThanDays(oldest.created_at, 5)) candidates.push("run_first_scan");
+            if (!anyCareContent && olderThanDays(oldest.created_at, 7)) candidates.push("start_care_plan");
             if (firstWeightAt && Date.now() - new Date(firstWeightAt).getTime() <= 7 * DAY) candidates.push("weight_trend");
           }
           const stage = candidates.find((s) => !sent.has(`${userId}:${s}`));
