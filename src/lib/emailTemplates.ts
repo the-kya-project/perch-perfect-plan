@@ -258,14 +258,14 @@ export function buildOnboardingFirstWeightEmail(opts: { birdName: string; link: 
       kicker: "Getting set up",
       heading: `${bird}'s weight tells you what words can't`,
       body:
-        `Birds hide illness — weight is often the first honest signal. Log ${bird}'s weight once and you've started a baseline; ` +
+        `Birds hide illness and weight is often the first signal. Log ${bird}'s weight once and you've started a baseline; ` +
         `keep it up (a kitchen scale and ten seconds) and the app will show you the trend at a glance.`,
       cta: "Log a weight",
       link: opts.link,
       foot: ONBOARDING_FOOT,
       reading: READING_SIGNS,
     }),
-    text: `Weight is often the first honest signal of a bird's health. Log ${opts.birdName}'s first weight to start a baseline: ${opts.link}`,
+    text: `Birds hide illness and weight is often the first signal. Log ${opts.birdName}'s first weight to start a baseline: ${opts.link}`,
   };
 }
 
@@ -279,7 +279,8 @@ export function buildOnboardingHealthScanEmail(opts: { birdName: string; link: s
       heading: `Run ${bird}'s health scan every day`,
       body:
         `The daily health scan takes about two minutes. Log it every day and document what you see, ` +
-        `whether something seems off or everything is normal. The normal days count too, because they're what make a change visible. ` +
+        `whether something seems off or everything is normal.<br /><br />` +
+        `The normal days count too, because they're what make a change visible. ` +
         `Every scan becomes part of ${bird}'s record, so at the vet you can show exactly what changed, and when.`,
       cta: "Run today's health scan",
       link: opts.link,
@@ -299,7 +300,7 @@ export function buildOnboardingWeightTrendEmail(opts: { birdName: string; link: 
       kicker: "Nice work",
       heading: `${bird}'s first weight is on the record`,
       body:
-        `Every weigh-in from here builds ${bird}'s trend — steady, up, or down — right on the record and in the vet summary. ` +
+        `Every weigh-in from here builds ${bird}'s trend right on the record and in the vet summary. ` +
         `Weighing at the same time of day (before breakfast works well) keeps the trend honest.`,
       cta: `See ${bird}'s weight page`,
       link: opts.link,
