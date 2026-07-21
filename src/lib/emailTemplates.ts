@@ -276,17 +276,17 @@ export function buildOnboardingHealthScanEmail(opts: { birdName: string; link: s
     subject: `Two minutes a day builds ${opts.birdName}'s health record`,
     html: shell({
       kicker: "Getting set up",
-      heading: `Scan ${bird} every day — off or not`,
+      heading: `Run ${bird}'s health scan every day`,
       body:
-        `The daily health check takes about two minutes. Log it every day and document ` +
-        `what you see — the odd days and the completely normal ones both count, because normal is what makes a change visible. ` +
-        `Every check becomes part of ${bird}'s record, so at the vet you're not saying "she's seemed off lately" — you're showing exactly what changed, and when.`,
-      cta: "Run today's health check",
+        `The daily health scan takes about two minutes. Log it every day and document what you see, ` +
+        `whether something seems off or everything is normal. The normal days count too, because they're what make a change visible. ` +
+        `Every scan becomes part of ${bird}'s record, so at the vet you can show exactly what changed, and when.`,
+      cta: "Run today's health scan",
       link: opts.link,
       foot: ONBOARDING_FOOT,
       reading: READING_SIGNS,
     }),
-    text: `The daily health check takes about two minutes. Log it every day and document what you see — off or completely normal — and it all becomes part of ${opts.birdName}'s record you can bring to the vet.\n\nRun today's check: ${opts.link}`,
+    text: `The daily health scan takes about two minutes. Log it every day and document what you see, whether something seems off or everything is normal. It all becomes part of ${opts.birdName}'s record you can bring to the vet.\n\nRun today's health scan: ${opts.link}`,
   };
 }
 
