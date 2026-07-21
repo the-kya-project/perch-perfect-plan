@@ -1781,12 +1781,14 @@ export function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlus
   const [weightMin, setWeightMin] = useState("");
   const [weightMax, setWeightMax] = useState("");
   const [conditions, setConditions] = useState("");
-  // Medications: a repeatable list of { name (incl. dose), schedule }. Stored
-  // structured in care_plans.medications_details (jsonb); the legacy text
-  // columns (birds.medications, care_plans.medication_schedule) are kept in
-  // sync as joined summaries so every read surface (care sheet, sitter view,
-  // vet summary, export) keeps working unchanged.
-  const [medRows, setMedRows] = useState<MedRow[]>([{ name: "", schedule: "" }]);
+  // Medications: a repeatable list of { name (incl. dose), times, notes }.
+  // Timing is STRUCTURED (day-part chips) — never inferred from text — because
+  // each selected day-part becomes its own sitter-checklist check-off and a
+  // missed inference would mean a missed dose. Stored in
+  // care_plans.medications_details (jsonb); the legacy text columns
+  // (birds.medications, care_plans.medication_schedule) are kept in sync as
+  // joined summaries so every read surface keeps working unchanged.
+  const [medRows, setMedRows] = useState<MedRow[]>([{ name: "", times: [], notes: "" }]);
   const [whatsNormal, setWhatsNormal] = useState("");
   const [notes, setNotes] = useState("");
   // Granular "what's normal" + when-to-call fields, keyed by care_plans column.
@@ -1814,14 +1816,17 @@ export function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlus
     setWeightMax(bird.normal_weight_max != null ? String(bird.normal_weight_max) : "");
     setConditions(bird.medical_conditions ?? "");
     // Prefer the structured list; fall back to the legacy single-med fields
-    // (lossless upgrade for birds saved before the list existed).
+    // (lossless upgrade for birds saved before the list existed). Rows saved
+    // before day-part chips existed carry free-text `schedule` — run it through
+    // the old inference ONCE as a visible pre-selection the owner confirms,
+    // and keep the text as the instructions note so nothing is lost.
     const structured = Array.isArray(plan.medications_details)
       ? (plan.medications_details as any[]).filter((m) => m && typeof m.name === "string")
       : [];
     if (structured.length) {
-      setMedRows(structured.map((m) => ({ name: m.name ?? "", schedule: m.schedule ?? "" })));
+      setMedRows(structured.map((m) => hydrateMedRow(m)));
     } else if ((bird.medications ?? "").trim()) {
-      setMedRows([{ name: bird.medications ?? "", schedule: plan.medication_schedule ?? "" }]);
+      setMedRows([hydrateMedRow({ name: bird.medications ?? "", schedule: plan.medication_schedule ?? "" })]);
     }
     setWhatsNormal(plan.whats_normal ?? "");
     setNotes(bird.notes ?? "");
@@ -1841,12 +1846,22 @@ export function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlus
       // Clean med rows (drop empties) + legacy joined summaries for the read
       // surfaces that still render the old text columns.
       const cleanMeds = medRows
-        .map((m) => ({ name: m.name.trim(), schedule: m.schedule.trim() }))
+        .map((m) => ({
+          name: m.name.trim(),
+          times: MED_TIMES.filter((t) => m.times.includes(t.key)).map((t) => t.key),
+          notes: m.notes.trim(),
+        }))
         .filter((m) => m.name);
       const medsSummary = cleanMeds.map((m) => m.name).join("; ") || null;
-      const schedSummary = cleanMeds.length <= 1
-        ? cleanMeds[0]?.schedule || null
-        : cleanMeds.map((m) => (m.schedule ? `${m.name}: ${m.schedule}` : m.name)).join(" · ");
+      const medLine = (m: { times: string[]; notes: string }) =>
+        [m.times.map((t) => MED_TIMES.find((x) => x.key === t)?.label.toLowerCase()).join(" & "), m.notes]
+          .filter(Boolean)
+          .join(" — ");
+      const schedSummary = cleanMeds.length === 0
+        ? null
+        : cleanMeds.length === 1
+          ? medLine(cleanMeds[0]) || null
+          : cleanMeds.map((m) => `${m.name}: ${medLine(m) || "no time set"}`).join(" · ");
       await supabase
         .from("birds")
         .update({
@@ -1988,7 +2003,7 @@ export function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlus
         />
       </Card>
 
-      <Card title="Medications" hint="Each medication here also creates a matching task in the Routine tab.">
+      <Card title="Medications" hint="Pick when each dose is given — every selected time becomes its own check-off on the sitter's daily list.">
         <div className="space-y-3">
           {medRows.map((m, i) => (
             <div key={i} className={i > 0 ? "border-t border-[#ece6d6] pt-3" : ""}>
@@ -2001,12 +2016,43 @@ export function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlus
                     maxLength={300}
                     onChange={(e) => setMedRows((rows) => rows.map((r, j) => (j === i ? { ...r, name: e.target.value } : r)))}
                   />
+                  <div className="flex flex-wrap gap-1.5">
+                    {MED_TIMES.map((t) => {
+                      const on = m.times.includes(t.key);
+                      return (
+                        <button
+                          key={t.key}
+                          type="button"
+                          aria-pressed={on}
+                          onClick={() =>
+                            setMedRows((rows) =>
+                              rows.map((r, j) =>
+                                j === i
+                                  ? { ...r, times: on ? r.times.filter((x) => x !== t.key) : [...r.times, t.key] }
+                                  : r,
+                              ),
+                            )
+                          }
+                          className={`min-h-[36px] rounded-full px-3.5 text-[13px] font-[500] ring-1 ${
+                            on ? "bg-[#1a3d2e] text-white ring-[#1a3d2e]" : "bg-white text-[#1a3d2e] ring-[#d8d2c0]"
+                          }`}
+                        >
+                          {t.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {m.name.trim() !== "" && m.times.length === 0 && (
+                    <p className="text-xs leading-relaxed text-[#8a897f]">
+                      No time set — sitters will see this under Anytime.
+                    </p>
+                  )}
                   <input
                     className="input"
-                    placeholder="Schedule (e.g. once daily in the morning with food)"
-                    value={m.schedule}
+                    placeholder="Instructions (e.g. in the left cheek, with food)"
+                    value={m.notes}
                     maxLength={300}
-                    onChange={(e) => setMedRows((rows) => rows.map((r, j) => (j === i ? { ...r, schedule: e.target.value } : r)))}
+                    onChange={(e) => setMedRows((rows) => rows.map((r, j) => (j === i ? { ...r, notes: e.target.value } : r)))}
                   />
                 </div>
                 {medRows.length > 1 && (
@@ -2024,7 +2070,7 @@ export function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlus
           ))}
           <button
             type="button"
-            onClick={() => setMedRows((rows) => [...rows, { name: "", schedule: "" }])}
+            onClick={() => setMedRows((rows) => [...rows, { name: "", times: [], notes: "" }])}
             className="inline-flex items-center gap-1.5 rounded-lg bg-sage-100 px-3 py-2 text-xs font-semibold text-sage-700"
           >
             <Plus className="size-3.5" /> Add another medication
@@ -2091,12 +2137,41 @@ export function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlus
   );
 }
 
-type MedRow = { name: string; schedule: string };
+// Day-part choices for medication doses. Keys match routine_tasks.category
+// values so the sitter checklist buckets them without any text inference.
+const MED_TIMES = [
+  { key: "morning", label: "Morning" },
+  { key: "midday", label: "Midday" },
+  { key: "evening", label: "Evening" },
+  { key: "bedtime", label: "Bedtime" },
+] as const;
+type MedTime = (typeof MED_TIMES)[number]["key"];
+type MedRow = { name: string; times: MedTime[]; notes: string };
 
-// Keep one Medication routine task per med in sync with the medications list.
+// Normalize a stored medications_details row into the chip shape. Rows saved
+// before chips existed carry free-text `schedule`: infer day-parts from it
+// ONCE (visible pre-selection the owner confirms) and keep the text as notes.
+function hydrateMedRow(m: any): MedRow {
+  if (Array.isArray(m.times)) {
+    const keys = MED_TIMES.map((t) => t.key as string);
+    return {
+      name: m.name ?? "",
+      times: (m.times as string[]).filter((t): t is MedTime => keys.includes(t)),
+      notes: m.notes ?? "",
+    };
+  }
+  const legacy = (m.schedule ?? "").toString();
+  const inferred = legacy ? feedTimeToDaypart(legacy) : null;
+  const times: MedTime[] =
+    inferred === "morning" || inferred === "midday" || inferred === "evening" ? [inferred] : [];
+  return { name: m.name ?? "", times, notes: legacy };
+}
+
+// Keep one Medication routine task per DOSE (med × selected day-part) in sync.
 // Reconciles by position: updates the first N existing tasks, inserts extras,
-// deletes leftovers — so an edited name or schedule keeps its task id (and any
-// sitter check-off history tied to it) instead of churning rows.
+// deletes leftovers — so edits keep task ids instead of churning rows. A med
+// with no day-part selected gets a single "custom" (Anytime) task so it never
+// silently disappears from the sitter's list.
 async function syncMedicationTasks(planId: string, meds: MedRow[]) {
   const { data: existing } = await supabase
     .from("routine_tasks")
@@ -2106,15 +2181,20 @@ async function syncMedicationTasks(planId: string, meds: MedRow[]) {
     .order("sort_order", { ascending: true });
   const current = (existing ?? []) as any[];
 
-  // Medication is free text (name+dose combined, free-text schedule), so we
-  // infer the day-part from the schedule wording when we can, else default to
-  // morning. NOTE: there is no discrete scheduled-time field — see summary flag.
-  const desired = meds.map((m, i) => ({
-    title: `${MED_TASK_PREFIX}: ${m.name}`,
-    instructions: m.schedule || null,
-    category: m.schedule ? inferFeedingCategory(m.schedule) : "morning",
-    sort_order: 999 + i,
-  }));
+  const desired = meds.flatMap((m, i) => {
+    const doses = m.times.length
+      ? m.times.map((t) => ({
+          title: `${MED_TASK_PREFIX}: ${m.name} — ${MED_TIMES.find((x) => x.key === t)?.label.toLowerCase()}`,
+          category: t as string,
+        }))
+      : [{ title: `${MED_TASK_PREFIX}: ${m.name}`, category: "custom" }];
+    return doses.map((d, j) => ({
+      title: d.title,
+      instructions: m.notes || null,
+      category: d.category,
+      sort_order: 999 + i * 10 + j,
+    }));
+  });
 
   const updates = desired.slice(0, current.length);
   const inserts = desired.slice(current.length);
@@ -2129,17 +2209,6 @@ async function syncMedicationTasks(planId: string, meds: MedRow[]) {
   if (removals.length) {
     await supabase.from("routine_tasks").delete().in("id", removals.map((t) => t.id));
   }
-}
-
-// Keep the auto-generated freshness & hygiene tasks (one per prefix) in sync
-// with the owner-selected cadences. Tasks are matched by title prefix so the
-// owner can still rename them inline without losing the sync target.
-// Stored category for a feeding task. Placement is ultimately decided at render
-// time by feedTimeToDaypart (so it's robust to mixed formats and existing data),
-// but we still store a sensible category for consistency. "anytime" → "custom".
-function inferFeedingCategory(time: string): string {
-  const dp = feedTimeToDaypart(time);
-  return dp === "anytime" ? "custom" : dp;
 }
 
 // syncFeedingTasks now lives in @/lib/feedingSync (shared with the tabbed editor)
