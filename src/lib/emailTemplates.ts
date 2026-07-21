@@ -209,6 +209,11 @@ const READING_SIGNS = {
   teaser: "Parrots are experts at hiding illness. Research on the quiet signals that matter.",
   url: `${BLOG}/what-parrot-welfare-research-reveals-about-the-signs-owners-miss`,
 };
+const READING_WEIGH = {
+  title: "Weigh your bird every day: what a gram scale tells you before your parrot does",
+  teaser: "Feathers hide bodies. Grams don't. The case for the ten-second morning habit.",
+  url: `${BLOG}/weigh-your-bird-every-day-what-a-gram-scale-tells-you-before-your-parrot-does`,
+};
 
 // Stage: signed up, no bird yet.
 export function buildOnboardingAddBirdEmail(opts: { firstName?: string; link: string }): BuiltEmail {
@@ -263,7 +268,7 @@ export function buildOnboardingFirstWeightEmail(opts: { birdName: string; link: 
       cta: "Log a weight",
       link: opts.link,
       foot: ONBOARDING_FOOT,
-      reading: READING_SIGNS,
+      reading: READING_WEIGH,
     }),
     text: `Birds hide illness and weight is often the first signal. Log ${opts.birdName}'s first weight to start a baseline: ${opts.link}`,
   };
@@ -305,7 +310,7 @@ export function buildOnboardingWeightTrendEmail(opts: { birdName: string; link: 
       cta: `See ${bird}'s weight page`,
       link: opts.link,
       foot: ONBOARDING_FOOT,
-      reading: READING_SIGNS,
+      reading: READING_WEIGH,
     }),
     text: `${opts.birdName}'s first weight is logged. Every weigh-in from here builds the trend on the record and in the vet summary.\n\nSee the weight page: ${opts.link}`,
   };
