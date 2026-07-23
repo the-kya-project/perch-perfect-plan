@@ -204,7 +204,12 @@ function NotificationsSettingsPage() {
               <IconTile size={38} icon={<Smartphone className="size-5" />} />
               <div className="min-w-0 flex-1">
                 <div className="t-item">Push on this device</div>
-                {pushBlocked && support?.reason === "ios-not-installed" ? (
+                {pushBlocked && support?.reason === "native-app" ? (
+                  <p className="t-body mt-1 text-[var(--mute)]">
+                    Push notifications in the app are coming soon. Email alerts below still
+                    reach you in the meantime.
+                  </p>
+                ) : pushBlocked && support?.reason === "ios-not-installed" ? (
                   <p className="t-body mt-1 text-[var(--mute)]">
                     On iPhone, add this app to your home screen first, then come back here.
                   </p>

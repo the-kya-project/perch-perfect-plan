@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { isNativeApp } from "./nativeApp";
 
 // Platform/browser detection + native install-prompt handling for the
 // "add to home screen" flow. One source of truth so every install surface
@@ -43,6 +44,9 @@ export function detectBrowser(): InstallBrowser {
 
 export function isStandalone(): boolean {
   if (typeof window === "undefined") return false;
+  // The App Store / Play Store shell IS the installed app: every surface that
+  // hides install steps for a standalone PWA must hide them there too.
+  if (isNativeApp()) return true;
   // @ts-expect-error iOS-only Safari flag
   if (typeof navigator !== "undefined" && typeof navigator.standalone === "boolean" && navigator.standalone) return true;
   return window.matchMedia?.("(display-mode: standalone)").matches ?? false;

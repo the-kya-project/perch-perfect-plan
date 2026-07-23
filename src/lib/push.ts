@@ -9,11 +9,13 @@
  * previews fails — which is fine: push only works on the installed prod PWA.
  */
 
+import { isNativeApp } from "./nativeApp";
+
 const SW_URL = "/sw.js";
 
 export type PushSupport =
   | { ok: true }
-  | { ok: false; reason: "no-sw" | "no-push" | "no-notifications" | "ios-not-installed" };
+  | { ok: false; reason: "no-sw" | "no-push" | "no-notifications" | "ios-not-installed" | "native-app" };
 
 function isIOS(): boolean {
   const ua = navigator.userAgent;
@@ -29,6 +31,9 @@ function isStandalone(): boolean {
 
 export function detectPushSupport(): PushSupport {
   if (typeof window === "undefined") return { ok: false, reason: "no-sw" };
+  // The native shell gets APNs/FCM push, not web-push — never register a
+  // web-push subscription from inside the app.
+  if (isNativeApp()) return { ok: false, reason: "native-app" };
   if (!("serviceWorker" in navigator)) return { ok: false, reason: "no-sw" };
   if (!("PushManager" in window)) return { ok: false, reason: "no-push" };
   if (!("Notification" in window)) return { ok: false, reason: "no-notifications" };

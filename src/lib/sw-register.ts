@@ -10,6 +10,8 @@
  * data on every navigation (denylisted in workbox config). Installation only
  * makes sense for owners using the app repeatedly.
  */
+import { isNativeApp } from "./nativeApp";
+
 const SW_URL = "/sw.js";
 
 function isPreviewHost(host: string): boolean {
@@ -122,6 +124,7 @@ export function registerServiceWorker() {
   const refuse =
     !import.meta.env.PROD ||
     inIframe ||
+    isNativeApp() || // the App Store / Play Store shell must never cache builds
     isPreviewHost(window.location.hostname) ||
     url.searchParams.get("sw") === "off";
 
