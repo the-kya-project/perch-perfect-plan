@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
+import { signInWithGoogle } from "@/lib/nativeOAuth";
 import { lovable } from "@/integrations/lovable";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
@@ -183,16 +184,10 @@ function AuthPage() {
   async function handleGoogle() {
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        // Land on the one-time welcome; it redirects returning owners straight to
-        // the dashboard (gated by an account flag), so only new owners see it.
-        options: { redirectTo: window.location.origin + "/welcome" },
-      });
-      if (error) {
-        toast.error(error.message ?? "Google sign-in failed.");
-        setLoading(false);
-      }
+      // Land on the one-time welcome; it redirects returning owners straight to
+      // the dashboard (gated by an account flag), so only new owners see it.
+      await signInWithGoogle(window.location.origin + "/welcome");
+      setLoading(false);
     } catch (err: any) {
       toast.error(err.message ?? "Google sign-in failed.");
       setLoading(false);

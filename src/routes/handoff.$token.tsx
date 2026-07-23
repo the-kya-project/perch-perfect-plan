@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
+import { signInWithGoogle } from "@/lib/nativeOAuth";
 import { getHandoff, acceptHandoff, declineHandoff } from "@/lib/handoff.functions";
 import { captureLead } from "@/lib/captureLead";
 import { toast } from "sonner";
@@ -173,7 +174,10 @@ function LoggedOutAccept({ token, inviteEmail }: { token: string; inviteEmail: s
       setConfirmSent(true); setPending(false);
     } catch (e: any) { toast.error(e?.message ?? "Couldn't create your account."); setPending(false); }
   }
-  async function google() { await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: redirect } }); }
+  async function google() {
+    try { await signInWithGoogle(redirect); }
+    catch (e: any) { toast.error(e?.message ?? "Google sign-in failed."); }
+  }
 
   if (confirmSent) {
     return (
