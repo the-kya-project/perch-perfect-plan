@@ -18,11 +18,19 @@ function createSupabaseClient() {
     throw new Error(message);
   }
 
+  // The native shell signs in via deep-link callback, which requires the PKCE
+  // flow (exchangeCodeForSession). Browsers keep the implicit default so the
+  // web/PWA auth flow is untouched.
+  const isNativeShell =
+    typeof window !== 'undefined' &&
+    (window as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor?.isNativePlatform?.() === true;
+
   return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
     auth: {
       storage: typeof window !== 'undefined' ? localStorage : undefined,
       persistSession: true,
       autoRefreshToken: true,
+      ...(isNativeShell ? { flowType: 'pkce' as const } : {}),
     }
   });
 }

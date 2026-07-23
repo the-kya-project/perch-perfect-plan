@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
+import { signInWithGoogle } from "@/lib/nativeOAuth";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { getHouseholdInvite, acceptHouseholdInvite, declineHouseholdInvite } from "@/lib/household.functions";
 import { captureLead } from "@/lib/captureLead";
@@ -230,7 +231,8 @@ function LoggedOutAccept({ token, inviteEmail, onDone }: { token: string; invite
   }
 
   async function google() {
-    await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: redirect } });
+    try { await signInWithGoogle(redirect); }
+    catch (e: any) { toast.error(e?.message ?? "Google sign-in failed."); }
   }
 
   if (confirmSent) {
