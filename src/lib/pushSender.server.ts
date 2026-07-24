@@ -10,11 +10,15 @@
 type EventKey =
   | "sitter_log"
   | "care_plan_reminder"
+  | "weight_reminder"
+  | "checkin_reminder"
   | "health_concern";
 
 const TOGGLE_COLUMN: Record<Exclude<EventKey, "health_concern">, string> = {
   sitter_log: "push_sitter_log",
   care_plan_reminder: "push_care_plan_reminder",
+  weight_reminder: "push_weight_reminder",
+  checkin_reminder: "push_checkin_reminder",
 };
 
 export interface PushPayload {
