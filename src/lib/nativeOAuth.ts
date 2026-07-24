@@ -51,15 +51,17 @@ async function completeSignIn(url: string) {
   window.location.assign(error ? "/auth?error=oauth-failed" : dest);
 }
 
+type OAuthProvider = "google" | "apple";
+
 /**
- * Google sign-in that works in both worlds. `redirectTo` is the full URL the
+ * OAuth sign-in that works in both worlds. `redirectTo` is the full URL the
  * web flow should land on; the native flow reuses its path after the deep-link
  * exchange. Rejects with an Error on failure to start (call sites toast it).
  */
-export async function signInWithGoogle(redirectTo: string): Promise<void> {
+export async function signInWithProvider(provider: OAuthProvider, redirectTo: string): Promise<void> {
   if (!isNativeApp()) {
     const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
+      provider,
       options: { redirectTo },
     });
     if (error) throw new Error(error.message);
@@ -72,11 +74,17 @@ export async function signInWithGoogle(redirectTo: string): Promise<void> {
   } catch { /* keep default dest */ }
 
   const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: "google",
+    provider,
     options: { redirectTo: CALLBACK_URL, skipBrowserRedirect: true },
   });
-  if (error || !data?.url) throw new Error(error?.message ?? "Could not start Google sign-in.");
+  if (error || !data?.url) throw new Error(error?.message ?? "Could not start sign-in.");
 
   const { Browser } = await import("@capacitor/browser");
   await Browser.open({ url: data.url });
 }
+
+export const signInWithGoogle = (redirectTo: string) => signInWithProvider("google", redirectTo);
+// Sign in with Apple (required alongside Google per App Store guideline 4.8)
+// uses the same rails — UI button + Supabase provider config land once the
+// Apple Developer account exists (Services ID + key come from that account).
+export const signInWithApple = (redirectTo: string) => signInWithProvider("apple", redirectTo);
