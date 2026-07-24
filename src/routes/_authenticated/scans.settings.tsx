@@ -35,10 +35,12 @@ type Prefs = {
   push_sitter_opened: boolean;
   push_sitter_log: boolean;
   push_care_plan_reminder: boolean;
+  push_weight_reminder: boolean;
+  push_checkin_reminder: boolean;
 };
 
 type Row = {
-  emailKey: keyof Prefs;
+  emailKey?: keyof Prefs; // push-only rows (reminder nudges) have no email counterpart
   pushKey: keyof Prefs;
   title: string;
   desc: string;
@@ -56,6 +58,16 @@ const ROWS: Row[] = [
     pushKey: "push_care_plan_reminder",
     title: "Care plan update reminder",
     desc: "Remind me to review the care plan before an upcoming sit.",
+  },
+  {
+    pushKey: "push_weight_reminder",
+    title: "Weigh-in reminders",
+    desc: "Nudge me when a bird is due for a weight check, based on my own logging rhythm.",
+  },
+  {
+    pushKey: "push_checkin_reminder",
+    title: "Check-in reminders",
+    desc: "A gentle reminder if it's been a while since the last entry.",
   },
 ];
 
@@ -89,11 +101,12 @@ function NotificationsSettingsPage() {
       const { data } = await supabase
         .from("profiles")
         .select(
-          "notify_sitter_opened, notify_sitter_log, notify_care_plan_reminder, push_sitter_opened, push_sitter_log, push_care_plan_reminder",
+          "notify_sitter_opened, notify_sitter_log, notify_care_plan_reminder, push_sitter_opened, push_sitter_log, push_care_plan_reminder, push_weight_reminder, push_checkin_reminder",
         )
         .eq("id", u.user.id)
         .maybeSingle();
-      if (data) setPrefs(data as Prefs);
+      // push_weight_reminder/push_checkin_reminder postdate the generated types
+      if (data) setPrefs(data as unknown as Prefs);
       setSupport(detectPushSupport());
       setPermission(getNotificationPermission());
       setPushEndpoint(await getCurrentEndpoint());
@@ -122,7 +135,7 @@ function NotificationsSettingsPage() {
       const { data: u } = await getLocalUser();
       if (!u.user) throw new Error("Not signed in.");
       const patch: Partial<Prefs> = { [key]: next } as Partial<Prefs>;
-      const { error } = await supabase.from("profiles").update(patch).eq("id", u.user.id);
+      const { error } = await (supabase as any).from("profiles").update(patch).eq("id", u.user.id);
       if (error) throw error;
     } catch (e: unknown) {
       setPrefs({ ...prefs, [key]: prev });
@@ -267,25 +280,29 @@ function NotificationsSettingsPage() {
             </div>
             <Card>
               {ROWS.map((row, i) => {
-                const emailChecked = prefs ? Boolean(prefs[row.emailKey]) : false;
+                const emailChecked = prefs && row.emailKey ? Boolean(prefs[row.emailKey]) : false;
                 const pushChecked = prefs ? Boolean(prefs[row.pushKey]) : false;
                 return (
                   <div
-                    key={row.emailKey}
+                    key={row.pushKey}
                     className={`flex items-start gap-4 px-4 py-3 ${i < ROWS.length - 1 ? "border-b border-[var(--line2)]" : ""}`}
                   >
                     <div className="min-w-0 flex-1">
                       <div className="t-item">{row.title}</div>
                       <p className="t-meta mt-0.5">{row.desc}</p>
                     </div>
-                    <input
-                      type="checkbox"
-                      aria-label={`Email: ${row.title}`}
-                      className="mt-1 size-5 w-12 rounded border-[var(--line)] accent-[var(--moss)]"
-                      checked={emailChecked}
-                      disabled={!prefs || saving === row.emailKey}
-                      onChange={(e) => toggle(row.emailKey, e.target.checked)}
-                    />
+                    {row.emailKey ? (
+                      <input
+                        type="checkbox"
+                        aria-label={`Email: ${row.title}`}
+                        className="mt-1 size-5 w-12 rounded border-[var(--line)] accent-[var(--moss)]"
+                        checked={emailChecked}
+                        disabled={!prefs || saving === row.emailKey}
+                        onChange={(e) => toggle(row.emailKey!, e.target.checked)}
+                      />
+                    ) : (
+                      <span aria-hidden className="t-meta mt-1 w-12 text-center text-[var(--mute2)]">—</span>
+                    )}
                     <input
                       type="checkbox"
                       aria-label={`Push: ${row.title}`}
