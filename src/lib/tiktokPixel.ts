@@ -10,6 +10,8 @@
  * runs the pixel), so it lives here rather than in an env var.
  */
 
+import { isNativeApp } from "./nativeApp";
+
 const PIXEL_ID = "D9BPFN3C77U03DOJEBE0";
 
 type Ttq = {
@@ -27,6 +29,10 @@ declare global {
 let injected = false;
 
 function enabled(): boolean {
+  // Never inside the App Store / Play Store shell: an ad-attribution tracker
+  // there would trigger Apple's App Tracking Transparency requirements (owner
+  // decision 2026-07-24: drop it from native, keep it on the web).
+  if (isNativeApp()) return false;
   return typeof window !== "undefined" && import.meta.env.PROD;
 }
 
