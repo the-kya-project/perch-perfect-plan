@@ -245,7 +245,7 @@ function NotificationsSettingsPage() {
                     Get instant alerts for sitter activity without needing to check email.
                   </p>
                 )}
-                {pushBlocked && (
+                {pushBlocked && support?.reason !== "native-app" && (
                   <div className="mt-2">
                     <CtaLink label="How to add this app to your home screen" onPress={() => setA2hsOpen(true)} />
                   </div>

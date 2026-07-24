@@ -9,6 +9,7 @@ import { APP_VERSION } from "@/lib/version";
 import { ArrowLeft, ShieldAlert, Bell, Smartphone, Lock, X, Archive, Users, Flower2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { AddToHomeModal } from "@/components/AddToHomeModal";
+import { isStandalone } from "@/lib/pwaInstall";
 import { InkHero, Card, RecordRow, IconTile, SectionHead, PrimaryButton } from "@/components/system";
 import { toast } from "sonner";
 
@@ -52,6 +53,10 @@ function AccountPage() {
   const [editOpen, setEditOpen] = useState(false);
   const [a2hsOpen, setA2hsOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  // Hide "Add to home screen" when this IS the installed experience (native
+  // shell or installed PWA). Effect-set to avoid an SSR hydration mismatch.
+  const [alreadyInstalled, setAlreadyInstalled] = useState(false);
+  useEffect(() => setAlreadyInstalled(isStandalone()), []);
 
   useEffect(() => {
     (async () => {
@@ -132,15 +137,18 @@ function AccountPage() {
                   leading={<IconTile icon={<Users className="size-5" />} />}
                   title="Household"
                   subtitle="People who help care for your birds."
+                  last={alreadyInstalled}
                 />
               </Link>
-              <RecordRow
-                onClick={() => setA2hsOpen(true)}
-                leading={<IconTile icon={<Smartphone className="size-5" />} />}
-                title="Add to home screen"
-                subtitle="Open it like an app, get alerts."
-                last
-              />
+              {!alreadyInstalled && (
+                <RecordRow
+                  onClick={() => setA2hsOpen(true)}
+                  leading={<IconTile icon={<Smartphone className="size-5" />} />}
+                  title="Add to home screen"
+                  subtitle="Open it like an app, get alerts."
+                  last
+                />
+              )}
             </Card>
           </div>
 
