@@ -117,6 +117,9 @@ export async function hardResetAndReload(): Promise<void> {
 
 export function registerServiceWorker() {
   if (typeof window === "undefined") return;
+  // Piggybacked shell setup (this runs once at client boot): mark the
+  // document so CSS can add native-only chrome like the status-bar backdrop.
+  if (isNativeApp()) document.documentElement.classList.add("native-app");
   if (!("serviceWorker" in navigator)) return;
 
   const inIframe = (() => { try { return window.self !== window.top; } catch { return true; } })();

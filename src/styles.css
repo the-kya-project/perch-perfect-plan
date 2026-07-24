@@ -198,6 +198,25 @@ select {
   padding-top: max(env(safe-area-inset-top), 12px);
 }
 
+/* Native shell only (html.native-app is set at boot inside the App Store /
+   Play Store builds): a frosted backdrop the height of the status bar, so
+   scrolled content blurs away under the clock instead of colliding with it —
+   the standard iOS treatment. pointer-events: none keeps it inert; browsers
+   and the PWA never get the class. */
+html.native-app body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: env(safe-area-inset-top);
+  z-index: 60;
+  pointer-events: none;
+  background: color-mix(in srgb, var(--cream) 45%, transparent);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+}
+
 /* ---- Typography tokens (weights 400/500 only — never 600/700) ----------
    Used across every owner screen via the shared component system. */
 .t-hero {
