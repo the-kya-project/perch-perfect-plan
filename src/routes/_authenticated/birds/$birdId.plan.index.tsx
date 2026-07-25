@@ -1,5 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useEffect } from "react";
+import { getBirdEmergencyReadiness } from "@/lib/household.functions";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
@@ -95,6 +97,10 @@ function CarePlanOverview() {
 
   const { data: defaults } = useQuery({
     queryKey: ["owner-defaults"],
+    // Only meaningful for the owner: this reads the VIEWER's own account
+    // defaults, which for a household member is their (usually empty) account,
+    // not this bird's owner's. Members get readiness from the server fn below.
+    enabled: isOwner,
     queryFn: async () => {
       const { data: u } = await getLocalUser();
       if (!u.user) return null;
@@ -107,7 +113,24 @@ function CarePlanOverview() {
     },
   });
 
+  const getEmergencyReadiness = useServerFn(getBirdEmergencyReadiness);
+  const { data: memberEmergency } = useQuery({
+    queryKey: ["member-emergency-ready", birdId],
+    // role resolves async; only fetch once we know the viewer is NOT the owner
+    enabled: role !== null && !isOwner,
+    queryFn: async () => await getEmergencyReadiness({ data: { birdId } }),
+  });
+
   const completeness = computeSetupCompleteness({ bird, plan, tasksCount: tasks.length, contacts, defaults });
+  // Members judge emergency readiness against the owner's merged data (same
+  // source the read view renders) rather than their own empty defaults.
+  if (!isOwner && memberEmergency?.ready) {
+    const c = completeness.checks.find((x) => x.key === "emergency");
+    if (c && !c.done) {
+      c.done = true;
+      completeness.doneCount += 1;
+    }
+  }
   const checksByKey = new Map<string, SetupCheck>(completeness.checks.map((c) => [c.key, c]));
 
   useEffect(() => {
