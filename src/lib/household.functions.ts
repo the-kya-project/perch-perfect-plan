@@ -420,6 +420,40 @@ export const declineHouseholdInvite = createServerFn({ method: "POST" })
 // Returns the same shape CareSheetView consumes (signed photo + clips, merged
 // contacts) plus routine tasks. Access is verified via bird_members; data is
 // read with the service role only after that check.
+/**
+ * Owner's effective emergency fields for a bird the caller is a member of.
+ * Lets non-owner surfaces (care-plan overview badge) judge emergency
+ * readiness from the same merged data the read view shows — the client-side
+ * owner_emergency_defaults query only ever sees the VIEWER's own defaults,
+ * which made the badge say "Needs info" for household members.
+ */
+export const getBirdEmergencyReadiness = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { birdId: string }) => z.object({ birdId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const sb = await getAdmin();
+    const userId = context.userId as string;
+    const { data: membership } = await sb
+      .from("bird_members")
+      .select("role")
+      .eq("bird_id", data.birdId)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (!membership) throw new Error("Not found.");
+
+    const { data: bird } = await sb.from("birds").select("owner_id").eq("id", data.birdId).maybeSingle();
+    if (!bird) throw new Error("Not found.");
+    const { data: contacts } = await sb.from("emergency_contacts").select("*").eq("bird_id", data.birdId).maybeSingle();
+    const { data: defaults } = await sb
+      .from("owner_emergency_defaults")
+      .select("*")
+      .eq("owner_id", (bird as any).owner_id)
+      .maybeSingle();
+    const merged = mergeEmergency(contacts, defaults) as Record<string, unknown>;
+    const has = (k: string) => !!(merged?.[k] ?? "").toString().trim();
+    return { ready: has("owner_phone") && has("avian_vet_phone") };
+  });
+
 export const getHouseholdCarePlanView = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: { birdId: string }) => z.object({ birdId: z.string().uuid() }).parse(d))

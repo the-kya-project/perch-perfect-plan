@@ -270,7 +270,9 @@ function MomentsFacet() {
 
           {anchors.length === 0 && (
             <p className="rounded-[16px] bg-[var(--cream2)] p-6 text-center t-body text-[var(--mute)]">
-              Add {name}'s hatch date and the day they came home in Identity, and their yearly moments will appear here.
+              {isOwner
+                ? <>Add {name}'s hatch date and the day they came home in Identity, and their yearly moments will appear here.</>
+                : <>Once {name}'s owner adds a hatch date or homecoming day, the yearly moments will appear here.</>}
             </p>
           )}
 
