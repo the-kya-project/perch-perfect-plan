@@ -54,7 +54,12 @@ export type AnalyticsEventName =
   | "view_as_sitter_opened"
   | "concern_flow_started"
   | "household_member_invited"
-  | "bird_handoff_initiated";
+  | "bird_handoff_initiated"
+  // Native-shell OAuth diagnostics (TestFlight sign-in loop debugging)
+  | "native_oauth_started"
+  | "native_oauth_callback"
+  | "native_oauth_exchanged"
+  | "native_oauth_failed";
 
 type EventProps = Record<string, string | number | boolean | null | undefined>;
 
@@ -161,6 +166,41 @@ function loadScript(src: string, attrs: Record<string, string> = {}): Promise<vo
 
 // ---------------- PostHog adapter ----------------
 
+// Supabase's implicit auth flow lands on /welcome#access_token=<JWT>&refresh_token=…
+// If PostHog captures that URL, live tokens end up stored in analytics. Scrub
+// auth material out of every URL-ish property before it leaves the browser.
+const TOKEN_PARAM_RE = /(access_token|refresh_token|provider_token|provider_refresh_token|id_token|token|code)=[^&#\s]*/gi;
+
+function scrubUrl(value: string): string {
+  // Drop the fragment entirely (Supabase puts tokens there), then redact any
+  // token-ish query params that survive.
+  const noFragment = value.replace(/#.*$/, "");
+  return noFragment.replace(TOKEN_PARAM_RE, "$1=REDACTED");
+}
+
+function sanitizeAnalyticsProperties(props: Record<string, any>): Record<string, any> {
+  const out: Record<string, any> = { ...props };
+  for (const key of Object.keys(out)) {
+    const v = out[key];
+    if (v && typeof v === "object" && !Array.isArray(v)) {
+      // $set / $set_once carry nested URL props like $initial_current_url.
+      out[key] = sanitizeAnalyticsProperties(v);
+    } else if (
+      typeof v === "string" &&
+      (key === "$current_url" ||
+        key === "$pathname" ||
+        key === "$referrer" ||
+        key.endsWith("_url") ||
+        key.endsWith("_referrer") ||
+        v.includes("access_token") ||
+        v.includes("refresh_token"))
+    ) {
+      out[key] = scrubUrl(v);
+    }
+  }
+  return out;
+}
+
 async function bootPostHog(key: string, host: string) {
   // Load array.js first, then init directly on the loaded library. The old
   // hand-rolled stub queued ["init", ...] as a generic method call, but
@@ -183,7 +223,7 @@ async function bootPostHog(key: string, host: string) {
     autocapture: false,
     disable_session_recording: true,
     respect_dnt: true,
-    sanitize_properties: (p: any) => p,
+    sanitize_properties: sanitizeAnalyticsProperties,
   });
   flush();
 }

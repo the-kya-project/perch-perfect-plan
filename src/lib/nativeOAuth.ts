@@ -19,6 +19,7 @@
  */
 import { supabase } from "@/integrations/supabase/client";
 import { isNativeApp } from "./nativeApp";
+import { track } from "./analytics";
 
 const CALLBACK_URL = "kya://auth-callback";
 const DEST_KEY = "native-oauth-dest";
@@ -50,6 +51,7 @@ function spaNavigate(path: string) {
 }
 
 async function completeSignIn(url: string) {
+  track("native_oauth_callback", { has_code: url.includes("code=") });
   const { Browser } = await import("@capacitor/browser");
   try { await Browser.close(); } catch { /* sheet may already be closed */ }
 
@@ -58,11 +60,18 @@ async function completeSignIn(url: string) {
   sessionStorage.removeItem(DEST_KEY);
 
   if (!code) {
+    track("native_oauth_failed", { stage: "no-code", url_shape: url.split("?")[0] });
     spaNavigate("/auth?error=oauth-cancelled");
     return;
   }
   const { error } = await supabase.auth.exchangeCodeForSession(code);
-  spaNavigate(error ? "/auth?error=oauth-failed" : dest);
+  if (error) {
+    track("native_oauth_failed", { stage: "exchange", message: error.message });
+    spaNavigate("/auth?error=oauth-failed");
+    return;
+  }
+  track("native_oauth_exchanged", { dest });
+  spaNavigate(dest);
 }
 
 type OAuthProvider = "google" | "apple";
@@ -83,6 +92,7 @@ export async function signInWithProvider(provider: OAuthProvider, redirectTo: st
   }
 
   await installCallbackListener();
+  track("native_oauth_started", { provider });
   try {
     sessionStorage.setItem(DEST_KEY, new URL(redirectTo).pathname + new URL(redirectTo).search);
   } catch { /* keep default dest */ }

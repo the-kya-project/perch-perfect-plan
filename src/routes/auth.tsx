@@ -53,6 +53,13 @@ function AuthPage() {
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) navigate({ to: (returnTo ?? "/dashboard") as any });
     });
+    // Also leave whenever a session APPEARS while this page is open — covers
+    // the native OAuth callback completing after mount (TestFlight sign-in
+    // loop: the deep-link exchange finishes while the user is parked here).
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_IN") navigate({ to: (returnTo ?? "/dashboard") as any });
+    });
+    return () => sub.subscription.unsubscribe();
   }, [navigate, returnTo]);
 
   // Ad-traffic pageview for TikTok campaigns (marketing pages only).
