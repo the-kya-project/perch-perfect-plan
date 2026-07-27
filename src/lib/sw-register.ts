@@ -68,6 +68,17 @@ export function reloadForStaleChunk() {
     if (chunkReloadAttemptedRecently()) return; // already tried very recently — avoid a loop
     sessionStorage.setItem(CHUNK_RELOAD_KEY, String(Date.now()));
   } catch { /* sessionStorage blocked (e.g. some iframes) — fall through to a single reload */ }
+  if (isNativeApp()) {
+    // The shell's WKWebView caches the document itself, so a plain reload can
+    // re-read the SAME stale HTML that references dead chunk URLs (seen on
+    // device after a deploy). Cache-bust the document fetch instead.
+    try {
+      const u = new URL(window.location.href);
+      u.searchParams.set("_r", String(Date.now()));
+      window.location.replace(u.toString());
+      return;
+    } catch { /* fall through to a plain reload */ }
+  }
   window.location.reload();
 }
 
