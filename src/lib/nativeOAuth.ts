@@ -33,6 +33,20 @@ async function installCallbackListener() {
     if (!url.startsWith(CALLBACK_URL)) return;
     void completeSignIn(url);
   });
+  // Cold start: if iOS relaunched the app via the callback URL, no appUrlOpen
+  // event fires — the URL arrives as the launch URL instead.
+  const launch = await App.getLaunchUrl();
+  if (launch?.url?.startsWith(CALLBACK_URL)) void completeSignIn(launch.url);
+}
+
+/** Navigate inside the running SPA. A full reload (location.assign) races the
+ *  session write: the fresh page's auth guard can mount before the new session
+ *  is readable and bounce to /auth even though sign-in succeeded (seen on
+ *  device in TestFlight build 1). The live app already holds the session in
+ *  memory, so an in-app navigation can't lose. */
+function spaNavigate(path: string) {
+  window.history.pushState({}, "", path);
+  window.dispatchEvent(new PopStateEvent("popstate", { state: {} }));
 }
 
 async function completeSignIn(url: string) {
@@ -44,11 +58,11 @@ async function completeSignIn(url: string) {
   sessionStorage.removeItem(DEST_KEY);
 
   if (!code) {
-    window.location.assign("/auth?error=oauth-cancelled");
+    spaNavigate("/auth?error=oauth-cancelled");
     return;
   }
   const { error } = await supabase.auth.exchangeCodeForSession(code);
-  window.location.assign(error ? "/auth?error=oauth-failed" : dest);
+  spaNavigate(error ? "/auth?error=oauth-failed" : dest);
 }
 
 type OAuthProvider = "google" | "apple";
