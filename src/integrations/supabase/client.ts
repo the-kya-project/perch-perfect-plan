@@ -18,19 +18,22 @@ function createSupabaseClient() {
     throw new Error(message);
   }
 
-  // The native shell signs in via deep-link callback, which requires the PKCE
-  // flow (exchangeCodeForSession). Browsers keep the implicit default so the
-  // web/PWA auth flow is untouched.
-  const isNativeShell =
-    typeof window !== 'undefined' &&
-    (window as { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor?.isNativePlatform?.() === true;
-
+  // PKCE for everyone. The native shell REQUIRES it (its deep-link callback
+  // exchanges a code via exchangeCodeForSession), and it's the Supabase-
+  // recommended flow for browser SPAs too. It must not be conditional on
+  // detecting the native shell at client-creation time: in remote-URL mode the
+  // app touches this client during boot before Capacitor's bridge finishes
+  // attaching window.Capacitor.isNativePlatform, so a native-only condition
+  // froze the client into implicit mode — no code verifier was generated, and
+  // the manual exchange died with flow_state_not_found (TestFlight, 2026-07-27).
+  // On the web, detectSessionInUrl (default true) auto-exchanges the ?code on
+  // the redirect landing using the stored verifier.
   return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
     auth: {
       storage: typeof window !== 'undefined' ? localStorage : undefined,
       persistSession: true,
       autoRefreshToken: true,
-      ...(isNativeShell ? { flowType: 'pkce' as const } : {}),
+      flowType: 'pkce',
     }
   });
 }
