@@ -21,6 +21,28 @@ import { supabase } from "@/integrations/supabase/client";
 import { isNativeApp } from "./nativeApp";
 import { track } from "./analytics";
 
+// Bump on each deploy while debugging the native sign-in, so the breadcrumbs
+// prove which build the device actually ran (rules out webview cache).
+const OAUTH_BUILD = "pkce-b3";
+
+function verifierPresent(): string {
+  try {
+    return Object.keys(localStorage).filter((k) => k.includes("code-verifier")).join(",") || "none";
+  } catch {
+    return "err";
+  }
+}
+
+/** What flow the live client is really using — reads the private option. */
+function clientFlowType(): string {
+  try {
+    // @ts-expect-error reaching into the client to confirm the effective flow
+    return supabase.auth?.flowType ?? "unknown";
+  } catch {
+    return "err";
+  }
+}
+
 const CALLBACK_URL = "kya://auth-callback";
 const DEST_KEY = "native-oauth-dest";
 
@@ -98,6 +120,8 @@ async function completeSignIn(url: string) {
       } catch { /* storage unavailable */ }
       track("native_oauth_failed", {
         stage: "exchange-detail",
+        build: OAUTH_BUILD,
+        flow: clientFlowType(),
         message: e.message || "empty",
         code: e.code ?? "none",
         status: e.status ?? 0,
@@ -130,7 +154,7 @@ export async function signInWithProvider(provider: OAuthProvider, redirectTo: st
   }
 
   await installCallbackListener();
-  track("native_oauth_started", { provider });
+  track("native_oauth_started", { provider, build: OAUTH_BUILD, flow: clientFlowType() });
   try {
     sessionStorage.setItem(DEST_KEY, new URL(redirectTo).pathname + new URL(redirectTo).search);
   } catch { /* keep default dest */ }
@@ -139,6 +163,10 @@ export async function signInWithProvider(provider: OAuthProvider, redirectTo: st
     provider,
     options: { redirectTo: CALLBACK_URL, skipBrowserRedirect: true },
   });
+  // Ground truth: is the PKCE verifier in storage the instant the sign-in call
+  // returns, before the browser even opens? Present here but gone at exchange
+  // = something wipes it; absent here = the client isn't in PKCE mode.
+  track("native_oauth_started", { build: OAUTH_BUILD, stage: "post-signin", verifier: verifierPresent(), has_url: !!data?.url });
   if (error || !data?.url) throw new Error(error?.message ?? "Could not start sign-in.");
 
   const { Browser } = await import("@capacitor/browser");
