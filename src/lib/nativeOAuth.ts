@@ -64,14 +64,34 @@ async function completeSignIn(url: string) {
     spaNavigate("/auth?error=oauth-cancelled");
     return;
   }
-  const { error } = await supabase.auth.exchangeCodeForSession(code);
-  if (error) {
-    track("native_oauth_failed", { stage: "exchange", message: error.message });
-    spaNavigate("/auth?error=oauth-failed");
-    return;
+
+  // The token exchange can fail transiently on device — the fetch races the
+  // in-app browser teardown / network transition (observed on TestFlight: a
+  // failed exchange with an empty error message, and an immediate retry
+  // succeeds). So: try, and on failure check whether a session landed anyway
+  // (detectSessionInUrl or a partial success), then retry a couple of times
+  // with backoff before giving up. Only a genuinely dead code fails all paths.
+  let lastMessage = "";
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (!error) {
+      track("native_oauth_exchanged", { dest, attempt });
+      spaNavigate(dest);
+      return;
+    }
+    lastMessage = error.message || "empty";
+    // Did a session arrive despite the error? Then we're actually signed in.
+    const { data } = await supabase.auth.getSession();
+    if (data.session) {
+      track("native_oauth_exchanged", { dest, attempt, via: "session-present" });
+      spaNavigate(dest);
+      return;
+    }
+    await new Promise((r) => setTimeout(r, 400 * (attempt + 1)));
   }
-  track("native_oauth_exchanged", { dest });
-  spaNavigate(dest);
+
+  track("native_oauth_failed", { stage: "exchange", message: lastMessage });
+  spaNavigate("/auth?error=oauth-failed");
 }
 
 type OAuthProvider = "google" | "apple";
