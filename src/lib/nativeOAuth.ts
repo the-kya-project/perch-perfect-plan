@@ -87,6 +87,24 @@ async function completeSignIn(url: string) {
       spaNavigate(dest);
       return;
     }
+    if (attempt === 0) {
+      // Capture the real error shape + whether the PKCE verifier is present in
+      // storage (empty error.message is hiding the cause). verifierKeys lists
+      // any sb-*-code-verifier entries so we can tell "missing" from "mismatch".
+      const e = error as { message?: string; code?: string; status?: number; name?: string };
+      let verifierKeys = "none";
+      try {
+        verifierKeys = Object.keys(localStorage).filter((k) => k.includes("code-verifier")).join(",") || "none";
+      } catch { /* storage unavailable */ }
+      track("native_oauth_failed", {
+        stage: "exchange-detail",
+        message: e.message || "empty",
+        code: e.code ?? "none",
+        status: e.status ?? 0,
+        name: e.name ?? "none",
+        verifier_keys: verifierKeys,
+      });
+    }
     await new Promise((r) => setTimeout(r, 400 * (attempt + 1)));
   }
 
