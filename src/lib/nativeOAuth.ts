@@ -23,13 +23,43 @@ import { track } from "./analytics";
 
 // Bump on each deploy while debugging the native sign-in, so the breadcrumbs
 // prove which build the device actually ran (rules out webview cache).
-const OAUTH_BUILD = "pkce-b3";
+const OAUTH_BUILD = "verifier-restore-b4";
 
 function verifierPresent(): string {
   try {
     return Object.keys(localStorage).filter((k) => k.includes("code-verifier")).join(",") || "none";
   } catch {
     return "err";
+  }
+}
+
+// The PKCE verifier disappears mid-flow on device: supabase-js stores it under
+// sb-<ref>-auth-token-code-verifier, but the webview reloads while the Google
+// sheet is open and a fresh supabase-js init clears the "abandoned" verifier —
+// so the deep-link exchange finds nothing and fails flow_state_not_found
+// (proven on TestFlight: present at signin, gone at exchange). We keep our own
+// copy under a key supabase-js never touches, and restore it before exchanging.
+const BACKUP_KEY = "kya-pkce-verifier-backup";
+
+function backupVerifier() {
+  try {
+    const k = Object.keys(localStorage).find((x) => x.includes("code-verifier"));
+    if (k) localStorage.setItem(BACKUP_KEY, JSON.stringify({ k, v: localStorage.getItem(k) }));
+  } catch { /* storage unavailable */ }
+}
+
+/** Ensure the sb-*-code-verifier key exists before exchange; restore from our
+ *  backup if supabase-js dropped it. Returns whether a restore was needed. */
+function restoreVerifierIfMissing(): "present" | "restored" | "no-backup" {
+  try {
+    if (Object.keys(localStorage).some((x) => x.includes("code-verifier"))) return "present";
+    const raw = localStorage.getItem(BACKUP_KEY);
+    if (!raw) return "no-backup";
+    const { k, v } = JSON.parse(raw) as { k: string; v: string | null };
+    if (k && v != null) { localStorage.setItem(k, v); return "restored"; }
+    return "no-backup";
+  } catch {
+    return "no-backup";
   }
 }
 
@@ -73,7 +103,6 @@ function spaNavigate(path: string) {
 }
 
 async function completeSignIn(url: string) {
-  track("native_oauth_callback", { has_code: url.includes("code=") });
   const { Browser } = await import("@capacitor/browser");
   try { await Browser.close(); } catch { /* sheet may already be closed */ }
 
@@ -93,11 +122,16 @@ async function completeSignIn(url: string) {
   // succeeds). So: try, and on failure check whether a session landed anyway
   // (detectSessionInUrl or a partial success), then retry a couple of times
   // with backoff before giving up. Only a genuinely dead code fails all paths.
+  // Put the verifier back if the webview reload dropped it (the actual bug).
+  const restore = restoreVerifierIfMissing();
+  track("native_oauth_callback", { build: OAUTH_BUILD, has_code: !!code, restore });
+
   let lastMessage = "";
   for (let attempt = 0; attempt < 3; attempt++) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      track("native_oauth_exchanged", { dest, attempt });
+      try { localStorage.removeItem(BACKUP_KEY); } catch { /* ignore */ }
+      track("native_oauth_exchanged", { dest, attempt, restore });
       spaNavigate(dest);
       return;
     }
@@ -163,9 +197,9 @@ export async function signInWithProvider(provider: OAuthProvider, redirectTo: st
     provider,
     options: { redirectTo: CALLBACK_URL, skipBrowserRedirect: true },
   });
-  // Ground truth: is the PKCE verifier in storage the instant the sign-in call
-  // returns, before the browser even opens? Present here but gone at exchange
-  // = something wipes it; absent here = the client isn't in PKCE mode.
+  // Keep our own copy of the verifier before the browser opens — supabase-js's
+  // copy can be wiped by a webview reload during the sheet.
+  backupVerifier();
   track("native_oauth_started", { build: OAUTH_BUILD, stage: "post-signin", verifier: verifierPresent(), has_url: !!data?.url });
   if (error || !data?.url) throw new Error(error?.message ?? "Could not start sign-in.");
 
