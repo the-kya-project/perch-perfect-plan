@@ -16,7 +16,7 @@
  * The plugin is imported dynamically so none of it ships in the web bundle.
  */
 import { supabase } from "@/integrations/supabase/client";
-import { isNativeApp } from "./nativeApp";
+import { isNativeApp, nativePlatform } from "./nativeApp";
 import { track } from "./analytics";
 
 type OAuthProvider = "google" | "apple";
@@ -31,14 +31,19 @@ let initialized = false;
 async function ensureInitialized() {
   if (initialized) return;
   const { SocialLogin } = await import("@capgo/capacitor-social-login");
-  await SocialLogin.initialize({
-    apple: {}, // iOS uses the app's bundle id automatically
+  // Apple is included ONLY on iOS — on Android the plugin's apple config
+  // requires a Services-ID redirectUrl (web flow), and passing apple:{} there
+  // fails initialize entirely ("apple.android.redirectUrl is null or empty"),
+  // which would also break Google. Apple sign-in is iOS-only for us anyway.
+  const config: Parameters<typeof SocialLogin.initialize>[0] = {
     google: {
       webClientId: GOOGLE_WEB_CLIENT_ID,
       ...(GOOGLE_IOS_CLIENT_ID ? { iOSClientId: GOOGLE_IOS_CLIENT_ID } : {}),
       mode: "online",
     },
-  });
+  };
+  if (nativePlatform() === "ios") config.apple = {};
+  await SocialLogin.initialize(config);
   initialized = true;
 }
 
