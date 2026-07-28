@@ -23,7 +23,7 @@ import { track } from "./analytics";
 
 // Bump on each deploy while debugging the native sign-in, so the breadcrumbs
 // prove which build the device actually ran (rules out webview cache).
-const OAUTH_BUILD = "verifier-restore-b4";
+const OAUTH_BUILD = "simplify-b5";
 
 function verifierPresent(): string {
   try {
@@ -77,6 +77,10 @@ const CALLBACK_URL = "kya://auth-callback";
 const DEST_KEY = "native-oauth-dest";
 
 let listenerInstalled = false;
+// Guard against exchanging the same one-time code twice (double appUrlOpen, or
+// a stale relaunch URL) — a second exchange of a consumed code returns
+// flow_state_not_found and stomps a session that already succeeded.
+const handledCodes = new Set<string>();
 
 async function installCallbackListener() {
   if (listenerInstalled) return;
@@ -86,10 +90,6 @@ async function installCallbackListener() {
     if (!url.startsWith(CALLBACK_URL)) return;
     void completeSignIn(url);
   });
-  // Cold start: if iOS relaunched the app via the callback URL, no appUrlOpen
-  // event fires — the URL arrives as the launch URL instead.
-  const launch = await App.getLaunchUrl();
-  if (launch?.url?.startsWith(CALLBACK_URL)) void completeSignIn(launch.url);
 }
 
 /** Navigate inside the running SPA. A full reload (location.assign) races the
@@ -108,65 +108,54 @@ async function completeSignIn(url: string) {
 
   const code = new URLSearchParams(url.split("?")[1] ?? "").get("code");
   const dest = sessionStorage.getItem(DEST_KEY) || "/welcome";
-  sessionStorage.removeItem(DEST_KEY);
 
   if (!code) {
     track("native_oauth_failed", { stage: "no-code", url_shape: url.split("?")[0] });
     spaNavigate("/auth?error=oauth-cancelled");
     return;
   }
-
-  // The token exchange can fail transiently on device — the fetch races the
-  // in-app browser teardown / network transition (observed on TestFlight: a
-  // failed exchange with an empty error message, and an immediate retry
-  // succeeds). So: try, and on failure check whether a session landed anyway
-  // (detectSessionInUrl or a partial success), then retry a couple of times
-  // with backoff before giving up. Only a genuinely dead code fails all paths.
-  // Put the verifier back if the webview reload dropped it (the actual bug).
-  const restore = restoreVerifierIfMissing();
-  track("native_oauth_callback", { build: OAUTH_BUILD, has_code: !!code, restore });
-
-  let lastMessage = "";
-  for (let attempt = 0; attempt < 3; attempt++) {
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) {
-      try { localStorage.removeItem(BACKUP_KEY); } catch { /* ignore */ }
-      track("native_oauth_exchanged", { dest, attempt, restore });
-      spaNavigate(dest);
-      return;
-    }
-    lastMessage = error.message || "empty";
-    // Did a session arrive despite the error? Then we're actually signed in.
-    const { data } = await supabase.auth.getSession();
-    if (data.session) {
-      track("native_oauth_exchanged", { dest, attempt, via: "session-present" });
-      spaNavigate(dest);
-      return;
-    }
-    if (attempt === 0) {
-      // Capture the real error shape + whether the PKCE verifier is present in
-      // storage (empty error.message is hiding the cause). verifierKeys lists
-      // any sb-*-code-verifier entries so we can tell "missing" from "mismatch".
-      const e = error as { message?: string; code?: string; status?: number; name?: string };
-      let verifierKeys = "none";
-      try {
-        verifierKeys = Object.keys(localStorage).filter((k) => k.includes("code-verifier")).join(",") || "none";
-      } catch { /* storage unavailable */ }
-      track("native_oauth_failed", {
-        stage: "exchange-detail",
-        build: OAUTH_BUILD,
-        flow: clientFlowType(),
-        message: e.message || "empty",
-        code: e.code ?? "none",
-        status: e.status ?? 0,
-        name: e.name ?? "none",
-        verifier_keys: verifierKeys,
-      });
-    }
-    await new Promise((r) => setTimeout(r, 400 * (attempt + 1)));
+  // Never exchange the same code twice (would fail flow_state_not_found and
+  // could stomp a session the first exchange already created).
+  if (handledCodes.has(code)) {
+    track("native_oauth_callback", { build: OAUTH_BUILD, dedup: true });
+    return;
   }
+  handledCodes.add(code);
+  sessionStorage.removeItem(DEST_KEY);
 
-  track("native_oauth_failed", { stage: "exchange", message: lastMessage });
+  restoreVerifierIfMissing();
+  track("native_oauth_callback", { build: OAUTH_BUILD, has_code: true });
+
+  // Single exchange — the proven-working path when PKCE is active. The /auth
+  // onAuthStateChange listener is the navigation safety net.
+  const { error } = await supabase.auth.exchangeCodeForSession(code);
+  if (!error) {
+    try { localStorage.removeItem(BACKUP_KEY); } catch { /* ignore */ }
+    track("native_oauth_exchanged", { dest });
+    spaNavigate(dest);
+    return;
+  }
+  // A session can exist despite an error (e.g. a duplicate that raced us).
+  const { data } = await supabase.auth.getSession();
+  if (data.session) {
+    track("native_oauth_exchanged", { dest, via: "session-present" });
+    spaNavigate(dest);
+    return;
+  }
+  const e = error as { message?: string; code?: string; status?: number };
+  let verifierKeys = "none";
+  try {
+    verifierKeys = Object.keys(localStorage).filter((k) => k.includes("code-verifier")).join(",") || "none";
+  } catch { /* storage unavailable */ }
+  track("native_oauth_failed", {
+    stage: "exchange",
+    build: OAUTH_BUILD,
+    flow: clientFlowType(),
+    message: e.message || "empty",
+    code: e.code ?? "none",
+    status: e.status ?? 0,
+    verifier_keys: verifierKeys,
+  });
   spaNavigate("/auth?error=oauth-failed");
 }
 
@@ -189,6 +178,18 @@ export async function signInWithProvider(provider: OAuthProvider, redirectTo: st
 
   await installCallbackListener();
   track("native_oauth_started", { provider, build: OAUTH_BUILD, flow: clientFlowType() });
+  // Start clean: dismiss any lingering sheet and drop stale PKCE verifiers from
+  // abandoned attempts, so the server flow_state and the local verifier both
+  // belong to THIS attempt only (stale/racing flows → flow_state_not_found).
+  try {
+    const { Browser } = await import("@capacitor/browser");
+    await Browser.close();
+  } catch { /* no sheet open */ }
+  try {
+    Object.keys(localStorage)
+      .filter((k) => k.includes("code-verifier") || k === BACKUP_KEY)
+      .forEach((k) => localStorage.removeItem(k));
+  } catch { /* storage unavailable */ }
   try {
     sessionStorage.setItem(DEST_KEY, new URL(redirectTo).pathname + new URL(redirectTo).search);
   } catch { /* keep default dest */ }
