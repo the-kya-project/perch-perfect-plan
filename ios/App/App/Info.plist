@@ -30,7 +30,17 @@
 				<string>kya</string>
 			</array>
 		</dict>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>google-signin</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.481724773308-85q8knidtnhf5f8i9g65ha3mflhg85eb</string>
+			</array>
+		</dict>
 	</array>
+	<key>GIDClientID</key>
+	<string>481724773308-85q8knidtnhf5f8i9g65ha3mflhg85eb.apps.googleusercontent.com</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>ITSAppUsesNonExemptEncryption</key>

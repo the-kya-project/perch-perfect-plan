@@ -25,7 +25,7 @@ type OAuthProvider = "google" | "apple";
 // also needs an iOS OAuth client id from the same Google Cloud project, added
 // to Supabase's authorized client ids. Filled once the iOS client is created.
 const GOOGLE_WEB_CLIENT_ID = "481724773308-plqmbh26monghfpbtnr1cgfib1v3cqjs.apps.googleusercontent.com";
-const GOOGLE_IOS_CLIENT_ID = ""; // TODO: iOS OAuth client id (…apps.googleusercontent.com)
+const GOOGLE_IOS_CLIENT_ID = "481724773308-85q8knidtnhf5f8i9g65ha3mflhg85eb.apps.googleusercontent.com";
 
 let initialized = false;
 async function ensureInitialized() {
