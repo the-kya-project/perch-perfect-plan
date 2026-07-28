@@ -10,10 +10,23 @@
  * prompts (you ARE the installed app), no service worker, and no web-push
  * (native push replaces it).
  */
-type CapacitorGlobal = { isNativePlatform?: () => boolean };
+type CapacitorGlobal = { isNativePlatform?: () => boolean; getPlatform?: () => string };
 
 export function isNativeApp(): boolean {
   if (typeof window === "undefined") return false;
   const cap = (window as { Capacitor?: CapacitorGlobal }).Capacitor;
   return cap?.isNativePlatform?.() === true;
+}
+
+/** "ios" | "android" | "web" — the shell platform. */
+export function nativePlatform(): string {
+  if (typeof window === "undefined") return "web";
+  const cap = (window as { Capacitor?: CapacitorGlobal }).Capacitor;
+  return cap?.getPlatform?.() ?? "web";
+}
+
+/** Sign in with Apple only makes sense on iOS (Android needs the heavier
+ *  web-based Services-ID flow, and Apple-account users are on iOS anyway). */
+export function isIOSApp(): boolean {
+  return nativePlatform() === "ios";
 }

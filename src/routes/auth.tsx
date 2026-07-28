@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { signInWithGoogle, signInWithApple } from "@/lib/nativeOAuth";
-import { isNativeApp } from "@/lib/nativeApp";
+import { isIOSApp } from "@/lib/nativeApp";
 import { lovable } from "@/integrations/lovable";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
@@ -271,7 +271,7 @@ function AuthPage() {
               Continue with Google
             </PrimaryButton>
 
-            {isNativeApp() && (
+            {isIOSApp() && (
               <div className="mt-3">
                 <PrimaryButton
                   tone="outline"
