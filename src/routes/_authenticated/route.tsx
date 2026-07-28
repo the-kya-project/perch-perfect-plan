@@ -2,6 +2,7 @@ import { createFileRoute, Outlet, redirect, useLocation } from "@tanstack/react-
 import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { getReadySession } from "@/lib/authReady";
 import { applyOAuthAttribution } from "@/lib/attribution";
 import { PullToRefresh } from "@/components/PullToRefresh";
 import { OwnerTabBar } from "@/components/OwnerTabBar";
@@ -9,17 +10,18 @@ import { OwnerTabBar } from "@/components/OwnerTabBar";
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async ({ location }) => {
-    // Read the session from local storage (no network round-trip): fast on every
-    // authenticated navigation, and it immediately reflects a session just set by
-    // signup/sign-in. getUser()'s network call raced that and bounced new owners
-    // back to sign-in right after signup.
-    const { data, error } = await supabase.auth.getSession();
-    if (error || !data.session) {
+    // Cold-start safe read: waits for the persisted session to hydrate from
+    // storage before deciding (see authReady). Without this, a cold launch in
+    // the native webview read null before hydration and bounced signed-in
+    // owners to /auth. Still no network round-trip, and a session just set by
+    // signup/sign-in is reflected immediately (auth already settled by then).
+    const session = await getReadySession();
+    if (!session) {
       // Remember where they were headed (e.g. a /past-birds email deep-link) so
       // /auth lands them there after sign-in instead of the default dashboard.
       throw redirect({ to: "/auth", search: { mode: "signin" as const, redirect: location.pathname } });
     }
-    return { user: data.session.user };
+    return { user: session.user };
   },
   // With ssr:false, the session check (and any redirect) is resolved on the
   // client. The server renders THIS pending component for the boundary, and the

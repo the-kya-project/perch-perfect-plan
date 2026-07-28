@@ -1,7 +1,7 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { ArrowRight } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { getReadySession } from "@/lib/authReady";
 import { loadTikTokPixel } from "@/lib/tiktokPixel";
 import { Disclaimer } from "@/components/Disclaimer";
 import { BrandLockup } from "@/components/BrandLogo";
@@ -12,8 +12,10 @@ export const Route = createFileRoute("/")({
   // there's no session and new visitors/crawlers still get the landing page.
   beforeLoad: async () => {
     if (typeof window === "undefined") return;
-    const { data } = await supabase.auth.getSession();
-    if (data.session) throw redirect({ to: "/dashboard" });
+    // Cold-start safe: waits for the persisted session to hydrate before
+    // deciding, so the native app doesn't flash the landing page on every
+    // launch for an already-signed-in owner.
+    if (await getReadySession()) throw redirect({ to: "/dashboard" });
   },
   head: () => ({
     meta: [
