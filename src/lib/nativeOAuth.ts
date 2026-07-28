@@ -1,215 +1,117 @@
 /**
- * OAuth for the native shell (App Store / Play Store builds).
+ * OAuth sign-in for both web and the native shell.
  *
- * In a browser, Supabase OAuth is a plain redirect and comes back to the site.
- * Inside the shell that breaks: Google's domain escapes to the system browser
- * and the session lands in Safari, not the app (and Google forbids OAuth
- * inside embedded webviews, so keeping it in the webview is not an option).
+ * WEB: the standard Supabase redirect flow (signInWithOAuth → provider →
+ * /welcome, session picked up by detectSessionInUrl). Unchanged and reliable.
  *
- * Native flow instead:
- *  1. `signInWithOAuth` with `skipBrowserRedirect` — we get the provider URL
- *     without navigating the webview.
- *  2. Open it in the in-app system browser sheet (@capacitor/browser).
- *  3. Supabase redirects to the `kya://auth-callback` deep link (must be in
- *     the Supabase auth allowlist); iOS/Android hand it to the app.
- *  4. The appUrlOpen listener exchanges the code for a session (PKCE) and
- *     navigates to the intended destination.
+ * NATIVE (App Store / Play Store): the OS-native account pickers via
+ * @capgo/capacitor-social-login, then hand the resulting identity token to
+ * Supabase with signInWithIdToken(). This replaces the old kya:// deep-link
+ * PKCE flow, which was intermittently failing with flow_state_not_found on
+ * device (the browser-sheet + custom-scheme + webview-reload chain is fragile;
+ * server logs confirmed the flow-state race). signInWithIdToken has no browser,
+ * no deep link, no PKCE — Apple/Google verify natively and Supabase verifies
+ * the token. Also delivers Sign in with Apple (App Store requirement).
  *
- * Plugins are imported dynamically so none of this ships in the web bundle.
+ * The plugin is imported dynamically so none of it ships in the web bundle.
  */
 import { supabase } from "@/integrations/supabase/client";
 import { isNativeApp } from "./nativeApp";
 import { track } from "./analytics";
 
-// Bump on each deploy while debugging the native sign-in, so the breadcrumbs
-// prove which build the device actually ran (rules out webview cache).
-const OAUTH_BUILD = "simplify-b5";
-
-function verifierPresent(): string {
-  try {
-    return Object.keys(localStorage).filter((k) => k.includes("code-verifier")).join(",") || "none";
-  } catch {
-    return "err";
-  }
-}
-
-// The PKCE verifier disappears mid-flow on device: supabase-js stores it under
-// sb-<ref>-auth-token-code-verifier, but the webview reloads while the Google
-// sheet is open and a fresh supabase-js init clears the "abandoned" verifier —
-// so the deep-link exchange finds nothing and fails flow_state_not_found
-// (proven on TestFlight: present at signin, gone at exchange). We keep our own
-// copy under a key supabase-js never touches, and restore it before exchanging.
-const BACKUP_KEY = "kya-pkce-verifier-backup";
-
-function backupVerifier() {
-  try {
-    const k = Object.keys(localStorage).find((x) => x.includes("code-verifier"));
-    if (k) localStorage.setItem(BACKUP_KEY, JSON.stringify({ k, v: localStorage.getItem(k) }));
-  } catch { /* storage unavailable */ }
-}
-
-/** Ensure the sb-*-code-verifier key exists before exchange; restore from our
- *  backup if supabase-js dropped it. Returns whether a restore was needed. */
-function restoreVerifierIfMissing(): "present" | "restored" | "no-backup" {
-  try {
-    if (Object.keys(localStorage).some((x) => x.includes("code-verifier"))) return "present";
-    const raw = localStorage.getItem(BACKUP_KEY);
-    if (!raw) return "no-backup";
-    const { k, v } = JSON.parse(raw) as { k: string; v: string | null };
-    if (k && v != null) { localStorage.setItem(k, v); return "restored"; }
-    return "no-backup";
-  } catch {
-    return "no-backup";
-  }
-}
-
-/** What flow the live client is really using — reads the private option. */
-function clientFlowType(): string {
-  try {
-    // @ts-expect-error reaching into the client to confirm the effective flow
-    return supabase.auth?.flowType ?? "unknown";
-  } catch {
-    return "err";
-  }
-}
-
-const CALLBACK_URL = "kya://auth-callback";
-const DEST_KEY = "native-oauth-dest";
-
-let listenerInstalled = false;
-// Guard against exchanging the same one-time code twice (double appUrlOpen, or
-// a stale relaunch URL) — a second exchange of a consumed code returns
-// flow_state_not_found and stomps a session that already succeeded.
-const handledCodes = new Set<string>();
-
-async function installCallbackListener() {
-  if (listenerInstalled) return;
-  listenerInstalled = true;
-  const { App } = await import("@capacitor/app");
-  await App.addListener("appUrlOpen", ({ url }) => {
-    if (!url.startsWith(CALLBACK_URL)) return;
-    void completeSignIn(url);
-  });
-}
-
-/** Navigate inside the running SPA. A full reload (location.assign) races the
- *  session write: the fresh page's auth guard can mount before the new session
- *  is readable and bounce to /auth even though sign-in succeeded (seen on
- *  device in TestFlight build 1). The live app already holds the session in
- *  memory, so an in-app navigation can't lose. */
-function spaNavigate(path: string) {
-  window.history.pushState({}, "", path);
-  window.dispatchEvent(new PopStateEvent("popstate", { state: {} }));
-}
-
-async function completeSignIn(url: string) {
-  const { Browser } = await import("@capacitor/browser");
-  try { await Browser.close(); } catch { /* sheet may already be closed */ }
-
-  const code = new URLSearchParams(url.split("?")[1] ?? "").get("code");
-  const dest = sessionStorage.getItem(DEST_KEY) || "/welcome";
-
-  if (!code) {
-    track("native_oauth_failed", { stage: "no-code", url_shape: url.split("?")[0] });
-    spaNavigate("/auth?error=oauth-cancelled");
-    return;
-  }
-  // Never exchange the same code twice (would fail flow_state_not_found and
-  // could stomp a session the first exchange already created).
-  if (handledCodes.has(code)) {
-    track("native_oauth_callback", { build: OAUTH_BUILD, dedup: true });
-    return;
-  }
-  handledCodes.add(code);
-  sessionStorage.removeItem(DEST_KEY);
-
-  restoreVerifierIfMissing();
-  track("native_oauth_callback", { build: OAUTH_BUILD, has_code: true });
-
-  // Single exchange — the proven-working path when PKCE is active. The /auth
-  // onAuthStateChange listener is the navigation safety net.
-  const { error } = await supabase.auth.exchangeCodeForSession(code);
-  if (!error) {
-    try { localStorage.removeItem(BACKUP_KEY); } catch { /* ignore */ }
-    track("native_oauth_exchanged", { dest });
-    spaNavigate(dest);
-    return;
-  }
-  // A session can exist despite an error (e.g. a duplicate that raced us).
-  const { data } = await supabase.auth.getSession();
-  if (data.session) {
-    track("native_oauth_exchanged", { dest, via: "session-present" });
-    spaNavigate(dest);
-    return;
-  }
-  const e = error as { message?: string; code?: string; status?: number };
-  let verifierKeys = "none";
-  try {
-    verifierKeys = Object.keys(localStorage).filter((k) => k.includes("code-verifier")).join(",") || "none";
-  } catch { /* storage unavailable */ }
-  track("native_oauth_failed", {
-    stage: "exchange",
-    build: OAUTH_BUILD,
-    flow: clientFlowType(),
-    message: e.message || "empty",
-    code: e.code ?? "none",
-    status: e.status ?? 0,
-    verifier_keys: verifierKeys,
-  });
-  spaNavigate("/auth?error=oauth-failed");
-}
-
 type OAuthProvider = "google" | "apple";
 
+// Supabase's Google provider uses this web client id; the native Google SDK
+// also needs an iOS OAuth client id from the same Google Cloud project, added
+// to Supabase's authorized client ids. Filled once the iOS client is created.
+const GOOGLE_WEB_CLIENT_ID = "481724773308-plqmbh26monghfpbtnr1cgfib1v3cqjs.apps.googleusercontent.com";
+const GOOGLE_IOS_CLIENT_ID = ""; // TODO: iOS OAuth client id (…apps.googleusercontent.com)
+
+let initialized = false;
+async function ensureInitialized() {
+  if (initialized) return;
+  const { SocialLogin } = await import("@capgo/capacitor-social-login");
+  await SocialLogin.initialize({
+    apple: {}, // iOS uses the app's bundle id automatically
+    google: {
+      webClientId: GOOGLE_WEB_CLIENT_ID,
+      ...(GOOGLE_IOS_CLIENT_ID ? { iOSClientId: GOOGLE_IOS_CLIENT_ID } : {}),
+      mode: "online",
+    },
+  });
+  initialized = true;
+}
+
+// rawNonce goes to Supabase; its SHA-256 digest goes to Google in the token.
+async function makeNonce(): Promise<{ raw: string; digest: string }> {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  const raw = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+  const hash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(raw));
+  const digest = Array.from(new Uint8Array(hash), (b) => b.toString(16).padStart(2, "0")).join("");
+  return { raw, digest };
+}
+
+async function nativeGoogle(): Promise<void> {
+  if (!GOOGLE_IOS_CLIENT_ID) throw new Error("Google sign-in isn't set up yet on this build.");
+  const { SocialLogin } = await import("@capgo/capacitor-social-login");
+  const { raw, digest } = await makeNonce();
+  const res = await SocialLogin.login({
+    provider: "google",
+    options: { scopes: ["email", "profile"], nonce: digest },
+  });
+  const idToken = (res.result as { idToken?: string })?.idToken;
+  if (!idToken) throw new Error("No Google identity token returned.");
+  const { error } = await supabase.auth.signInWithIdToken({ provider: "google", token: idToken, nonce: raw });
+  if (error) throw new Error(error.message);
+}
+
+async function nativeApple(): Promise<void> {
+  const { SocialLogin } = await import("@capgo/capacitor-social-login");
+  const res = await SocialLogin.login({
+    provider: "apple",
+    options: { scopes: ["email", "name"] },
+  });
+  const idToken = (res.result as { idToken?: string })?.idToken;
+  if (!idToken) throw new Error("No Apple identity token returned.");
+  const { error } = await supabase.auth.signInWithIdToken({ provider: "apple", token: idToken });
+  if (error) throw new Error(error.message);
+}
+
 /**
- * OAuth sign-in that works in both worlds. `redirectTo` is the full URL the
- * web flow should land on; the native flow reuses its path after the deep-link
- * exchange. Rejects with an Error on failure to start (call sites toast it).
+ * Sign in with a provider. On the web, redirects (call navigates away). In the
+ * native shell, uses the OS-native picker and returns once signed in — call
+ * sites should navigate to their destination on success.
  */
 export async function signInWithProvider(provider: OAuthProvider, redirectTo: string): Promise<void> {
   if (!isNativeApp()) {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: { redirectTo },
-    });
+    const { error } = await supabase.auth.signInWithOAuth({ provider, options: { redirectTo } });
     if (error) throw new Error(error.message);
     return; // browser is navigating away
   }
 
-  await installCallbackListener();
-  track("native_oauth_started", { provider, build: OAUTH_BUILD, flow: clientFlowType() });
-  // Start clean: dismiss any lingering sheet and drop stale PKCE verifiers from
-  // abandoned attempts, so the server flow_state and the local verifier both
-  // belong to THIS attempt only (stale/racing flows → flow_state_not_found).
+  track("native_oauth_started", { provider, build: "idtoken-b6" });
   try {
-    const { Browser } = await import("@capacitor/browser");
-    await Browser.close();
-  } catch { /* no sheet open */ }
-  try {
-    Object.keys(localStorage)
-      .filter((k) => k.includes("code-verifier") || k === BACKUP_KEY)
-      .forEach((k) => localStorage.removeItem(k));
-  } catch { /* storage unavailable */ }
-  try {
-    sessionStorage.setItem(DEST_KEY, new URL(redirectTo).pathname + new URL(redirectTo).search);
-  } catch { /* keep default dest */ }
-
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider,
-    options: { redirectTo: CALLBACK_URL, skipBrowserRedirect: true },
-  });
-  // Keep our own copy of the verifier before the browser opens — supabase-js's
-  // copy can be wiped by a webview reload during the sheet.
-  backupVerifier();
-  track("native_oauth_started", { build: OAUTH_BUILD, stage: "post-signin", verifier: verifierPresent(), has_url: !!data?.url });
-  if (error || !data?.url) throw new Error(error?.message ?? "Could not start sign-in.");
-
-  const { Browser } = await import("@capacitor/browser");
-  await Browser.open({ url: data.url });
+    await ensureInitialized();
+    if (provider === "apple") await nativeApple();
+    else await nativeGoogle();
+    track("native_oauth_exchanged", { provider });
+    // Session now exists in memory — navigate within the SPA (a full reload
+    // would race the auth guard). The /auth onAuthStateChange listener also
+    // catches this; belt and suspenders for invite/handoff entry points too.
+    try {
+      const path = new URL(redirectTo).pathname + new URL(redirectTo).search;
+      window.history.pushState({}, "", path);
+      window.dispatchEvent(new PopStateEvent("popstate", { state: {} }));
+    } catch { /* keep current location; the auth listener will navigate */ }
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "Sign-in failed.";
+    // The plugin throws on user cancel too — don't treat that as an error toast.
+    if (/cancel/i.test(msg)) { track("native_oauth_failed", { provider, stage: "cancelled" }); return; }
+    track("native_oauth_failed", { provider, stage: "idtoken", message: msg });
+    throw new Error(msg);
+  }
 }
 
 export const signInWithGoogle = (redirectTo: string) => signInWithProvider("google", redirectTo);
-// Sign in with Apple (required alongside Google per App Store guideline 4.8)
-// uses the same rails — UI button + Supabase provider config land once the
-// Apple Developer account exists (Services ID + key come from that account).
 export const signInWithApple = (redirectTo: string) => signInWithProvider("apple", redirectTo);

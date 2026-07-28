@@ -157,7 +157,24 @@ function RootComponent() {
 
   useEffect(() => {
     captureFirstTouch(); // first-touch attribution — record source before signup
-    initAnalytics();
+    if (window.location.hash.includes("access_token=")) {
+      // Supabase's implicit auth flow lands with live tokens in the URL hash.
+      // Let supabase-js consume them (getSession resolves after URL detection),
+      // scrub whatever remains, and only then boot analytics so PostHog never
+      // observes the token URL.
+      supabase.auth.getSession().finally(() => {
+        if (window.location.hash.includes("access_token=")) {
+          window.history.replaceState(
+            window.history.state,
+            "",
+            window.location.pathname + window.location.search,
+          );
+        }
+        initAnalytics();
+      });
+    } else {
+      initAnalytics();
+    }
     installChunkErrorRecovery(); // self-heal stale-build chunk 404s (incl. the sitter preview iframe)
     registerServiceWorker();
     supabase.auth.getSession().then(({ data }) => {

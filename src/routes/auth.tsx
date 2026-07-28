@@ -2,7 +2,8 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
-import { signInWithGoogle } from "@/lib/nativeOAuth";
+import { signInWithGoogle, signInWithApple } from "@/lib/nativeOAuth";
+import { isNativeApp } from "@/lib/nativeApp";
 import { lovable } from "@/integrations/lovable";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
@@ -201,6 +202,17 @@ function AuthPage() {
     }
   }
 
+  async function handleApple() {
+    setLoading(true);
+    try {
+      await signInWithApple(window.location.origin + "/welcome");
+      setLoading(false);
+    } catch (err: any) {
+      toast.error(err.message ?? "Apple sign-in failed.");
+      setLoading(false);
+    }
+  }
+
   async function handleForgotPassword() {
     const trimmed = email.trim();
     if (!trimmed) {
@@ -258,6 +270,19 @@ function AuthPage() {
             >
               Continue with Google
             </PrimaryButton>
+
+            {isNativeApp() && (
+              <div className="mt-3">
+                <PrimaryButton
+                  tone="outline"
+                  icon={<AppleIcon />}
+                  onPress={handleApple}
+                  disabled={loading}
+                >
+                  Continue with Apple
+                </PrimaryButton>
+              </div>
+            )}
 
             <div className="my-5 flex items-center gap-3">
               <div className="h-px flex-1 bg-[var(--line2)]" />
@@ -397,6 +422,14 @@ function GoogleIcon() {
   return (
     <svg className="size-4" viewBox="0 0 24 24" aria-hidden>
       <path fill="#EA4335" d="M12 10.2v3.9h5.5c-.2 1.4-1.6 4-5.5 4-3.3 0-6-2.7-6-6.1s2.7-6.1 6-6.1c1.9 0 3.1.8 3.8 1.5l2.6-2.5C16.7 3.3 14.6 2.3 12 2.3 6.7 2.3 2.4 6.6 2.4 12s4.3 9.7 9.6 9.7c5.6 0 9.2-3.9 9.2-9.4 0-.6-.1-1.1-.2-1.6H12z"/>
+    </svg>
+  );
+}
+
+function AppleIcon() {
+  return (
+    <svg className="size-4" viewBox="0 0 24 24" aria-hidden fill="currentColor">
+      <path d="M16.365 1.43c0 1.14-.417 2.2-1.11 2.98-.833.94-2.2 1.66-3.32 1.57-.14-1.1.42-2.27 1.06-2.99.72-.82 2-1.44 3.02-1.56.02.14.35.6.35 0zM20.5 17.02c-.55 1.27-.82 1.84-1.53 2.96-.99 1.56-2.39 3.5-4.12 3.51-1.54.02-1.93-1-4.02-.99-2.09.01-2.52 1.01-4.06.99-1.73-.02-3.05-1.77-4.04-3.33C-.05 16.5-.36 11.2 1.94 8.36 3.05 6.98 4.66 6.11 6.2 6.11c1.57 0 2.55 1 3.85 1 1.26 0 2.03-1 3.85-1 1.36 0 2.8.74 3.83 2.02-3.36 1.84-2.81 6.63.77 7.89z"/>
     </svg>
   );
 }
