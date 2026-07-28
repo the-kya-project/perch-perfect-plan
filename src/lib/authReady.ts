@@ -44,3 +44,30 @@ export async function getReadySession(): Promise<Session | null> {
   const { data } = await supabase.auth.getSession();
   return data.session;
 }
+
+/**
+ * SYNCHRONOUS best-effort check for a persisted session, straight from
+ * localStorage — no await, so a route guard can redirect instantly with no
+ * paint in between. supabase-js stores the session under `sb-<ref>-auth-token`.
+ * Used by the landing route so an already-signed-in owner is redirected to the
+ * dashboard on the first tick, without flashing the marketing/sign-in page
+ * while the async client finishes hydrating. A stored-but-expired token still
+ * returns true here; the authenticated guard then does the authoritative async
+ * check (behind its clean loading spinner, not the marketing page).
+ */
+export function hasStoredSession(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const key = Object.keys(localStorage).find(
+      (k) => k.startsWith("sb-") && k.endsWith("-auth-token"),
+    );
+    if (!key) return false;
+    const raw = localStorage.getItem(key);
+    if (!raw) return false;
+    const parsed = JSON.parse(raw);
+    // Shape is either the session object or { currentSession, expiresAt }.
+    return !!(parsed?.access_token || parsed?.currentSession?.access_token || parsed?.refresh_token);
+  } catch {
+    return false;
+  }
+}

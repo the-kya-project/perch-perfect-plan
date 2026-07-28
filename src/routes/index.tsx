@@ -1,7 +1,7 @@
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { ArrowRight } from "lucide-react";
-import { getReadySession } from "@/lib/authReady";
+import { hasStoredSession } from "@/lib/authReady";
 import { loadTikTokPixel } from "@/lib/tiktokPixel";
 import { Disclaimer } from "@/components/Disclaimer";
 import { BrandLockup } from "@/components/BrandLogo";
@@ -10,12 +10,14 @@ export const Route = createFileRoute("/")({
   // Returning owners shouldn't land on the marketing page — send them home.
   // Client-only: the session lives in localStorage, so during SSR/prerender
   // there's no session and new visitors/crawlers still get the landing page.
-  beforeLoad: async () => {
+  beforeLoad: () => {
     if (typeof window === "undefined") return;
-    // Cold-start safe: waits for the persisted session to hydrate before
-    // deciding, so the native app doesn't flash the landing page on every
-    // launch for an already-signed-in owner.
-    if (await getReadySession()) throw redirect({ to: "/dashboard" });
+    // Synchronous: redirect a signed-in owner to the dashboard on the FIRST
+    // tick, reading the persisted session straight from storage — no await, so
+    // the marketing/sign-in page never paints while the async client hydrates
+    // (that paint was the ~0.5s flash on cold launch). The authenticated guard
+    // then does the authoritative check behind its clean loading spinner.
+    if (hasStoredSession()) throw redirect({ to: "/dashboard" });
   },
   head: () => ({
     meta: [
