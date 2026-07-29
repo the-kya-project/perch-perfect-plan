@@ -59,7 +59,9 @@ export type AnalyticsEventName =
   | "native_oauth_started"
   | "native_oauth_callback"
   | "native_oauth_exchanged"
-  | "native_oauth_failed";
+  | "native_oauth_failed"
+  // Clip-upload diagnostics: compare picked file size app vs PWA
+  | "clip_upload_picked";
 
 type EventProps = Record<string, string | number | boolean | null | undefined>;
 

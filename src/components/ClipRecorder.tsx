@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { Video, Square, RotateCcw, Check, AlertTriangle, Upload, Loader2 } from "lucide-react";
 import { createClipUpload, getClipStatus } from "@/lib/clips.functions";
 import { cfRef } from "@/lib/clipRef";
+import { track } from "@/lib/analytics";
+import { nativePlatform } from "@/lib/nativeApp";
 
 /**
  * Clip recorder + uploader.
@@ -406,6 +408,17 @@ export function ClipRecorder({
     setChecking(true);
     const duration = await readDuration(file);
     setChecking(false);
+
+    // Diagnostic: the app and PWA run identical code, so if the native app
+    // uploads are slower it's because iOS hands the WKWebview a larger original
+    // file than Safari (which auto-compresses photo-library uploads). Compare
+    // size/type/platform across the two.
+    track("clip_upload_picked", {
+      size_mb: Math.round((file.size / 1_000_000) * 10) / 10,
+      type: file.type || "unknown",
+      duration_s: duration != null ? Math.round(duration) : null,
+      platform: nativePlatform(),
+    });
     if (duration != null && duration > MAX_SECONDS + 1) {
       setError(`That clip is ${fmt(Math.round(duration))} long. Please keep clips under 60 seconds.`);
       return;
