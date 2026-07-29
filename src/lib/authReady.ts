@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Session } from "@supabase/supabase-js";
+import { track } from "./analytics";
 
 /**
  * A cold-start-safe session read for route guards.
@@ -38,11 +39,40 @@ function waitForAuthReady(): Promise<void> {
   return readyPromise;
 }
 
-/** Session, read only after storage hydration has settled (cold-start safe). */
+/**
+ * Session for route guards — cold-start safe AND resume-after-idle safe.
+ *
+ * After the app sits idle, the access token expires (~1h). On resume the
+ * session needs a token refresh; if the guard reads auth before that refresh
+ * lands (or it races the network coming back), getSession() is null and the
+ * user gets bounced to sign-in even though their refresh token is still valid.
+ * So: if there's no live session but a refresh token is persisted, refresh
+ * explicitly with a few retries before concluding "signed out". A genuinely
+ * rejected refresh token clears storage — then we do treat it as signed out.
+ */
 export async function getReadySession(): Promise<Session | null> {
   await waitForAuthReady();
-  const { data } = await supabase.auth.getSession();
-  return data.session;
+  const live = (await supabase.auth.getSession()).data.session;
+  if (live) return live;
+  if (!hasStoredSession()) return null;
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const { data, error } = await supabase.auth.refreshSession();
+    if (data.session) {
+      track("auth_resume_refresh", { attempt, ok: true });
+      return data.session;
+    }
+    track("auth_resume_refresh", {
+      attempt,
+      ok: false,
+      message: error?.message ?? "none",
+      still_stored: hasStoredSession(),
+    });
+    // Refresh token rejected/cleared → a real sign-out, stop retrying.
+    if (!hasStoredSession()) return null;
+    await new Promise((r) => setTimeout(r, 500 * (attempt + 1)));
+  }
+  return (await supabase.auth.getSession()).data.session;
 }
 
 /**

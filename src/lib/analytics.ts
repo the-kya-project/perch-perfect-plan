@@ -61,7 +61,9 @@ export type AnalyticsEventName =
   | "native_oauth_exchanged"
   | "native_oauth_failed"
   // Clip-upload diagnostics: compare picked file size app vs PWA
-  | "clip_upload_picked";
+  | "clip_upload_picked"
+  // Resume-after-idle token refresh (bounced-to-sign-in debugging)
+  | "auth_resume_refresh";
 
 type EventProps = Record<string, string | number | boolean | null | undefined>;
 
