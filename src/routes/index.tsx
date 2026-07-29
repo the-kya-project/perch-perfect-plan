@@ -1,7 +1,8 @@
-import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { ArrowRight } from "lucide-react";
-import { hasStoredSession } from "@/lib/authReady";
+import { hasStoredSession, getReadySession } from "@/lib/authReady";
+import { track } from "@/lib/analytics";
 import { loadTikTokPixel } from "@/lib/tiktokPixel";
 import { Disclaimer } from "@/components/Disclaimer";
 import { BrandLockup } from "@/components/BrandLogo";
@@ -31,6 +32,23 @@ export const Route = createFileRoute("/")({
 });
 
 function Welcome() {
+  const navigate = useNavigate();
+
+  // Safety net: the beforeLoad guard reads the session synchronously, but on
+  // resume-after-idle the WKWebview's storage can read empty for a beat, so a
+  // signed-in owner lands on this marketing page instead of the dashboard (they
+  // then tap "Sign in", which bounces them home — no real re-auth). Re-check
+  // once mounted, awaiting hydration, and redirect if there's a session.
+  useEffect(() => {
+    let cancelled = false;
+    getReadySession().then((session) => {
+      if (cancelled) return;
+      track("landing_recheck", { had_session: !!session, had_stored: hasStoredSession() });
+      if (session) navigate({ to: "/dashboard" });
+    });
+    return () => { cancelled = true; };
+  }, [navigate]);
+
   // Ad-traffic pageview for TikTok campaigns (marketing pages only).
   useEffect(() => {
     loadTikTokPixel();

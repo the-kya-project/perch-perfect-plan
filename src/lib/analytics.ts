@@ -63,7 +63,9 @@ export type AnalyticsEventName =
   // Clip-upload diagnostics: compare picked file size app vs PWA
   | "clip_upload_picked"
   // Resume-after-idle token refresh (bounced-to-sign-in debugging)
-  | "auth_resume_refresh";
+  | "auth_resume_refresh"
+  // Landing-page re-check: did a signed-in owner land here by mistake?
+  | "landing_recheck";
 
 type EventProps = Record<string, string | number | boolean | null | undefined>;
 
