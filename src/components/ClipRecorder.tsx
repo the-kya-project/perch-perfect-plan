@@ -188,6 +188,9 @@ export function ClipRecorder({
   const [elapsed, setElapsed] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
+  // Uploaded (not recorded) videos aren't downscaled, so a 4K phone clip can be
+  // 150+ MB and take minutes to send. Track it to set expectations mid-upload.
+  const [bigUpload, setBigUpload] = useState(false);
   const [checking, setChecking] = useState(false);
   const [stage, setStage] = useState<{ kind: "uploading" | "processing"; pct?: number } | null>(null);
   const [recordedUrl, setRecordedUrl] = useState<string | null>(null);
@@ -419,6 +422,9 @@ export function ClipRecorder({
       duration_s: duration != null ? Math.round(duration) : null,
       platform: nativePlatform(),
     });
+    // >40 MB → warn it may be a few-minute upload (uploaded videos aren't
+    // shrunk on-device; a 4K phone clip is large).
+    setBigUpload(file.size > 40 * 1024 * 1024);
     if (duration != null && duration > MAX_SECONDS + 1) {
       setError(`That clip is ${fmt(Math.round(duration))} long. Please keep clips under 60 seconds.`);
       return;
@@ -457,7 +463,9 @@ export function ClipRecorder({
           ratio={stage.kind === "uploading" ? (stage.pct ?? 0) / 100 : undefined}
           hint={
             stage.kind === "uploading"
-              ? "Sending your clip to be converted. Please keep this screen open."
+              ? bigUpload
+                ? "Large video — this can take a few minutes to send on your connection. Keep this screen open. Tip: recording in-app uploads much faster."
+                : "Sending your clip to be converted. Please keep this screen open."
               : "Converting your clip so it plays on every device — usually just a few seconds. Please keep this screen open."
           }
         />
@@ -528,7 +536,8 @@ export function ClipRecorder({
         </label>
 
         <p className="text-center text-[11px] text-sage-500">
-          Up to {MAX_SECONDS} seconds and {mb(MAX_BYTES)} per clip.
+          Up to {MAX_SECONDS} seconds and {mb(MAX_BYTES)} per clip. Large phone
+          videos can take a few minutes to upload — recording here is faster.
         </p>
 
         {errorEl}
