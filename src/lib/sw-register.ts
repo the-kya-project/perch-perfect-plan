@@ -138,7 +138,13 @@ export function registerServiceWorker() {
   const refuse =
     !import.meta.env.PROD ||
     inIframe ||
-    isNativeApp() || // the App Store / Play Store shell must never cache builds
+    // The native shell registers the worker like the PWA does. Hashed asset
+    // filenames make cache-first assets immutable, and app-shell navigations
+    // are network-first (see src/sw.ts), so a new build always lands — the
+    // shell can't get pinned to a stale bundle. Before this, the shell refused
+    // the worker and re-downloaded the whole bundle from the network on every
+    // cold launch. (Native-only NON-caching behavior stays gated elsewhere:
+    // web push, add-to-home-screen, the TikTok pixel.)
     isPreviewHost(window.location.hostname) ||
     url.searchParams.get("sw") === "off";
 

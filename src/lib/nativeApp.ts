@@ -7,8 +7,9 @@
  * web bundle stays free of Capacitor code.
  *
  * Inside the shell, PWA-isms must not apply: no "add to home screen"
- * prompts (you ARE the installed app), no service worker, and no web-push
- * (native push replaces it).
+ * prompts (you ARE the installed app) and no web-push (native push replaces
+ * it). The service worker DOES run in the shell — it caches hashed assets so
+ * cold launches don't re-download the whole bundle (see sw-register.ts).
  */
 type CapacitorGlobal = { isNativePlatform?: () => boolean; getPlatform?: () => string };
 
