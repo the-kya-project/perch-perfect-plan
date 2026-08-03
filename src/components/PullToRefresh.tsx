@@ -110,7 +110,17 @@ export function PullToRefresh({
       let ok = true;
       let timer: ReturnType<typeof setTimeout> | undefined;
       try {
-        const fn = onRefreshRef.current ?? (() => qc.refetchQueries({ type: "active" }));
+        const fn = onRefreshRef.current ?? (async () => {
+          // refetchQueries resolves even when it refreshed nothing: React Query's
+          // default networkMode "online" PAUSES fetches while offline (and swallows
+          // per-query errors), so awaiting it can't tell success from no-connection.
+          // Detect the offline case explicitly so airplane mode reports failure
+          // instead of a false "Updated". (Refetch scope itself is unchanged.)
+          if (typeof navigator !== "undefined" && navigator.onLine === false) {
+            throw new Error("offline");
+          }
+          await qc.refetchQueries({ type: "active" });
+        });
         const timeout = new Promise((_, rej) => { timer = setTimeout(() => rej(new Error("timeout")), MAX_WAIT); });
         await Promise.race([Promise.resolve(fn()), timeout]);
       } catch {
