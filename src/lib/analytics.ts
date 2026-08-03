@@ -65,7 +65,9 @@ export type AnalyticsEventName =
   // Resume-after-idle token refresh (bounced-to-sign-in debugging)
   | "auth_resume_refresh"
   // Landing-page re-check: did a signed-in owner land here by mistake?
-  | "landing_recheck";
+  | "landing_recheck"
+  // Pre-hydration cold-launch redirect fired (inline head script → /dashboard)
+  | "cold_launch_redirect";
 
 type EventProps = Record<string, string | number | boolean | null | undefined>;
 

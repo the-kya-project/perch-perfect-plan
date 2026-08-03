@@ -98,8 +98,37 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   );
 }
 
+// Render-blocking, dependency-free inline script emitted into <head> (classic
+// <script>, so it runs before the deferred type="module" app bundle in the
+// body). Closes the cold-launch hole where a signed-in owner lands on the
+// marketing/sign-in page: "/" is SSR'd, so its beforeLoad guard runs
+// server-side (no window, early return) and the client reuses the dehydrated
+// match on hydration WITHOUT re-running beforeLoad — the synchronous guard
+// never fires on a cold launch. This script does the redirect from raw HTML,
+// before any React code, and only on "/". Mirrors hasStoredSession()'s key +
+// shape logic. Any throw is swallowed so a failure here can never block the
+// page from rendering. No query param / cache-buster — must not interact with
+// sw-register's stale-chunk recovery. Delivered via head().scripts (not a raw
+// <script> in the shell) so TanStack's <Script> renders it with
+// suppressHydrationWarning — React 19 otherwise drops a bare inline head script.
+const COLD_LAUNCH_REDIRECT = `(function(){try{` +
+  `if(window.location.pathname!=="/")return;` +
+  `var ks=Object.keys(localStorage);` +
+  `for(var i=0;i<ks.length;i++){var k=ks[i];` +
+  `if(!/^sb-.*-auth-token$/.test(k))continue;` +
+  `var raw=localStorage.getItem(k);if(!raw)continue;` +
+  `var p=JSON.parse(raw);` +
+  `if(p&&(p.access_token||p.refresh_token||(p.currentSession&&p.currentSession.access_token))){` +
+  // Inner try/catch: a marker-write failure (blocked/quota'd/private-mode
+  // storage) must NOT swallow the redirect — that would reintroduce the exact
+  // cold-launch bug on the devices least likely to report it.
+  `try{sessionStorage.setItem("kya_cold_redirect",JSON.stringify({path:window.location.pathname,had_stored:true}));}catch(e2){}` +
+  `window.location.replace("/dashboard");return;}}` +
+  `}catch(e){}})();`;
+
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
+    scripts: [{ children: COLD_LAUNCH_REDIRECT }],
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },

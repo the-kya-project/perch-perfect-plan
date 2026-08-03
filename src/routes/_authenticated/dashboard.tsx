@@ -5,6 +5,7 @@ import { z } from "zod";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
+import { track } from "@/lib/analytics";
 import { useBirdPhotos } from "@/lib/useBirdPhotos";
 import { BIRD_LIST_SELECT } from "@/lib/birdListSelect";
 import type { SignedPhoto } from "@/lib/birdPhoto";
@@ -50,6 +51,22 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 function Dashboard() {
   const navigate = useNavigate();
   const { emergencyDefaults } = Route.useSearch();
+
+  // One-shot: the inline pre-hydration head script (see __root.tsx) redirects a
+  // signed-in owner from "/" to here on cold launch and drops a sessionStorage
+  // marker. Report it from the app (PostHog isn't loaded when the inline script
+  // runs) so we can confirm the fix on-device instead of guessing.
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem("kya_cold_redirect");
+      if (!raw) return;
+      sessionStorage.removeItem("kya_cold_redirect");
+      const { path, had_stored } = JSON.parse(raw) ?? {};
+      track("cold_launch_redirect", { path: path ?? "/", had_stored: !!had_stored });
+    } catch {
+      // Never let instrumentation break the dashboard.
+    }
+  }, []);
 
   const { data: me } = useQuery({
     queryKey: ["owner-profile-name"],
