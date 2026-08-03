@@ -99,7 +99,7 @@ function OwnerScan() {
       // Show up immediately in the Scans tab, the record-home recent feed, and the weight timeline.
       ["scan-feed", "bird-checkins", "weight-entries", "bird-weights"].forEach((k) =>
         qc.invalidateQueries({ queryKey: k === "scan-feed" ? ["scan-feed"] : [k, birdId] }));
-      qc.invalidateQueries({ queryKey: ["home-weights"] }); // a weigh-in updates Home pills (no longer refetch-on-mount)
+      qc.invalidateQueries({ queryKey: ["birds"] }); // a weigh-in updates Home pills — weights embedded in the birds query
     } catch (e: any) {
       toast.error(e?.message ?? "Couldn't log the health check.");
     } finally {

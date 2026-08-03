@@ -74,7 +74,7 @@ function WeightFacet() {
       toast.success("Weight entry deleted.");
       qc.invalidateQueries({ queryKey: ["weight-entries", birdId] });
       qc.invalidateQueries({ queryKey: ["bird-weights", birdId] });
-      qc.invalidateQueries({ queryKey: ["home-weights"] });
+      qc.invalidateQueries({ queryKey: ["birds"] }); // Home weight pills — now embedded in the birds query
     } catch (e: any) {
       toast.error(e?.message ?? "Couldn't delete the entry.");
     } finally {
@@ -164,7 +164,7 @@ function WeightFacet() {
                 setLogOpen(false);
                 qc.invalidateQueries({ queryKey: ["weight-entries", birdId] });
                 qc.invalidateQueries({ queryKey: ["bird-weights", birdId] }); // record-home glance + recent feed
-                qc.invalidateQueries({ queryKey: ["home-weights"] }); // Home pills / stale detection (no longer refetch-on-mount)
+                qc.invalidateQueries({ queryKey: ["birds"] }); // Home pills / stale detection — weights embedded in the birds query
               }}
             />
           )}

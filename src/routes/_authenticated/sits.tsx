@@ -13,11 +13,11 @@ import { resolveHouseholdNames, resolveOwnerNames } from "@/lib/home.functions";
 import { memberDisplayName, firstName } from "@/lib/memberDisplay";
 import { InkHero, SectionHead, Card, IconTile } from "@/components/system";
 import { useBirdPhotos } from "@/lib/useBirdPhotos";
-import { BIRD_LIST_SELECT } from "@/lib/birdListSelect";
+import { fetchBirdList } from "@/lib/birdListSelect";
 import { weekdayMonthDay, monthDay, daysUntil } from "@/lib/dates";
 
 // Dedicated Sits tab: create / manage sits. Shares the ["birds"] cache with the
-// dashboard via BIRD_LIST_SELECT (identical shape, so neither poisons the other).
+// dashboard via fetchBirdList (identical query/shape, so neither poisons the other).
 // Its OWN ["sits-full"] key holds the full sit rows (+ sit_birds join) it needs —
 // separate from the dashboard's minimal ["all-sits"] so the two shapes don't
 // collide. Sit mutations invalidate both. Past sits (end_date < today) render
@@ -49,13 +49,10 @@ function SitsPage() {
   const { data: birds = [] } = useQuery({
     queryKey: ["birds"],
     queryFn: async () => {
-      // Active flock only (passed birds are excluded everywhere on Home/Sits —
-      // same filter as the dashboard so the shared ["birds"] cache stays consistent).
-      const { data, error } = await supabase
-        .from("birds")
-        .select(BIRD_LIST_SELECT)
-        .is("passed_at", null)
-        .order("created_at", { ascending: false });
+      // Identical to the dashboard's fetch (fetchBirdList) so the shared ["birds"]
+      // cache always has ONE shape. Active flock only; Sits ignores the embedded
+      // weight_entries the dashboard reads, but must fetch the same rows anyway.
+      const { data, error } = await fetchBirdList();
       if (error) throw error;
       return data ?? [];
     },

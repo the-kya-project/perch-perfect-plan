@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { track } from "@/lib/analytics";
 import { useBirdPhotos } from "@/lib/useBirdPhotos";
-import { BIRD_LIST_SELECT } from "@/lib/birdListSelect";
+import { fetchBirdList } from "@/lib/birdListSelect";
 import type { SignedPhoto } from "@/lib/birdPhoto";
 import {
   Plus, Settings, Users, ChevronRight, Scale, CalendarHeart, Calendar,
@@ -97,39 +97,31 @@ function Dashboard() {
     // No per-mount refetch: the 60s staleTime paints from cache on revisit, and
     // every bird mutation (add / hand-off / edit / delete) invalidates ["birds"],
     // so a solo↔flock change still appears immediately without a blocking fetch on
-    // every Home visit. Shape is shared with the Sits screen via BIRD_LIST_SELECT.
+    // every Home visit. Shape is shared with the Sits screen via fetchBirdList.
     queryFn: async () => {
       // Active flock only — a passed bird leaves Home entirely (it lives in the
       // Remembering menu entry; its record is preserved, just not ambient here).
-      const { data, error } = await supabase.from("birds").select(BIRD_LIST_SELECT).is("passed_at", null).order("created_at", { ascending: false });
+      // The latest weights per bird come embedded in this same request (see
+      // fetchBirdList) — no separate home-weights round-trip gated on the ids.
+      const { data, error } = await fetchBirdList();
       if (error) throw error;
       return (data ?? []) as any[];
     },
   });
-  const birdIds = useMemo(() => birds.map((b) => b.id), [birds]);
   // 800px (not 256) so the flock-card crop is byte-for-byte the same image the
   // reposition "Flock card" preview and the bird-record hero use — a smaller
   // transform cropped to a different aspect and broke the WYSIWYG promise.
   const resolvePhoto = useBirdPhotos(birds.map((b) => b.photo_url), 800);
 
-  // Latest weights for every accessible bird — pills, stale detection, Today.
-  const { data: allWeights = [] } = useQuery({
-    queryKey: ["home-weights", birdIds],
-    enabled: birdIds.length > 0,
-    // No per-mount refetch: 60s staleTime paints the pills from cache on revisit;
-    // weight logging (manual log + health-check weigh-in) invalidates
-    // ["home-weights"], so a new weight refreshes Home immediately without a
-    // blocking fetch on every visit.
-    queryFn: async () => {
-      // Newest-first + capped: the pills / stale detection / Today only use the
-      // most recent weights per bird, so the cap trims old history we never read.
-      // 300 comfortably covers recent weights across a realistic flock (was 600).
-      const { data } = await supabase
-        .from("weight_entries").select("bird_id, grams, measured_at")
-        .in("bird_id", birdIds).order("measured_at", { ascending: false }).limit(300);
-      return (data ?? []) as WeightEntry[];
-    },
-  });
+  // Latest weights per bird — pills, stale detection, Today — read straight from
+  // the embedded weight_entries on each bird row (no second query). Flattened
+  // back to the newest-first array groupWeights expects; weight logging /
+  // health-check weigh-ins invalidate ["birds"], so a new weight refreshes Home
+  // immediately without a blocking fetch on every visit.
+  const allWeights = useMemo<WeightEntry[]>(
+    () => (birds as any[]).flatMap((b) => (b.weight_entries ?? []) as WeightEntry[]),
+    [birds],
+  );
 
   const { data: sits = [] } = useQuery({
     queryKey: ["all-sits"],
