@@ -17,9 +17,53 @@
  */
 import { supabase } from "@/integrations/supabase/client";
 import { isNativeApp, nativePlatform } from "./nativeApp";
-import { track } from "./analytics";
+import { track, type AnalyticsEventName } from "./analytics";
 
 type OAuthProvider = "google" | "apple";
+
+// --- Diagnostics helpers (must never themselves throw and break sign-in) ---
+//
+// Property keys are chosen to survive analytics' scrub(): it drops any key
+// matching /email|name|token|note|message|address|phone|url|path|file/ AND any
+// string value longer than 80 chars. That is exactly why the old
+// native_oauth_failed { message } carried nothing — `message` was stripped. So
+// we use `err` (not `message`), `code` (not `name`), and pre-truncate values.
+
+function safeTrack(name: AnalyticsEventName, props: Record<string, string | number | boolean | undefined>): void {
+  try {
+    track(name, props);
+  } catch {
+    /* instrumentation is best-effort; never let it break the sign-in flow */
+  }
+}
+
+/** ms since page load — a stand-in for "since app boot" that needs no baseline. */
+function msSinceBoot(): number | undefined {
+  try {
+    if (typeof performance !== "undefined" && typeof performance.now === "function") {
+      return Math.round(performance.now());
+    }
+  } catch { /* ignore */ }
+  return undefined;
+}
+
+/** Error message, whitespace-collapsed and capped at 80 chars so scrub() keeps it. */
+function errText(e: unknown): string {
+  let s = "";
+  try { s = e instanceof Error ? e.message : String(e); } catch { s = "unknown"; }
+  return s.replace(/\s+/g, " ").trim().slice(0, 80);
+}
+
+/** Error code or name, if the thrown value carries one. Safe key, short value. */
+function errCode(e: unknown): string | undefined {
+  try {
+    const anyE = e as { code?: unknown; name?: unknown } | null;
+    const c = anyE?.code ?? anyE?.name;
+    return c == null ? undefined : String(c).slice(0, 40);
+  } catch {
+    return undefined;
+  }
+}
 
 // Supabase's Google provider uses this web client id; the native Google SDK
 // also needs an iOS OAuth client id from the same Google Cloud project, added
@@ -30,21 +74,41 @@ const GOOGLE_IOS_CLIENT_ID = "481724773308-85q8knidtnhf5f8i9g65ha3mflhg85eb.apps
 let initialized = false;
 async function ensureInitialized() {
   if (initialized) return;
-  const { SocialLogin } = await import("@capgo/capacitor-social-login");
-  // Apple is included ONLY on iOS — on Android the plugin's apple config
-  // requires a Services-ID redirectUrl (web flow), and passing apple:{} there
-  // fails initialize entirely ("apple.android.redirectUrl is null or empty"),
-  // which would also break Google. Apple sign-in is iOS-only for us anyway.
-  const config: Parameters<typeof SocialLogin.initialize>[0] = {
-    google: {
-      webClientId: GOOGLE_WEB_CLIENT_ID,
-      ...(GOOGLE_IOS_CLIENT_ID ? { iOSClientId: GOOGLE_IOS_CLIENT_ID } : {}),
-      mode: "online",
-    },
-  };
-  if (nativePlatform() === "ios") config.apple = {};
-  await SocialLogin.initialize(config);
-  initialized = true;
+  // The whole init path (dynamic import → SocialLogin.initialize) is wrapped so
+  // we always emit native_oauth_init with its outcome. An init throw here is the
+  // lead suspect for the ~3-6 ms native_oauth_failed events; this event makes it
+  // visible and distinguishes it from a later login/exchange failure.
+  try {
+    const { SocialLogin } = await import("@capgo/capacitor-social-login");
+    // Apple is included ONLY on iOS — on Android the plugin's apple config
+    // requires a Services-ID redirectUrl (web flow), and passing apple:{} there
+    // fails initialize entirely ("apple.android.redirectUrl is null or empty"),
+    // which would also break Google. Apple sign-in is iOS-only for us anyway.
+    const config: Parameters<typeof SocialLogin.initialize>[0] = {
+      google: {
+        webClientId: GOOGLE_WEB_CLIENT_ID,
+        ...(GOOGLE_IOS_CLIENT_ID ? { iOSClientId: GOOGLE_IOS_CLIENT_ID } : {}),
+        mode: "online",
+      },
+    };
+    if (nativePlatform() === "ios") config.apple = {};
+    await SocialLogin.initialize(config);
+    initialized = true;
+    safeTrack("native_oauth_init", {
+      ok: true,
+      platform: nativePlatform(),
+      ms_since_boot: msSinceBoot(),
+    });
+  } catch (e) {
+    safeTrack("native_oauth_init", {
+      ok: false,
+      platform: nativePlatform(),
+      ms_since_boot: msSinceBoot(),
+      err: errText(e),
+      code: errCode(e),
+    });
+    throw e;
+  }
 }
 
 // rawNonce goes to Supabase; its SHA-256 digest goes to Google in the token.
@@ -111,9 +175,19 @@ export async function signInWithProvider(provider: OAuthProvider, redirectTo: st
     } catch { /* keep current location; the auth listener will navigate */ }
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Sign-in failed.";
+    // `initialized` here tells us WHERE it broke: false → SocialLogin.initialize
+    // threw (the lead hypothesis); true → login/exchange threw after a good init.
+    const diag = {
+      provider,
+      platform: nativePlatform(),
+      initialized,
+      ms_since_boot: msSinceBoot(),
+      err: errText(e),   // scrub-safe key + ≤80 chars (unlike the old `message`)
+      code: errCode(e),
+    };
     // The plugin throws on user cancel too — don't treat that as an error toast.
-    if (/cancel/i.test(msg)) { track("native_oauth_failed", { provider, stage: "cancelled" }); return; }
-    track("native_oauth_failed", { provider, stage: "idtoken", message: msg });
+    if (/cancel/i.test(msg)) { safeTrack("native_oauth_failed", { ...diag, stage: "cancelled" }); return; }
+    safeTrack("native_oauth_failed", { ...diag, stage: "idtoken" });
     throw new Error(msg);
   }
 }
