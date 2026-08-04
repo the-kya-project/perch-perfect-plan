@@ -67,7 +67,9 @@ export type AnalyticsEventName =
   // Landing-page re-check: did a signed-in owner land here by mistake?
   | "landing_recheck"
   // Pre-hydration cold-launch redirect fired (inline head script → /dashboard)
-  | "cold_launch_redirect";
+  | "cold_launch_redirect"
+  // A household-caregiver sit email (assigned/updated/cancelled) failed to send
+  | "sit_caregiver_email_failed";
 
 type EventProps = Record<string, string | number | boolean | null | undefined>;
 

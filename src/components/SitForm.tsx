@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { track } from "@/lib/analytics";
 import { useServerFn } from "@tanstack/react-start";
 import { resolveHouseholdNames } from "@/lib/home.functions";
+import { notifySitAssigned, notifySitUpdated, notifySitCancelled } from "@/lib/sits.functions";
 import { memberDisplayName, memberInitials } from "@/lib/memberDisplay";
 import { useHouseholdCapability, useMyPermissions } from "@/lib/useCapability";
 import { Feather, Plus, Mail, Check, Users, Trash2, AlertTriangle } from "lucide-react";
@@ -80,9 +81,45 @@ export function SitForm({
   async function deleteSit() {
     if (!editing) return;
     setDeleting(true);
+    // Capture the household-caregiver details BEFORE the delete so we can notify
+    // afterward (the row, and its sit_birds, are gone once deleted).
+    const cancelInfo =
+      editSit.caregiver_user_id
+        ? {
+            caregiverUserId: editSit.caregiver_user_id as string,
+            birdIds: ((editSit.sit_birds ?? []) as any[]).map((sb) => sb.bird_id as string),
+            startDate: (editSit.start_date ?? "") as string,
+            endDate: (editSit.end_date ?? "") as string,
+          }
+        : null;
     const { error } = await supabase.from("sits").delete().eq("id", editSit.id);
+    // A FAILED delete must never send a cancellation — bail before notifying.
     if (error) { toast.error(error.message); setDeleting(false); return; }
-    toast.success("Sit deleted.");
+    // Delete succeeded → notify the caregiver they're no longer covering. The
+    // cancelled failure toast is the most prominent of the three: if it doesn't
+    // send, the caregiver could still show up expecting to cover.
+    if (cancelInfo && cancelInfo.birdIds.length) {
+      try {
+        const res = await notifyCancelled({ data: cancelInfo });
+        if (!res?.emailed) {
+          track("sit_caregiver_email_failed", { event: "cancelled", reason: res?.reason ?? "unknown" });
+          toast.error(
+            `Sit deleted, but we couldn't email ${res?.caregiverName ?? "your household member"} the cancellation. Tell them directly so they don't show up to cover.`,
+            { duration: 10000 },
+          );
+        } else {
+          toast.success("Sit deleted.");
+        }
+      } catch {
+        track("sit_caregiver_email_failed", { event: "cancelled", reason: "threw" });
+        toast.error(
+          "Sit deleted, but we couldn't email your household member the cancellation. Tell them directly so they don't show up to cover.",
+          { duration: 10000 },
+        );
+      }
+    } else {
+      toast.success("Sit deleted.");
+    }
     onSaved();      // parent refreshes ["all-sits"]
     onCancel?.();   // close the form
   }
@@ -111,6 +148,11 @@ export function SitForm({
   // reads bird_members via the existing owner RLS — no new permission.
   const birdIdsKey = useMemo(() => Array.from(selected).sort().join(","), [selected]);
   const resolveNames = useServerFn(resolveHouseholdNames);
+  // Household-caregiver sit notifications (owner -> caregiver email). Called
+  // AFTER the client-side sits write succeeds; external sits never touch these.
+  const notifyAssigned = useServerFn(notifySitAssigned);
+  const notifyUpdated = useServerFn(notifySitUpdated);
+  const notifyCancelled = useServerFn(notifySitCancelled);
   const { data: eligibleMembers = [] } = useQuery({
     queryKey: ["sit-eligible-household", birdIdsKey],
     enabled: !editing && selected.size > 0,
@@ -279,7 +321,23 @@ export function SitForm({
           if (remErr) { toast.error(remErr.message); setSaving(false); return; }
         }
         track("sit_edited", { bird_count: birdIds.length });
-        toast.success("Sit updated.");
+        // Notify the household caregiver only when the dates or the bird-set
+        // actually changed (title/notes-only edits are noise). Await before the
+        // toast so a send failure is surfaced.
+        const datesChanged = start !== (editSit.start_date ?? "") || end !== (editSit.end_date ?? "");
+        const birdsChanged = toAdd.length > 0 || toRemove.length > 0;
+        let updateFailedName: string | null = null;
+        if (kind === "household" && (datesChanged || birdsChanged)) {
+          try {
+            const res = await notifyUpdated({ data: { sitId: editSit.id, datesChanged, birdsChanged } });
+            if (!res?.emailed) { updateFailedName = res?.caregiverName ?? "your household member"; track("sit_caregiver_email_failed", { event: "updated", reason: res?.reason ?? "unknown" }); }
+          } catch { updateFailedName = "your household member"; track("sit_caregiver_email_failed", { event: "updated", reason: "threw" }); }
+        }
+        if (updateFailedName) {
+          toast.error(`Sit updated, but we couldn't email ${updateFailedName} the change. Let them know directly.`, { duration: 8000 });
+        } else {
+          toast.success("Sit updated.");
+        }
         onSaved();
         onCancel?.();
       } else {
@@ -313,7 +371,21 @@ export function SitForm({
         if (linkErr) { toast.error(linkErr.message); setSaving(false); return; }
         const days = Math.max(1, Math.round((new Date(end).getTime() - new Date(start).getTime()) / 86_400_000) + 1);
         track("sit_created", { bird_count: birdIds.length, days, has_email: !!sitterEmail, caregiver_kind: kind });
-        toast.success(kind === "household" ? "Sit created — your household member is set." : "Sit created.");
+        // Notify the household caregiver they're covering (await before the
+        // toast/nav so a send failure is surfaced to the owner). External sits
+        // keep their existing token flow — no email here.
+        let assignFailedName: string | null = null;
+        if (kind === "household") {
+          try {
+            const res = await notifyAssigned({ data: { sitId: sit.id } });
+            if (!res?.emailed) { assignFailedName = res?.caregiverName ?? "your household member"; track("sit_caregiver_email_failed", { event: "assigned", reason: res?.reason ?? "unknown" }); }
+          } catch { assignFailedName = "your household member"; track("sit_caregiver_email_failed", { event: "assigned", reason: "threw" }); }
+        }
+        if (assignFailedName) {
+          toast.error(`Sit created, but we couldn't email ${assignFailedName}. Let them know directly.`, { duration: 8000 });
+        } else {
+          toast.success(kind === "household" ? "Sit created — your household member is set." : "Sit created.");
+        }
         setOpen(false);
         setTitle(""); setSitterName(""); setSitterEmail(""); setStart(""); setEnd(""); setNotes("");
         setCaregiverKind(null); setHouseholdUserId(null);

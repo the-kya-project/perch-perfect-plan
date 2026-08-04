@@ -315,3 +315,96 @@ export function buildOnboardingWeightTrendEmail(opts: { birdName: string; link: 
     text: `${opts.birdName}'s first weight is logged. Every weigh-in from here builds the trend on the record and in the vet summary.\n\nSee the weight page: ${opts.link}`,
   };
 }
+
+// ── Sit assignment (household caregivers) ────────────────────────────────────
+// Transactional, unconditional (not preference-gated): the recipient was made
+// responsible for a sit and needs to know. Voice matches the household invite —
+// warm, plain, sentence case. `dateRange` and `birdNames` arrive pre-formatted
+// from the server fn; `link` is the caregiver's /today view.
+
+// "You're covering <birds>" — a household member was assigned to a sit.
+export function buildSitAssignedEmail(opts: {
+  ownerName: string;
+  birdNames: string;
+  dateRange: string;
+  link: string;
+}): BuiltEmail {
+  const owner = escapeHtml(opts.ownerName);
+  const birds = escapeHtml(opts.birdNames);
+  const range = escapeHtml(opts.dateRange);
+  return {
+    subject: `You're covering ${opts.birdNames} — ${opts.dateRange}`,
+    html: shell({
+      kicker: "Sit assigned",
+      heading: `${owner} asked you to cover ${birds}`,
+      body:
+        `${owner} set you as the lead for a sit covering ${birds} from ${range}. ` +
+        `You're the point person for that stretch — everything you'll need is in your care view.`,
+      cta: "Open your care view",
+      link: opts.link,
+      foot: `You're getting this because ${owner} assigned you to help with this sit on Kya & Co.`,
+    }),
+    text:
+      `${opts.ownerName} asked you to cover ${opts.birdNames} from ${opts.dateRange}. ` +
+      `You're the lead for this sit.\n\nOpen your care view: ${opts.link}`,
+  };
+}
+
+// "A sit you're covering changed" — dates and/or bird-set edited. `changeSummary`
+// is a pre-built phrase, e.g. "the dates" or "the dates and which birds you're covering".
+export function buildSitUpdatedEmail(opts: {
+  ownerName: string;
+  birdNames: string;
+  dateRange: string;
+  changeSummary: string;
+  link: string;
+}): BuiltEmail {
+  const owner = escapeHtml(opts.ownerName);
+  const birds = escapeHtml(opts.birdNames);
+  const range = escapeHtml(opts.dateRange);
+  const change = escapeHtml(opts.changeSummary);
+  return {
+    subject: `A sit you're covering changed — ${opts.dateRange}`,
+    html: shell({
+      kicker: "Sit updated",
+      heading: `${owner} updated a sit you're covering`,
+      body:
+        `${owner} changed ${change} for the sit you're leading. ` +
+        `It now covers ${birds} from ${range}. Your care view has the latest.`,
+      cta: "See the update",
+      link: opts.link,
+      foot: `You're getting this because a sit you're covering on Kya & Co. changed.`,
+    }),
+    text:
+      `${opts.ownerName} changed ${opts.changeSummary} for a sit you're covering. ` +
+      `It now covers ${opts.birdNames} from ${opts.dateRange}.\n\nSee the update: ${opts.link}`,
+  };
+}
+
+// "A sit was cancelled" — the sit was deleted; the caregiver is no longer covering.
+export function buildSitCancelledEmail(opts: {
+  ownerName: string;
+  birdNames: string;
+  dateRange: string;
+  link: string;
+}): BuiltEmail {
+  const owner = escapeHtml(opts.ownerName);
+  const birds = escapeHtml(opts.birdNames);
+  const range = escapeHtml(opts.dateRange);
+  return {
+    subject: `Cancelled: your sit covering ${opts.birdNames} (${opts.dateRange})`,
+    html: shell({
+      kicker: "Sit cancelled",
+      heading: `${owner} cancelled a sit you were covering`,
+      body:
+        `You're no longer covering ${birds}. The sit from ${range} has been cancelled, ` +
+        `so there's nothing you need to do for it. ${owner} will be in touch if that changes.`,
+      cta: "Open the app",
+      link: opts.link,
+      foot: `You're getting this because a sit you were covering on Kya & Co. was cancelled.`,
+    }),
+    text:
+      `${opts.ownerName} cancelled the sit covering ${opts.birdNames} from ${opts.dateRange}. ` +
+      `You're no longer covering it — nothing you need to do.\n\nOpen the app: ${opts.link}`,
+  };
+}
