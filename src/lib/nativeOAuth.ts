@@ -121,6 +121,26 @@ async function makeNonce(): Promise<{ raw: string; digest: string }> {
   return { raw, digest };
 }
 
+/**
+ * Whether an id_token carries a `nonce` claim, read from the JWT payload without
+ * verifying the signature (Supabase does the real verification). We never log or
+ * transmit the token — only the presence of the claim is inspected. Returns
+ * false on any decode error, which safely routes us to the no-nonce path.
+ */
+function idTokenHasNonce(idToken: string): boolean {
+  try {
+    const payload = idToken.split(".")[1];
+    if (!payload) return false;
+    const b64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = b64.padEnd(Math.ceil(b64.length / 4) * 4, "=");
+    const json = typeof atob === "function" ? atob(padded) : "";
+    const claims = JSON.parse(json) as { nonce?: unknown };
+    return typeof claims.nonce === "string" && claims.nonce.length > 0;
+  } catch {
+    return false;
+  }
+}
+
 async function nativeGoogle(): Promise<void> {
   if (!GOOGLE_IOS_CLIENT_ID) throw new Error("Google sign-in isn't set up yet on this build.");
   const { SocialLogin } = await import("@capgo/capacitor-social-login");
@@ -131,7 +151,16 @@ async function nativeGoogle(): Promise<void> {
   });
   const idToken = (res.result as { idToken?: string })?.idToken;
   if (!idToken) throw new Error("No Google identity token returned.");
-  const { error } = await supabase.auth.signInWithIdToken({ provider: "google", token: idToken, nonce: raw });
+  // The Google SDK can SILENTLY return a restored/cached id_token that was NOT
+  // minted with the nonce we just set — GIDSignIn.restorePreviousSignIn on iOS,
+  // a cached Credential Manager credential on Android. That token has no nonce
+  // claim, and gotrue rejects a mismatch in nonce *existence* ("Passed nonce and
+  // nonce in id_token should either both exist or not"). So pass raw only when
+  // the returned token actually carries a nonce (the fresh-sign-in case, fully
+  // verified); otherwise omit it so both sides agree it's absent. Never weakens
+  // a real nonce — a present nonce is always still checked by gotrue.
+  const nonce = idTokenHasNonce(idToken) ? raw : undefined;
+  const { error } = await supabase.auth.signInWithIdToken({ provider: "google", token: idToken, nonce });
   if (error) throw new Error(error.message);
 }
 
