@@ -226,7 +226,7 @@
   // Please answer every question before submitting.
   "scanForm.answerAllError": "Beantwoord elke vraag voordat je verstuurt.",
   // Concerning
-  "scanForm.answerConcerning": "Zorgwekkend",
+  "scanForm.answerConcerning": "Zorgelijk",
   // Normal
   "scanForm.answerNormal": "Normaal",
   // Not sure
@@ -238,7 +238,7 @@
   // Add a note, e.g. left foot looks swollen
   "scanForm.itemNotePlaceholder": "Voeg een notitie toe, bijv. linkervoet lijkt gezwollen",
   // Logging…
-  "scanForm.logging": "Bezig met opslaan…",
+  "scanForm.logging": "Bezig met noteren…",
   // Look again: 
   "scanForm.lookAgainLabel": "Kijk nog eens: ",
   // Please answer this before submitting.
@@ -548,21 +548,21 @@
   // Back to today
   "sitter.scan.backToToday": "Terug naar vandaag",
   // Could not log health check.
-  "sitter.scan.errorToast": "Kon de gezondheidscheck niet opslaan.",
+  "sitter.scan.errorToast": "Kon de gezondheidscheck niet noteren.",
   // Daily health check — {{name}}
   "sitter.scan.headerTitle": "Dagelijkse gezondheidscheck — {{name}}",
   // No health checks logged yet for this sit.
-  "sitter.scan.history.empty": "Nog geen gezondheidschecks opgeslagen voor deze oppasperiode.",
+  "sitter.scan.history.empty": "Nog geen gezondheidschecks genoteerd voor deze oppasperiode.",
   // Loading…
   "sitter.scan.history.loading": "Laden…",
   // Health checks you've logged during this sit, newest first.
-  "sitter.scan.history.subtitle": "Gezondheidschecks die je tijdens deze oppasperiode hebt opgeslagen, nieuwste eerst.",
+  "sitter.scan.history.subtitle": "Gezondheidschecks die je tijdens deze oppasperiode hebt genoteerd, nieuwste eerst.",
   // Past health checks — {{name}}
   "sitter.scan.history.title": "Eerdere gezondheidschecks — {{name}}",
   // A quick once-over to make sure {{name}}'s doing well.
   "sitter.scan.intro": "Een snelle controle om te zien of het goed gaat met {{name}}.",
   // Health scan logged.
-  "sitter.scan.loggedToast": "Gezondheidscheck opgeslagen.",
+  "sitter.scan.loggedToast": "Gezondheidscheck genoteerd.",
   // Notes
   "sitter.scan.notesLabel": "Notities",
   // Open emergency contacts
@@ -570,11 +570,11 @@
   // Past health checks
   "sitter.scan.pastHealthChecks": "Eerdere gezondheidschecks",
   // Scan photo
-  "sitter.scan.photoAlt": "Scanfoto",
+  "sitter.scan.photoAlt": "Foto van de gezondheidscheck",
   // Photo
   "sitter.scan.photoLabel": "Foto",
   // All clear logged
-  "sitter.scan.result.green": "Alles in orde opgeslagen",
+  "sitter.scan.result.green": "Alles in orde genoteerd",
   // Call vet now
   "sitter.scan.result.red": "Bel nu de dierenarts",
   // Monitor & message owner

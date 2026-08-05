@@ -1,7 +1,7 @@
 {
-  "_help": "One-time localization inputs consumed by scripts/i18n-translate.mjs. The translate step REFUSES to run until status is 'locked'. To lock: choose a register, set glossaryVersion to 1, set status to 'locked'. Bumping glossaryVersion (or changing register) forces a full re-translation on the next run so terminology stays consistent across every release.",
-  "status": "unpopulated",
-  "register": null,
-  "_register_help": "'je' = informal (recommended for Kya's warm voice), 'u' = formal. Must be 'je' or 'u' before locking.",
-  "glossaryVersion": 0
+  "_help": "One-time localization inputs consumed by scripts/i18n-translate.mjs. The translate step REFUSES to run until status is 'locked'. Bumping glossaryVersion (or changing register) invalidates every key and forces a full re-translation on the next run, so terminology stays consistent across every release.",
+  "status": "locked",
+  "register": "je",
+  "_register_help": "'je' = informal. Dutch consumer software is overwhelmingly informal; 'u' would make a warm app about someone's pets read like a utility bill. 'u' = formal.",
+  "glossaryVersion": 1
 }
