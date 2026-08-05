@@ -1,5 +1,8 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
+import { pickLocale } from "@/lib/i18n";
+import { objectPronoun, possessivePronoun } from "@/lib/i18n/pronouns";
 import { AlertTriangle, ChevronLeft, Check } from "lucide-react";
 
 // First-visit sitter onboarding: a two-screen welcome, then a coach-mark bubble
@@ -24,14 +27,6 @@ function formatNames(names: string[]): string {
   return `${n.slice(0, -1).join(", ")}, and ${n[n.length - 1]}`;
 }
 
-function objectPronoun(sex: string | null | undefined): string {
-  const s = (sex ?? "").toString().trim().toLowerCase();
-  return s.startsWith("f") ? "her" : s.startsWith("m") ? "him" : "them";
-}
-function possessivePronoun(sex: string | null | undefined): string {
-  const s = (sex ?? "").toString().trim().toLowerCase();
-  return s.startsWith("f") ? "her" : s.startsWith("m") ? "his" : "their";
-}
 
 // A fixed-position element (the bottom nav) shouldn't be scrolled to — only
 // in-page targets (cards, care-plan sections) need the page scrolled.
@@ -60,6 +55,8 @@ const PAD = 6;
 const GAP = 12;
 
 export function SitterOnboarding({ birds, bird, careSections, hasClips, token }: { birds: any[]; bird: any; careSections?: string[]; hasClips?: boolean; token: string }) {
+  const { t, i18n } = useTranslation();
+  const locale = pickLocale(i18n.language);
   const [phase, setPhase] = useState<Phase>(null);
   const [step, setStep] = useState(0);
   const [spot, setSpot] = useState<Spot | null>(null);
@@ -72,19 +69,19 @@ export function SitterOnboarding({ birds, bird, careSections, hasClips, token }:
   const names = list.map((b) => (b?.name ?? "").toString().trim()).filter(Boolean);
   const allNames = formatNames(names);
   const activeName = (bird?.name ?? names[0] ?? "your bird").toString().trim() || "your bird";
-  const obj = objectPronoun(bird?.sex);
-  const poss = possessivePronoun(bird?.sex);
+  const obj = objectPronoun(bird?.sex, locale);
+  const poss = possessivePronoun(bird?.sex, locale);
   // Stable key so a new careSections array ref each render doesn't rebuild steps.
   const careKey = (careSections ?? []).join(",");
 
   const steps = useMemo<CoachStep[]>(() => {
     const s: CoachStep[] = [];
     const cpText: Record<string, string> = {
-      food: `What ${activeName} eats, how much, and when.`,
-      handling: `How to interact with ${activeName} safely.`,
-      home: `${activeName}'s environment and what to watch for.`,
-      health: `${activeName}'s normal baseline and any conditions.`,
-      emergency: "Vet and owner contacts if something's wrong.",
+      food: t("sitterOnboarding.step.cp.food", "What {{name}} eats, how much, and when.", { name: activeName }),
+      handling: t("sitterOnboarding.step.cp.handling", "How to interact with {{name}} safely.", { name: activeName }),
+      home: t("sitterOnboarding.step.cp.home", "{{name}}'s environment and what to watch for.", { name: activeName }),
+      health: t("sitterOnboarding.step.cp.health", "{{name}}'s normal baseline and any conditions.", { name: activeName }),
+      emergency: t("sitterOnboarding.step.cp.emergency", "Vet and owner contacts if something's wrong."),
     };
 
     const single = list.length <= 1;
@@ -94,13 +91,15 @@ export function SitterOnboarding({ birds, bird, careSections, hasClips, token }:
       target: "nav-home",
       route: "home",
       place: "top",
-      text: "This is your home base — every bird you're caring for and what each one still needs today.",
+      text: t("sitterOnboarding.step.homeNav", "This is your home base — every bird you're caring for and what each one still needs today."),
     });
     s.push({
       target: "bird-card",
       route: "home",
       place: "auto",
-      text: single ? `Tap ${activeName} to open ${poss} day.` : "Tap a bird to open their day and check in on them.",
+      text: single
+        ? t("sitterOnboarding.step.birdCard.single", "Tap {{name}} to open {{their}} day.", { name: activeName, their: poss })
+        : t("sitterOnboarding.step.birdCard.multi", "Tap a bird to open their day and check in on them."),
     });
 
     // Today — intro the tab, then tour the screen top to bottom.
@@ -108,49 +107,49 @@ export function SitterOnboarding({ birds, bird, careSections, hasClips, token }:
       target: "nav-today",
       route: "today",
       place: "top",
-      text: `The Today tab — ${activeName}'s daily routine and health check, all in one place.`,
+      text: t("sitterOnboarding.step.todayNav", "The Today tab — {{name}}'s daily routine and health check, all in one place.", { name: activeName }),
     });
     s.push({
       target: "welcome-card",
       route: "today",
       place: "auto",
       text: single
-        ? `This is ${activeName}'s card — photo and key info at a glance. This screen shows everything for ${obj}.`
-        : `This is ${activeName}'s card — photo and key info at a glance. This screen shows everything for the bird you've selected.`,
+        ? t("sitterOnboarding.step.welcomeCard.single", "This is {{name}}'s card — photo and key info at a glance. This screen shows everything for {{them}}.", { name: activeName, them: obj })
+        : t("sitterOnboarding.step.welcomeCard.multi", "This is {{name}}'s card — photo and key info at a glance. This screen shows everything for the bird you've selected.", { name: activeName }),
     });
     if (!single) {
       s.push({
         target: "bird-switcher",
         route: "today",
         place: "bottom",
-        text: "Switch between the birds you're caring for up here — each has their own day and care plan.",
+        text: t("sitterOnboarding.step.birdSwitcher", "Switch between the birds you're caring for up here — each has their own day and care plan."),
       });
     }
     s.push({
       target: "scan-card",
       route: "today",
       place: "auto",
-      text: `Do this every day. It's a quick health check, and ${activeName}'s results are shared with the owner — it's how you both catch any early signs of illness, since birds tend to hide when they're unwell.`,
+      text: t("sitterOnboarding.step.scanCard", "Do this every day. It's a quick health check, and {{name}}'s results are shared with the owner — it's how you both catch any early signs of illness, since birds tend to hide when they're unwell.", { name: activeName }),
     });
     s.push({
       target: "daily-checklist",
       route: "today",
       place: "auto",
-      text: `Work through ${activeName}'s tasks here — grouped by morning, midday, and evening — and check them off as you go.`,
+      text: t("sitterOnboarding.step.dailyChecklist", "Work through {{name}}'s tasks here — grouped by morning, midday, and evening — and check them off as you go.", { name: activeName }),
     });
     if (hasClips) {
       s.push({
         target: "owner-tips",
         route: "today",
         place: "auto",
-        text: `Tips from the owner — short clips showing how things are done for ${activeName}.`,
+        text: t("sitterOnboarding.step.ownerTips", "Tips from the owner — short clips showing how things are done for {{name}}.", { name: activeName }),
       });
     }
     s.push({
       target: "care-plan-link",
       route: "today",
       place: "auto",
-      text: `For everything specific to ${activeName}, tap here for ${poss} full care plan — your source of truth for caring for ${obj}.`,
+      text: t("sitterOnboarding.step.carePlanLink", "For everything specific to {{name}}, tap here for {{their}} full care plan — your source of truth for caring for {{them}}.", { name: activeName, their: poss, them: obj }),
     });
 
     // Full care plan — section by section, the bird-specific source of truth.
@@ -163,19 +162,19 @@ export function SitterOnboarding({ birds, bird, careSections, hasClips, token }:
       target: "nav-guide",
       route: "guide",
       place: "top",
-      text: "The basics of parrot care, in plain language — general info for all parrots.",
+      text: t("sitterOnboarding.step.guideNav", "The basics of parrot care, in plain language — general info for all parrots."),
     });
     s.push({
       target: "guide-search",
       route: "guide",
       place: "bottom",
-      text: "Search here to find anything fast.",
+      text: t("sitterOnboarding.step.guideSearch", "Search here to find anything fast."),
     });
     s.push({
       target: "guide-topics",
       route: "guide",
       place: "bottom",
-      text: "Or tab through these topics to browse by subject.",
+      text: t("sitterOnboarding.step.guideTopics", "Or tab through these topics to browse by subject."),
     });
 
     // Emergency — last, on the always-present nav button.
@@ -184,12 +183,12 @@ export function SitterOnboarding({ birds, bird, careSections, hasClips, token }:
       route: "guide",
       place: "top",
       emphasis: true,
-      text: "And if something's ever wrong, the Emergency button is always here. When in doubt, reach out — it's better to check.",
+      text: t("sitterOnboarding.step.emergencyNav", "And if something's ever wrong, the Emergency button is always here. When in doubt, reach out — it's better to check."),
     });
 
     return s;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [list.length, activeName, obj, poss, careKey, hasClips]);
+  }, [list.length, activeName, obj, poss, careKey, hasClips, t]);
 
   useEffect(() => {
     // The owner's setup "sitter preview" iframe loads the real sitter view with
@@ -330,7 +329,7 @@ export function SitterOnboarding({ birds, bird, careSections, hasClips, token }:
       onClick={markSeenAndClose}
       className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full bg-[#993C1D] px-3 py-1.5 text-xs font-semibold text-white shadow"
     >
-      <AlertTriangle className="size-3.5" /> Emergency
+      <AlertTriangle className="size-3.5" /> {t("sitterOnboarding.emergency", "Emergency")}
     </Link>
   );
 
@@ -341,7 +340,7 @@ export function SitterOnboarding({ birds, bird, careSections, hasClips, token }:
         <div className="flex items-center justify-between px-5 pt-[max(env(safe-area-inset-top),0.9rem)] pb-2">
           {EmergencyLink}
           {phase !== "closing" && (
-            <button onClick={finishWalkthrough} className="text-sm font-medium text-[#cdeab0] underline">Skip</button>
+            <button onClick={finishWalkthrough} className="text-sm font-medium text-[#cdeab0] underline">{t("sitterOnboarding.skip", "Skip")}</button>
           )}
         </div>
 
@@ -364,39 +363,37 @@ export function SitterOnboarding({ birds, bird, careSections, hasClips, token }:
                 ),
               )}
             </div>
-            <h1 className="mt-5 text-[22px] font-medium leading-tight">You're caring for {allNames}.</h1>
+            <h1 className="mt-5 text-[22px] font-medium leading-tight">{t("sitterOnboarding.welcome.title", "You're caring for {{names}}.", { names: allNames })}</h1>
             <p className="mt-2 max-w-xs text-sm leading-relaxed text-white/85">
-              Everything you need is right here. Let's take a minute to show you around.
+              {t("sitterOnboarding.welcome.body", "Everything you need is right here. Let's take a minute to show you around.")}
             </p>
             <button onClick={() => setPhase("overview")} className="mt-7 w-full max-w-xs rounded-2xl bg-[#cdeab0] py-3 text-sm font-semibold text-[#1a3d2e]">
-              Show me around
+              {t("sitterOnboarding.welcome.cta", "Show me around")}
             </button>
-            <button onClick={finishWalkthrough} className="mt-3 text-sm font-medium text-[#cdeab0] underline">Skip</button>
+            <button onClick={finishWalkthrough} className="mt-3 text-sm font-medium text-[#cdeab0] underline">{t("sitterOnboarding.skip", "Skip")}</button>
           </div>
         ) : phase === "overview" ? (
           <div className="flex flex-1 flex-col items-center justify-center px-6 pb-10 text-center">
-            <h1 className="text-[22px] font-medium leading-tight">How this app works</h1>
+            <h1 className="text-[22px] font-medium leading-tight">{t("sitterOnboarding.overview.title", "How this app works")}</h1>
             <p className="mt-3 max-w-sm text-sm leading-relaxed text-white/85">
-              This app has everything you need to care for {allNames}: a daily routine and a quick health
-              check, a parrot care guide, and an emergency button if anything's ever wrong. It takes about a
-              minute to learn — we'll point out each part.
+              {t("sitterOnboarding.overview.body", "This app has everything you need to care for {{names}}: a daily routine and a quick health check, a parrot care guide, and an emergency button if anything's ever wrong. It takes about a minute to learn — we'll point out each part.", { names: allNames })}
             </p>
             <button onClick={startCoach} className="mt-7 w-full max-w-xs rounded-2xl bg-[#cdeab0] py-3 text-sm font-semibold text-[#1a3d2e]">
-              Got it, show me around
+              {t("sitterOnboarding.overview.cta", "Got it, show me around")}
             </button>
-            <button onClick={finishWalkthrough} className="mt-3 text-sm font-medium text-[#cdeab0] underline">Skip</button>
+            <button onClick={finishWalkthrough} className="mt-3 text-sm font-medium text-[#cdeab0] underline">{t("sitterOnboarding.skip", "Skip")}</button>
           </div>
         ) : (
           <div className="flex flex-1 flex-col items-center justify-center px-6 pb-10 text-center">
             <div className="grid size-14 place-items-center rounded-2xl bg-[#cdeab0]/15 text-[#cdeab0]">
               <Check className="size-7" />
             </div>
-            <h1 className="mt-5 text-[22px] font-medium leading-tight">That's everything! You're all set to care for {allNames}.</h1>
+            <h1 className="mt-5 text-[22px] font-medium leading-tight">{t("sitterOnboarding.closing.title", "That's everything! You're all set to care for {{names}}.", { names: allNames })}</h1>
             <p className="mt-3 max-w-xs text-sm leading-relaxed text-white/85">
-              Want to see this again? Tap the question mark in the upper right anytime.
+              {t("sitterOnboarding.closing.body", "Want to see this again? Tap the question mark in the upper right anytime.")}
             </p>
             <button onClick={finishWalkthrough} className="mt-7 w-full max-w-xs rounded-2xl bg-[#cdeab0] py-3 text-sm font-semibold text-[#1a3d2e]">
-              Let's go
+              {t("sitterOnboarding.closing.cta", "Let's go")}
             </button>
           </div>
         )}
@@ -459,17 +456,17 @@ export function SitterOnboarding({ birds, bird, careSections, hasClips, token }:
       <div className="pointer-events-none absolute inset-x-0 top-0 flex items-center justify-between px-5 pt-[max(env(safe-area-inset-top),0.9rem)]">
         {EmergencyLink}
         <button onClick={finishWalkthrough} className="pointer-events-auto rounded-full bg-white/90 px-3 py-1.5 text-xs font-semibold text-[#1a3d2e] shadow">
-          Skip
+          {t("sitterOnboarding.skip", "Skip")}
         </button>
       </div>
 
       {/* Bubble */}
       <div ref={bubbleRef} className="pointer-events-auto absolute rounded-2xl bg-white p-4 shadow-xl" style={bubbleStyle}>
-        <p className="text-[11px] font-semibold uppercase tracking-widest text-[#5f5e5a]">Step {step + 1} of {steps.length}</p>
+        <p className="text-[11px] font-semibold uppercase tracking-widest text-[#5f5e5a]">{t("sitterOnboarding.coach.stepProgress", "Step {{current}} of {{total}}", { current: step + 1, total: steps.length })}</p>
         <p className="mt-1.5 text-sm font-medium leading-snug text-[#1a3d2e]">{cur.text}</p>
         <div className="mt-3 flex items-center justify-between gap-2">
           <button onClick={back} className="inline-flex shrink-0 items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-[#5f5e5a]">
-            <ChevronLeft className="size-4" /> Back
+            <ChevronLeft className="size-4" /> {t("sitterOnboarding.coach.back", "Back")}
           </button>
           {/* Slim progress bar (scales to any step count, unlike per-step dots
               which overflowed the bubble and pushed Next off the edge). */}
@@ -477,7 +474,7 @@ export function SitterOnboarding({ birds, bird, careSections, hasClips, token }:
             <div className="h-full rounded-full bg-[#1a3d2e] transition-[width]" style={{ width: `${Math.round(((step + 1) / steps.length) * 100)}%` }} />
           </div>
           <button onClick={next} className="shrink-0 rounded-lg bg-[#1a3d2e] px-4 py-1.5 text-xs font-semibold text-white">
-            Next
+            {t("sitterOnboarding.coach.next", "Next")}
           </button>
         </div>
       </div>

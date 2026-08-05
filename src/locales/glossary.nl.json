@@ -1,0 +1,9 @@
+{
+  "_help": "Locked EN→NL domain glossary. Every term here is forced verbatim into every Dutch translation, on every run, so bird-care terminology never drifts between strings or releases. Fill in real terms, then set status to 'locked'. The translate step REFUSES to run while status is 'unpopulated'.",
+  "status": "unpopulated",
+  "terms": {
+    "__example__care plan": "verzorgingsplan",
+    "__example__sitter": "oppas",
+    "__example__health check": "gezondheidscheck"
+  }
+}

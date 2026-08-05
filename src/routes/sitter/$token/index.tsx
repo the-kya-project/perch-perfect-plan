@@ -9,6 +9,7 @@ import { Stethoscope, Calendar, BookOpen, ChevronRight, ChevronDown, HeartCrack 
 import { ClipPlayer } from "@/components/ClipPlayer";
 import { taskDaypart, hourToDaypart, DAYPARTS, DAYPART_LABEL, type Daypart } from "@/lib/routineTasks";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/sitter/$token/")({
   component: SitterHome,
@@ -64,7 +65,25 @@ function SitterHome() {
   return <SitterToday />;
 }
 
+// Literal-key daypart labels (not a dynamic `daypart.${dp}` key) so i18next-parser
+// can extract them statically. Capitalized for chips/headers; call .toLowerCase()
+// for mid-sentence use so English reads "done this morning" exactly as before.
+function useDaypartLabel() {
+  const { t } = useTranslation();
+  return (dp: string, fallback: string): string => {
+    switch (dp) {
+      case "morning": return t("sitter.today.daypart.morning", "Morning");
+      case "midday": return t("sitter.today.daypart.midday", "Midday");
+      case "evening": return t("sitter.today.daypart.evening", "Evening");
+      case "anytime": return t("sitter.today.daypart.anytime", "Anytime");
+      default: return fallback;
+    }
+  };
+}
+
 function SitterToday() {
+  const { t, i18n } = useTranslation();
+  const daypartLabel = useDaypartLabel();
   const { token } = Route.useParams();
   const { data: ctx } = useSitterContext(token);
   const qc = useQueryClient();
@@ -122,7 +141,7 @@ function SitterToday() {
     onError: (_e, _vars, mctx) => {
       // Roll the checkbox back and say so — never leave a silent mismatch.
       mctx?.prev?.forEach(([key, data]) => qc.setQueryData(key as any, data));
-      toast.error("That didn't save. Please tap it again.");
+      toast.error(t("sitter.today.saveFailed", "That didn't save. Please tap it again."));
     },
     onSuccess: (_data, vars) => {
       // Cache is already correct (optimistic patch + confirmed write): no
@@ -173,8 +192,9 @@ function SitterToday() {
 
   const now = new Date();
   const nowDp = currentDaypart(now);
-  const timeLabel = now.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
-  const todayLabel = now.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  const dloc = i18n.language === "nl" ? "nl-NL" : undefined;
+  const timeLabel = now.toLocaleTimeString(dloc, { hour: "numeric", minute: "2-digit" });
+  const todayLabel = now.toLocaleDateString(dloc, { month: "short", day: "numeric", year: "numeric" });
 
   const currentList = byDaypart[nowDp] ?? [];
   const currentDone = currentList.filter((t) => completedIds.has(t.id)).length;
@@ -192,18 +212,18 @@ function SitterToday() {
     }
   }
 
-  function renderTask(t: any) {
-    const done = completedIds.has(t.id);
-    const open = expandedIds.has(t.id);
-    const detail = typeof t.instructions === "string" ? t.instructions.trim() : "";
+  function renderTask(task: any) {
+    const done = completedIds.has(task.id);
+    const open = expandedIds.has(task.id);
+    const detail = typeof task.instructions === "string" ? task.instructions.trim() : "";
     const hasDetail = detail.length > 0;
-    const showCaution = t.id === firstFeedingId;
-    const showPill = !!t.time_of_day && parseTaskMinutes(t.time_of_day) != null;
+    const showCaution = task.id === firstFeedingId;
+    const showPill = !!task.time_of_day && parseTaskMinutes(task.time_of_day) != null;
     return (
-      <div key={t.id} className="py-2.5 first:pt-0 last:pb-0">
+      <div key={task.id} className="py-2.5 first:pt-0 last:pb-0">
         <div className="flex items-start gap-3">
           <button
-            onClick={() => m.mutate({ taskId: t.id, completed: !done, title: t.title })}
+            onClick={() => m.mutate({ taskId: task.id, completed: !done, title: task.title })}
             className="flex flex-1 items-start gap-3 text-left"
           >
             <span className={`mt-0.5 grid size-6 shrink-0 place-items-center rounded border-2 ${done ? "border-warn-green bg-warn-green" : "border-[#bcb6a3] bg-white"}`}>
@@ -211,18 +231,18 @@ function SitterToday() {
             </span>
             <span className="flex-1">
               <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                <span className={done ? "text-sm text-sage-400 line-through" : "text-sm font-medium text-sage-900"}>{t.title}</span>
-                {showPill && <span className="rounded-full bg-[#e8f0ec] px-2 py-0.5 text-[10px] font-medium text-[#2d6a4f]">{t.time_of_day}</span>}
+                <span className={done ? "text-sm text-sage-400 line-through" : "text-sm font-medium text-sage-900"}>{task.title}</span>
+                {showPill && <span className="rounded-full bg-[#e8f0ec] px-2 py-0.5 text-[10px] font-medium text-[#2d6a4f]">{task.time_of_day}</span>}
               </span>
-              {showCaution && <span className="mt-1 block text-[11px] font-semibold text-warn-amber">Don't introduce new foods while the owner is away.</span>}
+              {showCaution && <span className="mt-1 block text-[11px] font-semibold text-warn-amber">{t("sitter.today.noNewFoods", "Don't introduce new foods while the owner is away.")}</span>}
             </span>
           </button>
           {hasDetail && (
             <button
               type="button"
-              onClick={() => toggleExpanded(t.id)}
+              onClick={() => toggleExpanded(task.id)}
               aria-expanded={open}
-              aria-label={open ? "Hide details" : "Show details"}
+              aria-label={open ? t("sitter.today.hideDetails", "Hide details") : t("sitter.today.showDetails", "Show details")}
               className="grid shrink-0 place-items-center p-1 text-[#8a897f]"
             >
               <ChevronDown className={`size-4 transition-transform ${open ? "rotate-180" : ""}`} />
@@ -245,21 +265,21 @@ function SitterToday() {
       {/* Today header: daypart chip + date */}
       <div className="flex items-center justify-between gap-2">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-[#e8f0ec] px-3 py-1 text-xs font-semibold text-[#2d6a4f]">
-          {DAYPART_LABEL[nowDp]} · {timeLabel}
+          {daypartLabel(nowDp, DAYPART_LABEL[nowDp])} · {timeLabel}
         </span>
         <span className="flex items-center gap-1 text-xs text-sage-600"><Calendar className="size-3.5" />{todayLabel}</span>
       </div>
 
       {(ctx as any).remindersPaused ? (
-        <p className="rounded-2xl bg-[#efe9da] p-4 text-sm text-sage-600">{ctx.bird.name}'s reminders are paused.</p>
+        <p className="rounded-2xl bg-[#efe9da] p-4 text-sm text-sage-600">{t("sitter.today.remindersPaused", "{{name}}'s reminders are paused.", { name: ctx.bird.name })}</p>
       ) : ctx.tasks.length === 0 ? (
-        <p className="rounded-2xl bg-[#efe9da] p-4 text-sm text-sage-600">The owner hasn't added any routine tasks yet.</p>
+        <p className="rounded-2xl bg-[#efe9da] p-4 text-sm text-sage-600">{t("sitter.today.noTasks", "The owner hasn't added any routine tasks yet.")}</p>
       ) : (
         <>
           {/* Progress for the current daypart */}
           {currentList.length > 0 && (
             <div>
-              <p className="text-xs text-sage-600">{currentDone} of {currentList.length} daily tasks done this {nowDp}</p>
+              <p className="text-xs text-sage-600">{t("sitter.today.doneThisDaypart", "{{done}} of {{total}} daily tasks done this {{daypart}}", { done: currentDone, total: currentList.length, daypart: daypartLabel(nowDp, DAYPART_LABEL[nowDp]).toLowerCase() })}</p>
               <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-sage-100">
                 <div className="h-full rounded-full bg-[#2d6a4f] transition-all" style={{ width: `${Math.round((currentDone / currentList.length) * 100)}%` }} />
               </div>
@@ -268,11 +288,11 @@ function SitterToday() {
 
           {/* Due-now card — the one heavily-bordered element on screen */}
           <section data-coach="daily-checklist" className="rounded-2xl border-2 border-[#1a3d2e] bg-white p-4 shadow-sm">
-            <p className="text-[10px] font-medium uppercase tracking-widest text-[#1a3d2e]">Due now — {nowDp}</p>
+            <p className="text-[10px] font-medium uppercase tracking-widest text-[#1a3d2e]">{t("sitter.today.dueNow", "Due now — {{daypart}}", { daypart: daypartLabel(nowDp, DAYPART_LABEL[nowDp]).toLowerCase() })}</p>
             {currentList.length === 0 ? (
-              <p className="mt-2 text-sm text-sage-600">Nothing scheduled for this {nowDp}.</p>
+              <p className="mt-2 text-sm text-sage-600">{t("sitter.today.nothingScheduled", "Nothing scheduled for this {{daypart}}.", { daypart: daypartLabel(nowDp, DAYPART_LABEL[nowDp]).toLowerCase() })}</p>
             ) : allCurrentDone ? (
-              <p className="mt-2 text-sm font-medium text-[#2d6a4f]">All done for this {nowDp} — nicely done.</p>
+              <p className="mt-2 text-sm font-medium text-[#2d6a4f]">{t("sitter.today.allDone", "All done for this {{daypart}} — nicely done.", { daypart: daypartLabel(nowDp, DAYPART_LABEL[nowDp]).toLowerCase() })}</p>
             ) : (
               <div className="mt-2 divide-y divide-sage-100">
                 {currentList.map(renderTask)}
@@ -293,13 +313,13 @@ function SitterToday() {
                   className="flex w-full items-center justify-between rounded-2xl bg-[#efe9da] p-4 shadow-sm"
                 >
                   <span className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-sage-900">{DAYPART_LABEL[dp]}</span>
-                    <span className="text-xs text-[#5f5e5a]">{done}/{list.length} done</span>
+                    <span className="text-sm font-medium text-sage-900">{daypartLabel(dp, DAYPART_LABEL[dp])}</span>
+                    <span className="text-xs text-[#5f5e5a]">{t("sitter.today.doneCount", "{{done}}/{{total}} done", { done, total: list.length })}</span>
                   </span>
                   <ChevronDown className={`size-5 shrink-0 text-[#8a897f] transition-transform ${open ? "rotate-180" : ""}`} />
                 </button>
                 {!open && dp === nextUp && (
-                  <p className="mt-1 truncate px-4 text-xs text-[#5f5e5a]">Next: {list.map((t) => t.title).join(", ")}</p>
+                  <p className="mt-1 truncate px-4 text-xs text-[#5f5e5a]">{t("sitter.today.next", "Next:")} {list.map((task) => task.title).join(", ")}</p>
                 )}
                 {open && (
                   <div className="mt-2 rounded-2xl bg-[#efe9da] px-4 shadow-sm">
@@ -317,8 +337,8 @@ function SitterToday() {
       {/* Tips from the owner — owner-recorded clips */}
       {ctx.watchClips && ctx.watchClips.length > 0 && (
         <section data-coach="owner-tips" className="space-y-2">
-          <h2 className="text-lg font-medium tracking-tight">Tips from the owner</h2>
-          <p className="text-xs text-sage-600">See how it's done — short clips from {ctx.bird.name}'s owner, private to you.</p>
+          <h2 className="text-lg font-medium tracking-tight">{t("sitter.today.tipsTitle", "Tips from the owner")}</h2>
+          <p className="text-xs text-sage-600">{t("sitter.today.tipsSubtitle", "See how it's done — short clips from {{name}}'s owner, private to you.", { name: ctx.bird.name })}</p>
           <div className="-mx-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-1">
             {ctx.watchClips.map((c: any) => (
               <div
@@ -328,7 +348,7 @@ function SitterToday() {
                 <ClipPlayer src={c.url} label={c.label} className="aspect-video" />
                 <div className="p-3">
                   <p className="text-sm font-medium leading-tight">{c.label}</p>
-                  <p className="mt-0.5 text-[11px] uppercase tracking-wider text-sage-600">Owner-recorded</p>
+                  <p className="mt-0.5 text-[11px] uppercase tracking-wider text-sage-600">{t("sitter.today.ownerRecorded", "Owner-recorded")}</p>
                 </div>
               </div>
             ))}
@@ -345,8 +365,8 @@ function SitterToday() {
       >
         <BookOpen className="size-5 shrink-0 text-[#1a3d2e]" />
         <span className="flex-1">
-          <span className="block text-base font-medium leading-tight text-[#1a3d2e]">View {ctx.bird.name}'s full care plan</span>
-          <span className="mt-0.5 block text-xs text-sage-600">Diet, behavior, home, health — the source of truth</span>
+          <span className="block text-base font-medium leading-tight text-[#1a3d2e]">{t("sitter.today.viewCarePlan", "View {{name}}'s full care plan", { name: ctx.bird.name })}</span>
+          <span className="mt-0.5 block text-xs text-sage-600">{t("sitter.today.carePlanSubtitle", "Diet, behavior, home, health — the source of truth")}</span>
         </span>
         <ChevronRight className="size-5 shrink-0 text-[#1a3d2e]" />
       </Link>
@@ -360,10 +380,10 @@ function SitterToday() {
           className="flex w-full items-center gap-3 rounded-2xl border border-[#e0d8c4] bg-white p-4 text-left active:scale-[0.99]"
         >
           <HeartCrack className="size-5 shrink-0 text-sage-600" />
-          <span className="flex-1 text-sm font-medium text-[#1a3d2e]">Something's wrong with {ctx.bird.name}</span>
+          <span className="flex-1 text-sm font-medium text-[#1a3d2e]">{t("sitter.today.somethingWrong", "Something's wrong with {{name}}", { name: ctx.bird.name })}</span>
           <ChevronRight className="size-4 shrink-0 text-sage-600" />
         </Link>
-        <p className="mt-1.5 px-1 text-xs text-sage-600">If {ctx.bird.name} has passed or is in serious trouble</p>
+        <p className="mt-1.5 px-1 text-xs text-sage-600">{t("sitter.today.somethingWrongHint", "If {{name}} has passed or is in serious trouble", { name: ctx.bird.name })}</p>
       </div>
     </main>
   );
@@ -374,6 +394,7 @@ function SitterToday() {
 // and shows today's done/not-done state at a glance (amber = not done yet,
 // green = done; red/amber if today's scan was flagged).
 function ScanCard({ bird, todayLog, token }: { bird: any; todayLog: any; token: string }) {
+  const { t } = useTranslation();
   const done = !!todayLog;
   const status = (todayLog?.triage_status ?? "") as string;
   const flagged = status === "red" || status === "yellow";
@@ -384,10 +405,10 @@ function ScanCard({ bird, todayLog, token }: { bird: any; todayLog: any; token: 
     red: { wrap: "border-warn-red bg-warn-red/5", chip: "bg-warn-red/15 text-warn-red" },
   }[accent];
   const heading = !done
-    ? "Today's health check — not done yet"
+    ? t("sitter.today.scanNotDone", "Today's health check — not done yet")
     : flagged
-    ? "Health check done — flagged for review"
-    : "Health check done today ✓";
+    ? t("sitter.today.scanFlagged", "Health check done — flagged for review")
+    : t("sitter.today.scanDone", "Health check done today ✓");
   return (
     <Link
       to="/sitter/$token/scan"
@@ -399,10 +420,10 @@ function ScanCard({ bird, todayLog, token }: { bird: any; todayLog: any; token: 
         <Stethoscope className="size-5" />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block text-[10px] font-semibold uppercase tracking-widest text-sage-500">Daily health check · {bird.name}</span>
+        <span className="block text-[10px] font-semibold uppercase tracking-widest text-sage-500">{t("sitter.today.scanLabel", "Daily health check · {{name}}", { name: bird.name })}</span>
         <span className="block text-base font-medium leading-tight text-sage-900">{heading}</span>
       </span>
-      <span className="shrink-0 rounded-xl bg-[#1a3d2e] px-4 py-2 text-sm font-medium text-white">{done ? "Redo" : "Start"}</span>
+      <span className="shrink-0 rounded-xl bg-[#1a3d2e] px-4 py-2 text-sm font-medium text-white">{done ? t("sitter.today.redo", "Redo") : t("sitter.today.start", "Start")}</span>
     </Link>
   );
 }
@@ -414,7 +435,8 @@ function ScanCard({ bird, todayLog, token }: { bird: any; todayLog: any; token: 
 // "happy to step up onto a familiar hand" — a safety bug). The owner's exact
 // words live in the structured "Full care plan" view this card links to.
 function WelcomeCard({ bird, token }: { bird: any; token: string }) {
-  const species = (bird.species ?? "").trim() || "Parrot";
+  const { t } = useTranslation();
+  const species = (bird.species ?? "").trim() || t("sitter.today.speciesDefault", "Parrot");
   const age = (bird.age ?? "").trim();
   const speciesAge = [species, age].filter(Boolean).join(" · ");
   const initial = (bird.name?.slice(0, 1) ?? "?").toUpperCase();
@@ -444,7 +466,7 @@ function WelcomeCard({ bird, token }: { bird: any; token: string }) {
           </div>
         )}
         <div className="absolute inset-x-0 top-0 bg-gradient-to-b from-black/30 to-transparent px-4 pb-8 pt-3">
-          <p className="text-[10px] font-medium uppercase tracking-widest text-[#cdeab0]">Say hi to who you're caring for</p>
+          <p className="text-[10px] font-medium uppercase tracking-widest text-[#cdeab0]">{t("sitter.today.sayHi", "Say hi to who you're caring for")}</p>
         </div>
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#1a3d2e] via-[#1a3d2e]/70 to-transparent px-5 pb-3 pt-12">
           <h1 className="text-[22px] font-medium leading-tight text-white">{bird.name}</h1>
@@ -454,7 +476,7 @@ function WelcomeCard({ bird, token }: { bird: any; token: string }) {
 
       {/* Visible CTA so it's clearly an action, for sitters who don't tap the card. */}
       <div data-coach="care-plan-link" className="flex items-center justify-between gap-3 border-t border-white/10 px-5 py-3">
-        <span className="text-sm font-medium text-[#cdeab0]">View {bird.name}'s full care plan</span>
+        <span className="text-sm font-medium text-[#cdeab0]">{t("sitter.today.viewCarePlan", "View {{name}}'s full care plan", { name: bird.name })}</span>
         <ChevronRight className="size-5 shrink-0 text-[#cdeab0]" />
       </div>
     </Link>

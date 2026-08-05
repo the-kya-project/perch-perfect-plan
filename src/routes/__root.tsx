@@ -8,7 +8,9 @@ import {
   Scripts,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
+import { I18nextProvider } from "react-i18next";
 import { Loader2 } from "lucide-react";
+import { globalI18n } from "@/lib/i18n";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -220,9 +222,17 @@ function RootComponent() {
   }, [router, queryClient]);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <Outlet />
-      <Toaster />
-    </QueryClientProvider>
+    // App-wide default i18n instance, pinned to English. This establishes
+    // react-i18next's instance for EVERY surface — including owner routes that
+    // render shared components (CareSheetView, ConcernFlow, ScanForm, …) but
+    // don't otherwise import the i18n module. Without it those components would
+    // hit an uninitialized i18next and render raw keys. The sitter route nests
+    // its own <I18nextProvider> to switch its subtree to Dutch; this stays en.
+    <I18nextProvider i18n={globalI18n} defaultNS="translation">
+      <QueryClientProvider client={queryClient}>
+        <Outlet />
+        <Toaster />
+      </QueryClientProvider>
+    </I18nextProvider>
   );
 }
