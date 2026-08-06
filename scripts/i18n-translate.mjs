@@ -133,11 +133,18 @@ const system =
   `- Do not add or drop content. Output Dutch only.\n` +
   `- Return ONLY a JSON object mapping each given key to its Dutch string. No prose, no code fences.`;
 
-const payload = Object.fromEntries(stale.map((k) => [k, en[k]]));
-const user = `Translate the VALUES of this JSON to Dutch. Return the same keys with Dutch values:\n${JSON.stringify(payload, null, 2)}`;
+// Honor the standard ANTHROPIC_BASE_URL (same convention as the official SDK),
+// so the endpoint is configurable for gateways/proxies and testable end-to-end.
+const API_BASE = (process.env.ANTHROPIC_BASE_URL || "https://api.anthropic.com").replace(/\/+$/, "");
+// Translate in batches so a single response never overflows max_tokens: a
+// glossaryVersion bump marks ALL keys stale, and asking one call to emit
+// hundreds of Dutch strings would truncate the JSON and fail to parse.
+const BATCH = Math.max(1, Number(process.env.I18N_BATCH) || 50);
 
-async function callClaude() {
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
+async function translateBatch(keys) {
+  const payload = Object.fromEntries(keys.map((k) => [k, en[k]]));
+  const user = `Translate the VALUES of this JSON to Dutch. Return the same keys with Dutch values:\n${JSON.stringify(payload, null, 2)}`;
+  const res = await fetch(`${API_BASE}/v1/messages`, {
     method: "POST",
     headers: { "x-api-key": apiKey, "anthropic-version": "2023-06-01", "content-type": "application/json" },
     body: JSON.stringify({ model: MODEL, max_tokens: 8192, system, messages: [{ role: "user", content: user }] }),
@@ -151,7 +158,12 @@ async function callClaude() {
   return JSON.parse(text.slice(jsonStart, jsonEnd + 1));
 }
 
-const translated = await callClaude();
+const translated = {};
+for (let i = 0; i < stale.length; i += BATCH) {
+  const chunk = stale.slice(i, i + BATCH);
+  Object.assign(translated, await translateBatch(chunk));
+  if (stale.length > BATCH) console.log(`  … translated ${Math.min(i + BATCH, stale.length)}/${stale.length}`);
+}
 
 // ---- placeholder-set assertion: fail the run on any mismatch --------------
 const problems = [];
