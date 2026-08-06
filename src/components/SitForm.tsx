@@ -7,7 +7,10 @@ import { toast } from "sonner";
 import { track } from "@/lib/analytics";
 import { useServerFn } from "@tanstack/react-start";
 import { resolveHouseholdNames } from "@/lib/home.functions";
-import { notifySitAssigned, notifySitUpdated, notifySitCancelled } from "@/lib/sits.functions";
+import {
+  notifySitAssigned, notifySitUpdated, notifySitCancelled,
+  notifySitterInvite, notifySitterInviteUpdated, notifySitterCancelled,
+} from "@/lib/sits.functions";
 import { memberDisplayName, memberInitials } from "@/lib/memberDisplay";
 import { useHouseholdCapability, useMyPermissions } from "@/lib/useCapability";
 import { Feather, Plus, Mail, Check, Users, Trash2, AlertTriangle } from "lucide-react";
@@ -92,6 +95,18 @@ export function SitForm({
             endDate: (editSit.end_date ?? "") as string,
           }
         : null;
+    // External sit: capture the sitter's email too, so we can tell them the sit
+    // is off (their token is dead once the row is deleted).
+    const sitterCancelInfo =
+      !editSit.caregiver_user_id && (editSit.sitter_email ?? "").trim()
+        ? {
+            birdIds: ((editSit.sit_birds ?? []) as any[]).map((sb) => sb.bird_id as string),
+            startDate: (editSit.start_date ?? "") as string,
+            endDate: (editSit.end_date ?? "") as string,
+            sitterEmail: (editSit.sitter_email as string).trim(),
+            sitterName: (editSit.sitter_name as string | null) ?? null,
+          }
+        : null;
     const { error } = await supabase.from("sits").delete().eq("id", editSit.id);
     // A FAILED delete must never send a cancellation — bail before notifying.
     if (error) { toast.error(error.message); setDeleting(false); return; }
@@ -114,6 +129,26 @@ export function SitForm({
         track("sit_caregiver_email_failed", { event: "cancelled", reason: "threw" });
         toast.error(
           "Sit deleted, but we couldn't email your household member the cancellation. Tell them directly so they don't show up to cover.",
+          { duration: 10000 },
+        );
+      }
+    } else if (sitterCancelInfo && sitterCancelInfo.birdIds.length) {
+      const label = sitterCancelInfo.sitterName?.trim() || sitterCancelInfo.sitterEmail || "the sitter";
+      try {
+        const res = await sendSitterCancel({ data: sitterCancelInfo });
+        if (!res?.emailed) {
+          track("sitter_invite_email_failed", { event: "cancelled", reason: res?.reason ?? "unknown" });
+          toast.error(
+            `Sit deleted, but we couldn't email ${label} the cancellation. Tell them directly so they don't show up.`,
+            { duration: 10000 },
+          );
+        } else {
+          toast.success("Sit deleted.");
+        }
+      } catch {
+        track("sitter_invite_email_failed", { event: "cancelled", reason: "threw" });
+        toast.error(
+          `Sit deleted, but we couldn't email ${label} the cancellation. Tell them directly so they don't show up.`,
           { duration: 10000 },
         );
       }
@@ -153,6 +188,11 @@ export function SitForm({
   const notifyAssigned = useServerFn(notifySitAssigned);
   const notifyUpdated = useServerFn(notifySitUpdated);
   const notifyCancelled = useServerFn(notifySitCancelled);
+  // External (token-link) sitter notifications — the invert of the caregiver
+  // ones above; they fire only for external sits.
+  const sendSitterInvite = useServerFn(notifySitterInvite);
+  const sendSitterUpdate = useServerFn(notifySitterInviteUpdated);
+  const sendSitterCancel = useServerFn(notifySitterCancelled);
   const { data: eligibleMembers = [] } = useQuery({
     queryKey: ["sit-eligible-household", birdIdsKey],
     enabled: !editing && selected.size > 0,
@@ -326,15 +366,26 @@ export function SitForm({
         // toast so a send failure is surfaced.
         const datesChanged = start !== (editSit.start_date ?? "") || end !== (editSit.end_date ?? "");
         const birdsChanged = toAdd.length > 0 || toRemove.length > 0;
+        const sitterLabel = sitterName?.trim() || sitterEmail || "the sitter";
         let updateFailedName: string | null = null;
+        let sitterUpdateFailed = false;
         if (kind === "household" && (datesChanged || birdsChanged)) {
           try {
             const res = await notifyUpdated({ data: { sitId: editSit.id, datesChanged, birdsChanged } });
             if (!res?.emailed) { updateFailedName = res?.caregiverName ?? "your household member"; track("sit_caregiver_email_failed", { event: "updated", reason: res?.reason ?? "unknown" }); }
           } catch { updateFailedName = "your household member"; track("sit_caregiver_email_failed", { event: "updated", reason: "threw" }); }
+        } else if (kind === "external" && (datesChanged || birdsChanged)) {
+          // Same link, new details — tell the token sitter what changed. A no-op
+          // server-side if the token is revoked/expired (reason surfaced).
+          try {
+            const res = await sendSitterUpdate({ data: { sitId: editSit.id, datesChanged, birdsChanged } });
+            if (!res?.emailed) { sitterUpdateFailed = true; track("sitter_invite_email_failed", { event: "updated", reason: res?.reason ?? "unknown" }); }
+          } catch { sitterUpdateFailed = true; track("sitter_invite_email_failed", { event: "updated", reason: "threw" }); }
         }
         if (updateFailedName) {
           toast.error(`Sit updated, but we couldn't email ${updateFailedName} the change. Let them know directly.`, { duration: 8000 });
+        } else if (sitterUpdateFailed) {
+          toast.error(`Sit updated, but we couldn't email ${sitterLabel} the change. The link still works — send them the new details.`, { duration: 10000 });
         } else {
           toast.success("Sit updated.");
         }
@@ -372,19 +423,32 @@ export function SitForm({
         const days = Math.max(1, Math.round((new Date(end).getTime() - new Date(start).getTime()) / 86_400_000) + 1);
         track("sit_created", { bird_count: birdIds.length, days, has_email: !!sitterEmail, caregiver_kind: kind });
         // Notify the household caregiver they're covering (await before the
-        // toast/nav so a send failure is surfaced to the owner). External sits
-        // keep their existing token flow — no email here.
+        // toast/nav so a send failure is surfaced to the owner).
+        const sitterLabel = sitterName?.trim() || sitterEmail || "the sitter";
         let assignFailedName: string | null = null;
+        let sitterInviteFailed = false;
         if (kind === "household") {
           try {
             const res = await notifyAssigned({ data: { sitId: sit.id } });
             if (!res?.emailed) { assignFailedName = res?.caregiverName ?? "your household member"; track("sit_caregiver_email_failed", { event: "assigned", reason: res?.reason ?? "unknown" }); }
           } catch { assignFailedName = "your household member"; track("sit_caregiver_email_failed", { event: "assigned", reason: "threw" }); }
+        } else {
+          // External sit: email the token invite (the link they need). Distinct
+          // from the caregiver path so the owner can tell sent from not-sent and
+          // fall back to copying the link.
+          try {
+            const res = await sendSitterInvite({ data: { sitId: sit.id } });
+            if (!res?.emailed) { sitterInviteFailed = true; track("sitter_invite_email_failed", { event: "created", reason: res?.reason ?? "unknown" }); }
+          } catch { sitterInviteFailed = true; track("sitter_invite_email_failed", { event: "created", reason: "threw" }); }
         }
         if (assignFailedName) {
           toast.error(`Sit created, but we couldn't email ${assignFailedName}. Let them know directly.`, { duration: 8000 });
+        } else if (sitterInviteFailed) {
+          toast.error(`Sit created, but we couldn't email ${sitterLabel} the invite. Open the sit and copy the link to send it yourself.`, { duration: 10000 });
         } else {
-          toast.success(kind === "household" ? "Sit created — your household member is set." : "Sit created.");
+          toast.success(
+            kind === "household" ? "Sit created — your household member is set." : `Sit created — invite sent to ${sitterLabel}.`,
+          );
         }
         setOpen(false);
         setTitle(""); setSitterName(""); setSitterEmail(""); setStart(""); setEnd(""); setNotes("");

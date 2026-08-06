@@ -13,7 +13,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { buildSitAssignedEmail, buildSitUpdatedEmail, buildSitCancelledEmail, type BuiltEmail } from "./emailTemplates";
+import {
+  buildSitAssignedEmail, buildSitUpdatedEmail, buildSitCancelledEmail,
+  buildSitterInviteEmail, buildSitterInviteUpdatedEmail, buildSitterInviteCancelledEmail,
+  type BuiltEmail,
+} from "./emailTemplates";
 
 async function getAdmin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -208,4 +212,128 @@ export const notifySitCancelled = createServerFn({ method: "POST" })
     const ok = await send(built, email, name);
     if (!ok) console.error("[sits] cancelled email failed for caregiver", data.caregiverUserId);
     return { ok: true, emailed: ok, reason: ok ? undefined : "send-failed", caregiverName: name ?? undefined };
+  });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// External (token-link) sitter notifications. Distinct from the caregiver fns
+// above, and the exact INVERSE of their guard: these fire ONLY for external sits
+// (invite_token present, caregiver_user_id null) and no-op for household sits.
+// The recipient has no account, so the address is sits.sitter_email (a column) —
+// never an auth lookup. Same best-effort, failure-visible contract.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type SitterNotifyResult = { ok: boolean; emailed: boolean; reason?: string; sitterName?: string };
+
+// Shared load + validity gate for the token-link path. Returns a reason (no
+// send) when the row is missing, not an external sit, revoked, expired, or has
+// no sitter email — mirrors loadSitByToken's revoke/expiry checks so we never
+// email a dead link.
+async function loadSendableSitterSit(sb: any, sitId: string, ownerId: string) {
+  const { data: sit } = await sb
+    .from("sits")
+    .select("id, owner_id, caregiver_user_id, invite_token, token_expires_at, revoked, sitter_email, sitter_name, start_date, end_date")
+    .eq("id", sitId)
+    .maybeSingle();
+  if (!sit) return { sit: null, reason: "sit-not-found" as const };
+  if (sit.owner_id !== ownerId) throw new Error("Not authorized");
+  if (sit.caregiver_user_id || !sit.invite_token) return { sit, reason: "household-sit" as const };
+  if (sit.revoked) return { sit, reason: "token-revoked" as const };
+  if (!sit.token_expires_at || new Date(sit.token_expires_at) < new Date()) return { sit, reason: "token-expired" as const };
+  if (!((sit.sitter_email ?? "").trim())) return { sit, reason: "no-sitter-email" as const };
+  return { sit, reason: null };
+}
+
+// ── Invite (external sit created) ────────────────────────────────────────────
+export const notifySitterInvite = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { sitId: string }) => z.object({ sitId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }): Promise<SitterNotifyResult> => {
+    const sb = await getAdmin();
+    const ownerId = (context as any).userId as string;
+    const { sit, reason } = await loadSendableSitterSit(sb, data.sitId, ownerId);
+    if (reason) return { ok: reason === "sit-not-found" ? false : true, emailed: false, reason, sitterName: sit?.sitter_name ?? undefined };
+
+    const { data: sbRows } = await sb.from("sit_birds").select("bird_id").eq("sit_id", sit.id);
+    const ids = (sbRows ?? []).map((r: any) => r.bird_id as string);
+    const built = buildSitterInviteEmail({
+      ownerName: await ownerDisplayName(sb, ownerId),
+      birdNames: joinNames(await birdNames(sb, ids)),
+      dateRange: fmtRange(sit.start_date, sit.end_date),
+      link: `${appUrl()}/sitter/${sit.invite_token}`,
+    });
+    const ok = await send(built, (sit.sitter_email as string).trim(), sit.sitter_name);
+    if (!ok) console.error("[sits] sitter invite email failed for sit", sit.id);
+    return { ok: true, emailed: ok, reason: ok ? undefined : "send-failed", sitterName: sit.sitter_name ?? undefined };
+  });
+
+// ── Updated (external sit edited: dates and/or bird-set changed) ──────────────
+export const notifySitterInviteUpdated = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { sitId: string; datesChanged: boolean; birdsChanged: boolean }) =>
+    z.object({ sitId: z.string().uuid(), datesChanged: z.boolean(), birdsChanged: z.boolean() }).parse(d),
+  )
+  .handler(async ({ data, context }): Promise<SitterNotifyResult> => {
+    const sb = await getAdmin();
+    const ownerId = (context as any).userId as string;
+    const { sit, reason } = await loadSendableSitterSit(sb, data.sitId, ownerId);
+    if (reason) return { ok: reason === "sit-not-found" ? false : true, emailed: false, reason, sitterName: sit?.sitter_name ?? undefined };
+
+    const parts: string[] = [];
+    if (data.datesChanged) parts.push("the dates");
+    if (data.birdsChanged) parts.push("which birds you're covering");
+    const changeSummary = parts.join(" and ") || "some details";
+
+    const { data: sbRows } = await sb.from("sit_birds").select("bird_id").eq("sit_id", sit.id);
+    const ids = (sbRows ?? []).map((r: any) => r.bird_id as string);
+    const built = buildSitterInviteUpdatedEmail({
+      ownerName: await ownerDisplayName(sb, ownerId),
+      birdNames: joinNames(await birdNames(sb, ids)),
+      dateRange: fmtRange(sit.start_date, sit.end_date),
+      changeSummary,
+      link: `${appUrl()}/sitter/${sit.invite_token}`,
+    });
+    const ok = await send(built, (sit.sitter_email as string).trim(), sit.sitter_name);
+    if (!ok) console.error("[sits] sitter update email failed for sit", sit.id);
+    return { ok: true, emailed: ok, reason: ok ? undefined : "send-failed", sitterName: sit.sitter_name ?? undefined };
+  });
+
+// ── Cancelled (external sit deleted) ─────────────────────────────────────────
+// The row (and its token/sit_birds) is gone by the time this runs, so the
+// details — including the sitter's email — are passed in, captured before the
+// delete. Authorized by bird ownership: the caller must own every bird passed,
+// which proves they owned the sit. No link (the token is already dead).
+export const notifySitterCancelled = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { birdIds: string[]; startDate: string; endDate: string; sitterEmail: string; sitterName?: string | null }) =>
+    z
+      .object({
+        birdIds: z.array(z.string().uuid()).min(1).max(50),
+        startDate: z.string(),
+        endDate: z.string(),
+        sitterEmail: z.string(),
+        sitterName: z.string().nullable().optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }): Promise<SitterNotifyResult> => {
+    const sb = await getAdmin();
+    const ownerId = (context as any).userId as string;
+    const to = (data.sitterEmail ?? "").trim();
+    if (!to) return { ok: true, emailed: false, reason: "no-sitter-email", sitterName: data.sitterName ?? undefined };
+
+    const { data: rows } = await sb.from("birds").select("id, name, owner_id").in("id", data.birdIds);
+    const birds = (rows ?? []) as { id: string; name: string; owner_id: string }[];
+    if (!birds.length) return { ok: false, emailed: false, reason: "no-birds" };
+    if (birds.some((b) => b.owner_id !== ownerId)) throw new Error("Not authorized");
+
+    const nameById = new Map(birds.map((b) => [b.id, b.name]));
+    const names = data.birdIds.map((id) => nameById.get(id)).filter(Boolean) as string[];
+    const built = buildSitterInviteCancelledEmail({
+      ownerName: await ownerDisplayName(sb, ownerId),
+      birdNames: joinNames(names),
+      dateRange: fmtRange(data.startDate, data.endDate),
+    });
+    const ok = await send(built, to, data.sitterName ?? null);
+    if (!ok) console.error("[sits] sitter cancelled email failed");
+    return { ok: true, emailed: ok, reason: ok ? undefined : "send-failed", sitterName: data.sitterName ?? undefined };
   });
