@@ -83,7 +83,7 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
 
         // Whole-account snapshot in six queries — fine at this user scale.
         const [profilesQ, birdsQ, plansQ, weightsQ, scansQ, logQ] = await Promise.all([
-          supabaseAdmin.from("profiles").select("id, email, display_name, created_at, marketing_opt_in").limit(2000),
+          supabaseAdmin.from("profiles").select("id, email, display_name, created_at, marketing_opt_in, locale").limit(2000),
           supabaseAdmin.from("birds").select("id, owner_id, name, created_at, passed_at").limit(5000),
           supabaseAdmin.from("care_plans").select("bird_id, diet_types, food_instructions, handlers, likes, fears_triggers, cage_location, out_of_cage_mode, hazards, whats_normal").limit(5000),
           supabaseAdmin.from("weight_entries").select("bird_id, measured_at").order("measured_at", { ascending: true }).limit(10000),
@@ -206,16 +206,18 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
           const bird = p.birdName ?? "your bird";
           const profile = (profilesQ.data as any[]).find((x) => x.id === p.userId);
           const firstName = ((profile?.display_name ?? "").trim().split(/\s+/)[0] || "").trim() || undefined;
+          // Owner has an account (group 1) → their stored locale; null → English.
+          const locale = (profile as { locale?: string } | undefined)?.locale ?? undefined;
           const built =
             p.stage === "add_first_bird"
-              ? buildOnboardingAddBirdEmail({ firstName, link: `${appUrl}/birds/new` })
+              ? buildOnboardingAddBirdEmail({ firstName, link: `${appUrl}/birds/new`, locale })
               : p.stage === "start_care_plan"
-                ? buildOnboardingCarePlanEmail({ birdName: bird, link: `${appUrl}/dashboard` })
+                ? buildOnboardingCarePlanEmail({ birdName: bird, link: `${appUrl}/dashboard`, locale })
                 : p.stage === "log_first_weight"
-                  ? buildOnboardingFirstWeightEmail({ birdName: bird, link: `${appUrl}/dashboard` })
+                  ? buildOnboardingFirstWeightEmail({ birdName: bird, link: `${appUrl}/dashboard`, locale })
                   : p.stage === "run_first_scan"
-                    ? buildOnboardingHealthScanEmail({ birdName: bird, link: p.birdId ? `${appUrl}/birds/${p.birdId}/scan` : `${appUrl}/scans` })
-                    : buildOnboardingWeightTrendEmail({ birdName: bird, link: `${appUrl}/dashboard` });
+                    ? buildOnboardingHealthScanEmail({ birdName: bird, link: p.birdId ? `${appUrl}/birds/${p.birdId}/scan` : `${appUrl}/scans`, locale })
+                    : buildOnboardingWeightTrendEmail({ birdName: bird, link: `${appUrl}/dashboard`, locale });
 
           const res = await sendTransactionalEmail({
             to: p.email,

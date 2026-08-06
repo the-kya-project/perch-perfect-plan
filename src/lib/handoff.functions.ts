@@ -8,6 +8,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { buildHandoffInviteEmail, buildHandoffAcceptedEmail, buildHandoffDeclinedEmail } from "./emailTemplates";
+import { localeForUser } from "./emailLocale.server";
 
 async function getAdmin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -96,8 +97,9 @@ export const createHandoff = createServerFn({ method: "POST" })
 
     try {
       const senderName = await displayName(sb, senderId);
+      // Account-less recipient (group 2) → the SENDER's locale.
       await sendEmail(data.recipientEmail, data.recipientName?.trim() || undefined,
-        buildHandoffInviteEmail({ senderName, birdName: bird.name as string, link: `${appUrl()}/handoff/${token}` }));
+        buildHandoffInviteEmail({ senderName, birdName: bird.name as string, link: `${appUrl()}/handoff/${token}`, locale: await localeForUser(sb, senderId) }));
     } catch (e) { console.error("[handoff] invite email failed", e); }
 
     return { ok: true, handoff };
@@ -288,7 +290,7 @@ export const acceptHandoff = createServerFn({ method: "POST" })
       const recipientLabel = await displayName(sb, userId);
       const { data: bird } = await sb.from("birds").select("name").eq("id", h.bird_id).maybeSingle();
       const { data: su } = await sb.auth.admin.getUserById(h.sender_user_id as string);
-      if (su?.user?.email) await sendEmail(su.user.email, undefined, buildHandoffAcceptedEmail({ birdName: (bird?.name ?? "your bird") as string, recipientLabel }));
+      if (su?.user?.email) await sendEmail(su.user.email, undefined, buildHandoffAcceptedEmail({ birdName: (bird?.name ?? "your bird") as string, recipientLabel, locale: await localeForUser(sb, h.sender_user_id as string) }));
     } catch (e) { console.error("[handoff] accepted email failed", e); }
 
     return { ok: true, birdId: h.bird_id as string };
@@ -305,7 +307,7 @@ export const declineHandoff = createServerFn({ method: "POST" })
     try {
       const { data: bird } = await sb.from("birds").select("name").eq("id", h.bird_id).maybeSingle();
       const { data: su } = await sb.auth.admin.getUserById(h.sender_user_id as string);
-      if (su?.user?.email) await sendEmail(su.user.email, undefined, buildHandoffDeclinedEmail({ birdName: (bird?.name ?? "your bird") as string }));
+      if (su?.user?.email) await sendEmail(su.user.email, undefined, buildHandoffDeclinedEmail({ birdName: (bird?.name ?? "your bird") as string, locale: await localeForUser(sb, h.sender_user_id as string) }));
     } catch (e) { console.error("[handoff] declined email failed", e); }
     return { ok: true };
   });

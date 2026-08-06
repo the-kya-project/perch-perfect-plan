@@ -1,5 +1,21 @@
 // Transactional email templates (warm palette, inline styles for mail-client
 // consistency). Pure string builders — no secrets, no Node APIs.
+//
+// LOCALIZATION: user-facing prose lives in the server-only `emails` catalog and
+// is resolved per email from the recipient's (or, for account-less invitees, the
+// sender's) locale — see src/lib/i18n/emailI18n.server.ts. Each builder takes an
+// optional `locale`; an absent/unknown locale falls back to English, so a send
+// never fails on a missing translation. English output is byte-identical to the
+// pre-i18n templates (values are pre-escaped per field exactly as before, and
+// the email i18n instance interpolates with escapeValue:false).
+//
+// The external (token-link) sitter trio is NOT localized here — it's account-
+// less and keyed off a per-sit locale picker that doesn't exist yet (A3). Those
+// three builders keep their English literals and call shell() without `t`.
+
+import { emailT } from "./i18n/emailI18n.server";
+
+type EmailT = ReturnType<typeof emailT>;
 
 export function escapeHtml(s: string): string {
   return s.replace(/[&<>"']/g, (c) =>
@@ -20,11 +36,16 @@ function shell(opts: {
   foot: string;
   /** Optional "From the field notes" blog block rendered under the CTA. */
   reading?: { title: string; teaser: string; url: string };
+  /** Localized chrome. When omitted (the account-less sitter-invite emails),
+   *  the English literals are used. */
+  t?: EmailT;
 }): string {
+  const fieldNotes = opts.t ? opts.t("email.shell.fieldNotes") : "From the field notes";
+  const footNote = opts.t ? opts.t("email.shell.footNote") : "Kya &amp; Co. — by The Kya Project";
   const reading = opts.reading
     ? `
       <div style="margin-top:20px;padding:14px 16px;background:#f4f1e8;border-radius:12px;">
-        <p style="margin:0;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8a897f;">From the field notes</p>
+        <p style="margin:0;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8a897f;">${fieldNotes}</p>
         <p style="margin:6px 0 0;font-size:14px;"><a href="${opts.reading.url}" style="color:#1a3d2e;font-weight:600;">${opts.reading.title}</a></p>
         <p style="margin:4px 0 0;font-size:12.5px;color:#5f5e5a;line-height:1.5;">${opts.reading.teaser}</p>
       </div>`
@@ -47,7 +68,7 @@ function shell(opts: {
       <p style="margin:0 0 8px;font-size:15px;color:#1a3d2e;">${opts.body}</p>${opts.cta ? `
       <a href="${opts.link}" style="display:inline-block;margin-top:12px;background:#1a3d2e;color:#fff;text-decoration:none;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:600;">${opts.cta}</a>` : ""}${reading}
       <p style="margin:20px 0 0;font-size:12px;color:#8a897f;line-height:1.5;">${opts.foot}</p>
-      <p style="margin:18px 0 0;font-size:11px;color:#8a897f;text-align:center;border-top:1px solid #eee6d4;padding-top:12px;">Kya &amp; Co. — by The Kya Project</p>
+      <p style="margin:18px 0 0;font-size:11px;color:#8a897f;text-align:center;border-top:1px solid #eee6d4;padding-top:12px;">${footNote}</p>
     </div>
   </div>
 </div>`;
@@ -55,37 +76,41 @@ function shell(opts: {
 
 // "Sitter added a daily log" — sent for all-clear scans when the owner opts in
 // (flagged scans use the always-on health alert, not this one).
-export function buildDailyLogEmail(opts: { birdName: string; sitterName: string; link: string }): BuiltEmail {
+export function buildDailyLogEmail(opts: { birdName: string; sitterName: string; link: string; locale?: string }): BuiltEmail {
+  const t = emailT(opts.locale);
   const bird = escapeHtml(opts.birdName);
   const sitter = escapeHtml(opts.sitterName);
   return {
-    subject: `${opts.birdName}: daily health check logged — all clear`,
+    subject: t("email.dailyLog.subject", { birdName: opts.birdName }),
     html: shell({
-      kicker: "Daily update",
-      heading: `${bird}'s sitter logged an all-clear health check`,
-      body: `${sitter} just completed ${bird}'s daily health check and nothing was flagged.`,
-      cta: "View the health check",
+      kicker: t("email.dailyLog.kicker"),
+      heading: t("email.dailyLog.heading", { bird }),
+      body: t("email.dailyLog.body", { sitter, bird }),
+      cta: t("email.dailyLog.cta"),
       link: opts.link,
-      foot: "You're getting this because daily health-check emails are on. You can turn them off in the app's notification settings.",
+      foot: t("email.dailyLog.foot"),
+      t,
     }),
-    text: `${opts.birdName}'s sitter logged an all-clear daily health check.\n\nView it: ${opts.link}`,
+    text: t("email.dailyLog.text", { birdName: opts.birdName, link: opts.link }),
   };
 }
 
 // "Care plan update reminder" — sent by the reminder cron when the owner opts in.
-export function buildCarePlanReminderEmail(opts: { birdName: string; link: string }): BuiltEmail {
+export function buildCarePlanReminderEmail(opts: { birdName: string; link: string; locale?: string }): BuiltEmail {
+  const t = emailT(opts.locale);
   const bird = escapeHtml(opts.birdName);
   return {
-    subject: `${opts.birdName} has a sit coming up — review the care plan?`,
+    subject: t("email.carePlanReminder.subject", { birdName: opts.birdName }),
     html: shell({
-      kicker: "Care plan check-in",
-      heading: `${bird} has a sit coming up`,
-      body: `It's been a while since ${bird}'s care plan was updated, and a sit starts soon. Take a minute to review it so your sitter has the latest.`,
-      cta: "Review the care plan",
+      kicker: t("email.carePlanReminder.kicker"),
+      heading: t("email.carePlanReminder.heading", { bird }),
+      body: t("email.carePlanReminder.body", { bird }),
+      cta: t("email.carePlanReminder.cta"),
       link: opts.link,
-      foot: "You're getting this because care-plan reminder emails are on. You can turn them off in the app's notification settings.",
+      foot: t("email.carePlanReminder.foot"),
+      t,
     }),
-    text: `${opts.birdName} has a sit coming up — review the care plan: ${opts.link}`,
+    text: t("email.carePlanReminder.text", { birdName: opts.birdName, link: opts.link }),
   };
 }
 
@@ -96,95 +121,82 @@ export function buildHouseholdInviteEmail(opts: {
   inviterName: string;
   birdNames: string;
   link: string;
+  locale?: string;
 }): BuiltEmail {
+  const t = emailT(opts.locale);
   const inviter = escapeHtml(opts.inviterName);
   const birds = escapeHtml(opts.birdNames);
-  const body =
-    `${inviter} invited you to help care for ${birds} on Kya & Co.. ` +
-    `You'll be able to see each bird's care plan, weight, journal, and health checks — ` +
-    `and log weights, journal entries, and daily health checks alongside ${inviter}. ` +
-    `You won't be able to change the care plan or who has access; ${inviter} stays the owner. ` +
-    `This invite expires in 14 days.`;
   return {
-    subject: `${opts.inviterName} invited you to help care for ${opts.birdNames}`,
+    subject: t("email.householdInvite.subject", { inviterName: opts.inviterName, birdNames: opts.birdNames }),
     html: shell({
-      kicker: "Household invite",
-      heading: `${inviter} invited you to help care for ${birds}`,
-      body,
-      cta: "Accept the invite",
+      kicker: t("email.householdInvite.kicker"),
+      heading: t("email.householdInvite.heading", { inviter, birds }),
+      body: t("email.householdInvite.body", { inviter, birds }),
+      cta: t("email.householdInvite.cta"),
       link: opts.link,
-      foot: "If you didn't expect this, you can ignore this email — nothing happens until you accept. The invite link expires in 14 days.",
+      foot: t("email.householdInvite.foot"),
+      t,
     }),
-    text:
-      `${opts.inviterName} invited you to help care for ${opts.birdNames} on Kya & Co..\n\n` +
-      `You'll be able to view each bird's record and log weights, journal entries, and health checks. ` +
-      `You can't change the care plan or access; ${opts.inviterName} stays the owner.\n\n` +
-      `Accept (expires in 14 days): ${opts.link}\n\n` +
-      `If you didn't expect this, you can ignore this email.`,
+    text: t("email.householdInvite.text", { inviterName: opts.inviterName, birdNames: opts.birdNames, link: opts.link }),
   };
 }
 
 // "<sender> is handing off <bird> to you" — in-app handoff invitation.
-export function buildHandoffInviteEmail(opts: { senderName: string; birdName: string; link: string }): BuiltEmail {
+export function buildHandoffInviteEmail(opts: { senderName: string; birdName: string; link: string; locale?: string }): BuiltEmail {
+  const t = emailT(opts.locale);
   const sender = escapeHtml(opts.senderName);
   const bird = escapeHtml(opts.birdName);
   return {
-    subject: `${opts.senderName} is handing off ${opts.birdName} to you`,
+    subject: t("email.handoffInvite.subject", { senderName: opts.senderName, birdName: opts.birdName }),
     html: shell({
-      kicker: "Bird handoff",
-      heading: `${sender} is handing off ${bird} to you`,
-      body:
-        `${sender} wants to pass ${bird}'s full record to you on Kya & Co. — ` +
-        `care plan, identity, weight history, journal, and moments, so you have everything they learned while caring for ${bird}. ` +
-        `Once you accept, the record is yours and ${sender} no longer has access. This link expires in 14 days.`,
-      cta: "Review the handoff",
+      kicker: t("email.handoffInvite.kicker"),
+      heading: t("email.handoffInvite.heading", { sender, bird }),
+      body: t("email.handoffInvite.body", { sender, bird }),
+      cta: t("email.handoffInvite.cta"),
       link: opts.link,
-      foot: "If you weren't expecting this, you can ignore this email — nothing transfers until you accept.",
+      foot: t("email.handoffInvite.foot"),
+      t,
     }),
-    text:
-      `${opts.senderName} is handing off ${opts.birdName} to you on Kya & Co..\n\n` +
-      `You'll receive ${opts.birdName}'s full record (care plan, identity, weights, journal, moments). ` +
-      `Once you accept, it's yours and ${opts.senderName} no longer has access.\n\n` +
-      `Review (expires in 14 days): ${opts.link}`,
+    text: t("email.handoffInvite.text", { senderName: opts.senderName, birdName: opts.birdName, link: opts.link }),
   };
 }
 
 // "<recipient> accepted — <bird> is theirs now" — notify the sender it's done.
-export function buildHandoffAcceptedEmail(opts: { birdName: string; recipientLabel: string }): BuiltEmail {
+export function buildHandoffAcceptedEmail(opts: { birdName: string; recipientLabel: string; locale?: string }): BuiltEmail {
+  const t = emailT(opts.locale);
   const bird = escapeHtml(opts.birdName);
   const who = escapeHtml(opts.recipientLabel);
   return {
-    subject: `${opts.birdName}'s handoff is complete`,
+    subject: t("email.handoffAccepted.subject", { birdName: opts.birdName }),
     html: shell({
-      kicker: "Handoff complete",
-      heading: `${bird} has a new home`,
-      body:
-        `${who} accepted the handoff, so ${bird}'s record is now theirs and has left your account. ` +
-        `You'll find a memory of ${bird} in Past birds. Thank you for taking such good care of them.`,
-      cta: "View Past birds",
+      kicker: t("email.handoffAccepted.kicker"),
+      heading: t("email.handoffAccepted.heading", { bird }),
+      body: t("email.handoffAccepted.body", { who, bird }),
+      cta: t("email.handoffAccepted.cta"),
       link: "https://app.thekyaproject.com/past-birds",
-      foot: "This is a one-time confirmation. There's nothing else to do.",
+      foot: t("email.handoffAccepted.foot"),
+      t,
     }),
-    text: `${who} accepted the handoff. ${opts.birdName}'s record is now theirs and has left your account. A memory is saved in Past birds.`,
+    text: t("email.handoffAccepted.text", { who, birdName: opts.birdName }),
   };
 }
 
 // "<bird>'s handoff was declined" — notify the sender, gently.
-export function buildHandoffDeclinedEmail(opts: { birdName: string }): BuiltEmail {
+export function buildHandoffDeclinedEmail(opts: { birdName: string; locale?: string }): BuiltEmail {
+  const t = emailT(opts.locale);
   const bird = escapeHtml(opts.birdName);
   return {
-    subject: `${opts.birdName}'s handoff was declined`,
+    subject: t("email.handoffDeclined.subject", { birdName: opts.birdName }),
     html: shell({
-      kicker: "Handoff declined",
-      heading: `${bird}'s handoff wasn't accepted`,
-      body:
-        `The handoff for ${bird} was declined, so nothing changed — ${bird} is still in your account and you still have full access. ` +
-        `You can start a new handoff whenever you're ready.`,
-      cta: "Open Kya & Co.",
+      kicker: t("email.handoffDeclined.kicker"),
+      heading: t("email.handoffDeclined.heading", { bird }),
+      body: t("email.handoffDeclined.body", { bird }),
+      cta: t("email.handoffDeclined.cta"),
       link: "https://app.thekyaproject.com",
-      foot: "No action needed.",
+      foot: t("email.handoffDeclined.foot"),
+      t,
     }),
-    text: `${opts.birdName}'s handoff was declined. Nothing changed — ${opts.birdName} is still in your account.`,
+    text: t("email.handoffDeclined.text", { birdName: opts.birdName }),
   };
 }
 
@@ -194,12 +206,10 @@ export function buildHandoffDeclinedEmail(opts: { birdName: string }): BuiltEmai
 // These are core product communication, not marketing.
 // ---------------------------------------------------------------------------
 
-const ONBOARDING_FOOT =
-  "You're getting this because you have a Kya & Co. account and haven't finished setting up. Each of these setup notes is sent at most once.";
-
 // Blog posts linked from the drip (verified live on thekyaproject.com 2026-07-20).
 // When the planned "why weigh your bird" post is published, point the two
-// weight emails at it instead.
+// weight emails at it instead. Blog content is English-only, so the reading
+// blocks are not localized.
 const BLOG = "https://www.thekyaproject.com/blog";
 const READING_THRIVE = {
   title: "What the research actually says parrots need to thrive",
@@ -218,103 +228,101 @@ const READING_WEIGH = {
 };
 
 // Stage: signed up, no bird yet.
-export function buildOnboardingAddBirdEmail(opts: { firstName?: string; link: string }): BuiltEmail {
+export function buildOnboardingAddBirdEmail(opts: { firstName?: string; link: string; locale?: string }): BuiltEmail {
+  const t = emailT(opts.locale);
   const hi = opts.firstName ? `${escapeHtml(opts.firstName)}, your` : "Your";
   return {
-    subject: "Your bird's record is ready when you are",
+    subject: t("email.onboardingAddBird.subject"),
     html: shell({
-      kicker: "Getting set up",
-      heading: `${hi} flock page is still empty`,
-      body:
-        "Adding a bird takes about a minute — a name and a species is enough to start. " +
-        "Everything else (care plan, weights, photos) can come whenever you like.",
-      cta: "Add your bird",
+      kicker: t("email.onboardingAddBird.kicker"),
+      heading: t("email.onboardingAddBird.heading", { hi }),
+      body: t("email.onboardingAddBird.body"),
+      cta: t("email.onboardingAddBird.cta"),
       link: opts.link,
-      foot: ONBOARDING_FOOT,
+      foot: t("email.onboarding.foot"),
+      t,
     }),
-    text: `Adding a bird takes about a minute — a name and a species is enough to start.\n\nAdd your bird: ${opts.link}`,
+    text: t("email.onboardingAddBird.text", { link: opts.link }),
   };
 }
 
 // Stage: has a bird, care plan untouched.
-export function buildOnboardingCarePlanEmail(opts: { birdName: string; link: string }): BuiltEmail {
+export function buildOnboardingCarePlanEmail(opts: { birdName: string; link: string; locale?: string }): BuiltEmail {
+  const t = emailT(opts.locale);
   const bird = escapeHtml(opts.birdName);
   return {
-    subject: `A little about ${opts.birdName} goes a long way`,
+    subject: t("email.onboardingCarePlan.subject", { birdName: opts.birdName }),
     html: shell({
-      kicker: "Getting set up",
-      heading: `Start ${bird}'s care plan`,
-      body:
-        `You know ${bird}'s routine by heart — food, quirks, the little rules. Writing even one section down means ` +
-        `family, sitters, and anyone helping out can care for ${bird} the way you would. Add a section at a time, in any order.`,
-      cta: `Open ${bird}'s care plan`,
+      kicker: t("email.onboardingCarePlan.kicker"),
+      heading: t("email.onboardingCarePlan.heading", { bird }),
+      body: t("email.onboardingCarePlan.body", { bird }),
+      cta: t("email.onboardingCarePlan.cta", { bird }),
       link: opts.link,
-      foot: ONBOARDING_FOOT,
+      foot: t("email.onboarding.foot"),
       reading: READING_THRIVE,
+      t,
     }),
-    text: `Writing down even one care-plan section means anyone helping out can care for ${opts.birdName} the way you would.\n\nOpen the care plan: ${opts.link}`,
+    text: t("email.onboardingCarePlan.text", { birdName: opts.birdName, link: opts.link }),
   };
 }
 
 // Stage: has a bird, no weight logged yet.
-export function buildOnboardingFirstWeightEmail(opts: { birdName: string; link: string }): BuiltEmail {
+export function buildOnboardingFirstWeightEmail(opts: { birdName: string; link: string; locale?: string }): BuiltEmail {
+  const t = emailT(opts.locale);
   const bird = escapeHtml(opts.birdName);
   return {
-    subject: `Log ${opts.birdName}'s first weight`,
+    subject: t("email.onboardingFirstWeight.subject", { birdName: opts.birdName }),
     html: shell({
-      kicker: "Getting set up",
-      heading: `${bird}'s weight tells you what words can't`,
-      body:
-        `Birds hide illness and weight is often the first signal. Log ${bird}'s weight once and you've started a baseline; ` +
-        `keep it up (a kitchen scale and ten seconds) and the app will show you the trend at a glance.`,
-      cta: "Log a weight",
+      kicker: t("email.onboardingFirstWeight.kicker"),
+      heading: t("email.onboardingFirstWeight.heading", { bird }),
+      body: t("email.onboardingFirstWeight.body", { bird }),
+      cta: t("email.onboardingFirstWeight.cta"),
       link: opts.link,
-      foot: ONBOARDING_FOOT,
+      foot: t("email.onboarding.foot"),
       reading: READING_WEIGH,
+      t,
     }),
-    text: `Birds hide illness and weight is often the first signal. Log ${opts.birdName}'s first weight to start a baseline: ${opts.link}`,
+    text: t("email.onboardingFirstWeight.text", { birdName: opts.birdName, link: opts.link }),
   };
 }
 
 // Stage: has a bird, never run a daily health scan.
-export function buildOnboardingHealthScanEmail(opts: { birdName: string; link: string }): BuiltEmail {
+export function buildOnboardingHealthScanEmail(opts: { birdName: string; link: string; locale?: string }): BuiltEmail {
+  const t = emailT(opts.locale);
   const bird = escapeHtml(opts.birdName);
   return {
-    subject: `Two minutes a day builds ${opts.birdName}'s health record`,
+    subject: t("email.onboardingHealthScan.subject", { birdName: opts.birdName }),
     html: shell({
-      kicker: "Getting set up",
-      heading: `Run ${bird}'s health scan every day`,
-      body:
-        `The daily health scan takes about two minutes. Log it every day and document what you see, ` +
-        `whether something seems off or everything is normal.<br /><br />` +
-        `The normal days count too, because they're what make a change visible. ` +
-        `Every scan becomes part of ${bird}'s record, so at the vet you can show exactly what changed, and when.`,
-      cta: "Run today's health scan",
+      kicker: t("email.onboardingHealthScan.kicker"),
+      heading: t("email.onboardingHealthScan.heading", { bird }),
+      body: t("email.onboardingHealthScan.body", { bird }),
+      cta: t("email.onboardingHealthScan.cta"),
       link: opts.link,
-      foot: ONBOARDING_FOOT,
+      foot: t("email.onboarding.foot"),
       reading: READING_SIGNS,
+      t,
     }),
-    text: `The daily health scan takes about two minutes. Log it every day and document what you see, whether something seems off or everything is normal. It all becomes part of ${opts.birdName}'s record you can bring to the vet.\n\nRun today's health scan: ${opts.link}`,
+    text: t("email.onboardingHealthScan.text", { birdName: opts.birdName, link: opts.link }),
   };
 }
 
 // Stage: first weight just logged — show what it unlocked.
-export function buildOnboardingWeightTrendEmail(opts: { birdName: string; link: string }): BuiltEmail {
+export function buildOnboardingWeightTrendEmail(opts: { birdName: string; link: string; locale?: string }): BuiltEmail {
+  const t = emailT(opts.locale);
   const bird = escapeHtml(opts.birdName);
   return {
-    subject: `${opts.birdName}'s baseline has begun`,
+    subject: t("email.onboardingWeightTrend.subject", { birdName: opts.birdName }),
     html: shell({
-      kicker: "Nice work",
-      heading: `${bird}'s first weight is on the record`,
-      body:
-        `Every weigh-in from here builds ${bird}'s trend right on the record and in the vet summary. ` +
-        `Weighing at the same time of day (before breakfast works well) keeps the trend honest.`,
-      cta: `See ${bird}'s weight page`,
+      kicker: t("email.onboardingWeightTrend.kicker"),
+      heading: t("email.onboardingWeightTrend.heading", { bird }),
+      body: t("email.onboardingWeightTrend.body", { bird }),
+      cta: t("email.onboardingWeightTrend.cta", { bird }),
       link: opts.link,
-      foot: ONBOARDING_FOOT,
+      foot: t("email.onboarding.foot"),
       reading: READING_WEIGH,
+      t,
     }),
-    text: `${opts.birdName}'s first weight is logged. Every weigh-in from here builds the trend on the record and in the vet summary.\n\nSee the weight page: ${opts.link}`,
+    text: t("email.onboardingWeightTrend.text", { birdName: opts.birdName, link: opts.link }),
   };
 }
 
@@ -330,25 +338,24 @@ export function buildSitAssignedEmail(opts: {
   birdNames: string;
   dateRange: string;
   link: string;
+  locale?: string;
 }): BuiltEmail {
+  const t = emailT(opts.locale);
   const owner = escapeHtml(opts.ownerName);
   const birds = escapeHtml(opts.birdNames);
   const range = escapeHtml(opts.dateRange);
   return {
-    subject: `You're covering ${opts.birdNames} — ${opts.dateRange}`,
+    subject: t("email.sitAssigned.subject", { birdNames: opts.birdNames, dateRange: opts.dateRange }),
     html: shell({
-      kicker: "Sit assigned",
-      heading: `${owner} asked you to cover ${birds}`,
-      body:
-        `${owner} set you as the lead for a sit covering ${birds} from ${range}. ` +
-        `You're the point person for that stretch — everything you'll need is in your care view.`,
-      cta: "Open your care view",
+      kicker: t("email.sitAssigned.kicker"),
+      heading: t("email.sitAssigned.heading", { owner, birds }),
+      body: t("email.sitAssigned.body", { owner, birds, range }),
+      cta: t("email.sitAssigned.cta"),
       link: opts.link,
-      foot: `You're getting this because ${owner} assigned you to help with this sit on Kya & Co.`,
+      foot: t("email.sitAssigned.foot", { owner }),
+      t,
     }),
-    text:
-      `${opts.ownerName} asked you to cover ${opts.birdNames} from ${opts.dateRange}. ` +
-      `You're the lead for this sit.\n\nOpen your care view: ${opts.link}`,
+    text: t("email.sitAssigned.text", { ownerName: opts.ownerName, birdNames: opts.birdNames, dateRange: opts.dateRange, link: opts.link }),
   };
 }
 
@@ -360,26 +367,25 @@ export function buildSitUpdatedEmail(opts: {
   dateRange: string;
   changeSummary: string;
   link: string;
+  locale?: string;
 }): BuiltEmail {
+  const t = emailT(opts.locale);
   const owner = escapeHtml(opts.ownerName);
   const birds = escapeHtml(opts.birdNames);
   const range = escapeHtml(opts.dateRange);
   const change = escapeHtml(opts.changeSummary);
   return {
-    subject: `A sit you're covering changed — ${opts.dateRange}`,
+    subject: t("email.sitUpdated.subject", { dateRange: opts.dateRange }),
     html: shell({
-      kicker: "Sit updated",
-      heading: `${owner} updated a sit you're covering`,
-      body:
-        `${owner} changed ${change} for the sit you're leading. ` +
-        `It now covers ${birds} from ${range}. Your care view has the latest.`,
-      cta: "See the update",
+      kicker: t("email.sitUpdated.kicker"),
+      heading: t("email.sitUpdated.heading", { owner }),
+      body: t("email.sitUpdated.body", { owner, change, birds, range }),
+      cta: t("email.sitUpdated.cta"),
       link: opts.link,
-      foot: `You're getting this because a sit you're covering on Kya & Co. changed.`,
+      foot: t("email.sitUpdated.foot"),
+      t,
     }),
-    text:
-      `${opts.ownerName} changed ${opts.changeSummary} for a sit you're covering. ` +
-      `It now covers ${opts.birdNames} from ${opts.dateRange}.\n\nSee the update: ${opts.link}`,
+    text: t("email.sitUpdated.text", { ownerName: opts.ownerName, changeSummary: opts.changeSummary, birdNames: opts.birdNames, dateRange: opts.dateRange, link: opts.link }),
   };
 }
 
@@ -389,25 +395,24 @@ export function buildSitCancelledEmail(opts: {
   birdNames: string;
   dateRange: string;
   link: string;
+  locale?: string;
 }): BuiltEmail {
+  const t = emailT(opts.locale);
   const owner = escapeHtml(opts.ownerName);
   const birds = escapeHtml(opts.birdNames);
   const range = escapeHtml(opts.dateRange);
   return {
-    subject: `Cancelled: your sit covering ${opts.birdNames} (${opts.dateRange})`,
+    subject: t("email.sitCancelled.subject", { birdNames: opts.birdNames, dateRange: opts.dateRange }),
     html: shell({
-      kicker: "Sit cancelled",
-      heading: `${owner} cancelled a sit you were covering`,
-      body:
-        `You're no longer covering ${birds}. The sit from ${range} has been cancelled, ` +
-        `so there's nothing you need to do for it. ${owner} will be in touch if that changes.`,
-      cta: "Open the app",
+      kicker: t("email.sitCancelled.kicker"),
+      heading: t("email.sitCancelled.heading", { owner }),
+      body: t("email.sitCancelled.body", { birds, range, owner }),
+      cta: t("email.sitCancelled.cta"),
       link: opts.link,
-      foot: `You're getting this because a sit you were covering on Kya & Co. was cancelled.`,
+      foot: t("email.sitCancelled.foot"),
+      t,
     }),
-    text:
-      `${opts.ownerName} cancelled the sit covering ${opts.birdNames} from ${opts.dateRange}. ` +
-      `You're no longer covering it — nothing you need to do.\n\nOpen the app: ${opts.link}`,
+    text: t("email.sitCancelled.text", { ownerName: opts.ownerName, birdNames: opts.birdNames, dateRange: opts.dateRange, link: opts.link }),
   };
 }
 
@@ -416,6 +421,10 @@ export function buildSitCancelledEmail(opts: {
 // account. `link` is the private per-sit token URL (…/sitter/<token>), which
 // opens the read-only sitter view with no sign-in. Voice matches the household
 // invite — warm, plain, sentence case. Names/dates arrive pre-formatted.
+//
+// NOT localized (English only): these go to account-less token sitters, whose
+// language comes from a per-sit locale picker that doesn't exist yet (A3). They
+// call shell() without `t`, so the chrome stays English too.
 
 // "<owner> shared <birds>'s care with you" — sent when an external sit is created.
 export function buildSitterInviteEmail(opts: {

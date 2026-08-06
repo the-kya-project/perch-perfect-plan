@@ -18,6 +18,7 @@ import {
   buildSitterInviteEmail, buildSitterInviteUpdatedEmail, buildSitterInviteCancelledEmail,
   type BuiltEmail,
 } from "./emailTemplates";
+import { localeForUser } from "./emailLocale.server";
 
 async function getAdmin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -124,6 +125,8 @@ export const notifySitAssigned = createServerFn({ method: "POST" })
       birdNames: joinNames(await birdNames(sb, ids)),
       dateRange: fmtRange(sit.start_date, sit.end_date),
       link: `${appUrl()}/today`,
+      // Household caregiver (group 1) → the recipient's own locale.
+      locale: await localeForUser(sb, sit.caregiver_user_id),
     });
     const ok = await send(built, email, name);
     if (!ok) console.error("[sits] assigned email failed for sit", sit.id);
@@ -164,6 +167,7 @@ export const notifySitUpdated = createServerFn({ method: "POST" })
       dateRange: fmtRange(sit.start_date, sit.end_date),
       changeSummary,
       link: `${appUrl()}/today`,
+      locale: await localeForUser(sb, sit.caregiver_user_id),
     });
     const ok = await send(built, email, name);
     if (!ok) console.error("[sits] updated email failed for sit", sit.id);
@@ -208,6 +212,7 @@ export const notifySitCancelled = createServerFn({ method: "POST" })
       birdNames: joinNames(names),
       dateRange: fmtRange(data.startDate, data.endDate),
       link: `${appUrl()}/today`,
+      locale: await localeForUser(sb, data.caregiverUserId),
     });
     const ok = await send(built, email, name);
     if (!ok) console.error("[sits] cancelled email failed for caregiver", data.caregiverUserId);

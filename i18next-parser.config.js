@@ -14,7 +14,11 @@ export default {
   // Flat literal keys, matching the runtime (keySeparator/nsSeparator off).
   keySeparator: false,
   namespaceSeparator: false,
-  input: ["src/**/*.{ts,tsx}"],
+  // Exclude the SERVER-ONLY email templates: they call a local `t()` bound to the
+  // server email i18n instance (emails namespace, never bundled client-side), so
+  // their keys must NOT land in the client `translation` catalog (en.jsonc). Both
+  // files had zero t() calls before email i18n, so excluding them removes nothing.
+  input: ["src/**/*.{ts,tsx}", "!src/lib/emailTemplates.ts", "!src/lib/sitter.functions.ts"],
   output: "src/locales/$LOCALE.jsonc",
   sort: true,
   // Drop keys no longer present in the code (keeps the catalog honest).

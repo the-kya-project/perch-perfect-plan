@@ -1,0 +1,152 @@
+{
+  // SERVER-ONLY email catalog (namespace: "emails"). Source language: English.
+  // Loaded only by src/lib/i18n/emailI18n.server.ts — never shipped to the
+  // browser. Dutch is produced by scripts/i18n-translate.mjs (emails pair).
+  // {{placeholders}} are interpolated by the builders; values are pre-escaped
+  // per field at the call site, so the catalog carries no HTML escaping beyond
+  // what the original English literals already had.
+
+  // ---- Shared shell chrome ----
+  "email.shell.fieldNotes": "From the field notes",
+  "email.shell.footNote": "Kya &amp; Co. — by The Kya Project",
+
+  // Shared onboarding footer.
+  "email.onboarding.foot": "You're getting this because you have a Kya & Co. account and haven't finished setting up. Each of these setup notes is sent at most once.",
+
+  // ---- Daily log (owner) ----
+  "email.dailyLog.subject": "{{birdName}}: daily health check logged — all clear",
+  "email.dailyLog.kicker": "Daily update",
+  "email.dailyLog.heading": "{{bird}}'s sitter logged an all-clear health check",
+  "email.dailyLog.body": "{{sitter}} just completed {{bird}}'s daily health check and nothing was flagged.",
+  "email.dailyLog.cta": "View the health check",
+  "email.dailyLog.foot": "You're getting this because daily health-check emails are on. You can turn them off in the app's notification settings.",
+  "email.dailyLog.text": "{{birdName}}'s sitter logged an all-clear daily health check.\n\nView it: {{link}}",
+
+  // ---- Care plan reminder (owner) ----
+  "email.carePlanReminder.subject": "{{birdName}} has a sit coming up — review the care plan?",
+  "email.carePlanReminder.kicker": "Care plan check-in",
+  "email.carePlanReminder.heading": "{{bird}} has a sit coming up",
+  "email.carePlanReminder.body": "It's been a while since {{bird}}'s care plan was updated, and a sit starts soon. Take a minute to review it so your sitter has the latest.",
+  "email.carePlanReminder.cta": "Review the care plan",
+  "email.carePlanReminder.foot": "You're getting this because care-plan reminder emails are on. You can turn them off in the app's notification settings.",
+  "email.carePlanReminder.text": "{{birdName}} has a sit coming up — review the care plan: {{link}}",
+
+  // ---- Household invite (account-less invitee; sender's locale) ----
+  "email.householdInvite.subject": "{{inviterName}} invited you to help care for {{birdNames}}",
+  "email.householdInvite.kicker": "Household invite",
+  "email.householdInvite.heading": "{{inviter}} invited you to help care for {{birds}}",
+  "email.householdInvite.body": "{{inviter}} invited you to help care for {{birds}} on Kya & Co.. You'll be able to see each bird's care plan, weight, journal, and health checks — and log weights, journal entries, and daily health checks alongside {{inviter}}. You won't be able to change the care plan or who has access; {{inviter}} stays the owner. This invite expires in 14 days.",
+  "email.householdInvite.cta": "Accept the invite",
+  "email.householdInvite.foot": "If you didn't expect this, you can ignore this email — nothing happens until you accept. The invite link expires in 14 days.",
+  "email.householdInvite.text": "{{inviterName}} invited you to help care for {{birdNames}} on Kya & Co..\n\nYou'll be able to view each bird's record and log weights, journal entries, and health checks. You can't change the care plan or access; {{inviterName}} stays the owner.\n\nAccept (expires in 14 days): {{link}}\n\nIf you didn't expect this, you can ignore this email.",
+
+  // ---- Handoff invite (account-less recipient; sender's locale) ----
+  "email.handoffInvite.subject": "{{senderName}} is handing off {{birdName}} to you",
+  "email.handoffInvite.kicker": "Bird handoff",
+  "email.handoffInvite.heading": "{{sender}} is handing off {{bird}} to you",
+  "email.handoffInvite.body": "{{sender}} wants to pass {{bird}}'s full record to you on Kya & Co. — care plan, identity, weight history, journal, and moments, so you have everything they learned while caring for {{bird}}. Once you accept, the record is yours and {{sender}} no longer has access. This link expires in 14 days.",
+  "email.handoffInvite.cta": "Review the handoff",
+  "email.handoffInvite.foot": "If you weren't expecting this, you can ignore this email — nothing transfers until you accept.",
+  "email.handoffInvite.text": "{{senderName}} is handing off {{birdName}} to you on Kya & Co..\n\nYou'll receive {{birdName}}'s full record (care plan, identity, weights, journal, moments). Once you accept, it's yours and {{senderName}} no longer has access.\n\nReview (expires in 14 days): {{link}}",
+
+  // ---- Handoff accepted (sender/original owner) ----
+  "email.handoffAccepted.subject": "{{birdName}}'s handoff is complete",
+  "email.handoffAccepted.kicker": "Handoff complete",
+  "email.handoffAccepted.heading": "{{bird}} has a new home",
+  "email.handoffAccepted.body": "{{who}} accepted the handoff, so {{bird}}'s record is now theirs and has left your account. You'll find a memory of {{bird}} in Past birds. Thank you for taking such good care of them.",
+  "email.handoffAccepted.cta": "View Past birds",
+  "email.handoffAccepted.foot": "This is a one-time confirmation. There's nothing else to do.",
+  "email.handoffAccepted.text": "{{who}} accepted the handoff. {{birdName}}'s record is now theirs and has left your account. A memory is saved in Past birds.",
+
+  // ---- Handoff declined (sender/original owner) ----
+  "email.handoffDeclined.subject": "{{birdName}}'s handoff was declined",
+  "email.handoffDeclined.kicker": "Handoff declined",
+  "email.handoffDeclined.heading": "{{bird}}'s handoff wasn't accepted",
+  "email.handoffDeclined.body": "The handoff for {{bird}} was declined, so nothing changed — {{bird}} is still in your account and you still have full access. You can start a new handoff whenever you're ready.",
+  "email.handoffDeclined.cta": "Open Kya & Co.",
+  "email.handoffDeclined.foot": "No action needed.",
+  "email.handoffDeclined.text": "{{birdName}}'s handoff was declined. Nothing changed — {{birdName}} is still in your account.",
+
+  // ---- Onboarding: add first bird ----
+  "email.onboardingAddBird.subject": "Your bird's record is ready when you are",
+  "email.onboardingAddBird.kicker": "Getting set up",
+  "email.onboardingAddBird.heading": "{{hi}} flock page is still empty",
+  "email.onboardingAddBird.body": "Adding a bird takes about a minute — a name and a species is enough to start. Everything else (care plan, weights, photos) can come whenever you like.",
+  "email.onboardingAddBird.cta": "Add your bird",
+  "email.onboardingAddBird.text": "Adding a bird takes about a minute — a name and a species is enough to start.\n\nAdd your bird: {{link}}",
+
+  // ---- Onboarding: start care plan ----
+  "email.onboardingCarePlan.subject": "A little about {{birdName}} goes a long way",
+  "email.onboardingCarePlan.kicker": "Getting set up",
+  "email.onboardingCarePlan.heading": "Start {{bird}}'s care plan",
+  "email.onboardingCarePlan.body": "You know {{bird}}'s routine by heart — food, quirks, the little rules. Writing even one section down means family, sitters, and anyone helping out can care for {{bird}} the way you would. Add a section at a time, in any order.",
+  "email.onboardingCarePlan.cta": "Open {{bird}}'s care plan",
+  "email.onboardingCarePlan.text": "Writing down even one care-plan section means anyone helping out can care for {{birdName}} the way you would.\n\nOpen the care plan: {{link}}",
+
+  // ---- Onboarding: log first weight ----
+  "email.onboardingFirstWeight.subject": "Log {{birdName}}'s first weight",
+  "email.onboardingFirstWeight.kicker": "Getting set up",
+  "email.onboardingFirstWeight.heading": "{{bird}}'s weight tells you what words can't",
+  "email.onboardingFirstWeight.body": "Birds hide illness and weight is often the first signal. Log {{bird}}'s weight once and you've started a baseline; keep it up (a kitchen scale and ten seconds) and the app will show you the trend at a glance.",
+  "email.onboardingFirstWeight.cta": "Log a weight",
+  "email.onboardingFirstWeight.text": "Birds hide illness and weight is often the first signal. Log {{birdName}}'s first weight to start a baseline: {{link}}",
+
+  // ---- Onboarding: run health scan ----
+  "email.onboardingHealthScan.subject": "Two minutes a day builds {{birdName}}'s health record",
+  "email.onboardingHealthScan.kicker": "Getting set up",
+  "email.onboardingHealthScan.heading": "Run {{bird}}'s health scan every day",
+  "email.onboardingHealthScan.body": "The daily health scan takes about two minutes. Log it every day and document what you see, whether something seems off or everything is normal.<br /><br />The normal days count too, because they're what make a change visible. Every scan becomes part of {{bird}}'s record, so at the vet you can show exactly what changed, and when.",
+  "email.onboardingHealthScan.cta": "Run today's health scan",
+  "email.onboardingHealthScan.text": "The daily health scan takes about two minutes. Log it every day and document what you see, whether something seems off or everything is normal. It all becomes part of {{birdName}}'s record you can bring to the vet.\n\nRun today's health scan: {{link}}",
+
+  // ---- Onboarding: weight trend unlocked ----
+  "email.onboardingWeightTrend.subject": "{{birdName}}'s baseline has begun",
+  "email.onboardingWeightTrend.kicker": "Nice work",
+  "email.onboardingWeightTrend.heading": "{{bird}}'s first weight is on the record",
+  "email.onboardingWeightTrend.body": "Every weigh-in from here builds {{bird}}'s trend right on the record and in the vet summary. Weighing at the same time of day (before breakfast works well) keeps the trend honest.",
+  "email.onboardingWeightTrend.cta": "See {{bird}}'s weight page",
+  "email.onboardingWeightTrend.text": "{{birdName}}'s first weight is logged. Every weigh-in from here builds the trend on the record and in the vet summary.\n\nSee the weight page: {{link}}",
+
+  // ---- Sit assigned (household caregiver) ----
+  "email.sitAssigned.subject": "You're covering {{birdNames}} — {{dateRange}}",
+  "email.sitAssigned.kicker": "Sit assigned",
+  "email.sitAssigned.heading": "{{owner}} asked you to cover {{birds}}",
+  "email.sitAssigned.body": "{{owner}} set you as the lead for a sit covering {{birds}} from {{range}}. You're the point person for that stretch — everything you'll need is in your care view.",
+  "email.sitAssigned.cta": "Open your care view",
+  "email.sitAssigned.foot": "You're getting this because {{owner}} assigned you to help with this sit on Kya & Co.",
+  "email.sitAssigned.text": "{{ownerName}} asked you to cover {{birdNames}} from {{dateRange}}. You're the lead for this sit.\n\nOpen your care view: {{link}}",
+
+  // ---- Sit updated (household caregiver) ----
+  "email.sitUpdated.subject": "A sit you're covering changed — {{dateRange}}",
+  "email.sitUpdated.kicker": "Sit updated",
+  "email.sitUpdated.heading": "{{owner}} updated a sit you're covering",
+  "email.sitUpdated.body": "{{owner}} changed {{change}} for the sit you're leading. It now covers {{birds}} from {{range}}. Your care view has the latest.",
+  "email.sitUpdated.cta": "See the update",
+  "email.sitUpdated.foot": "You're getting this because a sit you're covering on Kya & Co. changed.",
+  "email.sitUpdated.text": "{{ownerName}} changed {{changeSummary}} for a sit you're covering. It now covers {{birdNames}} from {{dateRange}}.\n\nSee the update: {{link}}",
+
+  // ---- Sit cancelled (household caregiver) ----
+  "email.sitCancelled.subject": "Cancelled: your sit covering {{birdNames}} ({{dateRange}})",
+  "email.sitCancelled.kicker": "Sit cancelled",
+  "email.sitCancelled.heading": "{{owner}} cancelled a sit you were covering",
+  "email.sitCancelled.body": "You're no longer covering {{birds}}. The sit from {{range}} has been cancelled, so there's nothing you need to do for it. {{owner}} will be in touch if that changes.",
+  "email.sitCancelled.cta": "Open the app",
+  "email.sitCancelled.foot": "You're getting this because a sit you were covering on Kya & Co. was cancelled.",
+  "email.sitCancelled.text": "{{ownerName}} cancelled the sit covering {{birdNames}} from {{dateRange}}. You're no longer covering it — nothing you need to do.\n\nOpen the app: {{link}}",
+
+  // ---- Flagged-scan alert (owner) — the 15th, inline in sitter.functions.ts ----
+  "email.scanAlert.subjectUrgent": "{{birdName}}: health concern flagged by your sitter",
+  "email.scanAlert.subjectCalm": "{{birdName}}: your sitter flagged something to check",
+  "email.scanAlert.kickerUrgent": "Health concern",
+  "email.scanAlert.kickerCalm": "Worth a check",
+  "email.scanAlert.heading": "{{bird}}'s daily health check needs your eyes",
+  "email.scanAlert.body": "{{sitter}} just submitted a health check and flagged the following:",
+  "email.scanAlert.reasonsFallback": "See the full health check in the app.",
+  "email.scanAlert.notesLabel": "Sitter notes",
+  "email.scanAlert.cta": "View the full health check",
+  "email.scanAlert.disclaimer": "This app doesn't diagnose illness and isn't a substitute for veterinary care. If something seems off, contact an avian veterinarian.",
+  "email.scanAlert.textHeading": "{{birdName}}'s daily health check needs your eyes.",
+  "email.scanAlert.textFlagged": "{{sitter}} flagged:",
+  "email.scanAlert.textNotesLabel": "Sitter notes:",
+  "email.scanAlert.textCta": "View the full health check"
+}

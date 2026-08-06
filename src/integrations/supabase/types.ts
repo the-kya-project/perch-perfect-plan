@@ -225,6 +225,7 @@ export type Database = {
           known_triggers: string | null
           likes: string | null
           medication_schedule: string | null
+          medications_details: Json
           never_feed: string[]
           normal_activity: string | null
           normal_appetite: string | null
@@ -294,6 +295,7 @@ export type Database = {
           known_triggers?: string | null
           likes?: string | null
           medication_schedule?: string | null
+          medications_details?: Json
           never_feed?: string[]
           normal_activity?: string | null
           normal_appetite?: string | null
@@ -363,6 +365,7 @@ export type Database = {
           known_triggers?: string | null
           likes?: string | null
           medication_schedule?: string | null
+          medications_details?: Json
           never_feed?: string[]
           normal_activity?: string | null
           normal_appetite?: string | null
@@ -414,8 +417,8 @@ export type Database = {
           food_status: string | null
           id: string
           injury_status: string | null
-          log_date: string
           item_notes: Json | null
+          log_date: string
           notes: string | null
           posture_status: string | null
           resolved_at: string | null
@@ -438,8 +441,8 @@ export type Database = {
           food_status?: string | null
           id?: string
           injury_status?: string | null
-          log_date?: string
           item_notes?: Json | null
+          log_date?: string
           notes?: string | null
           posture_status?: string | null
           resolved_at?: string | null
@@ -462,8 +465,8 @@ export type Database = {
           food_status?: string | null
           id?: string
           injury_status?: string | null
-          log_date?: string
           item_notes?: Json | null
+          log_date?: string
           notes?: string | null
           posture_status?: string | null
           resolved_at?: string | null
@@ -670,6 +673,7 @@ export type Database = {
           invitee_email: string
           invitee_name: string | null
           owner_id: string
+          preset: string
           status: string
           token: string
         }
@@ -682,6 +686,7 @@ export type Database = {
           invitee_email: string
           invitee_name?: string | null
           owner_id: string
+          preset?: string
           status?: string
           token: string
         }
@@ -694,6 +699,7 @@ export type Database = {
           invitee_email?: string
           invitee_name?: string | null
           owner_id?: string
+          preset?: string
           status?: string
           token?: string
         }
@@ -823,6 +829,59 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      notification_log: {
+        Row: {
+          bird_id: string | null
+          channel: string
+          id: string
+          sent_at: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          bird_id?: string | null
+          channel?: string
+          id?: string
+          sent_at?: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          bird_id?: string | null
+          channel?: string
+          id?: string
+          sent_at?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_log_bird_id_fkey"
+            columns: ["bird_id"]
+            isOneToOne: false
+            referencedRelation: "birds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      onboarding_email_log: {
+        Row: {
+          sent_at: string
+          stage: string
+          user_id: string
+        }
+        Insert: {
+          sent_at?: string
+          stage: string
+          user_id: string
+        }
+        Update: {
+          sent_at?: string
+          stage?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       owner_emergency_defaults: {
         Row: {
@@ -983,14 +1042,19 @@ export type Database = {
           created_at: string
           display_name: string | null
           email: string | null
+          first_name: string | null
+          full_name: string | null
           id: string
+          locale: string | null
           marketing_opt_in: boolean
           notify_care_plan_reminder: boolean
           notify_sitter_log: boolean
           notify_sitter_opened: boolean
           push_care_plan_reminder: boolean
+          push_checkin_reminder: boolean
           push_sitter_log: boolean
           push_sitter_opened: boolean
+          push_weight_reminder: boolean
           signup_campaign: string | null
           signup_content: string | null
           signup_first_seen_at: string | null
@@ -1006,14 +1070,19 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           email?: string | null
+          first_name?: string | null
+          full_name?: string | null
           id: string
+          locale?: string | null
           marketing_opt_in?: boolean
           notify_care_plan_reminder?: boolean
           notify_sitter_log?: boolean
           notify_sitter_opened?: boolean
           push_care_plan_reminder?: boolean
+          push_checkin_reminder?: boolean
           push_sitter_log?: boolean
           push_sitter_opened?: boolean
+          push_weight_reminder?: boolean
           signup_campaign?: string | null
           signup_content?: string | null
           signup_first_seen_at?: string | null
@@ -1029,14 +1098,19 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           email?: string | null
+          first_name?: string | null
+          full_name?: string | null
           id?: string
+          locale?: string | null
           marketing_opt_in?: boolean
           notify_care_plan_reminder?: boolean
           notify_sitter_log?: boolean
           notify_sitter_opened?: boolean
           push_care_plan_reminder?: boolean
+          push_checkin_reminder?: boolean
           push_sitter_log?: boolean
           push_sitter_opened?: boolean
+          push_weight_reminder?: boolean
           signup_campaign?: string | null
           signup_content?: string | null
           signup_first_seen_at?: string | null
@@ -1239,11 +1313,11 @@ export type Database = {
       sits: {
         Row: {
           caregiver_user_id: string | null
-          lead_user_id: string | null
           created_at: string
           end_date: string
           id: string
           invite_token: string | null
+          lead_user_id: string | null
           marked_ready_at: string | null
           notes: string | null
           owner_id: string
@@ -1257,11 +1331,11 @@ export type Database = {
         }
         Insert: {
           caregiver_user_id?: string | null
-          lead_user_id?: string | null
           created_at?: string
           end_date: string
           id?: string
           invite_token?: string | null
+          lead_user_id?: string | null
           marked_ready_at?: string | null
           notes?: string | null
           owner_id: string
@@ -1275,11 +1349,11 @@ export type Database = {
         }
         Update: {
           caregiver_user_id?: string | null
-          lead_user_id?: string | null
           created_at?: string
           end_date?: string
           id?: string
           invite_token?: string | null
+          lead_user_id?: string | null
           marked_ready_at?: string | null
           notes?: string | null
           owner_id?: string
@@ -1436,7 +1510,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      has_bird_access: { Args: { b_id: string; u_id: string }; Returns: string }
+      handoff_accept_transfer: {
+        Args: {
+          p_handoff_id: string
+          p_new_owner: string
+          p_photo_thumb?: string
+        }
+        Returns: undefined
+      }
       safe_uuid: { Args: { t: string }; Returns: string }
     }
     Enums: {

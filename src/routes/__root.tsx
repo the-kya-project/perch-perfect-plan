@@ -17,6 +17,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
 import { initAnalytics, identifyUser, resetUser } from "@/lib/analytics";
+import { ensureProfileLocale } from "@/lib/ensureProfileLocale";
 import {
   registerServiceWorker, installChunkErrorRecovery, hardResetAndReload,
   isStaleChunkError, chunkReloadAttemptedRecently, reloadForStaleChunk,
@@ -209,12 +210,18 @@ function RootComponent() {
     installChunkErrorRecovery(); // self-heal stale-build chunk 404s (incl. the sitter preview iframe)
     registerServiceWorker();
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session?.user?.id) identifyUser(data.session.user.id);
+      if (data.session?.user?.id) {
+        identifyUser(data.session.user.id);
+        void ensureProfileLocale(data.session.user.id);
+      }
     });
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
       if (event === "SIGNED_OUT") resetUser();
-      else if (session?.user?.id) identifyUser(session.user.id);
+      else if (session?.user?.id) {
+        identifyUser(session.user.id);
+        void ensureProfileLocale(session.user.id);
+      }
       router.invalidate();
       if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
     });

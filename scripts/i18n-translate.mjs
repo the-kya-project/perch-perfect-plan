@@ -1,8 +1,9 @@
 #!/usr/bin/env node
-// Automated Dutch translation of the sitter catalog — changed keys only.
+// Automated Dutch translation of the app catalogs — changed keys only.
 //
 // PIPELINE (release workflow, gated on English approval):
-//   1. English is edited/approved and `npm run i18n:extract` regenerates en.jsonc.
+//   1. English is edited/approved and `npm run i18n:extract` regenerates en.jsonc
+//      (the client catalog). The email catalog (emails.en.jsonc) is hand-authored.
 //   2. This script translates ONLY keys whose English changed since last run
 //      (or whose glossary/register version changed). Unchanged English keeps its
 //      existing Dutch byte-identical, so wording stays stable across releases.
@@ -12,6 +13,10 @@
 //
 // It REFUSES to run until both inputs are locked (see the guards below), so no
 // machine translation ships without the agreed terminology and register.
+//
+// Runs over every entry in CATALOGS — the client sitter/owner catalog AND the
+// server-only email catalog — sharing one glossary, register, staleness scheme,
+// and placeholder-parity check.
 //
 //   Usage:  ANTHROPIC_API_KEY=… npm run i18n:translate
 //           npm run i18n:translate -- --check   (report stale keys, do not write)
@@ -28,6 +33,21 @@ const NL = join(LOCALES, "nl.jsonc");
 const META = join(LOCALES, ".i18n-meta.json");
 const CONFIG = join(LOCALES, "i18n.config.json");
 const GLOSSARY = join(LOCALES, "glossary.nl.json");
+
+// Catalogs translated by this script. The client sitter/owner catalog and the
+// SERVER-ONLY email catalog share the same glossary, register, staleness, and
+// placeholder-parity machinery — they differ only in their files. Adding a
+// catalog here is the whole extension; nothing below is catalog-specific.
+const CATALOGS = [
+  { label: "app", en: EN, nl: NL, meta: META, headerName: "Dutch sitter catalog" },
+  {
+    label: "emails",
+    en: join(LOCALES, "emails.en.jsonc"),
+    nl: join(LOCALES, "emails.nl.jsonc"),
+    meta: join(LOCALES, ".i18n-meta.emails.json"),
+    headerName: "Dutch email catalog",
+  },
+];
 
 const CHECK_ONLY = process.argv.includes("--check");
 const MODEL = process.env.I18N_MODEL || "claude-sonnet-5";
@@ -81,10 +101,7 @@ if (Object.keys(terms).length === 0) {
   die(`glossary.nl.json has no real terms (only examples). Add the locked EN→NL domain terms.`);
 }
 
-// ---- load catalogs + prior run meta ---------------------------------------
-const en = readJsonc(EN);
-const nl = existsSync(NL) ? readJsonc(NL) : {};
-const meta = existsSync(META) ? readJson(META) : { keys: {} };
+// ---- shared translation setup (identical glossary/register per catalog) ----
 const register = config.register;
 const glossaryVersion = config.glossaryVersion;
 
@@ -96,26 +113,6 @@ const stamp = (value) =>
 const PLACEHOLDER = /\{\{[^}]+\}\}/g;
 const placeholders = (s) => (s.match(PLACEHOLDER) || []).slice().sort();
 const sameSet = (a, b) => a.length === b.length && a.every((x, i) => x === b[i]);
-
-const stale = [];
-for (const [key, value] of Object.entries(en)) {
-  if (typeof value !== "string") continue;
-  const prior = meta.keys?.[key];
-  if (!(key in nl) || !prior || prior.stamp !== stamp(value)) stale.push(key);
-}
-
-const fresh = Object.keys(en).filter((k) => !stale.includes(k));
-console.log(`i18n:translate — ${Object.keys(en).length} keys · ${fresh.length} unchanged (kept) · ${stale.length} to translate`);
-
-if (CHECK_ONLY) {
-  if (stale.length) { console.log("stale keys:\n  " + stale.join("\n  ")); process.exit(2); }
-  console.log("✓ nl.jsonc is up to date."); process.exit(0);
-}
-if (stale.length === 0) { console.log("✓ nothing to translate."); process.exit(0); }
-
-// ---- translate stale keys via the Claude Messages API ---------------------
-const apiKey = process.env.ANTHROPIC_API_KEY;
-if (!apiKey) die("ANTHROPIC_API_KEY is not set (needed to translate the stale keys).");
 
 const registerLine = register === "je"
   ? `Address the reader informally: use "je"/"jij"/"jouw", never "u".`
@@ -141,8 +138,8 @@ const API_BASE = (process.env.ANTHROPIC_BASE_URL || "https://api.anthropic.com")
 // hundreds of Dutch strings would truncate the JSON and fail to parse.
 const BATCH = Math.max(1, Number(process.env.I18N_BATCH) || 50);
 
-async function translateBatch(keys) {
-  const payload = Object.fromEntries(keys.map((k) => [k, en[k]]));
+async function translateBatch(apiKey, enMap, keys) {
+  const payload = Object.fromEntries(keys.map((k) => [k, enMap[k]]));
   const user = `Translate the VALUES of this JSON to Dutch. Return the same keys with Dutch values:\n${JSON.stringify(payload, null, 2)}`;
   const res = await fetch(`${API_BASE}/v1/messages`, {
     method: "POST",
@@ -158,42 +155,81 @@ async function translateBatch(keys) {
   return JSON.parse(text.slice(jsonStart, jsonEnd + 1));
 }
 
-const translated = {};
-for (let i = 0; i < stale.length; i += BATCH) {
-  const chunk = stale.slice(i, i + BATCH);
-  Object.assign(translated, await translateBatch(chunk));
-  if (stale.length > BATCH) console.log(`  … translated ${Math.min(i + BATCH, stale.length)}/${stale.length}`);
-}
-
-// ---- placeholder-set assertion: fail the run on any mismatch --------------
-const problems = [];
-for (const key of stale) {
-  const src = en[key];
-  const out = translated[key];
-  if (typeof out !== "string") { problems.push(`${key}: missing translation`); continue; }
-  if (!sameSet(placeholders(src), placeholders(out))) {
-    problems.push(`${key}: placeholder mismatch\n    en: ${JSON.stringify(placeholders(src))}\n    nl: ${JSON.stringify(placeholders(out))}`);
+// ---- per-catalog: load + detect stale (English value/register/glossary) ----
+function loadCatalog(cat) {
+  const en = readJsonc(cat.en);
+  const nl = existsSync(cat.nl) ? readJsonc(cat.nl) : {};
+  const meta = existsSync(cat.meta) ? readJson(cat.meta) : { keys: {} };
+  const stale = [];
+  for (const [key, value] of Object.entries(en)) {
+    if (typeof value !== "string") continue;
+    const prior = meta.keys?.[key];
+    if (!(key in nl) || !prior || prior.stamp !== stamp(value)) stale.push(key);
   }
-}
-if (problems.length) die(`placeholder validation failed — nothing written:\n  ${problems.join("\n  ")}`);
-
-// ---- merge (unchanged Dutch untouched), write nl.jsonc + meta -------------
-const outNl = {};
-const outMeta = { keys: {} };
-for (const key of Object.keys(en)) {
-  outNl[key] = stale.includes(key) ? translated[key] : nl[key];
-  outMeta.keys[key] = { stamp: stamp(en[key]) };
+  return { en, nl, stale };
 }
 
-const header =
-  `{\n` +
-  `  // GENERATED by scripts/i18n-translate.mjs — Dutch sitter catalog.\n` +
-  `  // The // comment above each key is its English source; edit the quoted\n` +
-  `  // Dutch value to correct a translation. Register: "${register}".\n`;
-const body = Object.keys(en)
-  .map((key) => `  // ${en[key].replace(/\n/g, " ")}\n  ${JSON.stringify(key)}: ${JSON.stringify(outNl[key])}`)
-  .join(",\n");
-writeFileSync(NL, `${header}\n${body}\n}\n`);
-writeFileSync(META, JSON.stringify(outMeta, null, 2) + "\n");
+// ---- per-catalog: translate stale keys, assert placeholder parity, write ---
+async function writeCatalog(cat, { en, nl, stale }, apiKey) {
+  const translated = {};
+  for (let i = 0; i < stale.length; i += BATCH) {
+    const chunk = stale.slice(i, i + BATCH);
+    Object.assign(translated, await translateBatch(apiKey, en, chunk));
+    if (stale.length > BATCH) console.log(`  [${cat.label}] … translated ${Math.min(i + BATCH, stale.length)}/${stale.length}`);
+  }
 
-console.log(`✓ wrote ${NL} (${stale.length} translated, ${fresh.length} unchanged) and ${META}`);
+  // placeholder-set assertion: fail the run on any mismatch
+  const problems = [];
+  for (const key of stale) {
+    const src = en[key];
+    const out = translated[key];
+    if (typeof out !== "string") { problems.push(`${key}: missing translation`); continue; }
+    if (!sameSet(placeholders(src), placeholders(out))) {
+      problems.push(`${key}: placeholder mismatch\n    en: ${JSON.stringify(placeholders(src))}\n    nl: ${JSON.stringify(placeholders(out))}`);
+    }
+  }
+  if (problems.length) die(`[${cat.label}] placeholder validation failed — nothing written:\n  ${problems.join("\n  ")}`);
+
+  // merge (unchanged Dutch untouched), write nl + meta
+  const outNl = {};
+  const outMeta = { keys: {} };
+  for (const key of Object.keys(en)) {
+    outNl[key] = stale.includes(key) ? translated[key] : nl[key];
+    outMeta.keys[key] = { stamp: stamp(en[key]) };
+  }
+  const header =
+    `{\n` +
+    `  // GENERATED by scripts/i18n-translate.mjs — ${cat.headerName}.\n` +
+    `  // The // comment above each key is its English source; edit the quoted\n` +
+    `  // Dutch value to correct a translation. Register: "${register}".\n`;
+  const body = Object.keys(en)
+    .map((key) => `  // ${en[key].replace(/\n/g, " ")}\n  ${JSON.stringify(key)}: ${JSON.stringify(outNl[key])}`)
+    .join(",\n");
+  writeFileSync(cat.nl, `${header}\n${body}\n}\n`);
+  writeFileSync(cat.meta, JSON.stringify(outMeta, null, 2) + "\n");
+  console.log(`✓ [${cat.label}] wrote ${cat.nl} (${stale.length} translated) and ${cat.meta}`);
+}
+
+// ---- run every catalog -----------------------------------------------------
+const loaded = CATALOGS.map((cat) => ({ cat, ...loadCatalog(cat) }));
+for (const { cat, en, stale } of loaded) {
+  const total = Object.keys(en).length;
+  console.log(`i18n:translate [${cat.label}] — ${total} keys · ${total - stale.length} unchanged (kept) · ${stale.length} to translate`);
+}
+
+if (CHECK_ONLY) {
+  const anyStale = loaded.filter((l) => l.stale.length);
+  if (anyStale.length) {
+    for (const l of anyStale) console.log(`[${l.cat.label}] stale keys:\n  ${l.stale.join("\n  ")}`);
+    process.exit(2);
+  }
+  console.log("✓ all catalogs up to date."); process.exit(0);
+}
+
+const work = loaded.filter((l) => l.stale.length);
+if (work.length === 0) { console.log("✓ nothing to translate."); process.exit(0); }
+
+const apiKey = process.env.ANTHROPIC_API_KEY;
+if (!apiKey) die("ANTHROPIC_API_KEY is not set (needed to translate the stale keys).");
+
+for (const l of work) await writeCatalog(l.cat, l, apiKey);

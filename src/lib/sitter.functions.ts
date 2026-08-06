@@ -11,6 +11,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { computeTriage, type ScanAnswer, type ScanFieldKey } from "./triage";
 import { buildDailyLogEmail } from "./emailTemplates";
+import { emailT } from "./i18n/emailI18n.server";
 import { mergeEmergency } from "./emergency";
 import { isCfClip, cfUid } from "./clipRef";
 
@@ -350,16 +351,18 @@ function buildScanAlertEmail(opts: {
   reasons: string[];
   notes: string | null;
   link: string;
+  locale?: string;
 }): { subject: string; html: string; text: string } {
+  const t = emailT(opts.locale);
   const urgent = opts.status === "red";
   const subject = urgent
-    ? `${opts.birdName}: health concern flagged by your sitter`
-    : `${opts.birdName}: your sitter flagged something to check`;
+    ? t("email.scanAlert.subjectUrgent", { birdName: opts.birdName })
+    : t("email.scanAlert.subjectCalm", { birdName: opts.birdName });
   const reasonItems = opts.reasons.length
     ? opts.reasons.map((r) => `<li style="margin:4px 0;">${escapeHtml(r)}</li>`).join("")
-    : "<li>See the full health check in the app.</li>";
+    : `<li>${t("email.scanAlert.reasonsFallback")}</li>`;
   const notesBlock = opts.notes
-    ? `<p style="margin:16px 0 4px;font-size:13px;color:#5f5e5a;text-transform:uppercase;letter-spacing:.08em;">Sitter notes</p>
+    ? `<p style="margin:16px 0 4px;font-size:13px;color:#5f5e5a;text-transform:uppercase;letter-spacing:.08em;">${t("email.scanAlert.notesLabel")}</p>
        <p style="margin:0;font-size:15px;color:#1a3d2e;font-style:italic;">"${escapeHtml(opts.notes)}"</p>`
     : "";
   const html = `
@@ -367,28 +370,30 @@ function buildScanAlertEmail(opts: {
   <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;border:1px solid #e3ded0;">
     <div style="background:${urgent ? "#993C1D" : "#a9791f"};padding:20px 24px;">
       <p style="margin:0;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.85);">
-        ${urgent ? "Health concern" : "Worth a check"}
+        ${urgent ? t("email.scanAlert.kickerUrgent") : t("email.scanAlert.kickerCalm")}
       </p>
       <h1 style="margin:6px 0 0;font-size:20px;font-weight:500;color:#fff;">
-        ${escapeHtml(opts.birdName)}'s daily health check needs your eyes
+        ${t("email.scanAlert.heading", { bird: escapeHtml(opts.birdName) })}
       </h1>
     </div>
     <div style="padding:24px;">
       <p style="margin:0 0 12px;font-size:15px;color:#1a3d2e;">
-        ${escapeHtml(opts.sitterName)} just submitted a health check and flagged the following:
+        ${t("email.scanAlert.body", { sitter: escapeHtml(opts.sitterName) })}
       </p>
       <ul style="margin:0;padding-left:20px;font-size:15px;color:#1a3d2e;">${reasonItems}</ul>
       ${notesBlock}
       <a href="${opts.link}" style="display:inline-block;margin-top:20px;background:#1a3d2e;color:#fff;text-decoration:none;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:600;">
-        View the full health check
+        ${t("email.scanAlert.cta")}
       </a>
       <p style="margin:20px 0 0;font-size:12px;color:#8a897f;line-height:1.5;">
-        This app doesn't diagnose illness and isn't a substitute for veterinary care. If something seems off, contact an avian veterinarian.
+        ${t("email.scanAlert.disclaimer")}
       </p>
     </div>
   </div>
 </div>`;
-  const text = `${opts.birdName}'s daily health check needs your eyes.\n\n${opts.sitterName} flagged:\n${opts.reasons.map((r) => `- ${r}`).join("\n")}${opts.notes ? `\n\nSitter notes: "${opts.notes}"` : ""}\n\nView the full health check: ${opts.link}`;
+  const textReasons = opts.reasons.map((r) => `- ${r}`).join("\n");
+  const textNotes = opts.notes ? `\n\n${t("email.scanAlert.textNotesLabel")} "${opts.notes}"` : "";
+  const text = `${t("email.scanAlert.textHeading", { birdName: opts.birdName })}\n\n${t("email.scanAlert.textFlagged", { sitter: opts.sitterName })}\n${textReasons}${textNotes}\n\n${t("email.scanAlert.textCta")}: ${opts.link}`;
   return { subject, html, text };
 }
 
@@ -527,7 +532,7 @@ export const submitHealthScan = createServerFn({ method: "POST" })
       // daily log" emails (profiles.notify_sitter_log).
       try {
         const [{ data: profile }, { data: sitRow }] = await Promise.all([
-          sb.from("profiles").select("email, display_name, notify_sitter_log").eq("id", ownerId).maybeSingle(),
+          sb.from("profiles").select("email, display_name, notify_sitter_log, locale").eq("id", ownerId).maybeSingle(),
           sb.from("sits").select("sitter_name, sitter_email").eq("id", sit.id).maybeSingle(),
         ]);
         const wantsLogEmail = (profile?.notify_sitter_log ?? true) === true;
@@ -544,6 +549,9 @@ export const submitHealthScan = createServerFn({ method: "POST" })
             const appUrl = process.env.APP_URL || "https://app.thekyaproject.com";
             const sitterName = sitRow?.sitter_name || sitRow?.sitter_email || "Your sitter";
             const link = `${appUrl}${url}`;
+            // Owner has an account (group 1) → their stored locale; null/unknown
+            // falls back to English inside the builders.
+            const locale = (profile as { locale?: string } | null)?.locale ?? undefined;
             const built = flagged
               ? buildScanAlertEmail({
                   birdName,
@@ -552,8 +560,9 @@ export const submitHealthScan = createServerFn({ method: "POST" })
                   reasons: triage.reasons,
                   notes: data.notes ?? null,
                   link,
+                  locale,
                 })
-              : buildDailyLogEmail({ birdName, sitterName, link });
+              : buildDailyLogEmail({ birdName, sitterName, link, locale });
             const { sendTransactionalEmail } = await import("./brevoEmail.server");
             const sent = await sendTransactionalEmail({
               to,

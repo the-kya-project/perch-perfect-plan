@@ -70,7 +70,7 @@ export const Route = createFileRoute("/api/public/hooks/care-plan-reminders")({
             try {
               const { data: profile } = await supabaseAdmin
                 .from("profiles")
-                .select("email, display_name, notify_care_plan_reminder")
+                .select("email, display_name, notify_care_plan_reminder, locale")
                 .eq("id", ownerId)
                 .maybeSingle();
               if ((profile?.notify_care_plan_reminder ?? true) === true) {
@@ -83,7 +83,7 @@ export const Route = createFileRoute("/api/public/hooks/care-plan-reminders")({
                   const appUrl = process.env.APP_URL || "https://app.thekyaproject.com";
                   const { buildCarePlanReminderEmail } = await import("@/lib/emailTemplates");
                   const { sendTransactionalEmail } = await import("@/lib/brevoEmail.server");
-                  const built = buildCarePlanReminderEmail({ birdName: bird?.name ?? "your bird", link: `${appUrl}/dashboard` });
+                  const built = buildCarePlanReminderEmail({ birdName: bird?.name ?? "your bird", link: `${appUrl}/dashboard`, locale: (profile as { locale?: string } | null)?.locale ?? undefined });
                   await sendTransactionalEmail({
                     to,
                     toName: profile?.display_name ?? undefined,

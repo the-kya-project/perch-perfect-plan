@@ -14,6 +14,7 @@ import { PRESET_CAPABILITIES, ASSIGNABLE_PRESETS, type AssignablePreset } from "
 import { activeOwnerBirdsMin } from "@/lib/activeBirds";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { buildHouseholdInviteEmail } from "./emailTemplates";
+import { localeForUser } from "./emailLocale.server";
 import { mergeEmergency } from "./emergency";
 import { isCfClip, cfUid } from "./clipRef";
 
@@ -117,10 +118,12 @@ export const createHouseholdInvite = createServerFn({ method: "POST" })
     try {
       const inviterName = await ownerDisplayName(sb, ownerId);
       const birdNames = joinNames((owned ?? []).map((b: any) => b.name).filter(Boolean));
+      // Account-less invitee (group 2) → the SENDER's (owner's) locale.
       const built = buildHouseholdInviteEmail({
         inviterName,
         birdNames,
         link: `${appUrl()}/invite/${token}`,
+        locale: await localeForUser(sb, ownerId),
       });
       const { sendTransactionalEmail } = await import("./brevoEmail.server");
       await sendTransactionalEmail({
