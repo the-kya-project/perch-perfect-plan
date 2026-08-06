@@ -4,6 +4,7 @@
   "private": true,
   "sideEffects": false,
   "type": "module",
+  "packageManager": "npm@11.12.1",
   "scripts": {
     "dev": "vite dev",
     "build": "vite build && node scripts/copy-sw.mjs",
