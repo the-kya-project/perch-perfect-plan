@@ -72,7 +72,9 @@ export type AnalyticsEventName =
   // Pre-hydration cold-launch redirect fired (inline head script → /dashboard)
   | "cold_launch_redirect"
   // A household-caregiver sit email (assigned/updated/cancelled) failed to send
-  | "sit_caregiver_email_failed";
+  | "sit_caregiver_email_failed"
+  // An external-sitter token invite email (created/updated/cancelled) failed to send
+  | "sitter_invite_email_failed";
 
 type EventProps = Record<string, string | number | boolean | null | undefined>;
 

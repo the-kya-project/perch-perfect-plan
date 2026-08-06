@@ -13,8 +13,10 @@ function shell(opts: {
   kicker: string;
   heading: string;
   body: string;
-  cta: string;
-  link: string;
+  /** CTA button + its href. Omit both for an informational email with no action
+   *  (e.g. a cancellation to a token sitter whose link is already dead). */
+  cta?: string;
+  link?: string;
   foot: string;
   /** Optional "From the field notes" blog block rendered under the CTA. */
   reading?: { title: string; teaser: string; url: string };
@@ -42,8 +44,8 @@ function shell(opts: {
       <h1 style="margin:6px 0 0;font-size:20px;font-weight:500;color:#fff;">${opts.heading}</h1>
     </div>
     <div style="padding:24px;">
-      <p style="margin:0 0 8px;font-size:15px;color:#1a3d2e;">${opts.body}</p>
-      <a href="${opts.link}" style="display:inline-block;margin-top:12px;background:#1a3d2e;color:#fff;text-decoration:none;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:600;">${opts.cta}</a>${reading}
+      <p style="margin:0 0 8px;font-size:15px;color:#1a3d2e;">${opts.body}</p>${opts.cta ? `
+      <a href="${opts.link}" style="display:inline-block;margin-top:12px;background:#1a3d2e;color:#fff;text-decoration:none;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:600;">${opts.cta}</a>` : ""}${reading}
       <p style="margin:20px 0 0;font-size:12px;color:#8a897f;line-height:1.5;">${opts.foot}</p>
       <p style="margin:18px 0 0;font-size:11px;color:#8a897f;text-align:center;border-top:1px solid #eee6d4;padding-top:12px;">Kya &amp; Co. — by The Kya Project</p>
     </div>
@@ -406,5 +408,100 @@ export function buildSitCancelledEmail(opts: {
     text:
       `${opts.ownerName} cancelled the sit covering ${opts.birdNames} from ${opts.dateRange}. ` +
       `You're no longer covering it — nothing you need to do.\n\nOpen the app: ${opts.link}`,
+  };
+}
+
+// ── External (token-link) sitter — the invite/update/cancel trio ─────────────
+// Distinct from the household-caregiver emails above: the recipient has NO
+// account. `link` is the private per-sit token URL (…/sitter/<token>), which
+// opens the read-only sitter view with no sign-in. Voice matches the household
+// invite — warm, plain, sentence case. Names/dates arrive pre-formatted.
+
+// "<owner> shared <birds>'s care with you" — sent when an external sit is created.
+export function buildSitterInviteEmail(opts: {
+  ownerName: string;
+  birdNames: string;
+  dateRange: string;
+  link: string;
+}): BuiltEmail {
+  const owner = escapeHtml(opts.ownerName);
+  const birds = escapeHtml(opts.birdNames);
+  const range = escapeHtml(opts.dateRange);
+  return {
+    subject: `${opts.ownerName} shared ${opts.birdNames}'s care with you — ${opts.dateRange}`,
+    html: shell({
+      kicker: "Sitter access",
+      heading: `${owner} asked you to look after ${birds}`,
+      body:
+        `${owner} set you up as ${birds}'s sitter from ${range}. Your private link has everything ` +
+        `you'll need — the care plan, the daily routine and health check, and emergency contacts. ` +
+        `No account or password required.`,
+      cta: "Open the care plan",
+      link: opts.link,
+      foot: "This link is private to you and works only for this sit. If you weren't expecting it, you can ignore this email.",
+    }),
+    text:
+      `${opts.ownerName} set you up as ${opts.birdNames}'s sitter from ${opts.dateRange}. ` +
+      `Your private link has the care plan, the daily routine and health check, and emergency contacts — ` +
+      `no account needed.\n\nOpen the care plan: ${opts.link}`,
+  };
+}
+
+// "<owner> updated the sit you're covering" — dates and/or bird-set changed.
+// `changeSummary` is a pre-built phrase, e.g. "the dates" or "the dates and
+// which birds you're covering". The token link is unchanged.
+export function buildSitterInviteUpdatedEmail(opts: {
+  ownerName: string;
+  birdNames: string;
+  dateRange: string;
+  changeSummary: string;
+  link: string;
+}): BuiltEmail {
+  const owner = escapeHtml(opts.ownerName);
+  const birds = escapeHtml(opts.birdNames);
+  const range = escapeHtml(opts.dateRange);
+  const change = escapeHtml(opts.changeSummary);
+  return {
+    subject: `A change to your sit for ${opts.birdNames} — ${opts.dateRange}`,
+    html: shell({
+      kicker: "Sit updated",
+      heading: `${owner} updated the sit you're covering`,
+      body:
+        `${owner} changed ${change} for the sit covering ${birds}. It now runs ${range}. ` +
+        `Your link is the same — open it for the latest care plan and checklist.`,
+      cta: "Open the care plan",
+      link: opts.link,
+      foot: "You're getting this because a sit you're covering on Kya & Co. changed. Your private link is unchanged.",
+    }),
+    text:
+      `${opts.ownerName} changed ${opts.changeSummary} for the sit covering ${opts.birdNames}. ` +
+      `It now runs ${opts.dateRange}. Your link is the same.\n\nOpen the care plan: ${opts.link}`,
+  };
+}
+
+// "<owner> cancelled the sit you were covering" — the sit was deleted, so the
+// token link is already dead. Informational only — NO action button.
+export function buildSitterInviteCancelledEmail(opts: {
+  ownerName: string;
+  birdNames: string;
+  dateRange: string;
+}): BuiltEmail {
+  const owner = escapeHtml(opts.ownerName);
+  const birds = escapeHtml(opts.birdNames);
+  const range = escapeHtml(opts.dateRange);
+  return {
+    subject: `Cancelled: your sit for ${opts.birdNames} (${opts.dateRange})`,
+    html: shell({
+      kicker: "Sit cancelled",
+      heading: `${owner} cancelled the sit you were covering`,
+      body:
+        `You're no longer looking after ${birds}. The sit set for ${range} has been cancelled, so ` +
+        `there's nothing you need to do — your private link no longer works. ${owner} will be in touch ` +
+        `if that changes.`,
+      foot: "You're getting this because a sit you were covering on Kya & Co. was cancelled.",
+    }),
+    text:
+      `${opts.ownerName} cancelled the sit for ${opts.birdNames} set for ${opts.dateRange}. ` +
+      `You're no longer covering it and your link no longer works — nothing you need to do.`,
   };
 }
