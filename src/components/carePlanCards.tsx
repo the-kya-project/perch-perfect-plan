@@ -2,6 +2,7 @@ import { ClipPlayer } from "@/components/ClipPlayer";
 import { IconTile } from "@/components/system";
 import { FEED_PERIODS, formatAt, type FeedTime } from "@/lib/feedTimes";
 import { AlertTriangle, AlertOctagon } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 // Shared presentational primitives for the care-plan card hierarchy. THE single
 // source of the card design (icon + teal eyebrow header, feeding figures, timing
@@ -135,6 +136,7 @@ export function FeedingItem({
   freeFed: boolean;
   note: string;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="rounded-[12px] bg-[var(--cream)] p-3">
       <div className="flex items-start justify-between gap-3">
@@ -147,7 +149,7 @@ export function FeedingItem({
       {(times.length > 0 || freeFed) && (
         <div className="mt-2 flex flex-wrap gap-1.5">
           {times.map((ft, i) => <Pill key={i}>{mealPillLabel(ft)}</Pill>)}
-          {freeFed && <Pill>Free-fed</Pill>}
+          {freeFed && <Pill>{t("careCards.freeFed", "Free-fed")}</Pill>}
         </div>
       )}
       {note && <p className="mt-2 text-[13px] text-[var(--mute)] whitespace-pre-line">{note}</p>}
@@ -223,15 +225,16 @@ export function DangerChips({ items }: { items: string[] }) {
 
 // Step-up outcome pill + the owner's exact qualifier verbatim.
 export function StepUpField({ stepUp, notes }: { stepUp?: string | null; notes?: string | null }) {
+  const { t } = useTranslation();
   const raw = (stepUp ?? "").trim().toLowerCase();
   const qualifier = (notes ?? "").trim();
-  const base = raw === "yes" ? "Yes" : raw === "no" ? "No" : raw === "sometimes" ? "Sometimes" : null;
+  const base = raw === "yes" ? t("careCards.stepUpYes", "Yes") : raw === "no" ? t("careCards.stepUpNo", "No") : raw === "sometimes" ? t("careCards.stepUpSometimes", "Sometimes") : null;
   if (!base && !qualifier) return null;
-  const label = base ? (qualifier ? `${base}, with caveats` : base) : null;
+  const label = base ? (qualifier ? t("careCards.stepUpWithCaveats", "{{base}}, with caveats", { base }) : base) : null;
   const cautionary = !base || raw === "no" || !!qualifier;
   return (
     <div>
-      <p className={FIELD_LABEL}>Step up</p>
+      <p className={FIELD_LABEL}>{t("careCards.stepUp", "Step up")}</p>
       {label && (
         <span className={`mt-1 inline-flex items-center rounded-full px-2.5 py-1 text-[11.5px] font-medium ${cautionary ? "bg-[var(--amber-fill)] text-[var(--amber-ink)]" : "bg-[var(--pale)] text-[var(--moss)]"}`}>{label}</span>
       )}
@@ -242,10 +245,11 @@ export function StepUpField({ stepUp, notes }: { stepUp?: string | null; notes?:
 
 // Contextual "show me" clip placed inside its section.
 export function ClipField({ clip }: { clip: { key: string; label: string; url: string } | null }) {
+  const { t } = useTranslation();
   if (!clip) return null;
   return (
     <div>
-      <p className={FIELD_LABEL}>Show me</p>
+      <p className={FIELD_LABEL}>{t("careCards.showMe", "Show me")}</p>
       <div className="mt-1 overflow-hidden rounded-[12px] bg-[var(--cream)] ring-1 ring-[var(--line2)]">
         <ClipPlayer src={clip.url} label={clip.label} className="aspect-video" />
         <p className="px-2 py-1.5 text-[12px] font-medium leading-tight text-[var(--ink)]">{clip.label}</p>

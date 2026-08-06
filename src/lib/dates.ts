@@ -3,19 +3,33 @@
 // Parse the parts directly rather than `new Date("YYYY-MM-DD")` — the latter is
 // interpreted as UTC midnight and can render as the previous day in negative-UTC
 // timezones. Splitting the string keeps the calendar date the owner picked.
+//
+// LOCALE: every formatter takes an optional locale, defaulting to "en". Owner
+// call-sites pass nothing → "en" → output is IDENTICAL to before i18n (English
+// keeps the browser-default `undefined` locale; numeric dates keep US order).
+// Sitter call-sites pass the resolved sitter locale so nl renders DD-MM-YYYY and
+// nl-NL month/weekday names. Adding a locale later is a case here, not a rewrite.
 
-/** "2026-08-14" -> "08/14/2026". Returns "" for empty/invalid input. */
-export function formatDateUS(iso: string | null | undefined): string {
+import { type Locale } from "@/lib/i18n/config";
+
+// For toLocale* calls: "en" keeps the browser default (undefined) so existing
+// English output is unchanged; other locales get an explicit BCP-47 tag.
+function intlTag(locale: Locale): string | undefined {
+  return locale === "en" ? undefined : `${locale}-${locale.toUpperCase()}`;
+}
+
+/** "2026-08-14" -> "08/14/2026" (en) or "14-08-2026" (nl). "" for empty input. */
+export function formatDateUS(iso: string | null | undefined, locale: Locale = "en"): string {
   if (!iso) return "";
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
   if (!m) return iso;
   const [, y, mo, d] = m;
-  return `${mo}/${d}/${y}`;
+  return locale === "nl" ? `${d}-${mo}-${y}` : `${mo}/${d}/${y}`;
 }
 
-/** A start–end range as "MM/DD/YYYY – MM/DD/YYYY". */
-export function formatDateRangeUS(start: string | null | undefined, end: string | null | undefined): string {
-  return `${formatDateUS(start)} – ${formatDateUS(end)}`;
+/** A start–end range, each side formatted per locale. */
+export function formatDateRangeUS(start: string | null | undefined, end: string | null | undefined, locale: Locale = "en"): string {
+  return `${formatDateUS(start, locale)} – ${formatDateUS(end, locale)}`;
 }
 
 // ---- Calendar-safe parsing (local midnight, never UTC) for richer labels ----
@@ -29,25 +43,25 @@ function localDate(iso: string | null | undefined): Date | null {
   return p ? new Date(p.y, p.mo - 1, p.d) : null;
 }
 
-/** "2026-07-05" -> "Saturday, July 5". */
-export function weekdayMonthDay(iso: string | null | undefined): string {
+/** "2026-07-05" -> "Saturday, July 5" (en) / "zaterdag 5 juli" (nl). */
+export function weekdayMonthDay(iso: string | null | undefined, locale: Locale = "en"): string {
   const d = localDate(iso);
-  return d ? d.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }) : "";
+  return d ? d.toLocaleDateString(intlTag(locale), { weekday: "long", month: "long", day: "numeric" }) : "";
 }
 
-/** "2026-07-05" -> "Jul 5". */
-export function monthDay(iso: string | null | undefined): string {
+/** "2026-07-05" -> "Jul 5" (en) / "5 jul" (nl). */
+export function monthDay(iso: string | null | undefined, locale: Locale = "en"): string {
   const d = localDate(iso);
-  return d ? d.toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "";
+  return d ? d.toLocaleDateString(intlTag(locale), { month: "short", day: "numeric" }) : "";
 }
 
 /** A compact range: "Jul 6 → 12" when same month, else "Jun 24 → Jul 5". */
-export function compactRange(start: string | null | undefined, end: string | null | undefined): string {
+export function compactRange(start: string | null | undefined, end: string | null | undefined, locale: Locale = "en"): string {
   const a = dateParts(start);
   const b = dateParts(end);
   if (!a || !b) return "";
-  const right = a.y === b.y && a.mo === b.mo ? String(b.d) : monthDay(end);
-  return `${monthDay(start)} → ${right}`;
+  const right = a.y === b.y && a.mo === b.mo ? String(b.d) : monthDay(end, locale);
+  return `${monthDay(start, locale)} → ${right}`;
 }
 
 /** Whole days from local "today" to `iso` (negative if past, 0 if today). */

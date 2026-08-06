@@ -9,6 +9,8 @@ import { ScanForm, type ScanSubmit } from "@/components/ScanForm";
 import { ArrowLeft, History, ChevronDown, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { track } from "@/lib/analytics";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 
 export const Route = createFileRoute("/sitter/$token/scan")({
   component: ScanPage,
@@ -38,12 +40,19 @@ function answerStyle(a: string | null | undefined) {
     ? "bg-warn-green/10 text-warn-green"
     : "bg-[#e8e1d0] text-[#8a897f]";
 }
-function answerLabel(a: string | null | undefined) {
-  return a === "concerning" ? "Concerning" : a === "not_sure" ? "Not sure" : a === "normal" ? "Normal" : "—";
+function answerLabel(a: string | null | undefined, t: TFunction) {
+  return a === "concerning"
+    ? t("sitter.scan.answer.concerning", "Concerning")
+    : a === "not_sure"
+    ? t("sitter.scan.answer.notSure", "Not sure")
+    : a === "normal"
+    ? t("sitter.scan.answer.normal", "Normal")
+    : "—";
 }
 
 function ScanPage() {
   const { token } = Route.useParams();
+  const { t } = useTranslation();
   const { data: ctx } = useSitterContext(token);
   const [mode, setMode] = useState<"form" | "history">("form");
   const [result, setResult] = useState<{ status: string; message: string; reasons: string[] } | null>(null);
@@ -70,13 +79,13 @@ function ScanPage() {
     onSuccess: (res, p) => {
       setResult(res.triage as any);
       track("health_scan_run", { severity: (res.triage as any)?.status ?? "unknown", had_photo: !!p.photoDataUrl });
-      toast.success("Health scan logged.");
+      toast.success(t("sitter.scan.loggedToast", "Health scan logged."));
       // Refresh the Today scan card + the multi-bird dashboard so the new
       // done/flagged state shows immediately.
       qc.invalidateQueries({ queryKey: ["sitter-ctx", token] });
       qc.invalidateQueries({ queryKey: ["sitter-dashboard", token] });
     },
-    onError: (e: any) => toast.error(e.message ?? "Could not log health check."),
+    onError: (e: any) => toast.error(e.message ?? t("sitter.scan.errorToast", "Could not log health check.")),
   });
 
   if (mode === "history") {
@@ -88,12 +97,12 @@ function ScanPage() {
     return (
       <main className="mx-auto max-w-md space-y-4 px-5 py-6">
         <div className={`rounded-2xl ${color} p-6 text-white`}>
-          <p className="text-[11px] font-medium uppercase tracking-widest opacity-80">{result.status === "red" ? "Call vet now" : result.status === "yellow" ? "Monitor & message owner" : "All clear logged"}</p>
+          <p className="text-[11px] font-medium uppercase tracking-widest opacity-80">{result.status === "red" ? t("sitter.scan.result.red", "Call vet now") : result.status === "yellow" ? t("sitter.scan.result.yellow", "Monitor & message owner") : t("sitter.scan.result.green", "All clear logged")}</p>
           <h1 className="mt-1 text-2xl font-medium leading-tight">{result.message}</h1>
         </div>
         {result.reasons.length > 0 && (
           <div className="rounded-xl bg-[#efe9da] p-4">
-            <p className="text-[11px] font-medium uppercase tracking-widest text-[#5f5e5a]">What you flagged</p>
+            <p className="text-[11px] font-medium uppercase tracking-widest text-[#5f5e5a]">{t("sitter.scan.whatYouFlagged", "What you flagged")}</p>
             <ul className="mt-2 list-disc pl-5 text-sm text-[#1a3d2e]">
               {result.reasons.map((r, i) => <li key={i}>{r}</li>)}
             </ul>
@@ -101,12 +110,12 @@ function ScanPage() {
         )}
         <div className="flex gap-2">
           {result.status !== "green" && (
-            <Link to="/sitter/$token/emergency" params={{ token }} className="flex-1 rounded-xl bg-[#1a3d2e] py-3 text-center text-sm font-medium text-white">Open emergency contacts</Link>
+            <Link to="/sitter/$token/emergency" params={{ token }} className="flex-1 rounded-xl bg-[#1a3d2e] py-3 text-center text-sm font-medium text-white">{t("sitter.scan.openEmergency", "Open emergency contacts")}</Link>
           )}
-          <Link to="/sitter/$token" params={{ token }} className="flex-1 rounded-xl border border-[#e0d8c4] py-3 text-center text-sm font-medium">Back to today</Link>
+          <Link to="/sitter/$token" params={{ token }} className="flex-1 rounded-xl border border-[#e0d8c4] py-3 text-center text-sm font-medium">{t("sitter.scan.backToToday", "Back to today")}</Link>
         </div>
         <button onClick={() => setMode("history")} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#efe9da] py-3 text-sm font-medium text-[#1a3d2e]">
-          <History className="size-4" /> See past health checks for this sit
+          <History className="size-4" /> {t("sitter.scan.seePastForSit", "See past health checks for this sit")}
         </button>
       </main>
     );
@@ -117,22 +126,24 @@ function ScanPage() {
       <header className="border-b border-[#e0d8c4] bg-[#f4f1e8]">
         <div className="mx-auto flex max-w-md items-center gap-3 px-5 py-3">
           <Link to="/sitter/$token" params={{ token }} className="rounded p-1 text-[#5f5e5a]"><ArrowLeft className="size-5" /></Link>
-          <h1 className="flex-1 text-sm font-medium">Daily health check — {ctx.bird.name}</h1>
+          <h1 className="flex-1 text-sm font-medium">{t("sitter.scan.headerTitle", "Daily health check — {{name}}", { name: ctx.bird.name })}</h1>
           <button
             onClick={() => setMode("history")}
             className="inline-flex items-center gap-1.5 rounded-full bg-[#efe9da] px-3 py-1.5 text-xs font-medium text-[#1a3d2e]"
           >
-            <History className="size-3.5" /> Past health checks
+            <History className="size-3.5" /> {t("sitter.scan.pastHealthChecks", "Past health checks")}
           </button>
         </div>
       </header>
-      <p className="mx-auto max-w-md px-5 pt-4 text-sm leading-relaxed text-[#5f5e5a]">A quick once-over to make sure {ctx.bird.name}'s doing well.</p>
-      <ScanForm key={ctx.activeBirdId} submitting={m.isPending} onSubmit={(p) => m.mutate(p)} />
+      <p className="mx-auto max-w-md px-5 pt-4 text-sm leading-relaxed text-[#5f5e5a]">{t("sitter.scan.intro", "A quick once-over to make sure {{name}}'s doing well.", { name: ctx.bird.name })}</p>
+      <ScanForm key={ctx.activeBirdId} submitting={m.isPending} submitLabel={t("sitter.scan.submit", "Submit health check")} onSubmit={(p) => m.mutate(p)} />
     </div>
   );
 }
 
 function ScanHistory({ token, birdId, birdName, onBack }: { token: string; birdId: string; birdName: string; onBack: () => void }) {
+  const { t, i18n } = useTranslation();
+  const dloc = i18n.language === "nl" ? "nl-NL" : undefined;
   const fn = useServerFn(getSitterScans);
   const { data: scans = [], isLoading } = useQuery({
     queryKey: ["sitter-scans", token, birdId],
@@ -145,15 +156,15 @@ function ScanHistory({ token, birdId, birdName, onBack }: { token: string; birdI
       <header className="border-b border-[#e0d8c4] bg-[#f4f1e8]">
         <div className="mx-auto flex max-w-md items-center gap-3 px-5 py-3">
           <button onClick={onBack} className="rounded p-1 text-[#5f5e5a]"><ArrowLeft className="size-5" /></button>
-          <h1 className="text-sm font-medium">Past health checks — {birdName}</h1>
+          <h1 className="text-sm font-medium">{t("sitter.scan.history.title", "Past health checks — {{name}}", { name: birdName })}</h1>
         </div>
       </header>
       <main className="mx-auto max-w-md space-y-3 px-5 py-5 pb-32">
-        <p className="text-xs text-[#5f5e5a]">Health checks you've logged during this sit, newest first.</p>
+        <p className="text-xs text-[#5f5e5a]">{t("sitter.scan.history.subtitle", "Health checks you've logged during this sit, newest first.")}</p>
         {isLoading ? (
-          <div className="flex items-center gap-2 rounded-xl bg-[#efe9da] p-4 text-sm text-[#5f5e5a]"><Loader2 className="size-4 animate-spin" /> Loading…</div>
+          <div className="flex items-center gap-2 rounded-xl bg-[#efe9da] p-4 text-sm text-[#5f5e5a]"><Loader2 className="size-4 animate-spin" /> {t("sitter.scan.history.loading", "Loading…")}</div>
         ) : scans.length === 0 ? (
-          <div className="rounded-xl bg-[#efe9da] p-4 text-sm text-[#5f5e5a]">No health checks logged yet for this sit.</div>
+          <div className="rounded-xl bg-[#efe9da] p-4 text-sm text-[#5f5e5a]">{t("sitter.scan.history.empty", "No health checks logged yet for this sit.")}</div>
         ) : (
           <ul className="space-y-3">
             {(scans as any[]).map((s) => {
@@ -170,7 +181,7 @@ function ScanHistory({ token, birdId, birdName, onBack }: { token: string; birdI
                       <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${answerStyle(s.triage_status === "red" ? "concerning" : s.triage_status === "yellow" ? "not_sure" : "normal")}`}>
                         {s.triage_status}
                       </span>
-                      <span className="text-[11px] text-[#5f5e5a]">{new Date(s.created_at).toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
+                      <span className="text-[11px] text-[#5f5e5a]">{new Date(s.created_at).toLocaleString(dloc, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
                     </div>
                     <ChevronDown className={`size-4 shrink-0 text-[#8a897f] transition ${isOpen ? "rotate-180" : ""}`} />
                   </button>
@@ -181,24 +192,24 @@ function ScanHistory({ token, birdId, birdName, onBack }: { token: string; birdI
                           <li key={f.key} className="flex items-center justify-between gap-3 text-xs">
                             <span className="text-[#1a3d2e]">{f.question.replace(/\?$/, "")}</span>
                             <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${answerStyle(s[COL_BY_KEY[f.key]])}`}>
-                              {answerLabel(s[COL_BY_KEY[f.key]])}
+                              {answerLabel(s[COL_BY_KEY[f.key]], t)}
                             </span>
                           </li>
                         ))}
                       </ul>
                       {s.notes && (
                         <div>
-                          <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e5a]">Notes</p>
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e5a]">{t("sitter.scan.notesLabel", "Notes")}</p>
                           <p className="mt-1 text-xs italic text-[#1a3d2e]">"{s.notes}"</p>
                         </div>
                       )}
                       {s.photos?.length > 0 && (
                         <div>
-                          <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e5a]">Photo</p>
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e5a]">{t("sitter.scan.photoLabel", "Photo")}</p>
                           <div className="mt-2 grid grid-cols-3 gap-2">
                             {s.photos.map((p: any) => (
                               <a key={p.id} href={p.photo_url} target="_blank" rel="noreferrer" className="block aspect-square overflow-hidden rounded-lg bg-[#e8e1d0]">
-                                <img src={p.photo_url} alt="Scan photo" className="size-full object-cover" />
+                                <img src={p.photo_url} alt={t("sitter.scan.photoAlt", "Scan photo")} className="size-full object-cover" />
                               </a>
                             ))}
                           </div>

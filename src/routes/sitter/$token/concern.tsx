@@ -8,6 +8,7 @@ import { ConcernFlow } from "@/components/ConcernFlow";
 import { track } from "@/lib/analytics";
 import type { VetContact } from "@/components/PassingGuidance";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 // "Something's wrong" — sitter-link entry into the shared ConcernFlow (pause →
 // path choice → path detail). The flow + copy live in ConcernFlow, shared with
@@ -19,6 +20,7 @@ export const Route = createFileRoute("/sitter/$token/concern")({
 
 function ConcernPage() {
   const { token } = Route.useParams();
+  const { t } = useTranslation();
   const { data: ctx } = useSitterContext(token);
   const qc = useQueryClient();
   const pauseFn = useServerFn(pauseSitterReminders);
@@ -39,7 +41,7 @@ function ConcernPage() {
       qc.invalidateQueries({ queryKey: ["sitter-dashboard", token] });
       window.scrollTo(0, 0);
     },
-    onError: (e: any) => toast.error(e?.message ?? "Couldn't pause the reminders. Please try again."),
+    onError: (e: any) => toast.error(e?.message ?? t("sitter.concern.pauseError", "Couldn't pause the reminders. Please try again.")),
   });
 
   return (

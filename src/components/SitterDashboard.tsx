@@ -1,6 +1,7 @@
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
 import { getSitterDashboard } from "@/lib/sitter.functions";
 import { replaySitterOnboarding } from "@/components/SitterOnboarding";
 import { BirdCareCard } from "@/components/BirdCareCard";
@@ -21,6 +22,7 @@ function formatNames(names: string[]): string {
 }
 
 export function SitterDashboard({ token }: { token: string }) {
+  const { t } = useTranslation();
   const fn = useServerFn(getSitterDashboard);
   const navigate = useNavigate();
   const { data, isLoading } = useQuery({
@@ -34,25 +36,25 @@ export function SitterDashboard({ token }: { token: string }) {
     <main className="mx-auto max-w-md space-y-6 px-5 py-6">
       <header className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-2xl font-medium leading-tight text-[#1a3d2e]">Welcome</h1>
+          <h1 className="text-2xl font-medium leading-tight text-[#1a3d2e]">{t("sitterDashboard.welcome", "Welcome")}</h1>
           <p className="mt-1.5 text-sm leading-relaxed text-[#5f5e5a]">
             {isLoading
-              ? "Getting the birds ready for you…"
-              : `You're looking after ${allNames}. Tap any bird to see their day and how they're doing.`}
+              ? t("sitterDashboard.loadingIntro", "Getting the birds ready for you…")
+              : t("sitterDashboard.intro", "You're looking after {{names}}. Tap any bird to see their day and how they're doing.", { names: allNames })}
           </p>
         </div>
         <button
           onClick={replaySitterOnboarding}
           className="mt-0.5 inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[#e8f0ec] px-3 py-1.5 text-xs font-medium text-[#2d6a4f] active:scale-95"
         >
-          <HelpCircle className="size-3.5" /> Walkthrough
+          <HelpCircle className="size-3.5" /> {t("sitterDashboard.walkthrough", "Walkthrough")}
         </button>
       </header>
 
       <section data-coach="home-overview">
-        <h2 className="text-base font-medium text-[#1a3d2e]">Birds in your care</h2>
+        <h2 className="text-base font-medium text-[#1a3d2e]">{t("sitterDashboard.birdsInYourCare", "Birds in your care")}</h2>
         {isLoading ? (
-          <p className="mt-3 rounded-2xl bg-[#efe9da] p-4 text-sm text-[#5f5e5a]">Loading…</p>
+          <p className="mt-3 rounded-2xl bg-[#efe9da] p-4 text-sm text-[#5f5e5a]">{t("sitterDashboard.loading", "Loading…")}</p>
         ) : (
           <ul className="mt-3 space-y-3">
             {birds.map((b, i) => (

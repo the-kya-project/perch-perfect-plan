@@ -1,0 +1,31 @@
+{
+  // Locked EN→NL domain glossary. Every term here is forced verbatim into every
+  // Dutch translation, on every run, so bird-care terminology never drifts between
+  // strings or releases. Parsed comment-tolerantly by scripts/i18n-translate.mjs,
+  // so these // notes are preserved. Provisional — a native Dutch speaker reviews
+  // them in context during testing.
+  "status": "locked",
+  "terms": {
+    // "sit" is a NOUN — a period of care. Never the verb "zitten".
+    "sit": "oppasperiode",
+    "sitter": "oppas",
+    // "caregiver" (verzorger) and "sitter" (oppas) must stay clearly distinct —
+    // the app treats them differently and the words cannot blur.
+    "caregiver": "verzorger",
+    "care plan": "verzorgingsplan",
+    // "health scan" must NEVER render as "scan" — in Dutch that reads as medical
+    // imaging or document scanning. It is a short daily wellness check.
+    "health scan": "gezondheidscheck",
+    // "flock" is deliberately NOT translated literally. "Zwerm" means a wild flock
+    // in flight and reads clinical for three parrots at home.
+    "flock": "je vogels",
+    "handoff": "overdracht",
+    // "cover" (verb) — stand in for the owner on a sit.
+    "cover": "invallen",
+    // "log" → "noteren" (verb) / "notitie" (noun).
+    "log": "noteren",
+    // "concern" should signal "worth attention", not alarm.
+    "concern": "aandachtspunt",
+    "household": "huishouden"
+  }
+}

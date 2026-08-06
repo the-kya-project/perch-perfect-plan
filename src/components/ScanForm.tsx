@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Camera, Upload, Loader2 } from "lucide-react";
 import { SCAN_FIELDS, computeTriage, type ScanAnswer, type ScanFieldKey } from "@/lib/triage";
 import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
@@ -28,6 +29,7 @@ export function ScanForm({
   submitLabel?: string;
   onSubmit: (payload: ScanSubmit) => void;
 }) {
+  const { t } = useTranslation();
   const [answers, setAnswers] = useState<Partial<Record<ScanFieldKey, ScanAnswer>>>({});
   const [itemNotes, setItemNotes] = useState<Partial<Record<ScanFieldKey, string>>>({});
   const [notes, setNotes] = useState("");
@@ -48,12 +50,12 @@ export function ScanForm({
     try {
       const dataUrl = await compressImageToDataUrl(file);
       if (dataUrlBytes(dataUrl) > MAX_UPLOAD_BYTES) {
-        toast.error("That photo's a bit too large even after resizing. Try a different one.");
+        toast.error(t("scanForm.photoTooLarge", "That photo's a bit too large even after resizing. Try a different one."));
         return;
       }
       setPhoto(dataUrl);
     } catch {
-      toast.error("Couldn't process that photo. Try a different one.");
+      toast.error(t("scanForm.photoProcessError", "Couldn't process that photo. Try a different one."));
     } finally {
       setPhotoBusy(false);
     }
@@ -64,7 +66,7 @@ export function ScanForm({
     if (firstMissing) {
       setShowErrors(true);
       document.getElementById(`scan-field-${firstMissing.key}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
-      toast.error("Please answer every question before submitting.");
+      toast.error(t("scanForm.answerAllError", "Please answer every question before submitting."));
       return;
     }
     // Keep only notes on items still marked not normal (drop a note if the item
@@ -113,26 +115,26 @@ export function ScanForm({
                       : "border-warn-green bg-warn-green text-white"
                       : "border-[#e0d8c4] bg-white text-[#5f5e5a]"}`}
                   >
-                    {opt === "not_sure" ? "Not sure" : opt === "concerning" ? "Concerning" : "Normal"}
+                    {opt === "not_sure" ? t("scanForm.answerNotSure", "Not sure") : opt === "concerning" ? t("scanForm.answerConcerning", "Concerning") : t("scanForm.answerNormal", "Normal")}
                   </button>
                 );
               })}
             </div>
-            {missing && <p className="mt-3 text-[11px] font-medium text-warn-red">Please answer this before submitting.</p>}
+            {missing && <p className="mt-3 text-[11px] font-medium text-warn-red">{t("scanForm.missingAnswer", "Please answer this before submitting.")}</p>}
             {/* Both help notes use the app's amber warning treatment (same as the
                 never-feed callout) — never the off-brand red-on-cream "muddy pink." */}
-            {a === "not_sure" && <p className="mt-3 rounded bg-warn-amber/10 p-2 ring-1 ring-warn-amber/30 text-[11px] leading-relaxed text-warn-amber"><b>Look again: </b>{f.helpNotSure}</p>}
-            {a === "concerning" && <p className="mt-3 rounded bg-warn-amber/10 p-2 ring-1 ring-warn-amber/30 text-[11px] leading-relaxed text-warn-amber"><b>Watch for: </b>{f.helpConcerning}</p>}
+            {a === "not_sure" && <p className="mt-3 rounded bg-warn-amber/10 p-2 ring-1 ring-warn-amber/30 text-[11px] leading-relaxed text-warn-amber"><b>{t("scanForm.lookAgainLabel", "Look again: ")}</b>{f.helpNotSure}</p>}
+            {a === "concerning" && <p className="mt-3 rounded bg-warn-amber/10 p-2 ring-1 ring-warn-amber/30 text-[11px] leading-relaxed text-warn-amber"><b>{t("scanForm.watchForLabel", "Watch for: ")}</b>{f.helpConcerning}</p>}
             {/* Optional note — only for a not-normal item, so the owner gets
                 context on the flag. Never required; the check saves without it. */}
             {(a === "not_sure" || a === "concerning") && (
               <label className="mt-3 block">
-                <span className="mb-1 block text-[11px] font-medium text-[#5f5e5a]">What did you notice? (optional)</span>
+                <span className="mb-1 block text-[11px] font-medium text-[#5f5e5a]">{t("scanForm.itemNoteLabel", "What did you notice? (optional)")}</span>
                 <input
                   type="text"
                   value={itemNotes[f.key] ?? ""}
                   onChange={(e) => setItemNotes({ ...itemNotes, [f.key]: e.target.value })}
-                  placeholder="Add a note, e.g. left foot looks swollen"
+                  placeholder={t("scanForm.itemNotePlaceholder", "Add a note, e.g. left foot looks swollen")}
                   className="w-full rounded-xl border border-[#e0d8c4] bg-white p-2.5 text-sm"
                 />
               </label>
@@ -142,54 +144,54 @@ export function ScanForm({
       })}
 
       <section className="rounded-2xl bg-[#efe9da] p-4">
-        <p className="text-sm font-medium">Optional: add a photo</p>
-        <p className="mt-1 text-xs text-[#5f5e5a]">{photo ? "Take a new photo or upload a different one." : "Take a photo or upload one if anything looks off."}</p>
+        <p className="text-sm font-medium">{t("scanForm.photoSectionTitle", "Optional: add a photo")}</p>
+        <p className="mt-1 text-xs text-[#5f5e5a]">{photo ? t("scanForm.photoHelpHas", "Take a new photo or upload a different one.") : t("scanForm.photoHelpEmpty", "Take a photo or upload one if anything looks off.")}</p>
         {photoBusy ? (
           <div className="mt-3 flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#e0d8c4] py-3 text-sm font-medium text-[#5f5e5a] opacity-60">
-            <Loader2 className="size-4 animate-spin" /> Processing…
+            <Loader2 className="size-4 animate-spin" /> {t("scanForm.processing", "Processing…")}
           </div>
         ) : (
           <div className="mt-3 grid grid-cols-2 gap-2">
             <label className="flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#e0d8c4] py-3 text-sm font-medium text-[#5f5e5a]">
-              <Camera className="size-4" /> Take photo
+              <Camera className="size-4" /> {t("scanForm.takePhoto", "Take photo")}
               <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handlePhoto} />
             </label>
             <label className="flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#e0d8c4] py-3 text-sm font-medium text-[#5f5e5a]">
-              <Upload className="size-4" /> Upload photo
+              <Upload className="size-4" /> {t("scanForm.uploadPhoto", "Upload photo")}
               <input type="file" accept="image/*" className="hidden" onChange={handlePhoto} />
             </label>
           </div>
         )}
-        {photo && !photoBusy && <img src={photo} alt="Health check photo preview" className="mt-2 max-h-40 rounded-lg" />}
+        {photo && !photoBusy && <img src={photo} alt={t("scanForm.photoAlt", "Health check photo preview")} className="mt-2 max-h-40 rounded-lg" />}
       </section>
 
       <section className="rounded-2xl bg-[#efe9da] p-4">
         <label className="block">
-          <span className="text-sm font-medium">Optional: weigh-in</span>
-          <span className="mt-1 block text-xs text-[#5f5e5a]">If you weighed them, add the grams — it goes straight to the weight tracker.</span>
+          <span className="text-sm font-medium">{t("scanForm.weighInTitle", "Optional: weigh-in")}</span>
+          <span className="mt-1 block text-xs text-[#5f5e5a]">{t("scanForm.weighInHelp", "If you weighed them, add the grams — it goes straight to the weight tracker.")}</span>
           <div className="mt-3 flex items-center gap-2">
             <input
               inputMode="decimal"
               value={weight}
               onChange={(e) => setWeight(e.target.value.replace(/[^0-9.]/g, ""))}
-              placeholder="e.g. 410"
+              placeholder={t("scanForm.weightPlaceholder", "e.g. 410")}
               className="h-11 w-32 rounded-xl border border-[#e0d8c4] bg-white px-3 text-center text-sm"
             />
-            <span className="text-sm text-[#5f5e5a]">grams</span>
+            <span className="text-sm text-[#5f5e5a]">{t("scanForm.grams", "grams")}</span>
           </div>
         </label>
       </section>
 
       <section className="rounded-2xl bg-[#efe9da] p-4">
         <label className="block">
-          <span className="mb-1 block text-xs font-medium uppercase tracking-wider text-[#5f5e5a]">Notes</span>
+          <span className="mb-1 block text-xs font-medium uppercase tracking-wider text-[#5f5e5a]">{t("scanForm.notesLabel", "Notes")}</span>
           <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} className="w-full rounded-xl border border-[#e0d8c4] bg-white p-3 text-sm" />
         </label>
       </section>
 
       {allAnswered && (
         <div className="rounded-2xl bg-[#efe9da] p-4 text-xs text-[#5f5e5a]">
-          Preview: <b className="uppercase">{preview().status}</b> — {preview().message}
+          {t("scanForm.previewLabel", "Preview:")} <b className="uppercase">{preview().status}</b> — {preview().message}
         </div>
       )}
 
@@ -198,7 +200,7 @@ export function ScanForm({
         disabled={submitting || photoBusy}
         className="min-h-[44px] w-full rounded-xl bg-[#1a3d2e] py-3.5 text-sm font-medium text-white disabled:opacity-60"
       >
-        {submitting ? "Logging…" : submitLabel}
+        {submitting ? t("scanForm.logging", "Logging…") : submitLabel}
       </button>
     </main>
   );

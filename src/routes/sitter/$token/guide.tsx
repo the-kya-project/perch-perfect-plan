@@ -2,6 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
+import { useTranslation } from "react-i18next";
+import { pickLocale } from "@/lib/i18n";
+import { objectPronoun, possessivePronoun } from "@/lib/i18n/pronouns";
 import { useSitterContext } from "./route";
 import { getGuideCards } from "@/lib/sitter.functions";
 import {
@@ -14,20 +17,6 @@ import {
 export const Route = createFileRoute("/sitter/$token/guide")({
   component: Guide,
 });
-
-function objectPronoun(sex: string | null | undefined): string {
-  const s = (sex ?? "").trim().toLowerCase();
-  if (s.startsWith("f")) return "her";
-  if (s.startsWith("m")) return "him";
-  return "them";
-}
-
-function possessivePronoun(sex: string | null | undefined): string {
-  const s = (sex ?? "").trim().toLowerCase();
-  if (s.startsWith("f")) return "her";
-  if (s.startsWith("m")) return "his";
-  return "their";
-}
 
 // Topic chips. The stored guide_cards categories are book chapters (01-…, 02-…);
 // these map them to a small, sitter-friendly topic set. Per-entry overrides
@@ -98,7 +87,30 @@ function EntryIcon({ card }: { card: any }) {
   );
 }
 
+// Literal-key topic/subhead labels. Written as a switch of literal t() calls (not
+// a dynamic `topic.${key}` key) so i18next-parser can statically extract them.
+function useTopicLabels() {
+  const { t } = useTranslation();
+  const topicLabel = (key: string, fallback: string): string => {
+    switch (key) {
+      case "golden": return t("sitter.guide.topic.golden", "10 things to know");
+      case "eating": return t("sitter.guide.topic.eating", "Eating");
+      case "behavior": return t("sitter.guide.topic.behavior", "Behavior");
+      case "health": return t("sitter.guide.topic.health", "Health");
+      case "worry": return t("sitter.guide.topic.worry", "When to worry");
+      case "home": return t("sitter.guide.topic.home", "Home");
+      default: return fallback;
+    }
+  };
+  const subheadLabel = (key: string, fallback: string): string =>
+    key === "golden" ? t("sitter.guide.subhead.golden", "The essentials, in one place.") : fallback;
+  return { topicLabel, subheadLabel };
+}
+
 function Guide() {
+  const { t, i18n } = useTranslation();
+  const locale = pickLocale(i18n.language);
+  const { topicLabel, subheadLabel } = useTopicLabels();
   const { token } = Route.useParams();
   const { data: ctx } = useSitterContext(token);
   const fn = useServerFn(getGuideCards);
@@ -109,8 +121,8 @@ function Guide() {
   const [open, setOpen] = useState<string | null>(null);
 
   const bird = ctx.bird as any;
-  const pron = objectPronoun(bird.sex);
-  const poss = possessivePronoun(bird.sex);
+  const pron = objectPronoun(bird.sex, locale);
+  const poss = possessivePronoun(bird.sex, locale);
 
   const searching = q.trim().length > 0;
   const ql = q.trim().toLowerCase();
@@ -148,13 +160,13 @@ function Guide() {
       <header data-coach="guide-header" className="bg-[#1a3d2e] pt-[max(env(safe-area-inset-top),0.75rem)]">
         <div className="mx-auto max-w-md px-5 pb-5 pt-2">
           <div className="flex items-center gap-2">
-            <Link to="/sitter/$token" params={{ token }} className="-ml-1 rounded-full p-1 text-white/90 hover:bg-white/10" aria-label="Back">
+            <Link to="/sitter/$token" params={{ token }} className="-ml-1 rounded-full p-1 text-white/90 hover:bg-white/10" aria-label={t("sitter.guide.back", "Back")}>
               <ArrowLeft className="size-5" />
             </Link>
-            <h1 className="text-lg font-medium text-white">Parrots 101</h1>
+            <h1 className="text-lg font-medium text-white">{t("sitter.guide.title", "Parrots 101")}</h1>
           </div>
           <p className="mt-2 text-sm leading-relaxed text-[#cdeab0]">
-            The basics of parrot care. For {bird.name}'s own needs, always follow {poss} care plan.
+            {t("sitter.guide.subtitle", "The basics of parrot care. For {{name}}'s own needs, always follow {{poss}} care plan.", { name: bird.name, poss })}
           </p>
         </div>
       </header>
@@ -166,7 +178,7 @@ function Guide() {
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="What do you need to know?"
+            placeholder={t("sitter.guide.searchPlaceholder", "What do you need to know?")}
             className="w-full rounded-2xl border border-[#e0d8c4] bg-[#efe9da] py-3.5 pl-12 pr-4 text-sm text-[#1a3d2e] outline-none placeholder:text-[#8a897f] focus:border-[#2d6a4f]"
           />
         </div>
@@ -180,20 +192,20 @@ function Guide() {
                 onScroll={updateChipFades}
                 className="flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
               >
-                {TOPICS.map((t) => {
-                  const on = topic === t.key;
-                  const CIcon = t.icon;
+                {TOPICS.map((t_) => {
+                  const on = topic === t_.key;
+                  const CIcon = t_.icon;
                   return (
                     <button
-                      key={t.key}
-                      onClick={() => setTopic(t.key)}
+                      key={t_.key}
+                      onClick={() => setTopic(t_.key)}
                       aria-pressed={on}
                       className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition ${
                         on ? "bg-[#1a3d2e] text-white" : "bg-[#efe9da] text-[#1a3d2e]"
                       }`}
                     >
                       <CIcon className="size-3.5" />
-                      {t.label}
+                      {topicLabel(t_.key, t_.label)}
                     </button>
                   );
                 })}
@@ -209,9 +221,9 @@ function Guide() {
             </div>
 
             <div>
-              <p className="text-[11px] font-medium uppercase tracking-widest text-[#8a897f]">{activeTopic?.label}</p>
+              <p className="text-[11px] font-medium uppercase tracking-widest text-[#8a897f]">{topicLabel(topic, activeTopic?.label ?? "")}</p>
               {TOPIC_SUBHEAD[topic] && (
-                <p className="mt-0.5 text-xs text-[#5f5e5a]">{TOPIC_SUBHEAD[topic]}</p>
+                <p className="mt-0.5 text-xs text-[#5f5e5a]">{subheadLabel(topic, TOPIC_SUBHEAD[topic])}</p>
               )}
             </div>
           </>
@@ -241,15 +253,15 @@ function Guide() {
                     )}
                     {hasDeeper && (
                       <div className="mt-3 space-y-2 border-t border-[#e0d8c4] pt-3 text-sm leading-relaxed text-[#3a3a36]">
-                        {c.what_to_check && <p><span className="font-medium text-[#1a3d2e]">What to check:</span> {c.what_to_check}</p>}
-                        {c.what_to_do && <p><span className="font-medium text-[#1a3d2e]">What to do:</span> {c.what_to_do}</p>}
-                        {c.when_to_call_vet && <p><span className="font-medium text-[#1a3d2e]">When to call the vet:</span> {c.when_to_call_vet}</p>}
+                        {c.what_to_check && <p><span className="font-medium text-[#1a3d2e]">{t("sitter.guide.whatToCheck", "What to check:")}</span> {c.what_to_check}</p>}
+                        {c.what_to_do && <p><span className="font-medium text-[#1a3d2e]">{t("sitter.guide.whatToDo", "What to do:")}</span> {c.what_to_do}</p>}
+                        {c.when_to_call_vet && <p><span className="font-medium text-[#1a3d2e]">{t("sitter.guide.whenToCallVet", "When to call the vet:")}</span> {c.when_to_call_vet}</p>}
                       </div>
                     )}
                     {isDroppings(c) && (
                       <p className="mt-3 text-xs leading-relaxed text-[#5f5e5a]">
-                        If unsure, snap a photo for the owner in the{" "}
-                        <Link to="/sitter/$token/scan" params={{ token }} className="font-medium text-[#2d6a4f] underline">health scan</Link>.
+                        {t("sitter.guide.droppingsHint.before", "If unsure, snap a photo for the owner in the")}{" "}
+                        <Link to="/sitter/$token/scan" params={{ token }} className="font-medium text-[#2d6a4f] underline">{t("sitter.guide.droppingsHint.link", "health scan")}</Link>{t("sitter.guide.droppingsHint.after", ".")}
                       </p>
                     )}
                   </div>
@@ -258,14 +270,14 @@ function Guide() {
             );
           })}
           {list.length === 0 && (
-            <p className="px-1 text-sm text-[#5f5e5a]">No entries match “{q}”.</p>
+            <p className="px-1 text-sm text-[#5f5e5a]">{t("sitter.guide.noMatches", "No entries match “{{q}}”.", { q })}</p>
           )}
         </div>
 
         {/* Quiet disclaimer */}
         <p className="flex items-start gap-1.5 px-1 pt-2 text-[11px] leading-snug text-[#8a897f]">
           <Info className="mt-px size-3.5 shrink-0 text-[#8a897f]" />
-          <span>General guidance, not vet-reviewed. For anything urgent, use {bird.name}'s emergency info.</span>
+          <span>{t("sitter.guide.disclaimer", "General guidance, not vet-reviewed. For anything urgent, use {{name}}'s emergency info.", { name: bird.name })}</span>
         </p>
       </main>
     </div>
