@@ -39,17 +39,19 @@ function joinNames(names: string[]): string {
   return `${n.slice(0, -1).join(", ")}, and ${n[n.length - 1]}`;
 }
 
-// "Aug 12, 2026" (UTC — sit dates are calendar dates, no timezone shift).
-function fmtDate(iso: string): string {
-  return new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-US", {
+// "Aug 12, 2026" (en) / "12 aug 2026" (nl). UTC — sit dates are calendar dates,
+// no timezone shift. `locale` defaults to "en" so existing callers stay
+// byte-identical (en-US); pass the recipient's locale for localized months/order.
+function fmtDate(iso: string, locale: string = "en"): string {
+  return new Date(`${iso}T12:00:00Z`).toLocaleDateString(locale === "nl" ? "nl-NL" : "en-US", {
     month: "short",
     day: "numeric",
     year: "numeric",
     timeZone: "UTC",
   });
 }
-function fmtRange(start: string, end: string): string {
-  return start === end ? fmtDate(start) : `${fmtDate(start)} – ${fmtDate(end)}`;
+function fmtRange(start: string, end: string, locale: string = "en"): string {
+  return start === end ? fmtDate(start, locale) : `${fmtDate(start, locale)} – ${fmtDate(end, locale)}`;
 }
 
 async function ownerDisplayName(sb: any, ownerId: string): Promise<string> {
@@ -121,13 +123,14 @@ export const notifySitAssigned = createServerFn({ method: "POST" })
     const { email, name } = await resolveCaregiver(sb, sit.caregiver_user_id);
     if (!email) return { ok: true, emailed: false, reason: "no-caregiver-email", caregiverName: name ?? undefined };
 
+    // Household caregiver (group 1) → the recipient's own locale (also the date format).
+    const locale = await localeForUser(sb, sit.caregiver_user_id);
     const built = buildSitAssignedEmail({
       ownerName: await ownerDisplayName(sb, ownerId),
       birdNames: joinNames(await birdNames(sb, ids)),
-      dateRange: fmtRange(sit.start_date, sit.end_date),
+      dateRange: fmtRange(sit.start_date, sit.end_date, locale),
       link: `${appUrl()}/today`,
-      // Household caregiver (group 1) → the recipient's own locale.
-      locale: await localeForUser(sb, sit.caregiver_user_id),
+      locale,
     });
     const ok = await send(built, email, name);
     if (!ok) console.error("[sits] assigned email failed for sit", sit.id);
@@ -169,7 +172,7 @@ export const notifySitUpdated = createServerFn({ method: "POST" })
     const built = buildSitUpdatedEmail({
       ownerName: await ownerDisplayName(sb, ownerId),
       birdNames: joinNames(await birdNames(sb, ids)),
-      dateRange: fmtRange(sit.start_date, sit.end_date),
+      dateRange: fmtRange(sit.start_date, sit.end_date, locale),
       changeSummary,
       link: `${appUrl()}/today`,
       locale,
@@ -212,12 +215,13 @@ export const notifySitCancelled = createServerFn({ method: "POST" })
     const { email, name } = await resolveCaregiver(sb, data.caregiverUserId);
     if (!email) return { ok: true, emailed: false, reason: "no-caregiver-email", caregiverName: name ?? undefined };
 
+    const locale = await localeForUser(sb, data.caregiverUserId);
     const built = buildSitCancelledEmail({
       ownerName: await ownerDisplayName(sb, ownerId),
       birdNames: joinNames(names),
-      dateRange: fmtRange(data.startDate, data.endDate),
+      dateRange: fmtRange(data.startDate, data.endDate, locale),
       link: `${appUrl()}/today`,
-      locale: await localeForUser(sb, data.caregiverUserId),
+      locale,
     });
     const ok = await send(built, email, name);
     if (!ok) console.error("[sits] cancelled email failed for caregiver", data.caregiverUserId);
