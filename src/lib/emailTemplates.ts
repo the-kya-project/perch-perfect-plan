@@ -230,7 +230,11 @@ const READING_WEIGH = {
 // Stage: signed up, no bird yet.
 export function buildOnboardingAddBirdEmail(opts: { firstName?: string; link: string; locale?: string }): BuiltEmail {
   const t = emailT(opts.locale);
-  const hi = opts.firstName ? `${escapeHtml(opts.firstName)}, your` : "Your";
+  // Greeting is prose too — key both halves so Dutch says "…, jouw" / "Jouw",
+  // not the English "your". English output stays byte-identical.
+  const hi = opts.firstName
+    ? t("email.onboardingAddBird.hiName", { firstName: escapeHtml(opts.firstName) })
+    : t("email.onboardingAddBird.hiNoName");
   return {
     subject: t("email.onboardingAddBird.subject"),
     html: shell({

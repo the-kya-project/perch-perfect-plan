@@ -19,6 +19,7 @@ import {
   type BuiltEmail,
 } from "./emailTemplates";
 import { localeForUser } from "./emailLocale.server";
+import { emailT } from "./i18n/emailI18n.server";
 
 async function getAdmin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -151,10 +152,14 @@ export const notifySitUpdated = createServerFn({ method: "POST" })
     if (sit.owner_id !== ownerId) throw new Error("Not authorized");
     if (!sit.caregiver_user_id) return { ok: true, emailed: false, reason: "external-sit" };
 
+    // Resolve the caregiver's locale once — the change summary is prose too, so
+    // it must be built in their language rather than composed in English.
+    const locale = await localeForUser(sb, sit.caregiver_user_id);
+    const et = emailT(locale);
     const parts: string[] = [];
-    if (data.datesChanged) parts.push("the dates");
-    if (data.birdsChanged) parts.push("which birds you're covering");
-    const changeSummary = parts.join(" and ") || "some details";
+    if (data.datesChanged) parts.push(et("email.sitUpdated.changeDates"));
+    if (data.birdsChanged) parts.push(et("email.sitUpdated.changeBirds"));
+    const changeSummary = parts.join(et("email.sitUpdated.changeJoin")) || et("email.sitUpdated.changeFallback");
 
     const { data: sbRows } = await sb.from("sit_birds").select("bird_id").eq("sit_id", sit.id);
     const ids = (sbRows ?? []).map((r: any) => r.bird_id as string);
@@ -167,7 +172,7 @@ export const notifySitUpdated = createServerFn({ method: "POST" })
       dateRange: fmtRange(sit.start_date, sit.end_date),
       changeSummary,
       link: `${appUrl()}/today`,
-      locale: await localeForUser(sb, sit.caregiver_user_id),
+      locale,
     });
     const ok = await send(built, email, name);
     if (!ok) console.error("[sits] updated email failed for sit", sit.id);

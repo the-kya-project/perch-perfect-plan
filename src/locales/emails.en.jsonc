@@ -70,6 +70,9 @@
   // ---- Onboarding: add first bird ----
   "email.onboardingAddBird.subject": "Your bird's record is ready when you are",
   "email.onboardingAddBird.kicker": "Getting set up",
+  // Greeting halves, composed in the builder (so Dutch can say "jouw"/"Jouw").
+  "email.onboardingAddBird.hiName": "{{firstName}}, your",
+  "email.onboardingAddBird.hiNoName": "Your",
   "email.onboardingAddBird.heading": "{{hi}} flock page is still empty",
   "email.onboardingAddBird.body": "Adding a bird takes about a minute — a name and a species is enough to start. Everything else (care plan, weights, photos) can come whenever you like.",
   "email.onboardingAddBird.cta": "Add your bird",
@@ -124,6 +127,11 @@
   "email.sitUpdated.cta": "See the update",
   "email.sitUpdated.foot": "You're getting this because a sit you're covering on Kya & Co. changed.",
   "email.sitUpdated.text": "{{ownerName}} changed {{changeSummary}} for a sit you're covering. It now covers {{birdNames}} from {{dateRange}}.\n\nSee the update: {{link}}",
+  // changeSummary halves + joiner, composed in the sit-updated server fn.
+  "email.sitUpdated.changeDates": "the dates",
+  "email.sitUpdated.changeBirds": "which birds you're covering",
+  "email.sitUpdated.changeJoin": " and ",
+  "email.sitUpdated.changeFallback": "some details",
 
   // ---- Sit cancelled (household caregiver) ----
   "email.sitCancelled.subject": "Cancelled: your sit covering {{birdNames}} ({{dateRange}})",
