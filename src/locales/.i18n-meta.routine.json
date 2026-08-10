@@ -1,0 +1,127 @@
+{
+  "keys": {
+    "routine.feed.title": {
+      "stamp": "1015a68665753a49"
+    },
+    "routine.feed.titleAllDay": {
+      "stamp": "1abdb933cbed7847"
+    },
+    "routine.feed.serve": {
+      "stamp": "93e700d58c999b2b"
+    },
+    "routine.feed.freeFed": {
+      "stamp": "8e1111aad54afaa6"
+    },
+    "routine.med.title": {
+      "stamp": "bf8c1e9a0c2e18e8"
+    },
+    "routine.med.titleNoTime": {
+      "stamp": "1847239ee66fa9e0"
+    },
+    "routine.medTime.morning": {
+      "stamp": "3136a40529a58c46"
+    },
+    "routine.medTime.midday": {
+      "stamp": "a02684ba46a9be0d"
+    },
+    "routine.medTime.evening": {
+      "stamp": "70a3648179b3b20f"
+    },
+    "routine.medTime.bedtime": {
+      "stamp": "d8046d41d0e3e708"
+    },
+    "routine.washFood.title": {
+      "stamp": "cdc63c69f5c91bab"
+    },
+    "routine.washFood.instr": {
+      "stamp": "aa9ff2f0bfa951bd"
+    },
+    "routine.washWater.title": {
+      "stamp": "595d61a29184c010"
+    },
+    "routine.washWater.instr": {
+      "stamp": "8a8964c03a0b26c1"
+    },
+    "routine.removeFresh.title": {
+      "stamp": "00418003641ab4dc"
+    },
+    "routine.removeFresh.instr": {
+      "stamp": "76218e6149e14131"
+    },
+    "routine.changeWater.title": {
+      "stamp": "42f46d8167ae60d5"
+    },
+    "routine.changeWater.instr": {
+      "stamp": "01972820d55904bd"
+    },
+    "routine.bowlWash.after_each_fresh": {
+      "stamp": "88b4895a0415516e"
+    },
+    "routine.bowlWash.once_daily": {
+      "stamp": "b717ab2ab3048fa9"
+    },
+    "routine.bowlWash.twice_daily": {
+      "stamp": "b482c2ccacc8d6b8"
+    },
+    "routine.bowlWash.every_few_days": {
+      "stamp": "c8c0fa0bf881cd5b"
+    },
+    "routine.removal.60": {
+      "stamp": "2f81172efa78db22"
+    },
+    "routine.removal.120": {
+      "stamp": "cc67c454bebbb8da"
+    },
+    "routine.removal.180": {
+      "stamp": "c8319f2c9a41e412"
+    },
+    "routine.removal.fallback": {
+      "stamp": "d83bc9639cd36657"
+    },
+    "routine.waterChange.once": {
+      "stamp": "ea7540b8a2443c62"
+    },
+    "routine.waterChange.twice": {
+      "stamp": "e3af4d76e8e19a09"
+    },
+    "routine.waterChange.more": {
+      "stamp": "d80d48833969edc0"
+    },
+    "routine.unit.tablespoon_one": {
+      "stamp": "a55834c77b4c120b"
+    },
+    "routine.unit.tablespoon_other": {
+      "stamp": "f223a011f221f0a6"
+    },
+    "routine.unit.cup_one": {
+      "stamp": "d2b53181f2cdbcf3"
+    },
+    "routine.unit.cup_other": {
+      "stamp": "81bc24564089da76"
+    },
+    "routine.unit.gram_one": {
+      "stamp": "438d4514697a4625"
+    },
+    "routine.unit.gram_other": {
+      "stamp": "8c346e68b6fc24fa"
+    },
+    "routine.unit.scoop_one": {
+      "stamp": "1fe2beff1f38d9af"
+    },
+    "routine.unit.scoop_other": {
+      "stamp": "d83aa37390ad7e31"
+    },
+    "routine.unit.piece_one": {
+      "stamp": "31e411ccfb7959da"
+    },
+    "routine.unit.piece_other": {
+      "stamp": "29a124748fa49b4d"
+    },
+    "routine.unit.teaspoon_one": {
+      "stamp": "24b2a4646f63a414"
+    },
+    "routine.unit.teaspoon_other": {
+      "stamp": "8e9cccacf87ba582"
+    }
+  }
+}
