@@ -40,3 +40,7 @@ dist-ssr
 
 # Vercel build output
 .vercel
+
+# Backfill script scratch bundles
+.backfill-entry.mjs
+.backfill-bundle.mjs
