@@ -8,6 +8,8 @@ import { Disclaimer } from "@/components/Disclaimer";
 import { Stethoscope, Calendar, BookOpen, ChevronRight, ChevronDown, HeartCrack } from "lucide-react";
 import { ClipPlayer } from "@/components/ClipPlayer";
 import { taskDaypart, hourToDaypart, DAYPARTS, DAYPART_LABEL, type Daypart } from "@/lib/routineTasks";
+import { renderDerivedTask } from "@/lib/routineTaskRender";
+import type { DerivedTask } from "@/lib/derivedTasks";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 
@@ -215,7 +217,12 @@ function SitterToday() {
   function renderTask(task: any) {
     const done = completedIds.has(task.id);
     const open = expandedIds.has(task.id);
-    const detail = typeof task.instructions === "string" ? task.instructions.trim() : "";
+    // Localize derived tasks for DISPLAY only. Owner-typed tasks (no descriptor)
+    // render verbatim, and all task-matching logic below keeps the stored title.
+    const disp = task.derived
+      ? renderDerivedTask(task.derived as DerivedTask, i18n.getFixedT(i18n.language, "routine"), i18n.language)
+      : { title: task.title as string, instructions: task.instructions as string | null };
+    const detail = typeof disp.instructions === "string" ? disp.instructions.trim() : "";
     const hasDetail = detail.length > 0;
     const showCaution = task.id === firstFeedingId;
     const showPill = !!task.time_of_day && parseTaskMinutes(task.time_of_day) != null;
@@ -231,7 +238,7 @@ function SitterToday() {
             </span>
             <span className="flex-1">
               <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                <span className={done ? "text-sm text-sage-400 line-through" : "text-sm font-medium text-sage-900"}>{task.title}</span>
+                <span className={done ? "text-sm text-sage-400 line-through" : "text-sm font-medium text-sage-900"}>{disp.title}</span>
                 {showPill && <span className="rounded-full bg-[#e8f0ec] px-2 py-0.5 text-[10px] font-medium text-[#2d6a4f]">{task.time_of_day}</span>}
               </span>
               {showCaution && <span className="mt-1 block text-[11px] font-semibold text-warn-amber">{t("sitter.today.noNewFoods", "Don't introduce new foods while the owner is away.")}</span>}
@@ -319,7 +326,7 @@ function SitterToday() {
                   <ChevronDown className={`size-5 shrink-0 text-[#8a897f] transition-transform ${open ? "rotate-180" : ""}`} />
                 </button>
                 {!open && dp === nextUp && (
-                  <p className="mt-1 truncate px-4 text-xs text-[#5f5e5a]">{t("sitter.today.next", "Next:")} {list.map((task) => task.title).join(", ")}</p>
+                  <p className="mt-1 truncate px-4 text-xs text-[#5f5e5a]">{t("sitter.today.next", "Next:")} {list.map((task) => (task.derived ? renderDerivedTask(task.derived as DerivedTask, i18n.getFixedT(i18n.language, "routine"), i18n.language).title : task.title)).join(", ")}</p>
                 )}
                 {open && (
                   <div className="mt-2 rounded-2xl bg-[#efe9da] px-4 shadow-sm">

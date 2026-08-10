@@ -7,6 +7,8 @@
 
 import enRaw from "@/locales/en.jsonc?raw";
 import nlRaw from "@/locales/nl.jsonc?raw";
+import routineEnRaw from "@/locales/routine.en.jsonc?raw";
+import routineNlRaw from "@/locales/routine.nl.jsonc?raw";
 import { parseJsonc } from "./jsonc";
 
 export const catalogs = {
@@ -14,7 +16,15 @@ export const catalogs = {
   nl: parseJsonc(nlRaw),
 } as const;
 
+// The "routine" namespace renders auto-derived routine tasks (checklist) in the
+// reader's language from routine_tasks.derived. Kept a separate namespace so the
+// keys stay out of the parser-managed "translation" catalog.
+export const routineCatalogs = {
+  en: parseJsonc(routineEnRaw),
+  nl: parseJsonc(routineNlRaw),
+} as const;
+
 export const resources = {
-  en: { translation: catalogs.en },
-  nl: { translation: catalogs.nl },
+  en: { translation: catalogs.en, routine: routineCatalogs.en },
+  nl: { translation: catalogs.nl, routine: routineCatalogs.nl },
 } as const;

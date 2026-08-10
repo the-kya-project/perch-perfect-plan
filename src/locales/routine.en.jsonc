@@ -1,0 +1,56 @@
+{
+  // Client "routine" namespace — English source for auto-derived routine task
+  // titles/instructions rendered from routine_tasks.derived (see
+  // src/lib/routineTaskRender.ts). These values MUST match the inline English
+  // defaults in that renderer exactly (owner-facing English is byte-identical to
+  // the stored strings). Dutch lives in routine.nl.jsonc. Not managed by
+  // i18next-parser (the renderer is excluded from its input).
+
+  "routine.feed.title": "Feed: {{name}}",
+  "routine.feed.titleAllDay": "Feed: {{name}} (available all day)",
+  "routine.feed.serve": "Serve {{amt}}.",
+  "routine.feed.freeFed": "Keep topped up — this is free-fed in the cage.",
+
+  "routine.med.title": "Medication: {{name}} — {{time}}",
+  "routine.med.titleNoTime": "Medication: {{name}}",
+  "routine.medTime.morning": "morning",
+  "routine.medTime.midday": "midday",
+  "routine.medTime.evening": "evening",
+  "routine.medTime.bedtime": "bedtime",
+
+  "routine.washFood.title": "Wash food bowls ({{label}})",
+  "routine.washFood.instr": "Use hot water and a bottle brush. Rinse thoroughly before refilling.",
+  "routine.washWater.title": "Wash water bowl ({{label}})",
+  "routine.washWater.instr": "Wash the bowl/bottle itself — separate from how often water is changed.",
+  "routine.removeFresh.title": "Remove fresh food (within {{label}} of serving)",
+  "routine.removeFresh.instr": "Fresh / wet food spoils fast. Take it out within this window to prevent bacteria.",
+  "routine.changeWater.title": "Change water ({{label}})",
+  "routine.changeWater.instr": "Give fresh drinking water.",
+
+  "routine.bowlWash.after_each_fresh": "After every fresh-food serving",
+  "routine.bowlWash.once_daily": "Once a day",
+  "routine.bowlWash.twice_daily": "Twice a day",
+  "routine.bowlWash.every_few_days": "Every few days",
+
+  "routine.removal.60": "1 hour",
+  "routine.removal.120": "2 hours",
+  "routine.removal.180": "3 hours",
+  "routine.removal.fallback": "{{n}} min",
+
+  "routine.waterChange.once": "once daily",
+  "routine.waterChange.twice": "twice daily",
+  "routine.waterChange.more": "more than twice daily",
+
+  "routine.unit.tablespoon_one": "tablespoon",
+  "routine.unit.tablespoon_other": "tablespoons",
+  "routine.unit.cup_one": "cup",
+  "routine.unit.cup_other": "cups",
+  "routine.unit.gram_one": "gram",
+  "routine.unit.gram_other": "grams",
+  "routine.unit.scoop_one": "scoop",
+  "routine.unit.scoop_other": "scoops",
+  "routine.unit.piece_one": "piece",
+  "routine.unit.piece_other": "pieces",
+  "routine.unit.teaspoon_one": "teaspoon",
+  "routine.unit.teaspoon_other": "teaspoons"
+}

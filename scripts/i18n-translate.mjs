@@ -47,6 +47,13 @@ const CATALOGS = [
     meta: join(LOCALES, ".i18n-meta.emails.json"),
     headerName: "Dutch email catalog",
   },
+  {
+    label: "routine",
+    en: join(LOCALES, "routine.en.jsonc"),
+    nl: join(LOCALES, "routine.nl.jsonc"),
+    meta: join(LOCALES, ".i18n-meta.routine.json"),
+    headerName: "Dutch routine catalog",
+  },
 ];
 
 const CHECK_ONLY = process.argv.includes("--check");
