@@ -3,16 +3,48 @@
 // the client bundle.
 
 import { createServerFn } from "@tanstack/react-start";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import type { Database } from "@/integrations/supabase/types";
 
-async function removeStoragePrefix(
-  storage: { from: (bucket: string) => { list: (path: string, opts?: { limit?: number }) => Promise<{ data: Array<{ name: string }> | null }>; remove: (paths: string[]) => Promise<unknown> } },
+type AdminStorage = SupabaseClient<Database>["storage"];
+
+// Production page size for storage listing. `.list()` defaults to 100 and caps
+// silently — without an advancing offset, objects beyond one page are never
+// deleted. Kept as a named constant (overridable via the helper's `pageSize`
+// argument) so the pagination loop can be proven with a handful of objects.
+export const STORAGE_LIST_PAGE_SIZE = 1000;
+
+// `.remove()` has no client-side cap; the Storage API rejects oversized delete
+// requests server-side, so we chunk paths to stay comfortably under that limit.
+export const STORAGE_REMOVE_BATCH_SIZE = 100;
+
+// Delete every object under `<prefix>/` in a bucket, paging through the full
+// listing and chunking the removals. Throws on the first storage error so the
+// caller can abort before deleting the database rows that point at these files.
+export async function deleteAllUnderPrefix(
+  storage: AdminStorage,
   bucket: string,
   prefix: string,
-) {
-  const { data: files } = await storage.from(bucket).list(prefix, { limit: 1000 });
-  if (files?.length) {
-    await storage.from(bucket).remove(files.map((f) => `${prefix}/${f.name}`));
+  pageSize: number = STORAGE_LIST_PAGE_SIZE,
+): Promise<void> {
+  const bucketApi = storage.from(bucket);
+  const paths: string[] = [];
+
+  // Page until a short page signals the end. Collect first, remove after, so
+  // deletions never shift the offsets we're still reading.
+  for (let offset = 0; ; ) {
+    const { data: page, error } = await bucketApi.list(prefix, { limit: pageSize, offset });
+    if (error) throw new Error(`storage.list failed for ${bucket}/${prefix}: ${error.message}`);
+    const rows = page ?? [];
+    for (const f of rows) paths.push(`${prefix}/${f.name}`);
+    if (rows.length < pageSize) break;
+    offset += rows.length;
+  }
+
+  for (let i = 0; i < paths.length; i += STORAGE_REMOVE_BATCH_SIZE) {
+    const { error } = await bucketApi.remove(paths.slice(i, i + STORAGE_REMOVE_BATCH_SIZE));
+    if (error) throw new Error(`storage.remove failed for ${bucket}: ${error.message}`);
   }
 }
 
@@ -32,25 +64,23 @@ export const deleteMyAccount = createServerFn({ method: "POST" })
       .eq("owner_id", userId);
     const birdIds = (birds ?? []).map((b: any) => b.id as string);
 
-    // Remove any storage objects under the user's photo prefix.
+    // Remove Storage objects BEFORE any row deletion. bird-photos is keyed by
+    // the owner-uid folder; journal/moment and scan photos are keyed by bird id.
+    // If any bucket cleanup fails we abort here with the account fully intact:
+    // the rows are the only lookup path to these files, so deleting them on a
+    // partial storage failure would turn a retryable error into permanent
+    // orphaned user data. Surface an honest, retryable failure instead.
     try {
-      const { data: files } = await supabaseAdmin.storage
-        .from("bird-photos")
-        .list(userId, { limit: 1000 });
-      if (files && files.length) {
-        await supabaseAdmin.storage
-          .from("bird-photos")
-          .remove(files.map((f: any) => `${userId}/${f.name}`));
+      await deleteAllUnderPrefix(supabaseAdmin.storage, "bird-photos", userId);
+      for (const birdId of birdIds) {
+        await deleteAllUnderPrefix(supabaseAdmin.storage, "journal-photos", birdId);
+        await deleteAllUnderPrefix(supabaseAdmin.storage, "scan-photos", birdId);
       }
-    } catch {
-      // non-fatal — proceed with row deletes
-    }
-
-    // Journal/moment/scan photos are keyed by bird id, so deleting the DB rows is
-    // not enough to remove the private Storage objects.
-    for (const birdId of birdIds) {
-      try { await removeStoragePrefix(supabaseAdmin.storage, "journal-photos", birdId); } catch { /* non-fatal */ }
-      try { await removeStoragePrefix(supabaseAdmin.storage, "scan-photos", birdId); } catch { /* non-fatal */ }
+    } catch (e: any) {
+      throw new Error(
+        `Account deletion did not complete: your photos could not be removed (${e?.message ?? "storage error"}). ` +
+          "No account data was deleted — please try again.",
+      );
     }
 
     if (birdIds.length) {
