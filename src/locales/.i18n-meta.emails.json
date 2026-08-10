@@ -347,6 +347,42 @@
     },
     "email.scanAlert.textCta": {
       "stamp": "369879232a4740a4"
+    },
+    "email.scanReason.concerning": {
+      "stamp": "8676a7a66f6b1267"
+    },
+    "email.scanReason.notSure": {
+      "stamp": "eb9500b24d3697db"
+    },
+    "email.scanReason.q.alertness": {
+      "stamp": "f3b824bbe6181737"
+    },
+    "email.scanReason.q.food": {
+      "stamp": "439bf7b5af4ef0c5"
+    },
+    "email.scanReason.q.droppings": {
+      "stamp": "3253f81c8451e75a"
+    },
+    "email.scanReason.q.breathing": {
+      "stamp": "b0a704b455828b29"
+    },
+    "email.scanReason.q.posture": {
+      "stamp": "1a26c22e035a9821"
+    },
+    "email.scanReason.q.noise": {
+      "stamp": "119127e8fc749d2c"
+    },
+    "email.scanReason.q.fluffed": {
+      "stamp": "402c18d91c1a3213"
+    },
+    "email.scanReason.q.vomiting": {
+      "stamp": "c4b2263af0206ccc"
+    },
+    "email.scanReason.q.injury": {
+      "stamp": "282b3e817dd59383"
+    },
+    "email.scanReason.q.exposure": {
+      "stamp": "dbeb9669734bda9c"
     }
   }
 }

@@ -425,6 +425,7 @@ export type Database = {
           run_by: string | null
           sit_id: string | null
           source: string
+          triage_reason_codes: Json | null
           triage_reasons: string | null
           triage_status: string
           water_status: string | null
@@ -449,6 +450,7 @@ export type Database = {
           run_by?: string | null
           sit_id?: string | null
           source?: string
+          triage_reason_codes?: Json | null
           triage_reasons?: string | null
           triage_status?: string
           water_status?: string | null
@@ -473,6 +475,7 @@ export type Database = {
           run_by?: string | null
           sit_id?: string | null
           source?: string
+          triage_reason_codes?: Json | null
           triage_reasons?: string | null
           triage_status?: string
           water_status?: string | null

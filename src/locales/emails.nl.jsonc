@@ -234,5 +234,29 @@
   // Sitter notes:
   "email.scanAlert.textNotesLabel": "Notities van de oppas:",
   // View the full health check
-  "email.scanAlert.textCta": "Bekijk de volledige gezondheidscheck"
+  "email.scanAlert.textCta": "Bekijk de volledige gezondheidscheck",
+  // Concerning
+  "email.scanReason.concerning": "Aandachtspunt",
+  // Not sure
+  "email.scanReason.notSure": "Niet zeker",
+  // Is the bird alert and responsive
+  "email.scanReason.q.alertness": "Is de vogel alert en reageert hij",
+  // Is the bird eating normally
+  "email.scanReason.q.food": "Eet de vogel normaal",
+  // Do the droppings look normal
+  "email.scanReason.q.droppings": "Zien de uitwerpselen er normaal uit",
+  // Is the bird breathing normally
+  "email.scanReason.q.breathing": "Ademt de vogel normaal",
+  // Is the bird perched normally
+  "email.scanReason.q.posture": "Zit de vogel normaal op stok",
+  // Is the bird vocalizing as usual
+  "email.scanReason.q.noise": "Maakt de vogel normaal geluid",
+  // Is the bird fluffed for long stretches
+  "email.scanReason.q.fluffed": "Zit de vogel lange tijd opgebold",
+  // Is the face clean and dry, with no vomiting
+  "email.scanReason.q.vomiting": "Is het gezicht schoon en droog, zonder braken",
+  // Is the bird free of any injury, fall, bite, or scratch
+  "email.scanReason.q.injury": "Is de vogel vrij van verwondingen, een val, beet of kras",
+  // Has the bird been kept away from fumes, unsafe foods, metals, plants, and other pets
+  "email.scanReason.q.exposure": "Is de vogel uit de buurt gehouden van dampen, onveilig voedsel, metalen, planten en andere huisdieren"
 }

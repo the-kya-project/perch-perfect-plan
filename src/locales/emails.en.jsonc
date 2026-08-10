@@ -156,5 +156,20 @@
   "email.scanAlert.textHeading": "{{birdName}}'s daily health check needs your eyes.",
   "email.scanAlert.textFlagged": "{{sitter}} flagged:",
   "email.scanAlert.textNotesLabel": "Sitter notes:",
-  "email.scanAlert.textCta": "View the full health check"
+  "email.scanAlert.textCta": "View the full health check",
+
+  // Flagged-scan reason lines, rendered from structured triage codes. English
+  // must byte-match the composed prose ("Concerning: <question, no ?>").
+  "email.scanReason.concerning": "Concerning",
+  "email.scanReason.notSure": "Not sure",
+  "email.scanReason.q.alertness": "Is the bird alert and responsive",
+  "email.scanReason.q.food": "Is the bird eating normally",
+  "email.scanReason.q.droppings": "Do the droppings look normal",
+  "email.scanReason.q.breathing": "Is the bird breathing normally",
+  "email.scanReason.q.posture": "Is the bird perched normally",
+  "email.scanReason.q.noise": "Is the bird vocalizing as usual",
+  "email.scanReason.q.fluffed": "Is the bird fluffed for long stretches",
+  "email.scanReason.q.vomiting": "Is the face clean and dry, with no vomiting",
+  "email.scanReason.q.injury": "Is the bird free of any injury, fall, bite, or scratch",
+  "email.scanReason.q.exposure": "Has the bird been kept away from fumes, unsafe foods, metals, plants, and other pets"
 }

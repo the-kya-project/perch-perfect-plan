@@ -80,6 +80,7 @@ function OwnerScan() {
           item_notes: p.itemNotes ?? null,
           triage_status: triage.status,
           triage_reasons: triage.reasons.join(" | "),
+          triage_reason_codes: triage.reasonCodes,
         } as any)
         .select()
         .single();

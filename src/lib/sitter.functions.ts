@@ -348,7 +348,7 @@ function buildScanAlertEmail(opts: {
   birdName: string;
   sitterName: string;
   status: "red" | "yellow";
-  reasons: string[];
+  reasonCodes: { key: string; answer: "concerning" | "not_sure" }[];
   notes: string | null;
   link: string;
   locale?: string;
@@ -358,8 +358,13 @@ function buildScanAlertEmail(opts: {
   const subject = urgent
     ? t("email.scanAlert.subjectUrgent", { birdName: opts.birdName })
     : t("email.scanAlert.subjectCalm", { birdName: opts.birdName });
-  const reasonItems = opts.reasons.length
-    ? opts.reasons.map((r) => `<li style="margin:4px 0;">${escapeHtml(r)}</li>`).join("")
+  // Render each reason from its code in the recipient's language. English is
+  // byte-identical to the old composed prose ("Concerning: <question>").
+  const reasonLines = opts.reasonCodes.map(
+    (c) => `${c.answer === "concerning" ? t("email.scanReason.concerning") : t("email.scanReason.notSure")}: ${t("email.scanReason.q." + c.key)}`,
+  );
+  const reasonItems = reasonLines.length
+    ? reasonLines.map((r) => `<li style="margin:4px 0;">${escapeHtml(r)}</li>`).join("")
     : `<li>${t("email.scanAlert.reasonsFallback")}</li>`;
   const notesBlock = opts.notes
     ? `<p style="margin:16px 0 4px;font-size:13px;color:#5f5e5a;text-transform:uppercase;letter-spacing:.08em;">${t("email.scanAlert.notesLabel")}</p>
@@ -391,7 +396,7 @@ function buildScanAlertEmail(opts: {
     </div>
   </div>
 </div>`;
-  const textReasons = opts.reasons.map((r) => `- ${r}`).join("\n");
+  const textReasons = reasonLines.map((r) => `- ${r}`).join("\n");
   const textNotes = opts.notes ? `\n\n${t("email.scanAlert.textNotesLabel")} "${opts.notes}"` : "";
   const text = `${t("email.scanAlert.textHeading", { birdName: opts.birdName })}\n\n${t("email.scanAlert.textFlagged", { sitter: opts.sitterName })}\n${textReasons}${textNotes}\n\n${t("email.scanAlert.textCta")}: ${opts.link}`;
   return { subject, html, text };
@@ -448,6 +453,7 @@ export const submitHealthScan = createServerFn({ method: "POST" })
         item_notes: data.itemNotes ?? null,
         triage_status: triage.status,
         triage_reasons: triage.reasons.join(" | "),
+        triage_reason_codes: triage.reasonCodes,
       } as any)
       .select()
       .single();
@@ -557,7 +563,7 @@ export const submitHealthScan = createServerFn({ method: "POST" })
                   birdName,
                   sitterName,
                   status: triage.status as "red" | "yellow",
-                  reasons: triage.reasons,
+                  reasonCodes: triage.reasonCodes,
                   notes: data.notes ?? null,
                   link,
                   locale,

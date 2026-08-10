@@ -112,23 +112,38 @@ export const SCAN_FIELDS: ScanField[] = [
 
 const NOT_SURE_YELLOW_KEYS: ScanFieldKey[] = ["alertness", "breathing", "posture"];
 
+/** A triage reason as structured data: which scan field, and how it was answered.
+ *  Stored (daily_logs.triage_reason_codes) and rendered in the reader's language,
+ *  so a concern isn't frozen as English prose. `reasons` (English) is kept for
+ *  back-compat and for rows written before codes existed. */
+export type TriageReasonCode = { key: ScanFieldKey; answer: "concerning" | "not_sure" };
+
 export type TriageResult = {
   status: TriageStatus;
   reasons: string[];
+  reasonCodes: TriageReasonCode[];
   message: string;
 };
+
+/** Compose the English reason line for a code — the single source of truth the
+ *  localized renderers must reproduce byte-for-byte in English. */
+export function englishReason(code: TriageReasonCode): string {
+  const field = SCAN_FIELDS.find((f) => f.key === code.key);
+  const q = (field?.question ?? code.key).replace(/\?$/, "");
+  return `${code.answer === "concerning" ? "Concerning" : "Not sure"}: ${q}`;
+}
 
 export function computeTriage(
   answers: Record<ScanFieldKey, ScanAnswer>,
 ): TriageResult {
-  const reasons: string[] = [];
+  const reasonCodes: TriageReasonCode[] = [];
   let red = false;
   let yellowCount = 0;
 
   for (const field of SCAN_FIELDS) {
     const a = answers[field.key];
     if (a === "concerning") {
-      reasons.push(`Concerning: ${field.question.replace(/\?$/, "")}`);
+      reasonCodes.push({ key: field.key, answer: "concerning" });
       if (field.redOnConcerning) {
         red = true;
       } else {
@@ -136,15 +151,18 @@ export function computeTriage(
       }
     } else if (a === "not_sure") {
       // Any "not sure" should never be silently logged as all-clear.
-      reasons.push(`Not sure: ${field.question.replace(/\?$/, "")}`);
+      reasonCodes.push({ key: field.key, answer: "not_sure" });
       yellowCount++;
     }
   }
+
+  const reasons = reasonCodes.map(englishReason);
 
   if (red) {
     return {
       status: "red",
       reasons,
+      reasonCodes,
       message:
         "This may be urgent. Call the owner and the avian vet now. Keep the bird warm, quiet, and minimize handling.",
     };
@@ -153,6 +171,7 @@ export function computeTriage(
     return {
       status: "yellow",
       reasons,
+      reasonCodes,
       message:
         "Two or more concerning signs together — this combination is worth a call. Message the owner now and call the avian vet if it continues or worsens.",
     };
@@ -161,6 +180,7 @@ export function computeTriage(
     return {
       status: "yellow",
       reasons,
+      reasonCodes,
       message:
         "Something may be off. Message the owner, take photos if helpful, and keep monitoring. Call the avian vet if this continues or appears with other signs.",
     };
@@ -168,6 +188,7 @@ export function computeTriage(
   return {
     status: "green",
     reasons: [],
+    reasonCodes: [],
     message:
       "Nothing concerning logged. Keep following the care plan and watching for any changes.",
   };
