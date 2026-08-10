@@ -3,9 +3,8 @@
  * touched in a while AND who have a sit starting within the next 3 days.
  *
  * Called by pg_cron (see scheduled-jobs setup). The `/api/public/*` prefix
- * bypasses Lovable's published-site auth, so the handler validates the
- * incoming `apikey` header against the project's anon key before doing
- * anything.
+ * bypasses Lovable's published-site auth, so the handler validates a private
+ * bearer secret before doing anything.
  */
 import { createFileRoute } from "@tanstack/react-router";
 
@@ -13,9 +12,9 @@ export const Route = createFileRoute("/api/public/hooks/care-plan-reminders")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const apiKey = request.headers.get("apikey");
-        const expected = process.env.SUPABASE_ANON_KEY;
-        if (!expected || apiKey !== expected) {
+        const secret = process.env.CARE_PLAN_REMINDER_SECRET;
+        const auth = request.headers.get("authorization") ?? "";
+        if (!secret || auth !== `Bearer ${secret}`) {
           return new Response("Unauthorized", { status: 401 });
         }
 

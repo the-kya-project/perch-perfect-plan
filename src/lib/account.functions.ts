@@ -5,6 +5,17 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
+async function removeStoragePrefix(
+  storage: { from: (bucket: string) => { list: (path: string, opts?: { limit?: number }) => Promise<{ data: Array<{ name: string }> | null }>; remove: (paths: string[]) => Promise<unknown> } },
+  bucket: string,
+  prefix: string,
+) {
+  const { data: files } = await storage.from(bucket).list(prefix, { limit: 1000 });
+  if (files?.length) {
+    await storage.from(bucket).remove(files.map((f) => `${prefix}/${f.name}`));
+  }
+}
+
 export const deleteMyAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
@@ -33,6 +44,13 @@ export const deleteMyAccount = createServerFn({ method: "POST" })
       }
     } catch {
       // non-fatal — proceed with row deletes
+    }
+
+    // Journal/moment/scan photos are keyed by bird id, so deleting the DB rows is
+    // not enough to remove the private Storage objects.
+    for (const birdId of birdIds) {
+      try { await removeStoragePrefix(supabaseAdmin.storage, "journal-photos", birdId); } catch { /* non-fatal */ }
+      try { await removeStoragePrefix(supabaseAdmin.storage, "scan-photos", birdId); } catch { /* non-fatal */ }
     }
 
     if (birdIds.length) {

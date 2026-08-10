@@ -56,11 +56,11 @@ function ExportRecord() {
 
   const row = bird?.row;
   const name = row?.name ?? "This bird";
+  const complete = useServerFn(completePdfHandoff);
+  const [busy, setBusy] = useState(false);
   const notOwner = row && bird?.uid && row.owner_id !== bird.uid;
   if (notOwner) { navigate({ to: "/birds/$birdId", params: { birdId }, replace: true }); return null; }
 
-  const complete = useServerFn(completePdfHandoff);
-  const [busy, setBusy] = useState(false);
   async function confirmHandoff() {
     setBusy(true);
     try {
