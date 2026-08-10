@@ -45,6 +45,10 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>NSCameraUsageDescription</key>
+	<string>Kya uses the camera so you can record short care clips and take bird photos.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Kya uses the microphone when you record short care clips.</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
