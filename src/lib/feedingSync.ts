@@ -6,6 +6,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { FEED_PREFIX } from "./routineTasks";
 import { formatAmountUnit } from "./labels";
+import { feedDescriptor } from "./derivedTasks";
 import { normalizeFeedTimes, periodToDaypart, formatAt } from "./feedTimes";
 
 export type FeedingItem = {
@@ -52,6 +53,7 @@ export async function syncFeedingTasks(planId: string, items: FeedingItem[]): Pr
         category: "custom", // → "Anytime" section; placed once, not repeated
         time_of_day: "Available all day",
         sort_order: order++,
+        derived: feedDescriptor(it),
       });
       continue;
     }
@@ -66,6 +68,7 @@ export async function syncFeedingTasks(planId: string, items: FeedingItem[]): Pr
         category: periodToDaypart(ft.period), // direct period → section, no parsing
         time_of_day: formatAt(ft.at), // optional clock for display, else null
         sort_order: order++,
+        derived: feedDescriptor(it),
       });
     }
   }

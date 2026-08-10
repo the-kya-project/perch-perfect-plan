@@ -1165,6 +1165,7 @@ export type Database = {
           care_plan_id: string
           category: string
           created_at: string
+          derived: Json | null
           guide_card_id: string | null
           id: string
           instructions: string | null
@@ -1178,6 +1179,7 @@ export type Database = {
           care_plan_id: string
           category?: string
           created_at?: string
+          derived?: Json | null
           guide_card_id?: string | null
           id?: string
           instructions?: string | null
@@ -1191,6 +1193,7 @@ export type Database = {
           care_plan_id?: string
           category?: string
           created_at?: string
+          derived?: Json | null
           guide_card_id?: string | null
           id?: string
           instructions?: string | null

@@ -18,6 +18,7 @@ import { FoodItemsEditor } from "@/components/careEditors/FoodItemsEditor";
 import { blankFoodItem, isFoodItemComplete, foodItemHasContent, HOMEMADE_CHOP_NAME, type FoodItem } from "@/lib/foodItems";
 import { normalizeFeedTimes, feedTimeLabel, type FeedTime } from "@/lib/feedTimes";
 import { syncFeedingTasks } from "@/lib/feedingSync";
+import { medDescriptor, washFoodDescriptor, washWaterDescriptor, removeFreshDescriptor, changeWaterDescriptor, type DerivedTask } from "@/lib/derivedTasks";
 import { formatAmountUnit } from "@/lib/labels";
 import { track } from "@/lib/analytics";
 import { ensureSitterPreviewToken } from "@/lib/sitterPreview";
@@ -1158,6 +1159,10 @@ export function FoodWaterStep({
         waterWashLabel,
         waterChangeLabel,
         hasFresh,
+        removalMinutes,
+        foodBowlWash,
+        waterBowlWash,
+        waterFreq,
       });
 
       qc.invalidateQueries({ queryKey: ["plan", birdId] });
@@ -2186,13 +2191,15 @@ async function syncMedicationTasks(planId: string, meds: MedRow[]) {
       ? m.times.map((t) => ({
           title: `${MED_TASK_PREFIX}: ${m.name} — ${MED_TIMES.find((x) => x.key === t)?.label.toLowerCase()}`,
           category: t as string,
+          derived: medDescriptor(m.name, t, m.notes),
         }))
-      : [{ title: `${MED_TASK_PREFIX}: ${m.name}`, category: "custom" }];
+      : [{ title: `${MED_TASK_PREFIX}: ${m.name}`, category: "custom", derived: medDescriptor(m.name, null, m.notes) }];
     return doses.map((d, j) => ({
       title: d.title,
       instructions: m.notes || null,
       category: d.category,
       sort_order: 999 + i * 10 + j,
+      derived: d.derived,
     }));
   });
 
@@ -2216,9 +2223,13 @@ async function syncMedicationTasks(planId: string, meds: MedRow[]) {
 
 async function syncHygieneTasks(
   planId: string,
-  args: { removalLabel: string; foodWashLabel: string; waterWashLabel: string; waterChangeLabel: string | null; hasFresh: boolean },
+  args: {
+    removalLabel: string; foodWashLabel: string; waterWashLabel: string; waterChangeLabel: string | null; hasFresh: boolean;
+    // Enum KEYS (not labels) so the descriptor can be re-rendered per locale.
+    removalMinutes: number; foodBowlWash: string; waterBowlWash: string; waterFreq: string | null;
+  },
 ) {
-  type Spec = { prefix: string; title: string; instructions: string; category: string; sort_order: number; skip: boolean };
+  type Spec = { prefix: string; title: string; instructions: string; category: string; sort_order: number; skip: boolean; derived: DerivedTask };
   const specs: Spec[] = [
     {
       // Fresh drinking water — derived from the Food tab's water frequency.
@@ -2229,6 +2240,7 @@ async function syncHygieneTasks(
       category: "morning",
       sort_order: 989,
       skip: !args.waterChangeLabel,
+      derived: changeWaterDescriptor(args.waterFreq ?? ""),
     },
     {
       prefix: HYG_REMOVE_PREFIX,
@@ -2237,6 +2249,7 @@ async function syncHygieneTasks(
       category: "midday",
       sort_order: 990,
       skip: !args.hasFresh,
+      derived: removeFreshDescriptor(args.removalMinutes),
     },
     {
       prefix: HYG_WASH_FOOD_PREFIX,
@@ -2245,6 +2258,7 @@ async function syncHygieneTasks(
       category: "evening",
       sort_order: 991,
       skip: false,
+      derived: washFoodDescriptor(args.foodBowlWash),
     },
     {
       prefix: HYG_WASH_WATER_PREFIX,
@@ -2253,6 +2267,7 @@ async function syncHygieneTasks(
       category: "morning",
       sort_order: 992,
       skip: false,
+      derived: washWaterDescriptor(args.waterBowlWash),
     },
   ];
 
@@ -2274,10 +2289,11 @@ async function syncHygieneTasks(
         instructions: s.instructions,
         category: s.category,
         sort_order: s.sort_order,
+        derived: s.derived,
       } as any);
     } else {
       const [first, ...rest] = rows;
-      await supabase.from("routine_tasks").update({ title: s.title, instructions: s.instructions } as any).eq("id", first.id);
+      await supabase.from("routine_tasks").update({ title: s.title, instructions: s.instructions, derived: s.derived } as any).eq("id", first.id);
       if (rest.length) await supabase.from("routine_tasks").delete().in("id", rest.map((r) => r.id));
     }
   }
