@@ -44,6 +44,7 @@ Schema changes are migration-first. **Do NOT edit the schema in the Supabase das
 - The repo's pre-existing migrations were originally applied via the dashboard, so they're registered with the CLI as **already-applied** via a one-time `supabase migration repair --status applied <version>` (so `db push` runs only NEW files). These files ARE the baseline — do not `db pull` a fresh baseline on top of them.
 - Workflow for a change: write the migration file → `supabase db push` → commit the file. Verify against `supabase migration list` (Local and Remote columns should match).
 - Never commit an access token or the service-role key. `supabase login` (CLI auth) is separate from the per-project DB password; neither belongs in the repo.
+- **One channel per migration — don't mix MCP apply with a CLI-created file.** Applying via the Supabase MCP `apply_migration` stamps the tracking table (`supabase_migrations.schema_migrations`) with the MCP's *apply-time* version, which will NOT match a file created separately by `supabase migration new` (stamped at file-creation time). That mismatch is what breaks the "Supabase Preview" check ("Remote migration versions not found in local migrations directory") even when the SQL is byte-identical. So: if you apply via MCP, name the committed repo file with the **exact** version the MCP recorded; if you use the CLI, create the file first and apply it with `supabase db push`. Never do both for the same change.
 
 ## Deploy
 - Pushing to `main` auto-deploys the web app to Vercel at https://app.thekyaproject.com.
