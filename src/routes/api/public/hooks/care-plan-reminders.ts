@@ -7,14 +7,18 @@
  * bearer secret before doing anything.
  */
 import { createFileRoute } from "@tanstack/react-router";
+import { withCronTelemetry } from "@/lib/cronTelemetry";
 
 export const Route = createFileRoute("/api/public/hooks/care-plan-reminders")({
   server: {
     handlers: {
-      POST: async ({ request }) => {
+      POST: withCronTelemetry("care-plan-reminders", async ({ request }) => {
         const secret = process.env.CARE_PLAN_REMINDER_SECRET;
+        if (!secret) {
+          return Response.json({ ok: false, error: "CARE_PLAN_REMINDER_SECRET not configured" }, { status: 503 });
+        }
         const auth = request.headers.get("authorization") ?? "";
-        if (!secret || auth !== `Bearer ${secret}`) {
+        if (auth !== `Bearer ${secret}`) {
           return new Response("Unauthorized", { status: 401 });
         }
 
@@ -146,7 +150,7 @@ export const Route = createFileRoute("/api/public/hooks/care-plan-reminders")({
         }
 
         return Response.json({ ok: true, sits: sits?.length ?? 0, pushed: total, emailed });
-      },
+      }),
     },
   },
 });

@@ -32,6 +32,7 @@
  * is awaited before the response returns — nothing fire-and-forget here.
  */
 import { createFileRoute } from "@tanstack/react-router";
+import { withCronTelemetry } from "@/lib/cronTelemetry";
 
 type Stage = "add_first_bird" | "start_care_plan" | "log_first_weight" | "run_first_scan" | "weight_trend";
 
@@ -61,7 +62,7 @@ function hasCareContent(plan: Record<string, unknown> | undefined): boolean {
 export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
   server: {
     handlers: {
-      POST: async ({ request }) => {
+      POST: withCronTelemetry("onboarding-emails", async ({ request }) => {
         const secret = process.env.CARE_PLAN_REMINDER_SECRET;
         if (!secret) {
           return Response.json({ ok: false, error: "CARE_PLAN_REMINDER_SECRET not configured" }, { status: 503 });
@@ -239,7 +240,7 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
         }
 
         return Response.json({ ok: true, considered: (profilesQ.data ?? []).length, sent: results, failed });
-      },
+      }),
     },
   },
 });

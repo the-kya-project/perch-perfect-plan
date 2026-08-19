@@ -29,6 +29,7 @@
  * Body { "dryRun": true } → returns planned nudges, sends/logs nothing.
  */
 import { createFileRoute } from "@tanstack/react-router";
+import { withCronTelemetry } from "@/lib/cronTelemetry";
 
 const DAY = 1000 * 60 * 60 * 24;
 
@@ -54,10 +55,13 @@ function weightDueDays(entryDates: number[]): number {
 export const Route = createFileRoute("/api/public/hooks/engagement-nudges")({
   server: {
     handlers: {
-      POST: async ({ request }) => {
+      POST: withCronTelemetry("engagement-nudges", async ({ request }) => {
         const secret = process.env.CARE_PLAN_REMINDER_SECRET;
+        if (!secret) {
+          return Response.json({ ok: false, error: "CARE_PLAN_REMINDER_SECRET not configured" }, { status: 503 });
+        }
         const auth = request.headers.get("authorization") ?? "";
-        if (!secret || auth !== `Bearer ${secret}`) {
+        if (auth !== `Bearer ${secret}`) {
           return new Response("Unauthorized", { status: 401 });
         }
         const body = (await request.json().catch(() => ({}))) as { dryRun?: boolean };
@@ -223,7 +227,7 @@ export const Route = createFileRoute("/api/public/hooks/engagement-nudges")({
         }
 
         return Response.json({ ok: true, planned: planned.length, sent });
-      },
+      }),
     },
   },
 });
