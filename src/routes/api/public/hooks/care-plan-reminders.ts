@@ -39,22 +39,23 @@ export const Route = createFileRoute("/api/public/hooks/care-plan-reminders")({
           return Response.json({ ok: false, error: error.message }, { status: 500 });
         }
 
-        // One care-plan reminder per sit, ever. notification_log has no sit_id
-        // column, so we key on `type = care_plan_reminder:<sitId>` — a composite
-        // convention in the existing text column, no migration needed. That
-        // value also trips engagement-nudges' 20h suppression, whose lookback
-        // matches on user_id + sent_at and ignores the type value. Pre-fetch the
-        // sits already reminded so re-runs (this fires daily while a sit sits in
-        // the 3-day window) skip them instead of re-sending.
-        const reminderType = (sitId: string) => `care_plan_reminder:${sitId}`;
+        // One care-plan reminder per sit, ever. The sit id lives in
+        // notification_log.ref_id and `type` stays the stable kind
+        // "care_plan_reminder" (so the column groups by kind). A row still trips
+        // engagement-nudges' 20h suppression, whose lookback matches on
+        // user_id + sent_at and ignores type/ref_id. Pre-fetch the sits already
+        // reminded so re-runs (this fires daily while a sit sits in the 3-day
+        // window) skip them instead of re-sending.
+        const REMINDER_TYPE = "care_plan_reminder";
         const sitIds = (sits ?? []).map((s) => s.id);
         const alreadyReminded = new Set<string>();
         if (sitIds.length) {
           const { data: priorReminders } = await supabaseAdmin
             .from("notification_log")
-            .select("user_id, type")
-            .in("type", sitIds.map(reminderType));
-          for (const r of priorReminders ?? []) alreadyReminded.add(`${r.user_id}:${r.type}`);
+            .select("user_id, ref_id")
+            .eq("type", REMINDER_TYPE)
+            .in("ref_id", sitIds);
+          for (const r of priorReminders ?? []) alreadyReminded.add(`${r.user_id}:${r.ref_id}`);
         }
 
         // Dedupe owners we've already nudged in this run.
@@ -78,7 +79,7 @@ export const Route = createFileRoute("/api/public/hooks/care-plan-reminders")({
             if (!stale) continue;
 
             // Already reminded for this sit on an earlier run — never repeat.
-            if (alreadyReminded.has(`${ownerId}:${reminderType(sit.id)}`)) continue;
+            if (alreadyReminded.has(`${ownerId}:${sit.id}`)) continue;
 
             // Push and email are attempted independently so one failing can't
             // suppress the other or abort the run.
@@ -140,7 +141,8 @@ export const Route = createFileRoute("/api/public/hooks/care-plan-reminders")({
               await supabaseAdmin.from("notification_log").insert({
                 user_id: ownerId,
                 bird_id: link.bird_id ?? null,
-                type: reminderType(sit.id),
+                type: REMINDER_TYPE,
+                ref_id: sit.id,
                 channel: [pushSent ? "push" : null, emailSent ? "email" : null]
                   .filter(Boolean)
                   .join("+"),

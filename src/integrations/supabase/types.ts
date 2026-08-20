@@ -838,6 +838,7 @@ export type Database = {
           bird_id: string | null
           channel: string
           id: string
+          ref_id: string | null
           sent_at: string
           type: string
           user_id: string
@@ -846,6 +847,7 @@ export type Database = {
           bird_id?: string | null
           channel?: string
           id?: string
+          ref_id?: string | null
           sent_at?: string
           type: string
           user_id: string
@@ -854,6 +856,7 @@ export type Database = {
           bird_id?: string | null
           channel?: string
           id?: string
+          ref_id?: string | null
           sent_at?: string
           type?: string
           user_id?: string
