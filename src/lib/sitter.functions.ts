@@ -14,6 +14,7 @@ import { buildDailyLogEmail } from "./emailTemplates";
 import { emailT } from "./i18n/emailI18n.server";
 import { mergeEmergency } from "./emergency";
 import { isCfClip, cfUid } from "./clipRef";
+import { resolveScanPhotoUrls } from "./scanPhoto";
 
 // Resolve a clip column value to a playable URL: a signed Cloudflare Stream
 // iframe URL for "cfstream:<uid>" refs, or a signed Supabase Storage URL for
@@ -611,6 +612,11 @@ export const getSitterScans = createServerFn({ method: "GET" })
       const { data: p } = await sb.from("photo_logs").select("*").in("daily_log_id", ids);
       photos = p ?? [];
     }
+    // photo_url is a legacy inline data: URL or a scan-photos Storage path. Sign
+    // paths with the service-role client (data: passes through) so the token-based
+    // sitter view renders both formats.
+    const scanUrls = await resolveScanPhotoUrls(sb.storage, photos.map((p: any) => p.photo_url));
+    photos = photos.map((p: any) => ({ ...p, photo_url: scanUrls.get(p.photo_url) ?? p.photo_url }));
     return (scans ?? []).map((s: any) => ({
       ...s,
       photos: photos.filter((p: any) => p.daily_log_id === s.id),

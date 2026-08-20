@@ -15,6 +15,7 @@ import { SitCard } from "@/components/SitCard";
 import { toast } from "sonner";
 import { Disclaimer } from "@/components/Disclaimer";
 import { useBirdPhotos } from "@/lib/useBirdPhotos";
+import { resolveScanPhotoUrls } from "@/lib/scanPhoto";
 import { useBirdRole } from "@/lib/useBirdRole";
 import { useCapability, useMyPermissions } from "@/lib/useCapability";
 import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
@@ -407,7 +408,11 @@ function LogsPanel({ birdId, initialScan }: { birdId: string; initialScan?: stri
     queryKey: ["photo-logs", birdId],
     queryFn: async () => {
       const { data } = await supabase.from("photo_logs").select("*").eq("bird_id", birdId).order("created_at", { ascending: false }).limit(20);
-      return data ?? [];
+      const rows = data ?? [];
+      // photo_url is a legacy inline data: URL or a scan-photos Storage path —
+      // resolve both to a displayable URL (data: passes through, paths signed).
+      const scanUrls = await resolveScanPhotoUrls(supabase.storage, rows.map((r: any) => r.photo_url));
+      return rows.map((r: any) => ({ ...r, photo_url: scanUrls.get(r.photo_url) ?? r.photo_url }));
     },
   });
 

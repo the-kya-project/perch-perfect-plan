@@ -8,6 +8,7 @@ import { InkHero, Card, StatusPill, SectionHead, IconTile } from "@/components/s
 import { useCapability } from "@/lib/useCapability";
 import { useBirdRole } from "@/lib/useBirdRole";
 import { OwnerHeaderIcons } from "@/components/OwnerHeader";
+import { resolveScanPhotoUrls } from "@/lib/scanPhoto";
 
 // Focused, read-only view of one submitted health scan. Reached from the Scans
 // inbox (replaces the old deep-link into the care-plan editor's logs tab, which
@@ -90,14 +91,19 @@ function ScanDetail() {
         }
       }
       const { data: bird } = await supabase.from("birds").select("name").eq("id", birdId).maybeSingle();
-      // Photos attached to this check. photo_logs.photo_url is an inline data:
-      // URL (see the scan submit flows), so it renders directly — no signing.
+      // Photos attached to this check. photo_url is either a legacy inline data:
+      // URL or a scan-photos Storage path — resolve both to a displayable URL
+      // (data: passes through, paths are signed) via the shared helper.
       const { data: photos } = await supabase
         .from("photo_logs")
         .select("id, photo_url")
         .eq("daily_log_id", scanId)
         .order("created_at", { ascending: true });
-      return { row: row as any, actor, birdName: (bird?.name ?? "your bird") as string, photos: (photos ?? []) as { id: string; photo_url: string }[] };
+      const scanUrls = await resolveScanPhotoUrls(supabase.storage, (photos ?? []).map((p) => p.photo_url));
+      const resolvedPhotos = (photos ?? [])
+        .map((p) => ({ id: p.id, photo_url: scanUrls.get(p.photo_url) ?? p.photo_url }))
+        .filter((p) => !!p.photo_url);
+      return { row: row as any, actor, birdName: (bird?.name ?? "your bird") as string, photos: resolvedPhotos as { id: string; photo_url: string }[] };
     },
   });
 

@@ -12,6 +12,7 @@ import { computeTriage, type ScanFieldKey, type ScanAnswer } from "@/lib/triage"
 import { ScanForm, type ScanSubmit } from "@/components/ScanForm";
 import { MemberContextBanner } from "@/components/MemberContextBanner";
 import { track } from "@/lib/analytics";
+import { uploadScanPhotoOrInline } from "@/lib/scanPhoto";
 
 // Owner-run health scan. Uses the SAME ScanForm + triage as the sitter; on submit
 // it writes a daily_logs row (source='owner', run_by, no sit) + optional photo +
@@ -88,14 +89,20 @@ function OwnerScan() {
 
       // vomiting_status / photo / weight — best-effort, never block the scan.
       if (a.vomiting) await supabase.from("daily_logs").update({ vomiting_status: a.vomiting } as any).eq("id", row.id);
+      let photoFallback = false;
       if (p.photoDataUrl) {
-        await supabase.from("photo_logs").insert({ bird_id: birdId, daily_log_id: row.id, photo_type: "other", photo_url: p.photoDataUrl, notes: "Attached to health check", ...(activeSitId ? { sit_id: activeSitId } : {}) });
+        // New scans upload the image to the scan-photos bucket and store the
+        // path; on any upload failure we fall back to the inline data URL so the
+        // scan still saves (see uploadScanPhotoOrInline in scanPhoto.ts).
+        const stored = await uploadScanPhotoOrInline(birdId, p.photoDataUrl);
+        photoFallback = !stored.storedAsPath;
+        await supabase.from("photo_logs").insert({ bird_id: birdId, daily_log_id: row.id, photo_type: "other", photo_url: stored.value, notes: "Attached to health check", ...(activeSitId ? { sit_id: activeSitId } : {}) });
       }
       if (typeof p.weightGrams === "number") {
         await supabase.from("weight_entries").insert({ bird_id: birdId, grams: p.weightGrams, source: scanSource, logged_by: u.user?.id ?? null, ...(activeSitId ? { sit_id: activeSitId } : {}) });
       }
 
-      track("health_scan_run", { severity: triage.status, had_photo: !!p.photoDataUrl, source: scanSource });
+      track("health_scan_run", { severity: triage.status, had_photo: !!p.photoDataUrl, source: scanSource, photo_fallback: photoFallback });
       setResult(triage);
       // Show up immediately in the Scans tab, the record-home recent feed, and the weight timeline.
       ["scan-feed", "bird-checkins", "weight-entries", "bird-weights"].forEach((k) =>
