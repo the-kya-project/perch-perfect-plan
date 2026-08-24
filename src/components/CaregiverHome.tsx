@@ -1,4 +1,6 @@
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -68,6 +70,7 @@ function possessive(name: string): string {
 // task-completion path. Rendered only for the covering lead while the sit is
 // active (the caller passes only active sits).
 export function CaregiverCoveringSection({ sit, hideHeader }: { sit: ActiveCaregiverSit; hideHeader?: boolean }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const doneIds = useMemo(() => new Set(sit.completionsToday.map((c) => c.taskId)), [sit.completionsToday]);
 
@@ -81,14 +84,14 @@ export function CaregiverCoveringSection({ sit, hideHeader }: { sit: ActiveCareg
   const photoFor = (b: ActiveCaregiverSit["birds"][number]): string | null =>
     b.photo_url ? ((photoMap as any)?.[b.photo_url]?.url ?? null) : null;
 
-  const where = sit.ownerName ? `${possessive(sit.ownerName)} birds` : "a household's birds";
+  const where = sit.ownerName ? t("caregiver.ownerBirds", "{{owner}} birds", { owner: possessive(sit.ownerName) }) : t("caregiver.householdBirds", "a household's birds");
 
   return (
     <section className="space-y-3">
       {!hideHeader && (
         <div className="px-1">
-          <h2 className="t-section">Covering {where}</h2>
-          <p className="t-meta text-[var(--teal-on-cream)]">Sit active — daily care while {sit.ownerName || "the owner"}'s away</p>
+          <h2 className="t-section">{t("caregiver.covering", "Covering {{where}}", { where })}</h2>
+          <p className="t-meta text-[var(--teal-on-cream)]">{t("caregiver.sitActive", "Sit active — daily care while {{owner}}'s away", { owner: sit.ownerName || t("caregiver.theOwner", "the owner") })}</p>
         </div>
       )}
       <div className="space-y-3">
@@ -119,6 +122,7 @@ export function CaregiverCoveringSection({ sit, hideHeader }: { sit: ActiveCareg
 // pure-caregiver Home (CaregiverSitBlock / the Today tab) AND, scoped per-bird,
 // by the covering member's "Birds in your care" cards above.
 export function CaregiverTodayChecklist({ sit, birdId }: { sit: ActiveCaregiverSit; birdId?: string }) {
+  const { t } = useTranslation();
   // When birdId is set, scope to that one bird (the per-bird checklist a covering
   // member opens by tapping its card); otherwise show every bird's tasks.
   const scopedBirds = birdId ? sit.birds.filter((b) => b.id === birdId) : sit.birds;
@@ -147,18 +151,18 @@ export function CaregiverTodayChecklist({ sit, birdId }: { sit: ActiveCaregiverS
   const m = useMutation({
     mutationFn: (vars: { taskId: string; completed: boolean }) => toggle({ data: { sitId: sit.id, taskId: vars.taskId, completed: vars.completed } }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["active-caregiver-sits"] }),
-    onError: (e: any) => toast.error(e?.message ?? "Couldn't update."),
+    onError: (e: any) => toast.error(e?.message ?? t("caregiver.updateFailed", "Couldn't update.")),
   });
 
   return (
     <section>
       <SectionHead
-        title="Today's check"
+        title={t("caregiver.todaysCheck", "Today's check")}
         trailing={totalTasks > 0 ? <span className="t-meta">{doneTotal}/{totalTasks}</span> : undefined}
       />
       {totalTasks === 0 ? (
         <Card className="p-5 text-center">
-          <p className="t-body text-[var(--mute)]">No daily routine items yet. Logs you add still flow into the bird's record.</p>
+          <p className="t-body text-[var(--mute)]">{t("caregiver.noRoutineItems", "No daily routine items yet. Logs you add still flow into the bird's record.")}</p>
         </Card>
       ) : (
         <div className="space-y-4">
@@ -211,23 +215,24 @@ export function CaregiverTodayChecklist({ sit, birdId }: { sit: ActiveCaregiverS
 }
 
 function CaregiverSitBlock({ sit }: { sit: ActiveCaregiverSit }) {
+  const { t } = useTranslation();
   const today = new Date();
   const daysLeft = Math.max(0, Math.round((new Date(sit.endDate + "T23:59:59").getTime() - today.getTime()) / 86_400_000));
-  const greeting = (() => { const h = today.getHours(); return h < 12 ? "Morning" : h < 18 ? "Afternoon" : "Evening"; })();
+  const greeting = (() => { const h = today.getHours(); return h < 12 ? t("caregiver.morning", "Morning") : h < 18 ? t("caregiver.afternoon", "Afternoon") : t("caregiver.evening", "Evening"); })();
   const birdNames = sit.birds.map((b) => b.name);
-  const eyebrow = birdNames.length > 0 ? `You're caring for ${joinNames(birdNames)}` : "You're covering a sit";
+  const eyebrow = birdNames.length > 0 ? t("caregiver.caringFor", "You're caring for {{names}}", { names: joinNames(birdNames, t) }) : t("caregiver.coveringSit", "You're covering a sit");
   const body = daysLeft === 0
-    ? `${sit.ownerName} is back today. Here's today's check.`
+    ? t("caregiver.backToday", "{{owner}} is back today. Here's today's check.", { owner: sit.ownerName })
     : daysLeft === 1
-      ? `${sit.ownerName} is back tomorrow. Here's today's check.`
-      : `${sit.ownerName} is back in ${daysLeft} days. Here's today's check.`;
+      ? t("caregiver.backTomorrow", "{{owner}} is back tomorrow. Here's today's check.", { owner: sit.ownerName })
+      : t("caregiver.backInDays", "{{owner}} is back in {{days}} days. Here's today's check.", { owner: sit.ownerName, days: daysLeft });
 
   return (
     <>
       <InkHero
         showBrand
         eyebrow={eyebrow}
-        headline={`${greeting}.`}
+        headline={t("caregiver.greetingDot", "{{greeting}}.", { greeting })}
         body={body}
       />
       <div className="px-5 pt-5 space-y-6">
@@ -238,7 +243,7 @@ function CaregiverSitBlock({ sit }: { sit: ActiveCaregiverSit }) {
 
         {sit.notes && (
           <section>
-            <SectionHead title="From the owner" />
+            <SectionHead title={t("caregiver.fromOwner", "From the owner")} />
             <Card className="p-4">
               <p className="t-body whitespace-pre-line text-[var(--ink2)]">{sit.notes}</p>
             </Card>
@@ -253,24 +258,25 @@ function CaregiverSitBlock({ sit }: { sit: ActiveCaregiverSit }) {
 // if there is one (the "Today's check starts in N days" case) or routes to
 // the normal app otherwise.
 export function CaregiverEmpty({ upcoming }: { upcoming: { id: string; title: string | null; startDate: string; endDate: string } | null }) {
+  const { t } = useTranslation();
   if (upcoming) {
     const d = Math.max(0, Math.round((new Date(upcoming.startDate + "T00:00:00").getTime() - Date.now()) / 86_400_000));
-    const when = d === 0 ? "later today" : d === 1 ? "tomorrow" : `in ${d} days`;
+    const when = d === 0 ? t("caregiver.laterToday", "later today") : d === 1 ? t("caregiver.tomorrow", "tomorrow") : t("caregiver.inDays", "in {{days}} days", { days: d });
     return (
       <Card className="p-6 text-center">
         <div className="flex justify-center"><IconTile size={48} tone="pale" icon={<CalendarHeart className="size-6" />} /></div>
-        <h2 className="t-section mt-3">Today's check starts {when}.</h2>
-        <p className="t-body mt-1.5 text-[var(--ink2)]">{upcoming.title ? `${upcoming.title} — ` : ""}You'll see the daily list here when it begins.</p>
+        <h2 className="t-section mt-3">{t("caregiver.checkStarts", "Today's check starts {{when}}.", { when })}</h2>
+        <p className="t-body mt-1.5 text-[var(--ink2)]">{upcoming.title ? t("caregiver.titlePrefix", "{{title}} — ", { title: upcoming.title }) : ""}{t("caregiver.willSeeList", "You'll see the daily list here when it begins.")}</p>
       </Card>
     );
   }
   return (
     <Card className="p-6 text-center">
       <div className="flex justify-center"><IconTile size={48} tone="pale" icon={<CalendarHeart className="size-6" />} /></div>
-      <h2 className="t-section mt-3">No active sit right now.</h2>
-      <p className="t-body mt-1.5 text-[var(--ink2)]">When an owner assigns you to cover a sit, the daily checklist shows up here for the dates of that sit.</p>
+      <h2 className="t-section mt-3">{t("caregiver.noActiveSit", "No active sit right now.")}</h2>
+      <p className="t-body mt-1.5 text-[var(--ink2)]">{t("caregiver.noActiveSitBody", "When an owner assigns you to cover a sit, the daily checklist shows up here for the dates of that sit.")}</p>
       <div className="mt-4">
-        <Link to="/dashboard" className="inline-flex min-h-[44px] items-center justify-center rounded-[12px] bg-[var(--ink)] px-[18px] py-[11px] text-[15px] font-[500] text-white">Back to home</Link>
+        <Link to="/dashboard" className="inline-flex min-h-[44px] items-center justify-center rounded-[12px] bg-[var(--ink)] px-[18px] py-[11px] text-[15px] font-[500] text-white">{t("caregiver.backToHome", "Back to home")}</Link>
       </div>
     </Card>
   );
@@ -278,18 +284,19 @@ export function CaregiverEmpty({ upcoming }: { upcoming: { id: string; title: st
 
 // Spinner state for both the route and the Home embed.
 export function CaregiverLoading() {
+  const { t } = useTranslation();
   return (
-    <div className="flex items-center justify-center gap-2 py-10 text-[var(--mute)]"><Loader2 className="size-4 animate-spin" /> Loading…</div>
+    <div className="flex items-center justify-center gap-2 py-10 text-[var(--mute)]"><Loader2 className="size-4 animate-spin" /> {t("caregiver.loading", "Loading…")}</div>
   );
 }
 
 // ---- helpers ----
-function joinNames(names: string[]): string {
+function joinNames(names: string[], t: TFunction): string {
   const n = names.filter(Boolean);
-  if (n.length === 0) return "your birds";
+  if (n.length === 0) return t("caregiver.yourBirds", "your birds");
   if (n.length === 1) return n[0];
-  if (n.length === 2) return `${n[0]} & ${n[1]}`;
-  return `${n.slice(0, -1).join(", ")} & ${n[n.length - 1]}`;
+  if (n.length === 2) return t("caregiver.joinTwo", "{{a}} & {{b}}", { a: n[0], b: n[1] });
+  return t("caregiver.joinMany", "{{list}} & {{last}}", { list: n.slice(0, -1).join(", "), last: n[n.length - 1] });
 }
 function prettyTitle(t: string): string {
   // The derived-feed titles are like "Feed: Morning pellets" — keep them.

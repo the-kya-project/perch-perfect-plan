@@ -17,6 +17,66 @@
   "careCards.stepUpWithCaveats": "{{base}}, met kanttekeningen",
   // Yes
   "careCards.stepUpYes": "Ja",
+  // Afternoon
+  "caregiver.afternoon": "Middag",
+  // {{owner}} is back in {{days}} days. Here's today's check.
+  "caregiver.backInDays": "{{owner}} is over {{days}} dagen terug. Dit is de check van vandaag.",
+  // {{owner}} is back today. Here's today's check.
+  "caregiver.backToday": "{{owner}} is vandaag terug. Dit is de check van vandaag.",
+  // Back to home
+  "caregiver.backToHome": "Terug naar home",
+  // {{owner}} is back tomorrow. Here's today's check.
+  "caregiver.backTomorrow": "{{owner}} is morgen terug. Dit is de check van vandaag.",
+  // You're caring for {{names}}
+  "caregiver.caringFor": "Je zorgt voor {{names}}",
+  // Today's check starts {{when}}.
+  "caregiver.checkStarts": "De check van vandaag begint {{when}}.",
+  // Covering {{where}}
+  "caregiver.covering": "Invallen voor {{where}}",
+  // You're covering a sit
+  "caregiver.coveringSit": "Je valt in voor een oppasperiode",
+  // Evening
+  "caregiver.evening": "Avond",
+  // From the owner
+  "caregiver.fromOwner": "Van de eigenaar",
+  // {{greeting}}.
+  "caregiver.greetingDot": "{{greeting}}.",
+  // a household's birds
+  "caregiver.householdBirds": "de vogels van een huishouden",
+  // in {{days}} days
+  "caregiver.inDays": "over {{days}} dagen",
+  // {{list}} & {{last}}
+  "caregiver.joinMany": "{{list}} & {{last}}",
+  // {{a}} & {{b}}
+  "caregiver.joinTwo": "{{a}} & {{b}}",
+  // later today
+  "caregiver.laterToday": "later vandaag",
+  // Loading…
+  "caregiver.loading": "Laden…",
+  // Morning
+  "caregiver.morning": "Ochtend",
+  // No active sit right now.
+  "caregiver.noActiveSit": "Op dit moment geen actieve oppasperiode.",
+  // When an owner assigns you to cover a sit, the daily checklist shows up here for the dates of that sit.
+  "caregiver.noActiveSitBody": "Wanneer een eigenaar je vraagt in te vallen voor een oppasperiode, verschijnt de dagelijkse checklist hier voor de dagen van die oppasperiode.",
+  // No daily routine items yet. Logs you add still flow into the bird's record.
+  "caregiver.noRoutineItems": "Nog geen dagelijkse routinetaken. Wat je noteert komt wel in het dossier van de vogel.",
+  // {{owner}} birds
+  "caregiver.ownerBirds": "{{owner}} vogels",
+  // Sit active — daily care while {{owner}}'s away
+  "caregiver.sitActive": "Oppasperiode actief — dagelijkse zorg terwijl {{owner}} weg is",
+  // {{title}} — 
+  "caregiver.titlePrefix": "{{title}} — ",
+  // Today's check
+  "caregiver.todaysCheck": "Check van vandaag",
+  // tomorrow
+  "caregiver.tomorrow": "morgen",
+  // Couldn't update.
+  "caregiver.updateFailed": "Bijwerken mislukt.",
+  // You'll see the daily list here when it begins.
+  "caregiver.willSeeList": "Je ziet de dagelijkse lijst hier zodra die begint.",
+  // your birds
+  "caregiver.yourBirds": "je vogels",
   // Bite warning signs
   "careSheet.behavior.biteWarning": "Waarschuwingssignalen voor bijten",
   // Behavior
@@ -153,6 +213,152 @@
   "concernFlow.pauseFootnote": "Pauzeren verandert niets aan het dossier van {{name}}. {{ownerName}} beslist wat er daarna gebeurt.",
   // Is {{name}} okay?
   "concernFlow.pauseTitle": "Gaat het goed met {{name}}?",
+  // for
+  "dashboard.activityFor": "voor",
+  // Add a bird
+  "dashboard.addBird": "Vogel toevoegen",
+  // All good
+  "dashboard.allGood": "Alles in orde",
+  // Concern flagged
+  "dashboard.concernFlagged": "Aandachtspunt gemarkeerd",
+  // Avian vet address
+  "dashboard.defaults.avianVetAddress": "Adres vogeldierenarts",
+  // Avian vet name
+  "dashboard.defaults.avianVetName": "Naam vogeldierenarts",
+  // Avian vet phone
+  "dashboard.defaults.avianVetPhone": "Telefoon vogeldierenarts",
+  // Backup contact name
+  "dashboard.defaults.backupName": "Naam reservecontact",
+  // Backup contact phone
+  "dashboard.defaults.backupPhone": "Telefoon reservecontact",
+  // Carrier location
+  "dashboard.defaults.carrierLocation": "Locatie transportbox",
+  // Close
+  "dashboard.defaults.close": "Sluiten",
+  // Edit
+  "dashboard.defaults.edit": "Bewerken",
+  // Emergency vet address
+  "dashboard.defaults.emergencyVetAddress": "Adres spoeddierenarts",
+  // Emergency vet name
+  "dashboard.defaults.emergencyVetName": "Naam spoeddierenarts",
+  // Emergency vet phone
+  "dashboard.defaults.emergencyVetPhone": "Telefoon spoeddierenarts",
+  // First-aid kit location
+  "dashboard.defaults.firstAidKitLocation": "Locatie EHBO-kit",
+  // Set owner phone, avian vet, and other emergency info 
+  "dashboard.defaults.introA": "Stel telefoon van de eigenaar, vogeldierenarts en andere noodgegevens ",
+  // . Every bird uses this unless you edit it for that bird on its Emergency tab.
+  "dashboard.defaults.introB": " in. Elke vogel gebruikt dit, tenzij je het voor die vogel aanpast op het tabblad Noodgevallen.",
+  // No defaults set yet — each bird needs its own contacts until you fill these in.
+  "dashboard.defaults.noneSet": "Nog geen standaardgegevens ingesteld — elke vogel heeft zijn eigen contacten nodig totdat je deze invult.",
+  // once
+  "dashboard.defaults.once": "één keer",
+  // Owner phone
+  "dashboard.defaults.ownerPhone": "Telefoon eigenaar",
+  // Poison control number
+  "dashboard.defaults.poisonControl": "Nummer vergiftigingencentrum",
+  // {{label}} *
+  "dashboard.defaults.required": "{{label}} *",
+  // Save account defaults
+  "dashboard.defaults.save": "Accountstandaarden opslaan",
+  // Saved. Every bird uses this account info unless you edit it for that bird.
+  "dashboard.defaults.saved": "Opgeslagen. Elke vogel gebruikt deze accountgegevens, tenzij je het voor die vogel aanpast.",
+  // Saving...
+  "dashboard.defaults.saving": "Opslaan...",
+  // Set up
+  "dashboard.defaults.setUp": "Instellen",
+  // Signed out.
+  "dashboard.defaults.signedOut": "Uitgelogd.",
+  // {{filled}} of {{total}} default fields set.
+  "dashboard.defaults.someSet": "{{filled}} van {{total}} standaardvelden ingevuld.",
+  // Approved spending limit
+  "dashboard.defaults.spendingLimit": "Goedgekeurd uitgavenlimiet",
+  // Account emergency defaults
+  "dashboard.defaults.title": "Standaard noodgegevens account",
+  // Start their living record — care plan, weight, moments, and more. Tap Add a bird above to begin.
+  "dashboard.emptyBody": "Begin hun levende dossier — verzorgingsplan, gewicht, momenten en meer. Tik hierboven op Vogel toevoegen om te beginnen.",
+  // Welcome to your flock
+  "dashboard.emptyTitle": "Welkom bij je vogels",
+  // Foster
+  "dashboard.foster": "Opvang",
+  // {{count}} foster
+  "dashboard.fosterCount_one": "{{count}} opvangvogel",
+  // {{count}} fosters
+  "dashboard.fosterCount_other": "{{count}} opvangvogels",
+  // From your household
+  "dashboard.fromYourHousehold": "Uit je huishouden",
+  // Good afternoon
+  "dashboard.goodAfternoon": "Goedemiddag",
+  // Good evening
+  "dashboard.goodEvening": "Goedenavond",
+  // Good morning
+  "dashboard.goodMorning": "Goedemorgen",
+  // {{greeting}}, {{name}}
+  "dashboard.greetingNamed": "{{greeting}}, {{name}}",
+  // {{count}} hour ago
+  "dashboard.hoursAgo_one": "{{count}} uur geleden",
+  // {{count}} hours ago
+  "dashboard.hoursAgo_other": "{{count}} uur geleden",
+  // Household
+  "dashboard.household": "Huishouden",
+  // Add someone who helps care for your birds
+  "dashboard.householdAddSomeone": "Voeg iemand toe die meehelpt voor je vogels te zorgen",
+  // Household · You and {{name}}
+  "dashboard.householdYouAnd": "Huishouden · Jij en {{name}}",
+  // A household you help with
+  "dashboard.householdYouHelpWith": "Een huishouden waar je bij helpt",
+  // Household · You and {{count}} others
+  "dashboard.householdYouOthers_one": "Huishouden · Jij en {{count}} anderen",
+  // Household · You and {{count}} others
+  "dashboard.householdYouOthers_other": "Huishouden · Jij en {{count}} anderen",
+  // Household · You, {{name1}}, and {{name2}}
+  "dashboard.householdYouTwo": "Huishouden · Jij, {{name1}} en {{name2}}",
+  // In your care
+  "dashboard.inYourCare": "Onder jouw hoede",
+  // {{list}}, and {{last}}
+  "dashboard.joinMany": "{{list}} en {{last}}",
+  // {{a}} and {{b}}
+  "dashboard.joinTwo": "{{a}} en {{b}}",
+  // {{count}} min ago
+  "dashboard.minAgo_one": "{{count}} min geleden",
+  // {{count}} min ago
+  "dashboard.minAgo_other": "{{count}} min geleden",
+  // Needs a weigh-in
+  "dashboard.needsWeighIn": "Moet gewogen worden",
+  // No birds yet — start with your first.
+  "dashboard.noBirdsYet": "Nog geen vogels — begin met je eerste.",
+  // No weights yet
+  "dashboard.noWeightsYet": "Nog geen gewichten",
+  // {{owner}} household
+  "dashboard.ownerHousehold": "{{owner}} huishouden",
+  // Parrot
+  "dashboard.parrot": "Papegaai",
+  // Sharing all your birds
+  "dashboard.sharingAll": "Je deelt al je vogels",
+  // Sharing {{names}}
+  "dashboard.sharingNames": "Je deelt {{names}}",
+  // Add your first bird to start their record.
+  "dashboard.stateEmpty": "Voeg je eerste vogel toe om hun dossier te beginnen.",
+  // Take in a bird
+  "dashboard.takeInBird": "Een vogel opvangen",
+  // Today
+  "dashboard.today": "Vandaag",
+  // {{count}} thing
+  "dashboard.todayCount_one": "{{count}} ding",
+  // {{count}} things
+  "dashboard.todayCount_other": "{{count}} dingen",
+  // With you since {{date}}
+  "dashboard.withYouSince": "Bij je sinds {{date}}",
+  // yesterday
+  "dashboard.yesterday": "gisteren",
+  // You help here
+  "dashboard.youHelpHere": "Je helpt hier",
+  // Your birds
+  "dashboard.yourBirds": "Je vogels",
+  // your birds
+  "dashboard.yourBirdsFallback": "je vogels",
+  // Your flock
+  "dashboard.yourFlock": "Je vogels",
   // Not a substitute for veterinary care. Call a vet for any medical concern.
   "disclaimer.compactBody": "Geen vervanging voor diergeneeskundige zorg. Bel een dierenarts bij elk medisch probleem.",
   // Note:
@@ -167,6 +373,108 @@
   "emergencyBar.nav.home": "Home",
   // Today
   "emergencyBar.nav.today": "Vandaag",
+  // Gotcha day
+  "home.anchor.gotchaDay": "Gotcha-dag",
+  // Hatch day
+  "home.anchor.hatchDay": "Uitkomdag",
+  // Joined the flock
+  "home.anchor.joinedFlock": "Bij je vogels gekomen",
+  // Create a care plan
+  "home.checklist.carePlan": "Maak een verzorgingsplan",
+  // Dismiss checklist
+  "home.checklist.dismiss": "Checklist sluiten",
+  // Add emergency info
+  "home.checklist.emergency": "Noodgegevens toevoegen",
+  // Tap to install the app for push alerts.
+  "home.checklist.hintAndroidNative": "Tik om de app te installeren voor pushmeldingen.",
+  // Add it to your home screen for push alerts.
+  "home.checklist.hintAndroidOther": "Zet hem op je startscherm voor pushmeldingen.",
+  // Optional on a computer. Push alerts are made for your phone.
+  "home.checklist.hintDesktop": "Optioneel op een computer. Pushmeldingen zijn voor je telefoon gemaakt.",
+  // Open this page in Safari to install. Needed for push alerts.
+  "home.checklist.hintIosOther": "Open deze pagina in Safari om te installeren. Nodig voor pushmeldingen.",
+  // Tap share, then Add to Home Screen. Needed for push alerts.
+  "home.checklist.hintIosSafari": "Tik op delen en dan Zet op beginscherm. Nodig voor pushmeldingen.",
+  // Install the app
+  "home.checklist.install": "Installeer de app",
+  // Turn on notifications
+  "home.checklist.notifications": "Meldingen inschakelen",
+  // {{done}} of {{total}} done
+  "home.checklist.progress": "{{done}} van {{total}} klaar",
+  // Finish setting up
+  "home.checklist.title": "Rond het instellen af",
+  // {{count}} days
+  "home.staleDays_one": "{{count}} dagen",
+  // {{count}} days
+  "home.staleDays_other": "{{count}} dagen",
+  // {{who}} arrives {{when}}.
+  "home.state.arrives": "{{who}} komt {{when}}.",
+  // A quiet day across the flock.
+  "home.state.default": "Een rustige dag bij je vogels.",
+  // {{name}} is due for a weigh-in.
+  "home.state.dueWeighIn": "{{name}} moet gewogen worden.",
+  // {{count}} year with {{name}} {{when}}.
+  "home.state.gotchaYears_one": "{{count}} jaar met {{name}} {{when}}.",
+  // {{count}} years with {{name}} {{when}}.
+  "home.state.gotchaYears_other": "{{count}} jaar met {{name}} {{when}}.",
+  // One year since {{name}} joined the flock.
+  "home.state.joinedOneYear": "Eén jaar sinds {{name}} bij je vogels kwam.",
+  // {{years}} years since {{name}} joined the flock.
+  "home.state.joinedYears": "{{years}} jaar sinds {{name}} bij je vogels kwam.",
+  // {{namePoss}} {{label}} is {{when}}.
+  "home.state.momentFallback": "{{namePoss}} {{label}} is {{when}}.",
+  // {{name}} is settling in.
+  "home.state.settlingIn": "{{name}} is aan het wennen.",
+  // {{name}} turns {{years}} {{when}}.
+  "home.state.turnsAge": "{{name}} wordt {{years}} {{when}}.",
+  // Hope it's a slow one.
+  "home.state.weekend": "Hopelijk een rustige.",
+  // Your caregiver
+  "home.state.yourCaregiver": "Je verzorger",
+  // {{count}} day ago · Run by {{by}}
+  "home.today.concernMetaAgo_one": "{{count}} dag geleden · Uitgevoerd door {{by}}",
+  // {{count}} days ago · Run by {{by}}
+  "home.today.concernMetaAgo_other": "{{count}} dagen geleden · Uitgevoerd door {{by}}",
+  // Today · Run by {{by}}
+  "home.today.concernMetaToday": "Vandaag · Uitgevoerd door {{by}}",
+  // {{name}} — concern flagged
+  "home.today.concernTitle": "{{name}} — aandachtspunt gemarkeerd",
+  // {{namePoss}} {{label}} {{when}}
+  "home.today.momentTitle": "{{namePoss}} {{label}} {{when}}",
+  //  · {{count}} year
+  "home.today.momentYears_one": " · {{count}} jaar",
+  //  · {{count}} years
+  "home.today.momentYears_other": " · {{count}} jaar",
+  // {{name}} arrives soon
+  "home.today.sitArrives": "{{name}} komt binnenkort",
+  // A sit is coming up
+  "home.today.sitComingUp": "Er komt een oppasperiode aan",
+  // Sit {{when}}
+  "home.today.sitMeta": "Oppasperiode {{when}}",
+  // starts in {{count}} days
+  "home.today.sitStartsInDays_one": "begint over {{count}} dagen",
+  // starts in {{count}} days
+  "home.today.sitStartsInDays_other": "begint over {{count}} dagen",
+  // starts today
+  "home.today.sitStartsToday": "begint vandaag",
+  // starts tomorrow
+  "home.today.sitStartsTomorrow": "begint morgen",
+  // Last weighed {{count}} days ago
+  "home.today.staleMeta_one": "Laatst gewogen {{count}} dagen geleden",
+  // Last weighed {{count}} days ago
+  "home.today.staleMeta_other": "Laatst gewogen {{count}} dagen geleden",
+  // {{name}} needs a weigh-in
+  "home.today.staleTitle": "{{name}} moet gewogen worden",
+  // in {{count}} days
+  "home.when.inDays_one": "over {{count}} dagen",
+  // in {{count}} days
+  "home.when.inDays_other": "over {{count}} dagen",
+  // on {{day}}
+  "home.when.onDay": "op {{day}}",
+  // today
+  "home.when.today": "vandaag",
+  // tomorrow
+  "home.when.tomorrow": "morgen",
   // Do what feels right. Your avian vet can guide anything else.
   "passingGuidance.burialDisclaimerOwner": "Doe wat goed voelt. Je vogeldierenarts kan je met de rest helpen.",
   // Do what feels right. {{ownerName}} will guide anything else.

@@ -3,6 +3,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
 import { useServerFn } from "@tanstack/react-start";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { track } from "@/lib/analytics";
@@ -50,6 +52,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 
 function Dashboard() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { emergencyDefaults } = Route.useSearch();
 
   // One-shot: the inline pre-hydration head script (see __root.tsx) redirects a
@@ -155,8 +158,8 @@ function Dashboard() {
     [homeBirds, concernByBird],
   );
   const todayItems = useMemo(
-    () => buildTodayItems(homeBirds, weightsByBird, upcomingSits, moments, todayConcerns),
-    [homeBirds, weightsByBird, upcomingSits, moments, todayConcerns],
+    () => buildTodayItems(homeBirds, weightsByBird, upcomingSits, moments, todayConcerns, t),
+    [homeBirds, weightsByBird, upcomingSits, moments, todayConcerns, t],
   );
 
   const onTodayNavigate = (item: TodayItem) => {
@@ -213,7 +216,7 @@ function Dashboard() {
   const flockBirds = demo ? DEMO_FLOCK : ownedBirds.filter((b) => !b.is_foster);
   const todayItemsView = demo ? getDemoToday() : todayItems;
   const householdView = demo ? DEMO_HOUSEHOLD : household;
-  const glanceFor = (b: HomeBird) => (demo ? demoGlanceFor(b.id) : weightGlance(weightsByBird.get(b.id) ?? [], b.is_foster));
+  const glanceFor = (b: HomeBird) => (demo ? demoGlanceFor(b.id) : weightGlance(weightsByBird.get(b.id) ?? [], b.is_foster, t));
   const photoFor = (b: HomeBird) => (demo ? null : resolvePhoto(b.photo_url));
 
   const { data: caregiver } = useActiveCaregiver();
@@ -235,11 +238,11 @@ function Dashboard() {
     [sits, householdNameById],
   );
   const stateCopy = birdsLoading ? undefined
-    : birds.length === 0 ? "Add your first bird to start their record."
-    : buildHomeStateCopy(homeBirds, weightsByBird, sitsForStateCopy, moments);
+    : birds.length === 0 ? t("dashboard.stateEmpty", "Add your first bird to start their record.")
+    : buildHomeStateCopy(homeBirds, weightsByBird, sitsForStateCopy, moments, t);
   const heroCta: HeroCta | undefined =
     !birdsLoading && birds.length === 0
-      ? { label: "Add a bird", tone: "lime", icon: <Plus className="size-4" />, onPress: () => navigate({ to: "/birds/new" }) }
+      ? { label: t("dashboard.addBird", "Add a bird"), tone: "lime", icon: <Plus className="size-4" />, onPress: () => navigate({ to: "/birds/new" }) }
       : undefined;
 
   // No caregiver "takeover": ONE Home for every account. Owning a bird is derived
@@ -284,9 +287,9 @@ function Dashboard() {
             ))}
 
             <section className="space-y-3" data-coach="owner-flock">
-              <SectionHeaderCTA title={showHouseholds ? "Your birds" : "Your flock"} ctaLabel="Add a bird" onCta={() => navigate({ to: "/birds/new" })} />
+              <SectionHeaderCTA title={showHouseholds ? t("dashboard.yourBirds", "Your birds") : t("dashboard.yourFlock", "Your flock")} ctaLabel={t("dashboard.addBird", "Add a bird")} onCta={() => navigate({ to: "/birds/new" })} />
               {flockBirds.length === 0 ? (
-                <p className="px-1 text-sm text-[#5b6b61]">No birds yet — start with your first.</p>
+                <p className="px-1 text-sm text-[#5b6b61]">{t("dashboard.noBirdsYet", "No birds yet — start with your first.")}</p>
               ) : (
                 <div className="space-y-3">
                   {flockBirds.map((b) => (
@@ -306,8 +309,8 @@ function Dashboard() {
               // members get one sensible target, not a highlight per household).
               <section key={g.ownerId} className="space-y-3" data-coach={gi === 0 ? "member-household" : undefined}>
                 <div className="px-1">
-                  <h2 className="t-section">{g.ownerName ? `${possessive(g.ownerName)} household` : "A household you help with"}</h2>
-                  <p className="t-meta text-[var(--teal-on-cream)]">You help here</p>
+                  <h2 className="t-section">{g.ownerName ? t("dashboard.ownerHousehold", "{{owner}} household", { owner: possessive(g.ownerName) }) : t("dashboard.householdYouHelpWith", "A household you help with")}</h2>
+                  <p className="t-meta text-[var(--teal-on-cream)]">{t("dashboard.youHelpHere", "You help here")}</p>
                 </div>
                 <div className="space-y-3">
                   {g.birds.map((b, bi) =>
@@ -326,9 +329,9 @@ function Dashboard() {
             {fosterBirds.length > 0 && (
               <section className="space-y-3" data-coach="owner-fosters">
                 <SectionHeaderCTA
-                  title="In your care"
-                  pill={`${fosterBirds.length} ${fosterBirds.length === 1 ? "foster" : "fosters"}`}
-                  ctaLabel="Take in a bird"
+                  title={t("dashboard.inYourCare", "In your care")}
+                  pill={t("dashboard.fosterCount", { count: fosterBirds.length, defaultValue_one: "{{count}} foster", defaultValue_other: "{{count}} fosters" })}
+                  ctaLabel={t("dashboard.takeInBird", "Take in a bird")}
                   onCta={() => navigate({ to: "/birds/new", search: { foster: true } as any })}
                 />
                 <div className="space-y-3">
@@ -359,10 +362,11 @@ function Dashboard() {
 // Header
 // ---------------------------------------------------------------------------
 function HomeHeader({ firstName, unreadNotifs, stateCopy, cta }: { firstName: string; unreadNotifs: number; stateCopy?: string; cta?: HeroCta }) {
+  const { t } = useTranslation();
   const h = new Date().getHours();
   // Greetings are spoken-to-the-user copy: no terminal period.
-  const part = h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
-  const greeting = firstName ? `${part}, ${firstName}` : part;
+  const part = h < 12 ? t("dashboard.goodMorning", "Good morning") : h < 18 ? t("dashboard.goodAfternoon", "Good afternoon") : t("dashboard.goodEvening", "Good evening");
+  const greeting = firstName ? t("dashboard.greetingNamed", "{{greeting}}, {{name}}", { greeting: part, name: firstName }) : part;
   const dateLabel = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
   return (
     <InkHero
@@ -392,6 +396,7 @@ function SectionHeaderCTA({ title, pill, ctaLabel, onCta }: { title: string; pil
 // Today panel (adaptive — hidden entirely when empty)
 // ---------------------------------------------------------------------------
 function TodayPanel({ items, onNavigate }: { items: TodayItem[]; onNavigate: (i: TodayItem) => void }) {
+  const { t } = useTranslation();
   if (items.length === 0) return null;
   return (
     <section
@@ -400,8 +405,8 @@ function TodayPanel({ items, onNavigate }: { items: TodayItem[]; onNavigate: (i:
       style={{ background: "linear-gradient(180deg,#efe9da,#e7e0c8)" }}
     >
       <div className="flex items-baseline justify-between px-4 pb-1.5 pt-3.5">
-        <h2 className="t-section">Today</h2>
-        <span className="t-eyebrow text-[var(--teal-on-cream)]">{items.length} {items.length === 1 ? "thing" : "things"}</span>
+        <h2 className="t-section">{t("dashboard.today", "Today")}</h2>
+        <span className="t-eyebrow text-[var(--teal-on-cream)]">{t("dashboard.todayCount", { count: items.length, defaultValue_one: "{{count}} thing", defaultValue_other: "{{count}} things" })}</span>
       </div>
       <ul>
         {items.map((it) => (
@@ -455,7 +460,8 @@ function PhotoTile({ photo, name, species, position }: { photo: SignedPhoto | nu
 }
 
 function GlancePill({ glance }: { glance: WeightGlance }) {
-  if (glance.state === "none") return <span className="t-meta">No weights yet</span>;
+  const { t } = useTranslation();
+  if (glance.state === "none") return <span className="t-meta">{t("dashboard.noWeightsYet", "No weights yet")}</span>;
   const pill = glance.pill;
   return (
     <span className="inline-flex items-center gap-1.5 text-[15px] text-[var(--ink)]">
@@ -466,9 +472,10 @@ function GlancePill({ glance }: { glance: WeightGlance }) {
 }
 
 function ConcernPill() {
+  const { t } = useTranslation();
   return (
     <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--amber-fill)] px-2 py-0.5 text-[11px] font-[500] text-[var(--amber-ink)]">
-      <AlertTriangle className="size-3" /> Concern flagged
+      <AlertTriangle className="size-3" /> {t("dashboard.concernFlagged", "Concern flagged")}
     </span>
   );
 }
@@ -480,10 +487,11 @@ function possessive(name: string): string {
 }
 
 function BirdRow({ bird, photo, glance, foster, concern }: { bird: HomeBird; photo: SignedPhoto | null; glance: WeightGlance; foster?: boolean; concern?: boolean }) {
+  const { t } = useTranslation();
   const fosterStatus = foster
     ? glance.state === "stale"
-      ? { tone: "attention" as const, label: "Needs a weigh-in" }
-      : { tone: "good" as const, label: "All good" }
+      ? { tone: "attention" as const, label: t("dashboard.needsWeighIn", "Needs a weigh-in") }
+      : { tone: "good" as const, label: t("dashboard.allGood", "All good") }
     : null;
   return (
     <Link
@@ -495,11 +503,11 @@ function BirdRow({ bird, photo, glance, foster, concern }: { bird: HomeBird; pho
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <h3 className="t-item truncate text-[17px]">{bird.name}</h3>
-          {foster && <StatusPill tone="good">Foster</StatusPill>}
+          {foster && <StatusPill tone="good">{t("dashboard.foster", "Foster")}</StatusPill>}
         </div>
-        <p className="t-meta truncate">{bird.species || "Parrot"}</p>
+        <p className="t-meta truncate">{bird.species || t("dashboard.parrot", "Parrot")}</p>
         {foster && bird.intake_date && (
-          <p className="t-meta">With you since {fmtShort(bird.intake_date)}</p>
+          <p className="t-meta">{t("dashboard.withYouSince", "With you since {{date}}", { date: fmtShort(bird.intake_date) })}</p>
         )}
         {/* One status at a time. An active concern is mutually exclusive with
             the normal status — show ONLY the concern pill (never alongside
@@ -522,18 +530,19 @@ function BirdRow({ bird, photo, glance, foster, concern }: { bird: HomeBird; pho
 // From your household (activity, last 48h)
 // ---------------------------------------------------------------------------
 function HouseholdActivity({ household }: { household?: HomeHousehold }) {
+  const { t } = useTranslation();
   const activity = household?.activity ?? [];
   if (!household || household.members.length === 0 || activity.length === 0) return null;
   return (
     <section className="space-y-2">
-      <SectionHead title="From your household" />
+      <SectionHead title={t("dashboard.fromYourHousehold", "From your household")} />
       <ul className="space-y-1.5">
         {activity.map((a) => (
           <li key={a.id} className="flex items-start gap-2.5 rounded-[14px] bg-white px-3 py-2.5 ring-1 ring-[var(--line2)]">
             <span className="mt-1.5 size-2 shrink-0 rounded-full" style={{ background: "var(--house)" }} />
             <div className="min-w-0 flex-1">
-              <p className="text-[14px] text-[var(--ink)]"><span className="font-[500]">{a.actorName}</span> {a.summary} for {a.birdName}</p>
-              <p className="t-meta">{fmtAgo(a.at)}</p>
+              <p className="text-[14px] text-[var(--ink)]"><span className="font-[500]">{a.actorName}</span> {a.summary} {t("dashboard.activityFor", "for")} {a.birdName}</p>
+              <p className="t-meta">{fmtAgo(a.at, t)}</p>
             </div>
           </li>
         ))}
@@ -546,22 +555,23 @@ function HouseholdActivity({ household }: { household?: HomeHousehold }) {
 // Quiet Household row → account-level /household screen
 // ---------------------------------------------------------------------------
 function HouseholdRow({ household, firstName }: { household?: HomeHousehold; firstName: string }) {
+  const { t } = useTranslation();
   const members = household?.members ?? [];
   const youInitial = (firstName.slice(0, 1) || "Y").toUpperCase();
   const hasMembers = members.length > 0;
 
   const primary = (() => {
-    if (!hasMembers) return "Household";
+    if (!hasMembers) return t("dashboard.household", "Household");
     const names = members.map((m) => m.name?.trim()).filter(Boolean) as string[];
-    if (names.length === 1) return `Household · You and ${names[0]}`;
-    if (names.length === 2) return `Household · You, ${names[0]}, and ${names[1]}`;
-    return `Household · You and ${members.length} others`;
+    if (names.length === 1) return t("dashboard.householdYouAnd", "Household · You and {{name}}", { name: names[0] });
+    if (names.length === 2) return t("dashboard.householdYouTwo", "Household · You, {{name1}}, and {{name2}}", { name1: names[0], name2: names[1] });
+    return t("dashboard.householdYouOthers", "Household · You and {{count}} others", { count: members.length });
   })();
   const secondary = !hasMembers
-    ? "Add someone who helps care for your birds"
+    ? t("dashboard.householdAddSomeone", "Add someone who helps care for your birds")
     : household?.scope === "all" || !household?.sharedBirdNames.length
-      ? "Sharing all your birds"
-      : `Sharing ${joinNames(household.sharedBirdNames)}`;
+      ? t("dashboard.sharingAll", "Sharing all your birds")
+      : t("dashboard.sharingNames", "Sharing {{names}}", { names: joinNames(household.sharedBirdNames, t) });
 
   const inner = (
     <div className={`flex items-center gap-3 ${hasMembers ? "" : "opacity-[0.55]"}`}>
@@ -601,11 +611,12 @@ function Avatar({ initial, dim }: { initial: string; dim?: boolean }) {
 // so this is a calm explanatory card, no competing button.
 // ---------------------------------------------------------------------------
 function EmptyHome() {
+  const { t } = useTranslation();
   return (
     <section className="rounded-[18px] bg-white p-8 text-center ring-1 ring-[var(--line2)]" style={{ boxShadow: "0 6px 14px -8px rgba(40,50,40,.08)" }}>
       <div className="flex justify-center"><IconTile size={48} icon={<Feather className="size-6" />} /></div>
-      <h2 className="t-section mt-3">Welcome to your flock</h2>
-      <p className="t-body mx-auto mt-1.5 max-w-[34ch] text-[var(--ink2)]">Start their living record — care plan, weight, moments, and more. Tap Add a bird above to begin.</p>
+      <h2 className="t-section mt-3">{t("dashboard.emptyTitle", "Welcome to your flock")}</h2>
+      <p className="t-body mx-auto mt-1.5 max-w-[34ch] text-[var(--ink2)]">{t("dashboard.emptyBody", "Start their living record — care plan, weight, moments, and more. Tap Add a bird above to begin.")}</p>
     </section>
   );
 }
@@ -632,19 +643,19 @@ function HomeSkeleton() {
 function fmtShort(iso: string): string {
   return new Date(`${iso.slice(0, 10)}T12:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 }
-function fmtAgo(iso: string): string {
+function fmtAgo(iso: string, t: TFunction): string {
   const mins = Math.max(1, Math.round((Date.now() - +new Date(iso)) / 60000));
-  if (mins < 60) return `${mins} min ago`;
+  if (mins < 60) return t("dashboard.minAgo", "{{count}} min ago", { count: mins });
   const hrs = Math.round(mins / 60);
-  if (hrs < 24) return `${hrs} ${hrs === 1 ? "hour" : "hours"} ago`;
-  return "yesterday";
+  if (hrs < 24) return t("dashboard.hoursAgo", { count: hrs, defaultValue_one: "{{count}} hour ago", defaultValue_other: "{{count}} hours ago" });
+  return t("dashboard.yesterday", "yesterday");
 }
-function joinNames(names: string[]): string {
+function joinNames(names: string[], t: TFunction): string {
   const n = names.filter(Boolean);
-  if (n.length === 0) return "your birds";
+  if (n.length === 0) return t("dashboard.yourBirdsFallback", "your birds");
   if (n.length === 1) return n[0];
-  if (n.length === 2) return `${n[0]} and ${n[1]}`;
-  return `${n.slice(0, -1).join(", ")}, and ${n[n.length - 1]}`;
+  if (n.length === 2) return t("dashboard.joinTwo", "{{a}} and {{b}}", { a: n[0], b: n[1] });
+  return t("dashboard.joinMany", "{{list}}, and {{last}}", { list: n.slice(0, -1).join(", "), last: n[n.length - 1] });
 }
 
 // ---------------------------------------------------------------------------
@@ -662,6 +673,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 function DefaultsPanel() {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const sectionRef = useRef<HTMLElement>(null);
@@ -682,19 +694,19 @@ function DefaultsPanel() {
   const [d, setD] = useState<any>(() => seedDefaults(defaults));
   const [saving, setSaving] = useState(false);
   const fields: [string, string, boolean?][] = [
-    ["owner_phone", "Owner phone", true],
-    ["backup_name", "Backup contact name"],
-    ["backup_phone", "Backup contact phone"],
-    ["avian_vet_name", "Avian vet name"],
-    ["avian_vet_phone", "Avian vet phone", true],
-    ["avian_vet_address", "Avian vet address"],
-    ["emergency_vet_name", "Emergency vet name"],
-    ["emergency_vet_phone", "Emergency vet phone"],
-    ["emergency_vet_address", "Emergency vet address"],
-    ["poison_control", "Poison control number"],
-    ["carrier_location", "Carrier location"],
-    ["first_aid_kit_location", "First-aid kit location"],
-    ["spending_limit", "Approved spending limit"],
+    ["owner_phone", t("dashboard.defaults.ownerPhone", "Owner phone"), true],
+    ["backup_name", t("dashboard.defaults.backupName", "Backup contact name")],
+    ["backup_phone", t("dashboard.defaults.backupPhone", "Backup contact phone")],
+    ["avian_vet_name", t("dashboard.defaults.avianVetName", "Avian vet name")],
+    ["avian_vet_phone", t("dashboard.defaults.avianVetPhone", "Avian vet phone"), true],
+    ["avian_vet_address", t("dashboard.defaults.avianVetAddress", "Avian vet address")],
+    ["emergency_vet_name", t("dashboard.defaults.emergencyVetName", "Emergency vet name")],
+    ["emergency_vet_phone", t("dashboard.defaults.emergencyVetPhone", "Emergency vet phone")],
+    ["emergency_vet_address", t("dashboard.defaults.emergencyVetAddress", "Emergency vet address")],
+    ["poison_control", t("dashboard.defaults.poisonControl", "Poison control number")],
+    ["carrier_location", t("dashboard.defaults.carrierLocation", "Carrier location")],
+    ["first_aid_kit_location", t("dashboard.defaults.firstAidKitLocation", "First-aid kit location")],
+    ["spending_limit", t("dashboard.defaults.spendingLimit", "Approved spending limit")],
   ];
   const filledCount = defaults
     ? fields.filter(([k]) => typeof (defaults as any)[k] === "string" && (defaults as any)[k].trim()).length
@@ -712,7 +724,7 @@ function DefaultsPanel() {
   async function save() {
     setSaving(true);
     const { data: u } = await getLocalUser();
-    if (!u.user) { toast.error("Signed out."); setSaving(false); return; }
+    if (!u.user) { toast.error(t("dashboard.defaults.signedOut", "Signed out.")); setSaving(false); return; }
     const row: Record<string, any> = { owner_id: u.user.id };
     for (const [k] of fields) {
       const v = d[k];
@@ -721,7 +733,7 @@ function DefaultsPanel() {
     const { error } = await supabase.from("owner_emergency_defaults").upsert(row, { onConflict: "owner_id" });
     setSaving(false);
     if (error) { toast.error(error.message); return; }
-    toast.success("Saved. Every bird uses this account info unless you edit it for that bird.");
+    toast.success(t("dashboard.defaults.saved", "Saved. Every bird uses this account info unless you edit it for that bird."));
     setOpen(false);
     qc.invalidateQueries({ queryKey: ["owner-defaults"] });
   }
@@ -729,22 +741,22 @@ function DefaultsPanel() {
   return (
     <section ref={sectionRef} id="emergency-defaults" className="scroll-mt-4 space-y-3">
       <div className="flex items-end justify-between">
-        <h2 className="t-section">Account emergency defaults</h2>
+        <h2 className="t-section">{t("dashboard.defaults.title", "Account emergency defaults")}</h2>
         <button type="button" onClick={() => { setD(seedDefaults(defaults)); setOpen((o) => !o); }} className="text-sm font-medium text-[#1a3d2e] underline">
-          {open ? "Close" : filledCount > 0 ? "Edit" : "Set up"}
+          {open ? t("dashboard.defaults.close", "Close") : filledCount > 0 ? t("dashboard.defaults.edit", "Edit") : t("dashboard.defaults.setUp", "Set up")}
         </button>
       </div>
-      <p className="text-xs text-[#5f5e5a]">Set owner phone, avian vet, and other emergency info <em>once</em>. Every bird uses this unless you edit it for that bird on its Emergency tab.</p>
+      <p className="text-xs text-[#5f5e5a]">{t("dashboard.defaults.introA", "Set owner phone, avian vet, and other emergency info ")}<em>{t("dashboard.defaults.once", "once")}</em>{t("dashboard.defaults.introB", ". Every bird uses this unless you edit it for that bird on its Emergency tab.")}</p>
       {!open ? (
         <div className="rounded-[18px] bg-[#efe9da] p-4 text-xs text-[#5f5e5a]">
-          {filledCount === 0 ? "No defaults set yet — each bird needs its own contacts until you fill these in." : `${filledCount} of ${fields.length} default fields set.`}
+          {filledCount === 0 ? t("dashboard.defaults.noneSet", "No defaults set yet — each bird needs its own contacts until you fill these in.") : t("dashboard.defaults.someSet", "{{filled}} of {{total}} default fields set.", { filled: filledCount, total: fields.length })}
         </div>
       ) : (
         <div className="space-y-3 rounded-[18px] bg-[#efe9da] p-4">
           {fields.map(([k, l, required]) => {
             const warn = isPhoneField(k) ? phoneWarning(d[k]) : null;
             return (
-              <Field key={k} label={required ? `${l} *` : l}>
+              <Field key={k} label={required ? t("dashboard.defaults.required", "{{label}} *", { label: l }) : l}>
                 {isAddressField(k) ? (
                   <AddressInput value={d[k] ?? ""} onChange={(v) => setD((prev: any) => ({ ...prev, [k]: v }))} />
                 ) : (
@@ -759,7 +771,7 @@ function DefaultsPanel() {
             );
           })}
           <button disabled={saving || fields.some(([k]) => isPhoneField(k) && !!phoneWarning(d[k]))} onClick={save} className="mt-2 w-full rounded-[14px] bg-[#1a3d2e] py-3 text-sm font-medium text-white disabled:opacity-50">
-            {saving ? "Saving..." : "Save account defaults"}
+            {saving ? t("dashboard.defaults.saving", "Saving...") : t("dashboard.defaults.save", "Save account defaults")}
           </button>
         </div>
       )}

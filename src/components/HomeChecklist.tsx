@@ -7,6 +7,8 @@
 // "create a care plan" + "add emergency info" (a member helping someone else's
 // flock owns no birds, so those don't apply to them).
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Check, ChevronRight, X, Download, Bell, ClipboardList, Siren } from "lucide-react";
@@ -21,17 +23,18 @@ const dismissKey = (uid: string) => `ppc_setup_checklist_dismissed_${uid}`;
 
 // Short, branch-appropriate hint under the "Install the app" row (full steps
 // are in the modal it opens). Sentence case, no em dashes.
-function installHint(branch: InstallBranch): string {
+function installHint(branch: InstallBranch, t: TFunction): string {
   switch (branch) {
-    case "ios-safari": return "Tap share, then Add to Home Screen. Needed for push alerts.";
-    case "ios-other": return "Open this page in Safari to install. Needed for push alerts.";
-    case "android-native": return "Tap to install the app for push alerts.";
-    case "android-other": return "Add it to your home screen for push alerts.";
-    default: return "Optional on a computer. Push alerts are made for your phone.";
+    case "ios-safari": return t("home.checklist.hintIosSafari", "Tap share, then Add to Home Screen. Needed for push alerts.");
+    case "ios-other": return t("home.checklist.hintIosOther", "Open this page in Safari to install. Needed for push alerts.");
+    case "android-native": return t("home.checklist.hintAndroidNative", "Tap to install the app for push alerts.");
+    case "android-other": return t("home.checklist.hintAndroidOther", "Add it to your home screen for push alerts.");
+    default: return t("home.checklist.hintDesktop", "Optional on a computer. Push alerts are made for your phone.");
   }
 }
 
 export function HomeChecklist() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [dismissed, setDismissed] = useState(false);
   const [installOpen, setInstallOpen] = useState(false);
@@ -90,15 +93,15 @@ export function HomeChecklist() {
   const items: Item[] = [
     {
       key: "install",
-      label: "Install the app",
+      label: t("home.checklist.install", "Install the app"),
       icon: <Download className="size-4" />,
       done: installed,
       onAction: installed ? undefined : () => setInstallOpen(true),
-      hint: installed ? undefined : installHint(installBranch),
+      hint: installed ? undefined : installHint(installBranch, t),
     },
     {
       key: "notifications",
-      label: "Turn on notifications",
+      label: t("home.checklist.notifications", "Turn on notifications"),
       icon: <Bell className="size-4" />,
       done: notifGranted,
       onAction: notifGranted
@@ -116,7 +119,7 @@ export function HomeChecklist() {
   if (data.ownsBirds) {
     items.push({
       key: "care-plan",
-      label: "Create a care plan",
+      label: t("home.checklist.carePlan", "Create a care plan"),
       icon: <ClipboardList className="size-4" />,
       done: data.carePlanDone,
       onAction: () =>
@@ -126,7 +129,7 @@ export function HomeChecklist() {
     });
     items.push({
       key: "emergency",
-      label: "Add emergency info",
+      label: t("home.checklist.emergency", "Add emergency info"),
       icon: <Siren className="size-4" />,
       done: data.emergencyDone,
       onAction: () => navigate({ to: "/dashboard", search: { emergencyDefaults: true } }),
@@ -145,10 +148,10 @@ export function HomeChecklist() {
     <section className="rounded-[18px] bg-white p-4 ring-1 ring-[var(--line2)]" style={{ boxShadow: "0 6px 14px -8px rgba(40,50,40,.08)" }}>
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="t-section">Finish setting up</p>
-          <p className="t-meta mt-0.5">{doneCount} of {items.length} done</p>
+          <p className="t-section">{t("home.checklist.title", "Finish setting up")}</p>
+          <p className="t-meta mt-0.5">{t("home.checklist.progress", "{{done}} of {{total}} done", { done: doneCount, total: items.length })}</p>
         </div>
-        <button type="button" onClick={dismiss} aria-label="Dismiss checklist" className="grid size-8 shrink-0 place-items-center rounded-full text-[var(--mute2)] active:bg-black/[0.04]">
+        <button type="button" onClick={dismiss} aria-label={t("home.checklist.dismiss", "Dismiss checklist")} className="grid size-8 shrink-0 place-items-center rounded-full text-[var(--mute2)] active:bg-black/[0.04]">
           <X className="size-4" />
         </button>
       </div>

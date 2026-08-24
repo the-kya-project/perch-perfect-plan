@@ -21,6 +21,96 @@
     "careCards.stepUpYes": {
       "stamp": "3c2100d515be78f6"
     },
+    "caregiver.afternoon": {
+      "stamp": "8662597e3decf20a"
+    },
+    "caregiver.backInDays": {
+      "stamp": "6c6f825d0849064d"
+    },
+    "caregiver.backToday": {
+      "stamp": "469c99687c8bcab0"
+    },
+    "caregiver.backToHome": {
+      "stamp": "5707ed08861e2e51"
+    },
+    "caregiver.backTomorrow": {
+      "stamp": "1e2150064beaf591"
+    },
+    "caregiver.caringFor": {
+      "stamp": "6e533d3362b4aea6"
+    },
+    "caregiver.checkStarts": {
+      "stamp": "f813e2b1fc49da86"
+    },
+    "caregiver.covering": {
+      "stamp": "3c1f54f744cad295"
+    },
+    "caregiver.coveringSit": {
+      "stamp": "3fc00a32a70b5d63"
+    },
+    "caregiver.evening": {
+      "stamp": "a13b77a605bbc4c4"
+    },
+    "caregiver.fromOwner": {
+      "stamp": "ba78753e6aad72c3"
+    },
+    "caregiver.greetingDot": {
+      "stamp": "97ff4ba19a2fb779"
+    },
+    "caregiver.householdBirds": {
+      "stamp": "5c1a3a608b629090"
+    },
+    "caregiver.inDays": {
+      "stamp": "fd85f0a91fe9e357"
+    },
+    "caregiver.joinMany": {
+      "stamp": "53501f8407841d61"
+    },
+    "caregiver.joinTwo": {
+      "stamp": "8125b9de58d7fbc4"
+    },
+    "caregiver.laterToday": {
+      "stamp": "fd53102e0a0b43aa"
+    },
+    "caregiver.loading": {
+      "stamp": "543c404f0e5a7d86"
+    },
+    "caregiver.morning": {
+      "stamp": "2955bc8248288d8b"
+    },
+    "caregiver.noActiveSit": {
+      "stamp": "9b5ab329f859060b"
+    },
+    "caregiver.noActiveSitBody": {
+      "stamp": "5ff4d9168f36458c"
+    },
+    "caregiver.noRoutineItems": {
+      "stamp": "40f9bfa3c67cb400"
+    },
+    "caregiver.ownerBirds": {
+      "stamp": "e2e556668932a83c"
+    },
+    "caregiver.sitActive": {
+      "stamp": "095ae6e4bba77d48"
+    },
+    "caregiver.titlePrefix": {
+      "stamp": "deb665fd8bcec5db"
+    },
+    "caregiver.todaysCheck": {
+      "stamp": "d11527a360b2d4fe"
+    },
+    "caregiver.tomorrow": {
+      "stamp": "43ea43f10f298b6a"
+    },
+    "caregiver.updateFailed": {
+      "stamp": "9a66f933ffd81633"
+    },
+    "caregiver.willSeeList": {
+      "stamp": "8850b735ca24646e"
+    },
+    "caregiver.yourBirds": {
+      "stamp": "6afed180f92c7f4e"
+    },
     "careSheet.behavior.biteWarning": {
       "stamp": "8b8e84c9a7fa417a"
     },
@@ -225,6 +315,225 @@
     "concernFlow.pauseTitle": {
       "stamp": "4f35e0fe00ca9ab1"
     },
+    "dashboard.activityFor": {
+      "stamp": "bd4ff0f0192f0833"
+    },
+    "dashboard.addBird": {
+      "stamp": "560ff679efabdff6"
+    },
+    "dashboard.allGood": {
+      "stamp": "b0d0d9d04c58623e"
+    },
+    "dashboard.concernFlagged": {
+      "stamp": "e2d41a9d4e29d90a"
+    },
+    "dashboard.defaults.avianVetAddress": {
+      "stamp": "4c7ce4363a365794"
+    },
+    "dashboard.defaults.avianVetName": {
+      "stamp": "9b89e02514da4d60"
+    },
+    "dashboard.defaults.avianVetPhone": {
+      "stamp": "ff831e51075502cb"
+    },
+    "dashboard.defaults.backupName": {
+      "stamp": "0194c75e5be6def8"
+    },
+    "dashboard.defaults.backupPhone": {
+      "stamp": "5a995b18a1f887b6"
+    },
+    "dashboard.defaults.carrierLocation": {
+      "stamp": "f78f3d76ac0d1f1c"
+    },
+    "dashboard.defaults.close": {
+      "stamp": "d981ee660d866d8c"
+    },
+    "dashboard.defaults.edit": {
+      "stamp": "dc46962c1249053f"
+    },
+    "dashboard.defaults.emergencyVetAddress": {
+      "stamp": "94bec20be88cb313"
+    },
+    "dashboard.defaults.emergencyVetName": {
+      "stamp": "4934b12c84c320f4"
+    },
+    "dashboard.defaults.emergencyVetPhone": {
+      "stamp": "2c4d2579963763cb"
+    },
+    "dashboard.defaults.firstAidKitLocation": {
+      "stamp": "dd65d3ad54476bcf"
+    },
+    "dashboard.defaults.introA": {
+      "stamp": "0cea43b9b64891a2"
+    },
+    "dashboard.defaults.introB": {
+      "stamp": "247e7371e098ec90"
+    },
+    "dashboard.defaults.noneSet": {
+      "stamp": "a6586910feac99a0"
+    },
+    "dashboard.defaults.once": {
+      "stamp": "9ea090b8b8501e11"
+    },
+    "dashboard.defaults.ownerPhone": {
+      "stamp": "464a9cd7483a7fb7"
+    },
+    "dashboard.defaults.poisonControl": {
+      "stamp": "e921de87af5a5753"
+    },
+    "dashboard.defaults.required": {
+      "stamp": "d454dfd185b3ba51"
+    },
+    "dashboard.defaults.save": {
+      "stamp": "cc79407fe0d1104c"
+    },
+    "dashboard.defaults.saved": {
+      "stamp": "e51a25da22b49e81"
+    },
+    "dashboard.defaults.saving": {
+      "stamp": "0b6adadaf808c8a5"
+    },
+    "dashboard.defaults.setUp": {
+      "stamp": "29b8b2d01850fe7a"
+    },
+    "dashboard.defaults.signedOut": {
+      "stamp": "c968129a185a2b35"
+    },
+    "dashboard.defaults.someSet": {
+      "stamp": "87a04c3a5d592bbe"
+    },
+    "dashboard.defaults.spendingLimit": {
+      "stamp": "c26b503f617df333"
+    },
+    "dashboard.defaults.title": {
+      "stamp": "6d882dfff29582c6"
+    },
+    "dashboard.emptyBody": {
+      "stamp": "4ffbb36f685b6fba"
+    },
+    "dashboard.emptyTitle": {
+      "stamp": "8523dfe1d2284389"
+    },
+    "dashboard.foster": {
+      "stamp": "883bc5824866f631"
+    },
+    "dashboard.fosterCount_one": {
+      "stamp": "8c0793824bed07dd"
+    },
+    "dashboard.fosterCount_other": {
+      "stamp": "0ea631c2037e26ab"
+    },
+    "dashboard.fromYourHousehold": {
+      "stamp": "a21a7093758b7f43"
+    },
+    "dashboard.goodAfternoon": {
+      "stamp": "e694f81c6d4efc99"
+    },
+    "dashboard.goodEvening": {
+      "stamp": "bc6ee7cc04afb4cc"
+    },
+    "dashboard.goodMorning": {
+      "stamp": "d2ed179a60b83184"
+    },
+    "dashboard.greetingNamed": {
+      "stamp": "c547e4c586bb6037"
+    },
+    "dashboard.hoursAgo_one": {
+      "stamp": "cbe32908564e76b1"
+    },
+    "dashboard.hoursAgo_other": {
+      "stamp": "b88cc0c07130129e"
+    },
+    "dashboard.household": {
+      "stamp": "da35ceae68b17eed"
+    },
+    "dashboard.householdAddSomeone": {
+      "stamp": "cc301b63f4ac0ada"
+    },
+    "dashboard.householdYouAnd": {
+      "stamp": "29be4ecc60876a56"
+    },
+    "dashboard.householdYouHelpWith": {
+      "stamp": "57f824fd59cd7827"
+    },
+    "dashboard.householdYouOthers_one": {
+      "stamp": "7ad4fdd095f7f2e3"
+    },
+    "dashboard.householdYouOthers_other": {
+      "stamp": "7ad4fdd095f7f2e3"
+    },
+    "dashboard.householdYouTwo": {
+      "stamp": "d2e0fd99998d1811"
+    },
+    "dashboard.inYourCare": {
+      "stamp": "bb01634e2bbbabcc"
+    },
+    "dashboard.joinMany": {
+      "stamp": "37a97f174c0787a9"
+    },
+    "dashboard.joinTwo": {
+      "stamp": "8ae4b5e718dd5811"
+    },
+    "dashboard.minAgo_one": {
+      "stamp": "b319bcaf24a0f775"
+    },
+    "dashboard.minAgo_other": {
+      "stamp": "b319bcaf24a0f775"
+    },
+    "dashboard.needsWeighIn": {
+      "stamp": "50ca555ffc8aba95"
+    },
+    "dashboard.noBirdsYet": {
+      "stamp": "43caa67651968019"
+    },
+    "dashboard.noWeightsYet": {
+      "stamp": "83d210b728cc6f87"
+    },
+    "dashboard.ownerHousehold": {
+      "stamp": "6f88eefa3f29f263"
+    },
+    "dashboard.parrot": {
+      "stamp": "aced62a75d27e4c1"
+    },
+    "dashboard.sharingAll": {
+      "stamp": "86396a81949ea518"
+    },
+    "dashboard.sharingNames": {
+      "stamp": "7214a3a0dec11013"
+    },
+    "dashboard.stateEmpty": {
+      "stamp": "c3fe8a8c1554ec2e"
+    },
+    "dashboard.takeInBird": {
+      "stamp": "03568b1390419dbb"
+    },
+    "dashboard.today": {
+      "stamp": "65e7700b50124553"
+    },
+    "dashboard.todayCount_one": {
+      "stamp": "a710608e21c2d36e"
+    },
+    "dashboard.todayCount_other": {
+      "stamp": "de8f045c71864cec"
+    },
+    "dashboard.withYouSince": {
+      "stamp": "3f342b717aa459ef"
+    },
+    "dashboard.yesterday": {
+      "stamp": "fba3054b05ab61f7"
+    },
+    "dashboard.youHelpHere": {
+      "stamp": "b8b0f55d4969f67f"
+    },
+    "dashboard.yourBirds": {
+      "stamp": "06e9a8855418fc39"
+    },
+    "dashboard.yourBirdsFallback": {
+      "stamp": "6afed180f92c7f4e"
+    },
+    "dashboard.yourFlock": {
+      "stamp": "39c2272ca6b15b64"
+    },
     "disclaimer.compactBody": {
       "stamp": "52f56abf42e19540"
     },
@@ -245,6 +554,159 @@
     },
     "emergencyBar.nav.today": {
       "stamp": "65e7700b50124553"
+    },
+    "home.anchor.gotchaDay": {
+      "stamp": "f0adabab58593b7b"
+    },
+    "home.anchor.hatchDay": {
+      "stamp": "3bb80810b5939bf6"
+    },
+    "home.anchor.joinedFlock": {
+      "stamp": "9180e8faeeb93170"
+    },
+    "home.checklist.carePlan": {
+      "stamp": "5f9f49b5bffad50a"
+    },
+    "home.checklist.dismiss": {
+      "stamp": "867017e09adb082f"
+    },
+    "home.checklist.emergency": {
+      "stamp": "ebb7cef4c95ba41d"
+    },
+    "home.checklist.hintAndroidNative": {
+      "stamp": "36568c941a308716"
+    },
+    "home.checklist.hintAndroidOther": {
+      "stamp": "92dd36a298700c7b"
+    },
+    "home.checklist.hintDesktop": {
+      "stamp": "5c84cb41d06619a6"
+    },
+    "home.checklist.hintIosOther": {
+      "stamp": "05d32a03969cde76"
+    },
+    "home.checklist.hintIosSafari": {
+      "stamp": "8eb0c5d3fc5dc962"
+    },
+    "home.checklist.install": {
+      "stamp": "5caec8cb290698ad"
+    },
+    "home.checklist.notifications": {
+      "stamp": "68d7ce2eb8a94f51"
+    },
+    "home.checklist.progress": {
+      "stamp": "59efbd7d6145d298"
+    },
+    "home.checklist.title": {
+      "stamp": "1952e12dc7683eea"
+    },
+    "home.staleDays_one": {
+      "stamp": "61aff90b101588bf"
+    },
+    "home.staleDays_other": {
+      "stamp": "61aff90b101588bf"
+    },
+    "home.state.arrives": {
+      "stamp": "f6c68a20dac868dc"
+    },
+    "home.state.default": {
+      "stamp": "b6fb4d10b4779ef7"
+    },
+    "home.state.dueWeighIn": {
+      "stamp": "4ae6609d443e5621"
+    },
+    "home.state.gotchaYears_one": {
+      "stamp": "461b7536cbf58374"
+    },
+    "home.state.gotchaYears_other": {
+      "stamp": "70780d4dcd6aa1f1"
+    },
+    "home.state.joinedOneYear": {
+      "stamp": "c6225a35474b0aee"
+    },
+    "home.state.joinedYears": {
+      "stamp": "705de645623f09c9"
+    },
+    "home.state.momentFallback": {
+      "stamp": "3529a57e865499c0"
+    },
+    "home.state.settlingIn": {
+      "stamp": "6631466b8f0d57c3"
+    },
+    "home.state.turnsAge": {
+      "stamp": "fc9ae4d2a0becec9"
+    },
+    "home.state.weekend": {
+      "stamp": "93c8f7d04ce106cb"
+    },
+    "home.state.yourCaregiver": {
+      "stamp": "64e0d9a35f21b61c"
+    },
+    "home.today.concernMetaAgo_one": {
+      "stamp": "ad488dbb7b060fa2"
+    },
+    "home.today.concernMetaAgo_other": {
+      "stamp": "facbbd3da0326b70"
+    },
+    "home.today.concernMetaToday": {
+      "stamp": "fac311b290cfd06c"
+    },
+    "home.today.concernTitle": {
+      "stamp": "ba11ab55ce379138"
+    },
+    "home.today.momentTitle": {
+      "stamp": "3dbb0b3387a1f45f"
+    },
+    "home.today.momentYears_one": {
+      "stamp": "d2a4542fb95a64c4"
+    },
+    "home.today.momentYears_other": {
+      "stamp": "a5c69f3726f3d54b"
+    },
+    "home.today.sitArrives": {
+      "stamp": "802894b92ddea1df"
+    },
+    "home.today.sitComingUp": {
+      "stamp": "a99f9ef6659646b8"
+    },
+    "home.today.sitMeta": {
+      "stamp": "a7b5e2ba4cb2dbe7"
+    },
+    "home.today.sitStartsInDays_one": {
+      "stamp": "ddc740358d7be3eb"
+    },
+    "home.today.sitStartsInDays_other": {
+      "stamp": "ddc740358d7be3eb"
+    },
+    "home.today.sitStartsToday": {
+      "stamp": "90ec87f62474ba86"
+    },
+    "home.today.sitStartsTomorrow": {
+      "stamp": "0b65e5cdaba0b3c1"
+    },
+    "home.today.staleMeta_one": {
+      "stamp": "de357a4a5899e251"
+    },
+    "home.today.staleMeta_other": {
+      "stamp": "de357a4a5899e251"
+    },
+    "home.today.staleTitle": {
+      "stamp": "28d535a0258afcb5"
+    },
+    "home.when.inDays_one": {
+      "stamp": "4244c2a07a3a8883"
+    },
+    "home.when.inDays_other": {
+      "stamp": "4244c2a07a3a8883"
+    },
+    "home.when.onDay": {
+      "stamp": "7939d5584ccc5d70"
+    },
+    "home.when.today": {
+      "stamp": "9fd613b7258b1a55"
+    },
+    "home.when.tomorrow": {
+      "stamp": "43ea43f10f298b6a"
     },
     "passingGuidance.burialDisclaimerOwner": {
       "stamp": "fe31c1a275e79b4d"
