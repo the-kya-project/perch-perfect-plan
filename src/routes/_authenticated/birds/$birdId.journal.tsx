@@ -11,7 +11,7 @@ import { useCapability } from "@/lib/useCapability";
 import { useBirdRole } from "@/lib/useBirdRole";
 import { useActiveSitIdForBird } from "@/components/CaregiverHome";
 import { uploadJournalPhoto, signJournalPhotos } from "@/lib/journalPhoto";
-import { compressImageToDataUrl } from "@/lib/imageUpload";
+import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/journal")({
   head: () => ({ meta: [{ title: "Journal — Kya & Co." }] }),
@@ -237,7 +237,12 @@ function EntryForm({ birdId, entry, isOwner, onClose, onSaved, onDeleted }: { bi
     if (!file) return;
     setPhotoBusy(true);
     try {
-      setPhotoData(await compressImageToDataUrl(file));
+      const dataUrl = await compressImageToDataUrl(file);
+      if (dataUrlBytes(dataUrl) > MAX_UPLOAD_BYTES) {
+        toast.error("That photo's a bit too large even after resizing. Try a different one.");
+        return;
+      }
+      setPhotoData(dataUrl);
       setKeepPhoto(false);
     } catch {
       toast.error("Couldn't process that photo. Try a different one.");
