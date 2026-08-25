@@ -294,7 +294,10 @@
     "passingGuidance.stepBringToVet": {
       "stamp": "ccc830f5641283bd"
     },
-    "passingGuidance.stepFreezer": {
+    "passingGuidance.stepFreezerOwner": {
+      "stamp": "7aabfff79fb197c6"
+    },
+    "passingGuidance.stepFreezerSitter": {
       "stamp": "67016933faa89abb"
     },
     "passingGuidance.stepPlasticBag": {

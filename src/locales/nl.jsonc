@@ -199,8 +199,10 @@
   "passingGuidance.pathChoice.vet": "Breng {{name}} naar de dierenarts",
   // Bring them to the vet. Calling ahead helps them be ready.
   "passingGuidance.stepBringToVet": "Breng ze naar de dierenarts. Van tevoren bellen helpt hen zich voor te bereiden.",
+  // Put them in the freezer until you're ready.
+  "passingGuidance.stepFreezerOwner": "Leg ze in de vriezer tot je er klaar voor bent.",
   // Put them in the freezer until {{ownerName}} is ready.
-  "passingGuidance.stepFreezer": "Leg ze in de vriezer tot {{ownerName}} er klaar voor is.",
+  "passingGuidance.stepFreezerSitter": "Leg ze in de vriezer tot {{ownerName}} er klaar voor is.",
   // Place them in a plastic bag.
   "passingGuidance.stepPlasticBag": "Leg ze in een plastic zak.",
   // Place them in a plastic bag or a small box for the trip.

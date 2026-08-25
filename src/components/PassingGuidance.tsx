@@ -112,7 +112,9 @@ export function PathDetail({
         <Steps steps={[
           t("passingGuidance.stepWrapTowelCloth", "Gently wrap {{name}} in a towel or soft cloth.", { name }),
           t("passingGuidance.stepPlasticBag", "Place them in a plastic bag."),
-          t("passingGuidance.stepFreezer", "Put them in the freezer until {{ownerName}} is ready.", { ownerName }),
+          sitter
+            ? t("passingGuidance.stepFreezerSitter", "Put them in the freezer until {{ownerName}} is ready.", { ownerName })
+            : t("passingGuidance.stepFreezerOwner", "Put them in the freezer until you're ready."),
         ]} />
         {sitter && (
           <p className="t-body leading-relaxed text-[var(--ink2)]">
