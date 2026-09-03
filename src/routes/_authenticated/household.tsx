@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
   getHouseholdAccount, cancelHouseholdInvite, removeHouseholdMember, removeHouseholdMemberEverywhere,
+  addExistingHouseholdMember,
 } from "@/lib/household.functions";
 import { HouseholdInviteSheet } from "@/components/HouseholdInviteSheet";
 import { toast } from "sonner";
@@ -200,28 +201,59 @@ function PendingRow({ invite, last, onChanged }: { invite: AccountPending; last?
   );
 }
 
-// Manage a member: scope which birds they can help with (per-bird removal reuses
-// removeHouseholdMember — single source) or remove them from the household
-// entirely. Adding a new bird is done via the Invite flow (sends a fresh invite).
+// Manage a member: toggle which birds they can help with — checking grants via
+// addExistingHouseholdMember, unchecking revokes via removeHouseholdMember
+// (single source, shared with the per-bird access hub) — or remove them from the
+// household entirely. Unchecking their LAST bird is the same thing as removing
+// them, so it confirms and routes to removeHouseholdMemberEverywhere.
 function MemberManageSheet({ member, allBirds, onClose, onChanged }: {
   member: AccountMember; allBirds: { id: string; name: string }[]; onClose: () => void; onChanged: () => void;
 }) {
   const removeOne = useServerFn(removeHouseholdMember);
   const removeAll = useServerFn(removeHouseholdMemberEverywhere);
+  const addOne = useServerFn(addExistingHouseholdMember);
   const has = new Set(member.birdIds);
   const label = member.name?.trim() || member.email || "this member";
 
-  const removeBird = useMutation({
-    mutationFn: (birdId: string) => removeOne({ data: { birdId, userId: member.userId } }),
-    onSuccess: () => { toast.success("Updated."); onChanged(); },
-    onError: (e: any) => toast.error(e?.message ?? "Couldn't update."),
-  });
+  // Optimistic per-bird overrides so a toggle paints immediately. A key is
+  // dropped on failure, which reverts the box to `has` (server truth) rather
+  // than leaving it showing access the member doesn't have. On success the
+  // override is kept — it already agrees with the server, and holding it until
+  // onChanged's refetch lands avoids a flicker back to the old value.
+  const [pending, setPending] = useState<string | null>(null);
+  const [optimistic, setOptimistic] = useState<Record<string, boolean>>({});
+  const hasAccess = (id: string) => optimistic[id] ?? has.has(id);
+  const accessCount = allBirds.filter((b) => hasAccess(b.id)).length;
+
   const removeEverywhere = useMutation({
     mutationFn: () => removeAll({ data: { userId: member.userId } }),
     onSuccess: () => { toast.success(`${label} removed from your household.`); onChanged(); onClose(); },
     onError: (e: any) => toast.error(e?.message ?? "Couldn't remove."),
   });
-  const accessibleBirds = allBirds.filter((b) => has.has(b.id));
+
+  async function toggleBird(bird: { id: string; name: string }) {
+    if (pending || removeEverywhere.isPending) return;
+    const granting = !hasAccess(bird.id);
+    // Unchecking the only bird they can help with removes them from the
+    // household — same confirm and same server call as before.
+    if (!granting && accessCount === 1) {
+      if (window.confirm(`${bird.name} is the only bird ${label} can help with. Removing it takes them out of your household. Continue?`)) removeEverywhere.mutate();
+      return;
+    }
+    setPending(bird.id);
+    setOptimistic((o) => ({ ...o, [bird.id]: granting }));
+    try {
+      const data = { birdId: bird.id, userId: member.userId };
+      await (granting ? addOne({ data }) : removeOne({ data }));
+      toast.success("Updated.");
+      onChanged();
+    } catch (e: any) {
+      setOptimistic((o) => { const n = { ...o }; delete n[bird.id]; return n; });
+      toast.error(e?.message ?? "Couldn't update.");
+    } finally {
+      setPending(null);
+    }
+  }
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-end sm:place-items-center" role="dialog" aria-modal="true">
@@ -234,28 +266,23 @@ function MemberManageSheet({ member, allBirds, onClose, onChanged }: {
 
         <p className="t-eyebrow text-[var(--mute2)]">Can help with</p>
         <Card className="mt-1.5">
-          {accessibleBirds.map((b, i) => (
-            <div key={b.id} className={`flex min-h-[48px] items-center gap-3 px-4 ${i ? "border-t border-[var(--line2)]" : ""}`}>
-              <Check className="size-4 shrink-0 text-[var(--moss)]" />
+          {allBirds.map((b, i) => (
+            <label
+              key={b.id}
+              className={`flex min-h-[48px] cursor-pointer items-center gap-3 px-4 ${i ? "border-t border-[var(--line2)]" : ""}`}
+            >
+              <input
+                type="checkbox"
+                checked={hasAccess(b.id)}
+                disabled={!!pending || removeEverywhere.isPending}
+                onChange={() => toggleBird(b)}
+                className="size-4 shrink-0 accent-[var(--moss)] disabled:opacity-50"
+              />
               <span className="t-item flex-1 font-[400]">{b.name}</span>
-              <button
-                type="button"
-                disabled={removeBird.isPending}
-                onClick={() => {
-                  if (accessibleBirds.length === 1) {
-                    if (window.confirm(`${b.name} is the only bird ${label} can help with. Removing it takes them out of your household. Continue?`)) removeEverywhere.mutate();
-                    return;
-                  }
-                  removeBird.mutate(b.id);
-                }}
-                className="min-h-[44px] shrink-0 px-2 text-xs font-[500] text-[var(--red-ink)] underline disabled:opacity-50"
-              >
-                Remove
-              </button>
-            </div>
+              {pending === b.id && <Loader2 className="size-4 shrink-0 animate-spin text-[var(--mute2)]" />}
+            </label>
           ))}
         </Card>
-        <p className="t-meta mt-2 px-1">To add another bird, use “Invite a household member” and choose that bird.</p>
 
         <button
           type="button"
