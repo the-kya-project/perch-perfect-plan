@@ -84,6 +84,24 @@ export async function createTusDirectUpload(opts: { uploadLength: number; maxDur
   return { uploadURL, uid };
 }
 
+/**
+ * Permanently delete one video. Cloudflare returns 200 with an empty result on
+ * success. A 404 (already gone) is treated as success: the goal is "this uid no
+ * longer exists", and failing a bird/account deletion because a video was
+ * already removed would block the caller forever.
+ *
+ * The configured token needs Account -> Stream -> Edit, which is what the app
+ * already requires to create uploads.
+ */
+export async function deleteVideo(uid: string): Promise<void> {
+  try {
+    await cf(`/stream/${uid}`, { method: "DELETE" });
+  } catch (e: any) {
+    if (/not found|10007|404/i.test(String(e?.message ?? ""))) return;
+    throw e;
+  }
+}
+
 export type StreamStatus = {
   uid: string;
   readyToStream: boolean;

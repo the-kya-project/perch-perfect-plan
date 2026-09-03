@@ -3,6 +3,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
+import { purgeBirdMedia } from "@/lib/birdMedia.functions";
 import { activeOwnerBirdsMin } from "@/lib/activeBirds";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { ArrowLeft, Trash2, ChevronDown, AlertTriangle, Eye } from "lucide-react";
@@ -285,6 +287,7 @@ function DeleteBirdCard({ birdId, bird, plan }: { birdId: string; bird: any; pla
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleteText, setDeleteText] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const purgeMedia = useServerFn(purgeBirdMedia);
 
   async function deleteBird() {
     if (deleteText.trim() !== (bird.name ?? "").trim()) {
@@ -292,6 +295,16 @@ function DeleteBirdCard({ birdId, bird, plan }: { birdId: string; bird: any; pla
       return;
     }
     setDeleting(true);
+    // Media BEFORE rows: the rows are the only record of these files and clip
+    // uids, so a failure must abort with the bird intact rather than orphan
+    // them permanently. Same ordering as deleteAccount.
+    try {
+      await purgeMedia({ data: { birdId } });
+    } catch (e: any) {
+      setDeleting(false);
+      toast.error(e?.message ?? "Couldn't remove this bird's files — nothing was deleted. Please try again.");
+      return;
+    }
     await supabase.from("sit_birds").delete().eq("bird_id", birdId);
     await supabase.from("weight_logs").delete().eq("bird_id", birdId);
     await supabase.from("photo_logs").delete().eq("bird_id", birdId);

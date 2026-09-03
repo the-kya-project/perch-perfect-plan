@@ -77,6 +77,25 @@ export const deleteMyAccount = createServerFn({ method: "POST" })
         await deleteAllUnderPrefix(supabaseAdmin.storage, "scan-photos", birdId);
         await deleteAllUnderPrefix(supabaseAdmin.storage, "journal-attachments", birdId);
       }
+      // Cloudflare Stream clips live outside Supabase entirely, so no bucket
+      // sweep reaches them. Same ordering rule: the care_plans rows are the only
+      // record of these uids, so the videos go before the rows do — otherwise
+      // they bill forever with nothing left pointing at them.
+      if (birdIds.length) {
+        const { data: plans } = await supabaseAdmin
+          .from("care_plans")
+          .select(
+            "baseline_clip_path, clip_anything_else_path, clip_bedtime_path, clip_food_prep_path, " +
+              "clip_food_water_path, clip_locations_path, clip_step_up_path, clip_targeting_path, clip_toys_foraging_path",
+          )
+          .in("bird_id", birdIds);
+        const refs: string[] = [];
+        for (const row of (plans ?? []) as unknown as Array<Record<string, unknown>>) {
+          for (const v of Object.values(row)) if (typeof v === "string" && v) refs.push(v);
+        }
+        const { deleteStreamClips } = await import("./birdMedia.functions");
+        await deleteStreamClips(refs);
+      }
     } catch (e: any) {
       throw new Error(
         `Account deletion did not complete: your photos could not be removed (${e?.message ?? "storage error"}). ` +
