@@ -13,6 +13,23 @@ const config: CapacitorConfig = {
   server: {
     url: 'https://app.thekyaproject.com',
   },
+  plugins: {
+    // Kya signs in with Google and Apple only. The Facebook provider is unused,
+    // and on Android its SDK (com.facebook.android:facebook-login) transitively
+    // pulls facebook-core plus five advertising permissions the app never uses.
+    // Disabling it here drives @capgo/capacitor-social-login's cap-sync hook to
+    // set socialLogin.facebook.include=false, which drops the Facebook SDK and
+    // swaps in the plugin's stub FacebookProvider (no com.facebook.* ships).
+    // NOTE: the hook writes this into the plugin's node_modules gradle.properties,
+    // so `npx cap sync android` MUST run after any `npm install` and before
+    // `./gradlew bundleRelease`, or Facebook re-enables. iOS is unaffected — the
+    // SPM manifest links FBSDK unconditionally and no hook removes it there.
+    SocialLogin: {
+      providers: {
+        facebook: false,
+      },
+    },
+  },
 };
 
 export default config;
