@@ -75,6 +75,7 @@ export const deleteMyAccount = createServerFn({ method: "POST" })
       for (const birdId of birdIds) {
         await deleteAllUnderPrefix(supabaseAdmin.storage, "journal-photos", birdId);
         await deleteAllUnderPrefix(supabaseAdmin.storage, "scan-photos", birdId);
+        await deleteAllUnderPrefix(supabaseAdmin.storage, "journal-attachments", birdId);
       }
     } catch (e: any) {
       throw new Error(

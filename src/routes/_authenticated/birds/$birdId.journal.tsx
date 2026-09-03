@@ -4,7 +4,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, BookOpen, ImagePlus, Check, X, Loader2, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, BookOpen, ImagePlus, Check, X, Loader2, Trash2, Paperclip, FileText } from "lucide-react";
 import { InkHero, PhotoHero, StatusPill, Card, PrimaryButton } from "@/components/system";
 import { MemberContextBanner } from "@/components/MemberContextBanner";
 import { useCapability } from "@/lib/useCapability";
@@ -12,6 +12,10 @@ import { useBirdRole } from "@/lib/useBirdRole";
 import { useActiveSitIdForBird } from "@/components/CaregiverHome";
 import { uploadJournalPhoto, signJournalPhotos } from "@/lib/journalPhoto";
 import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
+import {
+  attachmentRejectionReason, uploadJournalAttachment, listJournalAttachments,
+  removeJournalAttachment, signJournalAttachments, type JournalAttachment,
+} from "@/lib/journalAttachment";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/journal")({
   head: () => ({ meta: [{ title: "Journal — Kya & Co." }] }),
@@ -88,6 +92,24 @@ function JournalFacet() {
     queryFn: async () => Object.fromEntries(await signJournalPhotos(paths)),
   });
 
+  // How many attachments each entry has, for the quiet list marker. One
+  // bird-scoped query rather than one per entry; the rows are tiny (an id) and
+  // RLS already limits them to birds the reader can see.
+  const { data: attachCounts } = useQuery({
+    queryKey: ["journal-attachment-counts", birdId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("journal_attachments").select("journal_entry_id").eq("bird_id", birdId);
+      if (error) throw error;
+      const counts: Record<string, number> = {};
+      for (const r of data ?? []) {
+        const id = (r as { journal_entry_id: string }).journal_entry_id;
+        counts[id] = (counts[id] ?? 0) + 1;
+      }
+      return counts;
+    },
+  });
+
   const shown = all.filter((e) => FILTERS.find((f) => f.value === filter)!.kinds.includes(e.kind));
 
   return (
@@ -140,6 +162,7 @@ function JournalFacet() {
                   key={e.id}
                   entry={e}
                   photoUrl={e.photo_path ? photoUrls?.[e.photo_path] ?? null : null}
+                  attachmentCount={attachCounts?.[e.id] ?? 0}
                   onOpen={() => setEditing(e)}
                 />
               ))}
@@ -157,10 +180,12 @@ function JournalFacet() {
           onSaved={() => {
             setEditing(null);
             qc.invalidateQueries({ queryKey: ["journal-entries", birdId] });
+            qc.invalidateQueries({ queryKey: ["journal-attachment-counts", birdId] });
           }}
           onDeleted={() => {
             setEditing(null);
             qc.invalidateQueries({ queryKey: ["journal-entries", birdId] });
+            qc.invalidateQueries({ queryKey: ["journal-attachment-counts", birdId] });
           }}
         />
       )}
@@ -171,7 +196,7 @@ function JournalFacet() {
 // One journal entry as a tokenized white card. If the entry has a photo it
 // renders as a PhotoHero-style band across the top; tapping anywhere opens the
 // existing edit flow.
-function EntryCard({ entry, photoUrl, onOpen }: { entry: Entry; photoUrl: string | null; onOpen: () => void }) {
+function EntryCard({ entry, photoUrl, attachmentCount, onOpen }: { entry: Entry; photoUrl: string | null; attachmentCount: number; onOpen: () => void }) {
   const k = KIND[entry.kind];
   return (
     <Card>
@@ -186,6 +211,13 @@ function EntryCard({ entry, photoUrl, onOpen }: { entry: Entry; photoUrl: string
             <span className={`inline-flex items-center rounded-full px-[9px] py-[3px] text-[11.5px] font-[500] ${k.pill}`}>{k.label}</span>
           </div>
           {entry.body && <p className="t-body mt-2 line-clamp-3 text-[var(--ink2)]">{entry.body}</p>}
+          {/* Quiet marker — the files themselves live in the entry sheet. */}
+          {attachmentCount > 0 && (
+            <p className="t-meta mt-2 inline-flex items-center gap-1 text-[var(--mute2)]">
+              <Paperclip className="size-3.5" />
+              {attachmentCount} {attachmentCount === 1 ? "file" : "files"}
+            </p>
+          )}
         </div>
       </button>
     </Card>
@@ -228,6 +260,64 @@ function EntryForm({ birdId, entry, isOwner, onClose, onSaved, onDeleted }: { bi
   const [photoBusy, setPhotoBusy] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  // Attachments are a DRAFT until Save, exactly like the photo and the
+  // "Remove photo" toggle above: picks are held in memory as File objects and
+  // removals are only marked. Two reasons, both about failure modes rather
+  // than elegance:
+  //   - uploadJournalAttachment needs a journal_entry_id, and a new entry has
+  //     no id until save. Uploading first would mean either inserting a draft
+  //     entry row (abandoned drafts litter the journal) or writing objects with
+  //     no row pointing at them — orphaned bytes the owner can neither see nor
+  //     delete.
+  //   - Deferring makes cancel-after-attaching a non-event: nothing was
+  //     uploaded, so there is nothing to clean up. The worst case becomes an
+  //     upload that fails after the entry saved, which is visible, named, and
+  //     retryable by re-attaching.
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [removedIds, setRemovedIds] = useState<Set<string>>(new Set());
+  const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
+  const [openingId, setOpeningId] = useState<string | null>(null);
+
+  const { data: existingAttachments } = useQuery({
+    queryKey: ["journal-attachments", entry?.id ?? "new"],
+    enabled: !!entry?.id,
+    queryFn: () => listJournalAttachments([entry!.id]),
+  });
+  const shownAttachments = (existingAttachments ?? []).filter((a) => !removedIds.has(a.id));
+
+  function pickAttachments(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = "";
+    const accepted: File[] = [];
+    for (const f of files) {
+      const reason = attachmentRejectionReason(f);
+      if (reason) toast.error(`${f.name}: ${reason}`);
+      else accepted.push(f);
+    }
+    if (accepted.length) setPendingFiles((p) => [...p, ...accepted]);
+  }
+
+  /** Open a saved attachment: sign, then navigate. The blank tab is opened
+   *  synchronously inside the click so Safari doesn't treat the post-await
+   *  open as an unrequested popup. */
+  async function openAttachment(a: JournalAttachment) {
+    if (openingId) return;
+    setOpeningId(a.id);
+    const tab = window.open("", "_blank");
+    try {
+      const urls = await signJournalAttachments([a.storage_path]);
+      const url = urls.get(a.storage_path);
+      if (!url) throw new Error("That file couldn't be opened.");
+      if (tab) tab.location.href = url;
+      else window.location.assign(url);
+    } catch (err: any) {
+      tab?.close();
+      toast.error(err?.message ?? "That file couldn't be opened.");
+    } finally {
+      setOpeningId(null);
+    }
+  }
+
   const valid = !!kind && !!date && title.trim().length > 0;
   const existingPhoto = entry?.photo_path ?? null;
 
@@ -259,29 +349,65 @@ function EntryForm({ birdId, entry, isOwner, onClose, onSaved, onDeleted }: { bi
       let photo_path = keepPhoto ? existingPhoto : null;
       if (photoData) photo_path = await uploadJournalPhoto(birdId, photoData);
 
+      let entryId = entry?.id ?? null;
       if (entry) {
         const { error } = await supabase.from("journal_entries")
           .update({ kind, title: title.trim(), body: body.trim() || null, occurred_on: date, photo_path })
           .eq("id", entry.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("journal_entries").insert({
+        // .select() so the new id is available to hang attachments off; the
+        // inserted values are unchanged.
+        const { data: created, error } = await supabase.from("journal_entries").insert({
           bird_id: birdId, kind, title: title.trim(), body: body.trim() || null,
           occurred_on: date, photo_path, logged_by: u.user?.id ?? null,
           ...(activeSitId ? { sit_id: activeSitId } : {}),
-        });
+        }).select("id").single();
         if (error) throw error;
+        entryId = (created as { id: string }).id;
       }
+
+      // Apply attachment changes now that the entry definitely exists. These
+      // run AFTER the entry is saved, so a failure here can't lose the written
+      // entry — it reports which file didn't make it and leaves the rest.
+      const failed: string[] = [];
+      if (entryId) {
+        for (let i = 0; i < pendingFiles.length; i++) {
+          setUploadingIdx(i);
+          try {
+            await uploadJournalAttachment(birdId, entryId, pendingFiles[i]);
+          } catch (err: any) {
+            console.error("[journal] attachment upload failed", err);
+            failed.push(pendingFiles[i].name);
+          }
+        }
+        setUploadingIdx(null);
+        for (const a of existingAttachments ?? []) {
+          if (!removedIds.has(a.id)) continue;
+          try {
+            await removeJournalAttachment(a);
+          } catch (err: any) {
+            console.error("[journal] attachment removal failed", err);
+            failed.push(a.file_name);
+          }
+        }
+      }
+
       toast.success(entry ? "Entry updated." : "Entry added.");
+      if (failed.length) {
+        toast.error(`Saved, but these files didn't go through: ${failed.join(", ")}. Open the entry and try attaching them again.`);
+      }
       onSaved();
     } catch (e: any) {
       toast.error(e?.message ?? "Couldn't save the entry.");
     } finally {
       setSaving(false);
+      setUploadingIdx(null);
     }
   }
 
   const showPhoto = photoData ?? (keepPhoto && existingPhoto ? "existing" : null);
+  const totalAttachments = shownAttachments.length + pendingFiles.length;
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-end sm:place-items-center">
@@ -330,9 +456,70 @@ function EntryForm({ birdId, entry, isOwner, onClose, onSaved, onDeleted }: { bi
           )}
         </div>
 
+        {/* Attachments — PDFs, several per entry. Applied on Save. */}
+        <div className="mt-3">
+          <span className="mb-1 block text-xs font-[500] text-[var(--mute)]">Files</span>
+          {totalAttachments > 0 && (
+            <div className="mb-2 overflow-hidden rounded-xl bg-white ring-1 ring-[var(--line2)]">
+              {shownAttachments.map((a, i) => (
+                <div key={a.id} className={`flex min-h-[48px] items-center gap-2 px-3 ${i ? "border-t border-[var(--line2)]" : ""}`}>
+                  <FileText className="size-4 shrink-0 text-[var(--mute2)]" />
+                  <button
+                    type="button"
+                    onClick={() => openAttachment(a)}
+                    disabled={saving}
+                    className="min-w-0 flex-1 truncate py-2 text-left text-sm text-[var(--ink)] underline disabled:opacity-50"
+                  >
+                    {a.file_name}
+                  </button>
+                  {openingId === a.id && <Loader2 className="size-4 shrink-0 animate-spin text-[var(--mute2)]" />}
+                  <button
+                    type="button"
+                    onClick={() => setRemovedIds((p) => new Set(p).add(a.id))}
+                    disabled={saving}
+                    className="shrink-0 px-1 text-xs font-[500] text-[var(--amber-ink)] underline disabled:opacity-50"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+              {pendingFiles.map((f, i) => (
+                <div
+                  key={`pending-${i}`}
+                  className={`flex min-h-[48px] items-center gap-2 px-3 ${shownAttachments.length || i ? "border-t border-[var(--line2)]" : ""}`}
+                >
+                  {uploadingIdx === i
+                    ? <Loader2 className="size-4 shrink-0 animate-spin text-[var(--mute2)]" />
+                    : <FileText className="size-4 shrink-0 text-[var(--mute2)]" />}
+                  <span className="min-w-0 flex-1 truncate py-2 text-sm text-[var(--ink)]">{f.name}</span>
+                  <span className="t-meta shrink-0 text-[var(--mute2)]">
+                    {uploadingIdx === i ? "Uploading…" : "Not saved yet"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setPendingFiles((p) => p.filter((_, j) => j !== i))}
+                    disabled={saving}
+                    className="shrink-0 px-1 text-xs font-[500] text-[var(--amber-ink)] underline disabled:opacity-50"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          <label className="flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[var(--line)] bg-white text-sm font-[500] text-[var(--mute)]">
+            <Paperclip className="size-4" />
+            {totalAttachments > 0 ? "Attach another PDF" : "Attach a PDF"}
+            <input type="file" accept="application/pdf" multiple className="hidden" disabled={saving} onChange={pickAttachments} />
+          </label>
+          <p className="t-meta mt-1 px-1 text-[var(--mute2)]">Vet records, lab results, discharge notes. PDFs up to 25 MB.</p>
+        </div>
+
         <div className="mt-5 flex gap-2">
           <PrimaryButton tone="lime" type="button" icon={<Check className="size-4" />} onPress={save} disabled={!valid || saving || photoBusy}>
-            {saving ? "Saving…" : "Save"}
+            {saving
+              ? (uploadingIdx !== null ? `Uploading ${uploadingIdx + 1} of ${pendingFiles.length}…` : "Saving…")
+              : "Save"}
           </PrimaryButton>
           <button type="button" onClick={onClose} disabled={saving} className="min-h-[44px] rounded-[12px] border border-[var(--line)] px-4 text-[15px] font-[500] text-[var(--mute)] disabled:opacity-50">Cancel</button>
         </div>
