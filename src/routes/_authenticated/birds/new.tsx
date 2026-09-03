@@ -1,6 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 import { useRef, useState } from "react";
+import { getHouseholdAccount } from "@/lib/household.functions";
+import { ShareNewBirdSheet, type ShareCandidate } from "@/components/ShareNewBirdSheet";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { toast } from "sonner";
@@ -37,6 +40,23 @@ function NewBird() {
   // even if the post-save navigation failed (see onAddBird).
   const createdIdRef = useRef<string | null>(null);
   const [photoBusy, setPhotoBusy] = useState(false);
+  // Set once the bird is saved and there are people to share it with — freezes
+  // the id AND the member list so a later refetch can't change the sheet.
+  const [share, setShare] = useState<{ birdId: string; members: ShareCandidate[] } | null>(null);
+
+  // Fetched on MOUNT, not after the bird is created — `scope` is derived from
+  // the bird count at query time, so post-creation data would rate everyone
+  // "scoped" (n of n+1 birds) and pre-check nobody. Shares /household's cache
+  // key. Deliberately NOT awaited anywhere: if it hasn't landed by the time the
+  // owner taps Add bird we skip the sheet and go straight to the care plan —
+  // access can be granted later from Household, but a stalled network must
+  // never hold the walkthrough hostage.
+  const householdAccount = useServerFn(getHouseholdAccount);
+  const { data: account } = useQuery({
+    queryKey: ["household-account"],
+    queryFn: () => householdAccount(),
+  });
+  const shareCandidates: ShareCandidate[] = ((account?.members ?? []) as ShareCandidate[]);
   const todayStr = new Date().toISOString().slice(0, 10);
   const [isFoster, setIsFoster] = useState(!!fosterParam);
   const [intakeDate, setIntakeDate] = useState<string>(todayStr);
@@ -129,6 +149,17 @@ function NewBird() {
   // right after a deploy), a retry NEVER inserts again — it reuses the id and
   // just retries the navigation, hard-navigating as a last resort (a full page
   // load always lands on the fresh build).
+  // The navigation half of onAddBird, reused by the share sheet's two exits.
+  // `saving` deliberately stays true throughout (see createBird).
+  async function goToSetup(id: string) {
+    try {
+      await navigate({ to: "/birds/$birdId/setup", params: { birdId: id }, search: { step: 1 } });
+    } catch (e) {
+      console.error("[add-bird] navigation failed — hard-navigating to setup", e);
+      window.location.assign(`/birds/${id}/setup?step=1`);
+    }
+  }
+
   async function onAddBird() {
     if (saving) return;
     let id = createdIdRef.current;
@@ -138,13 +169,16 @@ function NewBird() {
       createdIdRef.current = id;
       toast.success(`${name} added.`);
       track("bird_added", { species, is_foster: isFoster, has_photo: !!photo });
+      // Offer to share the new bird with people already in the household. Only
+      // on the FIRST pass: a retry (navigation failed earlier) has already been
+      // asked, so it goes straight to setup rather than re-prompting.
+      //
+      // `saving` stays true while the sheet is open, so the duplicate guard is
+      // unchanged — a second tap hits `if (saving) return`, and even if it
+      // didn't, createdIdRef.current is set so createBird is never called again.
+      if (shareCandidates.length) { setShare({ birdId: id, members: shareCandidates }); return; }
     }
-    try {
-      await navigate({ to: "/birds/$birdId/setup", params: { birdId: id }, search: { step: 1 } });
-    } catch (e) {
-      console.error("[add-bird] navigation failed — hard-navigating to setup", e);
-      window.location.assign(`/birds/${id}/setup?step=1`);
-    }
+    await goToSetup(id);
   }
 
   // Cancel — nothing is created until Add bird, so just leave. Confirm first only
@@ -251,6 +285,16 @@ function NewBird() {
           </PrimaryButton>
         </div>
       </footer>
+
+      {/* The bird is already saved by this point — both exits continue to setup. */}
+      {share && (
+        <ShareNewBirdSheet
+          birdName={name}
+          birdId={share.birdId}
+          members={share.members}
+          onContinue={() => goToSetup(share.birdId)}
+        />
+      )}
     </div>
   );
 }
