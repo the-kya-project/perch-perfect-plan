@@ -735,6 +735,57 @@ export type Database = {
         }
         Relationships: []
       }
+      journal_attachments: {
+        Row: {
+          bird_id: string
+          created_at: string
+          file_name: string
+          id: string
+          journal_entry_id: string
+          mime_type: string
+          size_bytes: number
+          storage_path: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          bird_id: string
+          created_at?: string
+          file_name: string
+          id?: string
+          journal_entry_id: string
+          mime_type: string
+          size_bytes: number
+          storage_path: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          bird_id?: string
+          created_at?: string
+          file_name?: string
+          id?: string
+          journal_entry_id?: string
+          mime_type?: string
+          size_bytes?: number
+          storage_path?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "journal_attachments_bird_id_fkey"
+            columns: ["bird_id"]
+            isOneToOne: false
+            referencedRelation: "birds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "journal_attachments_journal_entry_id_fkey"
+            columns: ["journal_entry_id"]
+            isOneToOne: false
+            referencedRelation: "journal_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       journal_entries: {
         Row: {
           bird_id: string
