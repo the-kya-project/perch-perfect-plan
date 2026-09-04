@@ -147,11 +147,12 @@ await settle(page);
 await scrollTo(page, 0);
 await shot(page, "05-household.png");
 
-// 6 — Journal entry read view (photo).
+// 6 — Journal entry read view: the vet check-up, which carries BOTH a photo and
+// the clinic's PDF, so one shot shows the record and its attachment together.
 console.log("06 journal");
-await page.goto(`${BASE}/birds/${PIP}/journal`, { waitUntil: "networkidle" });
+await page.goto(`${BASE}/birds/${JUNO}/journal`, { waitUntil: "networkidle" });
 await settle(page);
-await page.click('button:has-text("Hanging upside down again")');
+await page.click('button:has-text("Annual check-up")');
 await settle(page, { extra: 1200 });
 await shot(page, "06-journal.png");
 
