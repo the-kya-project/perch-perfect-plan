@@ -44,3 +44,6 @@ dist-ssr
 # Backfill script scratch bundles
 .backfill-entry.mjs
 .backfill-bundle.mjs
+
+# App Store screenshot captures (build output, not source)
+appstore-screenshots/
