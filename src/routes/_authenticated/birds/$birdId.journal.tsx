@@ -16,6 +16,8 @@ import {
   attachmentRejectionReason, uploadJournalAttachment, listJournalAttachments,
   removeJournalAttachment, signJournalAttachments, type JournalAttachment,
 } from "@/lib/journalAttachment";
+import { JournalEntryView } from "@/components/JournalEntryView";
+import { useOpenSignedFile } from "@/lib/useOpenSignedFile";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/journal")({
   head: () => ({ meta: [{ title: "Journal — Kya & Co." }] }),
@@ -57,6 +59,10 @@ function JournalFacet() {
   const qc = useQueryClient();
   const [filter, setFilter] = useState<Filter>("all");
   const [editing, setEditing] = useState<Entry | null | "new">(null);
+  // The read view is keyed by ID, not by a captured Entry object, so it re-reads
+  // from the live list: after an edit saves and the query invalidates, the view
+  // shows the new values instead of the stale snapshot it was opened with.
+  const [viewingId, setViewingId] = useState<string | null>(null);
 
   const { data: bird } = useQuery({
     queryKey: ["bird-name", birdId],
@@ -109,6 +115,8 @@ function JournalFacet() {
       return counts;
     },
   });
+
+  const viewing = viewingId ? all.find((e) => e.id === viewingId) ?? null : null;
 
   const shown = all.filter((e) => FILTERS.find((f) => f.value === filter)!.kinds.includes(e.kind));
 
@@ -163,13 +171,29 @@ function JournalFacet() {
                   entry={e}
                   photoUrl={e.photo_path ? photoUrls?.[e.photo_path] ?? null : null}
                   attachmentCount={attachCounts?.[e.id] ?? 0}
-                  onOpen={() => setEditing(e)}
+                  onOpen={() => setViewingId(e.id)}
                 />
               ))}
             </div>
           )}
         </main>
       </div>
+
+      {/* Read view. Rendered only when the editor is closed: opening Edit keeps
+          viewingId set, so dismissing the editor lands back here on the updated
+          entry rather than dumping the owner out to the list. */}
+      {viewing && !editing && (
+        <JournalEntryView
+          entry={viewing}
+          photoUrl={viewing.photo_path ? photoUrls?.[viewing.photo_path] ?? null : null}
+          kindLabel={KIND[viewing.kind].label}
+          kindPill={KIND[viewing.kind].pill}
+          dateLabel={fmtDate(viewing.occurred_on)}
+          canEdit={canHealth}
+          onEdit={() => setEditing(viewing)}
+          onClose={() => setViewingId(null)}
+        />
+      )}
 
       {editing && (
         <EntryForm
@@ -184,6 +208,8 @@ function JournalFacet() {
           }}
           onDeleted={() => {
             setEditing(null);
+            // The entry is gone — there is nothing left to return to.
+            setViewingId(null);
             qc.invalidateQueries({ queryKey: ["journal-entries", birdId] });
             qc.invalidateQueries({ queryKey: ["journal-attachment-counts", birdId] });
           }}
@@ -276,7 +302,7 @@ function EntryForm({ birdId, entry, isOwner, onClose, onSaved, onDeleted }: { bi
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [removedIds, setRemovedIds] = useState<Set<string>>(new Set());
   const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
-  const [openingId, setOpeningId] = useState<string | null>(null);
+  const { openingKey, openSigned } = useOpenSignedFile();
 
   const { data: existingAttachments } = useQuery({
     queryKey: ["journal-attachments", entry?.id ?? "new"],
@@ -295,27 +321,6 @@ function EntryForm({ birdId, entry, isOwner, onClose, onSaved, onDeleted }: { bi
       else accepted.push(f);
     }
     if (accepted.length) setPendingFiles((p) => [...p, ...accepted]);
-  }
-
-  /** Open a saved attachment: sign, then navigate. The blank tab is opened
-   *  synchronously inside the click so Safari doesn't treat the post-await
-   *  open as an unrequested popup. */
-  async function openAttachment(a: JournalAttachment) {
-    if (openingId) return;
-    setOpeningId(a.id);
-    const tab = window.open("", "_blank");
-    try {
-      const urls = await signJournalAttachments([a.storage_path]);
-      const url = urls.get(a.storage_path);
-      if (!url) throw new Error("That file couldn't be opened.");
-      if (tab) tab.location.href = url;
-      else window.location.assign(url);
-    } catch (err: any) {
-      tab?.close();
-      toast.error(err?.message ?? "That file couldn't be opened.");
-    } finally {
-      setOpeningId(null);
-    }
   }
 
   const valid = !!kind && !!date && title.trim().length > 0;
@@ -466,13 +471,13 @@ function EntryForm({ birdId, entry, isOwner, onClose, onSaved, onDeleted }: { bi
                   <FileText className="size-4 shrink-0 text-[var(--mute2)]" />
                   <button
                     type="button"
-                    onClick={() => openAttachment(a)}
+                    onClick={() => openSigned(a.id, async () => (await signJournalAttachments([a.storage_path])).get(a.storage_path))}
                     disabled={saving}
                     className="min-w-0 flex-1 truncate py-2 text-left text-sm text-[var(--ink)] underline disabled:opacity-50"
                   >
                     {a.file_name}
                   </button>
-                  {openingId === a.id && <Loader2 className="size-4 shrink-0 animate-spin text-[var(--mute2)]" />}
+                  {openingKey === a.id && <Loader2 className="size-4 shrink-0 animate-spin text-[var(--mute2)]" />}
                   <button
                     type="button"
                     onClick={() => setRemovedIds((p) => new Set(p).add(a.id))}
