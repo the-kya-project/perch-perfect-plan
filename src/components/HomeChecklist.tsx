@@ -59,13 +59,39 @@ export function HomeChecklist() {
       ]);
       const owned = (birdsRes.data ?? []) as { id: string; setup_complete: boolean | null }[];
       const em = emerRes.data as any;
+
+      // Emergency info can live on the BIRD as well as on the owner defaults,
+      // and mergeEmergency treats the bird's own value as authoritative with
+      // the default as fallback. Checking only the defaults meant an owner who
+      // filled emergency info on every bird individually — which the rest of
+      // the app considers complete — was nagged to "add" it forever, with no
+      // way to satisfy the item short of re-entering it as a default.
+      const birdIds = owned.map((b) => b.id);
+      let perBird: Array<{ bird_id: string; owner_phone: string | null; avian_vet_phone: string | null }> = [];
+      if (birdIds.length) {
+        const { data: ec } = await supabase
+          .from("emergency_contacts").select("bird_id, owner_phone, avian_vet_phone").in("bird_id", birdIds);
+        perBird = (ec ?? []) as typeof perBird;
+      }
+      const filled = (v: unknown) => !!(v ?? "").toString().trim();
+      // A default covers every bird, so it alone is enough. Otherwise every
+      // active bird must carry its own — one covered bird out of three is not
+      // "done". Deliberately the same either/or on the two required fields the
+      // previous check used, so this can only ever mark MORE owners complete,
+      // never resurface the checklist for someone who had finished it.
+      const defaultsCover = filled(em?.owner_phone) || filled(em?.avian_vet_phone);
+      const everyBirdCovered = owned.length > 0 && owned.every((b) => {
+        const row = perBird.find((r) => r.bird_id === b.id);
+        return filled(row?.owner_phone) || filled(row?.avian_vet_phone);
+      });
+
       return {
         id,
         createdAt: profRes.data?.created_at ?? null,
         ownsBirds: owned.length > 0,
         firstBirdId: owned[0]?.id as string | undefined,
         carePlanDone: owned.some((b) => !!b.setup_complete),
-        emergencyDone: !!((em?.owner_phone ?? "").toString().trim() || (em?.avian_vet_phone ?? "").toString().trim()),
+        emergencyDone: defaultsCover || everyBirdCovered,
       };
     },
   });
