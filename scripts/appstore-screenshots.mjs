@@ -133,11 +133,19 @@ await settle(page);
 await scrollTo(page, CARE_PLAN_SCROLL);
 await shot(page, "02-care-plan.png");
 
-// 4 — Daily health check, mid-flow. Answer the first few questions so the shot
+// 4 — Weight trend. With daily weigh-ins this is the clearest picture of the
+// product's day-to-day value: a dense 90-day curve plus per-day deltas.
+console.log("04 weight trend");
+await page.goto(`${BASE}/birds/${PRIMARY}/weight`, { waitUntil: "networkidle" });
+await settle(page);
+await scrollTo(page, 0);
+await shot(page, "04-weight-trend.png");
+
+// 5 — Daily health check, mid-flow. Answer the first few questions so the shot
 // shows the check being WORKED THROUGH rather than an untouched form. These
 // selections are local component state — nothing is written until the check is
 // submitted, which this script never does, so the demo data is unchanged.
-console.log("04 health check");
+console.log("05 health check");
 await page.goto(`${BASE}/birds/${SECONDARY}/scan`, { waitUntil: "networkidle" });
 await settle(page);
 const normals = page.locator('button:has-text("Normal")');
@@ -148,14 +156,14 @@ for (let i = 0; i < answerCount; i++) {
 }
 await page.waitForTimeout(600);
 await scrollTo(page, 0);
-await shot(page, "04-health-check.png");
+await shot(page, "05-health-check.png");
 
-// 5 — Household access, member visible.
-console.log("05 household");
+// 7 — Household access: one member on all birds, one scoped to a single bird.
+console.log("07 household");
 await page.goto(`${BASE}/household`, { waitUntil: "networkidle" });
 await settle(page);
 await scrollTo(page, 0);
-await shot(page, "05-household.png");
+await shot(page, "07-household.png");
 
 // 6 — Journal entry read view: the vet check-up, which carries BOTH a photo and
 // the clinic's PDF, so one shot shows the record and its attachment together.
