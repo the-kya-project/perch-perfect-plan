@@ -26,10 +26,20 @@ const EMAIL = process.env.KYA_REVIEW_EMAIL;
 const PASSWORD = process.env.KYA_REVIEW_PASSWORD;
 const OUT = "appstore-screenshots";
 
-// Demo-account fixtures. These are the App Review account's own rows — no real
-// owner's data appears in any capture.
-const JUNO = "fe54a9d5-5cb0-48f4-81e2-e95c60d3956c"; // blue-throated macaw
-const PIP = "411382d1-8b37-411a-ae9d-4af9c685f1a5"; // red-crowned amazon
+// Defaults are the App Review demo account. Override every one of these to
+// capture from a different account — e.g. the founder's own, which reads as
+// more lived-in. Nothing here is account-specific beyond these ids.
+//
+//   KYA_BIRD_PRIMARY    bird for shots 1, 2 and 6 (needs a photo)
+//   KYA_BIRD_SECONDARY  bird for shots 3 and 4
+//   KYA_JOURNAL_TITLE   exact title of the entry to open for shot 6
+//   KYA_SITTER_TOKEN    invite_token of a LIVE sit (not revoked, not expired)
+//   KYA_CARE_PLAN_SCROLL  y-offset for shot 2; retune per account, since the
+//                         right framing depends on how much each section holds
+const PRIMARY = process.env.KYA_BIRD_PRIMARY ?? "fe54a9d5-5cb0-48f4-81e2-e95c60d3956c";
+const SECONDARY = process.env.KYA_BIRD_SECONDARY ?? "411382d1-8b37-411a-ae9d-4af9c685f1a5";
+const JOURNAL_TITLE = process.env.KYA_JOURNAL_TITLE ?? "Annual check-up";
+const CARE_PLAN_SCROLL = Number(process.env.KYA_CARE_PLAN_SCROLL ?? 520);
 const SITTER_TOKEN = process.env.KYA_SITTER_TOKEN
   ?? "5575efc4f57b4946b6a604eb48c1f2a0e22a75711e6f409f865bc8874a7f32cc";
 
@@ -111,16 +121,16 @@ console.log("  signed in →", page.url());
 
 // 1 — Bird record: photo + weight trend, the screen an owner opens daily.
 console.log("01 bird record");
-await page.goto(`${BASE}/birds/${JUNO}`, { waitUntil: "networkidle" });
+await page.goto(`${BASE}/birds/${PRIMARY}`, { waitUntil: "networkidle" });
 await settle(page);
 await scrollTo(page, 0);
 await shot(page, "01-bird-record.png");
 
 // 2 — Care plan read view, scrolled past the header into the real content.
 console.log("02 care plan");
-await page.goto(`${BASE}/birds/${JUNO}/care-plan`, { waitUntil: "networkidle" });
+await page.goto(`${BASE}/birds/${PRIMARY}/care-plan`, { waitUntil: "networkidle" });
 await settle(page);
-await scrollTo(page, 520);
+await scrollTo(page, CARE_PLAN_SCROLL);
 await shot(page, "02-care-plan.png");
 
 // 4 — Daily health check, mid-flow. Answer the first few questions so the shot
@@ -128,7 +138,7 @@ await shot(page, "02-care-plan.png");
 // selections are local component state — nothing is written until the check is
 // submitted, which this script never does, so the demo data is unchanged.
 console.log("04 health check");
-await page.goto(`${BASE}/birds/${PIP}/scan`, { waitUntil: "networkidle" });
+await page.goto(`${BASE}/birds/${SECONDARY}/scan`, { waitUntil: "networkidle" });
 await settle(page);
 const normals = page.locator('button:has-text("Normal")');
 const answerCount = Math.min(4, await normals.count());
@@ -150,9 +160,9 @@ await shot(page, "05-household.png");
 // 6 — Journal entry read view: the vet check-up, which carries BOTH a photo and
 // the clinic's PDF, so one shot shows the record and its attachment together.
 console.log("06 journal");
-await page.goto(`${BASE}/birds/${JUNO}/journal`, { waitUntil: "networkidle" });
+await page.goto(`${BASE}/birds/${PRIMARY}/journal`, { waitUntil: "networkidle" });
 await settle(page);
-await page.click('button:has-text("Annual check-up")');
+await page.click(`button:has-text("${JOURNAL_TITLE}")`);
 await settle(page, { extra: 1200 });
 await shot(page, "06-journal.png");
 
@@ -170,7 +180,7 @@ if (await skip.count()) {
   await skip.click();
   await settle(sitter, { extra: 1200 });
 }
-await sitter.goto(`${BASE}/sitter/${SITTER_TOKEN}?birdId=${PIP}`, { waitUntil: "networkidle" });
+await sitter.goto(`${BASE}/sitter/${SITTER_TOKEN}?birdId=${SECONDARY}`, { waitUntil: "networkidle" });
 await settle(sitter, { extra: 1200 });
 await scrollTo(sitter, 0);
 await shot(sitter, "03-sitter-checklist.png");
