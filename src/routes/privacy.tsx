@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, useRouter, useCanGoBack } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useRouter, useCanGoBack, Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { InkHero } from "@/components/system";
 
@@ -60,7 +60,11 @@ function PrivacyPage() {
           <h2 className="text-base font-bold text-sage-900">Deleting your account</h2>
           <p>
             You can permanently delete your account from account settings. This removes your
-            birds, care plans, sits, logs, photos, and marketing-contact record.
+            birds, care plans, sits, logs, photos, and marketing-contact record.{" "}
+            <Link to="/delete-account" className="font-medium text-sage-900 underline">
+              How to delete your account
+            </Link>{" "}
+            explains the steps and exactly what is removed.
           </p>
           <h2 className="text-base font-bold text-sage-900">Contact</h2>
           <p>

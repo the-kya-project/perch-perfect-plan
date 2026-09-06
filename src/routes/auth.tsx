@@ -389,6 +389,8 @@ function AuthPage() {
             <Link to="/privacy" className="text-[var(--moss)] underline">Privacy</Link>
             {" · "}
             <Link to="/terms" className="text-[var(--moss)] underline">Terms</Link>
+            {" · "}
+            <Link to="/delete-account" className="text-[var(--moss)] underline">Delete account</Link>
           </p>
         </main>
       </div>
