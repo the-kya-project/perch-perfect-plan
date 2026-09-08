@@ -2,9 +2,7 @@ import { createFileRoute, useNavigate, useRouter, useCanGoBack, Link } from "@ta
 import { ArrowLeft } from "lucide-react";
 import { InkHero } from "@/components/system";
 
-// TODO: replace <SUPPORT_EMAIL> below with the real support address.
-// It appears twice: the "can't sign in" fallback and the marketing-contact note.
-const SUPPORT_EMAIL = "<SUPPORT_EMAIL>";
+const SUPPORT_EMAIL = "brittany@thekyaproject.com";
 
 export const Route = createFileRoute("/delete-account")({
   head: () => ({
@@ -108,6 +106,10 @@ function DeleteAccountPage() {
             and holds no financial records. Two things outlive the deletion:
           </p>
           <ul className="list-disc space-y-1 pl-5">
+            {/* TODO: the 7-day figure is UNVERIFIED. It is Supabase's documented default for
+                the Pro plan (which this project is on), but it was not confirmed against the
+                project's actual backup settings, and enabling PITR would change it. Confirm
+                the real retention period before this page ships. */}
             <li>
               <strong className="font-medium text-sage-900">Encrypted database backups.</strong>{" "}
               Deleted data remains in routine backups for up to 7 days, after which it rolls off

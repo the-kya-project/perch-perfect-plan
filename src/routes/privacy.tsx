@@ -60,7 +60,10 @@ function PrivacyPage() {
           <h2 className="text-base font-bold text-sage-900">Deleting your account</h2>
           <p>
             You can permanently delete your account from account settings. This removes your
-            birds, care plans, sits, logs, photos, and marketing-contact record.{" "}
+            birds, care plans, sits, logs, and photos. Your contact record with our email
+            provider is managed separately and is not removed by deleting your account —
+            every email we send includes an unsubscribe link, or you can ask us to delete
+            it using the address below.{" "}
             <Link to="/delete-account" className="font-medium text-sage-900 underline">
               How to delete your account
             </Link>{" "}
