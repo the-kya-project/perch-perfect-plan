@@ -106,15 +106,14 @@ function DeleteAccountPage() {
             and holds no financial records. Two things outlive the deletion:
           </p>
           <ul className="list-disc space-y-1 pl-5">
-            {/* TODO: the 7-day figure is UNVERIFIED. It is Supabase's documented default for
-                the Pro plan (which this project is on), but it was not confirmed against the
-                project's actual backup settings, and enabling PITR would change it. Confirm
-                the real retention period before this page ships. */}
             <li>
               <strong className="font-medium text-sage-900">Encrypted database backups.</strong>{" "}
-              Deleted data remains in routine backups for up to 7 days, after which it rolls off
-              permanently. Backups are used only to recover from an outage, never to restore a
-              deleted account.
+              Your written records — birds, care plans, logs, journal entries — may remain in our
+              encrypted daily backups for up to seven days after deletion, and then roll off
+              permanently. Those backups exist only to recover from an outage; they are never
+              used to bring back a deleted account. Your uploaded files work differently: photos,
+              video clips and PDF attachments are removed from storage straight away, and are not
+              part of those backups at all.
             </li>
             <li>
               <strong className="font-medium text-sage-900">Marketing contact record.</strong> If you

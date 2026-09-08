@@ -54,8 +54,9 @@ function PrivacyPage() {
           </p>
           <h2 className="text-base font-bold text-sage-900">Marketing</h2>
           <p>
-            We only send marketing or community updates if you opt in at signup or in account
-            settings. You can opt out at any time.
+            We only send marketing or community updates if you opt in at signup. You can opt out
+            at any time using the unsubscribe link in any of our emails, or by emailing{" "}
+            <a href="mailto:brittany@thekyaproject.com" className="font-medium text-sage-900 underline">brittany@thekyaproject.com</a>.
           </p>
           <h2 className="text-base font-bold text-sage-900">Deleting your account</h2>
           <p>
