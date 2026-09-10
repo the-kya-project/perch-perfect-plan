@@ -71,12 +71,42 @@ function clipRefsFrom(rows: Array<Record<string, unknown>>): string[] {
  * hold these uids — once the row is gone the uid is unrecoverable and the video
  * bills forever.
  */
-export async function deleteStreamClips(refs: string[]): Promise<number> {
+/** One clip we could not delete. Logged so the video can be chased manually. */
+export type ClipFailure = { uid: string; reason: string };
+
+/**
+ * Delete every Cloudflare Stream clip referenced by `refs`.
+ *
+ * Per-uid failures are collected, not thrown: one bad uid used to abort the
+ * loop and leave every later clip untouched. Callers decide what a failure
+ * means — account deletion logs and continues, bird deletion still refuses.
+ * An already-deleted clip is NOT a failure (deleteVideo treats 404 as success).
+ */
+export async function deleteStreamClips(
+  refs: string[],
+): Promise<{ deleted: number; failures: ClipFailure[] }> {
   const uids = [...new Set(refs.filter(isCfClip).map(cfUid))];
-  if (!uids.length) return 0;
-  const { deleteVideo } = await import("./cloudflareStream.server");
-  for (const uid of uids) await deleteVideo(uid);
-  return uids.length;
+  const failures: ClipFailure[] = [];
+  // Return before importing the client: with no clips to delete there is
+  // nothing to configure, so a missing CLOUDFLARE_* env must not surface here.
+  if (!uids.length) return { deleted: 0, failures };
+
+  let deleted = 0;
+  try {
+    const { deleteVideo } = await import("./cloudflareStream.server");
+    for (const uid of uids) {
+      try {
+        await deleteVideo(uid);
+        deleted++;
+      } catch (e: any) {
+        failures.push({ uid, reason: String(e?.message ?? e) });
+      }
+    }
+  } catch (e: any) {
+    // Import/creds blew up: nothing was attempted, so report every uid.
+    for (const uid of uids) failures.push({ uid, reason: String(e?.message ?? e) });
+  }
+  return { deleted, failures };
 }
 
 /** Collect + delete all media for one bird. Shared by the server fn and tests. */
@@ -97,7 +127,15 @@ export async function purgeBirdMediaWith(
   // the remote service first means the most likely failure (Stream env not
   // configured) aborts having touched no Supabase object at all, so a retry
   // starts from a completely clean state.
-  const streamClips = await deleteStreamClips(refs);
+  // Single-bird deletion stays fail-closed, unlike account deletion: the bird
+  // (and therefore the lookup path to its media) still exists, so the user can
+  // simply retry. Refusing beats orphaning.
+  const { deleted: streamClips, failures: clipFailures } = await deleteStreamClips(refs);
+  if (clipFailures.length) {
+    throw new Error(
+      `Stream clip delete failed for ${birdId}: ${clipFailures.map((f) => `${f.uid} (${f.reason})`).join("; ")}`,
+    );
+  }
 
   // bird-photos is keyed by OWNER, not bird, so it gets no prefix sweep — only
   // this bird's own photo plus any legacy (pre-Cloudflare) clips, which were
@@ -112,7 +150,13 @@ export async function purgeBirdMediaWith(
   }
 
   for (const bucket of BIRD_KEYED_BUCKETS) {
-    await deleteAllUnderPrefix(sb.storage, bucket, birdId);
+    const { failures } = await deleteAllUnderPrefix(sb.storage, bucket, birdId);
+    if (failures.length) {
+      throw new Error(
+        `storage sweep failed for ${bucket}/${birdId}: ` +
+          failures.map((f) => `${f.path} (${f.reason})`).join("; "),
+      );
+    }
   }
 
   return { birdPhotos: birdPhotoPaths.length, streamClips };

@@ -20,6 +20,18 @@ function creds() {
   return { accountId, token };
 }
 
+/** Error from the Cloudflare API, carrying the HTTP status for the caller. */
+export class CloudflareStreamError extends Error {
+  status: number;
+  codes: number[];
+  constructor(message: string, status: number, codes: number[] = []) {
+    super(message);
+    this.name = "CloudflareStreamError";
+    this.status = status;
+    this.codes = codes;
+  }
+}
+
 async function cf(path: string, init?: RequestInit): Promise<any> {
   const { accountId, token } = creds();
   const res = await fetch(`${API_BASE}/accounts/${accountId}${path}`, {
@@ -36,7 +48,10 @@ async function cf(path: string, init?: RequestInit): Promise<any> {
     // a thrown serverFn error comes back as a 200 envelope and is otherwise
     // invisible. Includes the HTTP status and Cloudflare's error array.
     console.error(`[cloudflareStream] ${path} HTTP ${res.status}:`, JSON.stringify(json?.errors ?? json));
-    throw new Error(`Cloudflare Stream: ${msg}`);
+    const codes = Array.isArray(json?.errors)
+      ? json.errors.map((e: any) => Number(e?.code)).filter((n: number) => Number.isFinite(n))
+      : [];
+    throw new CloudflareStreamError(`Cloudflare Stream: ${msg}`, res.status, codes);
   }
   return json.result;
 }
@@ -90,6 +105,14 @@ export async function createTusDirectUpload(opts: { uploadLength: number; maxDur
  * longer exists", and failing a bird/account deletion because a video was
  * already removed would block the caller forever.
  *
+ * The check is on the HTTP STATUS, not the message text. It used to regex the
+ * error string for "not found|10007|404", which quietly depended on Cloudflare
+ * wording: `res.statusText` is an empty string over HTTP/2, so a 404 whose body
+ * failed to parse produced the message "request failed", missed the regex, and
+ * threw — turning an already-deleted clip into a hard failure. 10003/10007
+ * (Cloudflare's own not-found codes) are honoured too, in case a not-found ever
+ * arrives with a non-404 status.
+ *
  * The configured token needs Account -> Stream -> Edit, which is what the app
  * already requires to create uploads.
  */
@@ -97,7 +120,10 @@ export async function deleteVideo(uid: string): Promise<void> {
   try {
     await cf(`/stream/${uid}`, { method: "DELETE" });
   } catch (e: any) {
-    if (/not found|10007|404/i.test(String(e?.message ?? ""))) return;
+    if (e instanceof CloudflareStreamError) {
+      if (e.status === 404) return;
+      if (e.codes.some((c) => c === 10003 || c === 10007)) return;
+    }
     throw e;
   }
 }
