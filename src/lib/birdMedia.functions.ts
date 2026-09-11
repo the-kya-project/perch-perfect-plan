@@ -18,24 +18,11 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { deleteAllUnderPrefix } from "./account.functions";
-import { isCfClip, cfUid } from "./clipRef";
+import { isCfClip, cfUid, CLIP_COLUMNS } from "./clipRef";
 
 // Buckets keyed "<bird_id>/..." — a prefix sweep gets everything.
 const BIRD_KEYED_BUCKETS = ["journal-photos", "scan-photos", "journal-attachments"] as const;
 
-// Every column that can hold a clip reference. Kept here (not derived) so a new
-// clip column is a deliberate edit rather than a silent leak.
-const CLIP_COLUMNS = [
-  "baseline_clip_path",
-  "clip_anything_else_path",
-  "clip_bedtime_path",
-  "clip_food_prep_path",
-  "clip_food_water_path",
-  "clip_locations_path",
-  "clip_step_up_path",
-  "clip_targeting_path",
-  "clip_toys_foraging_path",
-] as const;
 
 /**
  * True when a stored photo/clip value is a Storage object path rather than a
@@ -163,6 +150,22 @@ export async function purgeBirdMediaWith(
 }
 
 /**
+ * What the owner sees when purgeBirdMedia fails. ONE string, imported by both
+ * delete-bird screens (plan.editor.tsx and index.tsx) so they can't drift again.
+ *
+ * Deliberately does NOT say "nothing was deleted": storage and Stream deletes
+ * are not atomic. A purge that fails partway has already permanently removed
+ * whatever it reached first — verified by running purgeBirdMediaWith against a
+ * store that fails on scan-photos: both clips, the profile photo and the
+ * journal photos were gone before it threw. What IS true is that the bird row
+ * survives (media runs before rows) and that retrying works: already-deleted
+ * clips come back 404 from Cloudflare, which deleteVideo treats as success, and
+ * already-removed files are simply absent from the next listing.
+ */
+export const BIRD_MEDIA_PURGE_FAILED =
+  "We couldn't finish removing this bird's files, so the bird is still here. Please try again.";
+
+/**
  * Owner-authorized purge of one bird's media. Call this and let it settle
  * BEFORE deleting the bird's rows.
  */
@@ -181,5 +184,13 @@ export const purgeBirdMedia = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     if (!bird || (bird as any).owner_id !== ownerId) throw new Error("Not allowed.");
 
-    return purgeBirdMediaWith(sb, bird as { id: string; photo_url: string | null });
+    try {
+      return await purgeBirdMediaWith(sb, bird as { id: string; photo_url: string | null });
+    } catch (e: any) {
+      // The detail (bucket, full paths, clip uids) goes to the server log and
+      // nowhere else. The client gets only the fixed message, so no path or
+      // UUID can reach the UI — or even the network response.
+      console.error(`[purgeBirdMedia] bird=${bird.id} owner=${ownerId}: ${e?.message ?? e}`);
+      throw new Error(BIRD_MEDIA_PURGE_FAILED);
+    }
   });

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
-import { purgeBirdMedia } from "@/lib/birdMedia.functions";
+import { purgeBirdMedia, BIRD_MEDIA_PURGE_FAILED } from "@/lib/birdMedia.functions";
 import { activeOwnerBirdsMin } from "@/lib/activeBirds";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { ArrowLeft, Trash2, ChevronDown, AlertTriangle, Eye } from "lucide-react";
@@ -302,7 +302,10 @@ function DeleteBirdCard({ birdId, bird, plan }: { birdId: string; bird: any; pla
       await purgeMedia({ data: { birdId } });
     } catch (e: any) {
       setDeleting(false);
-      toast.error(e?.message ?? "Couldn't remove this bird's files — nothing was deleted. Please try again.");
+      // Never e.message: it could carry storage paths / clip uids. The server
+      // logs those; the owner gets the one shared message.
+      console.error("[deleteBird] media purge failed", e);
+      toast.error(BIRD_MEDIA_PURGE_FAILED);
       return;
     }
     await supabase.from("sit_birds").delete().eq("bird_id", birdId);

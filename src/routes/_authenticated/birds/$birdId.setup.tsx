@@ -1922,10 +1922,32 @@ export function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlus
   );
 
   // The ClipRecorder uploads to Cloudflare Stream and hands back a
-  // "cfstream:<uid>" reference; we persist it (autosave writes baseline_clip_path).
+  // "cfstream:<uid>" reference.
+  //
+  // Written to care_plans HERE, before setClipPath, rather than left to the
+  // 600ms-debounced autosave. getClipStatus and getOwnerClipUrl only authorize a
+  // clip that a care plan the caller can see already references, and
+  // useOwnerClipPreview polls the moment clipPath changes — so with autosave
+  // alone that first poll lands before the row is written, gets "Not found.",
+  // and the preview either shows the player mid-transcode (a black frame) or
+  // goes blank. The 8 care-plan clip slots already write through this way.
+  //
+  // Not a new abandon risk: autosave has clipPath in its deps, so the ref was
+  // already being saved ~600ms after upload whether or not the owner finished
+  // the walkthrough. This only moves that write earlier.
   async function uploadClip(ref: string) {
     if (clipPath && !isCfClip(clipPath)) {
       try { await supabase.storage.from("bird-photos").remove([clipPath]); } catch {}
+    }
+    if (plan?.id) {
+      const { error } = await supabase
+        .from("care_plans")
+        .update({ baseline_clip_path: ref } as any)
+        .eq("id", plan.id);
+      if (error) {
+        toast.error("Couldn't save the clip. Please try again.");
+        return;
+      }
     }
     setClipPath(ref);
     setReplacingClip(false);

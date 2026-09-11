@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate, useLocation } from "@tanstack/react
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { purgeBirdMedia } from "@/lib/birdMedia.functions";
+import { purgeBirdMedia, BIRD_MEDIA_PURGE_FAILED } from "@/lib/birdMedia.functions";
 import { useBirdPhotos } from "@/lib/useBirdPhotos";
 import { useBirdRole } from "@/lib/useBirdRole";
 import { useActiveSitIdForBird } from "@/components/CaregiverHome";
@@ -683,11 +683,21 @@ function DeleteBirdButton({ birdId, name }: { birdId: string; name: string }) {
   async function del() {
     if (!ready) { toast.error(`Type "${name}" exactly to confirm.`); return; }
     setDeleting(true);
+    // Media BEFORE rows: the rows are the only record of these files and clip
+    // uids, so a failure here must abort with the bird intact rather than
+    // orphan them permanently. Same ordering as deleteAccount.
+    //
+    // Its own catch, separate from the row deletes below: the shared message
+    // says the bird is still here, which is only true when THIS step fails.
     try {
-      // Media BEFORE rows: the rows are the only record of these files and clip
-      // uids, so a failure here must abort with the bird intact rather than
-      // orphan them permanently. Same ordering as deleteAccount.
       await purgeMedia({ data: { birdId } });
+    } catch (e: any) {
+      console.error("[deleteBird] media purge failed", e);
+      toast.error(BIRD_MEDIA_PURGE_FAILED);
+      setDeleting(false);
+      return;
+    }
+    try {
       const { data: plans } = await supabase.from("care_plans").select("id").eq("bird_id", birdId);
       const planIds = (plans ?? []).map((p: any) => p.id);
       await supabase.from("sit_birds").delete().eq("bird_id", birdId);
