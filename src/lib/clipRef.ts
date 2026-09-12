@@ -6,9 +6,9 @@ export const CF_PREFIX = "cfstream:";
 
 // Every care_plans column that can hold a clip reference. Kept explicit (not
 // derived) so a new clip column is a deliberate edit rather than a silent leak.
-// Shared by the media purge (what to delete) and the clip server functions'
-// ownership check (what to authorize against) — the two must never disagree,
-// or a real owner gets refused for a clip in a column the check didn't know.
+// Used by the media purge (what to delete) and by the clip_assets backfill.
+// NOT an authorization source: care_plans is user-writable, so what it
+// references says nothing about who may view a clip — see clips.functions.ts.
 export const CLIP_COLUMNS = [
   "baseline_clip_path",
   "clip_anything_else_path",

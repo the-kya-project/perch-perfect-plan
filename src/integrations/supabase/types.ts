@@ -404,6 +404,32 @@ export type Database = {
           },
         ]
       }
+      clip_assets: {
+        Row: {
+          bird_id: string
+          created_at: string
+          uid: string
+        }
+        Insert: {
+          bird_id: string
+          created_at?: string
+          uid: string
+        }
+        Update: {
+          bird_id?: string
+          created_at?: string
+          uid?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "clip_assets_bird_id_fkey"
+            columns: ["bird_id"]
+            isOneToOne: false
+            referencedRelation: "birds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       daily_logs: {
         Row: {
           alertness_status: string | null

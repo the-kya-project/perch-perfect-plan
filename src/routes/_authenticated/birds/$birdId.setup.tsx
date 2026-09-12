@@ -1922,32 +1922,15 @@ export function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlus
   );
 
   // The ClipRecorder uploads to Cloudflare Stream and hands back a
-  // "cfstream:<uid>" reference.
+  // "cfstream:<uid>" reference; we persist it (autosave writes baseline_clip_path).
   //
-  // Written to care_plans HERE, before setClipPath, rather than left to the
-  // 600ms-debounced autosave. getClipStatus and getOwnerClipUrl only authorize a
-  // clip that a care plan the caller can see already references, and
-  // useOwnerClipPreview polls the moment clipPath changes — so with autosave
-  // alone that first poll lands before the row is written, gets "Not found.",
-  // and the preview either shows the player mid-transcode (a black frame) or
-  // goes blank. The 8 care-plan clip slots already write through this way.
-  //
-  // Not a new abandon risk: autosave has clipPath in its deps, so the ref was
-  // already being saved ~600ms after upload whether or not the owner finished
-  // the walkthrough. This only moves that write earlier.
+  // Deliberately NOT written through here. Clip authorization resolves the uid
+  // via clip_assets, which createClipUpload writes before the uid ever reaches
+  // this client — so the registry row already exists by the time the preview
+  // polls, and the care_plans write timing doesn't gate anything.
   async function uploadClip(ref: string) {
     if (clipPath && !isCfClip(clipPath)) {
       try { await supabase.storage.from("bird-photos").remove([clipPath]); } catch {}
-    }
-    if (plan?.id) {
-      const { error } = await supabase
-        .from("care_plans")
-        .update({ baseline_clip_path: ref } as any)
-        .eq("id", plan.id);
-      if (error) {
-        toast.error("Couldn't save the clip. Please try again.");
-        return;
-      }
     }
     setClipPath(ref);
     setReplacingClip(false);
@@ -2010,7 +1993,7 @@ export function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlus
           </div>
         ) : (
           <div className="space-y-2">
-            <ClipRecorder onBusy={setClipBusy} onUploaded={uploadClip} />
+            <ClipRecorder birdId={birdId} onBusy={setClipBusy} onUploaded={uploadClip} />
             {clipPath && replacingClip && (
               <button type="button" onClick={() => setReplacingClip(false)} className="w-full rounded-xl border border-sage-200 bg-white py-2 text-xs font-semibold text-sage-700">
                 Keep current clip
@@ -2479,7 +2462,7 @@ function ClipSlotCard({
         </div>
       ) : (
         <div className="space-y-2">
-          <ClipRecorder onBusy={(b) => onBusy(`${slot.key}:rec`, b)} onUploaded={upload} />
+          <ClipRecorder birdId={birdId} onBusy={(b) => onBusy(`${slot.key}:rec`, b)} onUploaded={upload} />
           {path && replacing && (
             <button type="button" onClick={() => setReplacing(false)} className="w-full rounded-xl border border-sage-200 bg-white py-2 text-xs font-semibold text-sage-700">
               Keep current clip

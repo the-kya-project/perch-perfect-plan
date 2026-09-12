@@ -159,11 +159,17 @@ export function UploadProgress({ label, hint, ratio }: { label: string; hint?: s
 }
 
 export function ClipRecorder({
+  birdId,
   baseName,
   disabled,
   onBusy,
   onUploaded,
 }: {
+  /** The bird this clip belongs to. Sent to createClipUpload, which registers
+   *  the minted uid against it in clip_assets — the server-authored binding
+   *  every later clip authorization resolves. Required: without it a clip
+   *  would exist that nothing could ever authorize. */
+  birdId: string;
   /** Unused label retained for call-site compatibility. */
   baseName?: string;
   disabled?: boolean;
@@ -340,7 +346,7 @@ export function ClipRecorder({
     onBusy?.(true);
     try {
       setStage({ kind: "uploading", pct: 0 });
-      const { uploadURL, uid } = await createClipUpload({ data: { uploadLength: file.size } });
+      const { uploadURL, uid } = await createClipUpload({ data: { uploadLength: file.size, birdId } });
       await tusUpload(uploadURL, file, (pct) => setStage({ kind: "uploading", pct }));
       // The clip reference is valid the moment the bytes are up. Hand it off now
       // instead of blocking the owner on Cloudflare's server-side transcode
