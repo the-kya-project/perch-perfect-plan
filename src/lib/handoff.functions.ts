@@ -9,6 +9,7 @@ import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { buildHandoffInviteEmail, buildHandoffAcceptedEmail, buildHandoffDeclinedEmail } from "./emailTemplates";
 import { localeForUser } from "./emailLocale.server";
+import { purgeBirdMediaWith, pdfHandoffFailedMessage } from "./birdMedia.functions";
 
 async function getAdmin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -139,21 +140,49 @@ export const cancelHandoff = createServerFn({ method: "POST" })
   });
 
 // ---- Owner: complete a PDF/offline handoff (snapshot + delete the bird) -----
-export const completePdfHandoff = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((d: { birdId: string; recipientName?: string }) =>
-    z.object({ birdId: z.string().uuid(), recipientName: z.string().trim().max(120).optional() }).parse(d))
-  .handler(async ({ data, context }) => {
-    const sb = await getAdmin();
-    const senderId = context.userId as string;
-    const { data: bird } = await sb.from("birds")
-      .select("id, name, species, intake_date, is_foster, owner_id, photo_url").eq("id", data.birdId).maybeSingle();
-    if (!bird || (bird as any).owner_id !== senderId) throw new Error("Not allowed.");
+//
+// Archive-and-delete: no new bird is created anywhere. The adopter receives a
+// printed, text-only sheet (no clips, photos or links), handed over BEFORE this
+// runs. So the bird's media genuinely has to be purged here — and for most of
+// this function's life it wasn't: the row delete below cascaded care_plans and
+// clip_assets away, orphaning every photo and Cloudflare video with no record
+// left to find them by.
+//
+// ORDER, each step for a reason:
+//   1. keepsakeThumb  — READS the bird's photo from storage for the archive
+//                       thumbnail, so it must run while the photo still exists.
+//   2. purge          — reads clip_assets (registry-backed) and deletes media.
+//                       Must precede the row delete: clip_assets cascades on
+//                       bird_id, so afterwards there are no uids left to read.
+//   3. past_birds     — AFTER the purge, not before. The purge is the likeliest
+//                       failure; had the archive row already been written, the
+//                       retry would write a second one and Past birds would show
+//                       this bird twice.
+//   4. birds delete   — last.
+//
+// FAIL CLOSED, like single-bird deletion. The adopter's sheet is static and
+// unaffected either way, so the only cost of refusing is a bird that lingers on
+// the sender's screen until they retry — and a retry is safe (already-deleted
+// clips return 404, treated as success). Failing open would orphan media
+// permanently and lose its uids with the cascading registry rows.
+export async function completePdfHandoffWith(
+  sb: any,
+  senderId: string,
+  data: { birdId: string; recipientName?: string },
+): Promise<{ ok: true }> {
+  const { data: bird } = await sb.from("birds")
+    .select("id, name, species, intake_date, is_foster, owner_id, photo_url").eq("id", data.birdId).maybeSingle();
+  if (!bird || (bird as any).owner_id !== senderId) throw new Error("Not allowed.");
+  const birdName = ((bird as any).name ?? "This bird") as string;
 
-    // Keepsake thumbnail before the record is deleted below.
-    const thumb = await keepsakeThumb(sb, (bird as any).photo_url);
+  // 1. Keepsake thumbnail while the photo still exists.
+  const thumb = await keepsakeThumb(sb, (bird as any).photo_url);
 
-    // Snapshot the sender's memory BEFORE removing the record.
+  try {
+    // 2. Media, fail-closed: purgeBirdMediaWith throws on any failure.
+    await purgeBirdMediaWith(sb, { id: (bird as any).id, photo_url: (bird as any).photo_url ?? null });
+
+    // 3. Snapshot the sender's memory.
     const { error: pbErr } = await sb.from("past_birds").insert({
       original_owner_id: senderId,
       bird_name: (bird as any).name,
@@ -165,12 +194,28 @@ export const completePdfHandoff = createServerFn({ method: "POST" })
       was_foster: !!(bird as any).is_foster,
       photo_thumb: thumb,
     } as any);
-    if (pbErr) throw new Error(pbErr.message);
+    if (pbErr) throw new Error(`past_birds insert failed: ${pbErr.message}`);
 
-    // The record left as a PDF — delete the DB record (cascades its data).
+    // 4. The record left as a PDF — delete the DB record (cascades its data).
     const { error: delErr } = await sb.from("birds").delete().eq("id", data.birdId);
-    if (delErr) throw new Error(delErr.message);
-    return { ok: true };
+    if (delErr) throw new Error(`birds delete failed: ${delErr.message}`);
+  } catch (e: any) {
+    // Detail (paths, clip uids, DB errors) to the server log only. Only the
+    // fixed message leaves the server, so none of it reaches the UI or even the
+    // network response.
+    console.error(`[completePdfHandoff] bird=${data.birdId} sender=${senderId}: ${e?.message ?? e}`);
+    throw new Error(pdfHandoffFailedMessage(birdName));
+  }
+  return { ok: true };
+}
+
+export const completePdfHandoff = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { birdId: string; recipientName?: string }) =>
+    z.object({ birdId: z.string().uuid(), recipientName: z.string().trim().max(120).optional() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const sb = await getAdmin();
+    return completePdfHandoffWith(sb, context.userId as string, data);
   });
 
 // ---- Owner: foster-fail — make a foster permanent --------------------------

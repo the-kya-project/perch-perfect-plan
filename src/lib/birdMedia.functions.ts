@@ -203,6 +203,23 @@ export const BIRD_MEDIA_PURGE_FAILED =
   "We couldn't finish removing this bird's files, so the bird is still here. Please try again.";
 
 /**
+ * What the sender sees when a PDF handoff can't finish. Lives beside
+ * BIRD_MEDIA_PURGE_FAILED so every purge-failure message — delete-bird on two
+ * screens, and this — is in one place and follows one standard: a fixed,
+ * retryable message in the UI, detail in the server log only.
+ *
+ * Wording is deliberate. "Photos and videos", not "files": the sender has just
+ * given their bird away, and this must not read like a storage error. "For now"
+ * signals it's temporary. The adopter line answers the question they'll
+ * actually have — did I just break what I handed over? No: the sheet is static
+ * text, and a retry is safe because already-deleted clips come back 404, which
+ * counts as success.
+ */
+export function pdfHandoffFailedMessage(birdName: string): string {
+  return `We couldn't finish removing ${birdName}'s photos and videos, so they're still in your flock for now. The PDF you gave the adopter isn't affected. Please try again.`;
+}
+
+/**
  * Owner-authorized purge of one bird's media. Call this and let it settle
  * BEFORE deleting the bird's rows.
  */

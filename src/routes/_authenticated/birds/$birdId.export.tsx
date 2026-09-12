@@ -5,6 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { completePdfHandoff } from "@/lib/handoff.functions";
+import { pdfHandoffFailedMessage } from "@/lib/birdMedia.functions";
 import { toast } from "sonner";
 import { ArrowLeft, Printer, Loader2, AlertTriangle } from "lucide-react";
 
@@ -67,7 +68,13 @@ function ExportRecord() {
       await complete({ data: { birdId, recipientName: recipientName.trim() || undefined } });
       toast.success(`${name}'s record was handed off. They're in Past birds now.`);
       navigate({ to: "/dashboard" });
-    } catch (e: any) { toast.error(e?.message ?? "Couldn't complete the handoff."); setBusy(false); }
+    } catch (e: any) {
+      // Never e.message — same standard as the delete-bird screens. The server
+      // logs the detail; the sender gets the one shared, retryable message.
+      console.error("[handoff] PDF handoff failed", e);
+      toast.error(pdfHandoffFailedMessage(name));
+      setBusy(false);
+    }
   }
 
   const identity: [string, string | null][] = [
