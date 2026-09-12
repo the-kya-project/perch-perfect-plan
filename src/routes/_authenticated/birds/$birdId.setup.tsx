@@ -12,7 +12,6 @@ import { AgePicker, BirdField, SpeciesPicker } from "@/components/BirdPickers";
 import { ClipRecorder, UploadProgress, MAX_SECONDS as CLIP_MAX_SECONDS, MAX_BYTES as CLIP_MAX_BYTES } from "@/components/ClipRecorder";
 import { ClipPlayer } from "@/components/ClipPlayer";
 import { useOwnerClipPreview } from "@/lib/useOwnerClipPreview";
-import { isCfClip } from "@/lib/clipRef";
 import { commitClipRef } from "@/lib/clipReplace";
 import { FEED_PREFIX, HYG_REMOVE_PREFIX, HYG_WASH_FOOD_PREFIX, HYG_WASH_WATER_PREFIX, WATER_CHANGE_PREFIX, MED_TASK_PREFIX, isDerivedTask, derivedSource, feedTimeToDaypart } from "@/lib/routineTasks";
 import { FoodItemsEditor } from "@/components/careEditors/FoodItemsEditor";
@@ -1945,9 +1944,18 @@ export function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlus
     toast.success("Baseline clip saved.");
   }
 
+  // Remove = commit null, then retire the old clip. Same path and ordering as
+  // replace: the column is cleared FIRST (proven by commitClipRef), and only then
+  // is the old asset deleted. This used to delete a legacy object before
+  // clearing the column, and never touched Cloudflare at all.
   async function removeClip() {
-    if (clipPath && !isCfClip(clipPath)) {
-      try { await supabase.storage.from("bird-photos").remove([clipPath]); } catch {}
+    if (plan?.id) {
+      try {
+        await commitClipRef({ planId: plan.id, column: "baseline_clip_path", newRef: null, oldRef: clipPath });
+      } catch {
+        toast.error("Couldn't remove the clip. Please try again.");
+        return;
+      }
     }
     setClipPath(null);
   }
@@ -2432,11 +2440,13 @@ function ClipSlotCard({
     setBusy("uploading");
     onBusy(slot.key, true);
     try {
-      if (path && !isCfClip(path)) {
-        try { await supabase.storage.from("bird-photos").remove([path]); } catch {}
-      }
-      await supabase.from("care_plans").update({ [slot.column]: null } as any).eq("id", planId);
+      // Clear the column, then retire the old clip — see commitClipRef. This
+      // used to delete a legacy object before clearing, and ignored the update's
+      // result entirely, so a failed remove said nothing and left the clip up.
+      await commitClipRef({ planId, column: slot.column, newRef: null, oldRef: path });
       onChange();
+    } catch {
+      toast.error("Couldn't remove the clip. Please try again.");
     } finally {
       setBusy(null);
       onBusy(slot.key, false);

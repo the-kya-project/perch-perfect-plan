@@ -1,8 +1,9 @@
-// Commit a new clip reference to a care plan, then retire the one it replaced.
+// Commit a clip reference to a care plan — a new clip, or null to remove one —
+// then retire the clip it replaced.
 //
-// The ONLY path either replace handler uses — the baseline clip and all 8
-// care-plan slots — so the save-then-delete ordering lives in one place and
-// can't drift between them.
+// The ONLY path any clip replace OR remove handler uses — the baseline clip and
+// all 8 care-plan slots — so the save-then-delete ordering lives in one place
+// and can't drift between them.
 
 import { supabase } from "@/integrations/supabase/client";
 import { isCfClip, cfUid, type CLIP_COLUMNS } from "./clipRef";
@@ -11,7 +12,13 @@ import { retireReplacedClip } from "./clips.functions";
 export type ClipColumn = (typeof CLIP_COLUMNS)[number];
 
 /**
- * Save `newRef` into `column`, THEN retire `oldRef`.
+ * Save `newRef` into `column` (null clears it — a remove), THEN retire `oldRef`.
+ *
+ * Remove and replace are the same operation here. A remove commits null; the
+ * retire still fires because oldRef is set and differs; and the server's
+ * "still referenced" guard reads correctly against null — a cleared column
+ * never matches cfstream:<uid>, so a clear that landed permits the delete and
+ * one that didn't leaves the ref in place and is refused.
  *
  * Order is the whole point. Save first: if it fails, this throws and nothing
  * has been deleted, so the old clip is exactly as it was. Delete second: if
@@ -27,26 +34,35 @@ export type ClipColumn = (typeof CLIP_COLUMNS)[number];
  * function awaits Cloudflare internally, so the work isn't frozen when the
  * handler returns.
  *
- * Throws only for a failed SAVE, with a fixed message safe to show.
+ * Throws only when the save didn't land. Callers show their own fixed message
+ * (worded for replace vs remove), never this error's text.
  */
 export async function commitClipRef(opts: {
   planId: string;
   column: ClipColumn;
-  newRef: string;
+  newRef: string | null;
   oldRef: string | null | undefined;
 }): Promise<void> {
   const { planId, column, newRef, oldRef } = opts;
 
-  // 1. Save. supabase-js returns { error } rather than throwing, so check it —
-  //    an unchecked failure here would have toasted "saved" and then deleted
-  //    the old clip out from under a care plan still pointing at it.
-  const { error } = await supabase
+  // 1. Save, and PROVE it landed. { error } alone is not enough: an UPDATE that
+  //    RLS blocks comes back HTTP 204 with no error and zero rows touched
+  //    (verified). Checking only { error } would tell the owner "saved" or
+  //    "removed" while the column never changed. Returning the updated row and
+  //    requiring exactly one is the real signal. (The server guard would still
+  //    refuse the delete in that case — the old ref is still there — but the UI
+  //    must not claim a change that didn't happen.)
+  const { data, error } = await supabase
     .from("care_plans")
     .update({ [column]: newRef } as never)
-    .eq("id", planId);
-  if (error) {
-    console.error(`[commitClipRef] save failed for ${column}:`, error.message);
-    throw new Error("Couldn't save the clip. Please try again.");
+    .eq("id", planId)
+    .select("id");
+  if (error || data?.length !== 1) {
+    console.error(
+      `[commitClipRef] ${newRef === null ? "clear" : "save"} failed for ${column}:`,
+      error?.message ?? `${data?.length ?? 0} rows updated`,
+    );
+    throw new Error("The clip change didn't save.");
   }
 
   // 2. Retire what it replaced — best-effort, never awaited, never surfaced.
