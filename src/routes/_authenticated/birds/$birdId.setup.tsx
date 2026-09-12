@@ -13,6 +13,7 @@ import { ClipRecorder, UploadProgress, MAX_SECONDS as CLIP_MAX_SECONDS, MAX_BYTE
 import { ClipPlayer } from "@/components/ClipPlayer";
 import { useOwnerClipPreview } from "@/lib/useOwnerClipPreview";
 import { isCfClip } from "@/lib/clipRef";
+import { commitClipRef } from "@/lib/clipReplace";
 import { FEED_PREFIX, HYG_REMOVE_PREFIX, HYG_WASH_FOOD_PREFIX, HYG_WASH_WATER_PREFIX, WATER_CHANGE_PREFIX, MED_TASK_PREFIX, isDerivedTask, derivedSource, feedTimeToDaypart } from "@/lib/routineTasks";
 import { FoodItemsEditor } from "@/components/careEditors/FoodItemsEditor";
 import { blankFoodItem, isFoodItemComplete, foodItemHasContent, HOMEMADE_CHOP_NAME, type FoodItem } from "@/lib/foodItems";
@@ -1922,15 +1923,22 @@ export function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlus
   );
 
   // The ClipRecorder uploads to Cloudflare Stream and hands back a
-  // "cfstream:<uid>" reference; we persist it (autosave writes baseline_clip_path).
+  // "cfstream:<uid>" reference.
   //
-  // Deliberately NOT written through here. Clip authorization resolves the uid
-  // via clip_assets, which createClipUpload writes before the uid ever reaches
-  // this client — so the registry row already exists by the time the preview
-  // polls, and the care_plans write timing doesn't gate anything.
+  // Saved HERE through commitClipRef rather than left to the 600ms autosave,
+  // because replacing now retires the old clip's Cloudflare asset, and that must
+  // happen only after the new ref is committed. commitClipRef saves, then
+  // retires; the server additionally refuses to delete a uid the care plan still
+  // references. (Autosave also writes baseline_clip_path from state — the same
+  // value, so harmless.)
   async function uploadClip(ref: string) {
-    if (clipPath && !isCfClip(clipPath)) {
-      try { await supabase.storage.from("bird-photos").remove([clipPath]); } catch {}
+    if (plan?.id) {
+      try {
+        await commitClipRef({ planId: plan.id, column: "baseline_clip_path", newRef: ref, oldRef: clipPath });
+      } catch {
+        toast.error("Couldn't save the clip. Please try again.");
+        return;
+      }
     }
     setClipPath(ref);
     setReplacingClip(false);
@@ -2407,15 +2415,13 @@ function ClipSlotCard({
     setBusy("uploading");
     onBusy(slot.key, true);
     try {
-      if (path && !isCfClip(path)) {
-        try { await supabase.storage.from("bird-photos").remove([path]); } catch {}
-      }
-      await supabase.from("care_plans").update({ [slot.column]: ref } as any).eq("id", planId);
+      // Save the new ref, then retire the one it replaced — see commitClipRef.
+      await commitClipRef({ planId, column: slot.column, newRef: ref, oldRef: path });
       setReplacing(false);
       toast.success(`${slot.label} saved.`);
       onChange();
-    } catch (e: any) {
-      toast.error(e.message ?? "Couldn't save the clip. Please try again.");
+    } catch {
+      toast.error("Couldn't save the clip. Please try again.");
     } finally {
       setBusy(null);
       onBusy(slot.key, false);

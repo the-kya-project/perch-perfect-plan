@@ -5,7 +5,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { CF_UID_RE } from "@/lib/clipRef";
+import { CF_UID_RE, CLIP_COLUMNS, cfRef } from "@/lib/clipRef";
 
 const MAX_CLIP_SECONDS = 60;
 
@@ -138,3 +138,77 @@ export const getOwnerClipUrl = createServerFn({ method: "POST" })
     const { signedIframeUrl } = await import("@/lib/cloudflareStream.server");
     return { url: await signedIframeUrl(data.uid) };
   });
+
+/**
+ * Delete the Cloudflare asset of a clip that has just been REPLACED.
+ *
+ * Called fire-and-forget by commitClipRef AFTER the new ref is saved. Never
+ * throws for a Cloudflare failure and never reports one to the user: a missed
+ * delete is an orphan the registry sweep reclaims when the bird or account is
+ * deleted.
+ *
+ * Authorization, in two parts with different jobs:
+ *   - GRANT comes from the server-authored binding: the caller must be able to
+ *     see the bird clip_assets binds this uid to (resolveAuthorizedClip).
+ *     Unknown and unauthorized uids return identically and silently.
+ *   - SAFETY comes from care_plans, and only ever to REFUSE: nothing is deleted
+ *     while any of that bird's clip columns still references the uid. That
+ *     makes "save first" a server guarantee, not just client call order — if the
+ *     new ref didn't land, the old uid is still referenced and this refuses. It
+ *     also means the worst any caller can do is garbage-collect a clip that is
+ *     already unused. Reading user-writable data here can't escalate anything:
+ *     the only people who can unreference a clip are that bird's editors, who
+ *     could replace it anyway.
+ *
+ * The Cloudflare call is AWAITED before returning. Vercel freezes work left
+ * running after a server function returns, so the fire-and-forget belongs on
+ * the client, never inside this handler.
+ */
+export async function retireReplacedClipWith(
+  callerSb: SupabaseClient,
+  uid: string,
+): Promise<{ deleted: boolean }> {
+  let birdId: string;
+  try {
+    ({ birdId } = await resolveAuthorizedClip(callerSb, uid));
+  } catch {
+    return { deleted: false };
+  }
+
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  // uid is 32-hex (uidInput), so it is safe inside the PostgREST `or` filter.
+  const ref = cfRef(uid);
+  const filter = CLIP_COLUMNS.map((col) => `${col}.eq.${ref}`).join(",");
+  const { data: stillUsed, error } = await supabaseAdmin
+    .from("care_plans")
+    .select("id")
+    .eq("bird_id", birdId)
+    .or(filter)
+    .limit(1);
+  if (error) {
+    console.error(`[retireReplacedClip] uid=${uid} bird=${birdId}: reference check failed: ${error.message}`);
+    return { deleted: false };
+  }
+  if (stillUsed?.length) return { deleted: false };
+
+  const { deleteStreamUids, forgetClipUids } = await import("./birdMedia.functions");
+  const { deletedUids, failures } = await deleteStreamUids([uid]);
+  if (failures.length) {
+    // Registry row deliberately KEPT: it is the only record left that this
+    // video exists, and the bird/account sweep reclaims it from there.
+    console.error(`[retireReplacedClip] uid=${uid} bird=${birdId}: ${failures[0].reason}`);
+    return { deleted: false };
+  }
+  // Confirmed gone from Cloudflare, so drop the registry row — the same rule the
+  // deletion sweep follows, so clip_assets keeps one meaning: uids that may
+  // still exist on Cloudflare.
+  await forgetClipUids(supabaseAdmin, deletedUids);
+  return { deleted: true };
+}
+
+export const retireReplacedClip = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { uid: string }) => uidInput.parse(d))
+  .handler(async ({ data, context }) =>
+    retireReplacedClipWith((context as any).supabase as SupabaseClient, data.uid),
+  );
