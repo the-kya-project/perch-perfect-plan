@@ -172,21 +172,24 @@ export const deleteMyAccount = createServerFn({ method: "POST" })
     // CLOUDFLARE_* env, Cloudflare being down — is logged like a file, not
     // fatal: the alternative is an account that can never be deleted because of
     // a video the user cannot see.
+    //
+    // The uids come from clip_assets, not from the nine care_plans columns.
+    // Those columns hold only the CURRENT clip per slot, so a replaced clip, or
+    // one uploaded and abandoned before the care plan saved, was never seen
+    // here and its video was orphaned for good. The registry records every mint.
+    //
+    // ORDERING: this runs while every row still exists. clip_assets cascades on
+    // bird_id, so reading it after the row deletes below would read nothing and
+    // silently orphan every video. Nothing above this point deletes a row.
     if (birdIds.length) {
       try {
-        const { data: plans } = await supabaseAdmin
-          .from("care_plans")
-          .select(
-            "baseline_clip_path, clip_anything_else_path, clip_bedtime_path, clip_food_prep_path, " +
-              "clip_food_water_path, clip_locations_path, clip_step_up_path, clip_targeting_path, clip_toys_foraging_path",
-          )
-          .in("bird_id", birdIds);
-        const refs: string[] = [];
-        for (const row of (plans ?? []) as unknown as Array<Record<string, unknown>>) {
-          for (const v of Object.values(row)) if (typeof v === "string" && v) refs.push(v);
-        }
-        const { deleteStreamClips } = await import("./birdMedia.functions");
-        const { failures } = await deleteStreamClips(refs);
+        const { clipUidsForBirds, deleteStreamUids, forgetClipUids } = await import("./birdMedia.functions");
+        const uids = await clipUidsForBirds(supabaseAdmin, birdIds);
+        const { deletedUids, failures } = await deleteStreamUids(uids);
+        // Rows for videos confirmed gone. The birds are deleted below and would
+        // cascade these anyway, but that only holds while this stays in the
+        // same function as the row deletes.
+        await forgetClipUids(supabaseAdmin, deletedUids);
         for (const f of failures) {
           mediaFailures.push({ bucket: "cloudflare-stream", path: f.uid, reason: f.reason });
         }

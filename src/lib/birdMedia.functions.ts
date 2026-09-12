@@ -51,49 +51,76 @@ function clipRefsFrom(rows: Array<Record<string, unknown>>): string[] {
   return [...refs];
 }
 
-/**
- * Delete the Cloudflare Stream videos for the given refs. Non-cfstream refs are
- * ignored (legacy clips are Supabase objects and handled by the bucket sweep).
- * Throws on the first failure, so a caller aborts before dropping the rows that
- * hold these uids — once the row is gone the uid is unrecoverable and the video
- * bills forever.
- */
 /** One clip we could not delete. Logged so the video can be chased manually. */
 export type ClipFailure = { uid: string; reason: string };
 
 /**
- * Delete every Cloudflare Stream clip referenced by `refs`.
+ * Every Cloudflare uid ever minted against these birds.
+ *
+ * MUST be called before anything deletes birds or care_plans: clip_assets has
+ * ON DELETE CASCADE on bird_id, so a row deletion takes the uid list with it
+ * and the videos become unreachable forever. Callers read this first and hold
+ * the uids in memory.
+ *
+ * This is why the sweep no longer reads the nine care_plans clip columns for
+ * uids: those hold only the CURRENT clip per slot, so a replaced clip — or one
+ * uploaded and then abandoned before the care plan saved — was invisible and
+ * its video orphaned. The registry records every mint.
+ */
+export async function clipUidsForBirds(sb: any, birdIds: string[]): Promise<string[]> {
+  if (!birdIds.length) return [];
+  const { data, error } = await sb.from("clip_assets").select("uid").in("bird_id", birdIds);
+  if (error) throw new Error(`clip_assets read failed: ${error.message}`);
+  return [...new Set(((data ?? []) as Array<{ uid: string }>).map((r) => r.uid))];
+}
+
+/**
+ * Delete the given Cloudflare Stream videos.
  *
  * Per-uid failures are collected, not thrown: one bad uid used to abort the
  * loop and leave every later clip untouched. Callers decide what a failure
  * means — account deletion logs and continues, bird deletion still refuses.
  * An already-deleted clip is NOT a failure (deleteVideo treats 404 as success).
  */
-export async function deleteStreamClips(
-  refs: string[],
-): Promise<{ deleted: number; failures: ClipFailure[] }> {
-  const uids = [...new Set(refs.filter(isCfClip).map(cfUid))];
+export async function deleteStreamUids(
+  uids: string[],
+): Promise<{ deleted: number; deletedUids: string[]; failures: ClipFailure[] }> {
+  const unique = [...new Set(uids)];
   const failures: ClipFailure[] = [];
+  const deletedUids: string[] = [];
   // Return before importing the client: with no clips to delete there is
   // nothing to configure, so a missing CLOUDFLARE_* env must not surface here.
-  if (!uids.length) return { deleted: 0, failures };
+  if (!unique.length) return { deleted: 0, deletedUids, failures };
 
-  let deleted = 0;
   try {
     const { deleteVideo } = await import("./cloudflareStream.server");
-    for (const uid of uids) {
+    for (const uid of unique) {
       try {
         await deleteVideo(uid);
-        deleted++;
+        deletedUids.push(uid);
       } catch (e: any) {
         failures.push({ uid, reason: String(e?.message ?? e) });
       }
     }
   } catch (e: any) {
     // Import/creds blew up: nothing was attempted, so report every uid.
-    for (const uid of uids) failures.push({ uid, reason: String(e?.message ?? e) });
+    for (const uid of unique) failures.push({ uid, reason: String(e?.message ?? e) });
   }
-  return { deleted, failures };
+  return { deleted: deletedUids.length, deletedUids, failures };
+}
+
+/**
+ * Drop registry rows for videos that are actually gone from Cloudflare.
+ *
+ * Cascade covers the usual case (the bird row goes moments later), but not
+ * every one: a purge whose caller then fails to delete the bird would otherwise
+ * leave rows pointing at videos that no longer exist. Best-effort — a stale row
+ * is untidy, never harmful, and must not fail a deletion.
+ */
+export async function forgetClipUids(sb: any, uids: string[]): Promise<void> {
+  if (!uids.length) return;
+  const { error } = await sb.from("clip_assets").delete().in("uid", uids);
+  if (error) console.error(`[forgetClipUids] could not drop ${uids.length} row(s): ${error.message}`);
 }
 
 /** Collect + delete all media for one bird. Shared by the server fn and tests. */
@@ -103,6 +130,13 @@ export async function purgeBirdMediaWith(
 ): Promise<{ birdPhotos: number; streamClips: number }> {
   const birdId = bird.id;
 
+  // Registry FIRST, before anything can delete a row: clip_assets cascades on
+  // bird_id, so reading it late would mean reading nothing.
+  const uids = await clipUidsForBirds(sb, [birdId]);
+
+  // care_plans is still read, but only for LEGACY clips — pre-Cloudflare refs
+  // are Supabase Storage paths living in these same columns, and the registry
+  // holds Cloudflare uids only.
   const { data: plans, error: planErr } = await sb
     .from("care_plans").select(CLIP_COLUMNS.join(",")).eq("bird_id", birdId);
   if (planErr) throw new Error(`care_plans read failed for ${birdId}: ${planErr.message}`);
@@ -117,7 +151,10 @@ export async function purgeBirdMediaWith(
   // Single-bird deletion stays fail-closed, unlike account deletion: the bird
   // (and therefore the lookup path to its media) still exists, so the user can
   // simply retry. Refusing beats orphaning.
-  const { deleted: streamClips, failures: clipFailures } = await deleteStreamClips(refs);
+  const { deleted: streamClips, deletedUids, failures: clipFailures } = await deleteStreamUids(uids);
+  // Drop registry rows for videos confirmed gone, even if a later uid failed —
+  // those really are deleted and the row would be a lie.
+  await forgetClipUids(sb, deletedUids);
   if (clipFailures.length) {
     throw new Error(
       `Stream clip delete failed for ${birdId}: ${clipFailures.map((f) => `${f.uid} (${f.reason})`).join("; ")}`,
