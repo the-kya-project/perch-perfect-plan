@@ -199,8 +199,12 @@ export async function purgeBirdMediaWith(
  * clips come back 404 from Cloudflare, which deleteVideo treats as success, and
  * already-removed files are simply absent from the next listing.
  */
+// "Photos and videos", not "files": this is the moment someone is removing their
+// bird, and the copy must not read like a storage error. Worded the same way as
+// pdfHandoffFailedMessage below — two messages describing the same failure
+// differently is the kind of inconsistency that never gets cleaned up.
 export const BIRD_MEDIA_PURGE_FAILED =
-  "We couldn't finish removing this bird's files, so the bird is still here. Please try again.";
+  "We couldn't finish removing this bird's photos and videos, so the bird is still here. Please try again.";
 
 /**
  * What the sender sees when a PDF handoff can't finish. Lives beside
