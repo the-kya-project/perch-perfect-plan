@@ -286,7 +286,14 @@ export async function signInWithProvider(provider: OAuthProvider, redirectTo: st
     return; // browser is navigating away
   }
 
-  track("native_oauth_started", { provider, build: "idtoken-b6" });
+  // `web` is the deployed commit: the shells load production remotely and a
+  // service worker can serve stale chunks, so without it we cannot tell which
+  // version of this file actually ran on a given device.
+  track("native_oauth_started", {
+    provider,
+    build: "idtoken-b6",
+    web: typeof __WEB_BUILD__ === "string" ? __WEB_BUILD__ : "unknown",
+  });
   markPending(provider);
   try {
     await ensureInitialized();

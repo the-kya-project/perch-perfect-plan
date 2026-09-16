@@ -1,2 +1,3 @@
 // Injected by Vite's `define` from package.json (see vite.config.ts).
 declare const __APP_VERSION__: string | undefined;
+declare const __WEB_BUILD__: string | undefined;

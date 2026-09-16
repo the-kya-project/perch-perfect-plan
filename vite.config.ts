@@ -81,6 +81,14 @@ export default defineConfig({
   vite: {
     define: {
       __APP_VERSION__: JSON.stringify(pkgVersion),
+      // Which web build is actually running. The native shells load the
+      // production site remotely and a service worker can serve stale chunks,
+      // so "was the fix live on that device?" is otherwise unanswerable after
+      // the fact -- which is exactly the ambiguity that made an App Review
+      // failure impossible to attribute. Vercel sets VERCEL_GIT_COMMIT_SHA.
+      __WEB_BUILD__: JSON.stringify(
+        (process.env.VERCEL_GIT_COMMIT_SHA ?? "local").slice(0, 7),
+      ),
     },
     resolve: {
       alias: [
