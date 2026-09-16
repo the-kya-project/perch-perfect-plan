@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, useNavigate, useSearch, useLocation, retainSearchParams } from "@tanstack/react-router";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Component, Suspense, useEffect, useRef, useState, type ReactNode } from "react";
 import { z } from "zod";
 import { getSitterContext } from "@/lib/sitter.functions";
 import { HelpCircle } from "lucide-react";
@@ -24,38 +24,61 @@ export const Route = createFileRoute("/sitter/$token")({
     { title: "Sitter access — Kya & Co." },
     { name: "robots", content: "noindex,nofollow" },
   ]}),
-  errorComponent: ({ error }) => {
-    const code = error.message;
-    // The error boundary renders outside the sitter <I18nextProvider>, so read
-    // the sitter instance directly. Resolve the locale from the browser (no
-    // token here) and translate — errors are rare, so the per-token override
-    // isn't worth threading in.
-    ensureSitterI18n(resolveSitterLocale());
-    const t = sitterI18n.getFixedT(sitterI18n.language);
-    const copy =
-      code === "SITTER_LINK_EXPIRED"
-        ? { title: t("sitter.error.expired.title", "This sitter link has expired"), body: t("sitter.error.expired.body", "The sit it was created for has ended, so it no longer opens the care plan.") }
-        : code === "SITTER_LINK_REVOKED"
-        ? { title: t("sitter.error.revoked.title", "This sitter link was turned off"), body: t("sitter.error.revoked.body", "The owner revoked access to this link.") }
-        : code === "SITTER_LINK_INVALID"
-        ? { title: t("sitter.error.invalid.title", "This sitter link isn't valid"), body: t("sitter.error.invalid.body", "Double-check the link, or ask the owner to resend it.") }
-        : code === "SITTER_SIT_PAUSED"
-        ? { title: t("sitter.error.paused.title", "This sit is paused"), body: t("sitter.error.paused.body", "There's nothing that needs doing right now. The owner will be in touch.") }
-        : { title: t("sitter.error.generic.title", "This sitter link can't be opened"), body: error.message };
-    return (
-      <div className="grid min-h-screen place-items-center bg-[#f4f1e8] p-6 text-center">
-        <div className="max-w-sm">
-          <h1 className="text-lg font-medium">{copy.title}</h1>
-          <p className="mt-2 text-sm text-[#5f5e5a]">{copy.body}</p>
-          {code !== "SITTER_SIT_PAUSED" && (
-            <p className="mt-4 text-xs text-[#5f5e5a]">{t("sitter.error.askNew", "Ask the owner to send you a new link.")}</p>
-          )}
-        </div>
-      </div>
-    );
-  },
+  errorComponent: ({ error }) => <SitterLinkError error={error as Error} />,
   component: SitterRoot,
 });
+
+/**
+ * Terminal state for a sitter link that can't be opened.
+ *
+ * Used in two places, and it has to be: TanStack Router's `errorComponent`
+ * catches errors from the route itself, but `useSuspenseQuery` throws from
+ * INSIDE the <Suspense> below, and that throw was escaping the router boundary
+ * — leaving the sitter staring at the loading skeleton forever on a revoked,
+ * expired, or deleted link. React Query requires an error boundary paired with
+ * the Suspense boundary, so SitterErrorBoundary (below) renders this too.
+ */
+function SitterLinkError({ error }: { error: Error }) {
+  const code = error.message;
+  // Rendered outside the sitter <I18nextProvider> in the router case, so read
+  // the sitter instance directly. Resolve the locale from the browser (no token
+  // here) and translate — errors are rare, so the per-token override isn't
+  // worth threading in.
+  ensureSitterI18n(resolveSitterLocale());
+  const t = sitterI18n.getFixedT(sitterI18n.language);
+  const copy =
+    code === "SITTER_LINK_EXPIRED"
+      ? { title: t("sitter.error.expired.title", "This sitter link has expired"), body: t("sitter.error.expired.body", "The sit it was created for has ended, so it no longer opens the care plan.") }
+      : code === "SITTER_LINK_REVOKED"
+      ? { title: t("sitter.error.revoked.title", "This sitter link was turned off"), body: t("sitter.error.revoked.body", "The owner revoked access to this link.") }
+      : code === "SITTER_LINK_INVALID"
+      ? { title: t("sitter.error.invalid.title", "This sitter link isn't valid"), body: t("sitter.error.invalid.body", "Double-check the link, or ask the owner to resend it.") }
+      : code === "SITTER_SIT_PAUSED"
+      ? { title: t("sitter.error.paused.title", "This sit is paused"), body: t("sitter.error.paused.body", "There's nothing that needs doing right now. The owner will be in touch.") }
+      : code === "SITTER_LINK_UNAVAILABLE"
+      ? { title: t("sitter.error.unavailable.title", "This sitter link can't be opened"), body: t("sitter.error.unavailable.body", "It may have expired or been turned off. Check your connection and try again.") }
+      : { title: t("sitter.error.generic.title", "This sitter link can't be opened"), body: error.message };
+  return (
+    <div className="grid min-h-screen place-items-center bg-[#f4f1e8] p-6 text-center">
+      <div className="max-w-sm">
+        <h1 className="text-lg font-medium">{copy.title}</h1>
+        <p className="mt-2 text-sm text-[#5f5e5a]">{copy.body}</p>
+        {code !== "SITTER_SIT_PAUSED" && (
+          <p className="mt-4 text-xs text-[#5f5e5a]">{t("sitter.error.askNew", "Ask the owner to send you a new link.")}</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Catches the useSuspenseQuery throw that the router boundary does not see. */
+class SitterErrorBoundary extends Component<{ children: ReactNode }, { error: Error | null }> {
+  state: { error: Error | null } = { error: null };
+  static getDerivedStateFromError(error: Error) { return { error }; }
+  render() {
+    return this.state.error ? <SitterLinkError error={this.state.error} /> : this.props.children;
+  }
+}
 
 function SitterRoot() {
   const { token } = Route.useParams();
@@ -80,9 +103,11 @@ function SitterRoot() {
 
   return (
     <I18nextProvider i18n={sitterI18n}>
-      <Suspense fallback={<FullPageSkeleton />}>
-        <SitterLayout />
-      </Suspense>
+      <SitterErrorBoundary>
+        <Suspense fallback={<FullPageSkeleton />}>
+          <SitterLayout />
+        </Suspense>
+      </SitterErrorBoundary>
     </I18nextProvider>
   );
 }
@@ -219,13 +244,55 @@ function SitterLayout() {
   );
 }
 
+/**
+ * How long to wait for the sitter context before giving up.
+ *
+ * Not arbitrary. When the server function rejects a token it answers HTTP 200
+ * with a `$TSR/Error` envelope carrying the sentinel (SITTER_LINK_INVALID and
+ * friends) — but deserializing that envelope throws outside the promise React
+ * Query is awaiting, so the query NEVER SETTLES. The sitter sat on the loading
+ * skeleton forever: no error, no message, nothing in the UI. Verified against a
+ * deleted owner's token in production and locally.
+ *
+ * Until that framework behaviour is fixed upstream, this guard guarantees the
+ * query settles so the error boundary can render a real message.
+ */
+const SITTER_CTX_TIMEOUT_MS = 8_000;
+
+/** Verdicts about the link itself — retrying one cannot change the answer. */
+const TERMINAL_SITTER_ERRORS = new Set([
+  "SITTER_LINK_INVALID",
+  "SITTER_LINK_REVOKED",
+  "SITTER_LINK_EXPIRED",
+  "SITTER_SIT_PAUSED",
+]);
+
+function isTerminalSitterError(error: unknown): boolean {
+  return error instanceof Error && TERMINAL_SITTER_ERRORS.has(error.message);
+}
+
+function withSettleGuard<T>(work: Promise<T>): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("SITTER_LINK_UNAVAILABLE")), SITTER_CTX_TIMEOUT_MS);
+    work.then(
+      (value) => { clearTimeout(timer); resolve(value); },
+      (err) => { clearTimeout(timer); reject(err); },
+    );
+  });
+}
+
 export function useSitterContext(token: string) {
   const search = useSearch({ from: "/sitter/$token" });
   const birdId = search.birdId;
   const fn = useServerFn(getSitterContext);
   return useSuspenseQuery({
     queryKey: ["sitter-ctx", token, birdId ?? null],
-    queryFn: () => fn({ data: { token, birdId } }),
+    queryFn: () => withSettleGuard(fn({ data: { token, birdId } })),
+    // Retry a transient blip, but never a verdict. A token that is invalid,
+    // revoked, expired, or whose sit is paused will not become valid on a
+    // second attempt — retrying it only doubles how long the sitter waits for
+    // a message that was already decided.
+    retry: (failureCount, error) => failureCount < 1 && !isTerminalSitterError(error),
   });
 }
 
