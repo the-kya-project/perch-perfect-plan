@@ -106,7 +106,7 @@ export function PathDetail({
         <h2 className="t-section">{t("passingGuidance.burialTitle", "Keeping {{name}} safe until then", { name })}</h2>
         {sitter && (
           <p className="t-body leading-relaxed text-[var(--ink2)]">
-            {t("passingGuidance.burialIntro", "{{ownerName}} would like to bury {{name}} or arrange cremation when she's back. Here's how to keep them safe until then.", { ownerName, name })}
+            {t("passingGuidance.burialIntro", "{{ownerName}} would like to bury {{name}} or arrange cremation once back home. Here's how to keep them safe until then.", { ownerName, name })}
           </p>
         )}
         <Steps steps={[
@@ -118,7 +118,7 @@ export function PathDetail({
         ]} />
         {sitter && (
           <p className="t-body leading-relaxed text-[var(--ink2)]">
-            {t("passingGuidance.burialReassure", "{{ownerName}} will take it from here when she's back. You've done the hard part.", { ownerName })}
+            {t("passingGuidance.burialReassure", "{{ownerName}} will take it from here once home. You've done the hard part.", { ownerName })}
           </p>
         )}
         <Disclaimer>{sitter ? t("passingGuidance.burialDisclaimerSitter", "Do what feels right. {{ownerName}} will guide anything else.", { ownerName }) : t("passingGuidance.burialDisclaimerOwner", "Do what feels right. Your avian vet can guide anything else.")}</Disclaimer>

@@ -43,7 +43,7 @@ export function ConcernFlow({
       <div className="space-y-4">
         <h2 className="text-xl font-medium text-[#1a3d2e]">{t("concernFlow.pauseTitle", "Is {{name}} okay?", { name })}</h2>
         <p className="text-sm leading-relaxed text-[#5f5e5a]">
-          {t("concernFlow.pauseBody", "If {{name}} has passed or is in serious trouble, first call {{ownerName}} so she knows. We can pause {{name}}'s reminders so your phone isn't asking you to check on them.", { name, ownerName })}
+          {t("concernFlow.pauseBody", "If {{name}} has passed or is in serious trouble, call {{ownerName}} first. We can pause {{name}}'s reminders so your phone isn't asking you to check on them.", { name, ownerName })}
         </p>
         {ownerPhone && (
           <a
@@ -74,7 +74,7 @@ export function ConcernFlow({
         <p className="text-[11px] font-medium uppercase tracking-widest text-[#5f5e5a]">{t("concernFlow.pausedBadge", "Reminders paused · {{ownerName}} notified", { ownerName })}</p>
         <h2 className="text-xl font-medium text-[#1a3d2e]">{t("concernFlow.pathsTitle", "Thank you for caring for {{name}}.", { name })}</h2>
         <p className="text-sm leading-relaxed text-[#5f5e5a]">
-          {t("concernFlow.pathsBody", "{{ownerName}} would rather you have this here than talk it through right now. Tap what she asked you to do.", { ownerName })}
+          {t("concernFlow.pathsBody", "{{ownerName}} would rather you have this here than talk it through right now. Tap what {{ownerName}} asked you to do.", { ownerName })}
         </p>
         <div className="space-y-2 pt-1">
           {(["necropsy", "burial", "vet"] as PassingPath[]).map((p) => (

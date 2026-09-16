@@ -1248,7 +1248,7 @@ export function FoodWaterStep({
             >
               <AlertTriangle className="mt-0.5 size-5 shrink-0 text-[#854F0B]" />
               <p className="text-sm text-[#854F0B]">
-                {incomplete.count} item{incomplete.count > 1 ? "s" : ""} need details. Add the brand, amount, and timing for: {incomplete.labels.join(", ")}.
+                {incomplete.count} item{incomplete.count > 1 ? "s" : ""} need{incomplete.count > 1 ? "" : "s"} details. Add the brand, amount, and timing for: {incomplete.labels.join(", ")}.
               </p>
             </div>
           )}
@@ -2339,10 +2339,10 @@ type ClipSlot = {
 };
 
 const CLIP_SLOTS: ClipSlot[] = [
-  { key: "step_up", column: "clip_step_up_path", label: "How she steps up", hint: "Hand position, cue word, what works." },
+  { key: "step_up", column: "clip_step_up_path", label: "How they step up", hint: "Hand position, cue word, what works." },
   { key: "food_water", column: "clip_food_water_path", label: "How to refill food & water safely", hint: "Show the bowls, fill amount, and any cage-door routine." },
   { key: "locations", column: "clip_locations_path", label: "Where everything is", hint: "Walkthrough: food, treats, towels, carrier, first aid." },
-  { key: "bedtime", column: "clip_bedtime_path", label: "Settling her for the night", hint: "Cover routine, lights, sounds." },
+  { key: "bedtime", column: "clip_bedtime_path", label: "Settling them for the night", hint: "Cover routine, lights, sounds." },
   { key: "food_prep", column: "clip_food_prep_path", label: "Food prep", hint: "Making chop, portioning a pre-made mix, or prepping freeze-dried." },
   { key: "toys_foraging", column: "clip_toys_foraging_path", label: "Toys & foraging", hint: "Setting up foraging toys, rotating enrichment, or hiding treats." },
   { key: "targeting", column: "clip_targeting_path", label: "Targeting & interaction", hint: "Targeting, tricks, and how you like to hang out together." },

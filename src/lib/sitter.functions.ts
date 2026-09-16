@@ -152,10 +152,10 @@ export const getSitterContext = createServerFn({ method: "GET" })
     // Owner-recorded "Tips from the owner" clips, signed in PARALLEL (they were
     // a serial loop — up to 9 sequential Cloudflare/Storage calls per load).
     const watchClipSlots: { key: string; column: string; label: string }[] = [
-      { key: "step_up", column: "clip_step_up_path", label: "How she steps up" },
+      { key: "step_up", column: "clip_step_up_path", label: "How they step up" },
       { key: "food_water", column: "clip_food_water_path", label: "How to refill food & water safely" },
       { key: "locations", column: "clip_locations_path", label: "Where everything is" },
-      { key: "bedtime", column: "clip_bedtime_path", label: "Settling her for the night" },
+      { key: "bedtime", column: "clip_bedtime_path", label: "Settling them for the night" },
       { key: "food_prep", column: "clip_food_prep_path", label: "Food prep" },
       { key: "toys_foraging", column: "clip_toys_foraging_path", label: "Toys & foraging" },
       { key: "targeting", column: "clip_targeting_path", label: "Targeting & interaction" },

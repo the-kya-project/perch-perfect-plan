@@ -139,12 +139,12 @@
   "concernFlow.back": "Terug",
   // Call {{ownerName}}
   "concernFlow.callOwner": "Bel {{ownerName}}",
-  // {{ownerName}} would rather you have this here than talk it through right now. Tap what she asked you to do.
-  "concernFlow.pathsBody": "{{ownerName}} heeft dit liever hier voor je klaarstaan dan het nu te moeten bespreken. Tik op wat zij je heeft gevraagd te doen.",
+  // {{ownerName}} would rather you have this here than talk it through right now. Tap what {{ownerName}} asked you to do.
+  "concernFlow.pathsBody": "{{ownerName}} heeft dit liever hier voor je klaarstaan dan het nu te moeten bespreken. Tik op wat {{ownerName}} je heeft gevraagd te doen.",
   // Thank you for caring for {{name}}.
   "concernFlow.pathsTitle": "Bedankt dat je voor {{name}} zorgt.",
-  // If {{name}} has passed or is in serious trouble, first call {{ownerName}} so she knows. We can pause {{name}}'s reminders so your phone isn't asking you to check on them.
-  "concernFlow.pauseBody": "Als {{name}} is overleden of in ernstige nood is, bel dan eerst {{ownerName}} zodat zij het weet. We kunnen de herinneringen voor {{name}} pauzeren, zodat je telefoon je niet blijft vragen om even bij ze te kijken.",
+  // If {{name}} has passed or is in serious trouble, call {{ownerName}} first. We can pause {{name}}'s reminders so your phone isn't asking you to check on them.
+  "concernFlow.pauseBody": "Als {{name}} is overleden of in ernstige nood is, bel dan eerst {{ownerName}}. We kunnen de herinneringen voor {{name}} pauzeren, zodat je telefoon je niet blijft vragen om even bij ze te kijken.",
   // Pause {{name}}'s reminders
   "concernFlow.pauseButton": "Herinneringen voor {{name}} pauzeren",
   // Reminders paused · {{ownerName}} notified
@@ -171,10 +171,10 @@
   "passingGuidance.burialDisclaimerOwner": "Doe wat goed voelt. Je vogeldierenarts kan je met de rest helpen.",
   // Do what feels right. {{ownerName}} will guide anything else.
   "passingGuidance.burialDisclaimerSitter": "Doe wat goed voelt. {{ownerName}} helpt je met de rest.",
-  // {{ownerName}} would like to bury {{name}} or arrange cremation when she's back. Here's how to keep them safe until then.
-  "passingGuidance.burialIntro": "{{ownerName}} wil {{name}} begraven of een crematie regelen als zij terug is. Zo houd je ze veilig tot dan.",
-  // {{ownerName}} will take it from here when she's back. You've done the hard part.
-  "passingGuidance.burialReassure": "{{ownerName}} neemt het over als zij terug is. Jij hebt het moeilijkste gedaan.",
+  // {{ownerName}} would like to bury {{name}} or arrange cremation once back home. Here's how to keep them safe until then.
+  "passingGuidance.burialIntro": "{{ownerName}} wil {{name}} begraven of een crematie regelen na thuiskomst. Zo houd je ze veilig tot dan.",
+  // {{ownerName}} will take it from here once home. You've done the hard part.
+  "passingGuidance.burialReassure": "{{ownerName}} neemt het over na thuiskomst. Jij hebt het moeilijkste gedaan.",
   // Keeping {{name}} safe until then
   "passingGuidance.burialTitle": "{{name}} veilig houden tot dan",
   // Call the vet
