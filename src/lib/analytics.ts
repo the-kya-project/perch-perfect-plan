@@ -63,6 +63,7 @@ export type AnalyticsEventName =
   // SocialLogin.initialize outcome — separates an init throw from a login/
   // exchange throw when native sign-in fails a few ms after it starts.
   | "native_oauth_init"
+  | "native_oauth_token"
   // Clip-upload diagnostics: compare picked file size app vs PWA
   | "clip_upload_picked"
   // Resume-after-idle token refresh (bounced-to-sign-in debugging)

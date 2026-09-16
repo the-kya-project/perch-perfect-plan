@@ -209,7 +209,10 @@ async function nativeGoogle(): Promise<void> {
   // verified); otherwise omit it so both sides agree it's absent. Never weakens
   // a real nonce — a present nonce is always still checked by gotrue.
   const nonce = idTokenHasNonce(idToken) ? raw : undefined;
-  const { error } = await supabase.auth.signInWithIdToken({ provider: "google", token: idToken, nonce });
+  safeTrack("native_oauth_token", { provider: "google", platform: nativePlatform(), ms_since_boot: msSinceBoot() });
+  const { error } = await withNativeTimeout(
+    supabase.auth.signInWithIdToken({ provider: "google", token: idToken, nonce }),
+  );
   if (error) throw new Error(error.message);
 }
 
@@ -223,8 +226,52 @@ async function nativeApple(): Promise<void> {
   );
   const idToken = (res.result as { idToken?: string })?.idToken;
   if (!idToken) throw new Error("No Apple identity token returned.");
-  const { error } = await supabase.auth.signInWithIdToken({ provider: "apple", token: idToken });
+  // Breadcrumb: proves the native half finished. Without it, a hang in the
+  // plugin and a hang in the Supabase exchange below look identical from
+  // telemetry (started + init, then silence) -- which is exactly the ambiguity
+  // that cost us a review cycle.
+  safeTrack("native_oauth_token", { provider: "apple", platform: nativePlatform(), ms_since_boot: msSinceBoot() });
+  const { error } = await withNativeTimeout(
+    supabase.auth.signInWithIdToken({ provider: "apple", token: idToken }),
+  );
   if (error) throw new Error(error.message);
+}
+
+
+/**
+ * A sign-in that never settles leaves a marker behind.
+ *
+ * The 120s timeout above cannot be relied on alone: iOS suspends JS timers while
+ * the app is backgrounded behind Apple's sheet, and if the webview is torn down
+ * the pending promise dies with no event at all. Either way the attempt vanishes
+ * from telemetry, which is precisely why the App Review failure was invisible.
+ * So we persist a marker at the start of every native login and clear it on any
+ * outcome; whatever is still there next time this module loads is an attempt
+ * that silently died, reported as stage:"abandoned" with its age.
+ */
+const PENDING_KEY = "kya:native_oauth_pending";
+
+function markPending(provider: OAuthProvider): void {
+  try { localStorage.setItem(PENDING_KEY, JSON.stringify({ provider, at: Date.now() })); } catch { /* storage may be unavailable */ }
+}
+
+function clearPending(): void {
+  try { localStorage.removeItem(PENDING_KEY); } catch { /* storage may be unavailable */ }
+}
+
+function reportAbandonedLogin(): void {
+  try {
+    const raw = localStorage.getItem(PENDING_KEY);
+    if (!raw) return;
+    localStorage.removeItem(PENDING_KEY);
+    const { provider, at } = JSON.parse(raw) as { provider?: string; at?: number };
+    safeTrack("native_oauth_failed", {
+      provider,
+      platform: nativePlatform(),
+      stage: "abandoned",
+      age_ms: typeof at === "number" ? Date.now() - at : undefined,
+    });
+  } catch { /* never let diagnostics break sign-in */ }
 }
 
 /**
@@ -240,10 +287,12 @@ export async function signInWithProvider(provider: OAuthProvider, redirectTo: st
   }
 
   track("native_oauth_started", { provider, build: "idtoken-b6" });
+  markPending(provider);
   try {
     await ensureInitialized();
     if (provider === "apple") await nativeApple();
     else await nativeGoogle();
+    clearPending();
     track("native_oauth_exchanged", { provider });
     // Session now exists in memory — navigate within the SPA (a full reload
     // would race the auth guard). The /auth onAuthStateChange listener also
@@ -254,6 +303,7 @@ export async function signInWithProvider(provider: OAuthProvider, redirectTo: st
       window.dispatchEvent(new PopStateEvent("popstate", { state: {} }));
     } catch { /* keep current location; the auth listener will navigate */ }
   } catch (e) {
+    clearPending();
     const msg = e instanceof Error ? e.message : "Sign-in failed.";
     // `initialized` here tells us WHERE it broke: false → SocialLogin.initialize
     // threw (the lead hypothesis); true → login/exchange threw after a good init.
@@ -275,3 +325,6 @@ export async function signInWithProvider(provider: OAuthProvider, redirectTo: st
 
 export const signInWithGoogle = (redirectTo: string) => signInWithProvider("google", redirectTo);
 export const signInWithApple = (redirectTo: string) => signInWithProvider("apple", redirectTo);
+
+// Runs when the auth screen loads this module: reports any attempt that died silently.
+reportAbandonedLogin();
