@@ -141,14 +141,63 @@ function idTokenHasNonce(idToken: string): boolean {
   }
 }
 
+/**
+ * How long to wait for an OS-native picker before treating it as failed.
+ * Generous: the user may be reading Apple's consent sheet, using Face ID, or
+ * picking "Hide My Email".
+ */
+const NATIVE_LOGIN_TIMEOUT_MS = 120_000;
+
+/** Thrown when the native picker never settles. Named so the catch can tag it. */
+class NativeLoginTimeout extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "NativeLoginTimeout";
+  }
+}
+
+/**
+ * Reject if a native picker never calls back.
+ *
+ * @capgo/capacitor-social-login can leave its completion handler uncalled on the
+ * Apple path: the ASAuthorizationController is retained only as a local (so ARC
+ * can free it mid-sheet, after which no delegate method fires), and
+ * didCompleteWithAuthorization has no else branch for a credential that is not an
+ * ASAuthorizationAppleIDCredential. Either case leaves this promise pending
+ * forever: no toast, no analytics, and the user just sits on an unchanged
+ * sign-in screen -- which is exactly how App Review saw it. We patch the plugin
+ * (patches/@capgo+capacitor-social-login+8.3.39.patch), but keep this so a hang
+ * can never again be silent and untracked.
+ */
+function withNativeTimeout<T>(work: Promise<T>): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(
+      () => reject(new NativeLoginTimeout("Sign-in didn't finish. Please try again.")),
+      NATIVE_LOGIN_TIMEOUT_MS,
+    );
+    work.then(
+      (value) => { clearTimeout(timer); resolve(value); },
+      (err) => { clearTimeout(timer); reject(err); },
+    );
+  });
+}
+
 async function nativeGoogle(): Promise<void> {
   if (!GOOGLE_IOS_CLIENT_ID) throw new Error("Google sign-in isn't set up yet on this build.");
   const { SocialLogin } = await import("@capgo/capacitor-social-login");
   const { raw, digest } = await makeNonce();
-  const res = await SocialLogin.login({
-    provider: "google",
-    options: { scopes: ["email", "profile"], nonce: digest },
-  });
+  // NOTE: do NOT pass `scopes`. On Android the plugin hard-rejects any scopes
+  // array unless MainActivity implements ModifiedMainActivityForSocialLoginPlugin
+  // ("You CANNOT use scopes without modifying the main activity"), which broke
+  // every Android Google sign-in. Omitting it costs nothing: both platforms then
+  // apply their default grant of email + profile + openid — a superset of the
+  // ["email","profile"] we used to ask for.
+  const res = await withNativeTimeout(
+    SocialLogin.login({
+      provider: "google",
+      options: { nonce: digest },
+    }),
+  );
   const idToken = (res.result as { idToken?: string })?.idToken;
   if (!idToken) throw new Error("No Google identity token returned.");
   // The Google SDK can SILENTLY return a restored/cached id_token that was NOT
@@ -166,10 +215,12 @@ async function nativeGoogle(): Promise<void> {
 
 async function nativeApple(): Promise<void> {
   const { SocialLogin } = await import("@capgo/capacitor-social-login");
-  const res = await SocialLogin.login({
-    provider: "apple",
-    options: { scopes: ["email", "name"] },
-  });
+  const res = await withNativeTimeout(
+    SocialLogin.login({
+      provider: "apple",
+      options: { scopes: ["email", "name"] },
+    }),
+  );
   const idToken = (res.result as { idToken?: string })?.idToken;
   if (!idToken) throw new Error("No Apple identity token returned.");
   const { error } = await supabase.auth.signInWithIdToken({ provider: "apple", token: idToken });
@@ -216,7 +267,8 @@ export async function signInWithProvider(provider: OAuthProvider, redirectTo: st
     };
     // The plugin throws on user cancel too — don't treat that as an error toast.
     if (/cancel/i.test(msg)) { safeTrack("native_oauth_failed", { ...diag, stage: "cancelled" }); return; }
-    safeTrack("native_oauth_failed", { ...diag, stage: "idtoken" });
+    const stage = e instanceof NativeLoginTimeout ? "timeout" : "idtoken";
+    safeTrack("native_oauth_failed", { ...diag, stage });
     throw new Error(msg);
   }
 }

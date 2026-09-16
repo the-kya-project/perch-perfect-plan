@@ -1,0 +1,36 @@
+diff --git a/node_modules/@capgo/capacitor-social-login/ios/Sources/SocialLoginPlugin/AppleProvider.swift b/node_modules/@capgo/capacitor-social-login/ios/Sources/SocialLoginPlugin/AppleProvider.swift
+index 87e76b9..b53ab46 100644
+--- a/node_modules/@capgo/capacitor-social-login/ios/Sources/SocialLoginPlugin/AppleProvider.swift
++++ b/node_modules/@capgo/capacitor-social-login/ios/Sources/SocialLoginPlugin/AppleProvider.swift
+@@ -106,6 +106,12 @@ extension AppleProviderError: LocalizedError {
+ class AppleProvider: NSObject, ASAuthorizationControllerDelegate, ASAuthorizationControllerPresentationContextProviding {
+     private var completion: ((Result<AppleProviderResponse, Error>) -> Void)?
+ 
++    // ASAuthorizationController does not reliably keep itself alive for the
++    // duration of the sheet. Held as a local, ARC can release it while the user
++    // is still authenticating, after which NEITHER delegate method fires and the
++    // JS promise awaiting login() never settles - a silent hang with no error.
++    private var authorizationControllerRef: ASAuthorizationController?
++
+     // Instance variables
+     var idToken: String?
+     var refreshToken: String?
+@@ -213,6 +219,7 @@ class AppleProvider: NSObject, ASAuthorizationControllerDelegate, ASAuthorizatio
+         let authorizationController = ASAuthorizationController(authorizationRequests: [request])
+         authorizationController.delegate = self
+         authorizationController.presentationContextProvider = self
++        self.authorizationControllerRef = authorizationController
+         authorizationController.performRequests()
+     }
+ 
+@@ -323,6 +330,10 @@ class AppleProvider: NSObject, ASAuthorizationControllerDelegate, ASAuthorizatio
+                     self.completion?(.failure(AppleProviderError.specificJsonWritingError(error)))
+                 }
+             }
++        } else {
++            // Without this, a credential that is not an ASAuthorizationAppleIDCredential
++            // leaves `completion` uncalled and the caller waiting forever.
++            self.completion?(.failure(AppleProviderError.unknownError))
+         }
+     }
+ 
