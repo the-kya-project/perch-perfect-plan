@@ -218,10 +218,20 @@ async function nativeGoogle(): Promise<void> {
 
 async function nativeApple(): Promise<void> {
   const { SocialLogin } = await import("@capgo/capacitor-social-login");
+  // NOTE: do NOT pass `scopes`. The only scope values Apple defines are
+  // ASAuthorizationScopeEmail ("email") and ASAuthorizationScopeFullName
+  // ("fullName") -- there is no "name". ASAuthorizationScope is an NS_TYPED_ENUM
+  // over NSString, so the plugin's `payload["scopes"] as? [ASAuthorization.Scope]`
+  // cast SUCCEEDS on our strings and forwards the bogus "name" straight to
+  // ASAuthorizationController, which fails the whole authorization with
+  // AuthorizationError 1000 (.unknown) AFTER the user has already authenticated.
+  // Omitting it takes the plugin's own default of [.fullName, .email] -- exactly
+  // what we wanted to ask for. Same class of bug as the Android Google `scopes`
+  // rejection fixed above.
   const res = await withNativeTimeout(
     SocialLogin.login({
       provider: "apple",
-      options: { scopes: ["email", "name"] },
+      options: {},
     }),
   );
   const idToken = (res.result as { idToken?: string })?.idToken;
