@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>method</key><string>app-store-connect</string>
+  <key>destination</key><string>export</string>
+  <key>signingStyle</key><string>manual</string>
+  <key>teamID</key><string>DT93FSYJ9C</string>
+  <key>signingCertificate</key><string>Apple Distribution</string>
+  <!-- Pinned by UUID, NOT by name. Two installed profiles are both named
+       "Kya App Store"; fc52ba2b (2026-07-27) predates the Sign in with Apple
+       capability and carries NO com.apple.developer.applesignin entitlement.
+       Selecting by name is ambiguous between them, and picking the wrong one
+       ships an app where Sign in with Apple cannot work at all. -->
+  <key>provisioningProfiles</key>
+  <dict>
+    <key>com.thekyaproject.app</key><string>8f6ecfa2-30d5-4de2-9abe-f0f718cb471c</string>
+  </dict>
+</dict>
+</plist>
