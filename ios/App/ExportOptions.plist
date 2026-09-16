@@ -7,14 +7,15 @@
   <key>signingStyle</key><string>manual</string>
   <key>teamID</key><string>DT93FSYJ9C</string>
   <key>signingCertificate</key><string>Apple Distribution</string>
-  <!-- Pinned by UUID, NOT by name. Two installed profiles are both named
-       "Kya App Store"; fc52ba2b (2026-07-27) predates the Sign in with Apple
-       capability and carries NO com.apple.developer.applesignin entitlement.
-       Selecting by name is ambiguous between them, and picking the wrong one
-       ships an app where Sign in with Apple cannot work at all. -->
+  <!-- Pinned by UUID, NOT by name. Two installed profiles were both named
+       "Kya App Store" and one of them carried no com.apple.developer.applesignin
+       entitlement, so selecting by name was ambiguous and could ship an app where
+       Sign in with Apple cannot work. The App ID's Sign in with Apple capability
+       was toggled off/on and this profile regenerated on 2026-09-16 while chasing
+       an Apple-side sign-up failure; both stale profiles were removed locally. -->
   <key>provisioningProfiles</key>
   <dict>
-    <key>com.thekyaproject.app</key><string>8f6ecfa2-30d5-4de2-9abe-f0f718cb471c</string>
+    <key>com.thekyaproject.app</key><string>95485a28-e67e-40bb-9ddb-98f52163ca24</string>
   </dict>
 </dict>
 </plist>
