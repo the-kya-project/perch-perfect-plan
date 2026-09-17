@@ -176,16 +176,19 @@ export function MemberOnboarding() {
   // ---- Welcome ----
   if (phase === "welcome") {
     return (
-      <div className="fixed inset-0 z-[60] flex flex-col bg-[var(--ink)] text-white">
-        <div className="px-[22px] pt-[max(env(safe-area-inset-top),18px)]">
+      // Same large-screen treatment as the owner welcome — `sm:` and up only, so
+      // phones are untouched. A household member is just as likely to be on an
+      // iPad as an owner.
+      <div className="fixed inset-0 z-[60] flex flex-col bg-[var(--ink)] text-white sm:justify-center">
+        <div className="px-[22px] pt-[max(env(safe-area-inset-top),18px)] sm:absolute sm:inset-x-0 sm:top-0">
           <BrandLockup orientation="horizontal" variant="ink" size={100} />
         </div>
-        <div className="flex-1 px-6 pt-[80px]">
+        <div className="flex-1 px-6 pt-[80px] sm:mx-auto sm:w-full sm:max-w-md sm:flex-none sm:pt-0">
           <p className="t-eyebrow text-[var(--teal)]">Welcome</p>
           <h1 className="mt-3 text-[32px] font-[400] leading-[1.08] tracking-[-0.02em]">Welcome. You're helping with a flock.</h1>
           <p className="mt-3.5 max-w-[34ch] text-[15px] leading-[1.55] text-white/80">{ownerName} added you to help care for their birds. Here's how everything works.</p>
         </div>
-        <div className="px-6 pb-[max(env(safe-area-inset-bottom),24px)]">
+        <div className="px-6 pb-[max(env(safe-area-inset-bottom),24px)] sm:mx-auto sm:w-full sm:max-w-md sm:pb-0 sm:pt-8">
           <button
             onClick={startCoach}
             className="flex w-full items-center justify-center gap-2 rounded-[13px] bg-[var(--lime)] py-3.5 text-[14.5px] font-[500] text-[var(--ink)] active:scale-[0.99]"

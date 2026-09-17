@@ -174,16 +174,23 @@ export function OwnerOnboarding() {
   // ---- Welcome ----
   if (phase === "welcome") {
     return (
-      <div className="fixed inset-0 z-[60] flex flex-col bg-[var(--ink)] text-white">
-        <div className="px-[22px] pt-[max(env(safe-area-inset-top),18px)]">
+      // Every `sm:` below is iPad/desktop only (Tailwind sm = 640px; the widest
+      // iPhone is 440pt), so the phone layout — text up top, CTA pinned to the
+      // bottom — is untouched by construction. On a 13" iPad that same layout
+      // left roughly 80% of the screen empty dark green, with the copy crammed
+      // into the top-left and the CTA stranded a screen below it. This is the
+      // first thing a new owner sees, and the app ships declaring iPad support.
+      // Above sm the column stops stretching and the block centres instead.
+      <div className="fixed inset-0 z-[60] flex flex-col bg-[var(--ink)] text-white sm:justify-center">
+        <div className="px-[22px] pt-[max(env(safe-area-inset-top),18px)] sm:absolute sm:inset-x-0 sm:top-0">
           <BrandLockup orientation="horizontal" variant="ink" size={100} />
         </div>
-        <div className="flex-1 px-6 pt-[80px]">
+        <div className="flex-1 px-6 pt-[80px] sm:mx-auto sm:w-full sm:max-w-md sm:flex-none sm:pt-0">
           <p className="t-eyebrow text-[var(--teal)]">Welcome</p>
           <h1 className="mt-3 text-[38px] font-[400] leading-[1.05] tracking-[-0.02em]">{firstName ? `Hi, ${firstName}.` : "Welcome."}</h1>
           <p className="mt-3.5 max-w-[30ch] text-[15px] leading-[1.55] text-white/80">A quick walkthrough first, then we'll set up your bird.</p>
         </div>
-        <div className="px-6 pb-[max(env(safe-area-inset-bottom),24px)]">
+        <div className="px-6 pb-[max(env(safe-area-inset-bottom),24px)] sm:mx-auto sm:w-full sm:max-w-md sm:pb-0 sm:pt-8">
           <button
             onClick={startCoach}
             className="flex w-full items-center justify-center gap-2 rounded-[13px] bg-[var(--lime)] py-3.5 text-[14.5px] font-[500] text-[var(--ink)] active:scale-[0.99]"
