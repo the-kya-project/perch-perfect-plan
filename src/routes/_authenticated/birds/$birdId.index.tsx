@@ -53,6 +53,17 @@ export function useBirdRecord(birdId: string) {
 
 function BirdRecordHome() {
   const { birdId } = Route.useParams();
+  const { data: bird, isPending } = useBirdRecord(birdId);
+
+  // A bird you can no longer read comes back as `data: null` with `error: null`
+  // — RLS filters the row out rather than failing the request, exactly like the
+  // blocked-UPDATE case. Without this guard the page fell through to its
+  // `bird?.name ?? "This bird"` fallback and rendered a complete but empty
+  // record: hero, facet rows, working-looking links, no bird. Reachable by the
+  // previous owner after a handoff (a bookmark, or Back), by a household member
+  // whose access was removed, and by any stale link to a deleted bird.
+  if (!isPending && !bird) return <BirdNoAccess />;
+
   return (
     <div className="min-h-screen bg-[var(--cream)] pb-nav">
       <div className="mx-auto max-w-md">
@@ -61,6 +72,27 @@ function BirdRecordHome() {
           <MemberContextBanner birdId={birdId} />
           <BirdRecordBody birdId={birdId} />
         </main>
+      </div>
+    </div>
+  );
+}
+
+/** Deliberately does not say whether the bird exists — only that it isn't yours. */
+function BirdNoAccess() {
+  const navigate = useNavigate();
+  return (
+    <div className="grid min-h-screen place-items-center bg-[var(--cream)] px-8 pb-nav text-center">
+      <div>
+        <h1 className="t-h2 text-[var(--ink)]">This record isn't yours anymore</h1>
+        <p className="t-body mx-auto mt-3 max-w-[28rem] text-[var(--mute2)]">
+          You may have handed this bird off, or your access may have been removed. If you think
+          that's wrong, ask whoever looks after the record now.
+        </p>
+        <div className="mt-5">
+          <PrimaryButton tone="ink" onPress={() => navigate({ to: "/dashboard" })}>
+            Back to your flock
+          </PrimaryButton>
+        </div>
       </div>
     </div>
   );
