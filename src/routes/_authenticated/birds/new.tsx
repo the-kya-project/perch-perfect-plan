@@ -89,7 +89,16 @@ function NewBird() {
     if (!u.user) { setSaving(false); return null; }
     // Upload the picked photo to Storage and store the path (not the inline
     // base64), so list queries stay small. Legacy/empty values pass through.
-    const photoRef = await persistBirdPhoto(u.user.id, photo);
+    // A photo that won't upload must not cost someone the whole form they just
+    // filled in, so say what happened and add the bird without it — they can
+    // set a photo from the bird's page whenever.
+    let photoRef: string | null = null;
+    try {
+      photoRef = await persistBirdPhoto(u.user.id, photo);
+    } catch (e) {
+      console.error("[new bird] photo upload failed", e);
+      toast.error("We couldn't upload that photo, so we added your bird without it. You can add one from the bird's page.");
+    }
     const { data: bird, error } = await supabase.from("birds").insert({
       owner_id: u.user.id,
       name,

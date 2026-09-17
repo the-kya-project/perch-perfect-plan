@@ -34,7 +34,11 @@ function dataUrlToBlob(dataUrl: string): Blob {
  * bucket's RLS policies.
  */
 export async function uploadBirdPhoto(ownerId: string, dataUrl: string): Promise<string> {
-  const blob = dataUrlToBlob(dataUrl);
+  return uploadBlob(ownerId, dataUrlToBlob(dataUrl));
+}
+
+/** Upload one blob under a fresh random path. Never collides, so it is safe to retry. */
+async function uploadBlob(ownerId: string, blob: Blob): Promise<string> {
   const path = `${ownerId}/${crypto.randomUUID()}.jpg`;
   const { error } = await supabase.storage
     .from("bird-photos")
@@ -46,8 +50,17 @@ export async function uploadBirdPhoto(ownerId: string, dataUrl: string): Promise
 /**
  * Given a bird's `photo_url`, return the value to persist in the DB. If it's a
  * fresh data: URL (a newly picked photo), upload it and return the Storage path;
- * if it's already a path or empty, return it unchanged. Best-effort: on upload
- * failure it falls back to persisting the data URL so the save still succeeds.
+ * if it's already a path or empty, return it unchanged.
+ *
+ * This used to swallow upload failures and persist the data URL instead, so the
+ * save "succeeded". That was worse than failing: the base64 string goes into the
+ * `birds.photo_url` text column, which every bird list query selects, and
+ * `compressImageToDataUrl` passes the ORIGINAL file through when the browser
+ * can't decode it (HEIC on a non-Safari browser) — up to the 10 MB limit, which
+ * is ~13 MB of base64 in one row. Nobody was told, so it would never be fixed.
+ *
+ * Instead: retry once, then throw a message fit to show someone. Every caller
+ * either reports it or degrades deliberately.
  */
 export async function persistBirdPhoto(
   ownerId: string,
@@ -55,10 +68,20 @@ export async function persistBirdPhoto(
 ): Promise<string | null> {
   if (!photoUrl) return null;
   if (!photoUrl.startsWith("data:")) return photoUrl; // already a path/URL
+
+  const blob = dataUrlToBlob(photoUrl);
   try {
-    return await uploadBirdPhoto(ownerId, photoUrl);
-  } catch {
-    return photoUrl; // keep working even if Storage upload fails
+    return await uploadBlob(ownerId, blob);
+  } catch (first) {
+    // These uploads happen on phones, mid-save. A dropped connection is by far
+    // the likeliest cause, and a second attempt a moment later usually works.
+    await new Promise((r) => setTimeout(r, 750));
+    try {
+      return await uploadBlob(ownerId, blob);
+    } catch (second) {
+      console.error("[birdPhoto] upload failed twice", first, second);
+      throw new Error("We couldn't upload that photo. Check your connection and try again.");
+    }
   }
 }
 
