@@ -58,7 +58,10 @@ export function getDemoToday(): TodayItem[] {
   const tomorrow = new Date(t.getFullYear(), t.getMonth(), t.getDate() + 1).toISOString().slice(0, 10);
   return [
     { id: "demo-sit", tone: "pale", title: "Sam arrives tomorrow", meta: `Sit starts ${monthDay(tomorrow)}`, to: { kind: "sits" }, rank: 0 },
-    { id: "demo-hatch", tone: "amber", title: "Willow's hatch day Saturday", meta: "She'll be 14", to: { kind: "moments", birdId: "demo-willow" }, rank: 1 },
+    // "Turning 14", not "She'll be 14": the demo bird has no sex set (see `bird()`
+    // above, which never sets one), and the rest of the app was de-gendered for
+    // exactly this reason. This line is on the first screen a new owner sees.
+    { id: "demo-hatch", tone: "amber", title: "Willow's hatch day Saturday", meta: "Turning 14", to: { kind: "moments", birdId: "demo-willow" }, rank: 1 },
   ];
 }
 
