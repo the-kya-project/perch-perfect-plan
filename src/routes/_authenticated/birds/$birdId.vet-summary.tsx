@@ -9,6 +9,7 @@ import { formatAmountUnit } from "@/lib/labels";
 import { normalizeFeedTimes, feedTimeLabel } from "@/lib/feedTimes";
 import { InkHero, PrimaryButton, Card } from "@/components/system";
 import { SCAN_COLS } from "./$birdId.scans.$scanId";
+import { isNativeApp } from "@/lib/nativeApp";
 
 type WeightRow = { id: string; grams: number; measured_at: string; source: string | null; meal_relation: string | null; note: string | null };
 
@@ -78,7 +79,7 @@ function VetSummary() {
   });
 
   const name = bird?.name ?? "This bird";
-  const { current, trend, delta } = computeWeightTrend(weights ?? [], 90);
+  const { current, baseline, trend, delta } = computeWeightTrend(weights ?? [], 90);
 
   // ---- assemble field values (string | null) ----
   const sexText = bird?.sex
@@ -94,12 +95,17 @@ function VetSummary() {
   ];
 
   const weightText = current
-    ? `${current.grams} g · ${trendLabel(trend, delta)} · last weighed ${fmtDate(current.measured_at)}`
+    ? `${current.grams} g · ${trendLabel(trend, delta, baseline)} · last weighed ${fmtDate(current.measured_at)}`
     : null;
 
   const dietText = buildDiet(plan);
   const meds = [
     val(bird?.medications) && `Medications: ${bird.medications.trim()}`,
+    // birds.medications is only the joined NAMES. The dosing times and the
+    // administration notes live in care_plans.medication_schedule, which this
+    // page already loads. Leaving it out handed a vet "Metacam 0.1ml" with no
+    // way to tell once-daily from twice-daily.
+    val(plan?.medication_schedule) && `Dosing: ${plan.medication_schedule.trim()}`,
     val(bird?.medical_conditions) && `Conditions: ${bird.medical_conditions.trim()}`,
   ].filter(Boolean).join("\n");
   // Handling = is the bird handleable, for the person about to handle it:
@@ -160,11 +166,22 @@ function VetSummary() {
 
   async function share() {
     const text = shareText();
+    if (navigator.share) {
+      // A rejection here is almost always the person dismissing the sheet.
+      try {
+        await navigator.share({ title: `${name} — vet summary`, text });
+      } catch { /* cancelled — nothing to report */ }
+      return;
+    }
+    // The clipboard path is different: if it fails, nothing was shared and
+    // nothing was copied, and the old catch-all reported neither.
     try {
-      if (navigator.share) { await navigator.share({ title: `${name} — vet summary`, text }); return; }
       await navigator.clipboard.writeText(text);
       toast.success("Summary copied to clipboard.");
-    } catch { /* user cancelled share — ignore */ }
+    } catch (e) {
+      console.error("[vet summary] clipboard write failed", e);
+      toast.error("Couldn't copy the summary. Select the text and copy it manually.");
+    }
   }
 
   return (
@@ -195,9 +212,18 @@ function VetSummary() {
                 <button type="button" onClick={share} className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-[12px] bg-white px-[18px] py-[11px] text-[15px] font-[500] text-[var(--ink)] ring-1 ring-[var(--line)] active:scale-[0.99]">
                   <Share2 className="size-4" /> Share
                 </button>
-                <div className="flex-1">
-                  <PrimaryButton tone="lime" icon={<Printer className="size-4" />} onPress={() => window.print()}>Save as PDF</PrimaryButton>
-                </div>
+                {/* window.print() is a no-op inside the native shells: neither
+                    @capacitor/ios nor AppDelegate implements WebKit's print
+                    delegate, and Android's WebView has no window.print at all.
+                    Showing the button there is a control that silently does
+                    nothing. Share still works natively (navigator.share), so
+                    there is still a way to get this to a vet. Proper fix is a
+                    generated PDF -- see today-wip-backup (43fd077). */}
+                {!isNativeApp() && (
+                  <div className="flex-1">
+                    <PrimaryButton tone="lime" icon={<Printer className="size-4" />} onPress={() => window.print()}>Save as PDF</PrimaryButton>
+                  </div>
+                )}
               </div>
 
               {/* The sheet */}
@@ -225,7 +251,7 @@ function VetSummary() {
                     {current ? (
                       <div>
                         <p className="text-[22px] font-[550] leading-tight text-[var(--moss)]">{current.grams} g</p>
-                        <p className="t-meta mt-0.5">{trendLabel(trend, delta)} · last weighed {fmtDate(current.measured_at)}</p>
+                        <p className="t-meta mt-0.5">{trendLabel(trend, delta, baseline)} · last weighed {fmtDate(current.measured_at)}</p>
                       </div>
                     ) : (
                       <Value text={null} />
@@ -419,7 +445,10 @@ function val(s: unknown): s is string { return typeof s === "string" && s.trim()
 function fmtDate(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 }
-function trendLabel(trend: "steady" | "up" | "down", delta: number): string {
+function trendLabel(trend: "steady" | "up" | "down", delta: number, baseline?: unknown): string {
+  // computeWeightTrend reports "steady" when there is nothing to compare
+  // against, which on a single entry reads as a clinical claim we cannot make.
+  if (!baseline) return "first recorded weight";
   if (trend === "down") return `down ${Math.abs(delta)} g`;
   if (trend === "up") return `up ${delta} g`;
   return "steady";
