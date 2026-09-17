@@ -42,7 +42,15 @@ export function InkHero({
   // content sits directly under the safe-area inset.
   const hasChrome = showLockup || !!backIcon || !!trailingIcons;
   return (
-    <header className="bg-[var(--ink)] px-[22px] pb-[26px] pt-[max(env(safe-area-inset-top),18px)] text-white">
+    // Full-bleed background, phone-width content. Callers render the hero inside
+    // their `mx-auto max-w-md` column, so the ink block used to stop at 448px
+    // and float as a detached box on anything wider — an iPad (the app ships
+    // with TARGETED_DEVICE_FAMILY "1,2", so review sees it) or a desktop
+    // browser. `mx-[calc(50%-50vw)]` pulls the edges out to the viewport and is
+    // a NO-OP on phones, where the column already is the viewport. Safe against
+    // horizontal scrollbars because html/body are `overflow-x: clip`.
+    <header className="mx-[calc(50%-50vw)] bg-[var(--ink)] text-white">
+      <div className="mx-auto max-w-md px-[22px] pb-[26px] pt-[max(env(safe-area-inset-top),18px)]">
       {hasChrome && (
         <div className="flex min-h-9 items-center gap-2">
           {showLockup ? <BrandLockup orientation="horizontal" variant="ink" size={brandSize} /> : <span />}
@@ -67,6 +75,7 @@ export function InkHero({
               : <PrimaryButton tone="lime" icon={cta.icon} onPress={cta.onPress} disabled={cta.disabled}>{cta.label}</PrimaryButton>}
           </div>
         )}
+      </div>
       </div>
     </header>
   );
