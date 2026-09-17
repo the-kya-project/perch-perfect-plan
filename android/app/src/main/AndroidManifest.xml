@@ -1,7 +1,15 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Auto Backup is OFF deliberately. Capacitor keeps the WebView's
+         localStorage in the app's private data dir, and that is where the
+         Supabase session lives (persistSession: true) — so with backup on, a
+         refresh token and cached bird health data get copied to the user's
+         Google Drive. The app is server-backed: every record lives in Supabase
+         and comes back on sign-in, so device backup buys the user nothing here
+         while widening where their credentials sit. -->
     <application
-        android:allowBackup="true"
+        android:allowBackup="false"
+        android:fullBackupContent="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
@@ -19,13 +27,13 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- OAuth deep-link callback (kya://auth-callback) -->
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="kya" />
-            </intent-filter>
+            <!-- The kya:// OAuth deep-link filter was removed. That flow is gone:
+                 native sign-in goes through @capgo/capacitor-social-login and
+                 supabase.auth.signInWithIdToken(), and the only mention of the
+                 scheme left in the codebase is the comment in nativeOAuth.ts
+                 recording that it replaced this. Registering a custom scheme the
+                 app never produces is dead surface — any other app can claim the
+                 same scheme, and an intent arriving on it had no handler here. -->
         </activity>
 
         <provider
