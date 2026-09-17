@@ -5,6 +5,7 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 import { getCaregiverConcernContext, pauseCaregiverReminders } from "@/lib/caregiver.functions";
 import { ConcernFlow } from "@/components/ConcernFlow";
 import { toast } from "sonner";
+import { friendlyError } from "@/lib/errorMessage";
 
 // "Something's wrong" for a HOUSEHOLD MEMBER covering an active sit — the
 // authenticated twin of /sitter/$token/concern, rendering the same shared
@@ -35,7 +36,7 @@ function CaregiverConcern() {
       qc.invalidateQueries({ queryKey: ["active-caregiver-sits"] });
       window.scrollTo(0, 0);
     },
-    onError: (e: any) => toast.error(e?.message ?? "Couldn't pause the reminders. Please try again."),
+    onError: (e: any) => toast.error(friendlyError(e, "Couldn't pause the reminders. Please try again.")),
   });
 
   // Not covering (or bird gone) → this screen isn't for them.

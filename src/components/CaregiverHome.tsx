@@ -9,6 +9,7 @@ import { InkHero, SectionHead, Card, IconTile } from "@/components/system";
 import { BirdCareCard } from "@/components/BirdCareCard";
 import { Check, CalendarHeart, Sun, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyError } from "@/lib/errorMessage";
 
 // The active-caregiver Home variant. Rendered when the signed-in user is the
 // assigned caregiver on at least one sit whose window covers today. Mirrors the
@@ -147,7 +148,7 @@ export function CaregiverTodayChecklist({ sit, birdId }: { sit: ActiveCaregiverS
   const m = useMutation({
     mutationFn: (vars: { taskId: string; completed: boolean }) => toggle({ data: { sitId: sit.id, taskId: vars.taskId, completed: vars.completed } }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["active-caregiver-sits"] }),
-    onError: (e: any) => toast.error(e?.message ?? "Couldn't update."),
+    onError: (e: any) => toast.error(friendlyError(e, "Couldn't update.")),
   });
 
   return (

@@ -9,6 +9,7 @@ import { ASSIGNABLE_PRESETS, PRESET_LABELS, PRESET_DESCRIPTIONS, type Assignable
 import { track } from "@/lib/analytics";
 import { toast } from "sonner";
 import { Loader2, Plus } from "lucide-react";
+import { friendlyError } from "@/lib/errorMessage";
 
 // Shared household invite flow — used by the per-bird access hub and the
 // account-level /household screen. The invite defaults to ALL of the owner's
@@ -55,7 +56,7 @@ export function HouseholdInviteSheet({
       qc.invalidateQueries({ queryKey: ["household-account"] });
       qc.invalidateQueries({ queryKey: ["household", targetBirdId] });
     } catch (e: any) {
-      toast.error(e?.message ?? "Couldn't add them.");
+      toast.error(friendlyError(e, "Couldn't add them."));
     } finally {
       setAddingId(null);
     }
@@ -85,7 +86,7 @@ export function HouseholdInviteSheet({
       track("household_member_invited", { bird_count: selected.size, preset });
       onSent();
     },
-    onError: (e: any) => toast.error(e?.message ?? "Couldn't send the invite."),
+    onError: (e: any) => toast.error(friendlyError(e, "Couldn't send the invite.")),
   });
 
   const emailOk = /\S+@\S+\.\S+/.test(email.trim());

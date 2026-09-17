@@ -9,6 +9,7 @@
 // in one browser.
 import { useState } from "react";
 import { toast } from "sonner";
+import { friendlyError } from "@/lib/errorMessage";
 
 export function useOpenSignedFile() {
   // Which control is mid-signature, so the caller can spin that row only.
@@ -30,7 +31,7 @@ export function useOpenSignedFile() {
       else window.location.assign(url); // popup blocked outright — use this tab
     } catch (err: any) {
       tab?.close();
-      toast.error(err?.message ?? "That file couldn't be opened.");
+      toast.error(friendlyError(err, "That file couldn't be opened."));
     } finally {
       setOpeningKey(null);
     }

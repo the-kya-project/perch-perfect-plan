@@ -13,6 +13,7 @@ import { memberDisplayName, memberInitials } from "@/lib/memberDisplay";
 import { InkHero, Card } from "@/components/system";
 import { ArrowLeft, ChevronDown, Lock, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { friendlyError } from "@/lib/errorMessage";
 
 // Owner-facing permissions manager. Each household member's capabilities[] +
 // preset is owner-writable (RLS "hmp" owner-only). The owner is always full
@@ -162,7 +163,7 @@ function MemberRow({
       setDirty(false);
       onSaved();
     } catch (e: any) {
-      toast.error(e?.message ?? "Couldn't save.");
+      toast.error(friendlyError(e, "Couldn't save."));
     } finally {
       setSaving(false);
     }

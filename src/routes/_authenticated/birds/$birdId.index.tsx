@@ -1,3 +1,4 @@
+import { friendlyError } from "@/lib/errorMessage";
 import { createFileRoute, Link, useNavigate, useLocation } from "@tanstack/react-router";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useState } from "react";
@@ -265,7 +266,7 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
   async function savePhotoPosition(pos: string) {
     if (!bird) return;
     const { error } = await supabase.from("birds").update({ photo_position: pos } as any).eq("id", birdId);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(friendlyError(error)); return; }
     qc.invalidateQueries({ queryKey: ["bird-record", birdId] });
     qc.invalidateQueries({ queryKey: ["bird-identity", birdId] });
     qc.invalidateQueries({ queryKey: ["bird", birdId] });
@@ -617,7 +618,7 @@ function HandoffSection({ birdId, name, part, prominent }: { birdId: string; nam
   const cancelM = useMutation({
     mutationFn: (id: string) => cancel({ data: { handoffId: id } }),
     onSuccess: () => { toast.success("Handoff canceled."); qc.invalidateQueries({ queryKey: ["pending-handoff", birdId] }); },
-    onError: (e: any) => toast.error(e?.message ?? "Couldn't cancel."),
+    onError: (e: any) => toast.error(friendlyError(e, "Couldn't cancel.")),
   });
   const permanentM = useMutation({
     mutationFn: () => permanent({ data: { birdId } }),
@@ -625,7 +626,7 @@ function HandoffSection({ birdId, name, part, prominent }: { birdId: string; nam
       toast.success(`${name} joined the flock! 🎉`);
       ["bird-record", "moments", "birds", "bird-role"].forEach((k) => qc.invalidateQueries({ queryKey: k === "birds" ? ["birds"] : [k, birdId] }));
     },
-    onError: (e: any) => toast.error(e?.message ?? "Couldn't update."),
+    onError: (e: any) => toast.error(friendlyError(e, "Couldn't update.")),
   });
 
   const outlineBtn = "flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[12px] bg-white text-[15px] font-[500] text-[var(--ink)] ring-1 ring-[var(--line)] active:scale-[0.99] disabled:opacity-50";
@@ -713,7 +714,7 @@ function DeleteBirdButton({ birdId, name }: { birdId: string; name: string }) {
       qc.invalidateQueries({ queryKey: ["birds"] });
       navigate({ to: "/dashboard" });
     } catch (e: any) {
-      toast.error(e?.message ?? "Couldn't delete.");
+      toast.error(friendlyError(e, "Couldn't delete."));
       setDeleting(false);
     }
   }
@@ -835,7 +836,7 @@ function BasicInfoCard({ birdId, bird, editable = true }: { birdId: string; bird
       birth_date: f.birth_date || null,
     } as any).eq("id", birdId);
     setSaving(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(friendlyError(error)); return; }
     // Refresh every surface that displays these fields so changes appear
     // immediately on the Identity tab, the dashboard cards, and elsewhere.
     qc.invalidateQueries({ queryKey: ["bird-record", birdId] });

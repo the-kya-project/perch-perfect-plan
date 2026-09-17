@@ -12,6 +12,7 @@ import { AddToHomeModal } from "@/components/AddToHomeModal";
 import { isStandalone } from "@/lib/pwaInstall";
 import { InkHero, Card, RecordRow, IconTile, SectionHead, PrimaryButton } from "@/components/system";
 import { toast } from "sonner";
+import { friendlyError } from "@/lib/errorMessage";
 
 // Support inbox for the "Help & support" row. If this address changes, update it
 // here (and ideally point it at a monitored mailbox).
@@ -308,7 +309,7 @@ function EditIdentityModal({
       }
       onClose();
     } catch (e: any) {
-      toast.error(e.message ?? "Could not save changes.");
+      toast.error(friendlyError(e, "Could not save changes."));
     } finally {
       setSaving(false);
     }
@@ -367,7 +368,7 @@ function DeleteAccountModal({ onClose, onConfirm }: { onClose: () => void; onCon
     try {
       await onConfirm();
     } catch (e: any) {
-      toast.error(e.message ?? "Could not delete account.");
+      toast.error(friendlyError(e, "Could not delete account."));
       setDeleting(false);
     }
   }

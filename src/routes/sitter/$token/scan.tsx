@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { track } from "@/lib/analytics";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
+import { friendlyError } from "@/lib/errorMessage";
 
 export const Route = createFileRoute("/sitter/$token/scan")({
   component: ScanPage,
@@ -85,7 +86,7 @@ function ScanPage() {
       qc.invalidateQueries({ queryKey: ["sitter-ctx", token] });
       qc.invalidateQueries({ queryKey: ["sitter-dashboard", token] });
     },
-    onError: (e: any) => toast.error(e.message ?? t("sitter.scan.errorToast", "Could not log health check.")),
+    onError: (e: any) => toast.error(friendlyError(e, t("sitter.scan.errorToast", "Could not log health check."))),
   });
 
   if (mode === "history") {

@@ -8,6 +8,7 @@ import { createHandoff } from "@/lib/handoff.functions";
 import { track } from "@/lib/analytics";
 import { toast } from "sonner";
 import { ArrowLeft, ArrowRightLeft, AlertTriangle } from "lucide-react";
+import { friendlyError } from "@/lib/errorMessage";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/handoff")({
   head: () => ({ meta: [{ title: "Hand off — Kya & Co." }] }),
@@ -41,7 +42,7 @@ function HandoffFlow() {
       qc.invalidateQueries({ queryKey: ["pending-handoff", birdId] });
       navigate({ to: "/birds/$birdId", params: { birdId } });
     },
-    onError: (e: any) => toast.error(e?.message ?? "Couldn't send the handoff."),
+    onError: (e: any) => toast.error(friendlyError(e, "Couldn't send the handoff.")),
   });
 
   const emailOk = /\S+@\S+\.\S+/.test(email.trim());

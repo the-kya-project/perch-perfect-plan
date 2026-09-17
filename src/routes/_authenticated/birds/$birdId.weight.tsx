@@ -13,6 +13,7 @@ import { computeWeightTrend } from "@/lib/weightTrend";
 import { track } from "@/lib/analytics";
 import { InkHero, IconTile, StatusPill, SectionHead, Card, RecordRow } from "@/components/system";
 import { MemberContextBanner } from "@/components/MemberContextBanner";
+import { friendlyError } from "@/lib/errorMessage";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/weight")({
   head: () => ({ meta: [{ title: "Weight — Kya & Co." }] }),
@@ -76,7 +77,7 @@ function WeightFacet() {
       qc.invalidateQueries({ queryKey: ["bird-weights", birdId] });
       qc.invalidateQueries({ queryKey: ["birds"] }); // Home weight pills — now embedded in the birds query
     } catch (e: any) {
-      toast.error(e?.message ?? "Couldn't delete the entry.");
+      toast.error(friendlyError(e, "Couldn't delete the entry."));
     } finally {
       setDeletingId(null);
     }
@@ -288,7 +289,7 @@ function LogPanel({ birdId, lastGrams, onClose, onSaved }: { birdId: string; las
       });
       onSaved();
     } catch (e: any) {
-      toast.error(e?.message ?? "Couldn't save the weight.");
+      toast.error(friendlyError(e, "Couldn't save the weight."));
     } finally {
       setSaving(false);
     }

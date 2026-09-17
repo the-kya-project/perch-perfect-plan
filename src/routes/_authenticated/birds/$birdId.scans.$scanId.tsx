@@ -9,6 +9,7 @@ import { useCapability } from "@/lib/useCapability";
 import { useBirdRole } from "@/lib/useBirdRole";
 import { OwnerHeaderIcons } from "@/components/OwnerHeader";
 import { resolveScanPhotoUrls } from "@/lib/scanPhoto";
+import { friendlyError } from "@/lib/errorMessage";
 
 // Focused, read-only view of one submitted health scan. Reached from the Scans
 // inbox (replaces the old deep-link into the care-plan editor's logs tab, which
@@ -55,7 +56,7 @@ function ScanDetail() {
     setDeleting(true);
     const { error } = await supabase.from("daily_logs").delete().eq("id", scanId);
     setDeleting(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(friendlyError(error)); return; }
     toast.success("Health check deleted.");
     qc.invalidateQueries({ queryKey: ["scan-feed"] });
     qc.invalidateQueries({ queryKey: ["bird-checkins", birdId] });
@@ -68,7 +69,7 @@ function ScanDetail() {
     setResolving(true);
     const { error } = await supabase.from("daily_logs").update({ resolved_at: new Date().toISOString() } as any).eq("id", scanId);
     setResolving(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(friendlyError(error)); return; }
     toast.success("Concern marked resolved.");
     qc.invalidateQueries({ queryKey: ["scan-detail", scanId] });
     qc.invalidateQueries({ queryKey: ["scan-feed"] });

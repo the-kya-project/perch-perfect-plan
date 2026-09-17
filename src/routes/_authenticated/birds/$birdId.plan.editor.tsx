@@ -21,6 +21,7 @@ import { resolveScanPhotoUrls } from "@/lib/scanPhoto";
 import { useBirdRole } from "@/lib/useBirdRole";
 import { useCapability, useMyPermissions } from "@/lib/useCapability";
 import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
+import { friendlyError } from "@/lib/errorMessage";
 
 
 // The care-plan editor is reached via the new overview front door (/plan).
@@ -319,7 +320,7 @@ function DeleteBirdCard({ birdId, bird, plan }: { birdId: string; bird: any; pla
     }
     const { error } = await supabase.from("birds").delete().eq("id", birdId);
     setDeleting(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(friendlyError(error)); return; }
     toast.success(`${bird.name} removed.`);
     qc.invalidateQueries({ queryKey: ["birds"] });
     navigate({ to: "/dashboard" });

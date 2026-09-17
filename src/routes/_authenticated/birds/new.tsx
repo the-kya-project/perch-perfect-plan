@@ -15,6 +15,7 @@ import { persistBirdPhoto } from "@/lib/birdPhoto";
 import { track } from "@/lib/analytics";
 import { ArrowLeft } from "lucide-react";
 import { z } from "zod";
+import { friendlyError } from "@/lib/errorMessage";
 
 export const Route = createFileRoute("/_authenticated/birds/new")({
   head: () => ({ meta: [{ title: "Add a bird — Kya & Co." }] }),
@@ -105,7 +106,7 @@ function NewBird() {
       setup_step: targetStep,
     } as any).select().single();
     if (error || !bird) {
-      toast.error(error?.message ?? "Could not create bird.");
+      toast.error(friendlyError(error, "Could not create bird."));
       setSaving(false);
       return null;
     }
@@ -118,7 +119,7 @@ function NewBird() {
       .from("care_plans")
       .upsert({ bird_id: bird.id }, { onConflict: "bird_id" });
     if (planErr) {
-      toast.error(`Couldn't set up the care plan: ${planErr.message}`);
+      toast.error(`Couldn't set up the care plan: ${friendlyError(planErr, "please try again.")}`);
       setSaving(false);
       return null;
     }
@@ -126,7 +127,7 @@ function NewBird() {
       .from("emergency_contacts")
       .upsert({ bird_id: bird.id }, { onConflict: "bird_id" });
     if (ecErr) {
-      toast.error(`Couldn't set up emergency info: ${ecErr.message}`);
+      toast.error(`Couldn't set up emergency info: ${friendlyError(ecErr, "please try again.")}`);
       setSaving(false);
       return null;
     }

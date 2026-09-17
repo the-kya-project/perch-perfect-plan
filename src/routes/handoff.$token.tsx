@@ -9,6 +9,7 @@ import { captureLead } from "@/lib/captureLead";
 import { toast } from "sonner";
 import { Loader2, Check } from "lucide-react";
 import { InkHero, Card, PrimaryButton, CtaLink } from "@/components/system";
+import { friendlyError } from "@/lib/errorMessage";
 
 // Public handoff-accept screen. Renders for logged-out visitors; the token is
 // the access check. Invalid/expired/used → clean message, no data exposed.
@@ -112,7 +113,7 @@ function useAcceptDecline(token: string, onDone: () => void) {
   async function doAccept() {
     setBusy("accept");
     try { await accept({ data: { token } }); toast.success("The bird is yours — welcome!"); onDone(); }
-    catch (e: any) { toast.error(e?.message ?? "Couldn't accept."); setBusy(null); }
+    catch (e: any) { toast.error(friendlyError(e, "Couldn't accept.")); setBusy(null); }
   }
   async function doDecline() {
     setBusy("decline");
@@ -167,16 +168,16 @@ function LoggedOutAccept({ token, inviteEmail }: { token: string; inviteEmail: s
       // Store the REAL name so handle_new_user captures it — never the email prefix.
       const fullName = [first, last].filter(Boolean).join(" ");
       const { data, error } = await supabase.auth.signUp({ email: inviteEmail, password, options: { data: { display_name: fullName, full_name: fullName, given_name: first, family_name: last || undefined }, emailRedirectTo: redirect } });
-      if (error) { toast.error(error.message); setPending(false); return; }
+      if (error) { toast.error(friendlyError(error)); setPending(false); return; }
       // Land the new account in Brevo with a real name (no marketing consent).
       void captureLead({ email: inviteEmail, firstName: first, lastName: last || undefined, source: "handoff", marketingConsent: false, attribution: null });
       if (data.session) { window.location.href = redirect; return; }
       setConfirmSent(true); setPending(false);
-    } catch (e: any) { toast.error(e?.message ?? "Couldn't create your account."); setPending(false); }
+    } catch (e: any) { toast.error(friendlyError(e, "Couldn't create your account.")); setPending(false); }
   }
   async function google() {
     try { await signInWithGoogle(redirect); }
-    catch (e: any) { toast.error(e?.message ?? "Google sign-in failed."); }
+    catch (e: any) { toast.error(friendlyError(e, "Google sign-in failed.")); }
   }
 
   if (confirmSent) {

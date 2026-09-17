@@ -1,3 +1,4 @@
+import { friendlyError } from "@/lib/errorMessage";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -720,7 +721,7 @@ function DefaultsPanel() {
     }
     const { error } = await supabase.from("owner_emergency_defaults").upsert(row, { onConflict: "owner_id" });
     setSaving(false);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(friendlyError(error)); return; }
     toast.success("Saved. Every bird uses this account info unless you edit it for that bird.");
     setOpen(false);
     qc.invalidateQueries({ queryKey: ["owner-defaults"] });

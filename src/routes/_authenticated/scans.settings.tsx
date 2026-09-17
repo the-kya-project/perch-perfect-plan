@@ -22,6 +22,7 @@ import {
 import { markNotificationsReviewed } from "@/components/OwnerChecklist";
 import { AddToHomeModal } from "@/components/AddToHomeModal";
 import { InkHero, IconTile, Card, PrimaryButton, CtaLink } from "@/components/system";
+import { friendlyError } from "@/lib/errorMessage";
 
 export const Route = createFileRoute("/_authenticated/scans/settings")({
   head: () => ({ meta: [{ title: "Notification settings — Kya & Co." }] }),
@@ -139,7 +140,7 @@ function NotificationsSettingsPage() {
       if (error) throw error;
     } catch (e: unknown) {
       setPrefs({ ...prefs, [key]: prev });
-      toast.error(e instanceof Error ? e.message : "Could not save preference.");
+      toast.error(friendlyError(e, "Could not save preference."));
     } finally {
       setSaving(null);
     }
@@ -188,7 +189,7 @@ function NotificationsSettingsPage() {
       setPushEndpoint(null);
       toast.success("Push notifications turned off on this device.");
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : "Could not disable push.");
+      toast.error(friendlyError(e, "Could not disable push."));
     } finally {
       setBusy(false);
     }

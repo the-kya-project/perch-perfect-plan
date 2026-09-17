@@ -4,6 +4,7 @@ import { Link } from "@tanstack/react-router";
 import { Check, ChevronDown, ChevronRight, ExternalLink, Plus, Trash2, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { friendlyError } from "@/lib/errorMessage";
 
 type Bird = { id: string; name: string };
 
@@ -97,7 +98,7 @@ export function SitChecklist({
         { onConflict: "sit_id,item_key" },
       );
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyError(error));
       qc.invalidateQueries({ queryKey: ["sit-checklist", sit.id] });
     }
   }
@@ -113,7 +114,7 @@ export function SitChecklist({
       is_custom: true,
       custom_label: label,
     });
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(friendlyError(error)); return; }
     setNewLabel("");
     setAdding(false);
     qc.invalidateQueries({ queryKey: ["sit-checklist", sit.id] });
@@ -121,7 +122,7 @@ export function SitChecklist({
 
   async function removeCustom(rowId: string) {
     const { error } = await supabase.from("sit_checklist_items").delete().eq("id", rowId);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(friendlyError(error)); return; }
     qc.invalidateQueries({ queryKey: ["sit-checklist", sit.id] });
   }
 
@@ -138,7 +139,7 @@ export function SitChecklist({
       .from("sits")
       .update({ marked_ready_at: new Date().toISOString() } as any)
       .eq("id", sit.id);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(friendlyError(error)); return; }
     toast.success("Marked ready. Just for your view — the sitter isn't notified yet.");
     onSitChanged?.();
   }
@@ -148,7 +149,7 @@ export function SitChecklist({
       .from("sits")
       .update({ marked_ready_at: null } as any)
       .eq("id", sit.id);
-    if (error) { toast.error(error.message); return; }
+    if (error) { toast.error(friendlyError(error)); return; }
     onSitChanged?.();
   }
 

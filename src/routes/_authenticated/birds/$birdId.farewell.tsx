@@ -11,6 +11,7 @@ import { mergeEmergency } from "@/lib/emergency";
 import { InkHero, Card, PrimaryButton } from "@/components/system";
 import { PathDetail, type PassingPath, type VetContact } from "@/components/PassingGuidance";
 import { toast } from "sonner";
+import { friendlyError } from "@/lib/errorMessage";
 
 // Owner mark-as-passed flow. Two states, one visit:
 //   ask      → the gentle confirmation screen
@@ -80,7 +81,7 @@ function Farewell() {
       setStep("guidance");
       window.scrollTo(0, 0);
     } catch (e: any) {
-      toast.error(e?.message ?? "Something went wrong. Please try again.");
+      toast.error(friendlyError(e, "Something went wrong. Please try again."));
     } finally {
       setBusy(false);
     }

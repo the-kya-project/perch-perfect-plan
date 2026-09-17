@@ -12,6 +12,7 @@ import { resolveHouseholdNames } from "@/lib/home.functions";
 import { memberDisplayName, firstName } from "@/lib/memberDisplay";
 import { useHouseholdCapability, useMyPermissions } from "@/lib/useCapability";
 import { formatDateRangeUS } from "@/lib/dates";
+import { friendlyError } from "@/lib/errorMessage";
 
 // Past Sits detail view — the sit's own activity feed, derived strictly from
 // sit_id attribution on the logs that ran inside the window. Reachable from a
@@ -137,7 +138,7 @@ function SitDetail() {
       qc.invalidateQueries({ queryKey: ["dashboard-home"] }); // Home's upcoming-sit/today rows
       navigate({ to: "/sits" });
     } catch (e: any) {
-      toast.error(e?.message ?? "Couldn't delete the sit.");
+      toast.error(friendlyError(e, "Couldn't delete the sit."));
       setDeleting(false);
     }
   }

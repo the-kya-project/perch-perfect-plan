@@ -24,6 +24,7 @@ import { track } from "@/lib/analytics";
 import { ensureSitterPreviewToken } from "@/lib/sitterPreview";
 import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
 import { persistBirdPhoto, signBirdPhoto } from "@/lib/birdPhoto";
+import { friendlyError } from "@/lib/errorMessage";
 
 const setupSearch = z.object({
   step: z.coerce.number().int().min(1).max(TOTAL_STEPS).optional(),
@@ -97,7 +98,7 @@ function useDebouncedAutosave(
         setDirtyRef.current(false);
       } catch (e: any) {
         // Never fail silently — the owner must know their input didn't save.
-        toast.error(`Couldn't save your changes: ${e?.message ?? "please try again."}`);
+        toast.error(`Couldn't save your changes: ${friendlyError(e, "please try again.")}`);
       }
     }, delay);
     return () => {
@@ -115,7 +116,7 @@ function useDebouncedAutosave(
         pendingRef.current = false;
         setDirtyRef.current(false);
       } catch (e: any) {
-        toast.error(`Couldn't save your changes: ${e?.message ?? "please try again."}`);
+        toast.error(`Couldn't save your changes: ${friendlyError(e, "please try again.")}`);
         throw e; // surface to flushPending so navigation can be blocked
       }
     };
@@ -181,7 +182,7 @@ function BirdSetup() {
       if (error || data) return; // already exists, or transient — steps will retry
       const { error: upErr } = await supabase
         .from("care_plans").upsert({ bird_id: birdId }, { onConflict: "bird_id" });
-      if (upErr) { toast.error(`Couldn't load this bird's care plan: ${upErr.message}`); return; }
+      if (upErr) { toast.error(`Couldn't load this bird's care plan: ${friendlyError(upErr, "please try again.")}`); return; }
       qc.invalidateQueries(); // plan now exists — refetch the per-step queries
     })();
   }, [bird, birdId, qc]);
@@ -246,7 +247,7 @@ function BirdSetup() {
       .update(patch as any)
       .eq("id", birdId);
     setSaving(false);
-    if (error) { toast.error(error.message); return false; }
+    if (error) { toast.error(friendlyError(error)); return false; }
     // setup_complete/setup_step live on the birds row that the bird-record home
     // (the "Create care plan" CTA gate) and the flock list read from cache. Patch
     // the cache synchronously so the bird home reads the new value the instant we

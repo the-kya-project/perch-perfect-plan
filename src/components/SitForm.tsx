@@ -14,6 +14,7 @@ import {
 import { memberDisplayName, memberInitials } from "@/lib/memberDisplay";
 import { useHouseholdCapability, useMyPermissions } from "@/lib/useCapability";
 import { Feather, Plus, Mail, Check, Users, Trash2, AlertTriangle } from "lucide-react";
+import { friendlyError } from "@/lib/errorMessage";
 
 // Create OR edit a sit. In edit mode (`editSit` set) it preserves the existing
 // invite_token — the same sitter link keeps working; editing changes what it
@@ -109,7 +110,7 @@ export function SitForm({
         : null;
     const { error } = await supabase.from("sits").delete().eq("id", editSit.id);
     // A FAILED delete must never send a cancellation — bail before notifying.
-    if (error) { toast.error(error.message); setDeleting(false); return; }
+    if (error) { toast.error(friendlyError(error)); setDeleting(false); return; }
     // Delete succeeded → notify the caregiver they're no longer covering. The
     // cancelled failure toast is the most prominent of the three: if it doesn't
     // send, the caregiver could still show up expecting to cover.
@@ -277,7 +278,7 @@ export function SitForm({
           .in("bird_id", birdIds),
         getLocalUser(),
       ]);
-      if (ecErr) { toast.error(ecErr.message); setSaving(false); return; }
+      if (ecErr) { toast.error(friendlyError(ecErr)); setSaving(false); return; }
       if (!u.user) { toast.error("You're signed out."); setSaving(false); return; }
       // Emergency-contact preflight is for the external-sitter share — the
       // sitter has no other access, so the contacts must be on file before we
@@ -340,7 +341,7 @@ export function SitForm({
           update.token_expires_at = expires;
         }
         const { error } = await supabase.from("sits").update(update).eq("id", editSit.id);
-        if (error) { toast.error(error.message); setSaving(false); return; }
+        if (error) { toast.error(friendlyError(error)); setSaving(false); return; }
 
         // Reconcile which birds the token grants access to.
         const cur = new Set(currentBirdIds.current);
@@ -350,7 +351,7 @@ export function SitForm({
           const { error: addErr } = await supabase
             .from("sit_birds")
             .insert(toAdd.map((bird_id) => ({ sit_id: editSit.id, bird_id })));
-          if (addErr) { toast.error(addErr.message); setSaving(false); return; }
+          if (addErr) { toast.error(friendlyError(addErr)); setSaving(false); return; }
         }
         if (toRemove.length) {
           const { error: remErr } = await supabase
@@ -358,7 +359,7 @@ export function SitForm({
             .delete()
             .eq("sit_id", editSit.id)
             .in("bird_id", toRemove);
-          if (remErr) { toast.error(remErr.message); setSaving(false); return; }
+          if (remErr) { toast.error(friendlyError(remErr)); setSaving(false); return; }
         }
         track("sit_edited", { bird_count: birdIds.length });
         // Notify the household caregiver only when the dates or the bird-set
@@ -416,10 +417,10 @@ export function SitForm({
           insert.sitter_email = null;
         }
         const { data: sit, error } = await supabase.from("sits").insert(insert).select().single();
-        if (error || !sit) { toast.error(error?.message ?? "Could not create sit."); setSaving(false); return; }
+        if (error || !sit) { toast.error(friendlyError(error, "Could not create sit.")); setSaving(false); return; }
         const rows = birdIds.map((bird_id) => ({ sit_id: sit.id, bird_id }));
         const { error: linkErr } = await supabase.from("sit_birds").insert(rows);
-        if (linkErr) { toast.error(linkErr.message); setSaving(false); return; }
+        if (linkErr) { toast.error(friendlyError(linkErr)); setSaving(false); return; }
         const days = Math.max(1, Math.round((new Date(end).getTime() - new Date(start).getTime()) / 86_400_000) + 1);
         track("sit_created", { bird_count: birdIds.length, days, has_email: !!sitterEmail, caregiver_kind: kind });
         // Notify the household caregiver they're covering (await before the

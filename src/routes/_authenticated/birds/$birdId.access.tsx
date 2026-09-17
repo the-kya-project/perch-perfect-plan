@@ -10,6 +10,7 @@ import {
 import { HouseholdInviteSheet } from "@/components/HouseholdInviteSheet";
 import { toast } from "sonner";
 import { ArrowLeft, Plus, ChevronRight, Calendar, MoreHorizontal, Loader2 } from "lucide-react";
+import { friendlyError } from "@/lib/errorMessage";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/access")({
   head: () => ({ meta: [{ title: "Who can see this record — Kya & Co." }] }),
@@ -156,7 +157,7 @@ function MemberCard({ birdId, member, onChanged }: { birdId: string; member: { u
   const m = useMutation({
     mutationFn: () => remove({ data: { birdId, userId: member.userId } }),
     onSuccess: () => { toast.success("Removed from household."); onChanged(); },
-    onError: (e: any) => toast.error(e?.message ?? "Couldn't remove."),
+    onError: (e: any) => toast.error(friendlyError(e, "Couldn't remove.")),
   });
   const label = member.name?.trim() || member.email || "Household member";
   return (
@@ -198,7 +199,7 @@ function PendingCard({ invite, onChanged }: { invite: { id: string; email: strin
   const m = useMutation({
     mutationFn: () => cancel({ data: { inviteId: invite.id } }),
     onSuccess: () => { toast.success("Invite canceled."); onChanged(); },
-    onError: (e: any) => toast.error(e?.message ?? "Couldn't cancel."),
+    onError: (e: any) => toast.error(friendlyError(e, "Couldn't cancel.")),
   });
   return (
     <div className="flex items-center gap-3 rounded-[14px] border border-dashed bg-[#f6e7c4]/30 p-4" style={{ borderColor: "#d8b25a" }}>

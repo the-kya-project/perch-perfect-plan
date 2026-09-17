@@ -9,6 +9,7 @@ import { track } from "@/lib/analytics";
 import type { VetContact } from "@/components/PassingGuidance";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import { friendlyError } from "@/lib/errorMessage";
 
 // "Something's wrong" — sitter-link entry into the shared ConcernFlow (pause →
 // path choice → path detail). The flow + copy live in ConcernFlow, shared with
@@ -41,7 +42,7 @@ function ConcernPage() {
       qc.invalidateQueries({ queryKey: ["sitter-dashboard", token] });
       window.scrollTo(0, 0);
     },
-    onError: (e: any) => toast.error(e?.message ?? t("sitter.concern.pauseError", "Couldn't pause the reminders. Please try again.")),
+    onError: (e: any) => toast.error(friendlyError(e, t("sitter.concern.pauseError", "Couldn't pause the reminders. Please try again."))),
   });
 
   return (

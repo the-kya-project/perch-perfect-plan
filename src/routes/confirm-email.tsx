@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Mail } from "lucide-react";
 import { BrandLogo } from "@/components/BrandLogo";
+import { friendlyError } from "@/lib/errorMessage";
 
 // Persistent "check your email" screen shown after a signup that requires email
 // confirmation. Unlike a toast, it stays put until the owner confirms. The email
@@ -89,7 +90,7 @@ function ConfirmEmail() {
       setCooldown(RESEND_COOLDOWN_S);
       toast.success("Confirmation email sent again.");
     } catch (err: any) {
-      toast.error(err?.message ?? "Couldn't resend. Try again in a moment.");
+      toast.error(friendlyError(err, "Couldn't resend. Try again in a moment."));
     } finally {
       setResending(false);
     }

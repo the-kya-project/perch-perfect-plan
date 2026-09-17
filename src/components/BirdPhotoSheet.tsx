@@ -6,6 +6,7 @@ import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/im
 import { toast } from "sonner";
 import { Camera, Image as ImageIcon, Crop, Trash2, X } from "lucide-react";
 import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
+import { friendlyError } from "@/lib/errorMessage";
 
 // First-class bird-photo management. Opened from the camera button on the bird
 // main page hero. Menu → reposition step → save. The "focal point" is stored in
@@ -86,7 +87,7 @@ export function BirdPhotoSheet({
       toast.success("Photo updated.");
       onClose();
     } catch (e: any) {
-      toast.error(e?.message ?? "Couldn't save the photo.");
+      toast.error(friendlyError(e, "Couldn't save the photo."));
       setBusy(false);
     }
   }
@@ -101,7 +102,7 @@ export function BirdPhotoSheet({
       toast.success("Photo removed.");
       onClose();
     } catch (e: any) {
-      toast.error(e?.message ?? "Couldn't remove the photo.");
+      toast.error(friendlyError(e, "Couldn't remove the photo."));
       setBusy(false);
     }
   }

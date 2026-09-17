@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Check, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { InkHero, Card, RecordRow, StatusPill, IconTile, PrimaryButton, CtaLink } from "@/components/system";
+import { friendlyError } from "@/lib/errorMessage";
 
 export const Route = createFileRoute("/_authenticated/account/security")({
   head: () => ({ meta: [{ title: "Password & sign-in — Kya & Co." }] }),
@@ -57,7 +58,7 @@ function SecurityPage() {
       setPw(""); setConfirm("");
       setProviders((p) => (p.includes("email") ? p : [...p, "email"]));
     } catch (e: any) {
-      toast.error(e.message ?? "Could not update password.");
+      toast.error(friendlyError(e, "Could not update password."));
     } finally {
       setSaving(false);
     }
@@ -73,7 +74,7 @@ function SecurityPage() {
       if (error) throw error;
       toast.success("Password reset link sent. Check your email.");
     } catch (e: any) {
-      toast.error(e.message ?? "Could not send reset email.");
+      toast.error(friendlyError(e, "Could not send reset email."));
     } finally {
       setSendingReset(false);
     }

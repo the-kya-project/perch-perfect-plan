@@ -13,6 +13,7 @@ import { ScanForm, type ScanSubmit } from "@/components/ScanForm";
 import { MemberContextBanner } from "@/components/MemberContextBanner";
 import { track } from "@/lib/analytics";
 import { uploadScanPhotoOrInline } from "@/lib/scanPhoto";
+import { friendlyError } from "@/lib/errorMessage";
 
 // Owner-run health scan. Uses the SAME ScanForm + triage as the sitter; on submit
 // it writes a daily_logs row (source='owner', run_by, no sit) + optional photo +
@@ -109,7 +110,7 @@ function OwnerScan() {
         qc.invalidateQueries({ queryKey: k === "scan-feed" ? ["scan-feed"] : [k, birdId] }));
       qc.invalidateQueries({ queryKey: ["birds"] }); // a weigh-in updates Home pills — weights embedded in the birds query
     } catch (e: any) {
-      toast.error(e?.message ?? "Couldn't log the health check.");
+      toast.error(friendlyError(e, "Couldn't log the health check."));
     } finally {
       setSubmitting(false);
     }

@@ -10,6 +10,7 @@ import { HouseholdInviteSheet } from "@/components/HouseholdInviteSheet";
 import { toast } from "sonner";
 import { ArrowLeft, Plus, Mail, MoreHorizontal, Loader2, X, Check, SlidersHorizontal } from "lucide-react";
 import { InkHero, Card, RecordRow, IconTile } from "@/components/system";
+import { friendlyError } from "@/lib/errorMessage";
 
 // Account-level household management — every person who can help with the
 // owner's birds, each shown ONCE (memberships grouped by user, invites by
@@ -180,7 +181,7 @@ function PendingRow({ invite, last, onChanged }: { invite: AccountPending; last?
   const m = useMutation({
     mutationFn: async () => { for (const id of invite.inviteIds) await cancel({ data: { inviteId: id } }); },
     onSuccess: () => { toast.success("Invite canceled."); onChanged(); },
-    onError: (e: any) => toast.error(e?.message ?? "Couldn't cancel."),
+    onError: (e: any) => toast.error(friendlyError(e, "Couldn't cancel.")),
   });
   return (
     <div className={`flex min-h-[44px] items-center gap-3 bg-[var(--amber-fill)]/30 px-4 py-3 ${last ? "" : "border-b border-[var(--line2)]"}`}>
@@ -228,7 +229,7 @@ function MemberManageSheet({ member, allBirds, onClose, onChanged }: {
   const removeEverywhere = useMutation({
     mutationFn: () => removeAll({ data: { userId: member.userId } }),
     onSuccess: () => { toast.success(`${label} removed from your household.`); onChanged(); onClose(); },
-    onError: (e: any) => toast.error(e?.message ?? "Couldn't remove."),
+    onError: (e: any) => toast.error(friendlyError(e, "Couldn't remove.")),
   });
 
   async function toggleBird(bird: { id: string; name: string }) {
@@ -249,7 +250,7 @@ function MemberManageSheet({ member, allBirds, onClose, onChanged }: {
       onChanged();
     } catch (e: any) {
       setOptimistic((o) => { const n = { ...o }; delete n[bird.id]; return n; });
-      toast.error(e?.message ?? "Couldn't update.");
+      toast.error(friendlyError(e, "Couldn't update."));
     } finally {
       setPending(null);
     }

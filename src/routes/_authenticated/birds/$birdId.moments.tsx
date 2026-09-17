@@ -10,6 +10,7 @@ import { useBirdPhotos } from "@/lib/useBirdPhotos";
 import { useBirdRole } from "@/lib/useBirdRole";
 import { shareMomentCard } from "@/lib/momentCard";
 import { InkHero, IconTile, SectionHead, Card, RecordRow } from "@/components/system";
+import { friendlyError } from "@/lib/errorMessage";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/moments")({
   head: () => ({ meta: [{ title: "Moments — Kya & Co." }] }),
@@ -143,7 +144,7 @@ function MomentsFacet() {
       toast.success("Photo saved.");
       qc.invalidateQueries({ queryKey: ["anchor-photos", birdId] });
     } catch (e: any) {
-      toast.error(e?.message ?? "Couldn't save the photo.");
+      toast.error(friendlyError(e, "Couldn't save the photo."));
     } finally {
       setBusy(false);
     }
@@ -357,7 +358,7 @@ function AddMilestone({ birdId, onClose, onSaved }: { birdId: string; onClose: (
       toast.success("Milestone added.");
       onSaved();
     } catch (e: any) {
-      toast.error(e?.message ?? "Couldn't save.");
+      toast.error(friendlyError(e, "Couldn't save."));
     } finally {
       setSaving(false);
     }

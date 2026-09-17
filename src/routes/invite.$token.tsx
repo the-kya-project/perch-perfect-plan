@@ -10,6 +10,7 @@ import { captureLead } from "@/lib/captureLead";
 import { toast } from "sonner";
 import { Loader2, Check } from "lucide-react";
 import { InkHero, Card, PrimaryButton, CtaLink } from "@/components/system";
+import { friendlyError } from "@/lib/errorMessage";
 
 // Public household-invite accept screen. Renders for logged-out visitors too;
 // the token is the access check. Never reveals bird/owner data for an
@@ -133,7 +134,7 @@ function useAcceptDecline(token: string, onDone: () => void) {
       toast.success("You're in — welcome to the household.");
       onDone();
     } catch (e: any) {
-      toast.error(e?.message ?? "Couldn't accept the invite.");
+      toast.error(friendlyError(e, "Couldn't accept the invite."));
       setBusy(null);
     }
   }
@@ -209,7 +210,7 @@ function LoggedOutAccept({ token, inviteEmail, onDone }: { token: string; invite
         password,
         options: { data: { display_name: fullName, full_name: fullName, given_name: first, family_name: last || undefined }, emailRedirectTo: redirect },
       });
-      if (error) { toast.error(error.message); setPending(false); return; }
+      if (error) { toast.error(friendlyError(error)); setPending(false); return; }
       // Land the new member in Brevo with a real name. No marketing consent —
       // they're joining a household, not opting into marketing (the edge fn still
       // records the contact + name, just not the marketing list).
@@ -225,14 +226,14 @@ function LoggedOutAccept({ token, inviteEmail, onDone }: { token: string; invite
       setConfirmSent(true);
       setPending(false);
     } catch (e: any) {
-      toast.error(e?.message ?? "Couldn't create your account.");
+      toast.error(friendlyError(e, "Couldn't create your account."));
       setPending(false);
     }
   }
 
   async function google() {
     try { await signInWithGoogle(redirect); }
-    catch (e: any) { toast.error(e?.message ?? "Google sign-in failed."); }
+    catch (e: any) { toast.error(friendlyError(e, "Google sign-in failed.")); }
   }
 
   if (confirmSent) {

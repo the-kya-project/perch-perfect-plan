@@ -13,6 +13,7 @@ import { signBirdPhoto, persistBirdPhoto } from "@/lib/birdPhoto";
 import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
 import { InkHero, Card, PrimaryButton } from "@/components/system";
+import { friendlyError } from "@/lib/errorMessage";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/identity")({
   head: () => ({ meta: [{ title: "Identity — Kya & Co." }] }),
@@ -259,7 +260,7 @@ function IdentityForm({ birdId, bird, onClose, onSaved }: { birdId: string; bird
       toast.success("Identity saved.");
       onSaved();
     } catch (e: any) {
-      toast.error(e?.message ?? "Couldn't save.");
+      toast.error(friendlyError(e, "Couldn't save."));
     } finally {
       setSaving(false);
     }

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { InkHero, PrimaryButton, CtaLink } from "@/components/system";
+import { friendlyError } from "@/lib/errorMessage";
 
 export const Route = createFileRoute("/reset-password")({
   ssr: false,
@@ -56,7 +57,7 @@ function ResetPasswordPage() {
       toast.success("Password updated. You're signed in.");
       navigate({ to: "/dashboard" });
     } catch (err: any) {
-      toast.error(err.message ?? "Could not update password.");
+      toast.error(friendlyError(err, "Could not update password."));
     } finally {
       setLoading(false);
     }

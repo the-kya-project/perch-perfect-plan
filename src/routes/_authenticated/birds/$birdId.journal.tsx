@@ -18,6 +18,7 @@ import {
 } from "@/lib/journalAttachment";
 import { JournalEntryView } from "@/components/JournalEntryView";
 import { useOpenSignedFile } from "@/lib/useOpenSignedFile";
+import { friendlyError } from "@/lib/errorMessage";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/journal")({
   head: () => ({ meta: [{ title: "Journal — Kya & Co." }] }),
@@ -270,7 +271,7 @@ function EntryForm({ birdId, entry, isOwner, onClose, onSaved, onDeleted }: { bi
       toast.success("Entry deleted.");
       onDeleted();
     } catch (e: any) {
-      toast.error(e?.message ?? "Couldn't delete the entry.");
+      toast.error(friendlyError(e, "Couldn't delete the entry."));
     } finally {
       setDeleting(false);
     }
@@ -404,7 +405,7 @@ function EntryForm({ birdId, entry, isOwner, onClose, onSaved, onDeleted }: { bi
       }
       onSaved();
     } catch (e: any) {
-      toast.error(e?.message ?? "Couldn't save the entry.");
+      toast.error(friendlyError(e, "Couldn't save the entry."));
     } finally {
       setSaving(false);
       setUploadingIdx(null);

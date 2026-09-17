@@ -13,6 +13,7 @@ import { captureLead } from "@/lib/captureLead";
 import { attributionMetadata, getFirstTouch } from "@/lib/attribution";
 import { PENDING_EMAIL_KEY } from "./confirm-email";
 import { InkHero, PrimaryButton, CtaLink, Card } from "@/components/system";
+import { friendlyError } from "@/lib/errorMessage";
 
 const search = z.object({
   mode: z.enum(["signin", "signup"]).default("signin"),
@@ -172,7 +173,7 @@ function AuthPage() {
             clearAttempts(attemptsKey);
             toast.error("Too many failed attempts. Try again in 60s, or reset your password.");
           } else {
-            toast.error(error.message);
+            toast.error(friendlyError(error));
           }
           return;
         }
@@ -183,7 +184,7 @@ function AuthPage() {
         navigate({ to: (returnTo ?? "/welcome") as any });
       }
     } catch (err: any) {
-      toast.error(err.message ?? "Something went wrong.");
+      toast.error(friendlyError(err, "Something went wrong."));
     } finally {
       setLoading(false);
     }
@@ -197,7 +198,7 @@ function AuthPage() {
       await signInWithGoogle(window.location.origin + "/welcome");
       setLoading(false);
     } catch (err: any) {
-      toast.error(err.message ?? "Google sign-in failed.");
+      toast.error(friendlyError(err, "Google sign-in failed."));
       setLoading(false);
     }
   }
@@ -208,7 +209,7 @@ function AuthPage() {
       await signInWithApple(window.location.origin + "/welcome");
       setLoading(false);
     } catch (err: any) {
-      toast.error(err.message ?? "Apple sign-in failed.");
+      toast.error(friendlyError(err, "Apple sign-in failed."));
       setLoading(false);
     }
   }
@@ -234,7 +235,7 @@ function AuthPage() {
       setCooldown(cooldownKey, 60);
       toast.success("If that email is registered, a reset link is on its way.");
     } catch (err: any) {
-      toast.error(err.message ?? "Could not send reset email.");
+      toast.error(friendlyError(err, "Could not send reset email."));
     } finally {
       setLoading(false);
     }
