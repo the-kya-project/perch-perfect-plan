@@ -29,6 +29,8 @@ const pkgVersion = JSON.parse(
 // this build). CSP ships REPORT-ONLY first: it observes and reports violations
 // but never blocks, so we can verify the real flows before flipping to enforce.
 const SUPABASE_ORIGIN = "https://koyqdyamazuuwvqbttnj.supabase.co";
+// Same-origin, and under /api/public/* so it bypasses the published-site auth.
+const CSP_REPORT_PATH = "/api/public/csp-report";
 const CSP = [
   "default-src 'self'",
   "base-uri 'self'",
@@ -48,6 +50,13 @@ const CSP = [
   "frame-src 'self' https://*.videodelivery.net",
   "worker-src 'self' blob:",
   "manifest-src 'self'",
+  // Without one of these the report-only policy did nothing at all: it blocked
+  // nothing by definition and had nowhere to report to. `report-uri` is
+  // deprecated but still the only one Safari and older Chrome honour;
+  // `report-to` is the modern Reporting API form and needs the
+  // Reporting-Endpoints header below. Both point at the same collector.
+  `report-uri ${CSP_REPORT_PATH}`,
+  "report-to csp-endpoint",
 ].join("; ");
 
 const SECURITY_HEADERS = {
@@ -58,7 +67,18 @@ const SECURITY_HEADERS = {
   // Camera + mic are used for photos/clips; geolocation is not. Lock the rest down.
   "Permissions-Policy": "camera=(self), microphone=(self), geolocation=(), browsing-topics=()",
   // Report-only until verified on a deploy — then rename to Content-Security-Policy.
+  // Do NOT flip that switch until the collector has seen a week of real traffic;
+  // enforcing a policy nobody has observed is how you break production.
   "Content-Security-Policy-Report-Only": CSP,
+  // Names the group that the CSP's `report-to csp-endpoint` refers to.
+  "Reporting-Endpoints": `csp-endpoint="${CSP_REPORT_PATH}"`,
+  // Vercel already sends max-age=63072000 on the custom domain, but without
+  // includeSubDomains. Scoped to app.thekyaproject.com this only covers hosts
+  // UNDER app.* (not the apex or www, which are a separate Webflow site), so it
+  // is safe. `preload` is deliberately omitted: it is a one-way door — getting
+  // back off the browser preload list takes months — and it would commit the
+  // apex domain too, which is not ours to decide here.
+  "Strict-Transport-Security": "max-age=63072000; includeSubDomains",
 };
 
 export default defineConfig({
