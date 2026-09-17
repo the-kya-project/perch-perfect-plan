@@ -46,7 +46,14 @@ const CSP = [
   // us-assets.i.posthog.com serves PostHog's post-init scripts (config.js,
   // surveys.js) — observed live once analytics actually initialized.
   "script-src 'self' 'unsafe-inline' https://us.i.posthog.com https://eu.i.posthog.com https://us-assets.i.posthog.com https://plausible.io https://analytics.tiktok.com https://analytics-sg.tiktok.com",
-  `connect-src 'self' ${SUPABASE_ORIGIN} https://*.videodelivery.net https://*.cloudflarestream.com https://us.i.posthog.com https://eu.i.posthog.com https://us-assets.i.posthog.com https://plausible.io https://analytics.tiktok.com https://analytics-sg.tiktok.com`,
+  // analytics-ipv6.tiktokw.us is NOT a typo for tiktok.com — it is TikTok's
+  // separate US analytics domain, which the pixel calls for IP enrichment
+  // (/ipv6/enrich_ipv6). Found by the report collector on the first production
+  // page load after it went live; enforcing without it would have silently cost
+  // TikTok attribution. If more of these turn up in the `[csp-report]` logs,
+  // add them BEFORE flipping the policy to enforce — that is what the
+  // observation window is for.
+  `connect-src 'self' ${SUPABASE_ORIGIN} https://*.videodelivery.net https://*.cloudflarestream.com https://us.i.posthog.com https://eu.i.posthog.com https://us-assets.i.posthog.com https://plausible.io https://analytics.tiktok.com https://analytics-sg.tiktok.com https://analytics-ipv6.tiktokw.us`,
   "frame-src 'self' https://*.videodelivery.net",
   "worker-src 'self' blob:",
   "manifest-src 'self'",
