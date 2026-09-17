@@ -104,6 +104,17 @@ function memorialSubtitle(b: any): string {
 function withYouSpan(startIso: string | null, endIso: string): string {
   if (!startIso) return "always";
   const ms = new Date(endIso).getTime() - new Date(startIso).getTime();
+  // Short spans get their own words. This used to floor everything at
+  // `Math.max(1, …)` months, so a bird who was here four days — a rescue that
+  // did not make it, a bird who arrived already unwell — was remembered as
+  // "with you 1 month". On a memorial page that is simply the wrong number.
+  const days = Math.round(ms / (1000 * 60 * 60 * 24));
+  if (days < 1) return "less than a day";
+  if (days < 14) return `${days} ${days === 1 ? "day" : "days"}`;
+  if (days < 31) {
+    const weeks = Math.round(days / 7);
+    return `${weeks} ${weeks === 1 ? "week" : "weeks"}`;
+  }
   const months = Math.max(1, Math.round(ms / (1000 * 60 * 60 * 24 * 30.44)));
   if (months < 12) return `${months} ${months === 1 ? "month" : "months"}`;
   const years = Math.round((months / 12) * 10) / 10;
