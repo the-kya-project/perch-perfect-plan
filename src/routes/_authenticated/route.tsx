@@ -1,4 +1,4 @@
-import { createFileRoute, Outlet, redirect, useLocation } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect, useLocation, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -42,7 +42,43 @@ function AuthPending() {
   );
 }
 
+/**
+ * Is this response Supabase telling us the signed-in user no longer exists?
+ *
+ * Deliberately narrow. A deleted account must sign the device out, but a flaky
+ * network must NOT — so we only act on an explicit "this user is gone" answer,
+ * never on a generic failure, timeout, or offline error.
+ */
+function isUserGone(error: { code?: string; message?: string } | null): boolean {
+  if (!error) return false;
+  if (error.code === "user_not_found") return true;
+  return /user.*(not found|does not exist)/i.test(error.message ?? "");
+}
+
 function AuthenticatedLayout() {
+  const navigate = useNavigate();
+
+  // An account deleted ELSEWHERE — another device, or server-side — leaves this
+  // device holding a session for a user that no longer exists. The guard above
+  // can't catch it: the JWT is still well-formed and unexpired, so getSession()
+  // happily returns it and the app renders a nameless onboarding screen. The
+  // first write then failed with a raw foreign-key error.
+  //
+  // So verify with the server ONCE after mount, in the background. Deliberately
+  // not in beforeLoad: getUser() is a network round-trip that previously raced
+  // signup and slowed every cold start, which is why the guard uses getSession()
+  // (see authReady). Nothing here blocks first paint.
+  useEffect(() => {
+    let cancelled = false;
+    void supabase.auth.getUser().then(({ error }) => {
+      if (cancelled || !isUserGone(error as { code?: string; message?: string } | null)) return;
+      void supabase.auth.signOut().finally(() => {
+        if (!cancelled) void navigate({ to: "/auth", search: { mode: "signin" as const } });
+      });
+    });
+    return () => { cancelled = true; };
+  }, [navigate]);
+
   // OAuth signups can't carry attribution metadata through the provider
   // round-trip, so fill it client-side on return. No-ops for users who already
   // have attribution or aren't freshly created (see applyOAuthAttribution).
