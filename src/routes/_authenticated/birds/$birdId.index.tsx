@@ -53,7 +53,16 @@ export function useBirdRecord(birdId: string) {
 
 function BirdRecordHome() {
   const { birdId } = Route.useParams();
-  const { data: bird, isPending } = useBirdRecord(birdId);
+  const { data: bird, isPending, fetchStatus } = useBirdRecord(birdId);
+
+  // Offline, React Query PAUSES the query (its default networkMode), so it never
+  // settles: `isPending` stays true forever and the no-access guard below never
+  // runs. The page then sat on its `bird?.name ?? "This bird"` fallback and
+  // rendered a convincing but empty record — "This bird · Parrot", "No weight
+  // yet — log the first" — for a bird that may well have weights. On a health
+  // record that is worse than a blank screen: it reads as data loss, and it
+  // invites logging a duplicate weight.
+  if (isPending && fetchStatus === "paused") return <BirdOffline />;
 
   // A bird you can no longer read comes back as `data: null` with `error: null`
   // — RLS filters the row out rather than failing the request, exactly like the
@@ -72,6 +81,31 @@ function BirdRecordHome() {
           <MemberContextBanner birdId={birdId} />
           <BirdRecordBody birdId={birdId} />
         </main>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Offline: say so, rather than showing an empty record that looks like data loss.
+ *
+ * Deliberately has NO "Try again" button. While the query is paused, refetch()
+ * is paused too — React Query resumes it from its own onlineManager, not from a
+ * caller — so the button would sit there doing nothing, which is the failure
+ * this whole screen exists to avoid. Resuming on reconnect is React Query's
+ * documented behaviour; it could not be verified in the test harness, because
+ * onlineManager reads the real browser events and a synthetic `navigator.onLine`
+ * override does not reach it. The copy therefore promises only what is certain:
+ * nothing is lost.
+ */
+function BirdOffline() {
+  return (
+    <div className="grid min-h-screen place-items-center bg-[var(--cream)] px-8 pb-nav text-center">
+      <div>
+        <h1 className="t-h2 text-[var(--ink)]">You're offline</h1>
+        <p className="t-body mx-auto mt-3 max-w-[28rem] text-[var(--mute2)]">
+          This record needs a connection. Nothing has been lost — it'll be here when you're back.
+        </p>
       </div>
     </div>
   );
