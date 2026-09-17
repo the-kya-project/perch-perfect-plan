@@ -42,6 +42,7 @@ import { Route as SitterTokenGuideRouteImport } from './routes/sitter/$token/gui
 import { Route as SitterTokenEmergencyRouteImport } from './routes/sitter/$token/emergency'
 import { Route as SitterTokenConcernRouteImport } from './routes/sitter/$token/concern'
 import { Route as SitterTokenCareSheetRouteImport } from './routes/sitter/$token/care-sheet'
+import { Route as ApiPublicCspReportRouteImport } from './routes/api/public/csp-report'
 import { Route as AuthenticatedSitsSitIdRouteImport } from './routes/_authenticated/sits.$sitId'
 import { Route as AuthenticatedSitPreviewSitIdRouteImport } from './routes/_authenticated/sit-preview.$sitId'
 import { Route as AuthenticatedScansSettingsRouteImport } from './routes/_authenticated/scans.settings'
@@ -241,6 +242,11 @@ const SitterTokenCareSheetRoute = SitterTokenCareSheetRouteImport.update({
   id: '/care-sheet',
   path: '/care-sheet',
   getParentRoute: () => SitterTokenRouteRoute,
+} as any)
+const ApiPublicCspReportRoute = ApiPublicCspReportRouteImport.update({
+  id: '/api/public/csp-report',
+  path: '/api/public/csp-report',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedSitsSitIdRoute = AuthenticatedSitsSitIdRouteImport.update({
   id: '/$sitId',
@@ -451,6 +457,7 @@ export interface FileRoutesByFullPath {
   '/scans/settings': typeof AuthenticatedScansSettingsRoute
   '/sit-preview/$sitId': typeof AuthenticatedSitPreviewSitIdRoute
   '/sits/$sitId': typeof AuthenticatedSitsSitIdRoute
+  '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/sitter/$token/care-sheet': typeof SitterTokenCareSheetRoute
   '/sitter/$token/concern': typeof SitterTokenConcernRoute
   '/sitter/$token/emergency': typeof SitterTokenEmergencyRoute
@@ -510,6 +517,7 @@ export interface FileRoutesByTo {
   '/scans/settings': typeof AuthenticatedScansSettingsRoute
   '/sit-preview/$sitId': typeof AuthenticatedSitPreviewSitIdRoute
   '/sits/$sitId': typeof AuthenticatedSitsSitIdRoute
+  '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/sitter/$token/care-sheet': typeof SitterTokenCareSheetRoute
   '/sitter/$token/concern': typeof SitterTokenConcernRoute
   '/sitter/$token/emergency': typeof SitterTokenEmergencyRoute
@@ -575,6 +583,7 @@ export interface FileRoutesById {
   '/_authenticated/scans/settings': typeof AuthenticatedScansSettingsRoute
   '/_authenticated/sit-preview/$sitId': typeof AuthenticatedSitPreviewSitIdRoute
   '/_authenticated/sits/$sitId': typeof AuthenticatedSitsSitIdRoute
+  '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/sitter/$token/care-sheet': typeof SitterTokenCareSheetRoute
   '/sitter/$token/concern': typeof SitterTokenConcernRoute
   '/sitter/$token/emergency': typeof SitterTokenEmergencyRoute
@@ -641,6 +650,7 @@ export interface FileRouteTypes {
     | '/scans/settings'
     | '/sit-preview/$sitId'
     | '/sits/$sitId'
+    | '/api/public/csp-report'
     | '/sitter/$token/care-sheet'
     | '/sitter/$token/concern'
     | '/sitter/$token/emergency'
@@ -700,6 +710,7 @@ export interface FileRouteTypes {
     | '/scans/settings'
     | '/sit-preview/$sitId'
     | '/sits/$sitId'
+    | '/api/public/csp-report'
     | '/sitter/$token/care-sheet'
     | '/sitter/$token/concern'
     | '/sitter/$token/emergency'
@@ -764,6 +775,7 @@ export interface FileRouteTypes {
     | '/_authenticated/scans/settings'
     | '/_authenticated/sit-preview/$sitId'
     | '/_authenticated/sits/$sitId'
+    | '/api/public/csp-report'
     | '/sitter/$token/care-sheet'
     | '/sitter/$token/concern'
     | '/sitter/$token/emergency'
@@ -811,6 +823,7 @@ export interface RootRouteChildren {
   SitterTokenRouteRoute: typeof SitterTokenRouteRouteWithChildren
   HandoffTokenRoute: typeof HandoffTokenRoute
   InviteTokenRoute: typeof InviteTokenRoute
+  ApiPublicCspReportRoute: typeof ApiPublicCspReportRoute
   ApiPublicHooksCarePlanRemindersRoute: typeof ApiPublicHooksCarePlanRemindersRoute
   ApiPublicHooksEngagementNudgesRoute: typeof ApiPublicHooksEngagementNudgesRoute
   ApiPublicHooksOnboardingEmailsRoute: typeof ApiPublicHooksOnboardingEmailsRoute
@@ -1048,6 +1061,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/sitter/$token/care-sheet'
       preLoaderRoute: typeof SitterTokenCareSheetRouteImport
       parentRoute: typeof SitterTokenRouteRoute
+    }
+    '/api/public/csp-report': {
+      id: '/api/public/csp-report'
+      path: '/api/public/csp-report'
+      fullPath: '/api/public/csp-report'
+      preLoaderRoute: typeof ApiPublicCspReportRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/sits/$sitId': {
       id: '/_authenticated/sits/$sitId'
@@ -1464,6 +1484,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitterTokenRouteRoute: SitterTokenRouteRouteWithChildren,
   HandoffTokenRoute: HandoffTokenRoute,
   InviteTokenRoute: InviteTokenRoute,
+  ApiPublicCspReportRoute: ApiPublicCspReportRoute,
   ApiPublicHooksCarePlanRemindersRoute: ApiPublicHooksCarePlanRemindersRoute,
   ApiPublicHooksEngagementNudgesRoute: ApiPublicHooksEngagementNudgesRoute,
   ApiPublicHooksOnboardingEmailsRoute: ApiPublicHooksOnboardingEmailsRoute,
