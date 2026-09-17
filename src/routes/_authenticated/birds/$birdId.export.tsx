@@ -7,7 +7,8 @@ import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { completePdfHandoff } from "@/lib/handoff.functions";
 import { pdfHandoffFailedMessage } from "@/lib/birdMedia.functions";
 import { toast } from "sonner";
-import { ArrowLeft, Printer, Loader2, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Printer, Share2, Loader2, AlertTriangle } from "lucide-react";
+import { isNativeApp } from "@/lib/nativeApp";
 
 // PDF / offline handoff. Renders a print-optimized full-record sheet the sender
 // can "Save as PDF" and give to an adopter who isn't on the app. Confirming the
@@ -94,6 +95,29 @@ function ExportRecord() {
     val(plan?.sleep_routine) && `Sleep: ${plan.sleep_routine.trim()}`,
   ].filter(Boolean).join("\n");
 
+  const native = isNativeApp();
+
+  // Share the sheet exactly as rendered. Reading the article's text keeps this
+  // honest — whatever the adopter receives is what the page shows — and avoids
+  // a second, drift-prone serialiser for the same record.
+  async function shareRecord() {
+    const text = document.getElementById("export-sheet")?.innerText?.trim() ?? "";
+    if (!text) { toast.error("Nothing to share yet — give the record a moment to load."); return; }
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: `${name} — full record`, text });
+      } catch { /* dismissed — nothing to report */ }
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("Record copied to clipboard.");
+    } catch (e) {
+      console.error("[export] clipboard write failed", e);
+      toast.error("Couldn't copy the record. Select the text below and copy it manually.");
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[#f4f1e8] pb-[calc(var(--nav-spacer)+6rem)]">
       <header data-noprint className="sticky top-0 z-10 border-b border-[#e3ded0] bg-[#f4f1e8]/95 backdrop-blur">
@@ -104,11 +128,28 @@ function ExportRecord() {
       </header>
 
       <main className="mx-auto max-w-md px-5 py-5">
+        {/* window.print() does nothing inside the native shells — no WebKit print
+            delegate on iOS, no window.print at all in Android's WebView (see
+            BUG-7). Here that mattered more than on the vet summary: this is the
+            ONLY way to hand a bird to an adopter who isn't on the app, the copy
+            instructs you to produce a PDF, there is no other affordance on the
+            screen, and the next step is irreversible. So natively we share the
+            sheet instead, which does work, and say so. */}
         <div data-noprint className="mb-4 space-y-2">
-          <p className="text-sm leading-relaxed text-[#5f5e5a]">Save this as a PDF and give it to the adopter, then confirm the handoff below. Once you confirm, {name} moves to your Past birds and leaves your flock.</p>
-          <button type="button" onClick={() => window.print()} className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[14px] bg-[#1a3d2e] text-sm font-medium text-white">
-            <Printer className="size-4" /> Save as PDF
-          </button>
+          <p className="text-sm leading-relaxed text-[#5f5e5a]">
+            {native
+              ? `Share ${name}'s record with the adopter, then confirm the handoff below. Once you confirm, ${name} moves to your Past birds and leaves your flock.`
+              : `Save this as a PDF and give it to the adopter, then confirm the handoff below. Once you confirm, ${name} moves to your Past birds and leaves your flock.`}
+          </p>
+          {native ? (
+            <button type="button" onClick={shareRecord} className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[14px] bg-[#1a3d2e] text-sm font-medium text-white">
+              <Share2 className="size-4" /> Share record
+            </button>
+          ) : (
+            <button type="button" onClick={() => window.print()} className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[14px] bg-[#1a3d2e] text-sm font-medium text-white">
+              <Printer className="size-4" /> Save as PDF
+            </button>
+          )}
         </div>
 
         <article id="export-sheet" className="rounded-[14px] border border-[#d8d0bd] bg-white p-5">
@@ -163,7 +204,7 @@ function ExportRecord() {
         <div className="mx-auto max-w-md">
           {!confirming ? (
             <button type="button" onClick={() => setConfirming(true)} className="min-h-[48px] w-full rounded-[14px] border border-[#c8bfa6] bg-white text-sm font-medium text-[#1a3d2e]">
-              I gave them the PDF — did you hand off {name}?
+              {native ? "I shared it with them" : "I gave them the PDF"} — did you hand off {name}?
             </button>
           ) : (
             <div className="space-y-2 rounded-[14px] p-3" style={{ background: "#FCEBEB", border: "1px solid #E24B4A" }}>
