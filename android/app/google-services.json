@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1048011148484",
+    "project_id": "kya-project-4d386",
+    "storage_bucket": "kya-project-4d386.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1048011148484:android:ad9f1a4737d5e67b5f8d91",
+        "android_client_info": {
+          "package_name": "com.thekyaproject.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBvO-PqrEnztnGQUJvPQnkEQS5N2fmEr8Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
