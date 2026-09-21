@@ -23,6 +23,7 @@ import {
   isStaleChunkError, chunkReloadAttemptedRecently, reloadForStaleChunk,
 } from "@/lib/sw-register";
 import { captureFirstTouch } from "@/lib/attribution";
+import { attachNativePushHandlers } from "@/lib/pushNative";
 // Side-effect import: registers the beforeinstallprompt/appinstalled listeners
 // at app start so the native install prompt is captured (it fires once, early).
 import "@/lib/pwaInstall";
@@ -209,6 +210,11 @@ function RootComponent() {
     }
     installChunkErrorRecovery(); // self-heal stale-build chunk 404s (incl. the sitter preview iframe)
     registerServiceWorker();
+    // Native shell only: make a tapped push land on the screen it refers to.
+    // Attached once at boot because the tap can happen while the app is cold —
+    // Capacitor replays the event after launch, so a listener attached later
+    // (e.g. only on the settings screen) would miss it entirely.
+    void attachNativePushHandlers((url: string) => router.navigate({ href: url } as never));
     supabase.auth.getSession().then(({ data }) => {
       if (data.session?.user?.id) {
         identifyUser(data.session.user.id);

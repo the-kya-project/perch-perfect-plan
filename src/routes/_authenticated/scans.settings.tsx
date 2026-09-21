@@ -18,7 +18,15 @@ import {
   getVapidPublicKey,
   savePushSubscription,
   deletePushSubscription,
+  savePushToken,
+  deletePushToken,
 } from "@/lib/push.functions";
+import { isNativeApp } from "@/lib/nativeApp";
+import {
+  registerForNativePush,
+  unregisterNativePush,
+  nativePushPermission,
+} from "@/lib/pushNative";
 import { markNotificationsReviewed } from "@/components/OwnerChecklist";
 import { AddToHomeModal } from "@/components/AddToHomeModal";
 import { InkHero, IconTile, Card, PrimaryButton, CtaLink } from "@/components/system";
@@ -92,6 +100,13 @@ function NotificationsSettingsPage() {
   const getVapidKey = useServerFn(getVapidPublicKey);
   const saveSub = useServerFn(savePushSubscription);
   const deleteSub = useServerFn(deletePushSubscription);
+  const saveToken = useServerFn(savePushToken);
+  const deleteToken = useServerFn(deletePushToken);
+
+  // Native shell: APNs/FCM device token instead of a web-push subscription.
+  // Kept in its own state so the two paths never overwrite each other.
+  const native = isNativeApp();
+  const [nativeToken, setNativeToken] = useState<string | null>(null);
 
   useEffect(() => {
     // Visiting/reviewing notification preferences checks off that getting-started step.
@@ -108,6 +123,28 @@ function NotificationsSettingsPage() {
         .maybeSingle();
       // push_weight_reminder/push_checkin_reminder postdate the generated types
       if (data) setPrefs(data as unknown as Prefs);
+      if (native) {
+        // detectPushSupport() reports "native-app" (web-push is genuinely
+        // unavailable in a WKWebView), but the shell DOES support push via
+        // APNs/FCM — so the UI must not treat the shell as unsupported.
+        setSupport({ ok: true });
+        const p = await nativePushPermission();
+        // "prompt" and "unknown" both mean "not decided yet" to this UI, which
+        // speaks the web's NotificationPermission vocabulary.
+        setPermission(p === "granted" || p === "denied" ? p : "default");
+        if (p === "granted") {
+          // Already granted: re-register to pick up a ROTATED token and
+          // re-sync it. Silent — the OS does not prompt again.
+          const res = await registerForNativePush();
+          if (res.ok) {
+            setNativeToken(res.token);
+            try {
+              await saveToken({ data: { token: res.token, transport: res.transport } });
+            } catch { /* keep the UI enabled; the next open retries */ }
+          }
+        }
+        return;
+      }
       setSupport(detectPushSupport());
       setPermission(getNotificationPermission());
       setPushEndpoint(await getCurrentEndpoint());
@@ -116,6 +153,14 @@ function NotificationsSettingsPage() {
     // Re-check permission when the user comes back to the tab — e.g. after they
     // flip the toggle in their phone's settings — so the blocked banner clears.
     const recheck = async () => {
+      if (native) {
+        // In the shell, Notification.permission is the WEB permission, which is
+        // meaningless here — reading it would wrongly flip the banner to
+        // "blocked" after the user tabs away and back. Ask the OS instead.
+        const p = await nativePushPermission();
+        setPermission(p === "granted" || p === "denied" ? p : "default");
+        return;
+      }
       setPermission(getNotificationPermission());
       setPushEndpoint(await getCurrentEndpoint());
     };
@@ -125,6 +170,10 @@ function NotificationsSettingsPage() {
       window.removeEventListener("visibilitychange", recheck);
       window.removeEventListener("focus", recheck);
     };
+    // Mount-once on purpose. `saveToken` is a fresh reference every render, so
+    // listing it would re-run this effect continuously and re-register push on
+    // every render; `native` cannot change during a session.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function toggle(key: keyof Prefs, next: boolean) {
@@ -156,6 +205,24 @@ function NotificationsSettingsPage() {
     }
     setBusy(true);
     try {
+      if (native) {
+        const res = await registerForNativePush();
+        if (!res.ok) {
+          if (res.reason === "denied") {
+            setPermission("denied");
+            setBlockedOpen(true);
+          } else {
+            toast.error("Could not turn on notifications. Please try again.");
+          }
+          return;
+        }
+        await saveToken({ data: { token: res.token, transport: res.transport } });
+        setNativeToken(res.token);
+        setPermission("granted");
+        toast.success("Push notifications enabled on this device.");
+        return;
+      }
+
       const { publicKey } = await getVapidKey();
       const sub = await subscribeToPush(publicKey);
       setPermission(getNotificationPermission());
@@ -184,6 +251,16 @@ function NotificationsSettingsPage() {
   async function disablePush() {
     setBusy(true);
     try {
+      if (native) {
+        // Drop the server row FIRST: if unregister succeeds but the delete
+        // fails, the row would keep receiving pushes for a device that can no
+        // longer show them.
+        if (nativeToken) await deleteToken({ data: { token: nativeToken } });
+        await unregisterNativePush();
+        setNativeToken(null);
+        toast.success("Push notifications turned off on this device.");
+        return;
+      }
       const endpoint = await unsubscribeFromPush();
       if (endpoint) await deleteSub({ data: { endpoint } });
       setPushEndpoint(null);
@@ -195,7 +272,7 @@ function NotificationsSettingsPage() {
     }
   }
 
-  const pushEnabled = !!pushEndpoint;
+  const pushEnabled = native ? !!nativeToken : !!pushEndpoint;
   const pushBlocked = support && !support.ok;
   // Supported here, but the user/phone has blocked notifications in settings.
   const permissionDenied = !!support?.ok && permission === "denied" && !pushEnabled;
@@ -218,12 +295,7 @@ function NotificationsSettingsPage() {
               <IconTile size={38} icon={<Smartphone className="size-5" />} />
               <div className="min-w-0 flex-1">
                 <div className="t-item">Push on this device</div>
-                {pushBlocked && support?.reason === "native-app" ? (
-                  <p className="t-body mt-1 text-[var(--mute)]">
-                    Push notifications in the app are coming soon. Email alerts below still
-                    reach you in the meantime.
-                  </p>
-                ) : pushBlocked && support?.reason === "ios-not-installed" ? (
+                {pushBlocked && support?.reason === "ios-not-installed" ? (
                   <p className="t-body mt-1 text-[var(--mute)]">
                     On iPhone, add this app to your home screen first, then come back here.
                   </p>
@@ -246,7 +318,9 @@ function NotificationsSettingsPage() {
                     Get instant alerts for sitter activity without needing to check email.
                   </p>
                 )}
-                {pushBlocked && support?.reason !== "native-app" && (
+                {/* The shell is never "blocked" now — it has its own transport —
+                    so this only ever fires for browsers/PWAs. */}
+                {pushBlocked && (
                   <div className="mt-2">
                     <CtaLink label="How to add this app to your home screen" onPress={() => setA2hsOpen(true)} />
                   </div>
