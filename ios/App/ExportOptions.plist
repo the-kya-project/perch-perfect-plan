@@ -7,15 +7,24 @@
   <key>signingStyle</key><string>manual</string>
   <key>teamID</key><string>DT93FSYJ9C</string>
   <key>signingCertificate</key><string>Apple Distribution</string>
-  <!-- Pinned by UUID, NOT by name. Two installed profiles were both named
+  <!-- Pinned by UUID, NOT by name. Two installed profiles were once both named
        "Kya App Store" and one of them carried no com.apple.developer.applesignin
        entitlement, so selecting by name was ambiguous and could ship an app where
        Sign in with Apple cannot work. The App ID's Sign in with Apple capability
-       was toggled off/on and this profile regenerated on 2026-09-16 while chasing
-       an Apple-side sign-up failure; both stale profiles were removed locally. -->
+       was toggled off/on and a profile regenerated on 2026-09-16 while chasing
+       an Apple-side sign-up failure; stale profiles are removed locally.
+
+       Repinned 2026-09-21: enabling the Push Notifications capability invalidated
+       the 2026-09-16 profile (it carried no aps-environment, so it could not sign
+       a push build at all). Regenerated as "Kya App Store Push 2026-09-21" and
+       verified by decoding it before use:
+           aps-environment            = production
+           com.apple.developer.applesignin = Default
+       Both must be present. Sign in with Apple silently missing from the signed
+       binary is what got build 4 rejected under guideline 2.1(a). -->
   <key>provisioningProfiles</key>
   <dict>
-    <key>com.thekyaproject.app</key><string>95485a28-e67e-40bb-9ddb-98f52163ca24</string>
+    <key>com.thekyaproject.app</key><string>9682294d-4253-4060-8fa4-2787f18b8b86</string>
   </dict>
 </dict>
 </plist>
