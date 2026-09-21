@@ -6,5 +6,11 @@
 	<array>
 		<string>Default</string>
 	</array>
+	<!-- Native push (APNs). "development" is correct here even for shipping:
+	     Xcode rewrites it to "production" when archiving with a distribution
+	     profile. REQUIRES the Push Notifications capability to be enabled on
+	     the App ID and the provisioning profile regenerated, or signing fails. -->
+	<key>aps-environment</key>
+	<string>development</string>
 </dict>
 </plist>
