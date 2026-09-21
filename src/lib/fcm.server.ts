@@ -10,7 +10,9 @@
  * Android is FCM-only because Capacitor's push plugin requires it there. iOS
  * deliberately does NOT go through FCM -- see apns.server.ts.
  */
-import { createSign } from "node:crypto";
+// node:crypto is imported dynamically inside accessToken(): a top-level
+// import resolves to __vite-browser-external in the client graph and fails
+// the production build (see apns.server.ts for the full explanation).
 
 const TOKEN_URL = "https://oauth2.googleapis.com/token";
 const SCOPE = "https://www.googleapis.com/auth/firebase.messaging";
@@ -77,6 +79,7 @@ async function accessToken(sa: ServiceAccount): Promise<string | null> {
     ? sa.private_key.replace(/\\n/g, "\n")
     : sa.private_key;
 
+  const { createSign } = await import("node:crypto");
   const signer = createSign("RSA-SHA256");
   signer.update(signingInput);
   signer.end();

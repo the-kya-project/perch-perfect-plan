@@ -15,8 +15,17 @@
  *
  * No JWT dependency is added; `node:crypto` covers it.
  */
-import { createSign } from "node:crypto";
-import http2 from "node:http2";
+// node:crypto and node:http2 are imported DYNAMICALLY, inside the functions
+// that use them. The `.server.ts` suffix is a convention in this repo, not a
+// bundler guarantee: Vite still walks this module's static imports, and neither
+// builtin has a browser shim, so a top-level import resolves to
+// __vite-browser-external and fails the production build with
+// `"createSign" is not exported`. node:process is fine at the top level (it IS
+// shimmed) — these two are not.
+//
+// The type-only import below is erased at compile time and emits no runtime
+// require, so it does not reintroduce the problem.
+import type { ClientHttp2Session } from "node:http2";
 
 const PROD_HOST = "https://api.push.apple.com";
 const SANDBOX_HOST = "https://api.sandbox.push.apple.com";
@@ -60,7 +69,7 @@ function normalisePem(value: string): string {
  */
 let cachedToken: { jwt: string; issuedAt: number } | null = null;
 
-function providerToken(): string {
+async function providerToken(): Promise<string> {
   const keyId = process.env.APNS_KEY_ID;
   const teamId = process.env.APNS_TEAM_ID;
   const privateKey = process.env.APNS_PRIVATE_KEY;
@@ -80,6 +89,7 @@ function providerToken(): string {
   // it, because it is a single line and cannot be corrupted in transit.
   const pem = normalisePem(privateKey);
 
+  const { createSign } = await import("node:crypto");
   const signer = createSign("SHA256");
   signer.update(signingInput);
   signer.end();
@@ -91,15 +101,16 @@ function providerToken(): string {
 }
 
 /** One HTTP/2 POST to /3/device/<token>. Resolves with Apple's status + reason. */
-function post(
+async function post(
   host: string,
   deviceToken: string,
   payload: string,
   jwt: string,
   topic: string,
 ): Promise<{ status: number; reason: string }> {
+  const http2 = (await import("node:http2")).default;
   return new Promise((resolve) => {
-    let session: http2.ClientHttp2Session;
+    let session: ClientHttp2Session;
     try {
       session = http2.connect(host);
     } catch (err) {
@@ -163,7 +174,7 @@ export async function sendApns(deviceToken: string, msg: ApnsMessage): Promise<A
   const topic = process.env.APNS_BUNDLE_ID || "com.thekyaproject.app";
   let jwt: string;
   try {
-    jwt = providerToken();
+    jwt = await providerToken();
   } catch {
     return { ok: false, prune: false, reason: "apns-not-configured" };
   }
