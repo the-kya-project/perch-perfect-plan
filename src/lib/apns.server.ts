@@ -39,6 +39,20 @@ function base64url(input: Buffer | string): string {
     .replace(/=+$/, "");
 }
 
+/** Accept a .p8 as raw PEM, PEM with escaped newlines, or base64 of the file. */
+function normalisePem(value: string): string {
+  const trimmed = value.trim();
+  if (trimmed.includes("BEGIN PRIVATE KEY")) {
+    return trimmed.includes("\\n") ? trimmed.replace(/\\n/g, "\n") : trimmed;
+  }
+  // No PEM header: assume base64 of the whole file.
+  const decoded = Buffer.from(trimmed, "base64").toString("utf8");
+  if (!decoded.includes("BEGIN PRIVATE KEY")) {
+    throw new Error("APNS_PRIVATE_KEY is neither PEM nor base64-encoded PEM");
+  }
+  return decoded;
+}
+
 /**
  * Apple requires the provider token be refreshed at least hourly and NOT more
  * often than every 20 minutes -- reissuing on every send earns a 429
@@ -59,8 +73,12 @@ function providerToken(): string {
   const claims = base64url(JSON.stringify({ iss: teamId, iat: now }));
   const signingInput = `${header}.${claims}`;
 
-  // Vercel env vars flatten newlines; restore them or the PEM won't parse.
-  const pem = privateKey.includes("\\n") ? privateKey.replace(/\\n/g, "\n") : privateKey;
+  // A .p8 is multi-line PEM, which is awkward to get into an env var intact:
+  // pasting mangles it and piping it into a CLI prompt loses the first line.
+  // So accept three shapes — raw PEM, PEM with escaped \n, or base64 of the
+  // whole file — and normalise here. base64 is the one to prefer when setting
+  // it, because it is a single line and cannot be corrupted in transit.
+  const pem = normalisePem(privateKey);
 
   const signer = createSign("SHA256");
   signer.update(signingInput);
