@@ -44,3 +44,7 @@ dist-ssr
 # Backfill script scratch bundles
 .backfill-entry.mjs
 .backfill-bundle.mjs
+# Local env files (vercel link/pull writes these). .env.example is the
+# committed template and must stay tracked.
+.env*
+!.env.example
