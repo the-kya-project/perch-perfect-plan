@@ -26,6 +26,7 @@ import {
   registerForNativePush,
   unregisterNativePush,
   nativePushPermission,
+  nativePushAvailable,
 } from "@/lib/pushNative";
 import { markNotificationsReviewed } from "@/components/OwnerChecklist";
 import { AddToHomeModal } from "@/components/AddToHomeModal";
@@ -124,6 +125,13 @@ function NotificationsSettingsPage() {
       // push_weight_reminder/push_checkin_reminder postdate the generated types
       if (data) setPrefs(data as unknown as Prefs);
       if (native) {
+        // Older shells (shipped before native push) do not contain the plugin.
+        // A Vercel deploy reaches them instantly, so without this they'd get an
+        // enable button that always fails. Leave them on the old message.
+        if (!(await nativePushAvailable())) {
+          setSupport({ ok: false, reason: "native-app" });
+          return;
+        }
         // detectPushSupport() reports "native-app" (web-push is genuinely
         // unavailable in a WKWebView), but the shell DOES support push via
         // APNs/FCM — so the UI must not treat the shell as unsupported.
@@ -295,7 +303,12 @@ function NotificationsSettingsPage() {
               <IconTile size={38} icon={<Smartphone className="size-5" />} />
               <div className="min-w-0 flex-1">
                 <div className="t-item">Push on this device</div>
-                {pushBlocked && support?.reason === "ios-not-installed" ? (
+                {pushBlocked && support?.reason === "native-app" ? (
+                  <p className="t-body mt-1 text-[var(--mute)]">
+                    Push notifications arrive in the next app update. Email alerts below
+                    still reach you in the meantime.
+                  </p>
+                ) : pushBlocked && support?.reason === "ios-not-installed" ? (
                   <p className="t-body mt-1 text-[var(--mute)]">
                     On iPhone, add this app to your home screen first, then come back here.
                   </p>
@@ -318,9 +331,9 @@ function NotificationsSettingsPage() {
                     Get instant alerts for sitter activity without needing to check email.
                   </p>
                 )}
-                {/* The shell is never "blocked" now — it has its own transport —
-                    so this only ever fires for browsers/PWAs. */}
-                {pushBlocked && (
+                {/* Home-screen advice is meaningless inside the shell: an older
+                    binary just needs an app update, not a bookmark. */}
+                {pushBlocked && support?.reason !== "native-app" && (
                   <div className="mt-2">
                     <CtaLink label="How to add this app to your home screen" onPress={() => setA2hsOpen(true)} />
                   </div>

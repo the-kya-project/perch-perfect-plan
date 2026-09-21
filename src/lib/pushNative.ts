@@ -21,6 +21,26 @@ function transportForPlatform(platform: string): "apns" | "fcm" {
 }
 
 /**
+ * Is the push plugin actually IN this binary?
+ *
+ * This matters because web code ships independently of the native shell: a
+ * Vercel deploy reaches every already-installed app instantly, including the
+ * builds that predate native push. Without this check those users would get an
+ * "enable push" button that can only ever fail, because the plugin they'd be
+ * calling does not exist in their binary. They keep the "coming soon" message
+ * until they update.
+ */
+export async function nativePushAvailable(): Promise<boolean> {
+  if (!isNativeApp()) return false;
+  try {
+    const { Capacitor } = await import("@capacitor/core");
+    return Capacitor.isPluginAvailable("PushNotifications");
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Ask the OS for notification permission and resolve with the device token.
  *
  * Capacitor delivers the token through an EVENT, not the return value of
