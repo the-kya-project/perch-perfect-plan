@@ -259,9 +259,25 @@ export function RecordRow({
 }
 
 // Convenience: a plain white card surface that RecordRows sit inside.
+//
+// `contain: paint` works around an Android WebView compositing bug. On a device
+// with a FRACTIONAL devicePixelRatio (2.625 at 420dpi — Pixel-class hardware, and
+// the most common Android density), a tall card would have a ~10px horizontal
+// slice of its own rows re-painted further down the page, over unrelated content.
+// It is purely a paint artifact: hit-testing and the accessibility tree both show
+// nothing there, and the layout is correct in every other engine. The strip's
+// position moves with the DPR and disappears entirely at an integer DPR.
+//
+// `contain: paint` tells the compositor nothing paints outside this box, which is
+// already guaranteed by `overflow-hidden` — so it changes no layout or visuals,
+// it just stops the mis-rastered tile. Verified on a 420dpi emulator against a
+// real WebView: strip present without it, gone with it.
 export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
-    <div className={`overflow-hidden rounded-[18px] bg-white ring-1 ring-[var(--line2)] ${className}`} style={{ boxShadow: "0 1px 0 rgba(40,50,40,.02), 0 6px 14px -8px rgba(40,50,40,.08)" }}>
+    <div
+      className={`overflow-hidden rounded-[18px] bg-white ring-1 ring-[var(--line2)] ${className}`}
+      style={{ boxShadow: "0 1px 0 rgba(40,50,40,.02), 0 6px 14px -8px rgba(40,50,40,.08)", contain: "paint" }}
+    >
       {children}
     </div>
   );
