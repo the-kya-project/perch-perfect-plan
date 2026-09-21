@@ -1,26 +1,43 @@
 {
   "project_info": {
-    "project_number": "1048011148484",
-    "project_id": "kya-project-4d386",
-    "storage_bucket": "kya-project-4d386.firebasestorage.app"
+    "project_number": "481724773308",
+    "project_id": "parrot-care-co-pilot",
+    "storage_bucket": "parrot-care-co-pilot.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1048011148484:android:ad9f1a4737d5e67b5f8d91",
+        "mobilesdk_app_id": "1:481724773308:android:88a906cac6e9f1375df1b9",
         "android_client_info": {
           "package_name": "com.thekyaproject.app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "481724773308-plqmbh26monghfpbtnr1cgfib1v3cqjs.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
-          "current_key": "AIzaSyBvO-PqrEnztnGQUJvPQnkEQS5N2fmEr8Y"
+          "current_key": "AIzaSyAGUDW4Wa4GgQolZFinpO-udeh3b37WAIw"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "481724773308-plqmbh26monghfpbtnr1cgfib1v3cqjs.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "481724773308-85q8knidtnhf5f8i9g65ha3mflhg85eb.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.thekyaproject.app"
+              }
+            }
+          ]
         }
       }
     }
