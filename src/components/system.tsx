@@ -52,7 +52,14 @@ export function InkHero({
     <header className="mx-[calc(50%-50vw)] bg-[var(--ink)] text-white">
       <div className="mx-auto max-w-md px-[22px] pb-[26px] pt-[max(env(safe-area-inset-top),18px)]">
       {hasChrome && (
-        <div className="flex min-h-9 items-center gap-2">
+        // `mt-1.5` keeps the icon row clear of the native shell's frosted
+        // status-bar scrim (`html.native-app body::before`, styles.css). The
+        // scrim is exactly env(safe-area-inset-top) tall and this container's
+        // padding-top resolves to the same value, so the row would start flush
+        // against it -- and the bell's unread badge, which overhangs 2px via
+        // `-top-0.5`, would sit UNDER the blur and read as clipped. Only
+        // visible when there are unread scans, which is why it comes and goes.
+        <div className="mt-1.5 flex min-h-9 items-center gap-2">
           {showLockup ? <BrandLockup orientation="horizontal" variant="ink" size={brandSize} /> : <span />}
           <div className="flex-1" />
           {backIcon && (
