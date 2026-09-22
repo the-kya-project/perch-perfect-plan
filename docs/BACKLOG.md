@@ -84,6 +84,29 @@ owner as "too big". Don't resume without asking.
 
 ---
 
+## Release / store
+
+### Android still shows "Kya" on the launcher
+iOS ships "Kya & Co." from 1.0.1 / build 9; Android versionCode 4 was mid-review when the
+name was fixed and was deliberately not disturbed, so it ships "Kya".
+
+- The fix is **already committed** in `android/app/src/main/res/values/strings.xml`
+  (`app_name` and `title_activity_main`) — it rides along with the next Android build.
+- While there, bump `versionName` from `1.0` to match iOS. Play only requires `versionCode`
+  to increase, so the mismatch is cosmetic, but the two stores reading differently is
+  confusing.
+
+### App Store Connect rejection emails go somewhere unread
+Apple's ITMS-90062 rejection on 2026-09-22 never arrived at brittany@thekyaproject.com — a
+mailbox search found nothing from Apple since July. The rejection was only noticed by
+looking at the console.
+
+- Fix: App Store Connect → Users and Access → the user → notification settings, and point
+  App Review notifications at a mailbox that's actually read.
+- Worth doing before the next submission; a missed rejection can sit for days.
+
+---
+
 ## Housekeeping
 
 ### `appstore-screenshots/` is untracked — decide what to do with it
