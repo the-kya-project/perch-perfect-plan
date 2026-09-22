@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleDisplayName</key>
-	<string>Kya</string>
+	<string>Kya &amp; Co.</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -39,18 +39,18 @@
 			</array>
 		</dict>
 	</array>
-	<key>GIDClientID</key>
-	<string>481724773308-85q8knidtnhf5f8i9g65ha3mflhg85eb.apps.googleusercontent.com</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<key>GIDClientID</key>
+	<string>481724773308-85q8knidtnhf5f8i9g65ha3mflhg85eb.apps.googleusercontent.com</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>Kya uses the camera so you can record short care clips and take bird photos.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Kya uses the microphone when you record short care clips.</string>
-	<key>LSRequiresIPhoneOS</key>
-	<true/>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

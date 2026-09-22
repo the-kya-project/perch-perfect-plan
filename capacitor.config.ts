@@ -6,7 +6,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 // nothing in this file (or ios/ / android/) participates in the Vercel build.
 const config: CapacitorConfig = {
   appId: 'com.thekyaproject.app',
-  appName: 'Kya',
+  appName: 'Kya & Co.',
   // Required field; only used if we later switch to bundling the client
   // locally. In remote-URL mode the shell never reads it.
   webDir: '.vercel/output/static',
