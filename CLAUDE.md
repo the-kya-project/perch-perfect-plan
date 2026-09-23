@@ -1,6 +1,11 @@
 # CLAUDE.md
 
-Project context for Claude Code. This app is "Parrot Care Co-Pilot" by The Kya Project: a bird owner builds a care plan for their bird and shares a private, read-only view with a sitter.
+Project context for Claude Code. This app is "Kya & Co." (formerly "Parrot Care Co-Pilot") by The Kya Project.
+
+## What the product is
+Kya & Co. is a full-service health and wellness app for parrots. Its job is keeping a bird healthy at all times: the care plan, weight tracking, daily health scans, journal and moments, the vet summary, and household co-care all serve that mission.
+
+It is **not** a pet-sitting app. Sharing the care plan with a sitter began as the original idea and is still a valued feature, because it keeps care consistent when the owner is away. It supports the health mission rather than defining the product. Frame copy, emails, onboarding and positioning around the bird's lifelong health and wellbeing, with sitter access as one way the app delivers on that.
 
 ## Stack
 - Vite 7 + React 19 + TypeScript
