@@ -3,7 +3,7 @@
 Things we know about and chose not to do yet. Each entry is written to be picked up
 cold: what the problem is, where the code lives, and what "done" looks like.
 
-Nothing here is blocking a release. Last updated 2026-09-22.
+Nothing here is blocking a release. Last updated 2026-09-23.
 
 ---
 
@@ -81,6 +81,39 @@ does nothing for app users. A working react-pdf implementation exists on the bra
 ### Onboarding quickstart is shelved
 Finished and QA'd work parked on `origin/redesign/onboarding-quickstart`. Shelved by the
 owner as "too big". Don't resume without asking.
+
+### Each bird's normal weight range, and alerts when a weigh-in falls outside it
+**Status:** requested by the owner 2026-09-23. Wanted before weight alerts can ship.
+
+Today the "normal range" is whatever the owner types into the health step of the
+walkthrough (`birds.normal_weight`, `normal_weight_min`, `normal_weight_max`, set in
+`$birdId.setup.tsx`). It's shown on the care plan and the sitter view, but nothing checks
+new weigh-ins against it. `src/lib/weightTrend.ts` only labels trends (steady within
+±2.5% over the window, or up/down) and deliberately never shows red.
+
+What to build:
+- **Baseline.** Decide how the app establishes a bird's normal range from its own
+  weigh-ins, and when it has enough data to trust one. Starting proposal: at least 7
+  weigh-ins over at least 14 days. Prefer `before_meal` entries (`weight_entries.meal_relation`)
+  when there are enough of them, because weight swings around meals. A range the owner
+  entered by hand overrides the computed one. Show the range on the weight page, with a
+  "still learning [bird]'s normal" state until the baseline exists.
+- **Alert thresholds.** Starting proposal, to be checked with an avian vet before shipping:
+  - "worth a look": 5% or more below the baseline, or three weigh-ins in a row going down
+  - "call your vet": 10% or more below the baseline
+  - gains above the range get a gentler note
+- **Delivery.** Show the alert in the app on the weight page and in the bird's record.
+  Also send push and email, because the owner wants email alerts too. Send one alert per
+  crossing, not one per weigh-in. When a sitter or household member logs the weight, alert
+  the owner. Wording is the same kind as the flagged-scan alert: specific, calm, never a
+  diagnosis, and always with the line "This app doesn't diagnose illness… contact an
+  avian veterinarian."
+- **Emails.** Add a new builder in `src/lib/emailTemplates.ts` with Dutch copy in
+  `src/locales/emails.*.jsonc`, plus a notification-settings toggle that is on by default.
+
+Open questions: species reference ranges as a starting point before a bird has its own
+baseline (nothing in the repo holds them yet), and whether a vet should review the
+thresholds before launch.
 
 ---
 
