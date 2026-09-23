@@ -7,6 +7,12 @@
  *   - at most ONE onboarding email per user per run (earliest applicable stage)
  *   - each stage sends AT MOST ONCE EVER per user (onboarding_email_log)
  *   - stages, in funnel order:
+ *       welcome          — the day-0 hello from Brittany; not gated on any
+ *                          action, and limited to accounts created on/after
+ *                          WELCOME_LAUNCH so existing users don't get welcomed
+ *                          weeks late. NOTE: this cron runs once a day, so the
+ *                          welcome lands on the next run, not an hour after
+ *                          signup — move it off the cron if that matters.
  *       add_first_bird   — account ≥2 days old, no (living) birds
  *       log_first_weight — oldest bird ≥3 days old, zero weight entries
  *       run_first_scan   — oldest bird ≥5 days old, no daily health scan yet
@@ -34,13 +40,18 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { withCronTelemetry } from "@/lib/cronTelemetry";
 
-type Stage = "add_first_bird" | "start_care_plan" | "log_first_weight" | "run_first_scan" | "weight_trend";
+type Stage = "welcome" | "add_first_bird" | "start_care_plan" | "log_first_weight" | "run_first_scan" | "weight_trend";
 
 const DAY = 1000 * 60 * 60 * 24;
 
 // Accounts created before this date never enter the automated drip (they get
 // the one-off manual campaign instead). Set to the day the drip shipped.
 const ONBOARDING_LAUNCH = "2026-07-21T00:00:00Z";
+// The welcome email needs its OWN, later cutoff. Accounts created between
+// ONBOARDING_LAUNCH and this date are already deep in the drip — sending them
+// "Welcome to Kya & Co.!" weeks after they signed up would be worse than not
+// sending it. Only accounts created from here on get a welcome.
+const WELCOME_LAUNCH = "2026-09-23T00:00:00Z";
 
 function olderThanDays(iso: string | null | undefined, days: number): boolean {
   if (!iso) return false;
@@ -157,6 +168,9 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
           // the FIRST one not yet sent wins (so a person parked on one stage
           // doesn't block the later nudges forever).
           const candidates: Stage[] = [];
+          // Welcome comes first in funnel order and is not gated on any action:
+          // it is the day-0 hello, sent once, whether or not a bird exists yet.
+          if (new Date(profile.created_at) >= new Date(WELCOME_LAUNCH)) candidates.push("welcome");
           if (birds.length === 0) {
             if (olderThanDays(profile.created_at, 2)) candidates.push("add_first_bird");
           } else {
@@ -190,16 +204,17 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
         }
 
         const {
+          buildWelcomeEmail,
           buildOnboardingAddBirdEmail,
           buildOnboardingCarePlanEmail,
           buildOnboardingFirstWeightEmail,
           buildOnboardingHealthScanEmail,
           buildOnboardingWeightTrendEmail,
         } = await import("@/lib/emailTemplates");
-        const { sendTransactionalEmail } = await import("@/lib/brevoEmail.server");
+        const { sendTransactionalEmail, founderReplyTo } = await import("@/lib/brevoEmail.server");
 
         const results: Record<Stage, number> = {
-          add_first_bird: 0, start_care_plan: 0, log_first_weight: 0, run_first_scan: 0, weight_trend: 0,
+          welcome: 0, add_first_bird: 0, start_care_plan: 0, log_first_weight: 0, run_first_scan: 0, weight_trend: 0,
         };
         let failed = 0;
 
@@ -210,7 +225,9 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
           // Owner has an account (group 1) → their stored locale; null → English.
           const locale = (profile as { locale?: string } | undefined)?.locale ?? undefined;
           const built =
-            p.stage === "add_first_bird"
+            p.stage === "welcome"
+              ? buildWelcomeEmail({ firstName, birdName: p.birdName, link: appUrl, locale })
+              : p.stage === "add_first_bird"
               ? buildOnboardingAddBirdEmail({ firstName, link: `${appUrl}/birds/new`, locale })
               : p.stage === "start_care_plan"
                 ? buildOnboardingCarePlanEmail({ birdName: bird, link: `${appUrl}/dashboard`, locale })
@@ -226,6 +243,9 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
             subject: built.subject,
             htmlContent: built.html,
             textContent: built.text,
+            // The welcome email is signed by Brittany and invites a reply, so
+            // the reply has to reach her rather than the generic sender.
+            ...(p.stage === "welcome" ? { replyTo: founderReplyTo() } : {}),
           });
           if (res.ok) {
             // Log AFTER a confirmed send; a failed send retries on a later run.

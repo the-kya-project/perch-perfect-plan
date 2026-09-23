@@ -10,7 +10,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { computeTriage, type ScanAnswer, type ScanFieldKey } from "./triage";
-import { buildDailyLogEmail } from "./emailTemplates";
+import { buildDailyLogEmail, buildSitterConcernEmail } from "./emailTemplates";
 import { emailT } from "./i18n/emailI18n.server";
 import { mergeEmergency } from "./emergency";
 import { isCfClip, cfUid } from "./clipRef";
@@ -286,7 +286,7 @@ export async function notifyOwnerSomethingWrong(sb: any, birdId: string, coverin
     });
   } catch (e) { console.error("[sitter-concern] push failed", e); }
   try {
-    const { data: prof } = await sb.from("profiles").select("email, display_name").eq("id", ownerId).maybeSingle();
+    const { data: prof } = await sb.from("profiles").select("email, display_name, locale").eq("id", ownerId).maybeSingle();
     let email = (prof?.email ?? "").toString();
     if (!email) {
       const { data: u } = await sb.auth.admin.getUserById(ownerId);
@@ -294,18 +294,25 @@ export async function notifyOwnerSomethingWrong(sb: any, birdId: string, coverin
     }
     if (email) {
       const { sendTransactionalEmail } = await import("./brevoEmail.server");
-      const subject = `${coveringLabel} flagged something serious about ${birdName}`;
-      const text = `${coveringLabel} paused ${birdName}'s daily reminders and flagged that something is seriously wrong. Please call ${coveringLabel} as soon as you can. Nothing about ${birdName}'s record has changed.`;
-      // coveringLabel can carry a member's self-chosen display_name (and
-      // birdName is owner text) — escape EVERYTHING interpolated into the HTML
-      // body so a crafted name renders as inert text, never live markup. The
-      // plain-text part needs no escaping.
+      const appUrl = process.env.APP_URL || "https://app.thekyaproject.com";
+      // Owner has an account → their stored locale; null falls back to English
+      // inside the builder. This email used to be English-only.
+      const locale = (prof as { locale?: string } | null)?.locale ?? undefined;
+      // coveringLabel can carry a member's self-chosen display_name and
+      // birdName is owner text — the builder escapes both before they reach
+      // the markup, so a crafted name renders as inert text.
+      const built = buildSitterConcernEmail({
+        birdName,
+        coveringLabel,
+        link: `${appUrl}/birds/${birdId}`,
+        locale,
+      });
       await sendTransactionalEmail({
         to: email,
         toName: (prof?.display_name ?? undefined) as string | undefined,
-        subject,
-        htmlContent: `<p>${escapeHtml(text)}</p>`,
-        textContent: text,
+        subject: built.subject,
+        htmlContent: built.html,
+        textContent: built.text,
       });
     }
   } catch (e) { console.error("[sitter-concern] email failed", e); }

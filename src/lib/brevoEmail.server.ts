@@ -9,6 +9,8 @@
  *   BREVO_API_KEY       same key used by the capture-lead edge function
  *   BREVO_SENDER_EMAIL  a sender verified in Brevo (Senders, Domains & Dedicated IPs)
  *   BREVO_SENDER_NAME   optional display name (defaults to "The Kya Project")
+ *   BREVO_REPLY_TO      optional; where personal emails route replies. Defaults
+ *                       to brittany@thekyaproject.com — see founderReplyTo().
  *
  * Returns a result object instead of throwing so callers can fire-and-forget
  * without ever breaking the primary action (the scan still logs if email fails).
@@ -37,6 +39,15 @@ const RESERVED_TLDS = new Set(["test", "example", "invalid", "localhost"]);
 // It is the only rule here that would then silently swallow deliverable mail.
 const NO_MAILBOX = /^appreview([.+][^@]*)?@thekyaproject\.com$/i;
 
+/** Reply-to for the emails written as personal notes from Brittany — the
+ *  welcome email and the bereavement note. Both say "reply to this email" in
+ *  the body, so the address has to reach a mailbox a person reads. Today this
+ *  matches the sender, which makes it a no-op; it is set explicitly so the
+ *  promise survives the sender address ever changing to a noreply@ or hello@. */
+export function founderReplyTo(): { email: string; name: string } {
+  return { email: process.env.BREVO_REPLY_TO || "brittany@thekyaproject.com", name: "Brittany" };
+}
+
 export function isUndeliverableAddress(to: string): boolean {
   const addr = to.trim().toLowerCase();
   if (NO_MAILBOX.test(addr)) return true;
@@ -55,6 +66,10 @@ export interface TransactionalEmail {
   subject: string;
   htmlContent: string;
   textContent?: string;
+  /** Where a reply goes, when that isn't the sender. The welcome email and the
+   *  bereavement note are written as personal notes that invite a reply, so the
+   *  reply has to reach a mailbox someone reads. Omit for everything else. */
+  replyTo?: { email: string; name?: string };
 }
 
 export async function sendTransactionalEmail(
@@ -79,6 +94,7 @@ export async function sendTransactionalEmail(
       body: JSON.stringify({
         sender: { email: senderEmail, name: senderName },
         to: [{ email: email.to, name: email.toName || undefined }],
+        ...(email.replyTo ? { replyTo: email.replyTo } : {}),
         subject: email.subject,
         htmlContent: email.htmlContent,
         textContent: email.textContent,

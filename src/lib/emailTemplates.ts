@@ -28,7 +28,21 @@ export type BuiltEmail = { subject: string; html: string; text: string };
 function shell(opts: {
   kicker: string;
   heading: string;
-  body: string;
+  /** Plain prose, wrapped in the standard paragraph. Ignored when `bodyHtml`
+   *  is given. */
+  body?: string;
+  /** Raw body markup, for emails that need more than one paragraph (a list, an
+   *  alert box). Emitted as-is instead of the wrapped `body` paragraph — a
+   *  caller passing nested `<p>` through `body` would produce invalid HTML. */
+  bodyHtml?: string;
+  /** Kicker band and CTA colour. Defaults to the brand green. Only the
+   *  "something is seriously wrong" email overrides it, so clay red keeps
+   *  meaning exactly one thing across the whole programme. */
+  accent?: string;
+  /** Space above the closing note, in px. */
+  footGap?: number;
+  /** Render the closing note as fine print — smaller and italic. */
+  footFine?: boolean;
   /** CTA button + its href. Omit both for an informational email with no action
    *  (e.g. a cancellation to a token sitter whose link is already dead). */
   cta?: string;
@@ -40,6 +54,8 @@ function shell(opts: {
    *  the English literals are used. */
   t?: EmailT;
 }): string {
+  const accent = opts.accent ?? "#1a3d2e";
+  const footGap = opts.footGap ?? 20;
   const fieldNotes = opts.t ? opts.t("email.shell.fieldNotes") : "From the field notes";
   const footNote = opts.t ? opts.t("email.shell.footNote") : "Kya &amp; Co. — by The Kya Project";
   const reading = opts.reading
@@ -60,14 +76,14 @@ function shell(opts: {
     <div style="background:#f4f1e8;padding:20px 24px;text-align:left;border-bottom:1px solid #eee6d4;">
       <img src="https://app.thekyaproject.com/brand/lockups/horizontal-cream.png" width="280" alt="Kya & Co. — by The Kya Project" style="display:block;width:280px;max-width:100%;height:auto;" />
     </div>
-    <div style="background:#1a3d2e;padding:20px 24px;">
+    <div style="background:${accent};padding:20px 24px;">
       <p style="margin:0;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.85);">${opts.kicker}</p>
       <h1 style="margin:6px 0 0;font-size:20px;font-weight:500;color:#fff;">${opts.heading}</h1>
     </div>
     <div style="padding:24px;">
-      <p style="margin:0 0 8px;font-size:15px;color:#1a3d2e;">${opts.body}</p>${opts.cta ? `
-      <a href="${opts.link}" style="display:inline-block;margin-top:12px;background:#1a3d2e;color:#fff;text-decoration:none;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:600;">${opts.cta}</a>` : ""}${reading}
-      <p style="margin:20px 0 0;font-size:12px;color:#8a897f;line-height:1.5;">${opts.foot}</p>
+      ${opts.bodyHtml ?? `<p style="margin:0 0 8px;font-size:15px;color:#1a3d2e;">${opts.body}</p>`}${opts.cta ? `
+      <a href="${opts.link}" style="display:inline-block;margin-top:12px;background:${accent};color:#fff;text-decoration:none;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:600;">${opts.cta}</a>` : ""}${reading}
+      <p style="margin:${footGap}px 0 0;font-size:${opts.footFine ? "11.5" : "12"}px;color:#8a897f;line-height:1.5;${opts.footFine ? "font-style:italic;" : ""}">${opts.foot}</p>
       <p style="margin:18px 0 0;font-size:11px;color:#8a897f;text-align:center;border-top:1px solid #eee6d4;padding-top:12px;">${footNote}</p>
     </div>
   </div>
@@ -516,5 +532,107 @@ export function buildSitterInviteCancelledEmail(opts: {
     text:
       `${opts.ownerName} cancelled the sit for ${opts.birdNames} set for ${opts.dateRange}. ` +
       `You're no longer covering it and your link no longer works — nothing you need to do.`,
+  };
+}
+
+// ── Welcome (day 0) ──────────────────────────────────────────────────────────
+// A personal note from Brittany, not a product announcement: it is signed by
+// her, invites a reply, and the send sets reply-to accordingly. Two variants
+// off one template — a bird added during signup turns the first step from
+// "add your bird" into "<bird>'s record is ready", so day 0 stays ONE email.
+export function buildWelcomeEmail(opts: { firstName?: string; birdName?: string; link: string; locale?: string }): BuiltEmail {
+  const t = emailT(opts.locale);
+  const hasBird = !!opts.birdName;
+  const bird = escapeHtml(opts.birdName ?? "");
+  const hi = opts.firstName
+    ? t("email.welcome.hiName", { firstName: escapeHtml(opts.firstName) })
+    : t("email.welcome.hiNoName");
+  const p = (s: string) => `<p style="margin:0 0 12px;font-size:15px;color:#1a3d2e;line-height:1.6;">${s}</p>`;
+  const li = (s: string) =>
+    `<p style="margin:0 0 11px 0;font-size:15px;color:#1a3d2e;line-height:1.6;">&bull;&nbsp; ${s}</p>`;
+  const bodyHtml =
+    p(hi) +
+    p(t("email.welcome.intro")) +
+    p(t("email.welcome.built")) +
+    p(t("email.welcome.startThisWeek")) +
+    li(hasBird ? t("email.welcome.stepBirdReady", { bird }) : t("email.welcome.stepAddBird")) +
+    li(t("email.welcome.stepWeight")) +
+    li(t("email.welcome.stepScan")) +
+    p(t("email.welcome.habits")) +
+    p(t("email.welcome.carePlan")) +
+    p(t("email.welcome.reply")) +
+    p(t("email.welcome.signoff"));
+  return {
+    subject: t("email.welcome.subject"),
+    html: shell({
+      kicker: hasBird ? t("email.welcome.kickerBird", { bird }) : t("email.welcome.kicker"),
+      heading: hasBird ? t("email.welcome.headingBird", { bird }) : t("email.welcome.heading"),
+      bodyHtml,
+      cta: t("email.welcome.cta"),
+      link: opts.link,
+      foot: t("email.welcome.foot"),
+      footGap: 32,
+      footFine: true,
+      t,
+    }),
+    text: t("email.welcome.text", { link: opts.link }),
+  };
+}
+
+// ── "Someone flagged something serious" ──────────────────────────────────────
+// Replaces an unstyled <p>. The ONLY email allowed the clay-red band: it means
+// "call someone now" and stays reserved for that. coveringLabel can carry a
+// member's self-chosen display name and birdName is owner text, so both are
+// escaped before they reach the markup.
+export function buildSitterConcernEmail(opts: { birdName: string; coveringLabel: string; link: string; locale?: string }): BuiltEmail {
+  const t = emailT(opts.locale);
+  const bird = escapeHtml(opts.birdName);
+  const covering = escapeHtml(opts.coveringLabel);
+  const alert = `<div style="background:#fbf0ec;border:1px solid #e8c9bd;border-radius:12px;padding:14px 16px;margin:0 0 14px;">
+        <p style="margin:0;font-size:14px;color:#7a2d18;line-height:1.55;">${t("email.sitterConcern.alert", { covering, bird })}</p>
+      </div>`;
+  return {
+    subject: t("email.sitterConcern.subject", { coveringLabel: opts.coveringLabel, birdName: opts.birdName }),
+    html: shell({
+      kicker: t("email.sitterConcern.kicker"),
+      heading: t("email.sitterConcern.heading", { covering, bird }),
+      bodyHtml: alert + `<p style="margin:0;font-size:15px;color:#1a3d2e;line-height:1.6;">${t("email.sitterConcern.body", { bird })}</p>`,
+      accent: "#7a2d18",
+      cta: t("email.sitterConcern.cta", { bird }),
+      link: opts.link,
+      foot: t("email.sitterConcern.foot", { bird }),
+      footGap: 32,
+      t,
+    }),
+    text: t("email.sitterConcern.text", { coveringLabel: opts.coveringLabel, birdName: opts.birdName, link: opts.link }),
+  };
+}
+
+// ── When a bird dies ─────────────────────────────────────────────────────────
+// Deliberately NOT shell(): no lockup, no kicker band, no button, body set in a
+// serif. It should arrive as a letter from Brittany, not a notification from
+// software. Names only the bird and assumes nothing about the reader — see
+// BUG-6 in docs/qa-bugs-2026-09-16.md on gendered wording in grief copy.
+// The farewell screen in the app already covers the practical steps, so this
+// deliberately mentions no necropsy, no body care, and nothing to do.
+export function buildBereavementEmail(opts: { firstName?: string; birdName: string; locale?: string }): BuiltEmail {
+  const t = emailT(opts.locale);
+  const bird = escapeHtml(opts.birdName);
+  const hi = opts.firstName
+    ? t("email.bereavement.hiName", { firstName: escapeHtml(opts.firstName) })
+    : t("email.bereavement.hiNoName");
+  const p = (s: string) =>
+    `<p style="margin:0 0 15px;font-family:Georgia,'Times New Roman',serif;font-size:15.5px;line-height:1.72;color:#2b332c;">${s}</p>`;
+  return {
+    subject: t("email.bereavement.subject", { birdName: opts.birdName }),
+    html: `
+<div style="background:#f4f1e8;padding:24px;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">
+  <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;border:1px solid #e3ded0;">
+    <div style="padding:30px 28px;">
+      ${p(hi)}${p(t("email.bereavement.sorry", { bird }))}${p(t("email.bereavement.grief"))}${p(t("email.bereavement.record", { bird }))}${p(t("email.bereavement.story", { bird }))}${p(t("email.bereavement.signoff"))}
+    </div>
+  </div>
+</div>`,
+    text: t("email.bereavement.text", { birdName: opts.birdName }),
   };
 }
