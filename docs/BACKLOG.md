@@ -102,18 +102,24 @@ What to build:
   - "worth a look": 5% or more below the baseline, or three weigh-ins in a row going down
   - "call your vet": 10% or more below the baseline
   - gains above the range get a gentler note
-- **Delivery.** Show the alert in the app on the weight page and in the bird's record.
-  Also send push and email, because the owner wants email alerts too. Send one alert per
-  crossing, not one per weigh-in. When a sitter or household member logs the weight, alert
-  the owner. Wording is the same kind as the flagged-scan alert: specific, calm, never a
-  diagnosis, and always with the line "This app doesn't diagnose illness… contact an
-  avian veterinarian."
-- **Emails.** Add a new builder in `src/lib/emailTemplates.ts` with Dutch copy in
-  `src/locales/emails.*.jsonc`, plus a notification-settings toggle that is on by default.
+- **Delivery: in-app only. No email.** Decided by the owner 2026-09-23, reversing the
+  earlier "push and email too". Show the alert in the app on the weight page and in the
+  bird's record. Send one alert per crossing, not one per weigh-in. When a sitter or
+  household member logs the weight, alert the owner. Wording is the same kind as the
+  flagged-scan alert: specific, calm, never a diagnosis, and always with the line
+  "This app doesn't diagnose illness… contact an avian veterinarian."
+- **Don't build an email builder for this.** No entry in `src/lib/emailTemplates.ts`,
+  no keys in `src/locales/emails.*.jsonc`, no notification-settings toggle.
 
 Open questions: species reference ranges as a starting point before a bird has its own
 baseline (nothing in the repo holds them yet), and whether a vet should review the
 thresholds before launch.
+
+One consequence of in-app-only worth revisiting: the owner sees the alert when they next
+open the app, not when the weigh-in happens. A drop noticed three days late is a different
+product from one that reaches them that morning. Push would close the gap without an email
+— but the engagement-nudge work found only one push subscriber, so that channel is thin
+until native push adoption grows. Deliberately deferred, not overlooked.
 
 ---
 
