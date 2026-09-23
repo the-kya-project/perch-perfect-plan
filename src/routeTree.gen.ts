@@ -54,6 +54,7 @@ import { Route as AuthenticatedBirdsBirdIdIndexRouteImport } from './routes/_aut
 import { Route as ApiPublicHooksOnboardingEmailsRouteImport } from './routes/api/public/hooks/onboarding-emails'
 import { Route as ApiPublicHooksEngagementNudgesRouteImport } from './routes/api/public/hooks/engagement-nudges'
 import { Route as ApiPublicHooksCarePlanRemindersRouteImport } from './routes/api/public/hooks/care-plan-reminders'
+import { Route as ApiPublicHooksBereavementNoteRouteImport } from './routes/api/public/hooks/bereavement-note'
 import { Route as AuthenticatedCoveringSitIdBirdIdRouteImport } from './routes/_authenticated/covering.$sitId.$birdId'
 import { Route as AuthenticatedBirdsBirdIdWeightRouteImport } from './routes/_authenticated/birds/$birdId.weight'
 import { Route as AuthenticatedBirdsBirdIdViewAsSitterRouteImport } from './routes/_authenticated/birds/$birdId.view-as-sitter'
@@ -312,6 +313,12 @@ const ApiPublicHooksCarePlanRemindersRoute =
     path: '/api/public/hooks/care-plan-reminders',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksBereavementNoteRoute =
+  ApiPublicHooksBereavementNoteRouteImport.update({
+    id: '/api/public/hooks/bereavement-note',
+    path: '/api/public/hooks/bereavement-note',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedCoveringSitIdBirdIdRoute =
   AuthenticatedCoveringSitIdBirdIdRouteImport.update({
     id: '/covering/$sitId/$birdId',
@@ -484,6 +491,7 @@ export interface FileRoutesByFullPath {
   '/birds/$birdId/view-as-sitter': typeof AuthenticatedBirdsBirdIdViewAsSitterRoute
   '/birds/$birdId/weight': typeof AuthenticatedBirdsBirdIdWeightRoute
   '/covering/$sitId/$birdId': typeof AuthenticatedCoveringSitIdBirdIdRoute
+  '/api/public/hooks/bereavement-note': typeof ApiPublicHooksBereavementNoteRoute
   '/api/public/hooks/care-plan-reminders': typeof ApiPublicHooksCarePlanRemindersRoute
   '/api/public/hooks/engagement-nudges': typeof ApiPublicHooksEngagementNudgesRoute
   '/api/public/hooks/onboarding-emails': typeof ApiPublicHooksOnboardingEmailsRoute
@@ -543,6 +551,7 @@ export interface FileRoutesByTo {
   '/birds/$birdId/view-as-sitter': typeof AuthenticatedBirdsBirdIdViewAsSitterRoute
   '/birds/$birdId/weight': typeof AuthenticatedBirdsBirdIdWeightRoute
   '/covering/$sitId/$birdId': typeof AuthenticatedCoveringSitIdBirdIdRoute
+  '/api/public/hooks/bereavement-note': typeof ApiPublicHooksBereavementNoteRoute
   '/api/public/hooks/care-plan-reminders': typeof ApiPublicHooksCarePlanRemindersRoute
   '/api/public/hooks/engagement-nudges': typeof ApiPublicHooksEngagementNudgesRoute
   '/api/public/hooks/onboarding-emails': typeof ApiPublicHooksOnboardingEmailsRoute
@@ -610,6 +619,7 @@ export interface FileRoutesById {
   '/_authenticated/birds/$birdId/view-as-sitter': typeof AuthenticatedBirdsBirdIdViewAsSitterRoute
   '/_authenticated/birds/$birdId/weight': typeof AuthenticatedBirdsBirdIdWeightRoute
   '/_authenticated/covering/$sitId/$birdId': typeof AuthenticatedCoveringSitIdBirdIdRoute
+  '/api/public/hooks/bereavement-note': typeof ApiPublicHooksBereavementNoteRoute
   '/api/public/hooks/care-plan-reminders': typeof ApiPublicHooksCarePlanRemindersRoute
   '/api/public/hooks/engagement-nudges': typeof ApiPublicHooksEngagementNudgesRoute
   '/api/public/hooks/onboarding-emails': typeof ApiPublicHooksOnboardingEmailsRoute
@@ -677,6 +687,7 @@ export interface FileRouteTypes {
     | '/birds/$birdId/view-as-sitter'
     | '/birds/$birdId/weight'
     | '/covering/$sitId/$birdId'
+    | '/api/public/hooks/bereavement-note'
     | '/api/public/hooks/care-plan-reminders'
     | '/api/public/hooks/engagement-nudges'
     | '/api/public/hooks/onboarding-emails'
@@ -736,6 +747,7 @@ export interface FileRouteTypes {
     | '/birds/$birdId/view-as-sitter'
     | '/birds/$birdId/weight'
     | '/covering/$sitId/$birdId'
+    | '/api/public/hooks/bereavement-note'
     | '/api/public/hooks/care-plan-reminders'
     | '/api/public/hooks/engagement-nudges'
     | '/api/public/hooks/onboarding-emails'
@@ -802,6 +814,7 @@ export interface FileRouteTypes {
     | '/_authenticated/birds/$birdId/view-as-sitter'
     | '/_authenticated/birds/$birdId/weight'
     | '/_authenticated/covering/$sitId/$birdId'
+    | '/api/public/hooks/bereavement-note'
     | '/api/public/hooks/care-plan-reminders'
     | '/api/public/hooks/engagement-nudges'
     | '/api/public/hooks/onboarding-emails'
@@ -824,6 +837,7 @@ export interface RootRouteChildren {
   HandoffTokenRoute: typeof HandoffTokenRoute
   InviteTokenRoute: typeof InviteTokenRoute
   ApiPublicCspReportRoute: typeof ApiPublicCspReportRoute
+  ApiPublicHooksBereavementNoteRoute: typeof ApiPublicHooksBereavementNoteRoute
   ApiPublicHooksCarePlanRemindersRoute: typeof ApiPublicHooksCarePlanRemindersRoute
   ApiPublicHooksEngagementNudgesRoute: typeof ApiPublicHooksEngagementNudgesRoute
   ApiPublicHooksOnboardingEmailsRoute: typeof ApiPublicHooksOnboardingEmailsRoute
@@ -1144,6 +1158,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/hooks/care-plan-reminders'
       fullPath: '/api/public/hooks/care-plan-reminders'
       preLoaderRoute: typeof ApiPublicHooksCarePlanRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/bereavement-note': {
+      id: '/api/public/hooks/bereavement-note'
+      path: '/api/public/hooks/bereavement-note'
+      fullPath: '/api/public/hooks/bereavement-note'
+      preLoaderRoute: typeof ApiPublicHooksBereavementNoteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/covering/$sitId/$birdId': {
@@ -1485,6 +1506,7 @@ const rootRouteChildren: RootRouteChildren = {
   HandoffTokenRoute: HandoffTokenRoute,
   InviteTokenRoute: InviteTokenRoute,
   ApiPublicCspReportRoute: ApiPublicCspReportRoute,
+  ApiPublicHooksBereavementNoteRoute: ApiPublicHooksBereavementNoteRoute,
   ApiPublicHooksCarePlanRemindersRoute: ApiPublicHooksCarePlanRemindersRoute,
   ApiPublicHooksEngagementNudgesRoute: ApiPublicHooksEngagementNudgesRoute,
   ApiPublicHooksOnboardingEmailsRoute: ApiPublicHooksOnboardingEmailsRoute,
