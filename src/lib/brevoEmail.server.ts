@@ -28,8 +28,19 @@ const BREVO_SMTP_URL = "https://api.brevo.com/v3/smtp/email";
 const RESERVED_DOMAINS = new Set(["example.com", "example.net", "example.org"]);
 const RESERVED_TLDS = new Set(["test", "example", "invalid", "localhost"]);
 
+// App Store / Play review accounts are created at appreview*@thekyaproject.com.
+// No such Google Workspace mailbox exists and we've decided not to create one,
+// so these hard-bounce every time — on our own domain, which is worse than a
+// reserved one. Matches appreview@, appreview.rowan@, appreview+anything@.
+//
+// ⚠️ If an appreview alias is ever added in Google Workspace, DELETE THIS LINE.
+// It is the only rule here that would then silently swallow deliverable mail.
+const NO_MAILBOX = /^appreview([.+][^@]*)?@thekyaproject\.com$/i;
+
 export function isUndeliverableAddress(to: string): boolean {
-  const domain = to.trim().toLowerCase().split("@").pop() ?? "";
+  const addr = to.trim().toLowerCase();
+  if (NO_MAILBOX.test(addr)) return true;
+  const domain = addr.split("@").pop() ?? "";
   if (!domain) return false;
   if (RESERVED_DOMAINS.has(domain)) return true;
   if (RESERVED_TLDS.has(domain.split(".").pop() ?? "")) return true;
