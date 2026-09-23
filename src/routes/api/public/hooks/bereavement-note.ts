@@ -4,6 +4,8 @@
  * Sending rules, all deliberate (see docs/email-plan.md):
  *   - the DAY AFTER the owner marks the bird as passed, never the same day:
  *     an instant email would feel automated at the worst possible moment
+ *   - and never for a bird marked before BEREAVEMENT_LAUNCH: a condolence note
+ *     is only sent while the loss is recent
  *   - ONCE PER BIRD, forever (bereavement_email_log, bird_id primary key)
  *   - two birds marked on the same day produce ONE note naming both
  *   - NEVER on a handoff: a transferred bird's passed_at stays null, so the
@@ -25,6 +27,14 @@ import { createFileRoute } from "@tanstack/react-router";
 import { withCronTelemetry } from "@/lib/cronTelemetry";
 
 const DAY = 1000 * 60 * 60 * 24;
+
+// Birds marked as passed BEFORE this date never get a note. Without it, the
+// first run would email every owner whose bird has ever been marked — the
+// oldest in the database is from 2026-07-15, seventy days before this shipped.
+// "I saw that Willow passed away, and I'm so sorry", arriving ten weeks late
+// and obviously automated, is worse than silence. This is a condolence note:
+// it is only ever sent while the loss is recent.
+const BEREAVEMENT_LAUNCH = "2026-09-23T00:00:00Z";
 
 /** "Willow", "Willow and Moxie", "Echo, Willow and Moxie". */
 function joinNames(names: string[]): string {
@@ -64,6 +74,7 @@ export const Route = createFileRoute("/api/public/hooks/bereavement-note")({
           .from("birds")
           .select("id, name, owner_id, passed_at")
           .not("passed_at", "is", null)
+          .gte("passed_at", BEREAVEMENT_LAUNCH)
           .lte("passed_at", cutoff);
         if (birdErr) {
           return Response.json({ ok: false, error: birdErr.message }, { status: 500 });
