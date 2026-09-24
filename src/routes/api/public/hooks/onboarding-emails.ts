@@ -226,7 +226,7 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
           const locale = (profile as { locale?: string } | undefined)?.locale ?? undefined;
           const built =
             p.stage === "welcome"
-              ? buildWelcomeEmail({ firstName, birdName: p.birdName, link: appUrl, locale })
+              ? buildWelcomeEmail({ firstName, link: appUrl, locale })
               : p.stage === "add_first_bird"
               ? buildOnboardingAddBirdEmail({ firstName, link: `${appUrl}/birds/new`, locale })
               : p.stage === "start_care_plan"
