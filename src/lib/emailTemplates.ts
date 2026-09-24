@@ -25,6 +25,23 @@ export function escapeHtml(s: string): string {
 
 export type BuiltEmail = { subject: string; html: string; text: string };
 
+// ── Body blocks ──────────────────────────────────────────────────────────────
+// Shared by the onboarding series so seven emails can't drift apart. Every
+// input arrives pre-escaped from the catalog (see the escaping note up top).
+const bodyP = (s: string) =>
+  `<p style="margin:0 0 13px;font-size:15px;line-height:1.6;color:#1a3d2e;">${s}</p>`;
+const cardP = (s: string) =>
+  `<p style="margin:0 0 11px;font-size:14.5px;line-height:1.58;color:#1a3d2e;">${s}</p>`;
+const cardLi = (s: string) =>
+  `<p style="margin:0 0 11px;font-size:14.5px;line-height:1.58;color:#1a3d2e;">&bull;&nbsp; ${s}</p>`;
+
+/** The cream inset with a teal label — "What you need", "Worth knowing". */
+function noteCard(label: string, inner: string): string {
+  return `<div style="margin:6px 0 20px;padding:18px 20px 7px;background:#f4f1e8;border:1px solid #e0d8c4;border-radius:14px;">
+      <p style="margin:0 0 11px;font-size:11px;line-height:17px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;color:#5a8c7a;">${label}</p>${inner}</div>`;
+}
+
+
 function shell(opts: {
   kicker: string;
   heading: string;
@@ -603,6 +620,175 @@ export function buildWelcomeEmail(opts: { firstName?: string; link: string; loca
       t,
     }),
     text: t("email.welcome.text", { link: opts.link }),
+  };
+}
+
+// Day 3 — weighing. The only email in the series that can solve the scale
+// problem: someone without a gram scale is stuck whatever comes later.
+export function buildSeriesWeighingEmail(opts: { link: string; locale?: string }): BuiltEmail {
+  const t = emailT(opts.locale);
+  return {
+    subject: t("email.seriesWeighing.subject"),
+    html: shell({
+      preview: t("email.seriesWeighing.preview"),
+      kicker: t("email.seriesWeighing.kicker"),
+      heading: t("email.seriesWeighing.heading"),
+      bodyHtml:
+        bodyP(t("email.seriesWeighing.lead")) +
+        noteCard(t("email.seriesWeighing.card1Label"),
+        cardLi(t("email.seriesWeighing.card1Li1")) +
+        cardLi(t("email.seriesWeighing.card1Li2"))) +
+        bodyP(t("email.seriesWeighing.p2")) +
+        bodyP(t("email.seriesWeighing.p3")) +
+        bodyP(t("email.seriesWeighing.p4")),
+      cta: t("email.seriesWeighing.cta"),
+      link: opts.link,
+      nextUp: t("email.seriesWeighing.nextUp"),
+      healthNote: t("email.seriesWeighing.healthNote"),
+      foot: t("email.seriesWeighing.foot"),
+      footGap: 22,
+      t,
+    }),
+    text: t("email.seriesWeighing.text", { link: opts.link }),
+  };
+}
+
+// Day 6 — the daily health check.
+export function buildSeriesHealthCheckEmail(opts: { link: string; locale?: string }): BuiltEmail {
+  const t = emailT(opts.locale);
+  return {
+    subject: t("email.seriesHealthCheck.subject"),
+    html: shell({
+      preview: t("email.seriesHealthCheck.preview"),
+      kicker: t("email.seriesHealthCheck.kicker"),
+      heading: t("email.seriesHealthCheck.heading"),
+      bodyHtml:
+        bodyP(t("email.seriesHealthCheck.lead")) +
+        bodyP(t("email.seriesHealthCheck.p2")) +
+        noteCard(t("email.seriesHealthCheck.card1Label"),
+        cardP(t("email.seriesHealthCheck.card1P1"))) +
+        bodyP(t("email.seriesHealthCheck.p3")),
+      cta: t("email.seriesHealthCheck.cta"),
+      link: opts.link,
+      nextUp: t("email.seriesHealthCheck.nextUp"),
+      healthNote: t("email.seriesHealthCheck.healthNote"),
+      foot: t("email.seriesHealthCheck.foot"),
+      footGap: 22,
+      t,
+    }),
+    text: t("email.seriesHealthCheck.text", { link: opts.link }),
+  };
+}
+
+// Day 9 — the care plan.
+export function buildSeriesCarePlanEmail(opts: { link: string; locale?: string }): BuiltEmail {
+  const t = emailT(opts.locale);
+  return {
+    subject: t("email.seriesCarePlan.subject"),
+    html: shell({
+      preview: t("email.seriesCarePlan.preview"),
+      kicker: t("email.seriesCarePlan.kicker"),
+      heading: t("email.seriesCarePlan.heading"),
+      bodyHtml:
+        bodyP(t("email.seriesCarePlan.lead")) +
+        bodyP(t("email.seriesCarePlan.p2")) +
+        noteCard(t("email.seriesCarePlan.card1Label"),
+        cardP(t("email.seriesCarePlan.card1P1"))) +
+        bodyP(t("email.seriesCarePlan.p3")) +
+        bodyP(t("email.seriesCarePlan.p4")) +
+        bodyP(t("email.seriesCarePlan.p5")),
+      cta: t("email.seriesCarePlan.cta"),
+      link: opts.link,
+      nextUp: t("email.seriesCarePlan.nextUp"),
+      foot: t("email.seriesCarePlan.foot"),
+      footGap: 22,
+      t,
+    }),
+    text: t("email.seriesCarePlan.text", { link: opts.link }),
+  };
+}
+
+// Day 12 — journal and moments. The one email that asks for no new habit;
+// three in a row asking someone to start something is a lot.
+export function buildSeriesJournalEmail(opts: { link: string; locale?: string }): BuiltEmail {
+  const t = emailT(opts.locale);
+  return {
+    subject: t("email.seriesJournal.subject"),
+    html: shell({
+      preview: t("email.seriesJournal.preview"),
+      kicker: t("email.seriesJournal.kicker"),
+      heading: t("email.seriesJournal.heading"),
+      bodyHtml:
+        bodyP(t("email.seriesJournal.lead")) +
+        bodyP(t("email.seriesJournal.p2")) +
+        bodyP(t("email.seriesJournal.p3")) +
+        bodyP(t("email.seriesJournal.p4")) +
+        bodyP(t("email.seriesJournal.p5")),
+      cta: t("email.seriesJournal.cta"),
+      link: opts.link,
+      nextUp: t("email.seriesJournal.nextUp"),
+      foot: t("email.seriesJournal.foot"),
+      footGap: 22,
+      t,
+    }),
+    text: t("email.seriesJournal.text", { link: opts.link }),
+  };
+}
+
+// Day 15 — sharing with a sitter or the household.
+export function buildSeriesSharingEmail(opts: { link: string; locale?: string }): BuiltEmail {
+  const t = emailT(opts.locale);
+  return {
+    subject: t("email.seriesSharing.subject"),
+    html: shell({
+      preview: t("email.seriesSharing.preview"),
+      kicker: t("email.seriesSharing.kicker"),
+      heading: t("email.seriesSharing.heading"),
+      bodyHtml:
+        bodyP(t("email.seriesSharing.lead")) +
+        noteCard(t("email.seriesSharing.card1Label"),
+        cardP(t("email.seriesSharing.card1P1"))) +
+        noteCard(t("email.seriesSharing.card2Label"),
+        cardP(t("email.seriesSharing.card2P1"))) +
+        bodyP(t("email.seriesSharing.p2")) +
+        bodyP(t("email.seriesSharing.p3")),
+      cta: t("email.seriesSharing.cta"),
+      link: opts.link,
+      nextUp: t("email.seriesSharing.nextUp"),
+      foot: t("email.seriesSharing.foot"),
+      footGap: 22,
+      t,
+    }),
+    text: t("email.seriesSharing.text", { link: opts.link }),
+  };
+}
+
+// Day 18 — the vet summary. Closes the series and hands off to the monthly
+// recap, so the first monthly email does not arrive out of nowhere.
+export function buildSeriesVetEmail(opts: { link: string; locale?: string }): BuiltEmail {
+  const t = emailT(opts.locale);
+  return {
+    subject: t("email.seriesVet.subject"),
+    html: shell({
+      preview: t("email.seriesVet.preview"),
+      kicker: t("email.seriesVet.kicker"),
+      heading: t("email.seriesVet.heading"),
+      bodyHtml:
+        bodyP(t("email.seriesVet.lead")) +
+        bodyP(t("email.seriesVet.p2")) +
+        bodyP(t("email.seriesVet.p3")) +
+        bodyP(t("email.seriesVet.p4")) +
+        noteCard(t("email.seriesVet.card1Label"),
+        cardP(t("email.seriesVet.card1P1"))) +
+        bodyP(t("email.seriesVet.p5")),
+      cta: t("email.seriesVet.cta"),
+      link: opts.link,
+      healthNote: t("email.seriesVet.healthNote"),
+      foot: t("email.seriesVet.foot"),
+      footGap: 22,
+      t,
+    }),
+    text: t("email.seriesVet.text", { link: opts.link }),
   };
 }
 
