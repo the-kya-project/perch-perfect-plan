@@ -6,13 +6,27 @@
  * Brevo. Rules:
  *   - at most ONE onboarding email per user per run (earliest applicable stage)
  *   - each stage sends AT MOST ONCE EVER per user (onboarding_email_log)
- *   - stages, in funnel order:
- *       welcome          — the day-0 hello from Brittany; not gated on any
- *                          action, and limited to accounts created on/after
- *                          WELCOME_LAUNCH so existing users don't get welcomed
- *                          weeks late. NOTE: this cron runs once a day, so the
- *                          welcome lands on the next run, not an hour after
- *                          signup — move it off the cron if that matters.
+ *
+ * Two lanes. The SERIES is educational and runs on the calendar: seven emails
+ * on days 0, 3, 6, 9, 12, 15 and 18, whatever the account has or hasn't done.
+ * While it is running it is the only onboarding email an account gets — three
+ * of the seven cover the same ground as the behavioural nudges, and one send
+ * per run means the two lanes would otherwise take turns and knock the series
+ * off its three-day rhythm. After day 18 the behavioural DRIP resumes for
+ * anything still undone.
+ *
+ *   series (SERIES_LAUNCH onwards), in day order:
+ *       welcome              — day 0, the hello from Brittany. NOTE: this cron
+ *                              runs once a day, so it lands on the next run,
+ *                              not an hour after signup.
+ *       series_weighing      — day 3
+ *       series_health_check  — day 6
+ *       series_care_plan     — day 9
+ *       series_journal       — day 12
+ *       series_sharing       — day 15
+ *       series_vet           — day 18, closes the series
+ *
+ *   drip, in funnel order:
  *       add_first_bird   — account ≥2 days old, no (living) birds
  *       log_first_weight — oldest bird ≥3 days old, zero weight entries
  *       run_first_scan   — oldest bird ≥5 days old, no daily health scan yet
@@ -40,7 +54,22 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { withCronTelemetry } from "@/lib/cronTelemetry";
 
-type Stage = "welcome" | "add_first_bird" | "start_care_plan" | "log_first_weight" | "run_first_scan" | "weight_trend";
+type Stage =
+  // The educational series: fixed days from signup, regardless of what the
+  // account has or hasn't done.
+  | "welcome"
+  | "series_weighing"
+  | "series_health_check"
+  | "series_care_plan"
+  | "series_journal"
+  | "series_sharing"
+  | "series_vet"
+  // The behavioural drip: gated on what's still undone.
+  | "add_first_bird"
+  | "start_care_plan"
+  | "log_first_weight"
+  | "run_first_scan"
+  | "weight_trend";
 
 const DAY = 1000 * 60 * 60 * 24;
 
@@ -52,6 +81,23 @@ const ONBOARDING_LAUNCH = "2026-07-21T00:00:00Z";
 // "Welcome to Kya & Co.!" weeks after they signed up would be worse than not
 // sending it. Only accounts created from here on get a welcome.
 const WELCOME_LAUNCH = "2026-09-23T00:00:00Z";
+// The seven-part educational series: accounts created on/after this date get
+// it. Its own cutoff again, because the welcome promises "a short email every
+// three days" and only accounts that receive the new welcome should be told
+// that. Anyone earlier keeps the behavioural drip alone.
+const SERIES_LAUNCH = "2026-09-25T00:00:00Z";
+// Day offsets from signup. One email per run, so a missed run catches up in
+// order rather than sending two at once.
+const SERIES: Array<{ stage: Stage; day: number }> = [
+  { stage: "welcome", day: 0 },
+  { stage: "series_weighing", day: 3 },
+  { stage: "series_health_check", day: 6 },
+  { stage: "series_care_plan", day: 9 },
+  { stage: "series_journal", day: 12 },
+  { stage: "series_sharing", day: 15 },
+  { stage: "series_vet", day: 18 },
+];
+const SERIES_DAYS = 18;
 
 function olderThanDays(iso: string | null | undefined, days: number): boolean {
   if (!iso) return false;
@@ -168,12 +214,33 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
           // the FIRST one not yet sent wins (so a person parked on one stage
           // doesn't block the later nudges forever).
           const candidates: Stage[] = [];
-          // Welcome comes first in funnel order and is not gated on any action:
-          // it is the day-0 hello, sent once, whether or not a bird exists yet.
-          if (new Date(profile.created_at) >= new Date(WELCOME_LAUNCH)) candidates.push("welcome");
+          const inSeries = new Date(profile.created_at) >= new Date(SERIES_LAUNCH);
+          if (inSeries) {
+            // The series runs on the calendar, not on behaviour. Each stage is
+            // due once the account is old enough; the first unsent one wins.
+            for (const s of SERIES) {
+              if (olderThanDays(profile.created_at, s.day)) candidates.push(s.stage);
+            }
+          } else if (new Date(profile.created_at) >= new Date(WELCOME_LAUNCH)) {
+            // Pre-series accounts still get the day-0 hello, and nothing after.
+            candidates.push("welcome");
+          }
+
+          // While the series is running, the nudges that duplicate it stay quiet:
+          // three of the seven cover the same ground (weighing, the health
+          // check, the care plan), and one send per run means the two lanes
+          // would take turns — pushing the series off its three-day rhythm and
+          // making its "next email in three days" line a lie. Once it has
+          // finished, the drip picks up whatever is still undone.
+          //
+          // add_first_bird is the exception. Nothing in the series replaces it,
+          // and because series stages sit earlier in this list it can only fire
+          // on a day when no series email is due — day 2, in practice.
+          const seriesRunning = inSeries && !olderThanDays(profile.created_at, SERIES_DAYS);
+
           if (birds.length === 0) {
             if (olderThanDays(profile.created_at, 2)) candidates.push("add_first_bird");
-          } else {
+          } else if (!seriesRunning) {
             // Health habits first (weight, then the daily scan), the longer
             // care-plan ask after — per product decision 2026-07-20.
             if (!firstWeightAt && olderThanDays(oldest.created_at, 3)) candidates.push("log_first_weight");
@@ -205,6 +272,12 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
 
         const {
           buildWelcomeEmail,
+          buildSeriesWeighingEmail,
+          buildSeriesHealthCheckEmail,
+          buildSeriesCarePlanEmail,
+          buildSeriesJournalEmail,
+          buildSeriesSharingEmail,
+          buildSeriesVetEmail,
           buildOnboardingAddBirdEmail,
           buildOnboardingCarePlanEmail,
           buildOnboardingFirstWeightEmail,
@@ -214,7 +287,9 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
         const { sendTransactionalEmail, founderReplyTo } = await import("@/lib/brevoEmail.server");
 
         const results: Record<Stage, number> = {
-          welcome: 0, add_first_bird: 0, start_care_plan: 0, log_first_weight: 0, run_first_scan: 0, weight_trend: 0,
+          welcome: 0, series_weighing: 0, series_health_check: 0, series_care_plan: 0,
+          series_journal: 0, series_sharing: 0, series_vet: 0,
+          add_first_bird: 0, start_care_plan: 0, log_first_weight: 0, run_first_scan: 0, weight_trend: 0,
         };
         let failed = 0;
 
@@ -224,9 +299,24 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
           const firstName = ((profile?.display_name ?? "").trim().split(/\s+/)[0] || "").trim() || undefined;
           // Owner has an account (group 1) → their stored locale; null → English.
           const locale = (profile as { locale?: string } | undefined)?.locale ?? undefined;
+          // Where a series email points. No bird yet → the dashboard, which is
+          // where adding one starts.
+          const onBird = (path: string) => (p.birdId ? `${appUrl}/birds/${p.birdId}/${path}` : `${appUrl}/dashboard`);
           const built =
             p.stage === "welcome"
-              ? buildWelcomeEmail({ firstName, birdName: p.birdName, link: appUrl, locale })
+              ? buildWelcomeEmail({ firstName, link: appUrl, locale })
+              : p.stage === "series_weighing"
+              ? buildSeriesWeighingEmail({ link: onBird("weight"), locale })
+              : p.stage === "series_health_check"
+              ? buildSeriesHealthCheckEmail({ link: onBird("scan"), locale })
+              : p.stage === "series_care_plan"
+              ? buildSeriesCarePlanEmail({ link: onBird("plan"), locale })
+              : p.stage === "series_journal"
+              ? buildSeriesJournalEmail({ link: onBird("journal"), locale })
+              : p.stage === "series_sharing"
+              ? buildSeriesSharingEmail({ link: onBird("access"), locale })
+              : p.stage === "series_vet"
+              ? buildSeriesVetEmail({ link: onBird("vet-summary"), locale })
               : p.stage === "add_first_bird"
               ? buildOnboardingAddBirdEmail({ firstName, link: `${appUrl}/birds/new`, locale })
               : p.stage === "start_care_plan"
@@ -243,9 +333,10 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
             subject: built.subject,
             htmlContent: built.html,
             textContent: built.text,
-            // The welcome email is signed by Brittany and invites a reply, so
-            // the reply has to reach her rather than the generic sender.
-            ...(p.stage === "welcome" ? { replyTo: founderReplyTo() } : {}),
+            // The two emails signed by Brittany that ask for a reply — the
+            // welcome and the one that closes the series. A reply has to reach
+            // her, not the generic sender.
+            ...(p.stage === "welcome" || p.stage === "series_vet" ? { replyTo: founderReplyTo() } : {}),
           });
           if (res.ok) {
             // Log AFTER a confirmed send; a failed send retries on a later run.

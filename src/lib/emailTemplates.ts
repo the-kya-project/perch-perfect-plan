@@ -25,6 +25,23 @@ export function escapeHtml(s: string): string {
 
 export type BuiltEmail = { subject: string; html: string; text: string };
 
+// ── Body blocks ──────────────────────────────────────────────────────────────
+// Shared by the onboarding series so seven emails can't drift apart. Every
+// input arrives pre-escaped from the catalog (see the escaping note up top).
+const bodyP = (s: string) =>
+  `<p style="margin:0 0 13px;font-size:15px;line-height:1.6;color:#1a3d2e;">${s}</p>`;
+const cardP = (s: string) =>
+  `<p style="margin:0 0 11px;font-size:14.5px;line-height:1.58;color:#1a3d2e;">${s}</p>`;
+const cardLi = (s: string) =>
+  `<p style="margin:0 0 11px;font-size:14.5px;line-height:1.58;color:#1a3d2e;">&bull;&nbsp; ${s}</p>`;
+
+/** The cream inset with a teal label — "What you need", "Worth knowing". */
+function noteCard(label: string, inner: string): string {
+  return `<div style="margin:6px 0 20px;padding:18px 20px 7px;background:#f4f1e8;border:1px solid #e0d8c4;border-radius:14px;">
+      <p style="margin:0 0 11px;font-size:11px;line-height:17px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;color:#5a8c7a;">${label}</p>${inner}</div>`;
+}
+
+
 function shell(opts: {
   kicker: string;
   heading: string;
@@ -50,6 +67,16 @@ function shell(opts: {
   foot: string;
   /** Optional "From the field notes" blog block rendered under the CTA. */
   reading?: { title: string; teaser: string; url: string };
+  /** One line pointing at the next email, under a rule after the CTA. The
+   *  onboarding series uses it so each email hands off to the one after it. */
+  nextUp?: string;
+  /** Health disclaimer, above the closing note. Health-adjacent emails only —
+   *  it is not boilerplate and should not appear on every send. */
+  healthNote?: string;
+  /** Inbox preview line — the grey text beside the subject. Hidden in the body.
+   *  Without it the client pulls the first body words, which for a letter is
+   *  "Hi <name>," and tells the reader nothing. */
+  preview?: string;
   /** Localized chrome. When omitted (the account-less sitter-invite emails),
    *  the English literals are used. */
   t?: EmailT;
@@ -70,8 +97,22 @@ function shell(opts: {
   // ABSOLUTE URL (relative paths can't resolve inside a recipient's inbox).
   // Plain-text fallback line "Kya & Co. — by The Kya Project" lives in the
   // text/* bodies and the footer.
+  // Hidden preheader. The trailing entities stop the client padding the preview
+  // line with body text that follows it.
+  const preheader = opts.preview
+    ? `<div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;overflow:hidden;opacity:0;mso-hide:all;">${opts.preview}&#8203;&nbsp;&#8203;&nbsp;&#8203;&nbsp;&#8203;&nbsp;</div>`
+    : "";
+  const nextUp = opts.nextUp
+    ? `
+      <p style="margin:24px 0 0;padding-top:16px;border-top:1px solid #eee6d4;font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:14.5px;line-height:1.55;color:#5f5e5a;">${opts.nextUp}</p>`
+    : "";
+  const healthNote = opts.healthNote
+    ? `
+      <p style="margin:22px 0 0;font-size:11.5px;font-style:italic;line-height:1.5;color:#8a897f;">${opts.healthNote}</p>`
+    : "";
+
   return `
-<div style="background:#f4f1e8;padding:24px;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">
+<div style="background:#f4f1e8;padding:24px;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">${preheader}
   <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;border:1px solid #e3ded0;">
     <div style="background:#f4f1e8;padding:20px 24px;text-align:left;border-bottom:1px solid #eee6d4;">
       <img src="https://app.thekyaproject.com/brand/lockups/horizontal-cream.png" width="280" alt="Kya & Co. — by The Kya Project" style="display:block;width:280px;max-width:100%;height:auto;" />
@@ -82,7 +123,7 @@ function shell(opts: {
     </div>
     <div style="padding:24px;">
       ${opts.bodyHtml ?? `<p style="margin:0 0 8px;font-size:15px;color:#1a3d2e;">${opts.body}</p>`}${opts.cta ? `
-      <a href="${opts.link}" style="display:inline-block;margin-top:12px;background:${accent};color:#fff;text-decoration:none;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:600;">${opts.cta}</a>` : ""}${reading}
+      <a href="${opts.link}" style="display:inline-block;margin-top:12px;background:${accent};color:#fff;text-decoration:none;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:600;">${opts.cta}</a>` : ""}${reading}${nextUp}${healthNote}
       <p style="margin:${footGap}px 0 0;font-size:${opts.footFine ? "11.5" : "12"}px;color:#8a897f;line-height:1.5;${opts.footFine ? "font-style:italic;" : ""}">${opts.foot}</p>
       <p style="margin:18px 0 0;font-size:11px;color:#8a897f;text-align:center;border-top:1px solid #eee6d4;padding-top:12px;">${footNote}</p>
     </div>
@@ -540,10 +581,8 @@ export function buildSitterInviteCancelledEmail(opts: {
 // her, invites a reply, and the send sets reply-to accordingly. Two variants
 // off one template — a bird added during signup turns the first step from
 // "add your bird" into "<bird>'s record is ready", so day 0 stays ONE email.
-export function buildWelcomeEmail(opts: { firstName?: string; birdName?: string; link: string; locale?: string }): BuiltEmail {
+export function buildWelcomeEmail(opts: { firstName?: string; link: string; locale?: string }): BuiltEmail {
   const t = emailT(opts.locale);
-  const hasBird = !!opts.birdName;
-  const bird = escapeHtml(opts.birdName ?? "");
   const hi = opts.firstName
     ? t("email.welcome.hiName", { firstName: escapeHtml(opts.firstName) })
     : t("email.welcome.hiNoName");
@@ -552,30 +591,204 @@ export function buildWelcomeEmail(opts: { firstName?: string; birdName?: string;
     `<p style="margin:0 0 11px 0;font-size:15px;color:#1a3d2e;line-height:1.6;">&bull;&nbsp; ${s}</p>`;
   const bodyHtml =
     p(hi) +
-    p(t("email.welcome.intro")) +
+    p(t("email.welcome.founder")) +
+    p(t("email.welcome.birds")) +
     p(t("email.welcome.built")) +
     p(t("email.welcome.startThisWeek")) +
-    li(hasBird ? t("email.welcome.stepBirdReady", { bird }) : t("email.welcome.stepAddBird")) +
+    li(t("email.welcome.stepAddBird")) +
     li(t("email.welcome.stepWeight")) +
     li(t("email.welcome.stepScan")) +
-    p(t("email.welcome.habits")) +
+    p(t("email.welcome.together")) +
+    p(t("email.welcome.series")) +
     p(t("email.welcome.carePlan")) +
     p(t("email.welcome.reply")) +
     p(t("email.welcome.signoff"));
   return {
     subject: t("email.welcome.subject"),
     html: shell({
-      kicker: hasBird ? t("email.welcome.kickerBird", { bird }) : t("email.welcome.kicker"),
-      heading: hasBird ? t("email.welcome.headingBird", { bird }) : t("email.welcome.heading"),
+      preview: t("email.welcome.preview"),
+      kicker: t("email.welcome.kicker"),
+      heading: t("email.welcome.heading"),
       bodyHtml,
       cta: t("email.welcome.cta"),
       link: opts.link,
+      nextUp: t("email.welcome.nextUp"),
+      healthNote: t("email.welcome.healthNote"),
       foot: t("email.welcome.foot"),
-      footGap: 32,
-      footFine: true,
+      footGap: 22,
+      footFine: false,
       t,
     }),
     text: t("email.welcome.text", { link: opts.link }),
+  };
+}
+
+// Day 3 — weighing. The only email in the series that can solve the scale
+// problem: someone without a gram scale is stuck whatever comes later.
+export function buildSeriesWeighingEmail(opts: { link: string; locale?: string }): BuiltEmail {
+  const t = emailT(opts.locale);
+  return {
+    subject: t("email.seriesWeighing.subject"),
+    html: shell({
+      preview: t("email.seriesWeighing.preview"),
+      kicker: t("email.seriesWeighing.kicker"),
+      heading: t("email.seriesWeighing.heading"),
+      bodyHtml:
+        bodyP(t("email.seriesWeighing.lead")) +
+        noteCard(t("email.seriesWeighing.card1Label"),
+        cardLi(t("email.seriesWeighing.card1Li1")) +
+        cardLi(t("email.seriesWeighing.card1Li2"))) +
+        bodyP(t("email.seriesWeighing.p2")) +
+        bodyP(t("email.seriesWeighing.p3")) +
+        bodyP(t("email.seriesWeighing.p4")),
+      cta: t("email.seriesWeighing.cta"),
+      link: opts.link,
+      nextUp: t("email.seriesWeighing.nextUp"),
+      healthNote: t("email.seriesWeighing.healthNote"),
+      foot: t("email.seriesWeighing.foot"),
+      footGap: 22,
+      t,
+    }),
+    text: t("email.seriesWeighing.text", { link: opts.link }),
+  };
+}
+
+// Day 6 — the daily health check.
+export function buildSeriesHealthCheckEmail(opts: { link: string; locale?: string }): BuiltEmail {
+  const t = emailT(opts.locale);
+  return {
+    subject: t("email.seriesHealthCheck.subject"),
+    html: shell({
+      preview: t("email.seriesHealthCheck.preview"),
+      kicker: t("email.seriesHealthCheck.kicker"),
+      heading: t("email.seriesHealthCheck.heading"),
+      bodyHtml:
+        bodyP(t("email.seriesHealthCheck.lead")) +
+        bodyP(t("email.seriesHealthCheck.p2")) +
+        noteCard(t("email.seriesHealthCheck.card1Label"),
+        cardP(t("email.seriesHealthCheck.card1P1"))) +
+        bodyP(t("email.seriesHealthCheck.p3")),
+      cta: t("email.seriesHealthCheck.cta"),
+      link: opts.link,
+      nextUp: t("email.seriesHealthCheck.nextUp"),
+      healthNote: t("email.seriesHealthCheck.healthNote"),
+      foot: t("email.seriesHealthCheck.foot"),
+      footGap: 22,
+      t,
+    }),
+    text: t("email.seriesHealthCheck.text", { link: opts.link }),
+  };
+}
+
+// Day 9 — the care plan.
+export function buildSeriesCarePlanEmail(opts: { link: string; locale?: string }): BuiltEmail {
+  const t = emailT(opts.locale);
+  return {
+    subject: t("email.seriesCarePlan.subject"),
+    html: shell({
+      preview: t("email.seriesCarePlan.preview"),
+      kicker: t("email.seriesCarePlan.kicker"),
+      heading: t("email.seriesCarePlan.heading"),
+      bodyHtml:
+        bodyP(t("email.seriesCarePlan.lead")) +
+        bodyP(t("email.seriesCarePlan.p2")) +
+        noteCard(t("email.seriesCarePlan.card1Label"),
+        cardP(t("email.seriesCarePlan.card1P1"))) +
+        bodyP(t("email.seriesCarePlan.p3")) +
+        bodyP(t("email.seriesCarePlan.p4")) +
+        bodyP(t("email.seriesCarePlan.p5")),
+      cta: t("email.seriesCarePlan.cta"),
+      link: opts.link,
+      nextUp: t("email.seriesCarePlan.nextUp"),
+      foot: t("email.seriesCarePlan.foot"),
+      footGap: 22,
+      t,
+    }),
+    text: t("email.seriesCarePlan.text", { link: opts.link }),
+  };
+}
+
+// Day 12 — journal and moments. The one email that asks for no new habit;
+// three in a row asking someone to start something is a lot.
+export function buildSeriesJournalEmail(opts: { link: string; locale?: string }): BuiltEmail {
+  const t = emailT(opts.locale);
+  return {
+    subject: t("email.seriesJournal.subject"),
+    html: shell({
+      preview: t("email.seriesJournal.preview"),
+      kicker: t("email.seriesJournal.kicker"),
+      heading: t("email.seriesJournal.heading"),
+      bodyHtml:
+        bodyP(t("email.seriesJournal.lead")) +
+        bodyP(t("email.seriesJournal.p2")) +
+        bodyP(t("email.seriesJournal.p3")) +
+        bodyP(t("email.seriesJournal.p4")) +
+        bodyP(t("email.seriesJournal.p5")),
+      cta: t("email.seriesJournal.cta"),
+      link: opts.link,
+      nextUp: t("email.seriesJournal.nextUp"),
+      foot: t("email.seriesJournal.foot"),
+      footGap: 22,
+      t,
+    }),
+    text: t("email.seriesJournal.text", { link: opts.link }),
+  };
+}
+
+// Day 15 — sharing with a sitter or the household.
+export function buildSeriesSharingEmail(opts: { link: string; locale?: string }): BuiltEmail {
+  const t = emailT(opts.locale);
+  return {
+    subject: t("email.seriesSharing.subject"),
+    html: shell({
+      preview: t("email.seriesSharing.preview"),
+      kicker: t("email.seriesSharing.kicker"),
+      heading: t("email.seriesSharing.heading"),
+      bodyHtml:
+        bodyP(t("email.seriesSharing.lead")) +
+        noteCard(t("email.seriesSharing.card1Label"),
+        cardP(t("email.seriesSharing.card1P1"))) +
+        noteCard(t("email.seriesSharing.card2Label"),
+        cardP(t("email.seriesSharing.card2P1"))) +
+        bodyP(t("email.seriesSharing.p2")) +
+        bodyP(t("email.seriesSharing.p3")),
+      cta: t("email.seriesSharing.cta"),
+      link: opts.link,
+      nextUp: t("email.seriesSharing.nextUp"),
+      foot: t("email.seriesSharing.foot"),
+      footGap: 22,
+      t,
+    }),
+    text: t("email.seriesSharing.text", { link: opts.link }),
+  };
+}
+
+// Day 18 — the vet summary. Closes the series and hands off to the monthly
+// recap, so the first monthly email does not arrive out of nowhere.
+export function buildSeriesVetEmail(opts: { link: string; locale?: string }): BuiltEmail {
+  const t = emailT(opts.locale);
+  return {
+    subject: t("email.seriesVet.subject"),
+    html: shell({
+      preview: t("email.seriesVet.preview"),
+      kicker: t("email.seriesVet.kicker"),
+      heading: t("email.seriesVet.heading"),
+      bodyHtml:
+        bodyP(t("email.seriesVet.lead")) +
+        bodyP(t("email.seriesVet.p2")) +
+        bodyP(t("email.seriesVet.p3")) +
+        bodyP(t("email.seriesVet.p4")) +
+        noteCard(t("email.seriesVet.card1Label"),
+        cardP(t("email.seriesVet.card1P1"))) +
+        bodyP(t("email.seriesVet.p5")),
+      cta: t("email.seriesVet.cta"),
+      link: opts.link,
+      healthNote: t("email.seriesVet.healthNote"),
+      foot: t("email.seriesVet.foot"),
+      footGap: 22,
+      t,
+    }),
+    text: t("email.seriesVet.text", { link: opts.link }),
   };
 }
 
