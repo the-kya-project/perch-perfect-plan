@@ -844,7 +844,8 @@ export function buildSeriesVetEmail(opts: { link: string; locale?: string }): Bu
         bodyP(t("email.seriesVet.p4")) +
         noteCard(t("email.seriesVet.card1Label"),
         cardP(t("email.seriesVet.card1P1"))) +
-        bodyP(t("email.seriesVet.p5")),
+        bodyP(t("email.seriesVet.p5")) +
+        bodyP(t("email.seriesVet.signoff")),
       cta: t("email.seriesVet.cta"),
       link: opts.link,
       healthNote: t("email.seriesVet.healthNote"),
