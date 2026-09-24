@@ -5,9 +5,18 @@
 // is resolved per email from the recipient's (or, for account-less invitees, the
 // sender's) locale — see src/lib/i18n/emailI18n.server.ts. Each builder takes an
 // optional `locale`; an absent/unknown locale falls back to English, so a send
-// never fails on a missing translation. English output is byte-identical to the
-// pre-i18n templates (values are pre-escaped per field exactly as before, and
-// the email i18n instance interpolates with escapeValue:false).
+// never fails on a missing translation. Escaping semantics are unchanged from
+// the pre-i18n templates: values are pre-escaped per field by each builder and
+// the email i18n instance interpolates with escapeValue:false, so shell() and
+// the block helpers below emit their inputs raw and must never double-escape.
+//
+// NOTE: output is no longer byte-identical to the pre-i18n templates. shell()
+// was re-cut against the monthly-newsletter design language — Georgia for the
+// band heading and the field-notes title, an 8px outer gutter, table-based
+// layout with an MSO width wrapper, a table CTA, and an optional preheader —
+// and then gained the two slots the onboarding series needs (nextUp,
+// healthNote). Copy and per-builder escaping are untouched; only the chrome
+// changed.
 //
 // The external (token-link) sitter trio is NOT localized here — it's account-
 // less and keyed off a per-sit locale picker that doesn't exist yet (A3). Those
@@ -25,20 +34,44 @@ export function escapeHtml(s: string): string {
 
 export type BuiltEmail = { subject: string; html: string; text: string };
 
+// ── Design tokens ────────────────────────────────────────────────────────────
+// Exact values from the brand brief. Georgia is the serif voice everywhere the
+// app would use Fraunces (headings, the month, numbers): web fonts are stripped
+// by Gmail and Outlook, and Georgia ships on effectively every device.
+const SANS = "-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
+const SERIF = "Georgia,'Times New Roman',serif";
+const C = {
+  ground: "#f4f1e8",
+  card: "#ffffff",
+  green: "#1a3d2e",
+  border: "#e3ded0",
+  rule: "#eee6d4",
+  muted: "#8a897f",
+  secondary: "#5f5e5a",
+  teal: "#5a8c7a",
+} as const;
+
+/** Eyebrow: 11px uppercase, wide tracking, muted. The small-caps label that
+ *  opens a section. */
+function eyebrow(text: string, color: string = C.muted): string {
+  return `<p style="margin:0;font-family:${SANS};font-size:11px;line-height:17px;letter-spacing:.11em;text-transform:uppercase;color:${color};">${text}</p>`;
+}
+
+
 // ── Body blocks ──────────────────────────────────────────────────────────────
 // Shared by the onboarding series so seven emails can't drift apart. Every
 // input arrives pre-escaped from the catalog (see the escaping note up top).
 const bodyP = (s: string) =>
-  `<p style="margin:0 0 13px;font-size:15px;line-height:1.6;color:#1a3d2e;">${s}</p>`;
+  `<p style="margin:0 0 13px;font-family:${SANS};font-size:15px;line-height:1.6;color:${C.green};">${s}</p>`;
 const cardP = (s: string) =>
-  `<p style="margin:0 0 11px;font-size:14.5px;line-height:1.58;color:#1a3d2e;">${s}</p>`;
+  `<p style="margin:0 0 11px;font-family:${SANS};font-size:14.5px;line-height:1.58;color:${C.green};">${s}</p>`;
 const cardLi = (s: string) =>
-  `<p style="margin:0 0 11px;font-size:14.5px;line-height:1.58;color:#1a3d2e;">&bull;&nbsp; ${s}</p>`;
+  `<p style="margin:0 0 11px;font-family:${SANS};font-size:14.5px;line-height:1.58;color:${C.green};">&bull;&nbsp; ${s}</p>`;
 
 /** The cream inset with a teal label — "What you need", "Worth knowing". */
 function noteCard(label: string, inner: string): string {
-  return `<div style="margin:6px 0 20px;padding:18px 20px 7px;background:#f4f1e8;border:1px solid #e0d8c4;border-radius:14px;">
-      <p style="margin:0 0 11px;font-size:11px;line-height:17px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;color:#5a8c7a;">${label}</p>${inner}</div>`;
+  return `<div style="margin:6px 0 20px;padding:18px 20px 7px;background:${C.ground};border:1px solid ${C.border};border-radius:14px;">
+      <p style="margin:0 0 11px;font-size:11px;line-height:17px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;color:${C.teal};">${label}</p>${inner}</div>`;
 }
 
 
@@ -73,61 +106,92 @@ function shell(opts: {
   /** Health disclaimer, above the closing note. Health-adjacent emails only —
    *  it is not boilerplate and should not appear on every send. */
   healthNote?: string;
-  /** Inbox preview line — the grey text beside the subject. Hidden in the body.
-   *  Without it the client pulls the first body words, which for a letter is
-   *  "Hi <name>," and tells the reader nothing. */
+  /** Inbox preview line (the grey text beside the subject). Hidden in the body.
+   *  Optional so existing callers are unaffected; supply it for anything where
+   *  the first body words make a poor preview. */
   preview?: string;
   /** Localized chrome. When omitted (the account-less sitter-invite emails),
    *  the English literals are used. */
   t?: EmailT;
 }): string {
-  const accent = opts.accent ?? "#1a3d2e";
+  const accent = opts.accent ?? C.green;
   const footGap = opts.footGap ?? 20;
   const fieldNotes = opts.t ? opts.t("email.shell.fieldNotes") : "From the field notes";
   const footNote = opts.t ? opts.t("email.shell.footNote") : "Kya &amp; Co. — by The Kya Project";
-  const reading = opts.reading
-    ? `
-      <div style="margin-top:20px;padding:14px 16px;background:#f4f1e8;border-radius:12px;">
-        <p style="margin:0;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#8a897f;">${fieldNotes}</p>
-        <p style="margin:6px 0 0;font-size:14px;"><a href="${opts.reading.url}" style="color:#1a3d2e;font-weight:600;">${opts.reading.title}</a></p>
-        <p style="margin:4px 0 0;font-size:12.5px;color:#5f5e5a;line-height:1.5;">${opts.reading.teaser}</p>
-      </div>`
-    : "";
-  // Email header: horizontal-cream lockup served from production via an
-  // ABSOLUTE URL (relative paths can't resolve inside a recipient's inbox).
-  // Plain-text fallback line "Kya & Co. — by The Kya Project" lives in the
-  // text/* bodies and the footer.
-  // Hidden preheader. The trailing entities stop the client padding the preview
-  // line with body text that follows it.
+
+  // Hidden preheader. Trailing entities stop the client pulling body text in
+  // after it to pad the preview line.
   const preheader = opts.preview
     ? `<div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;overflow:hidden;opacity:0;mso-hide:all;">${opts.preview}&#8203;&nbsp;&#8203;&nbsp;&#8203;&nbsp;&#8203;&nbsp;</div>`
     : "";
-  const nextUp = opts.nextUp
+
+  // "From the field notes": a ruled section with an eyebrow and a serif linked
+  // title — the same rhythm the monthly newsletter uses for its blog block,
+  // instead of the old cream inset box.
+  const reading = opts.reading
     ? `
-      <p style="margin:24px 0 0;padding-top:16px;border-top:1px solid #eee6d4;font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:14.5px;line-height:1.55;color:#5f5e5a;">${opts.nextUp}</p>`
-    : "";
-  const healthNote = opts.healthNote
-    ? `
-      <p style="margin:22px 0 0;font-size:11.5px;font-style:italic;line-height:1.5;color:#8a897f;">${opts.healthNote}</p>`
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;mso-table-lspace:0pt;mso-table-rspace:0pt;">
+        <tr><td style="padding:20px 0 0;border-top:1px solid ${C.rule};">
+          ${eyebrow(fieldNotes)}
+          <h2 style="margin:8px 0 0;font-family:${SERIF};font-size:20px;line-height:27px;font-weight:normal;"><a href="${opts.reading.url}" style="color:${C.green};text-decoration:underline;">${opts.reading.title}</a></h2>
+          <p style="margin:6px 0 0;font-family:${SANS};font-size:13.5px;line-height:21px;color:${C.secondary};">${opts.reading.teaser}</p>
+        </td></tr>
+      </table>`
     : "";
 
+  // The onboarding series' hand-off line. Same ruled rhythm as the field-notes
+  // block, in the serif italic so it reads as an aside rather than more body
+  // copy. The spacer row is how you get air above a border in Outlook, which
+  // drops margins on tables.
+  const nextUp = opts.nextUp
+    ? `
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;mso-table-lspace:0pt;mso-table-rspace:0pt;">
+        <tr><td height="22" style="height:22px;line-height:22px;font-size:0;">&nbsp;</td></tr>
+        <tr><td style="padding:17px 0 0;border-top:1px solid ${C.rule};">
+          <p style="margin:0;font-family:${SERIF};font-style:italic;font-size:15px;line-height:23px;color:${C.secondary};">${opts.nextUp}</p>
+        </td></tr>
+      </table>`
+    : "";
+
+  const healthNote = opts.healthNote
+    ? `
+      <p style="margin:22px 0 0;font-family:${SANS};font-size:11.5px;font-style:italic;line-height:1.5;color:${C.muted};">${opts.healthNote}</p>`
+    : "";
+
+  // Table-based button with mso-padding-alt: Outlook's Word engine drops
+  // padding on an inline-block anchor, which used to collapse the CTA to bare
+  // text on a coloured strip.
+  const cta = opts.cta
+    ? `
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:18px 0 0;border-collapse:separate;mso-table-lspace:0pt;mso-table-rspace:0pt;">
+        <tr><td bgcolor="${accent}" style="background-color:${accent};border-radius:12px;mso-padding-alt:13px 22px;">
+          <a href="${opts.link}" style="display:block;padding:13px 22px;font-family:${SANS};font-size:15px;line-height:22px;font-weight:600;color:#ffffff;text-decoration:none;">${opts.cta}</a>
+        </td></tr>
+      </table>`
+    : "";
+
+  // Outer gutter is 8px per side (was 24) so the card keeps its full width on a
+  // 320px screen. The MSO conditional pins the card to 520px in the Word
+  // engine, which ignores max-width entirely and would otherwise let it run the
+  // full width of the reading pane.
   return `
-<div style="background:#f4f1e8;padding:24px;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">${preheader}
-  <div style="max-width:520px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;border:1px solid #e3ded0;">
-    <div style="background:#f4f1e8;padding:20px 24px;text-align:left;border-bottom:1px solid #eee6d4;">
-      <img src="https://app.thekyaproject.com/brand/lockups/horizontal-cream.png" width="280" alt="Kya & Co. — by The Kya Project" style="display:block;width:280px;max-width:100%;height:auto;" />
-    </div>
-    <div style="background:${accent};padding:20px 24px;">
-      <p style="margin:0;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.85);">${opts.kicker}</p>
-      <h1 style="margin:6px 0 0;font-size:20px;font-weight:500;color:#fff;">${opts.heading}</h1>
-    </div>
-    <div style="padding:24px;">
-      ${opts.bodyHtml ?? `<p style="margin:0 0 8px;font-size:15px;color:#1a3d2e;">${opts.body}</p>`}${opts.cta ? `
-      <a href="${opts.link}" style="display:inline-block;margin-top:12px;background:${accent};color:#fff;text-decoration:none;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:600;">${opts.cta}</a>` : ""}${reading}${nextUp}${healthNote}
-      <p style="margin:${footGap}px 0 0;font-size:${opts.footFine ? "11.5" : "12"}px;color:#8a897f;line-height:1.5;${opts.footFine ? "font-style:italic;" : ""}">${opts.foot}</p>
-      <p style="margin:18px 0 0;font-size:11px;color:#8a897f;text-align:center;border-top:1px solid #eee6d4;padding-top:12px;">${footNote}</p>
-    </div>
-  </div>
+<div style="background-color:${C.ground};padding:24px 8px;font-family:${SANS};-webkit-text-size-adjust:100%;">${preheader}
+  <!--[if mso]><table role="presentation" width="520" align="center" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" align="center" style="width:100%;max-width:520px;margin:0 auto;table-layout:fixed;border-collapse:separate;border-spacing:0;border:1px solid ${C.border};border-radius:16px;background-color:${C.card};mso-table-lspace:0pt;mso-table-rspace:0pt;">
+    <tr><td bgcolor="${C.ground}" style="padding:20px 24px;background-color:${C.ground};border-bottom:1px solid ${C.rule};border-radius:16px 16px 0 0;">
+      <img src="https://app.thekyaproject.com/brand/lockups/horizontal-cream.png" width="280" alt="Kya &amp; Co. — by The Kya Project" style="display:block;width:280px;max-width:100%;height:auto;border:0;font-family:${SERIF};font-size:22px;line-height:28px;color:${C.green};" />
+    </td></tr>
+    <tr><td bgcolor="${accent}" style="padding:18px 24px;background-color:${accent};">
+      ${eyebrow(opts.kicker, "rgba(255,255,255,.85)")}
+      <h1 style="margin:7px 0 0;font-family:${SERIF};font-size:21px;line-height:28px;font-weight:500;color:#ffffff;">${opts.heading}</h1>
+    </td></tr>
+    <tr><td style="padding:24px;">
+      ${opts.bodyHtml ?? `<p style="margin:0;font-family:${SANS};font-size:15px;line-height:1.6;color:${C.green};">${opts.body}</p>`}${cta}${reading}${nextUp}${healthNote}
+      <p style="margin:${footGap}px 0 0;font-family:${SANS};font-size:${opts.footFine ? "11.5" : "12"}px;line-height:1.5;color:${C.muted};${opts.footFine ? "font-style:italic;" : ""}">${opts.foot}</p>
+      <p style="margin:18px 0 0;font-family:${SANS};font-size:11px;line-height:17px;color:${C.muted};text-align:center;border-top:1px solid ${C.rule};padding-top:12px;">${footNote}</p>
+    </td></tr>
+  </table>
+  <!--[if mso]></td></tr></table><![endif]-->
 </div>`;
 }
 
