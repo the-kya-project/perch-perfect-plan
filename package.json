@@ -16,7 +16,8 @@
     "i18n:check": "i18next --config i18next-parser.config.js --fail-on-update",
     "i18n:translate": "node scripts/i18n-translate.mjs",
     "i18n:owner-parity": "node scripts/i18n-owner-parity.mjs",
-    "postinstall": "patch-package"
+    "postinstall": "patch-package",
+    "email:qa": "npx --yes vite-node scripts/qa-send-emails.ts --"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.2",
