@@ -40,6 +40,10 @@ export type BuiltEmail = { subject: string; html: string; text: string };
 // by Gmail and Outlook, and Georgia ships on effectively every device.
 const SANS = "-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
 const SERIF = "Georgia,'Times New Roman',serif";
+// Where the lockup and the screenshot crops are served from. Override to a
+// Vercel preview URL to see unreleased images in a real inbox before merging.
+const ASSETS = process.env.EMAIL_ASSET_BASE || "https://app.thekyaproject.com";
+
 const C = {
   ground: "#f4f1e8",
   card: "#ffffff",
@@ -67,6 +71,19 @@ const cardP = (s: string) =>
   `<p style="margin:0 0 11px;font-family:${SANS};font-size:14.5px;line-height:1.58;color:${C.green};">${s}</p>`;
 const cardLi = (s: string) =>
   `<p style="margin:0 0 11px;font-family:${SANS};font-size:14.5px;line-height:1.58;color:${C.green};">&bull;&nbsp; ${s}</p>`;
+
+/** A screenshot of the screen the email is about. Enhancement only: images are
+ *  blocked by default in most clients, so every email must still read as type
+ *  with all of these missing — which is why the alt text is a real sentence.
+ *  Crops live in public/email/ and are 2x for retina. */
+function shot(file: string, alt: string): string {
+  return `
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;border-collapse:collapse;margin:2px 0 18px;mso-table-lspace:0pt;mso-table-rspace:0pt;">
+        <tr><td style="padding:0;">
+          <img src="${ASSETS}/email/${file}" width="472" alt="${alt}" style="display:block;width:100%;max-width:472px;height:auto;border:1px solid ${C.border};border-radius:12px;" />
+        </td></tr>
+      </table>`;
+}
 
 /** The cream inset with a teal label — "What you need", "Worth knowing". */
 function noteCard(label: string, inner: string): string {
@@ -179,7 +196,7 @@ function shell(opts: {
   <!--[if mso]><table role="presentation" width="520" align="center" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" align="center" style="width:100%;max-width:520px;margin:0 auto;table-layout:fixed;border-collapse:separate;border-spacing:0;border:1px solid ${C.border};border-radius:16px;background-color:${C.card};mso-table-lspace:0pt;mso-table-rspace:0pt;">
     <tr><td bgcolor="${C.ground}" style="padding:20px 24px;background-color:${C.ground};border-bottom:1px solid ${C.rule};border-radius:16px 16px 0 0;">
-      <img src="https://app.thekyaproject.com/brand/lockups/horizontal-cream.png" width="280" alt="Kya &amp; Co. — by The Kya Project" style="display:block;width:280px;max-width:100%;height:auto;border:0;font-family:${SERIF};font-size:22px;line-height:28px;color:${C.green};" />
+      <img src="${ASSETS}/brand/lockups/horizontal-cream.png" width="280" alt="Kya &amp; Co. — by The Kya Project" style="display:block;width:280px;max-width:100%;height:auto;border:0;font-family:${SERIF};font-size:22px;line-height:28px;color:${C.green};" />
     </td></tr>
     <tr><td bgcolor="${accent}" style="padding:18px 24px;background-color:${accent};">
       ${eyebrow(opts.kicker, "rgba(255,255,255,.85)")}
@@ -658,6 +675,7 @@ export function buildWelcomeEmail(opts: { firstName?: string; link: string; loca
     p(t("email.welcome.founder")) +
     p(t("email.welcome.birds")) +
     p(t("email.welcome.built")) +
+        shot("welcome-record.jpg", t("email.welcome.shotAlt")) +
     p(t("email.welcome.startThisWeek")) +
     li(t("email.welcome.stepAddBird")) +
     li(t("email.welcome.stepWeight")) +
@@ -699,6 +717,7 @@ export function buildSeriesWeighingEmail(opts: { link: string; locale?: string }
       heading: t("email.seriesWeighing.heading"),
       bodyHtml:
         bodyP(t("email.seriesWeighing.lead")) +
+        shot("weight-log.png", t("email.seriesWeighing.shotAlt")) +
         noteCard(t("email.seriesWeighing.card1Label"),
         cardLi(t("email.seriesWeighing.card1Li1")) +
         cardLi(t("email.seriesWeighing.card1Li2"))) +
@@ -728,6 +747,7 @@ export function buildSeriesHealthCheckEmail(opts: { link: string; locale?: strin
       heading: t("email.seriesHealthCheck.heading"),
       bodyHtml:
         bodyP(t("email.seriesHealthCheck.lead")) +
+        shot("health-check.png", t("email.seriesHealthCheck.shotAlt")) +
         bodyP(t("email.seriesHealthCheck.p2")) +
         noteCard(t("email.seriesHealthCheck.card1Label"),
         cardP(t("email.seriesHealthCheck.card1P1"))) +
@@ -755,6 +775,7 @@ export function buildSeriesCarePlanEmail(opts: { link: string; locale?: string }
       heading: t("email.seriesCarePlan.heading"),
       bodyHtml:
         bodyP(t("email.seriesCarePlan.lead")) +
+        shot("care-plan.png", t("email.seriesCarePlan.shotAlt")) +
         bodyP(t("email.seriesCarePlan.p2")) +
         noteCard(t("email.seriesCarePlan.card1Label"),
         cardP(t("email.seriesCarePlan.card1P1"))) +
@@ -784,6 +805,7 @@ export function buildSeriesJournalEmail(opts: { link: string; locale?: string })
       heading: t("email.seriesJournal.heading"),
       bodyHtml:
         bodyP(t("email.seriesJournal.lead")) +
+        shot("journal-entry.jpg", t("email.seriesJournal.shotAlt")) +
         bodyP(t("email.seriesJournal.p2")) +
         bodyP(t("email.seriesJournal.p3")) +
         bodyP(t("email.seriesJournal.p4")) +
@@ -810,6 +832,7 @@ export function buildSeriesSharingEmail(opts: { link: string; locale?: string })
       heading: t("email.seriesSharing.heading"),
       bodyHtml:
         bodyP(t("email.seriesSharing.lead")) +
+        shot("household.png", t("email.seriesSharing.shotAlt")) +
         noteCard(t("email.seriesSharing.card1Label"),
         cardP(t("email.seriesSharing.card1P1"))) +
         noteCard(t("email.seriesSharing.card2Label"),
@@ -839,6 +862,7 @@ export function buildSeriesVetEmail(opts: { link: string; locale?: string }): Bu
       heading: t("email.seriesVet.heading"),
       bodyHtml:
         bodyP(t("email.seriesVet.lead")) +
+        shot("lately.png", t("email.seriesVet.shotAlt")) +
         bodyP(t("email.seriesVet.p2")) +
         bodyP(t("email.seriesVet.p3")) +
         bodyP(t("email.seriesVet.p4")) +
