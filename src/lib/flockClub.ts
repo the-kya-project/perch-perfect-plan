@@ -187,10 +187,8 @@ const buttonHtml = (label: string, href: string) =>
 /** Signature: 48px forest circle with a lime B, the name in Fraunces italic. */
 const signatureHtml = (t: EmailT) =>
   `${grid("margin:6px 0 4px;")}<tr>
-<td width="48" valign="top" style="width:48px;padding:0 14px 0 0;">
-<table role="presentation" width="48" cellpadding="0" cellspacing="0" border="0" style="width:48px;${RESET}">
-<tr><td align="center" height="48" bgcolor="${FC.forest}" style="width:48px;height:48px;background-color:${FC.forest};border-radius:24px;font-family:${SERIF_FONT};font-size:22px;line-height:48px;font-weight:700;color:${FC.lime};text-align:center;">B</td></tr>
-</table>
+<td width="64" valign="middle" style="width:64px;padding:0 14px 0 0;">
+<img src="${ASSETS}/brand/email/brittany.jpg" width="64" height="64" alt="${t("email.flock.signPhotoAlt")}" style="display:block;width:64px;height:64px;border-radius:32px;border:0;background-color:${FC.forest};font-family:${BODY_FONT};font-size:10px;line-height:13px;color:${FC.lime};text-align:center;" />
 </td>
 <td valign="middle" style="padding:0;">
 <p style="margin:0;font-family:${SERIF_FONT};font-style:italic;font-size:19px;line-height:26px;color:${FC.forest};">${t("email.flock.signName")}</p>

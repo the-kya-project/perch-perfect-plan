@@ -16,15 +16,14 @@
   // block — that is the whole point of it living here.
   "email.flock.lockupAlt": "Kya &amp; Co.",
   "email.flock.signName": "Brittany",
+  "email.flock.signPhotoAlt": "Brittany King with Juno",
   "email.flock.signTitle": "Founder, The Kya Project",
   "email.flock.disclaimer": "Kya &amp; Co. doesn't diagnose illness. If you're ever worried about your bird's health, contact an avian veterinarian.",
   "email.flock.settings": "Settings",
   "email.flock.unsubscribe": "Unsubscribe",
   "email.flock.byLine": "by The Kya Project",
-  // ⚠️ PLACEHOLDER. CAN-SPAM and the Brevo terms both require a real postal
-  // address in every bulk email. This must be filled in before The Flock
-  // Report or the onboarding series goes out.
-  "email.flock.mailingAddress": "The Kya Project · [ADDRESS NOT SET]",
+  // Required in every bulk email by CAN-SPAM and by Brevo's terms.
+  "email.flock.mailingAddress": "The Kya Project · PO Box 58, New Haven, IN 46774",
   "email.flock.pillFlockmate": "Hi, flockmate",
   "email.flock.addBirdCta": "Add your bird first",
 
@@ -490,7 +489,7 @@
   "email.seriesJournal.cardPill": "Juno's journal",
   "email.seriesJournal.cardDate": "Saturday, Sept 14",
   "email.seriesJournal.cardEntry": "Tried the new foraging box this morning. Solved it in under a minute, then ignored it for the rest of the day.",
-  "email.seriesJournal.cardPhotoAlt": "Juno with a foraging toy",
+  "email.seriesJournal.cardPhotoAlt": "Juno, a blue-throated macaw, with her crest up",
   "email.seriesJournal.momentLabel": "Moment &middot; Oct 3",
   "email.seriesJournal.momentText": "The day Juno came home",
   "email.seriesJournal.p2": "An entry can be one sentence. What happened, a photo if you've got one, done.",
