@@ -19,7 +19,13 @@ export const Route = createFileRoute("/_authenticated")({
     if (!session) {
       // Remember where they were headed (e.g. a /past-birds email deep-link) so
       // /auth lands them there after sign-in instead of the default dashboard.
-      throw redirect({ to: "/auth", search: { mode: "signin" as const, redirect: location.pathname } });
+      //
+      // href, not pathname: the query string IS the destination for the email
+      // deep-links that open a form rather than a screen (?log=1 on weight,
+      // ?new=1 on journal, ?section= on the care plan). Sending pathname alone
+      // dropped it, and the Flock Report's chips landed on the list instead of
+      // the thing the reader tapped.
+      throw redirect({ to: "/auth", search: { mode: "signin" as const, redirect: location.href } });
     }
     return { user: session.user };
   },
