@@ -55,6 +55,19 @@
   "email.monthly.totalWeighIns": "weigh-ins",
   "email.monthly.totalChecks": "health checks",
   "email.monthly.totalJournal": "journal entries",
+  // ---- The quiet Flock Report ----
+  // Sent when NOTHING was logged for any bird that month. Same shape as the
+  // active report minus the totals, plus one section that asks for one entry.
+  "email.monthly.quietPreview": "It was a quiet one. Here's an easy way back in.",
+  "email.monthly.quietIntro": "{{hi}} It was a quiet month in the record for {{birds}}. No judgment here. Birds keep you busy, and so does everything else.",
+  "email.monthly.startSmall": "Start small: pick one",
+  "email.monthly.startSmallNote": "One entry is all it takes to get the record going again.",
+  "email.monthly.start1Title": "Log one weight",
+  "email.monthly.start1Text": "Scale, bird, number. Done.",
+  "email.monthly.start2Title": "Do one daily once-over",
+  "email.monthly.start2Text": "A few taps about how they look and act today.",
+  "email.monthly.start3Title": "Write one sentence in the journal",
+  "email.monthly.start3Text": "What did they get into this week? That counts.",
   "email.monthly.rollCall": "Roll call",
   "email.monthly.rollCallNote": "Tap a bird to open their record",
   "email.monthly.noWeighIns": "No weigh-ins in {{month}}",

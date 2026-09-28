@@ -85,6 +85,8 @@ const monthly: Array<[string, T.BuiltEmail]> = [
   ["08-flock-report", T2.buildFlockReportEmail({ firstName: "Sam", birds: FLOCK6, month: 9, year: 2026, link: APP, coming: { date: "Oct 3", title: "The day Juno came home" }, article: ART })],
   ["08b-flock-report-one", T2.buildFlockReportEmail({ firstName: "Sam", birds: [FLOCK6[0]], month: 9, year: 2026, link: APP, article: ART })],
   ["08c-flock-report-eight", T2.buildFlockReportEmail({ firstName: "Sam", birds: FLOCK8, month: 9, year: 2026, link: APP, article: ART })],
+  ["09-flock-report-quiet", T2.buildFlockReportEmail({ firstName: "Sam", month: 9, year: 2026, link: APP, article: ART,
+    birds: ["Juno", "Pip", "Echo"].map((n) => ({ name: n, species: "Blue-throated macaw", href: `${A2}/birds/demo`, weighIns: [], checks: 0, journal: 0, planUpdated: null })) })],
 ];
 
 // Everything else that uses shell(). These must not change.

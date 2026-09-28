@@ -376,6 +376,16 @@ export function joinFlock(names: string[], andMore: (n: number) => string): stri
   return `${names.slice(0, 5).join(", ")}, ${andMore(names.length - 5)}`;
 }
 
+/**
+ * A quiet month is one where NOTHING was logged for ANY bird: no weigh-ins, no
+ * health checks, no journal entries, no care-plan edits. One reading on one
+ * bird makes it an active month — the report then has something to show, and
+ * the empty states on the other birds do the nudging.
+ */
+export function isQuietFlock(birds: FlockBird[]): boolean {
+  return birds.every((b) => b.weighIns.length === 0 && b.checks === 0 && b.journal === 0 && !b.planUpdated);
+}
+
 export function buildFlockReportEmail(opts: {
   firstName?: string;
   birds: FlockBird[];
@@ -407,16 +417,26 @@ export function buildFlockReportEmail(opts: {
   const hi = opts.firstName ? t("email.monthly.hi", { firstName: escapeHtml(opts.firstName) }) : t("email.monthly.hiNoName");
 
   const sum = (f: (b: FlockBird) => number) => opts.birds.reduce((a, b) => a + f(b), 0);
+  const quiet = isQuietFlock(opts.birds);
+  // The "pick one" cards point at the first bird the account added. There is no
+  // bird-picker screen for logging a weight or running a check — those routes
+  // are all per-bird — so the first bird is the one choice available.
+  const first = opts.birds[0];
 
   const blocks: FlockBlock[] = [
-    {
-      kind: "totals",
-      items: [
-        { n: String(sum((b) => b.weighIns.length)), label: t("email.monthly.totalWeighIns") },
-        { n: String(sum((b) => b.checks)), label: t("email.monthly.totalChecks") },
-        { n: String(sum((b) => b.journal)), label: t("email.monthly.totalJournal") },
-      ],
-    },
+    // A quiet month has nothing to total; three zeroes would be a scoreboard.
+    ...(quiet
+      ? []
+      : [
+          {
+            kind: "totals" as const,
+            items: [
+              { n: String(sum((b) => b.weighIns.length)), label: t("email.monthly.totalWeighIns") },
+              { n: String(sum((b) => b.checks)), label: t("email.monthly.totalChecks") },
+              { n: String(sum((b) => b.journal)), label: t("email.monthly.totalJournal") },
+            ],
+          },
+        ]),
     { kind: "sectionHead", title: t("email.monthly.rollCall"), note: t("email.monthly.rollCallNote") },
     {
       kind: "birdCards",
@@ -462,6 +482,19 @@ export function buildFlockReportEmail(opts: {
     },
   ];
 
+  if (quiet && first) {
+    blocks.push({ kind: "sectionHead", title: t("email.monthly.startSmall"), note: undefined });
+    blocks.push({ kind: "small", text: t("email.monthly.startSmallNote") });
+    blocks.push({
+      kind: "numberedLinks",
+      items: [
+        { title: t("email.monthly.start1Title"), text: t("email.monthly.start1Text"), href: `${first.href}/weight` },
+        { title: t("email.monthly.start2Title"), text: t("email.monthly.start2Text"), href: `${first.href}/scan` },
+        { title: t("email.monthly.start3Title"), text: t("email.monthly.start3Text"), href: `${first.href}/journal` },
+      ],
+    });
+  }
+
   if (opts.coming) {
     blocks.push({
       kind: "comingUp",
@@ -502,8 +535,14 @@ export function buildFlockReportEmail(opts: {
   return flockShell({
     headline,
     headlineStyle: "lime",
-    intro: t("email.monthly.intro", { hi, birds: flock, nextMonth: nextMonthName }),
-    preheader: one ? t("email.monthly.previewOne") : t("email.monthly.previewMany", { count: opts.birds.length }),
+    intro: quiet
+      ? t("email.monthly.quietIntro", { hi, birds: flock })
+      : t("email.monthly.intro", { hi, birds: flock, nextMonth: nextMonthName }),
+    preheader: quiet
+      ? t("email.monthly.quietPreview")
+      : one
+        ? t("email.monthly.previewOne")
+        : t("email.monthly.previewMany", { count: opts.birds.length }),
     pill: t("email.flock.reportPill", { mon: monShort }),
     hero: { file: `monthly/${String(m).padStart(2, "0")}.jpg`, alt: t(`email.monthly.care.${m}.alt`) },
     blocks,

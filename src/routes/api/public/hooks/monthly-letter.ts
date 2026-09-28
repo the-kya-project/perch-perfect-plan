@@ -54,7 +54,7 @@
  */
 import { createFileRoute } from "@tanstack/react-router";
 import { withCronTelemetry } from "@/lib/cronTelemetry";
-import { buildFlockReportEmail, type FlockBird } from "@/lib/flockEmails";
+import { buildFlockReportEmail, isQuietFlock, type FlockBird } from "@/lib/flockEmails";
 
 const APP_URL = "https://app.thekyaproject.com";
 
@@ -255,9 +255,8 @@ export const Route = createFileRoute("/api/public/hooks/monthly-letter")({
             locale,
           });
 
-          // The quiet variant lands in the next pass; every account gets the
-          // active report for now, whose empty states already read as nudges.
-          const allQuiet = modelled.every((b) => b.weighIns.length === 0 && b.checks === 0);
+          // One rule, shared with the builder, so the log and the email agree.
+          const allQuiet = isQuietFlock(modelled);
           planned.push({ email: p.email, birds: modelled.length, allQuiet, subject: built.subject });
           if (dryRun) continue;
 

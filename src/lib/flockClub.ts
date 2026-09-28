@@ -87,6 +87,7 @@ export type FlockBlock =
   | { kind: "tileGrid"; tiles: Array<{ name: string; badge?: string; highlight: boolean }> }
   | { kind: "totals"; items: Array<{ n: string; label: string }> }
   | { kind: "sectionHead"; title: string; note?: string }
+  | { kind: "numberedLinks"; items: Array<{ title: string; text: string; href: string }> }
   | {
       kind: "birdCards";
       birds: Array<{
@@ -300,6 +301,30 @@ const sectionHeadHtml = (title: string, note?: string) =>
 ${note ? `<td valign="bottom" align="right" class="fc-sec-note" style="padding:0 0 3px 10px;font-family:${BODY_FONT};font-size:12px;line-height:17px;color:${FC.muted};text-align:right;">${note}</td>` : ""}
 </tr>
 </table>`;
+
+/** Three linked cards with sunflower number circles. Used by the quiet report
+ *  as the one thing it asks for: pick one, do it once. */
+const numberedLinksHtml = (items: Array<{ title: string; text: string; href: string }>) =>
+  items
+    .map(
+      (it, i) => `${grid(`margin:0 0 ${i === items.length - 1 ? 24 : 10}px;`)}<tr>
+<td style="padding:14px;background-color:#ffffff;border:2px solid ${FC.forest};border-radius:18px;">
+${grid()}<tr>
+<td width="44" valign="top" style="width:44px;padding:0 14px 0 0;">
+<table role="presentation" width="44" cellpadding="0" cellspacing="0" border="0" style="width:44px;${RESET}">
+<tr><td align="center" height="40" bgcolor="${FC.sunflower}" style="width:44px;height:40px;background-color:${FC.sunflower};border:2px solid ${FC.forest};border-radius:22px;font-family:${HEAD_FONT};font-size:18px;line-height:40px;font-weight:800;color:${FC.forest};text-align:center;">${i + 1}</td></tr>
+</table>
+</td>
+<td valign="middle" style="padding:0;">
+<p style="margin:0 0 3px;font-family:${HEAD_FONT};font-size:16px;line-height:22px;font-weight:800;letter-spacing:-0.3px;color:${FC.forest};${NOBREAK}"><a href="${it.href}" style="color:${FC.forest};text-decoration:none;">${it.title}</a></p>
+<p style="margin:0;font-family:${BODY_FONT};font-size:13px;line-height:19px;color:${FC.muted};">${it.text}</p>
+</td>
+</tr>
+</table>
+</td>
+</tr></table>`,
+    )
+    .join("\n");
 
 /** Bird cards, two per row, stacking under 480px. The cards arrive rendered —
  *  buildFlockReport assembles each one, because what goes in depends on that
@@ -750,6 +775,7 @@ function blockHtml(b: FlockBlock, c: Ctx): string {
     case "tileGrid": return tileGridHtml(b.tiles);
     case "totals": return totalsHtml(b.items);
     case "sectionHead": return sectionHeadHtml(b.title, b.note);
+    case "numberedLinks": return numberedLinksHtml(b.items);
     case "birdCards": return birdCardsHtml(b.birds);
     case "comingUp": return comingUpHtml(b);
     case "careNote": return careNoteHtml(b);
@@ -794,6 +820,7 @@ function blockText(b: FlockBlock, c: Ctx): string {
     case "tileGrid": return b.tiles.map((x) => (x.badge ? `${detag(x.badge)} ` : "") + detag(x.name)).join("\n");
     case "totals": return b.items.map((x) => `${detag(x.n)} ${detag(x.label)}`).join("\n");
     case "sectionHead": return detag(b.title);
+    case "numberedLinks": return b.items.map((x, i) => `${i + 1}. ${detag(x.title)} — ${detag(x.text)}: ${x.href}`).join("\n");
     case "birdCards": return b.birds.map((x) => [`${detag(x.name)} (${detag(x.species)})`, x.chart ? detag(x.chart.line) : detag(x.empty?.text ?? ""), ...x.rows.map((r) => `${detag(r.label)}: ${detag(r.value)}`)].filter(Boolean).join("\n")).join("\n\n");
     case "comingUp": return `${detag(b.label)}\n${detag(b.text)}\n${detag(b.cta)}: ${b.href}`;
     case "careNote": return `${detag(b.pill)} — ${detag(b.title)}\n` + b.tips.map((t) => `${detag(t.lead)} ${detag(t.text)}`).join("\n");
