@@ -558,7 +558,7 @@ export function flockShell(opts: {
   .fc-sticker-t { width:80px !important; }
   .fc-sticker { width:80px !important; height:76px !important; border-radius:40px !important; font-size:13px !important; line-height:15px !important; }
   .fc-sticker-cell { width:96px !important; padding-left:12px !important; }
-  .fc-h1 { font-size:32px !important; line-height:35px !important; }
+  .fc-h1 { font-size:30px !important; line-height:34px !important; }
 }
 </style>
 </head>
