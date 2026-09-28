@@ -29,6 +29,24 @@
  * Serverless gotcha (memory/perch-serverless-fire-and-forget): every send is
  * awaited before the response returns — nothing fire-and-forget here.
  *
+ * SCHEDULING. The job definition is not a migration (see
+ * 20260724200000_enable_cron_extensions.sql) — run this once against the
+ * database, substituting the real secret. 13:00 UTC on the 2nd keeps it clear
+ * of the daily jobs at 09:00, 14:00, 15:00 and 16:00:
+ *
+ *   select cron.schedule(
+ *     'monthly-letter',
+ *     '0 13 2 * *',
+ *     $$select net.http_post(
+ *         url := 'https://app.thekyaproject.com/api/public/hooks/monthly-letter',
+ *         headers := '{"Content-Type":"application/json","Authorization":"Bearer <CARE_PLAN_REMINDER_SECRET>"}'::jsonb,
+ *         body := '{}'::jsonb
+ *       );$$
+ *   );
+ *
+ * Check it with `select * from cron.job;` and the runs with
+ * `select * from cron.job_run_details order by start_time desc limit 5;`.
+ *
  * SCALE: this pulls the month's rows in a handful of bulk queries and groups
  * them in memory, rather than querying per account. Supabase caps a select at
  * 1000 rows by default, so if the flock ever outgrows that these need

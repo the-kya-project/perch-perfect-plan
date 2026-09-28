@@ -1363,7 +1363,10 @@ export type MonthlyBird = {
   flagged: number;
   journalEntries: number;
   journalPhotos: number;
-  /** Sections touched this month, already joined ("Food and Routine"). */
+  /** When the plan was touched this month. `sections` names what changed
+   *  ("Food and Routine") when that is knowable; care_plans has no per-section
+   *  timestamps today, so the hook passes "" and the card says just "Updated"
+   *  rather than inventing a list. */
   planUpdated: { date: string; sections: string } | null;
   /** A journal line worth quoting. Entries with no body are not quotable, so
    *  the hook passes null and the block is dropped. */
@@ -1475,9 +1478,11 @@ function monthlyBirdRow(t: EmailT, b: MonthlyBird, first: boolean, prevMonth: st
   const journalValue = b.journalEntries === 1 ? t("email.monthly.journalValueOne") : t("email.monthly.journalValue", { count: b.journalEntries });
   const journalSub = b.journalPhotos > 0 ? t("email.monthly.journalPhotos", { count: b.journalPhotos }) : t("email.monthly.journalNoPhotos");
   const planValue = b.planUpdated ? b.planUpdated.date : "&mdash;";
-  const planSub = b.planUpdated
-    ? t("email.monthly.planUpdated", { sections: b.planUpdated.sections })
-    : t("email.monthly.planNotUpdated", { prevMonth });
+  const planSub = !b.planUpdated
+    ? t("email.monthly.planNotUpdated", { prevMonth })
+    : b.planUpdated.sections
+      ? t("email.monthly.planUpdated", { sections: b.planUpdated.sections })
+      : t("email.monthly.planUpdatedPlain");
 
   const quote = b.quote
     ? `${grid()}<tr>

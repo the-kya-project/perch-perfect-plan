@@ -55,7 +55,12 @@
   "email.monthly.journalPhotos": "and {{count}} photos this month",
   "email.monthly.journalNoPhotos": "no photos this month",
   "email.monthly.planLabel": "Care plan",
+  // The handback shows "Food and Routine updated", but care_plans is one wide
+  // row with no per-section timestamps, so which sections changed is not
+  // knowable. planUpdated is kept for when it is; until then the plain form
+  // is used rather than naming sections we cannot stand behind.
   "email.monthly.planUpdated": "{{sections}} updated",
+  "email.monthly.planUpdatedPlain": "Updated",
   "email.monthly.planNotUpdated": "Not updated in {{prevMonth}}",
   "email.monthly.journalQuoteLabel": "Journal · {{date}}",
   "email.monthly.recordLink": "Open {{bird}}'s record",
@@ -63,6 +68,12 @@
   // The quiet block (a bird with little logged) and the quiet letter (every
   // bird quiet). Deliberately not a telling-off — see notGrade.
   "email.monthly.quietLead": "{{bird}}'s record was quieter this month. One weight is enough to pick the trend back up, and everything from before is still there.",
+  // The handback disagrees with itself here: 09-monthly-quiet.html and
+  // new-strings.json say "Last on the record" / "Weight · <date>", while the
+  // quiet block inside 08-monthly.html says "Last weight" / "Logged <date>".
+  // new-strings.json wins — it is the named string source and template 09
+  // agrees with it, two against one. Both places use these keys, so the quiet
+  // block and the quiet letter cannot drift apart again.
   "email.monthly.lastLabel": "Last on the record",
   "email.monthly.lastWeight": "Weight · {{date}}",
   "email.monthly.lastCheckLabel": "Last health check",
