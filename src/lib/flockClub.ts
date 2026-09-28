@@ -860,6 +860,9 @@ export function flockShell(opts: {
   blocks: FlockBlock[];
   /** The one-line "why you're getting this", per email. */
   footerWhy: string;
+  /** The reader's signed one-click unsubscribe URL. Omitted only for emails
+   *  that are not unsubscribable — those should not offer the link at all. */
+  unsubscribeUrl?: string;
   link: string;
   /** False when the account has no bird at send time. Any button marked
    *  `needsBird` then becomes "add your bird first" instead. Defaults true so
@@ -993,10 +996,11 @@ ${body}
 <img src="${ASSETS}/brand/email/lockup-reversed.png" width="112" alt="${t("email.flock.lockupAlt")}" style="display:block;width:112px;height:auto;border:0;margin:0 auto 14px;font-family:${HEAD_FONT};font-size:16px;line-height:22px;font-weight:800;color:#ffffff;" />
 <p style="margin:0 0 10px;font-family:${BODY_FONT};font-size:13px;line-height:20px;color:${FC.footText};text-align:center;">${opts.footerWhy}</p>
 <p style="margin:0 0 14px;font-family:${BODY_FONT};font-size:12px;line-height:19px;color:${FC.footFine};text-align:center;">${t("email.flock.disclaimer")}</p>
+<p style="margin:0 0 10px;font-family:${BODY_FONT};font-size:12px;line-height:19px;color:${FC.footFine};text-align:center;">${t("email.flock.mailingAddress")}</p>
 <p style="margin:0;font-family:${BODY_FONT};font-size:12px;line-height:19px;color:${FC.footFine};text-align:center;">
-<a href="${ASSETS}/settings" style="color:${FC.footText};text-decoration:underline;">${t("email.flock.settings")}</a>
-&nbsp;&middot;&nbsp;
-<a href="${ASSETS}/settings" style="color:${FC.footText};text-decoration:underline;">${t("email.flock.unsubscribe")}</a>
+<a href="${ASSETS}/scans/settings" style="color:${FC.footText};text-decoration:underline;">${t("email.flock.settings")}</a>
+${opts.unsubscribeUrl ? `&nbsp;&middot;&nbsp;
+<a href="${opts.unsubscribeUrl}" style="color:${FC.footText};text-decoration:underline;">${t("email.flock.unsubscribe")}</a>` : ""}
 &nbsp;&middot;&nbsp;${t("email.flock.byLine")}</p>
 </td>
 </tr>

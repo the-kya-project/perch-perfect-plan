@@ -21,6 +21,10 @@
   "email.flock.settings": "Settings",
   "email.flock.unsubscribe": "Unsubscribe",
   "email.flock.byLine": "by The Kya Project",
+  // ⚠️ PLACEHOLDER. CAN-SPAM and the Brevo terms both require a real postal
+  // address in every bulk email. This must be filled in before The Flock
+  // Report or the onboarding series goes out.
+  "email.flock.mailingAddress": "The Kya Project · [ADDRESS NOT SET]",
   "email.flock.pillFlockmate": "Hi, flockmate",
   "email.flock.addBirdCta": "Add your bird first",
 
@@ -93,7 +97,7 @@
   "email.monthly.mailbagTitle": "The flockmate mailbag",
   "email.monthly.mailbagText": "What's your bird's weirdest habit? Reply with a story or a photo. With your OK, we'll share a few favorites next month.",
   "email.monthly.cta": "Open Kya &amp; Co.",
-  "email.monthly.foot": "You're getting The Flock Report because you have a Kya &amp; Co. account. Change which emails you get in Settings.",
+  "email.monthly.foot": "You're getting The Flock Report because you have a Kya &amp; Co. account.",
   "email.monthly.mon.1": "Jan",
   "email.monthly.mon.2": "Feb",
   "email.monthly.mon.3": "Mar",

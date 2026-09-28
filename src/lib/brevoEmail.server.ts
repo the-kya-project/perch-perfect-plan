@@ -70,6 +70,9 @@ export interface TransactionalEmail {
    *  bereavement note are written as personal notes that invite a reply, so the
    *  reply has to reach a mailbox someone reads. Omit for everything else. */
   replyTo?: { email: string; name?: string };
+  /** Extra SMTP headers. Used for List-Unsubscribe and List-Unsubscribe-Post,
+   *  which is what makes the one-click button appear in Gmail and Apple Mail. */
+  headers?: Record<string, string>;
 }
 
 export async function sendTransactionalEmail(
@@ -95,6 +98,7 @@ export async function sendTransactionalEmail(
         sender: { email: senderEmail, name: senderName },
         to: [{ email: email.to, name: email.toName || undefined }],
         ...(email.replyTo ? { replyTo: email.replyTo } : {}),
+        ...(email.headers && Object.keys(email.headers).length ? { headers: email.headers } : {}),
         subject: email.subject,
         htmlContent: email.htmlContent,
         textContent: email.textContent,

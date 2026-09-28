@@ -20,7 +20,7 @@ import { flockShell, FC, type FlockBlock } from "./flockClub";
  * founderReplyTo() for this stage, because the copy says "every reply comes
  * straight to me" and that promise has to survive the sender address changing.
  */
-export function buildWelcomeEmail(opts: { firstName?: string; link: string; locale?: string }): BuiltEmail {
+export function buildWelcomeEmail(opts: { firstName?: string; link: string; locale?: string; unsubscribeUrl?: string }): BuiltEmail {
   const t = emailT(opts.locale);
 
   // Subject and H1 are the same string, greeting by name when we have one.
@@ -61,6 +61,7 @@ export function buildWelcomeEmail(opts: { firstName?: string; link: string; loca
     blocks,
     footerWhy: t("email.welcome.foot"),
     link: opts.link,
+    unsubscribeUrl: opts.unsubscribeUrl,
     locale: opts.locale,
   });
 }
@@ -84,7 +85,7 @@ const JUNO_WEIGHTS = [
  * `/birds/demo/weight` in the old plain text was only ever the QA harness's
  * sample string; no real send has used it.
  */
-export function buildSeriesWeighingEmail(opts: { link: string; hasBird?: boolean; chartUrl?: string; locale?: string }): BuiltEmail {
+export function buildSeriesWeighingEmail(opts: { link: string; hasBird?: boolean; chartUrl?: string; locale?: string; unsubscribeUrl?: string }): BuiltEmail {
   const t = emailT(opts.locale);
   const blocks: FlockBlock[] = [
     { kind: "p", text: t("email.seriesWeighing.p1") },
@@ -122,6 +123,7 @@ export function buildSeriesWeighingEmail(opts: { link: string; hasBird?: boolean
     footerWhy: t("email.seriesWeighing.foot"),
     link: opts.link,
     hasBird: opts.hasBird,
+    unsubscribeUrl: opts.unsubscribeUrl,
     locale: opts.locale,
   });
 }
@@ -131,7 +133,7 @@ export function buildSeriesWeighingEmail(opts: { link: string; hasBird?: boolean
  * app's own question wording from src/lib/triage.ts, with "the bird" swapped
  * for Juno, so the email is not teaching a screen that does not exist.
  */
-export function buildSeriesHealthCheckEmail(opts: { link: string; hasBird?: boolean; locale?: string }): BuiltEmail {
+export function buildSeriesHealthCheckEmail(opts: { link: string; hasBird?: boolean; locale?: string; unsubscribeUrl?: string }): BuiltEmail {
   const t = emailT(opts.locale);
   const blocks: FlockBlock[] = [
     { kind: "p", text: t("email.seriesHealthCheck.p1") },
@@ -162,6 +164,7 @@ export function buildSeriesHealthCheckEmail(opts: { link: string; hasBird?: bool
     footerWhy: t("email.seriesHealthCheck.foot"),
     link: opts.link,
     hasBird: opts.hasBird,
+    unsubscribeUrl: opts.unsubscribeUrl,
     locale: opts.locale,
   });
 }
@@ -177,7 +180,7 @@ export function buildSeriesHealthCheckEmail(opts: { link: string; hasBird?: bool
  * two starting sections are labelled; the rest show their name alone, so the
  * grid does not imply an order to work through.
  */
-export function buildSeriesCarePlanEmail(opts: { link: string; hasBird?: boolean; locale?: string }): BuiltEmail {
+export function buildSeriesCarePlanEmail(opts: { link: string; hasBird?: boolean; locale?: string; unsubscribeUrl?: string }): BuiltEmail {
   const t = emailT(opts.locale);
   const start = t("email.seriesCarePlan.startHere");
   const blocks: FlockBlock[] = [
@@ -215,6 +218,7 @@ export function buildSeriesCarePlanEmail(opts: { link: string; hasBird?: boolean
     footerWhy: t("email.seriesCarePlan.foot"),
     link: opts.link,
     hasBird: opts.hasBird,
+    unsubscribeUrl: opts.unsubscribeUrl,
     locale: opts.locale,
   });
 }
@@ -226,7 +230,7 @@ export function buildSeriesCarePlanEmail(opts: { link: string; hasBird?: boolean
  * entries really do take a photo (journal_entries.photo_path), so the sample
  * card is showing something that exists.
  */
-export function buildSeriesJournalEmail(opts: { link: string; hasBird?: boolean; locale?: string }): BuiltEmail {
+export function buildSeriesJournalEmail(opts: { link: string; hasBird?: boolean; locale?: string; unsubscribeUrl?: string }): BuiltEmail {
   const t = emailT(opts.locale);
   const blocks: FlockBlock[] = [
     { kind: "p", text: t("email.seriesJournal.p1") },
@@ -255,6 +259,7 @@ export function buildSeriesJournalEmail(opts: { link: string; hasBird?: boolean;
     footerWhy: t("email.seriesJournal.foot"),
     link: opts.link,
     hasBird: opts.hasBird,
+    unsubscribeUrl: opts.unsubscribeUrl,
     locale: opts.locale,
   });
 }
@@ -267,7 +272,7 @@ export function buildSeriesJournalEmail(opts: { link: string; hasBird?: boolean;
  * of them — so "the parts you choose to share" would promise a privacy control
  * the app does not have.
  */
-export function buildSeriesSharingEmail(opts: { link: string; hasBird?: boolean; locale?: string }): BuiltEmail {
+export function buildSeriesSharingEmail(opts: { link: string; hasBird?: boolean; locale?: string; unsubscribeUrl?: string }): BuiltEmail {
   const t = emailT(opts.locale);
   const blocks: FlockBlock[] = [
     { kind: "p", text: t("email.seriesSharing.p1") },
@@ -292,6 +297,7 @@ export function buildSeriesSharingEmail(opts: { link: string; hasBird?: boolean;
     footerWhy: t("email.seriesSharing.foot"),
     link: opts.link,
     hasBird: opts.hasBird,
+    unsubscribeUrl: opts.unsubscribeUrl,
     locale: opts.locale,
   });
 }
@@ -306,7 +312,7 @@ export function buildSeriesSharingEmail(opts: { link: string; hasBird?: boolean;
  * The card states numbers and nothing else. Characterising them — "steady",
  * "normal", "nothing flagged" — is the reader's job and their vet's.
  */
-export function buildSeriesVetEmail(opts: { link: string; hasBird?: boolean; locale?: string }): BuiltEmail {
+export function buildSeriesVetEmail(opts: { link: string; hasBird?: boolean; locale?: string; unsubscribeUrl?: string }): BuiltEmail {
   const t = emailT(opts.locale);
   const blocks: FlockBlock[] = [
     { kind: "p", text: t("email.seriesVet.p1") },
@@ -338,6 +344,7 @@ export function buildSeriesVetEmail(opts: { link: string; hasBird?: boolean; loc
     footerWhy: t("email.seriesVet.foot"),
     link: opts.link,
     hasBird: opts.hasBird,
+    unsubscribeUrl: opts.unsubscribeUrl,
     locale: opts.locale,
   });
 }
@@ -396,6 +403,7 @@ export function buildFlockReportEmail(opts: {
   /** The soonest Moment falling in the month AFTER the one recapped. */
   coming?: { date: string; title: string } | null;
   article?: { title: string; url: string; minutes: number; imageUrl?: string; imageAlt?: string } | null;
+  unsubscribeUrl?: string;
   locale?: string;
 }): BuiltEmail {
   const t = emailT(opts.locale);
@@ -418,10 +426,12 @@ export function buildFlockReportEmail(opts: {
 
   const sum = (f: (b: FlockBird) => number) => opts.birds.reduce((a, b) => a + f(b), 0);
   const quiet = isQuietFlock(opts.birds);
-  // The "pick one" cards point at the first bird the account added. There is no
-  // bird-picker screen for logging a weight or running a check — those routes
-  // are all per-bird — so the first bird is the one choice available.
+  // The "pick one" cards. With one bird there is no ambiguity, so they go
+  // straight to that bird's screens. With two or more they go to the dashboard:
+  // guessing which bird someone meant is worse than one extra tap, and there is
+  // no per-action bird picker to send them to instead.
   const first = opts.birds[0];
+  const pick = (path: string) => (opts.birds.length === 1 && first ? `${first.href}/${path}` : `${opts.link}/dashboard`);
 
   const blocks: FlockBlock[] = [
     // A quiet month has nothing to total; three zeroes would be a scoreboard.
@@ -488,9 +498,9 @@ export function buildFlockReportEmail(opts: {
     blocks.push({
       kind: "numberedLinks",
       items: [
-        { title: t("email.monthly.start1Title"), text: t("email.monthly.start1Text"), href: `${first.href}/weight` },
-        { title: t("email.monthly.start2Title"), text: t("email.monthly.start2Text"), href: `${first.href}/scan` },
-        { title: t("email.monthly.start3Title"), text: t("email.monthly.start3Text"), href: `${first.href}/journal` },
+        { title: t("email.monthly.start1Title"), text: t("email.monthly.start1Text"), href: pick("weight") },
+        { title: t("email.monthly.start2Title"), text: t("email.monthly.start2Text"), href: pick("scan") },
+        { title: t("email.monthly.start3Title"), text: t("email.monthly.start3Text"), href: pick("journal") },
       ],
     });
   }
@@ -548,6 +558,7 @@ export function buildFlockReportEmail(opts: {
     blocks,
     footerWhy: t("email.monthly.foot"),
     link: opts.link,
+    unsubscribeUrl: opts.unsubscribeUrl,
     locale: opts.locale,
   });
 }

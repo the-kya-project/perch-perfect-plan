@@ -192,6 +192,7 @@ export const Route = createFileRoute("/api/public/hooks/monthly-letter")({
         const article = await fetchLatestArticle();
 
         const { sendTransactionalEmail, founderReplyTo } = await import("@/lib/brevoEmail.server");
+        const { unsubUrl, unsubHeaders } = await import("@/lib/unsubscribe");
 
         const planned: Array<{ email: string; birds: number; allQuiet: boolean; subject: string }> = [];
         const skipped: string[] = [];
@@ -244,6 +245,7 @@ export const Route = createFileRoute("/api/public/hooks/monthly-letter")({
             .filter((mo: any) => mo.on_date && new Date(mo.on_date).getUTCMonth() + 1 === sendMonth)
             .sort((a: any, z: any) => new Date(a.on_date).getUTCDate() - new Date(z.on_date).getUTCDate())[0];
 
+          const unsub = unsubUrl(APP_URL, p.id, "monthly");
           const built = buildFlockReportEmail({
             firstName: p.first_name ?? p.display_name ?? undefined,
             birds: modelled,
@@ -252,6 +254,7 @@ export const Route = createFileRoute("/api/public/hooks/monthly-letter")({
             link: APP_URL,
             coming: coming ? { date: shortDate(coming.on_date, locale), title: coming.title ?? "" } : null,
             article,
+            unsubscribeUrl: unsub,
             locale,
           });
 
@@ -267,6 +270,7 @@ export const Route = createFileRoute("/api/public/hooks/monthly-letter")({
             htmlContent: built.html,
             textContent: built.text,
             replyTo: founderReplyTo(),
+            headers: unsubHeaders(APP_URL, p.id, "monthly"),
           });
           if (!res.ok) { failed++; skipped.push(`${p.email}: send failed`); continue; }
           sent++;

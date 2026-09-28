@@ -141,7 +141,7 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
 
         // Whole-account snapshot in six queries — fine at this user scale.
         const [profilesQ, birdsQ, plansQ, weightsQ, scansQ, logQ] = await Promise.all([
-          supabaseAdmin.from("profiles").select("id, email, display_name, created_at, marketing_opt_in, locale").limit(2000),
+          supabaseAdmin.from("profiles").select("id, email, display_name, created_at, marketing_opt_in, locale, notify_onboarding").limit(2000),
           supabaseAdmin.from("birds").select("id, owner_id, name, created_at, passed_at").limit(5000),
           supabaseAdmin.from("care_plans").select("bird_id, diet_types, food_instructions, handlers, likes, fears_triggers, cage_location, out_of_cage_mode, hazards, whats_normal").limit(5000),
           supabaseAdmin.from("weight_entries").select("bird_id, measured_at").order("measured_at", { ascending: true }).limit(10000),
@@ -197,6 +197,10 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
 
         for (const profile of (profilesQ.data ?? []) as any[]) {
           const userId = profile.id as string;
+          // Opted out of the getting-started series. Checked as the email is
+          // built, not from a list snapshotted earlier, so an unsubscribe that
+          // lands mid-run still takes effect on this run.
+          if (profile.notify_onboarding === false) continue;
           // Launch cutoff: the automated drip is for new signups only.
           if (new Date(profile.created_at) < new Date(ONBOARDING_LAUNCH)) continue;
           const birds = (birdsByOwner.get(userId) ?? []).sort(
@@ -275,6 +279,7 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
         // The weighing letter's example chart is the same rendered image the
         // Flock Report uses, so the two look alike. Fixed demo data.
         const { chartUrl, CHART_DEMO_ID } = await import("@/lib/chartLink");
+        const { unsubUrl, unsubHeaders } = await import("@/lib/unsubscribe");
         let demoChartUrl: string | undefined;
         try {
           const { chartPng } = await import("@/lib/weightChart.server");
@@ -312,22 +317,23 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
           // Club layout also swaps the button LABEL in that case; the letterShell
           // emails still carry their own label until they move across.
           const hasBird = Boolean(p.birdId);
+          const unsub = unsubUrl(appUrl, p.userId, "onboarding");
           const onBird = (path: string) => (hasBird ? `${appUrl}/birds/${p.birdId}/${path}` : `${appUrl}/birds/new`);
           const built =
             p.stage === "welcome"
-              ? buildWelcomeEmail({ firstName, link: appUrl, locale })
+              ? buildWelcomeEmail({ firstName, link: appUrl, locale , unsubscribeUrl: unsub })
               : p.stage === "series_weighing"
-              ? buildSeriesWeighingEmail({ link: onBird("weight"), hasBird, chartUrl: demoChartUrl, locale })
+              ? buildSeriesWeighingEmail({ link: onBird("weight"), hasBird, chartUrl: demoChartUrl, locale , unsubscribeUrl: unsub })
               : p.stage === "series_health_check"
-              ? buildSeriesHealthCheckEmail({ link: onBird("scan"), hasBird, locale })
+              ? buildSeriesHealthCheckEmail({ link: onBird("scan"), hasBird, locale , unsubscribeUrl: unsub })
               : p.stage === "series_care_plan"
-              ? buildSeriesCarePlanEmail({ link: onBird("plan"), hasBird, locale })
+              ? buildSeriesCarePlanEmail({ link: onBird("plan"), hasBird, locale , unsubscribeUrl: unsub })
               : p.stage === "series_journal"
-              ? buildSeriesJournalEmail({ link: onBird("journal"), hasBird, locale })
+              ? buildSeriesJournalEmail({ link: onBird("journal"), hasBird, locale , unsubscribeUrl: unsub })
               : p.stage === "series_sharing"
-              ? buildSeriesSharingEmail({ link: onBird("access"), hasBird, locale })
+              ? buildSeriesSharingEmail({ link: onBird("access"), hasBird, locale , unsubscribeUrl: unsub })
               : p.stage === "series_vet"
-              ? buildSeriesVetEmail({ link: onBird("vet-summary"), hasBird, locale })
+              ? buildSeriesVetEmail({ link: onBird("vet-summary"), hasBird, locale , unsubscribeUrl: unsub })
               : p.stage === "add_first_bird"
               ? buildOnboardingAddBirdEmail({ firstName, link: `${appUrl}/birds/new`, locale })
               : p.stage === "start_care_plan"
@@ -348,6 +354,9 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
             // welcome and the one that closes the series. A reply has to reach
             // her, not the generic sender.
             ...(p.stage === "welcome" || p.stage === "series_vet" ? { replyTo: founderReplyTo() } : {}),
+            // Gmail and Apple Mail put their own unsubscribe button beside the
+            // sender when these are present.
+            headers: unsubHeaders(appUrl, p.userId, "onboarding"),
           });
           if (res.ok) {
             // Log AFTER a confirmed send; a failed send retries on a later run.
