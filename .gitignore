@@ -48,3 +48,12 @@ dist-ssr
 # committed template and must stay tracked.
 .env*
 !.env.example
+
+# Rendered email previews (npm run email:preview) — build output, never committed.
+.email-preview/
+
+# The design handback's source images. They ship from public/brand/email/ and
+# are byte-identical, so committing them here would duplicate a megabyte.
+# templates/, README.md and new-strings.json ARE committed — the preview check
+# diffs against templates/.
+docs/email-redesign/assets/
