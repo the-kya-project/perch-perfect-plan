@@ -83,6 +83,29 @@ const ASSETS = process.env.EMAIL_ASSET_BASE || "https://app.thekyaproject.com";
 
 // Letter palette, on top of C. Muted is darkened to #75746b from the C.muted
 // #8a897f used elsewhere — small print on cream needed the contrast.
+// ── The small label ("eyebrow") ──────────────────────────────────────────────
+// The uppercase, wide-tracked, bold sans label is the single most generic
+// gesture in email design — every SaaS template and every generated mockup
+// reaches for it. These letters are signed by a person, so the label is set in
+// the same serif as the headings: still small and quiet, but it reads as
+// typography rather than as a UI chip.
+//
+// Changing LABEL_FONT/LABEL_CASE here changes every label in every email at
+// once, which is the point — they must not drift apart.
+// Georgia italic, sentence case, no tracking. The catalog already stores these
+// strings in sentence case ("Health checks", "Worth knowing") — the old
+// uppercasing was done in CSS, so dropping text-transform is all it takes.
+//
+// Sizes are a little larger than the uppercase version they replace: lowercase
+// at 13px reads about the same as caps at 11px, and the italic needs the room.
+const LABEL_FONT = SERIF;
+/** The standard label, used everywhere except the masthead and the date chip. */
+const LABEL = `font-family:${LABEL_FONT};font-size:13px;line-height:18px;font-style:italic;font-weight:normal;`;
+/** Masthead right-hand label ("October letter", "Letter 1 of 7"). */
+const LABEL_MAST = `font-family:${LABEL_FONT};font-size:12.5px;line-height:17px;font-style:italic;font-weight:normal;`;
+/** The month chip on a coming-up date. */
+const LABEL_CHIP = `font-family:${LABEL_FONT};font-size:11px;line-height:14px;font-style:italic;font-weight:normal;`;
+
 const L = {
   mid: "#2d6a4f",      // kickers, statements, the "Normal" pill
   lime: "#cdeab0",     // on deep green: labels, bars, hero alt text
@@ -106,8 +129,11 @@ const BARE = `<table role="presentation" width="100%" cellpadding="0" cellspacin
 // from the catalog, same contract as the rest of this file.
 
 /** Opening paragraph, Georgia 18/29. One per letter, under the heading. */
+// The opening paragraph. It used to be Georgia 18/29 against a sans body, which
+// read as two different voices in one letter. Same font as everything else now;
+// it keeps only a little extra space beneath it.
 const lead = (s: string) =>
-  `<p style="margin:0 0 18px;font-family:${SERIF};font-size:18px;line-height:29px;color:${C.green};">${s}</p>`;
+  `<p style="margin:0 0 18px;font-family:${SANS};font-size:15px;line-height:25px;color:${C.green};">${s}</p>`;
 
 /** Standard body paragraph, sans 15/25. */
 const para = (s: string) =>
@@ -118,9 +144,11 @@ const paraLeadIn = (s: string) =>
   `<p style="margin:0 0 12px;font-family:${SANS};font-size:15px;line-height:25px;color:${C.green};font-weight:600;">${s}</p>`;
 
 /** The pull-quote: Georgia italic 21/31 in mid green, its own ruled row. */
+// Was Georgia italic 21/31 — a third voice on the page. Now the body face and
+// size, with the mid green doing the emphasis instead of the typeface.
 const statement = (s: string) =>
-  `${grid()}<tr><td style="padding:4px 0 22px;">
-          <p style="margin:0;font-family:${SERIF};font-style:italic;font-size:21px;line-height:31px;color:${L.mid};">${s}</p>
+  `${grid()}<tr><td style="padding:4px 0 18px;">
+          <p style="margin:0;font-family:${SANS};font-size:15px;line-height:25px;color:${L.mid};">${s}</p>
         </td></tr></table>`;
 
 /** Small italic caption under a product moment. */
@@ -147,7 +175,7 @@ const noteBullets = (items: string[]) =>
 const note = (label: string, inner: string, margin = "4px 0 22px") =>
   `${grid(`margin:${margin};`)}<tr>
 <td bgcolor="${C.ground}" style="padding:20px 22px 8px;background-color:${C.ground};border:1px solid ${C.border};border-radius:14px;">
-<p style="margin:0 0 12px;font-family:${SANS};font-size:11px;line-height:16px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:${C.teal};">${label}</p>
+<p style="margin:0 0 12px;${LABEL}color:${C.teal};">${label}</p>
 ${inner}
 </td>
 </tr></table>`;
@@ -177,14 +205,14 @@ const button = (label: string, href: string, margin: string) =>
 
 /** Sign-off, with the founder line under it. */
 const signature = (signoff: string, title: string) =>
-  `<p style="margin:0 0 4px;font-family:${SERIF};font-size:18px;line-height:27px;color:${C.green};font-style:italic;">${signoff}</p>
-<p style="margin:0 0 0px;font-family:${SANS};font-size:12.5px;line-height:19px;color:${C.secondary};">${title}</p>`;
+  `<p style="margin:0 0 3px;font-family:${SERIF};font-size:15px;line-height:23px;color:${C.green};font-style:italic;">${signoff}</p>
+<p style="margin:0 0 0px;font-family:${SANS};font-size:11.5px;line-height:17px;color:${C.secondary};">${title}</p>`;
 
 /** The deep-green card that closes the last letter. */
 const finale = (label: string, body: string) =>
   `${grid("margin:6px 0 22px;")}<tr>
 <td bgcolor="${C.green}" style="padding:22px 22px 20px;background-color:${C.green};border-radius:16px;">
-<p style="margin:0 0 10px;font-family:${SANS};font-size:11px;line-height:16px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:${L.lime};">${label}</p>
+<p style="margin:0 0 10px;${LABEL}color:${L.lime};">${label}</p>
 <p style="margin:0 0 0px;font-family:${SANS};font-size:15px;line-height:24px;color:#ffffff;">${body}</p>
 </td>
 </tr></table>`;
@@ -235,8 +263,8 @@ ${BARE}
   ).join("\n");
   return `${grid("margin:6px 0 10px;")}<tr>
 <td bgcolor="${C.green}" style="padding:22px 22px 18px;background-color:${C.green};border-radius:16px;">
-<p style="margin:0 0 14px;font-family:${SANS};font-size:11px;line-height:16px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:${L.lime};">${o.inApp}</p>
-<p style="margin:0 0 2px;font-family:${SANS};font-size:11px;line-height:16px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:${L.limeSoft};font-weight:600;">${o.label}</p>
+<p style="margin:0 0 14px;${LABEL}color:${L.lime};">${o.inApp}</p>
+<p style="margin:0 0 2px;${LABEL}color:${L.limeSoft};font-weight:600;">${o.label}</p>
 <p style="margin:0 0 2px;font-family:${SANS};font-size:40px;line-height:46px;color:#ffffff;font-weight:300;letter-spacing:-.5px;">${o.value}</p>
 <p style="margin:0 0 18px;font-family:${SANS};font-size:14px;line-height:21px;color:${L.onGreen};">${o.summary}</p>
 ${grid("table-layout:fixed;")}<tr>
@@ -280,7 +308,7 @@ ${pill(o.answers[2], false)}
 </tr>`;
   return `${grid("margin:4px 0 24px;")}<tr>
 <td bgcolor="${C.ground}" style="padding:20px 18px 16px;background-color:${C.ground};border:1px solid ${C.border};border-radius:16px;">
-<p style="margin:0 0 10px;font-family:${SANS};font-size:11px;line-height:16px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:${C.teal};">${o.inApp}</p>
+<p style="margin:0 0 10px;${LABEL}color:${C.teal};">${o.inApp}</p>
 <p style="margin:0 0 4px;font-family:${SERIF};font-size:17px;line-height:24px;color:${C.green};">${o.title}</p>
 <p style="margin:0 0 14px;font-family:${SANS};font-size:13.5px;line-height:20px;color:${C.secondary};">${o.intro}</p>
 ${grid()}${o.questions.map(card).join("\n")}
@@ -320,7 +348,7 @@ function journalEntry(o: { label: string; date: string; body: string; moment: st
   return `${grid("margin:0 0 24px;")}<tr>
 <td style="padding:20px 22px 16px;border:1px solid ${C.border};border-radius:16px;background-color:${C.card};">
 ${grid()}<tr>
-<td style="font-family:${SANS};font-size:11px;line-height:16px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:${C.teal};">${o.label}</td>
+<td style="${LABEL}color:${C.teal};">${o.label}</td>
 <td align="right" style="font-family:${SANS};font-size:12.5px;line-height:16px;color:${C.secondary};text-align:right;">${o.date}</td>
 </tr>
 </table>
@@ -335,13 +363,17 @@ ${grid()}<tr>
 
 /** The two ways to share, side by side: a sitter link and household access. */
 function sharingCards(o: { sitterLabel: string; sitterBody: string; sitterFoot: string; householdLabel: string; householdBody: string; householdFoot: string }): string {
+  // Set entirely in the serif: the pair reads as two short passages of prose
+  // rather than as two UI tiles, which is what the sans version looked like.
+  // The footnote is the italic, so the practical difference between the two
+  // options is set apart without another rule or another colour.
   const card = (bg: string, label: string, body: string, foot: string) =>
     `${grid()}<tr>
 <td bgcolor="${bg}" style="padding:18px 18px 16px;background-color:${bg};border-radius:14px;">
-<p style="margin:0 0 10px;font-family:${SANS};font-size:11px;line-height:16px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:${L.mid};">${label}</p>
-<p style="margin:0 0 14px;font-family:${SANS};font-size:14.5px;line-height:23px;color:${C.green};">${body}</p>
+<p style="margin:0 0 10px;font-family:${SERIF};font-size:18px;line-height:24px;color:${C.green};">${label}</p>
+<p style="margin:0 0 14px;font-family:${SERIF};font-size:15px;line-height:24px;color:${C.green};">${body}</p>
 ${grid()}<tr>
-<td style="padding:10px 0 0;border-top:1px solid ${C.border};font-family:${SANS};font-size:12.5px;line-height:18px;color:${C.secondary};">${foot}</td>
+<td style="padding:10px 0 0;border-top:1px solid ${C.border};font-family:${SERIF};font-size:13.5px;line-height:20px;font-style:italic;color:${L.mid};">${foot}</td>
 </tr>
 </table>
 </td>
@@ -357,17 +389,41 @@ ${grid()}<tr>
   );
 }
 
-/** The ruled list of questions a record can answer, in the last letter. */
-function vetQuestions(label: string, questions: string[]): string {
-  const rows = questions
+/** The vet summary, as the record actually presents it: the rows a vet would
+ *  look at, then the questions those rows let you answer. A list of questions on
+ *  its own was the dullest thing in the series — it described the record
+ *  instead of showing it. HTML, not a screenshot, so it reads with images off
+ *  and can be translated. */
+function vetSummaryCard(o: { label: string; title: string; rows: Array<{ label: string; value: string; sub: string }>; questionsLabel: string; questions: string[] }): string {
+  const rows = o.rows
     .map(
-      (q, i) => `<tr>
-<td style="padding:12px 0;${i === 0 ? "" : `border-top:1px solid ${C.border};`}font-family:${SERIF};font-style:italic;font-size:18px;line-height:26px;color:${C.green};">${q}</td>
+      (r, i) => `<tr>
+<td width="128" valign="top" style="width:128px;padding:${i === 0 ? "0" : "12px"} 12px 12px 0;${i === 0 ? "" : `border-top:1px solid #2f5a47;`}${LABEL}color:${L.limeSoft};">${r.label}</td>
+<td valign="top" style="padding:${i === 0 ? "0" : "12px"} 0 12px;${i === 0 ? "" : `border-top:1px solid #2f5a47;`}">
+<p style="margin:0 0 2px;font-family:${SANS};font-size:16px;line-height:22px;color:#ffffff;">${r.value}</p>
+<p style="margin:0;font-family:${SANS};font-size:12.5px;line-height:18px;color:${L.onGreen};">${r.sub}</p>
+</td>
 </tr>`,
     )
     .join("\n");
-  return note(label, `${grid("margin:0 0 8px;")}${rows}
-</table>`, "0px 0 22px");
+  const questions = o.questions
+    .map(
+      (q) => `<tr>
+<td width="16" valign="top" style="width:16px;padding:0 0 8px;font-family:${SANS};font-size:9px;line-height:21px;color:${C.teal};">&#9679;</td>
+<td valign="top" style="padding:0 0 8px;font-family:${SANS};font-size:14.5px;line-height:21px;color:${C.green};">${q}</td>
+</tr>`,
+    )
+    .join("\n");
+  return `${grid("margin:2px 0 10px;")}<tr>
+<td bgcolor="${C.green}" style="padding:20px 22px 18px;background-color:${C.green};border-radius:16px;">
+<p style="margin:0 0 4px;${LABEL}color:${L.lime};">${o.label}</p>
+<p style="margin:0 0 16px;font-family:${SERIF};font-size:20px;line-height:27px;color:#ffffff;">${o.title}</p>
+${grid()}${rows}
+</table>
+</td>
+</tr></table>
+${note(o.questionsLabel, `${grid()}${questions}
+</table>`, "0 0 22px")}`;
 }
 
 // ── letterShell ──────────────────────────────────────────────────────────────
@@ -405,12 +461,6 @@ function letterShell(opts: {
 
   // Progress: one cell per letter, the first n filled. The 2px white border-left
   // is the gap — border-spacing would be dropped by Outlook.
-  const segments = Array.from({ length: TOTAL }, (_, i) => {
-    const on = i < (opts.n ?? 0);
-    const bg = on ? C.green : C.border;
-    const edge = i === 0 ? "" : "border-left:2px solid #ffffff;";
-    return `<td height="3" bgcolor="${bg}" style="height:3px;line-height:3px;font-size:0;background-color:${bg};${edge}">&nbsp;</td>`;
-  }).join("\n");
 
   // Deep green behind the hero so the alt text reads in lime when the image is
   // blocked, instead of white-on-white.
@@ -422,20 +472,11 @@ function letterShell(opts: {
 </tr>`
     : "";
 
-  const nextUp =
-    opts.nextUp && opts.nextDay !== undefined
-      ? `<tr>
-<td style="padding:26px 24px 0;">
-${grid()}<tr>
-<td style="padding:18px 0 0;border-top:1px solid ${C.rule};">
-<p style="margin:0 0 6px;font-family:${SANS};font-size:11px;line-height:16px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:${C.secondary};font-weight:600;">${t("email.series.nextLabel", { day: opts.nextDay })}</p>
-<p style="margin:0;font-family:${SERIF};font-style:italic;font-size:16px;line-height:25px;color:${C.secondary};">${opts.nextUp}</p>
-</td>
-</tr>
-</table>
-</td>
-</tr>`
-      : "";
+  // The letters no longer announce what is coming next: a welcome email should
+  // read as a note from a person, not as lesson one of seven. `nextUp`/`nextDay`
+  // stay in the signature so the callers and their copy keys survive if it ever
+  // comes back.
+  const nextUp = "";
 
   const healthNote = opts.healthNote
     ? `<tr>
@@ -450,28 +491,20 @@ ${grid()}<tr>
   <!--[if mso]><table role="presentation" width="520" align="center" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" align="center" style="width:100%;max-width:520px;margin:0 auto;table-layout:fixed;border-collapse:separate;border-spacing:0;border:1px solid ${C.border};border-radius:16px;background-color:${C.card};overflow:hidden;mso-table-lspace:0pt;mso-table-rspace:0pt;">
 <tr>
-<td bgcolor="${C.ground}" style="padding:16px 24px;background-color:${C.ground};border-bottom:1px solid ${C.rule};border-radius:16px 16px 0 0;">
+<td bgcolor="${C.green}" style="padding:18px 24px;background-color:${C.green};border-radius:16px 16px 0 0;">
 ${grid()}<tr>
 <td valign="middle" style="padding:0;">
-<img src="${ASSETS}/brand/email/lockup.png" width="150" alt="${t("email.series.lockupAlt")}" style="display:block;width:150px;height:auto;border:0;font-family:${SERIF};font-size:20px;line-height:26px;font-weight:bold;color:${C.green};" />
+<img src="${ASSETS}/brand/email/lockup-reversed.png" width="150" alt="${t("email.series.lockupAlt")}" style="display:block;width:150px;height:auto;border:0;font-family:${SERIF};font-size:20px;line-height:26px;font-weight:bold;color:#ffffff;" />
 </td>
-<td valign="middle" align="right" style="padding:0 0 0 12px;font-family:${SANS};font-size:10.5px;line-height:15px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;color:${C.secondary};text-align:right;">${opts.mastLabel ?? t("email.series.letterOf", { n: opts.n })}</td>
+<td valign="middle" align="right" style="padding:0 0 0 12px;${LABEL_MAST}color:${L.lime};text-align:right;">${opts.mastLabel ?? ""}</td>
 </tr>
 </table>
 </td>
 </tr>
-${opts.n === undefined ? "" : `<tr>
-<td style="padding:0;">
-${grid()}<tr>
-${segments}
-</tr>
-</table>
-</td>
-</tr>`}
 ${hero}
 <tr>
 <td style="padding:30px 24px 0;">
-<p style="margin:0 0 12px;font-family:${SANS};font-size:11px;line-height:16px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:${L.mid};">${opts.kicker}</p>
+<p style="margin:0 0 12px;${LABEL}color:${L.mid};">${opts.kicker}</p>
 <h1 style="margin:0;font-family:${SERIF};font-size:30px;line-height:37px;font-weight:normal;letter-spacing:-.2px;color:${C.green};">${opts.heading}</h1>
 </td>
 </tr>
@@ -487,10 +520,10 @@ ${healthNote}
 <td height="28" style="height:28px;line-height:28px;font-size:0;">&nbsp;</td>
 </tr>
 <tr>
-<td bgcolor="${C.ground}" style="padding:24px 32px 26px;background-color:${C.ground};border-top:1px solid ${C.rule};border-radius:0 0 16px 16px;">
-<img src="${ASSETS}/brand/email/mark.png" width="30" alt="" style="display:block;width:30px;height:auto;border:0;margin:0 auto 10px;" />
-<p style="margin:0 0 12px;font-family:${SANS};font-size:12px;line-height:18px;color:${L.muted};text-align:center;">${opts.foot}</p>
-<p style="margin:0 0 0px;font-family:${SERIF};font-size:13px;line-height:19px;color:${C.green};text-align:center;font-style:italic;">${t("email.shell.footNote")}</p>
+<td bgcolor="${C.green}" style="padding:24px 32px 26px;background-color:${C.green};border-radius:0 0 16px 16px;">
+<img src="${ASSETS}/brand/email/mark-white.png" width="30" alt="" style="display:block;width:30px;height:auto;border:0;margin:0 auto 10px;" />
+<p style="margin:0 0 12px;font-family:${SANS};font-size:12px;line-height:18px;color:${L.onGreen};text-align:center;">${opts.foot}</p>
+<p style="margin:0 0 0px;font-family:${SERIF};font-size:13px;line-height:19px;color:${L.lime};text-align:center;font-style:italic;">${t("email.shell.footNote")}</p>
 </td>
 </tr>
   </table>
@@ -1102,9 +1135,6 @@ export function buildWelcomeEmail(opts: { firstName?: string; link: string; loca
           t("email.welcome.stepScan"),
         ]) +
         statement(t("email.welcome.together")) +
-        para(t("email.welcome.series")) +
-        para(t("email.welcome.carePlan")) +
-        para(t("email.welcome.reply")) +
         button(t("email.welcome.cta"), opts.link, "6px 0 26px") +
         signature(t("email.welcome.signoff"), t("email.series.signTitle")),
       nextUp: t("email.welcome.nextUp"),
@@ -1170,6 +1200,7 @@ export function buildSeriesHealthCheckEmail(opts: { link: string; locale?: strin
       preview: t("email.seriesHealthCheck.preview"),
       kicker: t("email.seriesHealthCheck.kicker"),
       heading: t("email.seriesHealthCheck.heading"),
+      hero: { file: "health-check.jpg", alt: t("email.seriesHealthCheck.heroAlt") },
       bodyHtml:
         lead(t("email.seriesHealthCheck.lead")) +
         para(t("email.seriesHealthCheck.p2")) +
@@ -1244,6 +1275,7 @@ export function buildSeriesJournalEmail(opts: { link: string; locale?: string })
       preview: t("email.seriesJournal.preview"),
       kicker: t("email.seriesJournal.kicker"),
       heading: t("email.seriesJournal.heading"),
+      hero: { file: "journal.jpg", alt: t("email.seriesJournal.heroAlt") },
       bodyHtml:
         lead(t("email.seriesJournal.lead")) +
         journalEntry({
@@ -1277,6 +1309,7 @@ export function buildSeriesSharingEmail(opts: { link: string; locale?: string })
       preview: t("email.seriesSharing.preview"),
       kicker: t("email.seriesSharing.kicker"),
       heading: t("email.seriesSharing.heading"),
+      hero: { file: "sharing.jpg", alt: t("email.seriesSharing.heroAlt") },
       bodyHtml:
         lead(t("email.seriesSharing.lead")) +
         sharingCards({
@@ -1310,18 +1343,24 @@ export function buildSeriesVetEmail(opts: { link: string; locale?: string }): Bu
       preview: t("email.seriesVet.preview"),
       kicker: t("email.seriesVet.kicker"),
       heading: t("email.seriesVet.heading"),
+      hero: { file: "vet.jpg", alt: t("email.seriesVet.heroAlt") },
       bodyHtml:
         lead(t("email.seriesVet.leadIntro")) +
-        vetQuestions(t("email.seriesVet.questionsLabel"), [
-          t("email.seriesVet.q1"),
-          t("email.seriesVet.q2"),
-          t("email.seriesVet.q3"),
-        ]) +
+        vetSummaryCard({
+          label: t("email.moment.inTheApp"),
+          title: t("email.seriesVet.summaryTitle"),
+          rows: [
+            { label: t("email.seriesVet.rowWeightLabel"), value: t("email.seriesVet.rowWeightValue"), sub: t("email.seriesVet.rowWeightSub") },
+            { label: t("email.seriesVet.rowChecksLabel"), value: t("email.seriesVet.rowChecksValue"), sub: t("email.seriesVet.rowChecksSub") },
+            { label: t("email.seriesVet.rowNotesLabel"), value: t("email.seriesVet.rowNotesValue"), sub: t("email.seriesVet.rowNotesSub") },
+          ],
+          questionsLabel: t("email.seriesVet.questionsLabel"),
+          questions: [t("email.seriesVet.q1"), t("email.seriesVet.q2"), t("email.seriesVet.q3")],
+        }) +
         para(t("email.seriesVet.p2")) +
         para(t("email.seriesVet.p3")) +
         para(t("email.seriesVet.p4")) +
         button(t("email.seriesVet.cta"), opts.link, "4px 0 24px") +
-        finale(t("email.seriesVet.card1Label"), t("email.seriesVet.card1P1")) +
         para(t("email.seriesVet.p5")) +
         signature(t("email.seriesVet.signoff"), t("email.series.signTitle")),
       healthNote: t("email.seriesVet.healthNote"),
@@ -1422,7 +1461,7 @@ ${BARE}
 
   return `${grid("margin:0;")}<tr>
 <td bgcolor="${C.green}" style="padding:20px 22px 20px;background-color:${C.green};border-radius:16px;">
-<p style="margin:0 0 6px;font-family:${SANS};font-size:11px;line-height:16px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:${L.lime};">${t("email.monthly.weightLabel", { prevMonth })}</p>
+<p style="margin:0 0 6px;${LABEL}color:${L.lime};">${t("email.monthly.weightLabel", { prevMonth })}</p>
 ${grid()}<tr>
 <td valign="bottom" style="font-family:${SANS};font-size:40px;line-height:44px;font-weight:300;letter-spacing:-.5px;color:#ffffff;">${typical}&nbsp;g</td>
 <td valign="bottom" align="right" style="padding:0 0 6px 12px;font-family:${SANS};font-size:13px;line-height:18px;color:${L.onGreen};text-align:right;">${t("email.monthly.weightTypical")}</td>
@@ -1446,7 +1485,7 @@ ${grid()}<tr>
 function monthlyStatCard(label: string, value: string, sub: string): string {
   return `${grid()}<tr>
 <td bgcolor="${C.ground}" style="padding:16px 16px 14px;background-color:${C.ground};border-radius:14px;">
-<p style="margin:0 0 8px;font-family:${SANS};font-size:11px;line-height:16px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:${C.teal};">${label}</p>
+<p style="margin:0 0 8px;${LABEL}color:${C.teal};">${label}</p>
 <p style="margin:0 0 4px;font-family:${SERIF};font-size:22px;line-height:28px;color:${C.green};">${value}</p>
 <p style="margin:0 0 0px;font-family:${SANS};font-size:12.5px;line-height:18px;color:${C.secondary};">${sub}</p>
 </td>
@@ -1457,10 +1496,10 @@ function monthlyStatCard(label: string, value: string, sub: string): string {
 /** The bird's name and species, over a heavy rule. */
 function monthlyBirdHeading(name: string, species: string): string {
   return `${grid()}<tr>
-<td valign="bottom" style="padding:0 0 12px;border-bottom:2px solid ${C.green};">
+<td valign="bottom" style="padding:0 0 10px;">
 <p style="margin:0;font-family:${SERIF};font-size:26px;line-height:32px;color:${C.green};">${name}</p>
 </td>
-<td valign="bottom" align="right" style="padding:0 0 15px 12px;border-bottom:2px solid ${C.green};font-family:${SANS};font-size:13px;line-height:19px;color:${C.secondary};text-align:right;">${species}</td>
+<td valign="bottom" align="right" style="padding:0 0 13px 12px;font-family:${SANS};font-size:13px;line-height:19px;color:${C.secondary};text-align:right;">${species}</td>
 </tr>
 </table>`;
 }
@@ -1487,7 +1526,7 @@ function monthlyBirdRow(t: EmailT, b: MonthlyBird, first: boolean, prevMonth: st
   const quote = b.quote
     ? `${grid()}<tr>
 <td style="padding:20px 0 0;">
-<p style="margin:0 0 8px;font-family:${SANS};font-size:11px;line-height:16px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:${C.teal};">${t("email.monthly.journalQuoteLabel", { date: b.quote.date })}</p>
+<p style="margin:0 0 8px;${LABEL}color:${C.teal};">${t("email.monthly.journalQuoteLabel", { date: b.quote.date })}</p>
 <p style="margin:0;font-family:${SERIF};font-style:italic;font-size:19px;line-height:29px;color:${C.green};">&ldquo;${b.quote.body}&rdquo;</p>
 </td>
 </tr>
@@ -1541,7 +1580,7 @@ function monthlyComingUp(t: EmailT, month: string, items: Array<{ mon: string; d
       (it, i) => `<tr>
 <td width="64" valign="top" style="width:64px;padding:${i === 0 ? "0px" : "12px"} 16px 12px 0;">
 ${grid()}<tr>
-<td align="center" bgcolor="${C.green}" style="padding:4px 0;background-color:${C.green};border-radius:10px 10px 0 0;font-family:${SANS};font-size:10.5px;line-height:14px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:${L.lime};text-align:center;">${it.mon}</td>
+<td align="center" bgcolor="${C.green}" style="padding:4px 0;background-color:${C.green};border-radius:10px 10px 0 0;${LABEL_CHIP}color:${L.lime};text-align:center;">${it.mon}</td>
 </tr>
 <tr>
 <td align="center" style="padding:6px 0 8px;border:1px solid ${C.border};border-top:0;border-radius:0 0 10px 10px;font-family:${SERIF};font-size:28px;line-height:32px;color:${C.green};text-align:center;">${it.day}</td>
@@ -1559,7 +1598,7 @@ ${grid()}<tr>
 <td style="padding:30px 24px 0;">
 ${grid()}<tr>
 <td style="padding:24px 0 0;border-top:1px solid ${C.rule};">
-<p style="margin:0 0 14px;font-family:${SANS};font-size:11px;line-height:16px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:${L.mid};">${t("email.monthly.comingLabel", { month })}</p>
+<p style="margin:0 0 14px;${LABEL}color:${L.mid};">${t("email.monthly.comingLabel", { month })}</p>
 ${grid()}${rows}
 </table>
 </td>
@@ -1583,7 +1622,7 @@ function monthlyCareNote(t: EmailT, month: number): string {
 <td style="padding:30px 24px 0;">
 ${grid()}<tr>
 <td bgcolor="${C.ground}" style="padding:20px 22px 8px;background-color:${C.ground};border:1px solid ${C.border};border-radius:14px;">
-<p style="margin:0 0 6px;font-family:${SANS};font-size:11px;line-height:16px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:${C.teal};">${t("email.monthly.careLabel")}</p>
+<p style="margin:0 0 6px;${LABEL}color:${C.teal};">${t("email.monthly.careLabel")}</p>
 <p style="margin:0 0 14px;font-family:${SERIF};font-size:20px;line-height:27px;color:${C.green};">${t(`email.monthly.care.${month}.title`)}</p>
 ${grid()}${bullets}
 </table>
@@ -1608,7 +1647,7 @@ function monthlyArticleBlock(t: EmailT, a: MonthlyArticle | null): string {
 <td style="padding:30px 24px 0;">
 ${grid()}<tr>
 <td style="padding:24px 0 0;border-top:1px solid ${C.rule};">
-<p style="margin:0 0 12px;font-family:${SANS};font-size:11px;line-height:16px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:${C.teal};">${t("email.monthly.fieldLabel")}</p>
+<p style="margin:0 0 12px;${LABEL}color:${C.teal};">${t("email.monthly.fieldLabel")}</p>
 ${img}<p style="margin:0 0 6px;font-family:${SERIF};font-size:20px;line-height:27px;color:${C.green};"><a href="${a.url}" style="color:${C.green};text-decoration:underline;">${a.title}</a></p>
 <p style="margin:0 0 10px;font-family:${SANS};font-size:14px;line-height:21px;color:${C.secondary};">${a.intro}</p>
 <p style="margin:0 0 0px;font-family:${SANS};font-size:12.5px;line-height:18px;color:${C.secondary};">${t("email.monthly.fieldMeta", { minutes: a.minutes })}&nbsp;&nbsp;·&nbsp;&nbsp;<a href="${a.url}" style="color:${L.mid};font-weight:600;text-decoration:underline;">${t("email.monthly.fieldLink")}&nbsp;&rarr;</a></p>
@@ -1657,12 +1696,12 @@ export function buildMonthlyEmail(opts: {
 
   const names = opts.birds.map((b) => escapeHtml(b.name));
   const birdsLabel = joinBirdNames(names);
+  // One bird is named; two or more become "your flock" rather than listing
+  // them. It also stops the subject growing with the size of the flock.
   const subject =
     names.length === 1
       ? t("email.monthly.subjectOne", { birdName: opts.birds[0].name, prevMonth })
-      : names.length === 2
-        ? t("email.monthly.subjectTwo", { birdName1: opts.birds[0].name, birdName2: opts.birds[1].name, prevMonth })
-        : t("email.monthly.subjectMany", { prevMonth });
+      : t("email.monthly.subjectMany", { prevMonth });
 
   const hi = t("email.monthly.hi", { firstName: escapeHtml(opts.firstName ?? "") });
   const allQuiet = opts.birds.length > 0 && opts.birds.every(isQuietMonth);
@@ -1743,7 +1782,6 @@ function monthlyReplyRow(t: EmailT): string {
 <td style="padding:30px 24px 0;">
 ${grid()}<tr>
 <td style="padding:24px 0 0;border-top:1px solid ${C.rule};">
-<p style="margin:0 0 14px;font-family:${SANS};font-size:15px;line-height:25px;color:${C.green};">${t("email.monthly.reply")}</p>
 ${signature(t("email.monthly.signoff"), t("email.series.signTitle"))}
 </td>
 </tr>

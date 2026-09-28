@@ -138,6 +138,22 @@ console.log(`${series.length} series + ${monthly.length} monthly + ${others.leng
 // --check: normalize whitespace between tags and compare the series output to
 // the handback. Whitespace between tags is not significant in these emails, and
 // the generator and the handback differ in how they indent.
+// --write: overwrite docs/email-redesign/templates/NN-name.html with the
+// current output, in the merge-field form. The handback was the source of
+// truth while the design was being handed over; now that the design is edited
+// in code, those files are a snapshot of it and --check is a change-detector:
+// it tells you when a code change moved the rendered letters, so the move is
+// deliberate rather than noticed in someone's inbox. The originals are in git.
+if (process.argv.includes("--write")) {
+  const forWrite = new Map(series.map(([n, b]) => [n, b.html]));
+  forWrite.set("01-welcome", T.buildWelcomeEmail({ firstName: "{{firstName}}", link: APP }).html);
+  for (const [name, built] of series) {
+    const out = `docs/email-redesign/templates/${name}.html`;
+    fs.writeFileSync(out, page(built.subject, forWrite.get(name)!).replace(/>\s+</g, "><").trim() + "\n");
+    console.log(`  wrote ${out}`);
+  }
+}
+
 if (process.argv.includes("--check")) {
   const norm = (s: string) => s.replace(/>\s+</g, "><").trim();
   // templates/ is the merge-field form, so compare against that form: the only
