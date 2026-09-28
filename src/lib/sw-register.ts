@@ -44,30 +44,73 @@ async function unregisterAppWorkers() {
  * for may have been removed by a newer deploy → 404 → the dynamic import throws
  * and the view fails to render (e.g. the sitter preview, which renders inside an
  * iframe the active SW still controls). Vite fires `vite:preloadError` for this;
- * we reload once to pull the current build (the shell is fetched network-first,
- * so the reload lands on fresh chunk names). A short sessionStorage guard stops
- * a reload loop if a refresh somehow doesn't resolve it.
+ * we reload to pull the current build (the shell is fetched network-first, so
+ * the reload lands on fresh chunk names).
+ *
+ * ONE retry is not enough. A Vercel production alias swap can leave chunks
+ * briefly unfetchable for longer than a single reload round-trip, so a one-shot
+ * guard spends its only attempt mid-swap and then surfaces "This page didn't
+ * load" for a condition that clears itself seconds later — seen 2026-09-28,
+ * ~90s after a prod deploy, on the vet-summary route. So we spend a small
+ * budget of reloads with backoff instead. A genuinely broken build still
+ * reaches the error screen, just ~17s of waiting later rather than ~10s.
  */
-const CHUNK_RELOAD_KEY = "chunk-reload-at";
+const CHUNK_RELOAD_KEY = "chunk-reload-state";
+/** Wait before each successive recovery reload; the length is the attempt budget. */
+const RELOAD_BACKOFF_MS = [1_000, 4_000, 12_000];
+/** Failures further apart than this are separate incidents — the budget resets. */
+const INCIDENT_WINDOW_MS = 60_000;
 
-/** True if a stale-chunk recovery reload was attempted in the last 10s — the
- *  loop guard. Pure read (no side effects), safe to call during render. */
-export function chunkReloadAttemptedRecently(): boolean {
-  if (typeof window === "undefined") return false;
+type ReloadState = { n: number; at: number };
+
+function readReloadState(): ReloadState {
+  const empty = { n: 0, at: 0 };
+  if (typeof window === "undefined") return empty;
   try {
-    return Date.now() - Number(sessionStorage.getItem(CHUNK_RELOAD_KEY) ?? 0) < 10_000;
+    const raw = sessionStorage.getItem(CHUNK_RELOAD_KEY);
+    if (!raw) return empty;
+    const parsed = JSON.parse(raw) as Partial<ReloadState> | null;
+    const n = Number(parsed?.n) || 0;
+    const at = Number(parsed?.at) || 0;
+    // A failure long after the last one is a new incident, not a continuing
+    // one — hand it a full budget rather than the tail of an old attempt.
+    return Date.now() - at > INCIDENT_WINDOW_MS ? empty : { n, at };
   } catch {
-    return false;
+    return empty;
   }
 }
 
-/** Reload once to recover from a stale-build chunk 404. Respects the loop guard. */
+/** True once the reload budget is spent — the caller should surface the real
+ *  error instead of reloading again. Pure read, safe to call during render. */
+export function staleChunkRecoveryExhausted(): boolean {
+  return readReloadState().n >= RELOAD_BACKOFF_MS.length;
+}
+
+/** At most one scheduled reload per page load: the `vite:preloadError` listener
+ *  and the root error boundary both fire for the same failure, and must not
+ *  each spend an attempt out of the budget. */
+let reloadScheduled = false;
+
+/** Reload to recover from a stale-build chunk 404, backing off across attempts
+ *  and standing down once the budget is spent. */
 export function reloadForStaleChunk() {
-  if (typeof window === "undefined") return;
+  if (typeof window === "undefined" || reloadScheduled) return;
+  const { n } = readReloadState();
+  const delay = RELOAD_BACKOFF_MS[n];
+  if (delay === undefined) return; // budget spent — the error boundary takes over
+  reloadScheduled = true;
   try {
-    if (chunkReloadAttemptedRecently()) return; // already tried very recently — avoid a loop
-    sessionStorage.setItem(CHUNK_RELOAD_KEY, String(Date.now()));
-  } catch { /* sessionStorage blocked (e.g. some iframes) — fall through to a single reload */ }
+    sessionStorage.setItem(CHUNK_RELOAD_KEY, JSON.stringify({ n: n + 1, at: Date.now() }));
+  } catch {
+    // sessionStorage blocked (private mode, some iframes). The attempt still
+    // runs, but nothing persists across the reload, so every load reads n=0 and
+    // the budget never advances. `reloadScheduled` is then the only loop guard,
+    // exactly as it was before the backoff existed — unchanged, not newly broken.
+  }
+  window.setTimeout(doStaleChunkReload, delay);
+}
+
+function doStaleChunkReload() {
   if (isNativeApp()) {
     // The shell's WKWebView caches the document itself, so a plain reload can
     // re-read the SAME stale HTML that references dead chunk URLs (seen on
