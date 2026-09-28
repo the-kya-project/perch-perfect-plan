@@ -19,7 +19,9 @@
 // verified those against the live collection — the Explore tab hedges the same
 // way. The candidates below are tried in order, so confirming the real slugs is
 // a matter of deleting the wrong guesses, not rewriting this.
-import type { MonthlyArticle } from "./emailTemplates";
+/** What the blog card needs. Declared here rather than imported: this module
+ *  is the only producer, and the email layer only consumes it. */
+export type MonthlyArticle = { title: string; intro: string; url: string; minutes: number; imageUrl?: string; imageAlt?: string };
 
 const WORDS_PER_MINUTE = 230;
 

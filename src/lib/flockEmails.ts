@@ -340,3 +340,167 @@ export function buildSeriesVetEmail(opts: { link: string; hasBird?: boolean; loc
     locale: opts.locale,
   });
 }
+
+// ── The Flock Report ─────────────────────────────────────────────────────────
+// Reader-facing name only: the route, the log table and the preference column
+// are all still "monthly". Sent on the 2nd, recapping the PREVIOUS month —
+// every month named in this email is the one being recapped, never the one it
+// arrives in.
+//
+// It states numbers and does not interpret them. No "typical", no "a little
+// tighter than last month", no verdict on a weight. Blanks are shown as
+// nudges rather than hidden, because a blank the reader can see is the point.
+
+export type FlockBird = {
+  name: string;
+  species: string;
+  href: string;
+  /** Every weigh-in that month: day of month, and grams. */
+  weighIns: Array<{ day: number; g: number }>;
+  checks: number;
+  journal: number;
+  /** "12 Sep" when the plan was touched that month, else null. */
+  planUpdated: string | null;
+};
+
+/** "Juno", "Juno and Pip", "Juno, Pip, and Echo" — Oxford comma throughout.
+ *  Over six, the first five and a count. */
+export function joinFlock(names: string[], andMore: (n: number) => string): string {
+  if (names.length <= 1) return names[0] ?? "";
+  if (names.length === 2) return `${names[0]} and ${names[1]}`;
+  if (names.length <= 6) return `${names.slice(0, -1).join(", ")}, and ${names[names.length - 1]}`;
+  return `${names.slice(0, 5).join(", ")}, ${andMore(names.length - 5)}`;
+}
+
+export function buildFlockReportEmail(opts: {
+  firstName?: string;
+  birds: FlockBird[];
+  /** The month being recapped, 1-12, and its year. */
+  month: number;
+  year: number;
+  link: string;
+  /** The soonest Moment falling in the month AFTER the one recapped. */
+  coming?: { date: string; title: string } | null;
+  article?: { title: string; url: string; minutes: number; imageUrl?: string; imageAlt?: string } | null;
+  locale?: string;
+}): BuiltEmail {
+  const t = emailT(opts.locale);
+  const m = opts.month;
+  const nextM = m === 12 ? 1 : m + 1;
+  const monthName = t(`email.monthly.month.${m}`);
+  const nextMonthName = t(`email.monthly.month.${nextM}`);
+  const monShort = t(`email.monthly.mon.${m}`);
+  const days = new Date(Date.UTC(opts.year, m, 0)).getUTCDate();
+
+  const names = opts.birds.map((b) => escapeHtml(b.name));
+  const flock = joinFlock(names, (n) => t("email.monthly.andMore", { n }));
+  const one = opts.birds.length === 1;
+
+  const headline = one
+    ? t("email.monthly.subjectOne", { birdName: names[0], month: monthName })
+    : t("email.monthly.subjectMany", { month: monthName });
+
+  const hi = opts.firstName ? t("email.monthly.hi", { firstName: escapeHtml(opts.firstName) }) : t("email.monthly.hiNoName");
+
+  const sum = (f: (b: FlockBird) => number) => opts.birds.reduce((a, b) => a + f(b), 0);
+
+  const blocks: FlockBlock[] = [
+    {
+      kind: "totals",
+      items: [
+        { n: String(sum((b) => b.weighIns.length)), label: t("email.monthly.totalWeighIns") },
+        { n: String(sum((b) => b.checks)), label: t("email.monthly.totalChecks") },
+        { n: String(sum((b) => b.journal)), label: t("email.monthly.totalJournal") },
+      ],
+    },
+    { kind: "sectionHead", title: t("email.monthly.rollCall"), note: t("email.monthly.rollCallNote") },
+    {
+      kind: "birdCards",
+      birds: opts.birds.map((b) => {
+        const latest = b.weighIns.length ? b.weighIns[b.weighIns.length - 1].g : 0;
+        return {
+          name: escapeHtml(b.name),
+          species: escapeHtml(b.species),
+          href: b.href,
+          chart: b.weighIns.length
+            ? {
+                points: b.weighIns,
+                days,
+                axisStart: `${monShort} 1`,
+                axisEnd: `${monShort} ${days}`,
+                line:
+                  b.weighIns.length === 1
+                    ? t("email.monthly.weighInLineOne", { g: latest })
+                    : t("email.monthly.weighInLine", { n: b.weighIns.length, g: latest }),
+              }
+            : undefined,
+          empty: b.weighIns.length ? undefined : { text: t("email.monthly.noWeighIns", { month: monthName }), cta: t("email.monthly.logOne") },
+          rows: [
+            b.checks > 0
+              ? { label: t("email.monthly.rowChecks"), value: t("email.monthly.rowChecksValue", { n: b.checks, days }) }
+              : { label: t("email.monthly.rowChecks"), value: t("email.monthly.doOne"), nudge: true },
+            b.journal > 0
+              ? {
+                  label: t("email.monthly.rowJournal"),
+                  value: b.journal === 1 ? t("email.monthly.rowJournalValueOne") : t("email.monthly.rowJournalValue", { n: b.journal }),
+                }
+              : { label: t("email.monthly.rowJournal"), value: t("email.monthly.addOne"), nudge: true },
+            b.planUpdated
+              ? { label: t("email.monthly.rowPlan"), value: t("email.monthly.rowPlanValue", { date: b.planUpdated }) }
+              : { label: t("email.monthly.rowPlan"), value: t("email.monthly.updatePlan"), nudge: true },
+          ],
+        };
+      }),
+    },
+  ];
+
+  if (opts.coming) {
+    blocks.push({
+      kind: "comingUp",
+      label: t("email.monthly.comingLabel", { month: nextMonthName.toUpperCase() }),
+      text: `${opts.coming.date} · ${escapeHtml(opts.coming.title)}`,
+      cta: t("email.monthly.comingCta"),
+      href: opts.link,
+    });
+  }
+
+  blocks.push({
+    kind: "careNote",
+    pill: t("email.monthly.careNotePill", { month: nextMonthName }),
+    title: t(`email.monthly.care.${nextM}.title`),
+    tips: [1, 2, 3].map((i) => {
+      const raw = t(`email.monthly.care.${nextM}.n${i}`);
+      const mm = /^\s*<b>(.*?)<\/b>\s*(.*)$/s.exec(raw);
+      return mm ? { lead: mm[1], text: mm[2] } : { lead: "", text: raw };
+    }),
+  });
+
+  if (opts.article) {
+    blocks.push({
+      kind: "blogCard",
+      label: t("email.monthly.blogLabel", { n: opts.article.minutes }),
+      title: opts.article.title,
+      cta: t("email.monthly.blogCta"),
+      href: opts.article.url,
+      image: opts.article.imageUrl,
+      imageAlt: opts.article.imageAlt,
+    });
+  }
+
+  blocks.push({ kind: "mailbag", title: t("email.monthly.mailbagTitle"), text: t("email.monthly.mailbagText") });
+  blocks.push({ kind: "button", label: t("email.monthly.cta"), href: opts.link });
+  blocks.push({ kind: "signature" });
+
+  return flockShell({
+    headline,
+    headlineStyle: "lime",
+    intro: t("email.monthly.intro", { hi, birds: flock, nextMonth: nextMonthName }),
+    preheader: one ? t("email.monthly.previewOne") : t("email.monthly.previewMany", { count: opts.birds.length }),
+    pill: t("email.flock.reportPill", { mon: monShort }),
+    hero: { file: `monthly/${String(m).padStart(2, "0")}.jpg`, alt: t(`email.monthly.care.${m}.alt`) },
+    blocks,
+    footerWhy: t("email.monthly.foot"),
+    link: opts.link,
+    locale: opts.locale,
+  });
+}

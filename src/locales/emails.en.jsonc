@@ -39,75 +39,77 @@
   // hardcodes "September"/"October" in its copy and hardcodes each stat as a
   // sample value; both are parameterised here so the letter works in any
   // month. English wording is the handback's, unchanged.
-  "email.monthly.mast": "{{month}} letter",
-  "email.monthly.kicker": "Your month with {{birds}}",
-  "email.monthly.heading": "{{prevMonth}}, in the record",
-  "email.monthly.preview": "A look back at the month, a care note, and the latest from The Kya Project.",
-  "email.monthly.subjectOne": "{{birdName}}'s {{prevMonth}}",
-  "email.monthly.subjectMany": "Your flock's {{prevMonth}}",
-  "email.monthly.hi": "Hi {{firstName}},",
-  "email.monthly.lead": "Here's a look back at {{birds}}'s month: what the record shows, a few things you wrote down, and a care note for the month ahead.",
+  // ---- The Flock Report (Flock Club) ----
+  // Reader-facing name only; the code stays "monthly". The month named
+  // everywhere is the month being RECAPPED, never the send month.
+  // Nothing here interprets a number: no "typical", no "tighter than".
+  "email.flock.reportPill": "The Flock Report &middot; {{mon}}",
+  "email.monthly.subjectMany": "Your flock's {{month}}",
+  "email.monthly.subjectOne": "{{birdName}}'s {{month}}",
+  "email.monthly.previewMany": "{{count}} birds, one month, all the numbers.",
+  "email.monthly.previewOne": "One bird, one month, all the numbers.",
+  "email.monthly.hi": "Hi {{firstName}}!",
+  "email.monthly.hiNoName": "Hi there!",
+  "email.monthly.intro": "{{hi}} Starring {{birds}}. Here's what you logged, what's still blank, and a few good reads for {{nextMonth}}.",
+  "email.monthly.andMore": "and {{n}} more",
+  "email.monthly.totalWeighIns": "weigh-ins",
+  "email.monthly.totalChecks": "health checks",
+  "email.monthly.totalJournal": "journal entries",
+  "email.monthly.rollCall": "Roll call",
+  "email.monthly.rollCallNote": "Tap a bird to open their record",
+  "email.monthly.noWeighIns": "No weigh-ins in {{month}}",
+  "email.monthly.logOne": "Log one",
+  "email.monthly.weighInLine": "{{n}} weigh-ins &middot; latest {{g}} g",
+  "email.monthly.weighInLineOne": "1 weigh-in &middot; latest {{g}} g",
+  "email.monthly.rowChecks": "Health checks",
+  "email.monthly.rowChecksValue": "{{n}} of {{days}} days",
+  "email.monthly.rowJournal": "Journal",
+  "email.monthly.rowJournalValue": "{{n}} entries",
+  "email.monthly.rowJournalValueOne": "1 entry",
+  "email.monthly.rowPlan": "Care plan",
+  "email.monthly.rowPlanValue": "Updated {{date}}",
+  "email.monthly.doOne": "+ Do one",
+  "email.monthly.addOne": "+ Add one",
+  "email.monthly.updatePlan": "+ Update",
+  "email.monthly.comingLabel": "COMING UP IN {{month}}",
+  "email.monthly.comingCta": "Add a moment",
+  "email.monthly.careNotePill": "{{month}} care note",
+  "email.monthly.blogLabel": "NEW ON THE BLOG &middot; {{n}} MIN READ",
+  "email.monthly.blogCta": "Read the article",
+  "email.monthly.mailbagTitle": "The flockmate mailbag",
+  "email.monthly.mailbagText": "What's your bird's weirdest habit? Reply with a story or a photo. With your OK, we'll share a few favorites next month.",
+  "email.monthly.cta": "Open Kya &amp; Co.",
+  "email.monthly.foot": "You're getting The Flock Report because you have a Kya &amp; Co. account. Change which emails you get in Settings.",
+  "email.monthly.mon.1": "Jan",
+  "email.monthly.mon.2": "Feb",
+  "email.monthly.mon.3": "Mar",
+  "email.monthly.mon.4": "Apr",
+  "email.monthly.mon.5": "May",
+  "email.monthly.mon.6": "June",
+  "email.monthly.mon.7": "July",
+  "email.monthly.mon.8": "Aug",
+  "email.monthly.mon.9": "Sept",
+  "email.monthly.mon.10": "Oct",
+  "email.monthly.mon.11": "Nov",
+  "email.monthly.mon.12": "Dec",
 
   // Per-bird stat cards. Each sentence is one key; none is assembled from
   // fragments. The three narrative variants exist because "a little tighter"
   // is a claim about the numbers and must not be printed when it is false.
-  "email.monthly.weightLabel": "Weight in {{prevMonth}}",
-  "email.monthly.weightTypical": "typical this month",
-  "email.monthly.weightRange": "{{min}}–{{max}} g across {{count}} weigh-ins in {{days}} days",
-  "email.monthly.weightRangeOne": "One weigh-in in {{days}} days",
-  "email.monthly.narrowerThan": "{{bird}}'s readings sat inside a {{range}} g range this month, a little tighter than {{prevMonth}}'s {{prevRange}} g.",
-  "email.monthly.widerThan": "{{bird}}'s readings sat inside a {{range}} g range this month, a little wider than {{prevMonth}}'s {{prevRange}} g.",
-  "email.monthly.rangeOnly": "{{bird}}'s readings sat inside a {{range}} g range this month.",
-  "email.monthly.checksLabel": "Health checks",
-  "email.monthly.checksValue": "{{count}} of {{days}} days",
-  "email.monthly.checksNoneFlagged": "Nothing flagged",
-  "email.monthly.checksFlagged": "{{count}} flagged",
-  "email.monthly.journalLabel": "Journal",
-  "email.monthly.journalValue": "{{count}} entries",
-  "email.monthly.journalValueOne": "1 entry",
-  "email.monthly.journalPhotos": "and {{count}} photos this month",
-  "email.monthly.journalNoPhotos": "no photos this month",
-  "email.monthly.planLabel": "Care plan",
   // The handback shows "Food and Routine updated", but care_plans is one wide
   // row with no per-section timestamps, so which sections changed is not
   // knowable. planUpdated is kept for when it is; until then the plain form
   // is used rather than naming sections we cannot stand behind.
-  "email.monthly.planUpdated": "{{sections}} updated",
-  "email.monthly.planUpdatedPlain": "Updated",
-  "email.monthly.planNotUpdated": "Not updated in {{prevMonth}}",
-  "email.monthly.journalQuoteLabel": "Journal · {{date}}",
-  "email.monthly.recordLink": "Open {{bird}}'s record",
 
   // The quiet block (a bird with little logged) and the quiet letter (every
   // bird quiet). Deliberately not a telling-off — see notGrade.
-  "email.monthly.quietLead": "{{bird}}'s record was quieter this month. One weight is enough to pick the trend back up, and everything from before is still there.",
   // The handback disagrees with itself here: 09-monthly-quiet.html and
   // new-strings.json say "Last on the record" / "Weight · <date>", while the
   // quiet block inside 08-monthly.html says "Last weight" / "Logged <date>".
   // new-strings.json wins — it is the named string source and template 09
   // agrees with it, two against one. Both places use these keys, so the quiet
   // block and the quiet letter cannot drift apart again.
-  "email.monthly.lastLabel": "Last on the record",
-  "email.monthly.lastWeight": "Weight · {{date}}",
-  "email.monthly.lastCheckLabel": "Last health check",
-  "email.monthly.nothingYet": "Nothing on the record yet",
-  "email.monthly.notGrade": "None of this is a score. A quieter month in the log is still a month you spent together.",
-  "email.monthly.qLead": "A new month is an easy place to pick things back up. One weight is enough to start again, and everything you logged before is still on the record.",
-  "email.monthly.qStartLabel": "Two easy ways back in",
-  "email.monthly.qStart1": "<b>Log a weight.</b> It takes about a minute, and it picks the trend up where you left it.",
-  "email.monthly.qStart2": "<b>Run a health check.</b> A few questions about how your bird looks and behaves today.",
-  "email.monthly.qCta": "Log a weight",
 
-  "email.monthly.comingLabel": "Coming up in {{month}}",
-  "email.monthly.careLabel": "This month's care note",
-  "email.monthly.fieldLabel": "From the field notes",
-  "email.monthly.fieldMeta": "{{minutes}} minute read",
-  "email.monthly.fieldLink": "Read the article",
-  "email.monthly.cta": "Open Kya &amp; Co.",
-  "email.monthly.reply": "What have your birds been up to? Reply and tell me. Every one comes straight to me.",
-  "email.monthly.signoff": "Warmly,<br>Brittany",
-  "email.monthly.healthNote": "This app doesn't diagnose illness. If you're ever worried about your bird's health, contact an avian veterinarian.",
-  "email.monthly.foot": "You're getting this because you have a Kya &amp; Co. account. You can turn off the monthly letter in Settings at any time.",
 
   // Month names, for the masthead, the heading and every {{month}} above.
   // Dutch needs its own; a date library would not be localized here.

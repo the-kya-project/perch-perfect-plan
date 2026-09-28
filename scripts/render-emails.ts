@@ -16,6 +16,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as T from "@/lib/emailTemplates";
+import * as T2 from "@/lib/flockEmails";
 import { buildWelcomeEmail, buildSeriesWeighingEmail, buildSeriesHealthCheckEmail, buildSeriesCarePlanEmail, buildSeriesJournalEmail, buildSeriesSharingEmail, buildSeriesVetEmail } from "@/lib/flockEmails";
 
 const OUT = ".email-preview";
@@ -60,34 +61,30 @@ const series: Array<[string, T.BuiltEmail]> = [
   ["07-vet", buildSeriesVetEmail({ link: APP })],
 ];
 
-// The monthly letter, with the handback's own sample flock (Juno full, Pip
-// quiet) so 08-monthly.html and 09-monthly-quiet.html are comparable by eye.
-const JUNO: T.MonthlyBird = {
-  name: "Juno", species: "Blue-throated macaw", recordUrl: `${APP}/birds/demo`,
-  weights: [752, 754, 750, 756, 748, 755, 757, 751, 753, 759, 754, 750, 761, 755, 752, 758, 753, 749, 756, 754, 757, 752, 755, 753],
-  prevSpread: 19, checks: 22, flagged: 0, journalEntries: 4, journalPhotos: 6,
-  planUpdated: { date: "12 Sep", sections: "Food and Routine" },
-  quote: { date: "14 September", body: "Tried the new foraging box this morning. Worked it out in under a minute, then ignored it for the rest of the day." },
-  lastWeight: null, lastCheck: null,
-};
-const PIP: T.MonthlyBird = {
-  name: "Pip", species: "Cockatiel", recordUrl: `${APP}/birds/demo2`,
-  weights: [92], prevSpread: null, checks: 0, flagged: 0, journalEntries: 0, journalPhotos: 0,
-  planUpdated: null, quote: null,
-  lastWeight: { grams: 92, date: "18 September" },
-  lastCheck: { date: "11 Sep", flagged: false },
-};
-const ARTICLE = {
-  title: "Weigh your bird every day: What a gram scale tells you before your parrot does",
-  intro: "Weight is the first honest signal of a parrot's health. Why daily weighing matters, what normal fluctuation looks like, and when the trend means call the vet.",
-  url: "https://www.thekyaproject.com/blog/weigh-your-bird-every-day",
-  minutes: 4,
-};
+// The Flock Report, in four shapes: a typical flock, one bird, a flock with
+// gaps in it, and one big enough to trip the name list.
+const A2 = APP;
+const wi = (days: number[], base: number) => days.map((d, i) => ({ day: d, g: base + ((i * 7) % 11) - 5 }));
+const bird = (name: string, species: string, o: Partial<T2.FlockBird> = {}): T2.FlockBird => ({
+  name, species, href: `${A2}/birds/demo`,
+  weighIns: wi([2, 5, 9, 12, 16, 19, 23, 26, 29], 752),
+  checks: 22, journal: 4, planUpdated: "12 Sep",
+  ...o,
+});
+const FLOCK6: T2.FlockBird[] = [
+  bird("Juno", "Blue-throated macaw"),
+  bird("Pip", "Cockatiel", { weighIns: [], checks: 8, journal: 1, planUpdated: null }),
+  bird("Echo", "Red-crowned amazon", { checks: 0, journal: 2 }),
+  bird("Buzz", "Timneh African grey", { weighIns: wi([3, 8, 14, 21, 27], 283) }),
+  bird("Moxie", "Blue-throated macaw", { weighIns: wi([1, 6, 11, 17, 22, 28], 775), journal: 0 }),
+  bird("Willow", "Blue and gold macaw", { weighIns: wi([4, 10, 15, 20, 25, 30], 1114), planUpdated: null }),
+];
+const FLOCK8: T2.FlockBird[] = [...FLOCK6, bird("Kiwi", "Green-cheeked conure", { weighIns: wi([7, 18], 64) }), bird("Sol", "Sun conure", { checks: 3 })];
+const ART = { title: "Weigh your bird every day: what a gram scale tells you first", url: "https://www.thekyaproject.com/blog/weigh", minutes: 4 };
 const monthly: Array<[string, T.BuiltEmail]> = [
-  ["08-monthly", T.buildMonthlyEmail({ firstName: "Sam", birds: [JUNO, PIP], month: 10, year: 2026, link: APP,
-    coming: [{ mon: "Oct", day: 3, title: "Four years since Juno came home", sub: "It's saved as a moment on Juno's record." }],
-    article: ARTICLE })],
-  ["09-monthly-quiet", T.buildMonthlyEmail({ firstName: "Sam", birds: [PIP], month: 10, year: 2026, link: APP, article: ARTICLE })],
+  ["08-flock-report", T2.buildFlockReportEmail({ firstName: "Sam", birds: FLOCK6, month: 9, year: 2026, link: APP, coming: { date: "Oct 3", title: "The day Juno came home" }, article: ART })],
+  ["08b-flock-report-one", T2.buildFlockReportEmail({ firstName: "Sam", birds: [FLOCK6[0]], month: 9, year: 2026, link: APP, article: ART })],
+  ["08c-flock-report-eight", T2.buildFlockReportEmail({ firstName: "Sam", birds: FLOCK8, month: 9, year: 2026, link: APP, article: ART })],
 ];
 
 // Everything else that uses shell(). These must not change.

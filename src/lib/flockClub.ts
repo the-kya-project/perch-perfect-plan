@@ -85,6 +85,25 @@ export type FlockBlock =
   | { kind: "subhead"; text: string }
   | { kind: "panel"; title: string; items: Array<{ lead: string; text: string }> }
   | { kind: "tileGrid"; tiles: Array<{ name: string; badge?: string; highlight: boolean }> }
+  | { kind: "totals"; items: Array<{ n: string; label: string }> }
+  | { kind: "sectionHead"; title: string; note?: string }
+  | {
+      kind: "birdCards";
+      birds: Array<{
+        name: string;
+        species: string;
+        href: string;
+        /** One dot per weigh-in, placed by day of month. */
+        chart?: { points: Array<{ day: number; g: number }>; days: number; axisStart: string; axisEnd: string; line: string };
+        /** Shown instead of the chart when the bird has no weigh-ins. */
+        empty?: { text: string; cta: string };
+        rows: Array<{ label: string; value: string; nudge?: boolean }>;
+      }>;
+    }
+  | { kind: "comingUp"; label: string; text: string; cta: string; href: string }
+  | { kind: "careNote"; pill: string; title: string; tips: Array<{ lead: string; text: string }> }
+  | { kind: "blogCard"; label: string; title: string; cta: string; href: string; image?: string; imageAlt?: string }
+  | { kind: "mailbag"; title: string; text: string }
   | { kind: "summaryCard"; title: string; badge: string; rows: Array<{ label: string; value: string }> }
   | { kind: "bubbles"; items: string[] }
   | { kind: "tickets"; items: Array<{ bg: string; label: string; title: string; text: string; stub: string }> }
@@ -258,6 +277,197 @@ ${t.badge ? `<p style="margin:0 0 5px;font-family:${BODY_FONT};font-size:11px;li
 ${rows.join("\n")}
 </table>`;
 }
+
+/** Three forest tiles: one number each, nothing interpreting it. */
+const totalsHtml = (items: Array<{ n: string; label: string }>) => {
+  const cell = (it: { n: string; label: string }) =>
+    `<td width="32%" valign="top" class="fc-total" style="width:32%;padding:16px 10px;background-color:${FC.forest};border-radius:16px;text-align:center;">
+<p style="margin:0 0 3px;font-family:${HEAD_FONT};font-size:30px;line-height:34px;font-weight:800;letter-spacing:-0.5px;color:#ffffff;text-align:center;${NOBREAK}">${it.n}</p>
+<p style="margin:0;font-family:${BODY_FONT};font-size:11.5px;line-height:16px;color:${FC.lime};text-align:center;${NOBREAK}">${it.label}</p>
+</td>`;
+  const gap = `<td width="8" class="fc-total-gap" style="width:8px;font-size:0;">&nbsp;</td>`;
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="fc-grid" style="width:100%;${RESET}table-layout:fixed;margin:0 0 24px;">
+<tr>${items.map(cell).join(gap)}</tr>
+</table>`;
+};
+
+/** A section heading with an optional note on the right. */
+const sectionHeadHtml = (title: string, note?: string) =>
+  `${grid("margin:0 0 12px;")}<tr>
+<td valign="bottom" style="padding:0;font-family:${HEAD_FONT};font-size:24px;line-height:29px;font-weight:800;letter-spacing:-0.4px;color:${FC.forest};${NOBREAK}">${title}</td>
+${note ? `<td valign="bottom" align="right" class="fc-sec-note" style="padding:0 0 3px 10px;font-family:${BODY_FONT};font-size:12px;line-height:17px;color:${FC.muted};text-align:right;">${note}</td>` : ""}
+</tr>
+</table>`;
+
+/** Bird cards, two per row, stacking under 480px. The cards arrive rendered —
+ *  buildFlockReport assembles each one, because what goes in depends on that
+ *  bird's month. */
+type FlockBirdCard = {
+  name: string;
+  species: string;
+  href: string;
+  chart?: { points: Array<{ day: number; g: number }>; days: number; axisStart: string; axisEnd: string; line: string };
+  empty?: { text: string; cta: string };
+  rows: Array<{ label: string; value: string; nudge?: boolean }>;
+};
+
+/** One bird's month. A dot per weigh-in placed by day, or a dashed box saying
+ *  there were none, then three rows. An empty row keeps its nudge rather than
+ *  disappearing — a blank the reader can see is the point of it. */
+function birdCardHtml(b: FlockBirdCard): string {
+  const H = 56;
+  const DOT = 6;
+  let chart = "";
+  if (b.chart && b.chart.points.length) {
+    const gs = b.chart.points.map((p) => p.g);
+    const hi = Math.max(...gs);
+    const lo = Math.min(...gs);
+    const span = hi - lo || 1;
+    // One cell per day of the month, so a dot sits where it happened.
+    const byDay = new Map(b.chart.points.map((p) => [p.day, p.g]));
+    const cells = Array.from({ length: b.chart.days }, (_, i) => {
+      const g = byDay.get(i + 1);
+      if (g === undefined) return `<td style="height:${H}px;padding:0;font-size:0;">&nbsp;</td>`;
+      const top = Math.round(((hi - g) / span) * (H - DOT));
+      return `<td valign="top" style="height:${H}px;padding:${top}px 0 0;">
+<table role="presentation" width="${DOT}" cellpadding="0" cellspacing="0" border="0" style="width:${DOT}px;${RESET}">
+<tr><td height="${DOT}" bgcolor="${FC.mid}" style="width:${DOT}px;height:${DOT}px;background-color:${FC.mid};border-radius:${DOT / 2}px;font-size:0;line-height:${DOT}px;">&nbsp;</td></tr>
+</table>
+</td>`;
+    }).join("");
+    const ax = (t: string) => `<span style="font-family:${BODY_FONT};font-size:10px;line-height:13px;color:${FC.muted};">${t}</span>`;
+    chart = `${grid(`margin:0 0 10px;background-color:${FC.panel};border-radius:12px;`)}<tr>
+<td style="padding:10px 10px 8px;">
+${grid()}<tr>
+<td width="30" valign="top" style="width:30px;padding:0 6px 0 0;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;${RESET}height:${H}px;">
+<tr><td height="12" valign="top" align="right" style="height:12px;text-align:right;">${ax(String(hi))}</td></tr>
+<tr><td valign="bottom" align="right" style="text-align:right;">${ax(String(lo))}</td></tr>
+</table>
+</td>
+<td valign="top" style="padding:0;">
+${grid("table-layout:fixed;")}<tr>${cells}</tr>
+</table>
+</td>
+</tr>
+</table>
+${grid("margin:4px 0 0;")}<tr>
+<td style="padding:0 0 0 36px;font-family:${BODY_FONT};font-size:10px;line-height:13px;color:${FC.muted};">${b.chart.axisStart}</td>
+<td align="right" style="font-family:${BODY_FONT};font-size:10px;line-height:13px;color:${FC.muted};text-align:right;">${b.chart.axisEnd}</td>
+</tr>
+</table>
+</td>
+</tr></table>
+<p style="margin:0 0 10px;font-family:${BODY_FONT};font-size:12px;line-height:17px;color:${FC.forest};${NOBREAK}">${b.chart.line}</p>`;
+  } else if (b.empty) {
+    chart = `${grid("margin:0 0 10px;")}<tr>
+<td style="padding:14px 12px;border:1px dashed ${FC.muted};border-radius:12px;text-align:center;">
+<p style="margin:0 0 4px;font-family:${BODY_FONT};font-size:12.5px;line-height:18px;color:${FC.muted};text-align:center;">${b.empty.text}</p>
+<p style="margin:0;font-family:${BODY_FONT};font-size:12.5px;line-height:18px;text-align:center;"><a href="${b.href}" style="color:${FC.mid};font-weight:700;text-decoration:underline;">${b.empty.cta}&nbsp;&rarr;</a></p>
+</td>
+</tr></table>`;
+  }
+  const rows = b.rows
+    .map(
+      (r) => `${grid("margin:0 0 6px;")}<tr>
+<td style="padding:8px 12px;${r.nudge ? `border:1px dashed ${FC.muted};` : `background-color:${FC.panel};`}border-radius:999px;">
+${grid()}<tr>
+<td valign="middle" style="padding:0;font-family:${BODY_FONT};font-size:12px;line-height:17px;color:${r.nudge ? FC.muted : FC.forest};${NOBREAK}">${r.label}</td>
+<td valign="middle" align="right" style="padding:0 0 0 8px;font-family:${BODY_FONT};font-size:12px;line-height:17px;font-weight:700;color:${r.nudge ? "#a15c16" : FC.forest};text-align:right;${NOBREAK}">${r.value}</td>
+</tr>
+</table>
+</td>
+</tr></table>`,
+    )
+    .join("");
+  return `${grid()}<tr>
+<td style="padding:14px;background-color:#ffffff;border:2px solid ${FC.forest};border-radius:16px;">
+${grid("margin:0 0 10px;")}<tr>
+<td width="30" valign="middle" style="width:30px;padding:0 9px 0 0;">
+<table role="presentation" width="30" cellpadding="0" cellspacing="0" border="0" style="width:30px;${RESET}">
+<tr><td align="center" height="30" bgcolor="${FC.lime}" style="width:30px;height:30px;background-color:${FC.lime};border-radius:15px;font-family:${HEAD_FONT};font-size:14px;line-height:30px;font-weight:800;color:${FC.forest};text-align:center;">${b.name.slice(0, 1).toUpperCase()}</td></tr>
+</table>
+</td>
+<td valign="middle" style="padding:0;">
+<p style="margin:0;font-family:${HEAD_FONT};font-size:20px;line-height:24px;font-weight:800;letter-spacing:-0.4px;color:${FC.forest};${NOBREAK}"><a href="${b.href}" style="color:${FC.forest};text-decoration:none;">${b.name}</a></p>
+<p style="margin:0;font-family:${BODY_FONT};font-size:11.5px;line-height:16px;color:${FC.muted};">${b.species}</p>
+</td>
+</tr>
+</table>
+${chart}${rows}
+</td>
+</tr></table>`;
+}
+
+const birdCardsHtml = (birds: FlockBirdCard[]) => {
+  const gap = `<td width="10" class="fc-bird-gap" style="width:10px;font-size:0;">&nbsp;</td>`;
+  const rows: string[] = [];
+  for (let i = 0; i < birds.length; i += 2) {
+    const pair = birds.slice(i, i + 2).map(birdCardHtml);
+    if (pair.length === 1) pair.push("");
+    rows.push(`<tr>${pair.map((c) => `<td width="50%" valign="top" class="fc-bird" style="width:50%;padding:0;">${c}</td>`).join(gap)}</tr>`);
+    if (i + 2 < birds.length) rows.push(`<tr><td height="10" colspan="3" style="height:10px;line-height:10px;font-size:0;">&nbsp;</td></tr>`);
+  }
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="fc-grid" style="width:100%;${RESET}table-layout:fixed;margin:0 0 24px;">${rows.join("\n")}
+</table>`;
+};
+
+/** The upcoming-moment strip. Omitted entirely when there is nothing coming. */
+const comingUpHtml = (o: { label: string; text: string; cta: string; href: string }) =>
+  `${grid("margin:0 0 24px;")}<tr>
+<td class="fc-coming" style="padding:14px 18px;background-color:#ffffff;border:2px solid ${FC.forest};border-radius:999px;">
+${grid()}<tr>
+<td valign="middle" class="fc-coming-a" style="padding:0;">
+<p style="margin:0 0 2px;font-family:${BODY_FONT};font-size:10.5px;line-height:14px;letter-spacing:.09em;font-weight:700;color:${FC.mid};${NOBREAK}">${o.label}</p>
+<p style="margin:0;font-family:${BODY_FONT};font-size:14px;line-height:20px;font-weight:700;color:${FC.forest};">${o.text}</p>
+</td>
+<td valign="middle" align="right" class="fc-coming-b" style="padding:0 0 0 12px;font-family:${BODY_FONT};font-size:13px;line-height:19px;text-align:right;white-space:nowrap;">
+<a href="${o.href}" style="color:${FC.mid};font-weight:700;text-decoration:underline;">${o.cta}&nbsp;&rarr;</a>
+</td>
+</tr>
+</table>
+</td>
+</tr></table>`;
+
+/** The month's care note, on sunflower. */
+const careNoteHtml = (o: { pill: string; title: string; tips: Array<{ lead: string; text: string }> }) =>
+  `${grid("margin:0 0 24px;")}<tr>
+<td style="padding:20px;background-color:${FC.sunflower};border-radius:20px;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="${RESET}margin:0 0 12px;">
+<tr><td bgcolor="${FC.forest}" style="padding:5px 13px;background-color:${FC.forest};border-radius:999px;font-family:${BODY_FONT};font-size:11.5px;line-height:15px;font-weight:700;color:${FC.lime};white-space:nowrap;">${o.pill}</td></tr>
+</table>
+<p style="margin:0 0 12px;font-family:${HEAD_FONT};font-size:26px;line-height:31px;font-weight:800;letter-spacing:-0.5px;color:${FC.forest};${NOBREAK}">${o.title}</p>
+${o.tips
+    .map(
+      (t, i) => `<p style="margin:0 0 ${i === o.tips.length - 1 ? 0 : 10}px;font-family:${BODY_FONT};font-size:14.5px;line-height:22px;color:${FC.forest};"><b style="font-weight:700;">${t.lead}</b> ${t.text}</p>`,
+    )
+    .join("\n")}
+</td>
+</tr></table>`;
+
+/** The latest post. */
+const blogCardHtml = (o: { label: string; title: string; cta: string; href: string; image?: string; imageAlt?: string }) =>
+  `${grid("margin:0 0 24px;")}<tr>
+<td style="padding:0;background-color:#ffffff;border:2px solid ${FC.forest};border-radius:18px;overflow:hidden;">
+${o.image ? `<img src="${o.image}" width="512" alt="${o.imageAlt ?? ""}" style="display:block;width:100%;max-width:512px;height:auto;border:0;border-radius:16px 16px 0 0;" />` : ""}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;${RESET}">
+<tr><td style="padding:16px 18px;">
+<p style="margin:0 0 6px;font-family:${BODY_FONT};font-size:10.5px;line-height:14px;letter-spacing:.09em;font-weight:700;color:${FC.mid};${NOBREAK}">${o.label}</p>
+<p style="margin:0 0 10px;font-family:${HEAD_FONT};font-size:21px;line-height:27px;font-weight:800;letter-spacing:-0.4px;color:${FC.forest};${NOBREAK}">${o.title}</p>
+<p style="margin:0;font-family:${BODY_FONT};font-size:14px;line-height:20px;"><a href="${o.href}" style="color:${FC.mid};font-weight:700;text-decoration:underline;">${o.cta}&nbsp;&rarr;</a></p>
+</td></tr>
+</table>
+</td>
+</tr></table>`;
+
+/** The mailbag ask. */
+const mailbagHtml = (o: { title: string; text: string }) =>
+  `${grid("margin:0 0 22px;")}<tr>
+<td style="padding:20px;background-color:${FC.forest};border-radius:20px;">
+<p style="margin:0 0 8px;font-family:${HEAD_FONT};font-size:22px;line-height:27px;font-weight:800;letter-spacing:-0.4px;color:${FC.lime};${NOBREAK}">${o.title}</p>
+<p style="margin:0;font-family:${BODY_FONT};font-size:14.5px;line-height:22px;color:${FC.footText};">${o.text}</p>
+</td>
+</tr></table>`;
 
 /** The vet summary on the forest card: a label and a number per row, and
  *  nothing that characterises either. The reader and their vet do that. */
@@ -526,6 +736,13 @@ function blockHtml(b: FlockBlock, c: Ctx): string {
     case "subhead": return subheadHtml(b.text);
     case "panel": return panelHtml(b);
     case "tileGrid": return tileGridHtml(b.tiles);
+    case "totals": return totalsHtml(b.items);
+    case "sectionHead": return sectionHeadHtml(b.title, b.note);
+    case "birdCards": return birdCardsHtml(b.birds);
+    case "comingUp": return comingUpHtml(b);
+    case "careNote": return careNoteHtml(b);
+    case "blogCard": return blogCardHtml(b);
+    case "mailbag": return mailbagHtml(b);
     case "summaryCard": return summaryCardHtml(b);
     case "bubbles": return bubblesHtml(b.items);
     case "tickets": return ticketsHtml(b.items);
@@ -563,6 +780,13 @@ function blockText(b: FlockBlock, c: Ctx): string {
     case "subhead": return detag(b.text);
     case "panel": return `${detag(b.title)}\n` + b.items.map((it, i) => `${i + 1}. ${detag(it.lead)} ${detag(it.text)}`).join("\n");
     case "tileGrid": return b.tiles.map((x) => (x.badge ? `${detag(x.badge)} ` : "") + detag(x.name)).join("\n");
+    case "totals": return b.items.map((x) => `${detag(x.n)} ${detag(x.label)}`).join("\n");
+    case "sectionHead": return detag(b.title);
+    case "birdCards": return b.birds.map((x) => [`${detag(x.name)} (${detag(x.species)})`, x.chart ? detag(x.chart.line) : detag(x.empty?.text ?? ""), ...x.rows.map((r) => `${detag(r.label)}: ${detag(r.value)}`)].filter(Boolean).join("\n")).join("\n\n");
+    case "comingUp": return `${detag(b.label)}\n${detag(b.text)}\n${detag(b.cta)}: ${b.href}`;
+    case "careNote": return `${detag(b.pill)} — ${detag(b.title)}\n` + b.tips.map((t) => `${detag(t.lead)} ${detag(t.text)}`).join("\n");
+    case "blogCard": return `${detag(b.label)}\n${detag(b.title)}\n${detag(b.cta)}: ${b.href}`;
+    case "mailbag": return `${detag(b.title)}\n${detag(b.text)}`;
     case "summaryCard": return `${detag(b.title)}\n` + b.rows.map((r) => `${detag(r.label)}: ${detag(r.value)}`).join("\n");
     case "bubbles": return b.items.map((q) => `- ${detag(q)}`).join("\n");
     case "tickets": return b.items.map((x) => `${detag(x.label)} — ${detag(x.title)}\n${detag(x.text)}`).join("\n\n");
@@ -586,8 +810,14 @@ export function flockShell(opts: {
   preheader: string;
   /** Right-hand header pill — "Hi, flockmate", "The Flock Report · Sept". */
   pill: string;
-  /** Full-width hero. `sticker` puts a sunflower circle on its bottom-right. */
+  /** Full-width hero. `sticker` puts a sunflower circle beside the headline. */
   hero?: { file: string; alt: string; sticker?: string };
+  /** "lime" sets the headline in a full-width lime band with an intro
+   *  paragraph under it, instead of on the card background beside a sticker.
+   *  The Flock Report uses it; the letters do not. */
+  headlineStyle?: "plain" | "lime";
+  /** The line under the headline, in the lime band. */
+  intro?: string;
   blocks: FlockBlock[];
   /** The one-line "why you're getting this", per email. */
   footerWhy: string;
@@ -655,6 +885,20 @@ export function flockShell(opts: {
   /* The stepped question bubbles line up flush; at this width the indents
      would take room the text needs. */
   .fc-bubble-pad { padding-left:0 !important; }
+  /* Bird cards and flock totals go one per row; their spacer cells collapse. */
+  /* The masthead pill is long on this email ("The Flock Report · Sept") and was
+     running off the right edge of a 320px screen. Smaller type, tighter
+     padding, and a smaller lockup beside it. */
+  .fc-lockup { width:104px !important; }
+  .fc-pill { font-size:10.5px !important; padding:5px 10px !important; }
+  /* A 24px section title plus a note is too much for one line here. */
+  .fc-sec-note { font-size:10.5px !important; line-height:15px !important; }
+  .fc-grid { table-layout:auto !important; }
+  .fc-bird { display:block !important; width:100% !important; box-sizing:border-box !important; padding-bottom:10px !important; }
+  .fc-bird-gap { display:none !important; }
+  .fc-coming-a, .fc-coming-b { display:block !important; width:100% !important; text-align:left !important; padding:0 !important; box-sizing:border-box !important; }
+  .fc-coming-b { padding-top:6px !important; }
+  .fc-coming { border-radius:18px !important; }
 }
 </style>
 </head>
@@ -666,11 +910,11 @@ export function flockShell(opts: {
 <td bgcolor="${FC.forest}" style="padding:16px 22px;background-color:${FC.forest};">
 ${grid()}<tr>
 <td valign="middle" style="padding:0;">
-<img src="${ASSETS}/brand/email/lockup-reversed.png" width="132" alt="${t("email.flock.lockupAlt")}" style="display:block;width:132px;height:auto;border:0;font-family:${HEAD_FONT};font-size:18px;line-height:24px;font-weight:800;color:#ffffff;" />
+<img src="${ASSETS}/brand/email/lockup-reversed.png" width="132" alt="${t("email.flock.lockupAlt")}" class="fc-lockup" style="display:block;width:132px;height:auto;border:0;font-family:${HEAD_FONT};font-size:18px;line-height:24px;font-weight:800;color:#ffffff;" />
 </td>
 <td valign="middle" align="right" style="padding:0 0 0 12px;">
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="${RESET}">
-<tr><td bgcolor="${FC.lime}" style="padding:7px 14px;background-color:${FC.lime};border-radius:999px;font-family:${BODY_FONT};font-size:12.5px;line-height:16px;font-weight:700;color:${FC.forest};white-space:nowrap;">${opts.pill}</td></tr>
+<tr><td bgcolor="${FC.lime}" class="fc-pill" style="padding:7px 14px;background-color:${FC.lime};border-radius:999px;font-family:${BODY_FONT};font-size:12.5px;line-height:16px;font-weight:700;color:${FC.forest};white-space:nowrap;">${opts.pill}</td></tr>
 </table>
 </td>
 </tr>
@@ -678,7 +922,20 @@ ${grid()}<tr>
 </td>
 </tr>
 ${hero}
+${
+    opts.headlineStyle === "lime"
+      ? `<tr>
+<td bgcolor="${FC.lime}" style="padding:26px 22px 24px;background-color:${FC.lime};">
+<h1 class="fc-h1" style="margin:0 0 12px;font-family:${HEAD_FONT};font-size:40px;line-height:43px;font-weight:800;letter-spacing:-0.5px;color:${FC.forest};${NOBREAK}">${opts.headline}</h1>
+${opts.intro ? `<p style="margin:0;font-family:${BODY_FONT};font-size:15px;line-height:24px;color:${FC.forest};">${opts.intro}</p>` : ""}
+</td>
+</tr>
 <tr>
+<td style="padding:24px 22px 0;">
+${body}
+</td>
+</tr>`
+      : `<tr>
 <td style="padding:28px 22px 0;">
 ${grid("margin:0 0 18px;")}<tr>
 <td valign="middle" style="padding:0;">
@@ -689,7 +946,8 @@ ${stickerCell}
 </table>
 ${body}
 </td>
-</tr>
+</tr>`
+  }
 <tr><td height="8" style="height:8px;line-height:8px;font-size:0;">&nbsp;</td></tr>
 <tr>
 <td bgcolor="${FC.forest}" style="padding:26px 28px 28px;background-color:${FC.forest};text-align:center;">
