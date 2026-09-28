@@ -29,9 +29,8 @@
   "email.monthly.kicker": "Your month with {{birds}}",
   "email.monthly.heading": "{{prevMonth}}, in the record",
   "email.monthly.preview": "A look back at the month, a care note, and the latest from The Kya Project.",
-  "email.monthly.subjectOne": "{{birdName}}'s {{prevMonth}}, in the record",
-  "email.monthly.subjectTwo": "{{birdName1}} and {{birdName2}}'s {{prevMonth}}, in the record",
-  "email.monthly.subjectMany": "Your flock's {{prevMonth}}, in the record",
+  "email.monthly.subjectOne": "{{birdName}}'s {{prevMonth}}",
+  "email.monthly.subjectMany": "Your flock's {{prevMonth}}",
   "email.monthly.hi": "Hi {{firstName}},",
   "email.monthly.lead": "Here's a look back at {{birds}}'s month: what the record shows, a few things you wrote down, and a care note for the month ahead.",
 

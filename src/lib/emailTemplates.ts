@@ -83,6 +83,29 @@ const ASSETS = process.env.EMAIL_ASSET_BASE || "https://app.thekyaproject.com";
 
 // Letter palette, on top of C. Muted is darkened to #75746b from the C.muted
 // #8a897f used elsewhere — small print on cream needed the contrast.
+// ── The small label ("eyebrow") ──────────────────────────────────────────────
+// The uppercase, wide-tracked, bold sans label is the single most generic
+// gesture in email design — every SaaS template and every generated mockup
+// reaches for it. These letters are signed by a person, so the label is set in
+// the same serif as the headings: still small and quiet, but it reads as
+// typography rather than as a UI chip.
+//
+// Changing LABEL_FONT/LABEL_CASE here changes every label in every email at
+// once, which is the point — they must not drift apart.
+// Georgia italic, sentence case, no tracking. The catalog already stores these
+// strings in sentence case ("Health checks", "Worth knowing") — the old
+// uppercasing was done in CSS, so dropping text-transform is all it takes.
+//
+// Sizes are a little larger than the uppercase version they replace: lowercase
+// at 13px reads about the same as caps at 11px, and the italic needs the room.
+const LABEL_FONT = SERIF;
+/** The standard label, used everywhere except the masthead and the date chip. */
+const LABEL = `font-family:${LABEL_FONT};font-size:13px;line-height:18px;font-style:italic;font-weight:normal;`;
+/** Masthead right-hand label ("October letter", "Letter 1 of 7"). */
+const LABEL_MAST = `font-family:${LABEL_FONT};font-size:12.5px;line-height:17px;font-style:italic;font-weight:normal;`;
+/** The month chip on a coming-up date. */
+const LABEL_CHIP = `font-family:${LABEL_FONT};font-size:11px;line-height:14px;font-style:italic;font-weight:normal;`;
+
 const L = {
   mid: "#2d6a4f",      // kickers, statements, the "Normal" pill
   lime: "#cdeab0",     // on deep green: labels, bars, hero alt text
@@ -147,7 +170,7 @@ const noteBullets = (items: string[]) =>
 const note = (label: string, inner: string, margin = "4px 0 22px") =>
   `${grid(`margin:${margin};`)}<tr>
 <td bgcolor="${C.ground}" style="padding:20px 22px 8px;background-color:${C.ground};border:1px solid ${C.border};border-radius:14px;">
-<p style="margin:0 0 12px;font-family:${SANS};font-size:11px;line-height:16px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:${C.teal};">${label}</p>
+<p style="margin:0 0 12px;${LABEL}color:${C.teal};">${label}</p>
 ${inner}
 </td>
 </tr></table>`;
@@ -177,14 +200,14 @@ const button = (label: string, href: string, margin: string) =>
 
 /** Sign-off, with the founder line under it. */
 const signature = (signoff: string, title: string) =>
-  `<p style="margin:0 0 4px;font-family:${SERIF};font-size:18px;line-height:27px;color:${C.green};font-style:italic;">${signoff}</p>
-<p style="margin:0 0 0px;font-family:${SANS};font-size:12.5px;line-height:19px;color:${C.secondary};">${title}</p>`;
+  `<p style="margin:0 0 3px;font-family:${SERIF};font-size:15px;line-height:23px;color:${C.green};font-style:italic;">${signoff}</p>
+<p style="margin:0 0 0px;font-family:${SANS};font-size:11.5px;line-height:17px;color:${C.secondary};">${title}</p>`;
 
 /** The deep-green card that closes the last letter. */
 const finale = (label: string, body: string) =>
   `${grid("margin:6px 0 22px;")}<tr>
 <td bgcolor="${C.green}" style="padding:22px 22px 20px;background-color:${C.green};border-radius:16px;">
-<p style="margin:0 0 10px;font-family:${SANS};font-size:11px;line-height:16px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:${L.lime};">${label}</p>
+<p style="margin:0 0 10px;${LABEL}color:${L.lime};">${label}</p>
 <p style="margin:0 0 0px;font-family:${SANS};font-size:15px;line-height:24px;color:#ffffff;">${body}</p>
 </td>
 </tr></table>`;
@@ -235,8 +258,8 @@ ${BARE}
   ).join("\n");
   return `${grid("margin:6px 0 10px;")}<tr>
 <td bgcolor="${C.green}" style="padding:22px 22px 18px;background-color:${C.green};border-radius:16px;">
-<p style="margin:0 0 14px;font-family:${SANS};font-size:11px;line-height:16px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:${L.lime};">${o.inApp}</p>
-<p style="margin:0 0 2px;font-family:${SANS};font-size:11px;line-height:16px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:${L.limeSoft};font-weight:600;">${o.label}</p>
+<p style="margin:0 0 14px;${LABEL}color:${L.lime};">${o.inApp}</p>
+<p style="margin:0 0 2px;${LABEL}color:${L.limeSoft};font-weight:600;">${o.label}</p>
 <p style="margin:0 0 2px;font-family:${SANS};font-size:40px;line-height:46px;color:#ffffff;font-weight:300;letter-spacing:-.5px;">${o.value}</p>
 <p style="margin:0 0 18px;font-family:${SANS};font-size:14px;line-height:21px;color:${L.onGreen};">${o.summary}</p>
 ${grid("table-layout:fixed;")}<tr>
@@ -280,7 +303,7 @@ ${pill(o.answers[2], false)}
 </tr>`;
   return `${grid("margin:4px 0 24px;")}<tr>
 <td bgcolor="${C.ground}" style="padding:20px 18px 16px;background-color:${C.ground};border:1px solid ${C.border};border-radius:16px;">
-<p style="margin:0 0 10px;font-family:${SANS};font-size:11px;line-height:16px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:${C.teal};">${o.inApp}</p>
+<p style="margin:0 0 10px;${LABEL}color:${C.teal};">${o.inApp}</p>
 <p style="margin:0 0 4px;font-family:${SERIF};font-size:17px;line-height:24px;color:${C.green};">${o.title}</p>
 <p style="margin:0 0 14px;font-family:${SANS};font-size:13.5px;line-height:20px;color:${C.secondary};">${o.intro}</p>
 ${grid()}${o.questions.map(card).join("\n")}
@@ -320,7 +343,7 @@ function journalEntry(o: { label: string; date: string; body: string; moment: st
   return `${grid("margin:0 0 24px;")}<tr>
 <td style="padding:20px 22px 16px;border:1px solid ${C.border};border-radius:16px;background-color:${C.card};">
 ${grid()}<tr>
-<td style="font-family:${SANS};font-size:11px;line-height:16px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:${C.teal};">${o.label}</td>
+<td style="${LABEL}color:${C.teal};">${o.label}</td>
 <td align="right" style="font-family:${SANS};font-size:12.5px;line-height:16px;color:${C.secondary};text-align:right;">${o.date}</td>
 </tr>
 </table>
@@ -338,7 +361,7 @@ function sharingCards(o: { sitterLabel: string; sitterBody: string; sitterFoot: 
   const card = (bg: string, label: string, body: string, foot: string) =>
     `${grid()}<tr>
 <td bgcolor="${bg}" style="padding:18px 18px 16px;background-color:${bg};border-radius:14px;">
-<p style="margin:0 0 10px;font-family:${SANS};font-size:11px;line-height:16px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:${L.mid};">${label}</p>
+<p style="margin:0 0 10px;${LABEL}color:${L.mid};">${label}</p>
 <p style="margin:0 0 14px;font-family:${SANS};font-size:14.5px;line-height:23px;color:${C.green};">${body}</p>
 ${grid()}<tr>
 <td style="padding:10px 0 0;border-top:1px solid ${C.border};font-family:${SANS};font-size:12.5px;line-height:18px;color:${C.secondary};">${foot}</td>
@@ -428,7 +451,7 @@ function letterShell(opts: {
 <td style="padding:26px 24px 0;">
 ${grid()}<tr>
 <td style="padding:18px 0 0;border-top:1px solid ${C.rule};">
-<p style="margin:0 0 6px;font-family:${SANS};font-size:11px;line-height:16px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:${C.secondary};font-weight:600;">${t("email.series.nextLabel", { day: opts.nextDay })}</p>
+<p style="margin:0 0 6px;${LABEL}color:${C.secondary};font-weight:600;">${t("email.series.nextLabel", { day: opts.nextDay })}</p>
 <p style="margin:0;font-family:${SERIF};font-style:italic;font-size:16px;line-height:25px;color:${C.secondary};">${opts.nextUp}</p>
 </td>
 </tr>
@@ -450,12 +473,12 @@ ${grid()}<tr>
   <!--[if mso]><table role="presentation" width="520" align="center" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" align="center" style="width:100%;max-width:520px;margin:0 auto;table-layout:fixed;border-collapse:separate;border-spacing:0;border:1px solid ${C.border};border-radius:16px;background-color:${C.card};overflow:hidden;mso-table-lspace:0pt;mso-table-rspace:0pt;">
 <tr>
-<td bgcolor="${C.ground}" style="padding:16px 24px;background-color:${C.ground};border-bottom:1px solid ${C.rule};border-radius:16px 16px 0 0;">
+<td bgcolor="${C.green}" style="padding:18px 24px;background-color:${C.green};border-radius:16px 16px 0 0;">
 ${grid()}<tr>
 <td valign="middle" style="padding:0;">
-<img src="${ASSETS}/brand/email/lockup.png" width="150" alt="${t("email.series.lockupAlt")}" style="display:block;width:150px;height:auto;border:0;font-family:${SERIF};font-size:20px;line-height:26px;font-weight:bold;color:${C.green};" />
+<img src="${ASSETS}/brand/email/lockup-reversed.png" width="150" alt="${t("email.series.lockupAlt")}" style="display:block;width:150px;height:auto;border:0;font-family:${SERIF};font-size:20px;line-height:26px;font-weight:bold;color:#ffffff;" />
 </td>
-<td valign="middle" align="right" style="padding:0 0 0 12px;font-family:${SANS};font-size:10.5px;line-height:15px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;color:${C.secondary};text-align:right;">${opts.mastLabel ?? t("email.series.letterOf", { n: opts.n })}</td>
+<td valign="middle" align="right" style="padding:0 0 0 12px;${LABEL_MAST}color:${L.lime};text-align:right;">${opts.mastLabel ?? t("email.series.letterOf", { n: opts.n })}</td>
 </tr>
 </table>
 </td>
@@ -471,7 +494,7 @@ ${segments}
 ${hero}
 <tr>
 <td style="padding:30px 24px 0;">
-<p style="margin:0 0 12px;font-family:${SANS};font-size:11px;line-height:16px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:${L.mid};">${opts.kicker}</p>
+<p style="margin:0 0 12px;${LABEL}color:${L.mid};">${opts.kicker}</p>
 <h1 style="margin:0;font-family:${SERIF};font-size:30px;line-height:37px;font-weight:normal;letter-spacing:-.2px;color:${C.green};">${opts.heading}</h1>
 </td>
 </tr>
@@ -1422,7 +1445,7 @@ ${BARE}
 
   return `${grid("margin:0;")}<tr>
 <td bgcolor="${C.green}" style="padding:20px 22px 20px;background-color:${C.green};border-radius:16px;">
-<p style="margin:0 0 6px;font-family:${SANS};font-size:11px;line-height:16px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:${L.lime};">${t("email.monthly.weightLabel", { prevMonth })}</p>
+<p style="margin:0 0 6px;${LABEL}color:${L.lime};">${t("email.monthly.weightLabel", { prevMonth })}</p>
 ${grid()}<tr>
 <td valign="bottom" style="font-family:${SANS};font-size:40px;line-height:44px;font-weight:300;letter-spacing:-.5px;color:#ffffff;">${typical}&nbsp;g</td>
 <td valign="bottom" align="right" style="padding:0 0 6px 12px;font-family:${SANS};font-size:13px;line-height:18px;color:${L.onGreen};text-align:right;">${t("email.monthly.weightTypical")}</td>
@@ -1446,7 +1469,7 @@ ${grid()}<tr>
 function monthlyStatCard(label: string, value: string, sub: string): string {
   return `${grid()}<tr>
 <td bgcolor="${C.ground}" style="padding:16px 16px 14px;background-color:${C.ground};border-radius:14px;">
-<p style="margin:0 0 8px;font-family:${SANS};font-size:11px;line-height:16px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:${C.teal};">${label}</p>
+<p style="margin:0 0 8px;${LABEL}color:${C.teal};">${label}</p>
 <p style="margin:0 0 4px;font-family:${SERIF};font-size:22px;line-height:28px;color:${C.green};">${value}</p>
 <p style="margin:0 0 0px;font-family:${SANS};font-size:12.5px;line-height:18px;color:${C.secondary};">${sub}</p>
 </td>
@@ -1457,10 +1480,10 @@ function monthlyStatCard(label: string, value: string, sub: string): string {
 /** The bird's name and species, over a heavy rule. */
 function monthlyBirdHeading(name: string, species: string): string {
   return `${grid()}<tr>
-<td valign="bottom" style="padding:0 0 12px;border-bottom:2px solid ${C.green};">
+<td valign="bottom" style="padding:0 0 10px;">
 <p style="margin:0;font-family:${SERIF};font-size:26px;line-height:32px;color:${C.green};">${name}</p>
 </td>
-<td valign="bottom" align="right" style="padding:0 0 15px 12px;border-bottom:2px solid ${C.green};font-family:${SANS};font-size:13px;line-height:19px;color:${C.secondary};text-align:right;">${species}</td>
+<td valign="bottom" align="right" style="padding:0 0 13px 12px;font-family:${SANS};font-size:13px;line-height:19px;color:${C.secondary};text-align:right;">${species}</td>
 </tr>
 </table>`;
 }
@@ -1487,7 +1510,7 @@ function monthlyBirdRow(t: EmailT, b: MonthlyBird, first: boolean, prevMonth: st
   const quote = b.quote
     ? `${grid()}<tr>
 <td style="padding:20px 0 0;">
-<p style="margin:0 0 8px;font-family:${SANS};font-size:11px;line-height:16px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:${C.teal};">${t("email.monthly.journalQuoteLabel", { date: b.quote.date })}</p>
+<p style="margin:0 0 8px;${LABEL}color:${C.teal};">${t("email.monthly.journalQuoteLabel", { date: b.quote.date })}</p>
 <p style="margin:0;font-family:${SERIF};font-style:italic;font-size:19px;line-height:29px;color:${C.green};">&ldquo;${b.quote.body}&rdquo;</p>
 </td>
 </tr>
@@ -1541,7 +1564,7 @@ function monthlyComingUp(t: EmailT, month: string, items: Array<{ mon: string; d
       (it, i) => `<tr>
 <td width="64" valign="top" style="width:64px;padding:${i === 0 ? "0px" : "12px"} 16px 12px 0;">
 ${grid()}<tr>
-<td align="center" bgcolor="${C.green}" style="padding:4px 0;background-color:${C.green};border-radius:10px 10px 0 0;font-family:${SANS};font-size:10.5px;line-height:14px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:${L.lime};text-align:center;">${it.mon}</td>
+<td align="center" bgcolor="${C.green}" style="padding:4px 0;background-color:${C.green};border-radius:10px 10px 0 0;${LABEL_CHIP}color:${L.lime};text-align:center;">${it.mon}</td>
 </tr>
 <tr>
 <td align="center" style="padding:6px 0 8px;border:1px solid ${C.border};border-top:0;border-radius:0 0 10px 10px;font-family:${SERIF};font-size:28px;line-height:32px;color:${C.green};text-align:center;">${it.day}</td>
@@ -1559,7 +1582,7 @@ ${grid()}<tr>
 <td style="padding:30px 24px 0;">
 ${grid()}<tr>
 <td style="padding:24px 0 0;border-top:1px solid ${C.rule};">
-<p style="margin:0 0 14px;font-family:${SANS};font-size:11px;line-height:16px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:${L.mid};">${t("email.monthly.comingLabel", { month })}</p>
+<p style="margin:0 0 14px;${LABEL}color:${L.mid};">${t("email.monthly.comingLabel", { month })}</p>
 ${grid()}${rows}
 </table>
 </td>
@@ -1583,7 +1606,7 @@ function monthlyCareNote(t: EmailT, month: number): string {
 <td style="padding:30px 24px 0;">
 ${grid()}<tr>
 <td bgcolor="${C.ground}" style="padding:20px 22px 8px;background-color:${C.ground};border:1px solid ${C.border};border-radius:14px;">
-<p style="margin:0 0 6px;font-family:${SANS};font-size:11px;line-height:16px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:${C.teal};">${t("email.monthly.careLabel")}</p>
+<p style="margin:0 0 6px;${LABEL}color:${C.teal};">${t("email.monthly.careLabel")}</p>
 <p style="margin:0 0 14px;font-family:${SERIF};font-size:20px;line-height:27px;color:${C.green};">${t(`email.monthly.care.${month}.title`)}</p>
 ${grid()}${bullets}
 </table>
@@ -1608,7 +1631,7 @@ function monthlyArticleBlock(t: EmailT, a: MonthlyArticle | null): string {
 <td style="padding:30px 24px 0;">
 ${grid()}<tr>
 <td style="padding:24px 0 0;border-top:1px solid ${C.rule};">
-<p style="margin:0 0 12px;font-family:${SANS};font-size:11px;line-height:16px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:${C.teal};">${t("email.monthly.fieldLabel")}</p>
+<p style="margin:0 0 12px;${LABEL}color:${C.teal};">${t("email.monthly.fieldLabel")}</p>
 ${img}<p style="margin:0 0 6px;font-family:${SERIF};font-size:20px;line-height:27px;color:${C.green};"><a href="${a.url}" style="color:${C.green};text-decoration:underline;">${a.title}</a></p>
 <p style="margin:0 0 10px;font-family:${SANS};font-size:14px;line-height:21px;color:${C.secondary};">${a.intro}</p>
 <p style="margin:0 0 0px;font-family:${SANS};font-size:12.5px;line-height:18px;color:${C.secondary};">${t("email.monthly.fieldMeta", { minutes: a.minutes })}&nbsp;&nbsp;·&nbsp;&nbsp;<a href="${a.url}" style="color:${L.mid};font-weight:600;text-decoration:underline;">${t("email.monthly.fieldLink")}&nbsp;&rarr;</a></p>
@@ -1657,12 +1680,12 @@ export function buildMonthlyEmail(opts: {
 
   const names = opts.birds.map((b) => escapeHtml(b.name));
   const birdsLabel = joinBirdNames(names);
+  // One bird is named; two or more become "your flock" rather than listing
+  // them. It also stops the subject growing with the size of the flock.
   const subject =
     names.length === 1
       ? t("email.monthly.subjectOne", { birdName: opts.birds[0].name, prevMonth })
-      : names.length === 2
-        ? t("email.monthly.subjectTwo", { birdName1: opts.birds[0].name, birdName2: opts.birds[1].name, prevMonth })
-        : t("email.monthly.subjectMany", { prevMonth });
+      : t("email.monthly.subjectMany", { prevMonth });
 
   const hi = t("email.monthly.hi", { firstName: escapeHtml(opts.firstName ?? "") });
   const allQuiet = opts.birds.length > 0 && opts.birds.every(isQuietMonth);
@@ -1743,7 +1766,6 @@ function monthlyReplyRow(t: EmailT): string {
 <td style="padding:30px 24px 0;">
 ${grid()}<tr>
 <td style="padding:24px 0 0;border-top:1px solid ${C.rule};">
-<p style="margin:0 0 14px;font-family:${SANS};font-size:15px;line-height:25px;color:${C.green};">${t("email.monthly.reply")}</p>
 ${signature(t("email.monthly.signoff"), t("email.series.signTitle"))}
 </td>
 </tr>
