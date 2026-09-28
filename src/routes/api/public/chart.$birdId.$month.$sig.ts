@@ -10,6 +10,12 @@
  * keeps it from being walked. An unsigned or wrong signature is a 404, not a
  * 403: there is no reason to confirm that a bird id exists.
  *
+ * A RENDER failure is a 500, not a 404. Those two used to be the same response,
+ * which is how a broken asset path shipped and looked exactly like a stale
+ * link — nothing in the logs stood out because nothing was logged as an error.
+ * A 500 with the real message is the difference between "someone clicked an old
+ * email" and "every chart in the programme is down".
+ *
  * Cached hard. The month being drawn is over, so the picture will not change,
  * and Gmail proxies and caches it once per recipient anyway.
  */
@@ -53,7 +59,10 @@ export const Route = createFileRoute("/api/public/chart/$birdId/$month/$sig")({
             .gte("measured_at", start)
             .lt("measured_at", end)
             .order("measured_at");
-          if (error) return new Response("Not found", { status: 404 });
+          if (error) {
+            console.error("[chart] weight query failed", { birdId, month, error });
+            return new Response("Chart could not be rendered", { status: 500 });
+          }
           points = (data ?? []).map((r: any) => ({ day: new Date(r.measured_at).getUTCDate(), g: Number(r.grams) }));
         }
         if (points.length === 0) return new Response("Not found", { status: 404 });
@@ -72,8 +81,14 @@ export const Route = createFileRoute("/api/public/chart/$birdId/$month/$sig")({
             },
           });
         } catch (e) {
-          console.error("[chart] render failed", e);
-          return new Response("Not found", { status: 404 });
+          // Loud on purpose: this is our bug, not a bad link.
+          console.error("[chart] RENDER FAILED", {
+            birdId,
+            month,
+            origin: new URL(request.url).origin,
+            error: e instanceof Error ? `${e.name}: ${e.message}` : String(e),
+          });
+          return new Response("Chart could not be rendered", { status: 500 });
         }
       },
     },
