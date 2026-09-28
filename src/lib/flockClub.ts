@@ -61,6 +61,11 @@ const FONT_LINK =
 
 const WIDTH = 560;
 
+/** Never hyphenate or split a word across lines. Fixed-layout table cells will
+ *  break a long word mid-way when the column is too narrow — which is how
+ *  "Emergency" became "Emergenc / y" on a phone. */
+const NOBREAK = "word-break:normal;overflow-wrap:normal;hyphens:none;";
+
 // Table openers, with the Outlook resets every one of them needs.
 const RESET = "border-collapse:separate;border-spacing:0;mso-table-lspace:0pt;mso-table-rspace:0pt;";
 const grid = (extra = "") =>
@@ -177,7 +182,7 @@ const styleLinks = (html: string) =>
 
 /** A small headline inside the body — Bricolage 21px, not an H1. */
 const subheadHtml = (s: string) =>
-  `<p style="margin:2px 0 14px;font-family:${HEAD_FONT};font-size:21px;line-height:27px;font-weight:800;letter-spacing:-0.4px;color:${FC.forest};">${s}</p>`;
+  `<p style="margin:2px 0 14px;font-family:${HEAD_FONT};font-size:21px;line-height:27px;font-weight:800;letter-spacing:-0.4px;color:${FC.forest};${NOBREAK}">${s}</p>`;
 
 /** Lime card with a round photo on the left. The circle is border-radius on the
  *  img: Gmail, Apple Mail and iOS round it; Outlook's Word engine ignores the
@@ -204,7 +209,7 @@ ${grid()}<tr>
 const panelHtml = (o: { title: string; items: Array<{ lead: string; text: string }> }) =>
   `${grid("margin:0 0 20px;")}<tr>
 <td style="padding:20px;background-color:${FC.panel};border:1px solid #e3ded0;border-radius:18px;">
-<p style="margin:0 0 14px;font-family:${HEAD_FONT};font-size:21px;line-height:27px;font-weight:800;letter-spacing:-0.4px;color:${FC.forest};">${o.title}</p>
+<p style="margin:0 0 14px;font-family:${HEAD_FONT};font-size:21px;line-height:27px;font-weight:800;letter-spacing:-0.4px;color:${FC.forest};${NOBREAK}">${o.title}</p>
 ${grid()}${o.items
     .map(
       (it, i) => `<tr>
@@ -227,20 +232,27 @@ ${grid()}${o.items
  *  gaps: percentage widths plus border-spacing behave differently in every
  *  client, and a spacer column is the one thing they all agree on. */
 function tileGridHtml(tiles: Array<{ name: string; badge?: string; highlight: boolean }>): string {
-  // A tile without a badge centres its name instead of top-aligning it, so it
-  // sits level with the badged tiles beside it. Cells in a row already share a
-  // height, so this is the only thing needed to make the grid look even.
+  // TWO columns, not three. At three, a fixed-layout cell on a 320px screen is
+  // narrow enough that the renderer splits the longest name mid-word
+  // ("Emergenc / y"). Two columns give every name room, and NOBREAK stops a
+  // split even if one ever gets close.
+  //
+  // Every tile is the same height and its name is vertically centred, so a
+  // badged tile and a bare one sit level.
   const cell = (t: { name: string; badge?: string; highlight: boolean }) =>
-    `<td width="32%" valign="${t.badge ? "top" : "middle"}" style="width:32%;padding:14px 12px;background-color:${t.highlight ? FC.lime : "#ffffff"};border:2px solid ${t.highlight ? FC.forest : "#e3ded0"};border-radius:16px;">
-${t.badge ? `<p style="margin:0 0 5px;font-family:${BODY_FONT};font-size:11px;line-height:14px;letter-spacing:.09em;font-weight:700;color:${t.highlight ? FC.mid : "#5a8c7a"};">${t.badge}</p>` : ""}
-<p style="margin:0;font-family:${HEAD_FONT};font-size:18px;line-height:23px;font-weight:800;letter-spacing:-0.3px;color:${FC.forest};">${t.name}</p>
+    `<td width="48%" valign="middle" height="64" style="width:48%;height:64px;padding:14px 14px;background-color:${t.highlight ? FC.lime : "#ffffff"};border:2px solid ${t.highlight ? FC.forest : "#e3ded0"};border-radius:16px;">
+${t.badge ? `<p style="margin:0 0 5px;font-family:${BODY_FONT};font-size:11px;line-height:14px;letter-spacing:.09em;font-weight:700;color:${t.highlight ? FC.mid : "#5a8c7a"};${NOBREAK}">${t.badge}</p>` : ""}
+<p style="margin:0;font-family:${HEAD_FONT};font-size:18px;line-height:23px;font-weight:800;letter-spacing:-0.3px;color:${FC.forest};${NOBREAK}">${t.name}</p>
 </td>`;
   const gap = `<td width="8" style="width:8px;font-size:0;">&nbsp;</td>`;
-  const row = (r: typeof tiles) => `<tr>${r.map(cell).join(gap)}</tr>`;
+  const spacer = `<tr><td height="8" colspan="3" style="height:8px;line-height:8px;font-size:0;">&nbsp;</td></tr>`;
+  const rows: string[] = [];
+  for (let i = 0; i < tiles.length; i += 2) {
+    if (i) rows.push(spacer);
+    rows.push(`<tr>${tiles.slice(i, i + 2).map(cell).join(gap)}</tr>`);
+  }
   return `${grid("table-layout:fixed;margin:0 0 20px;")}
-${row(tiles.slice(0, 3))}
-<tr><td height="8" colspan="5" style="height:8px;line-height:8px;font-size:0;">&nbsp;</td></tr>
-${row(tiles.slice(3, 6))}
+${rows.join("\n")}
 </table>`;
 }
 
@@ -286,7 +298,7 @@ ${grid()}<tr>
 const quoteCardHtml = (o: { title: string; panelLabel: string; quote: string; note: string }) =>
   `${grid("margin:0 0 20px;")}<tr>
 <td style="padding:16px;background-color:#ffffff;border:2px solid ${FC.forest};border-radius:18px;">
-<p style="margin:0 0 14px;font-family:${HEAD_FONT};font-size:21px;line-height:27px;font-weight:800;letter-spacing:-0.4px;color:${FC.forest};">${o.title}</p>
+<p style="margin:0 0 14px;font-family:${HEAD_FONT};font-size:21px;line-height:27px;font-weight:800;letter-spacing:-0.4px;color:${FC.forest};${NOBREAK}">${o.title}</p>
 ${grid("margin:0 0 12px;")}<tr>
 <td style="padding:14px;background-color:${FC.panel};border-radius:12px;">
 <p style="margin:0 0 7px;font-family:${BODY_FONT};font-size:11px;line-height:14px;letter-spacing:.09em;font-weight:700;color:#5a8c7a;">${o.panelLabel}</p>
@@ -333,7 +345,7 @@ ${chip(o.answers[2], false)}
   return `${grid("margin:0 0 20px;")}<tr>
 <td style="padding:16px;background-color:#ffffff;border:2px solid ${FC.forest};border-radius:18px;">
 ${grid("margin:0 0 14px;")}<tr>
-<td valign="middle" style="padding:0;font-family:${HEAD_FONT};font-size:21px;line-height:27px;font-weight:800;letter-spacing:-0.4px;color:${FC.forest};">${o.title}</td>
+<td valign="middle" style="padding:0;font-family:${HEAD_FONT};font-size:21px;line-height:27px;font-weight:800;letter-spacing:-0.4px;color:${FC.forest};${NOBREAK}">${o.title}</td>
 <td valign="middle" align="right" style="padding:0 0 0 10px;">
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="${RESET}">
 <tr><td bgcolor="${FC.lime}" style="padding:5px 12px;background-color:${FC.lime};border-radius:999px;font-family:${BODY_FONT};font-size:11.5px;line-height:15px;font-weight:700;color:${FC.forest};white-space:nowrap;">${o.badge}</td></tr>
@@ -508,27 +520,26 @@ export function flockShell(opts: {
 
   const preheader = `<div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;overflow:hidden;opacity:0;mso-hide:all;">${opts.preheader}${"&#8203;&nbsp;".repeat(12)}</div>`;
 
-  // The sticker is an HTML circle, not a pre-rendered PNG — see the note in the
-  // handover. It is pulled up over the photo with a negative margin, which
-  // Gmail and Apple Mail honour; Outlook ignores it and the circle sits just
-  // below the photo instead, which still reads as intentional.
-  const sticker = opts.hero?.sticker
-    ? `${grid("margin:-34px 0 0;")}<tr>
-<td align="right" style="padding:0 18px 0 0;">
-<table role="presentation" width="88" cellpadding="0" cellspacing="0" border="0" style="width:88px;${RESET}">
-<tr><td align="center" height="88" bgcolor="${FC.sunflower}" style="width:88px;height:88px;background-color:${FC.sunflower};border:2px solid ${FC.forest};border-radius:44px;font-family:${HEAD_FONT};font-size:13px;line-height:17px;font-weight:800;letter-spacing:-0.2px;color:${FC.forest};text-align:center;">${opts.hero.sticker}</td></tr>
-</table>
-</td>
-</tr></table>`
-    : "";
-
+  // The sticker used to be pulled up over the photo with a negative margin.
+  // It does not work: the image paints over the circle in iOS Mail and on the
+  // desktop, clipping the top half of it. Nothing overlaps the hero now — the
+  // sticker sits beside the headline in the row below, where it is always
+  // whole. It shrinks on a narrow screen through the media query in <head>;
+  // where that is stripped, the 96px inline size stands, which is fine.
   const hero = opts.hero
     ? `<tr>
 <td bgcolor="${FC.mid}" style="padding:0;background-color:${FC.mid};line-height:0;font-size:0;">
 <img src="${ASSETS}/brand/email/${opts.hero.file}" width="${WIDTH}" alt="${opts.hero.alt}" style="display:block;width:100%;max-width:${WIDTH}px;height:auto;border:0;font-family:${SERIF_FONT};font-style:italic;font-size:16px;line-height:24px;color:${FC.lime};" />
 </td>
-</tr>
-${opts.hero.sticker ? `<tr><td style="padding:0;">${sticker}</td></tr>` : ""}`
+</tr>`
+    : "";
+
+  const stickerCell = opts.hero?.sticker
+    ? `<td width="112" valign="middle" align="right" class="fc-sticker-cell" style="width:112px;padding:0 0 0 16px;">
+<table role="presentation" width="96" cellpadding="0" cellspacing="0" border="0" class="fc-sticker-t" style="width:96px;${RESET}">
+<tr><td align="center" height="92" bgcolor="${FC.sunflower}" class="fc-sticker" style="width:96px;height:92px;background-color:${FC.sunflower};border:2px solid ${FC.forest};border-radius:48px;font-family:${HEAD_FONT};font-size:15px;line-height:17px;font-weight:800;letter-spacing:-0.2px;color:${FC.forest};text-align:center;${NOBREAK}">${opts.hero.sticker}</td></tr>
+</table>
+</td>`
     : "";
 
   const body = opts.blocks.map((b) => styleLinks(blockHtml(b, ctx))).join("\n");
@@ -542,6 +553,14 @@ ${opts.hero.sticker ? `<tr><td style="padding:0;">${sticker}</td></tr>` : ""}`
 <meta name="supported-color-schemes" content="light">
 <title>${escapeHtml(detag(opts.headline))}</title>
 <link rel="stylesheet" href="${FONT_LINK}">
+<style>
+@media only screen and (max-width:480px) {
+  .fc-sticker-t { width:80px !important; }
+  .fc-sticker { width:80px !important; height:76px !important; border-radius:40px !important; font-size:13px !important; line-height:15px !important; }
+  .fc-sticker-cell { width:96px !important; padding-left:12px !important; }
+  .fc-h1 { font-size:32px !important; line-height:35px !important; }
+}
+</style>
 </head>
 <body style="margin:0;padding:0;background-color:${FC.page};">
 <div style="background-color:${FC.page};padding:24px 8px;font-family:${BODY_FONT};-webkit-text-size-adjust:100%;">${preheader}
@@ -565,7 +584,13 @@ ${grid()}<tr>
 ${hero}
 <tr>
 <td style="padding:28px 22px 0;">
-<h1 style="margin:0 0 18px;font-family:${HEAD_FONT};font-size:40px;line-height:43px;font-weight:800;letter-spacing:-0.5px;color:${FC.forest};">${opts.headline}</h1>
+${grid("margin:0 0 18px;")}<tr>
+<td valign="middle" style="padding:0;">
+<h1 class="fc-h1" style="margin:0;font-family:${HEAD_FONT};font-size:40px;line-height:43px;font-weight:800;letter-spacing:-0.5px;color:${FC.forest};${NOBREAK}">${opts.headline}</h1>
+</td>
+${stickerCell}
+</tr>
+</table>
 ${body}
 </td>
 </tr>
