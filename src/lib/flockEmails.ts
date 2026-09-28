@@ -172,9 +172,9 @@ export function buildSeriesHealthCheckEmail(opts: { link: string; hasBird?: bool
  * food, behavior, home, health, routine, emergency. Routine sits FIFTH in the
  * app, not second, so the two "start here" tiles are not adjacent. The email
  * follows the app rather than the other way round — a reader who opens the
- * plan should find it laid out the way the email just showed them. The number
- * badges are each tile's real position, which is why 01 and 05 do not appear:
- * those two tiles carry START HERE instead.
+ * plan should find it laid out the way the email just showed them. Only the
+ * two starting sections are labelled; the rest show their name alone, so the
+ * grid does not imply an order to work through.
  */
 export function buildSeriesCarePlanEmail(opts: { link: string; hasBird?: boolean; locale?: string }): BuiltEmail {
   const t = emailT(opts.locale);
@@ -185,11 +185,11 @@ export function buildSeriesCarePlanEmail(opts: { link: string; hasBird?: boolean
       kind: "tileGrid",
       tiles: [
         { name: t("email.seriesCarePlan.secFood"), badge: start, highlight: true },
-        { name: t("email.seriesCarePlan.secBehavior"), badge: "02", highlight: false },
-        { name: t("email.seriesCarePlan.secHome"), badge: "03", highlight: false },
-        { name: t("email.seriesCarePlan.secHealth"), badge: "04", highlight: false },
+        { name: t("email.seriesCarePlan.secBehavior"), highlight: false },
+        { name: t("email.seriesCarePlan.secHome"), highlight: false },
+        { name: t("email.seriesCarePlan.secHealth"), highlight: false },
         { name: t("email.seriesCarePlan.secRoutine"), badge: start, highlight: true },
-        { name: t("email.seriesCarePlan.secEmergency"), badge: "06", highlight: false },
+        { name: t("email.seriesCarePlan.secEmergency"), highlight: false },
       ],
     },
     { kind: "p", text: t("email.seriesCarePlan.p2") },
@@ -212,6 +212,46 @@ export function buildSeriesCarePlanEmail(opts: { link: string; hasBird?: boolean
     hero: { file: "care-plan.jpg", alt: t("email.seriesCarePlan.heroAlt"), sticker: t("email.seriesCarePlan.sticker") },
     blocks,
     footerWhy: t("email.seriesCarePlan.foot"),
+    link: opts.link,
+    hasBird: opts.hasBird,
+    locale: opts.locale,
+  });
+}
+
+/**
+ * Day 12 — journal and Moments. The one letter that asks for no new habit.
+ *
+ * "Moments" is the app's own name (/birds/$birdId/moments), and journal
+ * entries really do take a photo (journal_entries.photo_path), so the sample
+ * card is showing something that exists.
+ */
+export function buildSeriesJournalEmail(opts: { link: string; hasBird?: boolean; locale?: string }): BuiltEmail {
+  const t = emailT(opts.locale);
+  const blocks: FlockBlock[] = [
+    { kind: "p", text: t("email.seriesJournal.p1") },
+    {
+      kind: "journalCard",
+      pill: t("email.seriesJournal.cardPill"),
+      date: t("email.seriesJournal.cardDate"),
+      entry: t("email.seriesJournal.cardEntry"),
+      photo: "journal-photo.jpg",
+      photoAlt: t("email.seriesJournal.cardPhotoAlt"),
+    },
+    { kind: "momentStrip", label: t("email.seriesJournal.momentLabel"), text: t("email.seriesJournal.momentText") },
+    { kind: "p", text: t("email.seriesJournal.p2") },
+    { kind: "p", text: t("email.seriesJournal.p3") },
+    { kind: "p", text: t("email.seriesJournal.p4") },
+    { kind: "button", label: t("email.seriesJournal.cta"), href: opts.link, needsBird: true },
+    { kind: "p", text: t("email.seriesJournal.p5") },
+    { kind: "signature" },
+  ];
+  return flockShell({
+    headline: t("email.seriesJournal.headline"),
+    preheader: t("email.seriesJournal.preview"),
+    pill: t("email.flock.pillFlockmate"),
+    hero: { file: "journal.jpg", alt: t("email.seriesJournal.heroAlt"), sticker: t("email.seriesJournal.sticker") },
+    blocks,
+    footerWhy: t("email.seriesJournal.foot"),
     link: opts.link,
     hasBird: opts.hasBird,
     locale: opts.locale,

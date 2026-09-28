@@ -272,9 +272,8 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
 
         // The welcome letter is on the Flock Club layout and lives in its own
         // module now; the rest of the series is still on letterShell.
-        const { buildWelcomeEmail, buildSeriesWeighingEmail, buildSeriesHealthCheckEmail, buildSeriesCarePlanEmail } = await import("@/lib/flockEmails");
+        const { buildWelcomeEmail, buildSeriesWeighingEmail, buildSeriesHealthCheckEmail, buildSeriesCarePlanEmail, buildSeriesJournalEmail } = await import("@/lib/flockEmails");
         const {
-          buildSeriesJournalEmail,
           buildSeriesSharingEmail,
           buildSeriesVetEmail,
           buildOnboardingAddBirdEmail,
@@ -315,7 +314,7 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
               : p.stage === "series_care_plan"
               ? buildSeriesCarePlanEmail({ link: onBird("plan"), hasBird, locale })
               : p.stage === "series_journal"
-              ? buildSeriesJournalEmail({ link: onBird("journal"), locale })
+              ? buildSeriesJournalEmail({ link: onBird("journal"), hasBird, locale })
               : p.stage === "series_sharing"
               ? buildSeriesSharingEmail({ link: onBird("access"), locale })
               : p.stage === "series_vet"

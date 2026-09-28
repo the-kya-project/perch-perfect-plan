@@ -1118,39 +1118,8 @@ export function buildSitterInviteCancelledEmail(opts: {
 // The care-plan letter moved to the Flock Club layout — see
 // src/lib/flockEmails.ts.
 
-// Day 12 — journal and moments. The one letter that asks for no new habit;
-// three in a row asking someone to start something is a lot.
-export function buildSeriesJournalEmail(opts: { link: string; locale?: string }): BuiltEmail {
-  const t = emailT(opts.locale);
-  return {
-    subject: t("email.seriesJournal.subject"),
-    html: letterShell({
-      n: 5,
-      nextDay: 15,
-      preview: t("email.seriesJournal.preview"),
-      kicker: t("email.seriesJournal.kicker"),
-      heading: t("email.seriesJournal.heading"),
-      hero: { file: "journal.jpg", alt: t("email.seriesJournal.heroAlt") },
-      bodyHtml:
-        lead(t("email.seriesJournal.lead")) +
-        journalEntry({
-          label: t("email.moment.example"),
-          date: t("email.seriesJournal.entryDate"),
-          body: t("email.seriesJournal.entry"),
-          moment: t("email.seriesJournal.momentLine"),
-        }) +
-        para(t("email.seriesJournal.p2")) +
-        para(t("email.seriesJournal.p3")) +
-        para(t("email.seriesJournal.p4")) +
-        statement(t("email.seriesJournal.p5")) +
-        button(t("email.seriesJournal.cta"), opts.link, "0px 0 8px"),
-      nextUp: t("email.seriesJournal.nextUp"),
-      foot: t("email.seriesJournal.foot"),
-      t,
-    }),
-    text: t("email.seriesJournal.text", { link: opts.link }),
-  };
-}
+// The journal letter moved to the Flock Club layout — see
+// src/lib/flockEmails.ts.
 
 // Day 15 — sharing with a sitter or the household. The two options side by
 // side, because the whole point is that they are different things.

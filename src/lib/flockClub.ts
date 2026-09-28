@@ -79,7 +79,9 @@ export type FlockBlock =
   | { kind: "button"; label: string; href: string; needsBird?: boolean }
   | { kind: "subhead"; text: string }
   | { kind: "panel"; title: string; items: Array<{ lead: string; text: string }> }
-  | { kind: "tileGrid"; tiles: Array<{ name: string; badge: string; highlight: boolean }> }
+  | { kind: "tileGrid"; tiles: Array<{ name: string; badge?: string; highlight: boolean }> }
+  | { kind: "journalCard"; pill: string; date: string; entry: string; photo: string; photoAlt: string }
+  | { kind: "momentStrip"; label: string; text: string }
   | { kind: "quoteCard"; title: string; panelLabel: string; quote: string; note: string }
   | { kind: "checkCard"; title: string; badge: string; questions: string[]; answers: [string, string, string]; note: string }
   | { kind: "dotChart"; badge: string; caption: string; series: number[]; unit: string; axisStart: string; axisEnd: string; note: string }
@@ -224,10 +226,13 @@ ${grid()}${o.items
 /** A 3x2 grid of section tiles. Fixed layout with real spacer cells for the
  *  gaps: percentage widths plus border-spacing behave differently in every
  *  client, and a spacer column is the one thing they all agree on. */
-function tileGridHtml(tiles: Array<{ name: string; badge: string; highlight: boolean }>): string {
-  const cell = (t: { name: string; badge: string; highlight: boolean }) =>
-    `<td width="32%" valign="top" style="width:32%;padding:14px 12px;background-color:${t.highlight ? FC.lime : "#ffffff"};border:2px solid ${t.highlight ? FC.forest : "#e3ded0"};border-radius:16px;">
-<p style="margin:0 0 5px;font-family:${BODY_FONT};font-size:11px;line-height:14px;letter-spacing:.09em;font-weight:700;color:${t.highlight ? FC.mid : "#5a8c7a"};">${t.badge}</p>
+function tileGridHtml(tiles: Array<{ name: string; badge?: string; highlight: boolean }>): string {
+  // A tile without a badge centres its name instead of top-aligning it, so it
+  // sits level with the badged tiles beside it. Cells in a row already share a
+  // height, so this is the only thing needed to make the grid look even.
+  const cell = (t: { name: string; badge?: string; highlight: boolean }) =>
+    `<td width="32%" valign="${t.badge ? "top" : "middle"}" style="width:32%;padding:14px 12px;background-color:${t.highlight ? FC.lime : "#ffffff"};border:2px solid ${t.highlight ? FC.forest : "#e3ded0"};border-radius:16px;">
+${t.badge ? `<p style="margin:0 0 5px;font-family:${BODY_FONT};font-size:11px;line-height:14px;letter-spacing:.09em;font-weight:700;color:${t.highlight ? FC.mid : "#5a8c7a"};">${t.badge}</p>` : ""}
 <p style="margin:0;font-family:${HEAD_FONT};font-size:18px;line-height:23px;font-weight:800;letter-spacing:-0.3px;color:${FC.forest};">${t.name}</p>
 </td>`;
   const gap = `<td width="8" style="width:8px;font-size:0;">&nbsp;</td>`;
@@ -238,6 +243,43 @@ ${row(tiles.slice(0, 3))}
 ${row(tiles.slice(3, 6))}
 </table>`;
 }
+
+/** A sample journal entry: the white card, a lime pill and a date, the entry in
+ *  the serif, and a photo.
+ *
+ *  NOT ROTATED. A slight tilt would suit it, but CSS transforms are dropped by
+ *  Gmail and by the Outlook Word engine — the card would sit straight for most
+ *  readers and askew for a few, which is worse than straight for everyone. A
+ *  pre-rotated image is the only way to do it, and that would put the entry
+ *  text inside a picture. */
+const journalCardHtml = (o: { pill: string; date: string; entry: string; photo: string; photoAlt: string }) =>
+  `${grid("margin:0 0 10px;")}<tr>
+<td style="padding:16px;background-color:#ffffff;border:2px solid ${FC.forest};border-radius:18px;">
+${grid("margin:0 0 12px;")}<tr>
+<td valign="middle" style="padding:0;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="${RESET}">
+<tr><td bgcolor="${FC.lime}" style="padding:5px 12px;background-color:${FC.lime};border-radius:999px;font-family:${BODY_FONT};font-size:11.5px;line-height:15px;font-weight:700;color:${FC.forest};white-space:nowrap;">${o.pill}</td></tr>
+</table>
+</td>
+<td valign="middle" align="right" style="padding:0 0 0 10px;font-family:${BODY_FONT};font-size:12.5px;line-height:17px;color:${FC.muted};text-align:right;">${o.date}</td>
+</tr>
+</table>
+<p style="margin:0 0 14px;font-family:${SERIF_FONT};font-style:italic;font-size:20px;line-height:30px;color:${FC.forest};">${o.entry}</p>
+<img src="${ASSETS}/brand/email/${o.photo}" width="480" alt="${o.photoAlt}" style="display:block;width:100%;max-width:480px;height:auto;border:0;border-radius:12px;" />
+</td>
+</tr></table>`;
+
+/** The sunflower strip that sits under the journal card. */
+const momentStripHtml = (o: { label: string; text: string }) =>
+  `${grid("margin:0 0 20px;")}<tr>
+<td style="padding:11px 18px;background-color:${FC.sunflower};border:2px solid ${FC.forest};border-radius:999px;">
+${grid()}<tr>
+<td valign="middle" style="padding:0;font-family:${BODY_FONT};font-size:13.5px;line-height:19px;font-weight:700;color:${FC.forest};white-space:nowrap;">${o.label}</td>
+<td valign="middle" align="right" style="padding:0 0 0 12px;font-family:${BODY_FONT};font-size:13.5px;line-height:19px;color:${FC.forest};text-align:right;">${o.text}</td>
+</tr>
+</table>
+</td>
+</tr></table>`;
 
 /** A white card wrapping a cream panel with an example in it — the example is
  *  set in the serif so it reads as something someone wrote, not as UI copy. */
@@ -395,6 +437,8 @@ function blockHtml(b: FlockBlock, c: Ctx): string {
     case "subhead": return subheadHtml(b.text);
     case "panel": return panelHtml(b);
     case "tileGrid": return tileGridHtml(b.tiles);
+    case "journalCard": return journalCardHtml(b);
+    case "momentStrip": return momentStripHtml(b);
     case "quoteCard": return quoteCardHtml(b);
     case "checkCard": return checkCardHtml(b);
     case "dotChart": return dotChartHtml(b);
@@ -426,7 +470,9 @@ function blockText(b: FlockBlock, c: Ctx): string {
     case "button": { const r = resolveButton(b, c); return `${detag(r.label)}: ${r.href}`; }
     case "subhead": return detag(b.text);
     case "panel": return `${detag(b.title)}\n` + b.items.map((it, i) => `${i + 1}. ${detag(it.lead)} ${detag(it.text)}`).join("\n");
-    case "tileGrid": return b.tiles.map((x) => `${detag(x.badge)} ${detag(x.name)}`).join("\n");
+    case "tileGrid": return b.tiles.map((x) => (x.badge ? `${detag(x.badge)} ` : "") + detag(x.name)).join("\n");
+    case "journalCard": return `${detag(b.pill)} — ${detag(b.date)}\n${detag(b.entry)}`;
+    case "momentStrip": return `${detag(b.label)} — ${detag(b.text)}`;
     case "quoteCard": return `${detag(b.title)}\n${detag(b.panelLabel)}\n${detag(b.quote)}\n${detag(b.note)}`;
     case "checkCard": return `${detag(b.title)}\n` + b.questions.map((q) => `- ${detag(q)} [${detag(b.answers[0])}]`).join("\n") + `\n${detag(b.note)}`;
     case "dotChart": return `${detag(b.badge)} — ${detag(b.caption)}\n${Math.min(...b.series)}${b.unit}–${Math.max(...b.series)}${b.unit}, ${detag(b.axisStart)} to ${detag(b.axisEnd)}\n${detag(b.note)}`;
