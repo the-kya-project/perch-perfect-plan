@@ -16,7 +16,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as T from "@/lib/emailTemplates";
-import { buildWelcomeEmail, buildSeriesWeighingEmail, buildSeriesHealthCheckEmail, buildSeriesCarePlanEmail, buildSeriesJournalEmail, buildSeriesSharingEmail } from "@/lib/flockEmails";
+import { buildWelcomeEmail, buildSeriesWeighingEmail, buildSeriesHealthCheckEmail, buildSeriesCarePlanEmail, buildSeriesJournalEmail, buildSeriesSharingEmail, buildSeriesVetEmail } from "@/lib/flockEmails";
 
 const OUT = ".email-preview";
 const APP = "https://app.thekyaproject.com";
@@ -57,7 +57,7 @@ const series: Array<[string, T.BuiltEmail]> = [
   ["04-care-plan", buildSeriesCarePlanEmail({ link: APP })],
   ["05-journal", buildSeriesJournalEmail({ link: APP })],
   ["06-sharing", buildSeriesSharingEmail({ link: APP })],
-  ["07-vet", T.buildSeriesVetEmail({ link: APP })],
+  ["07-vet", buildSeriesVetEmail({ link: APP })],
 ];
 
 // The monthly letter, with the handback's own sample flock (Juno full, Pip

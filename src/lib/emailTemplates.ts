@@ -1124,46 +1124,8 @@ export function buildSitterInviteCancelledEmail(opts: {
 // The sharing letter moved to the Flock Club layout — see
 // src/lib/flockEmails.ts.
 
-// Day 18 — the vet summary. Closes the series and hands off to the monthly
-// recap, so the first monthly letter does not arrive out of nowhere. No
-// "next letter" block: there isn't one.
-export function buildSeriesVetEmail(opts: { link: string; locale?: string }): BuiltEmail {
-  const t = emailT(opts.locale);
-  return {
-    subject: t("email.seriesVet.subject"),
-    html: letterShell({
-      n: 7,
-      preview: t("email.seriesVet.preview"),
-      kicker: t("email.seriesVet.kicker"),
-      heading: t("email.seriesVet.heading"),
-      hero: { file: "vet.jpg", alt: t("email.seriesVet.heroAlt") },
-      bodyHtml:
-        lead(t("email.seriesVet.leadIntro")) +
-        vetSummaryCard({
-          label: t("email.moment.inTheApp"),
-          title: t("email.seriesVet.summaryTitle"),
-          rows: [
-            { label: t("email.seriesVet.rowWeightLabel"), value: t("email.seriesVet.rowWeightValue"), sub: t("email.seriesVet.rowWeightSub") },
-            { label: t("email.seriesVet.rowChecksLabel"), value: t("email.seriesVet.rowChecksValue"), sub: t("email.seriesVet.rowChecksSub") },
-            { label: t("email.seriesVet.rowNotesLabel"), value: t("email.seriesVet.rowNotesValue"), sub: t("email.seriesVet.rowNotesSub") },
-          ],
-          questionsLabel: t("email.seriesVet.questionsLabel"),
-          questions: [t("email.seriesVet.q1"), t("email.seriesVet.q2"), t("email.seriesVet.q3")],
-        }) +
-        para(t("email.seriesVet.p2")) +
-        para(t("email.seriesVet.p3")) +
-        para(t("email.seriesVet.p4")) +
-        button(t("email.seriesVet.cta"), opts.link, "4px 0 24px") +
-        para(t("email.seriesVet.p5")) +
-        signature(t("email.seriesVet.signoff"), t("email.series.signTitle")),
-      healthNote: t("email.seriesVet.healthNote"),
-      foot: t("email.seriesVet.foot"),
-      t,
-    }),
-    text: t("email.seriesVet.text", { link: opts.link }),
-  };
-}
-
+// The vet letter moved to the Flock Club layout — see
+// src/lib/flockEmails.ts.
 
 // ── The monthly letter ───────────────────────────────────────────────────────
 // Sends on the 2nd, recapping the previous month: one letter per account, one

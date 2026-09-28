@@ -294,3 +294,49 @@ export function buildSeriesSharingEmail(opts: { link: string; hasBird?: boolean;
     locale: opts.locale,
   });
 }
+
+/**
+ * Day 18 — the vet summary, and the end of the tour.
+ *
+ * Row three reads "last 30 days", not "since last visit": nothing in the app
+ * records a vet-visit date. A journal entry can be kind="vet", but no screen
+ * derives a last visit from it, so the email must not imply one exists.
+ *
+ * The card states numbers and nothing else. Characterising them — "steady",
+ * "normal", "nothing flagged" — is the reader's job and their vet's.
+ */
+export function buildSeriesVetEmail(opts: { link: string; hasBird?: boolean; locale?: string }): BuiltEmail {
+  const t = emailT(opts.locale);
+  const blocks: FlockBlock[] = [
+    { kind: "p", text: t("email.seriesVet.p1") },
+    {
+      kind: "summaryCard",
+      title: t("email.seriesVet.cardTitle"),
+      badge: t("email.seriesVet.cardBadge"),
+      rows: [
+        { label: t("email.seriesVet.row1Label"), value: t("email.seriesVet.row1Value") },
+        { label: t("email.seriesVet.row2Label"), value: t("email.seriesVet.row2Value") },
+        { label: t("email.seriesVet.row3Label"), value: t("email.seriesVet.row3Value") },
+      ],
+    },
+    { kind: "subhead", text: t("email.seriesVet.questionsHead") },
+    { kind: "bubbles", items: [t("email.seriesVet.q1"), t("email.seriesVet.q2"), t("email.seriesVet.q3")] },
+    { kind: "p", text: t("email.seriesVet.p2") },
+    { kind: "p", text: t("email.seriesVet.p3") },
+    { kind: "button", label: t("email.seriesVet.cta"), href: opts.link, needsBird: true },
+    { kind: "highlight", title: t("email.seriesVet.tourTitle"), body: t("email.seriesVet.tourText"), titleSize: 22 },
+    { kind: "p", text: t("email.seriesVet.p4") },
+    { kind: "signature" },
+  ];
+  return flockShell({
+    headline: t("email.seriesVet.headline"),
+    preheader: t("email.seriesVet.preview"),
+    pill: t("email.flock.pillFlockmate"),
+    hero: { file: "vet.jpg", alt: t("email.seriesVet.heroAlt"), sticker: t("email.seriesVet.sticker") },
+    blocks,
+    footerWhy: t("email.seriesVet.foot"),
+    link: opts.link,
+    hasBird: opts.hasBird,
+    locale: opts.locale,
+  });
+}

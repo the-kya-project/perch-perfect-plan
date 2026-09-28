@@ -85,6 +85,8 @@ export type FlockBlock =
   | { kind: "subhead"; text: string }
   | { kind: "panel"; title: string; items: Array<{ lead: string; text: string }> }
   | { kind: "tileGrid"; tiles: Array<{ name: string; badge?: string; highlight: boolean }> }
+  | { kind: "summaryCard"; title: string; badge: string; rows: Array<{ label: string; value: string }> }
+  | { kind: "bubbles"; items: string[] }
   | { kind: "tickets"; items: Array<{ bg: string; label: string; title: string; text: string; stub: string }> }
   | { kind: "journalCard"; pill: string; date: string; entry: string; photo: string; photoAlt: string }
   | { kind: "momentStrip"; label: string; text: string }
@@ -256,6 +258,51 @@ ${t.badge ? `<p style="margin:0 0 5px;font-family:${BODY_FONT};font-size:11px;li
 ${rows.join("\n")}
 </table>`;
 }
+
+/** The vet summary on the forest card: a label and a number per row, and
+ *  nothing that characterises either. The reader and their vet do that. */
+const summaryCardHtml = (o: { title: string; badge: string; rows: Array<{ label: string; value: string }> }) =>
+  `${grid("margin:0 0 22px;")}<tr>
+<td style="padding:20px;background-color:${FC.forest};border-radius:20px;">
+${grid("margin:0 0 4px;")}<tr>
+<td valign="middle" style="padding:0;font-family:${HEAD_FONT};font-size:20px;line-height:26px;font-weight:800;letter-spacing:-0.4px;color:#ffffff;${NOBREAK}">${o.title}</td>
+<td valign="middle" align="right" style="padding:0 0 0 10px;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="${RESET}">
+<tr><td bgcolor="${FC.lime}" style="padding:5px 12px;background-color:${FC.lime};border-radius:999px;font-family:${BODY_FONT};font-size:11.5px;line-height:15px;font-weight:700;color:${FC.forest};white-space:nowrap;">${o.badge}</td></tr>
+</table>
+</td>
+</tr>
+</table>
+${grid()}${o.rows
+    .map(
+      (r) => `<tr>
+<td valign="middle" style="padding:13px 10px 13px 0;border-top:1px solid #2f5a47;font-family:${BODY_FONT};font-size:13px;line-height:19px;color:${FC.footFine};">${r.label}</td>
+<td valign="middle" align="right" style="padding:13px 0;border-top:1px solid #2f5a47;font-family:${BODY_FONT};font-size:16px;line-height:22px;font-weight:700;color:#ffffff;text-align:right;${NOBREAK}">${r.value}</td>
+</tr>`,
+    )
+    .join("\n")}
+</table>
+</td>
+</tr></table>`;
+
+/** Question bubbles, stepped in from the left on a wide screen so they read as
+ *  a conversation rather than a list. The indents are padding on a wrapper
+ *  cell, which the media query zeroes under 480px — at that width the steps
+ *  would eat the text's room rather than suggest anything. */
+const bubblesHtml = (items: string[]) => {
+  const indents = [0, 24, 8];
+  return items
+    .map(
+      (q, i) => `${grid(`margin:0 0 ${i === items.length - 1 ? 20 : 8}px;`)}<tr>
+<td class="fc-bubble-pad" style="padding:0 0 0 ${indents[i] ?? 0}px;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="${RESET}">
+<tr><td style="padding:11px 18px;background-color:#ffffff;border:2px solid ${FC.forest};border-radius:999px;font-family:${BODY_FONT};font-size:14.5px;line-height:21px;font-weight:700;color:${FC.forest};">${q}</td></tr>
+</table>
+</td>
+</tr></table>`,
+    )
+    .join("\n");
+};
 
 /** Two "tickets": a main section and a torn-off stub, divided by a dashed rule.
  *
@@ -479,6 +526,8 @@ function blockHtml(b: FlockBlock, c: Ctx): string {
     case "subhead": return subheadHtml(b.text);
     case "panel": return panelHtml(b);
     case "tileGrid": return tileGridHtml(b.tiles);
+    case "summaryCard": return summaryCardHtml(b);
+    case "bubbles": return bubblesHtml(b.items);
     case "tickets": return ticketsHtml(b.items);
     case "journalCard": return journalCardHtml(b);
     case "momentStrip": return momentStripHtml(b);
@@ -514,6 +563,8 @@ function blockText(b: FlockBlock, c: Ctx): string {
     case "subhead": return detag(b.text);
     case "panel": return `${detag(b.title)}\n` + b.items.map((it, i) => `${i + 1}. ${detag(it.lead)} ${detag(it.text)}`).join("\n");
     case "tileGrid": return b.tiles.map((x) => (x.badge ? `${detag(x.badge)} ` : "") + detag(x.name)).join("\n");
+    case "summaryCard": return `${detag(b.title)}\n` + b.rows.map((r) => `${detag(r.label)}: ${detag(r.value)}`).join("\n");
+    case "bubbles": return b.items.map((q) => `- ${detag(q)}`).join("\n");
     case "tickets": return b.items.map((x) => `${detag(x.label)} — ${detag(x.title)}\n${detag(x.text)}`).join("\n\n");
     case "journalCard": return `${detag(b.pill)} — ${detag(b.date)}\n${detag(b.entry)}`;
     case "momentStrip": return `${detag(b.label)} — ${detag(b.text)}`;
@@ -601,6 +652,9 @@ export function flockShell(opts: {
      squeezed into what is left beside a 96px column on a small phone. */
   .fc-ticket-main, .fc-ticket-stub { display:block !important; width:100% !important; box-sizing:border-box !important; }
   .fc-ticket-stub { border-left:none !important; border-top:2px dashed ${FC.forest} !important; padding:9px 8px !important; }
+  /* The stepped question bubbles line up flush; at this width the indents
+     would take room the text needs. */
+  .fc-bubble-pad { padding-left:0 !important; }
 }
 </style>
 </head>

@@ -500,40 +500,40 @@
   "email.seriesSharing.p3": "The plan is there afterward, so nobody has to remember everything you said at the door.",
   "email.seriesSharing.cta": "Share your care plan",
   "email.seriesSharing.foot": "You're getting this as part of your first few weeks with Kya &amp; Co. Change which emails you get in Settings.",
-  "email.seriesVet.subject": "Taking the record to your vet",
-  "email.seriesVet.preview": "Having the dates and details ready when you need them.",
-  "email.seriesVet.kicker": "Vet visits",
-  "email.seriesVet.heading": "Taking the record to your vet",
-  // Replaces seriesVet.lead: the three questions are their own keys now, each a
-  // full sentence, so the ruled list can render them as separate rows.
-  "email.seriesVet.leadIntro": "The weights and observations you've logged give you something to refer to at a vet appointment.",
-  // The vet-summary card: the rows a vet actually looks at. Sample values, the
-  // same way the weighing letter shows a sample weight — this is a picture of
-  // the record, not the reader's own data.
+  // ---- Vet summary (Flock Club) ----
+  // row3 is "last 30 days", not "since last visit": nothing in the app
+  // records a vet-visit date. A journal entry can be kind="vet", but no
+  // screen derives a last-visit date from it, so the email cannot either.
+  // The card states numbers and nothing else — no "steady", no "normal".
+  "email.seriesVet.headline": "Bring the record to the vet",
+  "email.seriesVet.preview": "Dates and details, ready when you need them.",
+  "email.seriesVet.sticker": "Vet-ready",
   "email.seriesVet.heroAlt": "An African grey parrot looking up from a red perch indoors",
-  "email.seriesVet.summaryTitle": "Willow's record, at a glance",
-  "email.seriesVet.rowWeightLabel": "Weight",
-  "email.seriesVet.rowWeightValue": "1,114 g, steady",
-  "email.seriesVet.rowWeightSub": " 12 readings over the last 30 days",
-  "email.seriesVet.rowChecksLabel": "Daily checks",
-  "email.seriesVet.rowChecksValue": "22 of the last 30 days",
-  "email.seriesVet.rowChecksSub": "Nothing flagged",
-  "email.seriesVet.rowNotesLabel": "Journal",
-  "email.seriesVet.rowNotesValue": "4 notes since the last visit",
-  "email.seriesVet.rowNotesSub": "Including two about appetite",
-  "email.seriesVet.questionsLabel": "Questions your record can answer",
+  "email.seriesVet.p1": "Everything you've logged, from weights to daily checks to journal notes, adds up to something really useful at an appointment: the details, with dates attached.",
+  "email.seriesVet.cardTitle": "Juno's vet summary",
+  "email.seriesVet.cardBadge": "In the app",
+  "email.seriesVet.row1Label": "Weigh-ins, last 30 days",
+  "email.seriesVet.row1Value": "12 &middot; latest 752 g",
+  "email.seriesVet.row2Label": "Daily checks, last 30 days",
+  "email.seriesVet.row2Value": "22 of 30",
+  "email.seriesVet.row3Label": "Journal notes, last 30 days",
+  "email.seriesVet.row3Value": "4",
+  "email.seriesVet.questionsHead": "Questions your record can answer",
   "email.seriesVet.q1": "When did their appetite change?",
   "email.seriesVet.q2": "What did they weigh before that?",
   "email.seriesVet.q3": "Has it happened once, or a few times?",
-  "email.seriesVet.p2": "Having those details in front of you helps you explain what you've noticed. It gives your avian vet more context alongside what they learn from examining your bird.",
-  "email.seriesVet.p3": "The vet summary lets you review the information available in your bird's record before a visit. Check that it's up to date, and make a note of anything you want to ask.",
-  "email.seriesVet.p4": "Bring whatever you've recorded so far. You don't need a complete record to ask for help, and you shouldn't delay an appointment to collect more entries.",
-  "email.seriesVet.p5": "If you have a question, reply and ask. I'd love to hear how you and your bird are getting on.",
-  "email.seriesVet.signoff": "Warmly,<br>Brittany",
+  "email.seriesVet.p2": "Before a visit, open the vet summary, check that it's up to date, and jot down anything you want to ask.",
+  "email.seriesVet.p3": "Bring whatever you have. You don't need a complete record to ask for help, and you should never wait on more entries to book an appointment.",
   "email.seriesVet.cta": "See the vet summary",
-  "email.seriesVet.healthNote": "This app doesn't diagnose illness. If you're ever worried about your bird's health, contact an avian veterinarian.",
-  "email.seriesVet.foot": "You're getting this as part of your introduction to Kya &amp; Co. You can turn off emails like this one in Settings at any time.",
-  "email.seriesVet.text": "The weights and observations you've logged give you something to refer to at a vet appointment. When did their appetite change? What did they weigh before that? Has it happened once, or a few times?\n\nHaving those details in front of you helps you explain what you've noticed. It gives your avian vet more context alongside what they learn from examining your bird.\n\nThe vet summary lets you review the information available in your bird's record before a visit. Check that it's up to date, and make a note of anything you want to ask.\n\nBring whatever you've recorded so far. You don't need a complete record to ask for help, and you shouldn't delay an appointment to collect more entries.\n\nI hope these emails have helped you find your way around. If monthly recaps are on in Settings, you'll also hear from me each month with a look back at your bird's record and a few useful tips.\n\nIf you have a question, reply and ask. I'd love to hear how you and your bird are getting on.\n\nWarmly,\nBrittany\n\nOpen Kya & Co.: {{link}}\n\nThis app doesn't diagnose illness. If you're ever worried about your bird's health, contact an avian veterinarian.\n\nKya & Co. — by The Kya Project",
+  "email.seriesVet.tourTitle": "That's the tour, flockmate.",
+  "email.seriesVet.tourText": "From here, you'll hear from me once a month with The Flock Report: your bird's month in numbers, a care note, and the latest from The Kya Project.",
+  "email.seriesVet.p4": "Got a question, or a bird story you need to tell someone? Hit reply. I'd love to hear how you two are getting on.",
+  "email.seriesVet.foot": "You're getting this as part of your first few weeks with Kya &amp; Co. Change which emails you get in Settings.",
+  // Replaces seriesVet.lead: the three questions are their own keys now, each a
+  // full sentence, so the ruled list can render them as separate rows.
+  // The vet-summary card: the rows a vet actually looks at. Sample values, the
+  // same way the weighing letter shows a sample weight — this is a picture of
+  // the record, not the reader's own data.
   "email.sitterConcern.subject": "{{coveringLabel}} flagged something serious about {{birdName}}",
   "email.sitterConcern.kicker": "Please read now",
   "email.sitterConcern.heading": "{{covering}} flagged something serious about {{bird}}",
