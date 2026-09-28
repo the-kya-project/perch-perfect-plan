@@ -99,8 +99,8 @@ export type FlockBlock =
         /** A rendered line chart. Preferred over the dot chart when present. */
         chartImage?: { url: string; alt: string };
         /** Shown instead of the chart when the bird has no weigh-ins. */
-        empty?: { text: string; cta: string; href?: string };
-        rows: Array<{ label: string; value: string; nudge?: boolean; href?: string }>;
+        empty?: { text: string; cta: string };
+        rows: Array<{ label: string; value: string; nudge?: boolean }>;
       }>;
     }
   | { kind: "comingUp"; label: string; text: string; cta: string; href: string }
@@ -333,8 +333,8 @@ type FlockBirdCard = {
   href: string;
   chart?: { points: Array<{ day: number; g: number }>; days: number; axisStart: string; axisEnd: string; line: string };
   chartImage?: { url: string; alt: string };
-  empty?: { text: string; cta: string; href?: string };
-  rows: Array<{ label: string; value: string; nudge?: boolean; href?: string }>;
+  empty?: { text: string; cta: string };
+  rows: Array<{ label: string; value: string; nudge?: boolean }>;
 };
 
 /** One bird's month. A dot per weigh-in placed by day, or a dashed box saying
@@ -398,43 +398,22 @@ ${grid("margin:4px 0 0;")}<tr>
     chart = `${grid("margin:0 0 10px;")}<tr>
 <td style="padding:14px 12px;border:1px dashed ${FC.muted};border-radius:12px;text-align:center;">
 <p style="margin:0 0 4px;font-family:${BODY_FONT};font-size:12.5px;line-height:18px;color:${FC.muted};text-align:center;">${b.empty.text}</p>
-<p style="margin:0;font-family:${BODY_FONT};font-size:12.5px;line-height:18px;text-align:center;"><a href="${b.empty.href ?? b.href}" style="color:${FC.mid};font-weight:700;text-decoration:underline;">${b.empty.cta}&nbsp;&rarr;</a></p>
+<p style="margin:0;font-family:${BODY_FONT};font-size:12.5px;line-height:18px;text-align:center;"><a href="${b.href}" style="color:${FC.mid};font-weight:700;text-decoration:underline;">${b.empty.cta}&nbsp;&rarr;</a></p>
 </td>
 </tr></table>`;
   }
-  // Each chip is its own link to that feature for THIS bird. The anchors sit
-  // inside the two cells rather than around the chip's table: one <a> wrapping
-  // a <table> is what Outlook's Word engine drops on the floor, and an <a>
-  // around the whole card would nest inside the bird-name link, which is
-  // invalid and breaks the name link in Gmail.
-  //
-  // display:block makes the anchor fill its cell, so the tap target is the
-  // chip rather than the glyphs. The colour is restated on the <a> because
-  // every client recolours a bare link — the chip has to keep looking like a
-  // chip, not turn blue and underlined.
   const rows = b.rows
-    .map((r) => {
-      // The chip's vertical padding moves onto the anchors when there is a
-      // link, so the tap target is the whole 33px chip rather than the 17px
-      // line of text inside it. The box looks identical either way: 8px is
-      // 8px whether the cell or the anchor holds it.
-      const pad = r.href ? "0 12px" : "8px 12px";
-      const label = r.href
-        ? `<a href="${r.href}" style="display:block;padding:8px 0;color:${r.nudge ? FC.muted : FC.forest};text-decoration:none;">${r.label}</a>`
-        : r.label;
-      const value = r.href
-        ? `<a href="${r.href}" style="display:block;padding:8px 0;color:${r.nudge ? "#a15c16" : FC.forest};font-weight:700;text-decoration:none;text-align:right;">${r.value}</a>`
-        : r.value;
-      return `${grid("margin:0 0 6px;")}<tr>
-<td style="padding:${pad};${r.nudge ? `border:1px dashed ${FC.muted};` : `background-color:${FC.panel};`}border-radius:999px;">
+    .map(
+      (r) => `${grid("margin:0 0 6px;")}<tr>
+<td style="padding:8px 12px;${r.nudge ? `border:1px dashed ${FC.muted};` : `background-color:${FC.panel};`}border-radius:999px;">
 ${grid()}<tr>
-<td valign="middle" style="padding:0;font-family:${BODY_FONT};font-size:12px;line-height:17px;color:${r.nudge ? FC.muted : FC.forest};${NOBREAK}">${label}</td>
-<td valign="middle" align="right" style="padding:0 0 0 8px;font-family:${BODY_FONT};font-size:12px;line-height:17px;font-weight:700;color:${r.nudge ? "#a15c16" : FC.forest};text-align:right;${NOBREAK}">${value}</td>
+<td valign="middle" style="padding:0;font-family:${BODY_FONT};font-size:12px;line-height:17px;color:${r.nudge ? FC.muted : FC.forest};${NOBREAK}">${r.label}</td>
+<td valign="middle" align="right" style="padding:0 0 0 8px;font-family:${BODY_FONT};font-size:12px;line-height:17px;font-weight:700;color:${r.nudge ? "#a15c16" : FC.forest};text-align:right;${NOBREAK}">${r.value}</td>
 </tr>
 </table>
 </td>
-</tr></table>`;
-    })
+</tr></table>`,
+    )
     .join("");
   return `${grid()}<tr>
 <td style="padding:14px;background-color:#ffffff;border:2px solid ${FC.forest};border-radius:16px;">

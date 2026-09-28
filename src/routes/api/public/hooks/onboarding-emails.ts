@@ -318,21 +318,18 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
           // emails still carry their own label until they move across.
           const hasBird = Boolean(p.birdId);
           const unsub = unsubUrl(appUrl, p.userId, "onboarding");
-          // The deep-link forms, not the screens that list them: the buttons say
-          // "Log a weight" and "Add a journal entry", so they open the entry
-          // rather than leaving the reader one more tap short of it.
           const onBird = (path: string) => (hasBird ? `${appUrl}/birds/${p.birdId}/${path}` : `${appUrl}/birds/new`);
           const built =
             p.stage === "welcome"
               ? buildWelcomeEmail({ firstName, link: appUrl, locale , unsubscribeUrl: unsub })
               : p.stage === "series_weighing"
-              ? buildSeriesWeighingEmail({ link: onBird("weight?log=1"), hasBird, chartUrl: demoChartUrl, locale , unsubscribeUrl: unsub })
+              ? buildSeriesWeighingEmail({ link: onBird("weight"), hasBird, chartUrl: demoChartUrl, locale , unsubscribeUrl: unsub })
               : p.stage === "series_health_check"
               ? buildSeriesHealthCheckEmail({ link: onBird("scan"), hasBird, locale , unsubscribeUrl: unsub })
               : p.stage === "series_care_plan"
               ? buildSeriesCarePlanEmail({ link: onBird("plan"), hasBird, locale , unsubscribeUrl: unsub })
               : p.stage === "series_journal"
-              ? buildSeriesJournalEmail({ link: onBird("journal?new=1"), hasBird, locale , unsubscribeUrl: unsub })
+              ? buildSeriesJournalEmail({ link: onBird("journal"), hasBird, locale , unsubscribeUrl: unsub })
               : p.stage === "series_sharing"
               ? buildSeriesSharingEmail({ link: onBird("access"), hasBird, locale , unsubscribeUrl: unsub })
               : p.stage === "series_vet"

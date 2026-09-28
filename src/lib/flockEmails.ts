@@ -472,23 +472,20 @@ export function buildFlockReportEmail(opts: {
                     : t("email.monthly.weighInLine", { n: b.weighIns.length, g: latest }),
               }
             : undefined,
-          empty: b.weighIns.length
-            ? undefined
-            : { text: t("email.monthly.noWeighIns", { month: monthName }), cta: t("email.monthly.logOne"), href: `${b.href}/weight?log=1` },
+          empty: b.weighIns.length ? undefined : { text: t("email.monthly.noWeighIns", { month: monthName }), cta: t("email.monthly.logOne") },
           rows: [
             b.checks > 0
-              ? { label: t("email.monthly.rowChecks"), value: t("email.monthly.rowChecksValue", { n: b.checks, days }), href: `${b.href}/scan` }
-              : { label: t("email.monthly.rowChecks"), value: t("email.monthly.doOne"), nudge: true, href: `${b.href}/scan` },
+              ? { label: t("email.monthly.rowChecks"), value: t("email.monthly.rowChecksValue", { n: b.checks, days }) }
+              : { label: t("email.monthly.rowChecks"), value: t("email.monthly.doOne"), nudge: true },
             b.journal > 0
               ? {
                   label: t("email.monthly.rowJournal"),
                   value: b.journal === 1 ? t("email.monthly.rowJournalValueOne") : t("email.monthly.rowJournalValue", { n: b.journal }),
-                  href: `${b.href}/journal?new=1`,
                 }
-              : { label: t("email.monthly.rowJournal"), value: t("email.monthly.addOne"), nudge: true, href: `${b.href}/journal?new=1` },
+              : { label: t("email.monthly.rowJournal"), value: t("email.monthly.addOne"), nudge: true },
             b.planUpdated
-              ? { label: t("email.monthly.rowPlan"), value: t("email.monthly.rowPlanValue", { date: b.planUpdated }), href: `${b.href}/plan` }
-              : { label: t("email.monthly.rowPlan"), value: t("email.monthly.updatePlan"), nudge: true, href: `${b.href}/plan` },
+              ? { label: t("email.monthly.rowPlan"), value: t("email.monthly.rowPlanValue", { date: b.planUpdated }) }
+              : { label: t("email.monthly.rowPlan"), value: t("email.monthly.updatePlan"), nudge: true },
           ],
         };
       }),
@@ -501,9 +498,9 @@ export function buildFlockReportEmail(opts: {
     blocks.push({
       kind: "numberedLinks",
       items: [
-        { title: t("email.monthly.start1Title"), text: t("email.monthly.start1Text"), href: pick("weight?log=1") },
+        { title: t("email.monthly.start1Title"), text: t("email.monthly.start1Text"), href: pick("weight") },
         { title: t("email.monthly.start2Title"), text: t("email.monthly.start2Text"), href: pick("scan") },
-        { title: t("email.monthly.start3Title"), text: t("email.monthly.start3Text"), href: pick("journal?new=1") },
+        { title: t("email.monthly.start3Title"), text: t("email.monthly.start3Text"), href: pick("journal") },
       ],
     });
   }
