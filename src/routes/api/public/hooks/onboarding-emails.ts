@@ -272,9 +272,8 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
 
         // The welcome letter is on the Flock Club layout and lives in its own
         // module now; the rest of the series is still on letterShell.
-        const { buildWelcomeEmail, buildSeriesWeighingEmail } = await import("@/lib/flockEmails");
+        const { buildWelcomeEmail, buildSeriesWeighingEmail, buildSeriesHealthCheckEmail } = await import("@/lib/flockEmails");
         const {
-          buildSeriesHealthCheckEmail,
           buildSeriesCarePlanEmail,
           buildSeriesJournalEmail,
           buildSeriesSharingEmail,
@@ -302,14 +301,18 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
           const locale = (profile as { locale?: string } | undefined)?.locale ?? undefined;
           // Where a series email points. No bird yet → the dashboard, which is
           // where adding one starts.
-          const onBird = (path: string) => (p.birdId ? `${appUrl}/birds/${p.birdId}/${path}` : `${appUrl}/dashboard`);
+          // No bird yet → the add-bird screen, not the dashboard. The Flock
+          // Club layout also swaps the button LABEL in that case; the letterShell
+          // emails still carry their own label until they move across.
+          const hasBird = Boolean(p.birdId);
+          const onBird = (path: string) => (hasBird ? `${appUrl}/birds/${p.birdId}/${path}` : `${appUrl}/birds/new`);
           const built =
             p.stage === "welcome"
               ? buildWelcomeEmail({ firstName, link: appUrl, locale })
               : p.stage === "series_weighing"
-              ? buildSeriesWeighingEmail({ link: onBird("weight"), locale })
+              ? buildSeriesWeighingEmail({ link: onBird("weight"), hasBird, locale })
               : p.stage === "series_health_check"
-              ? buildSeriesHealthCheckEmail({ link: onBird("scan"), locale })
+              ? buildSeriesHealthCheckEmail({ link: onBird("scan"), hasBird, locale })
               : p.stage === "series_care_plan"
               ? buildSeriesCarePlanEmail({ link: onBird("plan"), locale })
               : p.stage === "series_journal"

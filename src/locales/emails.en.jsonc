@@ -22,6 +22,7 @@
   "email.flock.unsubscribe": "Unsubscribe",
   "email.flock.byLine": "by The Kya Project",
   "email.flock.pillFlockmate": "Hi, flockmate",
+  "email.flock.addBirdCta": "Add your bird first",
 
   // ---- The onboarding letter layout (letterShell) ----
   // Shared by the seven letters: the masthead label, the hand-off line, the
@@ -404,30 +405,30 @@
   "email.seriesWeighing.cta": "Log a weight",
   "email.seriesWeighing.p3": "Juno took three days to trust the scale. Yours might take one, or ten. Go at your bird's pace, and bring the good snacks.",
   "email.seriesWeighing.foot": "You're getting this as part of your first few weeks with Kya &amp; Co. Change which emails you get in Settings.",
-  "email.seriesHealthCheck.subject": "The daily health check",
-  "email.seriesHealthCheck.preview": "What the questions are looking for, and why the normal days count.",
-  "email.seriesHealthCheck.kicker": "A daily habit",
-  "email.seriesHealthCheck.heading": "The daily health check",
-  "email.seriesHealthCheck.lead": "The daily check is a short set of questions about how your bird looks and behaves. It asks about things like alertness, appetite, droppings, breathing, and posture.",
-  "email.seriesHealthCheck.p2": "Working through the same questions helps you pay attention to those details. It also leaves you a record to look back on when you're trying to remember when something changed.",
-  "email.seriesHealthCheck.card1Label": "Worth knowing",
-  "email.seriesHealthCheck.card1P1": "The normal days belong in the record too. If your bird seems quieter than usual, it helps to be able to look back at what you've been seeing over the past few days.",
-  "email.seriesHealthCheck.p3": "The check can't confirm that your bird is healthy. If something worries you, contact your avian vet, even if the app hasn't flagged anything.",
+  // ---- Daily health check (Flock Club) ----
+  // q1-q3 are the app's own wording from src/lib/triage.ts, with "the
+  // bird" swapped for Juno. If the questions change there, change them
+  // here — the email shows a real check, not an approximation of one.
+  "email.seriesHealthCheck.headline": "The daily once-over",
+  "email.seriesHealthCheck.preview": "A few questions a day, and why the boring days matter.",
+  "email.seriesHealthCheck.sticker": "Boring is good",
   "email.seriesHealthCheck.heroAlt": "A close-up of a green conure with red markings on its face",
-  "email.seriesHealthCheck.momentTitle": "Health check — Juno",
-  "email.seriesHealthCheck.momentIntro": "A quick once-over to make sure Juno's feeling like themselves.",
+  "email.seriesHealthCheck.p1": "The daily health check is a short set of questions about how your bird looks and acts today: alertness, appetite, droppings, breathing, and posture. Same questions, every day.",
+  "email.seriesHealthCheck.cardTitle": "Juno's once-over",
+  "email.seriesHealthCheck.cardBadge": "In the app",
+  "email.seriesHealthCheck.q1": "Is Juno alert and responsive?",
+  "email.seriesHealthCheck.q2": "Is Juno eating normally?",
+  "email.seriesHealthCheck.q3": "Do the droppings look normal?",
+  "email.seriesHealthCheck.cardNote": "Plus a few more about breathing, perching, and sound.",
+  "email.seriesHealthCheck.boringTitle": "Boring is good.",
+  "email.seriesHealthCheck.boringText": "Most days, everything's normal, and that's exactly what you want on record. The normal days are what you'll compare against if something ever changes.",
+  "email.seriesHealthCheck.p2": "It also leaves you a timeline. When you're trying to remember when something started, the answer's already written down.",
+  "email.seriesHealthCheck.cta": "Do today's check",
+  "email.seriesHealthCheck.p3": "Juno's tip: do it right after breakfast, while you're already standing there with the food bowl.",
+  "email.seriesHealthCheck.foot": "You're getting this as part of your first few weeks with Kya &amp; Co. Change which emails you get in Settings.",
   // Question-shaped, with the mark. The email.scanReason.q.* keys are the same
   // questions WITHOUT punctuation, because a reason line composes them as
   // "Concerning: <question>" and must byte-match that — so they are not reused here.
-  "email.seriesHealthCheck.q1": "Is the bird alert and responsive?",
-  "email.seriesHealthCheck.q2": "Is the bird eating normally?",
-  "email.seriesHealthCheck.q3": "Do the droppings look normal?",
-  "email.seriesHealthCheck.more": "And a few more, about breathing, perching, and sound.",
-  "email.seriesHealthCheck.cta": "Run a health check",
-  "email.seriesHealthCheck.nextUp": "Next, we'll look at writing down your bird's everyday routine in the care plan.",
-  "email.seriesHealthCheck.healthNote": "This app doesn't diagnose illness. If you're ever worried about your bird's health, contact an avian veterinarian.",
-  "email.seriesHealthCheck.foot": "You're getting this as part of your introduction to Kya &amp; Co. You can turn off emails like this one in Settings at any time.",
-  "email.seriesHealthCheck.text": "The daily check is a short set of questions about how your bird looks and behaves. It asks about things like alertness, appetite, droppings, breathing, and posture.\n\nWorking through the same questions helps you pay attention to those details. It also leaves you a record to look back on when you're trying to remember when something changed.\n\nThe normal days belong in the record too. If your bird seems quieter than usual, it helps to be able to look back at what you've been seeing over the past few days.\n\nThe check can't confirm that your bird is healthy. If something worries you, contact your avian vet, even if the app hasn't flagged anything.\n\nOpen Kya & Co.: {{link}}\n\nThis app doesn't diagnose illness. If you're ever worried about your bird's health, contact an avian veterinarian.\n\nKya & Co. — by The Kya Project",
   "email.seriesCarePlan.subject": "Writing down what normal looks like",
   "email.seriesCarePlan.preview": "Six sections, and you don't have to do them all at once.",
   "email.seriesCarePlan.kicker": "The care plan",

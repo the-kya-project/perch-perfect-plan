@@ -74,11 +74,12 @@ export type FlockBlock =
   | { kind: "p"; text: string }
   | { kind: "small"; text: string }
   | { kind: "card"; title?: string; body: string }
-  | { kind: "highlight"; title?: string; body: string }
+  | { kind: "highlight"; title?: string; body: string; titleSize?: number }
   | { kind: "steps"; items: Array<{ title: string; text: string }> }
-  | { kind: "button"; label: string; href: string }
+  | { kind: "button"; label: string; href: string; needsBird?: boolean }
   | { kind: "subhead"; text: string }
   | { kind: "panel"; title: string; items: Array<{ lead: string; text: string }> }
+  | { kind: "checkCard"; title: string; badge: string; questions: string[]; answers: [string, string, string]; note: string }
   | { kind: "dotChart"; badge: string; caption: string; series: number[]; unit: string; axisStart: string; axisEnd: string; note: string }
   | { kind: "photoHighlight"; title: string; body: string; photo: string; photoAlt: string }
   | { kind: "signature" }
@@ -105,10 +106,10 @@ ${title ? `<p style="margin:0 0 6px;font-family:${HEAD_FONT};font-size:17px;line
 </tr></table>`;
 
 /** Lime highlight: no border, 20px radius, 20px padding. */
-const highlightHtml = (title: string | undefined, body: string) =>
+const highlightHtml = (title: string | undefined, body: string, titleSize = 17) =>
   `${grid("margin:0 0 20px;")}<tr>
 <td style="padding:20px;background-color:${FC.lime};border-radius:20px;">
-${title ? `<p style="margin:0 0 6px;font-family:${HEAD_FONT};font-size:17px;line-height:24px;font-weight:800;letter-spacing:-0.3px;color:${FC.forest};">${title}</p>` : ""}
+${title ? `<p style="margin:0 0 8px;font-family:${HEAD_FONT};font-size:${titleSize}px;line-height:${Math.round(titleSize * 1.3)}px;font-weight:800;letter-spacing:-0.3px;color:${FC.forest};">${title}</p>` : ""}
 <p style="margin:0;font-family:${BODY_FONT};font-size:15px;line-height:23px;color:${FC.forest};">${body}</p>
 </td>
 </tr></table>`;
@@ -218,6 +219,56 @@ ${grid()}${o.items
 </td>
 </tr></table>`;
 
+/** A sample health check: the white card, a row per question on soft cream,
+ *  and three answer chips with the first one chosen. The chips are table cells
+ *  rather than spans so the pill shape and the selected state survive Outlook,
+ *  which would collapse inline-block padding. */
+function checkCardHtml(o: { title: string; badge: string; questions: string[]; answers: [string, string, string]; note: string }): string {
+  const chip = (text: string, chosen: boolean) =>
+    chosen
+      ? `<td align="center" bgcolor="${FC.forest}" style="padding:6px 10px;background-color:${FC.forest};border:1px solid ${FC.forest};border-radius:999px;font-family:${BODY_FONT};font-size:11.5px;line-height:15px;font-weight:700;color:#ffffff;text-align:center;">${text}</td>`
+      : `<td align="center" bgcolor="#ffffff" style="padding:6px 10px;background-color:#ffffff;border:1px solid #d8d2c0;border-radius:999px;font-family:${BODY_FONT};font-size:11.5px;line-height:15px;color:${FC.muted};text-align:center;">${text}</td>`;
+  const gap = `<td width="6" style="width:6px;font-size:0;">&nbsp;</td>`;
+  const rows = o.questions
+    .map(
+      (q) => `<tr>
+<td style="padding:0 0 8px;">
+${grid()}<tr>
+<td style="padding:12px 14px;background-color:${FC.panel};border-radius:14px;">
+<p style="margin:0 0 9px;font-family:${BODY_FONT};font-size:14px;line-height:20px;font-weight:700;color:${FC.forest};">${q}</p>
+${grid("table-layout:fixed;")}<tr>
+${chip(o.answers[0], true)}
+${gap}
+${chip(o.answers[1], false)}
+${gap}
+${chip(o.answers[2], false)}
+</tr>
+</table>
+</td>
+</tr>
+</table>
+</td>
+</tr>`,
+    )
+    .join("\n");
+  return `${grid("margin:0 0 20px;")}<tr>
+<td style="padding:16px;background-color:#ffffff;border:2px solid ${FC.forest};border-radius:18px;">
+${grid("margin:0 0 14px;")}<tr>
+<td valign="middle" style="padding:0;font-family:${HEAD_FONT};font-size:21px;line-height:27px;font-weight:800;letter-spacing:-0.4px;color:${FC.forest};">${o.title}</td>
+<td valign="middle" align="right" style="padding:0 0 0 10px;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="${RESET}">
+<tr><td bgcolor="${FC.lime}" style="padding:5px 12px;background-color:${FC.lime};border-radius:999px;font-family:${BODY_FONT};font-size:11.5px;line-height:15px;font-weight:700;color:${FC.forest};white-space:nowrap;">${o.badge}</td></tr>
+</table>
+</td>
+</tr>
+</table>
+${grid()}${rows}
+</table>
+<p style="margin:6px 0 0;font-family:${BODY_FONT};font-size:12.5px;line-height:19px;font-style:italic;color:${FC.muted};">${o.note}</p>
+</td>
+</tr></table>`;
+}
+
 /** A dot chart on the forest card: one dot per reading, its height its weight.
  *
  *  BUILD: a fixed-layout table with one cell per reading. Each cell is the full
@@ -281,17 +332,32 @@ ${grid("margin:8px 0 0;")}<tr>
 </tr></table>`;
 }
 
-function blockHtml(b: FlockBlock, t: EmailT): string {
+/** What a block needs beyond its own fields. */
+type Ctx = { t: EmailT; hasBird: boolean; addBirdHref: string };
+
+/** A button that goes to a bird's screen is pointless for an account with no
+ *  bird yet — it used to fall back to the dashboard, which is a dead end
+ *  dressed as a destination. Resolved here rather than in each email, so every
+ *  email on this layout gets it without knowing about it. */
+function resolveButton(b: { label: string; href: string; needsBird?: boolean }, c: Ctx) {
+  return b.needsBird && !c.hasBird
+    ? { label: c.t("email.flock.addBirdCta"), href: c.addBirdHref }
+    : { label: b.label, href: b.href };
+}
+
+function blockHtml(b: FlockBlock, c: Ctx): string {
+  const t = c.t;
   switch (b.kind) {
     case "lead": return leadHtml(b.text);
     case "p": return pHtml(b.text);
     case "small": return smallHtml(b.text);
     case "card": return cardHtml(b.title, b.body);
-    case "highlight": return highlightHtml(b.title, b.body);
+    case "highlight": return highlightHtml(b.title, b.body, b.titleSize);
     case "steps": return stepsHtml(b.items);
-    case "button": return buttonHtml(b.label, b.href);
+    case "button": { const r = resolveButton(b, c); return buttonHtml(r.label, r.href); }
     case "subhead": return subheadHtml(b.text);
     case "panel": return panelHtml(b);
+    case "checkCard": return checkCardHtml(b);
     case "dotChart": return dotChartHtml(b);
     case "photoHighlight": return photoHighlightHtml(b);
     case "signature": return signatureHtml(t);
@@ -309,7 +375,8 @@ const detag = (s: string) =>
    .replace(/&rarr;/g, "->").replace(/&#39;/g, "'").replace(/&quot;/g, '"')
    .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/[ \t]+/g, " ").trim();
 
-function blockText(b: FlockBlock, t: EmailT): string {
+function blockText(b: FlockBlock, c: Ctx): string {
+  const t = c.t;
   switch (b.kind) {
     case "lead":
     case "p":
@@ -317,9 +384,10 @@ function blockText(b: FlockBlock, t: EmailT): string {
     case "card":
     case "highlight": return (b.title ? detag(b.title) + "\n" : "") + detag(b.body);
     case "steps": return b.items.map((it, i) => `${i + 1}. ${detag(it.title)} ${detag(it.text)}`).join("\n");
-    case "button": return `${detag(b.label)}: ${b.href}`;
+    case "button": { const r = resolveButton(b, c); return `${detag(r.label)}: ${r.href}`; }
     case "subhead": return detag(b.text);
     case "panel": return `${detag(b.title)}\n` + b.items.map((it, i) => `${i + 1}. ${detag(it.lead)} ${detag(it.text)}`).join("\n");
+    case "checkCard": return `${detag(b.title)}\n` + b.questions.map((q) => `- ${detag(q)} [${detag(b.answers[0])}]`).join("\n") + `\n${detag(b.note)}`;
     case "dotChart": return `${detag(b.badge)} — ${detag(b.caption)}\n${Math.min(...b.series)}${b.unit}–${Math.max(...b.series)}${b.unit}, ${detag(b.axisStart)} to ${detag(b.axisEnd)}\n${detag(b.note)}`;
     case "photoHighlight": return `${detag(b.title)}\n${detag(b.body)}`;
     case "signature": return `${detag(t("email.flock.signName"))}\n${detag(t("email.flock.signTitle"))}`;
@@ -342,9 +410,14 @@ export function flockShell(opts: {
   /** The one-line "why you're getting this", per email. */
   footerWhy: string;
   link: string;
+  /** False when the account has no bird at send time. Any button marked
+   *  `needsBird` then becomes "add your bird first" instead. Defaults true so
+   *  an email with no bird-specific button need not think about it. */
+  hasBird?: boolean;
   locale?: string;
 }): BuiltEmail {
   const t = emailT(opts.locale);
+  const ctx: Ctx = { t, hasBird: opts.hasBird !== false, addBirdHref: `${ASSETS}/birds/new` };
 
   const preheader = `<div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;overflow:hidden;opacity:0;mso-hide:all;">${opts.preheader}${"&#8203;&nbsp;".repeat(12)}</div>`;
 
@@ -371,7 +444,7 @@ export function flockShell(opts: {
 ${opts.hero.sticker ? `<tr><td style="padding:0;">${sticker}</td></tr>` : ""}`
     : "";
 
-  const body = opts.blocks.map((b) => styleLinks(blockHtml(b, t))).join("\n");
+  const body = opts.blocks.map((b) => styleLinks(blockHtml(b, ctx))).join("\n");
 
   const html = `<!doctype html>
 <html lang="${opts.locale === "nl" ? "nl" : "en"}">
@@ -431,7 +504,7 @@ ${body}
   const text = [
     detag(opts.headline),
     "",
-    ...opts.blocks.map((b) => blockText(b, t)).filter(Boolean),
+    ...opts.blocks.map((b) => blockText(b, ctx)).filter(Boolean),
     "",
     detag(opts.footerWhy),
     detag(t("email.flock.disclaimer")),

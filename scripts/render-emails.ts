@@ -16,7 +16,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as T from "@/lib/emailTemplates";
-import { buildWelcomeEmail, buildSeriesWeighingEmail } from "@/lib/flockEmails";
+import { buildWelcomeEmail, buildSeriesWeighingEmail, buildSeriesHealthCheckEmail } from "@/lib/flockEmails";
 
 const OUT = ".email-preview";
 const APP = "https://app.thekyaproject.com";
@@ -53,7 +53,7 @@ ${body}
 const series: Array<[string, T.BuiltEmail]> = [
   ["01-welcome", buildWelcomeEmail({ firstName: "Sam", link: APP })],
   ["02-weighing", buildSeriesWeighingEmail({ link: APP })],
-  ["03-health-check", T.buildSeriesHealthCheckEmail({ link: APP })],
+  ["03-health-check", buildSeriesHealthCheckEmail({ link: APP })],
   ["04-care-plan", T.buildSeriesCarePlanEmail({ link: APP })],
   ["05-journal", T.buildSeriesJournalEmail({ link: APP })],
   ["06-sharing", T.buildSeriesSharingEmail({ link: APP })],

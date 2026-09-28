@@ -1112,49 +1112,8 @@ export function buildSitterInviteCancelledEmail(opts: {
 // The weighing letter moved to the Flock Club layout — see
 // src/lib/flockEmails.ts.
 
-// Day 6 — the daily health check. The moment shows three of the questions with
-// their answer pills, so the habit is recognisable before you open the app.
-export function buildSeriesHealthCheckEmail(opts: { link: string; locale?: string }): BuiltEmail {
-  const t = emailT(opts.locale);
-  return {
-    subject: t("email.seriesHealthCheck.subject"),
-    html: letterShell({
-      n: 3,
-      nextDay: 9,
-      preview: t("email.seriesHealthCheck.preview"),
-      kicker: t("email.seriesHealthCheck.kicker"),
-      heading: t("email.seriesHealthCheck.heading"),
-      hero: { file: "health-check.jpg", alt: t("email.seriesHealthCheck.heroAlt") },
-      bodyHtml:
-        lead(t("email.seriesHealthCheck.lead")) +
-        para(t("email.seriesHealthCheck.p2")) +
-        questionCards({
-          inApp: t("email.moment.inTheApp"),
-          title: t("email.seriesHealthCheck.momentTitle"),
-          intro: t("email.seriesHealthCheck.momentIntro"),
-          questions: [
-            t("email.seriesHealthCheck.q1"),
-            t("email.seriesHealthCheck.q2"),
-            t("email.seriesHealthCheck.q3"),
-          ],
-          answers: [
-            t("email.scanReason.normal"),
-            t("email.scanReason.notSure"),
-            t("email.scanReason.concerning"),
-          ],
-          more: t("email.seriesHealthCheck.more"),
-        }) +
-        note(t("email.seriesHealthCheck.card1Label"), noteP(t("email.seriesHealthCheck.card1P1"))) +
-        para(t("email.seriesHealthCheck.p3")) +
-        button(t("email.seriesHealthCheck.cta"), opts.link, "8px 0 8px"),
-      nextUp: t("email.seriesHealthCheck.nextUp"),
-      healthNote: t("email.seriesHealthCheck.healthNote"),
-      foot: t("email.seriesHealthCheck.foot"),
-      t,
-    }),
-    text: t("email.seriesHealthCheck.text", { link: opts.link }),
-  };
-}
+// The health-check letter moved to the Flock Club layout — see
+// src/lib/flockEmails.ts.
 
 // Day 9 — the care plan. The six sections as a grid, Food and Routine limed
 // because those are the two the copy tells you to start with.

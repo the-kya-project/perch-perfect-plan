@@ -84,7 +84,7 @@ const JUNO_WEIGHTS = [
  * `/birds/demo/weight` in the old plain text was only ever the QA harness's
  * sample string; no real send has used it.
  */
-export function buildSeriesWeighingEmail(opts: { link: string; locale?: string }): BuiltEmail {
+export function buildSeriesWeighingEmail(opts: { link: string; hasBird?: boolean; locale?: string }): BuiltEmail {
   const t = emailT(opts.locale);
   const blocks: FlockBlock[] = [
     { kind: "p", text: t("email.seriesWeighing.p1") },
@@ -108,7 +108,7 @@ export function buildSeriesWeighingEmail(opts: { link: string; locale?: string }
       axisEnd: t("email.seriesWeighing.chartAxisEnd"),
       note: t("email.seriesWeighing.chartNote"),
     },
-    { kind: "button", label: t("email.seriesWeighing.cta"), href: opts.link },
+    { kind: "button", label: t("email.seriesWeighing.cta"), href: opts.link, needsBird: true },
     { kind: "p", text: t("email.seriesWeighing.p3") },
     { kind: "signature" },
   ];
@@ -120,6 +120,47 @@ export function buildSeriesWeighingEmail(opts: { link: string; locale?: string }
     blocks,
     footerWhy: t("email.seriesWeighing.foot"),
     link: opts.link,
+    hasBird: opts.hasBird,
+    locale: opts.locale,
+  });
+}
+
+/**
+ * Day 6 — the daily health check. The card shows a real check: q1-q3 are the
+ * app's own question wording from src/lib/triage.ts, with "the bird" swapped
+ * for Juno, so the email is not teaching a screen that does not exist.
+ */
+export function buildSeriesHealthCheckEmail(opts: { link: string; hasBird?: boolean; locale?: string }): BuiltEmail {
+  const t = emailT(opts.locale);
+  const blocks: FlockBlock[] = [
+    { kind: "p", text: t("email.seriesHealthCheck.p1") },
+    {
+      kind: "checkCard",
+      title: t("email.seriesHealthCheck.cardTitle"),
+      badge: t("email.seriesHealthCheck.cardBadge"),
+      questions: [
+        t("email.seriesHealthCheck.q1"),
+        t("email.seriesHealthCheck.q2"),
+        t("email.seriesHealthCheck.q3"),
+      ],
+      answers: [t("email.scanReason.normal"), t("email.scanReason.notSure"), t("email.scanReason.concerning")],
+      note: t("email.seriesHealthCheck.cardNote"),
+    },
+    { kind: "highlight", title: t("email.seriesHealthCheck.boringTitle"), body: t("email.seriesHealthCheck.boringText"), titleSize: 22 },
+    { kind: "p", text: t("email.seriesHealthCheck.p2") },
+    { kind: "button", label: t("email.seriesHealthCheck.cta"), href: opts.link, needsBird: true },
+    { kind: "p", text: t("email.seriesHealthCheck.p3") },
+    { kind: "signature" },
+  ];
+  return flockShell({
+    headline: t("email.seriesHealthCheck.headline"),
+    preheader: t("email.seriesHealthCheck.preview"),
+    pill: t("email.flock.pillFlockmate"),
+    hero: { file: "health-check.jpg", alt: t("email.seriesHealthCheck.heroAlt"), sticker: t("email.seriesHealthCheck.sticker") },
+    blocks,
+    footerWhy: t("email.seriesHealthCheck.foot"),
+    link: opts.link,
+    hasBird: opts.hasBird,
     locale: opts.locale,
   });
 }

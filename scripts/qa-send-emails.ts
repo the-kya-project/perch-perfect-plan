@@ -18,7 +18,7 @@
 // app; nothing imports this.
 import * as fs from "node:fs";
 import * as T from "@/lib/emailTemplates";
-import { buildWelcomeEmail, buildSeriesWeighingEmail } from "@/lib/flockEmails";
+import { buildWelcomeEmail, buildSeriesWeighingEmail, buildSeriesHealthCheckEmail } from "@/lib/flockEmails";
 
 // Minimal dotenv: first file that exists, exported values take precedence.
 for (const f of [".env.email-qa", ".env.local", ".env"]) {
@@ -73,7 +73,7 @@ const RANGE = "3 to 11 October";
 const all: Array<[string, { subject: string; html: string; text: string }, boolean?]> = [
   ["01 onboarding · welcome", buildWelcomeEmail({ firstName: "Brittany", link: APP }), true],
   ["02 onboarding · weighing", buildSeriesWeighingEmail({ link: `${APP}/birds/demo/weight` })],
-  ["03 onboarding · health check", T.buildSeriesHealthCheckEmail({ link: `${APP}/birds/demo/scan` })],
+  ["03 onboarding · health check", buildSeriesHealthCheckEmail({ link: `${APP}/birds/demo/scan` })],
   ["04 onboarding · care plan", T.buildSeriesCarePlanEmail({ link: `${APP}/birds/demo/plan` })],
   ["05 onboarding · journal", T.buildSeriesJournalEmail({ link: `${APP}/birds/demo/journal` })],
   ["06 onboarding · sharing", T.buildSeriesSharingEmail({ link: `${APP}/birds/demo/access` })],
