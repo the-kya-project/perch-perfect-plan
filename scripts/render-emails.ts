@@ -56,6 +56,36 @@ const series: Array<[string, T.BuiltEmail]> = [
   ["07-vet", T.buildSeriesVetEmail({ link: APP })],
 ];
 
+// The monthly letter, with the handback's own sample flock (Juno full, Pip
+// quiet) so 08-monthly.html and 09-monthly-quiet.html are comparable by eye.
+const JUNO: T.MonthlyBird = {
+  name: "Juno", species: "Blue-throated macaw", recordUrl: `${APP}/birds/demo`,
+  weights: [752, 754, 750, 756, 748, 755, 757, 751, 753, 759, 754, 750, 761, 755, 752, 758, 753, 749, 756, 754, 757, 752, 755, 753],
+  prevSpread: 19, checks: 22, flagged: 0, journalEntries: 4, journalPhotos: 6,
+  planUpdated: { date: "12 Sep", sections: "Food and Routine" },
+  quote: { date: "14 September", body: "Tried the new foraging box this morning. Worked it out in under a minute, then ignored it for the rest of the day." },
+  lastWeight: null, lastCheck: null,
+};
+const PIP: T.MonthlyBird = {
+  name: "Pip", species: "Cockatiel", recordUrl: `${APP}/birds/demo2`,
+  weights: [92], prevSpread: null, checks: 0, flagged: 0, journalEntries: 0, journalPhotos: 0,
+  planUpdated: null, quote: null,
+  lastWeight: { grams: 92, date: "18 September" },
+  lastCheck: { date: "11 Sep", flagged: false },
+};
+const ARTICLE = {
+  title: "Weigh your bird every day: What a gram scale tells you before your parrot does",
+  intro: "Weight is the first honest signal of a parrot's health. Why daily weighing matters, what normal fluctuation looks like, and when the trend means call the vet.",
+  url: "https://www.thekyaproject.com/blog/weigh-your-bird-every-day",
+  minutes: 4,
+};
+const monthly: Array<[string, T.BuiltEmail]> = [
+  ["08-monthly", T.buildMonthlyEmail({ firstName: "Sam", birds: [JUNO, PIP], month: 10, year: 2026, link: APP,
+    coming: [{ mon: "Oct", day: 3, title: "Four years since Juno came home", sub: "It's saved as a moment on Juno's record." }],
+    article: ARTICLE })],
+  ["09-monthly-quiet", T.buildMonthlyEmail({ firstName: "Sam", birds: [PIP], month: 10, year: 2026, link: APP, article: ARTICLE })],
+];
+
 // Everything else that uses shell(). These must not change.
 const others: Array<[string, T.BuiltEmail]> = [
   ["drip-add-bird", T.buildOnboardingAddBirdEmail({ firstName: "Sam", link: `${APP}/birds/new` })],
@@ -88,6 +118,11 @@ for (const [name, built] of series) {
   fs.writeFileSync(path.join(OUT, `${name}.txt`), built.text);
   index.push(`<li><a href="${name}.html">${name}</a> — ${built.subject}</li>`);
 }
+for (const [name, built] of monthly) {
+  fs.writeFileSync(path.join(OUT, `${name}.html`), page(built.subject, built.html));
+  fs.writeFileSync(path.join(OUT, `${name}.txt`), built.text);
+  index.push(`<li><a href="${name}.html">${name}</a> — ${built.subject}</li>`);
+}
 for (const [name, built] of others) {
   fs.writeFileSync(path.join(OUT, "others", `${name}.html`), page(built.subject, built.html));
   fs.writeFileSync(path.join(OUT, "others", `${name}.txt`), built.text);
@@ -98,7 +133,7 @@ fs.writeFileSync(
   page("Email preview", `<div style="font-family:system-ui;padding:24px;"><h1>Email preview</h1><ul>${index.join("")}</ul></div>`),
 );
 
-console.log(`${series.length} series + ${others.length} other emails → ${OUT}/`);
+console.log(`${series.length} series + ${monthly.length} monthly + ${others.length} other emails → ${OUT}/`);
 
 // --check: normalize whitespace between tags and compare the series output to
 // the handback. Whitespace between tags is not significant in these emails, and

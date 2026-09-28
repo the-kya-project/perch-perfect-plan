@@ -78,6 +78,12 @@ const all: Array<[string, { subject: string; html: string; text: string }, boole
   ["06 onboarding · sharing", T.buildSeriesSharingEmail({ link: `${APP}/birds/demo/access` })],
   ["07 onboarding · vet summary", T.buildSeriesVetEmail({ link: `${APP}/birds/demo/vet-summary` }), true],
 
+  ["07b monthly · letter", T.buildMonthlyEmail({ firstName: "Brittany", month: new Date().getUTCMonth() + 1, year: new Date().getUTCFullYear(), link: APP,
+    birds: [{ name: BIRD, species: "Blue and Gold Macaw", recordUrl: `${APP}/birds/demo`,
+      weights: [1139, 1104, 1130, 1127, 1136, 1106, 1130, 1115, 1098, 1099, 1098, 1086],
+      prevSpread: 68, checks: 1, flagged: 0, journalEntries: 0, journalPhotos: 0,
+      planUpdated: null, quote: null, lastWeight: null, lastCheck: null }] }), true],
+
   ["08 drip · add first bird", T.buildOnboardingAddBirdEmail({ firstName: "Brittany", link: `${APP}/birds/new` })],
   ["09 drip · first weight", T.buildOnboardingFirstWeightEmail({ birdName: BIRD, link: `${APP}/dashboard` })],
   ["10 drip · health scan", T.buildOnboardingHealthScanEmail({ birdName: BIRD, link: `${APP}/scans` })],

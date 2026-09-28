@@ -24,6 +24,9 @@ launched on 2026-07-21), 28 living birds, 64 sits.
   - `care-plan-reminders-daily` at 09:00 UTC
   - `onboarding-emails-daily` at 15:00 UTC
   - `engagement-nudges-daily` at 16:00 UTC
+  - `bereavement-note` at 14:00 UTC
+  - `monthly-letter` at 13:00 UTC **on the 2nd** — not yet scheduled; the SQL is
+    in the header of `monthly-letter.ts`
 - Signup lead capture to Brevo: `supabase/functions/capture-lead`
 
 ### Onboarding drip (new signups only, one email per day at most, each email once)
@@ -34,6 +37,16 @@ launched on 2026-07-21), 28 living birds, 64 sits.
 | `run_first_scan` | bird 5+ days old, no health scan | 3 |
 | `start_care_plan` | bird 7+ days old, empty care plan | 0 |
 | `weight_trend` | first weight in the last 7 days | 3 |
+
+### Monthly letter (the 2nd, recapping the previous month)
+One letter per account, one section per bird. Quiet block for a bird with fewer than
+four weigh-ins and no health checks; a differently shaped "quiet letter" when every
+bird is quiet. Birds marked as passed are excluded. Gated on
+`profiles.notify_monthly_letter` (default true); one row per account per recapped
+month in `monthly_letter_log`, so a retry cannot send twice. The "From the field
+notes" block needs `WEBFLOW_API_TOKEN`, `WEBFLOW_BLOG_COLLECTION_ID` and
+`WEBFLOW_BLOG_BASE_URL`, and is omitted entirely when they are unset or the fetch
+fails. Not yet sending: the pg_cron job still has to be created.
 
 ### Reminders
 - Care-plan check-in (email and push): a sit starts within 3 days and the plan is 14+ days
