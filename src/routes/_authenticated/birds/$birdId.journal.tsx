@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, useRouter, useCanGoBack } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { toast } from "sonner";
@@ -22,6 +22,12 @@ import { friendlyError } from "@/lib/errorMessage";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/journal")({
   head: () => ({ meta: [{ title: "Journal — Kya & Co." }] }),
+  // ?new=1 opens the entry composer straight away, the same deep-link shape the
+  // weight facet uses for ?log=1. The Flock Report's "+ Add one" journal chip
+  // points here, so the tap lands on the form rather than on the list.
+  validateSearch: (search: Record<string, unknown>): { new?: boolean } => ({
+    new: search.new === true || search.new === "true" || search.new === 1 ? true : undefined,
+  }),
   component: JournalFacet,
 });
 
@@ -58,6 +64,7 @@ function JournalFacet() {
   // card); fall back to the bird record when there's no real history.
   const goBack = () => (canGoBack && window.history.length > 1 ? router.history.back() : navigate({ to: "/birds/$birdId", params: { birdId } }));
   const qc = useQueryClient();
+  const { new: startNew } = Route.useSearch();
   const [filter, setFilter] = useState<Filter>("all");
   const [editing, setEditing] = useState<Entry | null | "new">(null);
   // The read view is keyed by ID, not by a captured Entry object, so it re-reads
@@ -116,6 +123,11 @@ function JournalFacet() {
       return counts;
     },
   });
+
+  // ?new=1 deep-link → open the composer once we know the caller may write.
+  useEffect(() => {
+    if (startNew && canHealth) setEditing("new");
+  }, [startNew, canHealth]);
 
   const viewing = viewingId ? all.find((e) => e.id === viewingId) ?? null : null;
 

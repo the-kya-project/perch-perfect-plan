@@ -29,6 +29,19 @@ function safeInternalPath(p: string | undefined): string | null {
   return p;
 }
 
+/** Split "/birds/x/journal?new=true" into the path and its query, because the
+ *  router reads `to` as a path template: handed the whole string it would look
+ *  for a route literally named "/birds/x/journal?new=true". The deep-links that
+ *  open a form rather than a screen (?log, ?new, ?section) live in that query,
+ *  so it has to survive sign-in. */
+function returnToTarget(p: string): { to: string; search?: Record<string, string> } {
+  const i = p.indexOf("?");
+  if (i === -1) return { to: p };
+  const search: Record<string, string> = {};
+  for (const [k, v] of new URLSearchParams(p.slice(i + 1))) search[k] = v;
+  return { to: p.slice(0, i), search };
+}
+
 export const Route = createFileRoute("/auth")({
   validateSearch: search,
   head: () => ({
@@ -59,7 +72,7 @@ function AuthPage() {
     // the native OAuth callback completing after mount (TestFlight sign-in
     // loop: the deep-link exchange finishes while the user is parked here).
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_IN") navigate({ to: (returnTo ?? "/dashboard") as any });
+      if (event === "SIGNED_IN") navigate((returnTo ? returnToTarget(returnTo) : { to: "/dashboard" }) as any);
     });
     return () => sub.subscription.unsubscribe();
   }, [navigate, returnTo]);
@@ -181,7 +194,7 @@ function AuthPage() {
         // Deep-link return (e.g. the handoff email → Past birds) takes an existing
         // owner straight there. Otherwise route through the welcome screen, which
         // shows only on first sign-in and otherwise redirects to the dashboard.
-        navigate({ to: (returnTo ?? "/welcome") as any });
+        navigate((returnTo ? returnToTarget(returnTo) : { to: "/welcome" }) as any);
       }
     } catch (err: any) {
       toast.error(friendlyError(err, "Something went wrong."));
@@ -193,9 +206,12 @@ function AuthPage() {
   async function handleGoogle() {
     setLoading(true);
     try {
-      // Land on the one-time welcome; it redirects returning owners straight to
+      // A deep-link return wins, the same way it does for a password sign-in —
+      // otherwise every email link into the app dead-ends at the dashboard for
+      // the Google and Apple owners, who are most of them. With no deep link,
+      // land on the one-time welcome; it redirects returning owners straight to
       // the dashboard (gated by an account flag), so only new owners see it.
-      await signInWithGoogle(window.location.origin + "/welcome");
+      await signInWithGoogle(window.location.origin + (returnTo ?? "/welcome"));
       setLoading(false);
     } catch (err: any) {
       toast.error(friendlyError(err, "Google sign-in failed."));
@@ -206,7 +222,7 @@ function AuthPage() {
   async function handleApple() {
     setLoading(true);
     try {
-      await signInWithApple(window.location.origin + "/welcome");
+      await signInWithApple(window.location.origin + (returnTo ?? "/welcome"));
       setLoading(false);
     } catch (err: any) {
       toast.error(friendlyError(err, "Apple sign-in failed."));
