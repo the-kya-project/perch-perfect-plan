@@ -95,6 +95,8 @@ export type FlockBlock =
         href: string;
         /** One dot per weigh-in, placed by day of month. */
         chart?: { points: Array<{ day: number; g: number }>; days: number; axisStart: string; axisEnd: string; line: string };
+        /** A rendered line chart. Preferred over the dot chart when present. */
+        chartImage?: { url: string; alt: string };
         /** Shown instead of the chart when the bird has no weigh-ins. */
         empty?: { text: string; cta: string };
         rows: Array<{ label: string; value: string; nudge?: boolean }>;
@@ -111,7 +113,7 @@ export type FlockBlock =
   | { kind: "momentStrip"; label: string; text: string }
   | { kind: "quoteCard"; title: string; panelLabel: string; quote: string; note: string }
   | { kind: "checkCard"; title: string; badge: string; questions: string[]; answers: [string, string, string]; note: string }
-  | { kind: "dotChart"; badge: string; caption: string; series: number[]; unit: string; axisStart: string; axisEnd: string; note: string }
+  | { kind: "dotChart"; badge: string; caption: string; series: number[]; unit: string; axisStart: string; axisEnd: string; note: string; image?: { url: string; alt: string } }
   | { kind: "photoHighlight"; title: string; body: string; photo: string; photoAlt: string }
   | { kind: "signature" }
   | { kind: "spacer" };
@@ -307,6 +309,7 @@ type FlockBirdCard = {
   species: string;
   href: string;
   chart?: { points: Array<{ day: number; g: number }>; days: number; axisStart: string; axisEnd: string; line: string };
+  chartImage?: { url: string; alt: string };
   empty?: { text: string; cta: string };
   rows: Array<{ label: string; value: string; nudge?: boolean }>;
 };
@@ -318,7 +321,12 @@ function birdCardHtml(b: FlockBirdCard): string {
   const H = 56;
   const DOT = 6;
   let chart = "";
-  if (b.chart && b.chart.points.length) {
+  if (b.chartImage && b.chart) {
+    // The rendered line chart. The caption below it stays real text, so the
+    // count and the latest weight survive images being blocked.
+    chart = `<img src="${b.chartImage.url}" width="240" alt="${b.chartImage.alt}" style="display:block;width:100%;max-width:240px;height:auto;border:0;border-radius:10px;margin:0 0 8px;" />
+<p style="margin:0 0 10px;font-family:${BODY_FONT};font-size:12px;line-height:17px;color:${FC.forest};${NOBREAK}">${b.chart.line}</p>`;
+  } else if (b.chart && b.chart.points.length) {
     const gs = b.chart.points.map((p) => p.g);
     const hi = Math.max(...gs);
     const lo = Math.min(...gs);
@@ -662,7 +670,7 @@ ${grid()}${rows}
  *
  *  The axis shows the extremes only, and nothing here characterises the
  *  numbers — the reader draws their own conclusion from the shape. */
-function dotChartHtml(o: { badge: string; caption: string; series: number[]; unit: string; axisStart: string; axisEnd: string; note: string }): string {
+function dotChartHtml(o: { badge: string; caption: string; series: number[]; unit: string; axisStart: string; axisEnd: string; note: string; image?: { url: string; alt: string } }): string {
   const H = 92;
   const DOT = 7;
   const hi = Math.max(...o.series);
@@ -691,7 +699,7 @@ ${grid("margin:0 0 16px;")}<tr>
 <td valign="middle" align="right" style="padding:0 0 0 10px;font-family:${BODY_FONT};font-size:12px;line-height:16px;color:${FC.footFine};text-align:right;">${o.caption}</td>
 </tr>
 </table>
-${grid()}<tr>
+${o.image ? `<img src="${o.image.url}" width="472" alt="${o.image.alt}" style="display:block;width:100%;max-width:472px;height:auto;border:0;border-radius:12px;" />` : `${grid()}<tr>
 <td width="38" valign="top" style="width:38px;padding:0 8px 0 0;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;${RESET}height:${H}px;">
 <tr><td height="14" valign="top" align="right" style="height:14px;text-align:right;">${axisLabel(`${hi}${o.unit}`)}</td></tr>
@@ -708,7 +716,7 @@ ${grid("margin:8px 0 0;")}<tr>
 <td style="padding:0 0 0 46px;font-family:${BODY_FONT};font-size:11px;line-height:15px;color:${FC.footFine};">${o.axisStart}</td>
 <td align="right" style="font-family:${BODY_FONT};font-size:11px;line-height:15px;color:${FC.footFine};text-align:right;">${o.axisEnd}</td>
 </tr>
-</table>
+</table>`}
 <p style="margin:14px 0 0;font-family:${BODY_FONT};font-size:13px;line-height:20px;color:${FC.footText};">${o.note}</p>
 </td>
 </tr></table>`;

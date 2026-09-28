@@ -272,6 +272,17 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
 
         // The welcome letter is on the Flock Club layout and lives in its own
         // module now; the rest of the series is still on letterShell.
+        // The weighing letter's example chart is the same rendered image the
+        // Flock Report uses, so the two look alike. Fixed demo data.
+        const { chartUrl, CHART_DEMO_ID } = await import("@/lib/chartLink");
+        let demoChartUrl: string | undefined;
+        try {
+          const { chartPng } = await import("@/lib/weightChart.server");
+          await chartPng({ points: [{ day: 1, g: 750 }], days: 30, axisStart: "", axisEnd: "" });
+          demoChartUrl = chartUrl(appUrl, CHART_DEMO_ID, 2026, 9);
+        } catch (e) {
+          console.error("[onboarding-emails] demo chart render failed; falling back to dots", e);
+        }
         const { buildWelcomeEmail, buildSeriesWeighingEmail, buildSeriesHealthCheckEmail, buildSeriesCarePlanEmail, buildSeriesJournalEmail, buildSeriesSharingEmail, buildSeriesVetEmail } = await import("@/lib/flockEmails");
         const {
           buildOnboardingAddBirdEmail,
@@ -306,7 +317,7 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
             p.stage === "welcome"
               ? buildWelcomeEmail({ firstName, link: appUrl, locale })
               : p.stage === "series_weighing"
-              ? buildSeriesWeighingEmail({ link: onBird("weight"), hasBird, locale })
+              ? buildSeriesWeighingEmail({ link: onBird("weight"), hasBird, chartUrl: demoChartUrl, locale })
               : p.stage === "series_health_check"
               ? buildSeriesHealthCheckEmail({ link: onBird("scan"), hasBird, locale })
               : p.stage === "series_care_plan"

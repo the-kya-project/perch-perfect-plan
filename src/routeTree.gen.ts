@@ -75,6 +75,7 @@ import { Route as AuthenticatedBirdsBirdIdAccessRouteImport } from './routes/_au
 import { Route as AuthenticatedBirdsBirdIdPlanIndexRouteImport } from './routes/_authenticated/birds/$birdId.plan.index'
 import { Route as AuthenticatedBirdsBirdIdScansScanIdRouteImport } from './routes/_authenticated/birds/$birdId.scans.$scanId'
 import { Route as AuthenticatedBirdsBirdIdPlanEditorRouteImport } from './routes/_authenticated/birds/$birdId.plan.editor'
+import { Route as ApiPublicChartBirdIdMonthSigRouteImport } from './routes/api/public/chart.$birdId.$month.$sig'
 
 const TermsRoute = TermsRouteImport.update({
   id: '/terms',
@@ -440,6 +441,12 @@ const AuthenticatedBirdsBirdIdPlanEditorRoute =
     path: '/editor',
     getParentRoute: () => AuthenticatedBirdsBirdIdPlanRoute,
   } as any)
+const ApiPublicChartBirdIdMonthSigRoute =
+  ApiPublicChartBirdIdMonthSigRouteImport.update({
+    id: '/api/public/chart/$birdId/$month/$sig',
+    path: '/api/public/chart/$birdId/$month/$sig',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -507,6 +514,7 @@ export interface FileRoutesByFullPath {
   '/birds/$birdId/plan/editor': typeof AuthenticatedBirdsBirdIdPlanEditorRoute
   '/birds/$birdId/scans/$scanId': typeof AuthenticatedBirdsBirdIdScansScanIdRoute
   '/birds/$birdId/plan/': typeof AuthenticatedBirdsBirdIdPlanIndexRoute
+  '/api/public/chart/$birdId/$month/$sig': typeof ApiPublicChartBirdIdMonthSigRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -568,6 +576,7 @@ export interface FileRoutesByTo {
   '/birds/$birdId/plan/editor': typeof AuthenticatedBirdsBirdIdPlanEditorRoute
   '/birds/$birdId/scans/$scanId': typeof AuthenticatedBirdsBirdIdScansScanIdRoute
   '/birds/$birdId/plan': typeof AuthenticatedBirdsBirdIdPlanIndexRoute
+  '/api/public/chart/$birdId/$month/$sig': typeof ApiPublicChartBirdIdMonthSigRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -637,6 +646,7 @@ export interface FileRoutesById {
   '/_authenticated/birds/$birdId/plan/editor': typeof AuthenticatedBirdsBirdIdPlanEditorRoute
   '/_authenticated/birds/$birdId/scans/$scanId': typeof AuthenticatedBirdsBirdIdScansScanIdRoute
   '/_authenticated/birds/$birdId/plan/': typeof AuthenticatedBirdsBirdIdPlanIndexRoute
+  '/api/public/chart/$birdId/$month/$sig': typeof ApiPublicChartBirdIdMonthSigRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -706,6 +716,7 @@ export interface FileRouteTypes {
     | '/birds/$birdId/plan/editor'
     | '/birds/$birdId/scans/$scanId'
     | '/birds/$birdId/plan/'
+    | '/api/public/chart/$birdId/$month/$sig'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -767,6 +778,7 @@ export interface FileRouteTypes {
     | '/birds/$birdId/plan/editor'
     | '/birds/$birdId/scans/$scanId'
     | '/birds/$birdId/plan'
+    | '/api/public/chart/$birdId/$month/$sig'
   id:
     | '__root__'
     | '/'
@@ -835,6 +847,7 @@ export interface FileRouteTypes {
     | '/_authenticated/birds/$birdId/plan/editor'
     | '/_authenticated/birds/$birdId/scans/$scanId'
     | '/_authenticated/birds/$birdId/plan/'
+    | '/api/public/chart/$birdId/$month/$sig'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -855,6 +868,7 @@ export interface RootRouteChildren {
   ApiPublicHooksEngagementNudgesRoute: typeof ApiPublicHooksEngagementNudgesRoute
   ApiPublicHooksMonthlyLetterRoute: typeof ApiPublicHooksMonthlyLetterRoute
   ApiPublicHooksOnboardingEmailsRoute: typeof ApiPublicHooksOnboardingEmailsRoute
+  ApiPublicChartBirdIdMonthSigRoute: typeof ApiPublicChartBirdIdMonthSigRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1321,6 +1335,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBirdsBirdIdPlanEditorRouteImport
       parentRoute: typeof AuthenticatedBirdsBirdIdPlanRoute
     }
+    '/api/public/chart/$birdId/$month/$sig': {
+      id: '/api/public/chart/$birdId/$month/$sig'
+      path: '/api/public/chart/$birdId/$month/$sig'
+      fullPath: '/api/public/chart/$birdId/$month/$sig'
+      preLoaderRoute: typeof ApiPublicChartBirdIdMonthSigRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -1532,6 +1553,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksEngagementNudgesRoute: ApiPublicHooksEngagementNudgesRoute,
   ApiPublicHooksMonthlyLetterRoute: ApiPublicHooksMonthlyLetterRoute,
   ApiPublicHooksOnboardingEmailsRoute: ApiPublicHooksOnboardingEmailsRoute,
+  ApiPublicChartBirdIdMonthSigRoute: ApiPublicChartBirdIdMonthSigRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

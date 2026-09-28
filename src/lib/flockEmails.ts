@@ -84,7 +84,7 @@ const JUNO_WEIGHTS = [
  * `/birds/demo/weight` in the old plain text was only ever the QA harness's
  * sample string; no real send has used it.
  */
-export function buildSeriesWeighingEmail(opts: { link: string; hasBird?: boolean; locale?: string }): BuiltEmail {
+export function buildSeriesWeighingEmail(opts: { link: string; hasBird?: boolean; chartUrl?: string; locale?: string }): BuiltEmail {
   const t = emailT(opts.locale);
   const blocks: FlockBlock[] = [
     { kind: "p", text: t("email.seriesWeighing.p1") },
@@ -107,6 +107,7 @@ export function buildSeriesWeighingEmail(opts: { link: string; hasBird?: boolean
       axisStart: t("email.seriesWeighing.chartAxisStart"),
       axisEnd: t("email.seriesWeighing.chartAxisEnd"),
       note: t("email.seriesWeighing.chartNote"),
+      image: opts.chartUrl ? { url: opts.chartUrl, alt: t("email.seriesWeighing.chartAlt") } : undefined,
     },
     { kind: "button", label: t("email.seriesWeighing.cta"), href: opts.link, needsBird: true },
     { kind: "p", text: t("email.seriesWeighing.p3") },
@@ -361,6 +362,9 @@ export type FlockBird = {
   journal: number;
   /** "12 Sep" when the plan was touched that month, else null. */
   planUpdated: string | null;
+  /** A signed URL for this bird's rendered chart. Omitted when rendering was
+   *  tried at send time and failed, which drops that bird to the dot chart. */
+  chartUrl?: string;
 };
 
 /** "Juno", "Juno and Pip", "Juno, Pip, and Echo" — Oxford comma throughout.
@@ -422,6 +426,10 @@ export function buildFlockReportEmail(opts: {
           name: escapeHtml(b.name),
           species: escapeHtml(b.species),
           href: b.href,
+          chartImage:
+            b.chartUrl && b.weighIns.length
+              ? { url: b.chartUrl, alt: t("email.monthly.chartAlt", { bird: escapeHtml(b.name), month: monthName, n: b.weighIns.length, min: Math.min(...b.weighIns.map((w) => w.g)), max: Math.max(...b.weighIns.map((w) => w.g)) }) }
+              : undefined,
           chart: b.weighIns.length
             ? {
                 points: b.weighIns,

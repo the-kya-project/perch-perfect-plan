@@ -120,6 +120,7 @@ export const Route = createFileRoute("/api/public/hooks/monthly-letter")({
         const end = new Date(Date.UTC(recapYear, recapMonth, 1)).toISOString();
         const prevStart = new Date(Date.UTC(recapYear, recapMonth - 2, 1)).toISOString();
         const recapMonthKey = start.slice(0, 10); // YYYY-MM-01, the log key
+        const days = new Date(Date.UTC(recapYear, recapMonth, 0)).getUTCDate();
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const sb = supabaseAdmin as any;
@@ -204,12 +205,28 @@ export const Route = createFileRoute("/api/public/hooks/monthly-letter")({
           if (!p.email) { skipped.push(`${p.id}: no email`); continue; }
           const locale = p.locale ?? "en";
 
-          const modelled: FlockBird[] = mine.map((b: any) => {
+          const { chartUrl } = await import("@/lib/chartLink");
+          const { chartPng } = await import("@/lib/weightChart.server");
+          const modelled: FlockBird[] = [];
+          for (const b of mine as any[]) {
             const ws = (wByBird.get(b.id) ?? [])
               .map((r: any) => ({ day: new Date(r.measured_at).getUTCDate(), g: Number(r.grams) }))
               .sort((x: any, z: any) => x.day - z.day);
             const plan = (cByBird.get(b.id) ?? []).sort((a: any, z: any) => z.updated_at.localeCompare(a.updated_at))[0];
-            return {
+            // Render once here, purely as a pre-flight: if this bird's chart
+            // cannot be drawn, the email falls back to the dot chart rather
+            // than shipping an <img> that will 404 in someone's inbox. The
+            // image itself is still rendered on demand when the client asks.
+            let url: string | undefined;
+            if (ws.length) {
+              try {
+                await chartPng({ points: ws, days, axisStart: "", axisEnd: "" });
+                url = chartUrl(APP_URL, b.id, recapYear, recapMonth);
+              } catch (e) {
+                console.error(`[monthly-letter] chart render failed for bird ${b.id}`, e);
+              }
+            }
+            modelled.push({
               name: b.name,
               species: b.species ?? "",
               href: `${APP_URL}/birds/${b.id}`,
@@ -217,8 +234,9 @@ export const Route = createFileRoute("/api/public/hooks/monthly-letter")({
               checks: (lByBird.get(b.id) ?? []).length,
               journal: (jByBird.get(b.id) ?? []).length,
               planUpdated: plan ? shortDate(plan.updated_at, locale) : null,
-            };
-          });
+              chartUrl: url,
+            });
+          }
 
           // The soonest Moment in the month AFTER the one being recapped.
           const coming = mine
