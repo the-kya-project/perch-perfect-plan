@@ -18,6 +18,7 @@
 // app; nothing imports this.
 import * as fs from "node:fs";
 import * as T from "@/lib/emailTemplates";
+import { buildWelcomeEmail } from "@/lib/flockEmails";
 
 // Minimal dotenv: first file that exists, exported values take precedence.
 for (const f of [".env.email-qa", ".env.local", ".env"]) {
@@ -70,7 +71,7 @@ const RANGE = "3 to 11 October";
 // Programme order. Sent in REVERSE so the inbox, newest first, reads 1 to 26
 // top to bottom.
 const all: Array<[string, { subject: string; html: string; text: string }, boolean?]> = [
-  ["01 onboarding · welcome", T.buildWelcomeEmail({ firstName: "Brittany", link: APP }), true],
+  ["01 onboarding · welcome", buildWelcomeEmail({ firstName: "Brittany", link: APP }), true],
   ["02 onboarding · weighing", T.buildSeriesWeighingEmail({ link: `${APP}/birds/demo/weight` })],
   ["03 onboarding · health check", T.buildSeriesHealthCheckEmail({ link: `${APP}/birds/demo/scan` })],
   ["04 onboarding · care plan", T.buildSeriesCarePlanEmail({ link: `${APP}/birds/demo/plan` })],

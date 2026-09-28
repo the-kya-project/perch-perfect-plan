@@ -1105,46 +1105,9 @@ export function buildSitterInviteCancelledEmail(opts: {
 // Heroes are on three letters only (welcome, weighing, care plan). The rest
 // lead with type, because a photograph on every one stops meaning anything.
 
-// ── Welcome (day 0) ──────────────────────────────────────────────────────────
-// A personal note from Brittany, not a product announcement: it is signed by
-// her, invites a reply, and the send sets reply-to accordingly.
-export function buildWelcomeEmail(opts: { firstName?: string; link: string; locale?: string }): BuiltEmail {
-  const t = emailT(opts.locale);
-  const hi = opts.firstName
-    ? t("email.welcome.hiName", { firstName: escapeHtml(opts.firstName) })
-    : t("email.welcome.hiNoName");
-  // Two sentences, one paragraph — each stays its own key.
-  const leadCopy = `${t("email.welcome.founder")} ${t("email.welcome.birds")}`;
-  return {
-    subject: t("email.welcome.subject"),
-    html: letterShell({
-      n: 1,
-      nextDay: 3,
-      preview: t("email.welcome.preview"),
-      kicker: t("email.welcome.kicker"),
-      heading: t("email.welcome.heading"),
-      hero: { file: "welcome.jpg", alt: t("email.welcome.heroAlt") },
-      bodyHtml:
-        para(hi) +
-        lead(leadCopy) +
-        para(t("email.welcome.built")) +
-        paraLeadIn(t("email.welcome.startThisWeek")) +
-        steps([
-          t("email.welcome.stepAddBird"),
-          t("email.welcome.stepWeight"),
-          t("email.welcome.stepScan"),
-        ]) +
-        statement(t("email.welcome.together")) +
-        button(t("email.welcome.cta"), opts.link, "6px 0 26px") +
-        signature(t("email.welcome.signoff"), t("email.series.signTitle")),
-      nextUp: t("email.welcome.nextUp"),
-      healthNote: t("email.welcome.healthNote"),
-      foot: t("email.welcome.foot"),
-      t,
-    }),
-    text: t("email.welcome.text", { link: opts.link }),
-  };
-}
+// The welcome letter moved to the Flock Club layout — see
+// src/lib/flockEmails.ts. It is exported from there under the same name, so
+// every caller imports it from that module now.
 
 // Day 3 — weighing. The only letter that can solve the scale problem: someone
 // without a gram scale is stuck whatever comes later. The product moment is the

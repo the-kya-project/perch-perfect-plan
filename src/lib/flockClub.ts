@@ -77,6 +77,8 @@ export type FlockBlock =
   | { kind: "highlight"; title?: string; body: string }
   | { kind: "steps"; items: Array<{ title: string; text: string }> }
   | { kind: "button"; label: string; href: string }
+  | { kind: "subhead"; text: string }
+  | { kind: "photoHighlight"; title: string; body: string; photo: string; photoAlt: string }
   | { kind: "signature" }
   | { kind: "spacer" };
 
@@ -159,6 +161,36 @@ const signatureHtml = (t: EmailT) =>
 </td>
 </tr></table>`;
 
+/** Body links. Catalog strings carry bare <a href="…">, so the style is applied
+ *  here rather than at every call site. Footer links are styled separately —
+ *  mid green on forest green would be unreadable. */
+const LINK = `color:${FC.mid};font-weight:700;text-decoration:underline;`;
+const styleLinks = (html: string) =>
+  html.replace(/<a\s+href="([^"]*)"(?![^>]*\sstyle=)/g, `<a href="$1" style="${LINK}"`);
+
+/** A small headline inside the body — Bricolage 21px, not an H1. */
+const subheadHtml = (s: string) =>
+  `<p style="margin:2px 0 14px;font-family:${HEAD_FONT};font-size:21px;line-height:27px;font-weight:800;letter-spacing:-0.4px;color:${FC.forest};">${s}</p>`;
+
+/** Lime card with a round photo on the left. The circle is border-radius on the
+ *  img: Gmail, Apple Mail and iOS round it; Outlook's Word engine ignores the
+ *  radius and shows a square, which is a graceful enough fallback. */
+const photoHighlightHtml = (o: { title: string; body: string; photo: string; photoAlt: string }) =>
+  `${grid("margin:0 0 20px;")}<tr>
+<td style="padding:20px;background-color:${FC.lime};border-radius:20px;">
+${grid()}<tr>
+<td width="84" valign="top" style="width:84px;padding:0 16px 0 0;">
+<img src="${ASSETS}/brand/email/${o.photo}" width="84" height="84" alt="${o.photoAlt}" style="display:block;width:84px;height:84px;border-radius:42px;border:0;" />
+</td>
+<td valign="top" style="padding:0;">
+<p style="margin:0 0 5px;font-family:${HEAD_FONT};font-size:18px;line-height:24px;font-weight:800;letter-spacing:-0.3px;color:${FC.forest};">${o.title}</p>
+<p style="margin:0;font-family:${BODY_FONT};font-size:14.5px;line-height:22px;color:${FC.forest};">${o.body}</p>
+</td>
+</tr>
+</table>
+</td>
+</tr></table>`;
+
 function blockHtml(b: FlockBlock, t: EmailT): string {
   switch (b.kind) {
     case "lead": return leadHtml(b.text);
@@ -168,6 +200,8 @@ function blockHtml(b: FlockBlock, t: EmailT): string {
     case "highlight": return highlightHtml(b.title, b.body);
     case "steps": return stepsHtml(b.items);
     case "button": return buttonHtml(b.label, b.href);
+    case "subhead": return subheadHtml(b.text);
+    case "photoHighlight": return photoHighlightHtml(b);
     case "signature": return signatureHtml(t);
     case "spacer": return `<div style="height:14px;line-height:14px;font-size:0;">&nbsp;</div>`;
   }
@@ -192,6 +226,8 @@ function blockText(b: FlockBlock, t: EmailT): string {
     case "highlight": return (b.title ? detag(b.title) + "\n" : "") + detag(b.body);
     case "steps": return b.items.map((it, i) => `${i + 1}. ${detag(it.title)} ${detag(it.text)}`).join("\n");
     case "button": return `${detag(b.label)}: ${b.href}`;
+    case "subhead": return detag(b.text);
+    case "photoHighlight": return `${detag(b.title)}\n${detag(b.body)}`;
     case "signature": return `${detag(t("email.flock.signName"))}\n${detag(t("email.flock.signTitle"))}`;
     case "spacer": return "";
   }
@@ -241,7 +277,7 @@ export function flockShell(opts: {
 ${opts.hero.sticker ? `<tr><td style="padding:0;">${sticker}</td></tr>` : ""}`
     : "";
 
-  const body = opts.blocks.map((b) => blockHtml(b, t)).join("\n");
+  const body = opts.blocks.map((b) => styleLinks(blockHtml(b, t))).join("\n");
 
   const html = `<!doctype html>
 <html lang="${opts.locale === "nl" ? "nl" : "en"}">

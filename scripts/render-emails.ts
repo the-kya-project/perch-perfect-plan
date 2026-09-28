@@ -16,6 +16,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as T from "@/lib/emailTemplates";
+import { buildWelcomeEmail } from "@/lib/flockEmails";
 
 const OUT = ".email-preview";
 const APP = "https://app.thekyaproject.com";
@@ -26,6 +27,9 @@ const RANGE = "3 to 11 October";
 // fragment that Brevo sends. Wrap the fragment in the same head so a diff
 // against the handback shows real differences instead of scaffolding.
 function page(subject: string, body: string): string {
+  // Flock Club builders already return a whole document — wrapping one again
+  // would produce nested <html>, which is not what gets sent. Pass it through.
+  if (/^\s*<!doctype/i.test(body)) return body;
   // The subject is plain text ("Kya & Co."); a <title> needs it escaped. This
   // wrapper is preview scaffolding only — the sent email has no <title>.
   const title = subject.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -47,7 +51,7 @@ ${body}
 
 // The seven onboarding letters, with the handback's sample data.
 const series: Array<[string, T.BuiltEmail]> = [
-  ["01-welcome", T.buildWelcomeEmail({ firstName: "Sam", link: APP })],
+  ["01-welcome", buildWelcomeEmail({ firstName: "Sam", link: APP })],
   ["02-weighing", T.buildSeriesWeighingEmail({ link: APP })],
   ["03-health-check", T.buildSeriesHealthCheckEmail({ link: APP })],
   ["04-care-plan", T.buildSeriesCarePlanEmail({ link: APP })],
@@ -146,7 +150,7 @@ console.log(`${series.length} series + ${monthly.length} monthly + ${others.leng
 // deliberate rather than noticed in someone's inbox. The originals are in git.
 if (process.argv.includes("--write")) {
   const forWrite = new Map(series.map(([n, b]) => [n, b.html]));
-  forWrite.set("01-welcome", T.buildWelcomeEmail({ firstName: "{{firstName}}", link: APP }).html);
+  forWrite.set("01-welcome", buildWelcomeEmail({ firstName: "{{firstName}}", link: APP }).html);
   for (const [name, built] of series) {
     const out = `docs/email-redesign/templates/${name}.html`;
     fs.writeFileSync(out, page(built.subject, forWrite.get(name)!).replace(/>\s+</g, "><").trim() + "\n");
@@ -159,7 +163,7 @@ if (process.argv.includes("--check")) {
   // templates/ is the merge-field form, so compare against that form: the only
   // merge field in the seven is the welcome letter's {{firstName}}.
   const forCheck = new Map(series.map(([n, b]) => [n, b.html]));
-  forCheck.set("01-welcome", T.buildWelcomeEmail({ firstName: "{{firstName}}", link: APP }).html);
+  forCheck.set("01-welcome", buildWelcomeEmail({ firstName: "{{firstName}}", link: APP }).html);
   let diffs = 0;
   console.log("");
   for (const [name] of series) {
