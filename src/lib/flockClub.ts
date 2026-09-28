@@ -284,10 +284,10 @@ ${grid("margin:0 0 12px;")}<tr>
 /** The sunflower strip that sits under the journal card. */
 const momentStripHtml = (o: { label: string; text: string }) =>
   `${grid("margin:0 0 20px;")}<tr>
-<td style="padding:11px 18px;background-color:${FC.sunflower};border:2px solid ${FC.forest};border-radius:999px;">
+<td class="fc-strip" style="padding:11px 18px;background-color:${FC.sunflower};border:2px solid ${FC.forest};border-radius:999px;">
 ${grid()}<tr>
-<td valign="middle" style="padding:0;font-family:${BODY_FONT};font-size:13.5px;line-height:19px;font-weight:700;color:${FC.forest};white-space:nowrap;">${o.label}</td>
-<td valign="middle" align="right" style="padding:0 0 0 12px;font-family:${BODY_FONT};font-size:13.5px;line-height:19px;color:${FC.forest};text-align:right;">${o.text}</td>
+<td valign="middle" class="fc-strip-a" style="padding:0;font-family:${BODY_FONT};font-size:13.5px;line-height:19px;font-weight:700;color:${FC.forest};white-space:nowrap;">${o.label}</td>
+<td valign="middle" align="right" class="fc-strip-b" style="padding:0 0 0 12px;font-family:${BODY_FONT};font-size:13.5px;line-height:19px;color:${FC.forest};text-align:right;">${o.text}</td>
 </tr>
 </table>
 </td>
@@ -557,8 +557,14 @@ export function flockShell(opts: {
 @media only screen and (max-width:480px) {
   .fc-sticker-t { width:80px !important; }
   .fc-sticker { width:80px !important; height:76px !important; border-radius:40px !important; font-size:13px !important; line-height:15px !important; }
-  .fc-sticker-cell { width:96px !important; padding-left:12px !important; }
+  .fc-sticker-cell { width:88px !important; padding-left:8px !important; }
   .fc-h1 { font-size:30px !important; line-height:34px !important; }
+  /* The moment strip stacks rather than squeezing the date against the title.
+     A pill shape round two stacked lines looks wrong, so it becomes a rounded
+     rectangle at this width. */
+  .fc-strip { border-radius:18px !important; padding:12px 16px !important; }
+  .fc-strip-a, .fc-strip-b { display:block !important; width:100% !important; text-align:left !important; padding:0 !important; }
+  .fc-strip-b { padding-top:3px !important; }
 }
 </style>
 </head>
