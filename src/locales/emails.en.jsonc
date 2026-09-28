@@ -10,6 +10,16 @@
   "email.shell.fieldNotes": "From the field notes",
   "email.shell.footNote": "Kya &amp; Co. — by The Kya Project",
 
+  // ---- The onboarding letter layout (letterShell) ----
+  // Shared by the seven letters: the masthead label, the hand-off line, the
+  // founder line under the sign-off, and the two product-moment labels.
+  "email.series.lockupAlt": "Kya &amp; Co.",
+  "email.series.letterOf": "Letter {{n}} of 7",
+  "email.series.nextLabel": "Next letter · Day {{day}}",
+  "email.series.signTitle": "Founder, The Kya Project",
+  "email.moment.inTheApp": "In the app",
+  "email.moment.example": "Example",
+
   // Shared onboarding footer.
   "email.onboarding.foot": "You're getting this because you have a Kya & Co. account and haven't finished setting up. Each of these setup notes is sent at most once.",
 
@@ -160,6 +170,9 @@
 
   // Flagged-scan reason lines, rendered from structured triage codes. English
   // must byte-match the composed prose ("Concerning: <question, no ?>").
+  // "normal" is the unflagged answer, so it never appears in a reason line —
+  // it is here because the health-check letter shows all three pills.
+  "email.scanReason.normal": "Normal",
   "email.scanReason.concerning": "Concerning",
   "email.scanReason.notSure": "Not sure",
   "email.scanReason.q.alertness": "Is the bird alert and responsive",
@@ -192,6 +205,7 @@
   "email.welcome.carePlan": "When you're ready, the care plan puts your bird's routine and care instructions in one place. You can share it with a sitter or family member whenever someone else is helping out.",
   "email.welcome.reply": "If you have a question, or just want to tell me about your bird, reply to this email. It comes straight to me!",
   "email.welcome.signoff": "Warmly,<br>Brittany",
+  "email.welcome.heroAlt": "A green-cheeked conure perched on an outstretched hand",
   "email.welcome.cta": "Open Kya &amp; Co.",
   "email.welcome.nextUp": "Next, I'll cover weighing your bird and what to look for in a scale.",
   "email.welcome.healthNote": "This app doesn't diagnose illness. If you're ever worried about your bird's health, contact an avian veterinarian.",
@@ -210,6 +224,13 @@
   "email.seriesWeighing.p2": "Try to weigh at roughly the same time and at the same point in their usual feeding routine. That makes the readings easier to compare. Follow any instructions your vet has given you.",
   "email.seriesWeighing.p3": "If the scale is new to your bird, give them time to get comfortable with it. You don't need to force a first reading.",
   "email.seriesWeighing.p4": "Over time, the record gives you more to go on than a single weight. If a change worries you, contact your avian vet. You don't need to wait until you have more readings.",
+  "email.seriesWeighing.heroAlt": "A ring-necked parakeet standing on an open palm",
+  "email.seriesWeighing.momentLabel": "Weight",
+  "email.seriesWeighing.momentValue": "752&nbsp;g",
+  "email.seriesWeighing.momentSummary": "Steady over the last 90 days.",
+  "email.seriesWeighing.momentAxisStart": "90 days ago",
+  "email.seriesWeighing.momentAxisEnd": "Today",
+  "email.seriesWeighing.momentCaption": "Juno, a blue-throated macaw, weighed before breakfast most mornings. Ninety days of readings, one line.",
   "email.seriesWeighing.cta": "Log a weight",
   "email.seriesWeighing.nextUp": "Next, I'll explain what the daily health check helps you notice and record.",
   "email.seriesWeighing.healthNote": "This app doesn't diagnose illness. If you're ever worried about your bird's health, contact an avian veterinarian.",
@@ -224,6 +245,15 @@
   "email.seriesHealthCheck.card1Label": "Worth knowing",
   "email.seriesHealthCheck.card1P1": "The normal days belong in the record too. If your bird seems quieter than usual, it helps to be able to look back at what you've been seeing over the past few days.",
   "email.seriesHealthCheck.p3": "The check can't confirm that your bird is healthy. If something worries you, contact your avian vet, even if the app hasn't flagged anything.",
+  "email.seriesHealthCheck.momentTitle": "Health check — Juno",
+  "email.seriesHealthCheck.momentIntro": "A quick once-over to make sure Juno's feeling like themselves.",
+  // Question-shaped, with the mark. The email.scanReason.q.* keys are the same
+  // questions WITHOUT punctuation, because a reason line composes them as
+  // "Concerning: <question>" and must byte-match that — so they are not reused here.
+  "email.seriesHealthCheck.q1": "Is the bird alert and responsive?",
+  "email.seriesHealthCheck.q2": "Is the bird eating normally?",
+  "email.seriesHealthCheck.q3": "Do the droppings look normal?",
+  "email.seriesHealthCheck.more": "And a few more, about breathing, perching, and sound.",
   "email.seriesHealthCheck.cta": "Run a health check",
   "email.seriesHealthCheck.nextUp": "Next, we'll look at writing down your bird's everyday routine in the care plan.",
   "email.seriesHealthCheck.healthNote": "This app doesn't diagnose illness. If you're ever worried about your bird's health, contact an avian veterinarian.",
@@ -240,6 +270,11 @@
   "email.seriesCarePlan.p3": "In Behavior, include what your bird enjoys and how they spend their day. Enrichment belongs in the care plan too.",
   "email.seriesCarePlan.p4": "The plan is as much for you as for anyone else. It gives you one place to check the details and update them when their care changes.",
   "email.seriesCarePlan.p5": "It's also what you share when someone else looks after your bird, which I'll cover in a few days.",
+  "email.seriesCarePlan.heroAlt": "A peach-faced lovebird eating seed from cupped hands",
+  // The six section names, pipe-separated in one key so a translator sees them
+  // together and the order cannot drift from the app. Split on "|" at render.
+  "email.seriesCarePlan.sections": "Food|Routine|Behavior|Home|Health|Emergency",
+  "email.seriesCarePlan.momentCaption": "Six sections. The two in green are the easiest place to begin.",
   "email.seriesCarePlan.cta": "Open the care plan",
   "email.seriesCarePlan.nextUp": "Next, there's a place for the stories, photos, and dates you want to remember.",
   "email.seriesCarePlan.foot": "You're getting this as part of your introduction to Kya &amp; Co. You can turn off emails like this one in Settings at any time.",
@@ -253,6 +288,9 @@
   "email.seriesJournal.p3": "Moments work a little differently. They're the dates you want to hold on to, like a hatch day or the day your bird came home.",
   "email.seriesJournal.p4": "You can keep everyday observations in the journal too. How they got on with a new foraging activity, or something you want to mention at their next vet appointment. Having the date and details written down can help later.",
   "email.seriesJournal.p5": "There's no schedule to keep up with here. Add something when there's something you want to remember.",
+  "email.seriesJournal.entryDate": "Saturday, 14 September",
+  "email.seriesJournal.entry": "Tried the new foraging box this morning. Worked it out in under a minute, then ignored it for the rest of the day.",
+  "email.seriesJournal.momentLine": "Moment · 3 October, the day Juno came home",
   "email.seriesJournal.cta": "Add a journal entry",
   "email.seriesJournal.nextUp": "Next, I'll explain the two ways to share care when someone else helps.",
   "email.seriesJournal.foot": "You're getting this as part of your introduction to Kya &amp; Co. You can turn off emails like this one in Settings at any time.",
@@ -266,6 +304,8 @@
   "email.seriesSharing.card1P1": "A sitter link is for someone looking after your bird during a sit. They can refer to the care plan while you're away.",
   "email.seriesSharing.card2Label": "Household",
   "email.seriesSharing.card2P1": "Household access is for people who help regularly. It's the option for sharing the ongoing work of keeping your bird's record up to date.",
+  "email.seriesSharing.sitterAccount": "No account needed. They open a private link.",
+  "email.seriesSharing.householdAccount": "They sign in with their own account.",
   "email.seriesSharing.p2": "Before sharing the plan, check that feeding instructions and contact details are current. Talk through anything you'd want to show the person in practice, too.",
   "email.seriesSharing.p3": "The plan gives them somewhere to check the details afterward, so they don't have to remember everything you told them at once.",
   "email.seriesSharing.cta": "Share your care plan",
@@ -276,7 +316,13 @@
   "email.seriesVet.preview": "Having the dates and details ready when you need them.",
   "email.seriesVet.kicker": "Vet visits",
   "email.seriesVet.heading": "Taking the record to your vet",
-  "email.seriesVet.lead": "The weights and observations you've logged give you something to refer to at a vet appointment. When did their appetite change? What did they weigh before that? Has it happened once, or a few times?",
+  // Replaces seriesVet.lead: the three questions are their own keys now, each a
+  // full sentence, so the ruled list can render them as separate rows.
+  "email.seriesVet.leadIntro": "The weights and observations you've logged give you something to refer to at a vet appointment.",
+  "email.seriesVet.questionsLabel": "Questions your record can answer",
+  "email.seriesVet.q1": "When did their appetite change?",
+  "email.seriesVet.q2": "What did they weigh before that?",
+  "email.seriesVet.q3": "Has it happened once, or a few times?",
   "email.seriesVet.p2": "Having those details in front of you helps you explain what you've noticed. It gives your avian vet more context alongside what they learn from examining your bird.",
   "email.seriesVet.p3": "The vet summary lets you review the information available in your bird's record before a visit. Check that it's up to date, and make a note of anything you want to ask.",
   "email.seriesVet.p4": "Bring whatever you've recorded so far. You don't need a complete record to ask for help, and you shouldn't delay an appointment to collect more entries.",

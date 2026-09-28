@@ -58,22 +58,437 @@ function eyebrow(text: string, color: string = C.muted): string {
 }
 
 
-// ── Body blocks ──────────────────────────────────────────────────────────────
-// Shared by the onboarding series so seven emails can't drift apart. Every
-// input arrives pre-escaped from the catalog (see the escaping note up top).
-const bodyP = (s: string) =>
-  `<p style="margin:0 0 13px;font-family:${SANS};font-size:15px;line-height:1.6;color:${C.green};">${s}</p>`;
-const cardP = (s: string) =>
-  `<p style="margin:0 0 11px;font-family:${SANS};font-size:14.5px;line-height:1.58;color:${C.green};">${s}</p>`;
-const cardLi = (s: string) =>
-  `<p style="margin:0 0 11px;font-family:${SANS};font-size:14.5px;line-height:1.58;color:${C.green};">&bull;&nbsp; ${s}</p>`;
+// ── The letter layout ────────────────────────────────────────────────────────
+// The seven onboarding letters use letterShell() instead of shell(). It is a
+// SEPARATE layout, not a variant: shell() keeps rendering the rest of the
+// programme (drip nudges, sits, handoffs, invites, the serious-concern alert)
+// byte-for-byte as before, and nothing below is reachable from it.
+//
+// What a letter has that shell() does not:
+//   • a cream masthead — 150px lockup, "Letter n of 7" on the right
+//   • a 7-segment progress rule, the first n segments filled
+//   • an optional full-bleed hero on a deep-green cell, so blocked images
+//     leave the alt text legible in lime on green rather than white on white
+//   • the kicker and heading on WHITE in Georgia 30/37, not a green band
+//   • a "Next letter · Day n" hand-off block
+//   • a cream footer with the parrot mark and the foot text
+//
+// Source of truth is docs/email-redesign/templates/NN-name.html — the design
+// handback. `npm run email:preview -- --check` diffs this output against it.
+// Keep the two in step: if a value here changes, change it there too.
 
-/** The cream inset with a teal label — "What you need", "Worth knowing". */
-function noteCard(label: string, inner: string): string {
-  return `<div style="margin:6px 0 20px;padding:18px 20px 7px;background:${C.ground};border:1px solid ${C.border};border-radius:14px;">
-      <p style="margin:0 0 11px;font-size:11px;line-height:17px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;color:${C.teal};">${label}</p>${inner}</div>`;
+// Asset host. The default matches the handback exactly; point it at a Vercel
+// preview to check unreleased images in a real inbox before they are merged.
+const ASSETS = process.env.EMAIL_ASSET_BASE || "https://app.thekyaproject.com";
+
+// Letter palette, on top of C. Muted is darkened to #75746b from the C.muted
+// #8a897f used elsewhere — small print on cream needed the contrast.
+const L = {
+  mid: "#2d6a4f",      // kickers, statements, the "Normal" pill
+  lime: "#cdeab0",     // on deep green: labels, bars, hero alt text
+  limeSoft: "#9bcab8", // the weight card's smaller labels and axis
+  onGreen: "#d6e8dc",  // body copy inside a deep-green card
+  pill: "#efe9da",     // the health-check question cards
+  household: "#e8f0ec",// the household card in the sharing pair
+  muted: "#75746b",    // health note and foot text
+} as const;
+
+// The two table openings the handback uses, reproduced including its spacing so
+// the diff against it stays clean. GRID is the general full-width wrapper; BARE
+// is the collapsed one used inside the weight chart.
+const GRID_BASE = "width:100%;border-collapse:separate;border-spacing:0;mso-table-lspace:0pt;mso-table-rspace:0pt;";
+const grid = (extra = "") =>
+  `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"  style="${GRID_BASE}${extra}">`;
+const BARE = `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">`;
+
+// ── Body pieces ──────────────────────────────────────────────────────────────
+// Each one emits exactly what the templates contain. Inputs arrive pre-escaped
+// from the catalog, same contract as the rest of this file.
+
+/** Opening paragraph, Georgia 18/29. One per letter, under the heading. */
+const lead = (s: string) =>
+  `<p style="margin:0 0 18px;font-family:${SERIF};font-size:18px;line-height:29px;color:${C.green};">${s}</p>`;
+
+/** Standard body paragraph, sans 15/25. */
+const para = (s: string) =>
+  `<p style="margin:0 0 16px;font-family:${SANS};font-size:15px;line-height:25px;color:${C.green};">${s}</p>`;
+
+/** A body paragraph that introduces a list — tighter, semibold. */
+const paraLeadIn = (s: string) =>
+  `<p style="margin:0 0 12px;font-family:${SANS};font-size:15px;line-height:25px;color:${C.green};font-weight:600;">${s}</p>`;
+
+/** The pull-quote: Georgia italic 21/31 in mid green, its own ruled row. */
+const statement = (s: string) =>
+  `${grid()}<tr><td style="padding:4px 0 22px;">
+          <p style="margin:0;font-family:${SERIF};font-style:italic;font-size:21px;line-height:31px;color:${L.mid};">${s}</p>
+        </td></tr></table>`;
+
+/** Small italic caption under a product moment. */
+const caption = (s: string) =>
+  `<p style="margin:0 0 22px;font-family:${SANS};font-size:12.5px;line-height:19px;color:${C.secondary};font-style:italic;">${s}</p>`;
+
+/** Paragraph inside a note card. */
+const noteP = (s: string) =>
+  `<p style="margin:0 0 14px;font-family:${SANS};font-size:14.5px;line-height:23px;color:${C.green};">${s}</p>`;
+
+/** A bullet inside a note card: a hanging dot in its own 20px cell, so a wrapped
+ *  second line indents under the text rather than under the dot. */
+const noteBullets = (items: string[]) =>
+  `${grid()}${items
+    .map(
+      (s) => `<tr>
+<td width="20" valign="top" style="width:20px;padding:0 0 12px;font-family:${SANS};font-size:9px;line-height:23px;color:${C.teal};">&#9679;</td>
+<td valign="top" style="padding:0 0 12px;font-family:${SANS};font-size:14.5px;line-height:23px;color:${C.green};">${s}</td>
+</tr>`,
+    )
+    .join("")}</table>`;
+
+/** The cream inset with a teal label. `margin` varies by letter. */
+const note = (label: string, inner: string, margin = "4px 0 22px") =>
+  `${grid(`margin:${margin};`)}<tr>
+<td bgcolor="${C.ground}" style="padding:20px 22px 8px;background-color:${C.ground};border:1px solid ${C.border};border-radius:14px;">
+<p style="margin:0 0 12px;font-family:${SANS};font-size:11px;line-height:16px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:${C.teal};">${label}</p>
+${inner}
+</td>
+</tr></table>`;
+
+/** Numbered steps, ruled top and bottom, the numeral in Georgia. */
+const steps = (items: string[]) =>
+  `${grid("margin:0 0 18px;border-top:1px solid " + C.border + ";border-bottom:1px solid " + C.border + ";")}${items
+    .map((s, i) => {
+      const rule = i === 0 ? "" : `border-top:1px solid ${C.rule};`;
+      return `<tr>
+<td width="46" valign="top" style="width:46px;padding:14px 0 14px;${rule}font-family:${SERIF};font-size:28px;line-height:28px;color:${C.teal};">${i + 1}</td>
+<td valign="top" style="padding:14px 0 14px;${rule}font-family:${SANS};font-size:15px;line-height:24px;color:${C.green};">${s}</td>
+</tr>`;
+    })
+    .join("")}</table>`;
+
+/** CTA. mso-padding-alt because Outlook drops padding on an inline-block
+ *  anchor; the trailing arrow is part of the label in the handback. */
+const button = (label: string, href: string, margin: string) =>
+  `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:${margin};border-collapse:separate;mso-table-lspace:0pt;mso-table-rspace:0pt;">
+<tr>
+<td bgcolor="${C.green}" style="background-color:${C.green};border-radius:12px;mso-padding-alt:14px 24px;">
+<a href="${href}" style="display:block;padding:14px 24px;font-family:${SANS};font-size:15px;line-height:22px;font-weight:600;color:#ffffff;text-decoration:none;">${label}&nbsp;&nbsp;&rarr;</a>
+</td>
+</tr>
+</table>`;
+
+/** Sign-off, with the founder line under it. */
+const signature = (signoff: string, title: string) =>
+  `<p style="margin:0 0 4px;font-family:${SERIF};font-size:18px;line-height:27px;color:${C.green};font-style:italic;">${signoff}</p>
+<p style="margin:0 0 0px;font-family:${SANS};font-size:12.5px;line-height:19px;color:${C.secondary};">${title}</p>`;
+
+/** The deep-green card that closes the last letter. */
+const finale = (label: string, body: string) =>
+  `${grid("margin:6px 0 22px;")}<tr>
+<td bgcolor="${C.green}" style="padding:22px 22px 20px;background-color:${C.green};border-radius:16px;">
+<p style="margin:0 0 10px;font-family:${SANS};font-size:11px;line-height:16px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:${L.lime};">${label}</p>
+<p style="margin:0 0 0px;font-family:${SANS};font-size:15px;line-height:24px;color:#ffffff;">${body}</p>
+</td>
+</tr></table>`;
+
+/** Hybrid columns: inline-block divs that wrap on a phone, with MSO tables so
+ *  the Word engine still gets a two-column row. The calc() is the standard
+ *  fluid-hybrid switch — no media queries anywhere in these emails.
+ *  `total` is the content width (520 less the 24px gutters, less the gap). */
+function columns(cells: string[], total: number, gap: number): string {
+  const each = Math.floor((total - gap * (cells.length - 1)) / cells.length);
+  const mso = (s: string) => `<!--[if mso]>${s}<![endif]-->`;
+  const spacer = `${mso(`<td width="${gap}" style="width:${gap}px;">&nbsp;</td>`)}
+<div style="display:inline-block;width:${gap}px;height:12px;vertical-align:top;">
+</div>`;
+  const col = (inner: string) =>
+    `${mso(`<td width="${each}" valign="top" style="width:${each}px;">`)}
+<div style="display:inline-block;vertical-align:top;width:100%;max-width:${each}px;min-width:${each}px;max-width:100%;width:calc((${total}px - 100%) * ${total});font-size:15px;line-height:25px;">
+${inner}
+</div>
+${mso("</td>")}`;
+  return `<div style="margin:2px 0 22px;">
+<div style="font-size:0;line-height:0;text-align:left;">
+${mso(`<table role="presentation" width="${total}" cellpadding="0" cellspacing="0" border="0"><tr>`)}
+${cells.map(col).join("\n" + spacer + "\n")}
+${mso("</tr></table>")}
+</div>
+</div>`;
 }
 
+// ── Product moments ──────────────────────────────────────────────────────────
+// Each letter shows the screen it is describing. These are HTML, not
+// screenshots: text in an image is unreadable when images are blocked, which is
+// the default in most clients, and it cannot be translated.
+
+/** Ninety days of readings, one bar per day. Heights are the handback's own
+ *  sample series — a dip and a recovery, so the shape reads as a real trend. */
+const TREND = [19, 17, 13, 10, 6, 5, 8, 12, 15, 14, 18, 20, 19, 24, 28, 32, 34, 33, 31, 33, 37, 41, 43, 40, 34, 31, 28, 27, 24, 20];
+
+function weightCard(o: { inApp: string; label: string; value: string; summary: string; axisStart: string; axisEnd: string }): string {
+  const bars = TREND.map(
+    (h, i) => `<td valign="bottom" style="${i === 0 ? "" : "padding-left:2px;"}height:46px;">
+${BARE}
+<tr>
+<td height="${h}" bgcolor="${L.lime}" style="height:${h}px;line-height:${h}px;font-size:0;background-color:${L.lime};border-radius:2px 2px 0 0;">&nbsp;</td>
+</tr>
+</table>
+</td>`,
+  ).join("\n");
+  return `${grid("margin:6px 0 10px;")}<tr>
+<td bgcolor="${C.green}" style="padding:22px 22px 18px;background-color:${C.green};border-radius:16px;">
+<p style="margin:0 0 14px;font-family:${SANS};font-size:11px;line-height:16px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:${L.lime};">${o.inApp}</p>
+<p style="margin:0 0 2px;font-family:${SANS};font-size:11px;line-height:16px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:${L.limeSoft};font-weight:600;">${o.label}</p>
+<p style="margin:0 0 2px;font-family:${SANS};font-size:40px;line-height:46px;color:#ffffff;font-weight:300;letter-spacing:-.5px;">${o.value}</p>
+<p style="margin:0 0 18px;font-family:${SANS};font-size:14px;line-height:21px;color:${L.onGreen};">${o.summary}</p>
+${grid("table-layout:fixed;")}<tr>
+${bars}
+</tr>
+</table>
+${grid()}<tr>
+<td style="padding:8px 0 0;font-family:${SANS};font-size:11px;line-height:14px;color:${L.limeSoft};">${o.axisStart}</td>
+<td align="right" style="padding:8px 0 0;font-family:${SANS};font-size:11px;line-height:14px;color:${L.limeSoft};text-align:right;">${o.axisEnd}</td>
+</tr>
+</table>
+</td>
+</tr></table>`;
+}
+
+/** The health check: one card per question, with the three answer pills. The
+ *  first pill is shown chosen, which is what a normal day looks like. */
+function questionCards(o: { inApp: string; title: string; intro: string; questions: string[]; answers: [string, string, string]; more: string }): string {
+  const pill = (text: string, chosen: boolean) =>
+    chosen
+      ? `<td align="center" bgcolor="${L.mid}" style="padding:7px 4px;background-color:${L.mid};border:1px solid ${L.mid};border-radius:9px;font-family:${SANS};font-size:12px;line-height:16px;color:#ffffff;text-align:center;">${text}</td>`
+      : `<td align="center" bgcolor="#ffffff" style="padding:7px 4px;background-color:#ffffff;border:1px solid ${C.border};border-radius:9px;font-family:${SANS};font-size:12px;line-height:16px;color:${C.secondary};text-align:center;">${text}</td>`;
+  const gapCell = `<td width="6" style="width:6px;font-size:0;">&nbsp;</td>`;
+  const card = (q: string) => `<tr>
+<td style="padding:0 0 10px;">
+${grid()}<tr>
+<td bgcolor="${L.pill}" style="padding:14px 14px 14px;background-color:${L.pill};border-radius:12px;">
+<p style="margin:0 0 10px;font-family:${SANS};font-size:14px;line-height:20px;color:${C.green};font-weight:600;">${q}</p>
+${grid("table-layout:fixed;")}<tr>
+${pill(o.answers[0], true)}
+${gapCell}
+${pill(o.answers[1], false)}
+${gapCell}
+${pill(o.answers[2], false)}
+</tr>
+</table>
+</td>
+</tr>
+</table>
+</td>
+</tr>`;
+  return `${grid("margin:4px 0 24px;")}<tr>
+<td bgcolor="${C.ground}" style="padding:20px 18px 16px;background-color:${C.ground};border:1px solid ${C.border};border-radius:16px;">
+<p style="margin:0 0 10px;font-family:${SANS};font-size:11px;line-height:16px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:${C.teal};">${o.inApp}</p>
+<p style="margin:0 0 4px;font-family:${SERIF};font-size:17px;line-height:24px;color:${C.green};">${o.title}</p>
+<p style="margin:0 0 14px;font-family:${SANS};font-size:13.5px;line-height:20px;color:${C.secondary};">${o.intro}</p>
+${grid()}${o.questions.map(card).join("\n")}
+</table>
+<p style="margin:0 0 2px;font-family:${SANS};font-size:13px;line-height:19px;color:${C.secondary};font-style:italic;">${o.more}</p>
+</td>
+</tr></table>`;
+}
+
+/** The care plan's six sections, 3x2. The first two are limed: they are the
+ *  ones the letter tells you to start with, so the colour carries the advice. */
+function sectionGrid(names: string[]): string {
+  const cell = (name: string, i: number) => {
+    const hot = i < 2;
+    const bg = hot ? L.lime : C.ground;
+    const num = hot ? L.mid : C.teal;
+    return `<td width="33%" valign="top" bgcolor="${bg}" style="width:33%;padding:14px 12px 13px;background-color:${bg};border-radius:12px;">
+<p style="margin:0 0 6px;font-family:${SANS};font-size:11px;line-height:14px;letter-spacing:.1em;color:${num};font-weight:700;">${String(i + 1).padStart(2, "0")}</p>
+<p style="margin:0;font-family:${SERIF};font-size:16px;line-height:21px;color:${C.green};">${name}</p>
+</td>`;
+  };
+  const gapCell = `<td width="8" style="width:8px;font-size:0;">&nbsp;</td>`;
+  const row = (slice: string[], offset: number) =>
+    `<tr>
+${slice.map((n, i) => cell(n, offset + i)).join("\n" + gapCell + "\n")}
+</tr>`;
+  return `${grid("table-layout:fixed;margin:4px 0 10px;")}${row(names.slice(0, 3), 0)}
+<tr>
+<td height="8" style="height:8px;line-height:8px;font-size:0;">&nbsp;</td>
+</tr>
+${row(names.slice(3, 6), 3)}
+</table>`;
+}
+
+/** One journal entry, as it would read on the record. */
+function journalEntry(o: { label: string; date: string; body: string; moment: string }): string {
+  return `${grid("margin:0 0 24px;")}<tr>
+<td style="padding:20px 22px 16px;border:1px solid ${C.border};border-radius:16px;background-color:${C.card};">
+${grid()}<tr>
+<td style="font-family:${SANS};font-size:11px;line-height:16px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:${C.teal};">${o.label}</td>
+<td align="right" style="font-family:${SANS};font-size:12.5px;line-height:16px;color:${C.secondary};text-align:right;">${o.date}</td>
+</tr>
+</table>
+<p style="margin:14px 0 16px;font-family:${SERIF};font-style:italic;font-size:19px;line-height:29px;color:${C.green};">${o.body}</p>
+${grid()}<tr>
+<td style="padding:12px 0 0;border-top:1px solid ${C.rule};font-family:${SANS};font-size:13px;line-height:19px;color:${L.mid};font-weight:600;">${o.moment}</td>
+</tr>
+</table>
+</td>
+</tr></table>`;
+}
+
+/** The two ways to share, side by side: a sitter link and household access. */
+function sharingCards(o: { sitterLabel: string; sitterBody: string; sitterFoot: string; householdLabel: string; householdBody: string; householdFoot: string }): string {
+  const card = (bg: string, label: string, body: string, foot: string) =>
+    `${grid()}<tr>
+<td bgcolor="${bg}" style="padding:18px 18px 16px;background-color:${bg};border-radius:14px;">
+<p style="margin:0 0 10px;font-family:${SANS};font-size:11px;line-height:16px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:${L.mid};">${label}</p>
+<p style="margin:0 0 14px;font-family:${SANS};font-size:14.5px;line-height:23px;color:${C.green};">${body}</p>
+${grid()}<tr>
+<td style="padding:10px 0 0;border-top:1px solid ${C.border};font-family:${SANS};font-size:12.5px;line-height:18px;color:${C.secondary};">${foot}</td>
+</tr>
+</table>
+</td>
+</tr>
+</table>`;
+  return columns(
+    [
+      card(C.ground, o.sitterLabel, o.sitterBody, o.sitterFoot),
+      card(L.household, o.householdLabel, o.householdBody, o.householdFoot),
+    ],
+    470,
+    16,
+  );
+}
+
+/** The ruled list of questions a record can answer, in the last letter. */
+function vetQuestions(label: string, questions: string[]): string {
+  const rows = questions
+    .map(
+      (q, i) => `<tr>
+<td style="padding:12px 0;${i === 0 ? "" : `border-top:1px solid ${C.border};`}font-family:${SERIF};font-style:italic;font-size:18px;line-height:26px;color:${C.green};">${q}</td>
+</tr>`,
+    )
+    .join("\n");
+  return note(label, `${grid("margin:0 0 8px;")}${rows}
+</table>`, "0px 0 22px");
+}
+
+// ── letterShell ──────────────────────────────────────────────────────────────
+
+function letterShell(opts: {
+  /** Which letter this is, 1-7. Drives the masthead label and the progress rule. */
+  n: number;
+  /** Day the next letter lands. Omitted on the last one, which has no hand-off. */
+  nextDay?: number;
+  kicker: string;
+  heading: string;
+  /** Full-bleed image above the heading. Welcome, weighing and care plan only. */
+  hero?: { file: string; alt: string };
+  bodyHtml: string;
+  nextUp?: string;
+  /** Health-adjacent letters only. Not boilerplate. */
+  healthNote?: string;
+  preview?: string;
+  foot: string;
+  t: EmailT;
+}): string {
+  const t = opts.t;
+  const TOTAL = 7;
+
+  const preheader = opts.preview
+    ? `<div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;overflow:hidden;opacity:0;mso-hide:all;">${opts.preview}${"&#8203;&nbsp;".repeat(12)}</div>`
+    : "";
+
+  // Progress: one cell per letter, the first n filled. The 2px white border-left
+  // is the gap — border-spacing would be dropped by Outlook.
+  const segments = Array.from({ length: TOTAL }, (_, i) => {
+    const on = i < opts.n;
+    const bg = on ? C.green : C.border;
+    const edge = i === 0 ? "" : "border-left:2px solid #ffffff;";
+    return `<td height="3" bgcolor="${bg}" style="height:3px;line-height:3px;font-size:0;background-color:${bg};${edge}">&nbsp;</td>`;
+  }).join("\n");
+
+  // Deep green behind the hero so the alt text reads in lime when the image is
+  // blocked, instead of white-on-white.
+  const hero = opts.hero
+    ? `<tr>
+<td bgcolor="${C.green}" style="padding:0;background-color:${C.green};line-height:0;font-size:0;">
+<img src="${ASSETS}/brand/email/${opts.hero.file}" width="520" alt="${opts.hero.alt}" style="display:block;width:100%;max-width:520px;height:auto;border:0;font-family:${SERIF};font-style:italic;font-size:16px;line-height:24px;color:${L.lime};padding:0;" />
+</td>
+</tr>`
+    : "";
+
+  const nextUp =
+    opts.nextUp && opts.nextDay !== undefined
+      ? `<tr>
+<td style="padding:26px 24px 0;">
+${grid()}<tr>
+<td style="padding:18px 0 0;border-top:1px solid ${C.rule};">
+<p style="margin:0 0 6px;font-family:${SANS};font-size:11px;line-height:16px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:${C.secondary};font-weight:600;">${t("email.series.nextLabel", { day: opts.nextDay })}</p>
+<p style="margin:0;font-family:${SERIF};font-style:italic;font-size:16px;line-height:25px;color:${C.secondary};">${opts.nextUp}</p>
+</td>
+</tr>
+</table>
+</td>
+</tr>`
+      : "";
+
+  const healthNote = opts.healthNote
+    ? `<tr>
+<td style="padding:22px 24px 0;">
+<p style="margin:0 0 0px;font-family:${SANS};font-size:12px;line-height:18px;color:${L.muted};font-style:italic;">${opts.healthNote}</p>
+</td>
+</tr>`
+    : "";
+
+  return `
+<div style="background-color:${C.ground};padding:24px 8px;font-family:${SANS};-webkit-text-size-adjust:100%;">${preheader}
+  <!--[if mso]><table role="presentation" width="520" align="center" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" align="center" style="width:100%;max-width:520px;margin:0 auto;table-layout:fixed;border-collapse:separate;border-spacing:0;border:1px solid ${C.border};border-radius:16px;background-color:${C.card};overflow:hidden;mso-table-lspace:0pt;mso-table-rspace:0pt;">
+<tr>
+<td bgcolor="${C.ground}" style="padding:16px 24px;background-color:${C.ground};border-bottom:1px solid ${C.rule};border-radius:16px 16px 0 0;">
+${grid()}<tr>
+<td valign="middle" style="padding:0;">
+<img src="${ASSETS}/brand/email/lockup.png" width="150" alt="${t("email.series.lockupAlt")}" style="display:block;width:150px;height:auto;border:0;font-family:${SERIF};font-size:20px;line-height:26px;font-weight:bold;color:${C.green};" />
+</td>
+<td valign="middle" align="right" style="padding:0 0 0 12px;font-family:${SANS};font-size:10.5px;line-height:15px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;color:${C.secondary};text-align:right;">${t("email.series.letterOf", { n: opts.n })}</td>
+</tr>
+</table>
+</td>
+</tr>
+<tr>
+<td style="padding:0;">
+${grid()}<tr>
+${segments}
+</tr>
+</table>
+</td>
+</tr>
+${hero}
+<tr>
+<td style="padding:30px 24px 0;">
+<p style="margin:0 0 12px;font-family:${SANS};font-size:11px;line-height:16px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:${L.mid};">${opts.kicker}</p>
+<h1 style="margin:0;font-family:${SERIF};font-size:30px;line-height:37px;font-weight:normal;letter-spacing:-.2px;color:${C.green};">${opts.heading}</h1>
+</td>
+</tr>
+<tr>
+<td style="padding:22px 24px 0;">
+${opts.bodyHtml}
+</td>
+</tr>
+${nextUp}
+${healthNote}
+<tr>
+<td height="28" style="height:28px;line-height:28px;font-size:0;">&nbsp;</td>
+</tr>
+<tr>
+<td bgcolor="${C.ground}" style="padding:24px 32px 26px;background-color:${C.ground};border-top:1px solid ${C.rule};border-radius:0 0 16px 16px;">
+<img src="${ASSETS}/brand/email/mark.png" width="30" alt="" style="display:block;width:30px;height:auto;border:0;margin:0 auto 10px;" />
+<p style="margin:0 0 12px;font-family:${SANS};font-size:12px;line-height:18px;color:${L.muted};text-align:center;">${opts.foot}</p>
+<p style="margin:0 0 0px;font-family:${SERIF};font-size:13px;line-height:19px;color:${C.green};text-align:center;font-style:italic;">${t("email.shell.footNote")}</p>
+</td>
+</tr>
+  </table>
+  <!--[if mso]></td></tr></table><![endif]-->
+</div>`;
+}
 
 function shell(opts: {
   kicker: string;
@@ -640,187 +1055,235 @@ export function buildSitterInviteCancelledEmail(opts: {
   };
 }
 
+// ── The onboarding letters (days 0, 3, 6, 9, 12, 15, 18) ─────────────────────
+// Seven letters on letterShell(). Send timing, triggers, subjects, preview text
+// and CTA targets are unchanged; only the layout and the product moments are
+// new. Structure is set by docs/email-redesign/templates/NN-name.html — see the
+// note above letterShell() before changing any of it.
+//
+// Heroes are on three letters only (welcome, weighing, care plan). The rest
+// lead with type, because a photograph on every one stops meaning anything.
+
 // ── Welcome (day 0) ──────────────────────────────────────────────────────────
 // A personal note from Brittany, not a product announcement: it is signed by
-// her, invites a reply, and the send sets reply-to accordingly. Two variants
-// off one template — a bird added during signup turns the first step from
-// "add your bird" into "<bird>'s record is ready", so day 0 stays ONE email.
+// her, invites a reply, and the send sets reply-to accordingly.
 export function buildWelcomeEmail(opts: { firstName?: string; link: string; locale?: string }): BuiltEmail {
   const t = emailT(opts.locale);
   const hi = opts.firstName
     ? t("email.welcome.hiName", { firstName: escapeHtml(opts.firstName) })
     : t("email.welcome.hiNoName");
-  const p = (s: string) => `<p style="margin:0 0 12px;font-size:15px;color:#1a3d2e;line-height:1.6;">${s}</p>`;
-  const li = (s: string) =>
-    `<p style="margin:0 0 11px 0;font-size:15px;color:#1a3d2e;line-height:1.6;">&bull;&nbsp; ${s}</p>`;
-  const bodyHtml =
-    p(hi) +
-    p(t("email.welcome.founder")) +
-    p(t("email.welcome.birds")) +
-    p(t("email.welcome.built")) +
-    p(t("email.welcome.startThisWeek")) +
-    li(t("email.welcome.stepAddBird")) +
-    li(t("email.welcome.stepWeight")) +
-    li(t("email.welcome.stepScan")) +
-    p(t("email.welcome.together")) +
-    p(t("email.welcome.series")) +
-    p(t("email.welcome.carePlan")) +
-    p(t("email.welcome.reply")) +
-    p(t("email.welcome.signoff"));
+  // Two sentences, one paragraph — each stays its own key.
+  const leadCopy = `${t("email.welcome.founder")} ${t("email.welcome.birds")}`;
   return {
     subject: t("email.welcome.subject"),
-    html: shell({
+    html: letterShell({
+      n: 1,
+      nextDay: 3,
       preview: t("email.welcome.preview"),
       kicker: t("email.welcome.kicker"),
       heading: t("email.welcome.heading"),
-      bodyHtml,
-      cta: t("email.welcome.cta"),
-      link: opts.link,
+      hero: { file: "welcome.jpg", alt: t("email.welcome.heroAlt") },
+      bodyHtml:
+        para(hi) +
+        lead(leadCopy) +
+        para(t("email.welcome.built")) +
+        paraLeadIn(t("email.welcome.startThisWeek")) +
+        steps([
+          t("email.welcome.stepAddBird"),
+          t("email.welcome.stepWeight"),
+          t("email.welcome.stepScan"),
+        ]) +
+        statement(t("email.welcome.together")) +
+        para(t("email.welcome.series")) +
+        para(t("email.welcome.carePlan")) +
+        para(t("email.welcome.reply")) +
+        button(t("email.welcome.cta"), opts.link, "6px 0 26px") +
+        signature(t("email.welcome.signoff"), t("email.series.signTitle")),
       nextUp: t("email.welcome.nextUp"),
       healthNote: t("email.welcome.healthNote"),
       foot: t("email.welcome.foot"),
-      footGap: 22,
-      footFine: false,
       t,
     }),
     text: t("email.welcome.text", { link: opts.link }),
   };
 }
 
-// Day 3 — weighing. The only email in the series that can solve the scale
-// problem: someone without a gram scale is stuck whatever comes later.
+// Day 3 — weighing. The only letter that can solve the scale problem: someone
+// without a gram scale is stuck whatever comes later. The product moment is the
+// weight card, with ninety days of readings as one line.
 export function buildSeriesWeighingEmail(opts: { link: string; locale?: string }): BuiltEmail {
   const t = emailT(opts.locale);
   return {
     subject: t("email.seriesWeighing.subject"),
-    html: shell({
+    html: letterShell({
+      n: 2,
+      nextDay: 6,
       preview: t("email.seriesWeighing.preview"),
       kicker: t("email.seriesWeighing.kicker"),
       heading: t("email.seriesWeighing.heading"),
+      hero: { file: "weighing.jpg", alt: t("email.seriesWeighing.heroAlt") },
       bodyHtml:
-        bodyP(t("email.seriesWeighing.lead")) +
-        noteCard(t("email.seriesWeighing.card1Label"),
-        cardLi(t("email.seriesWeighing.card1Li1")) +
-        cardLi(t("email.seriesWeighing.card1Li2"))) +
-        bodyP(t("email.seriesWeighing.p2")) +
-        bodyP(t("email.seriesWeighing.p3")) +
-        bodyP(t("email.seriesWeighing.p4")),
-      cta: t("email.seriesWeighing.cta"),
-      link: opts.link,
+        lead(t("email.seriesWeighing.lead")) +
+        note(
+          t("email.seriesWeighing.card1Label"),
+          noteBullets([t("email.seriesWeighing.card1Li1"), t("email.seriesWeighing.card1Li2")]),
+        ) +
+        para(t("email.seriesWeighing.p2")) +
+        para(t("email.seriesWeighing.p3")) +
+        weightCard({
+          inApp: t("email.moment.inTheApp"),
+          label: t("email.seriesWeighing.momentLabel"),
+          value: t("email.seriesWeighing.momentValue"),
+          summary: t("email.seriesWeighing.momentSummary"),
+          axisStart: t("email.seriesWeighing.momentAxisStart"),
+          axisEnd: t("email.seriesWeighing.momentAxisEnd"),
+        }) +
+        caption(t("email.seriesWeighing.momentCaption")) +
+        para(t("email.seriesWeighing.p4")) +
+        button(t("email.seriesWeighing.cta"), opts.link, "8px 0 8px"),
       nextUp: t("email.seriesWeighing.nextUp"),
       healthNote: t("email.seriesWeighing.healthNote"),
       foot: t("email.seriesWeighing.foot"),
-      footGap: 22,
       t,
     }),
     text: t("email.seriesWeighing.text", { link: opts.link }),
   };
 }
 
-// Day 6 — the daily health check.
+// Day 6 — the daily health check. The moment shows three of the questions with
+// their answer pills, so the habit is recognisable before you open the app.
 export function buildSeriesHealthCheckEmail(opts: { link: string; locale?: string }): BuiltEmail {
   const t = emailT(opts.locale);
   return {
     subject: t("email.seriesHealthCheck.subject"),
-    html: shell({
+    html: letterShell({
+      n: 3,
+      nextDay: 9,
       preview: t("email.seriesHealthCheck.preview"),
       kicker: t("email.seriesHealthCheck.kicker"),
       heading: t("email.seriesHealthCheck.heading"),
       bodyHtml:
-        bodyP(t("email.seriesHealthCheck.lead")) +
-        bodyP(t("email.seriesHealthCheck.p2")) +
-        noteCard(t("email.seriesHealthCheck.card1Label"),
-        cardP(t("email.seriesHealthCheck.card1P1"))) +
-        bodyP(t("email.seriesHealthCheck.p3")),
-      cta: t("email.seriesHealthCheck.cta"),
-      link: opts.link,
+        lead(t("email.seriesHealthCheck.lead")) +
+        para(t("email.seriesHealthCheck.p2")) +
+        questionCards({
+          inApp: t("email.moment.inTheApp"),
+          title: t("email.seriesHealthCheck.momentTitle"),
+          intro: t("email.seriesHealthCheck.momentIntro"),
+          questions: [
+            t("email.seriesHealthCheck.q1"),
+            t("email.seriesHealthCheck.q2"),
+            t("email.seriesHealthCheck.q3"),
+          ],
+          answers: [
+            t("email.scanReason.normal"),
+            t("email.scanReason.notSure"),
+            t("email.scanReason.concerning"),
+          ],
+          more: t("email.seriesHealthCheck.more"),
+        }) +
+        note(t("email.seriesHealthCheck.card1Label"), noteP(t("email.seriesHealthCheck.card1P1"))) +
+        para(t("email.seriesHealthCheck.p3")) +
+        button(t("email.seriesHealthCheck.cta"), opts.link, "8px 0 8px"),
       nextUp: t("email.seriesHealthCheck.nextUp"),
       healthNote: t("email.seriesHealthCheck.healthNote"),
       foot: t("email.seriesHealthCheck.foot"),
-      footGap: 22,
       t,
     }),
     text: t("email.seriesHealthCheck.text", { link: opts.link }),
   };
 }
 
-// Day 9 — the care plan.
+// Day 9 — the care plan. The six sections as a grid, Food and Routine limed
+// because those are the two the copy tells you to start with.
 export function buildSeriesCarePlanEmail(opts: { link: string; locale?: string }): BuiltEmail {
   const t = emailT(opts.locale);
   return {
     subject: t("email.seriesCarePlan.subject"),
-    html: shell({
+    html: letterShell({
+      n: 4,
+      nextDay: 12,
       preview: t("email.seriesCarePlan.preview"),
       kicker: t("email.seriesCarePlan.kicker"),
       heading: t("email.seriesCarePlan.heading"),
+      hero: { file: "care-plan.jpg", alt: t("email.seriesCarePlan.heroAlt") },
       bodyHtml:
-        bodyP(t("email.seriesCarePlan.lead")) +
-        bodyP(t("email.seriesCarePlan.p2")) +
-        noteCard(t("email.seriesCarePlan.card1Label"),
-        cardP(t("email.seriesCarePlan.card1P1"))) +
-        bodyP(t("email.seriesCarePlan.p3")) +
-        bodyP(t("email.seriesCarePlan.p4")) +
-        bodyP(t("email.seriesCarePlan.p5")),
-      cta: t("email.seriesCarePlan.cta"),
-      link: opts.link,
+        lead(t("email.seriesCarePlan.lead")) +
+        sectionGrid(t("email.seriesCarePlan.sections").split("|")) +
+        caption(t("email.seriesCarePlan.momentCaption")) +
+        para(t("email.seriesCarePlan.p2")) +
+        note(t("email.seriesCarePlan.card1Label"), noteP(t("email.seriesCarePlan.card1P1"))) +
+        para(t("email.seriesCarePlan.p3")) +
+        para(t("email.seriesCarePlan.p4")) +
+        para(t("email.seriesCarePlan.p5")) +
+        button(t("email.seriesCarePlan.cta"), opts.link, "8px 0 8px"),
       nextUp: t("email.seriesCarePlan.nextUp"),
       foot: t("email.seriesCarePlan.foot"),
-      footGap: 22,
       t,
     }),
     text: t("email.seriesCarePlan.text", { link: opts.link }),
   };
 }
 
-// Day 12 — journal and moments. The one email that asks for no new habit;
+// Day 12 — journal and moments. The one letter that asks for no new habit;
 // three in a row asking someone to start something is a lot.
 export function buildSeriesJournalEmail(opts: { link: string; locale?: string }): BuiltEmail {
   const t = emailT(opts.locale);
   return {
     subject: t("email.seriesJournal.subject"),
-    html: shell({
+    html: letterShell({
+      n: 5,
+      nextDay: 15,
       preview: t("email.seriesJournal.preview"),
       kicker: t("email.seriesJournal.kicker"),
       heading: t("email.seriesJournal.heading"),
       bodyHtml:
-        bodyP(t("email.seriesJournal.lead")) +
-        bodyP(t("email.seriesJournal.p2")) +
-        bodyP(t("email.seriesJournal.p3")) +
-        bodyP(t("email.seriesJournal.p4")) +
-        bodyP(t("email.seriesJournal.p5")),
-      cta: t("email.seriesJournal.cta"),
-      link: opts.link,
+        lead(t("email.seriesJournal.lead")) +
+        journalEntry({
+          label: t("email.moment.example"),
+          date: t("email.seriesJournal.entryDate"),
+          body: t("email.seriesJournal.entry"),
+          moment: t("email.seriesJournal.momentLine"),
+        }) +
+        para(t("email.seriesJournal.p2")) +
+        para(t("email.seriesJournal.p3")) +
+        para(t("email.seriesJournal.p4")) +
+        statement(t("email.seriesJournal.p5")) +
+        button(t("email.seriesJournal.cta"), opts.link, "0px 0 8px"),
       nextUp: t("email.seriesJournal.nextUp"),
       foot: t("email.seriesJournal.foot"),
-      footGap: 22,
       t,
     }),
     text: t("email.seriesJournal.text", { link: opts.link }),
   };
 }
 
-// Day 15 — sharing with a sitter or the household.
+// Day 15 — sharing with a sitter or the household. The two options side by
+// side, because the whole point is that they are different things.
 export function buildSeriesSharingEmail(opts: { link: string; locale?: string }): BuiltEmail {
   const t = emailT(opts.locale);
   return {
     subject: t("email.seriesSharing.subject"),
-    html: shell({
+    html: letterShell({
+      n: 6,
+      nextDay: 18,
       preview: t("email.seriesSharing.preview"),
       kicker: t("email.seriesSharing.kicker"),
       heading: t("email.seriesSharing.heading"),
       bodyHtml:
-        bodyP(t("email.seriesSharing.lead")) +
-        noteCard(t("email.seriesSharing.card1Label"),
-        cardP(t("email.seriesSharing.card1P1"))) +
-        noteCard(t("email.seriesSharing.card2Label"),
-        cardP(t("email.seriesSharing.card2P1"))) +
-        bodyP(t("email.seriesSharing.p2")) +
-        bodyP(t("email.seriesSharing.p3")),
-      cta: t("email.seriesSharing.cta"),
-      link: opts.link,
+        lead(t("email.seriesSharing.lead")) +
+        sharingCards({
+          sitterLabel: t("email.seriesSharing.card1Label"),
+          sitterBody: t("email.seriesSharing.card1P1"),
+          sitterFoot: t("email.seriesSharing.sitterAccount"),
+          householdLabel: t("email.seriesSharing.card2Label"),
+          householdBody: t("email.seriesSharing.card2P1"),
+          householdFoot: t("email.seriesSharing.householdAccount"),
+        }) +
+        para(t("email.seriesSharing.p2")) +
+        para(t("email.seriesSharing.p3")) +
+        button(t("email.seriesSharing.cta"), opts.link, "8px 0 8px"),
       nextUp: t("email.seriesSharing.nextUp"),
       foot: t("email.seriesSharing.foot"),
-      footGap: 22,
       t,
     }),
     text: t("email.seriesSharing.text", { link: opts.link }),
@@ -828,29 +1291,33 @@ export function buildSeriesSharingEmail(opts: { link: string; locale?: string })
 }
 
 // Day 18 — the vet summary. Closes the series and hands off to the monthly
-// recap, so the first monthly email does not arrive out of nowhere.
+// recap, so the first monthly letter does not arrive out of nowhere. No
+// "next letter" block: there isn't one.
 export function buildSeriesVetEmail(opts: { link: string; locale?: string }): BuiltEmail {
   const t = emailT(opts.locale);
   return {
     subject: t("email.seriesVet.subject"),
-    html: shell({
+    html: letterShell({
+      n: 7,
       preview: t("email.seriesVet.preview"),
       kicker: t("email.seriesVet.kicker"),
       heading: t("email.seriesVet.heading"),
       bodyHtml:
-        bodyP(t("email.seriesVet.lead")) +
-        bodyP(t("email.seriesVet.p2")) +
-        bodyP(t("email.seriesVet.p3")) +
-        bodyP(t("email.seriesVet.p4")) +
-        noteCard(t("email.seriesVet.card1Label"),
-        cardP(t("email.seriesVet.card1P1"))) +
-        bodyP(t("email.seriesVet.p5")) +
-        bodyP(t("email.seriesVet.signoff")),
-      cta: t("email.seriesVet.cta"),
-      link: opts.link,
+        lead(t("email.seriesVet.leadIntro")) +
+        vetQuestions(t("email.seriesVet.questionsLabel"), [
+          t("email.seriesVet.q1"),
+          t("email.seriesVet.q2"),
+          t("email.seriesVet.q3"),
+        ]) +
+        para(t("email.seriesVet.p2")) +
+        para(t("email.seriesVet.p3")) +
+        para(t("email.seriesVet.p4")) +
+        button(t("email.seriesVet.cta"), opts.link, "4px 0 24px") +
+        finale(t("email.seriesVet.card1Label"), t("email.seriesVet.card1P1")) +
+        para(t("email.seriesVet.p5")) +
+        signature(t("email.seriesVet.signoff"), t("email.series.signTitle")),
       healthNote: t("email.seriesVet.healthNote"),
       foot: t("email.seriesVet.foot"),
-      footGap: 22,
       t,
     }),
     text: t("email.seriesVet.text", { link: opts.link }),

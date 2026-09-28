@@ -48,3 +48,6 @@ dist-ssr
 # committed template and must stay tracked.
 .env*
 !.env.example
+
+# Rendered email previews (npm run email:preview) — build output, never committed.
+.email-preview/
