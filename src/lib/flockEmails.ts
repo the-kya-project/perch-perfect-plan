@@ -64,3 +64,62 @@ export function buildWelcomeEmail(opts: { firstName?: string; link: string; loca
     locale: opts.locale,
   });
 }
+
+/** Juno's 90 days, 40 readings. Fixed demo data — this is a picture of what a
+ *  record looks like, not the reader's own. Kept deliberately unremarkable:
+ *  the email says nothing about what the shape means. */
+const JUNO_WEIGHTS = [
+  752, 749, 755, 751, 747, 753, 758, 750, 746, 754,
+  757, 752, 748, 756, 751, 745, 753, 759, 750, 747,
+  755, 752, 758, 749, 746, 754, 751, 757, 753, 748,
+  756, 750, 745, 752, 759, 754, 747, 751, 758, 753,
+];
+
+/**
+ * Day 3 — weighing. The second email on the Flock Club layout.
+ *
+ * The CTA link is chosen by the caller. In production the onboarding cron
+ * passes `${appUrl}/birds/${birdId}/weight` when the account has a bird and
+ * falls back to `/dashboard` when it does not — see onboarding-emails.ts. The
+ * `/birds/demo/weight` in the old plain text was only ever the QA harness's
+ * sample string; no real send has used it.
+ */
+export function buildSeriesWeighingEmail(opts: { link: string; locale?: string }): BuiltEmail {
+  const t = emailT(opts.locale);
+  const blocks: FlockBlock[] = [
+    { kind: "p", text: t("email.seriesWeighing.p1") },
+    {
+      kind: "panel",
+      title: t("email.seriesWeighing.needTitle"),
+      items: [
+        { lead: t("email.seriesWeighing.need1Lead"), text: t("email.seriesWeighing.need1Text") },
+        { lead: t("email.seriesWeighing.need2Lead"), text: t("email.seriesWeighing.need2Text") },
+        { lead: t("email.seriesWeighing.need3Lead"), text: t("email.seriesWeighing.need3Text") },
+      ],
+    },
+    { kind: "p", text: t("email.seriesWeighing.p2") },
+    {
+      kind: "dotChart",
+      badge: t("email.seriesWeighing.chartBadge"),
+      caption: t("email.seriesWeighing.chartCaption"),
+      series: JUNO_WEIGHTS,
+      unit: " g",
+      axisStart: t("email.seriesWeighing.chartAxisStart"),
+      axisEnd: t("email.seriesWeighing.chartAxisEnd"),
+      note: t("email.seriesWeighing.chartNote"),
+    },
+    { kind: "button", label: t("email.seriesWeighing.cta"), href: opts.link },
+    { kind: "p", text: t("email.seriesWeighing.p3") },
+    { kind: "signature" },
+  ];
+  return flockShell({
+    headline: t("email.seriesWeighing.headline"),
+    preheader: t("email.seriesWeighing.preview"),
+    pill: t("email.flock.pillFlockmate"),
+    hero: { file: "weighing.jpg", alt: t("email.seriesWeighing.heroAlt"), sticker: t("email.seriesWeighing.sticker") },
+    blocks,
+    footerWhy: t("email.seriesWeighing.foot"),
+    link: opts.link,
+    locale: opts.locale,
+  });
+}

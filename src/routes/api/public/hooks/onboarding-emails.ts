@@ -272,9 +272,8 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
 
         // The welcome letter is on the Flock Club layout and lives in its own
         // module now; the rest of the series is still on letterShell.
-        const { buildWelcomeEmail } = await import("@/lib/flockEmails");
+        const { buildWelcomeEmail, buildSeriesWeighingEmail } = await import("@/lib/flockEmails");
         const {
-          buildSeriesWeighingEmail,
           buildSeriesHealthCheckEmail,
           buildSeriesCarePlanEmail,
           buildSeriesJournalEmail,

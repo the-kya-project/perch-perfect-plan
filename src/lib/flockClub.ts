@@ -78,6 +78,8 @@ export type FlockBlock =
   | { kind: "steps"; items: Array<{ title: string; text: string }> }
   | { kind: "button"; label: string; href: string }
   | { kind: "subhead"; text: string }
+  | { kind: "panel"; title: string; items: Array<{ lead: string; text: string }> }
+  | { kind: "dotChart"; badge: string; caption: string; series: number[]; unit: string; axisStart: string; axisEnd: string; note: string }
   | { kind: "photoHighlight"; title: string; body: string; photo: string; photoAlt: string }
   | { kind: "signature" }
   | { kind: "spacer" };
@@ -191,6 +193,94 @@ ${grid()}<tr>
 </td>
 </tr></table>`;
 
+/** Soft cream panel with numbered rows and 32px lime circles. The lead sentence
+ *  is bold and runs inline with the rest, so each row reads as a sentence
+ *  rather than as a heading with a caption under it. */
+const panelHtml = (o: { title: string; items: Array<{ lead: string; text: string }> }) =>
+  `${grid("margin:0 0 20px;")}<tr>
+<td style="padding:20px;background-color:${FC.panel};border:1px solid #e3ded0;border-radius:18px;">
+<p style="margin:0 0 14px;font-family:${HEAD_FONT};font-size:21px;line-height:27px;font-weight:800;letter-spacing:-0.4px;color:${FC.forest};">${o.title}</p>
+${grid()}${o.items
+    .map(
+      (it, i) => `<tr>
+<td width="32" valign="top" style="width:32px;padding:0 12px ${i === o.items.length - 1 ? "0" : "14px"} 0;">
+<table role="presentation" width="32" cellpadding="0" cellspacing="0" border="0" style="width:32px;${RESET}">
+<tr><td align="center" height="32" bgcolor="${FC.lime}" style="width:32px;height:32px;background-color:${FC.lime};border-radius:16px;font-family:${HEAD_FONT};font-size:15px;line-height:32px;font-weight:800;color:${FC.forest};text-align:center;">${i + 1}</td></tr>
+</table>
+</td>
+<td valign="top" style="padding:0 0 ${i === o.items.length - 1 ? "0" : "14px"};font-family:${BODY_FONT};font-size:14.5px;line-height:22px;color:${FC.forest};">
+<b style="font-weight:700;">${it.lead}</b> ${it.text}
+</td>
+</tr>`,
+    )
+    .join("\n")}
+</table>
+</td>
+</tr></table>`;
+
+/** A dot chart on the forest card: one dot per reading, its height its weight.
+ *
+ *  BUILD: a fixed-layout table with one cell per reading. Each cell is the full
+ *  chart height and top-aligned, and the dot is pushed down with padding-top.
+ *  No absolute positioning, no background images, no text in an image — so it
+ *  survives Gmail and the Outlook Word engine, which between them rule out
+ *  every other way of placing a point on a plane. The only casualty is the
+ *  dot's roundness: Outlook drops border-radius and shows a 7px square.
+ *
+ *  The axis shows the extremes only, and nothing here characterises the
+ *  numbers — the reader draws their own conclusion from the shape. */
+function dotChartHtml(o: { badge: string; caption: string; series: number[]; unit: string; axisStart: string; axisEnd: string; note: string }): string {
+  const H = 92;
+  const DOT = 7;
+  const hi = Math.max(...o.series);
+  const lo = Math.min(...o.series);
+  const span = hi - lo || 1;
+  const dots = o.series
+    .map((v) => {
+      const top = Math.round(((hi - v) / span) * (H - DOT));
+      return `<td valign="top" style="height:${H}px;padding:${top}px 0 0;">
+<table role="presentation" width="${DOT}" cellpadding="0" cellspacing="0" border="0" style="width:${DOT}px;${RESET}">
+<tr><td height="${DOT}" bgcolor="${FC.lime}" style="width:${DOT}px;height:${DOT}px;background-color:${FC.lime};border-radius:${DOT / 2}px;font-size:0;line-height:${DOT}px;">&nbsp;</td></tr>
+</table>
+</td>`;
+    })
+    .join("");
+  const axisLabel = (s: string) =>
+    `<span style="font-family:${BODY_FONT};font-size:11px;line-height:14px;color:${FC.footFine};">${s}</span>`;
+  return `${grid("margin:0 0 20px;")}<tr>
+<td style="padding:20px;background-color:${FC.forest};border-radius:20px;">
+${grid("margin:0 0 16px;")}<tr>
+<td valign="middle" style="padding:0;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="${RESET}">
+<tr><td bgcolor="${FC.lime}" style="padding:5px 12px;background-color:${FC.lime};border-radius:999px;font-family:${BODY_FONT};font-size:11.5px;line-height:15px;font-weight:700;color:${FC.forest};white-space:nowrap;">${o.badge}</td></tr>
+</table>
+</td>
+<td valign="middle" align="right" style="padding:0 0 0 10px;font-family:${BODY_FONT};font-size:12px;line-height:16px;color:${FC.footFine};text-align:right;">${o.caption}</td>
+</tr>
+</table>
+${grid()}<tr>
+<td width="38" valign="top" style="width:38px;padding:0 8px 0 0;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;${RESET}height:${H}px;">
+<tr><td height="14" valign="top" align="right" style="height:14px;text-align:right;">${axisLabel(`${hi}${o.unit}`)}</td></tr>
+<tr><td valign="bottom" align="right" style="text-align:right;">${axisLabel(`${lo}${o.unit}`)}</td></tr>
+</table>
+</td>
+<td valign="top" style="padding:0;">
+${grid("table-layout:fixed;")}<tr>${dots}</tr>
+</table>
+</td>
+</tr>
+</table>
+${grid("margin:8px 0 0;")}<tr>
+<td style="padding:0 0 0 46px;font-family:${BODY_FONT};font-size:11px;line-height:15px;color:${FC.footFine};">${o.axisStart}</td>
+<td align="right" style="font-family:${BODY_FONT};font-size:11px;line-height:15px;color:${FC.footFine};text-align:right;">${o.axisEnd}</td>
+</tr>
+</table>
+<p style="margin:14px 0 0;font-family:${BODY_FONT};font-size:13px;line-height:20px;color:${FC.footText};">${o.note}</p>
+</td>
+</tr></table>`;
+}
+
 function blockHtml(b: FlockBlock, t: EmailT): string {
   switch (b.kind) {
     case "lead": return leadHtml(b.text);
@@ -201,6 +291,8 @@ function blockHtml(b: FlockBlock, t: EmailT): string {
     case "steps": return stepsHtml(b.items);
     case "button": return buttonHtml(b.label, b.href);
     case "subhead": return subheadHtml(b.text);
+    case "panel": return panelHtml(b);
+    case "dotChart": return dotChartHtml(b);
     case "photoHighlight": return photoHighlightHtml(b);
     case "signature": return signatureHtml(t);
     case "spacer": return `<div style="height:14px;line-height:14px;font-size:0;">&nbsp;</div>`;
@@ -227,6 +319,8 @@ function blockText(b: FlockBlock, t: EmailT): string {
     case "steps": return b.items.map((it, i) => `${i + 1}. ${detag(it.title)} ${detag(it.text)}`).join("\n");
     case "button": return `${detag(b.label)}: ${b.href}`;
     case "subhead": return detag(b.text);
+    case "panel": return `${detag(b.title)}\n` + b.items.map((it, i) => `${i + 1}. ${detag(it.lead)} ${detag(it.text)}`).join("\n");
+    case "dotChart": return `${detag(b.badge)} — ${detag(b.caption)}\n${Math.min(...b.series)}${b.unit}–${Math.max(...b.series)}${b.unit}, ${detag(b.axisStart)} to ${detag(b.axisEnd)}\n${detag(b.note)}`;
     case "photoHighlight": return `${detag(b.title)}\n${detag(b.body)}`;
     case "signature": return `${detag(t("email.flock.signName"))}\n${detag(t("email.flock.signTitle"))}`;
     case "spacer": return "";

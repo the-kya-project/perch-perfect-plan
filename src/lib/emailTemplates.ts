@@ -1109,47 +1109,8 @@ export function buildSitterInviteCancelledEmail(opts: {
 // src/lib/flockEmails.ts. It is exported from there under the same name, so
 // every caller imports it from that module now.
 
-// Day 3 — weighing. The only letter that can solve the scale problem: someone
-// without a gram scale is stuck whatever comes later. The product moment is the
-// weight card, with ninety days of readings as one line.
-export function buildSeriesWeighingEmail(opts: { link: string; locale?: string }): BuiltEmail {
-  const t = emailT(opts.locale);
-  return {
-    subject: t("email.seriesWeighing.subject"),
-    html: letterShell({
-      n: 2,
-      nextDay: 6,
-      preview: t("email.seriesWeighing.preview"),
-      kicker: t("email.seriesWeighing.kicker"),
-      heading: t("email.seriesWeighing.heading"),
-      hero: { file: "weighing.jpg", alt: t("email.seriesWeighing.heroAlt") },
-      bodyHtml:
-        lead(t("email.seriesWeighing.lead")) +
-        note(
-          t("email.seriesWeighing.card1Label"),
-          noteBullets([t("email.seriesWeighing.card1Li1"), t("email.seriesWeighing.card1Li2")]),
-        ) +
-        para(t("email.seriesWeighing.p2")) +
-        para(t("email.seriesWeighing.p3")) +
-        weightCard({
-          inApp: t("email.moment.inTheApp"),
-          label: t("email.seriesWeighing.momentLabel"),
-          value: t("email.seriesWeighing.momentValue"),
-          summary: t("email.seriesWeighing.momentSummary"),
-          axisStart: t("email.seriesWeighing.momentAxisStart"),
-          axisEnd: t("email.seriesWeighing.momentAxisEnd"),
-        }) +
-        caption(t("email.seriesWeighing.momentCaption")) +
-        para(t("email.seriesWeighing.p4")) +
-        button(t("email.seriesWeighing.cta"), opts.link, "8px 0 8px"),
-      nextUp: t("email.seriesWeighing.nextUp"),
-      healthNote: t("email.seriesWeighing.healthNote"),
-      foot: t("email.seriesWeighing.foot"),
-      t,
-    }),
-    text: t("email.seriesWeighing.text", { link: opts.link }),
-  };
-}
+// The weighing letter moved to the Flock Club layout — see
+// src/lib/flockEmails.ts.
 
 // Day 6 — the daily health check. The moment shows three of the questions with
 // their answer pills, so the habit is recognisable before you open the app.
