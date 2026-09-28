@@ -11,8 +11,6 @@
 // good or bad: the axis is labelled with real grams so it is plain that it does
 // not start at zero, and the reader draws their own conclusion.
 import { initWasm, Resvg } from "@resvg/resvg-wasm";
-import * as fs from "node:fs";
-import * as path from "node:path";
 
 export type Point = { day: number; g: number };
 
@@ -26,24 +24,36 @@ const W = 240;
 const H = 120;
 const PAD = { top: 10, right: 10, bottom: 18, left: 34 };
 
+// The WASM and the font are FETCHED from our own static assets, not read off
+// disk. node_modules/ and src/ do not exist in a serverless bundle — reading
+// from them worked locally and threw in production, where the only thing that
+// showed was a 404 on every chart. public/chart/ is deployed with the app, so
+// the files are always there and always the versions this build expects.
+//
+// Both are cached per warm instance, so a container pays for them once.
+const ASSET_BASE = () => process.env.EMAIL_ASSET_BASE || "https://app.thekyaproject.com";
+
 let ready: Promise<void> | null = null;
-/** resvg's WASM is initialised once per warm instance. */
-function wasmReady(): Promise<void> {
+function wasmReady(base: string): Promise<void> {
   if (!ready) {
     ready = (async () => {
-      const wasm = fs.readFileSync(
-        path.join(process.cwd(), "node_modules/@resvg/resvg-wasm/index_bg.wasm"),
-      );
-      await initWasm(wasm);
-    })();
+      const res = await fetch(`${base}/chart/resvg.wasm`);
+      if (!res.ok) throw new Error(`resvg wasm fetch failed: ${res.status}`);
+      await initWasm(await res.arrayBuffer());
+    })().catch((e) => {
+      ready = null; // let a later request retry rather than poisoning the instance
+      throw e;
+    });
   }
   return ready;
 }
 
-let fontCache: Buffer | null = null;
-function font(): Buffer {
+let fontCache: Uint8Array | null = null;
+async function font(base: string): Promise<Uint8Array> {
   if (!fontCache) {
-    fontCache = fs.readFileSync(path.join(process.cwd(), "src/assets/fonts/DMSans-Regular.ttf"));
+    const res = await fetch(`${base}/chart/DMSans-Regular.ttf`);
+    if (!res.ok) throw new Error(`font fetch failed: ${res.status}`);
+    fontCache = new Uint8Array(await res.arrayBuffer());
   }
   return fontCache;
 }
@@ -110,11 +120,15 @@ ${grid}${line}${dots}${soloLabel}
 }
 
 /** The chart as a 2x PNG. Throws on failure; the caller falls back. */
-export async function chartPng(o: { points: Point[]; days: number; axisStart: string; axisEnd: string }): Promise<Buffer> {
-  await wasmReady();
+export async function chartPng(
+  o: { points: Point[]; days: number; axisStart: string; axisEnd: string },
+  /** Where to fetch the WASM and font from. Defaults to production. */
+  base: string = ASSET_BASE(),
+): Promise<Buffer> {
+  await wasmReady(base);
   const r = new Resvg(chartSvg(o), {
     fitTo: { mode: "width", value: W * 2 },
-    font: { fontBuffers: [font()], defaultFontFamily: "DM Sans", loadSystemFonts: false },
+    font: { fontBuffers: [await font(base)], defaultFontFamily: "DM Sans", loadSystemFonts: false },
     background: CREAM,
   });
   return Buffer.from(r.render().asPng());

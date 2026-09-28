@@ -75,6 +75,7 @@ import { Route as AuthenticatedBirdsBirdIdAccessRouteImport } from './routes/_au
 import { Route as AuthenticatedBirdsBirdIdPlanIndexRouteImport } from './routes/_authenticated/birds/$birdId.plan.index'
 import { Route as AuthenticatedBirdsBirdIdScansScanIdRouteImport } from './routes/_authenticated/birds/$birdId.scans.$scanId'
 import { Route as AuthenticatedBirdsBirdIdPlanEditorRouteImport } from './routes/_authenticated/birds/$birdId.plan.editor'
+import { Route as ApiPublicUnsubscribeCategoryUserIdSigRouteImport } from './routes/api/public/unsubscribe.$category.$userId.$sig'
 import { Route as ApiPublicChartBirdIdMonthSigRouteImport } from './routes/api/public/chart.$birdId.$month.$sig'
 
 const TermsRoute = TermsRouteImport.update({
@@ -441,6 +442,12 @@ const AuthenticatedBirdsBirdIdPlanEditorRoute =
     path: '/editor',
     getParentRoute: () => AuthenticatedBirdsBirdIdPlanRoute,
   } as any)
+const ApiPublicUnsubscribeCategoryUserIdSigRoute =
+  ApiPublicUnsubscribeCategoryUserIdSigRouteImport.update({
+    id: '/api/public/unsubscribe/$category/$userId/$sig',
+    path: '/api/public/unsubscribe/$category/$userId/$sig',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicChartBirdIdMonthSigRoute =
   ApiPublicChartBirdIdMonthSigRouteImport.update({
     id: '/api/public/chart/$birdId/$month/$sig',
@@ -515,6 +522,7 @@ export interface FileRoutesByFullPath {
   '/birds/$birdId/scans/$scanId': typeof AuthenticatedBirdsBirdIdScansScanIdRoute
   '/birds/$birdId/plan/': typeof AuthenticatedBirdsBirdIdPlanIndexRoute
   '/api/public/chart/$birdId/$month/$sig': typeof ApiPublicChartBirdIdMonthSigRoute
+  '/api/public/unsubscribe/$category/$userId/$sig': typeof ApiPublicUnsubscribeCategoryUserIdSigRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -577,6 +585,7 @@ export interface FileRoutesByTo {
   '/birds/$birdId/scans/$scanId': typeof AuthenticatedBirdsBirdIdScansScanIdRoute
   '/birds/$birdId/plan': typeof AuthenticatedBirdsBirdIdPlanIndexRoute
   '/api/public/chart/$birdId/$month/$sig': typeof ApiPublicChartBirdIdMonthSigRoute
+  '/api/public/unsubscribe/$category/$userId/$sig': typeof ApiPublicUnsubscribeCategoryUserIdSigRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -647,6 +656,7 @@ export interface FileRoutesById {
   '/_authenticated/birds/$birdId/scans/$scanId': typeof AuthenticatedBirdsBirdIdScansScanIdRoute
   '/_authenticated/birds/$birdId/plan/': typeof AuthenticatedBirdsBirdIdPlanIndexRoute
   '/api/public/chart/$birdId/$month/$sig': typeof ApiPublicChartBirdIdMonthSigRoute
+  '/api/public/unsubscribe/$category/$userId/$sig': typeof ApiPublicUnsubscribeCategoryUserIdSigRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -717,6 +727,7 @@ export interface FileRouteTypes {
     | '/birds/$birdId/scans/$scanId'
     | '/birds/$birdId/plan/'
     | '/api/public/chart/$birdId/$month/$sig'
+    | '/api/public/unsubscribe/$category/$userId/$sig'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -779,6 +790,7 @@ export interface FileRouteTypes {
     | '/birds/$birdId/scans/$scanId'
     | '/birds/$birdId/plan'
     | '/api/public/chart/$birdId/$month/$sig'
+    | '/api/public/unsubscribe/$category/$userId/$sig'
   id:
     | '__root__'
     | '/'
@@ -848,6 +860,7 @@ export interface FileRouteTypes {
     | '/_authenticated/birds/$birdId/scans/$scanId'
     | '/_authenticated/birds/$birdId/plan/'
     | '/api/public/chart/$birdId/$month/$sig'
+    | '/api/public/unsubscribe/$category/$userId/$sig'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -869,6 +882,7 @@ export interface RootRouteChildren {
   ApiPublicHooksMonthlyLetterRoute: typeof ApiPublicHooksMonthlyLetterRoute
   ApiPublicHooksOnboardingEmailsRoute: typeof ApiPublicHooksOnboardingEmailsRoute
   ApiPublicChartBirdIdMonthSigRoute: typeof ApiPublicChartBirdIdMonthSigRoute
+  ApiPublicUnsubscribeCategoryUserIdSigRoute: typeof ApiPublicUnsubscribeCategoryUserIdSigRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1335,6 +1349,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBirdsBirdIdPlanEditorRouteImport
       parentRoute: typeof AuthenticatedBirdsBirdIdPlanRoute
     }
+    '/api/public/unsubscribe/$category/$userId/$sig': {
+      id: '/api/public/unsubscribe/$category/$userId/$sig'
+      path: '/api/public/unsubscribe/$category/$userId/$sig'
+      fullPath: '/api/public/unsubscribe/$category/$userId/$sig'
+      preLoaderRoute: typeof ApiPublicUnsubscribeCategoryUserIdSigRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/chart/$birdId/$month/$sig': {
       id: '/api/public/chart/$birdId/$month/$sig'
       path: '/api/public/chart/$birdId/$month/$sig'
@@ -1554,6 +1575,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksMonthlyLetterRoute: ApiPublicHooksMonthlyLetterRoute,
   ApiPublicHooksOnboardingEmailsRoute: ApiPublicHooksOnboardingEmailsRoute,
   ApiPublicChartBirdIdMonthSigRoute: ApiPublicChartBirdIdMonthSigRoute,
+  ApiPublicUnsubscribeCategoryUserIdSigRoute:
+    ApiPublicUnsubscribeCategoryUserIdSigRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

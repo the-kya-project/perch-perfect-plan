@@ -30,7 +30,7 @@ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "June", "July", "Aug", "Sept"
 export const Route = createFileRoute("/api/public/chart/$birdId/$month/$sig")({
   server: {
     handlers: {
-      GET: async ({ params }) => {
+      GET: async ({ params, request }) => {
         const { birdId, month, sig } = params as { birdId: string; month: string; sig: string };
         const m = /^(\d{4})-(\d{2})$/.exec(month);
         if (!m || !chartSigValid(birdId, month, sig)) return new Response("Not found", { status: 404 });
@@ -60,12 +60,10 @@ export const Route = createFileRoute("/api/public/chart/$birdId/$month/$sig")({
 
         try {
           const { chartPng } = await import("@/lib/weightChart.server");
-          const png = await chartPng({
-            points,
-            days,
-            axisStart: `${MONTHS[mon - 1]} 1`,
-            axisEnd: `${MONTHS[mon - 1]} ${days}`,
-          });
+          const png = await chartPng(
+            { points, days, axisStart: `${MONTHS[mon - 1]} 1`, axisEnd: `${MONTHS[mon - 1]} ${days}` },
+            new URL(request.url).origin,
+          );
           return new Response(new Uint8Array(png), {
             headers: {
               "content-type": "image/png",
