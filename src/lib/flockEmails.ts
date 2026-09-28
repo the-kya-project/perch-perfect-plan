@@ -4,7 +4,7 @@
 // still rendered by emailTemplates.ts and nothing about it has changed.
 import { emailT } from "./i18n/emailI18n.server";
 import { escapeHtml, type BuiltEmail } from "./emailTemplates";
-import { flockShell, type FlockBlock } from "./flockClub";
+import { flockShell, FC, type FlockBlock } from "./flockClub";
 
 /**
  * The welcome letter — day 0, and the first email on the Flock Club layout.
@@ -252,6 +252,43 @@ export function buildSeriesJournalEmail(opts: { link: string; hasBird?: boolean;
     hero: { file: "journal.jpg", alt: t("email.seriesJournal.heroAlt"), sticker: t("email.seriesJournal.sticker") },
     blocks,
     footerWhy: t("email.seriesJournal.foot"),
+    link: opts.link,
+    hasBird: opts.hasBird,
+    locale: opts.locale,
+  });
+}
+
+/**
+ * Day 15 — sharing. Two tickets: a guest pass and a house key.
+ *
+ * t2Text says what a household member can DO, not what they can see. A member
+ * sees the whole record — has_capability(bird, user, 'view') is true for any
+ * of them — so "the parts you choose to share" would promise a privacy control
+ * the app does not have.
+ */
+export function buildSeriesSharingEmail(opts: { link: string; hasBird?: boolean; locale?: string }): BuiltEmail {
+  const t = emailT(opts.locale);
+  const blocks: FlockBlock[] = [
+    { kind: "p", text: t("email.seriesSharing.p1") },
+    {
+      kind: "tickets",
+      items: [
+        { bg: FC.sunflower, label: t("email.seriesSharing.t1Label"), title: t("email.seriesSharing.t1Title"), text: t("email.seriesSharing.t1Text"), stub: t("email.seriesSharing.t1Stub") },
+        { bg: FC.lime, label: t("email.seriesSharing.t2Label"), title: t("email.seriesSharing.t2Title"), text: t("email.seriesSharing.t2Text"), stub: t("email.seriesSharing.t2Stub") },
+      ],
+    },
+    { kind: "p", text: t("email.seriesSharing.p2") },
+    { kind: "p", text: t("email.seriesSharing.p3") },
+    { kind: "button", label: t("email.seriesSharing.cta"), href: opts.link, needsBird: true },
+    { kind: "signature" },
+  ];
+  return flockShell({
+    headline: t("email.seriesSharing.headline"),
+    preheader: t("email.seriesSharing.preview"),
+    pill: t("email.flock.pillFlockmate"),
+    hero: { file: "sharing.jpg", alt: t("email.seriesSharing.heroAlt"), sticker: t("email.seriesSharing.sticker") },
+    blocks,
+    footerWhy: t("email.seriesSharing.foot"),
     link: opts.link,
     hasBird: opts.hasBird,
     locale: opts.locale,

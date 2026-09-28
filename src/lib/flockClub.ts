@@ -85,6 +85,7 @@ export type FlockBlock =
   | { kind: "subhead"; text: string }
   | { kind: "panel"; title: string; items: Array<{ lead: string; text: string }> }
   | { kind: "tileGrid"; tiles: Array<{ name: string; badge?: string; highlight: boolean }> }
+  | { kind: "tickets"; items: Array<{ bg: string; label: string; title: string; text: string; stub: string }> }
   | { kind: "journalCard"; pill: string; date: string; entry: string; photo: string; photoAlt: string }
   | { kind: "momentStrip"; label: string; text: string }
   | { kind: "quoteCard"; title: string; panelLabel: string; quote: string; note: string }
@@ -255,6 +256,35 @@ ${t.badge ? `<p style="margin:0 0 5px;font-family:${BODY_FONT};font-size:11px;li
 ${rows.join("\n")}
 </table>`;
 }
+
+/** Two "tickets": a main section and a torn-off stub, divided by a dashed rule.
+ *
+ *  No icon in the stub. Gmail strips inline SVG, so an icon would have to be a
+ *  PNG — two more assets to keep, and with images blocked the stub falls back
+ *  to its text anyway. The text is doing the work either way, so there is only
+ *  one rendering to reason about instead of two.
+ *
+ *  Under 480px the stub moves from the right side to a strip along the bottom,
+ *  its dashed rule moving from its left edge to its top, so the main text gets
+ *  the full width instead of being squeezed into what is left beside it. */
+const ticketsHtml = (items: Array<{ bg: string; label: string; title: string; text: string; stub: string }>) =>
+  items
+    .map(
+      (t, i) => `${grid(`margin:0 0 ${i === items.length - 1 ? 20 : 14}px;`)}<tr>
+<td style="padding:0;background-color:${t.bg};border:2px solid ${FC.forest};border-radius:16px;">
+${grid()}<tr>
+<td valign="top" class="fc-ticket-main" style="padding:16px 18px;">
+<p style="margin:0 0 6px;font-family:${BODY_FONT};font-size:11px;line-height:14px;letter-spacing:.09em;font-weight:700;color:${FC.forest};${NOBREAK}">${t.label}</p>
+<p style="margin:0 0 7px;font-family:${HEAD_FONT};font-size:22px;line-height:27px;font-weight:800;letter-spacing:-0.4px;color:${FC.forest};${NOBREAK}">${t.title}</p>
+<p style="margin:0;font-family:${BODY_FONT};font-size:14.5px;line-height:22px;color:${FC.forest};">${t.text}</p>
+</td>
+<td width="96" valign="middle" align="center" class="fc-ticket-stub" style="width:96px;padding:16px 8px;border-left:2px dashed ${FC.forest};font-family:${BODY_FONT};font-size:11px;line-height:15px;font-weight:700;color:${FC.forest};text-align:center;${NOBREAK}">${t.stub}</td>
+</tr>
+</table>
+</td>
+</tr></table>`,
+    )
+    .join("\n");
 
 /** A sample journal entry: the white card, a lime pill and a date, the entry in
  *  the serif, and a photo.
@@ -449,6 +479,7 @@ function blockHtml(b: FlockBlock, c: Ctx): string {
     case "subhead": return subheadHtml(b.text);
     case "panel": return panelHtml(b);
     case "tileGrid": return tileGridHtml(b.tiles);
+    case "tickets": return ticketsHtml(b.items);
     case "journalCard": return journalCardHtml(b);
     case "momentStrip": return momentStripHtml(b);
     case "quoteCard": return quoteCardHtml(b);
@@ -483,6 +514,7 @@ function blockText(b: FlockBlock, c: Ctx): string {
     case "subhead": return detag(b.text);
     case "panel": return `${detag(b.title)}\n` + b.items.map((it, i) => `${i + 1}. ${detag(it.lead)} ${detag(it.text)}`).join("\n");
     case "tileGrid": return b.tiles.map((x) => (x.badge ? `${detag(x.badge)} ` : "") + detag(x.name)).join("\n");
+    case "tickets": return b.items.map((x) => `${detag(x.label)} — ${detag(x.title)}\n${detag(x.text)}`).join("\n\n");
     case "journalCard": return `${detag(b.pill)} — ${detag(b.date)}\n${detag(b.entry)}`;
     case "momentStrip": return `${detag(b.label)} — ${detag(b.text)}`;
     case "quoteCard": return `${detag(b.title)}\n${detag(b.panelLabel)}\n${detag(b.quote)}\n${detag(b.note)}`;
@@ -565,6 +597,10 @@ export function flockShell(opts: {
   .fc-strip { border-radius:18px !important; padding:12px 16px !important; }
   .fc-strip-a, .fc-strip-b { display:block !important; width:100% !important; text-align:left !important; padding:0 !important; }
   .fc-strip-b { padding-top:3px !important; }
+  /* The ticket stub drops to a strip along the bottom, so the main text is not
+     squeezed into what is left beside a 96px column on a small phone. */
+  .fc-ticket-main, .fc-ticket-stub { display:block !important; width:100% !important; box-sizing:border-box !important; }
+  .fc-ticket-stub { border-left:none !important; border-top:2px dashed ${FC.forest} !important; padding:9px 8px !important; }
 }
 </style>
 </head>

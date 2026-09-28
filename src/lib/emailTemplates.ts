@@ -1121,39 +1121,8 @@ export function buildSitterInviteCancelledEmail(opts: {
 // The journal letter moved to the Flock Club layout — see
 // src/lib/flockEmails.ts.
 
-// Day 15 — sharing with a sitter or the household. The two options side by
-// side, because the whole point is that they are different things.
-export function buildSeriesSharingEmail(opts: { link: string; locale?: string }): BuiltEmail {
-  const t = emailT(opts.locale);
-  return {
-    subject: t("email.seriesSharing.subject"),
-    html: letterShell({
-      n: 6,
-      nextDay: 18,
-      preview: t("email.seriesSharing.preview"),
-      kicker: t("email.seriesSharing.kicker"),
-      heading: t("email.seriesSharing.heading"),
-      hero: { file: "sharing.jpg", alt: t("email.seriesSharing.heroAlt") },
-      bodyHtml:
-        lead(t("email.seriesSharing.lead")) +
-        sharingCards({
-          sitterLabel: t("email.seriesSharing.card1Label"),
-          sitterBody: t("email.seriesSharing.card1P1"),
-          sitterFoot: t("email.seriesSharing.sitterAccount"),
-          householdLabel: t("email.seriesSharing.card2Label"),
-          householdBody: t("email.seriesSharing.card2P1"),
-          householdFoot: t("email.seriesSharing.householdAccount"),
-        }) +
-        para(t("email.seriesSharing.p2")) +
-        para(t("email.seriesSharing.p3")) +
-        button(t("email.seriesSharing.cta"), opts.link, "8px 0 8px"),
-      nextUp: t("email.seriesSharing.nextUp"),
-      foot: t("email.seriesSharing.foot"),
-      t,
-    }),
-    text: t("email.seriesSharing.text", { link: opts.link }),
-  };
-}
+// The sharing letter moved to the Flock Club layout — see
+// src/lib/flockEmails.ts.
 
 // Day 18 — the vet summary. Closes the series and hands off to the monthly
 // recap, so the first monthly letter does not arrive out of nowhere. No
