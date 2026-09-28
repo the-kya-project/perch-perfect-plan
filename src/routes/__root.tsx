@@ -20,7 +20,7 @@ import { initAnalytics, identifyUser, resetUser } from "@/lib/analytics";
 import { ensureProfileLocale } from "@/lib/ensureProfileLocale";
 import {
   registerServiceWorker, installChunkErrorRecovery, hardResetAndReload,
-  isStaleChunkError, chunkReloadAttemptedRecently, reloadForStaleChunk,
+  isStaleChunkError, staleChunkRecoveryExhausted, reloadForStaleChunk,
 } from "@/lib/sw-register";
 import { captureFirstTouch } from "@/lib/attribution";
 import { attachNativePushHandlers } from "@/lib/pushNative";
@@ -55,12 +55,13 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   const router = useRouter();
   // A stale-build chunk 404 (lazy route import after a deploy swapped the
   // precache) is SELF-HEALING: installChunkErrorRecovery reloads onto the fresh
-  // build within ~1s. Rendering the error screen for that window reads as "the
-  // app broke" — show a calm loader instead and trigger the reload ourselves
-  // (belt-and-braces with the vite:preloadError listener). Only if a recovery
-  // reload was ALREADY attempted moments ago (loop guard) do we fall through to
-  // the real error screen, so a genuinely broken build still surfaces.
-  const recovering = isStaleChunkError(error) && !chunkReloadAttemptedRecently();
+  // build. Rendering the error screen during that window reads as "the app
+  // broke" — show a calm loader instead and trigger the reload ourselves
+  // (belt-and-braces with the vite:preloadError listener). reloadForStaleChunk
+  // retries with backoff, because a deploy's alias swap can outlast a single
+  // attempt; only once that whole budget is spent do we fall through to the
+  // real error screen, so a genuinely broken build still surfaces.
+  const recovering = isStaleChunkError(error) && !staleChunkRecoveryExhausted();
   useEffect(() => {
     if (recovering) reloadForStaleChunk();
     else reportLovableError(error, { boundary: "tanstack_root_error_component" });

@@ -25,8 +25,7 @@ launched on 2026-07-21), 28 living birds, 64 sits.
   - `onboarding-emails-daily` at 15:00 UTC
   - `engagement-nudges-daily` at 16:00 UTC
   - `bereavement-note` at 14:00 UTC
-  - `monthly-letter` at 13:00 UTC **on the 2nd** — not yet scheduled; the SQL is
-    in the header of `monthly-letter.ts`
+  - `monthly-letter` at 13:00 UTC **on the 2nd** (jobid 5, scheduled 2026-09-28)
 - Signup lead capture to Brevo: `supabase/functions/capture-lead`
 
 ### Onboarding drip (new signups only, one email per day at most, each email once)
@@ -46,7 +45,16 @@ bird is quiet. Birds marked as passed are excluded. Gated on
 month in `monthly_letter_log`, so a retry cannot send twice. The "From the field
 notes" block needs `WEBFLOW_API_TOKEN`, `WEBFLOW_BLOG_COLLECTION_ID` and
 `WEBFLOW_BLOG_BASE_URL`, and is omitted entirely when they are unset or the fetch
-fails. Not yet sending: the pg_cron job still has to be created.
+fails.
+
+The pg_cron job is live (jobid 5, `0 13 2 * *`). The chain was verified end to
+end before the first run by posting `{"dryRun":true}` through `net.http_post`
+with the real header — 200, 21 planned, 0 sent. To check a run afterwards:
+`select * from cron.job_run_details where jobid = 5 order by start_time desc;`
+
+One row per account per recapped month lives in `monthly_letter_log`, so an
+account that has already been sent a month is skipped. To deliberately re-send
+a month to someone, delete their row first.
 
 ### Reminders
 - Care-plan check-in (email and push): a sit starts within 3 days and the plan is 14+ days
