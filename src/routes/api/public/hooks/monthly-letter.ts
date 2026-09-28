@@ -54,11 +54,7 @@
  */
 import { createFileRoute } from "@tanstack/react-router";
 import { withCronTelemetry } from "@/lib/cronTelemetry";
-import {
-  buildMonthlyEmail,
-  isQuietMonth,
-  type MonthlyBird,
-} from "@/lib/emailTemplates";
+import { buildFlockReportEmail, isQuietFlock, type FlockBird } from "@/lib/flockEmails";
 
 const APP_URL = "https://app.thekyaproject.com";
 
@@ -124,6 +120,7 @@ export const Route = createFileRoute("/api/public/hooks/monthly-letter")({
         const end = new Date(Date.UTC(recapYear, recapMonth, 1)).toISOString();
         const prevStart = new Date(Date.UTC(recapYear, recapMonth - 2, 1)).toISOString();
         const recapMonthKey = start.slice(0, 10); // YYYY-MM-01, the log key
+        const days = new Date(Date.UTC(recapYear, recapMonth, 0)).getUTCDate();
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const sb = supabaseAdmin as any;
@@ -195,6 +192,7 @@ export const Route = createFileRoute("/api/public/hooks/monthly-letter")({
         const article = await fetchLatestArticle();
 
         const { sendTransactionalEmail, founderReplyTo } = await import("@/lib/brevoEmail.server");
+        const { unsubUrl, unsubHeaders } = await import("@/lib/unsubscribe");
 
         const planned: Array<{ email: string; birds: number; allQuiet: boolean; subject: string }> = [];
         const skipped: string[] = [];
@@ -208,57 +206,60 @@ export const Route = createFileRoute("/api/public/hooks/monthly-letter")({
           if (!p.email) { skipped.push(`${p.id}: no email`); continue; }
           const locale = p.locale ?? "en";
 
-          const modelled: MonthlyBird[] = mine.map((b: any) => {
-            const ws = (wByBird.get(b.id) ?? []).map((r: any) => Number(r.grams));
-            const prev = (pwByBird.get(b.id) ?? []).map((r: any) => Number(r.grams));
-            const ls = lByBird.get(b.id) ?? [];
-            const js = jByBird.get(b.id) ?? [];
-            const quotable = js.find((j: any) => typeof j.body === "string" && j.body.trim().length > 0);
+          const { chartUrl } = await import("@/lib/chartLink");
+          const { chartPng } = await import("@/lib/weightChart.server");
+          const modelled: FlockBird[] = [];
+          for (const b of mine as any[]) {
+            const ws = (wByBird.get(b.id) ?? [])
+              .map((r: any) => ({ day: new Date(r.measured_at).getUTCDate(), g: Number(r.grams) }))
+              .sort((x: any, z: any) => x.day - z.day);
             const plan = (cByBird.get(b.id) ?? []).sort((a: any, z: any) => z.updated_at.localeCompare(a.updated_at))[0];
-            const lw = (lwByBird.get(b.id) ?? [])[0];
-            const ll = (llByBird.get(b.id) ?? [])[0];
-            return {
+            // Render once here, purely as a pre-flight: if this bird's chart
+            // cannot be drawn, the email falls back to the dot chart rather
+            // than shipping an <img> that will 404 in someone's inbox. The
+            // image itself is still rendered on demand when the client asks.
+            let url: string | undefined;
+            if (ws.length) {
+              try {
+                await chartPng({ points: ws, days, axisStart: "", axisEnd: "" });
+                url = chartUrl(APP_URL, b.id, recapYear, recapMonth);
+              } catch (e) {
+                console.error(`[monthly-letter] chart render failed for bird ${b.id}`, e);
+              }
+            }
+            modelled.push({
               name: b.name,
               species: b.species ?? "",
-              recordUrl: `${APP_URL}/birds/${b.id}`,
-              weights: ws,
-              prevSpread: prev.length >= 2 ? spread(prev) : null,
-              checks: ls.length,
-              flagged: ls.filter((l: any) => l.triage_status === "red").length,
-              journalEntries: js.length,
-              journalPhotos: js.filter((j: any) => j.photo_path).length,
-              planUpdated: plan ? { date: shortDate(plan.updated_at, locale), sections: "" } : null,
-              quote: quotable ? { date: longDate(quotable.occurred_on, locale), body: String(quotable.body).slice(0, 240) } : null,
-              lastWeight: lw ? { grams: Number(lw.grams), date: longDate(lw.measured_at, locale) } : null,
-              lastCheck: ll ? { date: shortDate(ll.log_date, locale), flagged: ll.triage_status === "red" } : null,
-            };
-          });
+              href: `${APP_URL}/birds/${b.id}`,
+              weighIns: ws,
+              checks: (lByBird.get(b.id) ?? []).length,
+              journal: (jByBird.get(b.id) ?? []).length,
+              planUpdated: plan ? shortDate(plan.updated_at, locale) : null,
+              chartUrl: url,
+            });
+          }
 
-          // Dates already on the record that fall in the month we are sending in.
+          // The soonest Moment in the month AFTER the one being recapped.
           const coming = mine
-            .flatMap((b: any) => (mByBird.get(b.id) ?? []).map((m: any) => ({ bird: b.name, ...m })))
-            .filter((m: any) => m.on_date && new Date(m.on_date).getUTCMonth() + 1 === sendMonth)
-            .sort((a: any, z: any) => new Date(a.on_date).getUTCDate() - new Date(z.on_date).getUTCDate())
-            .slice(0, 3)
-            .map((m: any) => ({
-              mon: new Intl.DateTimeFormat("en-GB", { month: "short", timeZone: "UTC" }).format(new Date(m.on_date)),
-              day: new Date(m.on_date).getUTCDate(),
-              title: m.title ?? "",
-              sub: "",
-            }));
+            .flatMap((b: any) => (mByBird.get(b.id) ?? []).map((mo: any) => mo))
+            .filter((mo: any) => mo.on_date && new Date(mo.on_date).getUTCMonth() + 1 === sendMonth)
+            .sort((a: any, z: any) => new Date(a.on_date).getUTCDate() - new Date(z.on_date).getUTCDate())[0];
 
-          const built = buildMonthlyEmail({
+          const unsub = unsubUrl(APP_URL, p.id, "monthly");
+          const built = buildFlockReportEmail({
             firstName: p.first_name ?? p.display_name ?? undefined,
             birds: modelled,
-            month: sendMonth,
-            year: sendYear,
+            month: recapMonth,
+            year: recapYear,
             link: APP_URL,
-            coming,
+            coming: coming ? { date: shortDate(coming.on_date, locale), title: coming.title ?? "" } : null,
             article,
+            unsubscribeUrl: unsub,
             locale,
           });
 
-          const allQuiet = modelled.every(isQuietMonth);
+          // One rule, shared with the builder, so the log and the email agree.
+          const allQuiet = isQuietFlock(modelled);
           planned.push({ email: p.email, birds: modelled.length, allQuiet, subject: built.subject });
           if (dryRun) continue;
 
@@ -269,6 +270,7 @@ export const Route = createFileRoute("/api/public/hooks/monthly-letter")({
             htmlContent: built.html,
             textContent: built.text,
             replyTo: founderReplyTo(),
+            headers: unsubHeaders(APP_URL, p.id, "monthly"),
           });
           if (!res.ok) { failed++; skipped.push(`${p.email}: send failed`); continue; }
           sent++;

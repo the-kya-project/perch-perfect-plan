@@ -18,6 +18,7 @@
 // app; nothing imports this.
 import * as fs from "node:fs";
 import * as T from "@/lib/emailTemplates";
+import { buildWelcomeEmail, buildSeriesWeighingEmail, buildSeriesHealthCheckEmail, buildSeriesCarePlanEmail, buildSeriesJournalEmail, buildSeriesSharingEmail, buildSeriesVetEmail } from "@/lib/flockEmails";
 
 // Minimal dotenv: first file that exists, exported values take precedence.
 for (const f of [".env.email-qa", ".env.local", ".env"]) {
@@ -70,13 +71,13 @@ const RANGE = "3 to 11 October";
 // Programme order. Sent in REVERSE so the inbox, newest first, reads 1 to 26
 // top to bottom.
 const all: Array<[string, { subject: string; html: string; text: string }, boolean?]> = [
-  ["01 onboarding · welcome", T.buildWelcomeEmail({ firstName: "Brittany", link: APP }), true],
-  ["02 onboarding · weighing", T.buildSeriesWeighingEmail({ link: `${APP}/birds/demo/weight` })],
-  ["03 onboarding · health check", T.buildSeriesHealthCheckEmail({ link: `${APP}/birds/demo/scan` })],
-  ["04 onboarding · care plan", T.buildSeriesCarePlanEmail({ link: `${APP}/birds/demo/plan` })],
-  ["05 onboarding · journal", T.buildSeriesJournalEmail({ link: `${APP}/birds/demo/journal` })],
-  ["06 onboarding · sharing", T.buildSeriesSharingEmail({ link: `${APP}/birds/demo/access` })],
-  ["07 onboarding · vet summary", T.buildSeriesVetEmail({ link: `${APP}/birds/demo/vet-summary` }), true],
+  ["01 onboarding · welcome", buildWelcomeEmail({ firstName: "Brittany", link: APP }), true],
+  ["02 onboarding · weighing", buildSeriesWeighingEmail({ link: `${APP}/birds/demo/weight` })],
+  ["03 onboarding · health check", buildSeriesHealthCheckEmail({ link: `${APP}/birds/demo/scan` })],
+  ["04 onboarding · care plan", buildSeriesCarePlanEmail({ link: `${APP}/birds/demo/plan` })],
+  ["05 onboarding · journal", buildSeriesJournalEmail({ link: `${APP}/birds/demo/journal` })],
+  ["06 onboarding · sharing", buildSeriesSharingEmail({ link: `${APP}/birds/demo/access` })],
+  ["07 onboarding · vet summary", buildSeriesVetEmail({ link: `${APP}/birds/demo/vet-summary` }), true],
 
   ["07b monthly · letter", T.buildMonthlyEmail({ firstName: "Brittany", month: new Date().getUTCMonth() + 1, year: new Date().getUTCFullYear(), link: APP,
     birds: [{ name: BIRD, species: "Blue and Gold Macaw", recordUrl: `${APP}/birds/demo`,

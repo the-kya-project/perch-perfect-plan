@@ -47,6 +47,8 @@ type Prefs = {
   push_care_plan_reminder: boolean;
   push_weight_reminder: boolean;
   push_checkin_reminder: boolean;
+  notify_monthly_letter: boolean;
+  notify_onboarding: boolean;
 };
 
 type Row = {
@@ -78,6 +80,19 @@ const ROWS: Row[] = [
     pushKey: "push_checkin_reminder",
     title: "Check-in reminders",
     desc: "A gentle reminder if it's been a while since the last entry.",
+  },
+];
+
+const EMAIL_ROWS: Array<{ key: keyof Prefs; title: string; desc: string }> = [
+  {
+    key: "notify_monthly_letter",
+    title: "The Flock Report",
+    desc: "A monthly look at your flock's numbers, a care note, and the latest from The Kya Project. Sent on the 2nd.",
+  },
+  {
+    key: "notify_onboarding",
+    title: "Getting-started emails",
+    desc: "A short tour of the app over your first couple of weeks.",
   },
 ];
 
@@ -118,7 +133,7 @@ function NotificationsSettingsPage() {
       const { data } = await supabase
         .from("profiles")
         .select(
-          "notify_sitter_opened, notify_sitter_log, notify_care_plan_reminder, push_sitter_opened, push_sitter_log, push_care_plan_reminder, push_weight_reminder, push_checkin_reminder",
+          "notify_sitter_opened, notify_sitter_log, notify_care_plan_reminder, push_sitter_opened, push_sitter_log, push_care_plan_reminder, push_weight_reminder, push_checkin_reminder, notify_monthly_letter, notify_onboarding",
         )
         .eq("id", u.user.id)
         .maybeSingle();
@@ -358,6 +373,39 @@ function NotificationsSettingsPage() {
               </div>
             </div>
           </Card>
+
+          {/* The two email programmes a reader can turn off. Separate from the
+              per-event grid below, which is about transactional alerts: those
+              keep coming whatever these say, and the line underneath says so. */}
+          <div>
+            <div className="mb-2 px-4">
+              <span className="t-eyebrow text-[var(--mute2)]">Email</span>
+            </div>
+            <Card>
+              {EMAIL_ROWS.map((row, i) => (
+                <div
+                  key={row.key}
+                  className={`flex items-start gap-4 px-4 py-3 ${i < EMAIL_ROWS.length - 1 ? "border-b border-[var(--line2)]" : ""}`}
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="t-item">{row.title}</div>
+                    <p className="t-meta mt-0.5">{row.desc}</p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    aria-label={row.title}
+                    className="mt-1 size-5 w-12 rounded border-[var(--line)] accent-[var(--moss)]"
+                    checked={prefs ? Boolean(prefs[row.key]) : false}
+                    disabled={!prefs || saving === row.key}
+                    onChange={(e) => toggle(row.key, e.target.checked)}
+                  />
+                </div>
+              ))}
+            </Card>
+            <p className="t-meta mt-2 px-4 text-[var(--mute)]">
+              Sit updates, invites, and alerts always come through.
+            </p>
+          </div>
 
           {/* Per-event toggles: email | push */}
           <div>
