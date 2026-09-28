@@ -1115,36 +1115,8 @@ export function buildSitterInviteCancelledEmail(opts: {
 // The health-check letter moved to the Flock Club layout — see
 // src/lib/flockEmails.ts.
 
-// Day 9 — the care plan. The six sections as a grid, Food and Routine limed
-// because those are the two the copy tells you to start with.
-export function buildSeriesCarePlanEmail(opts: { link: string; locale?: string }): BuiltEmail {
-  const t = emailT(opts.locale);
-  return {
-    subject: t("email.seriesCarePlan.subject"),
-    html: letterShell({
-      n: 4,
-      nextDay: 12,
-      preview: t("email.seriesCarePlan.preview"),
-      kicker: t("email.seriesCarePlan.kicker"),
-      heading: t("email.seriesCarePlan.heading"),
-      hero: { file: "care-plan.jpg", alt: t("email.seriesCarePlan.heroAlt") },
-      bodyHtml:
-        lead(t("email.seriesCarePlan.lead")) +
-        sectionGrid(t("email.seriesCarePlan.sections").split("|")) +
-        caption(t("email.seriesCarePlan.momentCaption")) +
-        para(t("email.seriesCarePlan.p2")) +
-        note(t("email.seriesCarePlan.card1Label"), noteP(t("email.seriesCarePlan.card1P1"))) +
-        para(t("email.seriesCarePlan.p3")) +
-        para(t("email.seriesCarePlan.p4")) +
-        para(t("email.seriesCarePlan.p5")) +
-        button(t("email.seriesCarePlan.cta"), opts.link, "8px 0 8px"),
-      nextUp: t("email.seriesCarePlan.nextUp"),
-      foot: t("email.seriesCarePlan.foot"),
-      t,
-    }),
-    text: t("email.seriesCarePlan.text", { link: opts.link }),
-  };
-}
+// The care-plan letter moved to the Flock Club layout — see
+// src/lib/flockEmails.ts.
 
 // Day 12 — journal and moments. The one letter that asks for no new habit;
 // three in a row asking someone to start something is a lot.

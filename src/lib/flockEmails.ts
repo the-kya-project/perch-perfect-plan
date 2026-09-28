@@ -164,3 +164,56 @@ export function buildSeriesHealthCheckEmail(opts: { link: string; hasBird?: bool
     locale: opts.locale,
   });
 }
+
+/**
+ * Day 9 — the care plan.
+ *
+ * The tiles follow CARE_PLAN_SECTIONS in src/components/CarePlanView.tsx:
+ * food, behavior, home, health, routine, emergency. Routine sits FIFTH in the
+ * app, not second, so the two "start here" tiles are not adjacent. The email
+ * follows the app rather than the other way round — a reader who opens the
+ * plan should find it laid out the way the email just showed them. The number
+ * badges are each tile's real position, which is why 01 and 05 do not appear:
+ * those two tiles carry START HERE instead.
+ */
+export function buildSeriesCarePlanEmail(opts: { link: string; hasBird?: boolean; locale?: string }): BuiltEmail {
+  const t = emailT(opts.locale);
+  const start = t("email.seriesCarePlan.startHere");
+  const blocks: FlockBlock[] = [
+    { kind: "p", text: t("email.seriesCarePlan.p1") },
+    {
+      kind: "tileGrid",
+      tiles: [
+        { name: t("email.seriesCarePlan.secFood"), badge: start, highlight: true },
+        { name: t("email.seriesCarePlan.secBehavior"), badge: "02", highlight: false },
+        { name: t("email.seriesCarePlan.secHome"), badge: "03", highlight: false },
+        { name: t("email.seriesCarePlan.secHealth"), badge: "04", highlight: false },
+        { name: t("email.seriesCarePlan.secRoutine"), badge: start, highlight: true },
+        { name: t("email.seriesCarePlan.secEmergency"), badge: "06", highlight: false },
+      ],
+    },
+    { kind: "p", text: t("email.seriesCarePlan.p2") },
+    {
+      kind: "quoteCard",
+      title: t("email.seriesCarePlan.exampleTitle"),
+      panelLabel: t("email.seriesCarePlan.exampleLabel"),
+      quote: t("email.seriesCarePlan.exampleQuote"),
+      note: t("email.seriesCarePlan.exampleNote"),
+    },
+    { kind: "p", text: t("email.seriesCarePlan.p3") },
+    { kind: "p", text: t("email.seriesCarePlan.p4") },
+    { kind: "button", label: t("email.seriesCarePlan.cta"), href: opts.link, needsBird: true },
+    { kind: "signature" },
+  ];
+  return flockShell({
+    headline: t("email.seriesCarePlan.headline"),
+    preheader: t("email.seriesCarePlan.preview"),
+    pill: t("email.flock.pillFlockmate"),
+    hero: { file: "care-plan.jpg", alt: t("email.seriesCarePlan.heroAlt"), sticker: t("email.seriesCarePlan.sticker") },
+    blocks,
+    footerWhy: t("email.seriesCarePlan.foot"),
+    link: opts.link,
+    hasBird: opts.hasBird,
+    locale: opts.locale,
+  });
+}

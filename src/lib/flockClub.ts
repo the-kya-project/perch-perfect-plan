@@ -79,6 +79,8 @@ export type FlockBlock =
   | { kind: "button"; label: string; href: string; needsBird?: boolean }
   | { kind: "subhead"; text: string }
   | { kind: "panel"; title: string; items: Array<{ lead: string; text: string }> }
+  | { kind: "tileGrid"; tiles: Array<{ name: string; badge: string; highlight: boolean }> }
+  | { kind: "quoteCard"; title: string; panelLabel: string; quote: string; note: string }
   | { kind: "checkCard"; title: string; badge: string; questions: string[]; answers: [string, string, string]; note: string }
   | { kind: "dotChart"; badge: string; caption: string; series: number[]; unit: string; axisStart: string; axisEnd: string; note: string }
   | { kind: "photoHighlight"; title: string; body: string; photo: string; photoAlt: string }
@@ -216,6 +218,41 @@ ${grid()}${o.items
     )
     .join("\n")}
 </table>
+</td>
+</tr></table>`;
+
+/** A 3x2 grid of section tiles. Fixed layout with real spacer cells for the
+ *  gaps: percentage widths plus border-spacing behave differently in every
+ *  client, and a spacer column is the one thing they all agree on. */
+function tileGridHtml(tiles: Array<{ name: string; badge: string; highlight: boolean }>): string {
+  const cell = (t: { name: string; badge: string; highlight: boolean }) =>
+    `<td width="32%" valign="top" style="width:32%;padding:14px 12px;background-color:${t.highlight ? FC.lime : "#ffffff"};border:2px solid ${t.highlight ? FC.forest : "#e3ded0"};border-radius:16px;">
+<p style="margin:0 0 5px;font-family:${BODY_FONT};font-size:11px;line-height:14px;letter-spacing:.09em;font-weight:700;color:${t.highlight ? FC.mid : "#5a8c7a"};">${t.badge}</p>
+<p style="margin:0;font-family:${HEAD_FONT};font-size:18px;line-height:23px;font-weight:800;letter-spacing:-0.3px;color:${FC.forest};">${t.name}</p>
+</td>`;
+  const gap = `<td width="8" style="width:8px;font-size:0;">&nbsp;</td>`;
+  const row = (r: typeof tiles) => `<tr>${r.map(cell).join(gap)}</tr>`;
+  return `${grid("table-layout:fixed;margin:0 0 20px;")}
+${row(tiles.slice(0, 3))}
+<tr><td height="8" colspan="5" style="height:8px;line-height:8px;font-size:0;">&nbsp;</td></tr>
+${row(tiles.slice(3, 6))}
+</table>`;
+}
+
+/** A white card wrapping a cream panel with an example in it — the example is
+ *  set in the serif so it reads as something someone wrote, not as UI copy. */
+const quoteCardHtml = (o: { title: string; panelLabel: string; quote: string; note: string }) =>
+  `${grid("margin:0 0 20px;")}<tr>
+<td style="padding:16px;background-color:#ffffff;border:2px solid ${FC.forest};border-radius:18px;">
+<p style="margin:0 0 14px;font-family:${HEAD_FONT};font-size:21px;line-height:27px;font-weight:800;letter-spacing:-0.4px;color:${FC.forest};">${o.title}</p>
+${grid("margin:0 0 12px;")}<tr>
+<td style="padding:14px;background-color:${FC.panel};border-radius:12px;">
+<p style="margin:0 0 7px;font-family:${BODY_FONT};font-size:11px;line-height:14px;letter-spacing:.09em;font-weight:700;color:#5a8c7a;">${o.panelLabel}</p>
+<p style="margin:0;font-family:${SERIF_FONT};font-style:italic;font-size:17px;line-height:26px;color:${FC.forest};">${o.quote}</p>
+</td>
+</tr>
+</table>
+<p style="margin:0;font-family:${BODY_FONT};font-size:13px;line-height:20px;color:${FC.muted};">${o.note}</p>
 </td>
 </tr></table>`;
 
@@ -357,6 +394,8 @@ function blockHtml(b: FlockBlock, c: Ctx): string {
     case "button": { const r = resolveButton(b, c); return buttonHtml(r.label, r.href); }
     case "subhead": return subheadHtml(b.text);
     case "panel": return panelHtml(b);
+    case "tileGrid": return tileGridHtml(b.tiles);
+    case "quoteCard": return quoteCardHtml(b);
     case "checkCard": return checkCardHtml(b);
     case "dotChart": return dotChartHtml(b);
     case "photoHighlight": return photoHighlightHtml(b);
@@ -387,6 +426,8 @@ function blockText(b: FlockBlock, c: Ctx): string {
     case "button": { const r = resolveButton(b, c); return `${detag(r.label)}: ${r.href}`; }
     case "subhead": return detag(b.text);
     case "panel": return `${detag(b.title)}\n` + b.items.map((it, i) => `${i + 1}. ${detag(it.lead)} ${detag(it.text)}`).join("\n");
+    case "tileGrid": return b.tiles.map((x) => `${detag(x.badge)} ${detag(x.name)}`).join("\n");
+    case "quoteCard": return `${detag(b.title)}\n${detag(b.panelLabel)}\n${detag(b.quote)}\n${detag(b.note)}`;
     case "checkCard": return `${detag(b.title)}\n` + b.questions.map((q) => `- ${detag(q)} [${detag(b.answers[0])}]`).join("\n") + `\n${detag(b.note)}`;
     case "dotChart": return `${detag(b.badge)} — ${detag(b.caption)}\n${Math.min(...b.series)}${b.unit}–${Math.max(...b.series)}${b.unit}, ${detag(b.axisStart)} to ${detag(b.axisEnd)}\n${detag(b.note)}`;
     case "photoHighlight": return `${detag(b.title)}\n${detag(b.body)}`;
