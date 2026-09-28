@@ -10,6 +10,19 @@
   "email.shell.fieldNotes": "From the field notes",
   "email.shell.footNote": "Kya &amp; Co. — by The Kya Project",
 
+  // ---- Flock Club shared chrome (src/lib/flockClub.ts) ----
+  // Used by every email built on the new layout. The disclaimer is emitted by
+  // the footer on every one of them and must never be written into a body
+  // block — that is the whole point of it living here.
+  "email.flock.lockupAlt": "Kya &amp; Co.",
+  "email.flock.signName": "Brittany",
+  "email.flock.signTitle": "Founder, The Kya Project",
+  "email.flock.disclaimer": "Kya &amp; Co. doesn't diagnose illness. If you're ever worried about your bird's health, contact an avian veterinarian.",
+  "email.flock.settings": "Settings",
+  "email.flock.unsubscribe": "Unsubscribe",
+  "email.flock.byLine": "by The Kya Project",
+  "email.flock.pillFlockmate": "Hi, flockmate",
+
   // ---- The onboarding letter layout (letterShell) ----
   // Shared by the seven letters: the masthead label, the hand-off line, the
   // founder line under the sign-off, and the two product-moment labels.
