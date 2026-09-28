@@ -363,13 +363,17 @@ ${grid()}<tr>
 
 /** The two ways to share, side by side: a sitter link and household access. */
 function sharingCards(o: { sitterLabel: string; sitterBody: string; sitterFoot: string; householdLabel: string; householdBody: string; householdFoot: string }): string {
+  // Set entirely in the serif: the pair reads as two short passages of prose
+  // rather than as two UI tiles, which is what the sans version looked like.
+  // The footnote is the italic, so the practical difference between the two
+  // options is set apart without another rule or another colour.
   const card = (bg: string, label: string, body: string, foot: string) =>
     `${grid()}<tr>
 <td bgcolor="${bg}" style="padding:18px 18px 16px;background-color:${bg};border-radius:14px;">
-<p style="margin:0 0 10px;${LABEL}color:${L.mid};">${label}</p>
-<p style="margin:0 0 14px;font-family:${SANS};font-size:14.5px;line-height:23px;color:${C.green};">${body}</p>
+<p style="margin:0 0 10px;font-family:${SERIF};font-size:18px;line-height:24px;color:${C.green};">${label}</p>
+<p style="margin:0 0 14px;font-family:${SERIF};font-size:15px;line-height:24px;color:${C.green};">${body}</p>
 ${grid()}<tr>
-<td style="padding:10px 0 0;border-top:1px solid ${C.border};font-family:${SANS};font-size:12.5px;line-height:18px;color:${C.secondary};">${foot}</td>
+<td style="padding:10px 0 0;border-top:1px solid ${C.border};font-family:${SERIF};font-size:13.5px;line-height:20px;font-style:italic;color:${L.mid};">${foot}</td>
 </tr>
 </table>
 </td>
