@@ -322,13 +322,17 @@ function birdCardHtml(b: FlockBirdCard): string {
     const gs = b.chart.points.map((p) => p.g);
     const hi = Math.max(...gs);
     const lo = Math.min(...gs);
-    const span = hi - lo || 1;
-    // One cell per day of the month, so a dot sits where it happened.
-    const byDay = new Map(b.chart.points.map((p) => [p.day, p.g]));
-    const cells = Array.from({ length: b.chart.days }, (_, i) => {
-      const g = byDay.get(i + 1);
-      if (g === undefined) return `<td style="height:${H}px;padding:0;font-size:0;">&nbsp;</td>`;
-      const top = Math.round(((hi - g) / span) * (H - DOT));
+    const span = hi - lo;
+    // ONE CELL PER READING, not one per day. A day-keyed grid silently dropped
+    // every second reading on a day — two weigh-ins on the 10th plotted one
+    // dot while the caption still said two, and a month with two readings a day
+    // lost half of them. Ordinal spacing costs date-proportional x, which the
+    // rendered line chart restores; losing readings is the worse trade.
+    //
+    // A single reading (or a flat month) has no range to scale against, so it
+    // sits in the middle rather than pinned to the top, which read as "high".
+    const cells = b.chart.points.map((pt) => {
+      const top = span === 0 ? Math.round((H - DOT) / 2) : Math.round(((hi - pt.g) / span) * (H - DOT));
       return `<td valign="top" style="height:${H}px;padding:${top}px 0 0;">
 <table role="presentation" width="${DOT}" cellpadding="0" cellspacing="0" border="0" style="width:${DOT}px;${RESET}">
 <tr><td height="${DOT}" bgcolor="${FC.mid}" style="width:${DOT}px;height:${DOT}px;background-color:${FC.mid};border-radius:${DOT / 2}px;font-size:0;line-height:${DOT}px;">&nbsp;</td></tr>
