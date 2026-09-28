@@ -1,0 +1,181 @@
+{
+  "newSeriesStrings": {
+    "series.letterOf": "Letter {{n}} of 7",
+    "series.nextLabel": "Next letter · Day {{day}}",
+    "series.signTitle": "Founder, The Kya Project",
+    "moment.inTheApp": "In the app",
+    "moment.example": "Example",
+    "seriesWeighing.momentLabel": "Weight",
+    "seriesWeighing.momentSummary": "Steady over the last 90 days.",
+    "seriesWeighing.momentCaption": "Juno, a blue-throated macaw, weighed before breakfast most mornings. Ninety days of readings, one line.",
+    "seriesHealthCheck.momentTitle": "Health check — Juno",
+    "seriesHealthCheck.momentIntro": "A quick once-over to make sure Juno's feeling like themselves.",
+    "seriesHealthCheck.q1": "Is the bird alert and responsive?",
+    "seriesHealthCheck.q2": "Is the bird eating normally?",
+    "seriesHealthCheck.q3": "Do the droppings look normal?",
+    "seriesHealthCheck.more": "And a few more, about breathing, perching, and sound.",
+    "answer.normal": "Normal",
+    "answer.notSure": "Not sure",
+    "answer.concerning": "Concerning",
+    "seriesCarePlan.sections": "Food|Routine|Behavior|Home|Health|Emergency",
+    "seriesCarePlan.momentCaption": "Six sections. The two in green are the easiest place to begin.",
+    "seriesJournal.entryDate": "Saturday, 14 September",
+    "seriesJournal.entry": "Tried the new foraging box this morning. Worked it out in under a minute, then ignored it for the rest of the day.",
+    "seriesJournal.momentLine": "Moment · 3 October, the day Juno came home",
+    "seriesSharing.sitterAccount": "No account needed. They open a private link.",
+    "seriesSharing.householdAccount": "They sign in with their own account.",
+    "seriesVet.leadIntro": "The weights and observations you've logged give you something to refer to at a vet appointment.",
+    "seriesVet.q1": "When did their appetite change?",
+    "seriesVet.q2": "What did they weigh before that?",
+    "seriesVet.q3": "Has it happened once, or a few times?",
+    "seriesVet.questionsLabel": "Questions your record can answer"
+  },
+  "monthly": {
+    "subject.one": "{{birdName}}'s September, in the record",
+    "subject.two": "{{birdName1}} and {{birdName2}}'s September, in the record",
+    "subject.many": "Your flock's September, in the record",
+    "preview": "A look back at the month, a care note, and the latest from The Kya Project.",
+    "mast": "October letter",
+    "kicker": "Your month with {{birds}}",
+    "heading": "September, in the record",
+    "hi": "Hi {{firstName}},",
+    "lead": "Here's a look back at {{birds}}'s month: what the record shows, a few things you wrote down, and a care note for the month ahead.",
+    "weightLabel": "Weight in September",
+    "weightTypical": "typical this month",
+    "noticedLabel": "What changed",
+    "checksLabel": "Health checks",
+    "journalLabel": "Journal",
+    "planLabel": "Care plan",
+    "recordLink": "Open {{bird}}'s record",
+    "quietLead": "{{bird}}'s record was quieter this month. One weight is enough to pick the trend back up, and everything from before is still there.",
+    "lastLabel": "Last on the record",
+    "notGrade": "None of this is a score. A quieter month in the log is still a month you spent together.",
+    "cta": "Open Kya &amp; Co.",
+    "comingLabel": "Coming up in October",
+    "careLabel": "This month's care note",
+    "fieldLabel": "From the field notes",
+    "fieldTitle": "Weigh your bird every day: What a gram scale tells you before your parrot does",
+    "fieldDek": "Weight is the first honest signal of a parrot's health. Why daily weighing matters, what normal fluctuation looks like, and when the trend means call the vet.",
+    "fieldMeta": "4 minute read",
+    "fieldLink": "Read the article",
+    "reply": "What have your birds been up to? Reply and tell me. Every one comes straight to me.",
+    "signoff": "Warmly,<br>Brittany",
+    "healthNote": "This app doesn't diagnose illness. If you're ever worried about your bird's health, contact an avian veterinarian.",
+    "foot": "You're getting this because you have a Kya &amp; Co. account. You can turn off the monthly letter in Settings at any time.",
+    "q.lead": "A new month is an easy place to pick things back up. One weight is enough to start again, and everything you logged before is still on the record.",
+    "q.startLabel": "Two easy ways back in",
+    "q.start1": "<b>Log a weight.</b> It takes about a minute, and it picks the trend up where you left it.",
+    "q.start2": "<b>Run a health check.</b> A few questions about how your bird looks and behaves today.",
+    "q.cta": "Log a weight"
+  },
+  "careNotesByMonth": {
+    "1": {
+      "alt": "A sun conure looking over its shoulder",
+      "title": "Book the wellness visit",
+      "notes": [
+        "<b>Put a date on the calendar.</b> A yearly check with an avian vet gives you both a baseline to compare against, even when everything seems fine.",
+        "<b>Bring the record.</b> Open the vet summary before you go and jot down anything you've been wondering about, however small.",
+        "<b>Practice the carrier.</b> A few short, calm visits to the carrier in the weeks before make the trip easier on everyone."
+      ]
+    },
+    "2": {
+      "alt": "A white cockatoo with a yellow crest, holding food in one foot",
+      "title": "Make food take a bit of work",
+      "notes": [
+        "<b>Start easy.</b> Wrap a favorite treat loosely in plain paper, or tuck it into a paper cup. The first puzzle should be one your bird can solve.",
+        "<b>Build up slowly.</b> Once your bird has the idea, try a foraging toy, or hide pieces of the usual food around the cage.",
+        "<b>Keep an eye on the bowl.</b> Make sure your bird is still eating enough while they learn. Their weight trend will tell you if something's shifted."
+      ]
+    },
+    "3": {
+      "alt": "A golden conure perched on a bare branch",
+      "title": "Look after their feet",
+      "notes": [
+        "<b>Mix up the perches.</b> Different widths and textures let feet work in different ways. Natural branches from bird-safe wood are a good place to start.",
+        "<b>Check for wear.</b> Look for loose fittings, cracks, and smooth, worn spots, and replace anything that's seen better days.",
+        "<b>Watch how they stand.</b> In a calm moment, notice how your bird grips and balances. If something looks different from usual, ask your vet."
+      ]
+    },
+    "4": {
+      "alt": "A rainbow lorikeet preening its tail feathers on a rope perch",
+      "title": "Make time for a bath",
+      "notes": [
+        "<b>Offer a few options.</b> Some birds love a shallow dish, some prefer a light mist, and some would rather sit with you near the shower.",
+        "<b>Keep it warm and easy.</b> Lukewarm water, a warm room, and plenty of time to dry off afterward.",
+        "<b>Let your bird decide.</b> If they're not interested today, try again another day. Note what they like in the journal."
+      ]
+    },
+    "5": {
+      "alt": "A green eclectus parrot on a thin branch among leaves",
+      "title": "Give the toy box a once-over",
+      "notes": [
+        "<b>Check what you have.</b> Fraying rope, loose parts, and cracked plastic are worth replacing before they become a problem.",
+        "<b>Rotate a few.</b> Put some toys away and bring back ones your bird hasn't seen in a while. Old favorites often feel new again.",
+        "<b>Notice what gets chewed.</b> Which toys get destroyed and which get ignored is a good clue for what to offer next."
+      ]
+    },
+    "6": {
+      "alt": "A green parrot with an orange face perched in a leafy tree",
+      "title": "Add something new to the bowl",
+      "notes": [
+        "<b>Try one new vegetable.</b> Offer it more than once. Many parrots need to see a food several times before they'll taste it.",
+        "<b>Change the shape.</b> Chopped, whole, grated, or threaded on a skewer can each land differently.",
+        "<b>Ask about the balance.</b> The right mix of pellets, fresh food, and seed depends on species, so it's a good question for your next vet visit."
+      ]
+    },
+    "7": {
+      "alt": "A close-up of a green conure with red markings on its face",
+      "title": "Do a gentle once-over",
+      "notes": [
+        "<b>Pick a calm moment.</b> Sitting close during a quiet time is enough. There's no need to hold your bird still.",
+        "<b>Look at nails, beak, and eyes.</b> You're learning what's usual for your bird, so a change stands out later.",
+        "<b>Write down what you see.</b> A short journal note, and a photo if you can, gives you something to compare next time. If something has changed, ask your vet."
+      ]
+    },
+    "8": {
+      "alt": "A green budgerigar perched in front of a dark aviary",
+      "title": "Get ready for the unexpected",
+      "notes": [
+        "<b>Fill in the Emergency section.</b> Add your avian vet, the nearest emergency clinic, and who to call if you can't be reached.",
+        "<b>Keep a carrier ready.</b> Somewhere easy to reach, with a towel and a small container of food.",
+        "<b>Share the plan.</b> Make sure anyone who helps with your bird knows where to find it."
+      ]
+    },
+    "9": {
+      "alt": "An African grey parrot looking up from a red perch indoors",
+      "title": "Keep the air clean at home",
+      "notes": [
+        "<b>Be careful with nonstick pans.</b> Overheated nonstick cookware can release fumes that are very dangerous to birds. Keep your bird well away from the kitchen when you cook.",
+        "<b>Go easy on scents.</b> Aerosol sprays, scented candles, plug-in air fresheners, and strong cleaning products are best kept away from where your bird spends time.",
+        "<b>Let fresh air in.</b> Open a window when you clean or cook, and keep your bird in another room until the air clears."
+      ]
+    },
+    "10": {
+      "alt": "A white cockatiel with orange cheeks beside a wooden nest box",
+      "title": "Protect a good night's sleep",
+      "notes": [
+        "<b>Keep bedtime steady.</b> A regular time, a dark room, and quiet help most parrots settle.",
+        "<b>Notice what wakes them.</b> Late TV, passing headlights, or a busy hallway can interrupt sleep more than you'd think.",
+        "<b>Write down the routine.</b> Add bedtime to the Routine section of the care plan so anyone helping out keeps it the same."
+      ]
+    },
+    "11": {
+      "alt": "Two hyacinth macaws sitting close together on a rope",
+      "title": "Spend a few minutes on training",
+      "notes": [
+        "<b>Keep sessions short.</b> A few minutes at a time, ending while your bird is still interested.",
+        "<b>Start with something simple.</b> Stepping up, or touching a target stick, builds trust and makes everyday care easier.",
+        "<b>Reward what you want to see.</b> A favorite treat and your attention go a long way. Note progress in the journal."
+      ]
+    },
+    "12": {
+      "alt": "A green macaw with a red forehead perched in an aviary",
+      "title": "Plan for a busy house",
+      "notes": [
+        "<b>Keep the basics steady.</b> Meals, sleep, and time out of the cage matter more when the house is full or the routine shifts.",
+        "<b>Give your bird a quiet spot.</b> Somewhere calm to retreat to when there are guests, noise, or new things around.",
+        "<b>Watch for hazards.</b> Open doors, candles, decorations, and unfamiliar foods are worth an extra look."
+      ]
+    }
+  }
+}
