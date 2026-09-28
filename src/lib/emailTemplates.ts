@@ -129,8 +129,11 @@ const BARE = `<table role="presentation" width="100%" cellpadding="0" cellspacin
 // from the catalog, same contract as the rest of this file.
 
 /** Opening paragraph, Georgia 18/29. One per letter, under the heading. */
+// The opening paragraph. It used to be Georgia 18/29 against a sans body, which
+// read as two different voices in one letter. Same font as everything else now;
+// it keeps only a little extra space beneath it.
 const lead = (s: string) =>
-  `<p style="margin:0 0 18px;font-family:${SERIF};font-size:18px;line-height:29px;color:${C.green};">${s}</p>`;
+  `<p style="margin:0 0 18px;font-family:${SANS};font-size:15px;line-height:25px;color:${C.green};">${s}</p>`;
 
 /** Standard body paragraph, sans 15/25. */
 const para = (s: string) =>
@@ -141,9 +144,11 @@ const paraLeadIn = (s: string) =>
   `<p style="margin:0 0 12px;font-family:${SANS};font-size:15px;line-height:25px;color:${C.green};font-weight:600;">${s}</p>`;
 
 /** The pull-quote: Georgia italic 21/31 in mid green, its own ruled row. */
+// Was Georgia italic 21/31 — a third voice on the page. Now the body face and
+// size, with the mid green doing the emphasis instead of the typeface.
 const statement = (s: string) =>
-  `${grid()}<tr><td style="padding:4px 0 22px;">
-          <p style="margin:0;font-family:${SERIF};font-style:italic;font-size:21px;line-height:31px;color:${L.mid};">${s}</p>
+  `${grid()}<tr><td style="padding:4px 0 18px;">
+          <p style="margin:0;font-family:${SANS};font-size:15px;line-height:25px;color:${L.mid};">${s}</p>
         </td></tr></table>`;
 
 /** Small italic caption under a product moment. */
@@ -380,17 +385,41 @@ ${grid()}<tr>
   );
 }
 
-/** The ruled list of questions a record can answer, in the last letter. */
-function vetQuestions(label: string, questions: string[]): string {
-  const rows = questions
+/** The vet summary, as the record actually presents it: the rows a vet would
+ *  look at, then the questions those rows let you answer. A list of questions on
+ *  its own was the dullest thing in the series — it described the record
+ *  instead of showing it. HTML, not a screenshot, so it reads with images off
+ *  and can be translated. */
+function vetSummaryCard(o: { label: string; title: string; rows: Array<{ label: string; value: string; sub: string }>; questionsLabel: string; questions: string[] }): string {
+  const rows = o.rows
     .map(
-      (q, i) => `<tr>
-<td style="padding:12px 0;${i === 0 ? "" : `border-top:1px solid ${C.border};`}font-family:${SERIF};font-style:italic;font-size:18px;line-height:26px;color:${C.green};">${q}</td>
+      (r, i) => `<tr>
+<td width="128" valign="top" style="width:128px;padding:${i === 0 ? "0" : "12px"} 12px 12px 0;${i === 0 ? "" : `border-top:1px solid #2f5a47;`}${LABEL}color:${L.limeSoft};">${r.label}</td>
+<td valign="top" style="padding:${i === 0 ? "0" : "12px"} 0 12px;${i === 0 ? "" : `border-top:1px solid #2f5a47;`}">
+<p style="margin:0 0 2px;font-family:${SANS};font-size:16px;line-height:22px;color:#ffffff;">${r.value}</p>
+<p style="margin:0;font-family:${SANS};font-size:12.5px;line-height:18px;color:${L.onGreen};">${r.sub}</p>
+</td>
 </tr>`,
     )
     .join("\n");
-  return note(label, `${grid("margin:0 0 8px;")}${rows}
-</table>`, "0px 0 22px");
+  const questions = o.questions
+    .map(
+      (q) => `<tr>
+<td width="16" valign="top" style="width:16px;padding:0 0 8px;font-family:${SANS};font-size:9px;line-height:21px;color:${C.teal};">&#9679;</td>
+<td valign="top" style="padding:0 0 8px;font-family:${SANS};font-size:14.5px;line-height:21px;color:${C.green};">${q}</td>
+</tr>`,
+    )
+    .join("\n");
+  return `${grid("margin:2px 0 10px;")}<tr>
+<td bgcolor="${C.green}" style="padding:20px 22px 18px;background-color:${C.green};border-radius:16px;">
+<p style="margin:0 0 4px;${LABEL}color:${L.lime};">${o.label}</p>
+<p style="margin:0 0 16px;font-family:${SERIF};font-size:20px;line-height:27px;color:#ffffff;">${o.title}</p>
+${grid()}${rows}
+</table>
+</td>
+</tr></table>
+${note(o.questionsLabel, `${grid()}${questions}
+</table>`, "0 0 22px")}`;
 }
 
 // ── letterShell ──────────────────────────────────────────────────────────────
@@ -428,12 +457,6 @@ function letterShell(opts: {
 
   // Progress: one cell per letter, the first n filled. The 2px white border-left
   // is the gap — border-spacing would be dropped by Outlook.
-  const segments = Array.from({ length: TOTAL }, (_, i) => {
-    const on = i < (opts.n ?? 0);
-    const bg = on ? C.green : C.border;
-    const edge = i === 0 ? "" : "border-left:2px solid #ffffff;";
-    return `<td height="3" bgcolor="${bg}" style="height:3px;line-height:3px;font-size:0;background-color:${bg};${edge}">&nbsp;</td>`;
-  }).join("\n");
 
   // Deep green behind the hero so the alt text reads in lime when the image is
   // blocked, instead of white-on-white.
@@ -445,20 +468,11 @@ function letterShell(opts: {
 </tr>`
     : "";
 
-  const nextUp =
-    opts.nextUp && opts.nextDay !== undefined
-      ? `<tr>
-<td style="padding:26px 24px 0;">
-${grid()}<tr>
-<td style="padding:18px 0 0;border-top:1px solid ${C.rule};">
-<p style="margin:0 0 6px;${LABEL}color:${C.secondary};font-weight:600;">${t("email.series.nextLabel", { day: opts.nextDay })}</p>
-<p style="margin:0;font-family:${SERIF};font-style:italic;font-size:16px;line-height:25px;color:${C.secondary};">${opts.nextUp}</p>
-</td>
-</tr>
-</table>
-</td>
-</tr>`
-      : "";
+  // The letters no longer announce what is coming next: a welcome email should
+  // read as a note from a person, not as lesson one of seven. `nextUp`/`nextDay`
+  // stay in the signature so the callers and their copy keys survive if it ever
+  // comes back.
+  const nextUp = "";
 
   const healthNote = opts.healthNote
     ? `<tr>
@@ -478,19 +492,11 @@ ${grid()}<tr>
 <td valign="middle" style="padding:0;">
 <img src="${ASSETS}/brand/email/lockup-reversed.png" width="150" alt="${t("email.series.lockupAlt")}" style="display:block;width:150px;height:auto;border:0;font-family:${SERIF};font-size:20px;line-height:26px;font-weight:bold;color:#ffffff;" />
 </td>
-<td valign="middle" align="right" style="padding:0 0 0 12px;${LABEL_MAST}color:${L.lime};text-align:right;">${opts.mastLabel ?? t("email.series.letterOf", { n: opts.n })}</td>
+<td valign="middle" align="right" style="padding:0 0 0 12px;${LABEL_MAST}color:${L.lime};text-align:right;">${opts.mastLabel ?? ""}</td>
 </tr>
 </table>
 </td>
 </tr>
-${opts.n === undefined ? "" : `<tr>
-<td style="padding:0;">
-${grid()}<tr>
-${segments}
-</tr>
-</table>
-</td>
-</tr>`}
 ${hero}
 <tr>
 <td style="padding:30px 24px 0;">
@@ -510,10 +516,10 @@ ${healthNote}
 <td height="28" style="height:28px;line-height:28px;font-size:0;">&nbsp;</td>
 </tr>
 <tr>
-<td bgcolor="${C.ground}" style="padding:24px 32px 26px;background-color:${C.ground};border-top:1px solid ${C.rule};border-radius:0 0 16px 16px;">
-<img src="${ASSETS}/brand/email/mark.png" width="30" alt="" style="display:block;width:30px;height:auto;border:0;margin:0 auto 10px;" />
-<p style="margin:0 0 12px;font-family:${SANS};font-size:12px;line-height:18px;color:${L.muted};text-align:center;">${opts.foot}</p>
-<p style="margin:0 0 0px;font-family:${SERIF};font-size:13px;line-height:19px;color:${C.green};text-align:center;font-style:italic;">${t("email.shell.footNote")}</p>
+<td bgcolor="${C.green}" style="padding:24px 32px 26px;background-color:${C.green};border-radius:0 0 16px 16px;">
+<img src="${ASSETS}/brand/email/mark-white.png" width="30" alt="" style="display:block;width:30px;height:auto;border:0;margin:0 auto 10px;" />
+<p style="margin:0 0 12px;font-family:${SANS};font-size:12px;line-height:18px;color:${L.onGreen};text-align:center;">${opts.foot}</p>
+<p style="margin:0 0 0px;font-family:${SERIF};font-size:13px;line-height:19px;color:${L.lime};text-align:center;font-style:italic;">${t("email.shell.footNote")}</p>
 </td>
 </tr>
   </table>
@@ -1125,9 +1131,6 @@ export function buildWelcomeEmail(opts: { firstName?: string; link: string; loca
           t("email.welcome.stepScan"),
         ]) +
         statement(t("email.welcome.together")) +
-        para(t("email.welcome.series")) +
-        para(t("email.welcome.carePlan")) +
-        para(t("email.welcome.reply")) +
         button(t("email.welcome.cta"), opts.link, "6px 0 26px") +
         signature(t("email.welcome.signoff"), t("email.series.signTitle")),
       nextUp: t("email.welcome.nextUp"),
@@ -1193,6 +1196,7 @@ export function buildSeriesHealthCheckEmail(opts: { link: string; locale?: strin
       preview: t("email.seriesHealthCheck.preview"),
       kicker: t("email.seriesHealthCheck.kicker"),
       heading: t("email.seriesHealthCheck.heading"),
+      hero: { file: "health-check.jpg", alt: t("email.seriesHealthCheck.heroAlt") },
       bodyHtml:
         lead(t("email.seriesHealthCheck.lead")) +
         para(t("email.seriesHealthCheck.p2")) +
@@ -1267,6 +1271,7 @@ export function buildSeriesJournalEmail(opts: { link: string; locale?: string })
       preview: t("email.seriesJournal.preview"),
       kicker: t("email.seriesJournal.kicker"),
       heading: t("email.seriesJournal.heading"),
+      hero: { file: "journal.jpg", alt: t("email.seriesJournal.heroAlt") },
       bodyHtml:
         lead(t("email.seriesJournal.lead")) +
         journalEntry({
@@ -1300,6 +1305,7 @@ export function buildSeriesSharingEmail(opts: { link: string; locale?: string })
       preview: t("email.seriesSharing.preview"),
       kicker: t("email.seriesSharing.kicker"),
       heading: t("email.seriesSharing.heading"),
+      hero: { file: "sharing.jpg", alt: t("email.seriesSharing.heroAlt") },
       bodyHtml:
         lead(t("email.seriesSharing.lead")) +
         sharingCards({
@@ -1333,18 +1339,24 @@ export function buildSeriesVetEmail(opts: { link: string; locale?: string }): Bu
       preview: t("email.seriesVet.preview"),
       kicker: t("email.seriesVet.kicker"),
       heading: t("email.seriesVet.heading"),
+      hero: { file: "vet.jpg", alt: t("email.seriesVet.heroAlt") },
       bodyHtml:
         lead(t("email.seriesVet.leadIntro")) +
-        vetQuestions(t("email.seriesVet.questionsLabel"), [
-          t("email.seriesVet.q1"),
-          t("email.seriesVet.q2"),
-          t("email.seriesVet.q3"),
-        ]) +
+        vetSummaryCard({
+          label: t("email.moment.inTheApp"),
+          title: t("email.seriesVet.summaryTitle"),
+          rows: [
+            { label: t("email.seriesVet.rowWeightLabel"), value: t("email.seriesVet.rowWeightValue"), sub: t("email.seriesVet.rowWeightSub") },
+            { label: t("email.seriesVet.rowChecksLabel"), value: t("email.seriesVet.rowChecksValue"), sub: t("email.seriesVet.rowChecksSub") },
+            { label: t("email.seriesVet.rowNotesLabel"), value: t("email.seriesVet.rowNotesValue"), sub: t("email.seriesVet.rowNotesSub") },
+          ],
+          questionsLabel: t("email.seriesVet.questionsLabel"),
+          questions: [t("email.seriesVet.q1"), t("email.seriesVet.q2"), t("email.seriesVet.q3")],
+        }) +
         para(t("email.seriesVet.p2")) +
         para(t("email.seriesVet.p3")) +
         para(t("email.seriesVet.p4")) +
         button(t("email.seriesVet.cta"), opts.link, "4px 0 24px") +
-        finale(t("email.seriesVet.card1Label"), t("email.seriesVet.card1P1")) +
         para(t("email.seriesVet.p5")) +
         signature(t("email.seriesVet.signoff"), t("email.series.signTitle")),
       healthNote: t("email.seriesVet.healthNote"),

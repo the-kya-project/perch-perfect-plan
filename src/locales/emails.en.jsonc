@@ -353,9 +353,6 @@
   "email.welcome.stepWeight": "<b>Log a first weight.</b> A digital gram scale lets you keep track of their weight over time. I'll cover choosing and using one in the next email.",
   "email.welcome.stepScan": "<b>Run a daily health check.</b> It takes you through a few questions about how your bird looks and behaves. The normal days count too, because they give you something to compare when things change.",
   "email.welcome.together": "Together, those weights and observations build a record you can bring to your vet.",
-  "email.welcome.series": "Over the next few weeks, I'll send you a short email every three days. Each one shows you how a piece of the app works.",
-  "email.welcome.carePlan": "When you're ready, the care plan puts your bird's routine and care instructions in one place. You can share it with a sitter or family member whenever someone else is helping out.",
-  "email.welcome.reply": "If you have a question, or just want to tell me about your bird, reply to this email. It comes straight to me!",
   "email.welcome.signoff": "Warmly,<br>Brittany",
   "email.welcome.heroAlt": "A green-cheeked conure perched on an outstretched hand",
   "email.welcome.cta": "Open Kya &amp; Co.",
@@ -397,6 +394,7 @@
   "email.seriesHealthCheck.card1Label": "Worth knowing",
   "email.seriesHealthCheck.card1P1": "The normal days belong in the record too. If your bird seems quieter than usual, it helps to be able to look back at what you've been seeing over the past few days.",
   "email.seriesHealthCheck.p3": "The check can't confirm that your bird is healthy. If something worries you, contact your avian vet, even if the app hasn't flagged anything.",
+  "email.seriesHealthCheck.heroAlt": "A close-up of a green conure with red markings on its face",
   "email.seriesHealthCheck.momentTitle": "Health check — Juno",
   "email.seriesHealthCheck.momentIntro": "A quick once-over to make sure Juno's feeling like themselves.",
   // Question-shaped, with the mark. The email.scanReason.q.* keys are the same
@@ -440,6 +438,7 @@
   "email.seriesJournal.p3": "Moments work a little differently. They're the dates you want to hold on to, like a hatch day or the day your bird came home.",
   "email.seriesJournal.p4": "You can keep everyday observations in the journal too. How they got on with a new foraging activity, or something you want to mention at their next vet appointment. Having the date and details written down can help later.",
   "email.seriesJournal.p5": "There's no schedule to keep up with here. Add something when there's something you want to remember.",
+  "email.seriesJournal.heroAlt": "A rainbow lorikeet preening its tail feathers on a rope perch",
   "email.seriesJournal.entryDate": "Saturday, 14 September",
   "email.seriesJournal.entry": "Tried the new foraging box this morning. Worked it out in under a minute, then ignored it for the rest of the day.",
   "email.seriesJournal.momentLine": "Moment · 3 October, the day Juno came home",
@@ -456,6 +455,7 @@
   "email.seriesSharing.card1P1": "A sitter link is for someone looking after your bird during a sit. They can refer to the care plan while you're away.",
   "email.seriesSharing.card2Label": "Household",
   "email.seriesSharing.card2P1": "Household access is for people who help regularly. It's the option for sharing the ongoing work of keeping your bird's record up to date.",
+  "email.seriesSharing.heroAlt": "Two hyacinth macaws sitting close together on a rope",
   "email.seriesSharing.sitterAccount": "No account needed. They open a private link.",
   "email.seriesSharing.householdAccount": "They sign in with their own account.",
   "email.seriesSharing.p2": "Before sharing the plan, check that feeding instructions and contact details are current. Talk through anything you'd want to show the person in practice, too.",
@@ -471,6 +471,20 @@
   // Replaces seriesVet.lead: the three questions are their own keys now, each a
   // full sentence, so the ruled list can render them as separate rows.
   "email.seriesVet.leadIntro": "The weights and observations you've logged give you something to refer to at a vet appointment.",
+  // The vet-summary card: the rows a vet actually looks at. Sample values, the
+  // same way the weighing letter shows a sample weight — this is a picture of
+  // the record, not the reader's own data.
+  "email.seriesVet.heroAlt": "An African grey parrot looking up from a red perch indoors",
+  "email.seriesVet.summaryTitle": "Willow's record, at a glance",
+  "email.seriesVet.rowWeightLabel": "Weight",
+  "email.seriesVet.rowWeightValue": "1,114 g, steady",
+  "email.seriesVet.rowWeightSub": " 12 readings over the last 30 days",
+  "email.seriesVet.rowChecksLabel": "Daily checks",
+  "email.seriesVet.rowChecksValue": "22 of the last 30 days",
+  "email.seriesVet.rowChecksSub": "Nothing flagged",
+  "email.seriesVet.rowNotesLabel": "Journal",
+  "email.seriesVet.rowNotesValue": "4 notes since the last visit",
+  "email.seriesVet.rowNotesSub": "Including two about appetite",
   "email.seriesVet.questionsLabel": "Questions your record can answer",
   "email.seriesVet.q1": "When did their appetite change?",
   "email.seriesVet.q2": "What did they weigh before that?",
@@ -478,8 +492,6 @@
   "email.seriesVet.p2": "Having those details in front of you helps you explain what you've noticed. It gives your avian vet more context alongside what they learn from examining your bird.",
   "email.seriesVet.p3": "The vet summary lets you review the information available in your bird's record before a visit. Check that it's up to date, and make a note of anything you want to ask.",
   "email.seriesVet.p4": "Bring whatever you've recorded so far. You don't need a complete record to ask for help, and you shouldn't delay an appointment to collect more entries.",
-  "email.seriesVet.card1Label": "That's the last of these",
-  "email.seriesVet.card1P1": "I hope these emails have helped you find your way around. If monthly recaps are on in Settings, you'll also hear from me each month with a look back at your bird's record and a few useful tips.",
   "email.seriesVet.p5": "If you have a question, reply and ask. I'd love to hear how you and your bird are getting on.",
   "email.seriesVet.signoff": "Warmly,<br>Brittany",
   "email.seriesVet.cta": "See the vet summary",
