@@ -65,6 +65,22 @@ association files on both platforms plus a handler in the shell.
 - Needs a store rebuild for both platforms. Test in Apple Mail and the Gmail app, app
   installed vs not, signed in vs out.
 
+### `appendUserAgent: 'KyaApp'` so native requests are identifiable
+Status: same future native build as the deep links above.
+
+The shell sets neither `appendUserAgent` nor `overrideUserAgent`, and it runs in
+remote-URL mode against app.thekyaproject.com — so a request from the installed app is
+indistinguishable from a mobile browser. That is why the app-launch email could not be
+targeted properly: iOS could be inferred from a Sign in with Apple identity (that button
+only renders inside the app), and Android left no trace at all.
+
+- Set `server.appendUserAgent: 'KyaApp'` in `capacitor.config.ts`. Every request from the
+  app then carries a marker, in Vercel logs and in anything reading `user-agent`.
+- Needs a store rebuild on both platforms, so it rides along with the deep-links work.
+- Only helps going forward; it cannot say anything about installs that already exist.
+- Complementary to `last_native_app_seen_at` on `profiles`, which is a web-deploy change
+  and does not wait for a build.
+
 ### "Open settings" button for the notifications-denied state
 Status: same future native build as the deep links above.
 
