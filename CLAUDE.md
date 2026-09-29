@@ -58,6 +58,16 @@ Schema changes are migration-first. **Do NOT edit the schema in the Supabase das
 - Changing an Edge Function requires a separate Supabase deploy; it does not ship with the Vercel build.
 
 ## Conventions and gotchas
+- **Never `git add -A` or `git add .` in this repo. Stage files explicitly by path.**
+  Several directories are deliberately untracked and must stay that way:
+  `appstore-screenshots/` (~15 MB — committing it would put that in every clone
+  forever, and the assets already live in App Store Connect and Play Console),
+  `_to_delete/`, and the scratch build scripts under `docs/email-redesign/`. They are
+  gitignored now, but the rule stands regardless: a blanket add also sweeps in whatever
+  someone has half-finished in their working tree. More generally, before any
+  `git checkout`, `reset`, `stash` or rebase, run `git status` and stop if there are
+  modified or untracked files you did not create — an uncommitted binary asset that
+  reverts is invisible in a diff summary.
 - Static assets must live in `public/` and be referenced by root path, e.g. `/kya_parrot_icon_teal.png`. Do not use Lovable `__l5e/...asset.json` pointers — they resolve only on Lovable's host and 404 in production. Some dead `src/assets/*.png.asset.json` files remain from the Lovable origin and can be ignored or removed.
 - Product copy uses sentence case for titles, headings, and subheadings (only the first letter capitalized). Avoid the phrasing "it's not about X, it's about Y."
 - The guided walkthrough reads its starting step from the `?step=` URL param. Apply that value only when it actually changes, not on every data refetch, or the wizard bounces back to the linked step.

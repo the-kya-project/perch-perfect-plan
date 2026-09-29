@@ -193,6 +193,16 @@ looking at the console.
 
 ## Housekeeping
 
+### Run `test:no-home-screen` in CI
+`npm run test:no-home-screen` renders every authenticated page inside a stubbed native
+shell and fails on any install or home-screen copy. It needs a signed-in QA account, so
+it only runs locally today.
+
+- Run it in CI once QA credentials can be stored as a CI secret.
+- It reads `QA_CREDS` (a file) or `QA_EMAIL` + `QA_PASSWORD`, and skips loudly rather
+  than passing when neither is set.
+
+
 ### `appstore-screenshots/` is untracked — decide what to do with it
 36 PNGs, ~15 MB, currently untracked. Git history is permanent, so committing adds 15 MB
 to every clone forever, and these assets already live in App Store Connect and Play
