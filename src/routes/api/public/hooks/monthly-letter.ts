@@ -8,6 +8,9 @@
  *     send twice
  *   - accounts with notify_monthly_letter = false are skipped: the letter's own
  *     footer promises it can be turned off
+ *   - accounts created on or after the 15th of the recapped month are skipped
+ *     (see lib/monthlyEligibility): a late signup has nothing to recap, and the
+ *     onboarding series is already introducing the app that week
  *   - birds marked as passed are excluded — a memorial has no place in a recap,
  *     and the bereavement note already covered that bird
  *   - an account with no living birds gets nothing at all. There is no recap to
@@ -55,6 +58,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { withCronTelemetry } from "@/lib/cronTelemetry";
 import { buildFlockReportEmail, isQuietFlock, type FlockBird } from "@/lib/flockEmails";
+import { eligibleForRecap } from "@/lib/monthlyEligibility";
 
 const APP_URL = "https://app.thekyaproject.com";
 
@@ -128,7 +132,7 @@ export const Route = createFileRoute("/api/public/hooks/monthly-letter")({
         // ── Who ────────────────────────────────────────────────────────────
         let profileQ = sb
           .from("profiles")
-          .select("id, email, first_name, display_name, locale, notify_monthly_letter")
+          .select("id, email, first_name, display_name, locale, notify_monthly_letter, created_at")
           .eq("notify_monthly_letter", true);
         if (onlyEmail) profileQ = profileQ.eq("email", onlyEmail);
         const { data: profiles, error: pErr } = await profileQ;
@@ -210,6 +214,14 @@ export const Route = createFileRoute("/api/public/hooks/monthly-letter")({
 
         for (const p of profiles as any[]) {
           if (done.has(p.id)) { skipped.push(`${p.email}: already sent`); continue; }
+          // Too new for this recap. An account that signed up after the 15th
+          // has almost nothing to look back on, and the onboarding series is
+          // the better thing for them that week — they get their first recap
+          // next month, with a full month behind it.
+          if (!eligibleForRecap(p.created_at, recapYear, recapMonth)) {
+            skipped.push(`${p.email}: signed up ${String(p.created_at).slice(0, 10)}, after the 15th of the recapped month`);
+            continue;
+          }
           const mine = birdsByOwner.get(p.id) ?? [];
           if (mine.length === 0) { skipped.push(`${p.email}: no living birds`); continue; }
           if (!p.email) { skipped.push(`${p.id}: no email`); continue; }
