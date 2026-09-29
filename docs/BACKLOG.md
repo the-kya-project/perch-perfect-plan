@@ -65,6 +65,21 @@ association files on both platforms plus a handler in the shell.
 - Needs a store rebuild for both platforms. Test in Apple Mail and the Gmail app, app
   installed vs not, signed in vs out.
 
+### "Open settings" button for the notifications-denied state
+Status: same future native build as the deep links above.
+
+When push is denied at the OS level, Settings says so but offers no button, because
+nothing we ship can open the app's own settings page: `@capacitor/app` has no `openUrl`
+in this version, and `@capacitor/browser` only opens web URLs, so `app-settings:` goes
+nowhere.
+
+- Needs a plugin that opens the OS settings page, e.g. `capacitor-native-settings`.
+- The UI is already built for it: `NotificationsCallout` renders the button whenever
+  `canOpenSettings` is true, and `scans.settings.tsx` hardcodes that to `false` with the
+  reason written next to it. Adding the plugin is a one-line change there.
+- Needs a store rebuild, so it rides along with the deep-links work rather than shipping
+  on its own.
+
 ---
 
 ## Security / infrastructure
