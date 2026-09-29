@@ -472,20 +472,30 @@ export function buildFlockReportEmail(opts: {
                     : t("email.monthly.weighInLine", { n: b.weighIns.length, g: latest }),
               }
             : undefined,
-          empty: b.weighIns.length ? undefined : { text: t("email.monthly.noWeighIns", { month: monthName }), cta: t("email.monthly.logOne") },
+          // Every chip links to that feature for THIS bird. Plain paths, no
+          // query strings: each of these routes takes the bird as a path
+          // param, so the bird is already chosen, and a bare path is the link
+          // shape that is proven to survive the signed-out sign-in hop. Opening
+          // the entry form itself (?log, ?new) needs the guard to carry a query
+          // through /auth, which is a separate change and not worth putting in
+          // front of a send.
+          empty: b.weighIns.length
+            ? undefined
+            : { text: t("email.monthly.noWeighIns", { month: monthName }), cta: t("email.monthly.logOne"), href: `${b.href}/weight` },
           rows: [
             b.checks > 0
-              ? { label: t("email.monthly.rowChecks"), value: t("email.monthly.rowChecksValue", { n: b.checks, days }) }
-              : { label: t("email.monthly.rowChecks"), value: t("email.monthly.doOne"), nudge: true },
+              ? { label: t("email.monthly.rowChecks"), value: t("email.monthly.rowChecksValue", { n: b.checks, days }), href: `${b.href}/scan` }
+              : { label: t("email.monthly.rowChecks"), value: t("email.monthly.doOne"), nudge: true, href: `${b.href}/scan` },
             b.journal > 0
               ? {
                   label: t("email.monthly.rowJournal"),
                   value: b.journal === 1 ? t("email.monthly.rowJournalValueOne") : t("email.monthly.rowJournalValue", { n: b.journal }),
+                  href: `${b.href}/journal`,
                 }
-              : { label: t("email.monthly.rowJournal"), value: t("email.monthly.addOne"), nudge: true },
+              : { label: t("email.monthly.rowJournal"), value: t("email.monthly.addOne"), nudge: true, href: `${b.href}/journal` },
             b.planUpdated
-              ? { label: t("email.monthly.rowPlan"), value: t("email.monthly.rowPlanValue", { date: b.planUpdated }) }
-              : { label: t("email.monthly.rowPlan"), value: t("email.monthly.updatePlan"), nudge: true },
+              ? { label: t("email.monthly.rowPlan"), value: t("email.monthly.rowPlanValue", { date: b.planUpdated }), href: `${b.href}/plan` }
+              : { label: t("email.monthly.rowPlan"), value: t("email.monthly.updatePlan"), nudge: true, href: `${b.href}/plan` },
           ],
         };
       }),
