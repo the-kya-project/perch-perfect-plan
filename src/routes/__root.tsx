@@ -26,7 +26,6 @@ import { captureFirstTouch } from "@/lib/attribution";
 import { attachNativePushHandlers } from "@/lib/pushNative";
 // Side-effect import: registers the beforeinstallprompt/appinstalled listeners
 // at app start so the native install prompt is captured (it fires once, early).
-import "@/lib/pwaInstall";
 
 function NotFoundComponent() {
   return (

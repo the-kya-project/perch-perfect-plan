@@ -19,7 +19,6 @@ import { AppOnboarding } from "@/components/AppOnboarding";
 import { useTourDemo, DEMO_FLOCK, DEMO_FOSTERS, DEMO_HOUSEHOLD, demoGlanceFor, getDemoToday } from "@/lib/tourDemo";
 import { deriveConcernByBird, daysAgo } from "@/lib/scanConcern";
 import { Disclaimer } from "@/components/Disclaimer";
-import { AddToHomeScreenPrompt } from "@/components/AddToHomeScreenPrompt";
 import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 import { toast } from "sonner";
 import { ASPCA_POISON_CONTROL, isPhoneField, phoneWarning, formatPhoneOnBlur } from "@/lib/emergency";
@@ -346,7 +345,6 @@ function Dashboard() {
         )}
 
         <Disclaimer compact />
-        <AddToHomeScreenPrompt />
       </main>
       </div>
 
