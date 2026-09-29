@@ -68,6 +68,7 @@ export type AnalyticsEventName =
   | "clip_upload_picked"
   // Resume-after-idle token refresh (bounced-to-sign-in debugging)
   | "auth_resume_refresh"
+  | "auth_guard_timeout"
   // Landing-page re-check: did a signed-in owner land here by mistake?
   | "landing_recheck"
   // Pre-hydration cold-launch redirect fired (inline head script → /dashboard)
