@@ -425,9 +425,14 @@ export function buildFlockReportEmail(opts: {
   const flock = joinFlock(names, (n) => t("email.monthly.andMore", { n }));
   const one = opts.birds.length === 1;
 
-  const headline = one
-    ? t("email.monthly.subjectOne", { birdName: names[0], month: monthName })
-    : t("email.monthly.subjectMany", { month: monthName });
+  // Someone's FIRST Flock Report introduces itself; every later one names the
+  // month. Subject and H1 are the same string either way — flockShell derives
+  // the subject from the headline, so they cannot drift.
+  const headline = opts.firstIssue
+    ? t("email.monthly.firstSubject")
+    : one
+      ? t("email.monthly.subjectOne", { birdName: names[0], month: monthName })
+      : t("email.monthly.subjectMany", { month: monthName });
 
   const hi = opts.firstName ? t("email.monthly.hi", { firstName: escapeHtml(opts.firstName) }) : t("email.monthly.hiNoName");
 
@@ -447,16 +452,6 @@ export function buildFlockReportEmail(opts: {
   });
 
   const blocks: FlockBlock[] = [
-    // Only in someone's FIRST Flock Report: what this email is and when it
-    // comes. The caller decides — it is a question about monthly_letter_log,
-    // not about this month's numbers.
-    ...(opts.firstIssue
-      ? [{
-          kind: "highlight" as const,
-          title: t("email.monthly.firstIssueTitle"),
-          body: t("email.monthly.firstIssueBody"),
-        }]
-      : []),
     // A quiet month has nothing to total; three zeroes would be a scoreboard.
     ...(quiet
       ? []
@@ -578,10 +573,18 @@ export function buildFlockReportEmail(opts: {
   return flockShell({
     headline,
     headlineStyle: "lime",
-    intro: quiet
-      ? t("email.monthly.quietIntro", { hi, birds: flock })
-      : t("email.monthly.intro", { hi, birds: flock, nextMonth: nextMonthName }),
-    preheader: quiet
+    intro: opts.firstIssue
+      ? quiet
+        ? t("email.monthly.firstQuietIntro", { hi, birds: flock, month: monthName })
+        : t("email.monthly.firstIntro", { hi, birds: flock, month: monthName })
+      : quiet
+        ? t("email.monthly.quietIntro", { hi, birds: flock })
+        : t("email.monthly.intro", { hi, birds: flock, nextMonth: nextMonthName }),
+    preheader: opts.firstIssue
+      ? quiet
+        ? t("email.monthly.firstQuietPreview")
+        : t("email.monthly.firstPreview", { month: monthName })
+      : quiet
       ? t("email.monthly.quietPreview")
       : one
         ? t("email.monthly.previewOne")
