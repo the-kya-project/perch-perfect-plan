@@ -15,7 +15,13 @@ export const Route = createFileRoute("/review")({
         const url = new URL(request.url);
         const ua = request.headers.get("user-agent") ?? "";
         const resolved = resolveTarget(ua, url.searchParams.get("store"));
-        await logClick({ path: "review", url, userAgent: ua, resolved });
+        // Bounded, same as /get-app: the metric must never delay the redirect.
+        await Promise.race([
+          logClick({ path: "review", url, userAgent: ua, resolved, referrer: request.headers.get("referer") }).catch((e) => {
+            console.error("[review] click log failed", e instanceof Error ? e.message : e);
+          }),
+          new Promise((r) => setTimeout(r, 400)),
+        ]);
 
         if (resolved === "chooser") {
           return new Response(chooserPage("review"), {

@@ -6,7 +6,7 @@
  * from the email shell: that shell builds a whole email document (preheader,
  * unsubscribe footer, disclaimer), none of which belongs on a web page.
  */
-import { STORE } from "./storeRedirect.server";
+import { STORE, withUtms, type Utms } from "./storeRedirect.server";
 
 const FOREST = "#1a3d2e";
 const LIME = "#cdeab0";
@@ -16,14 +16,16 @@ const MUTED = "#5f5e5a";
 const BODY = "'DM Sans','Helvetica Neue',Helvetica,'Segoe UI',sans-serif";
 const HEAD = "'Bricolage Grotesque','Avenir Next','Segoe UI',Helvetica,sans-serif";
 
-export function chooserPage(kind: "get" | "review"): string {
+export function chooserPage(kind: "get" | "review", utms: Utms = {}): string {
   const title = kind === "get" ? "Get Kya &amp; Co. on your phone" : "Leave a review from your phone";
   const blurb =
     kind === "get"
       ? "Scan the code with your phone's camera, or open the store you use."
       : "Reviews are written from the store app on your phone. Scan the code, or open the store you use.";
-  const ios = kind === "get" ? STORE.ios : STORE.iosReview;
-  const android = kind === "get" ? STORE.android : STORE.androidReview;
+  // Back through /get-app rather than straight to the store, so a desktop
+  // visitor who taps a badge is counted and attributed like everyone else.
+  const ios = kind === "get" ? withUtms("/get-app?store=ios", utms) : STORE.iosReview;
+  const android = kind === "get" ? withUtms("/get-app?store=android", utms) : STORE.androidReview;
 
   return `<!doctype html>
 <html lang="en"><head>
