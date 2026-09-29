@@ -57,3 +57,6 @@ dist-ssr
 # templates/, README.md and new-strings.json ARE committed — the preview check
 # diffs against templates/.
 docs/email-redesign/assets/
+
+# QA harness sessions (never commit a session token)
+.qa-sessions/

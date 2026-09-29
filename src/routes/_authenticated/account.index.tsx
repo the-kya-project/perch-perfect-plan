@@ -8,8 +8,11 @@ import { deleteMyAccount } from "@/lib/account.functions";
 import { APP_VERSION } from "@/lib/version";
 import { ArrowLeft, ShieldAlert, Bell, Smartphone, Lock, X, Archive, Users, Flower2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { AddToHomeModal } from "@/components/AddToHomeModal";
-import { isStandalone } from "@/lib/pwaInstall";
+import { useAppSurface } from "@/lib/appSurface";
+import {
+  APP_STORE_BADGE, APP_STORE_BADGE_SIZE, APP_STORE_URL,
+  PLAY_STORE_BADGE, PLAY_STORE_BADGE_SIZE, PLAY_STORE_URL,
+} from "@/lib/storeLinks";
 import { InkHero, Card, RecordRow, IconTile, SectionHead, PrimaryButton } from "@/components/system";
 import { toast } from "sonner";
 import { friendlyError } from "@/lib/errorMessage";
@@ -52,12 +55,12 @@ function AccountPage() {
   const hasRemembering = rememberingCount > 0;
 
   const [editOpen, setEditOpen] = useState(false);
-  const [a2hsOpen, setA2hsOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
-  // Hide "Add to home screen" when this IS the installed experience (native
-  // shell or installed PWA). Effect-set to avoid an SSR hydration mismatch.
-  const [alreadyInstalled, setAlreadyInstalled] = useState(false);
-  useEffect(() => setAlreadyInstalled(isStandalone()), []);
+  // Same per-surface rule as Settings and the checklists: inside the app there
+  // is nothing to install, on a phone browser we point at the store, and on a
+  // desktop we do not push an install at all.
+  const surface = useAppSurface();
+  const showGetApp = surface.surface === "mobile-web";
 
   useEffect(() => {
     (async () => {
@@ -138,17 +141,28 @@ function AccountPage() {
                   leading={<IconTile icon={<Users className="size-5" />} />}
                   title="Household"
                   subtitle="People who help care for your birds."
-                  last={alreadyInstalled}
+                  last={!showGetApp}
                 />
               </Link>
-              {!alreadyInstalled && (
-                <RecordRow
-                  onClick={() => setA2hsOpen(true)}
-                  leading={<IconTile icon={<Smartphone className="size-5" />} />}
-                  title="Add to home screen"
-                  subtitle="Open it like an app, get alerts."
-                  last
-                />
+              {showGetApp && (
+                <>
+                  <RecordRow
+                    onClick={() => window.open(surface.storePlatform === "ios" ? APP_STORE_URL : PLAY_STORE_URL, "_blank", "noopener")}
+                    leading={<IconTile icon={<Smartphone className="size-5" />} />}
+                    title="Get the Kya & Co. app"
+                    subtitle="Reminders, quick logging, and your flock's whole record, right on your phone. Same account, nothing to move over."
+                    last
+                  />
+                  <div className="px-4 pb-4">
+                    <img
+                      src={surface.storePlatform === "ios" ? APP_STORE_BADGE : PLAY_STORE_BADGE}
+                      width={(surface.storePlatform === "ios" ? APP_STORE_BADGE_SIZE : PLAY_STORE_BADGE_SIZE).width}
+                      height={(surface.storePlatform === "ios" ? APP_STORE_BADGE_SIZE : PLAY_STORE_BADGE_SIZE).height}
+                      alt={surface.storePlatform === "ios" ? "Download on the App Store" : "Get it on Google Play"}
+                      className="block"
+                    />
+                  </div>
+                </>
               )}
             </Card>
           </div>
@@ -224,7 +238,6 @@ function AccountPage() {
           onClose={() => setEditOpen(false)}
         />
       )}
-      {a2hsOpen && <AddToHomeModal onClose={() => setA2hsOpen(false)} />}
       {deleteOpen && (
         <DeleteAccountModal
           onClose={() => setDeleteOpen(false)}
