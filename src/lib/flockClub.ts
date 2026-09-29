@@ -31,6 +31,13 @@ import { escapeHtml, type BuiltEmail } from "./emailTemplates";
 
 type EmailT = ReturnType<typeof emailT>;
 
+// Email images are served from public/brand/email/ at these names.
+//
+// A CHANGED IMAGE GETS A NEW FILENAME. Never overwrite one in place: every
+// email already sent keeps pointing at the old name, so an overwrite silently
+// repoints mail that is years old, and Gmail's image proxy caches the old
+// bytes for a long time either way — so the change often would not show. Old
+// files stay on disk; they cost nothing and they keep sent mail intact.
 const ASSETS = process.env.EMAIL_ASSET_BASE || "https://app.thekyaproject.com";
 
 // ── Colour ───────────────────────────────────────────────────────────────────

@@ -239,7 +239,11 @@ export function buildSeriesJournalEmail(opts: { link: string; hasBird?: boolean;
       pill: t("email.seriesJournal.cardPill"),
       date: t("email.seriesJournal.cardDate"),
       entry: t("email.seriesJournal.cardEntry"),
-      photo: "journal-photo.jpg",
+      // A changed email image gets a NEW filename, never an overwrite: an
+      // email already in someone's inbox keeps pointing at the old name, and
+      // caches (Gmail's proxy especially) hold the old bytes for a long time.
+      // journal-photo.jpg stays on disk for exactly that reason.
+      photo: "journal-foraging.jpg",
       photoAlt: t("email.seriesJournal.cardPhotoAlt"),
     },
     { kind: "momentStrip", label: t("email.seriesJournal.momentLabel"), text: t("email.seriesJournal.momentText") },
