@@ -50,7 +50,7 @@ const badgesHtml = () => `<table role="presentation" cellpadding="0" cellspacing
 <tr><td style="padding:0;">
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="${RESET}"><tr>
 <td valign="middle" style="padding:0 10px 0 0;"><a href="${LINKS.badgeIos}"><img src="${ASSETS}/brand/store/app-store-badge@2x.png" width="120" height="40" alt="Download on the App Store" style="display:block;width:120px;height:40px;border:0;" /></a></td>
-<td valign="middle" style="padding:0;"><a href="${LINKS.badgeAndroid}"><img src="${ASSETS}/brand/store/google-play-badge.png" width="103" height="40" alt="Get it on Google Play" style="display:block;width:103px;height:40px;border:0;" /></a></td>
+<td valign="middle" style="padding:0;"><a href="${LINKS.badgeAndroid}"><img src="${ASSETS}/brand/store/google-play-badge.png" width="155" height="60" alt="Get it on Google Play" style="display:block;width:155px;height:60px;border:0;" /></a></td>
 </tr></table>
 </td></tr></table>`;
 
@@ -82,6 +82,34 @@ ${items
     )
     .join("\n")}
 </td></tr></table>`;
+
+/**
+ * Tighten the footer for this email only.
+ *
+ * The footer belongs to the shared shell, and shrinking it there would change
+ * every email including Friday's Flock Report — so it is adjusted here, on the
+ * rendered output, and nowhere else. Each replacement asserts it matched, so
+ * this cannot quietly become a no-op if the shell's footer is ever restyled.
+ */
+function tightenFooter(html: string): string {
+  const edits: Array<[string, string]> = [
+    ["padding:26px 28px 28px;background-color:", "padding:20px 24px 22px;background-color:"],
+    ['width="112" alt', 'width="92" alt'],
+    ["width:112px;height:auto;border:0;margin:0 auto 14px;", "width:92px;height:auto;border:0;margin:0 auto 11px;"],
+    ["margin:0 0 10px;font-family:${BODY_FONT};font-size:13px;line-height:20px;", "margin:0 0 8px;font-family:${BODY_FONT};font-size:12px;line-height:18px;"],
+    ["margin:0 0 14px;font-family:${BODY_FONT};font-size:12px;line-height:19px;", "margin:0 0 10px;font-family:${BODY_FONT};font-size:11px;line-height:17px;"],
+    ["margin:0 0 10px;font-family:${BODY_FONT};font-size:12px;line-height:19px;", "margin:0 0 8px;font-family:${BODY_FONT};font-size:11px;line-height:17px;"],
+    ["margin:0;font-family:${BODY_FONT};font-size:12px;line-height:19px;", "margin:0;font-family:${BODY_FONT};font-size:11px;line-height:17px;"],
+  ];
+  let out = html;
+  for (const [from, to] of edits) {
+    const literal = from.replace("${BODY_FONT}", BODY_FONT);
+    const target = to.replace("${BODY_FONT}", BODY_FONT);
+    if (!out.includes(literal)) throw new Error(`app-launch email: footer edit did not match — ${literal.slice(0, 60)}`);
+    out = out.replace(literal, target);
+  }
+  return out;
+}
 
 /** Swap a token paragraph for real markup, wrapper and all. */
 function splice(html: string, token: string, replacement: string): string {
@@ -129,7 +157,7 @@ export function buildAppLaunchEmail(opts: { displayName?: string | null; unsubsc
     pill: "Big news",
     hero: { file: "app-launch-hero.jpg", alt: "A bright orange sun conure looking at the camera", sticker: "Now on iPhone + Android" },
     blocks,
-    footerWhy: "You're getting this because you have a Kya &amp; Co. account. It's a one-off, not part of a series.",
+    footerWhy: "You're getting this because you have a Kya &amp; Co. account.",
     link: APP_URL,
     unsubscribeUrl: opts.unsubscribeUrl,
   });
@@ -145,6 +173,7 @@ export function buildAppLaunchEmail(opts: { displayName?: string | null; unsubsc
   html = splice(html, SLOT_BADGES, badgesHtml());
   html = splice(html, SLOT_FAVOR, favorHtml());
   html = splice(html, SLOT_PEEK, peekHtml(peekItems));
+  html = tightenFooter(html);
 
   // The plain text comes from the same blocks, so the tokens are in it too.
   const text = built.text
