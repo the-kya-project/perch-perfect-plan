@@ -2,7 +2,7 @@ import { createFileRoute, Outlet, redirect, useLocation, useNavigate } from "@ta
 import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { getReadySession } from "@/lib/authReady";
+import { AuthClientStalled, getReadySession } from "@/lib/authReady";
 import { applyOAuthAttribution } from "@/lib/attribution";
 import { PullToRefresh } from "@/components/PullToRefresh";
 import { OwnerTabBar } from "@/components/OwnerTabBar";
@@ -15,7 +15,23 @@ export const Route = createFileRoute("/_authenticated")({
     // the native webview read null before hydration and bounced signed-in
     // owners to /auth. Still no network round-trip, and a session just set by
     // signup/sign-in is reflected immediately (auth already settled by then).
-    const session = await getReadySession();
+    let session;
+    try {
+      session = await getReadySession();
+    } catch (e) {
+      if (!(e instanceof AuthClientStalled)) throw e;
+      // The auth client is wedged in this page and is not coming back. A router
+      // redirect would keep it: /auth renders, the reader types their password,
+      // and signInWithPassword awaits the same stuck promise — the hang just
+      // moves to the sign-in button. So leave the page entirely and let the
+      // client be built again from nothing.
+      const to = `/auth?mode=signin&redirect=${encodeURIComponent(location.pathname)}`;
+      if (typeof window !== "undefined") window.location.assign(to);
+      // Still throw the router redirect: if the hard load is slow to take
+      // effect the reader sees /auth rather than the spinner, and the full load
+      // supersedes it a moment later.
+      throw redirect({ to: "/auth", search: { mode: "signin" as const, redirect: location.pathname } });
+    }
     if (!session) {
       // Remember where they were headed (e.g. a /past-birds email deep-link) so
       // /auth lands them there after sign-in instead of the default dashboard.

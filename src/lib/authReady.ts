@@ -45,6 +45,23 @@ const GUARD_BUDGET_MS = 8_000;
 /** Thrown when a step outlives the budget. Never escapes this module. */
 class GuardTimeout extends Error {}
 
+/**
+ * The auth client is wedged in THIS page and the guard gave up waiting.
+ *
+ * It matters that the caller knows the difference between this and an ordinary
+ * "no session". The promise that never settled is still never going to settle,
+ * and it lives in this JavaScript context — supabase.auth.signInWithPassword
+ * awaits `initializePromise` too, so routing to /auth without leaving the page
+ * would just move the hang to the sign-in button. The caller must do a full
+ * page load so the client is built again from scratch.
+ */
+export class AuthClientStalled extends Error {
+  constructor() {
+    super("auth client did not settle within the guard budget");
+    this.name = "AuthClientStalled";
+  }
+}
+
 function withDeadline<T>(p: Promise<T>, ms: number): Promise<T> {
   if (ms <= 0) return Promise.reject(new GuardTimeout());
   return new Promise<T>((resolve, reject) => {
@@ -158,10 +175,11 @@ export async function getReadySession(): Promise<Session | null> {
     return null;
   } catch (e) {
     if (e instanceof GuardTimeout) {
-      // The auth client never came back. Treat as signed out for routing only
-      // — the stored session is untouched, so a later launch can still use it.
+      // The auth client never came back. The stored session is untouched — a
+      // later launch can still use it — but the caller has to leave this page
+      // rather than route within it, so say so rather than returning null.
       track("auth_guard_timeout", { budget_ms: GUARD_BUDGET_MS, still_stored: hasStoredSession() });
-      return null;
+      throw new AuthClientStalled();
     }
     throw e;
   }
