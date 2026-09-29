@@ -13,31 +13,27 @@ import { Check, ChevronRight, X, Download, Bell, ClipboardList, Siren } from "lu
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { getNotificationPermission } from "@/lib/push";
-import { AddToHomeModal } from "@/components/AddToHomeModal";
-import { useInstallState, isStandalone, type InstallBranch } from "@/lib/pwaInstall";
+import { useAppSurface } from "@/lib/appSurface";
+import { registerForNativePush } from "@/lib/pushNative";
+import { savePushToken } from "@/lib/push.functions";
+import { useServerFn } from "@tanstack/react-start";
+import {
+  APP_STORE_BADGE, APP_STORE_BADGE_SIZE, APP_STORE_URL,
+  PLAY_STORE_BADGE, PLAY_STORE_BADGE_SIZE, PLAY_STORE_URL,
+} from "@/lib/storeLinks";
 
 const NEW_ACCOUNT_DAYS = 30;
 const dismissKey = (uid: string) => `ppc_setup_checklist_dismissed_${uid}`;
 
-// Short, branch-appropriate hint under the "Install the app" row (full steps
-// are in the modal it opens). Sentence case, no em dashes.
-function installHint(branch: InstallBranch): string {
-  switch (branch) {
-    case "ios-safari": return "Tap share, then Add to Home Screen. Needed for push alerts.";
-    case "ios-other": return "Open this page in Safari to install. Needed for push alerts.";
-    case "android-native": return "Tap to install the app for push alerts.";
-    case "android-other": return "Add it to your home screen for push alerts.";
-    default: return "Optional on a computer. Push alerts are made for your phone.";
-  }
-}
-
 export function HomeChecklist() {
   const navigate = useNavigate();
   const [dismissed, setDismissed] = useState(false);
-  const [installOpen, setInstallOpen] = useState(false);
-  const { branch: installBranch } = useInstallState();
-  // Client-only signals, re-read on mount (and after the notifications tap).
-  const [installed, setInstalled] = useState(false);
+  // Which surface, and what reminders mean there (see lib/appSurface).
+  const surface = useAppSurface();
+  const saveToken = useServerFn(savePushToken);
+  // Web notification permission. Only consulted on desktop now — inside the
+  // shell it answers for the WEBVIEW, not the app, which is why the old row
+  // never reflected real APNs/FCM state.
   const [notifGranted, setNotifGranted] = useState(false);
 
   // Account age (new-account gate) + true ownership (owner_id = me, NOT the
@@ -97,7 +93,6 @@ export function HomeChecklist() {
   });
 
   useEffect(() => {
-    setInstalled(isStandalone());
     setNotifGranted(getNotificationPermission() === "granted");
     if (data?.id) {
       try { setDismissed(localStorage.getItem(dismissKey(data.id)) === "1"); } catch { /* ignore */ }
@@ -112,33 +107,80 @@ export function HomeChecklist() {
 
   if (!data || dismissed || !isNew) return null;
 
-  type Item = { key: string; label: string; icon: ReactNode; done: boolean; onAction?: () => void; hint?: string };
-  const items: Item[] = [
-    {
-      key: "install",
-      label: "Install the app",
-      icon: <Download className="size-4" />,
-      done: installed,
-      onAction: installed ? undefined : () => setInstallOpen(true),
-      hint: installed ? undefined : installHint(installBranch),
-    },
-    {
-      key: "notifications",
-      label: "Turn on notifications",
-      icon: <Bell className="size-4" />,
-      done: notifGranted,
-      onAction: notifGranted
-        ? undefined
-        : async () => {
-            try {
-              if (typeof Notification !== "undefined") {
-                const p = await Notification.requestPermission();
-                setNotifGranted(p === "granted");
-              }
-            } catch { /* ignore */ }
-          },
-    },
-  ];
+  type Item = {
+    key: string; label: string; icon: ReactNode; done: boolean;
+    onAction?: () => void; hint?: string; badge?: "ios" | "android";
+  };
+
+  // ONE reminders step per surface, never two. The old pair — "Install the
+  // app" and "Turn on notifications" — was wrong in both live apps: there is
+  // nothing to install inside the shell, and the notifications row called
+  // Notification.requestPermission(), the WEB api, which answers for the
+  // webview rather than the app and so never reflected real APNs/FCM state.
+  const remindersStep: Item =
+    surface.surface === "native"
+      ? surface.nativePermission === "denied"
+        ? {
+            key: "reminders",
+            label: "Turn on reminders",
+            icon: <Bell className="size-4" />,
+            done: false,
+            hint: "Notifications are off. Turn them on in your phone's settings.",
+          }
+        : {
+            key: "reminders",
+            label: "Turn on reminders",
+            icon: <Bell className="size-4" />,
+            done: surface.nativePermission === "granted",
+            onAction:
+              surface.nativePermission === "granted"
+                ? undefined
+                : async () => {
+                    const res = await registerForNativePush();
+                    if (!res.ok) return;
+                    try { await saveToken({ data: { token: res.token, transport: res.transport } }); }
+                    catch { /* the row stays open; Settings can retry */ }
+                  },
+          }
+      : surface.surface === "mobile-web"
+        ? {
+            // A phone browser cannot see whether the app is installed, so the
+            // honest signal is whether this ACCOUNT has ever registered a
+            // device token. Web push on a phone needed the home-screen PWA,
+            // which we no longer ask anyone to do — so reminders come with
+            // the app, and this replaces both old rows.
+            key: "reminders",
+            label: "Get the app",
+            icon: <Download className="size-4" />,
+            done: surface.hasNativeDevice,
+            onAction: surface.hasNativeDevice
+              ? undefined
+              : () => window.open(surface.storePlatform === "ios" ? APP_STORE_URL : PLAY_STORE_URL, "_blank", "noopener"),
+            hint: surface.hasNativeDevice
+              ? undefined
+              : "Reminders, quick logging, and your flock's whole record, right on your phone. Same account, nothing to move over.",
+            badge: surface.hasNativeDevice ? undefined : surface.storePlatform,
+          }
+        : {
+            // Desktop web push genuinely works, so it keeps its own row —
+            // relabelled to match Settings and the app.
+            key: "reminders",
+            label: "Turn on reminders",
+            icon: <Bell className="size-4" />,
+            done: notifGranted,
+            onAction: notifGranted
+              ? undefined
+              : async () => {
+                  try {
+                    if (typeof Notification !== "undefined") {
+                      const p = await Notification.requestPermission();
+                      setNotifGranted(p === "granted");
+                    }
+                  } catch { /* ignore */ }
+                },
+          };
+
+  const items: Item[] = [remindersStep];
   if (data.ownsBirds) {
     items.push({
       key: "care-plan",
@@ -197,6 +239,15 @@ export function HomeChecklist() {
                 <span className="min-w-0 flex-1">
                   <span className={`block text-[14px] font-[500] ${it.done ? "text-[var(--mute)] line-through" : "text-[var(--ink)]"}`}>{it.label}</span>
                   {!it.done && it.hint && <span className="block text-[12px] leading-snug text-[var(--mute)]">{it.hint}</span>}
+                  {!it.done && it.badge && (
+                    <img
+                      src={it.badge === "ios" ? APP_STORE_BADGE : PLAY_STORE_BADGE}
+                      width={(it.badge === "ios" ? APP_STORE_BADGE_SIZE : PLAY_STORE_BADGE_SIZE).width}
+                      height={(it.badge === "ios" ? APP_STORE_BADGE_SIZE : PLAY_STORE_BADGE_SIZE).height}
+                      alt={it.badge === "ios" ? "Download on the App Store" : "Get it on Google Play"}
+                      className="mt-2 block"
+                    />
+                  )}
                 </span>
                 {tappable && <ChevronRight className="size-4 shrink-0 text-[var(--mute2)]" />}
               </button>
@@ -204,7 +255,6 @@ export function HomeChecklist() {
           );
         })}
       </ul>
-      {installOpen && <AddToHomeModal onClose={() => setInstallOpen(false)} />}
     </section>
   );
 }

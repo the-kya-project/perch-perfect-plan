@@ -29,7 +29,6 @@ import {
   nativePushAvailable,
 } from "@/lib/pushNative";
 import { markNotificationsReviewed } from "@/components/OwnerChecklist";
-import { AddToHomeModal } from "@/components/AddToHomeModal";
 import { NotificationsCallout } from "@/components/NotificationsCallout";
 import { calloutState } from "@/lib/notificationsCallout";
 import { detectWebPlatform } from "@/lib/storeLinks";
@@ -112,7 +111,6 @@ function NotificationsSettingsPage() {
   const [support, setSupport] = useState<PushSupport | null>(null);
   const [pushEndpoint, setPushEndpoint] = useState<string | null>(null);
   const [permission, setPermission] = useState<NotificationPermission | "unsupported">("default");
-  const [a2hsOpen, setA2hsOpen] = useState(false);
   const [blockedOpen, setBlockedOpen] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -509,8 +507,6 @@ function NotificationsSettingsPage() {
           <p className="t-meta text-center">Your choices save automatically.</p>
         </main>
       </div>
-
-      {a2hsOpen && <AddToHomeModal onClose={() => setA2hsOpen(false)} />}
       {blockedOpen && <NotificationsBlockedModal onClose={() => setBlockedOpen(false)} />}
     </div>
   );
