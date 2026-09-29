@@ -100,7 +100,24 @@ export const savePushToken = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     // A silent 0-row write is the failure mode that hides here; require proof.
     if (!rows || rows.length !== 1) throw new Error("push token was not stored");
-    return { ok: true };
+
+    // Native push wins on a phone. sendPushToOwner fans out to every row for
+    // the account with no preference between transports, so a phone that once
+    // had the home-screen PWA would get each reminder twice — one web-push,
+    // one APNs/FCM. Drop this account's MOBILE web-push rows now that a device
+    // token exists.
+    //
+    // Deliberately scoped by user agent rather than clearing every web row: a
+    // desktop PWA is a different device that nothing here replaces, and
+    // silencing it would be a worse bug than the duplicate it prevents.
+    const { data: dropped } = await supabaseAdmin
+      .from("push_subscriptions")
+      .delete()
+      .eq("user_id", userId)
+      .eq("transport", "webpush")
+      .or("user_agent.ilike.%iPhone%,user_agent.ilike.%iPad%,user_agent.ilike.%Android%")
+      .select("id");
+    return { ok: true, supersededWebPush: dropped?.length ?? 0 };
   });
 
 /** Drop a native device token (user turned push off, or signed out). */
