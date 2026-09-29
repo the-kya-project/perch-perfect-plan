@@ -21,7 +21,7 @@ import {
   savePushToken,
   deletePushToken,
 } from "@/lib/push.functions";
-import { isNativeApp } from "@/lib/nativeApp";
+import { isNativeApp, nativePlatform } from "@/lib/nativeApp";
 import {
   registerForNativePush,
   unregisterNativePush,
@@ -30,6 +30,9 @@ import {
 } from "@/lib/pushNative";
 import { markNotificationsReviewed } from "@/components/OwnerChecklist";
 import { AddToHomeModal } from "@/components/AddToHomeModal";
+import { NotificationsCallout } from "@/components/NotificationsCallout";
+import { calloutState } from "@/lib/notificationsCallout";
+import { detectWebPlatform } from "@/lib/storeLinks";
 import { InkHero, IconTile, Card, PrimaryButton, CtaLink } from "@/components/system";
 import { friendlyError } from "@/lib/errorMessage";
 
@@ -123,6 +126,11 @@ function NotificationsSettingsPage() {
   // Kept in its own state so the two paths never overwrite each other.
   const native = isNativeApp();
   const [nativeToken, setNativeToken] = useState<string | null>(null);
+  // Which store to point at when this is a phone BROWSER rather than the app.
+  const webPlatform = detectWebPlatform();
+  // The account's bird, for the reminder copy. More than one and the sentence
+  // names none of them rather than picking a favourite.
+  const [birdLabel, setBirdLabel] = useState("your bird");
 
   useEffect(() => {
     // Visiting/reviewing notification preferences checks off that getting-started step.
@@ -139,6 +147,14 @@ function NotificationsSettingsPage() {
         .maybeSingle();
       // push_weight_reminder/push_checkin_reminder postdate the generated types
       if (data) setPrefs(data as unknown as Prefs);
+      const { data: birds } = await supabase
+        .from("birds")
+        .select("name")
+        .eq("owner_id", u.user.id)
+        .is("passed_at", null)
+        .order("created_at");
+      if (birds?.length === 1) setBirdLabel(birds[0].name);
+      else if ((birds?.length ?? 0) > 1) setBirdLabel("your birds");
       if (native) {
         // Older shells (shipped before native push) do not contain the plugin.
         // A Vercel deploy reaches them instantly, so without this they'd get an
@@ -300,6 +316,25 @@ function NotificationsSettingsPage() {
   // Supported here, but the user/phone has blocked notifications in settings.
   const permissionDenied = !!support?.ok && permission === "denied" && !pushEnabled;
 
+  // No button, on either platform. Opening the OS settings page needs a plugin
+  // we do not ship: @capacitor/app has no openUrl in this version, and
+  // @capacitor/browser only opens web URLs, so `app-settings:` goes nowhere. A
+  // button that silently does nothing is worse than the sentence on its own.
+  // Add a settings plugin and this becomes `nativePlatform() === "ios"`.
+  const canOpenSettings = false;
+
+  // An older shell with no push plugin still has nothing to offer: it needs an
+  // app update, not a permission prompt. Treat it as already-handled so the
+  // callout stays silent instead of showing a button that cannot work.
+  const callout = calloutState({
+    native,
+    permission: pushBlocked && support?.reason === "native-app"
+      ? "granted"
+      : permission === "granted" || permission === "denied" ? permission : "default",
+    webPlatform,
+    canOpenSettings,
+  });
+
   return (
     <div className="min-h-screen bg-[var(--cream)] pb-nav">
       <div className="mx-auto max-w-md">
@@ -312,27 +347,30 @@ function NotificationsSettingsPage() {
         />
 
         <main className="space-y-4 px-5 pt-5">
-          {/* Push enable banner */}
+          {/* The notifications callout. Inside the app this asks for push (or
+              points at the OS settings, or says nothing at all when it is
+              already on); on a phone browser it points at the store; on
+              desktop it is one quiet line. The old "add this to your home
+              screen" advice is gone — it only ever existed to get iOS web
+              push, which the native shells now do properly. */}
+          <NotificationsCallout
+            state={callout}
+            birdLabel={birdLabel}
+            busy={busy}
+            onEnable={enablePush}
+          />
+
+          {/* Web push still works on a desktop browser, so the enable/disable
+              control stays there. It is deliberately NOT offered on a phone
+              browser any more: that path existed to work around iOS, and the
+              answer there is now the app. */}
+          {!native && webPlatform === "desktop" && support?.ok && (
           <Card>
             <div className="flex items-start gap-3 p-4">
               <IconTile size={38} icon={<Smartphone className="size-5" />} />
               <div className="min-w-0 flex-1">
                 <div className="t-item">Push on this device</div>
-                {pushBlocked && support?.reason === "native-app" ? (
-                  <p className="t-body mt-1 text-[var(--mute)]">
-                    Push notifications arrive in the next app update. Email alerts below
-                    still reach you in the meantime.
-                  </p>
-                ) : pushBlocked && support?.reason === "ios-not-installed" ? (
-                  <p className="t-body mt-1 text-[var(--mute)]">
-                    On iPhone, add this app to your home screen first, then come back here.
-                  </p>
-                ) : pushBlocked ? (
-                  <p className="t-body mt-1 text-[var(--mute)]">
-                    This browser doesn't support push notifications. Add the app to your home
-                    screen to turn push on.
-                  </p>
-                ) : permissionDenied ? (
+                {permissionDenied ? (
                   <p className="t-body mt-1 text-[var(--mute)]">
                     Notifications are turned off for this app in your device settings. Turn them
                     on there to get sitter alerts on this device.
@@ -346,19 +384,12 @@ function NotificationsSettingsPage() {
                     Get instant alerts for sitter activity without needing to check email.
                   </p>
                 )}
-                {/* Home-screen advice is meaningless inside the shell: an older
-                    binary just needs an app update, not a bookmark. */}
-                {pushBlocked && support?.reason !== "native-app" && (
-                  <div className="mt-2">
-                    <CtaLink label="How to add this app to your home screen" onPress={() => setA2hsOpen(true)} />
-                  </div>
-                )}
                 {permissionDenied && (
                   <div className="mt-2">
                     <CtaLink label="How to turn on notifications" onPress={() => setBlockedOpen(true)} />
                   </div>
                 )}
-                {!pushBlocked && !permissionDenied && (
+                {!permissionDenied && (
                   <div className="mt-3">
                     <PrimaryButton
                       tone={pushEnabled ? "outline" : "ink"}
@@ -373,6 +404,7 @@ function NotificationsSettingsPage() {
               </div>
             </div>
           </Card>
+          )}
 
           {/* The two email programmes a reader can turn off. Separate from the
               per-event grid below, which is about transactional alerts: those
