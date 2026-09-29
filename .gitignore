@@ -60,3 +60,18 @@ docs/email-redesign/assets/
 
 # QA harness sessions (never commit a session token)
 .qa-sessions/
+
+# Working files that live here but are deliberately not committed.
+# appstore-screenshots/ is ~15 MB and the decision is parked in docs/BACKLOG.md;
+# git history is permanent, so it must not be swept in by accident.
+appstore-screenshots/
+_to_delete/
+
+# Under docs/email-redesign/, ignore the untracked scratch build scripts and
+# rendered emails, but keep the tracked files AND templates/ visible: templates/
+# is the baseline `email:preview --check` compares against, and ignoring the
+# whole directory would silently hide a NEW template from git.
+docs/email-redesign/*
+!docs/email-redesign/README.md
+!docs/email-redesign/new-strings.json
+!docs/email-redesign/templates/
