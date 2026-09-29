@@ -44,6 +44,29 @@ one web-push row, one APNs row. The server can't tell they're the same device.
 
 ---
 
+## Native app
+
+### Deep links: open email links in the native app
+Status: planned for a future native build, not scheduled.
+
+Email links open in the browser today. Opening them in the installed app needs
+association files on both platforms plus a handler in the shell.
+
+- **iOS Universal Links:** serve `/.well-known/apple-app-site-association` from
+  app.thekyaproject.com; add the Associated Domains entitlement
+  `applinks:app.thekyaproject.com` (app ID 6795267221).
+- **Android App Links:** serve `/.well-known/assetlinks.json` with the **Play App Signing**
+  SHA-256 (not the upload key) for `com.thekyaproject.app`; add an `autoVerify` intent filter.
+- Handle `appUrlOpen` from `@capacitor/app` and route to the incoming path, including cold
+  start and the signed-out case (return to the path after sign-in).
+- Exclude paths that should stay in the browser: sitter token links, and the unsubscribe page.
+- Check Brevo click tracking — tracked redirect links bypass Universal Links.
+- Optional: Apple Smart App Banner on the website.
+- Needs a store rebuild for both platforms. Test in Apple Mail and the Gmail app, app
+  installed vs not, signed in vs out.
+
+---
+
 ## Security / infrastructure
 
 ### CSP is still report-only
@@ -120,6 +143,13 @@ open the app, not when the weigh-in happens. A drop noticed three days late is a
 product from one that reaches them that morning. Push would close the gap without an email
 — but the engagement-nudge work found only one push subscriber, so that channel is thin
 until native push adoption grows. Deliberately deferred, not overlooked.
+
+### Dead session on an open screen
+Status: after the October 2 send.
+
+When the session dies while a screen is open, the dashboard empties its bird cards but
+stays put. It should send the reader to `/auth` with the current path kept, so nobody
+thinks their birds are gone.
 
 ---
 
