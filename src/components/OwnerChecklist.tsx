@@ -4,8 +4,11 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { Check, ChevronRight, Sparkles } from "lucide-react";
-import { InstallGuide } from "@/components/InstallGuide";
-import { isStandalone } from "@/lib/pwaInstall";
+import { useAppSurface } from "@/lib/appSurface";
+import {
+  APP_STORE_BADGE, APP_STORE_BADGE_SIZE, APP_STORE_URL,
+  PLAY_STORE_BADGE, PLAY_STORE_BADGE_SIZE, PLAY_STORE_URL,
+} from "@/lib/storeLinks";
 
 // Persistent getting-started checklist on the owner dashboard. Steps auto-check
 // from real state (defaults saved, bird added, sit created); notifications +
@@ -33,6 +36,7 @@ export function OwnerChecklist({ birds, sits }: { birds: any[]; sits: any[] }) {
   const [dismissed, setDismissed] = useState(false);
   const [notifDone, setNotifDone] = useState(false);
   const [homeDone, setHomeDone] = useState(false);
+  const surface = useAppSurface();
   const [showHome, setShowHome] = useState(false);
 
   // Resolve the current account, then read its per-account flags. Until that
@@ -48,9 +52,7 @@ export function OwnerChecklist({ birds, sits }: { birds: any[]; sits: any[] }) {
         setUid(id);
         setDismissed(readFlag(scoped(DISMISS_KEY, id)));
         setNotifDone(readFlag(scoped(NOTIF_KEY, id)));
-        // Auto-complete when already installed (standalone) — never show the
-        // install step to someone who's already added the app.
-        setHomeDone(readFlag(scoped(HOMESCREEN_KEY, id)) || isStandalone());
+        setHomeDone(readFlag(scoped(HOMESCREEN_KEY, id)));
       }
       setFlagsLoaded(true);
     })();
@@ -89,7 +91,18 @@ export function OwnerChecklist({ birds, sits }: { birds: any[]; sits: any[] }) {
   const steps: Step[] = [
     { key: "defaults", name: "Set your emergency defaults", desc: "Account-level vet & emergency contacts — they carry over to every bird.", done: defaultsDone, to: "/dashboard", search: { emergencyDefaults: true } },
     { key: "bird", name: "Add your first bird", desc: "Build their care plan.", done: birds.length > 0, to: "/birds/new" },
-    { key: "home", name: "Add the app to your home screen", desc: "Open it like a native app.", done: homeDone, home: true },
+    // Only a phone browser gets this. Inside the app there is nothing to
+    // install, and on a desktop we do not push an install at all — the same
+    // rule Settings and the Home checklist follow.
+    ...(surface.surface === "mobile-web"
+      ? [{
+          key: "home",
+          name: "Get the app",
+          desc: "Reminders, quick logging, and your flock's whole record, right on your phone. Same account, nothing to move over.",
+          done: homeDone || surface.hasNativeDevice,
+          home: true,
+        } as Step]
+      : []),
     { key: "notif", name: "Set notification preferences", desc: "How you hear about scans and updates.", done: notifDone, to: "/scans/settings" },
     { key: "sit", name: "Create your first sit", desc: "Send a sitter a private link.", done: sits.length > 0, to: "/sits", search: { newSit: true } },
   ];
@@ -156,21 +169,30 @@ export function OwnerChecklist({ birds, sits }: { birds: any[]; sits: any[] }) {
             return <li key={s.key} className="flex items-start gap-3 p-2.5 opacity-70">{body}</li>;
           }
           if (s.home) {
+            // Straight to the store, with the platform's own badge. No panel of
+            // "tap share, then Add to Home Screen" steps any more.
+            const ios = surface.storePlatform === "ios";
+            const size = ios ? APP_STORE_BADGE_SIZE : PLAY_STORE_BADGE_SIZE;
             return (
               <li key={s.key}>
-                <button type="button" onClick={() => setShowHome((v) => !v)} className={rowClass}>{body}</button>
-                {showHome && (
-                  <div className="mt-1 space-y-2 rounded-xl bg-white p-3 ring-1 ring-sage-100">
-                    {/* Tailored to the visitor's platform + browser (native
-                        install button where available), instead of showing both
-                        iPhone and Android steps to everyone. */}
-                    <InstallGuide onInstalled={() => { if (uid) setFlag(scoped(HOMESCREEN_KEY, uid)); setHomeDone(true); setShowHome(false); }} />
-                    <div className="flex gap-2 pt-1">
-                      <button onClick={() => { if (uid) setFlag(scoped(HOMESCREEN_KEY, uid)); setHomeDone(true); setShowHome(false); }} className="rounded-lg bg-[#1a3d2e] px-3 py-1.5 text-xs font-semibold text-white">Done</button>
-                      <button onClick={() => { if (uid) setFlag(scoped(HOMESCREEN_KEY, uid)); setHomeDone(true); setShowHome(false); }} className="rounded-lg border border-[#e0d8c4] px-3 py-1.5 text-xs font-semibold text-[#5f5e5a]">Skip</button>
-                    </div>
-                  </div>
-                )}
+                <a
+                  href={ios ? APP_STORE_URL : PLAY_STORE_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => { if (uid) setFlag(scoped(HOMESCREEN_KEY, uid)); }}
+                  className={rowClass}
+                >
+                  {body}
+                </a>
+                <div className="px-2.5 pb-2">
+                  <img
+                    src={ios ? APP_STORE_BADGE : PLAY_STORE_BADGE}
+                    width={size.width}
+                    height={size.height}
+                    alt={ios ? "Download on the App Store" : "Get it on Google Play"}
+                    className="block"
+                  />
+                </div>
               </li>
             );
           }
