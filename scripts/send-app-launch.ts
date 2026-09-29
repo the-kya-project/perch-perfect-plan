@@ -28,7 +28,19 @@ for (const f of [".env.email-qa", ".env"]) {
 const TEST = process.argv.includes("--test");
 const SEND = process.argv.includes("--send");
 const FOUNDER = "brittany@thekyaproject.com";
-const EXCLUDE = new Set(["brittany+kyatest@thekyaproject.com"]);
+/**
+ * Addresses that never get this, whatever their preferences say.
+ *  - the QA account exists only for testing
+ *  - the two appreview accounts are the store reviewers' logins; a marketing
+ *    email landing in a reviewer's inbox helps nobody
+ */
+const EXCLUDE = new Set([
+  "brittany+kyatest@thekyaproject.com",
+  "appreview.helper@thekyaproject.com",
+  "appreview.rowan@thekyaproject.com",
+  // A test account, not a user — kept out of analytics for the same reason.
+  "smeyer@blackhawkchristian.org",
+]);
 const APP_URL = "https://app.thekyaproject.com";
 
 if (!process.env.BREVO_SENDER_EMAIL) {
@@ -54,13 +66,51 @@ const { data: profiles, error } = await sb
   .eq("notify_monthly_letter", true);
 if (error) throw new Error(error.message);
 
-const audience: Row[] = (profiles ?? []).filter((p: Row) => p.email && !EXCLUDE.has(p.email));
+/**
+ * Skip anyone we can SEE has the native app — this email asks people to
+ * download something they already have.
+ *
+ * Two signals, and only two exist:
+ *   - an apns/fcm row, which needs the app open AND push granted
+ *   - a Sign in with Apple identity: that button renders only inside the iOS
+ *     app (auth.tsx gates it on isIOSApp()), so it cannot come from the web
+ *
+ * This is reliable when it says YES and weak when it says no. Android leaves
+ * no trace at all — no UA marker, and native Google sign-in is identical to
+ * web Google — so an Android owner who already has the app will still be sent
+ * this. That is a known miss, not an oversight.
+ */
+const { data: pushRows } = await sb.from("push_subscriptions").select("user_id, transport");
+const hasNativeToken = new Set<string>(
+  (pushRows ?? []).filter((r: { transport: string }) => r.transport === "apns" || r.transport === "fcm")
+    .map((r: { user_id: string }) => r.user_id),
+);
+
+const adminUsers = await fetch(`${process.env.SUPABASE_URL}/auth/v1/admin/users?per_page=200`, {
+  headers: {
+    apikey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    Authorization: `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
+  },
+}).then((r) => r.json() as Promise<{ users?: Array<{ id: string; app_metadata?: { providers?: string[] } }> }>);
+const signedInWithApple = new Set<string>(
+  (adminUsers.users ?? []).filter((u) => (u.app_metadata?.providers ?? []).includes("apple")).map((u) => u.id),
+);
+
+const withNativeSignal = (p: Row) => hasNativeToken.has(p.id) || signedInWithApple.has(p.id);
+
+const all: Row[] = (profiles ?? []).filter((p: Row) => p.email && !EXCLUDE.has(p.email));
+const skippedNative = all.filter(withNativeSignal);
+const audience: Row[] = all.filter((p) => !withNativeSignal(p));
 const { data: already } = await sb.from("app_launch_email_log").select("user_id");
 const done = new Set<string>((already ?? []).map((r: { user_id: string }) => r.user_id));
 const pending = audience.filter((p) => !done.has(p.id));
 
+console.log(`opted in: ${all.length + EXCLUDE.size} · excluded by address: ${EXCLUDE.size} · skipped, native app detected: ${skippedNative.length}`);
 console.log(`audience: ${audience.length} · already sent: ${done.size} · pending: ${pending.length}`);
-console.log(`excluded by address: ${[...EXCLUDE].join(", ")}`);
+for (const p of skippedNative) {
+  const why = hasNativeToken.has(p.id) ? "apns/fcm push token" : "Sign in with Apple (iOS app only)";
+  console.log(`  skipped  ${p.email}  (${why})`);
+}
 console.log(`reply-to: ${FOUNDER}\n`);
 for (const p of pending) console.log(`  ${p.email}${p.display_name ? `  (${p.display_name})` : ""}`);
 
