@@ -145,6 +145,15 @@ export const Route = createFileRoute("/api/public/hooks/monthly-letter")({
           .in("owner_id", ownerIds);
         const done = new Set((already ?? []).map((r: any) => r.owner_id));
 
+        // Anyone with NO row at all has never had a Flock Report, so this one
+        // carries the short "what this is" panel. Deliberately every prior
+        // month, not just this one — `done` above answers a different question.
+        const { data: everSent } = await sb
+          .from("monthly_letter_log")
+          .select("owner_id")
+          .in("owner_id", ownerIds);
+        const hasHadOne = new Set((everSent ?? []).map((r: any) => r.owner_id));
+
         // ── What ───────────────────────────────────────────────────────────
         const { data: birds } = await sb
           .from("birds")
@@ -255,6 +264,7 @@ export const Route = createFileRoute("/api/public/hooks/monthly-letter")({
             coming: coming ? { date: shortDate(coming.on_date, locale), title: coming.title ?? "" } : null,
             article,
             unsubscribeUrl: unsub,
+            firstIssue: !hasHadOne.has(p.id),
             locale,
           });
 
