@@ -147,7 +147,7 @@ export function buildAppLaunchEmail(opts: { displayName?: string | null; unsubsc
     { kind: "p", text: "And if something isn't working, or there's something you wish it did, just hit reply. I read every note that comes in, and a lot of what we're building next started as an email from someone like you." },
 
     { kind: "p", text: SLOT_PEEK },
-    { kind: "p", text: "Before you go, thank you. Kya &amp; Co. was built for the people who weigh before breakfast, write down the strange new habit, and leave the sitter better notes than they ever got from their own babysitter. You were one of the very first, and I'm really glad you're here." },
+    { kind: "p", text: "Before you go, thank you for trusting Kya &amp; Co. with a little piece of your bird's life. You were one of the very first, and I'm really glad you're here." },
     { kind: "signature" },
   ];
 
