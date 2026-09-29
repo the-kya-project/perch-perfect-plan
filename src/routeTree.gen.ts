@@ -10,8 +10,10 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as TermsRouteImport } from './routes/terms'
+import { Route as ReviewRouteImport } from './routes/review'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as GetAppRouteImport } from './routes/get-app'
 import { Route as DeleteAccountRouteImport } from './routes/delete-account'
 import { Route as ConfirmEmailRouteImport } from './routes/confirm-email'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -83,6 +85,11 @@ const TermsRoute = TermsRouteImport.update({
   path: '/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReviewRoute = ReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
@@ -91,6 +98,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GetAppRoute = GetAppRouteImport.update({
+  id: '/get-app',
+  path: '/get-app',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DeleteAccountRoute = DeleteAccountRouteImport.update({
@@ -460,8 +472,10 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/confirm-email': typeof ConfirmEmailRoute
   '/delete-account': typeof DeleteAccountRoute
+  '/get-app': typeof GetAppRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/review': typeof ReviewRoute
   '/terms': typeof TermsRoute
   '/sitter/$token': typeof SitterTokenRouteRouteWithChildren
   '/account': typeof AuthenticatedAccountRouteWithChildren
@@ -529,8 +543,10 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/confirm-email': typeof ConfirmEmailRoute
   '/delete-account': typeof DeleteAccountRoute
+  '/get-app': typeof GetAppRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/review': typeof ReviewRoute
   '/terms': typeof TermsRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/explore': typeof AuthenticatedExploreRoute
@@ -594,8 +610,10 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/confirm-email': typeof ConfirmEmailRoute
   '/delete-account': typeof DeleteAccountRoute
+  '/get-app': typeof GetAppRoute
   '/privacy': typeof PrivacyRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/review': typeof ReviewRoute
   '/terms': typeof TermsRoute
   '/sitter/$token': typeof SitterTokenRouteRouteWithChildren
   '/_authenticated/account': typeof AuthenticatedAccountRouteWithChildren
@@ -665,8 +683,10 @@ export interface FileRouteTypes {
     | '/auth'
     | '/confirm-email'
     | '/delete-account'
+    | '/get-app'
     | '/privacy'
     | '/reset-password'
+    | '/review'
     | '/terms'
     | '/sitter/$token'
     | '/account'
@@ -734,8 +754,10 @@ export interface FileRouteTypes {
     | '/auth'
     | '/confirm-email'
     | '/delete-account'
+    | '/get-app'
     | '/privacy'
     | '/reset-password'
+    | '/review'
     | '/terms'
     | '/dashboard'
     | '/explore'
@@ -798,8 +820,10 @@ export interface FileRouteTypes {
     | '/auth'
     | '/confirm-email'
     | '/delete-account'
+    | '/get-app'
     | '/privacy'
     | '/reset-password'
+    | '/review'
     | '/terms'
     | '/sitter/$token'
     | '/_authenticated/account'
@@ -869,8 +893,10 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ConfirmEmailRoute: typeof ConfirmEmailRoute
   DeleteAccountRoute: typeof DeleteAccountRoute
+  GetAppRoute: typeof GetAppRoute
   PrivacyRoute: typeof PrivacyRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ReviewRoute: typeof ReviewRoute
   TermsRoute: typeof TermsRoute
   SitterTokenRouteRoute: typeof SitterTokenRouteRouteWithChildren
   HandoffTokenRoute: typeof HandoffTokenRoute
@@ -894,6 +920,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TermsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/review': {
+      id: '/review'
+      path: '/review'
+      fullPath: '/review'
+      preLoaderRoute: typeof ReviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/reset-password': {
       id: '/reset-password'
       path: '/reset-password'
@@ -906,6 +939,13 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/get-app': {
+      id: '/get-app'
+      path: '/get-app'
+      fullPath: '/get-app'
+      preLoaderRoute: typeof GetAppRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/delete-account': {
@@ -1562,8 +1602,10 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ConfirmEmailRoute: ConfirmEmailRoute,
   DeleteAccountRoute: DeleteAccountRoute,
+  GetAppRoute: GetAppRoute,
   PrivacyRoute: PrivacyRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  ReviewRoute: ReviewRoute,
   TermsRoute: TermsRoute,
   SitterTokenRouteRoute: SitterTokenRouteRouteWithChildren,
   HandoffTokenRoute: HandoffTokenRoute,
