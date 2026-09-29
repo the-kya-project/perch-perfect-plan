@@ -408,6 +408,9 @@ export function buildFlockReportEmail(opts: {
   coming?: { date: string; title: string } | null;
   article?: { title: string; url: string; minutes: number; imageUrl?: string; imageAlt?: string } | null;
   unsubscribeUrl?: string;
+  /** True only for someone's FIRST Flock Report — no prior monthly_letter_log
+   *  row. Adds a one-time panel explaining what this email is. */
+  firstIssue?: boolean;
   locale?: string;
 }): BuiltEmail {
   const t = emailT(opts.locale);
@@ -437,7 +440,23 @@ export function buildFlockReportEmail(opts: {
   const first = opts.birds[0];
   const pick = (path: string) => (opts.birds.length === 1 && first ? `${first.href}/${path}` : `${opts.link}/dashboard`);
 
+  /** A totals card, singular at exactly one. "1 journal entries" was the bug. */
+  const totalItem = (n: number, key: "totalWeighIns" | "totalChecks" | "totalJournal") => ({
+    n: String(n),
+    label: n === 1 ? t(`email.monthly.${key}One`) : t(`email.monthly.${key}`),
+  });
+
   const blocks: FlockBlock[] = [
+    // Only in someone's FIRST Flock Report: what this email is and when it
+    // comes. The caller decides — it is a question about monthly_letter_log,
+    // not about this month's numbers.
+    ...(opts.firstIssue
+      ? [{
+          kind: "highlight" as const,
+          title: t("email.monthly.firstIssueTitle"),
+          body: t("email.monthly.firstIssueBody"),
+        }]
+      : []),
     // A quiet month has nothing to total; three zeroes would be a scoreboard.
     ...(quiet
       ? []
@@ -445,9 +464,9 @@ export function buildFlockReportEmail(opts: {
           {
             kind: "totals" as const,
             items: [
-              { n: String(sum((b) => b.weighIns.length)), label: t("email.monthly.totalWeighIns") },
-              { n: String(sum((b) => b.checks)), label: t("email.monthly.totalChecks") },
-              { n: String(sum((b) => b.journal)), label: t("email.monthly.totalJournal") },
+              totalItem(sum((b) => b.weighIns.length), "totalWeighIns"),
+              totalItem(sum((b) => b.checks), "totalChecks"),
+              totalItem(sum((b) => b.journal), "totalJournal"),
             ],
           },
         ]),
