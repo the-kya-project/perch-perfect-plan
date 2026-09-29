@@ -20,7 +20,8 @@
     "email:qa": "npx --yes vite-node scripts/qa-send-emails.ts --",
     "email:preview": "npx --yes vite-node scripts/render-emails.ts --",
     "test:no-home-screen": "node scripts/no-home-screen.mjs",
-    "test:eligibility": "npx --yes vite-node scripts/eligibility.test.ts"
+    "test:eligibility": "npx --yes vite-node scripts/eligibility.test.ts",
+    "test:get-app": "npx --yes vite-node scripts/get-app.test.ts"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.2",
