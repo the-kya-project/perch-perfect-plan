@@ -15,6 +15,8 @@ import {
   appStoreUrl, campaignToken, detectInAppBrowser, detectPlatform, isBot,
   playStoreUrl, readUtms, resolveTarget, withUtms, STORE, UTM_MAX_LENGTH,
 } from "@/lib/storeRedirect.server";
+import { chooserPage } from "@/lib/storeChooserPage.server";
+import qrcode from "qrcode-generator";
 
 let passed = 0;
 function check(name: string, fn: () => void) {
@@ -193,5 +195,92 @@ check("android badge", () =>
   assert.equal(withUtms("/get-app?store=android", TIKTOK),
     "/get-app?store=android&utm_source=tiktok&utm_campaign=app_launch&utm_content=morning"));
 check("no UTMs -> path untouched", () => assert.equal(withUtms("/get-app?store=ios", NONE), "/get-app?store=ios"));
+
+console.log("\nchooser: the QR carries this visitor's UTMs");
+{
+  const ORIGIN = "https://app.thekyaproject.com";
+  const html = chooserPage("get", TIKTOK, { basePath: "/get", origin: ORIGIN });
+  // The QR is an inline <svg>; what it encodes is asserted by rebuilding the
+  // same target and checking the page was generated for it.
+  const target = `${ORIGIN}/get?utm_source=tiktok&utm_campaign=app_launch&utm_content=morning&qr=1`;
+  check("the QR is generated, not the static PNG", () => {
+    assert.ok(/<div class="qr" data-qr-target="[^"]+"><svg/.test(html), "expected an inline svg QR");
+    assert.ok(!html.includes("get-app-qr.png"), "static QR should not be used for /get");
+  });
+  check("the page states the target, and the SVG really encodes it", () => {
+    // Independently encode the URL we claim is in there. qrcode-generator is
+    // deterministic, so a byte-identical SVG proves the page's QR encodes this
+    // exact string — no phone or decoder needed.
+    const independent = qrcode(0, "M");
+    independent.addData(target);
+    independent.make();
+    const expectedSvg = independent.createSvgTag({ cellSize: 4, margin: 1, scalable: true });
+    assert.ok(html.includes(expectedSvg), "the rendered QR does not encode the stated target");
+    assert.ok(html.includes(`data-qr-target="${target.replace(/&/g, "&amp;")}"`),
+      "data-qr-target should state the same URL");
+  });
+  check("a /get-app chooser points its QR at /get-app", () => {
+    const appHtml = chooserPage("get", TIKTOK, { basePath: "/get-app", origin: ORIGIN });
+    assert.notEqual(appHtml, html, "a different QR target must produce a different QR");
+    assert.ok(appHtml.includes('href="/get-app?store=ios'), "badges follow the same path");
+  });
+  check("no UTMs -> the QR still works, just without them", () => {
+    const bare = chooserPage("get", NONE, { basePath: "/get", origin: ORIGIN });
+    assert.ok(/<div class="qr" data-qr-target="[^"]+"><svg/.test(bare));
+    assert.ok(!bare.includes("utm_"), "nothing invents a UTM");
+  });
+}
+
+console.log("\nchooser: link-preview tags");
+{
+  const ORIGIN = "https://app.thekyaproject.com";
+  const html = chooserPage("get", TIKTOK, { basePath: "/get", origin: ORIGIN });
+  const meta = (sel: string) => {
+    const m = html.match(new RegExp(`<meta (?:property|name)="${sel}" content="([^"]*)"`));
+    return m ? m[1] : null;
+  };
+  const TITLE = "Kya &amp; Co. | Your birds&#39; care, all in one place";
+  const DESC = "A free app for documenting your birds&#39; care, from care plans and diet to daily weights and health notes, shared with everyone who helps care for them.";
+  check("og:title", () => assert.equal(meta("og:title"), TITLE));
+  check("twitter:title", () => assert.equal(meta("twitter:title"), TITLE));
+  check("og:description", () => assert.equal(meta("og:description"), DESC));
+  check("twitter:description", () => assert.equal(meta("twitter:description"), DESC));
+  check("og:type is website", () => assert.equal(meta("og:type"), "website"));
+  check("twitter:card is summary_large_image", () =>
+    assert.equal(meta("twitter:card"), "summary_large_image"));
+  check("og:url is the clean canonical path, no UTMs", () => {
+    assert.equal(meta("og:url"), `${ORIGIN}/get`);
+    assert.ok(!meta("og:url")!.includes("utm_"));
+  });
+  check("og:image and twitter:image are absolute", () => {
+    for (const k of ["og:image", "twitter:image"]) {
+      assert.ok(meta(k)!.startsWith("https://"), `${k} must be absolute`);
+    }
+    assert.equal(meta("og:image"), meta("twitter:image"));
+  });
+  check("og:image points at the 1200x630 card", () =>
+    assert.equal(meta("og:image"), `${ORIGIN}/brand/share-card.jpg`));
+  check("declared dimensions match the real file", () => {
+    assert.equal(meta("og:image:width"), "1200");
+    assert.equal(meta("og:image:height"), "630");
+  });
+  check("og:image:alt", () =>
+    assert.equal(meta("og:image:alt"), "Kya &amp; Co. bird care app"));
+  check("twitter:image:alt matches, so the X card is described too", () =>
+    assert.equal(meta("twitter:image:alt"), "Kya &amp; Co. bird care app"));
+  check("the ampersand in the brand name is escaped", () => {
+    assert.ok(meta("og:title")!.includes("Kya &amp; Co."));
+    assert.ok(!/Kya & Co/.test(meta("og:title")!), "a raw & would break the attribute");
+  });
+  check("origin defaults to production when not passed", () => {
+    const d = chooserPage("get", NONE);
+    assert.ok(d.includes('content="https://app.thekyaproject.com/get-app"'));
+  });
+  check("/review gets no preview tags — different link, different copy", () => {
+    const review = chooserPage("review");
+    assert.equal(review.match(/og:title/), null);
+    assert.equal(review.match(/twitter:card/), null);
+  });
+}
 
 console.log(`\n${passed} passed${process.exitCode ? ", WITH FAILURES" : ", no failures"}`);
