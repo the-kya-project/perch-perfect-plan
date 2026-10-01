@@ -6,6 +6,7 @@ import {
   useRouter,
   HeadContent,
   Scripts,
+  type ErrorComponentProps,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 import { I18nextProvider } from "react-i18next";
@@ -49,8 +50,12 @@ function NotFoundComponent() {
   );
 }
 
-function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
+function ErrorComponent({ error, reset }: ErrorComponentProps) {
   console.error(error);
+  // The router types `error` as unknown, because a throw site can throw
+  // anything. Narrow once here; the original value is still what gets
+  // reported, so nothing is lost on the way to Lovable.
+  const err = error instanceof Error ? error : new Error(String(error));
   const router = useRouter();
   // A stale-build chunk 404 (lazy route import after a deploy swapped the
   // precache) is SELF-HEALING: installChunkErrorRecovery reloads onto the fresh
@@ -72,7 +77,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
       </div>
     );
   }
-  const detail = error.message && !/unknown error/i.test(error.message) ? error.message : null;
+  const detail = err.message && !/unknown error/i.test(err.message) ? err.message : null;
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
