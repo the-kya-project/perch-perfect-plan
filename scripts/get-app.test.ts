@@ -258,6 +258,16 @@ console.log("\nchooser: link-preview tags");
     }
     assert.equal(meta("og:image"), meta("twitter:image"));
   });
+  check("og:image points at the 1200x630 card", () =>
+    assert.equal(meta("og:image"), `${ORIGIN}/brand/share-card.jpg`));
+  check("declared dimensions match the real file", () => {
+    assert.equal(meta("og:image:width"), "1200");
+    assert.equal(meta("og:image:height"), "630");
+  });
+  check("og:image:alt", () =>
+    assert.equal(meta("og:image:alt"), "Kya &amp; Co. bird care app"));
+  check("twitter:image:alt matches, so the X card is described too", () =>
+    assert.equal(meta("twitter:image:alt"), "Kya &amp; Co. bird care app"));
   check("the ampersand in the brand name is escaped", () => {
     assert.ok(meta("og:title")!.includes("Kya &amp; Co."));
     assert.ok(!/Kya & Co/.test(meta("og:title")!), "a raw & would break the attribute");

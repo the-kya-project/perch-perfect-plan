@@ -13,14 +13,22 @@ import { STORE, UTM_KEYS, withUtms, type Utms } from "./storeRedirect.server";
 const PROD_ORIGIN = "https://app.thekyaproject.com";
 
 /**
- * The share image for link previews.
+ * The share image for link previews: a purpose-built 1200x630 card, the 1.91:1
+ * ratio Facebook, Slack, iMessage and X all size for, so nothing is cropped.
  *
- * NOTE: this is the 1960x600 brand lockup, the same asset __root.tsx already
- * uses. It is NOT a purpose-built 1200x630 (1.91:1) card, so Slack, Facebook
- * and iMessage will crop or letterbox it. Drop a real 1200x630 export in
- * public/brand/ and change this one line when there is one.
+ * Stored as JPEG rather than the WebP it was delivered as. WebP previews
+ * unreliably in iMessage and some DM clients, which is exactly where this link
+ * gets shared. EXIF was stripped on the way in — the right-hand side is a real
+ * photo, and a share card has no business carrying camera or location data.
+ *
+ * Declaring the dimensions lets a scraper lay out the card before it has
+ * finished fetching the image, which is the difference between a card that
+ * renders immediately and one that pops in late or not at all on first share.
  */
-const SHARE_IMAGE = "/brand/lockups/horizontal-ink.png";
+const SHARE_IMAGE = "/brand/share-card.jpg";
+const SHARE_IMAGE_WIDTH = "1200";
+const SHARE_IMAGE_HEIGHT = "630";
+const SHARE_IMAGE_ALT = "Kya & Co. bird care app";
 
 /** Fallback QR asset, used for /review and if QR generation ever fails. */
 const STATIC_QR = "/brand/store/get-app-qr.png";
@@ -128,10 +136,14 @@ export function chooserPage(
 <meta property="og:title" content="${attr(SHARE_TITLE)}" />
 <meta property="og:description" content="${attr(SHARE_DESC)}" />
 <meta property="og:image" content="${attr(`${origin}${SHARE_IMAGE}`)}" />
+<meta property="og:image:width" content="${SHARE_IMAGE_WIDTH}" />
+<meta property="og:image:height" content="${SHARE_IMAGE_HEIGHT}" />
+<meta property="og:image:alt" content="${attr(SHARE_IMAGE_ALT)}" />
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="${attr(SHARE_TITLE)}" />
 <meta name="twitter:description" content="${attr(SHARE_DESC)}" />
-<meta name="twitter:image" content="${attr(`${origin}${SHARE_IMAGE}`)}" />`
+<meta name="twitter:image" content="${attr(`${origin}${SHARE_IMAGE}`)}" />
+<meta name="twitter:image:alt" content="${attr(SHARE_IMAGE_ALT)}" />`
       : "";
 
   return `<!doctype html>
