@@ -18,6 +18,13 @@ export const STORE = {
   androidReview: `https://play.google.com/store/apps/details?id=${ANDROID_PACKAGE}&showAllReviews=true`,
 };
 
+/**
+ * Which link was opened. Kept distinct so a TikTok-bio visit (`get`) can be
+ * told apart from the launch email's button (`get-app`) and the review link,
+ * even when all three carry the same UTMs.
+ */
+export type ClickPath = "get" | "get-app" | "review";
+
 export type Resolved = "ios" | "android" | "chooser";
 export type Platform = "ios" | "android" | "desktop" | "other";
 export type InAppBrowser = "tiktok" | "instagram" | "facebook" | null;
@@ -26,11 +33,23 @@ export type InAppBrowser = "tiktok" | "instagram" | "facebook" | null;
 export const UTM_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_content"] as const;
 export type Utms = Partial<Record<(typeof UTM_KEYS)[number], string>>;
 
+/**
+ * Longest UTM value we will carry. Anything past this is a mistake or someone
+ * probing, and a store URL built from it would be rejected or truncated
+ * downstream anyway.
+ */
+export const UTM_MAX_LENGTH = 100;
+
+/**
+ * Read the UTMs we recognize, and nothing else: any other query param on the
+ * incoming link is ignored rather than forwarded, so a crafted URL cannot push
+ * its own parameters into a store link or a logged row.
+ */
 export function readUtms(url: URL): Utms {
   const out: Utms = {};
   for (const k of UTM_KEYS) {
     const v = url.searchParams.get(k);
-    if (v) out[k] = v;
+    if (v) out[k] = v.slice(0, UTM_MAX_LENGTH);
   }
   return out;
 }
@@ -75,15 +94,35 @@ export function resolveTarget(userAgent: string, storeOverride?: string | null):
 }
 
 /**
- * Apple's campaign token: `<source>_<content>`, lowercased, anything that is
- * not alphanumeric folded to an underscore, capped at Apple's 40 characters.
+ * Apple's campaign token, in order of preference:
+ *
+ *   utm_source + "_" + utm_content   (tiktok_ad1)
+ *   utm_source alone                 (tiktok)
+ *   utm_campaign                     (launch)
+ *
+ * Lowercased, narrowed to the characters Apple accepts (a-z, 0-9, underscore,
+ * hyphen) with anything else folded to an underscore, and capped at Apple's 40.
  * Returns null when there is nothing to build from, so a plain link is used.
+ *
+ * Hyphens survive deliberately: `utm_content=ad-1` reads as `ad-1` in App Store
+ * Connect rather than being flattened into `ad_1`.
  */
 export function campaignToken(utms: Utms): string | null {
-  const parts = [utms.utm_source, utms.utm_content].filter(Boolean);
-  if (parts.length === 0) return null;
-  const token = parts.join("_").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
-  return token ? token.slice(0, 40) : null;
+  const raw = utms.utm_source
+    ? [utms.utm_source, utms.utm_content].filter(Boolean).join("_")
+    : (utms.utm_campaign ?? null);
+  if (!raw) return null;
+  const token = raw
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, "_")
+    // Folding can butt an underscore against a literal one ("Tik Tok!_ad" ->
+    // "tik_tok__ad"); collapse the run so the token stays readable.
+    .replace(/_+/g, "_")
+    .replace(/^[_-]+|[_-]+$/g, "")
+    .slice(0, 40)
+    // The cap can land mid-separator; don't ship a token ending in one.
+    .replace(/[_-]+$/g, "");
+  return token || null;
 }
 
 let warnedMissingProviderToken = false;
@@ -136,11 +175,13 @@ export function withUtms(path: string, utms: Utms): string {
  * The user agent is used here and discarded; only what it implies is stored.
  */
 export async function logClick(o: {
-  path: "get-app" | "review";
+  path: ClickPath;
   url: URL;
   userAgent: string;
   resolved: Resolved;
   referrer?: string | null;
+  /** Vercel's x-vercel-ip-country. Two letters, or absent off-platform. */
+  country?: string | null;
 }): Promise<void> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const utms = readUtms(o.url);
@@ -157,6 +198,9 @@ export async function logClick(o: {
     in_app_browser: detectInAppBrowser(o.userAgent),
     is_bot: isBot(o.userAgent),
     referrer: o.referrer ? o.referrer.slice(0, 400) : null,
+    // Country, not IP. Vercel resolves it at the edge and we store only the
+    // two-letter code, so there is nothing here that identifies a visitor.
+    country: o.country ? o.country.slice(0, 2).toUpperCase() : null,
   });
   if (error) throw new Error(error.message);
 }

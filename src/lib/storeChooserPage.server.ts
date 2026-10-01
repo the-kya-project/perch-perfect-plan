@@ -16,16 +16,26 @@ const MUTED = "#5f5e5a";
 const BODY = "'DM Sans','Helvetica Neue',Helvetica,'Segoe UI',sans-serif";
 const HEAD = "'Bricolage Grotesque','Avenir Next','Segoe UI',Helvetica,sans-serif";
 
-export function chooserPage(kind: "get" | "review", utms: Utms = {}): string {
+/**
+ * `basePath` is the entry point the visitor actually used — /get or /get-app.
+ * The badges go back through that same path so a desktop visitor who taps one
+ * is counted under the link they really followed. Defaults to /get-app, which
+ * is what the launch email's links use.
+ */
+export function chooserPage(
+  kind: "get" | "review",
+  utms: Utms = {},
+  basePath: "/get" | "/get-app" = "/get-app",
+): string {
   const title = kind === "get" ? "Get Kya &amp; Co. on your phone" : "Leave a review from your phone";
   const blurb =
     kind === "get"
       ? "Scan the code with your phone's camera, or open the store you use."
       : "Reviews are written from the store app on your phone. Scan the code, or open the store you use.";
-  // Back through /get-app rather than straight to the store, so a desktop
+  // Back through the redirect rather than straight to the store, so a desktop
   // visitor who taps a badge is counted and attributed like everyone else.
-  const ios = kind === "get" ? withUtms("/get-app?store=ios", utms) : STORE.iosReview;
-  const android = kind === "get" ? withUtms("/get-app?store=android", utms) : STORE.androidReview;
+  const ios = kind === "get" ? withUtms(`${basePath}?store=ios`, utms) : STORE.iosReview;
+  const android = kind === "get" ? withUtms(`${basePath}?store=android`, utms) : STORE.androidReview;
 
   return `<!doctype html>
 <html lang="en"><head>

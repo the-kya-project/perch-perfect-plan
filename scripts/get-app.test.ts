@@ -13,7 +13,7 @@
 import assert from "node:assert/strict";
 import {
   appStoreUrl, campaignToken, detectInAppBrowser, detectPlatform, isBot,
-  playStoreUrl, readUtms, resolveTarget, withUtms, STORE,
+  playStoreUrl, readUtms, resolveTarget, withUtms, STORE, UTM_MAX_LENGTH,
 } from "@/lib/storeRedirect.server";
 
 let passed = 0;
@@ -42,8 +42,21 @@ const NONE = readUtms(u(""));
 
 console.log("campaign token");
 check("source_content, lowercased", () => assert.equal(campaignToken(TIKTOK), "tiktok_morning"));
-check("non-alphanumerics fold to underscore", () =>
-  assert.equal(campaignToken({ utm_source: "Tik Tok!", utm_content: "morning-v2" }), "tik_tok_morning_v2"));
+check("disallowed characters fold to underscore", () =>
+  assert.equal(campaignToken({ utm_source: "Tik Tok!", utm_content: "morning+v2" }), "tik_tok_morning_v2"));
+check("hyphens are kept — Apple accepts them", () =>
+  assert.equal(campaignToken({ utm_source: "tiktok", utm_content: "ad-1" }), "tiktok_ad-1"));
+check("the spec's example: tiktok + ad1", () =>
+  assert.equal(campaignToken({ utm_source: "tiktok", utm_content: "ad1" }), "tiktok_ad1"));
+check("falls back to utm_campaign when there is no source", () =>
+  assert.equal(campaignToken({ utm_campaign: "launch", utm_medium: "paid_social" }), "launch"));
+check("source wins over campaign", () =>
+  assert.equal(campaignToken({ utm_source: "tiktok", utm_campaign: "launch" }), "tiktok"));
+check("never ends on a separator after the 40-char cap", () => {
+  const t = campaignToken({ utm_source: "x".repeat(39), utm_content: "y" })!;
+  assert.equal(t, "x".repeat(39));
+  assert.ok(!/[_-]$/.test(t));
+});
 check("capped at Apple's 40 characters", () => {
   const t = campaignToken({ utm_source: "x".repeat(30), utm_content: "y".repeat(30) })!;
   assert.equal(t.length, 40);
@@ -51,6 +64,41 @@ check("capped at Apple's 40 characters", () => {
 check("no UTMs -> null", () => assert.equal(campaignToken(NONE), null));
 check("source alone still builds a token", () =>
   assert.equal(campaignToken({ utm_source: "tiktok" }), "tiktok"));
+
+console.log("\nUTM validation");
+check("each value is capped at 100 characters", () => {
+  const long = "a".repeat(250);
+  const utms = readUtms(u(`?utm_source=${long}&utm_campaign=${long}`));
+  assert.equal(utms.utm_source!.length, UTM_MAX_LENGTH);
+  assert.equal(utms.utm_campaign!.length, UTM_MAX_LENGTH);
+});
+check("unexpected query params are ignored, not carried", () => {
+  const utms = readUtms(u("?utm_source=tiktok&redirect=https://evil.example&fbclid=xyz"));
+  assert.deepEqual(utms, { utm_source: "tiktok" });
+});
+check("all four UTMs are read, and only those", () => {
+  const utms = readUtms(u("?utm_source=a&utm_medium=b&utm_campaign=c&utm_content=d&utm_term=e"));
+  assert.deepEqual(utms, { utm_source: "a", utm_medium: "b", utm_campaign: "c", utm_content: "d" });
+});
+check("a crafted param cannot reach the Play referrer", () => {
+  const utms = readUtms(u("?utm_source=tiktok&referrer=https://evil.example"));
+  const url = new URL(playStoreUrl(utms));
+  assert.equal(url.searchParams.get("referrer"), "utm_source=tiktok");
+  assert.equal(url.origin + url.pathname, "https://play.google.com/store/apps/details");
+});
+
+console.log("\nthe only two destinations are the stores");
+check("App Store URL is always an apple.com URL", () => {
+  process.env.APPLE_PROVIDER_TOKEN = "TEST_PT_0000";
+  for (const qs of ["", "?utm_source=tiktok", "?utm_source=//evil.example", "?utm_content=%2F%2Fevil"]) {
+    assert.equal(new URL(appStoreUrl(readUtms(u(qs)))).origin, "https://apps.apple.com");
+  }
+});
+check("Play URL is always a play.google.com URL", () => {
+  for (const qs of ["", "?utm_source=tiktok", "?utm_source=//evil.example"]) {
+    assert.equal(new URL(playStoreUrl(readUtms(u(qs)))).origin, "https://play.google.com");
+  }
+});
 
 console.log("\nApp Store URL");
 check("with token set: pt, ct and mt=8", () => {
@@ -102,6 +150,20 @@ check("email links gain pt/ct too — ct=email_button", () => {
   const emailUtms = readUtms(u("?utm_source=email&utm_campaign=app-launch&utm_content=button"));
   assert.equal(appStoreUrl(emailUtms), `${STORE.ios}?pt=TEST_PT_0000&ct=email_button&mt=8`);
 });
+
+console.log("\nthe bio link's sample URL, end to end");
+{
+  const sample = readUtms(u("?utm_source=tiktok&utm_medium=paid_social&utm_campaign=launch&utm_content=ad1"));
+  check("ct is tiktok_ad1", () => assert.equal(campaignToken(sample), "tiktok_ad1"));
+  check("App Store link carries pt, ct and mt=8", () => {
+    process.env.APPLE_PROVIDER_TOKEN = "TEST_PT_0000";
+    assert.equal(appStoreUrl(sample), `${STORE.ios}?pt=TEST_PT_0000&ct=tiktok_ad1&mt=8`);
+  });
+  check("Play referrer round-trips all four UTMs", () => {
+    const got = new URL(playStoreUrl(sample)).searchParams.get("referrer");
+    assert.equal(got, "utm_source=tiktok&utm_medium=paid_social&utm_campaign=launch&utm_content=ad1");
+  });
+}
 
 console.log("\nplatform");
 check("iPhone", () => assert.equal(detectPlatform(UA.iphone), "ios"));
