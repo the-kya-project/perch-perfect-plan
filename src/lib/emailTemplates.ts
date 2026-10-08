@@ -783,11 +783,14 @@ export function buildHandoffDeclinedEmail(opts: { birdName: string; locale?: str
 // These are core product communication, not marketing.
 // ---------------------------------------------------------------------------
 
-// Blog posts linked from the drip (verified live on thekyaproject.com 2026-07-20).
+// Blog posts linked from the drip (verified live on thekyaproject.com 2026-10-07).
 // When the planned "why weigh your bird" post is published, point the two
 // weight emails at it instead. Blog content is English-only, so the reading
 // blocks are not localized.
-const BLOG = "https://www.thekyaproject.com/blog";
+// Apex, matching the URLs the site's own JSON Feed publishes. The apex 308s to
+// www, so these links take one redirect; they are the canonical form the rest
+// of the app now uses.
+const BLOG = "https://thekyaproject.com/blog";
 const READING_THRIVE = {
   title: "What the research actually says parrots need to thrive",
   teaser: "The evidence behind good husbandry — the same ground a care plan covers.",

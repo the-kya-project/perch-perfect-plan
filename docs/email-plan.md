@@ -43,9 +43,10 @@ four weigh-ins and no health checks; a differently shaped "quiet letter" when ev
 bird is quiet. Birds marked as passed are excluded. Gated on
 `profiles.notify_monthly_letter` (default true); one row per account per recapped
 month in `monthly_letter_log`, so a retry cannot send twice. The "From the field
-notes" block needs `WEBFLOW_API_TOKEN`, `WEBFLOW_BLOG_COLLECTION_ID` and
-`WEBFLOW_BLOG_BASE_URL`, and is omitted entirely when they are unset or the fetch
-fails.
+notes" block reads the newest post from the site's public JSON Feed
+(`https://thekyaproject.com/feed.json`, see `src/lib/blogFeed.server.ts`) and
+needs no environment variables or credentials. It is omitted entirely when the
+fetch times out, errors, or returns nothing usable.
 
 The pg_cron job is live (jobid 5, `0 13 2 * *`). The chain was verified end to
 end before the first run by posting `{"dryRun":true}` through `net.http_post`

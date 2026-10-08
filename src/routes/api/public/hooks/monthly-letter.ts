@@ -19,7 +19,7 @@
  *   - reply-to is Brittany: the letter asks for a reply
  *
  * The article block is fetched ONCE per run and shared by every letter. If the
- * Webflow pull is unconfigured or fails it returns null and the block is
+ * blog feed read fails it returns null and the block is
  * dropped — see src/lib/monthlyArticle.server.ts.
  *
  * Auth: `Authorization: Bearer <CARE_PLAN_REMINDER_SECRET>`, the shared cron
@@ -309,7 +309,7 @@ export const Route = createFileRoute("/api/public/hooks/monthly-letter")({
           dryRun,
           recapMonth: recapMonthKey,
           sendMonth,
-          articleBlock: article ? "included" : "omitted (webflow unconfigured or failed)",
+          articleBlock: article ? "included" : "omitted (blog feed unavailable)",
           considered: profiles.length,
           planned: planned.length,
           sent,
