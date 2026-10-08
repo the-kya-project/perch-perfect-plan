@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { ArrowRight, ArrowUpRight, Headphones, Compass } from "lucide-react";
 import { OwnerHeaderIcons } from "@/components/OwnerHeader";
 import { WaitlistCard } from "@/components/WaitlistCard";
-import { getBlogPosts, type BlogPost } from "@/lib/webflow.functions";
+import { getBlogPosts, type BlogPost } from "@/lib/blogFeed.functions";
 
 // The Kya Project marketing links.
 const MISSION_URL = "https://www.thekyaproject.com/about";
@@ -52,7 +52,7 @@ function Explore() {
         {/* Community waitlist — the single lime accent moment. */}
         <WaitlistCard />
 
-        {/* Latest from the blog — live pull from Webflow. */}
+        {/* Latest from the blog — live pull from the site's JSON Feed. */}
         <section className="space-y-3">
           <div className="flex items-end justify-between">
             <h2 className="text-[21px] font-medium text-[#1a3d2e]">Latest from the blog</h2>
@@ -134,10 +134,10 @@ function BlogSection({ loading, connected, posts }: { loading: boolean; connecte
   );
 }
 
-// Webflow's CMS API only returns the full-size original image, which is far
-// bigger than the ~450px card needs. Route it through the weserv image proxy to
-// serve a card-sized WebP; the <img> onError falls back to the original if the
-// proxy is ever unavailable, so blog images always load.
+// The feed links the full-size original image, which is far bigger than the
+// ~450px card needs. Route it through the weserv image proxy to serve a
+// card-sized WebP; the <img> onError falls back to the original if the proxy is
+// ever unavailable, so blog images always load.
 function sizedImage(url: string, width = 820): string {
   return `https://images.weserv.nl/?url=${encodeURIComponent(url)}&w=${width}&q=72&output=webp&we`;
 }
