@@ -23,7 +23,7 @@ import {
   playStoreUrl,
   readUtms,
   resolveTarget,
-  type ClickPath,
+  type ClickEntry,
 } from "./storeRedirect.server";
 import { chooserPage } from "./storeChooserPage.server";
 
@@ -42,7 +42,7 @@ const VARY = "User-Agent";
 
 export async function handleStoreRedirect(
   request: Request,
-  entry: { path: Extract<ClickPath, "get" | "get-app">; basePath: "/get" | "/get-app" },
+  entry: { path: Extract<ClickEntry, "get" | "get-app">; basePath: "/get" | "/get-app" },
 ): Promise<Response> {
   const url = new URL(request.url);
   const ua = request.headers.get("user-agent") ?? "";
@@ -51,19 +51,23 @@ export async function handleStoreRedirect(
   const country = request.headers.get("x-vercel-ip-country");
   const resolved = resolveTarget(ua, url.searchParams.get("store"));
   const utms = readUtms(url);
+  // Set by the chooser's QR code, so a scan is told apart from a click without
+  // touching any UTM. Anything other than "1" is ignored.
+  const isScan = url.searchParams.get("qr") === "1";
+  const path = isScan ? (`${entry.path}-qr` as const) : entry.path;
 
   // Bounded on purpose. Awaited rather than fire-and-forget because a
   // serverless function can be frozen the moment it responds, which would drop
   // the row; bounded because the visitor must not wait on it.
   await Promise.race([
-    logClick({ path: entry.path, url, userAgent: ua, resolved, referrer, country }).catch((e) => {
-      console.error(`[${entry.path}] click log failed`, e instanceof Error ? e.message : e);
+    logClick({ path, url, userAgent: ua, resolved, referrer, country }).catch((e) => {
+      console.error(`[${path}] click log failed`, e instanceof Error ? e.message : e);
     }),
     new Promise((r) => setTimeout(r, LOG_BUDGET_MS)),
   ]);
 
   if (resolved === "chooser") {
-    return new Response(chooserPage("get", utms, entry.basePath), {
+    return new Response(chooserPage("get", utms, { basePath: entry.basePath, origin: url.origin }), {
       status: 200,
       headers: {
         "content-type": "text/html; charset=utf-8",

@@ -18,12 +18,21 @@ export const STORE = {
   androidReview: `https://play.google.com/store/apps/details?id=${ANDROID_PACKAGE}&showAllReviews=true`,
 };
 
+/** The three links we hand out. */
+export type ClickEntry = "get" | "get-app" | "review";
+
 /**
  * Which link was opened. Kept distinct so a TikTok-bio visit (`get`) can be
  * told apart from the launch email's button (`get-app`) and the review link,
  * even when all three carry the same UTMs.
+ *
+ * The `-qr` variants are a scan of the desktop chooser's QR code rather than a
+ * click. They are recorded in `path` on purpose: a scan is genuinely a
+ * different entry point, and reusing this column means no new column and no
+ * UTM is overwritten to represent it. The existing daily view already groups
+ * by `path`, so scans show up there with no query changes.
  */
-export type ClickPath = "get" | "get-app" | "review";
+export type ClickPath = ClickEntry | "get-qr" | "get-app-qr";
 
 export type Resolved = "ios" | "android" | "chooser";
 export type Platform = "ios" | "android" | "desktop" | "other";
