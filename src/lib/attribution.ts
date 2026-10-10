@@ -9,6 +9,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { captureLead } from "./captureLead";
+import { scrubUrl } from "./urlScrub";
 
 const KEY = "ppc_attribution_first_touch";
 const FRESH_SIGNUP_WINDOW_MS = 30 * 60 * 1000; // only attribute genuinely new users
@@ -60,8 +61,10 @@ export function captureFirstTouch(): void {
       campaign: get("utm_campaign"),
       term: get("utm_term"),
       content: get("utm_content"),
-      referrer,
-      landing_page: window.location.pathname + window.location.search,
+      // Scrubbed before it is stored: an invitee's first touch IS /invite/<token>,
+      // and this value is copied to their profile and to Brevo at signup.
+      referrer: scrubUrl(referrer),
+      landing_page: scrubUrl(window.location.pathname + window.location.search),
       first_seen_at: new Date().toISOString(),
     };
     window.localStorage.setItem(KEY, JSON.stringify(data));
@@ -76,7 +79,14 @@ export function getFirstTouch(): Attribution | null {
     const raw = window.localStorage.getItem(KEY);
     if (!raw) return null;
     const d = JSON.parse(raw);
-    return d && typeof d === "object" && typeof d.source === "string" ? (d as Attribution) : null;
+    if (!d || typeof d !== "object" || typeof d.source !== "string") return null;
+    // Scrub on read as well: values stored before the capture-side scrub existed
+    // are still sitting in localStorage on existing devices.
+    return {
+      ...(d as Attribution),
+      referrer: scrubUrl(String(d.referrer ?? "")),
+      landing_page: scrubUrl(String(d.landing_page ?? "")),
+    };
   } catch {
     return null;
   }

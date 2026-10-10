@@ -31,6 +31,8 @@
  *    raw Supabase auth UUID.
  */
 
+import { sanitizeAnalyticsEvent, sanitizeAnalyticsProperties } from "./urlScrub";
+
 // ---------------- Event catalogue ----------------
 
 export type AnalyticsEventName =
@@ -183,41 +185,6 @@ function loadScript(src: string, attrs: Record<string, string> = {}): Promise<vo
 
 // ---------------- PostHog adapter ----------------
 
-// Supabase's implicit auth flow lands on /welcome#access_token=<JWT>&refresh_token=…
-// If PostHog captures that URL, live tokens end up stored in analytics. Scrub
-// auth material out of every URL-ish property before it leaves the browser.
-const TOKEN_PARAM_RE = /(access_token|refresh_token|provider_token|provider_refresh_token|id_token|token|code)=[^&#\s]*/gi;
-
-function scrubUrl(value: string): string {
-  // Drop the fragment entirely (Supabase puts tokens there), then redact any
-  // token-ish query params that survive.
-  const noFragment = value.replace(/#.*$/, "");
-  return noFragment.replace(TOKEN_PARAM_RE, "$1=REDACTED");
-}
-
-function sanitizeAnalyticsProperties(props: Record<string, any>): Record<string, any> {
-  const out: Record<string, any> = { ...props };
-  for (const key of Object.keys(out)) {
-    const v = out[key];
-    if (v && typeof v === "object" && !Array.isArray(v)) {
-      // $set / $set_once carry nested URL props like $initial_current_url.
-      out[key] = sanitizeAnalyticsProperties(v);
-    } else if (
-      typeof v === "string" &&
-      (key === "$current_url" ||
-        key === "$pathname" ||
-        key === "$referrer" ||
-        key.endsWith("_url") ||
-        key.endsWith("_referrer") ||
-        v.includes("access_token") ||
-        v.includes("refresh_token"))
-    ) {
-      out[key] = scrubUrl(v);
-    }
-  }
-  return out;
-}
-
 async function bootPostHog(key: string, host: string) {
   // Load array.js first, then init directly on the loaded library. The old
   // hand-rolled stub queued ["init", ...] as a generic method call, but
@@ -240,7 +207,11 @@ async function bootPostHog(key: string, host: string) {
     autocapture: false,
     disable_session_recording: true,
     respect_dnt: true,
+    // Token redaction (src/lib/urlScrub.ts): sitter/invite/handoff path tokens
+    // and Supabase auth material never leave the browser. Both hooks on purpose —
+    // sanitize_properties runs per property bag, before_send sees the final event.
     sanitize_properties: sanitizeAnalyticsProperties,
+    before_send: sanitizeAnalyticsEvent,
   });
   flush();
 }
