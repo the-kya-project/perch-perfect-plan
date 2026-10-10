@@ -22,7 +22,8 @@
     "test:no-home-screen": "node scripts/no-home-screen.mjs",
     "test:eligibility": "npx --yes vite-node scripts/eligibility.test.ts",
     "test:get-app": "npx --yes vite-node scripts/get-app.test.ts",
-    "test:blog-feed": "npx --yes vite-node scripts/blog-feed.test.ts"
+    "test:blog-feed": "npx --yes vite-node scripts/blog-feed.test.ts",
+    "test:url-scrub": "npx --yes vite-node scripts/url-scrub.test.ts"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.2",
