@@ -67,6 +67,42 @@ export function buildWelcomeEmail(opts: { firstName?: string; link: string; hasB
   });
 }
 
+/**
+ * The two add-a-bird nudges, on the Flock Club layout so they match the series
+ * and carry its full footer (unsubscribe, mailing address, disclaimer).
+ *
+ *   add_first_bird           — the email after the welcome, for an account
+ *                              with no bird yet
+ *   add_first_bird_reminder  — three days later if there is still no bird.
+ *                              Never more than these two.
+ *
+ * Subject = H1 and nothing above it, per the Kya email guidelines. The button
+ * always goes to the add-a-bird flow (/birds/new, passed in by the cron).
+ */
+export function buildAddFirstBirdEmail(opts: { firstName?: string; link: string; reminder?: boolean; locale?: string; unsubscribeUrl?: string }): BuiltEmail {
+  const t = emailT(opts.locale);
+  const k = opts.reminder ? "email.addFirstBirdReminder" : "email.addFirstBird";
+  const greeting = opts.firstName
+    ? t("email.addFirstBird.greeting", { firstName: escapeHtml(opts.firstName) })
+    : t("email.addFirstBird.greetingNoName");
+  const blocks: FlockBlock[] = [
+    { kind: "p", text: greeting },
+    { kind: "p", text: t(`${k}.body`) },
+    { kind: "button", label: t("email.addFirstBird.cta"), href: opts.link },
+    { kind: "signature" },
+  ];
+  return flockShell({
+    headline: t(`${k}.headline`),
+    preheader: t(`${k}.preview`),
+    pill: t("email.flock.pillFlockmate"),
+    blocks,
+    footerWhy: t("email.addFirstBird.foot"),
+    link: opts.link,
+    unsubscribeUrl: opts.unsubscribeUrl,
+    locale: opts.locale,
+  });
+}
+
 /** Juno's 90 days, 40 readings. Fixed demo data — this is a picture of what a
  *  record looks like, not the reader's own. Kept deliberately unremarkable:
  *  the email says nothing about what the shape means. */

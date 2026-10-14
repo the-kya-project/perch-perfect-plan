@@ -17,7 +17,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as T from "@/lib/emailTemplates";
 import * as T2 from "@/lib/flockEmails";
-import { buildWelcomeEmail, buildSeriesWeighingEmail, buildSeriesHealthCheckEmail, buildSeriesCarePlanEmail, buildSeriesJournalEmail, buildSeriesSharingEmail, buildSeriesVetEmail } from "@/lib/flockEmails";
+import { buildWelcomeEmail, buildSeriesWeighingEmail, buildSeriesHealthCheckEmail, buildSeriesCarePlanEmail, buildSeriesJournalEmail, buildSeriesSharingEmail, buildSeriesVetEmail, buildAddFirstBirdEmail } from "@/lib/flockEmails";
 
 const OUT = ".email-preview";
 const APP = "https://app.thekyaproject.com";
@@ -92,7 +92,8 @@ const monthly: Array<[string, T.BuiltEmail]> = [
 // Everything else that uses shell(). These must not change.
 const others: Array<[string, T.BuiltEmail]> = [
   ["drip-add-bird", T.buildOnboardingAddBirdEmail({ firstName: "Sam", link: `${APP}/birds/new` })],
-  ["drip-add-bird-reminder", T.buildOnboardingAddBirdEmail({ firstName: "Sam", link: `${APP}/birds/new`, reminder: true })],
+  ["nudge-add-first-bird", buildAddFirstBirdEmail({ firstName: "Sam", link: `${APP}/birds/new`, unsubscribeUrl: `${APP}/api/public/unsubscribe/onboarding/demo/sig` })],
+  ["nudge-add-first-bird-reminder", buildAddFirstBirdEmail({ firstName: "Sam", link: `${APP}/birds/new`, reminder: true, unsubscribeUrl: `${APP}/api/public/unsubscribe/onboarding/demo/sig` })],
   // The series as a reader with no bird gets it: each stage's own add-a-bird button.
   ["nobird-01-welcome", buildWelcomeEmail({ firstName: "Sam", link: APP, hasBird: false, addBirdLink: `${APP}/birds/new` })],
   ["nobird-02-weighing", buildSeriesWeighingEmail({ link: APP, hasBird: false, addBirdLink: `${APP}/birds/new?next=weight` })],

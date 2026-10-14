@@ -18,7 +18,7 @@
 // app; nothing imports this.
 import * as fs from "node:fs";
 import * as T from "@/lib/emailTemplates";
-import { buildWelcomeEmail, buildSeriesWeighingEmail, buildSeriesHealthCheckEmail, buildSeriesCarePlanEmail, buildSeriesJournalEmail, buildSeriesSharingEmail, buildSeriesVetEmail } from "@/lib/flockEmails";
+import { buildWelcomeEmail, buildSeriesWeighingEmail, buildSeriesHealthCheckEmail, buildSeriesCarePlanEmail, buildSeriesJournalEmail, buildSeriesSharingEmail, buildSeriesVetEmail, buildAddFirstBirdEmail } from "@/lib/flockEmails";
 
 // Minimal dotenv: first file that exists, exported values take precedence.
 for (const f of [".env.email-qa", ".env.local", ".env"]) {
@@ -86,7 +86,8 @@ const all: Array<[string, { subject: string; html: string; text: string }, boole
       planUpdated: null, quote: null, lastWeight: null, lastCheck: null }] }), true],
 
   ["08 drip · add first bird", T.buildOnboardingAddBirdEmail({ firstName: "Brittany", link: `${APP}/birds/new` })],
-  ["08b nudge · add first bird reminder", T.buildOnboardingAddBirdEmail({ firstName: "Brittany", link: `${APP}/birds/new`, reminder: true })],
+  ["08a nudge · add first bird", buildAddFirstBirdEmail({ firstName: "Brittany", link: `${APP}/birds/new`, unsubscribeUrl: `${APP}/scans/settings` })],
+  ["08b nudge · add first bird reminder", buildAddFirstBirdEmail({ firstName: "Brittany", link: `${APP}/birds/new`, reminder: true, unsubscribeUrl: `${APP}/scans/settings` })],
   ["08c onboarding · weighing, no bird yet", buildSeriesWeighingEmail({ link: `${APP}/birds/new?next=weight`, hasBird: false, addBirdLink: `${APP}/birds/new?next=weight` })],
   ["09 drip · first weight", T.buildOnboardingFirstWeightEmail({ birdName: BIRD, link: `${APP}/dashboard` })],
   ["10 drip · health scan", T.buildOnboardingHealthScanEmail({ birdName: BIRD, link: `${APP}/scans` })],

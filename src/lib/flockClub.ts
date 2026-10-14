@@ -1054,6 +1054,10 @@ ${opts.unsubscribeUrl ? `&nbsp;&middot;&nbsp;
     "",
     detag(opts.footerWhy),
     detag(t("email.flock.disclaimer")),
+    // The plain-text part carries the same opt-out and postal address as the
+    // HTML footer, for clients that show only text.
+    ...(opts.unsubscribeUrl ? [`${detag(t("email.flock.unsubscribe"))}: ${opts.unsubscribeUrl}`] : []),
+    detag(t("email.flock.mailingAddress")),
     detag(t("email.flock.byLine")),
   ].join("\n\n");
 

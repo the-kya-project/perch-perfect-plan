@@ -26,7 +26,8 @@
  * /birds/new?next=<feature> so adding the bird lands on what the email was about.
  *
  * Retired (templates kept in emailTemplates.ts, no longer sent): the old
- * behavioural drip — log_first_weight, run_first_scan, start_care_plan,
+ * letterShell add_first_bird (the nudges now use buildAddFirstBirdEmail, on the
+ * series layout), and the behavioural drip — log_first_weight, run_first_scan, start_care_plan,
  * weight_trend — and all automated onboarding for accounts created before
  * SERIES_LAUNCH. An old add_first_bird already in the log counts as the first
  * nudge, so nobody gets it twice.
@@ -228,9 +229,8 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
         }
         const {
           buildWelcomeEmail, buildSeriesWeighingEmail, buildSeriesHealthCheckEmail, buildSeriesCarePlanEmail,
-          buildSeriesJournalEmail, buildSeriesSharingEmail, buildSeriesVetEmail,
+          buildSeriesJournalEmail, buildSeriesSharingEmail, buildSeriesVetEmail, buildAddFirstBirdEmail,
         } = await import("@/lib/flockEmails");
-        const { buildOnboardingAddBirdEmail } = await import("@/lib/emailTemplates");
         const { sendTransactionalEmail, founderReplyTo } = await import("@/lib/brevoEmail.server");
 
         const sent: Record<string, number> = {};
@@ -277,7 +277,7 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
             stage === "welcome"
               ? buildWelcomeEmail({ firstName, link: appUrl, hasBird, addBirdLink: `${appUrl}/birds/new`, locale, unsubscribeUrl: unsub })
               : stage === "add_first_bird" || stage === "add_first_bird_reminder"
-                ? buildOnboardingAddBirdEmail({ firstName, link: `${appUrl}/birds/new`, locale, reminder: stage === "add_first_bird_reminder" })
+                ? buildAddFirstBirdEmail({ firstName, link: `${appUrl}/birds/new`, locale, unsubscribeUrl: unsub, reminder: stage === "add_first_bird_reminder" })
                 : stage === "series_weighing"
                   ? buildSeriesWeighingEmail({ ...common, chartUrl: demoChartUrl })
                   : stage === "series_health_check"

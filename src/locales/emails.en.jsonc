@@ -281,14 +281,19 @@
   "email.onboardingAddBird.cta": "Add your bird",
   "email.onboardingAddBird.text": "Adding a bird takes about a minute — a name and a species is enough to start.\n\nAdd your bird: {{link}}",
 
-  // ---- Onboarding: add first bird, the reminder (three days later, still no bird) ----
-  // Subject and H1 are the same string.
-  "email.onboardingAddBirdReminder.subject": "Still room on the perch",
-  "email.onboardingAddBirdReminder.greeting": "Hi {{firstName}},",
-  "email.onboardingAddBirdReminder.greetingNoName": "Hi there,",
-  "email.onboardingAddBirdReminder.body": "Adding your bird takes about a minute, and a name and species are all you need to start. Weights, health checks, and the care plan can come later, whenever it suits you and your bird.",
-  "email.onboardingAddBirdReminder.cta": "Add your bird →",
-  "email.onboardingAddBirdReminder.text": "{{greeting}}\n\nAdding your bird takes about a minute, and a name and species are all you need to start. Weights, health checks, and the care plan can come later, whenever it suits you and your bird.\n\nAdd your bird: {{link}}",
+  // ---- Onboarding: the add-a-bird nudges (Flock Club layout) ----
+  // Headline = subject, nothing above it. The layout adds the button's arrow.
+  "email.addFirstBird.headline": "Your flock starts with one bird",
+  "email.addFirstBird.preview": "A name and a species is enough to start.",
+  "email.addFirstBird.greeting": "Hi {{firstName}},",
+  "email.addFirstBird.greetingNoName": "Hi there,",
+  "email.addFirstBird.body": "Adding a bird takes about a minute — a name and a species is enough to start. Everything else (care plan, weights, photos) can come whenever you like.",
+  "email.addFirstBird.cta": "Add your bird",
+  "email.addFirstBird.foot": "You're getting this as part of your first few weeks with Kya &amp; Co. Change which emails you get in Settings.",
+  // The reminder, three days later if there is still no bird.
+  "email.addFirstBirdReminder.headline": "Still room on the perch",
+  "email.addFirstBirdReminder.preview": "A name and species are all you need to start.",
+  "email.addFirstBirdReminder.body": "Adding your bird takes about a minute, and a name and species are all you need to start. Weights, health checks, and the care plan can come later, whenever it suits you and your bird.",
 
   // ---- Onboarding: start care plan ----
   "email.onboardingCarePlan.subject": "A little about {{birdName}} goes a long way",
