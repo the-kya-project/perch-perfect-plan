@@ -32,6 +32,8 @@
  */
 
 import { sanitizeAnalyticsEvent, sanitizeAnalyticsProperties } from "./urlScrub";
+import { scrubExceptionProperties } from "./errorScrub";
+import { hashUserId } from "./userHash";
 
 // ---------------- Event catalogue ----------------
 
@@ -145,13 +147,6 @@ function flush() {
   }
 }
 
-/** SHA-256 → hex. Used to hash user ids before identify(). */
-async function sha256Hex(input: string): Promise<string> {
-  if (!isBrowser() || !window.crypto?.subtle) return input;
-  const buf = await window.crypto.subtle.digest("SHA-256", new TextEncoder().encode(input));
-  return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
-}
-
 /** Drop any property whose value looks like it could be PII. */
 function scrub(props?: EventProps): EventProps {
   if (!props) return {};
@@ -185,6 +180,14 @@ function loadScript(src: string, attrs: Record<string, string> = {}): Promise<vo
 
 // ---------------- PostHog adapter ----------------
 
+function beforeSend<T extends Record<string, any> | null>(event: T): T {
+  const out = sanitizeAnalyticsEvent(event);
+  if (out && (out as Record<string, any>).event === "$exception" && out.properties) {
+    scrubExceptionProperties(out.properties);
+  }
+  return out;
+}
+
 async function bootPostHog(key: string, host: string) {
   // Load array.js first, then init directly on the loaded library. The old
   // hand-rolled stub queued ["init", ...] as a generic method call, but
@@ -211,7 +214,14 @@ async function bootPostHog(key: string, host: string) {
     // and Supabase auth material never leave the browser. Both hooks on purpose —
     // sanitize_properties runs per property bag, before_send sees the final event.
     sanitize_properties: sanitizeAnalyticsProperties,
-    before_send: sanitizeAnalyticsEvent,
+    // Error reports additionally get their message text scrubbed (Postgres row
+    // dumps, quoted input, emails, 500-char cap) — see src/lib/errorScrub.ts.
+    before_send: beforeSend,
+    // Exception capture is OURS (src/lib/errorReporting.ts → captureException).
+    // Never let the SDK's own autocapture switch on from project settings: it
+    // lazy-loads an extra script (exception-autocapture.js) on every page,
+    // sitter pages included.
+    capture_exceptions: false,
   });
   flush();
 }
@@ -273,13 +283,30 @@ export async function identifyUser(userId: string | null | undefined) {
   if (!isBrowser() || !userId) return;
   const cfg = readEnv();
   if (cfg.provider !== "posthog") return; // Plausible has no user identity
-  const hashed = await sha256Hex(`kya:${userId}`);
+  const hashed = await hashUserId(userId);
+  if (!hashed) return; // no Web Crypto: send nothing rather than the raw id
   const run = () => {
     const ph = (window as any).posthog;
     if (ph?.identify) ph.identify(hashed);
   };
   if (ready) run();
   else queue.push(run);
+}
+
+/**
+ * Send an error report through the already-loaded PostHog library. Queued until
+ * PostHog has booted, like track(). A silent no-op when analytics is off
+ * (dev, previews without a key). Only src/lib/errorReporting.ts should call
+ * this — it owns filtering, de-duplication, the per-session cap and the tags.
+ */
+export function captureException(error: Error, props: Record<string, string | number | boolean | null>) {
+  if (!isBrowser()) return;
+  const send = () => {
+    const ph = (window as any).posthog;
+    if (typeof ph?.captureException === "function") ph.captureException(error, props);
+  };
+  if (ready) send();
+  else queue.push(send);
 }
 
 /** Clear identity on sign-out. */

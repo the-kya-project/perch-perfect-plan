@@ -14,7 +14,8 @@ import { Loader2 } from "lucide-react";
 import { globalI18n } from "@/lib/i18n";
 
 import appCss from "../styles.css?url";
-import { reportLovableError } from "../lib/lovable-error-reporting";
+import { installErrorListeners, primeAccountRole, registerErrorReportingContext, reportError } from "@/lib/errorReporting";
+import { SUPPORT_EMAIL } from "@/lib/support";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
 import { initAnalytics, identifyUser, resetUser } from "@/lib/analytics";
@@ -50,13 +51,8 @@ function NotFoundComponent() {
   );
 }
 
-function ErrorComponent({ error, reset }: ErrorComponentProps) {
+function ErrorComponent({ error }: ErrorComponentProps) {
   console.error(error);
-  // The router types `error` as unknown, because a throw site can throw
-  // anything. Narrow once here; the original value is still what gets
-  // reported, so nothing is lost on the way to Lovable.
-  const err = error instanceof Error ? error : new Error(String(error));
-  const router = useRouter();
   // A stale-build chunk 404 (lazy route import after a deploy swapped the
   // precache) is SELF-HEALING: installChunkErrorRecovery reloads onto the fresh
   // build. Rendering the error screen during that window reads as "the app
@@ -68,7 +64,7 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
   const recovering = isStaleChunkError(error) && !staleChunkRecoveryExhausted();
   useEffect(() => {
     if (recovering) reloadForStaleChunk();
-    else reportLovableError(error, { boundary: "tanstack_root_error_component" });
+    else reportError(error, { mechanism: "react_error_boundary", boundary: "root" });
   }, [error, recovering]);
   if (recovering) {
     return (
@@ -77,30 +73,23 @@ function ErrorComponent({ error, reset }: ErrorComponentProps) {
       </div>
     );
   }
-  const detail = err.message && !/unknown error/i.test(err.message) ? err.message : null;
+  // The raw error message is deliberately NOT shown: it means nothing to the
+  // person reading it and can quote data back. It goes to the error report.
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold">This page didn't load</h1>
+        <h1 className="text-xl font-semibold">Something went wrong</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          This is usually an out-of-date copy of the app cached on this device. Reloading
-          it pulls the latest version and normally fixes it.
+          Sorry, that page didn't load properly. Try refreshing, and if it keeps happening,
+          email us at {SUPPORT_EMAIL}.
         </p>
-        {detail && <p className="mt-2 text-xs text-muted-foreground/80">{detail}</p>}
-        <div className="mt-6 flex flex-wrap justify-center gap-2">
+        <div className="mt-6 flex justify-center">
           <button
             onClick={() => { void hardResetAndReload(); }}
             className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
           >
-            Reload the app
+            Refresh
           </button>
-          <button
-            onClick={() => { router.invalidate(); reset(); }}
-            className="rounded-md border border-input bg-background px-4 py-2 text-sm font-medium"
-          >
-            Try again
-          </button>
-          <a href="/" className="rounded-md border border-input bg-background px-4 py-2 text-sm font-medium">Go home</a>
         </div>
       </div>
     </div>
@@ -194,6 +183,10 @@ function RootComponent() {
   const router = useRouter();
 
   useEffect(() => {
+    // Error reporting first, so anything that throws during the rest of boot is
+    // caught. Reports queue until PostHog has loaded (analytics.ts).
+    registerErrorReportingContext({ router, queryClient });
+    installErrorListeners();
     captureFirstTouch(); // first-touch attribution — record source before signup
     if (window.location.hash.includes("access_token=")) {
       // Supabase's implicit auth flow lands with live tokens in the URL hash.
@@ -223,14 +216,18 @@ function RootComponent() {
     supabase.auth.getSession().then(({ data }) => {
       if (data.session?.user?.id) {
         identifyUser(data.session.user.id);
+        void primeAccountRole(data.session.user.id);
         void ensureProfileLocale(data.session.user.id);
       }
     });
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
-      if (event === "SIGNED_OUT") resetUser();
-      else if (session?.user?.id) {
+      if (event === "SIGNED_OUT") {
+        resetUser();
+        void primeAccountRole(null);
+      } else if (session?.user?.id) {
         identifyUser(session.user.id);
+        void primeAccountRole(session.user.id);
         void ensureProfileLocale(session.user.id);
       }
       router.invalidate();

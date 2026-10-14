@@ -11,12 +11,13 @@
  *   /get-app?store=android    always Google Play
  */
 import { createFileRoute } from "@tanstack/react-router";
+import { withErrorTelemetry } from "@/lib/errorTelemetry";
 import { handleStoreRedirect } from "@/lib/storeRedirectHandler.server";
 
 export const Route = createFileRoute("/get-app")({
   server: {
     handlers: {
-      GET: ({ request }) => handleStoreRedirect(request, { path: "get-app", basePath: "/get-app" }),
+      GET: withErrorTelemetry("/get-app", ({ request }) => handleStoreRedirect(request, { path: "get-app", basePath: "/get-app" })),
     },
   },
 });

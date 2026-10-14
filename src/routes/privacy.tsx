@@ -38,13 +38,34 @@ function PrivacyPage() {
           <h2 className="text-base font-bold text-sage-900">What we collect</h2>
           <p>
             Account details (email, display name), bird profiles and care plans you create,
-            sit records and sitter activity, photos and clips you upload, and standard
-            request/usage metadata.
+            sit records and sitter activity, photos and clips you upload, and information
+            about how you use the app and, if something goes wrong, error reports (see below).
           </p>
           <h2 className="text-base font-bold text-sage-900">How we use it</h2>
           <p>
             To run the service: store your bird care plans, share them with sitters you invite,
             and surface your data back to you in the app. We do not sell your personal data.
+          </p>
+          <h2 className="text-base font-bold text-sage-900">Analytics</h2>
+          <p>
+            We use a service called PostHog to understand how the app is used, such as which
+            screens people open and which features they rely on. This shows us what's working
+            and what needs fixing. PostHog doesn't record your screen or what you type. Before
+            anything is sent, we remove links that give access to a care plan, sign-in details
+            and private photo links. PostHog knows you by a one-way coded version of your account
+            ID, never your name or email address. People using a sitter link aren't tied to any
+            account.
+          </p>
+          <h2 className="text-base font-bold text-sage-900">When something goes wrong</h2>
+          <p>
+            If the app runs into an error, it sends us a report so we can find and fix the
+            problem, often before you've had to tell us. A report includes the error message, the
+            technical trail showing where in our code it happened, the page you were on, the app
+            version, your device type and operating system, whether you were using the website or
+            the iPhone or Android app, and the same coded account ID we use for analytics. It
+            never includes your birds' names, health notes, weights, care plan details, photos,
+            your email address or sitter links. Reports go to PostHog and are kept for up to a
+            year.
           </p>
           <h2 className="text-base font-bold text-sage-900">Sharing with sitters</h2>
           <p>
@@ -61,7 +82,8 @@ function PrivacyPage() {
           <h2 className="text-base font-bold text-sage-900">Deleting your account</h2>
           <p>
             You can permanently delete your account from account settings. This removes your
-            birds, care plans, sits, logs, and photos. Your contact record with our email
+            birds, care plans, sits, logs, and photos, and the analytics and error data PostHog
+            holds about your account. Your contact record with our email
             provider is managed separately and is not removed by deleting your account —
             every email we send includes an unsubscribe link, or you can ask us to delete
             it using the address below.{" "}

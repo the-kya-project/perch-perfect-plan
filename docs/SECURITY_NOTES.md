@@ -42,6 +42,9 @@ No `/handoff/<token>` values were found. Exposure was limited to people with acc
 - **Demo sitter links left live on purpose.** The two sits on the owner's account that expire 2026-12-14 ("App Review demo sit" and "Weekend away", sitter Alex Moreno at an `example.com` address) were among the exposed tokens. They hold demo data only, and the App Review link must keep working for future store reviews, so they were neither revoked nor rotated. If either sit ever holds real data, rotate it.
 - **Supabase sessions: 90-day inactivity timeout, no time-box.** Set by the owner in the dashboard (Authentication → Sessions) on 2026-10-14. Before this, sessions never expired, which is why three refresh tokens from July were still usable. The inactivity timeout only ends sessions nobody is using, so daily users are unaffected. The time-box is deliberately left off, because it signs everyone out on a fixed schedule, including daily users.
 
+- **The privacy policy's "kept for up to a year" depends on the PostHog plan.** PostHog keeps events for 1 year on the free plan and 7 years on paid plans, and a shorter period can't be configured. **If the PostHog organisation ever moves to a paid plan, the "When something goes wrong" section of `src/routes/privacy.tsx` must change in the same step.**
+- **PostHog discards client IP addresses** ("Discard client IP data", enabled 2026-10-14). Country and city still arrive, because the GeoIP transformation runs before the IP is dropped — verified on a live event. That stops being true if "cookieless server hash mode" is ever turned on.
+
 ### How to re-run the audit
 
 In PostHog SQL, search the serialized properties rather than individual keys, because PostHog adds URL-bearing properties under names we do not control:

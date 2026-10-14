@@ -55,6 +55,7 @@
  * 1000 rows by default, so if the flock ever outgrows that these need
  * pagination — the counts are returned in the response so it is visible.
  */
+import { withErrorTelemetry } from "@/lib/errorTelemetry";
 import { createFileRoute } from "@tanstack/react-router";
 import { withCronTelemetry } from "@/lib/cronTelemetry";
 import { buildFlockReportEmail, isQuietFlock, type FlockBird } from "@/lib/flockEmails";
@@ -87,7 +88,7 @@ const spread = (xs: number[]) => (xs.length ? Math.max(...xs) - Math.min(...xs) 
 export const Route = createFileRoute("/api/public/hooks/monthly-letter")({
   server: {
     handlers: {
-      POST: withCronTelemetry("monthly-letter", async ({ request }) => {
+      POST: withCronTelemetry("monthly-letter", withErrorTelemetry("/api/public/hooks/monthly-letter", async ({ request }) => {
         const secret = process.env.CARE_PLAN_REMINDER_SECRET;
         if (!secret) {
           return Response.json({ ok: false, error: "CARE_PLAN_REMINDER_SECRET not configured" }, { status: 503 });
@@ -317,7 +318,7 @@ export const Route = createFileRoute("/api/public/hooks/monthly-letter")({
           skipped,
           ...(dryRun ? { wouldSend: planned } : {}),
         });
-      }),
+      })),
     },
   },
 });

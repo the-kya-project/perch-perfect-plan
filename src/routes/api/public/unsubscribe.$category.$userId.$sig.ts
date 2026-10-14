@@ -16,6 +16,7 @@
  * It takes effect immediately for anything not yet sent, because every cron
  * reads the flag as it builds each email rather than snapshotting a list.
  */
+import { withErrorTelemetry } from "@/lib/errorTelemetry";
 import { createFileRoute } from "@tanstack/react-router";
 import { isUnsubCategory, unsubSigValid, UNSUB_COLUMN, type UnsubCategory } from "@/lib/unsubscribe";
 
@@ -99,15 +100,15 @@ async function setFlag(userId: string, category: UnsubCategory, value: boolean):
 export const Route = createFileRoute("/api/public/unsubscribe/$category/$userId/$sig")({
   server: {
     handlers: {
-      POST: async ({ params }) => {
+      POST: withErrorTelemetry("/api/public/unsubscribe/$category/$userId/$sig", async ({ params }) => {
         const { category, userId, sig } = params as { category: string; userId: string; sig: string };
         if (!isUnsubCategory(category) || !unsubSigValid(userId, category, sig)) {
           return new Response("Not found", { status: 404 });
         }
         const ok = await setFlag(userId, category, false);
         return new Response(ok ? "Unsubscribed" : "Could not unsubscribe", { status: ok ? 200 : 500 });
-      },
-      GET: async ({ params, request }) => {
+      }),
+      GET: withErrorTelemetry("/api/public/unsubscribe/$category/$userId/$sig", async ({ params, request }) => {
         const { category, userId, sig } = params as { category: string; userId: string; sig: string };
         if (!isUnsubCategory(category) || !unsubSigValid(userId, category, sig)) {
           return new Response("Not found", { status: 404 });
@@ -121,7 +122,7 @@ export const Route = createFileRoute("/api/public/unsubscribe/$category/$userId/
         return new Response(page({ category, resubscribed: resubscribe, resubHref: "?resubscribe=1", appUrl }), {
           headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" },
         });
-      },
+      }),
     },
   },
 });
