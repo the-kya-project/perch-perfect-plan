@@ -284,7 +284,7 @@
   // ---- Onboarding: the add-a-bird nudges (Flock Club layout) ----
   // Headline = subject, nothing above it. The layout adds the button's arrow.
   "email.addFirstBird.headline": "Your flock starts with one bird",
-  "email.addFirstBird.preview": "A name and a species is enough to start.",
+  "email.addFirstBird.preview": "A name and species are all it takes to start.",
   "email.addFirstBird.greeting": "Hi {{firstName}},",
   "email.addFirstBird.greetingNoName": "Hi there,",
   "email.addFirstBird.body": "Adding a bird takes about a minute — a name and a species is enough to start. Everything else (care plan, weights, photos) can come whenever you like.",
@@ -292,7 +292,7 @@
   "email.addFirstBird.foot": "You're getting this as part of your first few weeks with Kya &amp; Co. Change which emails you get in Settings.",
   // The reminder, three days later if there is still no bird.
   "email.addFirstBirdReminder.headline": "Still room on the perch",
-  "email.addFirstBirdReminder.preview": "A name and species are all you need to start.",
+  "email.addFirstBirdReminder.preview": "One minute now, and a record you'll have for years.",
   "email.addFirstBirdReminder.body": "Adding your bird takes about a minute, and a name and species are all you need to start. Weights, health checks, and the care plan can come later, whenever it suits you and your bird.",
 
   // ---- Onboarding: start care plan ----
