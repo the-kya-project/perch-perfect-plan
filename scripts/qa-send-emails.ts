@@ -1,7 +1,7 @@
 // QA harness: send every email in the programme to one inbox, through the real
 // Brevo path, so they can be read as recipients will see them.
 //
-//   npm run email:qa                    → all 26 to brittany@thekyaproject.com
+//   npm run email:qa                    → every email to brittany@thekyaproject.com
 //   npm run email:qa -- --dry           → list what would send, send nothing
 //   npm run email:qa -- you@example.com
 //   npm run email:qa -- --only welcome  → just the ones whose label matches
@@ -18,7 +18,7 @@
 // app; nothing imports this.
 import * as fs from "node:fs";
 import * as T from "@/lib/emailTemplates";
-import { buildWelcomeEmail, buildSeriesWeighingEmail, buildSeriesHealthCheckEmail, buildSeriesCarePlanEmail, buildSeriesJournalEmail, buildSeriesSharingEmail, buildSeriesVetEmail, buildAddFirstBirdEmail } from "@/lib/flockEmails";
+import { buildWelcomeEmail, buildSeriesWeighingEmail, buildSeriesHealthCheckEmail, buildSeriesCarePlanEmail, buildSeriesJournalEmail, buildSeriesSharingEmail, buildSeriesVetEmail, buildAddFirstBirdEmail, buildFlockReportEmail } from "@/lib/flockEmails";
 
 // Minimal dotenv: first file that exists, exported values take precedence.
 for (const f of [".env.email-qa", ".env.local", ".env"]) {
@@ -68,7 +68,7 @@ const APP = "https://app.thekyaproject.com";
 const BIRD = "Willow";
 const RANGE = "3 to 11 October";
 
-// Programme order. Sent in REVERSE so the inbox, newest first, reads 1 to 26
+// Programme order. Sent in REVERSE so the inbox, newest first, reads in programme order
 // top to bottom.
 const all: Array<[string, { subject: string; html: string; text: string }, boolean?]> = [
   ["01 onboarding · welcome", buildWelcomeEmail({ firstName: "Brittany", link: APP }), true],
@@ -79,11 +79,12 @@ const all: Array<[string, { subject: string; html: string; text: string }, boole
   ["06 onboarding · sharing", buildSeriesSharingEmail({ link: `${APP}/birds/demo/access` })],
   ["07 onboarding · vet summary", buildSeriesVetEmail({ link: `${APP}/birds/demo/vet-summary` }), true],
 
-  ["07b monthly · letter", T.buildMonthlyEmail({ firstName: "Brittany", month: new Date().getUTCMonth() + 1, year: new Date().getUTCFullYear(), link: APP,
-    birds: [{ name: BIRD, species: "Blue and Gold Macaw", recordUrl: `${APP}/birds/demo`,
-      weights: [1139, 1104, 1130, 1127, 1136, 1106, 1130, 1115, 1098, 1099, 1098, 1086],
-      prevSpread: 68, checks: 1, flagged: 0, journalEntries: 0, journalPhotos: 0,
-      planUpdated: null, quote: null, lastWeight: null, lastCheck: null }] }), true],
+  // The Flock Report. (This used to call T.buildMonthlyEmail, which was
+  // removed in #279; the missing function made every run of this script hang.)
+  ["07b monthly · flock report", buildFlockReportEmail({ firstName: "Brittany", month: new Date().getUTCMonth() || 12, year: new Date().getUTCFullYear(), link: APP,
+    birds: [{ name: BIRD, species: "Blue and gold macaw", href: `${APP}/birds/demo`,
+      weighIns: [2, 5, 9, 12, 16, 19, 23, 26, 29].map((day, i) => ({ day, g: 1100 + ((i * 7) % 11) - 5 })),
+      checks: 12, journal: 2, planUpdated: null }] }), true],
 
   ["08 drip · add first bird", T.buildOnboardingAddBirdEmail({ firstName: "Brittany", link: `${APP}/birds/new` })],
   ["08a nudge · add first bird", buildAddFirstBirdEmail({ firstName: "Brittany", link: `${APP}/birds/new`, unsubscribeUrl: `${APP}/scans/settings` })],
