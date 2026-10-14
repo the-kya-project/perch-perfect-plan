@@ -59,6 +59,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { withCronTelemetry } from "@/lib/cronTelemetry";
 import { buildFlockReportEmail, isQuietFlock, type FlockBird } from "@/lib/flockEmails";
 import { eligibleForRecap } from "@/lib/monthlyEligibility";
+import { inOnboardingSeries } from "@/lib/onboardingPlan";
 
 const APP_URL = "https://app.thekyaproject.com";
 
@@ -132,7 +133,7 @@ export const Route = createFileRoute("/api/public/hooks/monthly-letter")({
         // ── Who ────────────────────────────────────────────────────────────
         let profileQ = sb
           .from("profiles")
-          .select("id, email, first_name, display_name, locale, notify_monthly_letter, created_at")
+          .select("id, email, first_name, display_name, locale, notify_monthly_letter, notify_onboarding, created_at")
           .eq("notify_monthly_letter", true);
         if (onlyEmail) profileQ = profileQ.eq("email", onlyEmail);
         const { data: profiles, error: pErr } = await profileQ;
@@ -157,6 +158,21 @@ export const Route = createFileRoute("/api/public/hooks/monthly-letter")({
           .select("owner_id")
           .in("owner_id", ownerIds);
         const hasHadOne = new Set((everSent ?? []).map((r: any) => r.owner_id));
+
+        // Who is still in the onboarding series. They get the series instead of
+        // The Flock Report, not both (decision 2026-10-14); their first recap
+        // comes the month after series_vet goes out.
+        const { data: onboardingRows, error: oErr } = await sb
+          .from("onboarding_email_log")
+          .select("user_id, stage, status, sent_at")
+          .in("user_id", ownerIds);
+        if (oErr) return Response.json({ ok: false, error: oErr.message }, { status: 500 });
+        const onboardingLog = new Map<string, Array<{ stage: string; status: "sent" | "skipped"; at: string }>>();
+        for (const r of (onboardingRows ?? []) as any[]) {
+          const arr = onboardingLog.get(r.user_id) ?? [];
+          arr.push({ stage: r.stage, status: r.status === "skipped" ? "skipped" : "sent", at: r.sent_at });
+          onboardingLog.set(r.user_id, arr);
+        }
 
         // ── What ───────────────────────────────────────────────────────────
         const { data: birds } = await sb
@@ -220,6 +236,10 @@ export const Route = createFileRoute("/api/public/hooks/monthly-letter")({
           // next month, with a full month behind it.
           if (!eligibleForRecap(p.created_at, recapYear, recapMonth)) {
             skipped.push(`${p.email}: signed up ${String(p.created_at).slice(0, 10)}, after the 15th of the recapped month`);
+            continue;
+          }
+          if (inOnboardingSeries({ createdAt: p.created_at, notifyOnboarding: p.notify_onboarding !== false, log: onboardingLog.get(p.id) ?? [] })) {
+            skipped.push(`${p.email}: still in the onboarding series`);
             continue;
           }
           const mine = birdsByOwner.get(p.id) ?? [];

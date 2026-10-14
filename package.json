@@ -23,7 +23,8 @@
     "test:eligibility": "npx --yes vite-node scripts/eligibility.test.ts",
     "test:get-app": "npx --yes vite-node scripts/get-app.test.ts",
     "test:blog-feed": "npx --yes vite-node scripts/blog-feed.test.ts",
-    "test:url-scrub": "npx --yes vite-node scripts/url-scrub.test.ts"
+    "test:url-scrub": "npx --yes vite-node scripts/url-scrub.test.ts",
+    "test:onboarding-plan": "npx --yes vite-node scripts/onboarding-plan.test.ts"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.2",

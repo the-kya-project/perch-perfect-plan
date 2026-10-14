@@ -532,7 +532,10 @@ ${healthNote}
 }
 
 function shell(opts: {
-  kicker: string;
+  /** The small label above the heading. Optional: the Kya email guidelines
+   *  call for no kicker on the getting-started emails (subject = H1, nothing
+   *  above it), so the add-a-bird nudges leave it out. */
+  kicker?: string;
   heading: string;
   /** Plain prose, wrapped in the standard paragraph. Ignored when `bodyHtml`
    *  is given. */
@@ -638,8 +641,8 @@ function shell(opts: {
       <img src="https://app.thekyaproject.com/brand/lockups/horizontal-cream.png" width="280" alt="Kya &amp; Co. — by The Kya Project" style="display:block;width:280px;max-width:100%;height:auto;border:0;font-family:${SERIF};font-size:22px;line-height:28px;color:${C.green};" />
     </td></tr>
     <tr><td bgcolor="${accent}" style="padding:18px 24px;background-color:${accent};">
-      ${eyebrow(opts.kicker, "rgba(255,255,255,.85)")}
-      <h1 style="margin:7px 0 0;font-family:${SERIF};font-size:21px;line-height:28px;font-weight:500;color:#ffffff;">${opts.heading}</h1>
+      ${opts.kicker ? eyebrow(opts.kicker, "rgba(255,255,255,.85)") : ""}
+      <h1 style="margin:${opts.kicker ? 7 : 0}px 0 0;font-family:${SERIF};font-size:21px;line-height:28px;font-weight:500;color:#ffffff;">${opts.heading}</h1>
     </td></tr>
     <tr><td style="padding:24px;">
       ${opts.bodyHtml ?? `<p style="margin:0;font-family:${SANS};font-size:15px;line-height:1.6;color:${C.green};">${opts.body}</p>`}${cta}${reading}${nextUp}${healthNote}
@@ -808,8 +811,34 @@ const READING_WEIGH = {
 };
 
 // Stage: signed up, no bird yet.
-export function buildOnboardingAddBirdEmail(opts: { firstName?: string; link: string; locale?: string }): BuiltEmail {
+export function buildOnboardingAddBirdEmail(opts: { firstName?: string; link: string; locale?: string; reminder?: boolean }): BuiltEmail {
   const t = emailT(opts.locale);
+  // No kicker on either nudge: the Kya email guidelines put nothing above the H1.
+  if (opts.reminder) {
+    // add_first_bird_reminder — the second and last nudge, three days after the
+    // first if there is still no bird. Subject and H1 are the same string.
+    const greeting = opts.firstName
+      ? t("email.onboardingAddBirdReminder.greeting", { firstName: escapeHtml(opts.firstName) })
+      : t("email.onboardingAddBirdReminder.greetingNoName");
+    const greetingText = opts.firstName
+      ? t("email.onboardingAddBirdReminder.greeting", { firstName: opts.firstName })
+      : t("email.onboardingAddBirdReminder.greetingNoName");
+    const p = (text: string, last = false) =>
+      `<p style="margin:0 0 ${last ? 0 : 12}px;font-family:${SANS};font-size:15px;line-height:1.6;color:${C.green};">${text}</p>`;
+    const headline = t("email.onboardingAddBirdReminder.subject");
+    return {
+      subject: headline,
+      html: shell({
+        heading: headline,
+        bodyHtml: p(greeting) + p(t("email.onboardingAddBirdReminder.body"), true),
+        cta: t("email.onboardingAddBirdReminder.cta"),
+        link: opts.link,
+        foot: t("email.onboarding.foot"),
+        t,
+      }),
+      text: t("email.onboardingAddBirdReminder.text", { greeting: greetingText, link: opts.link }),
+    };
+  }
   // Greeting is prose too — key both halves so Dutch says "…, jouw" / "Jouw",
   // not the English "your". English output stays byte-identical.
   const hi = opts.firstName
@@ -818,7 +847,6 @@ export function buildOnboardingAddBirdEmail(opts: { firstName?: string; link: st
   return {
     subject: t("email.onboardingAddBird.subject"),
     html: shell({
-      kicker: t("email.onboardingAddBird.kicker"),
       heading: t("email.onboardingAddBird.heading", { hi }),
       body: t("email.onboardingAddBird.body"),
       cta: t("email.onboardingAddBird.cta"),

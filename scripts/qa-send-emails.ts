@@ -86,6 +86,8 @@ const all: Array<[string, { subject: string; html: string; text: string }, boole
       planUpdated: null, quote: null, lastWeight: null, lastCheck: null }] }), true],
 
   ["08 drip · add first bird", T.buildOnboardingAddBirdEmail({ firstName: "Brittany", link: `${APP}/birds/new` })],
+  ["08b nudge · add first bird reminder", T.buildOnboardingAddBirdEmail({ firstName: "Brittany", link: `${APP}/birds/new`, reminder: true })],
+  ["08c onboarding · weighing, no bird yet", buildSeriesWeighingEmail({ link: `${APP}/birds/new?next=weight`, hasBird: false, addBirdLink: `${APP}/birds/new?next=weight` })],
   ["09 drip · first weight", T.buildOnboardingFirstWeightEmail({ birdName: BIRD, link: `${APP}/dashboard` })],
   ["10 drip · health scan", T.buildOnboardingHealthScanEmail({ birdName: BIRD, link: `${APP}/scans` })],
   ["11 drip · care plan", T.buildOnboardingCarePlanEmail({ birdName: BIRD, link: `${APP}/dashboard` })],

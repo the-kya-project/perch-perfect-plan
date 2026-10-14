@@ -20,7 +20,7 @@ import { flockShell, FC, type FlockBlock } from "./flockClub";
  * founderReplyTo() for this stage, because the copy says "every reply comes
  * straight to me" and that promise has to survive the sender address changing.
  */
-export function buildWelcomeEmail(opts: { firstName?: string; link: string; locale?: string; unsubscribeUrl?: string }): BuiltEmail {
+export function buildWelcomeEmail(opts: { firstName?: string; link: string; hasBird?: boolean; addBirdLink?: string; locale?: string; unsubscribeUrl?: string }): BuiltEmail {
   const t = emailT(opts.locale);
 
   // Subject and H1 are the same string, greeting by name when we have one.
@@ -40,7 +40,7 @@ export function buildWelcomeEmail(opts: { firstName?: string; link: string; loca
         { title: t("email.welcome.step3Title"), text: t("email.welcome.step3Text") },
       ],
     },
-    { kind: "button", label: t("email.welcome.cta"), href: opts.link },
+    { kind: "button", label: t("email.welcome.cta"), href: opts.link, needsBird: true, noBirdLabel: t("email.welcome.ctaNoBird"), noBirdHref: opts.addBirdLink },
     {
       kind: "photoHighlight",
       title: t("email.welcome.junoTitle"),
@@ -61,6 +61,7 @@ export function buildWelcomeEmail(opts: { firstName?: string; link: string; loca
     blocks,
     footerWhy: t("email.welcome.foot"),
     link: opts.link,
+    hasBird: opts.hasBird,
     unsubscribeUrl: opts.unsubscribeUrl,
     locale: opts.locale,
   });
@@ -85,7 +86,7 @@ const JUNO_WEIGHTS = [
  * `/birds/demo/weight` in the old plain text was only ever the QA harness's
  * sample string; no real send has used it.
  */
-export function buildSeriesWeighingEmail(opts: { link: string; hasBird?: boolean; chartUrl?: string; locale?: string; unsubscribeUrl?: string }): BuiltEmail {
+export function buildSeriesWeighingEmail(opts: { link: string; hasBird?: boolean; addBirdLink?: string; chartUrl?: string; locale?: string; unsubscribeUrl?: string }): BuiltEmail {
   const t = emailT(opts.locale);
   const blocks: FlockBlock[] = [
     { kind: "p", text: t("email.seriesWeighing.p1") },
@@ -110,7 +111,7 @@ export function buildSeriesWeighingEmail(opts: { link: string; hasBird?: boolean
       note: t("email.seriesWeighing.chartNote"),
       image: opts.chartUrl ? { url: opts.chartUrl, alt: t("email.seriesWeighing.chartAlt") } : undefined,
     },
-    { kind: "button", label: t("email.seriesWeighing.cta"), href: opts.link, needsBird: true },
+    { kind: "button", label: t("email.seriesWeighing.cta"), href: opts.link, needsBird: true, noBirdLabel: t("email.seriesWeighing.ctaNoBird"), noBirdHref: opts.addBirdLink },
     { kind: "p", text: t("email.seriesWeighing.p3") },
     { kind: "signature" },
   ];
@@ -133,7 +134,7 @@ export function buildSeriesWeighingEmail(opts: { link: string; hasBird?: boolean
  * app's own question wording from src/lib/triage.ts, with "the bird" swapped
  * for Juno, so the email is not teaching a screen that does not exist.
  */
-export function buildSeriesHealthCheckEmail(opts: { link: string; hasBird?: boolean; locale?: string; unsubscribeUrl?: string }): BuiltEmail {
+export function buildSeriesHealthCheckEmail(opts: { link: string; hasBird?: boolean; addBirdLink?: string; locale?: string; unsubscribeUrl?: string }): BuiltEmail {
   const t = emailT(opts.locale);
   const blocks: FlockBlock[] = [
     { kind: "p", text: t("email.seriesHealthCheck.p1") },
@@ -151,7 +152,7 @@ export function buildSeriesHealthCheckEmail(opts: { link: string; hasBird?: bool
     },
     { kind: "highlight", title: t("email.seriesHealthCheck.boringTitle"), body: t("email.seriesHealthCheck.boringText"), titleSize: 22 },
     { kind: "p", text: t("email.seriesHealthCheck.p2") },
-    { kind: "button", label: t("email.seriesHealthCheck.cta"), href: opts.link, needsBird: true },
+    { kind: "button", label: t("email.seriesHealthCheck.cta"), href: opts.link, needsBird: true, noBirdLabel: t("email.seriesHealthCheck.ctaNoBird"), noBirdHref: opts.addBirdLink },
     { kind: "p", text: t("email.seriesHealthCheck.p3") },
     { kind: "signature" },
   ];
@@ -180,7 +181,7 @@ export function buildSeriesHealthCheckEmail(opts: { link: string; hasBird?: bool
  * two starting sections are labelled; the rest show their name alone, so the
  * grid does not imply an order to work through.
  */
-export function buildSeriesCarePlanEmail(opts: { link: string; hasBird?: boolean; locale?: string; unsubscribeUrl?: string }): BuiltEmail {
+export function buildSeriesCarePlanEmail(opts: { link: string; hasBird?: boolean; addBirdLink?: string; locale?: string; unsubscribeUrl?: string }): BuiltEmail {
   const t = emailT(opts.locale);
   const start = t("email.seriesCarePlan.startHere");
   const blocks: FlockBlock[] = [
@@ -206,7 +207,7 @@ export function buildSeriesCarePlanEmail(opts: { link: string; hasBird?: boolean
     },
     { kind: "p", text: t("email.seriesCarePlan.p3") },
     { kind: "p", text: t("email.seriesCarePlan.p4") },
-    { kind: "button", label: t("email.seriesCarePlan.cta"), href: opts.link, needsBird: true },
+    { kind: "button", label: t("email.seriesCarePlan.cta"), href: opts.link, needsBird: true, noBirdLabel: t("email.seriesCarePlan.ctaNoBird"), noBirdHref: opts.addBirdLink },
     { kind: "signature" },
   ];
   return flockShell({
@@ -230,7 +231,7 @@ export function buildSeriesCarePlanEmail(opts: { link: string; hasBird?: boolean
  * entries really do take a photo (journal_entries.photo_path), so the sample
  * card is showing something that exists.
  */
-export function buildSeriesJournalEmail(opts: { link: string; hasBird?: boolean; locale?: string; unsubscribeUrl?: string }): BuiltEmail {
+export function buildSeriesJournalEmail(opts: { link: string; hasBird?: boolean; addBirdLink?: string; locale?: string; unsubscribeUrl?: string }): BuiltEmail {
   const t = emailT(opts.locale);
   const blocks: FlockBlock[] = [
     { kind: "p", text: t("email.seriesJournal.p1") },
@@ -250,7 +251,7 @@ export function buildSeriesJournalEmail(opts: { link: string; hasBird?: boolean;
     { kind: "p", text: t("email.seriesJournal.p2") },
     { kind: "p", text: t("email.seriesJournal.p3") },
     { kind: "p", text: t("email.seriesJournal.p4") },
-    { kind: "button", label: t("email.seriesJournal.cta"), href: opts.link, needsBird: true },
+    { kind: "button", label: t("email.seriesJournal.cta"), href: opts.link, needsBird: true, noBirdLabel: t("email.seriesJournal.ctaNoBird"), noBirdHref: opts.addBirdLink },
     { kind: "p", text: t("email.seriesJournal.p5") },
     { kind: "signature" },
   ];
@@ -276,7 +277,7 @@ export function buildSeriesJournalEmail(opts: { link: string; hasBird?: boolean;
  * of them — so "the parts you choose to share" would promise a privacy control
  * the app does not have.
  */
-export function buildSeriesSharingEmail(opts: { link: string; hasBird?: boolean; locale?: string; unsubscribeUrl?: string }): BuiltEmail {
+export function buildSeriesSharingEmail(opts: { link: string; hasBird?: boolean; addBirdLink?: string; locale?: string; unsubscribeUrl?: string }): BuiltEmail {
   const t = emailT(opts.locale);
   const blocks: FlockBlock[] = [
     { kind: "p", text: t("email.seriesSharing.p1") },
@@ -289,7 +290,7 @@ export function buildSeriesSharingEmail(opts: { link: string; hasBird?: boolean;
     },
     { kind: "p", text: t("email.seriesSharing.p2") },
     { kind: "p", text: t("email.seriesSharing.p3") },
-    { kind: "button", label: t("email.seriesSharing.cta"), href: opts.link, needsBird: true },
+    { kind: "button", label: t("email.seriesSharing.cta"), href: opts.link, needsBird: true, noBirdLabel: t("email.seriesSharing.ctaNoBird"), noBirdHref: opts.addBirdLink },
     { kind: "signature" },
   ];
   return flockShell({
@@ -316,7 +317,7 @@ export function buildSeriesSharingEmail(opts: { link: string; hasBird?: boolean;
  * The card states numbers and nothing else. Characterising them — "steady",
  * "normal", "nothing flagged" — is the reader's job and their vet's.
  */
-export function buildSeriesVetEmail(opts: { link: string; hasBird?: boolean; locale?: string; unsubscribeUrl?: string }): BuiltEmail {
+export function buildSeriesVetEmail(opts: { link: string; hasBird?: boolean; addBirdLink?: string; locale?: string; unsubscribeUrl?: string }): BuiltEmail {
   const t = emailT(opts.locale);
   const blocks: FlockBlock[] = [
     { kind: "p", text: t("email.seriesVet.p1") },
@@ -334,7 +335,7 @@ export function buildSeriesVetEmail(opts: { link: string; hasBird?: boolean; loc
     { kind: "bubbles", items: [t("email.seriesVet.q1"), t("email.seriesVet.q2"), t("email.seriesVet.q3")] },
     { kind: "p", text: t("email.seriesVet.p2") },
     { kind: "p", text: t("email.seriesVet.p3") },
-    { kind: "button", label: t("email.seriesVet.cta"), href: opts.link, needsBird: true },
+    { kind: "button", label: t("email.seriesVet.cta"), href: opts.link, needsBird: true, noBirdLabel: t("email.seriesVet.ctaNoBird"), noBirdHref: opts.addBirdLink },
     { kind: "highlight", title: t("email.seriesVet.tourTitle"), body: t("email.seriesVet.tourText"), titleSize: 22 },
     { kind: "p", text: t("email.seriesVet.p4") },
     { kind: "signature" },
