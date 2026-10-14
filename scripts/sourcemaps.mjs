@@ -37,10 +37,33 @@ function walk(dir) {
   return out;
 }
 
+const report = {
+  vercel_env: process.env.VERCEL_ENV ?? "local",
+  release: RELEASE_VERSION,
+  has_api_key: Boolean(process.env.POSTHOG_CLI_API_KEY),
+  has_project_id: Boolean(process.env.POSTHOG_CLI_PROJECT_ID),
+  steps: [],
+};
+
+// Never let a credential into a log line or the report.
+function redact(text) {
+  return String(text ?? "")
+    .replace(/ph[a-z]_[A-Za-z0-9]+/g, "[redacted-key]")
+    .replace(/Bearer\s+\S+/gi, "Bearer [redacted]");
+}
+
 function cli(args) {
   const r = spawnSync("npx", ["--no-install", "posthog-cli", "--host", HOST, ...args], {
-    stdio: "inherit",
     env: process.env,
+    encoding: "utf8",
+  });
+  if (r.stdout) process.stdout.write(redact(r.stdout));
+  if (r.stderr) process.stderr.write(redact(r.stderr));
+  report.steps.push({
+    step: args.slice(0, 2).join(" "),
+    exit: r.status,
+    spawn_error: r.error ? redact(r.error.message) : null,
+    tail: redact(`${r.stdout ?? ""}${r.stderr ?? ""}`).slice(-400),
   });
   return r.status === 0;
 }
@@ -89,3 +112,30 @@ if (leftovers.length || refs.length) {
   process.exit(1);
 }
 console.log(`sourcemaps: ${deleted} map file(s) removed, ${stripped} reference(s) stripped — none will be served`);
+
+// 4. Report the outcome as a PostHog event (`sourcemap_build`), so a build on
+// Vercel can be checked without access to its build log. Only on Vercel, never
+// fatal, bounded. Contains no credentials (see redact()).
+if (process.env.VERCEL) {
+  report.maps_deleted = deleted;
+  report.refs_stripped = stripped;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 5000);
+  try {
+    await fetch("https://us.i.posthog.com/i/v0/e/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        api_key: "phc_qkMPyAbqFHDcG6FdXFBQUsiyPsbMjbCX2hNSw2bddPKh",
+        event: "sourcemap_build",
+        distinct_id: "build",
+        properties: { ...report, $process_person_profile: false },
+      }),
+      signal: controller.signal,
+    });
+  } catch {
+    /* reporting is best-effort */
+  } finally {
+    clearTimeout(timer);
+  }
+}
