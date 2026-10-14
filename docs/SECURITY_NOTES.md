@@ -37,6 +37,11 @@ No `/handoff/<token>` values were found. Exposure was limited to people with acc
 - The token-bearing properties were removed from the 5 affected PostHog person profiles.
 - Stored PostHog events were deliberately left in place. PostHog has no self-serve way to delete individual events or strip one property from them; the credentials in them are expired or revoked.
 
+### Decisions recorded
+
+- **Demo sitter links left live on purpose.** The two sits on the owner's account that expire 2026-12-14 ("App Review demo sit" and "Weekend away", sitter Alex Moreno at an `example.com` address) were among the exposed tokens. They hold demo data only, and the App Review link must keep working for future store reviews, so they were neither revoked nor rotated. If either sit ever holds real data, rotate it.
+- **Supabase sessions: 90-day inactivity timeout, no time-box.** Set by the owner in the dashboard (Authentication → Sessions) on 2026-10-14. Before this, sessions never expired, which is why three refresh tokens from July were still usable. The inactivity timeout only ends sessions nobody is using, so daily users are unaffected. The time-box is deliberately left off, because it signs everyone out on a fixed schedule, including daily users.
+
 ### How to re-run the audit
 
 In PostHog SQL, search the serialized properties rather than individual keys, because PostHog adds URL-bearing properties under names we do not control:
