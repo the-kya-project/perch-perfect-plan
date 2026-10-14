@@ -97,7 +97,6 @@ const SERIES: Array<{ stage: Stage; day: number }> = [
   { stage: "series_sharing", day: 15 },
   { stage: "series_vet", day: 18 },
 ];
-const SERIES_DAYS = 18;
 
 function olderThanDays(iso: string | null | undefined, days: number): boolean {
   if (!iso) return false;
@@ -230,21 +229,18 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
             candidates.push("welcome");
           }
 
-          // While the series is running, the nudges that duplicate it stay quiet:
-          // three of the seven cover the same ground (weighing, the health
-          // check, the care plan), and one send per run means the two lanes
-          // would take turns — pushing the series off its three-day rhythm and
-          // making its "next email in three days" line a lie. Once it has
-          // finished, the drip picks up whatever is still undone.
-          //
-          // add_first_bird is the exception. Nothing in the series replaces it,
-          // and because series stages sit earlier in this list it can only fire
-          // on a day when no series email is due — day 2, in practice.
-          const seriesRunning = inSeries && !olderThanDays(profile.created_at, SERIES_DAYS);
-
-          if (birds.length === 0) {
+          // Series accounts never get the behavioural drip — not during the
+          // series and not after it. The drip had no spacing of its own, so
+          // after day 18 it could send three emails on three consecutive days,
+          // and its add_first_bird landed a day before series_weighing. The
+          // replacement folds the add-bird nudges into the series itself; until
+          // that ships, series accounts get the series and nothing else.
+          // Pre-series accounts keep the drip exactly as before.
+          if (inSeries) {
+            // no drip
+          } else if (birds.length === 0) {
             if (olderThanDays(profile.created_at, 2)) candidates.push("add_first_bird");
-          } else if (!seriesRunning) {
+          } else {
             // Health habits first (weight, then the daily scan), the longer
             // care-plan ask after — per product decision 2026-07-20.
             if (!firstWeightAt && olderThanDays(oldest.created_at, 3)) candidates.push("log_first_weight");
@@ -270,7 +266,9 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
           return Response.json({
             ok: true,
             dryRun: true,
-            planned: planned.map((p) => ({ stage: p.stage, email: p.email, birdName: p.birdName ?? null })),
+            // Lets a dry run confirm which build is live.
+            logic: "series-no-drip",
+            planned: planned.map((p) => ({ userId: p.userId, stage: p.stage, email: p.email, birdName: p.birdName ?? null })),
           });
         }
 
