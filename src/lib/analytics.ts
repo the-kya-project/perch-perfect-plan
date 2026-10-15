@@ -203,7 +203,11 @@ async function bootPostHog(key: string, host: string) {
     // (toolbar, debugging) still point at the real UI.
     ui_host: "https://us.posthog.com",
     capture_pageview: true,
-    persistence: "localStorage+cookie",
+    // No cookies, no localStorage: EU cookie rules need opt-in consent before
+    // analytics storage, and we'd rather not show a banner. Identity is held in
+    // memory only — __root re-identifies signed-in users on every launch, so the
+    // cost is just that anonymous visitors aren't linked across full reloads.
+    persistence: "memory",
     autocapture: false,
     disable_session_recording: true,
     respect_dnt: true,

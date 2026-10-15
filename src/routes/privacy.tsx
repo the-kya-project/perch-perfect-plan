@@ -21,12 +21,11 @@ const PROCESSORS: { name: string; does: string; data: string }[] = [
   { name: "Supabase", does: "our database, sign-in and file storage", data: "your account details, birds, care plans, sits, logs and photos" },
   { name: "Vercel", does: "hosts the app", data: "the requests your device makes, including your IP address" },
   { name: "Cloudflare Stream", does: "stores and plays care clips", data: "the videos you upload" },
-  { name: "Brevo", does: "sends our emails", data: "your email address, name, language, email preferences and how you found us" },
-  { name: "PostHog", does: "product analytics", data: "a coded account ID, the screens you use and your device type" },
+  { name: "Brevo", does: "sends our emails (based in France, data stored in the EU)", data: "your email address, name, language, email preferences and how you found us" },
+  { name: "PostHog", does: "product analytics, without cookies", data: "a coded account ID, the screens you use and your device type" },
   { name: "Google Sign-In and Sign in with Apple", does: "let you sign in, if you choose to", data: "the name and email address they share with us" },
   { name: "Apple Push Notification service and Firebase Cloud Messaging", does: "deliver notifications in the iPhone and Android apps", data: "a device token and the notification text" },
   { name: "Your browser's push service", does: "delivers notifications on the website, if you turn them on", data: "a push address for your browser and the notification text" },
-  { name: "Google Fonts", does: "loads our typefaces on a few pages, like the unsubscribe page", data: "your IP address" },
 ];
 
 function PrivacyPage() {
@@ -107,8 +106,9 @@ function PrivacyPage() {
           <h2 className="text-base font-bold text-sage-900">Where your data is stored</h2>
           <p>
             Our servers and most of our providers are in the United States. Our database and
-            files are stored in the eastern US. When you use Kya &amp; Co. from the EU or UK,
-            your data is transferred to the US. We protect those transfers with the European
+            files are stored in the eastern US, so when you use Kya &amp; Co. from the EU or
+            UK, your data is transferred to the US. Brevo, our email provider, keeps your
+            email details in the EU. We protect those transfers with the European
             Commission's Standard Contractual Clauses, or the EU-US Data Privacy Framework where
             a provider is certified under it.
           </p>
