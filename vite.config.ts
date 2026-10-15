@@ -93,6 +93,9 @@ export default defineConfig({
     preset: "vercel",
     routeRules: {
       "/**": { headers: SECURITY_HEADERS },
+      // Self-hosted brand fonts are linked from emails, i.e. cross-origin, and
+      // browsers (WebKit in Apple Mail included) require CORS for web fonts.
+      "/fonts/**": { headers: { "access-control-allow-origin": "*" } },
       // PostHog reverse proxy: analytics flows through our own domain so ad
       // blockers that blanket-block *.posthog.com don't drop the data. A root
       // vercel.json rewrite would be ignored by this build (see above), so the
