@@ -63,8 +63,9 @@ export const FC = {
 const HEAD_FONT = "'Bricolage Grotesque','Avenir Next','Segoe UI',Helvetica,sans-serif";
 const BODY_FONT = "'DM Sans','Helvetica Neue',Helvetica,'Segoe UI',sans-serif";
 const SERIF_FONT = "Fraunces,Georgia,serif";
-const FONT_LINK =
-  "https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;800&family=Fraunces:ital,wght@0,700;1,400&family=DM+Sans:wght@400;700&display=swap";
+// Self-hosted (public/fonts), not Google Fonts: a Google link would send every
+// recipient's IP to Google on open. Clients that skip web fonts use the stacks.
+const FONT_LINK = `${ASSETS}/fonts/fonts.css`;
 
 const WIDTH = 560;
 

@@ -152,8 +152,7 @@ export function chooserPage(
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <meta name="robots" content="noindex" />
 <title>${title.replace(/&amp;/g, "&")} — Kya &amp; Co.</title>${preview}
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;800&family=DM+Sans:wght@400;700&display=swap" rel="stylesheet" />
+<link href="/fonts/fonts.css" rel="stylesheet" />
 <style>
   body { margin:0; background:${PAGE}; font-family:${BODY}; -webkit-text-size-adjust:100%; }
   .wrap { max-width:520px; margin:0 auto; padding:24px 16px 48px; }
