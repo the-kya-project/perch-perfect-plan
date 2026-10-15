@@ -88,7 +88,7 @@ type Provider = "posthog" | "plausible" | null;
 
 // PostHog project key, hardcoded for production. It's a public client
 // identifier (it ships in the page source of every site running PostHog,
-// like the TikTok pixel ID) — not a secret. It lives here rather than in a
+// like any analytics key) — not a secret. It lives here rather than in a
 // Vercel env var because adding it as VITE_POSTHOG_KEY reliably broke
 // Vercel's runtime env bundling (EnvFileReadError 500s on every request,
 // reproduced twice on 2026-07-17). An env var still overrides when present.
