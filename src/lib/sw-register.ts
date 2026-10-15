@@ -187,7 +187,7 @@ export function registerServiceWorker() {
     // shell can't get pinned to a stale bundle. Before this, the shell refused
     // the worker and re-downloaded the whole bundle from the network on every
     // cold launch. (Native-only NON-caching behavior stays gated elsewhere:
-    // web push, add-to-home-screen, the TikTok pixel.)
+    // web push, add-to-home-screen.)
     isPreviewHost(window.location.hostname) ||
     url.searchParams.get("sw") === "off";
 

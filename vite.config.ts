@@ -41,19 +41,12 @@ const CSP = [
   `media-src 'self' blob: ${SUPABASE_ORIGIN} https://*.videodelivery.net https://*.cloudflarestream.com`,
   "font-src 'self' data:",
   "style-src 'self' 'unsafe-inline'",
-  // analytics.tiktok.com: ads pixel on the marketing pages (src/lib/tiktokPixel.ts);
-  // the -sg host is TikTok's regional fallback for the same script/beacons.
   // us-assets.i.posthog.com serves PostHog's post-init scripts (config.js,
   // surveys.js) — observed live once analytics actually initialized.
-  "script-src 'self' 'unsafe-inline' https://us.i.posthog.com https://eu.i.posthog.com https://us-assets.i.posthog.com https://plausible.io https://analytics.tiktok.com https://analytics-sg.tiktok.com",
-  // analytics-ipv6.tiktokw.us is NOT a typo for tiktok.com — it is TikTok's
-  // separate US analytics domain, which the pixel calls for IP enrichment
-  // (/ipv6/enrich_ipv6). Found by the report collector on the first production
-  // page load after it went live; enforcing without it would have silently cost
-  // TikTok attribution. If more of these turn up in the `[csp-report]` logs,
-  // add them BEFORE flipping the policy to enforce — that is what the
-  // observation window is for.
-  `connect-src 'self' ${SUPABASE_ORIGIN} https://*.videodelivery.net https://*.cloudflarestream.com https://us.i.posthog.com https://eu.i.posthog.com https://us-assets.i.posthog.com https://plausible.io https://analytics.tiktok.com https://analytics-sg.tiktok.com https://analytics-ipv6.tiktokw.us`,
+  "script-src 'self' 'unsafe-inline' https://us.i.posthog.com https://eu.i.posthog.com https://us-assets.i.posthog.com https://plausible.io",
+  // If a host turns up in the `[csp-report]` logs, add it BEFORE flipping the
+  // policy to enforce — that is what the observation window is for.
+  `connect-src 'self' ${SUPABASE_ORIGIN} https://*.videodelivery.net https://*.cloudflarestream.com https://us.i.posthog.com https://eu.i.posthog.com https://us-assets.i.posthog.com https://plausible.io`,
   "frame-src 'self' https://*.videodelivery.net",
   "worker-src 'self' blob:",
   "manifest-src 'self'",
@@ -93,6 +86,9 @@ export default defineConfig({
     preset: "vercel",
     routeRules: {
       "/**": { headers: SECURITY_HEADERS },
+      // Self-hosted brand fonts are linked from emails, i.e. cross-origin, and
+      // browsers (WebKit in Apple Mail included) require CORS for web fonts.
+      "/fonts/**": { headers: { "access-control-allow-origin": "*" } },
       // PostHog reverse proxy: analytics flows through our own domain so ad
       // blockers that blanket-block *.posthog.com don't drop the data. A root
       // vercel.json rewrite would be ignored by this build (see above), so the

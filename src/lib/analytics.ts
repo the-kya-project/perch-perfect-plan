@@ -90,7 +90,7 @@ type Provider = "posthog" | "plausible" | null;
 
 // PostHog project key, hardcoded for production. It's a public client
 // identifier (it ships in the page source of every site running PostHog,
-// like the TikTok pixel ID) — not a secret. It lives here rather than in a
+// like any analytics key) — not a secret. It lives here rather than in a
 // Vercel env var because adding it as VITE_POSTHOG_KEY reliably broke
 // Vercel's runtime env bundling (EnvFileReadError 500s on every request,
 // reproduced twice on 2026-07-17). An env var still overrides when present.
@@ -206,7 +206,11 @@ async function bootPostHog(key: string, host: string) {
     // (toolbar, debugging) still point at the real UI.
     ui_host: "https://us.posthog.com",
     capture_pageview: true,
-    persistence: "localStorage+cookie",
+    // No cookies, no localStorage: EU cookie rules need opt-in consent before
+    // analytics storage, and we'd rather not show a banner. Identity is held in
+    // memory only — __root re-identifies signed-in users on every launch, so the
+    // cost is just that anonymous visitors aren't linked across full reloads.
+    persistence: "memory",
     autocapture: false,
     disable_session_recording: true,
     respect_dnt: true,

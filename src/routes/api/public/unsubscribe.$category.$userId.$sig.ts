@@ -49,7 +49,7 @@ function page(o: { category: UnsubCategory; resubscribed: boolean; resubHref: st
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex">
 <title>${headline}</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;800&family=DM+Sans:wght@400;700&display=swap">
+<link rel="stylesheet" href="/fonts/fonts.css">
 <style>
   body { margin:0; background:${PAGE}; font-family:${BODY}; }
   .wrap { max-width:560px; margin:0 auto; padding:24px 16px 48px; }
