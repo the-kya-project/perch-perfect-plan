@@ -113,6 +113,11 @@ export default defineConfig({
         (process.env.VERCEL_GIT_COMMIT_SHA ?? "local").slice(0, 7),
       ),
     },
+    // Source maps are generated for PostHog error tracking ONLY: the build step
+    // (scripts/sourcemaps.mjs) uploads them, then deletes every .map file and
+    // strips the sourceMappingURL comments before deploy, and fails the build
+    // if any survive. They are never served.
+    build: { sourcemap: true },
     resolve: {
       alias: [
         { find: /^@supabase\/realtime-js$/, replacement: realtimeStub },

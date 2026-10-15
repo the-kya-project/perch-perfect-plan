@@ -18,6 +18,12 @@ import assert from "node:assert/strict";
 import {
   redactSecrets, redactTokenPaths, sanitizeAnalyticsEvent, sanitizeAnalyticsProperties, scrubUrl,
 } from "@/lib/urlScrub";
+import { ERROR_MESSAGE_MAX, scrubErrorMessage, scrubExceptionProperties } from "@/lib/errorScrub";
+import {
+  captureServerException, isExpectedServerError, jwtSubject, parseStackFrames,
+} from "@/lib/errorTelemetry";
+import { routeShapeFromPath } from "@/lib/errorTags";
+import { hashUserId } from "@/lib/userHash";
 
 let passed = 0;
 function check(name: string, fn: () => void) {
@@ -168,4 +174,193 @@ check("input is not mutated by sanitize_properties", () => {
   assert.equal(JSON.stringify(p), before);
 });
 
-console.log(`\n${passed} passed${process.exitCode ? " — WITH FAILURES" : ""}`);
+// ---------------- error reports ($exception) ----------------
+
+// Realistic things a message can quote back at us. All dummies.
+const HEALTH_NOTE = "Kiwi plucking chest feathers since Tuesday, vet suspects giardia";
+const BIRD_NAME = "Kiwi";
+const OWNER_EMAIL = "owner.person@example.com";
+const WEIGHT = "412";
+
+console.log("error messages");
+check("Postgres 'Failing row contains' drops the whole row", () => {
+  const msg = `new row for relation "care_plans" violates check constraint "x" Failing row contains (${BIRD_NAME}, ${HEALTH_NOTE}, ${WEIGHT}).`;
+  const out = scrubErrorMessage(msg);
+  assert.ok(!out.includes(HEALTH_NOTE) && !out.includes(BIRD_NAME) && !out.includes(WEIGHT), out);
+  assert.match(out, /Failing row contains \[row redacted\]/);
+  assert.match(out, /care_plans/); // the useful part survives
+});
+check("Postgres 'Key (…)=(…)' keeps the column, drops the value", () => {
+  const out = scrubErrorMessage(`duplicate key value violates unique constraint "profiles_email_key" Key (email)=(${OWNER_EMAIL}) already exists.`);
+  assert.ok(!out.includes(OWNER_EMAIL), out);
+  assert.match(out, /Key \(email\)=\[value redacted\]/);
+});
+check("DETAIL / HINT lines are dropped", () => {
+  const out = scrubErrorMessage(`insert failed\nDETAIL: ${HEALTH_NOTE}\nHINT: ${BIRD_NAME}`);
+  assert.ok(!out.includes(HEALTH_NOTE) && !out.includes(BIRD_NAME), out);
+});
+check("quoted input is dropped", () => {
+  const out = scrubErrorMessage(`invalid input syntax for type uuid: "${HEALTH_NOTE}"`);
+  assert.ok(!out.includes(HEALTH_NOTE), out);
+});
+check("emails are dropped", () => {
+  const out = scrubErrorMessage(`could not send invite to ${OWNER_EMAIL}`);
+  assert.equal(out, "could not send invite to [email]");
+});
+check("tokens and JWTs in a message are dropped", () => {
+  const out = scrubErrorMessage(`fetch /sitter/${TOKEN}/scan failed with Bearer ${JWT}`);
+  assert.ok(!out.includes(TOKEN) && !out.includes(JWT), out);
+});
+check(`messages are capped at ${ERROR_MESSAGE_MAX} characters`, () => {
+  const out = scrubErrorMessage("x".repeat(5000));
+  assert.equal(out.length, ERROR_MESSAGE_MAX);
+});
+check("ordinary messages pass through", () => {
+  assert.equal(scrubErrorMessage("Cannot read properties of undefined (reading 'map')"), "Cannot read properties of undefined (reading 'map')");
+});
+check("scrubbing is idempotent", () => {
+  const once = scrubErrorMessage(`Failing row contains (${HEALTH_NOTE}) for ${OWNER_EMAIL} at /invite/${TOKEN}`);
+  assert.equal(scrubErrorMessage(once), once);
+});
+
+console.log("client $exception event (what before_send sends)");
+check("message, URL and person props are all scrubbed", () => {
+  const url = `${ORIGIN}/sitter/${TOKEN}/scan`;
+  const event = {
+    event: "$exception",
+    properties: {
+      $exception_list: [{ type: "Error", value: `Failing row contains (${HEALTH_NOTE}) for ${OWNER_EMAIL}`, stacktrace: { type: "resolved", frames: [{ filename: `${ORIGIN}/assets/index-abc.js`, function: "save" }] } }],
+      $exception_message: `Failing row contains (${HEALTH_NOTE})`,
+      $exception_values: [`Failing row contains (${HEALTH_NOTE})`],
+      $current_url: url,
+      $pathname: `/sitter/${TOKEN}/scan`,
+      route: "/sitter/$token/scan",
+      user_role: "sitter",
+    },
+    $set_once: { $initial_current_url: url },
+  };
+  const out = sanitizeAnalyticsEvent(event as any);
+  scrubExceptionProperties(out.properties);
+  const json = JSON.stringify(out);
+  for (const secret of [TOKEN, HEALTH_NOTE, OWNER_EMAIL]) assert.ok(!json.includes(secret), `leaked …${secret.slice(0, 10)}`);
+  // Tags survive (the scrubber normalises the token placeholder; harmless).
+  assert.equal(out.properties.route, "/sitter/[token]/scan");
+  assert.equal(out.properties.user_role, "sitter");
+});
+
+console.log("server error helpers");
+check("route shapes never carry ids or tokens", () => {
+  assert.equal(routeShapeFromPath(`/sitter/${TOKEN}/scan`), "/sitter/$token/scan");
+  assert.equal(routeShapeFromPath(`/birds/${BIRD}/weight?tab=x`), "/birds/$id/weight");
+  assert.equal(routeShapeFromPath(`/api/public/chart/${BIRD}/2026-09/${SIG}`), "/api/public/chart/$id/2026-09/$secret");
+});
+check("expected failures are not reported", () => {
+  assert.ok(isExpectedServerError(new Error("SITTER_LINK_EXPIRED")));
+  assert.ok(isExpectedServerError(new Error("Unauthorized: No authorization header provided")));
+  assert.ok(isExpectedServerError({ isNotFound: true }));
+  assert.ok(isExpectedServerError(new Response(null, { status: 307 })));
+  assert.ok(isExpectedServerError({ statusCode: 404, message: "x" }));
+  assert.ok(!isExpectedServerError(new Error("Cannot read properties of undefined")));
+  assert.ok(!isExpectedServerError({ statusCode: 500, message: "x" }));
+});
+check("JWT subject decodes, non-JWT bearer does not", () => {
+  const payload = Buffer.from(JSON.stringify({ sub: USER })).toString("base64url");
+  assert.equal(jwtSubject(`Bearer x.${payload}.y`), USER);
+  assert.equal(jwtSubject("Bearer cron-shared-secret"), null);
+  assert.equal(jwtSubject(null), null);
+});
+check("stack frames parse oldest-first, node_modules marked not-in-app", () => {
+  const stack = "Error: boom\n    at inner (/var/task/chunks/a.mjs:10:5)\n    at outer (/var/task/node_modules/h3/dist/index.mjs:3:1)";
+  const frames = parseStackFrames(stack);
+  assert.equal(frames.length, 2);
+  assert.equal(frames[1].function, "inner");
+  assert.equal(frames[1].in_app, true);
+  assert.equal(frames[0].in_app, false);
+});
+
+async function checkAsync(name: string, fn: () => Promise<void>) {
+  try { await fn(); passed++; console.log(`  ok   ${name}`); }
+  catch (e) {
+    console.log(`  FAIL ${name}\n       ${e instanceof Error ? e.message.split("\n")[0] : String(e)}`);
+    process.exitCode = 1;
+  }
+}
+
+/** Run captureServerException with fetch stubbed; return what it would POST. */
+async function capturedPayload(err: unknown, ctx: Parameters<typeof captureServerException>[1]) {
+  const sent: string[] = [];
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = (async (_url: unknown, init?: { body?: string }) => {
+    if (init?.body) sent.push(init.body);
+    return new Response("[]", { status: 200 });
+  }) as typeof fetch;
+  try {
+    await captureServerException(err, ctx);
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+  return sent;
+}
+
+(async () => {
+  // Outside Vercel the server reporter sends nothing; force the real send path
+  // (fetch is stubbed below, so nothing leaves this machine).
+  (globalThis as Record<string, unknown>).__KYA_FORCE_ERROR_TELEMETRY__ = true;
+  console.log("server $exception payload (the real POST body)");
+  await checkAsync("a sitter-route crash carries no token, row data or email", async () => {
+    const err = new Error(`Failing row contains (${BIRD_NAME}, ${HEALTH_NOTE}, ${WEIGHT}) for ${OWNER_EMAIL} on /sitter/${TOKEN}`);
+    const [body] = await capturedPayload(err, {
+      route: routeShapeFromPath(`/sitter/${TOKEN}/scan`),
+      data: { token: TOKEN, birdId: BIRD, notes: HEALTH_NOTE },
+      mechanism: "server_fn_middleware",
+    });
+    assert.ok(body, "nothing was sent");
+    for (const secret of [TOKEN, HEALTH_NOTE, OWNER_EMAIL, `${BIRD_NAME},`]) {
+      assert.ok(!body.includes(secret), `leaked …${secret.slice(0, 10)}`);
+    }
+    const parsed = JSON.parse(body);
+    assert.equal(parsed.event, "$exception");
+    assert.equal(parsed.distinct_id, "server"); // sitters get no person
+    assert.equal(parsed.properties.user_role, "sitter");
+    assert.equal(parsed.properties.platform, "server");
+    assert.equal(parsed.properties.$process_person_profile, false);
+  });
+  await checkAsync("a signed-in crash uses the hashed id, never the raw one", async () => {
+    const payload = Buffer.from(JSON.stringify({ sub: USER })).toString("base64url");
+    const [body] = await capturedPayload(new Error("boom"), {
+      route: "serverfn:saveWeight",
+      authorization: `Bearer x.${payload}.y`,
+      mechanism: "server_fn_middleware",
+    });
+    const parsed = JSON.parse(body);
+    assert.equal(parsed.distinct_id, await hashUserId(USER));
+    assert.ok(!body.includes(USER), "raw user id leaked");
+    assert.ok(!body.includes("Bearer"), "authorization header leaked");
+  });
+  await checkAsync("the same error object is reported once", async () => {
+    const err = new Error("once");
+    const first = await capturedPayload(err, { route: "x", mechanism: "server_fn_middleware" });
+    const second = await capturedPayload(err, { route: "x", mechanism: "request_middleware" });
+    assert.equal(first.length, 1);
+    assert.equal(second.length, 0);
+  });
+  await checkAsync("expected errors send nothing", async () => {
+    const sent = await capturedPayload(new Error("SITTER_LINK_REVOKED"), { route: "x", mechanism: "server_fn_middleware" });
+    assert.equal(sent.length, 0);
+  });
+  await checkAsync("a PostHog outage never throws into the request", async () => {
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = (async () => { throw new Error("network down"); }) as typeof fetch;
+    const realError = console.error;
+    console.error = () => {};
+    try {
+      await captureServerException(new Error("boom-outage"), { route: "x", mechanism: "server_route" });
+    } finally {
+      globalThis.fetch = realFetch;
+      console.error = realError;
+    }
+  });
+
+  console.log(`\n${passed} passed${process.exitCode ? " — WITH FAILURES" : ""}`);
+})();
+

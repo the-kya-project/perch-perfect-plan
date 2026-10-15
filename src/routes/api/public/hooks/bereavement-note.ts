@@ -23,6 +23,7 @@
  * Serverless gotcha (memory/perch-serverless-fire-and-forget): every send is
  * awaited before the response returns — nothing fire-and-forget here.
  */
+import { withErrorTelemetry } from "@/lib/errorTelemetry";
 import { createFileRoute } from "@tanstack/react-router";
 import { withCronTelemetry } from "@/lib/cronTelemetry";
 
@@ -45,7 +46,7 @@ function joinNames(names: string[]): string {
 export const Route = createFileRoute("/api/public/hooks/bereavement-note")({
   server: {
     handlers: {
-      POST: withCronTelemetry("bereavement-note", async ({ request }) => {
+      POST: withCronTelemetry("bereavement-note", withErrorTelemetry("/api/public/hooks/bereavement-note", async ({ request }) => {
         const secret = process.env.CARE_PLAN_REMINDER_SECRET;
         if (!secret) {
           return Response.json({ ok: false, error: "CARE_PLAN_REMINDER_SECRET not configured" }, { status: 503 });
@@ -170,7 +171,7 @@ export const Route = createFileRoute("/api/public/hooks/bereavement-note")({
         }
 
         return Response.json({ ok: true, notes, birds: planned.reduce((n, p) => n + p.birdIds.length, 0), failed });
-      }),
+      })),
     },
   },
 });

@@ -10,12 +10,13 @@
  * The logic lives in storeRedirectHandler.server so there is exactly one copy.
  */
 import { createFileRoute } from "@tanstack/react-router";
+import { withErrorTelemetry } from "@/lib/errorTelemetry";
 import { handleStoreRedirect } from "@/lib/storeRedirectHandler.server";
 
 export const Route = createFileRoute("/get")({
   server: {
     handlers: {
-      GET: ({ request }) => handleStoreRedirect(request, { path: "get", basePath: "/get" }),
+      GET: withErrorTelemetry("/get", ({ request }) => handleStoreRedirect(request, { path: "get", basePath: "/get" })),
     },
   },
 });

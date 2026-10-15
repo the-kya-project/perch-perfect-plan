@@ -267,5 +267,16 @@ export const deleteMyAccount = createServerFn({ method: "POST" })
     const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
     if (error) throw new Error(error.message);
 
-    return { ok: true, mediaFailures: mediaFailures.length, rowFailures: rowFailures.length };
+    // Then their analytics and error-report data in PostHog (the privacy policy
+    // promises this). Best-effort and AWAITED — post-response work is frozen on
+    // Vercel. A failure is logged inside and never fails the deletion.
+    const { deletePostHogPerson } = await import("./posthogPersons.server");
+    const analytics = await deletePostHogPerson(userId);
+
+    return {
+      ok: true,
+      mediaFailures: mediaFailures.length,
+      rowFailures: rowFailures.length,
+      analyticsDeleted: analytics.ok,
+    };
   });

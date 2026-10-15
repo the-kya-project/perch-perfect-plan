@@ -7,7 +7,7 @@
   "packageManager": "npm@11.12.1",
   "scripts": {
     "dev": "vite dev",
-    "build": "vite build && node scripts/copy-sw.mjs",
+    "build": "vite build && node scripts/copy-sw.mjs && node scripts/sourcemaps.mjs",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
@@ -100,6 +100,7 @@
     "@eslint/js": "^9.32.0",
     "@lovable.dev/vite-tanstack-config": "^2.3.2",
     "@playwright/test": "^1.63.0",
+    "@posthog/cli": "0.18.9",
     "@types/node": "^22.16.5",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
