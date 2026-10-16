@@ -98,6 +98,9 @@ function DeleteAccountPage() {
               Every file you uploaded — bird photos, journal photos, health-check photos and PDF
               attachments — together with any care-plan video clips held by our video provider.
             </li>
+            <li>
+              The analytics and error reports our analytics provider holds about your account.
+            </li>
           </ul>
 
           <h2 className="text-base font-bold text-sage-900">What we keep, and for how long</h2>
@@ -116,10 +119,11 @@ function DeleteAccountPage() {
               part of those backups at all.
             </li>
             <li>
-              <strong className="font-medium text-sage-900">Marketing contact record.</strong> If you
-              opted in to marketing or community email, that contact record is held by our email
-              provider and is not removed by deleting your account. Use the unsubscribe link in any
-              of our emails to remove it, or email {SUPPORT_EMAIL} and we will delete it for you.
+              <strong className="font-medium text-sage-900">Email contact record.</strong> When you
+              sign up, our email provider keeps a contact record with your email address, name and
+              how you found us, whether or not you opted in to marketing. It is not removed by
+              deleting your account. The unsubscribe link in any of our emails stops further email;
+              to have the record deleted, email {SUPPORT_EMAIL} and we will delete it for you.
             </li>
           </ul>
 
