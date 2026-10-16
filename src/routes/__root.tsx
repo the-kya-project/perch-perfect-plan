@@ -20,6 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
 import { initAnalytics, identifyUser, resetUser } from "@/lib/analytics";
 import { ensureProfileLocale } from "@/lib/ensureProfileLocale";
+import { applyOwnerLocale } from "@/lib/i18n/ownerLocale";
 import {
   registerServiceWorker, installChunkErrorRecovery, hardResetAndReload,
   isStaleChunkError, staleChunkRecoveryExhausted, reloadForStaleChunk,
@@ -225,6 +226,7 @@ function RootComponent() {
       if (event === "SIGNED_OUT") {
         resetUser();
         void primeAccountRole(null);
+        applyOwnerLocale(null);
       } else if (session?.user?.id) {
         identifyUser(session.user.id);
         void primeAccountRole(session.user.id);

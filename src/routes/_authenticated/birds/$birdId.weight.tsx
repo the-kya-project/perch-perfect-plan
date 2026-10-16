@@ -14,6 +14,7 @@ import { track } from "@/lib/analytics";
 import { InkHero, IconTile, StatusPill, SectionHead, Card, RecordRow } from "@/components/system";
 import { MemberContextBanner } from "@/components/MemberContextBanner";
 import { friendlyError } from "@/lib/errorMessage";
+import { formatLocalDateTime } from "@/lib/dates";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/weight")({
   head: () => ({ meta: [{ title: "Weight — Kya & Co." }] }),
@@ -41,7 +42,7 @@ const nowLocal = () => {
   const d = new Date();
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 };
-const fmtDateTime = (iso: string) => new Date(iso).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+const fmtDateTime = (iso: string) => formatLocalDateTime(new Date(iso), { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 const mealLabel = (m: string | null | undefined): string | null => (m === "before_meal" ? "before meal" : m === "after_meal" ? "after meal" : null);
 
 // Window-aware steady/trend context line for the hero (no emergency framing —

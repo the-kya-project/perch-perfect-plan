@@ -11,6 +11,7 @@ import { HouseholdInviteSheet } from "@/components/HouseholdInviteSheet";
 import { toast } from "sonner";
 import { ArrowLeft, Plus, ChevronRight, Calendar, MoreHorizontal, Loader2 } from "lucide-react";
 import { friendlyError } from "@/lib/errorMessage";
+import { formatLocalDate } from "@/lib/dates";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/access")({
   head: () => ({ meta: [{ title: "Who can see this record — Kya & Co." }] }),
@@ -18,7 +19,7 @@ export const Route = createFileRoute("/_authenticated/birds/$birdId/access")({
 });
 
 function fmtDate(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  return formatLocalDate(new Date(iso), { month: "short", day: "numeric", year: "numeric" });
 }
 function initialOf(s: string | null | undefined, fallback = "?") {
   return (s?.trim()?.slice(0, 1) || fallback).toUpperCase();

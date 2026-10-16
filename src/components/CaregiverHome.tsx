@@ -10,6 +10,7 @@ import { BirdCareCard } from "@/components/BirdCareCard";
 import { Check, CalendarHeart, Sun, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { friendlyError } from "@/lib/errorMessage";
+import { formatLocalTime } from "@/lib/dates";
 
 // The active-caregiver Home variant. Rendered when the signed-in user is the
 // assigned caregiver on at least one sit whose window covers today. Mirrors the
@@ -297,5 +298,5 @@ function prettyTitle(t: string): string {
   return isDerivedTask(t) ? t : t;
 }
 function fmtTime(iso: string): string {
-  try { return new Date(iso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }); } catch { return ""; }
+  try { return formatLocalTime(new Date(iso), { hour: "numeric", minute: "2-digit" }); } catch { return ""; }
 }

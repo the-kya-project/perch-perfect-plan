@@ -10,6 +10,7 @@ import { normalizeFeedTimes, feedTimeLabel } from "@/lib/feedTimes";
 import { InkHero, PrimaryButton, Card } from "@/components/system";
 import { SCAN_COLS } from "./$birdId.scans.$scanId";
 import { isNativeApp } from "@/lib/nativeApp";
+import { formatLocalDate, formatLocalDateTime } from "@/lib/dates";
 
 type WeightRow = { id: string; grams: number; measured_at: string; source: string | null; meal_relation: string | null; note: string | null };
 
@@ -376,7 +377,7 @@ const mealLabel = (m: string | null | undefined): string | null =>
 const sourceLabel = (s: string | null | undefined): string | null =>
   s === "owner" ? "owner" : s === "household" ? "household" : s === "sitter" ? "sitter" : null;
 function fmtDateTime(iso: string): string {
-  return new Date(iso).toLocaleString(undefined, { year: "numeric", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  return formatLocalDateTime(new Date(iso), { year: "numeric", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 }
 
 export function WeightAppendix({ entries }: { entries: WeightRow[] }) {
@@ -443,7 +444,7 @@ function Value({ text, multiline }: { text: string | null | undefined; multiline
 function cap(s: string): string { return s.charAt(0).toUpperCase() + s.slice(1); }
 function val(s: unknown): s is string { return typeof s === "string" && s.trim().length > 0; }
 function fmtDate(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+  return formatLocalDate(new Date(iso), { year: "numeric", month: "short", day: "numeric" });
 }
 function trendLabel(trend: "steady" | "up" | "down", delta: number, baseline?: unknown): string {
   // computeWeightTrend reports "steady" when there is nothing to compare

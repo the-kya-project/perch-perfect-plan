@@ -9,6 +9,7 @@ import { pdfHandoffFailedMessage } from "@/lib/birdMedia.functions";
 import { toast } from "sonner";
 import { ArrowLeft, Printer, Share2, Loader2, AlertTriangle } from "lucide-react";
 import { isNativeApp } from "@/lib/nativeApp";
+import { formatLocalDate } from "@/lib/dates";
 
 // PDF / offline handoff. Renders a print-optimized full-record sheet the sender
 // can "Save as PDF" and give to an adopter who isn't on the app. Confirming the
@@ -248,7 +249,7 @@ function Value({ text, multiline }: { text: string | null | undefined; multiline
 }
 function cap(s: string): string { return s.charAt(0).toUpperCase() + s.slice(1); }
 function val(s: unknown): s is string { return typeof s === "string" && s.trim().length > 0; }
-function fmtDate(iso: string): string { return new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" }); }
+function fmtDate(iso: string): string { return formatLocalDate(new Date(iso), { year: "numeric", month: "short", day: "numeric" }); }
 
 function buildDiet(plan: any): string | null {
   if (!plan) return null;

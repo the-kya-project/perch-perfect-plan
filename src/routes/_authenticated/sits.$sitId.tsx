@@ -11,7 +11,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { resolveHouseholdNames } from "@/lib/home.functions";
 import { memberDisplayName, firstName } from "@/lib/memberDisplay";
 import { useHouseholdCapability, useMyPermissions } from "@/lib/useCapability";
-import { formatDateRangeUS } from "@/lib/dates";
+import { formatDateRangeUS, formatLocalDateTime } from "@/lib/dates";
 import { friendlyError } from "@/lib/errorMessage";
 
 // Past Sits detail view — the sit's own activity feed, derived strictly from
@@ -333,5 +333,5 @@ function Loader() {
 }
 
 function fmtWhen(iso: string): string {
-  return new Date(iso).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  return formatLocalDateTime(new Date(iso), { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 }

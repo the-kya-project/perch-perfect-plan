@@ -23,6 +23,7 @@ import {
   Plus, FileText, Activity, Pencil, ArrowLeft, ArrowRight, Camera,
   Check, X, Users, ArrowRightLeft, Heart, Loader2, Trash2, Crop, Flower2, HeartCrack,
 } from "lucide-react";
+import { formatLocalDate } from "@/lib/dates";
 
 // Bird-record home — the new landing when you tap a bird. A glanceable hub for
 // the living record; the care plan is one facet among several. Facet screens
@@ -656,11 +657,11 @@ function checkinLabel(status: string): string {
 
 function fmtDate(iso: string): string {
   const d = new Date(iso);
-  return d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  return formatLocalDate(d, { month: "short", day: "numeric" });
 }
 
 function fmtMonthYear(iso: string): string {
-  return new Date(`${iso.slice(0, 10)}T12:00:00`).toLocaleDateString(undefined, { month: "short", year: "numeric" });
+  return formatLocalDate(new Date(`${iso.slice(0, 10)}T12:00:00`), { month: "short", year: "numeric" });
 }
 
 // Handoff + foster-fail actions, split by `part`:
@@ -918,7 +919,7 @@ function BasicInfoCard({ birdId, bird, editable = true }: { birdId: string; bird
   const sexView = bird.sex && SEX_LABEL[bird.sex] ? SEX_LABEL[bird.sex] : (bird.sex || "Not set");
   const flightView = FLIGHT_LABEL[bird.flight_status ?? "unknown"] ?? "Unknown";
   const hatchView = bird.birth_date
-    ? new Date(bird.birth_date).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })
+    ? formatLocalDate(new Date(bird.birth_date), { month: "short", day: "numeric", year: "numeric" })
     : "Not set";
 
   return (
