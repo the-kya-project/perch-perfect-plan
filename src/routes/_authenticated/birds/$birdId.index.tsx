@@ -1,4 +1,6 @@
 import { friendlyError } from "@/lib/errorMessage";
+import { useTranslation } from "react-i18next";
+import i18next, { type TFunction } from "i18next";
 import { createFileRoute, Link, useNavigate, useLocation } from "@tanstack/react-router";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useState } from "react";
@@ -30,7 +32,7 @@ import { formatLocalDate } from "@/lib/dates";
 // (weight, journal, identity, moments, vet summary) are stubs for now.
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/")({
-  head: () => ({ meta: [{ title: "Bird record — Kya & Co." }] }),
+  head: () => ({ meta: [{ title: i18next.t("birdRecord.pageTitle", "Bird record — Kya & Co.") }] }),
   component: BirdRecordHome,
 });
 
@@ -100,12 +102,13 @@ function BirdRecordHome() {
  * nothing is lost.
  */
 function BirdOffline() {
+  const { t } = useTranslation();
   return (
     <div className="grid min-h-screen place-items-center bg-[var(--cream)] px-8 pb-nav text-center">
       <div>
-        <h1 className="t-h2 text-[var(--ink)]">You're offline</h1>
+        <h1 className="t-h2 text-[var(--ink)]">{t("birdRecord.youReOffline", "You're offline")}</h1>
         <p className="t-body mx-auto mt-3 max-w-[28rem] text-[var(--mute2)]">
-          This record needs a connection. Nothing has been lost — it'll be here when you're back.
+          {t("birdRecord.thisRecordNeedsAConnection", "This record needs a connection. Nothing has been lost — it'll be here when you're back.")}
         </p>
       </div>
     </div>
@@ -114,14 +117,14 @@ function BirdOffline() {
 
 /** Deliberately does not say whether the bird exists — only that it isn't yours. */
 function BirdNoAccess() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   return (
     <div className="grid min-h-screen place-items-center bg-[var(--cream)] px-8 pb-nav text-center">
       <div>
-        <h1 className="t-h2 text-[var(--ink)]">This record isn't yours anymore</h1>
+        <h1 className="t-h2 text-[var(--ink)]">{t("birdRecord.thisRecordIsnTYours", "This record isn't yours anymore")}</h1>
         <p className="t-body mx-auto mt-3 max-w-[28rem] text-[var(--mute2)]">
-          You may have handed this bird off, or your access may have been removed. If you think
-          that's wrong, ask whoever looks after the record now.
+          {t("birdRecord.youMayHaveHandedThis", "You may have handed this bird off, or your access may have been removed. If you think that's wrong, ask whoever looks after the record now.")}
         </p>
         <div className="mt-5">
           <PrimaryButton tone="ink" onPress={() => navigate({ to: "/dashboard" })}>
@@ -139,6 +142,7 @@ function BirdNoAccess() {
 // status bar. (Solo Home embeds only BirdRecordBody, under its own greeting
 // hero, so this isn't doubled.)
 function BirdRecordHero({ birdId }: { birdId: string }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   // Back always moves UP the hierarchy: the home screen, or Remembering when the
   // visitor came from a memorial card (explicit router state, set by the
@@ -152,9 +156,9 @@ function BirdRecordHero({ birdId }: { birdId: string }) {
   const { data: bird } = useBirdRecord(birdId);
   const photoOf = useBirdPhotos([bird?.photo_url], 800);
   const photo = photoOf(bird?.photo_url);
-  const name = bird?.name ?? "This bird";
-  const meta = [bird?.species || "Parrot", bird?.age].filter(Boolean).join(" · ");
-  const since = bird?.is_foster && bird?.intake_date ? `With you since ${fmtMonthYear(bird.intake_date)}` : null;
+  const name = bird?.name ?? t("birdRecord.thisBird", "This bird");
+  const meta = [bird?.species || t("birdRecord.parrot", "Parrot"), bird?.age].filter(Boolean).join(" · ");
+  const since = bird?.is_foster && bird?.intake_date ? t("birdRecord.withYouSince", "With you since {{date}}", { date: fmtMonthYear(bird.intake_date) }) : null;
   const identity = [meta, since].filter(Boolean).join(" · ");
   const [photoSheet, setPhotoSheet] = useState(false);
 
@@ -182,11 +186,11 @@ function BirdRecordHero({ birdId }: { birdId: string }) {
 
           {/* Floating controls over the photo. */}
           <div className="absolute inset-x-0 top-[14px] flex items-center justify-between px-[14px]">
-            <HeroCircleBtn label="Back" onPress={goBack}>
+            <HeroCircleBtn label={t("birdRecord.back", "Back")} onPress={goBack}>
               <ArrowLeft className="size-5" />
             </HeroCircleBtn>
             {isOwner && bird ? (
-              <HeroCircleBtn label="Edit photo" onPress={() => setPhotoSheet(true)}>
+              <HeroCircleBtn label={t("birdRecord.editPhoto", "Edit photo")} onPress={() => setPhotoSheet(true)}>
                 <Camera className="size-5" />
               </HeroCircleBtn>
             ) : (
@@ -196,7 +200,7 @@ function BirdRecordHero({ birdId }: { birdId: string }) {
 
           {/* Name + identity pinned to the bottom, over the gradient/ink. */}
           <div className="absolute inset-x-0 bottom-0 px-5 pb-5">
-            {bird?.is_foster && <p className="t-eyebrow mb-1 text-[var(--teal)]">In your care</p>}
+            {bird?.is_foster && <p className="t-eyebrow mb-1 text-[var(--teal)]">{t("birdRecord.inYourCare", "In your care")}</p>}
             <h1 className="text-[34px] font-[400] leading-[1.05] text-white">{name}.</h1>
             {identity && <p className="mt-1 text-[13.5px] text-white/85">{identity}</p>}
             <button
@@ -242,6 +246,7 @@ function HeroCircleBtn({ label, onPress, children }: { label: string; onPress: (
 // The bird-record body without page chrome — reused as solo Home (with the
 // global header + Today panel + Household row wrapped around it on /dashboard).
 export function BirdRecordBody({ birdId }: { birdId: string }) {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const navigate = useNavigate();
   const role = useBirdRole(birdId);
@@ -325,7 +330,7 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
     .sort((a, b) => +new Date(b.at) - +new Date(a.at))
     .slice(0, 12);
 
-  const name = bird?.name ?? "This bird";
+  const name = bird?.name ?? t("birdRecord.thisBird", "This bird");
   const initial = (bird?.name?.slice(0, 1) ?? "?").toUpperCase();
 
   // Reframe-in-place: dragging the strip photo saves its crop position. Upload
@@ -347,9 +352,9 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
           obvious next step instead of a hunt. Prominent but skippable. */}
       {bird && !bird.setup_complete && canEditPlan && (
         <section className="rounded-[18px] bg-white p-4 ring-1 ring-[var(--line2)]" style={{ boxShadow: "0 6px 14px -8px rgba(40,50,40,.08)" }}>
-          <p className="t-section">Set up {name}'s care plan</p>
+          <p className="t-section">{t("birdRecord.setUpCarePlan", "Set up {{name}}'s care plan", { name })}</p>
           <p className="t-body mt-1 text-[var(--ink2)]">
-            Build {name}'s care plan so sitters and household members know exactly what to do. You can skip and set it up later.
+            {t("birdRecord.buildCarePlanIntro", "Build {{name}}'s care plan so sitters and household members know exactly what to do. You can skip and set it up later.", { name })}
           </p>
           <div className="mt-3">
             <PrimaryButton tone="lime" icon={<ClipboardList className="size-4" />} onPress={() => navigate({ to: "/birds/$birdId/setup", params: { birdId }, search: { step: 1 } })}>
@@ -375,10 +380,10 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
         <div className="flex items-center gap-3 rounded-[14px] p-3" style={{ background: "var(--amber-fill)", border: "1px solid var(--amber-line)" }}>
           <Crop className="size-5 shrink-0" style={{ color: "var(--amber-ink)" }} />
           <button type="button" onClick={() => setPhotoSheet(true)} className="min-w-0 flex-1 text-left">
-            <span className="block text-[14px] font-[500]" style={{ color: "var(--amber-ink)" }}>Adjust crop</span>
-            <span className="block text-[12.5px]" style={{ color: "var(--amber-ink)" }}>Make sure the bird's face is centered.</span>
+            <span className="block text-[14px] font-[500]" style={{ color: "var(--amber-ink)" }}>{t("birdRecord.adjustCrop", "Adjust crop")}</span>
+            <span className="block text-[12.5px]" style={{ color: "var(--amber-ink)" }}>{t("birdRecord.makeSureTheBirdS", "Make sure the bird's face is centered.")}</span>
           </button>
-          <button type="button" onClick={dismissNudge} aria-label="Dismiss" className="grid min-h-[44px] min-w-[44px] shrink-0 place-items-center rounded-full" style={{ color: "var(--amber-ink)" }}>
+          <button type="button" onClick={dismissNudge} aria-label={t("birdRecord.dismiss", "Dismiss")} className="grid min-h-[44px] min-w-[44px] shrink-0 place-items-center rounded-full" style={{ color: "var(--amber-ink)" }}>
             <X className="size-4" />
           </button>
         </div>
@@ -386,14 +391,14 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
 
       {/* Latest weight */}
       <LimeStat
-        eyebrow="Latest weight"
+        eyebrow={t("birdRecord.latestWeight", "Latest weight")}
         value={current ? <>{current.grams}<span className="text-[16px] font-[400] text-[var(--moss)]"> g</span></> : "—"}
         meta={current
-          ? <><StatusPill tone={wtPill.tone}>{wtPill.label}</StatusPill><span className="t-meta">last weighed {fmtDate(current.measured_at)}</span></>
-          : <span className="text-[13px] text-[var(--ink2)]">No weight yet — log the first</span>}
+          ? <><StatusPill tone={wtPill.tone}>{wtPill.label}</StatusPill><span className="t-meta">{t("birdRecord.lastWeighedOn", "last weighed {{date}}", { date: fmtDate(current.measured_at) })}</span></>
+          : <span className="text-[13px] text-[var(--ink2)]">{t("birdRecord.noWeightYetLogThe", "No weight yet — log the first")}</span>}
         action={
           canLogCare ? (
-            <button type="button" aria-label="Log weight" onClick={() => navigate({ to: "/birds/$birdId/weight", params: { birdId }, search: { log: true } })} className="grid size-11 place-items-center rounded-full bg-[var(--ink)] text-[var(--lime)] active:scale-95">
+            <button type="button" aria-label={t("birdRecord.logWeight", "Log weight")} onClick={() => navigate({ to: "/birds/$birdId/weight", params: { birdId }, search: { log: true } })} className="grid size-11 place-items-center rounded-full bg-[var(--ink)] text-[var(--lime)] active:scale-95">
               <Plus className="size-5" />
             </button>
           ) : undefined
@@ -412,23 +417,23 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
         <SectionHead title={`${name}'s record`} />
         <Card>
           {bird?.setup_complete && (
-            <RecordRow leading={<IconTile size={38} icon={<ClipboardList className="size-5" />} />} title="Care plan" subtitle="Food, routine, behavior, home, health" onClick={() => navigate({ to: "/birds/$birdId/plan", params: { birdId } })} />
+            <RecordRow leading={<IconTile size={38} icon={<ClipboardList className="size-5" />} />} title={t("birdRecord.carePlan", "Care plan")} subtitle={t("birdRecord.foodRoutineBehaviorHomeHealth", "Food, routine, behavior, home, health")} onClick={() => navigate({ to: "/birds/$birdId/plan", params: { birdId } })} />
           )}
-          <RecordRow leading={<IconTile size={38} icon={<Scale className="size-5" />} />} title="Weight" subtitle={weightCount > 0 ? `${weightCount} ${weightCount === 1 ? "entry" : "entries"} · ${wtPill.label.toLowerCase()}` : "Not started"} onClick={() => navigate({ to: "/birds/$birdId/weight", params: { birdId } })} />
-          <RecordRow leading={<IconTile size={38} icon={<BookOpen className="size-5" />} />} title="Journal" subtitle="Molt, meds, vet visits" onClick={() => navigate({ to: "/birds/$birdId/journal", params: { birdId } })} />
-          <RecordRow leading={<IconTile size={38} icon={<IdCard className="size-5" />} />} title="Identity" subtitle="Chip, band, hatch date, origin, photo" onClick={() => navigate({ to: "/birds/$birdId/identity", params: { birdId } })} />
-          <RecordRow leading={<IconTile size={38} icon={<CalendarHeart className="size-5" />} />} title="Moments" subtitle="Mark the days worth remembering" onClick={() => navigate({ to: "/birds/$birdId/moments", params: { birdId } })} />
-          <RecordRow leading={<IconTile size={38} icon={<FileText className="size-5" />} />} title="Vet summary" subtitle="One clean sheet for the vet" onClick={() => navigate({ to: "/birds/$birdId/vet-summary", params: { birdId } })} />
-          {canHealth && <RecordRow leading={<IconTile size={38} icon={<Activity className="size-5" />} />} title="Run a health scan" subtitle="The same daily check a sitter runs" onClick={() => navigate({ to: "/birds/$birdId/scan", params: { birdId } })} last />}
+          <RecordRow leading={<IconTile size={38} icon={<Scale className="size-5" />} />} title={t("birdRecord.weight", "Weight")} subtitle={weightCount > 0 ? `${weightCount === 1 ? t("birdRecord.entryCount", "{{n}} entry", { n: weightCount }) : t("birdRecord.entriesCount", "{{n}} entries", { n: weightCount })} · ${wtPill.label.toLowerCase()}` : t("birdRecord.notStarted", "Not started")} onClick={() => navigate({ to: "/birds/$birdId/weight", params: { birdId } })} />
+          <RecordRow leading={<IconTile size={38} icon={<BookOpen className="size-5" />} />} title={t("birdRecord.journal", "Journal")} subtitle={t("birdRecord.moltMedsVetVisits", "Molt, meds, vet visits")} onClick={() => navigate({ to: "/birds/$birdId/journal", params: { birdId } })} />
+          <RecordRow leading={<IconTile size={38} icon={<IdCard className="size-5" />} />} title={t("birdRecord.identity", "Identity")} subtitle={t("birdRecord.chipBandHatchDateOrigin", "Chip, band, hatch date, origin, photo")} onClick={() => navigate({ to: "/birds/$birdId/identity", params: { birdId } })} />
+          <RecordRow leading={<IconTile size={38} icon={<CalendarHeart className="size-5" />} />} title={t("birdRecord.moments", "Moments")} subtitle={t("birdRecord.markTheDaysWorthRemembering", "Mark the days worth remembering")} onClick={() => navigate({ to: "/birds/$birdId/moments", params: { birdId } })} />
+          <RecordRow leading={<IconTile size={38} icon={<FileText className="size-5" />} />} title={t("birdRecord.vetSummary", "Vet summary")} subtitle={t("birdRecord.oneCleanSheetForThe", "One clean sheet for the vet")} onClick={() => navigate({ to: "/birds/$birdId/vet-summary", params: { birdId } })} />
+          {canHealth && <RecordRow leading={<IconTile size={38} icon={<Activity className="size-5" />} />} title={t("birdRecord.runAHealthScan", "Run a health scan")} subtitle={t("birdRecord.theSameDailyCheckA", "The same daily check a sitter runs")} onClick={() => navigate({ to: "/birds/$birdId/scan", params: { birdId } })} last />}
         </Card>
       </section>
 
       {/* Recent — id anchors the health-summary block's checks tap-through. */}
       <section id="bird-recent">
-        <SectionHead title="Recent" />
+        <SectionHead title={t("birdRecord.recent", "Recent")} />
         {recent.length === 0 ? (
           <div className="rounded-[16px] bg-[var(--cream2)] p-6 text-center text-[14px] text-[var(--mute)]">
-            Nothing logged yet. Weights and sitter check-ins will show up here.
+            {t("birdRecord.nothingLoggedYetWeightsAnd", "Nothing logged yet. Weights and sitter check-ins will show up here.")}
           </div>
         ) : (
           <Card>
@@ -436,9 +441,9 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
               <RecordRow
                 key={r.id}
                 leading={<IconTile size={34} tone="pale" icon={r.kind === "weight" ? <Scale className="size-4" /> : <Feather className="size-4" />} />}
-                title={r.kind === "weight" ? `Weight logged — ${r.grams} g` : `Daily check-in — ${checkinLabel(r.status)}`}
+                title={r.kind === "weight" ? t("birdRecord.weightLogged", "Weight logged — {{grams}} g", { grams: r.grams }) : t("birdRecord.dailyCheckIn", "Daily check-in — {{status}}", { status: checkinLabel(t, r.status) })}
                 subtitle={fmtDate(r.at)}
-                trailing={r.source === "household" ? <StatusPill tone="household">Household</StatusPill> : r.source === "sitter" ? <StatusPill tone="off">Sitter</StatusPill> : undefined}
+                trailing={r.source === "household" ? <StatusPill tone="household">{t("birdRecord.household", "Household")}</StatusPill> : r.source === "sitter" ? <StatusPill tone="off">{t("birdRecord.sitter", "Sitter")}</StatusPill> : undefined}
                 // Tap into the existing detail: a check-in opens its health-check
                 // detail; a weight opens the weight history.
                 onClick={r.kind === "checkin"
@@ -454,7 +459,7 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
       {/* Sharing — owner only */}
       {isOwner && (
         <Card>
-          <RecordRow leading={<IconTile size={38} tone="pale" icon={<Users className="size-5" />} />} title={`Who can see ${name}'s record`} subtitle="Household & sitters" onClick={() => navigate({ to: "/birds/$birdId/access", params: { birdId } })} last />
+          <RecordRow leading={<IconTile size={38} tone="pale" icon={<Users className="size-5" />} />} title={t("birdRecord.whoCanSee", "Who can see {{name}}'s record", { name })} subtitle={t("birdRecord.householdSitters", "Household & sitters")} onClick={() => navigate({ to: "/birds/$birdId/access", params: { birdId } })} last />
         </Card>
       )}
 
@@ -464,7 +469,7 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
       {canFlock && bird && (
         <section className="pt-1">
           <div className="border-t border-[var(--line2)] pt-4">
-            <p className="t-eyebrow mb-2 px-0.5 text-[var(--teal-on-cream)]">More</p>
+            <p className="t-eyebrow mb-2 px-0.5 text-[var(--teal-on-cream)]">{t("birdRecord.more", "More")}</p>
             <div className="space-y-2">
               <HandoffSection birdId={birdId} name={name} part="handoff" prominent={!!bird.is_foster} />
               {/* Mark as passed — quiet, owner-only. Opens the gentle confirm
@@ -476,7 +481,7 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
                   className="flex min-h-[48px] w-full items-center gap-3 rounded-[13px] bg-white px-4 text-left ring-1 ring-[var(--line2)] active:scale-[0.99]"
                 >
                   <Flower2 className="size-4 shrink-0 text-[var(--mute2)]" />
-                  <span className="text-[14px] font-[500] text-[var(--ink2)]">Mark as passed</span>
+                  <span className="text-[14px] font-[500] text-[var(--ink2)]">{t("birdRecord.markAsPassed", "Mark as passed")}</span>
                 </button>
               )}
               <DeleteBirdButton birdId={birdId} name={name} />
@@ -498,10 +503,10 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
             className="flex min-h-[52px] w-full items-center gap-3 rounded-[13px] border border-[var(--line)] bg-white px-4 text-left active:scale-[0.99]"
           >
             <HeartCrack className="size-5 shrink-0 text-[var(--mute2)]" />
-            <span className="flex-1 text-[14px] font-[500] text-[var(--ink)]">Something's wrong with {name}</span>
+            <span className="flex-1 text-[14px] font-[500] text-[var(--ink)]">{t("birdRecord.somethingsWrong", "Something's wrong with {{name}}", { name })}</span>
             <ArrowRight className="size-4 shrink-0 text-[var(--mute2)]" />
           </button>
-          <p className="t-meta mt-1.5 px-1">If {name} has passed or is in serious trouble</p>
+          <p className="t-meta mt-1.5 px-1">{t("birdRecord.passedOrTrouble", "If {{name}} has passed or is in serious trouble", { name })}</p>
         </div>
       )}
 
@@ -542,11 +547,27 @@ const ITEM_NOUNS: Record<string, string> = {
   exposure_status: "exposure",
 };
 
-function daysAgoLabel(iso: string): string {
+function itemNoun(t: TFunction, col: string): string {
+  switch (col) {
+    case "alertness_status": return t("birdRecord.item.alertness", "alertness");
+    case "food_status": return t("birdRecord.item.food", "food");
+    case "water_status": return t("birdRecord.item.water", "water");
+    case "droppings_status": return t("birdRecord.item.droppings", "droppings");
+    case "energy_status": return t("birdRecord.item.energy", "energy");
+    case "breathing_status": return t("birdRecord.item.breathing", "breathing");
+    case "posture_status": return t("birdRecord.item.posture", "posture");
+    case "behavior_status": return t("birdRecord.item.behavior", "behavior");
+    case "injury_status": return t("birdRecord.item.injury", "injury");
+    case "exposure_status": return t("birdRecord.item.exposure", "exposure");
+    default: return ITEM_NOUNS[col] ?? col;
+  }
+}
+
+function daysAgoLabel(t: TFunction, iso: string): string {
   const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
-  if (days <= 0) return "today";
-  if (days === 1) return "yesterday";
-  return `${days} days ago`;
+  if (days <= 0) return t("birdRecord.today", "today");
+  if (days === 1) return t("birdRecord.yesterday", "yesterday");
+  return t("birdRecord.daysAgo", "{{days}} days ago", { days });
 }
 
 export function HealthSummary({
@@ -557,6 +578,7 @@ export function HealthSummary({
   onOpenWeight: () => void;
   onOpenScan: (scanId: string) => void;
 }) {
+  const { t } = useTranslation();
   // Loading is "unknown", never "no data": render nothing until both resolve.
   if (!weights || !checkins) return null;
   if (weights.length === 0 && checkins.length === 0) return null;
@@ -570,13 +592,13 @@ export function HealthSummary({
   let weightPill: { label: string; tone: "good" | "attention" | "off" } | null = null;
   if (weightsInWindow.length >= 2) {
     const g = Math.round(Math.abs(trend.delta));
-    if (trend.trend === "steady") { weightText = `Weight steady over the last ${SUMMARY_WINDOW_DAYS} days`; weightPill = { label: "Steady", tone: "good" }; }
-    else if (trend.trend === "up") { weightText = `Weight up ${g} g over the last ${SUMMARY_WINDOW_DAYS} days`; weightPill = { label: `Up ${g} g`, tone: "good" }; }
-    else { weightText = `Weight down ${g} g over the last ${SUMMARY_WINDOW_DAYS} days`; weightPill = { label: `Down ${g} g`, tone: "attention" }; }
+    if (trend.trend === "steady") { weightText = t("birdRecord.weightSteady", "Weight steady over the last {{days}} days", { days: SUMMARY_WINDOW_DAYS }); weightPill = { label: t("birdRecord.steady", "Steady"), tone: "good" }; }
+    else if (trend.trend === "up") { weightText = t("birdRecord.weightUp", "Weight up {{g}} g over the last {{days}} days", { g, days: SUMMARY_WINDOW_DAYS }); weightPill = { label: t("birdRecord.upG", "Up {{g}} g", { g }), tone: "good" }; }
+    else { weightText = t("birdRecord.weightDown", "Weight down {{g}} g over the last {{days}} days", { g, days: SUMMARY_WINDOW_DAYS }); weightPill = { label: t("birdRecord.downG", "Down {{g}} g", { g }), tone: "attention" }; }
   } else if (weights.length > 0) {
     // One (or zero) weigh-ins in the window: state the latest value, no trend.
-    weightText = `Weighed ${weights[0].grams} g`;
-    weightPill = { label: weightsInWindow.length ? "1 weigh-in" : "No recent weights", tone: "off" };
+    weightText = t("birdRecord.weighedG", "Weighed {{grams}} g", { grams: weights[0].grams });
+    weightPill = { label: weightsInWindow.length ? t("birdRecord.oneWeighIn", "1 weigh-in") : t("birdRecord.noRecentWeights", "No recent weights"), tone: "off" };
   }
 
   // ---- checks line (count + which items came back not-normal) ----
@@ -588,23 +610,27 @@ export function HealthSummary({
       if (v === "not_sure" || v === "concerning") itemCounts.set(col, (itemCounts.get(col) ?? 0) + 1);
     }
   }
-  const flaggedItems = [...itemCounts.entries()].sort((a, b) => b[1] - a[1]).map(([col]) => ITEM_NOUNS[col]);
+  const flaggedItems = [...itemCounts.entries()].sort((a, b) => b[1] - a[1]).map(([col]) => itemNoun(t, col));
   let checksText: string | null = null;
   let checksPill: { label: string; tone: "good" | "off" } | null = null;
   if (checksInWindow.length > 0) {
     const n = checksInWindow.length;
-    const base = `${n} ${n === 1 ? "check" : "checks"} in the last ${SUMMARY_WINDOW_DAYS} days`;
+    const base = n === 1
+      ? t("birdRecord.oneCheckInWindow", "{{n}} check in the last {{days}} days", { n, days: SUMMARY_WINDOW_DAYS })
+      : t("birdRecord.checksInWindow", "{{n}} checks in the last {{days}} days", { n, days: SUMMARY_WINDOW_DAYS });
     if (flaggedItems.length === 0) {
       checksText = base;
-      checksPill = { label: "All normal", tone: "good" };
+      checksPill = { label: t("birdRecord.allNormal", "All normal"), tone: "good" };
     } else {
       const listed = flaggedItems.slice(0, 2).join(", ");
       const more = flaggedItems.length - 2;
-      checksText = `${base} · flagged ${listed}${more > 0 ? ` +${more} more` : ""}`;
-      checksPill = { label: `${flaggedItems.length} flagged`, tone: "off" };
+      checksText = more > 0
+        ? t("birdRecord.flaggedMore", "{{base}} · flagged {{listed}} +{{more}} more", { base, listed, more })
+        : t("birdRecord.flagged", "{{base}} · flagged {{listed}}", { base, listed });
+      checksPill = { label: t("birdRecord.nFlagged", "{{n}} flagged", { n: flaggedItems.length }), tone: "off" };
     }
   } else if (checkins.length > 0) {
-    checksText = `No checks in the last ${SUMMARY_WINDOW_DAYS} days`;
+    checksText = t("birdRecord.noChecksInWindow", "No checks in the last {{days}} days", { days: SUMMARY_WINDOW_DAYS });
     checksPill = { label: "—", tone: "off" };
   }
 
@@ -615,8 +641,8 @@ export function HealthSummary({
 
   // ---- recency (quiet footer) ----
   const recencyBits: string[] = [];
-  if (checkins.length > 0) recencyBits.push(`Last checked ${daysAgoLabel(checkins[0].created_at)}`);
-  if (weights.length > 0) recencyBits.push(`Last weighed ${daysAgoLabel(weights[0].measured_at)}`);
+  if (checkins.length > 0) recencyBits.push(t("birdRecord.lastChecked", "Last checked {{when}}", { when: daysAgoLabel(t, checkins[0].created_at) }));
+  if (weights.length > 0) recencyBits.push(t("birdRecord.lastWeighed", "Last weighed {{when}}", { when: daysAgoLabel(t, weights[0].measured_at) }));
 
   const scrollToRecent = () => document.getElementById("bird-recent")?.scrollIntoView({ behavior: "smooth", block: "start" });
 
@@ -630,7 +656,7 @@ export function HealthSummary({
 
   return (
     <section className="overflow-hidden rounded-[18px] bg-white ring-1 ring-[var(--line2)]" style={{ boxShadow: "0 6px 14px -8px rgba(40,50,40,.08)" }}>
-      <p className="t-eyebrow px-4 pt-3 text-[var(--teal-on-cream)]">Lately</p>
+      <p className="t-eyebrow px-4 pt-3 text-[var(--teal-on-cream)]">{t("birdRecord.lately", "Lately")}</p>
       <div className="mt-1 divide-y divide-[var(--line2)]">
         {weightText && weightPill && (
           <Row text={weightText} pill={weightPill} onClick={onOpenWeight} />
@@ -651,8 +677,12 @@ export function HealthSummary({
   );
 }
 
-function checkinLabel(status: string): string {
-  return status === "red" ? "concern flagged" : status === "yellow" ? "something to check" : "all clear";
+function checkinLabel(t: TFunction, status: string): string {
+  return status === "red"
+    ? t("birdRecord.concernFlagged", "concern flagged")
+    : status === "yellow"
+      ? t("birdRecord.somethingToCheck", "something to check")
+      : t("birdRecord.allClear", "all clear");
 }
 
 function fmtDate(iso: string): string {
@@ -671,6 +701,7 @@ function fmtMonthYear(iso: string): string {
 //                (outline when prominent — fosters; quiet otherwise). Lives in
 //                the bottom "More" group alongside Delete.
 function HandoffSection({ birdId, name, part, prominent }: { birdId: string; name: string; part: "welcome" | "handoff"; prominent?: boolean }) {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const getPending = useServerFn(getPendingHandoff);
   const cancel = useServerFn(cancelHandoff);
@@ -684,8 +715,8 @@ function HandoffSection({ birdId, name, part, prominent }: { birdId: string; nam
 
   const cancelM = useMutation({
     mutationFn: (id: string) => cancel({ data: { handoffId: id } }),
-    onSuccess: () => { toast.success("Handoff canceled."); qc.invalidateQueries({ queryKey: ["pending-handoff", birdId] }); },
-    onError: (e: any) => toast.error(friendlyError(e, "Couldn't cancel.")),
+    onSuccess: () => { toast.success(t("birdRecord.handoffCanceled", "Handoff canceled.")); qc.invalidateQueries({ queryKey: ["pending-handoff", birdId] }); },
+    onError: (e: any) => toast.error(friendlyError(e, t("birdRecord.couldntCancel", "Couldn't cancel."))),
   });
   const permanentM = useMutation({
     mutationFn: () => permanent({ data: { birdId } }),
@@ -693,7 +724,7 @@ function HandoffSection({ birdId, name, part, prominent }: { birdId: string; nam
       toast.success(`${name} joined the flock! 🎉`);
       ["bird-record", "moments", "birds", "bird-role"].forEach((k) => qc.invalidateQueries({ queryKey: k === "birds" ? ["birds"] : [k, birdId] }));
     },
-    onError: (e: any) => toast.error(friendlyError(e, "Couldn't update.")),
+    onError: (e: any) => toast.error(friendlyError(e, t("birdRecord.couldntUpdate", "Couldn't update."))),
   });
 
   const outlineBtn = "flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[12px] bg-white text-[15px] font-[500] text-[var(--ink)] ring-1 ring-[var(--line)] active:scale-[0.99] disabled:opacity-50";
@@ -731,7 +762,7 @@ function HandoffSection({ birdId, name, part, prominent }: { birdId: string; nam
       onClick={() => navigate({ to: "/birds/$birdId/handoff", params: { birdId } })}
       className={prominent ? outlineBtn : "flex min-h-[44px] w-full items-center justify-center gap-2 text-[14px] font-[500] text-[var(--mute)] active:scale-[0.99]"}
     >
-      <ArrowRightLeft className="size-4" /> Hand off {name}
+      <ArrowRightLeft className="size-4" /> {t("birdRecord.handOff", "Hand off {{name}}", { name })}
     </button>
   );
 }
@@ -740,6 +771,7 @@ function HandoffSection({ birdId, name, part, prominent }: { birdId: string; nam
 // type-the-name confirmation before the destructive cascade (same flow as the
 // editor's Danger zone). No accidental taps: delete is gated on an exact match.
 function DeleteBirdButton({ birdId, name }: { birdId: string; name: string }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [confirming, setConfirming] = useState(false);
@@ -781,7 +813,7 @@ function DeleteBirdButton({ birdId, name }: { birdId: string; name: string }) {
       qc.invalidateQueries({ queryKey: ["birds"] });
       navigate({ to: "/dashboard" });
     } catch (e: any) {
-      toast.error(friendlyError(e, "Couldn't delete."));
+      toast.error(friendlyError(e, t("birdRecord.couldntDelete", "Couldn't delete.")));
       setDeleting(false);
     }
   }
@@ -813,9 +845,9 @@ function DeleteBirdButton({ birdId, name }: { birdId: string; name: string }) {
               <div className="overflow-y-auto p-5" style={{ background: "var(--red-fill)", borderBottom: "1px solid var(--red-line)" }}>
                 <h2 id="delete-bird-title" className="t-section" style={{ color: "var(--red-deep)" }}>Delete {name}?</h2>
                 <p className="t-body mt-2" style={{ color: "var(--red-deep)" }}>
-                  Permanently delete {name} and everything in their record — care plan, weights, scans, journal, and photos. This can't be undone.
+                  {t("birdRecord.deleteWarning", "Permanently delete {{name}} and everything in their record — care plan, weights, scans, journal, and photos. This can't be undone.", { name })}
                 </p>
-                <label htmlFor="delete-confirm" className="t-eyebrow mt-4 block" style={{ color: "var(--red-deep)" }}>Type {name} to confirm</label>
+                <label htmlFor="delete-confirm" className="t-eyebrow mt-4 block" style={{ color: "var(--red-deep)" }}>{t("birdRecord.typeToConfirm", "Type {{name}} to confirm", { name })}</label>
                 <input
                   id="delete-confirm"
                   className="input mt-1"
@@ -843,7 +875,7 @@ function DeleteBirdButton({ birdId, name }: { birdId: string; name: string }) {
                   className="min-h-[48px] flex-1 rounded-[12px] text-[15px] font-[500] text-white disabled:opacity-50"
                   style={{ background: "var(--red-ink)" }}
                 >
-                  {deleting ? "Deleting…" : `Delete ${name}`}
+                  {deleting ? t("birdRecord.deleting", "Deleting…") : t("birdRecord.deleteName", "Delete {{name}}", { name })}
                 </button>
               </div>
             </div>
@@ -868,6 +900,7 @@ const FLIGHT_LABEL: Record<string, string> = {
 // (no fork). Age and Hatch date are coupled via the shared AgePicker — picking
 // a hatch date auto-derives age; clearing it re-enables the Age dropdown.
 function BasicInfoCard({ birdId, bird, editable = true }: { birdId: string; bird: { species?: string | null; age?: string | null; sex?: string | null; flight_status?: string | null; birth_date?: string | null }; editable?: boolean }) {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -910,22 +943,30 @@ function BasicInfoCard({ birdId, bird, editable = true }: { birdId: string; bird
     qc.invalidateQueries({ queryKey: ["bird-identity", birdId] });
     qc.invalidateQueries({ queryKey: ["bird", birdId] });
     qc.invalidateQueries({ queryKey: ["birds"] });
-    toast.success("Saved.");
+    toast.success(t("birdRecord.saved", "Saved."));
     setEditing(false);
   }
 
-  const speciesView = bird.species?.trim() || "Not set";
-  const ageView = bird.age?.trim() || "Not set";
-  const sexView = bird.sex && SEX_LABEL[bird.sex] ? SEX_LABEL[bird.sex] : (bird.sex || "Not set");
-  const flightView = FLIGHT_LABEL[bird.flight_status ?? "unknown"] ?? "Unknown";
+  const speciesView = bird.species?.trim() || t("birdRecord.notSet", "Not set");
+  const ageView = bird.age?.trim() || t("birdRecord.notSet", "Not set");
+  // Setup saves "Male"/"Female"; SEX_LABEL keys are lowercase, so look up case-insensitively.
+  const sexKey = (bird.sex ?? "").toLowerCase();
+  const sexView = sexKey === "male" ? t("birdRecord.male", "Male") : sexKey === "female" ? t("birdRecord.female", "Female") : sexKey === "unknown" ? t("birdRecord.unknown", "Unknown") : (bird.sex || t("birdRecord.notSet", "Not set"));
+  const flightKey = bird.flight_status ?? "unknown";
+  const flightView =
+    flightKey === "fully_flighted" ? t("birdRecord.fullyFlighted", "Fully flighted")
+    : flightKey === "clipped" ? t("birdRecord.clipped", "Clipped")
+    : flightKey === "partially_clipped" ? t("birdRecord.partiallyClipped", "Partially clipped")
+    : FLIGHT_LABEL[flightKey] && flightKey !== "unknown" ? FLIGHT_LABEL[flightKey]
+    : t("birdRecord.unknown", "Unknown");
   const hatchView = bird.birth_date
     ? formatLocalDate(new Date(bird.birth_date), { month: "short", day: "numeric", year: "numeric" })
-    : "Not set";
+    : t("birdRecord.notSet", "Not set");
 
   return (
     <section className="overflow-hidden rounded-[16px] bg-white ring-1 ring-[#e3dcc9]">
       <div className="flex items-center justify-between gap-3 border-b border-[#ece6d6] px-4 py-3">
-        <h3 className="t-eyebrow text-[var(--teal-on-cream)]">Basic info</h3>
+        <h3 className="t-eyebrow text-[var(--teal-on-cream)]">{t("birdRecord.basicInfo", "Basic info")}</h3>
         {editing ? (
           <div className="flex gap-2">
             <button type="button" onClick={() => setEditing(false)} disabled={saving} className="inline-flex min-h-[36px] items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium text-[#5f5e5a]">
@@ -944,7 +985,7 @@ function BasicInfoCard({ birdId, bird, editable = true }: { birdId: string; bird
 
       {editing ? (
         <div className="space-y-3 p-4">
-          <BasicField label="Species">
+          <BasicField label={t("birdRecord.species", "Species")}>
             <input className="input" value={f.species} maxLength={80} onChange={(e) => setF((p) => ({ ...p, species: e.target.value }))} />
           </BasicField>
           {/* Age + Hatch date are coupled — AgePicker disables Age when a
@@ -956,30 +997,30 @@ function BasicInfoCard({ birdId, bird, editable = true }: { birdId: string; bird
             birthDate={f.birth_date}
             onChange={(next) => setF((p) => ({ ...p, age: next.age, birth_date: next.birthDate ?? "" }))}
           />
-          <BasicField label="Sex">
+          <BasicField label={t("birdRecord.sex", "Sex")}>
             <select className="input" value={f.sex} onChange={(e) => setF((p) => ({ ...p, sex: e.target.value }))}>
-              <option value="">Not set</option>
-              <option value="male">Male</option>
-              <option value="female">Female</option>
-              <option value="unknown">Unknown</option>
+              <option value="">{t("birdRecord.notSet", "Not set")}</option>
+              <option value="male">{t("birdRecord.male", "Male")}</option>
+              <option value="female">{t("birdRecord.female", "Female")}</option>
+              <option value="unknown">{t("birdRecord.unknown", "Unknown")}</option>
             </select>
           </BasicField>
-          <BasicField label="Flight">
+          <BasicField label={t("birdRecord.flight", "Flight")}>
             <select className="input" value={f.flight_status} onChange={(e) => setF((p) => ({ ...p, flight_status: e.target.value }))}>
-              <option value="unknown">Unknown</option>
-              <option value="fully_flighted">Fully flighted</option>
-              <option value="clipped">Clipped</option>
-              <option value="partially_clipped">Partially clipped</option>
+              <option value="unknown">{t("birdRecord.unknown", "Unknown")}</option>
+              <option value="fully_flighted">{t("birdRecord.fullyFlighted", "Fully flighted")}</option>
+              <option value="clipped">{t("birdRecord.clipped", "Clipped")}</option>
+              <option value="partially_clipped">{t("birdRecord.partiallyClipped", "Partially clipped")}</option>
             </select>
           </BasicField>
         </div>
       ) : (
         <dl>
-          <BasicRow label="Species" value={speciesView} />
-          <BasicRow label="Age" value={ageView} />
-          <BasicRow label="Hatch date" value={hatchView} />
-          <BasicRow label="Sex" value={sexView} />
-          <BasicRow label="Flight" value={flightView} last />
+          <BasicRow label={t("birdRecord.species", "Species")} value={speciesView} />
+          <BasicRow label={t("birdRecord.age", "Age")} value={ageView} />
+          <BasicRow label={t("birdRecord.hatchDate", "Hatch date")} value={hatchView} />
+          <BasicRow label={t("birdRecord.sex", "Sex")} value={sexView} />
+          <BasicRow label={t("birdRecord.flight", "Flight")} value={flightView} last />
         </dl>
       )}
     </section>
