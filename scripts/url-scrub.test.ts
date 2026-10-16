@@ -258,6 +258,7 @@ check("expected failures are not reported", () => {
   assert.ok(isExpectedServerError(new Error("SITTER_LINK_EXPIRED")));
   assert.ok(isExpectedServerError(new Error("Unauthorized: No authorization header provided")));
   assert.ok(isExpectedServerError({ isNotFound: true }));
+  assert.ok(isExpectedServerError(new Error("This is a read-only preview — changes aren't saved.")));
   assert.ok(isExpectedServerError(new Response(null, { status: 307 })));
   assert.ok(isExpectedServerError({ statusCode: 404, message: "x" }));
   assert.ok(!isExpectedServerError(new Error("Cannot read properties of undefined")));

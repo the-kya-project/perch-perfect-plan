@@ -42,7 +42,9 @@ const reported = new WeakSet<object>();
 /**
  * Failures that are part of normal operation, not bugs: router redirects and
  * not-founds, HTTP errors below 500, signed-out callers, and sitter link states
- * (expired / revoked / paused) — those are answers, not crashes.
+ * (expired / revoked / paused) — those are answers, not crashes. Also the
+ * "View as sitter" preview refusing a write (assertNotPreview in
+ * sitter.functions.ts): the guard working, not a bug.
  */
 export function isExpectedServerError(error: unknown): boolean {
   if (error instanceof Response) return error.status < 500;
@@ -54,6 +56,7 @@ export function isExpectedServerError(error: unknown): boolean {
   const msg = typeof e.message === "string" ? e.message : "";
   if (/^SITTER_[A-Z_]+$/.test(msg)) return true;
   if (/^Unauthorized\b/.test(msg)) return true;
+  if (msg.startsWith("This is a read-only preview")) return true;
   return false;
 }
 
