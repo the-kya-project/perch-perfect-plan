@@ -139,6 +139,8 @@ export function shouldIgnore(error: Error): boolean {
   if (isStaleChunkError(error) && !staleChunkRecoveryExhausted()) return true;
   if (error.name === "AbortError") return true; // navigation cancelled a fetch
   if (/ResizeObserver loop/i.test(msg)) return true; // benign browser warning
+  // "View as sitter" refusing a write: the guard working (see errorTelemetry).
+  if (msg.startsWith("This is a read-only preview")) return true;
   // Cross-origin script errors carry no information at all.
   if (/^Script error\.?$/i.test(msg) && !error.stack) return true;
   // Errors raised entirely inside browser extensions.
