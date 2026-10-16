@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -44,6 +45,8 @@ export function SitForm({
   // screen already provides the open CTA (e.g. the Sits tab hero button).
   hidePrompt?: boolean;
 }) {
+  const { t } = useTranslation();
+  const theirInfo = t("sitForm.theirInfo", "Their info");
   const editing = !!editSit;
   const navigate = useNavigate();
   const [open, setOpen] = useState(initialOpen || editing);
@@ -124,12 +127,12 @@ export function SitForm({
             { duration: 10000 },
           );
         } else {
-          toast.success("Sit deleted.");
+          toast.success(t("sitForm.sitDeleted", "Sit deleted."));
         }
       } catch {
         track("sit_caregiver_email_failed", { event: "cancelled", reason: "threw" });
         toast.error(
-          "Sit deleted, but we couldn't email your household member the cancellation. Tell them directly so they don't show up to cover.",
+          t("sitForm.sitDeletedButWeCouldn", "Sit deleted, but we couldn't email your household member the cancellation. Tell them directly so they don't show up to cover."),
           { duration: 10000 },
         );
       }
@@ -140,21 +143,21 @@ export function SitForm({
         if (!res?.emailed) {
           track("sitter_invite_email_failed", { event: "cancelled", reason: res?.reason ?? "unknown" });
           toast.error(
-            `Sit deleted, but we couldn't email ${label} the cancellation. Tell them directly so they don't show up.`,
+            t("sitForm.deletedEmailFailed", "Sit deleted, but we couldn't email {{name}} the cancellation. Tell them directly so they don't show up.", { name: label }),
             { duration: 10000 },
           );
         } else {
-          toast.success("Sit deleted.");
+          toast.success(t("sitForm.sitDeleted", "Sit deleted."));
         }
       } catch {
         track("sitter_invite_email_failed", { event: "cancelled", reason: "threw" });
         toast.error(
-          `Sit deleted, but we couldn't email ${label} the cancellation. Tell them directly so they don't show up.`,
+          t("sitForm.deletedEmailFailed", "Sit deleted, but we couldn't email {{name}} the cancellation. Tell them directly so they don't show up.", { name: label }),
           { duration: 10000 },
         );
       }
     } else {
-      toast.success("Sit deleted.");
+      toast.success(t("sitForm.sitDeleted", "Sit deleted."));
     }
     onSaved();      // parent refreshes ["all-sits"]
     onCancel?.();   // close the form
@@ -259,14 +262,14 @@ export function SitForm({
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (selected.size === 0) { toast.error("Pick at least one bird."); return; }
-    if (!start || !end) { toast.error("Pick a start and end date."); return; }
-    if (end < start) { toast.error("End date must be on or after start date."); return; }
+    if (selected.size === 0) { toast.error(t("sitForm.pickAtLeastOneBird", "Pick at least one bird.")); return; }
+    if (!start || !end) { toast.error(t("sitForm.pickAStartAndEnd", "Pick a start and end date.")); return; }
+    if (end < start) { toast.error(t("sitForm.endDateMustBeOn", "End date must be on or after start date.")); return; }
     // Validate the caregiver choice — required on create; preserved on edit.
     if (!editing) {
-      if (!caregiverKind) { toast.error("Pick who's covering this sit."); return; }
-      if (caregiverKind === "household" && !householdUserId) { toast.error("Pick a household member."); return; }
-      if (caregiverKind === "external" && !sitterEmail.trim()) { toast.error("Add the sitter's email."); return; }
+      if (!caregiverKind) { toast.error(t("sitForm.pickWhoSCoveringThis", "Pick who's covering this sit.")); return; }
+      if (caregiverKind === "household" && !householdUserId) { toast.error(t("sitForm.pickAHouseholdMember", "Pick a household member.")); return; }
+      if (caregiverKind === "external" && !sitterEmail.trim()) { toast.error(t("sitForm.addTheSitterSEmail", "Add the sitter's email.")); return; }
     }
     setSaving(true);
     try {
@@ -279,7 +282,7 @@ export function SitForm({
         getLocalUser(),
       ]);
       if (ecErr) { toast.error(friendlyError(ecErr)); setSaving(false); return; }
-      if (!u.user) { toast.error("You're signed out."); setSaving(false); return; }
+      if (!u.user) { toast.error(t("sitForm.youReSignedOut", "You're signed out.")); setSaving(false); return; }
       // Emergency-contact preflight is for the external-sitter share — the
       // sitter has no other access, so the contacts must be on file before we
       // mint a link. A household caregiver already has bird access and the
@@ -302,15 +305,15 @@ export function SitForm({
           .map((id) => {
             const c = contactByBird.get(id);
             const needs: string[] = [];
-            if (!eff(c, "owner_phone")) needs.push("your phone");
-            if (!eff(c, "avian_vet_phone")) needs.push("avian vet phone");
+            if (!eff(c, "owner_phone")) needs.push(t("sitForm.needYourPhone", "your phone"));
+            if (!eff(c, "avian_vet_phone")) needs.push(t("sitForm.needAvianVetPhone", "avian vet phone"));
             return needs.length ? { bird: birds.find((b: any) => b.id === id), needs } : null;
           })
           .filter(Boolean) as { bird: any; needs: string[] }[];
         if (missing.length) {
-          const details = missing.map((m) => `${m.bird?.name ?? "Bird"}: ${m.needs.join(" & ")}`).join("; ");
+          const details = missing.map((m) => `${m.bird?.name ?? t("sitForm.bird", "Bird")}: ${m.needs.join(" & ")}`).join("; ");
           toast.error(
-            `Add the required emergency contacts before sharing a sitter link — ${details}. Set account defaults below, or open the bird's Emergency tab.`,
+            t("sitForm.missingContacts", "Add the required emergency contacts before sharing a sitter link — {{details}}. Set account defaults below, or open the bird's Emergency tab.", { details }),
             { duration: 8000 },
           );
           setSaving(false);
@@ -384,11 +387,11 @@ export function SitForm({
           } catch { sitterUpdateFailed = true; track("sitter_invite_email_failed", { event: "updated", reason: "threw" }); }
         }
         if (updateFailedName) {
-          toast.error(`Sit updated, but we couldn't email ${updateFailedName} the change. Let them know directly.`, { duration: 8000 });
+          toast.error(t("sitForm.updatedHouseholdEmailFailed", "Sit updated, but we couldn't email {{name}} the change. Let them know directly.", { name: updateFailedName }), { duration: 8000 });
         } else if (sitterUpdateFailed) {
-          toast.error(`Sit updated, but we couldn't email ${sitterLabel} the change. The link still works — send them the new details.`, { duration: 10000 });
+          toast.error(t("sitForm.updatedSitterEmailFailed", "Sit updated, but we couldn't email {{name}} the change. The link still works — send them the new details.", { name: sitterLabel }), { duration: 10000 });
         } else {
-          toast.success("Sit updated.");
+          toast.success(t("sitForm.sitUpdated", "Sit updated."));
         }
         onSaved();
         onCancel?.();
@@ -417,7 +420,7 @@ export function SitForm({
           insert.sitter_email = null;
         }
         const { data: sit, error } = await supabase.from("sits").insert(insert).select().single();
-        if (error || !sit) { toast.error(friendlyError(error, "Could not create sit.")); setSaving(false); return; }
+        if (error || !sit) { toast.error(friendlyError(error, t("sitForm.couldNotCreate", "Could not create sit."))); setSaving(false); return; }
         const rows = birdIds.map((bird_id) => ({ sit_id: sit.id, bird_id }));
         const { error: linkErr } = await supabase.from("sit_birds").insert(rows);
         if (linkErr) { toast.error(friendlyError(linkErr)); setSaving(false); return; }
@@ -443,12 +446,12 @@ export function SitForm({
           } catch { sitterInviteFailed = true; track("sitter_invite_email_failed", { event: "created", reason: "threw" }); }
         }
         if (assignFailedName) {
-          toast.error(`Sit created, but we couldn't email ${assignFailedName}. Let them know directly.`, { duration: 8000 });
+          toast.error(t("sitForm.createdHouseholdEmailFailed", "Sit created, but we couldn't email {{name}}. Let them know directly.", { name: assignFailedName }), { duration: 8000 });
         } else if (sitterInviteFailed) {
-          toast.error(`Sit created, but we couldn't email ${sitterLabel} the invite. Open the sit and copy the link to send it yourself.`, { duration: 10000 });
+          toast.error(t("sitForm.createdSitterEmailFailed", "Sit created, but we couldn't email {{name}} the invite. Open the sit and copy the link to send it yourself.", { name: sitterLabel }), { duration: 10000 });
         } else {
           toast.success(
-            kind === "household" ? "Sit created — your household member is set." : `Sit created — invite sent to ${sitterLabel}.`,
+            kind === "household" ? t("sitForm.createdHousehold", "Sit created — your household member is set.") : t("sitForm.createdInviteSent", "Sit created — invite sent to {{name}}.", { name: sitterLabel }),
           );
         }
         setOpen(false);
@@ -471,8 +474,8 @@ export function SitForm({
     if (activeSit) {
       return (
         <div className="rounded-[20px] bg-[#cdeab0] p-5">
-          <p className="text-lg font-medium text-[#1f3d12]">Sit active</p>
-          <p className="mt-1 text-sm text-[#3f5e22]">A sit is underway right now. Your sitter has their private link.</p>
+          <p className="text-lg font-medium text-[#1f3d12]">{t("sitForm.sitActive", "Sit active")}</p>
+          <p className="mt-1 text-sm text-[#3f5e22]">{t("sitForm.aSitIsUnderwayRight", "A sit is underway right now. Your sitter has their private link.")}</p>
           <button onClick={() => setOpen(true)} className="mt-4 inline-flex items-center gap-2 rounded-[14px] bg-[#1a3d2e] px-4 py-2.5 text-sm font-medium text-white">
             <Plus className="size-4" /> New sit
           </button>
@@ -482,8 +485,8 @@ export function SitForm({
     return (
       <div className="relative overflow-hidden rounded-[20px] bg-[#cdeab0] p-5">
         <Feather className="pointer-events-none absolute -right-3 -top-3 size-20 rotate-12 text-[#1f3d12]/10" />
-        <p className="text-lg font-medium text-[#1f3d12]">Going away soon?</p>
-        <p className="mt-1 max-w-[18rem] text-sm text-[#3f5e22]">Create a sit and send your sitter a private link with everything they need.</p>
+        <p className="text-lg font-medium text-[#1f3d12]">{t("sitForm.goingAwaySoon", "Going away soon?")}</p>
+        <p className="mt-1 max-w-[18rem] text-sm text-[#3f5e22]">{t("sitForm.createASitAndSend", "Create a sit and send your sitter a private link with everything they need.")}</p>
         <button onClick={() => setOpen(true)} className="mt-4 inline-flex items-center gap-2 rounded-[14px] bg-[#1a3d2e] px-4 py-2.5 text-sm font-medium text-white">
           <Plus className="size-4" /> New sit
         </button>
@@ -494,23 +497,23 @@ export function SitForm({
   return (
     <form ref={rootRef} onSubmit={submit} noValidate className="space-y-3 rounded-[20px] bg-[#efe9da] p-4">
       <div className="flex items-center justify-between">
-        <p className="text-sm font-medium text-[#1a3d2e]">{editing ? "Edit sit" : "New sit"}</p>
+        <p className="text-sm font-medium text-[#1a3d2e]">{editing ? t("sitForm.editSit", "Edit sit") : t("sitForm.newSit", "New sit")}</p>
         <button type="button" onClick={() => (editing ? onCancel?.() : setOpen(false))} className="text-xs text-[#5f5e5a] underline">Cancel</button>
       </div>
 
       <div>
         <label className="block">
-          <span className="mb-1 block text-xs font-medium uppercase tracking-wider text-[#5f5e5a]">Sit name</span>
-          <input className="input" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g. June vacation" />
+          <span className="mb-1 block text-xs font-medium uppercase tracking-wider text-[#5f5e5a]">{t("sitForm.sitName", "Sit name")}</span>
+          <input className="input" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t("sitForm.eGJuneVacation", "e.g. June vacation")} />
         </label>
-        <p className="mt-1 text-[11px] text-[#8a897f]">A label to recognize this sit, e.g. June vacation, August work trip.</p>
+        <p className="mt-1 text-[11px] text-[#8a897f]">{t("sitForm.aLabelToRecognizeThis", "A label to recognize this sit, e.g. June vacation, August work trip.")}</p>
       </div>
 
       <div>
         <div className="flex items-center justify-between">
-          <p className="text-[11px] font-medium uppercase tracking-wider text-[#5f5e5a]">Birds included</p>
+          <p className="text-[11px] font-medium uppercase tracking-wider text-[#5f5e5a]">{t("sitForm.birdsIncluded", "Birds included")}</p>
           {birds.length > 1 && (
-            <button type="button" onClick={selectAll} className="text-[11px] font-medium text-[#1a3d2e] underline">Select all</button>
+            <button type="button" onClick={selectAll} className="text-[11px] font-medium text-[#1a3d2e] underline">{t("sitForm.selectAll", "Select all")}</button>
           )}
         </div>
         <div className="mt-2 grid grid-cols-2 gap-2">
@@ -537,8 +540,8 @@ export function SitForm({
           column; the global input[type=date] appearance reset (styles.css) stops
           the native iOS date control from overflowing/overlapping. */}
       <div className="grid grid-cols-2 items-start gap-3">
-        <div className="min-w-0"><Field label="Start"><input className="input min-w-0" type="date" value={start} onChange={(e) => setStart(e.target.value)} /></Field></div>
-        <div className="min-w-0"><Field label="End"><input className="input min-w-0" type="date" value={end} onChange={(e) => setEnd(e.target.value)} /></Field></div>
+        <div className="min-w-0"><Field label={t("sitForm.start", "Start")}><input className="input min-w-0" type="date" value={start} onChange={(e) => setStart(e.target.value)} /></Field></div>
+        <div className="min-w-0"><Field label={t("sitForm.end", "End")}><input className="input min-w-0" type="date" value={end} onChange={(e) => setEnd(e.target.value)} /></Field></div>
       </div>
 
       {/* Who's covering — household member (no token, already has access) OR
@@ -546,16 +549,16 @@ export function SitForm({
           the row's existing kind (PR 1 doesn't swap caregiver type yet). */}
       {editing ? (
         <div className="rounded-[14px] border border-[#e0d8c4] bg-white p-3">
-          <p className="text-[11px] font-medium uppercase tracking-wider text-[#5f5e5a]">Who's covering</p>
+          <p className="text-[11px] font-medium uppercase tracking-wider text-[#5f5e5a]">{t("sitForm.whoSCovering", "Who's covering")}</p>
           <p className="mt-1 text-[13px] text-[#1a3d2e]">
             {initialKind === "household"
-              ? `A household member is assigned. Swapping caregiver type isn't available yet — delete this sit and create a new one to change it.`
-              : `An external sitter has the link. ${sitterName?.trim() || sitterEmail || "Their info"} is current; you can edit the name or email below.`}
+              ? t("sitForm.householdAssigned", "A household member is assigned. Swapping caregiver type isn't available yet — delete this sit and create a new one to change it.")
+              : t("sitForm.externalSitterHasLink", "An external sitter has the link. {{who}} is current; you can edit the name or email below.", { who: sitterName?.trim() || sitterEmail || theirInfo })}
           </p>
           {initialKind === "external" && (
             <div className="mt-2 space-y-2">
-              <Field label="Sitter name"><input className="input" value={sitterName} onChange={(e) => setSitterName(e.target.value)} /></Field>
-              <Field label="Sitter email"><input className="input" type="email" value={sitterEmail} onChange={(e) => setSitterEmail(e.target.value)} /></Field>
+              <Field label={t("sitForm.sitterName", "Sitter name")}><input className="input" value={sitterName} onChange={(e) => setSitterName(e.target.value)} /></Field>
+              <Field label={t("sitForm.sitterEmail", "Sitter email")}><input className="input" type="email" value={sitterEmail} onChange={(e) => setSitterEmail(e.target.value)} /></Field>
             </div>
           )}
         </div>
@@ -574,14 +577,14 @@ export function SitForm({
         />
       )}
 
-      <Field label="Notes for this sit"><textarea className="input area" value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
+      <Field label={t("sitForm.notesForThisSit", "Notes for this sit")}><textarea className="input area" value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
 
       <button type="submit" disabled={saving} className="w-full rounded-[14px] bg-[#1a3d2e] py-3 text-sm font-medium text-white disabled:opacity-50">
         {saving
-          ? (editing ? "Saving..." : "Creating...")
+          ? (editing ? t("sitForm.saving", "Saving...") : t("sitForm.creating", "Creating..."))
           : editing
-            ? "Save changes"
-            : caregiverKind === "household" ? "Create sit" : "Create sit & generate link"}
+            ? t("sitForm.saveChanges", "Save changes")
+            : caregiverKind === "household" ? t("sitForm.createSit", "Create sit") : t("sitForm.createSitAndLink", "Create sit & generate link")}
       </button>
 
       {/* Delete sit — edit mode only, gated by manage_sits (RLS enforces). */}
@@ -596,11 +599,11 @@ export function SitForm({
                 </p>
               )}
               <p className="text-[13px] text-[#1a3d2e]">
-                Delete this sit? This can't be undone. Its checklist and task completions are removed; logged scans, weights, and photos are kept but no longer tied to the sit.
+                {t("sitForm.deleteThisSitThisCan", "Delete this sit? This can't be undone. Its checklist and task completions are removed; logged scans, weights, and photos are kept but no longer tied to the sit.")}
               </p>
               <div className="mt-3 flex gap-2">
                 <button type="button" onClick={deleteSit} disabled={deleting} className="min-h-[44px] flex-1 rounded-[12px] bg-[var(--red-deep)] px-4 text-sm font-[600] text-white disabled:opacity-50">
-                  {deleting ? "Deleting…" : "Delete sit"}
+                  {deleting ? t("sitForm.deleting", "Deleting…") : t("sitForm.deleteSit", "Delete sit")}
                 </button>
                 <button type="button" onClick={() => setConfirmingDelete(false)} disabled={deleting} className="min-h-[44px] rounded-[12px] border border-[#c8bfa6] px-4 text-sm font-[500] text-[#5f5e5a] disabled:opacity-50">Keep</button>
               </div>
@@ -647,17 +650,18 @@ function CaregiverPicker({
   onChangeSitterName: (v: string) => void;
   onChangeSitterEmail: (v: string) => void;
 }) {
+  const { t } = useTranslation();
   const noBirdsPicked = selectedBirdCount === 0;
   const noEligible = !noBirdsPicked && eligibleMembers.length === 0;
   return (
     <div className="space-y-3 rounded-[14px] border border-[#e0d8c4] bg-white p-3">
-      <p className="text-[11px] font-medium uppercase tracking-wider text-[#5f5e5a]">Who's covering</p>
+      <p className="text-[11px] font-medium uppercase tracking-wider text-[#5f5e5a]">{t("sitForm.whoSCovering", "Who's covering")}</p>
 
       {noBirdsPicked ? (
-        <p className="text-[13px] text-[#5f5e5a]">Pick a bird above first.</p>
+        <p className="text-[13px] text-[#5f5e5a]">{t("sitForm.pickABirdAboveFirst", "Pick a bird above first.")}</p>
       ) : noEligible ? (
         <div className="rounded-[10px] bg-[#f4f1e8] p-3 text-[13px] text-[#5f5e5a]">
-          No household yet — <Link to="/household" className="underline">invite someone</Link> or send a link to a sitter below.
+          No household yet — <Link to="/household" className="underline">{t("sitForm.inviteSomeone", "invite someone")}</Link> or send a link to a sitter below.
         </div>
       ) : (
         <div className="space-y-2">
@@ -679,9 +683,9 @@ function CaregiverPicker({
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-2">
                     <span className="truncate text-[14px] font-medium text-[#1a3d2e]">{display}</span>
-                    <span className="shrink-0 rounded-full bg-[#cfe3dc] px-2 py-0.5 text-[10px] font-medium text-[#1a5e3f]">Household</span>
+                    <span className="shrink-0 rounded-full bg-[#cfe3dc] px-2 py-0.5 text-[10px] font-medium text-[#1a5e3f]">{t("sitForm.household", "Household")}</span>
                   </span>
-                  <span className="mt-0.5 block text-[11.5px] text-[#5f5e5a]">Already has access · they'll see the daily checklist while you're away.</span>
+                  <span className="mt-0.5 block text-[11.5px] text-[#5f5e5a]">{t("sitForm.alreadyHasAccessTheyLl", "Already has access · they'll see the daily checklist while you're away.")}</span>
                 </span>
                 {on && <Check className="size-4 shrink-0 text-[#2d6a4f]" aria-hidden />}
               </button>
@@ -698,10 +702,10 @@ function CaregiverPicker({
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <Mail className="size-4 text-[#5f5e5a]" />
-            <p className="flex-1 text-[13px] font-medium text-[#1a3d2e]">Send a link to someone else</p>
+            <p className="flex-1 text-[13px] font-medium text-[#1a3d2e]">{t("sitForm.sendALinkToSomeone", "Send a link to someone else")}</p>
           </div>
-          <Field label="Sitter name"><input className="input" value={sitterName} onChange={(e) => onChangeSitterName(e.target.value)} /></Field>
-          <Field label="Sitter email"><input className="input" type="email" value={sitterEmail} onChange={(e) => onChangeSitterEmail(e.target.value)} placeholder="sitter@example.com" /></Field>
+          <Field label={t("sitForm.sitterName", "Sitter name")}><input className="input" value={sitterName} onChange={(e) => onChangeSitterName(e.target.value)} /></Field>
+          <Field label={t("sitForm.sitterEmail", "Sitter email")}><input className="input" type="email" value={sitterEmail} onChange={(e) => onChangeSitterEmail(e.target.value)} placeholder={t("sitForm.sitterExampleCom", "sitter@example.com")} /></Field>
         </div>
       ) : (
         <button
@@ -711,8 +715,8 @@ function CaregiverPicker({
         >
           <Mail className="size-4 shrink-0 text-[#5f5e5a]" />
           <span className="min-w-0 flex-1">
-            <span className="block text-[14px] font-medium text-[#1a3d2e]">Send a link to someone else</span>
-            <span className="mt-0.5 block text-[11.5px] text-[#5f5e5a]">An email + a per-trip link, no account needed.</span>
+            <span className="block text-[14px] font-medium text-[#1a3d2e]">{t("sitForm.sendALinkToSomeone", "Send a link to someone else")}</span>
+            <span className="mt-0.5 block text-[11.5px] text-[#5f5e5a]">{t("sitForm.anEmailAPerTrip", "An email + a per-trip link, no account needed.")}</span>
           </span>
           <Users className="size-4 shrink-0 text-[#8a897f]" aria-hidden />
         </button>
