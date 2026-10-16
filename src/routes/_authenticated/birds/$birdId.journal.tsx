@@ -19,6 +19,7 @@ import {
 import { JournalEntryView } from "@/components/JournalEntryView";
 import { useOpenSignedFile } from "@/lib/useOpenSignedFile";
 import { friendlyError } from "@/lib/errorMessage";
+import { formatLocalDate } from "@/lib/dates";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/journal")({
   head: () => ({ meta: [{ title: "Journal — Kya & Co." }] }),
@@ -255,7 +256,7 @@ function fmtDate(iso: string): string {
   const d = new Date(`${iso.slice(0, 10)}T12:00:00`);
   const now = new Date();
   const sameYear = d.getFullYear() === now.getFullYear();
-  return d.toLocaleDateString(undefined, { month: "short", day: "numeric", ...(sameYear ? {} : { year: "numeric" }) });
+  return formatLocalDate(d, { month: "short", day: "numeric", ...(sameYear ? {} : { year: "numeric" }) });
 }
 
 function EntryForm({ birdId, entry, isOwner, onClose, onSaved, onDeleted }: { birdId: string; entry: Entry | null; isOwner: boolean; onClose: () => void; onSaved: () => void; onDeleted: () => void }) {

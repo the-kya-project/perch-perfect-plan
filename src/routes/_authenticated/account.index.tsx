@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { deleteMyAccount } from "@/lib/account.functions";
 import { APP_VERSION } from "@/lib/version";
-import { ArrowLeft, ShieldAlert, Bell, Smartphone, Lock, X, Archive, Users, Flower2 } from "lucide-react";
+import { ArrowLeft, ShieldAlert, Bell, Smartphone, Lock, X, Archive, Users, Flower2, Languages, Check } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useAppSurface } from "@/lib/appSurface";
 import {
@@ -16,6 +16,12 @@ import {
 import { InkHero, Card, RecordRow, IconTile, SectionHead, PrimaryButton } from "@/components/system";
 import { toast } from "sonner";
 import { friendlyError } from "@/lib/errorMessage";
+import { OWNER_I18N_ENABLED, SUPPORTED_LOCALES, isLocale, type Locale } from "@/lib/i18n/config";
+import { saveOwnerLocale } from "@/lib/i18n/ownerLocale";
+
+// Each language is named in itself, never translated: someone looking for
+// Nederlands has to recognise it whatever language the app is showing.
+const LANGUAGE_NAMES: Record<Locale, string> = { en: "English", nl: "Nederlands" };
 
 // Support inbox for the "Help & support" row. If this address changes, update it
 // here (and ideally point it at a monitored mailbox).
@@ -53,6 +59,21 @@ function AccountPage() {
     },
   });
   const hasRemembering = rememberingCount > 0;
+
+  // App + email language (profiles.locale). Only read once the owner-app
+  // language switch is on; until then the row is hidden.
+  const { data: locale = null } = useQuery({
+    queryKey: ["profile-locale"],
+    enabled: OWNER_I18N_ENABLED,
+    queryFn: async () => {
+      const { data: u } = await getLocalUser();
+      if (!u.user) return null;
+      const { data } = await supabase.from("profiles").select("locale").eq("id", u.user.id).maybeSingle();
+      const l = (data as { locale?: string | null } | null)?.locale;
+      return isLocale(l) ? l : null;
+    },
+  });
+  const [languageOpen, setLanguageOpen] = useState(false);
 
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -178,6 +199,14 @@ function AccountPage() {
                   subtitle="Manage how you log in."
                 />
               </Link>
+              {OWNER_I18N_ENABLED && (
+                <RecordRow
+                  onClick={() => setLanguageOpen(true)}
+                  leading={<IconTile icon={<Languages className="size-5" />} />}
+                  title="Language"
+                  subtitle={locale ? LANGUAGE_NAMES[locale] : "Same as your phone"}
+                />
+              )}
               <Link to="/past-birds" className="block">
                 <RecordRow
                   leading={<IconTile icon={<Archive className="size-5" />} />}
@@ -228,6 +257,9 @@ function AccountPage() {
         </main>
       </div>
 
+      {languageOpen && (
+        <LanguageModal userId={userId} current={locale} onClose={() => setLanguageOpen(false)} />
+      )}
       {editOpen && (
         <EditIdentityModal
           userId={userId}
@@ -256,6 +288,51 @@ function AccountPage() {
 }
 
 // ---------- Modals ----------
+
+function LanguageModal({
+  userId, current, onClose,
+}: {
+  userId: string | null;
+  current: Locale | null;
+  onClose: () => void;
+}) {
+  const qc = useQueryClient();
+  const [saving, setSaving] = useState<Locale | null>(null);
+
+  async function choose(next: Locale) {
+    if (!userId || next === current) { onClose(); return; }
+    setSaving(next);
+    try {
+      await saveOwnerLocale(userId, next);
+      qc.setQueryData(["profile-locale"], next);
+      onClose();
+    } catch (e) {
+      toast.error(friendlyError(e));
+    } finally {
+      setSaving(null);
+    }
+  }
+
+  return (
+    <ModalShell title="Language" onClose={onClose}>
+      <p className="mb-3 text-sm text-[var(--mute)]">Used in the app and in emails we send you.</p>
+      <div className="overflow-hidden rounded-xl bg-white">
+        {SUPPORTED_LOCALES.map((l, i) => (
+          <button
+            key={l}
+            lang={l}
+            onClick={() => void choose(l)}
+            disabled={saving !== null}
+            className={`flex w-full items-center justify-between px-4 py-3 text-left text-[var(--ink)] ${i > 0 ? "border-t border-black/5" : ""}`}
+          >
+            <span>{LANGUAGE_NAMES[l]}</span>
+            {(saving ?? current) === l && <Check className="size-5 text-[var(--ink)]" />}
+          </button>
+        ))}
+      </div>
+    </ModalShell>
+  );
+}
 
 function ModalShell({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   return (

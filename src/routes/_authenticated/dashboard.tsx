@@ -34,6 +34,7 @@ import {
   groupWeights, weightGlance, upcomingMoments, buildTodayItems, buildHomeStateCopy, daysSince,
   type HomeBird, type WeightEntry, type TodayItem, type WeightGlance, type UpcomingSit,
 } from "@/lib/homeData";
+import { formatLocalDate } from "@/lib/dates";
 
 const dashboardSearch = z.object({
   newSit: z.coerce.boolean().optional(),
@@ -362,7 +363,7 @@ function HomeHeader({ firstName, unreadNotifs, stateCopy, cta }: { firstName: st
   // Greetings are spoken-to-the-user copy: no terminal period.
   const part = h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
   const greeting = firstName ? `${part}, ${firstName}` : part;
-  const dateLabel = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+  const dateLabel = formatLocalDate(new Date(), { weekday: "long", month: "long", day: "numeric" });
   return (
     <InkHero
       showBrand
@@ -629,7 +630,7 @@ function HomeSkeleton() {
 // helpers
 // ---------------------------------------------------------------------------
 function fmtShort(iso: string): string {
-  return new Date(`${iso.slice(0, 10)}T12:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  return formatLocalDate(new Date(`${iso.slice(0, 10)}T12:00:00`), { month: "short", day: "numeric", year: "numeric" });
 }
 function fmtAgo(iso: string): string {
   const mins = Math.max(1, Math.round((Date.now() - +new Date(iso)) / 60000));

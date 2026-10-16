@@ -6,22 +6,28 @@
 // Best-effort and idempotent: null locale simply means English emails, so any
 // failure here is harmless. `en` is a real value (means "detected English"), so
 // a populated row is never re-touched.
+//
+// Also applies the saved locale to the owner app (applyOwnerLocale — a no-op
+// until OWNER_I18N_ENABLED), so the in-app language follows the same value.
 
 import { supabase } from "@/integrations/supabase/client";
 import { pickLocale } from "@/lib/i18n/config";
+import { applyOwnerLocale } from "@/lib/i18n/ownerLocale";
 
-let ran = false;
+let ranFor: string | null = null; // once per signed-in account
 
 export async function ensureProfileLocale(userId: string): Promise<void> {
-  if (ran || typeof navigator === "undefined") return;
-  ran = true;
+  if (ranFor === userId || typeof navigator === "undefined") return;
+  ranFor = userId;
   try {
     const { data } = await supabase.from("profiles").select("locale").eq("id", userId).maybeSingle();
+    const saved = (data as { locale?: string | null } | null)?.locale ?? null;
     // Only set when the row exists and locale is still null ("never set").
-    if (data && (data as { locale?: string | null }).locale == null) {
+    if (data && saved == null) {
       const locale = pickLocale(navigator.language);
       await supabase.from("profiles").update({ locale } as never).eq("id", userId);
     }
+    applyOwnerLocale(saved);
   } catch {
     /* best-effort — a missing locale falls back to English on send */
   }

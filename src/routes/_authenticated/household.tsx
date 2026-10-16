@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { ArrowLeft, Plus, Mail, MoreHorizontal, Loader2, X, Check, SlidersHorizontal } from "lucide-react";
 import { InkHero, Card, RecordRow, IconTile } from "@/components/system";
 import { friendlyError } from "@/lib/errorMessage";
+import { formatLocalDate } from "@/lib/dates";
 
 // Account-level household management — every person who can help with the
 // owner's birds, each shown ONCE (memberships grouped by user, invites by
@@ -306,7 +307,7 @@ function initialOf(s: string | null | undefined, fallback = "?") {
   return (s?.trim()?.slice(0, 1) || fallback).toUpperCase();
 }
 function fmtMonth(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, { month: "short", year: "numeric" });
+  return formatLocalDate(new Date(iso), { month: "short", year: "numeric" });
 }
 function truncNames(names: string[]): string {
   const n = names.filter(Boolean);

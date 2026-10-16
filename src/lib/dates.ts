@@ -4,13 +4,16 @@
 // interpreted as UTC midnight and can render as the previous day in negative-UTC
 // timezones. Splitting the string keeps the calendar date the owner picked.
 //
-// LOCALE: every formatter takes an optional locale, defaulting to "en". Owner
-// call-sites pass nothing → "en" → output is IDENTICAL to before i18n (English
-// keeps the browser-default `undefined` locale; numeric dates keep US order).
+// LOCALE: every formatter takes an optional locale, defaulting to the app's
+// current language (appLocale). Owner call-sites pass nothing → that is "en"
+// while OWNER_I18N_ENABLED is false → output is IDENTICAL to before i18n
+// (English keeps the browser-default `undefined` locale; numeric dates keep US
+// order).
 // Sitter call-sites pass the resolved sitter locale so nl renders DD-MM-YYYY and
 // nl-NL month/weekday names. Adding a locale later is a case here, not a rewrite.
 
 import { type Locale } from "@/lib/i18n/config";
+import { appLocale } from "@/lib/i18n/appLocale";
 
 // For toLocale* calls: "en" keeps the browser default (undefined) so existing
 // English output is unchanged; other locales get an explicit BCP-47 tag.
@@ -19,7 +22,7 @@ function intlTag(locale: Locale): string | undefined {
 }
 
 /** "2026-08-14" -> "08/14/2026" (en) or "14-08-2026" (nl). "" for empty input. */
-export function formatDateUS(iso: string | null | undefined, locale: Locale = "en"): string {
+export function formatDateUS(iso: string | null | undefined, locale: Locale = appLocale()): string {
   if (!iso) return "";
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
   if (!m) return iso;
@@ -27,8 +30,21 @@ export function formatDateUS(iso: string | null | undefined, locale: Locale = "e
   return locale === "nl" ? `${d}-${mo}-${y}` : `${mo}/${d}/${y}`;
 }
 
+/** Format a Date in the app's language — for owner code that used to call
+ *  toLocale*String(undefined, …). "en" passes `undefined`, so English output is
+ *  exactly what it was. */
+export function formatLocalDate(d: Date, opts: Intl.DateTimeFormatOptions, locale: Locale = appLocale()): string {
+  return d.toLocaleDateString(intlTag(locale), opts);
+}
+export function formatLocalDateTime(d: Date, opts: Intl.DateTimeFormatOptions, locale: Locale = appLocale()): string {
+  return d.toLocaleString(intlTag(locale), opts);
+}
+export function formatLocalTime(d: Date, opts: Intl.DateTimeFormatOptions, locale: Locale = appLocale()): string {
+  return d.toLocaleTimeString(intlTag(locale), opts);
+}
+
 /** A start–end range, each side formatted per locale. */
-export function formatDateRangeUS(start: string | null | undefined, end: string | null | undefined, locale: Locale = "en"): string {
+export function formatDateRangeUS(start: string | null | undefined, end: string | null | undefined, locale: Locale = appLocale()): string {
   return `${formatDateUS(start, locale)} – ${formatDateUS(end, locale)}`;
 }
 
@@ -44,19 +60,19 @@ function localDate(iso: string | null | undefined): Date | null {
 }
 
 /** "2026-07-05" -> "Saturday, July 5" (en) / "zaterdag 5 juli" (nl). */
-export function weekdayMonthDay(iso: string | null | undefined, locale: Locale = "en"): string {
+export function weekdayMonthDay(iso: string | null | undefined, locale: Locale = appLocale()): string {
   const d = localDate(iso);
   return d ? d.toLocaleDateString(intlTag(locale), { weekday: "long", month: "long", day: "numeric" }) : "";
 }
 
 /** "2026-07-05" -> "Jul 5" (en) / "5 jul" (nl). */
-export function monthDay(iso: string | null | undefined, locale: Locale = "en"): string {
+export function monthDay(iso: string | null | undefined, locale: Locale = appLocale()): string {
   const d = localDate(iso);
   return d ? d.toLocaleDateString(intlTag(locale), { month: "short", day: "numeric" }) : "";
 }
 
 /** A compact range: "Jul 6 → 12" when same month, else "Jun 24 → Jul 5". */
-export function compactRange(start: string | null | undefined, end: string | null | undefined, locale: Locale = "en"): string {
+export function compactRange(start: string | null | undefined, end: string | null | undefined, locale: Locale = appLocale()): string {
   const a = dateParts(start);
   const b = dateParts(end);
   if (!a || !b) return "";

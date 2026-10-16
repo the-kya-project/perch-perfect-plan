@@ -22,6 +22,7 @@ import { useBirdRole } from "@/lib/useBirdRole";
 import { useCapability, useMyPermissions } from "@/lib/useCapability";
 import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 import { friendlyError } from "@/lib/errorMessage";
+import { formatLocalDateTime } from "@/lib/dates";
 
 
 // The care-plan editor is reached via the new overview front door (/plan).
@@ -509,7 +510,7 @@ function LogsPanel({ birdId, initialScan }: { birdId: string; initialScan?: stri
                           )}
                         </div>
                         <p className="mt-1 text-[11px] text-sage-600">
-                          {new Date(d.created_at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })} · {sitterLabel(d)}
+                          {formatLocalDateTime(new Date(d.created_at), { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })} · {sitterLabel(d)}
                         </p>
                       </div>
                     </div>

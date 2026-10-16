@@ -8,7 +8,7 @@ import { activeOwnerBirdsMin, type ActiveBirdMin } from "@/lib/activeBirds";
 import { fetchScanFeed, markNotifsSeen, getNotifSeenAt, scanRunBy, type ScanFeedItem } from "@/lib/notificationsFeed";
 import { InkHero, IconTile, StatusPill, RecordRow, Card } from "@/components/system";
 import { OwnerHeaderIcons } from "@/components/OwnerHeader";
-import { monthDay } from "@/lib/dates";
+import { formatLocalDate, monthDay } from "@/lib/dates";
 
 export const Route = createFileRoute("/_authenticated/scans/")({
   head: () => ({ meta: [{ title: "Health checks — Kya & Co." }] }),
@@ -26,7 +26,7 @@ function relativeTime(iso: string): string {
   if (hrs < 24) return `${hrs}h ago`;
   const days = Math.round(hrs / 24);
   if (days < 7) return `${days}d ago`;
-  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  return formatLocalDate(new Date(iso), { month: "short", day: "numeric" });
 }
 
 function NotificationsInbox() {

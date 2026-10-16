@@ -14,6 +14,7 @@ import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
 import { InkHero, Card, PrimaryButton } from "@/components/system";
 import { friendlyError } from "@/lib/errorMessage";
+import { formatLocalDate } from "@/lib/dates";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/identity")({
   head: () => ({ meta: [{ title: "Identity — Kya & Co." }] }),
@@ -371,7 +372,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 function fmtDate(iso: string): string {
-  return new Date(`${iso}T12:00:00`).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+  return formatLocalDate(new Date(`${iso}T12:00:00`), { year: "numeric", month: "short", day: "numeric" });
 }
 
 function approxAge(iso: string): string {
