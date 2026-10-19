@@ -3,9 +3,10 @@ import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { PARROT_SPECIES, PARROT_SPECIES_GROUPS, AGE_OPTIONS, ageFromBirthDate } from "@/lib/parrot-data";
 import { localDateISO } from "@/lib/localDay";
+import { speciesLabel, speciesGroupLabel } from "@/lib/speciesLabel";
 
 /** Display label for a stored English age value ("<1 year", "3 years"). The
- *  stored value stays English; species names are also stored and shown as-is. */
+ *  stored value stays English (species work the same way: see speciesLabel). */
 export function ageLabel(t: TFunction, age: string): string {
   if (age === "<1 year") return t("birdPickers.ageUnderOne", "<1 year");
   const m = /^(\d+) years?$/.exec(age);
@@ -41,8 +42,8 @@ export function SpeciesPicker({ value, onChange }: { value: string; onChange: (v
       >
         <option value="">{t("birdPickers.selectSpecies", "Select species…")}</option>
         {PARROT_SPECIES_GROUPS.map((g) => (
-          <optgroup key={g.label} label={g.label}>
-            {g.options.map((s) => <option key={s} value={s}>{s}</option>)}
+          <optgroup key={g.label} label={speciesGroupLabel(t, g.label)}>
+            {g.options.map((s) => <option key={s} value={s}>{speciesLabel(t, s)}</option>)}
           </optgroup>
         ))}
         <option value="__other__">{t("birdPickers.otherEllipsis", "Other…")}</option>

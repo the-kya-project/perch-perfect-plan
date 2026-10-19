@@ -1,4 +1,5 @@
 import type { TFunction } from "i18next";
+import { speciesLabel } from "@/lib/speciesLabel";
 import { friendlyError } from "@/lib/errorMessage";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -518,7 +519,7 @@ function BirdRow({ bird, photo, glance, foster, concern }: { bird: HomeBird; pho
           <h3 className="t-item truncate text-[17px]">{bird.name}</h3>
           {foster && <StatusPill tone="good">{t("dashboard.foster", "Foster")}</StatusPill>}
         </div>
-        <p className="t-meta truncate">{bird.species || t("dashboard.parrot", "Parrot")}</p>
+        <p className="t-meta truncate">{bird.species ? speciesLabel(t, bird.species) : t("dashboard.parrot", "Parrot")}</p>
         {foster && bird.intake_date && (
           <p className="t-meta">{t("dashboard.withYouSince", "With you since {{date}}", { date: fmtShort(bird.intake_date) })}</p>
         )}

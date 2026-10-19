@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { speciesLabel } from "@/lib/speciesLabel";
 import { ageLabel } from "@/components/BirdPickers";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -113,7 +114,7 @@ function VetSummary() {
     ? `${sexLabel(bird.sex)}${sexMethodLabel(bird.sex_method) ? ` (${sexMethodLabel(bird.sex_method)})` : ""}`
     : null;
   const identity: [string, string | null][] = [
-    [t("vetSummary.species", "Species"), bird?.species ?? null],
+    [t("vetSummary.species", "Species"), bird?.species ? speciesLabel(t, bird.species) : null],
     [t("vetSummary.sex", "Sex"), sexText],
     [t("vetSummary.age", "Age"), bird?.age ? ageLabel(t, bird.age) : null],
     [t("vetSummary.microchip", "Microchip"), bird?.microchip ?? null],
@@ -152,7 +153,7 @@ function VetSummary() {
   function shareText(): string {
     const lines = [
       t("vetSummary.shareTitle", "{{name}} — vet summary", { name }),
-      bird?.species ? t("vetSummary.shareSpecies", "Species: {{species}}", { species: bird.species }) : "",
+      bird?.species ? t("vetSummary.shareSpecies", "Species: {{species}}", { species: speciesLabel(t, bird.species) }) : "",
       t("vetSummary.generated", "Generated {{date}}", { date: fmtDate(new Date().toISOString()) }),
       "",
       t("vetSummary.shareIdentity", "IDENTITY"),
@@ -259,7 +260,7 @@ function VetSummary() {
                   {/* Sections below each carry their own top hairline. */}
                   <header className="pb-1">
                     <h2 className="t-section text-[20px]">{name}</h2>
-                    {bird?.species && <p className="t-body mt-0.5 italic text-[var(--mute)]">{bird.species}</p>}
+                    {bird?.species && <p className="t-body mt-0.5 italic text-[var(--mute)]">{speciesLabel(t, bird.species)}</p>}
                     <p className="t-meta mt-1">{t("vetSummary.generated", "Generated {{date}}", { date: fmtDate(new Date().toISOString()) })}</p>
                   </header>
 

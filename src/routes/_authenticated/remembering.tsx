@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate, useRouter, useCanGoBack } from "@tanstack/react-router";
+import { speciesLabel } from "@/lib/speciesLabel";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Flower2, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -103,7 +104,7 @@ function memorialSubtitle(b: any): string {
   const start = b.acquired_on ?? b.intake_date ?? b.created_at;
   const span = withYouSpan(start, b.passed_at);
   return b.species
-    ? i18next.t("remembering.speciesWithYou", "{{species}} · with you {{span}}", { species: b.species, span })
+    ? i18next.t("remembering.speciesWithYou", "{{species}} · with you {{span}}", { species: speciesLabel(i18next.t, b.species), span })
     : i18next.t("remembering.withYou", "With you {{span}}", { span });
 }
 function withYouSpan(startIso: string | null, endIso: string): string {

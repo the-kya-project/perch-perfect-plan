@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { speciesLabel } from "@/lib/speciesLabel";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Trans, useTranslation } from "react-i18next";
 import i18next, { type TFunction } from "i18next";
@@ -220,7 +221,7 @@ function BirdEditor() {
             )}
             <div className="flex-1 min-w-0">
               <h1 className="text-sm font-bold truncate">{bird.name}</h1>
-              <p className="text-[10px] uppercase tracking-wider text-sage-600">{bird.species ?? t("planEditor.parrot", "Parrot")}</p>
+              <p className="text-[10px] uppercase tracking-wider text-sage-600">{bird.species ? speciesLabel(t, bird.species) : t("planEditor.parrot", "Parrot")}</p>
             </div>
             <Link
               to="/birds/$birdId/view-as-sitter"

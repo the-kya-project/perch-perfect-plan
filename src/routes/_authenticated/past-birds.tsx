@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate, useRouter, useCanGoBack } from "@tanstack/react-router";
+import { speciesLabel } from "@/lib/speciesLabel";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getPastBirds } from "@/lib/handoff.functions";
@@ -86,7 +87,7 @@ function PastBirdCard({ bird: b, last }: { bird: any; last: boolean }) {
             <span className="t-item">{b.bird_name}</span>
             {b.was_foster && <StatusPill tone="good">{t("pastBirds.foster", "Foster")}</StatusPill>}
           </div>
-          {b.species && <p className="t-meta mt-0.5">{b.species}</p>}
+          {b.species && <p className="t-meta mt-0.5">{speciesLabel(t, b.species)}</p>}
           <div className="mt-2 space-y-0.5">
             <p className="t-meta leading-relaxed">{withYouLabel(b.intake_date, b.departed_on)}</p>
             <p className="t-meta leading-relaxed">{whereLabel(b)}</p>
