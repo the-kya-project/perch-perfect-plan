@@ -9,116 +9,86 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as TermsRouteImport } from './routes/terms'
-import { Route as ReviewRouteImport } from './routes/review'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as PrivacyRouteImport } from './routes/privacy'
-import { Route as GetAppRouteImport } from './routes/get-app'
-import { Route as GetRouteImport } from './routes/get'
-import { Route as DeleteAccountRouteImport } from './routes/delete-account'
-import { Route as ConfirmEmailRouteImport } from './routes/confirm-email'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as InviteTokenRouteImport } from './routes/invite.$token'
-import { Route as HandoffTokenRouteImport } from './routes/handoff.$token'
-import { Route as AuthenticatedWelcomeRouteImport } from './routes/_authenticated/welcome'
-import { Route as AuthenticatedTodayRouteImport } from './routes/_authenticated/today'
-import { Route as AuthenticatedSitsRouteImport } from './routes/_authenticated/sits'
-import { Route as AuthenticatedScansRouteImport } from './routes/_authenticated/scans'
-import { Route as AuthenticatedRememberingRouteImport } from './routes/_authenticated/remembering'
-import { Route as AuthenticatedPastBirdsRouteImport } from './routes/_authenticated/past-birds'
-import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
-import { Route as AuthenticatedHouseholdPermissionsRouteImport } from './routes/_authenticated/household-permissions'
-import { Route as AuthenticatedHouseholdRouteImport } from './routes/_authenticated/household'
-import { Route as AuthenticatedExploreRouteImport } from './routes/_authenticated/explore'
-import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as ConfirmEmailRouteImport } from './routes/confirm-email'
+import { Route as DeleteAccountRouteImport } from './routes/delete-account'
+import { Route as GetRouteImport } from './routes/get'
+import { Route as GetAppRouteImport } from './routes/get-app'
+import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as ReviewRouteImport } from './routes/review'
+import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedExploreRouteImport } from './routes/_authenticated/explore'
+import { Route as AuthenticatedHouseholdRouteImport } from './routes/_authenticated/household'
+import { Route as AuthenticatedHouseholdPermissionsRouteImport } from './routes/_authenticated/household-permissions'
+import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
+import { Route as AuthenticatedPastBirdsRouteImport } from './routes/_authenticated/past-birds'
+import { Route as AuthenticatedRememberingRouteImport } from './routes/_authenticated/remembering'
+import { Route as AuthenticatedScansRouteImport } from './routes/_authenticated/scans'
+import { Route as AuthenticatedSitsRouteImport } from './routes/_authenticated/sits'
+import { Route as AuthenticatedTodayRouteImport } from './routes/_authenticated/today'
+import { Route as AuthenticatedWelcomeRouteImport } from './routes/_authenticated/welcome'
+import { Route as HandoffTokenRouteImport } from './routes/handoff.$token'
+import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as SitterTokenRouteRouteImport } from './routes/sitter/$token/route'
-import { Route as SitterTokenIndexRouteImport } from './routes/sitter/$token/index'
-import { Route as AuthenticatedScansIndexRouteImport } from './routes/_authenticated/scans.index'
-import { Route as AuthenticatedNotificationsIndexRouteImport } from './routes/_authenticated/notifications.index'
 import { Route as AuthenticatedAccountIndexRouteImport } from './routes/_authenticated/account.index'
-import { Route as SitterTokenScanRouteImport } from './routes/sitter/$token/scan'
-import { Route as SitterTokenHomeRouteImport } from './routes/sitter/$token/home'
-import { Route as SitterTokenGuideRouteImport } from './routes/sitter/$token/guide'
-import { Route as SitterTokenEmergencyRouteImport } from './routes/sitter/$token/emergency'
-import { Route as SitterTokenConcernRouteImport } from './routes/sitter/$token/concern'
-import { Route as SitterTokenCareSheetRouteImport } from './routes/sitter/$token/care-sheet'
-import { Route as ApiPublicCspReportRouteImport } from './routes/api/public/csp-report'
-import { Route as AuthenticatedSitsSitIdRouteImport } from './routes/_authenticated/sits.$sitId'
-import { Route as AuthenticatedSitPreviewSitIdRouteImport } from './routes/_authenticated/sit-preview.$sitId'
-import { Route as AuthenticatedScansSettingsRouteImport } from './routes/_authenticated/scans.settings'
-import { Route as AuthenticatedNotificationsSettingsRouteImport } from './routes/_authenticated/notifications.settings'
-import { Route as AuthenticatedBirdsNewRouteImport } from './routes/_authenticated/birds/new'
-import { Route as AuthenticatedBirdsBirdIdRouteImport } from './routes/_authenticated/birds/$birdId'
 import { Route as AuthenticatedAccountSecurityRouteImport } from './routes/_authenticated/account.security'
+import { Route as AuthenticatedBirdsBirdIdRouteImport } from './routes/_authenticated/birds/$birdId'
+import { Route as AuthenticatedBirdsNewRouteImport } from './routes/_authenticated/birds/new'
+import { Route as AuthenticatedNotificationsIndexRouteImport } from './routes/_authenticated/notifications.index'
+import { Route as AuthenticatedNotificationsSettingsRouteImport } from './routes/_authenticated/notifications.settings'
+import { Route as AuthenticatedScansIndexRouteImport } from './routes/_authenticated/scans.index'
+import { Route as AuthenticatedScansSettingsRouteImport } from './routes/_authenticated/scans.settings'
+import { Route as AuthenticatedSitPreviewSitIdRouteImport } from './routes/_authenticated/sit-preview.$sitId'
+import { Route as AuthenticatedSitsSitIdRouteImport } from './routes/_authenticated/sits.$sitId'
+import { Route as ApiPublicCspReportRouteImport } from './routes/api/public/csp-report'
+import { Route as SitterTokenIndexRouteImport } from './routes/sitter/$token/index'
+import { Route as SitterTokenCareSheetRouteImport } from './routes/sitter/$token/care-sheet'
+import { Route as SitterTokenConcernRouteImport } from './routes/sitter/$token/concern'
+import { Route as SitterTokenEmergencyRouteImport } from './routes/sitter/$token/emergency'
+import { Route as SitterTokenGuideRouteImport } from './routes/sitter/$token/guide'
+import { Route as SitterTokenHomeRouteImport } from './routes/sitter/$token/home'
+import { Route as SitterTokenScanRouteImport } from './routes/sitter/$token/scan'
 import { Route as AuthenticatedBirdsBirdIdIndexRouteImport } from './routes/_authenticated/birds/$birdId.index'
-import { Route as ApiPublicHooksOnboardingEmailsRouteImport } from './routes/api/public/hooks/onboarding-emails'
-import { Route as ApiPublicHooksMonthlyLetterRouteImport } from './routes/api/public/hooks/monthly-letter'
-import { Route as ApiPublicHooksEngagementNudgesRouteImport } from './routes/api/public/hooks/engagement-nudges'
-import { Route as ApiPublicHooksCarePlanRemindersRouteImport } from './routes/api/public/hooks/care-plan-reminders'
-import { Route as ApiPublicHooksBereavementNoteRouteImport } from './routes/api/public/hooks/bereavement-note'
-import { Route as AuthenticatedCoveringSitIdBirdIdRouteImport } from './routes/_authenticated/covering.$sitId.$birdId'
-import { Route as AuthenticatedBirdsBirdIdWeightRouteImport } from './routes/_authenticated/birds/$birdId.weight'
-import { Route as AuthenticatedBirdsBirdIdViewAsSitterRouteImport } from './routes/_authenticated/birds/$birdId.view-as-sitter'
-import { Route as AuthenticatedBirdsBirdIdVetSummaryRouteImport } from './routes/_authenticated/birds/$birdId.vet-summary'
-import { Route as AuthenticatedBirdsBirdIdSetupRouteImport } from './routes/_authenticated/birds/$birdId.setup'
-import { Route as AuthenticatedBirdsBirdIdScanRouteImport } from './routes/_authenticated/birds/$birdId.scan'
-import { Route as AuthenticatedBirdsBirdIdPlanRouteImport } from './routes/_authenticated/birds/$birdId.plan'
-import { Route as AuthenticatedBirdsBirdIdMomentsRouteImport } from './routes/_authenticated/birds/$birdId.moments'
-import { Route as AuthenticatedBirdsBirdIdJournalRouteImport } from './routes/_authenticated/birds/$birdId.journal'
-import { Route as AuthenticatedBirdsBirdIdIdentityRouteImport } from './routes/_authenticated/birds/$birdId.identity'
-import { Route as AuthenticatedBirdsBirdIdHandoffRouteImport } from './routes/_authenticated/birds/$birdId.handoff'
-import { Route as AuthenticatedBirdsBirdIdFarewellRouteImport } from './routes/_authenticated/birds/$birdId.farewell'
-import { Route as AuthenticatedBirdsBirdIdExportRouteImport } from './routes/_authenticated/birds/$birdId.export'
-import { Route as AuthenticatedBirdsBirdIdConcernRouteImport } from './routes/_authenticated/birds/$birdId.concern'
-import { Route as AuthenticatedBirdsBirdIdCarePlanRouteImport } from './routes/_authenticated/birds/$birdId.care-plan'
 import { Route as AuthenticatedBirdsBirdIdAccessRouteImport } from './routes/_authenticated/birds/$birdId.access'
+import { Route as AuthenticatedBirdsBirdIdCarePlanRouteImport } from './routes/_authenticated/birds/$birdId.care-plan'
+import { Route as AuthenticatedBirdsBirdIdConcernRouteImport } from './routes/_authenticated/birds/$birdId.concern'
+import { Route as AuthenticatedBirdsBirdIdExportRouteImport } from './routes/_authenticated/birds/$birdId.export'
+import { Route as AuthenticatedBirdsBirdIdFarewellRouteImport } from './routes/_authenticated/birds/$birdId.farewell'
+import { Route as AuthenticatedBirdsBirdIdHandoffRouteImport } from './routes/_authenticated/birds/$birdId.handoff'
+import { Route as AuthenticatedBirdsBirdIdIdentityRouteImport } from './routes/_authenticated/birds/$birdId.identity'
+import { Route as AuthenticatedBirdsBirdIdJournalRouteImport } from './routes/_authenticated/birds/$birdId.journal'
+import { Route as AuthenticatedBirdsBirdIdMomentsRouteImport } from './routes/_authenticated/birds/$birdId.moments'
+import { Route as AuthenticatedBirdsBirdIdPlanRouteImport } from './routes/_authenticated/birds/$birdId.plan'
+import { Route as AuthenticatedBirdsBirdIdScanRouteImport } from './routes/_authenticated/birds/$birdId.scan'
+import { Route as AuthenticatedBirdsBirdIdSetupRouteImport } from './routes/_authenticated/birds/$birdId.setup'
+import { Route as AuthenticatedBirdsBirdIdVetSummaryRouteImport } from './routes/_authenticated/birds/$birdId.vet-summary'
+import { Route as AuthenticatedBirdsBirdIdViewAsSitterRouteImport } from './routes/_authenticated/birds/$birdId.view-as-sitter'
+import { Route as AuthenticatedBirdsBirdIdWeightRouteImport } from './routes/_authenticated/birds/$birdId.weight'
+import { Route as AuthenticatedCoveringSitIdBirdIdRouteImport } from './routes/_authenticated/covering.$sitId.$birdId'
+import { Route as ApiPublicHooksBereavementNoteRouteImport } from './routes/api/public/hooks/bereavement-note'
+import { Route as ApiPublicHooksCarePlanRemindersRouteImport } from './routes/api/public/hooks/care-plan-reminders'
+import { Route as ApiPublicHooksEngagementNudgesRouteImport } from './routes/api/public/hooks/engagement-nudges'
+import { Route as ApiPublicHooksMonthlyLetterRouteImport } from './routes/api/public/hooks/monthly-letter'
+import { Route as ApiPublicHooksOnboardingEmailsRouteImport } from './routes/api/public/hooks/onboarding-emails'
 import { Route as AuthenticatedBirdsBirdIdPlanIndexRouteImport } from './routes/_authenticated/birds/$birdId.plan.index'
-import { Route as AuthenticatedBirdsBirdIdScansScanIdRouteImport } from './routes/_authenticated/birds/$birdId.scans.$scanId'
 import { Route as AuthenticatedBirdsBirdIdPlanEditorRouteImport } from './routes/_authenticated/birds/$birdId.plan.editor'
-import { Route as ApiPublicUnsubscribeCategoryUserIdSigRouteImport } from './routes/api/public/unsubscribe.$category.$userId.$sig'
+import { Route as AuthenticatedBirdsBirdIdScansScanIdRouteImport } from './routes/_authenticated/birds/$birdId.scans.$scanId'
+import { Route as ApiPublicBereavementReviewReviewIdSigRouteImport } from './routes/api/public/bereavement-review.$reviewId.$sig'
 import { Route as ApiPublicChartBirdIdMonthSigRouteImport } from './routes/api/public/chart.$birdId.$month.$sig'
+import { Route as ApiPublicUnsubscribeCategoryUserIdSigRouteImport } from './routes/api/public/unsubscribe.$category.$userId.$sig'
 
-const TermsRoute = TermsRouteImport.update({
-  id: '/terms',
-  path: '/terms',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const ReviewRoute = ReviewRouteImport.update({
-  id: '/review',
-  path: '/review',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PrivacyRoute = PrivacyRouteImport.update({
-  id: '/privacy',
-  path: '/privacy',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const GetAppRoute = GetAppRouteImport.update({
-  id: '/get-app',
-  path: '/get-app',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const GetRoute = GetRouteImport.update({
-  id: '/get',
-  path: '/get',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const DeleteAccountRoute = DeleteAccountRouteImport.update({
-  id: '/delete-account',
-  path: '/delete-account',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ConfirmEmailRoute = ConfirmEmailRouteImport.update({
-  id: '/confirm-email',
-  path: '/confirm-email',
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -126,43 +96,81 @@ const AuthRoute = AuthRouteImport.update({
   path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
-  id: '/_authenticated',
+const ConfirmEmailRoute = ConfirmEmailRouteImport.update({
+  id: '/confirm-email',
+  path: '/confirm-email',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const DeleteAccountRoute = DeleteAccountRouteImport.update({
+  id: '/delete-account',
+  path: '/delete-account',
   getParentRoute: () => rootRouteImport,
 } as any)
-const InviteTokenRoute = InviteTokenRouteImport.update({
-  id: '/invite/$token',
-  path: '/invite/$token',
+const GetRoute = GetRouteImport.update({
+  id: '/get',
+  path: '/get',
   getParentRoute: () => rootRouteImport,
 } as any)
-const HandoffTokenRoute = HandoffTokenRouteImport.update({
-  id: '/handoff/$token',
-  path: '/handoff/$token',
+const GetAppRoute = GetAppRouteImport.update({
+  id: '/get-app',
+  path: '/get-app',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedWelcomeRoute = AuthenticatedWelcomeRouteImport.update({
-  id: '/welcome',
-  path: '/welcome',
+const PrivacyRoute = PrivacyRouteImport.update({
+  id: '/privacy',
+  path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReviewRoute = ReviewRouteImport.update({
+  id: '/review',
+  path: '/review',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TermsRoute = TermsRouteImport.update({
+  id: '/terms',
+  path: '/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAccountRoute = AuthenticatedAccountRouteImport.update({
+  id: '/account',
+  path: '/account',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedTodayRoute = AuthenticatedTodayRouteImport.update({
-  id: '/today',
-  path: '/today',
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedSitsRoute = AuthenticatedSitsRouteImport.update({
-  id: '/sits',
-  path: '/sits',
+const AuthenticatedExploreRoute = AuthenticatedExploreRouteImport.update({
+  id: '/explore',
+  path: '/explore',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedScansRoute = AuthenticatedScansRouteImport.update({
-  id: '/scans',
-  path: '/scans',
+const AuthenticatedHouseholdRoute = AuthenticatedHouseholdRouteImport.update({
+  id: '/household',
+  path: '/household',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedHouseholdPermissionsRoute =
+  AuthenticatedHouseholdPermissionsRouteImport.update({
+    id: '/household-permissions',
+    path: '/household-permissions',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedNotificationsRoute =
+  AuthenticatedNotificationsRouteImport.update({
+    id: '/notifications',
+    path: '/notifications',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedPastBirdsRoute = AuthenticatedPastBirdsRouteImport.update({
+  id: '/past-birds',
+  path: '/past-birds',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedRememberingRoute =
@@ -171,138 +179,46 @@ const AuthenticatedRememberingRoute =
     path: '/remembering',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedPastBirdsRoute = AuthenticatedPastBirdsRouteImport.update({
-  id: '/past-birds',
-  path: '/past-birds',
+const AuthenticatedScansRoute = AuthenticatedScansRouteImport.update({
+  id: '/scans',
+  path: '/scans',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedNotificationsRoute =
-  AuthenticatedNotificationsRouteImport.update({
-    id: '/notifications',
-    path: '/notifications',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedHouseholdPermissionsRoute =
-  AuthenticatedHouseholdPermissionsRouteImport.update({
-    id: '/household-permissions',
-    path: '/household-permissions',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedHouseholdRoute = AuthenticatedHouseholdRouteImport.update({
-  id: '/household',
-  path: '/household',
+const AuthenticatedSitsRoute = AuthenticatedSitsRouteImport.update({
+  id: '/sits',
+  path: '/sits',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedExploreRoute = AuthenticatedExploreRouteImport.update({
-  id: '/explore',
-  path: '/explore',
+const AuthenticatedTodayRoute = AuthenticatedTodayRouteImport.update({
+  id: '/today',
+  path: '/today',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
+const AuthenticatedWelcomeRoute = AuthenticatedWelcomeRouteImport.update({
+  id: '/welcome',
+  path: '/welcome',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedAccountRoute = AuthenticatedAccountRouteImport.update({
-  id: '/account',
-  path: '/account',
-  getParentRoute: () => AuthenticatedRouteRoute,
+const HandoffTokenRoute = HandoffTokenRouteImport.update({
+  id: '/handoff/$token',
+  path: '/handoff/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InviteTokenRoute = InviteTokenRouteImport.update({
+  id: '/invite/$token',
+  path: '/invite/$token',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const SitterTokenRouteRoute = SitterTokenRouteRouteImport.update({
   id: '/sitter/$token',
   path: '/sitter/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
-const SitterTokenIndexRoute = SitterTokenIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => SitterTokenRouteRoute,
-} as any)
-const AuthenticatedScansIndexRoute = AuthenticatedScansIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => AuthenticatedScansRoute,
-} as any)
-const AuthenticatedNotificationsIndexRoute =
-  AuthenticatedNotificationsIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AuthenticatedNotificationsRoute,
-  } as any)
 const AuthenticatedAccountIndexRoute =
   AuthenticatedAccountIndexRouteImport.update({
     id: '/',
     path: '/',
     getParentRoute: () => AuthenticatedAccountRoute,
-  } as any)
-const SitterTokenScanRoute = SitterTokenScanRouteImport.update({
-  id: '/scan',
-  path: '/scan',
-  getParentRoute: () => SitterTokenRouteRoute,
-} as any)
-const SitterTokenHomeRoute = SitterTokenHomeRouteImport.update({
-  id: '/home',
-  path: '/home',
-  getParentRoute: () => SitterTokenRouteRoute,
-} as any)
-const SitterTokenGuideRoute = SitterTokenGuideRouteImport.update({
-  id: '/guide',
-  path: '/guide',
-  getParentRoute: () => SitterTokenRouteRoute,
-} as any)
-const SitterTokenEmergencyRoute = SitterTokenEmergencyRouteImport.update({
-  id: '/emergency',
-  path: '/emergency',
-  getParentRoute: () => SitterTokenRouteRoute,
-} as any)
-const SitterTokenConcernRoute = SitterTokenConcernRouteImport.update({
-  id: '/concern',
-  path: '/concern',
-  getParentRoute: () => SitterTokenRouteRoute,
-} as any)
-const SitterTokenCareSheetRoute = SitterTokenCareSheetRouteImport.update({
-  id: '/care-sheet',
-  path: '/care-sheet',
-  getParentRoute: () => SitterTokenRouteRoute,
-} as any)
-const ApiPublicCspReportRoute = ApiPublicCspReportRouteImport.update({
-  id: '/api/public/csp-report',
-  path: '/api/public/csp-report',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedSitsSitIdRoute = AuthenticatedSitsSitIdRouteImport.update({
-  id: '/$sitId',
-  path: '/$sitId',
-  getParentRoute: () => AuthenticatedSitsRoute,
-} as any)
-const AuthenticatedSitPreviewSitIdRoute =
-  AuthenticatedSitPreviewSitIdRouteImport.update({
-    id: '/sit-preview/$sitId',
-    path: '/sit-preview/$sitId',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedScansSettingsRoute =
-  AuthenticatedScansSettingsRouteImport.update({
-    id: '/settings',
-    path: '/settings',
-    getParentRoute: () => AuthenticatedScansRoute,
-  } as any)
-const AuthenticatedNotificationsSettingsRoute =
-  AuthenticatedNotificationsSettingsRouteImport.update({
-    id: '/settings',
-    path: '/settings',
-    getParentRoute: () => AuthenticatedNotificationsRoute,
-  } as any)
-const AuthenticatedBirdsNewRoute = AuthenticatedBirdsNewRouteImport.update({
-  id: '/birds/new',
-  path: '/birds/new',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
-const AuthenticatedBirdsBirdIdRoute =
-  AuthenticatedBirdsBirdIdRouteImport.update({
-    id: '/birds/$birdId',
-    path: '/birds/$birdId',
-    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedAccountSecurityRoute =
   AuthenticatedAccountSecurityRouteImport.update({
@@ -310,130 +226,95 @@ const AuthenticatedAccountSecurityRoute =
     path: '/security',
     getParentRoute: () => AuthenticatedAccountRoute,
   } as any)
+const AuthenticatedBirdsBirdIdRoute =
+  AuthenticatedBirdsBirdIdRouteImport.update({
+    id: '/birds/$birdId',
+    path: '/birds/$birdId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedBirdsNewRoute = AuthenticatedBirdsNewRouteImport.update({
+  id: '/birds/new',
+  path: '/birds/new',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedNotificationsIndexRoute =
+  AuthenticatedNotificationsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedNotificationsRoute,
+  } as any)
+const AuthenticatedNotificationsSettingsRoute =
+  AuthenticatedNotificationsSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedNotificationsRoute,
+  } as any)
+const AuthenticatedScansIndexRoute = AuthenticatedScansIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedScansRoute,
+} as any)
+const AuthenticatedScansSettingsRoute =
+  AuthenticatedScansSettingsRouteImport.update({
+    id: '/settings',
+    path: '/settings',
+    getParentRoute: () => AuthenticatedScansRoute,
+  } as any)
+const AuthenticatedSitPreviewSitIdRoute =
+  AuthenticatedSitPreviewSitIdRouteImport.update({
+    id: '/sit-preview/$sitId',
+    path: '/sit-preview/$sitId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSitsSitIdRoute = AuthenticatedSitsSitIdRouteImport.update({
+  id: '/$sitId',
+  path: '/$sitId',
+  getParentRoute: () => AuthenticatedSitsRoute,
+} as any)
+const ApiPublicCspReportRoute = ApiPublicCspReportRouteImport.update({
+  id: '/api/public/csp-report',
+  path: '/api/public/csp-report',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitterTokenIndexRoute = SitterTokenIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => SitterTokenRouteRoute,
+} as any)
+const SitterTokenCareSheetRoute = SitterTokenCareSheetRouteImport.update({
+  id: '/care-sheet',
+  path: '/care-sheet',
+  getParentRoute: () => SitterTokenRouteRoute,
+} as any)
+const SitterTokenConcernRoute = SitterTokenConcernRouteImport.update({
+  id: '/concern',
+  path: '/concern',
+  getParentRoute: () => SitterTokenRouteRoute,
+} as any)
+const SitterTokenEmergencyRoute = SitterTokenEmergencyRouteImport.update({
+  id: '/emergency',
+  path: '/emergency',
+  getParentRoute: () => SitterTokenRouteRoute,
+} as any)
+const SitterTokenGuideRoute = SitterTokenGuideRouteImport.update({
+  id: '/guide',
+  path: '/guide',
+  getParentRoute: () => SitterTokenRouteRoute,
+} as any)
+const SitterTokenHomeRoute = SitterTokenHomeRouteImport.update({
+  id: '/home',
+  path: '/home',
+  getParentRoute: () => SitterTokenRouteRoute,
+} as any)
+const SitterTokenScanRoute = SitterTokenScanRouteImport.update({
+  id: '/scan',
+  path: '/scan',
+  getParentRoute: () => SitterTokenRouteRoute,
+} as any)
 const AuthenticatedBirdsBirdIdIndexRoute =
   AuthenticatedBirdsBirdIdIndexRouteImport.update({
     id: '/',
     path: '/',
-    getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
-  } as any)
-const ApiPublicHooksOnboardingEmailsRoute =
-  ApiPublicHooksOnboardingEmailsRouteImport.update({
-    id: '/api/public/hooks/onboarding-emails',
-    path: '/api/public/hooks/onboarding-emails',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksMonthlyLetterRoute =
-  ApiPublicHooksMonthlyLetterRouteImport.update({
-    id: '/api/public/hooks/monthly-letter',
-    path: '/api/public/hooks/monthly-letter',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksEngagementNudgesRoute =
-  ApiPublicHooksEngagementNudgesRouteImport.update({
-    id: '/api/public/hooks/engagement-nudges',
-    path: '/api/public/hooks/engagement-nudges',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksCarePlanRemindersRoute =
-  ApiPublicHooksCarePlanRemindersRouteImport.update({
-    id: '/api/public/hooks/care-plan-reminders',
-    path: '/api/public/hooks/care-plan-reminders',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksBereavementNoteRoute =
-  ApiPublicHooksBereavementNoteRouteImport.update({
-    id: '/api/public/hooks/bereavement-note',
-    path: '/api/public/hooks/bereavement-note',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const AuthenticatedCoveringSitIdBirdIdRoute =
-  AuthenticatedCoveringSitIdBirdIdRouteImport.update({
-    id: '/covering/$sitId/$birdId',
-    path: '/covering/$sitId/$birdId',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
-const AuthenticatedBirdsBirdIdWeightRoute =
-  AuthenticatedBirdsBirdIdWeightRouteImport.update({
-    id: '/weight',
-    path: '/weight',
-    getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
-  } as any)
-const AuthenticatedBirdsBirdIdViewAsSitterRoute =
-  AuthenticatedBirdsBirdIdViewAsSitterRouteImport.update({
-    id: '/view-as-sitter',
-    path: '/view-as-sitter',
-    getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
-  } as any)
-const AuthenticatedBirdsBirdIdVetSummaryRoute =
-  AuthenticatedBirdsBirdIdVetSummaryRouteImport.update({
-    id: '/vet-summary',
-    path: '/vet-summary',
-    getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
-  } as any)
-const AuthenticatedBirdsBirdIdSetupRoute =
-  AuthenticatedBirdsBirdIdSetupRouteImport.update({
-    id: '/setup',
-    path: '/setup',
-    getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
-  } as any)
-const AuthenticatedBirdsBirdIdScanRoute =
-  AuthenticatedBirdsBirdIdScanRouteImport.update({
-    id: '/scan',
-    path: '/scan',
-    getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
-  } as any)
-const AuthenticatedBirdsBirdIdPlanRoute =
-  AuthenticatedBirdsBirdIdPlanRouteImport.update({
-    id: '/plan',
-    path: '/plan',
-    getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
-  } as any)
-const AuthenticatedBirdsBirdIdMomentsRoute =
-  AuthenticatedBirdsBirdIdMomentsRouteImport.update({
-    id: '/moments',
-    path: '/moments',
-    getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
-  } as any)
-const AuthenticatedBirdsBirdIdJournalRoute =
-  AuthenticatedBirdsBirdIdJournalRouteImport.update({
-    id: '/journal',
-    path: '/journal',
-    getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
-  } as any)
-const AuthenticatedBirdsBirdIdIdentityRoute =
-  AuthenticatedBirdsBirdIdIdentityRouteImport.update({
-    id: '/identity',
-    path: '/identity',
-    getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
-  } as any)
-const AuthenticatedBirdsBirdIdHandoffRoute =
-  AuthenticatedBirdsBirdIdHandoffRouteImport.update({
-    id: '/handoff',
-    path: '/handoff',
-    getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
-  } as any)
-const AuthenticatedBirdsBirdIdFarewellRoute =
-  AuthenticatedBirdsBirdIdFarewellRouteImport.update({
-    id: '/farewell',
-    path: '/farewell',
-    getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
-  } as any)
-const AuthenticatedBirdsBirdIdExportRoute =
-  AuthenticatedBirdsBirdIdExportRouteImport.update({
-    id: '/export',
-    path: '/export',
-    getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
-  } as any)
-const AuthenticatedBirdsBirdIdConcernRoute =
-  AuthenticatedBirdsBirdIdConcernRouteImport.update({
-    id: '/concern',
-    path: '/concern',
-    getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
-  } as any)
-const AuthenticatedBirdsBirdIdCarePlanRoute =
-  AuthenticatedBirdsBirdIdCarePlanRouteImport.update({
-    id: '/care-plan',
-    path: '/care-plan',
     getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
   } as any)
 const AuthenticatedBirdsBirdIdAccessRoute =
@@ -442,10 +323,136 @@ const AuthenticatedBirdsBirdIdAccessRoute =
     path: '/access',
     getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
   } as any)
+const AuthenticatedBirdsBirdIdCarePlanRoute =
+  AuthenticatedBirdsBirdIdCarePlanRouteImport.update({
+    id: '/care-plan',
+    path: '/care-plan',
+    getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
+  } as any)
+const AuthenticatedBirdsBirdIdConcernRoute =
+  AuthenticatedBirdsBirdIdConcernRouteImport.update({
+    id: '/concern',
+    path: '/concern',
+    getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
+  } as any)
+const AuthenticatedBirdsBirdIdExportRoute =
+  AuthenticatedBirdsBirdIdExportRouteImport.update({
+    id: '/export',
+    path: '/export',
+    getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
+  } as any)
+const AuthenticatedBirdsBirdIdFarewellRoute =
+  AuthenticatedBirdsBirdIdFarewellRouteImport.update({
+    id: '/farewell',
+    path: '/farewell',
+    getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
+  } as any)
+const AuthenticatedBirdsBirdIdHandoffRoute =
+  AuthenticatedBirdsBirdIdHandoffRouteImport.update({
+    id: '/handoff',
+    path: '/handoff',
+    getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
+  } as any)
+const AuthenticatedBirdsBirdIdIdentityRoute =
+  AuthenticatedBirdsBirdIdIdentityRouteImport.update({
+    id: '/identity',
+    path: '/identity',
+    getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
+  } as any)
+const AuthenticatedBirdsBirdIdJournalRoute =
+  AuthenticatedBirdsBirdIdJournalRouteImport.update({
+    id: '/journal',
+    path: '/journal',
+    getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
+  } as any)
+const AuthenticatedBirdsBirdIdMomentsRoute =
+  AuthenticatedBirdsBirdIdMomentsRouteImport.update({
+    id: '/moments',
+    path: '/moments',
+    getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
+  } as any)
+const AuthenticatedBirdsBirdIdPlanRoute =
+  AuthenticatedBirdsBirdIdPlanRouteImport.update({
+    id: '/plan',
+    path: '/plan',
+    getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
+  } as any)
+const AuthenticatedBirdsBirdIdScanRoute =
+  AuthenticatedBirdsBirdIdScanRouteImport.update({
+    id: '/scan',
+    path: '/scan',
+    getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
+  } as any)
+const AuthenticatedBirdsBirdIdSetupRoute =
+  AuthenticatedBirdsBirdIdSetupRouteImport.update({
+    id: '/setup',
+    path: '/setup',
+    getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
+  } as any)
+const AuthenticatedBirdsBirdIdVetSummaryRoute =
+  AuthenticatedBirdsBirdIdVetSummaryRouteImport.update({
+    id: '/vet-summary',
+    path: '/vet-summary',
+    getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
+  } as any)
+const AuthenticatedBirdsBirdIdViewAsSitterRoute =
+  AuthenticatedBirdsBirdIdViewAsSitterRouteImport.update({
+    id: '/view-as-sitter',
+    path: '/view-as-sitter',
+    getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
+  } as any)
+const AuthenticatedBirdsBirdIdWeightRoute =
+  AuthenticatedBirdsBirdIdWeightRouteImport.update({
+    id: '/weight',
+    path: '/weight',
+    getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
+  } as any)
+const AuthenticatedCoveringSitIdBirdIdRoute =
+  AuthenticatedCoveringSitIdBirdIdRouteImport.update({
+    id: '/covering/$sitId/$birdId',
+    path: '/covering/$sitId/$birdId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const ApiPublicHooksBereavementNoteRoute =
+  ApiPublicHooksBereavementNoteRouteImport.update({
+    id: '/api/public/hooks/bereavement-note',
+    path: '/api/public/hooks/bereavement-note',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksCarePlanRemindersRoute =
+  ApiPublicHooksCarePlanRemindersRouteImport.update({
+    id: '/api/public/hooks/care-plan-reminders',
+    path: '/api/public/hooks/care-plan-reminders',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksEngagementNudgesRoute =
+  ApiPublicHooksEngagementNudgesRouteImport.update({
+    id: '/api/public/hooks/engagement-nudges',
+    path: '/api/public/hooks/engagement-nudges',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksMonthlyLetterRoute =
+  ApiPublicHooksMonthlyLetterRouteImport.update({
+    id: '/api/public/hooks/monthly-letter',
+    path: '/api/public/hooks/monthly-letter',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksOnboardingEmailsRoute =
+  ApiPublicHooksOnboardingEmailsRouteImport.update({
+    id: '/api/public/hooks/onboarding-emails',
+    path: '/api/public/hooks/onboarding-emails',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedBirdsBirdIdPlanIndexRoute =
   AuthenticatedBirdsBirdIdPlanIndexRouteImport.update({
     id: '/',
     path: '/',
+    getParentRoute: () => AuthenticatedBirdsBirdIdPlanRoute,
+  } as any)
+const AuthenticatedBirdsBirdIdPlanEditorRoute =
+  AuthenticatedBirdsBirdIdPlanEditorRouteImport.update({
+    id: '/editor',
+    path: '/editor',
     getParentRoute: () => AuthenticatedBirdsBirdIdPlanRoute,
   } as any)
 const AuthenticatedBirdsBirdIdScansScanIdRoute =
@@ -454,22 +461,22 @@ const AuthenticatedBirdsBirdIdScansScanIdRoute =
     path: '/scans/$scanId',
     getParentRoute: () => AuthenticatedBirdsBirdIdRoute,
   } as any)
-const AuthenticatedBirdsBirdIdPlanEditorRoute =
-  AuthenticatedBirdsBirdIdPlanEditorRouteImport.update({
-    id: '/editor',
-    path: '/editor',
-    getParentRoute: () => AuthenticatedBirdsBirdIdPlanRoute,
-  } as any)
-const ApiPublicUnsubscribeCategoryUserIdSigRoute =
-  ApiPublicUnsubscribeCategoryUserIdSigRouteImport.update({
-    id: '/api/public/unsubscribe/$category/$userId/$sig',
-    path: '/api/public/unsubscribe/$category/$userId/$sig',
+const ApiPublicBereavementReviewReviewIdSigRoute =
+  ApiPublicBereavementReviewReviewIdSigRouteImport.update({
+    id: '/api/public/bereavement-review/$reviewId/$sig',
+    path: '/api/public/bereavement-review/$reviewId/$sig',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicChartBirdIdMonthSigRoute =
   ApiPublicChartBirdIdMonthSigRouteImport.update({
     id: '/api/public/chart/$birdId/$month/$sig',
     path: '/api/public/chart/$birdId/$month/$sig',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicUnsubscribeCategoryUserIdSigRoute =
+  ApiPublicUnsubscribeCategoryUserIdSigRouteImport.update({
+    id: '/api/public/unsubscribe/$category/$userId/$sig',
+    path: '/api/public/unsubscribe/$category/$userId/$sig',
     getParentRoute: () => rootRouteImport,
   } as any)
 
@@ -541,6 +548,7 @@ export interface FileRoutesByFullPath {
   '/birds/$birdId/': typeof AuthenticatedBirdsBirdIdIndexRoute
   '/birds/$birdId/plan/editor': typeof AuthenticatedBirdsBirdIdPlanEditorRoute
   '/birds/$birdId/scans/$scanId': typeof AuthenticatedBirdsBirdIdScansScanIdRoute
+  '/api/public/bereavement-review/$reviewId/$sig': typeof ApiPublicBereavementReviewReviewIdSigRoute
   '/birds/$birdId/plan/': typeof AuthenticatedBirdsBirdIdPlanIndexRoute
   '/api/public/chart/$birdId/$month/$sig': typeof ApiPublicChartBirdIdMonthSigRoute
   '/api/public/unsubscribe/$category/$userId/$sig': typeof ApiPublicUnsubscribeCategoryUserIdSigRoute
@@ -607,6 +615,7 @@ export interface FileRoutesByTo {
   '/birds/$birdId': typeof AuthenticatedBirdsBirdIdIndexRoute
   '/birds/$birdId/plan/editor': typeof AuthenticatedBirdsBirdIdPlanEditorRoute
   '/birds/$birdId/scans/$scanId': typeof AuthenticatedBirdsBirdIdScansScanIdRoute
+  '/api/public/bereavement-review/$reviewId/$sig': typeof ApiPublicBereavementReviewReviewIdSigRoute
   '/birds/$birdId/plan': typeof AuthenticatedBirdsBirdIdPlanIndexRoute
   '/api/public/chart/$birdId/$month/$sig': typeof ApiPublicChartBirdIdMonthSigRoute
   '/api/public/unsubscribe/$category/$userId/$sig': typeof ApiPublicUnsubscribeCategoryUserIdSigRoute
@@ -681,6 +690,7 @@ export interface FileRoutesById {
   '/_authenticated/birds/$birdId/': typeof AuthenticatedBirdsBirdIdIndexRoute
   '/_authenticated/birds/$birdId/plan/editor': typeof AuthenticatedBirdsBirdIdPlanEditorRoute
   '/_authenticated/birds/$birdId/scans/$scanId': typeof AuthenticatedBirdsBirdIdScansScanIdRoute
+  '/api/public/bereavement-review/$reviewId/$sig': typeof ApiPublicBereavementReviewReviewIdSigRoute
   '/_authenticated/birds/$birdId/plan/': typeof AuthenticatedBirdsBirdIdPlanIndexRoute
   '/api/public/chart/$birdId/$month/$sig': typeof ApiPublicChartBirdIdMonthSigRoute
   '/api/public/unsubscribe/$category/$userId/$sig': typeof ApiPublicUnsubscribeCategoryUserIdSigRoute
@@ -755,6 +765,7 @@ export interface FileRouteTypes {
     | '/birds/$birdId/'
     | '/birds/$birdId/plan/editor'
     | '/birds/$birdId/scans/$scanId'
+    | '/api/public/bereavement-review/$reviewId/$sig'
     | '/birds/$birdId/plan/'
     | '/api/public/chart/$birdId/$month/$sig'
     | '/api/public/unsubscribe/$category/$userId/$sig'
@@ -821,6 +832,7 @@ export interface FileRouteTypes {
     | '/birds/$birdId'
     | '/birds/$birdId/plan/editor'
     | '/birds/$birdId/scans/$scanId'
+    | '/api/public/bereavement-review/$reviewId/$sig'
     | '/birds/$birdId/plan'
     | '/api/public/chart/$birdId/$month/$sig'
     | '/api/public/unsubscribe/$category/$userId/$sig'
@@ -894,6 +906,7 @@ export interface FileRouteTypes {
     | '/_authenticated/birds/$birdId/'
     | '/_authenticated/birds/$birdId/plan/editor'
     | '/_authenticated/birds/$birdId/scans/$scanId'
+    | '/api/public/bereavement-review/$reviewId/$sig'
     | '/_authenticated/birds/$birdId/plan/'
     | '/api/public/chart/$birdId/$month/$sig'
     | '/api/public/unsubscribe/$category/$userId/$sig'
@@ -920,73 +933,18 @@ export interface RootRouteChildren {
   ApiPublicHooksEngagementNudgesRoute: typeof ApiPublicHooksEngagementNudgesRoute
   ApiPublicHooksMonthlyLetterRoute: typeof ApiPublicHooksMonthlyLetterRoute
   ApiPublicHooksOnboardingEmailsRoute: typeof ApiPublicHooksOnboardingEmailsRoute
+  ApiPublicBereavementReviewReviewIdSigRoute: typeof ApiPublicBereavementReviewReviewIdSigRoute
   ApiPublicChartBirdIdMonthSigRoute: typeof ApiPublicChartBirdIdMonthSigRoute
   ApiPublicUnsubscribeCategoryUserIdSigRoute: typeof ApiPublicUnsubscribeCategoryUserIdSigRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/terms': {
-      id: '/terms'
-      path: '/terms'
-      fullPath: '/terms'
-      preLoaderRoute: typeof TermsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/review': {
-      id: '/review'
-      path: '/review'
-      fullPath: '/review'
-      preLoaderRoute: typeof ReviewRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/privacy': {
-      id: '/privacy'
-      path: '/privacy'
-      fullPath: '/privacy'
-      preLoaderRoute: typeof PrivacyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/get-app': {
-      id: '/get-app'
-      path: '/get-app'
-      fullPath: '/get-app'
-      preLoaderRoute: typeof GetAppRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/get': {
-      id: '/get'
-      path: '/get'
-      fullPath: '/get'
-      preLoaderRoute: typeof GetRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/delete-account': {
-      id: '/delete-account'
-      path: '/delete-account'
-      fullPath: '/delete-account'
-      preLoaderRoute: typeof DeleteAccountRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/confirm-email': {
-      id: '/confirm-email'
-      path: '/confirm-email'
-      fullPath: '/confirm-email'
-      preLoaderRoute: typeof ConfirmEmailRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -996,95 +954,74 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/invite/$token': {
-      id: '/invite/$token'
-      path: '/invite/$token'
-      fullPath: '/invite/$token'
-      preLoaderRoute: typeof InviteTokenRouteImport
+    '/confirm-email': {
+      id: '/confirm-email'
+      path: '/confirm-email'
+      fullPath: '/confirm-email'
+      preLoaderRoute: typeof ConfirmEmailRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/handoff/$token': {
-      id: '/handoff/$token'
-      path: '/handoff/$token'
-      fullPath: '/handoff/$token'
-      preLoaderRoute: typeof HandoffTokenRouteImport
+    '/delete-account': {
+      id: '/delete-account'
+      path: '/delete-account'
+      fullPath: '/delete-account'
+      preLoaderRoute: typeof DeleteAccountRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/welcome': {
-      id: '/_authenticated/welcome'
-      path: '/welcome'
-      fullPath: '/welcome'
-      preLoaderRoute: typeof AuthenticatedWelcomeRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/get': {
+      id: '/get'
+      path: '/get'
+      fullPath: '/get'
+      preLoaderRoute: typeof GetRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/today': {
-      id: '/_authenticated/today'
-      path: '/today'
-      fullPath: '/today'
-      preLoaderRoute: typeof AuthenticatedTodayRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/get-app': {
+      id: '/get-app'
+      path: '/get-app'
+      fullPath: '/get-app'
+      preLoaderRoute: typeof GetAppRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/sits': {
-      id: '/_authenticated/sits'
-      path: '/sits'
-      fullPath: '/sits'
-      preLoaderRoute: typeof AuthenticatedSitsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/privacy': {
+      id: '/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/scans': {
-      id: '/_authenticated/scans'
-      path: '/scans'
-      fullPath: '/scans'
-      preLoaderRoute: typeof AuthenticatedScansRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/remembering': {
-      id: '/_authenticated/remembering'
-      path: '/remembering'
-      fullPath: '/remembering'
-      preLoaderRoute: typeof AuthenticatedRememberingRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/review': {
+      id: '/review'
+      path: '/review'
+      fullPath: '/review'
+      preLoaderRoute: typeof ReviewRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/past-birds': {
-      id: '/_authenticated/past-birds'
-      path: '/past-birds'
-      fullPath: '/past-birds'
-      preLoaderRoute: typeof AuthenticatedPastBirdsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
+    '/terms': {
+      id: '/terms'
+      path: '/terms'
+      fullPath: '/terms'
+      preLoaderRoute: typeof TermsRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/notifications': {
-      id: '/_authenticated/notifications'
-      path: '/notifications'
-      fullPath: '/notifications'
-      preLoaderRoute: typeof AuthenticatedNotificationsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/household-permissions': {
-      id: '/_authenticated/household-permissions'
-      path: '/household-permissions'
-      fullPath: '/household-permissions'
-      preLoaderRoute: typeof AuthenticatedHouseholdPermissionsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/household': {
-      id: '/_authenticated/household'
-      path: '/household'
-      fullPath: '/household'
-      preLoaderRoute: typeof AuthenticatedHouseholdRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/explore': {
-      id: '/_authenticated/explore'
-      path: '/explore'
-      fullPath: '/explore'
-      preLoaderRoute: typeof AuthenticatedExploreRouteImport
+    '/_authenticated/account': {
+      id: '/_authenticated/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof AuthenticatedAccountRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/dashboard': {
@@ -1094,18 +1031,172 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/account': {
-      id: '/_authenticated/account'
-      path: '/account'
-      fullPath: '/account'
-      preLoaderRoute: typeof AuthenticatedAccountRouteImport
+    '/_authenticated/explore': {
+      id: '/_authenticated/explore'
+      path: '/explore'
+      fullPath: '/explore'
+      preLoaderRoute: typeof AuthenticatedExploreRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/household': {
+      id: '/_authenticated/household'
+      path: '/household'
+      fullPath: '/household'
+      preLoaderRoute: typeof AuthenticatedHouseholdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/household-permissions': {
+      id: '/_authenticated/household-permissions'
+      path: '/household-permissions'
+      fullPath: '/household-permissions'
+      preLoaderRoute: typeof AuthenticatedHouseholdPermissionsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/notifications': {
+      id: '/_authenticated/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof AuthenticatedNotificationsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/past-birds': {
+      id: '/_authenticated/past-birds'
+      path: '/past-birds'
+      fullPath: '/past-birds'
+      preLoaderRoute: typeof AuthenticatedPastBirdsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/remembering': {
+      id: '/_authenticated/remembering'
+      path: '/remembering'
+      fullPath: '/remembering'
+      preLoaderRoute: typeof AuthenticatedRememberingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/scans': {
+      id: '/_authenticated/scans'
+      path: '/scans'
+      fullPath: '/scans'
+      preLoaderRoute: typeof AuthenticatedScansRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/sits': {
+      id: '/_authenticated/sits'
+      path: '/sits'
+      fullPath: '/sits'
+      preLoaderRoute: typeof AuthenticatedSitsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/today': {
+      id: '/_authenticated/today'
+      path: '/today'
+      fullPath: '/today'
+      preLoaderRoute: typeof AuthenticatedTodayRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/welcome': {
+      id: '/_authenticated/welcome'
+      path: '/welcome'
+      fullPath: '/welcome'
+      preLoaderRoute: typeof AuthenticatedWelcomeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/handoff/$token': {
+      id: '/handoff/$token'
+      path: '/handoff/$token'
+      fullPath: '/handoff/$token'
+      preLoaderRoute: typeof HandoffTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/invite/$token': {
+      id: '/invite/$token'
+      path: '/invite/$token'
+      fullPath: '/invite/$token'
+      preLoaderRoute: typeof InviteTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/sitter/$token': {
       id: '/sitter/$token'
       path: '/sitter/$token'
       fullPath: '/sitter/$token'
       preLoaderRoute: typeof SitterTokenRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/account/': {
+      id: '/_authenticated/account/'
+      path: '/'
+      fullPath: '/account/'
+      preLoaderRoute: typeof AuthenticatedAccountIndexRouteImport
+      parentRoute: typeof AuthenticatedAccountRoute
+    }
+    '/_authenticated/account/security': {
+      id: '/_authenticated/account/security'
+      path: '/security'
+      fullPath: '/account/security'
+      preLoaderRoute: typeof AuthenticatedAccountSecurityRouteImport
+      parentRoute: typeof AuthenticatedAccountRoute
+    }
+    '/_authenticated/birds/$birdId': {
+      id: '/_authenticated/birds/$birdId'
+      path: '/birds/$birdId'
+      fullPath: '/birds/$birdId'
+      preLoaderRoute: typeof AuthenticatedBirdsBirdIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/birds/new': {
+      id: '/_authenticated/birds/new'
+      path: '/birds/new'
+      fullPath: '/birds/new'
+      preLoaderRoute: typeof AuthenticatedBirdsNewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/notifications/': {
+      id: '/_authenticated/notifications/'
+      path: '/'
+      fullPath: '/notifications/'
+      preLoaderRoute: typeof AuthenticatedNotificationsIndexRouteImport
+      parentRoute: typeof AuthenticatedNotificationsRoute
+    }
+    '/_authenticated/notifications/settings': {
+      id: '/_authenticated/notifications/settings'
+      path: '/settings'
+      fullPath: '/notifications/settings'
+      preLoaderRoute: typeof AuthenticatedNotificationsSettingsRouteImport
+      parentRoute: typeof AuthenticatedNotificationsRoute
+    }
+    '/_authenticated/scans/': {
+      id: '/_authenticated/scans/'
+      path: '/'
+      fullPath: '/scans/'
+      preLoaderRoute: typeof AuthenticatedScansIndexRouteImport
+      parentRoute: typeof AuthenticatedScansRoute
+    }
+    '/_authenticated/scans/settings': {
+      id: '/_authenticated/scans/settings'
+      path: '/settings'
+      fullPath: '/scans/settings'
+      preLoaderRoute: typeof AuthenticatedScansSettingsRouteImport
+      parentRoute: typeof AuthenticatedScansRoute
+    }
+    '/_authenticated/sit-preview/$sitId': {
+      id: '/_authenticated/sit-preview/$sitId'
+      path: '/sit-preview/$sitId'
+      fullPath: '/sit-preview/$sitId'
+      preLoaderRoute: typeof AuthenticatedSitPreviewSitIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/sits/$sitId': {
+      id: '/_authenticated/sits/$sitId'
+      path: '/$sitId'
+      fullPath: '/sits/$sitId'
+      preLoaderRoute: typeof AuthenticatedSitsSitIdRouteImport
+      parentRoute: typeof AuthenticatedSitsRoute
+    }
+    '/api/public/csp-report': {
+      id: '/api/public/csp-report'
+      path: '/api/public/csp-report'
+      fullPath: '/api/public/csp-report'
+      preLoaderRoute: typeof ApiPublicCspReportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitter/$token/': {
@@ -1115,53 +1206,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SitterTokenIndexRouteImport
       parentRoute: typeof SitterTokenRouteRoute
     }
-    '/_authenticated/scans/': {
-      id: '/_authenticated/scans/'
-      path: '/'
-      fullPath: '/scans/'
-      preLoaderRoute: typeof AuthenticatedScansIndexRouteImport
-      parentRoute: typeof AuthenticatedScansRoute
-    }
-    '/_authenticated/notifications/': {
-      id: '/_authenticated/notifications/'
-      path: '/'
-      fullPath: '/notifications/'
-      preLoaderRoute: typeof AuthenticatedNotificationsIndexRouteImport
-      parentRoute: typeof AuthenticatedNotificationsRoute
-    }
-    '/_authenticated/account/': {
-      id: '/_authenticated/account/'
-      path: '/'
-      fullPath: '/account/'
-      preLoaderRoute: typeof AuthenticatedAccountIndexRouteImport
-      parentRoute: typeof AuthenticatedAccountRoute
-    }
-    '/sitter/$token/scan': {
-      id: '/sitter/$token/scan'
-      path: '/scan'
-      fullPath: '/sitter/$token/scan'
-      preLoaderRoute: typeof SitterTokenScanRouteImport
-      parentRoute: typeof SitterTokenRouteRoute
-    }
-    '/sitter/$token/home': {
-      id: '/sitter/$token/home'
-      path: '/home'
-      fullPath: '/sitter/$token/home'
-      preLoaderRoute: typeof SitterTokenHomeRouteImport
-      parentRoute: typeof SitterTokenRouteRoute
-    }
-    '/sitter/$token/guide': {
-      id: '/sitter/$token/guide'
-      path: '/guide'
-      fullPath: '/sitter/$token/guide'
-      preLoaderRoute: typeof SitterTokenGuideRouteImport
-      parentRoute: typeof SitterTokenRouteRoute
-    }
-    '/sitter/$token/emergency': {
-      id: '/sitter/$token/emergency'
-      path: '/emergency'
-      fullPath: '/sitter/$token/emergency'
-      preLoaderRoute: typeof SitterTokenEmergencyRouteImport
+    '/sitter/$token/care-sheet': {
+      id: '/sitter/$token/care-sheet'
+      path: '/care-sheet'
+      fullPath: '/sitter/$token/care-sheet'
+      preLoaderRoute: typeof SitterTokenCareSheetRouteImport
       parentRoute: typeof SitterTokenRouteRoute
     }
     '/sitter/$token/concern': {
@@ -1171,214 +1220,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SitterTokenConcernRouteImport
       parentRoute: typeof SitterTokenRouteRoute
     }
-    '/sitter/$token/care-sheet': {
-      id: '/sitter/$token/care-sheet'
-      path: '/care-sheet'
-      fullPath: '/sitter/$token/care-sheet'
-      preLoaderRoute: typeof SitterTokenCareSheetRouteImport
+    '/sitter/$token/emergency': {
+      id: '/sitter/$token/emergency'
+      path: '/emergency'
+      fullPath: '/sitter/$token/emergency'
+      preLoaderRoute: typeof SitterTokenEmergencyRouteImport
       parentRoute: typeof SitterTokenRouteRoute
     }
-    '/api/public/csp-report': {
-      id: '/api/public/csp-report'
-      path: '/api/public/csp-report'
-      fullPath: '/api/public/csp-report'
-      preLoaderRoute: typeof ApiPublicCspReportRouteImport
-      parentRoute: typeof rootRouteImport
+    '/sitter/$token/guide': {
+      id: '/sitter/$token/guide'
+      path: '/guide'
+      fullPath: '/sitter/$token/guide'
+      preLoaderRoute: typeof SitterTokenGuideRouteImport
+      parentRoute: typeof SitterTokenRouteRoute
     }
-    '/_authenticated/sits/$sitId': {
-      id: '/_authenticated/sits/$sitId'
-      path: '/$sitId'
-      fullPath: '/sits/$sitId'
-      preLoaderRoute: typeof AuthenticatedSitsSitIdRouteImport
-      parentRoute: typeof AuthenticatedSitsRoute
+    '/sitter/$token/home': {
+      id: '/sitter/$token/home'
+      path: '/home'
+      fullPath: '/sitter/$token/home'
+      preLoaderRoute: typeof SitterTokenHomeRouteImport
+      parentRoute: typeof SitterTokenRouteRoute
     }
-    '/_authenticated/sit-preview/$sitId': {
-      id: '/_authenticated/sit-preview/$sitId'
-      path: '/sit-preview/$sitId'
-      fullPath: '/sit-preview/$sitId'
-      preLoaderRoute: typeof AuthenticatedSitPreviewSitIdRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/scans/settings': {
-      id: '/_authenticated/scans/settings'
-      path: '/settings'
-      fullPath: '/scans/settings'
-      preLoaderRoute: typeof AuthenticatedScansSettingsRouteImport
-      parentRoute: typeof AuthenticatedScansRoute
-    }
-    '/_authenticated/notifications/settings': {
-      id: '/_authenticated/notifications/settings'
-      path: '/settings'
-      fullPath: '/notifications/settings'
-      preLoaderRoute: typeof AuthenticatedNotificationsSettingsRouteImport
-      parentRoute: typeof AuthenticatedNotificationsRoute
-    }
-    '/_authenticated/birds/new': {
-      id: '/_authenticated/birds/new'
-      path: '/birds/new'
-      fullPath: '/birds/new'
-      preLoaderRoute: typeof AuthenticatedBirdsNewRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/birds/$birdId': {
-      id: '/_authenticated/birds/$birdId'
-      path: '/birds/$birdId'
-      fullPath: '/birds/$birdId'
-      preLoaderRoute: typeof AuthenticatedBirdsBirdIdRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/account/security': {
-      id: '/_authenticated/account/security'
-      path: '/security'
-      fullPath: '/account/security'
-      preLoaderRoute: typeof AuthenticatedAccountSecurityRouteImport
-      parentRoute: typeof AuthenticatedAccountRoute
+    '/sitter/$token/scan': {
+      id: '/sitter/$token/scan'
+      path: '/scan'
+      fullPath: '/sitter/$token/scan'
+      preLoaderRoute: typeof SitterTokenScanRouteImport
+      parentRoute: typeof SitterTokenRouteRoute
     }
     '/_authenticated/birds/$birdId/': {
       id: '/_authenticated/birds/$birdId/'
       path: '/'
       fullPath: '/birds/$birdId/'
       preLoaderRoute: typeof AuthenticatedBirdsBirdIdIndexRouteImport
-      parentRoute: typeof AuthenticatedBirdsBirdIdRoute
-    }
-    '/api/public/hooks/onboarding-emails': {
-      id: '/api/public/hooks/onboarding-emails'
-      path: '/api/public/hooks/onboarding-emails'
-      fullPath: '/api/public/hooks/onboarding-emails'
-      preLoaderRoute: typeof ApiPublicHooksOnboardingEmailsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/monthly-letter': {
-      id: '/api/public/hooks/monthly-letter'
-      path: '/api/public/hooks/monthly-letter'
-      fullPath: '/api/public/hooks/monthly-letter'
-      preLoaderRoute: typeof ApiPublicHooksMonthlyLetterRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/engagement-nudges': {
-      id: '/api/public/hooks/engagement-nudges'
-      path: '/api/public/hooks/engagement-nudges'
-      fullPath: '/api/public/hooks/engagement-nudges'
-      preLoaderRoute: typeof ApiPublicHooksEngagementNudgesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/care-plan-reminders': {
-      id: '/api/public/hooks/care-plan-reminders'
-      path: '/api/public/hooks/care-plan-reminders'
-      fullPath: '/api/public/hooks/care-plan-reminders'
-      preLoaderRoute: typeof ApiPublicHooksCarePlanRemindersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/bereavement-note': {
-      id: '/api/public/hooks/bereavement-note'
-      path: '/api/public/hooks/bereavement-note'
-      fullPath: '/api/public/hooks/bereavement-note'
-      preLoaderRoute: typeof ApiPublicHooksBereavementNoteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated/covering/$sitId/$birdId': {
-      id: '/_authenticated/covering/$sitId/$birdId'
-      path: '/covering/$sitId/$birdId'
-      fullPath: '/covering/$sitId/$birdId'
-      preLoaderRoute: typeof AuthenticatedCoveringSitIdBirdIdRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/birds/$birdId/weight': {
-      id: '/_authenticated/birds/$birdId/weight'
-      path: '/weight'
-      fullPath: '/birds/$birdId/weight'
-      preLoaderRoute: typeof AuthenticatedBirdsBirdIdWeightRouteImport
-      parentRoute: typeof AuthenticatedBirdsBirdIdRoute
-    }
-    '/_authenticated/birds/$birdId/view-as-sitter': {
-      id: '/_authenticated/birds/$birdId/view-as-sitter'
-      path: '/view-as-sitter'
-      fullPath: '/birds/$birdId/view-as-sitter'
-      preLoaderRoute: typeof AuthenticatedBirdsBirdIdViewAsSitterRouteImport
-      parentRoute: typeof AuthenticatedBirdsBirdIdRoute
-    }
-    '/_authenticated/birds/$birdId/vet-summary': {
-      id: '/_authenticated/birds/$birdId/vet-summary'
-      path: '/vet-summary'
-      fullPath: '/birds/$birdId/vet-summary'
-      preLoaderRoute: typeof AuthenticatedBirdsBirdIdVetSummaryRouteImport
-      parentRoute: typeof AuthenticatedBirdsBirdIdRoute
-    }
-    '/_authenticated/birds/$birdId/setup': {
-      id: '/_authenticated/birds/$birdId/setup'
-      path: '/setup'
-      fullPath: '/birds/$birdId/setup'
-      preLoaderRoute: typeof AuthenticatedBirdsBirdIdSetupRouteImport
-      parentRoute: typeof AuthenticatedBirdsBirdIdRoute
-    }
-    '/_authenticated/birds/$birdId/scan': {
-      id: '/_authenticated/birds/$birdId/scan'
-      path: '/scan'
-      fullPath: '/birds/$birdId/scan'
-      preLoaderRoute: typeof AuthenticatedBirdsBirdIdScanRouteImport
-      parentRoute: typeof AuthenticatedBirdsBirdIdRoute
-    }
-    '/_authenticated/birds/$birdId/plan': {
-      id: '/_authenticated/birds/$birdId/plan'
-      path: '/plan'
-      fullPath: '/birds/$birdId/plan'
-      preLoaderRoute: typeof AuthenticatedBirdsBirdIdPlanRouteImport
-      parentRoute: typeof AuthenticatedBirdsBirdIdRoute
-    }
-    '/_authenticated/birds/$birdId/moments': {
-      id: '/_authenticated/birds/$birdId/moments'
-      path: '/moments'
-      fullPath: '/birds/$birdId/moments'
-      preLoaderRoute: typeof AuthenticatedBirdsBirdIdMomentsRouteImport
-      parentRoute: typeof AuthenticatedBirdsBirdIdRoute
-    }
-    '/_authenticated/birds/$birdId/journal': {
-      id: '/_authenticated/birds/$birdId/journal'
-      path: '/journal'
-      fullPath: '/birds/$birdId/journal'
-      preLoaderRoute: typeof AuthenticatedBirdsBirdIdJournalRouteImport
-      parentRoute: typeof AuthenticatedBirdsBirdIdRoute
-    }
-    '/_authenticated/birds/$birdId/identity': {
-      id: '/_authenticated/birds/$birdId/identity'
-      path: '/identity'
-      fullPath: '/birds/$birdId/identity'
-      preLoaderRoute: typeof AuthenticatedBirdsBirdIdIdentityRouteImport
-      parentRoute: typeof AuthenticatedBirdsBirdIdRoute
-    }
-    '/_authenticated/birds/$birdId/handoff': {
-      id: '/_authenticated/birds/$birdId/handoff'
-      path: '/handoff'
-      fullPath: '/birds/$birdId/handoff'
-      preLoaderRoute: typeof AuthenticatedBirdsBirdIdHandoffRouteImport
-      parentRoute: typeof AuthenticatedBirdsBirdIdRoute
-    }
-    '/_authenticated/birds/$birdId/farewell': {
-      id: '/_authenticated/birds/$birdId/farewell'
-      path: '/farewell'
-      fullPath: '/birds/$birdId/farewell'
-      preLoaderRoute: typeof AuthenticatedBirdsBirdIdFarewellRouteImport
-      parentRoute: typeof AuthenticatedBirdsBirdIdRoute
-    }
-    '/_authenticated/birds/$birdId/export': {
-      id: '/_authenticated/birds/$birdId/export'
-      path: '/export'
-      fullPath: '/birds/$birdId/export'
-      preLoaderRoute: typeof AuthenticatedBirdsBirdIdExportRouteImport
-      parentRoute: typeof AuthenticatedBirdsBirdIdRoute
-    }
-    '/_authenticated/birds/$birdId/concern': {
-      id: '/_authenticated/birds/$birdId/concern'
-      path: '/concern'
-      fullPath: '/birds/$birdId/concern'
-      preLoaderRoute: typeof AuthenticatedBirdsBirdIdConcernRouteImport
-      parentRoute: typeof AuthenticatedBirdsBirdIdRoute
-    }
-    '/_authenticated/birds/$birdId/care-plan': {
-      id: '/_authenticated/birds/$birdId/care-plan'
-      path: '/care-plan'
-      fullPath: '/birds/$birdId/care-plan'
-      preLoaderRoute: typeof AuthenticatedBirdsBirdIdCarePlanRouteImport
       parentRoute: typeof AuthenticatedBirdsBirdIdRoute
     }
     '/_authenticated/birds/$birdId/access': {
@@ -1388,11 +1262,158 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBirdsBirdIdAccessRouteImport
       parentRoute: typeof AuthenticatedBirdsBirdIdRoute
     }
+    '/_authenticated/birds/$birdId/care-plan': {
+      id: '/_authenticated/birds/$birdId/care-plan'
+      path: '/care-plan'
+      fullPath: '/birds/$birdId/care-plan'
+      preLoaderRoute: typeof AuthenticatedBirdsBirdIdCarePlanRouteImport
+      parentRoute: typeof AuthenticatedBirdsBirdIdRoute
+    }
+    '/_authenticated/birds/$birdId/concern': {
+      id: '/_authenticated/birds/$birdId/concern'
+      path: '/concern'
+      fullPath: '/birds/$birdId/concern'
+      preLoaderRoute: typeof AuthenticatedBirdsBirdIdConcernRouteImport
+      parentRoute: typeof AuthenticatedBirdsBirdIdRoute
+    }
+    '/_authenticated/birds/$birdId/export': {
+      id: '/_authenticated/birds/$birdId/export'
+      path: '/export'
+      fullPath: '/birds/$birdId/export'
+      preLoaderRoute: typeof AuthenticatedBirdsBirdIdExportRouteImport
+      parentRoute: typeof AuthenticatedBirdsBirdIdRoute
+    }
+    '/_authenticated/birds/$birdId/farewell': {
+      id: '/_authenticated/birds/$birdId/farewell'
+      path: '/farewell'
+      fullPath: '/birds/$birdId/farewell'
+      preLoaderRoute: typeof AuthenticatedBirdsBirdIdFarewellRouteImport
+      parentRoute: typeof AuthenticatedBirdsBirdIdRoute
+    }
+    '/_authenticated/birds/$birdId/handoff': {
+      id: '/_authenticated/birds/$birdId/handoff'
+      path: '/handoff'
+      fullPath: '/birds/$birdId/handoff'
+      preLoaderRoute: typeof AuthenticatedBirdsBirdIdHandoffRouteImport
+      parentRoute: typeof AuthenticatedBirdsBirdIdRoute
+    }
+    '/_authenticated/birds/$birdId/identity': {
+      id: '/_authenticated/birds/$birdId/identity'
+      path: '/identity'
+      fullPath: '/birds/$birdId/identity'
+      preLoaderRoute: typeof AuthenticatedBirdsBirdIdIdentityRouteImport
+      parentRoute: typeof AuthenticatedBirdsBirdIdRoute
+    }
+    '/_authenticated/birds/$birdId/journal': {
+      id: '/_authenticated/birds/$birdId/journal'
+      path: '/journal'
+      fullPath: '/birds/$birdId/journal'
+      preLoaderRoute: typeof AuthenticatedBirdsBirdIdJournalRouteImport
+      parentRoute: typeof AuthenticatedBirdsBirdIdRoute
+    }
+    '/_authenticated/birds/$birdId/moments': {
+      id: '/_authenticated/birds/$birdId/moments'
+      path: '/moments'
+      fullPath: '/birds/$birdId/moments'
+      preLoaderRoute: typeof AuthenticatedBirdsBirdIdMomentsRouteImport
+      parentRoute: typeof AuthenticatedBirdsBirdIdRoute
+    }
+    '/_authenticated/birds/$birdId/plan': {
+      id: '/_authenticated/birds/$birdId/plan'
+      path: '/plan'
+      fullPath: '/birds/$birdId/plan'
+      preLoaderRoute: typeof AuthenticatedBirdsBirdIdPlanRouteImport
+      parentRoute: typeof AuthenticatedBirdsBirdIdRoute
+    }
+    '/_authenticated/birds/$birdId/scan': {
+      id: '/_authenticated/birds/$birdId/scan'
+      path: '/scan'
+      fullPath: '/birds/$birdId/scan'
+      preLoaderRoute: typeof AuthenticatedBirdsBirdIdScanRouteImport
+      parentRoute: typeof AuthenticatedBirdsBirdIdRoute
+    }
+    '/_authenticated/birds/$birdId/setup': {
+      id: '/_authenticated/birds/$birdId/setup'
+      path: '/setup'
+      fullPath: '/birds/$birdId/setup'
+      preLoaderRoute: typeof AuthenticatedBirdsBirdIdSetupRouteImport
+      parentRoute: typeof AuthenticatedBirdsBirdIdRoute
+    }
+    '/_authenticated/birds/$birdId/vet-summary': {
+      id: '/_authenticated/birds/$birdId/vet-summary'
+      path: '/vet-summary'
+      fullPath: '/birds/$birdId/vet-summary'
+      preLoaderRoute: typeof AuthenticatedBirdsBirdIdVetSummaryRouteImport
+      parentRoute: typeof AuthenticatedBirdsBirdIdRoute
+    }
+    '/_authenticated/birds/$birdId/view-as-sitter': {
+      id: '/_authenticated/birds/$birdId/view-as-sitter'
+      path: '/view-as-sitter'
+      fullPath: '/birds/$birdId/view-as-sitter'
+      preLoaderRoute: typeof AuthenticatedBirdsBirdIdViewAsSitterRouteImport
+      parentRoute: typeof AuthenticatedBirdsBirdIdRoute
+    }
+    '/_authenticated/birds/$birdId/weight': {
+      id: '/_authenticated/birds/$birdId/weight'
+      path: '/weight'
+      fullPath: '/birds/$birdId/weight'
+      preLoaderRoute: typeof AuthenticatedBirdsBirdIdWeightRouteImport
+      parentRoute: typeof AuthenticatedBirdsBirdIdRoute
+    }
+    '/_authenticated/covering/$sitId/$birdId': {
+      id: '/_authenticated/covering/$sitId/$birdId'
+      path: '/covering/$sitId/$birdId'
+      fullPath: '/covering/$sitId/$birdId'
+      preLoaderRoute: typeof AuthenticatedCoveringSitIdBirdIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/api/public/hooks/bereavement-note': {
+      id: '/api/public/hooks/bereavement-note'
+      path: '/api/public/hooks/bereavement-note'
+      fullPath: '/api/public/hooks/bereavement-note'
+      preLoaderRoute: typeof ApiPublicHooksBereavementNoteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/care-plan-reminders': {
+      id: '/api/public/hooks/care-plan-reminders'
+      path: '/api/public/hooks/care-plan-reminders'
+      fullPath: '/api/public/hooks/care-plan-reminders'
+      preLoaderRoute: typeof ApiPublicHooksCarePlanRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/engagement-nudges': {
+      id: '/api/public/hooks/engagement-nudges'
+      path: '/api/public/hooks/engagement-nudges'
+      fullPath: '/api/public/hooks/engagement-nudges'
+      preLoaderRoute: typeof ApiPublicHooksEngagementNudgesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/monthly-letter': {
+      id: '/api/public/hooks/monthly-letter'
+      path: '/api/public/hooks/monthly-letter'
+      fullPath: '/api/public/hooks/monthly-letter'
+      preLoaderRoute: typeof ApiPublicHooksMonthlyLetterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/onboarding-emails': {
+      id: '/api/public/hooks/onboarding-emails'
+      path: '/api/public/hooks/onboarding-emails'
+      fullPath: '/api/public/hooks/onboarding-emails'
+      preLoaderRoute: typeof ApiPublicHooksOnboardingEmailsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/birds/$birdId/plan/': {
       id: '/_authenticated/birds/$birdId/plan/'
       path: '/'
       fullPath: '/birds/$birdId/plan/'
       preLoaderRoute: typeof AuthenticatedBirdsBirdIdPlanIndexRouteImport
+      parentRoute: typeof AuthenticatedBirdsBirdIdPlanRoute
+    }
+    '/_authenticated/birds/$birdId/plan/editor': {
+      id: '/_authenticated/birds/$birdId/plan/editor'
+      path: '/editor'
+      fullPath: '/birds/$birdId/plan/editor'
+      preLoaderRoute: typeof AuthenticatedBirdsBirdIdPlanEditorRouteImport
       parentRoute: typeof AuthenticatedBirdsBirdIdPlanRoute
     }
     '/_authenticated/birds/$birdId/scans/$scanId': {
@@ -1402,18 +1423,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBirdsBirdIdScansScanIdRouteImport
       parentRoute: typeof AuthenticatedBirdsBirdIdRoute
     }
-    '/_authenticated/birds/$birdId/plan/editor': {
-      id: '/_authenticated/birds/$birdId/plan/editor'
-      path: '/editor'
-      fullPath: '/birds/$birdId/plan/editor'
-      preLoaderRoute: typeof AuthenticatedBirdsBirdIdPlanEditorRouteImport
-      parentRoute: typeof AuthenticatedBirdsBirdIdPlanRoute
-    }
-    '/api/public/unsubscribe/$category/$userId/$sig': {
-      id: '/api/public/unsubscribe/$category/$userId/$sig'
-      path: '/api/public/unsubscribe/$category/$userId/$sig'
-      fullPath: '/api/public/unsubscribe/$category/$userId/$sig'
-      preLoaderRoute: typeof ApiPublicUnsubscribeCategoryUserIdSigRouteImport
+    '/api/public/bereavement-review/$reviewId/$sig': {
+      id: '/api/public/bereavement-review/$reviewId/$sig'
+      path: '/api/public/bereavement-review/$reviewId/$sig'
+      fullPath: '/api/public/bereavement-review/$reviewId/$sig'
+      preLoaderRoute: typeof ApiPublicBereavementReviewReviewIdSigRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/chart/$birdId/$month/$sig': {
@@ -1421,6 +1435,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/chart/$birdId/$month/$sig'
       fullPath: '/api/public/chart/$birdId/$month/$sig'
       preLoaderRoute: typeof ApiPublicChartBirdIdMonthSigRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/unsubscribe/$category/$userId/$sig': {
+      id: '/api/public/unsubscribe/$category/$userId/$sig'
+      path: '/api/public/unsubscribe/$category/$userId/$sig'
+      fullPath: '/api/public/unsubscribe/$category/$userId/$sig'
+      preLoaderRoute: typeof ApiPublicUnsubscribeCategoryUserIdSigRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -1637,6 +1658,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksEngagementNudgesRoute: ApiPublicHooksEngagementNudgesRoute,
   ApiPublicHooksMonthlyLetterRoute: ApiPublicHooksMonthlyLetterRoute,
   ApiPublicHooksOnboardingEmailsRoute: ApiPublicHooksOnboardingEmailsRoute,
+  ApiPublicBereavementReviewReviewIdSigRoute:
+    ApiPublicBereavementReviewReviewIdSigRoute,
   ApiPublicChartBirdIdMonthSigRoute: ApiPublicChartBirdIdMonthSigRoute,
   ApiPublicUnsubscribeCategoryUserIdSigRoute:
     ApiPublicUnsubscribeCategoryUserIdSigRoute,
