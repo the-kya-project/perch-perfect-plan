@@ -99,7 +99,7 @@ export interface TransactionalEmail {
  *  click tracker wrapped around the result, so the redirect sends the reader to
  *  exactly the link they would have had without it. Exported for the QA script
  *  and tests. */
-export function prepareContent(email: Pick<TransactionalEmail, "htmlContent" | "textContent" | "tag" | "clicks">, sentAt = Date.now()): { html: string; text: string | undefined } {
+export async function prepareContent(email: Pick<TransactionalEmail, "htmlContent" | "textContent" | "tag" | "clicks">, sentAt = Date.now()): Promise<{ html: string; text: string | undefined }> {
   const html = tagHtmlLinks(email.htmlContent, email.tag);
   const text = email.textContent ? tagTextLinks(email.textContent, email.tag) : undefined;
   if (!email.clicks) return { html, text };
@@ -123,7 +123,7 @@ export async function sendTransactionalEmail(
   if (!email.to) { console.warn("[brevoEmail] skipped: no recipient"); return { ok: false, skipped: "no-recipient" }; }
   if (isUndeliverableAddress(email.to)) { console.warn("[brevoEmail] skipped: reserved test domain", email.to); return { ok: false, skipped: "undeliverable-test-domain" }; }
 
-  const prepared = prepareContent(email);
+  const prepared = await prepareContent(email);
   try {
     const res = await fetch(BREVO_SMTP_URL, {
       method: "POST",

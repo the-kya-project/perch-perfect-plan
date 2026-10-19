@@ -15,7 +15,7 @@ import { APP_ORIGIN, classifyClick, detectInAppBrowser, detectPlatform, readClic
 const LOG_BUDGET_MS = 400;
 
 export async function handleEmailClick(request: Request, token: string): Promise<Response> {
-  const p = readClickToken(token);
+  const p = await readClickToken(token);
   if (!p) {
     // Tampered, truncated by a mail client, or signed with a rotated key. We
     // can't trust where it points, so send the reader somewhere safe and useful.

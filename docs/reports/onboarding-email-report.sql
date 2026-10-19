@@ -65,6 +65,10 @@ grid as (
   select stage, variant from sends
   union
   select stage, variant from clicks
+  union
+  -- A stage everyone skipped still gets a row, so you can see why it's quiet.
+  select k.stage, '(skipped only)' from skips k
+  where not exists (select 1 from sends s where s.stage = k.stage)
 )
 select
   g.stage,
@@ -86,7 +90,7 @@ left join top_link t on t.stage = g.stage and t.variant = g.variant
 left join stage_order o on o.stage = g.stage
 order by coalesce(o.n, 99), g.stage, g.variant;
 
--- Stages with skips but no sends yet won't appear above; this lists every skip:
+-- Every skip, by stage and reason:
 --   select stage, skipped_reason, count(*) from public.onboarding_email_log
 --   where status = 'skipped' group by 1, 2 order by 1, 3 desc;
 --

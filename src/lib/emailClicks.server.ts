@@ -25,8 +25,12 @@
  * The signing key is CARE_PLAN_REMINDER_SECRET with its own "click:" prefix, the
  * same key the unsubscribe links use. Rotating it breaks outstanding /r/ links'
  * logging, not the links: a bad signature still redirects, to the app home.
+ *
+ * Signing uses Web Crypto (crypto.subtle), not node:crypto. The send path
+ * (brevoEmail.server) is reachable from server functions whose files are also
+ * bundled for the browser, and a node:crypto import there fails the build. Web
+ * Crypto is a global in Node and browsers alike, so nothing needs importing.
  */
-import { createHmac, timingSafeEqual } from "node:crypto";
 import { detectInAppBrowser, detectPlatform, isBot } from "./storeRedirect.server";
 import type { EmailTag } from "./emailTracking";
 
@@ -68,28 +72,41 @@ function key(): string {
   return s;
 }
 
-const b64u = (b: Buffer) => b.toString("base64url");
+const b64u = (b: Uint8Array) => Buffer.from(b).toString("base64url");
 
-function sign(body: string): string {
-  // 128 bits is plenty for a link signature and keeps the URL short.
-  return b64u(createHmac("sha256", key()).update(`click:${body}`).digest().subarray(0, 16));
+let keyPromise: Promise<CryptoKey> | null = null;
+function hmacKey(): Promise<CryptoKey> {
+  keyPromise ??= crypto.subtle.importKey("raw", new TextEncoder().encode(key()), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+  return keyPromise;
 }
 
-export function clickToken(p: ClickPayload): string {
-  const body = b64u(Buffer.from(JSON.stringify(p), "utf8"));
-  return `${body}.${sign(body)}`;
+async function sign(body: string): Promise<string> {
+  const mac = new Uint8Array(await crypto.subtle.sign("HMAC", await hmacKey(), new TextEncoder().encode(`click:${body}`)));
+  // 128 bits is plenty for a link signature and keeps the URL short.
+  return b64u(mac.subarray(0, 16));
+}
+
+/** Constant-time string compare, so a signature can't be guessed byte by byte. */
+function sameString(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
+export async function clickToken(p: ClickPayload): Promise<string> {
+  const body = b64u(new TextEncoder().encode(JSON.stringify(p)));
+  return `${body}.${await sign(body)}`;
 }
 
 /** The payload, or null when the token is malformed, tampered with, or points
  *  somewhere we would never send anyone. Never throws. */
-export function readClickToken(token: string): ClickPayload | null {
+export async function readClickToken(token: string): Promise<ClickPayload | null> {
   try {
     const dot = token.lastIndexOf(".");
     if (dot <= 0) return null;
     const body = token.slice(0, dot);
-    const got = Buffer.from(token.slice(dot + 1), "base64url");
-    const want = Buffer.from(sign(body), "base64url");
-    if (got.length !== want.length || !timingSafeEqual(got, want)) return null;
+    if (!sameString(token.slice(dot + 1), await sign(body))) return null;
     const p = JSON.parse(Buffer.from(body, "base64url").toString("utf8")) as ClickPayload;
     if (!p || typeof p.u !== "string" || typeof p.e !== "string" || typeof p.k !== "string" || typeof p.d !== "string") return null;
     const dest = new URL(p.d);
@@ -100,8 +117,8 @@ export function readClickToken(token: string): ClickPayload | null {
   }
 }
 
-export function trackedUrl(p: ClickPayload, base = APP_ORIGIN): string {
-  return `${base}/r/${clickToken(p)}`;
+export async function trackedUrl(p: ClickPayload, base = APP_ORIGIN): Promise<string> {
+  return `${base}/r/${await clickToken(p)}`;
 }
 
 /** Images, fonts, stylesheets — fetched by the mail client, never clicked. */
@@ -168,33 +185,51 @@ export type WrapContext = { userId: string; email: EmailTag; variant: ClickVaria
  * unchanged. The text part reuses the HTML's key for the same destination, so
  * the plain-text button counts as cta_primary too.
  */
-export function wrapEmailLinks(html: string, text: string | undefined, ctx: WrapContext, base = APP_ORIGIN): { html: string; text: string | undefined } {
+export async function wrapEmailLinks(html: string, text: string | undefined, ctx: WrapContext, base = APP_ORIGIN): Promise<{ html: string; text: string | undefined }> {
   const keyByDest = new Map<string, string>();
   const payload = (dest: string, k: string): ClickPayload => ({
     u: ctx.userId, e: ctx.email, v: ctx.variant, k, d: dest, t: ctx.sentAt, ...(ctx.test ? { x: 1 as const } : {}),
   });
 
-  const outHtml = html.replace(/<a\b([^>]*?)>/gi, (tag: string, attrs: string) => {
+  // Signing is async, so find every link first, sign them all, then splice.
+  type Hit = { whole: string; out: Promise<string> };
+  const htmlHits: Hit[] = [];
+  html.replace(/<a\b([^>]*?)>/gi, (tag: string, attrs: string) => {
     const hrefM = attrs.match(/\bhref=(["'])(.*?)\1/i);
     if (!hrefM) return tag;
     const dest = decodeAmp(hrefM[2]);
     const dataM = attrs.match(/\sdata-link=(["'])(.*?)\1/i);
-    let rest = dataM ? attrs.replace(dataM[0], "") : attrs;
-    if (!shouldTrack(dest)) return dataM ? `<a${rest}>` : tag;
+    const rest = dataM ? attrs.replace(dataM[0], "") : attrs;
+    if (!shouldTrack(dest)) {
+      if (dataM) htmlHits.push({ whole: tag, out: Promise.resolve(`<a${rest}>`) });
+      return tag;
+    }
     const k = dataM?.[2] || linkKeyFor(dest);
     if (!keyByDest.has(dest) || dataM) keyByDest.set(dest, k);
-    rest = rest.replace(hrefM[0], `href=${hrefM[1]}${encodeAmp(trackedUrl(payload(dest, k), base))}${hrefM[1]}`);
-    return `<a${rest}>`;
+    htmlHits.push({
+      whole: tag,
+      out: trackedUrl(payload(dest, k), base).then((u) => `<a${rest.replace(hrefM[0], `href=${hrefM[1]}${encodeAmp(u)}${hrefM[1]}`)}>`),
+    });
+    return tag;
   });
+  const htmlOut = await Promise.all(htmlHits.map((h) => h.out));
+  let i = 0;
+  const outHtml = html.replace(/<a\b([^>]*?)>/gi, (tag: string) => (htmlHits[i]?.whole === tag ? htmlOut[i++] : tag));
 
-  const outText = text?.replace(/https:\/\/[^\s<>()"']+/g, (url) => {
+  if (text === undefined) return { html: outHtml, text };
+  const textHits: Array<{ url: string; out: Promise<string> }> = [];
+  text.replace(/https:\/\/[^\s<>()"']+/g, (url) => {
     const m = url.match(/^(.*?)([.,;:!?]*)$/);
     const core = m ? m[1] : url;
     const tail = m ? m[2] : "";
-    if (!shouldTrack(core)) return url;
-    return `${trackedUrl(payload(core, keyByDest.get(core) ?? linkKeyFor(core)), base)}${tail}`;
+    if (shouldTrack(core)) {
+      textHits.push({ url, out: trackedUrl(payload(core, keyByDest.get(core) ?? linkKeyFor(core)), base).then((u) => `${u}${tail}`) });
+    }
+    return url;
   });
-
+  const textOut = await Promise.all(textHits.map((h) => h.out));
+  let j = 0;
+  const outText = text.replace(/https:\/\/[^\s<>()"']+/g, (url) => (textHits[j]?.url === url ? textOut[j++] : url));
   return { html: outHtml, text: outText };
 }
 
