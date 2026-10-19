@@ -183,7 +183,9 @@ export function HomeChecklist() {
                 },
           };
 
-  const items: Item[] = [remindersStep];
+  // In the app, an owner's reminders ask is HomePushBanner, right above this
+  // card; repeating it here would put two identical asks on one screen.
+  const items: Item[] = surface.surface === "native" && data.ownsBirds ? [] : [remindersStep];
   if (data.ownsBirds) {
     items.push({
       key: "care-plan",

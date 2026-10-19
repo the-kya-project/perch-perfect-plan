@@ -80,7 +80,10 @@ export type AnalyticsEventName =
   // A household-caregiver sit email (assigned/updated/cancelled) failed to send
   | "sit_caregiver_email_failed"
   // An external-sitter token invite email (created/updated/cancelled) failed to send
-  | "sitter_invite_email_failed";
+  | "sitter_invite_email_failed"
+  // Home "turn on reminders" card: shown, then enabled / not_now / denied
+  | "push_banner_shown"
+  | "push_banner_result";
 
 type EventProps = Record<string, string | number | boolean | null | undefined>;
 

@@ -28,6 +28,7 @@ import { fetchScanFeed, getNotifSeenAt } from "@/lib/notificationsFeed";
 import { InkHero, IconTile, StatusPill, SectionHead, CtaLink, type HeroCta } from "@/components/system";
 import { CaregiverCoveringSection, useActiveCaregiver } from "@/components/CaregiverHome";
 import { HomeChecklist } from "@/components/HomeChecklist";
+import { HomePushBanner } from "@/components/HomePushBanner";
 import { getHouseholdHome, resolveOwnerNames, type HomeHousehold } from "@/lib/home.functions";
 import { useMyPermissions } from "@/lib/useCapability";
 import {
@@ -257,6 +258,10 @@ function Dashboard() {
 
       <main className="space-y-6 px-5 pb-6 pt-5">
         {emergencyDefaults && <DefaultsPanel />}
+
+        {/* Reminders only reach a phone registered for push, so Home asks until
+            it is on (in the app only) — see HomePushBanner. */}
+        {!demo && <HomePushBanner birdNames={flockBirds.map((b) => b.name)} />}
 
         {/* One-time post-setup checklist for new accounts (any type). Self-hides
             when done / dismissed / no longer a new account — see HomeChecklist. */}
