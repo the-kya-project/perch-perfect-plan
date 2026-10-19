@@ -2131,10 +2131,14 @@
   "confirmEmail.checkSpam": "Zie je hem niet? Kijk in je spam- of ongewenste map — en geef hem even de tijd om aan te komen.",
   // Check your email
   "confirmEmail.checkYourEmail": "Check je e-mail",
-  // Click it to activate your account. Keep this tab open — once you confirm, we'll take you straight in.
-  "confirmEmail.clickToActivate": "Klik erop om je account te activeren. Houd dit tabblad open — zodra je bevestigt, brengen we je meteen naar binnen.",
+  // That code didn't work. Check it, or resend for a new one.
+  "confirmEmail.codeInvalid": "Die code werkte niet. Controleer hem, of vraag een nieuwe aan.",
+  // Confirmation code
+  "confirmEmail.codeLabel": "Bevestigingscode",
   // Couldn't resend. Try again in a moment.
   "confirmEmail.couldNotResend": "Opnieuw versturen lukte niet. Probeer het zo nog eens.",
+  // Enter it below to activate your account.
+  "confirmEmail.enterCode": "Vul hem hieronder in om je account te activeren.",
   // Go back and fix it
   "confirmEmail.goBackAndFix": "Ga terug en pas het aan",
   // Confirm your email — Kya & Co.
@@ -2149,8 +2153,12 @@
   "confirmEmail.sentAgain": "Bevestigingsmail opnieuw verstuurd.",
   // Sign in
   "confirmEmail.signIn": "Inloggen",
-  // We sent a confirmation link to
-  "confirmEmail.weSentLinkTo": "We hebben een bevestigingslink gestuurd naar",
+  // Confirm
+  "confirmEmail.verify": "Bevestigen",
+  // Checking…
+  "confirmEmail.verifying": "Controleren…",
+  // We sent a 6-digit code to
+  "confirmEmail.weSentCodeTo": "We hebben een code van 6 cijfers gestuurd naar",
   // Wrong email address?
   "confirmEmail.wrongEmail": "Verkeerd e-mailadres?",
   // Covering {{owner}}'s flock
