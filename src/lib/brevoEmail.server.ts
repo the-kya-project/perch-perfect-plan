@@ -19,6 +19,8 @@
  * before the request leaves us — see isUndeliverableAddress below.
  */
 
+import { tagHtmlLinks, tagTextLinks, type EmailTag } from "./emailTracking";
+
 const BREVO_SMTP_URL = "https://api.brevo.com/v3/smtp/email";
 
 // Reserved names from RFC 2606 / RFC 6761. Nothing on these can ever receive
@@ -73,6 +75,10 @@ export interface TransactionalEmail {
   /** Extra SMTP headers. Used for List-Unsubscribe and List-Unsubscribe-Post,
    *  which is what makes the one-click button appear in Gmail and Apple Mail. */
   headers?: Record<string, string>;
+  /** Which email this is (see emailTracking.ts). Sent to Brevo as the tag, so
+   *  opens and clicks can be read per email, and stamped as utm_campaign on
+   *  every link back into the app. Required: an untagged send can't be measured. */
+  tag: EmailTag;
 }
 
 export async function sendTransactionalEmail(
@@ -100,8 +106,9 @@ export async function sendTransactionalEmail(
         ...(email.replyTo ? { replyTo: email.replyTo } : {}),
         ...(email.headers && Object.keys(email.headers).length ? { headers: email.headers } : {}),
         subject: email.subject,
-        htmlContent: email.htmlContent,
-        textContent: email.textContent,
+        htmlContent: tagHtmlLinks(email.htmlContent, email.tag),
+        textContent: email.textContent ? tagTextLinks(email.textContent, email.tag) : undefined,
+        tags: [email.tag],
       }),
     });
     if (!res.ok) {

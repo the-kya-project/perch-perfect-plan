@@ -294,6 +294,7 @@ export const Route = createFileRoute("/api/public/hooks/monthly-letter")({
             textContent: built.text,
             replyTo: founderReplyTo(),
             headers: unsubHeaders(APP_URL, p.id, "monthly"),
+            tag: "flock_report",
           });
           if (!res.ok) { failed++; skipped.push(`${p.email}: send failed`); continue; }
           sent++;

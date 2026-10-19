@@ -124,6 +124,7 @@ if (TEST) {
     htmlContent: b.html,
     textContent: b.text,
     replyTo: { email: FOUNDER, name: "Brittany" },
+    tag: "app_launch",
     headers: unsubHeaders(APP_URL, me.id, "monthly"),
   });
   // A test never writes to the log — the founder is on the real list too, and
@@ -143,6 +144,7 @@ if (TEST) {
       htmlContent: b.html,
       textContent: b.text,
       replyTo: { email: FOUNDER, name: "Brittany" },
+      tag: "app_launch",
       headers: unsubHeaders(APP_URL, p.id, "monthly"),
     });
     if (res.ok) {

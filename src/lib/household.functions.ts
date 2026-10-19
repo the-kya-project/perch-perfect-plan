@@ -132,6 +132,7 @@ export const createHouseholdInvite = createServerFn({ method: "POST" })
         subject: built.subject,
         htmlContent: built.html,
         textContent: built.text,
+        tag: "household_invite",
       });
     } catch (e) {
       console.error("[household] invite email failed", e);
