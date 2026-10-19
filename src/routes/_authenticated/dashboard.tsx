@@ -27,9 +27,11 @@ import { ASPCA_POISON_CONTROL, isPhoneField, phoneWarning, formatPhoneOnBlur } f
 import { isAddressField } from "@/lib/address";
 import { AddressInput } from "@/components/AddressInput";
 import { fetchScanFeed, getNotifSeenAt } from "@/lib/notificationsFeed";
-import { InkHero, IconTile, StatusPill, SectionHead, CtaLink, type HeroCta } from "@/components/system";
+import { InkHero, IconTile, StatusPill, SectionHead, CtaLink, PrimaryButton, type HeroCta } from "@/components/system";
 import { CaregiverCoveringSection, useActiveCaregiver } from "@/components/CaregiverHome";
 import { HomeChecklist } from "@/components/HomeChecklist";
+import { DailyCheckCard } from "@/components/DailyCheckCard";
+import { useDailyCheckToday } from "@/lib/dailyCheck";
 import { HomePushBanner } from "@/components/HomePushBanner";
 import { getHouseholdHome, resolveOwnerNames, type HomeHousehold } from "@/lib/home.functions";
 import { useMyPermissions } from "@/lib/useCapability";
@@ -225,6 +227,11 @@ function Dashboard() {
 
   const { data: caregiver } = useActiveCaregiver();
 
+  // Birds in the daily check: the viewer's own flock and fosters. Birds they
+  // help with in someone else's household are checked from the bird page.
+  const checkBirds = demo || !myId ? [] : [...flockBirds, ...fosterBirds];
+  const { data: dailyToday } = useDailyCheckToday(checkBirds.map((b) => b.id));
+
   // Home body line — state-aware (stale weigh-in → sit imminent → celebration
   // → new bird → weekend → default). Caregiver names for imminent sits come
   // from the household member list already loaded; sitter names from the row.
@@ -283,6 +290,21 @@ function Dashboard() {
           // indistinguishable from the bird record. A single bird now shows as one
           // card in the flock, with the same Today / household / guidance.)
           <>
+            {/* Daily weight & health check: the box itself for one bird, a
+                prompt into the flock check for two or more. */}
+            {!demo && checkBirds.length === 1 && (
+              <DailyCheckCard
+                birdId={checkBirds[0].id}
+                name={checkBirds[0].name}
+                title={t("dashboard.dailyCheckFor", "{{name}}'s weight and health check", { name: checkBirds[0].name })}
+                today={dailyToday?.[checkBirds[0].id]}
+                surface="home_one"
+              />
+            )}
+            {!demo && checkBirds.length > 1 && (
+              <FlockCheckPrompt total={checkBirds.length} doneTimes={checkBirds.flatMap((b) => { const c = dailyToday?.[b.id]?.check; return c ? [{ name: b.name, at: c.created_at }] : []; })} loading={!dailyToday} onOpen={() => navigate({ to: "/check" })} />
+            )}
+
             <TodayPanel items={todayItemsView} onNavigate={onTodayNavigate} />
 
             {/* A sit you're covering (any account): the sitter-style "Birds in
@@ -404,6 +426,33 @@ function SectionHeaderCTA({ title, pill, ctaLabel, onCta }: { title: string; pil
 // ---------------------------------------------------------------------------
 // Today panel (adaptive — hidden entirely when empty)
 // ---------------------------------------------------------------------------
+function FlockCheckPrompt({ total, doneTimes, loading, onOpen }: { total: number; doneTimes: { name: string; at: string }[]; loading: boolean; onOpen: () => void }) {
+  const { t } = useTranslation();
+  const done = doneTimes.length;
+  const allDone = !loading && done >= total;
+  return (
+    <section className="rounded-[18px] bg-[var(--lime)] p-4" style={{ boxShadow: "0 8px 20px -12px rgba(45,106,79,.45)" }}>
+      <p className="t-section">{allDone ? t("dashboard.flockCheckDone", "All birds checked today") : t("dashboard.dailyHealthCheck", "Daily health check")}</p>
+      {allDone ? (
+        <p className="mt-1 text-[13.5px] text-[var(--ink2)]">
+          {doneTimes.map((d) => t("dashboard.checkedAt", "{{name}} {{time}}", { name: d.name, time: new Date(d.at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }).toLowerCase() })).join(" · ")}
+        </p>
+      ) : (
+        <p className="mt-1 text-[13.5px] text-[var(--ink2)]">{t("dashboard.flockCheckBody", "Grab a weight and a quick once-over of your birds.")}</p>
+      )}
+      <div className="mt-3">
+        <PrimaryButton tone="ink" onPress={onOpen}>
+          {allDone
+            ? t("dashboard.flockCheckView", "View today's checks")
+            : done > 0
+              ? t("dashboard.flockCheckFinish", "Finish your flock check ({{done}} of {{total}} done)", { done, total })
+              : t("dashboard.flockCheckCta", "Weigh & check your flock")}
+        </PrimaryButton>
+      </div>
+    </section>
+  );
+}
+
 function TodayPanel({ items, onNavigate }: { items: TodayItem[]; onNavigate: (i: TodayItem) => void }) {
   const { t } = useTranslation();
   if (items.length === 0) return null;

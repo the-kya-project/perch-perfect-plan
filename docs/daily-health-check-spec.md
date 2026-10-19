@@ -131,7 +131,7 @@ A second health check on the same day is allowed (from the Health tab or the ful
 
 ## Validation
 
-- Weight must be a positive number, at most 4000 g, with one decimal place allowed. Out-of-range values show an inline error; don't block the health check if the weight is cleared.
+- Weight must be between 1 and 5000 g (the same range as the Weight page), with one decimal place allowed. Out-of-range values show an inline error; don't block the health check if the weight is cleared.
 - If the new weight differs from the most recent one by more than 10%, ask "That's 18% lower than last time. Save anyway?" (Save / Fix). This catches typos like 1090 for 109.
 - The check box can't be saved twice by double-tapping. Disable the button while saving.
 

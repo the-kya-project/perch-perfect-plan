@@ -21,6 +21,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ReviewRouteImport } from './routes/review'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
+import { Route as AuthenticatedCheckRouteImport } from './routes/_authenticated/check'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedExploreRouteImport } from './routes/_authenticated/explore'
 import { Route as AuthenticatedHouseholdRouteImport } from './routes/_authenticated/household'
@@ -139,6 +140,11 @@ const TermsRoute = TermsRouteImport.update({
 const AuthenticatedAccountRoute = AuthenticatedAccountRouteImport.update({
   id: '/account',
   path: '/account',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedCheckRoute = AuthenticatedCheckRouteImport.update({
+  id: '/check',
+  path: '/check',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
@@ -493,6 +499,7 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/sitter/$token': typeof SitterTokenRouteRouteWithChildren
   '/account': typeof AuthenticatedAccountRouteWithChildren
+  '/check': typeof AuthenticatedCheckRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/explore': typeof AuthenticatedExploreRoute
   '/household': typeof AuthenticatedHouseholdRoute
@@ -564,6 +571,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/review': typeof ReviewRoute
   '/terms': typeof TermsRoute
+  '/check': typeof AuthenticatedCheckRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/explore': typeof AuthenticatedExploreRoute
   '/household': typeof AuthenticatedHouseholdRoute
@@ -635,6 +643,7 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/sitter/$token': typeof SitterTokenRouteRouteWithChildren
   '/_authenticated/account': typeof AuthenticatedAccountRouteWithChildren
+  '/_authenticated/check': typeof AuthenticatedCheckRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/explore': typeof AuthenticatedExploreRoute
   '/_authenticated/household': typeof AuthenticatedHouseholdRoute
@@ -710,6 +719,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/sitter/$token'
     | '/account'
+    | '/check'
     | '/dashboard'
     | '/explore'
     | '/household'
@@ -781,6 +791,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/review'
     | '/terms'
+    | '/check'
     | '/dashboard'
     | '/explore'
     | '/household'
@@ -851,6 +862,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/sitter/$token'
     | '/_authenticated/account'
+    | '/_authenticated/check'
     | '/_authenticated/dashboard'
     | '/_authenticated/explore'
     | '/_authenticated/household'
@@ -1022,6 +1034,13 @@ declare module '@tanstack/react-router' {
       path: '/account'
       fullPath: '/account'
       preLoaderRoute: typeof AuthenticatedAccountRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/check': {
+      id: '/_authenticated/check'
+      path: '/check'
+      fullPath: '/check'
+      preLoaderRoute: typeof AuthenticatedCheckRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/dashboard': {
@@ -1574,6 +1593,7 @@ const AuthenticatedBirdsBirdIdRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountRoute: typeof AuthenticatedAccountRouteWithChildren
+  AuthenticatedCheckRoute: typeof AuthenticatedCheckRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedExploreRoute: typeof AuthenticatedExploreRoute
   AuthenticatedHouseholdRoute: typeof AuthenticatedHouseholdRoute
@@ -1593,6 +1613,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAccountRoute: AuthenticatedAccountRouteWithChildren,
+  AuthenticatedCheckRoute: AuthenticatedCheckRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedExploreRoute: AuthenticatedExploreRoute,
   AuthenticatedHouseholdRoute: AuthenticatedHouseholdRoute,

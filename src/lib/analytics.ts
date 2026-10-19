@@ -83,7 +83,13 @@ export type AnalyticsEventName =
   | "sitter_invite_email_failed"
   // Home "turn on reminders" card: shown, then enabled / not_now / denied
   | "push_banner_shown"
-  | "push_banner_result";
+  | "push_banner_result"
+  // Daily weight & health check box (bird page, one-bird Home, flock check)
+  | "daily_check_viewed"
+  | "daily_check_saved"
+  | "daily_check_different_opened"
+  | "flock_check_completed"
+  | "extra_weight_added";
 
 type EventProps = Record<string, string | number | boolean | null | undefined>;
 
