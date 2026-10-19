@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { PARROT_SPECIES, PARROT_SPECIES_GROUPS, AGE_OPTIONS, ageFromBirthDate } from "@/lib/parrot-data";
+import { localDateISO } from "@/lib/localDay";
 
 export function BirdField({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
@@ -118,7 +119,7 @@ export function OptionalDate({
 export function AgePicker({ age, birthDate, onChange, layout = "grid" }: { age: string; birthDate: string; onChange: (next: { age: string; birthDate: string | null }) => void; layout?: "grid" | "stacked" }) {
   const computed = ageFromBirthDate(birthDate);
   const hasBirth = !!birthDate;
-  const max = new Date().toISOString().slice(0, 10);
+  const max = localDateISO();
 
   return (
     <div className={layout === "stacked" ? "space-y-3" : "grid grid-cols-2 gap-3"}>

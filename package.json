@@ -24,6 +24,7 @@
     "test:get-app": "npx --yes vite-node scripts/get-app.test.ts",
     "test:blog-feed": "npx --yes vite-node scripts/blog-feed.test.ts",
     "test:url-scrub": "npx --yes vite-node scripts/url-scrub.test.ts",
+    "test:local-day": "npx --yes vite-node scripts/local-day.test.ts",
     "test:email-tracking": "npx --yes vite-node scripts/email-tracking.test.ts"
   },
   "dependencies": {

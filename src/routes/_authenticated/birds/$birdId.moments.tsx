@@ -12,6 +12,7 @@ import { shareMomentCard } from "@/lib/momentCard";
 import { InkHero, IconTile, SectionHead, Card, RecordRow } from "@/components/system";
 import { friendlyError } from "@/lib/errorMessage";
 import { formatLocalDate } from "@/lib/dates";
+import { localDateISO } from "@/lib/localDay";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/moments")({
   head: () => ({ meta: [{ title: "Moments — Kya & Co." }] }),
@@ -327,7 +328,7 @@ function MomentsFacet() {
 
 function AddMilestone({ birdId, onClose, onSaved }: { birdId: string; onClose: () => void; onSaved: () => void }) {
   const [title, setTitle] = useState("");
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(localDateISO());
   const [photoData, setPhotoData] = useState<string | null>(null);
   const [photoBusy, setPhotoBusy] = useState(false);
   const [saving, setSaving] = useState(false);
