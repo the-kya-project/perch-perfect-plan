@@ -49,6 +49,7 @@ export function NotificationsCallout({
   busy,
   onEnable,
   onOpenSettings,
+  onDismiss,
 }: {
   state: CalloutState;
   /** The bird's name, or "your birds" when there is more than one. */
@@ -57,7 +58,20 @@ export function NotificationsCallout({
   onEnable: () => void;
   /** Absent while nothing we ship can open the OS settings page. */
   onOpenSettings?: () => void;
+  /** Home only: adds "Not now" to the two in-app states. Settings has none. */
+  onDismiss?: () => void;
 }) {
+  const notNow = onDismiss && (
+    <button
+      type="button"
+      onClick={onDismiss}
+      disabled={busy}
+      className="min-h-[44px] whitespace-nowrap px-2.5 text-[15px] text-[var(--mute)] disabled:opacity-50"
+    >
+      Not now
+    </button>
+  );
+
   // Push is on and working. Saying so would just be noise on a settings screen
   // whose per-event toggles already say what reaches the phone.
   if (state.kind === "native-granted") return null;
@@ -73,10 +87,12 @@ export function NotificationsCallout({
               We'll let you know when it's time to weigh {birdLabel} and when a check-in is
               due. You can change this anytime.
             </p>
-            <div className="mt-3">
+            <div className="mt-3 flex items-center gap-2">
               <PrimaryButton tone="ink" full={false} onPress={onEnable} disabled={busy}>
-                Turn on notifications
+                {/* Shorter beside "Not now" so the pair fits one line on a phone. */}
+                {onDismiss ? "Turn on" : "Turn on notifications"}
               </PrimaryButton>
+              {notNow}
             </div>
           </div>
         </div>
@@ -98,11 +114,14 @@ export function NotificationsCallout({
             {/* Android has no supported way to open the app's settings page
                 without another plugin, so it gets the sentence and no button
                 rather than a button that does nothing. */}
-            {state.canOpenSettings && onOpenSettings && (
-              <div className="mt-3">
-                <PrimaryButton tone="ink" full={false} onPress={onOpenSettings} disabled={busy}>
-                  Open settings
-                </PrimaryButton>
+            {((state.canOpenSettings && onOpenSettings) || notNow) && (
+              <div className="mt-3 flex items-center gap-2">
+                {state.canOpenSettings && onOpenSettings && (
+                  <PrimaryButton tone="ink" full={false} onPress={onOpenSettings} disabled={busy}>
+                    Open settings
+                  </PrimaryButton>
+                )}
+                {notNow}
               </div>
             )}
           </div>
