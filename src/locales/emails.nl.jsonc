@@ -7,6 +7,340 @@
   "email.shell.fieldNotes": "Uit de veldnotities",
   // Kya &amp; Co. — by The Kya Project
   "email.shell.footNote": "Kya &amp; Co. — van The Kya Project",
+  // {{a}} and {{b}}
+  "email.common.listPair": "{{a}} en {{b}}",
+  // , 
+  "email.common.listSep": ", ",
+  // {{head}}, and {{last}}
+  "email.common.listMany": "{{head}} en {{last}}",
+  // your bird
+  "email.common.yourBird": "je vogel",
+  // your birds
+  "email.common.yourBirds": "je vogels",
+  // An owner
+  "email.common.anOwner": "Een eigenaar",
+  // Someone
+  "email.common.someone": "Iemand",
+  // Your bird
+  "email.common.yourBirdCap": "Je vogel",
+  // Your sitter
+  "email.common.yourSitter": "Je oppas",
+  // Your caregiver
+  "email.common.yourCaregiver": "Je verzorger",
+  // Kya &amp; Co.
+  "email.flock.lockupAlt": "Kya &amp; Co.",
+  // Brittany
+  "email.flock.signName": "Brittany",
+  // Brittany King with Juno
+  "email.flock.signPhotoAlt": "Brittany King met Juno",
+  // Founder, The Kya Project
+  "email.flock.signTitle": "Oprichter, The Kya Project",
+  // Kya &amp; Co. doesn't diagnose illness. If you're ever worried about your bird's health, contact an avian veterinarian.
+  "email.flock.disclaimer": "Kya &amp; Co. stelt geen ziekten vast. Maak je je ooit zorgen over de gezondheid van je vogel? Neem dan contact op met een vogeldierenarts.",
+  // Settings
+  "email.flock.settings": "Instellingen",
+  // Unsubscribe
+  "email.flock.unsubscribe": "Afmelden",
+  // by The Kya Project
+  "email.flock.byLine": "door The Kya Project",
+  // The Kya Project · PO Box 58, New Haven, IN 46774
+  "email.flock.mailingAddress": "The Kya Project · PO Box 58, New Haven, IN 46774",
+  // Hi, flockmate
+  "email.flock.pillFlockmate": "Hoi, vogelvriend",
+  // Add your bird first
+  "email.flock.addBirdCta": "Voeg eerst je vogel toe",
+  // Kya &amp; Co.
+  "email.series.lockupAlt": "Kya &amp; Co.",
+  // Letter {{n}} of 7
+  "email.series.letterOf": "Brief {{n}} van 7",
+  // Next letter · Day {{day}}
+  "email.series.nextLabel": "Volgende brief · dag {{day}}",
+  // Founder, The Kya Project
+  "email.series.signTitle": "Oprichter, The Kya Project",
+  // In the app
+  "email.moment.inTheApp": "In de app",
+  // Example
+  "email.moment.example": "Voorbeeld",
+  // The Flock Report &middot; {{mon}}
+  "email.flock.reportPill": "The Flock Report &middot; {{mon}}",
+  // Your flock's {{month}}
+  "email.monthly.subjectMany": "Je vogels in {{month}}",
+  // {{birdName}}'s {{month}}
+  "email.monthly.subjectOne": "{{birdName}} in {{month}}",
+  // {{count}} birds, one month, all the numbers.
+  "email.monthly.previewMany": "{{count}} vogels, één maand, alle cijfers.",
+  // One bird, one month, all the numbers.
+  "email.monthly.previewOne": "Eén vogel, één maand, alle cijfers.",
+  // Hi {{firstName}}!
+  "email.monthly.hi": "Hoi {{firstName}}!",
+  // Hi there!
+  "email.monthly.hiNoName": "Hoi!",
+  // Introducing The Flock Report: your monthly recap with your flock
+  "email.monthly.firstSubject": "Even voorstellen: The Flock Report, je maandelijkse terugblik met je vogels",
+  // A look back at {{month}}, and what to expect every month.
+  "email.monthly.firstPreview": "Een terugblik op {{month}}, en wat je elke maand kunt verwachten.",
+  // What to expect each month, plus an easy way to pick things back up.
+  "email.monthly.firstQuietPreview": "Wat je elke maand kunt verwachten, plus een makkelijke manier om de draad weer op te pakken.",
+  // {{hi}} Welcome to The Flock Report. Every month, you'll get a look back at your flock's month: what you logged, what's still waiting to be filled in, a care note for the season ahead, and the latest from The Kya Project. Here's how {{month}} went for {{birds}}.
+  "email.monthly.firstIntro": "{{hi}} Welkom bij The Flock Report. Elke maand krijg je een terugblik op de maand van je vogels: wat je hebt genoteerd, wat nog ingevuld kan worden, een verzorgingstip voor het komende seizoen en het laatste nieuws van The Kya Project. Zo ging {{month}} voor {{birds}}.",
+  // {{hi}} Welcome to The Flock Report. Every month, you'll get a look back at your flock's month, a care note for the season ahead, and the latest from The Kya Project. {{month}} was a quiet one in the record for {{birds}}, and that's okay. Birds keep you busy, and so does everything else, so below are a few easy ways to pick things back up.
+  "email.monthly.firstQuietIntro": "{{hi}} Welkom bij The Flock Report. Elke maand krijg je een terugblik op de maand van je vogels, een verzorgingstip voor het komende seizoen en het laatste nieuws van The Kya Project. In {{month}} was het rustig in het dossier van {{birds}}, en dat is oké. Vogels houden je bezig, en al het andere ook. Hieronder vind je daarom een paar makkelijke manieren om de draad weer op te pakken.",
+  // {{hi}} Starring {{birds}}. Here's what you logged, what's still blank, and a few good reads for {{nextMonth}}.
+  "email.monthly.intro": "{{hi}} In de hoofdrol: {{birds}}. Dit heb je genoteerd, dit is nog leeg, en hier zijn een paar fijne artikelen voor {{nextMonth}}.",
+  // and {{n}} more
+  "email.monthly.andMore": "en nog {{n}}",
+  // weigh-ins
+  "email.monthly.totalWeighIns": "wegingen",
+  // weigh-in
+  "email.monthly.totalWeighInsOne": "weging",
+  // health checks
+  "email.monthly.totalChecks": "gezondheidschecks",
+  // health check
+  "email.monthly.totalChecksOne": "gezondheidscheck",
+  // journal entries
+  "email.monthly.totalJournal": "dagboeknotities",
+  // journal entry
+  "email.monthly.totalJournalOne": "dagboeknotitie",
+  // It was a quiet one. Here's an easy way back in.
+  "email.monthly.quietPreview": "Het was een rustige maand. Zo pak je de draad makkelijk weer op.",
+  // {{hi}} It was a quiet month in the record for {{birds}}. No judgment here. Birds keep you busy, and so does everything else.
+  "email.monthly.quietIntro": "{{hi}} Het was een rustige maand in het dossier van {{birds}}. Geen oordeel hoor. Vogels houden je bezig, en al het andere ook.",
+  // Start small: pick one
+  "email.monthly.startSmall": "Begin klein: kies er één",
+  // One entry is all it takes to get the record going again.
+  "email.monthly.startSmallNote": "Eén notitie is genoeg om het dossier weer op gang te brengen.",
+  // Log one weight
+  "email.monthly.start1Title": "Noteer één gewicht",
+  // Pop your bird on the scale and you're done.
+  "email.monthly.start1Text": "Zet je vogel even op de weegschaal en klaar.",
+  // Do one daily once-over
+  "email.monthly.start2Title": "Doe één dagelijkse check",
+  // A few taps about how they look and act today.
+  "email.monthly.start2Text": "Een paar tikken over hoe je vogel er vandaag uitziet en zich gedraagt.",
+  // Write one sentence in the journal
+  "email.monthly.start3Title": "Schrijf één zin in het dagboek",
+  // What did they get into this week? That counts.
+  "email.monthly.start3Text": "Wat heeft je vogel deze week uitgespookt? Dat telt ook.",
+  // Roll call
+  "email.monthly.rollCall": "Wie is er?",
+  // Tap a bird to open their record
+  "email.monthly.rollCallNote": "Tik op een vogel om het dossier te openen",
+  // No weigh-ins in {{month}}
+  "email.monthly.noWeighIns": "Geen wegingen in {{month}}",
+  // Log one
+  "email.monthly.logOne": "Noteer er één",
+  // {{bird}}'s weigh-ins in {{month}}: {{n}} readings, from {{min}} g to {{max}} g.
+  "email.monthly.chartAlt": "Wegingen van {{bird}} in {{month}}: {{n}} metingen, van {{min}} g tot {{max}} g.",
+  // {{n}} weigh-ins &middot; latest {{g}} g
+  "email.monthly.weighInLine": "{{n}} wegingen &middot; laatste {{g}} g",
+  // 1 weigh-in &middot; latest {{g}} g
+  "email.monthly.weighInLineOne": "1 weging &middot; laatste {{g}} g",
+  // Health checks
+  "email.monthly.rowChecks": "Gezondheidschecks",
+  // {{n}} of {{days}} days
+  "email.monthly.rowChecksValue": "{{n}} van {{days}} dagen",
+  // Journal
+  "email.monthly.rowJournal": "Dagboek",
+  // {{n}} entries
+  "email.monthly.rowJournalValue": "{{n}} notities",
+  // 1 entry
+  "email.monthly.rowJournalValueOne": "1 notitie",
+  // Care plan
+  "email.monthly.rowPlan": "Verzorgingsplan",
+  // Updated {{date}}
+  "email.monthly.rowPlanValue": "Bijgewerkt op {{date}}",
+  // + Do one
+  "email.monthly.doOne": "+ Doe er één",
+  // + Add one
+  "email.monthly.addOne": "+ Voeg er één toe",
+  // + Update
+  "email.monthly.updatePlan": "+ Bijwerken",
+  // COMING UP IN {{month}}
+  "email.monthly.comingLabel": "BINNENKORT IN {{month}}",
+  // Add a moment
+  "email.monthly.comingCta": "Voeg een moment toe",
+  // {{month}} care note
+  "email.monthly.careNotePill": "Verzorgingstip voor {{month}}",
+  // NEW ON THE BLOG &middot; {{n}} MIN READ
+  "email.monthly.blogLabel": "NIEUW OP DE BLOG &middot; {{n}} MIN LEZEN",
+  // Read the article
+  "email.monthly.blogCta": "Lees het artikel",
+  // The mailbag
+  "email.monthly.mailbagTitle": "De brievenbus",
+  // What's your bird's weirdest habit? Reply with a story or a photo. With your OK, we'll share a few favorites next month.
+  "email.monthly.mailbagText": "Wat is de gekste gewoonte van je vogel? Stuur een verhaal of foto terug. Met jouw toestemming delen we volgende maand een paar favorieten.",
+  // Open Kya &amp; Co.
+  "email.monthly.cta": "Open Kya &amp; Co.",
+  // You're getting The Flock Report because you have a Kya &amp; Co. account.
+  "email.monthly.foot": "Je krijgt The Flock Report omdat je een account hebt bij Kya &amp; Co.",
+  // Jan
+  "email.monthly.mon.1": "jan",
+  // Feb
+  "email.monthly.mon.2": "feb",
+  // Mar
+  "email.monthly.mon.3": "mrt",
+  // Apr
+  "email.monthly.mon.4": "apr",
+  // May
+  "email.monthly.mon.5": "mei",
+  // June
+  "email.monthly.mon.6": "juni",
+  // July
+  "email.monthly.mon.7": "juli",
+  // Aug
+  "email.monthly.mon.8": "aug",
+  // Sept
+  "email.monthly.mon.9": "sept",
+  // Oct
+  "email.monthly.mon.10": "okt",
+  // Nov
+  "email.monthly.mon.11": "nov",
+  // Dec
+  "email.monthly.mon.12": "dec",
+  // January
+  "email.monthly.month.1": "januari",
+  // February
+  "email.monthly.month.2": "februari",
+  // March
+  "email.monthly.month.3": "maart",
+  // April
+  "email.monthly.month.4": "april",
+  // May
+  "email.monthly.month.5": "mei",
+  // June
+  "email.monthly.month.6": "juni",
+  // July
+  "email.monthly.month.7": "juli",
+  // August
+  "email.monthly.month.8": "augustus",
+  // September
+  "email.monthly.month.9": "september",
+  // October
+  "email.monthly.month.10": "oktober",
+  // November
+  "email.monthly.month.11": "november",
+  // December
+  "email.monthly.month.12": "december",
+  // A sun conure looking over its shoulder
+  "email.monthly.care.1.alt": "Een zonparkiet die over zijn schouder kijkt",
+  // Book the wellness visit
+  "email.monthly.care.1.title": "Plan de jaarlijkse controle",
+  // <b>Put a date on the calendar.</b> A yearly check with an avian vet gives you both a baseline to compare against, even when everything seems fine.
+  "email.monthly.care.1.n1": "<b>Zet een datum in de agenda.</b> Een jaarlijkse controle bij een vogeldierenarts geeft jullie allebei een basis om mee te vergelijken, ook als alles goed lijkt te gaan.",
+  // <b>Bring the record.</b> Open the vet summary before you go and jot down anything you've been wondering about, however small.
+  "email.monthly.care.1.n2": "<b>Neem het dossier mee.</b> Open de dierenartssamenvatting voordat je gaat en schrijf op waar je je over afvraagt, hoe klein ook.",
+  // <b>Practice the carrier.</b> A few short, calm visits to the carrier in the weeks before make the trip easier on everyone.
+  "email.monthly.care.1.n3": "<b>Oefen met de reismand.</b> Een paar korte, rustige oefenmomenten met de reismand in de weken ervoor maken de rit voor iedereen makkelijker.",
+  // A white cockatoo with a yellow crest, holding food in one foot
+  "email.monthly.care.2.alt": "Een witte kaketoe met een gele kuif, met eten in één poot",
+  // Make food take a bit of work
+  "email.monthly.care.2.title": "Laat je vogel een beetje werken voor zijn eten",
+  // <b>Start easy.</b> Wrap a favorite treat loosely in plain paper, or tuck it into a paper cup. The first puzzle should be one your bird can solve.
+  "email.monthly.care.2.n1": "<b>Begin makkelijk.</b> Wikkel een favoriet snoepje losjes in gewoon papier, of stop het in een papieren bekertje. De eerste puzzel moet er een zijn die je vogel kan oplossen.",
+  // <b>Build up slowly.</b> Once your bird has the idea, try a foraging toy, or hide pieces of the usual food around the cage.
+  "email.monthly.care.2.n2": "<b>Bouw het langzaam op.</b> Heeft je vogel het eenmaal door? Probeer dan een foerageerspeeltje, of verstop stukjes van het gewone voer in de kooi.",
+  // <b>Keep an eye on the bowl.</b> Make sure your bird is still eating enough while they learn. Their weight trend will tell you if something's shifted.
+  "email.monthly.care.2.n3": "<b>Houd het bakje in de gaten.</b> Let erop dat je vogel genoeg blijft eten terwijl hij het leert. De gewichtstrend laat zien of er iets verandert.",
+  // A golden conure perched on a bare branch
+  "email.monthly.care.3.alt": "Een goudparkiet op een kale tak",
+  // Look after their feet
+  "email.monthly.care.3.title": "Zorg goed voor hun pootjes",
+  // <b>Mix up the perches.</b> Different widths and textures let feet work in different ways. Natural branches from bird-safe wood are a good place to start.
+  "email.monthly.care.3.n1": "<b>Wissel de zitstokken af.</b> Verschillende diktes en structuren laten de pootjes op verschillende manieren werken. Natuurlijke takken van vogelveilig hout zijn een goed begin.",
+  // <b>Check for wear.</b> Look for loose fittings, cracks, and smooth, worn spots, and replace anything that's seen better days.
+  "email.monthly.care.3.n2": "<b>Controleer op slijtage.</b> Let op losse bevestigingen, scheurtjes en gladde, versleten plekken, en vervang alles wat zijn beste tijd gehad heeft.",
+  // <b>Watch how they stand.</b> In a calm moment, notice how your bird grips and balances. If something looks different from usual, ask your vet.
+  "email.monthly.care.3.n3": "<b>Kijk hoe je vogel staat.</b> Let op een rustig moment op hoe je vogel grijpt en zijn evenwicht houdt. Ziet iets er anders uit dan normaal? Vraag het je dierenarts.",
+  // A rainbow lorikeet preening its tail feathers on a rope perch
+  "email.monthly.care.4.alt": "Een regenbooglori die zijn staartveren poetst op een touwzitstok",
+  // Make time for a bath
+  "email.monthly.care.4.title": "Maak tijd voor een badje",
+  // <b>Offer a few options.</b> Some birds love a shallow dish, some prefer a light mist, and some would rather sit with you near the shower.
+  "email.monthly.care.4.n1": "<b>Bied een paar opties aan.</b> Sommige vogels zijn dol op een ondiep schaaltje, andere houden van een lichte sproeinevel, en weer andere zitten liever bij jou in de buurt van de douche.",
+  // <b>Keep it warm and easy.</b> Lukewarm water, a warm room, and plenty of time to dry off afterward.
+  "email.monthly.care.4.n2": "<b>Houd het warm en makkelijk.</b> Lauw water, een warme kamer en genoeg tijd om daarna op te drogen.",
+  // <b>Let your bird decide.</b> If they're not interested today, try again another day. Note what they like in the journal.
+  "email.monthly.care.4.n3": "<b>Laat je vogel kiezen.</b> Geen zin vandaag? Probeer het een andere dag opnieuw. Noteer in het dagboek wat je vogel leuk vindt.",
+  // A green eclectus parrot on a thin branch among leaves
+  "email.monthly.care.5.alt": "Een groene edelpapegaai op een dunne tak tussen de bladeren",
+  // Give the toy box a once-over
+  "email.monthly.care.5.title": "Loop de speelgoedkist even na",
+  // <b>Check what you have.</b> Fraying rope, loose parts, and cracked plastic are worth replacing before they become a problem.
+  "email.monthly.care.5.n1": "<b>Kijk wat je hebt.</b> Rafelend touw, losse onderdelen en gebarsten plastic kun je beter vervangen voordat ze een probleem worden.",
+  // <b>Rotate a few.</b> Put some toys away and bring back ones your bird hasn't seen in a while. Old favorites often feel new again.
+  "email.monthly.care.5.n2": "<b>Wissel een paar af.</b> Berg wat speeltjes op en haal speeltjes terug die je vogel een tijd niet heeft gezien. Oude favorieten voelen vaak weer als nieuw.",
+  // <b>Notice what gets chewed.</b> Which toys get destroyed and which get ignored is a good clue for what to offer next.
+  "email.monthly.care.5.n3": "<b>Let op wat er kapotgeknaagd wordt.</b> Welke speeltjes worden gesloopt en welke genegeerd? Dat is een goede aanwijzing voor wat je hierna kunt aanbieden.",
+  // A green parrot with an orange face perched in a leafy tree
+  "email.monthly.care.6.alt": "Een groene papegaai met een oranje kop in een bladrijke boom",
+  // Add something new to the bowl
+  "email.monthly.care.6.title": "Voeg iets nieuws toe aan het bakje",
+  // <b>Try one new vegetable.</b> Offer it more than once. Many parrots need to see a food several times before they'll taste it.
+  "email.monthly.care.6.n1": "<b>Probeer één nieuwe groente.</b> Bied hem vaker dan één keer aan. Veel papegaaien moeten een voedingsmiddel een paar keer zien voordat ze het durven te proeven.",
+  // <b>Change the shape.</b> Chopped, whole, grated, or threaded on a skewer can each land differently.
+  "email.monthly.care.6.n2": "<b>Verander de vorm.</b> Gehakt, heel, geraspt of aan een spiesje geregen: elke vorm kan anders vallen.",
+  // <b>Ask about the balance.</b> The right mix of pellets, fresh food, and seed depends on species, so it's a good question for your next vet visit.
+  "email.monthly.care.6.n3": "<b>Vraag naar de balans.</b> De juiste mix van pellets, vers voer en zaad hangt af van de soort, dus dat is een goede vraag voor je volgende bezoek aan de dierenarts.",
+  // A close-up of a green conure with red markings on its face
+  "email.monthly.care.7.alt": "Close-up van een groene parkiet met rode tekening op zijn kop",
+  // Do a gentle once-over
+  "email.monthly.care.7.title": "Kijk je vogel rustig even na",
+  // <b>Pick a calm moment.</b> Sitting close during a quiet time is enough. There's no need to hold your bird still.
+  "email.monthly.care.7.n1": "<b>Kies een rustig moment.</b> Even dichtbij zitten tijdens een stil moment is genoeg. Je hoeft je vogel niet vast te houden.",
+  // <b>Look at nails, beak, and eyes.</b> You're learning what's usual for your bird, so a change stands out later.
+  "email.monthly.care.7.n2": "<b>Kijk naar nagels, snavel en ogen.</b> Zo leer je wat normaal is voor jouw vogel, en valt een verandering later sneller op.",
+  // <b>Write down what you see.</b> A short journal note, and a photo if you can, gives you something to compare next time. If something has changed, ask your vet.
+  "email.monthly.care.7.n3": "<b>Schrijf op wat je ziet.</b> Een korte notitie in het dagboek, en als het kan een foto, geeft je iets om de volgende keer mee te vergelijken. Is er iets veranderd? Vraag het dan aan je dierenarts.",
+  // A green budgerigar perched in front of a dark aviary
+  "email.monthly.care.8.alt": "Een groene grasparkiet op een stok voor een donkere volière",
+  // Get ready for the unexpected
+  "email.monthly.care.8.title": "Wees voorbereid op het onverwachte",
+  // <b>Fill in the Emergency section.</b> Add your avian vet, the nearest emergency clinic, and who to call if you can't be reached.
+  "email.monthly.care.8.n1": "<b>Vul het onderdeel Noodgevallen in.</b> Voeg je vogeldierenarts toe, de dichtstbijzijnde spoedkliniek en wie er gebeld moet worden als jij niet bereikbaar bent.",
+  // <b>Keep a carrier ready.</b> Somewhere easy to reach, with a towel and a small container of food.
+  "email.monthly.care.8.n2": "<b>Houd een reismandje klaar.</b> Op een plek waar je er makkelijk bij kunt, met een handdoek en een klein bakje voer.",
+  // <b>Share the plan.</b> Make sure anyone who helps with your bird knows where to find it.
+  "email.monthly.care.8.n3": "<b>Deel het plan.</b> Zorg dat iedereen die helpt met je vogel weet waar het te vinden is.",
+  // An African grey parrot looking up from a red perch indoors
+  "email.monthly.care.9.alt": "Een grijze roodstaartpapegaai die binnen omhoogkijkt vanaf een rode zitstok",
+  // Keep the air clean at home
+  "email.monthly.care.9.title": "Houd de lucht in huis schoon",
+  // <b>Be careful with nonstick pans.</b> Overheated nonstick cookware can release fumes that are very dangerous to birds. Keep your bird well away from the kitchen when you cook.
+  "email.monthly.care.9.n1": "<b>Pas op met antiaanbakpannen.</b> Oververhitte pannen met een antiaanbaklaag kunnen dampen afgeven die erg gevaarlijk zijn voor vogels. Houd je vogel ver uit de keuken als je kookt.",
+  // <b>Go easy on scents.</b> Aerosol sprays, scented candles, plug-in air fresheners, and strong cleaning products are best kept away from where your bird spends time.
+  "email.monthly.care.9.n2": "<b>Wees zuinig met geurtjes.</b> Spuitbussen, geurkaarsen, luchtverfrissers in het stopcontact en sterke schoonmaakmiddelen houd je het best uit de buurt van de plek waar je vogel zijn tijd doorbrengt.",
+  // <b>Let fresh air in.</b> Open a window when you clean or cook, and keep your bird in another room until the air clears.
+  "email.monthly.care.9.n3": "<b>Laat frisse lucht binnen.</b> Zet een raam open als je schoonmaakt of kookt, en houd je vogel in een andere kamer tot de lucht weer schoon is.",
+  // A white cockatiel with orange cheeks beside a wooden nest box
+  "email.monthly.care.10.alt": "Een witte valkparkiet met oranje wangen naast een houten nestkast",
+  // Protect a good night's sleep
+  "email.monthly.care.10.title": "Bescherm een goede nachtrust",
+  // <b>Keep bedtime steady.</b> A regular time, a dark room, and quiet help most parrots settle.
+  "email.monthly.care.10.n1": "<b>Houd bedtijd vast.</b> Een vaste tijd, een donkere kamer en rust helpen de meeste papegaaien om tot rust te komen.",
+  // <b>Notice what wakes them.</b> Late TV, passing headlights, or a busy hallway can interrupt sleep more than you'd think.
+  "email.monthly.care.10.n2": "<b>Let op wat ze wakker maakt.</b> Laat nog tv kijken, koplampen die voorbijkomen of een drukke gang kunnen de slaap meer verstoren dan je denkt.",
+  // <b>Write down the routine.</b> Add bedtime to the Routine section of the care plan so anyone helping out keeps it the same.
+  "email.monthly.care.10.n3": "<b>Schrijf de routine op.</b> Zet bedtijd in het onderdeel Routine van het verzorgingsplan, zodat iedereen die helpt het hetzelfde houdt.",
+  // Two hyacinth macaws sitting close together on a rope
+  "email.monthly.care.11.alt": "Twee hyacinth-ara's dicht tegen elkaar op een touw",
+  // Spend a few minutes on training
+  "email.monthly.care.11.title": "Besteed een paar minuten aan training",
+  // <b>Keep sessions short.</b> A few minutes at a time, ending while your bird is still interested.
+  "email.monthly.care.11.n1": "<b>Houd sessies kort.</b> Een paar minuten per keer, en stop terwijl je vogel nog geïnteresseerd is.",
+  // <b>Start with something simple.</b> Stepping up, or touching a target stick, builds trust and makes everyday care easier.
+  "email.monthly.care.11.n2": "<b>Begin met iets simpels.</b> Opstappen of een targetstokje aanraken bouwt vertrouwen op en maakt de dagelijkse verzorging makkelijker.",
+  // <b>Reward what you want to see.</b> A favorite treat and your attention go a long way. Note progress in the journal.
+  "email.monthly.care.11.n3": "<b>Beloon wat je wilt zien.</b> Een favoriet snoepje en je aandacht doen veel. Noteer de vooruitgang in het dagboek.",
+  // A green macaw with a red forehead perched in an aviary
+  "email.monthly.care.12.alt": "Een groene ara met een rood voorhoofd op een stok in een volière",
+  // Plan for a busy house
+  "email.monthly.care.12.title": "Bereid je voor op een vol huis",
+  // <b>Keep the basics steady.</b> Meals, sleep, and time out of the cage matter more when the house is full or the routine shifts.
+  "email.monthly.care.12.n1": "<b>Houd de basis vast.</b> Eten, slaap en tijd buiten de kooi zijn extra belangrijk als het huis vol is of de routine verschuift.",
+  // <b>Give your bird a quiet spot.</b> Somewhere calm to retreat to when there are guests, noise, or new things around.
+  "email.monthly.care.12.n2": "<b>Geef je vogel een rustig plekje.</b> Een rustige plek om zich terug te trekken als er gasten, lawaai of nieuwe dingen in de buurt zijn.",
+  // <b>Watch for hazards.</b> Open doors, candles, decorations, and unfamiliar foods are worth an extra look.
+  "email.monthly.care.12.n3": "<b>Let op gevaren.</b> Open deuren, kaarsen, versiering en onbekend eten verdienen een extra blik.",
   // You're getting this because you have a Kya & Co. account and haven't finished setting up. Each of these setup notes is sent at most once.
   "email.onboarding.foot": "Je krijgt dit omdat je een Kya & Co.-account hebt en de installatie nog niet hebt afgerond. Elk van deze installatietips wordt hoogstens één keer verstuurd.",
   // {{birdName}}: daily health check logged — all clear
@@ -109,6 +443,26 @@
   "email.onboardingAddBird.cta": "Voeg je vogel toe",
   // Adding a bird takes about a minute — a name and a species is enough to start.  Add your bird: {{link}}
   "email.onboardingAddBird.text": "Een vogel toevoegen kost ongeveer een minuut — een naam en een soort is genoeg om te beginnen.\n\nVoeg je vogel toe: {{link}}",
+  // Your flock starts with one bird
+  "email.addFirstBird.headline": "Het begint met één vogel",
+  // A name and species are all it takes to start.
+  "email.addFirstBird.preview": "Een naam en een soort is alles wat je nodig hebt om te beginnen.",
+  // Hi {{firstName}},
+  "email.addFirstBird.greeting": "Hoi {{firstName}},",
+  // Hi there,
+  "email.addFirstBird.greetingNoName": "Hoi,",
+  // Adding a bird takes about a minute — a name and a species is enough to start. Everything else (care plan, weights, photos) can come whenever you like.
+  "email.addFirstBird.body": "Een vogel toevoegen kost ongeveer een minuut — een naam en een soort is genoeg om te beginnen. De rest (verzorgingsplan, gewicht, foto's) kan komen wanneer jij wilt.",
+  // Add your bird
+  "email.addFirstBird.cta": "Voeg je vogel toe",
+  // You're getting this as part of your first few weeks with Kya &amp; Co. Change which emails you get in Settings.
+  "email.addFirstBird.foot": "Je krijgt deze e-mail als onderdeel van je eerste weken met Kya &amp; Co. Bij Instellingen kies je welke e-mails je ontvangt.",
+  // Still room on the perch
+  "email.addFirstBirdReminder.headline": "Er is nog plek op de zitstok",
+  // One minute now, and a record you'll have for years.
+  "email.addFirstBirdReminder.preview": "Nu één minuut, en een dossier dat je jarenlang hebt.",
+  // Adding your bird takes about a minute, and a name and species are all you need to start. Weights, health checks, and the care plan can come later, whenever it suits you and your bird.
+  "email.addFirstBirdReminder.body": "Je vogel toevoegen kost ongeveer een minuut, en een naam en soort is alles wat je nodig hebt om te beginnen. Gewicht, gezondheidschecks en het verzorgingsplan kunnen later, wanneer het jou en je vogel uitkomt.",
   // A little about {{birdName}} goes a long way
   "email.onboardingCarePlan.subject": "Een beetje over {{birdName}} maakt al een groot verschil",
   // Getting set up
@@ -207,6 +561,128 @@
   "email.sitCancelled.foot": "Je krijgt dit omdat een oppasperiode waarvoor je zou invallen op Kya & Co. is geannuleerd.",
   // {{ownerName}} cancelled the sit covering {{birdNames}} from {{dateRange}}. You're no longer covering it — nothing you need to do.  Open the app: {{link}}
   "email.sitCancelled.text": "{{ownerName}} heeft de oppasperiode voor {{birdNames}} van {{dateRange}} geannuleerd. Je valt er niet meer voor in — je hoeft niets te doen.\n\nOpen de app: {{link}}",
+  // Hi {{first}},
+  "email.appLaunch.hi": "Hoi {{first}},",
+  // Hi there,
+  "email.appLaunch.hiNoName": "Hoi,",
+  // It's here! You can now download Kya &amp; Co. from the App Store and Google Play.
+  "email.appLaunch.p1": "Het is zover! Je kunt Kya &amp; Co. nu downloaden in de App Store en Google Play.",
+  // If you've been using it in your browser, you don't have to start over. Sign in with the same account and everything you've logged will be right where you left it, from weights and daily checks to journal entries and care plan notes.
+  "email.appLaunch.p2": "Gebruikte je de app al in je browser? Dan hoef je niet opnieuw te beginnen. Log in met hetzelfde account en alles wat je hebt genoteerd staat nog precies waar je het liet, van gewichten en dagelijkse checks tot dagboeknotities en aantekeningen in het verzorgingsplan.",
+  // Get the app
+  "email.appLaunch.cta": "Download de app",
+  // Why make the switch
+  "email.appLaunch.whyTitle": "Waarom overstappen",
+  // The app does a few things a browser tab can't, and they add up quickly when you're looking after a bird every day.
+  "email.appLaunch.whyIntro": "De app kan een paar dingen die een browsertabblad niet kan, en dat tikt snel aan als je elke dag voor een vogel zorgt.",
+  // Reminders reach you on time.
+  "email.appLaunch.step1Title": "Herinneringen komen op tijd binnen.",
+  // The app can let you know when it's time to weigh and when a check-in is due.
+  "email.appLaunch.step1Text": "De app kan je laten weten wanneer het tijd is om te wegen en wanneer er een check-in klaarstaat.",
+  // Logging takes seconds.
+  "email.appLaunch.step2Title": "Noteren kost een paar seconden.",
+  // Kya &amp; Co. sits on your Home Screen, so you can add a weight and get on with your morning.
+  "email.appLaunch.step2Text": "Kya &amp; Co. staat op je beginscherm, dus je voegt snel een gewicht toe en gaat verder met je ochtend.",
+  // Everything works the way you're used to.
+  "email.appLaunch.step3Title": "Alles werkt zoals je gewend bent.",
+  // It's the same app you know, living where your phone keeps the things you use every day.
+  "email.appLaunch.step3Text": "Het is dezelfde app die je kent, nu op de plek waar je telefoon de dingen bewaart die je elke dag gebruikt.",
+  // And if something isn't working, or there's something you wish it did, just hit reply. I read every note that comes in, and a lot of what we're building next started as an email from someone like you.
+  "email.appLaunch.reply": "En als iets niet werkt, of als je iets mist, druk dan gewoon op beantwoorden. Ik lees elk bericht dat binnenkomt, en veel van wat we nu bouwen begon als een e-mail van iemand zoals jij.",
+  // Before you go, thank you for trusting Kya &amp; Co. with a little piece of your bird's life. You were one of the very first, and I'm really glad you're here.
+  "email.appLaunch.thanks": "Nog even dit: bedankt dat je Kya &amp; Co. een klein stukje van het leven van je vogel toevertrouwt. Je was een van de allereersten, en ik ben echt blij dat je er bent.",
+  // Kya &amp; Co. is in the app stores
+  "email.appLaunch.headline": "Kya &amp; Co. staat in de app stores",
+  // Same account, reminders that reach you, and a peek at what we're building next.
+  "email.appLaunch.preview": "Hetzelfde account, herinneringen die echt aankomen en een voorproefje van wat we hierna bouwen.",
+  // Big news
+  "email.appLaunch.pill": "Groot nieuws",
+  // A bright orange sun conure looking at the camera
+  "email.appLaunch.heroAlt": "Een feloranje zonparkiet die in de camera kijkt",
+  // Now on iPhone + Android
+  "email.appLaunch.sticker": "Nu op iPhone + Android",
+  // You're getting this because you have a Kya &amp; Co. account.
+  "email.appLaunch.foot": "Je krijgt dit omdat je een Kya &amp; Co.-account hebt.",
+  // The app will learn your bird's normal.
+  "email.appLaunch.peek1Lead": "De app leert wat normaal is voor jouw vogel.",
+  // Their numbers will be compared with their own history instead of a general chart for the species.
+  "email.appLaunch.peek1Text": "Hun cijfers worden vergeleken met hun eigen geschiedenis in plaats van met een algemene tabel voor de soort.",
+  // Today cards will bring timely tips.
+  "email.appLaunch.peek2Lead": "Vandaag-kaarten brengen tips op het juiste moment.",
+  // You'll see short notes on what a heat wave, holiday candles, or fireworks night means for a parrot.
+  "email.appLaunch.peek2Text": "Je ziet korte notities over wat een hittegolf, kaarsen tijdens de feestdagen of vuurwerk betekenen voor een papegaai.",
+  // You'll be able to describe your bird out loud.
+  "email.appLaunch.peek3Lead": "Je kunt je vogel hardop beschrijven.",
+  // Talk or type the way you'd tell a friend about them, and the app will draft a care plan for you to review.
+  "email.appLaunch.peek3Text": "Vertel of typ over je vogel zoals je dat aan een vriend zou doen, en de app maakt een concept-verzorgingsplan dat jij kunt nakijken.",
+  // A weekly recap will round things up.
+  "email.appLaunch.peek4Lead": "Een wekelijks overzicht zet alles op een rij.",
+  // Instead of several separate nudges, you'll get one short look back at your week.
+  "email.appLaunch.peek4Text": "In plaats van losse herinneringetjes krijg je één korte terugblik op je week.",
+  // AVAILABLE ON
+  "email.appLaunch.availableOn": "BESCHIKBAAR IN",
+  // Download on the App Store
+  "email.appLaunch.badgeIosAlt": "Download in de App Store",
+  // Get it on Google Play
+  "email.appLaunch.badgeAndroidAlt": "Ontdek het op Google Play",
+  // A small favor
+  "email.appLaunch.favorTitle": "Een kleine gunst",
+  // Kya &amp; Co. is brand new in the stores, and those first few reviews go a long way toward helping other bird people find it. If the app has made caring for your flock a little easier, I'd be grateful if you left a rating and a sentence or two about why.
+  "email.appLaunch.favorBody": "Kya &amp; Co. is gloednieuw in de stores, en die eerste paar reviews helpen andere vogelliefhebbers enorm om de app te vinden. Heeft de app de zorg voor je vogels een beetje makkelijker gemaakt? Dan zou ik het heel fijn vinden als je een beoordeling achterlaat, met een zin of twee over waarom.",
+  // Leave a review
+  "email.appLaunch.favorCta": "Schrijf een review",
+  // Sneak peek
+  "email.appLaunch.peekPill": "Voorproefje",
+  // Coming to the app
+  "email.appLaunch.peekTitle": "Binnenkort in de app",
+  // Here's a look at what we're working on now. There are no dates yet, but I'll let you know as each one arrives.
+  "email.appLaunch.peekIntro": "Hier zie je waar we nu aan werken. Er zijn nog geen datums, maar ik laat het je weten zodra er iets klaar is.",
+  // Get the app: {{button}} App Store: {{ios}} Google Play: {{android}}
+  "email.appLaunch.textBadges": "Download de app: {{button}}\nApp Store: {{ios}}\nGoogle Play: {{android}}",
+  // A small favor Kya & Co. is brand new in the stores, and those first few reviews go a long way toward helping other bird people find it. If the app has made caring for your flock a little easier, I'd be grateful if you left a rating and a sentence or two about why. Leave a review: {{link}}
+  "email.appLaunch.textFavor": "Een kleine gunst\nKya & Co. is gloednieuw in de stores, en die eerste paar reviews helpen andere vogelliefhebbers enorm om de app te vinden. Heeft de app de zorg voor je vogels een beetje makkelijker gemaakt? Dan zou ik het heel fijn vinden als je een beoordeling achterlaat, met een zin of twee over waarom.\nSchrijf een review: {{link}}",
+  // Sneak peek — Coming to the app Here's a look at what we're working on now. There are no dates yet, but I'll let you know as each one arrives.
+  "email.appLaunch.textPeekHead": "Voorproefje — Binnenkort in de app\nHier zie je waar we nu aan werken. Er zijn nog geen datums, maar ik laat het je weten zodra er iets klaar is.",
+  // {{ownerName}} shared {{birdNames}}'s care with you — {{dateRange}}
+  "email.sitterInvite.subject": "{{ownerName}} heeft de zorg voor {{birdNames}} met je gedeeld — {{dateRange}}",
+  // Sitter access
+  "email.sitterInvite.kicker": "Toegang voor oppas",
+  // {{owner}} asked you to look after {{birds}}
+  "email.sitterInvite.heading": "{{owner}} heeft je gevraagd om op {{birds}} te passen",
+  // {{owner}} set you up as {{birds}}'s sitter from {{range}}. Your private link has everything you'll need — the care plan, the daily routine and health check, and emergency contacts. No account or password required.
+  "email.sitterInvite.body": "{{owner}} heeft je van {{range}} ingesteld als oppas van {{birds}}. Je persoonlijke link bevat alles wat je nodig hebt — het verzorgingsplan, de dagelijkse routine en gezondheidscheck, en noodcontacten. Geen account of wachtwoord nodig.",
+  // Open the care plan
+  "email.sitterInvite.cta": "Open het verzorgingsplan",
+  // This link is private to you and works only for this sit. If you weren't expecting it, you can ignore this email.
+  "email.sitterInvite.foot": "Deze link is alleen voor jou en werkt alleen voor deze oppasperiode. Verwachtte je dit niet? Dan kun je deze e-mail negeren.",
+  // {{ownerName}} set you up as {{birdNames}}'s sitter from {{dateRange}}. Your private link has the care plan, the daily routine and health check, and emergency contacts — no account needed.  Open the care plan: {{link}}
+  "email.sitterInvite.text": "{{ownerName}} heeft je van {{dateRange}} ingesteld als oppas van {{birdNames}}. Je persoonlijke link bevat het verzorgingsplan, de dagelijkse routine en gezondheidscheck, en noodcontacten — geen account nodig.\n\nOpen het verzorgingsplan: {{link}}",
+  // A change to your sit for {{birdNames}} — {{dateRange}}
+  "email.sitterInviteUpdated.subject": "Een wijziging in je oppasperiode voor {{birdNames}} — {{dateRange}}",
+  // Sit updated
+  "email.sitterInviteUpdated.kicker": "Oppasperiode bijgewerkt",
+  // {{owner}} updated the sit you're covering
+  "email.sitterInviteUpdated.heading": "{{owner}} heeft de oppasperiode bijgewerkt waarvoor je invalt",
+  // {{owner}} changed {{change}} for the sit covering {{birds}}. It now runs {{range}}. Your link is the same — open it for the latest care plan and checklist.
+  "email.sitterInviteUpdated.body": "{{owner}} heeft {{change}} gewijzigd voor de oppasperiode voor {{birds}}. Die loopt nu {{range}}. Je link blijft hetzelfde — open hem voor het nieuwste verzorgingsplan en de checklist.",
+  // Open the care plan
+  "email.sitterInviteUpdated.cta": "Open het verzorgingsplan",
+  // You're getting this because a sit you're covering on Kya & Co. changed. Your private link is unchanged.
+  "email.sitterInviteUpdated.foot": "Je krijgt dit omdat een oppasperiode waarvoor je invalt op Kya & Co. is gewijzigd. Je persoonlijke link blijft hetzelfde.",
+  // {{ownerName}} changed {{changeSummary}} for the sit covering {{birdNames}}. It now runs {{dateRange}}. Your link is the same.  Open the care plan: {{link}}
+  "email.sitterInviteUpdated.text": "{{ownerName}} heeft {{changeSummary}} gewijzigd voor de oppasperiode voor {{birdNames}}. Die loopt nu {{dateRange}}. Je link blijft hetzelfde.\n\nOpen het verzorgingsplan: {{link}}",
+  // Cancelled: your sit for {{birdNames}} ({{dateRange}})
+  "email.sitterInviteCancelled.subject": "Geannuleerd: je oppasperiode voor {{birdNames}} ({{dateRange}})",
+  // Sit cancelled
+  "email.sitterInviteCancelled.kicker": "Oppasperiode geannuleerd",
+  // {{owner}} cancelled the sit you were covering
+  "email.sitterInviteCancelled.heading": "{{owner}} heeft de oppasperiode geannuleerd waarvoor je zou invallen",
+  // You're no longer looking after {{birds}}. The sit set for {{range}} has been cancelled, so there's nothing you need to do — your private link no longer works. {{owner}} will be in touch if that changes.
+  "email.sitterInviteCancelled.body": "Je past niet meer op {{birds}}. De oppasperiode van {{range}} is geannuleerd, dus je hoeft niets te doen — je persoonlijke link werkt niet meer. {{owner}} neemt contact op als dat verandert.",
+  // You're getting this because a sit you were covering on Kya & Co. was cancelled.
+  "email.sitterInviteCancelled.foot": "Je krijgt dit omdat een oppasperiode waarvoor je zou invallen op Kya & Co. is geannuleerd.",
+  // {{ownerName}} cancelled the sit for {{birdNames}} set for {{dateRange}}. You're no longer covering it and your link no longer works — nothing you need to do.
+  "email.sitterInviteCancelled.text": "{{ownerName}} heeft de oppasperiode voor {{birdNames}} van {{dateRange}} geannuleerd. Je valt er niet meer voor in en je link werkt niet meer — je hoeft niets te doen.",
   // {{birdName}}: health concern flagged by your sitter
   "email.scanAlert.subjectUrgent": "{{birdName}}: gezondheidsaandachtspunt gemeld door je oppas",
   // {{birdName}}: your sitter flagged something to check
@@ -235,6 +711,8 @@
   "email.scanAlert.textNotesLabel": "Notities van de oppas:",
   // View the full health check
   "email.scanAlert.textCta": "Bekijk de volledige gezondheidscheck",
+  // Normal
+  "email.scanReason.normal": "Normaal",
   // Concerning
   "email.scanReason.concerning": "Aandachtspunt",
   // Not sure
@@ -258,5 +736,367 @@
   // Is the bird free of any injury, fall, bite, or scratch
   "email.scanReason.q.injury": "Is de vogel vrij van verwondingen, een val, beet of kras",
   // Has the bird been kept away from fumes, unsafe foods, metals, plants, and other pets
-  "email.scanReason.q.exposure": "Is de vogel uit de buurt gehouden van dampen, onveilig voedsel, metalen, planten en andere huisdieren"
+  "email.scanReason.q.exposure": "Is de vogel uit de buurt gehouden van dampen, onveilig voedsel, metalen, planten en andere huisdieren",
+  // Welcome to the flock, {{firstName}}.
+  "email.welcome.headline": "Welkom in de club, {{firstName}}.",
+  // Welcome to the flock.
+  "email.welcome.headlineNoName": "Welkom in de club.",
+  // Your bird's new favorite app (probably).
+  "email.welcome.preview": "De nieuwe favoriete app van je vogel (waarschijnlijk).",
+  // Welcome to the flock!
+  "email.welcome.sticker": "Welkom in de club!",
+  // A green-cheeked conure perched on an outstretched hand
+  "email.welcome.heroAlt": "Een groenwangparkiet op een uitgestoken hand",
+  // Open Kya &amp; Co.
+  "email.welcome.cta": "Open Kya &amp; Co.",
+  // Add your first bird
+  "email.welcome.ctaNoBird": "Voeg je eerste vogel toe",
+  // I'm Brittany, founder of The Kya Project, and I share my home with a flock of parrots who have opinions about everything.
+  "email.welcome.p1": "Ik ben Brittany, oprichter van The Kya Project, en ik deel mijn huis met een stel papegaaien die overal een mening over hebben.",
+  // Parrots are brilliant, loud, funny, and still wild animals. They need the right food, real enrichment, and someone paying close attention when something seems off. Kya &amp; Co. is how I keep up with mine, whether I'm home or someone else is on bird duty. Now it's yours too.
+  "email.welcome.p2": "Papegaaien zijn slim, luid, grappig en nog steeds wilde dieren. Ze hebben het juiste eten nodig, echte verrijking en iemand die goed oplet als er iets niet in orde lijkt. Met Kya &amp; Co. houd ik mijn vogels bij, of ik nu thuis ben of iemand anders de vogeldienst heeft. Nu is het ook van jou.",
+  // Your first three things
+  "email.welcome.stepsHead": "Je eerste drie stappen",
+  // Add your bird
+  "email.welcome.step1Title": "Voeg je vogel toe",
+  // Name and species is all it takes. Everything else can come later.
+  "email.welcome.step1Text": "Een naam en een soort is genoeg. De rest kan later.",
+  // Log a first weight
+  "email.welcome.step2Title": "Noteer een eerste gewicht",
+  // All you need is a digital scale that reads in grams. The next email covers the rest.
+  "email.welcome.step2Text": "Je hebt alleen een digitale weegschaal nodig die in grammen weegt. De volgende e-mail vertelt je de rest.",
+  // Run a daily health check
+  "email.welcome.step3Title": "Doe een dagelijkse gezondheidscheck",
+  // A few quick questions about how your bird looks and acts. The normal days count too.
+  "email.welcome.step3Text": "Een paar korte vragen over hoe je vogel eruitziet en zich gedraagt. De normale dagen tellen ook mee.",
+  // Meet Juno, our example bird
+  "email.welcome.junoTitle": "Maak kennis met Juno, onze voorbeeldvogel",
+  // A blue-throated macaw who weighs in before breakfast and has strong feelings about the vacuum. Juno will show you around over the next few emails.
+  "email.welcome.junoText": "Een blauwkeelara die zich vóór het ontbijt laat wegen en een uitgesproken mening heeft over de stofzuiger. Juno leidt je de komende e-mails rond.",
+  // Juno, a blue-throated macaw
+  "email.welcome.junoAlt": "Juno, een blauwkeelara",
+  // Over the next couple of weeks, I'll send a short email every few days. Each one is a quick tour of one part of the app. Think of it as flockmate orientation.
+  "email.welcome.p3": "De komende paar weken stuur ik je om de paar dagen een korte e-mail. Elke e-mail is een snelle rondleiding door één onderdeel van de app. Zie het als een kennismaking voor nieuwe vogelvrienden.",
+  // And tell me about your bird! Hit reply, send a photo, brag a little. Every reply comes straight to me.
+  "email.welcome.p4": "En vertel me over je vogel! Druk op beantwoorden, stuur een foto, schep een beetje op. Elk antwoord komt rechtstreeks bij mij terecht.",
+  // You're getting this because you just joined Kya &amp; Co. Change which emails you get in Settings.
+  "email.welcome.foot": "Je krijgt dit omdat je je net hebt aangemeld bij Kya &amp; Co. Kies in Instellingen welke e-mails je ontvangt.",
+  // How to weigh a bird with opinions
+  "email.seriesWeighing.headline": "Zo weeg je een vogel met een eigen mening",
+  // What you need, and how to get a reading you can use.
+  "email.seriesWeighing.preview": "Wat je nodig hebt, en hoe je een meting krijgt waar je iets aan hebt.",
+  // Grams count!
+  "email.seriesWeighing.sticker": "Elke gram telt!",
+  // A ring-necked parakeet standing on an open palm
+  "email.seriesWeighing.heroAlt": "Een halsbandparkiet die op een open handpalm staat",
+  // Weight is one of the most useful things you can track. It can shift before anything else looks different, and a record of it helps you and your vet get to know what's usual for your bird.
+  "email.seriesWeighing.p1": "Gewicht is een van de nuttigste dingen die je kunt bijhouden. Het kan al veranderen voordat er verder iets anders lijkt, en een overzicht ervan helpt jou en je dierenarts te leren wat normaal is voor jouw vogel.",
+  // What you'll need
+  "email.seriesWeighing.needTitle": "Wat je nodig hebt",
+  // A digital scale that reads in grams.
+  "email.seriesWeighing.need1Lead": "Een digitale weegschaal die in grammen weegt.",
+  // Make sure it can handle your bird plus any perch or container.
+  "email.seriesWeighing.need1Text": "Zorg dat hij je vogel plus een eventuele zitstok of bak aankan.",
+  // Somewhere steady to stand.
+  "email.seriesWeighing.need2Lead": "Een stevige plek om op te staan.",
+  // Set the perch or container on the scale, press tare to zero it, then add your bird. Bird scales with a built-in perch make this easy.
+  "email.seriesWeighing.need2Text": "Zet de zitstok of bak op de weegschaal, druk op tarra om op nul te zetten en zet dan je vogel erop. Vogelweegschalen met een ingebouwde zitstok maken dit makkelijk.",
+  // A little patience.
+  "email.seriesWeighing.need3Lead": "Een beetje geduld.",
+  // If the scale is new, let your bird check it out first. A treat helps. There's no need to force a first reading.
+  "email.seriesWeighing.need3Text": "Is de weegschaal nieuw? Laat je vogel hem dan eerst verkennen. Een snoepje helpt. Je hoeft een eerste meting niet te forceren.",
+  // Weigh at about the same time each day, at the same point in their feeding routine. That's what makes one reading easy to compare with the next. And follow any instructions your vet has given you.
+  "email.seriesWeighing.p2": "Weeg elke dag rond hetzelfde tijdstip, op hetzelfde moment in de voerroutine. Zo kun je de ene meting makkelijk met de volgende vergelijken. En volg de instructies die je dierenarts je heeft gegeven.",
+  // In the app
+  "email.seriesWeighing.chartBadge": "In de app",
+  // Juno &middot; last 90 days
+  "email.seriesWeighing.chartCaption": "Juno &middot; afgelopen 90 dagen",
+  // 90 days ago
+  "email.seriesWeighing.chartAxisStart": "90 dagen geleden",
+  // Today
+  "email.seriesWeighing.chartAxisEnd": "Vandaag",
+  // Juno's weigh-ins over 90 days: 15 readings, from 746 g to 758 g.
+  "email.seriesWeighing.chartAlt": "De wegingen van Juno over 90 dagen: 15 metingen, van 746 g tot 758 g.",
+  // 40 weigh-ins. Each dot is one reading, logged before breakfast.
+  "email.seriesWeighing.chartNote": "40 wegingen. Elke stip is één meting, genoteerd vóór het ontbijt.",
+  // Log a weight
+  "email.seriesWeighing.cta": "Noteer een gewicht",
+  // Add your bird to start weighing
+  "email.seriesWeighing.ctaNoBird": "Voeg je vogel toe om te gaan wegen",
+  // Juno took three days to trust the scale. Yours might take one, or ten. Go at your bird's pace, and bring the good snacks.
+  "email.seriesWeighing.p3": "Juno had drie dagen nodig om de weegschaal te vertrouwen. Bij jouw vogel kan het één dag duren, of tien. Ga in het tempo van je vogel, en neem de lekkerste snoepjes mee.",
+  // You're getting this as part of your first few weeks with Kya &amp; Co. Change which emails you get in Settings.
+  "email.seriesWeighing.foot": "Je krijgt dit als onderdeel van je eerste weken met Kya &amp; Co. Bij Instellingen kies je welke e-mails je ontvangt.",
+  // The daily once-over
+  "email.seriesHealthCheck.headline": "Het dagelijkse rondje",
+  // A few questions a day, and why the boring days matter.
+  "email.seriesHealthCheck.preview": "Een paar vragen per dag, en waarom de saaie dagen ertoe doen.",
+  // Boring is good
+  "email.seriesHealthCheck.sticker": "Saai is goed",
+  // A close-up of a green conure with red markings on its face
+  "email.seriesHealthCheck.heroAlt": "Een close-up van een groene parkiet met rode tekening op zijn kop",
+  // The daily health check is a short set of questions about how your bird looks and acts today: alertness, appetite, droppings, breathing, and posture. Same questions, every day.
+  "email.seriesHealthCheck.p1": "De dagelijkse gezondheidscheck is een korte reeks vragen over hoe je vogel er vandaag uitziet en zich gedraagt: alertheid, eetlust, poep, ademhaling en houding. Elke dag dezelfde vragen.",
+  // Juno's once-over
+  "email.seriesHealthCheck.cardTitle": "Juno's dagelijkse rondje",
+  // In the app
+  "email.seriesHealthCheck.cardBadge": "In de app",
+  // Is Juno alert and responsive?
+  "email.seriesHealthCheck.q1": "Is Juno alert en reageert ze goed?",
+  // Is Juno eating normally?
+  "email.seriesHealthCheck.q2": "Eet Juno normaal?",
+  // Do the droppings look normal?
+  "email.seriesHealthCheck.q3": "Ziet de poep er normaal uit?",
+  // Plus seven more, including breathing, perching, and sound.
+  "email.seriesHealthCheck.cardNote": "Plus nog zeven, waaronder ademhaling, op de zitstok zitten en geluid.",
+  // Boring is good.
+  "email.seriesHealthCheck.boringTitle": "Saai is goed.",
+  // Most days, everything's normal, and that's exactly what you want on record. The normal days are what you'll compare against if something ever changes.
+  "email.seriesHealthCheck.boringText": "De meeste dagen is alles normaal, en dat is precies wat je genoteerd wilt hebben. Met die normale dagen vergelijk je als er ooit iets verandert.",
+  // It also leaves you a timeline. When you're trying to remember when something started, the answer's already written down.
+  "email.seriesHealthCheck.p2": "Je bouwt er ook een tijdlijn mee op. Probeer je je te herinneren wanneer iets begon, dan staat het antwoord al op papier.",
+  // Do today's check
+  "email.seriesHealthCheck.cta": "Doe de check van vandaag",
+  // Add your bird to start checks
+  "email.seriesHealthCheck.ctaNoBird": "Voeg je vogel toe om met checks te beginnen",
+  // Juno's tip: do it right after breakfast, while you're already standing there with the food bowl.
+  "email.seriesHealthCheck.p3": "Tip van Juno: doe het direct na het ontbijt, als je toch al met het voerbakje in je hand staat.",
+  // You're getting this as part of your first few weeks with Kya &amp; Co. Change which emails you get in Settings.
+  "email.seriesHealthCheck.foot": "Je krijgt dit als onderdeel van je eerste weken met Kya &amp; Co. Bij Instellingen kies je welke e-mails je ontvangt.",
+  // Write down what normal looks like
+  "email.seriesCarePlan.headline": "Schrijf op hoe normaal eruitziet",
+  // Six sections. Start with two.
+  "email.seriesCarePlan.preview": "Zes onderdelen. Begin met twee.",
+  // Start with two
+  "email.seriesCarePlan.sticker": "Begin met twee",
+  // A peach-faced lovebird eating seed from cupped hands
+  "email.seriesCarePlan.heroAlt": "Een perzikkopagapornis die zaad eet uit twee gevouwen handen",
+  // The care plan is everything you know about your bird's care, in one place. It's the stuff that lives in your head right now, like how much breakfast, what time lights go out, and which toy is the favorite this week.
+  "email.seriesCarePlan.p1": "Het verzorgingsplan is alles wat je weet over de verzorging van je vogel, op één plek. Het zijn de dingen die nu nog in je hoofd zitten, zoals hoeveel ontbijt, hoe laat het licht uitgaat en welk speeltje deze week favoriet is.",
+  // Food
+  "email.seriesCarePlan.secFood": "Voeding",
+  // Behavior
+  "email.seriesCarePlan.secBehavior": "Gedrag",
+  // Home
+  "email.seriesCarePlan.secHome": "Thuis",
+  // Health
+  "email.seriesCarePlan.secHealth": "Gezondheid",
+  // Routine
+  "email.seriesCarePlan.secRoutine": "Routine",
+  // Emergency
+  "email.seriesCarePlan.secEmergency": "Noodgeval",
+  // START HERE
+  "email.seriesCarePlan.startHere": "BEGIN HIER",
+  // No need to fill in all six today. Food and Routine are the easy wins, and they're what anyone helping out will need first.
+  "email.seriesCarePlan.p2": "Je hoeft ze vandaag niet alle zes in te vullen. Voeding en Routine zijn de makkelijke eerste stappen, en dat is ook wat iemand die helpt als eerste nodig heeft.",
+  // Write it for someone who's never met your bird
+  "email.seriesCarePlan.exampleTitle": "Schrijf het voor iemand die je vogel nog nooit heeft ontmoet",
+  // JUNO'S ROUTINE
+  "email.seriesCarePlan.exampleLabel": "JUNO'S ROUTINE",
+  // Breakfast at 7: pellets and chopped veggies. One almond if Juno steps up nicely. Cover on and lights out by 8:30.
+  "email.seriesCarePlan.exampleQuote": "Ontbijt om 7 uur: pellets en gesneden groente. Eén amandel als Juno netjes opstapt. Om half 9 de doek over de kooi en het licht uit.",
+  // Specific beats short. &quot;Some pellets&quot; means something different to everyone.
+  "email.seriesCarePlan.exampleNote": "Precies wint van kort. &quot;Wat pellets&quot; betekent voor iedereen iets anders.",
+  // In Behavior, add what your bird loves and how they spend the day. Enrichment belongs in the plan too, because your sitter should know about the foraging box.
+  "email.seriesCarePlan.p3": "Zet bij Gedrag waar je vogel dol op is en hoe hij de dag doorbrengt. Verrijking hoort ook in het plan, want je oppas moet weten van de foerageerdoos.",
+  // The plan is also what you'll share when someone else helps out. More on that in a few days.
+  "email.seriesCarePlan.p4": "Het plan is ook wat je deelt als iemand anders helpt. Daarover over een paar dagen meer.",
+  // Start the care plan
+  "email.seriesCarePlan.cta": "Begin aan het verzorgingsplan",
+  // Add your bird to start a plan
+  "email.seriesCarePlan.ctaNoBird": "Voeg je vogel toe om een plan te maken",
+  // You're getting this as part of your first few weeks with Kya &amp; Co. Change which emails you get in Settings.
+  "email.seriesCarePlan.foot": "Je krijgt dit als onderdeel van je eerste weken met Kya &amp; Co. Bij Instellingen kies je welke e-mails je ontvangt.",
+  // The bits worth remembering
+  "email.seriesJournal.headline": "De dingen die het onthouden waard zijn",
+  // Stories, photos, and the dates you don't want to forget.
+  "email.seriesJournal.preview": "Verhalen, foto's en de data die je niet wilt vergeten.",
+  // No streaks required
+  "email.seriesJournal.sticker": "Geen reeksen nodig",
+  // A rainbow lorikeet preening its tail feathers on a rope perch
+  "email.seriesJournal.heroAlt": "Een regenbooglori die zijn staartveren poetst op een touwzitstok",
+  // The journal is for the good stuff: the first time they said something new, a photo from a great afternoon, the week they decided the vacuum is their mortal enemy.
+  "email.seriesJournal.p1": "Het dagboek is voor de mooie dingen: de eerste keer dat je vogel iets nieuws zei, een foto van een heerlijke middag, de week waarin de stofzuiger tot aartsvijand werd verklaard.",
+  // Juno's journal
+  "email.seriesJournal.cardPill": "Juno's dagboek",
+  // Saturday, Sept 14
+  "email.seriesJournal.cardDate": "Zaterdag 14 sept.",
+  // Tried the new foraging box this morning. Solved it in under a minute, then ignored it for the rest of the day.
+  "email.seriesJournal.cardEntry": "Vanochtend de nieuwe foerageerdoos geprobeerd. Binnen een minuut opgelost, en daarna de rest van de dag genegeerd.",
+  // Juno, a blue-throated macaw, foraging in a woven toy
+  "email.seriesJournal.cardPhotoAlt": "Juno, een blauwkeelara, foeragerend in een gevlochten speeltje",
+  // Moment &middot; Oct 3
+  "email.seriesJournal.momentLabel": "Moment &middot; 3 okt.",
+  // The day Juno came home
+  "email.seriesJournal.momentText": "De dag dat Juno thuiskwam",
+  // An entry can be one sentence. What happened, a photo if you've got one, done.
+  "email.seriesJournal.p2": "Een notitie mag één zin zijn. Wat er gebeurde, een foto als je die hebt, klaar.",
+  // <b>Moments</b> are the dates you want to keep, like a hatch day or the day your bird came home.
+  "email.seriesJournal.p3": "<b>Momenten</b> zijn de data die je wilt bewaren, zoals een uitkomstdag of de dag dat je vogel thuiskwam.",
+  // The journal works for everyday notes too, like how they took to a new toy, or something to mention at the next vet visit. Future you will be glad it has a date on it.
+  "email.seriesJournal.p4": "Het dagboek werkt ook voor alledaagse notities, zoals hoe je vogel op een nieuw speeltje reageerde, of iets wat je bij het volgende dierenartsbezoek wilt noemen. Je toekomstige zelf is blij dat er een datum bij staat.",
+  // Add a journal entry
+  "email.seriesJournal.cta": "Schrijf een dagboeknotitie",
+  // Add your bird to start a journal
+  "email.seriesJournal.ctaNoBird": "Voeg je vogel toe om een dagboek te beginnen",
+  // No schedule, no streaks. Write when there's something worth writing.
+  "email.seriesJournal.p5": "Geen schema, geen reeksen. Schrijf als er iets is wat het opschrijven waard is.",
+  // You're getting this as part of your first few weeks with Kya &amp; Co. Change which emails you get in Settings.
+  "email.seriesJournal.foot": "Je krijgt dit als onderdeel van je eerste weken met Kya &amp; Co. Bij Instellingen kies je welke e-mails je ontvangt.",
+  // When someone else helps
+  "email.seriesSharing.headline": "Als iemand anders helpt",
+  // A guest pass for the sitter. A house key for the everyday crew.
+  "email.seriesSharing.preview": "Een gastenpas voor de oppas. Een huissleutel voor de vaste hulp.",
+  // Juno's got people
+  "email.seriesSharing.sticker": "Juno heeft haar mensen",
+  // Two hyacinth macaws sitting close together on a rope
+  "email.seriesSharing.heroAlt": "Twee hyacintara's dicht tegen elkaar aan op een touw",
+  // Juno has a sitter for weekends away and a roommate who handles breakfast. They need different things from the app, so there are two ways to share.
+  "email.seriesSharing.p1": "Juno heeft een oppas voor weekendjes weg en een huisgenoot die het ontbijt regelt. Zij hebben verschillende dingen nodig van de app, dus er zijn twee manieren om te delen.",
+  // GUEST PASS
+  "email.seriesSharing.t1Label": "GASTENPAS",
+  // Going away for the weekend?
+  "email.seriesSharing.t1Title": "Een weekendje weg?",
+  // Send your sitter a private link. They'll have your bird's care plan on their phone. No sign-up, no passwords.
+  "email.seriesSharing.t1Text": "Stuur je oppas een privélink. Dan hebben ze het verzorgingsplan van je vogel op hun telefoon. Geen account, geen wachtwoorden.",
+  // Sitter link
+  "email.seriesSharing.t1Stub": "Oppaslink",
+  // HOUSE KEY
+  "email.seriesSharing.t2Label": "HUISSLEUTEL",
+  // Sharing the everyday?
+  "email.seriesSharing.t2Title": "De dagelijkse zorg delen?",
+  // Add them to your household. They get their own login, the full record, and whatever jobs you hand them, from logging breakfast to editing the care plan.
+  "email.seriesSharing.t2Text": "Voeg ze toe aan je huishouden. Ze krijgen hun eigen inlog, het volledige dossier en de taken die jij ze geeft, van het ontbijt noteren tot het verzorgingsplan bewerken.",
+  // Household
+  "email.seriesSharing.t2Stub": "Huishouden",
+  // Before you share, give the feeding instructions and contact details a quick look. Then walk your helper through anything that's easier to show than write, like how your bird likes to step up.
+  "email.seriesSharing.p2": "Kijk voordat je deelt nog even naar de voerinstructies en contactgegevens. Laat je helper daarna alles zien wat makkelijker voor te doen is dan op te schrijven, zoals hoe je vogel graag opstapt.",
+  // The plan is there afterward, so nobody has to remember everything you said at the door.
+  "email.seriesSharing.p3": "Het plan blijft er daarna gewoon, zodat niemand alles hoeft te onthouden wat je bij de deur zei.",
+  // Share your care plan
+  "email.seriesSharing.cta": "Deel je verzorgingsplan",
+  // Add your bird, then share
+  "email.seriesSharing.ctaNoBird": "Voeg je vogel toe en deel daarna",
+  // You're getting this as part of your first few weeks with Kya &amp; Co. Change which emails you get in Settings.
+  "email.seriesSharing.foot": "Je krijgt dit als onderdeel van je eerste weken met Kya &amp; Co. Bij Instellingen kies je welke e-mails je ontvangt.",
+  // Bring the record to the vet
+  "email.seriesVet.headline": "Neem het dossier mee naar de dierenarts",
+  // Dates and details, ready when you need them.
+  "email.seriesVet.preview": "Data en details, klaar wanneer je ze nodig hebt.",
+  // Vet-ready
+  "email.seriesVet.sticker": "Klaar voor de dierenarts",
+  // An African grey parrot looking up from a red perch indoors
+  "email.seriesVet.heroAlt": "Een grijze roodstaartpapegaai die binnen omhoogkijkt vanaf een rode zitstok",
+  // Everything you've logged, from weights to daily checks to journal notes, adds up to something really useful at an appointment: the details, with dates attached.
+  "email.seriesVet.p1": "Alles wat je hebt genoteerd, van gewichten tot dagelijkse checks en dagboeknotities, vormt samen iets heel nuttigs bij een afspraak: de details, met data erbij.",
+  // Juno's vet summary
+  "email.seriesVet.cardTitle": "Juno's dierenartssamenvatting",
+  // In the app
+  "email.seriesVet.cardBadge": "In de app",
+  // Weigh-ins, last 30 days
+  "email.seriesVet.row1Label": "Wegingen, afgelopen 30 dagen",
+  // 12 &middot; latest 752 g
+  "email.seriesVet.row1Value": "12 &middot; laatste 752 g",
+  // Daily checks, last 30 days
+  "email.seriesVet.row2Label": "Dagelijkse checks, afgelopen 30 dagen",
+  // 22 of 30
+  "email.seriesVet.row2Value": "22 van 30",
+  // Journal notes, last 30 days
+  "email.seriesVet.row3Label": "Dagboeknotities, afgelopen 30 dagen",
+  // 4
+  "email.seriesVet.row3Value": "4",
+  // Questions your record can answer
+  "email.seriesVet.questionsHead": "Vragen die je dossier kan beantwoorden",
+  // When did their appetite change?
+  "email.seriesVet.q1": "Wanneer veranderde de eetlust?",
+  // What did they weigh before that?
+  "email.seriesVet.q2": "Wat woog je vogel daarvoor?",
+  // Has it happened once, or a few times?
+  "email.seriesVet.q3": "Is het één keer gebeurd, of een paar keer?",
+  // Before a visit, open the vet summary, check that it's up to date, and jot down anything you want to ask.
+  "email.seriesVet.p2": "Open voor een bezoek de dierenartssamenvatting, controleer of die up-to-date is en schrijf op wat je wilt vragen.",
+  // Bring whatever you have. You don't need a complete record to ask for help, and you should never wait on more entries to book an appointment.
+  "email.seriesVet.p3": "Neem mee wat je hebt. Je hebt geen compleet dossier nodig om hulp te vragen, en wacht nooit op meer notities voordat je een afspraak maakt.",
+  // See the vet summary
+  "email.seriesVet.cta": "Bekijk de dierenartssamenvatting",
+  // Add your bird to prep for the vet
+  "email.seriesVet.ctaNoBird": "Voeg je vogel toe om je voor te bereiden op de dierenarts",
+  // That's the tour, flockmate.
+  "email.seriesVet.tourTitle": "Dat was de rondleiding, vogelvriend.",
+  // From here, you'll hear from me once a month with The Flock Report: your bird's month in numbers, a care note, and the latest from The Kya Project.
+  "email.seriesVet.tourText": "Vanaf nu hoor je één keer per maand van me met The Flock Report: de maand van je vogel in cijfers, een verzorgingstip en het laatste nieuws van The Kya Project.",
+  // Got a question, or a bird story you need to tell someone? Hit reply. I'd love to hear how you two are getting on.
+  "email.seriesVet.p4": "Heb je een vraag, of een vogelverhaal dat je kwijt moet? Klik op beantwoorden. Ik hoor graag hoe het met jullie gaat.",
+  // You're getting this as part of your first few weeks with Kya &amp; Co. Change which emails you get in Settings.
+  "email.seriesVet.foot": "Je krijgt dit als onderdeel van je eerste weken met Kya &amp; Co. Bij Instellingen kies je welke e-mails je ontvangt.",
+  // {{coveringLabel}} flagged something serious about {{birdName}}
+  "email.sitterConcern.subject": "{{coveringLabel}} meldt iets ernstigs over {{birdName}}",
+  // Please read now
+  "email.sitterConcern.kicker": "Lees dit nu",
+  // {{covering}} flagged something serious about {{bird}}
+  "email.sitterConcern.heading": "{{covering}} meldt iets ernstigs over {{bird}}",
+  // <b>{{covering}} has paused {{bird}}'s daily reminders</b> and may be trying to reach you. Please call {{covering}} as soon as you can.
+  "email.sitterConcern.alert": "<b>{{covering}} heeft de dagelijkse herinneringen voor {{bird}} gepauzeerd</b> en probeert je misschien te bereiken. Bel {{covering}} zo snel als je kunt.",
+  // Nothing about {{bird}}'s record has changed, and nothing has been deleted. Care is simply on hold until you and they have spoken.
+  "email.sitterConcern.body": "Er is niets veranderd aan het dossier van {{bird}}, en er is niets verwijderd. De zorg staat alleen even stil tot jullie elkaar hebben gesproken.",
+  // Open {{bird}}'s record
+  "email.sitterConcern.cta": "Open het dossier van {{bird}}",
+  // This app doesn't diagnose illness. If you're worried about {{bird}}, contact an avian veterinarian.
+  "email.sitterConcern.foot": "Deze app stelt geen diagnoses. Maak je je zorgen over {{bird}}, neem dan contact op met een vogeldierenarts.",
+  // {{coveringLabel}} paused {{birdName}}'s daily reminders and flagged that something is seriously wrong. Please call {{coveringLabel}} as soon as you can.  Nothing about {{birdName}}'s record has changed.  Open {{birdName}}'s record: {{link}}  This app doesn't diagnose illness. If you're worried about {{birdName}}, contact an avian veterinarian.  Kya & Co. — by The Kya Project
+  "email.sitterConcern.text": "{{coveringLabel}} heeft de dagelijkse herinneringen voor {{birdName}} gepauzeerd en gemeld dat er iets ernstig mis is. Bel {{coveringLabel}} zo snel als je kunt.\n\nEr is niets veranderd aan het dossier van {{birdName}}.\n\nOpen het dossier van {{birdName}}: {{link}}\n\nDeze app stelt geen diagnoses. Maak je je zorgen over {{birdName}}, neem dan contact op met een vogeldierenarts.\n\nKya & Co. — van The Kya Project",
+  // Thinking of you and {{birdName}}
+  "email.bereavement.subject": "Ik denk aan jou en {{birdName}}",
+  // Hi {{firstName}},
+  "email.bereavement.hiName": "Hoi {{firstName}},",
+  // Hi,
+  "email.bereavement.hiNoName": "Hoi,",
+  // I saw that {{bird}} passed away, and I'm so sorry.
+  "email.bereavement.sorry": "Ik zag dat {{bird}} is overleden, en het spijt me zo.",
+  // Losing a bird is its own kind of grief. They're with us for years, sometimes decades, and they fill a home with a personality that people who haven't lived with a parrot don't always understand. Please be gentle with yourself.
+  "email.bereavement.grief": "Een vogel verliezen is een verdriet op zich. Ze zijn jaren bij ons, soms tientallen jaren, en ze vullen een huis met een persoonlijkheid die mensen die nooit met een papegaai hebben samengewoond niet altijd begrijpen. Wees alsjeblieft lief voor jezelf.",
+  // {{bird}}'s record, journal and moments are safe in Kya &amp; Co. whenever you want to look back. There's nothing you need to do, and you won't get any reminders about {{bird}}.
+  "email.bereavement.record": "Het dossier, dagboek en de momenten van {{bird}} zijn veilig bewaard in Kya &amp; Co., voor wanneer je wilt terugkijken. Je hoeft niets te doen, en je krijgt geen herinneringen meer over {{bird}}.",
+  // If you ever want to share a favorite story about {{bird}}, you can reply to this email. I'd be honored to read it.
+  "email.bereavement.story": "Als je ooit een dierbaar verhaal over {{bird}} wilt delen, kun je op deze e-mail reageren. Ik zou het een eer vinden om het te lezen.",
+  // Warmly,<br>Brittany
+  "email.bereavement.signoff": "Hartelijke groet,<br>Brittany",
+  // Hi,  I saw that {{birdName}} passed away, and I'm so sorry.  Losing a bird is its own kind of grief. They're with us for years, sometimes decades, and they fill a home with a personality that people who haven't lived with a parrot don't always understand. Please be gentle with yourself.  {{birdName}}'s record, journal and moments are safe in Kya & Co. whenever you want to look back. There's nothing you need to do, and you won't get any reminders about {{birdName}}.  If you ever want to share a favorite story about {{birdName}}, you can reply to this email. I'd be honored to read it.  Warmly, Brittany
+  "email.bereavement.text": "Hoi,\n\nIk zag dat {{birdName}} is overleden, en het spijt me zo.\n\nEen vogel verliezen is een verdriet op zich. Ze zijn jaren bij ons, soms tientallen jaren, en ze vullen een huis met een persoonlijkheid die mensen die nooit met een papegaai hebben samengewoond niet altijd begrijpen. Wees alsjeblieft lief voor jezelf.\n\nHet dossier, dagboek en de momenten van {{birdName}} zijn veilig bewaard in Kya & Co., voor wanneer je wilt terugkijken. Je hoeft niets te doen, en je krijgt geen herinneringen meer over {{birdName}}.\n\nAls je ooit een dierbaar verhaal over {{birdName}} wilt delen, kun je op deze e-mail reageren. Ik zou het een eer vinden om het te lezen.\n\nHartelijke groet,\nBrittany",
+  // your bird
+  "push.common.yourBird": "je vogel",
+  // Your bird
+  "push.common.yourBirdCap": "Je vogel",
+  // Care plan check-in
+  "push.carePlanReminder.title": "Even het verzorgingsplan nalopen",
+  // {{birdName}} has a sit coming up — review the care plan?
+  "push.carePlanReminder.body": "{{birdName}} heeft binnenkort een oppasperiode — het verzorgingsplan nog even nalopen?",
+  // Weigh-in time
+  "push.weightReminder.title": "Tijd om te wegen",
+  // {{birdName}} is due for a weigh-in — the last one was {{n}} days ago.
+  "push.weightReminder.body": "{{birdName}} moet weer gewogen worden — de laatste keer was {{n}} dagen geleden.",
+  // A quick check-in
+  "push.checkin10.title": "Even bijwerken",
+  // It's been a little while since {{birdName}}'s last entry. Two minutes keeps the record whole.
+  "push.checkin10.body": "Het is alweer even geleden sinds de laatste notitie over {{birdName}}. Twee minuutjes houden het dossier compleet.",
+  // {{birdName}} says hi
+  "push.checkin30.title": "{{birdName}} zegt hallo",
+  // {{birdName}}'s health record is right where you left it, whenever you're ready.
+  "push.checkin30.body": "Het gezondheidsdossier van {{birdName}} ligt klaar waar je het liet, wanneer je er maar aan toe bent.",
+  // {{coveringLabel}} flagged something serious
+  "push.sitterConcern.title": "{{coveringLabel}} meldt iets ernstigs",
+  // {{coveringLabel}} paused {{birdName}}'s reminders and may be trying to reach you. Please call them as soon as you can.
+  "push.sitterConcern.body": "{{coveringLabel}} heeft de herinneringen voor {{birdName}} gepauzeerd en probeert je misschien te bereiken. Bel ze zo snel als je kunt.",
+  // Health concern flagged
+  "push.scan.redTitle": "Zorgelijke gezondheidscheck",
+  // {{birdName}}'s sitter logged a concerning result. Tap to review.
+  "push.scan.redBody": "De oppas van {{birdName}} heeft een zorgelijke uitkomst genoteerd. Tik om te bekijken.",
+  // Sitter flagged something to check
+  "push.scan.yellowTitle": "Oppas meldt iets om te checken",
+  // {{birdName}}'s sitter logged an uncertain result. Tap to review.
+  "push.scan.yellowBody": "De oppas van {{birdName}} heeft een onzekere uitkomst genoteerd. Tik om te bekijken.",
+  // New daily health check
+  "push.scan.clearTitle": "Nieuwe dagelijkse gezondheidscheck",
+  // {{birdName}}'s sitter logged an all-clear health check.
+  "push.scan.clearBody": "De oppas van {{birdName}} heeft een gezondheidscheck genoteerd: alles in orde."
 }

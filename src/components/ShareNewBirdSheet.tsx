@@ -3,6 +3,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { addExistingHouseholdMember } from "@/lib/household.functions";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import i18next from "i18next";
 
 // One person from getHouseholdAccount().members, narrowed to what this sheet
 // needs. `scope` is DERIVED there (birdIds.length >= totalBirds), not stored —
@@ -19,7 +21,7 @@ export type ShareCandidate = {
 };
 
 function memberLabel(m: ShareCandidate) {
-  return m.name?.trim() || m.email || "Household member";
+  return m.name?.trim() || m.email || i18next.t("shareNewBird.householdMember", "Household member");
 }
 
 // Asked right after a bird is created, before the care-plan walkthrough. The
@@ -42,6 +44,7 @@ export function ShareNewBirdSheet({
   const [selected, setSelected] = useState<Set<string>>(
     () => new Set(members.filter((m) => m.scope === "all").map((m) => m.userId)),
   );
+  const { t } = useTranslation();
   const [sharing, setSharing] = useState(false);
   const addExisting = useServerFn(addExistingHouseholdMember);
 
@@ -67,14 +70,14 @@ export function ShareNewBirdSheet({
     if (shared.length) {
       toast.success(
         shared.length === 1
-          ? `${memberLabel(shared[0])} can see ${birdName}.`
-          : `${shared.length} people can see ${birdName}.`,
+          ? t("shareNewBird.oneCanSee", "{{name}} can see {{bird}}.", { name: memberLabel(shared[0]), bird: birdName })
+          : t("shareNewBird.manyCanSee", "{{n}} people can see {{bird}}.", { n: shared.length, bird: birdName }),
       );
     }
     if (failed.length) {
       // Name who failed — "something went wrong" leaves the owner unable to
       // tell who still needs access.
-      toast.error(`Couldn't share ${birdName} with ${failed.map(memberLabel).join(", ")}. You can add them from Household.`);
+      toast.error(t("shareNewBird.shareFailed", "Couldn't share {{bird}} with {{names}}. You can add them from Household.", { bird: birdName, names: failed.map(memberLabel).join(", ") }));
     }
     onContinue();
   }
@@ -83,17 +86,17 @@ export function ShareNewBirdSheet({
     <div className="fixed inset-0 z-50 flex flex-col bg-[#f4f1e8]">
       <header className="flex items-center justify-between border-b border-[#e3ded0] px-5 py-3 pt-[max(env(safe-area-inset-top),0.75rem)]">
         <span className="w-12" />
-        <h2 className="text-base font-medium text-[#1a3d2e]">Who else helps?</h2>
+        <h2 className="text-base font-medium text-[#1a3d2e]">{t("shareNewBird.title", "Who else helps?")}</h2>
         <span className="w-12" />
       </header>
 
       <div className="mx-auto w-full max-w-md flex-1 space-y-4 overflow-y-auto px-5 py-5">
         <p className="text-sm text-[#5f5e5a]">
-          {birdName} is saved. These people help with your other birds — pick anyone who should see {birdName} too.
+          {t("shareNewBird.intro", "{{bird}} is saved. These people help with your other birds — pick anyone who should see {{bird}} too.", { bird: birdName })}
         </p>
 
         <div>
-          <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#5f5e5a]">Your household</span>
+          <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#5f5e5a]">{t("shareNewBird.yourHousehold", "Your household")}</span>
           <div className="overflow-hidden rounded-[14px] bg-white ring-1 ring-[#e3dcc9]">
             {members.map((m, i) => {
               const label = memberLabel(m);
@@ -114,14 +117,14 @@ export function ShareNewBirdSheet({
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-medium text-[#1a3d2e]">{label}</span>
                     <span className="mt-0.5 block truncate text-xs text-[#8a897f]">
-                      {m.scope === "all" ? "Helps with all your birds" : `Helps with ${m.birdNames.join(", ")}`}
+                      {m.scope === "all" ? t("shareNewBird.helpsWithAll", "Helps with all your birds") : t("shareNewBird.helpsWith", "Helps with {{names}}", { names: m.birdNames.join(", ") })}
                     </span>
                   </span>
                 </label>
               );
             })}
           </div>
-          <p className="mt-1.5 px-1 text-[11px] text-[#8a897f]">You can change who sees {birdName} anytime from Household.</p>
+          <p className="mt-1.5 px-1 text-[11px] text-[#8a897f]">{t("shareNewBird.changeAnytime", "You can change who sees {{bird}} anytime from Household.", { bird: birdName })}</p>
         </div>
       </div>
 
@@ -133,7 +136,7 @@ export function ShareNewBirdSheet({
             onClick={onContinue}
             className="min-h-[44px] flex-1 rounded-[14px] border border-[#c8bfa6] text-sm font-medium text-[#1a3d2e] disabled:opacity-50"
           >
-            Not now
+            {t("shareNewBird.notNow", "Not now")}
           </button>
           <button
             type="button"
@@ -142,7 +145,7 @@ export function ShareNewBirdSheet({
             className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-[14px] bg-[#1a3d2e] text-sm font-medium text-white disabled:opacity-50"
           >
             {sharing && <Loader2 className="size-4 animate-spin" />}
-            {selected.size ? "Share and continue" : "Continue"}
+            {selected.size ? t("shareNewBird.shareAndContinue", "Share and continue") : t("shareNewBird.continue", "Continue")}
           </button>
         </div>
       </footer>

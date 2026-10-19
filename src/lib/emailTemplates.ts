@@ -18,9 +18,8 @@
 // healthNote). Copy and per-builder escaping are untouched; only the chrome
 // changed.
 //
-// The external (token-link) sitter trio is NOT localized here — it's account-
-// less and keyed off a per-sit locale picker that doesn't exist yet (A3). Those
-// three builders keep their English literals and call shell() without `t`.
+// The external (token-link) sitter trio is account-less, so — like the
+// household and handoff invites — it is sent in the SENDER's (owner's) locale.
 
 import { emailT } from "./i18n/emailI18n.server";
 
@@ -1006,9 +1005,8 @@ export function buildSitCancelledEmail(opts: {
 // opens the read-only sitter view with no sign-in. Voice matches the household
 // invite — warm, plain, sentence case. Names/dates arrive pre-formatted.
 //
-// NOT localized (English only): these go to account-less token sitters, whose
-// language comes from a per-sit locale picker that doesn't exist yet (A3). They
-// call shell() without `t`, so the chrome stays English too.
+// Localized in the SENDER's (owner's) locale — the same rule as the household
+// and handoff invites, since the account-less sitter has no profile to read.
 
 // "<owner> shared <birds>'s care with you" — sent when an external sit is created.
 export function buildSitterInviteEmail(opts: {
@@ -1016,27 +1014,24 @@ export function buildSitterInviteEmail(opts: {
   birdNames: string;
   dateRange: string;
   link: string;
+  locale?: string;
 }): BuiltEmail {
+  const t = emailT(opts.locale);
   const owner = escapeHtml(opts.ownerName);
   const birds = escapeHtml(opts.birdNames);
   const range = escapeHtml(opts.dateRange);
   return {
-    subject: `${opts.ownerName} shared ${opts.birdNames}'s care with you — ${opts.dateRange}`,
+    subject: t("email.sitterInvite.subject", { ownerName: opts.ownerName, birdNames: opts.birdNames, dateRange: opts.dateRange }),
     html: shell({
-      kicker: "Sitter access",
-      heading: `${owner} asked you to look after ${birds}`,
-      body:
-        `${owner} set you up as ${birds}'s sitter from ${range}. Your private link has everything ` +
-        `you'll need — the care plan, the daily routine and health check, and emergency contacts. ` +
-        `No account or password required.`,
-      cta: "Open the care plan",
+      kicker: t("email.sitterInvite.kicker"),
+      heading: t("email.sitterInvite.heading", { owner, birds }),
+      body: t("email.sitterInvite.body", { owner, birds, range }),
+      cta: t("email.sitterInvite.cta"),
       link: opts.link,
-      foot: "This link is private to you and works only for this sit. If you weren't expecting it, you can ignore this email.",
+      foot: t("email.sitterInvite.foot"),
+      t,
     }),
-    text:
-      `${opts.ownerName} set you up as ${opts.birdNames}'s sitter from ${opts.dateRange}. ` +
-      `Your private link has the care plan, the daily routine and health check, and emergency contacts — ` +
-      `no account needed.\n\nOpen the care plan: ${opts.link}`,
+    text: t("email.sitterInvite.text", { ownerName: opts.ownerName, birdNames: opts.birdNames, dateRange: opts.dateRange, link: opts.link }),
   };
 }
 
@@ -1049,26 +1044,25 @@ export function buildSitterInviteUpdatedEmail(opts: {
   dateRange: string;
   changeSummary: string;
   link: string;
+  locale?: string;
 }): BuiltEmail {
+  const t = emailT(opts.locale);
   const owner = escapeHtml(opts.ownerName);
   const birds = escapeHtml(opts.birdNames);
   const range = escapeHtml(opts.dateRange);
   const change = escapeHtml(opts.changeSummary);
   return {
-    subject: `A change to your sit for ${opts.birdNames} — ${opts.dateRange}`,
+    subject: t("email.sitterInviteUpdated.subject", { birdNames: opts.birdNames, dateRange: opts.dateRange }),
     html: shell({
-      kicker: "Sit updated",
-      heading: `${owner} updated the sit you're covering`,
-      body:
-        `${owner} changed ${change} for the sit covering ${birds}. It now runs ${range}. ` +
-        `Your link is the same — open it for the latest care plan and checklist.`,
-      cta: "Open the care plan",
+      kicker: t("email.sitterInviteUpdated.kicker"),
+      heading: t("email.sitterInviteUpdated.heading", { owner }),
+      body: t("email.sitterInviteUpdated.body", { owner, change, birds, range }),
+      cta: t("email.sitterInviteUpdated.cta"),
       link: opts.link,
-      foot: "You're getting this because a sit you're covering on Kya & Co. changed. Your private link is unchanged.",
+      foot: t("email.sitterInviteUpdated.foot"),
+      t,
     }),
-    text:
-      `${opts.ownerName} changed ${opts.changeSummary} for the sit covering ${opts.birdNames}. ` +
-      `It now runs ${opts.dateRange}. Your link is the same.\n\nOpen the care plan: ${opts.link}`,
+    text: t("email.sitterInviteUpdated.text", { ownerName: opts.ownerName, changeSummary: opts.changeSummary, birdNames: opts.birdNames, dateRange: opts.dateRange, link: opts.link }),
   };
 }
 
@@ -1078,24 +1072,22 @@ export function buildSitterInviteCancelledEmail(opts: {
   ownerName: string;
   birdNames: string;
   dateRange: string;
+  locale?: string;
 }): BuiltEmail {
+  const t = emailT(opts.locale);
   const owner = escapeHtml(opts.ownerName);
   const birds = escapeHtml(opts.birdNames);
   const range = escapeHtml(opts.dateRange);
   return {
-    subject: `Cancelled: your sit for ${opts.birdNames} (${opts.dateRange})`,
+    subject: t("email.sitterInviteCancelled.subject", { birdNames: opts.birdNames, dateRange: opts.dateRange }),
     html: shell({
-      kicker: "Sit cancelled",
-      heading: `${owner} cancelled the sit you were covering`,
-      body:
-        `You're no longer looking after ${birds}. The sit set for ${range} has been cancelled, so ` +
-        `there's nothing you need to do — your private link no longer works. ${owner} will be in touch ` +
-        `if that changes.`,
-      foot: "You're getting this because a sit you were covering on Kya & Co. was cancelled.",
+      kicker: t("email.sitterInviteCancelled.kicker"),
+      heading: t("email.sitterInviteCancelled.heading", { owner }),
+      body: t("email.sitterInviteCancelled.body", { birds, range, owner }),
+      foot: t("email.sitterInviteCancelled.foot"),
+      t,
     }),
-    text:
-      `${opts.ownerName} cancelled the sit for ${opts.birdNames} set for ${opts.dateRange}. ` +
-      `You're no longer covering it and your link no longer works — nothing you need to do.`,
+    text: t("email.sitterInviteCancelled.text", { ownerName: opts.ownerName, birdNames: opts.birdNames, dateRange: opts.dateRange }),
   };
 }
 

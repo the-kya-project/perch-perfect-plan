@@ -15,9 +15,12 @@ import { InkHero, IconTile, StatusPill, SectionHead, Card, RecordRow } from "@/c
 import { MemberContextBanner } from "@/components/MemberContextBanner";
 import { friendlyError } from "@/lib/errorMessage";
 import { formatLocalDateTime } from "@/lib/dates";
+import i18next from "i18next";
+import type { TFunction } from "i18next";
+import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/weight")({
-  head: () => ({ meta: [{ title: "Weight — Kya & Co." }] }),
+  head: () => ({ meta: [{ title: i18next.t("birdWeight.metaTitle", "Weight — Kya & Co.") }] }),
   // ?log=1 (from the bird record's weight "+") opens the log-weight entry
   // straight away — one tap to the field, no intermediate CTA.
   validateSearch: (search: Record<string, unknown>): { log?: boolean } => ({
@@ -43,18 +46,28 @@ const nowLocal = () => {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 };
 const fmtDateTime = (iso: string) => formatLocalDateTime(new Date(iso), { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
-const mealLabel = (m: string | null | undefined): string | null => (m === "before_meal" ? "before meal" : m === "after_meal" ? "after meal" : null);
+const mealLabel = (m: string | null | undefined): string | null => (m === "before_meal" ? i18next.t("birdWeight.beforeMealLower", "before meal") : m === "after_meal" ? i18next.t("birdWeight.afterMealLower", "after meal") : null);
+function windowLabel(t: TFunction, days: WindowDays): string {
+  switch (days) {
+    case 30: return t("birdWeight.win30", "30d");
+    case 90: return t("birdWeight.win90", "90d");
+    case 365: return t("birdWeight.win365", "1y");
+  }
+}
 
 // Window-aware steady/trend context line for the hero (no emergency framing —
 // weight is never "red" on this screen).
 function trendContext(trend: "steady" | "up" | "down", delta: number, win: WindowDays): string {
-  const span = win === 30 ? "the last month" : win === 90 ? "the last 90 days" : "the last year";
-  if (trend === "up") return `Up ${delta} g over ${span}.`;
-  if (trend === "down") return `Down ${Math.abs(delta)} g over ${span}.`;
-  return `Steady over ${span}.`;
+  const span = win === 30
+    ? i18next.t("birdWeight.spanMonth", "the last month")
+    : win === 90 ? i18next.t("birdWeight.span90", "the last 90 days") : i18next.t("birdWeight.spanYear", "the last year");
+  if (trend === "up") return i18next.t("birdWeight.trendUp", "Up {{n}} g over {{span}}.", { n: delta, span });
+  if (trend === "down") return i18next.t("birdWeight.trendDown", "Down {{n}} g over {{span}}.", { n: Math.abs(delta), span });
+  return i18next.t("birdWeight.trendSteady", "Steady over {{span}}.", { span });
 }
 
 function WeightFacet() {
+  const { t } = useTranslation();
   const { birdId } = Route.useParams();
   const { log } = Route.useSearch();
   const canLogCare = useCapability("log_daily_care", { birdId });
@@ -68,17 +81,17 @@ function WeightFacet() {
   // Owner-only weight-entry delete (RLS also enforces birds.owner_id). Refresh the
   // list (trend recomputes from it) and the dashboard pills so nothing stale lingers.
   async function deleteWeight(id: string) {
-    if (!window.confirm("Delete this weight entry? This can't be undone.")) return;
+    if (!window.confirm(t("birdWeight.confirmDelete", "Delete this weight entry? This can't be undone."))) return;
     setDeletingId(id);
     try {
       const { error } = await supabase.from("weight_entries").delete().eq("id", id);
       if (error) throw error;
-      toast.success("Weight entry deleted.");
+      toast.success(t("birdWeight.deleted", "Weight entry deleted."));
       qc.invalidateQueries({ queryKey: ["weight-entries", birdId] });
       qc.invalidateQueries({ queryKey: ["bird-weights", birdId] });
       qc.invalidateQueries({ queryKey: ["birds"] }); // Home weight pills — now embedded in the birds query
     } catch (e: any) {
-      toast.error(friendlyError(e, "Couldn't delete the entry."));
+      toast.error(friendlyError(e, t("birdWeight.deleteFailed", "Couldn't delete the entry.")));
     } finally {
       setDeletingId(null);
     }
@@ -96,7 +109,7 @@ function WeightFacet() {
       return data as { name: string } | null;
     },
   });
-  const name = bird?.name ?? "this bird";
+  const name = bird?.name ?? t("birdWeight.thisBird", "this bird");
 
   const { data: entries } = useQuery({
     queryKey: ["weight-entries", birdId],
@@ -139,8 +152,8 @@ function WeightFacet() {
     },
   });
 
-  const heroHeadline = current ? `${current.grams} g.` : "Weight.";
-  const heroBody = current ? trendContext(trend, delta, win) : `No weights yet. Pop ${name} on a scale and log the first one.`;
+  const heroHeadline = current ? t("birdWeight.headlineGrams", "{{n}} g.", { n: current.grams }) : t("birdWeight.headlineEmpty", "Weight.");
+  const heroBody = current ? trendContext(trend, delta, win) : t("birdWeight.bodyEmpty", "No weights yet. Pop {{name}} on a scale and log the first one.", { name });
 
   return (
     <div className="min-h-screen bg-[var(--cream)] pb-nav">
@@ -148,10 +161,10 @@ function WeightFacet() {
         <InkHero
           backIcon={<ArrowLeft className="size-5" />}
           onBack={() => navigate({ to: "/birds/$birdId", params: { birdId } })}
-          eyebrow="Weight"
+          eyebrow={t("birdWeight.eyebrow", "Weight")}
           headline={heroHeadline}
           body={heroBody}
-          cta={canLogCare ? { label: "Log today's weight", tone: "lime", onPress: () => setLogOpen(true) } : undefined}
+          cta={canLogCare ? { label: t("birdWeight.logToday", "Log today's weight"), tone: "lime", onPress: () => setLogOpen(true) } : undefined}
         />
 
         <main className="space-y-4 px-5 pt-5">
@@ -175,7 +188,7 @@ function WeightFacet() {
             <>
               {/* Trend + chart */}
               <Card className="p-4">
-                <SectionHead title="Trend" />
+                <SectionHead title={t("birdWeight.trend", "Trend")} />
                 <div className="mb-3 flex justify-end">
                   <div className="inline-flex rounded-xl ring-1 ring-[var(--line)] p-0.5">
                     {WINDOWS.map((w) => (
@@ -185,39 +198,39 @@ function WeightFacet() {
                         onClick={() => setWin(w.days)}
                         className={`min-h-[36px] rounded-[10px] px-3 text-xs font-[500] ${win === w.days ? "bg-[var(--ink)] text-white" : "text-[var(--ink)]"}`}
                       >
-                        {w.label}
+                        {windowLabel(t, w.days)}
                       </button>
                     ))}
                   </div>
                 </div>
                 <WeightTrendChart points={chartPoints} />
                 <p className="mt-2 flex items-center gap-3 t-meta">
-                  <span className="inline-flex items-center gap-1"><span className="size-2 rounded-full bg-[var(--ink)]" /> You</span>
-                  <span className="inline-flex items-center gap-1"><span className="size-2 rounded-full bg-white ring-2 ring-[var(--amber-line)]" /> Sitter</span>
+                  <span className="inline-flex items-center gap-1"><span className="size-2 rounded-full bg-[var(--ink)]" /> {t("birdWeight.legendYou", "You")}</span>
+                  <span className="inline-flex items-center gap-1"><span className="size-2 rounded-full bg-white ring-2 ring-[var(--amber-line)]" /> {t("birdWeight.legendSitter", "Sitter")}</span>
                 </p>
               </Card>
 
               {/* History */}
               <section>
-                <SectionHead title="History" />
+                <SectionHead title={t("birdWeight.history", "History")} />
                 <Card>
                   {all.map((e, i) => {
                     const prev = all[i + 1]; // chronological previous (array is newest-first)
                     const d = prev ? e.grams - prev.grams : null;
-                    const deltaText = d == null ? "First weight" : `${d > 0 ? "+" : ""}${d} g from previous`;
+                    const deltaText = d == null ? t("birdWeight.firstWeight", "First weight") : t("birdWeight.fromPrevious", "{{delta}} g from previous", { delta: `${d > 0 ? "+" : ""}${d}` });
                     const subtitle = [fmtDateTime(e.measured_at), deltaText, mealLabel(e.meal_relation)].filter(Boolean).join(" · ");
                     let marker: React.ReactNode;
                     if (e.source === "sitter") {
-                      marker = <StatusPill tone="off">Sitter</StatusPill>;
+                      marker = <StatusPill tone="off">{t("birdWeight.sitter", "Sitter")}</StatusPill>;
                     } else if (e.source === "household") {
                       const nm = (e.logged_by && householdNames?.[e.logged_by]) || "";
-                      marker = <StatusPill tone="household">{nm ? `${nm} · household` : "Household"}</StatusPill>;
+                      marker = <StatusPill tone="household">{nm ? t("birdWeight.nameHousehold", "{{name}} · household", { name: nm }) : t("birdWeight.household", "Household")}</StatusPill>;
                     }
                     return (
                       <RecordRow
                         key={e.id}
                         leading={<IconTile size={34} tone="pale" icon={<Scale className="size-4" />} />}
-                        title={`${e.grams} g`}
+                        title={t("birdWeight.grams", "{{n}} g", { n: e.grams })}
                         subtitle={subtitle}
                         trailing={
                           <div className="flex items-center gap-2">
@@ -225,7 +238,7 @@ function WeightFacet() {
                             {isOwner && (
                               <button
                                 type="button"
-                                aria-label="Delete weight entry"
+                                aria-label={t("birdWeight.deleteAria", "Delete weight entry")}
                                 onClick={() => deleteWeight(e.id)}
                                 disabled={deletingId === e.id}
                                 className="grid size-9 shrink-0 place-items-center rounded-full text-[var(--red-ink)] active:bg-black/5 disabled:opacity-50"
@@ -257,6 +270,7 @@ function LogPanel({ birdId, lastGrams, onClose, onSaved }: { birdId: string; las
   // an active sit covering this bird, every weight they log during the window
   // is tagged with that sit_id, so the sit's activity view can derive its feed
   // from attribution. Null otherwise (no over-tagging).
+  const { t } = useTranslation();
   const activeSitId = useActiveSitIdForBird(birdId);
   const role = useBirdRole(birdId);
   const [grams, setGrams] = useState<string>(lastGrams ? String(lastGrams) : "");
@@ -282,7 +296,7 @@ function LogPanel({ birdId, lastGrams, onClose, onSaved }: { birdId: string; las
       if (activeSitId) payload.sit_id = activeSitId;
       const { error } = await supabase.from("weight_entries").insert(payload as any);
       if (error) throw error;
-      toast.success("Weight logged.");
+      toast.success(t("birdWeight.logged", "Weight logged."));
       track("weight_logged", {
         grams: n,
         has_meal_relation: !!meal,
@@ -290,7 +304,7 @@ function LogPanel({ birdId, lastGrams, onClose, onSaved }: { birdId: string; las
       });
       onSaved();
     } catch (e: any) {
-      toast.error(friendlyError(e, "Couldn't save the weight."));
+      toast.error(friendlyError(e, t("birdWeight.saveFailed", "Couldn't save the weight.")));
     } finally {
       setSaving(false);
     }
@@ -298,24 +312,24 @@ function LogPanel({ birdId, lastGrams, onClose, onSaved }: { birdId: string; las
 
   return (
     <Card className="p-4">
-      <p className="t-item">Log weight</p>
+      <p className="t-item">{t("birdWeight.logWeight", "Log weight")}</p>
 
       <div className="mt-3">
-        <label className="mb-1 block text-xs font-[500] text-[var(--mute)]">Weight (grams)</label>
+        <label className="mb-1 block text-xs font-[500] text-[var(--mute)]">{t("birdWeight.gramsLabel", "Weight (grams)")}</label>
         <input
           className="h-11 w-full rounded-xl bg-white ring-1 ring-[var(--line)] px-3 text-lg font-[500] text-[var(--ink)] outline-none focus:ring-[var(--moss)]"
           inputMode="decimal"
           value={grams}
-          placeholder={lastGrams ? String(lastGrams) : "e.g. 410"}
+          placeholder={lastGrams ? String(lastGrams) : t("birdWeight.gramsPlaceholder", "e.g. 410")}
           onChange={(e) => setGrams(e.target.value.replace(/[^0-9.]/g, ""))}
         />
         {grams !== "" && !valid && grams && (Number(grams) < MIN_G || Number(grams) > MAX_G) && (
-          <p className="mt-1 text-[11px] text-[var(--amber-ink)]">Enter a weight between {MIN_G} and {MAX_G} grams.</p>
+          <p className="mt-1 text-[11px] text-[var(--amber-ink)]">{t("birdWeight.range", "Enter a weight between {{min}} and {{max}} grams.", { min: MIN_G, max: MAX_G })}</p>
         )}
       </div>
 
       <div className="mt-3">
-        <label className="mb-1 block text-xs font-[500] text-[var(--mute)]">When</label>
+        <label className="mb-1 block text-xs font-[500] text-[var(--mute)]">{t("birdWeight.whenLabel", "When")}</label>
         <input
           type="datetime-local"
           className="h-11 w-full rounded-xl bg-white ring-1 ring-[var(--line)] px-3 text-sm text-[var(--ink)] outline-none focus:ring-[var(--moss)]"
@@ -326,7 +340,7 @@ function LogPanel({ birdId, lastGrams, onClose, onSaved }: { birdId: string; las
       </div>
 
       <div className="mt-3">
-        <label className="mb-1 block text-xs font-[500] text-[var(--mute)]">Relative to a meal (optional)</label>
+        <label className="mb-1 block text-xs font-[500] text-[var(--mute)]">{t("birdWeight.mealLabel", "Relative to a meal (optional)")}</label>
         <div className="grid grid-cols-2 gap-2">
           {(["before_meal", "after_meal"] as const).map((m) => (
             <button
@@ -335,7 +349,7 @@ function LogPanel({ birdId, lastGrams, onClose, onSaved }: { birdId: string; las
               onClick={() => setMeal((cur) => (cur === m ? null : m))}
               className={`min-h-[44px] rounded-xl text-sm font-[500] ${meal === m ? "bg-[var(--ink)] text-white ring-1 ring-[var(--moss)]" : "bg-white text-[var(--ink)] ring-1 ring-[var(--line)]"}`}
             >
-              {m === "before_meal" ? "Before meal" : "After meal"}
+              {m === "before_meal" ? t("birdWeight.beforeMeal", "Before meal") : t("birdWeight.afterMeal", "After meal")}
             </button>
           ))}
         </div>
@@ -348,10 +362,10 @@ function LogPanel({ birdId, lastGrams, onClose, onSaved }: { birdId: string; las
           disabled={!valid || saving}
           className="flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-[12px] bg-[var(--lime)] text-sm font-[500] text-[var(--ink)] disabled:opacity-50"
         >
-          <Check className="size-4" /> {saving ? "Saving…" : "Save"}
+          <Check className="size-4" /> {saving ? t("birdWeight.saving", "Saving…") : t("birdWeight.save", "Save")}
         </button>
         <button type="button" onClick={onClose} disabled={saving} className="min-h-[44px] rounded-[12px] px-4 text-sm font-[500] text-[var(--mute)] ring-1 ring-[var(--line)]">
-          Cancel
+          {t("birdWeight.cancel", "Cancel")}
         </button>
       </div>
     </Card>

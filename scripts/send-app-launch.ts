@@ -62,7 +62,7 @@ const sb = supabaseAdmin as any;
 type Row = { id: string; email: string | null; display_name: string | null };
 const { data: profiles, error } = await sb
   .from("profiles")
-  .select("id, email, display_name")
+  .select("id, email, display_name, locale")
   .eq("notify_monthly_letter", true);
 if (error) throw new Error(error.message);
 
@@ -116,7 +116,7 @@ for (const p of pending) console.log(`  ${p.email}${p.display_name ? `  (${p.dis
 
 if (TEST) {
   const me = audience.find((p) => p.email === FOUNDER) ?? { id: "df4c89f5-0be0-4df2-9ecf-e6818fa7471d", email: FOUNDER, display_name: "Brittany King" };
-  const b = buildAppLaunchEmail({ displayName: me.display_name, unsubscribeUrl: unsubUrl(APP_URL, me.id, "monthly") });
+  const b = buildAppLaunchEmail({ displayName: me.display_name, unsubscribeUrl: unsubUrl(APP_URL, me.id, "monthly"), locale: (me as any).locale ?? undefined });
   const res = await sendTransactionalEmail({
     to: FOUNDER,
     toName: "Brittany",
@@ -136,7 +136,7 @@ if (TEST) {
   let sent = 0;
   let failed = 0;
   for (const p of pending) {
-    const b = buildAppLaunchEmail({ displayName: p.display_name, unsubscribeUrl: unsubUrl(APP_URL, p.id, "monthly") });
+    const b = buildAppLaunchEmail({ displayName: p.display_name, unsubscribeUrl: unsubUrl(APP_URL, p.id, "monthly"), locale: (p as any).locale ?? undefined });
     const res = await sendTransactionalEmail({
       to: p.email!,
       toName: p.display_name ?? undefined,

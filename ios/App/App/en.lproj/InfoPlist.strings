@@ -1,0 +1,3 @@
+/* Permission prompts (English). Keep in sync with Info.plist. */
+"NSCameraUsageDescription" = "Kya uses the camera so you can record short care clips and take bird photos.";
+"NSMicrophoneUsageDescription" = "Kya uses the microphone when you record short care clips.";

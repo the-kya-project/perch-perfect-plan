@@ -3,6 +3,8 @@ import { ArrowLeft, Stethoscope, ChevronRight, HeartCrack } from "lucide-react";
 import { InkHero, Card } from "@/components/system";
 import { useActiveCaregiver, CaregiverTodayChecklist, CaregiverLoading } from "@/components/CaregiverHome";
 import type { ActiveCaregiverBird } from "@/lib/caregiver.functions";
+import { useTranslation } from "react-i18next";
+import i18next from "i18next";
 
 // Full-screen per-bird daily checklist for a covering household member — the
 // authenticated equivalent of the sitter's per-bird Today. Reached by tapping a
@@ -12,7 +14,7 @@ import type { ActiveCaregiverBird } from "@/lib/caregiver.functions";
 // sit is active and the user is its caregiver (the hook enforces both); otherwise
 // it shows a "not active" card.
 export const Route = createFileRoute("/_authenticated/covering/$sitId/$birdId")({
-  head: () => ({ meta: [{ title: "Daily care — Kya & Co." }] }),
+  head: () => ({ meta: [{ title: i18next.t("covering.pageTitle", "Daily care — Kya & Co.") }] }),
   component: CoveringBirdPage,
 });
 
@@ -21,16 +23,17 @@ export const Route = createFileRoute("/_authenticated/covering/$sitId/$birdId")(
 // the authenticated scan route. Not parallel scan logic: /birds/$birdId/scan IS
 // the shared scan flow.
 function ScanEntry({ bird, birdId }: { bird: ActiveCaregiverBird; birdId: string }) {
+  const { t } = useTranslation();
   const done = bird.scanDone;
   const flagged = bird.scanStatus === "red" || bird.scanStatus === "yellow";
   const tone = !done ? "amber" : bird.scanStatus === "red" ? "red" : flagged ? "amber" : "green";
   const color = tone === "red" ? "text-warn-red" : tone === "amber" ? "text-warn-amber" : "text-warn-green";
   const ring = tone === "red" ? "ring-warn-red/30" : tone === "amber" ? "ring-warn-amber/30" : "ring-warn-green/25";
   const label = !done
-    ? "Today's health check — not done yet"
+    ? t("covering.scanNotDone", "Today's health check — not done yet")
     : flagged
-      ? "Health check done — flagged"
-      : "Today's health check — done";
+      ? t("covering.scanFlagged", "Health check done — flagged")
+      : t("covering.scanDone", "Today's health check — done");
   return (
     <Link
       to="/birds/$birdId/scan"
@@ -41,7 +44,7 @@ function ScanEntry({ bird, birdId }: { bird: ActiveCaregiverBird; birdId: string
         <Stethoscope className="size-5" />
       </span>
       <div className="min-w-0 flex-1">
-        <span className="block text-[10px] font-semibold uppercase tracking-widest text-[var(--mute2)]">Daily health check · {bird.name}</span>
+        <span className="block text-[10px] font-semibold uppercase tracking-widest text-[var(--mute2)]">{t("covering.dailyHealthCheck", "Daily health check · {{bird}}", { bird: bird.name })}</span>
         <span className={`block text-sm font-medium ${color}`}>{label}</span>
       </div>
       <ChevronRight className="size-5 shrink-0 self-center text-[var(--mute2)]" />
@@ -50,6 +53,7 @@ function ScanEntry({ bird, birdId }: { bird: ActiveCaregiverBird; birdId: string
 }
 
 function CoveringBirdPage() {
+  const { t } = useTranslation();
   const { sitId, birdId } = Route.useParams();
   const navigate = useNavigate();
   const { data, isLoading } = useActiveCaregiver();
@@ -62,16 +66,16 @@ function CoveringBirdPage() {
         <InkHero
           backIcon={<ArrowLeft className="size-5" />}
           onBack={() => navigate({ to: "/dashboard" })}
-          eyebrow={sit?.ownerName ? `Covering ${sit.ownerName}'s flock` : "Daily care"}
-          headline={bird ? bird.name : "Daily care"}
-          body={bird ? `Today's care for ${bird.name}.` : undefined}
+          eyebrow={sit ? t("covering.coveringFlock", "Covering {{owner}}'s flock", { owner: sit.ownerName || t("covering.theOwner", "the owner") }) : t("covering.dailyCare", "Daily care")}
+          headline={bird ? bird.name : t("covering.dailyCare", "Daily care")}
+          body={bird ? t("covering.todaysCareFor", "Today's care for {{bird}}.", { bird: bird.name }) : undefined}
         />
         <main className="space-y-4 px-5 pt-5">
           {isLoading ? (
             <CaregiverLoading />
           ) : !sit || !bird ? (
             <Card className="p-6 text-center">
-              <p className="t-body text-[var(--ink2)]">This sit isn't active right now.</p>
+              <p className="t-body text-[var(--ink2)]">{t("covering.notActive", "This sit isn't active right now.")}</p>
             </Card>
           ) : (
             <>
@@ -93,10 +97,10 @@ function CoveringBirdPage() {
                   className="flex min-h-[52px] w-full items-center gap-3 rounded-[13px] border border-[var(--line)] bg-white px-4 text-left active:scale-[0.99]"
                 >
                   <HeartCrack className="size-5 shrink-0 text-[var(--mute2)]" />
-                  <span className="flex-1 text-[14px] font-[500] text-[var(--ink)]">Something's wrong with {bird.name}</span>
+                  <span className="flex-1 text-[14px] font-[500] text-[var(--ink)]">{t("covering.somethingsWrong", "Something's wrong with {{bird}}", { bird: bird.name })}</span>
                   <ChevronRight className="size-4 shrink-0 text-[var(--mute2)]" />
                 </Link>
-                <p className="t-meta mt-1.5 px-1">If {bird.name} has passed or is in serious trouble</p>
+                <p className="t-meta mt-1.5 px-1">{t("covering.ifPassed", "If {{bird}} has passed or is in serious trouble", { bird: bird.name })}</p>
               </div>
             </>
           )}

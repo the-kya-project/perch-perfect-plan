@@ -9,7 +9,8 @@ import {
   type ErrorComponentProps,
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
-import { I18nextProvider } from "react-i18next";
+import { I18nextProvider, useTranslation } from "react-i18next";
+import i18next from "i18next";
 import { Loader2 } from "lucide-react";
 import { globalI18n } from "@/lib/i18n";
 
@@ -32,20 +33,21 @@ import { savePushToken } from "@/lib/push.functions";
 // at app start so the native install prompt is captured (it fires once, early).
 
 function NotFoundComponent() {
+  const { t } = useTranslation();
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-6xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold">Page not found</h2>
+        <h2 className="mt-4 text-xl font-semibold">{t("root.pageNotFound", "Page not found")}</h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          The page you're looking for doesn't exist or the sitter link is invalid.
+          {t("root.pageNotFoundBody", "The page you're looking for doesn't exist or the sitter link is invalid.")}
         </p>
         <div className="mt-6">
           <Link
             to="/"
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
           >
-            Go home
+            {t("root.goHome", "Go home")}
           </Link>
         </div>
       </div>
@@ -54,6 +56,7 @@ function NotFoundComponent() {
 }
 
 function ErrorComponent({ error }: ErrorComponentProps) {
+  const { t } = useTranslation();
   console.error(error);
   // A stale-build chunk 404 (lazy route import after a deploy swapped the
   // precache) is SELF-HEALING: installChunkErrorRecovery reloads onto the fresh
@@ -80,17 +83,16 @@ function ErrorComponent({ error }: ErrorComponentProps) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold">Something went wrong</h1>
+        <h1 className="text-xl font-semibold">{t("root.somethingWentWrong", "Something went wrong")}</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Sorry, that page didn't load properly. Try refreshing, and if it keeps happening,
-          email us at {SUPPORT_EMAIL}.
+          {t("root.errorBody", "Sorry, that page didn't load properly. Try refreshing, and if it keeps happening, email us at {{email}}.", { email: SUPPORT_EMAIL })}
         </p>
         <div className="mt-6 flex justify-center">
           <button
             onClick={() => { void hardResetAndReload(); }}
             className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
           >
-            Refresh
+            {t("root.refresh", "Refresh")}
           </button>
         </div>
       </div>
@@ -143,15 +145,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       // <title> otherwise, which is too long). Exact string per the brand
       // spec — ampersand and period included.
       { name: "apple-mobile-web-app-title", content: "Kya & Co." },
-      { title: "Kya & Co. — Calm, clear care for your bird" },
-      { name: "description", content: "Shared care for your bird. Build one care plan, then share it so family, pet sitters, and household members all stay on the same page." },
+      { title: i18next.t("root.metaTitle", "Kya & Co. — Calm, clear care for your bird") },
+      { name: "description", content: i18next.t("root.metaDescription", "Shared care for your bird. Build one care plan, then share it so family, pet sitters, and household members all stay on the same page.") },
       { property: "og:site_name", content: "Kya & Co." },
-      { property: "og:title", content: "Kya & Co. — Calm, clear care for your bird" },
-      { property: "og:description", content: "Shared care for your bird. Build one care plan, then share it so family, pet sitters, and household members all stay on the same page." },
+      { property: "og:title", content: i18next.t("root.metaTitle", "Kya & Co. — Calm, clear care for your bird") },
+      { property: "og:description", content: i18next.t("root.metaDescription", "Shared care for your bird. Build one care plan, then share it so family, pet sitters, and household members all stay on the same page.") },
       { property: "og:type", content: "website" },
       { property: "og:image", content: "https://app.thekyaproject.com/brand/lockups/horizontal-ink.png" },
-      { name: "twitter:title", content: "Kya & Co. — Calm, clear care for your bird" },
-      { name: "twitter:description", content: "Shared care for your bird. Build one care plan, then share it so family, pet sitters, and household members all stay on the same page." },
+      { name: "twitter:title", content: i18next.t("root.metaTitle", "Kya & Co. — Calm, clear care for your bird") },
+      { name: "twitter:description", content: i18next.t("root.metaDescription", "Shared care for your bird. Build one care plan, then share it so family, pet sitters, and household members all stay on the same page.") },
       { name: "twitter:image", content: "https://app.thekyaproject.com/brand/lockups/horizontal-ink.png" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -225,6 +227,9 @@ function RootComponent() {
         void primeAccountRole(data.session.user.id);
         void ensureProfileLocale(data.session.user.id);
         syncPushToken();
+      } else {
+        // Signed out (sign-in, invite and handoff pages): follow the browser.
+        applyOwnerLocale(null);
       }
     });
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {

@@ -1,5 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { ageLabel } from "@/components/BirdPickers";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
+import i18next from "i18next";
 import { useServerFn } from "@tanstack/react-start";
 import { getHouseholdCarePlanView } from "@/lib/household.functions";
 import { useCapability } from "@/lib/useCapability";
@@ -13,7 +16,7 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 // sections; edit entry gated by edit_care_plans (UX only — RLS enforces).
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/care-plan")({
-  head: () => ({ meta: [{ title: "Care plan — Kya & Co." }] }),
+  head: () => ({ meta: [{ title: i18next.t("planEditor.metaTitle", "Care plan — Kya & Co.") }] }),
   // Deep-link target: ?section=food|behavior|home|health|routine|emergency.
   validateSearch: (search: Record<string, unknown>): { section?: CareSection } => {
     const s = search.section;
@@ -23,6 +26,7 @@ export const Route = createFileRoute("/_authenticated/birds/$birdId/care-plan")(
 });
 
 function HouseholdCarePlan() {
+  const { t } = useTranslation();
   const { birdId } = Route.useParams();
   const { section } = Route.useSearch();
   const navigate = useNavigate();
@@ -35,19 +39,19 @@ function HouseholdCarePlan() {
   });
 
   const bird = (data?.bird ?? {}) as any;
-  const name = (bird.name ?? "this bird") as string;
-  const speciesAge = [bird.species, bird.age].filter((x: any) => (x ?? "").toString().trim()).join(" · ");
+  const name = (bird.name ?? t("planEditor.thisBird", "this bird")) as string;
+  const speciesAge = [bird.species, bird.age ? ageLabel(t, bird.age) : null].filter((x: any) => (x ?? "").toString().trim()).join(" · ");
 
   return (
     <div className="min-h-screen bg-[var(--cream)] pb-nav">
       {isLoading ? (
         <main className="mx-auto flex max-w-md items-center justify-center gap-2 px-5 py-10 text-sm text-[var(--mute)]">
-          <Loader2 className="size-4 animate-spin" /> Loading the care plan…
+          <Loader2 className="size-4 animate-spin" /> {t("carePlanPage.loading", "Loading the care plan…")}
         </main>
       ) : isError || !data ? (
         <main className="mx-auto max-w-md px-5 py-5">
           <div className="rounded-[18px] bg-white p-6 text-center text-sm text-[var(--mute)] ring-1 ring-[var(--line2)]">
-            Couldn't load this care plan.
+            {t("carePlanPage.loadError", "Couldn't load this care plan.")}
           </div>
         </main>
       ) : (
@@ -60,7 +64,7 @@ function HouseholdCarePlan() {
           showViewOnlyTag={!canEdit}
           header={
             <div className="flex items-center gap-3">
-              <Link to="/birds/$birdId/plan" params={{ birdId }} aria-label="Back to care plan" className="-ml-1 rounded p-1 text-[var(--ink)]">
+              <Link to="/birds/$birdId/plan" params={{ birdId }} aria-label={t("carePlanPage.back", "Back to care plan")} className="-ml-1 rounded p-1 text-[var(--ink)]">
                 <ArrowLeft className="size-5" />
               </Link>
               <div className="min-w-0">
@@ -72,7 +76,7 @@ function HouseholdCarePlan() {
           footer={
             !canEdit ? (
               <p className="px-1 text-center text-[11px] text-[var(--mute)]">
-                Read-only. Only {name}'s owner can make changes.
+                {t("carePlanPage.readOnlyFooter", "Read-only. Only {{name}}'s owner can make changes.", { name })}
               </p>
             ) : undefined
           }

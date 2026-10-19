@@ -10,6 +10,20 @@
   "email.shell.fieldNotes": "From the field notes",
   "email.shell.footNote": "Kya &amp; Co. — by The Kya Project",
 
+  // ---- Shared name fallbacks + list joiners (server fns, any email) ----
+  // "Willow and Moxie" / "Willow, Moxie, and Kiwi" — {{head}} is already joined
+  // with listSep.
+  "email.common.listPair": "{{a}} and {{b}}",
+  "email.common.listSep": ", ",
+  "email.common.listMany": "{{head}}, and {{last}}",
+  "email.common.yourBird": "your bird",
+  "email.common.yourBirds": "your birds",
+  "email.common.anOwner": "An owner",
+  "email.common.someone": "Someone",
+  "email.common.yourBirdCap": "Your bird",
+  "email.common.yourSitter": "Your sitter",
+  "email.common.yourCaregiver": "Your caregiver",
+
   // ---- Flock Club shared chrome (src/lib/flockClub.ts) ----
   // Used by every email built on the new layout. The disclaimer is emitted by
   // the footer on every one of them and must never be written into a body
@@ -359,6 +373,76 @@
   "email.sitCancelled.foot": "You're getting this because a sit you were covering on Kya & Co. was cancelled.",
   "email.sitCancelled.text": "{{ownerName}} cancelled the sit covering {{birdNames}} from {{dateRange}}. You're no longer covering it — nothing you need to do.\n\nOpen the app: {{link}}",
 
+  // ---- App-launch announcement (one-off, src/lib/appLaunchEmail.ts) ----
+  // Plain-text variants (text*) mirror the HTML panels; Kya & Co. is unescaped there.
+  "email.appLaunch.hi": "Hi {{first}},",
+  "email.appLaunch.hiNoName": "Hi there,",
+  "email.appLaunch.p1": "It's here! You can now download Kya &amp; Co. from the App Store and Google Play.",
+  "email.appLaunch.p2": "If you've been using it in your browser, you don't have to start over. Sign in with the same account and everything you've logged will be right where you left it, from weights and daily checks to journal entries and care plan notes.",
+  "email.appLaunch.cta": "Get the app",
+  "email.appLaunch.whyTitle": "Why make the switch",
+  "email.appLaunch.whyIntro": "The app does a few things a browser tab can't, and they add up quickly when you're looking after a bird every day.",
+  "email.appLaunch.step1Title": "Reminders reach you on time.",
+  "email.appLaunch.step1Text": "The app can let you know when it's time to weigh and when a check-in is due.",
+  "email.appLaunch.step2Title": "Logging takes seconds.",
+  "email.appLaunch.step2Text": "Kya &amp; Co. sits on your Home Screen, so you can add a weight and get on with your morning.",
+  "email.appLaunch.step3Title": "Everything works the way you're used to.",
+  "email.appLaunch.step3Text": "It's the same app you know, living where your phone keeps the things you use every day.",
+  "email.appLaunch.reply": "And if something isn't working, or there's something you wish it did, just hit reply. I read every note that comes in, and a lot of what we're building next started as an email from someone like you.",
+  "email.appLaunch.thanks": "Before you go, thank you for trusting Kya &amp; Co. with a little piece of your bird's life. You were one of the very first, and I'm really glad you're here.",
+  "email.appLaunch.headline": "Kya &amp; Co. is in the app stores",
+  "email.appLaunch.preview": "Same account, reminders that reach you, and a peek at what we're building next.",
+  "email.appLaunch.pill": "Big news",
+  "email.appLaunch.heroAlt": "A bright orange sun conure looking at the camera",
+  "email.appLaunch.sticker": "Now on iPhone + Android",
+  "email.appLaunch.foot": "You're getting this because you have a Kya &amp; Co. account.",
+  "email.appLaunch.peek1Lead": "The app will learn your bird's normal.",
+  "email.appLaunch.peek1Text": "Their numbers will be compared with their own history instead of a general chart for the species.",
+  "email.appLaunch.peek2Lead": "Today cards will bring timely tips.",
+  "email.appLaunch.peek2Text": "You'll see short notes on what a heat wave, holiday candles, or fireworks night means for a parrot.",
+  "email.appLaunch.peek3Lead": "You'll be able to describe your bird out loud.",
+  "email.appLaunch.peek3Text": "Talk or type the way you'd tell a friend about them, and the app will draft a care plan for you to review.",
+  "email.appLaunch.peek4Lead": "A weekly recap will round things up.",
+  "email.appLaunch.peek4Text": "Instead of several separate nudges, you'll get one short look back at your week.",
+  "email.appLaunch.availableOn": "AVAILABLE ON",
+  "email.appLaunch.badgeIosAlt": "Download on the App Store",
+  "email.appLaunch.badgeAndroidAlt": "Get it on Google Play",
+  "email.appLaunch.favorTitle": "A small favor",
+  "email.appLaunch.favorBody": "Kya &amp; Co. is brand new in the stores, and those first few reviews go a long way toward helping other bird people find it. If the app has made caring for your flock a little easier, I'd be grateful if you left a rating and a sentence or two about why.",
+  "email.appLaunch.favorCta": "Leave a review",
+  "email.appLaunch.peekPill": "Sneak peek",
+  "email.appLaunch.peekTitle": "Coming to the app",
+  "email.appLaunch.peekIntro": "Here's a look at what we're working on now. There are no dates yet, but I'll let you know as each one arrives.",
+  "email.appLaunch.textBadges": "Get the app: {{button}}\nApp Store: {{ios}}\nGoogle Play: {{android}}",
+  "email.appLaunch.textFavor": "A small favor\nKya & Co. is brand new in the stores, and those first few reviews go a long way toward helping other bird people find it. If the app has made caring for your flock a little easier, I'd be grateful if you left a rating and a sentence or two about why.\nLeave a review: {{link}}",
+  "email.appLaunch.textPeekHead": "Sneak peek — Coming to the app\nHere's a look at what we're working on now. There are no dates yet, but I'll let you know as each one arrives.",
+
+  // ---- Sitter link invite (account-less token sitter; sender's locale) ----
+  "email.sitterInvite.subject": "{{ownerName}} shared {{birdNames}}'s care with you — {{dateRange}}",
+  "email.sitterInvite.kicker": "Sitter access",
+  "email.sitterInvite.heading": "{{owner}} asked you to look after {{birds}}",
+  "email.sitterInvite.body": "{{owner}} set you up as {{birds}}'s sitter from {{range}}. Your private link has everything you'll need — the care plan, the daily routine and health check, and emergency contacts. No account or password required.",
+  "email.sitterInvite.cta": "Open the care plan",
+  "email.sitterInvite.foot": "This link is private to you and works only for this sit. If you weren't expecting it, you can ignore this email.",
+  "email.sitterInvite.text": "{{ownerName}} set you up as {{birdNames}}'s sitter from {{dateRange}}. Your private link has the care plan, the daily routine and health check, and emergency contacts — no account needed.\n\nOpen the care plan: {{link}}",
+
+  // ---- Sitter link updated (account-less token sitter; sender's locale) ----
+  "email.sitterInviteUpdated.subject": "A change to your sit for {{birdNames}} — {{dateRange}}",
+  "email.sitterInviteUpdated.kicker": "Sit updated",
+  "email.sitterInviteUpdated.heading": "{{owner}} updated the sit you're covering",
+  "email.sitterInviteUpdated.body": "{{owner}} changed {{change}} for the sit covering {{birds}}. It now runs {{range}}. Your link is the same — open it for the latest care plan and checklist.",
+  "email.sitterInviteUpdated.cta": "Open the care plan",
+  "email.sitterInviteUpdated.foot": "You're getting this because a sit you're covering on Kya & Co. changed. Your private link is unchanged.",
+  "email.sitterInviteUpdated.text": "{{ownerName}} changed {{changeSummary}} for the sit covering {{birdNames}}. It now runs {{dateRange}}. Your link is the same.\n\nOpen the care plan: {{link}}",
+
+  // ---- Sitter link cancelled (account-less token sitter; sender's locale) ----
+  "email.sitterInviteCancelled.subject": "Cancelled: your sit for {{birdNames}} ({{dateRange}})",
+  "email.sitterInviteCancelled.kicker": "Sit cancelled",
+  "email.sitterInviteCancelled.heading": "{{owner}} cancelled the sit you were covering",
+  "email.sitterInviteCancelled.body": "You're no longer looking after {{birds}}. The sit set for {{range}} has been cancelled, so there's nothing you need to do — your private link no longer works. {{owner}} will be in touch if that changes.",
+  "email.sitterInviteCancelled.foot": "You're getting this because a sit you were covering on Kya & Co. was cancelled.",
+  "email.sitterInviteCancelled.text": "{{ownerName}} cancelled the sit for {{birdNames}} set for {{dateRange}}. You're no longer covering it and your link no longer works — nothing you need to do.",
+
   // ---- Flagged-scan alert (owner) — the 15th, inline in sitter.functions.ts ----
   "email.scanAlert.subjectUrgent": "{{birdName}}: health concern flagged by your sitter",
   "email.scanAlert.subjectCalm": "{{birdName}}: your sitter flagged something to check",
@@ -606,5 +690,26 @@
   "email.bereavement.record": "{{bird}}'s record, journal and moments are safe in Kya &amp; Co. whenever you want to look back. There's nothing you need to do, and you won't get any reminders about {{bird}}.",
   "email.bereavement.story": "If you ever want to share a favorite story about {{bird}}, you can reply to this email. I'd be honored to read it.",
   "email.bereavement.signoff": "Warmly,<br>Brittany",
-  "email.bereavement.text": "Hi,\n\nI saw that {{birdName}} passed away, and I'm so sorry.\n\nLosing a bird is its own kind of grief. They're with us for years, sometimes decades, and they fill a home with a personality that people who haven't lived with a parrot don't always understand. Please be gentle with yourself.\n\n{{birdName}}'s record, journal and moments are safe in Kya & Co. whenever you want to look back. There's nothing you need to do, and you won't get any reminders about {{birdName}}.\n\nIf you ever want to share a favorite story about {{birdName}}, you can reply to this email. I'd be honored to read it.\n\nWarmly,\nBrittany"
+  "email.bereavement.text": "Hi,\n\nI saw that {{birdName}} passed away, and I'm so sorry.\n\nLosing a bird is its own kind of grief. They're with us for years, sometimes decades, and they fill a home with a personality that people who haven't lived with a parrot don't always understand. Please be gentle with yourself.\n\n{{birdName}}'s record, journal and moments are safe in Kya & Co. whenever you want to look back. There's nothing you need to do, and you won't get any reminders about {{birdName}}.\n\nIf you ever want to share a favorite story about {{birdName}}, you can reply to this email. I'd be honored to read it.\n\nWarmly,\nBrittany",
+  // ---- Push notifications (server-only; src/lib/pushCopy.server.ts) ----
+  // Rendered per RECIPIENT locale. Bird names are interpolated raw (push text is
+  // not HTML). {{n}} is a plain number, not an i18next plural count.
+  "push.common.yourBird": "your bird",
+  "push.common.yourBirdCap": "Your bird",
+  "push.carePlanReminder.title": "Care plan check-in",
+  "push.carePlanReminder.body": "{{birdName}} has a sit coming up — review the care plan?",
+  "push.weightReminder.title": "Weigh-in time",
+  "push.weightReminder.body": "{{birdName}} is due for a weigh-in — the last one was {{n}} days ago.",
+  "push.checkin10.title": "A quick check-in",
+  "push.checkin10.body": "It's been a little while since {{birdName}}'s last entry. Two minutes keeps the record whole.",
+  "push.checkin30.title": "{{birdName}} says hi",
+  "push.checkin30.body": "{{birdName}}'s health record is right where you left it, whenever you're ready.",
+  "push.sitterConcern.title": "{{coveringLabel}} flagged something serious",
+  "push.sitterConcern.body": "{{coveringLabel}} paused {{birdName}}'s reminders and may be trying to reach you. Please call them as soon as you can.",
+  "push.scan.redTitle": "Health concern flagged",
+  "push.scan.redBody": "{{birdName}}'s sitter logged a concerning result. Tap to review.",
+  "push.scan.yellowTitle": "Sitter flagged something to check",
+  "push.scan.yellowBody": "{{birdName}}'s sitter logged an uncertain result. Tap to review.",
+  "push.scan.clearTitle": "New daily health check",
+  "push.scan.clearBody": "{{birdName}}'s sitter logged an all-clear health check."
 }

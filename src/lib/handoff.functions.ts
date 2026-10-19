@@ -9,7 +9,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { buildHandoffInviteEmail, buildHandoffAcceptedEmail, buildHandoffDeclinedEmail } from "./emailTemplates";
-import { localeForUser } from "./emailLocale.server";
+import { localeForUser, fallbackSomeoneLabel } from "./emailLocale.server";
+import { emailT } from "./i18n/emailI18n.server";
 import { purgeBirdMediaWith, pdfHandoffFailedMessage } from "./birdMedia.functions";
 
 async function getAdmin() {
@@ -22,14 +23,24 @@ function appUrl() {
 function makeToken() {
   return (crypto.randomUUID() + crypto.randomUUID()).replace(/-/g, "");
 }
-async function displayName(sb: any, userId: string): Promise<string> {
+/** Display name, or null when there's nothing to show. Callers supply the fallback. */
+async function displayNameRaw(sb: any, userId: string): Promise<string | null> {
   const { data } = await sb.from("profiles").select("display_name").eq("id", userId).maybeSingle();
   const n = (data?.display_name ?? "").toString().trim();
   if (n) return n;
   try {
     const { data: u } = await sb.auth.admin.getUserById(userId);
-    return (u?.user?.user_metadata?.display_name ?? "").toString().trim() || u?.user?.email?.split("@")[0] || "Someone";
-  } catch { return "Someone"; }
+    return (u?.user?.user_metadata?.display_name ?? "").toString().trim() || u?.user?.email?.split("@")[0] || null;
+  } catch { return null; }
+}
+async function displayName(sb: any, userId: string, locale: string = "en"): Promise<string> {
+  const { data } = await sb.from("profiles").select("display_name").eq("id", userId).maybeSingle();
+  const n = (data?.display_name ?? "").toString().trim();
+  if (n) return n;
+  try {
+    const { data: u } = await sb.auth.admin.getUserById(userId);
+    return (u?.user?.user_metadata?.display_name ?? "").toString().trim() || u?.user?.email?.split("@")[0] || fallbackSomeoneLabel(locale);
+  } catch { return fallbackSomeoneLabel(locale); }
 }
 async function sendEmail(to: string, toName: string | undefined, built: { subject: string; html: string; text: string }, tag: EmailTag) {
   const { sendTransactionalEmail } = await import("./brevoEmail.server");
@@ -98,10 +109,11 @@ export const createHandoff = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
 
     try {
-      const senderName = await displayName(sb, senderId);
       // Account-less recipient (group 2) → the SENDER's locale.
+      const locale = await localeForUser(sb, senderId);
+      const senderName = await displayName(sb, senderId, locale);
       await sendEmail(data.recipientEmail, data.recipientName?.trim() || undefined,
-        buildHandoffInviteEmail({ senderName, birdName: bird.name as string, link: `${appUrl()}/handoff/${token}`, locale: await localeForUser(sb, senderId) }), "handoff_invite");
+        buildHandoffInviteEmail({ senderName, birdName: bird.name as string, link: `${appUrl()}/handoff/${token}`, locale }), "handoff_invite");
     } catch (e) { console.error("[handoff] invite email failed", e); }
 
     return { ok: true, handoff };
@@ -271,12 +283,14 @@ export const getHandoff = createServerFn({ method: "GET" })
       if (h.status === "pending" && expired) await sb.from("handoffs").update({ status: "expired" }).eq("id", h.id);
       return { valid: false as const };
     }
-    const senderName = await displayName(sb, h.sender_user_id as string);
+    // Raw data only: the handoff screen supplies the "Someone" / "this bird"
+    // fallbacks in the reader's language.
+    const senderName: string | null = await displayNameRaw(sb, h.sender_user_id as string);
     const { data: bird } = await sb.from("birds").select("name").eq("id", h.bird_id).maybeSingle();
     return {
       valid: true as const,
       senderName,
-      birdName: (bird?.name ?? "this bird") as string,
+      birdName: (bird?.name ?? null) as string | null,
       recipientEmail: h.recipient_email as string,
     };
   });
@@ -333,10 +347,11 @@ export const acceptHandoff = createServerFn({ method: "POST" })
 
     // Notify the sender it's done (best-effort).
     try {
-      const recipientLabel = await displayName(sb, userId);
+      const locale = await localeForUser(sb, h.sender_user_id as string);
+      const recipientLabel = await displayName(sb, userId, locale);
       const { data: bird } = await sb.from("birds").select("name").eq("id", h.bird_id).maybeSingle();
       const { data: su } = await sb.auth.admin.getUserById(h.sender_user_id as string);
-      if (su?.user?.email) await sendEmail(su.user.email, undefined, buildHandoffAcceptedEmail({ birdName: (bird?.name ?? "your bird") as string, recipientLabel, locale: await localeForUser(sb, h.sender_user_id as string) }), "handoff_accepted");
+      if (su?.user?.email) await sendEmail(su.user.email, undefined, buildHandoffAcceptedEmail({ birdName: (bird?.name ?? emailT(locale)("email.common.yourBird")) as string, recipientLabel, locale }), "handoff_accepted");
     } catch (e) { console.error("[handoff] accepted email failed", e); }
 
     return { ok: true, birdId: h.bird_id as string };
@@ -353,7 +368,8 @@ export const declineHandoff = createServerFn({ method: "POST" })
     try {
       const { data: bird } = await sb.from("birds").select("name").eq("id", h.bird_id).maybeSingle();
       const { data: su } = await sb.auth.admin.getUserById(h.sender_user_id as string);
-      if (su?.user?.email) await sendEmail(su.user.email, undefined, buildHandoffDeclinedEmail({ birdName: (bird?.name ?? "your bird") as string, locale: await localeForUser(sb, h.sender_user_id as string) }), "handoff_declined");
+      const locale = await localeForUser(sb, h.sender_user_id as string);
+      if (su?.user?.email) await sendEmail(su.user.email, undefined, buildHandoffDeclinedEmail({ birdName: (bird?.name ?? emailT(locale)("email.common.yourBird")) as string, locale }), "handoff_declined");
     } catch (e) { console.error("[handoff] declined email failed", e); }
     return { ok: true };
   });

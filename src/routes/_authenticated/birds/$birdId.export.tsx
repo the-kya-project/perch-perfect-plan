@@ -1,30 +1,49 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { ageLabel } from "@/components/BirdPickers";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { completePdfHandoff } from "@/lib/handoff.functions";
-import { pdfHandoffFailedMessage } from "@/lib/birdMedia.functions";
+import { pdfHandoffFailedText } from "@/lib/i18n/serverErrors";
 import { toast } from "sonner";
 import { ArrowLeft, Printer, Share2, Loader2, AlertTriangle } from "lucide-react";
 import { isNativeApp } from "@/lib/nativeApp";
 import { formatLocalDate } from "@/lib/dates";
+import i18next from "i18next";
+import { useTranslation } from "react-i18next";
 
 // PDF / offline handoff. Renders a print-optimized full-record sheet the sender
 // can "Save as PDF" and give to an adopter who isn't on the app. Confirming the
 // handoff snapshots Past birds and removes the bird (completePdfHandoff).
 export const Route = createFileRoute("/_authenticated/birds/$birdId/export")({
-  head: () => ({ meta: [{ title: "Export record — Kya & Co." }] }),
+  head: () => ({ meta: [{ title: i18next.t("exportRecord.metaTitle", "Export record — Kya & Co.") }] }),
   component: ExportRecord,
 });
 
-const NONE = "none on file";
-const DIET_LABELS: Record<string, string> = {
-  pelleted: "Pelleted", seed: "Seed mix", pellet_seed: "Pellet & seed", chop: "Fresh chop / formulated", other: "Other",
-};
+const none = () => i18next.t("exportRecord.noneOnFile", "none on file");
+function dietLabel(key: string): string {
+  switch (key) {
+    case "pelleted": return i18next.t("exportRecord.diet.pelleted", "Pelleted");
+    case "seed": return i18next.t("exportRecord.diet.seed", "Seed mix");
+    case "pellet_seed": return i18next.t("exportRecord.diet.pelletSeed", "Pellet & seed");
+    case "chop": return i18next.t("exportRecord.diet.chop", "Fresh chop / formulated");
+    case "other": return i18next.t("exportRecord.diet.other", "Other");
+    default: return key;
+  }
+}
+function sexLabel(sex: string): string {
+  switch (sex.toLowerCase()) {
+    case "male": return i18next.t("exportRecord.sex.male", "Male");
+    case "female": return i18next.t("exportRecord.sex.female", "Female");
+    case "unknown": return i18next.t("exportRecord.sex.unknown", "Unknown");
+    default: return cap(sex);
+  }
+}
 
 function ExportRecord() {
+  const { t } = useTranslation();
   const { birdId } = Route.useParams();
   const navigate = useNavigate();
   const [confirming, setConfirming] = useState(false);
@@ -58,7 +77,7 @@ function ExportRecord() {
   });
 
   const row = bird?.row;
-  const name = row?.name ?? "This bird";
+  const name = row?.name ?? t("exportRecord.thisBird", "This bird");
   const complete = useServerFn(completePdfHandoff);
   const [busy, setBusy] = useState(false);
   const notOwner = row && bird?.uid && row.owner_id !== bird.uid;
@@ -68,32 +87,32 @@ function ExportRecord() {
     setBusy(true);
     try {
       await complete({ data: { birdId, recipientName: recipientName.trim() || undefined } });
-      toast.success(`${name}'s record was handed off. They're in Past birds now.`);
+      toast.success(t("exportRecord.handedOff", "{{name}}'s record was handed off. They're in Past birds now.", { name }));
       navigate({ to: "/dashboard" });
     } catch (e: any) {
       // Never e.message — same standard as the delete-bird screens. The server
       // logs the detail; the sender gets the one shared, retryable message.
       console.error("[handoff] PDF handoff failed", e);
-      toast.error(pdfHandoffFailedMessage(name));
+      toast.error(pdfHandoffFailedText(name));
       setBusy(false);
     }
   }
 
   const identity: [string, string | null][] = [
-    ["Species", row?.species ?? null], ["Sex", row?.sex ? cap(row.sex) : null], ["Age", row?.age ?? null],
-    ["Microchip", row?.microchip ?? null], ["Band", row?.band_number ?? null], ["Origin", row?.origin ?? null],
-    ["Came to you", row?.intake_date ? fmtDate(row.intake_date) : null],
+    [t("exportRecord.species", "Species"), row?.species ?? null], [t("exportRecord.sex", "Sex"), row?.sex ? sexLabel(row.sex) : null], [t("exportRecord.age", "Age"), row?.age ? ageLabel(t, row.age) : null],
+    [t("exportRecord.microchip", "Microchip"), row?.microchip ?? null], [t("exportRecord.band", "Band"), row?.band_number ?? null], [t("exportRecord.origin", "Origin"), row?.origin ?? null],
+    [t("exportRecord.cameToYou", "Came to you"), row?.intake_date ? fmtDate(row.intake_date) : null],
   ];
   const dietText = buildDiet(plan);
   const meds = [
-    val(row?.medications) && `Medications: ${row.medications.trim()}`,
-    val(row?.medical_conditions) && `Conditions: ${row.medical_conditions.trim()}`,
-    val(plan?.when_to_call_vet) && `Call the vet if: ${plan.when_to_call_vet.trim()}`,
+    val(row?.medications) && t("exportRecord.medicationsLine", "Medications: {{value}}", { value: row.medications.trim() }),
+    val(row?.medical_conditions) && t("exportRecord.conditionsLine", "Conditions: {{value}}", { value: row.medical_conditions.trim() }),
+    val(plan?.when_to_call_vet) && t("exportRecord.callVetLine", "Call the vet if: {{value}}", { value: plan.when_to_call_vet.trim() }),
   ].filter(Boolean).join("\n");
   const routine = [
     val(plan?.handling_rules) && plan.handling_rules.trim(),
-    val(plan?.out_of_cage_rules) && `Out of cage: ${plan.out_of_cage_rules.trim()}`,
-    val(plan?.sleep_routine) && `Sleep: ${plan.sleep_routine.trim()}`,
+    val(plan?.out_of_cage_rules) && t("exportRecord.outOfCageLine", "Out of cage: {{value}}", { value: plan.out_of_cage_rules.trim() }),
+    val(plan?.sleep_routine) && t("exportRecord.sleepLine", "Sleep: {{value}}", { value: plan.sleep_routine.trim() }),
   ].filter(Boolean).join("\n");
 
   const native = isNativeApp();
@@ -103,19 +122,19 @@ function ExportRecord() {
   // a second, drift-prone serialiser for the same record.
   async function shareRecord() {
     const text = document.getElementById("export-sheet")?.innerText?.trim() ?? "";
-    if (!text) { toast.error("Nothing to share yet — give the record a moment to load."); return; }
+    if (!text) { toast.error(t("exportRecord.nothingToShare", "Nothing to share yet — give the record a moment to load.")); return; }
     if (navigator.share) {
       try {
-        await navigator.share({ title: `${name} — full record`, text });
+        await navigator.share({ title: t("exportRecord.shareTitle", "{{name}} — full record", { name }), text });
       } catch { /* dismissed — nothing to report */ }
       return;
     }
     try {
       await navigator.clipboard.writeText(text);
-      toast.success("Record copied to clipboard.");
+      toast.success(t("exportRecord.copied", "Record copied to clipboard."));
     } catch (e) {
       console.error("[export] clipboard write failed", e);
-      toast.error("Couldn't copy the record. Select the text below and copy it manually.");
+      toast.error(t("exportRecord.copyFailed", "Couldn't copy the record. Select the text below and copy it manually."));
     }
   }
 
@@ -123,8 +142,8 @@ function ExportRecord() {
     <div className="min-h-screen bg-[#f4f1e8] pb-[calc(var(--nav-spacer)+6rem)]">
       <header data-noprint className="sticky top-0 z-10 border-b border-[#e3ded0] bg-[#f4f1e8]/95 backdrop-blur">
         <div className="mx-auto flex max-w-md items-center gap-3 px-5 pt-safe pb-3">
-          <Link to="/birds/$birdId/handoff" params={{ birdId }} aria-label="Back" className="-ml-1 rounded p-1 text-[#1a3d2e]"><ArrowLeft className="size-5" /></Link>
-          <h1 className="text-base font-medium text-[#1a3d2e]">Export {name}'s record</h1>
+          <Link to="/birds/$birdId/handoff" params={{ birdId }} aria-label={t("exportRecord.back", "Back")} className="-ml-1 rounded p-1 text-[#1a3d2e]"><ArrowLeft className="size-5" /></Link>
+          <h1 className="text-base font-medium text-[#1a3d2e]">{t("exportRecord.title", "Export {{name}}'s record", { name })}</h1>
         </div>
       </header>
 
@@ -139,16 +158,16 @@ function ExportRecord() {
         <div data-noprint className="mb-4 space-y-2">
           <p className="text-sm leading-relaxed text-[#5f5e5a]">
             {native
-              ? `Share ${name}'s record with the adopter, then confirm the handoff below. Once you confirm, ${name} moves to your Past birds and leaves your flock.`
-              : `Save this as a PDF and give it to the adopter, then confirm the handoff below. Once you confirm, ${name} moves to your Past birds and leaves your flock.`}
+              ? t("exportRecord.introNative", "Share {{name}}'s record with the adopter, then confirm the handoff below. Once you confirm, {{name}} moves to your Past birds and leaves your flock.", { name })
+              : t("exportRecord.introWeb", "Save this as a PDF and give it to the adopter, then confirm the handoff below. Once you confirm, {{name}} moves to your Past birds and leaves your flock.", { name })}
           </p>
           {native ? (
             <button type="button" onClick={shareRecord} className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[14px] bg-[#1a3d2e] text-sm font-medium text-white">
-              <Share2 className="size-4" /> Share record
+              <Share2 className="size-4" /> {t("exportRecord.shareRecord", "Share record")}
             </button>
           ) : (
             <button type="button" onClick={() => window.print()} className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[14px] bg-[#1a3d2e] text-sm font-medium text-white">
-              <Printer className="size-4" /> Save as PDF
+              <Printer className="size-4" /> {t("exportRecord.saveAsPdf", "Save as PDF")}
             </button>
           )}
         </div>
@@ -157,25 +176,25 @@ function ExportRecord() {
           <header className="border-b border-[#e3dcc9] pb-3">
             <h2 className="text-xl font-medium text-[#1a3d2e]">{name}</h2>
             {row?.species && <p className="mt-0.5 text-sm italic text-[#5f5e5a]">{row.species}</p>}
-            <p className="mt-1 text-xs text-[#8a897f]">Full record · generated {fmtDate(new Date().toISOString())}</p>
+            <p className="mt-1 text-xs text-[#8a897f]">{t("exportRecord.generated", "Full record · generated {{date}}", { date: fmtDate(new Date().toISOString()) })}</p>
           </header>
 
-          <Section label="Identity">
+          <Section label={t("exportRecord.identity", "Identity")}>
             <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5">
               {identity.map(([l, v]) => (
                 <div key={l}>
                   <dt className="text-[10px] font-semibold uppercase tracking-wider text-[#8a897f]">{l}</dt>
-                  <dd className={`text-sm ${v ? "text-[#1a3d2e]" : "italic text-[#9a978c]"}`}>{v ?? NONE}</dd>
+                  <dd className={`text-sm ${v ? "text-[#1a3d2e]" : "italic text-[#9a978c]"}`}>{v ?? none()}</dd>
                 </div>
               ))}
             </dl>
           </Section>
 
-          <Section label="Diet"><Value text={dietText} multiline /></Section>
-          <Section label="Meds & health"><Value text={meds} multiline /></Section>
-          <Section label="Routine & handling"><Value text={routine} multiline /></Section>
+          <Section label={t("exportRecord.diet", "Diet")}><Value text={dietText} multiline /></Section>
+          <Section label={t("exportRecord.medsHealth", "Meds & health")}><Value text={meds} multiline /></Section>
+          <Section label={t("exportRecord.routineHandling", "Routine & handling")}><Value text={routine} multiline /></Section>
 
-          <Section label="Weight history">
+          <Section label={t("exportRecord.weightHistory", "Weight history")}>
             {weights && weights.length ? (
               <ul className="text-sm text-[#1a3d2e]">
                 {weights.map((w, i) => <li key={i} className="flex justify-between border-b border-[#f0ebdd] py-0.5"><span>{fmtDate(w.measured_at)}</span><span className="tabular-nums">{w.grams} g</span></li>)}
@@ -183,7 +202,7 @@ function ExportRecord() {
             ) : <Value text={null} />}
           </Section>
 
-          <Section label="Moments">
+          <Section label={t("exportRecord.moments", "Moments")}>
             {moments && moments.length ? (
               <ul className="space-y-0.5 text-sm text-[#1a3d2e]">
                 {moments.map((m, i) => <li key={i} className="flex justify-between gap-3"><span>{m.title}</span><span className="shrink-0 text-[#8a897f]">{fmtDate(m.on_date)}</span></li>)}
@@ -191,7 +210,7 @@ function ExportRecord() {
             ) : <Value text={null} />}
           </Section>
 
-          <Section label="Journal">
+          <Section label={t("exportRecord.journal", "Journal")}>
             {journal && journal.length ? (
               <ul className="space-y-2 text-sm text-[#1a3d2e]">
                 {journal.map((j, i) => <li key={i}><span className="text-[11px] text-[#8a897f]">{fmtDate(j.created_at)}</span><p className="whitespace-pre-line">{j.body}</p></li>)}
@@ -205,19 +224,21 @@ function ExportRecord() {
         <div className="mx-auto max-w-md">
           {!confirming ? (
             <button type="button" onClick={() => setConfirming(true)} className="min-h-[48px] w-full rounded-[14px] border border-[#c8bfa6] bg-white text-sm font-medium text-[#1a3d2e]">
-              {native ? "I shared it with them" : "I gave them the PDF"} — did you hand off {name}?
+              {native
+                ? t("exportRecord.confirmPromptNative", "I shared it with them — did you hand off {{name}}?", { name })
+                : t("exportRecord.confirmPromptWeb", "I gave them the PDF — did you hand off {{name}}?", { name })}
             </button>
           ) : (
             <div className="space-y-2 rounded-[14px] p-3" style={{ background: "#FCEBEB", border: "1px solid #E24B4A" }}>
               <p className="flex items-start gap-2 text-sm" style={{ color: "#791F1F" }}>
                 <AlertTriangle className="mt-0.5 size-4 shrink-0" style={{ color: "#A32D2D" }} />
-                <span><span className="font-medium">This can't be undone.</span> {name} will leave your flock and move to Past birds.</span>
+                <span><span className="font-medium">{t("exportRecord.cantUndo", "This can't be undone.")}</span> {t("exportRecord.willLeave", "{{name}} will leave your flock and move to Past birds.", { name })}</span>
               </p>
-              <input value={recipientName} maxLength={120} onChange={(e) => setRecipientName(e.target.value)} placeholder="Who did they go to? (optional)" className="w-full rounded-[10px] border border-[#e3a0a0] bg-white px-3 py-2 text-sm outline-none" />
+              <input value={recipientName} maxLength={120} onChange={(e) => setRecipientName(e.target.value)} placeholder={t("exportRecord.recipientPlaceholder", "Who did they go to? (optional)")} className="w-full rounded-[10px] border border-[#e3a0a0] bg-white px-3 py-2 text-sm outline-none" />
               <div className="flex gap-2">
-                <button type="button" disabled={busy} onClick={() => setConfirming(false)} className="min-h-[44px] flex-1 rounded-[12px] border border-[#c8bfa6] bg-white text-sm font-medium text-[#1a3d2e] disabled:opacity-50">Not yet</button>
+                <button type="button" disabled={busy} onClick={() => setConfirming(false)} className="min-h-[44px] flex-1 rounded-[12px] border border-[#c8bfa6] bg-white text-sm font-medium text-[#1a3d2e] disabled:opacity-50">{t("exportRecord.notYet", "Not yet")}</button>
                 <button type="button" disabled={busy} onClick={confirmHandoff} className="flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-[12px] text-sm font-medium text-white disabled:opacity-50" style={{ background: "#A32D2D" }}>
-                  {busy ? <Loader2 className="size-4 animate-spin" /> : null} Yes, hand off {name}
+                  {busy ? <Loader2 className="size-4 animate-spin" /> : null} {t("exportRecord.yesHandOff", "Yes, hand off {{name}}", { name })}
                 </button>
               </div>
             </div>
@@ -244,7 +265,7 @@ function Section({ label, children }: { label: string; children: React.ReactNode
   );
 }
 function Value({ text, multiline }: { text: string | null | undefined; multiline?: boolean }) {
-  if (!text) return <p className="text-sm italic text-[#9a978c]">{NONE}</p>;
+  if (!text) return <p className="text-sm italic text-[#9a978c]">{none()}</p>;
   return <p className={`text-sm text-[#1a3d2e] ${multiline ? "whitespace-pre-line" : ""}`}>{text}</p>;
 }
 function cap(s: string): string { return s.charAt(0).toUpperCase() + s.slice(1); }
@@ -254,8 +275,8 @@ function fmtDate(iso: string): string { return formatLocalDate(new Date(iso), { 
 function buildDiet(plan: any): string | null {
   if (!plan) return null;
   const types = (plan.diet_types ?? []) as string[];
-  const lines: string[] = types.map((t) => DIET_LABELS[t] ?? t);
+  const lines: string[] = types.map((dietKey) => dietLabel(dietKey));
   const never = (plan.never_feed ?? []) as string[];
-  if (never.length) lines.push(`Never feed: ${never.join(", ")}`);
+  if (never.length) lines.push(i18next.t("exportRecord.neverFeedLine", "Never feed: {{value}}", { value: never.join(", ") }));
   return lines.length ? lines.join("\n") : null;
 }

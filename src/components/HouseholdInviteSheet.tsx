@@ -5,7 +5,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { activeOwnerBirdsMin, type ActiveBirdMin } from "@/lib/activeBirds";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { createHouseholdInvite, getHouseholdAccount, addExistingHouseholdMember } from "@/lib/household.functions";
-import { ASSIGNABLE_PRESETS, PRESET_LABELS, PRESET_DESCRIPTIONS, type AssignablePreset } from "@/lib/capabilities";
+import { ASSIGNABLE_PRESETS, type AssignablePreset } from "@/lib/capabilities";
+import { presetLabel, presetDescription } from "@/lib/capabilityLabels";
+import { useTranslation } from "react-i18next";
 import { track } from "@/lib/analytics";
 import { toast } from "sonner";
 import { Loader2, Plus } from "lucide-react";
@@ -24,6 +26,7 @@ export function HouseholdInviteSheet({
   onClose: () => void;
   onSent: () => void;
 }) {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
@@ -51,12 +54,12 @@ export function HouseholdInviteSheet({
     setAddingId(member.userId);
     try {
       await addExisting({ data: { birdId: targetBirdId, userId: member.userId } });
-      toast.success(`${member.name?.trim() || member.email || "Member"} added.`);
+      toast.success(t("householdInvite.addedToast", "{{name}} added.", { name: member.name?.trim() || member.email || t("householdInvite.member", "Member") }));
       // Refresh the eligible list (in place) and the access hub behind the sheet.
       qc.invalidateQueries({ queryKey: ["household-account"] });
       qc.invalidateQueries({ queryKey: ["household", targetBirdId] });
     } catch (e: any) {
-      toast.error(friendlyError(e, "Couldn't add them."));
+      toast.error(friendlyError(e, t("householdInvite.couldNotAdd", "Couldn't add them.")));
     } finally {
       setAddingId(null);
     }
@@ -82,11 +85,11 @@ export function HouseholdInviteSheet({
   const m = useMutation({
     mutationFn: () => create({ data: { inviteeEmail: email.trim(), inviteeName: name.trim() || undefined, birdIds: [...selected], preset } }),
     onSuccess: () => {
-      toast.success("Invite sent.");
+      toast.success(t("householdInvite.sent", "Invite sent."));
       track("household_member_invited", { bird_count: selected.size, preset });
       onSent();
     },
-    onError: (e: any) => toast.error(friendlyError(e, "Couldn't send the invite.")),
+    onError: (e: any) => toast.error(friendlyError(e, t("householdInvite.couldNotSend", "Couldn't send the invite."))),
   });
 
   const emailOk = /\S+@\S+\.\S+/.test(email.trim());
@@ -96,8 +99,8 @@ export function HouseholdInviteSheet({
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-[#f4f1e8]">
       <header className="flex items-center justify-between border-b border-[#e3ded0] px-5 py-3 pt-[max(env(safe-area-inset-top),0.75rem)]">
-        <button type="button" onClick={onClose} className="text-sm font-medium text-[#5f5e5a]">Cancel</button>
-        <h2 className="text-base font-medium text-[#1a3d2e]">Invite a household member</h2>
+        <button type="button" onClick={onClose} className="text-sm font-medium text-[#5f5e5a]">{t("householdInvite.cancel", "Cancel")}</button>
+        <h2 className="text-base font-medium text-[#1a3d2e]">{t("householdInvite.title", "Invite a household member")}</h2>
         <span className="w-12" />
       </header>
 
@@ -105,13 +108,13 @@ export function HouseholdInviteSheet({
         {/* Quick-add from people already in the household (single-bird context). */}
         {targetBirdId && (accountLoading || eligible.length > 0) && (
           <div>
-            <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#5f5e5a]">Already in your household</span>
+            <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#5f5e5a]">{t("householdInvite.alreadyInHousehold", "Already in your household")}</span>
             <div className="overflow-hidden rounded-[14px] bg-white ring-1 ring-[#e3dcc9]">
               {accountLoading ? (
-                <div className="flex items-center gap-2 px-4 py-4 text-sm text-[#8a897f]"><Loader2 className="size-4 animate-spin" /> Loading…</div>
+                <div className="flex items-center gap-2 px-4 py-4 text-sm text-[#8a897f]"><Loader2 className="size-4 animate-spin" /> {t("householdInvite.loading", "Loading…")}</div>
               ) : (
                 eligible.map((m, i) => {
-                  const label = m.name?.trim() || m.email || "Household member";
+                  const label = m.name?.trim() || m.email || t("householdInvite.householdMember", "Household member");
                   return (
                     <div key={m.userId} className={`flex min-h-[56px] items-center gap-3 px-4 ${i ? "border-t border-[#ece6d6]" : ""}`}>
                       <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[#cfe3dc] text-sm font-medium text-[#1a5e3f]">
@@ -127,7 +130,7 @@ export function HouseholdInviteSheet({
                         onClick={() => quickAdd(m)}
                         className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#1a3d2e] px-3 py-1.5 text-xs font-medium text-white active:scale-95 disabled:opacity-50"
                       >
-                        {addingId === m.userId ? <Loader2 className="size-3.5 animate-spin" /> : <Plus className="size-3.5" />} Add
+                        {addingId === m.userId ? <Loader2 className="size-3.5 animate-spin" /> : <Plus className="size-3.5" />} {t("householdInvite.add", "Add")}
                       </button>
                     </div>
                   );
@@ -136,25 +139,25 @@ export function HouseholdInviteSheet({
             </div>
             <div className="mt-4 flex items-center gap-3">
               <div className="h-px flex-1 bg-[#e3ded0]" />
-              <span className="text-[11px] font-medium uppercase tracking-wider text-[#8a897f]">or invite someone new</span>
+              <span className="text-[11px] font-medium uppercase tracking-wider text-[#8a897f]">{t("householdInvite.orInviteNew", "or invite someone new")}</span>
               <div className="h-px flex-1 bg-[#e3ded0]" />
             </div>
           </div>
         )}
 
-        <p className="text-sm text-[#5f5e5a]">They'll get an email invite to create an account and help care for your birds.</p>
+        <p className="text-sm text-[#5f5e5a]">{t("householdInvite.intro", "They'll get an email invite to create an account and help care for your birds.")}</p>
 
         <label className="block">
-          <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#5f5e5a]">Email</span>
+          <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#5f5e5a]">{t("householdInvite.email", "Email")}</span>
           <input className="input" type="email" inputMode="email" autoCapitalize="off" autoCorrect="off" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="partner@example.com" />
         </label>
         <label className="block">
-          <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#5f5e5a]">Their name (optional)</span>
-          <input className="input" value={name} maxLength={120} onChange={(e) => setName(e.target.value)} placeholder="e.g. Daniel" />
+          <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#5f5e5a]">{t("householdInvite.theirName", "Their name (optional)")}</span>
+          <input className="input" value={name} maxLength={120} onChange={(e) => setName(e.target.value)} placeholder={t("householdInvite.namePlaceholder", "e.g. Daniel")} />
         </label>
 
         <div>
-          <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#5f5e5a]">Which birds can they access?</span>
+          <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#5f5e5a]">{t("householdInvite.whichBirds", "Which birds can they access?")}</span>
           <div className="overflow-hidden rounded-[14px] bg-white ring-1 ring-[#e3dcc9]">
             {birds.map((b, i) => (
               <label key={b.id} className={`flex min-h-[48px] cursor-pointer items-center gap-3 px-4 ${i ? "border-t border-[#ece6d6]" : ""}`}>
@@ -166,35 +169,35 @@ export function HouseholdInviteSheet({
         </div>
 
         <div>
-          <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#5f5e5a]">Permission level</span>
+          <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#5f5e5a]">{t("householdInvite.permissionLevel", "Permission level")}</span>
           <div className="overflow-hidden rounded-[14px] bg-white ring-1 ring-[#e3dcc9]">
             {ASSIGNABLE_PRESETS.map((p, i) => (
               <label key={p} className={`flex min-h-[56px] cursor-pointer items-start gap-3 px-4 py-3 ${i ? "border-t border-[#ece6d6]" : ""}`}>
                 <input type="radio" name="preset" checked={preset === p} onChange={() => setPreset(p)} className="mt-0.5 size-4 shrink-0 accent-[#1a3d2e]" />
                 <span className="min-w-0">
-                  <span className="block text-sm font-medium text-[#1a3d2e]">{PRESET_LABELS[p]}</span>
-                  <span className="mt-0.5 block text-xs leading-relaxed text-[#5f5e5a]">{PRESET_DESCRIPTIONS[p]}</span>
+                  <span className="block text-sm font-medium text-[#1a3d2e]">{presetLabel(p)}</span>
+                  <span className="mt-0.5 block text-xs leading-relaxed text-[#5f5e5a]">{presetDescription(p)}</span>
                 </span>
               </label>
             ))}
           </div>
-          <p className="mt-1.5 px-1 text-[11px] text-[#8a897f]">You can fine-tune this anytime on the permissions screen.</p>
+          <p className="mt-1.5 px-1 text-[11px] text-[#8a897f]">{t("householdInvite.fineTune", "You can fine-tune this anytime on the permissions screen.")}</p>
         </div>
 
         <div className="rounded-[14px] bg-[#f6e7c4]/40 p-4 ring-1 ring-[#e3dcc9]">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-[#854F0B]">Always</p>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-[#854F0B]">{t("householdInvite.always", "Always")}</p>
           <ul className="mt-2 space-y-1 text-xs text-[#5f5e5a]">
-            <li>They can view each selected bird's care plan, weight, journal, and identity</li>
-            <li>They won't see your private notes or other people's contact info</li>
+            <li>{t("householdInvite.canView", "They can view each selected bird's care plan, weight, journal, and identity")}</li>
+            <li>{t("householdInvite.wontSee", "They won't see your private notes or other people's contact info")}</li>
           </ul>
         </div>
       </div>
 
       <footer className="border-t border-[#e3ded0] px-5 py-3 pb-[max(env(safe-area-inset-bottom),0.75rem)]">
         <div className="mx-auto flex max-w-md gap-2">
-          <button type="button" onClick={onClose} className="min-h-[44px] flex-1 rounded-[14px] border border-[#c8bfa6] text-sm font-medium text-[#1a3d2e]">Cancel</button>
+          <button type="button" onClick={onClose} className="min-h-[44px] flex-1 rounded-[14px] border border-[#c8bfa6] text-sm font-medium text-[#1a3d2e]">{t("householdInvite.cancel", "Cancel")}</button>
           <button type="button" disabled={!canSend} onClick={() => m.mutate()} className="min-h-[44px] flex-1 rounded-[14px] bg-[#1a3d2e] text-sm font-medium text-white disabled:opacity-50">
-            {m.isPending ? "Sending…" : "Send invite"}
+            {m.isPending ? t("householdInvite.sending", "Sending…") : t("householdInvite.sendInvite", "Send invite")}
           </button>
         </div>
       </footer>

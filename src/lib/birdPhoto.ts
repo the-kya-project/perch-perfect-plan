@@ -8,6 +8,7 @@
 // `data:` URL. `isStoragePath` returns false for those, and the resolvers pass
 // them through unchanged, so legacy birds keep rendering until backfilled.
 
+import i18next from "i18next";
 import { supabase } from "@/integrations/supabase/client";
 
 /** True when `photo_url` is a Storage object path (not a legacy data: URL or absolute URL). */
@@ -80,7 +81,7 @@ export async function persistBirdPhoto(
       return await uploadBlob(ownerId, blob);
     } catch (second) {
       console.error("[birdPhoto] upload failed twice", first, second);
-      throw new Error("We couldn't upload that photo. Check your connection and try again.");
+      throw new Error(i18next.t("photoUpload.failed", "We couldn't upload that photo. Check your connection and try again."));
     }
   }
 }

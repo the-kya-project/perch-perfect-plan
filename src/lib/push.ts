@@ -9,6 +9,7 @@
  * previews fails — which is fine: push only works on the installed prod PWA.
  */
 
+import i18next from "i18next";
 import { isNativeApp } from "./nativeApp";
 
 const SW_URL = "/sw.js";
@@ -88,7 +89,7 @@ export async function subscribeToPush(vapidPublicKey: string): Promise<{
   });
   const json = sub.toJSON() as { endpoint?: string; keys?: { p256dh?: string; auth?: string } };
   if (!json.endpoint || !json.keys?.p256dh || !json.keys?.auth) {
-    throw new Error("Browser did not return a usable subscription.");
+    throw new Error(i18next.t("pushSetup.noSubscription", "Browser did not return a usable subscription."));
   }
   return {
     endpoint: json.endpoint,

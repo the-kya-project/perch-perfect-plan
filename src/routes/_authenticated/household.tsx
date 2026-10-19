@@ -12,13 +12,15 @@ import { ArrowLeft, Plus, Mail, MoreHorizontal, Loader2, X, Check, SlidersHorizo
 import { InkHero, Card, RecordRow, IconTile } from "@/components/system";
 import { friendlyError } from "@/lib/errorMessage";
 import { formatLocalDate } from "@/lib/dates";
+import { useTranslation } from "react-i18next";
+import i18next from "i18next";
 
 // Account-level household management — every person who can help with the
 // owner's birds, each shown ONCE (memberships grouped by user, invites by
 // email). Per-bird scoping/removal reuses removeHouseholdMember; the per-bird
 // access hub (/birds/$id/access) is unchanged.
 export const Route = createFileRoute("/_authenticated/household")({
-  head: () => ({ meta: [{ title: "Your household — Kya & Co." }] }),
+  head: () => ({ meta: [{ title: i18next.t("household.pageTitle", "Your household — Kya & Co.") }] }),
   component: HouseholdScreen,
 });
 
@@ -32,6 +34,7 @@ type AccountPending = {
 };
 
 function HouseholdScreen() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const router = useRouter();
   const canGoBack = useCanGoBack();
@@ -58,23 +61,23 @@ function HouseholdScreen() {
         <InkHero
           backIcon={<ArrowLeft className="size-5" />}
           onBack={goBack}
-          eyebrow="Household"
-          headline="Your household"
-          body="People you've given access to your birds. By default they can help with all your birds — you can scope it to specific ones if you'd like."
+          eyebrow={t("household.eyebrow", "Household")}
+          headline={t("household.headline", "Your household")}
+          body={t("household.body", "People you've given access to your birds. By default they can help with all your birds — you can scope it to specific ones if you'd like.")}
         />
 
         <main className="space-y-5 px-5 pt-5">
           {isLoading ? (
             <Card>
               <div className="flex items-center gap-2 px-4 py-4 text-sm text-[var(--mute2)]">
-                <Loader2 className="size-4 animate-spin" /> Loading…
+                <Loader2 className="size-4 animate-spin" /> {t("household.loading", "Loading…")}
               </div>
             </Card>
           ) : (
             <>
               <Card>
                 {isEmpty ? (
-                  <p className="t-body px-4 py-5 text-[var(--mute)]">No one yet. Invite a partner or family member who helps care for your birds.</p>
+                  <p className="t-body px-4 py-5 text-[var(--mute)]">{t("household.empty", "No one yet. Invite a partner or family member who helps care for your birds.")}</p>
                 ) : (
                   <>
                     {members.map((m, i) => (
@@ -97,27 +100,27 @@ function HouseholdScreen() {
                 onClick={() => setInviting(true)}
                 className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-[16px] border border-dashed border-[var(--line)] bg-white/40 text-[15px] font-[500] text-[var(--moss)] active:scale-[0.99]"
               >
-                <Plus className="size-4" /> Invite a household member
+                <Plus className="size-4" /> {t("household.inviteMember", "Invite a household member")}
               </button>
 
               {members.length > 0 && (
                 <Card>
                   <RecordRow
                     leading={<IconTile tone="pale" icon={<SlidersHorizontal className="size-5" />} />}
-                    title="Permissions"
-                    subtitle="Choose what each member can do"
+                    title={t("household.permissions", "Permissions")}
+                    subtitle={t("household.permissionsSubtitle", "Choose what each member can do")}
                     onClick={() => navigate({ to: "/household-permissions" })}
                   />
                 </Card>
               )}
 
               <Card className="p-4">
-                <h2 className="t-section text-[14.5px]">You're in control</h2>
-                <p className="mt-2 text-[14px] leading-relaxed text-[var(--mute)]">You decide what everyone who helps can see and do, and you can change it any time.</p>
+                <h2 className="t-section text-[14.5px]">{t("household.inControl", "You're in control")}</h2>
+                <p className="mt-2 text-[14px] leading-relaxed text-[var(--mute)]">{t("household.inControlBody", "You decide what everyone who helps can see and do, and you can change it any time.")}</p>
               </Card>
 
               <p className="t-meta text-center italic">
-                Sitters are managed per-trip from the Sits tab.
+                {t("household.sittersNote", "Sitters are managed per-trip from the Sits tab.")}
               </p>
             </>
           )}
@@ -151,8 +154,9 @@ function Can({ children, yes }: { children: React.ReactNode; yes?: boolean }) {
 }
 
 function MemberRow({ member, last, onManage }: { member: AccountMember; last?: boolean; onManage: () => void }) {
-  const label = member.name?.trim() || member.email || "Household member";
-  const scopeLabel = member.scope === "all" ? "All birds" : `Sharing ${truncNames(member.birdNames)}`;
+  const { t } = useTranslation();
+  const label = member.name?.trim() || member.email || t("household.householdMember", "Household member");
+  const scopeLabel = member.scope === "all" ? t("household.allBirds", "All birds") : t("household.sharingNames", "Sharing {{names}}", { names: truncNames(member.birdNames) });
   return (
     <RecordRow
       leading={
@@ -161,12 +165,12 @@ function MemberRow({ member, last, onManage }: { member: AccountMember; last?: b
         </span>
       }
       title={label}
-      subtitle={`${scopeLabel} · since ${fmtMonth(member.since)}`}
+      subtitle={t("household.memberSubtitle", "{{scope}} · since {{month}}", { scope: scopeLabel, month: fmtMonth(member.since) })}
       last={last}
       trailing={
         <button
           type="button"
-          aria-label={`Manage ${label}`}
+          aria-label={t("household.manageLabel", "Manage {{name}}", { name: label })}
           onClick={onManage}
           className="-mr-1 grid size-9 shrink-0 place-items-center rounded-full text-[var(--mute)] active:bg-[var(--cream)]"
         >
@@ -178,18 +182,19 @@ function MemberRow({ member, last, onManage }: { member: AccountMember; last?: b
 }
 
 function PendingRow({ invite, last, onChanged }: { invite: AccountPending; last?: boolean; onChanged: () => void }) {
+  const { t } = useTranslation();
   const cancel = useServerFn(cancelHouseholdInvite);
   const m = useMutation({
     mutationFn: async () => { for (const id of invite.inviteIds) await cancel({ data: { inviteId: id } }); },
-    onSuccess: () => { toast.success("Invite canceled."); onChanged(); },
-    onError: (e: any) => toast.error(friendlyError(e, "Couldn't cancel.")),
+    onSuccess: () => { toast.success(t("household.inviteCanceled", "Invite canceled.")); onChanged(); },
+    onError: (e: any) => toast.error(friendlyError(e, t("household.couldNotCancel", "Couldn't cancel."))),
   });
   return (
     <div className={`flex min-h-[44px] items-center gap-3 bg-[var(--amber-fill)]/30 px-4 py-3 ${last ? "" : "border-b border-[var(--line2)]"}`}>
       <IconTile tone="amber" size={40} icon={<Mail className="size-[18px]" />} />
       <div className="min-w-0 flex-1">
         <p className="t-item truncate">{invite.name?.trim() || invite.email}</p>
-        <p className="t-meta mt-0.5 truncate font-[500] text-[var(--amber-ink)]">Invited · pending</p>
+        <p className="t-meta mt-0.5 truncate font-[500] text-[var(--amber-ink)]">{t("household.invitedPending", "Invited · pending")}</p>
       </div>
       <button
         type="button"
@@ -197,7 +202,7 @@ function PendingRow({ invite, last, onChanged }: { invite: AccountPending; last?
         onClick={() => m.mutate()}
         className="min-h-[44px] shrink-0 px-2 text-xs font-[500] text-[var(--amber-ink)] underline disabled:opacity-50"
       >
-        Cancel
+        {t("household.cancel", "Cancel")}
       </button>
     </div>
   );
@@ -211,11 +216,12 @@ function PendingRow({ invite, last, onChanged }: { invite: AccountPending; last?
 function MemberManageSheet({ member, allBirds, onClose, onChanged }: {
   member: AccountMember; allBirds: { id: string; name: string }[]; onClose: () => void; onChanged: () => void;
 }) {
+  const { t } = useTranslation();
   const removeOne = useServerFn(removeHouseholdMember);
   const removeAll = useServerFn(removeHouseholdMemberEverywhere);
   const addOne = useServerFn(addExistingHouseholdMember);
   const has = new Set(member.birdIds);
-  const label = member.name?.trim() || member.email || "this member";
+  const label = member.name?.trim() || member.email || t("household.thisMember", "this member");
 
   // Optimistic per-bird overrides so a toggle paints immediately. A key is
   // dropped on failure, which reverts the box to `has` (server truth) rather
@@ -229,8 +235,8 @@ function MemberManageSheet({ member, allBirds, onClose, onChanged }: {
 
   const removeEverywhere = useMutation({
     mutationFn: () => removeAll({ data: { userId: member.userId } }),
-    onSuccess: () => { toast.success(`${label} removed from your household.`); onChanged(); onClose(); },
-    onError: (e: any) => toast.error(friendlyError(e, "Couldn't remove.")),
+    onSuccess: () => { toast.success(t("household.removedToast", "{{name}} removed from your household.", { name: label })); onChanged(); onClose(); },
+    onError: (e: any) => toast.error(friendlyError(e, t("household.couldNotRemove", "Couldn't remove."))),
   });
 
   async function toggleBird(bird: { id: string; name: string }) {
@@ -239,7 +245,7 @@ function MemberManageSheet({ member, allBirds, onClose, onChanged }: {
     // Unchecking the only bird they can help with removes them from the
     // household — same confirm and same server call as before.
     if (!granting && accessCount === 1) {
-      if (window.confirm(`${bird.name} is the only bird ${label} can help with. Removing it takes them out of your household. Continue?`)) removeEverywhere.mutate();
+      if (window.confirm(t("household.confirmLastBird", "{{bird}} is the only bird {{name}} can help with. Removing it takes them out of your household. Continue?", { bird: bird.name, name: label }))) removeEverywhere.mutate();
       return;
     }
     setPending(bird.id);
@@ -247,11 +253,11 @@ function MemberManageSheet({ member, allBirds, onClose, onChanged }: {
     try {
       const data = { birdId: bird.id, userId: member.userId };
       await (granting ? addOne({ data }) : removeOne({ data }));
-      toast.success("Updated.");
+      toast.success(t("household.updated", "Updated."));
       onChanged();
     } catch (e: any) {
       setOptimistic((o) => { const n = { ...o }; delete n[bird.id]; return n; });
-      toast.error(friendlyError(e, "Couldn't update."));
+      toast.error(friendlyError(e, t("household.couldNotUpdate", "Couldn't update.")));
     } finally {
       setPending(null);
     }
@@ -259,14 +265,14 @@ function MemberManageSheet({ member, allBirds, onClose, onChanged }: {
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-end sm:place-items-center" role="dialog" aria-modal="true">
-      <button type="button" aria-label="Close" className="absolute inset-0 bg-black/30" onClick={onClose} />
+      <button type="button" aria-label={t("household.close", "Close")} className="absolute inset-0 bg-black/30" onClick={onClose} />
       <div className="relative w-full max-w-md rounded-t-2xl bg-[var(--cream)] p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-xl sm:rounded-2xl">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="t-section text-[19px]">{label}</h2>
-          <button onClick={onClose} aria-label="Close" className="grid size-9 place-items-center rounded-full text-[var(--mute)] active:bg-black/5"><X className="size-5" /></button>
+          <button onClick={onClose} aria-label={t("household.close", "Close")} className="grid size-9 place-items-center rounded-full text-[var(--mute)] active:bg-black/5"><X className="size-5" /></button>
         </div>
 
-        <p className="t-eyebrow text-[var(--mute2)]">Can help with</p>
+        <p className="t-eyebrow text-[var(--mute2)]">{t("household.canHelpWith", "Can help with")}</p>
         <Card className="mt-1.5">
           {allBirds.map((b, i) => (
             <label
@@ -289,13 +295,13 @@ function MemberManageSheet({ member, allBirds, onClose, onChanged }: {
         <button
           type="button"
           disabled={removeEverywhere.isPending}
-          onClick={() => { if (window.confirm(`Remove ${label} from your household? They'll lose access to all your birds. Their past logs stay in the record.\n\nIf they're currently covering a sit, that sit keeps its own access until it ends — cancel the sit from the Sits tab to end that too.`)) removeEverywhere.mutate(); }}
+          onClick={() => { if (window.confirm(t("household.confirmRemove", "Remove {{name}} from your household? They'll lose access to all your birds. Their past logs stay in the record.\n\nIf they're currently covering a sit, that sit keeps its own access until it ends — cancel the sit from the Sits tab to end that too.", { name: label }))) removeEverywhere.mutate(); }}
           className="mt-4 flex min-h-[48px] w-full items-center justify-center rounded-[14px] border border-[var(--red-line)] bg-white text-[15px] font-[500] text-[var(--red-ink)] disabled:opacity-50"
         >
-          {removeEverywhere.isPending ? "Removing…" : "Remove from household"}
+          {removeEverywhere.isPending ? t("household.removing", "Removing…") : t("household.removeFromHousehold", "Remove from household")}
         </button>
         <p className="t-meta mt-2 px-1">
-          Removing from the household won't end an active sit they're covering. To end that too, cancel the sit from the Sits tab.
+          {t("household.removeNote", "Removing from the household won't end an active sit they're covering. To end that too, cancel the sit from the Sits tab.")}
         </p>
       </div>
     </div>
@@ -311,8 +317,8 @@ function fmtMonth(iso: string): string {
 }
 function truncNames(names: string[]): string {
   const n = names.filter(Boolean);
-  if (n.length === 0) return "no birds";
+  if (n.length === 0) return i18next.t("household.noBirds", "no birds");
   if (n.length === 1) return n[0];
-  if (n.length === 2) return `${n[0]} & ${n[1]}`;
-  return `${n[0]}, ${n[1]} and ${n.length - 2} more`;
+  if (n.length === 2) return i18next.t("household.twoNames", "{{a}} & {{b}}", { a: n[0], b: n[1] });
+  return i18next.t("household.namesAndMore", "{{a}}, {{b}} and {{n}} more", { a: n[0], b: n[1], n: n.length - 2 });
 }

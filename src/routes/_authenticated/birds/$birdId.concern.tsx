@@ -6,6 +6,7 @@ import { getCaregiverConcernContext, pauseCaregiverReminders } from "@/lib/careg
 import { ConcernFlow } from "@/components/ConcernFlow";
 import { toast } from "sonner";
 import { friendlyError } from "@/lib/errorMessage";
+import { useTranslation } from "react-i18next";
 
 // "Something's wrong" for a HOUSEHOLD MEMBER covering an active sit — the
 // authenticated twin of /sitter/$token/concern, rendering the same shared
@@ -18,6 +19,7 @@ export const Route = createFileRoute("/_authenticated/birds/$birdId/concern")({
 });
 
 function CaregiverConcern() {
+  const { t } = useTranslation();
   const { birdId } = Route.useParams();
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -36,7 +38,7 @@ function CaregiverConcern() {
       qc.invalidateQueries({ queryKey: ["active-caregiver-sits"] });
       window.scrollTo(0, 0);
     },
-    onError: (e: any) => toast.error(friendlyError(e, "Couldn't pause the reminders. Please try again.")),
+    onError: (e: any) => toast.error(friendlyError(e, t("caregiverConcern.pauseFailed", "Couldn't pause the reminders. Please try again."))),
   });
 
   // Not covering (or bird gone) → this screen isn't for them.
@@ -52,7 +54,7 @@ function CaregiverConcern() {
           <button
             type="button"
             onClick={() => navigate({ to: "/birds/$birdId", params: { birdId } })}
-            aria-label="Back"
+            aria-label={t("caregiverConcern.back", "Back")}
             className="-ml-1 rounded p-1 text-[#5f5e5a]"
           >
             <ArrowLeft className="size-5" />
@@ -63,12 +65,12 @@ function CaregiverConcern() {
       <main className="mx-auto max-w-md px-5 py-6">
         {isLoading || !ctx?.covering ? (
           <div className="flex items-center justify-center gap-2 py-12 text-sm text-[#5f5e5a]">
-            <Loader2 className="size-4 animate-spin" /> Loading…
+            <Loader2 className="size-4 animate-spin" /> {t("caregiverConcern.loading", "Loading…")}
           </div>
         ) : (
           <ConcernFlow
             name={ctx.birdName}
-            ownerName={ctx.ownerName}
+            ownerName={ctx.ownerName || t("caregiverConcern.theOwner", "the owner")}
             ownerPhone={ctx.ownerPhone}
             vet={{ name: ctx.vetName, phone: ctx.vetPhone }}
             paused={ctx.paused || m.isSuccess}

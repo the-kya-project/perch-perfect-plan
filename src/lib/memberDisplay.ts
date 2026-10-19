@@ -4,6 +4,8 @@
 // profiles — profiles RLS is self-only, which is why members used to render as
 // the generic "Household member").
 
+import i18next from "i18next";
+
 export type MemberIdentity = { name?: string | null; email?: string | null };
 
 /** Real name, else invited email, else "Pending invite" — never a generic placeholder. */
@@ -12,13 +14,17 @@ export function memberDisplayName(m: MemberIdentity | null | undefined): string 
   if (name) return name;
   const email = (m?.email ?? "").trim();
   if (email) return email;
-  return "Pending invite";
+  return pendingInviteLabel();
+}
+
+function pendingInviteLabel(): string {
+  return i18next.t("memberDisplay.pendingInvite", "Pending invite");
 }
 
 /** Initials from the resolved display string (email → first letter of local part). */
 export function memberInitials(display: string): string {
   const s = (display ?? "").trim();
-  if (!s || s === "Pending invite") return "?";
+  if (!s || s === pendingInviteLabel()) return "?";
   if (s.includes("@")) return s[0]!.toUpperCase();
   const parts = s.split(/\s+/).filter(Boolean);
   return ((parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "")).toUpperCase() || "?";

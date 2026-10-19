@@ -10,6 +10,7 @@ import { copySitterLink } from "@/lib/sitLink";
 import { SitForm } from "@/components/SitForm";
 import { SitChecklist } from "@/components/SitChecklist";
 import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
+import { useTranslation } from "react-i18next";
 
 export type SitBird = { id: string; name: string; photo_url?: string | null; photo_original?: string | null; photo_position?: string | null };
 export type ListSit = {
@@ -28,19 +29,15 @@ export type ListSit = {
 // "IN CHARGE · [name]" content-label eyebrow. Teal per surface: bright --teal on
 // the ink active card, darker --teal-on-cream on cream cards.
 function InChargeEyebrow({ name, onDark }: { name: string; onDark?: boolean }) {
+  const { t } = useTranslation();
   return (
     <p className="mt-1">
-      <span className="t-eyebrow" style={{ color: onDark ? "var(--teal)" : "var(--teal-on-cream)" }}>In charge · </span>
+      <span className="t-eyebrow" style={{ color: onDark ? "var(--teal)" : "var(--teal-on-cream)" }}>{t("sitCards.inCharge", "In charge · ")}</span>
       <span className="t-eyebrow" style={{ color: onDark ? "rgba(255,255,255,0.85)" : "var(--ink)" }}>{name}</span>
     </p>
   );
 }
 
-/** "Sarah" -> "Sarah's", "Chris" -> "Chris'". */
-function possessive(name: string): string {
-  const n = name.trim();
-  return /s$/i.test(n) ? `${n}'` : `${n}'s`;
-}
 
 export type SitContextTag = { kind: "own" | "household"; ownerName?: string | null };
 
@@ -48,14 +45,22 @@ export type SitContextTag = { kind: "own" | "household"; ownerName?: string | nu
 // language and colors: "Your birds" (moss) vs "[Owner]'s household" (house-blue).
 // The page only passes this when the user has sits in BOTH contexts.
 function ContextTag({ tag, onDark }: { tag: SitContextTag; onDark?: boolean }) {
+  const { t } = useTranslation();
   if (tag.kind === "own") {
     return (
       <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-[500] ${onDark ? "bg-white/12 text-[var(--lime)]" : "bg-[var(--pale2)] text-[var(--moss)]"}`}>
-        Your birds
+        {t("sitCards.yourBirds", "Your birds")}
       </span>
     );
   }
-  const label = tag.ownerName ? `${possessive(tag.ownerName)} household` : "A household you help with";
+  // "Sarah's household" / "Chris' household" — the English possessive picks
+  // between two keys so translators get a plain {{name}}.
+  const owner = tag.ownerName?.trim();
+  const label = owner
+    ? /s$/i.test(owner)
+      ? t("sitCards.ownersHouseholdS", "{{name}}' household", { name: owner })
+      : t("sitCards.ownersHousehold", "{{name}}'s household", { name: owner })
+    : t("sitCards.aHouseholdYouHelp", "A household you help with");
   return (
     <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-[500] ${onDark ? "bg-white/12 text-[#bcd9e6]" : "bg-[#dbe9ef] text-[var(--house)]"}`}>
       <Home className="size-3" /> {label}
@@ -66,9 +71,10 @@ function ContextTag({ tag, onDark }: { tag: SitContextTag; onDark?: boolean }) {
 // "You're in charge" — the strongest marker on the card; lime action treatment.
 // Shown when the signed-in user is the sit's lead (lead_user_id === me).
 function IAmLeadPill() {
+  const { t } = useTranslation();
   return (
     <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-[var(--lime)] px-2 py-0.5 text-[11.5px] font-[600] text-[var(--ink)]">
-      <Star className="size-3" /> You're in charge
+      <Star className="size-3" /> {t("sitCards.youreInCharge", "You're in charge")}
     </span>
   );
 }
@@ -97,9 +103,10 @@ function CaregiverAvatar({ name, household, size = 44 }: { name: string; househo
 }
 
 function HouseholdTag() {
+  const { t } = useTranslation();
   return (
     <span className="inline-flex items-center gap-1 rounded-full bg-[var(--cream2)] px-1.5 py-0.5 text-[10px] font-[500]" style={{ color: "var(--house)" }}>
-      <Home className="size-3" /> Household
+      <Home className="size-3" /> {t("sitCards.household", "Household")}
     </span>
   );
 }
@@ -127,11 +134,12 @@ function BirdChip({ bird, onDark }: { bird: SitBird; onDark?: boolean }) {
 }
 
 function BirdChips({ birds, allBirdsCount, onDark }: { birds: SitBird[]; allBirdsCount: number; onDark?: boolean }) {
+  const { t } = useTranslation();
   // If the sit covers every bird, one "All birds" chip reads cleaner.
   if (allBirdsCount > 0 && birds.length === allBirdsCount && allBirdsCount > 1) {
     return (
       <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[12.5px] ${onDark ? "bg-white/12 text-white" : "bg-[var(--cream2)] text-[var(--ink)]"}`}>
-        All birds
+        {t("sitCards.allBirds", "All birds")}
       </span>
     );
   }
@@ -146,6 +154,7 @@ function BirdChips({ birds, allBirdsCount, onDark }: { birds: SitBird[]; allBird
 // ACTIVE — full ink card, the focal element.
 // ---------------------------------------------------------------------------
 export function ActiveSitCard({ sit, birds, allBirdsCount, caregiverName, leadName, iAmLead, iOwnSit, contextTag, allBirds, onChange }: { sit: ListSit; birds: SitBird[]; allBirdsCount: number; caregiverName: string; leadName?: string | null; iAmLead?: boolean; iOwnSit?: boolean; contextTag?: SitContextTag; allBirds?: any[]; onChange?: () => void }) {
+  const { t } = useTranslation();
   const [editing, setEditing] = useState(false);
   if (editing && allBirds) {
     return <SitForm birds={allBirds} editSit={sit as any} onSaved={onChange ?? (() => {})} onCancel={() => setEditing(false)} />;
@@ -153,7 +162,7 @@ export function ActiveSitCard({ sit, birds, allBirdsCount, caregiverName, leadNa
   const household = !!sit.caregiver_user_id;
   const dayOf = -daysUntil(sit.start_date) + 1;
   const total = durationDays(sit.start_date, sit.end_date);
-  const meta = household ? "Caregiver during trip" : `Sitter · day ${dayOf} of ${total}`;
+  const meta = household ? t("sitCards.caregiverDuringTrip", "Caregiver during trip") : t("sitCards.sitterDayOf", "Sitter · day {{day}} of {{total}}", { day: dayOf, total });
   // Surface the per-trip link on an ACTIVE sit so the owner can re-send it if the
   // sitter loses it. Only external link-covered sits have a link, and only while
   // it's live (not revoked); the token persists for the trip, so an active sit's
@@ -174,18 +183,18 @@ export function ActiveSitCard({ sit, birds, allBirdsCount, caregiverName, leadNa
           {iAmLead ? <IAmLeadPill /> : leadName ? <InChargeEyebrow name={leadName} onDark /> : null}
         </div>
         <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-[var(--lime)] px-2.5 py-1 text-[11.5px] font-[500] text-[var(--ink)]">
-          <span className="size-1.5 rounded-full bg-[var(--ink)]" /> Active
+          <span className="size-1.5 rounded-full bg-[var(--ink)]" /> {t("sitCards.active", "Active")}
         </span>
       </div>
 
       <div className="mt-3 space-y-2.5 border-t border-white/15 pt-3">
         <div className="flex items-center justify-between gap-3">
-          <span className="text-[12.5px] text-white/65">Dates</span>
-          <span className="text-[13.5px] text-white">{monthDay(sit.start_date)} → {monthDay(sit.end_date)}</span>
+          <span className="text-[12.5px] text-white/65">{t("sitCards.dates", "Dates")}</span>
+          <span className="text-[13.5px] text-white">{t("sitCards.dateRange", "{{start}} → {{end}}", { start: monthDay(sit.start_date), end: monthDay(sit.end_date) })}</span>
         </div>
         {birds.length > 0 && (
           <div className="flex items-start justify-between gap-3">
-            <span className="pt-1 text-[12.5px] text-white/65">Birds</span>
+            <span className="pt-1 text-[12.5px] text-white/65">{t("sitCards.birds", "Birds")}</span>
             <div className="min-w-0"><BirdChips birds={birds} allBirdsCount={allBirdsCount} onDark /></div>
           </div>
         )}
@@ -197,7 +206,7 @@ export function ActiveSitCard({ sit, birds, allBirdsCount, caregiverName, leadNa
           search={{ sitId: sit.id }}
           className="inline-flex min-h-[42px] flex-1 items-center justify-center gap-1.5 rounded-[12px] bg-[var(--lime)] text-[14px] font-[500] text-[var(--ink)] active:scale-[0.99]"
         >
-          <Activity className="size-4" /> View health checks
+          <Activity className="size-4" /> {t("sitCards.viewHealthChecks", "View health checks")}
         </Link>
         {iOwnSit ? (
           <Link
@@ -206,7 +215,7 @@ export function ActiveSitCard({ sit, birds, allBirdsCount, caregiverName, leadNa
             state={{ previewToken: sit.invite_token ?? null, previewLabel: caregiverName, previewHousehold: household } as any}
             className="inline-flex min-h-[42px] flex-1 items-center justify-center gap-1.5 rounded-[12px] border border-white/35 text-[14px] font-[500] text-white active:scale-[0.99]"
           >
-            <Eye className="size-4" /> {household ? "View as caregiver" : "View as sitter"}
+            <Eye className="size-4" /> {household ? t("sitCards.viewAsCaregiver", "View as caregiver") : t("sitCards.viewAsSitter", "View as sitter")}
           </Link>
         ) : birds.length > 0 ? (
           // Covering caregiver: their actual care view, not the owner's preview.
@@ -215,7 +224,7 @@ export function ActiveSitCard({ sit, birds, allBirdsCount, caregiverName, leadNa
             params={{ birdId: birds[0].id }}
             className="inline-flex min-h-[42px] flex-1 items-center justify-center gap-1.5 rounded-[12px] border border-white/35 text-[14px] font-[500] text-white active:scale-[0.99]"
           >
-            <Eye className="size-4" /> View care plan
+            <Eye className="size-4" /> {t("sitCards.viewCarePlan", "View care plan")}
           </Link>
         ) : null}
       </div>
@@ -224,12 +233,12 @@ export function ActiveSitCard({ sit, birds, allBirdsCount, caregiverName, leadNa
         <div className="mt-2.5 flex items-center justify-center gap-4">
           {showCopyLink && (
             <button type="button" onClick={() => copySitterLink(sit, birds)} className="inline-flex items-center gap-1 text-[13px] font-[500] text-white/60 active:opacity-80">
-              <Link2 className="size-3.5" /> Copy link
+              <Link2 className="size-3.5" /> {t("sitCards.copyLink", "Copy link")}
             </button>
           )}
           {allBirds && (
             <button type="button" onClick={() => setEditing(true)} className="inline-flex items-center gap-1 text-[13px] font-[500] text-white/60 active:opacity-80">
-              <Pencil className="size-3.5" /> Edit sit
+              <Pencil className="size-3.5" /> {t("sitCards.editSit", "Edit sit")}
             </button>
           )}
         </div>
@@ -244,6 +253,7 @@ export function ActiveSitCard({ sit, birds, allBirdsCount, caregiverName, leadNa
 export function UpcomingSitCard({
   sit, birds, allBirdsCount, caregiverName, leadName, iAmLead, iOwnSit, contextTag, collapsible = false, allBirds, onChange,
 }: { sit: ListSit; birds: SitBird[]; allBirdsCount: number; caregiverName: string; leadName?: string | null; iAmLead?: boolean; iOwnSit?: boolean; contextTag?: SitContextTag; collapsible?: boolean; allBirds?: any[]; onChange?: () => void }) {
+  const { t } = useTranslation();
   const household = !!sit.caregiver_user_id;
   const [open, setOpen] = useState(!collapsible);
   const [editing, setEditing] = useState(false);
@@ -266,7 +276,7 @@ export function UpcomingSitCard({
             <p className="truncate text-[15px] font-[500] text-[var(--ink)]">{caregiverName}</p>
             {household && <HouseholdTag />}
           </div>
-          <p className="mt-0.5 text-[12.5px] text-[var(--mute)]">{household ? "Caregiver during trip" : "Sitter"}</p>
+          <p className="mt-0.5 text-[12.5px] text-[var(--mute)]">{household ? t("sitCards.caregiverDuringTrip", "Caregiver during trip") : t("sitCards.sitter", "Sitter")}</p>
           {iAmLead ? <IAmLeadPill /> : leadName ? <InChargeEyebrow name={leadName} /> : null}
         </div>
         <span className="inline-flex shrink-0 items-center rounded-full border border-[var(--line)] bg-[var(--cream2)] px-2.5 py-1 text-[11.5px] font-[500] text-[var(--ink)]">
@@ -279,7 +289,7 @@ export function UpcomingSitCard({
         <>
           {birds.length > 0 && (
             <div className="mt-3 flex items-start justify-between gap-3 border-t border-[var(--line2)] pt-3">
-              <span className="pt-1 text-[12.5px] text-[var(--mute)]">Birds</span>
+              <span className="pt-1 text-[12.5px] text-[var(--mute)]">{t("sitCards.birds", "Birds")}</span>
               <div className="min-w-0"><BirdChips birds={birds} allBirdsCount={allBirdsCount} /></div>
             </div>
           )}
@@ -296,7 +306,7 @@ export function UpcomingSitCard({
                   state={{ previewToken: sit.invite_token ?? null, previewLabel: caregiverName, previewHousehold: household } as any}
                   className="inline-flex min-h-[42px] flex-1 items-center justify-center gap-1.5 rounded-[12px] border border-[var(--line)] text-[14px] font-[500] text-[var(--ink)] active:scale-[0.99]"
                 >
-                  <Eye className="size-4" /> {household ? "View as caregiver" : "View as sitter"}
+                  <Eye className="size-4" /> {household ? t("sitCards.viewAsCaregiver", "View as caregiver") : t("sitCards.viewAsSitter", "View as sitter")}
                 </Link>
                 {!household && (
                   <button
@@ -304,7 +314,7 @@ export function UpcomingSitCard({
                     onClick={() => copySitterLink(sit, birds)}
                     className="inline-flex min-h-[42px] flex-1 items-center justify-center gap-1.5 rounded-[12px] border border-[var(--line)] text-[14px] font-[500] text-[var(--ink)] active:scale-[0.99]"
                   >
-                    <Link2 className="size-4" /> Copy link
+                    <Link2 className="size-4" /> {t("sitCards.copyLink", "Copy link")}
                   </button>
                 )}
               </div>
@@ -312,7 +322,7 @@ export function UpcomingSitCard({
               {allBirds && (
                 <div className="mt-2.5 text-center">
                   <button type="button" onClick={() => setEditing(true)} className="inline-flex items-center gap-1 text-[13px] font-[500] text-[var(--moss)] active:opacity-80">
-                    <Pencil className="size-3.5" /> Edit sit
+                    <Pencil className="size-3.5" /> {t("sitCards.editSit", "Edit sit")}
                   </button>
                 </div>
               )}
@@ -327,7 +337,7 @@ export function UpcomingSitCard({
                   params={{ birdId: birds[0].id }}
                   className="inline-flex min-h-[42px] w-full items-center justify-center gap-1.5 rounded-[12px] border border-[var(--line)] text-[14px] font-[500] text-[var(--ink)] active:scale-[0.99]"
                 >
-                  <Eye className="size-4" /> View care plan
+                  <Eye className="size-4" /> {t("sitCards.viewCarePlan", "View care plan")}
                 </Link>
               </div>
             )
@@ -344,10 +354,11 @@ export function UpcomingSitCard({
 export function PastSitCard({
   sit, caregiverName, leadName, scans, flagged,
 }: { sit: ListSit; caregiverName: string; leadName?: string | null; scans: number; flagged: number }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const household = !!sit.caregiver_user_id;
   const days = durationDays(sit.start_date, sit.end_date);
-  const meta = `${compactRange(sit.start_date, sit.end_date)} · ${days} ${days === 1 ? "day" : "days"}`;
+  const meta = `${compactRange(sit.start_date, sit.end_date)} · ${days === 1 ? t("sitCards.dayCountOne", "{{n}} day", { n: days }) : t("sitCards.dayCountOther", "{{n}} days", { n: days })}`;
 
   return (
     <button
@@ -366,14 +377,14 @@ export function PastSitCard({
           {leadName && <InChargeEyebrow name={leadName} />}
         </div>
         <span className="inline-flex shrink-0 items-center rounded-full border border-[var(--line)] px-2.5 py-1 text-[11.5px] font-[500] text-[var(--mute)]">
-          Past
+          {t("sitCards.past", "Past")}
         </span>
       </div>
       {scans > 0 && (
         <div className="mt-3 flex items-center justify-between gap-3 border-t border-[var(--line2)] pt-3">
-          <span className="text-[12.5px] text-[var(--mute)]">Health checks</span>
+          <span className="text-[12.5px] text-[var(--mute)]">{t("sitCards.healthChecks", "Health checks")}</span>
           <span className="text-[13.5px] text-[var(--ink)]">
-            {scans} {scans === 1 ? "health check" : "health checks"} · {flagged > 0 ? `${flagged} flagged` : "all clear"}
+            {scans === 1 ? t("sitCards.healthCheckCountOne", "{{n}} health check", { n: scans }) : t("sitCards.healthCheckCountOther", "{{n}} health checks", { n: scans })} · {flagged > 0 ? t("sitCards.flaggedCount", "{{n}} flagged", { n: flagged }) : t("sitCards.allClear", "all clear")}
           </span>
         </div>
       )}

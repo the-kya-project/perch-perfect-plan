@@ -4,14 +4,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { ArrowLeft, Check, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { InkHero, Card, RecordRow, StatusPill, IconTile, PrimaryButton, CtaLink } from "@/components/system";
-import { friendlyError } from "@/lib/errorMessage";
+import { authErrorMessage } from "@/lib/authErrorMessage";
+import { useTranslation } from "react-i18next";
+import i18next from "i18next";
 
 export const Route = createFileRoute("/_authenticated/account/security")({
-  head: () => ({ meta: [{ title: "Password & sign-in — Kya & Co." }] }),
+  head: () => ({ meta: [{ title: i18next.t("accountSecurity.pageTitle", "Password & sign-in — Kya & Co.") }] }),
   component: SecurityPage,
 });
 
 function SecurityPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const router = useRouter();
   const canGoBack = useCanGoBack();
@@ -48,17 +51,17 @@ function SecurityPage() {
   const goBack = () => (canGoBack ? router.history.back() : navigate({ to: "/account" }));
 
   async function savePassword() {
-    if (pw.length < 6) { toast.error("Use at least 6 characters."); return; }
-    if (pw !== confirm) { toast.error("Passwords don't match."); return; }
+    if (pw.length < 6) { toast.error(t("accountSecurity.useSixChars", "Use at least 6 characters.")); return; }
+    if (pw !== confirm) { toast.error(t("accountSecurity.mismatch", "Passwords don't match.")); return; }
     setSaving(true);
     try {
       const { error } = await supabase.auth.updateUser({ password: pw });
       if (error) throw error;
-      toast.success(hasPassword ? "Password updated." : "Password set — you can now sign in with email too.");
+      toast.success(hasPassword ? t("accountSecurity.passwordUpdated", "Password updated.") : t("accountSecurity.passwordSetToast", "Password set — you can now sign in with email too."));
       setPw(""); setConfirm("");
       setProviders((p) => (p.includes("email") ? p : [...p, "email"]));
     } catch (e: any) {
-      toast.error(friendlyError(e, "Could not update password."));
+      toast.error(authErrorMessage(e, t("accountSecurity.couldNotUpdate", "Could not update password.")));
     } finally {
       setSaving(false);
     }
@@ -72,9 +75,9 @@ function SecurityPage() {
         redirectTo: `${window.location.origin}/reset-password`,
       });
       if (error) throw error;
-      toast.success("Password reset link sent. Check your email.");
+      toast.success(t("accountSecurity.resetSent", "Password reset link sent. Check your email."));
     } catch (e: any) {
-      toast.error(friendlyError(e, "Could not send reset email."));
+      toast.error(authErrorMessage(e, t("accountSecurity.couldNotSendReset", "Could not send reset email.")));
     } finally {
       setSendingReset(false);
     }
@@ -86,30 +89,30 @@ function SecurityPage() {
         <InkHero
           backIcon={<ArrowLeft className="size-5" />}
           onBack={goBack}
-          eyebrow="Account"
-          headline="Password & sign-in"
+          eyebrow={t("accountSecurity.eyebrow", "Account")}
+          headline={t("accountSecurity.headline", "Password & sign-in")}
         />
 
         <main className="space-y-4 px-5 pt-5">
           {/* Password */}
           <Card className="p-4">
-            <h2 className="t-item">{hasPassword ? "Change password" : "Set a password"}</h2>
+            <h2 className="t-item">{hasPassword ? t("accountSecurity.changePassword", "Change password") : t("accountSecurity.setAPassword", "Set a password")}</h2>
             <p className="t-body mt-1 text-[var(--mute)]">
               {hasPassword
-                ? "Choose a new password for signing in with your email."
-                : "Add a password so you can sign in with your email as well as Google."}
+                ? t("accountSecurity.changeBody", "Choose a new password for signing in with your email.")
+                : t("accountSecurity.setBody", "Add a password so you can sign in with your email as well as Google.")}
             </p>
 
-            <label className="t-eyebrow mt-4 block text-[var(--mute)]">New password</label>
+            <label className="t-eyebrow mt-4 block text-[var(--mute)]">{t("accountSecurity.newPassword", "New password")}</label>
             <input
               type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="new-password"
-              placeholder="At least 6 characters"
+              placeholder={t("accountSecurity.newPasswordPlaceholder", "At least 6 characters")}
               className="input mt-1"
             />
-            <label className="t-eyebrow mt-3 block text-[var(--mute)]">Confirm new password</label>
+            <label className="t-eyebrow mt-3 block text-[var(--mute)]">{t("accountSecurity.confirmNewPassword", "Confirm new password")}</label>
             <input
               type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password"
-              placeholder="Re-enter password"
+              placeholder={t("accountSecurity.reenterPassword", "Re-enter password")}
               className="input mt-1"
             />
 
@@ -120,14 +123,14 @@ function SecurityPage() {
                 disabled={saving || !pw || !confirm}
                 type="button"
               >
-                {saving ? "Saving…" : hasPassword ? "Update password" : "Set password"}
+                {saving ? t("accountSecurity.saving", "Saving…") : hasPassword ? t("accountSecurity.updatePassword", "Update password") : t("accountSecurity.setPassword", "Set password")}
               </PrimaryButton>
             </div>
 
             {hasPassword && (
               <div className="mt-3 flex justify-center">
                 <CtaLink
-                  label={sendingReset ? "Sending…" : "Email me a reset link instead"}
+                  label={sendingReset ? t("accountSecurity.sending", "Sending…") : t("accountSecurity.emailResetLink", "Email me a reset link instead")}
                   icon={<span />}
                   onPress={() => { if (!sendingReset) emailResetLink(); }}
                 />
@@ -137,16 +140,16 @@ function SecurityPage() {
 
           {/* Connected accounts */}
           <div>
-            <p className="t-eyebrow mb-2 px-1 text-[var(--mute2)]">Sign-in methods</p>
+            <p className="t-eyebrow mb-2 px-1 text-[var(--mute2)]">{t("accountSecurity.signInMethods", "Sign-in methods")}</p>
             <Card>
               <RecordRow
                 leading={<IconTile tone="pale" size={40} icon={<Mail className="size-5" />} />}
-                title="Email & password"
+                title={t("accountSecurity.emailAndPassword", "Email & password")}
                 subtitle={email}
                 trailing={
                   hasPassword
-                    ? <StatusPill tone="good"><Check className="size-3" /> Password set</StatusPill>
-                    : <StatusPill tone="off">No password</StatusPill>
+                    ? <StatusPill tone="good"><Check className="size-3" /> {t("accountSecurity.passwordSet", "Password set")}</StatusPill>
+                    : <StatusPill tone="off">{t("accountSecurity.noPassword", "No password")}</StatusPill>
                 }
               />
               <RecordRow
@@ -157,16 +160,16 @@ function SecurityPage() {
                   </span>
                 }
                 title="Google"
-                subtitle={googleConnected ? (googleEmail ?? "Connected") : "Not connected"}
+                subtitle={googleConnected ? (googleEmail ?? t("accountSecurity.connected", "Connected")) : t("accountSecurity.notConnected", "Not connected")}
                 trailing={
                   googleConnected
-                    ? <StatusPill tone="good"><Check className="size-3" /> Connected</StatusPill>
-                    : <StatusPill tone="off">Not connected</StatusPill>
+                    ? <StatusPill tone="good"><Check className="size-3" /> {t("accountSecurity.connected", "Connected")}</StatusPill>
+                    : <StatusPill tone="off">{t("accountSecurity.notConnected", "Not connected")}</StatusPill>
                 }
               />
             </Card>
             {loaded && !hasPassword && !googleConnected && (
-              <p className="t-body mt-2 px-1 text-[var(--mute)]">No sign-in method detected — set a password above to be safe.</p>
+              <p className="t-body mt-2 px-1 text-[var(--mute)]">{t("accountSecurity.noMethod", "No sign-in method detected — set a password above to be safe.")}</p>
             )}
           </div>
         </main>

@@ -1,6 +1,8 @@
 // Shared helper for computing how complete a bird's care plan setup is.
 // Mirrors the "before you share" checks in the Review step.
 
+import i18next from "i18next";
+
 export type SetupCheck = {
   step: number;
   /** Matches the SETUP_STEPS key in SetupShell — lets callers map a check to a section icon/row. */
@@ -45,19 +47,19 @@ export function computeSetupCompleteness(args: {
     {
       step: 1,
       key: "food",
-      label: "Food & water",
+      label: i18next.t("setupCheck.food", "Food & water"),
       done: nonEmpty(plan?.diet_types) || nonEmpty(plan?.food_instructions),
     },
     {
       step: 2,
       key: "personality",
-      label: "Personality & handling",
+      label: i18next.t("setupCheck.personality", "Personality & handling"),
       done: nonEmpty(plan?.handlers) || nonEmpty(plan?.likes) || nonEmpty(plan?.fears_triggers),
     },
     {
       step: 3,
       key: "environment",
-      label: "Environment & safety",
+      label: i18next.t("setupCheck.environment", "Environment & safety"),
       done:
         nonEmpty(plan?.cage_location) ||
         nonEmpty(plan?.out_of_cage_mode) ||
@@ -66,7 +68,7 @@ export function computeSetupCompleteness(args: {
     {
       step: 4,
       key: "health",
-      label: "Health baseline",
+      label: i18next.t("setupCheck.health", "Health baseline"),
       done:
         nonEmpty(bird?.normal_weight) ||
         nonEmpty(plan?.baseline_clip_path) ||
@@ -75,13 +77,13 @@ export function computeSetupCompleteness(args: {
     {
       step: 5,
       key: "day",
-      label: "A day in the life",
+      label: i18next.t("setupCheck.day", "A day in the life"),
       done: (tasksCount ?? 0) > 0,
     },
     {
       step: 6,
       key: "clips",
-      label: "Tips from the owner",
+      label: i18next.t("setupCheck.clips", "Tips from the owner"),
       done:
         nonEmpty(plan?.clip_step_up_path) ||
         nonEmpty(plan?.clip_food_water_path) ||
@@ -95,7 +97,7 @@ export function computeSetupCompleteness(args: {
     {
       step: 7,
       key: "emergency",
-      label: "Emergency info",
+      label: i18next.t("setupCheck.emergency", "Emergency info"),
       done: !!eff("owner_phone") && !!eff("avian_vet_phone"),
     },
   ];

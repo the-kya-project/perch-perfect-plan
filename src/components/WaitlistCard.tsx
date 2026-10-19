@@ -3,6 +3,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Check, X } from "lucide-react";
 import { joinWaitlist } from "@/lib/waitlist.functions";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 
 // Region options mirror the Brevo form's PRIMARY_CHAPTER select (value = Brevo
 // category id).
@@ -18,26 +20,43 @@ const CHAPTERS: { value: string; label: string }[] = [
   { value: "9", label: "Texas" },
 ];
 
+// Display-only labels (the submitted value is the Brevo id above).
+function chapterLabel(t: TFunction, value: string, en: string): string {
+  switch (value) {
+    case "1": return t("waitlist.chapter.california", "California");
+    case "2": return t("waitlist.chapter.florida", "Florida");
+    case "3": return t("waitlist.chapter.greatLakes", "Great Lakes (IL, IN, MI, OH)");
+    case "4": return t("waitlist.chapter.midAtlantic", "Mid-Atlantic (PA, NJ, MD, DE, DC, VA)");
+    case "5": return t("waitlist.chapter.northeast", "Northeast (NY, MA, CT, RI, VT, NH, ME)");
+    case "6": return t("waitlist.chapter.pacificNorthwest", "Pacific Northwest (WA, OR)");
+    case "7": return t("waitlist.chapter.southeast", "Southeast (GA, NC, SC, TN)");
+    case "8": return t("waitlist.chapter.southwest", "Southwest (AZ, NM, NV)");
+    case "9": return t("waitlist.chapter.texas", "Texas");
+    default: return en;
+  }
+}
+
 const inputCls =
   "w-full rounded-[12px] border border-[#1a3d2e]/15 bg-white px-3.5 py-2.5 text-base text-[#1a3d2e] placeholder:text-[#9a978c] outline-none focus:border-[#1a3d2e]/40";
 
 // Lime community-waitlist card on Explore — the single accent moment. The button
 // opens a popup form whose fields map 1:1 to the Brevo waitlist form.
 export function WaitlistCard() {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   return (
     <section className="rounded-[22px] bg-[#cdeab0] p-5">
-      <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#3f5e22]">Coming soon</p>
-      <h2 className="mt-1.5 text-xl font-medium text-[#1f3d12]">Join the community</h2>
+      <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#3f5e22]">{t("waitlist.comingSoon", "Coming soon")}</p>
+      <h2 className="mt-1.5 text-xl font-medium text-[#1f3d12]">{t("waitlist.joinTheCommunity", "Join the community")}</h2>
       <p className="mt-2 text-sm leading-relaxed text-[#3f5e22]">
-        A place for parrot people. Experience expert AMAs, local chapters, and a community that gives back to rescue.
+        {t("waitlist.cardBody", "A place for parrot people. Experience expert AMAs, local chapters, and a community that gives back to rescue.")}
       </p>
       <button
         type="button"
         onClick={() => setOpen(true)}
         className="mt-4 w-full rounded-[14px] bg-[#1a3d2e] py-3 text-sm font-medium text-white active:scale-[0.99]"
       >
-        Join the waitlist
+        {t("waitlist.joinTheWaitlist", "Join the waitlist")}
       </button>
       {open && <WaitlistModal onClose={() => setOpen(false)} />}
     </section>
@@ -45,6 +64,7 @@ export function WaitlistCard() {
 }
 
 function WaitlistModal({ onClose }: { onClose: () => void }) {
+  const { t } = useTranslation();
   const join = useServerFn(joinWaitlist);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -67,7 +87,7 @@ function WaitlistModal({ onClose }: { onClose: () => void }) {
     e.preventDefault();
     if (submitting) return;
     if (!firstName.trim() || !lastName.trim() || !email.trim() || !chapterLead || !chapter) {
-      toast.error("Please fill in every field.");
+      toast.error(t("waitlist.fillEveryField", "Please fill in every field."));
       return;
     }
     setSubmitting(true);
@@ -82,9 +102,9 @@ function WaitlistModal({ onClose }: { onClose: () => void }) {
         },
       });
       if (res?.ok) setDone(true);
-      else toast.error("Couldn't add you just now. Please try again.");
+      else toast.error(t("waitlist.couldntAdd", "Couldn't add you just now. Please try again."));
     } catch {
-      toast.error("Couldn't add you just now. Please try again.");
+      toast.error(t("waitlist.couldntAdd", "Couldn't add you just now. Please try again."));
     } finally {
       setSubmitting(false);
     }
@@ -103,9 +123,9 @@ function WaitlistModal({ onClose }: { onClose: () => void }) {
       >
         <div className="flex items-start justify-between gap-3">
           <h2 className="text-xl font-medium text-[#1a3d2e]">
-            {done ? "You're on the list!" : "Join the community waitlist"}
+            {done ? t("waitlist.onTheList", "You're on the list!") : t("waitlist.modalTitle", "Join the community waitlist")}
           </h2>
-          <button type="button" onClick={onClose} aria-label="Close" className="-mr-1 rounded-full p-1.5 text-[#5f5e5a] hover:bg-black/5">
+          <button type="button" onClick={onClose} aria-label={t("waitlist.close", "Close")} className="-mr-1 rounded-full p-1.5 text-[#5f5e5a] hover:bg-black/5">
             <X className="size-5" />
           </button>
         </div>
@@ -114,33 +134,33 @@ function WaitlistModal({ onClose }: { onClose: () => void }) {
           <div className="mt-3">
             <div className="flex items-center gap-2 rounded-[14px] bg-[#cdeab0] px-4 py-3 text-sm font-medium text-[#1f3d12]">
               <Check className="size-4 shrink-0" />
-              Thanks for joining — we'll email you when the community opens.
+              {t("waitlist.thanks", "Thanks for joining — we'll email you when the community opens.")}
             </div>
             <button
               type="button"
               onClick={onClose}
               className="mt-4 w-full rounded-[14px] bg-[#1a3d2e] py-3 text-sm font-medium text-white active:scale-[0.99]"
             >
-              Done
+              {t("waitlist.done", "Done")}
             </button>
           </div>
         ) : (
           <form onSubmit={submit} className="mt-4 space-y-3">
             <div className="grid grid-cols-2 gap-2">
-              <Field label="First name">
+              <Field label={t("waitlist.firstName", "First name")}>
                 <input type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} autoComplete="given-name" className={inputCls} />
               </Field>
-              <Field label="Last name">
+              <Field label={t("waitlist.lastName", "Last name")}>
                 <input type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} autoComplete="family-name" className={inputCls} />
               </Field>
             </div>
-            <Field label="Email">
+            <Field label={t("waitlist.email", "Email")}>
               <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" inputMode="email" placeholder="you@example.com" className={inputCls} />
             </Field>
 
-            <Field label="Would you be interested in leading a local chapter?">
+            <Field label={t("waitlist.leadChapterQ", "Would you be interested in leading a local chapter?")}>
               <div className="grid grid-cols-2 gap-2">
-                {([["1", "Yes"], ["2", "No"]] as const).map(([val, lbl]) => (
+                {([["1", t("waitlist.yes", "Yes")], ["2", t("waitlist.no", "No")]] as const).map(([val, lbl]) => (
                   <button
                     key={val}
                     type="button"
@@ -157,11 +177,11 @@ function WaitlistModal({ onClose }: { onClose: () => void }) {
               </div>
             </Field>
 
-            <Field label="Where are you located?">
+            <Field label={t("waitlist.whereLocated", "Where are you located?")}>
               <select value={chapter} onChange={(e) => setChapter(e.target.value)} className={`${inputCls} appearance-none`}>
-                <option value="">Select your region</option>
+                <option value="">{t("waitlist.selectRegion", "Select your region")}</option>
                 {CHAPTERS.map((c) => (
-                  <option key={c.value} value={c.value}>{c.label}</option>
+                  <option key={c.value} value={c.value}>{chapterLabel(t, c.value, c.label)}</option>
                 ))}
               </select>
             </Field>
@@ -171,7 +191,7 @@ function WaitlistModal({ onClose }: { onClose: () => void }) {
               disabled={submitting}
               className="!mt-5 w-full rounded-[14px] bg-[#1a3d2e] py-3 text-sm font-medium text-white active:scale-[0.99] disabled:opacity-50"
             >
-              {submitting ? "Joining…" : "Join the waitlist"}
+              {submitting ? t("waitlist.joining", "Joining…") : t("waitlist.joinTheWaitlist", "Join the waitlist")}
             </button>
           </form>
         )}

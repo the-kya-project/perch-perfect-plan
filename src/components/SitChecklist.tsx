@@ -5,6 +5,8 @@ import { Check, ChevronDown, ChevronRight, ExternalLink, Plus, Trash2, CheckCirc
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { friendlyError } from "@/lib/errorMessage";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 
 type Bird = { id: string; name: string };
 
@@ -23,6 +25,23 @@ export const CHECKLIST_ITEMS: StandardItem[] = [
   { key: "invite_tested", label: "Sitter invite link tested" },
 ];
 
+// Labels above stay the English source (only item_key is stored); translate at display.
+function itemLabel(t: TFunction, key: string, en: string): string {
+  switch (key) {
+    case "first_aid": return t("sitChecklist.item.firstAid", "First-aid kit stocked, and its location noted");
+    case "carrier": return t("sitChecklist.item.carrier", "Carrier clean and accessible");
+    case "food_portioned": return t("sitChecklist.item.foodPortioned", "Enough food portioned for the full sit, plus extra");
+    case "enrichment": return t("sitChecklist.item.enrichment", "Foraging toys and enrichment set up");
+    case "cage_clean": return t("sitChecklist.item.cageClean", "Cage cleaned");
+    case "sitter_access": return t("sitChecklist.item.sitterAccess", "Sitter has access (key, code, or entry plan)");
+    case "hazards": return t("sitChecklist.item.hazards", "Hazards handled (rooms closed, pets secured, windows checked)");
+    case "care_plans": return t("sitChecklist.item.carePlans", "Care plans up to date");
+    case "emergency_contacts": return t("sitChecklist.item.emergencyContacts", "Emergency contacts confirmed current");
+    case "invite_tested": return t("sitChecklist.item.inviteTested", "Sitter invite link tested");
+    default: return en;
+  }
+}
+
 type Row = {
   id?: string;
   item_key: string;
@@ -40,6 +59,7 @@ export function SitChecklist({
   birds: Bird[];
   onSitChanged?: () => void;
 }) {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [adding, setAdding] = useState(false);
@@ -64,10 +84,10 @@ export function SitChecklist({
   // Master list (standard items + the owner's custom additions) for progress
   // and the mark-ready check. Every item is treated the same.
   const allEntries: { key: string; label: string }[] = [
-    ...CHECKLIST_ITEMS.map((i) => ({ key: i.key, label: i.label })),
+    ...CHECKLIST_ITEMS.map((i) => ({ key: i.key, label: itemLabel(t, i.key, i.label) })),
     ...customRows.map((r) => ({
       key: r.item_key,
-      label: r.custom_label ?? "Custom item",
+      label: r.custom_label ?? t("sitChecklist.customItem", "Custom item"),
     })),
   ];
   const totalCount = allEntries.length;
@@ -140,7 +160,7 @@ export function SitChecklist({
       .update({ marked_ready_at: new Date().toISOString() } as any)
       .eq("id", sit.id);
     if (error) { toast.error(friendlyError(error)); return; }
-    toast.success("Marked ready. Just for your view — the sitter isn't notified yet.");
+    toast.success(t("sitChecklist.markedReadyToast", "Marked ready. Just for your view — the sitter isn't notified yet."));
     onSitChanged?.();
   }
 
@@ -170,7 +190,7 @@ export function SitChecklist({
           type="button"
           onClick={() => toggle(itemKey, !isChecked)}
           aria-pressed={isChecked}
-          aria-label={isChecked ? `Uncheck: ${label}` : `Check off: ${label}`}
+          aria-label={isChecked ? t("sitChecklist.uncheckAria", "Uncheck: {{label}}", { label }) : t("sitChecklist.checkOffAria", "Check off: {{label}}", { label })}
           className={`mt-0.5 grid size-5 shrink-0 place-items-center rounded-md ring-1 transition-colors ${
             isChecked
               ? "bg-sage-600 ring-sage-600 text-white"
@@ -193,7 +213,7 @@ export function SitChecklist({
                 type="button"
                 onClick={onRemove}
                 className="shrink-0 rounded p-0.5 text-sage-400 hover:text-warn-red"
-                aria-label={`Remove: ${label}`}
+                aria-label={t("sitChecklist.removeAria", "Remove: {{label}}", { label })}
               >
                 <Trash2 className="size-3" />
               </button>
@@ -205,7 +225,7 @@ export function SitChecklist({
     );
   }
 
-  const sitterLabel = sit.sitter_name && sit.sitter_name !== "__preview__" ? sit.sitter_name : "Your sitter";
+  const sitterLabel = sit.sitter_name && sit.sitter_name !== "__preview__" ? sit.sitter_name : t("sitChecklist.yourSitter", "Your sitter");
 
   return (
     <div className="mt-3 rounded-xl border border-sage-100 bg-sage-50/60">
@@ -218,11 +238,11 @@ export function SitChecklist({
         <div className="flex items-center gap-2">
           {open ? <ChevronDown className="size-4 text-sage-600" /> : <ChevronRight className="size-4 text-sage-600" />}
           <span className="text-xs font-bold uppercase tracking-wider text-sage-700">
-            Pre-leaving checklist
+            {t("sitChecklist.preLeavingChecklist", "Pre-leaving checklist")}
           </span>
           {sit.marked_ready_at && (
             <span className="inline-flex items-center gap-0.5 rounded-full bg-warn-green/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-warn-green">
-              <CheckCircle2 className="size-2.5" /> Ready
+              <CheckCircle2 className="size-2.5" /> {t("sitChecklist.ready", "Ready")}
             </span>
           )}
         </div>
@@ -240,21 +260,31 @@ export function SitChecklist({
       {showReminder && (
         <div className="mx-3 mb-2 rounded-lg bg-warn-amber/10 px-3 py-2 ring-1 ring-warn-amber/30">
           <p className="text-[11px] font-semibold text-warn-amber">
-            {sitterLabel} arrives in {daysToStart === 0 ? "today" : `${daysToStart} day${daysToStart === 1 ? "" : "s"}`} — {itemsLeft} prep item{itemsLeft === 1 ? "" : "s"} left
+            {t("sitChecklist.reminder", "{{sitter}} arrives in {{when}} — {{items}} left", {
+              sitter: sitterLabel,
+              when: daysToStart === 0
+                ? t("sitChecklist.today", "today")
+                : daysToStart === 1
+                  ? t("sitChecklist.dayOne", "{{n}} day", { n: daysToStart })
+                  : t("sitChecklist.dayOther", "{{n}} days", { n: daysToStart }),
+              items: itemsLeft === 1
+                ? t("sitChecklist.prepItemOne", "{{n}} prep item", { n: itemsLeft })
+                : t("sitChecklist.prepItemOther", "{{n}} prep items", { n: itemsLeft }),
+            })}
           </p>
         </div>
       )}
 
       {open && (
         <div className="space-y-2 px-2 pb-3">
-          {isLoading && <p className="px-2 py-1 text-xs text-sage-600">Loading…</p>}
+          {isLoading && <p className="px-2 py-1 text-xs text-sage-600">{t("sitChecklist.loading", "Loading…")}</p>}
 
           <ul className="space-y-1">
             {CHECKLIST_ITEMS.map((item) => (
               <li key={item.key}>
                 {renderItem(
                   item.key,
-                  item.label,
+                  itemLabel(t, item.key, item.label),
                   (item.key === "emergency_contacts" || item.key === "care_plans") && birds.length > 0 ? (
                     <div className="mt-1 flex flex-wrap gap-1.5">
                       {birds.map((b) =>
@@ -291,14 +321,14 @@ export function SitChecklist({
           {customRows.length > 0 && (
             <div className="space-y-1">
               <div className="px-1 pt-1 text-[10px] font-bold uppercase tracking-wider text-sage-600">
-                Your additions
+                {t("sitChecklist.yourAdditions", "Your additions")}
               </div>
               <ul className="space-y-1">
                 {customRows.map((r) => (
                   <li key={r.item_key}>
                     {renderItem(
                       r.item_key,
-                      r.custom_label ?? "Custom item",
+                      r.custom_label ?? t("sitChecklist.customItem", "Custom item"),
                       null,
                       r.id ? () => removeCustom(r.id!) : undefined,
                     )}
@@ -315,7 +345,7 @@ export function SitChecklist({
                 autoFocus
                 value={newLabel}
                 onChange={(e) => setNewLabel(e.target.value)}
-                placeholder="e.g. Top up humidifier"
+                placeholder={t("sitChecklist.customPlaceholder", "e.g. Top up humidifier")}
                 className="w-full rounded-md border border-sage-200 px-2 py-1.5 text-xs focus:border-sage-600 focus:outline-none"
                 onKeyDown={(e) => { if (e.key === "Enter") addCustom(); }}
               />
@@ -326,14 +356,14 @@ export function SitChecklist({
                   disabled={!newLabel.trim()}
                   className="ml-auto rounded-md bg-sage-600 px-3 py-1 text-[11px] font-semibold text-white disabled:opacity-40"
                 >
-                  Add
+                  {t("sitChecklist.add", "Add")}
                 </button>
                 <button
                   type="button"
                   onClick={() => { setAdding(false); setNewLabel(""); }}
                   className="rounded-md px-2 py-1 text-[11px] font-semibold text-sage-600"
                 >
-                  Cancel
+                  {t("sitChecklist.cancel", "Cancel")}
                 </button>
               </div>
             </div>
@@ -343,7 +373,7 @@ export function SitChecklist({
               onClick={() => setAdding(true)}
               className="flex w-full items-center justify-center gap-1 rounded-lg border border-dashed border-sage-300 bg-white px-3 py-2 text-[11px] font-semibold text-sage-700 hover:bg-sage-50"
             >
-              <Plus className="size-3" /> Add a custom item
+              <Plus className="size-3" /> {t("sitChecklist.addCustomItem", "Add a custom item")}
             </button>
           )}
 
@@ -353,14 +383,14 @@ export function SitChecklist({
               <div className="flex items-center justify-between gap-2 rounded-lg bg-warn-green/10 px-3 py-2 ring-1 ring-warn-green/30">
                 <div className="flex items-center gap-1.5 text-[11px] font-semibold text-warn-green">
                   <CheckCircle2 className="size-3.5" />
-                  Marked ready · only visible to you for now
+                  {t("sitChecklist.markedReadyOnlyYou", "Marked ready · only visible to you for now")}
                 </div>
                 <button
                   type="button"
                   onClick={unmarkReady}
                   className="text-[10px] font-semibold text-sage-600 underline"
                 >
-                  Undo
+                  {t("sitChecklist.undo", "Undo")}
                 </button>
               </div>
             ) : (
@@ -369,7 +399,7 @@ export function SitChecklist({
                 onClick={() => markReady(false)}
                 className="w-full rounded-lg bg-sage-900 px-3 py-2 text-xs font-semibold text-white"
               >
-                Mark ready
+                {t("sitChecklist.markReady", "Mark ready")}
               </button>
             )}
           </div>
@@ -388,9 +418,9 @@ export function SitChecklist({
             className="w-full max-w-md rounded-2xl bg-white p-4 shadow-lg"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-sm font-bold">Mark ready anyway?</h3>
+            <h3 className="text-sm font-bold">{t("sitChecklist.markReadyAnywayQ", "Mark ready anyway?")}</h3>
             <p className="mt-1 text-xs text-sage-600">
-              A few items aren't checked off yet. Nothing is blocked — this is just for you.
+              {t("sitChecklist.markReadyAnywayBody", "A few items aren't checked off yet. Nothing is blocked — this is just for you.")}
             </p>
             <ul className="mt-3 max-h-48 space-y-1 overflow-y-auto rounded-lg bg-sage-50 p-2">
               {confirmReady.missing.map((m) => (
@@ -403,14 +433,14 @@ export function SitChecklist({
                 onClick={() => setConfirmReady(null)}
                 className="flex-1 rounded-lg border border-sage-200 bg-white py-2 text-xs font-semibold text-sage-700"
               >
-                Keep editing
+                {t("sitChecklist.keepEditing", "Keep editing")}
               </button>
               <button
                 type="button"
                 onClick={() => markReady(true)}
                 className="flex-1 rounded-lg bg-sage-900 py-2 text-xs font-semibold text-white"
               >
-                Mark ready anyway
+                {t("sitChecklist.markReadyAnyway", "Mark ready anyway")}
               </button>
             </div>
           </div>

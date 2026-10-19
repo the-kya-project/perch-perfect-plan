@@ -1,6 +1,8 @@
 // Shared weight-trend computation so the weight facet and the vet summary agree.
 // Steady within ~2.5% over the window; never "red".
 
+import i18next from "i18next";
+
 export type WeightEntryLite = { grams: number; measured_at: string };
 export type WeightTrend = {
   current?: WeightEntryLite;        // latest overall
@@ -17,13 +19,13 @@ export type WeightTrend = {
 // ("attention"), first/only entry → mute ("off"). `entriesDesc` is newest-first.
 export type WeightPillTone = "good" | "attention" | "off";
 export function weightTrendPill(entriesDesc: { grams: number }[]): { label: string; tone: WeightPillTone } {
-  if (entriesDesc.length < 2) return { label: "First weight", tone: "off" };
+  if (entriesDesc.length < 2) return { label: i18next.t("weightPill.first", "First weight"), tone: "off" };
   const raw = entriesDesc[0].grams - entriesDesc[1].grams;
-  if (Math.abs(raw) < 1) return { label: "Steady", tone: "good" };
+  if (Math.abs(raw) < 1) return { label: i18next.t("weightPill.steady", "Steady"), tone: "good" };
   const delta = Math.round(Math.abs(raw));
   return raw > 0
-    ? { label: `Up ${delta} g`, tone: "good" }
-    : { label: `Down ${delta} g`, tone: "attention" };
+    ? { label: i18next.t("weightPill.up", "Up {{delta}} g", { delta }), tone: "good" }
+    : { label: i18next.t("weightPill.down", "Down {{delta}} g", { delta }), tone: "attention" };
 }
 
 /** `entriesDesc` must be newest-first. */

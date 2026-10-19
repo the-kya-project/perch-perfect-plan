@@ -1,11 +1,13 @@
 import { friendlyError } from "@/lib/errorMessage";
-import { useTranslation } from "react-i18next";
+import { ageLabel } from "@/components/BirdPickers";
+import { useTranslation, Trans } from "react-i18next";
 import i18next, { type TFunction } from "i18next";
 import { createFileRoute, Link, useNavigate, useLocation } from "@tanstack/react-router";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { purgeBirdMedia, BIRD_MEDIA_PURGE_FAILED } from "@/lib/birdMedia.functions";
+import { purgeBirdMedia } from "@/lib/birdMedia.functions";
+import { birdMediaPurgeFailedText } from "@/lib/i18n/serverErrors";
 import { useBirdPhotos } from "@/lib/useBirdPhotos";
 import { useBirdRole } from "@/lib/useBirdRole";
 import { useActiveSitIdForBird } from "@/components/CaregiverHome";
@@ -128,7 +130,7 @@ function BirdNoAccess() {
         </p>
         <div className="mt-5">
           <PrimaryButton tone="ink" onPress={() => navigate({ to: "/dashboard" })}>
-            Back to your flock
+            {t("birdRecord.backToYourFlock", "Back to your flock")}
           </PrimaryButton>
         </div>
       </div>
@@ -157,7 +159,7 @@ function BirdRecordHero({ birdId }: { birdId: string }) {
   const photoOf = useBirdPhotos([bird?.photo_url], 800);
   const photo = photoOf(bird?.photo_url);
   const name = bird?.name ?? t("birdRecord.thisBird", "This bird");
-  const meta = [bird?.species || t("birdRecord.parrot", "Parrot"), bird?.age].filter(Boolean).join(" · ");
+  const meta = [bird?.species || t("birdRecord.parrot", "Parrot"), bird?.age ? ageLabel(t, bird.age) : null].filter(Boolean).join(" · ");
   const since = bird?.is_foster && bird?.intake_date ? t("birdRecord.withYouSince", "With you since {{date}}", { date: fmtMonthYear(bird.intake_date) }) : null;
   const identity = [meta, since].filter(Boolean).join(" · ");
   const [photoSheet, setPhotoSheet] = useState(false);
@@ -208,7 +210,7 @@ function BirdRecordHero({ birdId }: { birdId: string }) {
               onClick={() => navigate({ to: "/birds/$birdId/identity", params: { birdId } })}
               className="mt-2 inline-flex items-center gap-1 text-[14px] font-[500] text-[var(--lime)] active:opacity-80"
             >
-              View identity <ArrowRight className="size-4" />
+              {t("birdRecord.viewIdentity", "View identity")} <ArrowRight className="size-4" />
             </button>
           </div>
         </div>
@@ -358,7 +360,7 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
           </p>
           <div className="mt-3">
             <PrimaryButton tone="lime" icon={<ClipboardList className="size-4" />} onPress={() => navigate({ to: "/birds/$birdId/setup", params: { birdId }, search: { step: 1 } })}>
-              Create care plan
+              {t("birdRecord.createCarePlan", "Create care plan")}
             </PrimaryButton>
           </div>
         </section>
@@ -414,7 +416,7 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
 
       {/* Record list */}
       <section>
-        <SectionHead title={`${name}'s record`} />
+        <SectionHead title={t("birdRecord.recordHeading", "{{name}}'s record", { name })} />
         <Card>
           {bird?.setup_complete && (
             <RecordRow leading={<IconTile size={38} icon={<ClipboardList className="size-5" />} />} title={t("birdRecord.carePlan", "Care plan")} subtitle={t("birdRecord.foodRoutineBehaviorHomeHealth", "Food, routine, behavior, home, health")} onClick={() => navigate({ to: "/birds/$birdId/plan", params: { birdId } })} />
@@ -666,8 +668,10 @@ export function HealthSummary({
         )}
         {openFlags.length > 0 && (
           <Row
-            text={`${openFlags.length} open ${openFlags.length === 1 ? "flag" : "flags"}`}
-            pill={{ label: "View", tone: "off" }}
+            text={openFlags.length === 1
+              ? t("birdRecord.openFlagsOne", "{{n}} open flag", { n: openFlags.length })
+              : t("birdRecord.openFlagsOther", "{{n}} open flags", { n: openFlags.length })}
+            pill={{ label: t("birdRecord.view", "View"), tone: "off" }}
             onClick={() => onOpenScan(openFlags[0].id)}
           />
         )}
@@ -721,7 +725,7 @@ function HandoffSection({ birdId, name, part, prominent }: { birdId: string; nam
   const permanentM = useMutation({
     mutationFn: () => permanent({ data: { birdId } }),
     onSuccess: () => {
-      toast.success(`${name} joined the flock! 🎉`);
+      toast.success(t("birdRecord.joinedFlockToast", "{{name}} joined the flock! 🎉", { name }));
       ["bird-record", "moments", "birds", "bird-role"].forEach((k) => qc.invalidateQueries({ queryKey: k === "birds" ? ["birds"] : [k, birdId] }));
     },
     onError: (e: any) => toast.error(friendlyError(e, t("birdRecord.couldntUpdate", "Couldn't update."))),
@@ -734,10 +738,10 @@ function HandoffSection({ birdId, name, part, prominent }: { birdId: string; nam
       <button
         type="button"
         disabled={permanentM.isPending}
-        onClick={() => { if (window.confirm(`Make ${name} a permanent member of your flock? You can change your mind later.`)) permanentM.mutate(); }}
+        onClick={() => { if (window.confirm(t("birdRecord.makePermanentConfirm", "Make {{name}} a permanent member of your flock? You can change your mind later.", { name }))) permanentM.mutate(); }}
         className={outlineBtn}
       >
-        <Heart className="size-4" /> Welcome to the flock
+        <Heart className="size-4" /> {t("birdRecord.welcomeToFlock", "Welcome to the flock")}
       </button>
     );
   }
@@ -748,10 +752,10 @@ function HandoffSection({ birdId, name, part, prominent }: { birdId: string; nam
       <div className="flex items-center gap-3 rounded-[14px] p-3" style={{ background: "var(--amber-fill)", border: "1px solid var(--amber-line)" }}>
         <Loader2 className="size-4 shrink-0 text-[var(--amber-ink)]" />
         <p className="min-w-0 flex-1 text-[12.5px] text-[var(--amber-ink)]">
-          Handoff pending — to <span className="font-[500]">{pending.pending.email}</span>
+          <Trans i18nKey="birdRecord.handoffPendingTo" defaults="Handoff pending — to <1>{{email}}</1>" values={{ email: pending.pending.email }} components={{ 1: <span className="font-[500]" /> }} />
         </p>
         <button type="button" disabled={cancelM.isPending} onClick={() => cancelM.mutate(pending.pending!.id)} className="shrink-0 text-[12.5px] font-[500] text-[var(--amber-ink)] underline disabled:opacity-50">
-          Cancel
+          {t("birdRecord.cancel", "Cancel")}
         </button>
       </div>
     );
@@ -781,7 +785,7 @@ function DeleteBirdButton({ birdId, name }: { birdId: string; name: string }) {
   const ready = text.trim() === name.trim();
 
   async function del() {
-    if (!ready) { toast.error(`Type "${name}" exactly to confirm.`); return; }
+    if (!ready) { toast.error(t("birdRecord.typeNameToConfirm", "Type \"{{name}}\" exactly to confirm.", { name })); return; }
     setDeleting(true);
     // Media BEFORE rows: the rows are the only record of these files and clip
     // uids, so a failure here must abort with the bird intact rather than
@@ -793,7 +797,7 @@ function DeleteBirdButton({ birdId, name }: { birdId: string; name: string }) {
       await purgeMedia({ data: { birdId } });
     } catch (e: any) {
       console.error("[deleteBird] media purge failed", e);
-      toast.error(BIRD_MEDIA_PURGE_FAILED);
+      toast.error(birdMediaPurgeFailedText());
       setDeleting(false);
       return;
     }
@@ -809,7 +813,7 @@ function DeleteBirdButton({ birdId, name }: { birdId: string; name: string }) {
       await supabase.from("care_plans").delete().eq("bird_id", birdId);
       const { error } = await supabase.from("birds").delete().eq("id", birdId);
       if (error) throw error;
-      toast.success(`${name} removed.`);
+      toast.success(t("birdRecord.removedToast", "{{name}} removed.", { name }));
       qc.invalidateQueries({ queryKey: ["birds"] });
       navigate({ to: "/dashboard" });
     } catch (e: any) {
@@ -825,7 +829,7 @@ function DeleteBirdButton({ birdId, name }: { birdId: string; name: string }) {
         onClick={() => setConfirming(true)}
         className="flex min-h-[44px] w-full items-center justify-center gap-2 text-[14px] font-[500] text-[var(--red-ink)] active:scale-[0.99]"
       >
-        <Trash2 className="size-4" /> Delete {name}
+        <Trash2 className="size-4" /> {t("birdRecord.deleteName", "Delete {{name}}", { name })}
       </button>
       {confirming && (
         // Modal renders ABOVE the bottom nav (z-50 vs nav's z-40), backdrop
@@ -843,7 +847,7 @@ function DeleteBirdButton({ birdId, name }: { birdId: string; name: string }) {
               style={{ maxHeight: "calc(100dvh - max(env(safe-area-inset-top), 12px) - 1.5rem)" }}
             >
               <div className="overflow-y-auto p-5" style={{ background: "var(--red-fill)", borderBottom: "1px solid var(--red-line)" }}>
-                <h2 id="delete-bird-title" className="t-section" style={{ color: "var(--red-deep)" }}>Delete {name}?</h2>
+                <h2 id="delete-bird-title" className="t-section" style={{ color: "var(--red-deep)" }}>{t("birdRecord.deleteNameQ", "Delete {{name}}?", { name })}</h2>
                 <p className="t-body mt-2" style={{ color: "var(--red-deep)" }}>
                   {t("birdRecord.deleteWarning", "Permanently delete {{name}} and everything in their record — care plan, weights, scans, journal, and photos. This can't be undone.", { name })}
                 </p>
@@ -866,7 +870,7 @@ function DeleteBirdButton({ birdId, name }: { birdId: string; name: string }) {
                   onClick={() => { setConfirming(false); setText(""); }}
                   className="min-h-[48px] flex-1 rounded-[12px] border border-[var(--line)] bg-white text-[15px] font-[500] text-[var(--ink)] disabled:opacity-50"
                 >
-                  Cancel
+                  {t("birdRecord.cancel", "Cancel")}
                 </button>
                 <button
                   type="button"
@@ -948,7 +952,7 @@ function BasicInfoCard({ birdId, bird, editable = true }: { birdId: string; bird
   }
 
   const speciesView = bird.species?.trim() || t("birdRecord.notSet", "Not set");
-  const ageView = bird.age?.trim() || t("birdRecord.notSet", "Not set");
+  const ageView = (bird.age?.trim() && ageLabel(t, bird.age.trim())) || t("birdRecord.notSet", "Not set");
   // Setup saves "Male"/"Female"; SEX_LABEL keys are lowercase, so look up case-insensitively.
   const sexKey = (bird.sex ?? "").toLowerCase();
   const sexView = sexKey === "male" ? t("birdRecord.male", "Male") : sexKey === "female" ? t("birdRecord.female", "Female") : sexKey === "unknown" ? t("birdRecord.unknown", "Unknown") : (bird.sex || t("birdRecord.notSet", "Not set"));
@@ -970,15 +974,15 @@ function BasicInfoCard({ birdId, bird, editable = true }: { birdId: string; bird
         {editing ? (
           <div className="flex gap-2">
             <button type="button" onClick={() => setEditing(false)} disabled={saving} className="inline-flex min-h-[36px] items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium text-[#5f5e5a]">
-              <X className="size-3.5" /> Cancel
+              <X className="size-3.5" /> {t("birdRecord.cancel", "Cancel")}
             </button>
             <button type="button" onClick={save} disabled={saving} className="inline-flex min-h-[36px] items-center gap-1 rounded-full bg-[#1a3d2e] px-3 py-1 text-xs font-medium text-white disabled:opacity-50">
-              <Check className="size-3.5" /> {saving ? "Saving…" : "Save"}
+              <Check className="size-3.5" /> {saving ? t("birdRecord.saving", "Saving…") : t("birdRecord.save", "Save")}
             </button>
           </div>
         ) : editable ? (
           <button type="button" onClick={openEdit} className="inline-flex min-h-[36px] items-center gap-1 rounded-full px-2 py-1 text-xs font-medium text-[#1a3d2e]">
-            <Pencil className="size-3.5" /> Edit
+            <Pencil className="size-3.5" /> {t("birdRecord.edit", "Edit")}
           </button>
         ) : null}
       </div>

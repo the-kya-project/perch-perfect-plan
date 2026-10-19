@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Camera, Upload, Loader2 } from "lucide-react";
 import { SCAN_FIELDS, computeTriage, type ScanAnswer, type ScanFieldKey } from "@/lib/triage";
+import { scanQuestion, scanHelpNotSure, scanHelpConcerning } from "@/lib/scanFieldLabels";
 import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
 import { toast } from "sonner";
 
@@ -22,7 +23,7 @@ export type ScanSubmit = {
 
 export function ScanForm({
   submitting,
-  submitLabel = "Submit health check",
+  submitLabel,
   onSubmit,
 }: {
   submitting: boolean;
@@ -93,7 +94,7 @@ export function ScanForm({
         const missing = showErrors && !a;
         return (
           <section key={f.key} id={`scan-field-${f.key}`} className={`rounded-2xl bg-[#efe9da] p-4 ${missing ? "ring-2 ring-warn-red" : ""}`}>
-            <p id={`scan-q-${f.key}`} className="text-sm font-medium">{f.question}</p>
+            <p id={`scan-q-${f.key}`} className="text-sm font-medium">{scanQuestion(t, f)}</p>
             {/* Semantic radio group: one answer per question. role+aria-checked
                 give it radio semantics for assistive tech; tap behavior is unchanged. */}
             <div role="radiogroup" aria-labelledby={`scan-q-${f.key}`} className="mt-3 grid grid-cols-3 gap-2">
@@ -123,8 +124,8 @@ export function ScanForm({
             {missing && <p className="mt-3 text-[11px] font-medium text-warn-red">{t("scanForm.missingAnswer", "Please answer this before submitting.")}</p>}
             {/* Both help notes use the app's amber warning treatment (same as the
                 never-feed callout) — never the off-brand red-on-cream "muddy pink." */}
-            {a === "not_sure" && <p className="mt-3 rounded bg-warn-amber/10 p-2 ring-1 ring-warn-amber/30 text-[11px] leading-relaxed text-warn-amber"><b>{t("scanForm.lookAgainLabel", "Look again: ")}</b>{f.helpNotSure}</p>}
-            {a === "concerning" && <p className="mt-3 rounded bg-warn-amber/10 p-2 ring-1 ring-warn-amber/30 text-[11px] leading-relaxed text-warn-amber"><b>{t("scanForm.watchForLabel", "Watch for: ")}</b>{f.helpConcerning}</p>}
+            {a === "not_sure" && <p className="mt-3 rounded bg-warn-amber/10 p-2 ring-1 ring-warn-amber/30 text-[11px] leading-relaxed text-warn-amber"><b>{t("scanForm.lookAgainLabel", "Look again: ")}</b>{scanHelpNotSure(t, f)}</p>}
+            {a === "concerning" && <p className="mt-3 rounded bg-warn-amber/10 p-2 ring-1 ring-warn-amber/30 text-[11px] leading-relaxed text-warn-amber"><b>{t("scanForm.watchForLabel", "Watch for: ")}</b>{scanHelpConcerning(t, f)}</p>}
             {/* Optional note — only for a not-normal item, so the owner gets
                 context on the flag. Never required; the check saves without it. */}
             {(a === "not_sure" || a === "concerning") && (
@@ -200,7 +201,7 @@ export function ScanForm({
         disabled={submitting || photoBusy}
         className="min-h-[44px] w-full rounded-xl bg-[#1a3d2e] py-3.5 text-sm font-medium text-white disabled:opacity-60"
       >
-        {submitting ? t("scanForm.logging", "Logging…") : submitLabel}
+        {submitting ? t("scanForm.logging", "Logging…") : (submitLabel ?? t("scanForm.submitDefault", "Submit health check"))}
       </button>
     </main>
   );

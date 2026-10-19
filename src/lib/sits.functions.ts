@@ -19,7 +19,7 @@ import {
   buildSitterInviteEmail, buildSitterInviteUpdatedEmail, buildSitterInviteCancelledEmail,
   type BuiltEmail,
 } from "./emailTemplates";
-import { localeForUser } from "./emailLocale.server";
+import { localeForUser, joinNamesLocalized, fallbackOwnerLabel } from "./emailLocale.server";
 import { emailT } from "./i18n/emailI18n.server";
 
 async function getAdmin() {
@@ -31,13 +31,10 @@ function appUrl() {
   return process.env.APP_URL || "https://app.thekyaproject.com";
 }
 
-// Human list: "Willow", "Willow and Moxie", "Willow, Moxie, and Kiwi".
-function joinNames(names: string[]): string {
-  const n = names.filter(Boolean);
-  if (n.length === 0) return "your birds";
-  if (n.length === 1) return n[0];
-  if (n.length === 2) return `${n[0]} and ${n[1]}`;
-  return `${n.slice(0, -1).join(", ")}, and ${n[n.length - 1]}`;
+// Human list: "Willow", "Willow and Moxie", "Willow, Moxie, and Kiwi" — in the
+// email's language (English when no locale is passed).
+function joinNames(names: string[], locale: string = "en"): string {
+  return joinNamesLocalized(names, locale, "birds");
 }
 
 // "Aug 12, 2026" (en) / "12 aug 2026" (nl). UTC — sit dates are calendar dates,
@@ -55,16 +52,16 @@ function fmtRange(start: string, end: string, locale: string = "en"): string {
   return start === end ? fmtDate(start, locale) : `${fmtDate(start, locale)} – ${fmtDate(end, locale)}`;
 }
 
-async function ownerDisplayName(sb: any, ownerId: string): Promise<string> {
+async function ownerDisplayName(sb: any, ownerId: string, locale: string = "en"): Promise<string> {
   const { data } = await sb.from("profiles").select("display_name").eq("id", ownerId).maybeSingle();
   const name = (data?.display_name ?? "").toString().trim();
   if (name) return name;
   try {
     const { data: u } = await sb.auth.admin.getUserById(ownerId);
     const meta = (u?.user?.user_metadata?.display_name ?? "").toString().trim();
-    return meta || u?.user?.email?.split("@")[0] || "An owner";
+    return meta || u?.user?.email?.split("@")[0] || fallbackOwnerLabel(locale);
   } catch {
-    return "An owner";
+    return fallbackOwnerLabel(locale);
   }
 }
 
@@ -128,8 +125,8 @@ export const notifySitAssigned = createServerFn({ method: "POST" })
     // Household caregiver (group 1) → the recipient's own locale (also the date format).
     const locale = await localeForUser(sb, sit.caregiver_user_id);
     const built = buildSitAssignedEmail({
-      ownerName: await ownerDisplayName(sb, ownerId),
-      birdNames: joinNames(await birdNames(sb, ids)),
+      ownerName: await ownerDisplayName(sb, ownerId, locale),
+      birdNames: joinNames(await birdNames(sb, ids), locale),
       dateRange: fmtRange(sit.start_date, sit.end_date, locale),
       link: `${appUrl()}/today`,
       locale,
@@ -172,8 +169,8 @@ export const notifySitUpdated = createServerFn({ method: "POST" })
     if (!email) return { ok: true, emailed: false, reason: "no-caregiver-email", caregiverName: name ?? undefined };
 
     const built = buildSitUpdatedEmail({
-      ownerName: await ownerDisplayName(sb, ownerId),
-      birdNames: joinNames(await birdNames(sb, ids)),
+      ownerName: await ownerDisplayName(sb, ownerId, locale),
+      birdNames: joinNames(await birdNames(sb, ids), locale),
       dateRange: fmtRange(sit.start_date, sit.end_date, locale),
       changeSummary,
       link: `${appUrl()}/today`,
@@ -219,8 +216,8 @@ export const notifySitCancelled = createServerFn({ method: "POST" })
 
     const locale = await localeForUser(sb, data.caregiverUserId);
     const built = buildSitCancelledEmail({
-      ownerName: await ownerDisplayName(sb, ownerId),
-      birdNames: joinNames(names),
+      ownerName: await ownerDisplayName(sb, ownerId, locale),
+      birdNames: joinNames(names, locale),
       dateRange: fmtRange(data.startDate, data.endDate, locale),
       link: `${appUrl()}/today`,
       locale,
@@ -271,11 +268,14 @@ export const notifySitterInvite = createServerFn({ method: "POST" })
 
     const { data: sbRows } = await sb.from("sit_birds").select("bird_id").eq("sit_id", sit.id);
     const ids = (sbRows ?? []).map((r: any) => r.bird_id as string);
+    // Account-less sitter (group 2) → the SENDER's (owner's) locale.
+    const locale = await localeForUser(sb, ownerId);
     const built = buildSitterInviteEmail({
-      ownerName: await ownerDisplayName(sb, ownerId),
-      birdNames: joinNames(await birdNames(sb, ids)),
-      dateRange: fmtRange(sit.start_date, sit.end_date),
+      ownerName: await ownerDisplayName(sb, ownerId, locale),
+      birdNames: joinNames(await birdNames(sb, ids), locale),
+      dateRange: fmtRange(sit.start_date, sit.end_date, locale),
       link: `${appUrl()}/sitter/${sit.invite_token}`,
+      locale,
     });
     const ok = await send(built, (sit.sitter_email as string).trim(), sit.sitter_name, "sitter_invite");
     if (!ok) console.error("[sits] sitter invite email failed for sit", sit.id);
@@ -294,19 +294,24 @@ export const notifySitterInviteUpdated = createServerFn({ method: "POST" })
     const { sit, reason } = await loadSendableSitterSit(sb, data.sitId, ownerId);
     if (reason) return { ok: reason === "sit-not-found" ? false : true, emailed: false, reason, sitterName: sit?.sitter_name ?? undefined };
 
+    // Account-less sitter (group 2) → the SENDER's (owner's) locale. The change
+    // summary is prose too, so it is built in that language.
+    const locale = await localeForUser(sb, ownerId);
+    const et = emailT(locale);
     const parts: string[] = [];
-    if (data.datesChanged) parts.push("the dates");
-    if (data.birdsChanged) parts.push("which birds you're covering");
-    const changeSummary = parts.join(" and ") || "some details";
+    if (data.datesChanged) parts.push(et("email.sitUpdated.changeDates"));
+    if (data.birdsChanged) parts.push(et("email.sitUpdated.changeBirds"));
+    const changeSummary = parts.join(et("email.sitUpdated.changeJoin")) || et("email.sitUpdated.changeFallback");
 
     const { data: sbRows } = await sb.from("sit_birds").select("bird_id").eq("sit_id", sit.id);
     const ids = (sbRows ?? []).map((r: any) => r.bird_id as string);
     const built = buildSitterInviteUpdatedEmail({
-      ownerName: await ownerDisplayName(sb, ownerId),
-      birdNames: joinNames(await birdNames(sb, ids)),
-      dateRange: fmtRange(sit.start_date, sit.end_date),
+      ownerName: await ownerDisplayName(sb, ownerId, locale),
+      birdNames: joinNames(await birdNames(sb, ids), locale),
+      dateRange: fmtRange(sit.start_date, sit.end_date, locale),
       changeSummary,
       link: `${appUrl()}/sitter/${sit.invite_token}`,
+      locale,
     });
     const ok = await send(built, (sit.sitter_email as string).trim(), sit.sitter_name, "sitter_invite_updated");
     if (!ok) console.error("[sits] sitter update email failed for sit", sit.id);
@@ -344,10 +349,13 @@ export const notifySitterCancelled = createServerFn({ method: "POST" })
 
     const nameById = new Map(birds.map((b) => [b.id, b.name]));
     const names = data.birdIds.map((id) => nameById.get(id)).filter(Boolean) as string[];
+    // Account-less sitter (group 2) → the SENDER's (owner's) locale.
+    const locale = await localeForUser(sb, ownerId);
     const built = buildSitterInviteCancelledEmail({
-      ownerName: await ownerDisplayName(sb, ownerId),
-      birdNames: joinNames(names),
-      dateRange: fmtRange(data.startDate, data.endDate),
+      ownerName: await ownerDisplayName(sb, ownerId, locale),
+      birdNames: joinNames(names, locale),
+      dateRange: fmtRange(data.startDate, data.endDate, locale),
+      locale,
     });
     const ok = await send(built, to, data.sitterName ?? null, "sitter_invite_cancelled");
     if (!ok) console.error("[sits] sitter cancelled email failed");

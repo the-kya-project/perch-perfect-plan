@@ -1,3 +1,5 @@
+import i18next from "i18next";
+
 export const EMERGENCY_FIELDS = [
   "owner_phone",
   "backup_name",
@@ -60,9 +62,9 @@ export function phoneWarning(v: string | null | undefined): string | null {
   const s = (v ?? "").trim();
   if (!s) return null;
   const digits = (s.match(/\d/g) || []).length;
-  if (digits < 7) return "That looks too short for a phone number.";
-  if (digits > 15) return "That looks too long for a phone number.";
-  if (!PHONE_RE.test(s)) return "That doesn't look like a valid phone number.";
+  if (digits < 7) return i18next.t("phoneCheck.tooShort", "That looks too short for a phone number.");
+  if (digits > 15) return i18next.t("phoneCheck.tooLong", "That looks too long for a phone number.");
+  if (!PHONE_RE.test(s)) return i18next.t("phoneCheck.invalid", "That doesn't look like a valid phone number.");
   return null;
 }
 

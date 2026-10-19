@@ -3,6 +3,7 @@
 // /  network so it's trivially testable and the dashboard stays declarative.
 import { weightTrendPill } from "./weightTrend";
 import { formatLocalDate } from "@/lib/dates";
+import i18next from "i18next";
 
 // ---- Tunable thresholds (surfaced as named constants) ----------------------
 export const STALE_DAYS_PERMANENT = 5; // permanent birds: nudge a weigh-in after 5 days
@@ -47,7 +48,7 @@ export function weightGlance(entriesDesc: WeightEntry[], isFoster: boolean | nul
   const current = entriesDesc[0].grams;
   const days = daysSince(entriesDesc[0].measured_at);
   if (days > staleThreshold(isFoster)) {
-    return { state: "stale", current, days, pill: { tone: "attention", label: `${days} days` } };
+    return { state: "stale", current, days, pill: { tone: "attention", label: i18next.t("home.staleDaysPill", "{{days}} days", { days }) } };
   }
   // Trend = latest entry vs the immediately previous one — the ONE canonical
   // computation shared with the bird-record pill (weightTrendPill), so the two
@@ -81,6 +82,24 @@ export function anchorsForBird(b: HomeBird): MomentAnchor[] {
   if (b.acquired_on) out.push({ birdId: b.id, birdName: b.name, label: "Gotcha day", baseISO: b.acquired_on });
   if (b.became_permanent_on) out.push({ birdId: b.id, birdName: b.name, label: "Joined the flock", baseISO: b.became_permanent_on });
   return out;
+}
+
+// Anchor labels stay English (compared below + used in ids); translate at display.
+export function momentLabel(en: string): string {
+  switch (en) {
+    case "Hatch day": return i18next.t("home.moment.hatchDay", "Hatch day");
+    case "Gotcha day": return i18next.t("home.moment.gotchaDay", "Gotcha day");
+    case "Joined the flock": return i18next.t("home.moment.joinedTheFlock", "Joined the flock");
+    default: return en;
+  }
+}
+function momentLabelLower(en: string): string {
+  switch (en) {
+    case "Hatch day": return i18next.t("home.moment.hatchDayLower", "hatch day");
+    case "Gotcha day": return i18next.t("home.moment.gotchaDayLower", "gotcha day");
+    case "Joined the flock": return i18next.t("home.moment.joinedTheFlockLower", "joined the flock");
+    default: return en.toLowerCase();
+  }
 }
 
 export function upcomingMoments(birds: HomeBird[], now = new Date()): UpcomingMoment[] {
@@ -117,8 +136,15 @@ export function buildTodayItems(
   const concernItems: TodayItem[] = concerns.map((c, i) => ({
     id: `concern-${c.birdId}`,
     tone: "amber",
-    title: `${c.birdName} — concern flagged`,
-    meta: `${c.daysAgo === 0 ? "Today" : `${c.daysAgo} day${c.daysAgo === 1 ? "" : "s"} ago`} · Run by ${c.runByName}`,
+    title: i18next.t("home.today.concernFlagged", "{{bird}} — concern flagged", { bird: c.birdName }),
+    meta: i18next.t("home.today.concernMeta", "{{when}} · Run by {{name}}", {
+      when: c.daysAgo === 0
+        ? i18next.t("home.today.today", "Today")
+        : c.daysAgo === 1
+          ? i18next.t("home.today.dayAgoOne", "{{n}} day ago", { n: c.daysAgo })
+          : i18next.t("home.today.dayAgoOther", "{{n}} days ago", { n: c.daysAgo }),
+      name: c.runByName,
+    }),
     to: { kind: "scan", birdId: c.birdId, scanId: c.scanId },
     rank: -1000 + i,
   }));
@@ -132,8 +158,8 @@ export function buildTodayItems(
     const days = daysSince(entries[0].measured_at);
     if (days > staleThreshold(b.is_foster)) {
       items.push({
-        id: `stale-${b.id}`, tone: "amber", title: `${b.name} needs a weigh-in`,
-        meta: `Last weighed ${days} days ago`, to: { kind: "weight", birdId: b.id }, rank: 100 - Math.min(days, 99),
+        id: `stale-${b.id}`, tone: "amber", title: i18next.t("home.today.needsWeighIn", "{{bird}} needs a weigh-in", { bird: b.name }),
+        meta: i18next.t("home.today.lastWeighed", "Last weighed {{days}} days ago", { days }), to: { kind: "weight", birdId: b.id }, rank: 100 - Math.min(days, 99),
       });
     }
   }
@@ -141,20 +167,36 @@ export function buildTodayItems(
   // b. Upcoming sits within the window.
   for (const s of sits) {
     if (s.daysUntil < 0 || s.daysUntil > SIT_SOON_DAYS) continue;
-    const when = s.daysUntil === 0 ? "starts today" : s.daysUntil === 1 ? "starts tomorrow" : `starts in ${s.daysUntil} days`;
+    const meta = s.daysUntil === 0
+      ? i18next.t("home.today.sitStartsToday", "Sit starts today")
+      : s.daysUntil === 1
+        ? i18next.t("home.today.sitStartsTomorrow", "Sit starts tomorrow")
+        : i18next.t("home.today.sitStartsInDays", "Sit starts in {{n}} days", { n: s.daysUntil });
     items.push({
-      id: `sit-${s.id}`, tone: "pale", title: s.sitterName ? `${s.sitterName} arrives soon` : "A sit is coming up",
-      meta: `Sit ${when}`, to: { kind: "sits" }, rank: 200 + s.daysUntil,
+      id: `sit-${s.id}`, tone: "pale",
+      title: s.sitterName
+        ? i18next.t("home.today.arrivesSoon", "{{name}} arrives soon", { name: s.sitterName })
+        : i18next.t("home.today.sitComingUp", "A sit is coming up"),
+      meta, to: { kind: "sits" }, rank: 200 + s.daysUntil,
     });
   }
 
   // c. Upcoming Moments within the window.
   for (const m of moments) {
-    const when = m.days === 0 ? "today" : m.days === 1 ? "tomorrow" : `in ${m.days} days`;
-    const yr = m.years > 0 ? ` · ${m.years} ${m.years === 1 ? "year" : "years"}` : "";
+    const when = m.days === 0
+      ? i18next.t("home.today.whenToday", "today")
+      : m.days === 1
+        ? i18next.t("home.today.whenTomorrow", "tomorrow")
+        : i18next.t("home.today.whenInDays", "in {{n}} days", { n: m.days });
+    const yr = m.years > 0
+      ? m.years === 1
+        ? i18next.t("home.today.yearsSuffixOne", " · {{n}} year", { n: m.years })
+        : i18next.t("home.today.yearsSuffixOther", " · {{n}} years", { n: m.years })
+      : "";
     items.push({
-      id: `moment-${m.birdId}-${m.label}`, tone: "pale", title: `${m.birdName}'s ${m.label.toLowerCase()} ${when}`,
-      meta: `${m.label}${yr}`, to: { kind: "moments", birdId: m.birdId }, rank: 300 + m.days,
+      id: `moment-${m.birdId}-${m.label}`, tone: "pale",
+      title: i18next.t("home.today.momentTitle", "{{bird}}'s {{label}} {{when}}", { bird: m.birdName, label: momentLabelLower(m.label), when }),
+      meta: `${momentLabel(m.label)}${yr}`, to: { kind: "moments", birdId: m.birdId }, rank: 300 + m.days,
     });
   }
 
@@ -187,49 +229,61 @@ export function buildHomeStateCopy(
     const entries = weightsByBird.get(b.id) ?? [];
     if (!entries.length) continue;
     if (daysSince(entries[0].measured_at, now) > staleThreshold(b.is_foster)) {
-      return `${b.name} is due for a weigh-in.`;
+      return i18next.t("home.state.dueForWeighIn", "{{bird}} is due for a weigh-in.", { bird: b.name });
     }
   }
 
   // 2) Sit imminent — within SIT_SOON_DAYS.
   const sitSoon = sits.find((s) => s.daysUntil >= 0 && s.daysUntil <= SIT_SOON_DAYS);
   if (sitSoon) {
-    const who = sitSoon.caregiverName?.trim() || sitSoon.sitterName?.trim() || "Your caregiver";
-    const when = sitSoon.daysUntil === 0 ? "today" : sitSoon.daysUntil === 1 ? "tomorrow" : dayName(sitSoon.startDate, now);
-    return `${who} arrives ${when}.`;
+    const who = sitSoon.caregiverName?.trim() || sitSoon.sitterName?.trim() || i18next.t("home.state.yourCaregiver", "Your caregiver");
+    const when = sitSoon.daysUntil === 0
+      ? i18next.t("home.state.today", "today")
+      : sitSoon.daysUntil === 1 ? i18next.t("home.state.tomorrow", "tomorrow") : dayName(sitSoon.startDate, now);
+    return i18next.t("home.state.arrives", "{{who}} arrives {{when}}.", { who, when });
   }
 
   // 3) Celebration — soonest hatch / foster-fail anniversary within window.
   const m = moments.find((x) => x.days >= 0 && x.days <= MOMENT_SOON_DAYS);
   if (m) {
-    const when = m.days === 0 ? "today" : m.days === 1 ? "tomorrow" : `on ${dayName(m.date.toISOString(), now)}`;
-    if (m.label === "Hatch day" && m.years > 0) return `${m.birdName} turns ${m.years} ${when}.`;
-    if (m.label === "Joined the flock" && m.years === 1) return `One year since ${m.birdName} joined the flock.`;
-    if (m.label === "Joined the flock" && m.years > 1) return `${m.years} years since ${m.birdName} joined the flock.`;
-    if (m.label === "Gotcha day" && m.years > 0) return `${m.years} ${m.years === 1 ? "year" : "years"} with ${m.birdName} ${when}.`;
+    const when = m.days === 0
+      ? i18next.t("home.state.today", "today")
+      : m.days === 1
+        ? i18next.t("home.state.tomorrow", "tomorrow")
+        : i18next.t("home.state.onDay", "on {{day}}", { day: dayName(m.date.toISOString(), now) });
+    const bird = m.birdName;
+    const n = m.years;
+    if (m.label === "Hatch day" && m.years > 0) return i18next.t("home.state.turns", "{{bird}} turns {{n}} {{when}}.", { bird, n, when });
+    if (m.label === "Joined the flock" && m.years === 1) return i18next.t("home.state.oneYearSinceJoined", "One year since {{bird}} joined the flock.", { bird });
+    if (m.label === "Joined the flock" && m.years > 1) return i18next.t("home.state.yearsSinceJoined", "{{n}} years since {{bird}} joined the flock.", { bird, n });
+    if (m.label === "Gotcha day" && m.years > 0) {
+      return m.years === 1
+        ? i18next.t("home.state.yearsWithOne", "{{n}} year with {{bird}} {{when}}.", { bird, n, when })
+        : i18next.t("home.state.yearsWithOther", "{{n}} years with {{bird}} {{when}}.", { bird, n, when });
+    }
     // Fallback for any anchor without a tailored line.
-    return `${m.birdName}'s ${m.label.toLowerCase()} is ${when}.`;
+    return i18next.t("home.state.momentIs", "{{bird}}'s {{label}} is {{when}}.", { bird, label: momentLabelLower(m.label), when });
   }
 
   // 4) New bird this week — most recently added within 7 days.
   const newOne = birds
     .filter((b) => b.created_at && daysSince(b.created_at, now) <= 7)
     .sort((a, b) => +new Date(b.created_at!) - +new Date(a.created_at!))[0];
-  if (newOne) return `${newOne.name} is settling in.`;
+  if (newOne) return i18next.t("home.state.settlingIn", "{{bird}} is settling in.", { bird: newOne.name });
 
   // 5) Weekend with nothing pressing.
   const wd = now.getDay();
-  if (wd === 0 || wd === 6) return "Hope it's a slow one.";
+  if (wd === 0 || wd === 6) return i18next.t("home.state.slowOne", "Hope it's a slow one.");
 
   // 6) Default.
-  return "A quiet day across the flock.";
+  return i18next.t("home.state.quietDay", "A quiet day across the flock.");
 }
 
 function dayName(iso: string, now = new Date()): string {
   const d = new Date(iso.slice(0, 10) + "T12:00:00");
   const days = Math.round((+midnight(d) - +midnight(now)) / DAY_MS);
-  if (days === 0) return "today";
-  if (days === 1) return "tomorrow";
+  if (days === 0) return i18next.t("home.state.today", "today");
+  if (days === 1) return i18next.t("home.state.tomorrow", "tomorrow");
   if (days > 1 && days < 7) return formatLocalDate(d, { weekday: "long" });
   return formatLocalDate(d, { weekday: "long", month: "short", day: "numeric" });
 }

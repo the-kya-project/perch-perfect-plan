@@ -11,6 +11,7 @@
 // lazy-import the RLS-gated browser client; `resolveJournalAttachmentUrls` takes
 // the caller's storage so the service-role sitter path can reuse it (see
 // journalAttachment.server.ts). Mirrors scanPhoto.ts.
+import i18next from "i18next";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export const JOURNAL_ATTACHMENTS_BUCKET = "journal-attachments";
@@ -48,12 +49,12 @@ type StorageApi = SupabaseClient["storage"];
  */
 export function attachmentRejectionReason(file: { name?: string; type?: string; size?: number }): string | null {
   if (!ALLOWED_ATTACHMENT_MIME.includes(file.type ?? "")) {
-    return "That file type isn't supported yet — attach a PDF.";
+    return i18next.t("journalAttachment.unsupportedType", "That file type isn't supported yet — attach a PDF.");
   }
-  if (!file.size) return "That file looks empty.";
+  if (!file.size) return i18next.t("journalAttachment.empty", "That file looks empty.");
   if (file.size > MAX_ATTACHMENT_BYTES) {
     const mb = Math.round(MAX_ATTACHMENT_BYTES / (1024 * 1024));
-    return `That file is too large — attachments are capped at ${mb} MB.`;
+    return i18next.t("journalAttachment.tooLarge", "That file is too large — attachments are capped at {{mb}} MB.", { mb });
   }
   return null;
 }

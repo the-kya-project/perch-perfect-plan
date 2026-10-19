@@ -15,17 +15,38 @@ import { track } from "@/lib/analytics";
 import { uploadScanPhotoOrInline } from "@/lib/scanPhoto";
 import { friendlyError } from "@/lib/errorMessage";
 import { localDateISO } from "@/lib/localDay";
+import i18next from "i18next";
+import type { TFunction } from "i18next";
+import { useTranslation } from "react-i18next";
+import { triageReasonLines } from "./$birdId.scans.$scanId";
 
 // Owner-run health scan. Uses the SAME ScanForm + triage as the sitter; on submit
 // it writes a daily_logs row (source='owner', run_by, no sit) + optional photo +
 // weight_entries(source='owner') via the authenticated client under has_bird_access
 // RLS. No notifications (the owner ran it themselves).
 export const Route = createFileRoute("/_authenticated/birds/$birdId/scan")({
-  head: () => ({ meta: [{ title: "Health check — Kya & Co." }] }),
+  head: () => ({ meta: [{ title: i18next.t("ownerScan.metaTitle", "Health check — Kya & Co.") }] }),
   component: OwnerScan,
 });
 
+// triage.ts composes its result message in English; display it localized.
+function triageMessageLabel(t: TFunction, en: string): string {
+  switch (en) {
+    case "This may be urgent. Call the owner and the avian vet now. Keep the bird warm, quiet, and minimize handling.":
+      return t("ownerScan.msgRed", "This may be urgent. Call the owner and the avian vet now. Keep the bird warm, quiet, and minimize handling.");
+    case "Two or more concerning signs together — this combination is worth a call. Message the owner now and call the avian vet if it continues or worsens.":
+      return t("ownerScan.msgYellowMulti", "Two or more concerning signs together — this combination is worth a call. Message the owner now and call the avian vet if it continues or worsens.");
+    case "Something may be off. Message the owner, take photos if helpful, and keep monitoring. Call the avian vet if this continues or appears with other signs.":
+      return t("ownerScan.msgYellowOne", "Something may be off. Message the owner, take photos if helpful, and keep monitoring. Call the avian vet if this continues or appears with other signs.");
+    case "Nothing concerning logged. Keep following the care plan and watching for any changes.":
+      return t("ownerScan.msgGreen", "Nothing concerning logged. Keep following the care plan and watching for any changes.");
+    default:
+      return en;
+  }
+}
+
 function OwnerScan() {
+  const { t } = useTranslation();
   const { birdId } = Route.useParams();
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -44,7 +65,7 @@ function OwnerScan() {
   // tag the daily_log, the inline photo_log, and the inline weight_entry with
   // the sit_id so the sit's activity view can pull them by attribution.
   const activeSitId = useActiveSitIdForBird(birdId);
-  const [result, setResult] = useState<{ status: string; message: string; reasons: string[] } | null>(null);
+  const [result, setResult] = useState<{ status: string; message: string; reasons: string[]; reasonCodes?: unknown } | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const { data: bird } = useQuery({
@@ -54,7 +75,7 @@ function OwnerScan() {
       return data as { name: string } | null;
     },
   });
-  const name = bird?.name ?? "this bird";
+  const name = bird?.name ?? t("ownerScan.thisBird", "this bird");
 
   async function onSubmit(p: ScanSubmit) {
     setSubmitting(true);
@@ -111,7 +132,7 @@ function OwnerScan() {
         qc.invalidateQueries({ queryKey: k === "scan-feed" ? ["scan-feed"] : [k, birdId] }));
       qc.invalidateQueries({ queryKey: ["birds"] }); // a weigh-in updates Home pills — weights embedded in the birds query
     } catch (e: any) {
-      toast.error(friendlyError(e, "Couldn't log the health check."));
+      toast.error(friendlyError(e, t("ownerScan.logFailed", "Couldn't log the health check.")));
     } finally {
       setSubmitting(false);
     }
@@ -121,37 +142,37 @@ function OwnerScan() {
     <div className="min-h-screen bg-[#f4f1e8] pb-nav">
       <header className="sticky top-0 z-10 border-b border-[#e3ded0] bg-[#f4f1e8]/95 backdrop-blur">
         <div className="mx-auto flex max-w-md items-center gap-3 px-5 pt-safe pb-3">
-          <Link to="/birds/$birdId" params={{ birdId }} aria-label="Back to bird record" className="-ml-1 rounded p-1 text-[#1a3d2e]">
+          <Link to="/birds/$birdId" params={{ birdId }} aria-label={t("ownerScan.backAria", "Back to bird record")} className="-ml-1 rounded p-1 text-[#1a3d2e]">
             <ArrowLeft className="size-5" />
           </Link>
-          <h1 className="text-base font-medium text-[#1a3d2e]">Health check — {name}</h1>
+          <h1 className="text-base font-medium text-[#1a3d2e]">{t("ownerScan.title", "Health check — {{name}}", { name })}</h1>
         </div>
       </header>
 
       {result ? (
         <main className="mx-auto max-w-md space-y-4 px-5 py-6">
           <div className={`rounded-2xl p-6 text-white ${result.status === "red" ? "bg-warn-red" : result.status === "yellow" ? "bg-warn-amber" : "bg-warn-green"}`}>
-            <p className="text-[11px] font-medium uppercase tracking-widest opacity-80">{result.status === "red" ? "Call your vet now" : result.status === "yellow" ? "Keep a close eye" : "All good today"}</p>
-            <h2 className="mt-1 text-2xl font-medium leading-tight">{result.message}</h2>
+            <p className="text-[11px] font-medium uppercase tracking-widest opacity-80">{result.status === "red" ? t("ownerScan.eyebrowRed", "Call your vet now") : result.status === "yellow" ? t("ownerScan.eyebrowYellow", "Keep a close eye") : t("ownerScan.eyebrowGreen", "All good today")}</p>
+            <h2 className="mt-1 text-2xl font-medium leading-tight">{triageMessageLabel(t, result.message)}</h2>
           </div>
           {result.reasons.length > 0 && (
             <div className="rounded-xl bg-[#efe9da] p-4">
-              <p className="text-[11px] font-medium uppercase tracking-widest text-[#5f5e5a]">What you flagged</p>
-              <ul className="mt-2 list-disc pl-5 text-sm text-[#1a3d2e]">{result.reasons.map((r, i) => <li key={i}>{r}</li>)}</ul>
+              <p className="text-[11px] font-medium uppercase tracking-widest text-[#5f5e5a]">{t("ownerScan.whatYouFlagged", "What you flagged")}</p>
+              <ul className="mt-2 list-disc pl-5 text-sm text-[#1a3d2e]">{(triageReasonLines(t, result.reasonCodes) ?? result.reasons).map((r, i) => <li key={i}>{r}</li>)}</ul>
             </div>
           )}
           <div className="flex gap-2">
             {result.status !== "green" && (
-              <Link to="/birds/$birdId/plan/editor" params={{ birdId }} search={{ tab: "emergency" }} className="flex-1 rounded-xl bg-[#1a3d2e] py-3 text-center text-sm font-medium text-white">Emergency contacts</Link>
+              <Link to="/birds/$birdId/plan/editor" params={{ birdId }} search={{ tab: "emergency" }} className="flex-1 rounded-xl bg-[#1a3d2e] py-3 text-center text-sm font-medium text-white">{t("ownerScan.emergencyContacts", "Emergency contacts")}</Link>
             )}
-            <button type="button" onClick={() => navigate({ to: "/birds/$birdId", params: { birdId } })} className="flex-1 rounded-xl border border-[#c8bfa6] py-3 text-center text-sm font-medium text-[#1a3d2e]">Back to record</button>
+            <button type="button" onClick={() => navigate({ to: "/birds/$birdId", params: { birdId } })} className="flex-1 rounded-xl border border-[#c8bfa6] py-3 text-center text-sm font-medium text-[#1a3d2e]">{t("ownerScan.backToRecord", "Back to record")}</button>
           </div>
         </main>
       ) : (
         <>
         <div className="mx-auto max-w-md px-5 pt-4"><MemberContextBanner birdId={birdId} /></div>
-        <p className="mx-auto max-w-md px-5 pt-2 text-sm leading-relaxed text-[#5f5e5a]">A quick once-over to make sure {name}'s feeling like themselves.</p>
-        <ScanForm submitting={submitting} submitLabel="Log health check" onSubmit={onSubmit} />
+        <p className="mx-auto max-w-md px-5 pt-2 text-sm leading-relaxed text-[#5f5e5a]">{t("ownerScan.intro", "A quick once-over to make sure {{name}}'s feeling like themselves.", { name })}</p>
+        <ScanForm submitting={submitting} submitLabel={t("ownerScan.submit", "Log health check")} onSubmit={onSubmit} />
         </>
       )}
     </div>

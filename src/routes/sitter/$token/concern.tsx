@@ -42,7 +42,7 @@ function ConcernPage() {
       qc.invalidateQueries({ queryKey: ["sitter-dashboard", token] });
       window.scrollTo(0, 0);
     },
-    onError: (e: any) => toast.error(friendlyError(e, t("sitter.concern.pauseError", "Couldn't pause the reminders. Please try again."))),
+    onError: (e: any) => toast.error(friendlyError(e, t("sitter.concern.pauseError", "Couldn't pause the reminders. Please try again."), t)),
   });
 
   return (

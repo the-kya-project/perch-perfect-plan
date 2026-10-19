@@ -16,6 +16,8 @@ import { useBirdPhotos } from "@/lib/useBirdPhotos";
 import { fetchBirdList } from "@/lib/birdListSelect";
 import { weekdayMonthDay, monthDay, daysUntil } from "@/lib/dates";
 import { localDateISO } from "@/lib/localDay";
+import { useTranslation } from "react-i18next";
+import i18next from "i18next";
 
 // Dedicated Sits tab: create / manage sits. Shares the ["birds"] cache with the
 // dashboard via fetchBirdList (identical query/shape, so neither poisons the other).
@@ -29,7 +31,7 @@ const sitsSearch = z.object({
 });
 
 export const Route = createFileRoute("/_authenticated/sits")({
-  head: () => ({ meta: [{ title: "Sits — Kya & Co." }] }),
+  head: () => ({ meta: [{ title: i18next.t("sits.pageTitle", "Sits — Kya & Co.") }] }),
   validateSearch: sitsSearch,
   component: SitsPage,
 });
@@ -37,11 +39,12 @@ export const Route = createFileRoute("/_authenticated/sits")({
 function joinNames(names: string[]): string {
   if (names.length === 0) return "";
   if (names.length === 1) return names[0];
-  if (names.length === 2) return `${names[0]} and ${names[1]}`;
-  return `${names.slice(0, -1).join(", ")}, and ${names[names.length - 1]}`;
+  if (names.length === 2) return i18next.t("sits.joinTwo", "{{a}} and {{b}}", { a: names[0], b: names[1] });
+  return i18next.t("sits.joinMany", "{{list}}, and {{last}}", { list: names.slice(0, -1).join(", "), last: names[names.length - 1] });
 }
 
 function SitsPage() {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [pastOpen, setPastOpen] = useState(false);
@@ -147,7 +150,7 @@ function SitsPage() {
   const leadFirstName = (s: any): string | null =>
     s.caregiver_user_id ? firstName(displayFor(s.caregiver_user_id)) || null : null;
   const caregiverName = (s: any): string =>
-    s.caregiver_user_id ? displayFor(s.caregiver_user_id) : (s.sitter_name?.trim() || "Your sitter");
+    s.caregiver_user_id ? displayFor(s.caregiver_user_id) : (s.sitter_name?.trim() || t("sits.yourSitter", "Your sitter"));
 
   // Context markers (mirrors the flock grouping): whose-birds tag shows ONLY when
   // the user has sits in BOTH their own birds AND a household they help with. A
@@ -169,7 +172,7 @@ function SitsPage() {
       ? undefined
       : s.owner_id === myId
         ? { kind: "own" }
-        : { kind: "household", ownerName: (ownerNames as Record<string, string>)[s.owner_id] ?? null };
+        : { kind: "household", ownerName: s.owner_id in ownerNames ? ((ownerNames as Record<string, string | null>)[s.owner_id] || t("sits.anOwner", "An owner")) : null };
   // "You're in charge" only when the current user is the one COVERING the sit
   // (the covering caregiver), never merely because they own the birds.
   const iAmLead = (s: any): boolean => !!myId && s.caregiver_user_id === myId;
@@ -189,19 +192,23 @@ function SitsPage() {
       });
 
   // ---- Adaptive hero copy ---------------------------------------------------
-  let heroHeadline = "Going away?";
-  let heroBody = "For when you can't be there — set up a sit and share what they need to know.";
+  let heroHeadline = t("sits.heroGoingAway", "Going away?");
+  let heroBody = t("sits.heroGoingAwayBody", "For when you can't be there — set up a sit and share what they need to know.");
   if (actives.length > 0) {
     const a = actives[0];
-    heroHeadline = `${caregiverName(a)} is sitting now.`;
-    heroBody = `Through ${weekdayMonthDay(a.end_date)}.`;
+    heroHeadline = t("sits.heroSittingNow", "{{name}} is sitting now.", { name: caregiverName(a) });
+    heroBody = t("sits.heroThrough", "Through {{date}}.", { date: weekdayMonthDay(a.end_date) });
   } else if (upcoming.length > 0) {
     const n = upcoming[0];
     const d = daysUntil(n.start_date);
-    const when = d <= 0 ? "today" : d === 1 ? "tomorrow" : `in ${d} days`;
-    heroHeadline = `${caregiverName(n)} arrives ${when}.`;
+    heroHeadline =
+      d <= 0
+        ? t("sits.heroArrivesToday", "{{name}} arrives today.", { name: caregiverName(n) })
+        : d === 1
+          ? t("sits.heroArrivesTomorrow", "{{name}} arrives tomorrow.", { name: caregiverName(n) })
+          : t("sits.heroArrivesInDays", "{{name}} arrives in {{n}} days.", { name: caregiverName(n), n: d });
     const names = birdsFor(n).map((b) => b.name);
-    heroBody = `${monthDay(n.start_date)} → ${monthDay(n.end_date)}.${names.length ? ` ${joinNames(names)}.` : ""}`;
+    heroBody = `${t("sits.heroRange", "{{start}} → {{end}}.", { start: monthDay(n.start_date), end: monthDay(n.end_date) })}${names.length ? ` ${joinNames(names)}.` : ""}`;
   }
 
   const noSits = actives.length === 0 && upcoming.length === 0;
@@ -211,7 +218,7 @@ function SitsPage() {
       <div className="mx-auto max-w-md">
         <InkHero
           showBrand
-          eyebrow="Sits"
+          eyebrow={t("sits.eyebrow", "Sits")}
           headline={heroHeadline}
           body={heroBody}
           trailingIcons={<OwnerHeaderIcons />}
@@ -226,15 +233,15 @@ function SitsPage() {
                     <Calendar className="size-6" />
                   </span>
                 </div>
-                <p className="t-section mt-3">Add a bird first</p>
+                <p className="t-section mt-3">{t("sits.addBirdFirst", "Add a bird first")}</p>
                 <p className="t-body mx-auto mt-1.5 max-w-[34ch] text-[var(--ink2)]">
-                  A sit shares one or more birds' care plans with a sitter. Add a bird to create your first sit.
+                  {t("sits.addBirdFirstBody", "A sit shares one or more birds' care plans with a sitter. Add a bird to create your first sit.")}
                 </p>
                 <Link
                   to="/birds/new"
                   className="mt-4 inline-flex min-h-[44px] items-center gap-2 rounded-[12px] bg-[var(--ink)] px-[18px] py-[11px] text-[15px] font-[500] text-white active:scale-[0.99]"
                 >
-                  <Plus className="size-4" /> Add bird
+                  <Plus className="size-4" /> {t("sits.addBird", "Add bird")}
                 </Link>
               </div>
             </Card>
@@ -280,8 +287,8 @@ function SitsPage() {
                   {upcoming.length > 0 && (
                     <section className="space-y-3">
                       <SectionHead
-                        title="Coming up"
-                        trailing={<span className="t-eyebrow text-[var(--teal-on-cream)]">{upcoming.length} {upcoming.length === 1 ? "sit" : "sits"}</span>}
+                        title={t("sits.comingUp", "Coming up")}
+                        trailing={<span className="t-eyebrow text-[var(--teal-on-cream)]">{upcoming.length === 1 ? t("sits.sitCountOne", "{{n}} sit", { n: upcoming.length }) : t("sits.sitCountOther", "{{n}} sits", { n: upcoming.length })}</span>}
                       />
                       {upcoming.map((s, i) => (
                         <UpcomingSitCard
@@ -310,9 +317,9 @@ function SitsPage() {
                         <div className="flex justify-center">
                           <IconTile tone="ink-lime" size={48} icon={<CalendarPlus className="size-6" />} />
                         </div>
-                        <p className="t-section mt-3">No sits scheduled.</p>
+                        <p className="t-section mt-3">{t("sits.noSits", "No sits scheduled.")}</p>
                         <p className="t-body mx-auto mt-1.5 max-w-[34ch] text-[var(--ink2)]">
-                          A sit shares today's routine, a daily health check, and one-tap emergency contacts with whoever's covering.
+                          {t("sits.noSitsBody", "A sit shares today's routine, a daily health check, and one-tap emergency contacts with whoever's covering.")}
                         </p>
                       </div>
                     </Card>
@@ -324,12 +331,12 @@ function SitsPage() {
                       onClick={() => navigate({ to: "/sits", search: { newSit: true } })}
                       className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-[14px] bg-[var(--lime)] text-[15px] font-[500] text-[var(--ink)] active:scale-[0.99]"
                     >
-                      <Plus className="size-4" /> Set up a sit
+                      <Plus className="size-4" /> {t("sits.setUpSit", "Set up a sit")}
                     </button>
                   ) : (
                     // Household members can view sits they're covering, but only a
                     // bird's owner can set one up.
-                    <p className="px-1 text-center t-meta">Only a bird's owner can set up a sit.</p>
+                    <p className="px-1 text-center t-meta">{t("sits.onlyOwner", "Only a bird's owner can set up a sit.")}</p>
                   )}
 
                   {/* Past sits — inline collapsible (no route). Hidden entirely
@@ -343,7 +350,7 @@ function SitsPage() {
                         onClick={() => setPastOpen((o) => !o)}
                         className="flex min-h-[44px] w-full items-center justify-between gap-2 text-left"
                       >
-                        <span className="t-eyebrow text-[var(--mute)]">Past sits ({pastSits.length})</span>
+                        <span className="t-eyebrow text-[var(--mute)]">{t("sits.pastSits", "Past sits ({{n}})", { n: pastSits.length })}</span>
                         <ChevronDown className={`size-4 text-[var(--mute)] transition-transform ${pastOpen ? "rotate-180" : ""}`} />
                       </button>
                       {pastOpen && (

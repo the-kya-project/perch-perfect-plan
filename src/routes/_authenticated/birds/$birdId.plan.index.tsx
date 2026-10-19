@@ -1,6 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect } from "react";
+import { useTranslation } from "react-i18next";
+import i18next, { type TFunction } from "i18next";
 import { getBirdEmergencyReadiness } from "@/lib/household.functions";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,7 +29,7 @@ import {
 // — an index/layout split so the editor is a real child route, not nested under
 // this page (which has no Outlet, so the editor never rendered before).
 export const Route = createFileRoute("/_authenticated/birds/$birdId/plan/")({
-  head: () => ({ meta: [{ title: "Care plan — Kya & Co." }] }),
+  head: () => ({ meta: [{ title: i18next.t("planEditor.metaTitle", "Care plan — Kya & Co.") }] }),
   component: CarePlanOverview,
 });
 
@@ -39,16 +41,17 @@ const READ_SECTION: Record<SectionKey, "food" | "behavior" | "home" | "health" |
   food: "food", personality: "behavior", environment: "home", health: "health", day: "routine", emergency: "emergency",
 };
 
-const SECTIONS: { key: SectionKey; tab: "food" | "routine" | "behavior" | "home" | "health" | "emergency"; label: string; icon: React.ReactNode; needsInfoHint: string; readyHint: string }[] = [
-  { key: "food",        tab: "food",      label: "Food",      icon: <Utensils className="size-5" />,     needsInfoHint: "Diet and food instructions", readyHint: "Diet and food instructions" },
-  { key: "personality", tab: "behavior",  label: "Behavior",  icon: <Smile className="size-5" />,        needsInfoHint: "Handling, likes, triggers",  readyHint: "Handling, likes, triggers" },
-  { key: "environment", tab: "home",      label: "Home",      icon: <HomeIcon className="size-5" />,     needsInfoHint: "Cage, out-of-cage, hazards", readyHint: "Cage, out-of-cage, hazards" },
-  { key: "health",      tab: "health",    label: "Health",    icon: <Stethoscope className="size-5" />,  needsInfoHint: "Baseline and what's normal", readyHint: "Baseline and what's normal" },
-  { key: "day",         tab: "routine",   label: "Routine",   icon: <CalendarClock className="size-5" />,needsInfoHint: "Daily schedule and tasks",   readyHint: "Daily schedule and tasks" },
-  { key: "emergency",   tab: "emergency", label: "Emergency", icon: <Siren className="size-5" />,        needsInfoHint: "Owner and vet contacts",     readyHint: "Owner and vet contacts" },
+const sectionList = (t: TFunction): { key: SectionKey; tab: "food" | "routine" | "behavior" | "home" | "health" | "emergency"; label: string; icon: React.ReactNode; needsInfoHint: string; readyHint: string }[] => [
+  { key: "food",        tab: "food",      label: t("planEditor.tabFood", "Food"),           icon: <Utensils className="size-5" />,     needsInfoHint: t("planOverview.hintFood", "Diet and food instructions"), readyHint: t("planOverview.hintFood", "Diet and food instructions") },
+  { key: "personality", tab: "behavior",  label: t("planEditor.tabBehavior", "Behavior"),   icon: <Smile className="size-5" />,        needsInfoHint: t("planOverview.hintBehavior", "Handling, likes, triggers"),  readyHint: t("planOverview.hintBehavior", "Handling, likes, triggers") },
+  { key: "environment", tab: "home",      label: t("planEditor.tabHome", "Home"),           icon: <HomeIcon className="size-5" />,     needsInfoHint: t("planOverview.hintHome", "Cage, out-of-cage, hazards"), readyHint: t("planOverview.hintHome", "Cage, out-of-cage, hazards") },
+  { key: "health",      tab: "health",    label: t("planEditor.tabHealth", "Health"),       icon: <Stethoscope className="size-5" />,  needsInfoHint: t("planOverview.hintHealth", "Baseline and what's normal"), readyHint: t("planOverview.hintHealth", "Baseline and what's normal") },
+  { key: "day",         tab: "routine",   label: t("planEditor.tabRoutine", "Routine"),     icon: <CalendarClock className="size-5" />,needsInfoHint: t("planOverview.hintRoutine", "Daily schedule and tasks"),   readyHint: t("planOverview.hintRoutine", "Daily schedule and tasks") },
+  { key: "emergency",   tab: "emergency", label: t("planEditor.tabEmergency", "Emergency"), icon: <Siren className="size-5" />,        needsInfoHint: t("planOverview.hintEmergency", "Owner and vet contacts"),     readyHint: t("planOverview.hintEmergency", "Owner and vet contacts") },
 ];
 
 function CarePlanOverview() {
+  const { t } = useTranslation();
   const { birdId } = Route.useParams();
   const navigate = useNavigate();
   const role = useBirdRole(birdId);
@@ -137,7 +140,7 @@ function CarePlanOverview() {
     track("care_plan_viewed", {});
   }, []);
 
-  const name = bird?.name ?? "this bird";
+  const name = bird?.name ?? t("planEditor.thisBird", "this bird");
 
   // Emergency "Using your account defaults" copy: true when no per-bird value
   // has been entered and account defaults supply at least the required fields.
@@ -154,17 +157,17 @@ function CarePlanOverview() {
         <InkHero
           backIcon={<ArrowLeft className="size-5" />}
           onBack={() => navigate({ to: "/birds/$birdId", params: { birdId } })}
-          eyebrow="Care plan"
-          headline={`Everything that makes ${name}, ${name}.`}
+          eyebrow={t("planOverview.eyebrow", "Care plan")}
+          headline={t("planOverview.headline", "Everything that makes {{name}}, {{name}}.", { name })}
           body={
             isOwner
-              ? "All the little things you know by heart, written down."
-              : `All the little things ${name}'s owner knows by heart, so you can care for ${name} just right.`
+              ? t("planOverview.bodyOwner", "All the little things you know by heart, written down.")
+              : t("planOverview.bodyMember", "All the little things {{name}}'s owner knows by heart, so you can care for {{name}} just right.", { name })
           }
           cta={
             isOwner
               ? {
-                  label: "View as your sitter",
+                  label: t("planOverview.viewAsYourSitter", "View as your sitter"),
                   tone: "lime",
                   icon: <Eye className="size-4" />,
                   onPress: () => navigate({ to: "/birds/$birdId/view-as-sitter", params: { birdId } }),
@@ -176,7 +179,7 @@ function CarePlanOverview() {
         <main className="space-y-4 px-5 pt-5">
           <MemberContextBanner birdId={birdId} />
           <Card>
-            {SECTIONS.map((s, i) => {
+            {sectionList(t).map((s) => {
               const check = checksByKey.get(s.key);
               const done = !!check?.done;
               const isEmergency = s.key === "emergency";
@@ -184,7 +187,7 @@ function CarePlanOverview() {
               // (eff() in setupCompleteness). The subtitle reflects WHY it's
               // ready: per-bird contacts vs. account defaults.
               const subtitle = isEmergency && done && emergencyUsesDefaults
-                ? "Using your account defaults"
+                ? t("planOverview.usingAccountDefaults", "Using your account defaults")
                 : done
                   ? s.readyHint
                   : s.needsInfoHint;
@@ -204,9 +207,9 @@ function CarePlanOverview() {
                   subtitle={subtitle}
                   trailing={
                     done ? (
-                      <StatusPill tone="ready"><Check className="size-3" /> Ready</StatusPill>
+                      <StatusPill tone="ready"><Check className="size-3" /> {t("planOverview.ready", "Ready")}</StatusPill>
                     ) : (
-                      <StatusPill tone="attention"><AlertTriangle className="size-3" /> Needs info</StatusPill>
+                      <StatusPill tone="attention"><AlertTriangle className="size-3" /> {t("planOverview.needsInfo", "Needs info")}</StatusPill>
                     )
                   }
                   onClick={onRow}
@@ -225,9 +228,9 @@ function CarePlanOverview() {
                 <RecordRow
                   key="clips"
                   leading={<IconTile size={38} tone="ink-lime" icon={<Video className="size-5" />} />}
-                  title="Tips from the owner"
-                  subtitle={hasClips ? `${clipCount} clip${clipCount === 1 ? "" : "s"}` : "Optional — short how-to videos for sitters"}
-                  trailing={hasClips ? <StatusPill tone="ready"><Check className="size-3" /> Added</StatusPill> : undefined}
+                  title={t("planOverview.tipsFromOwner", "Tips from the owner")}
+                  subtitle={hasClips ? (clipCount === 1 ? t("planOverview.clipCountOne", "{{n}} clip", { n: clipCount }) : t("planOverview.clipCountOther", "{{n}} clips", { n: clipCount })) : t("planOverview.clipsOptional", "Optional — short how-to videos for sitters")}
+                  trailing={hasClips ? <StatusPill tone="ready"><Check className="size-3" /> {t("planOverview.added", "Added")}</StatusPill> : undefined}
                   onClick={
                     canEdit
                       ? () => navigate({ to: "/birds/$birdId/plan/editor", params: { birdId }, search: { tab: "clips" } })
@@ -242,7 +245,7 @@ function CarePlanOverview() {
           {/* Quiet action — re-run the guided wizard (needs edit_care_plans) */}
           {canEdit && (
             <CtaLink
-              label="Walk through it again"
+              label={t("planOverview.walkThroughAgain", "Walk through it again")}
               icon={<Wand2 className="size-3.5" />}
               // "Walk through it again" is a full re-review — always start at the
               // beginning (Food · step 1), not the first incomplete step (which
@@ -253,8 +256,8 @@ function CarePlanOverview() {
 
           <p className="t-body px-1 text-[var(--mute)]">
             {isOwner
-              ? `This is what everyone helping with ${name} sees. Sitters get a per-trip link from the Sits tab; household members can view it any time.`
-              : `Only ${name}'s owner can make changes. You can view the plan and log weights, journal entries, and health checks.`}
+              ? t("planOverview.footerOwner", "This is what everyone helping with {{name}} sees. Sitters get a per-trip link from the Sits tab; household members can view it any time.", { name })
+              : t("planOverview.footerMember", "Only {{name}}'s owner can make changes. You can view the plan and log weights, journal entries, and health checks.", { name })}
           </p>
         </main>
       </div>
