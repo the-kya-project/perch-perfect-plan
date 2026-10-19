@@ -33,6 +33,8 @@ export type EmailTag =
   | "flock_report"
   | "app_launch"
   | "bereavement"
+  // To Brittany: a bird was marked as passed, review the note before it goes
+  | "bereavement_review"
   // Care during a sit
   | "sitter_daily_log"
   | "scan_alert"
