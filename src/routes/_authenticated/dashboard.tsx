@@ -231,6 +231,10 @@ function Dashboard() {
   // help with in someone else's household are checked from the bird page.
   const checkBirds = demo || !myId ? [] : [...flockBirds, ...fosterBirds];
   const { data: dailyToday } = useDailyCheckToday(checkBirds.map((b) => b.id));
+  // The daily check card already asks for today's weights, so overdue
+  // weigh-ins for those birds leave Today (it keeps sits, concerns, moments).
+  const checkIds = new Set(checkBirds.map((b) => b.id));
+  const todayPanelItems = todayItemsView.filter((i) => !(i.to.kind === "weight" && checkIds.has(i.to.birdId)));
 
   // Home body line — state-aware (stale weigh-in → sit imminent → celebration
   // → new bird → weekend → default). Caregiver names for imminent sits come
@@ -316,7 +320,7 @@ function Dashboard() {
               />
             )}
 
-            <TodayPanel items={todayItemsView} onNavigate={onTodayNavigate} />
+            <TodayPanel items={todayPanelItems} onNavigate={onTodayNavigate} />
 
             {/* A sit you're covering (any account): the sitter-style "Birds in
                 your care" cards (per-bird progress; tap a bird to open its
