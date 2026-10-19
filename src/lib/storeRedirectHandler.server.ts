@@ -10,6 +10,10 @@
  *   /get?store=ios        always the App Store
  *   /get?store=android    always Google Play
  *
+ * Android visitors inside TikTok's browser get a one-tap page instead of the
+ * Play redirect (androidHandoffPage), because the redirect strands them on the
+ * Play website inside TikTok.
+ *
  * Incoming UTMs are carried into the store links so App Store Connect and the
  * Play Console can attribute installs to the ad or video that drove them.
  *
@@ -20,12 +24,13 @@
 import {
   appStoreUrl,
   logClick,
+  needsAndroidHandoff,
   playStoreUrl,
   readUtms,
   resolveTarget,
   type ClickEntry,
 } from "./storeRedirect.server";
-import { chooserPage } from "./storeChooserPage.server";
+import { androidHandoffPage, chooserPage } from "./storeChooserPage.server";
 
 /** How long the redirect is willing to wait for the metric. */
 const LOG_BUDGET_MS = 400;
@@ -68,6 +73,17 @@ export async function handleStoreRedirect(
 
   if (resolved === "chooser") {
     return new Response(chooserPage("get", utms, { basePath: entry.basePath, origin: url.origin }), {
+      status: 200,
+      headers: {
+        "content-type": "text/html; charset=utf-8",
+        "cache-control": "no-store",
+        vary: VARY,
+      },
+    });
+  }
+
+  if (needsAndroidHandoff(ua, resolved)) {
+    return new Response(androidHandoffPage(utms), {
       status: 200,
       headers: {
         "content-type": "text/html; charset=utf-8",

@@ -170,6 +170,30 @@ export function playStoreUrl(utms: Utms, opts: { review?: boolean } = {}): strin
   return `${base}&referrer=${encodeURIComponent(inner)}`;
 }
 
+/**
+ * The same listing as a `market://` link, which Android hands to the Play Store
+ * app itself rather than loading the Play website. Same `referrer`, so Play
+ * Console attribution is unchanged.
+ */
+export function playStoreAppUrl(utms: Utms): string {
+  const web = new URL(playStoreUrl(utms));
+  return `market://details${web.search}`;
+}
+
+/**
+ * In-app browsers whose Android webview loads a play.google.com redirect as the
+ * Play *website* inside the app, where Install doesn't hand off to the store.
+ * Visitors from these get a one-tap page with a `market://` link instead of a
+ * 302. TikTok only for now: 56 of 71 Android clicks in the Oct 2026 launch ads
+ * came from its webview, and Play Console recorded 43 listing visits and one
+ * install for them. Add another here only with evidence it has the same problem.
+ */
+const ANDROID_HANDOFF_BROWSERS: ReadonlySet<InAppBrowser> = new Set(["tiktok"]);
+
+export function needsAndroidHandoff(userAgent: string, resolved: Resolved): boolean {
+  return resolved === "android" && ANDROID_HANDOFF_BROWSERS.has(detectInAppBrowser(userAgent));
+}
+
 /** Re-attach the incoming UTMs to a link, for the desktop chooser's badges. */
 export function withUtms(path: string, utms: Utms): string {
   const qs = UTM_KEYS.filter((k) => utms[k]).map((k) => `${k}=${encodeURIComponent(utms[k]!)}`).join("&");

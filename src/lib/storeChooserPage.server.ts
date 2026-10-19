@@ -7,7 +7,7 @@
  * unsubscribe footer, disclaimer), none of which belongs on a web page.
  */
 import qrcode from "qrcode-generator";
-import { STORE, UTM_KEYS, withUtms, type Utms } from "./storeRedirect.server";
+import { STORE, UTM_KEYS, playStoreAppUrl, playStoreUrl, withUtms, type Utms } from "./storeRedirect.server";
 
 /** Where absolute URLs point when the caller does not say. */
 const PROD_ORIGIN = "https://app.thekyaproject.com";
@@ -182,6 +182,56 @@ export function chooserPage(
           <a href="${ios}"><img src="/brand/store/app-store-badge.svg" width="120" height="40" alt="Download on the App Store" /></a>
           <a href="${android}"><img src="/brand/store/google-play-badge.png" width="103" height="40" alt="Get it on Google Play" /></a>
         </div>
+      </div>
+    </div>
+  </div>
+</body></html>`;
+}
+
+/**
+ * What an Android visitor inside TikTok's browser gets from /get instead of a
+ * redirect (see needsAndroidHandoff). A redirect there loads the Play website
+ * inside TikTok, where Install goes nowhere; a tapped `market://` link is handed
+ * to the Play Store app. It has to be a tap: webviews generally refuse to open
+ * another app from a redirect or script without one, and a refused navigation
+ * can replace this page with an error screen.
+ *
+ * The web listing stays on the page as the fallback, with the "open in browser"
+ * hint for webviews that won't hand off at all.
+ */
+export function androidHandoffPage(utms: Utms = {}): string {
+  const app = playStoreAppUrl(utms);
+  const web = playStoreUrl(utms);
+  return `<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="robots" content="noindex" />
+<title>Get Kya &amp; Co. on Google Play</title>
+<link href="/fonts/fonts.css" rel="stylesheet" />
+<style>
+  body { margin:0; background:${PAGE}; font-family:${BODY}; -webkit-text-size-adjust:100%; }
+  .wrap { max-width:520px; margin:0 auto; padding:24px 16px 48px; }
+  .card { background:${CARD}; border-radius:20px; overflow:hidden; }
+  .bar { background:${FOREST}; padding:18px 22px; color:#fff; font-family:${HEAD}; font-weight:800; letter-spacing:-.3px; }
+  .body { padding:24px 22px 28px; text-align:center; }
+  h1 { margin:0 0 10px; font-family:${HEAD}; font-size:26px; line-height:32px; font-weight:800; letter-spacing:-.5px; color:${FOREST}; }
+  p { margin:0 0 20px; font-size:15px; line-height:23px; color:${MUTED}; }
+  .cta { display:block; background:${FOREST}; color:#fff; text-decoration:none; font-weight:700; font-size:16px; border-radius:999px; padding:15px 20px; margin:0 0 18px; }
+  .small { font-size:13px; line-height:20px; margin:0; }
+  .small a { color:${FOREST}; font-weight:700; }
+  .pill { display:inline-block; background:${LIME}; color:${FOREST}; border-radius:999px; padding:5px 13px; font-size:11.5px; font-weight:700; margin:0 0 14px; }
+</style>
+</head><body>
+  <div class="wrap">
+    <div class="card">
+      <div class="bar">Kya &amp; Co.</div>
+      <div class="body">
+        <span class="pill">One more tap</span>
+        <h1>Open Google Play</h1>
+        <p>TikTok's browser can't install apps. Tap below to get Kya &amp; Co. in the Play Store app.</p>
+        <a class="cta" href="${attr(app)}">Open in Google Play</a>
+        <p class="small">Nothing happening? Tap the menu at the top and choose Open in browser, or <a href="${attr(web)}">open the Play Store page</a>.</p>
       </div>
     </div>
   </div>

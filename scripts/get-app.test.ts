@@ -13,9 +13,9 @@
 import assert from "node:assert/strict";
 import {
   appStoreUrl, campaignToken, detectInAppBrowser, detectPlatform, isBot,
-  playStoreUrl, readUtms, resolveTarget, withUtms, STORE, UTM_MAX_LENGTH,
+  needsAndroidHandoff, playStoreAppUrl, playStoreUrl, readUtms, resolveTarget, withUtms, STORE, UTM_MAX_LENGTH,
 } from "@/lib/storeRedirect.server";
-import { chooserPage } from "@/lib/storeChooserPage.server";
+import { androidHandoffPage, chooserPage } from "@/lib/storeChooserPage.server";
 import qrcode from "qrcode-generator";
 
 let passed = 0;
@@ -31,6 +31,8 @@ const UA = {
   iphone: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_7 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
   android: "Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Mobile Safari/537.36",
   desktop: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36",
+  tiktokAndroid: "Mozilla/5.0 (Linux; Android 13; SM-A536U; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/120 Mobile Safari/537.36 trill_340100 BytedanceWebview/d8a21c6",
+  instagramAndroid: "Mozilla/5.0 (Linux; Android 13; Pixel 7; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/120 Mobile Safari/537.36 Instagram 300.0.0.0 Android",
   tiktokIos: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 BytedanceWebview/d8a21c musical_ly_34.1.0",
   instagram: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 Instagram 300.0.0.0",
   facebook: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 [FBAN/FBIOS;FBAV/450.0]",
@@ -282,5 +284,36 @@ console.log("\nchooser: link-preview tags");
     assert.equal(review.match(/twitter:card/), null);
   });
 }
+
+console.log("\nAndroid in-app handoff");
+check("TikTok webview on Android -> handoff page", () =>
+  assert.equal(needsAndroidHandoff(UA.tiktokAndroid, resolveTarget(UA.tiktokAndroid)), true));
+check("TikTok on iPhone -> plain redirect", () =>
+  assert.equal(needsAndroidHandoff(UA.tiktokIos, resolveTarget(UA.tiktokIos)), false));
+check("Android Chrome -> plain redirect", () =>
+  assert.equal(needsAndroidHandoff(UA.android, resolveTarget(UA.android)), false));
+check("Instagram on Android -> plain redirect (no evidence it needs one)", () =>
+  assert.equal(needsAndroidHandoff(UA.instagramAndroid, resolveTarget(UA.instagramAndroid)), false));
+check("?store=ios from TikTok on Android -> App Store, no handoff", () =>
+  assert.equal(needsAndroidHandoff(UA.tiktokAndroid, resolveTarget(UA.tiktokAndroid, "ios")), false));
+check("market:// link keeps the same id and referrer as the web link", () => {
+  const app = playStoreAppUrl(TIKTOK);
+  const web = new URL(playStoreUrl(TIKTOK));
+  assert.ok(app.startsWith("market://details?"));
+  const q = new URLSearchParams(app.slice(app.indexOf("?") + 1));
+  assert.equal(q.get("id"), "com.thekyaproject.app");
+  assert.equal(q.get("referrer"), web.searchParams.get("referrer"));
+});
+check("market:// link without UTMs carries only the id", () =>
+  assert.equal(playStoreAppUrl(NONE), "market://details?id=com.thekyaproject.app"));
+check("handoff page links the Play app and keeps the web listing as fallback", () => {
+  const html = androidHandoffPage(TIKTOK);
+  assert.ok(html.includes(`href="${playStoreAppUrl(TIKTOK).replace(/&/g, "&amp;")}"`));
+  assert.ok(html.includes(`href="${playStoreUrl(TIKTOK).replace(/&/g, "&amp;")}"`));
+});
+check("handoff page escapes hostile UTMs", () => {
+  const html = androidHandoffPage(readUtms(u('?utm_source="><script>alert(1)</script>')));
+  assert.equal(html.includes("<script>"), false);
+});
 
 console.log(`\n${passed} passed${process.exitCode ? ", WITH FAILURES" : ", no failures"}`);
