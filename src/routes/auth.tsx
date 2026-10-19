@@ -129,7 +129,7 @@ function AuthPage() {
           return;
         }
         if (error) throw error; // any other signup error
-        track("owner_signup", { marketing_opt_in: marketingOptIn, verification_required: !data.session });
+        track("owner_signup", { method: "email", marketing_opt_in: marketingOptIn, verification_required: !data.session });
         if (marketingOptIn) track("marketing_opt_in_checked", { context: "signup" });
         void captureLead({
           email,

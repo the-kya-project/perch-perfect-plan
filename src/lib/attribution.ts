@@ -7,6 +7,7 @@
 // user's profile (Supabase) and pushed to Brevo. Capture is additive and must
 // never block page load or account creation.
 
+import { track } from "./analytics";
 import { supabase } from "@/integrations/supabase/client";
 import { captureLead } from "./captureLead";
 import { scrubUrl } from "./urlScrub";
@@ -129,7 +130,7 @@ function attributionColumns(d: Attribution): Record<string, string> {
  * whose profile has no attribution yet (first-touch on the record), so it never
  * mislabels returning users. Best-effort; never throws.
  */
-export async function applyOAuthAttribution(user: { id: string; email?: string | null; created_at?: string; user_metadata?: any }): Promise<void> {
+export async function applyOAuthAttribution(user: { id: string; email?: string | null; created_at?: string; user_metadata?: any; app_metadata?: { provider?: string } }): Promise<void> {
   try {
     if (user.created_at) {
       const age = Date.now() - new Date(user.created_at).getTime();
@@ -158,6 +159,23 @@ export async function applyOAuthAttribution(user: { id: string; email?: string |
         marketingConsent: false,
         attribution: d ?? null,
       });
+    }
+
+    // The email form fires owner_signup itself (routes/auth.tsx); OAuth signups
+    // never pass through it, so without this PostHog misses every Google/Apple
+    // signup — most of the native app's. The profile guard above stops repeats
+    // once attribution is written; the flag covers signups with no first-touch
+    // data, which leave signup_source null and would otherwise re-fire on reload.
+    const flag = `ppc_signup_tracked_${user.id}`;
+    let tracked = false;
+    try { tracked = window.localStorage.getItem(flag) === "1"; } catch { /* storage blocked */ }
+    if (!tracked) {
+      track("owner_signup", {
+        method: user.app_metadata?.provider ?? "oauth",
+        marketing_opt_in: false,
+        verification_required: false,
+      });
+      try { window.localStorage.setItem(flag, "1"); } catch { /* storage blocked */ }
     }
   } catch (err) {
     console.warn("applyOAuthAttribution failed", err);
