@@ -10,6 +10,11 @@
 import assert from "node:assert/strict";
 import { allNormalAnswers, answersWithChanges, buildDailyLogRow, weightToSave, bigWeightChange } from "@/lib/dailyLog";
 import { SCAN_FIELDS } from "@/lib/triage";
+import { buildHomeStateCopy, type HomeBird, type WeightEntry } from "@/lib/homeData";
+import i18next from "i18next";
+
+// Copy helpers fall back to their inline English once i18next is initialised.
+await i18next.init({ lng: "en", resources: {}, keySeparator: false, nsSeparator: false });
 
 let passed = 0;
 function check(name: string, fn: () => void) {
@@ -80,6 +85,22 @@ check("big weight change is flagged, small is not", () => {
   assert.equal(bigWeightChange(109, 89), -18);
   assert.equal(bigWeightChange(109, 112), null);
   assert.equal(bigWeightChange(null, 112), null);
+});
+
+check("welcome line names the longest-overdue bird", () => {
+  const now = new Date("2026-10-19T09:00:00");
+  const ago = (d: number) => new Date(now.getTime() - d * 86_400_000).toISOString();
+  const birds = [
+    { id: "a", name: "Buzz", is_foster: false },
+    { id: "b", name: "Max", is_foster: false },
+    { id: "c", name: "Echo", is_foster: false },
+  ] as unknown as HomeBird[];
+  const w = new Map<string, WeightEntry[]>([
+    ["a", [{ bird_id: "a", grams: 480, measured_at: ago(12) } as WeightEntry]],
+    ["b", [{ bird_id: "b", grams: 1100, measured_at: ago(15) } as WeightEntry]],
+    ["c", [{ bird_id: "c", grams: 412, measured_at: ago(1) } as WeightEntry]],
+  ]);
+  assert.equal(buildHomeStateCopy(birds, w, [], [], now), "Max is due for a weigh-in.");
 });
 
 console.log(`\n${passed} passed${process.exitCode ? ", some FAILED" : ""}`);

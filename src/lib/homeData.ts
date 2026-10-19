@@ -208,7 +208,7 @@ export function buildTodayItems(
 // ---- Home greeting body line (state-aware) --------------------------------
 // Returns the body line that sits under the "Good morning, X" greeting on Home.
 // Priority order — first match wins:
-//   1) Stale weigh-in:  "[Bird] is due for a weigh-in."
+//   1) Stale weigh-in:  "[Bird] is due for a weigh-in." (the longest-overdue bird)
 //   2) Sit imminent:    "[Caregiver] arrives [day]." (≤ SIT_SOON_DAYS)
 //   3) Celebration:     hatch / foster-fail anniversary within MOMENT_SOON_DAYS
 //   4) New bird:        bird.created_at within last 7 days — "[Bird] is settling in."
@@ -224,13 +224,18 @@ export function buildHomeStateCopy(
 ): string | undefined {
   if (!birds.length) return undefined;
 
-  // 1) Stale weigh-in — first bird overdue.
+  // 1) Stale weigh-in — the bird waiting longest (ties keep flock order).
+  let mostOverdue: { name: string; days: number } | null = null;
   for (const b of birds) {
     const entries = weightsByBird.get(b.id) ?? [];
     if (!entries.length) continue;
-    if (daysSince(entries[0].measured_at, now) > staleThreshold(b.is_foster)) {
-      return i18next.t("home.state.dueForWeighIn", "{{bird}} is due for a weigh-in.", { bird: b.name });
+    const days = daysSince(entries[0].measured_at, now);
+    if (days > staleThreshold(b.is_foster) && (!mostOverdue || days > mostOverdue.days)) {
+      mostOverdue = { name: b.name, days };
     }
+  }
+  if (mostOverdue) {
+    return i18next.t("home.state.dueForWeighIn", "{{bird}} is due for a weigh-in.", { bird: mostOverdue.name });
   }
 
   // 2) Sit imminent — within SIT_SOON_DAYS.
