@@ -1,4 +1,5 @@
 import { createFileRoute, Link, Navigate, useSearch } from "@tanstack/react-router";
+import { speciesLabel } from "@/lib/speciesLabel";
 import { ageLabel } from "@/components/BirdPickers";
 import { clipSlotLabel } from "@/lib/clipSlotLabels";
 import { useServerFn } from "@tanstack/react-start";
@@ -446,7 +447,7 @@ function ScanCard({ bird, todayLog, token }: { bird: any; todayLog: any; token: 
 // words live in the structured "Full care plan" view this card links to.
 function WelcomeCard({ bird, token }: { bird: any; token: string }) {
   const { t } = useTranslation();
-  const species = (bird.species ?? "").trim() || t("sitter.today.speciesDefault", "Parrot");
+  const species = (bird.species ?? "").trim() ? speciesLabel(t, (bird.species ?? "").trim()) : t("sitter.today.speciesDefault", "Parrot");
   const age = (bird.age ?? "").trim() ? ageLabel(t, (bird.age ?? "").trim()) : "";
   const speciesAge = [species, age].filter(Boolean).join(" · ");
   const initial = (bird.name?.slice(0, 1) ?? "?").toUpperCase();

@@ -8022,6 +8022,192 @@
     "sitterPreview.buildFailed": {
       "stamp": "3ce562b4bdf588b3"
     },
+    "species.africanGreyCongo": {
+      "stamp": "dfb11d16a0fb076e"
+    },
+    "species.africanGreyTimneh": {
+      "stamp": "c998e23d03940520"
+    },
+    "species.alexandrineParakeet": {
+      "stamp": "11bcd90121e70f95"
+    },
+    "species.bareEyedCockatoo": {
+      "stamp": "99ecc9eab8e219fa"
+    },
+    "species.blackHeadedCaique": {
+      "stamp": "c9f8cf2e4cf567c0"
+    },
+    "species.blueAndGoldMacaw": {
+      "stamp": "9fca08fb03d5fe87"
+    },
+    "species.blueCrownedConure": {
+      "stamp": "34bb22ce6e65decc"
+    },
+    "species.blueFrontedAmazon": {
+      "stamp": "eb51efa73d1d690a"
+    },
+    "species.blueHeadedPionus": {
+      "stamp": "9afdbc59c7a0da68"
+    },
+    "species.blueThroatedMacaw": {
+      "stamp": "2d686fc7af1f1fdb"
+    },
+    "species.bronzeWingedPionus": {
+      "stamp": "9399eb55bf59c70d"
+    },
+    "species.budgerigar": {
+      "stamp": "bfb64781a42e275d"
+    },
+    "species.catalinaMacaw": {
+      "stamp": "296b71a478dc17e0"
+    },
+    "species.cherryHeadedConure": {
+      "stamp": "33f7b5196e2a831b"
+    },
+    "species.citronCrestedCockatoo": {
+      "stamp": "738f91ed61c8b1ec"
+    },
+    "species.cockatiel": {
+      "stamp": "582a0008f914c369"
+    },
+    "species.doubleYellowHeadedAmazon": {
+      "stamp": "30952019a18d31ee"
+    },
+    "species.eclectus": {
+      "stamp": "946108ad334b8208"
+    },
+    "species.fischersLovebird": {
+      "stamp": "be5fd1ebd2184e0f"
+    },
+    "species.galah": {
+      "stamp": "b6d57cf95d6c41c4"
+    },
+    "species.goffinsCockatoo": {
+      "stamp": "164b04c93b0b0bc8"
+    },
+    "species.greenCheekedConure": {
+      "stamp": "4bbced41d0c815bd"
+    },
+    "species.greenWingedMacaw": {
+      "stamp": "4d7d27932926132f"
+    },
+    "species.groupAmazon": {
+      "stamp": "3f9b699e13cbb220"
+    },
+    "species.groupCaique": {
+      "stamp": "ddb623b673b7cb22"
+    },
+    "species.groupCockatoo": {
+      "stamp": "7a7da888ef8548f9"
+    },
+    "species.groupConure": {
+      "stamp": "5181736d19c06624"
+    },
+    "species.groupLovebird": {
+      "stamp": "d9923cbb912a745f"
+    },
+    "species.groupMacaw": {
+      "stamp": "795ebfde0243e26b"
+    },
+    "species.groupOther": {
+      "stamp": "58d9e76f3dfaef29"
+    },
+    "species.groupParakeet": {
+      "stamp": "292270ed0740c93c"
+    },
+    "species.groupPionus": {
+      "stamp": "75547f4bc1c3eae0"
+    },
+    "species.groupPoicephalus": {
+      "stamp": "f2443e4766825cdd"
+    },
+    "species.hahnsMacaw": {
+      "stamp": "be167608ad6589f9"
+    },
+    "species.halfMoonConure": {
+      "stamp": "f60b1b3b81fdcfe4"
+    },
+    "species.harlequinMacaw": {
+      "stamp": "1a06cbbf637f48e9"
+    },
+    "species.hyacinthMacaw": {
+      "stamp": "b3a88444ed3b9cb4"
+    },
+    "species.indianRingneckParakeet": {
+      "stamp": "445cc13bfbdd9653"
+    },
+    "species.jendayConure": {
+      "stamp": "682c826f0410e667"
+    },
+    "species.lilacCrownedAmazon": {
+      "stamp": "656cf567d0844d31"
+    },
+    "species.majorMitchellsCockatoo": {
+      "stamp": "7a991129f357cd44"
+    },
+    "species.meyersParrot": {
+      "stamp": "9cf2efb64afb53dc"
+    },
+    "species.militaryMacaw": {
+      "stamp": "cee64d7d5f1b52de"
+    },
+    "species.moluccanCockatoo": {
+      "stamp": "91a0bae98391e75b"
+    },
+    "species.monkParakeet": {
+      "stamp": "fb759184e3b050aa"
+    },
+    "species.nandayConure": {
+      "stamp": "908a476e5d299ac4"
+    },
+    "species.orangeWingedAmazon": {
+      "stamp": "65e03504cb9a0604"
+    },
+    "species.pacificParrotlet": {
+      "stamp": "c999b1e0cf6a09a1"
+    },
+    "species.peachFacedLovebird": {
+      "stamp": "52dc20731ab455d6"
+    },
+    "species.pineappleGreenCheekedConure": {
+      "stamp": "5c28e94f00aa90c3"
+    },
+    "species.plumHeadedParakeet": {
+      "stamp": "e7b90729e0273c01"
+    },
+    "species.rainbowLorikeet": {
+      "stamp": "dd98ec74e3843d8b"
+    },
+    "species.redBelliedParrot": {
+      "stamp": "91bfbd9f139780d2"
+    },
+    "species.scarletMacaw": {
+      "stamp": "e3e78b75c3b534b6"
+    },
+    "species.senegalParrot": {
+      "stamp": "5cd8ca8b6bcc16c3"
+    },
+    "species.sulphurCrestedCockatoo": {
+      "stamp": "49de3c029bd87af1"
+    },
+    "species.sunConure": {
+      "stamp": "fe71e7878de4f999"
+    },
+    "species.umbrellaCockatoo": {
+      "stamp": "d659fd7f1478fc24"
+    },
+    "species.whiteBelliedCaique": {
+      "stamp": "2743c8dcdf18e57d"
+    },
+    "species.whiteCappedPionus": {
+      "stamp": "01ef6fbdbec2ad7f"
+    },
+    "species.yellowCrownedAmazon": {
+      "stamp": "42173b7098e4c81b"
+    },
+    "species.yellowNapedAmazon": {
+      "stamp": "6115e328a2b6ae4c"
+    },
     "system.back": {
       "stamp": "5001815e48b3af8b"
     },

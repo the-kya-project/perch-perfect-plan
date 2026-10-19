@@ -1,4 +1,5 @@
 import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
+import { speciesLabel } from "@/lib/speciesLabel";
 import { Stethoscope, ChevronRight, ChevronDown } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -56,7 +57,7 @@ export function BirdCareCard({
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <p className="truncate text-base font-medium text-sage-900">{name}</p>
-          {species && <span className="truncate text-xs text-[#5f5e5a]">{species}</span>}
+          {species && <span className="truncate text-xs text-[#5f5e5a]">{speciesLabel(t, species)}</span>}
         </div>
 
         <p className="mt-1.5 text-xs text-[#5f5e5a]">

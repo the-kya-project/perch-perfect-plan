@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { speciesLabel } from "@/lib/speciesLabel";
 import { ageLabel } from "@/components/BirdPickers";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -99,7 +100,7 @@ function ExportRecord() {
   }
 
   const identity: [string, string | null][] = [
-    [t("exportRecord.species", "Species"), row?.species ?? null], [t("exportRecord.sex", "Sex"), row?.sex ? sexLabel(row.sex) : null], [t("exportRecord.age", "Age"), row?.age ? ageLabel(t, row.age) : null],
+    [t("exportRecord.species", "Species"), row?.species ? speciesLabel(t, row.species) : null], [t("exportRecord.sex", "Sex"), row?.sex ? sexLabel(row.sex) : null], [t("exportRecord.age", "Age"), row?.age ? ageLabel(t, row.age) : null],
     [t("exportRecord.microchip", "Microchip"), row?.microchip ?? null], [t("exportRecord.band", "Band"), row?.band_number ?? null], [t("exportRecord.origin", "Origin"), row?.origin ?? null],
     [t("exportRecord.cameToYou", "Came to you"), row?.intake_date ? fmtDate(row.intake_date) : null],
   ];
@@ -175,7 +176,7 @@ function ExportRecord() {
         <article id="export-sheet" className="rounded-[14px] border border-[#d8d0bd] bg-white p-5">
           <header className="border-b border-[#e3dcc9] pb-3">
             <h2 className="text-xl font-medium text-[#1a3d2e]">{name}</h2>
-            {row?.species && <p className="mt-0.5 text-sm italic text-[#5f5e5a]">{row.species}</p>}
+            {row?.species && <p className="mt-0.5 text-sm italic text-[#5f5e5a]">{speciesLabel(t, row.species)}</p>}
             <p className="mt-1 text-xs text-[#8a897f]">{t("exportRecord.generated", "Full record · generated {{date}}", { date: fmtDate(new Date().toISOString()) })}</p>
           </header>
 

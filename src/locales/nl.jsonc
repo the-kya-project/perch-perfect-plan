@@ -5351,6 +5351,130 @@
   "sitterOnboarding.welcome.title": "Je zorgt voor {{names}}.",
   // Could not build the sitter preview.
   "sitterPreview.buildFailed": "Kon het oppasvoorbeeld niet maken.",
+  // African Grey (Congo)
+  "species.africanGreyCongo": "Grijze roodstaartpapegaai (Congo)",
+  // African Grey (Timneh)
+  "species.africanGreyTimneh": "Grijze roodstaartpapegaai (Timneh)",
+  // Alexandrine Parakeet
+  "species.alexandrineParakeet": "Grote alexanderparkiet",
+  // Bare-eyed Cockatoo
+  "species.bareEyedCockatoo": "Naaktoogkaketoe",
+  // Black-headed Caique
+  "species.blackHeadedCaique": "Zwartkopcaique",
+  // Blue and Gold Macaw
+  "species.blueAndGoldMacaw": "Blauwgele ara",
+  // Blue-crowned Conure
+  "species.blueCrownedConure": "Blauwkopparkiet",
+  // Blue-fronted Amazon
+  "species.blueFrontedAmazon": "Blauwvoorhoofdamazone",
+  // Blue-headed Pionus
+  "species.blueHeadedPionus": "Blauwkopmargrietje",
+  // Blue-throated Macaw
+  "species.blueThroatedMacaw": "Blauwkeelara",
+  // Bronze-winged Pionus
+  "species.bronzeWingedPionus": "Bronsvleugelmargrietje",
+  // Budgerigar (Budgie)
+  "species.budgerigar": "Grasparkiet",
+  // Catalina Macaw
+  "species.catalinaMacaw": "Catalina-ara",
+  // Cherry-headed Conure
+  "species.cherryHeadedConure": "Roodmaskerparkiet",
+  // Citron-crested Cockatoo
+  "species.citronCrestedCockatoo": "Oranjekuifkaketoe",
+  // Cockatiel
+  "species.cockatiel": "Valkparkiet",
+  // Double Yellow-headed Amazon
+  "species.doubleYellowHeadedAmazon": "Dubbele geelkopamazone",
+  // Eclectus
+  "species.eclectus": "Edelpapegaai",
+  // Fischer's Lovebird
+  "species.fischersLovebird": "Fischers agapornis",
+  // Galah (Rose-breasted Cockatoo)
+  "species.galah": "Galah (rose kaketoe)",
+  // Goffin's Cockatoo
+  "species.goffinsCockatoo": "Goffins kaketoe",
+  // Green-cheeked Conure
+  "species.greenCheekedConure": "Groenwangparkiet",
+  // Green-winged Macaw
+  "species.greenWingedMacaw": "Groenvleugelara",
+  // Amazon
+  "species.groupAmazon": "Amazones",
+  // Caique
+  "species.groupCaique": "Caiques",
+  // Cockatoo
+  "species.groupCockatoo": "Kaketoes",
+  // Conure
+  "species.groupConure": "Conures (parkieten)",
+  // Lovebird
+  "species.groupLovebird": "Agapornissen",
+  // Macaw
+  "species.groupMacaw": "Ara's",
+  // Other species
+  "species.groupOther": "Overige soorten",
+  // Parakeet
+  "species.groupParakeet": "Parkieten",
+  // Pionus
+  "species.groupPionus": "Margrietjes (Pionus)",
+  // Poicephalus
+  "species.groupPoicephalus": "Boerenpapegaaien (Poicephalus)",
+  // Hahn's Macaw
+  "species.hahnsMacaw": "Hahns dwergara",
+  // Half-moon Conure
+  "species.halfMoonConure": "Halfmaanparkiet",
+  // Harlequin Macaw
+  "species.harlequinMacaw": "Harlekijnara",
+  // Hyacinth Macaw
+  "species.hyacinthMacaw": "Hyacinthara",
+  // Indian Ringneck Parakeet
+  "species.indianRingneckParakeet": "Halsbandparkiet",
+  // Jenday Conure
+  "species.jendayConure": "Jendayaparkiet",
+  // Lilac-crowned Amazon
+  "species.lilacCrownedAmazon": "Finsch' amazone",
+  // Major Mitchell's Cockatoo
+  "species.majorMitchellsCockatoo": "Inkakaketoe",
+  // Meyer's Parrot
+  "species.meyersParrot": "Bruine boerenpapegaai",
+  // Military Macaw
+  "species.militaryMacaw": "Soldatenara",
+  // Moluccan Cockatoo
+  "species.moluccanCockatoo": "Molukse kaketoe",
+  // Monk Parakeet (Quaker)
+  "species.monkParakeet": "Monniksparkiet",
+  // Nanday Conure
+  "species.nandayConure": "Nandayparkiet",
+  // Orange-winged Amazon
+  "species.orangeWingedAmazon": "Oranjevleugelamazone",
+  // Pacific Parrotlet
+  "species.pacificParrotlet": "Hemelpapegaaitje",
+  // Peach-faced Lovebird
+  "species.peachFacedLovebird": "Perzikkopagapornis",
+  // Pineapple Green-cheeked Conure
+  "species.pineappleGreenCheekedConure": "Groenwangparkiet (pineapple)",
+  // Plum-headed Parakeet
+  "species.plumHeadedParakeet": "Pruimkopparkiet",
+  // Rainbow Lorikeet
+  "species.rainbowLorikeet": "Regenbooglori",
+  // Red-bellied Parrot
+  "species.redBelliedParrot": "Roodbuikboerenpapegaai",
+  // Scarlet Macaw
+  "species.scarletMacaw": "Geelvleugelara",
+  // Senegal Parrot
+  "species.senegalParrot": "Senegalpapegaai",
+  // Sulphur-crested Cockatoo
+  "species.sulphurCrestedCockatoo": "Grote geelkuifkaketoe",
+  // Sun Conure
+  "species.sunConure": "Zonparkiet",
+  // Umbrella Cockatoo
+  "species.umbrellaCockatoo": "Witte kaketoe",
+  // White-bellied Caique
+  "species.whiteBelliedCaique": "Witbuikcaique",
+  // White-capped Pionus
+  "species.whiteCappedPionus": "Witkopmargrietje",
+  // Yellow-crowned Amazon
+  "species.yellowCrownedAmazon": "Geelvoorhoofdamazone",
+  // Yellow-naped Amazon
+  "species.yellowNapedAmazon": "Geelnekamazone",
   // Back
   "system.back": "Terug",
   // Change photo

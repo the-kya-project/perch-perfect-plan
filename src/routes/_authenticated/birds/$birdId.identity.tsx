@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { speciesLabel } from "@/lib/speciesLabel";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -157,7 +158,7 @@ function IdentityFacet() {
                 </div>
                 <div className="min-w-0">
                   <p className="t-item truncate text-[17px]">{bird.name}</p>
-                  <p className="t-meta mt-0.5 truncate">{[bird.species || t("planEditor.parrot", "Parrot"), bird.age ? ageLabel(t, bird.age) : null].filter(Boolean).join(" · ")}</p>
+                  <p className="t-meta mt-0.5 truncate">{[bird.species ? speciesLabel(t, bird.species) : t("planEditor.parrot", "Parrot"), bird.age ? ageLabel(t, bird.age) : null].filter(Boolean).join(" · ")}</p>
                 </div>
               </Card>
 
