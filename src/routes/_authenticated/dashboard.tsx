@@ -14,7 +14,7 @@ import { fetchBirdList } from "@/lib/birdListSelect";
 import type { SignedPhoto } from "@/lib/birdPhoto";
 import {
   Plus, Settings, Users, ChevronRight, Scale, CalendarHeart, Calendar,
-  Feather, AlertCircle, AlertTriangle,
+  Feather, AlertCircle, AlertTriangle, Check, Sun,
 } from "lucide-react";
 import { OwnerHeaderIcons } from "@/components/OwnerHeader";
 import { AppOnboarding } from "@/components/AppOnboarding";
@@ -302,7 +302,18 @@ function Dashboard() {
               />
             )}
             {!demo && checkBirds.length > 1 && (
-              <FlockCheckPrompt total={checkBirds.length} doneTimes={checkBirds.flatMap((b) => { const c = dailyToday?.[b.id]?.check; return c ? [{ name: b.name, at: c.created_at }] : []; })} loading={!dailyToday} onOpen={() => navigate({ to: "/check" })} />
+              <FlockCheckPrompt
+                loading={!dailyToday}
+                onOpen={() => navigate({ to: "/check" })}
+                birds={checkBirds.map((b) => {
+                  const d = dailyToday?.[b.id];
+                  return {
+                    id: b.id, name: b.name, species: b.species ?? null, photo: photoFor(b), position: b.photo_position,
+                    checkedAt: d?.check?.created_at ?? null,
+                    checked: !!d?.check, triage: d?.check?.triage_status ?? null, grams: d?.weights[0]?.grams ?? null,
+                  };
+                })}
+              />
             )}
 
             <TodayPanel items={todayItemsView} onNavigate={onTodayNavigate} />
@@ -426,29 +437,70 @@ function SectionHeaderCTA({ title, pill, ctaLabel, onCta }: { title: string; pil
 // ---------------------------------------------------------------------------
 // Today panel (adaptive — hidden entirely when empty)
 // ---------------------------------------------------------------------------
-function FlockCheckPrompt({ total, doneTimes, loading, onOpen }: { total: number; doneTimes: { name: string; at: string }[]; loading: boolean; onOpen: () => void }) {
+type PromptBird = { id: string; name: string; species: string | null; photo: SignedPhoto | null; position?: string | null; checked: boolean; checkedAt: string | null; triage: string | null; grams: number | null };
+
+// The Home prompt into the flock check: one avatar per bird with its status for
+// today, then the button. Once every bird is checked it turns into a summary.
+function FlockCheckPrompt({ birds, loading, onOpen }: { birds: PromptBird[]; loading: boolean; onOpen: () => void }) {
   const { t } = useTranslation();
-  const done = doneTimes.length;
+  const total = birds.length;
+  const done = birds.filter((b) => b.checked).length;
   const allDone = !loading && done >= total;
+  const normal = birds.filter((b) => b.checked && b.triage === "green").length;
+  const flagged = birds.filter((b) => b.checked && b.triage && b.triage !== "green");
+  const lastAt = birds.map((b) => b.checkedAt).filter(Boolean).sort().pop();
   return (
-    <section className="rounded-[18px] bg-[var(--lime)] p-4" style={{ boxShadow: "0 8px 20px -12px rgba(45,106,79,.45)" }}>
-      <p className="t-section">{allDone ? t("dashboard.flockCheckDone", "All birds checked today") : t("dashboard.dailyHealthCheck", "Daily health check")}</p>
-      {allDone ? (
-        <p className="mt-1 text-[13.5px] text-[var(--ink2)]">
-          {doneTimes.map((d) => t("dashboard.checkedAt", "{{name}} {{time}}", { name: d.name, time: new Date(d.at).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }).toLowerCase() })).join(" · ")}
-        </p>
-      ) : (
-        <p className="mt-1 text-[13.5px] text-[var(--ink2)]">{t("dashboard.flockCheckBody", "Grab a weight and a quick once-over of your birds.")}</p>
-      )}
-      <div className="mt-3">
-        <PrimaryButton tone="ink" onPress={onOpen}>
-          {allDone
-            ? t("dashboard.flockCheckView", "View today's checks")
-            : done > 0
-              ? t("dashboard.flockCheckFinish", "Finish your flock check ({{done}} of {{total}} done)", { done, total })
-              : t("dashboard.flockCheckCta", "Weigh & check your flock")}
-        </PrimaryButton>
+    <section className="space-y-3.5 rounded-[22px] bg-[var(--lime)] p-[18px]" style={{ boxShadow: "0 12px 26px -14px rgba(45,106,79,.55)" }}>
+      <div className="flex items-center gap-3">
+        <span className="grid size-10 shrink-0 place-items-center rounded-[12px] bg-[var(--ink)] text-[var(--lime)]">
+          {allDone ? <Check className="size-5" /> : <Sun className="size-5" />}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[17px] font-[500] text-[var(--ink)]">
+            {allDone
+              ? (total === 2 ? t("dashboard.flockCheckDoneTwo", "Both birds checked") : t("dashboard.flockCheckDoneN", "All {{n}} birds checked", { n: total }))
+              : t("dashboard.dailyHealthCheck", "Daily health check")}
+          </p>
+          <p className="mt-0.5 text-[12px] text-[#2b3a31]">
+            {allDone && lastAt ? t("dashboard.flockCheckDoneAt", "Done at {{time}}", { time: new Date(lastAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }).toLowerCase() }) : t("dashboard.flockCheckBody", "Grab a weight and a quick once-over of your birds.")}
+          </p>
+        </div>
       </div>
+
+      {allDone ? (
+        <div className="flex flex-wrap gap-1.5">
+          {normal > 0 && <span className="rounded-full bg-white px-2.5 py-1 text-[12px] font-[500] text-[var(--ink)]">{t("dashboard.nAllNormal", "{{n}} all normal", { n: normal })}</span>}
+          {flagged.map((b) => (
+            <span key={b.id} className="rounded-full bg-[#f6e7c4] px-2.5 py-1 text-[12px] font-[500] text-[#854f0b]">{t("dashboard.birdSomethingToCheck", "{{name}}: something to check", { name: b.name })}</span>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-4 gap-x-1.5 gap-y-3">
+          {birds.map((b) => (
+            <span key={b.id} className="flex min-w-0 flex-col items-center gap-1">
+              <span className={`relative size-11 overflow-hidden rounded-full ${b.checked ? "ring-2 ring-[var(--moss)]" : "ring-2 ring-white"}`} style={{ background: gradientFor(b.species || b.name) }} aria-hidden="true">
+                {b.photo
+                  ? <BirdPhotoCrop url={b.photo.url} original={b.photo.original} position={b.position} alt="" />
+                  : <span className="grid size-full place-items-center text-[15px] font-[500] text-white/90">{b.name.slice(0, 1).toUpperCase()}</span>}
+              </span>
+              <span className="max-w-full truncate text-[11.5px] font-[500] text-[var(--ink)]">{b.name}</span>
+              <span className={`text-[10.5px] ${b.checked ? "text-[var(--moss)]" : "text-[#854f0b]"}`}>
+                {b.checked ? (b.grams != null ? t("dashboard.gramsShort", "{{n}} g", { n: b.grams }) : t("dashboard.checkedShort", "Checked")) : t("dashboard.notYet", "Not yet")}
+              </span>
+            </span>
+          ))}
+        </div>
+      )}
+
+      {allDone ? (
+        <button type="button" onClick={onOpen} className="text-[13px] font-[500] text-[var(--ink)]">{t("dashboard.seeTodaysChecks", "See today's checks →")}</button>
+      ) : (
+        <PrimaryButton tone="ink" onPress={onOpen}>
+          {done > 0
+            ? t("dashboard.flockCheckFinish", "Finish your flock check ({{done}} of {{total}} done)", { done, total })
+            : t("dashboard.flockCheckCta", "Weigh & check your flock")}
+        </PrimaryButton>
+      )}
     </section>
   );
 }

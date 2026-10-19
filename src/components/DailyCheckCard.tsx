@@ -2,25 +2,47 @@
 // one-bird Home and each section of the flock check. A normal day is: type a
 // weight (optional), leave "Yes, looks normal" selected, save. The faded last
 // weight in the box is a hint only; an empty box saves the health check alone.
+// Visuals follow the "Daily health check" mock-ups: a lime card, white inputs,
+// ink primary buttons, amber for "something's different".
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { toast } from "sonner";
-import { Check, Plus } from "lucide-react";
+import { Check, CheckCircle2, AlertTriangle, Plus, Search } from "lucide-react";
 import { useBirdRole } from "@/lib/useBirdRole";
 import { useActiveSitIdForBird } from "@/components/CaregiverHome";
 import { answersWithChanges, allNormalAnswers, weightToSave, bigWeightChange, MIN_WEIGHT_G, MAX_WEIGHT_G } from "@/lib/dailyLog";
 import { saveDailyCheck, saveWeight, invalidateAfterCheck, type BirdToday, type Meal, type SaveResult } from "@/lib/dailyCheck";
-import type { ScanFieldKey } from "@/lib/triage";
+import { SCAN_FIELDS, type ScanFieldKey } from "@/lib/triage";
 import { track } from "@/lib/analytics";
 import { friendlyError } from "@/lib/errorMessage";
 import { triageMessageLabel } from "@/lib/triageLabels";
 
 export type DailyCheckSurface = "bird_page" | "home_one" | "flock";
 
+// Mock-up palette (Kya design system values used across the app's lime cards).
+const C = {
+  lime: "#cdeab0",
+  ink: "#1a3d2e",
+  moss: "#2d6a4f",
+  sub: "#2b3a31",
+  mute: "#5b6b61",
+  line: "#e0d8c4",
+  line2: "#eee6d4",
+  cream: "#f4f1e8",
+  amber: "#c47e1e",
+  amberFill: "#f6e7c4",
+  amberInk: "#854f0b",
+  red: "#a32d2d",
+  redFill: "#fcebeb",
+  redInk: "#791f1f",
+  divider: "rgba(45,106,79,0.25)",
+};
+
 const ITEM_KEYS: ScanFieldKey[] = ["alertness", "food", "droppings", "breathing", "posture", "noise", "fluffed", "vomiting", "injury", "exposure"];
+const RED_KEYS = new Set(SCAN_FIELDS.filter((f) => f.redOnConcerning).map((f) => f.key));
 
 function itemLabel(t: TFunction, k: ScanFieldKey): string {
   switch (k) {
@@ -41,30 +63,51 @@ function timeLabel(iso: string | Date): string {
   return new Date(iso).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }).toLowerCase();
 }
 
-const LABEL = "mb-1 block text-xs font-[500] text-[var(--mute)]";
-const INPUT = "h-11 w-full rounded-xl bg-white px-3 text-lg font-[500] text-[var(--ink)] outline-none ring-1 ring-[var(--line)] placeholder:font-[400] placeholder:text-[var(--mute2)] focus:ring-[var(--moss)]";
+const LABEL = "mb-1 block text-[12px] font-[500]";
+const EYEBROW = "text-[11px] font-[500] uppercase tracking-[0.13em]";
+const inputStyle = { boxShadow: `inset 0 0 0 1px ${C.line}`, color: C.ink };
+const INPUT = "box-border h-11 w-full rounded-[12px] border-0 bg-white px-3 text-[18px] font-[500] outline-none placeholder:font-[400] placeholder:text-[#9a9684] focus:shadow-[inset_0_0_0_2px_#2d6a4f]";
 
-function MealButtons({ meal, setMeal }: { meal: Meal; setMeal: (m: Meal) => void }) {
+function MealButtons({ meal, setMeal, labelId }: { meal: Meal; setMeal: (m: Meal) => void; labelId: string }) {
   const { t } = useTranslation();
   return (
-    <div className="grid grid-cols-2 gap-2">
-      {(["before_meal", "after_meal"] as const).map((m) => (
-        <button
-          key={m}
-          type="button"
-          aria-pressed={meal === m}
-          onClick={() => setMeal(meal === m ? null : m)}
-          className={`min-h-[44px] rounded-xl text-sm font-[500] ${meal === m ? "bg-[var(--ink)] text-white" : "bg-white text-[var(--ink)] ring-1 ring-inset ring-[var(--line)]"}`}
-        >
-          {m === "before_meal" ? t("birdWeight.beforeMeal", "Before meal") : t("birdWeight.afterMeal", "After meal")}
-        </button>
-      ))}
+    <div role="radiogroup" aria-labelledby={labelId} className="grid grid-cols-2 gap-2">
+      {(["before_meal", "after_meal"] as const).map((m) => {
+        const on = meal === m;
+        return (
+          <button
+            key={m}
+            type="button"
+            role="radio"
+            aria-checked={on}
+            onClick={() => setMeal(on ? null : m)}
+            className="min-h-[44px] rounded-[12px] border-0 text-[14px] font-[500]"
+            style={on ? { background: C.ink, color: "#fff" } : { background: "#fff", color: C.ink, boxShadow: `inset 0 0 0 1px ${C.line}` }}
+          >
+            {m === "before_meal" ? t("birdWeight.beforeMeal", "Before meal") : t("birdWeight.afterMeal", "After meal")}
+          </button>
+        );
+      })}
     </div>
   );
 }
 
 function mealText(t: TFunction, m: string | null): string | null {
   return m === "before_meal" ? t("dailyCheck.beforeMealLower", "before meal") : m === "after_meal" ? t("dailyCheck.afterMealLower", "after meal") : null;
+}
+
+function PrimaryBtn({ children, onClick, disabled, tall = true, className = "" }: { children: React.ReactNode; onClick: () => void; disabled?: boolean; tall?: boolean; className?: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={`flex w-full items-center justify-center rounded-[12px] border-0 text-[15px] font-[500] text-white disabled:opacity-50 ${tall ? "min-h-[50px]" : "min-h-[46px]"} ${className}`}
+      style={{ background: C.ink }}
+    >
+      {children}
+    </button>
+  );
 }
 
 export function DailyCheckCard({
@@ -82,7 +125,7 @@ export function DailyCheckCard({
   showHeading?: boolean;
   /** Heading override, e.g. "Mango's weight and health check" on Home. */
   title?: string;
-  /** Inside another card (the flock check): no outline or shadow of its own. */
+  /** Inside another lime card (the flock check): no card surface of its own. */
   flat?: boolean;
 }) {
   const { t } = useTranslation();
@@ -112,6 +155,7 @@ export function DailyCheckCard({
   const weightInvalid = canWeigh && parsed === undefined;
   const hasWeight = canWeigh && typeof parsed === "number";
   const hint = today?.lastGrams != null ? String(today.lastGrams) : t("dailyCheck.gramsPlaceholder", "e.g. 95");
+  const anyConcerning = Object.values(changes).some((v) => v === "concerning");
 
   async function save(skipConfirm = false) {
     if (saving || weightInvalid) return;
@@ -160,214 +204,276 @@ export function DailyCheckCard({
   const check = result ? { id: result.logId, triage_status: result.triage.status, created_at: result.at } : today?.check ?? null;
   const done = !!check && !weightFailed;
 
-  const shell = flat ? "bg-white p-4" : "rounded-[18px] bg-white p-4 ring-1 ring-[var(--line2)]";
-  const shadow = flat ? undefined : { boxShadow: "0 6px 14px -8px rgba(40,50,40,.08)" };
+  // The lime card surface (bird page, Home); the flock check supplies its own.
+  // A plain function, not a component, so inputs keep focus across renders.
+  const shell = (children: React.ReactNode, busy?: boolean) =>
+    flat
+      ? <div className="flex flex-col gap-3" style={{ color: C.ink }}>{children}</div>
+      : (
+        <section
+          aria-busy={busy || undefined}
+          className="flex flex-col gap-3 rounded-[18px] px-[18px] py-4"
+          style={{ background: C.lime, color: C.ink, boxShadow: "0 8px 20px -12px rgba(45,106,79,.45)" }}
+        >
+          {children}
+        </section>
+      );
 
   if (!today && !result) {
-    return <section className={`${shell} h-40 animate-pulse`} style={shadow} aria-busy="true" />;
+    return shell(<div className="h-36 animate-pulse rounded-[12px] bg-white/40" />, true);
   }
 
+  // ---------------------------------------------------------------- done
   if (done && check) {
     const weights = today?.weights ?? [];
     const latestW = weights[0];
     const status = check.triage_status;
-    return (
-      <section className={shell} style={shadow}>
-        {showHeading && <p className="t-eyebrow text-[var(--teal-on-cream)]">{t("dailyCheck.today", "Today")}</p>}
-        <div className="mt-1 flex items-center gap-2">
-          <span className="grid size-6 place-items-center rounded-full bg-[var(--lime)] text-[var(--ink)]"><Check className="size-3.5" /></span>
-          <p className="t-item">{t("dailyCheck.doneTitle", "Weight and health check done")}</p>
+    const good = status === "green";
+    return shell(
+      <>
+        <div>
+          {showHeading && (
+            <p className={EYEBROW} style={{ color: C.moss }}>
+              {latestW ? t("dailyCheck.todayAtEyebrow", "Today · {{time}}", { time: timeLabel(latestW.measured_at) }) : t("dailyCheck.today", "Today")}
+            </p>
+          )}
+          {latestW ? (
+            <>
+              <p className="mt-0.5 text-[30px] font-[400] leading-none tracking-[-0.015em]">
+                {latestW.grams}<span className="text-[16px]" style={{ color: C.moss }}> g</span>
+              </p>
+              {(mealText(t, latestW.meal_relation) || weights.length > 1) && (
+                <p className="mt-1.5 text-[11.5px]" style={{ color: C.mute }}>
+                  {[mealText(t, latestW.meal_relation), weights.length > 1 ? t("dailyCheck.weighInsToday", "{{n}} today", { n: weights.length }) : null].filter(Boolean).join(" · ")}
+                </p>
+              )}
+            </>
+          ) : (
+            <p className="mt-0.5 text-[16px] font-[500]">{t("dailyCheck.noWeightToday", "No weight today")}</p>
+          )}
         </div>
 
-        <div className="mt-3 divide-y divide-[var(--line2)] rounded-xl ring-1 ring-[var(--line2)]">
-          <button type="button" onClick={() => navigate({ to: "/birds/$birdId/weight", params: { birdId } })} className="flex min-h-[44px] w-full items-center gap-3 px-3 py-2 text-left">
-            <span className="min-w-0 flex-1 text-[14px] text-[var(--ink)]">
-              {latestW
-                ? [t("dailyCheck.gramsValue", "{{n}} g", { n: latestW.grams }), timeLabel(latestW.measured_at), mealText(t, latestW.meal_relation)].filter(Boolean).join(" · ")
-                : t("dailyCheck.noWeightToday", "No weight today")}
+        <button
+          type="button"
+          onClick={() => navigate({ to: "/birds/$birdId/scans/$scanId", params: { birdId, scanId: check.id } })}
+          className="flex w-full items-center gap-3 rounded-[12px] border-0 bg-white px-3 py-2.5 text-left"
+        >
+          <span className="grid size-8 shrink-0 place-items-center rounded-[10px]" style={good ? { background: "#e8f0ec", color: C.moss } : { background: C.amberFill, color: C.amberInk }}>
+            {good ? <CheckCircle2 className="size-[18px]" /> : <AlertTriangle className="size-[18px]" />}
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[14px] font-[500]">
+              {status === "red" ? t("dailyCheck.resultRed", "Health check: call your vet")
+                : status === "yellow" ? t("dailyCheck.resultYellow", "Health check: something to check")
+                : t("dailyCheck.resultGreen", "Health check: all normal")}
             </span>
-            {weights.length > 1 && <span className="t-meta">{t("dailyCheck.weighInsToday", "{{n}} today", { n: weights.length })}</span>}
-          </button>
-          <button type="button" onClick={() => navigate({ to: "/birds/$birdId/scans/$scanId", params: { birdId, scanId: check.id } })} className="flex min-h-[44px] w-full items-center gap-3 px-3 py-2 text-left">
-            <span className="min-w-0 flex-1 text-[14px] text-[var(--ink)]">
-              {t("dailyCheck.healthCheckAt", "Health check ✓ · {{time}}", { time: timeLabel(check.created_at) })}
-            </span>
-            <span className={`rounded-full px-[9px] py-[3px] text-[11.5px] font-[500] ${status === "green" ? "bg-[var(--pale)] text-[var(--ink)]" : "bg-[var(--amber-fill)] text-[var(--amber-ink)]"}`}>
-              {status === "red" ? t("ownerScan.eyebrowRed", "Call your vet now") : status === "yellow" ? t("ownerScan.eyebrowYellow", "Keep a close eye") : t("birdRecord.allNormal", "All normal")}
-            </span>
-          </button>
-        </div>
+            <span className="mt-px block text-[11.5px]" style={{ color: "#8a8270" }}>{t("dailyCheck.checkedAt", "Checked {{time}}", { time: timeLabel(check.created_at) })}</span>
+          </span>
+        </button>
 
         {result && result.triage.status !== "green" && (
-          <div className="mt-3 rounded-xl p-3 text-[13.5px] leading-relaxed" style={{ background: "var(--amber-fill)", color: "var(--amber-ink)" }}>
+          <div className="rounded-[12px] px-3 py-2.5 text-[12.5px] leading-[1.45]" style={result.triage.status === "red" ? { background: C.redFill, color: C.redInk } : { background: C.amberFill, color: C.amberInk }}>
             {triageMessageLabel(t, result.triage.message)}
-            <button type="button" onClick={() => navigate({ to: "/birds/$birdId/plan/editor", params: { birdId }, search: { tab: "emergency" } as any })} className="mt-2 block font-[500] underline">
+            <button type="button" onClick={() => navigate({ to: "/birds/$birdId/plan/editor", params: { birdId }, search: { tab: "emergency" } as any })} className="mt-1.5 block font-[500] underline">
               {t("ownerScan.emergencyContacts", "Emergency contacts")}
             </button>
           </div>
         )}
 
-        {canWeigh && (adding
-          ? <ExtraWeight birdId={birdId} name={name} lastGrams={latestW?.grams ?? today?.lastGrams ?? null} surface={surface} onDone={() => setAdding(false)} />
-          : (
-            <button type="button" onClick={() => setAdding(true)} className="mt-3 inline-flex min-h-[44px] items-center gap-1.5 text-[14px] font-[500] text-[var(--moss)]">
-              <Plus className="size-4" /> {latestW ? t("dailyCheck.addAWeight", "Add a weight") : t("dailyCheck.addTodaysWeight", "Add today's weight")}
+        {canWeigh && adding && (
+          <ExtraWeight birdId={birdId} name={name} lastGrams={latestW?.grams ?? today?.lastGrams ?? null} surface={surface} onDone={() => setAdding(false)} />
+        )}
+        {canWeigh && !adding && (
+          <div className="flex items-center justify-between">
+            <button type="button" onClick={() => setAdding(true)} className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full border-0 px-3 text-[12.5px] font-[500]" style={{ background: C.ink, color: C.lime }}>
+              <Plus className="size-3.5" strokeWidth={2.4} /> {latestW ? t("dailyCheck.addAnotherWeight", "Add another weight") : t("dailyCheck.addTodaysWeight", "Add today's weight")}
             </button>
-          ))}
-      </section>
+            <button type="button" onClick={() => navigate({ to: "/birds/$birdId/weight", params: { birdId } })} className="min-h-[36px] text-[13px] font-[500]" style={{ color: C.ink }}>
+              {t("dailyCheck.weightChart", "Weight chart →")}
+            </button>
+          </div>
+        )}
+      </>,
     );
   }
 
+  // ---------------------------------------------------------------- form
   const label = saving
     ? t("birdWeight.saving", "Saving…")
     : weightFailed
       ? t("dailyCheck.retryWeight", "Save weight")
       : saveLabel ?? (hasWeight ? t("dailyCheck.saveBoth", "Save weight & health check") : t("dailyCheck.saveCheck", "Save health check"));
+  const mealId = `dc-meal-${birdId}`;
 
-  return (
-    <section className={shell} style={shadow}>
+  const confirm = confirmPct != null && (
+    <div className="rounded-[12px] px-3 py-2.5 text-[13px]" style={{ background: C.amberFill, color: C.amberInk }}>
+      {confirmPct < 0
+        ? t("dailyCheck.bigDrop", "That's {{pct}}% lower than last time. Save anyway?", { pct: Math.abs(confirmPct) })
+        : t("dailyCheck.bigRise", "That's {{pct}}% higher than last time. Save anyway?", { pct: confirmPct })}
+      <div className="mt-2 flex gap-2">
+        <button type="button" onClick={() => save(true)} className="min-h-[40px] flex-1 rounded-[10px] border-0 text-[13.5px] font-[500] text-white" style={{ background: C.ink }}>{t("dailyCheck.saveAnyway", "Save anyway")}</button>
+        <button type="button" onClick={() => setConfirmPct(null)} className="min-h-[40px] flex-1 rounded-[10px] border-0 bg-white text-[13.5px] font-[500]" style={{ color: C.ink, boxShadow: `inset 0 0 0 1px ${C.line}` }}>{t("dailyCheck.fix", "Fix")}</button>
+      </div>
+    </div>
+  );
+
+  return shell(
+    <>
       {showHeading && (
-        <>
-          <p className="t-eyebrow text-[var(--teal-on-cream)]">{t("dailyCheck.today", "Today")}</p>
-          <p className="t-item mt-0.5">{title ?? t("dailyCheck.title", "Weight and health check")}</p>
-          <p className="t-meta">{t("dailyCheck.notDone", "Not done yet")}</p>
-        </>
+        <div className="flex items-start gap-2.5">
+          <div className="min-w-0 flex-1">
+            <p className={EYEBROW} style={{ color: C.moss }}>{t("dailyCheck.today", "Today")}</p>
+            <h2 className="mt-0.5 text-[16px] font-[500]">{title ?? t("dailyCheck.title", "Weight and health check")}</h2>
+          </div>
+          <span className="shrink-0 rounded-full px-[9px] py-[3px] text-[11.5px] font-[500]" style={{ background: C.amberFill, color: C.amberInk }}>{t("dailyCheck.notDone", "Not done yet")}</span>
+        </div>
       )}
 
       {canWeigh && (
-        <>
-          <div className="mt-3">
-            <label htmlFor={`dc-g-${birdId}`} className={LABEL}>{t("birdWeight.gramsLabel", "Weight (grams)")}</label>
+        <div className="flex flex-col gap-3">
+          <div>
+            <label htmlFor={`dc-g-${birdId}`} className={LABEL} style={{ color: C.sub }}>{t("birdWeight.gramsLabel", "Weight (grams)")}</label>
             <input
               id={`dc-g-${birdId}`}
               className={INPUT}
+              style={inputStyle}
               inputMode="decimal"
               value={grams}
               placeholder={hint}
               onChange={(e) => { setGrams(e.target.value.replace(/[^0-9.]/g, "")); setConfirmPct(null); }}
             />
             {weightInvalid && (
-              <p className="mt-1 text-[11px] text-[var(--amber-ink)]">{t("birdWeight.range", "Enter a weight between {{min}} and {{max}} grams.", { min: MIN_WEIGHT_G, max: MAX_WEIGHT_G })}</p>
+              <p className="mt-1 text-[11px]" style={{ color: C.amberInk }}>{t("birdWeight.range", "Enter a weight between {{min}} and {{max}} grams.", { min: MIN_WEIGHT_G, max: MAX_WEIGHT_G })}</p>
             )}
           </div>
-          <div className="mt-3">
-            <span className={LABEL}>{t("birdWeight.whenLabel", "When")}</span>
-            <p className="text-[14px] text-[var(--ink)]">{t("dailyCheck.todayAt", "Today, {{time}}", { time: timeLabel(now) })}</p>
+          <div>
+            <span className={LABEL} style={{ color: C.sub }}>{t("birdWeight.whenLabel", "When")}</span>
+            <p className="text-[14px]">{t("dailyCheck.todayAt", "Today, {{time}}", { time: timeLabel(now) })}</p>
           </div>
-          <div className="mt-3">
-            <span className={LABEL}>{t("birdWeight.mealLabel", "Relative to a meal (optional)")}</span>
-            <MealButtons meal={meal} setMeal={setMeal} />
+          <div>
+            <span id={mealId} className={LABEL} style={{ color: C.sub }}>{t("birdWeight.mealLabel", "Relative to a meal (optional)")}</span>
+            <MealButtons meal={meal} setMeal={setMeal} labelId={mealId} />
+          </div>
+        </div>
+      )}
+
+      {!weightFailed && (
+        <>
+          {canWeigh && <div className="h-px" style={{ background: C.divider }} />}
+          <div className="flex flex-col gap-2">
+            <span className={EYEBROW} style={{ color: C.moss }}>{t("dailyCheck.healthCheck", "Health check")}</span>
+            <span className="text-[16px] font-[500]">{t("dailyCheck.lookUsual", "Does {{name}} look like usual?", { name })}</span>
+
+            {!different ? (
+              <>
+                <span className="text-[12px] leading-[1.45]" style={{ color: C.sub }}>{t("dailyCheck.usualHelp", "Alert, eating, normal droppings, breathing easy, perching well.")}</span>
+                <div role="radiogroup" aria-label={t("dailyCheck.lookUsual", "Does {{name}} look like usual?", { name })} className="mt-0.5 grid grid-cols-2 gap-1.5">
+                  <button type="button" role="radio" aria-checked="true" className="flex min-h-[46px] items-center justify-center gap-1.5 rounded-[12px] border-0 bg-white text-[14px] font-[500]" style={{ color: C.ink, boxShadow: `inset 0 0 0 2px ${C.ink}` }}>
+                    <Check className="size-[15px]" strokeWidth={2.6} /> {t("dailyCheck.looksNormal", "Yes, looks normal")}
+                  </button>
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked="false"
+                    onClick={() => { track("daily_check_different_opened", { surface }); setDifferent(true); setConfirmPct(null); }}
+                    className="flex min-h-[46px] items-center justify-center rounded-[12px] border-0 text-[14px] font-[500]"
+                    style={{ background: "rgba(255,255,255,0.55)", color: C.sub }}
+                  >
+                    {t("dailyCheck.somethingDifferent", "Something's different")}
+                  </button>
+                </div>
+                {confirm}
+                {confirmPct == null && <PrimaryBtn onClick={() => save()} disabled={saving || weightInvalid}>{label}</PrimaryBtn>}
+              </>
+            ) : (
+              <div className="mt-1 flex flex-col gap-3 rounded-[18px] bg-white p-4" style={{ boxShadow: "0 6px 16px -10px rgba(26,61,46,.35)" }}>
+                <div className="flex items-center gap-2.5">
+                  <span className="grid size-[34px] shrink-0 place-items-center rounded-[11px]" style={{ background: C.amberFill, color: C.amberInk }}><Search className="size-[18px]" /></span>
+                  <span>
+                    <span className="block text-[16px] font-[500]">{t("dailyCheck.whatsDifferent", "What's different with {{name}}?", { name })}</span>
+                    <span className="block text-[12px]" style={{ color: C.mute }}>{t("dailyCheck.tapEverything", "Tap everything you noticed.")}</span>
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {ITEM_KEYS.map((k) => {
+                    const on = !!changes[k];
+                    return (
+                      <button
+                        key={k}
+                        type="button"
+                        aria-pressed={on}
+                        onClick={() => setChanges((c) => { const n = { ...c }; if (n[k]) delete n[k]; else n[k] = "not_sure"; return n; })}
+                        className="min-h-[36px] rounded-full border-0 px-3 text-[12.5px] font-[500]"
+                        style={on ? { background: C.amber, color: "#fff" } : { background: C.cream, color: C.sub, boxShadow: `inset 0 0 0 1px ${C.line}` }}
+                      >
+                        {itemLabel(t, k)}
+                      </button>
+                    );
+                  })}
+                </div>
+                {ITEM_KEYS.filter((k) => changes[k]).map((k) => (
+                  <div key={k} className="flex items-center gap-2 pt-2" style={{ borderTop: `1px solid ${C.line2}` }}>
+                    <span className="flex-1 text-[13px] font-[500]">{itemLabel(t, k)}</span>
+                    <div role="radiogroup" aria-label={itemLabel(t, k)} className="flex gap-1">
+                      {(["not_sure", "concerning"] as const).map((v) => {
+                        const on = changes[k] === v;
+                        const onStyle = v === "concerning" ? { background: C.red, color: "#fff" } : { background: C.amber, color: "#fff" };
+                        return (
+                          <button
+                            key={v}
+                            type="button"
+                            role="radio"
+                            aria-checked={on}
+                            onClick={() => setChanges((c) => ({ ...c, [k]: v }))}
+                            className="min-h-[34px] rounded-[9px] border-0 px-2.5 text-[12px] font-[500]"
+                            style={on ? onStyle : { background: C.cream, color: C.sub, boxShadow: `inset 0 0 0 1px ${C.line}` }}
+                          >
+                            {v === "concerning" ? t("scanForm.answerConcerning", "Concerning") : t("scanForm.answerNotSure", "Not sure")}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+                {anyConcerning && (
+                  <p className="rounded-[12px] px-3 py-2.5 text-[12.5px] leading-[1.45]" style={{ background: C.redFill, color: C.redInk }}>
+                    <b className="font-[500]">{t("dailyCheck.concerningTitle", "Concerning signs.")}</b>{" "}
+                    {[...Object.entries(changes)].some(([k, v]) => v === "concerning" && RED_KEYS.has(k as ScanFieldKey))
+                      ? t("dailyCheck.concerningRed", "Call your avian vet today. We'll keep this flagged on {{name}}'s page.", { name })
+                      : t("dailyCheck.concerningWatch", "Keep a close eye, and call your avian vet if it continues. We'll keep this flagged on {{name}}'s page.", { name })}
+                  </p>
+                )}
+                <label className="flex flex-col gap-1 text-[12px]" style={{ color: C.mute }}>
+                  {t("dailyCheck.noteLabel", "Note (optional)")}
+                  <input
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                    placeholder={t("dailyCheck.notePlaceholder", "What did you notice?")}
+                    className="min-h-[40px] rounded-[10px] bg-white px-2.5 text-[16px] outline-none"
+                    style={{ border: `1px solid ${C.line}`, color: C.ink }}
+                  />
+                </label>
+                {confirm}
+                {confirmPct == null && (
+                  <div className="flex gap-2">
+                    <button type="button" onClick={() => { setDifferent(false); setChanges({}); setNote(""); }} className="min-h-[46px] rounded-[12px] border-0 bg-transparent px-3.5 text-[14px] font-[500]" style={{ color: C.ink }}>
+                      {t("dailyCheck.back", "Back")}
+                    </button>
+                    <PrimaryBtn onClick={() => save()} disabled={saving || weightInvalid} tall={false} className="flex-1">{label}</PrimaryBtn>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </>
       )}
 
-      {!weightFailed && (
-        <div className="mt-4">
-          <span className={LABEL}>{t("dailyCheck.healthCheck", "Health check")}</span>
-          <p className="mb-2 text-[14px] text-[var(--ink)]">{t("dailyCheck.lookUsual", "Does {{name}} look like usual?", { name })}</p>
-          <div role="radiogroup" aria-label={t("dailyCheck.healthCheck", "Health check")} className="grid grid-cols-2 gap-2">
-            {([false, true] as const).map((isDiff) => {
-              const on = different === isDiff;
-              return (
-                <button
-                  key={String(isDiff)}
-                  type="button"
-                  role="radio"
-                  aria-checked={on}
-                  onClick={() => {
-                    if (isDiff && !different) track("daily_check_different_opened", { surface });
-                    setDifferent(isDiff);
-                    if (!isDiff) { setChanges({}); setNote(""); }
-                  }}
-                  className={`flex min-h-[44px] items-center gap-2 rounded-xl px-3 text-left text-sm font-[500] ${on ? "bg-[var(--pale)] text-[var(--ink)] ring-1 ring-inset ring-[var(--moss)]" : "bg-white text-[var(--ink)] ring-1 ring-inset ring-[var(--line)]"}`}
-                >
-                  <span className={`grid size-4 shrink-0 place-items-center rounded-full ring-1 ${on ? "ring-[var(--moss)]" : "ring-[var(--line)]"}`}>
-                    {on && <span className="size-2 rounded-full bg-[var(--moss)]" />}
-                  </span>
-                  {isDiff ? t("dailyCheck.somethingDifferent", "Something's different") : t("dailyCheck.looksNormal", "Yes, looks normal")}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {different && !weightFailed && (
-        <div className="mt-3 rounded-xl bg-[var(--cream2)] p-3">
-          <p className="t-item">{t("dailyCheck.whatsDifferent", "What's different with {{name}}?", { name })}</p>
-          <p className="t-meta">{t("dailyCheck.tapEverything", "Tap everything you noticed.")}</p>
-          <div className="mt-2 flex flex-wrap gap-1.5">
-            {ITEM_KEYS.map((k) => {
-              const on = !!changes[k];
-              return (
-                <button
-                  key={k}
-                  type="button"
-                  aria-pressed={on}
-                  onClick={() => setChanges((c) => { const n = { ...c }; if (n[k]) delete n[k]; else n[k] = "not_sure"; return n; })}
-                  className={`min-h-[36px] rounded-full px-3 text-[13px] font-[500] ${on ? "bg-[var(--ink)] text-white" : "bg-white text-[var(--ink)] ring-1 ring-inset ring-[var(--line)]"}`}
-                >
-                  {itemLabel(t, k)}
-                </button>
-              );
-            })}
-          </div>
-          {ITEM_KEYS.filter((k) => changes[k]).map((k) => (
-            <div key={k} className="mt-2 flex items-center gap-2">
-              <span className="flex-1 text-[13px] font-[500] text-[var(--ink)]">{itemLabel(t, k)}</span>
-              <div role="radiogroup" aria-label={itemLabel(t, k)} className="flex gap-1">
-                {(["not_sure", "concerning"] as const).map((v) => (
-                  <button
-                    key={v}
-                    type="button"
-                    role="radio"
-                    aria-checked={changes[k] === v}
-                    onClick={() => setChanges((c) => ({ ...c, [k]: v }))}
-                    className={`min-h-[36px] rounded-lg px-2.5 text-[12.5px] font-[500] ${changes[k] === v ? (v === "concerning" ? "bg-[var(--amber-fill)] text-[var(--amber-ink)] ring-1 ring-inset ring-[var(--amber-line)]" : "bg-[var(--ink)] text-white") : "bg-white text-[var(--ink)] ring-1 ring-inset ring-[var(--line)]"}`}
-                  >
-                    {v === "concerning" ? t("scanForm.answerConcerning", "Concerning") : t("scanForm.answerNotSure", "Not sure")}
-                  </button>
-                ))}
-              </div>
-            </div>
-          ))}
-          <label className="mt-3 block">
-            <span className={LABEL}>{t("dailyCheck.noteLabel", "Note (optional)")}</span>
-            <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} className="w-full rounded-xl bg-white p-2.5 text-[14px] text-[var(--ink)] outline-none ring-1 ring-[var(--line)] focus:ring-[var(--moss)]" />
-          </label>
-          <button type="button" onClick={() => { setDifferent(false); setChanges({}); setNote(""); }} className="mt-1 min-h-[44px] text-[13.5px] font-[500] text-[var(--mute)]">
-            {t("dailyCheck.back", "Back")}
-          </button>
-        </div>
-      )}
-
-      {confirmPct != null && (
-        <div className="mt-3 rounded-xl p-3 text-[13.5px]" style={{ background: "var(--amber-fill)", color: "var(--amber-ink)" }}>
-          {confirmPct < 0
-            ? t("dailyCheck.bigDrop", "That's {{pct}}% lower than last time. Save anyway?", { pct: Math.abs(confirmPct) })
-            : t("dailyCheck.bigRise", "That's {{pct}}% higher than last time. Save anyway?", { pct: confirmPct })}
-          <div className="mt-2 flex gap-2">
-            <button type="button" onClick={() => save(true)} className="min-h-[40px] flex-1 rounded-lg bg-[var(--ink)] text-[13.5px] font-[500] text-white">{t("dailyCheck.saveAnyway", "Save anyway")}</button>
-            <button type="button" onClick={() => setConfirmPct(null)} className="min-h-[40px] flex-1 rounded-lg bg-white text-[13.5px] font-[500] text-[var(--ink)] ring-1 ring-inset ring-[var(--line)]">{t("dailyCheck.fix", "Fix")}</button>
-          </div>
-        </div>
-      )}
-
-      {confirmPct == null && (
-        <button
-          type="button"
-          onClick={() => save()}
-          disabled={saving || weightInvalid || (weightFailed && !hasWeight)}
-          className="mt-4 flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-[12px] bg-[var(--ink)] text-[15px] font-[500] text-white disabled:opacity-50"
-        >
-          <Check className="size-4" /> {label}
-        </button>
-      )}
-    </section>
+      {weightFailed && <PrimaryBtn onClick={() => save()} disabled={saving || !hasWeight}>{label}</PrimaryBtn>}
+    </>,
   );
 }
 
-/** "Add a weight" after today's check: weight, When = now, meal, save. */
+/** "Add another weight" after today's check: weight, When = now, meal, save. */
 function ExtraWeight({ birdId, name, lastGrams, surface, onDone }: { birdId: string; name: string; lastGrams: number | null; surface: DailyCheckSurface; onDone: () => void }) {
   const { t } = useTranslation();
   const qc = useQueryClient();
@@ -378,6 +484,7 @@ function ExtraWeight({ birdId, name, lastGrams, surface, onDone }: { birdId: str
   const [saving, setSaving] = useState(false);
   const parsed = weightToSave(grams);
   const valid = typeof parsed === "number";
+  const mealId = `dc-xmeal-${birdId}`;
 
   async function save() {
     if (!valid || saving) return;
@@ -392,24 +499,28 @@ function ExtraWeight({ birdId, name, lastGrams, surface, onDone }: { birdId: str
   }
 
   return (
-    <div className="mt-3 rounded-xl bg-[var(--cream2)] p-3">
-      <p className="t-item">{t("dailyCheck.addWeightFor", "Add a weight for {{name}}", { name })}</p>
-      <div className="mt-2">
-        <label htmlFor={`dc-x-${birdId}`} className={LABEL}>{t("birdWeight.gramsLabel", "Weight (grams)")}</label>
-        <input id={`dc-x-${birdId}`} className={INPUT} inputMode="decimal" autoFocus value={grams} placeholder={lastGrams != null ? String(lastGrams) : ""} onChange={(e) => setGrams(e.target.value.replace(/[^0-9.]/g, ""))} />
-        {parsed === undefined && <p className="mt-1 text-[11px] text-[var(--amber-ink)]">{t("birdWeight.range", "Enter a weight between {{min}} and {{max}} grams.", { min: MIN_WEIGHT_G, max: MAX_WEIGHT_G })}</p>}
+    <div className="flex flex-col gap-3 rounded-[18px] bg-white p-4" style={{ color: C.ink, boxShadow: "0 6px 16px -10px rgba(26,61,46,.35)" }}>
+      <p className="text-[16px] font-[500]">{t("dailyCheck.addWeightFor", "Add a weight for {{name}}", { name })}</p>
+      <div>
+        <label htmlFor={`dc-x-${birdId}`} className={LABEL} style={{ color: C.mute }}>{t("birdWeight.gramsLabel", "Weight (grams)")}</label>
+        <input id={`dc-x-${birdId}`} className={INPUT} style={inputStyle} inputMode="decimal" autoFocus value={grams} placeholder={lastGrams != null ? String(lastGrams) : ""} onChange={(e) => setGrams(e.target.value.replace(/[^0-9.]/g, ""))} />
+        {parsed === undefined && <p className="mt-1 text-[11px]" style={{ color: C.amberInk }}>{t("birdWeight.range", "Enter a weight between {{min}} and {{max}} grams.", { min: MIN_WEIGHT_G, max: MAX_WEIGHT_G })}</p>}
       </div>
-      <div className="mt-2">
-        <span className={LABEL}>{t("birdWeight.mealLabel", "Relative to a meal (optional)")}</span>
-        <MealButtons meal={meal} setMeal={setMeal} />
+      <div>
+        <span className={LABEL} style={{ color: C.mute }}>{t("birdWeight.whenLabel", "When")}</span>
+        <p className="text-[14px]">{t("dailyCheck.todayAt", "Today, {{time}}", { time: timeLabel(new Date()) })}</p>
       </div>
-      <div className="mt-3 flex gap-2">
-        <button type="button" onClick={save} disabled={!valid || saving} className="min-h-[44px] flex-1 rounded-[12px] bg-[var(--ink)] text-sm font-[500] text-white disabled:opacity-50">
-          {saving ? t("birdWeight.saving", "Saving…") : t("birdWeight.save", "Save")}
-        </button>
-        <button type="button" onClick={onDone} disabled={saving} className="min-h-[44px] rounded-[12px] px-4 text-sm font-[500] text-[var(--mute)] ring-1 ring-[var(--line)]">
+      <div>
+        <span id={mealId} className={LABEL} style={{ color: C.mute }}>{t("birdWeight.mealLabel", "Relative to a meal (optional)")}</span>
+        <MealButtons meal={meal} setMeal={setMeal} labelId={mealId} />
+      </div>
+      <div className="flex gap-2">
+        <button type="button" onClick={onDone} disabled={saving} className="min-h-[46px] rounded-[12px] border-0 bg-transparent px-3.5 text-[14px] font-[500]" style={{ color: C.ink }}>
           {t("birdWeight.cancel", "Cancel")}
         </button>
+        <PrimaryBtn onClick={save} disabled={!valid || saving} tall={false} className="flex-1">
+          {saving ? t("birdWeight.saving", "Saving…") : t("dailyCheck.saveWeight", "Save weight")}
+        </PrimaryBtn>
       </div>
     </div>
   );
