@@ -443,6 +443,26 @@
   "email.onboardingAddBird.cta": "Voeg je vogel toe",
   // Adding a bird takes about a minute — a name and a species is enough to start.  Add your bird: {{link}}
   "email.onboardingAddBird.text": "Een vogel toevoegen kost ongeveer een minuut — een naam en een soort is genoeg om te beginnen.\n\nVoeg je vogel toe: {{link}}",
+  // Your flock starts with one bird
+  "email.addFirstBird.headline": "Het begint met één vogel",
+  // A name and species are all it takes to start.
+  "email.addFirstBird.preview": "Een naam en een soort is alles wat je nodig hebt om te beginnen.",
+  // Hi {{firstName}},
+  "email.addFirstBird.greeting": "Hoi {{firstName}},",
+  // Hi there,
+  "email.addFirstBird.greetingNoName": "Hoi,",
+  // Adding a bird takes about a minute — a name and a species is enough to start. Everything else (care plan, weights, photos) can come whenever you like.
+  "email.addFirstBird.body": "Een vogel toevoegen kost ongeveer een minuut — een naam en een soort is genoeg om te beginnen. De rest (verzorgingsplan, gewicht, foto's) kan komen wanneer jij wilt.",
+  // Add your bird
+  "email.addFirstBird.cta": "Voeg je vogel toe",
+  // You're getting this as part of your first few weeks with Kya &amp; Co. Change which emails you get in Settings.
+  "email.addFirstBird.foot": "Je krijgt deze e-mail als onderdeel van je eerste weken met Kya &amp; Co. Bij Instellingen kies je welke e-mails je ontvangt.",
+  // Still room on the perch
+  "email.addFirstBirdReminder.headline": "Er is nog plek op de zitstok",
+  // One minute now, and a record you'll have for years.
+  "email.addFirstBirdReminder.preview": "Nu één minuut, en een dossier dat je jarenlang hebt.",
+  // Adding your bird takes about a minute, and a name and species are all you need to start. Weights, health checks, and the care plan can come later, whenever it suits you and your bird.
+  "email.addFirstBirdReminder.body": "Je vogel toevoegen kost ongeveer een minuut, en een naam en soort is alles wat je nodig hebt om te beginnen. Gewicht, gezondheidschecks en het verzorgingsplan kunnen later, wanneer het jou en je vogel uitkomt.",
   // A little about {{birdName}} goes a long way
   "email.onboardingCarePlan.subject": "Een beetje over {{birdName}} maakt al een groot verschil",
   // Getting set up
@@ -729,6 +749,8 @@
   "email.welcome.heroAlt": "Een groenwangparkiet op een uitgestoken hand",
   // Open Kya &amp; Co.
   "email.welcome.cta": "Open Kya &amp; Co.",
+  // Add your first bird
+  "email.welcome.ctaNoBird": "Voeg je eerste vogel toe",
   // I'm Brittany, founder of The Kya Project, and I share my home with a flock of parrots who have opinions about everything.
   "email.welcome.p1": "Ik ben Brittany, oprichter van The Kya Project, en ik deel mijn huis met een stel papegaaien die overal een mening over hebben.",
   // Parrots are brilliant, loud, funny, and still wild animals. They need the right food, real enrichment, and someone paying close attention when something seems off. Kya &amp; Co. is how I keep up with mine, whether I'm home or someone else is on bird duty. Now it's yours too.
@@ -799,6 +821,8 @@
   "email.seriesWeighing.chartNote": "40 wegingen. Elke stip is één meting, genoteerd vóór het ontbijt.",
   // Log a weight
   "email.seriesWeighing.cta": "Noteer een gewicht",
+  // Add your bird to start weighing
+  "email.seriesWeighing.ctaNoBird": "Voeg je vogel toe om te gaan wegen",
   // Juno took three days to trust the scale. Yours might take one, or ten. Go at your bird's pace, and bring the good snacks.
   "email.seriesWeighing.p3": "Juno had drie dagen nodig om de weegschaal te vertrouwen. Bij jouw vogel kan het één dag duren, of tien. Ga in het tempo van je vogel, en neem de lekkerste snoepjes mee.",
   // You're getting this as part of your first few weeks with Kya &amp; Co. Change which emails you get in Settings.
@@ -833,6 +857,8 @@
   "email.seriesHealthCheck.p2": "Je bouwt er ook een tijdlijn mee op. Probeer je je te herinneren wanneer iets begon, dan staat het antwoord al op papier.",
   // Do today's check
   "email.seriesHealthCheck.cta": "Doe de check van vandaag",
+  // Add your bird to start checks
+  "email.seriesHealthCheck.ctaNoBird": "Voeg je vogel toe om met checks te beginnen",
   // Juno's tip: do it right after breakfast, while you're already standing there with the food bowl.
   "email.seriesHealthCheck.p3": "Tip van Juno: doe het direct na het ontbijt, als je toch al met het voerbakje in je hand staat.",
   // You're getting this as part of your first few weeks with Kya &amp; Co. Change which emails you get in Settings.
@@ -877,6 +903,8 @@
   "email.seriesCarePlan.p4": "Het plan is ook wat je deelt als iemand anders helpt. Daarover over een paar dagen meer.",
   // Start the care plan
   "email.seriesCarePlan.cta": "Begin aan het verzorgingsplan",
+  // Add your bird to start a plan
+  "email.seriesCarePlan.ctaNoBird": "Voeg je vogel toe om een plan te maken",
   // You're getting this as part of your first few weeks with Kya &amp; Co. Change which emails you get in Settings.
   "email.seriesCarePlan.foot": "Je krijgt dit als onderdeel van je eerste weken met Kya &amp; Co. Bij Instellingen kies je welke e-mails je ontvangt.",
   // The bits worth remembering
@@ -909,6 +937,8 @@
   "email.seriesJournal.p4": "Het dagboek werkt ook voor alledaagse notities, zoals hoe je vogel op een nieuw speeltje reageerde, of iets wat je bij het volgende dierenartsbezoek wilt noemen. Je toekomstige zelf is blij dat er een datum bij staat.",
   // Add a journal entry
   "email.seriesJournal.cta": "Schrijf een dagboeknotitie",
+  // Add your bird to start a journal
+  "email.seriesJournal.ctaNoBird": "Voeg je vogel toe om een dagboek te beginnen",
   // No schedule, no streaks. Write when there's something worth writing.
   "email.seriesJournal.p5": "Geen schema, geen reeksen. Schrijf als er iets is wat het opschrijven waard is.",
   // You're getting this as part of your first few weeks with Kya &amp; Co. Change which emails you get in Settings.
@@ -945,6 +975,8 @@
   "email.seriesSharing.p3": "Het plan blijft er daarna gewoon, zodat niemand alles hoeft te onthouden wat je bij de deur zei.",
   // Share your care plan
   "email.seriesSharing.cta": "Deel je verzorgingsplan",
+  // Add your bird, then share
+  "email.seriesSharing.ctaNoBird": "Voeg je vogel toe en deel daarna",
   // You're getting this as part of your first few weeks with Kya &amp; Co. Change which emails you get in Settings.
   "email.seriesSharing.foot": "Je krijgt dit als onderdeel van je eerste weken met Kya &amp; Co. Bij Instellingen kies je welke e-mails je ontvangt.",
   // Bring the record to the vet
@@ -987,6 +1019,8 @@
   "email.seriesVet.p3": "Neem mee wat je hebt. Je hebt geen compleet dossier nodig om hulp te vragen, en wacht nooit op meer notities voordat je een afspraak maakt.",
   // See the vet summary
   "email.seriesVet.cta": "Bekijk de dierenartssamenvatting",
+  // Add your bird to prep for the vet
+  "email.seriesVet.ctaNoBird": "Voeg je vogel toe om je voor te bereiden op de dierenarts",
   // That's the tour, flockmate.
   "email.seriesVet.tourTitle": "Dat was de rondleiding, vogelvriend.",
   // From here, you'll hear from me once a month with The Flock Report: your bird's month in numbers, a care note, and the latest from The Kya Project.

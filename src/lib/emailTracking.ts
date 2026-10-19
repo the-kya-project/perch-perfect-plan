@@ -16,14 +16,17 @@
 export type EmailTag =
   // Getting started (onboarding cron) — the stage key is the tag.
   | "welcome"
+  // The two add-a-bird nudges, inside the series since 2026-10. add_first_bird
+  // was a behavioural-drip email before that; the name is unchanged.
+  | "add_first_bird"
+  | "add_first_bird_reminder"
   | "series_weighing"
   | "series_health_check"
   | "series_care_plan"
   | "series_journal"
   | "series_sharing"
   | "series_vet"
-  // Behavioural drip (legacy cohort)
-  | "add_first_bird"
+  // Behavioural drip (retired 2026-10; templates kept)
   | "log_first_weight"
   | "run_first_scan"
   | "start_care_plan"

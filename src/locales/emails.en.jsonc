@@ -295,6 +295,20 @@
   "email.onboardingAddBird.cta": "Add your bird",
   "email.onboardingAddBird.text": "Adding a bird takes about a minute — a name and a species is enough to start.\n\nAdd your bird: {{link}}",
 
+  // ---- Onboarding: the add-a-bird nudges (Flock Club layout) ----
+  // Headline = subject, nothing above it. The layout adds the button's arrow.
+  "email.addFirstBird.headline": "Your flock starts with one bird",
+  "email.addFirstBird.preview": "A name and species are all it takes to start.",
+  "email.addFirstBird.greeting": "Hi {{firstName}},",
+  "email.addFirstBird.greetingNoName": "Hi there,",
+  "email.addFirstBird.body": "Adding a bird takes about a minute — a name and a species is enough to start. Everything else (care plan, weights, photos) can come whenever you like.",
+  "email.addFirstBird.cta": "Add your bird",
+  "email.addFirstBird.foot": "You're getting this as part of your first few weeks with Kya &amp; Co. Change which emails you get in Settings.",
+  // The reminder, three days later if there is still no bird.
+  "email.addFirstBirdReminder.headline": "Still room on the perch",
+  "email.addFirstBirdReminder.preview": "One minute now, and a record you'll have for years.",
+  "email.addFirstBirdReminder.body": "Adding your bird takes about a minute, and a name and species are all you need to start. Weights, health checks, and the care plan can come later, whenever it suits you and your bird.",
+
   // ---- Onboarding: start care plan ----
   "email.onboardingCarePlan.subject": "A little about {{birdName}} goes a long way",
   "email.onboardingCarePlan.kicker": "Getting set up",
@@ -474,6 +488,8 @@
   "email.welcome.sticker": "Welcome to the flock!",
   "email.welcome.heroAlt": "A green-cheeked conure perched on an outstretched hand",
   "email.welcome.cta": "Open Kya &amp; Co.",
+  // The same button when the reader has no bird yet; goes to the add-a-bird flow.
+  "email.welcome.ctaNoBird": "Add your first bird",
   "email.welcome.p1": "I'm Brittany, founder of The Kya Project, and I share my home with a flock of parrots who have opinions about everything.",
   "email.welcome.p2": "Parrots are brilliant, loud, funny, and still wild animals. They need the right food, real enrichment, and someone paying close attention when something seems off. Kya &amp; Co. is how I keep up with mine, whether I'm home or someone else is on bird duty. Now it's yours too.",
   "email.welcome.stepsHead": "Your first three things",
@@ -515,6 +531,8 @@
   "email.seriesWeighing.chartAlt": "Juno's weigh-ins over 90 days: 15 readings, from 746 g to 758 g.",
   "email.seriesWeighing.chartNote": "40 weigh-ins. Each dot is one reading, logged before breakfast.",
   "email.seriesWeighing.cta": "Log a weight",
+  // The same button when the reader has no bird yet; goes to the add-a-bird flow.
+  "email.seriesWeighing.ctaNoBird": "Add your bird to start weighing",
   "email.seriesWeighing.p3": "Juno took three days to trust the scale. Yours might take one, or ten. Go at your bird's pace, and bring the good snacks.",
   "email.seriesWeighing.foot": "You're getting this as part of your first few weeks with Kya &amp; Co. Change which emails you get in Settings.",
   // ---- Daily health check (Flock Club) ----
@@ -536,6 +554,8 @@
   "email.seriesHealthCheck.boringText": "Most days, everything's normal, and that's exactly what you want on record. The normal days are what you'll compare against if something ever changes.",
   "email.seriesHealthCheck.p2": "It also leaves you a timeline. When you're trying to remember when something started, the answer's already written down.",
   "email.seriesHealthCheck.cta": "Do today's check",
+  // The same button when the reader has no bird yet; goes to the add-a-bird flow.
+  "email.seriesHealthCheck.ctaNoBird": "Add your bird to start checks",
   "email.seriesHealthCheck.p3": "Juno's tip: do it right after breakfast, while you're already standing there with the food bowl.",
   "email.seriesHealthCheck.foot": "You're getting this as part of your first few weeks with Kya &amp; Co. Change which emails you get in Settings.",
   // Question-shaped, with the mark. The email.scanReason.q.* keys are the same
@@ -566,6 +586,8 @@
   "email.seriesCarePlan.p3": "In Behavior, add what your bird loves and how they spend the day. Enrichment belongs in the plan too, because your sitter should know about the foraging box.",
   "email.seriesCarePlan.p4": "The plan is also what you'll share when someone else helps out. More on that in a few days.",
   "email.seriesCarePlan.cta": "Start the care plan",
+  // The same button when the reader has no bird yet; goes to the add-a-bird flow.
+  "email.seriesCarePlan.ctaNoBird": "Add your bird to start a plan",
   "email.seriesCarePlan.foot": "You're getting this as part of your first few weeks with Kya &amp; Co. Change which emails you get in Settings.",
   // The six section names, pipe-separated in one key so a translator sees them
   // together and the order cannot drift from the app. Split on "|" at render.
@@ -588,6 +610,8 @@
   "email.seriesJournal.p3": "<b>Moments</b> are the dates you want to keep, like a hatch day or the day your bird came home.",
   "email.seriesJournal.p4": "The journal works for everyday notes too, like how they took to a new toy, or something to mention at the next vet visit. Future you will be glad it has a date on it.",
   "email.seriesJournal.cta": "Add a journal entry",
+  // The same button when the reader has no bird yet; goes to the add-a-bird flow.
+  "email.seriesJournal.ctaNoBird": "Add your bird to start a journal",
   "email.seriesJournal.p5": "No schedule, no streaks. Write when there's something worth writing.",
   "email.seriesJournal.foot": "You're getting this as part of your first few weeks with Kya &amp; Co. Change which emails you get in Settings.",
   // ---- Sharing (Flock Club) ----
@@ -611,6 +635,8 @@
   "email.seriesSharing.p2": "Before you share, give the feeding instructions and contact details a quick look. Then walk your helper through anything that's easier to show than write, like how your bird likes to step up.",
   "email.seriesSharing.p3": "The plan is there afterward, so nobody has to remember everything you said at the door.",
   "email.seriesSharing.cta": "Share your care plan",
+  // The same button when the reader has no bird yet; goes to the add-a-bird flow.
+  "email.seriesSharing.ctaNoBird": "Add your bird, then share",
   "email.seriesSharing.foot": "You're getting this as part of your first few weeks with Kya &amp; Co. Change which emails you get in Settings.",
   // ---- Vet summary (Flock Club) ----
   // row3 is "last 30 days", not "since last visit": nothing in the app
@@ -637,6 +663,8 @@
   "email.seriesVet.p2": "Before a visit, open the vet summary, check that it's up to date, and jot down anything you want to ask.",
   "email.seriesVet.p3": "Bring whatever you have. You don't need a complete record to ask for help, and you should never wait on more entries to book an appointment.",
   "email.seriesVet.cta": "See the vet summary",
+  // The same button when the reader has no bird yet; goes to the add-a-bird flow.
+  "email.seriesVet.ctaNoBird": "Add your bird to prep for the vet",
   "email.seriesVet.tourTitle": "That's the tour, flockmate.",
   "email.seriesVet.tourText": "From here, you'll hear from me once a month with The Flock Report: your bird's month in numbers, a care note, and the latest from The Kya Project.",
   "email.seriesVet.p4": "Got a question, or a bird story you need to tell someone? Hit reply. I'd love to hear how you two are getting on.",

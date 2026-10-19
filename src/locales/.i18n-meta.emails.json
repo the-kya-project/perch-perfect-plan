@@ -660,6 +660,36 @@
     "email.onboardingAddBird.text": {
       "stamp": "e1819df8d6d36989"
     },
+    "email.addFirstBird.headline": {
+      "stamp": "090d93012242f122"
+    },
+    "email.addFirstBird.preview": {
+      "stamp": "f47248ed237c3a6f"
+    },
+    "email.addFirstBird.greeting": {
+      "stamp": "8d0fa18b0f1cea55"
+    },
+    "email.addFirstBird.greetingNoName": {
+      "stamp": "6650fe4f7cb57639"
+    },
+    "email.addFirstBird.body": {
+      "stamp": "f8b50af77668a75e"
+    },
+    "email.addFirstBird.cta": {
+      "stamp": "56942f95bcda1e40"
+    },
+    "email.addFirstBird.foot": {
+      "stamp": "1be99ba6e7b47880"
+    },
+    "email.addFirstBirdReminder.headline": {
+      "stamp": "b055fa2057dfd96f"
+    },
+    "email.addFirstBirdReminder.preview": {
+      "stamp": "ae07280a7129ff28"
+    },
+    "email.addFirstBirdReminder.body": {
+      "stamp": "02e908eae152bb28"
+    },
     "email.onboardingCarePlan.subject": {
       "stamp": "09fc08ae69d8061b"
     },
@@ -1089,6 +1119,9 @@
     "email.welcome.cta": {
       "stamp": "657e8dcc39d7a084"
     },
+    "email.welcome.ctaNoBird": {
+      "stamp": "9105dea1093a6669"
+    },
     "email.welcome.p1": {
       "stamp": "4c52e45cac54fdb5"
     },
@@ -1194,6 +1227,9 @@
     "email.seriesWeighing.cta": {
       "stamp": "66cf207cb78e3c20"
     },
+    "email.seriesWeighing.ctaNoBird": {
+      "stamp": "2fff9f6220e1ed2a"
+    },
     "email.seriesWeighing.p3": {
       "stamp": "b809d8a22ae234a0"
     },
@@ -1244,6 +1280,9 @@
     },
     "email.seriesHealthCheck.cta": {
       "stamp": "3bf33315d4f9990d"
+    },
+    "email.seriesHealthCheck.ctaNoBird": {
+      "stamp": "48b8eac0f94770ca"
     },
     "email.seriesHealthCheck.p3": {
       "stamp": "31f0875f29322598"
@@ -1311,6 +1350,9 @@
     "email.seriesCarePlan.cta": {
       "stamp": "c92468d317145126"
     },
+    "email.seriesCarePlan.ctaNoBird": {
+      "stamp": "4a1c86202de3bd3f"
+    },
     "email.seriesCarePlan.foot": {
       "stamp": "1be99ba6e7b47880"
     },
@@ -1358,6 +1400,9 @@
     },
     "email.seriesJournal.cta": {
       "stamp": "2926e1e962f66a0e"
+    },
+    "email.seriesJournal.ctaNoBird": {
+      "stamp": "6655e6e674661ef6"
     },
     "email.seriesJournal.p5": {
       "stamp": "808fbb9c07f2efd7"
@@ -1412,6 +1457,9 @@
     },
     "email.seriesSharing.cta": {
       "stamp": "5edfc5bef1ed6753"
+    },
+    "email.seriesSharing.ctaNoBird": {
+      "stamp": "2cebc234a1b34dbc"
     },
     "email.seriesSharing.foot": {
       "stamp": "1be99ba6e7b47880"
@@ -1475,6 +1523,9 @@
     },
     "email.seriesVet.cta": {
       "stamp": "3b4820bc6812b817"
+    },
+    "email.seriesVet.ctaNoBird": {
+      "stamp": "f7df5bf19f6132eb"
     },
     "email.seriesVet.tourTitle": {
       "stamp": "277aadbcb38d0d63"

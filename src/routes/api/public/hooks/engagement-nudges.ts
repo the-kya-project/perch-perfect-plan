@@ -17,7 +17,10 @@
  * Guardrails, in order:
  *   - at most ONE nudge per user per run
  *   - nothing if ANY nudge went to the user in the last 20 hours
- *   - nothing if the onboarding drip emailed them today (no double-tap days)
+ *   - nothing if an onboarding email went to them today (UTC day) — one
+ *     touch per day across email and push, and the email wins: onboarding
+ *     runs at 15:00, before this, and holds off itself on a day it sees one
+ *     of these in notification_log
  *   - per-bird weight nudges at least 5 days apart
  *   - per-user toggles (push_weight_reminder / push_checkin_reminder) are
  *     enforced inside sendPushToOwner; passed birds are skipped
@@ -94,11 +97,14 @@ export const Route = createFileRoute("/api/public/hooks/engagement-nudges")({
             .select("user_id, bird_id, type, sent_at")
             .in("user_id", userIds)
             .gte("sent_at", new Date(now - 45 * DAY).toISOString()) as Promise<{ data: Array<{ user_id: string; bird_id: string | null; type: string; sent_at: string }> | null }>,
+          // Sends only — the log also records skipped stages now — and only
+          // today's, by UTC calendar day.
           admin
             .from("onboarding_email_log")
             .select("user_id, sent_at")
             .in("user_id", userIds)
-            .gte("sent_at", new Date(now - 1 * DAY).toISOString()) as Promise<{ data: Array<{ user_id: string; sent_at: string }> | null }>,
+            .eq("status", "sent")
+            .gte("sent_at", `${new Date(now).toISOString().slice(0, 10)}T00:00:00Z`) as Promise<{ data: Array<{ user_id: string; sent_at: string }> | null }>,
         ]);
 
         const livingBirds = ((birds ?? []) as BirdRow[]).filter((b) => !b.passed_at);

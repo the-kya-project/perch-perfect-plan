@@ -18,12 +18,20 @@ import { track } from "@/lib/analytics";
 import { ArrowLeft } from "lucide-react";
 import { z } from "zod";
 import { friendlyError } from "@/lib/errorMessage";
+import { BIRD_FEATURES } from "@/lib/onboardingPlan";
 import { localDateISO } from "@/lib/localDay";
 
 export const Route = createFileRoute("/_authenticated/birds/new")({
   head: () => ({ meta: [{ title: i18next.t("newBird.metaTitle", "Add a bird — Kya & Co.") }] }),
   // `?foster=true` arrives from Home's "Take in a bird" CTA → toggle starts ON.
-  validateSearch: z.object({ foster: z.coerce.boolean().optional() }),
+  // `?next=weight` (or scan, plan, journal, access, vet-summary) arrives from an
+  // onboarding email's "Add your bird" button: once the bird is saved, go to
+  // that feature instead of the care-plan walkthrough. Anything else is ignored
+  // rather than failing the page.
+  validateSearch: z.object({
+    foster: z.coerce.boolean().optional(),
+    next: z.enum(BIRD_FEATURES).optional().catch(undefined),
+  }),
   component: NewBird,
 });
 
@@ -31,7 +39,7 @@ function NewBird() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const { foster: fosterParam } = Route.useSearch();
+  const { foster: fosterParam, next } = Route.useSearch();
   const [name, setName] = useState("");
   const [species, setSpecies] = useState("");
   const [age, setAge] = useState("");
@@ -166,11 +174,15 @@ function NewBird() {
   // The navigation half of onAddBird, reused by the share sheet's two exits.
   // `saving` deliberately stays true throughout (see createBird).
   async function goToSetup(id: string) {
+    // Arrived from an email about one feature: land on it. The bird's page still
+    // offers the care-plan walkthrough until setup is complete.
+    const target = next ? `/birds/${id}/${next}` : `/birds/${id}/setup?step=1`;
     try {
-      await navigate({ to: "/birds/$birdId/setup", params: { birdId: id }, search: { step: 1 } });
+      if (next) await navigate({ href: target });
+      else await navigate({ to: "/birds/$birdId/setup", params: { birdId: id }, search: { step: 1 } });
     } catch (e) {
-      console.error("[add-bird] navigation failed — hard-navigating to setup", e);
-      window.location.assign(`/birds/${id}/setup?step=1`);
+      console.error("[add-bird] navigation failed — hard-navigating", e);
+      window.location.assign(target);
     }
   }
 

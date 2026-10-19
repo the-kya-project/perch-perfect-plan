@@ -15,6 +15,7 @@ import { InkHero, PrimaryButton, CtaLink, Card } from "@/components/system";
 import { authErrorMessage } from "@/lib/authErrorMessage";
 import { useTranslation, Trans } from "react-i18next";
 import i18next from "i18next";
+import { safeInternalPath, stashReturnTo, takeReturnTo } from "@/lib/returnTo";
 
 const search = z.object({
   mode: z.enum(["signin", "signup"]).default("signin"),
@@ -22,13 +23,6 @@ const search = z.object({
   // authenticated view). Validated to an internal path at use to avoid open redirects.
   redirect: z.string().optional(),
 });
-
-// Only honor same-origin absolute paths ("/past-birds") — never protocol-relative
-// ("//evil") or anything else — so `redirect` can't be used as an open redirect.
-function safeInternalPath(p: string | undefined): string | null {
-  if (!p || !p.startsWith("/") || p.startsWith("//") || p.startsWith("/\\")) return null;
-  return p;
-}
 
 export const Route = createFileRoute("/auth")({
   validateSearch: search,
@@ -55,13 +49,17 @@ function AuthPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: (returnTo ?? "/dashboard") as any });
+      if (data.session) { takeReturnTo(); navigate({ href: returnTo ?? "/dashboard" }); }
     });
     // Also leave whenever a session APPEARS while this page is open — covers
     // the native OAuth callback completing after mount (TestFlight sign-in
     // loop: the deep-link exchange finishes while the user is parked here).
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
-      if (event === "SIGNED_IN") navigate({ to: (returnTo ?? "/dashboard") as any });
+      // `href`, not `to`: the return path can carry a query string
+      // (/birds/new?next=weight) that `to` would treat as part of the path.
+      // The stash is left alone here: native sign-in pushes /welcome right
+      // after this fires, and /welcome is what reads it.
+      if (event === "SIGNED_IN") navigate({ href: returnTo ?? "/dashboard" });
     });
     return () => sub.subscription.unsubscribe();
   }, [navigate, returnTo]);
@@ -177,7 +175,7 @@ function AuthPage() {
         // Deep-link return (e.g. the handoff email → Past birds) takes an existing
         // owner straight there. Otherwise route through the welcome screen, which
         // shows only on first sign-in and otherwise redirects to the dashboard.
-        navigate({ to: (returnTo ?? "/welcome") as any });
+        navigate({ href: returnTo ?? "/welcome" });
       }
     } catch (err: any) {
       toast.error(authErrorMessage(err, t("auth.somethingWentWrong", "Something went wrong.")));
@@ -191,6 +189,9 @@ function AuthPage() {
     try {
       // Land on the one-time welcome; it redirects returning owners straight to
       // the dashboard (gated by an account flag), so only new owners see it.
+      // The provider round trip can't carry a deep link, so /welcome picks it
+      // up from the stash and forwards there instead.
+      stashReturnTo(returnTo);
       await signInWithGoogle(window.location.origin + "/welcome");
       setLoading(false);
     } catch (err: any) {
@@ -202,6 +203,7 @@ function AuthPage() {
   async function handleApple() {
     setLoading(true);
     try {
+      stashReturnTo(returnTo);
       await signInWithApple(window.location.origin + "/welcome");
       setLoading(false);
     } catch (err: any) {
