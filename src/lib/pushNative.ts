@@ -109,6 +109,61 @@ export async function nativePushPermission(): Promise<"granted" | "denied" | "pr
   }
 }
 
+/**
+ * Per-device "I turned push off" marker.
+ *
+ * Switching push off unregisters and drops the server row, but iOS permission
+ * stays "granted" -- so without this, the silent re-sync below would quietly
+ * turn push back on at the next launch. localStorage is per-install, which is
+ * the right scope: a reinstall starts fresh, as the OS permission does.
+ */
+const OPT_OUT_KEY = "kya_native_push_opted_out";
+
+export function setNativePushOptedOut(optedOut: boolean): void {
+  try {
+    if (optedOut) window.localStorage.setItem(OPT_OUT_KEY, "1");
+    else window.localStorage.removeItem(OPT_OUT_KEY);
+  } catch {
+    /* storage unavailable: worst case the next launch re-syncs */
+  }
+}
+
+export function nativePushOptedOut(): boolean {
+  try {
+    return window.localStorage.getItem(OPT_OUT_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Re-send this device's current token to the server, without prompting.
+ *
+ * APNs/FCM tokens change on reinstall, restore to a new phone, or a switch
+ * between TestFlight and App Store builds, and Apple keeps answering 200 for
+ * the old token for a while -- so a stale row looks like a successful send
+ * while nothing reaches the phone. Run at launch and on sign-in so the row
+ * always points at the token this install actually has.
+ *
+ * No-op unless permission is already granted and the user has not switched
+ * push off on this device. `save` is passed in so this module stays free of
+ * server-function imports.
+ */
+export async function syncNativePushToken(
+  save: (token: string, transport: "apns" | "fcm") => Promise<unknown>,
+): Promise<void> {
+  if (!isNativeApp() || nativePushOptedOut()) return;
+  if (!(await nativePushAvailable())) return;
+  if ((await nativePushPermission()) !== "granted") return;
+  const res = await registerForNativePush();
+  if (!res.ok) return;
+  try {
+    await save(res.token, res.transport);
+  } catch (err) {
+    console.error("[push] native token sync failed", err);
+  }
+}
+
 /** Stop receiving on this device (used when the toggle is switched off). */
 export async function unregisterNativePush(): Promise<void> {
   if (!isNativeApp()) return;

@@ -314,6 +314,7 @@ export async function notifyOwnerSomethingWrong(sb: any, birdId: string, coverin
         subject: built.subject,
         htmlContent: built.html,
         textContent: built.text,
+        tag: "sitter_concern",
       });
     }
   } catch (e) { console.error("[sitter-concern] email failed", e); }
@@ -588,6 +589,7 @@ export const submitHealthScan = createServerFn({ method: "POST" })
               subject: built.subject,
               htmlContent: built.html,
               textContent: built.text,
+              tag: flagged ? "scan_alert" : "sitter_daily_log",
             });
             console.log("[scan] email result", sent);
           }

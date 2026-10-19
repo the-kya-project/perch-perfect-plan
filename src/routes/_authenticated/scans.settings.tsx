@@ -27,6 +27,8 @@ import {
   unregisterNativePush,
   nativePushPermission,
   nativePushAvailable,
+  nativePushOptedOut,
+  setNativePushOptedOut,
 } from "@/lib/pushNative";
 import { markNotificationsReviewed } from "@/components/OwnerChecklist";
 import { NotificationsCallout } from "@/components/NotificationsCallout";
@@ -169,9 +171,10 @@ function NotificationsSettingsPage() {
         // "prompt" and "unknown" both mean "not decided yet" to this UI, which
         // speaks the web's NotificationPermission vocabulary.
         setPermission(p === "granted" || p === "denied" ? p : "default");
-        if (p === "granted") {
+        if (p === "granted" && !nativePushOptedOut()) {
           // Already granted: re-register to pick up a ROTATED token and
-          // re-sync it. Silent — the OS does not prompt again.
+          // re-sync it. Silent — the OS does not prompt again. Skipped when
+          // push was switched off here, or this would quietly turn it back on.
           const res = await registerForNativePush();
           if (res.ok) {
             setNativeToken(res.token);
@@ -254,6 +257,7 @@ function NotificationsSettingsPage() {
           return;
         }
         await saveToken({ data: { token: res.token, transport: res.transport } });
+        setNativePushOptedOut(false);
         setNativeToken(res.token);
         setPermission("granted");
         toast.success("Push notifications enabled on this device.");
@@ -294,6 +298,7 @@ function NotificationsSettingsPage() {
         // longer show them.
         if (nativeToken) await deleteToken({ data: { token: nativeToken } });
         await unregisterNativePush();
+        setNativePushOptedOut(true);
         setNativeToken(null);
         toast.success("Push notifications turned off on this device.");
         return;

@@ -4,6 +4,7 @@
 // account). Owner actions are authenticated; the accept/decline path is token +
 // service role. No notifications/reminders — transactional email only.
 
+import type { EmailTag } from "./emailTracking";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -30,9 +31,9 @@ async function displayName(sb: any, userId: string): Promise<string> {
     return (u?.user?.user_metadata?.display_name ?? "").toString().trim() || u?.user?.email?.split("@")[0] || "Someone";
   } catch { return "Someone"; }
 }
-async function sendEmail(to: string, toName: string | undefined, built: { subject: string; html: string; text: string }) {
+async function sendEmail(to: string, toName: string | undefined, built: { subject: string; html: string; text: string }, tag: EmailTag) {
   const { sendTransactionalEmail } = await import("./brevoEmail.server");
-  await sendTransactionalEmail({ to, toName, subject: built.subject, htmlContent: built.html, textContent: built.text });
+  await sendTransactionalEmail({ to, toName, subject: built.subject, htmlContent: built.html, textContent: built.text, tag });
 }
 
 // Build a small, SELF-CONTAINED keepsake thumbnail (base64 data URL) from a
@@ -100,7 +101,7 @@ export const createHandoff = createServerFn({ method: "POST" })
       const senderName = await displayName(sb, senderId);
       // Account-less recipient (group 2) → the SENDER's locale.
       await sendEmail(data.recipientEmail, data.recipientName?.trim() || undefined,
-        buildHandoffInviteEmail({ senderName, birdName: bird.name as string, link: `${appUrl()}/handoff/${token}`, locale: await localeForUser(sb, senderId) }));
+        buildHandoffInviteEmail({ senderName, birdName: bird.name as string, link: `${appUrl()}/handoff/${token}`, locale: await localeForUser(sb, senderId) }), "handoff_invite");
     } catch (e) { console.error("[handoff] invite email failed", e); }
 
     return { ok: true, handoff };
@@ -335,7 +336,7 @@ export const acceptHandoff = createServerFn({ method: "POST" })
       const recipientLabel = await displayName(sb, userId);
       const { data: bird } = await sb.from("birds").select("name").eq("id", h.bird_id).maybeSingle();
       const { data: su } = await sb.auth.admin.getUserById(h.sender_user_id as string);
-      if (su?.user?.email) await sendEmail(su.user.email, undefined, buildHandoffAcceptedEmail({ birdName: (bird?.name ?? "your bird") as string, recipientLabel, locale: await localeForUser(sb, h.sender_user_id as string) }));
+      if (su?.user?.email) await sendEmail(su.user.email, undefined, buildHandoffAcceptedEmail({ birdName: (bird?.name ?? "your bird") as string, recipientLabel, locale: await localeForUser(sb, h.sender_user_id as string) }), "handoff_accepted");
     } catch (e) { console.error("[handoff] accepted email failed", e); }
 
     return { ok: true, birdId: h.bird_id as string };
@@ -352,7 +353,7 @@ export const declineHandoff = createServerFn({ method: "POST" })
     try {
       const { data: bird } = await sb.from("birds").select("name").eq("id", h.bird_id).maybeSingle();
       const { data: su } = await sb.auth.admin.getUserById(h.sender_user_id as string);
-      if (su?.user?.email) await sendEmail(su.user.email, undefined, buildHandoffDeclinedEmail({ birdName: (bird?.name ?? "your bird") as string, locale: await localeForUser(sb, h.sender_user_id as string) }));
+      if (su?.user?.email) await sendEmail(su.user.email, undefined, buildHandoffDeclinedEmail({ birdName: (bird?.name ?? "your bird") as string, locale: await localeForUser(sb, h.sender_user_id as string) }), "handoff_declined");
     } catch (e) { console.error("[handoff] declined email failed", e); }
     return { ok: true };
   });

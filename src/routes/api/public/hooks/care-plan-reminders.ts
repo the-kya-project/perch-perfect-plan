@@ -125,6 +125,7 @@ export const Route = createFileRoute("/api/public/hooks/care-plan-reminders")({
                     subject: built.subject,
                     htmlContent: built.html,
                     textContent: built.text,
+                    tag: "care_plan_reminder",
                   });
                   emailed += 1;
                   emailSent = true;
