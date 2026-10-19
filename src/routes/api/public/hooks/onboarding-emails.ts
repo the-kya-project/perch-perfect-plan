@@ -356,6 +356,7 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
             // Gmail and Apple Mail put their own unsubscribe button beside the
             // sender when these are present.
             headers: unsubHeaders(appUrl, p.userId, "onboarding"),
+            tag: p.stage,
           });
           if (res.ok) {
             // Log AFTER a confirmed send; a failed send retries on a later run.

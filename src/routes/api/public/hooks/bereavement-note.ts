@@ -156,6 +156,7 @@ export const Route = createFileRoute("/api/public/hooks/bereavement-note")({
             htmlContent: built.html,
             textContent: built.text,
             replyTo: founderReplyTo(),
+            tag: "bereavement",
           });
           if (!res.ok) {
             failed += 1;

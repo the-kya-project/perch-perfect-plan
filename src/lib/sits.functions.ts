@@ -10,6 +10,7 @@
 // client can surface a precise failure toast. Email is best-effort: a send
 // failure never throws, it comes back as emailed:false.
 
+import type { EmailTag } from "./emailTracking";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
@@ -88,7 +89,7 @@ async function birdNames(sb: any, birdIds: string[]): Promise<string[]> {
   return birdIds.map((id) => byId.get(id)).filter(Boolean) as string[];
 }
 
-async function send(built: BuiltEmail, to: string, toName: string | null): Promise<boolean> {
+async function send(built: BuiltEmail, to: string, toName: string | null, tag: EmailTag): Promise<boolean> {
   const { sendTransactionalEmail } = await import("./brevoEmail.server");
   const res = await sendTransactionalEmail({
     to,
@@ -96,6 +97,7 @@ async function send(built: BuiltEmail, to: string, toName: string | null): Promi
     subject: built.subject,
     htmlContent: built.html,
     textContent: built.text,
+    tag,
   });
   return res.ok;
 }
@@ -132,7 +134,7 @@ export const notifySitAssigned = createServerFn({ method: "POST" })
       link: `${appUrl()}/today`,
       locale,
     });
-    const ok = await send(built, email, name);
+    const ok = await send(built, email, name, "sit_assigned");
     if (!ok) console.error("[sits] assigned email failed for sit", sit.id);
     return { ok: true, emailed: ok, reason: ok ? undefined : "send-failed", caregiverName: name ?? undefined };
   });
@@ -177,7 +179,7 @@ export const notifySitUpdated = createServerFn({ method: "POST" })
       link: `${appUrl()}/today`,
       locale,
     });
-    const ok = await send(built, email, name);
+    const ok = await send(built, email, name, "sit_updated");
     if (!ok) console.error("[sits] updated email failed for sit", sit.id);
     return { ok: true, emailed: ok, reason: ok ? undefined : "send-failed", caregiverName: name ?? undefined };
   });
@@ -223,7 +225,7 @@ export const notifySitCancelled = createServerFn({ method: "POST" })
       link: `${appUrl()}/today`,
       locale,
     });
-    const ok = await send(built, email, name);
+    const ok = await send(built, email, name, "sit_cancelled");
     if (!ok) console.error("[sits] cancelled email failed for caregiver", data.caregiverUserId);
     return { ok: true, emailed: ok, reason: ok ? undefined : "send-failed", caregiverName: name ?? undefined };
   });
@@ -275,7 +277,7 @@ export const notifySitterInvite = createServerFn({ method: "POST" })
       dateRange: fmtRange(sit.start_date, sit.end_date),
       link: `${appUrl()}/sitter/${sit.invite_token}`,
     });
-    const ok = await send(built, (sit.sitter_email as string).trim(), sit.sitter_name);
+    const ok = await send(built, (sit.sitter_email as string).trim(), sit.sitter_name, "sitter_invite");
     if (!ok) console.error("[sits] sitter invite email failed for sit", sit.id);
     return { ok: true, emailed: ok, reason: ok ? undefined : "send-failed", sitterName: sit.sitter_name ?? undefined };
   });
@@ -306,7 +308,7 @@ export const notifySitterInviteUpdated = createServerFn({ method: "POST" })
       changeSummary,
       link: `${appUrl()}/sitter/${sit.invite_token}`,
     });
-    const ok = await send(built, (sit.sitter_email as string).trim(), sit.sitter_name);
+    const ok = await send(built, (sit.sitter_email as string).trim(), sit.sitter_name, "sitter_invite_updated");
     if (!ok) console.error("[sits] sitter update email failed for sit", sit.id);
     return { ok: true, emailed: ok, reason: ok ? undefined : "send-failed", sitterName: sit.sitter_name ?? undefined };
   });
@@ -347,7 +349,7 @@ export const notifySitterCancelled = createServerFn({ method: "POST" })
       birdNames: joinNames(names),
       dateRange: fmtRange(data.startDate, data.endDate),
     });
-    const ok = await send(built, to, data.sitterName ?? null);
+    const ok = await send(built, to, data.sitterName ?? null, "sitter_invite_cancelled");
     if (!ok) console.error("[sits] sitter cancelled email failed");
     return { ok: true, emailed: ok, reason: ok ? undefined : "send-failed", sitterName: data.sitterName ?? undefined };
   });
