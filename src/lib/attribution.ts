@@ -10,6 +10,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { captureLead } from "./captureLead";
 import { scrubUrl } from "./urlScrub";
+import { nativePlatform } from "./nativeApp";
 
 const KEY = "ppc_attribution_first_touch";
 const FRESH_SIGNUP_WINDOW_MS = 30 * 60 * 1000; // only attribute genuinely new users
@@ -95,9 +96,14 @@ export function getFirstTouch(): Attribution | null {
 /** Flat metadata for supabase.auth.signUp({ options: { data } }) → the
  *  handle_new_user trigger copies these onto the profiles row. */
 export function attributionMetadata(): Record<string, string> {
+  // Platform is always known, even without first-touch data — and it's the only
+  // way to tell an App Store signup from a "direct" web visit, since the native
+  // webview has no referrer and always lands on "/".
+  const platform = { signup_platform: nativePlatform() };
   const d = getFirstTouch();
-  if (!d) return {};
+  if (!d) return platform;
   return {
+    ...platform,
     signup_source: d.source,
     signup_medium: d.medium,
     signup_campaign: d.campaign,
@@ -139,8 +145,12 @@ export async function applyOAuthAttribution(user: { id: string; email?: string |
     if (!prof || (prof as any).signup_source) return; // missing row, or already handled
 
     const d = getFirstTouch();
-    // Attribution columns only when we actually captured first-touch data.
-    if (d) await supabase.from("profiles").update(attributionColumns(d) as any).eq("id", user.id);
+    // Attribution columns only when we actually captured first-touch data;
+    // the platform always (native Google/Apple sign-in lands here too).
+    await supabase
+      .from("profiles")
+      .update({ ...(d ? attributionColumns(d) : {}), signup_platform: nativePlatform() } as any)
+      .eq("id", user.id);
 
     // Capture the lead in Brevo for EVERY fresh OAuth signup with their full
     // name — not only ones that arrived with attribution. (Bounded to the 30-min
