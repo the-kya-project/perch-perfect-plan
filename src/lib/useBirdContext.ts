@@ -10,11 +10,13 @@
 // Capability ENFORCEMENT stays in RLS; capability GATING stays in useCapability.
 // This hook is for legibility only.
 import { useQuery } from "@tanstack/react-query";
+import i18next from "i18next";
 import { useServerFn } from "@tanstack/react-start";
 import { useBirdRole } from "@/lib/useBirdRole";
 import { useMyPermissions, useBirdOwner } from "@/lib/useCapability";
 import { resolveOwnerNames } from "@/lib/home.functions";
-import { PRESET_LABELS, presetForCapabilities, type Preset } from "@/lib/capabilities";
+import { presetForCapabilities, type Preset } from "@/lib/capabilities";
+import { presetLabel as presetDisplayLabel } from "@/lib/capabilityLabels";
 
 export type BirdContext = {
   isOwner: boolean;
@@ -22,7 +24,7 @@ export type BirdContext = {
   ownerId: string | null;
   ownerName: string | null; // resolved owner display name (member view only)
   preset: Preset | null;
-  presetLabel: string | null; // e.g. "Caregiver"; null until resolved
+  presetLabel: string | null; // display label in the UI language, e.g. "Caregiver"; null until resolved
 };
 
 export function useBirdContext(birdId: string | undefined): BirdContext {
@@ -52,8 +54,10 @@ export function useBirdContext(birdId: string | undefined): BirdContext {
     isOwner,
     isMember,
     ownerId: ownerId ?? null,
-    ownerName: ownerId ? (ownerNames?.[ownerId] ?? null) : null,
+    // null value = owner with no displayable name → localized "An owner".
+    ownerName: ownerId && ownerNames && ownerId in ownerNames ? (ownerNames[ownerId] || i18next.t("memberContext.anOwner", "An owner")) : null,
     preset,
-    presetLabel: preset ? PRESET_LABELS[preset] : null,
+    // Display label in the UI language; `preset` (the id) is what to compare on.
+    presetLabel: preset ? presetDisplayLabel(preset) : null,
   };
 }

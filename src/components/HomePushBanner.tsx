@@ -22,6 +22,7 @@ import { NotificationsCallout } from "@/components/NotificationsCallout";
 import { useAppSurface } from "@/lib/appSurface";
 import { savePushToken } from "@/lib/push.functions";
 import { track } from "@/lib/analytics";
+import { useTranslation } from "react-i18next";
 import {
   nativePushAvailable,
   nativePushOptedOut,
@@ -42,6 +43,7 @@ function snoozed(): boolean {
 }
 
 export function HomePushBanner({ birdNames }: { birdNames: string[] }) {
+  const { t } = useTranslation();
   const surface = useAppSurface();
   const saveToken = useServerFn(savePushToken);
   const [available, setAvailable] = useState(false);
@@ -97,7 +99,7 @@ export function HomePushBanner({ birdNames }: { birdNames: string[] }) {
         // "denied" flips the card to the phone-settings state. Anything else
         // is worth a retry.
         if (res.reason === "denied") setDeniedHere(true);
-        else toast.error("Could not turn on notifications. Please try again.");
+        else toast.error(t("homePushBanner.couldNotTurnOn", "Could not turn on notifications. Please try again."));
         track("push_banner_result", { result: res.reason });
         return;
       }
@@ -105,9 +107,9 @@ export function HomePushBanner({ birdNames }: { birdNames: string[] }) {
       setNativePushOptedOut(false);
       setHidden(true);
       track("push_banner_result", { result: "enabled" });
-      toast.success("Reminders are on.");
+      toast.success(t("homePushBanner.remindersOn", "Reminders are on."));
     } catch {
-      toast.error("Could not turn on notifications. Please try again.");
+      toast.error(t("homePushBanner.couldNotTurnOn", "Could not turn on notifications. Please try again."));
     } finally {
       setBusy(false);
     }
@@ -130,7 +132,7 @@ export function HomePushBanner({ birdNames }: { birdNames: string[] }) {
           ? { kind: "native-denied", canOpenSettings: false }
           : { kind: "native-prompt" }
       }
-      birdLabel={birdNames.length === 1 ? birdNames[0] : "your birds"}
+      birdLabel={birdNames.length === 1 ? birdNames[0] : t("homePushBanner.yourBirds", "your birds")}
       busy={busy}
       onEnable={enable}
       onDismiss={dismiss}

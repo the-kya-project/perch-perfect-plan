@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { Trans, useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { Link } from "@tanstack/react-router";
 import { ShieldCheck, Pencil, RotateCcw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -23,7 +25,35 @@ const EMERGENCY_SECTIONS: { key: string; title: string; fields: [string, string]
 ];
 const REQUIRED_EMERGENCY = new Set(["owner_phone", "avian_vet_phone"]);
 
+// Display labels for the section titles / field labels above (keyed by their
+// stable section/field keys; the English constants stay as the source).
+function sectionTitle(t: TFunction, key: string, en: string): string {
+  switch (key) {
+    case "avian_vet": return t("emergencyInfo.sectionAvianVet", "Avian vet");
+    case "emergency_vet": return t("emergencyInfo.sectionEmergencyVet", "Emergency vet");
+    case "your_contact": return t("emergencyInfo.sectionYourContact", "Your contact");
+    case "poison_control": return t("emergencyInfo.sectionPoisonControl", "Poison control");
+    case "transport": return t("emergencyInfo.sectionTransport", "Transport & spending");
+    default: return en;
+  }
+}
+
+function fieldLabel(t: TFunction, en: string): string {
+  switch (en) {
+    case "Clinic": return t("emergencyInfo.fieldClinic", "Clinic");
+    case "Phone": return t("emergencyInfo.fieldPhone", "Phone");
+    case "Address": return t("emergencyInfo.fieldAddress", "Address");
+    case "Backup name": return t("emergencyInfo.fieldBackupName", "Backup name");
+    case "Backup phone": return t("emergencyInfo.fieldBackupPhone", "Backup phone");
+    case "Carrier": return t("emergencyInfo.fieldCarrier", "Carrier");
+    case "First-aid kit": return t("emergencyInfo.fieldFirstAidKit", "First-aid kit");
+    case "Spending limit": return t("emergencyInfo.fieldSpendingLimit", "Spending limit");
+    default: return en;
+  }
+}
+
 export function EmergencyInfo({ birdId, birdName, contacts, defaults, onSaved }: { birdId: string; birdName: string; contacts: any; defaults: any | null; onSaved: () => void }) {
+  const { t } = useTranslation();
   const [editing, setEditing] = useState<string | null>(null);
   const [form, setForm] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
@@ -61,7 +91,7 @@ export function EmergencyInfo({ birdId, birdName, contacts, defaults, onSaved }:
     await supabase.from("emergency_contacts").update(patch as any).eq("bird_id", birdId);
     setSaving(false);
     setEditing(null);
-    toast.success(`Saved for ${birdName}.`);
+    toast.success(t("emergencyInfo.savedFor", "Saved for {{name}}.", { name: birdName }));
     onSaved();
   }
 
@@ -71,7 +101,7 @@ export function EmergencyInfo({ birdId, birdName, contacts, defaults, onSaved }:
     for (const [k] of section.fields) patch[k] = null;
     await supabase.from("emergency_contacts").update(patch as any).eq("bird_id", birdId);
     setSaving(false);
-    toast.success(`${section.title} reset to your account info.`);
+    toast.success(t("emergencyInfo.resetToast", "{{section}} reset to your account info.", { section: sectionTitle(t, section.key, section.title) }));
     onSaved();
   }
 
@@ -83,16 +113,16 @@ export function EmergencyInfo({ birdId, birdName, contacts, defaults, onSaved }:
           <ShieldCheck className="size-4 text-[#1a3d2e]" />
         </div>
         <div className="min-w-0">
-          <p className="text-sm font-medium text-[#1a3d2e]">Using your account emergency info</p>
+          <p className="text-sm font-medium text-[#1a3d2e]">{t("emergencyInfo.usingAccountInfo", "Using your account emergency info")}</p>
           <p className="mt-1 text-xs leading-relaxed text-[#436055]">
-            This is the vet and emergency info you set for your account. You can change it just for {birdName} if it's different.
+            {t("emergencyInfo.usingAccountInfoBody", "This is the vet and emergency info you set for your account. You can change it just for {{name}} if it's different.", { name: birdName })}
           </p>
         </div>
       </section>
 
       {!hasAnyDefault && (
         <p className="rounded-xl bg-[#efe9da] px-3 py-2 text-[11px] text-[#5f5e5a]">
-          You haven't set your account emergency info yet. <Link to="/dashboard" search={{ emergencyDefaults: true }} className="font-semibold text-[#1a3d2e] underline">Set it once</Link> and every bird uses it.
+          <Trans i18nKey="emergencyInfo.noDefaults" defaults="You haven't set your account emergency info yet. <1>Set it once</1> and every bird uses it." components={{ 1: <Link to="/dashboard" search={{ emergencyDefaults: true }} className="font-semibold text-[#1a3d2e] underline" /> }} />
         </p>
       )}
 
@@ -103,10 +133,10 @@ export function EmergencyInfo({ birdId, birdName, contacts, defaults, onSaved }:
           <section key={section.key} className="rounded-2xl bg-[#efe9da] p-4">
             <div className="flex items-center justify-between gap-2">
               <div className="flex min-w-0 items-center gap-2">
-                <h3 className="text-sm font-medium text-[#1a3d2e]">{section.title}</h3>
+                <h3 className="text-sm font-medium text-[#1a3d2e]">{sectionTitle(t, section.key, section.title)}</h3>
                 {overridden && !isEditing && (
                   <span className="shrink-0 rounded-full bg-warn-amber/15 px-2 py-0.5 text-[10px] font-semibold text-warn-amber">
-                    Edited for {birdName}
+                    {t("emergencyInfo.editedFor", "Edited for {{name}}", { name: birdName })}
                   </span>
                 )}
               </div>
@@ -116,7 +146,7 @@ export function EmergencyInfo({ birdId, birdName, contacts, defaults, onSaved }:
                   onClick={() => startEdit(section)}
                   className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#e8f0ec] px-2.5 py-1 text-xs font-semibold text-[#1a3d2e] active:scale-95"
                 >
-                  <Pencil className="size-3" /> Edit for {birdName}
+                  <Pencil className="size-3" /> {t("emergencyInfo.editFor", "Edit for {{name}}", { name: birdName })}
                 </button>
               )}
             </div>
@@ -127,7 +157,7 @@ export function EmergencyInfo({ birdId, birdName, contacts, defaults, onSaved }:
                   const warn = isPhoneField(k) ? phoneWarning(form[k]) : null;
                   return (
                     <label key={k} className="block">
-                      <span className="mb-1 block text-xs font-medium text-[#5f5e5a]">{label}</span>
+                      <span className="mb-1 block text-xs font-medium text-[#5f5e5a]">{fieldLabel(t, label)}</span>
                       {isAddressField(k) ? (
                         <AddressInput value={form[k] ?? ""} onChange={(v) => setForm((f) => ({ ...f, [k]: v }))} />
                       ) : (
@@ -135,7 +165,7 @@ export function EmergencyInfo({ birdId, birdName, contacts, defaults, onSaved }:
                           className="input"
                           inputMode={isPhoneField(k) ? "tel" : undefined}
                           value={form[k] ?? ""}
-                          placeholder={defVal(k) ? `Account: ${defVal(k)}` : "Not provided"}
+                          placeholder={defVal(k) ? t("emergencyInfo.accountPlaceholder", "Account: {{value}}", { value: defVal(k) }) : t("emergencyInfo.notProvided", "Not provided")}
                           onChange={(e) => setForm({ ...form, [k]: e.target.value })}
                           onBlur={isPhoneField(k) ? (e) => setForm((f) => ({ ...f, [k]: formatPhoneOnBlur(e.target.value) })) : undefined}
                         />
@@ -146,10 +176,10 @@ export function EmergencyInfo({ birdId, birdName, contacts, defaults, onSaved }:
                 })}
                 <div className="flex gap-2 pt-1">
                   <button disabled={saving || section.fields.some(([k]) => isPhoneField(k) && !!phoneWarning(form[k]))} onClick={() => saveSection(section)} className="flex-1 rounded-xl bg-[#1a3d2e] py-2.5 text-sm font-medium text-white disabled:opacity-50">
-                    {saving ? "Saving…" : `Save for ${birdName}`}
+                    {saving ? t("emergencyInfo.saving", "Saving…") : t("emergencyInfo.saveFor", "Save for {{name}}", { name: birdName })}
                   </button>
                   <button disabled={saving} onClick={() => setEditing(null)} className="rounded-xl border border-[#d8cfb8] px-4 py-2.5 text-sm font-medium text-[#5f5e5a]">
-                    Cancel
+                    {t("emergencyInfo.cancel", "Cancel")}
                   </button>
                 </div>
               </div>
@@ -161,9 +191,9 @@ export function EmergencyInfo({ birdId, birdName, contacts, defaults, onSaved }:
                     const missingRequired = !val && REQUIRED_EMERGENCY.has(k);
                     return (
                       <div key={k} className={i > 0 ? "mt-2.5 border-t border-[#e3dcc9] pt-2.5" : ""}>
-                        <dt className="text-[10px] font-semibold uppercase tracking-wider text-[#8a897f]">{label}</dt>
+                        <dt className="text-[10px] font-semibold uppercase tracking-wider text-[#8a897f]">{fieldLabel(t, label)}</dt>
                         <dd className={`mt-0.5 text-sm ${val ? "text-[#1a3d2e]" : missingRequired ? "text-warn-red" : "text-[#9a978c]"}`}>
-                          {val || "Not provided"}
+                          {val || t("emergencyInfo.notProvided", "Not provided")}
                         </dd>
                       </div>
                     );
@@ -176,7 +206,7 @@ export function EmergencyInfo({ birdId, birdName, contacts, defaults, onSaved }:
                     disabled={saving}
                     className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-warn-amber disabled:opacity-50"
                   >
-                    <RotateCcw className="size-3" /> Reset to account
+                    <RotateCcw className="size-3" /> {t("emergencyInfo.resetToAccount", "Reset to account")}
                   </button>
                 )}
               </>
@@ -186,7 +216,7 @@ export function EmergencyInfo({ birdId, birdName, contacts, defaults, onSaved }:
       })}
 
       <p className="px-1 pt-1 text-[11px] text-[#5f5e5a]">
-        Need to change this for every bird? <Link to="/dashboard" search={{ emergencyDefaults: true }} className="font-semibold text-[#1a3d2e] underline">Edit your account emergency info</Link>.
+        <Trans i18nKey="emergencyInfo.changeForEveryBird" defaults="Need to change this for every bird? <1>Edit your account emergency info</1>." components={{ 1: <Link to="/dashboard" search={{ emergencyDefaults: true }} className="font-semibold text-[#1a3d2e] underline" /> }} />
       </p>
     </div>
   );

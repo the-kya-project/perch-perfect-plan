@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useTranslation } from "react-i18next";
+import { useTranslation, Trans } from "react-i18next";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -124,7 +124,7 @@ export function SitForm({
         if (!res?.emailed) {
           track("sit_caregiver_email_failed", { event: "cancelled", reason: res?.reason ?? "unknown" });
           toast.error(
-            `Sit deleted, but we couldn't email ${res?.caregiverName ?? "your household member"} the cancellation. Tell them directly so they don't show up to cover.`,
+            t("sitForm.sitDeletedEmailFailedNamed", "Sit deleted, but we couldn't email {{name}} the cancellation. Tell them directly so they don't show up to cover.", { name: res?.caregiverName ?? t("sitForm.yourHouseholdMember", "your household member") }),
             { duration: 10000 },
           );
         } else {
@@ -478,7 +478,7 @@ export function SitForm({
           <p className="text-lg font-medium text-[#1f3d12]">{t("sitForm.sitActive", "Sit active")}</p>
           <p className="mt-1 text-sm text-[#3f5e22]">{t("sitForm.aSitIsUnderwayRight", "A sit is underway right now. Your sitter has their private link.")}</p>
           <button onClick={() => setOpen(true)} className="mt-4 inline-flex items-center gap-2 rounded-[14px] bg-[#1a3d2e] px-4 py-2.5 text-sm font-medium text-white">
-            <Plus className="size-4" /> New sit
+            <Plus className="size-4" /> {t("sitForm.newSit", "New sit")}
           </button>
         </div>
       );
@@ -489,7 +489,7 @@ export function SitForm({
         <p className="text-lg font-medium text-[#1f3d12]">{t("sitForm.goingAwaySoon", "Going away soon?")}</p>
         <p className="mt-1 max-w-[18rem] text-sm text-[#3f5e22]">{t("sitForm.createASitAndSend", "Create a sit and send your sitter a private link with everything they need.")}</p>
         <button onClick={() => setOpen(true)} className="mt-4 inline-flex items-center gap-2 rounded-[14px] bg-[#1a3d2e] px-4 py-2.5 text-sm font-medium text-white">
-          <Plus className="size-4" /> New sit
+          <Plus className="size-4" /> {t("sitForm.newSit", "New sit")}
         </button>
       </div>
     );
@@ -499,7 +499,7 @@ export function SitForm({
     <form ref={rootRef} onSubmit={submit} noValidate className="space-y-3 rounded-[20px] bg-[#efe9da] p-4">
       <div className="flex items-center justify-between">
         <p className="text-sm font-medium text-[#1a3d2e]">{editing ? t("sitForm.editSit", "Edit sit") : t("sitForm.newSit", "New sit")}</p>
-        <button type="button" onClick={() => (editing ? onCancel?.() : setOpen(false))} className="text-xs text-[#5f5e5a] underline">Cancel</button>
+        <button type="button" onClick={() => (editing ? onCancel?.() : setOpen(false))} className="text-xs text-[#5f5e5a] underline">{t("sitForm.cancel", "Cancel")}</button>
       </div>
 
       <div>
@@ -596,7 +596,7 @@ export function SitForm({
               {isActiveSit && (
                 <p className="mb-2 flex items-start gap-1.5 text-[13px] font-[500] text-[var(--red-deep)]">
                   <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-                  This sit is active right now — a sitter is covering. Deleting it ends their access immediately.
+                  {t("sitForm.activeSitDeleteWarning", "This sit is active right now — a sitter is covering. Deleting it ends their access immediately.")}
                 </p>
               )}
               <p className="text-[13px] text-[#1a3d2e]">
@@ -606,12 +606,12 @@ export function SitForm({
                 <button type="button" onClick={deleteSit} disabled={deleting} className="min-h-[44px] flex-1 rounded-[12px] bg-[var(--red-deep)] px-4 text-sm font-[600] text-white disabled:opacity-50">
                   {deleting ? t("sitForm.deleting", "Deleting…") : t("sitForm.deleteSit", "Delete sit")}
                 </button>
-                <button type="button" onClick={() => setConfirmingDelete(false)} disabled={deleting} className="min-h-[44px] rounded-[12px] border border-[#c8bfa6] px-4 text-sm font-[500] text-[#5f5e5a] disabled:opacity-50">Keep</button>
+                <button type="button" onClick={() => setConfirmingDelete(false)} disabled={deleting} className="min-h-[44px] rounded-[12px] border border-[#c8bfa6] px-4 text-sm font-[500] text-[#5f5e5a] disabled:opacity-50">{t("sitForm.keep", "Keep")}</button>
               </div>
             </div>
           ) : (
             <button type="button" onClick={() => setConfirmingDelete(true)} className="inline-flex min-h-[44px] items-center gap-2 text-sm font-[500] text-[var(--red-deep)]">
-              <Trash2 className="size-4" /> Delete sit
+              <Trash2 className="size-4" /> {t("sitForm.deleteSit", "Delete sit")}
             </button>
           )}
         </div>
@@ -662,7 +662,7 @@ function CaregiverPicker({
         <p className="text-[13px] text-[#5f5e5a]">{t("sitForm.pickABirdAboveFirst", "Pick a bird above first.")}</p>
       ) : noEligible ? (
         <div className="rounded-[10px] bg-[#f4f1e8] p-3 text-[13px] text-[#5f5e5a]">
-          No household yet — <Link to="/household" className="underline">{t("sitForm.inviteSomeone", "invite someone")}</Link> or send a link to a sitter below.
+          <Trans i18nKey="sitForm.noHouseholdYet" defaults="No household yet — <1>invite someone</1> or send a link to a sitter below." components={{ 1: <Link to="/household" className="underline" /> }} />
         </div>
       ) : (
         <div className="space-y-2">
@@ -696,7 +696,7 @@ function CaregiverPicker({
       )}
 
       <div className="flex items-center gap-2 py-1 text-[11px] uppercase tracking-widest text-[#8a897f]">
-        <span className="h-px flex-1 bg-[#e0d8c4]" /> or <span className="h-px flex-1 bg-[#e0d8c4]" />
+        <span className="h-px flex-1 bg-[#e0d8c4]" /> {t("sitForm.or", "or")} <span className="h-px flex-1 bg-[#e0d8c4]" />
       </div>
 
       {caregiverKind === "external" ? (

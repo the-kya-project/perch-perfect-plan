@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Bell, Settings, HelpCircle } from "lucide-react";
 import { fetchScanFeed, getNotifSeenAt } from "@/lib/notificationsFeed";
 import { replayOwnerOnboarding } from "@/components/OwnerOnboarding";
+import { useTranslation } from "react-i18next";
 
 // THE single shared top-right hero icon cluster — help (replay tour), bell
 // (with unread badge), settings (gear) — in a consistent dark-circle treatment.
@@ -13,6 +14,7 @@ const HERO_ICON_BTN = "grid size-9 place-items-center rounded-full text-white ac
 const HERO_ICON_BG = { background: "rgba(255,255,255,0.12)" } as const;
 
 export function OwnerHeaderIcons() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: scanFeed = [] } = useQuery({ queryKey: ["scan-feed"], queryFn: fetchScanFeed });
   const seenAt = getNotifSeenAt();
@@ -29,10 +31,10 @@ export function OwnerHeaderIcons() {
 
   return (
     <div className="flex items-center gap-2 text-white">
-      <button type="button" onClick={replayTour} className={HERO_ICON_BTN} style={HERO_ICON_BG} aria-label="Replay app tour">
+      <button type="button" onClick={replayTour} className={HERO_ICON_BTN} style={HERO_ICON_BG} aria-label={t("ownerHeader.replayAppTour", "Replay app tour")}>
         <HelpCircle className="size-[18px]" />
       </button>
-      <Link to="/scans" className={`relative ${HERO_ICON_BTN}`} style={HERO_ICON_BG} aria-label="Scans">
+      <Link to="/scans" className={`relative ${HERO_ICON_BTN}`} style={HERO_ICON_BG} aria-label={t("ownerHeader.scans", "Scans")}>
         <Bell className="size-[18px]" />
         {/* Unread badge: lime fill, ink text, no border — the ONE canonical
             treatment, tied to count not to which page you're on. */}
@@ -42,7 +44,7 @@ export function OwnerHeaderIcons() {
           </span>
         )}
       </Link>
-      <Link to="/account" className={HERO_ICON_BTN} style={HERO_ICON_BG} aria-label="Account settings">
+      <Link to="/account" className={HERO_ICON_BTN} style={HERO_ICON_BG} aria-label={t("ownerHeader.accountSettings", "Account settings")}>
         <Settings className="size-[18px]" />
       </Link>
     </div>

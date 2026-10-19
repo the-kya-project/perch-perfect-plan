@@ -12,6 +12,7 @@ import { InkHero, Card, PrimaryButton } from "@/components/system";
 import { PathDetail, type PassingPath, type VetContact } from "@/components/PassingGuidance";
 import { toast } from "sonner";
 import { friendlyError } from "@/lib/errorMessage";
+import { useTranslation } from "react-i18next";
 
 // Owner mark-as-passed flow. Two states, one visit:
 //   ask      → the gentle confirmation screen
@@ -24,6 +25,7 @@ export const Route = createFileRoute("/_authenticated/birds/$birdId/farewell")({
 });
 
 function Farewell() {
+  const { t } = useTranslation();
   const { birdId } = Route.useParams();
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -50,13 +52,13 @@ function Farewell() {
       return {
         bird: bird.data as any,
         vet,
-        ownerName: ((profile.data?.display_name ?? "").toString().trim() || "you") as string,
+        ownerName: ((profile.data?.display_name ?? "").toString().trim() || t("farewell.you", "you")) as string,
       };
     },
   });
 
   const bird = data?.bird;
-  const name = bird?.name ?? "your bird";
+  const name = bird?.name ?? t("farewell.yourBird", "your bird");
 
   // Never ambient: if the bird is already passed and we're not mid-flow (i.e.
   // someone revisits this URL later), the memorial is the destination.
@@ -81,7 +83,7 @@ function Farewell() {
       setStep("guidance");
       window.scrollTo(0, 0);
     } catch (e: any) {
-      toast.error(friendlyError(e, "Something went wrong. Please try again."));
+      toast.error(friendlyError(e, t("farewell.error", "Something went wrong. Please try again.")));
     } finally {
       setBusy(false);
     }
@@ -91,24 +93,24 @@ function Farewell() {
     return (
       <div className="min-h-screen bg-[var(--cream)] pb-nav">
         <div className="mx-auto max-w-md">
-          <InkHero eyebrow="In your own time" headline="A few things that can help." />
+          <InkHero eyebrow={t("farewell.guidanceEyebrow", "In your own time")} headline={t("farewell.guidanceHeadline", "A few things that can help.")} />
           <main className="space-y-4 px-5 pt-5">
             <Card className="p-5">
-              <h2 className="t-section">Should you consider a necropsy?</h2>
+              <h2 className="t-section">{t("farewell.necropsyTitle", "Should you consider a necropsy?")}</h2>
               <p className="t-body mt-2 leading-relaxed text-[var(--ink2)]">
-                If {name}'s passing was sudden or unexplained, or you have other birds, a necropsy can tell you why, and whether your flock is at risk. It's time sensitive, so it helps to decide soon.
+                {t("farewell.necropsyBody", "If {{name}}'s passing was sudden or unexplained, or you have other birds, a necropsy can tell you why, and whether your flock is at risk. It's time sensitive, so it helps to decide soon.", { name })}
               </p>
             </Card>
 
             {/* The same three body-care paths the sitter sees, for an owner who
                 is with their bird. Collapsed by choice — nothing is forced. */}
-            <GuidancePaths name={name} ownerName={data?.ownerName ?? "you"} vet={data?.vet ?? { name: null, phone: null }} />
+            <GuidancePaths name={name} ownerName={data?.ownerName ?? t("farewell.you", "you")} vet={data?.vet ?? { name: null, phone: null }} />
 
             <p className="t-meta pt-1 leading-relaxed">
-              Gentle starting points, not medical advice. Your avian vet can guide the specifics.
+              {t("farewell.disclaimer", "Gentle starting points, not medical advice. Your avian vet can guide the specifics.")}
             </p>
 
-            <PrimaryButton tone="ink" onPress={() => navigate({ to: "/dashboard" })}>Done</PrimaryButton>
+            <PrimaryButton tone="ink" onPress={() => navigate({ to: "/dashboard" })}>{t("farewell.done", "Done")}</PrimaryButton>
           </main>
         </div>
       </div>
@@ -121,13 +123,13 @@ function Farewell() {
         <InkHero
           backIcon={<ArrowLeft className="size-5" />}
           onBack={() => navigate({ to: "/birds/$birdId", params: { birdId } })}
-          eyebrow="Take your time"
-          headline={`Has ${name} passed away?`}
+          eyebrow={t("farewell.askEyebrow", "Take your time")}
+          headline={t("farewell.askHeadline", "Has {{name}} passed away?", { name })}
         />
         <main className="space-y-4 px-5 pt-5">
           <Card className="p-5">
             <p className="t-body leading-relaxed text-[var(--ink2)]">
-              We're so sorry. This gently pauses {name}'s daily reminders, and if a sit is active, lets their sitter know they can stop too. {name}'s record, journal, and moments are kept, so you can look back whenever you'd like.
+              {t("farewell.askBody", "We're so sorry. This gently pauses {{name}}'s daily reminders, and if a sit is active, lets their sitter know they can stop too. {{name}}'s record, journal, and moments are kept, so you can look back whenever you'd like.", { name })}
             </p>
           </Card>
           <button
@@ -136,14 +138,14 @@ function Farewell() {
             onClick={confirm}
             className="flex min-h-[52px] w-full items-center justify-center rounded-[13px] bg-[var(--ink)] text-[15px] font-[500] text-white active:scale-[0.99] disabled:opacity-60"
           >
-            {busy ? <Loader2 className="size-4 animate-spin" /> : `Yes, ${name} has passed`}
+            {busy ? <Loader2 className="size-4 animate-spin" /> : t("farewell.confirm", "Yes, {{name}} has passed", { name })}
           </button>
           <button
             type="button"
             onClick={() => navigate({ to: "/birds/$birdId", params: { birdId } })}
             className="flex min-h-[48px] w-full items-center justify-center rounded-[13px] border border-[var(--line)] bg-white text-[15px] font-[500] text-[var(--ink)] active:scale-[0.99]"
           >
-            Not now
+            {t("farewell.notNow", "Not now")}
           </button>
         </main>
       </div>
@@ -154,11 +156,13 @@ function Farewell() {
 // Three collapsible path details (owner audience). Content lives in
 // PassingGuidance and is shared verbatim with the sitter's path screens.
 function GuidancePaths({ name, ownerName, vet }: { name: string; ownerName: string; vet: VetContact }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState<PassingPath | null>(null);
+  // Same keys/wording as PassingGuidance's path choice (shared with the sitter).
   const paths: { key: PassingPath; label: string }[] = [
-    { key: "necropsy", label: `Keep ${name} for a necropsy` },
-    { key: "burial", label: `Prepare ${name} for burial or cremation` },
-    { key: "vet", label: `Bring ${name} to the vet` },
+    { key: "necropsy", label: t("passingGuidance.pathChoice.necropsy", "Keep {{name}} for a necropsy", { name }) },
+    { key: "burial", label: t("passingGuidance.pathChoice.burial", "Prepare {{name}} for burial or cremation", { name }) },
+    { key: "vet", label: t("passingGuidance.pathChoice.vet", "Bring {{name}} to the vet", { name }) },
   ];
   return (
     <div className="space-y-2">

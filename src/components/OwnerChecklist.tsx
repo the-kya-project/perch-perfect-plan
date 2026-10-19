@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { Check, ChevronRight, Sparkles } from "lucide-react";
 import { useAppSurface } from "@/lib/appSurface";
+import { useTranslation } from "react-i18next";
 import {
   APP_STORE_BADGE, APP_STORE_BADGE_SIZE, APP_STORE_URL,
   PLAY_STORE_BADGE, PLAY_STORE_BADGE_SIZE, PLAY_STORE_URL,
@@ -31,6 +32,7 @@ function setFlag(k: string) {
 }
 
 export function OwnerChecklist({ birds, sits }: { birds: any[]; sits: any[] }) {
+  const { t } = useTranslation();
   const [uid, setUid] = useState<string | null>(null);
   const [flagsLoaded, setFlagsLoaded] = useState(false);
   const [dismissed, setDismissed] = useState(false);
@@ -89,22 +91,22 @@ export function OwnerChecklist({ birds, sits }: { birds: any[]; sits: any[] }) {
     home?: boolean;
   };
   const steps: Step[] = [
-    { key: "defaults", name: "Set your emergency defaults", desc: "Account-level vet & emergency contacts — they carry over to every bird.", done: defaultsDone, to: "/dashboard", search: { emergencyDefaults: true } },
-    { key: "bird", name: "Add your first bird", desc: "Build their care plan.", done: birds.length > 0, to: "/birds/new" },
+    { key: "defaults", name: t("ownerChecklist.setEmergencyDefaults", "Set your emergency defaults"), desc: t("ownerChecklist.setEmergencyDefaultsDesc", "Account-level vet & emergency contacts — they carry over to every bird."), done: defaultsDone, to: "/dashboard", search: { emergencyDefaults: true } },
+    { key: "bird", name: t("ownerChecklist.addFirstBird", "Add your first bird"), desc: t("ownerChecklist.addFirstBirdDesc", "Build their care plan."), done: birds.length > 0, to: "/birds/new" },
     // Only a phone browser gets this. Inside the app there is nothing to
     // install, and on a desktop we do not push an install at all — the same
     // rule Settings and the Home checklist follow.
     ...(surface.surface === "mobile-web"
       ? [{
           key: "home",
-          name: "Get the app",
-          desc: "Reminders, quick logging, and your flock's whole record, right on your phone. Same account, nothing to move over.",
+          name: t("ownerChecklist.getTheApp", "Get the app"),
+          desc: t("ownerChecklist.getTheAppDesc", "Reminders, quick logging, and your flock's whole record, right on your phone. Same account, nothing to move over."),
           done: homeDone || surface.hasNativeDevice,
           home: true,
         } as Step]
       : []),
-    { key: "notif", name: "Set notification preferences", desc: "How you hear about scans and updates.", done: notifDone, to: "/scans/settings" },
-    { key: "sit", name: "Create your first sit", desc: "Send a sitter a private link.", done: sits.length > 0, to: "/sits", search: { newSit: true } },
+    { key: "notif", name: t("ownerChecklist.setNotificationPrefs", "Set notification preferences"), desc: t("ownerChecklist.setNotificationPrefsDesc", "How you hear about scans and updates."), done: notifDone, to: "/scans/settings" },
+    { key: "sit", name: t("ownerChecklist.createFirstSit", "Create your first sit"), desc: t("ownerChecklist.createFirstSitDesc", "Send a sitter a private link."), done: sits.length > 0, to: "/sits", search: { newSit: true } },
   ];
 
   const doneCount = steps.filter((s) => s.done).length;
@@ -120,10 +122,10 @@ export function OwnerChecklist({ birds, sits }: { birds: any[]; sits: any[] }) {
     return (
       <section className="rounded-[20px] bg-[#cdeab0] p-5 text-center">
         <Sparkles className="mx-auto size-6 text-[#1f3d12]" />
-        <p className="mt-2 text-lg font-medium text-[#1f3d12]">You're all set!</p>
-        <p className="mt-1 text-sm text-[#3f5e22]">Your account is ready. Everything you need is on the dashboard.</p>
+        <p className="mt-2 text-lg font-medium text-[#1f3d12]">{t("ownerChecklist.allSet", "You're all set!")}</p>
+        <p className="mt-1 text-sm text-[#3f5e22]">{t("ownerChecklist.allSetBody", "Your account is ready. Everything you need is on the dashboard.")}</p>
         <button onClick={dismiss} className="mt-4 rounded-[14px] bg-[#1a3d2e] px-4 py-2 text-sm font-medium text-white">
-          Dismiss
+          {t("ownerChecklist.dismiss", "Dismiss")}
         </button>
       </section>
     );
@@ -133,10 +135,10 @@ export function OwnerChecklist({ birds, sits }: { birds: any[]; sits: any[] }) {
     <section data-coach="owner-checklist" className="rounded-[20px] bg-[#efe9da] p-4 shadow-sm">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h2 className="text-[17px] font-medium text-[#1a3d2e]">Let's get you set up</h2>
-          <p className="mt-0.5 text-xs text-[#5f5e5a]">{doneCount} of {steps.length} done</p>
+          <h2 className="text-[17px] font-medium text-[#1a3d2e]">{t("ownerChecklist.letsGetYouSetUp", "Let's get you set up")}</h2>
+          <p className="mt-0.5 text-xs text-[#5f5e5a]">{t("ownerChecklist.doneCount", "{{done}} of {{total}} done", { done: doneCount, total: steps.length })}</p>
         </div>
-        <button onClick={dismiss} className="shrink-0 text-xs font-medium text-[#5f5e5a] underline">Hide this</button>
+        <button onClick={dismiss} className="shrink-0 text-xs font-medium text-[#5f5e5a] underline">{t("ownerChecklist.hideThis", "Hide this")}</button>
       </div>
       <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-[#e3dcc9]">
         <div className="h-full rounded-full bg-[#2d6a4f] transition-all" style={{ width: `${Math.round((doneCount / steps.length) * 100)}%` }} />
@@ -156,7 +158,7 @@ export function OwnerChecklist({ birds, sits }: { birds: any[]; sits: any[] }) {
               </span>
               {!s.done && (
                 isNext ? (
-                  <span className="shrink-0 self-center rounded-full bg-[#1a3d2e] px-3 py-1 text-xs font-semibold text-white">Start</span>
+                  <span className="shrink-0 self-center rounded-full bg-[#1a3d2e] px-3 py-1 text-xs font-semibold text-white">{t("ownerChecklist.start", "Start")}</span>
                 ) : (
                   <ChevronRight className="size-4 shrink-0 self-center text-[#8a897f]" />
                 )
@@ -189,7 +191,7 @@ export function OwnerChecklist({ birds, sits }: { birds: any[]; sits: any[] }) {
                     src={ios ? APP_STORE_BADGE : PLAY_STORE_BADGE}
                     width={size.width}
                     height={size.height}
-                    alt={ios ? "Download on the App Store" : "Get it on Google Play"}
+                    alt={ios ? t("ownerChecklist.appStoreBadgeAlt", "Download on the App Store") : t("ownerChecklist.playStoreBadgeAlt", "Get it on Google Play")}
                     className="block"
                   />
                 </div>

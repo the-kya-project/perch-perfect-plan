@@ -1,3 +1,4 @@
+import i18next from "i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { localDateISO } from "@/lib/localDay";
 
@@ -39,7 +40,7 @@ export async function ensureSitterPreviewToken(birdId: string, ownerId: string):
     })
     .select()
     .single();
-  if (error || !sit) throw new Error(error?.message ?? "Could not build the sitter preview.");
+  if (error || !sit) throw new Error(error?.message ?? i18next.t("sitterPreview.buildFailed", "Could not build the sitter preview."));
   const { error: linkErr } = await supabase.from("sit_birds").insert({ sit_id: sit.id, bird_id: birdId });
   if (linkErr) throw new Error(linkErr.message);
   return sit.invite_token as string;

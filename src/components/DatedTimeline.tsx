@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { formatLocalDate } from "@/lib/dates";
+import { useTranslation } from "react-i18next";
 
 // Reusable newest-first dated timeline. The weight facet and the journal facet
 // both render their history through this so the dated-list UI lives in one
@@ -25,8 +26,9 @@ function fmt(iso: string): string {
 }
 
 export function DatedTimeline({ items, empty, rail = true }: { items: TimelineItem[]; empty?: ReactNode; rail?: boolean }) {
+  const { t } = useTranslation();
   if (items.length === 0) {
-    return <>{empty ?? <p className="rounded-[14px] bg-[#efe9da] p-6 text-center text-sm text-[#5f5e5a]">Nothing logged yet.</p>}</>;
+    return <>{empty ?? <p className="rounded-[14px] bg-[#efe9da] p-6 text-center text-sm text-[#5f5e5a]">{t("datedTimeline.nothingLoggedYet", "Nothing logged yet.")}</p>}</>;
   }
   const sorted = [...items].sort((a, b) => +new Date(b.at) - +new Date(a.at));
   return (

@@ -6,6 +6,507 @@
     "email.shell.footNote": {
       "stamp": "ee433b3f59149549"
     },
+    "email.common.listPair": {
+      "stamp": "8ae4b5e718dd5811"
+    },
+    "email.common.listSep": {
+      "stamp": "8e29da4f54dc385f"
+    },
+    "email.common.listMany": {
+      "stamp": "7fd25b43e95a52e7"
+    },
+    "email.common.yourBird": {
+      "stamp": "fb5d7aead9178f25"
+    },
+    "email.common.yourBirds": {
+      "stamp": "6afed180f92c7f4e"
+    },
+    "email.common.anOwner": {
+      "stamp": "2d725f2fa21f976d"
+    },
+    "email.common.someone": {
+      "stamp": "6928cafbfcbdfbdf"
+    },
+    "email.common.yourBirdCap": {
+      "stamp": "19f01978083a5dce"
+    },
+    "email.common.yourSitter": {
+      "stamp": "1f87da8fe21f5a1a"
+    },
+    "email.common.yourCaregiver": {
+      "stamp": "64e0d9a35f21b61c"
+    },
+    "email.flock.lockupAlt": {
+      "stamp": "099276ad4ce57c85"
+    },
+    "email.flock.signName": {
+      "stamp": "5ae9633985225e36"
+    },
+    "email.flock.signPhotoAlt": {
+      "stamp": "e0d3d08d1659523e"
+    },
+    "email.flock.signTitle": {
+      "stamp": "cf151b7175bacbfd"
+    },
+    "email.flock.disclaimer": {
+      "stamp": "f5d52951574c49bf"
+    },
+    "email.flock.settings": {
+      "stamp": "a509674d797f9f07"
+    },
+    "email.flock.unsubscribe": {
+      "stamp": "e88348dd6853c1a8"
+    },
+    "email.flock.byLine": {
+      "stamp": "abc3b6fd7061a827"
+    },
+    "email.flock.mailingAddress": {
+      "stamp": "501a2dbab3e76cd4"
+    },
+    "email.flock.pillFlockmate": {
+      "stamp": "c1cf12ac0477a8d3"
+    },
+    "email.flock.addBirdCta": {
+      "stamp": "b6cd54b438f8b26b"
+    },
+    "email.series.lockupAlt": {
+      "stamp": "099276ad4ce57c85"
+    },
+    "email.series.letterOf": {
+      "stamp": "4d4e39500bfbbbab"
+    },
+    "email.series.nextLabel": {
+      "stamp": "b10be9f898f1e4f3"
+    },
+    "email.series.signTitle": {
+      "stamp": "cf151b7175bacbfd"
+    },
+    "email.moment.inTheApp": {
+      "stamp": "76979856634988f6"
+    },
+    "email.moment.example": {
+      "stamp": "aa24345af66659b1"
+    },
+    "email.flock.reportPill": {
+      "stamp": "0344bc1e4d3cd806"
+    },
+    "email.monthly.subjectMany": {
+      "stamp": "41d906efd175b8f5"
+    },
+    "email.monthly.subjectOne": {
+      "stamp": "05ee3494ad2a9339"
+    },
+    "email.monthly.previewMany": {
+      "stamp": "0f5bf3972486f05d"
+    },
+    "email.monthly.previewOne": {
+      "stamp": "5dbeaac29419baa9"
+    },
+    "email.monthly.hi": {
+      "stamp": "cc2d6275e1069644"
+    },
+    "email.monthly.hiNoName": {
+      "stamp": "4c1949737b8f5942"
+    },
+    "email.monthly.firstSubject": {
+      "stamp": "9c3c0329e08f732a"
+    },
+    "email.monthly.firstPreview": {
+      "stamp": "ff06c70cc7a053f4"
+    },
+    "email.monthly.firstQuietPreview": {
+      "stamp": "c816c430b04dbd3d"
+    },
+    "email.monthly.firstIntro": {
+      "stamp": "98bf1aa54c9d505e"
+    },
+    "email.monthly.firstQuietIntro": {
+      "stamp": "f4cddaadf5d811b6"
+    },
+    "email.monthly.intro": {
+      "stamp": "0dec0cae657881af"
+    },
+    "email.monthly.andMore": {
+      "stamp": "1f9f70a838d28dfa"
+    },
+    "email.monthly.totalWeighIns": {
+      "stamp": "4bb5956281d83e14"
+    },
+    "email.monthly.totalWeighInsOne": {
+      "stamp": "f2de2422b513cce3"
+    },
+    "email.monthly.totalChecks": {
+      "stamp": "11b7e166051a88f7"
+    },
+    "email.monthly.totalChecksOne": {
+      "stamp": "47c714e68831978f"
+    },
+    "email.monthly.totalJournal": {
+      "stamp": "01a5fca8bfd553a9"
+    },
+    "email.monthly.totalJournalOne": {
+      "stamp": "40281de2fcfa54ec"
+    },
+    "email.monthly.quietPreview": {
+      "stamp": "b2b4b94c37777884"
+    },
+    "email.monthly.quietIntro": {
+      "stamp": "57cf8d7f41ec5fd0"
+    },
+    "email.monthly.startSmall": {
+      "stamp": "c51034797d095344"
+    },
+    "email.monthly.startSmallNote": {
+      "stamp": "fa8e1d55b2804be9"
+    },
+    "email.monthly.start1Title": {
+      "stamp": "6839b894a5c8d958"
+    },
+    "email.monthly.start1Text": {
+      "stamp": "629ced83b5884f58"
+    },
+    "email.monthly.start2Title": {
+      "stamp": "93ae1d85a65ba5d5"
+    },
+    "email.monthly.start2Text": {
+      "stamp": "c722065044852a6f"
+    },
+    "email.monthly.start3Title": {
+      "stamp": "4d0fdd001ef0072d"
+    },
+    "email.monthly.start3Text": {
+      "stamp": "a2034a2c3ad3ecc5"
+    },
+    "email.monthly.rollCall": {
+      "stamp": "f2f3817ae3614668"
+    },
+    "email.monthly.rollCallNote": {
+      "stamp": "a638ded76ff0013c"
+    },
+    "email.monthly.noWeighIns": {
+      "stamp": "dcd00b51643fd5a1"
+    },
+    "email.monthly.logOne": {
+      "stamp": "30d54af00fd7d60c"
+    },
+    "email.monthly.chartAlt": {
+      "stamp": "a563fce06b167561"
+    },
+    "email.monthly.weighInLine": {
+      "stamp": "74ee6bd2db5e8af3"
+    },
+    "email.monthly.weighInLineOne": {
+      "stamp": "bc4da6d97c0ab469"
+    },
+    "email.monthly.rowChecks": {
+      "stamp": "76061176bb2950ed"
+    },
+    "email.monthly.rowChecksValue": {
+      "stamp": "86fcf2eee505afac"
+    },
+    "email.monthly.rowJournal": {
+      "stamp": "523da79a345720e4"
+    },
+    "email.monthly.rowJournalValue": {
+      "stamp": "29b2b7f693915fa7"
+    },
+    "email.monthly.rowJournalValueOne": {
+      "stamp": "9a0606e057e69e05"
+    },
+    "email.monthly.rowPlan": {
+      "stamp": "024068f55f21e2cd"
+    },
+    "email.monthly.rowPlanValue": {
+      "stamp": "97fc41a461db29b5"
+    },
+    "email.monthly.doOne": {
+      "stamp": "6ba0f8dae3c68b4d"
+    },
+    "email.monthly.addOne": {
+      "stamp": "e4fb03beb5f08e2b"
+    },
+    "email.monthly.updatePlan": {
+      "stamp": "85bc9e6bd1e1a4f2"
+    },
+    "email.monthly.comingLabel": {
+      "stamp": "c575240c26987c13"
+    },
+    "email.monthly.comingCta": {
+      "stamp": "9dc40eba539d6de1"
+    },
+    "email.monthly.careNotePill": {
+      "stamp": "aa390e3d2c76c621"
+    },
+    "email.monthly.blogLabel": {
+      "stamp": "d86c975b3f5dd942"
+    },
+    "email.monthly.blogCta": {
+      "stamp": "6131a981be30636c"
+    },
+    "email.monthly.mailbagTitle": {
+      "stamp": "5708c6ffd041ca0f"
+    },
+    "email.monthly.mailbagText": {
+      "stamp": "baa6153fcae389a0"
+    },
+    "email.monthly.cta": {
+      "stamp": "657e8dcc39d7a084"
+    },
+    "email.monthly.foot": {
+      "stamp": "40dbcbace5dbeae0"
+    },
+    "email.monthly.mon.1": {
+      "stamp": "92e93964963359f2"
+    },
+    "email.monthly.mon.2": {
+      "stamp": "9cc235a2993739f9"
+    },
+    "email.monthly.mon.3": {
+      "stamp": "7b301c27b5f40bec"
+    },
+    "email.monthly.mon.4": {
+      "stamp": "a0602eeecf463b04"
+    },
+    "email.monthly.mon.5": {
+      "stamp": "edfc5a0f8b586d92"
+    },
+    "email.monthly.mon.6": {
+      "stamp": "06046e798026c80b"
+    },
+    "email.monthly.mon.7": {
+      "stamp": "6bb0a9638e8ae9dd"
+    },
+    "email.monthly.mon.8": {
+      "stamp": "18dd4fdce5500d97"
+    },
+    "email.monthly.mon.9": {
+      "stamp": "24048524efbc4698"
+    },
+    "email.monthly.mon.10": {
+      "stamp": "83be3be3043d95fb"
+    },
+    "email.monthly.mon.11": {
+      "stamp": "43a59e7b035c8c39"
+    },
+    "email.monthly.mon.12": {
+      "stamp": "2bc54fedddf4e5e1"
+    },
+    "email.monthly.month.1": {
+      "stamp": "68d7a5d60e7d992b"
+    },
+    "email.monthly.month.2": {
+      "stamp": "6b47169b279ff632"
+    },
+    "email.monthly.month.3": {
+      "stamp": "04d3018887341511"
+    },
+    "email.monthly.month.4": {
+      "stamp": "2409eb6fb65142ea"
+    },
+    "email.monthly.month.5": {
+      "stamp": "edfc5a0f8b586d92"
+    },
+    "email.monthly.month.6": {
+      "stamp": "06046e798026c80b"
+    },
+    "email.monthly.month.7": {
+      "stamp": "6bb0a9638e8ae9dd"
+    },
+    "email.monthly.month.8": {
+      "stamp": "86fef7d069f313bb"
+    },
+    "email.monthly.month.9": {
+      "stamp": "dfe317bf4bafa335"
+    },
+    "email.monthly.month.10": {
+      "stamp": "e0b261eae3bfa87a"
+    },
+    "email.monthly.month.11": {
+      "stamp": "99a97d7660455e1b"
+    },
+    "email.monthly.month.12": {
+      "stamp": "af481c846dbd1662"
+    },
+    "email.monthly.care.1.alt": {
+      "stamp": "bc5fa10837156c87"
+    },
+    "email.monthly.care.1.title": {
+      "stamp": "44e117d5131d1d9c"
+    },
+    "email.monthly.care.1.n1": {
+      "stamp": "a3ef99d2f1321415"
+    },
+    "email.monthly.care.1.n2": {
+      "stamp": "c2ec198d80b220f1"
+    },
+    "email.monthly.care.1.n3": {
+      "stamp": "284de03b2f2c9d35"
+    },
+    "email.monthly.care.2.alt": {
+      "stamp": "b81a3ee21426f1df"
+    },
+    "email.monthly.care.2.title": {
+      "stamp": "1a584ecb5f8ab423"
+    },
+    "email.monthly.care.2.n1": {
+      "stamp": "309e7730809cb043"
+    },
+    "email.monthly.care.2.n2": {
+      "stamp": "7e33a8b6774d5e29"
+    },
+    "email.monthly.care.2.n3": {
+      "stamp": "c39cd7b4d44797e7"
+    },
+    "email.monthly.care.3.alt": {
+      "stamp": "cf773608e9b8a3c9"
+    },
+    "email.monthly.care.3.title": {
+      "stamp": "9a6d4c22da3fa41e"
+    },
+    "email.monthly.care.3.n1": {
+      "stamp": "e0fda21b01761375"
+    },
+    "email.monthly.care.3.n2": {
+      "stamp": "577724ac97a0f55d"
+    },
+    "email.monthly.care.3.n3": {
+      "stamp": "2574d5603907f7c5"
+    },
+    "email.monthly.care.4.alt": {
+      "stamp": "f46074aae6f48b5b"
+    },
+    "email.monthly.care.4.title": {
+      "stamp": "13c62c32f0f0b1e4"
+    },
+    "email.monthly.care.4.n1": {
+      "stamp": "debf5314bf99b01c"
+    },
+    "email.monthly.care.4.n2": {
+      "stamp": "3994e3eddd6382e0"
+    },
+    "email.monthly.care.4.n3": {
+      "stamp": "2c4f84e0de754cc1"
+    },
+    "email.monthly.care.5.alt": {
+      "stamp": "2722d0325bca81f4"
+    },
+    "email.monthly.care.5.title": {
+      "stamp": "11be96e65dcc1bc5"
+    },
+    "email.monthly.care.5.n1": {
+      "stamp": "03cd04f924127c24"
+    },
+    "email.monthly.care.5.n2": {
+      "stamp": "a8c28a77ed5bc9b3"
+    },
+    "email.monthly.care.5.n3": {
+      "stamp": "0496d39e1b43e590"
+    },
+    "email.monthly.care.6.alt": {
+      "stamp": "d571fba995a7e8dd"
+    },
+    "email.monthly.care.6.title": {
+      "stamp": "9cc2f69c986ce7a7"
+    },
+    "email.monthly.care.6.n1": {
+      "stamp": "fa7f6ff7a7a28a85"
+    },
+    "email.monthly.care.6.n2": {
+      "stamp": "8d9488b9b579eb96"
+    },
+    "email.monthly.care.6.n3": {
+      "stamp": "f576c7e01cf1559e"
+    },
+    "email.monthly.care.7.alt": {
+      "stamp": "c674018efa9816fb"
+    },
+    "email.monthly.care.7.title": {
+      "stamp": "e30619e3160d53ef"
+    },
+    "email.monthly.care.7.n1": {
+      "stamp": "1431e61ab948de66"
+    },
+    "email.monthly.care.7.n2": {
+      "stamp": "b36899c8aec83c04"
+    },
+    "email.monthly.care.7.n3": {
+      "stamp": "f4c086d10d1982e5"
+    },
+    "email.monthly.care.8.alt": {
+      "stamp": "3be83cc94b19ce23"
+    },
+    "email.monthly.care.8.title": {
+      "stamp": "daa19f7d6960684c"
+    },
+    "email.monthly.care.8.n1": {
+      "stamp": "4d51b78742ca2b7b"
+    },
+    "email.monthly.care.8.n2": {
+      "stamp": "b58e3560e1035bcb"
+    },
+    "email.monthly.care.8.n3": {
+      "stamp": "115e7eafc29ae9a1"
+    },
+    "email.monthly.care.9.alt": {
+      "stamp": "125d37906f2ee3a3"
+    },
+    "email.monthly.care.9.title": {
+      "stamp": "8ad8bde3a266d7ce"
+    },
+    "email.monthly.care.9.n1": {
+      "stamp": "05230954647b2db4"
+    },
+    "email.monthly.care.9.n2": {
+      "stamp": "21127c99c17e5847"
+    },
+    "email.monthly.care.9.n3": {
+      "stamp": "3e76675339daad38"
+    },
+    "email.monthly.care.10.alt": {
+      "stamp": "7d2dd755087d7cdf"
+    },
+    "email.monthly.care.10.title": {
+      "stamp": "32625d6d4cc489d1"
+    },
+    "email.monthly.care.10.n1": {
+      "stamp": "dd24adf5e8609a37"
+    },
+    "email.monthly.care.10.n2": {
+      "stamp": "fec25d0abbf8a26a"
+    },
+    "email.monthly.care.10.n3": {
+      "stamp": "b1af5b46307700fe"
+    },
+    "email.monthly.care.11.alt": {
+      "stamp": "e8c06adbeaad679c"
+    },
+    "email.monthly.care.11.title": {
+      "stamp": "fbfc971e16cd36ae"
+    },
+    "email.monthly.care.11.n1": {
+      "stamp": "04ef3a88afa59992"
+    },
+    "email.monthly.care.11.n2": {
+      "stamp": "73978b74872fb8e4"
+    },
+    "email.monthly.care.11.n3": {
+      "stamp": "ce7cd6abafc3d458"
+    },
+    "email.monthly.care.12.alt": {
+      "stamp": "7ef2b7d06bbaac0e"
+    },
+    "email.monthly.care.12.title": {
+      "stamp": "ba1744f6007c610b"
+    },
+    "email.monthly.care.12.n1": {
+      "stamp": "97d16d70fab6a3f6"
+    },
+    "email.monthly.care.12.n2": {
+      "stamp": "5fcdd7a239e8ddcf"
+    },
+    "email.monthly.care.12.n3": {
+      "stamp": "02c78b59adbf3502"
+    },
     "email.onboarding.foot": {
       "stamp": "f58de02294bd3571"
     },
@@ -306,6 +807,189 @@
     "email.sitCancelled.text": {
       "stamp": "513d0b67eeccc236"
     },
+    "email.appLaunch.hi": {
+      "stamp": "d89841a3773e933b"
+    },
+    "email.appLaunch.hiNoName": {
+      "stamp": "6650fe4f7cb57639"
+    },
+    "email.appLaunch.p1": {
+      "stamp": "783986410820c5f7"
+    },
+    "email.appLaunch.p2": {
+      "stamp": "db66dc9c5e42e36a"
+    },
+    "email.appLaunch.cta": {
+      "stamp": "a287f019876e3637"
+    },
+    "email.appLaunch.whyTitle": {
+      "stamp": "092ef1804f5bb334"
+    },
+    "email.appLaunch.whyIntro": {
+      "stamp": "ba289083c71e9ed5"
+    },
+    "email.appLaunch.step1Title": {
+      "stamp": "115e328f3f591e01"
+    },
+    "email.appLaunch.step1Text": {
+      "stamp": "bb2369b406c01ef8"
+    },
+    "email.appLaunch.step2Title": {
+      "stamp": "2931fac183d7fb3a"
+    },
+    "email.appLaunch.step2Text": {
+      "stamp": "00bac9b4c5529e94"
+    },
+    "email.appLaunch.step3Title": {
+      "stamp": "2dae8dd45a44f04f"
+    },
+    "email.appLaunch.step3Text": {
+      "stamp": "6630249c28adacfa"
+    },
+    "email.appLaunch.reply": {
+      "stamp": "f5bb895e6093a637"
+    },
+    "email.appLaunch.thanks": {
+      "stamp": "2b6bf928370c5863"
+    },
+    "email.appLaunch.headline": {
+      "stamp": "4b341ebcca2801be"
+    },
+    "email.appLaunch.preview": {
+      "stamp": "8d3a3917fc387f9a"
+    },
+    "email.appLaunch.pill": {
+      "stamp": "e5fa21c68d544e8a"
+    },
+    "email.appLaunch.heroAlt": {
+      "stamp": "398c40840aa3e223"
+    },
+    "email.appLaunch.sticker": {
+      "stamp": "985386aae09e4288"
+    },
+    "email.appLaunch.foot": {
+      "stamp": "0b4590775e433a53"
+    },
+    "email.appLaunch.peek1Lead": {
+      "stamp": "68299516724edf13"
+    },
+    "email.appLaunch.peek1Text": {
+      "stamp": "848f3ee47d06dd5a"
+    },
+    "email.appLaunch.peek2Lead": {
+      "stamp": "aa3d3fc81799ddef"
+    },
+    "email.appLaunch.peek2Text": {
+      "stamp": "09ef66025789aecf"
+    },
+    "email.appLaunch.peek3Lead": {
+      "stamp": "25f47c90a26a04f4"
+    },
+    "email.appLaunch.peek3Text": {
+      "stamp": "a153f8153e3bbf7d"
+    },
+    "email.appLaunch.peek4Lead": {
+      "stamp": "8034be7a0ac16237"
+    },
+    "email.appLaunch.peek4Text": {
+      "stamp": "d3d4eec91d527937"
+    },
+    "email.appLaunch.availableOn": {
+      "stamp": "f42145ff5982a505"
+    },
+    "email.appLaunch.badgeIosAlt": {
+      "stamp": "5b8981e5bc6393b7"
+    },
+    "email.appLaunch.badgeAndroidAlt": {
+      "stamp": "2cd8697a2ecfaeee"
+    },
+    "email.appLaunch.favorTitle": {
+      "stamp": "e058bff25930201a"
+    },
+    "email.appLaunch.favorBody": {
+      "stamp": "8f1bf3d0d7bb4589"
+    },
+    "email.appLaunch.favorCta": {
+      "stamp": "0ce862a69d46ae14"
+    },
+    "email.appLaunch.peekPill": {
+      "stamp": "8a9ea169f654345d"
+    },
+    "email.appLaunch.peekTitle": {
+      "stamp": "d4a0a8d0a5a5f4bd"
+    },
+    "email.appLaunch.peekIntro": {
+      "stamp": "3cd80392bf766d6a"
+    },
+    "email.appLaunch.textBadges": {
+      "stamp": "c79863790bba7f28"
+    },
+    "email.appLaunch.textFavor": {
+      "stamp": "00fb5dbb83ff366a"
+    },
+    "email.appLaunch.textPeekHead": {
+      "stamp": "7383adf0d67568b8"
+    },
+    "email.sitterInvite.subject": {
+      "stamp": "cb6292d0f423cb06"
+    },
+    "email.sitterInvite.kicker": {
+      "stamp": "d56b47c644efb086"
+    },
+    "email.sitterInvite.heading": {
+      "stamp": "9ac620cbecc97546"
+    },
+    "email.sitterInvite.body": {
+      "stamp": "81cd938ca94fd365"
+    },
+    "email.sitterInvite.cta": {
+      "stamp": "178bcd02d9978e00"
+    },
+    "email.sitterInvite.foot": {
+      "stamp": "9c3c42c51ac5beff"
+    },
+    "email.sitterInvite.text": {
+      "stamp": "e13f138360dd0894"
+    },
+    "email.sitterInviteUpdated.subject": {
+      "stamp": "29cc30a5feb478f2"
+    },
+    "email.sitterInviteUpdated.kicker": {
+      "stamp": "29943ea7e5ee68a3"
+    },
+    "email.sitterInviteUpdated.heading": {
+      "stamp": "204332b20dbf5480"
+    },
+    "email.sitterInviteUpdated.body": {
+      "stamp": "fe3cba1b993a445f"
+    },
+    "email.sitterInviteUpdated.cta": {
+      "stamp": "178bcd02d9978e00"
+    },
+    "email.sitterInviteUpdated.foot": {
+      "stamp": "5e993152d0c5917f"
+    },
+    "email.sitterInviteUpdated.text": {
+      "stamp": "b5d561ffff0c8885"
+    },
+    "email.sitterInviteCancelled.subject": {
+      "stamp": "f1724ae0b8c7422d"
+    },
+    "email.sitterInviteCancelled.kicker": {
+      "stamp": "501e1a0fec2547fe"
+    },
+    "email.sitterInviteCancelled.heading": {
+      "stamp": "2ee47c3471f72ebc"
+    },
+    "email.sitterInviteCancelled.body": {
+      "stamp": "75eba82c38be523e"
+    },
+    "email.sitterInviteCancelled.foot": {
+      "stamp": "df82d42557445d4b"
+    },
+    "email.sitterInviteCancelled.text": {
+      "stamp": "50fe1bb88beb9c2d"
+    },
     "email.scanAlert.subjectUrgent": {
       "stamp": "354027ca32369bd8"
     },
@@ -348,6 +1032,9 @@
     "email.scanAlert.textCta": {
       "stamp": "369879232a4740a4"
     },
+    "email.scanReason.normal": {
+      "stamp": "a32e91d776f72de8"
+    },
     "email.scanReason.concerning": {
       "stamp": "8676a7a66f6b1267"
     },
@@ -383,6 +1070,528 @@
     },
     "email.scanReason.q.exposure": {
       "stamp": "dbeb9669734bda9c"
+    },
+    "email.welcome.headline": {
+      "stamp": "33932c9a5f44b0b3"
+    },
+    "email.welcome.headlineNoName": {
+      "stamp": "7291033c89d4d5f6"
+    },
+    "email.welcome.preview": {
+      "stamp": "830753c9637e5a73"
+    },
+    "email.welcome.sticker": {
+      "stamp": "050c6e449605c852"
+    },
+    "email.welcome.heroAlt": {
+      "stamp": "5e6fb32c7d5e7529"
+    },
+    "email.welcome.cta": {
+      "stamp": "657e8dcc39d7a084"
+    },
+    "email.welcome.p1": {
+      "stamp": "4c52e45cac54fdb5"
+    },
+    "email.welcome.p2": {
+      "stamp": "86b49378e2d35f44"
+    },
+    "email.welcome.stepsHead": {
+      "stamp": "e840b53e6752c89f"
+    },
+    "email.welcome.step1Title": {
+      "stamp": "56942f95bcda1e40"
+    },
+    "email.welcome.step1Text": {
+      "stamp": "ccdb289ed3c44591"
+    },
+    "email.welcome.step2Title": {
+      "stamp": "fc149c94ebddb646"
+    },
+    "email.welcome.step2Text": {
+      "stamp": "6ad6b61fa8c02a4a"
+    },
+    "email.welcome.step3Title": {
+      "stamp": "d0bc3f6555b83c24"
+    },
+    "email.welcome.step3Text": {
+      "stamp": "3693e23f9c4a1abc"
+    },
+    "email.welcome.junoTitle": {
+      "stamp": "738fe222c0b75869"
+    },
+    "email.welcome.junoText": {
+      "stamp": "bae19493502766f3"
+    },
+    "email.welcome.junoAlt": {
+      "stamp": "6026a31c9b7aa4d1"
+    },
+    "email.welcome.p3": {
+      "stamp": "3b5bec1991449378"
+    },
+    "email.welcome.p4": {
+      "stamp": "42ab7e6f788f361a"
+    },
+    "email.welcome.foot": {
+      "stamp": "713958aa9374db36"
+    },
+    "email.seriesWeighing.headline": {
+      "stamp": "5095211dc521dbfa"
+    },
+    "email.seriesWeighing.preview": {
+      "stamp": "590ab16c981af98b"
+    },
+    "email.seriesWeighing.sticker": {
+      "stamp": "05e17efb9b17c740"
+    },
+    "email.seriesWeighing.heroAlt": {
+      "stamp": "25ea537c86bedad2"
+    },
+    "email.seriesWeighing.p1": {
+      "stamp": "022fcaa2d2f696f7"
+    },
+    "email.seriesWeighing.needTitle": {
+      "stamp": "63f49d683722aaba"
+    },
+    "email.seriesWeighing.need1Lead": {
+      "stamp": "29762b1a464f0b24"
+    },
+    "email.seriesWeighing.need1Text": {
+      "stamp": "4523485862850814"
+    },
+    "email.seriesWeighing.need2Lead": {
+      "stamp": "8651afd328a5088d"
+    },
+    "email.seriesWeighing.need2Text": {
+      "stamp": "8fa7711abd0cc02c"
+    },
+    "email.seriesWeighing.need3Lead": {
+      "stamp": "4f70e76b667c88d4"
+    },
+    "email.seriesWeighing.need3Text": {
+      "stamp": "4f9c1e72fe1b5e75"
+    },
+    "email.seriesWeighing.p2": {
+      "stamp": "692a7d0f29ae6aa7"
+    },
+    "email.seriesWeighing.chartBadge": {
+      "stamp": "76979856634988f6"
+    },
+    "email.seriesWeighing.chartCaption": {
+      "stamp": "9181b5892a1d5b4c"
+    },
+    "email.seriesWeighing.chartAxisStart": {
+      "stamp": "474ea88e51fc6a83"
+    },
+    "email.seriesWeighing.chartAxisEnd": {
+      "stamp": "65e7700b50124553"
+    },
+    "email.seriesWeighing.chartAlt": {
+      "stamp": "295881ee19757d6b"
+    },
+    "email.seriesWeighing.chartNote": {
+      "stamp": "eb2c23589a3b1463"
+    },
+    "email.seriesWeighing.cta": {
+      "stamp": "66cf207cb78e3c20"
+    },
+    "email.seriesWeighing.p3": {
+      "stamp": "b809d8a22ae234a0"
+    },
+    "email.seriesWeighing.foot": {
+      "stamp": "1be99ba6e7b47880"
+    },
+    "email.seriesHealthCheck.headline": {
+      "stamp": "94c720c544e103d1"
+    },
+    "email.seriesHealthCheck.preview": {
+      "stamp": "cbc89e2495e631e5"
+    },
+    "email.seriesHealthCheck.sticker": {
+      "stamp": "13a1c664e5a25221"
+    },
+    "email.seriesHealthCheck.heroAlt": {
+      "stamp": "c674018efa9816fb"
+    },
+    "email.seriesHealthCheck.p1": {
+      "stamp": "9ae4b941c2f860e5"
+    },
+    "email.seriesHealthCheck.cardTitle": {
+      "stamp": "ae03fab4f2a33259"
+    },
+    "email.seriesHealthCheck.cardBadge": {
+      "stamp": "76979856634988f6"
+    },
+    "email.seriesHealthCheck.q1": {
+      "stamp": "cb5afec67ee0d83b"
+    },
+    "email.seriesHealthCheck.q2": {
+      "stamp": "aac9ac8151ed67bf"
+    },
+    "email.seriesHealthCheck.q3": {
+      "stamp": "11dedc0f4af24630"
+    },
+    "email.seriesHealthCheck.cardNote": {
+      "stamp": "bd7308c4fc1be83a"
+    },
+    "email.seriesHealthCheck.boringTitle": {
+      "stamp": "80b46ddcef60cfa0"
+    },
+    "email.seriesHealthCheck.boringText": {
+      "stamp": "b9777ae59f74f09b"
+    },
+    "email.seriesHealthCheck.p2": {
+      "stamp": "f819784c5b43ca29"
+    },
+    "email.seriesHealthCheck.cta": {
+      "stamp": "3bf33315d4f9990d"
+    },
+    "email.seriesHealthCheck.p3": {
+      "stamp": "31f0875f29322598"
+    },
+    "email.seriesHealthCheck.foot": {
+      "stamp": "1be99ba6e7b47880"
+    },
+    "email.seriesCarePlan.headline": {
+      "stamp": "62198a3a31199f04"
+    },
+    "email.seriesCarePlan.preview": {
+      "stamp": "167ae8490c1fe434"
+    },
+    "email.seriesCarePlan.sticker": {
+      "stamp": "a9ef4971befb936b"
+    },
+    "email.seriesCarePlan.heroAlt": {
+      "stamp": "76717bb87ec22d34"
+    },
+    "email.seriesCarePlan.p1": {
+      "stamp": "213a37504fb60034"
+    },
+    "email.seriesCarePlan.secFood": {
+      "stamp": "225420650888dd0d"
+    },
+    "email.seriesCarePlan.secBehavior": {
+      "stamp": "847b1e8ea2825cdf"
+    },
+    "email.seriesCarePlan.secHome": {
+      "stamp": "e0780ad0fc0251d0"
+    },
+    "email.seriesCarePlan.secHealth": {
+      "stamp": "24701ea98bfb3f0a"
+    },
+    "email.seriesCarePlan.secRoutine": {
+      "stamp": "acc337a43620f922"
+    },
+    "email.seriesCarePlan.secEmergency": {
+      "stamp": "16fdfafb12402299"
+    },
+    "email.seriesCarePlan.startHere": {
+      "stamp": "7a812a56b6768aa9"
+    },
+    "email.seriesCarePlan.p2": {
+      "stamp": "47ad3b669fc26f21"
+    },
+    "email.seriesCarePlan.exampleTitle": {
+      "stamp": "d2dcf31ab53ab3cd"
+    },
+    "email.seriesCarePlan.exampleLabel": {
+      "stamp": "b2784860ebeb417d"
+    },
+    "email.seriesCarePlan.exampleQuote": {
+      "stamp": "eb7c27f4220d943f"
+    },
+    "email.seriesCarePlan.exampleNote": {
+      "stamp": "18a94c4fa463727a"
+    },
+    "email.seriesCarePlan.p3": {
+      "stamp": "a2512ab56afdeb88"
+    },
+    "email.seriesCarePlan.p4": {
+      "stamp": "4a98e9ee3d740bd9"
+    },
+    "email.seriesCarePlan.cta": {
+      "stamp": "c92468d317145126"
+    },
+    "email.seriesCarePlan.foot": {
+      "stamp": "1be99ba6e7b47880"
+    },
+    "email.seriesJournal.headline": {
+      "stamp": "ee1ac0f5f3797f37"
+    },
+    "email.seriesJournal.preview": {
+      "stamp": "64c9ccd1142d3642"
+    },
+    "email.seriesJournal.sticker": {
+      "stamp": "b6f9d359afae3dba"
+    },
+    "email.seriesJournal.heroAlt": {
+      "stamp": "f46074aae6f48b5b"
+    },
+    "email.seriesJournal.p1": {
+      "stamp": "44d1b05f6275711d"
+    },
+    "email.seriesJournal.cardPill": {
+      "stamp": "7dcdb5a25287c104"
+    },
+    "email.seriesJournal.cardDate": {
+      "stamp": "ccdcb77bc0c9e58d"
+    },
+    "email.seriesJournal.cardEntry": {
+      "stamp": "63f843da8270816f"
+    },
+    "email.seriesJournal.cardPhotoAlt": {
+      "stamp": "9b50f33c91241229"
+    },
+    "email.seriesJournal.momentLabel": {
+      "stamp": "f6b86641d4dfb750"
+    },
+    "email.seriesJournal.momentText": {
+      "stamp": "da5e6970484c1e52"
+    },
+    "email.seriesJournal.p2": {
+      "stamp": "29fa36845f314764"
+    },
+    "email.seriesJournal.p3": {
+      "stamp": "d38c113d261bc4aa"
+    },
+    "email.seriesJournal.p4": {
+      "stamp": "259619fb0ed54734"
+    },
+    "email.seriesJournal.cta": {
+      "stamp": "2926e1e962f66a0e"
+    },
+    "email.seriesJournal.p5": {
+      "stamp": "808fbb9c07f2efd7"
+    },
+    "email.seriesJournal.foot": {
+      "stamp": "1be99ba6e7b47880"
+    },
+    "email.seriesSharing.headline": {
+      "stamp": "ece6611b2b864e1e"
+    },
+    "email.seriesSharing.preview": {
+      "stamp": "7a5d0a2f7055a0df"
+    },
+    "email.seriesSharing.sticker": {
+      "stamp": "1f6975aeac2f12c9"
+    },
+    "email.seriesSharing.heroAlt": {
+      "stamp": "e8c06adbeaad679c"
+    },
+    "email.seriesSharing.p1": {
+      "stamp": "db929a7cc6a4bc79"
+    },
+    "email.seriesSharing.t1Label": {
+      "stamp": "49f157e4362331c8"
+    },
+    "email.seriesSharing.t1Title": {
+      "stamp": "2c8594f561013f91"
+    },
+    "email.seriesSharing.t1Text": {
+      "stamp": "824e1da43cfc9077"
+    },
+    "email.seriesSharing.t1Stub": {
+      "stamp": "dbb806a07df46c7f"
+    },
+    "email.seriesSharing.t2Label": {
+      "stamp": "5d1e61d487afb89b"
+    },
+    "email.seriesSharing.t2Title": {
+      "stamp": "e29283b9c507d609"
+    },
+    "email.seriesSharing.t2Text": {
+      "stamp": "d6b161b78d166bd2"
+    },
+    "email.seriesSharing.t2Stub": {
+      "stamp": "da35ceae68b17eed"
+    },
+    "email.seriesSharing.p2": {
+      "stamp": "a2a19aad1d9da6f7"
+    },
+    "email.seriesSharing.p3": {
+      "stamp": "a1458ce4e9078ffc"
+    },
+    "email.seriesSharing.cta": {
+      "stamp": "5edfc5bef1ed6753"
+    },
+    "email.seriesSharing.foot": {
+      "stamp": "1be99ba6e7b47880"
+    },
+    "email.seriesVet.headline": {
+      "stamp": "d95fd224f193ab6d"
+    },
+    "email.seriesVet.preview": {
+      "stamp": "6d538fb40eae817a"
+    },
+    "email.seriesVet.sticker": {
+      "stamp": "cf3ce7bab94cd7e1"
+    },
+    "email.seriesVet.heroAlt": {
+      "stamp": "125d37906f2ee3a3"
+    },
+    "email.seriesVet.p1": {
+      "stamp": "24e0bca452bdecd7"
+    },
+    "email.seriesVet.cardTitle": {
+      "stamp": "e8fcbe698b62c464"
+    },
+    "email.seriesVet.cardBadge": {
+      "stamp": "76979856634988f6"
+    },
+    "email.seriesVet.row1Label": {
+      "stamp": "2828e932554a9202"
+    },
+    "email.seriesVet.row1Value": {
+      "stamp": "c171c83a60bbf5b3"
+    },
+    "email.seriesVet.row2Label": {
+      "stamp": "cc549651ceaf181e"
+    },
+    "email.seriesVet.row2Value": {
+      "stamp": "fa09c8022b11486f"
+    },
+    "email.seriesVet.row3Label": {
+      "stamp": "cbc7d3c478200622"
+    },
+    "email.seriesVet.row3Value": {
+      "stamp": "fccdfbbbbac45f79"
+    },
+    "email.seriesVet.questionsHead": {
+      "stamp": "44c6afd3ff1963f7"
+    },
+    "email.seriesVet.q1": {
+      "stamp": "f9707575ae042b6e"
+    },
+    "email.seriesVet.q2": {
+      "stamp": "2db4563b3d57bca4"
+    },
+    "email.seriesVet.q3": {
+      "stamp": "861b07f46a3564dc"
+    },
+    "email.seriesVet.p2": {
+      "stamp": "f0d74721fdd0a653"
+    },
+    "email.seriesVet.p3": {
+      "stamp": "701f462cedfe084d"
+    },
+    "email.seriesVet.cta": {
+      "stamp": "3b4820bc6812b817"
+    },
+    "email.seriesVet.tourTitle": {
+      "stamp": "277aadbcb38d0d63"
+    },
+    "email.seriesVet.tourText": {
+      "stamp": "5ecaece3bfec9d32"
+    },
+    "email.seriesVet.p4": {
+      "stamp": "d8c6f2313909b121"
+    },
+    "email.seriesVet.foot": {
+      "stamp": "1be99ba6e7b47880"
+    },
+    "email.sitterConcern.subject": {
+      "stamp": "2511c451da9c2b16"
+    },
+    "email.sitterConcern.kicker": {
+      "stamp": "cef70d2d498e7d2d"
+    },
+    "email.sitterConcern.heading": {
+      "stamp": "9f93ca3b21130664"
+    },
+    "email.sitterConcern.alert": {
+      "stamp": "0fd64520afb64763"
+    },
+    "email.sitterConcern.body": {
+      "stamp": "c9d41b6d2ad4af1d"
+    },
+    "email.sitterConcern.cta": {
+      "stamp": "d81b15a28ebf93a0"
+    },
+    "email.sitterConcern.foot": {
+      "stamp": "88b5fceccc57c9dd"
+    },
+    "email.sitterConcern.text": {
+      "stamp": "672a3d6fd1c4ef02"
+    },
+    "email.bereavement.subject": {
+      "stamp": "8e571d571a7d399e"
+    },
+    "email.bereavement.hiName": {
+      "stamp": "8d0fa18b0f1cea55"
+    },
+    "email.bereavement.hiNoName": {
+      "stamp": "8e54bf9d67919bec"
+    },
+    "email.bereavement.sorry": {
+      "stamp": "de03fdc327ee9ec3"
+    },
+    "email.bereavement.grief": {
+      "stamp": "35d0fe0db6bf80f2"
+    },
+    "email.bereavement.record": {
+      "stamp": "d96742c5e7ed8331"
+    },
+    "email.bereavement.story": {
+      "stamp": "8a7c4ac6aaf42502"
+    },
+    "email.bereavement.signoff": {
+      "stamp": "430e2617a98bfd45"
+    },
+    "email.bereavement.text": {
+      "stamp": "1b371aafe2097766"
+    },
+    "push.common.yourBird": {
+      "stamp": "fb5d7aead9178f25"
+    },
+    "push.common.yourBirdCap": {
+      "stamp": "19f01978083a5dce"
+    },
+    "push.carePlanReminder.title": {
+      "stamp": "7c9e0e53dfd0eaa0"
+    },
+    "push.carePlanReminder.body": {
+      "stamp": "55f1ab18949ef0e4"
+    },
+    "push.weightReminder.title": {
+      "stamp": "a611e8bd2b6c9590"
+    },
+    "push.weightReminder.body": {
+      "stamp": "e165d842e3b84953"
+    },
+    "push.checkin10.title": {
+      "stamp": "ea0ea17c31f9a395"
+    },
+    "push.checkin10.body": {
+      "stamp": "8b84fb5d3d7a9af3"
+    },
+    "push.checkin30.title": {
+      "stamp": "b0630249488ae133"
+    },
+    "push.checkin30.body": {
+      "stamp": "f8f0f38cf122fef6"
+    },
+    "push.sitterConcern.title": {
+      "stamp": "4cbd886caaccebd4"
+    },
+    "push.sitterConcern.body": {
+      "stamp": "bd842b7321bcdb53"
+    },
+    "push.scan.redTitle": {
+      "stamp": "1e58a4084de952de"
+    },
+    "push.scan.redBody": {
+      "stamp": "c3505fba6fe55dd3"
+    },
+    "push.scan.yellowTitle": {
+      "stamp": "0a4b74304d696cb1"
+    },
+    "push.scan.yellowBody": {
+      "stamp": "edcdc94ee3c2f6e6"
+    },
+    "push.scan.clearTitle": {
+      "stamp": "8c88e7f48c480d05"
+    },
+    "push.scan.clearBody": {
+      "stamp": "afbbf0e87d2153b9"
     }
   }
 }

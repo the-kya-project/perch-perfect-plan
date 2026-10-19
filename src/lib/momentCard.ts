@@ -1,3 +1,5 @@
+import i18next from "i18next";
+
 // Render a moment to a shareable branded image (canvas → PNG) and hand it to the
 // OS share sheet, or save it. No backend, no community target — just an image.
 
@@ -81,7 +83,7 @@ export async function renderMomentCard(opts: { photoUrl?: string | null; title: 
   ctx.fillText(opts.context, 56, H - 56);
 
   return await new Promise<Blob>((resolve, reject) =>
-    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("Couldn't render the card."))), "image/png"),
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error(i18next.t("momentCardImage.renderFailed", "Couldn't render the card.")))), "image/png"),
   );
 }
 

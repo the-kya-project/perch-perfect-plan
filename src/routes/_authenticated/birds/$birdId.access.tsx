@@ -12,9 +12,11 @@ import { toast } from "sonner";
 import { ArrowLeft, Plus, ChevronRight, Calendar, MoreHorizontal, Loader2 } from "lucide-react";
 import { friendlyError } from "@/lib/errorMessage";
 import { formatLocalDate } from "@/lib/dates";
+import i18next from "i18next";
+import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/access")({
-  head: () => ({ meta: [{ title: "Who can see this record — Kya & Co." }] }),
+  head: () => ({ meta: [{ title: i18next.t("birdAccess.metaTitle", "Who can see this record — Kya & Co.") }] }),
   component: AccessHub,
 });
 
@@ -26,6 +28,7 @@ function initialOf(s: string | null | undefined, fallback = "?") {
 }
 
 function AccessHub() {
+  const { t } = useTranslation();
   const { birdId } = Route.useParams();
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -53,40 +56,40 @@ function AccessHub() {
     queryFn: () => getHousehold({ data: { birdId } }),
   });
 
-  const name = bird?.row?.name ?? "this bird";
+  const name = bird?.row?.name ?? t("birdAccess.thisBird", "this bird");
 
   return (
     <div className="min-h-screen bg-[#f4f1e8] pb-nav">
       <header className="sticky top-0 z-10 border-b border-[#e3ded0] bg-[#f4f1e8]/95 backdrop-blur">
         <div className="mx-auto flex max-w-md items-center gap-3 px-5 pt-safe pb-3">
-          <Link to="/birds/$birdId" params={{ birdId }} aria-label="Back to bird record" className="-ml-1 rounded p-1 text-[#1a3d2e]">
+          <Link to="/birds/$birdId" params={{ birdId }} aria-label={t("birdAccess.backAria", "Back to bird record")} className="-ml-1 rounded p-1 text-[#1a3d2e]">
             <ArrowLeft className="size-5" />
           </Link>
-          <h1 className="truncate text-base font-medium text-[#1a3d2e]">Who can see {name}'s record</h1>
+          <h1 className="truncate text-base font-medium text-[#1a3d2e]">{t("birdAccess.title", "Who can see {{name}}'s record", { name })}</h1>
         </div>
       </header>
 
       <main className="mx-auto max-w-md space-y-6 px-5 py-5">
         {/* You */}
         <section className="space-y-2">
-          <h2 className="px-1 text-[11px] font-semibold uppercase tracking-widest text-[#5f5e5a]">You</h2>
+          <h2 className="px-1 text-[11px] font-semibold uppercase tracking-widest text-[#5f5e5a]">{t("birdAccess.youHeading", "You")}</h2>
           <div className="flex items-center gap-3 rounded-[14px] bg-white p-4 ring-1 ring-[#e3dcc9]">
             <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[#1a3d2e] text-sm font-medium text-white">
               <OwnerInitial />
             </span>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-[#1a3d2e]">You</p>
-              <p className="text-xs text-[#8a897f]">Owner · full access</p>
+              <p className="text-sm font-medium text-[#1a3d2e]">{t("birdAccess.you", "You")}</p>
+              <p className="text-xs text-[#8a897f]">{t("birdAccess.ownerFullAccess", "Owner · full access")}</p>
             </div>
           </div>
         </section>
 
         {/* Household */}
         <section className="space-y-2">
-          <h2 className="px-1 text-[11px] font-semibold uppercase tracking-widest text-[#5f5e5a]">Household</h2>
+          <h2 className="px-1 text-[11px] font-semibold uppercase tracking-widest text-[#5f5e5a]">{t("birdAccess.household", "Household")}</h2>
           {isLoading ? (
             <div className="flex items-center gap-2 rounded-[14px] bg-white p-4 text-sm text-[#8a897f] ring-1 ring-[#e3dcc9]">
-              <Loader2 className="size-4 animate-spin" /> Loading…
+              <Loader2 className="size-4 animate-spin" /> {t("birdAccess.loading", "Loading…")}
             </div>
           ) : (
             <div className="space-y-2">
@@ -101,18 +104,18 @@ function AccessHub() {
                 onClick={() => setInviting(true)}
                 className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-[14px] border border-dashed border-[#c8bfa6] bg-[#fbfaf2] text-sm font-medium text-[#5f5e5a] active:scale-[0.99]"
               >
-                <Plus className="size-4" /> Add a household member
+                <Plus className="size-4" /> {t("birdAccess.addMember", "Add a household member")}
               </button>
             </div>
           )}
           <p className="px-1 text-xs leading-relaxed text-[#5f5e5a]">
-            Household members can view and log alongside you. Good for partners or family who help with {name}.
+            {t("birdAccess.householdHint", "Household members can view and log alongside you. Good for partners or family who help with {{name}}.", { name })}
           </p>
         </section>
 
         {/* Sitters */}
         <section className="space-y-2">
-          <h2 className="px-1 text-[11px] font-semibold uppercase tracking-widest text-[#5f5e5a]">Sitters</h2>
+          <h2 className="px-1 text-[11px] font-semibold uppercase tracking-widest text-[#5f5e5a]">{t("birdAccess.sitters", "Sitters")}</h2>
           <Link
             to="/sits"
             className="flex items-center gap-3 rounded-[14px] bg-white p-4 ring-1 ring-[#e3dcc9] active:bg-[#f4f1e8]"
@@ -121,8 +124,8 @@ function AccessHub() {
               <Calendar className="size-5" />
             </span>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-[#1a3d2e]">Sitter access</p>
-              <p className="text-xs text-[#8a897f]">Temporary links, managed per sit</p>
+              <p className="text-sm font-medium text-[#1a3d2e]">{t("birdAccess.sitterAccess", "Sitter access")}</p>
+              <p className="text-xs text-[#8a897f]">{t("birdAccess.sitterAccessHint", "Temporary links, managed per sit")}</p>
             </div>
             <ChevronRight className="size-4 shrink-0 text-[#bcb6a3]" />
           </Link>
@@ -153,14 +156,15 @@ function OwnerInitial() {
 }
 
 function MemberCard({ birdId, member, onChanged }: { birdId: string; member: { userId: string; name: string | null; email: string | null; addedAt: string }; onChanged: () => void }) {
+  const { t } = useTranslation();
   const [menu, setMenu] = useState(false);
   const remove = useServerFn(removeHouseholdMember);
   const m = useMutation({
     mutationFn: () => remove({ data: { birdId, userId: member.userId } }),
-    onSuccess: () => { toast.success("Removed from household."); onChanged(); },
-    onError: (e: any) => toast.error(friendlyError(e, "Couldn't remove.")),
+    onSuccess: () => { toast.success(t("birdAccess.removed", "Removed from household.")); onChanged(); },
+    onError: (e: any) => toast.error(friendlyError(e, t("birdAccess.removeFailed", "Couldn't remove."))),
   });
-  const label = member.name?.trim() || member.email || "Household member";
+  const label = member.name?.trim() || member.email || t("birdAccess.householdMember", "Household member");
   return (
     <div className="relative flex items-center gap-3 rounded-[14px] bg-white p-4 ring-1 ring-[#e3dcc9]">
       <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[#cfe3dc] text-sm font-medium text-[#1a5e3f]">
@@ -168,9 +172,9 @@ function MemberCard({ birdId, member, onChanged }: { birdId: string; member: { u
       </span>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-[#1a3d2e]">{label}</p>
-        <p className="truncate text-xs text-[#8a897f]">Can view &amp; log · added {fmtDate(member.addedAt)}</p>
+        <p className="truncate text-xs text-[#8a897f]">{t("birdAccess.canViewLog", "Can view & log · added {{date}}", { date: fmtDate(member.addedAt) })}</p>
       </div>
-      <button type="button" aria-label="Member options" onClick={() => setMenu((v) => !v)} className="-mr-1 shrink-0 rounded-full p-2 text-[#5f5e5a] active:bg-[#f4f1e8]">
+      <button type="button" aria-label={t("birdAccess.memberOptions", "Member options")} onClick={() => setMenu((v) => !v)} className="-mr-1 shrink-0 rounded-full p-2 text-[#5f5e5a] active:bg-[#f4f1e8]">
         <MoreHorizontal className="size-5" />
       </button>
       {menu && (
@@ -182,11 +186,11 @@ function MemberCard({ birdId, member, onChanged }: { birdId: string; member: { u
               disabled={m.isPending}
               onClick={() => {
                 setMenu(false);
-                if (window.confirm(`Remove ${label} from ${"this bird"}'s household? Their past logs stay in the record.`)) m.mutate();
+                if (window.confirm(t("birdAccess.confirmRemove", "Remove {{name}} from this bird's household? Their past logs stay in the record.", { name: label }))) m.mutate();
               }}
               className="block w-full px-4 py-3 text-left text-sm font-medium text-warn-red disabled:opacity-50"
             >
-              Remove from household
+              {t("birdAccess.removeFromHousehold", "Remove from household")}
             </button>
           </div>
         </>
@@ -196,11 +200,12 @@ function MemberCard({ birdId, member, onChanged }: { birdId: string; member: { u
 }
 
 function PendingCard({ invite, onChanged }: { invite: { id: string; email: string; name: string | null; expiresAt: string }; onChanged: () => void }) {
+  const { t } = useTranslation();
   const cancel = useServerFn(cancelHouseholdInvite);
   const m = useMutation({
     mutationFn: () => cancel({ data: { inviteId: invite.id } }),
-    onSuccess: () => { toast.success("Invite canceled."); onChanged(); },
-    onError: (e: any) => toast.error(friendlyError(e, "Couldn't cancel.")),
+    onSuccess: () => { toast.success(t("birdAccess.inviteCanceled", "Invite canceled.")); onChanged(); },
+    onError: (e: any) => toast.error(friendlyError(e, t("birdAccess.cancelFailed", "Couldn't cancel."))),
   });
   return (
     <div className="flex items-center gap-3 rounded-[14px] border border-dashed bg-[#f6e7c4]/30 p-4" style={{ borderColor: "#d8b25a" }}>
@@ -209,10 +214,10 @@ function PendingCard({ invite, onChanged }: { invite: { id: string; email: strin
       </span>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-[#1a3d2e]">{invite.name?.trim() || invite.email}</p>
-        <p className="truncate text-xs font-medium text-[#854F0B]">Invited · pending</p>
+        <p className="truncate text-xs font-medium text-[#854F0B]">{t("birdAccess.invitedPending", "Invited · pending")}</p>
       </div>
       <button type="button" disabled={m.isPending} onClick={() => m.mutate()} className="shrink-0 rounded-full px-2.5 py-1 text-xs font-medium text-[#854F0B] underline disabled:opacity-50">
-        Cancel
+        {t("birdAccess.cancel", "Cancel")}
       </button>
     </div>
   );

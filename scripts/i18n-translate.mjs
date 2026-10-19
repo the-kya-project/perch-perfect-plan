@@ -21,6 +21,12 @@
 //   Usage:  ANTHROPIC_API_KEY=… npm run i18n:translate
 //           npm run i18n:translate -- --check   (report stale keys, do not write)
 //           npm run i18n:translate -- --only email.seriesWeighing,email.welcome
+//           npm run i18n:translate -- --from translations.json
+//
+// --from <file.json> takes the Dutch from a flat {key: "Dutch"} file instead of
+// the API (e.g. a hand-reviewed or native-speaker pass). It goes through the
+// same placeholder check and stamping; stale keys the file doesn't cover are
+// deferred exactly like --only, so they stay stale for a later run.
 //
 // --only <prefix,...> narrows a run to keys matching those prefixes. Everything
 // else stale is DEFERRED, not silently accepted: a deferred key keeps whatever
@@ -73,7 +79,15 @@ if (onlyAt !== -1 && (!ONLY || ONLY.length === 0)) {
   console.error("\n✗ i18n:translate — --only needs at least one key prefix, e.g. --only email.welcome\n");
   process.exit(1);
 }
-const selected = (key) => !ONLY || ONLY.some((prefix) => key.startsWith(prefix));
+const fromAt = process.argv.indexOf("--from");
+const FROM_PATH = fromAt !== -1 ? process.argv[fromAt + 1] : null;
+if (fromAt !== -1 && !FROM_PATH) {
+  console.error("\n✗ i18n:translate — --from needs a JSON file of {key: Dutch}\n");
+  process.exit(1);
+}
+const FROM = FROM_PATH ? JSON.parse(readFileSync(FROM_PATH, "utf8")) : null;
+const selected = (key) =>
+  (!ONLY || ONLY.some((prefix) => key.startsWith(prefix))) && (!FROM || typeof FROM[key] === "string");
 const MODEL = process.env.I18N_MODEL || "claude-sonnet-5";
 
 // ---- tiny JSONC reader (mirrors src/lib/i18n/jsonc.ts) --------------------
@@ -200,7 +214,8 @@ function loadCatalog(cat) {
 // ---- per-catalog: translate stale keys, assert placeholder parity, write ---
 async function writeCatalog(cat, { en, nl, stale, deferred }, apiKey) {
   const translated = {};
-  for (let i = 0; i < stale.length; i += BATCH) {
+  if (FROM) for (const key of stale) translated[key] = FROM[key];
+  else for (let i = 0; i < stale.length; i += BATCH) {
     const chunk = stale.slice(i, i + BATCH);
     Object.assign(translated, await translateBatch(apiKey, en, chunk));
     if (stale.length > BATCH) console.log(`  [${cat.label}] … translated ${Math.min(i + BATCH, stale.length)}/${stale.length}`);
@@ -264,10 +279,11 @@ for (const { cat, en, stale, deferred } of loaded) {
   const held = deferred.length;
   console.log(
     `i18n:translate [${cat.label}] — ${total} keys · ${total - stale.length - held} unchanged (kept) · ` +
-    `${stale.length} to translate${held ? ` · ${held} deferred by --only` : ""}`,
+    `${stale.length} to translate${held ? ` · ${held} deferred${FROM ? "" : " by --only"}` : ""}`,
   );
 }
 if (ONLY) console.log(`  --only: ${ONLY.join(", ")}`);
+if (FROM) console.log(`  --from: ${FROM_PATH} (${Object.keys(FROM).length} entries)`);
 
 if (CHECK_ONLY) {
   const anyStale = loaded.filter((l) => l.stale.length);
@@ -285,6 +301,6 @@ const work = loaded.filter((l) => l.stale.length);
 if (work.length === 0) { console.log("✓ nothing to translate."); process.exit(0); }
 
 const apiKey = process.env.ANTHROPIC_API_KEY;
-if (!apiKey) die("ANTHROPIC_API_KEY is not set (needed to translate the stale keys).");
+if (!apiKey && !FROM) die("ANTHROPIC_API_KEY is not set (needed to translate the stale keys).");
 
 for (const l of work) await writeCatalog(l.cat, l, apiKey);

@@ -15,17 +15,36 @@
  * triggers. Those pass through untouched. Only recognisably raw database output
  * is swapped for the caller's fallback, and the original is logged so it is
  * still there when debugging.
+ *
+ * LOCALIZATION: everything this returns is shown to a person, so it follows the
+ * UI language. The SQLSTATE copy and the default fallback are keyed here, and a
+ * raw message that is one of our own known server/client English errors is
+ * translated by translateServerError (src/lib/i18n/serverErrors.ts). A caller's
+ * own `fallback` is passed through as given — key it at the call site. English
+ * output is byte-identical. Pass `t` from useTranslation() on a surface with
+ * its own i18n instance (the sitter subtree); owner code can omit it.
  */
+import i18next, { type TFunction } from "i18next";
+import { translateServerError } from "@/lib/i18n/serverErrors";
 
 /** SQLSTATEs worth explaining specifically rather than generically. */
-const SQLSTATE_COPY: Record<string, string> = {
-  "23503": "That's still connected to something else, so it can't be changed right now.",
-  "23505": "That already exists.",
-  "23502": "Something required was missing.",
-  "23514": "Some of those details aren't valid.",
-  "42501": "You don't have permission to do that.",
-  "22P02": "Some of those details aren't in the right format.",
-};
+function sqlstateCopy(code: string, t: TFunction): string | undefined {
+  switch (code) {
+    case "23503":
+      return t("dbError.stillConnected", "That's still connected to something else, so it can't be changed right now.");
+    case "23505":
+      return t("dbError.alreadyExists", "That already exists.");
+    case "23502":
+      return t("dbError.missingRequired", "Something required was missing.");
+    case "23514":
+      return t("dbError.notValid", "Some of those details aren't valid.");
+    case "42501":
+      return t("dbError.noPermission", "You don't have permission to do that.");
+    case "22P02":
+      return t("dbError.wrongFormat", "Some of those details aren't in the right format.");
+  }
+  return undefined;
+}
 
 /**
  * Shapes that only ever come from the database driver, never from copy someone
@@ -49,7 +68,7 @@ const RAW_DATABASE_TEXT = new RegExp(
   "i",
 );
 
-const DEFAULT_FALLBACK = "Something went wrong. Please try again.";
+const defaultFallback = (t: TFunction) => t("dbError.somethingWentWrong", "Something went wrong. Please try again.");
 
 /** Keep the real error reachable in the console without showing it to anyone. */
 function logRaw(raw: string, code: string) {
@@ -63,24 +82,27 @@ function logRaw(raw: string, code: string) {
 /**
  * @param err      the thrown value — a PostgrestError, an Error, or anything
  * @param fallback what to show when the error has nothing presentable
+ * @param tr       optional translator (a scoped instance's t); defaults to the global one
  */
-export function friendlyError(err: unknown, fallback: string = DEFAULT_FALLBACK): string {
+export function friendlyError(err: unknown, fallback?: string, tr?: TFunction): string {
+  const t: TFunction = tr ?? i18next.t.bind(i18next);
+  const fb = fallback ?? defaultFallback(t);
   const e = err as { message?: unknown; code?: unknown } | null | undefined;
   const raw = typeof e?.message === "string" ? e.message.trim() : "";
   const code = typeof e?.code === "string" ? e.code : "";
 
-  const bySqlstate = code ? SQLSTATE_COPY[code] : undefined;
+  const bySqlstate = code ? sqlstateCopy(code, t) : undefined;
   if (bySqlstate) {
     logRaw(raw, code);
     return bySqlstate;
   }
 
-  if (!raw) return fallback;
+  if (!raw) return fb;
 
   if (RAW_DATABASE_TEXT.test(raw)) {
     logRaw(raw, code);
-    return fallback;
+    return fb;
   }
 
-  return raw;
+  return translateServerError(raw, t) ?? raw;
 }

@@ -1,4 +1,5 @@
 import { useRef, useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 
 type Props = {
   src: string;
@@ -21,6 +22,7 @@ function parsePos(p: string | null | undefined): { x: number; y: number } {
 function clamp(n: number, min = 0, max = 100) { return Math.max(min, Math.min(max, n)); }
 
 export function PhotoCropper({ src, position, onChange, onCommit, size = 160, shape = "square", showHint = true }: Props) {
+  const { t } = useTranslation();
   const ref = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState(() => parsePos(position));
   const [dragging, setDragging] = useState(false);
@@ -72,9 +74,9 @@ export function PhotoCropper({ src, position, onChange, onCommit, size = 160, sh
           cursor: dragging ? "grabbing" : "grab",
         }}
         role="img"
-        aria-label="Drag to reposition photo"
+        aria-label={t("photoCropper.aria", "Drag to reposition photo")}
       />
-      {showHint && <p className="text-[10px] text-sage-600">Drag inside the frame to adjust what shows.</p>}
+      {showHint && <p className="text-[10px] text-sage-600">{t("photoCropper.hint", "Drag inside the frame to adjust what shows.")}</p>}
     </div>
   );
 }

@@ -6,7 +6,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { SetupShell, SETUP_STEPS, TOTAL_STEPS } from "@/components/SetupShell";
+import { SetupShell, SETUP_STEPS, TOTAL_STEPS, setupStepTitle } from "@/components/SetupShell";
 import { EmergencyInfo } from "@/components/EmergencyInfo";
 import { Plus, X, Check, Lightbulb, GripVertical, Sparkles, AlertTriangle } from "lucide-react";
 import { PhotoCropper } from "@/components/PhotoCropper";
@@ -100,7 +100,7 @@ function useDebouncedAutosave(
         setDirtyRef.current(false);
       } catch (e: any) {
         // Never fail silently — the owner must know their input didn't save.
-        toast.error(`Couldn't save your changes: ${friendlyError(e, "please try again.")}`);
+        toast.error(i18next.t("birdSetup.couldNotSaveChanges", "Couldn't save your changes: {{reason}}", { reason: friendlyError(e, i18next.t("birdSetup.pleaseTryAgainLower", "please try again.")) }));
       }
     }, delay);
     return () => {
@@ -118,7 +118,7 @@ function useDebouncedAutosave(
         pendingRef.current = false;
         setDirtyRef.current(false);
       } catch (e: any) {
-        toast.error(`Couldn't save your changes: ${friendlyError(e, "please try again.")}`);
+        toast.error(i18next.t("birdSetup.couldNotSaveChanges", "Couldn't save your changes: {{reason}}", { reason: friendlyError(e, i18next.t("birdSetup.pleaseTryAgainLower", "please try again.")) }));
         throw e; // surface to flushPending so navigation can be blocked
       }
     };
@@ -185,7 +185,7 @@ function BirdSetup() {
       if (error || data) return; // already exists, or transient — steps will retry
       const { error: upErr } = await supabase
         .from("care_plans").upsert({ bird_id: birdId }, { onConflict: "bird_id" });
-      if (upErr) { toast.error(`Couldn't load this bird's care plan: ${friendlyError(upErr, "please try again.")}`); return; }
+      if (upErr) { toast.error(i18next.t("birdSetup.couldNotLoadPlan", "Couldn't load this bird's care plan: {{reason}}", { reason: friendlyError(upErr, i18next.t("birdSetup.pleaseTryAgainLower", "please try again.")) })); return; }
       qc.invalidateQueries(); // plan now exists — refetch the per-step queries
     })();
   }, [bird, birdId, qc]);
@@ -273,7 +273,7 @@ function BirdSetup() {
       if (ok) {
         track("care_plan_section_completed", { section: completedSection, step });
         track("care_plan_progress", { percent_complete: 100, sections_complete: TOTAL_STEPS, total: TOTAL_STEPS });
-        toast.success(`${bird?.name ?? "Bird"} setup complete.`);
+        toast.success(i18next.t("birdSetup.setupComplete", "{{name}} setup complete.", { name: bird?.name ?? i18next.t("birdSetup.birdFallback", "Bird") }));
         navigate({ to: "/birds/$birdId", params: { birdId } });
       }
       return;
@@ -355,7 +355,7 @@ function BirdSetup() {
   return (
     <SetupShell
       step={step}
-      title={meta.title}
+      title={setupStepTitle(t, meta.key)}
       birdName={bird.name}
       birdSpecies={bird.species}
       saving={saving}
@@ -645,7 +645,7 @@ export function BasicsStep({ birdId, onBlockNext, registerFlush }: { birdId: str
               <input type="file" accept="image/*,.heic,.heif" disabled={photoBusy} className="hidden" onChange={onPhoto} />
             </label>
             {form.photo_url && (
-              <button type="button" onClick={() => { setForm({ ...form, photo_url: null, photo_position: null }); setPhotoRef(null); }} className="ml-2 text-xs font-semibold text-warn-red underline">Remove</button>
+              <button type="button" onClick={() => { setForm({ ...form, photo_url: null, photo_position: null }); setPhotoRef(null); }} className="ml-2 text-xs font-semibold text-warn-red underline">{t("birdSetup.remove", "Remove")}</button>
             )}
           </div>
         </div>
@@ -873,7 +873,7 @@ function TimeBlockSection({
             onClick={() => setAddingCustom(true)}
             className="flex items-center gap-1 rounded-full border border-dashed border-[#b9c7bd] px-3 py-1.5 text-[13px] text-[#1a3d2e] transition hover:bg-white/50"
           >
-            <Plus className="size-3.5 text-[#5f7a6e]" /> Add your own
+            <Plus className="size-3.5 text-[#5f7a6e]" /> {t("birdSetup.addYourOwnChip", "Add your own")}
           </button>
         )}
       </div>
@@ -1284,7 +1284,7 @@ export function FoodWaterStep({
     if (diet.includes(value)) {
       const items = dietDetails[value] ?? [];
       const hasContent = items.some(foodItemHasContent) || (value === "chop" && chopIngredients.length > 0);
-      if (hasContent && !window.confirm(`Remove ${typeLabel(value)} and the items you've added to it?`)) return;
+      if (hasContent && !window.confirm(t("birdSetup.removeDietTypeConfirm", "Remove {{type}} and the items you've added to it?", { type: typeLabel(value) }))) return;
       setDiet(diet.filter((d) => d !== value));
       setDietDetails((prev) => { const next = { ...prev }; delete next[value]; return next; });
       if (value === "chop") setChopIngredients([]);
@@ -1298,7 +1298,7 @@ export function FoodWaterStep({
   // since it replaces the chop item(s).
   function chooseChopMode(mode: "premade" | "homemade") {
     if (chopMode === mode) return;
-    if (chopMode && chopItemsState.some(foodItemHasContent) && !window.confirm(`Switch to ${mode === "homemade" ? "homemade" : "pre-made"}? This clears the chop items you've added.`)) return;
+    if (chopMode && chopItemsState.some(foodItemHasContent) && !window.confirm(mode === "homemade" ? t("birdSetup.switchToHomemadeConfirm", "Switch to homemade? This clears the chop items you've added.") : t("birdSetup.switchToPremadeConfirm", "Switch to pre-made? This clears the chop items you've added."))) return;
     setItemsForType("chop", mode === "homemade"
       ? [{ ...blankFoodItem(), name: HOMEMADE_CHOP_NAME, homemade: true }]
       : [{ ...blankFoodItem(), homemade: false }]);
@@ -1398,7 +1398,7 @@ export function FoodWaterStep({
               {n}
               <button
                 type="button"
-                aria-label={`Remove ${n}`}
+                aria-label={t("birdSetup.removeItemAria", "Remove {{item}}", { item: n })}
                 onClick={() => setNever(never.filter((x) => x !== n))}
                 className="rounded-full p-0.5 hover:bg-warn-red/20"
               >
@@ -2100,7 +2100,7 @@ export function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlus
                 onClick={() => setReplacingClip(true)}
                 className="flex-1 rounded-xl border border-sage-200 bg-white py-2 text-xs font-semibold text-sage-700"
               >
-                Replace
+                {t("birdSetup.replace", "Replace")}
               </button>
               <button
                 type="button"
@@ -2116,7 +2116,7 @@ export function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlus
             <ClipRecorder birdId={birdId} onBusy={setClipBusy} onUploaded={uploadClip} />
             {clipPath && replacingClip && (
               <button type="button" onClick={() => setReplacingClip(false)} className="w-full rounded-xl border border-sage-200 bg-white py-2 text-xs font-semibold text-sage-700">
-                Keep current clip
+                {t("birdSetup.keepCurrentClip", "Keep current clip")}
               </button>
             )}
           </div>
@@ -2203,7 +2203,7 @@ export function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlus
             onClick={() => setMedRows((rows) => [...rows, { name: "", times: [], notes: "" }])}
             className="inline-flex items-center gap-1.5 rounded-lg bg-sage-100 px-3 py-2 text-xs font-semibold text-sage-700"
           >
-            <Plus className="size-3.5" /> Add another medication
+            <Plus className="size-3.5" /> {t("birdSetup.addAnotherMedication", "Add another medication")}
           </button>
         </div>
       </Card>
@@ -2575,7 +2575,7 @@ function ClipSlotCard({
           <p className="flex items-center gap-1 text-xs font-semibold text-sage-600"><Check className="size-3.5" /> {t("birdSetup.clipSaved", "Clip saved")}</p>
           <div className="flex gap-2">
             <button type="button" onClick={() => setReplacing(true)} className="flex-1 rounded-xl border border-sage-200 bg-white py-2 text-xs font-semibold text-sage-700">
-              Replace
+              {t("birdSetup.replace", "Replace")}
             </button>
             <button type="button" onClick={remove} className="flex-1 rounded-xl border border-sage-200 bg-white py-2 text-xs font-semibold text-warn-red">
               {t("birdSetup.remove", "Remove")}
@@ -2587,7 +2587,7 @@ function ClipSlotCard({
           <ClipRecorder birdId={birdId} onBusy={(b) => onBusy(`${slot.key}:rec`, b)} onUploaded={upload} />
           {path && replacing && (
             <button type="button" onClick={() => setReplacing(false)} className="w-full rounded-xl border border-sage-200 bg-white py-2 text-xs font-semibold text-sage-700">
-              Keep current clip
+              {t("birdSetup.keepCurrentClip", "Keep current clip")}
             </button>
           )}
         </div>
@@ -2820,21 +2820,21 @@ function ReviewStep({
           onClick={() => onFinish({ to: "home" })}
           className="w-full rounded-xl bg-sage-600 py-3 text-sm font-semibold text-white"
         >
-          Looks good — save
+          {t("birdSetup.looksGoodSave", "Looks good — save")}
         </button>
         <button
           type="button"
           onClick={() => onFinish({ to: "dashboard-newsit" })}
           className="w-full rounded-xl border border-sage-300 bg-white py-3 text-sm font-semibold text-sage-700"
         >
-          Save & create a sit
+          {t("birdSetup.saveAndCreateSit", "Save & create a sit")}
         </button>
         <button
           type="button"
           onClick={() => onJumpToStep(8)}
           className="block w-full text-center text-xs font-semibold text-sage-700 underline"
         >
-          ← Back to Emergency
+          {t("birdSetup.backToEmergency", "← Back to Emergency")}
         </button>
       </div>
     </div>

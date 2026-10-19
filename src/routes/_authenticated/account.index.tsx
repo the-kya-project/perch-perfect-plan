@@ -1,5 +1,5 @@
 import { createFileRoute, Link, useNavigate, useRouter, useCanGoBack } from "@tanstack/react-router";
-import { useTranslation } from "react-i18next";
+import { useTranslation, Trans } from "react-i18next";
 import i18next from "i18next";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -138,7 +138,7 @@ function AccountPage() {
                   <p className="mt-0.5 truncate text-[11px] text-[var(--amber-ink)]">{t("account.emailChangePending", "Change to {{email}} pending — confirm the emailed links.", { email: pendingEmail })}</p>
                 )}
               </div>
-              <button onClick={() => setEditOpen(true)} className="shrink-0 text-[13px] font-[500] text-[var(--moss)] active:opacity-70">Edit</button>
+              <button onClick={() => setEditOpen(true)} className="shrink-0 text-[13px] font-[500] text-[var(--moss)] active:opacity-70">{t("account.edit", "Edit")}</button>
             </div>
           </Card>
 
@@ -247,7 +247,7 @@ function AccountPage() {
             </Card>
           </div>
 
-          <p className="t-meta text-center">Version {APP_VERSION}</p>
+          <p className="t-meta text-center">{t("account.version", "Version {{version}}", { version: APP_VERSION })}</p>
 
           <PrimaryButton tone="outline" onPress={signOut}>{t("account.signOut", "Sign out")}</PrimaryButton>
 
@@ -255,7 +255,7 @@ function AccountPage() {
             onClick={() => setDeleteOpen(true)}
             className="block w-full min-h-[44px] py-1 text-center text-[13px] font-[500] text-[var(--red-ink)] active:opacity-70"
           >
-            Delete account
+            {t("account.deleteAccount", "Delete account")}
           </button>
         </main>
       </div>
@@ -473,8 +473,11 @@ function DeleteAccountModal({ onClose, onConfirm }: { onClose: () => void; onCon
   return (
     <ModalShell title={t("account.deleteAccount", "Delete account")} onClose={deleting ? () => {} : onClose}>
       <p className="t-body text-[var(--mute)]">
-        This permanently deletes your account and <strong className="text-[var(--ink)]">{t("account.everythingInIt", "everything in it")}</strong> — your birds,
-        care plans, clips, sits, sitter logs, and your contact record. Sitter links stop working. This cannot be undone.
+        <Trans
+          i18nKey="account.deletePermanentlyBody"
+          defaults="This permanently deletes your account and <1>everything in it</1> — your birds, care plans, clips, sits, sitter logs, and your contact record. Sitter links stop working. This cannot be undone."
+          components={{ 1: <strong className="text-[var(--ink)]" /> }}
+        />
       </p>
       <label className="t-eyebrow mt-4 block text-[var(--mute)]">{t("account.typeDeleteToConfirm", "Type DELETE to confirm")}</label>
       <input

@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import { foodLabel } from "./foodLabels";
 import { FEED_PERIODS, type FeedPeriod, type FeedTime } from "@/lib/feedTimes";
 
 /**
@@ -19,12 +21,13 @@ export function FeedTimePicker({
   value: { times: FeedTime[]; freeFed: boolean; note?: string | null };
   onChange: (patch: { times?: FeedTime[]; freeFed?: boolean; note?: string | null }) => void;
 }) {
+  const { t } = useTranslation();
   const { times, freeFed, note } = value;
-  const selected = new Map<FeedPeriod, FeedTime>(times.map((t) => [t.period, t]));
+  const selected = new Map<FeedPeriod, FeedTime>(times.map((ft) => [ft.period, ft]));
 
   function togglePeriod(p: FeedPeriod) {
     if (selected.has(p)) {
-      onChange({ times: times.filter((t) => t.period !== p) });
+      onChange({ times: times.filter((ft) => ft.period !== p) });
     } else {
       // Keep periods in canonical order (morning → midday → evening).
       const next = [...times, { period: p, at: null }];
@@ -34,7 +37,7 @@ export function FeedTimePicker({
   }
 
   function setAt(p: FeedPeriod, at: string) {
-    onChange({ times: times.map((t) => (t.period === p ? { ...t, at: at || null } : t)) });
+    onChange({ times: times.map((ft) => (ft.period === p ? { ...ft, at: at || null } : ft)) });
   }
 
   return (
@@ -46,12 +49,12 @@ export function FeedTimePicker({
           checked={freeFed}
           onChange={(e) => onChange({ freeFed: e.target.checked, ...(e.target.checked ? { times: [] } : {}) })}
         />
-        Available all day / free-fed
+        {t("foodEditor.availableAllDayFreeFed", "Available all day / free-fed")}
       </label>
 
       {!freeFed && (
         <div className="mt-2">
-          <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-sage-600">When is it fed?</p>
+          <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-sage-600">{t("foodEditor.whenIsItFed", "When is it fed?")}</p>
           <div className="flex flex-wrap gap-1.5">
             {FEED_PERIODS.map((p) => {
               const on = selected.has(p.value);
@@ -65,7 +68,7 @@ export function FeedTimePicker({
                     (on ? "border-sage-600 bg-sage-600 text-white" : "border-sage-200 bg-white text-sage-700 hover:bg-sage-50")
                   }
                 >
-                  {on ? "✓ " : "+ "}{p.label}
+                  {on ? "✓ " : "+ "}{foodLabel(t, p.label)}
                 </button>
               );
             })}
@@ -77,7 +80,7 @@ export function FeedTimePicker({
                 const at = selected.get(p.value)?.at ?? "";
                 return (
                   <div key={p.value} className="flex items-center gap-2 text-xs text-sage-700">
-                    <span className="w-16 shrink-0 font-medium">{p.label}</span>
+                    <span className="w-16 shrink-0 font-medium">{foodLabel(t, p.label)}</span>
                     <input
                       type="time"
                       className="input flex-1 text-sm"
@@ -89,12 +92,12 @@ export function FeedTimePicker({
                         type="button"
                         onClick={() => setAt(p.value, "")}
                         className="shrink-0 rounded-md px-2 py-1 text-[11px] font-semibold text-warn-red hover:bg-warn-red/10"
-                        aria-label={`Clear ${p.label} time`}
+                        aria-label={t("foodEditor.clearPeriodTime", "Clear {{period}} time", { period: foodLabel(t, p.label) })}
                       >
-                        Clear
+                        {t("foodEditor.clear", "Clear")}
                       </button>
                     ) : (
-                      <span className="shrink-0 text-[11px] text-sage-400">optional time</span>
+                      <span className="shrink-0 text-[11px] text-sage-400">{t("foodEditor.optionalTime", "optional time")}</span>
                     )}
                   </div>
                 );
@@ -102,16 +105,16 @@ export function FeedTimePicker({
             </div>
           )}
 
-          {times.length === 0 && <p className="mt-1 text-[11px] text-sage-400">Pick at least one period.</p>}
+          {times.length === 0 && <p className="mt-1 text-[11px] text-sage-400">{t("foodEditor.pickAtLeastOnePeriod", "Pick at least one period.")}</p>}
         </div>
       )}
 
       {/* Optional per-food note — any prep or serving detail. */}
       <div className="mt-2">
-        <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-sage-600">Note (optional)</label>
+        <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-sage-600">{t("foodEditor.noteOptional", "Note (optional)")}</label>
         <textarea
           className="input area text-sm"
-          placeholder="e.g. any prep or serving details"
+          placeholder={t("foodEditor.notePlaceholderEg", "e.g. any prep or serving details")}
           maxLength={300}
           value={note ?? ""}
           onChange={(e) => onChange({ note: e.target.value || null })}

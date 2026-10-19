@@ -5,6 +5,7 @@
 import { emailT } from "./i18n/emailI18n.server";
 import { escapeHtml, type BuiltEmail } from "./emailTemplates";
 import { flockShell, FC, type FlockBlock } from "./flockClub";
+type EmailTFn = ReturnType<typeof emailT>;
 
 /**
  * The welcome letter — day 0, and the first email on the Flock Club layout.
@@ -380,11 +381,16 @@ export type FlockBird = {
 
 /** "Juno", "Juno and Pip", "Juno, Pip, and Echo" — Oxford comma throughout.
  *  Over six, the first five and a count. */
-export function joinFlock(names: string[], andMore: (n: number) => string): string {
+export function joinFlock(names: string[], andMore: (n: number) => string, t?: EmailTFn): string {
+  // Joiners come from the shared email.common.* keys so a Dutch report reads
+  // "Juno en Pip"; with no translator the English literals are used.
+  const pair = (a: string, b: string) => (t ? t("email.common.listPair", { a, b }) : `${a} and ${b}`);
+  const sep = t ? t("email.common.listSep") : ", ";
+  const many = (head: string, last: string) => (t ? t("email.common.listMany", { head, last }) : `${head}, and ${last}`);
   if (names.length <= 1) return names[0] ?? "";
-  if (names.length === 2) return `${names[0]} and ${names[1]}`;
-  if (names.length <= 6) return `${names.slice(0, -1).join(", ")}, and ${names[names.length - 1]}`;
-  return `${names.slice(0, 5).join(", ")}, ${andMore(names.length - 5)}`;
+  if (names.length === 2) return pair(names[0], names[1]);
+  if (names.length <= 6) return many(names.slice(0, -1).join(sep), names[names.length - 1]);
+  return `${names.slice(0, 5).join(sep)}${sep}${andMore(names.length - 5)}`;
 }
 
 /**
@@ -422,7 +428,7 @@ export function buildFlockReportEmail(opts: {
   const days = new Date(Date.UTC(opts.year, m, 0)).getUTCDate();
 
   const names = opts.birds.map((b) => escapeHtml(b.name));
-  const flock = joinFlock(names, (n) => t("email.monthly.andMore", { n }));
+  const flock = joinFlock(names, (n) => t("email.monthly.andMore", { n }), t);
   const one = opts.birds.length === 1;
 
   // Someone's FIRST Flock Report introduces itself; every later one names the

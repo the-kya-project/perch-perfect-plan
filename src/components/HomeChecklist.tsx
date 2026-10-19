@@ -17,6 +17,7 @@ import { useAppSurface } from "@/lib/appSurface";
 import { registerForNativePush, setNativePushOptedOut } from "@/lib/pushNative";
 import { savePushToken } from "@/lib/push.functions";
 import { useServerFn } from "@tanstack/react-start";
+import { useTranslation } from "react-i18next";
 import {
   APP_STORE_BADGE, APP_STORE_BADGE_SIZE, APP_STORE_URL,
   PLAY_STORE_BADGE, PLAY_STORE_BADGE_SIZE, PLAY_STORE_URL,
@@ -26,6 +27,7 @@ const NEW_ACCOUNT_DAYS = 30;
 const dismissKey = (uid: string) => `ppc_setup_checklist_dismissed_${uid}`;
 
 export function HomeChecklist() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [dismissed, setDismissed] = useState(false);
   // Which surface, and what reminders mean there (see lib/appSurface).
@@ -122,14 +124,14 @@ export function HomeChecklist() {
       ? surface.nativePermission === "denied"
         ? {
             key: "reminders",
-            label: "Turn on reminders",
+            label: t("homeChecklist.turnOnReminders", "Turn on reminders"),
             icon: <Bell className="size-4" />,
             done: false,
-            hint: "Notifications are off. Turn them on in your phone's settings.",
+            hint: t("homeChecklist.notificationsOffHint", "Notifications are off. Turn them on in your phone's settings."),
           }
         : {
             key: "reminders",
-            label: "Turn on reminders",
+            label: t("homeChecklist.turnOnReminders", "Turn on reminders"),
             icon: <Bell className="size-4" />,
             done: surface.nativePermission === "granted",
             onAction:
@@ -153,7 +155,7 @@ export function HomeChecklist() {
             // which we no longer ask anyone to do — so reminders come with
             // the app, and this replaces both old rows.
             key: "reminders",
-            label: "Get the app",
+            label: t("homeChecklist.getTheApp", "Get the app"),
             icon: <Download className="size-4" />,
             done: surface.hasNativeDevice,
             onAction: surface.hasNativeDevice
@@ -161,14 +163,14 @@ export function HomeChecklist() {
               : () => window.open(surface.storePlatform === "ios" ? APP_STORE_URL : PLAY_STORE_URL, "_blank", "noopener"),
             hint: surface.hasNativeDevice
               ? undefined
-              : "Reminders, quick logging, and your flock's whole record, right on your phone. Same account, nothing to move over.",
+              : t("homeChecklist.getTheAppHint", "Reminders, quick logging, and your flock's whole record, right on your phone. Same account, nothing to move over."),
             badge: surface.hasNativeDevice ? undefined : surface.storePlatform,
           }
         : {
             // Desktop web push genuinely works, so it keeps its own row —
             // relabelled to match Settings and the app.
             key: "reminders",
-            label: "Turn on reminders",
+            label: t("homeChecklist.turnOnReminders", "Turn on reminders"),
             icon: <Bell className="size-4" />,
             done: notifGranted,
             onAction: notifGranted
@@ -189,7 +191,7 @@ export function HomeChecklist() {
   if (data.ownsBirds) {
     items.push({
       key: "care-plan",
-      label: "Create a care plan",
+      label: t("homeChecklist.createACarePlan", "Create a care plan"),
       icon: <ClipboardList className="size-4" />,
       done: data.carePlanDone,
       onAction: () =>
@@ -199,7 +201,7 @@ export function HomeChecklist() {
     });
     items.push({
       key: "emergency",
-      label: "Add emergency info",
+      label: t("homeChecklist.addEmergencyInfo", "Add emergency info"),
       icon: <Siren className="size-4" />,
       done: data.emergencyDone,
       onAction: () => navigate({ to: "/dashboard", search: { emergencyDefaults: true } }),
@@ -218,10 +220,10 @@ export function HomeChecklist() {
     <section className="rounded-[18px] bg-white p-4 ring-1 ring-[var(--line2)]" style={{ boxShadow: "0 6px 14px -8px rgba(40,50,40,.08)" }}>
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="t-section">Finish setting up</p>
-          <p className="t-meta mt-0.5">{doneCount} of {items.length} done</p>
+          <p className="t-section">{t("homeChecklist.finishSettingUp", "Finish setting up")}</p>
+          <p className="t-meta mt-0.5">{t("homeChecklist.doneCount", "{{done}} of {{total}} done", { done: doneCount, total: items.length })}</p>
         </div>
-        <button type="button" onClick={dismiss} aria-label="Dismiss checklist" className="grid size-8 shrink-0 place-items-center rounded-full text-[var(--mute2)] active:bg-black/[0.04]">
+        <button type="button" onClick={dismiss} aria-label={t("homeChecklist.dismissChecklist", "Dismiss checklist")} className="grid size-8 shrink-0 place-items-center rounded-full text-[var(--mute2)] active:bg-black/[0.04]">
           <X className="size-4" />
         </button>
       </div>
@@ -249,7 +251,7 @@ export function HomeChecklist() {
                       src={it.badge === "ios" ? APP_STORE_BADGE : PLAY_STORE_BADGE}
                       width={(it.badge === "ios" ? APP_STORE_BADGE_SIZE : PLAY_STORE_BADGE_SIZE).width}
                       height={(it.badge === "ios" ? APP_STORE_BADGE_SIZE : PLAY_STORE_BADGE_SIZE).height}
-                      alt={it.badge === "ios" ? "Download on the App Store" : "Get it on Google Play"}
+                      alt={it.badge === "ios" ? t("homeChecklist.appStoreBadgeAlt", "Download on the App Store") : t("homeChecklist.playStoreBadgeAlt", "Get it on Google Play")}
                       className="mt-2 block"
                     />
                   )}

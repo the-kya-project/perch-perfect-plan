@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Camera, Image as ImageIcon, Crop, Trash2, X } from "lucide-react";
 import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 import { friendlyError } from "@/lib/errorMessage";
+import { Trans, useTranslation } from "react-i18next";
 
 // First-class bird-photo management. Opened from the camera button on the bird
 // main page hero. Menu → reposition step → save. The "focal point" is stored in
@@ -26,6 +27,7 @@ export function BirdPhotoSheet({
   // crop" nudge uses this so it's one tap to the crop UI).
   startAdjusting?: boolean;
 }) {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const adjustNow = startAdjusting && !!currentPhoto && !!displayUrl;
   const [mode, setMode] = useState<"menu" | "reposition">(adjustNow ? "reposition" : "menu");
@@ -48,7 +50,7 @@ export function BirdPhotoSheet({
     try {
       const dataUrl = await compressImageToDataUrl(file);
       if (dataUrlBytes(dataUrl) > MAX_UPLOAD_BYTES) {
-        toast.error("That photo's a bit too large even after resizing. Try a different one.");
+        toast.error(t("birdPhotoSheet.tooLarge", "That photo's a bit too large even after resizing. Try a different one."));
         return;
       }
       setEditUrl(dataUrl);
@@ -56,7 +58,7 @@ export function BirdPhotoSheet({
       setPos("50% 50%"); // new photo starts centered; user repositions
       setMode("reposition");
     } catch {
-      toast.error("Couldn't process that photo. Try a different one.");
+      toast.error(t("birdPhotoSheet.processFailed", "Couldn't process that photo. Try a different one."));
     } finally {
       setBusy(false);
     }
@@ -84,55 +86,55 @@ export function BirdPhotoSheet({
       const { error } = await supabase.from("birds").update({ photo_url: ref, photo_position: ref ? pos : null } as any).eq("id", birdId);
       if (error) throw error;
       invalidate();
-      toast.success("Photo updated.");
+      toast.success(t("birdPhotoSheet.updated", "Photo updated."));
       onClose();
     } catch (e: any) {
-      toast.error(friendlyError(e, "Couldn't save the photo."));
+      toast.error(friendlyError(e, t("birdPhotoSheet.saveFailed", "Couldn't save the photo.")));
       setBusy(false);
     }
   }
 
   async function remove() {
-    if (!window.confirm("Remove this bird's photo? You can add one again any time.")) return;
+    if (!window.confirm(t("birdPhotoSheet.confirmRemove", "Remove this bird's photo? You can add one again any time."))) return;
     setBusy(true);
     try {
       const { error } = await supabase.from("birds").update({ photo_url: null, photo_position: null } as any).eq("id", birdId);
       if (error) throw error;
       invalidate();
-      toast.success("Photo removed.");
+      toast.success(t("birdPhotoSheet.removed", "Photo removed."));
       onClose();
     } catch (e: any) {
-      toast.error(friendlyError(e, "Couldn't remove the photo."));
+      toast.error(friendlyError(e, t("birdPhotoSheet.removeFailed", "Couldn't remove the photo.")));
       setBusy(false);
     }
   }
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-end sm:place-items-center" role="dialog" aria-modal="true">
-      <button type="button" aria-label="Close" className="absolute inset-0 bg-[var(--ink)]/40" onClick={busy ? undefined : onClose} />
+      <button type="button" aria-label={t("birdPhotoSheet.close", "Close")} className="absolute inset-0 bg-[var(--ink)]/40" onClick={busy ? undefined : onClose} />
       <div className="relative w-full max-w-md rounded-t-2xl bg-[var(--cream)] p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-xl sm:rounded-2xl">
         <input ref={takeRef} type="file" accept="image/*,.heic,.heif" capture="environment" className="hidden" onChange={onFile} />
         <input ref={libRef} type="file" accept="image/*,.heic,.heif" className="hidden" onChange={onFile} />
 
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="t-section">{mode === "menu" ? "Bird photo" : "Reposition"}</h2>
-          <button onClick={onClose} disabled={busy} aria-label="Close" className="rounded-full p-1 text-[var(--mute)] active:bg-black/5 disabled:opacity-50"><X className="size-5" /></button>
+          <h2 className="t-section">{mode === "menu" ? t("birdPhotoSheet.title", "Bird photo") : t("birdPhotoSheet.reposition", "Reposition")}</h2>
+          <button onClick={onClose} disabled={busy} aria-label={t("birdPhotoSheet.close", "Close")} className="rounded-full p-1 text-[var(--mute)] active:bg-black/5 disabled:opacity-50"><X className="size-5" /></button>
         </div>
 
         {mode === "menu" ? (
           <div className="space-y-2">
-            <SheetRow icon={<Camera className="size-5" />} label="Take photo" onClick={() => takeRef.current?.click()} disabled={busy} />
-            <SheetRow icon={<ImageIcon className="size-5" />} label="Choose from library" onClick={() => libRef.current?.click()} disabled={busy} />
-            {currentPhoto && displayUrl && <SheetRow icon={<Crop className="size-5" />} label="Adjust crop" onClick={adjustExisting} disabled={busy} />}
-            {currentPhoto && <SheetRow icon={<Trash2 className="size-5" />} label="Remove photo" onClick={remove} disabled={busy} destructive />}
+            <SheetRow icon={<Camera className="size-5" />} label={t("birdPhotoSheet.takePhoto", "Take photo")} onClick={() => takeRef.current?.click()} disabled={busy} />
+            <SheetRow icon={<ImageIcon className="size-5" />} label={t("birdPhotoSheet.chooseLibrary", "Choose from library")} onClick={() => libRef.current?.click()} disabled={busy} />
+            {currentPhoto && displayUrl && <SheetRow icon={<Crop className="size-5" />} label={t("birdPhotoSheet.adjustCrop", "Adjust crop")} onClick={adjustExisting} disabled={busy} />}
+            {currentPhoto && <SheetRow icon={<Trash2 className="size-5" />} label={t("birdPhotoSheet.removePhoto", "Remove photo")} onClick={remove} disabled={busy} destructive />}
           </div>
         ) : (
           <div className="space-y-3">
             {editUrl && <RepositionBox src={editUrl} position={pos} onChange={setPos} />}
-            <p className="t-meta text-center">Drag to frame the photo. The green <span className="font-[600] text-[var(--moss)]">Flock card</span> preview is exactly what your Home tile will show — frame the bird inside it, then save.</p>
+            <p className="t-meta text-center"><Trans i18nKey="birdPhotoSheet.frameHint" defaults="Drag to frame the photo. The green <1>Flock card</1> preview is exactly what your Home tile will show — frame the bird inside it, then save." components={{ 1: <span className="font-[600] text-[var(--moss)]" /> }} /></p>
             <div className="flex gap-2">
-              <button type="button" disabled={busy} onClick={() => setMode("menu")} className="min-h-[44px] flex-1 rounded-[12px] border border-[var(--line)] bg-white text-[15px] font-[500] text-[var(--ink)] disabled:opacity-50">Back</button>
-              <button type="button" disabled={busy} onClick={save} className="min-h-[44px] flex-1 rounded-[12px] bg-[var(--lime)] text-[15px] font-[500] text-[var(--ink)] disabled:opacity-50">{busy ? "Saving…" : "Save photo"}</button>
+              <button type="button" disabled={busy} onClick={() => setMode("menu")} className="min-h-[44px] flex-1 rounded-[12px] border border-[var(--line)] bg-white text-[15px] font-[500] text-[var(--ink)] disabled:opacity-50">{t("birdPhotoSheet.back", "Back")}</button>
+              <button type="button" disabled={busy} onClick={save} className="min-h-[44px] flex-1 rounded-[12px] bg-[var(--lime)] text-[15px] font-[500] text-[var(--ink)] disabled:opacity-50">{busy ? t("birdPhotoSheet.saving", "Saving…") : t("birdPhotoSheet.savePhoto", "Save photo")}</button>
             </div>
           </div>
         )}
@@ -161,6 +163,7 @@ function SheetRow({ icon, label, onClick, disabled, destructive }: { icon: React
 // crop a single object-position to wildly different portions of the source,
 // so a dashed-guide overlay can't honestly preview both at once.
 function RepositionBox({ src, position, onChange }: { src: string; position: string; onChange: (pos: string) => void }) {
+  const { t } = useTranslation();
   const ref = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState(() => parse(position));
   const [dragging, setDragging] = useState(false);
@@ -202,11 +205,11 @@ function RepositionBox({ src, position, onChange }: { src: string; position: str
           className="relative aspect-[3/2] w-full touch-none select-none overflow-hidden rounded-[14px] ring-1 ring-[var(--line)]"
           style={{ ...coverStyle, cursor: dragging ? "grabbing" : "grab" }}
           role="img"
-          aria-label="Drag to reposition photo"
+          aria-label={t("birdPhotoSheet.dragAria", "Drag to reposition photo")}
         >
-          <span className="absolute left-2 top-2 rounded-full bg-black/45 px-2 py-0.5 text-[10px] font-[500] text-white">Drag to reposition</span>
+          <span className="absolute left-2 top-2 rounded-full bg-black/45 px-2 py-0.5 text-[10px] font-[500] text-white">{t("birdPhotoSheet.dragToReposition", "Drag to reposition")}</span>
         </div>
-        <p className="t-meta text-center">Bird-record header</p>
+        <p className="t-meta text-center">{t("birdPhotoSheet.recordHeader", "Bird-record header")}</p>
       </div>
       {/* The real flock-tile preview at the actual 9:10 card aspect, rendered
           through the SAME BirdPhotoCrop component (img + object-cover) the Home
@@ -214,9 +217,9 @@ function RepositionBox({ src, position, onChange }: { src: string; position: str
       <div className="shrink-0 space-y-1">
         <div className="relative aspect-[9/10] w-28 overflow-hidden rounded-[14px] bg-[var(--cream2)] ring-2 ring-[var(--moss)]">
           <BirdPhotoCrop url={src} position={`${pos.x}% ${pos.y}%`} eager />
-          <span className="absolute bottom-1 left-1/2 -translate-x-1/2 rounded-full bg-[var(--moss)] px-2 py-0.5 text-[10px] font-[500] text-white">Flock card</span>
+          <span className="absolute bottom-1 left-1/2 -translate-x-1/2 rounded-full bg-[var(--moss)] px-2 py-0.5 text-[10px] font-[500] text-white">{t("birdPhotoSheet.flockCard", "Flock card")}</span>
         </div>
-        <p className="t-meta text-center">What the tile shows</p>
+        <p className="t-meta text-center">{t("birdPhotoSheet.tileShows", "What the tile shows")}</p>
       </div>
     </div>
   );

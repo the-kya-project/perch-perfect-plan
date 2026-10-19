@@ -1,4 +1,5 @@
 import { createFileRoute, Link, Navigate, useSearch } from "@tanstack/react-router";
+import { clipSlotLabel } from "@/lib/clipSlotLabels";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
@@ -353,9 +354,9 @@ function SitterToday() {
                 key={c.key}
                 className="flex w-60 shrink-0 snap-start flex-col overflow-hidden rounded-2xl bg-[#efe9da] shadow-sm"
               >
-                <ClipPlayer src={c.url} label={c.label} className="aspect-video" />
+                <ClipPlayer src={c.url} label={clipSlotLabel(c.key, c.label, t)} className="aspect-video" />
                 <div className="p-3">
-                  <p className="text-sm font-medium leading-tight">{c.label}</p>
+                  <p className="text-sm font-medium leading-tight">{clipSlotLabel(c.key, c.label, t)}</p>
                   <p className="mt-0.5 text-[11px] uppercase tracking-wider text-sage-600">{t("sitter.today.ownerRecorded", "Owner-recorded")}</p>
                 </div>
               </div>

@@ -21,9 +21,12 @@ import { useOpenSignedFile } from "@/lib/useOpenSignedFile";
 import { friendlyError } from "@/lib/errorMessage";
 import { formatLocalDate } from "@/lib/dates";
 import { localDateISO } from "@/lib/localDay";
+import i18next from "i18next";
+import type { TFunction } from "i18next";
+import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/journal")({
-  head: () => ({ meta: [{ title: "Journal — Kya & Co." }] }),
+  head: () => ({ meta: [{ title: i18next.t("birdJournal.metaTitle", "Journal — Kya & Co.") }] }),
   component: JournalFacet,
 });
 
@@ -49,7 +52,37 @@ const FILTERS: { value: Filter; label: string; kinds: Kind[] }[] = [
 ];
 const todayStr = () => localDateISO();
 
+// Display labels — the KINDS/FILTERS constants keep English; `kind` is stored.
+function kindLabel(t: TFunction, kind: Kind): string {
+  switch (kind) {
+    case "molt": return t("birdJournal.kindMolt", "Molt");
+    case "meds": return t("birdJournal.kindMeds", "Meds");
+    case "vet": return t("birdJournal.kindVet", "Vet visit");
+    case "behavior": return t("birdJournal.kindBehavior", "Behavior");
+    case "note": return t("birdJournal.kindNote", "Note");
+    case "other": return t("birdJournal.kindOther", "Other");
+    default: return String(kind);
+  }
+}
+function filterLabel(t: TFunction, f: Filter): string {
+  switch (f) {
+    case "all": return t("birdJournal.filterAll", "All");
+    case "health": return t("birdJournal.filterHealth", "Health");
+    case "behavior": return t("birdJournal.filterBehavior", "Behavior");
+    case "notes": return t("birdJournal.filterNotes", "Notes");
+  }
+}
+function emptyFilterText(t: TFunction, f: Filter): string {
+  switch (f) {
+    case "all": return t("birdJournal.emptyAll", "No all entries yet.");
+    case "health": return t("birdJournal.emptyHealth", "No health entries yet.");
+    case "behavior": return t("birdJournal.emptyBehavior", "No behavior entries yet.");
+    case "notes": return t("birdJournal.emptyNotes", "No notes entries yet.");
+  }
+}
+
 function JournalFacet() {
+  const { t } = useTranslation();
   const { birdId } = Route.useParams();
   const canHealth = useCapability("record_health", { birdId });
   const isOwner = useBirdRole(birdId) === "owner";
@@ -74,7 +107,7 @@ function JournalFacet() {
       return data as { name: string } | null;
     },
   });
-  const name = bird?.name ?? "this bird";
+  const name = bird?.name ?? t("birdJournal.thisBird", "this bird");
 
   const { data: entries } = useQuery({
     queryKey: ["journal-entries", birdId],
@@ -129,10 +162,10 @@ function JournalFacet() {
         <InkHero
           backIcon={<ArrowLeft className="size-5" />}
           onBack={goBack}
-          eyebrow="Journal"
-          headline={`What ${name}'s been up to.`}
-          body="The little things you notice now can matter later."
-          cta={canHealth ? { label: "Add an entry", tone: "lime", icon: <Plus className="size-4" />, onPress: () => setEditing("new") } : undefined}
+          eyebrow={t("birdJournal.eyebrow", "Journal")}
+          headline={t("birdJournal.headline", "What {{name}}'s been up to.", { name })}
+          body={t("birdJournal.body", "The little things you notice now can matter later.")}
+          cta={canHealth ? { label: t("birdJournal.addAnEntry", "Add an entry"), tone: "lime", icon: <Plus className="size-4" />, onPress: () => setEditing("new") } : undefined}
         />
 
         <main className="space-y-4 px-5 pt-5">
@@ -147,7 +180,7 @@ function JournalFacet() {
                 aria-pressed={filter === f.value}
                 className="inline-flex min-h-[44px] items-center"
               >
-                <StatusPill tone={filter === f.value ? "on" : "off"}>{f.label}</StatusPill>
+                <StatusPill tone={filter === f.value ? "on" : "off"}>{filterLabel(t, f.value)}</StatusPill>
               </button>
             ))}
           </div>
@@ -155,16 +188,16 @@ function JournalFacet() {
           {all.length === 0 ? (
             <section className="rounded-[18px] bg-[var(--cream2)] p-8 text-center ring-1 ring-[var(--line2)]">
               <BookOpen className="mx-auto size-7 text-[var(--moss)]" />
-              <p className="t-body mt-3 text-[var(--ink)]">Nothing here yet. The journal is where you track health and behavior over time — molts, meds, vet visits, a new word, an off day. Add an entry whenever something's worth noting for the record.</p>
+              <p className="t-body mt-3 text-[var(--ink)]">{t("birdJournal.emptyIntro", "Nothing here yet. The journal is where you track health and behavior over time — molts, meds, vet visits, a new word, an off day. Add an entry whenever something's worth noting for the record.")}</p>
               <div className="mt-4">
                 <PrimaryButton tone="lime" icon={<Plus className="size-4" />} onPress={() => setEditing("new")} full={false}>
-                  Add first entry
+                  {t("birdJournal.addFirst", "Add first entry")}
                 </PrimaryButton>
               </div>
             </section>
           ) : shown.length === 0 ? (
             <p className="t-body rounded-[18px] bg-[var(--cream2)] p-6 text-center text-[var(--mute)] ring-1 ring-[var(--line2)]">
-              No {FILTERS.find((f) => f.value === filter)!.label.toLowerCase()} entries yet.
+              {emptyFilterText(t, filter)}
             </p>
           ) : (
             <div className="space-y-3">
@@ -189,7 +222,7 @@ function JournalFacet() {
         <JournalEntryView
           entry={viewing}
           photoUrl={viewing.photo_path ? photoUrls?.[viewing.photo_path] ?? null : null}
-          kindLabel={KIND[viewing.kind].label}
+          kindLabel={kindLabel(t, viewing.kind)}
           kindPill={KIND[viewing.kind].pill}
           dateLabel={fmtDate(viewing.occurred_on)}
           canEdit={canHealth}
@@ -226,25 +259,27 @@ function JournalFacet() {
 // renders as a PhotoHero-style band across the top; tapping anywhere opens the
 // existing edit flow.
 function EntryCard({ entry, photoUrl, attachmentCount, onOpen }: { entry: Entry; photoUrl: string | null; attachmentCount: number; onOpen: () => void }) {
+  const { t } = useTranslation();
   const k = KIND[entry.kind];
+  const label = kindLabel(t, entry.kind);
   return (
     <Card>
       <button type="button" onClick={onOpen} className="block w-full text-left active:bg-black/[0.02]">
         {photoUrl && <PhotoHero src={photoUrl} height={160} alt="" />}
         <div className="p-4">
           <div className="flex items-start justify-between gap-3">
-            <h3 className="t-item min-w-0 flex-1">{entry.title || k.label}</h3>
+            <h3 className="t-item min-w-0 flex-1">{entry.title || label}</h3>
             <span className="t-meta shrink-0">{fmtDate(entry.occurred_on)}</span>
           </div>
           <div className="mt-1.5">
-            <span className={`inline-flex items-center rounded-full px-[9px] py-[3px] text-[11.5px] font-[500] ${k.pill}`}>{k.label}</span>
+            <span className={`inline-flex items-center rounded-full px-[9px] py-[3px] text-[11.5px] font-[500] ${k.pill}`}>{label}</span>
           </div>
           {entry.body && <p className="t-body mt-2 line-clamp-3 text-[var(--ink2)]">{entry.body}</p>}
           {/* Quiet marker — the files themselves live in the entry sheet. */}
           {attachmentCount > 0 && (
             <p className="t-meta mt-2 inline-flex items-center gap-1 text-[var(--mute2)]">
               <Paperclip className="size-3.5" />
-              {attachmentCount} {attachmentCount === 1 ? "file" : "files"}
+              {attachmentCount === 1 ? t("birdJournal.filesOne", "{{n}} file", { n: attachmentCount }) : t("birdJournal.filesOther", "{{n}} files", { n: attachmentCount })}
             </p>
           )}
         </div>
@@ -261,19 +296,20 @@ function fmtDate(iso: string): string {
 }
 
 function EntryForm({ birdId, entry, isOwner, onClose, onSaved, onDeleted }: { birdId: string; entry: Entry | null; isOwner: boolean; onClose: () => void; onSaved: () => void; onDeleted: () => void }) {
+  const { t } = useTranslation();
   const [deleting, setDeleting] = useState(false);
 
   async function remove() {
     if (!entry) return;
-    if (!window.confirm("Delete this journal entry? This can't be undone.")) return;
+    if (!window.confirm(t("birdJournal.confirmDelete", "Delete this journal entry? This can't be undone."))) return;
     setDeleting(true);
     try {
       const { error } = await supabase.from("journal_entries").delete().eq("id", entry.id);
       if (error) throw error;
-      toast.success("Entry deleted.");
+      toast.success(t("birdJournal.deleted", "Entry deleted."));
       onDeleted();
     } catch (e: any) {
-      toast.error(friendlyError(e, "Couldn't delete the entry."));
+      toast.error(friendlyError(e, t("birdJournal.deleteFailed", "Couldn't delete the entry.")));
     } finally {
       setDeleting(false);
     }
@@ -337,13 +373,13 @@ function EntryForm({ birdId, entry, isOwner, onClose, onSaved, onDeleted }: { bi
     try {
       const dataUrl = await compressImageToDataUrl(file);
       if (dataUrlBytes(dataUrl) > MAX_UPLOAD_BYTES) {
-        toast.error("That photo's a bit too large even after resizing. Try a different one.");
+        toast.error(t("birdJournal.photoTooLarge", "That photo's a bit too large even after resizing. Try a different one."));
         return;
       }
       setPhotoData(dataUrl);
       setKeepPhoto(false);
     } catch {
-      toast.error("Couldn't process that photo. Try a different one.");
+      toast.error(t("birdJournal.photoFailed", "Couldn't process that photo. Try a different one."));
     } finally {
       setPhotoBusy(false);
     }
@@ -401,13 +437,13 @@ function EntryForm({ birdId, entry, isOwner, onClose, onSaved, onDeleted }: { bi
         }
       }
 
-      toast.success(entry ? "Entry updated." : "Entry added.");
+      toast.success(entry ? t("birdJournal.updated", "Entry updated.") : t("birdJournal.added", "Entry added."));
       if (failed.length) {
-        toast.error(`Saved, but these files didn't go through: ${failed.join(", ")}. Open the entry and try attaching them again.`);
+        toast.error(t("birdJournal.filesFailed", "Saved, but these files didn't go through: {{files}}. Open the entry and try attaching them again.", { files: failed.join(", ") }));
       }
       onSaved();
     } catch (e: any) {
-      toast.error(friendlyError(e, "Couldn't save the entry."));
+      toast.error(friendlyError(e, t("birdJournal.saveFailed", "Couldn't save the entry.")));
     } finally {
       setSaving(false);
       setUploadingIdx(null);
@@ -422,43 +458,43 @@ function EntryForm({ birdId, entry, isOwner, onClose, onSaved, onDeleted }: { bi
       <div className="absolute inset-0 bg-black/30" onClick={saving ? undefined : onClose} />
       <div className="relative max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-2xl bg-[var(--cream)] p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-xl sm:rounded-2xl">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="t-section">{entry ? "Edit entry" : "Add entry"}</h2>
-          <button onClick={onClose} aria-label="Close" className="grid size-9 place-items-center rounded-full text-[var(--mute)]"><X className="size-5" /></button>
+          <h2 className="t-section">{entry ? t("birdJournal.editEntry", "Edit entry") : t("birdJournal.addEntry", "Add entry")}</h2>
+          <button onClick={onClose} aria-label={t("birdJournal.close", "Close")} className="grid size-9 place-items-center rounded-full text-[var(--mute)]"><X className="size-5" /></button>
         </div>
 
         <label className="block">
-          <span className="mb-1 block text-xs font-[500] text-[var(--mute)]">Kind *</span>
+          <span className="mb-1 block text-xs font-[500] text-[var(--mute)]">{t("birdJournal.kindLabel", "Kind *")}</span>
           <select value={kind} onChange={(e) => setKind(e.target.value as Kind)} className="h-11 w-full rounded-xl border border-[var(--line)] bg-white px-3 text-sm text-[var(--ink)]">
-            {KINDS.map((k) => <option key={k.value} value={k.value}>{k.label}</option>)}
+            {KINDS.map((k) => <option key={k.value} value={k.value}>{kindLabel(t, k.value)}</option>)}
           </select>
         </label>
 
         <label className="mt-3 block">
-          <span className="mb-1 block text-xs font-[500] text-[var(--mute)]">Title *</span>
-          <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120} placeholder="e.g. Started wing molt" className="h-11 w-full rounded-xl border border-[var(--line)] bg-white px-3 text-sm text-[var(--ink)]" />
+          <span className="mb-1 block text-xs font-[500] text-[var(--mute)]">{t("birdJournal.titleLabel", "Title *")}</span>
+          <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120} placeholder={t("birdJournal.titlePlaceholder", "e.g. Started wing molt")} className="h-11 w-full rounded-xl border border-[var(--line)] bg-white px-3 text-sm text-[var(--ink)]" />
         </label>
 
         <label className="mt-3 block">
-          <span className="mb-1 block text-xs font-[500] text-[var(--mute)]">Details</span>
-          <textarea value={body} onChange={(e) => setBody(e.target.value)} maxLength={2000} rows={3} placeholder="Optional" className="w-full rounded-xl border border-[var(--line)] bg-white p-3 text-sm text-[var(--ink)]" />
+          <span className="mb-1 block text-xs font-[500] text-[var(--mute)]">{t("birdJournal.detailsLabel", "Details")}</span>
+          <textarea value={body} onChange={(e) => setBody(e.target.value)} maxLength={2000} rows={3} placeholder={t("birdJournal.optional", "Optional")} className="w-full rounded-xl border border-[var(--line)] bg-white p-3 text-sm text-[var(--ink)]" />
         </label>
 
         <label className="mt-3 block">
-          <span className="mb-1 block text-xs font-[500] text-[var(--mute)]">Date *</span>
+          <span className="mb-1 block text-xs font-[500] text-[var(--mute)]">{t("birdJournal.dateLabel", "Date *")}</span>
           <input type="date" value={date} max={todayStr()} onChange={(e) => setDate(e.target.value)} className="h-11 w-full rounded-xl border border-[var(--line)] bg-white px-3 text-sm text-[var(--ink)]" />
         </label>
 
         <div className="mt-3">
-          <span className="mb-1 block text-xs font-[500] text-[var(--mute)]">Photo</span>
+          <span className="mb-1 block text-xs font-[500] text-[var(--mute)]">{t("birdJournal.photoLabel", "Photo")}</span>
           {showPhoto ? (
             <div className="flex items-center gap-3">
-              {photoData ? <img src={photoData} alt="" className="h-16 w-16 rounded-lg object-cover" /> : <span className="grid h-16 w-16 place-items-center rounded-lg bg-[var(--cream2)] text-[10px] text-[var(--mute2)]">Saved photo</span>}
-              <button type="button" onClick={() => { setPhotoData(null); setKeepPhoto(false); }} className="text-xs font-[500] text-[var(--amber-ink)] underline">Remove photo</button>
+              {photoData ? <img src={photoData} alt="" className="h-16 w-16 rounded-lg object-cover" /> : <span className="grid h-16 w-16 place-items-center rounded-lg bg-[var(--cream2)] text-[10px] text-[var(--mute2)]">{t("birdJournal.savedPhoto", "Saved photo")}</span>}
+              <button type="button" onClick={() => { setPhotoData(null); setKeepPhoto(false); }} className="text-xs font-[500] text-[var(--amber-ink)] underline">{t("birdJournal.removePhoto", "Remove photo")}</button>
             </div>
           ) : (
             <label className="flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[var(--line)] bg-white text-sm font-[500] text-[var(--mute)]">
               {photoBusy ? <Loader2 className="size-4 animate-spin" /> : <ImagePlus className="size-4" />}
-              {photoBusy ? "Processing…" : "Add a photo"}
+              {photoBusy ? t("birdJournal.processing", "Processing…") : t("birdJournal.addPhoto", "Add a photo")}
               <input type="file" accept="image/*" className="hidden" disabled={photoBusy} onChange={pickPhoto} />
             </label>
           )}
@@ -466,7 +502,7 @@ function EntryForm({ birdId, entry, isOwner, onClose, onSaved, onDeleted }: { bi
 
         {/* Attachments — PDFs, several per entry. Applied on Save. */}
         <div className="mt-3">
-          <span className="mb-1 block text-xs font-[500] text-[var(--mute)]">Files</span>
+          <span className="mb-1 block text-xs font-[500] text-[var(--mute)]">{t("birdJournal.filesLabel", "Files")}</span>
           {totalAttachments > 0 && (
             <div className="mb-2 overflow-hidden rounded-xl bg-white ring-1 ring-[var(--line2)]">
               {shownAttachments.map((a, i) => (
@@ -487,7 +523,7 @@ function EntryForm({ birdId, entry, isOwner, onClose, onSaved, onDeleted }: { bi
                     disabled={saving}
                     className="shrink-0 px-1 text-xs font-[500] text-[var(--amber-ink)] underline disabled:opacity-50"
                   >
-                    Remove
+                    {t("birdJournal.remove", "Remove")}
                   </button>
                 </div>
               ))}
@@ -501,7 +537,7 @@ function EntryForm({ birdId, entry, isOwner, onClose, onSaved, onDeleted }: { bi
                     : <FileText className="size-4 shrink-0 text-[var(--mute2)]" />}
                   <span className="min-w-0 flex-1 truncate py-2 text-sm text-[var(--ink)]">{f.name}</span>
                   <span className="t-meta shrink-0 text-[var(--mute2)]">
-                    {uploadingIdx === i ? "Uploading…" : "Not saved yet"}
+                    {uploadingIdx === i ? t("birdJournal.uploading", "Uploading…") : t("birdJournal.notSavedYet", "Not saved yet")}
                   </span>
                   <button
                     type="button"
@@ -509,7 +545,7 @@ function EntryForm({ birdId, entry, isOwner, onClose, onSaved, onDeleted }: { bi
                     disabled={saving}
                     className="shrink-0 px-1 text-xs font-[500] text-[var(--amber-ink)] underline disabled:opacity-50"
                   >
-                    Remove
+                    {t("birdJournal.remove", "Remove")}
                   </button>
                 </div>
               ))}
@@ -517,19 +553,19 @@ function EntryForm({ birdId, entry, isOwner, onClose, onSaved, onDeleted }: { bi
           )}
           <label className="flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[var(--line)] bg-white text-sm font-[500] text-[var(--mute)]">
             <Paperclip className="size-4" />
-            {totalAttachments > 0 ? "Attach another PDF" : "Attach a PDF"}
+            {totalAttachments > 0 ? t("birdJournal.attachAnother", "Attach another PDF") : t("birdJournal.attachPdf", "Attach a PDF")}
             <input type="file" accept="application/pdf" multiple className="hidden" disabled={saving} onChange={pickAttachments} />
           </label>
-          <p className="t-meta mt-1 px-1 text-[var(--mute2)]">Vet records, lab results, discharge notes. PDFs up to 25 MB.</p>
+          <p className="t-meta mt-1 px-1 text-[var(--mute2)]">{t("birdJournal.attachHint", "Vet records, lab results, discharge notes. PDFs up to 25 MB.")}</p>
         </div>
 
         <div className="mt-5 flex gap-2">
           <PrimaryButton tone="lime" type="button" icon={<Check className="size-4" />} onPress={save} disabled={!valid || saving || photoBusy}>
             {saving
-              ? (uploadingIdx !== null ? `Uploading ${uploadingIdx + 1} of ${pendingFiles.length}…` : "Saving…")
-              : "Save"}
+              ? (uploadingIdx !== null ? t("birdJournal.uploadingNofM", "Uploading {{n}} of {{total}}…", { n: uploadingIdx + 1, total: pendingFiles.length }) : t("birdJournal.saving", "Saving…"))
+              : t("birdJournal.save", "Save")}
           </PrimaryButton>
-          <button type="button" onClick={onClose} disabled={saving} className="min-h-[44px] rounded-[12px] border border-[var(--line)] px-4 text-[15px] font-[500] text-[var(--mute)] disabled:opacity-50">Cancel</button>
+          <button type="button" onClick={onClose} disabled={saving} className="min-h-[44px] rounded-[12px] border border-[var(--line)] px-4 text-[15px] font-[500] text-[var(--mute)] disabled:opacity-50">{t("birdJournal.cancel", "Cancel")}</button>
         </div>
 
         {/* Delete — owner-only (RLS also enforces birds.owner_id). Only for an
@@ -541,7 +577,7 @@ function EntryForm({ birdId, entry, isOwner, onClose, onSaved, onDeleted }: { bi
             disabled={saving || deleting}
             className="mt-3 flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[12px] border border-[var(--red-line)] text-[14px] font-[500] text-[var(--red-ink)] disabled:opacity-50"
           >
-            <Trash2 className="size-4" /> {deleting ? "Deleting…" : "Delete entry"}
+            <Trash2 className="size-4" /> {deleting ? t("birdJournal.deleting", "Deleting…") : t("birdJournal.deleteEntry", "Delete entry")}
           </button>
         )}
       </div>

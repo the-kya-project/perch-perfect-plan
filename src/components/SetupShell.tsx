@@ -1,5 +1,6 @@
 import { ReactNode, useEffect, useRef, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { ArrowLeft, Check, ChevronDown } from "lucide-react";
 import { OwnerTabBar } from "@/components/OwnerTabBar";
 
@@ -20,6 +21,36 @@ export const SETUP_STEPS = [
 
 export const TOTAL_STEPS = SETUP_STEPS.length;
 
+type SetupStepKey = (typeof SETUP_STEPS)[number]["key"];
+
+/** Display title for a setup step (SETUP_STEPS stays the English source). */
+export function setupStepTitle(t: TFunction, key: SetupStepKey): string {
+  switch (key) {
+    case "food": return t("setupShell.titleFood", "Food & water");
+    case "personality": return t("setupShell.titlePersonality", "Personality & handling");
+    case "environment": return t("setupShell.titleEnvironment", "Environment & safety");
+    case "health": return t("setupShell.titleHealth", "Health baseline");
+    case "day": return t("setupShell.titleDay", "A day in the life");
+    case "clips": return t("setupShell.titleClips", "Tips from the owner");
+    case "emergency": return t("setupShell.titleEmergency", "Emergency info");
+    case "review": return t("setupShell.titleReview", "Review & finish");
+  }
+}
+
+/** Short display label for a setup step (the "All steps" sheet). */
+export function setupStepShort(t: TFunction, key: SetupStepKey): string {
+  switch (key) {
+    case "food": return t("planEditor.tabFood", "Food");
+    case "personality": return t("planEditor.tabBehavior", "Behavior");
+    case "environment": return t("planEditor.tabHome", "Home");
+    case "health": return t("planEditor.tabHealth", "Health");
+    case "day": return t("planEditor.tabRoutine", "Routine");
+    case "clips": return t("planEditor.tabClips", "Clips");
+    case "emergency": return t("planEditor.tabEmergency", "Emergency");
+    case "review": return t("setupShell.shortReview", "Review");
+  }
+}
+
 type StepState = "completed" | "active" | "upcoming";
 
 function stepState(index: number, current: number): StepState {
@@ -38,14 +69,14 @@ export function SetupShell({
   onNavigateStep,
   onExit,
   exitLabel,
-  exitConfirmTitle = "Leave this step?",
-  exitConfirmBody = "Your progress is saved — you can pick up right where you left off.",
-  exitConfirmCta = "Leave",
+  exitConfirmTitle: exitConfirmTitleProp,
+  exitConfirmBody: exitConfirmBodyProp,
+  exitConfirmCta: exitConfirmCtaProp,
   isDirty,
   onBack,
   onNext,
   onSaveAndExit,
-  nextLabel = "Next",
+  nextLabel: nextLabelProp,
   nextDisabled,
   saving,
   backDisabled,
@@ -73,6 +104,11 @@ export function SetupShell({
   backDisabled?: boolean;
   hideFooter?: boolean;
 }) {
+  const { t } = useTranslation();
+  const exitConfirmTitle = exitConfirmTitleProp ?? t("setupShell.exitConfirmTitle", "Leave this step?");
+  const exitConfirmBody = exitConfirmBodyProp ?? t("setupShell.exitConfirmBody", "Your progress is saved — you can pick up right where you left off.");
+  const exitConfirmCta = exitConfirmCtaProp ?? t("setupShell.exitConfirmCta", "Leave");
+  const nextLabel = nextLabelProp ?? t("setupShell.next", "Next");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [confirmExit, setConfirmExit] = useState(false);
 
@@ -96,6 +132,8 @@ export function SetupShell({
   const completedCount = Math.max(0, step - 1);
   const pct = Math.round((completedCount / TOTAL_STEPS) * 100);
   const current = SETUP_STEPS[step - 1];
+  // Callers pass the English SETUP_STEPS title; show its translation.
+  const displayTitle = current && title === current.title ? setupStepTitle(t, current.key) : title;
 
   function handleExit() {
     if (!onExit) return;
@@ -108,7 +146,7 @@ export function SetupShell({
     onNavigateStep?.(target);
   }
 
-  const birdLabel = exitLabel ?? (birdName?.trim() || "Bird");
+  const birdLabel = exitLabel ?? (birdName?.trim() || t("setupShell.bird", "Bird"));
 
   return (
     <div className={`min-h-screen bg-[var(--cream)] ${hideFooter ? "pb-28" : "pb-44"}`}>
@@ -120,7 +158,7 @@ export function SetupShell({
               type="button"
               onClick={handleExit}
               disabled={!onExit}
-              aria-label={exitLabel ?? `Back to ${birdLabel}`}
+              aria-label={exitLabel ?? t("setupShell.backTo", "Back to {{name}}", { name: birdLabel })}
               className="-ml-1.5 flex items-center gap-1 text-white/90 disabled:opacity-40"
             >
               <ArrowLeft className="size-5 shrink-0" />
@@ -132,11 +170,11 @@ export function SetupShell({
               className="flex shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-[12px] font-[500] text-white"
               style={{ background: "rgba(255,255,255,0.12)" }}
             >
-              All steps <ChevronDown className="size-4" />
+              {t("setupShell.allSteps", "All steps")} <ChevronDown className="size-4" />
             </button>
           </div>
-          <p className="t-eyebrow text-[var(--lime)]">Step {step} of {TOTAL_STEPS}</p>
-          <h1 className="t-hero mt-1 text-white">{title}</h1>
+          <p className="t-eyebrow text-[var(--lime)]">{t("setupShell.stepOf", "Step {{step}} of {{total}}", { step, total: TOTAL_STEPS })}</p>
+          <h1 className="t-hero mt-1 text-white">{displayTitle}</h1>
           <div className="mt-3 flex items-center gap-1" aria-hidden="true">
             {SETUP_STEPS.map((s, i) => {
               const state = stepState(i, step);
@@ -169,7 +207,7 @@ export function SetupShell({
                 type="button"
                 onClick={onBack}
                 disabled={backDisabled || saving}
-                aria-label="Previous step"
+                aria-label={t("setupShell.previousStep", "Previous step")}
                 className="grid size-11 shrink-0 place-items-center rounded-xl border border-[var(--line)] bg-white text-[var(--ink)] disabled:opacity-40"
               >
                 <ArrowLeft className="size-5" />
@@ -181,7 +219,7 @@ export function SetupShell({
                   disabled={saving}
                   className="shrink-0 px-2 text-[12px] font-[500] text-[var(--mute)] underline disabled:opacity-50"
                 >
-                  Save &amp; exit
+                  {t("setupShell.saveAndExit", "Save & exit")}
                 </button>
               )}
               <button
@@ -190,7 +228,7 @@ export function SetupShell({
                 disabled={nextDisabled || saving}
                 className="min-h-[44px] flex-1 rounded-xl bg-[var(--ink)] py-3 text-[15px] font-[500] text-white disabled:opacity-50"
               >
-                {saving ? "Saving…" : nextLabel}
+                {saving ? t("setupShell.saving", "Saving…") : nextLabel}
               </button>
             </div>
           </div>
@@ -211,7 +249,7 @@ export function SetupShell({
         />
         <div
           role="dialog"
-          aria-label="All steps"
+          aria-label={t("setupShell.allSteps", "All steps")}
           className={`absolute inset-x-0 bottom-0 mx-auto max-w-md rounded-t-2xl bg-white pb-[max(1rem,env(safe-area-inset-bottom))] shadow-xl transition-transform duration-200 ${
             drawerOpen ? "translate-y-0" : "translate-y-full"
           }`}
@@ -219,7 +257,7 @@ export function SetupShell({
           <div className="flex justify-center pt-3">
             <span className="h-1 w-10 rounded-full bg-[var(--line)]" />
           </div>
-          <p className="t-eyebrow px-5 pb-2 pt-3 text-[var(--mute2)]">All steps</p>
+          <p className="t-eyebrow px-5 pb-2 pt-3 text-[var(--mute2)]">{t("setupShell.allSteps", "All steps")}</p>
           <ul className="max-h-[60vh] overflow-y-auto px-2 pb-2">
             {SETUP_STEPS.map((s, i) => {
               const state = stepState(i, step);
@@ -243,9 +281,9 @@ export function SetupShell({
                         {i + 1}
                       </span>
                     )}
-                    <span className="t-item flex-1">{s.short}</span>
+                    <span className="t-item flex-1">{setupStepShort(t, s.key)}</span>
                     <span className="t-eyebrow text-[var(--mute2)]">
-                      {state === "completed" ? "Done" : state === "active" ? "Here now" : ""}
+                      {state === "completed" ? t("setupShell.done", "Done") : state === "active" ? t("setupShell.hereNow", "Here now") : ""}
                     </span>
                   </button>
                 </li>
@@ -261,7 +299,7 @@ export function SetupShell({
           <div className="absolute inset-0 bg-[var(--ink)]/40" onClick={() => setConfirmExit(false)} />
           <div
             role="alertdialog"
-            aria-label="Leave this step"
+            aria-label={t("setupShell.leaveThisStep", "Leave this step")}
             className="relative w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl"
           >
             <h2 className="t-section">{exitConfirmTitle}</h2>
@@ -272,7 +310,7 @@ export function SetupShell({
                 onClick={() => setConfirmExit(false)}
                 className="min-h-[44px] flex-1 rounded-xl border border-[var(--line)] bg-white py-2.5 text-[15px] font-[500] text-[var(--ink)]"
               >
-                Cancel
+                {t("setupShell.cancel", "Cancel")}
               </button>
               <button
                 type="button"

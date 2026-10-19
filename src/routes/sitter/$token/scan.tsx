@@ -88,7 +88,7 @@ function ScanPage() {
       qc.invalidateQueries({ queryKey: ["sitter-ctx", token] });
       qc.invalidateQueries({ queryKey: ["sitter-dashboard", token] });
     },
-    onError: (e: any) => toast.error(friendlyError(e, t("sitter.scan.errorToast", "Could not log health check."))),
+    onError: (e: any) => toast.error(friendlyError(e, t("sitter.scan.errorToast", "Could not log health check."), t)),
   });
 
   if (mode === "history") {

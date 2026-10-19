@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { Loader2, AlertTriangle } from "lucide-react";
 import { track } from "@/lib/analytics";
 import { isStreamUrl } from "@/lib/clipRef";
+import { useTranslation } from "react-i18next";
 
 /**
  * Inline HTML5 video player for owner-recorded clips.
@@ -22,6 +23,7 @@ export function ClipPlayer({
   className?: string;
   poster?: string;
 }) {
+  const { t } = useTranslation();
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
   const firedRef = useRef(false);
 
@@ -32,7 +34,7 @@ export function ClipPlayer({
       <div className={`relative overflow-hidden bg-black ${className}`}>
         <iframe
           src={src}
-          title={label ?? "Clip"}
+          title={label ?? t("clipPlayer.clip", "Clip")}
           loading="lazy"
           className="size-full"
           style={{ border: 0 }}
@@ -62,7 +64,7 @@ export function ClipPlayer({
       {state === "loading" && (
         <div className="pointer-events-none absolute inset-0 grid place-items-center bg-black/40 text-white">
           <div className="flex items-center gap-2 rounded-full bg-black/60 px-3 py-1.5 text-xs font-semibold">
-            <Loader2 className="size-3.5 animate-spin" /> Loading clip…
+            <Loader2 className="size-3.5 animate-spin" /> {t("clipPlayer.loading", "Loading clip…")}
           </div>
         </div>
       )}
@@ -70,9 +72,9 @@ export function ClipPlayer({
         <div className="absolute inset-0 grid place-items-center bg-sage-900/95 p-3 text-center text-white">
           <div className="flex max-w-[90%] flex-col items-center gap-1.5">
             <AlertTriangle className="size-5 text-warn-amber" />
-            <p className="text-xs font-semibold">This clip can't play here.</p>
+            <p className="text-xs font-semibold">{t("clipPlayer.cantPlay", "This clip can't play here.")}</p>
             <p className="text-[11px] opacity-80">
-              Ask the owner to re-upload it from the bird's setup so it's converted for all devices.
+              {t("clipPlayer.askReupload", "Ask the owner to re-upload it from the bird's setup so it's converted for all devices.")}
             </p>
           </div>
         </div>

@@ -5,17 +5,20 @@ import { ArrowRight, ArrowUpRight, Headphones, Compass } from "lucide-react";
 import { OwnerHeaderIcons } from "@/components/OwnerHeader";
 import { WaitlistCard } from "@/components/WaitlistCard";
 import { getBlogPosts, type BlogPost } from "@/lib/blogFeed.functions";
+import { useTranslation } from "react-i18next";
+import i18next from "i18next";
 
 // The Kya Project marketing links.
 const MISSION_URL = "https://www.thekyaproject.com/about";
 const BLOG_URL = "https://www.thekyaproject.com/blog";
 
 export const Route = createFileRoute("/_authenticated/explore")({
-  head: () => ({ meta: [{ title: "Explore — The Kya Project" }] }),
+  head: () => ({ meta: [{ title: i18next.t("explore.pageTitle", "Explore — The Kya Project") }] }),
   component: Explore,
 });
 
 function Explore() {
+  const { t } = useTranslation();
   const blogFn = useServerFn(getBlogPosts);
   const { data: blog, isLoading: blogLoading } = useQuery({
     queryKey: ["explore-blog"],
@@ -33,9 +36,9 @@ function Explore() {
             <OwnerHeaderIcons />
           </div>
           <p className="mt-2 text-[11px] font-medium uppercase tracking-[0.18em] text-[#9FE1CB]">The Kya Project</p>
-          <h1 className="mt-2 text-[30px] font-medium leading-[1.1] text-white">Better care, wilder futures.</h1>
+          <h1 className="mt-2 text-[30px] font-medium leading-[1.1] text-white">{t("explore.missionHeadline", "Better care, wilder futures.")}</h1>
           <p className="mt-3 text-sm leading-relaxed text-white/80">
-            We help parrots thrive, at home and in the wild, through education, community, and support for rescue and conservation.
+            {t("explore.missionBody", "We help parrots thrive, at home and in the wild, through education, community, and support for rescue and conservation.")}
           </p>
           <a
             href={MISSION_URL}
@@ -43,7 +46,7 @@ function Explore() {
             rel="noreferrer"
             className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-[#cdeab0]"
           >
-            Our mission <ArrowRight className="size-4" />
+            {t("explore.ourMission", "Our mission")} <ArrowRight className="size-4" />
           </a>
         </div>
       </section>
@@ -55,9 +58,9 @@ function Explore() {
         {/* Latest from the blog — live pull from the site's JSON Feed. */}
         <section className="space-y-3">
           <div className="flex items-end justify-between">
-            <h2 className="text-[21px] font-medium text-[#1a3d2e]">Latest from the blog</h2>
+            <h2 className="text-[21px] font-medium text-[#1a3d2e]">{t("explore.latestFromTheBlog", "Latest from the blog")}</h2>
             <a href={BLOG_URL} target="_blank" rel="noreferrer" className="text-sm font-medium text-[#2d6a4f]">
-              View all
+              {t("explore.viewAll", "View all")}
             </a>
           </div>
           <BlogSection loading={blogLoading} connected={blog?.connected ?? false} posts={blog?.posts ?? []} />
@@ -72,19 +75,19 @@ function Explore() {
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <h3 className="text-base font-medium text-[#1a3d2e]">The Kya Project Podcast</h3>
-                <span className="shrink-0 rounded-full bg-[#e3dcc9] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#5f5e5a]">Coming soon</span>
+                <span className="shrink-0 rounded-full bg-[#e3dcc9] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#5f5e5a]">{t("explore.comingSoon", "Coming soon")}</span>
               </div>
-              <p className="mt-1 text-sm text-[#5f5e5a]">Conversations on parrots, rescue, and the wild.</p>
+              <p className="mt-1 text-sm text-[#5f5e5a]">{t("explore.podcastBody", "Conversations on parrots, rescue, and the wild.")}</p>
             </div>
           </div>
         </section>
 
         {/* Membership preview — dark green, preview only (no purchase). */}
         <section className="rounded-[22px] bg-[#1a3d2e] p-5">
-          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#9FE1CB]">Membership</p>
-          <h2 className="mt-1.5 text-xl font-medium text-white">Support the mission and get more</h2>
+          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#9FE1CB]">{t("explore.membership", "Membership")}</p>
+          <h2 className="mt-1.5 text-xl font-medium text-white">{t("explore.membershipHeadline", "Support the mission and get more")}</h2>
           <p className="mt-2 text-sm leading-relaxed text-white/80">
-            When the community launches, members get AMAs, chapter access, and 20% of every membership funds rescue and conservation.
+            {t("explore.membershipBody", "When the community launches, members get AMAs, chapter access, and 20% of every membership funds rescue and conservation.")}
           </p>
         </section>
       </main>
@@ -93,6 +96,7 @@ function Explore() {
 }
 
 function BlogSection({ loading, connected, posts }: { loading: boolean; connected: boolean; posts: BlogPost[] }) {
+  const { t } = useTranslation();
   if (loading) {
     return (
       <div className="space-y-4">
@@ -115,11 +119,11 @@ function BlogSection({ loading, connected, posts }: { loading: boolean; connecte
     return (
       <div className="rounded-[20px] border border-dashed border-[#d8cfb8] bg-[#efe9da] p-8 text-center">
         <Compass className="mx-auto size-7 text-[#2d6a4f]" />
-        <p className="mt-3 font-medium text-[#1a3d2e]">{connected ? "No posts yet" : "Stories are on the way"}</p>
+        <p className="mt-3 font-medium text-[#1a3d2e]">{connected ? t("explore.noPostsYet", "No posts yet") : t("explore.storiesOnTheWay", "Stories are on the way")}</p>
         <p className="mt-1 text-sm text-[#5f5e5a]">
           {connected
-            ? "New writing from The Kya Project will appear here."
-            : "We're lining up guides and stories on parrot care, rescue, and the wild."}
+            ? t("explore.newWritingWillAppear", "New writing from The Kya Project will appear here.")
+            : t("explore.liningUpStories", "We're lining up guides and stories on parrot care, rescue, and the wild.")}
         </p>
       </div>
     );

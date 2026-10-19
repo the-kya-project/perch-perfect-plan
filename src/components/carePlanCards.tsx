@@ -1,4 +1,5 @@
 import { ClipPlayer } from "@/components/ClipPlayer";
+import { clipSlotLabel } from "@/lib/clipSlotLabels";
 import { IconTile } from "@/components/system";
 import { FEED_PERIODS, formatAt, type FeedTime } from "@/lib/feedTimes";
 import { AlertTriangle, AlertOctagon } from "lucide-react";
@@ -251,8 +252,8 @@ export function ClipField({ clip }: { clip: { key: string; label: string; url: s
     <div>
       <p className={FIELD_LABEL}>{t("careCards.showMe", "Show me")}</p>
       <div className="mt-1 overflow-hidden rounded-[12px] bg-[var(--cream)] ring-1 ring-[var(--line2)]">
-        <ClipPlayer src={clip.url} label={clip.label} className="aspect-video" />
-        <p className="px-2 py-1.5 text-[12px] font-medium leading-tight text-[var(--ink)]">{clip.label}</p>
+        <ClipPlayer src={clip.url} label={clipSlotLabel(clip.key, clip.label, t)} className="aspect-video" />
+        <p className="px-2 py-1.5 text-[12px] font-medium leading-tight text-[var(--ink)]">{clipSlotLabel(clip.key, clip.label, t)}</p>
       </div>
     </div>
   );

@@ -5,15 +5,18 @@ import { getPastBirds } from "@/lib/handoff.functions";
 import { ArrowLeft, Feather, Loader2 } from "lucide-react";
 import { InkHero, Card, IconTile, StatusPill, PrimaryButton } from "@/components/system";
 import { formatLocalDate } from "@/lib/dates";
+import i18next from "i18next";
+import { useTranslation } from "react-i18next";
 
 // Past birds archive — read-only, sender-side memory of birds handed off.
 // Snapshots only (not linked to live records). Newest departures first.
 export const Route = createFileRoute("/_authenticated/past-birds")({
-  head: () => ({ meta: [{ title: "Past birds — Kya & Co." }] }),
+  head: () => ({ meta: [{ title: i18next.t("pastBirds.metaTitle", "Past birds — Kya & Co.") }] }),
   component: PastBirds,
 });
 
 function PastBirds() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const router = useRouter();
   const canGoBack = useCanGoBack();
@@ -29,22 +32,22 @@ function PastBirds() {
         <InkHero
           backIcon={<ArrowLeft className="size-5" />}
           onBack={goBack}
-          eyebrow="Past birds"
-          headline="Past birds"
+          eyebrow={t("pastBirds.eyebrow", "Past birds")}
+          headline={t("pastBirds.headline", "Past birds")}
         />
 
         <main className="space-y-4 px-5 pt-5">
           {isLoading ? (
             <div className="flex items-center justify-center gap-2 py-12 t-meta">
-              <Loader2 className="size-4 animate-spin" /> Loading…
+              <Loader2 className="size-4 animate-spin" /> {t("pastBirds.loading", "Loading…")}
             </div>
           ) : birds.length === 0 ? (
             <Card className="p-8 text-center">
               <IconTile tone="pale" icon={<Feather className="size-5" />} />
-              <p className="mt-3 t-body">No past birds yet. When you hand off a bird, a memory of them will live here.</p>
+              <p className="mt-3 t-body">{t("pastBirds.empty", "No past birds yet. When you hand off a bird, a memory of them will live here.")}</p>
               <div className="mt-4">
                 <Link to="/dashboard">
-                  <PrimaryButton tone="ink" full={false}>Back to your flock</PrimaryButton>
+                  <PrimaryButton tone="ink" full={false}>{t("pastBirds.backToFlock", "Back to your flock")}</PrimaryButton>
                 </Link>
               </div>
             </Card>
@@ -56,7 +59,7 @@ function PastBirds() {
                 ))}
               </Card>
               <p className="px-1 pt-2 text-center t-meta leading-relaxed">
-                Their full records went with them. These are your keepsakes: who they were and where they went.
+                {t("pastBirds.footer", "Their full records went with them. These are your keepsakes: who they were and where they went.")}
               </p>
             </>
           )}
@@ -69,6 +72,7 @@ function PastBirds() {
 // Static keepsake card — everything shows on the card itself (no tap target, no
 // detail view). Text wraps freely so the dates and destination are never clipped.
 function PastBirdCard({ bird: b, last }: { bird: any; last: boolean }) {
+  const { t } = useTranslation();
   return (
     <div className={`px-4 py-3.5 ${last ? "" : "border-b border-[var(--line2)]"}`}>
       <div className="flex items-start gap-3">
@@ -80,7 +84,7 @@ function PastBirdCard({ bird: b, last }: { bird: any; last: boolean }) {
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <span className="t-item">{b.bird_name}</span>
-            {b.was_foster && <StatusPill tone="good">Foster</StatusPill>}
+            {b.was_foster && <StatusPill tone="good">{t("pastBirds.foster", "Foster")}</StatusPill>}
           </div>
           {b.species && <p className="t-meta mt-0.5">{b.species}</p>}
           <div className="mt-2 space-y-0.5">
@@ -96,13 +100,15 @@ function PastBirdCard({ bird: b, last }: { bird: any; last: boolean }) {
 // Where they went — from the sender's own handoff record (they entered the
 // recipient's name), so it's safe to show back to them.
 function whereLabel(b: any): string {
-  const on = ` on ${fmt(b.departed_on)}`;
-  if (b.recipient_name) return `Found a home with ${b.recipient_name}${on}`;
-  if (b.mode === "pdf") return `Left as a PDF handoff${on}`;
-  return `Found a new home${on}`;
+  const date = fmt(b.departed_on);
+  if (b.recipient_name) return i18next.t("pastBirds.foundHomeWith", "Found a home with {{name}} on {{date}}", { name: b.recipient_name, date });
+  if (b.mode === "pdf") return i18next.t("pastBirds.leftAsPdf", "Left as a PDF handoff on {{date}}", { date });
+  return i18next.t("pastBirds.foundNewHome", "Found a new home on {{date}}", { date });
 }
 function withYouLabel(intake: string | null, departed: string): string {
-  return intake ? `With you from ${fmt(intake)} to ${fmt(departed)}` : `With you until ${fmt(departed)}`;
+  return intake
+    ? i18next.t("pastBirds.withYouFromTo", "With you from {{from}} to {{to}}", { from: fmt(intake), to: fmt(departed) })
+    : i18next.t("pastBirds.withYouUntil", "With you until {{date}}", { date: fmt(departed) });
 }
 function fmt(iso: string): string {
   return formatLocalDate(new Date(iso), { year: "numeric", month: "short", day: "numeric" });

@@ -5,6 +5,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { toast } from "sonner";
+import i18next from "i18next";
 
 type SitLike = { invite_token?: string | null; caregiver_user_id?: string | null };
 
@@ -33,19 +34,23 @@ export async function copySitterLink(sit: SitLike, birds: Array<{ id: string; na
       .map((b) => {
         const c = byBird.get(b.id);
         const needs: string[] = [];
-        if (!eff(c, "owner_phone")) needs.push("your phone");
-        if (!eff(c, "avian_vet_phone")) needs.push("avian vet phone");
-        return needs.length ? `${b.name}: ${needs.join(" & ")}` : null;
+        if (!eff(c, "owner_phone")) needs.push(i18next.t("sitLink.needYourPhone", "your phone"));
+        if (!eff(c, "avian_vet_phone")) needs.push(i18next.t("sitLink.needVetPhone", "avian vet phone"));
+        return needs.length ? `${b.name}: ${needs.join(i18next.t("sitLink.needJoin", " & "))}` : null;
       })
       .filter(Boolean);
     if (missing.length) {
       toast.error(
-        `Add the required emergency contacts before sharing — ${missing.join("; ")}. Set account defaults on the dashboard or fill the bird's Emergency tab.`,
+        i18next.t(
+          "sitLink.missingContacts",
+          "Add the required emergency contacts before sharing — {{missing}}. Set account defaults on the dashboard or fill the bird's Emergency tab.",
+          { missing: missing.join("; ") },
+        ),
         { duration: 8000 },
       );
       return;
     }
   }
   await navigator.clipboard.writeText(url);
-  toast.success("Link copied.");
+  toast.success(i18next.t("sitLink.copied", "Link copied."));
 }

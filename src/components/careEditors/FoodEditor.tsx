@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { foodLabel } from "./foodLabels";
 import { Plus, X } from "lucide-react";
 import { FeedTimePicker } from "./FeedTimePicker";
 import { normalizeFeedTimes, feedTimeLabel, type FeedTime } from "@/lib/feedTimes";
@@ -119,7 +121,7 @@ export function deriveFoodLegacyFields(v: FoodValue): {
   amount_value: number | null;
   amount_unit: string | null;
 } {
-  const allItems: DietItem[] = v.diet_types.flatMap((t) => v.diet_details[t] ?? []);
+  const allItems: DietItem[] = v.diet_types.flatMap((type) => v.diet_details[type] ?? []);
   // Denormalized fallback shown to the sitter only when no per-food data exists.
   const feeding_times = Array.from(
     new Set(allItems.flatMap((it) => normalizeFeedTimes(it.times).map((ft) => feedTimeLabel(ft, "period")))),
@@ -162,6 +164,7 @@ function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; chi
 }
 
 export function FoodEditor({ value, onChange }: { value: FoodValue; onChange: (patch: Partial<FoodValue>) => void }) {
+  const { t } = useTranslation();
   const [newNever, setNewNever] = useState("");
 
   const diet = value.diet_types;
@@ -171,8 +174,8 @@ export function FoodEditor({ value, onChange }: { value: FoodValue; onChange: (p
   function toggleDiet(v: string) {
     onChange({ diet_types: diet.includes(v) ? diet.filter((x) => x !== v) : [...diet, v] });
   }
-  function setItems(t: string, next: DietItem[]) {
-    onChange({ diet_details: { ...dietDetails, [t]: next } });
+  function setItems(type: string, next: DietItem[]) {
+    onChange({ diet_details: { ...dietDetails, [type]: next } });
   }
   function toggleFreshFood(label: string) {
     const items = dietDetails["chop"] ?? [];
@@ -193,18 +196,18 @@ export function FoodEditor({ value, onChange }: { value: FoodValue; onChange: (p
   return (
     <div className="space-y-3">
       {/* Primary diet */}
-      <Group title="Primary diet" hint="Choose all that apply.">
+      <Group title={t("foodEditor.primaryDiet", "Primary diet")} hint={t("foodEditor.chooseAllThatApply", "Choose all that apply.")}>
         <div className="flex flex-wrap gap-2">
           {DIET_OPTIONS.map((o) => (
             <Chip key={o.value} on={diet.includes(o.value)} onClick={() => toggleDiet(o.value)}>
-              {o.label}
+              {foodLabel(t, o.label)}
             </Chip>
           ))}
         </div>
         {diet.includes("other") && (
           <input
             className="input mt-3"
-            placeholder="Describe the other diet"
+            placeholder={t("foodEditor.describeOtherDiet", "Describe the other diet")}
             value={value.diet_other ?? ""}
             maxLength={200}
             onChange={(e) => onChange({ diet_other: e.target.value || null })}
@@ -215,18 +218,18 @@ export function FoodEditor({ value, onChange }: { value: FoodValue; onChange: (p
       {/* Per-diet-type items, amounts & feed times */}
       {diet.length > 0 && (
         <Group
-          title={diet.length === 1 ? "Items, amounts & feed time(s)" : "Items & amounts per food type"}
-          hint="For each item, add the amount and when it's served. Use “Available all day” for food left in the cage."
+          title={diet.length === 1 ? t("foodEditor.itemsAmountsFeedTimes", "Items, amounts & feed time(s)") : t("foodEditor.itemsAmountsPerType", "Items & amounts per food type")}
+          hint={t("foodEditor.itemsHint", "For each item, add the amount and when it's served. Use “Available all day” for food left in the cage.")}
         >
           <div className="space-y-4">
-            {diet.map((t) => {
-              const label = DIET_OPTIONS.find((o) => o.value === t)?.label ?? t;
-              const items = dietDetails[t] ?? [];
-              const update = (next: DietItem[]) => setItems(t, next);
-              const isChop = t === "chop";
+            {diet.map((type) => {
+              const label = foodLabel(t, DIET_OPTIONS.find((o) => o.value === type)?.label ?? type);
+              const items = dietDetails[type] ?? [];
+              const update = (next: DietItem[]) => setItems(type, next);
+              const isChop = type === "chop";
               const selectedFreshNames = new Set(items.map((i) => i.name.trim().toLowerCase()));
               return (
-                <div key={t} className="rounded-xl bg-white p-3 ring-1 ring-sage-100">
+                <div key={type} className="rounded-xl bg-white p-3 ring-1 ring-sage-100">
                   <div className="mb-2 flex items-center justify-between">
                     <p className="text-sm font-semibold text-sage-800">{label}</p>
                     <button
@@ -234,23 +237,23 @@ export function FoodEditor({ value, onChange }: { value: FoodValue; onChange: (p
                       onClick={() => update([...items, { name: "", amount: "", unit: "", times: [] }])}
                       className="inline-flex items-center gap-1 rounded-lg bg-sage-100 px-2.5 py-1 text-xs font-semibold text-sage-700 hover:bg-sage-200"
                     >
-                      <Plus className="size-3.5" /> Add item
+                      <Plus className="size-3.5" /> {t("foodEditor.addItem", "Add item")}
                     </button>
                   </div>
 
                   {isChop && (
                     <div className="mb-3 rounded-lg bg-sage-50/60 p-2 ring-1 ring-sage-100">
-                      <p className="mb-1.5 text-xs font-semibold text-sage-600">Fresh foods offered — tap to add as items</p>
+                      <p className="mb-1.5 text-xs font-semibold text-sage-600">{t("foodEditor.freshFoodsOffered", "Fresh foods offered — tap to add as items")}</p>
                       <div className="flex flex-wrap gap-1.5">
                         {FRESH_FOOD_OPTIONS.map((f) => (
                           <Chip key={f} on={selectedFreshNames.has(f.trim().toLowerCase())} onClick={() => toggleFreshFood(f)}>
-                            {f}
+                            {foodLabel(t, f)}
                           </Chip>
                         ))}
                       </div>
                       <input
                         className="input mt-2 text-sm"
-                        placeholder="Other fresh foods (free text)"
+                        placeholder={t("foodEditor.otherFreshFoodsPlaceholder", "Other fresh foods (free text)")}
                         value={value.fresh_foods_other ?? ""}
                         maxLength={300}
                         onChange={(e) => onChange({ fresh_foods_other: e.target.value || null })}
@@ -261,8 +264,8 @@ export function FoodEditor({ value, onChange }: { value: FoodValue; onChange: (p
                   {items.length === 0 && (
                     <p className="text-xs text-sage-500">
                       {isChop
-                        ? "Pick fresh foods above or tap “Add item” to list your own."
-                        : "No items yet. Tap “Add item” to list a brand or food."}
+                        ? t("foodEditor.chopEmpty", "Pick fresh foods above or tap “Add item” to list your own.")
+                        : t("foodEditor.itemsEmpty", "No items yet. Tap “Add item” to list a brand or food.")}
                     </p>
                   )}
                   <div className="space-y-2">
@@ -273,7 +276,7 @@ export function FoodEditor({ value, onChange }: { value: FoodValue; onChange: (p
                           <div className="grid grid-cols-[1fr,auto] gap-2">
                             <input
                               className="input"
-                              placeholder={isChop ? "e.g. Morning chop mix" : "Brand or item name"}
+                              placeholder={isChop ? t("foodEditor.chopNamePlaceholder", "e.g. Morning chop mix") : t("foodEditor.brandOrItemName", "Brand or item name")}
                               value={it.name}
                               maxLength={120}
                               onChange={(e) => {
@@ -284,7 +287,7 @@ export function FoodEditor({ value, onChange }: { value: FoodValue; onChange: (p
                             />
                             <button
                               type="button"
-                              aria-label="Remove item"
+                              aria-label={t("foodEditor.removeItem", "Remove item")}
                               onClick={() => update(items.filter((_, i) => i !== idx))}
                               className="rounded-lg p-2 text-sage-500 hover:bg-sage-100"
                             >
@@ -295,7 +298,7 @@ export function FoodEditor({ value, onChange }: { value: FoodValue; onChange: (p
                             <input
                               className="input"
                               inputMode="decimal"
-                              placeholder="Amount (e.g. 2)"
+                              placeholder={t("foodEditor.amountEg", "Amount (e.g. 2)")}
                               value={it.amount}
                               onChange={(e) => {
                                 const next = items.slice();
@@ -312,12 +315,12 @@ export function FoodEditor({ value, onChange }: { value: FoodValue; onChange: (p
                                 update(next);
                               }}
                             >
-                              <option value="">Pick a unit…</option>
-                              {UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
+                              <option value="">{t("foodEditor.pickAUnit", "Pick a unit…")}</option>
+                              {UNITS.map((u) => <option key={u} value={u}>{foodLabel(t, u)}</option>)}
                             </select>
                           </div>
                           {rowInvalid && (
-                            <p className="mt-1.5 text-xs font-semibold text-warn-red">Add both an amount and a unit, or clear both.</p>
+                            <p className="mt-1.5 text-xs font-semibold text-warn-red">{t("foodEditor.amountUnitBoth", "Add both an amount and a unit, or clear both.")}</p>
                           )}
 
                           {/* Per-item feed time(s) — structured period picker. */}
@@ -342,28 +345,28 @@ export function FoodEditor({ value, onChange }: { value: FoodValue; onChange: (p
         </Group>
       )}
 
-      <Group title="Treats">
+      <Group title={t("foodEditor.treats", "Treats")}>
         <input
           className="input"
-          placeholder="What treats are OK? (e.g. millet spray, almond slivers)"
+          placeholder={t("foodEditor.treatsPlaceholder", "What treats are OK? (e.g. millet spray, almond slivers)")}
           value={value.treats_notes ?? ""}
           maxLength={300}
           onChange={(e) => onChange({ treats_notes: e.target.value || null })}
         />
         <select className="input mt-2" value={value.treats_frequency ?? ""} onChange={(e) => onChange({ treats_frequency: e.target.value || null })}>
-          <option value="">Pick a frequency…</option>
-          {TREAT_FREQ.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          <option value="">{t("foodEditor.pickAFrequency", "Pick a frequency…")}</option>
+          {TREAT_FREQ.map((o) => <option key={o.value} value={o.value}>{foodLabel(t, o.label)}</option>)}
         </select>
       </Group>
 
-      <Group title="Never feed" hint="Add anything specific to your bird.">
+      <Group title={t("foodEditor.neverFeed", "Never feed")} hint={t("foodEditor.neverFeedHint", "Add anything specific to your bird.")}>
         <div className="flex flex-wrap gap-2">
           {never.map((n) => (
             <span key={n} className="inline-flex items-center gap-1 rounded-full bg-warn-red/10 px-3 py-1.5 text-xs font-semibold text-warn-red">
               {n}
               <button
                 type="button"
-                aria-label={`Remove ${n}`}
+                aria-label={t("foodEditor.removeNamed", "Remove {{name}}", { name: n })}
                 onClick={() => onChange({ never_feed: never.filter((x) => x !== n) })}
                 className="rounded-full p-0.5 hover:bg-warn-red/20"
               >
@@ -371,12 +374,12 @@ export function FoodEditor({ value, onChange }: { value: FoodValue; onChange: (p
               </button>
             </span>
           ))}
-          {never.length === 0 && <span className="text-[11px] text-sage-400">Nothing added yet.</span>}
+          {never.length === 0 && <span className="text-[11px] text-sage-400">{t("foodEditor.nothingAddedYet", "Nothing added yet.")}</span>}
         </div>
         <div className="mt-3 flex gap-2">
           <input
             className="input flex-1"
-            placeholder="Add another food to never feed"
+            placeholder={t("foodEditor.neverFeedPlaceholder", "Add another food to never feed")}
             value={newNever}
             maxLength={80}
             onChange={(e) => setNewNever(e.target.value)}
@@ -388,56 +391,56 @@ export function FoodEditor({ value, onChange }: { value: FoodValue; onChange: (p
         </div>
       </Group>
 
-      <Group title="Water">
+      <Group title={t("foodEditor.water", "Water")}>
         <select className="input" value={value.water_frequency ?? ""} onChange={(e) => onChange({ water_frequency: e.target.value || null })}>
-          <option value="">Pick a frequency…</option>
-          {WATER_FREQ.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          <option value="">{t("foodEditor.pickAFrequency", "Pick a frequency…")}</option>
+          {WATER_FREQ.map((o) => <option key={o.value} value={o.value}>{foodLabel(t, o.label)}</option>)}
         </select>
         <textarea
           className="input area mt-2"
-          placeholder="Notes (filter, bottle vs bowl, etc.)"
+          placeholder={t("foodEditor.waterNotesPlaceholder", "Notes (filter, bottle vs bowl, etc.)")}
           value={value.water_notes ?? ""}
           maxLength={400}
           onChange={(e) => onChange({ water_notes: e.target.value || null })}
         />
       </Group>
 
-      <Group title="Where food is stored">
+      <Group title={t("foodEditor.whereFoodIsStored", "Where food is stored")}>
         <input
           className="input"
-          placeholder="e.g. Pantry, top shelf; fridge bin"
+          placeholder={t("foodEditor.storagePlaceholder", "e.g. Pantry, top shelf; fridge bin")}
           value={value.food_storage ?? ""}
           maxLength={200}
           onChange={(e) => onChange({ food_storage: e.target.value || null })}
         />
       </Group>
 
-      <Group title="Freshness & hygiene" hint="General defaults — adjust to fit your bird and routine.">
-        <label className="text-xs font-semibold text-sage-700">Remove fresh or wet food after</label>
+      <Group title={t("foodEditor.freshnessHygiene", "Freshness & hygiene")} hint={t("foodEditor.freshnessHygieneHint", "General defaults — adjust to fit your bird and routine.")}>
+        <label className="text-xs font-semibold text-sage-700">{t("foodEditor.removeFreshAfter", "Remove fresh or wet food after")}</label>
         <select
           className="input mt-1"
           value={String(value.fresh_food_removal_minutes ?? 120)}
           onChange={(e) => onChange({ fresh_food_removal_minutes: Number(e.target.value) })}
         >
-          {REMOVAL_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          {REMOVAL_OPTIONS.map((o) => <option key={o.value} value={o.value}>{foodLabel(t, o.label)}</option>)}
         </select>
-        <p className="mt-1 text-[11px] text-sage-600">Fresh food spoils fast and can grow bacteria. This tells your sitter when to take it out.</p>
+        <p className="mt-1 text-[11px] text-sage-600">{t("foodEditor.freshSpoilsHint", "Fresh food spoils fast and can grow bacteria. This tells your sitter when to take it out.")}</p>
 
-        <label className="mt-3 block text-xs font-semibold text-sage-700">Wash food bowls</label>
+        <label className="mt-3 block text-xs font-semibold text-sage-700">{t("foodEditor.washFoodBowls", "Wash food bowls")}</label>
         <select className="input mt-1" value={value.food_bowl_wash_cadence ?? "after_each_fresh"} onChange={(e) => onChange({ food_bowl_wash_cadence: e.target.value })}>
-          {FOOD_BOWL_WASH_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          {FOOD_BOWL_WASH_OPTIONS.map((o) => <option key={o.value} value={o.value}>{foodLabel(t, o.label)}</option>)}
         </select>
 
-        <label className="mt-3 block text-xs font-semibold text-sage-700">Wash water bowl or bottle</label>
+        <label className="mt-3 block text-xs font-semibold text-sage-700">{t("foodEditor.washWaterBowl", "Wash water bowl or bottle")}</label>
         <select className="input mt-1" value={value.water_bowl_wash_cadence ?? "once_daily"} onChange={(e) => onChange({ water_bowl_wash_cadence: e.target.value })}>
-          {WATER_BOWL_WASH_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          {WATER_BOWL_WASH_OPTIONS.map((o) => <option key={o.value} value={o.value}>{foodLabel(t, o.label)}</option>)}
         </select>
-        <p className="mt-1 text-[11px] text-sage-600">This is washing the bowl itself — separate from how often you change the water.</p>
+        <p className="mt-1 text-[11px] text-sage-600">{t("foodEditor.washBowlHint", "This is washing the bowl itself — separate from how often you change the water.")}</p>
 
-        <label className="mt-3 block text-xs font-semibold text-sage-700">Other food hygiene notes</label>
+        <label className="mt-3 block text-xs font-semibold text-sage-700">{t("foodEditor.otherHygieneNotes", "Other food hygiene notes")}</label>
         <textarea
           className="input area mt-1"
-          placeholder="Optional — anything else the sitter should know about food/water hygiene."
+          placeholder={t("foodEditor.hygieneNotesPlaceholder", "Optional — anything else the sitter should know about food/water hygiene.")}
           value={value.food_hygiene_notes ?? ""}
           maxLength={500}
           onChange={(e) => onChange({ food_hygiene_notes: e.target.value || null })}

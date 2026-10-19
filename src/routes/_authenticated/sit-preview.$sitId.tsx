@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Eye, ArrowLeft, Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import i18next from "i18next";
 
 // Owner "View as sitter" — previews the REAL token-based sitter view for a
 // specific sit (the exact renderer + content the sitter gets), in an iframe
@@ -10,13 +12,14 @@ import { Eye, ArrowLeft, Loader2 } from "lucide-react";
 // loader not to count it as a sitter visit. A banner makes the mode obvious and
 // links back to the Sits page (not the sitter view's own back target).
 export const Route = createFileRoute("/_authenticated/sit-preview/$sitId")({
-  head: () => ({ meta: [{ title: "Sitter preview — Kya & Co." }] }),
+  head: () => ({ meta: [{ title: i18next.t("sitPreview.pageTitle", "Sitter preview — Kya & Co.") }] }),
   component: SitPreview,
 });
 
 type PreviewState = { previewToken?: string | null; previewLabel?: string; previewHousehold?: boolean };
 
 function SitPreview() {
+  const { t } = useTranslation();
   const { sitId } = Route.useParams();
   const navigate = useNavigate();
   // Fast path: the sit card already holds the sit's token, caregiver label, and
@@ -36,10 +39,10 @@ function SitPreview() {
         .select("id, invite_token, sitter_name, caregiver_user_id")
         .eq("id", sitId)
         .maybeSingle();
-      let label = (sit?.sitter_name ?? "").trim() || "your sitter";
+      let label = (sit?.sitter_name ?? "").trim() || i18next.t("sitPreview.yourSitter", "your sitter");
       if (sit?.caregiver_user_id) {
         const { data: p } = await supabase.from("profiles").select("display_name").eq("id", sit.caregiver_user_id).maybeSingle();
-        label = (p?.display_name ?? "").toString().trim() || "your caregiver";
+        label = (p?.display_name ?? "").toString().trim() || i18next.t("sitPreview.yourCaregiver", "your caregiver");
       }
       return { sit: sit as any, label };
     },
@@ -47,7 +50,7 @@ function SitPreview() {
 
   const household = hasState ? !!state.previewHousehold : !!data?.sit?.caregiver_user_id;
   const token = (hasState ? state.previewToken : data?.sit?.invite_token) as string | null | undefined;
-  const label = (hasState ? state.previewLabel : data?.label) || "they";
+  const label = (hasState ? state.previewLabel : data?.label) || t("sitPreview.they", "they");
   const src = token ? `/sitter/${token}?preview=1` : null;
   const resolving = !hasState && isLoading;
 
@@ -60,31 +63,31 @@ function SitPreview() {
       <div className="flex items-center justify-between gap-3 bg-[var(--ink)] px-4 py-2.5 pt-[max(env(safe-area-inset-top),0.625rem)] text-white">
         <span className="flex min-w-0 items-center gap-2 text-[13.5px] font-[500]">
           <Eye className="size-4 shrink-0 text-[var(--lime)]" />
-          <span className="truncate">{household ? "Caregiver" : "Sitter"} preview · how {label} will see this sit</span>
+          <span className="truncate">{household ? t("sitPreview.caregiverBanner", "Caregiver preview · how {{label}} will see this sit", { label }) : t("sitPreview.sitterBanner", "Sitter preview · how {{label}} will see this sit", { label })}</span>
         </span>
         <Link
           to="/sits"
           className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white/15 px-3 py-1 text-xs font-[500] text-white"
         >
-          <ArrowLeft className="size-3.5" /> Sits
+          <ArrowLeft className="size-3.5" /> {t("sitPreview.sits", "Sits")}
         </Link>
       </div>
 
       {resolving ? (
         <div className="flex flex-1 items-center justify-center gap-2 text-[14px] text-[var(--mute)]">
-          <Loader2 className="size-4 animate-spin" /> Loading preview…
+          <Loader2 className="size-4 animate-spin" /> {t("sitPreview.loading", "Loading preview…")}
         </div>
       ) : src ? (
         <div className="relative flex-1">
           <iframe
             src={src}
-            title="Sitter view preview"
+            title={t("sitPreview.iframeTitle", "Sitter view preview")}
             onLoad={() => setFrameReady(true)}
             className="absolute inset-0 size-full border-0 bg-[var(--cream)]"
           />
           {!frameReady && (
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center gap-2 bg-[var(--cream)] text-[14px] text-[var(--mute)]">
-              <Loader2 className="size-4 animate-spin" /> Loading preview…
+              <Loader2 className="size-4 animate-spin" /> {t("sitPreview.loading", "Loading preview…")}
             </div>
           )}
         </div>
@@ -95,14 +98,14 @@ function SitPreview() {
         <div className="grid flex-1 place-items-center p-6 text-center">
           <div className="max-w-[34ch]">
             <p className="t-body text-[var(--ink2)]">
-              Household caregivers use the app's caregiver Today screen — there's no shareable preview link.
+              {t("sitPreview.householdNoLink", "Household caregivers use the app's caregiver Today screen — there's no shareable preview link.")}
             </p>
             <button
               type="button"
               onClick={() => navigate({ to: "/sits/$sitId", params: { sitId } })}
               className="mt-4 inline-flex min-h-[44px] items-center justify-center rounded-[12px] bg-[var(--ink)] px-[18px] text-[15px] font-[500] text-white"
             >
-              See this sit's activity
+              {t("sitPreview.seeActivity", "See this sit's activity")}
             </button>
           </div>
         </div>

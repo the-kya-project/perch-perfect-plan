@@ -4,6 +4,9 @@ import { createClipUpload, getClipStatus } from "@/lib/clips.functions";
 import { cfRef } from "@/lib/clipRef";
 import { track } from "@/lib/analytics";
 import { nativePlatform } from "@/lib/nativeApp";
+import i18next from "i18next";
+import { useTranslation } from "react-i18next";
+import { friendlyError } from "@/lib/errorMessage";
 
 /**
  * Clip recorder + uploader.
@@ -121,16 +124,18 @@ async function waitForReady(uid: string): Promise<void> {
 
 function friendlyUploadError(err: any): string {
   const m = String(err?.message ?? "");
-  if (/not configured/i.test(m)) return "Video uploads aren't set up yet — please try again later.";
+  if (/not configured/i.test(m)) return i18next.t("clipRecorder.notConfigured", "Video uploads aren't set up yet — please try again later.");
+  // waitForReady's own (English) transcode-failure message — shown localized.
+  if (m === "This video couldn't be processed. Please try a different clip.") return i18next.t("clipRecorder.couldntProcess", "This video couldn't be processed. Please try a different clip.");
   if (/processed/i.test(m)) return m;
   // Surface the real Cloudflare error (e.g. auth/subscription) instead of hiding it.
-  if (/cloudflare stream/i.test(m)) return `Video service error — ${m}`;
+  if (/cloudflare stream/i.test(m)) return i18next.t("clipRecorder.serviceError", "Video service error — {{detail}}", { detail: m });
   // tus exhausted its retries (the connection kept dropping). Show the raw
   // detail so a flaky-network failure can be diagnosed from the phone.
   if (/tus|http|network|request|connection|timed out|aborted/i.test(m)) {
-    return `Upload failed after retrying — check your connection and try again.${m ? ` (${m.slice(0, 120)})` : ""}`;
+    return `${i18next.t("clipRecorder.uploadFailedRetrying", "Upload failed after retrying — check your connection and try again.")}${m ? ` (${m.slice(0, 120)})` : ""}`;
   }
-  return "Upload failed. Please try again.";
+  return i18next.t("clipRecorder.uploadFailed", "Upload failed. Please try again.");
 }
 
 /** Prominent, labeled progress block shared by the checking/uploading/processing states. */
@@ -180,6 +185,7 @@ export function ClipRecorder({
    *  to Cloudflare Stream completes; the parent saves it on the clip column. */
   onUploaded: (ref: string) => void | Promise<void>;
 }) {
+  const { t } = useTranslation();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
@@ -237,7 +243,7 @@ export function ClipRecorder({
     if (tickRef.current) { clearInterval(tickRef.current); tickRef.current = null; }
     try { recorderRef.current?.state !== "inactive" && recorderRef.current?.stop(); } catch {}
     recorderRef.current = null;
-    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current?.getTracks().forEach((tr) => tr.stop());
     streamRef.current = null;
     if (videoRef.current) videoRef.current.srcObject = null;
   }
@@ -246,7 +252,7 @@ export function ClipRecorder({
     setError(null);
     setNote(null);
     const cand = pickCandidate();
-    if (!cand) { setError("Your browser can't record video here. Try Safari on iPhone or Chrome."); return; }
+    if (!cand) { setError(t("clipRecorder.cantRecord", "Your browser can't record video here. Try Safari on iPhone or Chrome.")); return; }
     candidateRef.current = cand;
 
     try {
@@ -259,8 +265,8 @@ export function ClipRecorder({
         audio: true,
       });
       if (!stream.getVideoTracks().length) {
-        stream.getTracks().forEach((t) => t.stop());
-        setError("No camera was found. Check that another app isn't using it.");
+        stream.getTracks().forEach((tr) => tr.stop());
+        setError(t("clipRecorder.noCamera", "No camera was found. Check that another app isn't using it."));
         return;
       }
       streamRef.current = stream;
@@ -269,8 +275,8 @@ export function ClipRecorder({
       const denied = e?.name === "NotAllowedError" || e?.name === "SecurityError";
       setError(
         denied
-          ? "Camera access was blocked. Allow camera access in your browser settings, then try again."
-          : (e?.message ?? "Couldn't access the camera. Check your browser permissions."),
+          ? t("clipRecorder.cameraBlocked", "Camera access was blocked. Allow camera access in your browser settings, then try again.")
+          : friendlyError(e, t("clipRecorder.cameraAccessFailed", "Couldn't access the camera. Check your browser permissions."), t),
       );
       setPhase("idle");
     }
@@ -289,13 +295,13 @@ export function ClipRecorder({
       rec = new MediaRecorder(stream, { mimeType: cand.mime, ...recOpts });
     } catch {
       try { rec = new MediaRecorder(stream, recOpts); } catch (e: any) {
-        setError(e?.message ?? "Couldn't start the recorder.");
+        setError(friendlyError(e, t("clipRecorder.recorderStartFailed", "Couldn't start the recorder."), t));
         return;
       }
     }
     recorderRef.current = rec;
     rec.ondataavailable = (e) => { if (e.data && e.data.size) chunksRef.current.push(e.data); };
-    rec.onerror = () => setError("Recording failed. Please try again.");
+    rec.onerror = () => setError(t("clipRecorder.recordingFailed", "Recording failed. Please try again."));
     rec.onstop = () => finalize();
     rec.start(1000); // 1s chunks so we get data even on early stop
     setElapsed(0);
@@ -323,12 +329,12 @@ export function ClipRecorder({
     chunksRef.current = [];
     if (tickRef.current) { clearInterval(tickRef.current); tickRef.current = null; }
     recorderRef.current = null;
-    streamRef.current?.getTracks().forEach((t) => t.stop());
+    streamRef.current?.getTracks().forEach((tr) => tr.stop());
     streamRef.current = null;
     if (videoRef.current) videoRef.current.srcObject = null;
 
-    if (!blob.size) { setPhase("idle"); setError("No video was captured. Please try recording again."); return; }
-    if (blob.size > MAX_BYTES) { setPhase("idle"); setError("That recording is too large. Please record a shorter clip."); return; }
+    if (!blob.size) { setPhase("idle"); setError(t("clipRecorder.nothingCaptured", "No video was captured. Please try recording again.")); return; }
+    if (blob.size > MAX_BYTES) { setPhase("idle"); setError(t("clipRecorder.recordingTooLarge", "That recording is too large. Please record a shorter clip.")); return; }
 
     recordedFileRef.current = new File([blob], `${baseName ?? "clip"}.${cand.ext}`, { type: cand.contentType });
     revokeRecorded();
@@ -410,7 +416,7 @@ export function ClipRecorder({
     const isVideo =
       file.type.startsWith("video/") || /\.(mov|mp4|m4v|hevc|3gp|webm)$/i.test(file.name);
     if (!isVideo) {
-      setError("Please choose a video file, such as a .mov or .mp4.");
+      setError(t("clipRecorder.chooseVideo", "Please choose a video file, such as a .mov or .mp4."));
       return;
     }
 
@@ -432,11 +438,11 @@ export function ClipRecorder({
     // shrunk on-device; a 4K phone clip is large).
     setBigUpload(file.size > 40 * 1024 * 1024);
     if (duration != null && duration > MAX_SECONDS + 1) {
-      setError(`That clip is ${fmt(Math.round(duration))} long. Please keep clips under 60 seconds.`);
+      setError(t("clipRecorder.clipTooLong", "That clip is {{duration}} long. Please keep clips under 60 seconds.", { duration: fmt(Math.round(duration)) }));
       return;
     }
     if (file.size > MAX_BYTES) {
-      setError(`That video is too large (over ${mb(MAX_BYTES)}). Please record a shorter clip.`);
+      setError(t("clipRecorder.videoTooLarge", "That video is too large (over {{size}}). Please record a shorter clip.", { size: mb(MAX_BYTES) }));
       return;
     }
 
@@ -465,14 +471,14 @@ export function ClipRecorder({
     return (
       <div className="space-y-2">
         <UploadProgress
-          label={stage.kind === "uploading" ? "Uploading…" : "Processing video…"}
+          label={stage.kind === "uploading" ? t("clipRecorder.uploading", "Uploading…") : t("clipRecorder.processing", "Processing video…")}
           ratio={stage.kind === "uploading" ? (stage.pct ?? 0) / 100 : undefined}
           hint={
             stage.kind === "uploading"
               ? bigUpload
-                ? "Large video — this can take a few minutes to send on your connection. Keep this screen open. Tip: recording in-app uploads much faster."
-                : "Sending your clip to be converted. Please keep this screen open."
-              : "Converting your clip so it plays on every device — usually just a few seconds. Please keep this screen open."
+                ? t("clipRecorder.hintLarge", "Large video — this can take a few minutes to send on your connection. Keep this screen open. Tip: recording in-app uploads much faster.")
+                : t("clipRecorder.hintSending", "Sending your clip to be converted. Please keep this screen open.")
+              : t("clipRecorder.hintConverting", "Converting your clip so it plays on every device — usually just a few seconds. Please keep this screen open.")
           }
         />
         {noteEl}
@@ -480,7 +486,7 @@ export function ClipRecorder({
     );
   }
   if (checking) {
-    return <UploadProgress label="Checking video…" hint="Making sure the clip is under 60 seconds." />;
+    return <UploadProgress label={t("clipRecorder.checking", "Checking video…")} hint={t("clipRecorder.checkingHint", "Making sure the clip is under 60 seconds.")} />;
   }
 
   if (phase === "review") {
@@ -489,13 +495,13 @@ export function ClipRecorder({
         <div className="overflow-hidden rounded-xl bg-black ring-1 ring-sage-200">
           {recordedUrl && <video src={recordedUrl} controls playsInline className="aspect-video w-full object-contain" />}
         </div>
-        <p className="flex items-center gap-1 text-xs font-semibold text-sage-600"><Check className="size-3.5" /> Clip recorded — review it below.</p>
+        <p className="flex items-center gap-1 text-xs font-semibold text-sage-600"><Check className="size-3.5" /> {t("clipRecorder.recordedReview", "Clip recorded — review it below.")}</p>
         <div className="flex gap-2">
           <button type="button" onClick={useRecorded} disabled={disabled} className="flex-1 rounded-xl bg-sage-900 py-2 text-sm font-semibold text-white disabled:opacity-50">
-            <span className="inline-flex items-center justify-center gap-1.5"><Check className="size-4" /> Use this clip</span>
+            <span className="inline-flex items-center justify-center gap-1.5"><Check className="size-4" /> {t("clipRecorder.useClip", "Use this clip")}</span>
           </button>
           <button type="button" onClick={reRecord} disabled={disabled} className="rounded-xl border border-sage-200 bg-white px-3 py-2 text-sm font-semibold text-sage-700 disabled:opacity-50">
-            <span className="inline-flex items-center gap-1.5"><RotateCcw className="size-4" /> Re-record</span>
+            <span className="inline-flex items-center gap-1.5"><RotateCcw className="size-4" /> {t("clipRecorder.reRecord", "Re-record")}</span>
           </button>
         </div>
         {errorEl}
@@ -512,12 +518,12 @@ export function ClipRecorder({
           onClick={start}
           className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-sage-200 bg-sage-50 p-4 text-sm font-semibold text-sage-700 disabled:opacity-50"
         >
-          <Video className="size-4" /> Record a clip (up to 60 seconds)
+          <Video className="size-4" /> {t("clipRecorder.recordClip", "Record a clip (up to 60 seconds)")}
         </button>
 
         <div className="flex items-center gap-3 text-[11px] uppercase tracking-widest text-sage-500">
           <div className="h-px flex-1 bg-sage-200" />
-          or
+          {t("clipRecorder.or", "or")}
           <div className="h-px flex-1 bg-sage-200" />
         </div>
 
@@ -525,7 +531,7 @@ export function ClipRecorder({
           className={`flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-sage-200 bg-sage-50 p-4 text-sm font-semibold text-sage-700 ${disabled ? "pointer-events-none opacity-50" : ""}`}
         >
           <Upload className="size-4" />
-          Upload a video
+          {t("clipRecorder.uploadVideo", "Upload a video")}
           <input
             ref={fileInputRef}
             type="file"
@@ -542,8 +548,7 @@ export function ClipRecorder({
         </label>
 
         <p className="text-center text-[11px] text-sage-500">
-          Up to {MAX_SECONDS} seconds and {mb(MAX_BYTES)} per clip. Large phone
-          videos can take a few minutes to upload — recording here is faster.
+          {t("clipRecorder.limits", "Up to {{seconds}} seconds and {{size}} per clip. Large phone videos can take a few minutes to upload — recording here is faster.", { seconds: MAX_SECONDS, size: mb(MAX_BYTES) })}
         </p>
 
         {errorEl}
@@ -567,12 +572,12 @@ export function ClipRecorder({
         {phase === "recording" && (
           <div className="absolute left-2 top-2 flex items-center gap-1.5 rounded-full bg-warn-red/90 px-2 py-0.5 text-[11px] font-bold text-white">
             <span className="size-1.5 animate-pulse rounded-full bg-white" />
-            REC {fmt(elapsed)} / {fmt(MAX_SECONDS)}
+            {t("clipRecorder.rec", "REC {{elapsed}} / {{max}}", { elapsed: fmt(elapsed), max: fmt(MAX_SECONDS) })}
           </div>
         )}
         {phase === "ready" && (
           <div className="absolute left-2 top-2 rounded-full bg-black/60 px-2 py-0.5 text-[11px] font-semibold text-white">
-            Live preview
+            {t("clipRecorder.livePreview", "Live preview")}
           </div>
         )}
       </div>
@@ -585,14 +590,14 @@ export function ClipRecorder({
               onClick={beginRecording}
               className="flex-1 rounded-xl bg-warn-red py-2 text-sm font-semibold text-white"
             >
-              <span className="inline-flex items-center justify-center gap-1.5"><Video className="size-4" /> Start recording</span>
+              <span className="inline-flex items-center justify-center gap-1.5"><Video className="size-4" /> {t("clipRecorder.startRecording", "Start recording")}</span>
             </button>
             <button
               type="button"
               onClick={cancel}
               className="rounded-xl border border-sage-200 bg-white px-3 py-2 text-sm font-semibold text-sage-700"
             >
-              <span className="inline-flex items-center gap-1.5"><RotateCcw className="size-4" /> Cancel</span>
+              <span className="inline-flex items-center gap-1.5"><RotateCcw className="size-4" /> {t("clipRecorder.cancel", "Cancel")}</span>
             </button>
           </>
         )}
@@ -602,12 +607,12 @@ export function ClipRecorder({
             onClick={stop}
             className="flex-1 rounded-xl bg-sage-900 py-2 text-sm font-semibold text-white"
           >
-            <span className="inline-flex items-center justify-center gap-1.5"><Square className="size-4" /> Stop & save</span>
+            <span className="inline-flex items-center justify-center gap-1.5"><Square className="size-4" /> {t("clipRecorder.stopSave", "Stop & save")}</span>
           </button>
         )}
         {phase === "stopping" && (
           <div className="flex-1 rounded-xl bg-sage-100 py-2 text-center text-sm font-semibold text-sage-700">
-            <span className="inline-flex items-center gap-1.5"><Loader2 className="size-4 animate-spin" /> Finalizing…</span>
+            <span className="inline-flex items-center gap-1.5"><Loader2 className="size-4 animate-spin" /> {t("clipRecorder.finalizing", "Finalizing…")}</span>
           </div>
         )}
       </div>

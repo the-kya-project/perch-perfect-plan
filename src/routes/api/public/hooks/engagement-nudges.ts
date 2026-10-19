@@ -35,7 +35,9 @@ import { withCronTelemetry } from "@/lib/cronTelemetry";
 const DAY = 1000 * 60 * 60 * 24;
 
 type BirdRow = { id: string; name: string | null; owner_id: string; passed_at: string | null };
-type Planned = { userId: string; type: "weight_reminder" | "checkin_reminder"; birdId: string | null; birdName: string; daysSince: number; checkinStage?: 10 | 30 };
+// birdName is the English label for the dryRun report; rawName (null when the
+// bird has no name) is what the localized push copy is built from.
+type Planned = { userId: string; type: "weight_reminder" | "checkin_reminder"; birdId: string | null; birdName: string; rawName: string | null; daysSince: number; checkinStage?: 10 | 30 };
 
 function median(nums: number[]): number {
   const s = [...nums].sort((a, b) => a - b);
@@ -166,7 +168,7 @@ export const Route = createFileRoute("/api/public/hooks/engagement-nudges")({
             const due = weightDueDays(entries);
             if (daysSince < due) continue;
             if (birdWeightNudgeSince(bird.id, 5 * DAY)) continue;
-            const cand: Planned = { userId, type: "weight_reminder", birdId: bird.id, birdName: bird.name ?? "Your bird", daysSince };
+            const cand: Planned = { userId, type: "weight_reminder", birdId: bird.id, birdName: bird.name ?? "Your bird", rawName: bird.name, daysSince };
             if (!best || cand.daysSince > best.daysSince) best = cand;
           }
           if (best) { planned.push(best); continue; }
@@ -181,35 +183,30 @@ export const Route = createFileRoute("/api/public/hooks/engagement-nudges")({
             lapseDays >= 10 && sentThisEpisode === 0 ? 10 : null;
           if (!stage) continue;
           const bird = myBirds[0];
-          planned.push({ userId, type: "checkin_reminder", birdId: bird.id, birdName: bird.name ?? "your bird", daysSince: lapseDays, checkinStage: stage });
+          planned.push({ userId, type: "checkin_reminder", birdId: bird.id, birdName: bird.name ?? "your bird", rawName: bird.name, daysSince: lapseDays, checkinStage: stage });
         }
 
         if (dryRun) return Response.json({ ok: true, dryRun: true, planned });
 
         const { sendPushToOwner } = await import("@/lib/pushSender.server");
+        const { localeForUser } = await import("@/lib/emailLocale.server");
+        const { weightReminderPush, checkinReminderPush } = await import("@/lib/pushCopy.server");
         let sent = 0;
         for (const p of planned) {
+          // Recipient (owner, group 1) → their stored locale; English fallback.
+          const locale = await localeForUser(supabaseAdmin, p.userId);
           const payload =
             p.type === "weight_reminder"
               ? {
-                  title: "Weigh-in time",
-                  body: `${p.birdName} is due for a weigh-in — the last one was ${p.daysSince} days ago.`,
+                  ...weightReminderPush(locale, p.rawName, p.daysSince),
                   url: `/birds/${p.birdId}`,
                   tag: `weight-reminder-${p.birdId}`,
                 }
-              : p.checkinStage === 10
-                ? {
-                    title: "A quick check-in",
-                    body: `It's been a little while since ${p.birdName}'s last entry. Two minutes keeps the record whole.`,
-                    url: "/dashboard",
-                    tag: `checkin-reminder-${p.userId}`,
-                  }
-                : {
-                    title: `${p.birdName} says hi`,
-                    body: `${p.birdName}'s health record is right where you left it, whenever you're ready.`,
-                    url: "/dashboard",
-                    tag: `checkin-reminder-${p.userId}`,
-                  };
+              : {
+                  ...checkinReminderPush(locale, p.rawName, p.checkinStage === 10 ? 10 : 30),
+                  url: "/dashboard",
+                  tag: `checkin-reminder-${p.userId}`,
+                };
 
           try {
             const res = await sendPushToOwner(p.userId, p.type, payload);

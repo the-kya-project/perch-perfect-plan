@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { Check, ChevronDown, Plus, AlertTriangle, AlertCircle } from "lucide-react";
 import { FEED_PERIODS, normalizeFeedTimes, type FeedPeriod, type FeedTime } from "@/lib/feedTimes";
-import { formatAmountUnit } from "@/lib/labels";
+import { formatAmountUnitDisplay } from "@/lib/labels";
 import {
   FOOD_UNITS,
   blankFoodItem,
@@ -9,6 +11,7 @@ import {
   foodItemMissing,
   type FoodItem,
 } from "@/lib/foodItems";
+import { foodLabel } from "./foodLabels";
 
 /**
  * Shared per-food-type item editor. Rendered identically by the guided wizard's
@@ -40,22 +43,23 @@ export type ChopConfig = {
   onOtherChange: (v: string) => void;
 };
 
-function whenLabels(it: FoodItem): string {
+function whenLabels(t: TFunction, it: FoodItem): string {
   return normalizeFeedTimes(it.times)
-    .map((t) => FEED_PERIODS.find((p) => p.value === t.period)?.label)
-    .filter(Boolean)
+    .map((ft) => FEED_PERIODS.find((p) => p.value === ft.period)?.label)
+    .filter((l): l is string => !!l)
+    .map((l) => foodLabel(t, l))
     .join(", ");
 }
 
-function summaryLine(it: FoodItem): string {
-  if (it.freeFed) return "Available all day.";
-  return [formatAmountUnit(it.amount, it.unit), whenLabels(it)].filter(Boolean).join(" · ");
+function summaryLine(t: TFunction, it: FoodItem): string {
+  if (it.freeFed) return t("foodEditor.availableAllDaySentence", "Available all day.");
+  return [formatAmountUnitDisplay(it.amount, it.unit, t), whenLabels(t, it)].filter(Boolean).join(" · ");
 }
 
 function toggleWhen(it: FoodItem, period: FeedPeriod): FeedTime[] {
   const times = normalizeFeedTimes(it.times);
-  const has = times.some((t) => t.period === period);
-  const next = has ? times.filter((t) => t.period !== period) : [...times, { period, at: null }];
+  const has = times.some((ft) => ft.period === period);
+  const next = has ? times.filter((ft) => ft.period !== period) : [...times, { period, at: null }];
   next.sort(
     (a, b) =>
       FEED_PERIODS.findIndex((x) => x.value === a.period) - FEED_PERIODS.findIndex((x) => x.value === b.period),
@@ -78,6 +82,7 @@ export function FoodItemsEditor({
   expandSignal?: number;
   chop?: ChopConfig;
 }) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const k = (type: string, idx: number) => `${type}:${idx}`;
   const isOpen = (type: string, idx: number, it: FoodItem) => expanded[k(type, idx)] ?? !isFoodItemComplete(it);
@@ -88,9 +93,9 @@ export function FoodItemsEditor({
     if (!expandSignal) return;
     setExpanded((prev) => {
       const next = { ...prev };
-      for (const t of types) {
-        (details[t.value] ?? []).forEach((it, idx) => {
-          if (!isFoodItemComplete(it)) next[k(t.value, idx)] = true;
+      for (const ty of types) {
+        (details[ty.value] ?? []).forEach((it, idx) => {
+          if (!isFoodItemComplete(it)) next[k(ty.value, idx)] = true;
         });
       }
       return next;
@@ -122,18 +127,18 @@ export function FoodItemsEditor({
             <div key={type} className="rounded-[16px] border border-[var(--line)] bg-[var(--cream2)] p-4">
               {/* Question header + status pill */}
               <div className="flex items-center justify-between gap-2">
-                <p className="text-[16px] font-[500] text-[var(--ink)]">What kind of fresh chop?</p>
+                <p className="text-[16px] font-[500] text-[var(--ink)]">{t("foodEditor.chopKindQuestion", "What kind of fresh chop?")}</p>
                 {picked ? (
                   <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--lime)] px-2.5 py-1 text-[11px] font-[500] text-[var(--ink)]">
-                    <Check className="size-3" /> Set
+                    <Check className="size-3" /> {t("foodEditor.pillSet", "Set")}
                   </span>
                 ) : (
                   <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--amber-fill)] px-2.5 py-1 text-[11px] font-[500] text-[var(--amber-ink)]">
-                    <AlertCircle className="size-3" /> Pick one
+                    <AlertCircle className="size-3" /> {t("foodEditor.pillPickOne", "Pick one")}
                   </span>
                 )}
               </div>
-              <p className="mt-1 text-[12.5px] leading-[1.5] text-[var(--mute)]">So the caregiver knows what to prep.</p>
+              <p className="mt-1 text-[12.5px] leading-[1.5] text-[var(--mute)]">{t("foodEditor.chopKindHint", "So the caregiver knows what to prep.")}</p>
 
               {/* Two compact option cards */}
               <div className="mt-3 grid grid-cols-2 gap-2">
@@ -149,7 +154,7 @@ export function FoodItemsEditor({
                         (sel ? "border-2 border-[var(--ink)] bg-[var(--lime)]" : "border border-[var(--line)] bg-white")
                       }
                     >
-                      {m === "premade" ? "Pre-made" : "Homemade"}
+                      {m === "premade" ? t("foodEditor.preMade", "Pre-made") : t("foodEditor.homemade", "Homemade")}
                       {sel && (
                         <span className="absolute -right-1.5 -top-1.5 grid size-[18px] place-items-center rounded-full bg-[var(--ink)] text-[var(--lime)]">
                           <Check className="size-3" />
@@ -164,7 +169,7 @@ export function FoodItemsEditor({
               {chop.mode === "homemade" && (
                 <>
                   <div className="mt-3 rounded-xl bg-white/70 p-3" style={{ borderWidth: "0.5px", borderColor: "#d8cfb8" }}>
-                    <p className="mb-1.5 text-xs font-medium text-[#5f5e5a]">What's in it? Tap the ingredients.</p>
+                    <p className="mb-1.5 text-xs font-medium text-[#5f5e5a]">{t("foodEditor.whatsInIt", "What's in it? Tap the ingredients.")}</p>
                     <div className="flex flex-wrap gap-1.5">
                       {chop.options.map((f) => {
                         const on = chop.ingredients.some((x) => x.toLowerCase() === f.toLowerCase());
@@ -178,14 +183,14 @@ export function FoodItemsEditor({
                               (on ? "bg-[#1a3d2e] text-white" : "border border-[#c8bfa6] bg-white text-[#1a3d2e]")
                             }
                           >
-                            {f}
+                            {foodLabel(t, f)}
                           </button>
                         );
                       })}
                     </div>
                     <input
                       className={`mt-2 ${FIELD} ${BORDER_OK}`}
-                      placeholder="Other ingredients (free text)"
+                      placeholder={t("foodEditor.otherIngredientsPlaceholder", "Other ingredients (free text)")}
                       value={chop.other}
                       maxLength={300}
                       onChange={(e) => chop.onOtherChange(e.target.value)}
@@ -286,6 +291,7 @@ function ItemCard({
   setWhen: (period: FeedPeriod) => void;
   onRemove?: () => void;
 }) {
+  const { t } = useTranslation();
   const complete = isFoodItemComplete(item);
   const miss = foodItemMissing(item);
   const amber = (on: boolean) => (validationActive && on ? BORDER_AMBER : BORDER_OK);
@@ -296,7 +302,7 @@ function ItemCard({
         <span className="min-w-0 flex-1">
           <span className="block truncate text-sm font-medium text-[#1a3d2e]">{item.name.trim() || label}</span>
           <span className={`mt-0.5 block truncate text-xs ${complete ? "text-[#5f5e5a]" : "text-[#854F0B]"}`}>
-            {complete ? summaryLine(item) : "Tap to add the details your sitter needs."}
+            {complete ? summaryLine(t, item) : t("foodEditor.tapToAddDetails", "Tap to add the details your sitter needs.")}
           </span>
         </span>
         <StatusPill complete={complete} />
@@ -306,26 +312,26 @@ function ItemCard({
       {open && (
         <div className="space-y-3 border-t border-[#ece6d6] px-3 pb-3 pt-3">
           {!hideBrand && (
-            <Field label="Brand or name" required>
+            <Field label={t("foodEditor.brandOrName", "Brand or name")} required>
               <input
                 className={`${FIELD} ${amber(miss.brand)}`}
-                placeholder="e.g. Harrison's High Potency"
+                placeholder={t("foodEditor.brandPlaceholder", "e.g. Harrison's High Potency")}
                 value={item.name}
                 maxLength={120}
                 onChange={(e) => onChange({ name: e.target.value })}
               />
-              {validationActive && miss.brand && <Helper>Add the brand or food name.</Helper>}
+              {validationActive && miss.brand && <Helper>{t("foodEditor.helperBrand", "Add the brand or food name.")}</Helper>}
             </Field>
           )}
 
           {!item.freeFed && (
             <>
-              <Field label="How much?" required>
+              <Field label={t("foodEditor.howMuch", "How much?")} required>
                 <div className="grid grid-cols-[1fr,1.3fr] gap-2">
                   <input
                     className={`${FIELD} ${amber(miss.qty)}`}
                     inputMode="decimal"
-                    placeholder="Amount"
+                    placeholder={t("foodEditor.amount", "Amount")}
                     value={item.amount}
                     onChange={(e) => onChange({ amount: e.target.value.replace(/[^0-9.]/g, "") })}
                   />
@@ -334,18 +340,18 @@ function ItemCard({
                     value={item.unit}
                     onChange={(e) => onChange({ unit: e.target.value })}
                   >
-                    <option value="">Unit…</option>
+                    <option value="">{t("foodEditor.unitPlaceholder", "Unit…")}</option>
                     {item.unit && !FOOD_UNITS.includes(item.unit as any) && <option value={item.unit}>{item.unit}</option>}
-                    {FOOD_UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
+                    {FOOD_UNITS.map((u) => <option key={u} value={u}>{foodLabel(t, u)}</option>)}
                   </select>
                 </div>
-                {validationActive && (miss.qty || miss.unit) && <Helper>Add the amount and pick a unit.</Helper>}
+                {validationActive && (miss.qty || miss.unit) && <Helper>{t("foodEditor.helperAmountUnit", "Add the amount and pick a unit.")}</Helper>}
               </Field>
 
-              <Field label="When?" required>
+              <Field label={t("foodEditor.when", "When?")} required>
                 <div className="flex flex-wrap gap-1.5">
                   {FEED_PERIODS.map((p) => {
-                    const on = normalizeFeedTimes(item.times).some((t) => t.period === p.value);
+                    const on = normalizeFeedTimes(item.times).some((ft) => ft.period === p.value);
                     return (
                       <button
                         key={p.value}
@@ -358,12 +364,12 @@ function ItemCard({
                             : `border bg-white text-[#1a3d2e] ${validationActive && miss.when ? BORDER_AMBER : "border-[#c8bfa6]"}`)
                         }
                       >
-                        {on ? "✓ " : ""}{p.label}
+                        {on ? "✓ " : ""}{foodLabel(t, p.label)}
                       </button>
                     );
                   })}
                 </div>
-                {validationActive && miss.when && <Helper>Pick at least one feeding time.</Helper>}
+                {validationActive && miss.when && <Helper>{t("foodEditor.helperWhen", "Pick at least one feeding time.")}</Helper>}
               </Field>
             </>
           )}
@@ -375,18 +381,18 @@ function ItemCard({
               checked={!!item.freeFed}
               onChange={(e) => onChange({ freeFed: e.target.checked, ...(e.target.checked ? { times: [] } : {}) })}
             />
-            Available all day / free-fed
+            {t("foodEditor.availableAllDayFreeFed", "Available all day / free-fed")}
           </label>
           {item.freeFed && (
             <p className="rounded-xl bg-[#d6e8dc] px-3 py-2 text-xs text-[#1a3d2e]">
-              Left in the cage — no set amount or times needed.
+              {t("foodEditor.freeFedNote", "Left in the cage — no set amount or times needed.")}
             </p>
           )}
 
-          <Field label="Anything else?">
+          <Field label={t("foodEditor.anythingElse", "Anything else?")}>
             <textarea
               className={`${FIELD} ${BORDER_OK} min-h-[64px] leading-relaxed`}
-              placeholder="Optional — any prep or serving details"
+              placeholder={t("foodEditor.notePlaceholder", "Optional — any prep or serving details")}
               maxLength={300}
               value={item.note ?? ""}
               onChange={(e) => onChange({ note: e.target.value || null })}
@@ -395,7 +401,7 @@ function ItemCard({
 
           {onRemove && (
             <button type="button" onClick={onRemove} className="text-xs font-medium text-[#854F0B] underline">
-              Remove this item
+              {t("foodEditor.removeThisItem", "Remove this item")}
             </button>
           )}
 
@@ -405,7 +411,7 @@ function ItemCard({
             onClick={onLooksGood}
             className="flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-[11px] bg-[var(--ink)] px-3 py-2.5 text-[14px] font-[500] text-white active:scale-[0.99]"
           >
-            <Check className="size-4" /> Looks good
+            <Check className="size-4" /> {t("foodEditor.looksGood", "Looks good")}
           </button>
         </div>
       )}
@@ -414,25 +420,27 @@ function ItemCard({
 }
 
 function AddButton({ label, onClick }: { label: string; onClick: () => void }) {
+  const { t } = useTranslation();
   return (
     <button
       type="button"
       onClick={onClick}
       className="mt-3 flex min-h-[44px] w-full items-center justify-center gap-1.5 rounded-xl border border-dashed border-[#2d6a4f] bg-transparent text-sm font-medium text-[#2d6a4f]"
     >
-      <Plus className="size-4" /> Add another {label.toLowerCase()} item
+      <Plus className="size-4" /> {t("foodEditor.addAnotherItem", "Add another {{type}} item", { type: label.toLowerCase() })}
     </button>
   );
 }
 
 function StatusPill({ complete }: { complete: boolean }) {
+  const { t } = useTranslation();
   return complete ? (
     <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#d6e8dc] px-2.5 py-1 text-[11px] font-medium text-[#1a3d2e]">
-      <Check className="size-3" /> Ready
+      <Check className="size-3" /> {t("foodEditor.pillReady", "Ready")}
     </span>
   ) : (
     <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#f6e7c4] px-2.5 py-1 text-[11px] font-medium text-[#854F0B]">
-      <AlertTriangle className="size-3" /> Needs details
+      <AlertTriangle className="size-3" /> {t("foodEditor.pillNeedsDetails", "Needs details")}
     </span>
   );
 }

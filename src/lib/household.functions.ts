@@ -14,7 +14,7 @@ import { PRESET_CAPABILITIES, ASSIGNABLE_PRESETS, type AssignablePreset } from "
 import { activeOwnerBirdsMin } from "@/lib/activeBirds";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { buildHouseholdInviteEmail } from "./emailTemplates";
-import { localeForUser } from "./emailLocale.server";
+import { localeForUser, joinNamesLocalized, fallbackOwnerLabel } from "./emailLocale.server";
 import { mergeEmergency } from "./emergency";
 import { isCfClip, cfUid } from "./clipRef";
 
@@ -51,25 +51,37 @@ function makeToken() {
   return (crypto.randomUUID() + crypto.randomUUID()).replace(/-/g, "");
 }
 
-// Human list: "Willow", "Willow and Moxie", "Willow, Moxie, and Kiwi".
-function joinNames(names: string[]): string {
-  const n = names.filter(Boolean);
-  if (n.length === 0) return "your bird";
-  if (n.length === 1) return n[0];
-  if (n.length === 2) return `${n[0]} and ${n[1]}`;
-  return `${n.slice(0, -1).join(", ")}, and ${n[n.length - 1]}`;
+// Human list: "Willow", "Willow and Moxie", "Willow, Moxie, and Kiwi" — in the
+// email's language (English when no locale is passed).
+function joinNames(names: string[], locale: string = "en"): string {
+  return joinNamesLocalized(names, locale, "bird");
 }
 
-async function ownerDisplayName(sb: any, ownerId: string): Promise<string> {
+/** Owner's display name, or null when there's nothing to show (no profile
+ *  name, metadata name, or email). Callers supply their own fallback. */
+async function ownerDisplayNameRaw(sb: any, ownerId: string): Promise<string | null> {
   const { data } = await sb.from("profiles").select("display_name").eq("id", ownerId).maybeSingle();
   const name = (data?.display_name ?? "").toString().trim();
   if (name) return name;
   try {
     const { data: u } = await sb.auth.admin.getUserById(ownerId);
     const meta = (u?.user?.user_metadata?.display_name ?? "").toString().trim();
-    return meta || u?.user?.email?.split("@")[0] || "An owner";
+    return meta || u?.user?.email?.split("@")[0] || null;
   } catch {
-    return "An owner";
+    return null;
+  }
+}
+
+async function ownerDisplayName(sb: any, ownerId: string, locale: string = "en"): Promise<string> {
+  const { data } = await sb.from("profiles").select("display_name").eq("id", ownerId).maybeSingle();
+  const name = (data?.display_name ?? "").toString().trim();
+  if (name) return name;
+  try {
+    const { data: u } = await sb.auth.admin.getUserById(ownerId);
+    const meta = (u?.user?.user_metadata?.display_name ?? "").toString().trim();
+    return meta || u?.user?.email?.split("@")[0] || fallbackOwnerLabel(locale);
+  } catch {
+    return fallbackOwnerLabel(locale);
   }
 }
 
@@ -116,14 +128,15 @@ export const createHouseholdInvite = createServerFn({ method: "POST" })
 
     // Send the invite email (best-effort — the invite is created regardless).
     try {
-      const inviterName = await ownerDisplayName(sb, ownerId);
-      const birdNames = joinNames((owned ?? []).map((b: any) => b.name).filter(Boolean));
       // Account-less invitee (group 2) → the SENDER's (owner's) locale.
+      const locale = await localeForUser(sb, ownerId);
+      const inviterName = await ownerDisplayName(sb, ownerId, locale);
+      const birdNames = joinNames((owned ?? []).map((b: any) => b.name).filter(Boolean), locale);
       const built = buildHouseholdInviteEmail({
         inviterName,
         birdNames,
         link: `${appUrl()}/invite/${token}`,
-        locale: await localeForUser(sb, ownerId),
+        locale,
       });
       const { sendTransactionalEmail } = await import("./brevoEmail.server");
       await sendTransactionalEmail({
@@ -322,9 +335,11 @@ export const getHouseholdInvite = createServerFn({ method: "GET" })
       return { valid: false as const };
     }
 
-    const inviterName = await ownerDisplayName(sb, invite.owner_id);
+    // Raw data only: the invite screen joins the names and supplies the
+    // "An owner" fallback in the reader's language (joinNamesDisplay / t()).
+    const inviterName: string | null = await ownerDisplayNameRaw(sb, invite.owner_id);
     const { data: birds } = await sb.from("birds").select("name").in("id", invite.bird_ids);
-    const birdNames = joinNames((birds ?? []).map((b: any) => b.name).filter(Boolean));
+    const birdNames: string[] = (birds ?? []).map((b: any) => b.name as string).filter(Boolean);
     return {
       valid: true as const,
       inviterName,

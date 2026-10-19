@@ -2,6 +2,8 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import i18next from "i18next";
 import { getHouseholdAccount } from "@/lib/household.functions";
 import { ShareNewBirdSheet, type ShareCandidate } from "@/components/ShareNewBirdSheet";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,13 +21,14 @@ import { friendlyError } from "@/lib/errorMessage";
 import { localDateISO } from "@/lib/localDay";
 
 export const Route = createFileRoute("/_authenticated/birds/new")({
-  head: () => ({ meta: [{ title: "Add a bird — Kya & Co." }] }),
+  head: () => ({ meta: [{ title: i18next.t("newBird.metaTitle", "Add a bird — Kya & Co.") }] }),
   // `?foster=true` arrives from Home's "Take in a bird" CTA → toggle starts ON.
   validateSearch: z.object({ foster: z.coerce.boolean().optional() }),
   component: NewBird,
 });
 
 function NewBird() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { foster: fosterParam } = Route.useSearch();
@@ -71,20 +74,20 @@ function NewBird() {
     try {
       const dataUrl = await compressImageToDataUrl(file);
       if (dataUrlBytes(dataUrl) > MAX_UPLOAD_BYTES) {
-        toast.error("That photo's a bit too large even after resizing. Try a different photo.");
+        toast.error(t("newBird.photoTooLarge", "That photo's a bit too large even after resizing. Try a different photo."));
         return;
       }
       setPhoto(dataUrl);
     } catch {
-      toast.error("Couldn't process that photo. Try a different one.");
+      toast.error(t("newBird.photoProcessError", "Couldn't process that photo. Try a different one."));
     } finally {
       setPhotoBusy(false);
     }
   }
 
   async function createBird(targetStep: number): Promise<string | null> {
-    if (!name.trim()) { toast.error("Give your bird a name."); return null; }
-    if (!species.trim()) { toast.error("Choose a species."); return null; }
+    if (!name.trim()) { toast.error(t("newBird.needName", "Give your bird a name.")); return null; }
+    if (!species.trim()) { toast.error(t("newBird.needSpecies", "Choose a species.")); return null; }
     setSaving(true);
     const { data: u } = await getLocalUser();
     if (!u.user) { setSaving(false); return null; }
@@ -98,7 +101,7 @@ function NewBird() {
       photoRef = await persistBirdPhoto(u.user.id, photo);
     } catch (e) {
       console.error("[new bird] photo upload failed", e);
-      toast.error("We couldn't upload that photo, so we added your bird without it. You can add one from the bird's page.");
+      toast.error(t("newBird.photoUploadFailed", "We couldn't upload that photo, so we added your bird without it. You can add one from the bird's page."));
     }
     const { data: bird, error } = await supabase.from("birds").insert({
       owner_id: u.user.id,
@@ -116,7 +119,7 @@ function NewBird() {
       setup_step: targetStep,
     } as any).select().single();
     if (error || !bird) {
-      toast.error(friendlyError(error, "Could not create bird."));
+      toast.error(friendlyError(error, t("newBird.createFailed", "Could not create bird.")));
       setSaving(false);
       return null;
     }
@@ -129,7 +132,7 @@ function NewBird() {
       .from("care_plans")
       .upsert({ bird_id: bird.id }, { onConflict: "bird_id" });
     if (planErr) {
-      toast.error(`Couldn't set up the care plan: ${friendlyError(planErr, "please try again.")}`);
+      toast.error(t("newBird.carePlanSetupFailed", "Couldn't set up the care plan: {{reason}}", { reason: friendlyError(planErr, t("newBird.pleaseTryAgain", "please try again.")) }));
       setSaving(false);
       return null;
     }
@@ -137,7 +140,7 @@ function NewBird() {
       .from("emergency_contacts")
       .upsert({ bird_id: bird.id }, { onConflict: "bird_id" });
     if (ecErr) {
-      toast.error(`Couldn't set up emergency info: ${friendlyError(ecErr, "please try again.")}`);
+      toast.error(t("newBird.emergencySetupFailed", "Couldn't set up emergency info: {{reason}}", { reason: friendlyError(ecErr, t("newBird.pleaseTryAgain", "please try again.")) }));
       setSaving(false);
       return null;
     }
@@ -178,7 +181,7 @@ function NewBird() {
       id = await createBird(1);
       if (!id) return;
       createdIdRef.current = id;
-      toast.success(`${name} added.`);
+      toast.success(t("newBird.added", "{{name}} added.", { name }));
       track("bird_added", { species, is_foster: isFoster, has_photo: !!photo });
       // Offer to share the new bird with people already in the household. Only
       // on the FIRST pass: a retry (navigation failed earlier) has already been
@@ -199,7 +202,7 @@ function NewBird() {
   const hasInput = !!(name.trim() || species.trim() || age || birthDate || sex || photo || flight !== "unknown");
   function onCancel() {
     if (createdIdRef.current) { navigate({ to: "/dashboard" }); return; }
-    if (!hasInput || window.confirm("Discard this bird? You haven't saved it yet.")) {
+    if (!hasInput || window.confirm(t("newBird.discardConfirm", "Discard this bird? You haven't saved it yet."))) {
       navigate({ to: "/dashboard" });
     }
   }
@@ -212,9 +215,9 @@ function NewBird() {
         <InkHero
           backIcon={<ArrowLeft className="size-5" />}
           onBack={onCancel}
-          eyebrow="New bird"
-          headline={fosterParam ? "Take in a bird." : "Add a bird."}
-          body="Start with the basics. The full care plan comes next."
+          eyebrow={t("newBird.eyebrow", "New bird")}
+          headline={fosterParam ? t("newBird.headlineFoster", "Take in a bird.") : t("newBird.headline", "Add a bird.")}
+          body={t("newBird.body", "Start with the basics. The full care plan comes next.")}
         />
 
         <main className="space-y-4 px-5 pt-5">
@@ -223,19 +226,19 @@ function NewBird() {
           {photo ? (
             <PhotoCropper src={photo} position={photoPos} onChange={setPhotoPos} size={120} />
           ) : (
-            <div className="flex size-[120px] items-center justify-center rounded-xl bg-sage-100 text-[10px] uppercase tracking-wider text-sage-600">No photo</div>
+            <div className="flex size-[120px] items-center justify-center rounded-xl bg-sage-100 text-[10px] uppercase tracking-wider text-sage-600">{t("birdSetup.noPhoto", "No photo")}</div>
           )}
           <div className="flex-1 space-y-2 pt-1">
             <label className={`inline-block rounded-lg bg-sage-100 px-3 py-1.5 text-xs font-semibold text-sage-700 ${photoBusy ? "cursor-default opacity-60" : "cursor-pointer"}`}>
-              {photoBusy ? "Processing…" : photo ? "Change photo" : "Add photo"}
+              {photoBusy ? t("birdSetup.processing", "Processing…") : photo ? t("birdSetup.changePhoto", "Change photo") : t("birdSetup.addPhoto", "Add photo")}
               <input type="file" accept="image/*,.heic,.heif" disabled={photoBusy} className="hidden" onChange={onPhoto} />
             </label>
             {photo && (
-              <button type="button" onClick={() => { setPhoto(null); setPhotoPos("50% 50%"); }} className="ml-2 text-xs font-semibold text-warn-red underline">Remove</button>
+              <button type="button" onClick={() => { setPhoto(null); setPhotoPos("50% 50%"); }} className="ml-2 text-xs font-semibold text-warn-red underline">{t("newBird.remove", "Remove")}</button>
             )}
           </div>
         </div>
-        <BirdField label="Name"><input className="input" value={name} onChange={(e) => setName(e.target.value)} /></BirdField>
+        <BirdField label={t("birdSetup.name", "Name")}><input className="input" value={name} onChange={(e) => setName(e.target.value)} /></BirdField>
         <SpeciesPicker value={species} onChange={setSpecies} />
         <AgePicker
           age={age}
@@ -243,17 +246,17 @@ function NewBird() {
           onChange={(next) => { setAge(next.age); setBirthDate(next.birthDate ?? ""); }}
         />
         <div className="grid grid-cols-2 gap-3">
-          <BirdField label="Sex">
+          <BirdField label={t("birdSetup.sex", "Sex")}>
             <select className="input" value={sex} onChange={(e) => setSex(e.target.value)}>
-              <option value="">Unknown</option><option>Male</option><option>Female</option>
+              <option value="">{t("birdSetup.unknown", "Unknown")}</option><option value="Male">{t("birdSetup.male", "Male")}</option><option value="Female">{t("birdSetup.female", "Female")}</option>
             </select>
           </BirdField>
-          <BirdField label="Flight">
+          <BirdField label={t("birdSetup.flight", "Flight")}>
             <select className="input" value={flight} onChange={(e) => setFlight(e.target.value)}>
-              <option value="unknown">Unknown</option>
-              <option value="fully_flighted">Fully flighted</option>
-              <option value="clipped">Clipped</option>
-              <option value="partially_clipped">Partially clipped</option>
+              <option value="unknown">{t("birdSetup.unknown", "Unknown")}</option>
+              <option value="fully_flighted">{t("birdSetup.fullyFlighted", "Fully flighted")}</option>
+              <option value="clipped">{t("birdSetup.clipped", "Clipped")}</option>
+              <option value="partially_clipped">{t("birdSetup.partiallyClipped", "Partially clipped")}</option>
             </select>
           </BirdField>
         </div>
@@ -265,20 +268,20 @@ function NewBird() {
         <label className="flex cursor-pointer items-start gap-3">
           <input type="checkbox" checked={isFoster} onChange={(e) => setIsFoster(e.target.checked)} className="mt-0.5 size-5 shrink-0 accent-[#1a3d2e]" />
           <span className="min-w-0">
-            <span className="block text-sm font-medium text-[#1a3d2e]">This is a foster</span>
+            <span className="block text-sm font-medium text-[#1a3d2e]">{t("newBird.isFoster", "This is a foster")}</span>
             <span className="mt-0.5 block text-xs leading-relaxed text-[#5f5e5a]">
-              You're caring for them while they find a permanent home. You'll be able to hand off their record to the adopter.
+              {t("newBird.isFosterBody", "You're caring for them while they find a permanent home. You'll be able to hand off their record to the adopter.")}
             </span>
           </span>
         </label>
         {isFoster && (
           <div className="mt-3 space-y-3 border-t border-[#ece6d6] pt-3">
-            <BirdField label="Came to you">
-              <OptionalDate value={intakeDate} max={todayStr} addLabel="Add date" onChange={(v) => setIntakeDate(v)} />
+            <BirdField label={t("newBird.cameToYou", "Came to you")}>
+              <OptionalDate value={intakeDate} max={todayStr} addLabel={t("birdPickers.addDate", "Add date")} onChange={(v) => setIntakeDate(v)} />
             </BirdField>
             <div className="rounded-xl bg-[#efe9da] p-3">
               <p className="text-sm leading-relaxed text-[#5f5e5a]">
-                It's okay if you don't know much yet — add what you know now, fill the rest in as you learn.
+                {t("newBird.fosterReassure", "It's okay if you don't know much yet — add what you know now, fill the rest in as you learn.")}
               </p>
             </div>
           </div>
@@ -292,7 +295,7 @@ function NewBird() {
       <footer className="fixed inset-x-0 bottom-0 border-t border-[var(--line)] bg-[var(--cream)]/95 px-5 py-3 pb-[max(env(safe-area-inset-bottom),0.75rem)] backdrop-blur">
         <div className="mx-auto max-w-md">
           <PrimaryButton tone="lime" disabled={saving || !canAdd} onPress={onAddBird}>
-            {saving ? "Adding…" : "Add bird"}
+            {saving ? t("newBird.adding", "Adding…") : t("newBird.addBird", "Add bird")}
           </PrimaryButton>
         </div>
       </footer>

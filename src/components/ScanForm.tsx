@@ -22,7 +22,7 @@ export type ScanSubmit = {
 
 export function ScanForm({
   submitting,
-  submitLabel = "Submit health check",
+  submitLabel,
   onSubmit,
 }: {
   submitting: boolean;
@@ -200,7 +200,7 @@ export function ScanForm({
         disabled={submitting || photoBusy}
         className="min-h-[44px] w-full rounded-xl bg-[#1a3d2e] py-3.5 text-sm font-medium text-white disabled:opacity-60"
       >
-        {submitting ? t("scanForm.logging", "Logging…") : submitLabel}
+        {submitting ? t("scanForm.logging", "Logging…") : (submitLabel ?? t("scanForm.submitDefault", "Submit health check"))}
       </button>
     </main>
   );

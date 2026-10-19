@@ -4,6 +4,7 @@
 // to its detail. "Seen" state is tracked per-device in localStorage (like push):
 // it's fine if the unread badge resets on another device.
 
+import i18next from "i18next";
 import { supabase } from "@/integrations/supabase/client";
 
 export const NOTIF_SEEN_KEY = "ppc_notif_seen_at";
@@ -68,9 +69,9 @@ export async function fetchScanFeed(): Promise<ScanFeedItem[]> {
   return items;
 }
 
-/** Who ran a scan: "You" for owner scans, the member's name for household, else the sitter. */
+/** Who ran a scan: "You" (an untranslated SENTINEL — callers compare it) for owner scans, the member's name for household, else the sitter. */
 export function scanRunBy(n: ScanFeedItem): string {
   if (n.source === "owner") return "You";
-  if (n.source === "household") return n.runner_name?.trim() || "A household member";
-  return n.sit?.sitter_name?.trim() || n.sit?.sitter_email?.trim() || "Your sitter";
+  if (n.source === "household") return n.runner_name?.trim() || i18next.t("scanRunBy.householdMember", "A household member");
+  return n.sit?.sitter_name?.trim() || n.sit?.sitter_email?.trim() || i18next.t("scanRunBy.yourSitter", "Your sitter");
 }
