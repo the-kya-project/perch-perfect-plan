@@ -1219,6 +1219,7 @@
   "dashboard.thingCountOne": "{{n}} thing",
   "dashboard.thingCountOther": "{{n}} things",
   "dashboard.today": "Today",
+  "dashboard.weighedDaysAgo": "Weighed {{n}}d ago",
   "dashboard.welcomeToYourFlock": "Welcome to your flock",
   "dashboard.withYouSince": "With you since {{date}}",
   "dashboard.yesterday": "yesterday",

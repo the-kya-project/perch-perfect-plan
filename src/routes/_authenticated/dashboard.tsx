@@ -314,6 +314,7 @@ function Dashboard() {
                   return {
                     id: b.id, name: b.name, species: b.species ?? null, photo: photoFor(b), position: b.photo_position,
                     checkedAt: d?.check?.created_at ?? null,
+                    overdueDays: (() => { const g = glanceFor(b); return g.state === "stale" ? g.days : null; })(),
                     checked: !!d?.check, triage: d?.check?.triage_status ?? null, grams: d?.weights[0]?.grams ?? null,
                   };
                 })}
@@ -441,7 +442,7 @@ function SectionHeaderCTA({ title, pill, ctaLabel, onCta }: { title: string; pil
 // ---------------------------------------------------------------------------
 // Today panel (adaptive — hidden entirely when empty)
 // ---------------------------------------------------------------------------
-type PromptBird = { id: string; name: string; species: string | null; photo: SignedPhoto | null; position?: string | null; checked: boolean; checkedAt: string | null; triage: string | null; grams: number | null };
+type PromptBird = { id: string; name: string; species: string | null; photo: SignedPhoto | null; position?: string | null; checked: boolean; checkedAt: string | null; triage: string | null; grams: number | null; overdueDays: number | null };
 
 // The Home prompt into the flock check: one avatar per bird with its status for
 // today, then the button. Once every bird is checked it turns into a summary.
@@ -482,15 +483,32 @@ function FlockCheckPrompt({ birds, loading, onOpen }: { birds: PromptBird[]; loa
         <div className="grid grid-cols-4 gap-x-1.5 gap-y-3">
           {birds.map((b) => (
             <span key={b.id} className="flex min-w-0 flex-col items-center gap-1">
-              <span className={`relative size-11 overflow-hidden rounded-full ${b.checked ? "ring-2 ring-[var(--moss)]" : "ring-2 ring-white"}`} style={{ background: gradientFor(b.species || b.name) }} aria-hidden="true">
-                {b.photo
-                  ? <BirdPhotoCrop url={b.photo.url} original={b.photo.original} position={b.position} alt="" />
-                  : <span className="grid size-full place-items-center text-[15px] font-[500] text-white/90">{b.name.slice(0, 1).toUpperCase()}</span>}
+              <span className="relative size-11 shrink-0">
+                <span
+                  className="relative block size-11 overflow-hidden rounded-full"
+                  style={{ background: gradientFor(b.species || b.name), boxShadow: `0 0 0 ${b.overdueDays != null ? "2.5px #c47e1e" : b.checked ? "2px var(--moss)" : "2px #fff"}` }}
+                  aria-hidden="true"
+                >
+                  {b.photo
+                    ? <BirdPhotoCrop url={b.photo.url} original={b.photo.original} position={b.position} alt="" />
+                    : <span className="grid size-full place-items-center text-[15px] font-[500] text-white/90">{b.name.slice(0, 1).toUpperCase()}</span>}
+                </span>
+                {b.overdueDays != null && (
+                  <span className="absolute -bottom-[3px] -right-[3px] grid size-5 place-items-center rounded-full bg-[#c47e1e] text-white" style={{ boxShadow: "0 0 0 2px var(--lime)" }} aria-hidden="true">
+                    <Scale className="size-[11px]" strokeWidth={2.6} />
+                  </span>
+                )}
               </span>
-              <span className="max-w-full truncate text-[11.5px] font-[500] text-[var(--ink)]">{b.name}</span>
+              <span className="mt-0.5 max-w-full truncate text-[11.5px] font-[500] text-[var(--ink)]">{b.name}</span>
               <span className={`text-[10.5px] ${b.checked ? "text-[var(--moss)]" : "text-[#854f0b]"}`}>
                 {b.checked ? (b.grams != null ? t("dashboard.gramsShort", "{{n}} g", { n: b.grams }) : t("dashboard.checkedShort", "Checked")) : t("dashboard.notYet", "Not yet")}
               </span>
+              {b.overdueDays != null && (
+                <span className="inline-flex max-w-full items-start gap-[3px] rounded-[9px] bg-[#c47e1e] px-1.5 py-[2px] text-center text-[10px] font-[500] leading-[1.25] text-white">
+                  <AlertCircle className="mt-px size-[10px] shrink-0" strokeWidth={2.6} aria-hidden="true" />
+                  <span>{t("dashboard.weighedDaysAgo", "Weighed {{n}}d ago", { n: b.overdueDays })}</span>
+                </span>
+              )}
             </span>
           ))}
         </div>
