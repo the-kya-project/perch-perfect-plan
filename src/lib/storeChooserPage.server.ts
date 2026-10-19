@@ -199,9 +199,15 @@ export function chooserPage(
  * The web listing stays on the page as the fallback, with the "open in browser"
  * hint for webviews that won't hand off at all.
  */
-export function androidHandoffPage(utms: Utms = {}): string {
+export function androidHandoffPage(utms: Utms = {}, opts: { basePath?: "/get" | "/get-app" } = {}): string {
   const app = playStoreAppUrl(utms);
   const web = playStoreUrl(utms);
+  // Each button pings back through the same entry path with tap=app|web before
+  // following its link, so taps are counted like every other visit. keepalive
+  // lets the ping finish after the page hands off; a failed ping is ignored.
+  const basePath = opts.basePath ?? "/get";
+  const tapApp = withUtms(`${basePath}?tap=app`, utms);
+  const tapWeb = withUtms(`${basePath}?tap=web`, utms);
   return `<!doctype html>
 <html lang="en"><head>
 <meta charset="utf-8" />
@@ -230,10 +236,17 @@ export function androidHandoffPage(utms: Utms = {}): string {
         <span class="pill">One more tap</span>
         <h1>Open Google Play</h1>
         <p>TikTok's browser can't install apps. Tap below to get Kya &amp; Co. in the Play Store app.</p>
-        <a class="cta" href="${attr(app)}">Open in Google Play</a>
-        <p class="small">Nothing happening? Tap the menu at the top and choose Open in browser, or <a href="${attr(web)}">open the Play Store page</a>.</p>
+        <a class="cta" href="${attr(app)}" data-tap="${attr(tapApp)}">Open in Google Play</a>
+        <p class="small">Nothing happening? Tap the menu at the top and choose Open in browser, or <a href="${attr(web)}" data-tap="${attr(tapWeb)}">open the Play Store page</a>.</p>
       </div>
     </div>
   </div>
+<script>
+  document.querySelectorAll("a[data-tap]").forEach(function (a) {
+    a.addEventListener("click", function () {
+      try { fetch(a.getAttribute("data-tap"), { keepalive: true }); } catch (e) {}
+    });
+  });
+</script>
 </body></html>`;
 }

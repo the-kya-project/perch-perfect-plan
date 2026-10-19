@@ -26,6 +26,7 @@ import {
   logClick,
   needsAndroidHandoff,
   playStoreUrl,
+  readHandoffTap,
   readUtms,
   resolveTarget,
   type ClickEntry,
@@ -59,7 +60,10 @@ export async function handleStoreRedirect(
   // Set by the chooser's QR code, so a scan is told apart from a click without
   // touching any UTM. Anything other than "1" is ignored.
   const isScan = url.searchParams.get("qr") === "1";
-  const path = isScan ? (`${entry.path}-qr` as const) : entry.path;
+  // A ping from the Android handoff page's buttons: logged as its own path
+  // and answered with no body, since the page is already following its link.
+  const tap = readHandoffTap(url);
+  const path = tap ? (`${entry.path}-tap-${tap}` as const) : isScan ? (`${entry.path}-qr` as const) : entry.path;
 
   // Bounded on purpose. Awaited rather than fire-and-forget because a
   // serverless function can be frozen the moment it responds, which would drop
@@ -70,6 +74,10 @@ export async function handleStoreRedirect(
     }),
     new Promise((r) => setTimeout(r, LOG_BUDGET_MS)),
   ]);
+
+  if (tap) {
+    return new Response(null, { status: 204, headers: { "cache-control": "no-store" } });
+  }
 
   if (resolved === "chooser") {
     return new Response(chooserPage("get", utms, { basePath: entry.basePath, origin: url.origin }), {
@@ -83,7 +91,7 @@ export async function handleStoreRedirect(
   }
 
   if (needsAndroidHandoff(ua, resolved)) {
-    return new Response(androidHandoffPage(utms), {
+    return new Response(androidHandoffPage(utms, { basePath: entry.basePath }), {
       status: 200,
       headers: {
         "content-type": "text/html; charset=utf-8",

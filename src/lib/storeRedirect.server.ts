@@ -32,7 +32,19 @@ export type ClickEntry = "get" | "get-app" | "review";
  * UTM is overwritten to represent it. The existing daily view already groups
  * by `path`, so scans show up there with no query changes.
  */
-export type ClickPath = ClickEntry | "get-qr" | "get-app-qr";
+export type ClickPath = ClickEntry | "get-qr" | "get-app-qr" | `${HandoffEntry}-tap-${HandoffTap}`;
+
+/**
+ * A tap on the Android handoff page's buttons (see androidHandoffPage), logged
+ * as its own row so a campaign shows how many TikTok visitors tapped through:
+ * `get-tap-app` for "Open in Google Play", `get-tap-web` for the web fallback.
+ */
+export type HandoffEntry = "get" | "get-app";
+export type HandoffTap = "app" | "web";
+export function readHandoffTap(url: URL): HandoffTap | null {
+  const t = url.searchParams.get("tap");
+  return t === "app" || t === "web" ? t : null;
+}
 
 export type Resolved = "ios" | "android" | "chooser";
 export type Platform = "ios" | "android" | "desktop" | "other";

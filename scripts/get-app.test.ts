@@ -13,7 +13,7 @@
 import assert from "node:assert/strict";
 import {
   appStoreUrl, campaignToken, detectInAppBrowser, detectPlatform, isBot,
-  needsAndroidHandoff, playStoreAppUrl, playStoreUrl, readUtms, resolveTarget, withUtms, STORE, UTM_MAX_LENGTH,
+  needsAndroidHandoff, playStoreAppUrl, readHandoffTap, playStoreUrl, readUtms, resolveTarget, withUtms, STORE, UTM_MAX_LENGTH,
 } from "@/lib/storeRedirect.server";
 import { androidHandoffPage, chooserPage } from "@/lib/storeChooserPage.server";
 import qrcode from "qrcode-generator";
@@ -313,7 +313,20 @@ check("handoff page links the Play app and keeps the web listing as fallback", (
 });
 check("handoff page escapes hostile UTMs", () => {
   const html = androidHandoffPage(readUtms(u('?utm_source="><script>alert(1)</script>')));
-  assert.equal(html.includes("<script>"), false);
+  assert.equal(html.includes("<script>alert"), false);
+  // UTMs reach the page only URL-encoded inside attributes.
+  assert.equal(html.includes('"><script'), false);
+});
+check("handoff buttons ping back through the entry path with tap + UTMs", () => {
+  const html = androidHandoffPage(TIKTOK, { basePath: "/get" });
+  assert.ok(html.includes('data-tap="/get?tap=app&amp;utm_source=tiktok'));
+  assert.ok(html.includes('data-tap="/get?tap=web&amp;utm_source=tiktok'));
+});
+check("tap param: only app|web are recognised", () => {
+  assert.equal(readHandoffTap(u("?tap=app")), "app");
+  assert.equal(readHandoffTap(u("?tap=web")), "web");
+  assert.equal(readHandoffTap(u("?tap=evil")), null);
+  assert.equal(readHandoffTap(u("")), null);
 });
 
 console.log(`\n${passed} passed${process.exitCode ? ", WITH FAILURES" : ", no failures"}`);
