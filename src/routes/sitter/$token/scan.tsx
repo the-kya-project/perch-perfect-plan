@@ -12,6 +12,7 @@ import { track } from "@/lib/analytics";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { friendlyError } from "@/lib/errorMessage";
+import { localDateISO } from "@/lib/localDay";
 
 export const Route = createFileRoute("/sitter/$token/scan")({
   component: ScanPage,
@@ -75,6 +76,7 @@ function ScanPage() {
           notes: p.notes,
           photoDataUrl: p.photoDataUrl,
           weightGrams: p.weightGrams,
+          today: localDateISO(),
         },
       }),
     onSuccess: (res, p) => {

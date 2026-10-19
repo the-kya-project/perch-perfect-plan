@@ -15,6 +15,7 @@ import { PullToRefresh } from "@/components/PullToRefresh";
 import { I18nextProvider, useTranslation } from "react-i18next";
 import { sitterI18n, ensureSitterI18n, resolveSitterLocale } from "@/lib/i18n";
 import { SitterLanguageToggle } from "@/components/SitterLanguageToggle";
+import { localDateISO } from "@/lib/localDay";
 
 const searchSchema = z.object({ birdId: z.string().uuid().optional() });
 
@@ -313,7 +314,7 @@ export function useSitterContext(token: string) {
   const fn = useServerFn(getSitterContext);
   return useSuspenseQuery({
     queryKey: ["sitter-ctx", token, birdId ?? null],
-    queryFn: () => withSettleGuard(fn({ data: { token, birdId } })),
+    queryFn: () => withSettleGuard(fn({ data: { token, birdId, today: localDateISO() } })),
     // Retry a transient blip, but never a verdict. A token that is invalid,
     // revoked, expired, or whose sit is paused will not become valid on a
     // second attempt — retrying it only doubles how long the sitter waits for

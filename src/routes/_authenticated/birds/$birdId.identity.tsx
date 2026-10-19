@@ -15,6 +15,7 @@ import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/im
 import { InkHero, Card, PrimaryButton } from "@/components/system";
 import { friendlyError } from "@/lib/errorMessage";
 import { formatLocalDate } from "@/lib/dates";
+import { localDateISO } from "@/lib/localDay";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/identity")({
   head: () => ({ meta: [{ title: "Identity — Kya & Co." }] }),
@@ -267,7 +268,7 @@ function IdentityForm({ birdId, bird, onClose, onSaved }: { birdId: string; bird
     }
   }
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localDateISO();
   return (
     <Card className="space-y-3 p-4">
       {/* Shared core: photo, name, species, age — same columns as the Basics tab */}

@@ -16,6 +16,7 @@ import { memberDisplayName, memberInitials } from "@/lib/memberDisplay";
 import { useHouseholdCapability, useMyPermissions } from "@/lib/useCapability";
 import { Feather, Plus, Mail, Check, Users, Trash2, AlertTriangle } from "lucide-react";
 import { friendlyError } from "@/lib/errorMessage";
+import { localDateISO } from "@/lib/localDay";
 
 // Create OR edit a sit. In edit mode (`editSit` set) it preserves the existing
 // invite_token — the same sitter link keeps working; editing changes what it
@@ -83,7 +84,7 @@ export function SitForm({
   const { data: perms } = useMyPermissions();
   const isOwner = editing && !!perms?.myId && perms.myId === editSit.owner_id;
   const canDelete = isOwner || canManageSits;
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = localDateISO();
   const isActiveSit = editing && !editSit.revoked && (editSit.start_date ?? "") <= todayStr && (editSit.end_date ?? "") >= todayStr;
   async function deleteSit() {
     if (!editing) return;

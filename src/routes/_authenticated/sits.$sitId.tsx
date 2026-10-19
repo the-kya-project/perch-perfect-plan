@@ -13,6 +13,7 @@ import { memberDisplayName, firstName } from "@/lib/memberDisplay";
 import { useHouseholdCapability, useMyPermissions } from "@/lib/useCapability";
 import { formatDateRangeUS, formatLocalDateTime } from "@/lib/dates";
 import { friendlyError } from "@/lib/errorMessage";
+import { localDateISO } from "@/lib/localDay";
 
 // Past Sits detail view — the sit's own activity feed, derived strictly from
 // sit_id attribution on the logs that ran inside the window. Reachable from a
@@ -117,7 +118,7 @@ function SitDetail() {
   // manage_sits. RLS ("sits delete") enforces the same rule server-side.
   const isOwner = !!perms?.myId && perms.myId === sit.owner_id;
   const canDelete = isOwner || canManageSits;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localDateISO();
   // Active = a sitter is currently covering: live window (today between the
   // dates) and not revoked. Deleting one mid-sit pulls coverage out from under them.
   const isActiveSit = !sit.revoked && sit.start_date <= today && sit.end_date >= today;

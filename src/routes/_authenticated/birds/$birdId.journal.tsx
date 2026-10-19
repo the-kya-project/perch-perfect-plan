@@ -20,6 +20,7 @@ import { JournalEntryView } from "@/components/JournalEntryView";
 import { useOpenSignedFile } from "@/lib/useOpenSignedFile";
 import { friendlyError } from "@/lib/errorMessage";
 import { formatLocalDate } from "@/lib/dates";
+import { localDateISO } from "@/lib/localDay";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/journal")({
   head: () => ({ meta: [{ title: "Journal — Kya & Co." }] }),
@@ -46,7 +47,7 @@ const FILTERS: { value: Filter; label: string; kinds: Kind[] }[] = [
   { value: "behavior", label: "Behavior", kinds: ["behavior"] },
   { value: "notes", label: "Notes", kinds: ["note", "other"] },
 ];
-const todayStr = () => new Date().toISOString().slice(0, 10);
+const todayStr = () => localDateISO();
 
 function JournalFacet() {
   const { birdId } = Route.useParams();

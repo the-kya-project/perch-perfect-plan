@@ -14,6 +14,7 @@ import { MemberContextBanner } from "@/components/MemberContextBanner";
 import { track } from "@/lib/analytics";
 import { uploadScanPhotoOrInline } from "@/lib/scanPhoto";
 import { friendlyError } from "@/lib/errorMessage";
+import { localDateISO } from "@/lib/localDay";
 
 // Owner-run health scan. Uses the SAME ScanForm + triage as the sitter; on submit
 // it writes a daily_logs row (source='owner', run_by, no sit) + optional photo +
@@ -68,7 +69,7 @@ function OwnerScan() {
           sit_id: activeSitId,
           source: scanSource,
           run_by: u.user?.id ?? null,
-          log_date: new Date().toISOString().slice(0, 10),
+          log_date: localDateISO(),
           alertness_status: a.alertness,
           food_status: a.food,
           droppings_status: a.droppings,
