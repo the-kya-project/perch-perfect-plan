@@ -89,7 +89,18 @@ export type FlockBlock =
   | { kind: "card"; title?: string; body: string }
   | { kind: "highlight"; title?: string; body: string; titleSize?: number }
   | { kind: "steps"; items: Array<{ title: string; text: string }> }
-  | { kind: "button"; label: string; href: string; needsBird?: boolean }
+  | {
+      kind: "button";
+      label: string;
+      href: string;
+      /** Marks a button whose destination needs a bird. With no bird at send
+       *  time it becomes the add-a-bird button: `noBirdLabel` (each stage has
+       *  its own) linking to `noBirdHref` (/birds/new?next=…, so adding the bird
+       *  lands on this stage's feature). */
+      needsBird?: boolean;
+      noBirdLabel?: string;
+      noBirdHref?: string;
+    }
   | { kind: "subhead"; text: string }
   | { kind: "panel"; title: string; items: Array<{ lead: string; text: string }> }
   | { kind: "tileGrid"; tiles: Array<{ name: string; badge?: string; highlight: boolean }> }
@@ -781,9 +792,9 @@ type Ctx = { t: EmailT; hasBird: boolean; addBirdHref: string };
  *  bird yet — it used to fall back to the dashboard, which is a dead end
  *  dressed as a destination. Resolved here rather than in each email, so every
  *  email on this layout gets it without knowing about it. */
-function resolveButton(b: { label: string; href: string; needsBird?: boolean }, c: Ctx) {
+function resolveButton(b: { label: string; href: string; needsBird?: boolean; noBirdLabel?: string; noBirdHref?: string }, c: Ctx) {
   return b.needsBird && !c.hasBird
-    ? { label: c.t("email.flock.addBirdCta"), href: c.addBirdHref }
+    ? { label: b.noBirdLabel ?? c.t("email.flock.addBirdCta"), href: b.noBirdHref ?? c.addBirdHref }
     : { label: b.label, href: b.href };
 }
 
@@ -1044,6 +1055,10 @@ ${opts.unsubscribeUrl ? `&nbsp;&middot;&nbsp;
     "",
     detag(opts.footerWhy),
     detag(t("email.flock.disclaimer")),
+    // The plain-text part carries the same opt-out and postal address as the
+    // HTML footer, for clients that show only text.
+    ...(opts.unsubscribeUrl ? [`${detag(t("email.flock.unsubscribe"))}: ${opts.unsubscribeUrl}`] : []),
+    detag(t("email.flock.mailingAddress")),
     detag(t("email.flock.byLine")),
   ].join("\n\n");
 

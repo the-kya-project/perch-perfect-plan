@@ -25,17 +25,18 @@ export const Route = createFileRoute("/_authenticated")({
       // and signInWithPassword awaits the same stuck promise — the hang just
       // moves to the sign-in button. So leave the page entirely and let the
       // client be built again from nothing.
-      const to = `/auth?mode=signin&redirect=${encodeURIComponent(location.pathname)}`;
+      const to = `/auth?mode=signin&redirect=${encodeURIComponent(location.href)}`;
       if (typeof window !== "undefined") window.location.assign(to);
       // Still throw the router redirect: if the hard load is slow to take
       // effect the reader sees /auth rather than the spinner, and the full load
       // supersedes it a moment later.
-      throw redirect({ to: "/auth", search: { mode: "signin" as const, redirect: location.pathname } });
+      throw redirect({ to: "/auth", search: { mode: "signin" as const, redirect: location.href } });
     }
     if (!session) {
       // Remember where they were headed (e.g. a /past-birds email deep-link) so
       // /auth lands them there after sign-in instead of the default dashboard.
-      throw redirect({ to: "/auth", search: { mode: "signin" as const, redirect: location.pathname } });
+      // `href` keeps the query string: /birds/new?next=weight must survive.
+      throw redirect({ to: "/auth", search: { mode: "signin" as const, redirect: location.href } });
     }
     return { user: session.user };
   },
