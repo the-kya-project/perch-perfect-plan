@@ -14,7 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { getNotificationPermission } from "@/lib/push";
 import { useAppSurface } from "@/lib/appSurface";
-import { registerForNativePush } from "@/lib/pushNative";
+import { registerForNativePush, setNativePushOptedOut } from "@/lib/pushNative";
 import { savePushToken } from "@/lib/push.functions";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -138,7 +138,10 @@ export function HomeChecklist() {
                 : async () => {
                     const res = await registerForNativePush();
                     if (!res.ok) return;
-                    try { await saveToken({ data: { token: res.token, transport: res.transport } }); }
+                    try {
+                      await saveToken({ data: { token: res.token, transport: res.transport } });
+                      setNativePushOptedOut(false);
+                    }
                     catch { /* the row stays open; Settings can retry */ }
                   },
           }

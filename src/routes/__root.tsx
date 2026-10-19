@@ -26,7 +26,8 @@ import {
   isStaleChunkError, staleChunkRecoveryExhausted, reloadForStaleChunk,
 } from "@/lib/sw-register";
 import { captureFirstTouch } from "@/lib/attribution";
-import { attachNativePushHandlers } from "@/lib/pushNative";
+import { attachNativePushHandlers, syncNativePushToken } from "@/lib/pushNative";
+import { savePushToken } from "@/lib/push.functions";
 // Side-effect import: registers the beforeinstallprompt/appinstalled listeners
 // at app start so the native install prompt is captured (it fires once, early).
 
@@ -214,11 +215,16 @@ function RootComponent() {
     // Capacitor replays the event after launch, so a listener attached later
     // (e.g. only on the settings screen) would miss it entirely.
     void attachNativePushHandlers((url: string) => router.navigate({ href: url } as never));
+    // Native shell only: keep the server's device token current (see
+    // syncNativePushToken). Needs a session, since the row is per account.
+    const syncPushToken = () =>
+      void syncNativePushToken((token, transport) => savePushToken({ data: { token, transport } }));
     supabase.auth.getSession().then(({ data }) => {
       if (data.session?.user?.id) {
         identifyUser(data.session.user.id);
         void primeAccountRole(data.session.user.id);
         void ensureProfileLocale(data.session.user.id);
+        syncPushToken();
       }
     });
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
@@ -231,6 +237,7 @@ function RootComponent() {
         identifyUser(session.user.id);
         void primeAccountRole(session.user.id);
         void ensureProfileLocale(session.user.id);
+        if (event === "SIGNED_IN") syncPushToken();
       }
       router.invalidate();
       if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
