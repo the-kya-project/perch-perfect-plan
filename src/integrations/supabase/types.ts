@@ -1143,6 +1143,7 @@ export type Database = {
           signup_first_seen_at: string | null
           signup_landing_page: string | null
           signup_medium: string | null
+          signup_platform: string | null
           signup_referrer: string | null
           signup_source: string | null
           signup_term: string | null
@@ -1171,6 +1172,7 @@ export type Database = {
           signup_first_seen_at?: string | null
           signup_landing_page?: string | null
           signup_medium?: string | null
+          signup_platform?: string | null
           signup_referrer?: string | null
           signup_source?: string | null
           signup_term?: string | null
@@ -1199,6 +1201,7 @@ export type Database = {
           signup_first_seen_at?: string | null
           signup_landing_page?: string | null
           signup_medium?: string | null
+          signup_platform?: string | null
           signup_referrer?: string | null
           signup_source?: string | null
           signup_term?: string | null
