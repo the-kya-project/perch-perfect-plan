@@ -17,6 +17,7 @@ import { ArrowLeft } from "lucide-react";
 import { z } from "zod";
 import { friendlyError } from "@/lib/errorMessage";
 import { BIRD_FEATURES } from "@/lib/onboardingPlan";
+import { localDateISO } from "@/lib/localDay";
 
 export const Route = createFileRoute("/_authenticated/birds/new")({
   head: () => ({ meta: [{ title: "Add a bird — Kya & Co." }] }),
@@ -66,7 +67,7 @@ function NewBird() {
     queryFn: () => householdAccount(),
   });
   const shareCandidates: ShareCandidate[] = ((account?.members ?? []) as ShareCandidate[]);
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = localDateISO();
   const [isFoster, setIsFoster] = useState(!!fosterParam);
   const [intakeDate, setIntakeDate] = useState<string>(todayStr);
 

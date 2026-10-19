@@ -14,7 +14,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { getNotificationPermission } from "@/lib/push";
 import { useAppSurface } from "@/lib/appSurface";
-import { registerForNativePush } from "@/lib/pushNative";
+import { registerForNativePush, setNativePushOptedOut } from "@/lib/pushNative";
 import { savePushToken } from "@/lib/push.functions";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -138,7 +138,10 @@ export function HomeChecklist() {
                 : async () => {
                     const res = await registerForNativePush();
                     if (!res.ok) return;
-                    try { await saveToken({ data: { token: res.token, transport: res.transport } }); }
+                    try {
+                      await saveToken({ data: { token: res.token, transport: res.transport } });
+                      setNativePushOptedOut(false);
+                    }
                     catch { /* the row stays open; Settings can retry */ }
                   },
           }
@@ -180,7 +183,9 @@ export function HomeChecklist() {
                 },
           };
 
-  const items: Item[] = [remindersStep];
+  // In the app, an owner's reminders ask is HomePushBanner, right above this
+  // card; repeating it here would put two identical asks on one screen.
+  const items: Item[] = surface.surface === "native" && data.ownsBirds ? [] : [remindersStep];
   if (data.ownsBirds) {
     items.push({
       key: "care-plan",

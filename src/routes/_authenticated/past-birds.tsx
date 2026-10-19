@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { getPastBirds } from "@/lib/handoff.functions";
 import { ArrowLeft, Feather, Loader2 } from "lucide-react";
 import { InkHero, Card, IconTile, StatusPill, PrimaryButton } from "@/components/system";
+import { formatLocalDate } from "@/lib/dates";
 
 // Past birds archive — read-only, sender-side memory of birds handed off.
 // Snapshots only (not linked to live records). Newest departures first.
@@ -104,5 +105,5 @@ function withYouLabel(intake: string | null, departed: string): string {
   return intake ? `With you from ${fmt(intake)} to ${fmt(departed)}` : `With you until ${fmt(departed)}`;
 }
 function fmt(iso: string): string {
-  return new Date(iso).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+  return formatLocalDate(new Date(iso), { year: "numeric", month: "short", day: "numeric" });
 }

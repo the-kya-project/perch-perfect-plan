@@ -18,6 +18,7 @@
  * verbatim would leak working credentials into Vercel's log store. Every URL is
  * therefore reduced to origin + a redacted path shape before it is logged.
  */
+import { withErrorTelemetry } from "@/lib/errorTelemetry";
 import { createFileRoute } from "@tanstack/react-router";
 
 /** Reports are small; anything larger is noise or abuse. */
@@ -74,7 +75,7 @@ function summarize(report: Record<string, unknown>) {
 export const Route = createFileRoute("/api/public/csp-report")({
   server: {
     handlers: {
-      POST: async ({ request }) => {
+      POST: withErrorTelemetry("/api/public/csp-report", async ({ request }) => {
         // Always answer 204 regardless of what arrives. A browser has nothing
         // useful to do with an error here, and a noisy status would only invite
         // retries.
@@ -97,7 +98,7 @@ export const Route = createFileRoute("/api/public/csp-report")({
           /* malformed body — ignore, never surface */
         }
         return noContent;
-      },
+      }),
     },
   },
 });

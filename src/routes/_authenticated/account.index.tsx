@@ -1,4 +1,6 @@
 import { createFileRoute, Link, useNavigate, useRouter, useCanGoBack } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
+import i18next from "i18next";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
@@ -6,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { deleteMyAccount } from "@/lib/account.functions";
 import { APP_VERSION } from "@/lib/version";
-import { ArrowLeft, ShieldAlert, Bell, Smartphone, Lock, X, Archive, Users, Flower2 } from "lucide-react";
+import { ArrowLeft, ShieldAlert, Bell, Smartphone, Lock, X, Archive, Users, Flower2, Languages, Check } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useAppSurface } from "@/lib/appSurface";
 import {
@@ -16,17 +18,24 @@ import {
 import { InkHero, Card, RecordRow, IconTile, SectionHead, PrimaryButton } from "@/components/system";
 import { toast } from "sonner";
 import { friendlyError } from "@/lib/errorMessage";
+import { OWNER_I18N_ENABLED, SUPPORTED_LOCALES, isLocale, type Locale } from "@/lib/i18n/config";
+import { saveOwnerLocale } from "@/lib/i18n/ownerLocale";
+
+// Each language is named in itself, never translated: someone looking for
+// Nederlands has to recognise it whatever language the app is showing.
+const LANGUAGE_NAMES: Record<Locale, string> = { en: "English", nl: "Nederlands" };
 
 // Support inbox for the "Help & support" row. If this address changes, update it
 // here (and ideally point it at a monitored mailbox).
 const SUPPORT_EMAIL = "brittany@thekyaproject.com";
 
 export const Route = createFileRoute("/_authenticated/account/")({
-  head: () => ({ meta: [{ title: "Account — Kya & Co." }] }),
+  head: () => ({ meta: [{ title: i18next.t("account.pageTitle", "Account — Kya & Co.") }] }),
   component: AccountPage,
 });
 
 function AccountPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const router = useRouter();
   const canGoBack = useCanGoBack();
@@ -53,6 +62,21 @@ function AccountPage() {
     },
   });
   const hasRemembering = rememberingCount > 0;
+
+  // App + email language (profiles.locale). Only read once the owner-app
+  // language switch is on; until then the row is hidden.
+  const { data: locale = null } = useQuery({
+    queryKey: ["profile-locale"],
+    enabled: OWNER_I18N_ENABLED,
+    queryFn: async () => {
+      const { data: u } = await getLocalUser();
+      if (!u.user) return null;
+      const { data } = await supabase.from("profiles").select("locale").eq("id", u.user.id).maybeSingle();
+      const l = (data as { locale?: string | null } | null)?.locale;
+      return isLocale(l) ? l : null;
+    },
+  });
+  const [languageOpen, setLanguageOpen] = useState(false);
 
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -83,7 +107,7 @@ function AccountPage() {
 
   async function signOut() {
     await supabase.auth.signOut();
-    toast.success("Signed out.");
+    toast.success(t("account.signedOut", "Signed out."));
     navigate({ to: "/", replace: true });
   }
 
@@ -96,8 +120,8 @@ function AccountPage() {
         <InkHero
           backIcon={<ArrowLeft className="size-5" />}
           onBack={goBack}
-          eyebrow="Account"
-          headline="Your account"
+          eyebrow={t("account.account", "Account")}
+          headline={t("account.yourAccount", "Your account")}
         />
 
         <main className="space-y-6 px-5 pt-5">
@@ -108,10 +132,10 @@ function AccountPage() {
                 {initial}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="t-item truncate">{name.trim() || "Your name"}</p>
+                <p className="t-item truncate">{name.trim() || t("account.yourName", "Your name")}</p>
                 <p className="t-meta truncate">{email}</p>
                 {emailPending && (
-                  <p className="mt-0.5 truncate text-[11px] text-[var(--amber-ink)]">Change to {pendingEmail} pending — confirm the emailed links.</p>
+                  <p className="mt-0.5 truncate text-[11px] text-[var(--amber-ink)]">{t("account.emailChangePending", "Change to {{email}} pending — confirm the emailed links.", { email: pendingEmail })}</p>
                 )}
               </div>
               <button onClick={() => setEditOpen(true)} className="shrink-0 text-[13px] font-[500] text-[var(--moss)] active:opacity-70">Edit</button>
@@ -120,27 +144,27 @@ function AccountPage() {
 
           {/* Care settings */}
           <div>
-            <SectionHead title="Care settings" />
+            <SectionHead title={t("account.careSettings", "Care settings")} />
             <Card>
               <Link to="/dashboard" search={{ emergencyDefaults: true }} className="block">
                 <RecordRow
                   leading={<IconTile tone="pale" icon={<ShieldAlert className="size-5" />} />}
-                  title="Emergency defaults"
-                  subtitle="Vet, contacts & spend limit — used for every bird."
+                  title={t("account.emergencyDefaults", "Emergency defaults")}
+                  subtitle={t("account.vetContactsSpendLimitUsed", "Vet, contacts & spend limit — used for every bird.")}
                 />
               </Link>
               <Link to="/scans/settings" className="block">
                 <RecordRow
                   leading={<IconTile icon={<Bell className="size-5" />} />}
-                  title="Notifications"
-                  subtitle="How you hear about health checks and updates."
+                  title={t("account.notifications", "Notifications")}
+                  subtitle={t("account.howYouHearAboutHealth", "How you hear about health checks and updates.")}
                 />
               </Link>
               <Link to="/household" className="block">
                 <RecordRow
                   leading={<IconTile icon={<Users className="size-5" />} />}
-                  title="Household"
-                  subtitle="People who help care for your birds."
+                  title={t("account.household", "Household")}
+                  subtitle={t("account.peopleWhoHelpCareFor", "People who help care for your birds.")}
                   last={!showGetApp}
                 />
               </Link>
@@ -149,8 +173,8 @@ function AccountPage() {
                   <RecordRow
                     onClick={() => window.open(surface.storePlatform === "ios" ? APP_STORE_URL : PLAY_STORE_URL, "_blank", "noopener")}
                     leading={<IconTile icon={<Smartphone className="size-5" />} />}
-                    title="Get the Kya & Co. app"
-                    subtitle="Reminders, quick logging, and your flock's whole record, right on your phone. Same account, nothing to move over."
+                    title={t("account.getTheKyaCoApp", "Get the Kya & Co. app")}
+                    subtitle={t("account.remindersQuickLoggingAndYour", "Reminders, quick logging, and your flock's whole record, right on your phone. Same account, nothing to move over.")}
                     last
                   />
                   <div className="px-4 pb-4">
@@ -158,7 +182,7 @@ function AccountPage() {
                       src={surface.storePlatform === "ios" ? APP_STORE_BADGE : PLAY_STORE_BADGE}
                       width={(surface.storePlatform === "ios" ? APP_STORE_BADGE_SIZE : PLAY_STORE_BADGE_SIZE).width}
                       height={(surface.storePlatform === "ios" ? APP_STORE_BADGE_SIZE : PLAY_STORE_BADGE_SIZE).height}
-                      alt={surface.storePlatform === "ios" ? "Download on the App Store" : "Get it on Google Play"}
+                      alt={surface.storePlatform === "ios" ? t("account.appStoreBadgeAlt", "Download on the App Store") : t("account.playStoreBadgeAlt", "Get it on Google Play")}
                       className="block"
                     />
                   </div>
@@ -169,19 +193,27 @@ function AccountPage() {
 
           {/* Account */}
           <div>
-            <SectionHead title="Account" />
+            <SectionHead title={t("account.account", "Account")} />
             <Card>
               <Link to="/account/security" className="block">
                 <RecordRow
                   leading={<IconTile icon={<Lock className="size-5" />} />}
-                  title="Password & sign-in"
-                  subtitle="Manage how you log in."
+                  title={t("account.passwordSignIn", "Password & sign-in")}
+                  subtitle={t("account.manageHowYouLogIn", "Manage how you log in.")}
                 />
               </Link>
+              {OWNER_I18N_ENABLED && (
+                <RecordRow
+                  onClick={() => setLanguageOpen(true)}
+                  leading={<IconTile icon={<Languages className="size-5" />} />}
+                  title={t("account.language", "Language")}
+                  subtitle={locale ? LANGUAGE_NAMES[locale] : t("account.sameAsPhone", "Same as your phone")}
+                />
+              )}
               <Link to="/past-birds" className="block">
                 <RecordRow
                   leading={<IconTile icon={<Archive className="size-5" />} />}
-                  title="Birds you've helped find a home"
+                  title={t("account.birdsYouVeHelpedFind", "Birds you've helped find a home")}
                   last={!hasRemembering}
                 />
               </Link>
@@ -191,7 +223,7 @@ function AccountPage() {
                 <Link to="/remembering" className="block">
                   <RecordRow
                     leading={<IconTile icon={<Flower2 className="size-5" />} />}
-                    title="Remembering"
+                    title={t("account.remembering", "Remembering")}
                     last
                   />
                 </Link>
@@ -201,23 +233,23 @@ function AccountPage() {
 
           {/* Legal / meta */}
           <div>
-            <SectionHead title="Legal" />
+            <SectionHead title={t("account.legal", "Legal")} />
             <Card>
               <a href={`mailto:${SUPPORT_EMAIL}?subject=Kya%20%26%20Co.%20support`} className="block">
-                <RecordRow title="Help & support" chevron />
+                <RecordRow title={t("account.helpSupport", "Help & support")} chevron />
               </a>
               <Link to="/privacy" className="block">
-                <RecordRow title="Privacy policy" chevron />
+                <RecordRow title={t("account.privacyPolicy", "Privacy policy")} chevron />
               </Link>
               <Link to="/terms" className="block">
-                <RecordRow title="Terms of service" chevron last />
+                <RecordRow title={t("account.termsOfService", "Terms of service")} chevron last />
               </Link>
             </Card>
           </div>
 
           <p className="t-meta text-center">Version {APP_VERSION}</p>
 
-          <PrimaryButton tone="outline" onPress={signOut}>Sign out</PrimaryButton>
+          <PrimaryButton tone="outline" onPress={signOut}>{t("account.signOut", "Sign out")}</PrimaryButton>
 
           <button
             onClick={() => setDeleteOpen(true)}
@@ -228,6 +260,9 @@ function AccountPage() {
         </main>
       </div>
 
+      {languageOpen && (
+        <LanguageModal userId={userId} current={locale} onClose={() => setLanguageOpen(false)} />
+      )}
       {editOpen && (
         <EditIdentityModal
           userId={userId}
@@ -246,7 +281,7 @@ function AccountPage() {
             await qc.cancelQueries();
             qc.clear();
             await supabase.auth.signOut();
-            toast.success("Your account and all data have been deleted.");
+            toast.success(t("account.yourAccountAndAllData", "Your account and all data have been deleted."));
             navigate({ to: "/", replace: true });
           }}
         />
@@ -257,14 +292,61 @@ function AccountPage() {
 
 // ---------- Modals ----------
 
+function LanguageModal({
+  userId, current, onClose,
+}: {
+  userId: string | null;
+  current: Locale | null;
+  onClose: () => void;
+}) {
+  const { t } = useTranslation();
+  const qc = useQueryClient();
+  const [saving, setSaving] = useState<Locale | null>(null);
+
+  async function choose(next: Locale) {
+    if (!userId || next === current) { onClose(); return; }
+    setSaving(next);
+    try {
+      await saveOwnerLocale(userId, next);
+      qc.setQueryData(["profile-locale"], next);
+      onClose();
+    } catch (e) {
+      toast.error(friendlyError(e));
+    } finally {
+      setSaving(null);
+    }
+  }
+
+  return (
+    <ModalShell title={t("account.language", "Language")} onClose={onClose}>
+      <p className="mb-3 text-sm text-[var(--mute)]">{t("account.usedInTheAppAnd", "Used in the app and in emails we send you.")}</p>
+      <div className="overflow-hidden rounded-xl bg-white">
+        {SUPPORTED_LOCALES.map((l, i) => (
+          <button
+            key={l}
+            lang={l}
+            onClick={() => void choose(l)}
+            disabled={saving !== null}
+            className={`flex w-full items-center justify-between px-4 py-3 text-left text-[var(--ink)] ${i > 0 ? "border-t border-black/5" : ""}`}
+          >
+            <span>{LANGUAGE_NAMES[l]}</span>
+            {(saving ?? current) === l && <Check className="size-5 text-[var(--ink)]" />}
+          </button>
+        ))}
+      </div>
+    </ModalShell>
+  );
+}
+
 function ModalShell({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
+  const { t } = useTranslation();
   return (
     <div className="fixed inset-0 z-50 grid place-items-end sm:place-items-center">
       <div className="absolute inset-0 bg-black/30" onClick={onClose} />
       <div className="relative w-full max-w-md rounded-t-2xl bg-[var(--cream)] p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-xl sm:rounded-2xl">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-lg font-[500] text-[var(--ink)]">{title}</h2>
-          <button onClick={onClose} aria-label="Close" className="rounded-full p-1 text-[var(--mute)] hover:bg-black/5">
+          <button onClick={onClose} aria-label={t("account.close", "Close")} className="rounded-full p-1 text-[var(--mute)] hover:bg-black/5">
             <X className="size-5" />
           </button>
         </div>
@@ -284,6 +366,7 @@ function EditIdentityModal({
   onPendingEmail: (v: string | null) => void;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   // Split the stored full name into first + last for editing; recombine on save.
   const parts = name.trim().split(/\s+/).filter(Boolean);
   const [firstInput, setFirstInput] = useState(parts[0] ?? "");
@@ -316,54 +399,54 @@ function EditIdentityModal({
         const { error } = await supabase.auth.updateUser({ email: next }, { emailRedirectTo: `${window.location.origin}/dashboard` });
         if (error) throw error;
         onPendingEmail(next);
-        toast.success("Confirmation links sent to your current and new email — both must be confirmed.");
+        toast.success(t("account.confirmationLinksSentToYour", "Confirmation links sent to your current and new email — both must be confirmed."));
       } else if (nameDirty) {
-        toast.success("Name updated.");
+        toast.success(t("account.nameUpdated", "Name updated."));
       }
       onClose();
     } catch (e: any) {
-      toast.error(friendlyError(e, "Could not save changes."));
+      toast.error(friendlyError(e, t("account.couldNotSave", "Could not save changes.")));
     } finally {
       setSaving(false);
     }
   }
 
   return (
-    <ModalShell title="Edit your details" onClose={onClose}>
+    <ModalShell title={t("account.editYourDetails", "Edit your details")} onClose={onClose}>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="t-eyebrow block text-[var(--mute)]">First name</label>
+          <label className="t-eyebrow block text-[var(--mute)]">{t("account.firstName", "First name")}</label>
           <input
             value={firstInput}
             onChange={(e) => setFirstInput(e.target.value)}
-            placeholder="Brittany"
+            placeholder={t("account.brittany", "Brittany")}
             autoComplete="given-name"
             className="mt-1 w-full rounded-xl border border-[var(--line)] bg-white px-3 py-2.5 text-sm outline-none focus:border-[var(--moss)]"
           />
         </div>
         <div>
-          <label className="t-eyebrow block text-[var(--mute)]">Last name</label>
+          <label className="t-eyebrow block text-[var(--mute)]">{t("account.lastName", "Last name")}</label>
           <input
             value={lastInput}
             onChange={(e) => setLastInput(e.target.value)}
-            placeholder="King"
+            placeholder={t("account.king", "King")}
             autoComplete="family-name"
             className="mt-1 w-full rounded-xl border border-[var(--line)] bg-white px-3 py-2.5 text-sm outline-none focus:border-[var(--moss)]"
           />
         </div>
       </div>
-      <label className="t-eyebrow mt-4 block text-[var(--mute)]">Email address</label>
+      <label className="t-eyebrow mt-4 block text-[var(--mute)]">{t("account.emailAddress", "Email address")}</label>
       <input
         type="email"
         value={emailInput}
         onChange={(e) => setEmailInput(e.target.value)}
-        placeholder="you@example.com"
+        placeholder={t("account.youExampleCom", "you@example.com")}
         className="mt-1 w-full rounded-xl border border-[var(--line)] bg-white px-3 py-2.5 text-sm outline-none focus:border-[var(--moss)]"
       />
-      <p className="t-meta mt-1.5">Changing your email sends a confirmation link to both your current and new address. Both must be confirmed.</p>
+      <p className="t-meta mt-1.5">{t("account.changingYourEmailSendsA", "Changing your email sends a confirmation link to both your current and new address. Both must be confirmed.")}</p>
       <div className="mt-4">
         <PrimaryButton tone="ink" onPress={save} disabled={saving || (!nameDirty && !emailDirty)}>
-          {saving ? "Saving…" : "Save changes"}
+          {saving ? t("account.saving", "Saving…") : t("account.saveChanges", "Save changes")}
         </PrimaryButton>
       </div>
     </ModalShell>
@@ -371,6 +454,7 @@ function EditIdentityModal({
 }
 
 function DeleteAccountModal({ onClose, onConfirm }: { onClose: () => void; onConfirm: () => Promise<void> }) {
+  const { t } = useTranslation();
   const [confirmText, setConfirmText] = useState("");
   const [deleting, setDeleting] = useState(false);
   const ready = confirmText.trim().toUpperCase() === "DELETE";
@@ -381,22 +465,22 @@ function DeleteAccountModal({ onClose, onConfirm }: { onClose: () => void; onCon
     try {
       await onConfirm();
     } catch (e: any) {
-      toast.error(friendlyError(e, "Could not delete account."));
+      toast.error(friendlyError(e, t("account.couldNotDelete", "Could not delete account.")));
       setDeleting(false);
     }
   }
 
   return (
-    <ModalShell title="Delete account" onClose={deleting ? () => {} : onClose}>
+    <ModalShell title={t("account.deleteAccount", "Delete account")} onClose={deleting ? () => {} : onClose}>
       <p className="t-body text-[var(--mute)]">
-        This permanently deletes your account and <strong className="text-[var(--ink)]">everything in it</strong> — your birds,
+        This permanently deletes your account and <strong className="text-[var(--ink)]">{t("account.everythingInIt", "everything in it")}</strong> — your birds,
         care plans, clips, sits, sitter logs, and your contact record. Sitter links stop working. This cannot be undone.
       </p>
-      <label className="t-eyebrow mt-4 block text-[var(--mute)]">Type DELETE to confirm</label>
+      <label className="t-eyebrow mt-4 block text-[var(--mute)]">{t("account.typeDeleteToConfirm", "Type DELETE to confirm")}</label>
       <input
         value={confirmText}
         onChange={(e) => setConfirmText(e.target.value)}
-        placeholder="DELETE"
+        placeholder={t("account.delete", "DELETE")}
         autoCapitalize="characters"
         className="mt-1 w-full rounded-xl border border-[var(--line)] bg-white px-3 py-2.5 text-sm outline-none focus:border-[var(--red-line)]"
       />
@@ -405,10 +489,10 @@ function DeleteAccountModal({ onClose, onConfirm }: { onClose: () => void; onCon
         disabled={!ready || deleting}
         className="mt-4 w-full min-h-[44px] rounded-[12px] bg-[var(--red-deep)] py-3 text-[15px] font-[500] text-white disabled:opacity-50"
       >
-        {deleting ? "Deleting…" : "Permanently delete my account"}
+        {deleting ? t("account.deleting", "Deleting…") : t("account.permanentlyDelete", "Permanently delete my account")}
       </button>
       <button onClick={onClose} disabled={deleting} className="mt-2 w-full min-h-[44px] py-2 text-center text-[13px] font-[500] text-[var(--mute)] disabled:opacity-50">
-        Cancel
+        {t("account.cancel", "Cancel")}
       </button>
     </ModalShell>
   );

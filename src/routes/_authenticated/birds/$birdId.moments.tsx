@@ -11,6 +11,8 @@ import { useBirdRole } from "@/lib/useBirdRole";
 import { shareMomentCard } from "@/lib/momentCard";
 import { InkHero, IconTile, SectionHead, Card, RecordRow } from "@/components/system";
 import { friendlyError } from "@/lib/errorMessage";
+import { formatLocalDate } from "@/lib/dates";
+import { localDateISO } from "@/lib/localDay";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/moments")({
   head: () => ({ meta: [{ title: "Moments — Kya & Co." }] }),
@@ -36,11 +38,11 @@ function relDay(d: Date) {
   const n = daysUntil(d);
   if (n === 0) return "today";
   if (n === 1) return "tomorrow";
-  if (n < 7) return `on ${d.toLocaleDateString(undefined, { weekday: "long" })}`;
-  return `on ${d.toLocaleDateString(undefined, { month: "long", day: "numeric" })}`;
+  if (n < 7) return `on ${formatLocalDate(d, { weekday: "long" })}`;
+  return `on ${formatLocalDate(d, { month: "long", day: "numeric" })}`;
 }
-const fmtDate = (iso: string) => new Date(`${iso}T12:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
-const monthDay = (iso: string) => new Date(`${iso}T12:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+const fmtDate = (iso: string) => formatLocalDate(new Date(`${iso}T12:00:00`), { month: "short", day: "numeric", year: "numeric" });
+const monthDay = (iso: string) => formatLocalDate(new Date(`${iso}T12:00:00`), { month: "short", day: "numeric" });
 
 function MomentsFacet() {
   const { birdId } = Route.useParams();
@@ -326,7 +328,7 @@ function MomentsFacet() {
 
 function AddMilestone({ birdId, onClose, onSaved }: { birdId: string; onClose: () => void; onSaved: () => void }) {
   const [title, setTitle] = useState("");
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(localDateISO());
   const [photoData, setPhotoData] = useState<string | null>(null);
   const [photoBusy, setPhotoBusy] = useState(false);
   const [saving, setSaving] = useState(false);

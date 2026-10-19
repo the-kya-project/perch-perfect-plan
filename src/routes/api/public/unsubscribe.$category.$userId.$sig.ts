@@ -16,6 +16,7 @@
  * It takes effect immediately for anything not yet sent, because every cron
  * reads the flag as it builds each email rather than snapshotting a list.
  */
+import { withErrorTelemetry } from "@/lib/errorTelemetry";
 import { createFileRoute } from "@tanstack/react-router";
 import { isUnsubCategory, unsubSigValid, UNSUB_COLUMN, type UnsubCategory } from "@/lib/unsubscribe";
 
@@ -48,7 +49,7 @@ function page(o: { category: UnsubCategory; resubscribed: boolean; resubHref: st
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex">
 <title>${headline}</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;800&family=DM+Sans:wght@400;700&display=swap">
+<link rel="stylesheet" href="/fonts/fonts.css">
 <style>
   body { margin:0; background:${PAGE}; font-family:${BODY}; }
   .wrap { max-width:560px; margin:0 auto; padding:24px 16px 48px; }
@@ -99,15 +100,15 @@ async function setFlag(userId: string, category: UnsubCategory, value: boolean):
 export const Route = createFileRoute("/api/public/unsubscribe/$category/$userId/$sig")({
   server: {
     handlers: {
-      POST: async ({ params }) => {
+      POST: withErrorTelemetry("/api/public/unsubscribe/$category/$userId/$sig", async ({ params }) => {
         const { category, userId, sig } = params as { category: string; userId: string; sig: string };
         if (!isUnsubCategory(category) || !unsubSigValid(userId, category, sig)) {
           return new Response("Not found", { status: 404 });
         }
         const ok = await setFlag(userId, category, false);
         return new Response(ok ? "Unsubscribed" : "Could not unsubscribe", { status: ok ? 200 : 500 });
-      },
-      GET: async ({ params, request }) => {
+      }),
+      GET: withErrorTelemetry("/api/public/unsubscribe/$category/$userId/$sig", async ({ params, request }) => {
         const { category, userId, sig } = params as { category: string; userId: string; sig: string };
         if (!isUnsubCategory(category) || !unsubSigValid(userId, category, sig)) {
           return new Response("Not found", { status: 404 });
@@ -121,7 +122,7 @@ export const Route = createFileRoute("/api/public/unsubscribe/$category/$userId/
         return new Response(page({ category, resubscribed: resubscribe, resubHref: "?resubscribe=1", appUrl }), {
           headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" },
         });
-      },
+      }),
     },
   },
 });

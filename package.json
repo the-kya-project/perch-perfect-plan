@@ -7,7 +7,7 @@
   "packageManager": "npm@11.12.1",
   "scripts": {
     "dev": "vite dev",
-    "build": "vite build && node scripts/copy-sw.mjs",
+    "build": "vite build && node scripts/copy-sw.mjs && node scripts/sourcemaps.mjs",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
@@ -24,7 +24,9 @@
     "test:get-app": "npx --yes vite-node scripts/get-app.test.ts",
     "test:blog-feed": "npx --yes vite-node scripts/blog-feed.test.ts",
     "test:url-scrub": "npx --yes vite-node scripts/url-scrub.test.ts",
-    "test:onboarding-plan": "npx --yes vite-node scripts/onboarding-plan.test.ts"
+    "test:onboarding-plan": "npx --yes vite-node scripts/onboarding-plan.test.ts",
+    "test:local-day": "npx --yes vite-node scripts/local-day.test.ts",
+    "test:email-tracking": "npx --yes vite-node scripts/email-tracking.test.ts"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.2",
@@ -101,6 +103,7 @@
     "@eslint/js": "^9.32.0",
     "@lovable.dev/vite-tanstack-config": "^2.3.2",
     "@playwright/test": "^1.63.0",
+    "@posthog/cli": "0.18.9",
     "@types/node": "^22.16.5",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",

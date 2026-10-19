@@ -12,6 +12,7 @@ import { renderDerivedTask } from "@/lib/routineTaskRender";
 import type { DerivedTask } from "@/lib/derivedTasks";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import { localDateISO } from "@/lib/localDay";
 
 export const Route = createFileRoute("/sitter/$token/")({
   component: SitterHome,
@@ -124,7 +125,7 @@ function SitterToday() {
 
   const m = useMutation({
     mutationFn: (vars: { taskId: string; completed: boolean; title: string }) =>
-      toggle({ data: { token, taskId: vars.taskId, completed: vars.completed } }),
+      toggle({ data: { token, taskId: vars.taskId, completed: vars.completed, today: localDateISO() } }),
     // OPTIMISTIC: flip the checkbox instantly by patching ctx.completions in the
     // cache, then sync in the background. The old flow waited for the toggle
     // round trip AND a full sitter-context refetch (a 15-call waterfall) before

@@ -6,6 +6,7 @@ import { getSitterDashboard } from "@/lib/sitter.functions";
 import { replaySitterOnboarding } from "@/components/SitterOnboarding";
 import { BirdCareCard } from "@/components/BirdCareCard";
 import { HelpCircle } from "lucide-react";
+import { localDateISO } from "@/lib/localDay";
 
 // Sitter Home tab: the all-birds home base. Warm welcome + an overview naming
 // every bird, then a card per bird with today's task progress and health-scan
@@ -27,7 +28,7 @@ export function SitterDashboard({ token }: { token: string }) {
   const navigate = useNavigate();
   const { data, isLoading } = useQuery({
     queryKey: ["sitter-dashboard", token],
-    queryFn: () => fn({ data: { token } }),
+    queryFn: () => fn({ data: { token, today: localDateISO() } }),
   });
   const birds = (data?.birds ?? []) as any[];
   const allNames = formatNames(birds.map((b) => b.name));

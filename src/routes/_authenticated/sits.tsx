@@ -15,6 +15,7 @@ import { InkHero, SectionHead, Card, IconTile } from "@/components/system";
 import { useBirdPhotos } from "@/lib/useBirdPhotos";
 import { fetchBirdList } from "@/lib/birdListSelect";
 import { weekdayMonthDay, monthDay, daysUntil } from "@/lib/dates";
+import { localDateISO } from "@/lib/localDay";
 
 // Dedicated Sits tab: create / manage sits. Shares the ["birds"] cache with the
 // dashboard via fetchBirdList (identical query/shape, so neither poisons the other).
@@ -108,7 +109,7 @@ function SitsPage() {
       return (count ?? 0) > 0;
     },
   });
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localDateISO();
   const allSits = sits as any[];
 
   // State buckets. Active = underway today (most-recently-started first).

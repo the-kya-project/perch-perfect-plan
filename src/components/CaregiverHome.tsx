@@ -10,6 +10,8 @@ import { BirdCareCard } from "@/components/BirdCareCard";
 import { Check, CalendarHeart, Sun, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { friendlyError } from "@/lib/errorMessage";
+import { formatLocalTime } from "@/lib/dates";
+import { localDateISO } from "@/lib/localDay";
 
 // The active-caregiver Home variant. Rendered when the signed-in user is the
 // assigned caregiver on at least one sit whose window covers today. Mirrors the
@@ -24,7 +26,7 @@ export function useActiveCaregiver() {
   const fn = useServerFn(getActiveCaregiverSits);
   return useQuery({
     queryKey: ["active-caregiver-sits"],
-    queryFn: () => fn(),
+    queryFn: () => fn({ data: { today: localDateISO() } }),
     refetchOnWindowFocus: true,
     // Re-check on a slow cadence so the app reverts at end_date + 1 without a
     // refresh: the server fn filters by today's date.
@@ -146,7 +148,7 @@ export function CaregiverTodayChecklist({ sit, birdId }: { sit: ActiveCaregiverS
   const qc = useQueryClient();
   const toggle = useServerFn(caregiverToggleTaskCompletion);
   const m = useMutation({
-    mutationFn: (vars: { taskId: string; completed: boolean }) => toggle({ data: { sitId: sit.id, taskId: vars.taskId, completed: vars.completed } }),
+    mutationFn: (vars: { taskId: string; completed: boolean }) => toggle({ data: { sitId: sit.id, taskId: vars.taskId, completed: vars.completed, today: localDateISO() } }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["active-caregiver-sits"] }),
     onError: (e: any) => toast.error(friendlyError(e, "Couldn't update.")),
   });
@@ -297,5 +299,5 @@ function prettyTitle(t: string): string {
   return isDerivedTask(t) ? t : t;
 }
 function fmtTime(iso: string): string {
-  try { return new Date(iso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }); } catch { return ""; }
+  try { return formatLocalTime(new Date(iso), { hour: "numeric", minute: "2-digit" }); } catch { return ""; }
 }

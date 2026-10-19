@@ -9,10 +9,13 @@ import { EmergencyBar } from "@/components/EmergencyBar";
 import { SitterOnboarding, replaySitterOnboarding } from "@/components/SitterOnboarding";
 import { presentCareSections } from "@/lib/sitterCareSections";
 import { track } from "@/lib/analytics";
+import { reportError } from "@/lib/errorReporting";
+import { SUPPORT_EMAIL } from "@/lib/support";
 import { PullToRefresh } from "@/components/PullToRefresh";
 import { I18nextProvider, useTranslation } from "react-i18next";
 import { sitterI18n, ensureSitterI18n, resolveSitterLocale } from "@/lib/i18n";
 import { SitterLanguageToggle } from "@/components/SitterLanguageToggle";
+import { localDateISO } from "@/lib/localDay";
 
 const searchSchema = z.object({ birdId: z.string().uuid().optional() });
 
@@ -57,7 +60,31 @@ function SitterLinkError({ error }: { error: Error }) {
       ? { title: t("sitter.error.paused.title", "This sit is paused"), body: t("sitter.error.paused.body", "There's nothing that needs doing right now. The owner will be in touch.") }
       : code === "SITTER_LINK_UNAVAILABLE"
       ? { title: t("sitter.error.unavailable.title", "This sitter link can't be opened"), body: t("sitter.error.unavailable.body", "It may have expired or been turned off. Check your connection and try again.") }
-      : { title: t("sitter.error.generic.title", "This sitter link can't be opened"), body: error.message };
+      : null;
+  // Anything else is a real failure, not a link state: report it, and show the
+  // friendly screen instead of the raw message.
+  const unexpected = copy === null;
+  useEffect(() => {
+    if (unexpected) reportError(error, { mechanism: "react_error_boundary", boundary: "sitter" });
+  }, [error, unexpected]);
+  if (unexpected) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-[#f4f1e8] p-6 text-center">
+        <div className="max-w-sm">
+          <h1 className="text-lg font-medium">{t("sitter.error.crash.title", "Something went wrong")}</h1>
+          <p className="mt-2 text-sm text-[#5f5e5a]">
+            {t("sitter.error.crash.body", "Sorry, that page didn't load properly. Try refreshing, and if it keeps happening, email us at {{email}}.", { email: SUPPORT_EMAIL })}
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-5 rounded-md bg-[#1a3d2e] px-4 py-2 text-sm font-medium text-white"
+          >
+            {t("sitter.error.refresh", "Refresh")}
+          </button>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="grid min-h-screen place-items-center bg-[#f4f1e8] p-6 text-center">
       <div className="max-w-sm">
@@ -287,7 +314,7 @@ export function useSitterContext(token: string) {
   const fn = useServerFn(getSitterContext);
   return useSuspenseQuery({
     queryKey: ["sitter-ctx", token, birdId ?? null],
-    queryFn: () => withSettleGuard(fn({ data: { token, birdId } })),
+    queryFn: () => withSettleGuard(fn({ data: { token, birdId, today: localDateISO() } })),
     // Retry a transient blip, but never a verdict. A token that is invalid,
     // revoked, expired, or whose sit is paused will not become valid on a
     // second attempt — retrying it only doubles how long the sitter waits for

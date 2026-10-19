@@ -7,6 +7,7 @@ import { useSyncExternalStore } from "react";
 import { monthDay } from "@/lib/dates";
 import type { HomeBird, WeightGlance, TodayItem } from "@/lib/homeData";
 import type { HomeHousehold } from "@/lib/home.functions";
+import { localDateISO } from "@/lib/localDay";
 
 let demo = false;
 const listeners = new Set<() => void>();
@@ -55,7 +56,7 @@ export function demoGlanceFor(birdId: string): WeightGlance {
 // day the tour runs.
 export function getDemoToday(): TodayItem[] {
   const t = new Date();
-  const tomorrow = new Date(t.getFullYear(), t.getMonth(), t.getDate() + 1).toISOString().slice(0, 10);
+  const tomorrow = localDateISO(new Date(t.getFullYear(), t.getMonth(), t.getDate() + 1));
   return [
     { id: "demo-sit", tone: "pale", title: "Sam arrives tomorrow", meta: `Sit starts ${monthDay(tomorrow)}`, to: { kind: "sits" }, rank: 0 },
     // "Turning 14", not "She'll be 14": the demo bird has no sex set (see `bird()`

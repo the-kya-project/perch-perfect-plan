@@ -5,13 +5,14 @@
  * review flow. Only a desktop sees a page.
  */
 import { createFileRoute } from "@tanstack/react-router";
+import { withErrorTelemetry } from "@/lib/errorTelemetry";
 import { STORE, logClick, resolveTarget } from "@/lib/storeRedirect.server";
 import { chooserPage } from "@/lib/storeChooserPage.server";
 
 export const Route = createFileRoute("/review")({
   server: {
     handlers: {
-      GET: async ({ request }) => {
+      GET: withErrorTelemetry("/review", async ({ request }) => {
         const url = new URL(request.url);
         const ua = request.headers.get("user-agent") ?? "";
         const resolved = resolveTarget(ua, url.searchParams.get("store"));
@@ -36,7 +37,7 @@ export const Route = createFileRoute("/review")({
             "cache-control": "no-store",
           },
         });
-      },
+      }),
     },
   },
 });

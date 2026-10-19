@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { formatLocalDate } from "@/lib/dates";
 
 // Reusable newest-first dated timeline. The weight facet and the journal facet
 // both render their history through this so the dated-list UI lives in one
@@ -20,7 +21,7 @@ function fmt(iso: string): string {
   const d = new Date(iso);
   const now = new Date();
   const sameYear = d.getFullYear() === now.getFullYear();
-  return d.toLocaleDateString(undefined, { month: "short", day: "numeric", ...(sameYear ? {} : { year: "numeric" }) });
+  return formatLocalDate(d, { month: "short", day: "numeric", ...(sameYear ? {} : { year: "numeric" }) });
 }
 
 export function DatedTimeline({ items, empty, rail = true }: { items: TimelineItem[]; empty?: ReactNode; rail?: boolean }) {

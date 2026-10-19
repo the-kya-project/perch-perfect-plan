@@ -19,6 +19,13 @@ export function pickLocale(input: string | null | undefined): Locale {
   return DEFAULT_LOCALE;
 }
 
+/** Phase 2 master switch. While false the owner app stays English whatever the
+ *  user's language — the plumbing below is wired but inert, so owner output is
+ *  byte-identical. Flip to true only once the owner screens are keyed: until
+ *  then, switching would render the already-keyed shared components (care
+ *  plan cards, scan form, …) in Dutch inside an otherwise English app. */
+export const OWNER_I18N_ENABLED = false;
+
 export function isLocale(v: unknown): v is Locale {
   return typeof v === "string" && (SUPPORTED_LOCALES as readonly string[]).includes(v);
 }

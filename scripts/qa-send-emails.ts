@@ -132,6 +132,8 @@ for (const [label, built, replyToFounder] of [...queue].reverse()) {
     htmlContent: built.html,
     textContent: built.text,
     ...(replyToFounder ? { replyTo: founderReplyTo() } : {}),
+    // Its own tag, so QA previews never count toward a real email's numbers.
+    tag: "qa_preview",
   });
   if (res.ok) { ok++; console.log("sent   ", label.padEnd(30), "|", built.subject); }
   else { fail++; console.log("FAILED ", label.padEnd(30), "|", JSON.stringify(res)); }

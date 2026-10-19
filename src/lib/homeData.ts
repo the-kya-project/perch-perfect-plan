@@ -2,6 +2,7 @@
 // upcoming-Moment anniversaries, and the adaptive Today list. Kept free of React
 // /  network so it's trivially testable and the dashboard stays declarative.
 import { weightTrendPill } from "./weightTrend";
+import { formatLocalDate } from "@/lib/dates";
 
 // ---- Tunable thresholds (surfaced as named constants) ----------------------
 export const STALE_DAYS_PERMANENT = 5; // permanent birds: nudge a weigh-in after 5 days
@@ -229,6 +230,6 @@ function dayName(iso: string, now = new Date()): string {
   const days = Math.round((+midnight(d) - +midnight(now)) / DAY_MS);
   if (days === 0) return "today";
   if (days === 1) return "tomorrow";
-  if (days > 1 && days < 7) return d.toLocaleDateString(undefined, { weekday: "long" });
-  return d.toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
+  if (days > 1 && days < 7) return formatLocalDate(d, { weekday: "long" });
+  return formatLocalDate(d, { weekday: "long", month: "short", day: "numeric" });
 }

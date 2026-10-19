@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { localDateISO } from "@/lib/localDay";
 
 // "View as sitter" reuses the real token-based sitter view by provisioning a
 // disposable preview sit per bird (sitter_name = "__preview__"). These are
@@ -23,7 +24,7 @@ export async function ensureSitterPreviewToken(birdId: string, ownerId: string):
 
   // Far-future expiry so the owner can revisit; it's disposable and hidden.
   const expires = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localDateISO();
   const { data: sit, error } = await supabase
     .from("sits")
     .insert({

@@ -8,10 +8,11 @@
 // those shared components to Dutch — an owner-facing regression, and a Phase-2
 // concern leaking into Phase 1.
 //
-//   • `globalI18n` is the react-i18next DEFAULT instance, pinned to English and
-//     never switched. Everything OUTSIDE a sitter route (the whole owner app,
-//     any SSR) reads this, so shared components render byte-identically to
-//     pre-i18n. This is what makes owner output provably unchanged.
+//   • `globalI18n` is the react-i18next DEFAULT instance. Everything OUTSIDE a
+//     sitter route (the whole owner app, any SSR) reads this. It renders in
+//     English and only switches via applyOwnerLocale (./ownerLocale), which is
+//     a no-op while OWNER_I18N_ENABLED is false — so until Phase 2 flips that,
+//     shared components render byte-identically to pre-i18n.
 //   • `sitterI18n` is a separate instance provided ONLY around the sitter
 //     subtree (see route.tsx's <I18nextProvider>). Its language is resolved
 //     from the sitter's browser / manual toggle. Owner code never sees it.
@@ -51,7 +52,7 @@ const commonInit = {
   react: { useSuspense: false } as const,
 };
 
-// ---- Global default instance: English, forever. Owner app + SSR read this. ----
+// ---- Global default instance: English unless applyOwnerLocale switches it. ----
 // initReactI18next is applied ONLY here, so this is react-i18next's default
 // instance (what useTranslation() resolves to with no <I18nextProvider>).
 if (!i18next.isInitialized) {

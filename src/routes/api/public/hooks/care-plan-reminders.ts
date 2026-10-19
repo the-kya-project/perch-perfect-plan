@@ -6,13 +6,14 @@
  * bypasses Lovable's published-site auth, so the handler validates a private
  * bearer secret before doing anything.
  */
+import { withErrorTelemetry } from "@/lib/errorTelemetry";
 import { createFileRoute } from "@tanstack/react-router";
 import { withCronTelemetry } from "@/lib/cronTelemetry";
 
 export const Route = createFileRoute("/api/public/hooks/care-plan-reminders")({
   server: {
     handlers: {
-      POST: withCronTelemetry("care-plan-reminders", async ({ request }) => {
+      POST: withCronTelemetry("care-plan-reminders", withErrorTelemetry("/api/public/hooks/care-plan-reminders", async ({ request }) => {
         const secret = process.env.CARE_PLAN_REMINDER_SECRET;
         if (!secret) {
           return Response.json({ ok: false, error: "CARE_PLAN_REMINDER_SECRET not configured" }, { status: 503 });
@@ -124,6 +125,7 @@ export const Route = createFileRoute("/api/public/hooks/care-plan-reminders")({
                     subject: built.subject,
                     htmlContent: built.html,
                     textContent: built.text,
+                    tag: "care_plan_reminder",
                   });
                   emailed += 1;
                   emailSent = true;
@@ -152,7 +154,7 @@ export const Route = createFileRoute("/api/public/hooks/care-plan-reminders")({
         }
 
         return Response.json({ ok: true, sits: sits?.length ?? 0, pushed: total, emailed });
-      }),
+      })),
     },
   },
 });

@@ -19,6 +19,7 @@
  * Cached hard. The month being drawn is over, so the picture will not change,
  * and Gmail proxies and caches it once per recipient anyway.
  */
+import { withErrorTelemetry } from "@/lib/errorTelemetry";
 import { createFileRoute } from "@tanstack/react-router";
 import { chartSigValid, CHART_DEMO_ID } from "@/lib/chartLink";
 
@@ -36,7 +37,7 @@ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "June", "July", "Aug", "Sept"
 export const Route = createFileRoute("/api/public/chart/$birdId/$month/$sig")({
   server: {
     handlers: {
-      GET: async ({ params, request }) => {
+      GET: withErrorTelemetry("/api/public/chart/$birdId/$month/$sig", async ({ params, request }) => {
         const { birdId, month, sig } = params as { birdId: string; month: string; sig: string };
         const m = /^(\d{4})-(\d{2})$/.exec(month);
         if (!m || !chartSigValid(birdId, month, sig)) return new Response("Not found", { status: 404 });
@@ -90,7 +91,7 @@ export const Route = createFileRoute("/api/public/chart/$birdId/$month/$sig")({
           });
           return new Response("Chart could not be rendered", { status: 500 });
         }
-      },
+      }),
     },
   },
 });

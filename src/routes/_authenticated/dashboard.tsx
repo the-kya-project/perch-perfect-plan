@@ -28,12 +28,14 @@ import { fetchScanFeed, getNotifSeenAt } from "@/lib/notificationsFeed";
 import { InkHero, IconTile, StatusPill, SectionHead, CtaLink, type HeroCta } from "@/components/system";
 import { CaregiverCoveringSection, useActiveCaregiver } from "@/components/CaregiverHome";
 import { HomeChecklist } from "@/components/HomeChecklist";
+import { HomePushBanner } from "@/components/HomePushBanner";
 import { getHouseholdHome, resolveOwnerNames, type HomeHousehold } from "@/lib/home.functions";
 import { useMyPermissions } from "@/lib/useCapability";
 import {
   groupWeights, weightGlance, upcomingMoments, buildTodayItems, buildHomeStateCopy, daysSince,
   type HomeBird, type WeightEntry, type TodayItem, type WeightGlance, type UpcomingSit,
 } from "@/lib/homeData";
+import { formatLocalDate } from "@/lib/dates";
 
 const dashboardSearch = z.object({
   newSit: z.coerce.boolean().optional(),
@@ -257,6 +259,10 @@ function Dashboard() {
       <main className="space-y-6 px-5 pb-6 pt-5">
         {emergencyDefaults && <DefaultsPanel />}
 
+        {/* Reminders only reach a phone registered for push, so Home asks until
+            it is on (in the app only) — see HomePushBanner. */}
+        {!demo && <HomePushBanner birdNames={flockBirds.map((b) => b.name)} />}
+
         {/* One-time post-setup checklist for new accounts (any type). Self-hides
             when done / dismissed / no longer a new account — see HomeChecklist. */}
         {!demo && <HomeChecklist />}
@@ -362,7 +368,7 @@ function HomeHeader({ firstName, unreadNotifs, stateCopy, cta }: { firstName: st
   // Greetings are spoken-to-the-user copy: no terminal period.
   const part = h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
   const greeting = firstName ? `${part}, ${firstName}` : part;
-  const dateLabel = new Date().toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+  const dateLabel = formatLocalDate(new Date(), { weekday: "long", month: "long", day: "numeric" });
   return (
     <InkHero
       showBrand
@@ -629,7 +635,7 @@ function HomeSkeleton() {
 // helpers
 // ---------------------------------------------------------------------------
 function fmtShort(iso: string): string {
-  return new Date(`${iso.slice(0, 10)}T12:00:00`).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  return formatLocalDate(new Date(`${iso.slice(0, 10)}T12:00:00`), { month: "short", day: "numeric", year: "numeric" });
 }
 function fmtAgo(iso: string): string {
   const mins = Math.max(1, Math.round((Date.now() - +new Date(iso)) / 60000));

@@ -8,14 +8,16 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { resolveToday } from "./localDay";
 
 async function getAdmin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   return supabaseAdmin;
 }
 
-function todayISO() {
-  return new Date().toISOString().slice(0, 10);
+// The caller's local date when the client sent one (see localDay.ts), else UTC.
+function todayISO(clientDay?: string) {
+  return resolveToday(clientDay);
 }
 
 // All sits where the caller is the assigned household caregiver AND today is
@@ -25,10 +27,11 @@ function todayISO() {
 // be length > 1) — the UI stacks them.
 export const getActiveCaregiverSits = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((d?: { today?: string }) => z.object({ today: z.string().optional() }).optional().parse(d))
+  .handler(async ({ data, context }) => {
     const sb = await getAdmin();
     const userId = context.userId as string;
-    const today = todayISO();
+    const today = todayISO(data?.today);
 
     const { data: sits } = await sb
       .from("sits")
@@ -168,13 +171,13 @@ async function loadUpcoming(sb: any, userId: string, today: string) {
 // that sit's birds. Mirrors the sitter token version's upsert/delete.
 export const caregiverToggleTaskCompletion = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { sitId: string; taskId: string; completed: boolean }) =>
-    z.object({ sitId: z.string().uuid(), taskId: z.string().uuid(), completed: z.boolean() }).parse(d),
+  .inputValidator((d: { sitId: string; taskId: string; completed: boolean; today?: string }) =>
+    z.object({ sitId: z.string().uuid(), taskId: z.string().uuid(), completed: z.boolean(), today: z.string().optional() }).parse(d),
   )
   .handler(async ({ data, context }) => {
     const sb = await getAdmin();
     const userId = context.userId as string;
-    const today = todayISO();
+    const today = todayISO(data.today);
 
     // Authorization: caller IS the caregiver on this sit, sit is active today.
     const { data: sit } = await sb

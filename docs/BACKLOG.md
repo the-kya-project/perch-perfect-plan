@@ -230,3 +230,22 @@ Console.
 ### `_to_delete/` contains a stray 0-byte file
 `_to_delete/index.lock.stale` — almost certainly debris from an interrupted git
 operation. Delete the directory.
+
+---
+
+## i18n
+
+### `npm run i18n:check` fails on `main` (catalog drift)
+**Status:** pre-existing, found 2026-10-14 while adding the error-screen strings. Left alone on purpose.
+
+`npm run i18n:extract` on `main` rewrites `src/locales/en.jsonc` with ~205 lines of changes:
+keys used in code that never made it into the English catalog. So `i18n:check` (which runs the
+same extraction with `--fail-on-update`) fails before anyone touches i18n. Nothing enforces it in
+CI today, which is how it drifted.
+
+- Fix: run `npm run i18n:extract` on a clean `main`, review the diff (expect only additions and
+  re-sorting), commit it, then run the Dutch step for the newly stale keys
+  (`npm run i18n:translate -- --check` first to see them).
+- Watch for: extraction keeps an EXISTING key's catalog value even when the code's English
+  default changed, so changed copy must be edited in `en.jsonc` by hand (or given a new key).
+- Done when `npm run i18n:check` passes on `main`; consider making it a required check.

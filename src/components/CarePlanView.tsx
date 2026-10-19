@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { ClipPlayer } from "@/components/ClipPlayer";
 import { CtaLink } from "@/components/system";
 import { ViewOnlyTag } from "@/components/MemberContextBanner";
@@ -86,6 +88,38 @@ const COACH: Partial<Record<CareSection, string>> = {
   food: "cp-food", behavior: "cp-handling", home: "cp-home", health: "cp-health", emergency: "cp-emergency",
 };
 
+// Display labels for the constant lists above (time of day, contacts, nav). The
+// constants stay English; this only changes what's shown.
+function displayLabel(t: TFunction, en: string): string {
+  switch (en) {
+    case "Morning": return t("carePlan.label.morning", "Morning");
+    case "Midday": return t("carePlan.label.midday", "Midday");
+    case "Afternoon": return t("carePlan.label.afternoon", "Afternoon");
+    case "Evening": return t("carePlan.label.evening", "Evening");
+    case "Night": return t("carePlan.label.night", "Night");
+    case "Anytime": return t("carePlan.label.anytime", "Anytime");
+    case "Owner": return t("carePlan.label.owner", "Owner");
+    case "Backup contact": return t("carePlan.label.backupContact", "Backup contact");
+    case "Backup phone": return t("carePlan.label.backupPhone", "Backup phone");
+    case "Avian vet": return t("carePlan.label.avianVet", "Avian vet");
+    case "Avian vet phone": return t("carePlan.label.avianVetPhone", "Avian vet phone");
+    case "Avian vet address": return t("carePlan.label.avianVetAddress", "Avian vet address");
+    case "Emergency vet": return t("carePlan.label.emergencyVet", "Emergency vet");
+    case "Emergency vet phone": return t("carePlan.label.emergencyVetPhone", "Emergency vet phone");
+    case "Emergency vet address": return t("carePlan.label.emergencyVetAddress", "Emergency vet address");
+    case "Poison control": return t("carePlan.label.poisonControl", "Poison control");
+    case "Carrier location": return t("carePlan.label.carrierLocation", "Carrier location");
+    case "First-aid kit": return t("carePlan.label.firstAidKit", "First-aid kit");
+    case "Food": return t("carePlan.label.food", "Food");
+    case "Behavior": return t("carePlan.label.behavior", "Behavior");
+    case "Home": return t("carePlan.label.home", "Home");
+    case "Health": return t("carePlan.label.health", "Health");
+    case "Routine": return t("carePlan.label.routine", "Routine");
+    case "Emergency": return t("carePlan.label.emergency", "Emergency");
+    default: return en;
+  }
+}
+
 export function CarePlanView({
   data,
   visibleSections = CARE_PLAN_SECTIONS,
@@ -121,6 +155,7 @@ export function CarePlanView({
    *  Edit entry would be (member surfaces only — never the sitter). */
   showViewOnlyTag?: boolean;
 }) {
+  const { t } = useTranslation();
   const bird = (data.bird ?? {}) as any;
   const plan = (data.plan ?? {}) as any;
   const name = (bird.name ?? "this bird") as string;
@@ -171,10 +206,10 @@ export function CarePlanView({
   })();
 
   const groups = TIME_ORDER
-    .map((t) => ({ t, items: tasks.filter((x) => (x.time_of_day || "anytime") === t) }))
+    .map((time) => ({ time, items: tasks.filter((x) => (x.time_of_day || "anytime") === time) }))
     .filter((g) => g.items.length > 0);
   const ungrouped = tasks.filter((x) => !TIME_ORDER.includes(x.time_of_day || "anytime"));
-  if (ungrouped.length) groups.push({ t: "anytime", items: ungrouped });
+  if (ungrouped.length) groups.push({ time: "anytime", items: ungrouped });
 
   // Contacts only when the surface includes them (sitter shows them on its own
   // Emergency tab, so the care-sheet omits them).
@@ -257,7 +292,7 @@ export function CarePlanView({
                         on ? "bg-[var(--ink)] text-white" : "bg-white text-[var(--ink)] ring-1 ring-[var(--line2)]"
                       }`}
                     >
-                      {n.icon}{n.label}
+                      {n.icon}{displayLabel(t, n.label)}
                     </button>
                   );
                 })}
@@ -271,7 +306,7 @@ export function CarePlanView({
         {contextBanner}
         {canEdit && onEdit ? (
           <div className="-mb-1 flex justify-end">
-            <CtaLink label="Edit care plan" icon={<Pencil className="size-3.5" />} onPress={onEdit} />
+            <CtaLink label={t("carePlan.editCarePlan", "Edit care plan")} icon={<Pencil className="size-3.5" />} onPress={onEdit} />
           </div>
         ) : showViewOnlyTag ? (
           <div className="-mb-1 flex justify-end">
@@ -281,17 +316,17 @@ export function CarePlanView({
 
         {/* ------------------------------------------------------------ FOOD */}
         {present.food && (
-          <SectionCard id="food" coach={COACH.food} setRef={setRef("food")} icon={<Utensils className="size-5" />} eyebrow="Food" title={`What ${name} eats`}>
+          <SectionCard id="food" coach={COACH.food} setRef={setRef("food")} icon={<Utensils className="size-5" />} eyebrow={t("carePlan.food", "Food")} title={t("carePlan.whatEats", "What {{name}} eats", { name })}>
             {neverFeed.length > 0 && (
-              <DangerCallout title="Never feed · toxic to this bird">
+              <DangerCallout title={t("carePlan.neverFeedToxicToThis", "Never feed · toxic to this bird")}>
                 <DangerChips items={neverFeed} />
-                <p className="mt-2 text-xs font-medium">Keep these completely out of reach.</p>
+                <p className="mt-2 text-xs font-medium">{t("carePlan.keepTheseCompletelyOutOf", "Keep these completely out of reach.")}</p>
               </DangerCallout>
             )}
-            {showFeeding && <Callout>Don't introduce new foods while the owner is away.</Callout>}
-            {!hasStructuredFood && has(plan.food_instructions) && <Field label="Diet overview"><RichText text={plan.food_instructions} /></Field>}
-            {diet.length > 0 && <Field label="Diet types"><Chips items={diet} /></Field>}
-            {has(plan.diet_other) && <Field label="Other diet">{plan.diet_other}</Field>}
+            {showFeeding && <Callout>{t("carePlan.donTIntroduceNewFoods", "Don't introduce new foods while the owner is away.")}</Callout>}
+            {!hasStructuredFood && has(plan.food_instructions) && <Field label={t("carePlan.dietOverview", "Diet overview")}><RichText text={plan.food_instructions} /></Field>}
+            {diet.length > 0 && <Field label={t("carePlan.dietTypes", "Diet types")}><Chips items={diet} /></Field>}
+            {has(plan.diet_other) && <Field label={t("carePlan.otherDiet", "Other diet")}>{plan.diet_other}</Field>}
             {hasPerFoodDetails ? (
               <div className="space-y-2">
                 {foodRows.map((f, i) => (
@@ -308,18 +343,18 @@ export function CarePlanView({
               </div>
             ) : (
               (has(plan.food_brand) || has(plan.amount_value)) && (
-                <Field label="Brand & amount">{`${plan.food_brand ?? ""}${has(plan.amount_value) ? ` · ${formatAmountUnit(plan.amount_value, plan.amount_unit)}` : ""}`.trim()}</Field>
+                <Field label={t("carePlan.brandAmount", "Brand & amount")}>{`${plan.food_brand ?? ""}${has(plan.amount_value) ? ` · ${formatAmountUnit(plan.amount_value, plan.amount_unit)}` : ""}`.trim()}</Field>
               )
             )}
             {!foodRows.some((f) => f.times.length > 0) && feedingTimes.length > 0 && (
-              <Field label="Feeding times"><Chips items={feedingTimes} /></Field>
+              <Field label={t("carePlan.feedingTimes", "Feeding times")}><Chips items={feedingTimes} /></Field>
             )}
-            {freshFoods.length > 0 && <Field label="Fresh foods"><Chips items={freshFoods} /></Field>}
-            {has(plan.fresh_foods_other) && <Field label="Other fresh foods">{plan.fresh_foods_other}</Field>}
+            {freshFoods.length > 0 && <Field label={t("carePlan.freshFoods", "Fresh foods")}><Chips items={freshFoods} /></Field>}
+            {has(plan.fresh_foods_other) && <Field label={t("carePlan.otherFreshFoods", "Other fresh foods")}>{plan.fresh_foods_other}</Field>}
             {(has(plan.treats_notes) || has(plan.treats_frequency)) && (
-              <Field label="Treats">
+              <Field label={t("carePlan.treats", "Treats")}>
                 {has(plan.treats_frequency) && (
-                  <KVList rows={[{ label: "Frequency", value: prettyLabel(plan.treats_frequency, TREATS_FREQ_LABELS) }]} />
+                  <KVList rows={[{ label: t("carePlan.frequency", "Frequency"), value: prettyLabel(plan.treats_frequency, TREATS_FREQ_LABELS) }]} />
                 )}
                 {has(plan.treats_notes) && (
                   <p className={`text-sm text-[var(--ink)] whitespace-pre-line ${has(plan.treats_frequency) ? "mt-2" : ""}`}>{plan.treats_notes}</p>
@@ -327,9 +362,9 @@ export function CarePlanView({
               </Field>
             )}
             {(has(plan.water_frequency) || has(plan.water_notes) || has(plan.water_instructions)) && (
-              <Field label="Water">
+              <Field label={t("carePlan.water", "Water")}>
                 {has(plan.water_frequency) && (
-                  <KVList rows={[{ label: "Change water", value: prettyLabel(plan.water_frequency, WATER_FREQ_LABELS) }]} />
+                  <KVList rows={[{ label: t("carePlan.changeWater", "Change water"), value: prettyLabel(plan.water_frequency, WATER_FREQ_LABELS) }]} />
                 )}
                 {(has(plan.water_notes) || (!has(plan.water_frequency) && has(plan.water_instructions))) && (
                   <p className={`text-sm text-[var(--ink)] whitespace-pre-line ${has(plan.water_frequency) ? "mt-2" : ""}`}>
@@ -338,38 +373,38 @@ export function CarePlanView({
                 )}
               </Field>
             )}
-            <Field label="Freshness & hygiene">
+            <Field label={t("carePlan.freshnessHygiene", "Freshness & hygiene")}>
               <KVList
                 rows={[
-                  { label: "Remove fresh food", value: `Within ${formatRemovalMinutes(plan.fresh_food_removal_minutes)}` },
-                  { label: "Wash food bowls", value: prettyLabel(plan.food_bowl_wash_cadence, BOWL_WASH_LABELS) },
-                  { label: "Wash water bowl", value: prettyLabel(plan.water_bowl_wash_cadence, BOWL_WASH_LABELS) },
+                  { label: t("carePlan.removeFreshFood", "Remove fresh food"), value: t("carePlan.withinDuration", "Within {{duration}}", { duration: formatRemovalMinutes(plan.fresh_food_removal_minutes) }) },
+                  { label: t("carePlan.washFoodBowls", "Wash food bowls"), value: prettyLabel(plan.food_bowl_wash_cadence, BOWL_WASH_LABELS) },
+                  { label: t("carePlan.washWaterBowl", "Wash water bowl"), value: prettyLabel(plan.water_bowl_wash_cadence, BOWL_WASH_LABELS) },
                 ]}
               />
               {has(plan.food_hygiene_notes) && <p className="mt-2 text-xs text-[var(--mute)] whitespace-pre-line">{plan.food_hygiene_notes}</p>}
             </Field>
-            {has(plan.food_storage) && <Field label="Food storage">{plan.food_storage}</Field>}
+            {has(plan.food_storage) && <Field label={t("carePlan.foodStorage", "Food storage")}>{plan.food_storage}</Field>}
             <ClipField clip={clipByKey("food_water")} />
           </SectionCard>
         )}
 
         {/* -------------------------------------------------------- BEHAVIOR */}
         {present.behavior && (
-          <SectionCard id="behavior" coach={COACH.behavior} setRef={setRef("behavior")} icon={<Smile className="size-5" />} eyebrow="Behavior" title={`Handling ${name}`}>
+          <SectionCard id="behavior" coach={COACH.behavior} setRef={setRef("behavior")} icon={<Smile className="size-5" />} eyebrow={t("carePlan.behavior", "Behavior")} title={t("carePlan.handling", "Handling {{name}}", { name })}>
             {(handlingDangerous || has(plan.bite_risk)) && (
-              <Callout>This bird has handling restrictions — read this section before any contact.</Callout>
+              <Callout>{t("carePlan.thisBirdHasHandlingRestrictions", "This bird has handling restrictions — read this section before any contact.")}</Callout>
             )}
             <StepUpField stepUp={plan.step_up} notes={plan.step_up_notes} />
-            {has(plan.handlers) && <Field label="Who can handle">{plan.handlers}</Field>}
+            {has(plan.handlers) && <Field label={t("carePlan.whoCanHandle", "Who can handle")}>{plan.handlers}</Field>}
             {!has(plan.step_up) && !has(plan.step_up_notes) && !has(plan.handlers) && has(plan.handling_rules) && (
-              <Field label="Handling rules">{plan.handling_rules}</Field>
+              <Field label={t("carePlan.handlingRules", "Handling rules")}>{plan.handling_rules}</Field>
             )}
-            {has(plan.likes) && <Field label="Likes">{plan.likes}</Field>}
+            {has(plan.likes) && <Field label={t("carePlan.likes", "Likes")}>{plan.likes}</Field>}
             {(has(plan.fears_triggers) || has(plan.known_triggers)) && (
-              <Callout label="Fears & triggers">{joinUnique([plan.fears_triggers, plan.known_triggers])}</Callout>
+              <Callout label={t("carePlan.fearsTriggers", "Fears & triggers")}>{joinUnique([plan.fears_triggers, plan.known_triggers])}</Callout>
             )}
             {has(plan.bite_risk) && (
-              <DangerCallout title="Bite warning signs" icon={<ShieldAlert className="size-3.5" />}>
+              <DangerCallout title={t("carePlan.biteWarningSigns", "Bite warning signs")} icon={<ShieldAlert className="size-3.5" />}>
                 <p className="text-sm whitespace-pre-line">{plan.bite_risk}</p>
               </DangerCallout>
             )}
@@ -379,49 +414,49 @@ export function CarePlanView({
 
         {/* ------------------------------------------------------------ HOME */}
         {present.home && (
-          <SectionCard id="home" coach={COACH.home} setRef={setRef("home")} icon={<HomeIcon className="size-5" />} eyebrow="Home & safety" title={`${name}'s home & safety`}>
+          <SectionCard id="home" coach={COACH.home} setRef={setRef("home")} icon={<HomeIcon className="size-5" />} eyebrow={t("carePlan.homeSafety", "Home & safety")} title={`${name}'s home & safety`}>
             {hazards.length > 0 && (
-              <DangerCallout title="Household hazards · keep away">
+              <DangerCallout title={t("carePlan.householdHazardsKeepAway", "Household hazards · keep away")}>
                 <DangerChips items={hazards} />
                 {has(plan.hazards_other) && <p className="mt-2 text-sm whitespace-pre-line">{plan.hazards_other}</p>}
               </DangerCallout>
             )}
-            {has(plan.cage_location) && <Field label="Cage location">{plan.cage_location}</Field>}
+            {has(plan.cage_location) && <Field label={t("carePlan.cageLocation", "Cage location")}>{plan.cage_location}</Field>}
             {(has(plan.out_of_cage_mode) || has(plan.out_of_cage_notes) || has(plan.out_of_cage_rules)) && (
-              <Field label="Out-of-cage rules">
+              <Field label={t("carePlan.outOfCageRules", "Out-of-cage rules")}>
                 {has(plan.out_of_cage_mode) || has(plan.out_of_cage_notes)
                   ? joinUnique([prettyLabel(plan.out_of_cage_mode, OUT_OF_CAGE_LABELS), plan.out_of_cage_notes])
                   : plan.out_of_cage_rules}
               </Field>
             )}
             {(has(plan.off_limits) || has(plan.off_limits_rooms)) && (
-              <Field label="Off-limits areas">{joinUnique([plan.off_limits, plan.off_limits_rooms])}</Field>
+              <Field label={t("carePlan.offLimitsAreas", "Off-limits areas")}>{joinUnique([plan.off_limits, plan.off_limits_rooms])}</Field>
             )}
-            {hazards.length === 0 && has(plan.safety_rules) && <Field label="Safety rules">{plan.safety_rules}</Field>}
-            {has(plan.other_pets) && <Field label="Other pets">{plan.other_pets}</Field>}
+            {hazards.length === 0 && has(plan.safety_rules) && <Field label={t("carePlan.safetyRules", "Safety rules")}>{plan.safety_rules}</Field>}
+            {has(plan.other_pets) && <Field label={t("carePlan.otherPets", "Other pets")}>{plan.other_pets}</Field>}
             <ClipField clip={clipByKey("locations")} />
           </SectionCard>
         )}
 
         {/* ---------------------------------------------------------- HEALTH */}
         {present.health && (
-          <SectionCard id="health" coach={COACH.health} setRef={setRef("health")} icon={<Stethoscope className="size-5" />} eyebrow="Health" title={`What's normal for ${name}`}>
-            {weightStr && <Metric value={weightStr} caption="Normal weight" />}
-            {has(plan.whats_normal) && <Field label="What's normal (overall)">{plan.whats_normal}</Field>}
-            {has(plan.normal_appetite) && <Field label="Normal appetite">{plan.normal_appetite}</Field>}
-            {has(plan.normal_droppings) && <Field label="Normal droppings">{plan.normal_droppings}</Field>}
-            {has(plan.normal_noise) && <Field label="Normal noise">{plan.normal_noise}</Field>}
-            {has(plan.normal_activity) && <Field label="Normal activity">{plan.normal_activity}</Field>}
-            {has(plan.normal_sleep) && <Field label="Normal sleep">{plan.normal_sleep}</Field>}
-            {has(plan.normal_behavior_with_strangers) && <Field label="With strangers">{plan.normal_behavior_with_strangers}</Field>}
-            {has(bird.medical_conditions) && <Field label="Medical conditions">{bird.medical_conditions}</Field>}
+          <SectionCard id="health" coach={COACH.health} setRef={setRef("health")} icon={<Stethoscope className="size-5" />} eyebrow={t("carePlan.health", "Health")} title={t("carePlan.whatsNormal", "What's normal for {{name}}", { name })}>
+            {weightStr && <Metric value={weightStr} caption={t("carePlan.normalWeight", "Normal weight")} />}
+            {has(plan.whats_normal) && <Field label={t("carePlan.whatSNormalOverall", "What's normal (overall)")}>{plan.whats_normal}</Field>}
+            {has(plan.normal_appetite) && <Field label={t("carePlan.normalAppetite", "Normal appetite")}>{plan.normal_appetite}</Field>}
+            {has(plan.normal_droppings) && <Field label={t("carePlan.normalDroppings", "Normal droppings")}>{plan.normal_droppings}</Field>}
+            {has(plan.normal_noise) && <Field label={t("carePlan.normalNoise", "Normal noise")}>{plan.normal_noise}</Field>}
+            {has(plan.normal_activity) && <Field label={t("carePlan.normalActivity", "Normal activity")}>{plan.normal_activity}</Field>}
+            {has(plan.normal_sleep) && <Field label={t("carePlan.normalSleep", "Normal sleep")}>{plan.normal_sleep}</Field>}
+            {has(plan.normal_behavior_with_strangers) && <Field label={t("carePlan.withStrangers", "With strangers")}>{plan.normal_behavior_with_strangers}</Field>}
+            {has(bird.medical_conditions) && <Field label={t("carePlan.medicalConditions", "Medical conditions")}>{bird.medical_conditions}</Field>}
             {(has(bird.medications) || has(plan.medication_schedule)) && (
-              <Field label="Medications">{joinUnique([bird.medications, plan.medication_schedule])}</Field>
+              <Field label={t("carePlan.medications", "Medications")}>{joinUnique([bird.medications, plan.medication_schedule])}</Field>
             )}
             {baselineClipUrl && (
               <div className="overflow-hidden rounded-[12px] ring-1 ring-[var(--line2)]">
-                <ClipPlayer src={baselineClipUrl} label="Normal-behavior clip" className="aspect-video" />
-                <p className="bg-white px-2 py-1.5 text-[11px] font-medium text-[var(--ink)]">Normal-behavior clip</p>
+                <ClipPlayer src={baselineClipUrl} label={t("carePlan.normalBehaviorClip", "Normal-behavior clip")} className="aspect-video" />
+                <p className="bg-white px-2 py-1.5 text-[11px] font-medium text-[var(--ink)]">{t("carePlan.normalBehaviorClip", "Normal-behavior clip")}</p>
               </div>
             )}
           </SectionCard>
@@ -429,10 +464,10 @@ export function CarePlanView({
 
         {/* --------------------------------------------------------- ROUTINE */}
         {present.routine && (
-          <SectionCard id="routine" setRef={setRef("routine")} icon={<CalendarClock className="size-5" />} eyebrow="Routine" title="Daily rhythm">
+          <SectionCard id="routine" setRef={setRef("routine")} icon={<CalendarClock className="size-5" />} eyebrow={t("carePlan.routine", "Routine")} title={t("carePlan.dailyRhythm", "Daily rhythm")}>
             {groups.map((g) => (
-              <div key={g.t}>
-                <p className="t-eyebrow text-[var(--teal-on-cream)]">{TIME_LABEL[g.t] ?? g.t}</p>
+              <div key={g.time}>
+                <p className="t-eyebrow text-[var(--teal-on-cream)]">{displayLabel(t, TIME_LABEL[g.time] ?? g.time)}</p>
                 <ul className="mt-1.5 space-y-1.5">
                   {g.items.map((it) => (
                     <li key={it.id} className="text-sm font-medium text-[var(--ink)]">
@@ -449,12 +484,12 @@ export function CarePlanView({
 
         {/* ------------------------------------------------------- EMERGENCY */}
         {present.emergency && (
-          <SectionCard id="emergency" coach={COACH.emergency} setRef={setRef("emergency")} icon={<Siren className="size-5" />} eyebrow="Emergency" title="Emergency" tone="red">
+          <SectionCard id="emergency" coach={COACH.emergency} setRef={setRef("emergency")} icon={<Siren className="size-5" />} eyebrow={t("carePlan.emergency", "Emergency")} title={t("carePlan.emergency", "Emergency")} tone="red">
             {hasWhenToCall && (
-              <Callout label="When to call">
+              <Callout label={t("carePlan.whenToCall", "When to call")}>
                 {joinUnique([
-                  has(plan.when_to_call_owner) && `Call the owner: ${plan.when_to_call_owner}`,
-                  has(plan.when_to_call_vet) && `Call the vet: ${plan.when_to_call_vet}`,
+                  has(plan.when_to_call_owner) && t("carePlan.callOwner", "Call the owner: {{info}}", { info: plan.when_to_call_owner }),
+                  has(plan.when_to_call_vet) && t("carePlan.callVet", "Call the vet: {{info}}", { info: plan.when_to_call_vet }),
                 ])}
               </Callout>
             )}
@@ -465,7 +500,7 @@ export function CarePlanView({
                   const isPhone = /phone|control|owner/.test(r.key) && /[0-9]/.test(v);
                   return (
                     <div key={r.key} className={`flex items-baseline justify-between gap-4 py-2 ${i > 0 ? "border-t border-[var(--line)]" : ""}`}>
-                      <span className="shrink-0 text-[13px] text-[var(--mute)]">{r.label}</span>
+                      <span className="shrink-0 text-[13px] text-[var(--mute)]">{displayLabel(t, r.label)}</span>
                       <span className="min-w-0 text-right text-sm font-medium text-[var(--ink)]">
                         {isPhone ? (
                           <a href={`tel:${v.replace(/[^0-9+]/g, "")}`} className="inline-flex items-center gap-1.5 text-[var(--ink)] underline">

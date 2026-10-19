@@ -3,7 +3,6 @@ import { useEffect } from "react";
 import { ArrowRight } from "lucide-react";
 import { hasStoredSession, getReadySession } from "@/lib/authReady";
 import { track } from "@/lib/analytics";
-import { loadTikTokPixel } from "@/lib/tiktokPixel";
 import { Disclaimer } from "@/components/Disclaimer";
 import { BrandLockup } from "@/components/BrandLogo";
 
@@ -48,11 +47,6 @@ function Welcome() {
     });
     return () => { cancelled = true; };
   }, [navigate]);
-
-  // Ad-traffic pageview for TikTok campaigns (marketing pages only).
-  useEffect(() => {
-    loadTikTokPixel();
-  }, []);
 
   return (
     <div className="min-h-screen bg-[#f4f1e8]">

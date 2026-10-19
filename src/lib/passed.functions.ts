@@ -23,5 +23,15 @@ export const markBirdPassed = createServerFn({ method: "POST" })
 
     const { error } = await sb.from("birds").update({ passed_at: new Date().toISOString() } as any).eq("id", data.birdId);
     if (error) throw new Error(error.message);
+
+    // Tell Brittany now, so she can review the condolence note before anything
+    // goes to the owner. Never fails the owner's action: the daily
+    // bereavement-note cron queues anything this misses.
+    try {
+      const { queueBereavementReviews } = await import("./bereavementReview.server");
+      await queueBereavementReviews({ birdIds: [data.birdId] });
+    } catch (e) {
+      console.error("[passed] bereavement review queue failed", e);
+    }
     return { ok: true };
   });

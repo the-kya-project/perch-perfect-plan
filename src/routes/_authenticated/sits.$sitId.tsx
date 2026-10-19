@@ -11,8 +11,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { resolveHouseholdNames } from "@/lib/home.functions";
 import { memberDisplayName, firstName } from "@/lib/memberDisplay";
 import { useHouseholdCapability, useMyPermissions } from "@/lib/useCapability";
-import { formatDateRangeUS } from "@/lib/dates";
+import { formatDateRangeUS, formatLocalDateTime } from "@/lib/dates";
 import { friendlyError } from "@/lib/errorMessage";
+import { localDateISO } from "@/lib/localDay";
 
 // Past Sits detail view — the sit's own activity feed, derived strictly from
 // sit_id attribution on the logs that ran inside the window. Reachable from a
@@ -117,7 +118,7 @@ function SitDetail() {
   // manage_sits. RLS ("sits delete") enforces the same rule server-side.
   const isOwner = !!perms?.myId && perms.myId === sit.owner_id;
   const canDelete = isOwner || canManageSits;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localDateISO();
   // Active = a sitter is currently covering: live window (today between the
   // dates) and not revoked. Deleting one mid-sit pulls coverage out from under them.
   const isActiveSit = !sit.revoked && sit.start_date <= today && sit.end_date >= today;
@@ -333,5 +334,5 @@ function Loader() {
 }
 
 function fmtWhen(iso: string): string {
-  return new Date(iso).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  return formatLocalDateTime(new Date(iso), { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 }

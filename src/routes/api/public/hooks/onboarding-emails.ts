@@ -47,6 +47,7 @@
  * Serverless gotcha (memory/perch-serverless-fire-and-forget): every send is
  * awaited before the response returns — nothing fire-and-forget here.
  */
+import { withErrorTelemetry } from "@/lib/errorTelemetry";
 import { createFileRoute } from "@tanstack/react-router";
 import { withCronTelemetry } from "@/lib/cronTelemetry";
 import {
@@ -92,7 +93,7 @@ async function selectAll<T>(
 export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
   server: {
     handlers: {
-      POST: withCronTelemetry("onboarding-emails", async ({ request }) => {
+      POST: withCronTelemetry("onboarding-emails", withErrorTelemetry("/api/public/hooks/onboarding-emails", async ({ request }) => {
         const secret = process.env.CARE_PLAN_REMINDER_SECRET;
         if (!secret) {
           return Response.json({ ok: false, error: "CARE_PLAN_REMINDER_SECRET not configured" }, { status: 503 });
@@ -302,6 +303,9 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
             // Gmail and Apple Mail put their own unsubscribe button beside the
             // sender when these are present.
             headers: unsubHeaders(appUrl, userId, "onboarding"),
+            // The stage is the email's tag: Brevo groups sends by it, and it is
+            // utm_campaign on every link back into the app.
+            tag: stage,
           });
           if (!res.ok) {
             // Nothing logged: the slot stays open and retries on the next run.
@@ -319,7 +323,7 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
         }
 
         return Response.json({ ok: true, considered: accounts.length, sent, skipped, holds, failed, logErrors });
-      }),
+      })),
     },
   },
 });

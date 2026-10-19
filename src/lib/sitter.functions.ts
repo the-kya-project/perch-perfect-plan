@@ -10,6 +10,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { computeTriage, type ScanAnswer, type ScanFieldKey } from "./triage";
+import { resolveToday } from "./localDay";
 import { buildDailyLogEmail, buildSitterConcernEmail } from "./emailTemplates";
 import { emailT } from "./i18n/emailI18n.server";
 import { mergeEmergency } from "./emergency";
@@ -106,8 +107,8 @@ async function assertTaskInSit(sitId: string, taskId: string) {
 }
 
 export const getSitterContext = createServerFn({ method: "GET" })
-  .inputValidator((d: { token: string; birdId?: string }) =>
-    z.object({ token: z.string().min(8), birdId: z.string().uuid().optional() }).parse(d),
+  .inputValidator((d: { token: string; birdId?: string; today?: string }) =>
+    z.object({ token: z.string().min(8), birdId: z.string().uuid().optional(), today: z.string().optional() }).parse(d),
   )
   .handler(async ({ data }) => {
     const sb = await getAdmin();
@@ -132,7 +133,7 @@ export const getSitterContext = createServerFn({ method: "GET" })
 
     // PERF: two parallel stages instead of ~11 sequential ones. Stage 1 needs
     // only sit.id / activeId / the birds list; stage 2 needs the bird/plan rows.
-    const today = new Date().toISOString().slice(0, 10);
+    const today = resolveToday(data.today);
     const [birdRes, planRes, contactsRes, completionsRes, todayLogRes, sitBirdRes, signedBirds] = await Promise.all([
       sb.from("birds").select("*").eq("id", activeId).maybeSingle(),
       sb.from("care_plans").select("*").eq("bird_id", activeId).maybeSingle(),
@@ -313,17 +314,19 @@ export async function notifyOwnerSomethingWrong(sb: any, birdId: string, coverin
         subject: built.subject,
         htmlContent: built.html,
         textContent: built.text,
+        tag: "sitter_concern",
       });
     }
   } catch (e) { console.error("[sitter-concern] email failed", e); }
 }
 
 export const toggleTaskCompletion = createServerFn({ method: "POST" })
-  .inputValidator((d: { token: string; taskId: string; completed: boolean }) =>
+  .inputValidator((d: { token: string; taskId: string; completed: boolean; today?: string }) =>
     z.object({
       token: z.string().min(8),
       taskId: z.string().uuid(),
       completed: z.boolean(),
+      today: z.string().optional(),
     }).parse(d),
   )
   .handler(async ({ data }) => {
@@ -331,7 +334,7 @@ export const toggleTaskCompletion = createServerFn({ method: "POST" })
     const sit = await loadSitByToken(data.token);
     assertNotPreview(sit);
     await assertTaskInSit(sit.id, data.taskId);
-    const today = new Date().toISOString().slice(0, 10);
+    const today = resolveToday(data.today);
     if (data.completed) {
       await sb.from("task_completions").upsert(
         { sit_id: sit.id, routine_task_id: data.taskId, completed_date: today },
@@ -418,7 +421,7 @@ function escapeHtml(s: string): string {
 
 export const submitHealthScan = createServerFn({ method: "POST" })
   .inputValidator(
-    (d: { token: string; birdId: string; answers: Record<string, ScanAnswer>; itemNotes?: Record<string, string>; notes?: string; photoDataUrl?: string; weightGrams?: number }) =>
+    (d: { token: string; birdId: string; answers: Record<string, ScanAnswer>; itemNotes?: Record<string, string>; notes?: string; photoDataUrl?: string; weightGrams?: number; today?: string }) =>
       z
         .object({
           token: z.string().min(8),
@@ -431,6 +434,8 @@ export const submitHealthScan = createServerFn({ method: "POST" })
           photoDataUrl: z.string().startsWith("data:image/").max(4_000_000).optional(),
           // Optional weigh-in — flows into the owner's weight timeline.
           weightGrams: z.number().positive().max(5000).optional(),
+          // The sitter's local date, so an evening check isn't filed under tomorrow.
+          today: z.string().optional(),
         })
         .parse(d),
   )
@@ -440,7 +445,7 @@ export const submitHealthScan = createServerFn({ method: "POST" })
     assertNotPreview(sit);
     await assertBirdInSit(sit.id, data.birdId);
     const triage = computeTriage(data.answers as Record<ScanFieldKey, ScanAnswer>);
-    const today = new Date().toISOString().slice(0, 10);
+    const today = resolveToday(data.today);
     const a = data.answers as Record<string, string>;
     const { data: row, error } = await sb
       .from("daily_logs")
@@ -584,6 +589,7 @@ export const submitHealthScan = createServerFn({ method: "POST" })
               subject: built.subject,
               htmlContent: built.html,
               textContent: built.text,
+              tag: flagged ? "scan_alert" : "sitter_daily_log",
             });
             console.log("[scan] email result", sent);
           }
@@ -634,12 +640,12 @@ export const getSitterScans = createServerFn({ method: "GET" })
 // and today's health-scan status. Same underlying data as the Today tab, so the
 // dashboard and a bird's Today card always agree.
 export const getSitterDashboard = createServerFn({ method: "GET" })
-  .inputValidator((d: { token: string }) => z.object({ token: z.string().min(8) }).parse(d))
+  .inputValidator((d: { token: string; today?: string }) => z.object({ token: z.string().min(8), today: z.string().optional() }).parse(d))
   .handler(async ({ data }) => {
     const sb = await getAdmin();
     const sit = await loadSitByToken(data.token);
     const birdIds = await loadSitBirdIds(sit.id);
-    const today = new Date().toISOString().slice(0, 10);
+    const today = resolveToday(data.today);
 
     const [birdsRes, plansRes, compsRes, scansRes] = await Promise.all([
       // Passed birds leave the caregiver's list entirely (nothing left to care for).

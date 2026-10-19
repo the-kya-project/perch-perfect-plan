@@ -10,6 +10,7 @@ import { useBirdRole } from "@/lib/useBirdRole";
 import { OwnerHeaderIcons } from "@/components/OwnerHeader";
 import { resolveScanPhotoUrls } from "@/lib/scanPhoto";
 import { friendlyError } from "@/lib/errorMessage";
+import { formatLocalDateTime } from "@/lib/dates";
 
 // Focused, read-only view of one submitted health scan. Reached from the Scans
 // inbox (replaces the old deep-link into the care-plan editor's logs tab, which
@@ -130,7 +131,7 @@ function ScanDetail() {
   const triage = (row.triage_status ?? "green") as string;
   const concern = triage === "red" || triage === "yellow";
   const headline = triage === "red" ? "Concern flagged." : triage === "yellow" ? "Something to check." : "All clear.";
-  const when = new Date(row.created_at).toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  const when = formatLocalDateTime(new Date(row.created_at), { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
   const runBy = data!.actor === "You" ? "Run by you" : `Run by ${data!.actor}`;
   const notSure = SCAN_COLS.filter((f) => row[f.col] === "not_sure");
 

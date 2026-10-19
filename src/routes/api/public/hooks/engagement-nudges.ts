@@ -31,6 +31,7 @@
  * Auth: `Authorization: Bearer <CARE_PLAN_REMINDER_SECRET>`.
  * Body { "dryRun": true } → returns planned nudges, sends/logs nothing.
  */
+import { withErrorTelemetry } from "@/lib/errorTelemetry";
 import { createFileRoute } from "@tanstack/react-router";
 import { withCronTelemetry } from "@/lib/cronTelemetry";
 
@@ -58,7 +59,7 @@ function weightDueDays(entryDates: number[]): number {
 export const Route = createFileRoute("/api/public/hooks/engagement-nudges")({
   server: {
     handlers: {
-      POST: withCronTelemetry("engagement-nudges", async ({ request }) => {
+      POST: withCronTelemetry("engagement-nudges", withErrorTelemetry("/api/public/hooks/engagement-nudges", async ({ request }) => {
         const secret = process.env.CARE_PLAN_REMINDER_SECRET;
         if (!secret) {
           return Response.json({ ok: false, error: "CARE_PLAN_REMINDER_SECRET not configured" }, { status: 503 });
@@ -233,7 +234,7 @@ export const Route = createFileRoute("/api/public/hooks/engagement-nudges")({
         }
 
         return Response.json({ ok: true, planned: planned.length, sent });
-      }),
+      })),
     },
   },
 });

@@ -14,6 +14,8 @@ import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
 import { InkHero, Card, PrimaryButton } from "@/components/system";
 import { friendlyError } from "@/lib/errorMessage";
+import { formatLocalDate } from "@/lib/dates";
+import { localDateISO } from "@/lib/localDay";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/identity")({
   head: () => ({ meta: [{ title: "Identity — Kya & Co." }] }),
@@ -266,7 +268,7 @@ function IdentityForm({ birdId, bird, onClose, onSaved }: { birdId: string; bird
     }
   }
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localDateISO();
   return (
     <Card className="space-y-3 p-4">
       {/* Shared core: photo, name, species, age — same columns as the Basics tab */}
@@ -371,7 +373,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 function fmtDate(iso: string): string {
-  return new Date(`${iso}T12:00:00`).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+  return formatLocalDate(new Date(`${iso}T12:00:00`), { year: "numeric", month: "short", day: "numeric" });
 }
 
 function approxAge(iso: string): string {
