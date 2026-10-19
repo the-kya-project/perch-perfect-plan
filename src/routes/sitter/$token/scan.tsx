@@ -6,6 +6,7 @@ import { useSitterContext } from "./route";
 import { submitHealthScan, getSitterScans } from "@/lib/sitter.functions";
 import { SCAN_FIELDS, type ScanAnswer, type ScanFieldKey, computeTriage } from "@/lib/triage";
 import { ScanForm, type ScanSubmit } from "@/components/ScanForm";
+import { scanQuestion } from "@/lib/scanFieldLabels";
 import { ArrowLeft, History, ChevronDown, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { track } from "@/lib/analytics";
@@ -193,7 +194,7 @@ function ScanHistory({ token, birdId, birdName, onBack }: { token: string; birdI
                       <ul className="space-y-1.5">
                         {SCAN_FIELDS.map((f) => (
                           <li key={f.key} className="flex items-center justify-between gap-3 text-xs">
-                            <span className="text-[#1a3d2e]">{f.question.replace(/\?$/, "")}</span>
+                            <span className="text-[#1a3d2e]">{scanQuestion(t, f).replace(/\?$/, "")}</span>
                             <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${answerStyle(s[COL_BY_KEY[f.key]])}`}>
                               {answerLabel(s[COL_BY_KEY[f.key]], t)}
                             </span>

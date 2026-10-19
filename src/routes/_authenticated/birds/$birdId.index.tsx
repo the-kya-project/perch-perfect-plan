@@ -1,4 +1,5 @@
 import { friendlyError } from "@/lib/errorMessage";
+import { ageLabel } from "@/components/BirdPickers";
 import { useTranslation, Trans } from "react-i18next";
 import i18next, { type TFunction } from "i18next";
 import { createFileRoute, Link, useNavigate, useLocation } from "@tanstack/react-router";
@@ -158,7 +159,7 @@ function BirdRecordHero({ birdId }: { birdId: string }) {
   const photoOf = useBirdPhotos([bird?.photo_url], 800);
   const photo = photoOf(bird?.photo_url);
   const name = bird?.name ?? t("birdRecord.thisBird", "This bird");
-  const meta = [bird?.species || t("birdRecord.parrot", "Parrot"), bird?.age].filter(Boolean).join(" · ");
+  const meta = [bird?.species || t("birdRecord.parrot", "Parrot"), bird?.age ? ageLabel(t, bird.age) : null].filter(Boolean).join(" · ");
   const since = bird?.is_foster && bird?.intake_date ? t("birdRecord.withYouSince", "With you since {{date}}", { date: fmtMonthYear(bird.intake_date) }) : null;
   const identity = [meta, since].filter(Boolean).join(" · ");
   const [photoSheet, setPhotoSheet] = useState(false);
@@ -951,7 +952,7 @@ function BasicInfoCard({ birdId, bird, editable = true }: { birdId: string; bird
   }
 
   const speciesView = bird.species?.trim() || t("birdRecord.notSet", "Not set");
-  const ageView = bird.age?.trim() || t("birdRecord.notSet", "Not set");
+  const ageView = (bird.age?.trim() && ageLabel(t, bird.age.trim())) || t("birdRecord.notSet", "Not set");
   // Setup saves "Male"/"Female"; SEX_LABEL keys are lowercase, so look up case-insensitively.
   const sexKey = (bird.sex ?? "").toLowerCase();
   const sexView = sexKey === "male" ? t("birdRecord.male", "Male") : sexKey === "female" ? t("birdRecord.female", "Female") : sexKey === "unknown" ? t("birdRecord.unknown", "Unknown") : (bird.sex || t("birdRecord.notSet", "Not set"));

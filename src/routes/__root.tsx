@@ -227,6 +227,9 @@ function RootComponent() {
         void primeAccountRole(data.session.user.id);
         void ensureProfileLocale(data.session.user.id);
         syncPushToken();
+      } else {
+        // Signed out (sign-in, invite and handoff pages): follow the browser.
+        applyOwnerLocale(null);
       }
     });
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {

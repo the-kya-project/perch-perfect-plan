@@ -1,4 +1,5 @@
 import { ShieldAlert, Utensils, Smile, Home as HomeIcon, Stethoscope, Siren, Video } from "lucide-react";
+import { ageLabel } from "@/components/BirdPickers";
 import { clipSlotLabel } from "@/lib/clipSlotLabels";
 import { useTranslation } from "react-i18next";
 import { ClipPlayer } from "@/components/ClipPlayer";
@@ -106,7 +107,7 @@ export function CareSheetView({ data }: { data: CareSheetData }) {
             <div className="min-w-0">
               <p className="t-section leading-tight">{bird.name}</p>
               {has(bird.species) && <p className="text-sm text-[var(--mute)]">{bird.species}</p>}
-              {has(bird.age) && <p className="text-xs text-[var(--mute)]">{bird.age}</p>}
+              {has(bird.age) && <p className="text-xs text-[var(--mute)]">{ageLabel(t, bird.age)}</p>}
             </div>
           </div>
         </section>

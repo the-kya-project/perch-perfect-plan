@@ -936,10 +936,19 @@ const WATER_FREQ = [
   { value: "more", label: "More than twice daily" },
 ];
 
-const NEVER_DEFAULTS = [
-  "Chocolate", "Avocado", "Caffeine", "Alcohol",
-  "Onion & garlic", "Salt", "Fruit pits & apple seeds",
-];
+// Pre-filled starting list for a new plan. It's the owner's own free text once
+// saved, so it starts in the owner's language.
+function neverDefaults(t: TFunction): string[] {
+  return [
+    t("birdSetup.never.chocolate", "Chocolate"),
+    t("birdSetup.never.avocado", "Avocado"),
+    t("birdSetup.never.caffeine", "Caffeine"),
+    t("birdSetup.never.alcohol", "Alcohol"),
+    t("birdSetup.never.onionGarlic", "Onion & garlic"),
+    t("birdSetup.never.salt", "Salt"),
+    t("birdSetup.never.fruitPits", "Fruit pits & apple seeds"),
+  ];
+}
 
 const REMOVAL_OPTIONS = [
   { value: 60, label: "1 hour" },
@@ -1077,7 +1086,7 @@ export function FoodWaterStep({
     setTreatsNotes(plan.treats_notes ?? "");
     setTreatsFreq(plan.treats_frequency ?? "");
     const nv = (plan.never_feed ?? []) as string[];
-    setNever(nv.length ? nv : NEVER_DEFAULTS);
+    setNever(nv.length ? nv : neverDefaults(t));
     setWaterFreq(plan.water_frequency ?? "");
     setWaterNotes(plan.water_notes ?? "");
     setStorage(plan.food_storage ?? "");

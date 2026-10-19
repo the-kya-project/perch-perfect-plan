@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { ageLabel } from "@/components/BirdPickers";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -98,7 +99,7 @@ function ExportRecord() {
   }
 
   const identity: [string, string | null][] = [
-    [t("exportRecord.species", "Species"), row?.species ?? null], [t("exportRecord.sex", "Sex"), row?.sex ? sexLabel(row.sex) : null], [t("exportRecord.age", "Age"), row?.age ?? null],
+    [t("exportRecord.species", "Species"), row?.species ?? null], [t("exportRecord.sex", "Sex"), row?.sex ? sexLabel(row.sex) : null], [t("exportRecord.age", "Age"), row?.age ? ageLabel(t, row.age) : null],
     [t("exportRecord.microchip", "Microchip"), row?.microchip ?? null], [t("exportRecord.band", "Band"), row?.band_number ?? null], [t("exportRecord.origin", "Origin"), row?.origin ?? null],
     [t("exportRecord.cameToYou", "Came to you"), row?.intake_date ? fmtDate(row.intake_date) : null],
   ];

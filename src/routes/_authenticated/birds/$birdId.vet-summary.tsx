@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { ageLabel } from "@/components/BirdPickers";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -114,7 +115,7 @@ function VetSummary() {
   const identity: [string, string | null][] = [
     [t("vetSummary.species", "Species"), bird?.species ?? null],
     [t("vetSummary.sex", "Sex"), sexText],
-    [t("vetSummary.age", "Age"), bird?.age ?? null],
+    [t("vetSummary.age", "Age"), bird?.age ? ageLabel(t, bird.age) : null],
     [t("vetSummary.microchip", "Microchip"), bird?.microchip ?? null],
     [t("vetSummary.band", "Band"), bird?.band_number ?? null],
     [t("vetSummary.origin", "Origin"), bird?.origin ?? null],

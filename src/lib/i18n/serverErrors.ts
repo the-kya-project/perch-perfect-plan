@@ -9,7 +9,7 @@
 // the KNOWN messages when it shows them. Anything unrecognised is returned as
 // null and the caller shows the raw text exactly as before.
 //
-// Each case is a literal t("serverError.*", "English") call so i18next-parser
+// Each case is a literal t() call with a serverError.<name> key and the English call so i18next-parser
 // extracts it; the English default is the exact server string, so English
 // output is byte-identical. When a server message changes, change it here too —
 // an unmatched message simply stops being translated, it never breaks.

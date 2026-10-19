@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { ageLabel } from "@/components/BirdPickers";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import i18next from "i18next";
@@ -39,7 +40,7 @@ function HouseholdCarePlan() {
 
   const bird = (data?.bird ?? {}) as any;
   const name = (bird.name ?? t("planEditor.thisBird", "this bird")) as string;
-  const speciesAge = [bird.species, bird.age].filter((x: any) => (x ?? "").toString().trim()).join(" · ");
+  const speciesAge = [bird.species, bird.age ? ageLabel(t, bird.age) : null].filter((x: any) => (x ?? "").toString().trim()).join(" · ");
 
   return (
     <div className="min-h-screen bg-[var(--cream)] pb-nav">
