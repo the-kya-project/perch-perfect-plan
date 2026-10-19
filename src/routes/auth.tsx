@@ -46,6 +46,12 @@ function AuthPage() {
   const [lastName, setLastName] = useState("");
   const [marketingOptIn, setMarketingOptIn] = useState(true);
   const [loading, setLoading] = useState(false);
+  // Read after mount, not during render: the server can't tell it's rendering
+  // for the iOS app, so rendering the Apple button from isIOSApp() directly made
+  // the server HTML and the app's first render disagree whenever the app opened
+  // straight onto /auth (React errors #422/#520, recovered by a re-render).
+  const [showApple, setShowApple] = useState(false);
+  useEffect(() => setShowApple(isIOSApp()), []);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -270,7 +276,7 @@ function AuthPage() {
               {t("auth.continueWithGoogle", "Continue with Google")}
             </PrimaryButton>
 
-            {isIOSApp() && (
+            {showApple && (
               <div className="mt-3">
                 <PrimaryButton
                   tone="outline"
