@@ -41,6 +41,12 @@
  *   { "dryRun": true, "simulateDays": 30 }   → the plan run forward N days,
  *                                              assuming every send succeeds and
  *                                              nobody does anything in the app
+ *   { "testSend": { "userId": "…", "stage": "welcome" } }
+ *                                            → send that one stage to that one
+ *                                              account now, as a TEST: Brevo tag
+ *                                              qa_preview, click rows is_test,
+ *                                              nothing written to the log. For
+ *                                              checking the click tracker.
  *   { "audit": "no_bird" }                   → pre-launch accounts with no bird
  *                                              (the manual-campaign list)
  *
@@ -51,6 +57,7 @@ import { withErrorTelemetry } from "@/lib/errorTelemetry";
 import { createFileRoute } from "@tanstack/react-router";
 import { withCronTelemetry } from "@/lib/cronTelemetry";
 import {
+  SLOTS,
   STAGE_FEATURE,
   buildAccounts,
   decide,
@@ -105,11 +112,15 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
         let dryRun = false;
         let audit: string | null = null;
         let simulateDays = 0;
+        let testSend: { userId: string; stage: Slot } | null = null;
         try {
           const body = await request.clone().json();
           dryRun = body?.dryRun === true;
           audit = typeof body?.audit === "string" ? body.audit : null;
           if (Number.isInteger(body?.simulateDays)) simulateDays = Math.min(Math.max(body.simulateDays, 1), 60);
+          if (body?.testSend && typeof body.testSend.userId === "string" && (SLOTS as readonly string[]).includes(body.testSend.stage)) {
+            testSend = { userId: body.testSend.userId, stage: body.testSend.stage as Slot };
+          }
         } catch { /* empty body is fine */ }
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -200,7 +211,7 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
           decisions.push({ account, decision });
         }
 
-        if (dryRun) {
+        if (dryRun && !testSend) {
           return Response.json({
             ok: true,
             dryRun: true,
@@ -234,33 +245,13 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
         } = await import("@/lib/flockEmails");
         const { sendTransactionalEmail, founderReplyTo } = await import("@/lib/brevoEmail.server");
 
-        const sent: Record<string, number> = {};
-        const skipped: Record<string, number> = {};
-        let failed = 0;
-        let logErrors = 0;
-
-        for (const { account, decision } of decisions) {
+        /** Build one stage's email for one account and send it, through the
+         *  same path the cron uses. `test` sends are for checking the tracker:
+         *  Brevo tag qa_preview, click rows flagged is_test, nothing logged. */
+        async function sendStage(account: OnboardingAccount, stage: Slot, ctaVariant: "standard" | "no_bird", test = false) {
           const userId = account.userId;
-          // Skips first: they are facts about the account right now and stand
-          // whether or not today's send goes through. ignoreDuplicates keeps a
-          // double-fired run from erroring on the primary key.
-          if (decision.skips.length) {
-            const { error } = await db.from("onboarding_email_log").upsert(
-              decision.skips.map((s) => ({ user_id: userId, stage: s.stage, status: "skipped", skipped_reason: s.reason, sent_at: now.toISOString() })),
-              { onConflict: "user_id,stage", ignoreDuplicates: true },
-            );
-            if (error) {
-              logErrors += 1;
-              console.error("[onboarding-emails] skip log failed", userId, error.message);
-              continue; // don't send past slots we couldn't record as settled
-            }
-            for (const s of decision.skips) skipped[`${s.stage}:${s.reason}`] = (skipped[`${s.stage}:${s.reason}`] ?? 0) + 1;
-          }
-          if (!decision.send) continue;
-
-          const { stage, ctaVariant } = decision.send;
           const email = await emailFor(userId);
-          if (!email) continue;
+          if (!email) return { ok: false as const, skipped: "no-email" };
           const profile = profileById.get(userId);
           const firstName = ((profile?.display_name ?? "").trim().split(/\s+/)[0] || "").trim() || undefined;
           const locale = profile?.locale ?? undefined;
@@ -291,7 +282,7 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
                           ? buildSeriesSharingEmail(common)
                           : buildSeriesVetEmail(common);
 
-          const res = await sendTransactionalEmail({
+          return sendTransactionalEmail({
             to: email,
             toName: profile?.display_name ?? undefined,
             subject: built.subject,
@@ -304,12 +295,55 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
             // sender when these are present.
             headers: unsubHeaders(appUrl, userId, "onboarding"),
             // The stage is the email's tag: Brevo groups sends by it, and it is
-            // utm_campaign on every link back into the app.
-            tag: stage,
+            // utm_campaign on every link back into the app. A test send is kept
+            // out of Brevo's numbers.
+            tag: test ? "qa_preview" : stage,
+            // Every link goes through the /r/ click tracker, which records the
+            // stage, the button variant and which link was clicked.
+            clicks: { userId, variant: ctaVariant, email: stage, test },
           });
+        }
+
+        if (testSend) {
+          const account = accounts.find((a) => a.userId === testSend!.userId);
+          if (!account) return Response.json({ ok: false, error: "no such account" }, { status: 404 });
+          const nudge = testSend.stage === "add_first_bird" || testSend.stage === "add_first_bird_reminder";
+          // The variant the account would get today: nudges are no-bird by
+          // definition, everything else follows whether there is a bird.
+          const variant = nudge || !account.hasBird ? "no_bird" : "standard";
+          const res = await sendStage(account, testSend.stage, variant, true);
+          return Response.json({ ok: res.ok, test: true, stage: testSend.stage, ctaVariant: variant, result: res });
+        }
+
+        const sent: Record<string, number> = {};
+        const skipped: Record<string, number> = {};
+        let failed = 0;
+        let logErrors = 0;
+
+        for (const { account, decision } of decisions) {
+          const userId = account.userId;
+          // Skips first: they are facts about the account right now and stand
+          // whether or not today's send goes through. ignoreDuplicates keeps a
+          // double-fired run from erroring on the primary key.
+          if (decision.skips.length) {
+            const { error } = await db.from("onboarding_email_log").upsert(
+              decision.skips.map((s) => ({ user_id: userId, stage: s.stage, status: "skipped", skipped_reason: s.reason, sent_at: now.toISOString() })),
+              { onConflict: "user_id,stage", ignoreDuplicates: true },
+            );
+            if (error) {
+              logErrors += 1;
+              console.error("[onboarding-emails] skip log failed", userId, error.message);
+              continue; // don't send past slots we couldn't record as settled
+            }
+            for (const s of decision.skips) skipped[`${s.stage}:${s.reason}`] = (skipped[`${s.stage}:${s.reason}`] ?? 0) + 1;
+          }
+          if (!decision.send) continue;
+
+          const { stage, ctaVariant } = decision.send;
+          const res = await sendStage(account, stage, ctaVariant);
           if (!res.ok) {
             // Nothing logged: the slot stays open and retries on the next run.
-            failed += 1;
+            if (!("skipped" in res && res.skipped === "no-email")) failed += 1;
             continue;
           }
           const { error: logErr } = await db
