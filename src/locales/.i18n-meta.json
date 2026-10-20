@@ -1089,6 +1089,12 @@
     "birdPickers.unknown": {
       "stamp": "e03b7c979c1f6ad7"
     },
+    "birdRecord.addSitterDetails": {
+      "stamp": "e5c13e0743d10300"
+    },
+    "birdRecord.addSitterDetailsIntro": {
+      "stamp": "f8e47bb03c3322ef"
+    },
     "birdRecord.adjustCrop": {
       "stamp": "5d330a9b86037c5c"
     },
@@ -1109,6 +1115,9 @@
     },
     "birdRecord.basicInfo": {
       "stamp": "f4b0a5b58361bef2"
+    },
+    "birdRecord.basicsSet": {
+      "stamp": "a9c949375c1823c9"
     },
     "birdRecord.buildCarePlanIntro": {
       "stamp": "94e1eca2bb07c712"
@@ -2105,6 +2114,21 @@
     },
     "birdSetup.startWithTheEssentialsWho": {
       "stamp": "eb971f04561eada8"
+    },
+    "birdSetup.stop.body": {
+      "stamp": "f5bc63880fdeeb93"
+    },
+    "birdSetup.stop.eyebrow": {
+      "stamp": "db5b00d129a98fe2"
+    },
+    "birdSetup.stop.keepGoing": {
+      "stamp": "5507dd17ff95fc22"
+    },
+    "birdSetup.stop.later": {
+      "stamp": "1b0cdb2ab12944d2"
+    },
+    "birdSetup.stop.title": {
+      "stamp": "8f143832e0f0a434"
     },
     "birdSetup.switchToHomemadeConfirm": {
       "stamp": "21c6979e6cd2b9d6"
@@ -5199,9 +5223,6 @@
     "nameList.yourBirds": {
       "stamp": "6afed180f92c7f4e"
     },
-    "newBird.addBird": {
-      "stamp": "7ec29c328be800fc"
-    },
     "newBird.added": {
       "stamp": "d2caaa8d33215c8a"
     },
@@ -5216,6 +5237,9 @@
     },
     "newBird.carePlanSetupFailed": {
       "stamp": "bc0e6552b1d68ea1"
+    },
+    "newBird.continue": {
+      "stamp": "f5d8735d0e2ff713"
     },
     "newBird.createFailed": {
       "stamp": "a84846bbc2a1445a"
@@ -6057,8 +6081,8 @@
     "planOverview.headline": {
       "stamp": "9522364224d159e7"
     },
-    "planOverview.hintBehavior": {
-      "stamp": "53385a22336ad17d"
+    "planOverview.hintBehaviorCage": {
+      "stamp": "141df2dcdc65c53d"
     },
     "planOverview.hintEmergency": {
       "stamp": "fa9b9ac5848441af"
@@ -6069,8 +6093,8 @@
     "planOverview.hintHealth": {
       "stamp": "5efc18b00de8bc0f"
     },
-    "planOverview.hintHome": {
-      "stamp": "cfd258a9276892e9"
+    "planOverview.hintHomeWide": {
+      "stamp": "19268441ecb2a3fe"
     },
     "planOverview.hintRoutine": {
       "stamp": "1a4cbb8ffc601946"
@@ -6810,6 +6834,9 @@
     "setupShell.hereNow": {
       "stamp": "dc6227c65ab91a6e"
     },
+    "setupShell.lastLook": {
+      "stamp": "ef313f754a4b2bd2"
+    },
     "setupShell.leaveThisStep": {
       "stamp": "31d7f6b4d7aa94ed"
     },
@@ -6854,6 +6881,24 @@
     },
     "setupShell.titleReview": {
       "stamp": "872d2c409f44066f"
+    },
+    "setupUi.add": {
+      "stamp": "13ffff7a830ca985"
+    },
+    "setupUi.needsDetails": {
+      "stamp": "bef08d9c13b03750"
+    },
+    "setupUi.optional": {
+      "stamp": "e301f0fddfd8d6a1"
+    },
+    "setupUi.ready": {
+      "stamp": "febf31ddd8bcb7b1"
+    },
+    "setupUi.removeItem": {
+      "stamp": "4b63b415b3722053"
+    },
+    "setupUi.required": {
+      "stamp": "dba5a2479ac6f5fa"
     },
     "shareNewBird.changeAnytime": {
       "stamp": "4c6ef7c7ef0e31d9"

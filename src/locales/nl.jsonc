@@ -729,6 +729,10 @@
   "birdPickers.species": "Soort",
   // Unknown
   "birdPickers.unknown": "Onbekend",
+  // Add pet-sitter details
+  "birdRecord.addSitterDetails": "Oppasdetails toevoegen",
+  // Add behavior, tips and {{name}}'s day so a pet sitter has everything they need.
+  "birdRecord.addSitterDetailsIntro": "Voeg gedrag, tips en de dag van {{name}} toe, zodat een oppas alles heeft wat nodig is.",
   // Adjust crop
   "birdRecord.adjustCrop": "Uitsnede aanpassen",
   // Age
@@ -743,6 +747,8 @@
   "birdRecord.backToYourFlock": "Terug naar je vogels",
   // Basic info
   "birdRecord.basicInfo": "Basisgegevens",
+  // The basics are set for {{name}}
+  "birdRecord.basicsSet": "De basis voor {{name}} staat",
   // Build {{name}}'s care plan so sitters and household members know exactly what to do. You can skip and set it up later.
   "birdRecord.buildCarePlanIntro": "Stel het verzorgingsplan van {{name}} op, zodat oppassen en leden van je huishouden precies weten wat ze moeten doen. Je kunt dit overslaan en later instellen.",
   // Cancel
@@ -1407,6 +1413,16 @@
   "birdSetup.specificsHelpASitterSpot": "Met details ziet een oppas sneller wanneer er iets niet klopt.",
   // Start with the essentials — who your bird is, and a photo so your sitter recognizes them right away.
   "birdSetup.startWithTheEssentialsWho": "Begin met de basis — wie je vogel is, en een foto zodat je oppas hem meteen herkent.",
+  // Do you want to add more details for a pet sitter? We'll cover behavior and training, tips and tricks for {{name}}'s care, and more.
+  "birdSetup.stop.body": "Wil je meer details toevoegen voor een oppas? We behandelen gedrag en training, tips en trucs voor de verzorging van {{name}}, en meer.",
+  // Basics done
+  "birdSetup.stop.eyebrow": "Basis klaar",
+  // Keep going
+  "birdSetup.stop.keepGoing": "Doorgaan",
+  // Set up later
+  "birdSetup.stop.later": "Later instellen",
+  // The basics are set for {{name}}.
+  "birdSetup.stop.title": "De basis voor {{name}} staat.",
   // Switch to homemade? This clears the chop items you've added.
   "birdSetup.switchToHomemadeConfirm": "Overstappen op zelfgemaakt? Dan worden de chop-items die je hebt toegevoegd gewist.",
   // Switch to pre-made? This clears the chop items you've added.
@@ -3469,8 +3485,6 @@
   "nameList.yourBird": "je vogel",
   // your birds
   "nameList.yourBirds": "je vogels",
-  // Add bird
-  "newBird.addBird": "Vogel toevoegen",
   // {{name}} added.
   "newBird.added": "{{name}} toegevoegd.",
   // Adding…
@@ -3481,6 +3495,8 @@
   "newBird.cameToYou": "Bij jou gekomen",
   // Couldn't set up the care plan: {{reason}}
   "newBird.carePlanSetupFailed": "Het verzorgingsplan kon niet worden aangemaakt: {{reason}}",
+  // Continue
+  "newBird.continue": "Doorgaan",
   // Could not create bird.
   "newBird.createFailed": "De vogel kon niet worden aangemaakt.",
   // Discard this bird? You haven't saved it yet.
@@ -4041,16 +4057,16 @@
   "planOverview.footerOwner": "Dit ziet iedereen die helpt met {{name}}. Oppassen krijgen per oppasperiode een link via het tabblad Oppasperiodes; leden van je huishouden kunnen het altijd bekijken.",
   // Everything that makes {{name}}, {{name}}.
   "planOverview.headline": "Alles wat {{name}} tot {{name}} maakt.",
-  // Handling, likes, triggers
-  "planOverview.hintBehavior": "Oppakken, voorkeuren, triggers",
+  // Handling, likes, cage, out-of-cage
+  "planOverview.hintBehaviorCage": "Oppakken, voorkeuren, kooi, buiten de kooi",
   // Owner and vet contacts
   "planOverview.hintEmergency": "Contacten van eigenaar en dierenarts",
   // Diet and food instructions
   "planOverview.hintFood": "Dieet en voedingsinstructies",
   // Baseline and what's normal
   "planOverview.hintHealth": "Uitgangssituatie en wat normaal is",
-  // Cage, out-of-cage, hazards
-  "planOverview.hintHome": "Kooi, buiten de kooi, gevaren",
+  // Hazards, off-limits, pets, cleaning
+  "planOverview.hintHomeWide": "Gevaren, verboden plekken, huisdieren, schoonmaken",
   // Daily schedule and tasks
   "planOverview.hintRoutine": "Dagschema en taken",
   // Needs info
@@ -4543,6 +4559,8 @@
   "setupShell.exitConfirmTitle": "Deze stap verlaten?",
   // Here now
   "setupShell.hereNow": "Je bent hier",
+  // Last look
+  "setupShell.lastLook": "Laatste blik",
   // Leave this step
   "setupShell.leaveThisStep": "Deze stap verlaten",
   // Next
@@ -4573,6 +4591,18 @@
   "setupShell.titlePersonality": "Karakter & omgang",
   // Review & finish
   "setupShell.titleReview": "Controleren & afronden",
+  // Add…
+  "setupUi.add": "Toevoegen…",
+  // Needs details
+  "setupUi.needsDetails": "Details nodig",
+  // Optional
+  "setupUi.optional": "Optioneel",
+  // Ready
+  "setupUi.ready": "Klaar",
+  // Remove {{item}}
+  "setupUi.removeItem": "{{item}} verwijderen",
+  // Required
+  "setupUi.required": "Verplicht",
   // You can change who sees {{bird}} anytime from Household.
   "shareNewBird.changeAnytime": "Je kunt altijd via Huishouden aanpassen wie {{bird}} kan zien.",
   // Continue

@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { PrimaryButton } from "@/components/system";
 import { useTranslation } from "react-i18next";
 import i18next, { type TFunction } from "i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -6,7 +7,8 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { SetupShell, SETUP_STEPS, TOTAL_STEPS, setupStepTitle } from "@/components/SetupShell";
+import { SetupShell, SETUP_STEPS, TOTAL_STEPS, setupStepTitle, setupStepNumber } from "@/components/SetupShell";
+import { encodeSetupStep, basicsDone } from "@/lib/setupProgress";
 import { EmergencyInfo } from "@/components/EmergencyInfo";
 import { Plus, X, Check, Lightbulb, GripVertical, Sparkles, AlertTriangle } from "lucide-react";
 import { PhotoCropper } from "@/components/PhotoCropper";
@@ -170,6 +172,11 @@ function BirdSetup() {
   const [dirty, setDirty] = useState(false);
   useEffect(() => { setBlockNext(false); setDirty(false); }, [step]);
   const [saving, setSaving] = useState(false);
+  // The stop point after Health: "The basics are set". Shown once per bird, the
+  // first time it gets past Health (a finished bird walking through again, or a
+  // bird that already passed it, goes straight on to Behavior).
+  const [atStopPoint, setAtStopPoint] = useState(false);
+  const stopPointSeenRef = useRef(false);
   const qc = useQueryClient();
 
   // Self-heal: guarantee a care_plan exists for this bird so no setup step can
@@ -243,7 +250,7 @@ function BirdSetup() {
     // false here UN-completed finished birds the moment their owner re-entered
     // "Walk through it again" — which resurrected the "Set up care plan" CTA on
     // birds with complete plans (the intermittent, some-birds-only report).
-    const patch: Record<string, unknown> = { setup_step: nextStep };
+    const patch: Record<string, unknown> = { setup_step: encodeSetupStep(nextStep) };
     if (complete) patch.setup_complete = true;
     const { error } = await supabase
       .from("birds")
@@ -279,6 +286,7 @@ function BirdSetup() {
       return;
     }
     const next = step + 1;
+    const showStop = completedSection === "health" && !stopPointSeenRef.current && !basicsDone(bird?.setup_step, bird?.setup_complete);
     const ok = await persistStep(next);
     if (ok) {
       track("care_plan_section_completed", { section: completedSection, step });
@@ -288,10 +296,28 @@ function BirdSetup() {
         total: TOTAL_STEPS,
       });
       setStep(next);
+      if (showStop) {
+        stopPointSeenRef.current = true;
+        setAtStopPoint(true);
+        track("setup_stop_point_viewed", {});
+      }
     }
   }
 
+  function keepGoing() {
+    track("setup_stop_point_choice", { choice: "keep_going" });
+    setAtStopPoint(false);
+  }
+
+  function setUpLater() {
+    track("setup_stop_point_choice", { choice: "later" });
+    // Progress already points at Behavior, so the bird's page offers to pick up
+    // the pet-sitter details from there.
+    navigate({ to: "/birds/$birdId/plan", params: { birdId } });
+  }
+
   async function onBack() {
+    if (atStopPoint) { setAtStopPoint(false); setStep(setupStepNumber("health")); return; }
     if (step <= 1) return;
     if (!(await flushPending())) return;
     const prev = step - 1;
@@ -310,6 +336,7 @@ function BirdSetup() {
 
   async function jumpToStep(target: number) {
     const clamped = Math.min(TOTAL_STEPS, Math.max(1, target));
+    setAtStopPoint(false);
     if (clamped === step) return;
     if (!(await flushPending())) return;
     const ok = await persistStep(clamped);
@@ -351,6 +378,29 @@ function BirdSetup() {
 
   const meta = SETUP_STEPS[step - 1];
   const isLast = step === TOTAL_STEPS;
+
+  if (atStopPoint) {
+    return (
+      <SetupShell
+        step={setupStepNumber("health")}
+        title={t("birdSetup.stop.title", "The basics are set for {{name}}.", { name: bird.name })}
+        eyebrow={t("birdSetup.stop.eyebrow", "Basics done")}
+        birdName={bird.name}
+        birdSpecies={bird.species}
+        onExit={exitToProfile}
+        onNavigateStep={jumpToStep}
+        hideFooter
+      >
+        <p className="t-body text-[var(--ink2)]">
+          {t("birdSetup.stop.body", "Do you want to add more details for a pet sitter? We'll cover behavior and training, tips and tricks for {{name}}'s care, and more.", { name: bird.name })}
+        </p>
+        <div className="space-y-2.5 pt-2">
+          <PrimaryButton onPress={keepGoing}>{t("birdSetup.stop.keepGoing", "Keep going")}</PrimaryButton>
+          <PrimaryButton tone="outline" onPress={setUpLater}>{t("birdSetup.stop.later", "Set up later")}</PrimaryButton>
+        </div>
+      </SetupShell>
+    );
+  }
 
   return (
     <SetupShell
@@ -405,20 +455,18 @@ function StepBody({
   registerFlush: (fn: (() => Promise<void>) | null) => void;
   registerValidate: (fn: (() => boolean) | null) => void;
 }) {
-  // Basics moved to the bird main page; the wizard is now pure care instructions.
-  // Step numbers match SETUP_STEPS in SetupShell — daily rhythm sits after the
-  // descriptive sections, with Food still first (Routine auto-derives feeding
-  // items from Food).
-  if (step === 1) return <FoodWaterStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} registerFlush={registerFlush} registerValidate={registerValidate} />;
-  if (step === 2) return <PersonalityStep birdId={birdId} birdName={birdName} registerFlush={registerFlush} />;
-  if (step === 3) return <EnvironmentStep birdId={birdId} birdName={birdName} registerFlush={registerFlush} />;
-  if (step === 4) return <HealthBaselineStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} registerFlush={registerFlush} />;
-  if (step === 5) return <DayInLifeStep birdId={birdId} birdName={birdName} />;
-  if (step === 6) return <OwnerTipsClipsStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} />;
-  if (step === 7) return <EmergencyStep birdId={birdId} onBlockNext={onBlockNext} registerFlush={registerFlush} />;
-  if (step === 8) return <ReviewStep birdId={birdId} birdName={birdName} onJumpToStep={onJumpToStep} onFinish={onFinish} />;
-
-  return null; // every step (1–8) is handled above
+  // Steps are looked up by key, so the order lives only in SETUP_STEPS.
+  switch (SETUP_STEPS[step - 1]?.key) {
+    case "food": return <FoodWaterStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} registerFlush={registerFlush} registerValidate={registerValidate} />;
+    case "health": return <HealthBaselineStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} registerFlush={registerFlush} />;
+    case "personality": return <PersonalityStep birdId={birdId} birdName={birdName} registerFlush={registerFlush} />;
+    case "clips": return <OwnerTipsClipsStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} />;
+    case "day": return <DayInLifeStep birdId={birdId} birdName={birdName} />;
+    case "environment": return <EnvironmentStep birdId={birdId} birdName={birdName} registerFlush={registerFlush} />;
+    case "emergency": return <EmergencyStep birdId={birdId} onBlockNext={onBlockNext} registerFlush={registerFlush} />;
+    case "review": return <ReviewStep birdId={birdId} birdName={birdName} onJumpToStep={onJumpToStep} onFinish={onFinish} />;
+    default: return null;
+  }
 }
 
 const TIME_BLOCKS: { key: string; label: string }[] = [
@@ -906,7 +954,7 @@ function TimeBlockSection({
   );
 }
 
-// ---------- Step 3: Food & water ----------
+// ---------- Food & water ----------
 
 const DIET_OPTIONS = [
   { value: "pelleted", label: "Pelleted diet" },
@@ -1548,7 +1596,7 @@ function capitalize(s: string | null | undefined) {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-// ---------- Step 4: Personality & handling ----------
+// ---------- Personality & handling ----------
 
 const STEP_UP_OPTIONS = [
   { value: "yes", label: "Yes" },
@@ -1575,6 +1623,10 @@ export function PersonalityStep({ birdId, birdName, registerFlush }: { birdId: s
   const [likes, setLikes] = useState("");
   const [fears, setFears] = useState("");
   const [bite, setBite] = useState("");
+  // The bird's own space (moved here from the Home step: it's per bird).
+  const [cageLoc, setCageLoc] = useState("");
+  const [oocMode, setOocMode] = useState("");
+  const [oocNotes, setOocNotes] = useState("");
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -1585,6 +1637,12 @@ export function PersonalityStep({ birdId, birdName, registerFlush }: { birdId: s
     setLikes(plan.likes ?? "");
     setFears(plan.fears_triggers ?? plan.known_triggers ?? "");
     setBite(plan.bite_risk ?? "");
+    setCageLoc(plan.cage_location ?? "");
+    setOocMode(plan.out_of_cage_mode ?? "");
+    // Seed notes only from the structured notes field — never from the assembled
+    // out_of_cage_rules summary, which would fold the summary back in on re-save
+    // and produce "Supervised only — Supervised only".
+    setOocNotes(plan.out_of_cage_notes ?? "");
     setHydrated(true);
   }, [plan, hydrated]);
 
@@ -1603,11 +1661,14 @@ export function PersonalityStep({ birdId, birdName, registerFlush }: { birdId: s
           known_triggers: fears || null,
           // handling_rules is no longer stored — the sitter view derives the
           // handling summary from the structured fields above.
+          cage_location: cageLoc || null,
+          out_of_cage_mode: oocMode || null,
+          out_of_cage_notes: oocNotes || null,
         } as any)
         .eq("id", plan.id);
       qc.invalidateQueries({ queryKey: ["plan", birdId] });
     },
-    [stepUp, stepUpNotes, handlers, likes, fears, bite],
+    [stepUp, stepUpNotes, handlers, likes, fears, bite, cageLoc, oocMode, oocNotes],
     !!plan && hydrated,
     registerFlush,
   );
@@ -1672,12 +1733,37 @@ export function PersonalityStep({ birdId, birdName, registerFlush }: { birdId: s
         />
       </Card>
 
+      <Card title={t("birdSetup.cageLocationSetupNotes", "Cage location & setup notes")}>
+        <textarea
+          className="input area"
+          placeholder={t("birdSetup.eGLivingRoomAway", "e.g. Living room, away from the kitchen. Cover is on the side table.")}
+          value={cageLoc}
+          maxLength={500}
+          onChange={(e) => setCageLoc(e.target.value)}
+        />
+      </Card>
+
+      <Card title={t("birdSetup.outOfCageRules", "Out-of-cage rules")}>
+        <select className="input" value={oocMode} onChange={(e) => setOocMode(e.target.value)}>
+          <option value="">{t("birdSetup.pickOne", "Pick one…")}</option>
+          {OUT_OF_CAGE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{displayLabel(t, o.label)}</option>)}
+        </select>
+        <textarea
+          className="input area mt-2"
+          placeholder={t("birdSetup.notesWhichRoomHowLong", "Notes (which room? how long? what to watch for?)")}
+          value={oocNotes}
+          maxLength={500}
+          onChange={(e) => setOocNotes(e.target.value)}
+        />
+      </Card>
+
+
       <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.65rem .8rem;font-size:16px;outline:none}.input:focus{border-color:var(--sage-600);box-shadow:0 0 0 3px rgb(74 103 65 / .15)}.area{min-height:60px;line-height:1.4}`}</style>
     </div>
   );
 }
 
-// ---------- Step 5: Environment & safety ----------
+// ---------- Environment & safety ----------
 
 const OUT_OF_CAGE_OPTIONS = [
   { value: "supervised", label: "Supervised only" },
@@ -1708,9 +1794,6 @@ export function EnvironmentStep({ birdId, birdName, registerFlush }: { birdId: s
     },
   });
 
-  const [cageLoc, setCageLoc] = useState("");
-  const [oocMode, setOocMode] = useState("");
-  const [oocNotes, setOocNotes] = useState("");
   const [hazards, setHazards] = useState<string[]>([]);
   const [hazardsOther, setHazardsOther] = useState("");
   const [offLimits, setOffLimits] = useState("");
@@ -1720,12 +1803,6 @@ export function EnvironmentStep({ birdId, birdName, registerFlush }: { birdId: s
 
   useEffect(() => {
     if (!plan || hydrated) return;
-    setCageLoc(plan.cage_location ?? "");
-    setOocMode(plan.out_of_cage_mode ?? "");
-    // Seed notes only from the structured notes field — never from the assembled
-    // out_of_cage_rules summary, which would fold the summary back in on re-save
-    // and produce "Supervised only — Supervised only".
-    setOocNotes(plan.out_of_cage_notes ?? "");
     setHazards(plan.hazards ?? []);
     setHazardsOther(plan.hazards_other ?? "");
     setOffLimits(plan.off_limits ?? plan.off_limits_rooms ?? "");
@@ -1737,17 +1814,9 @@ export function EnvironmentStep({ birdId, birdName, registerFlush }: { birdId: s
   useDebouncedAutosave(
     async () => {
       if (!plan) return;
-      const modeLabel = OUT_OF_CAGE_OPTIONS.find((o) => o.value === oocMode)?.label;
-      // De-dupe so an empty/identical notes value can't repeat the mode label.
-      const oocSummary = [...new Set([modeLabel ?? "", oocNotes.trim()].filter(Boolean))].join(" — ");
-      const allHazards = [...hazards, ...(hazardsOther.trim() ? [hazardsOther.trim()] : [])];
-      const safetySummary = allHazards.length ? `Hazards: ${allHazards.join(", ")}` : "";
       await supabase
         .from("care_plans")
         .update({
-          cage_location: cageLoc || null,
-          out_of_cage_mode: oocMode || null,
-          out_of_cage_notes: oocNotes || null,
           hazards,
           hazards_other: hazardsOther || null,
           off_limits: offLimits || null,
@@ -1761,7 +1830,7 @@ export function EnvironmentStep({ birdId, birdName, registerFlush }: { birdId: s
         .eq("id", plan.id);
       qc.invalidateQueries({ queryKey: ["plan", birdId] });
     },
-    [cageLoc, oocMode, oocNotes, hazards, hazardsOther, offLimits, otherPets, cleaning],
+    [hazards, hazardsOther, offLimits, otherPets, cleaning],
     !!plan && hydrated,
     registerFlush,
   );
@@ -1775,30 +1844,6 @@ export function EnvironmentStep({ birdId, birdName, registerFlush }: { birdId: s
   return (
     <div className="space-y-4">
       <StepInstruction>{t("birdSetup.instr.environment", "What should someone know about your home to keep {{name}} safe?", { name: birdName })}</StepInstruction>
-
-      <Card title={t("birdSetup.cageLocationSetupNotes", "Cage location & setup notes")}>
-        <textarea
-          className="input area"
-          placeholder={t("birdSetup.eGLivingRoomAway", "e.g. Living room, away from the kitchen. Cover is on the side table.")}
-          value={cageLoc}
-          maxLength={500}
-          onChange={(e) => setCageLoc(e.target.value)}
-        />
-      </Card>
-
-      <Card title={t("birdSetup.outOfCageRules", "Out-of-cage rules")}>
-        <select className="input" value={oocMode} onChange={(e) => setOocMode(e.target.value)}>
-          <option value="">{t("birdSetup.pickOne", "Pick one…")}</option>
-          {OUT_OF_CAGE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{displayLabel(t, o.label)}</option>)}
-        </select>
-        <textarea
-          className="input area mt-2"
-          placeholder={t("birdSetup.notesWhichRoomHowLong", "Notes (which room? how long? what to watch for?)")}
-          value={oocNotes}
-          maxLength={500}
-          onChange={(e) => setOocNotes(e.target.value)}
-        />
-      </Card>
 
       <Card title={t("birdSetup.homeSpecificHazards", "Home-specific hazards")} hint={t("birdSetup.tapAnyThatApplyThen", "Tap any that apply, then add your own.")}>
         <div className="flex flex-wrap gap-2">
@@ -1850,7 +1895,7 @@ export function EnvironmentStep({ birdId, birdName, registerFlush }: { birdId: s
   );
 }
 
-// ---------- Step 6: Health baseline ----------
+// ---------- Health baseline ----------
 
 // Granular "what's normal" + when-to-call care-plan text fields. Shown under the
 // summary so a sitter can spot specifics; all optional.
@@ -2433,7 +2478,7 @@ async function syncHygieneTasks(
   }
 }
 
-// ---------- Step 7: Tips from the owner ----------
+// ---------- Tips from the owner ----------
 
 type ClipSlot = {
   key: "step_up" | "food_water" | "locations" | "bedtime" | "food_prep" | "toys_foraging" | "targeting" | "anything_else";
@@ -2605,7 +2650,7 @@ function ClipSlotCard({
   );
 }
 
-// ---------- Step 8: Emergency ----------
+// ---------- Emergency ----------
 
 // Same shared emergency UI as the bird editor's Emergency tab (read-only
 // account info + per-bird "Edit for {bird}" override). Emergency info comes from
@@ -2670,7 +2715,7 @@ function EmergencyStep({
   );
 }
 
-// ---------- Step 9: Review (real sitter preview) ----------
+// ---------- Review (real sitter preview) ----------
 
 function ReviewStep({
   birdId,
@@ -2762,8 +2807,8 @@ function ReviewStep({
     const list: { label: string; step: number }[] = [];
     if ((tasks?.length ?? 0) === 0) list.push({ label: t("birdSetup.issue.noRoutineTasksYet", "No routine tasks yet"), step: stepOf("day") });
     if (!plan?.diet_types?.length && !plan?.food_instructions) list.push({ label: t("birdSetup.issue.noFoodWaterDetails", "No food & water details"), step: stepOf("food") });
-    if (!plan?.handlers && !plan?.likes && !plan?.fears_triggers) list.push({ label: t("birdSetup.issue.noPersonalityHandlingNotes", "No personality & handling notes"), step: stepOf("personality") });
-    if (!plan?.cage_location && !plan?.out_of_cage_mode && !(plan?.hazards?.length)) list.push({ label: t("birdSetup.issue.noEnvironmentSafetyDetails", "No environment & safety details"), step: stepOf("environment") });
+    if (!plan?.handlers && !plan?.likes && !plan?.fears_triggers && !plan?.cage_location && !plan?.out_of_cage_mode) list.push({ label: t("birdSetup.issue.noPersonalityHandlingNotes", "No personality & handling notes"), step: stepOf("personality") });
+    if (!(plan?.hazards?.length) && !plan?.hazards_other && !plan?.off_limits && !plan?.other_pets && !plan?.cleaning_instructions) list.push({ label: t("birdSetup.issue.noEnvironmentSafetyDetails", "No environment & safety details"), step: stepOf("environment") });
     if (!bird?.normal_weight && !plan?.baseline_clip_path && !plan?.whats_normal) {
       list.push({ label: t("birdSetup.issue.noHealthBaselineWeightPhoto", "No health baseline (weight, photo, clip, or notes)"), step: stepOf("health") });
     }

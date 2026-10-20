@@ -26,6 +26,7 @@
     "test:url-scrub": "npx --yes vite-node scripts/url-scrub.test.ts",
     "test:onboarding-plan": "npx --yes vite-node scripts/onboarding-plan.test.ts",
     "test:local-day": "npx --yes vite-node scripts/local-day.test.ts",
+    "test:setup-progress": "npx --yes vite-node scripts/setup-progress.test.ts",
     "test:daily-log": "npx --yes vite-node scripts/daily-log.test.ts",
     "test:email-tracking": "npx --yes vite-node scripts/email-tracking.test.ts",
     "test:auth-email-hook": "npx --yes vite-node scripts/auth-email-hook.test.ts"

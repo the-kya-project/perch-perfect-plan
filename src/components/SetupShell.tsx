@@ -5,23 +5,33 @@ import { ArrowLeft, Check, ChevronDown } from "lucide-react";
 import { OwnerTabBar } from "@/components/OwnerTabBar";
 
 export const SETUP_STEPS = [
-  // Basics has moved to the bird main page; the wizard is now pure care
-  // instructions. Daily rhythm sits after the descriptive sections so it can
-  // be reviewed against the full care picture — Food still comes first because
-  // the Routine step auto-derives feeding/water items from Food.
+  // Details (name, species, photo…) is the Add-a-bird page, which saves the bird
+  // before the wizard opens. Food → Health are the basics; the wizard then offers
+  // a stop point before the pet-sitter details (Behavior, Tips, Day). Home and
+  // Emergency come last until they move to the shared "Your home" section.
+  // Food still comes before Day because Day auto-derives feeding/water items
+  // from Food. Review is the finishing screen, not a numbered step.
   { key: "food", title: "Food & water", short: "Food" },
-  { key: "personality", title: "Personality & handling", short: "Behavior" },
-  { key: "environment", title: "Environment & safety", short: "Home" },
   { key: "health", title: "Health baseline", short: "Health" },
-  { key: "day", title: "A day in the life", short: "Routine" },
+  { key: "personality", title: "Personality & handling", short: "Behavior" },
   { key: "clips", title: "Tips from the owner", short: "Clips" },
+  { key: "day", title: "A day in the life", short: "Routine" },
+  { key: "environment", title: "Environment & safety", short: "Home" },
   { key: "emergency", title: "Emergency info", short: "Emergency" },
   { key: "review", title: "Review & finish", short: "Review" },
 ] as const;
 
 export const TOTAL_STEPS = SETUP_STEPS.length;
+/** Steps counted in "Step N of M": everything before the Review screen. */
+export const NUMBERED_STEPS = TOTAL_STEPS - 1;
 
-type SetupStepKey = (typeof SETUP_STEPS)[number]["key"];
+export type SetupStepKey = (typeof SETUP_STEPS)[number]["key"];
+
+/** 1-indexed position of a step in the current flow. */
+export function setupStepNumber(key: SetupStepKey): number {
+  return SETUP_STEPS.findIndex((s) => s.key === key) + 1;
+}
+
 
 /** Display title for a setup step (SETUP_STEPS stays the English source). */
 export function setupStepTitle(t: TFunction, key: SetupStepKey): string {
@@ -81,6 +91,7 @@ export function SetupShell({
   saving,
   backDisabled,
   hideFooter,
+  eyebrow,
 }: {
   step: number; // 1-indexed
   title: string;
@@ -103,6 +114,7 @@ export function SetupShell({
   saving?: boolean;
   backDisabled?: boolean;
   hideFooter?: boolean;
+  eyebrow?: string; // replaces "Step N of M" (e.g. on the stop point)
 }) {
   const { t } = useTranslation();
   const exitConfirmTitle = exitConfirmTitleProp ?? t("setupShell.exitConfirmTitle", "Leave this step?");
@@ -129,8 +141,6 @@ export function SetupShell({
      
   }, [step]);
 
-  const completedCount = Math.max(0, step - 1);
-  const pct = Math.round((completedCount / TOTAL_STEPS) * 100);
   const current = SETUP_STEPS[step - 1];
   // Callers pass the English SETUP_STEPS title; show its translation.
   const displayTitle = current && title === current.title ? setupStepTitle(t, current.key) : title;
@@ -150,7 +160,7 @@ export function SetupShell({
 
   return (
     <div className={`min-h-screen bg-[var(--cream)] ${hideFooter ? "pb-28" : "pb-44"}`}>
-      {/* InkHero-style wizard header: Step N of 8 + section name + lime dots. */}
+      {/* InkHero-style wizard header: Step N of M + section name + lime dots. */}
       <header className="bg-[var(--ink)] text-white">
         <div className="mx-auto max-w-md px-[22px] pb-[20px] pt-[max(env(safe-area-inset-top),18px)]">
           <div className="mb-3 flex items-center justify-between gap-3">
@@ -173,10 +183,14 @@ export function SetupShell({
               {t("setupShell.allSteps", "All steps")} <ChevronDown className="size-4" />
             </button>
           </div>
-          <p className="t-eyebrow text-[var(--lime)]">{t("setupShell.stepOf", "Step {{step}} of {{total}}", { step, total: TOTAL_STEPS })}</p>
+          <p className="t-eyebrow text-[var(--lime)]">
+            {eyebrow ?? (step > NUMBERED_STEPS
+              ? t("setupShell.lastLook", "Last look")
+              : t("setupShell.stepOf", "Step {{step}} of {{total}}", { step, total: NUMBERED_STEPS }))}
+          </p>
           <h1 className="t-hero mt-1 text-white">{displayTitle}</h1>
           <div className="mt-3 flex items-center gap-1" aria-hidden="true">
-            {SETUP_STEPS.map((s, i) => {
+            {SETUP_STEPS.slice(0, NUMBERED_STEPS).map((s, i) => {
               const state = stepState(i, step);
               return (
                 <span

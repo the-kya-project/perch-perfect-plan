@@ -20,6 +20,7 @@ import { z } from "zod";
 import { friendlyError } from "@/lib/errorMessage";
 import { BIRD_FEATURES } from "@/lib/onboardingPlan";
 import { localDateISO } from "@/lib/localDay";
+import { encodeSetupStep } from "@/lib/setupProgress";
 
 export const Route = createFileRoute("/_authenticated/birds/new")({
   head: () => ({ meta: [{ title: i18next.t("newBird.metaTitle", "Add a bird — Kya & Co.") }] }),
@@ -124,7 +125,7 @@ function NewBird() {
       is_foster: isFoster,
       intake_date: intakeDate || null,
       setup_complete: false,
-      setup_step: targetStep,
+      setup_step: encodeSetupStep(targetStep),
     } as any).select().single();
     if (error || !bird) {
       toast.error(friendlyError(error, t("newBird.createFailed", "Could not create bird.")));
@@ -161,8 +162,9 @@ function NewBird() {
     return bird.id;
   }
 
-  // Add the bird, then guide straight into the care-plan wizard (Food · Step 1
-  // of 8) — the obvious next step instead of leaving the owner to find the CTA.
+  // Continue saves the bird (Details is the first step of setup), then goes
+  // straight into the care-plan wizard at Food — the obvious next step instead
+  // of leaving the owner to find the CTA.
   // Skippable: the wizard's "Save & exit" drops onto the bird's record, which
   // keeps a "Set up <name>'s care plan" invite until setup is complete.
   //
@@ -307,7 +309,7 @@ function NewBird() {
       <footer className="fixed inset-x-0 bottom-0 border-t border-[var(--line)] bg-[var(--cream)]/95 px-5 py-3 pb-[max(env(safe-area-inset-bottom),0.75rem)] backdrop-blur">
         <div className="mx-auto max-w-md">
           <PrimaryButton tone="lime" disabled={saving || !canAdd} onPress={onAddBird}>
-            {saving ? t("newBird.adding", "Adding…") : t("newBird.addBird", "Add bird")}
+            {saving ? t("newBird.adding", "Adding…") : t("newBird.continue", "Continue")}
           </PrimaryButton>
         </div>
       </footer>
