@@ -76,6 +76,13 @@ export type AnalyticsEventName =
   | "native_oauth_token"
   // Clip-upload diagnostics: compare picked file size app vs PWA
   | "clip_upload_picked"
+  // Clip-upload timing: how long sending took (and the speed it implies), or
+  // how far it got before failing / being cancelled; then how long Cloudflare
+  // took to get it ready to play.
+  | "clip_upload_done"
+  | "clip_upload_failed"
+  | "clip_upload_cancelled"
+  | "clip_ready"
   // Resume-after-idle token refresh (bounced-to-sign-in debugging)
   | "auth_resume_refresh"
   | "auth_guard_timeout"

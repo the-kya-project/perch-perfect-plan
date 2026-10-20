@@ -119,16 +119,18 @@ class UploadCancelled extends Error {
 }
 
 /** Poll the transcode status until ready (best-effort; resolves on timeout so a
- *  still-processing clip's reference is still saved). Throws on transcode error. */
-async function waitForReady(uid: string): Promise<void> {
+ *  still-processing clip's reference is still saved). Resolves false on timeout;
+ *  throws on transcode error. */
+async function waitForReady(uid: string): Promise<boolean> {
   const deadline = Date.now() + 150000; // ~2.5 min
   while (Date.now() < deadline) {
     let s: any = null;
     try { s = await getClipStatus({ data: { uid } }); } catch {}
-    if (s?.readyToStream) return;
+    if (s?.readyToStream) return true;
     if (s?.state === "error") throw new Error("This video couldn't be processed. Please try a different clip.");
     await new Promise((r) => setTimeout(r, 2500));
   }
+  return false;
 }
 
 function friendlyUploadError(err: any): string {
@@ -371,14 +373,31 @@ export function ClipRecorder({
 
   // Upload the raw clip to Cloudflare Stream, wait for transcode, hand the
   // "cfstream:<uid>" reference to the parent. Returns true on success.
-  async function uploadToStream(file: File): Promise<boolean> {
+  async function uploadToStream(file: File, source: "recorded" | "picked"): Promise<boolean> {
     setError(null);
     setNote(null);
     onBusy?.(true);
+    // Timing for analytics: setup (minting the upload URL), sending, and how far
+    // a failed or cancelled upload got.
+    const sizeMb = Math.round((file.size / 1_000_000) * 10) / 10;
+    const base = { size_mb: sizeMb, source, platform: nativePlatform() };
+    const started = performance.now();
+    let sendStarted: number | null = null;
+    let lastPct = 0;
+    const secs = (from: number) => Math.round((performance.now() - from) / 100) / 10;
     try {
       setStage({ kind: "uploading", pct: 0 });
       const { uploadURL, uid } = await createClipUpload({ data: { uploadLength: file.size, birdId } });
-      await tusUpload(uploadURL, file, (pct) => setStage({ kind: "uploading", pct }), (abort) => { abortRef.current = abort; if (cancelRef) cancelRef.current = abort; });
+      sendStarted = performance.now();
+      await tusUpload(uploadURL, file, (pct) => { lastPct = pct; setStage({ kind: "uploading", pct }); }, (abort) => { abortRef.current = abort; if (cancelRef) cancelRef.current = abort; });
+      const sendS = secs(sendStarted);
+      track("clip_upload_done", {
+        ...base,
+        setup_s: Math.round((sendStarted - started) / 100) / 10,
+        send_s: sendS,
+        mbps: sendS > 0 ? Math.round(((file.size * 8) / 1_000_000 / sendS) * 10) / 10 : null,
+      });
+      const sentAt = performance.now();
       // The clip reference is valid the moment the bytes are up. Hand it off now
       // instead of blocking the owner on Cloudflare's server-side transcode
       // (previously up to ~2.5 min on "Processing…"). The clip keeps transcoding
@@ -386,13 +405,15 @@ export function ClipRecorder({
       // opened before it's ready. Best-effort: surface a transcode failure (rare)
       // without blocking — if the recorder is still open the owner sees it.
       await onUploaded(cfRef(uid));
-      void waitForReady(uid).catch((err) => {
+      void waitForReady(uid).then((ready) => track("clip_ready", { ...base, ready_s: secs(sentAt), timed_out: !ready })).catch((err) => {
         console.error("[clip] transcode failed", err);
         setError(friendlyUploadError(err));
       });
       return true;
     } catch (err) {
-      if (err instanceof UploadCancelled) return false;
+      const after = { ...base, after_s: secs(started), sending: sendStarted != null, pct: Math.round(lastPct) };
+      if (err instanceof UploadCancelled) { track("clip_upload_cancelled", after); return false; }
+      track("clip_upload_failed", after);
       console.error("[clip] upload failed", err);
       setError(friendlyUploadError(err));
       return false;
@@ -407,7 +428,7 @@ export function ClipRecorder({
   async function useRecorded() {
     const file = recordedFileRef.current;
     if (!file) return;
-    const ok = await uploadToStream(file);
+    const ok = await uploadToStream(file, "recorded");
     if (ok) {
       revokeRecorded();
       setRecordedUrl(null);
@@ -472,7 +493,7 @@ export function ClipRecorder({
     }
 
     // Upload the raw clip straight to Cloudflare Stream (it transcodes server-side).
-    await uploadToStream(file);
+    await uploadToStream(file, "picked");
   }
 
   // ---- Render ----------------------------------------------------------------
