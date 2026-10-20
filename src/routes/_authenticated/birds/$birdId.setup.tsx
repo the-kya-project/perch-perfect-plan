@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { createPortal } from "react-dom";
 import { InSetupFrame, SetupIntroSlot } from "@/components/setup/SetupFrame";
-import { StartFromAnotherBird, useCopySources } from "@/components/setup/StartFromAnotherBird";
+import { StartFromAnotherBird, useCopySources, type CopyResult } from "@/components/setup/StartFromAnotherBird";
 import { foodCopy, dayCopy, isOwnTask } from "@/lib/copyFromBird";
 import { S, SERIF, SetupPrimaryButton, SetupSecondaryButton, SetupTextButton, SectionCard, TileCard, Field, TextField, TextBox, Dropdown, Segmented, EditableList, Helper, CheckChips } from "@/components/setup/controls";
 import { BottomSheet } from "@/components/setup/BottomSheet";
@@ -905,16 +905,30 @@ export function DayInLifeStep({ birdId, birdName }: { birdId: string; birdName: 
   const [copyDone, setCopyDone] = useState(false);
   useEffect(() => { if (offerCopy && copySources.length) setShowCopy(true); }, [offerCopy, copySources.length]);
 
-  async function copyDay(sourcePlanId: string) {
+  async function copyDay(sourcePlanId: string): Promise<CopyResult> {
     const { data: rows, error } = await supabase.from("routine_tasks").select("*").eq("care_plan_id", sourcePlanId);
     if (error) throw error;
     const inserts = dayCopy(rows ?? [], plan!.id);
+    let ids: string[] = [];
     if (inserts.length) {
-      const { error: insertError } = await supabase.from("routine_tasks").insert(inserts as any);
+      const { data: added, error: insertError } = await supabase.from("routine_tasks").insert(inserts as any).select("id");
       if (insertError) throw insertError;
+      ids = ((added ?? []) as { id: string }[]).map((r) => r.id);
     }
     setCopyDone(true);
     refresh();
+    return {
+      count: inserts.length,
+      // Remove exactly the tasks this copy added.
+      undo: async () => {
+        if (ids.length) {
+          const { error: delError } = await supabase.from("routine_tasks").delete().in("id", ids);
+          if (delError) throw delError;
+        }
+        setCopyDone(false);
+        refresh();
+      },
+    };
   }
 
   if (isLoading || !plan) {
@@ -1562,7 +1576,17 @@ export function FoodWaterStep({
           kind="food"
           birdName={birdName}
           sources={copySources}
-          onCopy={(source) => { hydrate({ ...plan, ...foodCopy(source.plan) }); setCopyDone(true); }}
+          onCopy={async (source) => {
+            const before = plan;
+            hydrate({ ...plan, ...foodCopy(source.plan) });
+            setCopyDone(true);
+            const items = Object.values((source.plan.diet_details ?? {}) as Record<string, unknown[]>).reduce((n, list) => n + (Array.isArray(list) ? list.length : 0), 0);
+            return {
+              count: items || (source.plan.diet_types?.length ?? 0),
+              // Back to the empty page this bird had; autosave clears the copy.
+              undo: () => { hydrate(before); setCopyDone(false); },
+            };
+          }}
         />
       )}
 

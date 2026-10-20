@@ -3471,35 +3471,44 @@
     "confirmEmail.wrongEmail": {
       "stamp": "cbd9b23f63595263"
     },
-    "copyFromBird.copiedDay": {
-      "stamp": "c19987bf658400d2"
+    "copyFromBird.copiedFoods_one": {
+      "stamp": "053be84af97d58f0"
     },
-    "copyFromBird.copiedFood": {
-      "stamp": "58f6c12ee9d0056e"
+    "copyFromBird.copiedFoods_other": {
+      "stamp": "6379d70f006aadd2"
     },
-    "copyFromBird.copiedTitle": {
-      "stamp": "d9d8be72ce3ce4bb"
+    "copyFromBird.copiedTasks_one": {
+      "stamp": "8e5b3086033e1b2e"
     },
-    "copyFromBird.copyFrom": {
-      "stamp": "53468b2b77f74892"
+    "copyFromBird.copiedTasks_other": {
+      "stamp": "a8ed1c123b7c7203"
     },
-    "copyFromBird.dayHelperMany": {
-      "stamp": "7911e9445a763417"
+    "copyFromBird.copyDay": {
+      "stamp": "e961844a3b6c9c41"
     },
-    "copyFromBird.dayHelperOne": {
-      "stamp": "c54dde4b9b91c05b"
+    "copyFromBird.copyFoods": {
+      "stamp": "25039c56f62868b0"
+    },
+    "copyFromBird.dayBody": {
+      "stamp": "aa19a78d9d865ea1"
     },
     "copyFromBird.failed": {
       "stamp": "1132c747c0fe6cf6"
     },
-    "copyFromBird.foodHelperMany": {
-      "stamp": "45311c899a3e5fdc"
+    "copyFromBird.foodBody": {
+      "stamp": "88f6fc605f501e8e"
     },
-    "copyFromBird.foodHelperOne": {
-      "stamp": "84442a947e764110"
+    "copyFromBird.pickBird": {
+      "stamp": "169a52a830858586"
+    },
+    "copyFromBird.startFresh": {
+      "stamp": "6875fed52d80ae87"
     },
     "copyFromBird.title": {
       "stamp": "1567c17de869f000"
+    },
+    "copyFromBird.undo": {
+      "stamp": "eff6798f17be1468"
     },
     "covering.coveringFlock": {
       "stamp": "45c78f6f408064f3"
