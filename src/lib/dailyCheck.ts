@@ -35,21 +35,25 @@ export function useDailyCheckToday(birdIds: string[]) {
           .in("bird_id", ids).eq("log_date", day).order("created_at", { ascending: false }),
         supabase.from("weight_entries").select("id, bird_id, grams, measured_at, meal_relation")
           .in("bird_id", ids).gte("measured_at", localMidnightISO()).order("measured_at", { ascending: false }),
-        // One latest weight per bird; a small per-bird limit keeps this cheap.
-        Promise.all(ids.map((id) => supabase.from("weight_entries").select("grams").eq("bird_id", id)
-          .order("measured_at", { ascending: false }).limit(1).maybeSingle())),
+        // Each bird's latest weight in ONE request, however big the flock:
+        // embed weight_entries on birds and keep only the newest per bird.
+        supabase.from("birds").select("id, weight_entries(grams, measured_at)").in("id", ids)
+          .order("measured_at", { referencedTable: "weight_entries", ascending: false })
+          .limit(1, { referencedTable: "weight_entries" }),
       ]);
       if (logs.error) throw logs.error;
       if (todayW.error) throw todayW.error;
+      if (lastW.error) throw lastW.error;
+      const lastById = new Map(((lastW.data ?? []) as any[]).map((b) => [b.id as string, (b.weight_entries?.[0]?.grams ?? null) as number | null]));
       const out: Record<string, BirdToday> = {};
-      ids.forEach((id, i) => {
+      for (const id of ids) {
         const l = (logs.data ?? []).find((r: any) => r.bird_id === id) as any;
         out[id] = {
           check: l ? { id: l.id, triage_status: l.triage_status, created_at: l.created_at } : null,
           weights: ((todayW.data ?? []) as any[]).filter((w) => w.bird_id === id),
-          lastGrams: (lastW[i].data as any)?.grams ?? null,
+          lastGrams: lastById.get(id) ?? null,
         };
-      });
+      }
       return out;
     },
   });

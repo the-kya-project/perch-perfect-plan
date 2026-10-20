@@ -2175,6 +2175,106 @@
   "covering.somethingsWrong": "Er is iets mis met {{bird}}",
   // Today's care for {{bird}}.
   "covering.todaysCareFor": "De verzorging van vandaag voor {{bird}}.",
+  // Add another weight
+  "dailyCheck.addAnotherWeight": "Nog een gewicht toevoegen",
+  // Add today's weight
+  "dailyCheck.addTodaysWeight": "Gewicht van vandaag toevoegen",
+  // Add a weight for {{name}}
+  "dailyCheck.addWeightFor": "Gewicht toevoegen voor {{name}}",
+  // after meal
+  "dailyCheck.afterMealLower": "na het eten",
+  // Back
+  "dailyCheck.back": "Terug",
+  // before meal
+  "dailyCheck.beforeMealLower": "voor het eten",
+  // That's {{pct}}% lower than last time. Save anyway?
+  "dailyCheck.bigDrop": "Dat is {{pct}}% lager dan de vorige keer. Toch opslaan?",
+  // That's {{pct}}% higher than last time. Save anyway?
+  "dailyCheck.bigRise": "Dat is {{pct}}% hoger dan de vorige keer. Toch opslaan?",
+  // Checked {{time}}
+  "dailyCheck.checkedAt": "Gecheckt om {{time}}",
+  // Call your avian vet today. We'll keep this flagged on {{name}}'s page.
+  "dailyCheck.concerningRed": "Bel vandaag nog je vogeldierenarts. We houden dit gemarkeerd op de pagina van {{name}}.",
+  // Concerning signs.
+  "dailyCheck.concerningTitle": "Zorgelijke signalen.",
+  // Keep a close eye, and call your avian vet if it continues. We'll keep this flagged on {{name}}'s page.
+  "dailyCheck.concerningWatch": "Houd het goed in de gaten en bel je vogeldierenarts als het aanhoudt. We houden dit gemarkeerd op de pagina van {{name}}.",
+  // Fix
+  "dailyCheck.fix": "Aanpassen",
+  // e.g. 95
+  "dailyCheck.gramsPlaceholder": "bijv. 95",
+  // Health check
+  "dailyCheck.healthCheck": "Gezondheidscheck",
+  // Alertness
+  "dailyCheck.item.alertness": "Alertheid",
+  // Breathing
+  "dailyCheck.item.breathing": "Ademhaling",
+  // Droppings
+  "dailyCheck.item.droppings": "Poep",
+  // Fumes or toxins
+  "dailyCheck.item.exposure": "Dampen of gif",
+  // Fluffed up
+  "dailyCheck.item.fluffed": "Opgezette veren",
+  // Eating
+  "dailyCheck.item.food": "Eten",
+  // Injury
+  "dailyCheck.item.injury": "Verwonding",
+  // Vocalizing
+  "dailyCheck.item.noise": "Geluid maken",
+  // Perching
+  "dailyCheck.item.posture": "Op stok zitten",
+  // Face or vomiting
+  "dailyCheck.item.vomiting": "Gezicht of braken",
+  // Yes, looks normal
+  "dailyCheck.looksNormal": "Ja, ziet er normaal uit",
+  // Does {{name}} look like usual?
+  "dailyCheck.lookUsual": "Ziet {{name}} eruit zoals altijd?",
+  // Not done yet
+  "dailyCheck.notDone": "Nog niet gedaan",
+  // Note (optional)
+  "dailyCheck.noteLabel": "Notitie (optioneel)",
+  // What did you notice?
+  "dailyCheck.notePlaceholder": "Wat viel je op?",
+  // No weight today
+  "dailyCheck.noWeightToday": "Vandaag geen gewicht",
+  // Health check: all normal
+  "dailyCheck.resultGreen": "Gezondheidscheck: alles normaal",
+  // Health check: call your vet
+  "dailyCheck.resultRed": "Gezondheidscheck: bel je dierenarts",
+  // Health check: something to check
+  "dailyCheck.resultYellow": "Gezondheidscheck: iets om op te letten",
+  // Save weight
+  "dailyCheck.retryWeight": "Gewicht opslaan",
+  // Save anyway
+  "dailyCheck.saveAnyway": "Toch opslaan",
+  // Save weight & health check
+  "dailyCheck.saveBoth": "Gewicht & gezondheidscheck opslaan",
+  // Save health check
+  "dailyCheck.saveCheck": "Gezondheidscheck opslaan",
+  // Save weight
+  "dailyCheck.saveWeight": "Gewicht opslaan",
+  // Something's different
+  "dailyCheck.somethingDifferent": "Er is iets anders",
+  // Tap everything you noticed.
+  "dailyCheck.tapEverything": "Tik alles aan wat je opviel.",
+  // Weight and health check
+  "dailyCheck.title": "Gewicht en gezondheidscheck",
+  // Today
+  "dailyCheck.today": "Vandaag",
+  // Today, {{time}}
+  "dailyCheck.todayAt": "Vandaag, {{time}}",
+  // Today · {{time}}
+  "dailyCheck.todayAtEyebrow": "Vandaag · {{time}}",
+  // Alert, eating, normal droppings, breathing easy, perching well.
+  "dailyCheck.usualHelp": "Alert, eet, normale poep, ademt rustig, zit goed op stok.",
+  // {{n}} today
+  "dailyCheck.weighInsToday": "{{n}} vandaag",
+  // Weight chart →
+  "dailyCheck.weightChart": "Gewichtsgrafiek →",
+  // Weight didn't save. Try again.
+  "dailyCheck.weightFailed": "Het gewicht is niet opgeslagen. Probeer het opnieuw.",
+  // What's different with {{name}}?
+  "dailyCheck.whatsDifferent": "Wat is er anders aan {{name}}?",
   // Account emergency defaults
   "dashboard.accountEmergencyDefaults": "Standaard noodinfo voor je account",
   // added a journal note
@@ -2201,10 +2301,18 @@
   "dashboard.allGood": "Alles goed",
   // An owner
   "dashboard.anOwner": "Een eigenaar",
+  // {{name}}: something to check
+  "dashboard.birdSomethingToCheck": "{{name}}: iets om op te letten",
+  // Checked ✓
+  "dashboard.checkedDone": "Gecheckt ✓",
   // Close
   "dashboard.close": "Sluiten",
   // Concern flagged
   "dashboard.concernFlagged": "Aandachtspunt gemeld",
+  // {{name}}'s weight and health check
+  "dashboard.dailyCheckFor": "Gewicht en gezondheidscheck van {{name}}",
+  // Daily health check
+  "dashboard.dailyHealthCheck": "Dagelijkse gezondheidscheck",
   // {{filled}} of {{total}} default fields set.
   "dashboard.defaultsFilled": "{{filled}} van {{total}} standaardvelden ingevuld.",
   // Set owner phone, avian vet, and other emergency info <1>once</1>. Every bird uses this unless you edit it for that bird on its Emergency tab.
@@ -2241,6 +2349,18 @@
   "dashboard.field.ownerPhone": "Telefoon eigenaar",
   // Poison control number
   "dashboard.field.poisonControlNumber": "Nummer Vergiftigingen Informatie Centrum",
+  // Grab a weight and a quick once-over of your birds.
+  "dashboard.flockCheckBody": "Even wegen en snel een blik op je vogels.",
+  // Weigh & check your flock
+  "dashboard.flockCheckCta": "Weeg & check je vogels",
+  // Done at {{time}}
+  "dashboard.flockCheckDoneAt": "Klaar om {{time}}",
+  // All {{n}} birds checked
+  "dashboard.flockCheckDoneN": "Alle {{n}} vogels gecheckt",
+  // Both birds checked
+  "dashboard.flockCheckDoneTwo": "Beide vogels gecheckt",
+  // Finish your flock check ({{done}} of {{total}} done)
+  "dashboard.flockCheckFinish": "Maak de check af ({{done}} van {{total}} klaar)",
   // Foster
   "dashboard.foster": "Opvang",
   // {{n}} foster
@@ -2255,6 +2375,8 @@
   "dashboard.goodEvening": "Goedenavond",
   // Good morning
   "dashboard.goodMorning": "Goedemorgen",
+  // {{n}} g ✓
+  "dashboard.gramsDone": "{{n}} g ✓",
   // g
   "dashboard.gramsUnit": "g",
   // {{part}}, {{name}}
@@ -2279,14 +2401,22 @@
   "dashboard.joinTwo": "{{a}} en {{b}}",
   // {{n}} min ago
   "dashboard.minAgo": "{{n}} min geleden",
+  // {{n}} all normal
+  "dashboard.nAllNormal": "{{n}} alles normaal",
   // Needs a weigh-in
   "dashboard.needsAWeighIn": "Moet gewogen worden",
+  // Needs daily check
+  "dashboard.needsDailyCheck": "Dagelijkse check nodig",
   // No birds yet — start with your first.
   "dashboard.noBirdsYet": "Nog geen vogels — begin met je eerste.",
   // No defaults set yet — each bird needs its own contacts until you fill these in.
   "dashboard.noDefaultsYet": "Nog geen standaardgegevens ingesteld — elke vogel heeft eigen contacten nodig totdat je deze invult.",
+  // {{done}} of {{total}} checked
+  "dashboard.nOfTotalChecked": "{{done}} van {{total}} gecheckt",
   // No weights yet
   "dashboard.noWeightsYet": "Nog geen gewichten",
+  // {{n}} days
+  "dashboard.overdueDays": "{{n}} dagen",
   // {{name}}'s household
   "dashboard.ownersHousehold": "Huishouden van {{name}}",
   // {{name}}' household
@@ -2299,6 +2429,8 @@
   "dashboard.saveAccountDefaults": "Standaardgegevens opslaan",
   // Saving...
   "dashboard.saving": "Opslaan...",
+  // See today's checks →
+  "dashboard.seeTodaysChecks": "Bekijk de checks van vandaag →",
   // Set up
   "dashboard.setUp": "Instellen",
   // Sharing all your birds
@@ -2315,6 +2447,8 @@
   "dashboard.thingCountOther": "{{n}} dingen",
   // Today
   "dashboard.today": "Vandaag",
+  // Weigh-ins overdue: {{list}}
+  "dashboard.weighInsOverdue": "Moeten gewogen worden: {{list}}",
   // Welcome to your flock
   "dashboard.welcomeToYourFlock": "Welkom bij je vogels",
   // With you since {{date}}
@@ -2575,6 +2709,40 @@
   "farewell.you": "jij",
   // your bird
   "farewell.yourBird": "je vogel",
+  // Every bird is checked.
+  "flockCheck.allDone": "Alle vogels zijn gecheckt.",
+  // Back
+  "flockCheck.back": "Terug",
+  // Concerning
+  "flockCheck.concerning": "Zorgelijk",
+  // {{n}} g
+  "flockCheck.grams": "{{n}} g",
+  // last {{n}} g
+  "flockCheck.lastWeight": "laatst {{n}} g",
+  // Flock check — Kya & Co.
+  "flockCheck.metaTitle": "Check van je vogels — Kya & Co.",
+  // Health check normal
+  "flockCheck.normal": "Gezondheidscheck normaal",
+  // Not checked yet
+  "flockCheck.notChecked": "Nog niet gecheckt",
+  // {{done}} of {{total}} done
+  "flockCheck.progress": "{{done}} van {{total}} klaar",
+  // {{done}} of {{total}} birds checked
+  "flockCheck.progressAria": "{{done}} van {{total}} vogels gecheckt",
+  // Save · next: {{name}}
+  "flockCheck.saveNext": "Opslaan · volgende: {{name}}",
+  // Each bird saves as soon as you finish it.
+  "flockCheck.savesAsYouGo": "Elke vogel wordt opgeslagen zodra je klaar bent.",
+  // See you tomorrow.
+  "flockCheck.seeYouTomorrow": "Tot morgen.",
+  // Something to check
+  "flockCheck.somethingToCheck": "Iets om op te letten",
+  // Start
+  "flockCheck.start": "Begin",
+  // Daily health check · all birds
+  "flockCheck.title": "Dagelijkse gezondheidscheck · alle vogels",
+  // View
+  "flockCheck.view": "Bekijk",
   // Add another {{type}} item
   "foodEditor.addAnotherItem": "Nog een {{type}}-item toevoegen",
   // Add item

@@ -3258,6 +3258,156 @@
     "covering.todaysCareFor": {
       "stamp": "ac0f10e53df5cf4c"
     },
+    "dailyCheck.addAnotherWeight": {
+      "stamp": "105e7e3d331899ce"
+    },
+    "dailyCheck.addTodaysWeight": {
+      "stamp": "9564c7748a891c09"
+    },
+    "dailyCheck.addWeightFor": {
+      "stamp": "ab8f2da685d5191d"
+    },
+    "dailyCheck.afterMealLower": {
+      "stamp": "cb3f28c121a1c4af"
+    },
+    "dailyCheck.back": {
+      "stamp": "5001815e48b3af8b"
+    },
+    "dailyCheck.beforeMealLower": {
+      "stamp": "02448216d0184ca8"
+    },
+    "dailyCheck.bigDrop": {
+      "stamp": "edb7d344939bae32"
+    },
+    "dailyCheck.bigRise": {
+      "stamp": "f8d5f521d5fe52da"
+    },
+    "dailyCheck.checkedAt": {
+      "stamp": "5240b2f3e174aabf"
+    },
+    "dailyCheck.concerningRed": {
+      "stamp": "6ee1759fd5174ec8"
+    },
+    "dailyCheck.concerningTitle": {
+      "stamp": "94a77bb8d856c3ac"
+    },
+    "dailyCheck.concerningWatch": {
+      "stamp": "6391af817678d05c"
+    },
+    "dailyCheck.fix": {
+      "stamp": "be9c9548d327b354"
+    },
+    "dailyCheck.gramsPlaceholder": {
+      "stamp": "a18beb5e16bf8307"
+    },
+    "dailyCheck.healthCheck": {
+      "stamp": "8e03faf2e5f1ee54"
+    },
+    "dailyCheck.item.alertness": {
+      "stamp": "2d881a7420a6db72"
+    },
+    "dailyCheck.item.breathing": {
+      "stamp": "1fdac70f20912e98"
+    },
+    "dailyCheck.item.droppings": {
+      "stamp": "c2281305e71cfa48"
+    },
+    "dailyCheck.item.exposure": {
+      "stamp": "3daf81a4ae72022a"
+    },
+    "dailyCheck.item.fluffed": {
+      "stamp": "f7ed30084fa31161"
+    },
+    "dailyCheck.item.food": {
+      "stamp": "ff4a84c349e35ef1"
+    },
+    "dailyCheck.item.injury": {
+      "stamp": "349ca9446b4de23b"
+    },
+    "dailyCheck.item.noise": {
+      "stamp": "c06a56812f2898ca"
+    },
+    "dailyCheck.item.posture": {
+      "stamp": "bd82ae1d35111232"
+    },
+    "dailyCheck.item.vomiting": {
+      "stamp": "5339aec0644b2318"
+    },
+    "dailyCheck.looksNormal": {
+      "stamp": "68d404b5b7881218"
+    },
+    "dailyCheck.lookUsual": {
+      "stamp": "7efbd79214501aee"
+    },
+    "dailyCheck.notDone": {
+      "stamp": "70f6ad313fd10308"
+    },
+    "dailyCheck.noteLabel": {
+      "stamp": "1c9c81d2c9ea79a7"
+    },
+    "dailyCheck.notePlaceholder": {
+      "stamp": "97431dbc231eff90"
+    },
+    "dailyCheck.noWeightToday": {
+      "stamp": "d37ebe292ba5ee0e"
+    },
+    "dailyCheck.resultGreen": {
+      "stamp": "abc5cb2b28347912"
+    },
+    "dailyCheck.resultRed": {
+      "stamp": "6897fdd96ad44bdb"
+    },
+    "dailyCheck.resultYellow": {
+      "stamp": "bcd863d101341b34"
+    },
+    "dailyCheck.retryWeight": {
+      "stamp": "ceaf042818a3f417"
+    },
+    "dailyCheck.saveAnyway": {
+      "stamp": "623f5aa363471649"
+    },
+    "dailyCheck.saveBoth": {
+      "stamp": "95286b6310fff98e"
+    },
+    "dailyCheck.saveCheck": {
+      "stamp": "f6086c88430c8eee"
+    },
+    "dailyCheck.saveWeight": {
+      "stamp": "ceaf042818a3f417"
+    },
+    "dailyCheck.somethingDifferent": {
+      "stamp": "58af753c79e0b612"
+    },
+    "dailyCheck.tapEverything": {
+      "stamp": "6980206c07dd60ee"
+    },
+    "dailyCheck.title": {
+      "stamp": "8dd349c423b566fd"
+    },
+    "dailyCheck.today": {
+      "stamp": "65e7700b50124553"
+    },
+    "dailyCheck.todayAt": {
+      "stamp": "2b183f60cdc6f825"
+    },
+    "dailyCheck.todayAtEyebrow": {
+      "stamp": "e0508c67d30f9306"
+    },
+    "dailyCheck.usualHelp": {
+      "stamp": "bdb5ebd27ce6e949"
+    },
+    "dailyCheck.weighInsToday": {
+      "stamp": "f435750ed4e47e8e"
+    },
+    "dailyCheck.weightChart": {
+      "stamp": "67616bb634a8f4bc"
+    },
+    "dailyCheck.weightFailed": {
+      "stamp": "77d783b017452835"
+    },
+    "dailyCheck.whatsDifferent": {
+      "stamp": "5dcfd0093f333f8b"
+    },
     "dashboard.accountEmergencyDefaults": {
       "stamp": "6d882dfff29582c6"
     },
@@ -3297,11 +3447,23 @@
     "dashboard.anOwner": {
       "stamp": "2d725f2fa21f976d"
     },
+    "dashboard.birdSomethingToCheck": {
+      "stamp": "0cfb1e0b2cf6e037"
+    },
+    "dashboard.checkedDone": {
+      "stamp": "a7e25c29ce6f6454"
+    },
     "dashboard.close": {
       "stamp": "d981ee660d866d8c"
     },
     "dashboard.concernFlagged": {
       "stamp": "e2d41a9d4e29d90a"
+    },
+    "dashboard.dailyCheckFor": {
+      "stamp": "9843f4f19ab6e8d0"
+    },
+    "dashboard.dailyHealthCheck": {
+      "stamp": "01e38b3413c0e455"
     },
     "dashboard.defaultsFilled": {
       "stamp": "87a04c3a5d592bbe"
@@ -3357,6 +3519,24 @@
     "dashboard.field.poisonControlNumber": {
       "stamp": "e921de87af5a5753"
     },
+    "dashboard.flockCheckBody": {
+      "stamp": "4be05364bac6f8b6"
+    },
+    "dashboard.flockCheckCta": {
+      "stamp": "1ef05daeda7e5e11"
+    },
+    "dashboard.flockCheckDoneAt": {
+      "stamp": "9268c1b9c2b6c3e2"
+    },
+    "dashboard.flockCheckDoneN": {
+      "stamp": "5972af1644b8cbf6"
+    },
+    "dashboard.flockCheckDoneTwo": {
+      "stamp": "97a9754f93da0a97"
+    },
+    "dashboard.flockCheckFinish": {
+      "stamp": "e3af6828ce6a8cf7"
+    },
     "dashboard.foster": {
       "stamp": "883bc5824866f631"
     },
@@ -3377,6 +3557,9 @@
     },
     "dashboard.goodMorning": {
       "stamp": "d2ed179a60b83184"
+    },
+    "dashboard.gramsDone": {
+      "stamp": "43f581da9d4dbe70"
     },
     "dashboard.gramsUnit": {
       "stamp": "9393ef97578f0bd3"
@@ -3414,8 +3597,14 @@
     "dashboard.minAgo": {
       "stamp": "6e102612f2738fb6"
     },
+    "dashboard.nAllNormal": {
+      "stamp": "1de82ba84432fb8d"
+    },
     "dashboard.needsAWeighIn": {
       "stamp": "50ca555ffc8aba95"
+    },
+    "dashboard.needsDailyCheck": {
+      "stamp": "4448fbb2e7410bd0"
     },
     "dashboard.noBirdsYet": {
       "stamp": "43caa67651968019"
@@ -3423,8 +3612,14 @@
     "dashboard.noDefaultsYet": {
       "stamp": "a6586910feac99a0"
     },
+    "dashboard.nOfTotalChecked": {
+      "stamp": "0cf9f0853847bb4e"
+    },
     "dashboard.noWeightsYet": {
       "stamp": "83d210b728cc6f87"
+    },
+    "dashboard.overdueDays": {
+      "stamp": "e4eb664b0d3db46d"
     },
     "dashboard.ownersHousehold": {
       "stamp": "db8358dc681a5ea4"
@@ -3443,6 +3638,9 @@
     },
     "dashboard.saving": {
       "stamp": "0b6adadaf808c8a5"
+    },
+    "dashboard.seeTodaysChecks": {
+      "stamp": "85f76c13f036d871"
     },
     "dashboard.setUp": {
       "stamp": "29b8b2d01850fe7a"
@@ -3467,6 +3665,9 @@
     },
     "dashboard.today": {
       "stamp": "65e7700b50124553"
+    },
+    "dashboard.weighInsOverdue": {
+      "stamp": "c9b8f0f0a509802d"
     },
     "dashboard.welcomeToYourFlock": {
       "stamp": "8523dfe1d2284389"
@@ -3857,6 +4058,57 @@
     },
     "farewell.yourBird": {
       "stamp": "fb5d7aead9178f25"
+    },
+    "flockCheck.allDone": {
+      "stamp": "c932c1263370af8c"
+    },
+    "flockCheck.back": {
+      "stamp": "5001815e48b3af8b"
+    },
+    "flockCheck.concerning": {
+      "stamp": "8676a7a66f6b1267"
+    },
+    "flockCheck.grams": {
+      "stamp": "32a06ffb524410f9"
+    },
+    "flockCheck.lastWeight": {
+      "stamp": "65ed12d98ef3a938"
+    },
+    "flockCheck.metaTitle": {
+      "stamp": "e7c2887494cc77ba"
+    },
+    "flockCheck.normal": {
+      "stamp": "bd98a1ef0645386f"
+    },
+    "flockCheck.notChecked": {
+      "stamp": "da4820767bef144b"
+    },
+    "flockCheck.progress": {
+      "stamp": "59efbd7d6145d298"
+    },
+    "flockCheck.progressAria": {
+      "stamp": "3fc6eb3aebd3498b"
+    },
+    "flockCheck.saveNext": {
+      "stamp": "ccd66bb87fa51b6c"
+    },
+    "flockCheck.savesAsYouGo": {
+      "stamp": "5b690095730d5353"
+    },
+    "flockCheck.seeYouTomorrow": {
+      "stamp": "12699a783603b140"
+    },
+    "flockCheck.somethingToCheck": {
+      "stamp": "334cb9928400c46a"
+    },
+    "flockCheck.start": {
+      "stamp": "c30064b41a710fa9"
+    },
+    "flockCheck.title": {
+      "stamp": "4034959f2ad99a4c"
+    },
+    "flockCheck.view": {
+      "stamp": "5c82e762c70a893a"
     },
     "foodEditor.addAnotherItem": {
       "stamp": "9649a82e8720ead5"
