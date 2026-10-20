@@ -122,6 +122,17 @@ const others: Array<[string, T.BuiltEmail]> = [
   ["sitter-link-cancelled", T.buildSitterInviteCancelledEmail({ ownerName: "Sam", birdNames: BIRD, dateRange: RANGE })],
 ];
 
+// Supabase auth emails (Send Email hook), in both languages. New, so they live
+// in their own folder rather than in the others/ guard.
+const VERIFY = "https://koyqdyamazuuwvqbttnj.supabase.co/auth/v1/verify?token=demo&type=signup&redirect_to=https%3A%2F%2Fapp.thekyaproject.com%2Fwelcome";
+const authKinds = ["signup", "recovery", "magiclink", "invite", "emailChangeNew", "emailChangeCurrent", "reauthentication"] as const;
+const auth: Array<[string, T.BuiltEmail]> = (["en", "nl"] as const).flatMap((locale) =>
+  authKinds.map((kind): [string, T.BuiltEmail] => [
+    `${locale}-${kind}`,
+    T.buildAuthEmail({ kind, locale, link: kind === "reauthentication" ? undefined : VERIFY, code: "305805", newEmail: "sam.new@example.com" }),
+  ]),
+);
+
 fs.rmSync(OUT, { recursive: true, force: true });
 fs.mkdirSync(path.join(OUT, "others"), { recursive: true });
 
@@ -135,6 +146,10 @@ for (const [name, built] of monthly) {
   fs.writeFileSync(path.join(OUT, `${name}.html`), page(built.subject, built.html));
   fs.writeFileSync(path.join(OUT, `${name}.txt`), built.text);
   index.push(`<li><a href="${name}.html">${name}</a> — ${built.subject}</li>`);
+}
+fs.mkdirSync(path.join(OUT, "auth"), { recursive: true });
+for (const [name, built] of auth) {
+  fs.writeFileSync(path.join(OUT, "auth", `${name}.html`), page(built.subject, built.html));
 }
 for (const [name, built] of others) {
   fs.writeFileSync(path.join(OUT, "others", `${name}.html`), page(built.subject, built.html));

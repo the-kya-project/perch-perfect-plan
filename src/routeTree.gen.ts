@@ -76,6 +76,7 @@ import { Route as ApiPublicHooksCarePlanRemindersRouteImport } from './routes/ap
 import { Route as ApiPublicHooksEngagementNudgesRouteImport } from './routes/api/public/hooks/engagement-nudges'
 import { Route as ApiPublicHooksMonthlyLetterRouteImport } from './routes/api/public/hooks/monthly-letter'
 import { Route as ApiPublicHooksOnboardingEmailsRouteImport } from './routes/api/public/hooks/onboarding-emails'
+import { Route as ApiPublicHooksSendEmailRouteImport } from './routes/api/public/hooks/send-email'
 import { Route as AuthenticatedBirdsBirdIdPlanIndexRouteImport } from './routes/_authenticated/birds/$birdId.plan.index'
 import { Route as AuthenticatedBirdsBirdIdPlanEditorRouteImport } from './routes/_authenticated/birds/$birdId.plan.editor'
 import { Route as AuthenticatedBirdsBirdIdScansScanIdRouteImport } from './routes/_authenticated/birds/$birdId.scans.$scanId'
@@ -449,6 +450,11 @@ const ApiPublicHooksOnboardingEmailsRoute =
     path: '/api/public/hooks/onboarding-emails',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksSendEmailRoute = ApiPublicHooksSendEmailRouteImport.update({
+  id: '/api/public/hooks/send-email',
+  path: '/api/public/hooks/send-email',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedBirdsBirdIdPlanIndexRoute =
   AuthenticatedBirdsBirdIdPlanIndexRouteImport.update({
     id: '/',
@@ -552,6 +558,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/engagement-nudges': typeof ApiPublicHooksEngagementNudgesRoute
   '/api/public/hooks/monthly-letter': typeof ApiPublicHooksMonthlyLetterRoute
   '/api/public/hooks/onboarding-emails': typeof ApiPublicHooksOnboardingEmailsRoute
+  '/api/public/hooks/send-email': typeof ApiPublicHooksSendEmailRoute
   '/birds/$birdId/': typeof AuthenticatedBirdsBirdIdIndexRoute
   '/birds/$birdId/plan/editor': typeof AuthenticatedBirdsBirdIdPlanEditorRoute
   '/birds/$birdId/scans/$scanId': typeof AuthenticatedBirdsBirdIdScansScanIdRoute
@@ -620,6 +627,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/engagement-nudges': typeof ApiPublicHooksEngagementNudgesRoute
   '/api/public/hooks/monthly-letter': typeof ApiPublicHooksMonthlyLetterRoute
   '/api/public/hooks/onboarding-emails': typeof ApiPublicHooksOnboardingEmailsRoute
+  '/api/public/hooks/send-email': typeof ApiPublicHooksSendEmailRoute
   '/birds/$birdId': typeof AuthenticatedBirdsBirdIdIndexRoute
   '/birds/$birdId/plan/editor': typeof AuthenticatedBirdsBirdIdPlanEditorRoute
   '/birds/$birdId/scans/$scanId': typeof AuthenticatedBirdsBirdIdScansScanIdRoute
@@ -696,6 +704,7 @@ export interface FileRoutesById {
   '/api/public/hooks/engagement-nudges': typeof ApiPublicHooksEngagementNudgesRoute
   '/api/public/hooks/monthly-letter': typeof ApiPublicHooksMonthlyLetterRoute
   '/api/public/hooks/onboarding-emails': typeof ApiPublicHooksOnboardingEmailsRoute
+  '/api/public/hooks/send-email': typeof ApiPublicHooksSendEmailRoute
   '/_authenticated/birds/$birdId/': typeof AuthenticatedBirdsBirdIdIndexRoute
   '/_authenticated/birds/$birdId/plan/editor': typeof AuthenticatedBirdsBirdIdPlanEditorRoute
   '/_authenticated/birds/$birdId/scans/$scanId': typeof AuthenticatedBirdsBirdIdScansScanIdRoute
@@ -772,6 +781,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/engagement-nudges'
     | '/api/public/hooks/monthly-letter'
     | '/api/public/hooks/onboarding-emails'
+    | '/api/public/hooks/send-email'
     | '/birds/$birdId/'
     | '/birds/$birdId/plan/editor'
     | '/birds/$birdId/scans/$scanId'
@@ -840,6 +850,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/engagement-nudges'
     | '/api/public/hooks/monthly-letter'
     | '/api/public/hooks/onboarding-emails'
+    | '/api/public/hooks/send-email'
     | '/birds/$birdId'
     | '/birds/$birdId/plan/editor'
     | '/birds/$birdId/scans/$scanId'
@@ -915,6 +926,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/engagement-nudges'
     | '/api/public/hooks/monthly-letter'
     | '/api/public/hooks/onboarding-emails'
+    | '/api/public/hooks/send-email'
     | '/_authenticated/birds/$birdId/'
     | '/_authenticated/birds/$birdId/plan/editor'
     | '/_authenticated/birds/$birdId/scans/$scanId'
@@ -945,6 +957,7 @@ export interface RootRouteChildren {
   ApiPublicHooksEngagementNudgesRoute: typeof ApiPublicHooksEngagementNudgesRoute
   ApiPublicHooksMonthlyLetterRoute: typeof ApiPublicHooksMonthlyLetterRoute
   ApiPublicHooksOnboardingEmailsRoute: typeof ApiPublicHooksOnboardingEmailsRoute
+  ApiPublicHooksSendEmailRoute: typeof ApiPublicHooksSendEmailRoute
   ApiPublicBereavementReviewReviewIdSigRoute: typeof ApiPublicBereavementReviewReviewIdSigRoute
   ApiPublicChartBirdIdMonthSigRoute: typeof ApiPublicChartBirdIdMonthSigRoute
   ApiPublicUnsubscribeCategoryUserIdSigRoute: typeof ApiPublicUnsubscribeCategoryUserIdSigRoute
@@ -1421,6 +1434,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksOnboardingEmailsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/send-email': {
+      id: '/api/public/hooks/send-email'
+      path: '/api/public/hooks/send-email'
+      fullPath: '/api/public/hooks/send-email'
+      preLoaderRoute: typeof ApiPublicHooksSendEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/birds/$birdId/plan/': {
       id: '/_authenticated/birds/$birdId/plan/'
       path: '/'
@@ -1679,6 +1699,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksEngagementNudgesRoute: ApiPublicHooksEngagementNudgesRoute,
   ApiPublicHooksMonthlyLetterRoute: ApiPublicHooksMonthlyLetterRoute,
   ApiPublicHooksOnboardingEmailsRoute: ApiPublicHooksOnboardingEmailsRoute,
+  ApiPublicHooksSendEmailRoute: ApiPublicHooksSendEmailRoute,
   ApiPublicBereavementReviewReviewIdSigRoute:
     ApiPublicBereavementReviewReviewIdSigRoute,
   ApiPublicChartBirdIdMonthSigRoute: ApiPublicChartBirdIdMonthSigRoute,

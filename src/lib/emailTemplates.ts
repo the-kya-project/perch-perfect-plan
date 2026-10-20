@@ -552,6 +552,9 @@ function shell(opts: {
    *  (e.g. a cancellation to a token sitter whose link is already dead). */
   cta?: string;
   link?: string;
+  /** Raw markup directly under the CTA (the auth emails' copy-this-link
+   *  fallback). Empty for everything else, so their output is unchanged. */
+  afterCta?: string;
   foot: string;
   /** Optional "From the field notes" blog block rendered under the CTA. */
   reading?: { title: string; teaser: string; url: string };
@@ -641,7 +644,7 @@ function shell(opts: {
       <h1 style="margin:7px 0 0;font-family:${SERIF};font-size:21px;line-height:28px;font-weight:500;color:#ffffff;">${opts.heading}</h1>
     </td></tr>
     <tr><td style="padding:24px;">
-      ${opts.bodyHtml ?? `<p style="margin:0;font-family:${SANS};font-size:15px;line-height:1.6;color:${C.green};">${opts.body}</p>`}${cta}${reading}${nextUp}${healthNote}
+      ${opts.bodyHtml ?? `<p style="margin:0;font-family:${SANS};font-size:15px;line-height:1.6;color:${C.green};">${opts.body}</p>`}${cta}${opts.afterCta ?? ""}${reading}${nextUp}${healthNote}
       <p style="margin:${footGap}px 0 0;font-family:${SANS};font-size:${opts.footFine ? "11.5" : "12"}px;line-height:1.5;color:${C.muted};${opts.footFine ? "font-style:italic;" : ""}">${opts.foot}</p>
       <p style="margin:18px 0 0;font-family:${SANS};font-size:11px;line-height:17px;color:${C.muted};text-align:center;border-top:1px solid ${C.rule};padding-top:12px;">${footNote}</p>
     </td></tr>
@@ -1180,5 +1183,75 @@ export function buildBereavementEmail(opts: { firstName?: string; birdName: stri
   </div>
 </div>`,
     text: t("email.bereavement.text", { birdName: opts.birdName }),
+  };
+}
+
+// ── Supabase auth emails ─────────────────────────────────────────────────────
+// Sent by the Send Email hook (src/routes/api/public/hooks/send-email.ts)
+// instead of Supabase's dashboard templates, so they come out in the user's
+// language and in the same shell as everything else. `link` is the Supabase
+// /auth/v1/verify URL; `code` is the 6-digit OTP, shown only where the flow
+// has nothing to click (reauthentication).
+
+export type AuthEmailKind =
+  | "signup"
+  | "recovery"
+  | "magiclink"
+  | "invite"
+  | "emailChangeNew"
+  | "emailChangeCurrent"
+  | "reauthentication";
+
+const plain = (s: string) => s.replace(/&amp;/g, "&");
+
+export function buildAuthEmail(opts: {
+  kind: AuthEmailKind;
+  link?: string;
+  code?: string;
+  newEmail?: string;
+  locale?: string;
+}): BuiltEmail {
+  const t = emailT(opts.locale);
+  const k = `email.auth.${opts.kind}`;
+  const code = escapeHtml(opts.code ?? "");
+  const vars = { newEmail: escapeHtml(opts.newEmail ?? ""), code };
+  const heading = t(`${k}.heading`);
+  const body = t(`${k}.body`, vars);
+  const foot = opts.kind === "emailChangeCurrent" ? t(`${k}.foot`) : t("email.auth.foot");
+  const kicker = opts.kind === "signup" ? t(`${k}.kicker`) : t("email.auth.kicker");
+  const p = (s: string, extra = "") =>
+    `<p style="margin:0;font-family:${SANS};font-size:15px;line-height:1.6;color:${C.green};${extra}">${s}</p>`;
+
+  let bodyHtml = p(body);
+  if (opts.code && !opts.link) {
+    bodyHtml += `
+      <p style="margin:18px 0 0;font-family:${SANS};font-size:12px;line-height:17px;color:${C.muted};">${t("email.auth.codeLabel")}</p>
+      ${p(code, `margin-top:4px;font-size:28px;line-height:36px;font-weight:600;letter-spacing:6px;`)}`;
+  }
+
+  // The plain link under the button: some clients strip buttons, and a
+  // password reset that can't be clicked is a support ticket.
+  const fallback = opts.link
+    ? `<p style="margin:16px 0 0;font-family:${SANS};font-size:12px;line-height:1.5;color:${C.muted};">${t("email.auth.linkFallback")}<br><a href="${escapeHtml(opts.link)}" style="color:${C.secondary};word-break:break-all;">${escapeHtml(opts.link)}</a></p>`
+    : "";
+
+  return {
+    subject: plain(t(`${k}.subject`, { code: opts.code ?? "" })),
+    html: shell({
+      kicker,
+      heading,
+      bodyHtml,
+      cta: opts.link ? t(`${k}.cta`) : undefined,
+      link: opts.link ? escapeHtml(opts.link) : undefined,
+      afterCta: fallback,
+      foot,
+      preview: body,
+      t,
+    }),
+    text: plain(
+      opts.link
+        ? t("email.auth.text", { heading, body: t(`${k}.body`, { newEmail: opts.newEmail ?? "" }), link: opts.link, foot })
+        : t("email.auth.textCode", { heading, body: t(`${k}.body`), code: opts.code ?? "", foot }),
+    ),
   };
 }
