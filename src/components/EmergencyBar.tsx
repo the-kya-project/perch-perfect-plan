@@ -6,13 +6,14 @@ import { Home, ClipboardList, BookOpen, AlertTriangle } from "lucide-react";
 // always-present Emergency pill. Home is the all-birds home base; Today is the
 // selected bird's day (its nav link carries the active bird so it's never
 // blank); the scan lives inside Today (per-bird), not the nav. Home / Today /
-// Parrots 101 are icon-above-label (active = dark green, inactive = muted gray).
+// Parrots 101 are icon-above-label (active = forest and bold, inactive = muted
+// #5f5e5a) on a white bar with a #d5dfd5 top rule, matching the owner nav.
 // Emergency is always a solid red pill — the loudest item, never muted.
 export function EmergencyBar({ token, activeBirdId }: { token: string; activeBirdId?: string }) {
   const { t } = useTranslation();
-  const item = "flex flex-col items-center gap-0.5 text-[#8a897f] [&.active]:text-[#1a3d2e]";
+  const item = "flex flex-col items-center gap-0.5 text-[#5f5e5a] [&.active]:text-[#1a3d2e] [&.active_span]:font-bold";
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-[#e3ded0] bg-[#f4f1e8]/95 px-4 pb-[max(env(safe-area-inset-bottom),0.75rem)] pt-2.5 backdrop-blur">
+    <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-[#d5dfd5] bg-white px-4 pb-[max(env(safe-area-inset-bottom),0.75rem)] pt-2.5">
       <div className="mx-auto flex max-w-md items-center justify-between gap-2">
         <Link to="/sitter/$token/home" params={{ token }} className={item} data-coach="nav-home">
           <Home className="size-5" />
