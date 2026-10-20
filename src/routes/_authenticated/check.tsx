@@ -153,7 +153,7 @@ function FlockCheck() {
 
   const header = (
     <header className="text-white" style={{ background: C.forest }}>
-      <div className="mx-auto max-w-md px-5 pt-safe pb-10">
+      <div className="mx-auto max-w-md px-5 pb-10 pt-[calc(env(safe-area-inset-top)+14px)]">
         <div className="flex items-center gap-2">
           <button type="button" onClick={goBack} aria-label={t("flockCheck.back", "Back")} className="-ml-2.5 grid size-11 shrink-0 place-items-center rounded-full text-white">
             <ArrowLeft className="size-5" />

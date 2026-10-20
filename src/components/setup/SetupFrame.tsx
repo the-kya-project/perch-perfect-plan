@@ -96,7 +96,7 @@ export function SetupFrame({
   return (
     <div className="setup-frame flex min-h-screen flex-col bg-white" style={{ color: S.forest }}>
       <header className="text-white" style={{ background: S.forest }}>
-        <div className="mx-auto max-w-md px-4 pb-[52px] pt-[max(env(safe-area-inset-top),14px)]">
+        <div className="mx-auto max-w-md px-4 pb-[52px] pt-[calc(env(safe-area-inset-top)+14px)]">
           <div className="flex items-center gap-3">
             <button
               type="button"

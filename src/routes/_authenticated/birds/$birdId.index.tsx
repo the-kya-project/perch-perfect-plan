@@ -178,7 +178,7 @@ function BirdRecordHero({ birdId }: { birdId: string }) {
   return (
     <>
       {/* Status-bar-safe top padding so the card never clips. */}
-      <div className="px-4 pt-[max(env(safe-area-inset-top),14px)]">
+      <div className="px-4 pt-[calc(env(safe-area-inset-top)+14px)]">
       <div className="relative h-[380px] w-full overflow-hidden rounded-[22px]" style={{ background: K.forest }}>
         {photo?.url ? (
           <BirdPhotoCrop url={photo.url} original={photo.original} position={bird?.photo_position} alt={name} eager />
