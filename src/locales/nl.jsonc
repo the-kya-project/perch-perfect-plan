@@ -1003,18 +1003,12 @@
   "birdSetup.addPhoto": "Foto toevoegen",
   // Add your own…
   "birdSetup.addYourOwn": "Zelf toevoegen…",
-  // A few things are still thin or empty:
-  "birdSetup.aFewThingsAreStill": "Een paar dingen zijn nog summier of leeg:",
   // Anything else a sitter should know.
   "birdSetup.anythingElseASitterShould": "Alles wat een oppas verder moet weten.",
   // Anything off-limits
   "birdSetup.anythingOffLimits": "Verboden plekken",
-  // ← Back to Emergency
-  "birdSetup.backToEmergency": "← Terug naar Noodgevallen",
   // Baseline clip saved.
   "birdSetup.baselineClipSaved": "Referentieclip opgeslagen.",
-  // Before you share
-  "birdSetup.beforeYouShare": "Voordat je deelt",
   // {{name}}'s space
   "birdSetup.behavior.birdsSpace": "De plek van {{name}}",
   // e.g. Low risk, but pinned eyes and a fanned tail mean back off
@@ -1089,8 +1083,6 @@
   "birdSetup.female": "Vrouwtje",
   // Finish setup
   "birdSetup.finishSetup": "Instellen afronden",
-  // — fix it
-  "birdSetup.fixIt": "— oplossen",
   // Flight
   "birdSetup.flight": "Vliegen",
   // Everything here is optional, and the defaults are a good place to start.
@@ -1219,24 +1211,10 @@
   "birdSetup.instr.personalityOptional": "Geef wie er helpt een gevoel voor het karakter en de kleine gewoontes van {{name}}. Alles hier is optioneel.",
   // Things you know without thinking that a sitter might not. Include any hazard a bird could run into in your home.
   "birdSetup.instr.remindersHome": "Dingen die jij zonder nadenken weet, maar een oppas misschien niet. Noem elk gevaar waar een vogel in je huis tegenaan kan lopen.",
-  // Here's exactly what everyone helping will see for {{name}}. Scroll inside the preview to explore the Today screen.
-  "birdSetup.instr.review": "Dit is precies wat iedereen die helpt voor {{name}} te zien krijgt. Scroll in de preview om het Vandaag-scherm te bekijken.",
+  // This is {{name}}'s plan the way a sitter reads it. Tap anything to fix it.
+  "birdSetup.instr.reviewSitter": "Zo leest een oppas het plan van {{name}}. Tik op iets om het aan te passen.",
   // Add short video clips, up to 60 seconds each. Record one now or upload from your phone.
   "birdSetup.instr.tips": "Voeg korte filmpjes toe, elk tot 60 seconden. Neem er nu een op of upload er een van je telefoon.",
-  // No food & water details
-  "birdSetup.issue.noFoodWaterDetails": "Geen gegevens over eten & water",
-  // No health baseline (weight, photo, clip, or notes)
-  "birdSetup.issue.noHealthBaselineWeightPhoto": "Geen gezondheidsreferentie (gewicht, foto, clip of notities)",
-  // No personality & handling notes
-  "birdSetup.issue.noPersonalityHandlingNotes": "Geen notities over karakter & omgang",
-  // No reminders for your sitter
-  "birdSetup.issue.noReminders": "Geen herinneringen voor je oppas",
-  // No routine tasks yet
-  "birdSetup.issue.noRoutineTasksYet": "Nog geen routinetaken",
-  // No tips-from-the-owner clips
-  "birdSetup.issue.noTipsFromTheOwner": "Geen clips met tips van de eigenaar",
-  // Required emergency contacts missing
-  "birdSetup.issue.requiredEmergencyContactsMissing": "Verplichte noodcontacten ontbreken",
   // {{n}} item needs details. Add the brand, amount, and timing for: {{list}}.
   "birdSetup.itemNeedsDetails": "{{n}} item heeft nog gegevens nodig. Vul merk, hoeveelheid en tijdstip in voor: {{list}}.",
   // {{n}} items need details. Add the brand, amount, and timing for: {{list}}.
@@ -1247,8 +1225,6 @@
   "birdSetup.knownConditions": "Bekende aandoeningen",
   // Likes
   "birdSetup.likes": "Vindt leuk",
-  // Live
-  "birdSetup.live": "Live",
   // Loading…
   "birdSetup.loading": "Laden…",
   // Looks good — save
@@ -1507,14 +1483,62 @@
   "birdSetup.removeTask": "{{title}} verwijderen",
   // Replace
   "birdSetup.replace": "Vervangen",
+  // Add
+  "birdSetup.review.add": "Toevoegen",
+  // Anytime
+  "birdSetup.review.anytime": "Altijd",
+  // Care plan
+  "birdSetup.review.carePlan": "Verzorgingsplan",
+  // Daily checklist
+  "birdSetup.review.dailyChecklist": "Dagelijkse lijst",
+  // Evening
+  "birdSetup.review.evening": "Avond",
+  // Behavior
+  "birdSetup.review.gapBehavior": "Gedrag",
+  // no handling notes yet, so your sitter won't know how {{name}} likes to be treated.
+  "birdSetup.review.gapBehaviorNote": "nog geen notities over omgang, dus je oppas weet niet hoe {{name}} behandeld wil worden.",
+  // Day
+  "birdSetup.review.gapDay": "Dag",
+  // no tasks yet, so your sitter's daily checklist will be empty.
+  "birdSetup.review.gapDayNote": "nog geen taken, dus de dagelijkse lijst van je oppas is leeg.",
+  // Emergency contacts
+  "birdSetup.review.gapEmergency": "Noodcontacten",
+  // your phone or your avian vet's phone is missing. You'll need both before you can create a pet sit.
+  "birdSetup.review.gapEmergencyNeed": "je telefoonnummer of dat van je vogeldierenarts ontbreekt. Je hebt ze allebei nodig voordat je een oppasperiode kunt maken.",
+  // Food
+  "birdSetup.review.gapFood": "Eten",
+  // nothing yet, so your sitter won't know what to serve {{name}}.
+  "birdSetup.review.gapFoodNote": "nog niets, dus je oppas weet niet wat {{name}} krijgt.",
+  // Health
+  "birdSetup.review.gapHealth": "Gezondheid",
+  // no weight or notes yet, so your sitter can't tell what's normal for {{name}}.
+  "birdSetup.review.gapHealthNote": "nog geen gewicht of notities, dus je oppas kan niet zien wat normaal is voor {{name}}.",
+  // Reminders
+  "birdSetup.review.gapReminders": "Herinneringen",
+  // nothing yet, so your sitter won't know your home's hazards.
+  "birdSetup.review.gapRemindersNote": "nog niets, dus je oppas kent de gevaren in je huis niet.",
+  // Tips
+  "birdSetup.review.gapTips": "Tips",
+  // no clips yet, so your sitter won't see how you step {{name}} up.
+  "birdSetup.review.gapTipsNote": "nog geen filmpjes, dus je oppas ziet niet hoe je {{name}} laat opstappen.",
+  // Midday
+  "birdSetup.review.midday": "Middag",
+  // Morning
+  "birdSetup.review.morning": "Ochtend",
+  // Nothing on the checklist yet.
+  "birdSetup.review.noTasks": "Er staat nog niets op de lijst.",
+  // Still thin or empty
+  "birdSetup.review.stillThin": "Nog dun of leeg",
+  // Here's what your sitter sees
+  "birdSetup.review.title": "Dit ziet je oppas",
+  // Preview
+  "birdSetup.review.viewLabel": "Voorbeeld",
   // Save & create a sit
   "birdSetup.saveAndCreateSit": "Opslaan & oppasperiode maken",
   // {{name}} setup complete.
   "birdSetup.setupComplete": "{{name}} is ingesteld.",
   // Sex
   "birdSetup.sex": "Geslacht",
-  // Sitter preview
-  "birdSetup.sitterPreview": "Preview voor de oppas",
   // Food
   "birdSetup.sourceFood": "Eten",
   // Health
@@ -4975,6 +4999,8 @@
   "setupFrame.pillTips": "Tips",
   // Setting up
   "setupFrame.settingUp": "Instellen",
+  // All 6 steps done
+  "setupShell.allStepsDone": "Alle 6 stappen klaar",
   // Cancel
   "setupShell.cancel": "Annuleren",
   // Your progress is saved — you can pick up right where you left off.

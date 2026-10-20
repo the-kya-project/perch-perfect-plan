@@ -157,6 +157,7 @@ export function SetupShell({
         onPill={onNavigateStep ? (p) => { const key = PILL_STEP[p]; if (key) onNavigateStep(setupStepNumber(key)); } : undefined}
         footer={footer}
         tinted={tinted}
+        allDone={current?.key === "review" ? t("setupShell.allStepsDone", "All 6 steps done") : undefined}
         home={homePill ? {
           current: homePill,
           subline: homeSubline ?? t("setupShell.sharedByEveryBird", "Shared by every bird"),
