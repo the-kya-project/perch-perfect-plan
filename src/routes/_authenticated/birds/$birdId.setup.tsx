@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { createPortal } from "react-dom";
 import { InSetupFrame, SetupIntroSlot } from "@/components/setup/SetupFrame";
-import { SetupPrimaryButton, SetupSecondaryButton } from "@/components/setup/controls";
+import { SetupPrimaryButton, SetupTextButton } from "@/components/setup/controls";
 import { useTranslation } from "react-i18next";
 import i18next, { type TFunction } from "i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -422,12 +422,29 @@ function BirdSetup() {
         onExit={exitToProfile}
         onBack={onBack}
         onNavigateStep={jumpToStep}
-        hideFooter
+        footer={
+          <div className="flex items-center gap-3">
+            <SetupTextButton onClick={setUpLater}>{t("birdSetup.stop.later", "Set up later")}</SetupTextButton>
+            <div className="min-w-0 flex-1">
+              <SetupPrimaryButton onClick={keepGoing}>{t("birdSetup.stop.keepGoing", "Keep going")}</SetupPrimaryButton>
+            </div>
+          </div>
+        }
       >
-        <div className="flex flex-col gap-2.5">
-          <SetupPrimaryButton onClick={keepGoing}>{t("birdSetup.stop.keepGoing", "Keep going")}</SetupPrimaryButton>
-          <SetupSecondaryButton onClick={setUpLater}>{t("birdSetup.stop.later", "Set up later")}</SetupSecondaryButton>
-        </div>
+        {/* What's done, and what "Keep going" covers. */}
+        <StopPointList
+          heading={t("birdSetup.stop.doneHeading", "Done")}
+          done
+          items={[t("setupFrame.pillDetails", "Details"), t("planEditor.tabFood", "Food"), t("planEditor.tabHealth", "Health")]}
+        />
+        <StopPointList
+          heading={t("birdSetup.stop.nextHeading", "Next, for a pet sitter")}
+          items={[
+            t("birdSetup.stop.nextBehavior", "Behavior and training"),
+            t("birdSetup.stop.nextTips", "Tips and tricks"),
+            t("birdSetup.stop.nextDay", "{{name}}'s day", { name: bird.name }),
+          ]}
+        />
       </SetupShell>
     );
   }
@@ -463,6 +480,29 @@ function BirdSetup() {
         />
       </SetupDirtyContext.Provider>
     </SetupShell>
+  );
+}
+
+/** One list on the stop point: checked rows for what's done, open rows for what's next. */
+function StopPointList({ heading, items, done }: { heading: string; items: string[]; done?: boolean }) {
+  return (
+    <section className="rounded-[18px] bg-[#f1f5f0] px-4 py-4 text-[#1a3d2e]">
+      <h2 className="m-0 text-[13px] font-[700] text-[#5f5e5a]">{heading}</h2>
+      <ul className="m-0 mt-1 list-none p-0">
+        {items.map((item) => (
+          <li key={item} className="flex min-h-[44px] items-center gap-3 text-[16px] font-[500]">
+            {done ? (
+              <span className="grid size-6 shrink-0 place-items-center rounded-full bg-[#1a3d2e] text-[#cdeab0]" aria-hidden="true">
+                <Check className="size-3.5" strokeWidth={3} />
+              </span>
+            ) : (
+              <span className="size-6 shrink-0 rounded-full border-2 border-[#c9d6c9] bg-white" aria-hidden="true" />
+            )}
+            {item}
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 

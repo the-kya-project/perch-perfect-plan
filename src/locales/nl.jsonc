@@ -1437,10 +1437,20 @@
   "birdSetup.startWithTheEssentialsWho": "Begin met de basis — wie je vogel is, en een foto zodat je oppas hem meteen herkent.",
   // Do you want to add more details for a pet sitter? We'll cover behavior and training, tips and tricks for {{name}}'s care, and more.
   "birdSetup.stop.body": "Wil je meer details toevoegen voor een oppas? We behandelen gedrag en training, tips en trucs voor de verzorging van {{name}}, en meer.",
+  // Done
+  "birdSetup.stop.doneHeading": "Klaar",
   // Keep going
   "birdSetup.stop.keepGoing": "Doorgaan",
   // Set up later
   "birdSetup.stop.later": "Later instellen",
+  // Behavior and training
+  "birdSetup.stop.nextBehavior": "Gedrag en training",
+  // {{name}}'s day
+  "birdSetup.stop.nextDay": "De dag van {{name}}",
+  // Next, for a pet sitter
+  "birdSetup.stop.nextHeading": "Hierna, voor een oppas",
+  // Tips and tricks
+  "birdSetup.stop.nextTips": "Tips en trucs",
   // The basics are set for {{name}}.
   "birdSetup.stop.title": "De basis voor {{name}} staat.",
   // Tap any that apply, then add your own.

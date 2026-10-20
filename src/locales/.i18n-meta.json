@@ -2151,11 +2151,26 @@
     "birdSetup.stop.body": {
       "stamp": "f5bc63880fdeeb93"
     },
+    "birdSetup.stop.doneHeading": {
+      "stamp": "3e00dbef8dddb12e"
+    },
     "birdSetup.stop.keepGoing": {
       "stamp": "5507dd17ff95fc22"
     },
     "birdSetup.stop.later": {
       "stamp": "1b0cdb2ab12944d2"
+    },
+    "birdSetup.stop.nextBehavior": {
+      "stamp": "f369ef8182c7bbb3"
+    },
+    "birdSetup.stop.nextDay": {
+      "stamp": "425aa0efc2dbcd61"
+    },
+    "birdSetup.stop.nextHeading": {
+      "stamp": "e29578d1f3acfaac"
+    },
+    "birdSetup.stop.nextTips": {
+      "stamp": "70e116d8a8c029d3"
     },
     "birdSetup.stop.title": {
       "stamp": "8f143832e0f0a434"
