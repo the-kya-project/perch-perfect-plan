@@ -315,6 +315,9 @@ export const Route = createFileRoute("/api/public/hooks/monthly-letter")({
             replyTo: founderReplyTo(),
             headers: unsubHeaders(APP_URL, p.id, "monthly"),
             tag: "flock_report",
+            // Links go through the /r/ click tracker, same rules as onboarding:
+            // unsubscribe and other /api/ links are left alone.
+            clicks: { userId: p.id, variant: null },
           });
           if (!res.ok) { failed++; skipped.push(`${p.email}: send failed`); continue; }
           sent++;

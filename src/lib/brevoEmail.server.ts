@@ -20,6 +20,7 @@
  */
 
 import { tagHtmlLinks, tagTextLinks, type EmailTag } from "./emailTracking";
+import { wrapEmailLinks, type ClickVariant } from "./emailClicks.server";
 
 const BREVO_SMTP_URL = "https://api.brevo.com/v3/smtp/email";
 
@@ -79,6 +80,36 @@ export interface TransactionalEmail {
    *  opens and clicks can be read per email, and stamped as utm_campaign on
    *  every link back into the app. Required: an untagged send can't be measured. */
   tag: EmailTag;
+  /** Route every clickable link through the /r/ click tracker (see
+   *  emailClicks.server.ts). Set by the onboarding cron and The Flock Report;
+   *  everything else (sit and household mail, alerts, token links) leaves it
+   *  off. `variant` is the onboarding button variant, null elsewhere. */
+  clicks?: {
+    userId: string;
+    variant: ClickVariant | null;
+    /** The email the clicks are counted against, when it differs from `tag`
+     *  (a test send is tagged qa_preview but is still, say, the welcome). */
+    email?: EmailTag;
+    /** Flags the click rows is_test so reports leave them out. */
+    test?: boolean;
+  };
+}
+
+/** The HTML and text Brevo is given: utm params first, then (when asked) the
+ *  click tracker wrapped around the result, so the redirect sends the reader to
+ *  exactly the link they would have had without it. Exported for the QA script
+ *  and tests. */
+export async function prepareContent(email: Pick<TransactionalEmail, "htmlContent" | "textContent" | "tag" | "clicks">, sentAt = Date.now()): Promise<{ html: string; text: string | undefined }> {
+  const html = tagHtmlLinks(email.htmlContent, email.tag);
+  const text = email.textContent ? tagTextLinks(email.textContent, email.tag) : undefined;
+  if (!email.clicks) return { html, text };
+  return wrapEmailLinks(html, text, {
+    userId: email.clicks.userId,
+    email: email.clicks.email ?? email.tag,
+    variant: email.clicks.variant,
+    sentAt,
+    test: email.clicks.test,
+  });
 }
 
 export async function sendTransactionalEmail(
@@ -92,6 +123,7 @@ export async function sendTransactionalEmail(
   if (!email.to) { console.warn("[brevoEmail] skipped: no recipient"); return { ok: false, skipped: "no-recipient" }; }
   if (isUndeliverableAddress(email.to)) { console.warn("[brevoEmail] skipped: reserved test domain", email.to); return { ok: false, skipped: "undeliverable-test-domain" }; }
 
+  const prepared = await prepareContent(email);
   try {
     const res = await fetch(BREVO_SMTP_URL, {
       method: "POST",
@@ -106,8 +138,8 @@ export async function sendTransactionalEmail(
         ...(email.replyTo ? { replyTo: email.replyTo } : {}),
         ...(email.headers && Object.keys(email.headers).length ? { headers: email.headers } : {}),
         subject: email.subject,
-        htmlContent: tagHtmlLinks(email.htmlContent, email.tag),
-        textContent: email.textContent ? tagTextLinks(email.textContent, email.tag) : undefined,
+        htmlContent: prepared.html,
+        textContent: prepared.text,
         tags: [email.tag],
       }),
     });
