@@ -15,6 +15,13 @@ export function getNotifSeenAt(): number {
   return Number.isFinite(v) ? v : 0;
 }
 
+/** New since the bell was last opened, and not a check you ran yourself: your
+ *  own daily checks would otherwise light the bell every morning. */
+export function isUnreadScan(n: { created_at: string; run_by?: string | null }, seenAt: number, myId: string | null | undefined): boolean {
+  if (myId && n.run_by === myId) return false;
+  return new Date(n.created_at).getTime() > seenAt;
+}
+
 export function markNotifsSeen() {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(NOTIF_SEEN_KEY, String(Date.now()));

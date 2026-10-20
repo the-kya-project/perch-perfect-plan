@@ -1,7 +1,8 @@
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Bell, Settings, HelpCircle } from "lucide-react";
-import { fetchScanFeed, getNotifSeenAt } from "@/lib/notificationsFeed";
+import { fetchScanFeed, getNotifSeenAt, isUnreadScan } from "@/lib/notificationsFeed";
+import { useMyPermissions } from "@/lib/useCapability";
 import { replayOwnerOnboarding } from "@/components/OwnerOnboarding";
 import { useTranslation } from "react-i18next";
 
@@ -18,7 +19,8 @@ export function OwnerHeaderIcons() {
   const navigate = useNavigate();
   const { data: scanFeed = [] } = useQuery({ queryKey: ["scan-feed"], queryFn: fetchScanFeed });
   const seenAt = getNotifSeenAt();
-  const unread = (scanFeed as any[]).filter((n) => new Date(n.created_at).getTime() > seenAt).length;
+  const myId = useMyPermissions().data?.myId;
+  const unread = (scanFeed as any[]).filter((n) => isUnreadScan(n, seenAt, myId)).length;
 
   // "?" replays the onboarding tour. It navigates Home first (the tour lives on
   // the dashboard); replayOwnerOnboarding sets a session flag so the tour

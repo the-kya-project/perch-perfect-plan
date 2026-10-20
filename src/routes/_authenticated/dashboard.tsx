@@ -26,7 +26,7 @@ import { toast } from "sonner";
 import { ASPCA_POISON_CONTROL, isPhoneField, phoneWarning, formatPhoneOnBlur } from "@/lib/emergency";
 import { isAddressField } from "@/lib/address";
 import { AddressInput } from "@/components/AddressInput";
-import { fetchScanFeed, getNotifSeenAt } from "@/lib/notificationsFeed";
+import { fetchScanFeed, getNotifSeenAt, isUnreadScan } from "@/lib/notificationsFeed";
 import { InkHero, IconTile, StatusPill, SectionHead, CtaLink, PrimaryButton, type HeroCta } from "@/components/system";
 import { CaregiverCoveringSection, useActiveCaregiver } from "@/components/CaregiverHome";
 import { HomeChecklist } from "@/components/HomeChecklist";
@@ -99,7 +99,8 @@ function Dashboard() {
   // Bell badge — unread scans (seen state is per-device).
   const { data: scanFeed = [] } = useQuery({ queryKey: ["scan-feed"], queryFn: fetchScanFeed });
   const [notifSeenAt] = useState(() => getNotifSeenAt());
-  const unreadNotifs = scanFeed.filter((n) => new Date(n.created_at).getTime() > notifSeenAt).length;
+  const myUserId = useMyPermissions().data?.myId;
+  const unreadNotifs = scanFeed.filter((n) => isUnreadScan(n, notifSeenAt, myUserId)).length;
 
   const { data: birds = [], isLoading: birdsLoading } = useQuery({
     queryKey: ["birds"],

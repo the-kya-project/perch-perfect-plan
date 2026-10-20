@@ -12,6 +12,7 @@ import { allNormalAnswers, answersWithChanges, buildDailyLogRow, weightToSave, b
 import { SCAN_FIELDS } from "@/lib/triage";
 import { buildHomeStateCopy, type HomeBird, type WeightEntry } from "@/lib/homeData";
 import i18next from "i18next";
+import { isUnreadScan } from "@/lib/notificationsFeed";
 
 // Copy helpers fall back to their inline English once i18next is initialised.
 await i18next.init({ lng: "en", resources: {}, keySeparator: false, nsSeparator: false });
@@ -101,6 +102,14 @@ check("welcome line names the longest-overdue bird", () => {
     ["c", [{ bird_id: "c", grams: 412, measured_at: ago(1) } as WeightEntry]],
   ]);
   assert.equal(buildHomeStateCopy(birds, w, [], [], now), "Max is due for a weigh-in.");
+});
+
+check("your own checks never light the bell; others' new ones do", () => {
+  const seen = Date.parse("2026-10-19T08:00:00Z");
+  assert.equal(isUnreadScan({ created_at: "2026-10-19T09:00:00Z", run_by: "me" }, seen, "me"), false);
+  assert.equal(isUnreadScan({ created_at: "2026-10-19T09:00:00Z", run_by: "partner" }, seen, "me"), true);
+  assert.equal(isUnreadScan({ created_at: "2026-10-19T09:00:00Z", run_by: null }, seen, "me"), true); // sitter
+  assert.equal(isUnreadScan({ created_at: "2026-10-19T07:00:00Z", run_by: null }, seen, "me"), false);
 });
 
 console.log(`\n${passed} passed${process.exitCode ? ", some FAILED" : ""}`);
