@@ -997,6 +997,8 @@
   "birdSetup.addAnotherFoodToNever": "Nog een verboden voedingsmiddel toevoegen",
   // Add another medication
   "birdSetup.addAnotherMedication": "Nog een medicijn toevoegen",
+  // Add
+  "birdSetup.addButton": "Toevoegen",
   // Add custom task
   "birdSetup.addCustomTask": "Eigen taak toevoegen",
   // Add photo
@@ -1091,6 +1093,12 @@
   "birdSetup.fixIt": "— oplossen",
   // Flight
   "birdSetup.flight": "Vliegen",
+  // Everything here is optional, and the defaults are a good place to start.
+  "birdSetup.food2.intro": "Alles hier is optioneel, en de standaardinstellingen zijn een goed begin.",
+  // Next: Health
+  "birdSetup.food2.next": "Volgende: Gezondheid",
+  // Water, treats and hygiene
+  "birdSetup.food2.title": "Water, snacks en hygiëne",
   // Fresh food spoils fast and can grow bacteria. This tells your sitter when to take it out.
   "birdSetup.freshFoodSpoilsFastAnd": "Vers eten bederft snel en er kunnen bacteriën in groeien. Zo weet je oppas wanneer het eruit moet.",
   // Freshness & hygiene
@@ -1103,6 +1111,12 @@
   "birdSetup.generalDefaultsAdjustToFit": "Algemene standaardwaarden — pas ze aan op je vogel en jullie routine.",
   // Home-specific hazards
   "birdSetup.homeSpecificHazards": "Gevaren in jouw huis",
+  // How often?
+  "birdSetup.howOften": "Hoe vaak?",
+  // How often is it changed?
+  "birdSetup.howOftenWaterChanged": "Hoe vaak wordt het ververst?",
+  // Anything else the sitter should know about food/water hygiene.
+  "birdSetup.hygieneNotesPlaceholder": "Nog iets wat de oppas moet weten over hygiëne rond voer en water.",
   // Record a few short clips so anyone helping can see how it's done. Clips stay private, shared only with the people you trust with {{name}}.
   "birdSetup.instr.clips": "Neem een paar korte clips op, zodat iedereen die helpt kan zien hoe het moet. Clips blijven privé en worden alleen gedeeld met de mensen die je {{name}} toevertrouwt.",
   // What does {{name}} eat, and how much? Clear answers mean anyone caring for {{name}} knows exactly what to serve, and when.
@@ -1191,8 +1205,8 @@
   "birdSetup.normal": "Normaal",
   // Normal weight (grams)
   "birdSetup.normalWeightGrams": "Normaal gewicht (gram)",
-  // Notes (filter, bottle vs bowl, etc.)
-  "birdSetup.notesFilterBottleVsBowl": "Notities (filter, drinkflesje of bakje, enz.)",
+  // Notes
+  "birdSetup.notesLabel": "Notities",
   // Notes (only from certain perches? prefers a hand vs. perch?)
   "birdSetup.notesOnlyFromCertainPerches": "Notities (alleen vanaf bepaalde zitstokken? liever een hand dan een zitstok?)",
   // Notes (which room? how long? what to watch for?)
@@ -1355,8 +1369,6 @@
   "birdSetup.opt.youngChildren": "Jonge kinderen",
   // Optional
   "birdSetup.optional": "Optioneel",
-  // Optional — anything else the sitter should know about food/water hygiene.
-  "birdSetup.optionalAnythingElseTheSitter": "Optioneel — wat de oppas verder moet weten over hygiëne van eten en water.",
   // Optional. Updating the normal weight adds an entry to the weight log.
   "birdSetup.optionalUpdatingTheNormalWeight": "Optioneel. Als je het normale gewicht aanpast, komt er een notitie bij in het gewichtslogboek.",
   // Other food hygiene notes
@@ -1409,8 +1421,6 @@
   "birdSetup.removeFreshOrWetFood": "Vers of nat eten weghalen na",
   // Remove homemade chop? This clears its amount, timing and ingredients.
   "birdSetup.removeHomemadeConfirm": "Zelfgemaakte chop verwijderen? Dan worden de hoeveelheid, tijden en ingrediënten gewist.",
-  // Remove {{item}}
-  "birdSetup.removeItemAria": "{{item}} verwijderen",
   // Remove medication
   "birdSetup.removeMedication": "Medicijn verwijderen",
   // Remove {{title}}
@@ -1465,6 +1475,8 @@
   "birdSetup.thisIsWashingTheBowl": "Dit gaat over het afwassen van het bakje zelf — los van hoe vaak je het water ververst.",
   // Treats
   "birdSetup.treats": "Snacks",
+  // e.g. millet spray, almond slivers
+  "birdSetup.treatsPlaceholder": "bijv. trosgierst, amandelschilfers",
   // Unknown
   "birdSetup.unknown": "Onbekend",
   // Uploading your clip…
@@ -1475,10 +1487,12 @@
   "birdSetup.washWaterBowlOrBottle": "Waterbakje of drinkflesje afwassen",
   // Water
   "birdSetup.water": "Water",
+  // Filter, bottle vs bowl, etc.
+  "birdSetup.waterNotesPlaceholder": "Filter, fles of bak, enz.",
   // What's normal for this bird
   "birdSetup.whatSNormalForThis": "Wat normaal is voor deze vogel",
-  // What treats are OK? (e.g. millet spray, almond slivers)
-  "birdSetup.whatTreatsAreOkE": "Welke snoepjes mogen? (bijv. trosgierst, amandelschilfers)",
+  // What treats are OK?
+  "birdSetup.whatTreatsAreOk": "Welke snacks mogen?",
   // When to call
   "birdSetup.whenToCall": "Wanneer bellen",
   // Where food is stored

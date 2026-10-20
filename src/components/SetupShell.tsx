@@ -56,6 +56,7 @@ export function SetupShell({
   hideFooter,
   eyebrow,
   footer: footerProp,
+  page,
 }: {
   step: number; // 1-indexed
   title: string;
@@ -80,6 +81,7 @@ export function SetupShell({
   hideFooter?: boolean;
   eyebrow?: string | null; // replaces "Step N of 6"
   footer?: ReactNode; // replaces the standard Save & exit / Next footer
+  page?: [number, number]; // sub-page of the current step, e.g. Food · 2 of 2
 }) {
   const { t } = useTranslation();
   const exitConfirmTitle = exitConfirmTitleProp ?? t("setupShell.exitConfirmTitle", "Leave this step?");
@@ -121,6 +123,7 @@ export function SetupShell({
       <SetupFrame
         birdName={birdName}
         current={pill}
+        page={page}
         stepLabel={stepLabel}
         title={displayTitle}
         intro={subtitle}

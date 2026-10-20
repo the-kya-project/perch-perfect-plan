@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { createPortal } from "react-dom";
 import { InSetupFrame, SetupIntroSlot } from "@/components/setup/SetupFrame";
-import { SetupPrimaryButton, SetupTextButton } from "@/components/setup/controls";
+import { SetupPrimaryButton, SetupTextButton, SectionCard, Field, TextField, TextBox, Dropdown, Segmented, EditableList, Helper } from "@/components/setup/controls";
 import { useTranslation } from "react-i18next";
 import i18next, { type TFunction } from "i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -182,6 +182,9 @@ function BirdSetup() {
   // first time it gets past Health (a finished bird walking through again, or a
   // bird that already passed it, goes straight on to Behavior).
   const [atStopPoint, setAtStopPoint] = useState(false);
+  // Food is one step on two pages: 1 = what the bird eats, 2 = water, treats
+  // and hygiene. Same step number (and saved progress) for both.
+  const [foodPage, setFoodPage] = useState<1 | 2>(1);
   // "Your home" screens (shared reminders, emergency contacts) are entered once
   // for every bird: the walkthrough skips the ones the owner already filled in.
   // Read once when the wizard opens, so filling one in now doesn't make Back
@@ -305,6 +308,13 @@ function BirdSetup() {
   async function onNext() {
     // Forward-navigation gate (Food step): block + show validation if incomplete.
     if (validateRef.current && !validateRef.current()) return;
+    // Food page 1 → page 2, within the same step.
+    if (SETUP_STEPS[step - 1]?.key === "food" && foodPage === 1) {
+      if (!(await flushPending())) return;
+      setFoodPage(2);
+      window.scrollTo(0, 0);
+      return;
+    }
     if (!(await flushPending())) return;
     const completedSection = SETUP_STEPS[step - 1]?.key;
     if (step >= TOTAL_STEPS) {
@@ -350,11 +360,18 @@ function BirdSetup() {
 
   async function onBack() {
     if (atStopPoint) { setAtStopPoint(false); setStep(setupStepNumber("health")); return; }
+    if (SETUP_STEPS[step - 1]?.key === "food" && foodPage === 2) {
+      if (!(await flushPending())) return;
+      setFoodPage(1);
+      window.scrollTo(0, 0);
+      return;
+    }
     if (step <= 1) return;
     if (!(await flushPending())) return;
     const prev = stepBefore(step);
     const ok = await persistStep(prev);
-    if (ok) setStep(prev);
+    // Coming back into Food lands on its last page.
+    if (ok) { setFoodPage(prev === setupStepNumber("food") ? 2 : 1); setStep(prev); }
   }
 
   async function onSaveAndExit() {
@@ -369,6 +386,7 @@ function BirdSetup() {
   async function jumpToStep(target: number) {
     const clamped = Math.min(TOTAL_STEPS, Math.max(1, target));
     setAtStopPoint(false);
+    setFoodPage(1);
     if (clamped === step) return;
     if (!(await flushPending())) return;
     const ok = await persistStep(clamped);
@@ -410,6 +428,7 @@ function BirdSetup() {
 
   const meta = SETUP_STEPS[step - 1];
   const isLast = step === TOTAL_STEPS;
+  const onFoodPage2 = meta.key === "food" && foodPage === 2;
 
   if (atStopPoint) {
     return (
@@ -452,7 +471,9 @@ function BirdSetup() {
   return (
     <SetupShell
       step={step}
-      title={setupStepTitle(t, meta.key)}
+      title={onFoodPage2 ? t("birdSetup.food2.title", "Water, treats and hygiene") : setupStepTitle(t, meta.key)}
+      subtitle={onFoodPage2 ? t("birdSetup.food2.intro", "Everything here is optional, and the defaults are a good place to start.") : undefined}
+      page={meta.key === "food" ? [foodPage, 2] : undefined}
       birdName={bird.name}
       birdSpecies={bird.species}
       saving={saving}
@@ -462,8 +483,8 @@ function BirdSetup() {
       onBack={onBack}
       onNext={onNext}
       onSaveAndExit={onSaveAndExit}
-      nextLabel={isLast ? t("birdSetup.finishSetup", "Finish setup") : t("birdSetup.next", "Next")}
-      backDisabled={step <= 1}
+      nextLabel={isLast ? t("birdSetup.finishSetup", "Finish setup") : onFoodPage2 ? t("birdSetup.food2.next", "Next: Health") : t("birdSetup.next", "Next")}
+      backDisabled={step <= 1 && !(meta.key === "food" && foodPage === 2)}
       nextDisabled={blockNext}
       hideFooter={step === TOTAL_STEPS}
     >
@@ -477,6 +498,7 @@ function BirdSetup() {
           onFinish={finishAndGo}
           registerFlush={registerFlush}
           registerValidate={registerValidate}
+          foodPage={foodPage}
         />
       </SetupDirtyContext.Provider>
     </SetupShell>
@@ -515,6 +537,7 @@ function StepBody({
   onFinish,
   registerFlush,
   registerValidate,
+  foodPage,
 }: {
   step: number;
   birdId: string;
@@ -524,10 +547,11 @@ function StepBody({
   onFinish: (opts: { to: "dashboard-newsit" | "home" }) => void;
   registerFlush: (fn: (() => Promise<void>) | null) => void;
   registerValidate: (fn: (() => boolean) | null) => void;
+  foodPage: 1 | 2;
 }) {
   // Steps are looked up by key, so the order lives only in SETUP_STEPS.
   switch (SETUP_STEPS[step - 1]?.key) {
-    case "food": return <FoodWaterStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} registerFlush={registerFlush} registerValidate={registerValidate} />;
+    case "food": return <FoodWaterStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} registerFlush={registerFlush} registerValidate={registerValidate} page={foodPage} />;
     case "health": return <HealthBaselineStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} registerFlush={registerFlush} />;
     case "personality": return <PersonalityStep birdId={birdId} birdName={birdName} registerFlush={registerFlush} />;
     case "clips": return <OwnerTipsClipsStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} />;
@@ -1101,9 +1125,13 @@ export function FoodWaterStep({
   onBlockNext,
   registerFlush,
   registerValidate,
+  page,
 }: {
   birdId: string;
   birdName: string;
+  /** The walkthrough shows Food on two pages: 1 = what the bird eats, 2 =
+   *  water, treats and hygiene. Omitted (the plan editor): both, one page. */
+  page?: 1 | 2;
   onBlockNext: (block: boolean) => void;
   registerFlush?: (fn: (() => Promise<void>) | null) => void;
   // Wizard-only: register a gate run on "Next". Returns true to proceed; on false
@@ -1141,6 +1169,7 @@ export function FoodWaterStep({
   const [treatsFreq, setTreatsFreq] = useState("");
   const [never, setNever] = useState<string[]>([]);
   const [newNever, setNewNever] = useState("");
+  const [addingNever, setAddingNever] = useState(false);
   const [waterFreq, setWaterFreq] = useState("");
   const [waterNotes, setWaterNotes] = useState("");
   const [storage, setStorage] = useState("");
@@ -1444,6 +1473,8 @@ export function FoodWaterStep({
 
   return (
     <div className="space-y-4">
+      {page !== 2 && (
+        <>
       <StepInstruction>{t("birdSetup.instr.food", "What does {{name}} eat, and how much? Clear answers mean anyone caring for {{name}} knows exactly what to serve, and when.", { name: birdName })}</StepInstruction>
 
       {/* Primary diet */}
@@ -1506,120 +1537,106 @@ export function FoodWaterStep({
         </>
       )}
 
-      <Card title={t("birdSetup.treats", "Treats")}>
-        <input
-          className="input"
-          placeholder={t("birdSetup.whatTreatsAreOkE", "What treats are OK? (e.g. millet spray, almond slivers)")}
-          value={treatsNotes}
-          maxLength={300}
-          onChange={(e) => setTreatsNotes(e.target.value)}
-        />
-        <select className="input mt-2" value={treatsFreq} onChange={(e) => setTreatsFreq(e.target.value)}>
-          <option value="">{t("birdSetup.pickAFrequency", "Pick a frequency…")}</option>
-          {TREAT_FREQ.map((o) => <option key={o.value} value={o.value}>{displayLabel(t, o.label)}</option>)}
-        </select>
-      </Card>
+        </>
+      )}
 
-      <Card title={t("birdSetup.neverFeed", "Never feed")} hint={t("birdSetup.commonToxicFoodsArePrefilled", "Common toxic foods are prefilled. Add anything specific to your bird.")}>
-        <div className="flex flex-wrap gap-2">
-          {never.map((n) => (
-            <span key={n} className="inline-flex items-center gap-1 rounded-full bg-warn-red/10 px-3 py-1.5 text-xs font-semibold text-warn-red">
-              {n}
-              <button
-                type="button"
-                aria-label={t("birdSetup.removeItemAria", "Remove {{item}}", { item: n })}
-                onClick={() => setNever(never.filter((x) => x !== n))}
-                className="rounded-full p-0.5 hover:bg-warn-red/20"
-              >
-                <X className="size-3" />
-              </button>
-            </span>
-          ))}
-        </div>
-        <div className="mt-3 flex gap-2">
-          <input
-            className="input flex-1"
-            placeholder={t("birdSetup.addAnotherFoodToNever", "Add another food to never feed")}
-            value={newNever}
-            maxLength={80}
-            onChange={(e) => setNewNever(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addNever(); } }}
-          />
-          <button type="button" onClick={addNever} disabled={!newNever.trim()} className="rounded-xl bg-sage-100 px-3 text-sm font-semibold text-sage-700 disabled:opacity-50">
-            <Plus className="size-4" />
-          </button>
-        </div>
-      </Card>
+      {page !== 1 && (
+        <>
+          {/* Water, treats and hygiene (Food · 2 of 2 in the walkthrough). */}
+          <SectionCard emphasis title={t("birdSetup.neverFeed", "Never feed")} helper={t("birdSetup.commonToxicFoodsArePrefilled", "Common toxic foods are prefilled. Add anything specific to your bird.")}>
+            <EditableList items={never} onRemove={(i) => setNever(never.filter((_, j) => j !== i))} />
+            {addingNever ? (
+              <div className="flex gap-2">
+                <input
+                  autoFocus
+                  aria-label={t("birdSetup.addAnotherFoodToNever", "Add another food to never feed")}
+                  className="h-12 min-w-0 flex-1 rounded-full border-2 border-[#c9d6c9] bg-white px-[18px] text-[16px] text-[#1a3d2e] outline-none focus:border-[#1a3d2e]"
+                  value={newNever}
+                  maxLength={80}
+                  onChange={(e) => setNewNever(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") { e.preventDefault(); addNever(); }
+                    if (e.key === "Escape") { setNewNever(""); setAddingNever(false); }
+                  }}
+                />
+                <SetupTextButton onClick={addNever} disabled={!newNever.trim()}>{t("birdSetup.addButton", "Add")}</SetupTextButton>
+              </div>
+            ) : (
+              <div>
+                <SetupTextButton onClick={() => setAddingNever(true)} icon={<Plus className="size-4" strokeWidth={2.6} aria-hidden="true" />}>
+                  {t("birdSetup.addAnotherFoodToNever", "Add another food to never feed")}
+                </SetupTextButton>
+              </div>
+            )}
+          </SectionCard>
 
-      <Card title={t("birdSetup.water", "Water")}>
-        <select className="input" value={waterFreq} onChange={(e) => setWaterFreq(e.target.value)}>
-          <option value="">{t("birdSetup.pickAFrequency", "Pick a frequency…")}</option>
-          {WATER_FREQ.map((o) => <option key={o.value} value={o.value}>{displayLabel(t, o.label)}</option>)}
-        </select>
-        <textarea
-          className="input area mt-2"
-          placeholder={t("birdSetup.notesFilterBottleVsBowl", "Notes (filter, bottle vs bowl, etc.)")}
-          value={waterNotes}
-          maxLength={400}
-          onChange={(e) => setWaterNotes(e.target.value)}
-        />
-      </Card>
+          <SectionCard title={t("birdSetup.treats", "Treats")}>
+            <Field label={t("birdSetup.whatTreatsAreOk", "What treats are OK?")} htmlFor="food-treats">
+              <TextField id="food-treats" value={treatsNotes} onChange={setTreatsNotes} placeholder={t("birdSetup.treatsPlaceholder", "e.g. millet spray, almond slivers")} />
+            </Field>
+            <Field label={t("birdSetup.howOften", "How often?")} htmlFor="food-treats-freq">
+              <Dropdown
+                id="food-treats-freq"
+                value={treatsFreq}
+                onChange={setTreatsFreq}
+                placeholder={t("birdSetup.pickAFrequency", "Pick a frequency…")}
+                options={TREAT_FREQ.map((o) => ({ value: o.value, label: displayLabel(t, o.label) }))}
+              />
+            </Field>
+          </SectionCard>
 
-      <Card title={t("birdSetup.whereFoodIsStored", "Where food is stored")}>
-        <input
-          className="input"
-          placeholder={t("birdSetup.eGPantryTopShelf", "e.g. Pantry, top shelf; fridge bin")}
-          value={storage}
-          maxLength={200}
-          onChange={(e) => setStorage(e.target.value)}
-        />
-      </Card>
+          <SectionCard title={t("birdSetup.water", "Water")}>
+            <Field label={t("birdSetup.howOftenWaterChanged", "How often is it changed?")} htmlFor="food-water-freq">
+              <Dropdown
+                id="food-water-freq"
+                value={waterFreq}
+                onChange={setWaterFreq}
+                placeholder={t("birdSetup.pickAFrequency", "Pick a frequency…")}
+                options={WATER_FREQ.map((o) => ({ value: o.value, label: displayLabel(t, o.label) }))}
+              />
+            </Field>
+            <Field label={t("birdSetup.notesLabel", "Notes")} optional htmlFor="food-water-notes">
+              <TextBox id="food-water-notes" value={waterNotes} onChange={setWaterNotes} placeholder={t("birdSetup.waterNotesPlaceholder", "Filter, bottle vs bowl, etc.")} />
+            </Field>
+          </SectionCard>
 
-      <Card title={t("birdSetup.freshnessHygiene", "Freshness & hygiene")} hint={t("birdSetup.generalDefaultsAdjustToFit", "General defaults — adjust to fit your bird and routine.")}>
-        <label className="text-xs font-semibold text-sage-700">{t("birdSetup.removeFreshOrWetFood", "Remove fresh or wet food after")}</label>
-        <select
-          className="input mt-1"
-          value={String(removalMinutes)}
-          onChange={(e) => setRemovalMinutes(Number(e.target.value))}
-        >
-          {REMOVAL_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>{displayLabel(t, o.label)}</option>
-          ))}
-        </select>
-        <p className="mt-1 text-[11px] text-sage-600">{t("birdSetup.freshFoodSpoilsFastAnd", "Fresh food spoils fast and can grow bacteria. This tells your sitter when to take it out.")}</p>
+          <SectionCard title={t("birdSetup.freshnessHygiene", "Freshness & hygiene")} helper={t("birdSetup.generalDefaultsAdjustToFit", "General defaults — adjust to fit your bird and routine.")}>
+            <Field label={t("birdSetup.removeFreshOrWetFood", "Remove fresh or wet food after")}>
+              <Segmented
+                label={t("birdSetup.removeFreshOrWetFood", "Remove fresh or wet food after")}
+                value={String(removalMinutes)}
+                onChange={(v) => setRemovalMinutes(Number(v))}
+                options={REMOVAL_OPTIONS.map((o) => ({ value: String(o.value), label: displayLabel(t, o.label) }))}
+              />
+              <Helper>{t("birdSetup.freshFoodSpoilsFastAnd", "Fresh food spoils fast and can grow bacteria. This tells your sitter when to take it out.")}</Helper>
+            </Field>
+            <Field label={t("birdSetup.washFoodBowls", "Wash food bowls")} htmlFor="food-bowl-wash">
+              <Dropdown
+                id="food-bowl-wash"
+                value={foodBowlWash}
+                onChange={setFoodBowlWash}
+                options={FOOD_BOWL_WASH_OPTIONS.map((o) => ({ value: o.value, label: displayLabel(t, o.label) }))}
+              />
+            </Field>
+            <Field label={t("birdSetup.washWaterBowlOrBottle", "Wash water bowl or bottle")}>
+              <Segmented
+                label={t("birdSetup.washWaterBowlOrBottle", "Wash water bowl or bottle")}
+                value={waterBowlWash}
+                onChange={setWaterBowlWash}
+                options={WATER_BOWL_WASH_OPTIONS.map((o) => ({ value: o.value, label: displayLabel(t, o.label) }))}
+              />
+              <Helper>{t("birdSetup.thisIsWashingTheBowl", "This is washing the bowl itself — separate from how often you change the water.")}</Helper>
+            </Field>
+            <Field label={t("birdSetup.otherFoodHygieneNotes", "Other food hygiene notes")} optional htmlFor="food-hygiene-notes">
+              <TextBox id="food-hygiene-notes" value={hygieneNotes} onChange={setHygieneNotes} placeholder={t("birdSetup.hygieneNotesPlaceholder", "Anything else the sitter should know about food/water hygiene.")} />
+            </Field>
+          </SectionCard>
 
-        <label className="mt-3 block text-xs font-semibold text-sage-700">{t("birdSetup.washFoodBowls", "Wash food bowls")}</label>
-        <select
-          className="input mt-1"
-          value={foodBowlWash}
-          onChange={(e) => setFoodBowlWash(e.target.value)}
-        >
-          {FOOD_BOWL_WASH_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>{displayLabel(t, o.label)}</option>
-          ))}
-        </select>
-
-        <label className="mt-3 block text-xs font-semibold text-sage-700">{t("birdSetup.washWaterBowlOrBottle", "Wash water bowl or bottle")}</label>
-        <select
-          className="input mt-1"
-          value={waterBowlWash}
-          onChange={(e) => setWaterBowlWash(e.target.value)}
-        >
-          {WATER_BOWL_WASH_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>{displayLabel(t, o.label)}</option>
-          ))}
-        </select>
-        <p className="mt-1 text-[11px] text-sage-600">{t("birdSetup.thisIsWashingTheBowl", "This is washing the bowl itself — separate from how often you change the water.")}</p>
-
-        <label className="mt-3 block text-xs font-semibold text-sage-700">{t("birdSetup.otherFoodHygieneNotes", "Other food hygiene notes")}</label>
-        <textarea
-          className="input area mt-1"
-          placeholder={t("birdSetup.optionalAnythingElseTheSitter", "Optional — anything else the sitter should know about food/water hygiene.")}
-          value={hygieneNotes}
-          maxLength={500}
-          onChange={(e) => setHygieneNotes(e.target.value)}
-        />
-      </Card>
+          <SectionCard title={t("birdSetup.whereFoodIsStored", "Where food is stored")}>
+            <TextField value={storage} onChange={setStorage} ariaLabel={t("birdSetup.whereFoodIsStored", "Where food is stored")} placeholder={t("birdSetup.eGPantryTopShelf", "e.g. Pantry, top shelf; fridge bin")} />
+          </SectionCard>
+        </>
+      )}
 
       <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.65rem .8rem;font-size:16px;outline:none}.input:focus{border-color:var(--sage-600);box-shadow:0 0 0 3px rgb(74 103 65 / .15)}.area{min-height:60px;line-height:1.4}`}</style>
     </div>
@@ -1627,9 +1644,9 @@ export function FoodWaterStep({
 
   function addNever() {
     const v = newNever.trim();
-    if (!v || never.includes(v)) { setNewNever(""); return; }
-    setNever([...never, v]);
+    if (v && !never.includes(v)) setNever([...never, v]);
     setNewNever("");
+    setAddingNever(false);
   }
 }
 

@@ -1491,6 +1491,9 @@
     "birdSetup.addAnotherMedication": {
       "stamp": "434257a57cb30fc9"
     },
+    "birdSetup.addButton": {
+      "stamp": "7243fcbe9aec5d44"
+    },
     "birdSetup.addCustomTask": {
       "stamp": "c38f8f4b3b2eb57c"
     },
@@ -1632,6 +1635,15 @@
     "birdSetup.flight": {
       "stamp": "5bdc1919d90eeaf6"
     },
+    "birdSetup.food2.intro": {
+      "stamp": "68d85b54810e239c"
+    },
+    "birdSetup.food2.next": {
+      "stamp": "6e32a093b3648350"
+    },
+    "birdSetup.food2.title": {
+      "stamp": "00afcfc58a360f9e"
+    },
     "birdSetup.freshFoodSpoilsFastAnd": {
       "stamp": "c66b3dd24fff205c"
     },
@@ -1649,6 +1661,15 @@
     },
     "birdSetup.homeSpecificHazards": {
       "stamp": "8a44311a31a6c88f"
+    },
+    "birdSetup.howOften": {
+      "stamp": "df5c01b1274c5075"
+    },
+    "birdSetup.howOftenWaterChanged": {
+      "stamp": "2c3a8e0b6ac67234"
+    },
+    "birdSetup.hygieneNotesPlaceholder": {
+      "stamp": "956a155d01710976"
     },
     "birdSetup.instr.clips": {
       "stamp": "f4d612758f4bc6e5"
@@ -1782,8 +1803,8 @@
     "birdSetup.normalWeightGrams": {
       "stamp": "2b1c58259dbf0fe2"
     },
-    "birdSetup.notesFilterBottleVsBowl": {
-      "stamp": "93a2558fbaeed292"
+    "birdSetup.notesLabel": {
+      "stamp": "d19a3271a64d8524"
     },
     "birdSetup.notesOnlyFromCertainPerches": {
       "stamp": "8f333a1a0c99e979"
@@ -2028,9 +2049,6 @@
     "birdSetup.optional": {
       "stamp": "e301f0fddfd8d6a1"
     },
-    "birdSetup.optionalAnythingElseTheSitter": {
-      "stamp": "6c15c24e583b894b"
-    },
     "birdSetup.optionalUpdatingTheNormalWeight": {
       "stamp": "32b448e96eca3d38"
     },
@@ -2108,9 +2126,6 @@
     },
     "birdSetup.removeHomemadeConfirm": {
       "stamp": "9de36acf2a3425f9"
-    },
-    "birdSetup.removeItemAria": {
-      "stamp": "4b63b415b3722053"
     },
     "birdSetup.removeMedication": {
       "stamp": "535b848f48b0ef9b"
@@ -2193,6 +2208,9 @@
     "birdSetup.treats": {
       "stamp": "f74a07c2d2ee143e"
     },
+    "birdSetup.treatsPlaceholder": {
+      "stamp": "0c85fe97a721af18"
+    },
     "birdSetup.unknown": {
       "stamp": "e03b7c979c1f6ad7"
     },
@@ -2208,11 +2226,14 @@
     "birdSetup.water": {
       "stamp": "81b5c0d6c66b3a7d"
     },
+    "birdSetup.waterNotesPlaceholder": {
+      "stamp": "c22336a58cdc7c9a"
+    },
     "birdSetup.whatSNormalForThis": {
       "stamp": "b03cd9ec3f2599f1"
     },
-    "birdSetup.whatTreatsAreOkE": {
-      "stamp": "d388568adafe3193"
+    "birdSetup.whatTreatsAreOk": {
+      "stamp": "50d8af96d3ee6c8c"
     },
     "birdSetup.whenToCall": {
       "stamp": "2a1f27f5960e7d00"
