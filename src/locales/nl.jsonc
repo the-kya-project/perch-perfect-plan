@@ -5383,10 +5383,42 @@
   "sitForm.endDateMustBeOn": "De einddatum moet op of na de startdatum liggen.",
   // An external sitter has the link. {{who}} is current; you can edit the name or email below.
   "sitForm.externalSitterHasLink": "Een externe oppas heeft de link. {{who}} is nu ingesteld; je kunt de naam of het e-mailadres hieronder aanpassen.",
+  // Add
+  "sitForm.gaps.add": "Toevoegen",
+  // Add your emergency contacts to create the sit.
+  "sitForm.gaps.addContactsFirst": "Voeg je noodcontacten toe om de oppasperiode te maken.",
+  // {{names}}'s plan is missing a few things a sitter leans on.
+  "sitForm.gaps.body": "Het plan van {{names}} mist nog een paar dingen waar een oppas op leunt.",
+  // {{names}}'s plans are missing a few things a sitter leans on.
+  "sitForm.gaps.bodyMany": "De plannen van {{names}} missen nog een paar dingen waar een oppas op leunt.",
   // Create the sit anyway
   "sitForm.gaps.createAnyway": "Toch een oppasperiode aanmaken",
+  // Handling, likes, and {{name}}'s space
+  "sitForm.gaps.detailBehavior": "Omgang, lievelingsdingen, en de plek van {{name}}",
+  // {{name}}'s daily tasks
+  "sitForm.gaps.detailDay": "De dagelijkse taken van {{name}}",
+  // Your phone and your avian vet
+  "sitForm.gaps.detailEmergency": "Je telefoon en je vogeldierenarts",
+  // What {{name}} eats and how much
+  "sitForm.gaps.detailFood": "Wat {{name}} eet en hoeveel",
+  // Weight, medications, and when to call
+  "sitForm.gaps.detailHealth": "Gewicht, medicijnen, en wanneer je belt",
+  // Hazards, off-limits areas, and cleaning
+  "sitForm.gaps.detailReminders": "Gevaren, verboden plekken, en schoonmaken",
   // Fill these in
   "sitForm.gaps.fillIn": "Vul deze in",
+  // Good to add when you can
+  "sitForm.gaps.goodToAdd": "Handig om toe te voegen als je kunt",
+  // {{first}} and {{last}}
+  "sitForm.gaps.namesAnd": "{{first}} en {{last}}",
+  // Your phone number and your avian vet's phone
+  "sitForm.gaps.needBoth": "Je telefoonnummer en dat van je vogeldierenarts",
+  // Needed before you can create a sit
+  "sitForm.gaps.neededBefore": "Nodig voordat je een oppasperiode kunt maken",
+  // Your phone number
+  "sitForm.gaps.needOwnerPhone": "Je telefoonnummer",
+  // Your avian vet's phone
+  "sitForm.gaps.needVetPhone": "Het telefoonnummer van je vogeldierenarts",
   // {{name}} will need a little more
   "sitForm.gaps.title": "{{name}} heeft nog wat meer nodig",
   // Your sitter

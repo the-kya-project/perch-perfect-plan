@@ -9,6 +9,9 @@ import { track } from "@/lib/analytics";
 import { useServerFn } from "@tanstack/react-start";
 import { resolveHouseholdNames } from "@/lib/home.functions";
 import { getSitReadiness, type SitGapSection } from "@/lib/household.functions";
+import { BottomSheet } from "@/components/setup/BottomSheet";
+import type { TFunction } from "i18next";
+import { S, SERIF, Tag, SetupPrimaryButton, SetupSecondaryButton, SetupTextButton } from "@/components/setup/controls";
 import {
   notifySitAssigned, notifySitUpdated, notifySitCancelled,
   notifySitterInvite, notifySitterInviteUpdated, notifySitterCancelled,
@@ -193,7 +196,10 @@ export function SitForm({
   // Soft reminder before creating a sit: care-plan sections the birds are still
   // missing. Only the emergency phones for an outside sitter block a sit (the
   // check in submit); everything here can be skipped with "Create the sit anyway".
+  // The reminder sheet: what each bird's plan is missing, and (outside sitters
+  // only) the required emergency contacts still missing, which block the sit.
   const [gaps, setGaps] = useState<{ birdId: string; name: string; missing: SitGapSection[] }[] | null>(null);
+  const [requiredMissing, setRequiredMissing] = useState<{ birdId: string; needs: ("owner_phone" | "avian_vet_phone")[] } | null>(null);
   const acceptGapsRef = useRef(false);
   // Household-caregiver sit notifications (owner -> caregiver email). Called
   // AFTER the client-side sits write succeeds; external sits never touch these.
@@ -278,8 +284,22 @@ export function SitForm({
     return t("sitForm.gaps.yourSitter", "Your sitter");
   }
 
+  // Leave for the editor tab where a missing section is filled in.
+  function openGap(birdId: string, m: SitGapSection) {
+    navigate({ to: "/birds/$birdId/plan/editor", params: { birdId }, search: { tab: GAP_TAB[m] } as any });
+  }
+  // The birds the sheet is about, e.g. "Mango" or "Mango and Kiwi".
+  const gapBirdIds = () => new Set([...(gaps ?? []).map((g) => g.birdId), ...(requiredMissing ? [requiredMissing.birdId] : [])]);
+  const gapBirdCount = () => gapBirdIds().size;
+  function gapBirdNames(): string {
+    const ids = gapBirdIds();
+    const names = Array.from(selected).filter((id) => ids.has(id)).map((id) => (birds.find((b: any) => b.id === id)?.name ?? "") as string).filter(Boolean);
+    if (names.length <= 1) return names[0] ?? "";
+    return t("sitForm.gaps.namesAnd", "{{first}} and {{last}}", { first: names.slice(0, -1).join(", "), last: names[names.length - 1] });
+  }
+
   // A different set of birds or caregiver means a fresh look at the gaps.
-  useEffect(() => { setGaps(null); acceptGapsRef.current = false; }, [birdIdsKey, caregiverKind, householdUserId]);
+  useEffect(() => { setGaps(null); setRequiredMissing(null); acceptGapsRef.current = false; }, [birdIdsKey, caregiverKind, householdUserId]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -313,6 +333,10 @@ export function SitForm({
       // lead; an external sitter leaves the owner (you) as responsible contact.
       // Never null (household path is validated to have a member above).
       const leadUserId: string = kind === "household" ? (householdUserId as string) : u.user.id;
+      // Required emergency contacts (outside sitters only): the sitter has no
+      // other way to reach you or the vet. On create they show in the reminder
+      // sheet and block the sit; on edit, a message as before.
+      let required: { birdId: string; needs: ("owner_phone" | "avian_vet_phone")[] } | null = null;
       if (kind === "external") {
         const { data: defaults } = await supabase
           .from("owner_emergency_defaults")
@@ -325,39 +349,47 @@ export function SitForm({
         const missing = birdIds
           .map((id) => {
             const c = contactByBird.get(id);
-            const needs: string[] = [];
-            if (!eff(c, "owner_phone")) needs.push(t("sitForm.needYourPhone", "your phone"));
-            if (!eff(c, "avian_vet_phone")) needs.push(t("sitForm.needAvianVetPhone", "avian vet phone"));
-            return needs.length ? { bird: birds.find((b: any) => b.id === id), needs } : null;
+            const needs: ("owner_phone" | "avian_vet_phone")[] = [];
+            if (!eff(c, "owner_phone")) needs.push("owner_phone");
+            if (!eff(c, "avian_vet_phone")) needs.push("avian_vet_phone");
+            return needs.length ? { birdId: id, bird: birds.find((b: any) => b.id === id), needs } : null;
           })
-          .filter(Boolean) as { bird: any; needs: string[] }[];
+          .filter(Boolean) as { birdId: string; bird: any; needs: ("owner_phone" | "avian_vet_phone")[] }[];
         if (missing.length) {
-          const details = missing.map((m) => `${m.bird?.name ?? t("sitForm.bird", "Bird")}: ${m.needs.join(" & ")}`).join("; ");
-          toast.error(
-            t("sitForm.missingContacts", "Add the required emergency contacts before sharing a sitter link — {{details}}. Set account defaults below, or open the bird's Emergency tab.", { details }),
-            { duration: 8000 },
-          );
-          setSaving(false);
-          return;
+          if (editing) {
+            const label = (k: string) => (k === "owner_phone" ? t("sitForm.needYourPhone", "your phone") : t("sitForm.needAvianVetPhone", "avian vet phone"));
+            const details = missing.map((m) => `${m.bird?.name ?? t("sitForm.bird", "Bird")}: ${m.needs.map(label).join(" & ")}`).join("; ");
+            toast.error(
+              t("sitForm.missingContacts", "Add the required emergency contacts before sharing a sitter link — {{details}}. Set account defaults below, or open the bird's Emergency tab.", { details }),
+              { duration: 8000 },
+            );
+            setSaving(false);
+            return;
+          }
+          required = { birdId: missing[0].birdId, needs: Array.from(new Set(missing.flatMap((m) => m.needs))) };
         }
       }
 
       // Soft reminder (create only): list what the plan is still missing and
-      // let the owner fill it in or go ahead. A failed check never blocks a sit.
-      if (!editing && !acceptGapsRef.current) {
+      // let the owner fill it in or go ahead. A failed check never blocks a
+      // sit on its own; missing required contacts always do.
+      if (!editing && (required || !acceptGapsRef.current)) {
+        let withGaps: { birdId: string; name: string; missing: SitGapSection[] }[] = [];
         try {
           const { birds: ready } = await sitReadiness({ data: { birdIds } });
-          const withGaps = ready
+          withGaps = ready
+            .map((r) => ({ ...r, missing: required ? r.missing.filter((m) => m !== "emergency") : r.missing }))
             .filter((r) => r.missing.length > 0)
             .map((r) => ({ ...r, name: (birds.find((b: any) => b.id === r.birdId)?.name ?? "") as string }));
-          if (withGaps.length) {
-            setGaps(withGaps);
-            setSaving(false);
-            track("sit_gaps_shown", { bird_count: withGaps.length, caregiver_kind: kind });
-            return;
-          }
         } catch (err) {
           console.error("[sit] readiness check failed — continuing", err);
+        }
+        if (required || withGaps.length) {
+          setGaps(withGaps);
+          setRequiredMissing(required);
+          setSaving(false);
+          track("sit_gaps_shown", { bird_count: withGaps.length, caregiver_kind: kind, required_missing: !!required });
+          return;
         }
       }
       acceptGapsRef.current = false;
@@ -621,52 +653,88 @@ export function SitForm({
       <Field label={t("sitForm.notesForThisSit", "Notes for this sit")}><textarea className="input area" value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
 
       {gaps && (
-        <div role="alert" className="space-y-2.5 rounded-[14px] bg-white p-3.5 ring-1 ring-[#e0d8c4]">
-          <p className="text-sm font-medium text-[#1a3d2e]">
-            {t("sitForm.gaps.title", "{{name}} will need a little more", { name: caregiverLabel() })}
-          </p>
-          <ul className="space-y-1.5">
-            {gaps.map((g) => (
-              <li key={g.birdId} className="text-sm text-[#1a3d2e]">
-                <span className="font-medium">{g.name}:</span>{" "}
-                {g.missing.map((m, i) => (
-                  <span key={m}>
-                    {i > 0 && ", "}
-                    <Link to="/birds/$birdId/plan/editor" params={{ birdId: g.birdId }} search={{ tab: GAP_TAB[m] } as any} className="text-[#2d6a4f] underline">
-                      {gapLabel(t, m)}
-                    </Link>
+        <BottomSheet onClose={() => { setGaps(null); setRequiredMissing(null); }}>
+          <div className="flex flex-col gap-4" style={{ color: S.forest }}>
+            <div>
+              <h2 className="m-0 text-[28px] font-[700] leading-[1.1]" style={{ fontFamily: SERIF }}>
+                {t("sitForm.gaps.title", "{{name}} will need a little more", { name: caregiverLabel() })}
+              </h2>
+              <p className="m-0 mt-2 text-[15.5px] leading-[1.5]" style={{ color: S.helper }}>
+                {gapBirdCount() > 1
+                  ? t("sitForm.gaps.bodyMany", "{{names}}'s plans are missing a few things a sitter leans on.", { names: gapBirdNames() })
+                  : t("sitForm.gaps.body", "{{names}}'s plan is missing a few things a sitter leans on.", { names: gapBirdNames() })}
+              </p>
+            </div>
+
+            {requiredMissing && (
+              <div className="flex flex-col gap-2.5 rounded-[18px] p-3.5" style={{ background: S.lime }}>
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="m-0 text-[15px] font-[700]">{t("sitForm.gaps.neededBefore", "Needed before you can create a sit")}</p>
+                  <Tag kind="required" />
+                </div>
+                <div className="flex items-center gap-3 rounded-[14px] bg-white px-3.5 py-3">
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[15px] font-[700]">{t("planOverview.rowEmergencyContacts", "Emergency contacts")}</span>
+                    <span className="block text-[14px]" style={{ color: S.helper }}>
+                      {requiredMissing.needs.length === 2
+                        ? t("sitForm.gaps.needBoth", "Your phone number and your avian vet's phone")
+                        : requiredMissing.needs[0] === "owner_phone"
+                          ? t("sitForm.gaps.needOwnerPhone", "Your phone number")
+                          : t("sitForm.gaps.needVetPhone", "Your avian vet's phone")}
+                    </span>
                   </span>
-                ))}
-              </li>
-            ))}
-          </ul>
-          <div className="flex flex-col gap-2 pt-1">
-            <button
-              type="button"
-              onClick={() => {
-                track("sit_gaps_choice", { choice: "fill_in" });
-                const first = gaps[0];
-                navigate({ to: "/birds/$birdId/plan/editor", params: { birdId: first.birdId }, search: { tab: GAP_TAB[first.missing[0]] } as any });
-              }}
-              className="min-h-[44px] w-full rounded-[14px] bg-[#1a3d2e] text-sm font-medium text-white"
-            >
-              {t("sitForm.gaps.fillIn", "Fill these in")}
-            </button>
-            <button
-              type="button"
-              disabled={saving}
-              onClick={() => {
-                track("sit_gaps_choice", { choice: "create_anyway" });
-                acceptGapsRef.current = true;
-                setGaps(null);
-                rootRef.current?.requestSubmit();
-              }}
-              className="min-h-[44px] w-full rounded-[14px] bg-white text-sm font-medium text-[#1a3d2e] ring-1 ring-[#c8bfa6] disabled:opacity-50"
-            >
-              {t("sitForm.gaps.createAnyway", "Create the sit anyway")}
-            </button>
+                  <SetupTextButton onClick={() => openGap(requiredMissing.birdId, "emergency")}>{t("sitForm.gaps.add", "Add")}</SetupTextButton>
+                </div>
+              </div>
+            )}
+
+            {gaps.length > 0 && (
+              <div className="flex flex-col gap-2">
+                <p className="m-0 text-[13px] font-[700]" style={{ color: S.quiet }}>{t("sitForm.gaps.goodToAdd", "Good to add when you can")}</p>
+                {gaps.flatMap((g) => g.missing.map((m) => (
+                  <div key={`${g.birdId}-${m}`} className="flex items-center gap-3 rounded-[14px] px-3.5 py-3" style={{ background: S.card }}>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[15px] font-[700]">
+                        {gaps.length > 1 ? `${g.name} · ${gapLabel(t, m)}` : gapLabel(t, m)}
+                      </span>
+                      <span className="block text-[14px]" style={{ color: S.helper }}>{gapDetail(t, m, g.name)}</span>
+                    </span>
+                    <SetupTextButton onClick={() => openGap(g.birdId, m)}>{t("sitForm.gaps.add", "Add")}</SetupTextButton>
+                  </div>
+                )))}
+              </div>
+            )}
+
+            <div className="flex flex-col gap-2.5">
+              <SetupPrimaryButton
+                arrow={false}
+                onClick={() => {
+                  track("sit_gaps_choice", { choice: "fill_in" });
+                  if (requiredMissing) openGap(requiredMissing.birdId, "emergency");
+                  else if (gaps[0]) openGap(gaps[0].birdId, gaps[0].missing[0]);
+                }}
+              >
+                {t("sitForm.gaps.fillIn", "Fill these in")}
+              </SetupPrimaryButton>
+              <SetupSecondaryButton
+                disabled={saving || !!requiredMissing}
+                onClick={() => {
+                  track("sit_gaps_choice", { choice: "create_anyway" });
+                  acceptGapsRef.current = true;
+                  setGaps(null);
+                  rootRef.current?.requestSubmit();
+                }}
+              >
+                {t("sitForm.gaps.createAnyway", "Create the sit anyway")}
+              </SetupSecondaryButton>
+              {requiredMissing && (
+                <p className="m-0 text-center text-[14px]" style={{ color: S.helper }}>
+                  {t("sitForm.gaps.addContactsFirst", "Add your emergency contacts to create the sit.")}
+                </p>
+              )}
+            </div>
           </div>
-        </div>
+        </BottomSheet>
       )}
 
       {!gaps && <button type="submit" disabled={saving} className="w-full rounded-[14px] bg-[#1a3d2e] py-3 text-sm font-medium text-white disabled:opacity-50">
@@ -718,9 +786,21 @@ function gapLabel(t: (k: string, d: string) => string, m: SitGapSection): string
     case "food": return t("planEditor.tabFood", "Food");
     case "health": return t("planEditor.tabHealth", "Health");
     case "personality": return t("planEditor.tabBehavior", "Behavior");
-    case "day": return t("planEditor.tabRoutine", "Routine");
+    case "day": return t("planOverview.rowDay", "Day");
     case "environment": return t("planOverview.rowReminders", "Reminders for your sitter");
     case "emergency": return t("planOverview.rowEmergencyContacts", "Emergency contacts");
+  }
+}
+
+/** What a sitter misses when a section is empty, for the reminder sheet. */
+function gapDetail(t: TFunction, m: SitGapSection, name: string): string {
+  switch (m) {
+    case "food": return t("sitForm.gaps.detailFood", "What {{name}} eats and how much", { name });
+    case "health": return t("sitForm.gaps.detailHealth", "Weight, medications, and when to call", { name });
+    case "personality": return t("sitForm.gaps.detailBehavior", "Handling, likes, and {{name}}'s space", { name });
+    case "day": return t("sitForm.gaps.detailDay", "{{name}}'s daily tasks", { name });
+    case "environment": return t("sitForm.gaps.detailReminders", "Hazards, off-limits areas, and cleaning", { name });
+    case "emergency": return t("sitForm.gaps.detailEmergency", "Your phone and your avian vet", { name });
   }
 }
 
