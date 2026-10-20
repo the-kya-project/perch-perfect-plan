@@ -104,7 +104,9 @@ function CarePlanOverview() {
   }, []);
 
   const name = bird?.name ?? t("planEditor.thisBird", "this bird");
-  const photoOf = useBirdPhotos([bird?.photo_url], 256);
+  // 800px, the same width every other bird tile uses: a smaller transform crops
+  // to a different aspect and the photo comes out zoomed in (see BirdPhotoCrop).
+  const photoOf = useBirdPhotos([bird?.photo_url], 800);
   const photo = photoOf(bird?.photo_url);
 
   const status = todo.length === 0
