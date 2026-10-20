@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { parseAddress, composeAddress, type AddressParts } from "@/lib/address";
 
 // Structured street / city / state / ZIP input that reads and writes a single
@@ -7,6 +8,7 @@ import { parseAddress, composeAddress, type AddressParts } from "@/lib/address";
 // external value changes to something we didn't just produce — so typing never
 // glitches on the compose→parse round-trip.
 export function AddressInput({ value, onChange }: { value: string; onChange: (composed: string) => void }) {
+  const { t } = useTranslation();
   const [parts, setParts] = useState<AddressParts>(() => parseAddress(value));
 
   useEffect(() => {
@@ -26,14 +28,14 @@ export function AddressInput({ value, onChange }: { value: string; onChange: (co
     <div className="space-y-2">
       <input
         className="input"
-        placeholder="Street address"
+        placeholder={t("addressInput.street", "Street address")}
         autoComplete="address-line1"
         value={parts.street}
         onChange={(e) => update({ street: e.target.value })}
       />
       <input
         className="input"
-        placeholder="City"
+        placeholder={t("addressInput.city", "City")}
         autoComplete="address-level2"
         value={parts.city}
         onChange={(e) => update({ city: e.target.value })}
@@ -41,7 +43,7 @@ export function AddressInput({ value, onChange }: { value: string; onChange: (co
       <div className="grid grid-cols-2 gap-2">
         <input
           className="input"
-          placeholder="State"
+          placeholder={t("addressInput.state", "State")}
           autoComplete="address-level1"
           autoCapitalize="characters"
           value={parts.state}
@@ -49,7 +51,7 @@ export function AddressInput({ value, onChange }: { value: string; onChange: (co
         />
         <input
           className="input"
-          placeholder="ZIP"
+          placeholder={t("addressInput.zip", "ZIP")}
           inputMode="numeric"
           autoComplete="postal-code"
           value={parts.zip}

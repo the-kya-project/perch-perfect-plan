@@ -4,6 +4,7 @@
 // to its detail. "Seen" state is tracked per-device in localStorage (like push):
 // it's fine if the unread badge resets on another device.
 
+import i18next from "i18next";
 import { supabase } from "@/integrations/supabase/client";
 
 export const NOTIF_SEEN_KEY = "ppc_notif_seen_at";
@@ -12,6 +13,13 @@ export function getNotifSeenAt(): number {
   if (typeof window === "undefined") return 0;
   const v = Number(window.localStorage.getItem(NOTIF_SEEN_KEY) ?? "0");
   return Number.isFinite(v) ? v : 0;
+}
+
+/** New since the bell was last opened, and not a check you ran yourself: your
+ *  own daily checks would otherwise light the bell every morning. */
+export function isUnreadScan(n: { created_at: string; run_by?: string | null }, seenAt: number, myId: string | null | undefined): boolean {
+  if (myId && n.run_by === myId) return false;
+  return new Date(n.created_at).getTime() > seenAt;
 }
 
 export function markNotifsSeen() {
@@ -68,9 +76,9 @@ export async function fetchScanFeed(): Promise<ScanFeedItem[]> {
   return items;
 }
 
-/** Who ran a scan: "You" for owner scans, the member's name for household, else the sitter. */
+/** Who ran a scan: "You" (an untranslated SENTINEL — callers compare it) for owner scans, the member's name for household, else the sitter. */
 export function scanRunBy(n: ScanFeedItem): string {
   if (n.source === "owner") return "You";
-  if (n.source === "household") return n.runner_name?.trim() || "A household member";
-  return n.sit?.sitter_name?.trim() || n.sit?.sitter_email?.trim() || "Your sitter";
+  if (n.source === "household") return n.runner_name?.trim() || i18next.t("scanRunBy.householdMember", "A household member");
+  return n.sit?.sitter_name?.trim() || n.sit?.sitter_email?.trim() || i18next.t("scanRunBy.yourSitter", "Your sitter");
 }

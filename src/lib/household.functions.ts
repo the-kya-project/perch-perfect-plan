@@ -14,9 +14,11 @@ import { PRESET_CAPABILITIES, ASSIGNABLE_PRESETS, type AssignablePreset } from "
 import { activeOwnerBirdsMin } from "@/lib/activeBirds";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { buildHouseholdInviteEmail } from "./emailTemplates";
-import { localeForUser } from "./emailLocale.server";
-import { mergeEmergency } from "./emergency";
+import { localeForUser, joinNamesLocalized, fallbackOwnerLabel } from "./emailLocale.server";
+import { mergeEmergency, emergencyDifferent } from "./emergency";
+import { mergeHome, homeDifferences, birdHasOwn, HOME_GROUPS } from "./homeDefaults";
 import { isCfClip, cfUid } from "./clipRef";
+import { computeSetupCompleteness, type SetupCheck } from "./setupCompleteness";
 
 async function getAdmin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -51,25 +53,37 @@ function makeToken() {
   return (crypto.randomUUID() + crypto.randomUUID()).replace(/-/g, "");
 }
 
-// Human list: "Willow", "Willow and Moxie", "Willow, Moxie, and Kiwi".
-function joinNames(names: string[]): string {
-  const n = names.filter(Boolean);
-  if (n.length === 0) return "your bird";
-  if (n.length === 1) return n[0];
-  if (n.length === 2) return `${n[0]} and ${n[1]}`;
-  return `${n.slice(0, -1).join(", ")}, and ${n[n.length - 1]}`;
+// Human list: "Willow", "Willow and Moxie", "Willow, Moxie, and Kiwi" — in the
+// email's language (English when no locale is passed).
+function joinNames(names: string[], locale: string = "en"): string {
+  return joinNamesLocalized(names, locale, "bird");
 }
 
-async function ownerDisplayName(sb: any, ownerId: string): Promise<string> {
+/** Owner's display name, or null when there's nothing to show (no profile
+ *  name, metadata name, or email). Callers supply their own fallback. */
+async function ownerDisplayNameRaw(sb: any, ownerId: string): Promise<string | null> {
   const { data } = await sb.from("profiles").select("display_name").eq("id", ownerId).maybeSingle();
   const name = (data?.display_name ?? "").toString().trim();
   if (name) return name;
   try {
     const { data: u } = await sb.auth.admin.getUserById(ownerId);
     const meta = (u?.user?.user_metadata?.display_name ?? "").toString().trim();
-    return meta || u?.user?.email?.split("@")[0] || "An owner";
+    return meta || u?.user?.email?.split("@")[0] || null;
   } catch {
-    return "An owner";
+    return null;
+  }
+}
+
+async function ownerDisplayName(sb: any, ownerId: string, locale: string = "en"): Promise<string> {
+  const { data } = await sb.from("profiles").select("display_name").eq("id", ownerId).maybeSingle();
+  const name = (data?.display_name ?? "").toString().trim();
+  if (name) return name;
+  try {
+    const { data: u } = await sb.auth.admin.getUserById(ownerId);
+    const meta = (u?.user?.user_metadata?.display_name ?? "").toString().trim();
+    return meta || u?.user?.email?.split("@")[0] || fallbackOwnerLabel(locale);
+  } catch {
+    return fallbackOwnerLabel(locale);
   }
 }
 
@@ -116,14 +130,15 @@ export const createHouseholdInvite = createServerFn({ method: "POST" })
 
     // Send the invite email (best-effort — the invite is created regardless).
     try {
-      const inviterName = await ownerDisplayName(sb, ownerId);
-      const birdNames = joinNames((owned ?? []).map((b: any) => b.name).filter(Boolean));
       // Account-less invitee (group 2) → the SENDER's (owner's) locale.
+      const locale = await localeForUser(sb, ownerId);
+      const inviterName = await ownerDisplayName(sb, ownerId, locale);
+      const birdNames = joinNames((owned ?? []).map((b: any) => b.name).filter(Boolean), locale);
       const built = buildHouseholdInviteEmail({
         inviterName,
         birdNames,
         link: `${appUrl()}/invite/${token}`,
-        locale: await localeForUser(sb, ownerId),
+        locale,
       });
       const { sendTransactionalEmail } = await import("./brevoEmail.server");
       await sendTransactionalEmail({
@@ -322,9 +337,11 @@ export const getHouseholdInvite = createServerFn({ method: "GET" })
       return { valid: false as const };
     }
 
-    const inviterName = await ownerDisplayName(sb, invite.owner_id);
+    // Raw data only: the invite screen joins the names and supplies the
+    // "An owner" fallback in the reader's language (joinNamesDisplay / t()).
+    const inviterName: string | null = await ownerDisplayNameRaw(sb, invite.owner_id);
     const { data: birds } = await sb.from("birds").select("name").in("id", invite.bird_ids);
-    const birdNames = joinNames((birds ?? []).map((b: any) => b.name).filter(Boolean));
+    const birdNames: string[] = (birds ?? []).map((b: any) => b.name as string).filter(Boolean);
     return {
       valid: true as const,
       inviterName,
@@ -455,7 +472,72 @@ export const getBirdEmergencyReadiness = createServerFn({ method: "GET" })
       .maybeSingle();
     const merged = mergeEmergency(contacts, defaults) as Record<string, unknown>;
     const has = (k: string) => !!(merged?.[k] ?? "").toString().trim();
-    return { ready: has("owner_phone") && has("avian_vet_phone") };
+    // "Your home" reminders, judged on the same merged data the read view shows.
+    const [{ data: plan }, { data: home }] = await Promise.all([
+      sb.from("care_plans").select("hazards, hazards_other, off_limits, off_limits_rooms, other_pets, cleaning_instructions").eq("bird_id", data.birdId).maybeSingle(),
+      sb.from("owner_home_defaults").select("*").eq("owner_id", (bird as any).owner_id).maybeSingle(),
+    ]);
+    const mergedPlan = mergeHome(plan ?? {}, home);
+    return {
+      ready: has("owner_phone") && has("avian_vet_phone"),
+      homeReady: HOME_GROUPS.some((g) => birdHasOwn(mergedPlan, g)),
+      homeDifferent: homeDifferences(plan, home).length > 0,
+      emergencyDifferent: emergencyDifferent(contacts, defaults),
+    };
+  });
+
+/** The care-plan sections a sit's birds are still missing, for the soft
+ *  "will need a little more" reminder before a sit is created. Judged on the
+ *  same merged data the sitter sees (per-bird answers over the owner's shared
+ *  "Your home" answers and emergency defaults). Tips are optional, so they're
+ *  never listed. The caller must be a member (owner or household) of each bird. */
+export type SitGapSection = Exclude<SetupCheck["key"], "clips">;
+export const getSitReadiness = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { birdIds: string[] }) => z.object({ birdIds: z.array(z.string().uuid()).min(1).max(50) }).parse(d))
+  .handler(async ({ data, context }) => {
+    const sb = await getAdmin();
+    const userId = context.userId as string;
+    const birdIds = [...new Set(data.birdIds)];
+    const { data: memberships } = await sb.from("bird_members").select("bird_id").eq("user_id", userId).in("bird_id", birdIds);
+    const allowed = new Set(((memberships ?? []) as { bird_id: string }[]).map((m) => m.bird_id));
+    const ids = birdIds.filter((id) => allowed.has(id));
+    if (!ids.length) return { birds: [] as { birdId: string; missing: SitGapSection[] }[] };
+
+    const [{ data: birds }, { data: plans }, { data: contacts }] = await Promise.all([
+      sb.from("birds").select("id, owner_id, normal_weight").in("id", ids),
+      sb.from("care_plans").select("*").in("bird_id", ids),
+      sb.from("emergency_contacts").select("*").in("bird_id", ids),
+    ]);
+    const ownerIds = [...new Set(((birds ?? []) as any[]).map((b) => b.owner_id as string))];
+    const planIds = ((plans ?? []) as any[]).map((p) => p.id as string);
+    const [{ data: ecDefaults }, { data: homeDefaults }, { data: tasks }] = await Promise.all([
+      sb.from("owner_emergency_defaults").select("*").in("owner_id", ownerIds),
+      sb.from("owner_home_defaults").select("*").in("owner_id", ownerIds),
+      planIds.length ? sb.from("routine_tasks").select("care_plan_id").in("care_plan_id", planIds) : Promise.resolve({ data: [] as any[] }),
+    ]);
+    const byBird = <T,>(rows: T[] | null, key: string) => new Map(((rows ?? []) as any[]).map((r) => [r[key] as string, r as T]));
+    const planByBird = byBird(plans as any[], "bird_id");
+    const contactsByBird = byBird(contacts as any[], "bird_id");
+    const ecByOwner = byBird(ecDefaults as any[], "owner_id");
+    const homeByOwner = byBird(homeDefaults as any[], "owner_id");
+    const taskCount = new Map<string, number>();
+    for (const r of (tasks ?? []) as any[]) taskCount.set(r.care_plan_id, (taskCount.get(r.care_plan_id) ?? 0) + 1);
+
+    return {
+      birds: ((birds ?? []) as any[]).map((b) => {
+        const plan = planByBird.get(b.id) as any;
+        const { checks } = computeSetupCompleteness({
+          bird: b,
+          plan: mergeHome(plan ?? null, homeByOwner.get(b.owner_id) as any),
+          tasksCount: plan ? taskCount.get(plan.id) ?? 0 : 0,
+          contacts: contactsByBird.get(b.id) ?? null,
+          defaults: ecByOwner.get(b.owner_id) ?? null,
+        });
+        const missing = checks.filter((c) => !c.done && c.key !== "clips").map((c) => c.key as SitGapSection);
+        return { birdId: b.id as string, missing };
+      }),
+    };
   });
 
 export const getHouseholdCarePlanView = createServerFn({ method: "GET" })
@@ -498,6 +580,11 @@ export const getHouseholdCarePlanView = createServerFn({ method: "GET" })
       .eq("owner_id", (bird as any).owner_id)
       .maybeSingle();
     const mergedContacts = { ...mergeEmergency(contacts, defaults) };
+    const { data: home } = await sb
+      .from("owner_home_defaults")
+      .select("*")
+      .eq("owner_id", (bird as any).owner_id)
+      .maybeSingle();
 
     // Sign photo + clips.
     const signedBird = { ...bird, photo_url: await signBirdPhotoPath(sb, (bird as any).photo_url) };
@@ -524,7 +611,8 @@ export const getHouseholdCarePlanView = createServerFn({ method: "GET" })
       if (bcp) baselineClipUrl = await resolveClipUrl(sb, bcp);
     }
 
-    return { bird: signedBird, plan: plan ?? null, contacts: mergedContacts, tasks, watchClips, baselineClipUrl };
+    // Shared "Your home" reminders fill in wherever this bird has none of its own.
+    return { bird: signedBird, plan: plan ? mergeHome(plan, home) : null, contacts: mergedContacts, tasks, watchClips, baselineClipUrl };
   });
 
 // ---- Owner: account-level household (aggregate across all owned birds) ------

@@ -6,6 +6,8 @@ import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { BrandLockup } from "@/components/BrandLogo";
 import { ChevronLeft, ArrowRight, Check } from "lucide-react";
 import { getMemberOnboardingContext, type MemberHousehold } from "@/lib/onboarding.functions";
+import { useTranslation } from "react-i18next";
+import i18next from "i18next";
 
 // First-run orientation for an ACCOUNT-HOLDING household member (someone added
 // to an existing household via invite — NOT the external link-sitter, which has
@@ -31,21 +33,25 @@ type Step = {
 // "Buzz" / "Buzz and Willow" / "Buzz, Willow, and Kiwi" / "Buzz, Willow, and 2 more"
 function formatBirds(names: string[]): string {
   const n = names.filter(Boolean);
-  if (n.length === 0) return "their birds";
+  if (n.length === 0) return i18next.t("memberOnboarding.theirBirds", "their birds");
   if (n.length === 1) return n[0];
-  if (n.length === 2) return `${n[0]} and ${n[1]}`;
-  if (n.length === 3) return `${n[0]}, ${n[1]}, and ${n[2]}`;
-  return `${n[0]}, ${n[1]}, and ${n.length - 2} more`;
+  if (n.length === 2) return i18next.t("memberOnboarding.birdsTwo", "{{a}} and {{b}}", { a: n[0], b: n[1] });
+  if (n.length === 3) return i18next.t("memberOnboarding.birdsThree", "{{a}}, {{b}}, and {{c}}", { a: n[0], b: n[1], c: n[2] });
+  return i18next.t("memberOnboarding.birdsMore", "{{a}}, {{b}}, and {{n}} more", { a: n[0], b: n[1], n: n.length - 2 });
 }
 
 function welcomeBody(households: MemberHousehold[]): string {
-  if (!households.length) return "You've been added to a household to help care for their birds.";
+  if (!households.length) return i18next.t("memberOnboarding.addedToAHousehold", "You've been added to a household to help care for their birds.");
   const primary = households[0];
+  const owner = primary.ownerName || i18next.t("memberOnboarding.yourHouseholdsOwnerLower", "your household's owner");
   const birds = formatBirds(primary.birdNames);
   if (households.length === 1) {
-    return `You've been added to ${primary.ownerName}'s household to help care for ${birds}.`;
+    return i18next.t("memberOnboarding.addedToOwnersHousehold", "You've been added to {{owner}}'s household to help care for {{birds}}.", { owner, birds });
   }
-  return `You've been added to ${primary.ownerName}'s household (and ${households.length - 1} other${households.length - 1 === 1 ? "" : "s"}) to help care for ${birds}.`;
+  const others = households.length - 1;
+  return others === 1
+    ? i18next.t("memberOnboarding.addedToOwnersHouseholdAndOne", "You've been added to {{owner}}'s household (and {{n}} other) to help care for {{birds}}.", { owner, n: others, birds })
+    : i18next.t("memberOnboarding.addedToOwnersHouseholdAndOthers", "You've been added to {{owner}}'s household (and {{n}} others) to help care for {{birds}}.", { owner, n: others, birds });
 }
 
 const PAD = 6;
@@ -64,6 +70,7 @@ type Phase = null | "welcome" | "coach";
 type Spot = { rect: { top: number; left: number; width: number; height: number; bottom: number } | null; vw: number; vh: number };
 
 export function MemberOnboarding() {
+  const { t } = useTranslation();
   const [phase, setPhase] = useState<Phase>(null);
   const [step, setStep] = useState(0);
   const [firstName, setFirstName] = useState("");
@@ -74,7 +81,9 @@ export function MemberOnboarding() {
   const ctxFn = useServerFn(getMemberOnboardingContext);
   const { data: ctx } = useQuery({ queryKey: ["member-onboarding-context"], queryFn: () => ctxFn(), staleTime: 5 * 60_000 });
   const households = ctx?.households ?? [];
-  const ownerName = households[0]?.ownerName || "Your household's owner";
+  const ownerName = households[0]
+    ? households[0].ownerName || t("memberOnboarding.yourHouseholdsOwnerLower", "your household's owner")
+    : t("memberOnboarding.yourHouseholdsOwner", "Your household's owner");
 
   // Member tour (owns no birds). Every step anchors to a REAL element on the
   // member's Home: the "[Owner]'s household" section, a household bird card, the
@@ -84,10 +93,10 @@ export function MemberOnboarding() {
   // member's own empty flock or a nonexistent target. {Owner} = the household
   // owner's real display name (from the onboarding context, first household).
   const steps: Step[] = [
-    { target: "member-household", headline: "Here are the birds you help with.", body: `Tap any bird in ${ownerName}'s household to read their care plan: food, handling, home, health, and emergency info, all in one place.` },
-    { target: "member-household-bird", headline: "Pitch in on daily care.", body: "Open a bird to check off today's tasks, log a weight, or add a moment as you go." },
-    { target: "owner-tab-sits", headline: `When ${ownerName}'s away, you've got this.`, body: `If ${ownerName} puts you in charge of a sit, you'll get a simple daily checklist for their birds, so nothing slips while they're gone.` },
-    { target: "owner-flock", headline: "Got your own flock? Add them too.", body: "Have birds of your own? Or will you soon? It's just a matter of time. Add them here whenever and manage everyone in one place." },
+    { target: "member-household", headline: t("memberOnboarding.householdHeadline", "Here are the birds you help with."), body: t("memberOnboarding.householdBody", "Tap any bird in {{owner}}'s household to read their care plan: food, handling, home, health, and emergency info, all in one place.", { owner: ownerName }) },
+    { target: "member-household-bird", headline: t("memberOnboarding.birdHeadline", "Pitch in on daily care."), body: t("memberOnboarding.birdBody", "Open a bird to check off today's tasks, log a weight, or add a moment as you go.") },
+    { target: "owner-tab-sits", headline: t("memberOnboarding.sitsHeadline", "When {{owner}}'s away, you've got this.", { owner: ownerName }), body: t("memberOnboarding.sitsBody", "If {{owner}} puts you in charge of a sit, you'll get a simple daily checklist for their birds, so nothing slips while they're gone.", { owner: ownerName }) },
+    { target: "owner-flock", headline: t("memberOnboarding.flockHeadline", "Got your own flock? Add them too."), body: t("memberOnboarding.flockBody", "Have birds of your own? Or will you soon? It's just a matter of time. Add them here whenever and manage everyone in one place.") },
   ];
   const TOTAL = steps.length + 1; // + wrap-up
 
@@ -184,19 +193,19 @@ export function MemberOnboarding() {
           <BrandLockup orientation="horizontal" variant="ink" size={100} />
         </div>
         <div className="flex-1 px-6 pt-[80px] sm:mx-auto sm:w-full sm:max-w-md sm:flex-none sm:pt-0">
-          <p className="t-eyebrow text-[var(--teal)]">Welcome</p>
-          <h1 className="mt-3 text-[32px] font-[400] leading-[1.08] tracking-[-0.02em]">Welcome. You're helping with a flock.</h1>
-          <p className="mt-3.5 max-w-[34ch] text-[15px] leading-[1.55] text-white/80">{ownerName} added you to help care for their birds. Here's how everything works.</p>
+          <p className="t-eyebrow text-[var(--teal)]">{t("memberOnboarding.welcomeEyebrow", "Welcome")}</p>
+          <h1 className="mt-3 text-[32px] font-[400] leading-[1.08] tracking-[-0.02em]">{t("memberOnboarding.welcomeHeadline", "Welcome. You're helping with a flock.")}</h1>
+          <p className="mt-3.5 max-w-[34ch] text-[15px] leading-[1.55] text-white/80">{t("memberOnboarding.welcomeBody", "{{owner}} added you to help care for their birds. Here's how everything works.", { owner: ownerName })}</p>
         </div>
         <div className="px-6 pb-[max(env(safe-area-inset-bottom),24px)] sm:mx-auto sm:w-full sm:max-w-md sm:pb-0 sm:pt-8">
           <button
             onClick={startCoach}
             className="flex w-full items-center justify-center gap-2 rounded-[13px] bg-[var(--lime)] py-3.5 text-[14.5px] font-[500] text-[var(--ink)] active:scale-[0.99]"
           >
-            <ArrowRight className="size-4" /> Show me around
+            <ArrowRight className="size-4" /> {t("memberOnboarding.showMeAround", "Show me around")}
           </button>
           <div className="mt-3.5 text-center">
-            <button onClick={finish} className="text-[13px] font-[500] text-white/60 underline underline-offset-[3px]">Skip for now</button>
+            <button onClick={finish} className="text-[13px] font-[500] text-white/60 underline underline-offset-[3px]">{t("memberOnboarding.skipForNow", "Skip for now")}</button>
           </div>
         </div>
       </div>
@@ -248,39 +257,39 @@ export function MemberOnboarding() {
 
       {!isWrapUp && (
         <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-end px-5 pt-[max(env(safe-area-inset-top),0.9rem)]">
-          <button onClick={finish} className="pointer-events-auto rounded-full bg-white/90 px-3 py-1.5 text-xs font-[500] text-[var(--ink)] shadow">Skip tour</button>
+          <button onClick={finish} className="pointer-events-auto rounded-full bg-white/90 px-3 py-1.5 text-xs font-[500] text-[var(--ink)] shadow">{t("memberOnboarding.skipTour", "Skip tour")}</button>
         </div>
       )}
 
       <div ref={bubbleRef} className="pointer-events-auto absolute rounded-[18px] border border-[var(--line)] bg-[var(--cream)] p-4 shadow-xl" style={bubbleStyle}>
         {isWrapUp ? (
           <div className="text-center">
-            <p className="t-eyebrow text-[var(--mute2)]">{TOTAL} of {TOTAL}</p>
-            <h2 className="mt-1.5 text-[18px] font-[500] text-[var(--ink)]">You're all set.</h2>
-            <p className="mt-2 text-[13px] leading-[1.5] text-[var(--ink2)]">{ownerName} manages everything else. Just reach out to them if you ever need to do more.</p>
+            <p className="t-eyebrow text-[var(--mute2)]">{t("memberOnboarding.stepOf", "{{n}} of {{total}}", { n: TOTAL, total: TOTAL })}</p>
+            <h2 className="mt-1.5 text-[18px] font-[500] text-[var(--ink)]">{t("memberOnboarding.allSet", "You're all set.")}</h2>
+            <p className="mt-2 text-[13px] leading-[1.5] text-[var(--ink2)]">{t("memberOnboarding.ownerManages", "{{owner}} manages everything else. Just reach out to them if you ever need to do more.", { owner: ownerName })}</p>
             <button onClick={finish} className="mt-3.5 flex w-full items-center justify-center gap-2 rounded-[13px] bg-[var(--lime)] py-3 text-[14px] font-[500] text-[var(--ink)] active:scale-[0.99]">
-              <Check className="size-4" /> Got it
+              <Check className="size-4" /> {t("memberOnboarding.gotIt", "Got it")}
             </button>
-            <p className="mt-2.5 text-[11.5px] leading-[1.45] text-[var(--mute)]">Tap the ? in the top bar anytime to revisit this.</p>
+            <p className="mt-2.5 text-[11.5px] leading-[1.45] text-[var(--mute)]">{t("memberOnboarding.revisit", "Tap the ? in the top bar anytime to revisit this.")}</p>
           </div>
         ) : (
           <>
-            <p className="t-eyebrow text-[var(--mute2)]">{step + 1} of {TOTAL}</p>
+            <p className="t-eyebrow text-[var(--mute2)]">{t("memberOnboarding.stepOf", "{{n}} of {{total}}", { n: step + 1, total: TOTAL })}</p>
             <h2 className="mt-1.5 text-[15px] font-[500] leading-[1.2] text-[var(--ink)]">{stepDef!.headline}</h2>
             <p className="mt-1.5 text-[13px] leading-[1.5] text-[var(--ink2)]">{stepDef!.body}</p>
             <div className="mt-3 flex items-center justify-between gap-2">
               <button onClick={back} className="inline-flex shrink-0 items-center gap-1 rounded-lg px-1.5 py-1.5 text-xs font-[500] text-[var(--mute)]">
-                <ChevronLeft className="size-4" /> Back
+                <ChevronLeft className="size-4" /> {t("memberOnboarding.back", "Back")}
               </button>
               <div className="mx-1 h-1 flex-1 overflow-hidden rounded-full bg-[#e8e1d0]">
                 <div className="h-full rounded-full bg-[var(--ink)] transition-[width]" style={{ width: `${Math.round(((step + 1) / TOTAL) * 100)}%` }} />
               </div>
               <button onClick={next} className="inline-flex shrink-0 items-center gap-1 rounded-[10px] bg-[var(--lime)] px-4 py-2 text-[13px] font-[500] text-[var(--ink)]">
-                Next <ArrowRight className="size-3.5" />
+                {t("memberOnboarding.next", "Next")} <ArrowRight className="size-3.5" />
               </button>
             </div>
             <div className="mt-2 text-center">
-              <button onClick={finish} className="text-[12px] font-[500] text-[var(--mute)] underline underline-offset-2">Skip tour</button>
+              <button onClick={finish} className="text-[12px] font-[500] text-[var(--mute)] underline underline-offset-2">{t("memberOnboarding.skipTour", "Skip tour")}</button>
             </div>
           </>
         )}

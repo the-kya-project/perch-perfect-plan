@@ -1,6 +1,19 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { PARROT_SPECIES, PARROT_SPECIES_GROUPS, AGE_OPTIONS, ageFromBirthDate } from "@/lib/parrot-data";
 import { localDateISO } from "@/lib/localDay";
+import { speciesLabel, speciesGroupLabel } from "@/lib/speciesLabel";
+
+/** Display label for a stored English age value ("<1 year", "3 years"). The
+ *  stored value stays English (species work the same way: see speciesLabel). */
+export function ageLabel(t: TFunction, age: string): string {
+  if (age === "<1 year") return t("birdPickers.ageUnderOne", "<1 year");
+  const m = /^(\d+) years?$/.exec(age);
+  if (!m) return age;
+  const n = Number(m[1]);
+  return n === 1 ? t("birdPickers.ageYearsOne", "{{n}} year", { n }) : t("birdPickers.ageYearsOther", "{{n}} years", { n });
+}
 
 export function BirdField({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
@@ -15,9 +28,10 @@ export function BirdField({ label, hint, children }: { label: string; hint?: str
 export function SpeciesPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const known = PARROT_SPECIES.includes(value);
   const isOther = value !== "" && !known;
+  const { t } = useTranslation();
   const [mode, setMode] = useState<"known" | "other">(isOther ? "other" : "known");
   return (
-    <BirdField label="Species">
+    <BirdField label={t("birdPickers.species", "Species")}>
       <select
         className="input"
         value={mode === "other" ? "__other__" : value}
@@ -26,18 +40,18 @@ export function SpeciesPicker({ value, onChange }: { value: string; onChange: (v
           else { setMode("known"); onChange(e.target.value); }
         }}
       >
-        <option value="">Select species…</option>
+        <option value="">{t("birdPickers.selectSpecies", "Select species…")}</option>
         {PARROT_SPECIES_GROUPS.map((g) => (
-          <optgroup key={g.label} label={g.label}>
-            {g.options.map((s) => <option key={s} value={s}>{s}</option>)}
+          <optgroup key={g.label} label={speciesGroupLabel(t, g.label)}>
+            {g.options.map((s) => <option key={s} value={s}>{speciesLabel(t, s)}</option>)}
           </optgroup>
         ))}
-        <option value="__other__">Other…</option>
+        <option value="__other__">{t("birdPickers.otherEllipsis", "Other…")}</option>
       </select>
       {mode === "other" && (
         <input
           className="input mt-2"
-          placeholder="Enter species"
+          placeholder={t("birdPickers.enterSpecies", "Enter species")}
           value={value}
           onChange={(e) => onChange(e.target.value)}
         />
@@ -54,7 +68,7 @@ export function OptionalDate({
   value,
   onChange,
   max,
-  addLabel = "Add date",
+  addLabel: addLabelProp,
   inputClassName = "input",
 }: {
   value: string;
@@ -63,6 +77,8 @@ export function OptionalDate({
   addLabel?: string;
   inputClassName?: string;
 }) {
+  const { t } = useTranslation();
+  const addLabel = addLabelProp ?? t("birdPickers.addDate", "Add date");
   const [picking, setPicking] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   // iOS renders an empty <input type=date> as TODAY; tapping Clear blurs the
@@ -104,7 +120,7 @@ export function OptionalDate({
           onClick={() => { setPicking(false); onChange(""); requestAnimationFrame(() => { ignoreTodayRef.current = false; }); }}
           className="shrink-0 rounded-lg border border-[#c8bfa6] bg-white px-2.5 py-2 text-xs font-medium text-[#5f5e5a]"
         >
-          Clear
+          {t("birdPickers.clear", "Clear")}
         </button>
       </div>
     );
@@ -117,31 +133,32 @@ export function OptionalDate({
 }
 
 export function AgePicker({ age, birthDate, onChange, layout = "grid" }: { age: string; birthDate: string; onChange: (next: { age: string; birthDate: string | null }) => void; layout?: "grid" | "stacked" }) {
+  const { t } = useTranslation();
   const computed = ageFromBirthDate(birthDate);
   const hasBirth = !!birthDate;
   const max = localDateISO();
 
   return (
     <div className={layout === "stacked" ? "space-y-3" : "grid grid-cols-2 gap-3"}>
-      <BirdField label="Age" hint={hasBirth ? "From hatch date" : undefined}>
+      <BirdField label={t("birdPickers.age", "Age")} hint={hasBirth ? t("birdPickers.fromHatchDate", "From hatch date") : undefined}>
         <select
           className="input disabled:opacity-60"
           disabled={hasBirth}
           value={hasBirth ? (computed ?? "") : age}
           onChange={(e) => onChange({ age: e.target.value, birthDate: null })}
         >
-          <option value="">Unknown</option>
-          {AGE_OPTIONS.map((a) => <option key={a} value={a}>{a}</option>)}
+          <option value="">{t("birdPickers.unknown", "Unknown")}</option>
+          {AGE_OPTIONS.map((a) => <option key={a} value={a}>{ageLabel(t, a)}</option>)}
         </select>
       </BirdField>
-      <BirdField label="Hatch date" hint="Optional — sets age automatically">
+      <BirdField label={t("birdPickers.hatchDate", "Hatch date")} hint={t("birdPickers.hatchDateHint", "Optional — sets age automatically")}>
         {/* Hatch date uses the shared OptionalDate so clear-to-empty (+ the iOS
             Clear guard) lives in ONE place. Clearing also drops the age that was
             auto-derived from it, so no stale derived age is left behind. */}
         <OptionalDate
           value={birthDate ?? ""}
           max={max}
-          addLabel="Add hatch date"
+          addLabel={t("birdPickers.addHatchDate", "Add hatch date")}
           onChange={(v) => onChange({ age: v ? (ageFromBirthDate(v) ?? age) : "", birthDate: v || null })}
         />
       </BirdField>

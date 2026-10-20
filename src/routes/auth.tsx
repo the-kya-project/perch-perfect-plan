@@ -10,9 +10,12 @@ import { ArrowLeft } from "lucide-react";
 import { track } from "@/lib/analytics";
 import { captureLead } from "@/lib/captureLead";
 import { attributionMetadata, getFirstTouch } from "@/lib/attribution";
+import { currentLocale } from "@/lib/i18n/ownerLocale";
 import { PENDING_EMAIL_KEY } from "./confirm-email";
 import { InkHero, PrimaryButton, CtaLink, Card } from "@/components/system";
-import { friendlyError } from "@/lib/errorMessage";
+import { authErrorMessage } from "@/lib/authErrorMessage";
+import { useTranslation, Trans } from "react-i18next";
+import i18next from "i18next";
 import { safeInternalPath, stashReturnTo, takeReturnTo } from "@/lib/returnTo";
 
 const search = z.object({
@@ -26,14 +29,15 @@ export const Route = createFileRoute("/auth")({
   validateSearch: search,
   head: () => ({
     meta: [
-      { title: "Sign in — Kya & Co." },
-      { name: "description", content: "Sign in or create an owner account to build a bird care plan." },
+      { title: i18next.t("auth.pageTitle", "Sign in — Kya & Co.") },
+      { name: "description", content: i18next.t("auth.metaDescription", "Sign in or create an owner account to build a bird care plan.") },
     ],
   }),
   component: AuthPage,
 });
 
 function AuthPage() {
+  const { t } = useTranslation();
   const { mode, redirect } = Route.useSearch();
   const navigate = useNavigate();
   const returnTo = safeInternalPath(redirect);
@@ -43,6 +47,12 @@ function AuthPage() {
   const [lastName, setLastName] = useState("");
   const [marketingOptIn, setMarketingOptIn] = useState(true);
   const [loading, setLoading] = useState(false);
+  // Read after mount, not during render: the server can't tell it's rendering
+  // for the iOS app, so rendering the Apple button from isIOSApp() directly made
+  // the server HTML and the app's first render disagree whenever the app opened
+  // straight onto /auth (React errors #422/#520, recovered by a re-render).
+  const [showApple, setShowApple] = useState(false);
+  useEffect(() => setShowApple(isIOSApp()), []);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -99,6 +109,8 @@ function AuthPage() {
             data: {
               display_name: [firstName, lastName].filter(Boolean).join(" ") || email.split("@")[0],
               marketing_opt_in: marketingOptIn,
+              // Read by the "Confirm signup" email template ({{ .Data.locale }}).
+              locale: currentLocale(),
               // First-touch attribution → handle_new_user trigger writes it onto
               // the profile (works even when email confirmation defers the session).
               ...attributionMetadata(),
@@ -122,7 +134,7 @@ function AuthPage() {
           (!!error && /already\s*(registered|exist)/i.test(error.message ?? "")) ||
           (!error && Array.isArray(identities) && identities.length === 0);
         if (alreadyRegistered) {
-          toast.error("That email already has an account — sign in instead.");
+          toast.error(t("auth.emailAlreadyHasAccount", "That email already has an account — sign in instead."));
           navigate({ to: "/auth", search: { mode: "signin" } });
           return;
         }
@@ -153,7 +165,7 @@ function AuthPage() {
         const attemptsKey = `signin:attempts:${email.toLowerCase()}`;
         const wait = remainingCooldown(cooldownKey);
         if (wait > 0) {
-          toast.error(`Too many attempts. Try again in ${wait}s.`);
+          toast.error(t("auth.tooManyAttemptsWait", "Too many attempts. Try again in {{wait}}s.", { wait }));
           return;
         }
         const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -162,9 +174,9 @@ function AuthPage() {
           if (n >= 5) {
             setCooldown(cooldownKey, 60);
             clearAttempts(attemptsKey);
-            toast.error("Too many failed attempts. Try again in 60s, or reset your password.");
+            toast.error(t("auth.tooManyFailedAttempts", "Too many failed attempts. Try again in 60s, or reset your password."));
           } else {
-            toast.error(friendlyError(error));
+            toast.error(authErrorMessage(error));
           }
           return;
         }
@@ -175,7 +187,7 @@ function AuthPage() {
         navigate({ href: returnTo ?? "/welcome" });
       }
     } catch (err: any) {
-      toast.error(friendlyError(err, "Something went wrong."));
+      toast.error(authErrorMessage(err, t("auth.somethingWentWrong", "Something went wrong.")));
     } finally {
       setLoading(false);
     }
@@ -192,7 +204,7 @@ function AuthPage() {
       await signInWithGoogle(window.location.origin + "/welcome");
       setLoading(false);
     } catch (err: any) {
-      toast.error(friendlyError(err, "Google sign-in failed."));
+      toast.error(authErrorMessage(err, t("auth.googleSignInFailed", "Google sign-in failed.")));
       setLoading(false);
     }
   }
@@ -204,7 +216,7 @@ function AuthPage() {
       await signInWithApple(window.location.origin + "/welcome");
       setLoading(false);
     } catch (err: any) {
-      toast.error(friendlyError(err, "Apple sign-in failed."));
+      toast.error(authErrorMessage(err, t("auth.appleSignInFailed", "Apple sign-in failed.")));
       setLoading(false);
     }
   }
@@ -212,13 +224,13 @@ function AuthPage() {
   async function handleForgotPassword() {
     const trimmed = email.trim();
     if (!trimmed) {
-      toast.error("Enter your email above first, then tap Forgot password.");
+      toast.error(t("auth.enterEmailFirst", "Enter your email above first, then tap Forgot password."));
       return;
     }
     const cooldownKey = `reset:cooldown:${trimmed.toLowerCase()}`;
     const wait = remainingCooldown(cooldownKey);
     if (wait > 0) {
-      toast.error(`Please wait ${wait}s before requesting another reset email.`);
+      toast.error(t("auth.waitBeforeReset", "Please wait {{wait}}s before requesting another reset email.", { wait }));
       return;
     }
     setLoading(true);
@@ -228,9 +240,9 @@ function AuthPage() {
       });
       if (error) throw error;
       setCooldown(cooldownKey, 60);
-      toast.success("If that email is registered, a reset link is on its way.");
+      toast.success(t("auth.resetLinkSent", "If that email is registered, a reset link is on its way."));
     } catch (err: any) {
-      toast.error(friendlyError(err, "Could not send reset email."));
+      toast.error(authErrorMessage(err, t("auth.couldNotSendReset", "Could not send reset email.")));
     } finally {
       setLoading(false);
     }
@@ -245,12 +257,12 @@ function AuthPage() {
           // Sign-up keeps the lockup as chrome; sign-in removes it so the
           // welcome carries the screen.
           showBrand={mode === "signup"}
-          eyebrow={mode === "signup" ? "Get started" : "Welcome back"}
-          headline={mode === "signup" ? "Create your account." : "Pick up where you left off."}
+          eyebrow={mode === "signup" ? t("auth.getStarted", "Get started") : t("auth.welcomeBack", "Welcome back")}
+          headline={mode === "signup" ? t("auth.createYourAccount", "Create your account.") : t("auth.pickUpWhereYouLeftOff", "Pick up where you left off.")}
           body={
             mode === "signup"
-              ? "Build one care plan and share it with the family, pet sitters, and household members who help."
-              : "Sign in to your bird's record."
+              ? t("auth.signupBody", "Build one care plan and share it with the family, pet sitters, and household members who help.")
+              : t("auth.signinBody", "Sign in to your bird's record.")
           }
           backIcon={<ArrowLeft className="size-5" />}
           onBack={() => navigate({ to: "/" })}
@@ -264,10 +276,10 @@ function AuthPage() {
               onPress={handleGoogle}
               disabled={loading}
             >
-              Continue with Google
+              {t("auth.continueWithGoogle", "Continue with Google")}
             </PrimaryButton>
 
-            {isIOSApp() && (
+            {showApple && (
               <div className="mt-3">
                 <PrimaryButton
                   tone="outline"
@@ -275,41 +287,41 @@ function AuthPage() {
                   onPress={handleApple}
                   disabled={loading}
                 >
-                  Continue with Apple
+                  {t("auth.continueWithApple", "Continue with Apple")}
                 </PrimaryButton>
               </div>
             )}
 
             <div className="my-5 flex items-center gap-3">
               <div className="h-px flex-1 bg-[var(--line2)]" />
-              <span className="t-eyebrow text-[var(--mute2)]">Or with email</span>
+              <span className="t-eyebrow text-[var(--mute2)]">{t("auth.orWithEmail", "Or with email")}</span>
               <div className="h-px flex-1 bg-[var(--line2)]" />
             </div>
 
             <form onSubmit={handleEmail} className="space-y-3">
               {mode === "signup" && (
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="First name">
+                  <Field label={t("auth.firstName", "First name")}>
                     <input
                       type="text"
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
                       className="input"
-                      placeholder="Maya"
+                      placeholder={t("auth.firstNamePlaceholder", "Maya")}
                     />
                   </Field>
-                  <Field label="Last name">
+                  <Field label={t("auth.lastName", "Last name")}>
                     <input
                       type="text"
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
                       className="input"
-                      placeholder="Lopez"
+                      placeholder={t("auth.lastNamePlaceholder", "Lopez")}
                     />
                   </Field>
                 </div>
               )}
-              <Field label="Email">
+              <Field label={t("auth.email", "Email")}>
                 <input
                   type="email"
                   required
@@ -319,7 +331,7 @@ function AuthPage() {
                   placeholder="you@example.com"
                 />
               </Field>
-              <Field label="Password">
+              <Field label={t("auth.password", "Password")}>
                 <input
                   type="password"
                   required
@@ -333,7 +345,7 @@ function AuthPage() {
               {mode === "signin" && (
                 <div className="flex justify-end">
                   <CtaLink
-                    label="Forgot password?"
+                    label={t("auth.forgotPassword", "Forgot password?")}
                     icon={<span />}
                     onPress={() => { if (!loading) handleForgotPassword(); }}
                   />
@@ -347,7 +359,7 @@ function AuthPage() {
                     onChange={(e) => { setMarketingOptIn(e.target.checked); if (e.target.checked) track("marketing_opt_in_checked", { context: "checkbox" }); }}
                     className="mt-0.5 size-4 rounded border-[var(--line)]"
                   />
-                  <span>Email me about The Kya Project community and updates. (Optional)</span>
+                  <span>{t("auth.marketingOptIn", "Email me about The Kya Project community and updates. (Optional)")}</span>
                 </label>
               )}
               <div className="pt-1">
@@ -356,14 +368,19 @@ function AuthPage() {
                   type="submit"
                   disabled={loading}
                 >
-                  {loading ? "..." : mode === "signup" ? "Create account" : "Sign in"}
+                  {loading ? "..." : mode === "signup" ? t("auth.createAccount", "Create account") : t("auth.signIn", "Sign in")}
                 </PrimaryButton>
               </div>
               {mode === "signup" && (
                 <p className="text-center text-[11px] text-[var(--mute2)]">
-                  By creating an account you agree to our{" "}
-                  <Link to="/terms" className="text-[var(--moss)] underline">Terms</Link> and{" "}
-                  <Link to="/privacy" className="text-[var(--moss)] underline">Privacy Policy</Link>.
+                  <Trans
+                    i18nKey="auth.agreeToTerms"
+                    defaults="By creating an account you agree to our <terms>Terms</terms> and <privacy>Privacy Policy</privacy>."
+                    components={{
+                      terms: <Link to="/terms" className="text-[var(--moss)] underline" />,
+                      privacy: <Link to="/privacy" className="text-[var(--moss)] underline" />,
+                    }}
+                  />
                 </p>
               )}
             </form>
@@ -372,21 +389,21 @@ function AuthPage() {
           <p className="mt-6 text-center text-[14px] text-[var(--mute)]">
             {mode === "signup" ? (
               <Link to="/auth" search={{ mode: "signin" }} className="font-[500] text-[var(--moss)] underline">
-                Already have an account? Sign in
+                {t("auth.alreadyHaveAccount", "Already have an account? Sign in")}
               </Link>
             ) : (
               <Link to="/auth" search={{ mode: "signup" }} className="font-[500] text-[var(--moss)] underline">
-                Need an account? Sign up
+                {t("auth.needAccount", "Need an account? Sign up")}
               </Link>
             )}
           </p>
 
           <p className="mt-4 text-center text-[11px] text-[var(--mute2)]">
-            <Link to="/privacy" className="text-[var(--moss)] underline">Privacy</Link>
+            <Link to="/privacy" className="text-[var(--moss)] underline">{t("auth.privacy", "Privacy")}</Link>
             {" · "}
-            <Link to="/terms" className="text-[var(--moss)] underline">Terms</Link>
+            <Link to="/terms" className="text-[var(--moss)] underline">{t("auth.terms", "Terms")}</Link>
             {" · "}
-            <Link to="/delete-account" className="text-[var(--moss)] underline">Delete account</Link>
+            <Link to="/delete-account" className="text-[var(--moss)] underline">{t("auth.deleteAccount", "Delete account")}</Link>
           </p>
         </main>
       </div>

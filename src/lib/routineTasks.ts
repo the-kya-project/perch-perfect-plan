@@ -128,3 +128,19 @@ export function taskDaypart(task: { time_of_day?: string | null; category?: stri
   if (t) return feedTimeToDaypart(t); // legacy free-text feed times
   return "anytime"; // "custom", unknown, empty
 }
+
+// Parse a free-text time ("4 p.m.", "8 am", "7:30", "Available all day") to
+// minutes-since-midnight for chronological sorting; null when there's no time.
+// Shared by the sitter's checklist and the setup Review preview.
+export function parseTaskMinutes(s: string | null | undefined): number | null {
+  if (!s) return null;
+  const m = String(s).toLowerCase().match(/(\d{1,2})(?::(\d{2}))?\s*(a\.?m\.?|p\.?m\.?)?/);
+  if (!m) return null;
+  let h = parseInt(m[1], 10);
+  const min = m[2] ? parseInt(m[2], 10) : 0;
+  const ap = m[3];
+  if (ap?.startsWith("p") && h < 12) h += 12;
+  if (ap?.startsWith("a") && h === 12) h = 0;
+  if (h > 23 || min > 59) return null;
+  return h * 60 + min;
+}

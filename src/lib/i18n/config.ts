@@ -24,7 +24,7 @@ export function pickLocale(input: string | null | undefined): Locale {
  *  byte-identical. Flip to true only once the owner screens are keyed: until
  *  then, switching would render the already-keyed shared components (care
  *  plan cards, scan form, …) in Dutch inside an otherwise English app. */
-export const OWNER_I18N_ENABLED = false;
+export const OWNER_I18N_ENABLED = true;
 
 export function isLocale(v: unknown): v is Locale {
   return typeof v === "string" && (SUPPORTED_LOCALES as readonly string[]).includes(v);

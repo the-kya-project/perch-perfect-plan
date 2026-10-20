@@ -7,6 +7,7 @@
 // editor and the entry read view both open files this way; a second copy of
 // this would drift, and would drift silently because the failure only shows up
 // in one browser.
+import i18next from "i18next";
 import { useState } from "react";
 import { toast } from "sonner";
 import { friendlyError } from "@/lib/errorMessage";
@@ -26,12 +27,12 @@ export function useOpenSignedFile() {
     const tab = window.open("", "_blank");
     try {
       const url = await resolve();
-      if (!url) throw new Error("That file couldn't be opened.");
+      if (!url) throw new Error(i18next.t("signedFile.openFailed", "That file couldn't be opened."));
       if (tab) tab.location.href = url;
       else window.location.assign(url); // popup blocked outright — use this tab
     } catch (err: any) {
       tab?.close();
-      toast.error(friendlyError(err, "That file couldn't be opened."));
+      toast.error(friendlyError(err, i18next.t("signedFile.openFailed", "That file couldn't be opened.")));
     } finally {
       setOpeningKey(null);
     }

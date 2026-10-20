@@ -4,7 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Mail } from "lucide-react";
 import { BrandLogo } from "@/components/BrandLogo";
-import { friendlyError } from "@/lib/errorMessage";
+import { authErrorMessage } from "@/lib/authErrorMessage";
+import { useTranslation } from "react-i18next";
+import i18next from "i18next";
 
 // Persistent "check your email" screen shown after a signup that requires email
 // confirmation. Unlike a toast, it stays put until the owner confirms. The email
@@ -15,7 +17,7 @@ const RESEND_UNTIL_KEY = "ppc_confirm_resend_until";
 const RESEND_COOLDOWN_S = 30;
 
 export const Route = createFileRoute("/confirm-email")({
-  head: () => ({ meta: [{ title: "Confirm your email — Kya & Co." }] }),
+  head: () => ({ meta: [{ title: i18next.t("confirmEmail.pageTitle", "Confirm your email — Kya & Co.") }] }),
   component: ConfirmEmail,
 });
 
@@ -30,6 +32,7 @@ function writeResendUntil(ts: number) {
 }
 
 function ConfirmEmail() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [email] = useState(readEmail);
   const [resending, setResending] = useState(false);
@@ -88,9 +91,9 @@ function ConfirmEmail() {
       if (error) throw error;
       writeResendUntil(Date.now() + RESEND_COOLDOWN_S * 1000);
       setCooldown(RESEND_COOLDOWN_S);
-      toast.success("Confirmation email sent again.");
+      toast.success(t("confirmEmail.sentAgain", "Confirmation email sent again."));
     } catch (err: any) {
-      toast.error(friendlyError(err, "Couldn't resend. Try again in a moment."));
+      toast.error(authErrorMessage(err, t("confirmEmail.couldNotResend", "Couldn't resend. Try again in a moment.")));
     } finally {
       setResending(false);
     }
@@ -115,16 +118,16 @@ function ConfirmEmail() {
           <Mail className="size-7 text-[#1a3d2e]" />
         </div>
 
-        <h1 className="mt-5 text-2xl font-medium leading-tight text-[#1a3d2e]">Check your email</h1>
+        <h1 className="mt-5 text-2xl font-medium leading-tight text-[#1a3d2e]">{t("confirmEmail.checkYourEmail", "Check your email")}</h1>
         <p className="mt-3 text-sm leading-relaxed text-[#5f5e5a]">
-          We sent a confirmation link to
+          {t("confirmEmail.weSentLinkTo", "We sent a confirmation link to")}
         </p>
         <p className="mt-1 break-all text-sm font-semibold text-[#1a3d2e]">{email}</p>
         <p className="mt-3 text-sm leading-relaxed text-[#5f5e5a]">
-          Click it to activate your account. Keep this tab open — once you confirm, we'll take you straight in.
+          {t("confirmEmail.clickToActivate", "Click it to activate your account. Keep this tab open — once you confirm, we'll take you straight in.")}
         </p>
         <p className="mt-3 text-xs leading-relaxed text-[#5f5e5a]">
-          Don't see it? Check your spam or junk folder — and give it a minute to arrive.
+          {t("confirmEmail.checkSpam", "Don't see it? Check your spam or junk folder — and give it a minute to arrive.")}
         </p>
 
         <button
@@ -132,20 +135,20 @@ function ConfirmEmail() {
           disabled={cooldown > 0 || resending}
           className="mt-8 w-full rounded-xl bg-[#1a3d2e] py-3 text-sm font-medium text-white active:scale-[0.99] disabled:opacity-50"
         >
-          {resending ? "Sending…" : cooldown > 0 ? `Resend email (${cooldown}s)` : "Didn't get it? Resend email"}
+          {resending ? t("confirmEmail.sending", "Sending…") : cooldown > 0 ? t("confirmEmail.resendCooldown", "Resend email ({{cooldown}}s)", { cooldown }) : t("confirmEmail.resend", "Didn't get it? Resend email")}
         </button>
 
         <p className="mt-4 text-xs text-[#5f5e5a]">
-          Wrong email address?{" "}
+          {t("confirmEmail.wrongEmail", "Wrong email address?")}{" "}
           <button onClick={useDifferentEmail} className="font-medium text-[#1a3d2e] underline">
-            Go back and fix it
+            {t("confirmEmail.goBackAndFix", "Go back and fix it")}
           </button>
         </p>
 
         <p className="mt-6 text-[11px] text-[#5f5e5a]">
-          Already confirmed?{" "}
+          {t("confirmEmail.alreadyConfirmed", "Already confirmed?")}{" "}
           <Link to="/auth" search={{ mode: "signin" as const }} className="font-medium underline">
-            Sign in
+            {t("confirmEmail.signIn", "Sign in")}
           </Link>
         </p>
       </div>

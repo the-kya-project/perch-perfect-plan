@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { ArrowRight, ChevronRight, Feather, Camera } from "lucide-react";
 import { BrandLockup } from "@/components/BrandLogo";
+import { useTranslation } from "react-i18next";
 
 // ===========================================================================
 // Owner visual system ("Explore-grade"). Build once, reuse everywhere.
@@ -36,6 +37,7 @@ export function InkHero({
   // Lockup width; default 118 ≈ 36px tall (the asset is ~3.27:1).
   brandSize?: number;
 }) {
+  const { t } = useTranslation();
   const showLockup = !!showBrand;
   // Only render the top chrome row when there's something in it (a lockup or
   // icon controls). On screens with neither (accept-invite/handoff), the hero
@@ -63,7 +65,7 @@ export function InkHero({
           {showLockup ? <BrandLockup orientation="horizontal" variant="ink" size={brandSize} /> : <span />}
           <div className="flex-1" />
           {backIcon && (
-            <button type="button" onClick={onBack} aria-label="Back" className="grid size-9 place-items-center rounded-full text-white/90 active:bg-white/10">{backIcon}</button>
+            <button type="button" onClick={onBack} aria-label={t("system.back", "Back")} className="grid size-9 place-items-center rounded-full text-white/90 active:bg-white/10">{backIcon}</button>
           )}
           {trailingIcons && <div className="flex items-center gap-2">{trailingIcons}</div>}
         </div>
@@ -107,6 +109,7 @@ export function PhotoHero({
   // Renders a camera button bottom-right → open the photo-management sheet.
   onEditPhoto?: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="relative w-full overflow-hidden" style={{ height, background: fallbackGradient }}>
       {src ? (
@@ -116,15 +119,15 @@ export function PhotoHero({
       )}
       {(onBack || onShare || onDots) && (
         <div className="absolute inset-x-0 top-0 flex items-center justify-between px-3 pt-[max(env(safe-area-inset-top),12px)]">
-          {onBack ? <CircleControl label="Back" onPress={onBack}><ArrowRight className="size-5 rotate-180" /></CircleControl> : <span className="size-9" />}
+          {onBack ? <CircleControl label={t("system.back", "Back")} onPress={onBack}><ArrowRight className="size-5 rotate-180" /></CircleControl> : <span className="size-9" />}
           <div className="flex items-center gap-2">
-            {onShare && <CircleControl label="Share" onPress={onShare}><ShareGlyph /></CircleControl>}
-            {onDots && <CircleControl label="More" onPress={onDots}><DotsGlyph /></CircleControl>}
+            {onShare && <CircleControl label={t("system.share", "Share")} onPress={onShare}><ShareGlyph /></CircleControl>}
+            {onDots && <CircleControl label={t("system.more", "More")} onPress={onDots}><DotsGlyph /></CircleControl>}
           </div>
         </div>
       )}
       {onEditPhoto && (
-        <button type="button" aria-label="Change photo" onClick={onEditPhoto} className="absolute bottom-3 right-3 grid size-11 place-items-center rounded-full text-white active:scale-95" style={{ background: "rgba(0,0,0,0.32)" }}>
+        <button type="button" aria-label={t("system.changePhoto", "Change photo")} onClick={onEditPhoto} className="absolute bottom-3 right-3 grid size-11 place-items-center rounded-full text-white active:scale-95" style={{ background: "rgba(0,0,0,0.32)" }}>
           <Camera className="size-5" />
         </button>
       )}

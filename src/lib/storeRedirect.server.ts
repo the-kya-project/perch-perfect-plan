@@ -32,7 +32,19 @@ export type ClickEntry = "get" | "get-app" | "review";
  * UTM is overwritten to represent it. The existing daily view already groups
  * by `path`, so scans show up there with no query changes.
  */
-export type ClickPath = ClickEntry | "get-qr" | "get-app-qr";
+export type ClickPath = ClickEntry | "get-qr" | "get-app-qr" | `${HandoffEntry}-tap-${HandoffTap}`;
+
+/**
+ * A tap on the Android handoff page's buttons (see androidHandoffPage), logged
+ * as its own row so a campaign shows how many TikTok visitors tapped through:
+ * `get-tap-app` for "Open in Google Play", `get-tap-web` for the web fallback.
+ */
+export type HandoffEntry = "get" | "get-app";
+export type HandoffTap = "app" | "web";
+export function readHandoffTap(url: URL): HandoffTap | null {
+  const t = url.searchParams.get("tap");
+  return t === "app" || t === "web" ? t : null;
+}
 
 export type Resolved = "ios" | "android" | "chooser";
 export type Platform = "ios" | "android" | "desktop" | "other";
@@ -168,6 +180,30 @@ export function playStoreUrl(utms: Utms, opts: { review?: boolean } = {}): strin
   const inner = UTM_KEYS.filter((k) => utms[k]).map((k) => `${k}=${utms[k]}`).join("&");
   if (!inner) return base;
   return `${base}&referrer=${encodeURIComponent(inner)}`;
+}
+
+/**
+ * The same listing as a `market://` link, which Android hands to the Play Store
+ * app itself rather than loading the Play website. Same `referrer`, so Play
+ * Console attribution is unchanged.
+ */
+export function playStoreAppUrl(utms: Utms): string {
+  const web = new URL(playStoreUrl(utms));
+  return `market://details${web.search}`;
+}
+
+/**
+ * In-app browsers whose Android webview loads a play.google.com redirect as the
+ * Play *website* inside the app, where Install doesn't hand off to the store.
+ * Visitors from these get a one-tap page with a `market://` link instead of a
+ * 302. TikTok only for now: 56 of 71 Android clicks in the Oct 2026 launch ads
+ * came from its webview, and Play Console recorded 43 listing visits and one
+ * install for them. Add another here only with evidence it has the same problem.
+ */
+const ANDROID_HANDOFF_BROWSERS: ReadonlySet<InAppBrowser> = new Set(["tiktok"]);
+
+export function needsAndroidHandoff(userAgent: string, resolved: Resolved): boolean {
+  return resolved === "android" && ANDROID_HANDOFF_BROWSERS.has(detectInAppBrowser(userAgent));
 }
 
 /** Re-attach the incoming UTMs to a link, for the desktop chooser's badges. */

@@ -25,6 +25,8 @@ export const Route = createFileRoute("/api/public/hooks/care-plan-reminders")({
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const { sendPushToOwner } = await import("@/lib/pushSender.server");
+        const { localeForUser } = await import("@/lib/emailLocale.server");
+        const { carePlanReminderPush } = await import("@/lib/pushCopy.server");
 
         const today = new Date();
         const horizon = new Date(today);
@@ -86,9 +88,10 @@ export const Route = createFileRoute("/api/public/hooks/care-plan-reminders")({
             // suppress the other or abort the run.
             let pushSent = false;
             try {
+              // Owner (group 1) → their stored locale; null/unknown → English.
+              const locale = await localeForUser(supabaseAdmin, ownerId);
               const res = await sendPushToOwner(ownerId, "care_plan_reminder", {
-                title: "Care plan check-in",
-                body: `${bird?.name ?? "Your bird"} has a sit coming up — review the care plan?`,
+                ...carePlanReminderPush(locale, bird?.name),
                 url: "/dashboard",
                 tag: `care-plan-reminder-${sit.id}`,
               });
@@ -117,8 +120,10 @@ export const Route = createFileRoute("/api/public/hooks/care-plan-reminders")({
                 if (to) {
                   const appUrl = process.env.APP_URL || "https://app.thekyaproject.com";
                   const { buildCarePlanReminderEmail } = await import("@/lib/emailTemplates");
+                  const { emailT } = await import("@/lib/i18n/emailI18n.server");
                   const { sendTransactionalEmail } = await import("@/lib/brevoEmail.server");
-                  const built = buildCarePlanReminderEmail({ birdName: bird?.name ?? "your bird", link: `${appUrl}/dashboard`, locale: (profile as { locale?: string } | null)?.locale ?? undefined });
+                  const emailLocale = (profile as { locale?: string } | null)?.locale ?? undefined;
+                  const built = buildCarePlanReminderEmail({ birdName: bird?.name ?? emailT(emailLocale)("email.common.yourBird"), link: `${appUrl}/dashboard`, locale: emailLocale });
                   await sendTransactionalEmail({
                     to,
                     toName: profile?.display_name ?? undefined,

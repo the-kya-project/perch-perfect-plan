@@ -1,5 +1,7 @@
 import { Link, useLocation } from "@tanstack/react-router";
 import { Home, Calendar, Activity, Compass } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 
 // Bottom navigation — ONE set for every authenticated account: Home / Sits /
 // Scans / Explore. Owning a bird is derived (not a signup type), so there's no
@@ -15,6 +17,17 @@ const SITS_TAB: TabSpec = { key: "sits", label: "Sits", to: "/sits", Icon: Calen
 const ACTIVITY_TAB: TabSpec = { key: "activity", label: "Health", to: "/scans", Icon: Activity };
 const EXPLORE_TAB: TabSpec = { key: "explore", label: "Explore", to: "/explore", Icon: Compass };
 
+// `label` stays the English source; translate only at display.
+function tabLabel(t: TFunction, key: OwnerTab, fallback: string): string {
+  switch (key) {
+    case "home": return t("ownerTabs.home", "Home");
+    case "sits": return t("ownerTabs.sits", "Sits");
+    case "activity": return t("ownerTabs.health", "Health");
+    case "explore": return t("ownerTabs.explore", "Explore");
+  }
+  return fallback;
+}
+
 // `active` is optional — during the setup flow no tab is highlighted. Pass
 // `embedded` to drop the fixed positioning so it can be stacked inside another
 // fixed container (e.g. above the setup footer).
@@ -28,6 +41,7 @@ function tabForPath(pathname: string): OwnerTab | undefined {
 }
 
 export function OwnerTabBar({ active, embedded }: { active?: OwnerTab; embedded?: boolean }) {
+  const { t } = useTranslation();
   const pathname = useLocation({ select: (l) => l.pathname });
   const current = active ?? tabForPath(pathname);
   // ONE nav for every authenticated account — owning a bird is derived, not a
@@ -36,7 +50,7 @@ export function OwnerTabBar({ active, embedded }: { active?: OwnerTab; embedded?
   const TABS: TabSpec[] = [HOME_TAB, SITS_TAB, ACTIVITY_TAB, EXPLORE_TAB];
   return (
     <nav
-      aria-label="Primary"
+      aria-label={t("ownerTabs.navAria", "Primary")}
       className={`${embedded ? "" : "fixed inset-x-0 bottom-0 z-40 "}border-t border-[#e3dcc9] bg-[#f4f1e8]/95 backdrop-blur-sm pb-[env(safe-area-inset-bottom)]`}
     >
       <div className="mx-auto flex max-w-md items-stretch justify-around">
@@ -53,7 +67,7 @@ export function OwnerTabBar({ active, embedded }: { active?: OwnerTab; embedded?
               }`}
             >
               <Icon className="size-6" strokeWidth={on ? 2.4 : 1.9} />
-              {label}
+              {tabLabel(t, key, label)}
             </Link>
           );
         })}

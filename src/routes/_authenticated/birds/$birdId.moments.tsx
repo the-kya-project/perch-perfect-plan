@@ -13,9 +13,11 @@ import { InkHero, IconTile, SectionHead, Card, RecordRow } from "@/components/sy
 import { friendlyError } from "@/lib/errorMessage";
 import { formatLocalDate } from "@/lib/dates";
 import { localDateISO } from "@/lib/localDay";
+import i18next from "i18next";
+import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/moments")({
-  head: () => ({ meta: [{ title: "Moments — Kya & Co." }] }),
+  head: () => ({ meta: [{ title: i18next.t("birdMoments.metaTitle", "Moments — Kya & Co.") }] }),
   component: MomentsFacet,
 });
 
@@ -28,23 +30,24 @@ type Anchor = { key: AnchorKey; label: string; baseISO: string };
 const todayMid = () => { const n = new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate(), 12); };
 function nextOccurrence(baseISO: string) {
   const base = new Date(`${baseISO}T12:00:00`);
-  const t = todayMid();
-  let d = new Date(t.getFullYear(), base.getMonth(), base.getDate(), 12);
-  if (d < t) d = new Date(t.getFullYear() + 1, base.getMonth(), base.getDate(), 12);
+  const today = todayMid();
+  let d = new Date(today.getFullYear(), base.getMonth(), base.getDate(), 12);
+  if (d < today) d = new Date(today.getFullYear() + 1, base.getMonth(), base.getDate(), 12);
   return { date: d, years: d.getFullYear() - base.getFullYear() };
 }
 const daysUntil = (d: Date) => Math.round((+d - +todayMid()) / 86_400_000);
 function relDay(d: Date) {
   const n = daysUntil(d);
-  if (n === 0) return "today";
-  if (n === 1) return "tomorrow";
-  if (n < 7) return `on ${formatLocalDate(d, { weekday: "long" })}`;
-  return `on ${formatLocalDate(d, { month: "long", day: "numeric" })}`;
+  if (n === 0) return i18next.t("birdMoments.today", "today");
+  if (n === 1) return i18next.t("birdMoments.tomorrow", "tomorrow");
+  if (n < 7) return i18next.t("birdMoments.onDate", "on {{date}}", { date: formatLocalDate(d, { weekday: "long" }) });
+  return i18next.t("birdMoments.onDate", "on {{date}}", { date: formatLocalDate(d, { month: "long", day: "numeric" }) });
 }
 const fmtDate = (iso: string) => formatLocalDate(new Date(`${iso}T12:00:00`), { month: "short", day: "numeric", year: "numeric" });
 const monthDay = (iso: string) => formatLocalDate(new Date(`${iso}T12:00:00`), { month: "short", day: "numeric" });
 
 function MomentsFacet() {
+  const { t } = useTranslation();
   const { birdId } = Route.useParams();
   const navigate = useNavigate();
   const router = useRouter();
@@ -103,7 +106,7 @@ function MomentsFacet() {
   });
   const urlFor = (p: string | null | undefined) => (p ? (urls as Record<string, string>)[p] ?? null : null);
 
-  const name = bird?.name ?? "This bird";
+  const name = bird?.name ?? t("birdMoments.thisBird", "This bird");
   const birdPhotoOf = useBirdPhotos([bird?.photo_url], 800);
   const birdPhoto = birdPhotoOf(bird?.photo_url);
   const photoByYear = new Map(anchorPhotos.map((a) => [`${a.anchor}:${a.year}`, a.photo_path]));
@@ -114,7 +117,12 @@ function MomentsFacet() {
   if (bird?.birth_date) anchors.push({ key: "hatch_day", label: "Hatch-day", baseISO: bird.birth_date });
 
   const anchorTitle = (a: Anchor, years: number) =>
-    a.key === "gotcha_day" ? `${years} year${years === 1 ? "" : "s"} together` : `${name} turns ${years}`;
+    a.key === "gotcha_day"
+      ? years === 1
+        ? t("birdMoments.yearsTogetherOne", "{{n}} year together", { n: years })
+        : t("birdMoments.yearsTogetherOther", "{{n}} years together", { n: years })
+      : t("birdMoments.turns", "{{name}} turns {{n}}", { name, n: years });
+  const anchorLabel = (a: Anchor) => (a.key === "gotcha_day" ? t("birdMoments.gotchaDay", "Gotcha-day") : t("birdMoments.hatchDay", "Hatch-day"));
 
   // Featured keepsake = soonest upcoming anchor.
   const featured = anchors
@@ -139,14 +147,14 @@ function MomentsFacet() {
     setBusy(true);
     try {
       const dataUrl = await compressImageToDataUrl(file);
-      if (dataUrlBytes(dataUrl) > MAX_UPLOAD_BYTES) { toast.error("That photo's a bit too large even after resizing. Try a different one."); return; }
+      if (dataUrlBytes(dataUrl) > MAX_UPLOAD_BYTES) { toast.error(t("birdMoments.photoTooLarge", "That photo's a bit too large even after resizing. Try a different one.")); return; }
       const path = await uploadJournalPhoto(birdId, dataUrl);
       const { error } = await supabase.from("anchor_photos").upsert({ bird_id: birdId, anchor, year, photo_path: path }, { onConflict: "bird_id,anchor,year" });
       if (error) throw error;
-      toast.success("Photo saved.");
+      toast.success(t("birdMoments.photoSaved", "Photo saved."));
       qc.invalidateQueries({ queryKey: ["anchor-photos", birdId] });
     } catch (e: any) {
-      toast.error(friendlyError(e, "Couldn't save the photo."));
+      toast.error(friendlyError(e, t("birdMoments.photoSaveFailed", "Couldn't save the photo.")));
     } finally {
       setBusy(false);
     }
@@ -155,9 +163,9 @@ function MomentsFacet() {
   async function share(opts: { photoUrl?: string | null; title: string; context: string }) {
     try {
       const r = await shareMomentCard(opts);
-      if (r === "saved") toast.success("Saved a card to your photos.");
+      if (r === "saved") toast.success(t("birdMoments.cardSaved", "Saved a card to your photos."));
     } catch (e: any) {
-      if (e?.name !== "AbortError") toast.error("Couldn't create the share card.");
+      if (e?.name !== "AbortError") toast.error(t("birdMoments.cardFailed", "Couldn't create the share card."));
     }
   }
 
@@ -165,28 +173,28 @@ function MomentsFacet() {
     <div className="min-h-screen bg-[var(--cream)] pb-nav">
       <div className="mx-auto max-w-md">
         <InkHero
-          eyebrow="Moments"
-          headline={`${name} being ${name}.`}
-          body="The highlight reel."
+          eyebrow={t("birdMoments.eyebrow", "Moments")}
+          headline={t("birdMoments.headline", "{{name}} being {{name}}.", { name })}
+          body={t("birdMoments.body", "The highlight reel.")}
           backIcon={<ArrowLeft className="size-5" />}
           onBack={goBack}
           trailingIcons={busy ? <Loader2 className="size-4 animate-spin text-white/80" /> : undefined}
-          cta={isOwner ? { label: "Add custom milestone", tone: "lime", icon: <Plus className="size-4" />, onPress: () => setAdding(true) } : undefined}
+          cta={isOwner ? { label: t("birdMoments.addCustom", "Add custom milestone"), tone: "lime", icon: <Plus className="size-4" />, onPress: () => setAdding(true) } : undefined}
         />
 
         <main className="space-y-4 px-5 pt-5">
           {/* Upcoming nudge — only within ~7 days, owner-only (it's an upload prompt) */}
           {nudge && isOwner && (
             <section>
-              <SectionHead title="Upcoming" />
+              <SectionHead title={t("birdMoments.upcoming", "Upcoming")} />
               <Card>
                 <div className="flex items-center gap-3 px-4 py-3">
                   <IconTile size={38} tone="pale" icon={<CalendarHeart className="size-5" />} />
                   <p className="min-w-0 flex-1 t-body text-[var(--ink)]">
-                    {anchorTitle(nudge.a, nudge.occ.years)} {relDay(nudge.occ.date)} — mark it with a photo.
+                    {t("birdMoments.nudge", "{{title}} {{when}} — mark it with a photo.", { title: anchorTitle(nudge.a, nudge.occ.years), when: relDay(nudge.occ.date) })}
                   </p>
                   <label className="inline-flex min-h-[44px] shrink-0 cursor-pointer items-center gap-1.5 rounded-[12px] bg-[var(--ink)] px-4 text-[15px] font-[500] text-white active:scale-[0.99]">
-                    <Plus className="size-4" /> Add
+                    <Plus className="size-4" /> {t("birdMoments.add", "Add")}
                     <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) addAnchorPhoto(nudge.a.key, nudge.occ.date.getFullYear(), f); }} />
                   </label>
                 </div>
@@ -211,13 +219,13 @@ function MomentsFacet() {
                 </div>
               </div>
               <div className="mt-2 flex items-center justify-between gap-3 px-1">
-                <p className="t-meta">Save to your photos or share anywhere.</p>
+                <p className="t-meta">{t("birdMoments.saveOrShare", "Save to your photos or share anywhere.")}</p>
                 <button
                   type="button"
                   onClick={() => share({ photoUrl: featuredPhoto, title: anchorTitle(featured.a, featured.occ.years), context: `${name} · ${monthDay(featured.a.baseISO)}` })}
                   className="inline-flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-full bg-[var(--ink)] px-4 text-[15px] font-[500] text-white active:scale-[0.99]"
                 >
-                  <Share2 className="size-4" /> Share
+                  <Share2 className="size-4" /> {t("birdMoments.share", "Share")}
                 </button>
               </div>
             </section>
@@ -226,7 +234,7 @@ function MomentsFacet() {
           {/* Milestones — auto anchors with year-over-year photo slots */}
           {anchors.length > 0 && (
             <section>
-              <SectionHead title="Milestones" />
+              <SectionHead title={t("birdMoments.milestones", "Milestones")} />
               <div className="space-y-4">
                 {anchors.map((a) => {
                   const baseYear = new Date(`${a.baseISO}T12:00:00`).getFullYear();
@@ -236,8 +244,8 @@ function MomentsFacet() {
                   return (
                     <Card key={a.key} className="p-4">
                       <div className="flex items-baseline justify-between">
-                        <p className="t-item">{a.label}</p>
-                        <p className="t-meta">{monthDay(a.baseISO)} · yearly</p>
+                        <p className="t-item">{anchorLabel(a)}</p>
+                        <p className="t-meta">{t("birdMoments.yearly", "{{date}} · yearly", { date: monthDay(a.baseISO) })}</p>
                       </div>
                       <div className="mt-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                         {years.map((y) => {
@@ -274,15 +282,15 @@ function MomentsFacet() {
           {anchors.length === 0 && (
             <p className="rounded-[16px] bg-[var(--cream2)] p-6 text-center t-body text-[var(--mute)]">
               {isOwner
-                ? <>Add {name}'s hatch date and the day they came home in Identity, and their yearly moments will appear here.</>
-                : <>Once {name}'s owner adds a hatch date or homecoming day, the yearly moments will appear here.</>}
+                ? t("birdMoments.emptyOwner", "Add {{name}}'s hatch date and the day they came home in Identity, and their yearly moments will appear here.", { name })
+                : t("birdMoments.emptyMember", "Once {{name}}'s owner adds a hatch date or homecoming day, the yearly moments will appear here.", { name })}
             </p>
           )}
 
           {/* Your own — secondary. Members see it only when there are entries to view. */}
           {(customs.length > 0 || isOwner) && (
           <section>
-            <SectionHead title="Your own" />
+            <SectionHead title={t("birdMoments.yourOwn", "Your own")} />
             {customs.length > 0 && (
               <Card className="mb-2">
                 {customs.map((c, i) => {
@@ -295,10 +303,10 @@ function MomentsFacet() {
                           ? <img src={url} alt="" className="size-11 shrink-0 rounded-[11px] object-cover" />
                           : <span className="size-11 shrink-0 rounded-[11px]" style={{ background: "linear-gradient(135deg,var(--moss),var(--lime))" }} />
                       }
-                      title={c.title || "Milestone"}
+                      title={c.title || t("birdMoments.milestone", "Milestone")}
                       subtitle={c.on_date ? fmtDate(c.on_date) : undefined}
                       trailing={
-                        <button type="button" onClick={() => share({ photoUrl: url, title: c.title || "Milestone", context: `${name}${c.on_date ? ` · ${monthDay(c.on_date)}` : ""}` })} aria-label="Share" className="grid size-11 place-items-center rounded-full text-[var(--moss)] active:scale-95">
+                        <button type="button" onClick={() => share({ photoUrl: url, title: c.title || t("birdMoments.milestone", "Milestone"), context: `${name}${c.on_date ? ` · ${monthDay(c.on_date)}` : ""}` })} aria-label={t("birdMoments.share", "Share")} className="grid size-11 place-items-center rounded-full text-[var(--moss)] active:scale-95">
                           <Share2 className="size-4" />
                         </button>
                       }
@@ -311,7 +319,7 @@ function MomentsFacet() {
             )}
             {isOwner && (
               <button type="button" onClick={() => setAdding(true)} className="mt-2 flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[12px] border border-dashed border-[var(--line)] t-item text-[var(--mute)] active:scale-[0.99]">
-                <Plus className="size-4" /> Add a milestone
+                <Plus className="size-4" /> {t("birdMoments.addMilestone", "Add a milestone")}
               </button>
             )}
           </section>
@@ -327,6 +335,7 @@ function MomentsFacet() {
 }
 
 function AddMilestone({ birdId, onClose, onSaved }: { birdId: string; onClose: () => void; onSaved: () => void }) {
+  const { t } = useTranslation();
   const [title, setTitle] = useState("");
   const [date, setDate] = useState(localDateISO());
   const [photoData, setPhotoData] = useState<string | null>(null);
@@ -341,9 +350,9 @@ function AddMilestone({ birdId, onClose, onSaved }: { birdId: string; onClose: (
     setPhotoBusy(true);
     try {
       const d = await compressImageToDataUrl(file);
-      if (dataUrlBytes(d) > MAX_UPLOAD_BYTES) { toast.error("That photo's a bit too large even after resizing."); return; }
+      if (dataUrlBytes(d) > MAX_UPLOAD_BYTES) { toast.error(t("birdMoments.photoTooLargeShort", "That photo's a bit too large even after resizing.")); return; }
       setPhotoData(d);
-    } catch { toast.error("Couldn't process that photo."); }
+    } catch { toast.error(t("birdMoments.photoFailed", "Couldn't process that photo.")); }
     finally { setPhotoBusy(false); }
   }
 
@@ -357,10 +366,10 @@ function AddMilestone({ birdId, onClose, onSaved }: { birdId: string; onClose: (
         bird_id: birdId, kind: "custom", title: title.trim(), on_date: date, recurs: false, auto_generated: false, photo_path,
       });
       if (error) throw error;
-      toast.success("Milestone added.");
+      toast.success(t("birdMoments.milestoneAdded", "Milestone added."));
       onSaved();
     } catch (e: any) {
-      toast.error(friendlyError(e, "Couldn't save."));
+      toast.error(friendlyError(e, t("birdMoments.saveFailed", "Couldn't save.")));
     } finally {
       setSaving(false);
     }
@@ -371,37 +380,37 @@ function AddMilestone({ birdId, onClose, onSaved }: { birdId: string; onClose: (
       <div className="absolute inset-0 bg-black/30" onClick={saving ? undefined : onClose} />
       <div className="relative w-full max-w-md rounded-t-2xl bg-[#f4f1e8] p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-xl sm:rounded-2xl">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-medium text-[#1a3d2e]">Add a milestone</h2>
-          <button onClick={onClose} aria-label="Close" className="rounded-full p-1 text-[#5f5e5a]"><X className="size-5" /></button>
+          <h2 className="text-lg font-medium text-[#1a3d2e]">{t("birdMoments.addMilestone", "Add a milestone")}</h2>
+          <button onClick={onClose} aria-label={t("birdMoments.close", "Close")} className="rounded-full p-1 text-[#5f5e5a]"><X className="size-5" /></button>
         </div>
         <label className="block">
-          <span className="mb-1 block text-xs font-medium text-[#5f5e5a]">Title</span>
-          <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={80} placeholder="e.g. First free-flight trip" className="h-11 w-full rounded-xl border border-[#c8bfa6] bg-[#fbfaf2] px-3 text-sm text-[#1a3d2e]" />
+          <span className="mb-1 block text-xs font-medium text-[#5f5e5a]">{t("birdMoments.titleLabel", "Title")}</span>
+          <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={80} placeholder={t("birdMoments.titlePlaceholder", "e.g. First free-flight trip")} className="h-11 w-full rounded-xl border border-[#c8bfa6] bg-[#fbfaf2] px-3 text-sm text-[#1a3d2e]" />
         </label>
         <label className="mt-3 block">
-          <span className="mb-1 block text-xs font-medium text-[#5f5e5a]">Date</span>
+          <span className="mb-1 block text-xs font-medium text-[#5f5e5a]">{t("birdMoments.dateLabel", "Date")}</span>
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="h-11 w-full rounded-xl border border-[#c8bfa6] bg-[#fbfaf2] px-3 text-sm text-[#1a3d2e]" />
         </label>
         <div className="mt-3">
-          <span className="mb-1 block text-xs font-medium text-[#5f5e5a]">Photo (optional)</span>
+          <span className="mb-1 block text-xs font-medium text-[#5f5e5a]">{t("birdMoments.photoOptional", "Photo (optional)")}</span>
           {photoData ? (
             <div className="flex items-center gap-3">
               <img src={photoData} alt="" className="h-16 w-16 rounded-lg object-cover" />
-              <button type="button" onClick={() => setPhotoData(null)} className="text-xs font-medium text-[#854F0B] underline">Remove</button>
+              <button type="button" onClick={() => setPhotoData(null)} className="text-xs font-medium text-[#854F0B] underline">{t("birdMoments.remove", "Remove")}</button>
             </div>
           ) : (
             <label className="flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#c8bfa6] bg-[#fbfaf2] text-sm font-medium text-[#5f5e5a]">
               {photoBusy ? <Loader2 className="size-4 animate-spin" /> : <Camera className="size-4" />}
-              {photoBusy ? "Processing…" : "Add a photo"}
+              {photoBusy ? t("birdMoments.processing", "Processing…") : t("birdMoments.addPhoto", "Add a photo")}
               <input type="file" accept="image/*" className="hidden" disabled={photoBusy} onChange={pick} />
             </label>
           )}
         </div>
         <div className="mt-5 flex gap-2">
           <button type="button" onClick={save} disabled={!valid || saving || photoBusy} className="flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-[14px] bg-[#1a3d2e] text-sm font-medium text-white disabled:opacity-50">
-            <Check className="size-4" /> {saving ? "Saving…" : "Save"}
+            <Check className="size-4" /> {saving ? t("birdMoments.saving", "Saving…") : t("birdMoments.save", "Save")}
           </button>
-          <button type="button" onClick={onClose} disabled={saving} className="min-h-[44px] rounded-[14px] border border-[#c8bfa6] px-4 text-sm font-medium text-[#5f5e5a]">Cancel</button>
+          <button type="button" onClick={onClose} disabled={saving} className="min-h-[44px] rounded-[14px] border border-[#c8bfa6] px-4 text-sm font-medium text-[#5f5e5a]">{t("birdMoments.cancel", "Cancel")}</button>
         </div>
       </div>
     </div>

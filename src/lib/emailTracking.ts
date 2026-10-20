@@ -53,6 +53,13 @@ export type EmailTag =
   | "handoff_invite"
   | "handoff_accepted"
   | "handoff_declined"
+  // Supabase auth emails, sent by the Send Email hook (/api/public/hooks/send-email)
+  | "auth_signup"
+  | "auth_recovery"
+  | "auth_magiclink"
+  | "auth_invite"
+  | "auth_email_change"
+  | "auth_reauthentication"
   // scripts/qa-send-emails.ts previews to the founder, kept out of real numbers
   | "qa_preview";
 

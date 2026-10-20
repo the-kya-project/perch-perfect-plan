@@ -21,6 +21,9 @@
  */
 import { flockShell, FC, type FlockBlock } from "./flockClub";
 import type { BuiltEmail } from "./emailTemplates";
+import { emailT } from "./i18n/emailI18n.server";
+
+type EmailT = ReturnType<typeof emailT>;
 
 const APP_URL = "https://app.thekyaproject.com";
 const ASSETS = process.env.EMAIL_ASSET_BASE || APP_URL;
@@ -45,34 +48,34 @@ const SLOT_FAVOR = "@@APP_LAUNCH_FAVOR@@";
 const SLOT_PEEK = "@@APP_LAUNCH_PEEK@@";
 
 /** "AVAILABLE ON" over the two official store badges, side by side. */
-const badgesHtml = () => `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="${RESET}margin:0 0 22px;">
-<tr><td style="padding:0 0 8px;font-family:${BODY_FONT};font-size:10.5px;line-height:14px;letter-spacing:.09em;font-weight:700;color:${FC.muted};">AVAILABLE ON</td></tr>
+const badgesHtml = (t: EmailT) => `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="${RESET}margin:0 0 22px;">
+<tr><td style="padding:0 0 8px;font-family:${BODY_FONT};font-size:10.5px;line-height:14px;letter-spacing:.09em;font-weight:700;color:${FC.muted};">${t("email.appLaunch.availableOn")}</td></tr>
 <tr><td style="padding:0;">
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="${RESET}"><tr>
-<td valign="middle" style="padding:0 10px 0 0;"><a href="${LINKS.badgeIos}"><img src="${ASSETS}/brand/store/app-store-badge@2x.png" width="120" height="40" alt="Download on the App Store" style="display:block;width:120px;height:40px;border:0;" /></a></td>
-<td valign="middle" style="padding:0;"><a href="${LINKS.badgeAndroid}"><img src="${ASSETS}/brand/store/google-play-badge.png" width="155" height="60" alt="Get it on Google Play" style="display:block;width:155px;height:60px;border:0;" /></a></td>
+<td valign="middle" style="padding:0 10px 0 0;"><a href="${LINKS.badgeIos}"><img src="${ASSETS}/brand/store/app-store-badge@2x.png" width="120" height="40" alt="${t("email.appLaunch.badgeIosAlt")}" style="display:block;width:120px;height:40px;border:0;" /></a></td>
+<td valign="middle" style="padding:0;"><a href="${LINKS.badgeAndroid}"><img src="${ASSETS}/brand/store/google-play-badge.png" width="155" height="60" alt="${t("email.appLaunch.badgeAndroidAlt")}" style="display:block;width:155px;height:60px;border:0;" /></a></td>
 </tr></table>
 </td></tr></table>`;
 
 /** The lime "A small favor" panel, with a white button inside it. */
-const favorHtml = () => `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;${RESET}margin:0 0 22px;">
+const favorHtml = (t: EmailT) => `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;${RESET}margin:0 0 22px;">
 <tr><td style="padding:22px;background-color:${FC.lime};border-radius:20px;">
-<p style="margin:0 0 10px;font-family:${HEAD_FONT};font-size:22px;line-height:27px;font-weight:800;letter-spacing:-0.4px;color:${FC.forest};">A small favor</p>
-<p style="margin:0 0 16px;font-family:${BODY_FONT};font-size:15px;line-height:23px;color:${FC.forest};">Kya &amp; Co. is brand new in the stores, and those first few reviews go a long way toward helping other bird people find it. If the app has made caring for your flock a little easier, I'd be grateful if you left a rating and a sentence or two about why.</p>
+<p style="margin:0 0 10px;font-family:${HEAD_FONT};font-size:22px;line-height:27px;font-weight:800;letter-spacing:-0.4px;color:${FC.forest};">${t("email.appLaunch.favorTitle")}</p>
+<p style="margin:0 0 16px;font-family:${BODY_FONT};font-size:15px;line-height:23px;color:${FC.forest};">${t("email.appLaunch.favorBody")}</p>
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="${RESET}">
 <tr><td bgcolor="#ffffff" style="background-color:#ffffff;border:2px solid ${FC.forest};border-radius:999px;mso-padding-alt:13px 24px;">
-<a href="${LINKS.review}" style="display:block;padding:13px 24px;font-family:${BODY_FONT};font-size:15px;line-height:21px;font-weight:700;color:${FC.forest};text-decoration:none;">Leave a review&nbsp;&nbsp;&rarr;</a>
+<a href="${LINKS.review}" style="display:block;padding:13px 24px;font-family:${BODY_FONT};font-size:15px;line-height:21px;font-weight:700;color:${FC.forest};text-decoration:none;">${t("email.appLaunch.favorCta")}&nbsp;&nbsp;&rarr;</a>
 </td></tr></table>
 </td></tr></table>`;
 
 /** The forest "Coming to the app" panel: a lime pill, then ruled items. */
-const peekHtml = (items: Array<{ lead: string; text: string }>) => `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;${RESET}margin:0 0 22px;">
+const peekHtml = (t: EmailT, items: Array<{ lead: string; text: string }>) => `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;${RESET}margin:0 0 22px;">
 <tr><td style="padding:22px;background-color:${FC.forest};border-radius:20px;">
 <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="${RESET}margin:0 0 12px;">
-<tr><td bgcolor="${FC.lime}" style="padding:5px 13px;background-color:${FC.lime};border-radius:999px;font-family:${BODY_FONT};font-size:11.5px;line-height:15px;font-weight:700;color:${FC.forest};white-space:nowrap;">Sneak peek</td></tr>
+<tr><td bgcolor="${FC.lime}" style="padding:5px 13px;background-color:${FC.lime};border-radius:999px;font-family:${BODY_FONT};font-size:11.5px;line-height:15px;font-weight:700;color:${FC.forest};white-space:nowrap;">${t("email.appLaunch.peekPill")}</td></tr>
 </table>
-<p style="margin:0 0 8px;font-family:${HEAD_FONT};font-size:22px;line-height:27px;font-weight:800;letter-spacing:-0.4px;color:#ffffff;">Coming to the app</p>
-<p style="margin:0 0 14px;font-family:${BODY_FONT};font-size:14.5px;line-height:22px;color:${FC.footText};">Here's a look at what we're working on now. There are no dates yet, but I'll let you know as each one arrives.</p>
+<p style="margin:0 0 8px;font-family:${HEAD_FONT};font-size:22px;line-height:27px;font-weight:800;letter-spacing:-0.4px;color:#ffffff;">${t("email.appLaunch.peekTitle")}</p>
+<p style="margin:0 0 14px;font-family:${BODY_FONT};font-size:14.5px;line-height:22px;color:${FC.footText};">${t("email.appLaunch.peekIntro")}</p>
 ${items
     .map(
       (it, i) => `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;${RESET}">
@@ -119,67 +122,70 @@ function splice(html: string, token: string, replacement: string): string {
 }
 
 /** First word of the display name, or a nameless greeting. */
-export function greeting(displayName?: string | null): string {
+export function greeting(displayName?: string | null, locale?: string): string {
+  const t = emailT(locale);
   const first = (displayName ?? "").trim().split(/\s+/)[0];
-  return first ? `Hi ${first},` : "Hi there,";
+  return first ? t("email.appLaunch.hi", { first }) : t("email.appLaunch.hiNoName");
 }
 
-export function buildAppLaunchEmail(opts: { displayName?: string | null; unsubscribeUrl?: string }): BuiltEmail {
+export function buildAppLaunchEmail(opts: { displayName?: string | null; unsubscribeUrl?: string; locale?: string }): BuiltEmail {
+  const t = emailT(opts.locale);
   const blocks: FlockBlock[] = [
-    { kind: "p", text: greeting(opts.displayName) },
-    { kind: "p", text: "It's here! You can now download Kya &amp; Co. from the App Store and Google Play." },
-    { kind: "p", text: "If you've been using it in your browser, you don't have to start over. Sign in with the same account and everything you've logged will be right where you left it, from weights and daily checks to journal entries and care plan notes." },
-    { kind: "button", label: "Get the app", href: LINKS.button },
+    { kind: "p", text: greeting(opts.displayName, opts.locale) },
+    { kind: "p", text: t("email.appLaunch.p1") },
+    { kind: "p", text: t("email.appLaunch.p2") },
+    { kind: "button", label: t("email.appLaunch.cta"), href: LINKS.button },
     { kind: "p", text: SLOT_BADGES },
 
-    { kind: "sectionHead", title: "Why make the switch" },
-    { kind: "p", text: "The app does a few things a browser tab can't, and they add up quickly when you're looking after a bird every day." },
+    { kind: "sectionHead", title: t("email.appLaunch.whyTitle") },
+    { kind: "p", text: t("email.appLaunch.whyIntro") },
     {
       kind: "steps",
       items: [
-        { title: "Reminders reach you on time.", text: "The app can let you know when it's time to weigh and when a check-in is due." },
-        { title: "Logging takes seconds.", text: "Kya &amp; Co. sits on your Home Screen, so you can add a weight and get on with your morning." },
-        { title: "Everything works the way you're used to.", text: "It's the same app you know, living where your phone keeps the things you use every day." },
+        { title: t("email.appLaunch.step1Title"), text: t("email.appLaunch.step1Text") },
+        { title: t("email.appLaunch.step2Title"), text: t("email.appLaunch.step2Text") },
+        { title: t("email.appLaunch.step3Title"), text: t("email.appLaunch.step3Text") },
       ],
     },
 
     { kind: "p", text: SLOT_FAVOR },
-    { kind: "p", text: "And if something isn't working, or there's something you wish it did, just hit reply. I read every note that comes in, and a lot of what we're building next started as an email from someone like you." },
+    { kind: "p", text: t("email.appLaunch.reply") },
 
     { kind: "p", text: SLOT_PEEK },
-    { kind: "p", text: "Before you go, thank you for trusting Kya &amp; Co. with a little piece of your bird's life. You were one of the very first, and I'm really glad you're here." },
+    { kind: "p", text: t("email.appLaunch.thanks") },
     { kind: "signature" },
   ];
 
   const built = flockShell({
-    headline: "Kya &amp; Co. is in the app stores",
-    preheader: "Same account, reminders that reach you, and a peek at what we're building next.",
-    pill: "Big news",
-    hero: { file: "app-launch-hero.jpg", alt: "A bright orange sun conure looking at the camera", sticker: "Now on iPhone + Android" },
+    headline: t("email.appLaunch.headline"),
+    preheader: t("email.appLaunch.preview"),
+    pill: t("email.appLaunch.pill"),
+    hero: { file: "app-launch-hero.jpg", alt: t("email.appLaunch.heroAlt"), sticker: t("email.appLaunch.sticker") },
     blocks,
-    footerWhy: "You're getting this because you have a Kya &amp; Co. account.",
+    footerWhy: t("email.appLaunch.foot"),
     link: APP_URL,
     unsubscribeUrl: opts.unsubscribeUrl,
+    locale: opts.locale,
   });
 
   const peekItems = [
-    { lead: "The app will learn your bird's normal.", text: "Their numbers will be compared with their own history instead of a general chart for the species." },
-    { lead: "Today cards will bring timely tips.", text: "You'll see short notes on what a heat wave, holiday candles, or fireworks night means for a parrot." },
-    { lead: "You'll be able to describe your bird out loud.", text: "Talk or type the way you'd tell a friend about them, and the app will draft a care plan for you to review." },
-    { lead: "A weekly recap will round things up.", text: "Instead of several separate nudges, you'll get one short look back at your week." },
+    { lead: t("email.appLaunch.peek1Lead"), text: t("email.appLaunch.peek1Text") },
+    { lead: t("email.appLaunch.peek2Lead"), text: t("email.appLaunch.peek2Text") },
+    { lead: t("email.appLaunch.peek3Lead"), text: t("email.appLaunch.peek3Text") },
+    { lead: t("email.appLaunch.peek4Lead"), text: t("email.appLaunch.peek4Text") },
   ];
 
   let html = built.html;
-  html = splice(html, SLOT_BADGES, badgesHtml());
-  html = splice(html, SLOT_FAVOR, favorHtml());
-  html = splice(html, SLOT_PEEK, peekHtml(peekItems));
+  html = splice(html, SLOT_BADGES, badgesHtml(t));
+  html = splice(html, SLOT_FAVOR, favorHtml(t));
+  html = splice(html, SLOT_PEEK, peekHtml(t, peekItems));
   html = tightenFooter(html);
 
   // The plain text comes from the same blocks, so the tokens are in it too.
   const text = built.text
-    .replace(SLOT_BADGES, `Get the app: ${LINKS.button}\nApp Store: ${LINKS.badgeIos}\nGoogle Play: ${LINKS.badgeAndroid}`)
-    .replace(SLOT_FAVOR, `A small favor\nKya & Co. is brand new in the stores, and those first few reviews go a long way toward helping other bird people find it. If the app has made caring for your flock a little easier, I'd be grateful if you left a rating and a sentence or two about why.\nLeave a review: ${LINKS.review}`)
-    .replace(SLOT_PEEK, `Sneak peek — Coming to the app\nHere's a look at what we're working on now. There are no dates yet, but I'll let you know as each one arrives.\n\n${peekItems.map((i) => `${i.lead} ${i.text}`).join("\n\n")}`);
+    .replace(SLOT_BADGES, t("email.appLaunch.textBadges", { button: LINKS.button, ios: LINKS.badgeIos, android: LINKS.badgeAndroid }))
+    .replace(SLOT_FAVOR, t("email.appLaunch.textFavor", { link: LINKS.review }))
+    .replace(SLOT_PEEK, `${t("email.appLaunch.textPeekHead")}\n\n${peekItems.map((i) => `${i.lead} ${i.text}`).join("\n\n")}`);
 
   if (html.includes("@@APP_LAUNCH_")) throw new Error("app-launch email: a slot token survived into the HTML");
   if (text.includes("@@APP_LAUNCH_")) throw new Error("app-launch email: a slot token survived into the plain text");

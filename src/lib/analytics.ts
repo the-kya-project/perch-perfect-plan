@@ -40,6 +40,12 @@ import { hashUserId } from "./userHash";
 export type AnalyticsEventName =
   | "owner_signup"
   | "guided_editor_opened"
+  | "setup_stop_point_viewed"
+  | "setup_stop_point_choice"
+  | "sit_gaps_shown"
+  | "sit_gaps_choice"
+  | "setup_copy_from_bird"
+  | "setup_copy_from_bird_undo"
   | "care_plan_section_completed"
   | "care_plan_progress"
   | "sit_created"
@@ -53,6 +59,7 @@ export type AnalyticsEventName =
   // through this wrapper rather than its posthog-js provider rewrite.
   | "bird_added"
   | "weight_logged"
+  | "weight_edited"
   | "care_plan_viewed"
   | "care_plan_editor_opened"
   | "view_as_sitter_opened"
@@ -70,6 +77,13 @@ export type AnalyticsEventName =
   | "native_oauth_token"
   // Clip-upload diagnostics: compare picked file size app vs PWA
   | "clip_upload_picked"
+  // Clip-upload timing: how long sending took (and the speed it implies), or
+  // how far it got before failing / being cancelled; then how long Cloudflare
+  // took to get it ready to play.
+  | "clip_upload_done"
+  | "clip_upload_failed"
+  | "clip_upload_cancelled"
+  | "clip_ready"
   // Resume-after-idle token refresh (bounced-to-sign-in debugging)
   | "auth_resume_refresh"
   | "auth_guard_timeout"
@@ -83,7 +97,13 @@ export type AnalyticsEventName =
   | "sitter_invite_email_failed"
   // Home "turn on reminders" card: shown, then enabled / not_now / denied
   | "push_banner_shown"
-  | "push_banner_result";
+  | "push_banner_result"
+  // Daily weight & health check box (bird page, one-bird Home, flock check)
+  | "daily_check_viewed"
+  | "daily_check_saved"
+  | "daily_check_different_opened"
+  | "flock_check_completed"
+  | "extra_weight_added";
 
 type EventProps = Record<string, string | number | boolean | null | undefined>;
 

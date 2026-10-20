@@ -1,10 +1,13 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { Check, ChevronDown, ChevronRight, ExternalLink, Plus, Trash2, CheckCircle2 } from "lucide-react";
+import { Check, ChevronDown, Plus, X } from "lucide-react";
+import { K } from "@/components/kya";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { friendlyError } from "@/lib/errorMessage";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 
 type Bird = { id: string; name: string };
 
@@ -20,8 +23,25 @@ export const CHECKLIST_ITEMS: StandardItem[] = [
   { key: "hazards", label: "Hazards handled (rooms closed, pets secured, windows checked)" },
   { key: "care_plans", label: "Care plans up to date" },
   { key: "emergency_contacts", label: "Emergency contacts confirmed current" },
-  { key: "invite_tested", label: "Sitter invite link tested" },
+  { key: "invite_tested", label: "Sitter link tested" },
 ];
+
+// Labels above stay the English source (only item_key is stored); translate at display.
+function itemLabel(t: TFunction, key: string, en: string): string {
+  switch (key) {
+    case "first_aid": return t("sitChecklist.item.firstAid", "First-aid kit stocked, and its location noted");
+    case "carrier": return t("sitChecklist.item.carrier", "Carrier clean and accessible");
+    case "food_portioned": return t("sitChecklist.item.foodPortioned", "Enough food portioned for the full sit, plus extra");
+    case "enrichment": return t("sitChecklist.item.enrichment", "Foraging toys and enrichment set up");
+    case "cage_clean": return t("sitChecklist.item.cageClean", "Cage cleaned");
+    case "sitter_access": return t("sitChecklist.item.sitterAccess", "Sitter has access (key, code, or entry plan)");
+    case "hazards": return t("sitChecklist.item.hazards", "Hazards handled (rooms closed, pets secured, windows checked)");
+    case "care_plans": return t("sitChecklist.item.carePlans", "Care plans up to date");
+    case "emergency_contacts": return t("sitChecklist.item.emergencyContacts", "Emergency contacts confirmed current");
+    case "invite_tested": return t("sitChecklist.item.sitterLinkTested", "Sitter link tested");
+    default: return en;
+  }
+}
 
 type Row = {
   id?: string;
@@ -31,20 +51,22 @@ type Row = {
   custom_label?: string | null;
 };
 
+// "Before you leave" — the owner's prep list for one sit, saved per sit in
+// sit_checklist_items. Open until everything is done, then it folds to its
+// title row ("All done"); tap the row to open it again.
 export function SitChecklist({
   sit,
   birds,
-  onSitChanged,
 }: {
-  sit: { id: string; start_date: string; end_date: string; sitter_name?: string | null; marked_ready_at?: string | null };
+  sit: { id: string; start_date: string; end_date: string; sitter_name?: string | null };
   birds: Bird[];
   onSitChanged?: () => void;
 }) {
+  const { t } = useTranslation();
   const qc = useQueryClient();
-  const [open, setOpen] = useState(false);
+  const [openOverride, setOpenOverride] = useState<boolean | null>(null);
   const [adding, setAdding] = useState(false);
   const [newLabel, setNewLabel] = useState("");
-  const [confirmReady, setConfirmReady] = useState<null | { missing: { key: string; label: string }[] }>(null);
 
   const { data: rows = [], isLoading } = useQuery<Row[]>({
     queryKey: ["sit-checklist", sit.id],
@@ -60,36 +82,21 @@ export function SitChecklist({
 
   const checkedSet = new Set(rows.filter((r) => r.checked).map((r) => r.item_key));
   const customRows = rows.filter((r) => r.is_custom);
-
-  // Master list (standard items + the owner's custom additions) for progress
-  // and the mark-ready check. Every item is treated the same.
   const allEntries: { key: string; label: string }[] = [
-    ...CHECKLIST_ITEMS.map((i) => ({ key: i.key, label: i.label })),
-    ...customRows.map((r) => ({
-      key: r.item_key,
-      label: r.custom_label ?? "Custom item",
-    })),
+    ...CHECKLIST_ITEMS.map((i) => ({ key: i.key, label: itemLabel(t, i.key, i.label) })),
+    ...customRows.map((r) => ({ key: r.item_key, label: r.custom_label ?? t("sitChecklist.customItem", "Custom item") })),
   ];
   const totalCount = allEntries.length;
   const doneCount = allEntries.filter((e) => checkedSet.has(e.key)).length;
+  const allDone = !isLoading && totalCount > 0 && doneCount === totalCount;
+  const open = openOverride ?? !allDone;
   const pct = totalCount === 0 ? 0 : Math.round((doneCount / totalCount) * 100);
-  const itemsLeft = totalCount - doneCount;
-
-  // Reminder banner — within 3 days of start, before the sit begins.
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  const start = new Date(sit.start_date + "T00:00:00");
-  const msPerDay = 86_400_000;
-  const daysToStart = Math.round((start.getTime() - today.getTime()) / msPerDay);
-  const showReminder = daysToStart >= 0 && daysToStart <= 3 && itemsLeft > 0;
 
   async function toggle(itemKey: string, nextChecked: boolean) {
     qc.setQueryData(["sit-checklist", sit.id], (prev: Row[] = []) => {
       const others = prev.filter((r) => r.item_key !== itemKey);
       const existing = prev.find((r) => r.item_key === itemKey);
-      return [
-        ...others,
-        { ...(existing ?? { item_key: itemKey }), checked: nextChecked } as Row,
-      ];
+      return [...others, { ...(existing ?? { item_key: itemKey }), checked: nextChecked } as Row];
     });
     const { error } = await supabase
       .from("sit_checklist_items")
@@ -108,11 +115,7 @@ export function SitChecklist({
     if (!label) return;
     const key = `custom:${crypto.randomUUID()}`;
     const { error } = await supabase.from("sit_checklist_items").insert({
-      sit_id: sit.id,
-      item_key: key,
-      checked: false,
-      is_custom: true,
-      custom_label: label,
+      sit_id: sit.id, item_key: key, checked: false, is_custom: true, custom_label: label,
     });
     if (error) { toast.error(friendlyError(error)); return; }
     setNewLabel("");
@@ -126,294 +129,103 @@ export function SitChecklist({
     qc.invalidateQueries({ queryKey: ["sit-checklist", sit.id] });
   }
 
-  async function markReady(force = false) {
-    const missing = allEntries
-      .filter((e) => !checkedSet.has(e.key))
-      .map((e) => ({ key: e.key, label: e.label }));
-    if (!force && missing.length > 0) {
-      setConfirmReady({ missing });
-      return;
-    }
-    setConfirmReady(null);
-    const { error } = await supabase
-      .from("sits")
-      .update({ marked_ready_at: new Date().toISOString() } as any)
-      .eq("id", sit.id);
-    if (error) { toast.error(friendlyError(error)); return; }
-    toast.success("Marked ready. Just for your view — the sitter isn't notified yet.");
-    onSitChanged?.();
-  }
-
-  async function unmarkReady() {
-    const { error } = await supabase
-      .from("sits")
-      .update({ marked_ready_at: null } as any)
-      .eq("id", sit.id);
-    if (error) { toast.error(friendlyError(error)); return; }
-    onSitChanged?.();
-  }
-
-  function renderItem(
-    itemKey: string,
-    label: string,
-    extra?: React.ReactNode,
-    onRemove?: () => void,
-  ) {
-    const isChecked = checkedSet.has(itemKey);
+  const linkPill = "mt-1 inline-flex min-h-[44px] items-center rounded-full px-3.5 text-[13.5px] font-[700]";
+  function birdLinks(key: string) {
+    if (!birds.length || (key !== "care_plans" && key !== "emergency_contacts")) return null;
     return (
-      <div
-        className={`flex items-start gap-2 rounded-lg px-2 py-2 ring-1 ring-sage-100 ${
-          isChecked ? "bg-warn-green/5" : "bg-white"
-        }`}
-      >
-        <button
-          type="button"
-          onClick={() => toggle(itemKey, !isChecked)}
-          aria-pressed={isChecked}
-          aria-label={isChecked ? `Uncheck: ${label}` : `Check off: ${label}`}
-          className={`mt-0.5 grid size-5 shrink-0 place-items-center rounded-md ring-1 transition-colors ${
-            isChecked
-              ? "bg-sage-600 ring-sage-600 text-white"
-              : "bg-white ring-sage-300 text-transparent"
-          }`}
-        >
-          <Check className="size-3.5" strokeWidth={3} />
-        </button>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start gap-1.5">
-            <p
-              className={`flex-1 text-xs leading-snug ${
-                isChecked ? "text-sage-600 line-through" : "text-sage-800"
-              }`}
-            >
-              {label}
-            </p>
-            {onRemove && (
-              <button
-                type="button"
-                onClick={onRemove}
-                className="shrink-0 rounded p-0.5 text-sage-400 hover:text-warn-red"
-                aria-label={`Remove: ${label}`}
-              >
-                <Trash2 className="size-3" />
-              </button>
-            )}
-          </div>
-          {extra}
-        </div>
-      </div>
+      <span className="flex flex-wrap gap-1.5">
+        {birds.map((b) => key === "care_plans" ? (
+          <Link key={b.id} to="/birds/$birdId/plan" params={{ birdId: b.id }} className={linkPill} style={{ background: "#fff", color: K.moss }}>
+            {t("sitChecklist.openCarePlan", "Open {{name}}'s care plan →", { name: b.name })}
+          </Link>
+        ) : (
+          <Link key={b.id} to="/birds/$birdId/plan/editor" params={{ birdId: b.id }} search={{ tab: "emergency" }} className={linkPill} style={{ background: "#fff", color: K.moss }}>
+            {birds.length > 1 ? t("sitChecklist.checkBirdContacts", "Check {{name}}'s contacts →", { name: b.name }) : t("sitChecklist.checkContacts", "Check contacts →")}
+          </Link>
+        ))}
+      </span>
     );
   }
 
-  const sitterLabel = sit.sitter_name && sit.sitter_name !== "__preview__" ? sit.sitter_name : "Your sitter";
+  function item(key: string, label: string, onRemove?: () => void) {
+    const done = checkedSet.has(key);
+    return (
+      <li key={key} className="flex items-start gap-3 py-1.5">
+        <button
+          type="button"
+          onClick={() => toggle(key, !done)}
+          aria-pressed={done}
+          aria-label={done ? t("sitChecklist.uncheckAria", "Uncheck: {{label}}", { label }) : t("sitChecklist.checkOffAria", "Check off: {{label}}", { label })}
+          className="flex min-h-[48px] min-w-0 flex-1 items-center gap-3 text-left"
+        >
+          <span className="grid size-7 shrink-0 place-items-center rounded-full border-2" style={done ? { background: K.forest, borderColor: K.forest, color: "#fff" } : { background: "#fff", borderColor: "#b9c7ba" }} aria-hidden="true">
+            {done && <Check className="size-4" strokeWidth={3} />}
+          </span>
+          <span className={`text-[15px] leading-[1.4] ${done ? "line-through" : ""}`} style={{ color: done ? K.quiet : K.forest }}>{label}</span>
+        </button>
+        {onRemove && (
+          <button type="button" onClick={onRemove} aria-label={t("sitChecklist.removeAria", "Remove: {{label}}", { label })} className="grid size-11 shrink-0 place-items-center rounded-full" style={{ color: K.quiet }}>
+            <X className="size-4" />
+          </button>
+        )}
+      </li>
+    );
+  }
 
   return (
-    <div className="mt-3 rounded-xl border border-sage-100 bg-sage-50/60">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between gap-2 px-3 py-2.5 text-left"
-        aria-expanded={open}
-      >
-        <div className="flex items-center gap-2">
-          {open ? <ChevronDown className="size-4 text-sage-600" /> : <ChevronRight className="size-4 text-sage-600" />}
-          <span className="text-xs font-bold uppercase tracking-wider text-sage-700">
-            Pre-leaving checklist
-          </span>
-          {sit.marked_ready_at && (
-            <span className="inline-flex items-center gap-0.5 rounded-full bg-warn-green/15 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-warn-green">
-              <CheckCircle2 className="size-2.5" /> Ready
-            </span>
-          )}
-        </div>
-        <span className="text-[11px] font-semibold text-sage-600">{doneCount}/{totalCount}</span>
+    <div className="mt-3 rounded-[16px] p-3.5" style={{ background: K.mist, color: K.forest }}>
+      <button type="button" onClick={() => setOpenOverride(!open)} aria-expanded={open} className="flex min-h-[44px] w-full items-center gap-2 text-left">
+        <span className="flex-1 text-[15px] font-[700]">{t("sitChecklist.beforeYouLeave", "Before you leave")}</span>
+        <span className="text-[13px] font-[700]" style={{ color: K.quiet }}>
+          {allDone ? t("sitChecklist.allDone", "All done") : t("sitChecklist.doneOfTotal", "{{done}} of {{total}} done", { done: doneCount, total: totalCount })}
+        </span>
+        <ChevronDown className={`size-4 shrink-0 transition-transform ${open ? "rotate-180" : ""}`} style={{ color: K.quiet }} aria-hidden="true" />
       </button>
-
-      {/* Always-visible progress bar */}
-      <div className="mx-3 mb-1 h-1 overflow-hidden rounded-full bg-sage-100">
-        <div
-          className="h-full rounded-full bg-sage-600 transition-all"
-          style={{ width: `${Math.max(2, pct)}%` }}
-        />
+      <div className="mt-1 h-1.5 overflow-hidden rounded-full" style={{ background: "#d6dfd5" }}>
+        <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: K.forest }} />
       </div>
 
-      {showReminder && (
-        <div className="mx-3 mb-2 rounded-lg bg-warn-amber/10 px-3 py-2 ring-1 ring-warn-amber/30">
-          <p className="text-[11px] font-semibold text-warn-amber">
-            {sitterLabel} arrives in {daysToStart === 0 ? "today" : `${daysToStart} day${daysToStart === 1 ? "" : "s"}`} — {itemsLeft} prep item{itemsLeft === 1 ? "" : "s"} left
-          </p>
-        </div>
-      )}
-
       {open && (
-        <div className="space-y-2 px-2 pb-3">
-          {isLoading && <p className="px-2 py-1 text-xs text-sage-600">Loading…</p>}
-
-          <ul className="space-y-1">
-            {CHECKLIST_ITEMS.map((item) => (
-              <li key={item.key}>
-                {renderItem(
-                  item.key,
-                  item.label,
-                  (item.key === "emergency_contacts" || item.key === "care_plans") && birds.length > 0 ? (
-                    <div className="mt-1 flex flex-wrap gap-1.5">
-                      {birds.map((b) =>
-                        item.key === "emergency_contacts" ? (
-                          <Link
-                            key={b.id}
-                            to="/birds/$birdId/plan/editor"
-                            params={{ birdId: b.id }}
-                            search={{ tab: "emergency" }}
-                            className="inline-flex items-center gap-1 rounded-md bg-sage-100 px-1.5 py-0.5 text-[10px] font-semibold text-sage-700 hover:bg-sage-200"
-                          >
-                            {b.name}
-                            <ExternalLink className="size-2.5" />
-                          </Link>
-                        ) : (
-                          <Link
-                            key={b.id}
-                            to="/birds/$birdId/plan"
-                            params={{ birdId: b.id }}
-                            className="inline-flex items-center gap-1 rounded-md bg-sage-100 px-1.5 py-0.5 text-[10px] font-semibold text-sage-700 hover:bg-sage-200"
-                          >
-                            {b.name}
-                            <ExternalLink className="size-2.5" />
-                          </Link>
-                        ),
-                      )}
-                    </div>
-                  ) : null,
+        <div className="mt-2">
+          {isLoading && <p className="m-0 py-2 text-[14px]" style={{ color: K.quiet }}>{t("sitChecklist.loading", "Loading…")}</p>}
+          <ul className="m-0 list-none p-0">
+            {CHECKLIST_ITEMS.map((i) => (
+              <div key={i.key}>
+                {item(i.key, itemLabel(t, i.key, i.label))}
+                {(i.key === "care_plans" || i.key === "emergency_contacts") && birds.length > 0 && (
+                  <div className="-mt-1 mb-1 pl-10">{birdLinks(i.key)}</div>
                 )}
-              </li>
+              </div>
             ))}
+            {customRows.map((r) => item(r.item_key, r.custom_label ?? t("sitChecklist.customItem", "Custom item"), r.id ? () => removeCustom(r.id!) : undefined))}
           </ul>
 
-          {customRows.length > 0 && (
-            <div className="space-y-1">
-              <div className="px-1 pt-1 text-[10px] font-bold uppercase tracking-wider text-sage-600">
-                Your additions
-              </div>
-              <ul className="space-y-1">
-                {customRows.map((r) => (
-                  <li key={r.item_key}>
-                    {renderItem(
-                      r.item_key,
-                      r.custom_label ?? "Custom item",
-                      null,
-                      r.id ? () => removeCustom(r.id!) : undefined,
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* Add custom item */}
           {adding ? (
-            <div className="space-y-2 rounded-lg bg-white p-2 ring-1 ring-sage-200">
+            <div className="mt-2 flex flex-col gap-2">
               <input
                 autoFocus
                 value={newLabel}
                 onChange={(e) => setNewLabel(e.target.value)}
-                placeholder="e.g. Top up humidifier"
-                className="w-full rounded-md border border-sage-200 px-2 py-1.5 text-xs focus:border-sage-600 focus:outline-none"
-                onKeyDown={(e) => { if (e.key === "Enter") addCustom(); }}
+                placeholder={t("sitChecklist.customPlaceholder", "e.g. Top up humidifier")}
+                aria-label={t("sitChecklist.addYourOwnItem", "Add your own item")}
+                className="h-12 w-full rounded-full border-2 bg-white px-[18px] text-[16px] outline-none focus:border-[#1a3d2e]"
+                style={{ borderColor: "#d6dfd5", color: K.forest }}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCustom(); } }}
               />
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={addCustom}
-                  disabled={!newLabel.trim()}
-                  className="ml-auto rounded-md bg-sage-600 px-3 py-1 text-[11px] font-semibold text-white disabled:opacity-40"
-                >
-                  Add
+              <div className="flex gap-2">
+                <button type="button" onClick={addCustom} disabled={!newLabel.trim()} className="min-h-[44px] flex-1 rounded-full border-2 text-[15px] font-[700] disabled:opacity-45" style={{ background: K.forest, borderColor: K.forest, color: "#fff" }}>
+                  {t("sitChecklist.add", "Add")}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => { setAdding(false); setNewLabel(""); }}
-                  className="rounded-md px-2 py-1 text-[11px] font-semibold text-sage-600"
-                >
-                  Cancel
+                <button type="button" onClick={() => { setAdding(false); setNewLabel(""); }} className="min-h-[44px] rounded-full px-4 text-[15px] font-[700]" style={{ color: K.quiet }}>
+                  {t("sitChecklist.cancel", "Cancel")}
                 </button>
               </div>
             </div>
           ) : (
-            <button
-              type="button"
-              onClick={() => setAdding(true)}
-              className="flex w-full items-center justify-center gap-1 rounded-lg border border-dashed border-sage-300 bg-white px-3 py-2 text-[11px] font-semibold text-sage-700 hover:bg-sage-50"
-            >
-              <Plus className="size-3" /> Add a custom item
+            <button type="button" onClick={() => setAdding(true)} className="mt-2 flex min-h-[48px] w-full items-center justify-center gap-1.5 rounded-full border-2 border-dashed bg-white/60 text-[15px] font-[700]" style={{ borderColor: "#9fb3a3", color: K.forest }}>
+              <Plus className="size-4" /> {t("sitChecklist.addYourOwnItem", "Add your own item")}
             </button>
           )}
-
-          {/* Mark ready */}
-          <div className="pt-1">
-            {sit.marked_ready_at ? (
-              <div className="flex items-center justify-between gap-2 rounded-lg bg-warn-green/10 px-3 py-2 ring-1 ring-warn-green/30">
-                <div className="flex items-center gap-1.5 text-[11px] font-semibold text-warn-green">
-                  <CheckCircle2 className="size-3.5" />
-                  Marked ready · only visible to you for now
-                </div>
-                <button
-                  type="button"
-                  onClick={unmarkReady}
-                  className="text-[10px] font-semibold text-sage-600 underline"
-                >
-                  Undo
-                </button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => markReady(false)}
-                className="w-full rounded-lg bg-sage-900 px-3 py-2 text-xs font-semibold text-white"
-              >
-                Mark ready
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Confirmation dialog for unchecked items */}
-      {confirmReady && (
-        <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center"
-          role="dialog"
-          aria-modal="true"
-          onClick={() => setConfirmReady(null)}
-        >
-          <div
-            className="w-full max-w-md rounded-2xl bg-white p-4 shadow-lg"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <h3 className="text-sm font-bold">Mark ready anyway?</h3>
-            <p className="mt-1 text-xs text-sage-600">
-              A few items aren't checked off yet. Nothing is blocked — this is just for you.
-            </p>
-            <ul className="mt-3 max-h-48 space-y-1 overflow-y-auto rounded-lg bg-sage-50 p-2">
-              {confirmReady.missing.map((m) => (
-                <li key={m.key} className="text-[11px] text-sage-800">• {m.label}</li>
-              ))}
-            </ul>
-            <div className="mt-3 flex gap-2">
-              <button
-                type="button"
-                onClick={() => setConfirmReady(null)}
-                className="flex-1 rounded-lg border border-sage-200 bg-white py-2 text-xs font-semibold text-sage-700"
-              >
-                Keep editing
-              </button>
-              <button
-                type="button"
-                onClick={() => markReady(true)}
-                className="flex-1 rounded-lg bg-sage-900 py-2 text-xs font-semibold text-white"
-              >
-                Mark ready anyway
-              </button>
-            </div>
-          </div>
         </div>
       )}
     </div>

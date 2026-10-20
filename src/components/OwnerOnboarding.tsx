@@ -5,6 +5,8 @@ import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { BrandLockup } from "@/components/BrandLogo";
 import { ChevronLeft, ArrowRight, Feather } from "lucide-react";
 import { setTourDemo } from "@/lib/tourDemo";
+import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 
 // First-run owner orientation: a warm welcome, then a 10-step guided tour of the
 // real Home (nav tabs + content sections) with coach-mark bubbles, ending on a
@@ -35,18 +37,21 @@ type Step = {
 };
 
 // 9 explained steps; step index 9 is the wrap-up CTA (rendered specially).
-const STEPS: Step[] = [
-  { target: "owner-tab-home", headline: "Home is where you land.", body: "Here you'll find daily check-ins, your flock, and anything happening soon. It's the screen you'll open most." },
-  { target: "owner-today", headline: "Today, at a glance.", body: "Sits starting, hatch days, a foster settling in — whatever's worth knowing today shows up here first." },
-  { target: "owner-flock", headline: "Each bird gets a record.", body: "Tap a bird to see their care plan, weight history, journal, identity, and photos. The works." },
-  { target: "owner-fosters", headline: "Fostering a bird?", body: "They live here while they're with you — until they're adopted, or until you decide they're staying. (It happens.)" },
-  { headline: "Saying goodbye? Hand off the record.", body: "When a bird moves to a new home their full record can transfer with them. Care plan, history, identity, everything." },
-  { target: "owner-household", headline: "Family who shares the care?", body: "Spouse, partner, kids, roommates — add them as household. They get access to your care plan and health checks so they can step in when needed." },
-  { target: "owner-tab-sits", headline: "Going away? Set up a sit.", body: "Pet sitters get a temporary link — just for the trip. Household members get more details and a daily checklist." },
-  { target: "owner-tab-activity", headline: "Daily health checks.", body: "Quick questions to track health. Pet sitters are asked to run a health check daily. Flags show up fast when something's off." },
-  { target: "owner-tab-explore", headline: "Stories, education, conservation.", body: "What The Kya Project is up to. Field notes, deep dives, community and other ways to get involved. Read when you have a minute." },
-];
-const TOTAL = STEPS.length + 1; // + wrap-up = 10
+function getSteps(t: TFunction): Step[] {
+  return [
+    { target: "owner-tab-home", headline: t("ownerOnboarding.homeHeadline", "Home is where you land."), body: t("ownerOnboarding.homeBody", "Here you'll find daily check-ins, your flock, and anything happening soon. It's the screen you'll open most.") },
+    { target: "owner-today", headline: t("ownerOnboarding.todayHeadline", "Today, at a glance."), body: t("ownerOnboarding.todayBody", "Sits starting, hatch days, a foster settling in — whatever's worth knowing today shows up here first.") },
+    { target: "owner-flock", headline: t("ownerOnboarding.flockHeadline", "Each bird gets a record."), body: t("ownerOnboarding.flockBody", "Tap a bird to see their care plan, weight history, journal, identity, and photos. The works.") },
+    { target: "owner-fosters", headline: t("ownerOnboarding.fostersHeadline", "Fostering a bird?"), body: t("ownerOnboarding.fostersBody", "They live here while they're with you — until they're adopted, or until you decide they're staying. (It happens.)") },
+    { headline: t("ownerOnboarding.handoffHeadline", "Saying goodbye? Hand off the record."), body: t("ownerOnboarding.handoffBody", "When a bird moves to a new home their full record can transfer with them. Care plan, history, identity, everything.") },
+    { target: "owner-household", headline: t("ownerOnboarding.householdHeadline", "Family who shares the care?"), body: t("ownerOnboarding.householdBody", "Spouse, partner, kids, roommates — add them as household. They get access to your care plan and health checks so they can step in when needed.") },
+    { target: "owner-tab-sits", headline: t("ownerOnboarding.sitsHeadline", "Going away? Set up a sit."), body: t("ownerOnboarding.sitsBody", "Pet sitters get a temporary link — just for the trip. Household members get more details and a daily checklist.") },
+    { target: "owner-tab-activity", headline: t("ownerOnboarding.activityHeadline", "Daily health checks."), body: t("ownerOnboarding.activityBody", "Quick questions to track health. Pet sitters are asked to run a health check daily. Flags show up fast when something's off.") },
+    { target: "owner-tab-explore", headline: t("ownerOnboarding.exploreHeadline", "Stories, education, conservation."), body: t("ownerOnboarding.exploreBody", "What The Kya Project is up to. Field notes, deep dives, community and other ways to get involved. Read when you have a minute.") },
+  ];
+}
+const STEP_COUNT = 9;
+const TOTAL = STEP_COUNT + 1; // + wrap-up = 10
 
 const PAD = 6;
 const GAP = 12;
@@ -64,6 +69,8 @@ type Phase = null | "welcome" | "coach";
 type Spot = { rect: { top: number; left: number; width: number; height: number; bottom: number } | null; vw: number; vh: number };
 
 export function OwnerOnboarding() {
+  const { t } = useTranslation();
+  const STEPS = getSteps(t);
   const navigate = useNavigate();
   const [phase, setPhase] = useState<Phase>(null);
   const [step, setStep] = useState(0); // 0..STEPS.length (last index = wrap-up)
@@ -186,19 +193,19 @@ export function OwnerOnboarding() {
           <BrandLockup orientation="horizontal" variant="ink" size={100} />
         </div>
         <div className="flex-1 px-6 pt-[80px] sm:mx-auto sm:w-full sm:max-w-md sm:flex-none sm:pt-0">
-          <p className="t-eyebrow text-[var(--teal)]">Welcome</p>
-          <h1 className="mt-3 text-[38px] font-[400] leading-[1.05] tracking-[-0.02em]">{firstName ? `Hi, ${firstName}.` : "Welcome."}</h1>
-          <p className="mt-3.5 max-w-[30ch] text-[15px] leading-[1.55] text-white/80">A quick walkthrough first, then we'll set up your bird.</p>
+          <p className="t-eyebrow text-[var(--teal)]">{t("ownerOnboarding.welcomeEyebrow", "Welcome")}</p>
+          <h1 className="mt-3 text-[38px] font-[400] leading-[1.05] tracking-[-0.02em]">{firstName ? t("ownerOnboarding.hiName", "Hi, {{name}}.", { name: firstName }) : t("ownerOnboarding.welcomeHeadline", "Welcome.")}</h1>
+          <p className="mt-3.5 max-w-[30ch] text-[15px] leading-[1.55] text-white/80">{t("ownerOnboarding.welcomeBody", "A quick walkthrough first, then we'll set up your bird.")}</p>
         </div>
         <div className="px-6 pb-[max(env(safe-area-inset-bottom),24px)] sm:mx-auto sm:w-full sm:max-w-md sm:pb-0 sm:pt-8">
           <button
             onClick={startCoach}
             className="flex w-full items-center justify-center gap-2 rounded-[13px] bg-[var(--lime)] py-3.5 text-[14.5px] font-[500] text-[var(--ink)] active:scale-[0.99]"
           >
-            <ArrowRight className="size-4" /> Show me around
+            <ArrowRight className="size-4" /> {t("ownerOnboarding.showMeAround", "Show me around")}
           </button>
           <div className="mt-3.5 text-center">
-            <button onClick={addBird} className="text-[13px] font-[500] text-white/60 underline underline-offset-[3px]">Skip and add my bird</button>
+            <button onClick={addBird} className="text-[13px] font-[500] text-white/60 underline underline-offset-[3px]">{t("ownerOnboarding.skipAndAddMyBird", "Skip and add my bird")}</button>
           </div>
         </div>
       </div>
@@ -255,53 +262,53 @@ export function OwnerOnboarding() {
       {/* Skip — always available, top-right (hidden on wrap-up, which has its own actions). */}
       {!isWrapUp && (
         <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-end px-5 pt-[max(env(safe-area-inset-top),0.9rem)]">
-          <button onClick={finish} className="pointer-events-auto rounded-full bg-white/90 px-3 py-1.5 text-xs font-[500] text-[var(--ink)] shadow">Skip tour</button>
+          <button onClick={finish} className="pointer-events-auto rounded-full bg-white/90 px-3 py-1.5 text-xs font-[500] text-[var(--ink)] shadow">{t("ownerOnboarding.skipTour", "Skip tour")}</button>
         </div>
       )}
 
       <div ref={bubbleRef} className="pointer-events-auto absolute rounded-[18px] border border-[var(--line)] bg-[var(--cream)] p-4 shadow-xl" style={bubbleStyle}>
         {isWrapUp ? (
           <div className="text-center">
-            <p className="t-eyebrow text-[var(--mute2)]">{TOTAL} of {TOTAL}</p>
-            <h2 className="mt-1.5 text-[18px] font-[500] text-[var(--ink)]">That's the tour.</h2>
+            <p className="t-eyebrow text-[var(--mute2)]">{t("ownerOnboarding.stepOf", "{{n}} of {{total}}", { n: TOTAL, total: TOTAL })}</p>
+            <h2 className="mt-1.5 text-[18px] font-[500] text-[var(--ink)]">{t("ownerOnboarding.thatsTheTour", "That's the tour.")}</h2>
             {birdCount === 0 ? (
               <>
-                <p className="mt-2 text-[13px] leading-[1.5] text-[var(--ink2)]">Now the fun part — let's set up your first bird.</p>
+                <p className="mt-2 text-[13px] leading-[1.5] text-[var(--ink2)]">{t("ownerOnboarding.nowTheFunPart", "Now the fun part — let's set up your first bird.")}</p>
                 <button onClick={addBird} className="mt-3.5 flex w-full items-center justify-center gap-2 rounded-[13px] bg-[var(--lime)] py-3 text-[14px] font-[500] text-[var(--ink)] active:scale-[0.99]">
-                  <Feather className="size-4" /> Add my first bird
+                  <Feather className="size-4" /> {t("ownerOnboarding.addMyFirstBird", "Add my first bird")}
                 </button>
                 <button onClick={finish} className="mt-2 w-full rounded-[13px] py-2.5 text-[13px] font-[500] text-[var(--mute)] active:scale-[0.99]">
-                  Skip for now
+                  {t("ownerOnboarding.skipForNow", "Skip for now")}
                 </button>
-                <p className="mt-2.5 text-[11.5px] leading-[1.45] text-[var(--mute)]">You can add a bird anytime from Home — tap the ? to revisit the tour.</p>
+                <p className="mt-2.5 text-[11.5px] leading-[1.45] text-[var(--mute)]">{t("ownerOnboarding.addAnytime", "You can add a bird anytime from Home — tap the ? to revisit the tour.")}</p>
               </>
             ) : (
               <>
-                <p className="mt-2 text-[13px] leading-[1.5] text-[var(--ink2)]">Anytime you need a refresher, the ? is right up top.</p>
+                <p className="mt-2 text-[13px] leading-[1.5] text-[var(--ink2)]">{t("ownerOnboarding.refresher", "Anytime you need a refresher, the ? is right up top.")}</p>
                 <button onClick={finish} className="mt-3.5 flex w-full items-center justify-center rounded-[13px] bg-[var(--lime)] py-3 text-[14px] font-[500] text-[var(--ink)] active:scale-[0.99]">
-                  Got it
+                  {t("ownerOnboarding.gotIt", "Got it")}
                 </button>
               </>
             )}
           </div>
         ) : (
           <>
-            <p className="t-eyebrow text-[var(--mute2)]">{step + 1} of {TOTAL}</p>
+            <p className="t-eyebrow text-[var(--mute2)]">{t("ownerOnboarding.stepOf", "{{n}} of {{total}}", { n: step + 1, total: TOTAL })}</p>
             <h2 className="mt-1.5 text-[15px] font-[500] leading-[1.2] text-[var(--ink)]">{stepDef!.headline}</h2>
             <p className="mt-1.5 text-[13px] leading-[1.5] text-[var(--ink2)]">{stepDef!.body}</p>
             <div className="mt-3 flex items-center justify-between gap-2">
               <button onClick={back} className="inline-flex shrink-0 items-center gap-1 rounded-lg px-1.5 py-1.5 text-xs font-[500] text-[var(--mute)]">
-                <ChevronLeft className="size-4" /> Back
+                <ChevronLeft className="size-4" /> {t("ownerOnboarding.back", "Back")}
               </button>
               <div className="mx-1 h-1 flex-1 overflow-hidden rounded-full bg-[#e8e1d0]">
                 <div className="h-full rounded-full bg-[var(--ink)] transition-[width]" style={{ width: `${Math.round(((step + 1) / TOTAL) * 100)}%` }} />
               </div>
               <button onClick={next} className="inline-flex shrink-0 items-center gap-1 rounded-[10px] bg-[var(--lime)] px-4 py-2 text-[13px] font-[500] text-[var(--ink)]">
-                Next <ArrowRight className="size-3.5" />
+                {t("ownerOnboarding.next", "Next")} <ArrowRight className="size-3.5" />
               </button>
             </div>
             <div className="mt-2 text-center">
-              <button onClick={finish} className="text-[12px] font-[500] text-[var(--mute)] underline underline-offset-2">Skip tour</button>
+              <button onClick={finish} className="text-[12px] font-[500] text-[var(--mute)] underline underline-offset-2">{t("ownerOnboarding.skipTour", "Skip tour")}</button>
             </div>
           </>
         )}

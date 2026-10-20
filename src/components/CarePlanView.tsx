@@ -6,13 +6,12 @@ import { CtaLink } from "@/components/system";
 import { ViewOnlyTag } from "@/components/MemberContextBanner";
 import { normalizeFeedTimes } from "@/lib/feedTimes";
 import {
-  WATER_FREQ_LABELS,
-  TREATS_FREQ_LABELS,
-  OUT_OF_CAGE_LABELS,
-  BOWL_WASH_LABELS,
-  prettyLabel,
-  formatAmountUnit,
-  formatRemovalMinutes,
+  waterFreqLabel,
+  treatsFreqLabel,
+  outOfCageLabel,
+  bowlWashLabel,
+  formatAmountUnitDisplay,
+  formatRemovalMinutesDisplay,
 } from "@/lib/labels";
 import {
   has, joinUnique, SectionCard, Field, KVList, Metric, FeedingItem,
@@ -194,7 +193,7 @@ export function CarePlanView({
 
   const showFeeding = !!(diet.length || plan.food_brand || plan.amount_value || feedingTimes.length || freshFoods.length || plan.fresh_foods_other || plan.treats_notes || plan.treats_frequency || plan.water_frequency || plan.water_notes || plan.food_storage || plan.food_hygiene_notes || plan.food_instructions || plan.water_instructions || plan.fresh_food_removal_minutes);
   const showHandling = has(plan.step_up) || has(plan.step_up_notes) || has(plan.handlers) || has(plan.likes) || has(plan.fears_triggers) || has(plan.bite_risk) || has(plan.handling_rules) || has(plan.known_triggers);
-  const showHome = has(plan.cage_location) || has(plan.out_of_cage_mode) || has(plan.out_of_cage_notes) || has(plan.out_of_cage_rules) || hazards.length > 0 || has(plan.hazards_other) || has(plan.off_limits) || has(plan.off_limits_rooms) || has(plan.safety_rules) || has(plan.other_pets);
+  const showHome = has(plan.cage_location) || has(plan.out_of_cage_mode) || has(plan.out_of_cage_notes) || has(plan.out_of_cage_rules) || hazards.length > 0 || has(plan.hazards_other) || has(plan.off_limits) || has(plan.off_limits_rooms) || has(plan.safety_rules) || has(plan.other_pets) || has(plan.cleaning_instructions);
   const showHealth = has(bird.normal_weight) || has(bird.normal_weight_min) || has(bird.normal_weight_max) || has(plan.whats_normal) || has(plan.normal_appetite) || has(plan.normal_droppings) || has(plan.normal_noise) || has(plan.normal_activity) || has(plan.normal_sleep) || has(plan.normal_behavior_with_strangers) || has(bird.medical_conditions) || has(bird.medications) || has(plan.medication_schedule) || !!baselineClipUrl;
 
   const handlingDangerous = /\b(no|do not|don'?t|never|owner.?only)\b/i.test(`${plan.step_up ?? ""} ${plan.step_up_notes ?? ""} ${plan.handlers ?? ""}`);
@@ -334,7 +333,7 @@ export function CarePlanView({
                     key={`${f.type}-${i}`}
                     typeLabel={f.type.charAt(0).toUpperCase() + f.type.slice(1).replace(/_/g, " ")}
                     name={f.name}
-                    amountStr={has(f.amount) ? (f.unit ? formatAmountUnit(f.amount, f.unit) : String(f.amount)) : ""}
+                    amountStr={has(f.amount) ? (f.unit ? formatAmountUnitDisplay(f.amount, f.unit, t) : String(f.amount)) : ""}
                     times={f.times}
                     freeFed={f.freeFed}
                     note={f.note}
@@ -343,7 +342,7 @@ export function CarePlanView({
               </div>
             ) : (
               (has(plan.food_brand) || has(plan.amount_value)) && (
-                <Field label={t("carePlan.brandAmount", "Brand & amount")}>{`${plan.food_brand ?? ""}${has(plan.amount_value) ? ` · ${formatAmountUnit(plan.amount_value, plan.amount_unit)}` : ""}`.trim()}</Field>
+                <Field label={t("carePlan.brandAmount", "Brand & amount")}>{`${plan.food_brand ?? ""}${has(plan.amount_value) ? ` · ${formatAmountUnitDisplay(plan.amount_value, plan.amount_unit, t)}` : ""}`.trim()}</Field>
               )
             )}
             {!foodRows.some((f) => f.times.length > 0) && feedingTimes.length > 0 && (
@@ -354,7 +353,7 @@ export function CarePlanView({
             {(has(plan.treats_notes) || has(plan.treats_frequency)) && (
               <Field label={t("carePlan.treats", "Treats")}>
                 {has(plan.treats_frequency) && (
-                  <KVList rows={[{ label: t("carePlan.frequency", "Frequency"), value: prettyLabel(plan.treats_frequency, TREATS_FREQ_LABELS) }]} />
+                  <KVList rows={[{ label: t("carePlan.frequency", "Frequency"), value: treatsFreqLabel(plan.treats_frequency, t) }]} />
                 )}
                 {has(plan.treats_notes) && (
                   <p className={`text-sm text-[var(--ink)] whitespace-pre-line ${has(plan.treats_frequency) ? "mt-2" : ""}`}>{plan.treats_notes}</p>
@@ -364,7 +363,7 @@ export function CarePlanView({
             {(has(plan.water_frequency) || has(plan.water_notes) || has(plan.water_instructions)) && (
               <Field label={t("carePlan.water", "Water")}>
                 {has(plan.water_frequency) && (
-                  <KVList rows={[{ label: t("carePlan.changeWater", "Change water"), value: prettyLabel(plan.water_frequency, WATER_FREQ_LABELS) }]} />
+                  <KVList rows={[{ label: t("carePlan.changeWater", "Change water"), value: waterFreqLabel(plan.water_frequency, t) }]} />
                 )}
                 {(has(plan.water_notes) || (!has(plan.water_frequency) && has(plan.water_instructions))) && (
                   <p className={`text-sm text-[var(--ink)] whitespace-pre-line ${has(plan.water_frequency) ? "mt-2" : ""}`}>
@@ -376,9 +375,9 @@ export function CarePlanView({
             <Field label={t("carePlan.freshnessHygiene", "Freshness & hygiene")}>
               <KVList
                 rows={[
-                  { label: t("carePlan.removeFreshFood", "Remove fresh food"), value: t("carePlan.withinDuration", "Within {{duration}}", { duration: formatRemovalMinutes(plan.fresh_food_removal_minutes) }) },
-                  { label: t("carePlan.washFoodBowls", "Wash food bowls"), value: prettyLabel(plan.food_bowl_wash_cadence, BOWL_WASH_LABELS) },
-                  { label: t("carePlan.washWaterBowl", "Wash water bowl"), value: prettyLabel(plan.water_bowl_wash_cadence, BOWL_WASH_LABELS) },
+                  { label: t("carePlan.removeFreshFood", "Remove fresh food"), value: t("carePlan.withinDuration", "Within {{duration}}", { duration: formatRemovalMinutesDisplay(plan.fresh_food_removal_minutes, t) }) },
+                  { label: t("carePlan.washFoodBowls", "Wash food bowls"), value: bowlWashLabel(plan.food_bowl_wash_cadence, t) },
+                  { label: t("carePlan.washWaterBowl", "Wash water bowl"), value: bowlWashLabel(plan.water_bowl_wash_cadence, t) },
                 ]}
               />
               {has(plan.food_hygiene_notes) && <p className="mt-2 text-xs text-[var(--mute)] whitespace-pre-line">{plan.food_hygiene_notes}</p>}
@@ -414,7 +413,7 @@ export function CarePlanView({
 
         {/* ------------------------------------------------------------ HOME */}
         {present.home && (
-          <SectionCard id="home" coach={COACH.home} setRef={setRef("home")} icon={<HomeIcon className="size-5" />} eyebrow={t("carePlan.homeSafety", "Home & safety")} title={`${name}'s home & safety`}>
+          <SectionCard id="home" coach={COACH.home} setRef={setRef("home")} icon={<HomeIcon className="size-5" />} eyebrow={t("carePlan.homeSafety", "Home & safety")} title={t("carePlan.homeSafetyTitle", "{{name}}'s home & safety", { name })}>
             {hazards.length > 0 && (
               <DangerCallout title={t("carePlan.householdHazardsKeepAway", "Household hazards · keep away")}>
                 <DangerChips items={hazards} />
@@ -425,7 +424,7 @@ export function CarePlanView({
             {(has(plan.out_of_cage_mode) || has(plan.out_of_cage_notes) || has(plan.out_of_cage_rules)) && (
               <Field label={t("carePlan.outOfCageRules", "Out-of-cage rules")}>
                 {has(plan.out_of_cage_mode) || has(plan.out_of_cage_notes)
-                  ? joinUnique([prettyLabel(plan.out_of_cage_mode, OUT_OF_CAGE_LABELS), plan.out_of_cage_notes])
+                  ? joinUnique([outOfCageLabel(plan.out_of_cage_mode, t), plan.out_of_cage_notes])
                   : plan.out_of_cage_rules}
               </Field>
             )}
@@ -434,6 +433,7 @@ export function CarePlanView({
             )}
             {hazards.length === 0 && has(plan.safety_rules) && <Field label={t("carePlan.safetyRules", "Safety rules")}>{plan.safety_rules}</Field>}
             {has(plan.other_pets) && <Field label={t("carePlan.otherPets", "Other pets")}>{plan.other_pets}</Field>}
+            {has(plan.cleaning_instructions) && <Field label={t("carePlan.cleaningProducts", "Cleaning products")}>{plan.cleaning_instructions}</Field>}
             <ClipField clip={clipByKey("locations")} />
           </SectionCard>
         )}

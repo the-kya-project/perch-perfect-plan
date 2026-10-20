@@ -4,7 +4,9 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getActiveCaregiverSits, caregiverToggleTaskCompletion, type ActiveCaregiverSit } from "@/lib/caregiver.functions";
 import { signBirdPhotos } from "@/lib/birdPhoto";
-import { taskDaypart, DAYPARTS, DAYPART_LABEL, isDerivedTask, type Daypart } from "@/lib/routineTasks";
+import { taskDaypart, DAYPARTS, DAYPART_LABEL, type Daypart } from "@/lib/routineTasks";
+import { renderDerivedTask } from "@/lib/routineTaskRender";
+import type { DerivedTask } from "@/lib/derivedTasks";
 import { InkHero, SectionHead, Card, IconTile } from "@/components/system";
 import { BirdCareCard } from "@/components/BirdCareCard";
 import { Check, CalendarHeart, Sun, Loader2 } from "lucide-react";
@@ -12,6 +14,8 @@ import { toast } from "sonner";
 import { friendlyError } from "@/lib/errorMessage";
 import { formatLocalTime } from "@/lib/dates";
 import { localDateISO } from "@/lib/localDay";
+import { useTranslation } from "react-i18next";
+import i18next, { type TFunction } from "i18next";
 
 // The active-caregiver Home variant. Rendered when the signed-in user is the
 // assigned caregiver on at least one sit whose window covers today. Mirrors the
@@ -58,10 +62,6 @@ export function CaregiverHome({ data }: { data: { sits: ActiveCaregiverSit[]; up
   );
 }
 
-function possessive(name: string): string {
-  const n = name.trim();
-  return /s$/i.test(n) ? `${n}'` : `${n}'s`;
-}
 
 // The covering member's Home section: the sitter-style "Birds in your care" card
 // list (one card per bird with today's task progress), reusing BirdCareCard.
@@ -71,6 +71,7 @@ function possessive(name: string): string {
 // task-completion path. Rendered only for the covering lead while the sit is
 // active (the caller passes only active sits).
 export function CaregiverCoveringSection({ sit, hideHeader }: { sit: ActiveCaregiverSit; hideHeader?: boolean }) {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const doneIds = useMemo(() => new Set(sit.completionsToday.map((c) => c.taskId)), [sit.completionsToday]);
 
@@ -84,20 +85,27 @@ export function CaregiverCoveringSection({ sit, hideHeader }: { sit: ActiveCareg
   const photoFor = (b: ActiveCaregiverSit["birds"][number]): string | null =>
     b.photo_url ? ((photoMap as any)?.[b.photo_url]?.url ?? null) : null;
 
-  const where = sit.ownerName ? `${possessive(sit.ownerName)} birds` : "a household's birds";
+  // "Sarah's birds" / "Chris' birds": the English possessive picks between two
+  // keys so translators get a plain {{name}}.
+  const ownerTrim = sit.ownerName?.trim();
+  const where = ownerTrim
+    ? /s$/i.test(ownerTrim)
+      ? t("caregiverHome.ownersBirdsS", "{{name}}' birds", { name: ownerTrim })
+      : t("caregiverHome.ownersBirds", "{{name}}'s birds", { name: ownerTrim })
+    : t("caregiverHome.theOwnersBirds", "the owner's birds");
 
   return (
     <section className="space-y-3">
       {!hideHeader && (
         <div className="px-1">
-          <h2 className="t-section">Covering {where}</h2>
-          <p className="t-meta text-[var(--teal-on-cream)]">Sit active — daily care while {sit.ownerName || "the owner"}'s away</p>
+          <h2 className="t-section">{t("caregiverHome.covering", "Covering {{where}}", { where })}</h2>
+          <p className="t-meta text-[var(--teal-on-cream)]">{t("caregiverHome.sitActive", "Sit active — daily care while {{owner}}'s away", { owner: sit.ownerName || t("caregiverHome.theOwner", "the owner") })}</p>
         </div>
       )}
       <div className="space-y-3">
         {sit.birds.map((b) => {
           const total = b.tasks.length;
-          const done = b.tasks.filter((t) => doneIds.has(t.id)).length;
+          const done = b.tasks.filter((task) => doneIds.has(task.id)).length;
           return (
             <BirdCareCard
               key={b.id}
@@ -122,6 +130,7 @@ export function CaregiverCoveringSection({ sit, hideHeader }: { sit: ActiveCareg
 // pure-caregiver Home (CaregiverSitBlock / the Today tab) AND, scoped per-bird,
 // by the covering member's "Birds in your care" cards above.
 export function CaregiverTodayChecklist({ sit, birdId }: { sit: ActiveCaregiverSit; birdId?: string }) {
+  const { t, i18n } = useTranslation();
   // When birdId is set, scope to that one bird (the per-bird checklist a covering
   // member opens by tapping its card); otherwise show every bird's tasks.
   const scopedBirds = birdId ? sit.birds.filter((b) => b.id === birdId) : sit.birds;
@@ -130,15 +139,21 @@ export function CaregiverTodayChecklist({ sit, birdId }: { sit: ActiveCaregiverS
   const grouped = useMemo<Record<Daypart, Row[]>>(() => {
     const out: Record<Daypart, Row[]> = { morning: [], midday: [], evening: [], anytime: [] };
     for (const b of scopedBirds) {
-      for (const t of b.tasks) {
-        const dp = taskDaypart(t);
-        out[dp].push({ taskId: t.id, title: t.title, instructions: t.instructions, birdId: b.id, birdName: b.name });
+      for (const task of b.tasks) {
+        const dp = taskDaypart(task);
+        // Localize derived tasks for DISPLAY only (owner's UI language). Owner-typed
+        // tasks (no descriptor) render verbatim; daypart/completion logic keeps
+        // the stored task.
+        const disp = task.derived
+          ? renderDerivedTask(task.derived as DerivedTask, i18n.getFixedT(i18n.language, "routine"), i18n.language)
+          : { title: task.title, instructions: task.instructions };
+        out[dp].push({ taskId: task.id, title: disp.title, instructions: disp.instructions, birdId: b.id, birdName: b.name });
       }
     }
     for (const dp of DAYPARTS) out[dp].sort((a, b) => a.title.localeCompare(b.title));
     return out;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sit.birds, birdId]);
+  }, [sit.birds, birdId, i18n.language]);
 
   const doneByTask = useMemo(() => new Set(sit.completionsToday.map((c) => c.taskId)), [sit.completionsToday]);
   const doneAtByTask = useMemo(() => new Map(sit.completionsToday.map((c) => [c.taskId, c.at])), [sit.completionsToday]);
@@ -150,18 +165,18 @@ export function CaregiverTodayChecklist({ sit, birdId }: { sit: ActiveCaregiverS
   const m = useMutation({
     mutationFn: (vars: { taskId: string; completed: boolean }) => toggle({ data: { sitId: sit.id, taskId: vars.taskId, completed: vars.completed, today: localDateISO() } }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["active-caregiver-sits"] }),
-    onError: (e: any) => toast.error(friendlyError(e, "Couldn't update.")),
+    onError: (e: any) => toast.error(friendlyError(e, t("caregiverHome.couldntUpdate", "Couldn't update."))),
   });
 
   return (
     <section>
       <SectionHead
-        title="Today's check"
+        title={t("caregiverHome.todaysCheck", "Today's check")}
         trailing={totalTasks > 0 ? <span className="t-meta">{doneTotal}/{totalTasks}</span> : undefined}
       />
       {totalTasks === 0 ? (
         <Card className="p-5 text-center">
-          <p className="t-body text-[var(--mute)]">No daily routine items yet. Logs you add still flow into the bird's record.</p>
+          <p className="t-body text-[var(--mute)]">{t("caregiverHome.noRoutineItems", "No daily routine items yet. Logs you add still flow into the bird's record.")}</p>
         </Card>
       ) : (
         <div className="space-y-4">
@@ -172,7 +187,7 @@ export function CaregiverTodayChecklist({ sit, birdId }: { sit: ActiveCaregiverS
               <div key={dp} className="space-y-2">
                 <div className="flex items-center gap-2 px-1">
                   <Sun className="size-4 text-[var(--mute)]" />
-                  <p className="t-eyebrow text-[var(--mute2)]">{DAYPART_LABEL[dp]}</p>
+                  <p className="t-eyebrow text-[var(--mute2)]">{daypartLabel(t, dp)}</p>
                 </div>
                 <Card>
                   {rows.map((r, i) => {
@@ -193,11 +208,11 @@ export function CaregiverTodayChecklist({ sit, birdId }: { sit: ActiveCaregiverS
                           {done && <Check className="size-3.5" />}
                         </span>
                         <span className="min-w-0 flex-1">
-                          <span className={`t-item block ${done ? "line-through text-[var(--mute2)]" : ""}`}>{prettyTitle(r.title)}</span>
+                          <span className={`t-item block ${done ? "line-through text-[var(--mute2)]" : ""}`}>{r.title}</span>
                           <span className="t-meta block">
                             {multiBird && <span className="font-[500] text-[var(--ink2)]">{r.birdName}{r.instructions ? " · " : ""}</span>}
                             {r.instructions && <span>{r.instructions}</span>}
-                            {done && at && <span className="ml-1">· done {fmtTime(at)}</span>}
+                            {done && at && <span className="ml-1">{t("caregiverHome.doneAt", "· done {{time}}", { time: fmtTime(at) })}</span>}
                           </span>
                         </span>
                       </button>
@@ -214,23 +229,30 @@ export function CaregiverTodayChecklist({ sit, birdId }: { sit: ActiveCaregiverS
 }
 
 function CaregiverSitBlock({ sit }: { sit: ActiveCaregiverSit }) {
+  const { t } = useTranslation();
   const today = new Date();
   const daysLeft = Math.max(0, Math.round((new Date(sit.endDate + "T23:59:59").getTime() - today.getTime()) / 86_400_000));
-  const greeting = (() => { const h = today.getHours(); return h < 12 ? "Morning" : h < 18 ? "Afternoon" : "Evening"; })();
+  const greeting = (() => {
+    const h = today.getHours();
+    return h < 12 ? t("caregiverHome.morning", "Morning") : h < 18 ? t("caregiverHome.afternoon", "Afternoon") : t("caregiverHome.evening", "Evening");
+  })();
   const birdNames = sit.birds.map((b) => b.name);
-  const eyebrow = birdNames.length > 0 ? `You're caring for ${joinNames(birdNames)}` : "You're covering a sit";
+  const eyebrow = birdNames.length > 0
+    ? t("caregiverHome.youreCaringFor", "You're caring for {{names}}", { names: joinNames(birdNames) })
+    : t("caregiverHome.youreCoveringASit", "You're covering a sit");
+  const owner = sit.ownerName || t("caregiverHome.theOwner", "the owner");
   const body = daysLeft === 0
-    ? `${sit.ownerName} is back today. Here's today's check.`
+    ? t("caregiverHome.backToday", "{{owner}} is back today. Here's today's check.", { owner })
     : daysLeft === 1
-      ? `${sit.ownerName} is back tomorrow. Here's today's check.`
-      : `${sit.ownerName} is back in ${daysLeft} days. Here's today's check.`;
+      ? t("caregiverHome.backTomorrow", "{{owner}} is back tomorrow. Here's today's check.", { owner })
+      : t("caregiverHome.backInDays", "{{owner}} is back in {{n}} days. Here's today's check.", { owner, n: daysLeft });
 
   return (
     <>
       <InkHero
         showBrand
         eyebrow={eyebrow}
-        headline={`${greeting}.`}
+        headline={t("caregiverHome.greetingHeadline", "{{greeting}}.", { greeting })}
         body={body}
       />
       <div className="px-5 pt-5 space-y-6">
@@ -241,7 +263,7 @@ function CaregiverSitBlock({ sit }: { sit: ActiveCaregiverSit }) {
 
         {sit.notes && (
           <section>
-            <SectionHead title="From the owner" />
+            <SectionHead title={t("caregiverHome.fromTheOwner", "From the owner")} />
             <Card className="p-4">
               <p className="t-body whitespace-pre-line text-[var(--ink2)]">{sit.notes}</p>
             </Card>
@@ -256,24 +278,27 @@ function CaregiverSitBlock({ sit }: { sit: ActiveCaregiverSit }) {
 // if there is one (the "Today's check starts in N days" case) or routes to
 // the normal app otherwise.
 export function CaregiverEmpty({ upcoming }: { upcoming: { id: string; title: string | null; startDate: string; endDate: string } | null }) {
+  const { t } = useTranslation();
   if (upcoming) {
     const d = Math.max(0, Math.round((new Date(upcoming.startDate + "T00:00:00").getTime() - Date.now()) / 86_400_000));
-    const when = d === 0 ? "later today" : d === 1 ? "tomorrow" : `in ${d} days`;
+    const when = d === 0
+      ? t("caregiverHome.laterToday", "later today")
+      : d === 1 ? t("caregiverHome.tomorrow", "tomorrow") : t("caregiverHome.inDays", "in {{n}} days", { n: d });
     return (
       <Card className="p-6 text-center">
         <div className="flex justify-center"><IconTile size={48} tone="pale" icon={<CalendarHeart className="size-6" />} /></div>
-        <h2 className="t-section mt-3">Today's check starts {when}.</h2>
-        <p className="t-body mt-1.5 text-[var(--ink2)]">{upcoming.title ? `${upcoming.title} — ` : ""}You'll see the daily list here when it begins.</p>
+        <h2 className="t-section mt-3">{t("caregiverHome.checkStarts", "Today's check starts {{when}}.", { when })}</h2>
+        <p className="t-body mt-1.5 text-[var(--ink2)]">{upcoming.title ? `${upcoming.title} — ` : ""}{t("caregiverHome.dailyListWhenBegins", "You'll see the daily list here when it begins.")}</p>
       </Card>
     );
   }
   return (
     <Card className="p-6 text-center">
       <div className="flex justify-center"><IconTile size={48} tone="pale" icon={<CalendarHeart className="size-6" />} /></div>
-      <h2 className="t-section mt-3">No active sit right now.</h2>
-      <p className="t-body mt-1.5 text-[var(--ink2)]">When an owner assigns you to cover a sit, the daily checklist shows up here for the dates of that sit.</p>
+      <h2 className="t-section mt-3">{t("caregiverHome.noActiveSit", "No active sit right now.")}</h2>
+      <p className="t-body mt-1.5 text-[var(--ink2)]">{t("caregiverHome.noActiveSitBody", "When an owner assigns you to cover a sit, the daily checklist shows up here for the dates of that sit.")}</p>
       <div className="mt-4">
-        <Link to="/dashboard" className="inline-flex min-h-[44px] items-center justify-center rounded-[12px] bg-[var(--ink)] px-[18px] py-[11px] text-[15px] font-[500] text-white">Back to home</Link>
+        <Link to="/dashboard" className="inline-flex min-h-[44px] items-center justify-center rounded-[12px] bg-[var(--ink)] px-[18px] py-[11px] text-[15px] font-[500] text-white">{t("caregiverHome.backToHome", "Back to home")}</Link>
       </div>
     </Card>
   );
@@ -281,22 +306,29 @@ export function CaregiverEmpty({ upcoming }: { upcoming: { id: string; title: st
 
 // Spinner state for both the route and the Home embed.
 export function CaregiverLoading() {
+  const { t } = useTranslation();
   return (
-    <div className="flex items-center justify-center gap-2 py-10 text-[var(--mute)]"><Loader2 className="size-4 animate-spin" /> Loading…</div>
+    <div className="flex items-center justify-center gap-2 py-10 text-[var(--mute)]"><Loader2 className="size-4 animate-spin" /> {t("caregiverHome.loading", "Loading…")}</div>
   );
 }
 
 // ---- helpers ----
 function joinNames(names: string[]): string {
   const n = names.filter(Boolean);
-  if (n.length === 0) return "your birds";
+  if (n.length === 0) return i18next.t("caregiverHome.yourBirds", "your birds");
   if (n.length === 1) return n[0];
-  if (n.length === 2) return `${n[0]} & ${n[1]}`;
-  return `${n.slice(0, -1).join(", ")} & ${n[n.length - 1]}`;
+  if (n.length === 2) return i18next.t("caregiverHome.joinTwo", "{{a}} & {{b}}", { a: n[0], b: n[1] });
+  return i18next.t("caregiverHome.joinMany", "{{list}} & {{last}}", { list: n.slice(0, -1).join(", "), last: n[n.length - 1] });
 }
-function prettyTitle(t: string): string {
-  // The derived-feed titles are like "Feed: Morning pellets" — keep them.
-  return isDerivedTask(t) ? t : t;
+// DAYPART_LABEL stays the English source; translate only at display.
+function daypartLabel(t: TFunction, dp: Daypart): string {
+  switch (dp) {
+    case "morning": return t("caregiverHome.daypart.morning", "Morning");
+    case "midday": return t("caregiverHome.daypart.midday", "Midday");
+    case "evening": return t("caregiverHome.daypart.evening", "Evening");
+    case "anytime": return t("caregiverHome.daypart.anytime", "Anytime");
+    default: return DAYPART_LABEL[dp];
+  }
 }
 function fmtTime(iso: string): string {
   try { return formatLocalTime(new Date(iso), { hour: "numeric", minute: "2-digit" }); } catch { return ""; }

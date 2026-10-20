@@ -18,13 +18,16 @@ async function getAdmin() {
 const ACTIVITY_WINDOW_MS = 48 * 60 * 60 * 1000;
 
 export type HomeHouseholdMember = { userId: string; name: string | null };
+// Raw data only — the client composes the sentence ("logged 120 g", "ran a
+// health check", …) and the "Someone" / "A bird" fallbacks in the UI language.
 export type HomeHouseholdActivity = {
   id: string;
   kind: "weight" | "journal" | "scan";
-  birdName: string;
-  actorName: string;
+  birdName: string | null;
+  actorName: string | null;
   at: string;
-  summary: string;
+  grams?: number;
+  journalTitle?: string | null;
 };
 export type HomeHousehold = {
   members: HomeHouseholdMember[];
@@ -84,7 +87,7 @@ export const getHouseholdHome = createServerFn({ method: "GET" })
         } catch { /* ignore */ }
       }),
     );
-    const displayName = (id: string) => nameByUser.get(id)?.trim() || "Someone";
+    const displayName = (id: string): string | null => nameByUser.get(id)?.trim() || null;
 
     const members: HomeHouseholdMember[] = memberIds.map((id) => ({ userId: id, name: nameByUser.get(id)?.trim() || null }));
 
@@ -114,22 +117,22 @@ export const getHouseholdHome = createServerFn({ method: "GET" })
 
     for (const w of (weightsRes.data ?? []) as any[]) {
       activity.push({
-        id: `w-${w.id}`, kind: "weight", birdName: nameByBird.get(w.bird_id) ?? "A bird",
-        actorName: displayName(w.logged_by), at: w.measured_at, summary: `logged ${w.grams} g`,
+        id: `w-${w.id}`, kind: "weight", birdName: nameByBird.get(w.bird_id) ?? null,
+        actorName: displayName(w.logged_by), at: w.measured_at, grams: w.grams,
       });
     }
     for (const s of (scansRes.data ?? []) as any[]) {
       activity.push({
-        id: `s-${s.id}`, kind: "scan", birdName: nameByBird.get(s.bird_id) ?? "A bird",
-        actorName: displayName(s.run_by), at: s.created_at, summary: "ran a health check",
+        id: `s-${s.id}`, kind: "scan", birdName: nameByBird.get(s.bird_id) ?? null,
+        actorName: displayName(s.run_by), at: s.created_at,
       });
     }
     for (const j of (journalRes.data ?? []) as any[]) {
       if (!j.logged_by || !memberSet.has(j.logged_by)) continue; // owner's own entries aren't "household"
       activity.push({
-        id: `j-${j.id}`, kind: "journal", birdName: nameByBird.get(j.bird_id) ?? "A bird",
+        id: `j-${j.id}`, kind: "journal", birdName: nameByBird.get(j.bird_id) ?? null,
         actorName: displayName(j.logged_by), at: j.created_at,
-        summary: j.title ? `added a journal note — ${j.title}` : "added a journal note",
+        journalTitle: (j.title ?? null) as string | null,
       });
     }
 
@@ -186,7 +189,9 @@ export const resolveOwnerNames = createServerFn({ method: "GET" })
   .inputValidator((d: { ownerIds: string[] }) =>
     z.object({ ownerIds: z.array(z.string().uuid()).max(50) }).parse(d),
   )
-  .handler(async ({ data, context }): Promise<Record<string, string>> => {
+  // Values are raw names; null = an allowed owner with no displayable name (the
+  // client shows its localized "An owner" fallback). Missing key = not allowed.
+  .handler(async ({ data, context }): Promise<Record<string, string | null>> => {
     const sb = await getAdmin();
     const userId = (context as any).userId as string;
     const want = Array.from(new Set((data.ownerIds ?? []).filter(Boolean))).filter((id) => id !== userId);
@@ -204,11 +209,11 @@ export const resolveOwnerNames = createServerFn({ method: "GET" })
     if (!allowed.size) return {};
 
     const { data: profs } = await sb.from("profiles").select("id, display_name, email").in("id", [...allowed]);
-    const out: Record<string, string> = {};
+    const out: Record<string, string | null> = {};
     for (const p of (profs ?? []) as any[]) {
       const name = (p.display_name ?? "").toString().trim();
       const email = (p.email ?? "").toString().trim();
-      out[p.id] = name || (email ? email.split("@")[0] : "An owner");
+      out[p.id] = name || (email ? email.split("@")[0] : null);
     }
     return out;
   });

@@ -5,13 +5,16 @@ import { z } from "zod";
 import { ArrowLeft, Settings, AlertTriangle, CheckCircle2, Feather, Activity, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { activeOwnerBirdsMin, type ActiveBirdMin } from "@/lib/activeBirds";
-import { fetchScanFeed, markNotifsSeen, getNotifSeenAt, scanRunBy, type ScanFeedItem } from "@/lib/notificationsFeed";
+import { fetchScanFeed, markNotifsSeen, getNotifSeenAt, scanRunBy, isUnreadScan, type ScanFeedItem } from "@/lib/notificationsFeed";
+import { useMyPermissions } from "@/lib/useCapability";
 import { InkHero, IconTile, StatusPill, RecordRow, Card } from "@/components/system";
 import { OwnerHeaderIcons } from "@/components/OwnerHeader";
 import { formatLocalDate, monthDay } from "@/lib/dates";
+import i18next from "i18next";
+import { useTranslation } from "react-i18next";
 
 export const Route = createFileRoute("/_authenticated/scans/")({
-  head: () => ({ meta: [{ title: "Health checks — Kya & Co." }] }),
+  head: () => ({ meta: [{ title: i18next.t("scansInbox.metaTitle", "Health checks — Kya & Co.") }] }),
   validateSearch: (s: Record<string, unknown>) => z.object({ sitId: z.string().uuid().optional() }).parse(s),
   component: NotificationsInbox,
 });
@@ -20,16 +23,17 @@ function relativeTime(iso: string): string {
   const then = new Date(iso).getTime();
   const diff = Date.now() - then;
   const mins = Math.round(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
+  if (mins < 1) return i18next.t("scansInbox.justNow", "just now");
+  if (mins < 60) return i18next.t("scansInbox.minsAgo", "{{n}}m ago", { n: mins });
   const hrs = Math.round(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
+  if (hrs < 24) return i18next.t("scansInbox.hoursAgo", "{{n}}h ago", { n: hrs });
   const days = Math.round(hrs / 24);
-  if (days < 7) return `${days}d ago`;
+  if (days < 7) return i18next.t("scansInbox.daysAgo", "{{n}}d ago", { n: days });
   return formatLocalDate(new Date(iso), { month: "short", day: "numeric" });
 }
 
 function NotificationsInbox() {
+  const { t } = useTranslation();
   const router = useRouter();
   const canGoBack = useCanGoBack();
   const navigate = useNavigate();
@@ -37,6 +41,7 @@ function NotificationsInbox() {
   // to wherever the user came from; fall back to Home if there's no history.
   const goBack = () => (canGoBack ? router.history.back() : navigate({ to: "/dashboard" }));
   const seenAt = getNotifSeenAt();
+  const myId = useMyPermissions().data?.myId;
   const { sitId } = Route.useSearch();
   const { data: feed = [], isLoading } = useQuery({ queryKey: ["scan-feed"], queryFn: fetchScanFeed, refetchOnWindowFocus: true });
 
@@ -48,15 +53,15 @@ function NotificationsInbox() {
     queryFn: async () => {
       const { data: s } = await supabase.from("sits").select("id, start_date, end_date, sitter_name, caregiver_user_id").eq("id", sitId!).maybeSingle();
       if (!s) return null;
-      let label = (s.sitter_name ?? "").trim() || "your sitter";
+      let label = (s.sitter_name ?? "").trim() || t("scansInbox.yourSitter", "your sitter");
       if (s.caregiver_user_id) {
         const { data: p } = await supabase.from("profiles").select("display_name").eq("id", s.caregiver_user_id).maybeSingle();
-        label = (p?.display_name ?? "").toString().trim() || "your caregiver";
+        label = (p?.display_name ?? "").toString().trim() || t("scansInbox.yourCaregiver", "your caregiver");
       }
       return { label, range: `${monthDay(s.start_date)} → ${monthDay(s.end_date)}` };
     },
   });
-  const filterLabel = filterSit?.label ?? "this sit";
+  const filterLabel = filterSit?.label ?? t("scansInbox.thisSit", "this sit");
   const shownFeed = sitId ? (feed as ScanFeedItem[]).filter((n) => n.sit_id === sitId) : (feed as ScanFeedItem[]);
   const { data: birds = [] } = useQuery({
     queryKey: ["owner-birds-min-scans"],
@@ -80,16 +85,16 @@ function NotificationsInbox() {
     <div className="min-h-screen bg-[var(--cream)] pb-nav">
       <div className="mx-auto max-w-md">
         <InkHero
-          eyebrow="Health checks"
-          headline="A daily check, archived."
-          body="A small daily look that adds up to a record."
+          eyebrow={t("scansInbox.eyebrow", "Health checks")}
+          headline={t("scansInbox.headline", "A daily check, archived.")}
+          body={t("scansInbox.body", "A small daily look that adds up to a record.")}
           backIcon={<ArrowLeft className="size-5" />}
           onBack={goBack}
           cta={
             birds.length === 1
-              ? { label: "Run a health check", tone: "lime", icon: <Activity className="size-4" />, onPress: () => navigate({ to: "/birds/$birdId/scan", params: { birdId: birds[0].id } }) }
+              ? { label: t("scansInbox.runCheck", "Run a health check"), tone: "lime", icon: <Activity className="size-4" />, onPress: () => navigate({ to: "/birds/$birdId/scan", params: { birdId: birds[0].id } }) }
               : birds.length > 1
-              ? { label: "Run a health check", tone: "lime", icon: <Activity className="size-4" />, onPress: () => setPicking((v) => !v) }
+              ? { label: t("scansInbox.runCheck", "Run a health check"), tone: "lime", icon: <Activity className="size-4" />, onPress: () => setPicking((v) => !v) }
               : undefined
           }
           trailingIcons={<OwnerHeaderIcons />}
@@ -100,11 +105,11 @@ function NotificationsInbox() {
           {sitId && (
             <div className="flex items-center justify-between gap-3 rounded-[14px] bg-[var(--cream2)] px-4 py-2.5 ring-1 ring-[var(--line)]">
               <span className="min-w-0 text-[13px] text-[var(--ink)]">
-                <span className="font-[500]">{filterLabel}'s sit</span>
+                <span className="font-[500]">{t("scansInbox.nameSit", "{{name}}'s sit", { name: filterLabel })}</span>
                 {filterSit?.range && <span className="text-[var(--mute)]"> · {filterSit.range}</span>}
               </span>
               <Link to="/scans" search={{}} className="inline-flex shrink-0 items-center gap-1 text-[13px] font-[500] text-[var(--moss)]">
-                <X className="size-3.5" /> Clear filter
+                <X className="size-3.5" /> {t("scansInbox.clearFilter", "Clear filter")}
               </Link>
             </div>
           )}
@@ -124,32 +129,33 @@ function NotificationsInbox() {
           )}
 
           {isLoading ? (
-            <p className="t-body text-[var(--mute)]">Loading…</p>
+            <p className="t-body text-[var(--mute)]">{t("scansInbox.loading", "Loading…")}</p>
           ) : shownFeed.length === 0 ? (
             <section className="rounded-[18px] bg-white p-8 text-center ring-1 ring-[var(--line2)]" style={{ boxShadow: "0 6px 14px -8px rgba(40,50,40,.08)" }}>
               <div className="flex justify-center"><IconTile size={48} tone="pale" icon={<Feather className="size-6" />} /></div>
-              <h2 className="t-section mt-3">No health checks yet{sitId ? " for this sit" : ""}</h2>
+              <h2 className="t-section mt-3">{sitId ? t("scansInbox.emptyTitleSit", "No health checks yet for this sit") : t("scansInbox.emptyTitle", "No health checks yet")}</h2>
               <p className="t-body mx-auto mt-1.5 max-w-[34ch] text-[var(--ink2)]">
-                {sitId ? `${filterLabel} is asked to run a health check daily — their checks will show up here.` : "Run a health check above, or a sitter's daily health checks will show up here."}
+                {sitId ? t("scansInbox.emptyBodySit", "{{name}} is asked to run a health check daily — their checks will show up here.", { name: filterLabel }) : t("scansInbox.emptyBody", "Run a health check above, or a sitter's daily health checks will show up here.")}
               </p>
             </section>
           ) : (
             <Card>
               {shownFeed.map((n, i) => {
                 const flagged = n.triage_status === "red" || n.triage_status === "yellow";
-                const unread = new Date(n.created_at).getTime() > seenAt;
-                const birdName = n.bird?.name ?? "Your bird";
+                const unread = isUnreadScan(n, seenAt, myId);
+                const birdName = n.bird?.name ?? t("scansInbox.yourBird", "Your bird");
                 const runBy = scanRunBy(n);
                 const title = n.triage_status === "red"
-                  ? `${birdName}: health concern flagged`
+                  ? t("scansInbox.titleRed", "{{name}}: health concern flagged", { name: birdName })
                   : n.triage_status === "yellow"
-                  ? `${birdName}: something to check`
-                  : `${birdName}: all-clear scan`;
-                const runByLabel = runBy === "You" ? "Run by you" : `Run by ${runBy}`;
+                  ? t("scansInbox.titleYellow", "{{name}}: something to check", { name: birdName })
+                  : t("scansInbox.titleGreen", "{{name}}: all-clear scan", { name: birdName });
+                // scanRunBy returns the literal "You" sentinel for the viewer's own scans.
+                const runByLabel = runBy === "You" ? t("scansInbox.runByYou", "Run by you") : t("scansInbox.runBy", "Run by {{name}}", { name: runBy });
                 const runnerPill = n.source === "household"
-                  ? <StatusPill tone="household">Household</StatusPill>
+                  ? <StatusPill tone="household">{t("scansInbox.household", "Household")}</StatusPill>
                   : n.source === "sitter"
-                  ? <StatusPill tone="off">Sitter</StatusPill>
+                  ? <StatusPill tone="off">{t("scansInbox.sitter", "Sitter")}</StatusPill>
                   : undefined;
                 return (
                   <RecordRow
@@ -165,7 +171,7 @@ function NotificationsInbox() {
                     title={
                       <span className="inline-flex items-center gap-2">
                         {title}
-                        {unread && <span className="size-2 shrink-0 rounded-full bg-[var(--moss)]" aria-label="Unread" />}
+                        {unread && <span className="size-2 shrink-0 rounded-full bg-[var(--moss)]" aria-label={t("scansInbox.unread", "Unread")} />}
                       </span>
                     }
                     subtitle={

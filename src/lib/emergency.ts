@@ -1,3 +1,5 @@
+import i18next from "i18next";
+
 export const EMERGENCY_FIELDS = [
   "owner_phone",
   "backup_name",
@@ -60,9 +62,9 @@ export function phoneWarning(v: string | null | undefined): string | null {
   const s = (v ?? "").trim();
   if (!s) return null;
   const digits = (s.match(/\d/g) || []).length;
-  if (digits < 7) return "That looks too short for a phone number.";
-  if (digits > 15) return "That looks too long for a phone number.";
-  if (!PHONE_RE.test(s)) return "That doesn't look like a valid phone number.";
+  if (digits < 7) return i18next.t("phoneCheck.tooShort", "That looks too short for a phone number.");
+  if (digits > 15) return i18next.t("phoneCheck.tooLong", "That looks too long for a phone number.");
+  if (!PHONE_RE.test(s)) return i18next.t("phoneCheck.invalid", "That doesn't look like a valid phone number.");
   return null;
 }
 
@@ -113,4 +115,12 @@ export function isInherited(
   bird: Record<string, any> | null | undefined,
 ): boolean {
   return clean(bird?.[field]) === null;
+}
+
+/** True when a bird's own emergency contacts differ from the account defaults
+ *  in any field (a per-bird change the owner made on purpose). */
+export function emergencyDifferent(contacts: Record<string, any> | null | undefined, defaults: Record<string, any> | null | undefined): boolean {
+  if (!contacts) return false;
+  const v = (row: Record<string, any> | null | undefined, k: string) => (row?.[k] ?? "").toString().trim();
+  return EMERGENCY_FIELDS.some((k) => v(contacts, k) !== "" && v(contacts, k) !== v(defaults, k));
 }

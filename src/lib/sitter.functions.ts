@@ -14,6 +14,7 @@ import { resolveToday } from "./localDay";
 import { buildDailyLogEmail, buildSitterConcernEmail } from "./emailTemplates";
 import { emailT } from "./i18n/emailI18n.server";
 import { mergeEmergency } from "./emergency";
+import { mergeHome } from "./homeDefaults";
 import { isCfClip, cfUid } from "./clipRef";
 import { resolveScanPhotoUrls } from "./scanPhoto";
 
@@ -193,8 +194,9 @@ export const getSitterContext = createServerFn({ method: "GET" })
       return "the owner";
     };
 
-    const [defaultsRow, tasksRes, clips, ownerName] = await Promise.all([
+    const [defaultsRow, homeRow, tasksRes, clips, ownerName] = await Promise.all([
       sb.from("owner_emergency_defaults").select("*").eq("owner_id", activeBird.owner_id).maybeSingle().then((r: any) => r.data),
+      sb.from("owner_home_defaults").select("*").eq("owner_id", activeBird.owner_id).maybeSingle().then((r: any) => r.data),
       planRes.data
         ? sb.from("routine_tasks").select("*").eq("care_plan_id", planRes.data.id).order("category").order("sort_order")
         : Promise.resolve({ data: [] as any[], error: null }),
@@ -223,7 +225,8 @@ export const getSitterContext = createServerFn({ method: "GET" })
       birds: signedBirds,
       activeBirdId: activeId,
       bird: signedActiveBird,
-      plan: planRes.data,
+      // Shared "Your home" reminders fill in wherever this bird has none of its own.
+      plan: mergeHome(planRes.data, homeRow),
       contacts: mergedContacts,
       // Paused (sitter pause or owner mark-as-passed) → no daily prompts.
       tasks: remindersPaused ? [] : (tasksRes.data ?? []),
@@ -260,7 +263,7 @@ export const pauseSitterReminders = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
 
     // Urgent owner notification — best-effort, never blocks the pause.
-    await notifyOwnerSomethingWrong(sb, data.birdId, (sit.sitter_name || "Your sitter") as string);
+    await notifyOwnerSomethingWrong(sb, data.birdId, (sit.sitter_name || null) as string | null, "sitter");
 
     return { ok: true };
   });
@@ -271,16 +274,28 @@ export const pauseSitterReminders = createServerFn({ method: "POST" })
  * pause so both paths notify identically: always-on health_concern push
  * (requireInteraction) + a direct email. Best-effort — never throws.
  */
-export async function notifyOwnerSomethingWrong(sb: any, birdId: string, coveringLabel: string) {
+export async function notifyOwnerSomethingWrong(
+  sb: any,
+  birdId: string,
+  /** Who is covering. null → a localized "Your sitter" / "Your caregiver". */
+  coveringName: string | null,
+  role: "sitter" | "caregiver" = "sitter",
+) {
   const { data: bird } = await sb.from("birds").select("name, owner_id").eq("id", birdId).maybeSingle();
   const ownerId = (bird as any)?.owner_id as string | undefined;
-  const birdName = ((bird as any)?.name ?? "your bird") as string;
   if (!ownerId) return;
+  // Owner (group 1) → their stored locale, for both the push and the email.
+  const { localeForUser } = await import("./emailLocale.server");
+  const ownerLocale = await localeForUser(sb, ownerId);
+  const et = emailT(ownerLocale);
+  const birdName = ((bird as any)?.name ?? et("email.common.yourBird")) as string;
+  const coveringLabel =
+    coveringName || (role === "caregiver" ? et("email.common.yourCaregiver") : et("email.common.yourSitter"));
   try {
     const { sendPushToOwner } = await import("./pushSender.server");
+    const { sitterConcernPush } = await import("./pushCopy.server");
     await sendPushToOwner(ownerId, "health_concern", {
-      title: `${coveringLabel} flagged something serious`,
-      body: `${coveringLabel} paused ${birdName}'s reminders and may be trying to reach you. Please call them as soon as you can.`,
+      ...sitterConcernPush(ownerLocale, coveringLabel, birdName),
       url: "/scans",
       tag: `sitter-concern-${birdId}`,
       requireInteraction: true,
@@ -517,17 +532,20 @@ export const submitHealthScan = createServerFn({ method: "POST" })
       .maybeSingle();
     if (birdRow?.owner_id) {
       const ownerId = birdRow.owner_id as string;
-      const birdName = birdRow.name ?? "Your bird";
+      // Owner (group 1) → their stored locale for the push and the fallback name.
+      const { localeForUser } = await import("./emailLocale.server");
+      const ownerLocale = await localeForUser(sb, ownerId);
+      const birdName = birdRow.name ?? emailT(ownerLocale)("email.common.yourBirdCap");
       const flagged = triage.status === "red" || triage.status === "yellow";
       const url = `/birds/${data.birdId}/scans/${row.id}`;
 
       // Push (best-effort).
       try {
         const { sendPushToOwner } = await import("./pushSender.server");
+        const { scanPush } = await import("./pushCopy.server");
         if (flagged) {
           const res = await sendPushToOwner(ownerId, "health_concern", {
-            title: triage.status === "red" ? "Health concern flagged" : "Sitter flagged something to check",
-            body: `${birdName}'s sitter logged ${triage.status === "red" ? "a concerning" : "an uncertain"} result. Tap to review.`,
+            ...scanPush(ownerLocale, triage.status === "red" ? "red" : "yellow", birdName),
             url,
             tag: `scan-${row.id}`,
             requireInteraction: triage.status === "red",
@@ -535,8 +553,7 @@ export const submitHealthScan = createServerFn({ method: "POST" })
           console.log("[scan] push", res);
         } else {
           const res = await sendPushToOwner(ownerId, "sitter_log", {
-            title: "New daily health check",
-            body: `${birdName}'s sitter logged an all-clear health check.`,
+            ...scanPush(ownerLocale, "green", birdName),
             url,
             tag: `scan-${row.id}`,
           });
@@ -566,7 +583,7 @@ export const submitHealthScan = createServerFn({ method: "POST" })
           console.log("[scan] email", { status: triage.status, flagged, wantsLogEmail, ownerHasEmail: !!to });
           if (to) {
             const appUrl = process.env.APP_URL || "https://app.thekyaproject.com";
-            const sitterName = sitRow?.sitter_name || sitRow?.sitter_email || "Your sitter";
+            const sitterName = sitRow?.sitter_name || sitRow?.sitter_email || emailT(ownerLocale)("email.common.yourSitter");
             const link = `${appUrl}${url}`;
             // Owner has an account (group 1) → their stored locale; null/unknown
             // falls back to English inside the builders.

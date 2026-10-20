@@ -18,7 +18,18 @@ export default {
   // server email i18n instance (emails namespace, never bundled client-side), so
   // their keys must NOT land in the client `translation` catalog (en.jsonc). Both
   // files had zero t() calls before email i18n, so excluding them removes nothing.
-  input: ["src/**/*.{ts,tsx}", "!src/lib/emailTemplates.ts", "!src/lib/sitter.functions.ts", "!src/lib/routineTaskRender.ts"],
+  // Server-only email/push builders translate with emailT (the "emails"
+  // namespace) through a local `t`, so they must stay out of the client catalog.
+  input: [
+    "src/**/*.{ts,tsx}",
+    "!src/**/*.server.ts",
+    "!src/lib/emailTemplates.ts",
+    "!src/lib/flockClub.ts",
+    "!src/lib/flockEmails.ts",
+    "!src/lib/appLaunchEmail.ts",
+    "!src/lib/sitter.functions.ts",
+    "!src/lib/routineTaskRender.ts",
+  ],
   output: "src/locales/$LOCALE.jsonc",
   sort: true,
   // Drop keys no longer present in the code (keeps the catalog honest).

@@ -3,13 +3,15 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { InkHero, PrimaryButton, CtaLink } from "@/components/system";
-import { friendlyError } from "@/lib/errorMessage";
+import { authErrorMessage } from "@/lib/authErrorMessage";
+import { useTranslation } from "react-i18next";
+import i18next from "i18next";
 
 export const Route = createFileRoute("/reset-password")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Reset password — Kya & Co." },
+      { title: i18next.t("resetPassword.pageTitle", "Reset password — Kya & Co.") },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),
@@ -17,6 +19,7 @@ export const Route = createFileRoute("/reset-password")({
 });
 
 function ResetPasswordPage() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [ready, setReady] = useState(false);
   const [password, setPassword] = useState("");
@@ -43,21 +46,21 @@ function ResetPasswordPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (password.length < 6) {
-      toast.error("Password must be at least 6 characters.");
+      toast.error(t("resetPassword.tooShort", "Password must be at least 6 characters."));
       return;
     }
     if (password !== confirm) {
-      toast.error("Passwords don't match.");
+      toast.error(t("resetPassword.mismatch", "Passwords don't match."));
       return;
     }
     setLoading(true);
     try {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
-      toast.success("Password updated. You're signed in.");
+      toast.success(t("resetPassword.updated", "Password updated. You're signed in."));
       navigate({ to: "/dashboard" });
     } catch (err: any) {
-      toast.error(friendlyError(err, "Could not update password."));
+      toast.error(authErrorMessage(err, t("resetPassword.couldNotUpdate", "Could not update password.")));
     } finally {
       setLoading(false);
     }
@@ -67,18 +70,18 @@ function ResetPasswordPage() {
     <div className="min-h-screen bg-[var(--cream)]">
       <InkHero
         eyebrow="Kya & Co."
-        headline="Set a new password."
+        headline={t("resetPassword.headline", "Set a new password.")}
         body={
           ready
-            ? "Choose a new password for your account."
-            : "Open this page from the password reset email you received."
+            ? t("resetPassword.bodyReady", "Choose a new password for your account.")
+            : t("resetPassword.bodyNotReady", "Open this page from the password reset email you received.")
         }
       />
 
       <main className="mx-auto max-w-md px-5 py-8">
         <form onSubmit={handleSubmit} className="space-y-3">
           <label className="block">
-            <span className="t-eyebrow mb-1 block text-[var(--mute)]">New password</span>
+            <span className="t-eyebrow mb-1 block text-[var(--mute)]">{t("resetPassword.newPassword", "New password")}</span>
             <input
               type="password"
               required
@@ -91,7 +94,7 @@ function ResetPasswordPage() {
             />
           </label>
           <label className="block">
-            <span className="t-eyebrow mb-1 block text-[var(--mute)]">Confirm password</span>
+            <span className="t-eyebrow mb-1 block text-[var(--mute)]">{t("resetPassword.confirmPassword", "Confirm password")}</span>
             <input
               type="password"
               required
@@ -105,14 +108,14 @@ function ResetPasswordPage() {
           </label>
           <div className="pt-2">
             <PrimaryButton tone="ink" type="submit" disabled={loading || !ready}>
-              {loading ? "..." : "Update password"}
+              {loading ? "..." : t("resetPassword.updatePassword", "Update password")}
             </PrimaryButton>
           </div>
         </form>
 
         <div className="mt-6">
           <CtaLink
-            label="Back to sign in"
+            label={t("resetPassword.backToSignIn", "Back to sign in")}
             onPress={() => navigate({ to: "/auth", search: { mode: "signin" } })}
           />
         </div>

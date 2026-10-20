@@ -18,9 +18,8 @@
 // healthNote). Copy and per-builder escaping are untouched; only the chrome
 // changed.
 //
-// The external (token-link) sitter trio is NOT localized here — it's account-
-// less and keyed off a per-sit locale picker that doesn't exist yet (A3). Those
-// three builders keep their English literals and call shell() without `t`.
+// The external (token-link) sitter trio is account-less, so — like the
+// household and handoff invites — it is sent in the SENDER's (owner's) locale.
 
 import { emailT } from "./i18n/emailI18n.server";
 
@@ -553,6 +552,9 @@ function shell(opts: {
    *  (e.g. a cancellation to a token sitter whose link is already dead). */
   cta?: string;
   link?: string;
+  /** Raw markup directly under the CTA (the auth emails' copy-this-link
+   *  fallback). Empty for everything else, so their output is unchanged. */
+  afterCta?: string;
   foot: string;
   /** Optional "From the field notes" blog block rendered under the CTA. */
   reading?: { title: string; teaser: string; url: string };
@@ -642,7 +644,7 @@ function shell(opts: {
       <h1 style="margin:7px 0 0;font-family:${SERIF};font-size:21px;line-height:28px;font-weight:500;color:#ffffff;">${opts.heading}</h1>
     </td></tr>
     <tr><td style="padding:24px;">
-      ${opts.bodyHtml ?? `<p style="margin:0;font-family:${SANS};font-size:15px;line-height:1.6;color:${C.green};">${opts.body}</p>`}${cta}${reading}${nextUp}${healthNote}
+      ${opts.bodyHtml ?? `<p style="margin:0;font-family:${SANS};font-size:15px;line-height:1.6;color:${C.green};">${opts.body}</p>`}${cta}${opts.afterCta ?? ""}${reading}${nextUp}${healthNote}
       <p style="margin:${footGap}px 0 0;font-family:${SANS};font-size:${opts.footFine ? "11.5" : "12"}px;line-height:1.5;color:${C.muted};${opts.footFine ? "font-style:italic;" : ""}">${opts.foot}</p>
       <p style="margin:18px 0 0;font-family:${SANS};font-size:11px;line-height:17px;color:${C.muted};text-align:center;border-top:1px solid ${C.rule};padding-top:12px;">${footNote}</p>
     </td></tr>
@@ -1006,9 +1008,8 @@ export function buildSitCancelledEmail(opts: {
 // opens the read-only sitter view with no sign-in. Voice matches the household
 // invite — warm, plain, sentence case. Names/dates arrive pre-formatted.
 //
-// NOT localized (English only): these go to account-less token sitters, whose
-// language comes from a per-sit locale picker that doesn't exist yet (A3). They
-// call shell() without `t`, so the chrome stays English too.
+// Localized in the SENDER's (owner's) locale — the same rule as the household
+// and handoff invites, since the account-less sitter has no profile to read.
 
 // "<owner> shared <birds>'s care with you" — sent when an external sit is created.
 export function buildSitterInviteEmail(opts: {
@@ -1016,27 +1017,24 @@ export function buildSitterInviteEmail(opts: {
   birdNames: string;
   dateRange: string;
   link: string;
+  locale?: string;
 }): BuiltEmail {
+  const t = emailT(opts.locale);
   const owner = escapeHtml(opts.ownerName);
   const birds = escapeHtml(opts.birdNames);
   const range = escapeHtml(opts.dateRange);
   return {
-    subject: `${opts.ownerName} shared ${opts.birdNames}'s care with you — ${opts.dateRange}`,
+    subject: t("email.sitterInvite.subject", { ownerName: opts.ownerName, birdNames: opts.birdNames, dateRange: opts.dateRange }),
     html: shell({
-      kicker: "Sitter access",
-      heading: `${owner} asked you to look after ${birds}`,
-      body:
-        `${owner} set you up as ${birds}'s sitter from ${range}. Your private link has everything ` +
-        `you'll need — the care plan, the daily routine and health check, and emergency contacts. ` +
-        `No account or password required.`,
-      cta: "Open the care plan",
+      kicker: t("email.sitterInvite.kicker"),
+      heading: t("email.sitterInvite.heading", { owner, birds }),
+      body: t("email.sitterInvite.body", { owner, birds, range }),
+      cta: t("email.sitterInvite.cta"),
       link: opts.link,
-      foot: "This link is private to you and works only for this sit. If you weren't expecting it, you can ignore this email.",
+      foot: t("email.sitterInvite.foot"),
+      t,
     }),
-    text:
-      `${opts.ownerName} set you up as ${opts.birdNames}'s sitter from ${opts.dateRange}. ` +
-      `Your private link has the care plan, the daily routine and health check, and emergency contacts — ` +
-      `no account needed.\n\nOpen the care plan: ${opts.link}`,
+    text: t("email.sitterInvite.text", { ownerName: opts.ownerName, birdNames: opts.birdNames, dateRange: opts.dateRange, link: opts.link }),
   };
 }
 
@@ -1049,26 +1047,25 @@ export function buildSitterInviteUpdatedEmail(opts: {
   dateRange: string;
   changeSummary: string;
   link: string;
+  locale?: string;
 }): BuiltEmail {
+  const t = emailT(opts.locale);
   const owner = escapeHtml(opts.ownerName);
   const birds = escapeHtml(opts.birdNames);
   const range = escapeHtml(opts.dateRange);
   const change = escapeHtml(opts.changeSummary);
   return {
-    subject: `A change to your sit for ${opts.birdNames} — ${opts.dateRange}`,
+    subject: t("email.sitterInviteUpdated.subject", { birdNames: opts.birdNames, dateRange: opts.dateRange }),
     html: shell({
-      kicker: "Sit updated",
-      heading: `${owner} updated the sit you're covering`,
-      body:
-        `${owner} changed ${change} for the sit covering ${birds}. It now runs ${range}. ` +
-        `Your link is the same — open it for the latest care plan and checklist.`,
-      cta: "Open the care plan",
+      kicker: t("email.sitterInviteUpdated.kicker"),
+      heading: t("email.sitterInviteUpdated.heading", { owner }),
+      body: t("email.sitterInviteUpdated.body", { owner, change, birds, range }),
+      cta: t("email.sitterInviteUpdated.cta"),
       link: opts.link,
-      foot: "You're getting this because a sit you're covering on Kya & Co. changed. Your private link is unchanged.",
+      foot: t("email.sitterInviteUpdated.foot"),
+      t,
     }),
-    text:
-      `${opts.ownerName} changed ${opts.changeSummary} for the sit covering ${opts.birdNames}. ` +
-      `It now runs ${opts.dateRange}. Your link is the same.\n\nOpen the care plan: ${opts.link}`,
+    text: t("email.sitterInviteUpdated.text", { ownerName: opts.ownerName, changeSummary: opts.changeSummary, birdNames: opts.birdNames, dateRange: opts.dateRange, link: opts.link }),
   };
 }
 
@@ -1078,24 +1075,22 @@ export function buildSitterInviteCancelledEmail(opts: {
   ownerName: string;
   birdNames: string;
   dateRange: string;
+  locale?: string;
 }): BuiltEmail {
+  const t = emailT(opts.locale);
   const owner = escapeHtml(opts.ownerName);
   const birds = escapeHtml(opts.birdNames);
   const range = escapeHtml(opts.dateRange);
   return {
-    subject: `Cancelled: your sit for ${opts.birdNames} (${opts.dateRange})`,
+    subject: t("email.sitterInviteCancelled.subject", { birdNames: opts.birdNames, dateRange: opts.dateRange }),
     html: shell({
-      kicker: "Sit cancelled",
-      heading: `${owner} cancelled the sit you were covering`,
-      body:
-        `You're no longer looking after ${birds}. The sit set for ${range} has been cancelled, so ` +
-        `there's nothing you need to do — your private link no longer works. ${owner} will be in touch ` +
-        `if that changes.`,
-      foot: "You're getting this because a sit you were covering on Kya & Co. was cancelled.",
+      kicker: t("email.sitterInviteCancelled.kicker"),
+      heading: t("email.sitterInviteCancelled.heading", { owner }),
+      body: t("email.sitterInviteCancelled.body", { birds, range, owner }),
+      foot: t("email.sitterInviteCancelled.foot"),
+      t,
     }),
-    text:
-      `${opts.ownerName} cancelled the sit for ${opts.birdNames} set for ${opts.dateRange}. ` +
-      `You're no longer covering it and your link no longer works — nothing you need to do.`,
+    text: t("email.sitterInviteCancelled.text", { ownerName: opts.ownerName, birdNames: opts.birdNames, dateRange: opts.dateRange }),
   };
 }
 
@@ -1188,5 +1183,75 @@ export function buildBereavementEmail(opts: { firstName?: string; birdName: stri
   </div>
 </div>`,
     text: t("email.bereavement.text", { birdName: opts.birdName }),
+  };
+}
+
+// ── Supabase auth emails ─────────────────────────────────────────────────────
+// Sent by the Send Email hook (src/routes/api/public/hooks/send-email.ts)
+// instead of Supabase's dashboard templates, so they come out in the user's
+// language and in the same shell as everything else. `link` is the Supabase
+// /auth/v1/verify URL; `code` is the 6-digit OTP, shown only where the flow
+// has nothing to click (reauthentication).
+
+export type AuthEmailKind =
+  | "signup"
+  | "recovery"
+  | "magiclink"
+  | "invite"
+  | "emailChangeNew"
+  | "emailChangeCurrent"
+  | "reauthentication";
+
+const plain = (s: string) => s.replace(/&amp;/g, "&");
+
+export function buildAuthEmail(opts: {
+  kind: AuthEmailKind;
+  link?: string;
+  code?: string;
+  newEmail?: string;
+  locale?: string;
+}): BuiltEmail {
+  const t = emailT(opts.locale);
+  const k = `email.auth.${opts.kind}`;
+  const code = escapeHtml(opts.code ?? "");
+  const vars = { newEmail: escapeHtml(opts.newEmail ?? ""), code };
+  const heading = t(`${k}.heading`);
+  const body = t(`${k}.body`, vars);
+  const foot = opts.kind === "emailChangeCurrent" ? t(`${k}.foot`) : t("email.auth.foot");
+  const kicker = opts.kind === "signup" ? t(`${k}.kicker`) : t("email.auth.kicker");
+  const p = (s: string, extra = "") =>
+    `<p style="margin:0;font-family:${SANS};font-size:15px;line-height:1.6;color:${C.green};${extra}">${s}</p>`;
+
+  let bodyHtml = p(body);
+  if (opts.code && !opts.link) {
+    bodyHtml += `
+      <p style="margin:18px 0 0;font-family:${SANS};font-size:12px;line-height:17px;color:${C.muted};">${t("email.auth.codeLabel")}</p>
+      ${p(code, `margin-top:4px;font-size:28px;line-height:36px;font-weight:600;letter-spacing:6px;`)}`;
+  }
+
+  // The plain link under the button: some clients strip buttons, and a
+  // password reset that can't be clicked is a support ticket.
+  const fallback = opts.link
+    ? `<p style="margin:16px 0 0;font-family:${SANS};font-size:12px;line-height:1.5;color:${C.muted};">${t("email.auth.linkFallback")}<br><a href="${escapeHtml(opts.link)}" style="color:${C.secondary};word-break:break-all;">${escapeHtml(opts.link)}</a></p>`
+    : "";
+
+  return {
+    subject: plain(t(`${k}.subject`, { code: opts.code ?? "" })),
+    html: shell({
+      kicker,
+      heading,
+      bodyHtml,
+      cta: opts.link ? t(`${k}.cta`) : undefined,
+      link: opts.link ? escapeHtml(opts.link) : undefined,
+      afterCta: fallback,
+      foot,
+      preview: body,
+      t,
+    }),
+    text: plain(
+      opts.link
+        ? t("email.auth.text", { heading, body: t(`${k}.body`, { newEmail: opts.newEmail ?? "" }), link: opts.link, foot })
+        : t("email.auth.textCode", { heading, body: t(`${k}.body`), code: opts.code ?? "", foot }),
+    ),
   };
 }

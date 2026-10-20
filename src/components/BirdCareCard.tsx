@@ -1,5 +1,7 @@
 import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
+import { speciesLabel } from "@/lib/speciesLabel";
 import { Stethoscope, ChevronRight, ChevronDown } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 // One "bird in your care" card: photo + name + today's task progress (+ optional
 // health-scan status). Shared by the sitter Home (SitterDashboard) and the
@@ -24,18 +26,19 @@ export function BirdCareCard({
   coach?: string;
   expanded?: boolean;
 }) {
+  const { t } = useTranslation();
   const pct = tasksTotal > 0 ? Math.round((tasksDone / tasksTotal) * 100) : 0;
   const allDone = tasksTotal > 0 && tasksDone === tasksTotal;
   const initial = (name?.slice(0, 1) ?? "?").toUpperCase();
   const scanAccent = !scan
     ? null
     : !scan.done
-      ? { dot: "bg-warn-amber", text: "text-warn-amber", label: "Health check not done yet" }
+      ? { dot: "bg-warn-amber", text: "text-warn-amber", label: t("birdCareCard.healthCheckNotDone", "Health check not done yet") }
       : scan.status === "red"
-        ? { dot: "bg-warn-red", text: "text-warn-red", label: "Health check flagged" }
+        ? { dot: "bg-warn-red", text: "text-warn-red", label: t("birdCareCard.healthCheckFlagged", "Health check flagged") }
         : scan.status === "yellow"
-          ? { dot: "bg-warn-amber", text: "text-warn-amber", label: "Health check flagged" }
-          : { dot: "bg-warn-green", text: "text-warn-green", label: "Health check done today" };
+          ? { dot: "bg-warn-amber", text: "text-warn-amber", label: t("birdCareCard.healthCheckFlagged", "Health check flagged") }
+          : { dot: "bg-warn-green", text: "text-warn-green", label: t("birdCareCard.healthCheckDoneToday", "Health check done today") };
 
   return (
     <button
@@ -54,11 +57,15 @@ export function BirdCareCard({
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <p className="truncate text-base font-medium text-sage-900">{name}</p>
-          {species && <span className="truncate text-xs text-[#5f5e5a]">{species}</span>}
+          {species && <span className="truncate text-xs text-[#5f5e5a]">{speciesLabel(t, species)}</span>}
         </div>
 
         <p className="mt-1.5 text-xs text-[#5f5e5a]">
-          {tasksTotal === 0 ? "No routine tasks" : allDone ? `All ${tasksTotal} done` : `${tasksDone} of ${tasksTotal} done`}
+          {tasksTotal === 0
+            ? t("birdCareCard.noRoutineTasks", "No routine tasks")
+            : allDone
+              ? t("birdCareCard.allDone", "All {{total}} done", { total: tasksTotal })
+              : t("birdCareCard.doneOf", "{{done}} of {{total}} done", { done: tasksDone, total: tasksTotal })}
         </p>
         {tasksTotal > 0 && (
           <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-white">

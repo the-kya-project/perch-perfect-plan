@@ -5,6 +5,7 @@
 // all 8 care-plan slots — so the save-then-delete ordering lives in one place
 // and can't drift between them.
 
+import i18next from "i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { isCfClip, cfUid, type CLIP_COLUMNS } from "./clipRef";
 import { retireReplacedClip } from "./clips.functions";
@@ -62,7 +63,7 @@ export async function commitClipRef(opts: {
       `[commitClipRef] ${newRef === null ? "clear" : "save"} failed for ${column}:`,
       error?.message ?? `${data?.length ?? 0} rows updated`,
     );
-    throw new Error("The clip change didn't save.");
+    throw new Error(i18next.t("clipSave.failed", "The clip change didn't save."));
   }
 
   // 2. Retire what it replaced — best-effort, never awaited, never surfaced.

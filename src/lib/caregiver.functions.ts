@@ -66,7 +66,7 @@ export const getActiveCaregiverSits = createServerFn({ method: "GET" })
     const [tasksRes, completionsRes, scansRes] = await Promise.all([
       planIds.length
         ? sb.from("routine_tasks")
-            .select("id, care_plan_id, title, instructions, category, time_of_day, sort_order, required, sitter_completable, guide_card_id")
+            .select("id, care_plan_id, title, instructions, category, time_of_day, sort_order, required, sitter_completable, guide_card_id, derived")
             .in("care_plan_id", planIds)
         : Promise.resolve({ data: [] as any[] }),
       sb.from("task_completions")
@@ -82,7 +82,8 @@ export const getActiveCaregiverSits = createServerFn({ method: "GET" })
     ]);
 
     const birdById = new Map(((birdsRes.data ?? []) as any[]).map((b: any) => [b.id, b]));
-    const ownerNameById = new Map(((ownerProfsRes.data ?? []) as any[]).map((p: any) => [p.id, (p.display_name ?? "").toString().trim() || "the owner"]));
+    // Raw names only — the client supplies the localized "the owner" fallback.
+    const ownerNameById = new Map(((ownerProfsRes.data ?? []) as any[]).map((p: any) => [p.id, (p.display_name ?? "").toString().trim() || null]));
     const sitBirdsBySit = new Map<string, string[]>();
     // Paused prompts: the caregiver's own "something's wrong" pause, or the
     // owner having marked the bird as passed. Either way, no daily tasks.
@@ -135,7 +136,7 @@ export const getActiveCaregiverSits = createServerFn({ method: "GET" })
       return {
         id: s.id as string,
         title: s.title as string | null,
-        ownerName: ownerNameById.get(s.owner_id) ?? "the owner",
+        ownerName: (ownerNameById.get(s.owner_id) ?? null) as string | null,
         startDate: s.start_date as string,
         endDate: s.end_date as string,
         notes: s.notes as string | null,
@@ -226,14 +227,16 @@ export type ActiveCaregiverBird = {
   species: string | null;
   photo_url: string | null;
   photo_position: string | null;
-  tasks: { id: string; title: string; instructions: string | null; category: string; time_of_day: string | null; sort_order: number; required: boolean; sitter_completable: boolean; guide_card_id: string | null }[];
+  // `derived` is the structured descriptor for auto-derived tasks (render via
+  // renderDerivedTask for display); title/instructions stay the stored English.
+  tasks: { id: string; title: string; instructions: string | null; category: string; time_of_day: string | null; sort_order: number; required: boolean; sitter_completable: boolean; guide_card_id: string | null; derived: unknown | null }[];
   scanDone: boolean;
   scanStatus: string | null;
 };
 export type ActiveCaregiverSit = {
   id: string;
   title: string | null;
-  ownerName: string;
+  ownerName: string | null; // null = no display name; client shows "the owner"
   startDate: string;
   endDate: string;
   notes: string | null;
@@ -292,7 +295,9 @@ export const getCaregiverConcernContext = createServerFn({ method: "GET" })
     ]);
     const { mergeEmergency } = await import("./emergency");
     const merged = { ...(contacts ?? {}), ...mergeEmergency(contacts as any, defaults as any) } as any;
-    const ownerName = await resolveDisplayName(sb, (bird as any).owner_id, "the owner");
+    // Raw name or null — the client supplies the localized "the owner" fallback.
+    const resolvedOwner = await resolveDisplayName(sb, (bird as any).owner_id, "");
+    const ownerName: string | null = resolvedOwner || null;
 
     return {
       covering: true as const,
@@ -324,8 +329,10 @@ export const pauseCaregiverReminders = createServerFn({ method: "POST" })
       .eq("bird_id", data.birdId);
     if (error) throw new Error(error.message);
 
-    const label = await resolveDisplayName(sb, userId, "Your caregiver");
+    // Empty fallback → notifyOwnerSomethingWrong fills a localized "Your caregiver"
+    // in the OWNER's language.
+    const label = await resolveDisplayName(sb, userId, "");
     const { notifyOwnerSomethingWrong } = await import("./sitter.functions");
-    await notifyOwnerSomethingWrong(sb, data.birdId, label);
+    await notifyOwnerSomethingWrong(sb, data.birdId, label || null, "caregiver");
     return { ok: true };
   });

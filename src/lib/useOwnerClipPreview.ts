@@ -15,6 +15,8 @@ export type ClipPreview = {
   // none: no clip · processing: uploaded, still transcoding · ready: playable
   status: "none" | "processing" | "ready";
   url: string | null;
+  /** Length in seconds, when the video service reports it. */
+  duration?: number | null;
 };
 
 const TRANSCODE_BUDGET_MS = 150_000; // ~2.5 min, matches the recorder's wait
@@ -44,9 +46,10 @@ export function useOwnerClipPreview(path: string | null | undefined): ClipPrevie
     const uid = cfUid(path);
     const deadline = Date.now() + TRANSCODE_BUDGET_MS;
 
+    let duration: number | null = null;
     const showReady = async () => {
       const url = await resolveOwnerClipUrl(path);
-      if (!cancelled) setPreview({ status: url ? "ready" : "none", url });
+      if (!cancelled) setPreview({ status: url ? "ready" : "none", url, duration });
     };
 
     const poll = async () => {
@@ -54,6 +57,7 @@ export function useOwnerClipPreview(path: string | null | undefined): ClipPrevie
       try {
         const s = await getClipStatus({ data: { uid } });
         ready = !!s?.readyToStream;
+        duration = typeof s?.duration === "number" && s.duration > 0 ? s.duration : null;
       } catch {
         ready = true; // status unknown — don't trap the clip in "processing"
       }

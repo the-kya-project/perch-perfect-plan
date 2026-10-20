@@ -1,4 +1,7 @@
 import { createFileRoute, Link, Navigate, useSearch } from "@tanstack/react-router";
+import { speciesLabel } from "@/lib/speciesLabel";
+import { ageLabel } from "@/components/BirdPickers";
+import { clipSlotLabel } from "@/lib/clipSlotLabels";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
@@ -7,7 +10,7 @@ import { toggleTaskCompletion } from "@/lib/sitter.functions";
 import { Disclaimer } from "@/components/Disclaimer";
 import { Stethoscope, Calendar, BookOpen, ChevronRight, ChevronDown, HeartCrack } from "lucide-react";
 import { ClipPlayer } from "@/components/ClipPlayer";
-import { taskDaypart, hourToDaypart, DAYPARTS, DAYPART_LABEL, type Daypart } from "@/lib/routineTasks";
+import { taskDaypart, hourToDaypart, parseTaskMinutes, DAYPARTS, DAYPART_LABEL, type Daypart } from "@/lib/routineTasks";
 import { renderDerivedTask } from "@/lib/routineTaskRender";
 import type { DerivedTask } from "@/lib/derivedTasks";
 import { toast } from "sonner";
@@ -40,21 +43,6 @@ function saveTimers(sitId: string, birdId: string, t: Record<string, FreshTimer>
 // taskDaypart() so the sitter checklist and the owner Routine tab always agree.
 function currentDaypart(d: Date): Daypart {
   return hourToDaypart(d.getHours());
-}
-
-// Parse a free-text time ("4 p.m.", "8 am", "7:30", "Available all day") to
-// minutes-since-midnight for chronological sorting; null when there's no time.
-function parseTaskMinutes(s: string | null | undefined): number | null {
-  if (!s) return null;
-  const m = String(s).toLowerCase().match(/(\d{1,2})(?::(\d{2}))?\s*(a\.?m\.?|p\.?m\.?)?/);
-  if (!m) return null;
-  let h = parseInt(m[1], 10);
-  const min = m[2] ? parseInt(m[2], 10) : 0;
-  const ap = m[3];
-  if (ap?.startsWith("p") && h < 12) h += 12;
-  if (ap?.startsWith("a") && h === 12) h = 0;
-  if (h > 23 || min > 59) return null;
-  return h * 60 + min;
 }
 
 function SitterHome() {
@@ -353,9 +341,9 @@ function SitterToday() {
                 key={c.key}
                 className="flex w-60 shrink-0 snap-start flex-col overflow-hidden rounded-2xl bg-[#efe9da] shadow-sm"
               >
-                <ClipPlayer src={c.url} label={c.label} className="aspect-video" />
+                <ClipPlayer src={c.url} label={clipSlotLabel(c.key, c.label, t)} className="aspect-video" />
                 <div className="p-3">
-                  <p className="text-sm font-medium leading-tight">{c.label}</p>
+                  <p className="text-sm font-medium leading-tight">{clipSlotLabel(c.key, c.label, t)}</p>
                   <p className="mt-0.5 text-[11px] uppercase tracking-wider text-sage-600">{t("sitter.today.ownerRecorded", "Owner-recorded")}</p>
                 </div>
               </div>
@@ -444,8 +432,8 @@ function ScanCard({ bird, todayLog, token }: { bird: any; todayLog: any; token: 
 // words live in the structured "Full care plan" view this card links to.
 function WelcomeCard({ bird, token }: { bird: any; token: string }) {
   const { t } = useTranslation();
-  const species = (bird.species ?? "").trim() || t("sitter.today.speciesDefault", "Parrot");
-  const age = (bird.age ?? "").trim();
+  const species = (bird.species ?? "").trim() ? speciesLabel(t, (bird.species ?? "").trim()) : t("sitter.today.speciesDefault", "Parrot");
+  const age = (bird.age ?? "").trim() ? ageLabel(t, (bird.age ?? "").trim()) : "";
   const speciesAge = [species, age].filter(Boolean).join(" · ");
   const initial = (bird.name?.slice(0, 1) ?? "?").toUpperCase();
 

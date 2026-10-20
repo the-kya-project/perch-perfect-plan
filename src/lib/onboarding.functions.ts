@@ -14,7 +14,8 @@ async function getAdmin() {
   return supabaseAdmin;
 }
 
-export type MemberHousehold = { ownerId: string; ownerName: string; birdNames: string[] };
+// ownerName is the raw display name, or null — the client localizes the fallback.
+export type MemberHousehold = { ownerId: string; ownerName: string | null; birdNames: string[] };
 export type MemberOnboardingContext = { households: MemberHousehold[] };
 
 export const getMemberOnboardingContext = createServerFn({ method: "GET" })
@@ -64,7 +65,7 @@ export const getMemberOnboardingContext = createServerFn({ method: "GET" })
     );
 
     const households: MemberHousehold[] = ownerIds
-      .map((id) => ({ ownerId: id, ownerName: nameByOwner.get(id)?.trim() || "your household's owner", birdNames: namesByOwner.get(id) ?? [] }))
+      .map((id) => ({ ownerId: id, ownerName: nameByOwner.get(id)?.trim() || null, birdNames: namesByOwner.get(id) ?? [] }))
       // Most-birds-first so the welcome leads with the primary household.
       .sort((a, b) => b.birdNames.length - a.birdNames.length);
 

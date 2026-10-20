@@ -1,15 +1,17 @@
 import { ShieldAlert, Utensils, Smile, Home as HomeIcon, Stethoscope, Siren, Video } from "lucide-react";
+import { speciesLabel } from "@/lib/speciesLabel";
+import { ageLabel } from "@/components/BirdPickers";
+import { clipSlotLabel } from "@/lib/clipSlotLabels";
 import { useTranslation } from "react-i18next";
 import { ClipPlayer } from "@/components/ClipPlayer";
 import { normalizeFeedTimes } from "@/lib/feedTimes";
 import {
-  WATER_FREQ_LABELS,
-  TREATS_FREQ_LABELS,
-  OUT_OF_CAGE_LABELS,
-  BOWL_WASH_LABELS,
-  prettyLabel,
-  formatAmountUnit,
-  formatRemovalMinutes,
+  waterFreqLabel,
+  treatsFreqLabel,
+  outOfCageLabel,
+  bowlWashLabel,
+  formatAmountUnitDisplay,
+  formatRemovalMinutesDisplay,
 } from "@/lib/labels";
 import {
   has, joinUnique, SectionCard, Field, KVList, Metric, FeedingItem,
@@ -66,7 +68,7 @@ export function CareSheetView({ data }: { data: CareSheetData }) {
   const showBasics = has(bird.name) || has(bird.species) || has(bird.age) || has(bird.photo_url);
   const showFeeding = diet.length || plan.food_brand || plan.amount_value || feedingTimes.length || freshFoods.length || plan.fresh_foods_other || plan.treats_notes || plan.treats_frequency || plan.water_frequency || plan.water_notes || plan.food_storage || plan.food_hygiene_notes || plan.food_instructions || plan.water_instructions || plan.fresh_food_removal_minutes;
   const showHandling = has(plan.step_up) || has(plan.step_up_notes) || has(plan.handlers) || has(plan.likes) || has(plan.fears_triggers) || has(plan.bite_risk) || has(plan.handling_rules) || has(plan.known_triggers);
-  const showHome = has(plan.cage_location) || has(plan.out_of_cage_mode) || has(plan.out_of_cage_notes) || has(plan.out_of_cage_rules) || hazards.length || has(plan.hazards_other) || has(plan.off_limits) || has(plan.off_limits_rooms) || has(plan.safety_rules) || has(plan.other_pets);
+  const showHome = has(plan.cage_location) || has(plan.out_of_cage_mode) || has(plan.out_of_cage_notes) || has(plan.out_of_cage_rules) || hazards.length || has(plan.hazards_other) || has(plan.off_limits) || has(plan.off_limits_rooms) || has(plan.safety_rules) || has(plan.other_pets) || has(plan.cleaning_instructions);
 
   const hasStructuredFood =
     diet.length > 0 ||
@@ -105,8 +107,8 @@ export function CareSheetView({ data }: { data: CareSheetData }) {
             )}
             <div className="min-w-0">
               <p className="t-section leading-tight">{bird.name}</p>
-              {has(bird.species) && <p className="text-sm text-[var(--mute)]">{bird.species}</p>}
-              {has(bird.age) && <p className="text-xs text-[var(--mute)]">{bird.age}</p>}
+              {has(bird.species) && <p className="text-sm text-[var(--mute)]">{speciesLabel(t, bird.species)}</p>}
+              {has(bird.age) && <p className="text-xs text-[var(--mute)]">{ageLabel(t, bird.age)}</p>}
             </div>
           </div>
         </section>
@@ -118,8 +120,8 @@ export function CareSheetView({ data }: { data: CareSheetData }) {
           <div className="space-y-3">
             {clips.map((c: any) => (
               <div key={c.key} className="overflow-hidden rounded-[12px] bg-[var(--cream)] ring-1 ring-[var(--line2)]">
-                <ClipPlayer src={c.url} label={c.label} className="aspect-video" />
-                <p className="px-2 py-1.5 text-[12px] font-medium leading-tight text-[var(--ink)]">{c.label}</p>
+                <ClipPlayer src={c.url} label={clipSlotLabel(c.key, c.label, t)} className="aspect-video" />
+                <p className="px-2 py-1.5 text-[12px] font-medium leading-tight text-[var(--ink)]">{clipSlotLabel(c.key, c.label, t)}</p>
               </div>
             ))}
           </div>
@@ -145,7 +147,7 @@ export function CareSheetView({ data }: { data: CareSheetData }) {
                   key={`${f.type}-${i}`}
                   typeLabel={f.type.charAt(0).toUpperCase() + f.type.slice(1).replace(/_/g, " ")}
                   name={f.name}
-                  amountStr={has(f.amount) ? (f.unit ? formatAmountUnit(f.amount, f.unit) : String(f.amount)) : ""}
+                  amountStr={has(f.amount) ? (f.unit ? formatAmountUnitDisplay(f.amount, f.unit, t) : String(f.amount)) : ""}
                   times={f.times}
                   freeFed={f.freeFed}
                   note={f.note}
@@ -154,7 +156,7 @@ export function CareSheetView({ data }: { data: CareSheetData }) {
             </div>
           ) : (
             (has(plan.food_brand) || has(plan.amount_value)) && (
-              <Field label={t("careSheet.field.brandAmount", "Brand & amount")}>{`${plan.food_brand ?? ""}${has(plan.amount_value) ? ` · ${formatAmountUnit(plan.amount_value, plan.amount_unit)}` : ""}`.trim()}</Field>
+              <Field label={t("careSheet.field.brandAmount", "Brand & amount")}>{`${plan.food_brand ?? ""}${has(plan.amount_value) ? ` · ${formatAmountUnitDisplay(plan.amount_value, plan.amount_unit, t)}` : ""}`.trim()}</Field>
             )
           )}
           {!foodRows.some((f) => f.times.length > 0) && feedingTimes.length > 0 && (
@@ -165,7 +167,7 @@ export function CareSheetView({ data }: { data: CareSheetData }) {
           {(has(plan.treats_notes) || has(plan.treats_frequency)) && (
             <Field label={t("careSheet.field.treats", "Treats")}>
               {has(plan.treats_frequency) && (
-                <KVList rows={[{ label: t("careSheet.kv.frequency", "Frequency"), value: prettyLabel(plan.treats_frequency, TREATS_FREQ_LABELS) }]} />
+                <KVList rows={[{ label: t("careSheet.kv.frequency", "Frequency"), value: treatsFreqLabel(plan.treats_frequency, t) }]} />
               )}
               {has(plan.treats_notes) && (
                 <p className={`text-sm text-[var(--ink)] whitespace-pre-line ${has(plan.treats_frequency) ? "mt-2" : ""}`}>{plan.treats_notes}</p>
@@ -175,7 +177,7 @@ export function CareSheetView({ data }: { data: CareSheetData }) {
           {(has(plan.water_frequency) || has(plan.water_notes) || has(plan.water_instructions)) && (
             <Field label={t("careSheet.field.water", "Water")}>
               {has(plan.water_frequency) && (
-                <KVList rows={[{ label: t("careSheet.kv.changeWater", "Change water"), value: prettyLabel(plan.water_frequency, WATER_FREQ_LABELS) }]} />
+                <KVList rows={[{ label: t("careSheet.kv.changeWater", "Change water"), value: waterFreqLabel(plan.water_frequency, t) }]} />
               )}
               {(has(plan.water_notes) || (!has(plan.water_frequency) && has(plan.water_instructions))) && (
                 <p className={`text-sm text-[var(--ink)] whitespace-pre-line ${has(plan.water_frequency) ? "mt-2" : ""}`}>
@@ -187,9 +189,9 @@ export function CareSheetView({ data }: { data: CareSheetData }) {
           <Field label={t("careSheet.field.freshnessHygiene", "Freshness & hygiene")}>
             <KVList
               rows={[
-                { label: t("careSheet.kv.removeFreshFood", "Remove fresh food"), value: t("careSheet.value.within", "Within {{duration}}", { duration: formatRemovalMinutes(plan.fresh_food_removal_minutes) }) },
-                { label: t("careSheet.kv.washFoodBowls", "Wash food bowls"), value: prettyLabel(plan.food_bowl_wash_cadence, BOWL_WASH_LABELS) },
-                { label: t("careSheet.kv.washWaterBowl", "Wash water bowl"), value: prettyLabel(plan.water_bowl_wash_cadence, BOWL_WASH_LABELS) },
+                { label: t("careSheet.kv.removeFreshFood", "Remove fresh food"), value: t("careSheet.value.within", "Within {{duration}}", { duration: formatRemovalMinutesDisplay(plan.fresh_food_removal_minutes, t) }) },
+                { label: t("careSheet.kv.washFoodBowls", "Wash food bowls"), value: bowlWashLabel(plan.food_bowl_wash_cadence, t) },
+                { label: t("careSheet.kv.washWaterBowl", "Wash water bowl"), value: bowlWashLabel(plan.water_bowl_wash_cadence, t) },
               ]}
             />
             {has(plan.food_hygiene_notes) && <p className="mt-2 text-xs text-[var(--mute)] whitespace-pre-line">{plan.food_hygiene_notes}</p>}
@@ -232,7 +234,7 @@ export function CareSheetView({ data }: { data: CareSheetData }) {
           {(has(plan.out_of_cage_mode) || has(plan.out_of_cage_notes) || has(plan.out_of_cage_rules)) && (
             <Field label={t("careSheet.field.outOfCageRules", "Out-of-cage rules")}>
               {has(plan.out_of_cage_mode) || has(plan.out_of_cage_notes)
-                ? joinUnique([prettyLabel(plan.out_of_cage_mode, OUT_OF_CAGE_LABELS), plan.out_of_cage_notes])
+                ? joinUnique([outOfCageLabel(plan.out_of_cage_mode, t), plan.out_of_cage_notes])
                 : plan.out_of_cage_rules}
             </Field>
           )}
@@ -241,6 +243,7 @@ export function CareSheetView({ data }: { data: CareSheetData }) {
           )}
           {hazards.length === 0 && has(plan.safety_rules) && <Field label={t("careSheet.field.safetyRules", "Safety rules")}>{plan.safety_rules}</Field>}
           {has(plan.other_pets) && <Field label={t("careSheet.field.otherPets", "Other pets")}>{plan.other_pets}</Field>}
+          {has(plan.cleaning_instructions) && <Field label={t("careSheet.field.cleaningProducts", "Cleaning products")}>{plan.cleaning_instructions}</Field>}
         </SectionCard>
       )}
 

@@ -1,21 +1,33 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createPortal } from "react-dom";
+import { InSetupFrame, SetupIntroSlot } from "@/components/setup/SetupFrame";
+import { StartFromAnotherBird, useCopySources, type CopyResult } from "@/components/setup/StartFromAnotherBird";
+import { foodCopy, dayCopy, isOwnTask } from "@/lib/copyFromBird";
+import { S, SERIF, SetupPrimaryButton, SetupSecondaryButton, SetupTextButton, SectionCard, TileCard, Field, TextField, TextBox, Dropdown, Segmented, EditableList, Helper, CheckChips } from "@/components/setup/controls";
+import { BottomSheet } from "@/components/setup/BottomSheet";
 import { useTranslation } from "react-i18next";
 import i18next, { type TFunction } from "i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { getHouseholdCarePlanView } from "@/lib/household.functions";
+import { CarePlanView } from "@/components/CarePlanView";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { SetupShell, SETUP_STEPS, TOTAL_STEPS } from "@/components/SetupShell";
-import { EmergencyInfo } from "@/components/EmergencyInfo";
-import { Plus, X, Check, Lightbulb, GripVertical, Sparkles, AlertTriangle } from "lucide-react";
+import { SetupShell, SETUP_STEPS, TOTAL_STEPS, setupStepTitle, setupStepNumber } from "@/components/SetupShell";
+import { encodeSetupStep, basicsDone } from "@/lib/setupProgress";
+import { getLocalUser } from "@/integrations/supabase/currentUser";
+import { mergeHome, homeDifferences, seedShared, sameGroup, followSharedPatch, clearOwnPatch, birdHasOwn, HOME_GROUPS, HOME_GROUP_COLUMNS, parseCleaning, formatCleaning, CLEANING_NEVER_DEFAULTS, type HomeRow } from "@/lib/homeDefaults";
+import { EmergencyContactsScreen, type EmergencySetupState } from "@/components/setup/EmergencyContactsScreen";
+import { Plus, X, Check, Lightbulb, GripVertical, Sparkles, AlertTriangle, Pill, ChevronDown, Play, Video, Sunrise, Sun, Sunset, Moon, Clock, Soup, DoorClosed, SprayCan } from "lucide-react";
 import { PhotoCropper } from "@/components/PhotoCropper";
 import { AgePicker, BirdField, SpeciesPicker } from "@/components/BirdPickers";
-import { ClipRecorder, UploadProgress, MAX_SECONDS as CLIP_MAX_SECONDS, MAX_BYTES as CLIP_MAX_BYTES } from "@/components/ClipRecorder";
-import { ClipPlayer } from "@/components/ClipPlayer";
+import { ClipRecorder, UploadProgress } from "@/components/ClipRecorder";
+import { PosterClipPlayer, clipLength } from "@/components/ClipPlayer";
 import { useOwnerClipPreview } from "@/lib/useOwnerClipPreview";
 import { commitClipRef } from "@/lib/clipReplace";
-import { FEED_PREFIX, HYG_REMOVE_PREFIX, HYG_WASH_FOOD_PREFIX, HYG_WASH_WATER_PREFIX, WATER_CHANGE_PREFIX, MED_TASK_PREFIX, isDerivedTask, derivedSource, feedTimeToDaypart } from "@/lib/routineTasks";
+import { FEED_PREFIX, HYG_REMOVE_PREFIX, HYG_WASH_FOOD_PREFIX, HYG_WASH_WATER_PREFIX, WATER_CHANGE_PREFIX, MED_TASK_PREFIX, isDerivedTask, derivedSource, feedTimeToDaypart, taskDaypart, parseTaskMinutes, DAYPARTS, type Daypart } from "@/lib/routineTasks";
 import { FoodItemsEditor } from "@/components/careEditors/FoodItemsEditor";
 import { blankFoodItem, isFoodItemComplete, foodItemHasContent, HOMEMADE_CHOP_NAME, type FoodItem } from "@/lib/foodItems";
 import { normalizeFeedTimes, feedTimeLabel, type FeedTime } from "@/lib/feedTimes";
@@ -23,7 +35,6 @@ import { syncFeedingTasks } from "@/lib/feedingSync";
 import { medDescriptor, washFoodDescriptor, washWaterDescriptor, removeFreshDescriptor, changeWaterDescriptor, type DerivedTask } from "@/lib/derivedTasks";
 import { formatAmountUnit } from "@/lib/labels";
 import { track } from "@/lib/analytics";
-import { ensureSitterPreviewToken } from "@/lib/sitterPreview";
 import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
 import { persistBirdPhoto, signBirdPhoto } from "@/lib/birdPhoto";
 import { friendlyError } from "@/lib/errorMessage";
@@ -39,6 +50,10 @@ const setupSearch = z.object({
  * so steps work outside the wizard too.
  */
 const SetupDirtyContext = createContext<(dirty: boolean) => void>(() => {});
+/** Lets the Reminders screen change the header line under "Your home". */
+const SetupHomeSublineContext = createContext<(line: string | null) => void>(() => {});
+/** Lets a step put a short line above the footer (e.g. "Your clip is still uploading."). */
+const SetupFooterNoteContext = createContext<(note: string | null) => void>(() => {});
 
 /**
  * Hides the per-step instruction banner. The bird editor renders these same step
@@ -53,11 +68,13 @@ export const HideStepInstruction = createContext(false);
  * flush function so pending edits are persisted before the step unmounts.
  * While a save is pending the step is reported "dirty" via SetupDirtyContext.
  */
-// Standout step instruction — a dark-green banner so the "here's what this step
-// is for" guidance never blends into the form. Shown in the guided setup; hidden
-// on the editor tabs (via HideStepInstruction).
+// The "here's what this step is for" line. In the setup shell it renders as the
+// header's intro line; elsewhere it's a dark-green banner so it never blends
+// into the form. Hidden on the editor tabs (via HideStepInstruction).
 function StepInstruction({ children }: { children: React.ReactNode }) {
+  const introSlot = useContext(SetupIntroSlot);
   if (useContext(HideStepInstruction)) return null;
+  if (introSlot) return createPortal(<p>{children}</p>, introSlot);
   return (
     <div className="mb-4 flex items-start gap-2.5 rounded-2xl bg-[#1a3d2e] p-3.5">
       <Lightbulb className="mt-0.5 size-4 shrink-0 text-[#cdeab0]" />
@@ -100,7 +117,7 @@ function useDebouncedAutosave(
         setDirtyRef.current(false);
       } catch (e: any) {
         // Never fail silently — the owner must know their input didn't save.
-        toast.error(`Couldn't save your changes: ${friendlyError(e, "please try again.")}`);
+        toast.error(i18next.t("birdSetup.couldNotSaveChanges", "Couldn't save your changes: {{reason}}", { reason: friendlyError(e, i18next.t("birdSetup.pleaseTryAgainLower", "please try again.")) }));
       }
     }, delay);
     return () => {
@@ -118,7 +135,7 @@ function useDebouncedAutosave(
         pendingRef.current = false;
         setDirtyRef.current(false);
       } catch (e: any) {
-        toast.error(`Couldn't save your changes: ${friendlyError(e, "please try again.")}`);
+        toast.error(i18next.t("birdSetup.couldNotSaveChanges", "Couldn't save your changes: {{reason}}", { reason: friendlyError(e, i18next.t("birdSetup.pleaseTryAgainLower", "please try again.")) }));
         throw e; // surface to flushPending so navigation can be blocked
       }
     };
@@ -167,9 +184,45 @@ function BirdSetup() {
 
   const [step, setStep] = useState<number>(1);
   const [blockNext, setBlockNext] = useState(false);
+  const [footerNote, setFooterNote] = useState<string | null>(null);
+  const [homeSubline, setHomeSubline] = useState<string | null>(null);
   const [dirty, setDirty] = useState(false);
-  useEffect(() => { setBlockNext(false); setDirty(false); }, [step]);
+  useEffect(() => { setBlockNext(false); setDirty(false); setFooterNote(null); }, [step]);
   const [saving, setSaving] = useState(false);
+  // The stop point after Health: "The basics are set". Shown once per bird, the
+  // first time it gets past Health (a finished bird walking through again, or a
+  // bird that already passed it, goes straight on to Behavior).
+  const [atStopPoint, setAtStopPoint] = useState(false);
+  // Food is one step on two pages: 1 = what the bird eats, 2 = water, treats
+  // and hygiene. Same step number (and saved progress) for both.
+  const [foodPage, setFoodPage] = useState<1 | 2>(1);
+  // "Your home" screens (shared reminders, emergency contacts) are entered once
+  // for every bird: the walkthrough skips the ones the owner already filled in.
+  // Read once when the wizard opens, so filling one in now doesn't make Back
+  // jump over it. The "All steps" list still opens them.
+  const skipRef = useRef<Set<string> | null>(null);
+  const { data: homeDone } = useQuery({
+    queryKey: ["setup-your-home-done", birdId],
+    enabled: !!bird,
+    queryFn: async () => {
+      const { data: u } = await getLocalUser();
+      const userId = u.user?.id;
+      if (!userId || bird?.owner_id !== userId) return { reminders: false, emergency: false };
+      const [{ data: home }, { data: ec }] = await Promise.all([
+        supabase.from("owner_home_defaults").select("owner_id").eq("owner_id", userId).maybeSingle(),
+        supabase.from("owner_emergency_defaults").select("owner_phone, avian_vet_phone").eq("owner_id", userId).maybeSingle(),
+      ]);
+      const filled = (v: unknown) => !!(v ?? "").toString().trim();
+      return { reminders: !!home, emergency: filled((ec as any)?.owner_phone) && filled((ec as any)?.avian_vet_phone) };
+    },
+  });
+  if (homeDone && !skipRef.current) {
+    skipRef.current = new Set([...(homeDone.reminders ? ["environment"] : []), ...(homeDone.emergency ? ["emergency"] : [])]);
+  }
+  const skipped = (n: number) => skipRef.current?.has(SETUP_STEPS[n - 1]?.key) ?? false;
+  const stepAfter = (n: number) => { let x = n + 1; while (x < TOTAL_STEPS && skipped(x)) x++; return x; };
+  const stepBefore = (n: number) => { let x = n - 1; while (x > 1 && skipped(x)) x--; return x; };
+  const stopPointSeenRef = useRef(false);
   const qc = useQueryClient();
 
   // Self-heal: guarantee a care_plan exists for this bird so no setup step can
@@ -185,7 +238,7 @@ function BirdSetup() {
       if (error || data) return; // already exists, or transient — steps will retry
       const { error: upErr } = await supabase
         .from("care_plans").upsert({ bird_id: birdId }, { onConflict: "bird_id" });
-      if (upErr) { toast.error(`Couldn't load this bird's care plan: ${friendlyError(upErr, "please try again.")}`); return; }
+      if (upErr) { toast.error(i18next.t("birdSetup.couldNotLoadPlan", "Couldn't load this bird's care plan: {{reason}}", { reason: friendlyError(upErr, i18next.t("birdSetup.pleaseTryAgainLower", "please try again.")) })); return; }
       qc.invalidateQueries(); // plan now exists — refetch the per-step queries
     })();
   }, [bird, birdId, qc]);
@@ -243,7 +296,7 @@ function BirdSetup() {
     // false here UN-completed finished birds the moment their owner re-entered
     // "Walk through it again" — which resurrected the "Set up care plan" CTA on
     // birds with complete plans (the intermittent, some-birds-only report).
-    const patch: Record<string, unknown> = { setup_step: nextStep };
+    const patch: Record<string, unknown> = { setup_step: encodeSetupStep(nextStep) };
     if (complete) patch.setup_complete = true;
     const { error } = await supabase
       .from("birds")
@@ -266,6 +319,13 @@ function BirdSetup() {
   async function onNext() {
     // Forward-navigation gate (Food step): block + show validation if incomplete.
     if (validateRef.current && !validateRef.current()) return;
+    // Food page 1 → page 2, within the same step.
+    if (SETUP_STEPS[step - 1]?.key === "food" && foodPage === 1) {
+      if (!(await flushPending())) return;
+      setFoodPage(2);
+      window.scrollTo(0, 0);
+      return;
+    }
     if (!(await flushPending())) return;
     const completedSection = SETUP_STEPS[step - 1]?.key;
     if (step >= TOTAL_STEPS) {
@@ -273,12 +333,13 @@ function BirdSetup() {
       if (ok) {
         track("care_plan_section_completed", { section: completedSection, step });
         track("care_plan_progress", { percent_complete: 100, sections_complete: TOTAL_STEPS, total: TOTAL_STEPS });
-        toast.success(`${bird?.name ?? "Bird"} setup complete.`);
+        toast.success(i18next.t("birdSetup.setupComplete", "{{name}} setup complete.", { name: bird?.name ?? i18next.t("birdSetup.birdFallback", "Bird") }));
         navigate({ to: "/birds/$birdId", params: { birdId } });
       }
       return;
     }
-    const next = step + 1;
+    const next = stepAfter(step);
+    const showStop = completedSection === "health" && !stopPointSeenRef.current && !basicsDone(bird?.setup_step, bird?.setup_complete);
     const ok = await persistStep(next);
     if (ok) {
       track("care_plan_section_completed", { section: completedSection, step });
@@ -288,15 +349,40 @@ function BirdSetup() {
         total: TOTAL_STEPS,
       });
       setStep(next);
+      if (showStop) {
+        stopPointSeenRef.current = true;
+        setAtStopPoint(true);
+        track("setup_stop_point_viewed", {});
+      }
     }
   }
 
+  function keepGoing() {
+    track("setup_stop_point_choice", { choice: "keep_going" });
+    setAtStopPoint(false);
+  }
+
+  function setUpLater() {
+    track("setup_stop_point_choice", { choice: "later" });
+    // Progress already points at Behavior, so the bird's page offers to pick up
+    // the pet-sitter details from there.
+    navigate({ to: "/birds/$birdId/plan", params: { birdId } });
+  }
+
   async function onBack() {
+    if (atStopPoint) { setAtStopPoint(false); setStep(setupStepNumber("health")); return; }
+    if (SETUP_STEPS[step - 1]?.key === "food" && foodPage === 2) {
+      if (!(await flushPending())) return;
+      setFoodPage(1);
+      window.scrollTo(0, 0);
+      return;
+    }
     if (step <= 1) return;
     if (!(await flushPending())) return;
-    const prev = step - 1;
+    const prev = stepBefore(step);
     const ok = await persistStep(prev);
-    if (ok) setStep(prev);
+    // Coming back into Food lands on its last page.
+    if (ok) { setFoodPage(prev === setupStepNumber("food") ? 2 : 1); setStep(prev); }
   }
 
   async function onSaveAndExit() {
@@ -310,6 +396,8 @@ function BirdSetup() {
 
   async function jumpToStep(target: number) {
     const clamped = Math.min(TOTAL_STEPS, Math.max(1, target));
+    setAtStopPoint(false);
+    setFoodPage(1);
     if (clamped === step) return;
     if (!(await flushPending())) return;
     const ok = await persistStep(clamped);
@@ -327,13 +415,8 @@ function BirdSetup() {
     const ok = await persistStep(TOTAL_STEPS, true);
     if (!ok) return;
     if (opts.to === "dashboard-newsit") {
-      // The new-sit form lives on the Sits tab (the dashboard stopped hosting it
-      // in the Home v3 redesign). Route there with ?newSit so it opens with this
-      // bird preselected; on save SitForm keeps the owner on /sits.
-      navigate({
-        to: "/sits",
-        search: { newSit: true, preselectBirdId: birdId },
-      });
+      // "Set up a sit" is its own screen, with this bird preselected.
+      navigate({ to: "/sits/new", search: { bird: birdId } });
     } else {
       // After finishing setup, land on Home so the owner sees their bird and the
       // getting-started checklist — not back at the start of the wizard.
@@ -351,11 +434,66 @@ function BirdSetup() {
 
   const meta = SETUP_STEPS[step - 1];
   const isLast = step === TOTAL_STEPS;
+  const onFoodPage2 = meta.key === "food" && foodPage === 2;
+
+  if (atStopPoint) {
+    return (
+      <SetupShell
+        step={setupStepNumber("health")}
+        title={t("birdSetup.stop.title", "The basics are set for {{name}}.", { name: bird.name })}
+        subtitle={t("birdSetup.stop.body", "Do you want to add more details for a pet sitter? We'll cover behavior and training, tips and tricks for {{name}}'s care, and more.", { name: bird.name })}
+        birdName={bird.name}
+        birdSpecies={bird.species}
+        onExit={exitToProfile}
+        onBack={onBack}
+        onNavigateStep={jumpToStep}
+        footer={
+          <div className="flex items-center gap-3">
+            <SetupTextButton onClick={setUpLater}>{t("birdSetup.stop.later", "Set up later")}</SetupTextButton>
+            <div className="min-w-0 flex-1">
+              <SetupPrimaryButton onClick={keepGoing}>{t("birdSetup.stop.keepGoing", "Keep going")}</SetupPrimaryButton>
+            </div>
+          </div>
+        }
+      >
+        {/* What's done, and what "Keep going" covers. */}
+        <StopPointList
+          heading={t("birdSetup.stop.doneHeading", "Done")}
+          done
+          items={[t("setupFrame.pillDetails", "Details"), t("planEditor.tabFood", "Food"), t("planEditor.tabHealth", "Health")]}
+        />
+        <StopPointList
+          heading={t("birdSetup.stop.nextHeading", "Next, for a pet sitter")}
+          items={[
+            t("birdSetup.stop.nextBehavior", "Behavior and training"),
+            t("birdSetup.stop.nextTips", "Tips and tricks"),
+            t("birdSetup.stop.nextDay", "{{name}}'s day", { name: bird.name }),
+          ]}
+        />
+      </SetupShell>
+    );
+  }
 
   return (
     <SetupShell
       step={step}
-      title={meta.title}
+      title={onFoodPage2
+        ? t("birdSetup.food2.title", "Water, treats and hygiene")
+        : meta.key === "food"
+          ? t("birdSetup.food.title", "What {{name}} eats", { name: bird.name })
+        : meta.key === "health"
+          ? t("birdSetup.health.title", "Keeping {{name}} healthy", { name: bird.name })
+          : meta.key === "personality"
+            ? t("birdSetup.behavior.title", "How {{name}} likes to be treated", { name: bird.name })
+            : meta.key === "clips"
+              ? t("birdSetup.tips.title", "Show your sitter how")
+              : meta.key === "day"
+                ? t("birdSetup.day.title", "{{name}}'s day", { name: bird.name })
+                : meta.key === "review"
+                  ? t("birdSetup.review.title", "Here's what your sitter sees")
+                  : setupStepTitle(t, meta.key)}
+      subtitle={onFoodPage2 ? t("birdSetup.food2.intro", "Everything here is optional, and the defaults are a good place to start.") : undefined}
+      page={meta.key === "food" ? [foodPage, 2] : undefined}
       birdName={bird.name}
       birdSpecies={bird.species}
       saving={saving}
@@ -365,12 +503,24 @@ function BirdSetup() {
       onBack={onBack}
       onNext={onNext}
       onSaveAndExit={onSaveAndExit}
-      nextLabel={isLast ? t("birdSetup.finishSetup", "Finish setup") : t("birdSetup.next", "Next")}
-      backDisabled={step <= 1}
+      nextLabel={isLast ? t("birdSetup.finishSetup", "Finish setup") : onFoodPage2 ? t("birdSetup.food2.next", "Next: Health") : meta.key === "emergency" ? t("emergencySetup.saveContacts", "Save contacts") : t("birdSetup.next", "Next")}
+      backDisabled={step <= 1 && !(meta.key === "food" && foodPage === 2)}
       nextDisabled={blockNext}
-      hideFooter={step === TOTAL_STEPS}
+      footerNote={footerNote}
+      tinted={(meta.key === "day" || meta.key === "environment" || meta.key === "emergency") && !atStopPoint}
+      homeSubline={homeSubline ?? undefined}
+      onSkip={meta.key === "environment" || meta.key === "emergency" ? onNext : undefined}
+      footerNoteWarn={meta.key === "emergency"}
+      footer={meta.key === "review" ? (
+        <div className="flex flex-col gap-2.5">
+          <SetupPrimaryButton onClick={() => finishAndGo({ to: "home" })} disabled={saving} arrow={false}>{t("birdSetup.looksGoodSave", "Looks good — save")}</SetupPrimaryButton>
+          <SetupSecondaryButton onClick={() => finishAndGo({ to: "dashboard-newsit" })} disabled={saving}>{t("birdSetup.saveAndCreateSit", "Save & create a sit")}</SetupSecondaryButton>
+        </div>
+      ) : undefined}
     >
       <SetupDirtyContext.Provider value={setDirty}>
+        <SetupFooterNoteContext.Provider value={setFooterNote}>
+        <SetupHomeSublineContext.Provider value={setHomeSubline}>
         <StepBody
           step={step}
           birdId={birdId}
@@ -380,9 +530,35 @@ function BirdSetup() {
           onFinish={finishAndGo}
           registerFlush={registerFlush}
           registerValidate={registerValidate}
+          foodPage={foodPage}
         />
+        </SetupHomeSublineContext.Provider>
+        </SetupFooterNoteContext.Provider>
       </SetupDirtyContext.Provider>
     </SetupShell>
+  );
+}
+
+/** One list on the stop point: checked rows for what's done, open rows for what's next. */
+function StopPointList({ heading, items, done }: { heading: string; items: string[]; done?: boolean }) {
+  return (
+    <section className="rounded-[18px] bg-[#f1f5f0] px-4 py-4 text-[#1a3d2e]">
+      <h2 className="m-0 text-[13px] font-[700] text-[#5f5e5a]">{heading}</h2>
+      <ul className="m-0 mt-1 list-none p-0">
+        {items.map((item) => (
+          <li key={item} className="flex min-h-[44px] items-center gap-3 text-[16px] font-[500]">
+            {done ? (
+              <span className="grid size-6 shrink-0 place-items-center rounded-full bg-[#1a3d2e] text-[#cdeab0]" aria-hidden="true">
+                <Check className="size-3.5" strokeWidth={3} />
+              </span>
+            ) : (
+              <span className="size-6 shrink-0 rounded-full border-2 border-[#c9d6c9] bg-white" aria-hidden="true" />
+            )}
+            {item}
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
@@ -395,6 +571,7 @@ function StepBody({
   onFinish,
   registerFlush,
   registerValidate,
+  foodPage,
 }: {
   step: number;
   birdId: string;
@@ -404,21 +581,20 @@ function StepBody({
   onFinish: (opts: { to: "dashboard-newsit" | "home" }) => void;
   registerFlush: (fn: (() => Promise<void>) | null) => void;
   registerValidate: (fn: (() => boolean) | null) => void;
+  foodPage: 1 | 2;
 }) {
-  // Basics moved to the bird main page; the wizard is now pure care instructions.
-  // Step numbers match SETUP_STEPS in SetupShell — daily rhythm sits after the
-  // descriptive sections, with Food still first (Routine auto-derives feeding
-  // items from Food).
-  if (step === 1) return <FoodWaterStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} registerFlush={registerFlush} registerValidate={registerValidate} />;
-  if (step === 2) return <PersonalityStep birdId={birdId} birdName={birdName} registerFlush={registerFlush} />;
-  if (step === 3) return <EnvironmentStep birdId={birdId} birdName={birdName} registerFlush={registerFlush} />;
-  if (step === 4) return <HealthBaselineStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} registerFlush={registerFlush} />;
-  if (step === 5) return <DayInLifeStep birdId={birdId} birdName={birdName} />;
-  if (step === 6) return <OwnerTipsClipsStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} />;
-  if (step === 7) return <EmergencyStep birdId={birdId} onBlockNext={onBlockNext} registerFlush={registerFlush} />;
-  if (step === 8) return <ReviewStep birdId={birdId} birdName={birdName} onJumpToStep={onJumpToStep} onFinish={onFinish} />;
-
-  return null; // every step (1–8) is handled above
+  // Steps are looked up by key, so the order lives only in SETUP_STEPS.
+  switch (SETUP_STEPS[step - 1]?.key) {
+    case "food": return <FoodWaterStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} registerFlush={registerFlush} registerValidate={registerValidate} page={foodPage} />;
+    case "health": return <HealthBaselineStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} registerFlush={registerFlush} />;
+    case "personality": return <PersonalityStep birdId={birdId} birdName={birdName} registerFlush={registerFlush} />;
+    case "clips": return <OwnerTipsClipsStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} />;
+    case "day": return <DayInLifeStep birdId={birdId} birdName={birdName} />;
+    case "environment": return <EnvironmentStep birdId={birdId} birdName={birdName} registerFlush={registerFlush} />;
+    case "emergency": return <EmergencyStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} registerFlush={registerFlush} />;
+    case "review": return <ReviewStep birdId={birdId} birdName={birdName} onJumpToStep={onJumpToStep} />;
+    default: return null;
+  }
 }
 
 const TIME_BLOCKS: { key: string; label: string }[] = [
@@ -436,6 +612,8 @@ const TIME_BLOCKS: { key: string; label: string }[] = [
 function displayLabel(t: TFunction, en: string): string {
   switch (en) {
     case "Uncover cage": return t("birdSetup.opt.uncoverCage", "Uncover cage");
+    case "Lights on": return t("birdSetup.opt.lightsOn", "Lights on");
+    case "Lights out": return t("birdSetup.opt.lightsOut", "Lights out");
     case "Open curtains": return t("birdSetup.opt.openCurtains", "Open curtains");
     case "Out-of-cage time": return t("birdSetup.opt.outOfCageTime", "Out-of-cage time");
     case "Training or play": return t("birdSetup.opt.trainingOrPlay", "Training or play");
@@ -502,7 +680,7 @@ function displayLabel(t: TFunction, en: string): string {
     case "Where everything is": return t("birdSetup.opt.whereEverythingIs", "Where everything is");
     case "Walkthrough: food, treats, towels, carrier, first aid.": return t("birdSetup.opt.walkthroughFoodTreatsTowelsCarrier", "Walkthrough: food, treats, towels, carrier, first aid.");
     case "Settling them for the night": return t("birdSetup.opt.settlingThemForTheNight", "Settling them for the night");
-    case "Cover routine, lights, sounds.": return t("birdSetup.opt.coverRoutineLightsSounds", "Cover routine, lights, sounds.");
+    case "Lights, sounds, bedtime routine.": return t("birdSetup.opt.lightsSoundsBedtime", "Lights, sounds, bedtime routine.");
     case "Food prep": return t("birdSetup.opt.foodPrep", "Food prep");
     case "Making chop, portioning a pre-made mix, or prepping freeze-dried.": return t("birdSetup.opt.makingChopPortioningAPre", "Making chop, portioning a pre-made mix, or prepping freeze-dried.");
     case "Toys & foraging": return t("birdSetup.opt.toysForaging", "Toys & foraging");
@@ -524,14 +702,16 @@ function sourceLabel(t: TFunction, title: string): string {
 // water, cleaning, and medication are auto-derived from the Food / Health tabs
 // (see syncFeedingTasks / syncHygieneTasks / syncMedicationTask) and must not be
 // re-entered here, or they drift out of sync.
+// Quick-add suggestions for the owner's own tasks. "Uncover cage" and "Cover
+// for night" left the list; tasks owners already added keep their names.
 const COMMON_TASKS = [
-  "Uncover cage",
+  "Lights on",
   "Open curtains",
   "Out-of-cage time",
   "Training or play",
   "Misting or bath",
   "Close curtains",
-  "Cover for night",
+  "Lights out",
 ];
 
 export function BasicsStep({ birdId, onBlockNext, registerFlush }: { birdId: string; onBlockNext: (block: boolean) => void; registerFlush?: (fn: (() => Promise<void>) | null) => void }) {
@@ -645,7 +825,7 @@ export function BasicsStep({ birdId, onBlockNext, registerFlush }: { birdId: str
               <input type="file" accept="image/*,.heic,.heif" disabled={photoBusy} className="hidden" onChange={onPhoto} />
             </label>
             {form.photo_url && (
-              <button type="button" onClick={() => { setForm({ ...form, photo_url: null, photo_position: null }); setPhotoRef(null); }} className="ml-2 text-xs font-semibold text-warn-red underline">Remove</button>
+              <button type="button" onClick={() => { setForm({ ...form, photo_url: null, photo_position: null }); setPhotoRef(null); }} className="ml-2 text-xs font-semibold text-warn-red underline">{t("birdSetup.remove", "Remove")}</button>
             )}
           </div>
         </div>
@@ -714,13 +894,51 @@ export function DayInLifeStep({ birdId, birdName }: { birdId: string; birdName: 
     if (plan?.id) qc.invalidateQueries({ queryKey: ["tasks", plan.id] });
   }
 
+  // "Start from another bird?" — walkthrough only, while this bird has none of its own tasks.
+  const inFrame = useContext(InSetupFrame);
+  const offerCopy = inFrame && !isLoading && !!plan && !tasks.some(isOwnTask);
+  const { data: copySources = [] } = useCopySources(birdId, "day", offerCopy);
+  const [showCopy, setShowCopy] = useState(false);
+  const [copyDone, setCopyDone] = useState(false);
+  useEffect(() => { if (offerCopy && copySources.length) setShowCopy(true); }, [offerCopy, copySources.length]);
+
+  async function copyDay(sourcePlanId: string): Promise<CopyResult> {
+    const { data: rows, error } = await supabase.from("routine_tasks").select("*").eq("care_plan_id", sourcePlanId);
+    if (error) throw error;
+    const inserts = dayCopy(rows ?? [], plan!.id);
+    let ids: string[] = [];
+    if (inserts.length) {
+      const { data: added, error: insertError } = await supabase.from("routine_tasks").insert(inserts as any).select("id");
+      if (insertError) throw insertError;
+      ids = ((added ?? []) as { id: string }[]).map((r) => r.id);
+    }
+    setCopyDone(true);
+    refresh();
+    return {
+      count: inserts.length,
+      // Remove exactly the tasks this copy added.
+      undo: async () => {
+        if (ids.length) {
+          const { error: delError } = await supabase.from("routine_tasks").delete().in("id", ids);
+          if (delError) throw delError;
+        }
+        setCopyDone(false);
+        refresh();
+      },
+    };
+  }
+
   if (isLoading || !plan) {
     return <div className="h-32 animate-pulse rounded-2xl bg-sage-100" />;
   }
 
   return (
-    <div className="space-y-4">
-      <StepInstruction>{t("birdSetup.instr.routine", "Build {{name}}'s daily rhythm. Feedings, water, cleaning, and meds carry over automatically from the Food and Health steps. Add anything else here, like uncovering the cage or playtime. Auto-added items are tagged and live in their own step.", { name: birdName })}</StepInstruction>
+    <div className="flex flex-col gap-[14px]">
+      <StepInstruction>{t("birdSetup.instr.day", "What does a normal day look like for {{name}}? Add the details that keep care smooth from morning to night.", { name: birdName })}</StepInstruction>
+
+      {showCopy && (!tasks.some(isOwnTask) || copyDone) && (
+        <StartFromAnotherBird kind="day" birdName={birdName} sources={copySources} onCopy={(source) => copyDay(source.plan.id)} />
+      )}
 
       {TIME_BLOCKS.map((block) => (
         <TimeBlockSection
@@ -733,6 +951,23 @@ export function DayInLifeStep({ birdId, birdName }: { birdId: string; birdName: 
       ))}
     </div>
   );
+}
+
+function blockIcon(key: string) {
+  const cls = "size-[22px]";
+  switch (key) {
+    case "morning": return <Sunrise className={cls} aria-hidden="true" />;
+    case "midday": return <Sun className={cls} aria-hidden="true" />;
+    case "evening": return <Sunset className={cls} aria-hidden="true" />;
+    case "bedtime": return <Moon className={cls} aria-hidden="true" />;
+    default: return <Clock className={cls} aria-hidden="true" />;
+  }
+}
+
+/** A Food clock time on an automatic task ("7:30 AM"), if it has one. */
+function taskClock(task: any): string | null {
+  const v = (task.time_of_day ?? "").trim();
+  return /\d/.test(v) ? v : null;
 }
 
 function TimeBlockSection({
@@ -749,16 +984,16 @@ function TimeBlockSection({
   const { t } = useTranslation();
   const [custom, setCustom] = useState("");
   const [addingCustom, setAddingCustom] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  // Derived tasks (feeding/water/hygiene/medication) are read-only here — they
-  // come from the Food / Health tabs. Only manual rhythm items are editable.
+  // Automatic tasks (feeding/water/hygiene/medication) are read-only here — they
+  // come from the Food and Health steps. Only the owner's own tasks are editable.
   const derivedTasks = tasks.filter((item) => isDerivedTask(item.title));
   const manualTasks = tasks.filter((item) => !isDerivedTask(item.title));
-  const present = new Map(manualTasks.map((item) => [item.title.trim().toLowerCase(), item]));
-  const hasItems = derivedTasks.length > 0 || manualTasks.length > 0;
-  // One-place rule: a common task is offered as an "add" chip only while it is
-  // NOT yet in the routine. Once added it moves into the "In the routine" list.
+  const present = new Set(manualTasks.map((item) => item.title.trim().toLowerCase()));
+  // A suggestion disappears once this block already has it.
   const availableChips = COMMON_TASKS.filter((item) => !present.has(item.trim().toLowerCase()));
+  const bedtime = block.key === "bedtime";
 
   async function add(title: string) {
     if (busy) return;
@@ -780,133 +1015,125 @@ function TimeBlockSection({
     onChange();
   }
   async function addCustom() {
-    const t = custom.trim();
-    if (!t) return;
-    await add(t);
+    const title = custom.trim();
+    if (!title) return;
+    await add(title);
     setCustom("");
     setAddingCustom(false);
   }
   async function saveNote(id: string, value: string) {
-    await supabase.from("routine_tasks").update({ instructions: value || null } as any).eq("id", id);
+    await supabase.from("routine_tasks").update({ instructions: value.trim() || null } as any).eq("id", id);
     onChange();
   }
 
-  return (
-    <section className="rounded-[18px] bg-[#efe9da] p-4">
-      <h2 className="text-[11px] font-medium uppercase tracking-[0.05em] text-[#1a3d2e]">{displayLabel(t, block.label)}</h2>
+  const label = "m-0 text-[12.5px] font-[700] text-[#5f5e5a]";
+  const chip = "inline-flex min-h-[44px] items-center gap-1.5 rounded-full border-2 border-dashed border-[#9bb5a6] bg-white px-3.5 text-[14.5px] font-[700] text-[#1a3d2e] disabled:opacity-50";
 
-      {/* In the routine — everything currently scheduled for this day-part. */}
-      {hasItems ? (
-        <>
-          <p className="mt-3 text-[11px] font-medium text-[#6b6a60]">{t("birdSetup.inTheRoutine", "In the routine")}</p>
-          <ul className="mt-2 space-y-2">
-            {/* Auto-derived items, read-only — managed in their source step. */}
-            {derivedTasks.map((item) => (
-              <li key={item.id} className="flex items-start gap-2.5 rounded-[11px] bg-[#e8f0ec] px-3 py-2.5">
-                <Sparkles className="mt-0.5 size-3.5 shrink-0 text-[#2d6a4f]" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm text-[#1f1f1d]">
+  return (
+    <section className="flex flex-col gap-3 rounded-[20px] border-b bg-white p-4" style={{ borderColor: S.footerLine, color: S.forest }}>
+      <div className="flex items-center gap-3">
+        <span
+          className="grid size-11 shrink-0 place-items-center rounded-full"
+          style={bedtime ? { background: S.forest, color: S.lime } : { background: S.lime, color: S.forest }}
+        >
+          {blockIcon(block.key)}
+        </span>
+        <h2 className="m-0 text-[23px] font-[700] leading-[1.15]" style={{ fontFamily: SERIF }}>{displayLabel(t, block.label)}</h2>
+      </div>
+
+      {derivedTasks.length > 0 && (
+        <div>
+          <p className={label}>{t("birdSetup.day.fromFoodAndHealth", "From Food and Health")}</p>
+          <ul className="m-0 mt-1 list-none p-0">
+            {derivedTasks.map((item, i) => {
+              const clock = taskClock(item);
+              return (
+                <li key={item.id} className={`flex min-h-[42px] items-center gap-2.5 py-2 text-[15px] ${i > 0 ? "border-t border-[#e3ebe2]" : ""}`}>
+                  <span className="shrink-0" style={{ color: S.moss }}>
+                    {derivedSource(item.title) === "Health" ? <Pill className="size-4" aria-hidden="true" /> : <Soup className="size-4" aria-hidden="true" />}
+                  </span>
+                  <span className="min-w-0">
                     {item.title}
-                    {item.time_of_day && <span className="text-sage-500"> · {item.time_of_day}</span>}
-                  </p>
-                  {item.instructions && <p className="mt-0.5 whitespace-pre-line text-xs text-sage-600">{item.instructions}</p>}
-                </div>
-                <span className="mt-0.5 shrink-0 rounded-full bg-[#d2e6d9] px-2 py-0.5 text-[9px] font-medium uppercase tracking-wider text-[#2d6a4f]">
-                  {t("birdSetup.fromSource", "from {{source}}", { source: sourceLabel(t, item.title) })}
-                </span>
-              </li>
-            ))}
-            {/* Manual rhythm items, editable here. */}
-            {manualTasks.map((item) => (
-              <li key={item.id} className="rounded-[11px] bg-white px-3 py-2.5">
-                <div className="flex items-center gap-2.5">
-                  <GripVertical className="size-4 shrink-0 text-[#c0bba8]" />
-                  <p className="flex-1 text-sm text-[#1f1f1d]">{item.title}</p>
-                  <button
-                    type="button"
-                    onClick={() => remove(item.id)}
-                    className="shrink-0 rounded p-0.5 text-[#b0aea2] hover:bg-sage-100"
-                    aria-label={t("birdSetup.removeTask", "Remove {{title}}", { title: item.title })}
-                  >
-                    <X className="size-4" />
-                  </button>
-                </div>
-                <textarea
-                  className="input area mt-2 text-xs"
-                  placeholder={t("birdSetup.addANoteOptional", "Add a note (optional)")}
-                  defaultValue={item.instructions ?? ""}
-                  onBlur={(e) => {
-                    if ((e.target.value ?? "") !== (item.instructions ?? "")) {
-                      saveNote(item.id, e.target.value);
-                    }
-                  }}
-                />
-              </li>
-            ))}
+                    {clock && <span style={{ color: S.quiet }}> · {clock}</span>}
+                  </span>
+                </li>
+              );
+            })}
           </ul>
-        </>
-      ) : (
-        <p className="mt-3 text-[13px] text-[#a8a596]">{t("birdSetup.nothingAddedYet", "Nothing added yet")}</p>
+        </div>
       )}
 
-      {/* Add to [day-part] — clearly separated "tap to add" chips. */}
-      <div className="mb-2.5 mt-4 flex items-center gap-2">
-        <span className="text-[11px] font-medium text-[#8a897f]">{t("birdSetup.addToBlock", "Add to {{block}}", { block: displayLabel(t, block.label).toLowerCase() })}</span>
-        <span className="h-px flex-1 bg-black/10" />
-      </div>
+      {manualTasks.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <p className={label}>{t("birdSetup.day.yourTasks", "Your tasks")}</p>
+          {manualTasks.map((item) => (
+            <div key={item.id} className="rounded-[14px] px-3.5" style={{ background: S.lime }}>
+              <div className="flex min-h-[52px] items-center gap-2">
+                <button type="button" onClick={() => setEditingId(editingId === item.id ? null : item.id)} className="min-w-0 flex-1 py-2.5 text-left">
+                  <span className="block text-[15px] font-[700]">{displayLabel(t, item.title)}</span>
+                  {item.instructions && editingId !== item.id && <span className="mt-0.5 block whitespace-pre-line text-[14px]">{item.instructions}</span>}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => remove(item.id)}
+                  aria-label={t("birdSetup.removeTask", "Remove {{title}}", { title: item.title })}
+                  className="grid size-11 shrink-0 place-items-center rounded-full"
+                >
+                  <X className="size-5" aria-hidden="true" />
+                </button>
+              </div>
+              {editingId === item.id && (
+                <textarea
+                  autoFocus
+                  aria-label={t("birdSetup.addANoteOptional", "Add a note (optional)")}
+                  placeholder={t("birdSetup.addANoteOptional", "Add a note (optional)")}
+                  defaultValue={item.instructions ?? ""}
+                  maxLength={500}
+                  className="mb-3 min-h-[72px] w-full rounded-[12px] border-2 bg-white px-3.5 py-2.5 text-[15px] leading-[1.5] outline-none"
+                  style={{ borderColor: S.forest, color: S.forest }}
+                  onBlur={(e) => {
+                    if ((e.target.value ?? "").trim() !== (item.instructions ?? "")) saveNote(item.id, e.target.value);
+                    setEditingId(null);
+                  }}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="flex flex-wrap gap-2">
         {availableChips.map((item) => (
-          <button
-            key={item}
-            type="button"
-            onClick={() => add(item)}
-            disabled={busy}
-            className="flex items-center gap-1 rounded-full border border-dashed border-[#b9c7bd] px-3 py-1.5 text-[13px] text-[#1a3d2e] transition hover:bg-white/50 disabled:opacity-50"
-          >
-            <Plus className="size-3.5 text-[#5f7a6e]" /> {displayLabel(t, item)}
+          <button key={item} type="button" onClick={() => add(item)} disabled={busy} className={chip}>
+            <Plus className="size-4" strokeWidth={2.6} aria-hidden="true" /> {displayLabel(t, item)}
           </button>
         ))}
         {!addingCustom && (
-          <button
-            type="button"
-            onClick={() => setAddingCustom(true)}
-            className="flex items-center gap-1 rounded-full border border-dashed border-[#b9c7bd] px-3 py-1.5 text-[13px] text-[#1a3d2e] transition hover:bg-white/50"
-          >
-            <Plus className="size-3.5 text-[#5f7a6e]" /> Add your own
+          <button type="button" onClick={() => setAddingCustom(true)} className={chip}>
+            {t("birdSetup.day.yourOwn", "+ Your own")}
           </button>
         )}
       </div>
 
       {addingCustom && (
-        <div className="mt-2.5 flex gap-2">
-          <input
-            className="input flex-1"
-            value={custom}
-            autoFocus
-            onChange={(e) => setCustom(e.target.value)}
-            placeholder={t("birdSetup.addYourOwn", "Add your own…")}
-            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCustom(); } }}
-            onBlur={() => { if (!custom.trim()) setAddingCustom(false); }}
-          />
-          <button
-            type="button"
-            onClick={addCustom}
-            disabled={!custom.trim() || busy}
-            className="rounded-xl bg-[#1a3d2e] px-3 text-sm font-semibold text-white disabled:opacity-50"
-            aria-label={t("birdSetup.addCustomTask", "Add custom task")}
-          >
-            <Plus className="size-4" />
-          </button>
+        <div className="flex gap-2">
+          <div className="min-w-0 flex-1">
+            <TextField
+              value={custom}
+              onChange={setCustom}
+              maxLength={120}
+              ariaLabel={t("birdSetup.addYourOwn", "Add your own…")}
+              placeholder={t("birdSetup.addYourOwn", "Add your own…")}
+            />
+          </div>
+          <SetupTextButton onClick={addCustom} disabled={!custom.trim() || busy}>{t("birdSetup.addButton", "Add")}</SetupTextButton>
         </div>
       )}
-
-      <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.55rem .7rem;font-size:14px;outline:none}.input:focus{border-color:var(--sage-600);box-shadow:0 0 0 3px rgb(74 103 65 / .15)}.area{min-height:50px;line-height:1.4}`}</style>
     </section>
   );
 }
 
-// ---------- Step 3: Food & water ----------
+// ---------- Food & water ----------
 
 const DIET_OPTIONS = [
   { value: "pelleted", label: "Pelleted diet" },
@@ -936,10 +1163,19 @@ const WATER_FREQ = [
   { value: "more", label: "More than twice daily" },
 ];
 
-const NEVER_DEFAULTS = [
-  "Chocolate", "Avocado", "Caffeine", "Alcohol",
-  "Onion & garlic", "Salt", "Fruit pits & apple seeds",
-];
+// Pre-filled starting list for a new plan. It's the owner's own free text once
+// saved, so it starts in the owner's language.
+function neverDefaults(t: TFunction): string[] {
+  return [
+    t("birdSetup.never.chocolate", "Chocolate"),
+    t("birdSetup.never.avocado", "Avocado"),
+    t("birdSetup.never.caffeine", "Caffeine"),
+    t("birdSetup.never.alcohol", "Alcohol"),
+    t("birdSetup.never.onionGarlic", "Onion & garlic"),
+    t("birdSetup.never.salt", "Salt"),
+    t("birdSetup.never.fruitPits", "Fruit pits & apple seeds"),
+  ];
+}
 
 const REMOVAL_OPTIONS = [
   { value: 60, label: "1 hour" },
@@ -974,9 +1210,13 @@ export function FoodWaterStep({
   onBlockNext,
   registerFlush,
   registerValidate,
+  page,
 }: {
   birdId: string;
   birdName: string;
+  /** The walkthrough shows Food on two pages: 1 = what the bird eats, 2 =
+   *  water, treats and hygiene. Omitted (the plan editor): both, one page. */
+  page?: 1 | 2;
   onBlockNext: (block: boolean) => void;
   registerFlush?: (fn: (() => Promise<void>) | null) => void;
   // Wizard-only: register a gate run on "Next". Returns true to proceed; on false
@@ -1014,6 +1254,7 @@ export function FoodWaterStep({
   const [treatsFreq, setTreatsFreq] = useState("");
   const [never, setNever] = useState<string[]>([]);
   const [newNever, setNewNever] = useState("");
+  const [addingNever, setAddingNever] = useState(false);
   const [waterFreq, setWaterFreq] = useState("");
   const [waterNotes, setWaterNotes] = useState("");
   const [storage, setStorage] = useState("");
@@ -1024,8 +1265,9 @@ export function FoodWaterStep({
   // Per-row in-flight "add a time" input, keyed by `${type}:${index}`.
   const [hydrated, setHydrated] = useState(false);
 
-  useEffect(() => {
-    if (!plan || hydrated) return;
+  // Fill the form from a care_plans row: the bird's own plan on load, or the
+  // bird's plan overlaid with another bird's food ("Start from another bird?").
+  function hydrate(plan: any) {
     const dietTypes = (plan.diet_types ?? []) as string[];
     setDiet(dietTypes);
     setDietOther(plan.diet_other ?? "");
@@ -1040,8 +1282,8 @@ export function FoodWaterStep({
     if (!hasAny && dietTypes.length && (seedBrand || seedAmt || seedUnit)) {
       dd[dietTypes[0]] = [{ name: seedBrand, amount: seedAmt, unit: seedUnit, times: [] }];
     }
-    // Chop: pre-made (branded items) vs homemade (ingredient checklist + one
-    // auto-named item). Reading legacy data: items already tagged with `homemade`
+    // Chop: pre-made (branded items), homemade (ingredient checklist + one
+    // auto-named item), or both. Reading legacy data: items already tagged with `homemade`
     // are used as-is; older chop data (veggie items / a populated fresh_foods
     // list) is inferred as homemade and collapsed into one "Homemade chop" item.
     const legacyFresh = (plan.fresh_foods ?? []) as string[];
@@ -1049,7 +1291,7 @@ export function FoodWaterStep({
       const existing = (dd["chop"] ?? []) as DietItem[];
       const alreadyTagged = existing.length > 0 && existing[0].homemade !== undefined;
       if (alreadyTagged) {
-        if (existing[0].homemade) setChopIngredients(legacyFresh);
+        if (existing.some((i) => i.homemade)) setChopIngredients(legacyFresh);
       } else if (existing.length > 0 || legacyFresh.length > 0) {
         const looksHomemade =
           legacyFresh.length > 0 ||
@@ -1065,19 +1307,12 @@ export function FoodWaterStep({
       }
       // else chop selected but empty → leave with no items so the owner chooses a mode.
     }
-    // Every selected type EXCEPT chop shows at least one (needs-details) item
-    // card, so the editable box is never hidden behind an "Add item" tap. Chop
-    // waits for the pre-made/homemade choice before showing an item.
-    for (const t of dietTypes) {
-      if (t === "chop") continue;
-      if (!Array.isArray(dd[t]) || dd[t].length === 0) dd[t] = [blankFoodItem()];
-    }
     setDietDetails(dd);
     setFreshOther(plan.fresh_foods_other ?? "");
     setTreatsNotes(plan.treats_notes ?? "");
     setTreatsFreq(plan.treats_frequency ?? "");
     const nv = (plan.never_feed ?? []) as string[];
-    setNever(nv.length ? nv : NEVER_DEFAULTS);
+    setNever(nv.length ? nv : neverDefaults(t));
     setWaterFreq(plan.water_frequency ?? "");
     setWaterNotes(plan.water_notes ?? "");
     setStorage(plan.food_storage ?? "");
@@ -1086,7 +1321,19 @@ export function FoodWaterStep({
     setWaterBowlWash(plan.water_bowl_wash_cadence ?? "once_daily");
     setHygieneNotes(plan.food_hygiene_notes ?? "");
     setHydrated(true);
+  }
+  useEffect(() => {
+    if (plan && !hydrated) hydrate(plan);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [plan, hydrated]);
+
+  // "Start from another bird?" — walkthrough only, while this bird's food is empty.
+  const inFrame = useContext(InSetupFrame);
+  const offerCopy = inFrame && page !== 2 && hydrated && diet.length === 0;
+  const { data: copySources = [] } = useCopySources(birdId, "food", offerCopy);
+  const [showCopy, setShowCopy] = useState(false);
+  const [copyDone, setCopyDone] = useState(false);
+  useEffect(() => { if (offerCopy && copySources.length) setShowCopy(true); }, [offerCopy, copySources.length]);
 
   // ---- Completeness + wizard validation gate ----
   const [validationActive, setValidationActive] = useState(false);
@@ -1098,12 +1345,14 @@ export function FoodWaterStep({
     [dietOther, t],
   );
 
-  // Chop mode is derived from its items: tagged homemade → homemade, any items →
-  // premade, no items yet → not chosen (the owner must pick).
+  // Which kinds of chop the owner feeds, read from its items: a homemade-tagged
+  // item means homemade, any other item means pre-made; both can be on. No
+  // items yet → nothing chosen (the owner must pick).
   const chopItemsState = dietDetails["chop"] ?? [];
-  const chopMode: "premade" | "homemade" | null = chopItemsState.length
-    ? (chopItemsState[0].homemade ? "homemade" : "premade")
-    : null;
+  const chopKinds = {
+    homemade: chopItemsState.some((i) => i.homemade),
+    premade: chopItemsState.some((i) => !i.homemade),
+  };
 
   // Incomplete items across all selected types (recomputed live). For chop, not
   // having chosen a mode yet also counts as incomplete.
@@ -1112,7 +1361,7 @@ export function FoodWaterStep({
     let count = 0;
     for (const t of diet) {
       const items = dietDetails[t] ?? [];
-      if (t === "chop" && items.length === 0) { count += 1; labels.push(typeLabel(t)); continue; }
+      if (items.length === 0) { count += 1; labels.push(typeLabel(t)); continue; }
       const bad = items.filter((it) => !isFoodItemComplete(it));
       if (bad.length) { count += bad.length; labels.push(typeLabel(t)); }
     }
@@ -1184,7 +1433,7 @@ export function FoodWaterStep({
 
       // Fresh foods list — the homemade-chop ingredient checklist. Pre-made and
       // non-chop diets contribute no ingredient list.
-      const freshList = chopMode === "homemade" ? chopIngredients.map((s) => s.trim()).filter(Boolean) : [];
+      const freshList = chopKinds.homemade ? chopIngredients.map((s) => s.trim()).filter(Boolean) : [];
 
       const feedingTimesArr = Array.from(allFeedingTimes);
 
@@ -1224,7 +1473,7 @@ export function FoodWaterStep({
           amount_unit: legacyAmtUnit || null,
           feeding_times: feedingTimesArr,
           fresh_foods: freshList,
-          fresh_foods_other: chopMode === "homemade" ? (freshOther || null) : null,
+          fresh_foods_other: chopKinds.homemade ? (freshOther || null) : null,
           treats_notes: treatsNotes || null,
           treats_frequency: treatsFreq || null,
           never_feed: never,
@@ -1284,24 +1533,26 @@ export function FoodWaterStep({
     if (diet.includes(value)) {
       const items = dietDetails[value] ?? [];
       const hasContent = items.some(foodItemHasContent) || (value === "chop" && chopIngredients.length > 0);
-      if (hasContent && !window.confirm(`Remove ${typeLabel(value)} and the items you've added to it?`)) return;
+      if (hasContent && !window.confirm(t("birdSetup.removeDietTypeConfirm", "Remove {{type}} and the items you've added to it?", { type: typeLabel(value) }))) return;
       setDiet(diet.filter((d) => d !== value));
       setDietDetails((prev) => { const next = { ...prev }; delete next[value]; return next; });
       if (value === "chop") setChopIngredients([]);
     } else {
+      // A new type starts empty: its card shows "Add your first …".
       setDiet([...diet, value]);
-      if (value !== "chop") setDietDetails((prev) => (prev[value]?.length ? prev : { ...prev, [value]: [blankFoodItem()] }));
     }
   }
 
-  // Chop: choose pre-made / homemade. Switching modes with content confirms,
-  // since it replaces the chop item(s).
-  function chooseChopMode(mode: "premade" | "homemade") {
-    if (chopMode === mode) return;
-    if (chopMode && chopItemsState.some(foodItemHasContent) && !window.confirm(`Switch to ${mode === "homemade" ? "homemade" : "pre-made"}? This clears the chop items you've added.`)) return;
-    setItemsForType("chop", mode === "homemade"
-      ? [{ ...blankFoodItem(), name: HOMEMADE_CHOP_NAME, homemade: true }]
-      : [{ ...blankFoodItem(), homemade: false }]);
+  // Chop: remove the homemade item and its ingredients (asks first when there's
+  // anything to lose). Pre-made items are added and removed in the editor.
+  function removeHomemadeChop(): boolean {
+    const homemade = chopItemsState.filter((i) => i.homemade);
+    const hasContent = homemade.some(foodItemHasContent) || chopIngredients.length > 0 || freshOther.trim() !== "";
+    if (hasContent && !window.confirm(t("birdSetup.removeHomemadeConfirm", "Remove homemade chop? This clears its amount, timing and ingredients."))) return false;
+    setItemsForType("chop", chopItemsState.filter((i) => !i.homemade));
+    setChopIngredients([]);
+    setFreshOther("");
+    return true;
   }
 
   function toggleChopIngredient(label: string) {
@@ -1313,8 +1564,29 @@ export function FoodWaterStep({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-[14px]">
+      {page !== 2 && (
+        <>
       <StepInstruction>{t("birdSetup.instr.food", "What does {{name}} eat, and how much? Clear answers mean anyone caring for {{name}} knows exactly what to serve, and when.", { name: birdName })}</StepInstruction>
+
+      {showCopy && (diet.length === 0 || copyDone) && (
+        <StartFromAnotherBird
+          kind="food"
+          birdName={birdName}
+          sources={copySources}
+          onCopy={async (source) => {
+            const before = plan;
+            hydrate({ ...plan, ...foodCopy(source.plan) });
+            setCopyDone(true);
+            const items = Object.values((source.plan.diet_details ?? {}) as Record<string, unknown[]>).reduce((n, list) => n + (Array.isArray(list) ? list.length : 0), 0);
+            return {
+              count: items || (source.plan.diet_types?.length ?? 0),
+              // Back to the empty page this bird had; autosave clears the copy.
+              undo: () => { hydrate(before); setCopyDone(false); },
+            };
+          }}
+        />
+      )}
 
       {/* Primary diet */}
       <Card title={t("birdSetup.primaryDiet", "Primary diet")} hint={t("birdSetup.chooseAllThatApply", "Choose all that apply.")}>
@@ -1325,20 +1597,30 @@ export function FoodWaterStep({
             </Chip>
           ))}
         </div>
-        {diet.includes("other") && (
-          <input
-            className="input mt-3"
-            placeholder={t("birdSetup.describeTheOtherDiet", "Describe the other diet")}
-            value={dietOther}
-            maxLength={200}
-            onChange={(e) => setDietOther(e.target.value)}
-          />
-        )}
       </Card>
 
-      {/* Per-diet-type items, amounts & feed times — shared FoodItemsEditor */}
+      {/* One card per selected food type, in chip order — shared FoodItemsEditor */}
       {diet.length > 0 && (
         <>
+          <p className="m-0 text-[15px] leading-[1.5] text-[#3d4f45]">
+            {t("birdSetup.forEachFoodAdd", "For each food, add the brand, how much, and when it's served.")}
+          </p>
+          <FoodItemsEditor
+            types={DIET_OPTIONS.filter((o) => diet.includes(o.value)).map((o) => ({ value: o.value, label: displayLabel(t, o.label) }))}
+            details={dietDetails}
+            onChangeType={setItemsForType}
+            validationActive={validationActive}
+            expandSignal={expandSignal}
+            otherDescription={{ value: dietOther, onChange: setDietOther }}
+            chop={{
+              onRemoveHomemade: removeHomemadeChop,
+              ingredients: chopIngredients,
+              onToggleIngredient: toggleChopIngredient,
+              neverFeed: never,
+              other: freshOther,
+              onOtherChange: setFreshOther,
+            }}
+          />
           {validationActive && incomplete.count > 0 && (
             <div
               ref={bannerRef}
@@ -1353,144 +1635,109 @@ export function FoodWaterStep({
               </p>
             </div>
           )}
-          <Card
-            title={diet.length === 1 ? t("birdSetup.itemAmountTiming", "Item, amount & timing") : t("birdSetup.itemsAmountsTimingPerType", "Items, amounts & timing per food type")}
-            hint={t("birdSetup.addTheBrandHowMuch", "Add the brand, how much, and when it's served. Use “Available all day” for food left in the cage.")}
-          >
-            <FoodItemsEditor
-              types={diet.map((item) => ({ value: item, label: typeLabel(item) }))}
-              details={dietDetails}
-              onChangeType={setItemsForType}
-              validationActive={validationActive}
-              expandSignal={expandSignal}
-              chop={{
-                mode: chopMode,
-                onChooseMode: chooseChopMode,
-                ingredients: chopIngredients,
-                onToggleIngredient: toggleChopIngredient,
-                options: FRESH_FOOD_OPTIONS,
-                other: freshOther,
-                onOtherChange: setFreshOther,
-              }}
-            />
-          </Card>
         </>
       )}
 
-      <Card title={t("birdSetup.treats", "Treats")}>
-        <input
-          className="input"
-          placeholder={t("birdSetup.whatTreatsAreOkE", "What treats are OK? (e.g. millet spray, almond slivers)")}
-          value={treatsNotes}
-          maxLength={300}
-          onChange={(e) => setTreatsNotes(e.target.value)}
-        />
-        <select className="input mt-2" value={treatsFreq} onChange={(e) => setTreatsFreq(e.target.value)}>
-          <option value="">{t("birdSetup.pickAFrequency", "Pick a frequency…")}</option>
-          {TREAT_FREQ.map((o) => <option key={o.value} value={o.value}>{displayLabel(t, o.label)}</option>)}
-        </select>
-      </Card>
+        </>
+      )}
 
-      <Card title={t("birdSetup.neverFeed", "Never feed")} hint={t("birdSetup.commonToxicFoodsArePrefilled", "Common toxic foods are prefilled. Add anything specific to your bird.")}>
-        <div className="flex flex-wrap gap-2">
-          {never.map((n) => (
-            <span key={n} className="inline-flex items-center gap-1 rounded-full bg-warn-red/10 px-3 py-1.5 text-xs font-semibold text-warn-red">
-              {n}
-              <button
-                type="button"
-                aria-label={`Remove ${n}`}
-                onClick={() => setNever(never.filter((x) => x !== n))}
-                className="rounded-full p-0.5 hover:bg-warn-red/20"
-              >
-                <X className="size-3" />
-              </button>
-            </span>
-          ))}
-        </div>
-        <div className="mt-3 flex gap-2">
-          <input
-            className="input flex-1"
-            placeholder={t("birdSetup.addAnotherFoodToNever", "Add another food to never feed")}
-            value={newNever}
-            maxLength={80}
-            onChange={(e) => setNewNever(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addNever(); } }}
-          />
-          <button type="button" onClick={addNever} disabled={!newNever.trim()} className="rounded-xl bg-sage-100 px-3 text-sm font-semibold text-sage-700 disabled:opacity-50">
-            <Plus className="size-4" />
-          </button>
-        </div>
-      </Card>
+      {page !== 1 && (
+        <>
+          {/* Water, treats and hygiene (Food · 2 of 2 in the walkthrough). */}
+          <SectionCard emphasis title={t("birdSetup.neverFeed", "Never feed")} helper={t("birdSetup.commonToxicFoodsArePrefilled", "Common toxic foods are prefilled. Add anything specific to your bird.")}>
+            <EditableList items={never} onRemove={(i) => setNever(never.filter((_, j) => j !== i))} />
+            {addingNever ? (
+              <div className="flex gap-2">
+                <input
+                  autoFocus
+                  aria-label={t("birdSetup.addAnotherFoodToNever", "Add another food to never feed")}
+                  className="h-12 min-w-0 flex-1 rounded-full border-2 border-[#c9d6c9] bg-white px-[18px] text-[16px] text-[#1a3d2e] outline-none focus:border-[#1a3d2e]"
+                  value={newNever}
+                  maxLength={80}
+                  onChange={(e) => setNewNever(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") { e.preventDefault(); addNever(); }
+                    if (e.key === "Escape") { setNewNever(""); setAddingNever(false); }
+                  }}
+                />
+                <SetupTextButton onClick={addNever} disabled={!newNever.trim()}>{t("birdSetup.addButton", "Add")}</SetupTextButton>
+              </div>
+            ) : (
+              <div>
+                <SetupTextButton onClick={() => setAddingNever(true)} icon={<Plus className="size-4" strokeWidth={2.6} aria-hidden="true" />}>
+                  {t("birdSetup.addAnotherFoodToNever", "Add another food to never feed")}
+                </SetupTextButton>
+              </div>
+            )}
+          </SectionCard>
 
-      <Card title={t("birdSetup.water", "Water")}>
-        <select className="input" value={waterFreq} onChange={(e) => setWaterFreq(e.target.value)}>
-          <option value="">{t("birdSetup.pickAFrequency", "Pick a frequency…")}</option>
-          {WATER_FREQ.map((o) => <option key={o.value} value={o.value}>{displayLabel(t, o.label)}</option>)}
-        </select>
-        <textarea
-          className="input area mt-2"
-          placeholder={t("birdSetup.notesFilterBottleVsBowl", "Notes (filter, bottle vs bowl, etc.)")}
-          value={waterNotes}
-          maxLength={400}
-          onChange={(e) => setWaterNotes(e.target.value)}
-        />
-      </Card>
+          <SectionCard title={t("birdSetup.treats", "Treats")}>
+            <Field label={t("birdSetup.whatTreatsAreOk", "What treats are OK?")} htmlFor="food-treats">
+              <TextField id="food-treats" value={treatsNotes} onChange={setTreatsNotes} placeholder={t("birdSetup.treatsPlaceholder", "e.g. millet spray, almond slivers")} />
+            </Field>
+            <Field label={t("birdSetup.howOften", "How often?")} htmlFor="food-treats-freq">
+              <Dropdown
+                id="food-treats-freq"
+                value={treatsFreq}
+                onChange={setTreatsFreq}
+                placeholder={t("birdSetup.pickAFrequency", "Pick a frequency…")}
+                options={TREAT_FREQ.map((o) => ({ value: o.value, label: displayLabel(t, o.label) }))}
+              />
+            </Field>
+          </SectionCard>
 
-      <Card title={t("birdSetup.whereFoodIsStored", "Where food is stored")}>
-        <input
-          className="input"
-          placeholder={t("birdSetup.eGPantryTopShelf", "e.g. Pantry, top shelf; fridge bin")}
-          value={storage}
-          maxLength={200}
-          onChange={(e) => setStorage(e.target.value)}
-        />
-      </Card>
+          <SectionCard title={t("birdSetup.water", "Water")}>
+            <Field label={t("birdSetup.howOftenWaterChanged", "How often is it changed?")} htmlFor="food-water-freq">
+              <Dropdown
+                id="food-water-freq"
+                value={waterFreq}
+                onChange={setWaterFreq}
+                placeholder={t("birdSetup.pickAFrequency", "Pick a frequency…")}
+                options={WATER_FREQ.map((o) => ({ value: o.value, label: displayLabel(t, o.label) }))}
+              />
+            </Field>
+            <Field label={t("birdSetup.notesLabel", "Notes")} optional htmlFor="food-water-notes">
+              <TextBox id="food-water-notes" value={waterNotes} onChange={setWaterNotes} placeholder={t("birdSetup.waterNotesPlaceholder", "Filter, bottle vs bowl, etc.")} />
+            </Field>
+          </SectionCard>
 
-      <Card title={t("birdSetup.freshnessHygiene", "Freshness & hygiene")} hint={t("birdSetup.generalDefaultsAdjustToFit", "General defaults — adjust to fit your bird and routine.")}>
-        <label className="text-xs font-semibold text-sage-700">{t("birdSetup.removeFreshOrWetFood", "Remove fresh or wet food after")}</label>
-        <select
-          className="input mt-1"
-          value={String(removalMinutes)}
-          onChange={(e) => setRemovalMinutes(Number(e.target.value))}
-        >
-          {REMOVAL_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>{displayLabel(t, o.label)}</option>
-          ))}
-        </select>
-        <p className="mt-1 text-[11px] text-sage-600">{t("birdSetup.freshFoodSpoilsFastAnd", "Fresh food spoils fast and can grow bacteria. This tells your sitter when to take it out.")}</p>
+          <SectionCard title={t("birdSetup.freshnessHygiene", "Freshness & hygiene")} helper={t("birdSetup.generalDefaultsAdjustToFit", "General defaults — adjust to fit your bird and routine.")}>
+            <Field label={t("birdSetup.removeFreshOrWetFood", "Remove fresh or wet food after")}>
+              <Segmented
+                label={t("birdSetup.removeFreshOrWetFood", "Remove fresh or wet food after")}
+                value={String(removalMinutes)}
+                onChange={(v) => setRemovalMinutes(Number(v))}
+                options={REMOVAL_OPTIONS.map((o) => ({ value: String(o.value), label: displayLabel(t, o.label) }))}
+              />
+              <Helper>{t("birdSetup.freshFoodSpoilsFastAnd", "Fresh food spoils fast and can grow bacteria. This tells your sitter when to take it out.")}</Helper>
+            </Field>
+            <Field label={t("birdSetup.washFoodBowls", "Wash food bowls")} htmlFor="food-bowl-wash">
+              <Dropdown
+                id="food-bowl-wash"
+                value={foodBowlWash}
+                onChange={setFoodBowlWash}
+                options={FOOD_BOWL_WASH_OPTIONS.map((o) => ({ value: o.value, label: displayLabel(t, o.label) }))}
+              />
+            </Field>
+            <Field label={t("birdSetup.washWaterBowlOrBottle", "Wash water bowl or bottle")}>
+              <Segmented
+                label={t("birdSetup.washWaterBowlOrBottle", "Wash water bowl or bottle")}
+                value={waterBowlWash}
+                onChange={setWaterBowlWash}
+                options={WATER_BOWL_WASH_OPTIONS.map((o) => ({ value: o.value, label: displayLabel(t, o.label) }))}
+              />
+              <Helper>{t("birdSetup.thisIsWashingTheBowl", "This is washing the bowl itself — separate from how often you change the water.")}</Helper>
+            </Field>
+            <Field label={t("birdSetup.otherFoodHygieneNotes", "Other food hygiene notes")} optional htmlFor="food-hygiene-notes">
+              <TextBox id="food-hygiene-notes" value={hygieneNotes} onChange={setHygieneNotes} placeholder={t("birdSetup.hygieneNotesPlaceholder", "Anything else the sitter should know about food/water hygiene.")} />
+            </Field>
+          </SectionCard>
 
-        <label className="mt-3 block text-xs font-semibold text-sage-700">{t("birdSetup.washFoodBowls", "Wash food bowls")}</label>
-        <select
-          className="input mt-1"
-          value={foodBowlWash}
-          onChange={(e) => setFoodBowlWash(e.target.value)}
-        >
-          {FOOD_BOWL_WASH_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>{displayLabel(t, o.label)}</option>
-          ))}
-        </select>
-
-        <label className="mt-3 block text-xs font-semibold text-sage-700">{t("birdSetup.washWaterBowlOrBottle", "Wash water bowl or bottle")}</label>
-        <select
-          className="input mt-1"
-          value={waterBowlWash}
-          onChange={(e) => setWaterBowlWash(e.target.value)}
-        >
-          {WATER_BOWL_WASH_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>{displayLabel(t, o.label)}</option>
-          ))}
-        </select>
-        <p className="mt-1 text-[11px] text-sage-600">{t("birdSetup.thisIsWashingTheBowl", "This is washing the bowl itself — separate from how often you change the water.")}</p>
-
-        <label className="mt-3 block text-xs font-semibold text-sage-700">{t("birdSetup.otherFoodHygieneNotes", "Other food hygiene notes")}</label>
-        <textarea
-          className="input area mt-1"
-          placeholder={t("birdSetup.optionalAnythingElseTheSitter", "Optional — anything else the sitter should know about food/water hygiene.")}
-          value={hygieneNotes}
-          maxLength={500}
-          onChange={(e) => setHygieneNotes(e.target.value)}
-        />
-      </Card>
+          <SectionCard title={t("birdSetup.whereFoodIsStored", "Where food is stored")}>
+            <TextField value={storage} onChange={setStorage} ariaLabel={t("birdSetup.whereFoodIsStored", "Where food is stored")} placeholder={t("birdSetup.eGPantryTopShelf", "e.g. Pantry, top shelf; fridge bin")} />
+          </SectionCard>
+        </>
+      )}
 
       <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.65rem .8rem;font-size:16px;outline:none}.input:focus{border-color:var(--sage-600);box-shadow:0 0 0 3px rgb(74 103 65 / .15)}.area{min-height:60px;line-height:1.4}`}</style>
     </div>
@@ -1498,15 +1745,17 @@ export function FoodWaterStep({
 
   function addNever() {
     const v = newNever.trim();
-    if (!v || never.includes(v)) { setNewNever(""); return; }
-    setNever([...never, v]);
+    if (v && !never.includes(v)) setNever([...never, v]);
     setNewNever("");
+    setAddingNever(false);
   }
 }
 
 function Card({ title, hint, badge, children }: { title: string; hint?: string; badge?: React.ReactNode; children: React.ReactNode }) {
+  // Inside the setup shell: the new section-card fill on the white body.
+  const inFrame = useContext(InSetupFrame);
   return (
-    <section className="rounded-2xl bg-[#efe9da] p-4">
+    <section className={`rounded-2xl p-4 ${inFrame ? "bg-[#f1f5f0]" : "bg-[#efe9da]"}`}>
       <h2 className="flex items-center gap-2 text-sm font-medium">
         {title}
         {badge}
@@ -1539,7 +1788,7 @@ function capitalize(s: string | null | undefined) {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-// ---------- Step 4: Personality & handling ----------
+// ---------- Personality & handling ----------
 
 const STEP_UP_OPTIONS = [
   { value: "yes", label: "Yes" },
@@ -1566,6 +1815,10 @@ export function PersonalityStep({ birdId, birdName, registerFlush }: { birdId: s
   const [likes, setLikes] = useState("");
   const [fears, setFears] = useState("");
   const [bite, setBite] = useState("");
+  // The bird's own space (moved here from the Home step: it's per bird).
+  const [cageLoc, setCageLoc] = useState("");
+  const [oocMode, setOocMode] = useState("");
+  const [oocNotes, setOocNotes] = useState("");
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -1576,6 +1829,12 @@ export function PersonalityStep({ birdId, birdName, registerFlush }: { birdId: s
     setLikes(plan.likes ?? "");
     setFears(plan.fears_triggers ?? plan.known_triggers ?? "");
     setBite(plan.bite_risk ?? "");
+    setCageLoc(plan.cage_location ?? "");
+    setOocMode(plan.out_of_cage_mode ?? "");
+    // Seed notes only from the structured notes field — never from the assembled
+    // out_of_cage_rules summary, which would fold the summary back in on re-save
+    // and produce "Supervised only — Supervised only".
+    setOocNotes(plan.out_of_cage_notes ?? "");
     setHydrated(true);
   }, [plan, hydrated]);
 
@@ -1594,81 +1853,100 @@ export function PersonalityStep({ birdId, birdName, registerFlush }: { birdId: s
           known_triggers: fears || null,
           // handling_rules is no longer stored — the sitter view derives the
           // handling summary from the structured fields above.
+          cage_location: cageLoc || null,
+          out_of_cage_mode: oocMode || null,
+          out_of_cage_notes: oocNotes || null,
         } as any)
         .eq("id", plan.id);
       qc.invalidateQueries({ queryKey: ["plan", birdId] });
     },
-    [stepUp, stepUpNotes, handlers, likes, fears, bite],
+    [stepUp, stepUpNotes, handlers, likes, fears, bite, cageLoc, oocMode, oocNotes],
     !!plan && hydrated,
     registerFlush,
   );
 
   if (isLoading || !plan) return <div className="h-32 animate-pulse rounded-2xl bg-sage-100" />;
 
+  const stepUpOptions = STEP_UP_OPTIONS.map((o) => ({ value: o.value, label: displayLabel(t, o.label) }));
+  const oocOptions = OUT_OF_CAGE_OPTIONS.map((o) => ({ value: o.value, label: displayLabel(t, o.label) }));
+
   return (
-    <div className="space-y-4">
-      <StepInstruction>{t("birdSetup.instr.personality", "How does {{name}} like to be treated? Give whoever's helping a feel for {{name}}'s quirks.", { name: birdName })}</StepInstruction>
+    <div className="flex flex-col gap-[14px]">
+      <StepInstruction>{t("birdSetup.instr.personalityOptional", "Give whoever's helping a feel for {{name}}'s personality and little habits. Everything here is optional.", { name: birdName })}</StepInstruction>
 
-      <Card title={t("birdSetup.doesTheBirdStepUp", "Does the bird step up?")}>
-        <select className="input" value={stepUp} onChange={(e) => setStepUp(e.target.value)}>
-          <option value="">{t("birdSetup.pickOne", "Pick one…")}</option>
-          {STEP_UP_OPTIONS.map((o) => <option key={o.value} value={o.value}>{displayLabel(t, o.label)}</option>)}
-        </select>
-        <textarea
-          className="input area mt-2"
-          placeholder={t("birdSetup.notesOnlyFromCertainPerches", "Notes (only from certain perches? prefers a hand vs. perch?)")}
-          value={stepUpNotes}
-          maxLength={400}
-          onChange={(e) => setStepUpNotes(e.target.value)}
-        />
-      </Card>
+      <SectionCard emphasis title={t("birdSetup.behavior.handling", "Handling")}>
+        <Field label={t("birdSetup.behavior.doesStepUp", "Does {{name}} step up?", { name: birdName })} htmlFor="behavior-step-up">
+          <Dropdown id="behavior-step-up" value={stepUp} onChange={setStepUp} options={stepUpOptions} placeholder={t("birdSetup.pickOne", "Pick one…")} />
+          <TextBox
+            ariaLabel={t("birdSetup.behavior.stepUpNotes", "Step-up notes")}
+            value={stepUpNotes}
+            onChange={(v) => setStepUpNotes(v.slice(0, 400))}
+            placeholder={t("birdSetup.notesOnlyFromCertainPerches", "Notes (only from certain perches? prefers a hand vs. perch?)")}
+          />
+        </Field>
+        <Field label={t("birdSetup.whoCanHandleAndHow", "Who can handle, and how")} htmlFor="behavior-handlers">
+          <TextBox
+            id="behavior-handlers"
+            value={handlers}
+            onChange={(v) => setHandlers(v.slice(0, 500))}
+            placeholder={t("birdSetup.eGOnlyMeAnd", "e.g. Only me and my partner. Sitter: don't try to handle — talk only.")}
+          />
+        </Field>
+        <Field label={t("birdSetup.biteRiskWarningSigns", "Bite risk & warning signs")} htmlFor="behavior-bite">
+          <TextBox
+            id="behavior-bite"
+            value={bite}
+            onChange={(v) => setBite(v.slice(0, 500))}
+            placeholder={t("birdSetup.behavior.bitePlaceholder", "e.g. Low risk, but pinned eyes and a fanned tail mean back off")}
+          />
+        </Field>
+      </SectionCard>
 
-      <Card title={t("birdSetup.whoCanHandleAndHow", "Who can handle, and how")}>
-        <textarea
-          className="input area"
-          placeholder={t("birdSetup.eGOnlyMeAnd", "e.g. Only me and my partner. Sitter: don't try to handle — talk only.")}
-          value={handlers}
-          maxLength={500}
-          onChange={(e) => setHandlers(e.target.value)}
-        />
-      </Card>
+      <SectionCard title={t("birdSetup.behavior.likesAndFears", "Likes and fears")}>
+        <Field label={t("birdSetup.likes", "Likes")} htmlFor="behavior-likes">
+          <TextField
+            id="behavior-likes"
+            value={likes}
+            maxLength={300}
+            onChange={setLikes}
+            placeholder={t("birdSetup.behavior.likesPlaceholder", "e.g. Head scratches, millet, shoulder rides")}
+          />
+        </Field>
+        <Field label={t("birdSetup.fearsTriggers", "Fears & triggers")} htmlFor="behavior-fears">
+          <TextField
+            id="behavior-fears"
+            value={fears}
+            maxLength={500}
+            onChange={setFears}
+            placeholder={t("birdSetup.behavior.fearsPlaceholder", "e.g. Panics at the vacuum, hates hats")}
+          />
+        </Field>
+      </SectionCard>
 
-      <Card title={t("birdSetup.likes", "Likes")}>
-        <input
-          className="input"
-          placeholder={t("birdSetup.eGHeadScratchesMillet", "e.g. head scratches, millet, shoulder rides")}
-          value={likes}
-          maxLength={300}
-          onChange={(e) => setLikes(e.target.value)}
-        />
-      </Card>
-
-      <Card title={t("birdSetup.fearsTriggers", "Fears & triggers")}>
-        <textarea
-          className="input area"
-          placeholder={t("birdSetup.eGPanicsAtThe", "e.g. panics at the vacuum, hates hats")}
-          value={fears}
-          maxLength={500}
-          onChange={(e) => setFears(e.target.value)}
-        />
-      </Card>
-
-      <Card title={t("birdSetup.biteRiskWarningSigns", "Bite risk & warning signs")}>
-        <textarea
-          className="input area"
-          placeholder={t("birdSetup.eGLowRiskBut", "e.g. low risk, but pinned eyes and tail fan = back off")}
-          value={bite}
-          maxLength={500}
-          onChange={(e) => setBite(e.target.value)}
-        />
-      </Card>
-
-      <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.65rem .8rem;font-size:16px;outline:none}.input:focus{border-color:var(--sage-600);box-shadow:0 0 0 3px rgb(74 103 65 / .15)}.area{min-height:60px;line-height:1.4}`}</style>
+      <SectionCard title={t("birdSetup.behavior.birdsSpace", "{{name}}'s space", { name: birdName })}>
+        <Field label={t("birdSetup.cageLocationSetupNotes", "Cage location & setup notes")} htmlFor="behavior-cage">
+          <TextBox
+            id="behavior-cage"
+            value={cageLoc}
+            onChange={(v) => setCageLoc(v.slice(0, 500))}
+            placeholder={t("birdSetup.behavior.cagePlaceholder", "e.g. Living room, away from the kitchen.")}
+          />
+        </Field>
+        <Field label={t("birdSetup.outOfCageRules", "Out-of-cage rules")} htmlFor="behavior-ooc">
+          <Dropdown id="behavior-ooc" value={oocMode} onChange={setOocMode} options={oocOptions} placeholder={t("birdSetup.pickOne", "Pick one…")} />
+          <TextBox
+            ariaLabel={t("birdSetup.behavior.oocNotes", "Out-of-cage notes")}
+            value={oocNotes}
+            onChange={(v) => setOocNotes(v.slice(0, 500))}
+            placeholder={t("birdSetup.notesWhichRoomHowLong", "Notes (which room? how long? what to watch for?)")}
+          />
+        </Field>
+      </SectionCard>
     </div>
   );
 }
 
-// ---------- Step 5: Environment & safety ----------
+// ---------- Environment & safety ----------
 
 const OUT_OF_CAGE_OPTIONS = [
   { value: "supervised", label: "Supervised only" },
@@ -1687,161 +1965,267 @@ const HAZARD_OPTIONS = [
 ];
 
 export function EnvironmentStep({ birdId, birdName, registerFlush }: { birdId: string; birdName: string; registerFlush?: (fn: (() => Promise<void>) | null) => void }) {
+  // "Reminders for your sitter": the owner's shared "Your home" answers
+  // (owner_home_defaults), used by every bird that has none of its own. The
+  // owner can make them different for this bird, which saves to the bird's
+  // care plan instead. Household members editing a plan can't change the
+  // owner's shared answers, so they always edit this bird's own.
   const { t } = useTranslation();
   const qc = useQueryClient();
-  const { data: plan, isLoading } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ["plan-environment", birdId],
     gcTime: 0, // drop cache on unmount so Back refetches saved values (see BasicsStep)
     queryFn: async () => {
-      const { data, error } = await supabase.from("care_plans").select("*").eq("bird_id", birdId).maybeSingle();
+      const [{ data: plan, error }, { data: u }, { data: bird }] = await Promise.all([
+        supabase.from("care_plans").select("*").eq("bird_id", birdId).maybeSingle(),
+        getLocalUser(),
+        supabase.from("birds").select("owner_id").eq("id", birdId).maybeSingle(),
+      ]);
       if (error) throw error;
-      return data as any;
+      const userId = u.user?.id ?? null;
+      const isOwner = !!userId && (bird as any)?.owner_id === userId;
+      if (!isOwner) return { plan: plan as any, isOwner, userId, home: null as HomeRow | null, otherPlans: [] as any[] };
+      const [{ data: home }, { data: owned }] = await Promise.all([
+        supabase.from("owner_home_defaults").select("*").eq("owner_id", userId).maybeSingle(),
+        supabase.from("birds").select("id").eq("owner_id", userId),
+      ]);
+      const otherIds = ((owned ?? []) as { id: string }[]).map((b) => b.id).filter((id) => id !== birdId);
+      const { data: otherPlans } = otherIds.length
+        ? await supabase.from("care_plans").select("id, bird_id, hazards, hazards_other, off_limits, off_limits_rooms, other_pets, cleaning_instructions").in("bird_id", otherIds)
+        : { data: [] as any[] };
+      return { plan: plan as any, isOwner, userId, home: (home ?? null) as HomeRow | null, otherPlans: (otherPlans ?? []) as any[] };
     },
   });
+  const plan = data?.plan;
 
-  const [cageLoc, setCageLoc] = useState("");
-  const [oocMode, setOocMode] = useState("");
-  const [oocNotes, setOocNotes] = useState("");
+  const [mode, setMode] = useState<"shared" | "bird">("shared");
   const [hazards, setHazards] = useState<string[]>([]);
   const [hazardsOther, setHazardsOther] = useState("");
   const [offLimits, setOffLimits] = useState("");
   const [otherPets, setOtherPets] = useState("");
-  const [cleaning, setCleaning] = useState("");
+  // Cleaning products, edited as two parts and saved as one field (see parseCleaning).
+  const [cleanNever, setCleanNever] = useState<string[]>([]);
+  const [cleanInstead, setCleanInstead] = useState("");
+  const [addingClean, setAddingClean] = useState(false);
+  const [newClean, setNewClean] = useState("");
+  const setHomeSubline = useContext(SetupHomeSublineContext);
   const [hydrated, setHydrated] = useState(false);
+  // The shared answers as last saved — what "different" is measured against.
+  const sharedRef = useRef<HomeRow | null>(null);
+  // Whether a shared row existed when this screen opened: the first save
+  // brings the owner's other birds along (see followSharedPatch).
+  const firstSaveRef = useRef(false);
+  const birdClearedRef = useRef(false);
+
+  function fill(row: any) {
+    setHazards(Array.isArray(row?.hazards) ? row.hazards : []);
+    setHazardsOther(row?.hazards_other ?? "");
+    setOffLimits(row?.off_limits ?? row?.off_limits_rooms ?? "");
+    setOtherPets(row?.other_pets ?? "");
+    const parts = parseCleaning(row?.cleaning_instructions);
+    // An empty field starts with the common products to keep away from birds.
+    setCleanNever(!parts.never.length && !parts.instead ? [...CLEANING_NEVER_DEFAULTS] : parts.never);
+    setCleanInstead(parts.instead);
+  }
 
   useEffect(() => {
-    if (!plan || hydrated) return;
-    setCageLoc(plan.cage_location ?? "");
-    setOocMode(plan.out_of_cage_mode ?? "");
-    // Seed notes only from the structured notes field — never from the assembled
-    // out_of_cage_rules summary, which would fold the summary back in on re-save
-    // and produce "Supervised only — Supervised only".
-    setOocNotes(plan.out_of_cage_notes ?? "");
-    setHazards(plan.hazards ?? []);
-    setHazardsOther(plan.hazards_other ?? "");
-    setOffLimits(plan.off_limits ?? plan.off_limits_rooms ?? "");
-    setOtherPets(plan.other_pets ?? "");
-    setCleaning(plan.cleaning_instructions ?? "");
+    if (!data?.plan || hydrated) return;
+    const { plan: p, isOwner, home, otherPlans } = data;
+    sharedRef.current = home;
+    firstSaveRef.current = isOwner && !home;
+    const m = !isOwner || (home && homeDifferences(p, home).length > 0) ? "bird" : "shared";
+    setMode(m);
+    // Bird mode shows the full picture: its own answers, shared ones elsewhere.
+    fill(m === "bird" ? mergeHome(p, home) : home ?? seedShared(p, otherPlans));
     setHydrated(true);
-  }, [plan, hydrated]);
+  }, [data, hydrated]);
 
   useDebouncedAutosave(
     async () => {
-      if (!plan) return;
-      const modeLabel = OUT_OF_CAGE_OPTIONS.find((o) => o.value === oocMode)?.label;
-      // De-dupe so an empty/identical notes value can't repeat the mode label.
-      const oocSummary = [...new Set([modeLabel ?? "", oocNotes.trim()].filter(Boolean))].join(" — ");
-      const allHazards = [...hazards, ...(hazardsOther.trim() ? [hazardsOther.trim()] : [])];
-      const safetySummary = allHazards.length ? `Hazards: ${allHazards.join(", ")}` : "";
-      await supabase
-        .from("care_plans")
-        .update({
-          cage_location: cageLoc || null,
-          out_of_cage_mode: oocMode || null,
-          out_of_cage_notes: oocNotes || null,
-          hazards,
-          hazards_other: hazardsOther || null,
-          off_limits: offLimits || null,
-          // Denormalized mirror the sitter view reads as a fallback. The
-          // out_of_cage_rules / safety_rules free-text blobs are no longer
-          // written — the sitter assembles those from the structured fields.
-          off_limits_rooms: offLimits || null,
-          other_pets: otherPets || null,
-          cleaning_instructions: cleaning || null,
-        } as any)
-        .eq("id", plan.id);
+      if (!data?.plan) return;
+      const row: HomeRow = {
+        hazards,
+        hazards_other: hazardsOther || null,
+        off_limits: offLimits || null,
+        other_pets: otherPets || null,
+        cleaning_instructions: formatCleaning(
+          { never: cleanNever, instead: cleanInstead },
+          { never: t("birdSetup.reminders.neverUseLabel", "Never use near the birds:"), instead: t("birdSetup.reminders.useInsteadLabel", "Use instead:") },
+        ),
+      };
+      if (mode === "shared" && data.isOwner && data.userId) {
+        const { error } = await supabase.from("owner_home_defaults").upsert({ owner_id: data.userId, ...row } as any, { onConflict: "owner_id" });
+        if (error) throw error;
+        sharedRef.current = row;
+        // This bird follows the shared answers from now on.
+        if (!birdClearedRef.current && HOME_GROUPS.some((g) => birdHasOwn(data.plan, g))) {
+          const { error: clearErr } = await supabase.from("care_plans").update(clearOwnPatch() as any).eq("id", data.plan.id);
+          if (clearErr) throw clearErr;
+        }
+        birdClearedRef.current = true;
+        // First save: every other bird whose answers match (or are empty)
+        // follows the shared answers; birds with different answers keep theirs.
+        if (firstSaveRef.current) {
+          firstSaveRef.current = false;
+          for (const other of data.otherPlans) {
+            const patch = followSharedPatch(other, row);
+            if (patch) await supabase.from("care_plans").update(patch as any).eq("id", other.id);
+          }
+        }
+        qc.invalidateQueries({ queryKey: ["owner-home-defaults"] });
+      } else {
+        // This bird's own answers. Groups that match the shared answers are
+        // cleared so they keep following them; only real differences are kept.
+        const shared = data.isOwner ? sharedRef.current : null;
+        const patch: Record<string, unknown> = {};
+        const own = { ...row, off_limits_rooms: row.off_limits };
+        for (const g of HOME_GROUPS) {
+          const follow = !!shared && sameGroup(own, shared, g);
+          for (const col of HOME_GROUP_COLUMNS[g]) {
+            patch[col] = follow ? (col === "hazards" ? [] : null) : (own as any)[col];
+          }
+        }
+        await supabase.from("care_plans").update(patch as any).eq("id", data.plan.id);
+      }
       qc.invalidateQueries({ queryKey: ["plan", birdId] });
     },
-    [cageLoc, oocMode, oocNotes, hazards, hazardsOther, offLimits, otherPets, cleaning],
+    [mode, hazards, hazardsOther, offLimits, otherPets, cleanNever, cleanInstead],
     !!plan && hydrated,
     registerFlush,
   );
 
+  // The header line under "Your home": shared, or different for this bird.
+  useEffect(() => {
+    setHomeSubline(hydrated && mode === "bird" ? t("birdSetup.reminders.differentTitle", "Different for {{name}}", { name: birdName }) : null);
+    return () => setHomeSubline(null);
+  }, [hydrated, mode, birdName, setHomeSubline, t]);
+
   if (isLoading || !plan) return <div className="h-32 animate-pulse rounded-2xl bg-sage-100" />;
+
+  function addClean() {
+    const v = newClean.trim();
+    if (v && !cleanNever.some((x) => x.toLowerCase() === v.toLowerCase())) setCleanNever([...cleanNever, v.replace(/,/g, " ")]);
+    setNewClean("");
+    setAddingClean(false);
+  }
 
   function toggleHazard(v: string) {
     setHazards(hazards.includes(v) ? hazards.filter((x) => x !== v) : [...hazards, v]);
   }
 
+  async function switchToShared() {
+    if (!window.confirm(t("birdSetup.reminders.useSharedConfirm", "Use your shared reminders for {{name}}? The answers that are different for {{name}} will be removed.", { name: birdName }))) return;
+    const { error } = await supabase.from("care_plans").update(clearOwnPatch() as any).eq("id", plan.id);
+    if (error) { toast.error(friendlyError(error)); return; }
+    birdClearedRef.current = true;
+    fill(sharedRef.current ?? {});
+    setMode("shared");
+    qc.invalidateQueries({ queryKey: ["plan", birdId] });
+  }
+
+  const showPets = hazards.includes("Other pets") || !!otherPets.trim();
+
   return (
-    <div className="space-y-4">
-      <StepInstruction>{t("birdSetup.instr.environment", "What should someone know about your home to keep {{name}} safe?", { name: birdName })}</StepInstruction>
+    <div className="flex flex-col gap-[14px]">
+      <StepInstruction>{t("birdSetup.instr.remindersHome", "Things you know without thinking that a sitter might not. Include any hazard a bird could run into in your home.")}</StepInstruction>
 
-      <Card title={t("birdSetup.cageLocationSetupNotes", "Cage location & setup notes")}>
-        <textarea
-          className="input area"
-          placeholder={t("birdSetup.eGLivingRoomAway", "e.g. Living room, away from the kitchen. Cover is on the side table.")}
-          value={cageLoc}
-          maxLength={500}
-          onChange={(e) => setCageLoc(e.target.value)}
-        />
-      </Card>
-
-      <Card title={t("birdSetup.outOfCageRules", "Out-of-cage rules")}>
-        <select className="input" value={oocMode} onChange={(e) => setOocMode(e.target.value)}>
-          <option value="">{t("birdSetup.pickOne", "Pick one…")}</option>
-          {OUT_OF_CAGE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{displayLabel(t, o.label)}</option>)}
-        </select>
-        <textarea
-          className="input area mt-2"
-          placeholder={t("birdSetup.notesWhichRoomHowLong", "Notes (which room? how long? what to watch for?)")}
-          value={oocNotes}
-          maxLength={500}
-          onChange={(e) => setOocNotes(e.target.value)}
-        />
-      </Card>
-
-      <Card title={t("birdSetup.homeSpecificHazards", "Home-specific hazards")} hint={t("birdSetup.tapAnyThatApplyThen", "Tap any that apply, then add your own.")}>
-        <div className="flex flex-wrap gap-2">
-          {HAZARD_OPTIONS.map((h) => (
-            <Chip key={h} on={hazards.includes(h)} onClick={() => toggleHazard(h)}>{displayLabel(t, h)}</Chip>
-          ))}
+      {data?.isOwner && (
+        <div className="flex flex-col gap-1 rounded-[20px] bg-white p-4 text-[#1a3d2e]">
+          {mode === "shared" ? (
+            <>
+              <p className="m-0 text-[15px] font-[700]">{t("birdSetup.reminders.sharedTitle", "Shared by all your birds")}</p>
+              <p className="m-0 text-[14px] text-[#3d4f45]">{t("birdSetup.reminders.sharedBody", "Changes here apply to every bird that uses the shared reminders.")}</p>
+              <div><SetupTextButton onClick={() => setMode("bird")}>{t("birdSetup.reminders.makeDifferent", "Make these different for {{name}}", { name: birdName })}</SetupTextButton></div>
+            </>
+          ) : (
+            <>
+              <p className="m-0 text-[15px] font-[700]">{t("birdSetup.reminders.differentTitle", "Different for {{name}}", { name: birdName })}</p>
+              <p className="m-0 text-[14px] text-[#3d4f45]">{t("birdSetup.reminders.differentBody", "Changes here apply to {{name}} only.", { name: birdName })}</p>
+              {sharedRef.current && (
+                <div><SetupTextButton onClick={switchToShared}>{t("birdSetup.reminders.useShared", "Use the shared reminders instead")}</SetupTextButton></div>
+              )}
+            </>
+          )}
         </div>
-        <input
-          className="input mt-3"
-          placeholder={t("birdSetup.otherHazards", "Other hazards")}
+      )}
+
+      <TileCard icon={<AlertTriangle className="size-5" />} title={t("birdSetup.homeSpecificHazards", "Home-specific hazards")} helper={t("birdSetup.tapAnyThatApplyThen", "Tap any that apply, then add your own.")}>
+        <CheckChips
+          label={t("birdSetup.homeSpecificHazards", "Home-specific hazards")}
+          options={HAZARD_OPTIONS.map((h) => ({ value: h, label: displayLabel(t, h) }))}
+          value={hazards}
+          onChange={setHazards}
+        />
+        {showPets && (
+          <div className="rounded-[16px] p-3.5" style={{ background: S.lime }}>
+            <Field label={t("birdSetup.otherPetsSeparationRules", "Other pets & separation rules")} htmlFor="home-other-pets">
+              <TextField
+                id="home-other-pets"
+                value={otherPets}
+                maxLength={500}
+                onChange={setOtherPets}
+                placeholder={t("birdSetup.reminders.petsPlaceholder", "e.g. A cat — keep her out of the bird room")}
+              />
+            </Field>
+          </div>
+        )}
+        <TextField
           value={hazardsOther}
           maxLength={300}
-          onChange={(e) => setHazardsOther(e.target.value)}
+          onChange={setHazardsOther}
+          ariaLabel={t("birdSetup.otherHazards", "Other hazards")}
+          placeholder={t("birdSetup.otherHazards", "Other hazards")}
         />
-      </Card>
+      </TileCard>
 
-      <Card title={t("birdSetup.anythingOffLimits", "Anything off-limits")}>
-        <textarea
-          className="input area"
-          placeholder={t("birdSetup.eGNoAccessTo", "e.g. No access to the kitchen or bathroom; bedroom door stays closed.")}
+      <TileCard tile="teal" icon={<DoorClosed className="size-5" />} title={t("birdSetup.anythingOffLimits", "Anything off-limits")}>
+        <TextField
           value={offLimits}
           maxLength={400}
-          onChange={(e) => setOffLimits(e.target.value)}
+          onChange={setOffLimits}
+          ariaLabel={t("birdSetup.anythingOffLimits", "Anything off-limits")}
+          placeholder={t("birdSetup.reminders.offLimitsPlaceholder", "e.g. Kitchen and bathroom; bedroom door stays closed")}
         />
-      </Card>
+      </TileCard>
 
-      <Card title={t("birdSetup.otherPetsSeparationRules", "Other pets & separation rules")}>
-        <textarea
-          className="input area"
-          placeholder={t("birdSetup.eGACatAnd", "e.g. A cat and a dog — keep them out of the bird room; never leave them together.")}
-          value={otherPets}
-          maxLength={500}
-          onChange={(e) => setOtherPets(e.target.value)}
-        />
-      </Card>
-
-      <Card title={t("birdSetup.cleaningProductsInstructions", "Cleaning products & instructions")}>
-        <textarea
-          className="input area"
-          placeholder={t("birdSetup.eGWipeTheCage", "e.g. Wipe the cage tray daily; use only bird-safe cleaner under the sink. No aerosols near the bird.")}
-          value={cleaning}
-          maxLength={500}
-          onChange={(e) => setCleaning(e.target.value)}
-        />
-      </Card>
-
-      <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.65rem .8rem;font-size:16px;outline:none}.input:focus{border-color:var(--sage-600);box-shadow:0 0 0 3px rgb(74 103 65 / .15)}.area{min-height:60px;line-height:1.4}`}</style>
+      <TileCard icon={<SprayCan className="size-5" />} title={t("birdSetup.cleaningProductsInstructions", "Cleaning products & instructions")}>
+        <Field label={t("birdSetup.reminders.neverUse", "Never use near the birds")}>
+          <EditableList tone="warn" items={cleanNever} onRemove={(i) => setCleanNever(cleanNever.filter((_, j) => j !== i))} />
+          {addingClean ? (
+            <div className="flex gap-2">
+              <div className="min-w-0 flex-1">
+                <TextField
+                  value={newClean}
+                  maxLength={80}
+                  onChange={setNewClean}
+                  ariaLabel={t("birdSetup.reminders.neverUse", "Never use near the birds")}
+                />
+              </div>
+              <SetupTextButton onClick={addClean} disabled={!newClean.trim()}>{t("birdSetup.addButton", "Add")}</SetupTextButton>
+            </div>
+          ) : (
+            <div>
+              <SetupTextButton onClick={() => setAddingClean(true)} icon={<Plus className="size-4" strokeWidth={2.6} aria-hidden="true" />}>
+                {t("birdSetup.reminders.addAnother", "Add another")}
+              </SetupTextButton>
+            </div>
+          )}
+        </Field>
+        <Field label={t("birdSetup.reminders.useInstead", "What to use instead, and where it is")} htmlFor="home-clean-instead">
+          <TextField
+            id="home-clean-instead"
+            value={cleanInstead}
+            maxLength={400}
+            onChange={setCleanInstead}
+            placeholder={t("birdSetup.reminders.useInsteadPlaceholder", "e.g. Vinegar spray, under the sink")}
+          />
+        </Field>
+      </TileCard>
     </div>
   );
 }
 
-// ---------- Step 6: Health baseline ----------
+// ---------- Health baseline ----------
 
 // Granular "what's normal" + when-to-call care-plan text fields. Shown under the
 // summary so a sitter can spot specifics; all optional.
@@ -1897,7 +2281,13 @@ export function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlus
   // care_plans.medications_details (jsonb); the legacy text columns
   // (birds.medications, care_plans.medication_schedule) are kept in sync as
   // joined summaries so every read surface keeps working unchanged.
-  const [medRows, setMedRows] = useState<MedRow[]>([{ name: "", times: [], notes: "" }]);
+  const [medRows, setMedRows] = useState<MedRow[]>([]);
+  // The medication open in the sheet, and which "more detail" row is being typed in.
+  const [medSheet, setMedSheet] = useState<number | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [editingDetail, setEditingDetail] = useState<string | null>(null);
+  const [clipUploading, setClipUploading] = useState(false);
+  const setFooterNote = useContext(SetupFooterNoteContext);
   const [whatsNormal, setWhatsNormal] = useState("");
   const [notes, setNotes] = useState("");
   // Granular "what's normal" + when-to-call fields, keyed by care_plans column.
@@ -1915,6 +2305,10 @@ export function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlus
 
   // Don't let the owner advance mid-upload (prevents re-trigger / partial saves).
   useEffect(() => { onBlockNext(clipBusy); }, [clipBusy, onBlockNext]);
+  useEffect(() => {
+    setFooterNote(clipUploading ? t("birdSetup.health.clipStillUploading", "Your clip is still uploading.") : null);
+    return () => setFooterNote(null);
+  }, [clipUploading, setFooterNote, t]);
 
   useEffect(() => {
     if (!plan || !bird || hydrated) return;
@@ -2066,209 +2460,313 @@ export function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlus
 
   if (isLoading || !plan || !bird) return <div className="h-32 animate-pulse rounded-2xl bg-sage-100" />;
 
+  const detailCount = HEALTH_DETAIL_FIELDS.filter(([k]) => (detail[k] ?? "").trim()).length;
+  const setDetailField = (k: string, v: string) => setDetail((d) => ({ ...d, [k]: v.slice(0, 500) }));
+  const medTimeLabel = (key: MedTime) => displayLabel(t, MED_TIMES.find((x) => x.key === key)!.label);
+  const medSummary = (m: MedRow) => {
+    const when = m.times.length
+      ? MED_TIMES.filter((x) => m.times.includes(x.key)).map((x) => medTimeLabel(x.key)).join(", ")
+      : t("birdSetup.health.anytimeNoTime", "Anytime · no time set");
+    return m.times.length && m.notes.trim() ? `${when} · ${m.notes.trim()}` : when;
+  };
+  const openNewMed = () => { setMedRows((rows) => [...rows, { name: "", times: [], notes: "" }]); setMedSheet(medRows.length); };
+  // Closing the sheet drops a medication that was opened but left blank.
+  const closeMedSheet = () => {
+    setMedRows((rows) => rows.filter((m, i) => i !== medSheet || m.name.trim() || m.times.length || m.notes.trim()));
+    setMedSheet(null);
+  };
+  const updateMed = (i: number, patch: Partial<MedRow>) => setMedRows((rows) => rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
+  const sheetMed = medSheet != null ? medRows[medSheet] : undefined;
+  const detailLabel = (k: string) => {
+    switch (k) {
+      case "normal_appetite": return t("birdSetup.health.appetite", "Appetite");
+      case "normal_droppings": return t("birdSetup.health.droppings", "Droppings");
+      case "normal_noise": return t("birdSetup.health.noiseLevel", "Noise level");
+      case "normal_activity": return t("birdSetup.health.activity", "Activity");
+      case "normal_sleep": return t("birdSetup.health.sleepAndNaps", "Sleep and naps");
+      default: return t("birdSetup.health.withStrangers", "With strangers");
+    }
+  };
+  const detailPlaceholder = (k: string, ph: string) =>
+    k === "normal_sleep" ? t("birdSetup.health.sleepPlaceholder", "e.g. Lights out by 8pm, sleeps about 12 hours; short afternoon nap.") : displayLabel(t, ph);
+
   return (
-    <div className="space-y-4">
-      <StepInstruction>{t("birdSetup.instr.health", "Help anyone caring for {{name}} know what's normal, so they can spot what isn't.", { name: birdName })}</StepInstruction>
+    <div className="flex flex-col gap-[14px]">
+      <StepInstruction>{t("birdSetup.instr.healthOptional", "Help anyone caring for {{name}} know what's normal, so they can spot what isn't. Everything here is optional.", { name: birdName })}</StepInstruction>
 
-      <Card title={t("birdSetup.normalWeightGrams", "Normal weight (grams)")} hint={t("birdSetup.optionalUpdatingTheNormalWeight", "Optional. Updating the normal weight adds an entry to the weight log.")}>
-        <div className="grid grid-cols-3 gap-2">
-          <label className="block">
-            <span className="mb-1 block text-[11px] font-medium text-[#5f5e5a]">{t("birdSetup.normal", "Normal")}</span>
-            <input className="input" inputMode="decimal" placeholder="410" value={weight} onChange={(e) => setWeight(e.target.value.replace(/[^0-9.]/g, ""))} />
-          </label>
-          <label className="block">
-            <span className="mb-1 block text-[11px] font-medium text-[#5f5e5a]">{t("birdSetup.min", "Min")}</span>
-            <input className="input" inputMode="decimal" placeholder="395" value={weightMin} onChange={(e) => setWeightMin(e.target.value.replace(/[^0-9.]/g, ""))} />
-          </label>
-          <label className="block">
-            <span className="mb-1 block text-[11px] font-medium text-[#5f5e5a]">{t("birdSetup.max", "Max")}</span>
-            <input className="input" inputMode="decimal" placeholder="425" value={weightMax} onChange={(e) => setWeightMax(e.target.value.replace(/[^0-9.]/g, ""))} />
-          </label>
-        </div>
-      </Card>
-
-      <Card title={t("birdSetup.shortClipOfNormalBehavior", "Short clip of normal behavior or vocalizing")} hint={t("birdSetup.baselineClipHint", "Optional, up to {{seconds}} seconds and {{mb}} MB. Record at 720p in your browser or upload an existing video. Private — only your assigned sitter can view it.", { seconds: CLIP_MAX_SECONDS, mb: Math.round(CLIP_MAX_BYTES / (1024 * 1024)) })}>
-        {clipPreview.status === "processing" && !replacingClip ? (
-          <UploadProgress label={t("birdSetup.processingVideo", "Processing video…")} hint={t("birdSetup.yourClipIsSavedIt", "Your clip is saved. It'll be viewable here once it finishes converting — usually under a minute.")} />
-        ) : clipPreview.url && !replacingClip ? (
-          <div className="space-y-2">
-            <ClipPlayer src={clipPreview.url} className="aspect-video w-full rounded-xl ring-1 ring-sage-200" />
-            <p className="flex items-center gap-1 text-xs font-semibold text-sage-600"><Check className="size-3.5" /> {t("birdSetup.clipSaved", "Clip saved")}</p>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setReplacingClip(true)}
-                className="flex-1 rounded-xl border border-sage-200 bg-white py-2 text-xs font-semibold text-sage-700"
-              >
-                Replace
-              </button>
-              <button
-                type="button"
-                onClick={removeClip}
-                className="flex-1 rounded-xl border border-sage-200 bg-white py-2 text-xs font-semibold text-warn-red"
-              >
-                {t("birdSetup.remove", "Remove")}
-              </button>
+      <SectionCard
+        title={t("birdSetup.health.weight", "Weight")}
+        helper={t("birdSetup.health.weightHelper", "A healthy range helps you and your sitter notice a change early. Saving a new normal weight also adds it to {{name}}'s weight log.", { name: birdName })}
+      >
+        <Field label={t("birdSetup.health.normalWeight", "Normal weight")} htmlFor="health-weight">
+          <GramsField id="health-weight" value={weight} onChange={setWeight} placeholder={t("birdSetup.health.weightPlaceholder", "e.g. 1,080")} />
+        </Field>
+        <Field label={t("birdSetup.health.healthyRange", "Healthy range")} htmlFor="health-weight-min">
+          <div className="flex items-center gap-2.5">
+            <div className="min-w-0 flex-1">
+              <GramsField id="health-weight-min" value={weightMin} onChange={setWeightMin} placeholder={t("birdSetup.health.low", "Low")} />
+            </div>
+            <span className="text-[15px]" style={{ color: S.helper }}>{t("birdSetup.health.to", "to")}</span>
+            <div className="min-w-0 flex-1">
+              <GramsField value={weightMax} onChange={setWeightMax} placeholder={t("birdSetup.health.high", "High")} ariaLabel={t("birdSetup.health.healthyRangeHigh", "Healthy range, high")} />
             </div>
           </div>
-        ) : (
-          <div className="space-y-2">
-            <ClipRecorder birdId={birdId} onBusy={setClipBusy} onUploaded={uploadClip} />
-            {clipPath && replacingClip && (
-              <button type="button" onClick={() => setReplacingClip(false)} className="w-full rounded-xl border border-sage-200 bg-white py-2 text-xs font-semibold text-sage-700">
-                Keep current clip
-              </button>
-            )}
-          </div>
-        )}
-      </Card>
+        </Field>
+      </SectionCard>
 
-      <Card title={t("birdSetup.knownConditions", "Known conditions")}>
-        <textarea
-          className="input area"
-          placeholder={t("birdSetup.eGMildFeatherPlucking", "e.g. Mild feather plucking; old wing injury (no flight).")}
-          value={conditions}
-          maxLength={500}
-          onChange={(e) => setConditions(e.target.value)}
-        />
-      </Card>
-
-      <Card title={t("birdSetup.medications", "Medications")} hint={t("birdSetup.pickWhenEachDoseIs", "Pick when each dose is given — every selected time becomes its own check-off on the sitter's daily list.")}>
-        <div className="space-y-3">
-          {medRows.map((m, i) => (
-            <div key={i} className={i > 0 ? "border-t border-[#ece6d6] pt-3" : ""}>
-              <div className="flex items-start gap-2">
-                <div className="min-w-0 flex-1 space-y-2">
-                  <input
-                    className="input"
-                    placeholder={t("birdSetup.eGMetacam01ml", "e.g. Metacam 0.1ml")}
-                    value={m.name}
-                    maxLength={300}
-                    onChange={(e) => setMedRows((rows) => rows.map((r, j) => (j === i ? { ...r, name: e.target.value } : r)))}
-                  />
-                  <div className="flex flex-wrap gap-1.5">
-                    {MED_TIMES.map((item) => {
-                      const on = m.times.includes(item.key);
-                      return (
-                        <button
-                          key={item.key}
-                          type="button"
-                          aria-pressed={on}
-                          onClick={() =>
-                            setMedRows((rows) =>
-                              rows.map((r, j) =>
-                                j === i
-                                  ? { ...r, times: on ? r.times.filter((x) => x !== item.key) : [...r.times, item.key] }
-                                  : r,
-                              ),
-                            )
-                          }
-                          className={`min-h-[36px] rounded-full px-3.5 text-[13px] font-[500] ring-1 ${
-                            on ? "bg-[#1a3d2e] text-white ring-[#1a3d2e]" : "bg-white text-[#1a3d2e] ring-[#d8d2c0]"
-                          }`}
-                        >
-                          {displayLabel(t, item.label)}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  {m.name.trim() !== "" && m.times.length === 0 && (
-                    <p className="text-xs leading-relaxed text-[#8a897f]">
-                      {t("birdSetup.noTimeSetSittersWill", "No time set — sitters will see this under Anytime.")}
-                    </p>
-                  )}
-                  <input
-                    className="input"
-                    placeholder={t("birdSetup.instructionsEGInThe", "Instructions (e.g. in the left cheek, with food)")}
-                    value={m.notes}
-                    maxLength={300}
-                    onChange={(e) => setMedRows((rows) => rows.map((r, j) => (j === i ? { ...r, notes: e.target.value } : r)))}
-                  />
-                </div>
-                {medRows.length > 1 && (
-                  <button
-                    type="button"
-                    aria-label={t("birdSetup.removeMedication", "Remove medication")}
-                    onClick={() => setMedRows((rows) => rows.filter((_, j) => j !== i))}
-                    className="mt-1 grid size-9 shrink-0 place-items-center rounded-lg text-[var(--mute)] hover:bg-sage-100"
-                  >
-                    <X className="size-4" />
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
+      <SectionCard
+        title={t("birdSetup.medications", "Medications")}
+        helper={medRows.length > 0 ? t("birdSetup.health.medsHelper", "Each time you pick becomes a check-off on your sitter's daily list.") : undefined}
+      >
+        {medRows.length === 0 ? (
           <button
             type="button"
-            onClick={() => setMedRows((rows) => [...rows, { name: "", times: [], notes: "" }])}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-sage-100 px-3 py-2 text-xs font-semibold text-sage-700"
+            onClick={openNewMed}
+            className="flex min-h-[62px] w-full items-center gap-3 rounded-[16px] border-2 border-dashed bg-white px-4 py-3 text-left"
+            style={{ borderColor: "#b9b19a", color: S.forest }}
           >
-            <Plus className="size-3.5" /> Add another medication
+            <span className="grid size-8 shrink-0 place-items-center rounded-full" style={{ background: S.forest, color: S.lime }}>
+              <Plus className="size-4" strokeWidth={2.6} aria-hidden="true" />
+            </span>
+            <span className="min-w-0">
+              <span className="block text-[15.5px] font-[700]">{t("birdSetup.health.addAMedication", "Add a medication")}</span>
+              <span className="block text-[13.5px]" style={{ color: S.helper }}>{t("birdSetup.health.nameDoseWhen", "Name, dose, and when it's given")}</span>
+            </span>
           </button>
-        </div>
-      </Card>
+        ) : (
+          <>
+            <div className="flex flex-col gap-2">
+              {medRows.map((m, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setMedSheet(i)}
+                  className="flex min-h-[64px] w-full items-center gap-3 rounded-[16px] bg-white px-3.5 py-3 text-left"
+                  style={{ color: S.forest }}
+                >
+                  <span className="grid size-10 shrink-0 place-items-center rounded-[12px]" style={{ background: S.lime }}>
+                    <Pill className="size-5" aria-hidden="true" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[15.5px] font-[700]">{m.name.trim() || t("birdSetup.health.newMedication", "New medication")}</span>
+                    <span className="mt-0.5 block truncate text-[14px]" style={{ color: S.helper }}>{medSummary(m)}</span>
+                  </span>
+                </button>
+              ))}
+            </div>
+            <div>
+              <SetupTextButton onClick={openNewMed} icon={<Plus className="size-4" strokeWidth={2.6} aria-hidden="true" />}>
+                {t("birdSetup.addAnotherMedication", "Add another medication")}
+              </SetupTextButton>
+            </div>
+          </>
+        )}
+      </SectionCard>
 
-      <Card title={t("birdSetup.whatSNormalForThis", "What's normal for this bird")}>
+      <SectionCard emphasis title={t("birdSetup.whenToCall", "When to call")} helper={t("birdSetup.health.whenToCallHelper", "The first thing a sitter checks when something seems off.")}>
+        <Field label={t("birdSetup.health.whenToCallYou", "When to call you")} htmlFor="health-call-owner">
+          <TextBox
+            id="health-call-owner"
+            value={detail.when_to_call_owner ?? ""}
+            onChange={(v) => setDetailField("when_to_call_owner", v)}
+            placeholder={displayLabel(t, "e.g. Any change in droppings, eating less, or seems off.")}
+          />
+        </Field>
+        <Field label={t("birdSetup.health.whenToCallTheVet", "When to call the vet")} htmlFor="health-call-vet">
+          <TextBox
+            id="health-call-vet"
+            value={detail.when_to_call_vet ?? ""}
+            onChange={(v) => setDetailField("when_to_call_vet", v)}
+            placeholder={t("birdSetup.health.vetPlaceholder", "e.g. Trouble breathing, bleeding, a fall, or fluffed up all day.")}
+          />
+        </Field>
+      </SectionCard>
+
+      <SectionCard
+        title={t("birdSetup.health.whatsNormalFor", "What's normal for {{name}}", { name: birdName })}
+        helper={t("birdSetup.health.whatsNormalHelper", "In your own words: sounds, naps, droppings, anything you'd notice if it changed.")}
+      >
         <textarea
-          className="input area"
-          placeholder={t("birdSetup.eGLoudWhistlesAt", "e.g. Loud whistles at sunrise and sunset are normal. Naps mid-afternoon for ~30 min. Likes to flap on the perch for exercise.")}
+          aria-label={t("birdSetup.health.whatsNormalFor", "What's normal for {{name}}", { name: birdName })}
+          className="min-h-[96px] w-full rounded-[18px] border-2 bg-white px-4 py-3 text-[16px] leading-[1.5] outline-none focus:border-[#1a3d2e]"
+          style={{ borderColor: S.line, color: S.forest }}
+          placeholder={t("birdSetup.health.whatsNormalPlaceholder", "e.g. Loud whistles at sunrise and sunset. Naps mid-afternoon for about 30 minutes.")}
           value={whatsNormal}
           maxLength={800}
           onChange={(e) => setWhatsNormal(e.target.value)}
         />
-      </Card>
+        {!detailOpen ? (
+          <button
+            type="button"
+            onClick={() => setDetailOpen(true)}
+            aria-expanded={false}
+            className="flex min-h-[62px] w-full items-center gap-3 rounded-[16px] bg-white px-4 py-3 text-left"
+            style={{ color: S.forest }}
+          >
+            <span className="min-w-0 flex-1">
+              {detailCount > 0 ? (
+                <span className="block text-[15.5px] font-[700]">{t("birdSetup.health.moreDetailCount", "More detail · {{n}} of 6", { n: detailCount })}</span>
+              ) : (
+                <>
+                  <span className="block text-[15.5px] font-[700]">{t("birdSetup.health.addMoreDetail", "Add more detail")}</span>
+                  <span className="block text-[13.5px]" style={{ color: S.helper }}>{t("birdSetup.health.moreDetailList", "Appetite, droppings, noise, activity, sleep, and strangers")}</span>
+                </>
+              )}
+            </span>
+            <ChevronDown className="size-5 shrink-0" aria-hidden="true" />
+          </button>
+        ) : (
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[15px] font-[700]">{t("birdSetup.health.moreDetailCount", "More detail · {{n}} of 6", { n: detailCount })}</span>
+              <SetupTextButton onClick={() => { setDetailOpen(false); setEditingDetail(null); }}>{t("birdSetup.health.showLess", "Show less")}</SetupTextButton>
+            </div>
+            <div className="overflow-hidden rounded-[16px] bg-white">
+              {HEALTH_DETAIL_FIELDS.map(([k, , ph], i) => {
+                const value = detail[k] ?? "";
+                const divider = i > 0 ? "border-t border-[#e3eae2]" : "";
+                return editingDetail === k ? (
+                  <div key={k} className={`flex flex-col gap-1.5 px-4 py-3 ${divider}`}>
+                    <label htmlFor={`health-detail-${k}`} className="text-[15px] font-[700]">{detailLabel(k)}</label>
+                    <textarea
+                      id={`health-detail-${k}`}
+                      autoFocus
+                      className="min-h-[72px] w-full rounded-[14px] border-2 bg-white px-3.5 py-2.5 text-[16px] leading-[1.5] outline-none"
+                      style={{ borderColor: S.forest, color: S.forest }}
+                      placeholder={detailPlaceholder(k, ph)}
+                      value={value}
+                      maxLength={500}
+                      onChange={(e) => setDetailField(k, e.target.value)}
+                      onBlur={() => setEditingDetail(null)}
+                    />
+                  </div>
+                ) : (
+                  <button
+                    key={k}
+                    type="button"
+                    onClick={() => setEditingDetail(k)}
+                    className={`flex min-h-[52px] w-full items-center justify-between gap-3 px-4 py-3 text-left ${divider}`}
+                    style={{ color: S.forest }}
+                  >
+                    <span className="min-w-0">
+                      <span className="block text-[15px] font-[700]">{detailLabel(k)}</span>
+                      {value.trim() && <span className="mt-0.5 block text-[14.5px]" style={{ color: S.helper }}>{value}</span>}
+                    </span>
+                    {!value.trim() && <span className="shrink-0 text-[15px] font-[700]" style={{ color: S.moss }}>{t("birdSetup.health.addPlus", "+ Add")}</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </SectionCard>
 
-      <Card title={t("birdSetup.moreDetailOptional", "More detail (optional)")} hint={t("birdSetup.specificsHelpASitterSpot", "Specifics help a sitter spot when something's off.")}>
-        <div className="space-y-3">
-          {HEALTH_DETAIL_FIELDS.map(([k, label, ph]) => (
-            <label key={k} className="block">
-              <span className="mb-1 block text-xs font-medium text-[#5f5e5a]">{displayLabel(t, label)}</span>
-              <textarea
-                className="input area"
-                placeholder={displayLabel(t, ph)}
-                value={detail[k] ?? ""}
-                maxLength={500}
-                onChange={(e) => setDetail((d) => ({ ...d, [k]: e.target.value }))}
-              />
-            </label>
-          ))}
-        </div>
-      </Card>
-
-      <Card title={t("birdSetup.whenToCall", "When to call")}>
-        <div className="space-y-3">
-          {HEALTH_CALL_FIELDS.map(([k, label, ph]) => (
-            <label key={k} className="block">
-              <span className="mb-1 block text-xs font-medium text-[#5f5e5a]">{displayLabel(t, label)}</span>
-              <textarea
-                className="input area"
-                placeholder={displayLabel(t, ph)}
-                value={detail[k] ?? ""}
-                maxLength={500}
-                onChange={(e) => setDetail((d) => ({ ...d, [k]: e.target.value }))}
-              />
-            </label>
-          ))}
-        </div>
-      </Card>
-
-      <Card title={t("birdSetup.otherNotes", "Other notes")}>
-        <textarea
-          className="input area"
-          placeholder={t("birdSetup.anythingElseASitterShould", "Anything else a sitter should know.")}
-          value={notes}
-          maxLength={800}
-          onChange={(e) => setNotes(e.target.value)}
+      <SectionCard title={t("birdSetup.knownConditions", "Known conditions")}>
+        <TextBox
+          ariaLabel={t("birdSetup.knownConditions", "Known conditions")}
+          value={conditions}
+          onChange={(v) => setConditions(v.slice(0, 500))}
+          placeholder={t("birdSetup.eGMildFeatherPlucking", "e.g. Mild feather plucking; old wing injury (no flight).")}
         />
-      </Card>
+      </SectionCard>
 
-      <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.65rem .8rem;font-size:16px;outline:none}.input:focus{border-color:var(--sage-600);box-shadow:0 0 0 3px rgb(74 103 65 / .15)}.area{min-height:60px;line-height:1.4}`}</style>
+      <SectionCard
+        title={t("birdSetup.health.clipTitle", "A short clip of {{name}}", { name: birdName })}
+        helper={t("birdSetup.health.clipHelper", "Normal behavior or sounds, up to 60 seconds. Only your sitter can see it.")}
+      >
+        {clipPreview.status === "processing" && !replacingClip ? (
+          <UploadProgress label={t("clipRecorder.gettingItReady", "Getting it ready…")} />
+        ) : clipPreview.url && !replacingClip ? (
+          <div className="flex flex-col gap-1">
+            <PosterClipPlayer src={clipPreview.url} duration={clipPreview.duration} className="h-[180px] w-full rounded-[16px]" />
+            <div className="flex gap-4">
+              <SetupTextButton onClick={() => setReplacingClip(true)}>{t("birdSetup.replace", "Replace")}</SetupTextButton>
+              <SetupTextButton onClick={removeClip}>{t("birdSetup.remove", "Remove")}</SetupTextButton>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-1">
+            <ClipRecorder birdId={birdId} onBusy={setClipBusy} onUploading={setClipUploading} onUploaded={uploadClip} />
+            {clipPath && replacingClip && (
+              <div>
+                <SetupTextButton onClick={() => setReplacingClip(false)}>{t("birdSetup.keepCurrentClip", "Keep current clip")}</SetupTextButton>
+              </div>
+            )}
+          </div>
+        )}
+      </SectionCard>
+
+      <SectionCard title={t("birdSetup.otherNotes", "Other notes")}>
+        <TextBox
+          ariaLabel={t("birdSetup.otherNotes", "Other notes")}
+          value={notes}
+          onChange={(v) => setNotes(v.slice(0, 800))}
+          placeholder={t("birdSetup.anythingElseASitterShould", "Anything else a sitter should know.")}
+        />
+      </SectionCard>
+
+      {sheetMed && medSheet != null && (
+        <BottomSheet onClose={closeMedSheet}>
+          <div className="flex flex-col gap-5" style={{ color: S.forest }}>
+            <div className="flex items-start gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="m-0 text-[13px]" style={{ color: S.quiet }}>{t("birdSetup.health.medication", "Medication")}</p>
+                <h2 className="m-0 mt-0.5 break-words text-[26px] font-[700] leading-[1.15]" style={{ fontFamily: SERIF }}>
+                  {sheetMed.name.trim() || t("birdSetup.health.newMedication", "New medication")}
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={closeMedSheet}
+                aria-label={t("foodEditor.closeSheet", "Close")}
+                className="grid size-11 shrink-0 place-items-center rounded-full"
+                style={{ background: S.card, color: S.forest }}
+              >
+                <X className="size-5" aria-hidden="true" />
+              </button>
+            </div>
+            <Field label={t("birdSetup.health.nameAndDose", "Name and dose")} htmlFor="med-name">
+              <TextField id="med-name" value={sheetMed.name} maxLength={300} onChange={(v) => updateMed(medSheet, { name: v })} placeholder={t("birdSetup.eGMetacam01ml", "e.g. Metacam 0.1ml")} />
+            </Field>
+            <Field label={t("birdSetup.health.whenIsItGiven", "When is it given?")}>
+              <CheckChips
+                label={t("birdSetup.health.whenIsItGiven", "When is it given?")}
+                options={MED_TIMES.map((x) => ({ value: x.key, label: medTimeLabel(x.key) }))}
+                value={sheetMed.times}
+                onChange={(next) => updateMed(medSheet, { times: MED_TIMES.filter((x) => next.includes(x.key)).map((x) => x.key) })}
+              />
+              <p className="m-0 mt-1 rounded-[14px] px-4 py-3 text-[14.5px] leading-[1.45]" style={{ background: S.card, color: S.helper }}>
+                {sheetMed.times.length === 0
+                  ? t("birdSetup.health.noTimePicked", "No time picked, so your sitter will see this under Anytime. Each time you pick becomes its own check-off.")
+                  : t("birdSetup.health.eachTimeCheckOff", "Each time you pick becomes its own check-off.")}
+              </p>
+            </Field>
+            <Field label={t("birdSetup.health.instructions", "Instructions")} optional htmlFor="med-notes">
+              <TextField id="med-notes" value={sheetMed.notes} maxLength={300} onChange={(v) => updateMed(medSheet, { notes: v })} placeholder={t("birdSetup.health.instructionsPlaceholder", "e.g. With food, in the left cheek")} />
+            </Field>
+            <div className="flex flex-col items-center gap-1">
+              <SetupPrimaryButton onClick={closeMedSheet} arrow={false}>{t("foodEditor.done", "Done")}</SetupPrimaryButton>
+              <SetupTextButton onClick={() => { setMedRows((rows) => rows.filter((_, j) => j !== medSheet)); setMedSheet(null); }}>
+                {t("birdSetup.health.removeMedication", "Remove this medication")}
+              </SetupTextButton>
+            </div>
+          </div>
+        </BottomSheet>
+      )}
     </div>
   );
 }
 
-// Day-part choices for medication doses. Keys match routine_tasks.category
-// values so the sitter checklist buckets them without any text inference.
+/** A number box with "g" inside its right edge. */
+function GramsField({ id, value, onChange, placeholder, ariaLabel }: { id?: string; value: string; onChange: (v: string) => void; placeholder?: string; ariaLabel?: string }) {
+  return (
+    <div className="relative">
+      <TextField id={id} ariaLabel={ariaLabel} inputMode="decimal" value={value} onChange={(v) => onChange(v.replace(/[^0-9.]/g, ""))} placeholder={placeholder} className="pr-10" />
+      <span aria-hidden="true" className="pointer-events-none absolute right-[18px] top-1/2 -translate-y-1/2 text-[16px]" style={{ color: S.quiet }}>g</span>
+    </div>
+  );
+}
+
 const MED_TIMES = [
   { key: "morning", label: "Morning" },
   { key: "midday", label: "Midday" },
@@ -2424,7 +2922,7 @@ async function syncHygieneTasks(
   }
 }
 
-// ---------- Step 7: Tips from the owner ----------
+// ---------- Tips from the owner ----------
 
 type ClipSlot = {
   key: "step_up" | "food_water" | "locations" | "bedtime" | "food_prep" | "toys_foraging" | "targeting" | "anything_else";
@@ -2446,7 +2944,7 @@ const CLIP_SLOTS: ClipSlot[] = [
   { key: "step_up", column: "clip_step_up_path", label: "How they step up", hint: "Hand position, cue word, what works." },
   { key: "food_water", column: "clip_food_water_path", label: "How to refill food & water safely", hint: "Show the bowls, fill amount, and any cage-door routine." },
   { key: "locations", column: "clip_locations_path", label: "Where everything is", hint: "Walkthrough: food, treats, towels, carrier, first aid." },
-  { key: "bedtime", column: "clip_bedtime_path", label: "Settling them for the night", hint: "Cover routine, lights, sounds." },
+  { key: "bedtime", column: "clip_bedtime_path", label: "Settling them for the night", hint: "Lights, sounds, bedtime routine." },
   { key: "food_prep", column: "clip_food_prep_path", label: "Food prep", hint: "Making chop, portioning a pre-made mix, or prepping freeze-dried." },
   { key: "toys_foraging", column: "clip_toys_foraging_path", label: "Toys & foraging", hint: "Setting up foraging toys, rotating enrichment, or hiding treats." },
   { key: "targeting", column: "clip_targeting_path", label: "Targeting & interaction", hint: "Targeting, tricks, and how you like to hang out together." },
@@ -2456,24 +2954,28 @@ const CLIP_SLOTS: ClipSlot[] = [
 export function OwnerTipsClipsStep({ birdId, birdName, onBlockNext }: { birdId: string; birdName: string; onBlockNext: (block: boolean) => void }) {
   const { t } = useTranslation();
   const qc = useQueryClient();
-  // Track which slots are mid-upload so Next is disabled until all settle.
+  // Next waits while any slot is recording or uploading; the footer says so
+  // while one is uploading.
   const busyRef = useRef<Set<string>>(new Set());
+  const uploadingRef = useRef<Set<string>>(new Set());
   const [anyBusy, setAnyBusy] = useState(false);
-  function reportBusy(key: string, busy: boolean) {
+  const [anyUploading, setAnyUploading] = useState(false);
+  const reportBusy = useCallback((key: string, busy: boolean) => {
     if (busy) busyRef.current.add(key);
     else busyRef.current.delete(key);
     setAnyBusy(busyRef.current.size > 0);
-  }
-  useEffect(() => { onBlockNext(anyBusy); }, [anyBusy, onBlockNext]);
-
-  const { data: bird } = useQuery({
-    queryKey: ["bird-owner", birdId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("birds").select("id, owner_id").eq("id", birdId).single();
-      if (error) throw error;
-      return data as any;
-    },
-  });
+  }, []);
+  const reportUploading = useCallback((key: string, uploading: boolean) => {
+    if (uploading) uploadingRef.current.add(key);
+    else uploadingRef.current.delete(key);
+    setAnyUploading(uploadingRef.current.size > 0);
+  }, []);
+  useEffect(() => { onBlockNext(anyBusy || anyUploading); }, [anyBusy, anyUploading, onBlockNext]);
+  const setFooterNote = useContext(SetupFooterNoteContext);
+  useEffect(() => {
+    setFooterNote(anyUploading ? t("birdSetup.tips.clipStillUploading", "A clip is still uploading.") : null);
+    return () => setFooterNote(null);
+  }, [anyUploading, setFooterNote, t]);
 
   const { data: plan, isLoading } = useQuery({
     queryKey: ["plan-clips", birdId],
@@ -2484,119 +2986,206 @@ export function OwnerTipsClipsStep({ birdId, birdName, onBlockNext }: { birdId: 
     },
   });
 
-  if (isLoading || !plan || !bird) return <div className="h-32 animate-pulse rounded-2xl bg-sage-100" />;
+  if (isLoading || !plan) return <div className="h-32 animate-pulse rounded-2xl bg-sage-100" />;
+
+  const added = CLIP_SLOTS.filter((slot) => !!plan[slot.column]).length;
 
   return (
-    <div className="space-y-4">
-      <StepInstruction>{t("birdSetup.instr.clips", "Record a few short clips so anyone helping can see how it's done. Clips stay private, shared only with the people you trust with {{name}}.", { name: birdName })}</StepInstruction>
-
+    <div className="flex flex-col gap-2.5">
+      <StepInstruction>{t("birdSetup.instr.tips", "Add short video clips, up to 60 seconds each. Record one now or upload from your phone.")}</StepInstruction>
+      <p className="m-0 text-[13px] font-[700] text-[#5f5e5a]">{t("birdSetup.tips.countAdded", "{{n}} of 8 added", { n: added })}</p>
       {CLIP_SLOTS.map((slot) => (
-        <ClipSlotCard
+        <ClipSlotRow
           key={slot.key}
           slot={slot}
           path={plan[slot.column] ?? null}
-          ownerId={bird.owner_id}
           birdId={birdId}
           planId={plan.id}
           onBusy={reportBusy}
+          onUploading={reportUploading}
           onChange={() => qc.invalidateQueries({ queryKey: ["plan-clips", birdId] })}
         />
       ))}
-
-      <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.65rem .8rem;font-size:16px;outline:none}`}</style>
     </div>
   );
 }
 
-function ClipSlotCard({
-  slot, path, ownerId, birdId, planId, onBusy, onChange,
+/** Progress ring for a clip that's uploading, drawn inside the row's square. */
+function ProgressRing({ pct }: { pct: number }) {
+  const r = 18;
+  const c = 2 * Math.PI * r;
+  return (
+    <svg viewBox="0 0 44 44" className="size-11 -rotate-90" aria-hidden="true">
+      <circle cx="22" cy="22" r={r} fill="none" stroke="#e3ebe2" strokeWidth="4" />
+      <circle cx="22" cy="22" r={r} fill="none" stroke="#1a3d2e" strokeWidth="4" strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - Math.max(0, Math.min(100, pct)) / 100)} />
+    </svg>
+  );
+}
+
+/**
+ * One tip clip as a row: a square (camera, progress ring, or play), the slot's
+ * title and hint, and + / Cancel / Edit. Adding opens a small sheet with the
+ * recorder; once an upload starts the sheet steps out of sight (still mounted,
+ * so the upload carries on) and the row shows the progress.
+ */
+function ClipSlotRow({
+  slot, path, birdId, planId, onBusy, onUploading, onChange,
 }: {
   slot: ClipSlot;
   path: string | null;
-  ownerId: string;
   birdId: string;
   planId: string;
   onBusy: (key: string, busy: boolean) => void;
+  onUploading: (key: string, uploading: boolean) => void;
   onChange: () => void;
 }) {
   const { t } = useTranslation();
   const preview = useOwnerClipPreview(path);
-  const [busy, setBusy] = useState<"uploading" | null>(null);
+  const [sheet, setSheet] = useState<"add" | "edit" | null>(null);
   const [replacing, setReplacing] = useState(false);
+  const [progress, setProgress] = useState<number | null>(null);
+  const [saving, setSaving] = useState(false);
+  const cancelRef = useRef<(() => void) | null>(null);
+  const title = displayLabel(t, slot.label);
+  const uploading = progress != null || saving;
+
+  useEffect(() => { onUploading(slot.key, uploading); }, [uploading, slot.key, onUploading]);
+  useEffect(() => () => { onUploading(slot.key, false); onBusy(`${slot.key}:rec`, false); }, [slot.key, onUploading, onBusy]);
 
   // The recorder uploads to Cloudflare Stream and returns a "cfstream:<uid>" ref.
   async function upload(ref: string) {
-    setBusy("uploading");
-    onBusy(slot.key, true);
+    setSaving(true);
     try {
       // Save the new ref, then retire the one it replaced — see commitClipRef.
       await commitClipRef({ planId, column: slot.column, newRef: ref, oldRef: path });
       setReplacing(false);
-      toast.success(t("birdSetup.clipSlotSaved", "{{label}} saved.", { label: displayLabel(t, slot.label) }));
+      setSheet(null);
+      toast.success(t("birdSetup.clipSlotSaved", "{{label}} saved.", { label: title }));
       onChange();
     } catch {
       toast.error(t("birdSetup.couldnTSaveTheClip", "Couldn't save the clip. Please try again."));
     } finally {
-      setBusy(null);
-      onBusy(slot.key, false);
+      setSaving(false);
+      setProgress(null);
     }
   }
 
   async function remove() {
-    setBusy("uploading");
-    onBusy(slot.key, true);
+    setSaving(true);
     try {
-      // Clear the column, then retire the old clip — see commitClipRef. This
-      // used to delete a legacy object before clearing, and ignored the update's
-      // result entirely, so a failed remove said nothing and left the clip up.
+      // Clear the column, then retire the old clip — see commitClipRef.
       await commitClipRef({ planId, column: slot.column, newRef: null, oldRef: path });
+      setSheet(null);
       onChange();
     } catch {
       toast.error(t("birdSetup.couldnTRemoveTheClip", "Couldn't remove the clip. Please try again."));
     } finally {
-      setBusy(null);
-      onBusy(slot.key, false);
+      setSaving(false);
     }
   }
 
+  function cancelUpload() {
+    cancelRef.current?.();
+    setProgress(null);
+    setSheet(null);
+    setReplacing(false);
+  }
+
+  const hint = displayLabel(t, slot.hint);
+  const length = clipLength(preview.duration);
+  const hintLine = uploading
+    ? t("birdSetup.tips.uploadingPct", "Uploading… {{n}}%", { n: progress ?? 100 })
+    : path && preview.status === "processing"
+      ? t("clipRecorder.gettingItReady", "Getting it ready…")
+      : path && length ? `${length} · ${hint}` : hint;
+  const showRecorder = sheet === "add" || (sheet === "edit" && replacing);
+
   return (
-    <Card
-      title={displayLabel(t, slot.label)}
-      hint={displayLabel(t, slot.hint)}
-      badge={slot.optional ? <span className="rounded-full bg-sage-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-sage-600">{t("birdSetup.optional", "Optional")}</span> : undefined}
-    >
-      {busy === "uploading" ? (
-        <UploadProgress label={t("birdSetup.uploadingYourClip", "Uploading your clip…")} hint={t("birdSetup.thisCanTakeAMoment", "This can take a moment on slower connections. Please keep this screen open.")} />
-      ) : preview.status === "processing" && !replacing ? (
-        <UploadProgress label={t("birdSetup.processingVideo", "Processing video…")} hint={t("birdSetup.yourClipIsSavedIt", "Your clip is saved. It'll be viewable here once it finishes converting — usually under a minute.")} />
-      ) : preview.url && !replacing ? (
-        <div className="space-y-2">
-          <ClipPlayer src={preview.url} className="aspect-video w-full rounded-xl ring-1 ring-sage-200" />
-          <p className="flex items-center gap-1 text-xs font-semibold text-sage-600"><Check className="size-3.5" /> {t("birdSetup.clipSaved", "Clip saved")}</p>
-          <div className="flex gap-2">
-            <button type="button" onClick={() => setReplacing(true)} className="flex-1 rounded-xl border border-sage-200 bg-white py-2 text-xs font-semibold text-sage-700">
-              Replace
-            </button>
-            <button type="button" onClick={remove} className="flex-1 rounded-xl border border-sage-200 bg-white py-2 text-xs font-semibold text-warn-red">
-              {t("birdSetup.remove", "Remove")}
-            </button>
-          </div>
-        </div>
+    <div className="flex items-center gap-3 rounded-[18px] p-3" style={{ background: S.card, color: S.forest }}>
+      <button
+        type="button"
+        onClick={() => (path && !uploading ? setSheet("edit") : undefined)}
+        tabIndex={path && !uploading ? 0 : -1}
+        aria-hidden={!path || uploading}
+        className="grid size-14 shrink-0 place-items-center rounded-[14px]"
+        style={{ background: path && !uploading ? S.forest : "#fff", color: path && !uploading ? S.lime : S.moss }}
+      >
+        {uploading ? <ProgressRing pct={progress ?? 100} /> : path ? <Play className="ml-0.5 size-6 fill-current" aria-hidden="true" /> : <Video className="size-6" aria-hidden="true" />}
+      </button>
+      <div className="min-w-0 flex-1">
+        <p className="m-0 text-[15.5px] font-[700] leading-[1.3]">
+          {title}
+          {slot.optional && <span className="ml-1 font-[500]" style={{ color: S.quiet }}>{t("birdSetup.tips.optional", "(optional)")}</span>}
+        </p>
+        <p className="m-0 mt-0.5 text-[14px] leading-[1.4]" style={{ color: S.helper }}>{hintLine}</p>
+      </div>
+      {uploading ? (
+        progress != null ? <SetupTextButton onClick={cancelUpload}>{t("birdSetup.tips.cancel", "Cancel")}</SetupTextButton> : null
+      ) : path ? (
+        <SetupTextButton onClick={() => setSheet("edit")}>{t("birdSetup.tips.edit", "Edit")}</SetupTextButton>
       ) : (
-        <div className="space-y-2">
-          <ClipRecorder birdId={birdId} onBusy={(b) => onBusy(`${slot.key}:rec`, b)} onUploaded={upload} />
-          {path && replacing && (
-            <button type="button" onClick={() => setReplacing(false)} className="w-full rounded-xl border border-sage-200 bg-white py-2 text-xs font-semibold text-sage-700">
-              Keep current clip
-            </button>
-          )}
-        </div>
+        <button
+          type="button"
+          onClick={() => setSheet("add")}
+          aria-label={t("birdSetup.tips.addClipAria", "Add a {{slot}} clip", { slot: title })}
+          className="grid size-11 shrink-0 place-items-center rounded-full border-2 bg-white"
+          style={{ borderColor: S.forest, color: S.forest }}
+        >
+          <Plus className="size-5" strokeWidth={2.6} aria-hidden="true" />
+        </button>
       )}
-    </Card>
+
+      {sheet && (
+        <BottomSheet hidden={uploading} onClose={() => { setSheet(null); setReplacing(false); }}>
+          <div className="flex flex-col gap-4" style={{ color: S.forest }}>
+            <div className="flex items-start gap-3">
+              <h2 className="m-0 min-w-0 flex-1 break-words text-[24px] font-[700] leading-[1.15]" style={{ fontFamily: SERIF }}>{title}</h2>
+              <button
+                type="button"
+                onClick={() => { setSheet(null); setReplacing(false); }}
+                aria-label={t("foodEditor.closeSheet", "Close")}
+                className="grid size-11 shrink-0 place-items-center rounded-full"
+                style={{ background: S.card, color: S.forest }}
+              >
+                <X className="size-5" aria-hidden="true" />
+              </button>
+            </div>
+            {showRecorder ? (
+              <>
+                <ClipRecorder
+                  birdId={birdId}
+                  onBusy={(b) => onBusy(`${slot.key}:rec`, b)}
+                  onProgress={setProgress}
+                  cancelRef={cancelRef}
+                  onUploaded={upload}
+                />
+                {replacing && (
+                  <div>
+                    <SetupTextButton onClick={() => setReplacing(false)}>{t("birdSetup.keepCurrentClip", "Keep current clip")}</SetupTextButton>
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                {preview.status === "processing" || !preview.url ? (
+                  <UploadProgress label={t("clipRecorder.gettingItReady", "Getting it ready…")} />
+                ) : (
+                  <PosterClipPlayer src={preview.url} duration={preview.duration} label={title} className="h-[180px] w-full rounded-[16px]" />
+                )}
+                <div className="flex gap-4">
+                  <SetupTextButton onClick={() => setReplacing(true)}>{t("birdSetup.replace", "Replace")}</SetupTextButton>
+                  <SetupTextButton onClick={remove} disabled={saving}>{t("birdSetup.remove", "Remove")}</SetupTextButton>
+                </div>
+              </>
+            )}
+          </div>
+        </BottomSheet>
+      )}
+    </div>
   );
 }
 
-// ---------- Step 8: Emergency ----------
+// ---------- Emergency ----------
 
 // Same shared emergency UI as the bird editor's Emergency tab (read-only
 // account info + per-bird "Edit for {bird}" override). Emergency info comes from
@@ -2604,91 +3193,71 @@ function ClipSlotCard({
 // shows them read-only rather than asking the owner to re-enter from scratch.
 function EmergencyStep({
   birdId,
+  birdName,
   onBlockNext,
   registerFlush,
 }: {
   birdId: string;
+  birdName: string;
   onBlockNext: (block: boolean) => void;
   registerFlush?: (fn: (() => Promise<void>) | null) => void;
 }) {
   const { t } = useTranslation();
   const qc = useQueryClient();
+  const setFooterNote = useContext(SetupFooterNoteContext);
+  const setHomeSubline = useContext(SetupHomeSublineContext);
 
-  // EmergencyInfo saves each section on demand, so this step never blocks Next
-  // or registers a debounced flush.
-  useEffect(() => { onBlockNext(false); registerFlush?.(null); }, [onBlockNext, registerFlush]);
+  // Each row saves when its sheet closes, so there's no debounced flush.
+  useEffect(() => { registerFlush?.(null); }, [registerFlush]);
 
-  const { data: bird } = useQuery({
-    queryKey: ["bird-owner-emerg", birdId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("birds").select("id, owner_id, name").eq("id", birdId).single();
-      if (error) throw error;
-      return data as any;
-    },
-  });
-
-  const { data: contacts, isLoading } = useQuery({
-    queryKey: ["emergency-contacts", birdId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("emergency_contacts").select("*").eq("bird_id", birdId).maybeSingle();
-      if (error) throw error;
-      return data as any;
-    },
-  });
-
-  const { data: defaults } = useQuery({
-    queryKey: ["owner-emergency-defaults", bird?.owner_id],
-    enabled: !!bird?.owner_id,
-    queryFn: async () => {
-      const { data } = await supabase.from("owner_emergency_defaults").select("*").eq("owner_id", bird!.owner_id).maybeSingle();
-      return data as any;
-    },
-  });
-
-  if (isLoading || !bird) return <div className="h-32 animate-pulse rounded-2xl bg-sage-100" />;
+  const onState = useCallback(({ missingOwnerPhone, missingVetPhone }: EmergencySetupState) => {
+    // "Save contacts" waits for both required contacts; "Skip for now" doesn't.
+    onBlockNext(missingOwnerPhone || missingVetPhone);
+    const after = t("emergencySetup.neededForSit", "You'll need it before you can create a pet sit.");
+    setFooterNote(
+      missingOwnerPhone && missingVetPhone
+        ? `${t("emergencySetup.missingBoth", "Add your phone number and your avian vet's phone to finish.")} ${t("emergencySetup.neededForSitBoth", "You'll need them before you can create a pet sit.")}`
+        : missingOwnerPhone
+          ? `${t("emergencySetup.missingOwner", "Add your phone number to finish.")} ${after}`
+          : missingVetPhone
+            ? `${t("emergencySetup.missingVet", "Add your avian vet's phone to finish.")} ${after}`
+            : null,
+    );
+    qc.invalidateQueries({ queryKey: ["emergency-contacts", birdId] });
+  }, [onBlockNext, setFooterNote, t, qc, birdId]);
+  useEffect(() => () => setFooterNote(null), [setFooterNote]);
 
   return (
     <>
-      <StepInstruction>{t("birdSetup.theStuffYouHopeNo", "The stuff you hope no one needs, but everyone should have.")}</StepInstruction>
-      <EmergencyInfo
-        birdId={birdId}
-        birdName={bird.name ?? "this bird"}
-        contacts={contacts ?? null}
-        defaults={defaults ?? null}
-        onSaved={() => qc.invalidateQueries({ queryKey: ["emergency-contacts", birdId] })}
-      />
+      <StepInstruction>{t("birdSetup.instr.emergencyContacts", "Your birds' emergency contacts. Saved once for every bird.")}</StepInstruction>
+      <EmergencyContactsScreen birdId={birdId} birdName={birdName} onState={onState} onSubline={setHomeSubline} />
     </>
   );
 }
 
-// ---------- Step 9: Review (real sitter preview) ----------
+// ---------- Review (real sitter preview) ----------
 
 function ReviewStep({
   birdId,
   birdName,
   onJumpToStep,
-  onFinish,
 }: {
   birdId: string;
   birdName: string;
   onJumpToStep: (target: number) => void;
-  onFinish: (opts: { to: "dashboard-newsit" | "home" }) => void;
 }) {
   const { t } = useTranslation();
-  // Pull the same shape used elsewhere so the warning list reflects real data.
+  const [view, setView] = useState<"checklist" | "plan">("checklist");
+  const stepOf = (key: string) => SETUP_STEPS.findIndex((s) => s.key === key) + 1;
+
   const { data: bird } = useQuery({
     queryKey: ["bird-review", birdId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("birds")
-        .select("id, owner_id, normal_weight")
-        .eq("id", birdId)
-        .single();
+      const { data, error } = await supabase.from("birds").select("id, owner_id, normal_weight").eq("id", birdId).single();
       if (error) throw error;
       return data as any;
     },
   });
-
   const { data: plan } = useQuery({
     queryKey: ["plan-review", birdId],
     queryFn: async () => {
@@ -2696,16 +3265,14 @@ function ReviewStep({
       return data as any;
     },
   });
-
   const { data: tasks = [] } = useQuery({
     queryKey: ["tasks-review", plan?.id],
     enabled: !!plan?.id,
     queryFn: async () => {
-      const { data } = await supabase.from("routine_tasks").select("id").eq("care_plan_id", plan!.id);
-      return data ?? [];
+      const { data } = await supabase.from("routine_tasks").select("id, title, category, time_of_day, instructions, sort_order").eq("care_plan_id", plan!.id);
+      return (data ?? []) as any[];
     },
   });
-
   const { data: contacts } = useQuery({
     queryKey: ["contacts-review", birdId],
     queryFn: async () => {
@@ -2713,130 +3280,166 @@ function ReviewStep({
       return data as any;
     },
   });
-
   const { data: defaults } = useQuery({
     queryKey: ["defaults-review", bird?.owner_id],
     enabled: !!bird?.owner_id,
     queryFn: async () => {
-      const { data } = await supabase
-        .from("owner_emergency_defaults")
-        .select("*")
-        .eq("owner_id", bird!.owner_id)
-        .maybeSingle();
+      const { data } = await supabase.from("owner_emergency_defaults").select("*").eq("owner_id", bird!.owner_id).maybeSingle();
       return data as any;
     },
   });
+  // Shared "Your home" reminders, so a bird that uses them isn't listed as thin.
+  const { data: homeDefaults } = useQuery({
+    queryKey: ["home-defaults-review", bird?.owner_id],
+    enabled: !!bird?.owner_id,
+    queryFn: async () => {
+      const { data } = await supabase.from("owner_home_defaults").select("*").eq("owner_id", bird!.owner_id).maybeSingle();
+      return data ?? null;
+    },
+  });
+  // The sitter's section-by-section view, from the same server function the
+  // household care plan page uses (shared home answers merged in).
+  const getView = useServerFn(getHouseholdCarePlanView);
+  const { data: planView, isError: planViewError } = useQuery({
+    queryKey: ["review-care-plan", birdId],
+    enabled: view === "plan",
+    queryFn: () => getView({ data: { birdId } }),
+    retry: false,
+  });
 
-  // Find-or-create a preview sit so we can render the REAL sitter view.
-  const [previewToken, setPreviewToken] = useState<string | null>(null);
-  const [previewError, setPreviewError] = useState<{ message?: string } | null>(null);
+  // The daily checklist as the sitter's Today reads it: by day-part, timed
+  // tasks in time order, then the rest.
+  const checklist = useMemo(() => {
+    const by: Record<string, any[]> = {};
+    for (const task of tasks) (by[taskDaypart(task)] ??= []).push(task);
+    for (const dp of Object.keys(by)) {
+      by[dp].sort((a, b) => {
+        const va = parseTaskMinutes(a.time_of_day) ?? 1e9;
+        const vb = parseTaskMinutes(b.time_of_day) ?? 1e9;
+        return va !== vb ? va - vb : (a.sort_order ?? 0) - (b.sort_order ?? 0);
+      });
+    }
+    return DAYPARTS.filter((dp) => by[dp]?.length).map((dp) => ({ dp, items: by[dp] }));
+  }, [tasks]);
+  const daypartName = (dp: Daypart) =>
+    dp === "morning" ? t("birdSetup.review.morning", "Morning")
+    : dp === "midday" ? t("birdSetup.review.midday", "Midday")
+    : dp === "evening" ? t("birdSetup.review.evening", "Evening")
+    : t("birdSetup.review.anytime", "Anytime");
+  // Where each task is edited: its Food or Health source, else Day.
+  const taskStep = (title: string) => {
+    const src = derivedSource(title);
+    return stepOf(src === "Food" ? "food" : src === "Health" ? "health" : "day");
+  };
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      if (!bird?.owner_id) return;
-      try {
-        const token = await ensureSitterPreviewToken(birdId, bird.owner_id);
-        if (!cancelled) setPreviewToken(token);
-      } catch (e: any) {
-        if (!cancelled) setPreviewError({ message: e.message });
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [bird?.owner_id, birdId]);
-
-  // "Before you share" thin/empty checks. Each links to its step.
-  const issues = useMemo(() => {
-    // Map by section key, not hardcoded numbers, so these links stay correct
-    // regardless of step order (Food/Routine were reordered).
-    const stepOf = (key: string) => SETUP_STEPS.findIndex((s) => s.key === key) + 1;
-    const list: { label: string; step: number }[] = [];
-    if ((tasks?.length ?? 0) === 0) list.push({ label: t("birdSetup.issue.noRoutineTasksYet", "No routine tasks yet"), step: stepOf("day") });
-    if (!plan?.diet_types?.length && !plan?.food_instructions) list.push({ label: t("birdSetup.issue.noFoodWaterDetails", "No food & water details"), step: stepOf("food") });
-    if (!plan?.handlers && !plan?.likes && !plan?.fears_triggers) list.push({ label: t("birdSetup.issue.noPersonalityHandlingNotes", "No personality & handling notes"), step: stepOf("personality") });
-    if (!plan?.cage_location && !plan?.out_of_cage_mode && !(plan?.hazards?.length)) list.push({ label: t("birdSetup.issue.noEnvironmentSafetyDetails", "No environment & safety details"), step: stepOf("environment") });
+  // "Still thin or empty": what the sitter will miss, each with a link to fix it.
+  const gaps = useMemo(() => {
+    const list: { key: string; title: string; note: string; step: number }[] = [];
+    if (!plan?.diet_types?.length && !plan?.food_instructions) {
+      list.push({ key: "food", title: t("birdSetup.review.gapFood", "Food"), note: t("birdSetup.review.gapFoodNote", "nothing yet, so your sitter won't know what to serve {{name}}.", { name: birdName }), step: stepOf("food") });
+    }
     if (!bird?.normal_weight && !plan?.baseline_clip_path && !plan?.whats_normal) {
-      list.push({ label: t("birdSetup.issue.noHealthBaselineWeightPhoto", "No health baseline (weight, photo, clip, or notes)"), step: stepOf("health") });
+      list.push({ key: "health", title: t("birdSetup.review.gapHealth", "Health"), note: t("birdSetup.review.gapHealthNote", "no weight or notes yet, so your sitter can't tell what's normal for {{name}}.", { name: birdName }), step: stepOf("health") });
+    }
+    if (!plan?.handlers && !plan?.likes && !plan?.fears_triggers && !plan?.cage_location && !plan?.out_of_cage_mode) {
+      list.push({ key: "behavior", title: t("birdSetup.review.gapBehavior", "Behavior"), note: t("birdSetup.review.gapBehaviorNote", "no handling notes yet, so your sitter won't know how {{name}} likes to be treated.", { name: birdName }), step: stepOf("personality") });
     }
     if (!plan?.clip_step_up_path && !plan?.clip_food_water_path && !plan?.clip_locations_path && !plan?.clip_bedtime_path) {
-      list.push({ label: t("birdSetup.issue.noTipsFromTheOwner", "No tips-from-the-owner clips"), step: stepOf("clips") });
+      list.push({ key: "clips", title: t("birdSetup.review.gapTips", "Tips"), note: t("birdSetup.review.gapTipsNote", "no clips yet, so your sitter won't see how you step {{name}} up.", { name: birdName }), step: stepOf("clips") });
+    }
+    if (tasks.length === 0) {
+      list.push({ key: "day", title: t("birdSetup.review.gapDay", "Day"), note: t("birdSetup.review.gapDayNote", "no tasks yet, so your sitter's daily checklist will be empty."), step: stepOf("day") });
+    }
+    if (!HOME_GROUPS.some((g) => birdHasOwn(mergeHome(plan, homeDefaults), g))) {
+      list.push({ key: "environment", title: t("birdSetup.review.gapReminders", "Reminders"), note: t("birdSetup.review.gapRemindersNote", "nothing yet, so your sitter won't know your home's hazards."), step: stepOf("environment") });
     }
     const eff = (k: string) => ((contacts?.[k] ?? "").toString().trim() || (defaults?.[k] ?? "").toString().trim());
     if (!eff("owner_phone") || !eff("avian_vet_phone")) {
-      list.push({ label: t("birdSetup.issue.requiredEmergencyContactsMissing", "Required emergency contacts missing"), step: stepOf("emergency") });
+      list.push({ key: "emergency", title: t("birdSetup.review.gapEmergency", "Emergency contacts"), note: t("birdSetup.review.gapEmergencyNeed", "your phone or your avian vet's phone is missing. You'll need both before you can create a pet sit."), step: stepOf("emergency") });
     }
     return list;
-  }, [tasks, plan, bird, contacts, defaults, t]);
+  }, [tasks, plan, bird, contacts, defaults, homeDefaults, birdName, t]);
 
-  const previewSrc = previewToken ? `/sitter/${previewToken}?birdId=${birdId}&preview=1` : null;
+  // A tap on a section of the sitter's care plan opens the screen that edits it
+  // (buttons, links and clips inside keep working as they are).
+  const SECTION_STEP: Record<string, string> = { food: "food", behavior: "personality", home: "environment", health: "health", routine: "day", emergency: "emergency" };
+  function onPlanClick(e: React.MouseEvent) {
+    const target = e.target as HTMLElement;
+    if (target.closest("button, a, video, iframe, input, select, textarea")) return;
+    const id = target.closest("section[id]")?.id;
+    if (id && SECTION_STEP[id]) onJumpToStep(stepOf(SECTION_STEP[id]));
+  }
 
   return (
-    <div className="space-y-4">
-      <StepInstruction>{t("birdSetup.instr.review", "Here's exactly what everyone helping will see for {{name}}. Scroll inside the preview to explore the Today screen.", { name: birdName })}</StepInstruction>
+    <div className="flex flex-col gap-[14px]" style={{ color: S.forest }}>
+      <StepInstruction>{t("birdSetup.instr.reviewSitter", "This is {{name}}'s plan the way a sitter reads it. Tap anything to fix it.", { name: birdName })}</StepInstruction>
 
-      {issues.length > 0 && (
-        <section className="rounded-2xl bg-warn-amber/10 p-4 ring-1 ring-warn-amber/30">
-          <h2 className="text-sm font-bold text-warn-amber">{t("birdSetup.beforeYouShare", "Before you share")}</h2>
-          <p className="mt-1 text-xs text-sage-700">{t("birdSetup.aFewThingsAreStill", "A few things are still thin or empty:")}</p>
-          <ul className="mt-2 space-y-1">
-            {issues.map((i) => (
-              <li key={i.step}>
-                <button
-                  type="button"
-                  onClick={() => onJumpToStep(i.step)}
-                  className="text-left text-sm font-semibold text-sage-900 underline decoration-warn-amber underline-offset-2"
-                >
-                  {i.label} <span className="text-xs text-sage-600">{t("birdSetup.fixInStep", "— fix in step {{step}}", { step: i.step })}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </section>
+      <Segmented
+        label={t("birdSetup.review.viewLabel", "Preview")}
+        value={view}
+        onChange={setView}
+        options={[
+          { value: "checklist", label: t("birdSetup.review.dailyChecklist", "Daily checklist") },
+          { value: "plan", label: t("birdSetup.review.carePlan", "Care plan") },
+        ]}
+      />
+
+      {view === "checklist" ? (
+        checklist.length === 0 ? (
+          <p className="m-0 rounded-[18px] p-4 text-[15px]" style={{ background: S.card, color: S.helper }}>
+            {t("birdSetup.review.noTasks", "Nothing on the checklist yet.")}
+          </p>
+        ) : (
+          checklist.map(({ dp, items }) => (
+            <section key={dp} className="flex flex-col gap-2 rounded-[18px] p-4" style={{ background: S.card }}>
+              <h2 className="m-0 text-[21px] font-[700] leading-[1.2]" style={{ fontFamily: SERIF }}>{daypartName(dp)}</h2>
+              {items.map((task) => {
+                const clock = /\d/.test(task.time_of_day ?? "") ? task.time_of_day : null;
+                return (
+                  <button
+                    key={task.id}
+                    type="button"
+                    onClick={() => onJumpToStep(taskStep(task.title))}
+                    className="flex min-h-[52px] w-full items-start gap-3 rounded-[14px] bg-white px-3.5 py-3 text-left"
+                  >
+                    <span aria-hidden="true" className="mt-0.5 size-[22px] shrink-0 rounded-[6px] border-2" style={{ borderColor: S.line }} />
+                    <span className="min-w-0">
+                      <span className="block text-[15px] font-[600]">
+                        {displayLabel(t, task.title)}
+                        {clock && <span className="font-[400]" style={{ color: S.quiet }}> · {clock}</span>}
+                      </span>
+                      {task.instructions && <span className="mt-0.5 block whitespace-pre-line text-[14px]" style={{ color: S.helper }}>{task.instructions}</span>}
+                    </span>
+                  </button>
+                );
+              })}
+            </section>
+          ))
+        )
+      ) : planViewError ? (
+        <p className="m-0 rounded-[18px] p-4 text-[15px]" style={{ background: S.card, color: S.helper }}>{t("birdSetup.couldNotBuildPreview", "Could not build preview")}</p>
+      ) : !planView ? (
+        <div className="h-64 animate-pulse rounded-[18px]" style={{ background: S.card }} />
+      ) : (
+        <div onClick={onPlanClick} className="cursor-pointer">
+          <CarePlanView data={planView} showEmergencyContacts={false} />
+        </div>
       )}
 
-      <section className="overflow-hidden rounded-2xl bg-sage-900 ring-1 ring-sage-200">
-        <div className="flex items-center justify-between px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-white/80">
-          <span>{t("birdSetup.sitterPreview", "Sitter preview")}</span>
-          <span className="rounded bg-white/10 px-2 py-0.5">{t("birdSetup.live", "Live")}</span>
-        </div>
-        <div className="bg-sage-50">
-          {previewError ? (
-            <div className="p-6 text-sm text-warn-red">{previewError.message ?? t("birdSetup.couldNotBuildPreview", "Could not build preview")}</div>
-          ) : previewSrc ? (
-            <iframe
-              src={previewSrc}
-              title={t("birdSetup.sitterPreview", "Sitter preview")}
-              className="h-[640px] w-full border-0 bg-sage-50"
-            />
-          ) : (
-            <div className="h-[640px] animate-pulse bg-sage-100" />
-          )}
-        </div>
-      </section>
-
-      <div className="space-y-2">
-        <button
-          type="button"
-          onClick={() => onFinish({ to: "home" })}
-          className="w-full rounded-xl bg-sage-600 py-3 text-sm font-semibold text-white"
-        >
-          Looks good — save
-        </button>
-        <button
-          type="button"
-          onClick={() => onFinish({ to: "dashboard-newsit" })}
-          className="w-full rounded-xl border border-sage-300 bg-white py-3 text-sm font-semibold text-sage-700"
-        >
-          Save & create a sit
-        </button>
-        <button
-          type="button"
-          onClick={() => onJumpToStep(8)}
-          className="block w-full text-center text-xs font-semibold text-sage-700 underline"
-        >
-          ← Back to Emergency
-        </button>
-      </div>
+      {gaps.length > 0 && (
+        <section className="flex flex-col gap-2.5">
+          <h2 className="m-0 mt-2 text-[22px] font-[700] leading-[1.2]" style={{ fontFamily: SERIF }}>{t("birdSetup.review.stillThin", "Still thin or empty")}</h2>
+          {gaps.map((g) => (
+            <div key={g.key} className="flex items-center gap-3 rounded-[14px] border-2 border-dashed bg-white px-4 py-3" style={{ borderColor: "#b9b19a" }}>
+              <p className="m-0 min-w-0 flex-1 text-[14.5px] leading-[1.45]">
+                <span className="font-[700]">{g.title}</span>
+                <span style={{ color: S.helper }}> · {g.note}</span>
+              </p>
+              <SetupTextButton onClick={() => onJumpToStep(g.step)}>{t("birdSetup.review.add", "Add")}</SetupTextButton>
+            </div>
+          ))}
+        </section>
+      )}
     </div>
   );
 }

@@ -8,24 +8,29 @@ import { useCapability, useMyPermissions } from "@/lib/useCapability";
 import { useActiveSitIdForBird } from "@/components/CaregiverHome";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
-import { computeTriage, type ScanFieldKey, type ScanAnswer } from "@/lib/triage";
+import { buildDailyLogRow, type ScanAnswers } from "@/lib/dailyLog";
 import { ScanForm, type ScanSubmit } from "@/components/ScanForm";
 import { MemberContextBanner } from "@/components/MemberContextBanner";
 import { track } from "@/lib/analytics";
 import { uploadScanPhotoOrInline } from "@/lib/scanPhoto";
 import { friendlyError } from "@/lib/errorMessage";
 import { localDateISO } from "@/lib/localDay";
+import i18next from "i18next";
+import { useTranslation } from "react-i18next";
+import { triageReasonLines } from "./$birdId.scans.$scanId";
+import { triageMessageLabel } from "@/lib/triageLabels";
 
 // Owner-run health scan. Uses the SAME ScanForm + triage as the sitter; on submit
 // it writes a daily_logs row (source='owner', run_by, no sit) + optional photo +
 // weight_entries(source='owner') via the authenticated client under has_bird_access
 // RLS. No notifications (the owner ran it themselves).
 export const Route = createFileRoute("/_authenticated/birds/$birdId/scan")({
-  head: () => ({ meta: [{ title: "Health check — Kya & Co." }] }),
+  head: () => ({ meta: [{ title: i18next.t("ownerScan.metaTitle", "Health check — Kya & Co.") }] }),
   component: OwnerScan,
 });
 
 function OwnerScan() {
+  const { t } = useTranslation();
   const { birdId } = Route.useParams();
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -44,7 +49,7 @@ function OwnerScan() {
   // tag the daily_log, the inline photo_log, and the inline weight_entry with
   // the sit_id so the sit's activity view can pull them by attribution.
   const activeSitId = useActiveSitIdForBird(birdId);
-  const [result, setResult] = useState<{ status: string; message: string; reasons: string[] } | null>(null);
+  const [result, setResult] = useState<{ status: string; message: string; reasons: string[]; reasonCodes?: unknown } | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const { data: bird } = useQuery({
@@ -54,37 +59,20 @@ function OwnerScan() {
       return data as { name: string } | null;
     },
   });
-  const name = bird?.name ?? "this bird";
+  const name = bird?.name ?? t("ownerScan.thisBird", "this bird");
 
   async function onSubmit(p: ScanSubmit) {
     setSubmitting(true);
     try {
       const { data: u } = await getLocalUser();
-      const triage = computeTriage(p.answers as Record<ScanFieldKey, ScanAnswer>);
+      const { row: logRow, triage } = buildDailyLogRow(p.answers as ScanAnswers, {
+        birdId, sitId: activeSitId, source: scanSource, runBy: u.user?.id ?? null, logDate: localDateISO(),
+        notes: p.notes ?? null, itemNotes: p.itemNotes ?? null,
+      });
       const a = p.answers;
       const { data: row, error } = await supabase
         .from("daily_logs")
-        .insert({
-          bird_id: birdId,
-          sit_id: activeSitId,
-          source: scanSource,
-          run_by: u.user?.id ?? null,
-          log_date: localDateISO(),
-          alertness_status: a.alertness,
-          food_status: a.food,
-          droppings_status: a.droppings,
-          breathing_status: a.breathing,
-          posture_status: a.posture,
-          behavior_status: a.noise,
-          energy_status: a.fluffed,
-          injury_status: a.injury,
-          exposure_status: a.exposure,
-          notes: p.notes ?? null,
-          item_notes: p.itemNotes ?? null,
-          triage_status: triage.status,
-          triage_reasons: triage.reasons.join(" | "),
-          triage_reason_codes: triage.reasonCodes,
-        } as any)
+        .insert(logRow as any)
         .select()
         .single();
       if (error) throw error;
@@ -111,7 +99,7 @@ function OwnerScan() {
         qc.invalidateQueries({ queryKey: k === "scan-feed" ? ["scan-feed"] : [k, birdId] }));
       qc.invalidateQueries({ queryKey: ["birds"] }); // a weigh-in updates Home pills — weights embedded in the birds query
     } catch (e: any) {
-      toast.error(friendlyError(e, "Couldn't log the health check."));
+      toast.error(friendlyError(e, t("ownerScan.logFailed", "Couldn't log the health check.")));
     } finally {
       setSubmitting(false);
     }
@@ -121,37 +109,37 @@ function OwnerScan() {
     <div className="min-h-screen bg-[#f4f1e8] pb-nav">
       <header className="sticky top-0 z-10 border-b border-[#e3ded0] bg-[#f4f1e8]/95 backdrop-blur">
         <div className="mx-auto flex max-w-md items-center gap-3 px-5 pt-safe pb-3">
-          <Link to="/birds/$birdId" params={{ birdId }} aria-label="Back to bird record" className="-ml-1 rounded p-1 text-[#1a3d2e]">
+          <Link to="/birds/$birdId" params={{ birdId }} aria-label={t("ownerScan.backAria", "Back to bird record")} className="-ml-1 rounded p-1 text-[#1a3d2e]">
             <ArrowLeft className="size-5" />
           </Link>
-          <h1 className="text-base font-medium text-[#1a3d2e]">Health check — {name}</h1>
+          <h1 className="text-base font-medium text-[#1a3d2e]">{t("ownerScan.title", "Health check — {{name}}", { name })}</h1>
         </div>
       </header>
 
       {result ? (
         <main className="mx-auto max-w-md space-y-4 px-5 py-6">
           <div className={`rounded-2xl p-6 text-white ${result.status === "red" ? "bg-warn-red" : result.status === "yellow" ? "bg-warn-amber" : "bg-warn-green"}`}>
-            <p className="text-[11px] font-medium uppercase tracking-widest opacity-80">{result.status === "red" ? "Call your vet now" : result.status === "yellow" ? "Keep a close eye" : "All good today"}</p>
-            <h2 className="mt-1 text-2xl font-medium leading-tight">{result.message}</h2>
+            <p className="text-[11px] font-medium uppercase tracking-widest opacity-80">{result.status === "red" ? t("ownerScan.eyebrowRed", "Call your vet now") : result.status === "yellow" ? t("ownerScan.eyebrowYellow", "Keep a close eye") : t("ownerScan.eyebrowGreen", "All good today")}</p>
+            <h2 className="mt-1 text-2xl font-medium leading-tight">{triageMessageLabel(t, result.message)}</h2>
           </div>
           {result.reasons.length > 0 && (
             <div className="rounded-xl bg-[#efe9da] p-4">
-              <p className="text-[11px] font-medium uppercase tracking-widest text-[#5f5e5a]">What you flagged</p>
-              <ul className="mt-2 list-disc pl-5 text-sm text-[#1a3d2e]">{result.reasons.map((r, i) => <li key={i}>{r}</li>)}</ul>
+              <p className="text-[11px] font-medium uppercase tracking-widest text-[#5f5e5a]">{t("ownerScan.whatYouFlagged", "What you flagged")}</p>
+              <ul className="mt-2 list-disc pl-5 text-sm text-[#1a3d2e]">{(triageReasonLines(t, result.reasonCodes) ?? result.reasons).map((r, i) => <li key={i}>{r}</li>)}</ul>
             </div>
           )}
           <div className="flex gap-2">
             {result.status !== "green" && (
-              <Link to="/birds/$birdId/plan/editor" params={{ birdId }} search={{ tab: "emergency" }} className="flex-1 rounded-xl bg-[#1a3d2e] py-3 text-center text-sm font-medium text-white">Emergency contacts</Link>
+              <Link to="/birds/$birdId/plan/editor" params={{ birdId }} search={{ tab: "emergency" }} className="flex-1 rounded-xl bg-[#1a3d2e] py-3 text-center text-sm font-medium text-white">{t("ownerScan.emergencyContacts", "Emergency contacts")}</Link>
             )}
-            <button type="button" onClick={() => navigate({ to: "/birds/$birdId", params: { birdId } })} className="flex-1 rounded-xl border border-[#c8bfa6] py-3 text-center text-sm font-medium text-[#1a3d2e]">Back to record</button>
+            <button type="button" onClick={() => navigate({ to: "/birds/$birdId", params: { birdId } })} className="flex-1 rounded-xl border border-[#c8bfa6] py-3 text-center text-sm font-medium text-[#1a3d2e]">{t("ownerScan.backToRecord", "Back to record")}</button>
           </div>
         </main>
       ) : (
         <>
         <div className="mx-auto max-w-md px-5 pt-4"><MemberContextBanner birdId={birdId} /></div>
-        <p className="mx-auto max-w-md px-5 pt-2 text-sm leading-relaxed text-[#5f5e5a]">A quick once-over to make sure {name}'s feeling like themselves.</p>
-        <ScanForm submitting={submitting} submitLabel="Log health check" onSubmit={onSubmit} />
+        <p className="mx-auto max-w-md px-5 pt-2 text-sm leading-relaxed text-[#5f5e5a]">{t("ownerScan.intro", "A quick once-over to make sure {{name}}'s feeling like themselves.", { name })}</p>
+        <ScanForm submitting={submitting} submitLabel={t("ownerScan.submit", "Log health check")} onSubmit={onSubmit} />
         </>
       )}
     </div>

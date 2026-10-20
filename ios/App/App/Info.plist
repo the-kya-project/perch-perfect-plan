@@ -6,6 +6,11 @@
 	<string>$(CAPACITOR_DEBUG)</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>nl</string>
+	</array>
 	<key>CFBundleDisplayName</key>
 	<string>Kya &amp; Co.</string>
 	<key>CFBundleExecutable</key>
@@ -22,14 +27,6 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleURLTypes</key>
 	<array>
-		<dict>
-			<key>CFBundleURLName</key>
-			<string>com.thekyaproject.app</string>
-			<key>CFBundleURLSchemes</key>
-			<array>
-				<string>kya</string>
-			</array>
-		</dict>
 		<dict>
 			<key>CFBundleURLName</key>
 			<string>google-signin</string>

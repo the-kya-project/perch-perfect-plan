@@ -4,22 +4,29 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import {
-  ArrowLeft, Calendar, Activity, Scale, BookOpen, CheckSquare, Image as ImageIcon, Loader2, Users, Mail, Trash2, AlertTriangle,
+  ArrowLeft, Activity, Scale, BookOpen, CheckSquare, Image as ImageIcon, Loader2, Home, AlertTriangle,
 } from "lucide-react";
-import { InkHero, SectionHead, Card, IconTile, StatusPill } from "@/components/system";
+import { IconTile } from "@/components/system";
+import { K, KyaPage, KyaHeader, KyaBody, KyaCard, KyaHeading, KyaIconButton, KyaLink } from "@/components/kya";
+import { rangeTo, sitTitle } from "@/lib/sitText";
+import { durationDays } from "@/lib/dates";
 import { useServerFn } from "@tanstack/react-start";
 import { resolveHouseholdNames } from "@/lib/home.functions";
-import { memberDisplayName, firstName } from "@/lib/memberDisplay";
+import { memberDisplayName } from "@/lib/memberDisplay";
 import { useHouseholdCapability, useMyPermissions } from "@/lib/useCapability";
-import { formatDateRangeUS, formatLocalDateTime } from "@/lib/dates";
+import { formatLocalDateTime } from "@/lib/dates";
 import { friendlyError } from "@/lib/errorMessage";
 import { localDateISO } from "@/lib/localDay";
+import { renderDerivedTask } from "@/lib/routineTaskRender";
+import type { DerivedTask } from "@/lib/derivedTasks";
+import { useTranslation } from "react-i18next";
+import i18next from "i18next";
 
 // Past Sits detail view — the sit's own activity feed, derived strictly from
 // sit_id attribution on the logs that ran inside the window. Reachable from a
 // SitCard "Activity" link; owner-only (RLS on sits enforces). Read-only.
 export const Route = createFileRoute("/_authenticated/sits/$sitId")({
-  head: () => ({ meta: [{ title: "Sit activity — Kya & Co." }] }),
+  head: () => ({ meta: [{ title: i18next.t("sitDetail.pageTitle", "Sit activity — Kya & Co.") }] }),
   component: SitDetail,
 });
 
@@ -28,9 +35,12 @@ type Activity =
   | { kind: "weight"; id: string; at: string; grams: number; bird_id: string }
   | { kind: "journal"; id: string; at: string; title: string; kindLabel: string | null; bird_id: string }
   | { kind: "photo"; id: string; at: string; bird_id: string }
-  | { kind: "task"; id: string; at: string; label: string };
+  // label = stored English title (null if unknown); derived = its descriptor,
+  // rendered in the UI language at display.
+  | { kind: "task"; id: string; at: string; label: string | null; derived: unknown | null };
 
 function SitDetail() {
+  const { t } = useTranslation();
   const { sitId } = Route.useParams();
   const navigate = useNavigate();
   const router = useRouter();
@@ -66,7 +76,7 @@ function SitDetail() {
         supabase.from("weight_entries").select("id, bird_id, grams, measured_at").eq("sit_id", sitId).order("measured_at", { ascending: false }),
         supabase.from("journal_entries").select("id, bird_id, title, kind, created_at").eq("sit_id", sitId).order("created_at", { ascending: false }),
         supabase.from("photo_logs").select("id, bird_id, created_at").eq("sit_id", sitId).order("created_at", { ascending: false }),
-        supabase.from("task_completions").select("id, routine_task_id, completed_at, routine_tasks(title)").eq("sit_id", sitId).order("completed_at", { ascending: false }),
+        supabase.from("task_completions").select("id, routine_task_id, completed_at, routine_tasks(title, derived)").eq("sit_id", sitId).order("completed_at", { ascending: false }),
       ]);
       const counts = {
         scans: scansRes.data?.length ?? 0,
@@ -79,9 +89,9 @@ function SitDetail() {
       const activity: Activity[] = [
         ...((scansRes.data ?? []) as any[]).map((r) => ({ kind: "scan" as const, id: r.id, at: r.created_at, status: r.triage_status ?? "green", reasons: r.triage_reasons ?? null, bird_id: r.bird_id })),
         ...((weightsRes.data ?? []) as any[]).map((r) => ({ kind: "weight" as const, id: r.id, at: r.measured_at, grams: r.grams, bird_id: r.bird_id })),
-        ...((journalRes.data ?? []) as any[]).map((r) => ({ kind: "journal" as const, id: r.id, at: r.created_at, title: r.title ?? "Journal entry", kindLabel: r.kind ?? null, bird_id: r.bird_id })),
+        ...((journalRes.data ?? []) as any[]).map((r) => ({ kind: "journal" as const, id: r.id, at: r.created_at, title: r.title ?? i18next.t("sitDetail.journalEntry", "Journal entry"), kindLabel: r.kind ?? null, bird_id: r.bird_id })),
         ...((photosRes.data ?? []) as any[]).map((r) => ({ kind: "photo" as const, id: r.id, at: r.created_at, bird_id: r.bird_id })),
-        ...((completionsRes.data ?? []) as any[]).map((r) => ({ kind: "task" as const, id: r.id, at: r.completed_at, label: r.routine_tasks?.title ?? "Routine task" })),
+        ...((completionsRes.data ?? []) as any[]).map((r) => ({ kind: "task" as const, id: r.id, at: r.completed_at, label: (r.routine_tasks?.title ?? null) as string | null, derived: r.routine_tasks?.derived ?? null })),
       ].sort((a, b) => +new Date(b.at) - +new Date(a.at));
 
       return {
@@ -109,8 +119,8 @@ function SitDetail() {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  if (isLoading) return <Shell goBack={goBack} eyebrow="Sit activity" headline="Loading…"><Loader /></Shell>;
-  if (!data?.sit) return <Shell goBack={goBack} eyebrow="Sit activity" headline="Sit not found."><Card className="p-6 text-center"><p className="t-body text-[var(--ink2)]">This sit isn't available.</p></Card></Shell>;
+  if (isLoading) return <Shell goBack={goBack} headline={t("sitDetail.loading", "Loading…")}><Loader /></Shell>;
+  if (!data?.sit) return <Shell goBack={goBack} headline={t("sitDetail.notFoundNoDot", "Sit not found")}><KyaCard className="p-6 text-center"><p className="m-0 text-[15px]" style={{ color: K.ink }}>{t("sitDetail.notAvailable", "This sit isn't available.")}</p></KyaCard></Shell>;
 
   const sit = data.sit;
   // Owner ALWAYS sees delete — detected explicitly here so a slow/empty
@@ -128,7 +138,7 @@ function SitDetail() {
     try {
       const { error } = await supabase.from("sits").delete().eq("id", sitId);
       if (error) throw error;
-      toast.success("Sit deleted.");
+      toast.success(t("sitDetail.deleted", "Sit deleted."));
       // Refresh every surface that lists sits: the Sits list (["sits-full"]), the
       // Past archive (["sits-archive"]), the dashboard's upcoming row (["all-sits"]),
       // and the caregiver home (["active-caregiver-sits"]).
@@ -139,128 +149,112 @@ function SitDetail() {
       qc.invalidateQueries({ queryKey: ["dashboard-home"] }); // Home's upcoming-sit/today rows
       navigate({ to: "/sits" });
     } catch (e: any) {
-      toast.error(friendlyError(e, "Couldn't delete the sit."));
+      toast.error(friendlyError(e, t("sitDetail.couldNotDelete", "Couldn't delete the sit.")));
       setDeleting(false);
     }
   }
 
   const isHousehold = !!sit.caregiver_user_id;
-  const eyebrow = sit.title?.trim() || "Sit";
-  const headline = formatDateRangeUS(sit.start_date, sit.end_date);
-  const coverBy = isHousehold
-    ? `Covered by ${data.caregiver?.name ?? "household member"}`
-    : sit.sitter_name?.trim()
-      ? `Covered by ${sit.sitter_name}${sit.sitter_email ? ` · ${sit.sitter_email}` : ""}`
-      : sit.sitter_email ?? "External sitter";
+  const caregiver = isHousehold
+    ? data.caregiver?.name ?? t("sitDetail.householdMember", "Household member")
+    : sit.sitter_name?.trim() || sit.sitter_email || t("sitDetail.externalSitter", "External sitter");
+  const headline = sitTitle(t, sit, caregiver);
+  const days = durationDays(sit.start_date, sit.end_date);
+  const sub = `${caregiver} · ${rangeTo(t, sit.start_date, sit.end_date)} · ${t("sitCards.dayCount", "{{count}} days", { count: days })}`;
   const birdById = new Map(data.birds.map((b) => [b.id, b.name]));
-  const birdLabel = (id: string) => birdById.get(id) ?? "A bird";
+  const birdLabel = (id: string) => birdById.get(id) ?? t("sitDetail.aBird", "A bird");
 
   return (
-    <Shell goBack={goBack} eyebrow={eyebrow} headline={headline} body={coverBy}>
-      {/* Sit meta — who, what birds, dates. */}
-      <Card className="p-4">
+    <Shell goBack={goBack} headline={headline} body={sub}>
+      {/* Who covered, and which birds. */}
+      <KyaCard className="p-4">
         <div className="flex items-center gap-3">
           {isHousehold ? (
-            <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[var(--pale)] text-sm font-[500] text-[var(--moss)]">
-              {((data.caregiver?.name ?? "?").slice(0, 1) || "?").toUpperCase()}
-            </span>
+            <span className="grid size-11 shrink-0 place-items-center rounded-[14px]" style={{ background: K.forest, color: K.lime }}><Home className="size-5" /></span>
           ) : (
-            <IconTile size={40} tone="pale" icon={<Mail className="size-5" />} />
+            <span className="grid size-11 shrink-0 place-items-center rounded-full text-[15px] font-[700]" style={{ background: K.lime, color: K.forest }}>{caregiver.slice(0, 1).toUpperCase()}</span>
           )}
           <div className="min-w-0 flex-1">
-            <p className="t-item truncate">{isHousehold ? data.caregiver?.name ?? "Household member" : sit.sitter_name?.trim() || sit.sitter_email || "External sitter"}</p>
-            <p className="t-meta truncate">
-              {isHousehold ? "Household" : "External sitter"} · {formatDateRangeUS(sit.start_date, sit.end_date)}
+            <p className="m-0 truncate text-[15px] font-[700]">{caregiver}</p>
+            <p className="m-0 truncate text-[13px]" style={{ color: K.quiet }}>
+              {isHousehold ? t("sitDetail.household", "Household") : [t("sitDetail.sitter", "Sitter"), sit.sitter_email].filter(Boolean).join(" · ")}
             </p>
-            {data.leadName && (
-              <p className="mt-0.5">
-                <span className="t-eyebrow text-[var(--teal-on-cream)]">In charge · </span>
-                <span className="t-eyebrow text-[var(--ink)]">{firstName(data.leadName)}</span>
-              </p>
-            )}
           </div>
-          {isHousehold && <StatusPill tone="household">Household</StatusPill>}
         </div>
         {data.birds.length > 0 && (
-          <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-[var(--line2)] pt-3">
-            <Users className="size-4 text-[var(--mute)]" />
-            <p className="t-meta">Birds covered:</p>
+          <div className="mt-3 flex flex-wrap items-center gap-2 pt-3" style={{ borderTop: `1px solid ${K.line}` }}>
+            <span className="text-[13px]" style={{ color: K.quiet }}>{t("sitDetail.birdsCoveredLabel", "Birds")}</span>
             {data.birds.map((b) => (
-              <Link key={b.id} to="/birds/$birdId" params={{ birdId: b.id }} className="rounded-full bg-[var(--pale2)] px-2 py-0.5 text-[12px] font-[500] text-[var(--moss)]">{b.name}</Link>
+              <Link key={b.id} to="/birds/$birdId" params={{ birdId: b.id }} className="inline-flex min-h-[44px] items-center rounded-full px-3.5 text-[14px] font-[700]" style={{ background: K.mist, color: K.moss }}>{b.name}</Link>
             ))}
           </div>
         )}
-      </Card>
+      </KyaCard>
 
-      {/* Activity summary tiles */}
-      <Card>
-        <div className="grid grid-cols-5 divide-x divide-[var(--line2)]">
-          <SummaryTile label="Health checks" value={data.counts.scans} />
-          <SummaryTile label="Weights" value={data.counts.weights} />
-          <SummaryTile label="Journal" value={data.counts.journals} />
-          <SummaryTile label="Photos" value={data.counts.photos} />
-          <SummaryTile label="Tasks" value={data.counts.tasks} />
+      {/* What happened, in numbers */}
+      <KyaCard>
+        <div className="grid grid-cols-5">
+          <SummaryTile label={t("sitDetail.healthChecks", "Health checks")} value={data.counts.scans} />
+          <SummaryTile label={t("sitDetail.weights", "Weights")} value={data.counts.weights} />
+          <SummaryTile label={t("sitDetail.journal", "Journal")} value={data.counts.journals} />
+          <SummaryTile label={t("sitDetail.photos", "Photos")} value={data.counts.photos} />
+          <SummaryTile label={t("sitDetail.tasks", "Tasks")} value={data.counts.tasks} />
         </div>
-      </Card>
+      </KyaCard>
 
-      <section>
-        <SectionHead title="Activity" />
+      <KyaCard>
+        <KyaHeading size={21} className="px-4 pb-1 pt-4">{t("sitDetail.activity", "Activity")}</KyaHeading>
         {data.activity.length === 0 ? (
-          <Card className="p-6 text-center">
-            <p className="t-body text-[var(--ink2)]">No activity logged during this sit.</p>
-          </Card>
+          <p className="m-0 px-4 pb-4 pt-1 text-[15px]" style={{ color: K.quiet }}>{t("sitDetail.noActivity", "No activity logged during this sit.")}</p>
         ) : (
-          <Card>
-            {data.activity.map((a, i) => (
-              <ActivityRow key={`${a.kind}-${a.id}`} a={a} last={i === data.activity.length - 1} birdLabel={birdLabel} />
-            ))}
-          </Card>
+          data.activity.map((a, i) => (
+            <ActivityRow key={`${a.kind}-${a.id}`} a={a} last={i === data.activity.length - 1} birdLabel={birdLabel} />
+          ))
         )}
-      </section>
+      </KyaCard>
 
       {/* Delete — owner (always) or a manage_sits member (RLS enforces the same). */}
       {canDelete && (
-        <section>
-          <SectionHead title="Danger zone" />
-          <Card className="p-4">
-            {confirmingDelete ? (
-              <div className="rounded-xl bg-[var(--red-fill)] p-3 ring-1 ring-[var(--red-deep)]/15">
-                {isActiveSit && (
-                  <p className="mb-2 flex items-start gap-2 text-sm font-[500] text-[var(--red-deep)]">
-                    <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-                    This sit is active right now — a sitter is covering. Deleting it ends their access immediately.
-                  </p>
-                )}
-                <p className="text-sm text-[var(--ink)]">
-                  Delete this sit? This can't be undone. Logs recorded during it (scans, weights, photos) are kept but
-                  no longer tied to the sit; its checklist and task completions are removed.
+        <div className="px-1">
+          {confirmingDelete ? (
+            <div className="rounded-[16px] p-3.5" style={{ background: "#fcebeb" }}>
+              {isActiveSit && (
+                <p className="m-0 mb-2 flex items-start gap-2 text-[14px] font-[700]" style={{ color: K.red }}>
+                  <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+                  {t("sitDetail.activeWarning", "This sit is active right now — a sitter is covering. Deleting it ends their access immediately.")}
                 </p>
-                <div className="mt-3 flex gap-2">
-                  <button type="button" onClick={deleteSit} disabled={deleting} className="min-h-[44px] flex-1 rounded-[12px] bg-[var(--red-deep)] px-4 text-[15px] font-[600] text-white disabled:opacity-50">
-                    {deleting ? "Deleting…" : "Delete sit"}
-                  </button>
-                  <button type="button" onClick={() => setConfirmingDelete(false)} disabled={deleting} className="min-h-[44px] rounded-[12px] border border-[var(--line)] px-4 text-[15px] font-[500] text-[var(--mute)] disabled:opacity-50">Keep</button>
-                </div>
+              )}
+              <p className="m-0 text-[14px] leading-[1.5]">
+                {t("sitDetail.deleteConfirm", "Delete this sit? This can't be undone. Logs recorded during it (scans, weights, photos) are kept but no longer tied to the sit; its checklist and task completions are removed.")}
+              </p>
+              <div className="mt-3 flex gap-2">
+                <button type="button" onClick={deleteSit} disabled={deleting} className="min-h-[48px] flex-1 rounded-full px-4 text-[15px] font-[700] text-white disabled:opacity-50" style={{ background: K.red }}>
+                  {deleting ? t("sitDetail.deleting", "Deleting…") : t("sitDetail.deleteSit", "Delete sit")}
+                </button>
+                <button type="button" onClick={() => setConfirmingDelete(false)} disabled={deleting} className="min-h-[48px] rounded-full border-2 bg-white px-5 text-[15px] font-[700] disabled:opacity-50" style={{ borderColor: K.forest, color: K.forest }}>{t("sitDetail.keep", "Keep")}</button>
               </div>
-            ) : (
-              <button type="button" onClick={() => setConfirmingDelete(true)} className="inline-flex min-h-[44px] items-center gap-2 text-[15px] font-[500] text-[var(--red-deep)]">
-                <Trash2 className="size-4" /> Delete this sit
-              </button>
-            )}
-          </Card>
-        </section>
+            </div>
+          ) : (
+            <KyaLink color={K.red} onClick={() => setConfirmingDelete(true)}>{t("sitDetail.deleteThisSit", "Delete this sit")}</KyaLink>
+          )}
+        </div>
       )}
     </Shell>
   );
 }
 
 function ActivityRow({ a, last, birdLabel }: { a: Activity; last: boolean; birdLabel: (id: string) => string }) {
+  const { t, i18n } = useTranslation();
   const when = fmtWhen(a.at);
   if (a.kind === "scan") {
     const triage = a.status === "red" || a.status === "yellow";
     return (
       <Row last={last} leading={<IconTile size={34} tone={triage ? "amber" : "pale"} icon={<Activity className="size-4" />} />}
-        title={`${birdLabel(a.bird_id)} · health check — ${a.status === "red" ? "concern flagged" : a.status === "yellow" ? "something to check" : "all clear"}`}
+        title={a.status === "red"
+          ? t("sitDetail.scanConcern", "{{bird}} · health check — concern flagged", { bird: birdLabel(a.bird_id) })
+          : a.status === "yellow"
+            ? t("sitDetail.scanCheck", "{{bird}} · health check — something to check", { bird: birdLabel(a.bird_id) })
+            : t("sitDetail.scanClear", "{{bird}} · health check — all clear", { bird: birdLabel(a.bird_id) })}
         subtitle={`${when}${a.reasons ? ` · ${a.reasons.replace(/ \| /g, " · ")}` : ""}`}
       />
     );
@@ -268,7 +262,7 @@ function ActivityRow({ a, last, birdLabel }: { a: Activity; last: boolean; birdL
   if (a.kind === "weight") {
     return (
       <Row last={last} leading={<IconTile size={34} tone="pale" icon={<Scale className="size-4" />} />}
-        title={`${birdLabel(a.bird_id)} · ${a.grams} g`}
+        title={t("sitDetail.weightRow", "{{bird}} · {{grams}} g", { bird: birdLabel(a.bird_id), grams: a.grams })}
         subtitle={when}
       />
     );
@@ -284,14 +278,18 @@ function ActivityRow({ a, last, birdLabel }: { a: Activity; last: boolean; birdL
   if (a.kind === "photo") {
     return (
       <Row last={last} leading={<IconTile size={34} tone="pale" icon={<ImageIcon className="size-4" />} />}
-        title={`${birdLabel(a.bird_id)} · photo`}
+        title={t("sitDetail.photoRow", "{{bird}} · photo", { bird: birdLabel(a.bird_id) })}
         subtitle={when}
       />
     );
   }
+  // Derived tasks render in the UI language; owner-typed titles show verbatim.
+  const taskLabel = a.derived
+    ? renderDerivedTask(a.derived as DerivedTask, i18n.getFixedT(i18n.language, "routine"), i18n.language).title
+    : (a.label ?? t("sitDetail.routineTask", "Routine task"));
   return (
     <Row last={last} leading={<IconTile size={34} tone="pale" icon={<CheckSquare className="size-4" />} />}
-      title={`Task complete — ${a.label}`}
+      title={t("sitDetail.taskComplete", "Task complete — {{label}}", { label: taskLabel })}
       subtitle={when}
     />
   );
@@ -299,11 +297,11 @@ function ActivityRow({ a, last, birdLabel }: { a: Activity; last: boolean; birdL
 
 function Row({ leading, title, subtitle, last }: { leading: React.ReactNode; title: string; subtitle: string; last: boolean }) {
   return (
-    <div className={`flex min-h-[44px] items-center gap-3 px-4 py-2.5 ${last ? "" : "border-b border-[var(--line2)]"}`}>
+    <div className="flex min-h-[60px] items-center gap-3 px-4 py-2.5" style={{ borderBottom: last ? undefined : `1px solid ${K.line}` }}>
       {leading}
       <div className="min-w-0 flex-1">
-        <p className="t-item truncate font-[400]">{title}</p>
-        <p className="t-meta truncate">{subtitle}</p>
+        <p className="m-0 text-[15px] font-[600]">{title}</p>
+        <p className="m-0 truncate text-[13px]" style={{ color: K.quiet }}>{subtitle}</p>
       </div>
     </div>
   );
@@ -311,26 +309,34 @@ function Row({ leading, title, subtitle, last }: { leading: React.ReactNode; tit
 
 function SummaryTile({ label, value }: { label: string; value: number }) {
   return (
-    <div className="px-2 py-3 text-center">
-      <p className="text-[18px] font-[500] text-[var(--ink)]">{value}</p>
-      <p className="t-meta">{label}</p>
+    <div className="px-1 py-3.5 text-center">
+      <p className="m-0 text-[20px] font-[700]">{value}</p>
+      <p className="m-0 text-[11.5px] leading-[1.25]" style={{ color: K.quiet }}>{label}</p>
     </div>
   );
 }
 
-function Shell({ goBack, eyebrow, headline, body, children }: { goBack: () => void; eyebrow: string; headline: string; body?: string; children: React.ReactNode }) {
+function Shell({ goBack, headline, body, children }: { goBack: () => void; headline: string; body?: string; children: React.ReactNode }) {
+  const { t } = useTranslation();
   return (
-    <div className="min-h-screen bg-[var(--cream)] pb-nav">
+    <KyaPage>
       <div className="mx-auto max-w-md">
-        <InkHero backIcon={<ArrowLeft className="size-5" />} onBack={goBack} eyebrow={eyebrow} headline={headline} body={body} trailingIcons={<Calendar className="size-4 text-white/70" />} />
-        <main className="space-y-4 px-5 pt-5">{children}</main>
+        <KyaHeader>
+          <div className="mt-1.5">
+            <KyaIconButton label={t("sitDetail.back", "Back")} onClick={goBack}><ArrowLeft className="size-5" /></KyaIconButton>
+          </div>
+          <KyaHeading as="h1" size={30} className="mt-4 text-white">{headline}</KyaHeading>
+          {body && <p className="m-0 mt-2 text-[15px] leading-[1.5]" style={{ color: K.paleGreen }}>{body}</p>}
+        </KyaHeader>
+        <KyaBody>{children}</KyaBody>
       </div>
-    </div>
+    </KyaPage>
   );
 }
 
 function Loader() {
-  return <div className="flex items-center justify-center gap-2 py-10 text-[var(--mute)]"><Loader2 className="size-4 animate-spin" /> Loading…</div>;
+  const { t } = useTranslation();
+  return <div className="flex items-center justify-center gap-2 py-10 text-[var(--mute)]"><Loader2 className="size-4 animate-spin" /> {t("sitDetail.loading", "Loading…")}</div>;
 }
 
 function fmtWhen(iso: string): string {

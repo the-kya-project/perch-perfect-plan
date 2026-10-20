@@ -1,18 +1,19 @@
-import { useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { namesAsCount } from "@/lib/birdNames";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { Calendar, Link2, Copy, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { SitChecklist } from "@/components/SitChecklist";
-import { SitForm } from "@/components/SitForm";
 import { formatDateRangeUS } from "@/lib/dates";
+import { useTranslation, Trans } from "react-i18next";
 
 type Bird = { id: string; name: string };
 
 export function SitCard({ sit, birds = [], allBirds, onChange }: { sit: any; birds?: Bird[]; allBirds?: any[]; onChange: () => void }) {
-  const [editing, setEditing] = useState(false);
+  const { t } = useTranslation();
+  const navigate = useNavigate();
   // Two caregiver kinds — see migration sits_one_caregiver_chk. A household sit
   // has no token (and never expires by a token window); it just runs from
   // start_date through end_date.
@@ -20,31 +21,38 @@ export function SitCard({ sit, birds = [], allBirds, onChange }: { sit: any; bir
   const expired = !isHousehold && sit.token_expires_at && new Date(sit.token_expires_at) < new Date();
   const ended = new Date(sit.end_date + "T23:59:59") < new Date();
   const upcoming = new Date(sit.start_date) > new Date(new Date().toDateString());
-  const status = sit.revoked ? "Revoked" : expired || ended ? (isHousehold && ended ? "Ended" : "Expired") : upcoming ? "Upcoming" : "Active";
+  const status = sit.revoked
+    ? t("sitCard.revoked", "Revoked")
+    : expired || ended
+      ? (isHousehold && ended ? t("sitCard.ended", "Ended") : t("sitCard.expired", "Expired"))
+      : upcoming ? t("sitCard.upcoming", "Upcoming") : t("sitCard.active", "Active");
   const tone = sit.revoked || expired || ended ? "bg-[#e8e1d0] text-[#5f5e5a]" : upcoming ? "bg-[#f4e4c4] text-[#84600f]" : "bg-[#d6e8dc] text-[#1a5e3f]";
   const url = !isHousehold && typeof window !== "undefined" ? `${window.location.origin}/sitter/${sit.invite_token}` : "";
 
   // Resolve the household caregiver's display name for the card.
-  const { data: caregiverName } = useQuery({
+  const { data: rawCaregiverName } = useQuery({
     queryKey: ["sit-caregiver-name", sit.caregiver_user_id],
     enabled: isHousehold,
     staleTime: 5 * 60_000,
     queryFn: async () => {
       const { data } = await supabase.from("profiles").select("display_name").eq("id", sit.caregiver_user_id).maybeSingle();
-      return (data?.display_name ?? "").toString().trim() || "Household member";
+      return (data?.display_name ?? "").toString().trim();
     },
   });
 
+  // Empty display name → "Household member" (translated at display, not cached).
+  const caregiverName = rawCaregiverName === undefined ? undefined : rawCaregiverName || t("sitCard.householdMember", "Household member");
+
   async function revoke() {
-    if (!confirm("Revoke this invite link? The sitter will lose access.")) return;
+    if (!confirm(t("sitCard.confirmRevoke", "Revoke this invite link? The sitter will lose access."))) return;
     await supabase.from("sits").update({ revoked: true }).eq("id", sit.id);
-    toast.success("Link revoked.");
+    toast.success(t("sitCard.linkRevoked", "Link revoked."));
     onChange();
   }
   async function remove() {
-    if (!confirm("Delete this sit? This removes all sitter logs for it.")) return;
+    if (!confirm(t("sitCard.confirmDelete", "Delete this sit? This removes all sitter logs for it."))) return;
     await supabase.from("sits").delete().eq("id", sit.id);
-    toast.success("Sit deleted.");
+    toast.success(t("sitCard.deleted", "Sit deleted."));
     onChange();
   }
   async function copy() {
@@ -71,32 +79,21 @@ export function SitCard({ sit, birds = [], allBirds, onChange }: { sit: any; bir
         .map((b) => {
           const c = byBird.get(b.id);
           const needs: string[] = [];
-          if (!eff(c, "owner_phone")) needs.push("your phone");
-          if (!eff(c, "avian_vet_phone")) needs.push("avian vet phone");
+          if (!eff(c, "owner_phone")) needs.push(t("sitCard.needYourPhone", "your phone"));
+          if (!eff(c, "avian_vet_phone")) needs.push(t("sitCard.needVetPhone", "avian vet phone"));
           return needs.length ? `${b.name}: ${needs.join(" & ")}` : null;
         })
         .filter(Boolean);
       if (missing.length) {
         toast.error(
-          `Add the required emergency contacts before sharing — ${missing.join("; ")}. Set account defaults on the dashboard or fill the bird's Emergency tab.`,
+          t("sitCard.missingContacts", "Add the required emergency contacts before sharing — {{missing}}. Set account defaults on the dashboard or fill the bird's Emergency tab.", { missing: missing.join("; ") }),
           { duration: 8000 },
         );
         return;
       }
     }
     await navigator.clipboard.writeText(url);
-    toast.success("Link copied.");
-  }
-
-  if (editing && allBirds) {
-    return (
-      <SitForm
-        birds={allBirds}
-        editSit={sit}
-        onSaved={onChange}
-        onCancel={() => setEditing(false)}
-      />
-    );
+    toast.success(t("sitCard.linkCopied", "Link copied."));
   }
 
   return (
@@ -118,17 +115,26 @@ export function SitCard({ sit, birds = [], allBirds, onChange }: { sit: any; bir
           <span className="grid size-5 shrink-0 place-items-center rounded-full bg-[#cfe3dc] text-[10px] font-medium text-[#1a5e3f]">
             {((caregiverName ?? "?").slice(0, 1) || "?").toUpperCase()}
           </span>
-          <span>Covered by <span className="font-medium text-[#1a3d2e]">{caregiverName ?? "household member"}</span></span>
-          <span className="rounded-full bg-[#cfe3dc] px-1.5 py-0.5 text-[10px] font-medium text-[#1a5e3f]">Household</span>
+          <span>
+            <Trans
+              i18nKey="sitCard.coveredBy"
+              defaults="Covered by <b>{{name}}</b>"
+              values={{ name: caregiverName ?? t("sitCard.householdMemberLower", "household member") }}
+              components={{ b: <span className="font-medium text-[#1a3d2e]" /> }}
+            />
+          </span>
+          <span className="rounded-full bg-[#cfe3dc] px-1.5 py-0.5 text-[10px] font-medium text-[#1a5e3f]">{t("sitCard.household", "Household")}</span>
         </div>
       ) : (
         <p className="mt-1 text-xs text-[#5f5e5a]">
-          Sitter: {sit.sitter_name?.trim() || "Not named yet"}{sit.sitter_email && ` (${sit.sitter_email})`}
+          {t("sitCard.sitterLabel", "Sitter: {{name}}", { name: sit.sitter_name?.trim() || t("sitCard.notNamedYet", "Not named yet") })}{sit.sitter_email && ` (${sit.sitter_email})`}
         </p>
       )}
       {birds.length > 0 && (
         <p className="mt-1 text-xs text-sage-700">
-          Birds: <span className="font-medium">{birds.map((b) => b.name).join(", ")}</span>
+          {namesAsCount(birds.map((b) => b.name))
+            ? <span className="font-medium">{t("birdNames.count", "{{count}} birds", { count: birds.length })}</span>
+            : <>{t("sitCard.birdsLabel", "Birds:")} <span className="font-medium">{birds.map((b) => b.name).join(", ")}</span></>}
         </p>
       )}
       {/* Per-trip link strip — external sitter only; household has no token. */}
@@ -136,7 +142,7 @@ export function SitCard({ sit, birds = [], allBirds, onChange }: { sit: any; bir
         <div className="mt-3 flex items-center gap-2 rounded-[12px] bg-[#e8e1d0] p-2">
           <Link2 className="size-3.5 text-[#5f5e5a]" />
           <span className="flex-1 truncate text-[11px] text-sage-700">{url}</span>
-          <button onClick={copy} className="rounded p-1 text-[#5f5e5a]" aria-label="Copy link"><Copy className="size-3.5" /></button>
+          <button onClick={copy} className="rounded p-1 text-[#5f5e5a]" aria-label={t("sitCard.copyLink", "Copy link")}><Copy className="size-3.5" /></button>
         </div>
       )}
       {!sit.revoked && (
@@ -144,23 +150,23 @@ export function SitCard({ sit, birds = [], allBirds, onChange }: { sit: any; bir
       )}
       {birds.length > 0 && (
         <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-medium">
-          <span className="text-[#5f5e5a]">Preview as your sitter:</span>
+          <span className="text-[#5f5e5a]">{t("sitCard.previewAsSitter", "Preview as your sitter:")}</span>
           {birds.map((b) => (
             <Link key={b.id} to="/birds/$birdId/view-as-sitter" params={{ birdId: b.id }} className="inline-flex items-center gap-1 text-[#1a3d2e] underline">
-              <Eye className="size-3" /> {birds.length === 1 ? "View" : b.name}
+              <Eye className="size-3" /> {birds.length === 1 ? t("sitCard.view", "View") : b.name}
             </Link>
           ))}
         </div>
       )}
       <div className="mt-3 flex gap-3 text-xs font-medium">
         {allBirds && !sit.revoked && (
-          <button onClick={() => setEditing(true)} className="text-[#1a3d2e] underline">Edit</button>
+          <button onClick={() => navigate({ to: "/sits/edit/$sitId", params: { sitId: sit.id } })} className="text-[#1a3d2e] underline">{t("sitCard.edit", "Edit")}</button>
         )}
-        <Link to="/sits/$sitId" params={{ sitId: sit.id }} className="text-[#1a3d2e] underline">Activity</Link>
+        <Link to="/sits/$sitId" params={{ sitId: sit.id }} className="text-[#1a3d2e] underline">{t("sitCard.activity", "Activity")}</Link>
         {!isHousehold && !sit.revoked && !expired && (
-          <button onClick={revoke} className="text-[#5f5e5a] underline">Revoke link</button>
+          <button onClick={revoke} className="text-[#5f5e5a] underline">{t("sitCard.revokeLink", "Revoke link")}</button>
         )}
-        <button onClick={remove} className="ml-auto text-[#5f5e5a] underline">Delete</button>
+        <button onClick={remove} className="ml-auto text-[#5f5e5a] underline">{t("sitCard.delete", "Delete")}</button>
       </div>
     </div>
   );

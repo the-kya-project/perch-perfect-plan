@@ -1,11 +1,14 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { speciesLabel } from "@/lib/speciesLabel";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
+import i18next, { type TFunction } from "i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ArrowLeft, Pencil, Check, X } from "lucide-react";
 import { PhotoCropper } from "@/components/PhotoCropper";
-import { OptionalDate } from "@/components/BirdPickers";
+import { OptionalDate, ageLabel } from "@/components/BirdPickers";
 import { useBirdPhotos } from "@/lib/useBirdPhotos";
 import { useBirdRole } from "@/lib/useBirdRole";
 import { useCapability } from "@/lib/useCapability";
@@ -18,7 +21,7 @@ import { formatLocalDate } from "@/lib/dates";
 import { localDateISO } from "@/lib/localDay";
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/identity")({
-  head: () => ({ meta: [{ title: "Identity — Kya & Co." }] }),
+  head: () => ({ meta: [{ title: i18next.t("birdIdentity.metaTitle", "Identity — Kya & Co.") }] }),
   component: IdentityFacet,
 });
 
@@ -44,35 +47,40 @@ type Identity = {
 // Shared core (photo, name, species, age) lives in the same birds columns the
 // Basics tab edits — one source, two views. The deeper fields below stay here.
 
-const SEX_LABEL: Record<string, string> = { female: "Female", male: "Male", unknown: "Unknown" };
-const METHOD_LABEL: Record<string, string> = { dna: "DNA confirmed", surgical: "Surgically sexed", visual: "Visual", unknown: "" };
-const FLIGHT_LABEL: Record<string, string> = { fully_flighted: "Fully flighted", clipped: "Clipped", partially_clipped: "Partially clipped", unknown: "Unknown" };
-function flightLabel(v: string | null | undefined): string | null {
+function sexLabel(t: TFunction, v: string): string {
+  switch (v) {
+    case "female": return t("birdSetup.female", "Female");
+    case "male": return t("birdSetup.male", "Male");
+    case "unknown": return t("birdSetup.unknown", "Unknown");
+    default: return v;
+  }
+}
+function methodLabel(t: TFunction, v: string): string {
+  switch (v) {
+    case "dna": return t("birdIdentity.methodDnaConfirmed", "DNA confirmed");
+    case "surgical": return t("birdIdentity.methodSurgicallySexed", "Surgically sexed");
+    case "visual": return t("birdIdentity.methodVisual", "Visual");
+    default: return "";
+  }
+}
+function flightLabel(t: TFunction, v: string | null | undefined): string | null {
   const k = (v ?? "").trim();
   if (!k || k === "unknown") return null; // hide the row when unset / Unknown
-  return FLIGHT_LABEL[k] ?? null;
+  switch (k) {
+    case "fully_flighted": return t("birdSetup.fullyFlighted", "Fully flighted");
+    case "clipped": return t("birdSetup.clipped", "Clipped");
+    case "partially_clipped": return t("birdSetup.partiallyClipped", "Partially clipped");
+    default: return null;
+  }
 }
 const blank = (v: string | null | undefined) => !((v ?? "").trim());
 
-// Subject pronoun + its matching copy forms, derived ONCE from the bird's sex so
-// the identity hero headline and the footer line always agree (the footer used
-// to be hardcoded "she's"). Defaults to "they" when sex is unknown or null,
-// matching the rest of the app's gender-neutral language for unknowns.
-function birdPronoun(sex: string | null | undefined): { subject: string; be: string; contraction: string } {
-  const s = (sex ?? "").trim().toLowerCase();
-  if (s === "female") return { subject: "she", be: "is", contraction: "she's" };
-  if (s === "male") return { subject: "he", be: "is", contraction: "he's" };
-  return { subject: "they", be: "are", contraction: "they're" };
-}
-
-// Pronoun-aware identity hero — "Who she is on paper." / "Who he is on paper."
-// / "Who they are on paper."
-function identityHeadline(sex: string | null | undefined): string {
-  const p = birdPronoun(sex);
-  return `Who ${p.subject} ${p.be} on paper.`;
-}
+// Footer copy is pronoun-aware from the bird's sex (she's / he's / they're),
+// one whole-sentence key per pronoun so translations can inflect freely.
+// Defaults to "they" when sex is unknown or null.
 
 function IdentityFacet() {
+  const { t } = useTranslation();
   const { birdId } = Route.useParams();
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -95,7 +103,7 @@ function IdentityFacet() {
     },
   });
 
-  const name = bird?.name ?? "this bird";
+  const name = bird?.name ?? t("planEditor.thisBird", "this bird");
   // 800px — the SAME width the Home flock card / bird-record hero resolve at, so
   // the Identity circle gets byte-for-byte the same cropped image they do. A
   // smaller transform (e.g. 256) crops to a different effective aspect on this
@@ -115,15 +123,15 @@ function IdentityFacet() {
     <div className="min-h-screen bg-[var(--cream)] pb-nav">
       <div className="mx-auto max-w-md">
         <InkHero
-          eyebrow="Identity"
-          headline={`${name}, on paper.`}
-          body={`The details that make ${name} officially ${name}.`}
+          eyebrow={t("birdIdentity.eyebrow", "Identity")}
+          headline={t("birdIdentity.headline", "{{name}}, on paper.", { name })}
+          body={t("birdIdentity.body", "The details that make {{name}} officially {{name}}.", { name })}
           backIcon={<ArrowLeft className="size-5" />}
           onBack={goBack}
           trailingIcons={
             bird && !editing && canEditIdentity ? (
               <button type="button" onClick={() => setEditing(true)} className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full bg-white/10 px-3.5 text-[14px] font-[500] text-white active:bg-white/15">
-                <Pencil className="size-3.5" /> Edit
+                <Pencil className="size-3.5" /> {t("birdIdentity.edit", "Edit")}
               </button>
             ) : undefined
           }
@@ -150,22 +158,29 @@ function IdentityFacet() {
                 </div>
                 <div className="min-w-0">
                   <p className="t-item truncate text-[17px]">{bird.name}</p>
-                  <p className="t-meta mt-0.5 truncate">{[bird.species || "Parrot", bird.age].filter(Boolean).join(" · ")}</p>
+                  <p className="t-meta mt-0.5 truncate">{[bird.species ? speciesLabel(t, bird.species) : t("planEditor.parrot", "Parrot"), bird.age ? ageLabel(t, bird.age) : null].filter(Boolean).join(" · ")}</p>
                 </div>
               </Card>
 
               {/* Deeper record (Identity only) */}
               <Card>
-                <Row label="Sex" value={sexValue(bird)} />
-                <Row label="Flight" value={flightLabel(bird.flight_status)} />
-                <Row label="Hatch date" value={bird.birth_date ? `${fmtDate(bird.birth_date)} (≈ ${approxAge(bird.birth_date)})` : null} />
-                <Row label="Microchip" value={bird.microchip} />
-                <Row label="Leg band" value={bird.band_number} emptyText="None" />
-                <Row label="Origin" value={bird.origin} />
-                <Row label="Came home" value={bird.acquired_on ? fmtDate(bird.acquired_on) : null} last />
+                <Row label={t("birdSetup.sex", "Sex")} value={sexValue(t, bird)} />
+                <Row label={t("birdSetup.flight", "Flight")} value={flightLabel(t, bird.flight_status)} />
+                <Row label={t("birdPickers.hatchDate", "Hatch date")} value={bird.birth_date ? `${fmtDate(bird.birth_date)} (≈ ${approxAge(t, bird.birth_date)})` : null} />
+                <Row label={t("birdIdentity.microchip", "Microchip")} value={bird.microchip} />
+                <Row label={t("birdIdentity.legBand", "Leg band")} value={bird.band_number} emptyText={t("birdIdentity.none", "None")} />
+                <Row label={t("birdIdentity.origin", "Origin")} value={bird.origin} />
+                <Row label={t("birdIdentity.cameHome", "Came home")} value={bird.acquired_on ? fmtDate(bird.acquired_on) : null} last />
               </Card>
               <p className="t-meta px-1 text-center leading-relaxed">
-                These details build the vet summary and travel with {name} if {birdPronoun(bird.sex).contraction} ever rehomed.
+                {(() => {
+                  const s = (bird.sex ?? "").trim().toLowerCase();
+                  return s === "female"
+                    ? t("birdIdentity.footerFemale", "These details build the vet summary and travel with {{name}} if she's ever rehomed.", { name })
+                    : s === "male"
+                      ? t("birdIdentity.footerMale", "These details build the vet summary and travel with {{name}} if he's ever rehomed.", { name })
+                      : t("birdIdentity.footerOther", "These details build the vet summary and travel with {{name}} if they're ever rehomed.", { name });
+                })()}
               </p>
             </>
           )}
@@ -175,10 +190,10 @@ function IdentityFacet() {
   );
 }
 
-function sexValue(b: Identity): string | null {
+function sexValue(t: TFunction, b: Identity): string | null {
   if (blank(b.sex)) return null;
-  const sex = SEX_LABEL[b.sex!] ?? b.sex!;
-  const method = b.sex_method ? METHOD_LABEL[b.sex_method] : "";
+  const sex = sexLabel(t, b.sex!);
+  const method = b.sex_method ? methodLabel(t, b.sex_method) : "";
   return method ? `${sex} · ${method}` : sex;
 }
 
@@ -193,6 +208,7 @@ function Row({ label, value, emptyText = "—", last }: { label: string; value: 
 }
 
 function IdentityForm({ birdId, bird, onClose, onSaved }: { birdId: string; bird: Identity; onClose: () => void; onSaved: () => void }) {
+  const { t } = useTranslation();
   const [f, setF] = useState({
     name: bird.name ?? "",
     species: bird.species ?? "",
@@ -225,11 +241,11 @@ function IdentityForm({ birdId, bird, onClose, onSaved }: { birdId: string; bird
     setPhotoBusy(true);
     try {
       const dataUrl = await compressImageToDataUrl(file);
-      if (dataUrlBytes(dataUrl) > MAX_UPLOAD_BYTES) { toast.error("That photo's a bit too large even after resizing. Try a different one."); return; }
+      if (dataUrlBytes(dataUrl) > MAX_UPLOAD_BYTES) { toast.error(t("birdIdentity.photoTooLarge", "That photo's a bit too large even after resizing. Try a different one.")); return; }
       setPhotoDisplay(dataUrl);
       setPhotoRef(dataUrl);
     } catch {
-      toast.error("Couldn't process that photo. Try a different one.");
+      toast.error(t("newBird.photoProcessError", "Couldn't process that photo. Try a different one."));
     } finally {
       setPhotoBusy(false);
     }
@@ -259,10 +275,10 @@ function IdentityForm({ birdId, bird, onClose, onSaved }: { birdId: string; bird
         photo_position: photoPosition,
       } as any).eq("id", birdId);
       if (error) throw error;
-      toast.success("Identity saved.");
+      toast.success(t("birdIdentity.saved", "Identity saved."));
       onSaved();
     } catch (e: any) {
-      toast.error(friendlyError(e, "Couldn't save."));
+      toast.error(friendlyError(e, t("birdIdentity.saveFailed", "Couldn't save.")));
     } finally {
       setSaving(false);
     }
@@ -276,81 +292,81 @@ function IdentityForm({ birdId, bird, onClose, onSaved }: { birdId: string; bird
         {photoDisplay ? (
           <PhotoCropper src={photoDisplay} position={photoPosition ?? undefined} onChange={setPhotoPosition} size={96} />
         ) : (
-          <div className="t-eyebrow grid size-24 place-items-center rounded-xl bg-[var(--cream2)] text-[var(--mute2)]">No photo</div>
+          <div className="t-eyebrow grid size-24 place-items-center rounded-xl bg-[var(--cream2)] text-[var(--mute2)]">{t("birdSetup.noPhoto", "No photo")}</div>
         )}
         <div className="flex-1 space-y-2 pt-1">
           <label className={`inline-flex min-h-[44px] items-center rounded-lg bg-[var(--pale2)] px-3 text-[13px] font-[500] text-[var(--ink)] ${photoBusy ? "cursor-default opacity-60" : "cursor-pointer"}`}>
-            {photoBusy ? "Processing…" : photoDisplay ? "Change photo" : "Add photo"}
+            {photoBusy ? t("birdSetup.processing", "Processing…") : photoDisplay ? t("birdSetup.changePhoto", "Change photo") : t("birdSetup.addPhoto", "Add photo")}
             <input type="file" accept="image/*,.heic,.heif" disabled={photoBusy} className="hidden" onChange={onPhoto} />
           </label>
           {photoDisplay && (
-            <button type="button" onClick={() => { setPhotoDisplay(null); setPhotoRef(null); setPhotoPosition(null); }} className="ml-2 text-[13px] font-[500] text-[var(--amber-ink)] underline">Remove</button>
+            <button type="button" onClick={() => { setPhotoDisplay(null); setPhotoRef(null); setPhotoPosition(null); }} className="ml-2 text-[13px] font-[500] text-[var(--amber-ink)] underline">{t("newBird.remove", "Remove")}</button>
           )}
         </div>
       </div>
 
-      <Field label="Name"><input className={INPUT} value={f.name} maxLength={80} onChange={(e) => set("name", e.target.value)} /></Field>
-      <Field label="Species"><input className={INPUT} value={f.species} maxLength={80} onChange={(e) => set("species", e.target.value)} /></Field>
-      <Field label="Age"><input className={INPUT} value={f.age} maxLength={40} placeholder="e.g. 6 years" onChange={(e) => set("age", e.target.value)} /></Field>
+      <Field label={t("birdSetup.name", "Name")}><input className={INPUT} value={f.name} maxLength={80} onChange={(e) => set("name", e.target.value)} /></Field>
+      <Field label={t("birdPickers.species", "Species")}><input className={INPUT} value={f.species} maxLength={80} onChange={(e) => set("species", e.target.value)} /></Field>
+      <Field label={t("birdPickers.age", "Age")}><input className={INPUT} value={f.age} maxLength={40} placeholder={t("birdIdentity.agePlaceholder", "e.g. 6 years")} onChange={(e) => set("age", e.target.value)} /></Field>
 
-      <Field label="Sex">
+      <Field label={t("birdSetup.sex", "Sex")}>
         <div className="grid grid-cols-2 gap-2">
           <select className={INPUT} value={f.sex} onChange={(e) => set("sex", e.target.value)}>
-            <option value="">Not set</option>
-            <option value="female">Female</option>
-            <option value="male">Male</option>
-            <option value="unknown">Unknown</option>
+            <option value="">{t("birdIdentity.notSet", "Not set")}</option>
+            <option value="female">{t("birdSetup.female", "Female")}</option>
+            <option value="male">{t("birdSetup.male", "Male")}</option>
+            <option value="unknown">{t("birdSetup.unknown", "Unknown")}</option>
           </select>
           <select className={INPUT} value={f.sex_method} onChange={(e) => set("sex_method", e.target.value)}>
-            <option value="">Method…</option>
-            <option value="dna">DNA</option>
-            <option value="surgical">Surgical</option>
-            <option value="visual">Visual</option>
-            <option value="unknown">Unknown</option>
+            <option value="">{t("birdIdentity.methodPlaceholder", "Method…")}</option>
+            <option value="dna">{t("birdIdentity.methodDna", "DNA")}</option>
+            <option value="surgical">{t("birdIdentity.methodSurgical", "Surgical")}</option>
+            <option value="visual">{t("birdIdentity.methodVisual", "Visual")}</option>
+            <option value="unknown">{t("birdSetup.unknown", "Unknown")}</option>
           </select>
         </div>
       </Field>
 
-      <Field label="Flight">
+      <Field label={t("birdSetup.flight", "Flight")}>
         <select className={INPUT} value={f.flight_status} onChange={(e) => set("flight_status", e.target.value)}>
-          <option value="unknown">Unknown</option>
-          <option value="fully_flighted">Fully flighted</option>
-          <option value="clipped">Clipped</option>
-          <option value="partially_clipped">Partially clipped</option>
+          <option value="unknown">{t("birdSetup.unknown", "Unknown")}</option>
+          <option value="fully_flighted">{t("birdSetup.fullyFlighted", "Fully flighted")}</option>
+          <option value="clipped">{t("birdSetup.clipped", "Clipped")}</option>
+          <option value="partially_clipped">{t("birdSetup.partiallyClipped", "Partially clipped")}</option>
         </select>
       </Field>
 
-      <Field label="Hatch date">
-        <OptionalDate value={f.birth_date} max={today} addLabel="Add hatch date" inputClassName={INPUT} onChange={(v) => set("birth_date", v)} />
+      <Field label={t("birdPickers.hatchDate", "Hatch date")}>
+        <OptionalDate value={f.birth_date} max={today} addLabel={t("birdPickers.addHatchDate", "Add hatch date")} inputClassName={INPUT} onChange={(v) => set("birth_date", v)} />
       </Field>
-      <Field label="Microchip"><input className={INPUT} value={f.microchip} maxLength={60} onChange={(e) => set("microchip", e.target.value)} /></Field>
-      <Field label="Leg band"><input className={INPUT} value={f.band_number} maxLength={60} onChange={(e) => set("band_number", e.target.value)} /></Field>
-      <Field label="Origin"><input className={INPUT} value={f.origin} maxLength={200} placeholder="e.g. captive-bred, wild-hatched / rescued" onChange={(e) => set("origin", e.target.value)} /></Field>
-      <Field label="Came home">
-        <OptionalDate value={f.acquired_on} max={today} addLabel="Add date" inputClassName={INPUT} onChange={(v) => set("acquired_on", v)} />
+      <Field label={t("birdIdentity.microchip", "Microchip")}><input className={INPUT} value={f.microchip} maxLength={60} onChange={(e) => set("microchip", e.target.value)} /></Field>
+      <Field label={t("birdIdentity.legBand", "Leg band")}><input className={INPUT} value={f.band_number} maxLength={60} onChange={(e) => set("band_number", e.target.value)} /></Field>
+      <Field label={t("birdIdentity.origin", "Origin")}><input className={INPUT} value={f.origin} maxLength={200} placeholder={t("birdIdentity.originPlaceholder", "e.g. captive-bred, wild-hatched / rescued")} onChange={(e) => set("origin", e.target.value)} /></Field>
+      <Field label={t("birdIdentity.cameHome", "Came home")}>
+        <OptionalDate value={f.acquired_on} max={today} addLabel={t("birdPickers.addDate", "Add date")} inputClassName={INPUT} onChange={(v) => set("acquired_on", v)} />
       </Field>
 
       <div className="rounded-xl border border-[var(--line)] bg-[var(--cream2)] p-3">
         <label className="flex cursor-pointer items-start gap-3">
           <input type="checkbox" checked={f.is_foster} onChange={(e) => setF((p) => ({ ...p, is_foster: e.target.checked }))} className="mt-0.5 size-5 shrink-0 accent-[var(--ink)]" />
           <span className="min-w-0">
-            <span className="t-item block">This is a foster</span>
-            <span className="t-meta mt-0.5 block leading-relaxed">You're caring for them while they find a permanent home.</span>
+            <span className="t-item block">{t("newBird.isFoster", "This is a foster")}</span>
+            <span className="t-meta mt-0.5 block leading-relaxed">{t("birdIdentity.fosterBody", "You're caring for them while they find a permanent home.")}</span>
           </span>
         </label>
         {f.is_foster && (
           <div className="mt-3 border-t border-[var(--line2)] pt-3">
-            <Field label="Came to you"><OptionalDate value={f.intake_date} max={today} addLabel="Add date" inputClassName={INPUT} onChange={(v) => set("intake_date", v)} /></Field>
+            <Field label={t("newBird.cameToYou", "Came to you")}><OptionalDate value={f.intake_date} max={today} addLabel={t("birdPickers.addDate", "Add date")} inputClassName={INPUT} onChange={(v) => set("intake_date", v)} /></Field>
           </div>
         )}
       </div>
 
-      <p className="t-meta">All fields are optional — partial records are fine.</p>
+      <p className="t-meta">{t("birdIdentity.allOptional", "All fields are optional — partial records are fine.")}</p>
 
       <div className="flex gap-2 pt-1">
         <div className="flex-1">
           <PrimaryButton tone="ink" type="button" onPress={save} disabled={saving} icon={<Check className="size-4" />}>
-            {saving ? "Saving…" : "Save"}
+            {saving ? t("birdIdentity.saving", "Saving…") : t("birdIdentity.save", "Save")}
           </PrimaryButton>
         </div>
         <button type="button" onClick={onClose} disabled={saving} className="grid min-h-[44px] min-w-[44px] place-items-center rounded-[12px] border border-[var(--line)] px-4 text-[var(--mute)] disabled:opacity-50">
@@ -376,12 +392,12 @@ function fmtDate(iso: string): string {
   return formatLocalDate(new Date(`${iso}T12:00:00`), { year: "numeric", month: "short", day: "numeric" });
 }
 
-function approxAge(iso: string): string {
+function approxAge(t: TFunction, iso: string): string {
   const days = Math.floor((Date.now() - +new Date(`${iso}T12:00:00`)) / 86_400_000);
   if (days < 0) return "—";
   const years = Math.floor(days / 365);
-  if (years >= 1) return `${years} year${years === 1 ? "" : "s"}`;
+  if (years >= 1) return years === 1 ? t("birdPickers.ageYearsOne", "{{n}} year", { n: years }) : t("birdPickers.ageYearsOther", "{{n}} years", { n: years });
   const months = Math.floor(days / 30);
-  if (months >= 1) return `${months} month${months === 1 ? "" : "s"}`;
-  return `${days} day${days === 1 ? "" : "s"}`;
+  if (months >= 1) return months === 1 ? t("birdIdentity.monthsOne", "{{n}} month", { n: months }) : t("birdIdentity.monthsOther", "{{n}} months", { n: months });
+  return days === 1 ? t("birdIdentity.daysOne", "{{n}} day", { n: days }) : t("birdIdentity.daysOther", "{{n}} days", { n: days });
 }

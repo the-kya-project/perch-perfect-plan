@@ -10,6 +10,7 @@ import { PhotoHero } from "@/components/system";
 import { listJournalAttachments, signJournalAttachments } from "@/lib/journalAttachment";
 import { signJournalPhotos } from "@/lib/journalPhoto";
 import { useOpenSignedFile } from "@/lib/useOpenSignedFile";
+import { useTranslation } from "react-i18next";
 
 export type ViewEntry = {
   id: string;
@@ -32,6 +33,7 @@ export function JournalEntryView({
   onEdit: () => void;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const { openingKey, openSigned } = useOpenSignedFile();
 
   // Same query key as the editor, so opening one after the other is a cache hit
@@ -54,7 +56,7 @@ export function JournalEntryView({
               <span className="t-meta">{dateLabel}</span>
             </div>
           </div>
-          <button onClick={onClose} aria-label="Close" className="grid size-9 shrink-0 place-items-center rounded-full text-[var(--mute)]"><X className="size-5" /></button>
+          <button onClick={onClose} aria-label={t("journalEntryView.close", "Close")} className="grid size-9 shrink-0 place-items-center rounded-full text-[var(--mute)]"><X className="size-5" /></button>
         </div>
 
         {entry.photo_path && photoUrl && (
@@ -63,7 +65,7 @@ export function JournalEntryView({
             onClick={() => openSigned("photo", async () =>
               (await signJournalPhotos([entry.photo_path!])).get(entry.photo_path!))}
             className="relative mt-1 block w-full overflow-hidden rounded-xl active:opacity-90"
-            aria-label="Open photo full size"
+            aria-label={t("journalEntryView.openPhoto", "Open photo full size")}
           >
             <PhotoHero src={photoUrl} height={200} alt="" />
             {openingKey === "photo" && (
@@ -79,7 +81,7 @@ export function JournalEntryView({
         {files.length > 0 && (
           <div className="mt-4">
             <span className="mb-1 flex items-center gap-1 text-xs font-[500] text-[var(--mute)]">
-              <Paperclip className="size-3.5" /> Files
+              <Paperclip className="size-3.5" /> {t("journalEntryView.files", "Files")}
             </span>
             <div className="overflow-hidden rounded-xl bg-white ring-1 ring-[var(--line2)]">
               {files.map((a, i) => (
@@ -107,7 +109,7 @@ export function JournalEntryView({
             onClick={onEdit}
             className="mt-5 flex min-h-[48px] w-full items-center justify-center gap-2 rounded-[12px] border border-[var(--line)] bg-white text-[15px] font-[500] text-[var(--ink)] active:scale-[0.99]"
           >
-            <Pencil className="size-4" /> Edit
+            <Pencil className="size-4" /> {t("journalEntryView.edit", "Edit")}
           </button>
         )}
       </div>

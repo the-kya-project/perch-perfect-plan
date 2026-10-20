@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, Check, AlertCircle } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 // Native-style pull-to-refresh for the app's document-scrolling screens.
 //
@@ -36,6 +37,7 @@ export function PullToRefresh({
   onRefresh?: () => Promise<unknown>;
   children: ReactNode;
 }) {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const ref = useRef<HTMLDivElement>(null);
   const startY = useRef<number | null>(null);
@@ -170,7 +172,7 @@ export function PullToRefresh({
   const active = phase !== null;
   const offset = active ? THRESHOLD : pull;
   const visible = offset > 0 || active;
-  const label = phase === "done" ? "Updated" : phase === "fail" ? "Couldn't refresh" : null;
+  const label = phase === "done" ? t("pullToRefresh.updated", "Updated") : phase === "fail" ? t("pullToRefresh.failed", "Couldn't refresh") : null;
 
   return (
     <div ref={ref}>

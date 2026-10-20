@@ -1,0 +1,3 @@
+/* Permission prompts (Dutch). */
+"NSCameraUsageDescription" = "Kya gebruikt de camera zodat je korte verzorgingsclips kunt opnemen en foto's van je vogel kunt maken.";
+"NSMicrophoneUsageDescription" = "Kya gebruikt de microfoon wanneer je korte verzorgingsclips opneemt.";
