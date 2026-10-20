@@ -1,15 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useServerFn } from "@tanstack/react-start";
 import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import i18next, { type TFunction } from "i18next";
-import { getBirdEmergencyReadiness } from "@/lib/household.functions";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
-import { getLocalUser } from "@/integrations/supabase/currentUser";
-import { computeSetupCompleteness, type SetupCheck } from "@/lib/setupCompleteness";
-import { mergeHome, homeDifferences } from "@/lib/homeDefaults";
-import { emergencyDifferent } from "@/lib/emergency";
+import { useCarePlanStatus, CARE_PLAN_ROWS, CARE_PLAN_HOME_ROWS, type CarePlanRowKey } from "@/lib/useCarePlanStatus";
 import { useBirdRole } from "@/lib/useBirdRole";
 import { useCapability } from "@/lib/useCapability";
 import { track } from "@/lib/analytics";
@@ -49,7 +42,7 @@ const READ_SECTION: Record<SectionKey, "food" | "behavior" | "home" | "health" |
 // The six rows of the "Care plan" card, in flow order, and the two "Your
 // home" rows. Each opens its editor tab (or, without edit access, the
 // read-only plan at that section).
-type RowKey = "details" | "food" | "health" | "personality" | "clips" | "day" | "environment" | "emergency";
+type RowKey = CarePlanRowKey;
 const EDITOR_TAB: Record<Exclude<RowKey, "details">, "food" | "routine" | "behavior" | "home" | "health" | "emergency" | "clips"> = {
   food: "food", health: "health", personality: "behavior", clips: "clips", day: "routine", environment: "home", emergency: "emergency",
 };
@@ -104,98 +97,7 @@ function CarePlanOverview() {
   const canEdit = useCapability("edit_care_plans", { birdId });
   const isOwner = role === "owner";
 
-  const { data: bird } = useQuery({
-    queryKey: ["bird", birdId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("birds")
-        .select("id, name, species, photo_url, photo_position, normal_weight, setup_step, setup_complete, updated_at")
-        .eq("id", birdId)
-        .maybeSingle();
-      if (error) throw error;
-      return data as any;
-    },
-  });
-
-  const { data: plan } = useQuery({
-    queryKey: ["plan", birdId],
-    queryFn: async () => {
-      const { data } = await supabase.from("care_plans").select("*").eq("bird_id", birdId).maybeSingle();
-      return data ?? null;
-    },
-  });
-
-  const { data: tasks = [] } = useQuery({
-    queryKey: ["tasks", plan?.id],
-    enabled: !!plan?.id,
-    queryFn: async () => {
-      const { data } = await supabase.from("routine_tasks").select("id").eq("care_plan_id", plan!.id);
-      return data ?? [];
-    },
-  });
-
-  const { data: contacts } = useQuery({
-    queryKey: ["contacts", birdId],
-    queryFn: async () => {
-      const { data } = await supabase.from("emergency_contacts").select("*").eq("bird_id", birdId).maybeSingle();
-      return data ?? null;
-    },
-  });
-
-  const { data: defaults } = useQuery({
-    queryKey: ["owner-defaults"],
-    // Only meaningful for the owner: this reads the VIEWER's own account
-    // defaults, which for a household member is their (usually empty) account,
-    // not this bird's owner's. Members get readiness from the server fn below.
-    enabled: isOwner,
-    queryFn: async () => {
-      const { data: u } = await getLocalUser();
-      if (!u.user) return null;
-      const { data } = await supabase
-        .from("owner_emergency_defaults")
-        .select("*")
-        .eq("owner_id", u.user.id)
-        .maybeSingle();
-      return data ?? null;
-    },
-  });
-
-  // The owner's shared "Your home" reminders (owner only, like the defaults above).
-  const { data: homeDefaults } = useQuery({
-    queryKey: ["owner-home-defaults"],
-    enabled: isOwner,
-    queryFn: async () => {
-      const { data: u } = await getLocalUser();
-      if (!u.user) return null;
-      const { data } = await supabase.from("owner_home_defaults").select("*").eq("owner_id", u.user.id).maybeSingle();
-      return data ?? null;
-    },
-  });
-
-  const getEmergencyReadiness = useServerFn(getBirdEmergencyReadiness);
-  const { data: memberEmergency } = useQuery({
-    queryKey: ["member-emergency-ready", birdId],
-    // role resolves async; only fetch once we know the viewer is NOT the owner
-    enabled: role !== null && !isOwner,
-    queryFn: async () => await getEmergencyReadiness({ data: { birdId } }),
-  });
-
-  const completeness = computeSetupCompleteness({ bird, plan: mergeHome(plan, homeDefaults), tasksCount: tasks.length, contacts, defaults });
-  // Members judge emergency and home readiness against the owner's merged data
-  // (same source the read view renders) rather than their own empty defaults.
-  if (!isOwner) {
-    for (const [key, ready] of [["emergency", memberEmergency?.ready], ["environment", memberEmergency?.homeReady]] as const) {
-      const c = completeness.checks.find((x) => x.key === key);
-      if (ready && c && !c.done) {
-        c.done = true;
-        completeness.doneCount += 1;
-      }
-    }
-  }
-  // "Your home" rows say whether this bird uses the shared answers.
-  const homeIsDifferent = isOwner ? homeDifferences(plan, homeDefaults).length > 0 : !!memberEmergency?.homeDifferent;
-  const emergencyIsDifferent = isOwner ? emergencyDifferent(contacts, defaults) : !!memberEmergency?.emergencyDifferent;
-  const checksByKey = new Map<string, SetupCheck>(completeness.checks.map((c) => [c.key, c]));
+  const { bird, isDone, todo, homeIsDifferent, emergencyIsDifferent } = useCarePlanStatus(birdId);
 
   useEffect(() => {
     track("care_plan_viewed", {});
@@ -205,10 +107,6 @@ function CarePlanOverview() {
   const photoOf = useBirdPhotos([bird?.photo_url], 256);
   const photo = photoOf(bird?.photo_url);
 
-  const isDone = (k: RowKey) => (k === "details" ? !!bird?.name : !!checksByKey.get(k)?.done);
-  const planRows: RowKey[] = ["details", "food", "health", "personality", "clips", "day"];
-  const homeRows: RowKey[] = ["environment", "emergency"];
-  const todo = [...planRows, ...homeRows].filter((k) => !isDone(k));
   const status = todo.length === 0
     ? t("planOverview.statusDone", "{{name}}'s plan has everything a sitter needs.", { name })
     : todo.length === 1
@@ -315,11 +213,11 @@ function CarePlanOverview() {
           <MemberContextBanner birdId={birdId} />
           <section className="rounded-[20px] bg-white px-4 py-3" style={{ color: S.forest }}>
             <h2 className="m-0 pt-1 text-[21px] font-[700]" style={{ fontFamily: SERIF }}>{t("planOverview.cardCarePlan", "Care plan")}</h2>
-            <ul className="m-0 mt-1 list-none p-0">{planRows.map(row)}</ul>
+            <ul className="m-0 mt-1 list-none p-0">{CARE_PLAN_ROWS.map(row)}</ul>
           </section>
           <section className="rounded-[20px] bg-white px-4 py-3" style={{ color: S.forest }}>
             <h2 className="m-0 pt-1 text-[21px] font-[700]" style={{ fontFamily: SERIF }}>{t("planOverview.cardYourHome", "Your home")}</h2>
-            <ul className="m-0 mt-1 list-none p-0">{homeRows.map(row)}</ul>
+            <ul className="m-0 mt-1 list-none p-0">{CARE_PLAN_HOME_ROWS.map(row)}</ul>
           </section>
 
           {canEdit && (

@@ -20,25 +20,26 @@ import { OwnerHeaderIcons } from "@/components/OwnerHeader";
 import { AppOnboarding } from "@/components/AppOnboarding";
 import { useTourDemo, DEMO_FLOCK, DEMO_FOSTERS, DEMO_HOUSEHOLD, demoGlanceFor, getDemoToday } from "@/lib/tourDemo";
 import { deriveConcernByBird, daysAgo } from "@/lib/scanConcern";
-import { Disclaimer } from "@/components/Disclaimer";
 import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 import { toast } from "sonner";
 import { ASPCA_POISON_CONTROL, isPhoneField, phoneWarning, formatPhoneOnBlur } from "@/lib/emergency";
 import { isAddressField } from "@/lib/address";
 import { AddressInput } from "@/components/AddressInput";
 import { fetchScanFeed, getNotifSeenAt, isUnreadScan } from "@/lib/notificationsFeed";
-import { InkHero, IconTile, StatusPill, SectionHead, CtaLink, PrimaryButton, type HeroCta } from "@/components/system";
+import { IconTile, PrimaryButton, type HeroCta } from "@/components/system";
 import { CaregiverCoveringSection, useActiveCaregiver } from "@/components/CaregiverHome";
 import { HomeChecklist } from "@/components/HomeChecklist";
 import { DailyCheckCard } from "@/components/DailyCheckCard";
 import { useDailyCheckToday } from "@/lib/dailyCheck";
 import { birdNames, namesAsCount } from "@/lib/birdNames";
+import { K, KyaPage, KyaHeader, KyaBody, KyaCard, KyaHeading, KyaLink, KyaPrimaryButton, KyaAvatarStack } from "@/components/kya";
+import { BrandLockup } from "@/components/BrandLogo";
 import { HomePushBanner } from "@/components/HomePushBanner";
 import { getHouseholdHome, resolveOwnerNames, type HomeHousehold } from "@/lib/home.functions";
 import { useMyPermissions } from "@/lib/useCapability";
 import {
   groupWeights, weightGlance, upcomingMoments, buildTodayItems, buildHomeStateCopy, daysSince,
-  type HomeBird, type WeightEntry, type TodayItem, type WeightGlance, type UpcomingSit,
+  type HomeBird, type WeightEntry, type TodayItem, type UpcomingSit,
 } from "@/lib/homeData";
 import { formatLocalDate } from "@/lib/dates";
 import { useTranslation, Trans } from "react-i18next";
@@ -226,6 +227,12 @@ function Dashboard() {
   const householdView = demo ? DEMO_HOUSEHOLD : household;
   const glanceFor = (b: HomeBird) => (demo ? demoGlanceFor(b.id) : weightGlance(weightsByBird.get(b.id) ?? [], b.is_foster));
   const photoFor = (b: HomeBird) => (demo ? null : resolvePhoto(b.photo_url));
+  // The bird's latest weigh-in for its Home row (the demo tour has a value but no date).
+  const latestFor = (b: HomeBird): LatestWeight => {
+    if (demo) { const g = glanceFor(b); return g.state === "none" ? null : { grams: g.current, at: null }; }
+    const w = weightsByBird.get(b.id)?.[0];
+    return w ? { grams: w.grams, at: w.measured_at } : null;
+  };
 
   const { data: caregiver } = useActiveCaregiver();
 
@@ -270,11 +277,11 @@ function Dashboard() {
   // that would hide their birds or the add-bird affordance.
 
   return (
-    <div className="min-h-screen bg-[var(--cream)] pb-nav">
+    <KyaPage>
       <div className="mx-auto max-w-md">
       <HomeHeader firstName={firstName} unreadNotifs={unreadNotifs} stateCopy={stateCopy} cta={heroCta} />
 
-      <main className="space-y-6 px-5 pb-6 pt-5">
+      <KyaBody className="gap-6">
         {emergencyDefaults && <DefaultsPanel />}
 
         {/* Reminders only reach a phone registered for push, so Home asks until
@@ -336,15 +343,15 @@ function Dashboard() {
             ))}
 
             <section className="space-y-3" data-coach="owner-flock">
-              <SectionHeaderCTA title={showHouseholds ? t("dashboard.yourBirds", "Your birds") : t("dashboard.yourFlock", "Your flock")} ctaLabel={t("dashboard.addABird", "Add a bird")} onCta={() => navigate({ to: "/birds/new" })} />
+              <SectionHeaderCTA title={showHouseholds ? t("dashboard.yourBirds", "Your birds") : t("dashboard.yourFlock", "Your flock")} ctaLabel={t("dashboard.addABirdLink", "+ Add a bird")} onCta={() => navigate({ to: "/birds/new" })} />
               {flockBirds.length === 0 ? (
-                <p className="px-1 text-sm text-[#5b6b61]">{t("dashboard.noBirdsYet", "No birds yet — start with your first.")}</p>
+                <p className="px-1 text-[14px]" style={{ color: K.quiet }}>{t("dashboard.noBirdsYet", "No birds yet — start with your first.")}</p>
               ) : (
-                <div className="space-y-3">
-                  {flockBirds.map((b) => (
-                    <BirdRow key={b.id} bird={b} photo={photoFor(b)} glance={glanceFor(b)} concern={concernByBird.has(b.id)} />
+                <KyaCard>
+                  {flockBirds.map((b, i) => (
+                    <BirdRow key={b.id} bird={b} photo={photoFor(b)} latest={latestFor(b)} concern={concernByBird.has(b.id)} last={i === flockBirds.length - 1} />
                   ))}
-                </div>
+                </KyaCard>
               )}
             </section>
 
@@ -358,20 +365,20 @@ function Dashboard() {
               // members get one sensible target, not a highlight per household).
               <section key={g.ownerId} className="space-y-3" data-coach={gi === 0 ? "member-household" : undefined}>
                 <div className="px-1">
-                  <h2 className="t-section">{householdHeading(t, g.ownerName)}</h2>
-                  <p className="t-meta text-[var(--teal-on-cream)]">{t("dashboard.youHelpHere", "You help here")}</p>
+                  <KyaHeading size={23}>{householdHeading(t, g.ownerName)}</KyaHeading>
+                  <p className="m-0 mt-0.5 text-[13px]" style={{ color: K.quiet }}>{t("dashboard.youHelpHere", "You help here")}</p>
                 </div>
-                <div className="space-y-3">
+                <KyaCard>
                   {g.birds.map((b, bi) =>
                     gi === 0 && bi === 0 ? (
                       <div key={b.id} data-coach="member-household-bird">
-                        <BirdRow bird={b} photo={photoFor(b)} glance={glanceFor(b)} concern={concernByBird.has(b.id)} />
+                        <BirdRow bird={b} photo={photoFor(b)} latest={latestFor(b)} concern={concernByBird.has(b.id)} last={bi === g.birds.length - 1} />
                       </div>
                     ) : (
-                      <BirdRow key={b.id} bird={b} photo={photoFor(b)} glance={glanceFor(b)} concern={concernByBird.has(b.id)} />
+                      <BirdRow key={b.id} bird={b} photo={photoFor(b)} latest={latestFor(b)} concern={concernByBird.has(b.id)} last={bi === g.birds.length - 1} />
                     ),
                   )}
-                </div>
+                </KyaCard>
               </section>
             ))}
 
@@ -385,11 +392,11 @@ function Dashboard() {
                   ctaLabel={t("dashboard.takeInABird", "Take in a bird")}
                   onCta={() => navigate({ to: "/birds/new", search: { foster: true } as any })}
                 />
-                <div className="space-y-3">
-                  {fosterBirds.map((b) => (
-                    <BirdRow key={b.id} bird={b} photo={photoFor(b)} glance={glanceFor(b)} foster concern={concernByBird.has(b.id)} />
+                <KyaCard>
+                  {fosterBirds.map((b, i) => (
+                    <BirdRow key={b.id} bird={b} photo={photoFor(b)} latest={latestFor(b)} foster concern={concernByBird.has(b.id)} last={i === fosterBirds.length - 1} />
                   ))}
-                </div>
+                </KyaCard>
               </section>
             )}
 
@@ -398,20 +405,22 @@ function Dashboard() {
           </>
         )}
 
-        <Disclaimer compact />
-      </main>
+        <p className="m-0 px-1 text-[12.5px] leading-[1.45]" style={{ color: K.quiet }}>
+          {t("disclaimer.noteLabel", "Note:")} {t("disclaimer.compactBody", "Not a substitute for veterinary care. Call a vet for any medical concern.")}
+        </p>
+      </KyaBody>
       </div>
 
       <AppOnboarding />
       <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.65rem .8rem;font-size:16px;outline:none}.input:focus{border-color:var(--sage-600);box-shadow:0 0 0 3px rgb(74 103 65 / .15)}`}</style>
-    </div>
+    </KyaPage>
   );
 }
 
 // ---------------------------------------------------------------------------
 // Header
 // ---------------------------------------------------------------------------
-function HomeHeader({ firstName, unreadNotifs, stateCopy, cta }: { firstName: string; unreadNotifs: number; stateCopy?: string; cta?: HeroCta }) {
+function HomeHeader({ firstName, stateCopy, cta }: { firstName: string; unreadNotifs: number; stateCopy?: string; cta?: HeroCta }) {
   const { t } = useTranslation();
   const h = new Date().getHours();
   // Greetings are spoken-to-the-user copy: no terminal period.
@@ -419,26 +428,37 @@ function HomeHeader({ firstName, unreadNotifs, stateCopy, cta }: { firstName: st
   const greeting = firstName ? t("dashboard.greetingWithName", "{{part}}, {{name}}", { part, name: firstName }) : part;
   const dateLabel = formatLocalDate(new Date(), { weekday: "long", month: "long", day: "numeric" });
   return (
-    <InkHero
-      showBrand
-      eyebrow={dateLabel}
-      headline={greeting}
-      body={stateCopy}
-      cta={cta}
-      trailingIcons={<OwnerHeaderIcons />}
-    />
+    <KyaHeader>
+      {/* mt-1.5 keeps the icons clear of the native shell's status-bar scrim. */}
+      <div className="mt-1.5 flex items-center gap-2">
+        <BrandLockup orientation="horizontal" variant="ink" size={118} />
+        <div className="flex-1" />
+        <OwnerHeaderIcons large />
+      </div>
+      <p className="m-0 mt-9 text-[14px]" style={{ color: K.teal }}>{dateLabel}</p>
+      <KyaHeading as="h1" size={31} className="mt-1 text-white">{greeting}</KyaHeading>
+      {stateCopy && <p className="m-0 mt-2 text-[15px] leading-[1.5]" style={{ color: K.paleGreen }}>{stateCopy}</p>}
+      {cta && (
+        <div className="mt-4">
+          <KyaPrimaryButton onClick={cta.onPress} disabled={cta.disabled} icon={cta.icon}>{cta.label}</KyaPrimaryButton>
+        </div>
+      )}
+    </KyaHeader>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Section header with a text-link CTA — SectionHead + CtaLink from the system.
+// Section header: a Newsreader heading with a moss text link on the right.
 // ---------------------------------------------------------------------------
 function SectionHeaderCTA({ title, pill, ctaLabel, onCta }: { title: string; pill?: string; ctaLabel: string; onCta: () => void }) {
   return (
-    <SectionHead
-      title={pill ? <span className="inline-flex items-center gap-2">{title}<StatusPill tone="good">{pill}</StatusPill></span> : title}
-      trailing={<CtaLink label={ctaLabel} icon={<Plus className="size-3.5" strokeWidth={2.2} />} onPress={onCta} />}
-    />
+    <div className="flex items-center justify-between gap-3 px-1">
+      <KyaHeading size={23} className="inline-flex items-center gap-2">
+        {title}
+        {pill && <span className="rounded-full px-2.5 py-1 text-[12px] font-[700]" style={{ background: K.lime, color: K.forest, fontFamily: "inherit" }}>{pill}</span>}
+      </KyaHeading>
+      <KyaLink onClick={onCta}>{ctaLabel}</KyaLink>
+    </div>
   );
 }
 
@@ -607,19 +627,15 @@ function TodayPanel({ items, onNavigate }: { items: TodayItem[]; onNavigate: (i:
   const { t } = useTranslation();
   if (items.length === 0) return null;
   return (
-    <section
-      data-coach="owner-today"
-      className="overflow-hidden rounded-[18px] border border-[#dccfa8]"
-      style={{ background: "linear-gradient(180deg,#efe9da,#e7e0c8)" }}
-    >
-      <div className="flex items-baseline justify-between px-4 pb-1.5 pt-3.5">
-        <h2 className="t-section">{t("dashboard.today", "Today")}</h2>
-        <span className="t-eyebrow text-[var(--teal-on-cream)]">{items.length === 1 ? t("dashboard.thingCountOne", "{{n}} thing", { n: items.length }) : t("dashboard.thingCountOther", "{{n}} things", { n: items.length })}</span>
+    <section data-coach="owner-today" className="overflow-hidden rounded-[20px] bg-white">
+      <div className="flex items-baseline justify-between px-4 pb-1.5 pt-4">
+        <KyaHeading size={21}>{t("dashboard.today", "Today")}</KyaHeading>
+        <span className="text-[13px]" style={{ color: K.quiet }}>{items.length === 1 ? t("dashboard.thingCountOne", "{{n}} thing", { n: items.length }) : t("dashboard.thingCountOther", "{{n}} things", { n: items.length })}</span>
       </div>
-      <ul>
+      <ul className="m-0 list-none p-0">
         {items.map((it) => (
-          <li key={it.id} className="border-t border-[var(--line)]/70 first:border-t-0">
-            <button type="button" onClick={() => onNavigate(it)} className="flex min-h-[44px] w-full items-center gap-3 px-4 py-3 text-left active:bg-black/[0.03]">
+          <li key={it.id} className="border-t first:border-t-0" style={{ borderColor: K.line }}>
+            <button type="button" onClick={() => onNavigate(it)} className="flex min-h-[60px] w-full items-center gap-3 px-4 py-3 text-left active:bg-black/[0.03]">
               <IconTile
                 size={34}
                 tone={it.tone === "amber" ? "amber" : "ink-lime"}
@@ -652,38 +668,19 @@ function gradientFor(seed: string) {
   return `linear-gradient(135deg,${a},${b})`;
 }
 
-function PhotoTile({ photo, name, species, position }: { photo: SignedPhoto | null; name: string; species: string | null; position?: string | null }) {
+type LatestWeight = { grams: number; at: string | null } | null;
+// A weigh-in older than this many days reads red on the Home row.
+const HOME_STALE_DAYS = 7;
+
+function BirdThumb({ photo, name, species, position }: { photo: SignedPhoto | null; name: string; species: string | null; position?: string | null }) {
   const initial = (name?.slice(0, 1) ?? "?").toUpperCase();
   return (
-    <div className="relative h-[80px] w-[72px] shrink-0 overflow-hidden rounded-[14px]" style={{ background: gradientFor(species || name) }}>
+    <span className="relative block size-[52px] shrink-0 overflow-hidden rounded-[14px]" style={{ background: gradientFor(species || name) }}>
       {photo ? (
-        <BirdPhotoCrop url={photo.url} original={photo.original} position={position} alt={name} />
+        <BirdPhotoCrop url={photo.url} original={photo.original} position={position} alt="" />
       ) : (
-        <div className="grid size-full place-items-center">
-          <span className="text-2xl font-[500] text-white/90">{initial}</span>
-        </div>
+        <span className="grid size-full place-items-center text-[20px] font-[600] text-white/90">{initial}</span>
       )}
-    </div>
-  );
-}
-
-function GlancePill({ glance }: { glance: WeightGlance }) {
-  const { t } = useTranslation();
-  if (glance.state === "none") return <span className="t-meta">{t("dashboard.noWeightsYet", "No weights yet")}</span>;
-  const pill = glance.pill;
-  return (
-    <span className="inline-flex items-center gap-1.5 text-[15px] text-[var(--ink)]">
-      {glance.current}<span className="t-meta">{t("dashboard.gramsUnit", "g")}</span>
-      <StatusPill tone={pill.tone}>{pill.label}</StatusPill>
-    </span>
-  );
-}
-
-function ConcernPill() {
-  const { t } = useTranslation();
-  return (
-    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--amber-fill)] px-2 py-0.5 text-[11px] font-[500] text-[var(--amber-ink)]">
-      <AlertTriangle className="size-3" /> {t("dashboard.concernFlagged", "Concern flagged")}
     </span>
   );
 }
@@ -699,42 +696,46 @@ function householdHeading(t: TFunction, ownerName: string | null | undefined): s
     : t("dashboard.ownersHousehold", "{{name}}'s household", { name: n });
 }
 
-function BirdRow({ bird, photo, glance, foster, concern }: { bird: HomeBird; photo: SignedPhoto | null; glance: WeightGlance; foster?: boolean; concern?: boolean }) {
+/** One bird in the Home list: photo, name and species, then the latest weight
+ *  and when it was taken (red past a week). The weight trend lives on the
+ *  weight page. */
+function BirdRow({ bird, photo, latest, foster, concern, last }: { bird: HomeBird; photo: SignedPhoto | null; latest: LatestWeight; foster?: boolean; concern?: boolean; last?: boolean }) {
   const { t } = useTranslation();
-  const fosterStatus = foster
-    ? glance.state === "stale"
-      ? { tone: "attention" as const, label: t("dashboard.needsAWeighIn", "Needs a weigh-in") }
-      : { tone: "good" as const, label: t("dashboard.allGood", "All good") }
-    : null;
+  const days = latest?.at ? daysAgo(latest.at) : null;
+  const stale = days != null && days > HOME_STALE_DAYS;
+  const when = days == null ? null
+    : days <= 0 ? t("dashboard.weighedToday", "Weighed today")
+    : days === 1 ? t("dashboard.weighedYesterday", "Yesterday")
+    : t("dashboard.weighedDaysAgo", "{{count}} days ago", { count: days });
   return (
     <Link
       to="/birds/$birdId" params={{ birdId: bird.id }}
-      className="flex items-center gap-3 rounded-[18px] bg-white p-3 ring-1 ring-[var(--line2)] active:scale-[0.995]"
-      style={{ boxShadow: "0 1px 0 rgba(40,50,40,.02), 0 6px 14px -8px rgba(40,50,40,.08)" }}
+      className="flex min-h-[72px] items-center gap-3 px-4 py-2.5 active:bg-black/[0.03]"
+      style={{ borderBottom: last ? undefined : `1px solid ${K.line}`, color: K.forest }}
     >
-      <PhotoTile photo={photo} name={bird.name} species={bird.species} position={bird.photo_position} />
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <h3 className="t-item truncate text-[17px]">{bird.name}</h3>
-          {foster && <StatusPill tone="good">{t("dashboard.foster", "Foster")}</StatusPill>}
-        </div>
-        <p className="t-meta truncate">{bird.species ? speciesLabel(t, bird.species) : t("dashboard.parrot", "Parrot")}</p>
-        {foster && bird.intake_date && (
-          <p className="t-meta">{t("dashboard.withYouSince", "With you since {{date}}", { date: fmtShort(bird.intake_date) })}</p>
+      <BirdThumb photo={photo} name={bird.name} species={bird.species} position={bird.photo_position} />
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[15px] font-[700]">{bird.name}</span>
+        <span className="block truncate text-[13px]" style={{ color: K.quiet }}>
+          {bird.species ? speciesLabel(t, bird.species) : t("dashboard.parrot", "Parrot")}
+          {foster && bird.intake_date ? ` · ${t("dashboard.withYouSince", "With you since {{date}}", { date: fmtShort(bird.intake_date) })}` : ""}
+        </span>
+        {concern && (
+          <span className="mt-0.5 inline-flex items-center gap-1 text-[12.5px] font-[700]" style={{ color: K.amberText }}>
+            <AlertTriangle className="size-3.5" aria-hidden="true" /> {t("dashboard.concernFlagged", "Concern flagged")}
+          </span>
         )}
-        {/* One status at a time. An active concern is mutually exclusive with
-            the normal status — show ONLY the concern pill (never alongside
-            "All good" or the weight pill, which would contradict it). */}
-        <div className="mt-1 flex flex-wrap items-center gap-1.5">
-          {concern ? (
-            <ConcernPill />
-          ) : fosterStatus ? (
-            <span className={`text-[13px] font-[500] ${fosterStatus.tone === "good" ? "text-[var(--moss)]" : "text-[var(--amber-ink)]"}`}>{fosterStatus.label}</span>
-          ) : (
-            <GlancePill glance={glance} />
-          )}
-        </div>
-      </div>
+      </span>
+      <span className="shrink-0 text-right">
+        {latest ? (
+          <>
+            <span className="block text-[15px] font-[700]">{t("dashboard.gramsShort", "{{n}} g", { n: latest.grams.toLocaleString() })}</span>
+            {when && <span className={`block text-[13px] ${stale ? "font-[700]" : ""}`} style={{ color: stale ? K.red : K.quiet }}>{when}</span>}
+          </>
+        ) : (
+          <span className="block text-[13px]" style={{ color: K.quiet }}>{t("dashboard.noWeightsYet", "No weights yet")}</span>
+        )}
+      </span>
     </Link>
   );
 }
@@ -757,10 +758,10 @@ function HouseholdActivity({ household }: { household?: HomeHousehold }) {
   if (!household || household.members.length === 0 || activity.length === 0) return null;
   return (
     <section className="space-y-2">
-      <SectionHead title={t("dashboard.fromYourHousehold", "From your household")} />
-      <ul className="space-y-1.5">
+      <KyaHeading size={23} className="px-1">{t("dashboard.fromYourHousehold", "From your household")}</KyaHeading>
+      <ul className="m-0 list-none space-y-1.5 p-0">
         {activity.map((a) => (
-          <li key={a.id} className="flex items-start gap-2.5 rounded-[14px] bg-white px-3 py-2.5 ring-1 ring-[var(--line2)]">
+          <li key={a.id} className="flex items-start gap-2.5 rounded-[20px] bg-white px-4 py-3">
             <span className="mt-1.5 size-2 shrink-0 rounded-full" style={{ background: "var(--house)" }} />
             <div className="min-w-0 flex-1">
               <p className="text-[14px] text-[var(--ink)]"><span className="font-[500]">{a.actorName || t("dashboard.activitySomeone", "Someone")}</span> {t("dashboard.activitySummary", "{{summary}} for {{bird}}", { summary: activitySummary(t, a), bird: a.birdName ?? t("dashboard.activityABird", "A bird") })}</p>
@@ -781,47 +782,34 @@ function HouseholdRow({ household, firstName }: { household?: HomeHousehold; fir
   const members = household?.members ?? [];
   const youInitial = (firstName.slice(0, 1) || "Y").toUpperCase();
   const hasMembers = members.length > 0;
+  const names = members.map((m) => m.name?.trim()).filter(Boolean) as string[];
 
-  const primary = (() => {
-    if (!hasMembers) return t("dashboard.household", "Household");
-    const names = members.map((m) => m.name?.trim()).filter(Boolean) as string[];
-    if (names.length === 1) return t("dashboard.householdYouAndOne", "Household · You and {{a}}", { a: names[0] });
-    if (names.length === 2) return t("dashboard.householdYouAndTwo", "Household · You, {{a}}, and {{b}}", { a: names[0], b: names[1] });
-    return t("dashboard.householdYouAndOthers", "Household · You and {{n}} others", { n: members.length });
-  })();
-  const secondary = !hasMembers
+  const who = !hasMembers
+    ? null
+    : names.length === 1
+      ? t("dashboard.youAndOne", "You and {{a}}", { a: names[0] })
+      : names.length === 2
+        ? t("dashboard.youAndTwo", "You, {{a}} and {{b}}", { a: names[0], b: names[1] })
+        : t("dashboard.youAndOthers", "You and {{count}} others", { count: members.length });
+  const sharing = !hasMembers
     ? t("dashboard.addSomeoneWhoHelps", "Add someone who helps care for your birds")
     : household?.scope === "all" || !household?.sharedBirdNames.length
       ? t("dashboard.sharingAllYourBirds", "Sharing all your birds")
       : t("dashboard.sharingNames", "Sharing {{names}}", { names: joinNames(household.sharedBirdNames) });
 
-  const inner = (
-    <div className={`flex items-center gap-3 ${hasMembers ? "" : "opacity-[0.55]"}`}>
+  return (
+    <Link to="/household" data-coach="owner-household" className="flex min-h-[68px] items-center gap-3 rounded-[20px] bg-white px-4 py-3 active:bg-black/[0.03]" style={{ color: K.forest }}>
       {hasMembers ? (
-        <div className="flex shrink-0 -space-x-2">
-          <Avatar initial={youInitial} />
-          {members.slice(0, 2).map((m, i) => <Avatar key={m.userId} initial={(m.name?.slice(0, 1) || "?").toUpperCase()} dim={i === 1 && members.length > 2} />)}
-        </div>
+        <KyaAvatarStack initials={[youInitial, ...members.slice(0, 2).map((m) => (m.name?.slice(0, 1) || "?").toUpperCase())]} />
       ) : (
-        <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[var(--cream2)] text-[var(--mute2)]"><Users className="size-[18px]" /></span>
+        <span className="grid size-9 shrink-0 place-items-center rounded-full" style={{ background: K.mist, color: K.moss }}><Users className="size-[18px]" /></span>
       )}
-      <div className="min-w-0 flex-1">
-        <p className="t-item truncate">{primary}</p>
-        <p className="t-meta truncate">{secondary}</p>
-      </div>
-      <ChevronRight className="size-4 shrink-0 text-[var(--mute2)]" />
-    </div>
-  );
-
-  return (
-    <Link to="/household" data-coach="owner-household" className="block px-1 active:opacity-80">{inner}</Link>
-  );
-}
-function Avatar({ initial, dim }: { initial: string; dim?: boolean }) {
-  return (
-    <span className={`grid size-9 place-items-center rounded-full text-[11px] font-[500] text-white ring-2 ring-[var(--cream)] ${dim ? "bg-[var(--mute2)]" : "bg-[var(--moss)]"}`}>
-      {initial}
-    </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[15px] font-[700]">{t("dashboard.household", "Household")}</span>
+        <span className="block text-[13px] leading-[1.4]" style={{ color: K.quiet }}>{[who, sharing].filter(Boolean).join(" · ")}</span>
+      </span>
+      <ChevronRight className="size-[18px] shrink-0" style={{ color: K.quiet }} aria-hidden="true" />
+    </Link>
   );
 }
 
@@ -829,15 +817,15 @@ function Avatar({ initial, dim }: { initial: string; dim?: boolean }) {
 // Foster footer
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
-// Empty + skeleton — the InkHero already carries the "Add a bird" lime primary,
+// Empty + skeleton — the header already carries the "Add a bird" main button,
 // so this is a calm explanatory card, no competing button.
 // ---------------------------------------------------------------------------
 function EmptyHome() {
   const { t } = useTranslation();
   return (
-    <section className="rounded-[18px] bg-white p-8 text-center ring-1 ring-[var(--line2)]" style={{ boxShadow: "0 6px 14px -8px rgba(40,50,40,.08)" }}>
+    <section className="rounded-[20px] bg-white p-8 text-center">
       <div className="flex justify-center"><IconTile size={48} icon={<Feather className="size-6" />} /></div>
-      <h2 className="t-section mt-3">{t("dashboard.welcomeToYourFlock", "Welcome to your flock")}</h2>
+      <KyaHeading size={23} className="mt-3">{t("dashboard.welcomeToYourFlock", "Welcome to your flock")}</KyaHeading>
       <p className="t-body mx-auto mt-1.5 max-w-[34ch] text-[var(--ink2)]">{t("dashboard.emptyHomeBody", "Start their living record — care plan, weight, moments, and more. Tap Add a bird above to begin.")}</p>
     </section>
   );
@@ -847,11 +835,11 @@ function HomeSkeleton() {
   return (
     <div className="space-y-3">
       {[0, 1].map((i) => (
-        <div key={i} className="flex items-center gap-3 rounded-[18px] bg-white p-3 ring-1 ring-[var(--line2)]">
-          <div className="h-[80px] w-[72px] shrink-0 animate-pulse rounded-[14px] bg-[var(--cream2)]" />
+        <div key={i} className="flex items-center gap-3 rounded-[20px] bg-white p-3">
+          <div className="size-[52px] shrink-0 animate-pulse rounded-[14px] bg-[#e3ebe2]" />
           <div className="flex-1 space-y-2">
-            <div className="h-4 w-1/3 animate-pulse rounded bg-[var(--cream2)]" />
-            <div className="h-3 w-1/4 animate-pulse rounded bg-[var(--cream2)]" />
+            <div className="h-4 w-1/3 animate-pulse rounded bg-[#e3ebe2]" />
+            <div className="h-3 w-1/4 animate-pulse rounded bg-[#e3ebe2]" />
           </div>
         </div>
       ))}
@@ -879,6 +867,7 @@ function fmtAgo(iso: string): string {
 function joinNames(names: string[]): string {
   const n = names.filter(Boolean);
   if (n.length === 0) return i18next.t("dashboard.yourBirdsLower", "your birds");
+  if (namesAsCount(n)) return i18next.t("birdNames.count", "{{count}} birds", { count: n.length });
   if (n.length === 1) return n[0];
   if (n.length === 2) return i18next.t("dashboard.joinTwo", "{{a}} and {{b}}", { a: n[0], b: n[1] });
   return i18next.t("dashboard.joinMany", "{{list}}, and {{last}}", { list: n.slice(0, -1).join(", "), last: n[n.length - 1] });

@@ -81,16 +81,18 @@ function FlockCheck() {
   });
   const { data: perms } = useMyPermissions();
   const myId = perms?.myId ?? null;
-  // Same set as the Home prompt: the viewer's own flock, then fosters.
+  // Same set as the Home prompt: the viewer's own flock, then fosters. A bird
+  // opened from its own page (?bird=) that someone else owns is added too.
   const birds = useMemo(() => {
     if (!allBirds || !myId) return [];
     const own = (allBirds as Bird[]).filter((b) => b.owner_id === myId);
-    return [...own.filter((b) => !b.is_foster), ...own.filter((b) => b.is_foster)].map((b) => ({
+    const extra = birdParam ? (allBirds as Bird[]).filter((b) => b.id === birdParam && b.owner_id !== myId) : [];
+    return [...own.filter((b) => !b.is_foster), ...own.filter((b) => b.is_foster), ...extra].map((b) => ({
       ...b,
       color: "#adbca7", // sage tile behind a missing or loading photo
       speciesText: b.species ? speciesLabel(t, b.species) : null,
     }));
-  }, [allBirds, myId, t]);
+  }, [allBirds, myId, t, birdParam]);
   // 800px, the same width every other bird tile uses: a smaller transform crops
   // to a different aspect and the photo comes out zoomed in (see BirdPhotoCrop).
   const photoOf = useBirdPhotos(birds.map((b) => b.photo_url), 800);

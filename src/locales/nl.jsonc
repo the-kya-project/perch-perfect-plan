@@ -735,6 +735,10 @@
   "birdPickers.species": "Soort",
   // Unknown
   "birdPickers.unknown": "Onbekend",
+  // About {{name}}
+  "birdRecord.aboutName": "Over {{name}}",
+  // Add
+  "birdRecord.add": "Toevoegen",
   // Add pet-sitter details
   "birdRecord.addSitterDetails": "Oppasdetails toevoegen",
   // Add behavior, tips, and {{name}}'s day so a pet sitter has everything they need.
@@ -743,16 +747,12 @@
   "birdRecord.adjustCrop": "Uitsnede aanpassen",
   // Age
   "birdRecord.age": "Leeftijd",
-  // all clear
-  "birdRecord.allClear": "alles in orde",
-  // All normal
-  "birdRecord.allNormal": "Alles normaal",
+  // {{age}} old
+  "birdRecord.ageOld": "{{age}} oud",
   // Back
   "birdRecord.back": "Terug",
   // Back to your flock
   "birdRecord.backToYourFlock": "Terug naar je vogels",
-  // Basic info
-  "birdRecord.basicInfo": "Basisgegevens",
   // The basics are set for {{name}}
   "birdRecord.basicsSet": "De basis voor {{name}} staat",
   // Build {{name}}'s care plan so sitters and household members know exactly what to do. You can skip and set it up later.
@@ -761,14 +761,20 @@
   "birdRecord.cancel": "Annuleren",
   // Care plan
   "birdRecord.carePlan": "Verzorgingsplan",
-  // {{n}} checks in the last {{days}} days
-  "birdRecord.checksInWindow": "{{n}} checks in de afgelopen {{days}} dagen",
+  // Food, health, behavior, tips and day
+  "birdRecord.carePlanSections": "Eten, gezondheid, gedrag, tips en dag",
+  // All normal.
+  "birdRecord.checkAllNormal": "Alles normaal.",
+  // Done
+  "birdRecord.checkDone": "Klaar",
+  // Checked today.
+  "birdRecord.checkedToday": "Vandaag gecheckt.",
+  // You noted something.
+  "birdRecord.checkNotedSomething": "Je hebt iets genoteerd.",
   // Chip, band, hatch date, origin, photo
   "birdRecord.chipBandHatchDateOrigin": "Chip, ring, uitkomstdatum, herkomst, foto",
   // Clipped
   "birdRecord.clipped": "Geknipt",
-  // concern flagged
-  "birdRecord.concernFlagged": "aandachtspunt gemeld",
   // Continue care plan
   "birdRecord.continueCarePlan": "Verzorgingsplan verder invullen",
   // Pick up where you left off. What you've added so far is saved.
@@ -783,10 +789,6 @@
   "birdRecord.couldntUpdate": "Kon niet bijwerken.",
   // Create care plan
   "birdRecord.createCarePlan": "Verzorgingsplan maken",
-  // Daily check-in — {{status}}
-  "birdRecord.dailyCheckIn": "Dagelijkse check — {{status}}",
-  // {{days}} days ago
-  "birdRecord.daysAgo": "{{days}} dagen geleden",
   // Delete {{name}}
   "birdRecord.deleteName": "{{name}} verwijderen",
   // Delete {{name}}?
@@ -797,8 +799,6 @@
   "birdRecord.deleting": "Verwijderen…",
   // Dismiss
   "birdRecord.dismiss": "Sluiten",
-  // Down {{g}} g
-  "birdRecord.downG": "{{g}} g lichter",
   // Edit
   "birdRecord.edit": "Bewerken",
   // Edit photo
@@ -809,118 +809,84 @@
   "birdRecord.entryCount": "{{n}} meting",
   // Female
   "birdRecord.female": "Vrouwtje",
-  // {{base}} · flagged {{listed}}
-  "birdRecord.flagged": "{{base}} · gemarkeerd: {{listed}}",
-  // {{base}} · flagged {{listed}} +{{more}} more
-  "birdRecord.flaggedMore": "{{base}} · gemarkeerd: {{listed}} +{{more}} meer",
   // Flight
   "birdRecord.flight": "Vliegen",
-  // Food, routine, behavior, home, health
-  "birdRecord.foodRoutineBehaviorHomeHealth": "Eten, routine, gedrag, huis, gezondheid",
   // Fully flighted
   "birdRecord.fullyFlighted": "Volledig vliegvaardig",
-  // Hand off {{name}}
-  "birdRecord.handOff": "{{name}} overdragen",
+  // {{n}} g
+  "birdRecord.grams": "{{n}} g",
   // Handoff canceled.
   "birdRecord.handoffCanceled": "Overdracht geannuleerd.",
   // Handoff pending — to <1>{{email}}</1>
   "birdRecord.handoffPendingTo": "Overdracht in afwachting — naar <1>{{email}}</1>",
+  // Hand {{name}} off to a new owner
+  "birdRecord.handOffToNewOwner": "{{name}} overdragen aan een nieuwe eigenaar",
   // Hatch date
   "birdRecord.hatchDate": "Uitkomstdatum",
-  // Household
-  "birdRecord.household": "Huishouden",
-  // Household & sitters
-  "birdRecord.householdSitters": "Huishouden & oppassen",
   // Identity
   "birdRecord.identity": "Identiteit",
   // In your care
-  "birdRecord.inYourCare": "In jouw zorg",
-  // alertness
-  "birdRecord.item.alertness": "alertheid",
-  // behavior
-  "birdRecord.item.behavior": "gedrag",
-  // breathing
-  "birdRecord.item.breathing": "ademhaling",
-  // droppings
-  "birdRecord.item.droppings": "poep",
-  // energy
-  "birdRecord.item.energy": "energie",
-  // exposure
-  "birdRecord.item.exposure": "blootstelling",
-  // food
-  "birdRecord.item.food": "eten",
-  // injury
-  "birdRecord.item.injury": "verwonding",
-  // posture
-  "birdRecord.item.posture": "houding",
-  // water
-  "birdRecord.item.water": "water",
+  "birdRecord.inYourCareText": "In je zorg",
   // {{name}} joined the flock! 🎉
   "birdRecord.joinedFlockToast": "{{name}} hoort nu bij je vogels! 🎉",
   // Journal
   "birdRecord.journal": "Dagboek",
-  // Last checked {{when}}
-  "birdRecord.lastChecked": "Laatst gecheckt {{when}}",
-  // Last weighed {{when}}
-  "birdRecord.lastWeighed": "Laatst gewogen {{when}}",
-  // last weighed {{date}}
-  "birdRecord.lastWeighedOn": "laatst gewogen {{date}}",
-  // Lately
-  "birdRecord.lately": "De laatste tijd",
-  // Latest weight
-  "birdRecord.latestWeight": "Laatste gewicht",
-  // Log weight
-  "birdRecord.logWeight": "Gewicht noteren",
+  // Just you
+  "birdRecord.justYou": "Alleen jij",
   // Make {{name}} a permanent member of your flock? You can change your mind later.
   "birdRecord.makePermanentConfirm": "Wil je {{name}} voorgoed bij je vogels opnemen? Je kunt later nog van gedachten veranderen.",
   // Make sure the bird's face is centered.
   "birdRecord.makeSureTheBirdS": "Zorg dat het kopje van de vogel in het midden staat.",
   // Male
   "birdRecord.male": "Mannetje",
-  // Mark as passed
-  "birdRecord.markAsPassed": "Markeren als overleden",
+  // Manage
+  "birdRecord.manage": "Beheren",
+  // Mark {{name}} as passed
+  "birdRecord.markNameAsPassed": "{{name}} markeren als overleden",
   // Mark the days worth remembering
   "birdRecord.markTheDaysWorthRemembering": "Leg de dagen vast die je wilt onthouden",
   // Molt, meds, vet visits
   "birdRecord.moltMedsVetVisits": "Rui, medicijnen, dierenartsbezoeken",
   // Moments
   "birdRecord.moments": "Momenten",
-  // More
-  "birdRecord.more": "Meer",
-  // {{n}} flagged
-  "birdRecord.nFlagged": "{{n}} gemarkeerd",
-  // No checks in the last {{days}} days
-  "birdRecord.noChecksInWindow": "Geen checks in de afgelopen {{days}} dagen",
-  // No recent weights
-  "birdRecord.noRecentWeights": "Geen recente gewichten",
+  // Not added
+  "birdRecord.notAdded": "Niet toegevoegd",
+  // Not checked yet today
+  "birdRecord.notCheckedToday": "Vandaag nog niet gecheckt",
   // Nothing logged yet. Weights and sitter check-ins will show up here.
   "birdRecord.nothingLoggedYetWeightsAnd": "Nog niets genoteerd. Gewichten en checks van de oppas verschijnen hier.",
   // Not set
   "birdRecord.notSet": "Niet ingesteld",
   // Not started
   "birdRecord.notStarted": "Nog niet begonnen",
-  // No weight yet — log the first
-  "birdRecord.noWeightYetLogThe": "Nog geen gewicht — noteer het eerste",
-  // {{n}} check in the last {{days}} days
-  "birdRecord.oneCheckInWindow": "{{n}} check in de afgelopen {{days}} dagen",
+  // Not yet
+  "birdRecord.notYet": "Nog niet",
   // One clean sheet for the vet
   "birdRecord.oneCleanSheetForThe": "Eén helder overzicht voor de dierenarts",
-  // 1 weigh-in
-  "birdRecord.oneWeighIn": "1 weging",
-  // {{n}} open flag
-  "birdRecord.openFlagsOne": "{{n}} open melding",
-  // {{n}} open flags
-  "birdRecord.openFlagsOther": "{{n}} open meldingen",
   // Bird record — Kya & Co.
   "birdRecord.pageTitle": "Dossier — Kya & Co.",
-  // Parrot
-  "birdRecord.parrot": "Papegaai",
   // Partially clipped
   "birdRecord.partiallyClipped": "Gedeeltelijk geknipt",
   // If {{name}} has passed or is in serious trouble
   "birdRecord.passedOrTrouble": "Als {{name}} is overleden of in ernstige nood is",
+  // Ready
+  "birdRecord.planReady": "Klaar",
+  // {{count}} to finish
+  "birdRecord.planToFinish_one": "Nog {{count}} te doen",
+  // {{count}} to finish
+  "birdRecord.planToFinish_other": "Nog {{count}} te doen",
   // Recent
   "birdRecord.recent": "Recent",
+  // All normal
+  "birdRecord.recentAllNormal": "Alles normaal",
+  // Concern flagged
+  "birdRecord.recentConcern": "Zorg gemeld",
+  // Daily check
+  "birdRecord.recentDailyCheck": "Dagelijkse check",
+  // Something to check
+  "birdRecord.recentSomethingToCheck": "Iets om na te kijken",
+  // Weighed
+  "birdRecord.recentWeighed": "Gewogen",
   // {{name}}'s record
   "birdRecord.recordHeading": "Dossier van {{name}}",
   // {{name}} removed.
@@ -933,20 +899,24 @@
   "birdRecord.saved": "Opgeslagen.",
   // Saving…
   "birdRecord.saving": "Opslaan…",
+  // See all
+  "birdRecord.seeAll": "Alles bekijken",
+  // See check
+  "birdRecord.seeCheck": "Check bekijken",
   // Set up {{name}}'s care plan
   "birdRecord.setUpCarePlan": "Verzorgingsplan van {{name}} instellen",
   // Sex
   "birdRecord.sex": "Geslacht",
-  // Sitter
-  "birdRecord.sitter": "Oppas",
+  // Show fewer
+  "birdRecord.showFewer": "Minder tonen",
+  // someone
+  "birdRecord.someone": "iemand",
   // Something's wrong with {{name}}
   "birdRecord.somethingsWrong": "Er is iets mis met {{name}}",
-  // something to check
-  "birdRecord.somethingToCheck": "iets om na te kijken",
   // Species
   "birdRecord.species": "Soort",
-  // Steady
-  "birdRecord.steady": "Stabiel",
+  // Start check
+  "birdRecord.startCheck": "Check starten",
   // The same daily check a sitter runs
   "birdRecord.theSameDailyCheckA": "Dezelfde dagelijkse check die een oppas doet",
   // This bird
@@ -955,42 +925,44 @@
   "birdRecord.thisRecordIsnTYours": "Dit dossier is niet meer van jou",
   // This record needs a connection. Nothing has been lost — it'll be here when you're back.
   "birdRecord.thisRecordNeedsAConnection": "Voor dit dossier is een verbinding nodig. Er is niets verloren gegaan — het staat hier weer klaar als je terug bent.",
-  // today
-  "birdRecord.today": "vandaag",
+  // Daily check
+  "birdRecord.tileDailyCheck": "Dagelijkse check",
+  // Last weighed
+  "birdRecord.tileLastWeighed": "Laatst gewogen",
+  // Weight
+  "birdRecord.tileWeight": "Gewicht",
   // Type "{{name}}" exactly to confirm.
   "birdRecord.typeNameToConfirm": "Typ precies \"{{name}}\" om te bevestigen.",
   // Type {{name}} to confirm
   "birdRecord.typeToConfirm": "Typ {{name}} om te bevestigen",
   // Unknown
   "birdRecord.unknown": "Onbekend",
-  // Up {{g}} g
-  "birdRecord.upG": "{{g}} g zwaarder",
   // Vet summary
   "birdRecord.vetSummary": "Dierenartssamenvatting",
-  // View
-  "birdRecord.view": "Bekijken",
-  // View identity
-  "birdRecord.viewIdentity": "Identiteit bekijken",
-  // Weighed {{grams}} g
-  "birdRecord.weighedG": "Gewogen: {{grams}} g",
   // Weight
   "birdRecord.weight": "Gewicht",
-  // Weight down {{g}} g over the last {{days}} days
-  "birdRecord.weightDown": "Gewicht {{g}} g gedaald in de afgelopen {{days}} dagen",
-  // Weight logged — {{grams}} g
-  "birdRecord.weightLogged": "Gewicht genoteerd — {{grams}} g",
-  // Weight steady over the last {{days}} days
-  "birdRecord.weightSteady": "Gewicht stabiel in de afgelopen {{days}} dagen",
-  // Weight up {{g}} g over the last {{days}} days
-  "birdRecord.weightUp": "Gewicht {{g}} g gestegen in de afgelopen {{days}} dagen",
   // Welcome to the flock
   "birdRecord.welcomeToFlock": "Welkom bij je vogels",
-  // Who can see {{name}}'s record
-  "birdRecord.whoCanSee": "Wie het dossier van {{name}} kan zien",
+  // {{count}} day ago
+  "birdRecord.whenDaysAgo_one": "{{count}} dag geleden",
+  // {{count}} days ago
+  "birdRecord.whenDaysAgo_other": "{{count}} dagen geleden",
+  // Today
+  "birdRecord.whenToday": "Vandaag",
+  // Yesterday
+  "birdRecord.whenYesterday": "Gisteren",
+  // Who can see {{name}}
+  "birdRecord.whoCanSeeName": "Wie {{name}} kan zien",
   // With you since {{date}}
   "birdRecord.withYouSince": "Bij jou sinds {{date}}",
-  // yesterday
-  "birdRecord.yesterday": "gisteren",
+  // You and {{count}} other
+  "birdRecord.youAndCount_one": "Jij en {{count}} ander",
+  // You and {{count}} others
+  "birdRecord.youAndCount_other": "Jij en {{count}} anderen",
+  // You and {{names}}
+  "birdRecord.youAndNames": "Jij en {{names}}",
+  // Y
+  "birdRecord.youInitial": "J",
   // You may have handed this bird off, or your access may have been removed. If you think that's wrong, ask whoever looks after the record now.
   "birdRecord.youMayHaveHandedThis": "Misschien heb je deze vogel overgedragen, of is je toegang ingetrokken. Denk je dat dat niet klopt? Vraag het dan aan degene die nu over het dossier gaat.",
   // You're offline
@@ -1619,6 +1591,14 @@
   "birdWeight.afterMeal": "Na het eten",
   // after meal
   "birdWeight.afterMealLower": "na het eten",
+  // 30 days ago
+  "birdWeight.ago30": "30 dagen geleden",
+  // 1 year ago
+  "birdWeight.ago365": "1 jaar geleden",
+  // 90 days ago
+  "birdWeight.ago90": "90 dagen geleden",
+  // Back
+  "birdWeight.back": "Terug",
   // Before meal
   "birdWeight.beforeMeal": "Voor het eten",
   // before meal
@@ -1627,50 +1607,58 @@
   "birdWeight.bodyEmpty": "Nog geen gewichten. Zet {{name}} op de weegschaal en noteer de eerste.",
   // Cancel
   "birdWeight.cancel": "Annuleren",
+  // Weight chart
+  "birdWeight.chartAria": "Gewichtsgrafiek",
+  // Close
+  "birdWeight.close": "Sluiten",
   // Delete this weight entry? This can't be undone.
   "birdWeight.confirmDelete": "Deze weging verwijderen? Dit kan niet ongedaan worden gemaakt.",
-  // Delete weight entry
-  "birdWeight.deleteAria": "Weging verwijderen",
+  // Delete
+  "birdWeight.delete": "Verwijderen",
   // Weight entry deleted.
   "birdWeight.deleted": "Weging verwijderd.",
   // Couldn't delete the entry.
   "birdWeight.deleteFailed": "Kon de weging niet verwijderen.",
-  // Weight
-  "birdWeight.eyebrow": "Gewicht",
-  // First weight
-  "birdWeight.firstWeight": "Eerste weging",
-  // {{delta}} g from previous
-  "birdWeight.fromPrevious": "{{delta}} g t.o.v. vorige",
+  // Deleting…
+  "birdWeight.deleting": "Verwijderen…",
+  // Edit
+  "birdWeight.edit": "Bewerken",
+  // Edit weight
+  "birdWeight.editWeight": "Gewicht bewerken",
   // {{n}} g
   "birdWeight.grams": "{{n}} g",
   // Weight (grams)
   "birdWeight.gramsLabel": "Gewicht (gram)",
   // e.g. 410
   "birdWeight.gramsPlaceholder": "bijv. 410",
-  // Weight.
-  "birdWeight.headlineEmpty": "Gewicht.",
-  // {{n}} g.
-  "birdWeight.headlineGrams": "{{n}} g.",
+  // Highest
+  "birdWeight.highest": "Hoogste",
   // History
   "birdWeight.history": "Geschiedenis",
-  // Household
-  "birdWeight.household": "Huishouden",
-  // Sitter
-  "birdWeight.legendSitter": "Oppas",
+  // Sitter or household
+  "birdWeight.legendOthers": "Oppas of huisgenoot",
   // You
   "birdWeight.legendYou": "Jij",
+  // Log a weight
+  "birdWeight.logAWeight": "Gewicht noteren",
   // Weight logged.
   "birdWeight.logged": "Gewicht genoteerd.",
-  // Log today's weight
-  "birdWeight.logToday": "Gewicht van vandaag noteren",
-  // Log weight
-  "birdWeight.logWeight": "Gewicht noteren",
+  // Logged by {{who}}
+  "birdWeight.loggedBy": "Genoteerd door {{who}}",
+  // Lowest
+  "birdWeight.lowest": "Laagste",
   // Relative to a meal (optional)
   "birdWeight.mealLabel": "Ten opzichte van het eten (optioneel)",
   // Weight — Kya & Co.
   "birdWeight.metaTitle": "Gewicht — Kya & Co.",
-  // {{name}} · household
-  "birdWeight.nameHousehold": "{{name}} · huishouden",
+  // −{{n}} g
+  "birdWeight.minusG": "−{{n}} g",
+  // No change
+  "birdWeight.noChange": "Geen verschil",
+  // No weights in the last {{range}}.
+  "birdWeight.noneInRange": "Geen gewichten in de laatste {{range}}.",
+  // +{{n}} g
+  "birdWeight.plusG": "+{{n}} g",
   // Enter a weight between {{min}} and {{max}} grams.
   "birdWeight.range": "Vul een gewicht in tussen {{min}} en {{max}} gram.",
   // Save
@@ -1679,32 +1667,28 @@
   "birdWeight.saveFailed": "Kon het gewicht niet opslaan.",
   // Saving…
   "birdWeight.saving": "Opslaan…",
-  // Sitter
-  "birdWeight.sitter": "Oppas",
-  // the last 90 days
-  "birdWeight.span90": "de afgelopen 90 dagen",
-  // the last month
-  "birdWeight.spanMonth": "de afgelopen maand",
-  // the last year
-  "birdWeight.spanYear": "het afgelopen jaar",
+  // Show older weights
+  "birdWeight.showOlder": "Oudere gewichten tonen",
+  // Tap a weight to edit or delete it.
+  "birdWeight.tapToEdit": "Tik op een gewicht om het te bewerken of te verwijderen.",
   // this bird
   "birdWeight.thisBird": "deze vogel",
-  // Trend
-  "birdWeight.trend": "Trend",
-  // Down {{n}} g over {{span}}.
-  "birdWeight.trendDown": "{{n}} g omlaag in {{span}}.",
-  // Steady over {{span}}.
-  "birdWeight.trendSteady": "Stabiel in {{span}}.",
-  // Up {{n}} g over {{span}}.
-  "birdWeight.trendUp": "{{n}} g omhoog in {{span}}.",
+  // {{name}}'s weight
+  "birdWeight.title": "Gewicht van {{name}}",
+  // Today
+  "birdWeight.today": "Vandaag",
+  // Weight updated.
+  "birdWeight.updated": "Gewicht bijgewerkt.",
   // When
   "birdWeight.whenLabel": "Wanneer",
-  // 30d
-  "birdWeight.win30": "30d",
-  // 1y
-  "birdWeight.win365": "1j",
-  // 90d
-  "birdWeight.win90": "90d",
+  // 1 year
+  "birdWeight.win1Year": "1 jaar",
+  // 30 days
+  "birdWeight.win30Days": "30 dagen",
+  // 90 days
+  "birdWeight.win90Days": "90 dagen",
+  // Yesterday
+  "birdWeight.yesterday": "Gisteren",
   // Can log daily care and record health.
   "capabilities.descCaregiver": "Kan de dagelijkse verzorging noteren en de gezondheid bijhouden.",
   // Caregiver, plus edit care plans, emergency info, and sits.
@@ -2489,6 +2473,8 @@
   "dashboard.activitySummary": "{{summary}} voor {{bird}}",
   // Add a bird
   "dashboard.addABird": "Vogel toevoegen",
+  // + Add a bird
+  "dashboard.addABirdLink": "+ Vogel toevoegen",
   // Add your first bird to start their record.
   "dashboard.addFirstBirdBody": "Voeg je eerste vogel toe om het dossier te starten.",
   // Add someone who helps care for your birds
@@ -2499,8 +2485,6 @@
   "dashboard.allBirdsCheckedToday_one": "{{count}} vogel vandaag gecheckt",
   // All {{count}} birds checked today
   "dashboard.allBirdsCheckedToday_other": "Alle {{count}} vogels vandaag gecheckt",
-  // All good
-  "dashboard.allGood": "Alles goed",
   // An owner
   "dashboard.anOwner": "Een eigenaar",
   // {{count}} bird still needs a daily check and weight
@@ -2559,8 +2543,6 @@
   "dashboard.flockCheckCta": "Weeg & check je vogels",
   // Finish your flock check ({{done}} of {{total}} done)
   "dashboard.flockCheckFinish": "Maak de check af ({{done}} van {{total}} klaar)",
-  // Foster
-  "dashboard.foster": "Opvang",
   // {{n}} foster
   "dashboard.fosterCountOne": "{{n}} opvangvogel",
   // {{n}} fosters
@@ -2575,8 +2557,6 @@
   "dashboard.goodMorning": "Goedemorgen",
   // {{n}} g
   "dashboard.gramsShort": "{{n}} g",
-  // g
-  "dashboard.gramsUnit": "g",
   // {{part}}, {{name}}
   "dashboard.greetingWithName": "{{part}}, {{name}}",
   // {{n}} hour ago
@@ -2585,12 +2565,6 @@
   "dashboard.hoursAgoOther": "{{n}} uur geleden",
   // Household
   "dashboard.household": "Huishouden",
-  // Household · You and {{a}}
-  "dashboard.householdYouAndOne": "Huishouden · Jij en {{a}}",
-  // Household · You and {{n}} others
-  "dashboard.householdYouAndOthers": "Huishouden · Jij en {{n}} anderen",
-  // Household · You, {{a}}, and {{b}}
-  "dashboard.householdYouAndTwo": "Huishouden · Jij, {{a}} en {{b}}",
   // In your care
   "dashboard.inYourCare": "In jouw zorg",
   // {{list}}, and {{last}}
@@ -2607,8 +2581,6 @@
   "dashboard.nBirdsNotWeighedWeek_one": "{{count}} vogel is al meer dan een week niet gewogen",
   // {{count}} birds haven't been weighed in over a week
   "dashboard.nBirdsNotWeighedWeek_other": "{{count}} vogels zijn al meer dan een week niet gewogen",
-  // Needs a weigh-in
-  "dashboard.needsAWeighIn": "Moet gewogen worden",
   // Needs daily check
   "dashboard.needsDailyCheck": "Dagelijkse check nodig",
   // No birds yet — start with your first.
@@ -2653,12 +2625,28 @@
   "dashboard.thingCountOther": "{{n}} dingen",
   // Today
   "dashboard.today": "Vandaag",
+  // {{count}} day ago
+  "dashboard.weighedDaysAgo_one": "{{count}} dag geleden",
+  // {{count}} days ago
+  "dashboard.weighedDaysAgo_other": "{{count}} dagen geleden",
+  // Weighed today
+  "dashboard.weighedToday": "Vandaag gewogen",
+  // Yesterday
+  "dashboard.weighedYesterday": "Gisteren",
   // Welcome to your flock
   "dashboard.welcomeToYourFlock": "Welkom bij je vogels",
   // With you since {{date}}
   "dashboard.withYouSince": "Bij jou sinds {{date}}",
   // yesterday
   "dashboard.yesterday": "gisteren",
+  // You and {{a}}
+  "dashboard.youAndOne": "Jij en {{a}}",
+  // You and {{count}} other
+  "dashboard.youAndOthers_one": "Jij en {{count}} ander",
+  // You and {{count}} others
+  "dashboard.youAndOthers_other": "Jij en {{count}} anderen",
+  // You, {{a}} and {{b}}
+  "dashboard.youAndTwo": "Jij, {{a}} en {{b}}",
   // You help here
   "dashboard.youHelpHere": "Je helpt hier",
   // Your birds
@@ -3905,6 +3893,18 @@
   "landing.startHere": "Begin hier",
   // Keep a complete care plan and health record for each of your birds — routine, diet, weight, and the little things only you know. Share it with the family, sitters, and household members who help.
   "landing.subhead": "Houd voor elk van je vogels een compleet verzorgingsplan en gezondheidsdossier bij — routine, voeding, gewicht en de kleine dingen die alleen jij weet. Deel het met familie, oppassen en leden van je huishouden die helpen.",
+  // Household
+  "loggedBy.household": "Huisgenoot",
+  // Owner
+  "loggedBy.owner": "Eigenaar",
+  // Sitter
+  "loggedBy.sitter": "Oppas",
+  // Sitter · {{name}}
+  "loggedBy.sitterNamed": "Oppas · {{name}}",
+  // Someone
+  "loggedBy.someone": "Iemand",
+  // You
+  "loggedBy.you": "Jij",
   // An owner
   "memberContext.anOwner": "Een eigenaar",
   // member
@@ -6511,10 +6511,6 @@
   "waitlist.whereLocated": "Waar woon je?",
   // Yes
   "waitlist.yes": "Ja",
-  // Weight over time
-  "weightChart.aria": "Gewicht door de tijd",
-  // No weights in this window yet.
-  "weightChart.empty": "Nog geen gewichten in deze periode.",
   // Down {{delta}} g
   "weightPill.down": "{{delta}} g eraf",
   // First weight
