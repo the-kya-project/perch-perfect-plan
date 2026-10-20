@@ -29,14 +29,6 @@
 	<array>
 		<dict>
 			<key>CFBundleURLName</key>
-			<string>com.thekyaproject.app</string>
-			<key>CFBundleURLSchemes</key>
-			<array>
-				<string>kya</string>
-			</array>
-		</dict>
-		<dict>
-			<key>CFBundleURLName</key>
 			<string>google-signin</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
