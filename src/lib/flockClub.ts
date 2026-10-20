@@ -193,12 +193,14 @@ ${grid()}<tr>
     .join("\n");
 
 /** Primary button: sunflower, forest text, pill, 2px forest border, trailing
- *  arrow. mso-padding-alt because Outlook drops padding on an inline-block a. */
+ *  arrow. mso-padding-alt because Outlook drops padding on an inline-block a.
+ *  data-link names it for the click tracker (emailClicks.server.ts), which
+ *  strips the attribute when it rewrites the link. */
 const buttonHtml = (label: string, href: string) =>
   `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:4px 0 24px;${RESET}">
 <tr>
 <td bgcolor="${FC.sunflower}" style="background-color:${FC.sunflower};border:2px solid ${FC.forest};border-radius:999px;mso-padding-alt:14px 28px;">
-<a href="${href}" style="display:block;padding:14px 28px;font-family:${BODY_FONT};font-size:16px;line-height:22px;font-weight:700;color:${FC.forest};text-decoration:none;">${label}&nbsp;&nbsp;&rarr;</a>
+<a href="${href}" data-link="cta_primary" style="display:block;padding:14px 28px;font-family:${BODY_FONT};font-size:16px;line-height:22px;font-weight:700;color:${FC.forest};text-decoration:none;">${label}&nbsp;&nbsp;&rarr;</a>
 </td>
 </tr>
 </table>`;

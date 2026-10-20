@@ -19,6 +19,7 @@ import { Route as GetAppRouteImport } from './routes/get-app'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ReviewRouteImport } from './routes/review'
+import { Route as RTokenRouteImport } from './routes/r.$token'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedCheckRouteImport } from './routes/_authenticated/check'
@@ -129,6 +130,11 @@ const PrivacyRoute = PrivacyRouteImport.update({
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
   id: '/reset-password',
   path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RTokenRoute = RTokenRouteImport.update({
+  id: '/r/$token',
+  path: '/r/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ReviewRoute = ReviewRouteImport.update({
@@ -513,6 +519,7 @@ const ApiPublicUnsubscribeCategoryUserIdSigRoute =
   } as any)
 
 export interface FileRoutesByFullPath {
+  '/r/$token': typeof RTokenRoute
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/confirm-email': typeof ConfirmEmailRoute
@@ -591,6 +598,7 @@ export interface FileRoutesByFullPath {
   '/api/public/unsubscribe/$category/$userId/$sig': typeof ApiPublicUnsubscribeCategoryUserIdSigRoute
 }
 export interface FileRoutesByTo {
+  '/r/$token': typeof RTokenRoute
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/confirm-email': typeof ConfirmEmailRoute
@@ -663,6 +671,7 @@ export interface FileRoutesByTo {
   '/api/public/unsubscribe/$category/$userId/$sig': typeof ApiPublicUnsubscribeCategoryUserIdSigRoute
 }
 export interface FileRoutesById {
+  '/r/$token': typeof RTokenRoute
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
@@ -745,6 +754,7 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
+    | '/r/$token'
     | '/'
     | '/auth'
     | '/confirm-email'
@@ -823,6 +833,7 @@ export interface FileRouteTypes {
     | '/api/public/unsubscribe/$category/$userId/$sig'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/r/$token'
     | '/'
     | '/auth'
     | '/confirm-email'
@@ -894,6 +905,7 @@ export interface FileRouteTypes {
     | '/api/public/chart/$birdId/$month/$sig'
     | '/api/public/unsubscribe/$category/$userId/$sig'
   id:
+    | '/r/$token'
     | '__root__'
     | '/'
     | '/_authenticated'
@@ -975,6 +987,7 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  RTokenRoute: typeof RTokenRoute
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
@@ -1003,6 +1016,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/r/$token': {
+      id: '/r/$token'
+      path: '/r/$token'
+      fullPath: '/r/$token'
+      preLoaderRoute: typeof RTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -1735,6 +1755,7 @@ const SitterTokenRouteRouteWithChildren =
   SitterTokenRouteRoute._addFileChildren(SitterTokenRouteRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
+  RTokenRoute: RTokenRoute,
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
