@@ -157,7 +157,7 @@ function SitsPage() {
 
   // Bird photos are stored as bucket PATHS; resolve them to signed URLs (small
   // transform — the chips are tiny dots) so the chip <img> actually loads.
-  const resolvePhoto = useBirdPhotos(birds.map((b: any) => b.photo_url), 96);
+  const resolvePhoto = useBirdPhotos(birds.map((b: any) => b.photo_url), 800);
   const birdsFor = (s: any): SitBird[] =>
     ((s.sit_birds ?? []) as any[])
       .map((sb: any) => birdLookup[sb.bird_id])

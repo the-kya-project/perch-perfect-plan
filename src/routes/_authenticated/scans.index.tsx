@@ -49,7 +49,7 @@ function HealthTab() {
   });
   const birds = ((birdsRaw ?? []) as any[]).slice().sort((a, b) => String(a.name).localeCompare(String(b.name)));
   const { data: hist, isLoading: histLoading, isError: histError } = useHealthHistory(birds.map((b) => b.id), myId);
-  const resolvePhoto = useBirdPhotos(birds.map((b) => b.photo_url), 96);
+  const resolvePhoto = useBirdPhotos(birds.map((b) => b.photo_url), 800);
 
   // The header bell opens this tab: clear its badge.
   useEffect(() => { markNotifsSeen(); }, []);

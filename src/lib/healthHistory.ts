@@ -225,7 +225,9 @@ export function useHealthHistory(birdIds: string[], ownerId: string | null | und
   const ids = [...birdIds].sort();
   return useQuery({
     queryKey: ["health-history", ids.join(","), ownerId ?? "", limit],
-    enabled: ids.length > 0 && ownerId !== undefined,
+    // Don't wait on the signed-in user id: the checks and weights don't need
+    // it (RLS scopes them); only the sits do, and they refetch once it lands.
+    enabled: ids.length > 0,
     queryFn: () => fetchHealthHistory(ids, ownerId ?? null, limit),
     placeholderData: (prev) => prev,
   });
