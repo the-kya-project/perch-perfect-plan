@@ -1003,8 +1003,6 @@
   "birdSetup.addCustomTask": "Eigen taak toevoegen",
   // Add photo
   "birdSetup.addPhoto": "Foto toevoegen",
-  // Add the brand, how much, and when it's served. Use “Available all day” for food left in the cage.
-  "birdSetup.addTheBrandHowMuch": "Vul het merk in, hoeveel, en wanneer het gegeven wordt. Kies “Hele dag beschikbaar” voor eten dat in de kooi blijft staan.",
   // Add to {{block}}
   "birdSetup.addToBlock": "Toevoegen aan {{block}}",
   // Add your own…
@@ -1099,6 +1097,8 @@
   "birdSetup.food2.next": "Volgende: Gezondheid",
   // Water, treats and hygiene
   "birdSetup.food2.title": "Water, snacks en hygiëne",
+  // For each food, add the brand, how much, and when it's served.
+  "birdSetup.forEachFoodAdd": "Vul bij elk voer het merk in, hoeveel, en wanneer het gegeven wordt.",
   // Fresh food spoils fast and can grow bacteria. This tells your sitter when to take it out.
   "birdSetup.freshFoodSpoilsFastAnd": "Vers eten bederft snel en er kunnen bacteriën in groeien. Zo weet je oppas wanneer het eruit moet.",
   // Freshness & hygiene
@@ -1149,12 +1149,8 @@
   "birdSetup.issue.noTipsFromTheOwner": "Geen clips met tips van de eigenaar",
   // Required emergency contacts missing
   "birdSetup.issue.requiredEmergencyContactsMissing": "Verplichte noodcontacten ontbreken",
-  // Item, amount & timing
-  "birdSetup.itemAmountTiming": "Voer, hoeveelheid & tijdstip",
   // {{n}} item needs details. Add the brand, amount, and timing for: {{list}}.
   "birdSetup.itemNeedsDetails": "{{n}} item heeft nog gegevens nodig. Vul merk, hoeveelheid en tijdstip in voor: {{list}}.",
-  // Items, amounts & timing per food type
-  "birdSetup.itemsAmountsTimingPerType": "Voer, hoeveelheden & tijdstippen per soort voer",
   // {{n}} items need details. Add the brand, amount, and timing for: {{list}}.
   "birdSetup.itemsNeedDetails": "{{n}} items hebben nog gegevens nodig. Vul merk, hoeveelheid en tijdstip in voor: {{list}}.",
   // Keep current clip
@@ -2825,12 +2821,28 @@
   "flockCheck.view": "Bekijk",
   // Add an ingredient
   "foodEditor.addAnIngredient": "Voeg een ingrediënt toe",
-  // Add another {{type}} item
-  "foodEditor.addAnotherItem": "Nog een {{type}}-item toevoegen",
+  // Add another blend
+  "foodEditor.addAnotherBlend": "Nog een mix toevoegen",
+  // Add another food
+  "foodEditor.addAnotherFood": "Nog een voer toevoegen",
+  // Add another pellet
+  "foodEditor.addAnotherPellet": "Nog een pellet toevoegen",
   // Add another pre-made chop
   "foodEditor.addAnotherPremadeChop": "Nog een kant-en-klare chop toevoegen",
+  // Add another seed mix
+  "foodEditor.addAnotherSeedMix": "Nog een zadenmix toevoegen",
   // Add “{{food}}” as written
   "foodEditor.addAsWritten": "“{{food}}” toevoegen zoals getypt",
+  // Add a time
+  "foodEditor.addATime": "Tijd toevoegen",
+  // Add your first blend
+  "foodEditor.addFirstBlend": "Je eerste mix toevoegen",
+  // Add your first food
+  "foodEditor.addFirstFood": "Je eerste voer toevoegen",
+  // Add your first pellet
+  "foodEditor.addFirstPellet": "Je eerste pellet toevoegen",
+  // Add your first seed mix
+  "foodEditor.addFirstSeedMix": "Je eerste zadenmix toevoegen",
   // Add your homemade chop
   "foodEditor.addHomemadeChop": "Je zelfgemaakte chop toevoegen",
   // What goes in it, how much, and when
@@ -2851,8 +2863,8 @@
   "foodEditor.anythingElse": "Nog iets?",
   // Available all day / free-fed
   "foodEditor.availableAllDayFreeFed": "Hele dag beschikbaar / vrij voeren",
-  // Available all day.
-  "foodEditor.availableAllDaySentence": "Hele dag beschikbaar.",
+  // Brand, how much, and when
+  "foodEditor.brandHowMuchWhen": "Merk, hoeveel, en wanneer",
   // Brand or item name
   "foodEditor.brandOrItemName": "Merk of naam van het item",
   // Brand or name
@@ -2877,6 +2889,10 @@
   "foodEditor.commonPicks": "Veelgekozen",
   // Describe the other diet
   "foodEditor.describeOtherDiet": "Beschrijf de andere voeding",
+  // Done
+  "foodEditor.done": "Klaar",
+  // How much and When are hidden while this is on. Your sitter will see “Available all day.”
+  "foodEditor.freeFedHiddenNote": "Hoeveel en Wanneer zijn verborgen zolang dit aan staat. Je oppas ziet “Hele dag beschikbaar.”",
   // Left in the cage — no set amount or times needed.
   "foodEditor.freeFedNote": "Blijft in de kooi — geen vaste hoeveelheid of tijden nodig.",
   // Amaranth
@@ -3067,10 +3083,10 @@
   "foodEditor.freshnessHygieneHint": "Algemene standaardwaarden — pas ze aan op je vogel en jullie routine.",
   // Fresh food spoils fast and can grow bacteria. This tells your sitter when to take it out.
   "foodEditor.freshSpoilsHint": "Vers voer bederft snel en er kunnen bacteriën in groeien. Zo weet je oppas wanneer het eruit moet.",
-  // Add the amount and pick a unit.
-  "foodEditor.helperAmountUnit": "Vul de hoeveelheid in en kies een eenheid.",
   // Add the brand or food name.
   "foodEditor.helperBrand": "Vul het merk of de naam van het voer in.",
+  // Add how much.
+  "foodEditor.helperHowMuch": "Vul in hoeveel.",
   // Pick at least one feeding time.
   "foodEditor.helperWhen": "Kies minstens één voedertijd.",
   // Homemade
@@ -3089,20 +3105,42 @@
   "foodEditor.itemsEmpty": "Nog geen items. Tik op “Item toevoegen” om een merk of voer te noteren.",
   // For each item, add the amount and when it's served. Use “Available all day” for food left in the cage.
   "foodEditor.itemsHint": "Vul per item de hoeveelheid in en wanneer het gegeven wordt. Gebruik “Hele dag beschikbaar” voor voer dat in de kooi blijft.",
-  // Looks good
-  "foodEditor.looksGood": "Ziet er goed uit",
+  // Add the brand, how much, and when
+  "foodEditor.missingAll": "Vul het merk in, hoeveel, en wanneer",
+  // Add the brand
+  "foodEditor.missingBrand": "Vul het merk in",
+  // Add the brand and how much
+  "foodEditor.missingBrandQty": "Vul het merk in en hoeveel",
+  // Add the brand and when
+  "foodEditor.missingBrandWhen": "Vul het merk in en wanneer",
+  // Add how much
+  "foodEditor.missingQty": "Vul in hoeveel",
+  // Add how much and when
+  "foodEditor.missingQtyWhen": "Vul in hoeveel en wanneer",
+  // Add when it's served
+  "foodEditor.missingWhen": "Vul in wanneer het gegeven wordt",
   // Never feed
   "foodEditor.neverFeed": "Nooit geven",
   // Add anything specific to your bird.
   "foodEditor.neverFeedHint": "Voeg alles toe wat specifiek voor je vogel geldt.",
   // Add another food to never feed
   "foodEditor.neverFeedPlaceholder": "Nog een voedingsmiddel toevoegen dat nooit mag",
+  // New blend
+  "foodEditor.newBlend": "Nieuwe mix",
+  // New food
+  "foodEditor.newFood": "Nieuw voer",
+  // New pellet
+  "foodEditor.newPellet": "Nieuwe pellet",
+  // New pre-made chop
+  "foodEditor.newPremadeChop": "Nieuwe kant-en-klare chop",
+  // New seed mix
+  "foodEditor.newSeedMix": "Nieuwe zadenmix",
   // Note (optional)
   "foodEditor.noteOptional": "Notitie (optioneel)",
-  // Optional — any prep or serving details
-  "foodEditor.notePlaceholder": "Optioneel — details over bereiden of geven",
   // e.g. any prep or serving details
   "foodEditor.notePlaceholderEg": "bijv. details over bereiden of geven",
+  // Any prep or serving details
+  "foodEditor.notePlaceholderPrep": "Eventuele bereiding of manier van serveren",
   // Nothing added yet.
   "foodEditor.nothingAddedYet": "Nog niets toegevoegd.",
   // {{food}} isn't safe for birds, so it can't go in the chop.
@@ -3121,10 +3159,6 @@
   "foodEditor.pickAtLeastOnePeriod": "Kies minstens één dagdeel.",
   // Pick a unit…
   "foodEditor.pickAUnit": "Kies een eenheid…",
-  // Needs details
-  "foodEditor.pillNeedsDetails": "Details nodig",
-  // Ready
-  "foodEditor.pillReady": "Klaar",
   // Pre-made
   "foodEditor.preMade": "Kant-en-klaar",
   // Pre-made chop
@@ -3143,12 +3177,16 @@
   "foodEditor.removeThisItem": "Dit item verwijderen",
   // e.g. Pantry, top shelf; fridge bin
   "foodEditor.storagePlaceholder": "bijv. voorraadkast, bovenste plank; bak in de koelkast",
-  // Tap to add the details your sitter needs.
-  "foodEditor.tapToAddDetails": "Tik om de details toe te voegen die je oppas nodig heeft.",
+  // Available all day
+  "foodEditor.summaryAllDay": "Hele dag beschikbaar",
+  // Time for {{period}}
+  "foodEditor.timeFor": "Tijd voor {{period}}",
   // Treats
   "foodEditor.treats": "Snacks",
   // What treats are OK? (e.g. millet spray, almond slivers)
   "foodEditor.treatsPlaceholder": "Welke snoepjes mogen? (bijv. trosgierst, amandelschilfers)",
+  // Unit
+  "foodEditor.unit": "Eenheid",
   // cups
   "foodEditor.unit.cups": "kopjes",
   // grams
@@ -3169,8 +3207,6 @@
   "foodEditor.unit.tbsp": "el",
   // tsp
   "foodEditor.unit.tsp": "tl",
-  // Unit…
-  "foodEditor.unitPlaceholder": "Eenheid…",
   // This is washing the bowl itself — separate from how often you change the water.
   "foodEditor.washBowlHint": "Dit gaat over het afwassen van de bak zelf — los van hoe vaak je het water ververst.",
   // Wash food bowls

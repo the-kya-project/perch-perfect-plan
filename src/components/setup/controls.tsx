@@ -216,8 +216,10 @@ export function Segmented<T extends string>({ options, value, onChange, label }:
 
 // ---------- Dropdown (pick one of 4+, or long labels) ----------
 
-export function Dropdown({ id, value, onChange, options, placeholder, ariaLabel }: {
+export function Dropdown({ id, value, onChange, options, placeholder, ariaLabel, invalid }: {
   id?: string; value: string; onChange: (next: string) => void; options: { value: string; label: string }[]; placeholder?: string; ariaLabel?: string;
+  /** A required answer that's missing: amber border. */
+  invalid?: boolean;
 }) {
   return (
     <div className="relative">
@@ -226,8 +228,9 @@ export function Dropdown({ id, value, onChange, options, placeholder, ariaLabel 
         aria-label={ariaLabel}
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        aria-invalid={invalid || undefined}
         className="h-12 w-full appearance-none rounded-full border-2 bg-white pl-[18px] pr-11 text-[16px] outline-none focus:border-[#1a3d2e]"
-        style={{ borderColor: S.line, color: S.forest }}
+        style={{ borderColor: invalid ? S.amberText : S.line, color: S.forest }}
       >
         {placeholder != null && <option value="">{placeholder}</option>}
         {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -271,9 +274,11 @@ export function Switch({ checked, onChange, label, children }: { checked: boolea
 
 const FIELD = "w-full border-2 bg-white text-[16px] outline-none focus:border-[#1a3d2e]";
 
-export function TextField({ id, value, onChange, placeholder, type = "text", inputMode, ariaLabel }: {
+export function TextField({ id, value, onChange, placeholder, type = "text", inputMode, ariaLabel, invalid, maxLength, className }: {
   id?: string; value: string; onChange: (next: string) => void; placeholder?: string; type?: string;
   inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"]; ariaLabel?: string;
+  /** A required answer that's missing: amber border. */
+  invalid?: boolean; maxLength?: number; className?: string;
 }) {
   return (
     <input
@@ -283,9 +288,11 @@ export function TextField({ id, value, onChange, placeholder, type = "text", inp
       aria-label={ariaLabel}
       value={value}
       placeholder={placeholder}
+      maxLength={maxLength}
+      aria-invalid={invalid || undefined}
       onChange={(e) => onChange(e.target.value)}
-      className={`${FIELD} h-12 rounded-full px-[18px]`}
-      style={{ borderColor: S.line, color: S.forest }}
+      className={`${FIELD} h-12 rounded-full px-[18px] ${className ?? ""}`}
+      style={{ borderColor: invalid ? S.amberText : S.line, color: S.forest }}
     />
   );
 }

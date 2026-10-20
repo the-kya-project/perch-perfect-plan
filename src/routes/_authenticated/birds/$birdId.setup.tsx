@@ -1248,13 +1248,6 @@ export function FoodWaterStep({
       }
       // else chop selected but empty → leave with no items so the owner chooses a mode.
     }
-    // Every selected type EXCEPT chop shows at least one (needs-details) item
-    // card, so the editable box is never hidden behind an "Add item" tap. Chop
-    // waits for the pre-made/homemade choice before showing an item.
-    for (const t of dietTypes) {
-      if (t === "chop") continue;
-      if (!Array.isArray(dd[t]) || dd[t].length === 0) dd[t] = [blankFoodItem()];
-    }
     setDietDetails(dd);
     setFreshOther(plan.fresh_foods_other ?? "");
     setTreatsNotes(plan.treats_notes ?? "");
@@ -1309,7 +1302,7 @@ export function FoodWaterStep({
     let count = 0;
     for (const t of diet) {
       const items = dietDetails[t] ?? [];
-      if (t === "chop" && items.length === 0) { count += 1; labels.push(typeLabel(t)); continue; }
+      if (items.length === 0) { count += 1; labels.push(typeLabel(t)); continue; }
       const bad = items.filter((it) => !isFoodItemComplete(it));
       if (bad.length) { count += bad.length; labels.push(typeLabel(t)); }
     }
@@ -1486,8 +1479,8 @@ export function FoodWaterStep({
       setDietDetails((prev) => { const next = { ...prev }; delete next[value]; return next; });
       if (value === "chop") setChopIngredients([]);
     } else {
+      // A new type starts empty: its card shows "Add your first …".
       setDiet([...diet, value]);
-      if (value !== "chop") setDietDetails((prev) => (prev[value]?.length ? prev : { ...prev, [value]: [blankFoodItem()] }));
     }
   }
 
@@ -1511,7 +1504,7 @@ export function FoodWaterStep({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-[14px]">
       {page !== 2 && (
         <>
       <StepInstruction>{t("birdSetup.instr.food", "What does {{name}} eat, and how much? Clear answers mean anyone caring for {{name}} knows exactly what to serve, and when.", { name: birdName })}</StepInstruction>
@@ -1534,20 +1527,30 @@ export function FoodWaterStep({
             </Chip>
           ))}
         </div>
-        {diet.includes("other") && (
-          <input
-            className="input mt-3"
-            placeholder={t("birdSetup.describeTheOtherDiet", "Describe the other diet")}
-            value={dietOther}
-            maxLength={200}
-            onChange={(e) => setDietOther(e.target.value)}
-          />
-        )}
       </Card>
 
-      {/* Per-diet-type items, amounts & feed times — shared FoodItemsEditor */}
+      {/* One card per selected food type, in chip order — shared FoodItemsEditor */}
       {diet.length > 0 && (
         <>
+          <p className="m-0 text-[15px] leading-[1.5] text-[#3d4f45]">
+            {t("birdSetup.forEachFoodAdd", "For each food, add the brand, how much, and when it's served.")}
+          </p>
+          <FoodItemsEditor
+            types={DIET_OPTIONS.filter((o) => diet.includes(o.value)).map((o) => ({ value: o.value, label: displayLabel(t, o.label) }))}
+            details={dietDetails}
+            onChangeType={setItemsForType}
+            validationActive={validationActive}
+            expandSignal={expandSignal}
+            otherDescription={{ value: dietOther, onChange: setDietOther }}
+            chop={{
+              onRemoveHomemade: removeHomemadeChop,
+              ingredients: chopIngredients,
+              onToggleIngredient: toggleChopIngredient,
+              neverFeed: never,
+              other: freshOther,
+              onOtherChange: setFreshOther,
+            }}
+          />
           {validationActive && incomplete.count > 0 && (
             <div
               ref={bannerRef}
@@ -1562,26 +1565,6 @@ export function FoodWaterStep({
               </p>
             </div>
           )}
-          <Card
-            title={diet.length === 1 ? t("birdSetup.itemAmountTiming", "Item, amount & timing") : t("birdSetup.itemsAmountsTimingPerType", "Items, amounts & timing per food type")}
-            hint={t("birdSetup.addTheBrandHowMuch", "Add the brand, how much, and when it's served. Use “Available all day” for food left in the cage.")}
-          >
-            <FoodItemsEditor
-              types={diet.map((item) => ({ value: item, label: typeLabel(item) }))}
-              details={dietDetails}
-              onChangeType={setItemsForType}
-              validationActive={validationActive}
-              expandSignal={expandSignal}
-              chop={{
-                onRemoveHomemade: removeHomemadeChop,
-                ingredients: chopIngredients,
-                onToggleIngredient: toggleChopIngredient,
-                neverFeed: never,
-                other: freshOther,
-                onOtherChange: setFreshOther,
-              }}
-            />
-          </Card>
         </>
       )}
 

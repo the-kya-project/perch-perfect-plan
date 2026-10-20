@@ -1500,9 +1500,6 @@
     "birdSetup.addPhoto": {
       "stamp": "919260493285cf40"
     },
-    "birdSetup.addTheBrandHowMuch": {
-      "stamp": "6b30628203e66650"
-    },
     "birdSetup.addToBlock": {
       "stamp": "a06875d4999d6a14"
     },
@@ -1644,6 +1641,9 @@
     "birdSetup.food2.title": {
       "stamp": "00afcfc58a360f9e"
     },
+    "birdSetup.forEachFoodAdd": {
+      "stamp": "646631c41d8a5376"
+    },
     "birdSetup.freshFoodSpoilsFastAnd": {
       "stamp": "c66b3dd24fff205c"
     },
@@ -1719,14 +1719,8 @@
     "birdSetup.issue.requiredEmergencyContactsMissing": {
       "stamp": "1dcbf9f9e4e28222"
     },
-    "birdSetup.itemAmountTiming": {
-      "stamp": "c0b064eb8c92442c"
-    },
     "birdSetup.itemNeedsDetails": {
       "stamp": "4529a50970f8dba4"
-    },
-    "birdSetup.itemsAmountsTimingPerType": {
-      "stamp": "39bb10d578b052b7"
     },
     "birdSetup.itemsNeedDetails": {
       "stamp": "09b642e4d6d5b63d"
@@ -4233,14 +4227,38 @@
     "foodEditor.addAnIngredient": {
       "stamp": "b518c5e21bad4eb9"
     },
-    "foodEditor.addAnotherItem": {
-      "stamp": "9649a82e8720ead5"
+    "foodEditor.addAnotherBlend": {
+      "stamp": "40357602af9ea042"
+    },
+    "foodEditor.addAnotherFood": {
+      "stamp": "a2a617c29de9aeb9"
+    },
+    "foodEditor.addAnotherPellet": {
+      "stamp": "829ed06a86156a88"
     },
     "foodEditor.addAnotherPremadeChop": {
       "stamp": "cec5e3f0a782705d"
     },
+    "foodEditor.addAnotherSeedMix": {
+      "stamp": "375604db943fefc5"
+    },
     "foodEditor.addAsWritten": {
       "stamp": "0a537d3426f70803"
+    },
+    "foodEditor.addATime": {
+      "stamp": "1baa89af9dcc5eab"
+    },
+    "foodEditor.addFirstBlend": {
+      "stamp": "a6d65279c618c50c"
+    },
+    "foodEditor.addFirstFood": {
+      "stamp": "28ca1b08a2d47c4c"
+    },
+    "foodEditor.addFirstPellet": {
+      "stamp": "41cae66052e6c1af"
+    },
+    "foodEditor.addFirstSeedMix": {
+      "stamp": "c40f6a21014212d8"
     },
     "foodEditor.addHomemadeChop": {
       "stamp": "1df2f3a7e2253088"
@@ -4272,8 +4290,8 @@
     "foodEditor.availableAllDayFreeFed": {
       "stamp": "6579788b6c24e3ce"
     },
-    "foodEditor.availableAllDaySentence": {
-      "stamp": "6fc3be60f356dcdd"
+    "foodEditor.brandHowMuchWhen": {
+      "stamp": "cec68e45f6bda5fb"
     },
     "foodEditor.brandOrItemName": {
       "stamp": "8a4488659d886ef6"
@@ -4310,6 +4328,12 @@
     },
     "foodEditor.describeOtherDiet": {
       "stamp": "7518cfa2fca94fe3"
+    },
+    "foodEditor.done": {
+      "stamp": "3e00dbef8dddb12e"
+    },
+    "foodEditor.freeFedHiddenNote": {
+      "stamp": "98e641efca8056b1"
     },
     "foodEditor.freeFedNote": {
       "stamp": "09e60c4f7d4efb05"
@@ -4596,11 +4620,11 @@
     "foodEditor.freshSpoilsHint": {
       "stamp": "c66b3dd24fff205c"
     },
-    "foodEditor.helperAmountUnit": {
-      "stamp": "1bafd6348acd58c0"
-    },
     "foodEditor.helperBrand": {
       "stamp": "e1e13971d4b1ce4e"
+    },
+    "foodEditor.helperHowMuch": {
+      "stamp": "a22b1745983915f6"
     },
     "foodEditor.helperWhen": {
       "stamp": "5cd18d3f97ae4a92"
@@ -4629,8 +4653,26 @@
     "foodEditor.itemsHint": {
       "stamp": "8be4f1768569342f"
     },
-    "foodEditor.looksGood": {
-      "stamp": "d6a6fb8131568ad0"
+    "foodEditor.missingAll": {
+      "stamp": "4a7e2ac51f205dc0"
+    },
+    "foodEditor.missingBrand": {
+      "stamp": "a750505f78640aee"
+    },
+    "foodEditor.missingBrandQty": {
+      "stamp": "d816b623feffce1a"
+    },
+    "foodEditor.missingBrandWhen": {
+      "stamp": "f27f435123e80f8d"
+    },
+    "foodEditor.missingQty": {
+      "stamp": "fe898ec8a66c2e84"
+    },
+    "foodEditor.missingQtyWhen": {
+      "stamp": "ad8d4ef7af889320"
+    },
+    "foodEditor.missingWhen": {
+      "stamp": "809ebd90e17cf41f"
     },
     "foodEditor.neverFeed": {
       "stamp": "6ddfe75182cfb725"
@@ -4641,14 +4683,29 @@
     "foodEditor.neverFeedPlaceholder": {
       "stamp": "b1be272405920445"
     },
+    "foodEditor.newBlend": {
+      "stamp": "e724594da0e566d2"
+    },
+    "foodEditor.newFood": {
+      "stamp": "5460629a80d106a9"
+    },
+    "foodEditor.newPellet": {
+      "stamp": "caa023e2c55f5cc1"
+    },
+    "foodEditor.newPremadeChop": {
+      "stamp": "95af178b0b10aeb1"
+    },
+    "foodEditor.newSeedMix": {
+      "stamp": "b74cc3462c46252b"
+    },
     "foodEditor.noteOptional": {
       "stamp": "1c9c81d2c9ea79a7"
     },
-    "foodEditor.notePlaceholder": {
-      "stamp": "a73a130d59b0aa32"
-    },
     "foodEditor.notePlaceholderEg": {
       "stamp": "7c78e5536b148986"
+    },
+    "foodEditor.notePlaceholderPrep": {
+      "stamp": "89c67bc2d9ae5fae"
     },
     "foodEditor.nothingAddedYet": {
       "stamp": "6cd66b156be9763c"
@@ -4677,12 +4734,6 @@
     "foodEditor.pickAUnit": {
       "stamp": "b7410aa295d2854e"
     },
-    "foodEditor.pillNeedsDetails": {
-      "stamp": "bef08d9c13b03750"
-    },
-    "foodEditor.pillReady": {
-      "stamp": "febf31ddd8bcb7b1"
-    },
     "foodEditor.preMade": {
       "stamp": "77230f26282c3507"
     },
@@ -4710,14 +4761,20 @@
     "foodEditor.storagePlaceholder": {
       "stamp": "90a9929ca21282e0"
     },
-    "foodEditor.tapToAddDetails": {
-      "stamp": "065cd02cc6df2166"
+    "foodEditor.summaryAllDay": {
+      "stamp": "d3deb55a27756893"
+    },
+    "foodEditor.timeFor": {
+      "stamp": "090dc6ed6018c095"
     },
     "foodEditor.treats": {
       "stamp": "f74a07c2d2ee143e"
     },
     "foodEditor.treatsPlaceholder": {
       "stamp": "d388568adafe3193"
+    },
+    "foodEditor.unit": {
+      "stamp": "80fecb184799e67b"
     },
     "foodEditor.unit.cups": {
       "stamp": "81bc24564089da76"
@@ -4748,9 +4805,6 @@
     },
     "foodEditor.unit.tsp": {
       "stamp": "7078337e00fa28ff"
-    },
-    "foodEditor.unitPlaceholder": {
-      "stamp": "74be03357cc856a4"
     },
     "foodEditor.washBowlHint": {
       "stamp": "f29e8f28423acce4"
