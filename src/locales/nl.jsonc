@@ -1085,6 +1085,8 @@
   "birdSetup.finishSetup": "Instellen afronden",
   // Flight
   "birdSetup.flight": "Vliegen",
+  // What {{name}} eats
+  "birdSetup.food.title": "Wat {{name}} eet",
   // Everything here is optional, and the defaults are a good place to start.
   "birdSetup.food2.intro": "Alles hier is optioneel, en de standaardinstellingen zijn een goed begin.",
   // Next: Health
@@ -3037,6 +3039,12 @@
   "foodEditor.brandOrName": "Merk of naam",
   // e.g. Harrison's High Potency
   "foodEditor.brandPlaceholder": "bijv. Harrison's High Potency",
+  // e.g. The name on the bag
+  "foodEditor.brandPlaceholderBag": "bijv. de naam op de zak",
+  // e.g. Sprouted seed mix
+  "foodEditor.brandPlaceholderOther": "bijv. gekiemd zaadmengsel",
+  // e.g. Higgins Sunburst
+  "foodEditor.brandPlaceholderSeed": "bijv. Higgins Sunburst",
   // Choose all that apply.
   "foodEditor.chooseAllThatApply": "Kies alles wat van toepassing is.",
   // Pick fresh foods above or tap “Add item” to list your own.

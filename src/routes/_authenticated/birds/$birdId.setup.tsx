@@ -484,6 +484,8 @@ function BirdSetup() {
       step={step}
       title={onFoodPage2
         ? t("birdSetup.food2.title", "Water, treats and hygiene")
+        : meta.key === "food"
+          ? t("birdSetup.food.title", "What {{name}} eats", { name: bird.name })
         : meta.key === "health"
           ? t("birdSetup.health.title", "Keeping {{name}} healthy", { name: bird.name })
           : meta.key === "personality"

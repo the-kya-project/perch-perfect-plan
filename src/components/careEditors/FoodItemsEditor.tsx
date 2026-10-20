@@ -84,6 +84,17 @@ function typeWords(t: TFunction, type: string) {
   }
 }
 
+/** The "Brand or name" placeholder, matched to the food type. */
+function brandPlaceholder(t: TFunction, type: string): string {
+  switch (type) {
+    case "seed": return t("foodEditor.brandPlaceholderSeed", "e.g. Higgins Sunburst");
+    case "pellet_seed":
+    case "chop": return t("foodEditor.brandPlaceholderBag", "e.g. The name on the bag");
+    case "other": return t("foodEditor.brandPlaceholderOther", "e.g. Sprouted seed mix");
+    default: return t("foodEditor.brandPlaceholder", "e.g. Harrison's High Potency");
+  }
+}
+
 function whenLabels(t: TFunction, it: FoodItem): string {
   return normalizeFeedTimes(it.times)
     .map((ft) => FEED_PERIODS.find((p) => p.value === ft.period)?.label)
@@ -261,6 +272,7 @@ export function FoodItemsEditor({
             item={sheetItem}
             typeLabel={sheetItem.homemade ? t("birdSetup.opt.freshChopFormulated", "Fresh chop / formulated") : sheetTypeLabel}
             freshTitle={sheetItem.homemade ? t("foodEditor.homemadeChopItem", "Homemade chop") : typeWords(t, sheet.type).fresh}
+            namePlaceholder={brandPlaceholder(t, sheet.type)}
             validationActive={validationActive}
             onChange={(patch) => onChangeType(sheet.type, sheetItems.map((it, i) => (i === sheet.idx ? { ...it, ...patch } : it)))}
             onDone={() => setSheet(null)}
@@ -423,8 +435,10 @@ function Missing({ children }: { children: React.ReactNode }) {
 }
 
 /** The sheet's fields for one item: brand, how much, when, all day, note. */
-function ItemSheetBody({ item, typeLabel, freshTitle, validationActive, onChange, onDone, onRemove, chop }: {
+function ItemSheetBody({ item, typeLabel, freshTitle, namePlaceholder, validationActive, onChange, onDone, onRemove, chop }: {
   item: FoodItem;
+  /** "Brand or name" placeholder for this food type. */
+  namePlaceholder?: string;
   typeLabel: string;
   /** Title until a brand is typed ("New pellet"), or the homemade item's name. */
   freshTitle: string;
@@ -487,7 +501,7 @@ function ItemSheetBody({ item, typeLabel, freshTitle, validationActive, onChange
             maxLength={120}
             invalid={validationActive && miss.brand}
             onChange={(v) => onChange({ name: v })}
-            placeholder={t("foodEditor.brandPlaceholder", "e.g. Harrison's High Potency")}
+            placeholder={namePlaceholder ?? t("foodEditor.brandPlaceholder", "e.g. Harrison's High Potency")}
           />
           {validationActive && miss.brand && <Missing>{t("foodEditor.helperBrand", "Add the brand or food name.")}</Missing>}
         </Field>

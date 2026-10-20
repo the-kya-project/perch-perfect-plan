@@ -1623,6 +1623,9 @@
     "birdSetup.flight": {
       "stamp": "5bdc1919d90eeaf6"
     },
+    "birdSetup.food.title": {
+      "stamp": "1596cf6ed93e9602"
+    },
     "birdSetup.food2.intro": {
       "stamp": "68d85b54810e239c"
     },
@@ -4550,6 +4553,15 @@
     },
     "foodEditor.brandPlaceholder": {
       "stamp": "9712ad87270c3b20"
+    },
+    "foodEditor.brandPlaceholderBag": {
+      "stamp": "e07ec96e89e85acc"
+    },
+    "foodEditor.brandPlaceholderOther": {
+      "stamp": "95cf2efa2f04570a"
+    },
+    "foodEditor.brandPlaceholderSeed": {
+      "stamp": "8f8df33ad68a2500"
     },
     "foodEditor.chooseAllThatApply": {
       "stamp": "6fcf4c51b8594ea1"
