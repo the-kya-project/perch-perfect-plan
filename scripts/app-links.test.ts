@@ -182,4 +182,15 @@ await check("trackedUrl follows EMAIL_CLICK_ORIGIN, and the token still verifies
   }
 });
 
+console.log("smart app banner");
+await check("app screens get the banner, pointing at the same page", () => {
+  assert.equal(L.smartAppBannerContent("/birds/new", "?next=weight"), "app-id=6795267221, app-argument=https://app.thekyaproject.com/birds/new?next=weight");
+  assert.equal(L.smartAppBannerContent("/", ""), "app-id=6795267221, app-argument=https://app.thekyaproject.com/");
+  assert.equal(L.smartAppBannerContent("/dashboard", "next=x"), "app-id=6795267221, app-argument=https://app.thekyaproject.com/dashboard?next=x");
+});
+await check("sitter, sign-in, invite and public pages get no banner", () => {
+  for (const p of BROWSER_ONLY) assert.equal(L.smartAppBannerContent(p, ""), null, p);
+});
+await check("a ?code= sign-in redirect gets no banner", () => assert.equal(L.smartAppBannerContent("/dashboard", "?code=abc"), null));
+
 console.log(`\n${passed} passed${process.exitCode ? ", some FAILED" : ""}`);

@@ -80,7 +80,7 @@ Still to do, in order:
 7. Test in Apple Mail and the Gmail app, app installed vs not, signed in vs out. Gmail's
    in-app browser may still open the web; that's Gmail's choice, not ours.
 
-Optional: Apple Smart App Banner on the website.
+Apple Smart App Banner: live on app screens (`smartAppBannerContent`), so people who land in Safari get an "Open" bar that goes to the same screen.
 
 ### `appendUserAgent: 'KyaApp'` so native requests are identifiable
 Status: set in `capacitor.config.ts` on feat/universal-links; takes effect with the same

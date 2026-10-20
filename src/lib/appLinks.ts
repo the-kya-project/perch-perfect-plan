@@ -45,6 +45,7 @@ export const APP_LINK_HOST = "app.thekyaproject.com";
 export const CLICK_LINK_HOST = "links.thekyaproject.com";
 
 /** Apple Team ID (ios/App/App.xcodeproj DEVELOPMENT_TEAM) + bundle id. */
+export const APP_STORE_ID = "6795267221";
 export const APPLE_APP_ID = "DT93FSYJ9C.com.thekyaproject.app";
 export const ANDROID_PACKAGE = "com.thekyaproject.app";
 
@@ -166,4 +167,23 @@ export function clickOriginFor(destination: string, clickOrigin: string | undefi
   } catch {
     return appOrigin;
   }
+}
+
+/**
+ * Apple's Smart App Banner: the slim bar Safari shows at the top of the page,
+ * with "Open" when the app is installed and "View" when it isn't. It's the
+ * gentle option for people who land in the browser anyway (Gmail's own
+ * browser, or long-pressing a link and choosing Safari). iOS Safari only; the
+ * app's own webview and other browsers ignore the tag.
+ *
+ * Shown only on app screens, the same list Universal Links use, so a sitter
+ * on their token link or someone mid-sign-in is never pushed toward the app.
+ * app-argument hands the current page to the app, so "Open" lands on the same
+ * screen (appLinkNative.ts routes it). null = no banner on this page.
+ */
+export function smartAppBannerContent(pathname: string, search: string): string | null {
+  if (!isAppLinkPath(pathname)) return null;
+  const query = search && search !== "?" ? (search.startsWith("?") ? search : `?${search}`) : "";
+  if (new URLSearchParams(query).has("code")) return null;
+  return `app-id=${APP_STORE_ID}, app-argument=https://${APP_LINK_HOST}${pathname}${query}`;
 }

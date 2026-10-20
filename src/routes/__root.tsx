@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
   type ErrorComponentProps,
@@ -31,6 +32,7 @@ import {
 import { captureFirstTouch } from "@/lib/attribution";
 import { attachNativePushHandlers, syncNativePushToken } from "@/lib/pushNative";
 import { attachAppLinkHandler } from "@/lib/appLinkNative";
+import { smartAppBannerContent } from "@/lib/appLinks";
 import { savePushToken } from "@/lib/push.functions";
 // Side-effect import: registers the beforeinstallprompt/appinstalled listeners
 // at app start so the native install prompt is captured (it fires once, early).
@@ -181,9 +183,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 });
 
 function RootShell({ children }: { children: ReactNode }) {
+  // iOS Safari's Smart App Banner on app screens (see appLinks.ts). Rendered
+  // here rather than in head() because it carries the current URL, and Safari
+  // reads it from the first page load, which is the server render.
+  const location = useRouterState({ select: (s) => s.location });
+  const banner = smartAppBannerContent(location.pathname, location.searchStr);
   return (
     <html lang="en">
-      <head><HeadContent /></head>
+      <head>
+        <HeadContent />
+        {banner && <meta name="apple-itunes-app" content={banner} />}
+      </head>
       <body>{children}<Scripts /></body>
     </html>
   );
