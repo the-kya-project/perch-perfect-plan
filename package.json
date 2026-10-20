@@ -33,7 +33,8 @@
     "test:daily-log": "npx --yes vite-node scripts/daily-log.test.ts",
     "test:email-tracking": "npx --yes vite-node scripts/email-tracking.test.ts",
     "test:auth-email-hook": "npx --yes vite-node scripts/auth-email-hook.test.ts",
-    "test:email-clicks": "npx --yes vite-node scripts/email-clicks.test.ts"
+    "test:email-clicks": "npx --yes vite-node scripts/email-clicks.test.ts",
+    "test:app-links": "npx --yes vite-node scripts/app-links.test.ts"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.2",

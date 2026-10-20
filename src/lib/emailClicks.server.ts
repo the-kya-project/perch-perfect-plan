@@ -33,6 +33,7 @@
  */
 import { detectInAppBrowser, detectPlatform, isBot } from "./storeRedirect.server";
 import type { EmailTag } from "./emailTracking";
+import { clickOriginFor } from "./appLinks";
 
 export const APP_ORIGIN = "https://app.thekyaproject.com";
 
@@ -117,8 +118,12 @@ export async function readClickToken(token: string): Promise<ClickPayload | null
   }
 }
 
-export async function trackedUrl(p: ClickPayload, base = APP_ORIGIN): Promise<string> {
-  return `${base}/r/${await clickToken(p)}`;
+/** The /r/ link for a payload. Without an explicit base, app screens go
+ *  through EMAIL_CLICK_ORIGIN when it's set, so they can open the app (see
+ *  appLinks.ts); everything else uses the app origin. */
+export async function trackedUrl(p: ClickPayload, base?: string): Promise<string> {
+  const origin = base ?? clickOriginFor(p.d, typeof process !== "undefined" ? process.env.EMAIL_CLICK_ORIGIN : undefined);
+  return `${origin}/r/${await clickToken(p)}`;
 }
 
 /** Images, fonts, stylesheets — fetched by the mail client, never clicked. */
@@ -185,7 +190,7 @@ export type WrapContext = { userId: string; email: EmailTag; variant: ClickVaria
  * unchanged. The text part reuses the HTML's key for the same destination, so
  * the plain-text button counts as cta_primary too.
  */
-export async function wrapEmailLinks(html: string, text: string | undefined, ctx: WrapContext, base = APP_ORIGIN): Promise<{ html: string; text: string | undefined }> {
+export async function wrapEmailLinks(html: string, text: string | undefined, ctx: WrapContext, base?: string): Promise<{ html: string; text: string | undefined }> {
   const keyByDest = new Map<string, string>();
   const payload = (dest: string, k: string): ClickPayload => ({
     u: ctx.userId, e: ctx.email, v: ctx.variant, k, d: dest, t: ctx.sentAt, ...(ctx.test ? { x: 1 as const } : {}),
