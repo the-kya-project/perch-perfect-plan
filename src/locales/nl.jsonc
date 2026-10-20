@@ -1075,20 +1075,14 @@
   "birdSetup.day.yourTasks": "Jouw taken",
   // Describe the other diet
   "birdSetup.describeTheOtherDiet": "Beschrijf het andere voer",
-  // e.g. A cat and a dog — keep them out of the bird room; never leave them together.
-  "birdSetup.eGACatAnd": "bijv. Een kat en een hond — houd ze uit de vogelkamer; laat ze nooit samen alleen.",
   // e.g. Metacam 0.1ml
   "birdSetup.eGMetacam01ml": "bijv. Metacam 0,1 ml",
   // e.g. Mild feather plucking; old wing injury (no flight).
   "birdSetup.eGMildFeatherPlucking": "bijv. Lichte verenpluk; oude vleugelblessure (kan niet vliegen).",
-  // e.g. No access to the kitchen or bathroom; bedroom door stays closed.
-  "birdSetup.eGNoAccessTo": "bijv. Geen toegang tot keuken of badkamer; slaapkamerdeur blijft dicht.",
   // e.g. Only me and my partner. Sitter: don't try to handle — talk only.
   "birdSetup.eGOnlyMeAnd": "bijv. Alleen ik en mijn partner. Oppas: niet proberen op te pakken — alleen praten.",
   // e.g. Pantry, top shelf; fridge bin
   "birdSetup.eGPantryTopShelf": "bijv. Voorraadkast, bovenste plank; bak in de koelkast",
-  // e.g. Wipe the cage tray daily; use only bird-safe cleaner under the sink. No aerosols near the bird.
-  "birdSetup.eGWipeTheCage": "bijv. Veeg de kooibodem dagelijks schoon; gebruik alleen het vogelveilige schoonmaakmiddel onder de gootsteen. Geen spuitbussen in de buurt van de vogel.",
   // Fears & triggers
   "birdSetup.fearsTriggers": "Angsten & triggers",
   // Female
@@ -1221,8 +1215,8 @@
   "birdSetup.instr.healthOptional": "Laat iedereen die voor {{name}} zorgt weten wat normaal is, zodat ze zien wat niet normaal is. Alles hier is optioneel.",
   // Give whoever's helping a feel for {{name}}'s personality and little habits. Everything here is optional.
   "birdSetup.instr.personalityOptional": "Geef wie er helpt een gevoel voor het karakter en de kleine gewoontes van {{name}}. Alles hier is optioneel.",
-  // These are things you know without thinking that a sitter might not consider. Include any safety hazard a bird might run into in your home.
-  "birdSetup.instr.reminders": "Dit zijn dingen die jij zonder nadenken weet, maar waar een oppas misschien niet aan denkt. Noem elk gevaar dat een vogel in jouw huis kan tegenkomen.",
+  // Things you know without thinking that a sitter might not. Include any hazard a bird could run into in your home.
+  "birdSetup.instr.remindersHome": "Dingen die jij zonder nadenken weet, maar een oppas misschien niet. Noem elk gevaar waar een vogel in je huis tegenaan kan lopen.",
   // Here's exactly what everyone helping will see for {{name}}. Scroll inside the preview to explore the Today screen.
   "birdSetup.instr.review": "Dit is precies wat iedereen die helpt voor {{name}} te zien krijgt. Scroll in de preview om het Vandaag-scherm te bekijken.",
   // Add short video clips, up to 60 seconds each. Record one now or upload from your phone.
@@ -1469,16 +1463,32 @@
   "birdSetup.processing": "Verwerken…",
   // Progress saved.
   "birdSetup.progressSaved": "Voortgang opgeslagen.",
+  // Add another
+  "birdSetup.reminders.addAnother": "Nog een toevoegen",
   // Changes here apply to {{name}} only.
   "birdSetup.reminders.differentBody": "Wijzigingen hier gelden alleen voor {{name}}.",
   // Different for {{name}}
   "birdSetup.reminders.differentTitle": "Anders voor {{name}}",
   // Make these different for {{name}}
   "birdSetup.reminders.makeDifferent": "Maak deze anders voor {{name}}",
+  // Never use near the birds
+  "birdSetup.reminders.neverUse": "Nooit gebruiken bij de vogels",
+  // Never use near the birds:
+  "birdSetup.reminders.neverUseLabel": "Nooit gebruiken bij de vogels:",
+  // e.g. Kitchen and bathroom; bedroom door stays closed
+  "birdSetup.reminders.offLimitsPlaceholder": "bijv. Keuken en badkamer; slaapkamerdeur blijft dicht",
+  // e.g. A cat — keep her out of the bird room
+  "birdSetup.reminders.petsPlaceholder": "bijv. Een kat — houd haar uit de vogelkamer",
   // Changes here apply to every bird that uses the shared reminders.
   "birdSetup.reminders.sharedBody": "Wijzigingen hier gelden voor elke vogel die de gedeelde herinneringen gebruikt.",
   // Shared by all your birds
   "birdSetup.reminders.sharedTitle": "Gedeeld door al je vogels",
+  // What to use instead, and where it is
+  "birdSetup.reminders.useInstead": "Wat je in plaats daarvan gebruikt, en waar het staat",
+  // Use instead:
+  "birdSetup.reminders.useInsteadLabel": "Gebruik in plaats daarvan:",
+  // e.g. Vinegar spray, under the sink
+  "birdSetup.reminders.useInsteadPlaceholder": "bijv. Azijnspray, onder de gootsteen",
   // Use the shared reminders instead
   "birdSetup.reminders.useShared": "Gebruik toch de gedeelde herinneringen",
   // Use your shared reminders for {{name}}? The answers that are different for {{name}} will be removed.
@@ -4903,8 +4913,12 @@
   "setupFrame.pillDay": "Dag",
   // Details
   "setupFrame.pillDetails": "Gegevens",
+  // Emergency contacts
+  "setupFrame.pillEmergency": "Noodcontacten",
   // {{step}} · {{n}} of {{total}}
   "setupFrame.pillPage": "{{step}} · {{n}} van {{total}}",
+  // Reminders
+  "setupFrame.pillReminders": "Herinneringen",
   // Tips
   "setupFrame.pillTips": "Tips",
   // Setting up
@@ -4929,6 +4943,10 @@
   "setupShell.saveAndExit": "Opslaan & sluiten",
   // Saving…
   "setupShell.saving": "Opslaan…",
+  // Shared by every bird
+  "setupShell.sharedByEveryBird": "Gedeeld door al je vogels",
+  // Skip for now
+  "setupShell.skipForNow": "Voorlopig overslaan",
   // Step {{step}} of {{total}}
   "setupShell.stepOf": "Stap {{step}} van {{total}}",
   // Tips from the owner

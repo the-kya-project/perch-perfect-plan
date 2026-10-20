@@ -144,3 +144,48 @@ export function seedShared(current: any, others: any[]): HomeRow {
 export function sameGroup(a: any, b: any, group: HomeGroup): boolean {
   return groupValue(a, group) === groupValue(b, group);
 }
+
+// ---------- Cleaning products: two parts in one text field ----------
+//
+// cleaning_instructions stays one text column. The Reminders screen splits it
+// into a "never use near the birds" list and "what to use instead", saved as
+// two lines:
+//   Never use near the birds: Bleach, Pine-Sol
+//   Use instead: Vinegar spray, under the sink
+// The line labels are written in the owner's language; both English and Dutch
+// are read back. Text saved before this format (free text) reads as "use
+// instead", so nothing is lost.
+
+export const CLEANING_NEVER_DEFAULTS = ["Bleach", "Pine-Sol", "Aerosol sprays", "Plug-in air fresheners"];
+
+const NEVER_LABELS = ["Never use near the birds:", "Nooit gebruiken bij de vogels:"];
+const INSTEAD_LABELS = ["Use instead:", "Gebruik in plaats daarvan:"];
+
+export type CleaningParts = { never: string[]; instead: string };
+
+function stripLabel(line: string, labels: string[]): string | null {
+  const l = labels.find((x) => line.toLowerCase().startsWith(x.toLowerCase()));
+  return l ? line.slice(l.length).trim() : null;
+}
+
+export function parseCleaning(text: string | null | undefined): CleaningParts {
+  const raw = (text ?? "").trim();
+  if (!raw) return { never: [], instead: "" };
+  const lines = raw.split(/\r?\n/);
+  const neverLine = stripLabel(lines[0], NEVER_LABELS);
+  if (neverLine == null) return { never: [], instead: raw };
+  const never = neverLine.split(",").map((s) => s.trim()).filter(Boolean);
+  const rest = lines.slice(1).join("\n").trim();
+  const instead = stripLabel(rest, INSTEAD_LABELS) ?? rest;
+  return { never, instead };
+}
+
+/** The two parts as saved text; labels come from the caller (translated). */
+export function formatCleaning(parts: CleaningParts, labels: { never: string; instead: string } = { never: NEVER_LABELS[0], instead: INSTEAD_LABELS[0] }): string | null {
+  const never = parts.never.map((s) => s.trim()).filter(Boolean);
+  const instead = parts.instead.trim();
+  const lines: string[] = [];
+  if (never.length) lines.push(`${labels.never} ${never.join(", ")}`);
+  if (instead) lines.push(never.length ? `${labels.instead} ${instead}` : instead);
+  return lines.length ? lines.join("\n") : null;
+}

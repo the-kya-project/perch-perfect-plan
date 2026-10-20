@@ -5,12 +5,15 @@
 import { createContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
-import { Check, ChevronLeft } from "lucide-react";
+import { Check, ChevronLeft, Home } from "lucide-react";
 import { S, SERIF } from "./controls";
 
 /** The six steps an owner sees, in flow order. */
 export const SETUP_PILLS = ["details", "food", "health", "behavior", "tips", "day"] as const;
 export type SetupPill = (typeof SETUP_PILLS)[number];
+
+/** The two "Your home" screens, shared by every bird. */
+export type HomePill = "reminders" | "emergency";
 
 /** True inside a SetupFrame body — older step pieces use it to match the new look. */
 export const InSetupFrame = createContext(false);
@@ -42,6 +45,7 @@ export function SetupFrame({
   footer,
   belowFooter,
   tinted,
+  home,
   children,
 }: {
   birdName?: string | null;
@@ -63,6 +67,9 @@ export function SetupFrame({
   belowFooter?: ReactNode;
   /** A light green body instead of white, for screens of white cards (Day). */
   tinted?: boolean;
+  /** The "Your home" screens: a house instead of the bird, "Your home" over
+   *  `subline`, no step count, and Reminders / Emergency contacts as the pills. */
+  home?: { current: HomePill; subline: string; onPill?: (pill: HomePill) => void };
   children: ReactNode;
 }) {
   const { t } = useTranslation();
@@ -99,20 +106,44 @@ export function SetupFrame({
               className="grid size-10 shrink-0 place-items-center rounded-full text-[17px] font-[700]"
               style={{ background: S.lime, color: S.forest }}
             >
-              {name ? name.slice(0, 1).toUpperCase() : ""}
+              {home ? <Home className="size-5" aria-hidden="true" /> : name ? name.slice(0, 1).toUpperCase() : ""}
             </span>
-            <span className="min-w-0 flex-1 leading-tight">
-              <span className="block text-[13px]" style={{ color: S.mist }}>{t("setupFrame.settingUp", "Setting up")}</span>
-              <span className="block truncate text-[17px] font-[700] text-white">{name || t("setupFrame.newBird", "New bird")}</span>
-            </span>
-            <span className="shrink-0 text-[13px]" style={{ color: S.mist }}>
-              {stepLabel ?? t("setupShell.stepOf", "Step {{step}} of {{total}}", { step: currentIndex + 1, total: SETUP_PILLS.length })}
-            </span>
+            {home ? (
+              <span className="min-w-0 flex-1 leading-tight">
+                <span className="block text-[17px] font-[700] text-white">{t("setupShell.yourHome", "Your home")}</span>
+                <span className="block truncate text-[13px]" style={{ color: S.mist }}>{home.subline}</span>
+              </span>
+            ) : (
+              <>
+                <span className="min-w-0 flex-1 leading-tight">
+                  <span className="block text-[13px]" style={{ color: S.mist }}>{t("setupFrame.settingUp", "Setting up")}</span>
+                  <span className="block truncate text-[17px] font-[700] text-white">{name || t("setupFrame.newBird", "New bird")}</span>
+                </span>
+                <span className="shrink-0 text-[13px]" style={{ color: S.mist }}>
+                  {stepLabel ?? t("setupShell.stepOf", "Step {{step}} of {{total}}", { step: currentIndex + 1, total: SETUP_PILLS.length })}
+                </span>
+              </>
+            )}
           </div>
 
           <div ref={stripRef} className="-mx-4 mt-4 overflow-x-auto px-4 py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <ol className="m-0 flex w-max list-none gap-2 p-0">
-              {SETUP_PILLS.map((pill, i) => {
+              {home && (["reminders", "emergency"] as HomePill[]).map((pill) => {
+                const on = pill === home.current;
+                const label = pill === "reminders" ? t("setupFrame.pillReminders", "Reminders") : t("setupFrame.pillEmergency", "Emergency contacts");
+                const cls = "relative inline-flex h-[34px] items-center whitespace-nowrap rounded-full border px-3.5 text-[13px] font-[700]";
+                const style = on ? { background: S.lime, color: S.forest, borderColor: S.lime } : { background: "transparent", color: S.mist, borderColor: S.pillLine };
+                return (
+                  <li key={pill}>
+                    {!on && home.onPill ? (
+                      <button type="button" onClick={() => home.onPill!(pill)} className={cls} style={style}>{label}</button>
+                    ) : (
+                      <span ref={on ? (el) => { currentRef.current = el; } : undefined} aria-current={on ? "step" : undefined} className={cls} style={style}>{label}</span>
+                    )}
+                  </li>
+                );
+              })}
+              {!home && SETUP_PILLS.map((pill, i) => {
                 const state = i < currentIndex ? "done" : i === currentIndex ? "current" : "upcoming";
                 const label = pillLabel(t, pill);
                 const text = state === "current" && page

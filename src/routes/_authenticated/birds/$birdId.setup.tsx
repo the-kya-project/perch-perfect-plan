@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { InSetupFrame, SetupIntroSlot } from "@/components/setup/SetupFrame";
 import { StartFromAnotherBird, useCopySources } from "@/components/setup/StartFromAnotherBird";
 import { foodCopy, dayCopy, isOwnTask } from "@/lib/copyFromBird";
-import { S, SERIF, SetupPrimaryButton, SetupTextButton, SectionCard, Field, TextField, TextBox, Dropdown, Segmented, EditableList, Helper, CheckChips } from "@/components/setup/controls";
+import { S, SERIF, SetupPrimaryButton, SetupTextButton, SectionCard, TileCard, Field, TextField, TextBox, Dropdown, Segmented, EditableList, Helper, CheckChips } from "@/components/setup/controls";
 import { BottomSheet } from "@/components/setup/BottomSheet";
 import { useTranslation } from "react-i18next";
 import i18next, { type TFunction } from "i18next";
@@ -15,9 +15,9 @@ import { toast } from "sonner";
 import { SetupShell, SETUP_STEPS, TOTAL_STEPS, setupStepTitle, setupStepNumber } from "@/components/SetupShell";
 import { encodeSetupStep, basicsDone } from "@/lib/setupProgress";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
-import { mergeHome, homeDifferences, seedShared, sameGroup, followSharedPatch, clearOwnPatch, birdHasOwn, HOME_GROUPS, HOME_GROUP_COLUMNS, type HomeRow } from "@/lib/homeDefaults";
+import { mergeHome, homeDifferences, seedShared, sameGroup, followSharedPatch, clearOwnPatch, birdHasOwn, HOME_GROUPS, HOME_GROUP_COLUMNS, parseCleaning, formatCleaning, CLEANING_NEVER_DEFAULTS, type HomeRow } from "@/lib/homeDefaults";
 import { EmergencyInfo } from "@/components/EmergencyInfo";
-import { Plus, X, Check, Lightbulb, GripVertical, Sparkles, AlertTriangle, Pill, ChevronDown, Play, Video, Sunrise, Sun, Sunset, Moon, Clock, Soup } from "lucide-react";
+import { Plus, X, Check, Lightbulb, GripVertical, Sparkles, AlertTriangle, Pill, ChevronDown, Play, Video, Sunrise, Sun, Sunset, Moon, Clock, Soup, DoorClosed, SprayCan } from "lucide-react";
 import { PhotoCropper } from "@/components/PhotoCropper";
 import { AgePicker, BirdField, SpeciesPicker } from "@/components/BirdPickers";
 import { ClipRecorder, UploadProgress } from "@/components/ClipRecorder";
@@ -48,6 +48,8 @@ const setupSearch = z.object({
  * so steps work outside the wizard too.
  */
 const SetupDirtyContext = createContext<(dirty: boolean) => void>(() => {});
+/** Lets the Reminders screen change the header line under "Your home". */
+const SetupHomeSublineContext = createContext<(line: string | null) => void>(() => {});
 /** Lets a step put a short line above the footer (e.g. "Your clip is still uploading."). */
 const SetupFooterNoteContext = createContext<(note: string | null) => void>(() => {});
 
@@ -181,6 +183,7 @@ function BirdSetup() {
   const [step, setStep] = useState<number>(1);
   const [blockNext, setBlockNext] = useState(false);
   const [footerNote, setFooterNote] = useState<string | null>(null);
+  const [homeSubline, setHomeSubline] = useState<string | null>(null);
   const [dirty, setDirty] = useState(false);
   useEffect(() => { setBlockNext(false); setDirty(false); setFooterNote(null); }, [step]);
   const [saving, setSaving] = useState(false);
@@ -503,11 +506,14 @@ function BirdSetup() {
       backDisabled={step <= 1 && !(meta.key === "food" && foodPage === 2)}
       nextDisabled={blockNext}
       footerNote={footerNote}
-      tinted={meta.key === "day" && !atStopPoint}
+      tinted={(meta.key === "day" || meta.key === "environment") && !atStopPoint}
+      homeSubline={homeSubline ?? undefined}
+      onSkip={meta.key === "environment" ? onNext : undefined}
       hideFooter={step === TOTAL_STEPS}
     >
       <SetupDirtyContext.Provider value={setDirty}>
         <SetupFooterNoteContext.Provider value={setFooterNote}>
+        <SetupHomeSublineContext.Provider value={setHomeSubline}>
         <StepBody
           step={step}
           birdId={birdId}
@@ -519,6 +525,7 @@ function BirdSetup() {
           registerValidate={registerValidate}
           foodPage={foodPage}
         />
+        </SetupHomeSublineContext.Provider>
         </SetupFooterNoteContext.Provider>
       </SetupDirtyContext.Provider>
     </SetupShell>
@@ -1964,7 +1971,12 @@ export function EnvironmentStep({ birdId, birdName, registerFlush }: { birdId: s
   const [hazardsOther, setHazardsOther] = useState("");
   const [offLimits, setOffLimits] = useState("");
   const [otherPets, setOtherPets] = useState("");
-  const [cleaning, setCleaning] = useState("");
+  // Cleaning products, edited as two parts and saved as one field (see parseCleaning).
+  const [cleanNever, setCleanNever] = useState<string[]>([]);
+  const [cleanInstead, setCleanInstead] = useState("");
+  const [addingClean, setAddingClean] = useState(false);
+  const [newClean, setNewClean] = useState("");
+  const setHomeSubline = useContext(SetupHomeSublineContext);
   const [hydrated, setHydrated] = useState(false);
   // The shared answers as last saved — what "different" is measured against.
   const sharedRef = useRef<HomeRow | null>(null);
@@ -1978,7 +1990,10 @@ export function EnvironmentStep({ birdId, birdName, registerFlush }: { birdId: s
     setHazardsOther(row?.hazards_other ?? "");
     setOffLimits(row?.off_limits ?? row?.off_limits_rooms ?? "");
     setOtherPets(row?.other_pets ?? "");
-    setCleaning(row?.cleaning_instructions ?? "");
+    const parts = parseCleaning(row?.cleaning_instructions);
+    // An empty field starts with the common products to keep away from birds.
+    setCleanNever(!parts.never.length && !parts.instead ? [...CLEANING_NEVER_DEFAULTS] : parts.never);
+    setCleanInstead(parts.instead);
   }
 
   useEffect(() => {
@@ -2001,7 +2016,10 @@ export function EnvironmentStep({ birdId, birdName, registerFlush }: { birdId: s
         hazards_other: hazardsOther || null,
         off_limits: offLimits || null,
         other_pets: otherPets || null,
-        cleaning_instructions: cleaning || null,
+        cleaning_instructions: formatCleaning(
+          { never: cleanNever, instead: cleanInstead },
+          { never: t("birdSetup.reminders.neverUseLabel", "Never use near the birds:"), instead: t("birdSetup.reminders.useInsteadLabel", "Use instead:") },
+        ),
       };
       if (mode === "shared" && data.isOwner && data.userId) {
         const { error } = await supabase.from("owner_home_defaults").upsert({ owner_id: data.userId, ...row } as any, { onConflict: "owner_id" });
@@ -2039,12 +2057,25 @@ export function EnvironmentStep({ birdId, birdName, registerFlush }: { birdId: s
       }
       qc.invalidateQueries({ queryKey: ["plan", birdId] });
     },
-    [mode, hazards, hazardsOther, offLimits, otherPets, cleaning],
+    [mode, hazards, hazardsOther, offLimits, otherPets, cleanNever, cleanInstead],
     !!plan && hydrated,
     registerFlush,
   );
 
+  // The header line under "Your home": shared, or different for this bird.
+  useEffect(() => {
+    setHomeSubline(hydrated && mode === "bird" ? t("birdSetup.reminders.differentTitle", "Different for {{name}}", { name: birdName }) : null);
+    return () => setHomeSubline(null);
+  }, [hydrated, mode, birdName, setHomeSubline, t]);
+
   if (isLoading || !plan) return <div className="h-32 animate-pulse rounded-2xl bg-sage-100" />;
+
+  function addClean() {
+    const v = newClean.trim();
+    if (v && !cleanNever.some((x) => x.toLowerCase() === v.toLowerCase())) setCleanNever([...cleanNever, v.replace(/,/g, " ")]);
+    setNewClean("");
+    setAddingClean(false);
+  }
 
   function toggleHazard(v: string) {
     setHazards(hazards.includes(v) ? hazards.filter((x) => x !== v) : [...hazards, v]);
@@ -2060,80 +2091,104 @@ export function EnvironmentStep({ birdId, birdName, registerFlush }: { birdId: s
     qc.invalidateQueries({ queryKey: ["plan", birdId] });
   }
 
+  const showPets = hazards.includes("Other pets") || !!otherPets.trim();
+
   return (
-    <div className="space-y-4">
-      <StepInstruction>{t("birdSetup.instr.reminders", "These are things you know without thinking that a sitter might not consider. Include any safety hazard a bird might run into in your home.")}</StepInstruction>
+    <div className="flex flex-col gap-[14px]">
+      <StepInstruction>{t("birdSetup.instr.remindersHome", "Things you know without thinking that a sitter might not. Include any hazard a bird could run into in your home.")}</StepInstruction>
 
       {data?.isOwner && (
-        <div className="rounded-2xl bg-white p-3.5 text-sm text-[#1a3d2e] ring-1 ring-sage-100">
+        <div className="flex flex-col gap-1 rounded-[20px] bg-white p-4 text-[#1a3d2e]">
           {mode === "shared" ? (
             <>
-              <p className="font-medium">{t("birdSetup.reminders.sharedTitle", "Shared by all your birds")}</p>
-              <p className="mt-0.5 text-xs text-sage-600">{t("birdSetup.reminders.sharedBody", "Changes here apply to every bird that uses the shared reminders.")}</p>
-              <button type="button" onClick={() => setMode("bird")} className="mt-2 min-h-[44px] text-xs font-semibold text-[#2d6a4f] underline">
-                {t("birdSetup.reminders.makeDifferent", "Make these different for {{name}}", { name: birdName })}
-              </button>
+              <p className="m-0 text-[15px] font-[700]">{t("birdSetup.reminders.sharedTitle", "Shared by all your birds")}</p>
+              <p className="m-0 text-[14px] text-[#3d4f45]">{t("birdSetup.reminders.sharedBody", "Changes here apply to every bird that uses the shared reminders.")}</p>
+              <div><SetupTextButton onClick={() => setMode("bird")}>{t("birdSetup.reminders.makeDifferent", "Make these different for {{name}}", { name: birdName })}</SetupTextButton></div>
             </>
           ) : (
             <>
-              <p className="font-medium">{t("birdSetup.reminders.differentTitle", "Different for {{name}}", { name: birdName })}</p>
-              <p className="mt-0.5 text-xs text-sage-600">{t("birdSetup.reminders.differentBody", "Changes here apply to {{name}} only.", { name: birdName })}</p>
+              <p className="m-0 text-[15px] font-[700]">{t("birdSetup.reminders.differentTitle", "Different for {{name}}", { name: birdName })}</p>
+              <p className="m-0 text-[14px] text-[#3d4f45]">{t("birdSetup.reminders.differentBody", "Changes here apply to {{name}} only.", { name: birdName })}</p>
               {sharedRef.current && (
-                <button type="button" onClick={switchToShared} className="mt-2 min-h-[44px] text-xs font-semibold text-[#2d6a4f] underline">
-                  {t("birdSetup.reminders.useShared", "Use the shared reminders instead")}
-                </button>
+                <div><SetupTextButton onClick={switchToShared}>{t("birdSetup.reminders.useShared", "Use the shared reminders instead")}</SetupTextButton></div>
               )}
             </>
           )}
         </div>
       )}
 
-      <Card title={t("birdSetup.homeSpecificHazards", "Home-specific hazards")} hint={t("birdSetup.tapAnyThatApplyThen", "Tap any that apply, then add your own.")}>
-        <div className="flex flex-wrap gap-2">
-          {HAZARD_OPTIONS.map((h) => (
-            <Chip key={h} on={hazards.includes(h)} onClick={() => toggleHazard(h)}>{displayLabel(t, h)}</Chip>
-          ))}
-        </div>
-        <input
-          className="input mt-3"
-          placeholder={t("birdSetup.otherHazards", "Other hazards")}
+      <TileCard icon={<AlertTriangle className="size-5" />} title={t("birdSetup.homeSpecificHazards", "Home-specific hazards")} helper={t("birdSetup.tapAnyThatApplyThen", "Tap any that apply, then add your own.")}>
+        <CheckChips
+          label={t("birdSetup.homeSpecificHazards", "Home-specific hazards")}
+          options={HAZARD_OPTIONS.map((h) => ({ value: h, label: displayLabel(t, h) }))}
+          value={hazards}
+          onChange={setHazards}
+        />
+        {showPets && (
+          <div className="rounded-[16px] p-3.5" style={{ background: S.lime }}>
+            <Field label={t("birdSetup.otherPetsSeparationRules", "Other pets & separation rules")} htmlFor="home-other-pets">
+              <TextField
+                id="home-other-pets"
+                value={otherPets}
+                maxLength={500}
+                onChange={setOtherPets}
+                placeholder={t("birdSetup.reminders.petsPlaceholder", "e.g. A cat — keep her out of the bird room")}
+              />
+            </Field>
+          </div>
+        )}
+        <TextField
           value={hazardsOther}
           maxLength={300}
-          onChange={(e) => setHazardsOther(e.target.value)}
+          onChange={setHazardsOther}
+          ariaLabel={t("birdSetup.otherHazards", "Other hazards")}
+          placeholder={t("birdSetup.otherHazards", "Other hazards")}
         />
-      </Card>
+      </TileCard>
 
-      <Card title={t("birdSetup.anythingOffLimits", "Anything off-limits")}>
-        <textarea
-          className="input area"
-          placeholder={t("birdSetup.eGNoAccessTo", "e.g. No access to the kitchen or bathroom; bedroom door stays closed.")}
+      <TileCard tile="teal" icon={<DoorClosed className="size-5" />} title={t("birdSetup.anythingOffLimits", "Anything off-limits")}>
+        <TextField
           value={offLimits}
           maxLength={400}
-          onChange={(e) => setOffLimits(e.target.value)}
+          onChange={setOffLimits}
+          ariaLabel={t("birdSetup.anythingOffLimits", "Anything off-limits")}
+          placeholder={t("birdSetup.reminders.offLimitsPlaceholder", "e.g. Kitchen and bathroom; bedroom door stays closed")}
         />
-      </Card>
+      </TileCard>
 
-      <Card title={t("birdSetup.otherPetsSeparationRules", "Other pets & separation rules")}>
-        <textarea
-          className="input area"
-          placeholder={t("birdSetup.eGACatAnd", "e.g. A cat and a dog — keep them out of the bird room; never leave them together.")}
-          value={otherPets}
-          maxLength={500}
-          onChange={(e) => setOtherPets(e.target.value)}
-        />
-      </Card>
-
-      <Card title={t("birdSetup.cleaningProductsInstructions", "Cleaning products & instructions")}>
-        <textarea
-          className="input area"
-          placeholder={t("birdSetup.eGWipeTheCage", "e.g. Wipe the cage tray daily; use only bird-safe cleaner under the sink. No aerosols near the bird.")}
-          value={cleaning}
-          maxLength={500}
-          onChange={(e) => setCleaning(e.target.value)}
-        />
-      </Card>
-
-      <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.65rem .8rem;font-size:16px;outline:none}.input:focus{border-color:var(--sage-600);box-shadow:0 0 0 3px rgb(74 103 65 / .15)}.area{min-height:60px;line-height:1.4}`}</style>
+      <TileCard icon={<SprayCan className="size-5" />} title={t("birdSetup.cleaningProductsInstructions", "Cleaning products & instructions")}>
+        <Field label={t("birdSetup.reminders.neverUse", "Never use near the birds")}>
+          <EditableList tone="warn" items={cleanNever} onRemove={(i) => setCleanNever(cleanNever.filter((_, j) => j !== i))} />
+          {addingClean ? (
+            <div className="flex gap-2">
+              <div className="min-w-0 flex-1">
+                <TextField
+                  value={newClean}
+                  maxLength={80}
+                  onChange={setNewClean}
+                  ariaLabel={t("birdSetup.reminders.neverUse", "Never use near the birds")}
+                />
+              </div>
+              <SetupTextButton onClick={addClean} disabled={!newClean.trim()}>{t("birdSetup.addButton", "Add")}</SetupTextButton>
+            </div>
+          ) : (
+            <div>
+              <SetupTextButton onClick={() => setAddingClean(true)} icon={<Plus className="size-4" strokeWidth={2.6} aria-hidden="true" />}>
+                {t("birdSetup.reminders.addAnother", "Add another")}
+              </SetupTextButton>
+            </div>
+          )}
+        </Field>
+        <Field label={t("birdSetup.reminders.useInstead", "What to use instead, and where it is")} htmlFor="home-clean-instead">
+          <TextField
+            id="home-clean-instead"
+            value={cleanInstead}
+            maxLength={400}
+            onChange={setCleanInstead}
+            placeholder={t("birdSetup.reminders.useInsteadPlaceholder", "e.g. Vinegar spray, under the sink")}
+          />
+        </Field>
+      </TileCard>
     </div>
   );
 }

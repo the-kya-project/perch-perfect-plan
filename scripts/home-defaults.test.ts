@@ -56,3 +56,21 @@ assert.equal(seed.cleaning_instructions, "No bleach", "this bird's own answer fi
 assert.deepEqual(seed.hazards, []);
 
 console.log("home-defaults: all passed");
+
+// ---------- Cleaning products: two parts in one field ----------
+import { parseCleaning, formatCleaning } from "../src/lib/homeDefaults";
+{
+  const text = formatCleaning({ never: ["Bleach", "Pine-Sol"], instead: "Vinegar spray, under the sink" });
+  assert.equal(text, "Never use near the birds: Bleach, Pine-Sol\nUse instead: Vinegar spray, under the sink");
+  assert.deepEqual(parseCleaning(text), { never: ["Bleach", "Pine-Sol"], instead: "Vinegar spray, under the sink" });
+  // Old free text reads as "use instead", untouched.
+  assert.deepEqual(parseCleaning("Wipe the tray daily; no aerosols."), { never: [], instead: "Wipe the tray daily; no aerosols." });
+  // Only "use instead" saves as plain text (no label), so old answers stay as they were.
+  assert.equal(formatCleaning({ never: [], instead: "Wipe the tray daily" }), "Wipe the tray daily");
+  assert.equal(formatCleaning({ never: [], instead: "  " }), null);
+  // Dutch labels read back too.
+  assert.deepEqual(parseCleaning("Nooit gebruiken bij de vogels: Bleek\nGebruik in plaats daarvan: Azijn"), { never: ["Bleek"], instead: "Azijn" });
+  // Only the list.
+  assert.deepEqual(parseCleaning("Never use near the birds: Bleach"), { never: ["Bleach"], instead: "" });
+  console.log("cleaning parts: ok");
+}
