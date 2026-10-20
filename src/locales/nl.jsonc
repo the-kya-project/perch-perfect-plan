@@ -1407,8 +1407,6 @@
   "birdSetup.removeItemAria": "{{item}} verwijderen",
   // Remove medication
   "birdSetup.removeMedication": "Medicijn verwijderen",
-  // Remove pre-made chop? This clears the pre-made items you've added.
-  "birdSetup.removePremadeConfirm": "Kant-en-klare chop verwijderen? Dan worden de kant-en-klare items die je hebt toegevoegd gewist.",
   // Remove {{title}}
   "birdSetup.removeTask": "{{title}} verwijderen",
   // Replace
@@ -2775,14 +2773,24 @@
   "flockCheck.title": "Dagelijkse gezondheidscheck · alle vogels",
   // View
   "flockCheck.view": "Bekijk",
+  // Add an ingredient
+  "foodEditor.addAnIngredient": "Voeg een ingrediënt toe",
   // Add another {{type}} item
   "foodEditor.addAnotherItem": "Nog een {{type}}-item toevoegen",
-  // Added
-  "foodEditor.added": "Toegevoegd",
+  // Add another pre-made chop
+  "foodEditor.addAnotherPremadeChop": "Nog een kant-en-klare chop toevoegen",
+  // Add “{{food}}” as written
+  "foodEditor.addAsWritten": "“{{food}}” toevoegen zoals getypt",
+  // Add your homemade chop
+  "foodEditor.addHomemadeChop": "Je zelfgemaakte chop toevoegen",
+  // What goes in it, how much, and when
+  "foodEditor.addHomemadeChopDetail": "Wat erin zit, hoeveel en wanneer",
   // Add item
   "foodEditor.addItem": "Item toevoegen",
-  // Add “{{food}}”
-  "foodEditor.addTypedIngredient": "“{{food}}” toevoegen",
+  // Add a pre-made chop
+  "foodEditor.addPremadeChop": "Een kant-en-klare chop toevoegen",
+  // A brand you buy, like Harrison's
+  "foodEditor.addPremadeChopDetail": "Een merk dat je koopt, zoals Harrison's",
   // Amount
   "foodEditor.amount": "Hoeveelheid",
   // Amount (e.g. 2)
@@ -2805,16 +2813,18 @@
   "foodEditor.chooseAllThatApply": "Kies alles wat van toepassing is.",
   // Pick fresh foods above or tap “Add item” to list your own.
   "foodEditor.chopEmpty": "Kies hierboven vers voer of tik op “Item toevoegen” om je eigen items te noteren.",
-  // Choose one or both, so the caregiver knows what to prep.
-  "foodEditor.chopKindHintBoth": "Kies er een of allebei, zodat de verzorger weet wat er klaargemaakt moet worden.",
-  // What kind of fresh chop?
-  "foodEditor.chopKindQuestion": "Wat voor verse chop?",
+  // Add a pre-made chop, your own homemade mix, or both.
+  "foodEditor.chopHelper": "Voeg een kant-en-klare chop toe, je eigen zelfgemaakte mix, of allebei.",
   // e.g. Morning chop mix
   "foodEditor.chopNamePlaceholder": "bijv. Ochtend-chopmix",
   // Clear
   "foodEditor.clear": "Wissen",
   // Clear {{period}} time
   "foodEditor.clearPeriodTime": "Tijd voor {{period}} wissen",
+  // Close
+  "foodEditor.closeSheet": "Sluiten",
+  // Common picks
+  "foodEditor.commonPicks": "Veelgekozen",
   // Describe the other diet
   "foodEditor.describeOtherDiet": "Beschrijf de andere voeding",
   // Left in the cage — no set amount or times needed.
@@ -3015,6 +3025,8 @@
   "foodEditor.helperWhen": "Kies minstens één voedertijd.",
   // Homemade
   "foodEditor.homemade": "Zelfgemaakt",
+  // Homemade chop
+  "foodEditor.homemadeChopItem": "Zelfgemaakte chop",
   // How much?
   "foodEditor.howMuch": "Hoeveel?",
   // Optional — anything else the sitter should know about food/water hygiene.
@@ -3053,10 +3065,6 @@
   "foodEditor.otherFreshFoodsPlaceholder": "Ander vers voer (vrije tekst)",
   // Other food hygiene notes
   "foodEditor.otherHygieneNotes": "Andere notities over voerhygiëne",
-  // Other ingredients
-  "foodEditor.otherIngredients": "Andere ingrediënten",
-  // Other ingredients (free text)
-  "foodEditor.otherIngredientsPlaceholder": "Andere ingrediënten (vrije tekst)",
   // Pick a frequency…
   "foodEditor.pickAFrequency": "Kies hoe vaak…",
   // Pick at least one period.
@@ -3065,28 +3073,24 @@
   "foodEditor.pickAUnit": "Kies een eenheid…",
   // Needs details
   "foodEditor.pillNeedsDetails": "Details nodig",
-  // Pick one
-  "foodEditor.pillPickOne": "Kies er één",
   // Ready
   "foodEditor.pillReady": "Klaar",
-  // Set
-  "foodEditor.pillSet": "Ingesteld",
   // Pre-made
   "foodEditor.preMade": "Kant-en-klaar",
+  // Pre-made chop
+  "foodEditor.preMadeChopItem": "Kant-en-klare chop",
   // Primary diet
   "foodEditor.primaryDiet": "Hoofdvoeding",
   // Remove fresh or wet food after
   "foodEditor.removeFreshAfter": "Vers of nat voer weghalen na",
+  // Remove homemade chop
+  "foodEditor.removeHomemadeChop": "Zelfgemaakte chop verwijderen",
   // Remove item
   "foodEditor.removeItem": "Item verwijderen",
   // Remove {{name}}
   "foodEditor.removeNamed": "{{name}} verwijderen",
   // Remove this item
   "foodEditor.removeThisItem": "Dit item verwijderen",
-  // Search ingredients
-  "foodEditor.searchIngredients": "Ingrediënten zoeken",
-  // Search ingredients (e.g. kale, mango)
-  "foodEditor.searchIngredientsPlaceholder": "Ingrediënten zoeken (bijv. boerenkool, mango)",
   // e.g. Pantry, top shelf; fridge bin
   "foodEditor.storagePlaceholder": "bijv. voorraadkast, bovenste plank; bak in de koelkast",
   // Tap to add the details your sitter needs.
@@ -3127,8 +3131,10 @@
   "foodEditor.water": "Water",
   // Notes (filter, bottle vs bowl, etc.)
   "foodEditor.waterNotesPlaceholder": "Notities (filter, fles of bak, enz.)",
-  // What's in it? Tap the common ones or search for more.
-  "foodEditor.whatsInItSearch": "Wat zit erin? Tik de gewone aan of zoek naar meer.",
+  // What's in it · {{count}}
+  "foodEditor.whatsInItCount_one": "Wat zit erin · {{count}}",
+  // What's in it · {{count}}
+  "foodEditor.whatsInItCount_other": "Wat zit erin · {{count}}",
   // When?
   "foodEditor.when": "Wanneer?",
   // When is it fed?

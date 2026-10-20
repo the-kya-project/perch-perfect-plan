@@ -1383,23 +1383,15 @@ export function FoodWaterStep({
     }
   }
 
-  // Chop: turn pre-made or homemade on or off (either, or both). Turning one
-  // off with details entered confirms first, since it removes those items.
-  function toggleChopKind(kind: "premade" | "homemade") {
-    const isHomemade = kind === "homemade";
-    if (!chopKinds[kind]) {
-      const added = { ...blankFoodItem(), ...(isHomemade ? { name: HOMEMADE_CHOP_NAME, homemade: true } : { homemade: false }) };
-      // The homemade item leads the list; pre-made items follow.
-      setItemsForType("chop", isHomemade ? [added, ...chopItemsState] : [...chopItemsState, added]);
-      return;
-    }
-    const removing = chopItemsState.filter((i) => !!i.homemade === isHomemade);
-    const hasContent = removing.some(foodItemHasContent) || (isHomemade && (chopIngredients.length > 0 || freshOther.trim() !== ""));
-    if (hasContent && !window.confirm(isHomemade
-      ? t("birdSetup.removeHomemadeConfirm", "Remove homemade chop? This clears its amount, timing and ingredients.")
-      : t("birdSetup.removePremadeConfirm", "Remove pre-made chop? This clears the pre-made items you've added."))) return;
-    setItemsForType("chop", chopItemsState.filter((i) => !!i.homemade !== isHomemade));
-    if (isHomemade) { setChopIngredients([]); setFreshOther(""); }
+  // Chop: remove the homemade item and its ingredients (asks first when there's
+  // anything to lose). Pre-made items are added and removed in the editor.
+  function removeHomemadeChop() {
+    const homemade = chopItemsState.filter((i) => i.homemade);
+    const hasContent = homemade.some(foodItemHasContent) || chopIngredients.length > 0 || freshOther.trim() !== "";
+    if (hasContent && !window.confirm(t("birdSetup.removeHomemadeConfirm", "Remove homemade chop? This clears its amount, timing and ingredients."))) return;
+    setItemsForType("chop", chopItemsState.filter((i) => !i.homemade));
+    setChopIngredients([]);
+    setFreshOther("");
   }
 
   function toggleChopIngredient(label: string) {
@@ -1462,8 +1454,7 @@ export function FoodWaterStep({
               validationActive={validationActive}
               expandSignal={expandSignal}
               chop={{
-                kinds: chopKinds,
-                onToggleKind: toggleChopKind,
+                onRemoveHomemade: removeHomemadeChop,
                 ingredients: chopIngredients,
                 onToggleIngredient: toggleChopIngredient,
                 neverFeed: never,

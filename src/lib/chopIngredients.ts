@@ -17,8 +17,9 @@ export const CHOP_COMMON = [
 
 /** Everything search can find. Includes every option the old checklist had. */
 export const CHOP_INGREDIENTS: string[] = [
-  // From the original checklist
-  "Pre-made chop", "Leafy greens", "Carrot", "Bell pepper", "Broccoli", "Sweet potato",
+  // From the original checklist ("Pre-made chop" left the list once pre-made
+  // became its own part; birds that saved it keep it as a chip)
+  "Leafy greens", "Carrot", "Bell pepper", "Broccoli", "Sweet potato",
   "Squash", "Apple (no seeds)", "Berries", "Banana", "Cooked grains",
   "Cooked legumes", "Sprouts", "Quinoa",
   // Greens and herbs

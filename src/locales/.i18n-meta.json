@@ -2106,9 +2106,6 @@
     "birdSetup.removeMedication": {
       "stamp": "535b848f48b0ef9b"
     },
-    "birdSetup.removePremadeConfirm": {
-      "stamp": "673aee982a695895"
-    },
     "birdSetup.removeTask": {
       "stamp": "0992443e480b189a"
     },
@@ -4158,17 +4155,32 @@
     "flockCheck.view": {
       "stamp": "5c82e762c70a893a"
     },
+    "foodEditor.addAnIngredient": {
+      "stamp": "b518c5e21bad4eb9"
+    },
     "foodEditor.addAnotherItem": {
       "stamp": "9649a82e8720ead5"
     },
-    "foodEditor.added": {
-      "stamp": "bbd00a77ee943f88"
+    "foodEditor.addAnotherPremadeChop": {
+      "stamp": "cec5e3f0a782705d"
+    },
+    "foodEditor.addAsWritten": {
+      "stamp": "0a537d3426f70803"
+    },
+    "foodEditor.addHomemadeChop": {
+      "stamp": "1df2f3a7e2253088"
+    },
+    "foodEditor.addHomemadeChopDetail": {
+      "stamp": "030147b96a0dfa4e"
     },
     "foodEditor.addItem": {
       "stamp": "fd3d4b789e31c37a"
     },
-    "foodEditor.addTypedIngredient": {
-      "stamp": "f9c9853dd6a0f9fc"
+    "foodEditor.addPremadeChop": {
+      "stamp": "b15c6cff5391e47f"
+    },
+    "foodEditor.addPremadeChopDetail": {
+      "stamp": "fb39a67652595cd1"
     },
     "foodEditor.amount": {
       "stamp": "53cfd9a31133bbe4"
@@ -4203,11 +4215,8 @@
     "foodEditor.chopEmpty": {
       "stamp": "ccb44ff5727fea10"
     },
-    "foodEditor.chopKindHintBoth": {
-      "stamp": "76c4a91b80a4e626"
-    },
-    "foodEditor.chopKindQuestion": {
-      "stamp": "6d4d253ae7bbf942"
+    "foodEditor.chopHelper": {
+      "stamp": "18ee2a59f327c1c8"
     },
     "foodEditor.chopNamePlaceholder": {
       "stamp": "656dc6cbca5174b0"
@@ -4217,6 +4226,12 @@
     },
     "foodEditor.clearPeriodTime": {
       "stamp": "a5bc4aea8f131e95"
+    },
+    "foodEditor.closeSheet": {
+      "stamp": "d981ee660d866d8c"
+    },
+    "foodEditor.commonPicks": {
+      "stamp": "6ba1d1e680b71d16"
     },
     "foodEditor.describeOtherDiet": {
       "stamp": "7518cfa2fca94fe3"
@@ -4518,6 +4533,9 @@
     "foodEditor.homemade": {
       "stamp": "8f661c45a548d5a6"
     },
+    "foodEditor.homemadeChopItem": {
+      "stamp": "2fc74f23f3b2d959"
+    },
     "foodEditor.howMuch": {
       "stamp": "0b23e3fd8acd5e4c"
     },
@@ -4575,12 +4593,6 @@
     "foodEditor.otherHygieneNotes": {
       "stamp": "1909645e28cca3e5"
     },
-    "foodEditor.otherIngredients": {
-      "stamp": "5a0c19aee7975611"
-    },
-    "foodEditor.otherIngredientsPlaceholder": {
-      "stamp": "d5676cb9495cf241"
-    },
     "foodEditor.pickAFrequency": {
       "stamp": "6d2220534874f0ec"
     },
@@ -4593,23 +4605,23 @@
     "foodEditor.pillNeedsDetails": {
       "stamp": "bef08d9c13b03750"
     },
-    "foodEditor.pillPickOne": {
-      "stamp": "8a31731051c715fa"
-    },
     "foodEditor.pillReady": {
       "stamp": "febf31ddd8bcb7b1"
     },
-    "foodEditor.pillSet": {
-      "stamp": "034140a97c8c6f61"
-    },
     "foodEditor.preMade": {
       "stamp": "77230f26282c3507"
+    },
+    "foodEditor.preMadeChopItem": {
+      "stamp": "416d216fbce033ba"
     },
     "foodEditor.primaryDiet": {
       "stamp": "c2e6663a7d06f952"
     },
     "foodEditor.removeFreshAfter": {
       "stamp": "c7c8c5de7c15ce84"
+    },
+    "foodEditor.removeHomemadeChop": {
+      "stamp": "011f75638c707215"
     },
     "foodEditor.removeItem": {
       "stamp": "778db6b4b0a97a7d"
@@ -4619,12 +4631,6 @@
     },
     "foodEditor.removeThisItem": {
       "stamp": "38ca1b406d0af019"
-    },
-    "foodEditor.searchIngredients": {
-      "stamp": "b6923818f444c2a2"
-    },
-    "foodEditor.searchIngredientsPlaceholder": {
-      "stamp": "693ed8858ce607f0"
     },
     "foodEditor.storagePlaceholder": {
       "stamp": "90a9929ca21282e0"
@@ -4686,8 +4692,11 @@
     "foodEditor.waterNotesPlaceholder": {
       "stamp": "93a2558fbaeed292"
     },
-    "foodEditor.whatsInItSearch": {
-      "stamp": "221aefc5dcc30a4a"
+    "foodEditor.whatsInItCount_one": {
+      "stamp": "9844cb253d772e7d"
+    },
+    "foodEditor.whatsInItCount_other": {
+      "stamp": "9844cb253d772e7d"
     },
     "foodEditor.when": {
       "stamp": "1391a59a62eace9c"

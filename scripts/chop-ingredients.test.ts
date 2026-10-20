@@ -8,8 +8,10 @@ const same = (en: string) => en;
 const never = ["Chocolate", "Avocado", "Caffeine", "Alcohol", "Onion & garlic", "Salt", "Fruit pits & apple seeds"];
 const find = (q: string) => searchChopIngredients(q, same, never);
 
-// Every old checklist option and every common pick is still searchable.
-for (const en of ["Pre-made chop", "Leafy greens", "Carrot", "Bell pepper", "Broccoli", "Sweet potato", "Squash", "Apple (no seeds)", "Berries", "Banana", "Cooked grains", "Cooked legumes", "Sprouts", "Quinoa", ...CHOP_COMMON]) {
+// Every old checklist option (except "Pre-made chop", now its own part) and
+// every common pick is still searchable.
+assert.ok(!CHOP_INGREDIENTS.includes("Pre-made chop"));
+for (const en of ["Leafy greens", "Carrot", "Bell pepper", "Broccoli", "Sweet potato", "Squash", "Apple (no seeds)", "Berries", "Banana", "Cooked grains", "Cooked legumes", "Sprouts", "Quinoa", ...CHOP_COMMON]) {
   assert.ok(CHOP_INGREDIENTS.includes(en), `${en} is on the list`);
 }
 assert.equal(new Set(CHOP_INGREDIENTS).size, CHOP_INGREDIENTS.length, "no duplicates");

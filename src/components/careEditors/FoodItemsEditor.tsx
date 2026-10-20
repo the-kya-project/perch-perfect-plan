@@ -7,6 +7,7 @@ import { FEED_PERIODS, normalizeFeedTimes, type FeedPeriod, type FeedTime } from
 import { formatAmountUnitDisplay } from "@/lib/labels";
 import {
   FOOD_UNITS,
+  HOMEMADE_CHOP_NAME,
   blankFoodItem,
   isFoodItemComplete,
   foodItemMissing,
@@ -24,9 +25,9 @@ import { foodLabel } from "./foodLabels";
  * to a one-line summary once complete. `validationActive` turns on amber field
  * highlights; bumping `expandSignal` force-opens every incomplete item.
  *
- * "Fresh chop / formulated" is special: the owner picks Pre-made (brand
- * required), Homemade (an ingredient checklist + a single auto-named
- * "Homemade chop" item with no brand required), or both.
+ * "Fresh chop / formulated" is special (ChopSection): pre-made items (brand
+ * required), a single auto-named "Homemade chop" item with its ingredients,
+ * or both. Which parts show follows the items the bird has.
  */
 
 const FIELD =
@@ -35,8 +36,8 @@ const BORDER_OK = "border-[#c8bfa6]";
 const BORDER_AMBER = "border-[#BA7517]";
 
 export type ChopConfig = {
-  kinds: { premade: boolean; homemade: boolean };
-  onToggleKind: (kind: "premade" | "homemade") => void;
+  /** Removes the homemade item and its ingredients (the caller confirms first). */
+  onRemoveHomemade: () => void;
   ingredients: string[];
   onToggleIngredient: (label: string) => void;
   /** The bird's never-feed list: searching one of these warns instead of adding. */
@@ -124,114 +125,14 @@ export function FoodItemsEditor({
         const removeItem = (idx: number) => onChangeType(type, items.filter((_, i) => i !== idx));
 
         if (type === "chop" && chop) {
-          const picked = chop.kinds.premade || chop.kinds.homemade;
-          const both = chop.kinds.premade && chop.kinds.homemade;
-          // One list holds both kinds; each item knows whether it's homemade.
-          const homemadeIdx = items.findIndex((it) => it.homemade);
-          const premadeIdx = items.map((it, i) => (it.homemade ? -1 : i)).filter((i) => i >= 0);
-          const addPremade = () => {
-            onChangeType(type, [...items, { ...blankFoodItem(), homemade: false }]);
-            setExpanded((prev) => { const n = { ...prev }; items.forEach((_, i) => { n[k(type, i)] = false; }); return n; });
-          };
           return (
-            <div key={type} className="rounded-[16px] border border-[var(--line)] bg-[var(--cream2)] p-4">
-              {/* Question header + status pill */}
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-[16px] font-[500] text-[var(--ink)]">{t("foodEditor.chopKindQuestion", "What kind of fresh chop?")}</p>
-                {picked ? (
-                  <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--lime)] px-2.5 py-1 text-[11px] font-[500] text-[var(--ink)]">
-                    <Check className="size-3" /> {t("foodEditor.pillSet", "Set")}
-                  </span>
-                ) : (
-                  <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--amber-fill)] px-2.5 py-1 text-[11px] font-[500] text-[var(--amber-ink)]">
-                    <AlertCircle className="size-3" /> {t("foodEditor.pillPickOne", "Pick one")}
-                  </span>
-                )}
-              </div>
-              <p className="mt-1 text-[12.5px] leading-[1.5] text-[var(--mute)]">{t("foodEditor.chopKindHintBoth", "Choose one or both, so the caregiver knows what to prep.")}</p>
-
-              {/* Two option cards — pick either or both */}
-              <div className="mt-3 grid grid-cols-2 gap-2">
-                {(["premade", "homemade"] as const).map((m) => {
-                  const sel = chop.kinds[m];
-                  return (
-                    <button
-                      key={m}
-                      type="button"
-                      aria-pressed={sel}
-                      onClick={() => chop.onToggleKind(m)}
-                      className={
-                        "relative grid min-h-[52px] place-items-center rounded-[13px] p-[14px] text-[14px] font-[500] text-[var(--ink)] transition " +
-                        (sel ? "border-2 border-[var(--ink)] bg-[var(--lime)]" : "border border-[var(--line)] bg-white")
-                      }
-                    >
-                      {m === "premade" ? t("foodEditor.preMade", "Pre-made") : t("foodEditor.homemade", "Homemade")}
-                      {sel && (
-                        <span className="absolute -right-1.5 -top-1.5 grid size-[18px] place-items-center rounded-full bg-[var(--ink)] text-[var(--lime)]">
-                          <Check className="size-3" />
-                        </span>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Homemade: ingredient checklist + single auto-named item */}
-              {chop.kinds.homemade && (
-                <>
-                  {both && <p className="mt-4 text-[13px] font-[500] text-[var(--ink)]">{t("foodEditor.homemade", "Homemade")}</p>}
-                  <div className="mt-3 rounded-xl bg-white/70 p-3" style={{ borderWidth: "0.5px", borderColor: "#d8cfb8" }}>
-                    <ChopIngredientPicker
-                      ingredients={chop.ingredients}
-                      onToggle={chop.onToggleIngredient}
-                      other={chop.other}
-                      onOtherChange={chop.onOtherChange}
-                      neverFeed={chop.neverFeed}
-                      fieldClass={`${FIELD} ${BORDER_OK}`}
-                    />
-                  </div>
-                  {homemadeIdx >= 0 && (
-                    <div className="mt-3">
-                      <ItemCard
-                        item={items[homemadeIdx]}
-                        label={label}
-                        hideBrand
-                        validationActive={validationActive}
-                        open={isOpen(type, homemadeIdx, items[homemadeIdx])}
-                        onToggle={() => setOpen(type, homemadeIdx, !isOpen(type, homemadeIdx, items[homemadeIdx]))}
-                        onLooksGood={() => setOpen(type, homemadeIdx, false)}
-                        onChange={(patch) => setItem(homemadeIdx, patch)}
-                        setWhen={(period) => setItem(homemadeIdx, { times: toggleWhen(items[homemadeIdx], period) })}
-                      />
-                    </div>
-                  )}
-                </>
-              )}
-
-              {/* Pre-made: brand-required item cards */}
-              {chop.kinds.premade && (
-                <>
-                  {both && <p className="mt-4 text-[13px] font-[500] text-[var(--ink)]">{t("foodEditor.preMade", "Pre-made")}</p>}
-                  <div className="mt-3 space-y-2">
-                    {premadeIdx.map((idx) => (
-                      <ItemCard
-                        key={idx}
-                        item={items[idx]}
-                        label={label}
-                        validationActive={validationActive}
-                        open={isOpen(type, idx, items[idx])}
-                        onToggle={() => setOpen(type, idx, !isOpen(type, idx, items[idx]))}
-                        onLooksGood={() => setOpen(type, idx, false)}
-                        onChange={(patch) => setItem(idx, patch)}
-                        setWhen={(period) => setItem(idx, { times: toggleWhen(items[idx], period) })}
-                        onRemove={premadeIdx.length > 1 ? () => removeItem(idx) : undefined}
-                      />
-                    ))}
-                  </div>
-                  <AddButton label={label} onClick={addPremade} />
-                </>
-              )}
-            </div>
+            <ChopSection
+              key={type}
+              items={items}
+              onChange={(next) => onChangeType(type, next)}
+              chop={chop}
+              validationActive={validationActive}
+            />
           );
         }
 
@@ -453,4 +354,201 @@ function Field({ label, required, children }: { label: string; required?: boolea
 
 function Helper({ children }: { children: React.ReactNode }) {
   return <span className="mt-1 block text-[11px] text-[#854F0B]">{children}</span>;
+}
+
+// ---------- Fresh chop ----------
+
+const C = { forest: "#1a3d2e", lime: "#cdeab0", helper: "#3d4f45", quiet: "#5f5e5a" };
+
+function ChopTag({ complete }: { complete: boolean }) {
+  const { t } = useTranslation();
+  // On the lime chop card, Ready is forest with white text.
+  return complete ? (
+    <span className="inline-flex shrink-0 items-center rounded-full px-[10px] py-[5px] text-[12px] font-[700] leading-none text-white" style={{ background: C.forest }}>
+      {t("setupUi.ready", "Ready")}
+    </span>
+  ) : (
+    <span className="inline-flex shrink-0 items-center rounded-full bg-[#f6e7c4] px-[10px] py-[5px] text-[12px] font-[700] leading-none text-[#854f0b]">
+      {t("setupUi.needsDetails", "Needs details")}
+    </span>
+  );
+}
+
+/** One food item as a row: name over its summary, with its status. Opens the sheet. */
+function ItemRow({ item, name, onOpen, flat }: { item: FoodItem; name: string; onOpen: () => void; flat?: boolean }) {
+  const { t } = useTranslation();
+  const complete = isFoodItemComplete(item);
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className={`flex min-h-[60px] w-full items-center gap-3 px-4 py-3 text-left ${flat ? "" : "rounded-[16px] bg-white"}`}
+      style={{ color: C.forest }}
+    >
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[16px] font-[700]">{name}</span>
+        <span className="mt-0.5 block truncate text-[14px]" style={{ color: complete ? C.helper : "#854f0b" }}>
+          {complete ? summaryLine(t, item) : t("foodEditor.tapToAddDetails", "Tap to add the details your sitter needs.")}
+        </span>
+      </span>
+      <ChopTag complete={complete} />
+    </button>
+  );
+}
+
+/** Dashed "add" row used before a part has anything in it. */
+function AddRow({ title, detail, onClick }: { title: string; detail: string; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex min-h-[60px] w-full items-center gap-3 rounded-[16px] border-2 border-dashed bg-white/50 px-4 py-3 text-left"
+      style={{ borderColor: "rgba(26,61,46,0.4)", color: C.forest }}
+    >
+      <span className="grid size-8 shrink-0 place-items-center rounded-full" style={{ background: C.forest, color: C.lime }}>
+        <Plus className="size-4" strokeWidth={2.6} aria-hidden="true" />
+      </span>
+      <span className="min-w-0">
+        <span className="block text-[15.5px] font-[700]">{title}</span>
+        <span className="block text-[13.5px]" style={{ color: C.helper }}>{detail}</span>
+      </span>
+    </button>
+  );
+}
+
+/**
+ * Fresh chop: a pre-made part (any number of branded items) and a homemade part
+ * (one "Homemade chop" item plus its ingredients). Which parts are filled in
+ * follows the bird's items — there's no separate pre-made/homemade choice.
+ */
+function ChopSection({ items, onChange, chop, validationActive }: {
+  items: FoodItem[];
+  onChange: (items: FoodItem[]) => void;
+  chop: ChopConfig;
+  validationActive: boolean;
+}) {
+  const { t } = useTranslation();
+  const [sheetIdx, setSheetIdx] = useState<number | null>(null);
+  const homemadeIdx = items.findIndex((it) => it.homemade);
+  const premadeIdx = items.map((it, i) => (it.homemade ? -1 : i)).filter((i) => i >= 0);
+  const needsDetails = items.length === 0 || items.some((it) => !isFoodItemComplete(it));
+
+  const setItem = (idx: number, patch: Partial<FoodItem>) => onChange(items.map((it, i) => (i === idx ? { ...it, ...patch } : it)));
+  const addPremade = () => {
+    onChange([...items, { ...blankFoodItem(), homemade: false }]);
+    setSheetIdx(items.length);
+  };
+  const addHomemade = () => {
+    // The homemade item leads the list; pre-made items follow.
+    onChange([{ ...blankFoodItem(), name: HOMEMADE_CHOP_NAME, homemade: true }, ...items]);
+    setSheetIdx(null);
+  };
+  const sheetItem = sheetIdx != null ? items[sheetIdx] : undefined;
+
+  return (
+    <section className="flex flex-col gap-[14px] rounded-[18px] px-4 py-5" style={{ background: C.lime, color: C.forest }}>
+      <div>
+        <div className="flex items-start justify-between gap-2">
+          <h3 className="m-0 text-[21px] font-[700] leading-[1.2]" style={{ fontFamily: "'Newsreader', Georgia, serif" }}>
+            {t("birdSetup.opt.freshChopFormulated", "Fresh chop / formulated")}
+          </h3>
+          {needsDetails && <ChopTag complete={false} />}
+        </div>
+        <p className="m-0 mt-1.5 text-[15px] leading-[1.5]">{t("foodEditor.chopHelper", "Add a pre-made chop, your own homemade mix, or both.")}</p>
+      </div>
+
+      {/* Pre-made */}
+      {premadeIdx.length === 0 ? (
+        <AddRow
+          title={t("foodEditor.addPremadeChop", "Add a pre-made chop")}
+          detail={t("foodEditor.addPremadeChopDetail", "A brand you buy, like Harrison's")}
+          onClick={addPremade}
+        />
+      ) : (
+        <div className="flex flex-col gap-2">
+          <p className="m-0 text-[14px] font-[700]">{t("foodEditor.preMade", "Pre-made")}</p>
+          {premadeIdx.map((idx) => (
+            <ItemRow
+              key={idx}
+              item={items[idx]}
+              name={items[idx].name.trim() || t("foodEditor.preMadeChopItem", "Pre-made chop")}
+              onOpen={() => setSheetIdx(idx)}
+            />
+          ))}
+          <div>
+            <button type="button" onClick={addPremade} className="inline-flex min-h-[44px] items-center gap-1.5 text-[15px] font-[700] text-[#2d6a4f]">
+              <Plus className="size-4" strokeWidth={2.6} aria-hidden="true" /> {t("foodEditor.addAnotherPremadeChop", "Add another pre-made chop")}
+            </button>
+          </div>
+          <hr className="m-0 border-0 border-t" style={{ borderColor: "rgba(26,61,46,0.15)" }} />
+        </div>
+      )}
+
+      {/* Homemade */}
+      {homemadeIdx < 0 ? (
+        <AddRow
+          title={t("foodEditor.addHomemadeChop", "Add your homemade chop")}
+          detail={t("foodEditor.addHomemadeChopDetail", "What goes in it, how much, and when")}
+          onClick={addHomemade}
+        />
+      ) : (
+        <div className="flex flex-col gap-2">
+          <p className="m-0 text-[14px] font-[700]">{t("foodEditor.homemade", "Homemade")}</p>
+          <div className="overflow-hidden rounded-[16px] bg-white">
+            <ItemRow flat item={items[homemadeIdx]} name={t("foodEditor.homemadeChopItem", "Homemade chop")} onOpen={() => setSheetIdx(homemadeIdx)} />
+            <hr className="m-0 border-0 border-t border-[#e3eae2]" />
+            <div className="px-4 pb-3 pt-3.5">
+              <ChopIngredientPicker
+                ingredients={chop.ingredients}
+                onToggle={chop.onToggleIngredient}
+                other={chop.other}
+                onOtherChange={chop.onOtherChange}
+                neverFeed={chop.neverFeed}
+                fieldClass={`${FIELD} ${BORDER_OK}`}
+              />
+              <button type="button" onClick={chop.onRemoveHomemade} className="mt-2 inline-flex min-h-[44px] items-center text-[15px] font-[700] text-[#2d6a4f]">
+                {t("foodEditor.removeHomemadeChop", "Remove homemade chop")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {sheetItem && sheetIdx != null && (
+        <ItemSheet onClose={() => setSheetIdx(null)}>
+          <ItemCard
+            item={sheetItem}
+            label={sheetItem.homemade ? t("foodEditor.homemadeChopItem", "Homemade chop") : t("foodEditor.preMadeChopItem", "Pre-made chop")}
+            hideBrand={!!sheetItem.homemade}
+            validationActive={validationActive}
+            open
+            onToggle={() => setSheetIdx(null)}
+            onLooksGood={() => setSheetIdx(null)}
+            onChange={(patch) => setItem(sheetIdx, patch)}
+            setWhen={(period) => setItem(sheetIdx, { times: toggleWhen(sheetItem, period) })}
+            onRemove={sheetItem.homemade ? undefined : () => { onChange(items.filter((_, i) => i !== sheetIdx)); setSheetIdx(null); }}
+          />
+        </ItemSheet>
+      )}
+    </section>
+  );
+}
+
+/** Bottom sheet for editing one food item. */
+function ItemSheet({ onClose, children }: { onClose: () => void; children: React.ReactNode }) {
+  const { t } = useTranslation();
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+  return (
+    <div className="fixed inset-0 z-[70] flex items-end justify-center">
+      <button type="button" aria-label={t("foodEditor.closeSheet", "Close")} onClick={onClose} className="absolute inset-0 bg-[#1a3d2e]/40" />
+      <div role="dialog" aria-modal="true" className="relative max-h-[88vh] w-full max-w-md overflow-y-auto rounded-t-[26px] bg-white px-4 pb-[max(env(safe-area-inset-bottom),20px)] pt-3">
+        <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-[#d5dfd5]" />
+        {children}
+      </div>
+    </div>
+  );
 }
