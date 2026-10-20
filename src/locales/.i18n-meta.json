@@ -1500,23 +1500,14 @@
     "birdSetup.addYourOwn": {
       "stamp": "58072321d1034813"
     },
-    "birdSetup.aFewThingsAreStill": {
-      "stamp": "3149f9bb1a482529"
-    },
     "birdSetup.anythingElseASitterShould": {
       "stamp": "69e2ec8f674b3268"
     },
     "birdSetup.anythingOffLimits": {
       "stamp": "904282cb61a20e3e"
     },
-    "birdSetup.backToEmergency": {
-      "stamp": "93677054b6368345"
-    },
     "birdSetup.baselineClipSaved": {
       "stamp": "7b8be6bdc0635352"
-    },
-    "birdSetup.beforeYouShare": {
-      "stamp": "8b6da0ff7118c645"
     },
     "birdSetup.behavior.birdsSpace": {
       "stamp": "7ad97a7783071e23"
@@ -1628,9 +1619,6 @@
     },
     "birdSetup.finishSetup": {
       "stamp": "9bb7368070b3ef5a"
-    },
-    "birdSetup.fixIt": {
-      "stamp": "14ea90d8a520370b"
     },
     "birdSetup.flight": {
       "stamp": "5bdc1919d90eeaf6"
@@ -1824,32 +1812,11 @@
     "birdSetup.instr.remindersHome": {
       "stamp": "6b991bf8b47c837e"
     },
-    "birdSetup.instr.review": {
-      "stamp": "bf0a387c9e79aa13"
+    "birdSetup.instr.reviewSitter": {
+      "stamp": "90d996999b13aa63"
     },
     "birdSetup.instr.tips": {
       "stamp": "635bbdd2201f8f0d"
-    },
-    "birdSetup.issue.noFoodWaterDetails": {
-      "stamp": "b365652fd80f3800"
-    },
-    "birdSetup.issue.noHealthBaselineWeightPhoto": {
-      "stamp": "ec4f40e1579a443b"
-    },
-    "birdSetup.issue.noPersonalityHandlingNotes": {
-      "stamp": "0ddddea6e67de489"
-    },
-    "birdSetup.issue.noReminders": {
-      "stamp": "106633a32a83c7ba"
-    },
-    "birdSetup.issue.noRoutineTasksYet": {
-      "stamp": "af3c6fecd9c7914e"
-    },
-    "birdSetup.issue.noTipsFromTheOwner": {
-      "stamp": "ee0a157a782bc8cc"
-    },
-    "birdSetup.issue.requiredEmergencyContactsMissing": {
-      "stamp": "1dcbf9f9e4e28222"
     },
     "birdSetup.itemNeedsDetails": {
       "stamp": "4529a50970f8dba4"
@@ -1865,9 +1832,6 @@
     },
     "birdSetup.likes": {
       "stamp": "144345008760dd0f"
-    },
-    "birdSetup.live": {
-      "stamp": "f98bfbbef84541a1"
     },
     "birdSetup.loading": {
       "stamp": "543c404f0e5a7d86"
@@ -2256,6 +2220,81 @@
     "birdSetup.replace": {
       "stamp": "9309430110d116c7"
     },
+    "birdSetup.review.add": {
+      "stamp": "7243fcbe9aec5d44"
+    },
+    "birdSetup.review.anytime": {
+      "stamp": "4e5a4a40504d17e8"
+    },
+    "birdSetup.review.carePlan": {
+      "stamp": "024068f55f21e2cd"
+    },
+    "birdSetup.review.dailyChecklist": {
+      "stamp": "a9a98e20ab266cbc"
+    },
+    "birdSetup.review.evening": {
+      "stamp": "a13b77a605bbc4c4"
+    },
+    "birdSetup.review.gapBehavior": {
+      "stamp": "847b1e8ea2825cdf"
+    },
+    "birdSetup.review.gapBehaviorNote": {
+      "stamp": "4c7aa1b235d64b0a"
+    },
+    "birdSetup.review.gapDay": {
+      "stamp": "d3234f936e818a35"
+    },
+    "birdSetup.review.gapDayNote": {
+      "stamp": "7b622160c6a7c03e"
+    },
+    "birdSetup.review.gapEmergency": {
+      "stamp": "13dc8bdb952a70e3"
+    },
+    "birdSetup.review.gapEmergencyNeed": {
+      "stamp": "ac81bd2601e5802f"
+    },
+    "birdSetup.review.gapFood": {
+      "stamp": "225420650888dd0d"
+    },
+    "birdSetup.review.gapFoodNote": {
+      "stamp": "fd554ea9da48da43"
+    },
+    "birdSetup.review.gapHealth": {
+      "stamp": "24701ea98bfb3f0a"
+    },
+    "birdSetup.review.gapHealthNote": {
+      "stamp": "3f66ebe707b43ddc"
+    },
+    "birdSetup.review.gapReminders": {
+      "stamp": "591dc7e3ea0c8ffa"
+    },
+    "birdSetup.review.gapRemindersNote": {
+      "stamp": "98135f8cf1651fc8"
+    },
+    "birdSetup.review.gapTips": {
+      "stamp": "b5599f17ff594655"
+    },
+    "birdSetup.review.gapTipsNote": {
+      "stamp": "634e2c790b72056c"
+    },
+    "birdSetup.review.midday": {
+      "stamp": "cbbc35e6d7d25161"
+    },
+    "birdSetup.review.morning": {
+      "stamp": "2955bc8248288d8b"
+    },
+    "birdSetup.review.noTasks": {
+      "stamp": "d1c8be8b369ae110"
+    },
+    "birdSetup.review.stillThin": {
+      "stamp": "8cadbc4dcc43edd3"
+    },
+    "birdSetup.review.title": {
+      "stamp": "3f253b53e8c6e8df"
+    },
+    "birdSetup.review.viewLabel": {
+      "stamp": "5b4680732706d9f7"
+    },
     "birdSetup.saveAndCreateSit": {
       "stamp": "8baee8bb981ae527"
     },
@@ -2264,9 +2303,6 @@
     },
     "birdSetup.sex": {
       "stamp": "8f5291ce61be7582"
-    },
-    "birdSetup.sitterPreview": {
-      "stamp": "2f62b4b99467797b"
     },
     "birdSetup.sourceFood": {
       "stamp": "225420650888dd0d"
@@ -7457,6 +7493,9 @@
     },
     "setupFrame.settingUp": {
       "stamp": "9b3438f9000b0f04"
+    },
+    "setupShell.allStepsDone": {
+      "stamp": "319be695823ed88a"
     },
     "setupShell.cancel": {
       "stamp": "06c80f8b6f9f2b3b"

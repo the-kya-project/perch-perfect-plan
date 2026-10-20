@@ -46,6 +46,7 @@ export function SetupFrame({
   belowFooter,
   tinted,
   home,
+  allDone,
   children,
 }: {
   birdName?: string | null;
@@ -70,6 +71,8 @@ export function SetupFrame({
   /** The "Your home" screens: a house instead of the bird, "Your home" over
    *  `subline`, no step count, and Reminders / Emergency contacts as the pills. */
   home?: { current: HomePill; subline: string; onPill?: (pill: HomePill) => void };
+  /** The finishing screen: no pills, and this label (lime, bold) where the step count sits. */
+  allDone?: string;
   children: ReactNode;
 }) {
   const { t } = useTranslation();
@@ -119,14 +122,14 @@ export function SetupFrame({
                   <span className="block text-[13px]" style={{ color: S.mist }}>{t("setupFrame.settingUp", "Setting up")}</span>
                   <span className="block truncate text-[17px] font-[700] text-white">{name || t("setupFrame.newBird", "New bird")}</span>
                 </span>
-                <span className="shrink-0 text-[13px]" style={{ color: S.mist }}>
-                  {stepLabel ?? t("setupShell.stepOf", "Step {{step}} of {{total}}", { step: currentIndex + 1, total: SETUP_PILLS.length })}
+                <span className={`shrink-0 text-[13px] ${allDone ? "font-[700]" : ""}`} style={{ color: allDone ? S.lime : S.mist }}>
+                  {allDone ?? stepLabel ?? t("setupShell.stepOf", "Step {{step}} of {{total}}", { step: currentIndex + 1, total: SETUP_PILLS.length })}
                 </span>
               </>
             )}
           </div>
 
-          <div ref={stripRef} className="-mx-4 mt-4 overflow-x-auto px-4 py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {!allDone && <div ref={stripRef} className="-mx-4 mt-4 overflow-x-auto px-4 py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <ol className="m-0 flex w-max list-none gap-2 p-0">
               {home && (["reminders", "emergency"] as HomePill[]).map((pill) => {
                 const on = pill === home.current;
@@ -181,7 +184,7 @@ export function SetupFrame({
                 );
               })}
             </ol>
-          </div>
+          </div>}
 
           <h1
             className="m-0 mt-5 text-[34px] font-[700] leading-[1.06] tracking-[-0.02em] text-white [text-wrap:balance]"

@@ -10,7 +10,7 @@ import { toggleTaskCompletion } from "@/lib/sitter.functions";
 import { Disclaimer } from "@/components/Disclaimer";
 import { Stethoscope, Calendar, BookOpen, ChevronRight, ChevronDown, HeartCrack } from "lucide-react";
 import { ClipPlayer } from "@/components/ClipPlayer";
-import { taskDaypart, hourToDaypart, DAYPARTS, DAYPART_LABEL, type Daypart } from "@/lib/routineTasks";
+import { taskDaypart, hourToDaypart, parseTaskMinutes, DAYPARTS, DAYPART_LABEL, type Daypart } from "@/lib/routineTasks";
 import { renderDerivedTask } from "@/lib/routineTaskRender";
 import type { DerivedTask } from "@/lib/derivedTasks";
 import { toast } from "sonner";
@@ -43,21 +43,6 @@ function saveTimers(sitId: string, birdId: string, t: Record<string, FreshTimer>
 // taskDaypart() so the sitter checklist and the owner Routine tab always agree.
 function currentDaypart(d: Date): Daypart {
   return hourToDaypart(d.getHours());
-}
-
-// Parse a free-text time ("4 p.m.", "8 am", "7:30", "Available all day") to
-// minutes-since-midnight for chronological sorting; null when there's no time.
-function parseTaskMinutes(s: string | null | undefined): number | null {
-  if (!s) return null;
-  const m = String(s).toLowerCase().match(/(\d{1,2})(?::(\d{2}))?\s*(a\.?m\.?|p\.?m\.?)?/);
-  if (!m) return null;
-  let h = parseInt(m[1], 10);
-  const min = m[2] ? parseInt(m[2], 10) : 0;
-  const ap = m[3];
-  if (ap?.startsWith("p") && h < 12) h += 12;
-  if (ap?.startsWith("a") && h === 12) h = 0;
-  if (h > 23 || min > 59) return null;
-  return h * 60 + min;
 }
 
 function SitterHome() {

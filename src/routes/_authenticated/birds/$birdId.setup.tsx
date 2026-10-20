@@ -3,11 +3,14 @@ import { createPortal } from "react-dom";
 import { InSetupFrame, SetupIntroSlot } from "@/components/setup/SetupFrame";
 import { StartFromAnotherBird, useCopySources } from "@/components/setup/StartFromAnotherBird";
 import { foodCopy, dayCopy, isOwnTask } from "@/lib/copyFromBird";
-import { S, SERIF, SetupPrimaryButton, SetupTextButton, SectionCard, TileCard, Field, TextField, TextBox, Dropdown, Segmented, EditableList, Helper, CheckChips } from "@/components/setup/controls";
+import { S, SERIF, SetupPrimaryButton, SetupSecondaryButton, SetupTextButton, SectionCard, TileCard, Field, TextField, TextBox, Dropdown, Segmented, EditableList, Helper, CheckChips } from "@/components/setup/controls";
 import { BottomSheet } from "@/components/setup/BottomSheet";
 import { useTranslation } from "react-i18next";
 import i18next, { type TFunction } from "i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
+import { getHouseholdCarePlanView } from "@/lib/household.functions";
+import { CarePlanView } from "@/components/CarePlanView";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,7 +27,7 @@ import { ClipRecorder, UploadProgress } from "@/components/ClipRecorder";
 import { PosterClipPlayer, clipLength } from "@/components/ClipPlayer";
 import { useOwnerClipPreview } from "@/lib/useOwnerClipPreview";
 import { commitClipRef } from "@/lib/clipReplace";
-import { FEED_PREFIX, HYG_REMOVE_PREFIX, HYG_WASH_FOOD_PREFIX, HYG_WASH_WATER_PREFIX, WATER_CHANGE_PREFIX, MED_TASK_PREFIX, isDerivedTask, derivedSource, feedTimeToDaypart } from "@/lib/routineTasks";
+import { FEED_PREFIX, HYG_REMOVE_PREFIX, HYG_WASH_FOOD_PREFIX, HYG_WASH_WATER_PREFIX, WATER_CHANGE_PREFIX, MED_TASK_PREFIX, isDerivedTask, derivedSource, feedTimeToDaypart, taskDaypart, parseTaskMinutes, DAYPARTS, type Daypart } from "@/lib/routineTasks";
 import { FoodItemsEditor } from "@/components/careEditors/FoodItemsEditor";
 import { blankFoodItem, isFoodItemComplete, foodItemHasContent, HOMEMADE_CHOP_NAME, type FoodItem } from "@/lib/foodItems";
 import { normalizeFeedTimes, feedTimeLabel, type FeedTime } from "@/lib/feedTimes";
@@ -32,7 +35,6 @@ import { syncFeedingTasks } from "@/lib/feedingSync";
 import { medDescriptor, washFoodDescriptor, washWaterDescriptor, removeFreshDescriptor, changeWaterDescriptor, type DerivedTask } from "@/lib/derivedTasks";
 import { formatAmountUnit } from "@/lib/labels";
 import { track } from "@/lib/analytics";
-import { ensureSitterPreviewToken } from "@/lib/sitterPreview";
 import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
 import { persistBirdPhoto, signBirdPhoto } from "@/lib/birdPhoto";
 import { friendlyError } from "@/lib/errorMessage";
@@ -490,7 +492,9 @@ function BirdSetup() {
               ? t("birdSetup.tips.title", "Show your sitter how")
               : meta.key === "day"
                 ? t("birdSetup.day.title", "{{name}}'s day", { name: bird.name })
-                : setupStepTitle(t, meta.key)}
+                : meta.key === "review"
+                  ? t("birdSetup.review.title", "Here's what your sitter sees")
+                  : setupStepTitle(t, meta.key)}
       subtitle={onFoodPage2 ? t("birdSetup.food2.intro", "Everything here is optional, and the defaults are a good place to start.") : undefined}
       page={meta.key === "food" ? [foodPage, 2] : undefined}
       birdName={bird.name}
@@ -510,7 +514,12 @@ function BirdSetup() {
       homeSubline={homeSubline ?? undefined}
       onSkip={meta.key === "environment" || meta.key === "emergency" ? onNext : undefined}
       footerNoteWarn={meta.key === "emergency"}
-      hideFooter={step === TOTAL_STEPS}
+      footer={meta.key === "review" ? (
+        <div className="flex flex-col gap-2.5">
+          <SetupPrimaryButton onClick={() => finishAndGo({ to: "home" })} disabled={saving} arrow={false}>{t("birdSetup.looksGoodSave", "Looks good — save")}</SetupPrimaryButton>
+          <SetupSecondaryButton onClick={() => finishAndGo({ to: "dashboard-newsit" })} disabled={saving}>{t("birdSetup.saveAndCreateSit", "Save & create a sit")}</SetupSecondaryButton>
+        </div>
+      ) : undefined}
     >
       <SetupDirtyContext.Provider value={setDirty}>
         <SetupFooterNoteContext.Provider value={setFooterNote}>
@@ -586,7 +595,7 @@ function StepBody({
     case "day": return <DayInLifeStep birdId={birdId} birdName={birdName} />;
     case "environment": return <EnvironmentStep birdId={birdId} birdName={birdName} registerFlush={registerFlush} />;
     case "emergency": return <EmergencyStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} registerFlush={registerFlush} />;
-    case "review": return <ReviewStep birdId={birdId} birdName={birdName} onJumpToStep={onJumpToStep} onFinish={onFinish} />;
+    case "review": return <ReviewStep birdId={birdId} birdName={birdName} onJumpToStep={onJumpToStep} />;
     default: return null;
   }
 }
@@ -3210,28 +3219,23 @@ function ReviewStep({
   birdId,
   birdName,
   onJumpToStep,
-  onFinish,
 }: {
   birdId: string;
   birdName: string;
   onJumpToStep: (target: number) => void;
-  onFinish: (opts: { to: "dashboard-newsit" | "home" }) => void;
 }) {
   const { t } = useTranslation();
-  // Pull the same shape used elsewhere so the warning list reflects real data.
+  const [view, setView] = useState<"checklist" | "plan">("checklist");
+  const stepOf = (key: string) => SETUP_STEPS.findIndex((s) => s.key === key) + 1;
+
   const { data: bird } = useQuery({
     queryKey: ["bird-review", birdId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("birds")
-        .select("id, owner_id, normal_weight")
-        .eq("id", birdId)
-        .single();
+      const { data, error } = await supabase.from("birds").select("id, owner_id, normal_weight").eq("id", birdId).single();
       if (error) throw error;
       return data as any;
     },
   });
-
   const { data: plan } = useQuery({
     queryKey: ["plan-review", birdId],
     queryFn: async () => {
@@ -3239,16 +3243,14 @@ function ReviewStep({
       return data as any;
     },
   });
-
   const { data: tasks = [] } = useQuery({
     queryKey: ["tasks-review", plan?.id],
     enabled: !!plan?.id,
     queryFn: async () => {
-      const { data } = await supabase.from("routine_tasks").select("id").eq("care_plan_id", plan!.id);
-      return data ?? [];
+      const { data } = await supabase.from("routine_tasks").select("id, title, category, time_of_day, instructions, sort_order").eq("care_plan_id", plan!.id);
+      return (data ?? []) as any[];
     },
   });
-
   const { data: contacts } = useQuery({
     queryKey: ["contacts-review", birdId],
     queryFn: async () => {
@@ -3256,16 +3258,11 @@ function ReviewStep({
       return data as any;
     },
   });
-
   const { data: defaults } = useQuery({
     queryKey: ["defaults-review", bird?.owner_id],
     enabled: !!bird?.owner_id,
     queryFn: async () => {
-      const { data } = await supabase
-        .from("owner_emergency_defaults")
-        .select("*")
-        .eq("owner_id", bird!.owner_id)
-        .maybeSingle();
+      const { data } = await supabase.from("owner_emergency_defaults").select("*").eq("owner_id", bird!.owner_id).maybeSingle();
       return data as any;
     },
   });
@@ -3278,117 +3275,149 @@ function ReviewStep({
       return data ?? null;
     },
   });
+  // The sitter's section-by-section view, from the same server function the
+  // household care plan page uses (shared home answers merged in).
+  const getView = useServerFn(getHouseholdCarePlanView);
+  const { data: planView, isError: planViewError } = useQuery({
+    queryKey: ["review-care-plan", birdId],
+    enabled: view === "plan",
+    queryFn: () => getView({ data: { birdId } }),
+    retry: false,
+  });
 
-  // Find-or-create a preview sit so we can render the REAL sitter view.
-  const [previewToken, setPreviewToken] = useState<string | null>(null);
-  const [previewError, setPreviewError] = useState<{ message?: string } | null>(null);
+  // The daily checklist as the sitter's Today reads it: by day-part, timed
+  // tasks in time order, then the rest.
+  const checklist = useMemo(() => {
+    const by: Record<string, any[]> = {};
+    for (const task of tasks) (by[taskDaypart(task)] ??= []).push(task);
+    for (const dp of Object.keys(by)) {
+      by[dp].sort((a, b) => {
+        const va = parseTaskMinutes(a.time_of_day) ?? 1e9;
+        const vb = parseTaskMinutes(b.time_of_day) ?? 1e9;
+        return va !== vb ? va - vb : (a.sort_order ?? 0) - (b.sort_order ?? 0);
+      });
+    }
+    return DAYPARTS.filter((dp) => by[dp]?.length).map((dp) => ({ dp, items: by[dp] }));
+  }, [tasks]);
+  const daypartName = (dp: Daypart) =>
+    dp === "morning" ? t("birdSetup.review.morning", "Morning")
+    : dp === "midday" ? t("birdSetup.review.midday", "Midday")
+    : dp === "evening" ? t("birdSetup.review.evening", "Evening")
+    : t("birdSetup.review.anytime", "Anytime");
+  // Where each task is edited: its Food or Health source, else Day.
+  const taskStep = (title: string) => {
+    const src = derivedSource(title);
+    return stepOf(src === "Food" ? "food" : src === "Health" ? "health" : "day");
+  };
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      if (!bird?.owner_id) return;
-      try {
-        const token = await ensureSitterPreviewToken(birdId, bird.owner_id);
-        if (!cancelled) setPreviewToken(token);
-      } catch (e: any) {
-        if (!cancelled) setPreviewError({ message: e.message });
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [bird?.owner_id, birdId]);
-
-  // "Before you share" thin/empty checks. Each links to its step.
-  const issues = useMemo(() => {
-    // Map by section key, not hardcoded numbers, so these links stay correct
-    // regardless of step order (Food/Routine were reordered).
-    const stepOf = (key: string) => SETUP_STEPS.findIndex((s) => s.key === key) + 1;
-    const list: { label: string; step: number }[] = [];
-    if ((tasks?.length ?? 0) === 0) list.push({ label: t("birdSetup.issue.noRoutineTasksYet", "No routine tasks yet"), step: stepOf("day") });
-    if (!plan?.diet_types?.length && !plan?.food_instructions) list.push({ label: t("birdSetup.issue.noFoodWaterDetails", "No food & water details"), step: stepOf("food") });
-    if (!plan?.handlers && !plan?.likes && !plan?.fears_triggers && !plan?.cage_location && !plan?.out_of_cage_mode) list.push({ label: t("birdSetup.issue.noPersonalityHandlingNotes", "No personality & handling notes"), step: stepOf("personality") });
-    if (!HOME_GROUPS.some((g) => birdHasOwn(mergeHome(plan, homeDefaults), g))) list.push({ label: t("birdSetup.issue.noReminders", "No reminders for your sitter"), step: stepOf("environment") });
+  // "Still thin or empty": what the sitter will miss, each with a link to fix it.
+  const gaps = useMemo(() => {
+    const list: { key: string; title: string; note: string; step: number }[] = [];
+    if (!plan?.diet_types?.length && !plan?.food_instructions) {
+      list.push({ key: "food", title: t("birdSetup.review.gapFood", "Food"), note: t("birdSetup.review.gapFoodNote", "nothing yet, so your sitter won't know what to serve {{name}}.", { name: birdName }), step: stepOf("food") });
+    }
     if (!bird?.normal_weight && !plan?.baseline_clip_path && !plan?.whats_normal) {
-      list.push({ label: t("birdSetup.issue.noHealthBaselineWeightPhoto", "No health baseline (weight, photo, clip, or notes)"), step: stepOf("health") });
+      list.push({ key: "health", title: t("birdSetup.review.gapHealth", "Health"), note: t("birdSetup.review.gapHealthNote", "no weight or notes yet, so your sitter can't tell what's normal for {{name}}.", { name: birdName }), step: stepOf("health") });
+    }
+    if (!plan?.handlers && !plan?.likes && !plan?.fears_triggers && !plan?.cage_location && !plan?.out_of_cage_mode) {
+      list.push({ key: "behavior", title: t("birdSetup.review.gapBehavior", "Behavior"), note: t("birdSetup.review.gapBehaviorNote", "no handling notes yet, so your sitter won't know how {{name}} likes to be treated.", { name: birdName }), step: stepOf("personality") });
     }
     if (!plan?.clip_step_up_path && !plan?.clip_food_water_path && !plan?.clip_locations_path && !plan?.clip_bedtime_path) {
-      list.push({ label: t("birdSetup.issue.noTipsFromTheOwner", "No tips-from-the-owner clips"), step: stepOf("clips") });
+      list.push({ key: "clips", title: t("birdSetup.review.gapTips", "Tips"), note: t("birdSetup.review.gapTipsNote", "no clips yet, so your sitter won't see how you step {{name}} up.", { name: birdName }), step: stepOf("clips") });
+    }
+    if (tasks.length === 0) {
+      list.push({ key: "day", title: t("birdSetup.review.gapDay", "Day"), note: t("birdSetup.review.gapDayNote", "no tasks yet, so your sitter's daily checklist will be empty."), step: stepOf("day") });
+    }
+    if (!HOME_GROUPS.some((g) => birdHasOwn(mergeHome(plan, homeDefaults), g))) {
+      list.push({ key: "environment", title: t("birdSetup.review.gapReminders", "Reminders"), note: t("birdSetup.review.gapRemindersNote", "nothing yet, so your sitter won't know your home's hazards."), step: stepOf("environment") });
     }
     const eff = (k: string) => ((contacts?.[k] ?? "").toString().trim() || (defaults?.[k] ?? "").toString().trim());
     if (!eff("owner_phone") || !eff("avian_vet_phone")) {
-      list.push({ label: t("birdSetup.issue.requiredEmergencyContactsMissing", "Required emergency contacts missing"), step: stepOf("emergency") });
+      list.push({ key: "emergency", title: t("birdSetup.review.gapEmergency", "Emergency contacts"), note: t("birdSetup.review.gapEmergencyNeed", "your phone or your avian vet's phone is missing. You'll need both before you can create a pet sit."), step: stepOf("emergency") });
     }
     return list;
-  }, [tasks, plan, bird, contacts, defaults, homeDefaults, t]);
+  }, [tasks, plan, bird, contacts, defaults, homeDefaults, birdName, t]);
 
-  const previewSrc = previewToken ? `/sitter/${previewToken}?birdId=${birdId}&preview=1` : null;
+  // A tap on a section of the sitter's care plan opens the screen that edits it
+  // (buttons, links and clips inside keep working as they are).
+  const SECTION_STEP: Record<string, string> = { food: "food", behavior: "personality", home: "environment", health: "health", routine: "day", emergency: "emergency" };
+  function onPlanClick(e: React.MouseEvent) {
+    const target = e.target as HTMLElement;
+    if (target.closest("button, a, video, iframe, input, select, textarea")) return;
+    const id = target.closest("section[id]")?.id;
+    if (id && SECTION_STEP[id]) onJumpToStep(stepOf(SECTION_STEP[id]));
+  }
 
   return (
-    <div className="space-y-4">
-      <StepInstruction>{t("birdSetup.instr.review", "Here's exactly what everyone helping will see for {{name}}. Scroll inside the preview to explore the Today screen.", { name: birdName })}</StepInstruction>
+    <div className="flex flex-col gap-[14px]" style={{ color: S.forest }}>
+      <StepInstruction>{t("birdSetup.instr.reviewSitter", "This is {{name}}'s plan the way a sitter reads it. Tap anything to fix it.", { name: birdName })}</StepInstruction>
 
-      {issues.length > 0 && (
-        <section className="rounded-2xl bg-warn-amber/10 p-4 ring-1 ring-warn-amber/30">
-          <h2 className="text-sm font-bold text-warn-amber">{t("birdSetup.beforeYouShare", "Before you share")}</h2>
-          <p className="mt-1 text-xs text-sage-700">{t("birdSetup.aFewThingsAreStill", "A few things are still thin or empty:")}</p>
-          <ul className="mt-2 space-y-1">
-            {issues.map((i) => (
-              <li key={i.step}>
-                <button
-                  type="button"
-                  onClick={() => onJumpToStep(i.step)}
-                  className="text-left text-sm font-semibold text-sage-900 underline decoration-warn-amber underline-offset-2"
-                >
-                  {i.label} <span className="text-xs text-sage-600">{t("birdSetup.fixIt", "— fix it")}</span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </section>
+      <Segmented
+        label={t("birdSetup.review.viewLabel", "Preview")}
+        value={view}
+        onChange={setView}
+        options={[
+          { value: "checklist", label: t("birdSetup.review.dailyChecklist", "Daily checklist") },
+          { value: "plan", label: t("birdSetup.review.carePlan", "Care plan") },
+        ]}
+      />
+
+      {view === "checklist" ? (
+        checklist.length === 0 ? (
+          <p className="m-0 rounded-[18px] p-4 text-[15px]" style={{ background: S.card, color: S.helper }}>
+            {t("birdSetup.review.noTasks", "Nothing on the checklist yet.")}
+          </p>
+        ) : (
+          checklist.map(({ dp, items }) => (
+            <section key={dp} className="flex flex-col gap-2 rounded-[18px] p-4" style={{ background: S.card }}>
+              <h2 className="m-0 text-[21px] font-[700] leading-[1.2]" style={{ fontFamily: SERIF }}>{daypartName(dp)}</h2>
+              {items.map((task) => {
+                const clock = /\d/.test(task.time_of_day ?? "") ? task.time_of_day : null;
+                return (
+                  <button
+                    key={task.id}
+                    type="button"
+                    onClick={() => onJumpToStep(taskStep(task.title))}
+                    className="flex min-h-[52px] w-full items-start gap-3 rounded-[14px] bg-white px-3.5 py-3 text-left"
+                  >
+                    <span aria-hidden="true" className="mt-0.5 size-[22px] shrink-0 rounded-[6px] border-2" style={{ borderColor: S.line }} />
+                    <span className="min-w-0">
+                      <span className="block text-[15px] font-[600]">
+                        {displayLabel(t, task.title)}
+                        {clock && <span className="font-[400]" style={{ color: S.quiet }}> · {clock}</span>}
+                      </span>
+                      {task.instructions && <span className="mt-0.5 block whitespace-pre-line text-[14px]" style={{ color: S.helper }}>{task.instructions}</span>}
+                    </span>
+                  </button>
+                );
+              })}
+            </section>
+          ))
+        )
+      ) : planViewError ? (
+        <p className="m-0 rounded-[18px] p-4 text-[15px]" style={{ background: S.card, color: S.helper }}>{t("birdSetup.couldNotBuildPreview", "Could not build preview")}</p>
+      ) : !planView ? (
+        <div className="h-64 animate-pulse rounded-[18px]" style={{ background: S.card }} />
+      ) : (
+        <div onClick={onPlanClick} className="cursor-pointer">
+          <CarePlanView data={planView} showEmergencyContacts={false} />
+        </div>
       )}
 
-      <section className="overflow-hidden rounded-2xl bg-sage-900 ring-1 ring-sage-200">
-        <div className="flex items-center justify-between px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-white/80">
-          <span>{t("birdSetup.sitterPreview", "Sitter preview")}</span>
-          <span className="rounded bg-white/10 px-2 py-0.5">{t("birdSetup.live", "Live")}</span>
-        </div>
-        <div className="bg-sage-50">
-          {previewError ? (
-            <div className="p-6 text-sm text-warn-red">{previewError.message ?? t("birdSetup.couldNotBuildPreview", "Could not build preview")}</div>
-          ) : previewSrc ? (
-            <iframe
-              src={previewSrc}
-              title={t("birdSetup.sitterPreview", "Sitter preview")}
-              className="h-[640px] w-full border-0 bg-sage-50"
-            />
-          ) : (
-            <div className="h-[640px] animate-pulse bg-sage-100" />
-          )}
-        </div>
-      </section>
-
-      <div className="space-y-2">
-        <button
-          type="button"
-          onClick={() => onFinish({ to: "home" })}
-          className="w-full rounded-xl bg-sage-600 py-3 text-sm font-semibold text-white"
-        >
-          {t("birdSetup.looksGoodSave", "Looks good — save")}
-        </button>
-        <button
-          type="button"
-          onClick={() => onFinish({ to: "dashboard-newsit" })}
-          className="w-full rounded-xl border border-sage-300 bg-white py-3 text-sm font-semibold text-sage-700"
-        >
-          {t("birdSetup.saveAndCreateSit", "Save & create a sit")}
-        </button>
-        <button
-          type="button"
-          onClick={() => onJumpToStep(8)}
-          className="block w-full text-center text-xs font-semibold text-sage-700 underline"
-        >
-          {t("birdSetup.backToEmergency", "← Back to Emergency")}
-        </button>
-      </div>
+      {gaps.length > 0 && (
+        <section className="flex flex-col gap-2.5">
+          <h2 className="m-0 mt-2 text-[22px] font-[700] leading-[1.2]" style={{ fontFamily: SERIF }}>{t("birdSetup.review.stillThin", "Still thin or empty")}</h2>
+          {gaps.map((g) => (
+            <div key={g.key} className="flex items-center gap-3 rounded-[14px] border-2 border-dashed bg-white px-4 py-3" style={{ borderColor: "#b9b19a" }}>
+              <p className="m-0 min-w-0 flex-1 text-[14.5px] leading-[1.45]">
+                <span className="font-[700]">{g.title}</span>
+                <span style={{ color: S.helper }}> · {g.note}</span>
+              </p>
+              <SetupTextButton onClick={() => onJumpToStep(g.step)}>{t("birdSetup.review.add", "Add")}</SetupTextButton>
+            </div>
+          ))}
+        </section>
+      )}
     </div>
   );
 }
