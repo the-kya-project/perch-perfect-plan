@@ -33,7 +33,8 @@ import {
 } from "@/lib/pushNative";
 import { markNotificationsReviewed } from "@/components/OwnerChecklist";
 import { detectWebPlatform, APP_STORE_URL, PLAY_STORE_URL } from "@/lib/storeLinks";
-import { K, KyaPage, KyaHeader, KyaBody, KyaCard, KyaIconTile, KyaGroupLabel, KyaSwitch, KyaLink, KyaPrimaryButton, KyaSecondaryButton, KyaBackRow, KyaTitle } from "@/components/kya";
+import { K, KyaPage, KyaBody, KyaCard, KyaIconTile, KyaGroupLabel, KyaSwitch, KyaLink, KyaPrimaryButton, KyaSecondaryButton } from "@/components/kya";
+import { PageHeader } from "@/components/headers";
 import { friendlyError } from "@/lib/errorMessage";
 import i18next from "i18next";
 import type { TFunction } from "i18next";
@@ -349,10 +350,7 @@ function NotificationsSettingsPage() {
   return (
     <KyaPage>
       <div className="mx-auto max-w-md">
-        <KyaHeader>
-          <KyaBackRow label={t("notifSettings.back", "Back")} onBack={goBack} />
-          <KyaTitle title={t("notifSettings.headline", "Notifications")} line={t("notifSettings.bodyNew", "Choose what reaches you by email and on this device.")} />
-        </KyaHeader>
+        <PageHeader onBack={goBack} title={t("notifSettings.headline", "Notifications")} line={t("notifSettings.bodyNew", "Choose what reaches you by email and on this device.")} />
 
         <KyaBody className="gap-5">
           {/* Push on this device */}

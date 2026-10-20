@@ -1,11 +1,12 @@
 import { createFileRoute, useNavigate, useRouter, useCanGoBack } from "@tanstack/react-router";
 import { speciesLabel } from "@/lib/speciesLabel";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Flower2, Loader2 } from "lucide-react";
+import { Flower2, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { useBirdPhotos } from "@/lib/useBirdPhotos";
-import { InkHero, Card, RecordRow, IconTile } from "@/components/system";
+import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaRow, KyaIconTile } from "@/components/kya";
+import { PageHeader } from "@/components/headers";
 import i18next from "i18next";
 import { useTranslation } from "react-i18next";
 
@@ -44,57 +45,50 @@ function Remembering() {
   const resolvePhoto = useBirdPhotos(birds.map((b: any) => b.photo_url), 200);
 
   return (
-    <div className="min-h-screen bg-[var(--cream)] pb-nav">
-      <div className="mx-auto max-w-md">
-        <InkHero
-          backIcon={<ArrowLeft className="size-5" />}
-          onBack={goBack}
-          eyebrow={t("remembering.eyebrow", "Remembering")}
-          headline={t("remembering.headline", "Remembering")}
-        />
-        <main className="space-y-4 px-5 pt-5">
-          {isLoading ? (
-            <div className="flex items-center justify-center gap-2 py-12 t-meta">
-              <Loader2 className="size-4 animate-spin" /> {t("remembering.loading", "Loading…")}
-            </div>
-          ) : birds.length === 0 ? (
-            <Card className="p-8 text-center">
-              <IconTile tone="pale" icon={<Flower2 className="size-5" />} />
-              <p className="mt-3 t-body text-[var(--ink2)]">{t("remembering.empty", "Nothing here, and that's a good thing.")}</p>
-            </Card>
-          ) : (
-            birds.map((b: any) => {
-              const photo = resolvePhoto(b.photo_url);
-              return (
-                <Card key={b.id} className="p-5">
-                  <div className="flex items-center gap-3">
-                    {photo ? (
-                      <img src={photo.url} alt="" className="size-12 shrink-0 rounded-full object-cover ring-1 ring-[var(--line2)]" />
-                    ) : (
-                      <IconTile size={48} tone="pale" icon={<Flower2 className="size-5" />} />
-                    )}
-                    <div className="min-w-0 flex-1">
-                      <h2 className="t-section">{t("remembering.cardTitle", "Remembering {{name}}", { name: b.name })}</h2>
-                      <p className="t-meta mt-0.5">{memorialSubtitle(b)}</p>
-                    </div>
+    <KyaPage>
+      <PageHeader title={t("remembering.headline", "Remembering")} onBack={goBack} />
+      <KyaBody>
+        {isLoading ? (
+          <div className="flex items-center justify-center gap-2 py-12 text-[14px]" style={{ color: K.quiet }}>
+            <Loader2 className="size-4 animate-spin" /> {t("remembering.loading", "Loading…")}
+          </div>
+        ) : birds.length === 0 ? (
+          <KyaCard className="flex flex-col items-center p-8 text-center">
+            <KyaIconTile tone="mist"><Flower2 className="size-5" /></KyaIconTile>
+            <p className="m-0 mt-3 text-[15px] leading-[1.5]" style={{ color: K.ink }}>{t("remembering.empty", "Nothing here, and that's a good thing.")}</p>
+          </KyaCard>
+        ) : (
+          birds.map((b: any) => {
+            const photo = resolvePhoto(b.photo_url);
+            return (
+              <KyaCard key={b.id} className="p-5">
+                <div className="flex items-center gap-3">
+                  {photo ? (
+                    <img src={photo.url} alt="" className="size-12 shrink-0 rounded-full object-cover" />
+                  ) : (
+                    <KyaIconTile size={48} tone="mist"><Flower2 className="size-5" /></KyaIconTile>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <KyaHeading>{t("remembering.cardTitle", "Remembering {{name}}", { name: b.name })}</KyaHeading>
+                    <p className="m-0 mt-0.5 text-[13px]" style={{ color: K.quiet }}>{memorialSubtitle(b)}</p>
                   </div>
-                  <div className="mt-4 overflow-hidden rounded-[13px] ring-1 ring-[var(--line2)]">
-                    <RecordRow title={t("remembering.moments", "Moments and photos")} chevron onClick={() => navigate({ to: "/birds/$birdId/moments", params: { birdId: b.id } })} />
-                    <RecordRow title={t("remembering.journal", "Journal")} chevron onClick={() => navigate({ to: "/birds/$birdId/journal", params: { birdId: b.id } })} />
-                    {/* fromRemembering: the bird page's back returns HERE instead
-                        of the home screen (a passed bird isn't in the flock). */}
-                    <RecordRow title={t("remembering.record", "Their record")} chevron last onClick={() => navigate({ to: "/birds/$birdId", params: { birdId: b.id }, state: { fromRemembering: true } as any })} />
-                  </div>
-                  <p className="t-meta mt-3 leading-relaxed">
-                    {t("remembering.paused", "{{name}}'s daily care is paused. Everything you kept is still here, whenever you'd like to look back.", { name: b.name })}
-                  </p>
-                </Card>
-              );
-            })
-          )}
-        </main>
-      </div>
-    </div>
+                </div>
+                <div className="mt-4 overflow-hidden rounded-[14px]" style={{ boxShadow: `inset 0 0 0 1px ${K.line}` }}>
+                  <KyaRow title={t("remembering.moments", "Moments and photos")} onClick={() => navigate({ to: "/birds/$birdId/moments", params: { birdId: b.id } })} />
+                  <KyaRow title={t("remembering.journal", "Journal")} onClick={() => navigate({ to: "/birds/$birdId/journal", params: { birdId: b.id } })} />
+                  {/* fromRemembering: the bird page's back returns HERE instead
+                      of the home screen (a passed bird isn't in the flock). */}
+                  <KyaRow title={t("remembering.record", "Their record")} last onClick={() => navigate({ to: "/birds/$birdId", params: { birdId: b.id }, state: { fromRemembering: true } as any })} />
+                </div>
+                <p className="m-0 mt-3 text-[13.5px] leading-[1.5]" style={{ color: K.quiet }}>
+                  {t("remembering.paused", "{{name}}'s daily care is paused. Everything you kept is still here, whenever you'd like to look back.", { name: b.name })}
+                </p>
+              </KyaCard>
+            );
+          })
+        )}
+      </KyaBody>
+    </KyaPage>
   );
 }
 

@@ -1,8 +1,9 @@
 import { createFileRoute, useCanGoBack, useNavigate, useRouter } from "@tanstack/react-router";
 import i18next, { type TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
-import { Check, ClipboardList, Scale, Users } from "lucide-react";
-import { K, KyaPage, KyaHeader, KyaBody, KyaCard, KyaGroupLabel, KyaIconTile, KyaLink, KyaBackRow, KyaTitle } from "@/components/kya";
+import { Check, CheckCheck, ClipboardList, Scale, Users } from "lucide-react";
+import { K, KyaPage, KyaBody, KyaCard, KyaGroupLabel, KyaIconTile, KyaLink } from "@/components/kya";
+import { PageHeader } from "@/components/headers";
 import { useUpdates, type Update } from "@/lib/updates";
 import { noticedItems } from "@/lib/dailyCheckLabels";
 import { namesAsCount } from "@/lib/birdNames";
@@ -141,18 +142,12 @@ function UpdatesPage() {
   return (
     <KyaPage>
       <div className="mx-auto max-w-md">
-        <KyaHeader>
-          <KyaBackRow
-            label={t("updates.back", "Back")}
-            onBack={goBack}
-            right={unread > 0 ? (
-              <button type="button" onClick={markAllRead} className="inline-flex min-h-[44px] items-center px-1 text-[15px] font-[700]" style={{ color: K.lime }}>
-                {t("updates.markAllRead", "Mark all read")}
-              </button>
-            ) : undefined}
-          />
-          <KyaTitle title={t("updates.title", "Updates")} line={t("updates.line", "What's happened with your birds while you weren't looking.")} />
-        </KyaHeader>
+        <PageHeader
+          onBack={goBack}
+          title={t("updates.title", "Updates")}
+          line={t("updates.line", "What's happened with your birds while you weren't looking.")}
+          action={unread > 0 ? { label: t("updates.markAllRead", "Mark all read"), icon: <CheckCheck className="size-4" />, onClick: markAllRead } : undefined}
+        />
         <KyaBody className="gap-5">
           {loading ? (
             <p className="m-0 px-1 text-[14px]" style={{ color: K.quiet }}>{t("updates.loading", "Loading…")}</p>

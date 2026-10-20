@@ -1,7 +1,10 @@
+import { useCallback } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { K, KyaPage, KyaBody, KyaCard } from "@/components/kya";
+import { PageHeader, useGoBack } from "@/components/headers";
 import { getCaregiverConcernContext, pauseCaregiverReminders } from "@/lib/caregiver.functions";
 import { ConcernFlow } from "@/components/ConcernFlow";
 import { toast } from "sonner";
@@ -25,6 +28,7 @@ function CaregiverConcern() {
   const qc = useQueryClient();
   const ctxFn = useServerFn(getCaregiverConcernContext);
   const pauseFn = useServerFn(pauseCaregiverReminders);
+  const goBack = useGoBack(useCallback(() => navigate({ to: "/birds/$birdId", params: { birdId } }), [navigate, birdId]));
 
   const { data: ctx, isLoading } = useQuery({
     queryKey: ["caregiver-concern", birdId],
@@ -48,37 +52,32 @@ function CaregiverConcern() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f4f1e8] pb-nav">
-      <header className="border-b border-[#e0d8c4] bg-[#f4f1e8]">
-        <div className="mx-auto flex max-w-md items-center gap-3 px-5 pt-safe pb-3">
-          <button
-            type="button"
-            onClick={() => navigate({ to: "/birds/$birdId", params: { birdId } })}
-            aria-label={t("caregiverConcern.back", "Back")}
-            className="-ml-1 rounded p-1 text-[#5f5e5a]"
-          >
-            <ArrowLeft className="size-5" />
-          </button>
-          <h1 className="text-sm font-medium text-[#1a3d2e]">{ctx?.covering ? ctx.birdName : ""}</h1>
-        </div>
-      </header>
-      <main className="mx-auto max-w-md px-5 py-6">
+    <KyaPage>
+      <PageHeader
+        title={ctx?.covering
+          ? t("caregiverConcern.title", "Something's wrong with {{name}}", { name: ctx.birdName })
+          : t("caregiverConcern.titleNoName", "Something's wrong")}
+        onBack={goBack}
+      />
+      <KyaBody>
         {isLoading || !ctx?.covering ? (
-          <div className="flex items-center justify-center gap-2 py-12 text-sm text-[#5f5e5a]">
+          <div className="flex items-center justify-center gap-2 py-12 text-[14px]" style={{ color: K.quiet }}>
             <Loader2 className="size-4 animate-spin" /> {t("caregiverConcern.loading", "Loading…")}
           </div>
         ) : (
-          <ConcernFlow
-            name={ctx.birdName}
-            ownerName={ctx.ownerName || t("caregiverConcern.theOwner", "the owner")}
-            ownerPhone={ctx.ownerPhone}
-            vet={{ name: ctx.vetName, phone: ctx.vetPhone }}
-            paused={ctx.paused || m.isSuccess}
-            onPause={() => m.mutate()}
-            pausePending={m.isPending}
-          />
+          <KyaCard className="p-5">
+            <ConcernFlow
+              name={ctx.birdName}
+              ownerName={ctx.ownerName || t("caregiverConcern.theOwner", "the owner")}
+              ownerPhone={ctx.ownerPhone}
+              vet={{ name: ctx.vetName, phone: ctx.vetPhone }}
+              paused={ctx.paused || m.isSuccess}
+              onPause={() => m.mutate()}
+              pausePending={m.isPending}
+            />
+          </KyaCard>
         )}
-      </main>
-    </div>
+      </KyaBody>
+    </KyaPage>
   );
 }

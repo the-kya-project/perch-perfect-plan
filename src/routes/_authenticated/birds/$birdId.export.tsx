@@ -1,15 +1,17 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { speciesLabel } from "@/lib/speciesLabel";
 import { ageLabel } from "@/components/BirdPickers";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { completePdfHandoff } from "@/lib/handoff.functions";
 import { pdfHandoffFailedText } from "@/lib/i18n/serverErrors";
 import { toast } from "sonner";
-import { ArrowLeft, Printer, Share2, Loader2, AlertTriangle } from "lucide-react";
+import { Printer, Share2, Loader2, AlertTriangle } from "lucide-react";
+import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaField, KyaPrimaryButton, KyaSecondaryButton, KyaSheet } from "@/components/kya";
+import { PageHeader, useGoBack } from "@/components/headers";
 import { isNativeApp } from "@/lib/nativeApp";
 import { formatLocalDate } from "@/lib/dates";
 import i18next from "i18next";
@@ -49,6 +51,7 @@ function ExportRecord() {
   const navigate = useNavigate();
   const [confirming, setConfirming] = useState(false);
   const [recipientName, setRecipientName] = useState("");
+  const goBack = useGoBack(useCallback(() => navigate({ to: "/birds/$birdId/handoff", params: { birdId } }), [navigate, birdId]));
 
   const { data: bird } = useQuery({
     queryKey: ["export-bird", birdId],
@@ -140,15 +143,16 @@ function ExportRecord() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f4f1e8] pb-[calc(var(--nav-spacer)+6rem)]">
-      <header data-noprint className="sticky top-0 z-10 border-b border-[#e3ded0] bg-[#f4f1e8]/95 backdrop-blur">
-        <div className="mx-auto flex max-w-md items-center gap-3 px-5 pt-safe pb-3">
-          <Link to="/birds/$birdId/handoff" params={{ birdId }} aria-label={t("exportRecord.back", "Back")} className="-ml-1 rounded p-1 text-[#1a3d2e]"><ArrowLeft className="size-5" /></Link>
-          <h1 className="text-base font-medium text-[#1a3d2e]">{t("exportRecord.title", "Export {{name}}'s record", { name })}</h1>
-        </div>
-      </header>
+    <KyaPage>
+      <PageHeader
+        title={t("exportRecord.title", "Export {{name}}'s record", { name })}
+        line={native
+          ? t("exportRecord.introNative", "Share {{name}}'s record with the adopter, then confirm the handoff below. Once you confirm, {{name}} moves to your Past birds and leaves your flock.", { name })
+          : t("exportRecord.introWeb", "Save this as a PDF and give it to the adopter, then confirm the handoff below. Once you confirm, {{name}} moves to your Past birds and leaves your flock.", { name })}
+        onBack={goBack}
+      />
 
-      <main className="mx-auto max-w-md px-5 py-5">
+      <KyaBody>
         {/* window.print() does nothing inside the native shells — no WebKit print
             delegate on iOS, no window.print at all in Android's WebView (see
             BUG-7). Here that mattered more than on the vet summary: this is the
@@ -156,36 +160,27 @@ function ExportRecord() {
             instructs you to produce a PDF, there is no other affordance on the
             screen, and the next step is irreversible. So natively we share the
             sheet instead, which does work, and say so. */}
-        <div data-noprint className="mb-4 space-y-2">
-          <p className="text-sm leading-relaxed text-[#5f5e5a]">
-            {native
-              ? t("exportRecord.introNative", "Share {{name}}'s record with the adopter, then confirm the handoff below. Once you confirm, {{name}} moves to your Past birds and leaves your flock.", { name })
-              : t("exportRecord.introWeb", "Save this as a PDF and give it to the adopter, then confirm the handoff below. Once you confirm, {{name}} moves to your Past birds and leaves your flock.", { name })}
-          </p>
+        <div data-noprint>
           {native ? (
-            <button type="button" onClick={shareRecord} className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[14px] bg-[#1a3d2e] text-sm font-medium text-white">
-              <Share2 className="size-4" /> {t("exportRecord.shareRecord", "Share record")}
-            </button>
+            <KyaPrimaryButton onClick={shareRecord} icon={<Share2 className="size-4" />}>{t("exportRecord.shareRecord", "Share record")}</KyaPrimaryButton>
           ) : (
-            <button type="button" onClick={() => window.print()} className="flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[14px] bg-[#1a3d2e] text-sm font-medium text-white">
-              <Printer className="size-4" /> {t("exportRecord.saveAsPdf", "Save as PDF")}
-            </button>
+            <KyaPrimaryButton onClick={() => window.print()} icon={<Printer className="size-4" />}>{t("exportRecord.saveAsPdf", "Save as PDF")}</KyaPrimaryButton>
           )}
         </div>
 
-        <article id="export-sheet" className="rounded-[14px] border border-[#d8d0bd] bg-white p-5">
-          <header className="border-b border-[#e3dcc9] pb-3">
-            <h2 className="text-xl font-medium text-[#1a3d2e]">{name}</h2>
-            {row?.species && <p className="mt-0.5 text-sm italic text-[#5f5e5a]">{speciesLabel(t, row.species)}</p>}
-            <p className="mt-1 text-xs text-[#8a897f]">{t("exportRecord.generated", "Full record · generated {{date}}", { date: fmtDate(new Date().toISOString()) })}</p>
+        <KyaCard id="export-sheet" className="p-5" style={{ color: K.forest }}>
+          <header className="pb-3" style={{ borderBottom: `1px solid ${K.line}` }}>
+            <KyaHeading size={24}>{name}</KyaHeading>
+            {row?.species && <p className="m-0 mt-0.5 text-[14px] italic" style={{ color: K.quiet }}>{speciesLabel(t, row.species)}</p>}
+            <p className="m-0 mt-1 text-[13px]" style={{ color: K.quiet }}>{t("exportRecord.generated", "Full record · generated {{date}}", { date: fmtDate(new Date().toISOString()) })}</p>
           </header>
 
           <Section label={t("exportRecord.identity", "Identity")}>
-            <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+            <dl className="m-0 grid grid-cols-2 gap-x-4 gap-y-2">
               {identity.map(([l, v]) => (
                 <div key={l}>
-                  <dt className="text-[10px] font-semibold uppercase tracking-wider text-[#8a897f]">{l}</dt>
-                  <dd className={`text-sm ${v ? "text-[#1a3d2e]" : "italic text-[#9a978c]"}`}>{v ?? none()}</dd>
+                  <dt className="text-[12.5px] font-[700]" style={{ color: K.quiet }}>{l}</dt>
+                  <dd className={`m-0 text-[14px] ${v ? "" : "italic"}`} style={v ? undefined : { color: K.quiet }}>{v ?? none()}</dd>
                 </div>
               ))}
             </dl>
@@ -197,77 +192,99 @@ function ExportRecord() {
 
           <Section label={t("exportRecord.weightHistory", "Weight history")}>
             {weights && weights.length ? (
-              <ul className="text-sm text-[#1a3d2e]">
-                {weights.map((w, i) => <li key={i} className="flex justify-between border-b border-[#f0ebdd] py-0.5"><span>{fmtDate(w.measured_at)}</span><span className="tabular-nums">{w.grams} g</span></li>)}
+              <ul className="m-0 list-none p-0 text-[14px]">
+                {weights.map((w, i) => <li key={i} className="flex justify-between py-1" style={{ borderBottom: `1px solid ${K.line}` }}><span>{fmtDate(w.measured_at)}</span><span className="tabular-nums">{w.grams} g</span></li>)}
               </ul>
             ) : <Value text={null} />}
           </Section>
 
           <Section label={t("exportRecord.moments", "Moments")}>
             {moments && moments.length ? (
-              <ul className="space-y-0.5 text-sm text-[#1a3d2e]">
-                {moments.map((m, i) => <li key={i} className="flex justify-between gap-3"><span>{m.title}</span><span className="shrink-0 text-[#8a897f]">{fmtDate(m.on_date)}</span></li>)}
+              <ul className="m-0 list-none space-y-1 p-0 text-[14px]">
+                {moments.map((m, i) => <li key={i} className="flex justify-between gap-3"><span>{m.title}</span><span className="shrink-0" style={{ color: K.quiet }}>{fmtDate(m.on_date)}</span></li>)}
               </ul>
             ) : <Value text={null} />}
           </Section>
 
           <Section label={t("exportRecord.journal", "Journal")}>
             {journal && journal.length ? (
-              <ul className="space-y-2 text-sm text-[#1a3d2e]">
-                {journal.map((j, i) => <li key={i}><span className="text-[11px] text-[#8a897f]">{fmtDate(j.created_at)}</span><p className="whitespace-pre-line">{j.body}</p></li>)}
+              <ul className="m-0 list-none space-y-2 p-0 text-[14px]">
+                {journal.map((j, i) => <li key={i}><span className="text-[12.5px]" style={{ color: K.quiet }}>{fmtDate(j.created_at)}</span><p className="m-0 whitespace-pre-line">{j.body}</p></li>)}
               </ul>
             ) : <Value text={null} />}
           </Section>
-        </article>
-      </main>
+        </KyaCard>
 
-      <footer data-noprint className="fixed inset-x-0 bottom-[var(--nav-spacer)] border-t border-[#e3ded0] bg-[#f4f1e8] px-5 py-3">
-        <div className="mx-auto max-w-md">
-          {!confirming ? (
-            <button type="button" onClick={() => setConfirming(true)} className="min-h-[48px] w-full rounded-[14px] border border-[#c8bfa6] bg-white text-sm font-medium text-[#1a3d2e]">
-              {native
-                ? t("exportRecord.confirmPromptNative", "I shared it with them — did you hand off {{name}}?", { name })
-                : t("exportRecord.confirmPromptWeb", "I gave them the PDF — did you hand off {{name}}?", { name })}
-            </button>
-          ) : (
-            <div className="space-y-2 rounded-[14px] p-3" style={{ background: "#FCEBEB", border: "1px solid #E24B4A" }}>
-              <p className="flex items-start gap-2 text-sm" style={{ color: "#791F1F" }}>
-                <AlertTriangle className="mt-0.5 size-4 shrink-0" style={{ color: "#A32D2D" }} />
-                <span><span className="font-medium">{t("exportRecord.cantUndo", "This can't be undone.")}</span> {t("exportRecord.willLeave", "{{name}} will leave your flock and move to Past birds.", { name })}</span>
-              </p>
-              <input value={recipientName} maxLength={120} onChange={(e) => setRecipientName(e.target.value)} placeholder={t("exportRecord.recipientPlaceholder", "Who did they go to? (optional)")} className="w-full rounded-[10px] border border-[#e3a0a0] bg-white px-3 py-2 text-sm outline-none" />
-              <div className="flex gap-2">
-                <button type="button" disabled={busy} onClick={() => setConfirming(false)} className="min-h-[44px] flex-1 rounded-[12px] border border-[#c8bfa6] bg-white text-sm font-medium text-[#1a3d2e] disabled:opacity-50">{t("exportRecord.notYet", "Not yet")}</button>
-                <button type="button" disabled={busy} onClick={confirmHandoff} className="flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-[12px] text-sm font-medium text-white disabled:opacity-50" style={{ background: "#A32D2D" }}>
-                  {busy ? <Loader2 className="size-4 animate-spin" /> : null} {t("exportRecord.yesHandOff", "Yes, hand off {{name}}", { name })}
-                </button>
-              </div>
-            </div>
-          )}
+        <div data-noprint>
+          <KyaSecondaryButton className="w-full text-center" onClick={() => setConfirming(true)}>
+            {native
+              ? t("exportRecord.confirmPromptNative", "I shared it with them — did you hand off {{name}}?", { name })
+              : t("exportRecord.confirmPromptWeb", "I gave them the PDF — did you hand off {{name}}?", { name })}
+          </KyaSecondaryButton>
         </div>
-      </footer>
+      </KyaBody>
+
+      <KyaSheet
+        open={confirming}
+        onClose={() => { if (!busy) setConfirming(false); }}
+        closeLabel={t("exportRecord.close", "Close")}
+        title={<KyaHeading size={24}>{t("exportRecord.confirmTitle", "Hand off {{name}}?", { name })}</KyaHeading>}
+        footer={
+          <div className="flex flex-col gap-2.5">
+            <button
+              type="button"
+              disabled={busy}
+              onClick={confirmHandoff}
+              className="inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full px-6 text-[16px] font-[700] text-white disabled:opacity-45"
+              style={{ background: K.red }}
+            >
+              {busy && <Loader2 className="size-4 animate-spin" />} {t("exportRecord.yesHandOff", "Yes, hand off {{name}}", { name })}
+            </button>
+            <KyaSecondaryButton className="w-full" disabled={busy} onClick={() => setConfirming(false)}>{t("exportRecord.notYet", "Not yet")}</KyaSecondaryButton>
+          </div>
+        }
+      >
+        <div className="rounded-[16px] p-3.5" style={{ background: "#fcebeb", border: `1.5px solid ${K.red}` }}>
+          <p className="m-0 flex items-start gap-2 text-[14px] leading-[1.5]" style={{ color: "#791f1f" }}>
+            <AlertTriangle className="mt-0.5 size-4 shrink-0" style={{ color: K.red }} aria-hidden="true" />
+            <span><span className="font-[700]">{t("exportRecord.cantUndo", "This can't be undone.")}</span> {t("exportRecord.willLeave", "{{name}} will leave your flock and move to Past birds.", { name })}</span>
+          </p>
+        </div>
+        <div className="mt-4">
+          <KyaField
+            id="export-recipient"
+            label={t("exportRecord.recipientLabel", "Who did they go to?")}
+            tag={<span className="text-[12.5px] font-[400]" style={{ color: K.quiet }}>{t("exportRecord.optional", "Optional")}</span>}
+            value={recipientName}
+            maxLength={120}
+            onChange={(e) => setRecipientName(e.target.value)}
+            placeholder={t("exportRecord.recipientPlaceholder", "Who did they go to? (optional)")}
+          />
+        </div>
+      </KyaSheet>
 
       <style>{`@media print {
         body * { visibility: hidden !important; }
+        main:has(#export-sheet) { position: static !important; }
         #export-sheet, #export-sheet * { visibility: visible !important; }
         #export-sheet { position: absolute; left: 0; top: 0; width: 100%; border: none !important; }
         [data-noprint] { display: none !important; }
       }`}</style>
-    </div>
+    </KyaPage>
   );
 }
 
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <section className="mt-4 break-inside-avoid">
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-[#BA7517]">{label}</p>
-      <div className="mt-1">{children}</div>
+    <section className="mt-5 break-inside-avoid">
+      <KyaHeading as="h3" size={17}>{label}</KyaHeading>
+      <div className="mt-1.5">{children}</div>
     </section>
   );
 }
 function Value({ text, multiline }: { text: string | null | undefined; multiline?: boolean }) {
-  if (!text) return <p className="text-sm italic text-[#9a978c]">{none()}</p>;
-  return <p className={`text-sm text-[#1a3d2e] ${multiline ? "whitespace-pre-line" : ""}`}>{text}</p>;
+  if (!text) return <p className="m-0 text-[14px] italic" style={{ color: K.quiet }}>{none()}</p>;
+  return <p className={`m-0 text-[14px] ${multiline ? "whitespace-pre-line" : ""}`}>{text}</p>;
 }
 function cap(s: string): string { return s.charAt(0).toUpperCase() + s.slice(1); }
 function val(s: unknown): s is string { return typeof s === "string" && s.trim().length > 0; }

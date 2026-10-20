@@ -2,9 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ArrowRight, ArrowUpRight, Headphones, Compass } from "lucide-react";
-import { OwnerHeaderIcons } from "@/components/OwnerHeader";
-import { BrandLockup } from "@/components/BrandLogo";
-import { K, KyaPage, KyaHeader, KyaBody, KyaCard, KyaHeading, KyaIconTile } from "@/components/kya";
+import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaIconTile } from "@/components/kya";
+import { TabHeader } from "@/components/headers";
 import { WaitlistCard } from "@/components/WaitlistCard";
 import { getBlogPosts, type BlogPost } from "@/lib/blogFeed.functions";
 import { useTranslation } from "react-i18next";
@@ -31,20 +30,11 @@ function Explore() {
   return (
     <KyaPage>
       <div className="mx-auto max-w-md">
-        <KyaHeader>
-          <div className="mt-1.5 flex items-center gap-2">
-            <BrandLockup orientation="horizontal" variant="ink" size={118} />
-            <div className="flex-1" />
-            <OwnerHeaderIcons large />
-          </div>
-          <KyaHeading as="h1" size={31} className="mt-9 text-white">{t("explore.missionTitle", "Better care, wilder futures")}</KyaHeading>
-          <p className="m-0 mt-2 text-[15px] leading-[1.5]" style={{ color: K.paleGreen }}>
-            {t("explore.missionBody", "We help parrots thrive, at home and in the wild, through education, community, and support for rescue and conservation.")}
-          </p>
+        <TabHeader title={t("explore.missionTitle", "Better care, wilder futures")} line={t("explore.missionBody", "We help parrots thrive, at home and in the wild, through education, community, and support for rescue and conservation.")}>
           <a href={MISSION_URL} target="_blank" rel="noreferrer" className="mt-2 inline-flex min-h-[44px] items-center gap-1.5 text-[15px] font-[700]" style={{ color: K.lime }}>
             {t("explore.ourMission", "Our mission")} <ArrowRight className="size-4" />
           </a>
-        </KyaHeader>
+        </TabHeader>
 
         <KyaBody className="gap-6">
           {/* Community waitlist */}

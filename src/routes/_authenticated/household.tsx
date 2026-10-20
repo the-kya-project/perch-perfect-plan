@@ -11,10 +11,8 @@ import {
 } from "@/components/HouseholdMemberSheet";
 import { toast } from "sonner";
 import { Plus, Mail, Loader2, User } from "lucide-react";
-import {
-  K, KyaPage, KyaHeader, KyaBody, KyaCard, KyaHeading, KyaLink, KyaPrimaryButton, KyaRow,
-  KyaIconTile, KyaBackRow, KyaTitle,
-} from "@/components/kya";
+import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaLink, KyaPrimaryButton, KyaRow, KyaIconTile } from "@/components/kya";
+import { PageHeader } from "@/components/headers";
 import { friendlyError } from "@/lib/errorMessage";
 import { namesAsCount } from "@/lib/birdNames";
 import { memberDisplayName } from "@/lib/memberDisplay";
@@ -107,13 +105,7 @@ function HouseholdScreen() {
 
   return (
     <KyaPage>
-      <KyaHeader>
-        <KyaBackRow label={t("household.back", "Back")} onBack={goBack} />
-        <KyaTitle
-          title={t("household.headline", "Your household")}
-          line={t("household.intro", "People who help with your birds every day. You decide what each person can see and do.")}
-        />
-      </KyaHeader>
+      <PageHeader onBack={goBack} title={t("household.headline", "Your household")} line={t("household.intro", "People who help with your birds every day. You decide what each person can see and do.")} />
 
       <KyaBody>
         <KyaCard>

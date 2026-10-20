@@ -12,8 +12,10 @@ import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 import { speciesLabel } from "@/lib/speciesLabel";
 import { setupStepNumber, type SetupStepKey } from "@/lib/setupSteps";
 import { S, SERIF, SetupPrimaryButton } from "@/components/setup/controls";
+import { KyaIconButton } from "@/components/kya";
+import { HeaderPill } from "@/components/headers";
 import {
-  ChevronLeft, Feather, Soup, Heart, Hand, Video, Sun, Home as HomeIcon, Phone, Wand2,
+  ChevronLeft, Eye, Feather, Soup, Heart, Hand, Video, Sun, Home as HomeIcon, Phone, Wand2,
 } from "lucide-react";
 
 // Care-plan overview — the front door an owner sees when they tap "Care plan"
@@ -165,23 +167,11 @@ function CarePlanOverview() {
       <div className="mx-auto max-w-md">
         <header className="rounded-b-[26px] px-4 pb-6 pt-[calc(env(safe-area-inset-top)+14px)] text-white" style={{ background: S.forest }}>
           <div className="flex items-center justify-between gap-3">
-            <button
-              type="button"
-              onClick={() => navigate({ to: "/birds/$birdId", params: { birdId } })}
-              className="inline-flex min-h-[44px] items-center gap-1 rounded-full pl-2.5 pr-4 text-[15px] font-[700] text-white"
-              style={{ background: S.forestDeep }}
-            >
-              <ChevronLeft className="size-5" aria-hidden="true" /> {t("planOverview.birds", "Birds")}
-            </button>
+            <KyaIconButton label={t("planOverview.back", "Back")} onClick={() => navigate({ to: "/birds/$birdId", params: { birdId } })}>
+              <ChevronLeft className="size-5" aria-hidden="true" />
+            </KyaIconButton>
             {isOwner && (
-              <button
-                type="button"
-                onClick={() => navigate({ to: "/birds/$birdId/view-as-sitter", params: { birdId } })}
-                className="inline-flex min-h-[44px] items-center px-1 text-[15px] font-[700]"
-                style={{ color: S.lime }}
-              >
-                {t("planOverview.viewAsYourSitter", "View as your sitter")}
-              </button>
+              <HeaderPill action={{ label: t("planOverview.viewAsSitterPill", "View as sitter"), icon: <Eye className="size-4" />, onClick: () => navigate({ to: "/birds/$birdId/view-as-sitter", params: { birdId } }) }} />
             )}
           </div>
 
@@ -196,7 +186,7 @@ function CarePlanOverview() {
               </span>
             )}
             <div className="min-w-0">
-              <h1 className="m-0 truncate text-[34px] font-[700] leading-[1.06] tracking-[-0.02em]" style={{ fontFamily: SERIF }}>{name}</h1>
+              <h1 className="m-0 text-[30px] font-[700] leading-[1.1]" style={{ fontFamily: SERIF }}>{t("planOverview.titleNamed", "{{name}}'s care plan", { name })}</h1>
               {bird?.species && <p className="m-0 mt-1 text-[15px]" style={{ color: S.mist }}>{speciesLabel(t, bird.species)}</p>}
             </div>
           </div>

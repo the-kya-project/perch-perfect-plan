@@ -140,7 +140,7 @@ function ScanPage() {
         </div>
       </header>
       <p className="mx-auto max-w-md px-5 pt-4 text-sm leading-relaxed text-[#5f5e5a]">{t("sitter.scan.intro", "A quick once-over to make sure {{name}}'s doing well.", { name: ctx.bird.name })}</p>
-      <ScanForm key={ctx.activeBirdId} submitting={m.isPending} submitLabel={t("sitter.scan.submit", "Submit health check")} onSubmit={(p) => m.mutate(p)} />
+      <ScanForm key={ctx.activeBirdId} birdName={ctx.bird.name} submitting={m.isPending} submitLabel={t("sitter.scan.submit", "Submit health check")} onSubmit={(p) => m.mutate(p)} />
     </div>
   );
 }

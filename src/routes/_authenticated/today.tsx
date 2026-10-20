@@ -1,6 +1,9 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { CaregiverHome, CaregiverEmpty, CaregiverLoading, useActiveCaregiver } from "@/components/CaregiverHome";
-import { InkHero } from "@/components/system";
+import { useCallback } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useActiveCaregiver } from "@/components/CaregiverHome";
+import { KyaCaregiverToday, KyaCaregiverEmpty, KyaCaregiverLoading, caregiverGreeting, caregiverBackLine } from "@/components/CaregiverToday";
+import { KyaPage, KyaBody } from "@/components/kya";
+import { PageHeader, useGoBack } from "@/components/headers";
 import { useTranslation } from "react-i18next";
 import i18next from "i18next";
 
@@ -15,32 +18,38 @@ export const Route = createFileRoute("/_authenticated/today")({
 
 function TodayPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const goBack = useGoBack(useCallback(() => navigate({ to: "/dashboard" }), [navigate]));
   const { data, isLoading } = useActiveCaregiver();
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[var(--cream)] pb-nav">
-        <div className="mx-auto max-w-md">
-          <InkHero eyebrow={t("todayPage.today", "Today")} headline={t("todayPage.loading", "Loading…")} />
-          <main className="px-5 pt-5"><CaregiverLoading /></main>
-        </div>
-      </div>
+      <KyaPage>
+        <PageHeader title={t("todayPage.today", "Today")} onBack={goBack} />
+        <KyaBody><KyaCaregiverLoading /></KyaBody>
+      </KyaPage>
     );
   }
   if (!data || data.sits.length === 0) {
     return (
-      <div className="min-h-screen bg-[var(--cream)] pb-nav">
-        <div className="mx-auto max-w-md">
-          <InkHero eyebrow={t("todayPage.today", "Today")} headline={t("todayPage.nothingOnForToday", "Nothing on for today.")} />
-          <main className="px-5 pt-5"><CaregiverEmpty upcoming={data?.upcoming ?? null} /></main>
-        </div>
-      </div>
+      <KyaPage>
+        <PageHeader title={t("todayPage.nothingOnTitle", "Nothing on for today")} onBack={goBack} />
+        <KyaBody><KyaCaregiverEmpty upcoming={data?.upcoming ?? null} /></KyaBody>
+      </KyaPage>
     );
   }
+  // One sit: its "back in N days" line sits under the greeting. Several: each
+  // block carries its own line.
+  const single = data.sits.length === 1 ? data.sits[0] : null;
   return (
-    <div className="min-h-screen bg-[var(--cream)] pb-nav">
-      <div className="mx-auto max-w-md">
-        <CaregiverHome data={data} />
-      </div>
-    </div>
+    <KyaPage>
+      <PageHeader
+        title={caregiverGreeting(t)}
+        line={single ? caregiverBackLine(t, single) : undefined}
+        onBack={goBack}
+      />
+      <KyaBody className="gap-6">
+        <KyaCaregiverToday sits={data.sits} />
+      </KyaBody>
+    </KyaPage>
   );
 }

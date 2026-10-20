@@ -1,9 +1,10 @@
 import { createFileRoute, useNavigate, useRouter, useCanGoBack } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowLeft, Check, Mail } from "lucide-react";
+import { Check, Mail } from "lucide-react";
 import { toast } from "sonner";
-import { InkHero, Card, RecordRow, StatusPill, IconTile, PrimaryButton, CtaLink } from "@/components/system";
+import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaField, KyaPrimaryButton, KyaLink, KyaGroupLabel, KyaRow, KyaIconTile, KyaTag } from "@/components/kya";
+import { PageHeader } from "@/components/headers";
 import { authErrorMessage } from "@/lib/authErrorMessage";
 import { useTranslation } from "react-i18next";
 import i18next from "i18next";
@@ -84,97 +85,85 @@ function SecurityPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--cream)] pb-nav">
-      <div className="mx-auto max-w-md">
-        <InkHero
-          backIcon={<ArrowLeft className="size-5" />}
-          onBack={goBack}
-          eyebrow={t("accountSecurity.eyebrow", "Account")}
-          headline={t("accountSecurity.headline", "Password & sign-in")}
-        />
+    <KyaPage>
+      <PageHeader title={t("accountSecurity.headline", "Password & sign-in")} onBack={goBack} />
 
-        <main className="space-y-4 px-5 pt-5">
-          {/* Password */}
-          <Card className="p-4">
-            <h2 className="t-item">{hasPassword ? t("accountSecurity.changePassword", "Change password") : t("accountSecurity.setAPassword", "Set a password")}</h2>
-            <p className="t-body mt-1 text-[var(--mute)]">
-              {hasPassword
-                ? t("accountSecurity.changeBody", "Choose a new password for signing in with your email.")
-                : t("accountSecurity.setBody", "Add a password so you can sign in with your email as well as Google.")}
-            </p>
+      <KyaBody>
+        {/* Password */}
+        <KyaCard className="p-4">
+          <KyaHeading>{hasPassword ? t("accountSecurity.changePassword", "Change password") : t("accountSecurity.setAPassword", "Set a password")}</KyaHeading>
+          <p className="m-0 mt-1.5 text-[15px] leading-[1.5]" style={{ color: K.quiet }}>
+            {hasPassword
+              ? t("accountSecurity.changeBody", "Choose a new password for signing in with your email.")
+              : t("accountSecurity.setBody", "Add a password so you can sign in with your email as well as Google.")}
+          </p>
 
-            <label className="t-eyebrow mt-4 block text-[var(--mute)]">{t("accountSecurity.newPassword", "New password")}</label>
-            <input
+          <div className="mt-4 flex flex-col gap-3">
+            <KyaField
+              id="security-new-password"
+              label={t("accountSecurity.newPassword", "New password")}
               type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="new-password"
               placeholder={t("accountSecurity.newPasswordPlaceholder", "At least 6 characters")}
-              className="input mt-1"
             />
-            <label className="t-eyebrow mt-3 block text-[var(--mute)]">{t("accountSecurity.confirmNewPassword", "Confirm new password")}</label>
-            <input
+            <KyaField
+              id="security-confirm-password"
+              label={t("accountSecurity.confirmNewPassword", "Confirm new password")}
               type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password"
               placeholder={t("accountSecurity.reenterPassword", "Re-enter password")}
-              className="input mt-1"
             />
-
-            <div className="mt-4">
-              <PrimaryButton
-                tone="ink"
-                onPress={savePassword}
-                disabled={saving || !pw || !confirm}
-                type="button"
-              >
-                {saving ? t("accountSecurity.saving", "Saving…") : hasPassword ? t("accountSecurity.updatePassword", "Update password") : t("accountSecurity.setPassword", "Set password")}
-              </PrimaryButton>
-            </div>
-
-            {hasPassword && (
-              <div className="mt-3 flex justify-center">
-                <CtaLink
-                  label={sendingReset ? t("accountSecurity.sending", "Sending…") : t("accountSecurity.emailResetLink", "Email me a reset link instead")}
-                  icon={<span />}
-                  onPress={() => { if (!sendingReset) emailResetLink(); }}
-                />
-              </div>
-            )}
-          </Card>
-
-          {/* Connected accounts */}
-          <div>
-            <p className="t-eyebrow mb-2 px-1 text-[var(--mute2)]">{t("accountSecurity.signInMethods", "Sign-in methods")}</p>
-            <Card>
-              <RecordRow
-                leading={<IconTile tone="pale" size={40} icon={<Mail className="size-5" />} />}
-                title={t("accountSecurity.emailAndPassword", "Email & password")}
-                subtitle={email}
-                trailing={
-                  hasPassword
-                    ? <StatusPill tone="good"><Check className="size-3" /> {t("accountSecurity.passwordSet", "Password set")}</StatusPill>
-                    : <StatusPill tone="off">{t("accountSecurity.noPassword", "No password")}</StatusPill>
-                }
-              />
-              <RecordRow
-                last
-                leading={
-                  <span className="grid size-10 shrink-0 place-items-center rounded-[11px] bg-white ring-1 ring-[var(--line2)]">
-                    <GoogleGlyph />
-                  </span>
-                }
-                title="Google"
-                subtitle={googleConnected ? (googleEmail ?? t("accountSecurity.connected", "Connected")) : t("accountSecurity.notConnected", "Not connected")}
-                trailing={
-                  googleConnected
-                    ? <StatusPill tone="good"><Check className="size-3" /> {t("accountSecurity.connected", "Connected")}</StatusPill>
-                    : <StatusPill tone="off">{t("accountSecurity.notConnected", "Not connected")}</StatusPill>
-                }
-              />
-            </Card>
-            {loaded && !hasPassword && !googleConnected && (
-              <p className="t-body mt-2 px-1 text-[var(--mute)]">{t("accountSecurity.noMethod", "No sign-in method detected — set a password above to be safe.")}</p>
-            )}
           </div>
-        </main>
-      </div>
-    </div>
+
+          <div className="mt-4">
+            <KyaPrimaryButton onClick={savePassword} disabled={saving || !pw || !confirm}>
+              {saving ? t("accountSecurity.saving", "Saving…") : hasPassword ? t("accountSecurity.updatePassword", "Update password") : t("accountSecurity.setPassword", "Set password")}
+            </KyaPrimaryButton>
+          </div>
+
+          {hasPassword && (
+            <div className="mt-2 flex justify-center">
+              <KyaLink onClick={() => { if (!sendingReset) emailResetLink(); }}>
+                {sendingReset ? t("accountSecurity.sending", "Sending…") : t("accountSecurity.emailResetLink", "Email me a reset link instead")}
+              </KyaLink>
+            </div>
+          )}
+        </KyaCard>
+
+        {/* Connected accounts */}
+        <section className="flex flex-col gap-2">
+          <KyaGroupLabel>{t("accountSecurity.signInMethods", "Sign-in methods")}</KyaGroupLabel>
+          <KyaCard>
+            <KyaRow
+              leading={<KyaIconTile><Mail className="size-5" /></KyaIconTile>}
+              title={t("accountSecurity.emailAndPassword", "Email & password")}
+              detail={email}
+              trailing={
+                hasPassword
+                  ? <KyaTag tone="lime"><Check className="mr-1 size-3" /> {t("accountSecurity.passwordSet", "Password set")}</KyaTag>
+                  : <KyaTag tone="amber">{t("accountSecurity.noPassword", "No password")}</KyaTag>
+              }
+            />
+            <KyaRow
+              last
+              leading={
+                <span className="grid size-10 shrink-0 place-items-center rounded-[12px] bg-white" style={{ boxShadow: `inset 0 0 0 1px ${K.line}` }}>
+                  <GoogleGlyph />
+                </span>
+              }
+              title="Google"
+              detail={googleConnected ? (googleEmail ?? t("accountSecurity.connected", "Connected")) : t("accountSecurity.notConnected", "Not connected")}
+              trailing={
+                googleConnected
+                  ? <KyaTag tone="lime"><Check className="mr-1 size-3" /> {t("accountSecurity.connected", "Connected")}</KyaTag>
+                  : <KyaTag tone="amber">{t("accountSecurity.notConnected", "Not connected")}</KyaTag>
+              }
+            />
+          </KyaCard>
+          {loaded && !hasPassword && !googleConnected && (
+            <p className="m-0 px-1 text-[14px] leading-[1.5]" style={{ color: K.quiet }}>{t("accountSecurity.noMethod", "No sign-in method detected — set a password above to be safe.")}</p>
+          )}
+        </section>
+      </KyaBody>
+    </KyaPage>
   );
 }
 

@@ -1,11 +1,12 @@
-import { createFileRoute, useNavigate, useRouter, useCanGoBack } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, BookOpen, ImagePlus, Check, X, Loader2, Trash2, Paperclip, FileText } from "lucide-react";
-import { InkHero, PhotoHero, StatusPill, Card, PrimaryButton } from "@/components/system";
+import { Plus, BookOpen, ImagePlus, Loader2, Trash2, Paperclip, FileText } from "lucide-react";
+import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaPrimaryButton, KyaGroupLabel, KyaSheet, KyaField } from "@/components/kya";
+import { PageHeader, useGoBack } from "@/components/headers";
 import { MemberContextBanner } from "@/components/MemberContextBanner";
 import { useCapability } from "@/lib/useCapability";
 import { useBirdRole } from "@/lib/useBirdRole";
@@ -14,9 +15,9 @@ import { uploadJournalPhoto, signJournalPhotos } from "@/lib/journalPhoto";
 import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
 import {
   attachmentRejectionReason, uploadJournalAttachment, listJournalAttachments,
-  removeJournalAttachment, signJournalAttachments, type JournalAttachment,
+  removeJournalAttachment, signJournalAttachments,
 } from "@/lib/journalAttachment";
-import { JournalEntryView } from "@/components/JournalEntryView";
+import { JournalEntryView, JournalKindTag } from "@/components/JournalEntryView";
 import { useOpenSignedFile } from "@/lib/useOpenSignedFile";
 import { friendlyError } from "@/lib/errorMessage";
 import { formatLocalDate } from "@/lib/dates";
@@ -33,26 +34,20 @@ export const Route = createFileRoute("/_authenticated/birds/$birdId/journal")({
 type Kind = "molt" | "meds" | "vet" | "behavior" | "note" | "other";
 type Entry = { id: string; kind: Kind; title: string | null; body: string | null; occurred_on: string; photo_path: string | null };
 
-const KINDS: { value: Kind; label: string; pill: string }[] = [
-  { value: "molt", label: "Molt", pill: "bg-[var(--amber-fill)] text-[var(--amber-ink)]" },
-  { value: "meds", label: "Meds", pill: "bg-[var(--pale)] text-[var(--ink)]" },
-  { value: "vet", label: "Vet visit", pill: "bg-[var(--pale)] text-[var(--ink)]" },
-  { value: "behavior", label: "Behavior", pill: "bg-[var(--pale2)] text-[var(--ink)]" },
-  { value: "note", label: "Note", pill: "bg-[var(--cream2)] text-[var(--mute)]" },
-  { value: "other", label: "Other", pill: "bg-[var(--cream2)] text-[var(--mute)]" },
-];
-const KIND = Object.fromEntries(KINDS.map((k) => [k.value, k])) as Record<Kind, (typeof KINDS)[number]>;
+const KINDS: Kind[] = ["molt", "meds", "vet", "behavior", "note", "other"];
 
+// The chips group the stored kinds: Health = molt, meds, vet visit;
+// Behavior = behavior; Notes = note, other.
 type Filter = "all" | "health" | "behavior" | "notes";
-const FILTERS: { value: Filter; label: string; kinds: Kind[] }[] = [
-  { value: "all", label: "All", kinds: ["molt", "meds", "vet", "behavior", "note", "other"] },
-  { value: "health", label: "Health", kinds: ["molt", "meds", "vet"] },
-  { value: "behavior", label: "Behavior", kinds: ["behavior"] },
-  { value: "notes", label: "Notes", kinds: ["note", "other"] },
+const FILTERS: { value: Filter; kinds: Kind[] }[] = [
+  { value: "all", kinds: KINDS },
+  { value: "health", kinds: ["molt", "meds", "vet"] },
+  { value: "behavior", kinds: ["behavior"] },
+  { value: "notes", kinds: ["note", "other"] },
 ];
 const todayStr = () => localDateISO();
 
-// Display labels — the KINDS/FILTERS constants keep English; `kind` is stored.
+// Display labels — `kind` is what's stored.
 function kindLabel(t: TFunction, kind: Kind): string {
   switch (kind) {
     case "molt": return t("birdJournal.kindMolt", "Molt");
@@ -81,17 +76,33 @@ function emptyFilterText(t: TFunction, f: Filter): string {
   }
 }
 
+const isoDay = (iso: string) => new Date(`${iso.slice(0, 10)}T12:00:00`);
+// Month + day only: the month label above each group already carries the year.
+const cardDate = (iso: string) => formatLocalDate(isoDay(iso), { month: "short", day: "numeric" });
+const fullDate = (iso: string) => formatLocalDate(isoDay(iso), { month: "short", day: "numeric", year: "numeric" });
+const monthLabel = (iso: string) => formatLocalDate(isoDay(iso), { month: "long", year: "numeric" });
+
+/** Entries (already newest first) grouped by calendar month. */
+function byMonth(entries: Entry[]): { key: string; label: string; entries: Entry[] }[] {
+  const groups: { key: string; label: string; entries: Entry[] }[] = [];
+  for (const e of entries) {
+    const key = e.occurred_on.slice(0, 7);
+    const last = groups[groups.length - 1];
+    if (last && last.key === key) last.entries.push(e);
+    else groups.push({ key, label: monthLabel(e.occurred_on), entries: [e] });
+  }
+  return groups;
+}
+
 function JournalFacet() {
   const { t } = useTranslation();
   const { birdId } = Route.useParams();
   const canHealth = useCapability("record_health", { birdId });
   const isOwner = useBirdRole(birdId) === "owner";
   const navigate = useNavigate();
-  const router = useRouter();
-  const canGoBack = useCanGoBack();
   // Return where the visitor came from (bird record, or a Remembering memorial
   // card); fall back to the bird record when there's no real history.
-  const goBack = () => (canGoBack && window.history.length > 1 ? router.history.back() : navigate({ to: "/birds/$birdId", params: { birdId } }));
+  const goBack = useGoBack(useCallback(() => navigate({ to: "/birds/$birdId", params: { birdId } }), [navigate, birdId]));
   const qc = useQueryClient();
   const [filter, setFilter] = useState<Filter>("all");
   const [editing, setEditing] = useState<Entry | null | "new">(null);
@@ -107,7 +118,6 @@ function JournalFacet() {
       return data as { name: string } | null;
     },
   });
-  const name = bird?.name ?? t("birdJournal.thisBird", "this bird");
 
   const { data: entries } = useQuery({
     queryKey: ["journal-entries", birdId],
@@ -157,74 +167,86 @@ function JournalFacet() {
   const shown = all.filter((e) => FILTERS.find((f) => f.value === filter)!.kinds.includes(e.kind));
 
   return (
-    <div className="min-h-screen bg-[var(--cream)] pb-nav">
-      <div className="mx-auto max-w-md">
-        <InkHero
-          backIcon={<ArrowLeft className="size-5" />}
-          onBack={goBack}
-          eyebrow={t("birdJournal.eyebrow", "Journal")}
-          headline={t("birdJournal.headline", "What {{name}}'s been up to.", { name })}
-          body={t("birdJournal.body", "The little things you notice now can matter later.")}
-          cta={canHealth ? { label: t("birdJournal.addAnEntry", "Add an entry"), tone: "lime", icon: <Plus className="size-4" />, onPress: () => setEditing("new") } : undefined}
-        />
+    <KyaPage>
+      <PageHeader
+        onBack={goBack}
+        title={bird?.name
+          ? t("birdJournal.titleNamed", "{{name}}'s journal", { name: bird.name })
+          : t("birdJournal.titlePlain", "Journal")}
+        line={t("birdJournal.body", "The little things you notice now can matter later.")}
+      />
 
-        <main className="space-y-4 px-5 pt-5">
-          <MemberContextBanner birdId={birdId} />
-          {/* Filter chips */}
-          <div className="flex flex-wrap gap-2">
-            {FILTERS.map((f) => (
+      <KyaBody>
+        <MemberContextBanner birdId={birdId} />
+
+        {canHealth && (
+          <KyaPrimaryButton icon={<Plus className="size-5" />} onClick={() => setEditing("new")}>
+            {t("birdJournal.addAnEntry", "Add an entry")}
+          </KyaPrimaryButton>
+        )}
+
+        {/* Filter chips: 40px pills inside 44px tap targets. */}
+        <div className="flex flex-wrap gap-x-2" role="group" aria-label={t("birdJournal.filterLabel", "Show entries")}>
+          {FILTERS.map((f) => {
+            const on = filter === f.value;
+            return (
               <button
                 key={f.value}
                 type="button"
                 onClick={() => setFilter(f.value)}
-                aria-pressed={filter === f.value}
-                className="inline-flex min-h-[44px] items-center"
+                aria-pressed={on}
+                className="inline-flex min-h-[44px] items-center active:scale-[0.98]"
               >
-                <StatusPill tone={filter === f.value ? "on" : "off"}>{filterLabel(t, f.value)}</StatusPill>
+                <span
+                  className="inline-flex h-10 items-center rounded-full px-4 text-[15px] font-[700]"
+                  style={on
+                    ? { background: K.forest, color: "#fff", border: `1.5px solid ${K.forest}` }
+                    : { background: "#fff", color: K.forest, border: `1.5px solid ${K.line}` }}
+                >
+                  {filterLabel(t, f.value)}
+                </span>
               </button>
-            ))}
-          </div>
+            );
+          })}
+        </div>
 
-          {all.length === 0 ? (
-            <section className="rounded-[18px] bg-[var(--cream2)] p-8 text-center ring-1 ring-[var(--line2)]">
-              <BookOpen className="mx-auto size-7 text-[var(--moss)]" />
-              <p className="t-body mt-3 text-[var(--ink)]">{t("birdJournal.emptyIntro", "Nothing here yet. The journal is where you track health and behavior over time — molts, meds, vet visits, a new word, an off day. Add an entry whenever something's worth noting for the record.")}</p>
-              <div className="mt-4">
-                <PrimaryButton tone="lime" icon={<Plus className="size-4" />} onPress={() => setEditing("new")} full={false}>
-                  {t("birdJournal.addFirst", "Add first entry")}
-                </PrimaryButton>
-              </div>
-            </section>
-          ) : shown.length === 0 ? (
-            <p className="t-body rounded-[18px] bg-[var(--cream2)] p-6 text-center text-[var(--mute)] ring-1 ring-[var(--line2)]">
-              {emptyFilterText(t, filter)}
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {shown.map((e) => (
+        {all.length === 0 ? (
+          <KyaCard className="p-7 text-center">
+            <BookOpen className="mx-auto size-7" style={{ color: K.moss }} aria-hidden="true" />
+            <p className="m-0 mt-3 text-[15px] leading-[1.5]" style={{ color: K.ink }}>{t("birdJournal.emptyIntro", "Nothing here yet. The journal is where you track health and behavior over time — molts, meds, vet visits, a new word, an off day. Add an entry whenever something's worth noting for the record.")}</p>
+          </KyaCard>
+        ) : shown.length === 0 ? (
+          <KyaCard className="p-6 text-center">
+            <p className="m-0 text-[15px]" style={{ color: K.quiet }}>{emptyFilterText(t, filter)}</p>
+          </KyaCard>
+        ) : (
+          byMonth(shown).map((g) => (
+            <section key={g.key} className="flex flex-col gap-2.5">
+              <KyaGroupLabel>{g.label}</KyaGroupLabel>
+              {g.entries.map((e) => (
                 <EntryCard
                   key={e.id}
                   entry={e}
+                  label={kindLabel(t, e.kind)}
                   photoUrl={e.photo_path ? photoUrls?.[e.photo_path] ?? null : null}
                   attachmentCount={attachCounts?.[e.id] ?? 0}
                   onOpen={() => setViewingId(e.id)}
                 />
               ))}
-            </div>
-          )}
-        </main>
-      </div>
+            </section>
+          ))
+        )}
+      </KyaBody>
 
-      {/* Read view. Rendered only when the editor is closed: opening Edit keeps
-          viewingId set, so dismissing the editor lands back here on the updated
-          entry rather than dumping the owner out to the list. */}
+      {/* Read view. Rendered only when the editor is closed, so two sheets never
+          stack: opening Edit keeps viewingId set, and dismissing the editor
+          lands back here on the updated entry. */}
       {viewing && !editing && (
         <JournalEntryView
           entry={viewing}
           photoUrl={viewing.photo_path ? photoUrls?.[viewing.photo_path] ?? null : null}
           kindLabel={kindLabel(t, viewing.kind)}
-          kindPill={KIND[viewing.kind].pill}
-          dateLabel={fmtDate(viewing.occurred_on)}
+          dateLabel={fullDate(viewing.occurred_on)}
           canEdit={canHealth}
           onEdit={() => setEditing(viewing)}
           onClose={() => setViewingId(null)}
@@ -251,48 +273,53 @@ function JournalFacet() {
           }}
         />
       )}
-    </div>
+    </KyaPage>
   );
 }
 
-// One journal entry as a tokenized white card. If the entry has a photo it
-// renders as a PhotoHero-style band across the top; tapping anywhere opens the
-// existing edit flow.
-function EntryCard({ entry, photoUrl, attachmentCount, onOpen }: { entry: Entry; photoUrl: string | null; attachmentCount: number; onOpen: () => void }) {
+// One journal entry as a white card: photo band (if any), bold title with the
+// date on the right, the type tag, then the text. Tapping opens the read view.
+function EntryCard({ entry, label, photoUrl, attachmentCount, onOpen }: { entry: Entry; label: string; photoUrl: string | null; attachmentCount: number; onOpen: () => void }) {
   const { t } = useTranslation();
-  const k = KIND[entry.kind];
-  const label = kindLabel(t, entry.kind);
   return (
-    <Card>
-      <button type="button" onClick={onOpen} className="block w-full text-left active:bg-black/[0.02]">
-        {photoUrl && <PhotoHero src={photoUrl} height={160} alt="" />}
+    <KyaCard>
+      <button type="button" onClick={onOpen} className="block w-full text-left active:bg-black/[0.02]" style={{ color: K.forest }}>
+        {photoUrl && <img src={photoUrl} alt="" className="block h-40 w-full object-cover" />}
         <div className="p-4">
           <div className="flex items-start justify-between gap-3">
-            <h3 className="t-item min-w-0 flex-1">{entry.title || label}</h3>
-            <span className="t-meta shrink-0">{fmtDate(entry.occurred_on)}</span>
+            <h3 className="m-0 min-w-0 flex-1 text-[16px] font-[700] leading-[1.3]">{entry.title || label}</h3>
+            <span className="shrink-0 pt-0.5 text-[13px]" style={{ color: K.quiet }}>{cardDate(entry.occurred_on)}</span>
           </div>
-          <div className="mt-1.5">
-            <span className={`inline-flex items-center rounded-full px-[9px] py-[3px] text-[11.5px] font-[500] ${k.pill}`}>{label}</span>
+          <div className="mt-2">
+            <JournalKindTag kind={entry.kind}>{label}</JournalKindTag>
           </div>
-          {entry.body && <p className="t-body mt-2 line-clamp-3 text-[var(--ink2)]">{entry.body}</p>}
+          {entry.body && <p className="m-0 mt-2 line-clamp-3 text-[15px] leading-[1.5]" style={{ color: K.ink }}>{entry.body}</p>}
           {/* Quiet marker — the files themselves live in the entry sheet. */}
           {attachmentCount > 0 && (
-            <p className="t-meta mt-2 inline-flex items-center gap-1 text-[var(--mute2)]">
-              <Paperclip className="size-3.5" />
+            <p className="m-0 mt-2 inline-flex items-center gap-1 text-[13px]" style={{ color: K.quiet }}>
+              <Paperclip className="size-3.5" aria-hidden="true" />
               {attachmentCount === 1 ? t("birdJournal.filesOne", "{{n}} file", { n: attachmentCount }) : t("birdJournal.filesOther", "{{n}} files", { n: attachmentCount })}
             </p>
           )}
         </div>
       </button>
-    </Card>
+    </KyaCard>
   );
 }
 
-function fmtDate(iso: string): string {
-  const d = new Date(`${iso.slice(0, 10)}T12:00:00`);
-  const now = new Date();
-  const sameYear = d.getFullYear() === now.getFullYear();
-  return formatLocalDate(d, { month: "short", day: "numeric", ...(sameYear ? {} : { year: "numeric" }) });
+/** 13.5px bold label over a sheet control, matching KyaField. */
+function FieldLabel({ children, htmlFor }: { children: ReactNode; htmlFor?: string }) {
+  return <label htmlFor={htmlFor} className="mb-1.5 block text-[13.5px] font-[700]" style={{ color: K.forest }}>{children}</label>;
+}
+
+/** Dashed white pill that opens a file picker. */
+function PickButton({ icon, children, accept, multiple, disabled, onChange }: { icon: ReactNode; children: ReactNode; accept: string; multiple?: boolean; disabled?: boolean; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) {
+  return (
+    <label className={`flex min-h-[48px] items-center justify-center gap-2 rounded-full border-[1.5px] border-dashed bg-white px-4 text-[15px] font-[700] ${disabled ? "opacity-50" : "cursor-pointer active:scale-[0.99]"}`} style={{ borderColor: "#c4d2c4", color: K.moss }}>
+      {icon}{children}
+      <input type="file" accept={accept} multiple={multiple} className="hidden" disabled={disabled} onChange={onChange} />
+    </label>
+  );
 }
 
 function EntryForm({ birdId, entry, isOwner, onClose, onSaved, onDeleted }: { birdId: string; entry: Entry | null; isOwner: boolean; onClose: () => void; onSaved: () => void; onDeleted: () => void }) {
@@ -452,120 +479,130 @@ function EntryForm({ birdId, entry, isOwner, onClose, onSaved, onDeleted }: { bi
 
   const showPhoto = photoData ?? (keepPhoto && existingPhoto ? "existing" : null);
   const totalAttachments = shownAttachments.length + pendingFiles.length;
+  const busy = saving || deleting;
+  const removeLink = "shrink-0 px-2 min-h-[44px] text-[14px] font-[700] underline disabled:opacity-50";
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-end sm:place-items-center">
-      <div className="absolute inset-0 bg-black/30" onClick={saving ? undefined : onClose} />
-      <div className="relative max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-2xl bg-[var(--cream)] p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-xl sm:rounded-2xl">
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="t-section">{entry ? t("birdJournal.editEntry", "Edit entry") : t("birdJournal.addEntry", "Add entry")}</h2>
-          <button onClick={onClose} aria-label={t("birdJournal.close", "Close")} className="grid size-9 place-items-center rounded-full text-[var(--mute)]"><X className="size-5" /></button>
+    <KyaSheet
+      onClose={busy ? () => {} : onClose}
+      closeLabel={t("birdJournal.close", "Close")}
+      title={<KyaHeading size={24}>{entry ? t("birdJournal.editEntry", "Edit entry") : t("birdJournal.addEntryTitle", "Add an entry")}</KyaHeading>}
+      footer={
+        <KyaPrimaryButton onClick={save} disabled={!valid || busy || photoBusy}>
+          {saving
+            ? (uploadingIdx !== null ? t("birdJournal.uploadingNofM", "Uploading {{n}} of {{total}}…", { n: uploadingIdx + 1, total: pendingFiles.length }) : t("birdJournal.saving", "Saving…"))
+            : t("birdJournal.save", "Save")}
+        </KyaPrimaryButton>
+      }
+    >
+      <div className="flex flex-col gap-4">
+        <div>
+          <FieldLabel>{t("birdJournal.kindPick", "Kind")}</FieldLabel>
+          <div className="flex flex-wrap gap-x-2" role="radiogroup" aria-label={t("birdJournal.kindPick", "Kind")}>
+            {KINDS.map((k) => {
+              const on = kind === k;
+              return (
+                <button key={k} type="button" role="radio" aria-checked={on} onClick={() => setKind(k)} className="inline-flex min-h-[44px] items-center">
+                  <span className="inline-flex h-10 items-center rounded-full px-4 text-[15px] font-[700]" style={on ? { background: K.forest, color: "#fff", border: `1.5px solid ${K.forest}` } : { background: "#fff", color: K.forest, border: "1.5px solid #d5dfd5" }}>
+                    {kindLabel(t, k)}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        <label className="block">
-          <span className="mb-1 block text-xs font-[500] text-[var(--mute)]">{t("birdJournal.kindLabel", "Kind *")}</span>
-          <select value={kind} onChange={(e) => setKind(e.target.value as Kind)} className="h-11 w-full rounded-xl border border-[var(--line)] bg-white px-3 text-sm text-[var(--ink)]">
-            {KINDS.map((k) => <option key={k.value} value={k.value}>{kindLabel(t, k.value)}</option>)}
-          </select>
-        </label>
+        <KyaField
+          id="journal-title"
+          label={t("birdJournal.titleField", "Title")}
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          maxLength={120}
+          placeholder={t("birdJournal.titlePlaceholder", "e.g. Started wing molt")}
+        />
 
-        <label className="mt-3 block">
-          <span className="mb-1 block text-xs font-[500] text-[var(--mute)]">{t("birdJournal.titleLabel", "Title *")}</span>
-          <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={120} placeholder={t("birdJournal.titlePlaceholder", "e.g. Started wing molt")} className="h-11 w-full rounded-xl border border-[var(--line)] bg-white px-3 text-sm text-[var(--ink)]" />
-        </label>
+        <div>
+          <FieldLabel htmlFor="journal-body">{t("birdJournal.detailsLabel", "Details")}</FieldLabel>
+          <textarea
+            id="journal-body"
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            maxLength={2000}
+            rows={4}
+            placeholder={t("birdJournal.optional", "Optional")}
+            className="w-full rounded-[20px] border-[1.5px] bg-white px-4 py-3 text-[16px] leading-[1.5] outline-none focus:border-[#2d6a4f]"
+            style={{ borderColor: "#d5dfd5", color: K.forest }}
+          />
+        </div>
 
-        <label className="mt-3 block">
-          <span className="mb-1 block text-xs font-[500] text-[var(--mute)]">{t("birdJournal.detailsLabel", "Details")}</span>
-          <textarea value={body} onChange={(e) => setBody(e.target.value)} maxLength={2000} rows={3} placeholder={t("birdJournal.optional", "Optional")} className="w-full rounded-xl border border-[var(--line)] bg-white p-3 text-sm text-[var(--ink)]" />
-        </label>
+        <KyaField
+          id="journal-date"
+          type="date"
+          label={t("birdJournal.dateField", "Date")}
+          value={date}
+          max={todayStr()}
+          onChange={(e) => setDate(e.target.value)}
+        />
 
-        <label className="mt-3 block">
-          <span className="mb-1 block text-xs font-[500] text-[var(--mute)]">{t("birdJournal.dateLabel", "Date *")}</span>
-          <input type="date" value={date} max={todayStr()} onChange={(e) => setDate(e.target.value)} className="h-11 w-full rounded-xl border border-[var(--line)] bg-white px-3 text-sm text-[var(--ink)]" />
-        </label>
-
-        <div className="mt-3">
-          <span className="mb-1 block text-xs font-[500] text-[var(--mute)]">{t("birdJournal.photoLabel", "Photo")}</span>
+        <div>
+          <FieldLabel>{t("birdJournal.photoLabel", "Photo")}</FieldLabel>
           {showPhoto ? (
             <div className="flex items-center gap-3">
-              {photoData ? <img src={photoData} alt="" className="h-16 w-16 rounded-lg object-cover" /> : <span className="grid h-16 w-16 place-items-center rounded-lg bg-[var(--cream2)] text-[10px] text-[var(--mute2)]">{t("birdJournal.savedPhoto", "Saved photo")}</span>}
-              <button type="button" onClick={() => { setPhotoData(null); setKeepPhoto(false); }} className="text-xs font-[500] text-[var(--amber-ink)] underline">{t("birdJournal.removePhoto", "Remove photo")}</button>
+              {photoData
+                ? <img src={photoData} alt="" className="size-16 rounded-[12px] object-cover" />
+                : <span className="grid size-16 place-items-center rounded-[12px] text-center text-[11px]" style={{ background: K.mist, color: K.quiet }}>{t("birdJournal.savedPhoto", "Saved photo")}</span>}
+              <button type="button" onClick={() => { setPhotoData(null); setKeepPhoto(false); }} className={removeLink} style={{ color: K.red }}>{t("birdJournal.removePhoto", "Remove photo")}</button>
             </div>
           ) : (
-            <label className="flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[var(--line)] bg-white text-sm font-[500] text-[var(--mute)]">
-              {photoBusy ? <Loader2 className="size-4 animate-spin" /> : <ImagePlus className="size-4" />}
+            <PickButton icon={photoBusy ? <Loader2 className="size-4 animate-spin" /> : <ImagePlus className="size-4" />} accept="image/*" disabled={photoBusy} onChange={pickPhoto}>
               {photoBusy ? t("birdJournal.processing", "Processing…") : t("birdJournal.addPhoto", "Add a photo")}
-              <input type="file" accept="image/*" className="hidden" disabled={photoBusy} onChange={pickPhoto} />
-            </label>
+            </PickButton>
           )}
         </div>
 
         {/* Attachments — PDFs, several per entry. Applied on Save. */}
-        <div className="mt-3">
-          <span className="mb-1 block text-xs font-[500] text-[var(--mute)]">{t("birdJournal.filesLabel", "Files")}</span>
+        <div>
+          <FieldLabel>{t("birdJournal.filesLabel", "Files")}</FieldLabel>
           {totalAttachments > 0 && (
-            <div className="mb-2 overflow-hidden rounded-xl bg-white ring-1 ring-[var(--line2)]">
+            <div className="mb-2 overflow-hidden rounded-[16px] border-[1.5px] bg-white" style={{ borderColor: K.line }}>
               {shownAttachments.map((a, i) => (
-                <div key={a.id} className={`flex min-h-[48px] items-center gap-2 px-3 ${i ? "border-t border-[var(--line2)]" : ""}`}>
-                  <FileText className="size-4 shrink-0 text-[var(--mute2)]" />
+                <div key={a.id} className="flex min-h-[48px] items-center gap-2 px-3" style={i ? { borderTop: `1px solid ${K.line}` } : undefined}>
+                  <FileText className="size-4 shrink-0" style={{ color: K.quiet }} aria-hidden="true" />
                   <button
                     type="button"
                     onClick={() => openSigned(a.id, async () => (await signJournalAttachments([a.storage_path])).get(a.storage_path))}
                     disabled={saving}
-                    className="min-w-0 flex-1 truncate py-2 text-left text-sm text-[var(--ink)] underline disabled:opacity-50"
+                    className="min-h-[44px] min-w-0 flex-1 truncate text-left text-[15px] underline disabled:opacity-50"
+                    style={{ color: K.forest }}
                   >
                     {a.file_name}
                   </button>
-                  {openingKey === a.id && <Loader2 className="size-4 shrink-0 animate-spin text-[var(--mute2)]" />}
-                  <button
-                    type="button"
-                    onClick={() => setRemovedIds((p) => new Set(p).add(a.id))}
-                    disabled={saving}
-                    className="shrink-0 px-1 text-xs font-[500] text-[var(--amber-ink)] underline disabled:opacity-50"
-                  >
+                  {openingKey === a.id && <Loader2 className="size-4 shrink-0 animate-spin" style={{ color: K.quiet }} />}
+                  <button type="button" onClick={() => setRemovedIds((p) => new Set(p).add(a.id))} disabled={saving} className={removeLink} style={{ color: K.red }}>
                     {t("birdJournal.remove", "Remove")}
                   </button>
                 </div>
               ))}
               {pendingFiles.map((f, i) => (
-                <div
-                  key={`pending-${i}`}
-                  className={`flex min-h-[48px] items-center gap-2 px-3 ${shownAttachments.length || i ? "border-t border-[var(--line2)]" : ""}`}
-                >
+                <div key={`pending-${i}`} className="flex min-h-[48px] items-center gap-2 px-3" style={shownAttachments.length || i ? { borderTop: `1px solid ${K.line}` } : undefined}>
                   {uploadingIdx === i
-                    ? <Loader2 className="size-4 shrink-0 animate-spin text-[var(--mute2)]" />
-                    : <FileText className="size-4 shrink-0 text-[var(--mute2)]" />}
-                  <span className="min-w-0 flex-1 truncate py-2 text-sm text-[var(--ink)]">{f.name}</span>
-                  <span className="t-meta shrink-0 text-[var(--mute2)]">
+                    ? <Loader2 className="size-4 shrink-0 animate-spin" style={{ color: K.quiet }} />
+                    : <FileText className="size-4 shrink-0" style={{ color: K.quiet }} aria-hidden="true" />}
+                  <span className="min-w-0 flex-1 truncate py-2 text-[15px]" style={{ color: K.forest }}>{f.name}</span>
+                  <span className="shrink-0 text-[13px]" style={{ color: K.quiet }}>
                     {uploadingIdx === i ? t("birdJournal.uploading", "Uploading…") : t("birdJournal.notSavedYet", "Not saved yet")}
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => setPendingFiles((p) => p.filter((_, j) => j !== i))}
-                    disabled={saving}
-                    className="shrink-0 px-1 text-xs font-[500] text-[var(--amber-ink)] underline disabled:opacity-50"
-                  >
+                  <button type="button" onClick={() => setPendingFiles((p) => p.filter((_, j) => j !== i))} disabled={saving} className={removeLink} style={{ color: K.red }}>
                     {t("birdJournal.remove", "Remove")}
                   </button>
                 </div>
               ))}
             </div>
           )}
-          <label className="flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[var(--line)] bg-white text-sm font-[500] text-[var(--mute)]">
-            <Paperclip className="size-4" />
+          <PickButton icon={<Paperclip className="size-4" />} accept="application/pdf" multiple disabled={saving} onChange={pickAttachments}>
             {totalAttachments > 0 ? t("birdJournal.attachAnother", "Attach another PDF") : t("birdJournal.attachPdf", "Attach a PDF")}
-            <input type="file" accept="application/pdf" multiple className="hidden" disabled={saving} onChange={pickAttachments} />
-          </label>
-          <p className="t-meta mt-1 px-1 text-[var(--mute2)]">{t("birdJournal.attachHint", "Vet records, lab results, discharge notes. PDFs up to 25 MB.")}</p>
-        </div>
-
-        <div className="mt-5 flex gap-2">
-          <PrimaryButton tone="lime" type="button" icon={<Check className="size-4" />} onPress={save} disabled={!valid || saving || photoBusy}>
-            {saving
-              ? (uploadingIdx !== null ? t("birdJournal.uploadingNofM", "Uploading {{n}} of {{total}}…", { n: uploadingIdx + 1, total: pendingFiles.length }) : t("birdJournal.saving", "Saving…"))
-              : t("birdJournal.save", "Save")}
-          </PrimaryButton>
-          <button type="button" onClick={onClose} disabled={saving} className="min-h-[44px] rounded-[12px] border border-[var(--line)] px-4 text-[15px] font-[500] text-[var(--mute)] disabled:opacity-50">{t("birdJournal.cancel", "Cancel")}</button>
+          </PickButton>
+          <p className="m-0 mt-1.5 px-1 text-[13px] leading-[1.4]" style={{ color: K.quiet }}>{t("birdJournal.attachHint", "Vet records, lab results, discharge notes. PDFs up to 25 MB.")}</p>
         </div>
 
         {/* Delete — owner-only (RLS also enforces birds.owner_id). Only for an
@@ -574,13 +611,14 @@ function EntryForm({ birdId, entry, isOwner, onClose, onSaved, onDeleted }: { bi
           <button
             type="button"
             onClick={remove}
-            disabled={saving || deleting}
-            className="mt-3 flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[12px] border border-[var(--red-line)] text-[14px] font-[500] text-[var(--red-ink)] disabled:opacity-50"
+            disabled={busy}
+            className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-full border-2 bg-white text-[15px] font-[700] disabled:opacity-50"
+            style={{ borderColor: K.red, color: K.red }}
           >
             <Trash2 className="size-4" /> {deleting ? t("birdJournal.deleting", "Deleting…") : t("birdJournal.deleteEntry", "Delete entry")}
           </button>
         )}
       </div>
-    </div>
+    </KyaSheet>
   );
 }

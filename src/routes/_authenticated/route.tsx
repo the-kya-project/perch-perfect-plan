@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AuthClientStalled, getReadySession } from "@/lib/authReady";
 import { applyOAuthAttribution } from "@/lib/attribution";
 import { PullToRefresh } from "@/components/PullToRefresh";
-import { OwnerTabBar } from "@/components/OwnerTabBar";
+import { OwnerTabBar, isTaskPath } from "@/components/OwnerTabBar";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -116,7 +116,10 @@ function AuthenticatedLayout() {
     pathname.endsWith("/setup") || pathname.endsWith("/view-as-sitter") ||
     // The sitter preview renders the sitter's OWN chrome (its iframe) — the
     // owner's bottom nav must not show under it.
-    pathname.startsWith("/sit-preview");
+    pathname.startsWith("/sit-preview") ||
+    // Tasks (daily check, full health check, set up / edit a sit) end with
+    // one pinned button instead of the nav.
+    isTaskPath(pathname);
 
   return (
     <>

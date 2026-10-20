@@ -4,7 +4,8 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ArrowLeft, Loader2, Phone } from "lucide-react";
-import { K, KyaPage, KyaHeader, KyaBody, KyaCard, KyaHeading, KyaIconButton, KyaLink, KyaSecondaryButton } from "@/components/kya";
+import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaLink, KyaSecondaryButton } from "@/components/kya";
+import { PageHeader } from "@/components/headers";
 import { useCapability, useMyPermissions } from "@/lib/useCapability";
 import { useBirdRole } from "@/lib/useBirdRole";
 import { resolveScanPhotoUrls } from "@/lib/scanPhoto";
@@ -376,13 +377,7 @@ function Shell({ headline, body, onBack, children }: { headline: string; body?: 
   return (
     <KyaPage>
       <div className="mx-auto max-w-md">
-        <KyaHeader>
-          <div className="mt-1.5">
-            <KyaIconButton label={t("scanDetail.back", "Back")} onClick={onBack}><ArrowLeft className="size-5" /></KyaIconButton>
-          </div>
-          <KyaHeading as="h1" size={30} className="mt-5 text-white">{headline}</KyaHeading>
-          {body && <p className="m-0 mt-2 text-[15px] leading-[1.5]" style={{ color: K.paleGreen }}>{body}</p>}
-        </KyaHeader>
+        <PageHeader onBack={onBack} title={headline} line={body} />
         <KyaBody className="gap-4">{children}</KyaBody>
       </div>
     </KyaPage>

@@ -1,14 +1,15 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, ChevronDown, Loader2 } from "lucide-react";
+import { ChevronDown, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { useBirdRole } from "@/lib/useBirdRole";
 import { markBirdPassed } from "@/lib/passed.functions";
 import { mergeEmergency } from "@/lib/emergency";
-import { InkHero, Card, PrimaryButton } from "@/components/system";
+import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaPrimaryButton, KyaSecondaryButton } from "@/components/kya";
+import { PageHeader, useGoBack } from "@/components/headers";
 import { PathDetail, type PassingPath, type VetContact } from "@/components/PassingGuidance";
 import { toast } from "sonner";
 import { friendlyError } from "@/lib/errorMessage";
@@ -33,6 +34,7 @@ function Farewell() {
   const [step, setStep] = useState<"ask" | "guidance">("ask");
   const [busy, setBusy] = useState(false);
   const mark = useServerFn(markBirdPassed);
+  const goBack = useGoBack(useCallback(() => navigate({ to: "/birds/$birdId", params: { birdId } }), [navigate, birdId]));
 
   const { data } = useQuery({
     queryKey: ["farewell", birdId],
@@ -91,65 +93,57 @@ function Farewell() {
 
   if (step === "guidance") {
     return (
-      <div className="min-h-screen bg-[var(--cream)] pb-nav">
-        <div className="mx-auto max-w-md">
-          <InkHero eyebrow={t("farewell.guidanceEyebrow", "In your own time")} headline={t("farewell.guidanceHeadline", "A few things that can help.")} />
-          <main className="space-y-4 px-5 pt-5">
-            <Card className="p-5">
-              <h2 className="t-section">{t("farewell.necropsyTitle", "Should you consider a necropsy?")}</h2>
-              <p className="t-body mt-2 leading-relaxed text-[var(--ink2)]">
-                {t("farewell.necropsyBody", "If {{name}}'s passing was sudden or unexplained, or you have other birds, a necropsy can tell you why, and whether your flock is at risk. It's time sensitive, so it helps to decide soon.", { name })}
-              </p>
-            </Card>
-
-            {/* The same three body-care paths the sitter sees, for an owner who
-                is with their bird. Collapsed by choice — nothing is forced. */}
-            <GuidancePaths name={name} ownerName={data?.ownerName ?? t("farewell.you", "you")} vet={data?.vet ?? { name: null, phone: null }} />
-
-            <p className="t-meta pt-1 leading-relaxed">
-              {t("farewell.disclaimer", "Gentle starting points, not medical advice. Your avian vet can guide the specifics.")}
+      <KyaPage>
+        <PageHeader
+          title={t("farewell.guidanceTitle", "A few things that can help")}
+          line={t("farewell.guidanceEyebrow", "In your own time")}
+          onBack={goBack}
+        />
+        <KyaBody>
+          <KyaCard className="p-5">
+            <KyaHeading>{t("farewell.necropsyTitle", "Should you consider a necropsy?")}</KyaHeading>
+            <p className="m-0 mt-2 text-[15px] leading-[1.55]" style={{ color: K.ink }}>
+              {t("farewell.necropsyBody", "If {{name}}'s passing was sudden or unexplained, or you have other birds, a necropsy can tell you why, and whether your flock is at risk. It's time sensitive, so it helps to decide soon.", { name })}
             </p>
+          </KyaCard>
 
-            <PrimaryButton tone="ink" onPress={() => navigate({ to: "/dashboard" })}>{t("farewell.done", "Done")}</PrimaryButton>
-          </main>
-        </div>
-      </div>
+          {/* The same three body-care paths the sitter sees, for an owner who
+              is with their bird. Collapsed by choice — nothing is forced. */}
+          <GuidancePaths name={name} ownerName={data?.ownerName ?? t("farewell.you", "you")} vet={data?.vet ?? { name: null, phone: null }} />
+
+          <p className="m-0 px-1 text-[13.5px] leading-[1.5]" style={{ color: K.quiet }}>
+            {t("farewell.disclaimer", "Gentle starting points, not medical advice. Your avian vet can guide the specifics.")}
+          </p>
+
+          <KyaSecondaryButton className="w-full" onClick={() => navigate({ to: "/dashboard" })}>{t("farewell.done", "Done")}</KyaSecondaryButton>
+        </KyaBody>
+      </KyaPage>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[var(--cream)] pb-nav">
-      <div className="mx-auto max-w-md">
-        <InkHero
-          backIcon={<ArrowLeft className="size-5" />}
-          onBack={() => navigate({ to: "/birds/$birdId", params: { birdId } })}
-          eyebrow={t("farewell.askEyebrow", "Take your time")}
-          headline={t("farewell.askHeadline", "Has {{name}} passed away?", { name })}
-        />
-        <main className="space-y-4 px-5 pt-5">
-          <Card className="p-5">
-            <p className="t-body leading-relaxed text-[var(--ink2)]">
-              {t("farewell.askBody", "We're so sorry. This gently pauses {{name}}'s daily reminders, and if a sit is active, lets their sitter know they can stop too. {{name}}'s record, journal, and moments are kept, so you can look back whenever you'd like.", { name })}
-            </p>
-          </Card>
-          <button
-            type="button"
-            disabled={busy || !bird}
-            onClick={confirm}
-            className="flex min-h-[52px] w-full items-center justify-center rounded-[13px] bg-[var(--ink)] text-[15px] font-[500] text-white active:scale-[0.99] disabled:opacity-60"
-          >
+    <KyaPage>
+      <PageHeader
+        title={t("farewell.askHeadline", "Has {{name}} passed away?", { name })}
+        line={t("farewell.askEyebrow", "Take your time")}
+        onBack={goBack}
+      />
+      <KyaBody>
+        <KyaCard className="p-5">
+          <p className="m-0 text-[15px] leading-[1.55]" style={{ color: K.ink }}>
+            {t("farewell.askBody", "We're so sorry. This gently pauses {{name}}'s daily reminders, and if a sit is active, lets their sitter know they can stop too. {{name}}'s record, journal, and moments are kept, so you can look back whenever you'd like.", { name })}
+          </p>
+        </KyaCard>
+        <div className="flex flex-col gap-2.5">
+          <KyaPrimaryButton disabled={busy || !bird} onClick={confirm}>
             {busy ? <Loader2 className="size-4 animate-spin" /> : t("farewell.confirm", "Yes, {{name}} has passed", { name })}
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate({ to: "/birds/$birdId", params: { birdId } })}
-            className="flex min-h-[48px] w-full items-center justify-center rounded-[13px] border border-[var(--line)] bg-white text-[15px] font-[500] text-[var(--ink)] active:scale-[0.99]"
-          >
+          </KyaPrimaryButton>
+          <KyaSecondaryButton className="w-full" onClick={() => navigate({ to: "/birds/$birdId", params: { birdId } })}>
             {t("farewell.notNow", "Not now")}
-          </button>
-        </main>
-      </div>
-    </div>
+          </KyaSecondaryButton>
+        </div>
+      </KyaBody>
+    </KyaPage>
   );
 }
 
@@ -165,28 +159,30 @@ function GuidancePaths({ name, ownerName, vet }: { name: string; ownerName: stri
     { key: "vet", label: t("passingGuidance.pathChoice.vet", "Bring {{name}} to the vet", { name }) },
   ];
   return (
-    <div className="space-y-2">
-      {paths.map((p) => {
+    <KyaCard>
+      {paths.map((p, i) => {
         const isOpen = open === p.key;
+        const last = i === paths.length - 1;
         return (
-          <Card key={p.key}>
+          <div key={p.key} style={{ borderBottom: last ? undefined : `1px solid ${K.line}` }}>
             <button
               type="button"
               onClick={() => setOpen(isOpen ? null : p.key)}
               aria-expanded={isOpen}
-              className="flex min-h-[52px] w-full items-center gap-3 px-4 py-3 text-left"
+              className="flex min-h-[60px] w-full items-center gap-3 px-4 py-3 text-left active:bg-black/[0.03]"
+              style={{ color: K.forest }}
             >
-              <span className="t-item flex-1">{p.label}</span>
-              <ChevronDown className={`size-4 shrink-0 text-[var(--mute2)] transition ${isOpen ? "rotate-180" : ""}`} />
+              <span className="flex-1 text-[15px] font-[700]">{p.label}</span>
+              <ChevronDown className={`size-[18px] shrink-0 transition ${isOpen ? "rotate-180" : ""}`} style={{ color: K.quiet }} aria-hidden="true" />
             </button>
             {isOpen && (
-              <div className="border-t border-[var(--line2)] px-4 py-4">
+              <div className="px-4 pb-4 pt-1">
                 <PathDetail path={p.key} name={name} ownerName={ownerName} vet={vet} audience="owner" />
               </div>
             )}
-          </Card>
+          </div>
         );
       })}
-    </div>
+    </KyaCard>
   );
 }

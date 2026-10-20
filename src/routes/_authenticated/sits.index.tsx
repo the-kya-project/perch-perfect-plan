@@ -6,11 +6,10 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { Plus, Calendar, CalendarPlus } from "lucide-react";
-import { OwnerHeaderIcons } from "@/components/OwnerHeader";
 import { ActiveSitCard, UpcomingSitCard, PastSitsList, type SitBird, type ListSit } from "@/components/SitListCards";
 import { rangeTo } from "@/lib/sitText";
-import { K, KyaPage, KyaHeader, KyaBody, KyaCard, KyaHeading, KyaPrimaryButton } from "@/components/kya";
-import { BrandLockup } from "@/components/BrandLogo";
+import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaPrimaryButton } from "@/components/kya";
+import { TabHeader } from "@/components/headers";
 import { useServerFn } from "@tanstack/react-start";
 import { resolveHouseholdNames, resolveOwnerNames } from "@/lib/home.functions";
 import { memberDisplayName } from "@/lib/memberDisplay";
@@ -194,15 +193,7 @@ function SitsPage() {
   return (
     <KyaPage>
       <div className="mx-auto max-w-md">
-        <KyaHeader>
-          <div className="mt-1.5 flex items-center gap-2">
-            <BrandLockup orientation="horizontal" variant="ink" size={118} />
-            <div className="flex-1" />
-            <OwnerHeaderIcons large />
-          </div>
-          <KyaHeading as="h1" size={31} className="mt-9 text-white">{heroHeadline}</KyaHeading>
-          <p className="m-0 mt-2 text-[15px] leading-[1.5]" style={{ color: K.paleGreen }}>{heroBody}</p>
-        </KyaHeader>
+        <TabHeader title={heroHeadline} line={heroBody}></TabHeader>
 
         <KyaBody className="gap-5">
           {birds.length === 0 ? (

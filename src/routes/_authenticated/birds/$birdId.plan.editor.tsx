@@ -13,6 +13,8 @@ import { activeOwnerBirdsMin } from "@/lib/activeBirds";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { ArrowLeft, Trash2, ChevronDown, AlertTriangle, Eye } from "lucide-react";
 import { EmergencyInfo } from "@/components/EmergencyInfo";
+import { KyaIconButton } from "@/components/kya";
+import { HeaderPill } from "@/components/headers";
 import { SETUP_STEPS } from "@/components/SetupShell";
 // The editor renders the guided-setup step components directly so the two UIs
 // are identical (same fields, pickers, autosave, clip recording).
@@ -209,27 +211,22 @@ function BirdEditor() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f4f1e8] pb-nav">
-      <header className="sticky top-0 z-10 border-b border-[#e3ded0] bg-[#f4f1e8]/95 backdrop-blur">
-        <div className="mx-auto max-w-md px-5 pt-safe pb-3">
-          <div className="flex items-center gap-3">
-            <Link to="/birds/$birdId/plan" params={{ birdId }} className="rounded p-1 text-sage-600" aria-label={t("planEditor.backToOverview", "Back to care plan overview")}><ArrowLeft className="size-5" /></Link>
+    <div className="setup-frame min-h-screen pb-nav" style={{ background: "#f1f5f0" }}>
+      <header className="sticky top-0 z-10 text-white" style={{ background: "#1a3d2e" }}>
+        <div className="mx-auto max-w-md px-5 pb-3 pt-[calc(env(safe-area-inset-top)+14px)]">
+          <div className="flex items-center justify-between gap-3">
+            <KyaIconButton label={t("planEditor.backToOverview", "Back to care plan overview")} onClick={() => navigate({ to: "/birds/$birdId/plan", params: { birdId } })}>
+              <ArrowLeft className="size-5" />
+            </KyaIconButton>
+            <HeaderPill action={{ label: t("planEditor.viewAsSitter", "View as sitter"), icon: <Eye className="size-4" />, onClick: () => navigate({ to: "/birds/$birdId/view-as-sitter", params: { birdId } }) }} />
+          </div>
+          <div className="mt-4 flex items-center gap-3">
             {headerPhoto && (
-              <div className="relative size-9 shrink-0 overflow-hidden rounded-full ring-1 ring-sage-200">
+              <div className="relative size-11 shrink-0 overflow-hidden rounded-full">
                 <BirdPhotoCrop url={headerPhoto.url} original={headerPhoto.original} position={bird.photo_position ?? "50% 20%"} alt={bird.name} />
               </div>
             )}
-            <div className="flex-1 min-w-0">
-              <h1 className="text-sm font-bold truncate">{bird.name}</h1>
-              <p className="text-[10px] uppercase tracking-wider text-sage-600">{bird.species ? speciesLabel(t, bird.species) : t("planEditor.parrot", "Parrot")}</p>
-            </div>
-            <Link
-              to="/birds/$birdId/view-as-sitter"
-              params={{ birdId }}
-              className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#e8f0ec] px-2.5 py-1.5 text-xs font-semibold text-[#1a3d2e]"
-            >
-              <Eye className="size-3.5" /> {t("planEditor.viewAsSitter", "View as sitter")}
-            </Link>
+            <h1 className="m-0 min-w-0 flex-1 text-[30px] font-[700] leading-[1.1]" style={{ fontFamily: "'Newsreader', Georgia, serif" }}>{t("planEditor.titleNamed", "{{name}}'s care plan", { name: bird.name })}</h1>
           </div>
           <div className="relative mt-3">
             <div ref={tabStripRef} onScroll={updateTabFades} className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -237,15 +234,15 @@ function BirdEditor() {
                 <button
                   key={tb.id}
                   onClick={() => setTab(tb.id)}
-                  className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold ${tab === tb.id ? "bg-[#1a3d2e] text-white" : "bg-[#efe9da] text-[#5f5e5a]"}`}
+                  className={`min-h-[44px] shrink-0 rounded-full px-4 text-[14px] font-[700] ${tab === tb.id ? "bg-[#cdeab0] text-[#1a3d2e]" : "bg-[#12291f] text-white"}`}
                 >
                   {tb.label}
                 </button>
               ))}
               <span aria-hidden className="shrink-0 pl-1" />
             </div>
-            {!tabAtStart && <div className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-[#f4f1e8] to-transparent" />}
-            {!tabAtEnd && <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-[#f4f1e8] to-transparent" />}
+            {!tabAtStart && <div className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-[#1a3d2e] to-transparent" />}
+            {!tabAtEnd && <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-[#1a3d2e] to-transparent" />}
           </div>
         </div>
       </header>

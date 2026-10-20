@@ -19,7 +19,8 @@ import {
 import { memberDisplayName, memberInitials } from "@/lib/memberDisplay";
 import { useHouseholdCapability, useMyPermissions } from "@/lib/useCapability";
 import { Mail, Check, X, AlertTriangle } from "lucide-react";
-import { K, KyaHeader, KyaHeading, KyaIconButton, KyaLink } from "@/components/kya";
+import { K, KyaLink } from "@/components/kya";
+import { TaskHeader, useLeaveGuard } from "@/components/headers";
 import { copySitterLink } from "@/lib/sitLink";
 import { friendlyError } from "@/lib/errorMessage";
 import { localDateISO } from "@/lib/localDay";
@@ -68,6 +69,10 @@ export function SitForm({
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const rootRef = useRef<HTMLFormElement>(null);
+  // Close asks before throwing away anything entered.
+  const snapshot = JSON.stringify([Array.from(selected).sort(), title, sitterName, sitterEmail, start, end, notes]);
+  const initialSnapshot = useRef(snapshot);
+  const { requestClose, guard } = useLeaveGuard(snapshot !== initialSnapshot.current && !saving, onClose);
 
   // Delete a sit — owner always; a household member only with manage_sits (RLS
   // "sits delete" mirrors this). FK cascade cleans children: sit_birds,
@@ -534,19 +539,13 @@ export function SitForm({
         : t("sitForm.createSit", "Create sit");
 
   return (
-    <form ref={rootRef} onSubmit={submit} noValidate className="setup-frame min-h-screen pb-nav" style={{ background: K.mist, color: K.forest }}>
+    <form ref={rootRef} onSubmit={submit} noValidate className="setup-frame min-h-screen" style={{ background: K.mist, color: K.forest }}>
       <div className="mx-auto max-w-md">
-        <KyaHeader>
-          <div className="mt-1.5">
-            <KyaIconButton label={t("sitForm.close", "Close")} onClick={onClose}>
-              <X className="size-5" />
-            </KyaIconButton>
-          </div>
-          <KyaHeading as="h1" size={30} className="mt-4 text-white">{editing ? t("sitForm.editSit", "Edit sit") : t("sitForm.setUpASit", "Set up a sit")}</KyaHeading>
-          <p className="m-0 mt-2 text-[15px] leading-[1.5]" style={{ color: K.paleGreen }}>
-            {t("sitForm.screenIntro", "Your sitter gets the daily routine, a daily health check, and one-tap emergency contacts.")}
-          </p>
-        </KyaHeader>
+        <TaskHeader
+          onClose={requestClose}
+          title={editing ? t("sitForm.editSit", "Edit sit") : t("sitForm.setUpASit", "Set up a sit")}
+          line={t("sitForm.screenIntro", "Your sitter gets the daily routine, a daily health check, and one-tap emergency contacts.")}
+        />
 
         <main className="relative -mt-[26px] flex flex-col gap-7 rounded-t-[26px] bg-white px-5 pb-8 pt-6">
           {/* 1. Which birds? */}
@@ -677,7 +676,7 @@ export function SitForm({
 
       {/* Pinned footer */}
       {!gaps && (
-        <div className="sticky z-10 border-t bg-white px-4 pb-3 pt-3" style={{ bottom: "var(--nav-spacer)", borderColor: K.line }}>
+        <div className="sticky bottom-0 z-10 border-t bg-white px-4 pb-[max(env(safe-area-inset-bottom),12px)] pt-3" style={{ borderColor: K.line }}>
           <div className="mx-auto max-w-md">
             <button
               type="submit"
@@ -777,6 +776,7 @@ export function SitForm({
           </div>
         </BottomSheet>
       )}
+      {guard}
     </form>
   );
 }

@@ -5,8 +5,6 @@
 
   // Account
   "account.account": "Account",
-  // Back
-  "account.back": "Terug",
   // Birds you've helped rehome
   "account.birdsRehomed": "Vogels die je een nieuw thuis hebt helpen vinden",
   // Birds you've handed off to new owners
@@ -133,8 +131,6 @@
   "account.yourAccountAndAllData": "Je account en alle gegevens zijn verwijderd.",
   // Your name
   "account.yourName": "Je naam",
-  // Back
-  "accountEmergency.back": "Terug",
   // What a sitter sees if something goes wrong. Tap any line to change it.
   "accountEmergency.line": "Wat een oppas ziet als er iets misgaat. Tik op een regel om die te wijzigen.",
   // Loading…
@@ -163,8 +159,6 @@
   "accountSecurity.emailAndPassword": "E-mail & wachtwoord",
   // Email me a reset link instead
   "accountSecurity.emailResetLink": "Mail me liever een resetlink",
-  // Account
-  "accountSecurity.eyebrow": "Account",
   // Password & sign-in
   "accountSecurity.headline": "Wachtwoord & inloggen",
   // Passwords don't match.
@@ -307,14 +301,14 @@
   "authError.weakPasswordLength": "Je wachtwoord moet minimaal {{n}} tekens hebben.",
   // Add a household member
   "birdAccess.addMember": "Huisgenoot toevoegen",
-  // Back to bird record
-  "birdAccess.backAria": "Terug naar het dossier van de vogel",
   // Cancel
   "birdAccess.cancel": "Annuleren",
   // Couldn't cancel.
   "birdAccess.cancelFailed": "Kon niet annuleren.",
   // Can view & log · added {{date}}
   "birdAccess.canViewLog": "Kan bekijken & noteren · toegevoegd op {{date}}",
+  // Close
+  "birdAccess.close": "Sluiten",
   // Remove {{name}} from this bird's household? Their past logs stay in the record.
   "birdAccess.confirmRemove": "{{name}} verwijderen uit het huishouden van deze vogel? Eerdere notities blijven in het dossier staan.",
   // Household
@@ -369,8 +363,6 @@
   "birdCareCard.noRoutineTasks": "Geen vaste taken",
   // All birds
   "birdEmergency.allBirds": "Alle vogels",
-  // Back
-  "birdEmergency.back": "Terug",
   // Close
   "birdEmergency.close": "Sluiten",
   // Use my emergency info
@@ -413,8 +405,6 @@
   "birdEmergency.whoQuestion": "Dit alleen voor {{name}} wijzigen, of voor al je vogels?",
   // your bird
   "birdEmergency.yourBird": "je vogel",
-  // Back
-  "birdHandoff.back": "Terug",
   // This can't be undone.
   "birdHandoff.cantUndo": "Dit kan niet ongedaan worden gemaakt.",
   // Once they accept, the record is theirs. You won't be able to view or edit it.
@@ -457,6 +447,8 @@
   "birdHandoff.thisBird": "deze vogel",
   // Hand off {{name}}
   "birdHandoff.title": "{{name}} overdragen",
+  // Add
+  "birdIdentity.add": "Toevoegen",
   // e.g. 6 years
   "birdIdentity.agePlaceholder": "bijv. 6 jaar",
   // All fields are optional — partial records are fine.
@@ -465,24 +457,24 @@
   "birdIdentity.body": "De details die {{name}} officieel {{name}} maken.",
   // Came home
   "birdIdentity.cameHome": "Kwam thuis",
+  // Cancel
+  "birdIdentity.cancel": "Annuleren",
   // {{n}} day
   "birdIdentity.daysOne": "{{n}} dag",
   // {{n}} days
   "birdIdentity.daysOther": "{{n}} dagen",
   // Edit
   "birdIdentity.edit": "Bewerken",
-  // Identity
-  "birdIdentity.eyebrow": "Identiteit",
-  // These details build the vet summary and travel with {{name}} if she's ever rehomed.
-  "birdIdentity.footerFemale": "Met deze gegevens maken we de dierenartssamenvatting, en ze gaan mee met {{name}} als ze ooit een nieuw thuis krijgt.",
-  // These details build the vet summary and travel with {{name}} if he's ever rehomed.
-  "birdIdentity.footerMale": "Met deze gegevens maken we de dierenartssamenvatting, en ze gaan mee met {{name}} als hij ooit een nieuw thuis krijgt.",
-  // These details build the vet summary and travel with {{name}} if they're ever rehomed.
-  "birdIdentity.footerOther": "Met deze gegevens maken we de dierenartssamenvatting, en ze gaan mee met {{name}} als die ooit een nieuw thuis krijgt.",
+  // Edit identity
+  "birdIdentity.editTitle": "Identiteit bewerken",
+  // These details build {{name}}'s vet summary and go with her if she's ever rehomed.
+  "birdIdentity.footnoteFemale": "Deze gegevens vormen de dierenartssamenvatting van {{name}} en gaan met haar mee als ze ooit een nieuw thuis krijgt.",
+  // These details build {{name}}'s vet summary and go with him if he's ever rehomed.
+  "birdIdentity.footnoteMale": "Deze gegevens vormen de dierenartssamenvatting van {{name}} en gaan met hem mee als hij ooit een nieuw thuis krijgt.",
+  // These details build {{name}}'s vet summary and go with them if they're ever rehomed.
+  "birdIdentity.footnoteOther": "Deze gegevens vormen de dierenartssamenvatting van {{name}} en gaan mee als de vogel ooit een nieuw thuis krijgt.",
   // You're caring for them while they find a permanent home.
   "birdIdentity.fosterBody": "Je zorgt voor ze terwijl ze een vast thuis vinden.",
-  // {{name}}, on paper.
-  "birdIdentity.headline": "{{name}}, op papier.",
   // Leg band
   "birdIdentity.legBand": "Pootring",
   // Identity — Kya & Co.
@@ -491,6 +483,8 @@
   "birdIdentity.methodDna": "DNA",
   // DNA confirmed
   "birdIdentity.methodDnaConfirmed": "Bevestigd met DNA",
+  // How sex was determined
+  "birdIdentity.methodLabel": "Hoe het geslacht is bepaald",
   // Method…
   "birdIdentity.methodPlaceholder": "Methode…",
   // Surgical
@@ -505,8 +499,8 @@
   "birdIdentity.monthsOne": "{{n}} maand",
   // {{n}} months
   "birdIdentity.monthsOther": "{{n}} maanden",
-  // None
-  "birdIdentity.none": "Geen",
+  // Not added
+  "birdIdentity.notAdded": "Niet toegevoegd",
   // Not set
   "birdIdentity.notSet": "Niet ingesteld",
   // Origin
@@ -523,14 +517,16 @@
   "birdIdentity.saveFailed": "Kon niet opslaan.",
   // Saving…
   "birdIdentity.saving": "Opslaan…",
+  // {{name}}'s identity
+  "birdIdentity.title": "Identiteit van {{name}}",
+  // Identity
+  "birdIdentity.titleFallback": "Identiteit",
   // Add an entry
   "birdJournal.addAnEntry": "Voeg een notitie toe",
   // Entry added.
   "birdJournal.added": "Notitie toegevoegd.",
-  // Add entry
-  "birdJournal.addEntry": "Notitie toevoegen",
-  // Add first entry
-  "birdJournal.addFirst": "Eerste notitie toevoegen",
+  // Add an entry
+  "birdJournal.addEntryTitle": "Notitie toevoegen",
   // Add a photo
   "birdJournal.addPhoto": "Voeg een foto toe",
   // Attach another PDF
@@ -541,14 +537,12 @@
   "birdJournal.attachPdf": "Pdf bijvoegen",
   // The little things you notice now can matter later.
   "birdJournal.body": "De kleine dingen die je nu opmerkt, kunnen later belangrijk zijn.",
-  // Cancel
-  "birdJournal.cancel": "Annuleren",
   // Close
   "birdJournal.close": "Sluiten",
   // Delete this journal entry? This can't be undone.
   "birdJournal.confirmDelete": "Deze dagboeknotitie verwijderen? Dit kan niet ongedaan worden gemaakt.",
-  // Date *
-  "birdJournal.dateLabel": "Datum *",
+  // Date
+  "birdJournal.dateField": "Datum",
   // Entry deleted.
   "birdJournal.deleted": "Notitie verwijderd.",
   // Delete entry
@@ -571,8 +565,6 @@
   "birdJournal.emptyIntro": "Hier staat nog niets. In het dagboek houd je gezondheid en gedrag bij door de tijd heen — rui, medicijnen, bezoekjes aan de dierenarts, een nieuw woord, een mindere dag. Voeg een notitie toe als iets het vastleggen waard is.",
   // No notes entries yet.
   "birdJournal.emptyNotes": "Nog geen losse notities.",
-  // Journal
-  "birdJournal.eyebrow": "Dagboek",
   // Saved, but these files didn't go through: {{files}}. Open the entry and try attaching them again.
   "birdJournal.filesFailed": "Opgeslagen, maar deze bestanden zijn niet gelukt: {{files}}. Open de notitie en probeer ze opnieuw bij te voegen.",
   // Files
@@ -587,14 +579,12 @@
   "birdJournal.filterBehavior": "Gedrag",
   // Health
   "birdJournal.filterHealth": "Gezondheid",
+  // Show entries
+  "birdJournal.filterLabel": "Notities tonen",
   // Notes
   "birdJournal.filterNotes": "Notities",
-  // What {{name}}'s been up to.
-  "birdJournal.headline": "Wat {{name}} allemaal heeft gedaan.",
   // Behavior
   "birdJournal.kindBehavior": "Gedrag",
-  // Kind *
-  "birdJournal.kindLabel": "Soort *",
   // Meds
   "birdJournal.kindMeds": "Medicijnen",
   // Molt
@@ -603,6 +593,8 @@
   "birdJournal.kindNote": "Notitie",
   // Other
   "birdJournal.kindOther": "Overig",
+  // Kind
+  "birdJournal.kindPick": "Soort",
   // Vet visit
   "birdJournal.kindVet": "Dierenartsbezoek",
   // Journal — Kya & Co.
@@ -631,12 +623,14 @@
   "birdJournal.saveFailed": "Kon de notitie niet opslaan.",
   // Saving…
   "birdJournal.saving": "Opslaan…",
-  // this bird
-  "birdJournal.thisBird": "deze vogel",
-  // Title *
-  "birdJournal.titleLabel": "Titel *",
+  // Title
+  "birdJournal.titleField": "Titel",
+  // {{name}}'s journal
+  "birdJournal.titleNamed": "Dagboek van {{name}}",
   // e.g. Started wing molt
   "birdJournal.titlePlaceholder": "bijv. Begonnen met vleugelrui",
+  // Journal
+  "birdJournal.titlePlain": "Dagboek",
   // Entry updated.
   "birdJournal.updated": "Notitie bijgewerkt.",
   // Uploading…
@@ -645,48 +639,72 @@
   "birdJournal.uploadingNofM": "{{n}} van {{total}} uploaden…",
   // Add
   "birdMoments.add": "Toevoegen",
-  // Add custom milestone
-  "birdMoments.addCustom": "Eigen mijlpaal toevoegen",
   // Add a milestone
   "birdMoments.addMilestone": "Voeg een mijlpaal toe",
   // Add a photo
   "birdMoments.addPhoto": "Voeg een foto toe",
-  // The highlight reel.
-  "birdMoments.body": "De hoogtepunten.",
-  // Cancel
-  "birdMoments.cancel": "Annuleren",
+  // The day {{name}} came home
+  "birdMoments.cameHomeDay": "De dag dat {{name}} thuiskwam",
   // Couldn't create the share card.
   "birdMoments.cardFailed": "Kon de deelkaart niet maken.",
   // Saved a card to your photos.
   "birdMoments.cardSaved": "Kaart opgeslagen in je foto's.",
   // Close
   "birdMoments.close": "Sluiten",
+  // Delete this milestone? This can't be undone.
+  "birdMoments.confirmDelete": "Deze mijlpaal verwijderen? Dit kan niet ongedaan worden gemaakt.",
   // Date
   "birdMoments.dateLabel": "Datum",
+  // Couldn't delete the milestone.
+  "birdMoments.deleteFailed": "De mijlpaal kon niet worden verwijderd.",
+  // Delete milestone
+  "birdMoments.deleteMilestone": "Mijlpaal verwijderen",
+  // Deleting…
+  "birdMoments.deleting": "Verwijderen…",
+  // Edit milestone
+  "birdMoments.editMilestone": "Mijlpaal bewerken",
   // Once {{name}}'s owner adds a hatch date or homecoming day, the yearly moments will appear here.
   "birdMoments.emptyMember": "Zodra de eigenaar van {{name}} een uitkomstdatum of thuiskomstdag toevoegt, verschijnen de jaarlijkse momenten hier.",
   // Add {{name}}'s hatch date and the day they came home in Identity, and their yearly moments will appear here.
   "birdMoments.emptyOwner": "Voeg bij Identiteit de uitkomstdatum van {{name}} en de dag dat ze thuiskwamen toe, dan verschijnen hun jaarlijkse momenten hier.",
-  // Moments
-  "birdMoments.eyebrow": "Momenten",
+  // {{date}} · every year · {{years}}
+  "birdMoments.everyYearLine": "{{date}} · elk jaar · {{years}}",
+  // {{date}} · every year
+  "birdMoments.everyYearShort": "{{date}} · elk jaar",
   // Gotcha-day
   "birdMoments.gotchaDay": "Adoptiedag",
   // Hatch-day
   "birdMoments.hatchDay": "Uitkomstdag",
-  // {{name}} being {{name}}.
-  "birdMoments.headline": "{{name}}, helemaal {{name}}.",
+  // The day {{name}} hatched
+  "birdMoments.hatchedDay": "De dag dat {{name}} uit het ei kwam",
+  // Less than a month together
+  "birdMoments.lessThanMonthTogether": "Nog geen maand samen",
+  // The days worth remembering.
+  "birdMoments.line": "De dagen om te onthouden.",
   // Moments — Kya & Co.
   "birdMoments.metaTitle": "Momenten — Kya & Co.",
   // Milestone
   "birdMoments.milestone": "Mijlpaal",
   // Milestone added.
   "birdMoments.milestoneAdded": "Mijlpaal toegevoegd.",
+  // Milestone deleted.
+  "birdMoments.milestoneDeleted": "Mijlpaal verwijderd.",
   // Milestones
   "birdMoments.milestones": "Mijlpalen",
+  // Milestone updated.
+  "birdMoments.milestoneUpdated": "Mijlpaal bijgewerkt.",
+  // {{count}} month together
+  "birdMoments.monthsTogether_one": "{{count}} maand samen",
+  // {{count}} months together
+  "birdMoments.monthsTogether_other": "{{count}} maanden samen",
   // {{title}} {{when}} — mark it with a photo.
   "birdMoments.nudge": "{{title}} {{when}} — leg het vast met een foto.",
   // on {{date}}
   "birdMoments.onDate": "op {{date}}",
+  // {{date}} · your own
+  "birdMoments.ownLine": "{{date}} · eigen mijlpaal",
+  // Your own
+  "birdMoments.ownShort": "Eigen mijlpaal",
   // Couldn't process that photo.
   "birdMoments.photoFailed": "Kon die foto niet verwerken.",
   // Photo (optional)
@@ -711,30 +729,38 @@
   "birdMoments.saveOrShare": "Bewaar in je foto's of deel het waar je wilt.",
   // Saving…
   "birdMoments.saving": "Opslaan…",
+  // Saving photo…
+  "birdMoments.savingPhoto": "Foto opslaan…",
   // Share
   "birdMoments.share": "Delen",
+  // Share {{year}}
+  "birdMoments.shareYear": "{{year}} delen",
   // This bird
   "birdMoments.thisBird": "Deze vogel",
   // Title
   "birdMoments.titleLabel": "Titel",
+  // {{name}}'s moments
+  "birdMoments.titleNamed": "Momenten van {{name}}",
   // e.g. First free-flight trip
   "birdMoments.titlePlaceholder": "bijv. Eerste vrije vlucht buiten",
+  // Moments
+  "birdMoments.titlePlain": "Momenten",
   // today
   "birdMoments.today": "vandaag",
   // tomorrow
   "birdMoments.tomorrow": "morgen",
   // {{name}} turns {{n}}
   "birdMoments.turns": "{{name}} wordt {{n}}",
-  // Upcoming
-  "birdMoments.upcoming": "Binnenkort",
   // {{date}} · yearly
   "birdMoments.yearly": "{{date}} · jaarlijks",
-  // {{n}} year together
-  "birdMoments.yearsTogetherOne": "{{n}} jaar samen",
-  // {{n}} years together
-  "birdMoments.yearsTogetherOther": "{{n}} jaar samen",
-  // Your own
-  "birdMoments.yourOwn": "Je eigen",
+  // Tap a photo to share it.
+  "birdMoments.yearsHintMember": "Tik op een foto om hem te delen.",
+  // One photo for each year. Tap a photo to share it.
+  "birdMoments.yearsHintOwner": "Eén foto per jaar. Tik op een foto om hem te delen.",
+  // {{count}} year together
+  "birdMoments.yearsTogether_one": "{{count}} jaar samen",
+  // {{count}} years together
+  "birdMoments.yearsTogether_other": "{{count}} jaar samen",
   // {{first}} and {{last}}
   "birdNames.and": "{{first}} en {{last}}",
   // {{count}} bird
@@ -845,14 +871,10 @@
   "birdRecord.carePlan": "Verzorgingsplan",
   // Food, health, behavior, tips and day
   "birdRecord.carePlanSections": "Eten, gezondheid, gedrag, tips en dag",
-  // All normal.
-  "birdRecord.checkAllNormal": "Alles normaal.",
+  // Daily check has an “all good” shortcut. The full check walks through all 10 questions, the same one a sitter does.
+  "birdRecord.checkButtonsHint": "De dagelijkse check heeft een snelkoppeling voor ‘alles goed’. De volledige check loopt alle 10 vragen door, dezelfde als die van een oppas.",
   // Done
   "birdRecord.checkDone": "Klaar",
-  // Checked today.
-  "birdRecord.checkedToday": "Vandaag gecheckt.",
-  // You noted something.
-  "birdRecord.checkNotedSomething": "Je hebt iets genoteerd.",
   // Chip, band, hatch date, origin, photo
   "birdRecord.chipBandHatchDateOrigin": "Chip, ring, uitkomstdatum, herkomst, foto",
   // Clipped
@@ -871,6 +893,14 @@
   "birdRecord.couldntUpdate": "Kon niet bijwerken.",
   // Create care plan
   "birdRecord.createCarePlan": "Verzorgingsplan maken",
+  // Daily check
+  "birdRecord.dailyCheckButton": "Dagelijkse check",
+  // Removes {{name}} and everything logged for her
+  "birdRecord.deleteDetailHer": "Verwijdert {{name}} en alles wat voor haar is bijgehouden",
+  // Removes {{name}} and everything logged for him
+  "birdRecord.deleteDetailHim": "Verwijdert {{name}} en alles wat voor hem is bijgehouden",
+  // Removes {{name}} and everything logged for them
+  "birdRecord.deleteDetailThem": "Verwijdert {{name}} en alles wat is bijgehouden",
   // Delete {{name}}
   "birdRecord.deleteName": "{{name}} verwijderen",
   // Delete {{name}}?
@@ -899,12 +929,20 @@
   "birdRecord.female": "Vrouwtje",
   // Flight
   "birdRecord.flight": "Vliegen",
+  // Full health check
+  "birdRecord.fullHealthCheckButton": "Volledige gezondheidscheck",
   // Fully flighted
   "birdRecord.fullyFlighted": "Volledig vliegvaardig",
   // {{n}} g
   "birdRecord.grams": "{{n}} g",
   // Handoff canceled.
   "birdRecord.handoffCanceled": "Overdracht geannuleerd.",
+  // {{name}}'s record goes with her
+  "birdRecord.handoffDetailHer": "Het dossier van {{name}} gaat met haar mee",
+  // {{name}}'s record goes with him
+  "birdRecord.handoffDetailHim": "Het dossier van {{name}} gaat met hem mee",
+  // {{name}}'s record goes with them
+  "birdRecord.handoffDetailThem": "Het dossier van {{name}} gaat mee",
   // Handoff pending — to <1>{{email}}</1>
   "birdRecord.handoffPendingTo": "Overdracht in afwachting — naar <1>{{email}}</1>",
   // Hand {{name}} off to a new owner
@@ -913,6 +951,8 @@
   "birdRecord.hatchDate": "Uitkomstdatum",
   // Identity
   "birdRecord.identity": "Identiteit",
+  // If things change for {{name}}
+  "birdRecord.ifThingsChangeHeading": "Als er iets verandert voor {{name}}",
   // In your care
   "birdRecord.inYourCareText": "In je zorg",
   // {{name}} joined the flock! 🎉
@@ -939,8 +979,6 @@
   "birdRecord.moments": "Momenten",
   // Not added
   "birdRecord.notAdded": "Niet toegevoegd",
-  // Not checked yet today
-  "birdRecord.notCheckedToday": "Vandaag nog niet gecheckt",
   // Nothing logged yet. Weights and sitter check-ins will show up here.
   "birdRecord.nothingLoggedYetWeightsAnd": "Nog niets genoteerd. Gewichten en checks van de oppas verschijnen hier.",
   // Not set
@@ -955,6 +993,12 @@
   "birdRecord.pageTitle": "Dossier — Kya & Co.",
   // Partially clipped
   "birdRecord.partiallyClipped": "Gedeeltelijk geknipt",
+  // Keep her record and moments as a memorial
+  "birdRecord.passedDetailHer": "Bewaar haar dossier en momenten als herinnering",
+  // Keep his record and moments as a memorial
+  "birdRecord.passedDetailHis": "Bewaar zijn dossier en momenten als herinnering",
+  // Keep their record and moments as a memorial
+  "birdRecord.passedDetailTheir": "Bewaar het dossier en de momenten als herinnering",
   // If {{name}} has passed or is in serious trouble
   "birdRecord.passedOrTrouble": "Als {{name}} is overleden of in ernstige nood is",
   // Ready
@@ -979,8 +1023,6 @@
   "birdRecord.recordHeading": "Dossier van {{name}}",
   // {{name}} removed.
   "birdRecord.removedToast": "{{name}} verwijderd.",
-  // Run a health scan
-  "birdRecord.runAHealthScan": "Doe een gezondheidscheck",
   // Save
   "birdRecord.save": "Opslaan",
   // Saved.
@@ -989,8 +1031,6 @@
   "birdRecord.saving": "Opslaan…",
   // See all
   "birdRecord.seeAll": "Alles bekijken",
-  // See check
-  "birdRecord.seeCheck": "Check bekijken",
   // Set up {{name}}'s care plan
   "birdRecord.setUpCarePlan": "Verzorgingsplan van {{name}} instellen",
   // Sex
@@ -1003,10 +1043,6 @@
   "birdRecord.somethingsWrong": "Er is iets mis met {{name}}",
   // Species
   "birdRecord.species": "Soort",
-  // Start check
-  "birdRecord.startCheck": "Check starten",
-  // The same daily check a sitter runs
-  "birdRecord.theSameDailyCheckA": "Dezelfde dagelijkse check die een oppas doet",
   // This bird
   "birdRecord.thisBird": "Deze vogel",
   // This record isn't yours anymore
@@ -1685,8 +1721,6 @@
   "birdWeight.ago365": "1 jaar geleden",
   // 90 days ago
   "birdWeight.ago90": "90 dagen geleden",
-  // Back
-  "birdWeight.back": "Terug",
   // Before meal
   "birdWeight.beforeMeal": "Voor het eten",
   // before meal
@@ -1823,14 +1857,16 @@
   "careCards.stepUpWithCaveats": "{{base}}, met kanttekeningen",
   // Yes
   "careCards.stepUpYes": "Ja",
-  // Back
-  "caregiverConcern.back": "Terug",
   // Loading…
   "caregiverConcern.loading": "Laden…",
   // Couldn't pause the reminders. Please try again.
   "caregiverConcern.pauseFailed": "Kon de herinneringen niet pauzeren. Probeer het opnieuw.",
   // the owner
   "caregiverConcern.theOwner": "de eigenaar",
+  // Something's wrong with {{name}}
+  "caregiverConcern.title": "Er is iets mis met {{name}}",
+  // Something's wrong
+  "caregiverConcern.titleNoName": "Er is iets mis",
   // Afternoon
   "caregiverHome.afternoon": "Middag",
   // {{owner}} is back in {{n}} days. Here's today's check.
@@ -1843,6 +1879,8 @@
   "caregiverHome.backTomorrow": "{{owner}} is morgen terug. Hier is de check van vandaag.",
   // Today's check starts {{when}}.
   "caregiverHome.checkStarts": "De dagelijkse check begint {{when}}.",
+  // Today's check starts {{when}}
+  "caregiverHome.checkStartsTitle": "De check van vandaag begint {{when}}",
   // Couldn't update.
   "caregiverHome.couldntUpdate": "Kon niet bijwerken.",
   // Covering {{where}}
@@ -1881,6 +1919,8 @@
   "caregiverHome.noActiveSit": "Op dit moment geen actieve oppasperiode.",
   // When an owner assigns you to cover a sit, the daily checklist shows up here for the dates of that sit.
   "caregiverHome.noActiveSitBody": "Als een eigenaar je vraagt om in te vallen tijdens een oppasperiode, verschijnt de dagelijkse checklist hier voor de data van die oppasperiode.",
+  // No active sit right now
+  "caregiverHome.noActiveSitTitle": "Nu geen actieve oppas",
   // No daily routine items yet. Logs you add still flow into the bird's record.
   "caregiverHome.noRoutineItems": "Nog geen dagelijkse routinetaken. Wat je noteert, komt nog steeds in het dossier van de vogel.",
   // {{name}}'s birds
@@ -2423,14 +2463,14 @@
   "copyFromBird.title": "Beginnen met een andere vogel?",
   // Undo
   "copyFromBird.undo": "Ongedaan maken",
-  // Covering {{owner}}'s flock
-  "covering.coveringFlock": "Je valt in voor de vogels van {{owner}}",
   // Daily care
   "covering.dailyCare": "Dagelijkse verzorging",
   // Daily health check · {{bird}}
   "covering.dailyHealthCheck": "Dagelijkse gezondheidscheck · {{bird}}",
   // If {{bird}} has passed or is in serious trouble
   "covering.ifPassed": "Als {{bird}} is overleden of in ernstige problemen is",
+  // Today's care while you cover {{owner}}'s flock
+  "covering.lineCovering": "De zorg van vandaag terwijl je de vogels van {{owner}} verzorgt",
   // This sit isn't active right now.
   "covering.notActive": "Deze oppasperiode is op dit moment niet actief.",
   // Daily care — Kya & Co.
@@ -2443,8 +2483,8 @@
   "covering.scanNotDone": "Gezondheidscheck van vandaag — nog niet gedaan",
   // Something's wrong with {{bird}}
   "covering.somethingsWrong": "Er is iets mis met {{bird}}",
-  // Today's care for {{bird}}.
-  "covering.todaysCareFor": "De verzorging van vandaag voor {{bird}}.",
+  // the owner
+  "covering.theOwner": "de eigenaar",
   // Add another weight
   "dailyCheck.addAnotherWeight": "Nog een gewicht toevoegen",
   // Add today's weight
@@ -2879,8 +2919,6 @@
   "explore.viewAll": "Alles bekijken",
   // Age
   "exportRecord.age": "Leeftijd",
-  // Back
-  "exportRecord.back": "Terug",
   // Band
   "exportRecord.band": "Ring",
   // Call the vet if: {{value}}
@@ -2889,12 +2927,16 @@
   "exportRecord.cameToYou": "Bij jou gekomen",
   // This can't be undone.
   "exportRecord.cantUndo": "Dit kan niet ongedaan worden gemaakt.",
+  // Close
+  "exportRecord.close": "Sluiten",
   // Conditions: {{value}}
   "exportRecord.conditionsLine": "Aandoeningen: {{value}}",
   // I shared it with them — did you hand off {{name}}?
   "exportRecord.confirmPromptNative": "Ik heb het met ze gedeeld — heb je {{name}} overgedragen?",
   // I gave them the PDF — did you hand off {{name}}?
   "exportRecord.confirmPromptWeb": "Ik heb ze de pdf gegeven — heb je {{name}} overgedragen?",
+  // Hand off {{name}}?
+  "exportRecord.confirmTitle": "{{name}} overdragen?",
   // Record copied to clipboard.
   "exportRecord.copied": "Dossier gekopieerd naar het klembord.",
   // Couldn't copy the record. Select the text below and copy it manually.
@@ -2941,10 +2983,14 @@
   "exportRecord.nothingToShare": "Nog niets om te delen — geef het dossier even de tijd om te laden.",
   // Not yet
   "exportRecord.notYet": "Nog niet",
+  // Optional
+  "exportRecord.optional": "Optioneel",
   // Origin
   "exportRecord.origin": "Herkomst",
   // Out of cage: {{value}}
   "exportRecord.outOfCageLine": "Buiten de kooi: {{value}}",
+  // Who did they go to?
+  "exportRecord.recipientLabel": "Naar wie is de vogel gegaan?",
   // Who did they go to? (optional)
   "exportRecord.recipientPlaceholder": "Naar wie is je vogel gegaan? (optioneel)",
   // Routine & handling
@@ -2997,8 +3043,8 @@
   "farewell.error": "Er ging iets mis. Probeer het opnieuw.",
   // In your own time
   "farewell.guidanceEyebrow": "In je eigen tempo",
-  // A few things that can help.
-  "farewell.guidanceHeadline": "Een paar dingen die kunnen helpen.",
+  // A few things that can help
+  "farewell.guidanceTitle": "Een paar dingen die kunnen helpen",
   // If {{name}}'s passing was sudden or unexplained, or you have other birds, a necropsy can tell you why, and whether your flock is at risk. It's time sensitive, so it helps to decide soon.
   "farewell.necropsyBody": "Als {{name}} plotseling of zonder duidelijke oorzaak is overleden, of als je andere vogels hebt, kan een sectie laten zien waarom, en of je andere vogels risico lopen. Het is tijdgevoelig, dus het helpt om snel te beslissen.",
   // Should you consider a necropsy?
@@ -3011,8 +3057,6 @@
   "farewell.yourBird": "je vogel",
   // Add weight
   "flockCheck.addWeight": "Gewicht toevoegen",
-  // Back
-  "flockCheck.back": "Terug",
   // Back to home
   "flockCheck.backToHome": "Terug naar home",
   // {{name}} · {{items}}
@@ -3035,6 +3079,8 @@
   "flockCheck.grams": "{{n}} g",
   // Daily health check
   "flockCheck.heading": "Dagelijkse gezondheidscheck",
+  // {{name}}'s daily check
+  "flockCheck.headingOne": "Dagelijkse check van {{name}}",
   // A quick once-over every day helps you spot early signs of illness. Record what you see for each bird here.
   "flockCheck.intro": "Elke dag even goed kijken helpt je vroege tekenen van ziekte op te merken. Noteer hier wat je bij elke vogel ziet.",
   // Last weighed {{count}} day ago
@@ -3059,8 +3105,8 @@
   "flockCheck.notWeighedInDays_other": "{{count}} dagen niet gewogen",
   // Not weighed yet
   "flockCheck.notWeighedYet": "Nog niet gewogen",
-  // {{done}} of {{total}} birds checked
-  "flockCheck.progressAria": "{{done}} van {{total}} vogels gecheckt",
+  // {{done}} of {{total}} checked
+  "flockCheck.progressChecked": "{{done}} van {{total}} gecheckt",
   // Save · next: {{name}}
   "flockCheck.saveNext": "Opslaan · volgende: {{name}}",
   // See {{name}}'s health →
@@ -3507,6 +3553,102 @@
   "foodEditor.whenIsItFed": "Wanneer wordt het gegeven?",
   // Where food is stored
   "foodEditor.whereFoodIsStored": "Waar het voer bewaard wordt",
+  // Call vet
+  "fullCheck.callVet": "Bel de dierenarts",
+  // Weight in grams
+  "fullCheck.gramsLabel": "Gewicht in grammen",
+  // e.g. 95
+  "fullCheck.gramsPlaceholder": "bijv. 95",
+  // Note about this answer
+  "fullCheck.itemNoteAria": "Notitie bij dit antwoord",
+  // What did you notice?
+  "fullCheck.itemNotePlaceholder": "Wat viel je op?",
+  // A careful once-over to make sure {{name}} is feeling like themselves.
+  "fullCheck.line_other": "Een zorgvuldige controle om zeker te weten dat {{name}} zich goed voelt.",
+  // A careful once-over to make sure {{name}} is feeling like herself.
+  "fullCheck.line_female": "Een zorgvuldige controle om zeker te weten dat {{name}} zich goed voelt.",
+  // A careful once-over to make sure {{name}} is feeling like himself.
+  "fullCheck.line_male": "Een zorgvuldige controle om zeker te weten dat {{name}} zich goed voelt.",
+  // Notes for {{name}}'s health log
+  "fullCheck.notesPlaceholder": "Notities voor het gezondheidslogboek van {{name}}",
+  // Anything else?
+  "fullCheck.notesTitle": "Nog iets?",
+  // alertness
+  "fullCheck.noun.alertness": "alertheid",
+  // breathing
+  "fullCheck.noun.breathing": "ademhaling",
+  // droppings
+  "fullCheck.noun.droppings": "ontlasting",
+  // exposure to hazards
+  "fullCheck.noun.exposure": "blootstelling aan gevaren",
+  // posture
+  "fullCheck.noun.fluffed": "houding",
+  // eating
+  "fullCheck.noun.food": "eten",
+  // injury
+  "fullCheck.noun.injury": "verwondingen",
+  // vocalizing
+  "fullCheck.noun.noise": "geluid maken",
+  // perching
+  "fullCheck.noun.posture": "zitten op de stok",
+  // face
+  "fullCheck.noun.vomiting": "gezicht",
+  // Alertness
+  "fullCheck.nounCap.alertness": "Alertheid",
+  // Breathing
+  "fullCheck.nounCap.breathing": "Ademhaling",
+  // Droppings
+  "fullCheck.nounCap.droppings": "Ontlasting",
+  // Exposure to hazards
+  "fullCheck.nounCap.exposure": "Blootstelling aan gevaren",
+  // Posture
+  "fullCheck.nounCap.fluffed": "Houding",
+  // Eating
+  "fullCheck.nounCap.food": "Eten",
+  // Injury
+  "fullCheck.nounCap.injury": "Verwondingen",
+  // Vocalizing
+  "fullCheck.nounCap.noise": "Geluid maken",
+  // Perching
+  "fullCheck.nounCap.posture": "Zitten op de stok",
+  // Face
+  "fullCheck.nounCap.vomiting": "Gezicht",
+  // Helpful if anything looks off.
+  "fullCheck.photoLine": "Handig als er iets niet goed lijkt.",
+  // Add a photo?
+  "fullCheck.photoTitle": "Een foto toevoegen?",
+  // {{n}} of {{total}} answered
+  "fullCheck.progress": "{{n}} van {{total}} beantwoord",
+  // Remove
+  "fullCheck.removePhoto": "Verwijderen",
+  // Save {{name}}'s check
+  "fullCheck.save": "Check van {{name}} opslaan",
+  // {{name}}'s check is saved to the health log.
+  "fullCheck.savedLine": "De check van {{name}} staat in het gezondheidslogboek.",
+  // Saving…
+  "fullCheck.saving": "Opslaan…",
+  // {{name}}'s full health check
+  "fullCheck.title": "Volledige gezondheidscheck van {{name}}",
+  // Upload
+  "fullCheck.upload": "Uploaden",
+  // {{item}} looked concerning. Call your avian vet.
+  "fullCheck.watchConcerning": "{{item}} zag er zorgelijk uit. Bel je vogeldierenarts.",
+  // {{count}} thing to watch
+  "fullCheck.watchCount_one": "{{count}} ding om op te letten",
+  // {{count}} things to watch
+  "fullCheck.watchCount_other": "{{count}} dingen om op te letten",
+  // You weren't sure about {{name}}'s {{item}}. If it doesn't clear up, call your avian vet.
+  "fullCheck.watchNotSure": "Je wist het niet zeker over {{item}} bij {{name}}. Als het niet overgaat, bel je vogeldierenarts.",
+  // Optional. It goes straight to their weight history.
+  "fullCheck.weighLine_other": "Optioneel. Het gaat meteen naar de gewichtsgeschiedenis.",
+  // Optional. It goes straight to her weight history.
+  "fullCheck.weighLine_female": "Optioneel. Het gaat meteen naar haar gewichtsgeschiedenis.",
+  // Optional. It goes straight to his weight history.
+  "fullCheck.weighLine_male": "Optioneel. Het gaat meteen naar zijn gewichtsgeschiedenis.",
+  // The check saved, but the weight didn't. Add it from the weight page.
+  "fullCheck.weightFailed": "De check is opgeslagen, maar het gewicht niet. Voeg het toe via de gewichtspagina.",
+  // Weigh {{name}} too?
+  "fullCheck.weighTitle": "{{name}} ook wegen?",
   // Accept
   "handoff.accept": "Accepteren",
   // Accept & create account
@@ -3587,10 +3729,20 @@
   "handoff.wrongAccount": "Deze overdracht is gestuurd naar <b>{{email}}</b>, maar je bent ingelogd met een ander account.",
   // You'll receive
   "handoff.youllReceive": "Je krijgt",
+  // Back
+  "headers.back": "Terug",
+  // Close
+  "headers.close": "Sluiten",
+  // Keep going
+  "headers.keepGoing": "Verder gaan",
+  // Leave
+  "headers.leave": "Verlaten",
+  // What you've entered so far won't be kept.
+  "headers.leaveBody": "Wat je tot nu toe hebt ingevuld, wordt niet bewaard.",
+  // Leave without saving?
+  "headers.leaveTitle": "Verlaten zonder opslaan?",
   // All birds
   "healthHistory.allBirds": "Alle vogels",
-  // Back
-  "healthHistory.back": "Terug",
   // Bird
   "healthHistory.birdLabel": "Vogel",
   // Every daily check and weight, by everyone who cares for your birds.
@@ -3861,8 +4013,6 @@
   "household.allBirds": "Alle vogels",
   // They can always see everything
   "household.alwaysSeeEverything": "Ze kunnen altijd alles zien",
-  // Back
-  "household.back": "Terug",
   // Cancel invite
   "household.cancelInvite": "Uitnodiging intrekken",
   // Edit care plans
@@ -4319,8 +4469,6 @@
   "notifSettings.alwaysOn": "Altijd aan",
   // Health and behavior alerts from a sitter, sit updates, and invites always reach you by email.
   "notifSettings.alwaysOnBody": "Gezondheids- en gedragsmeldingen van een oppas, oppasupdates en uitnodigingen bereiken je altijd per e-mail.",
-  // Back
-  "notifSettings.back": "Terug",
   // Choose what reaches you by email and on this device.
   "notifSettings.bodyNew": "Kies wat je per e-mail en op dit apparaat bereikt.",
   // Push
@@ -4529,8 +4677,6 @@
   "ownerOnboarding.welcomeEyebrow": "Welkom",
   // Welcome.
   "ownerOnboarding.welcomeHeadline": "Welkom.",
-  // Back to bird record
-  "ownerScan.backAria": "Terug naar het dossier van je vogel",
   // Back to record
   "ownerScan.backToRecord": "Terug naar dossier",
   // Emergency contacts
@@ -4541,8 +4687,6 @@
   "ownerScan.eyebrowRed": "Bel nu je dierenarts",
   // Keep a close eye
   "ownerScan.eyebrowYellow": "Houd het goed in de gaten",
-  // A quick once-over to make sure {{name}}'s feeling like themselves.
-  "ownerScan.intro": "Een snelle controle om te zien of {{name}} zich zoals altijd voelt.",
   // Couldn't log the health check.
   "ownerScan.logFailed": "Kon de gezondheidscheck niet noteren.",
   // Health check — Kya & Co.
@@ -4555,12 +4699,8 @@
   "ownerScan.msgYellowMulti": "Twee of meer zorgelijke signalen tegelijk — deze combinatie is een telefoontje waard. Stuur de eigenaar nu een bericht en bel de vogeldierenarts als het aanhoudt of erger wordt.",
   // Something may be off. Message the owner, take photos if helpful, and keep monitoring. Call the avian vet if this continues or appears with other signs.
   "ownerScan.msgYellowOne": "Er is misschien iets niet in orde. Stuur de eigenaar een bericht, maak foto's als dat helpt en blijf het in de gaten houden. Bel de vogeldierenarts als het aanhoudt of samen met andere signalen optreedt.",
-  // Log health check
-  "ownerScan.submit": "Gezondheidscheck noteren",
   // this bird
   "ownerScan.thisBird": "deze vogel",
-  // Health check — {{name}}
-  "ownerScan.title": "Gezondheidscheck — {{name}}",
   // What you flagged
   "ownerScan.whatYouFlagged": "Wat je hebt gemarkeerd",
   // Explore
@@ -4631,8 +4771,6 @@
   "pastBirds.backToFlock": "Terug naar je vogels",
   // No past birds yet. When you hand off a bird, a memory of them will live here.
   "pastBirds.empty": "Nog geen eerdere vogels. Als je een vogel overdraagt, blijft hier een herinnering aan hem bewaard.",
-  // Past birds
-  "pastBirds.eyebrow": "Eerdere vogels",
   // Their full records went with them. These are your keepsakes: who they were and where they went.
   "pastBirds.footer": "Hun volledige dossiers gingen met ze mee. Dit zijn jouw herinneringen: wie ze waren en waar ze naartoe gingen.",
   // Foster
@@ -4641,14 +4779,14 @@
   "pastBirds.foundHomeWith": "Vond op {{date}} een thuis bij {{name}}",
   // Found a new home on {{date}}
   "pastBirds.foundNewHome": "Vond op {{date}} een nieuw thuis",
-  // Past birds
-  "pastBirds.headline": "Eerdere vogels",
   // Left as a PDF handoff on {{date}}
   "pastBirds.leftAsPdf": "Vertrokken met een pdf-overdracht op {{date}}",
   // Loading…
   "pastBirds.loading": "Laden…",
-  // Past birds — Kya & Co.
-  "pastBirds.metaTitle": "Eerdere vogels — Kya & Co.",
+  // Birds you've helped rehome — Kya & Co.
+  "pastBirds.metaTitleRehome": "Vogels die je een nieuw thuis hebt helpen vinden — Kya & Co.",
+  // Birds you've helped rehome
+  "pastBirds.title": "Vogels die je een nieuw thuis hebt helpen vinden",
   // With you from {{from}} to {{to}}
   "pastBirds.withYouFromTo": "Bij jou van {{from}} tot {{to}}",
   // With you until {{date}}
@@ -4771,6 +4909,8 @@
   "planEditor.tabSits": "Oppasperiodes",
   // this bird
   "planEditor.thisBird": "deze vogel",
+  // {{name}}'s care plan
+  "planEditor.titleNamed": "Zorgplan van {{name}}",
   // green
   "planEditor.triageGreen": "groen",
   // red
@@ -4783,8 +4923,8 @@
   "planEditor.typeToConfirm": "Typ <1>{{name}}</1> om te bevestigen",
   // View as sitter
   "planEditor.viewAsSitter": "Bekijk als oppas",
-  // Birds
-  "planOverview.birds": "Vogels",
+  // Back
+  "planOverview.back": "Terug",
   // Care plan
   "planOverview.cardCarePlan": "Verzorgingsplan",
   // Your home
@@ -4827,8 +4967,10 @@
   "planOverview.tagNeededForSit": "Nodig voor een oppasperiode",
   // To do
   "planOverview.tagToDo": "Te doen",
-  // View as your sitter
-  "planOverview.viewAsYourSitter": "Bekijken als je oppas",
+  // {{name}}'s care plan
+  "planOverview.titleNamed": "Zorgplan van {{name}}",
+  // View as sitter
+  "planOverview.viewAsSitterPill": "Bekijk als oppas",
   // Walk through it again
   "planOverview.walkThroughAgain": "Nog een keer doorlopen",
   // Couldn't refresh
@@ -4847,8 +4989,6 @@
   "remembering.dayOther": "{{n}} dagen",
   // Nothing here, and that's a good thing.
   "remembering.empty": "Hier is niets, en dat is maar goed ook.",
-  // Remembering
-  "remembering.eyebrow": "In herinnering",
   // Remembering
   "remembering.headline": "In herinnering",
   // Journal
@@ -4927,8 +5067,6 @@
   "scanDetail.answerNormal": "Normaal",
   // Not sure
   "scanDetail.answerNotSure": "Niet zeker",
-  // Back
-  "scanDetail.back": "Terug",
   // by {{name}}
   "scanDetail.byName": "door {{name}}",
   // by {{name}}, sitter
@@ -5093,6 +5231,18 @@
   "scanForm.concerning.vomiting": "Herhaald schudden met de kop met nat materiaal, natte veren op gezicht/borst.",
   // grams
   "scanForm.grams": "gram",
+  // No tail bobbing, clicking, or open-mouth breathing
+  "scanForm.hint.breathing": "Geen wippende staart, geklik of ademen met open snavel",
+  // Color, shape, and amount
+  "scanForm.hint.droppings": "Kleur, vorm en hoeveelheid",
+  // Fumes, unsafe foods, metals, plants, and other pets
+  "scanForm.hint.exposure": "Dampen, onveilig eten, metalen, planten en andere huisdieren",
+  // Not fluffed up for long stretches
+  "scanForm.hint.fluffed": "Niet langdurig opgezet",
+  // No falls, bites, or scratches
+  "scanForm.hint.injury": "Geen val, beet of kras",
+  // No vomiting or discharge
+  "scanForm.hint.vomiting": "Geen braaksel of afscheiding",
   // What did you notice? (optional)
   "scanForm.itemNoteLabel": "Wat is je opgevallen? (optioneel)",
   // Add a note, e.g. left foot looks swollen
@@ -5161,10 +5311,32 @@
   "scanForm.q.posture": "Zit de vogel normaal op de zitstok?",
   // Is the face clean and dry, with no vomiting?
   "scanForm.q.vomiting": "Is het gezicht schoon en droog, zonder overgeven?",
+  // Is {{name}} alert and responsive?
+  "scanForm.q2.alertness": "Is {{name}} alert en reageert hij of zij?",
+  // Is {{name}} breathing normally?
+  "scanForm.q2.breathing": "Ademt {{name}} normaal?",
+  // Do {{name}}'s droppings look normal?
+  "scanForm.q2.droppings": "Ziet de ontlasting van {{name}} er normaal uit?",
+  // Has {{name}} been kept away from hazards?
+  "scanForm.q2.exposure": "Is {{name}} uit de buurt van gevaren gehouden?",
+  // Is {{name}}'s posture normal?
+  "scanForm.q2.fluffed": "Is de houding van {{name}} normaal?",
+  // Is {{name}} eating normally?
+  "scanForm.q2.food": "Eet {{name}} normaal?",
+  // Is {{name}} free of injury?
+  "scanForm.q2.injury": "Is {{name}} vrij van verwondingen?",
+  // Is {{name}} vocalizing as usual?
+  "scanForm.q2.noise": "Maakt {{name}} geluid zoals gewoonlijk?",
+  // Is {{name}} perched normally?
+  "scanForm.q2.posture": "Zit {{name}} normaal op de stok?",
+  // Is {{name}}'s face clean and dry?
+  "scanForm.q2.vomiting": "Is het gezicht van {{name}} schoon en droog?",
   // Submit health check
   "scanForm.submitDefault": "Gezondheidscheck versturen",
   // Take photo
   "scanForm.takePhoto": "Foto maken",
+  // the bird
+  "scanForm.theBird": "de vogel",
   // Upload photo
   "scanForm.uploadPhoto": "Foto uploaden",
   // Watch for: 
@@ -5263,8 +5435,8 @@
   "setupCheck.personality": "Karakter & omgang",
   // Reminders for your sitter
   "setupCheck.reminders": "Herinneringen voor je oppas",
-  // Back
-  "setupFrame.back": "Terug",
+  // Close
+  "setupFrame.close": "Sluiten",
   // (done)
   "setupFrame.done": "(klaar)",
   // New bird
@@ -5295,12 +5467,8 @@
   "setupShell.exitConfirmTitle": "Deze stap verlaten?",
   // Last look
   "setupShell.lastLook": "Laatste blik",
-  // Leave this step
-  "setupShell.leaveThisStep": "Deze stap verlaten",
   // Next
   "setupShell.next": "Volgende",
-  // Previous step
-  "setupShell.previousStep": "Vorige stap",
   // Save & exit
   "setupShell.saveAndExit": "Opslaan & sluiten",
   // Saving…
@@ -5519,8 +5687,6 @@
   "sitDetail.activeWarning": "Deze oppasperiode is nu bezig — er valt een oppas in. Als je hem verwijdert, verliest de oppas meteen de toegang.",
   // Activity
   "sitDetail.activity": "Activiteit",
-  // Back
-  "sitDetail.back": "Terug",
   // Birds
   "sitDetail.birdsCoveredLabel": "Vogels",
   // Couldn't delete the sit.
@@ -5591,8 +5757,6 @@
   "sitForm.anythingElseSitter": "Moet je oppas nog iets weten?",
   // Bird
   "sitForm.bird": "Vogel",
-  // Close
-  "sitForm.close": "Sluiten",
   // Copy link
   "sitForm.copyLink": "Link kopiëren",
   // Could not create sit.
@@ -6433,10 +6597,8 @@
   "system.more": "Meer",
   // Share
   "system.share": "Delen",
-  // Loading…
-  "todayPage.loading": "Laden…",
-  // Nothing on for today.
-  "todayPage.nothingOnForToday": "Niets gepland voor vandaag.",
+  // Nothing on for today
+  "todayPage.nothingOnTitle": "Niets gepland voor vandaag",
   // Today — Kya & Co.
   "todayPage.pageTitle": "Vandaag — Kya & Co.",
   // Today
@@ -6453,8 +6615,6 @@
   "tourDemo.turning": "Wordt {{n}}",
   // Willow's hatch day Saturday
   "tourDemo.willowHatchDay": "Uitkomstdag van Willow op zaterdag",
-  // Back
-  "updates.back": "Terug",
   // Review {{bird}}'s care plan before {{sit}}
   "updates.careplanTitle": "Bekijk het zorgplan van {{bird}} voor {{sit}}",
   // You're all caught up.
@@ -6515,6 +6675,8 @@
   "updates.yourBird": "je vogel",
   // Your sitter
   "updates.yourSitter": "Je oppas",
+  // Add them
+  "vetSummary.addThem": "Toevoegen",
   // after meal
   "vetSummary.afterMeal": "na het eten",
   // Age
@@ -6523,8 +6685,8 @@
   "vetSummary.answerConcerning": "zorgwekkend",
   // not sure
   "vetSummary.answerNotSure": "niet zeker",
-  // Appendix · weight history
-  "vetSummary.appendixTitle": "Bijlage · gewichtsverloop",
+  // Appendix: weight history
+  "vetSummary.appendixHeading": "Bijlage: gewichtsgeschiedenis",
   // Band
   "vetSummary.band": "Ring",
   // before meal
@@ -6563,28 +6725,26 @@
   "vetSummary.entriesOne": "{{n}} meting, nieuwste eerst",
   // {{n}} entries, newest first
   "vetSummary.entriesOther": "{{n}} metingen, nieuwste eerst",
-  // Vet summary
-  "vetSummary.eyebrow": "Dierenartssamenvatting",
   // Flagged for review (last 6 months)
   "vetSummary.flaggedTitle": "Gemarkeerd voor controle (afgelopen 6 maanden)",
   // free-fed
   "vetSummary.freeFed": "vrij gevoerd",
-  // Generate summary
-  "vetSummary.generate": "Samenvatting maken",
   // Generated {{date}}
   "vetSummary.generated": "Gemaakt op {{date}}",
   // Handling
   "vetSummary.handling": "Hanteren",
-  // One sheet for the vet.
-  "vetSummary.headline": "Eén overzicht voor de dierenarts.",
   // Identity
   "vetSummary.identity": "Identiteit",
-  // A clean snapshot for the vet — identity, weight, diet, meds, handling, and flagged health checks, pulled from {{name}}'s record.
-  "vetSummary.intro": "Een overzichtelijke momentopname voor de dierenarts — identiteit, gewicht, voeding, medicijnen, hanteren en gemarkeerde gezondheidschecks, uit het dossier van {{name}}.",
+  // What's included
+  "vetSummary.includedTitle": "Wat erin staat",
   // last weighed {{date}}
   "vetSummary.lastWeighed": "laatst gewogen op {{date}}",
+  // One clean sheet to bring to the vet or send ahead.
+  "vetSummary.line": "Eén overzichtelijk blad om mee te nemen naar de dierenarts of vooraf te sturen.",
   // logged by {{source}}
   "vetSummary.loggedBy": "genoteerd door {{source}}",
+  // Make {{name}}'s vet summary
+  "vetSummary.make": "Dierenartssamenvatting van {{name}} maken",
   // Medications: {{value}}
   "vetSummary.medicationsLine": "Medicijnen: {{value}}",
   // Meds & health flags
@@ -6595,6 +6755,22 @@
   "vetSummary.microchip": "Microchip",
   // Marked "not sure" only
   "vetSummary.milderGroup": "Alleen \"niet zeker\" aangegeven",
+  // age
+  "vetSummary.missingAge": "leeftijd",
+  // leg band
+  "vetSummary.missingBand": "pootring",
+  // {{items}}.
+  "vetSummary.missingList": "{{items}}.",
+  // microchip
+  "vetSummary.missingMicrochip": "microchip",
+  // origin
+  "vetSummary.missingOrigin": "herkomst",
+  // sex
+  "vetSummary.missingSex": "geslacht",
+  // species
+  "vetSummary.missingSpecies": "soort",
+  // Missing from {{name}}'s record
+  "vetSummary.missingTitle": "Ontbreekt in het dossier van {{name}}",
   // Never feed: {{value}}
   "vetSummary.neverFeedLine": "Nooit voeren: {{value}}",
   // No flagged checks in the last 6 months.
@@ -6603,6 +6779,8 @@
   "vetSummary.noneOnFile": "niets vastgelegd",
   // Origin
   "vetSummary.origin": "Herkomst",
+  // Pulled from {{name}}'s record, so it's always current.
+  "vetSummary.pulledFrom": "Gehaald uit het dossier van {{name}}, dus altijd actueel.",
   // resolved {{date}}
   "vetSummary.resolvedOn": "opgelost op {{date}}",
   // Save as PDF
@@ -6659,8 +6837,24 @@
   "vetSummary.stepUpSometimes": "Soms",
   // Yes
   "vetSummary.stepUpYes": "Ja",
+  // Diet
+  "vetSummary.tagDiet": "Voeding",
+  // Flagged checks
+  "vetSummary.tagFlagged": "Gemelde checks",
+  // Handling notes
+  "vetSummary.tagHandling": "Omgangsnotities",
+  // Identity
+  "vetSummary.tagIdentity": "Identiteit",
+  // Medications
+  "vetSummary.tagMedications": "Medicijnen",
+  // Weight trend
+  "vetSummary.tagWeightTrend": "Gewichtsverloop",
   // This bird
   "vetSummary.thisBird": "Deze vogel",
+  // {{name}}'s vet summary
+  "vetSummary.title": "Dierenartssamenvatting van {{name}}",
+  // Vet summary
+  "vetSummary.titleFallback": "Dierenartssamenvatting",
   // down {{n}} g
   "vetSummary.trendDown": "{{n}} g eraf",
   // first recorded weight

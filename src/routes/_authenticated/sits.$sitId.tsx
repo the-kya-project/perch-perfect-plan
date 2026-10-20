@@ -7,7 +7,8 @@ import {
   ArrowLeft, Activity, Scale, BookOpen, CheckSquare, Image as ImageIcon, Loader2, Home, AlertTriangle,
 } from "lucide-react";
 import { IconTile } from "@/components/system";
-import { K, KyaPage, KyaHeader, KyaBody, KyaCard, KyaHeading, KyaIconButton, KyaLink } from "@/components/kya";
+import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaLink } from "@/components/kya";
+import { PageHeader } from "@/components/headers";
 import { rangeTo, sitTitle } from "@/lib/sitText";
 import { durationDays } from "@/lib/dates";
 import { useServerFn } from "@tanstack/react-start";
@@ -321,13 +322,7 @@ function Shell({ goBack, headline, body, children }: { goBack: () => void; headl
   return (
     <KyaPage>
       <div className="mx-auto max-w-md">
-        <KyaHeader>
-          <div className="mt-1.5">
-            <KyaIconButton label={t("sitDetail.back", "Back")} onClick={goBack}><ArrowLeft className="size-5" /></KyaIconButton>
-          </div>
-          <KyaHeading as="h1" size={30} className="mt-4 text-white">{headline}</KyaHeading>
-          {body && <p className="m-0 mt-2 text-[15px] leading-[1.5]" style={{ color: K.paleGreen }}>{body}</p>}
-        </KyaHeader>
+        <PageHeader onBack={goBack} title={headline} line={body} />
         <KyaBody>{children}</KyaBody>
       </div>
     </KyaPage>
