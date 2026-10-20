@@ -93,6 +93,21 @@ export function KyaPrimaryButton({ children, onClick, disabled, icon }: { childr
   );
 }
 
+/** White secondary button with a 2px forest border, 48px tall. */
+export function KyaSecondaryButton({ children, onClick, disabled, icon, className = "" }: { children: ReactNode; onClick?: () => void; disabled?: boolean; icon?: ReactNode; className?: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={`inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full border-2 bg-white px-4 text-[15px] font-[700] active:scale-[0.99] disabled:opacity-45 ${className}`}
+      style={{ borderColor: K.forest, color: K.forest }}
+    >
+      {icon}{children}
+    </button>
+  );
+}
+
 /** One row in a white list card: leading, title + one-line detail, trailing,
  *  chevron. About 60px tall; rows are divided by thin lines. */
 export function KyaRow({ leading, title, detail, trailing, onClick, chevron = true, last }: {

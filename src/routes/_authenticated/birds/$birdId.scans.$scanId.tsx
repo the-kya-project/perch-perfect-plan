@@ -3,21 +3,24 @@ import { createFileRoute, useNavigate, useRouter, useCanGoBack, Link } from "@ta
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, Check, AlertTriangle, HelpCircle, Minus, Loader2, Siren, Trash2 } from "lucide-react";
-import { InkHero, Card, StatusPill, SectionHead, IconTile } from "@/components/system";
-import { useCapability } from "@/lib/useCapability";
+import { ArrowLeft, Loader2, Phone } from "lucide-react";
+import { K, KyaPage, KyaHeader, KyaBody, KyaCard, KyaHeading, KyaIconButton, KyaLink, KyaSecondaryButton } from "@/components/kya";
+import { useCapability, useMyPermissions } from "@/lib/useCapability";
 import { useBirdRole } from "@/lib/useBirdRole";
-import { OwnerHeaderIcons } from "@/components/OwnerHeader";
 import { resolveScanPhotoUrls } from "@/lib/scanPhoto";
 import { friendlyError } from "@/lib/errorMessage";
-import { formatLocalDateTime } from "@/lib/dates";
+import { formatLocalDate, formatLocalTime, monthDay } from "@/lib/dates";
+import { localDateISO } from "@/lib/localDay";
+import { mergeEmergency } from "@/lib/emergency";
+import { isStored } from "@/lib/healthHistory";
+import type { ScanFieldKey } from "@/lib/triage";
 import i18next from "i18next";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 
-// Focused, read-only view of one submitted health scan. Reached from the Scans
-// inbox (replaces the old deep-link into the care-plan editor's logs tab, which
-// read as "the care plan"). Owner/household read via RLS on daily_logs.
+// One daily check: what needed watching (with Mark resolved and Call vet),
+// every answer, the weight logged that day, and the photo. Reached from the
+// Health tab and Health history. Owner/household read via RLS on daily_logs.
 export const Route = createFileRoute("/_authenticated/birds/$birdId/scans/$scanId")({
   head: () => ({ meta: [{ title: i18next.t("scanDetail.metaTitle", "Health check — Kya & Co.") }] }),
   component: ScanDetail,
@@ -36,7 +39,7 @@ export const SCAN_COLS: { col: string; fkey: string; label: string }[] = [
   { col: "energy_status", fkey: "fluffed", label: "Not fluffed for long stretches" },
   { col: "vomiting_status", fkey: "vomiting", label: "Face clean, no vomiting" },
   { col: "injury_status", fkey: "injury", label: "No injury, fall, bite, or scratch" },
-  { col: "exposure_status", fkey: "exposure", label: "No exposure to fumes / unsafe items" },
+  { col: "exposure_status", fkey: "exposure", label: "No exposure to fumes or unsafe items" },
 ];
 
 /** Display label for a SCAN_COLS row (the constant `label` stays English). */
@@ -51,7 +54,7 @@ export function scanColLabel(t: TFunction, col: string, en: string): string {
     case "energy_status": return t("scanDetail.col.energy", "Not fluffed for long stretches");
     case "vomiting_status": return t("scanDetail.col.vomiting", "Face clean, no vomiting");
     case "injury_status": return t("scanDetail.col.injury", "No injury, fall, bite, or scratch");
-    case "exposure_status": return t("scanDetail.col.exposure", "No exposure to fumes / unsafe items");
+    case "exposure_status": return t("scanDetail.col.exposure", "No exposure to fumes or unsafe items");
     default: return en;
   }
 }
@@ -98,12 +101,35 @@ export function triageReasonLines(t: TFunction, codes: unknown): string[] | null
   return lines;
 }
 
+/** The thing a not-normal answer was about, for "wasn't sure about Max's …". */
+function itemNoun(t: TFunction, fkey: string): string {
+  switch (fkey) {
+    case "alertness": return t("scanDetail.noun.alertness", "alertness");
+    case "food": return t("scanDetail.noun.food", "eating");
+    case "droppings": return t("scanDetail.noun.droppings", "droppings");
+    case "breathing": return t("scanDetail.noun.breathing", "breathing");
+    case "posture": return t("scanDetail.noun.posture", "perching");
+    case "noise": return t("scanDetail.noun.noise", "vocalizing");
+    case "fluffed": return t("scanDetail.noun.fluffed", "fluffed-up feathers");
+    case "vomiting": return t("scanDetail.noun.vomiting", "face, for vomiting");
+    case "injury": return t("scanDetail.noun.injury", "possible injury");
+    case "exposure": return t("scanDetail.noun.exposure", "exposure to fumes or unsafe items");
+    default: return fkey;
+  }
+}
+
+function mealText(t: TFunction, m: string | null | undefined): string | null {
+  if (m === "before_meal") return t("dailyCheck.beforeMealLower", "before meal");
+  if (m === "after_meal") return t("dailyCheck.afterMealLower", "after meal");
+  return null;
+}
+
 function ScanDetail() {
   const { t } = useTranslation();
   const { birdId, scanId } = Route.useParams();
   const canHealth = useCapability("record_health", { birdId });
-  const canEmergency = useCapability("manage_emergency", { birdId });
   const isOwner = useBirdRole(birdId) === "owner";
+  const myId = useMyPermissions().data?.myId;
   const navigate = useNavigate();
   const router = useRouter();
   const qc = useQueryClient();
@@ -112,17 +138,16 @@ function ScanDetail() {
   const [deleting, setDeleting] = useState(false);
   const goBack = () => (canGoBack ? router.history.back() : navigate({ to: "/scans" }));
 
-  // Owner-only delete (RLS also enforces birds.owner_id). Removes the health check
-  // and refreshes concern surfacing (scan feed + record check-ins), then leaves
-  // the now-gone detail for the Scans list.
+  // Owner-only delete (RLS also enforces birds.owner_id).
   async function deleteScan() {
     if (!window.confirm(t("scanDetail.confirmDelete", "Delete this health check? This can't be undone."))) return;
     setDeleting(true);
     const { error } = await supabase.from("daily_logs").delete().eq("id", scanId);
     setDeleting(false);
     if (error) { toast.error(friendlyError(error)); return; }
-    toast.success(t("scanDetail.deleted", "Health check deleted."));
+    toast.success(t("scanDetail.deletedCheck", "Daily check deleted."));
     qc.invalidateQueries({ queryKey: ["scan-feed"] });
+    qc.invalidateQueries({ queryKey: ["health-history"] });
     qc.invalidateQueries({ queryKey: ["bird-checkins", birdId] });
     qc.invalidateQueries({ queryKey: ["scan-detail", scanId] });
     navigate({ to: "/scans" });
@@ -137,6 +162,7 @@ function ScanDetail() {
     toast.success(t("scanDetail.resolved", "Concern marked resolved."));
     qc.invalidateQueries({ queryKey: ["scan-detail", scanId] });
     qc.invalidateQueries({ queryKey: ["scan-feed"] });
+    qc.invalidateQueries({ queryKey: ["health-history"] });
   }
 
   const { data, isLoading } = useQuery({
@@ -149,16 +175,14 @@ function ScanDetail() {
       let actor: string | null = null;
       if (row) {
         const r = row as any;
-        if (r.sit?.sitter_name || r.sit?.sitter_email) actor = r.sit.sitter_name || r.sit.sitter_email;
+        if (r.source === "sitter") actor = r.sit?.sitter_name || r.sit?.sitter_email || null;
         else if (r.run_by) {
           const { data: p } = await supabase.from("profiles").select("display_name").eq("id", r.run_by).maybeSingle();
           actor = (p?.display_name ?? "").trim() || null;
         }
       }
-      const { data: bird } = await supabase.from("birds").select("name").eq("id", birdId).maybeSingle();
-      // Photos attached to this check. photo_url is either a legacy inline data:
-      // URL or a scan-photos Storage path — resolve both to a displayable URL
-      // (data: passes through, paths are signed) via the shared helper.
+      const { data: bird } = await supabase.from("birds").select("name, owner_id").eq("id", birdId).maybeSingle();
+      // Photos attached to this check: legacy data: URLs or scan-photos paths.
       const { data: photos } = await supabase
         .from("photo_logs")
         .select("id, photo_url")
@@ -168,185 +192,208 @@ function ScanDetail() {
       const resolvedPhotos = (photos ?? [])
         .map((p) => ({ id: p.id, photo_url: scanUrls.get(p.photo_url) ?? p.photo_url }))
         .filter((p) => !!p.photo_url);
-      return { row: row as any, actor, birdName: (bird?.name ?? null) as string | null, photos: resolvedPhotos as { id: string; photo_url: string }[] };
+
+      // The weight logged for this bird on the same local day.
+      let weight: { grams: number; measured_at: string; meal_relation: string | null } | null = null;
+      if (row) {
+        const d = new Date((row as any).created_at);
+        const from = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        const to = new Date(from.getTime() + 86_400_000);
+        const { data: ws } = await supabase.from("weight_entries").select("grams, measured_at, meal_relation")
+          .eq("bird_id", birdId).gte("measured_at", from.toISOString()).lt("measured_at", to.toISOString())
+          .order("measured_at", { ascending: false }).limit(1);
+        weight = (ws?.[0] as any) ?? null;
+      }
+
+      // The avian vet number: the bird's own, else the owner's account default.
+      const [{ data: ec }, { data: defs }] = await Promise.all([
+        supabase.from("emergency_contacts").select("avian_vet_phone").eq("bird_id", birdId).maybeSingle(),
+        bird?.owner_id
+          ? supabase.from("owner_emergency_defaults").select("avian_vet_phone").eq("owner_id", bird.owner_id).maybeSingle()
+          : Promise.resolve({ data: null } as any),
+      ]);
+      const vetPhone = mergeEmergency(ec as any, defs as any).avian_vet_phone;
+
+      return { row: row as any, actor, birdName: (bird?.name ?? null) as string | null, photos: resolvedPhotos as { id: string; photo_url: string }[], weight, vetPhone };
     },
   });
 
   const row = data?.row;
 
-  if (isLoading) {
+  if (isLoading || !row) {
     return (
-      <Shell eyebrow={t("scanDetail.eyebrow", "Health check")} headline={t("scanDetail.loading", "Loading…")} onBack={goBack}>
-        <div className="flex items-center justify-center gap-2 py-10 text-[14px] text-[var(--mute)]"><Loader2 className="size-4 animate-spin" /> {t("scanDetail.loading", "Loading…")}</div>
-      </Shell>
-    );
-  }
-  if (!row) {
-    return (
-      <Shell eyebrow={t("scanDetail.eyebrow", "Health check")} headline={t("scanDetail.notFound", "Health check not found.")} onBack={goBack}>
-        <Card className="p-6 text-center">
-          <p className="t-body text-[var(--ink2)]">{t("scanDetail.notAvailable", "This health check isn't available — it may have been removed.")}</p>
-        </Card>
+      <Shell headline={isLoading ? t("scanDetail.loading", "Loading…") : t("scanDetail.notFoundCheck", "Daily check not found")} onBack={goBack}>
+        <KyaCard className="p-6 text-center">
+          {isLoading
+            ? <span className="inline-flex items-center gap-2 text-[14px]" style={{ color: K.quiet }}><Loader2 className="size-4 animate-spin" /> {t("scanDetail.loading", "Loading…")}</span>
+            : <p className="m-0 text-[15px]" style={{ color: K.quiet }}>{t("scanDetail.notAvailableCheck", "This daily check isn't available. It may have been removed.")}</p>}
+        </KyaCard>
       </Shell>
     );
   }
 
-  const triage = (row.triage_status ?? "green") as string;
-  const concern = triage === "red" || triage === "yellow";
-  const headline = triage === "red" ? t("scanDetail.headlineRed", "Concern flagged.") : triage === "yellow" ? t("scanDetail.headlineYellow", "Something to check.") : t("scanDetail.headlineGreen", "All clear.");
-  const when = formatLocalDateTime(new Date(row.created_at), { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
-  const actor = data!.actor;
-  const runBy = actor === null ? t("scanDetail.runByYou", "Run by you") : t("scanDetail.runBy", "Run by {{name}}", { name: actor });
   const birdName = data!.birdName ?? t("scanDetail.yourBird", "your bird");
-  const notSure = SCAN_COLS.filter((f) => row[f.col] === "not_sure");
-  const reasonsText = formatTriageReasons(t, row);
+  const at = new Date(row.created_at);
+  const when = `${formatLocalDate(at, { weekday: "long", month: "long", day: "numeric" })}, ${formatLocalTime(at, { hour: "numeric", minute: "2-digit" })}`;
+  const isSitter = row.source === "sitter";
+  const mine = !isSitter && !!myId && row.run_by === myId;
+  const actor = data!.actor;
+  const sitterFallback = t("scanDetail.yourSitterLower", "your sitter");
+  const memberFallback = t("scanDetail.householdMemberLower", "a household member");
+  const by = mine
+    ? t("scanDetail.byYou", "by you")
+    : isSitter
+      ? t("scanDetail.bySitter", "by {{name}}, sitter", { name: actor ?? sitterFallback })
+      : t("scanDetail.byName", "by {{name}}", { name: actor ?? memberFallback });
+  const whoShort = mine ? null : (actor?.split(/\s+/)[0] ?? (isSitter ? t("scanDetail.yourSitterCap", "Your sitter") : t("scanDetail.householdMemberCap", "A household member")));
+  const notes = (row.item_notes ?? null) as Record<string, string> | null;
+  // A question with no stored answer (vomiting before 20261020230000) uses its
+  // triage code if it was flagged, else is left out rather than called unanswered.
+  const codes = (Array.isArray(row.triage_reason_codes) ? row.triage_reason_codes : []) as { key?: string; answer?: string }[];
+  const answerOf = (f: (typeof SCAN_COLS)[number]): string | null | undefined =>
+    isStored(row, f.fkey as ScanFieldKey) ? row[f.col] : codes.find((c) => c.key === f.fkey)?.answer;
+  const shownCols = SCAN_COLS.filter((f) => answerOf(f) !== undefined);
+  const flagged = shownCols.filter((f) => answerOf(f) === "not_sure" || answerOf(f) === "concerning");
+  // A flag with no per-question answers (older rows) still counts as one thing.
+  const watchCount = flagged.length || (row.triage_status && row.triage_status !== "green" ? 1 : 0);
+  const reasonsText = flagged.length ? null : formatTriageReasons(t, row);
+
+  const sentence = (f: (typeof SCAN_COLS)[number]) => {
+    const noun = itemNoun(t, f.fkey);
+    const notSure = answerOf(f) === "not_sure";
+    if (whoShort === null) {
+      return notSure
+        ? t("scanDetail.youNotSure", "You weren't sure about {{bird}}'s {{item}}", { bird: birdName, item: noun })
+        : t("scanDetail.youConcerning", "You marked {{bird}}'s {{item}} as concerning", { bird: birdName, item: noun });
+    }
+    return notSure
+      ? t("scanDetail.otherNotSure", "{{name}} wasn't sure about {{bird}}'s {{item}}", { name: whoShort, bird: birdName, item: noun })
+      : t("scanDetail.otherConcerning", "{{name}} marked {{bird}}'s {{item}} as concerning", { name: whoShort, bird: birdName, item: noun });
+  };
 
   return (
-    <Shell eyebrow={t("scanDetail.eyebrow", "Health check")} headline={headline} body={`${birdName} · ${runBy} · ${when}`} onBack={goBack}>
-      {/* Summary banner — amber for concern, pale-green for clear (no red: a
-          flagged scan is attention, not an emergency-contact block). */}
-      <div
-        className="flex items-start gap-3 rounded-[16px] p-4"
-        style={concern ? { background: "var(--amber-fill)" } : { background: "var(--pale)" }}
-      >
-        <IconTile size={34} tone={concern ? "amber" : "pale"} icon={concern ? <AlertTriangle className="size-4" /> : <Check className="size-4" />} />
-        <div className="min-w-0 flex-1">
-          <p className="t-item" style={{ color: concern ? "var(--amber-ink)" : "var(--ink)" }}>
-            {triage === "red" ? t("scanDetail.bannerRed", "Needs attention") : triage === "yellow" ? t("scanDetail.bannerYellow", "Worth a closer look") : t("scanDetail.bannerGreen", "Everything looked normal")}
-          </p>
-          {reasonsText && (
-            <p className="mt-0.5 text-[13px]" style={{ color: concern ? "var(--amber-ink)" : "var(--ink2)" }}>
-              {reasonsText}
-            </p>
-          )}
-          {notSure.length > 0 && (
-            <p className="mt-1 text-[13px] text-[var(--amber-ink)]">
-              {actor === null
-                ? notSure.length === 1
-                  ? t("scanDetail.notSureYouOne", "{{n}} item you weren't sure about.", { n: notSure.length })
-                  : t("scanDetail.notSureYouOther", "{{n}} items you weren't sure about.", { n: notSure.length })
-                : notSure.length === 1
-                  ? t("scanDetail.notSureOtherOne", "{{n}} item {{name}} wasn't sure about.", { n: notSure.length, name: actor.split(/\s+/)[0] })
-                  : t("scanDetail.notSureOtherOther", "{{n}} items {{name}} wasn't sure about.", { n: notSure.length, name: actor.split(/\s+/)[0] })}
-            </p>
-          )}
-        </div>
-      </div>
-
-      {/* Concern actions — emergency contacts (manage_emergency) + resolve
-          (record_health). Each gated so members don't see controls that fail. */}
-      {concern && (
-        <div className="space-y-2">
-          {canEmergency && (
-          <Link
-            to="/birds/$birdId/plan/editor"
-            params={{ birdId }}
-            search={{ tab: "emergency" }}
-            className="flex min-h-[48px] items-center justify-center gap-2 rounded-[13px] bg-[var(--ink)] text-[15px] font-[500] text-white active:scale-[0.99]"
-          >
-            <Siren className="size-4" /> {t("scanDetail.emergencyContacts", "Emergency contacts")}
-          </Link>
-          )}
+    <Shell
+      headline={t("scanDetail.titleCheck", "{{name}}'s daily check", { name: birdName })}
+      body={`${when} · ${by}`}
+      onBack={goBack}
+    >
+      {watchCount > 0 && (
+        <section className="rounded-[20px] p-4" style={{ background: K.amberBg, color: K.amberText }}>
+          <KyaHeading size={20}>{t("scanDetail.thingsToWatch", "{{count}} things to watch", { count: watchCount })}</KyaHeading>
+          <div className="mt-2 flex flex-col gap-2 text-[15px] leading-[1.45]">
+            {flagged.map((f) => (
+              <p key={f.col} className="m-0">
+                {sentence(f)}{notes?.[f.fkey] ? `: “${notes[f.fkey]}”` : "."}
+              </p>
+            ))}
+            {reasonsText && <p className="m-0">{reasonsText}</p>}
+          </div>
           {row.resolved_at ? (
-            <p className="flex items-center justify-center gap-1.5 py-1 text-[13px] font-[500] text-[var(--moss)]">
-              <Check className="size-4" /> {t("scanDetail.markedResolved", "Marked resolved")}
+            <p className="m-0 mt-3 text-[15px] font-[700]">
+              {t("scanDetail.markedResolvedOn", "Marked resolved {{date}}", { date: monthDay(localDateISO(new Date(row.resolved_at))) })}
             </p>
-          ) : canHealth ? (
-            <button
-              type="button"
-              onClick={markResolved}
-              disabled={resolving}
-              className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-[13px] border border-[var(--ink)] text-[15px] font-[500] text-[var(--ink)] active:scale-[0.99] disabled:opacity-50"
-            >
-              {resolving ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />} {t("scanDetail.markResolved", "Mark resolved")}
-            </button>
+          ) : (canHealth || data!.vetPhone) ? (
+            <div className="mt-3 flex gap-2">
+              {canHealth && (
+                <KyaSecondaryButton className="flex-1" onClick={markResolved} disabled={resolving} icon={resolving ? <Loader2 className="size-4 animate-spin" /> : undefined}>
+                  {t("scanDetail.markResolved", "Mark resolved")}
+                </KyaSecondaryButton>
+              )}
+              {data!.vetPhone && (
+                <a
+                  href={`tel:${data!.vetPhone.replace(/[^\d+]/g, "")}`}
+                  className="inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-full border-2 bg-white px-4 text-[15px] font-[700] active:scale-[0.99]"
+                  style={{ borderColor: K.forest, color: K.forest }}
+                >
+                  <Phone className="size-4" /> {t("scanDetail.callVet", "Call vet")}
+                </a>
+              )}
+            </div>
           ) : null}
-        </div>
+        </section>
       )}
 
-      {/* Per-item checklist */}
-      <section>
-        <SectionHead title={t("scanDetail.theCheck", "The check")} />
-        <Card>
-          {SCAN_COLS.map((f, i) => {
-            const note = (row.item_notes as Record<string, string> | null)?.[f.fkey];
-            return (
-              <div key={f.col} className={`px-4 py-2.5 ${i === SCAN_COLS.length - 1 ? "" : "border-b border-[var(--line2)]"}`}>
-                <div className="flex min-h-[44px] items-center gap-3">
-                  <AnswerIcon value={row[f.col]} />
-                  <span className="t-item flex-1 font-[400]">{scanColLabel(t, f.col, f.label)}</span>
-                  <AnswerPill value={row[f.col]} />
-                </div>
-                {note && (
-                  <p className="mt-1 rounded-lg px-3 py-2 text-[13px] leading-relaxed" style={{ background: "var(--amber-fill)", color: "var(--amber-ink)" }}>
-                    {note}
-                  </p>
-                )}
+      <KyaCard>
+        <div className="px-4 pb-1 pt-4"><KyaHeading size={20}>{t("scanDetail.everyAnswer", "Every answer")}</KyaHeading></div>
+        {shownCols.map((f, i) => {
+          const note = notes?.[f.fkey];
+          return (
+            <div key={f.col} className="px-4 py-1.5" style={{ borderBottom: i === shownCols.length - 1 ? undefined : `1px solid ${K.line}` }}>
+              <div className="flex min-h-[44px] items-center gap-3">
+                <span className="min-w-0 flex-1 text-[15px]" style={{ color: K.forest }}>{scanColLabel(t, f.col, f.label)}</span>
+                <AnswerTag value={answerOf(f) ?? null} />
               </div>
-            );
-          })}
-        </Card>
-      </section>
+              {note && <p className="m-0 pb-2 text-[13px] leading-[1.45]" style={{ color: K.quiet }}>{note}</p>}
+            </div>
+          );
+        })}
+      </KyaCard>
 
       {row.notes && (
-        <section>
-          <SectionHead title={t("scanDetail.notes", "Notes")} />
-          <Card className="p-4">
-            <p className="t-body whitespace-pre-line text-[var(--ink2)]">{row.notes}</p>
-          </Card>
-        </section>
+        <KyaCard className="p-4">
+          <KyaHeading size={20}>{t("scanDetail.notes", "Notes")}</KyaHeading>
+          <p className="m-0 mt-2 whitespace-pre-line text-[15px]" style={{ color: K.ink }}>{row.notes}</p>
+        </KyaCard>
       )}
 
-      {/* Photos attached to this check (data: URLs — render directly). */}
+      {data!.weight && (
+        <KyaCard className="p-4">
+          <p className="m-0 text-[15px] font-[700]">{t("scanDetail.weightThatDay", "Weight that day")}</p>
+          <p className="m-0 mt-1 text-[14px]" style={{ color: K.quiet }}>
+            {[
+              t("healthHistory.grams", "{{n}} g", { n: Number(data!.weight.grams).toLocaleString() }),
+              formatLocalTime(new Date(data!.weight.measured_at), { hour: "numeric", minute: "2-digit" }),
+              mealText(t, data!.weight.meal_relation),
+            ].filter(Boolean).join(" · ")}
+          </p>
+        </KyaCard>
+      )}
+
       {(data?.photos?.length ?? 0) > 0 && (
-        <section>
-          <SectionHead title={data!.photos.length === 1 ? t("scanDetail.photo", "Photo") : t("scanDetail.photos", "Photos")} />
-          <div className="space-y-3">
+        <KyaCard className="p-4">
+          <KyaHeading size={20}>{data!.photos.length === 1 ? t("scanDetail.photo", "Photo") : t("scanDetail.photos", "Photos")}</KyaHeading>
+          <div className="mt-3 flex flex-col gap-3">
             {data!.photos.map((p) => (
-              <Card key={p.id} className="overflow-hidden">
-                <img src={p.photo_url} alt={t("scanDetail.photoAlt", "Photo attached to this health check")} className="block w-full object-contain" />
-              </Card>
+              <img key={p.id} src={p.photo_url} alt={t("scanDetail.photoAltCheck", "Photo attached to this daily check")} className="block w-full rounded-[14px] object-contain" />
             ))}
           </div>
-        </section>
+        </KyaCard>
       )}
 
-      {/* Delete — owner-only (RLS also enforces birds.owner_id). */}
       {isOwner && (
-        <button
-          type="button"
-          onClick={deleteScan}
-          disabled={deleting}
-          className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-[13px] border border-[var(--red-line)] text-[15px] font-[500] text-[var(--red-ink)] active:scale-[0.99] disabled:opacity-50"
-        >
-          {deleting ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />} {deleting ? t("scanDetail.deleting", "Deleting…") : t("scanDetail.deleteCheck", "Delete health check")}
-        </button>
+        <div className="flex justify-center">
+          <KyaLink color={K.red} onClick={deleting ? undefined : deleteScan}>
+            {deleting ? t("scanDetail.deleting", "Deleting…") : t("scanDetail.deleteThisCheck", "Delete this check")}
+          </KyaLink>
+        </div>
       )}
     </Shell>
   );
 }
 
-function Shell({ eyebrow, headline, body, onBack, children }: { eyebrow: string; headline: string; body?: string; onBack: () => void; children: React.ReactNode }) {
+function Shell({ headline, body, onBack, children }: { headline: string; body?: string; onBack: () => void; children: React.ReactNode }) {
+  const { t } = useTranslation();
   return (
-    <div className="min-h-screen bg-[var(--cream)] pb-nav">
+    <KyaPage>
       <div className="mx-auto max-w-md">
-        <InkHero backIcon={<ArrowLeft className="size-5" />} onBack={onBack} eyebrow={eyebrow} headline={headline} body={body} trailingIcons={<OwnerHeaderIcons />} />
-        <main className="space-y-4 px-5 pt-5">{children}</main>
+        <KyaHeader>
+          <div className="mt-1.5">
+            <KyaIconButton label={t("scanDetail.back", "Back")} onClick={onBack}><ArrowLeft className="size-5" /></KyaIconButton>
+          </div>
+          <KyaHeading as="h1" size={30} className="mt-5 text-white">{headline}</KyaHeading>
+          {body && <p className="m-0 mt-2 text-[15px] leading-[1.5]" style={{ color: K.paleGreen }}>{body}</p>}
+        </KyaHeader>
+        <KyaBody className="gap-4">{children}</KyaBody>
       </div>
-    </div>
+    </KyaPage>
   );
 }
 
-function AnswerIcon({ value }: { value: string | null }) {
-  if (value === "normal") return <Check className="size-4 shrink-0 text-[var(--moss)]" />;
-  if (value === "concerning") return <AlertTriangle className="size-4 shrink-0 text-[var(--amber-ink)]" />;
-  if (value === "not_sure") return <HelpCircle className="size-4 shrink-0 text-[var(--amber-ink)]" />;
-  return <Minus className="size-4 shrink-0 text-[var(--mute2)]" />;
-}
-function AnswerPill({ value }: { value: string | null }) {
+function AnswerTag({ value }: { value: string | null }) {
   const { t } = useTranslation();
-  if (value === "normal") return <StatusPill tone="good">{t("scanDetail.answerNormal", "Normal")}</StatusPill>;
-  if (value === "concerning") return <StatusPill tone="attention">{t("scanDetail.answerConcerning", "Concerning")}</StatusPill>;
-  if (value === "not_sure") return <StatusPill tone="attention">{t("scanDetail.answerNotSure", "Not sure")}</StatusPill>;
-  return <span className="t-meta">—</span>;
+  const cls = "inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-[12.5px] font-[700]";
+  if (value === "normal") return <span className={cls} style={{ background: K.mist, color: K.moss }}>{t("scanDetail.answerNormal", "Normal")}</span>;
+  if (value === "concerning") return <span className={cls} style={{ background: K.amberBg, color: K.amberText }}>{t("scanDetail.answerConcerning", "Concerning")}</span>;
+  if (value === "not_sure") return <span className={cls} style={{ background: K.amberBg, color: K.amberText }}>{t("scanDetail.answerNotSure", "Not sure")}</span>;
+  return <span className={cls} style={{ color: K.quiet }}>{t("scanDetail.notAnswered", "Not answered")}</span>;
 }

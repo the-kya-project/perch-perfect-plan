@@ -35,6 +35,8 @@ function tabForPath(pathname: string): OwnerTab | undefined {
   if (pathname.startsWith("/dashboard")) return "home";
   if (pathname.startsWith("/today")) return "sits";
   if (pathname.startsWith("/sits")) return "sits";
+  // Notification settings is opened from settings, not the Health tab.
+  if (pathname.startsWith("/scans/settings")) return undefined;
   if (pathname.startsWith("/scans")) return "activity";
   if (pathname.startsWith("/explore")) return "explore";
   return undefined; // deeper screens (bird editor, account, …) highlight nothing
@@ -51,7 +53,7 @@ export function OwnerTabBar({ active, embedded }: { active?: OwnerTab; embedded?
   return (
     <nav
       aria-label={t("ownerTabs.navAria", "Primary")}
-      className={`${embedded ? "" : "fixed inset-x-0 bottom-0 z-40 "}border-t border-[#e3dcc9] bg-[#f4f1e8]/95 backdrop-blur-sm pb-[env(safe-area-inset-bottom)]`}
+      className={`${embedded ? "" : "fixed inset-x-0 bottom-0 z-40 "}border-t border-[#d5dfd5] bg-white pb-[env(safe-area-inset-bottom)]`}
     >
       <div className="mx-auto flex max-w-md items-stretch justify-around">
         {TABS.map(({ key, label, to, Icon }) => {
@@ -62,8 +64,8 @@ export function OwnerTabBar({ active, embedded }: { active?: OwnerTab; embedded?
               to={to}
               data-coach={`owner-tab-${key}`}
               aria-current={on ? "page" : undefined}
-              className={`flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] font-medium transition-colors ${
-                on ? "text-[#1a3d2e]" : "text-[#8a897f]"
+              className={`flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] transition-colors ${
+                on ? "font-bold text-[#1a3d2e]" : "font-medium text-[#5f5e5a]"
               }`}
             >
               <Icon className="size-6" strokeWidth={on ? 2.4 : 1.9} />

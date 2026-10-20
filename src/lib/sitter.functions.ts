@@ -9,7 +9,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { computeTriage, type ScanAnswer, type ScanFieldKey } from "./triage";
+import { computeTriage, SCAN_FIELDS, type ScanAnswer, type ScanFieldKey } from "./triage";
 import { resolveToday } from "./localDay";
 import { buildDailyLogEmail, buildSitterConcernEmail } from "./emailTemplates";
 import { emailT } from "./i18n/emailI18n.server";
@@ -48,14 +48,19 @@ async function getAdmin() {
   return supabaseAdmin;
 }
 
-// Owner-side "View as sitter" preview sits carry this sentinel name. They render
-// the real read-only sitter view but must never accept writes.
+// Owner-side "View as sitter" previews. A preview is NOT a sit: its token lives
+// in sitter_previews (see sitterPreview.functions.ts), and loadSitByToken turns
+// it into a stand-in sit for one bird that exists only for this request. The
+// stand-in's id is the nil UUID, so every per-sit query (completions, logs,
+// scans, pauses) matches nothing, and assertNotPreview rejects every write.
 export const PREVIEW_SITTER_NAME = "__preview__";
+const PREVIEW_SIT_ID = "00000000-0000-0000-0000-000000000000";
+type LoadedSit = Record<string, any> & { id: string; sitter_name?: string | null; preview_bird_id?: string };
 function assertNotPreview(sit: { sitter_name?: string | null }) {
   if (sit.sitter_name === PREVIEW_SITTER_NAME) throw new Error("This is a read-only preview — changes aren't saved.");
 }
 
-async function loadSitByToken(token: string) {
+async function loadSitByToken(token: string): Promise<LoadedSit> {
   const sb = await getAdmin();
   const { data: sit, error } = await sb
     .from("sits")
@@ -63,7 +68,7 @@ async function loadSitByToken(token: string) {
     .eq("invite_token", token)
     .maybeSingle();
   if (error) throw new Error(error.message);
-  if (!sit) throw new Error("SITTER_LINK_INVALID");
+  if (!sit) return loadPreviewByToken(token);
   if (sit.revoked) throw new Error("SITTER_LINK_REVOKED");
   // Token-bearing rows always carry token_expires_at (sits_one_caregiver_chk
   // enforces token + expiry on the external-sitter path); household sits have
@@ -74,15 +79,49 @@ async function loadSitByToken(token: string) {
   return sit;
 }
 
-async function loadSitBirdIds(sitId: string): Promise<string[]> {
+async function loadPreviewByToken(token: string): Promise<LoadedSit> {
   const sb = await getAdmin();
-  const { data, error } = await sb.from("sit_birds").select("bird_id").eq("sit_id", sitId);
+  // sitter_previews postdates the generated types.
+  const { data: p, error } = await (sb as any)
+    .from("sitter_previews")
+    .select("token, bird_id, created_at, expires_at")
+    .eq("token", token)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!p) throw new Error("SITTER_LINK_INVALID");
+  if (new Date(p.expires_at) < new Date()) throw new Error("SITTER_LINK_EXPIRED");
+  const { data: bird } = await sb.from("birds").select("owner_id").eq("id", p.bird_id).maybeSingle();
+  if (!bird) throw new Error("SITTER_LINK_INVALID");
+  const today = new Date().toISOString().slice(0, 10);
+  return {
+    id: PREVIEW_SIT_ID,
+    owner_id: bird.owner_id,
+    sitter_name: PREVIEW_SITTER_NAME,
+    sitter_email: null,
+    caregiver_user_id: null,
+    title: null,
+    notes: null,
+    start_date: today,
+    end_date: today,
+    status: "upcoming",
+    revoked: false,
+    invite_token: p.token,
+    token_expires_at: p.expires_at,
+    created_at: p.created_at,
+    preview_bird_id: p.bird_id,
+  };
+}
+
+async function loadSitBirdIds(sit: LoadedSit): Promise<string[]> {
+  if (sit.preview_bird_id) return [sit.preview_bird_id];
+  const sb = await getAdmin();
+  const { data, error } = await sb.from("sit_birds").select("bird_id").eq("sit_id", sit.id);
   if (error) throw new Error(error.message);
   return (data ?? []).map((r: any) => r.bird_id);
 }
 
-async function assertBirdInSit(sitId: string, birdId: string) {
-  const ids = await loadSitBirdIds(sitId);
+async function assertBirdInSit(sit: LoadedSit, birdId: string) {
+  const ids = await loadSitBirdIds(sit);
   if (!ids.includes(birdId)) throw new Error("Bird not in this sit.");
 }
 
@@ -91,9 +130,9 @@ async function assertBirdInSit(sitId: string, birdId: string) {
 // routine_task_id; the row would be harmless (scoped to their own sit_id and
 // only readable by that sit's owner), but we reject it so completions can only
 // reference this sit's real tasks.
-async function assertTaskInSit(sitId: string, taskId: string) {
+async function assertTaskInSit(sit: LoadedSit, taskId: string) {
   const sb = await getAdmin();
-  const birdIds = await loadSitBirdIds(sitId);
+  const birdIds = await loadSitBirdIds(sit);
   if (birdIds.length === 0) throw new Error("Task not in this sit.");
   const { data: plans } = await sb.from("care_plans").select("id").in("bird_id", birdIds);
   const planIds = (plans ?? []).map((p: any) => p.id);
@@ -115,7 +154,7 @@ export const getSitterContext = createServerFn({ method: "GET" })
     const sb = await getAdmin();
     const sit = await loadSitByToken(data.token);
 
-    const birdIds = await loadSitBirdIds(sit.id);
+    const birdIds = await loadSitBirdIds(sit);
     if (birdIds.length === 0) throw new Error("This sit has no birds.");
 
     const { data: allBirds, error: bErr } = await sb
@@ -252,7 +291,7 @@ export const pauseSitterReminders = createServerFn({ method: "POST" })
     const sb = await getAdmin();
     const sit = await loadSitByToken(data.token);
     assertNotPreview(sit);
-    const birdIds = await loadSitBirdIds(sit.id);
+    const birdIds = await loadSitBirdIds(sit);
     if (!birdIds.includes(data.birdId)) throw new Error("Bird not in this sit.");
 
     const { error } = await sb
@@ -348,7 +387,7 @@ export const toggleTaskCompletion = createServerFn({ method: "POST" })
     const sb = await getAdmin();
     const sit = await loadSitByToken(data.token);
     assertNotPreview(sit);
-    await assertTaskInSit(sit.id, data.taskId);
+    await assertTaskInSit(sit, data.taskId);
     const today = resolveToday(data.today);
     if (data.completed) {
       await sb.from("task_completions").upsert(
@@ -452,13 +491,16 @@ export const submitHealthScan = createServerFn({ method: "POST" })
           // The sitter's local date, so an evening check isn't filed under tomorrow.
           today: z.string().optional(),
         })
+        // Sitters answer every question: there is no all-good shortcut, and
+        // the form already blocks a partial check. Enforce it here too.
+        .refine((v) => SCAN_FIELDS.every((f) => v.answers[f.key] !== undefined), { message: "Please answer every question before submitting." })
         .parse(d),
   )
   .handler(async ({ data }) => {
     const sb = await getAdmin();
     const sit = await loadSitByToken(data.token);
     assertNotPreview(sit);
-    await assertBirdInSit(sit.id, data.birdId);
+    await assertBirdInSit(sit, data.birdId);
     const triage = computeTriage(data.answers as Record<ScanFieldKey, ScanAnswer>);
     const today = resolveToday(data.today);
     const a = data.answers as Record<string, string>;
@@ -514,6 +556,7 @@ export const submitHealthScan = createServerFn({ method: "POST" })
         bird_id: data.birdId,
         grams: data.weightGrams,
         source: "sitter",
+        sit_id: sit.id,
         // No auth user for a token-based sitter; note carries who logged it.
         note: sit.sitter_name ? `Logged by ${sit.sitter_name}` : null,
       });
@@ -629,7 +672,7 @@ export const getSitterScans = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const sb = await getAdmin();
     const sit = await loadSitByToken(data.token);
-    await assertBirdInSit(sit.id, data.birdId);
+    await assertBirdInSit(sit, data.birdId);
     const { data: scans } = await sb
       .from("daily_logs")
       .select("*")
@@ -661,7 +704,7 @@ export const getSitterDashboard = createServerFn({ method: "GET" })
   .handler(async ({ data }) => {
     const sb = await getAdmin();
     const sit = await loadSitByToken(data.token);
-    const birdIds = await loadSitBirdIds(sit.id);
+    const birdIds = await loadSitBirdIds(sit);
     const today = resolveToday(data.today);
 
     const [birdsRes, plansRes, compsRes, scansRes] = await Promise.all([
