@@ -139,7 +139,7 @@ function FlockCheck() {
     const photo = photoOf(b.photo_url) as Photo;
     return (
       <span className="relative shrink-0" style={{ width: size, height: size }} aria-hidden="true">
-        <span className="block size-full overflow-hidden rounded-full" style={{ background: b.color, boxShadow: `0 0 0 2px ${border}` }}>
+        <span className="relative block size-full overflow-hidden rounded-full" style={{ background: b.color, boxShadow: `0 0 0 2px ${border}` }}>
           {photo ? <BirdPhotoCrop url={photo.url} original={photo.original} position={b.photo_position} alt="" /> : <span className="grid size-full place-items-center font-[600] text-white/90" style={{ fontSize: size * 0.36 }}>{b.name.slice(0, 1).toUpperCase()}</span>}
         </span>
         {badge && (

@@ -185,7 +185,7 @@ function CarePlanOverview() {
 
           <div className="mt-5 flex items-center gap-4">
             {photo?.url ? (
-              <div className="size-[76px] shrink-0 overflow-hidden rounded-full">
+              <div className="relative size-[76px] shrink-0 overflow-hidden rounded-full">
                 <BirdPhotoCrop url={photo.url} original={photo.original} position={bird?.photo_position} alt={name} />
               </div>
             ) : (
