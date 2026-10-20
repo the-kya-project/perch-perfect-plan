@@ -1,5 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { PrimaryButton } from "@/components/system";
+import { createPortal } from "react-dom";
+import { InSetupFrame, SetupIntroSlot } from "@/components/setup/SetupFrame";
+import { SetupPrimaryButton, SetupSecondaryButton } from "@/components/setup/controls";
 import { useTranslation } from "react-i18next";
 import i18next, { type TFunction } from "i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -57,11 +59,13 @@ export const HideStepInstruction = createContext(false);
  * flush function so pending edits are persisted before the step unmounts.
  * While a save is pending the step is reported "dirty" via SetupDirtyContext.
  */
-// Standout step instruction — a dark-green banner so the "here's what this step
-// is for" guidance never blends into the form. Shown in the guided setup; hidden
-// on the editor tabs (via HideStepInstruction).
+// The "here's what this step is for" line. In the setup shell it renders as the
+// header's intro line; elsewhere it's a dark-green banner so it never blends
+// into the form. Hidden on the editor tabs (via HideStepInstruction).
 function StepInstruction({ children }: { children: React.ReactNode }) {
+  const introSlot = useContext(SetupIntroSlot);
   if (useContext(HideStepInstruction)) return null;
+  if (introSlot) return createPortal(<p>{children}</p>, introSlot);
   return (
     <div className="mb-4 flex items-start gap-2.5 rounded-2xl bg-[#1a3d2e] p-3.5">
       <Lightbulb className="mt-0.5 size-4 shrink-0 text-[#cdeab0]" />
@@ -412,19 +416,17 @@ function BirdSetup() {
       <SetupShell
         step={setupStepNumber("health")}
         title={t("birdSetup.stop.title", "The basics are set for {{name}}.", { name: bird.name })}
-        eyebrow={null}
+        subtitle={t("birdSetup.stop.body", "Do you want to add more details for a pet sitter? We'll cover behavior and training, tips and tricks for {{name}}'s care, and more.", { name: bird.name })}
         birdName={bird.name}
         birdSpecies={bird.species}
         onExit={exitToProfile}
+        onBack={onBack}
         onNavigateStep={jumpToStep}
         hideFooter
       >
-        <p className="t-body text-[var(--ink2)]">
-          {t("birdSetup.stop.body", "Do you want to add more details for a pet sitter? We'll cover behavior and training, tips and tricks for {{name}}'s care, and more.", { name: bird.name })}
-        </p>
-        <div className="space-y-2.5 pt-2">
-          <PrimaryButton onPress={keepGoing}>{t("birdSetup.stop.keepGoing", "Keep going")}</PrimaryButton>
-          <PrimaryButton tone="outline" onPress={setUpLater}>{t("birdSetup.stop.later", "Set up later")}</PrimaryButton>
+        <div className="flex flex-col gap-2.5">
+          <SetupPrimaryButton onClick={keepGoing}>{t("birdSetup.stop.keepGoing", "Keep going")}</SetupPrimaryButton>
+          <SetupSecondaryButton onClick={setUpLater}>{t("birdSetup.stop.later", "Set up later")}</SetupSecondaryButton>
         </div>
       </SetupShell>
     );
@@ -1590,8 +1592,10 @@ export function FoodWaterStep({
 }
 
 function Card({ title, hint, badge, children }: { title: string; hint?: string; badge?: React.ReactNode; children: React.ReactNode }) {
+  // Inside the setup shell: the new section-card fill on the white body.
+  const inFrame = useContext(InSetupFrame);
   return (
-    <section className="rounded-2xl bg-[#efe9da] p-4">
+    <section className={`rounded-2xl p-4 ${inFrame ? "bg-[#f1f5f0]" : "bg-[#efe9da]"}`}>
       <h2 className="flex items-center gap-2 text-sm font-medium">
         {title}
         {badge}
@@ -2976,7 +2980,7 @@ function ReviewStep({
                   onClick={() => onJumpToStep(i.step)}
                   className="text-left text-sm font-semibold text-sage-900 underline decoration-warn-amber underline-offset-2"
                 >
-                  {i.label} <span className="text-xs text-sage-600">{t("birdSetup.fixInStep", "— fix in step {{step}}", { step: i.step })}</span>
+                  {i.label} <span className="text-xs text-sage-600">{t("birdSetup.fixIt", "— fix it")}</span>
                 </button>
               </li>
             ))}

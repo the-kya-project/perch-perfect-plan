@@ -1081,8 +1081,8 @@
   "birdSetup.female": "Vrouwtje",
   // Finish setup
   "birdSetup.finishSetup": "Instellen afronden",
-  // — fix in step {{step}}
-  "birdSetup.fixInStep": "— aanpassen in stap {{step}}",
+  // — fix it
+  "birdSetup.fixIt": "— oplossen",
   // Flight
   "birdSetup.flight": "Vliegen",
   // Fresh food spoils fast and can grow bacteria. This tells your sitter when to take it out.
@@ -3519,8 +3519,6 @@
   "newBird.discardConfirm": "Deze vogel weggooien? Je hebt hem nog niet opgeslagen.",
   // Couldn't set up emergency info: {{reason}}
   "newBird.emergencySetupFailed": "De noodinfo kon niet worden aangemaakt: {{reason}}",
-  // New bird
-  "newBird.eyebrow": "Nieuwe vogel",
   // It's okay if you don't know much yet — add what you know now, fill the rest in as you learn.
   "newBird.fosterReassure": "Het is niet erg als je nog niet veel weet — voeg toe wat je nu weet en vul de rest aan zodra je meer leert.",
   // Add a bird.
@@ -4579,24 +4577,14 @@
   "setupFrame.pillTips": "Tips",
   // Setting up
   "setupFrame.settingUp": "Instellen",
-  // All steps
-  "setupShell.allSteps": "Alle stappen",
-  // Back to {{name}}
-  "setupShell.backTo": "Terug naar {{name}}",
-  // Bird
-  "setupShell.bird": "Vogel",
   // Cancel
   "setupShell.cancel": "Annuleren",
-  // Done
-  "setupShell.done": "Klaar",
   // Your progress is saved — you can pick up right where you left off.
   "setupShell.exitConfirmBody": "Je voortgang is opgeslagen — je kunt verder waar je gebleven was.",
   // Leave
   "setupShell.exitConfirmCta": "Verlaten",
   // Leave this step?
   "setupShell.exitConfirmTitle": "Deze stap verlaten?",
-  // Here now
-  "setupShell.hereNow": "Je bent hier",
   // Last look
   "setupShell.lastLook": "Laatste blik",
   // Leave this step
@@ -4609,8 +4597,6 @@
   "setupShell.saveAndExit": "Opslaan & sluiten",
   // Saving…
   "setupShell.saving": "Opslaan…",
-  // Review
-  "setupShell.shortReview": "Controleren",
   // Step {{step}} of {{total}}
   "setupShell.stepOf": "Stap {{step}} van {{total}}",
   // Tips from the owner
@@ -4629,6 +4615,8 @@
   "setupShell.titleReminders": "Herinneringen voor je oppas",
   // Review & finish
   "setupShell.titleReview": "Controleren & afronden",
+  // Your home
+  "setupShell.yourHome": "Je huis",
   // Add…
   "setupUi.add": "Toevoegen…",
   // Needs details

@@ -1617,8 +1617,8 @@
     "birdSetup.finishSetup": {
       "stamp": "9bb7368070b3ef5a"
     },
-    "birdSetup.fixInStep": {
-      "stamp": "fb428cacbba661fe"
+    "birdSetup.fixIt": {
+      "stamp": "14ea90d8a520370b"
     },
     "birdSetup.flight": {
       "stamp": "5bdc1919d90eeaf6"
@@ -5274,9 +5274,6 @@
     "newBird.emergencySetupFailed": {
       "stamp": "3a79a312c976d3cd"
     },
-    "newBird.eyebrow": {
-      "stamp": "bdf86184291c6b49"
-    },
     "newBird.fosterReassure": {
       "stamp": "ccbd8f979ec81674"
     },
@@ -6864,20 +6861,8 @@
     "setupFrame.settingUp": {
       "stamp": "9b3438f9000b0f04"
     },
-    "setupShell.allSteps": {
-      "stamp": "e8b243e903b7abb7"
-    },
-    "setupShell.backTo": {
-      "stamp": "829aa07ea34b8d18"
-    },
-    "setupShell.bird": {
-      "stamp": "7964d14d200e7108"
-    },
     "setupShell.cancel": {
       "stamp": "06c80f8b6f9f2b3b"
-    },
-    "setupShell.done": {
-      "stamp": "3e00dbef8dddb12e"
     },
     "setupShell.exitConfirmBody": {
       "stamp": "d59ed32c0ccbce49"
@@ -6887,9 +6872,6 @@
     },
     "setupShell.exitConfirmTitle": {
       "stamp": "b6785407a7b5bf63"
-    },
-    "setupShell.hereNow": {
-      "stamp": "dc6227c65ab91a6e"
     },
     "setupShell.lastLook": {
       "stamp": "ef313f754a4b2bd2"
@@ -6908,9 +6890,6 @@
     },
     "setupShell.saving": {
       "stamp": "0b998d1b1ad7ec9e"
-    },
-    "setupShell.shortReview": {
-      "stamp": "8b2f81666244b331"
     },
     "setupShell.stepOf": {
       "stamp": "c35676ac4c220cb5"
@@ -6938,6 +6917,9 @@
     },
     "setupShell.titleReview": {
       "stamp": "872d2c409f44066f"
+    },
+    "setupShell.yourHome": {
+      "stamp": "a0b55ed740b3c6f2"
     },
     "setupUi.add": {
       "stamp": "13ffff7a830ca985"

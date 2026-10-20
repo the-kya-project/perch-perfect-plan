@@ -1,8 +1,8 @@
 // The new setup shell: forest header with the bird, step pills and title; a
 // white body tucked under the header's rounded corners; a sticky footer.
-// Screens move onto it one at a time as they're restyled — the older
-// SetupShell still frames the rest of the walkthrough until then.
-import { useEffect, useRef, type ReactNode } from "react";
+// Every setup screen renders inside it (SetupShell wraps it for the guided
+// walkthrough; Add a bird and "Who else helps?" use it directly).
+import { createContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { Check, ChevronLeft } from "lucide-react";
@@ -11,6 +11,11 @@ import { S, SERIF } from "./controls";
 /** The six steps an owner sees, in flow order. */
 export const SETUP_PILLS = ["details", "food", "health", "behavior", "tips", "day"] as const;
 export type SetupPill = (typeof SETUP_PILLS)[number];
+
+/** True inside a SetupFrame body — older step pieces use it to match the new look. */
+export const InSetupFrame = createContext(false);
+/** The header's intro slot, so a step's own intro line can render up there. */
+export const SetupIntroSlot = createContext<HTMLElement | null>(null);
 
 function pillLabel(t: TFunction, pill: SetupPill): string {
   switch (pill) {
@@ -27,31 +32,44 @@ export function SetupFrame({
   birdName,
   current,
   page,
+  stepLabel,
   title,
   intro,
   headerPanel,
   onBack,
+  backLabel,
+  onPill,
   footer,
+  belowFooter,
   children,
 }: {
   birdName?: string | null;
-  current: SetupPill;
+  /** The current step's pill, or null on screens after the six steps (all done). */
+  current: SetupPill | null;
   /** Sub-pages of the current step, e.g. [2, 2] → "Details · 2 of 2". */
   page?: [number, number];
+  /** Replaces "Step N of 6" (screens outside the six steps). */
+  stepLabel?: string;
   title: ReactNode;
   intro?: ReactNode;
   headerPanel?: ReactNode;
   onBack: () => void;
+  backLabel?: string;
+  /** Makes the other pills tappable (jump to that step). */
+  onPill?: (pill: SetupPill) => void;
   footer?: ReactNode;
+  /** Rendered under the footer, inside the sticky area (the owner tab bar). */
+  belowFooter?: ReactNode;
   children: ReactNode;
 }) {
   const { t } = useTranslation();
   const name = birdName?.trim() || "";
-  const currentIndex = SETUP_PILLS.indexOf(current);
+  const currentIndex = current ? SETUP_PILLS.indexOf(current) : SETUP_PILLS.length;
+  const [introSlot, setIntroSlot] = useState<HTMLElement | null>(null);
 
   // Bring the current pill into view on load, scrolling only the strip.
   const stripRef = useRef<HTMLDivElement>(null);
-  const currentRef = useRef<HTMLSpanElement>(null);
+  const currentRef = useRef<HTMLElement | null>(null);
   useEffect(() => {
     const strip = stripRef.current;
     const pill = currentRef.current;
@@ -67,7 +85,7 @@ export function SetupFrame({
             <button
               type="button"
               onClick={onBack}
-              aria-label={t("setupFrame.back", "Back")}
+              aria-label={backLabel ?? t("setupFrame.back", "Back")}
               className="grid size-11 shrink-0 place-items-center rounded-full text-white"
               style={{ background: S.forestDeep }}
             >
@@ -85,11 +103,11 @@ export function SetupFrame({
               <span className="block truncate text-[17px] font-[700] text-white">{name || t("setupFrame.newBird", "New bird")}</span>
             </span>
             <span className="shrink-0 text-[13px]" style={{ color: S.mist }}>
-              {t("setupShell.stepOf", "Step {{step}} of {{total}}", { step: currentIndex + 1, total: SETUP_PILLS.length })}
+              {stepLabel ?? t("setupShell.stepOf", "Step {{step}} of {{total}}", { step: currentIndex + 1, total: SETUP_PILLS.length })}
             </span>
           </div>
 
-          <div ref={stripRef} className="-mx-4 mt-4 overflow-x-auto px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div ref={stripRef} className="-mx-4 mt-4 overflow-x-auto px-4 py-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <ol className="m-0 flex w-max list-none gap-2 p-0">
               {SETUP_PILLS.map((pill, i) => {
                 const state = i < currentIndex ? "done" : i === currentIndex ? "current" : "upcoming";
@@ -101,18 +119,30 @@ export function SetupFrame({
                   state === "done" ? { background: S.forestDeep, color: S.lime, borderColor: S.forestDeep }
                   : state === "current" ? { background: S.lime, color: S.forest, borderColor: S.lime }
                   : { background: "transparent", color: S.mist, borderColor: S.pillLine };
+                const cls = "inline-flex h-[34px] items-center gap-1.5 whitespace-nowrap rounded-full border px-3.5 text-[13px] font-[700]";
+                const content = (
+                  <>
+                    {state === "done" && <Check className="size-3.5" strokeWidth={3} aria-hidden="true" />}
+                    {text}
+                    {state === "done" && <span className="sr-only"> {t("setupFrame.done", "(done)")}</span>}
+                  </>
+                );
+                // Details is edited on the bird's page once saved, so it never jumps.
+                const tappable = !!onPill && state !== "current" && pill !== "details";
                 return (
                   <li key={pill}>
-                    <span
-                      ref={state === "current" ? currentRef : undefined}
-                      aria-current={state === "current" ? "step" : undefined}
-                      className="inline-flex h-[34px] items-center gap-1.5 whitespace-nowrap rounded-full border px-3.5 text-[13px] font-[700]"
-                      style={style}
-                    >
-                      {state === "done" && <Check className="size-3.5" strokeWidth={3} aria-hidden="true" />}
-                      {text}
-                      {state === "done" && <span className="sr-only"> {t("setupFrame.done", "(done)")}</span>}
-                    </span>
+                    {tappable ? (
+                      <button type="button" onClick={() => onPill!(pill)} className={cls} style={style}>{content}</button>
+                    ) : (
+                      <span
+                        ref={state === "current" ? (el) => { currentRef.current = el; } : undefined}
+                        aria-current={state === "current" ? "step" : undefined}
+                        className={cls}
+                        style={style}
+                      >
+                        {content}
+                      </span>
+                    )}
                   </li>
                 );
               })}
@@ -125,19 +155,30 @@ export function SetupFrame({
           >
             {title}
           </h1>
-          {intro && <p className="m-0 mt-2.5 text-[15.5px] leading-[1.55]" style={{ color: S.mist }}>{intro}</p>}
+          <div ref={setIntroSlot} className="text-[15.5px] leading-[1.55] empty:hidden [&>*]:m-0 [&>*]:mt-2.5" style={{ color: S.mist }}>
+            {intro && <p>{intro}</p>}
+          </div>
           {headerPanel && <div className="mt-4">{headerPanel}</div>}
         </div>
       </header>
 
       <main className="relative z-[1] -mt-[26px] flex-1 rounded-t-[26px] bg-white">
-        <div className="mx-auto flex max-w-md flex-col gap-[14px] px-4 py-[22px]">{children}</div>
+        <div className="mx-auto flex max-w-md flex-col gap-[14px] px-4 py-[22px]">
+          <InSetupFrame.Provider value={true}>
+            <SetupIntroSlot.Provider value={introSlot}>{children}</SetupIntroSlot.Provider>
+          </InSetupFrame.Provider>
+        </div>
       </main>
 
-      {footer && (
-        <footer className="sticky bottom-0 z-10 border-t bg-white" style={{ borderColor: S.footerLine }}>
-          <div className="mx-auto max-w-md px-5 pb-[max(env(safe-area-inset-bottom),26px)] pt-[14px]">{footer}</div>
-        </footer>
+      {(footer || belowFooter) && (
+        <div className="sticky bottom-0 z-40">
+          {footer && (
+            <footer className="border-t bg-white" style={{ borderColor: S.footerLine }}>
+              <div className={`mx-auto max-w-md px-5 pt-[14px] ${belowFooter ? "pb-[14px]" : "pb-[max(env(safe-area-inset-bottom),26px)]"}`}>{footer}</div>
+            </footer>
+          )}
+          {belowFooter}
+        </div>
       )}
     </div>
   );
