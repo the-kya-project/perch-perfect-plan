@@ -4469,52 +4469,50 @@
   "planEditor.typeToConfirm": "Typ <1>{{name}}</1> om te bevestigen",
   // View as sitter
   "planEditor.viewAsSitter": "Bekijk als oppas",
-  // Added
-  "planOverview.added": "Toegevoegd",
-  // All the little things {{name}}'s owner knows by heart, so you can care for {{name}} just right.
-  "planOverview.bodyMember": "Alle kleine dingen die de eigenaar van {{name}} uit het hoofd weet, zodat je precies goed voor {{name}} kunt zorgen.",
-  // All the little things you know by heart, written down.
-  "planOverview.bodyOwner": "Alle kleine dingen die je uit je hoofd weet, opgeschreven.",
-  // {{n}} clip
-  "planOverview.clipCountOne": "{{n}} clip",
-  // {{n}} clips
-  "planOverview.clipCountOther": "{{n}} clips",
-  // Optional — short how-to videos for sitters
-  "planOverview.clipsOptional": "Optioneel — korte instructievideo's voor oppassen",
+  // Birds
+  "planOverview.birds": "Vogels",
+  // Care plan
+  "planOverview.cardCarePlan": "Verzorgingsplan",
+  // Your home
+  "planOverview.cardYourHome": "Je huis",
   // Different for {{name}}
   "planOverview.differentFor": "Anders voor {{name}}",
-  // Care plan
-  "planOverview.eyebrow": "Verzorgingsplan",
-  // Only {{name}}'s owner can make changes. You can view the plan and log weights, journal entries, and health checks.
-  "planOverview.footerMember": "Alleen de eigenaar van {{name}} kan wijzigingen maken. Jij kunt het plan bekijken en gewichten, dagboeknotities en gezondheidschecks noteren.",
-  // This is what everyone helping with {{name}} sees. Sitters get a per-trip link from the Sits tab; household members can view it any time.
-  "planOverview.footerOwner": "Dit ziet iedereen die helpt met {{name}}. Oppassen krijgen per oppasperiode een link via het tabblad Oppasperiodes; leden van je huishouden kunnen het altijd bekijken.",
-  // Everything that makes {{name}}, {{name}}.
-  "planOverview.headline": "Alles wat {{name}} tot {{name}} maakt.",
-  // Handling, likes, cage, and out-of-cage time
-  "planOverview.hintBehaviorCageTime": "Oppakken, voorkeuren, kooi en tijd buiten de kooi",
-  // Owner and vet contacts
-  "planOverview.hintEmergency": "Contacten van eigenaar en dierenarts",
-  // Diet and food instructions
-  "planOverview.hintFood": "Dieet en voedingsinstructies",
-  // Baseline and what's normal
-  "planOverview.hintHealth": "Uitgangssituatie en wat normaal is",
-  // Hazards, off-limits areas, pets, and cleaning
-  "planOverview.hintHomeAreas": "Gevaren, verboden plekken, huisdieren en schoonmaken",
-  // Daily schedule and tasks
-  "planOverview.hintRoutine": "Dagschema en taken",
-  // Needs info
-  "planOverview.needsInfo": "Info nodig",
-  // Ready
-  "planOverview.ready": "Klaar",
+  // Two
+  "planOverview.num2": "Nog twee",
+  // Three
+  "planOverview.num3": "Nog drie",
+  // Four
+  "planOverview.num4": "Nog vier",
+  // Five
+  "planOverview.num5": "Nog vijf",
+  // Six
+  "planOverview.num6": "Nog zes",
+  // Seven
+  "planOverview.num7": "Nog zeven",
+  // Day
+  "planOverview.rowDay": "Dag",
+  // Details
+  "planOverview.rowDetails": "Gegevens",
   // Emergency contacts
   "planOverview.rowEmergencyContacts": "Noodcontacten",
   // Reminders for your sitter
   "planOverview.rowReminders": "Herinneringen voor je oppas",
+  // Tips
+  "planOverview.rowTips": "Tips",
   // Shared
   "planOverview.shared": "Gedeeld",
-  // Tips from the owner
-  "planOverview.tipsFromOwner": "Tips van de eigenaar",
+  // {{name}}'s plan has everything a sitter needs.
+  "planOverview.statusDone": "Het plan van {{name}} heeft alles wat een oppas nodig heeft.",
+  // {{words}} more sections and {{name}}'s plan will have everything a sitter needs.
+  "planOverview.statusMany": "{{words}} onderdelen en het plan van {{name}} heeft alles wat een oppas nodig heeft.",
+  // One more section and {{name}}'s plan will have everything a sitter needs.
+  "planOverview.statusOne": "Nog één onderdeel en het plan van {{name}} heeft alles wat een oppas nodig heeft.",
+  // Done
+  "planOverview.tagDone": "Klaar",
+  // Needed for a sit
+  "planOverview.tagNeededForSit": "Nodig voor een oppasperiode",
+  // To do
+  "planOverview.tagToDo": "Te doen",
   // View as your sitter
   "planOverview.viewAsYourSitter": "Bekijken als je oppas",
   // Walk through it again
