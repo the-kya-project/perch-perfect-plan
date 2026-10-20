@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { signInWithGoogle } from "@/lib/nativeOAuth";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { joinNamesDisplay } from "@/lib/i18n/joinNames";
+import { currentLocale } from "@/lib/i18n/ownerLocale";
 import { getHouseholdInvite, acceptHouseholdInvite, declineHouseholdInvite } from "@/lib/household.functions";
 import { captureLead } from "@/lib/captureLead";
 import { toast } from "sonner";
@@ -225,7 +226,7 @@ function LoggedOutAccept({ token, inviteEmail, onDone }: { token: string; invite
       const { data, error } = await supabase.auth.signUp({
         email: inviteEmail,
         password,
-        options: { data: { display_name: fullName, full_name: fullName, given_name: first, family_name: last || undefined }, emailRedirectTo: redirect },
+        options: { data: { display_name: fullName, full_name: fullName, given_name: first, family_name: last || undefined, locale: currentLocale() }, emailRedirectTo: redirect },
       });
       if (error) { toast.error(authErrorMessage(error)); setPending(false); return; }
       // Land the new member in Brevo with a real name. No marketing consent —

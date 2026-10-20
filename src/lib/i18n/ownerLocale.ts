@@ -34,3 +34,11 @@ export async function saveOwnerLocale(userId: string, locale: Locale): Promise<v
   if (!data) throw new Error("Couldn't save your language. Please try again.");
   applyOwnerLocale(locale);
 }
+
+/** The language the app is rendering in right now, normalized to exactly a
+ *  supported locale ("nl-BE" → "nl", anything non-Dutch → "en"). Sent as
+ *  user_metadata.locale on email signUp so the Supabase "Confirm signup"
+ *  template can branch on {{ .Data.locale }} before profiles.locale exists. */
+export function currentLocale(): Locale {
+  return pickLocale(globalI18n.language);
+}

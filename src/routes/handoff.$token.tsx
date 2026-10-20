@@ -13,6 +13,7 @@ import { friendlyError } from "@/lib/errorMessage";
 import { authErrorMessage } from "@/lib/authErrorMessage";
 import { useTranslation, Trans } from "react-i18next";
 import i18next from "i18next";
+import { currentLocale } from "@/lib/i18n/ownerLocale";
 
 // Public handoff-accept screen. Renders for logged-out visitors; the token is
 // the access check. Invalid/expired/used → clean message, no data exposed.
@@ -178,7 +179,7 @@ function LoggedOutAccept({ token, inviteEmail }: { token: string; inviteEmail: s
     try {
       // Store the REAL name so handle_new_user captures it — never the email prefix.
       const fullName = [first, last].filter(Boolean).join(" ");
-      const { data, error } = await supabase.auth.signUp({ email: inviteEmail, password, options: { data: { display_name: fullName, full_name: fullName, given_name: first, family_name: last || undefined }, emailRedirectTo: redirect } });
+      const { data, error } = await supabase.auth.signUp({ email: inviteEmail, password, options: { data: { display_name: fullName, full_name: fullName, given_name: first, family_name: last || undefined, locale: currentLocale() }, emailRedirectTo: redirect } });
       if (error) { toast.error(authErrorMessage(error)); setPending(false); return; }
       // Land the new account in Brevo with a real name (no marketing consent).
       void captureLead({ email: inviteEmail, firstName: first, lastName: last || undefined, source: "handoff", marketingConsent: false, attribution: null });
