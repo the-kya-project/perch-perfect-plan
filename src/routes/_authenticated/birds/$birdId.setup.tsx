@@ -1548,13 +1548,14 @@ export function FoodWaterStep({
 
   // Chop: remove the homemade item and its ingredients (asks first when there's
   // anything to lose). Pre-made items are added and removed in the editor.
-  function removeHomemadeChop() {
+  function removeHomemadeChop(): boolean {
     const homemade = chopItemsState.filter((i) => i.homemade);
     const hasContent = homemade.some(foodItemHasContent) || chopIngredients.length > 0 || freshOther.trim() !== "";
-    if (hasContent && !window.confirm(t("birdSetup.removeHomemadeConfirm", "Remove homemade chop? This clears its amount, timing and ingredients."))) return;
+    if (hasContent && !window.confirm(t("birdSetup.removeHomemadeConfirm", "Remove homemade chop? This clears its amount, timing and ingredients."))) return false;
     setItemsForType("chop", chopItemsState.filter((i) => !i.homemade));
     setChopIngredients([]);
     setFreshOther("");
+    return true;
   }
 
   function toggleChopIngredient(label: string) {

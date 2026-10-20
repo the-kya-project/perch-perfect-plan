@@ -3259,8 +3259,18 @@
   "foodEditor.homemade": "Zelfgemaakt",
   // Homemade chop
   "foodEditor.homemadeChopItem": "Zelfgemaakte chop",
+  // add how much
+  "foodEditor.homemadeMissingQty": "hoeveel nog invullen",
+  // add how much and when
+  "foodEditor.homemadeMissingQtyWhen": "hoeveel en wanneer nog invullen",
+  // add when it's served
+  "foodEditor.homemadeMissingWhen": "wanneer nog invullen",
+  // Your ingredients are saved. Add how much and when whenever you're ready.
+  "foodEditor.homemadeSavedNote": "Je ingrediënten zijn bewaard. Vul hoeveel en wanneer in zodra je klaar bent.",
   // How much?
   "foodEditor.howMuch": "Hoeveel?",
+  // How much and when
+  "foodEditor.howMuchAndWhen": "Hoeveel en wanneer",
   // Optional — anything else the sitter should know about food/water hygiene.
   "foodEditor.hygieneNotesPlaceholder": "Optioneel — nog iets wat de oppas moet weten over hygiëne van voer en water.",
   // Items, amounts & feed time(s)
@@ -3285,6 +3295,10 @@
   "foodEditor.missingQtyWhen": "Vul in hoeveel en wanneer",
   // Add when it's served
   "foodEditor.missingWhen": "Vul in wanneer het gegeven wordt",
+  // {{count}} added
+  "foodEditor.nAdded_one": "{{count}} toegevoegd",
+  // {{count}} added
+  "foodEditor.nAdded_other": "{{count}} toegevoegd",
   // Never feed
   "foodEditor.neverFeed": "Nooit geven",
   // Add anything specific to your bird.
@@ -3301,6 +3315,10 @@
   "foodEditor.newPremadeChop": "Nieuwe kant-en-klare chop",
   // New seed mix
   "foodEditor.newSeedMix": "Nieuwe zadenmix",
+  // {{count}} ingredient
+  "foodEditor.nIngredients_one": "{{count}} ingrediënt",
+  // {{count}} ingredients
+  "foodEditor.nIngredients_other": "{{count}} ingrediënten",
   // Note (optional)
   "foodEditor.noteOptional": "Notitie (optioneel)",
   // e.g. any prep or serving details
@@ -3383,10 +3401,8 @@
   "foodEditor.water": "Water",
   // Notes (filter, bottle vs bowl, etc.)
   "foodEditor.waterNotesPlaceholder": "Notities (filter, fles of bak, enz.)",
-  // What's in it · {{count}}
-  "foodEditor.whatsInItCount_one": "Wat zit erin · {{count}}",
-  // What's in it · {{count}}
-  "foodEditor.whatsInItCount_other": "Wat zit erin · {{count}}",
+  // What's in it
+  "foodEditor.whatsInIt": "Wat zit erin",
   // When?
   "foodEditor.when": "Wanneer?",
   // When is it fed?

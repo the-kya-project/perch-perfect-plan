@@ -4884,8 +4884,23 @@
     "foodEditor.homemadeChopItem": {
       "stamp": "2fc74f23f3b2d959"
     },
+    "foodEditor.homemadeMissingQty": {
+      "stamp": "c52a29a7fc0e0946"
+    },
+    "foodEditor.homemadeMissingQtyWhen": {
+      "stamp": "721d6f829c2330d7"
+    },
+    "foodEditor.homemadeMissingWhen": {
+      "stamp": "c3f2e810087ac082"
+    },
+    "foodEditor.homemadeSavedNote": {
+      "stamp": "bf0422032c9f5d90"
+    },
     "foodEditor.howMuch": {
       "stamp": "0b23e3fd8acd5e4c"
+    },
+    "foodEditor.howMuchAndWhen": {
+      "stamp": "229490e27c2010bc"
     },
     "foodEditor.hygieneNotesPlaceholder": {
       "stamp": "6c15c24e583b894b"
@@ -4923,6 +4938,12 @@
     "foodEditor.missingWhen": {
       "stamp": "809ebd90e17cf41f"
     },
+    "foodEditor.nAdded_one": {
+      "stamp": "d4a11f2abad3b5a2"
+    },
+    "foodEditor.nAdded_other": {
+      "stamp": "d4a11f2abad3b5a2"
+    },
     "foodEditor.neverFeed": {
       "stamp": "6ddfe75182cfb725"
     },
@@ -4946,6 +4967,12 @@
     },
     "foodEditor.newSeedMix": {
       "stamp": "b74cc3462c46252b"
+    },
+    "foodEditor.nIngredients_one": {
+      "stamp": "b0f9167d0f71090a"
+    },
+    "foodEditor.nIngredients_other": {
+      "stamp": "61ed34ef8be1977f"
     },
     "foodEditor.noteOptional": {
       "stamp": "1c9c81d2c9ea79a7"
@@ -5070,11 +5097,8 @@
     "foodEditor.waterNotesPlaceholder": {
       "stamp": "93a2558fbaeed292"
     },
-    "foodEditor.whatsInItCount_one": {
-      "stamp": "9844cb253d772e7d"
-    },
-    "foodEditor.whatsInItCount_other": {
-      "stamp": "9844cb253d772e7d"
+    "foodEditor.whatsInIt": {
+      "stamp": "f7f74ddda7e5dafb"
     },
     "foodEditor.when": {
       "stamp": "1391a59a62eace9c"

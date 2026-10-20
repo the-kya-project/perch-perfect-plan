@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { AlertTriangle, Plus, Search, X } from "lucide-react";
 import { CHOP_COMMON, normalize, searchChopIngredients } from "@/lib/chopIngredients";
 import { chopIngredientLabel } from "./foodLabels";
+import { SERIF } from "@/components/setup/controls";
 
 /**
  * Homemade chop ingredients, in one place: every ingredient as a chip (picks
@@ -58,9 +59,12 @@ export function ChopIngredientPicker({
 
   return (
     <div className="flex flex-col gap-3" style={{ color: "#1a3d2e" }}>
-      <p className="m-0 text-[13px] font-[700] text-[#5f5e5a]">
-        {t("foodEditor.whatsInItCount", "What's in it · {{count}}", { count })}
-      </p>
+      <div className="flex items-baseline justify-between gap-2">
+        <h3 className="m-0 text-[20px] font-[700] leading-[1.2]" style={{ fontFamily: SERIF }}>
+          {t("foodEditor.whatsInIt", "What's in it")}
+        </h3>
+        <span className="shrink-0 text-[13px] font-[700] text-[#5f5e5a]">{t("foodEditor.nAdded", "{{count}} added", { count })}</span>
+      </div>
 
       {count > 0 && (
         <div className="flex flex-wrap gap-2">
