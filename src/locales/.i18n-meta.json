@@ -4161,8 +4161,14 @@
     "foodEditor.addAnotherItem": {
       "stamp": "9649a82e8720ead5"
     },
+    "foodEditor.added": {
+      "stamp": "bbd00a77ee943f88"
+    },
     "foodEditor.addItem": {
       "stamp": "fd3d4b789e31c37a"
+    },
+    "foodEditor.addTypedIngredient": {
+      "stamp": "f9c9853dd6a0f9fc"
     },
     "foodEditor.amount": {
       "stamp": "53cfd9a31133bbe4"
@@ -4218,11 +4224,35 @@
     "foodEditor.freeFedNote": {
       "stamp": "09e60c4f7d4efb05"
     },
+    "foodEditor.fresh.amaranth": {
+      "stamp": "c470dfac0b457771"
+    },
     "foodEditor.fresh.appleNoSeeds": {
       "stamp": "3dd43ed293cbea12"
     },
+    "foodEditor.fresh.apricotNoPit": {
+      "stamp": "f7ee1487c3315a91"
+    },
+    "foodEditor.fresh.arugula": {
+      "stamp": "68bff481c6bc671f"
+    },
+    "foodEditor.fresh.asparagus": {
+      "stamp": "f101c288f3eb5d04"
+    },
     "foodEditor.fresh.banana": {
       "stamp": "1db0faf17e7bc428"
+    },
+    "foodEditor.fresh.barleyCooked": {
+      "stamp": "d8ffcbb21e82159a"
+    },
+    "foodEditor.fresh.basil": {
+      "stamp": "e526a30f6cedd07b"
+    },
+    "foodEditor.fresh.beet": {
+      "stamp": "082f20ccbca6fdff"
+    },
+    "foodEditor.fresh.beetGreens": {
+      "stamp": "38407d7bc950485e"
     },
     "foodEditor.fresh.bellPepper": {
       "stamp": "3bbe06ba8900828c"
@@ -4230,11 +4260,71 @@
     "foodEditor.fresh.berries": {
       "stamp": "166df2bf890fa506"
     },
+    "foodEditor.fresh.blackBeansCooked": {
+      "stamp": "72ecaa0ca5c0c3ca"
+    },
+    "foodEditor.fresh.blackberries": {
+      "stamp": "13779e4592788094"
+    },
+    "foodEditor.fresh.blueberries": {
+      "stamp": "d12ecd78c5e96728"
+    },
+    "foodEditor.fresh.bokChoy": {
+      "stamp": "d5d89b0eff000263"
+    },
     "foodEditor.fresh.broccoli": {
       "stamp": "af7e34e47626df65"
     },
+    "foodEditor.fresh.brownRiceCooked": {
+      "stamp": "05bed2e9caf24663"
+    },
+    "foodEditor.fresh.brusselsSprouts": {
+      "stamp": "9dcbc8cca3bb9d4c"
+    },
+    "foodEditor.fresh.buckwheat": {
+      "stamp": "8d2d1eb8693a8359"
+    },
+    "foodEditor.fresh.butternutSquash": {
+      "stamp": "b55de4834f037fa0"
+    },
+    "foodEditor.fresh.cabbage": {
+      "stamp": "b2d257d1bdf1c71d"
+    },
+    "foodEditor.fresh.cantaloupe": {
+      "stamp": "5f66d96ecbfd18ef"
+    },
     "foodEditor.fresh.carrot": {
       "stamp": "57537f67c993a39f"
+    },
+    "foodEditor.fresh.carrotTops": {
+      "stamp": "8570f99603b40c45"
+    },
+    "foodEditor.fresh.cauliflower": {
+      "stamp": "c12795175a284547"
+    },
+    "foodEditor.fresh.celery": {
+      "stamp": "57483f48834963b1"
+    },
+    "foodEditor.fresh.cherriesNoPits": {
+      "stamp": "e99774ec56e478f4"
+    },
+    "foodEditor.fresh.chiaSeeds": {
+      "stamp": "6e43491ca35a05b3"
+    },
+    "foodEditor.fresh.chickpeasCooked": {
+      "stamp": "38278797abfbf62f"
+    },
+    "foodEditor.fresh.chiliPepper": {
+      "stamp": "48f2980ddf6d18a0"
+    },
+    "foodEditor.fresh.cilantro": {
+      "stamp": "77fee2c547a0aa01"
+    },
+    "foodEditor.fresh.coconut": {
+      "stamp": "caf1e996ec5581a5"
+    },
+    "foodEditor.fresh.collardGreens": {
+      "stamp": "c02326cc16a77206"
     },
     "foodEditor.fresh.cookedGrains": {
       "stamp": "9a5fea85ade9ceda"
@@ -4242,14 +4332,137 @@
     "foodEditor.fresh.cookedLegumes": {
       "stamp": "6167c319c6d60c0d"
     },
+    "foodEditor.fresh.corn": {
+      "stamp": "d776afcde7f06cb4"
+    },
+    "foodEditor.fresh.cranberries": {
+      "stamp": "a18d1f447fe0530c"
+    },
+    "foodEditor.fresh.cucumber": {
+      "stamp": "5a29af011d6f7cc4"
+    },
+    "foodEditor.fresh.dandelionGreens": {
+      "stamp": "65159f139a07093d"
+    },
+    "foodEditor.fresh.dill": {
+      "stamp": "c8b0c2f5804dda2b"
+    },
+    "foodEditor.fresh.eggCooked": {
+      "stamp": "5d7eec64f3c029ee"
+    },
+    "foodEditor.fresh.fennel": {
+      "stamp": "efbb5fa231d63690"
+    },
+    "foodEditor.fresh.fig": {
+      "stamp": "35e93ad605513ca4"
+    },
+    "foodEditor.fresh.flaxseed": {
+      "stamp": "3a3690fc590f44a9"
+    },
+    "foodEditor.fresh.ginger": {
+      "stamp": "1a191ec7f3557f22"
+    },
+    "foodEditor.fresh.grapes": {
+      "stamp": "dd33a3a8a924ef0e"
+    },
+    "foodEditor.fresh.greenBeans": {
+      "stamp": "d75c3152023d62c9"
+    },
+    "foodEditor.fresh.hempSeeds": {
+      "stamp": "d220bfe9a1e023d3"
+    },
+    "foodEditor.fresh.jalapeno": {
+      "stamp": "980862c7829600b7"
+    },
+    "foodEditor.fresh.kale": {
+      "stamp": "bb0d2c56bb4aaa46"
+    },
+    "foodEditor.fresh.kiwi": {
+      "stamp": "89a8d27882891f66"
+    },
     "foodEditor.fresh.leafyGreens": {
       "stamp": "437f42b86ec3cc14"
+    },
+    "foodEditor.fresh.lentilsCooked": {
+      "stamp": "8d62ada90f09e100"
+    },
+    "foodEditor.fresh.mango": {
+      "stamp": "04bc864a1edd2d8f"
+    },
+    "foodEditor.fresh.melon": {
+      "stamp": "8d3589689de80d57"
+    },
+    "foodEditor.fresh.millet": {
+      "stamp": "ddf0c8463d7110f8"
+    },
+    "foodEditor.fresh.mint": {
+      "stamp": "d6e0439169eb5028"
+    },
+    "foodEditor.fresh.mustardGreens": {
+      "stamp": "940fdf8e3359e2e4"
+    },
+    "foodEditor.fresh.nectarineNoPit": {
+      "stamp": "4ae10e79762ca53d"
+    },
+    "foodEditor.fresh.oats": {
+      "stamp": "cca65abd097fed90"
+    },
+    "foodEditor.fresh.okra": {
+      "stamp": "62abdf4489c7bf7a"
+    },
+    "foodEditor.fresh.orange": {
+      "stamp": "1b8c5c57b72cbf1e"
+    },
+    "foodEditor.fresh.papaya": {
+      "stamp": "7fe70e55f0428dcc"
+    },
+    "foodEditor.fresh.parsley": {
+      "stamp": "d397cee8bc0a4c1f"
+    },
+    "foodEditor.fresh.parsnip": {
+      "stamp": "db01f73ca23bc3b2"
+    },
+    "foodEditor.fresh.peachNoPit": {
+      "stamp": "678be6b1aa711b5b"
+    },
+    "foodEditor.fresh.pearNoSeeds": {
+      "stamp": "66916ff7c37ad927"
+    },
+    "foodEditor.fresh.peas": {
+      "stamp": "5347329b178b55e1"
+    },
+    "foodEditor.fresh.pineapple": {
+      "stamp": "110622b0d0cef0da"
+    },
+    "foodEditor.fresh.plumNoPit": {
+      "stamp": "5aeeda64fed176e5"
+    },
+    "foodEditor.fresh.pomegranate": {
+      "stamp": "6b2eb5be1b538fea"
     },
     "foodEditor.fresh.preMadeChop": {
       "stamp": "416d216fbce033ba"
     },
+    "foodEditor.fresh.pumpkin": {
+      "stamp": "e284aa93c081745c"
+    },
+    "foodEditor.fresh.pumpkinSeeds": {
+      "stamp": "32534209b5138dbc"
+    },
     "foodEditor.fresh.quinoa": {
       "stamp": "2e7cddd6f2414ca5"
+    },
+    "foodEditor.fresh.radish": {
+      "stamp": "988acb97c030f8ad"
+    },
+    "foodEditor.fresh.raspberries": {
+      "stamp": "4bd0072c36225ff5"
+    },
+    "foodEditor.fresh.romaineLettuce": {
+      "stamp": "1ee439b537cc9732"
+    },
+    "foodEditor.fresh.snapPeas": {
+      "stamp": "5eb7461a6dcac157"
     },
     "foodEditor.fresh.sprouts": {
       "stamp": "afb8f801a82f589c"
@@ -4257,8 +4470,29 @@
     "foodEditor.fresh.squash": {
       "stamp": "a53b594b42608305"
     },
+    "foodEditor.fresh.strawberries": {
+      "stamp": "46ed19755a24c9cd"
+    },
     "foodEditor.fresh.sweetPotato": {
       "stamp": "122129f56ddbfe39"
+    },
+    "foodEditor.fresh.swissChard": {
+      "stamp": "52d1fd2d2467e0ad"
+    },
+    "foodEditor.fresh.turmeric": {
+      "stamp": "e824a375ca2d3954"
+    },
+    "foodEditor.fresh.turnip": {
+      "stamp": "63087883c56bbcbe"
+    },
+    "foodEditor.fresh.watermelon": {
+      "stamp": "1955638a03ab92bb"
+    },
+    "foodEditor.fresh.wholeWheatPastaCooked": {
+      "stamp": "fa4ec13152d7553a"
+    },
+    "foodEditor.fresh.zucchini": {
+      "stamp": "d693380d9d744fe5"
     },
     "foodEditor.freshFoodsOffered": {
       "stamp": "8e94837ecfac9acd"
@@ -4326,6 +4560,12 @@
     "foodEditor.nothingAddedYet": {
       "stamp": "6cd66b156be9763c"
     },
+    "foodEditor.notSafeForBirds": {
+      "stamp": "773c34318e5ada15"
+    },
+    "foodEditor.onNeverFeedList": {
+      "stamp": "cee353a630cc730f"
+    },
     "foodEditor.optionalTime": {
       "stamp": "f04bde8da1a662f5"
     },
@@ -4334,6 +4574,9 @@
     },
     "foodEditor.otherHygieneNotes": {
       "stamp": "1909645e28cca3e5"
+    },
+    "foodEditor.otherIngredients": {
+      "stamp": "5a0c19aee7975611"
     },
     "foodEditor.otherIngredientsPlaceholder": {
       "stamp": "d5676cb9495cf241"
@@ -4376,6 +4619,12 @@
     },
     "foodEditor.removeThisItem": {
       "stamp": "38ca1b406d0af019"
+    },
+    "foodEditor.searchIngredients": {
+      "stamp": "b6923818f444c2a2"
+    },
+    "foodEditor.searchIngredientsPlaceholder": {
+      "stamp": "693ed8858ce607f0"
     },
     "foodEditor.storagePlaceholder": {
       "stamp": "90a9929ca21282e0"
@@ -4437,8 +4686,8 @@
     "foodEditor.waterNotesPlaceholder": {
       "stamp": "93a2558fbaeed292"
     },
-    "foodEditor.whatsInIt": {
-      "stamp": "cf90d59a86a82092"
+    "foodEditor.whatsInItSearch": {
+      "stamp": "221aefc5dcc30a4a"
     },
     "foodEditor.when": {
       "stamp": "1391a59a62eace9c"

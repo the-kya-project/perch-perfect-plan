@@ -1466,7 +1466,7 @@ export function FoodWaterStep({
                 onToggleKind: toggleChopKind,
                 ingredients: chopIngredients,
                 onToggleIngredient: toggleChopIngredient,
-                options: FRESH_FOOD_OPTIONS,
+                neverFeed: never,
                 other: freshOther,
                 onOtherChange: setFreshOther,
               }}

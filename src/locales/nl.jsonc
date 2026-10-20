@@ -2777,8 +2777,12 @@
   "flockCheck.view": "Bekijk",
   // Add another {{type}} item
   "foodEditor.addAnotherItem": "Nog een {{type}}-item toevoegen",
+  // Added
+  "foodEditor.added": "Toegevoegd",
   // Add item
   "foodEditor.addItem": "Item toevoegen",
+  // Add “{{food}}”
+  "foodEditor.addTypedIngredient": "“{{food}}” toevoegen",
   // Amount
   "foodEditor.amount": "Hoeveelheid",
   // Amount (e.g. 2)
@@ -2815,34 +2819,186 @@
   "foodEditor.describeOtherDiet": "Beschrijf de andere voeding",
   // Left in the cage — no set amount or times needed.
   "foodEditor.freeFedNote": "Blijft in de kooi — geen vaste hoeveelheid of tijden nodig.",
+  // Amaranth
+  "foodEditor.fresh.amaranth": "Amarant",
   // Apple (no seeds)
   "foodEditor.fresh.appleNoSeeds": "Appel (zonder pitten)",
+  // Apricot (no pit)
+  "foodEditor.fresh.apricotNoPit": "Abrikoos (zonder pit)",
+  // Arugula
+  "foodEditor.fresh.arugula": "Rucola",
+  // Asparagus
+  "foodEditor.fresh.asparagus": "Asperge",
   // Banana
   "foodEditor.fresh.banana": "Banaan",
+  // Barley (cooked)
+  "foodEditor.fresh.barleyCooked": "Gerst (gekookt)",
+  // Basil
+  "foodEditor.fresh.basil": "Basilicum",
+  // Beet
+  "foodEditor.fresh.beet": "Biet",
+  // Beet greens
+  "foodEditor.fresh.beetGreens": "Bietenblad",
   // Bell pepper
   "foodEditor.fresh.bellPepper": "Paprika",
   // Berries
   "foodEditor.fresh.berries": "Bessen",
+  // Black beans (cooked)
+  "foodEditor.fresh.blackBeansCooked": "Zwarte bonen (gekookt)",
+  // Blackberries
+  "foodEditor.fresh.blackberries": "Bramen",
+  // Blueberries
+  "foodEditor.fresh.blueberries": "Blauwe bessen",
+  // Bok choy
+  "foodEditor.fresh.bokChoy": "Paksoi",
   // Broccoli
   "foodEditor.fresh.broccoli": "Broccoli",
+  // Brown rice (cooked)
+  "foodEditor.fresh.brownRiceCooked": "Zilvervliesrijst (gekookt)",
+  // Brussels sprouts
+  "foodEditor.fresh.brusselsSprouts": "Spruitjes",
+  // Buckwheat
+  "foodEditor.fresh.buckwheat": "Boekweit",
+  // Butternut squash
+  "foodEditor.fresh.butternutSquash": "Flespompoen",
+  // Cabbage
+  "foodEditor.fresh.cabbage": "Kool",
+  // Cantaloupe
+  "foodEditor.fresh.cantaloupe": "Cantaloupe",
   // Carrot
   "foodEditor.fresh.carrot": "Wortel",
+  // Carrot tops
+  "foodEditor.fresh.carrotTops": "Wortelloof",
+  // Cauliflower
+  "foodEditor.fresh.cauliflower": "Bloemkool",
+  // Celery
+  "foodEditor.fresh.celery": "Bleekselderij",
+  // Cherries (no pits)
+  "foodEditor.fresh.cherriesNoPits": "Kersen (zonder pitten)",
+  // Chia seeds
+  "foodEditor.fresh.chiaSeeds": "Chiazaad",
+  // Chickpeas (cooked)
+  "foodEditor.fresh.chickpeasCooked": "Kikkererwten (gekookt)",
+  // Chili pepper
+  "foodEditor.fresh.chiliPepper": "Chilipeper",
+  // Cilantro
+  "foodEditor.fresh.cilantro": "Koriander",
+  // Coconut
+  "foodEditor.fresh.coconut": "Kokosnoot",
+  // Collard greens
+  "foodEditor.fresh.collardGreens": "Bladkool",
   // Cooked grains
   "foodEditor.fresh.cookedGrains": "Gekookte granen",
   // Cooked legumes
   "foodEditor.fresh.cookedLegumes": "Gekookte peulvruchten",
+  // Corn
+  "foodEditor.fresh.corn": "Mais",
+  // Cranberries
+  "foodEditor.fresh.cranberries": "Cranberry's",
+  // Cucumber
+  "foodEditor.fresh.cucumber": "Komkommer",
+  // Dandelion greens
+  "foodEditor.fresh.dandelionGreens": "Paardenbloemblad",
+  // Dill
+  "foodEditor.fresh.dill": "Dille",
+  // Egg (cooked)
+  "foodEditor.fresh.eggCooked": "Ei (gekookt)",
+  // Fennel
+  "foodEditor.fresh.fennel": "Venkel",
+  // Fig
+  "foodEditor.fresh.fig": "Vijg",
+  // Flaxseed
+  "foodEditor.fresh.flaxseed": "Lijnzaad",
+  // Ginger
+  "foodEditor.fresh.ginger": "Gember",
+  // Grapes
+  "foodEditor.fresh.grapes": "Druiven",
+  // Green beans
+  "foodEditor.fresh.greenBeans": "Sperziebonen",
+  // Hemp seeds
+  "foodEditor.fresh.hempSeeds": "Hennepzaad",
+  // Jalapeño
+  "foodEditor.fresh.jalapeno": "Jalapeño",
+  // Kale
+  "foodEditor.fresh.kale": "Boerenkool",
+  // Kiwi
+  "foodEditor.fresh.kiwi": "Kiwi",
   // Leafy greens
   "foodEditor.fresh.leafyGreens": "Bladgroenten",
+  // Lentils (cooked)
+  "foodEditor.fresh.lentilsCooked": "Linzen (gekookt)",
+  // Mango
+  "foodEditor.fresh.mango": "Mango",
+  // Melon
+  "foodEditor.fresh.melon": "Meloen",
+  // Millet
+  "foodEditor.fresh.millet": "Gierst",
+  // Mint
+  "foodEditor.fresh.mint": "Munt",
+  // Mustard greens
+  "foodEditor.fresh.mustardGreens": "Mosterdblad",
+  // Nectarine (no pit)
+  "foodEditor.fresh.nectarineNoPit": "Nectarine (zonder pit)",
+  // Oats
+  "foodEditor.fresh.oats": "Haver",
+  // Okra
+  "foodEditor.fresh.okra": "Okra",
+  // Orange
+  "foodEditor.fresh.orange": "Sinaasappel",
+  // Papaya
+  "foodEditor.fresh.papaya": "Papaja",
+  // Parsley
+  "foodEditor.fresh.parsley": "Peterselie",
+  // Parsnip
+  "foodEditor.fresh.parsnip": "Pastinaak",
+  // Peach (no pit)
+  "foodEditor.fresh.peachNoPit": "Perzik (zonder pit)",
+  // Pear (no seeds)
+  "foodEditor.fresh.pearNoSeeds": "Peer (zonder pitjes)",
+  // Peas
+  "foodEditor.fresh.peas": "Doperwten",
+  // Pineapple
+  "foodEditor.fresh.pineapple": "Ananas",
+  // Plum (no pit)
+  "foodEditor.fresh.plumNoPit": "Pruim (zonder pit)",
+  // Pomegranate
+  "foodEditor.fresh.pomegranate": "Granaatappel",
   // Pre-made chop
   "foodEditor.fresh.preMadeChop": "Kant-en-klare chop",
+  // Pumpkin
+  "foodEditor.fresh.pumpkin": "Pompoen",
+  // Pumpkin seeds
+  "foodEditor.fresh.pumpkinSeeds": "Pompoenpitten",
   // Quinoa
   "foodEditor.fresh.quinoa": "Quinoa",
+  // Radish
+  "foodEditor.fresh.radish": "Radijs",
+  // Raspberries
+  "foodEditor.fresh.raspberries": "Frambozen",
+  // Romaine lettuce
+  "foodEditor.fresh.romaineLettuce": "Romaine sla",
+  // Snap peas
+  "foodEditor.fresh.snapPeas": "Peultjes",
   // Sprouts
   "foodEditor.fresh.sprouts": "Kiemgroenten",
   // Squash
   "foodEditor.fresh.squash": "Pompoen",
+  // Strawberries
+  "foodEditor.fresh.strawberries": "Aardbeien",
   // Sweet potato
   "foodEditor.fresh.sweetPotato": "Zoete aardappel",
+  // Swiss chard
+  "foodEditor.fresh.swissChard": "Snijbiet",
+  // Turmeric
+  "foodEditor.fresh.turmeric": "Kurkuma",
+  // Turnip
+  "foodEditor.fresh.turnip": "Raap",
+  // Watermelon
+  "foodEditor.fresh.watermelon": "Watermeloen",
+  // Whole-wheat pasta (cooked)
+  "foodEditor.fresh.wholeWheatPastaCooked": "Volkoren pasta (gekookt)",
+  // Zucchini
+  "foodEditor.fresh.zucchini": "Courgette",
   // Fresh foods offered — tap to add as items
   "foodEditor.freshFoodsOffered": "Aangeboden vers voer — tik om als item toe te voegen",
   // Freshness & hygiene
@@ -2887,12 +3043,18 @@
   "foodEditor.notePlaceholderEg": "bijv. details over bereiden of geven",
   // Nothing added yet.
   "foodEditor.nothingAddedYet": "Nog niets toegevoegd.",
+  // {{food}} isn't safe for birds, so it can't go in the chop.
+  "foodEditor.notSafeForBirds": "{{food}} is niet veilig voor vogels, dus het kan niet in de chop.",
+  // {{food}} is on the never-feed list, so it can't go in the chop.
+  "foodEditor.onNeverFeedList": "{{food}} staat op de lijst met verboden voedsel, dus het kan niet in de chop.",
   // optional time
   "foodEditor.optionalTime": "tijd optioneel",
   // Other fresh foods (free text)
   "foodEditor.otherFreshFoodsPlaceholder": "Ander vers voer (vrije tekst)",
   // Other food hygiene notes
   "foodEditor.otherHygieneNotes": "Andere notities over voerhygiëne",
+  // Other ingredients
+  "foodEditor.otherIngredients": "Andere ingrediënten",
   // Other ingredients (free text)
   "foodEditor.otherIngredientsPlaceholder": "Andere ingrediënten (vrije tekst)",
   // Pick a frequency…
@@ -2921,6 +3083,10 @@
   "foodEditor.removeNamed": "{{name}} verwijderen",
   // Remove this item
   "foodEditor.removeThisItem": "Dit item verwijderen",
+  // Search ingredients
+  "foodEditor.searchIngredients": "Ingrediënten zoeken",
+  // Search ingredients (e.g. kale, mango)
+  "foodEditor.searchIngredientsPlaceholder": "Ingrediënten zoeken (bijv. boerenkool, mango)",
   // e.g. Pantry, top shelf; fridge bin
   "foodEditor.storagePlaceholder": "bijv. voorraadkast, bovenste plank; bak in de koelkast",
   // Tap to add the details your sitter needs.
@@ -2961,8 +3127,8 @@
   "foodEditor.water": "Water",
   // Notes (filter, bottle vs bowl, etc.)
   "foodEditor.waterNotesPlaceholder": "Notities (filter, fles of bak, enz.)",
-  // What's in it? Tap the ingredients.
-  "foodEditor.whatsInIt": "Wat zit erin? Tik op de ingrediënten.",
+  // What's in it? Tap the common ones or search for more.
+  "foodEditor.whatsInItSearch": "Wat zit erin? Tik de gewone aan of zoek naar meer.",
   // When?
   "foodEditor.when": "Wanneer?",
   // When is it fed?

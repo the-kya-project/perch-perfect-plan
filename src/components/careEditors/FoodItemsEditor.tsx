@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { ChopIngredientPicker } from "./ChopIngredientPicker";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { Check, ChevronDown, Plus, AlertTriangle, AlertCircle } from "lucide-react";
@@ -38,7 +39,8 @@ export type ChopConfig = {
   onToggleKind: (kind: "premade" | "homemade") => void;
   ingredients: string[];
   onToggleIngredient: (label: string) => void;
-  options: string[];
+  /** The bird's never-feed list: searching one of these warns instead of adding. */
+  neverFeed: string[];
   other: string;
   onOtherChange: (v: string) => void;
 };
@@ -179,31 +181,13 @@ export function FoodItemsEditor({
                 <>
                   {both && <p className="mt-4 text-[13px] font-[500] text-[var(--ink)]">{t("foodEditor.homemade", "Homemade")}</p>}
                   <div className="mt-3 rounded-xl bg-white/70 p-3" style={{ borderWidth: "0.5px", borderColor: "#d8cfb8" }}>
-                    <p className="mb-1.5 text-xs font-medium text-[#5f5e5a]">{t("foodEditor.whatsInIt", "What's in it? Tap the ingredients.")}</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {chop.options.map((f) => {
-                        const on = chop.ingredients.some((x) => x.toLowerCase() === f.toLowerCase());
-                        return (
-                          <button
-                            key={f}
-                            type="button"
-                            onClick={() => chop.onToggleIngredient(f)}
-                            className={
-                              "min-h-[40px] rounded-full px-3 text-xs font-medium transition " +
-                              (on ? "bg-[#1a3d2e] text-white" : "border border-[#c8bfa6] bg-white text-[#1a3d2e]")
-                            }
-                          >
-                            {foodLabel(t, f)}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    <input
-                      className={`mt-2 ${FIELD} ${BORDER_OK}`}
-                      placeholder={t("foodEditor.otherIngredientsPlaceholder", "Other ingredients (free text)")}
-                      value={chop.other}
-                      maxLength={300}
-                      onChange={(e) => chop.onOtherChange(e.target.value)}
+                    <ChopIngredientPicker
+                      ingredients={chop.ingredients}
+                      onToggle={chop.onToggleIngredient}
+                      other={chop.other}
+                      onOtherChange={chop.onOtherChange}
+                      neverFeed={chop.neverFeed}
+                      fieldClass={`${FIELD} ${BORDER_OK}`}
                     />
                   </div>
                   {homemadeIdx >= 0 && (
