@@ -591,6 +591,83 @@ export type Database = {
           },
         ]
       }
+      entitlements: {
+        Row: {
+          created_at: string
+          current_period_end: string | null
+          external_ref: string | null
+          granted_by: string | null
+          id: string
+          note: string | null
+          plan: string
+          source: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_period_end?: string | null
+          external_ref?: string | null
+          granted_by?: string | null
+          id?: string
+          note?: string | null
+          plan: string
+          source: string
+          status: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_period_end?: string | null
+          external_ref?: string | null
+          granted_by?: string | null
+          id?: string
+          note?: string | null
+          plan?: string
+          source?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      flock_profiles: {
+        Row: {
+          bio: string | null
+          created_at: string
+          display_name: string
+          region_slug: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bio?: string | null
+          created_at?: string
+          display_name: string
+          region_slug: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bio?: string | null
+          created_at?: string
+          display_name?: string
+          region_slug?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "flock_profiles_region_slug_fkey"
+            columns: ["region_slug"]
+            isOneToOne: false
+            referencedRelation: "regions"
+            referencedColumns: ["slug"]
+          },
+        ]
+      }
       guide_cards: {
         Row: {
           category: string
@@ -1279,6 +1356,27 @@ export type Database = {
         }
         Relationships: []
       }
+      regions: {
+        Row: {
+          name: string
+          slug: string
+          sort_order: number
+          states: string[]
+        }
+        Insert: {
+          name: string
+          slug: string
+          sort_order: number
+          states?: string[]
+        }
+        Update: {
+          name?: string
+          slug?: string
+          sort_order?: number
+          states?: string[]
+        }
+        Relationships: []
+      }
       routine_tasks: {
         Row: {
           care_plan_id: string
@@ -1534,6 +1632,24 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          role: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       weight_entries: {
         Row: {
           bird_id: string
@@ -1635,6 +1751,56 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_grant_entitlement: {
+        Args: {
+          p_email: string
+          p_note?: string
+          p_period_end?: string
+          p_plan: string
+        }
+        Returns: {
+          created_at: string
+          current_period_end: string | null
+          external_ref: string | null
+          granted_by: string | null
+          id: string
+          note: string | null
+          plan: string
+          source: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "entitlements"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      admin_revoke_entitlement: {
+        Args: { p_email: string }
+        Returns: {
+          created_at: string
+          current_period_end: string | null
+          external_ref: string | null
+          granted_by: string | null
+          id: string
+          note: string | null
+          plan: string
+          source: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "entitlements"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      flock_enabled: { Args: never; Returns: boolean }
       handoff_accept_transfer: {
         Args: {
           p_handoff_id: string
@@ -1643,6 +1809,9 @@ export type Database = {
         }
         Returns: undefined
       }
+      has_app_premium: { Args: { p_user_id?: string }; Returns: boolean }
+      is_admin: { Args: { p_user_id?: string }; Returns: boolean }
+      is_flock_member: { Args: { p_user_id?: string }; Returns: boolean }
       safe_uuid: { Args: { t: string }; Returns: string }
     }
     Enums: {
