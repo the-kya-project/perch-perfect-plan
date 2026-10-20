@@ -3531,6 +3531,126 @@
   "handoff.wrongAccount": "Deze overdracht is gestuurd naar <b>{{email}}</b>, maar je bent ingelogd met een ander account.",
   // You'll receive
   "handoff.youllReceive": "Je krijgt",
+  // All birds
+  "healthHistory.allBirds": "Alle vogels",
+  // Back
+  "healthHistory.back": "Terug",
+  // Bird
+  "healthHistory.birdLabel": "Vogel",
+  // Every daily check and weight, by everyone who cares for your birds.
+  "healthHistory.body": "Elke dagelijkse check en elk gewicht, van iedereen die voor je vogels zorgt.",
+  // Daily check, all normal
+  "healthHistory.checkAllNormal": "Dagelijkse check, alles normaal",
+  // Daily check, {{count}} thing to watch
+  "healthHistory.checkToWatch_one": "Dagelijkse check, {{count}} ding om op te letten",
+  // Daily check, {{count}} things to watch
+  "healthHistory.checkToWatch_other": "Dagelijkse check, {{count}} dingen om op te letten",
+  // Clear the sit filter
+  "healthHistory.clearSit": "Oppasfilter wissen",
+  // Daily check
+  "healthHistory.dailyCheck": "Dagelijkse check",
+  // {{day}} · during {{sit}}
+  "healthHistory.dayDuringSit": "{{day}} · tijdens {{sit}}",
+  // Everyone
+  "healthHistory.everyone": "Iedereen",
+  // {{n}} g
+  "healthHistory.grams": "{{n}} g",
+  // Household member
+  "healthHistory.householdMember": "Huisgenoot",
+  // Load older entries
+  "healthHistory.loadOlder": "Oudere items laden",
+  // Health history — Kya & Co.
+  "healthHistory.metaTitle": "Gezondheidsgeschiedenis — Kya & Co.",
+  // {{count}} concerning
+  "healthHistory.nConcerning_one": "{{count}} zorgelijk",
+  // {{count}} concerning
+  "healthHistory.nConcerning_other": "{{count}} zorgelijk",
+  // {{count}} normal
+  "healthHistory.nNormal_one": "{{count}} normaal",
+  // {{count}} normal
+  "healthHistory.nNormal_other": "{{count}} normaal",
+  // {{count}} not sure
+  "healthHistory.nNotSure_one": "{{count}} niet zeker",
+  // {{count}} not sure
+  "healthHistory.nNotSure_other": "{{count}} niet zeker",
+  // {{n}} of {{total}} normal
+  "healthHistory.nOfNNormal": "{{n}} van {{total}} normaal",
+  // Sitters
+  "healthHistory.sitters": "Oppassers",
+  // Sitter
+  "healthHistory.sitterTag": "Oppas",
+  // This sit
+  "healthHistory.thisSit": "Deze oppas",
+  // Health history
+  "healthHistory.title": "Gezondheidsgeschiedenis",
+  // Checks and weights
+  "healthHistory.typeAll": "Checks en gewichten",
+  // Daily checks
+  "healthHistory.typeChecks": "Dagelijkse checks",
+  // Type
+  "healthHistory.typeLabel": "Soort",
+  // Weights
+  "healthHistory.typeWeights": "Gewichten",
+  // Weighed
+  "healthHistory.weighed": "Gewogen",
+  // Who
+  "healthHistory.whoLabel": "Wie",
+  // You
+  "healthHistory.you": "Jij",
+  // Your sitter
+  "healthHistory.yourSitter": "Je oppas",
+  // Daily checks, weights, and anything you noticed, for all your birds.
+  "healthTab.body": "Dagelijkse checks, gewichten en alles wat je opviel, voor al je vogels.",
+  // Checked {{date}}
+  "healthTab.checkedOn": "Gecheckt op {{date}}",
+  // Checked today
+  "healthTab.checkedToday": "Vandaag gecheckt",
+  // Checked today · All normal
+  "healthTab.checkedTodayNormal": "Vandaag gecheckt · Alles normaal",
+  // During sits
+  "healthTab.duringSits": "Tijdens oppassen",
+  // Loading…
+  "healthTab.loading": "Laden…",
+  // Flock health — Kya & Co.
+  "healthTab.metaTitle": "Gezondheid van je vogels — Kya & Co.",
+  // {{count}} daily check
+  "healthTab.nChecks_one": "{{count}} dagelijkse check",
+  // {{count}} daily checks
+  "healthTab.nChecks_other": "{{count}} dagelijkse checks",
+  // Add a bird to start daily checks.
+  "healthTab.noBirds": "Voeg een vogel toe om met dagelijkse checks te beginnen.",
+  // Not checked yet
+  "healthTab.notChecked": "Nog niet gecheckt",
+  // Nothing here yet.
+  "healthTab.nothingYet": "Hier staat nog niets.",
+  // Not weighed in {{count}} day
+  "healthTab.notWeighedDays_one": "{{count}} dag niet gewogen",
+  // Not weighed in {{count}} days
+  "healthTab.notWeighedDays_other": "{{count}} dagen niet gewogen",
+  // {{count}} weight
+  "healthTab.nWeights_one": "{{count}} gewicht",
+  // {{count}} weights
+  "healthTab.nWeights_other": "{{count}} gewichten",
+  // Recent
+  "healthTab.recent": "Recent",
+  // See full health history
+  "healthTab.seeHistory": "Bekijk de hele gezondheidsgeschiedenis",
+  // {{count}} thing {{name}} flagged
+  "healthTab.thingsFlagged_one": "{{count}} ding gemeld door {{name}}",
+  // {{count}} things {{name}} flagged
+  "healthTab.thingsFlagged_other": "{{count}} dingen gemeld door {{name}}",
+  // {{count}} thing to watch
+  "healthTab.thingsToWatch_one": "{{count}} ding om op te letten",
+  // {{count}} things to watch
+  "healthTab.thingsToWatch_other": "{{count}} dingen om op te letten",
+  // Flock health
+  "healthTab.title": "Gezondheid van je vogels",
+  // Weigh & check your flock
+  "healthTab.weighAndCheck": "Weeg en check je vogels",
+  // Your bird
+  "healthTab.yourBird": "Je vogel",
+  // Your birds
+  "healthTab.yourBirds": "Je vogels",
   // Gotcha day
   "home.moment.gotchaDay": "Adoptiedag",
   // gotcha day
@@ -4689,12 +4809,16 @@
   "scanDetail.answerNormal": "Normaal",
   // Not sure
   "scanDetail.answerNotSure": "Niet zeker",
-  // Everything looked normal
-  "scanDetail.bannerGreen": "Alles zag er normaal uit",
-  // Needs attention
-  "scanDetail.bannerRed": "Vraagt aandacht",
-  // Worth a closer look
-  "scanDetail.bannerYellow": "Het bekijken waard",
+  // Back
+  "scanDetail.back": "Terug",
+  // by {{name}}
+  "scanDetail.byName": "door {{name}}",
+  // by {{name}}, sitter
+  "scanDetail.bySitter": "door {{name}}, oppas",
+  // by you
+  "scanDetail.byYou": "door jou",
+  // Call vet
+  "scanDetail.callVet": "Bel de dierenarts",
   // Alert and responsive
   "scanDetail.col.alertness": "Alert en reageert",
   // Vocalizing as usual
@@ -4705,8 +4829,8 @@
   "scanDetail.col.droppings": "Poep ziet er normaal uit",
   // Not fluffed for long stretches
   "scanDetail.col.energy": "Niet lang achter elkaar opgezet",
-  // No exposure to fumes / unsafe items
-  "scanDetail.col.exposure": "Niet blootgesteld aan dampen / onveilige dingen",
+  // No exposure to fumes or unsafe items
+  "scanDetail.col.exposure": "Niet blootgesteld aan dampen of onveilige dingen",
   // Eating normally
   "scanDetail.col.food": "Eet normaal",
   // No injury, fall, bite, or scratch
@@ -4719,48 +4843,62 @@
   "scanDetail.confirmDelete": "Deze gezondheidscheck verwijderen? Dit kan niet ongedaan worden gemaakt.",
   // Mark this concern as resolved? Caregivers will see the bird's status return to normal.
   "scanDetail.confirmResolve": "Dit aandachtspunt als opgelost markeren? Verzorgers zien dan dat de status van de vogel weer normaal is.",
-  // Delete health check
-  "scanDetail.deleteCheck": "Gezondheidscheck verwijderen",
-  // Health check deleted.
-  "scanDetail.deleted": "Gezondheidscheck verwijderd.",
+  // Daily check deleted.
+  "scanDetail.deletedCheck": "Dagelijkse check verwijderd.",
+  // Delete this check
+  "scanDetail.deleteThisCheck": "Deze check verwijderen",
   // Deleting…
   "scanDetail.deleting": "Verwijderen…",
-  // Emergency contacts
-  "scanDetail.emergencyContacts": "Noodcontacten",
-  // Health check
-  "scanDetail.eyebrow": "Gezondheidscheck",
-  // All clear.
-  "scanDetail.headlineGreen": "Alles in orde.",
-  // Concern flagged.
-  "scanDetail.headlineRed": "Aandachtspunt gemarkeerd.",
-  // Something to check.
-  "scanDetail.headlineYellow": "Iets om te controleren.",
+  // Every answer
+  "scanDetail.everyAnswer": "Alle antwoorden",
+  // A household member
+  "scanDetail.householdMemberCap": "Een huisgenoot",
+  // a household member
+  "scanDetail.householdMemberLower": "een huisgenoot",
   // Loading…
   "scanDetail.loading": "Laden…",
-  // Marked resolved
-  "scanDetail.markedResolved": "Gemarkeerd als opgelost",
+  // Marked resolved {{date}}
+  "scanDetail.markedResolvedOn": "Opgelost gemarkeerd op {{date}}",
   // Mark resolved
   "scanDetail.markResolved": "Markeren als opgelost",
   // Health check — Kya & Co.
   "scanDetail.metaTitle": "Gezondheidscheck — Kya & Co.",
-  // This health check isn't available — it may have been removed.
-  "scanDetail.notAvailable": "Deze gezondheidscheck is niet beschikbaar — misschien is hij verwijderd.",
+  // Not answered
+  "scanDetail.notAnswered": "Niet beantwoord",
+  // This daily check isn't available. It may have been removed.
+  "scanDetail.notAvailableCheck": "Deze dagelijkse check is niet beschikbaar. Misschien is hij verwijderd.",
   // Notes
   "scanDetail.notes": "Notities",
-  // Health check not found.
-  "scanDetail.notFound": "Gezondheidscheck niet gevonden.",
-  // {{n}} item {{name}} wasn't sure about.
-  "scanDetail.notSureOtherOne": "{{n}} punt waar {{name}} niet zeker over was.",
-  // {{n}} items {{name}} wasn't sure about.
-  "scanDetail.notSureOtherOther": "{{n}} punten waar {{name}} niet zeker over was.",
-  // {{n}} item you weren't sure about.
-  "scanDetail.notSureYouOne": "{{n}} punt waar je niet zeker over was.",
-  // {{n}} items you weren't sure about.
-  "scanDetail.notSureYouOther": "{{n}} punten waar je niet zeker over was.",
+  // Daily check not found
+  "scanDetail.notFoundCheck": "Dagelijkse check niet gevonden",
+  // alertness
+  "scanDetail.noun.alertness": "alertheid",
+  // breathing
+  "scanDetail.noun.breathing": "ademhaling",
+  // droppings
+  "scanDetail.noun.droppings": "ontlasting",
+  // exposure to fumes or unsafe items
+  "scanDetail.noun.exposure": "blootstelling aan dampen of onveilige dingen",
+  // fluffed-up feathers
+  "scanDetail.noun.fluffed": "opgezette veren",
+  // eating
+  "scanDetail.noun.food": "eten",
+  // possible injury
+  "scanDetail.noun.injury": "mogelijke verwonding",
+  // vocalizing
+  "scanDetail.noun.noise": "geluid maken",
+  // perching
+  "scanDetail.noun.posture": "zitten op de stok",
+  // face, for vomiting
+  "scanDetail.noun.vomiting": "gezicht, vanwege braken",
+  // {{name}} marked {{bird}}'s {{item}} as concerning
+  "scanDetail.otherConcerning": "{{name}} vond {{item}} bij {{bird}} zorgelijk",
+  // {{name}} wasn't sure about {{bird}}'s {{item}}
+  "scanDetail.otherNotSure": "{{name}} wist het niet zeker over {{item}} bij {{bird}}",
   // Photo
   "scanDetail.photo": "Foto",
-  // Photo attached to this health check
-  "scanDetail.photoAlt": "Foto bij deze gezondheidscheck",
+  // Photo attached to this daily check
+  "scanDetail.photoAltCheck": "Foto bij deze dagelijkse check",
   // Photos
   "scanDetail.photos": "Foto's",
   // Concerning
@@ -4789,14 +4927,24 @@
   "scanDetail.reason.q.vomiting": "Is het gezicht schoon en droog, zonder overgeven",
   // Concern marked resolved.
   "scanDetail.resolved": "Aandachtspunt gemarkeerd als opgelost.",
-  // Run by {{name}}
-  "scanDetail.runBy": "Gedaan door {{name}}",
-  // Run by you
-  "scanDetail.runByYou": "Gedaan door jou",
-  // The check
-  "scanDetail.theCheck": "De check",
+  // {{count}} thing to watch
+  "scanDetail.thingsToWatch_one": "{{count}} ding om op te letten",
+  // {{count}} things to watch
+  "scanDetail.thingsToWatch_other": "{{count}} dingen om op te letten",
+  // {{name}}'s daily check
+  "scanDetail.titleCheck": "Dagelijkse check van {{name}}",
+  // Weight that day
+  "scanDetail.weightThatDay": "Gewicht die dag",
+  // You marked {{bird}}'s {{item}} as concerning
+  "scanDetail.youConcerning": "Je vond {{item}} bij {{bird}} zorgelijk",
+  // You weren't sure about {{bird}}'s {{item}}
+  "scanDetail.youNotSure": "Je wist het niet zeker over {{item}} bij {{bird}}",
   // your bird
   "scanDetail.yourBird": "je vogel",
+  // Your sitter
+  "scanDetail.yourSitterCap": "Je oppas",
+  // your sitter
+  "scanDetail.yourSitterLower": "je oppas",
   // Please answer every question before submitting.
   "scanForm.answerAllError": "Beantwoord elke vraag voordat je verstuurt.",
   // Concerning
@@ -4913,62 +5061,6 @@
   "scanRunBy.householdMember": "Iemand uit je huishouden",
   // Your sitter
   "scanRunBy.yourSitter": "Je oppas",
-  // A small daily look that adds up to a record.
-  "scansInbox.body": "Elke dag even kijken, en samen vormt dat een dossier.",
-  // Clear filter
-  "scansInbox.clearFilter": "Filter wissen",
-  // {{n}}d ago
-  "scansInbox.daysAgo": "{{n}} d geleden",
-  // Run a health check above, or a sitter's daily health checks will show up here.
-  "scansInbox.emptyBody": "Doe hierboven een gezondheidscheck, of de dagelijkse gezondheidschecks van een oppas verschijnen hier.",
-  // {{name}} is asked to run a health check daily — their checks will show up here.
-  "scansInbox.emptyBodySit": "{{name}} wordt gevraagd elke dag een gezondheidscheck te doen — die checks verschijnen hier.",
-  // No health checks yet
-  "scansInbox.emptyTitle": "Nog geen gezondheidschecks",
-  // No health checks yet for this sit
-  "scansInbox.emptyTitleSit": "Nog geen gezondheidschecks voor deze oppasperiode",
-  // Health checks
-  "scansInbox.eyebrow": "Gezondheidschecks",
-  // A daily check, archived.
-  "scansInbox.headline": "Een dagelijkse check, bewaard.",
-  // {{n}}h ago
-  "scansInbox.hoursAgo": "{{n}} u geleden",
-  // Household
-  "scansInbox.household": "Huishouden",
-  // just now
-  "scansInbox.justNow": "zojuist",
-  // Loading…
-  "scansInbox.loading": "Laden…",
-  // Health checks — Kya & Co.
-  "scansInbox.metaTitle": "Gezondheidschecks — Kya & Co.",
-  // {{n}}m ago
-  "scansInbox.minsAgo": "{{n}} min geleden",
-  // {{name}}'s sit
-  "scansInbox.nameSit": "Oppasperiode van {{name}}",
-  // Run by {{name}}
-  "scansInbox.runBy": "Gedaan door {{name}}",
-  // Run by you
-  "scansInbox.runByYou": "Gedaan door jou",
-  // Run a health check
-  "scansInbox.runCheck": "Doe een gezondheidscheck",
-  // Sitter
-  "scansInbox.sitter": "Oppas",
-  // this sit
-  "scansInbox.thisSit": "deze oppasperiode",
-  // {{name}}: all-clear scan
-  "scansInbox.titleGreen": "{{name}}: gezondheidscheck in orde",
-  // {{name}}: health concern flagged
-  "scansInbox.titleRed": "{{name}}: aandachtspunt gemarkeerd",
-  // {{name}}: something to check
-  "scansInbox.titleYellow": "{{name}}: iets om te controleren",
-  // Unread
-  "scansInbox.unread": "Ongelezen",
-  // Your bird
-  "scansInbox.yourBird": "Je vogel",
-  // your caregiver
-  "scansInbox.yourCaregiver": "je verzorger",
-  // your sitter
-  "scansInbox.yourSitter": "je oppas",
   // You already have access.
   "serverError.alreadyHaveAccess": "Je hebt al toegang.",
   // We couldn't finish removing this bird's photos and videos, so the bird is still here. Please try again.

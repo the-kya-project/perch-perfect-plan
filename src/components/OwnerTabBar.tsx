@@ -35,6 +35,8 @@ function tabForPath(pathname: string): OwnerTab | undefined {
   if (pathname.startsWith("/dashboard")) return "home";
   if (pathname.startsWith("/today")) return "sits";
   if (pathname.startsWith("/sits")) return "sits";
+  // Notification settings is opened from settings, not the Health tab.
+  if (pathname.startsWith("/scans/settings")) return undefined;
   if (pathname.startsWith("/scans")) return "activity";
   if (pathname.startsWith("/explore")) return "explore";
   return undefined; // deeper screens (bird editor, account, …) highlight nothing
