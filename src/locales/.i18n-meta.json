@@ -6699,62 +6699,41 @@
     "planEditor.viewAsSitter": {
       "stamp": "c87b907105d3a5ba"
     },
-    "planOverview.added": {
-      "stamp": "bbd00a77ee943f88"
+    "planOverview.birds": {
+      "stamp": "a5f0388c35c3053a"
     },
-    "planOverview.bodyMember": {
-      "stamp": "78c18d28ddfd5914"
+    "planOverview.cardCarePlan": {
+      "stamp": "024068f55f21e2cd"
     },
-    "planOverview.bodyOwner": {
-      "stamp": "b274d2151dc0f6a9"
-    },
-    "planOverview.clipCountOne": {
-      "stamp": "d1074668d85dc3b3"
-    },
-    "planOverview.clipCountOther": {
-      "stamp": "79901f5f77814ac4"
-    },
-    "planOverview.clipsOptional": {
-      "stamp": "43c2ba6d7d280d4a"
+    "planOverview.cardYourHome": {
+      "stamp": "a0b55ed740b3c6f2"
     },
     "planOverview.differentFor": {
       "stamp": "a35fa62fc823d056"
     },
-    "planOverview.eyebrow": {
-      "stamp": "024068f55f21e2cd"
+    "planOverview.num2": {
+      "stamp": "50d78d28607e12a9"
     },
-    "planOverview.footerMember": {
-      "stamp": "e6f89ce9195f31b3"
+    "planOverview.num3": {
+      "stamp": "adcae4fab83c6eb1"
     },
-    "planOverview.footerOwner": {
-      "stamp": "343276a86897d9aa"
+    "planOverview.num4": {
+      "stamp": "0a740af5d535b400"
     },
-    "planOverview.headline": {
-      "stamp": "9522364224d159e7"
+    "planOverview.num5": {
+      "stamp": "7aac3775dcdd1735"
     },
-    "planOverview.hintBehaviorCageTime": {
-      "stamp": "b207eaa0835b9e41"
+    "planOverview.num6": {
+      "stamp": "9bc419fc3987edd9"
     },
-    "planOverview.hintEmergency": {
-      "stamp": "fa9b9ac5848441af"
+    "planOverview.num7": {
+      "stamp": "2e62f018e6d3eaf2"
     },
-    "planOverview.hintFood": {
-      "stamp": "99c24eecb7ee35f2"
+    "planOverview.rowDay": {
+      "stamp": "d3234f936e818a35"
     },
-    "planOverview.hintHealth": {
-      "stamp": "5efc18b00de8bc0f"
-    },
-    "planOverview.hintHomeAreas": {
-      "stamp": "809e73c87192d04e"
-    },
-    "planOverview.hintRoutine": {
-      "stamp": "1a4cbb8ffc601946"
-    },
-    "planOverview.needsInfo": {
-      "stamp": "5512ba2f87f39d7e"
-    },
-    "planOverview.ready": {
-      "stamp": "febf31ddd8bcb7b1"
+    "planOverview.rowDetails": {
+      "stamp": "67a6143d0380d26d"
     },
     "planOverview.rowEmergencyContacts": {
       "stamp": "13dc8bdb952a70e3"
@@ -6762,11 +6741,29 @@
     "planOverview.rowReminders": {
       "stamp": "3729415b74f79da5"
     },
+    "planOverview.rowTips": {
+      "stamp": "b5599f17ff594655"
+    },
     "planOverview.shared": {
       "stamp": "a56e579df5c162f1"
     },
-    "planOverview.tipsFromOwner": {
-      "stamp": "3b89e17ce4472fbc"
+    "planOverview.statusDone": {
+      "stamp": "640d9be3aa585884"
+    },
+    "planOverview.statusMany": {
+      "stamp": "ef700c7441a3c6db"
+    },
+    "planOverview.statusOne": {
+      "stamp": "47c5f3ef417ccb19"
+    },
+    "planOverview.tagDone": {
+      "stamp": "3e00dbef8dddb12e"
+    },
+    "planOverview.tagNeededForSit": {
+      "stamp": "b6249a1f6c373074"
+    },
+    "planOverview.tagToDo": {
+      "stamp": "b7e7ae329f2bbae8"
     },
     "planOverview.viewAsYourSitter": {
       "stamp": "346587f81036b8b6"
