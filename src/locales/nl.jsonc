@@ -1401,10 +1401,14 @@
   "birdSetup.removeDietTypeConfirm": "{{type}} verwijderen, samen met de items die je eraan hebt toegevoegd?",
   // Remove fresh or wet food after
   "birdSetup.removeFreshOrWetFood": "Vers of nat eten weghalen na",
+  // Remove homemade chop? This clears its amount, timing and ingredients.
+  "birdSetup.removeHomemadeConfirm": "Zelfgemaakte chop verwijderen? Dan worden de hoeveelheid, tijden en ingrediënten gewist.",
   // Remove {{item}}
   "birdSetup.removeItemAria": "{{item}} verwijderen",
   // Remove medication
   "birdSetup.removeMedication": "Medicijn verwijderen",
+  // Remove pre-made chop? This clears the pre-made items you've added.
+  "birdSetup.removePremadeConfirm": "Kant-en-klare chop verwijderen? Dan worden de kant-en-klare items die je hebt toegevoegd gewist.",
   // Remove {{title}}
   "birdSetup.removeTask": "{{title}} verwijderen",
   // Replace
@@ -1435,10 +1439,6 @@
   "birdSetup.stop.later": "Later instellen",
   // The basics are set for {{name}}.
   "birdSetup.stop.title": "De basis voor {{name}} staat.",
-  // Switch to homemade? This clears the chop items you've added.
-  "birdSetup.switchToHomemadeConfirm": "Overstappen op zelfgemaakt? Dan worden de chop-items die je hebt toegevoegd gewist.",
-  // Switch to pre-made? This clears the chop items you've added.
-  "birdSetup.switchToPremadeConfirm": "Overstappen op kant-en-klaar? Dan worden de chop-items die je hebt toegevoegd gewist.",
   // Tap any that apply, then add your own.
   "birdSetup.tapAnyThatApplyThen": "Tik aan wat van toepassing is en voeg daarna je eigen toe.",
   // That photo's a bit too large even after resizing. Try a different photo.
@@ -2801,8 +2801,8 @@
   "foodEditor.chooseAllThatApply": "Kies alles wat van toepassing is.",
   // Pick fresh foods above or tap “Add item” to list your own.
   "foodEditor.chopEmpty": "Kies hierboven vers voer of tik op “Item toevoegen” om je eigen items te noteren.",
-  // So the caregiver knows what to prep.
-  "foodEditor.chopKindHint": "Zodat de verzorger weet wat er klaargemaakt moet worden.",
+  // Choose one or both, so the caregiver knows what to prep.
+  "foodEditor.chopKindHintBoth": "Kies er een of allebei, zodat de verzorger weet wat er klaargemaakt moet worden.",
   // What kind of fresh chop?
   "foodEditor.chopKindQuestion": "Wat voor verse chop?",
   // e.g. Morning chop mix

@@ -1127,8 +1127,8 @@ export function FoodWaterStep({
     if (!hasAny && dietTypes.length && (seedBrand || seedAmt || seedUnit)) {
       dd[dietTypes[0]] = [{ name: seedBrand, amount: seedAmt, unit: seedUnit, times: [] }];
     }
-    // Chop: pre-made (branded items) vs homemade (ingredient checklist + one
-    // auto-named item). Reading legacy data: items already tagged with `homemade`
+    // Chop: pre-made (branded items), homemade (ingredient checklist + one
+    // auto-named item), or both. Reading legacy data: items already tagged with `homemade`
     // are used as-is; older chop data (veggie items / a populated fresh_foods
     // list) is inferred as homemade and collapsed into one "Homemade chop" item.
     const legacyFresh = (plan.fresh_foods ?? []) as string[];
@@ -1136,7 +1136,7 @@ export function FoodWaterStep({
       const existing = (dd["chop"] ?? []) as DietItem[];
       const alreadyTagged = existing.length > 0 && existing[0].homemade !== undefined;
       if (alreadyTagged) {
-        if (existing[0].homemade) setChopIngredients(legacyFresh);
+        if (existing.some((i) => i.homemade)) setChopIngredients(legacyFresh);
       } else if (existing.length > 0 || legacyFresh.length > 0) {
         const looksHomemade =
           legacyFresh.length > 0 ||
@@ -1185,12 +1185,14 @@ export function FoodWaterStep({
     [dietOther, t],
   );
 
-  // Chop mode is derived from its items: tagged homemade → homemade, any items →
-  // premade, no items yet → not chosen (the owner must pick).
+  // Which kinds of chop the owner feeds, read from its items: a homemade-tagged
+  // item means homemade, any other item means pre-made; both can be on. No
+  // items yet → nothing chosen (the owner must pick).
   const chopItemsState = dietDetails["chop"] ?? [];
-  const chopMode: "premade" | "homemade" | null = chopItemsState.length
-    ? (chopItemsState[0].homemade ? "homemade" : "premade")
-    : null;
+  const chopKinds = {
+    homemade: chopItemsState.some((i) => i.homemade),
+    premade: chopItemsState.some((i) => !i.homemade),
+  };
 
   // Incomplete items across all selected types (recomputed live). For chop, not
   // having chosen a mode yet also counts as incomplete.
@@ -1271,7 +1273,7 @@ export function FoodWaterStep({
 
       // Fresh foods list — the homemade-chop ingredient checklist. Pre-made and
       // non-chop diets contribute no ingredient list.
-      const freshList = chopMode === "homemade" ? chopIngredients.map((s) => s.trim()).filter(Boolean) : [];
+      const freshList = chopKinds.homemade ? chopIngredients.map((s) => s.trim()).filter(Boolean) : [];
 
       const feedingTimesArr = Array.from(allFeedingTimes);
 
@@ -1311,7 +1313,7 @@ export function FoodWaterStep({
           amount_unit: legacyAmtUnit || null,
           feeding_times: feedingTimesArr,
           fresh_foods: freshList,
-          fresh_foods_other: chopMode === "homemade" ? (freshOther || null) : null,
+          fresh_foods_other: chopKinds.homemade ? (freshOther || null) : null,
           treats_notes: treatsNotes || null,
           treats_frequency: treatsFreq || null,
           never_feed: never,
@@ -1381,14 +1383,23 @@ export function FoodWaterStep({
     }
   }
 
-  // Chop: choose pre-made / homemade. Switching modes with content confirms,
-  // since it replaces the chop item(s).
-  function chooseChopMode(mode: "premade" | "homemade") {
-    if (chopMode === mode) return;
-    if (chopMode && chopItemsState.some(foodItemHasContent) && !window.confirm(mode === "homemade" ? t("birdSetup.switchToHomemadeConfirm", "Switch to homemade? This clears the chop items you've added.") : t("birdSetup.switchToPremadeConfirm", "Switch to pre-made? This clears the chop items you've added."))) return;
-    setItemsForType("chop", mode === "homemade"
-      ? [{ ...blankFoodItem(), name: HOMEMADE_CHOP_NAME, homemade: true }]
-      : [{ ...blankFoodItem(), homemade: false }]);
+  // Chop: turn pre-made or homemade on or off (either, or both). Turning one
+  // off with details entered confirms first, since it removes those items.
+  function toggleChopKind(kind: "premade" | "homemade") {
+    const isHomemade = kind === "homemade";
+    if (!chopKinds[kind]) {
+      const added = { ...blankFoodItem(), ...(isHomemade ? { name: HOMEMADE_CHOP_NAME, homemade: true } : { homemade: false }) };
+      // The homemade item leads the list; pre-made items follow.
+      setItemsForType("chop", isHomemade ? [added, ...chopItemsState] : [...chopItemsState, added]);
+      return;
+    }
+    const removing = chopItemsState.filter((i) => !!i.homemade === isHomemade);
+    const hasContent = removing.some(foodItemHasContent) || (isHomemade && (chopIngredients.length > 0 || freshOther.trim() !== ""));
+    if (hasContent && !window.confirm(isHomemade
+      ? t("birdSetup.removeHomemadeConfirm", "Remove homemade chop? This clears its amount, timing and ingredients.")
+      : t("birdSetup.removePremadeConfirm", "Remove pre-made chop? This clears the pre-made items you've added."))) return;
+    setItemsForType("chop", chopItemsState.filter((i) => !!i.homemade !== isHomemade));
+    if (isHomemade) { setChopIngredients([]); setFreshOther(""); }
   }
 
   function toggleChopIngredient(label: string) {
@@ -1451,8 +1462,8 @@ export function FoodWaterStep({
               validationActive={validationActive}
               expandSignal={expandSignal}
               chop={{
-                mode: chopMode,
-                onChooseMode: chooseChopMode,
+                kinds: chopKinds,
+                onToggleKind: toggleChopKind,
                 ingredients: chopIngredients,
                 onToggleIngredient: toggleChopIngredient,
                 options: FRESH_FOOD_OPTIONS,

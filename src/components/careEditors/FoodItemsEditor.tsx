@@ -23,9 +23,9 @@ import { foodLabel } from "./foodLabels";
  * to a one-line summary once complete. `validationActive` turns on amber field
  * highlights; bumping `expandSignal` force-opens every incomplete item.
  *
- * "Fresh chop / formulated" is special: the owner first picks Pre-made (brand
- * required) or Homemade (an ingredient checklist + a single auto-named
- * "Homemade chop" item with no brand required).
+ * "Fresh chop / formulated" is special: the owner picks Pre-made (brand
+ * required), Homemade (an ingredient checklist + a single auto-named
+ * "Homemade chop" item with no brand required), or both.
  */
 
 const FIELD =
@@ -34,8 +34,8 @@ const BORDER_OK = "border-[#c8bfa6]";
 const BORDER_AMBER = "border-[#BA7517]";
 
 export type ChopConfig = {
-  mode: "premade" | "homemade" | null;
-  onChooseMode: (mode: "premade" | "homemade") => void;
+  kinds: { premade: boolean; homemade: boolean };
+  onToggleKind: (kind: "premade" | "homemade") => void;
   ingredients: string[];
   onToggleIngredient: (label: string) => void;
   options: string[];
@@ -122,7 +122,15 @@ export function FoodItemsEditor({
         const removeItem = (idx: number) => onChangeType(type, items.filter((_, i) => i !== idx));
 
         if (type === "chop" && chop) {
-          const picked = chop.mode !== null;
+          const picked = chop.kinds.premade || chop.kinds.homemade;
+          const both = chop.kinds.premade && chop.kinds.homemade;
+          // One list holds both kinds; each item knows whether it's homemade.
+          const homemadeIdx = items.findIndex((it) => it.homemade);
+          const premadeIdx = items.map((it, i) => (it.homemade ? -1 : i)).filter((i) => i >= 0);
+          const addPremade = () => {
+            onChangeType(type, [...items, { ...blankFoodItem(), homemade: false }]);
+            setExpanded((prev) => { const n = { ...prev }; items.forEach((_, i) => { n[k(type, i)] = false; }); return n; });
+          };
           return (
             <div key={type} className="rounded-[16px] border border-[var(--line)] bg-[var(--cream2)] p-4">
               {/* Question header + status pill */}
@@ -138,17 +146,18 @@ export function FoodItemsEditor({
                   </span>
                 )}
               </div>
-              <p className="mt-1 text-[12.5px] leading-[1.5] text-[var(--mute)]">{t("foodEditor.chopKindHint", "So the caregiver knows what to prep.")}</p>
+              <p className="mt-1 text-[12.5px] leading-[1.5] text-[var(--mute)]">{t("foodEditor.chopKindHintBoth", "Choose one or both, so the caregiver knows what to prep.")}</p>
 
-              {/* Two compact option cards */}
+              {/* Two option cards — pick either or both */}
               <div className="mt-3 grid grid-cols-2 gap-2">
                 {(["premade", "homemade"] as const).map((m) => {
-                  const sel = chop.mode === m;
+                  const sel = chop.kinds[m];
                   return (
                     <button
                       key={m}
                       type="button"
-                      onClick={() => chop.onChooseMode(m)}
+                      aria-pressed={sel}
+                      onClick={() => chop.onToggleKind(m)}
                       className={
                         "relative grid min-h-[52px] place-items-center rounded-[13px] p-[14px] text-[14px] font-[500] text-[var(--ink)] transition " +
                         (sel ? "border-2 border-[var(--ink)] bg-[var(--lime)]" : "border border-[var(--line)] bg-white")
@@ -165,9 +174,10 @@ export function FoodItemsEditor({
                 })}
               </div>
 
-              {/* Homemade follow-up: ingredient checklist + single auto-named item */}
-              {chop.mode === "homemade" && (
+              {/* Homemade: ingredient checklist + single auto-named item */}
+              {chop.kinds.homemade && (
                 <>
+                  {both && <p className="mt-4 text-[13px] font-[500] text-[var(--ink)]">{t("foodEditor.homemade", "Homemade")}</p>}
                   <div className="mt-3 rounded-xl bg-white/70 p-3" style={{ borderWidth: "0.5px", borderColor: "#d8cfb8" }}>
                     <p className="mb-1.5 text-xs font-medium text-[#5f5e5a]">{t("foodEditor.whatsInIt", "What's in it? Tap the ingredients.")}</p>
                     <div className="flex flex-wrap gap-1.5">
@@ -196,44 +206,45 @@ export function FoodItemsEditor({
                       onChange={(e) => chop.onOtherChange(e.target.value)}
                     />
                   </div>
-                  {items.length > 0 && (
+                  {homemadeIdx >= 0 && (
                     <div className="mt-3">
                       <ItemCard
-                        item={items[0]}
+                        item={items[homemadeIdx]}
                         label={label}
                         hideBrand
                         validationActive={validationActive}
-                        open={isOpen(type, 0, items[0])}
-                        onToggle={() => setOpen(type, 0, !isOpen(type, 0, items[0]))}
-                        onLooksGood={() => setOpen(type, 0, false)}
-                        onChange={(patch) => setItem(0, patch)}
-                        setWhen={(period) => setItem(0, { times: toggleWhen(items[0], period) })}
+                        open={isOpen(type, homemadeIdx, items[homemadeIdx])}
+                        onToggle={() => setOpen(type, homemadeIdx, !isOpen(type, homemadeIdx, items[homemadeIdx]))}
+                        onLooksGood={() => setOpen(type, homemadeIdx, false)}
+                        onChange={(patch) => setItem(homemadeIdx, patch)}
+                        setWhen={(period) => setItem(homemadeIdx, { times: toggleWhen(items[homemadeIdx], period) })}
                       />
                     </div>
                   )}
                 </>
               )}
 
-              {/* Pre-made follow-up: brand-required item cards */}
-              {chop.mode === "premade" && (
+              {/* Pre-made: brand-required item cards */}
+              {chop.kinds.premade && (
                 <>
+                  {both && <p className="mt-4 text-[13px] font-[500] text-[var(--ink)]">{t("foodEditor.preMade", "Pre-made")}</p>}
                   <div className="mt-3 space-y-2">
-                    {items.map((it, idx) => (
+                    {premadeIdx.map((idx) => (
                       <ItemCard
                         key={idx}
-                        item={it}
+                        item={items[idx]}
                         label={label}
                         validationActive={validationActive}
-                        open={isOpen(type, idx, it)}
-                        onToggle={() => setOpen(type, idx, !isOpen(type, idx, it))}
+                        open={isOpen(type, idx, items[idx])}
+                        onToggle={() => setOpen(type, idx, !isOpen(type, idx, items[idx]))}
                         onLooksGood={() => setOpen(type, idx, false)}
                         onChange={(patch) => setItem(idx, patch)}
-                        setWhen={(period) => setItem(idx, { times: toggleWhen(it, period) })}
-                        onRemove={items.length > 1 ? () => removeItem(idx) : undefined}
+                        setWhen={(period) => setItem(idx, { times: toggleWhen(items[idx], period) })}
+                        onRemove={premadeIdx.length > 1 ? () => removeItem(idx) : undefined}
                       />
                     ))}
                   </div>
-                  <AddButton label={label} onClick={addItem} />
+                  <AddButton label={label} onClick={addPremade} />
                 </>
               )}
             </div>

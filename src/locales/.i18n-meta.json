@@ -2097,11 +2097,17 @@
     "birdSetup.removeFreshOrWetFood": {
       "stamp": "c7c8c5de7c15ce84"
     },
+    "birdSetup.removeHomemadeConfirm": {
+      "stamp": "9de36acf2a3425f9"
+    },
     "birdSetup.removeItemAria": {
       "stamp": "4b63b415b3722053"
     },
     "birdSetup.removeMedication": {
       "stamp": "535b848f48b0ef9b"
+    },
+    "birdSetup.removePremadeConfirm": {
+      "stamp": "673aee982a695895"
     },
     "birdSetup.removeTask": {
       "stamp": "0992443e480b189a"
@@ -2147,12 +2153,6 @@
     },
     "birdSetup.stop.title": {
       "stamp": "8f143832e0f0a434"
-    },
-    "birdSetup.switchToHomemadeConfirm": {
-      "stamp": "21c6979e6cd2b9d6"
-    },
-    "birdSetup.switchToPremadeConfirm": {
-      "stamp": "7a0e4917df785cc3"
     },
     "birdSetup.tapAnyThatApplyThen": {
       "stamp": "140d5f8cf3b3e618"
@@ -4197,8 +4197,8 @@
     "foodEditor.chopEmpty": {
       "stamp": "ccb44ff5727fea10"
     },
-    "foodEditor.chopKindHint": {
-      "stamp": "3865e6561b38bf48"
+    "foodEditor.chopKindHintBoth": {
+      "stamp": "76c4a91b80a4e626"
     },
     "foodEditor.chopKindQuestion": {
       "stamp": "6d4d253ae7bbf942"
