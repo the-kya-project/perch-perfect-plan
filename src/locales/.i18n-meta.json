@@ -975,6 +975,15 @@
     "birdMoments.yourOwn": {
       "stamp": "511a7eb06dd6830a"
     },
+    "birdNames.and": {
+      "stamp": "fbb6deca81886546"
+    },
+    "birdNames.count_one": {
+      "stamp": "77ebd0a5b87711fa"
+    },
+    "birdNames.count_other": {
+      "stamp": "1c68e78e777ef117"
+    },
     "birdPhotoSheet.adjustCrop": {
       "stamp": "5d330a9b86037c5c"
     },
@@ -3729,17 +3738,26 @@
     "dashboard.aHouseholdYouHelpWith": {
       "stamp": "57f824fd59cd7827"
     },
+    "dashboard.allBirdsCheckedToday_one": {
+      "stamp": "e0d8eeaed372579e"
+    },
+    "dashboard.allBirdsCheckedToday_other": {
+      "stamp": "9d3b3ce0a0637213"
+    },
     "dashboard.allGood": {
       "stamp": "b0d0d9d04c58623e"
     },
     "dashboard.anOwner": {
       "stamp": "2d725f2fa21f976d"
     },
-    "dashboard.birdSomethingToCheck": {
-      "stamp": "0cfb1e0b2cf6e037"
+    "dashboard.birdsStillNeedCheck_one": {
+      "stamp": "d85ab95be8ce283d"
     },
-    "dashboard.checkedDone": {
-      "stamp": "a7e25c29ce6f6454"
+    "dashboard.birdsStillNeedCheck_other": {
+      "stamp": "aa8f05028846cc8d"
+    },
+    "dashboard.checked": {
+      "stamp": "1fd45a741e84b36e"
     },
     "dashboard.close": {
       "stamp": "d981ee660d866d8c"
@@ -3813,15 +3831,6 @@
     "dashboard.flockCheckCta": {
       "stamp": "1ef05daeda7e5e11"
     },
-    "dashboard.flockCheckDoneAt": {
-      "stamp": "9268c1b9c2b6c3e2"
-    },
-    "dashboard.flockCheckDoneN": {
-      "stamp": "5972af1644b8cbf6"
-    },
-    "dashboard.flockCheckDoneTwo": {
-      "stamp": "97a9754f93da0a97"
-    },
     "dashboard.flockCheckFinish": {
       "stamp": "e3af6828ce6a8cf7"
     },
@@ -3846,8 +3855,8 @@
     "dashboard.goodMorning": {
       "stamp": "d2ed179a60b83184"
     },
-    "dashboard.gramsDone": {
-      "stamp": "43f581da9d4dbe70"
+    "dashboard.gramsShort": {
+      "stamp": "32a06ffb524410f9"
     },
     "dashboard.gramsUnit": {
       "stamp": "9393ef97578f0bd3"
@@ -3885,8 +3894,17 @@
     "dashboard.minAgo": {
       "stamp": "6e102612f2738fb6"
     },
-    "dashboard.nAllNormal": {
-      "stamp": "1de82ba84432fb8d"
+    "dashboard.namesNotWeighedWeek_one": {
+      "stamp": "fa54949b9a510392"
+    },
+    "dashboard.namesNotWeighedWeek_other": {
+      "stamp": "cfa5b856f8b35ac3"
+    },
+    "dashboard.nBirdsNotWeighedWeek_one": {
+      "stamp": "89d455a7941e9b67"
+    },
+    "dashboard.nBirdsNotWeighedWeek_other": {
+      "stamp": "abca7f864cf5cc73"
     },
     "dashboard.needsAWeighIn": {
       "stamp": "50ca555ffc8aba95"
@@ -3900,14 +3918,17 @@
     "dashboard.noDefaultsYet": {
       "stamp": "a6586910feac99a0"
     },
-    "dashboard.nOfTotalChecked": {
-      "stamp": "0cf9f0853847bb4e"
+    "dashboard.notWeighedInDays_one": {
+      "stamp": "2fd678bafd66e1bc"
+    },
+    "dashboard.notWeighedInDays_other": {
+      "stamp": "c8f2b82ac97a3fde"
     },
     "dashboard.noWeightsYet": {
       "stamp": "83d210b728cc6f87"
     },
-    "dashboard.overdueDays": {
-      "stamp": "e4eb664b0d3db46d"
+    "dashboard.openDailyCheckList": {
+      "stamp": "95bb4af14e0ab517"
     },
     "dashboard.ownersHousehold": {
       "stamp": "db8358dc681a5ea4"
@@ -3927,8 +3948,8 @@
     "dashboard.saving": {
       "stamp": "0b6adadaf808c8a5"
     },
-    "dashboard.seeTodaysChecks": {
-      "stamp": "85f76c13f036d871"
+    "dashboard.seeTodaysChecksButton": {
+      "stamp": "9edabaf84420f770"
     },
     "dashboard.setUp": {
       "stamp": "29b8b2d01850fe7a"
@@ -3953,9 +3974,6 @@
     },
     "dashboard.today": {
       "stamp": "65e7700b50124553"
-    },
-    "dashboard.weighInsOverdue": {
-      "stamp": "c9b8f0f0a509802d"
     },
     "dashboard.welcomeToYourFlock": {
       "stamp": "8523dfe1d2284389"
@@ -4425,32 +4443,80 @@
     "farewell.yourBird": {
       "stamp": "fb5d7aead9178f25"
     },
-    "flockCheck.allDone": {
-      "stamp": "c932c1263370af8c"
+    "flockCheck.addWeight": {
+      "stamp": "1e7d56b6177867b4"
     },
     "flockCheck.back": {
       "stamp": "5001815e48b3af8b"
     },
-    "flockCheck.concerning": {
-      "stamp": "8676a7a66f6b1267"
+    "flockCheck.backToHome": {
+      "stamp": "5707ed08861e2e51"
+    },
+    "flockCheck.birdNoticed": {
+      "stamp": "74a5d60a874b1fca"
+    },
+    "flockCheck.checkedNotWeighed": {
+      "stamp": "fed723b661953987"
+    },
+    "flockCheck.checkNext": {
+      "stamp": "bf951034824a2a04"
+    },
+    "flockCheck.doneSubhead": {
+      "stamp": "639a95727a054986"
+    },
+    "flockCheck.doneTag": {
+      "stamp": "3e00dbef8dddb12e"
+    },
+    "flockCheck.doneToday": {
+      "stamp": "b11c08778204a011"
+    },
+    "flockCheck.everyoneElseUsual": {
+      "stamp": "4be09588cdc741cb"
+    },
+    "flockCheck.everyoneUsual": {
+      "stamp": "5af66b54cf02bec8"
     },
     "flockCheck.grams": {
       "stamp": "32a06ffb524410f9"
     },
+    "flockCheck.heading": {
+      "stamp": "01e38b3413c0e455"
+    },
+    "flockCheck.intro": {
+      "stamp": "9d20775447934dcd"
+    },
+    "flockCheck.lastWeighedDaysAgo_one": {
+      "stamp": "6aa53ee2b93a2839"
+    },
+    "flockCheck.lastWeighedDaysAgo_other": {
+      "stamp": "de357a4a5899e251"
+    },
+    "flockCheck.lastWeighedToday": {
+      "stamp": "7976521547199bad"
+    },
+    "flockCheck.lastWeighedYesterday": {
+      "stamp": "3204a2c5d8281427"
+    },
     "flockCheck.lastWeight": {
       "stamp": "65ed12d98ef3a938"
+    },
+    "flockCheck.looksNormal": {
+      "stamp": "71c1e49e0725b569"
     },
     "flockCheck.metaTitle": {
       "stamp": "e7c2887494cc77ba"
     },
-    "flockCheck.normal": {
-      "stamp": "bd98a1ef0645386f"
+    "flockCheck.noticedSomething": {
+      "stamp": "42aba0a6eea34785"
     },
-    "flockCheck.notChecked": {
-      "stamp": "da4820767bef144b"
+    "flockCheck.notWeighedInDays_one": {
+      "stamp": "2fd678bafd66e1bc"
     },
-    "flockCheck.progress": {
-      "stamp": "59efbd7d6145d298"
+    "flockCheck.notWeighedInDays_other": {
+      "stamp": "c8f2b82ac97a3fde"
+    },
+    "flockCheck.notWeighedYet": {
+      "stamp": "79118c3c5e1ec058"
     },
     "flockCheck.progressAria": {
       "stamp": "3fc6eb3aebd3498b"
@@ -4458,23 +4524,26 @@
     "flockCheck.saveNext": {
       "stamp": "ccd66bb87fa51b6c"
     },
-    "flockCheck.savesAsYouGo": {
-      "stamp": "5b690095730d5353"
+    "flockCheck.seeBirdsHealth": {
+      "stamp": "f1f9b08f37c2fc30"
     },
-    "flockCheck.seeYouTomorrow": {
-      "stamp": "12699a783603b140"
-    },
-    "flockCheck.somethingToCheck": {
-      "stamp": "334cb9928400c46a"
+    "flockCheck.seeSummary": {
+      "stamp": "659e4250b91a3eee"
     },
     "flockCheck.start": {
       "stamp": "c30064b41a710fa9"
     },
-    "flockCheck.title": {
-      "stamp": "4034959f2ad99a4c"
+    "flockCheck.todaysWeights": {
+      "stamp": "640ab3db07b714d9"
     },
-    "flockCheck.view": {
-      "stamp": "5c82e762c70a893a"
+    "flockCheck.upNext": {
+      "stamp": "7730a439c6ecb72b"
+    },
+    "flockCheck.youNoticed": {
+      "stamp": "ad1a30c7a85a8dc6"
+    },
+    "flockCheck.youNoticedItems": {
+      "stamp": "a96c88f8977de5c6"
     },
     "foodEditor.addAnIngredient": {
       "stamp": "b518c5e21bad4eb9"
@@ -8123,6 +8192,12 @@
     },
     "sitForm.gaps.body": {
       "stamp": "1e26aaec1ac74d7a"
+    },
+    "sitForm.gaps.bodyCount_one": {
+      "stamp": "5fc84dc63d7f0448"
+    },
+    "sitForm.gaps.bodyCount_other": {
+      "stamp": "44d8f1f5fa359e06"
     },
     "sitForm.gaps.bodyMany": {
       "stamp": "97c1d1e743b54217"

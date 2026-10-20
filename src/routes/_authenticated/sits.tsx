@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { namesAsCount } from "@/lib/birdNames";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { z } from "zod";
@@ -38,6 +39,8 @@ export const Route = createFileRoute("/_authenticated/sits")({
 
 function joinNames(names: string[]): string {
   if (names.length === 0) return "";
+  // More than three birds: a count instead of names (see src/lib/birdNames.ts).
+  if (namesAsCount(names)) return i18next.t("birdNames.count", "{{count}} birds", { count: names.length });
   if (names.length === 1) return names[0];
   if (names.length === 2) return i18next.t("sits.joinTwo", "{{a}} and {{b}}", { a: names[0], b: names[1] });
   return i18next.t("sits.joinMany", "{{list}}, and {{last}}", { list: names.slice(0, -1).join(", "), last: names[names.length - 1] });

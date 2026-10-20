@@ -19,6 +19,7 @@ import { SCAN_FIELDS, type ScanFieldKey } from "@/lib/triage";
 import { track } from "@/lib/analytics";
 import { friendlyError } from "@/lib/errorMessage";
 import { triageMessageLabel } from "@/lib/triageLabels";
+import { dailyCheckItemLabel } from "@/lib/dailyCheckLabels";
 
 export type DailyCheckSurface = "bird_page" | "home_one" | "flock";
 
@@ -44,20 +45,7 @@ const C = {
 const ITEM_KEYS: ScanFieldKey[] = ["alertness", "food", "droppings", "breathing", "posture", "noise", "fluffed", "vomiting", "injury", "exposure"];
 const RED_KEYS = new Set(SCAN_FIELDS.filter((f) => f.redOnConcerning).map((f) => f.key));
 
-function itemLabel(t: TFunction, k: ScanFieldKey): string {
-  switch (k) {
-    case "alertness": return t("dailyCheck.item.alertness", "Alertness");
-    case "food": return t("dailyCheck.item.food", "Eating");
-    case "droppings": return t("dailyCheck.item.droppings", "Droppings");
-    case "breathing": return t("dailyCheck.item.breathing", "Breathing");
-    case "posture": return t("dailyCheck.item.posture", "Perching");
-    case "noise": return t("dailyCheck.item.noise", "Vocalizing");
-    case "fluffed": return t("dailyCheck.item.fluffed", "Fluffed up");
-    case "vomiting": return t("dailyCheck.item.vomiting", "Face or vomiting");
-    case "injury": return t("dailyCheck.item.injury", "Injury");
-    case "exposure": return t("dailyCheck.item.exposure", "Fumes or toxins");
-  }
-}
+const itemLabel = dailyCheckItemLabel;
 
 function timeLabel(iso: string | Date): string {
   return new Date(iso).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }).toLowerCase();

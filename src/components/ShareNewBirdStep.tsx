@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { birdNames } from "@/lib/birdNames";
 import { useServerFn } from "@tanstack/react-start";
 import { addExistingHouseholdMember } from "@/lib/household.functions";
 import { toast } from "sonner";
@@ -122,7 +123,7 @@ export function ShareNewBirdStep({
                 </span>
               }
               title={label}
-              detail={m.scope === "all" ? t("shareNewBird.helpsWithAll", "Helps with all your birds") : t("shareNewBird.helpsWith", "Helps with {{names}}", { names: m.birdNames.join(", ") })}
+              detail={m.scope === "all" ? t("shareNewBird.helpsWithAll", "Helps with all your birds") : t("shareNewBird.helpsWith", "Helps with {{names}}", { names: birdNames(t, m.birdNames) })}
             />
           );
         })}

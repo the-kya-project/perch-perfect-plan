@@ -660,7 +660,9 @@ export function SitForm({
                 {t("sitForm.gaps.title", "{{name}} will need a little more", { name: caregiverLabel() })}
               </h2>
               <p className="m-0 mt-2 text-[15.5px] leading-[1.5]" style={{ color: S.helper }}>
-                {gapBirdCount() > 1
+                {gapBirdCount() > 3
+                  ? t("sitForm.gaps.bodyCount", "{{count}} birds' plans are missing a few things a sitter leans on.", { count: gapBirdCount() })
+                  : gapBirdCount() > 1
                   ? t("sitForm.gaps.bodyMany", "{{names}}'s plans are missing a few things a sitter leans on.", { names: gapBirdNames() })
                   : t("sitForm.gaps.body", "{{names}}'s plan is missing a few things a sitter leans on.", { names: gapBirdNames() })}
               </p>
