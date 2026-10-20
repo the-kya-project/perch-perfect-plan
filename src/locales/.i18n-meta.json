@@ -6804,6 +6804,30 @@
     "setupCheck.personality": {
       "stamp": "bdd45b3f310e36f3"
     },
+    "setupFrame.back": {
+      "stamp": "5001815e48b3af8b"
+    },
+    "setupFrame.done": {
+      "stamp": "08103d4ee528bd92"
+    },
+    "setupFrame.newBird": {
+      "stamp": "bdf86184291c6b49"
+    },
+    "setupFrame.pillDay": {
+      "stamp": "d3234f936e818a35"
+    },
+    "setupFrame.pillDetails": {
+      "stamp": "67a6143d0380d26d"
+    },
+    "setupFrame.pillPage": {
+      "stamp": "3ec62addfed153c8"
+    },
+    "setupFrame.pillTips": {
+      "stamp": "b5599f17ff594655"
+    },
+    "setupFrame.settingUp": {
+      "stamp": "9b3438f9000b0f04"
+    },
     "setupShell.allSteps": {
       "stamp": "e8b243e903b7abb7"
     },
@@ -6932,9 +6956,6 @@
     },
     "shareNewBird.title": {
       "stamp": "bad5c4865fcd9db3"
-    },
-    "shareNewBird.yourHousehold": {
-      "stamp": "233e24fd0e1b3d87"
     },
     "signedFile.openFailed": {
       "stamp": "a667e55c910dceb5"

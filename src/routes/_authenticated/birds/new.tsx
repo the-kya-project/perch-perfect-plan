@@ -5,7 +5,7 @@ import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import i18next from "i18next";
 import { getHouseholdAccount } from "@/lib/household.functions";
-import { ShareNewBirdSheet, type ShareCandidate } from "@/components/ShareNewBirdSheet";
+import { ShareNewBirdStep, type ShareCandidate } from "@/components/ShareNewBirdStep";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { toast } from "sonner";
@@ -173,7 +173,7 @@ function NewBird() {
   // right after a deploy), a retry NEVER inserts again — it reuses the id and
   // just retries the navigation, hard-navigating as a last resort (a full page
   // load always lands on the fresh build).
-  // The navigation half of onAddBird, reused by the share sheet's two exits.
+  // The navigation half of onAddBird, reused by the share step's two exits.
   // `saving` deliberately stays true throughout (see createBird).
   async function goToSetup(id: string) {
     // Arrived from an email about one feature: land on it. The bird's page still
@@ -222,6 +222,20 @@ function NewBird() {
   }
 
   const canAdd = !!name.trim() && !!species.trim();
+
+  // Details · 2 of 2: the bird is already saved by this point. Not now and
+  // Continue go on to Food; Back leaves for the bird's page (nothing to undo).
+  if (share) {
+    return (
+      <ShareNewBirdStep
+        birdName={name}
+        birdId={share.birdId}
+        members={share.members}
+        onContinue={() => goToSetup(share.birdId)}
+        onBack={() => navigate({ to: "/birds/$birdId", params: { birdId: share.birdId } })}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[var(--cream)] pb-28">
@@ -314,15 +328,6 @@ function NewBird() {
         </div>
       </footer>
 
-      {/* The bird is already saved by this point — both exits continue to setup. */}
-      {share && (
-        <ShareNewBirdSheet
-          birdName={name}
-          birdId={share.birdId}
-          members={share.members}
-          onContinue={() => goToSetup(share.birdId)}
-        />
-      )}
     </div>
   );
 }

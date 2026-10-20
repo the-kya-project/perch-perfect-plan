@@ -4539,6 +4539,22 @@
   "setupCheck.health": "Gezondheid: uitgangssituatie",
   // Personality & handling
   "setupCheck.personality": "Karakter & omgang",
+  // Back
+  "setupFrame.back": "Terug",
+  // (done)
+  "setupFrame.done": "(klaar)",
+  // New bird
+  "setupFrame.newBird": "Nieuwe vogel",
+  // Day
+  "setupFrame.pillDay": "Dag",
+  // Details
+  "setupFrame.pillDetails": "Gegevens",
+  // {{step}} · {{n}} of {{total}}
+  "setupFrame.pillPage": "{{step}} · {{n}} van {{total}}",
+  // Tips
+  "setupFrame.pillTips": "Tips",
+  // Setting up
+  "setupFrame.settingUp": "Instellen",
   // All steps
   "setupShell.allSteps": "Alle stappen",
   // Back to {{name}}
@@ -4625,8 +4641,6 @@
   "shareNewBird.shareFailed": "Kon {{bird}} niet delen met {{names}}. Je kunt ze toevoegen via Huishouden.",
   // Who else helps?
   "shareNewBird.title": "Wie helpt er nog meer?",
-  // Your household
-  "shareNewBird.yourHousehold": "Jouw huishouden",
   // That file couldn't be opened.
   "signedFile.openFailed": "Dat bestand kon niet worden geopend.",
   // Active

@@ -157,6 +157,37 @@ export function CheckChips<T extends string>({ options, value, onChange, label }
   );
 }
 
+// ---------- Check row (pick any, when each choice needs two lines) ----------
+
+/** A check chip with room for a name and a detail line, plus a leading badge. */
+export function CheckRow({ on, onClick, leading, title, detail, disabled }: {
+  on: boolean; onClick: () => void; leading?: ReactNode; title: ReactNode; detail?: ReactNode; disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={on}
+      onClick={onClick}
+      disabled={disabled}
+      className="flex min-h-[72px] w-full items-center gap-3 rounded-[18px] border-2 px-3.5 py-3 text-left disabled:opacity-45"
+      style={{ background: on ? S.lime : "#fff", borderColor: on ? S.forest : S.line, color: S.forest }}
+    >
+      {leading}
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[16px] font-[700]">{title}</span>
+        {detail && <span className="mt-0.5 block text-[14px] leading-[1.35]" style={{ color: S.helper }}>{detail}</span>}
+      </span>
+      <span
+        aria-hidden="true"
+        className="grid size-7 shrink-0 place-items-center rounded-[8px] border-2"
+        style={on ? { background: S.forest, borderColor: S.forest, color: S.lime } : { background: "#fff", borderColor: S.line }}
+      >
+        {on && <Check className="size-4" strokeWidth={3} />}
+      </span>
+    </button>
+  );
+}
+
 // ---------- Segmented choice (pick one of 2–3 short options) ----------
 
 export function Segmented<T extends string>({ options, value, onChange, label }: {
