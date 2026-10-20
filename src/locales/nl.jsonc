@@ -5213,52 +5213,38 @@
   "sitCards.active": "Actief",
   // A household you help with
   "sitCards.aHouseholdYouHelp": "Een huishouden waar je helpt",
-  // All birds
-  "sitCards.allBirds": "Alle vogels",
-  // all clear
-  "sitCards.allClear": "alles in orde",
-  // Birds
-  "sitCards.birds": "Vogels",
-  // Caregiver during trip
-  "sitCards.caregiverDuringTrip": "Verzorger tijdens de reis",
   // Copy link
   "sitCards.copyLink": "Link kopiëren",
-  // {{start}} → {{end}}
-  "sitCards.dateRange": "{{start}} → {{end}}",
-  // Dates
-  "sitCards.dates": "Data",
-  // {{n}} day
-  "sitCards.dayCountOne": "{{n}} dag",
-  // {{n}} days
-  "sitCards.dayCountOther": "{{n}} dagen",
+  // Copy {{name}}'s link
+  "sitCards.copyNamesLink": "Link van {{name}} kopiëren",
+  // {{count}} day
+  "sitCards.dayCount_one": "{{count}} dag",
+  // {{count}} days
+  "sitCards.dayCount_other": "{{count}} dagen",
   // Edit sit
   "sitCards.editSit": "Oppasperiode bewerken",
-  // {{n}} flagged
-  "sitCards.flaggedCount": "{{n}} gemarkeerd",
-  // {{n}} health check
-  "sitCards.healthCheckCountOne": "{{n}} gezondheidscheck",
-  // {{n}} health checks
-  "sitCards.healthCheckCountOther": "{{n}} gezondheidschecks",
-  // Health checks
-  "sitCards.healthChecks": "Gezondheidschecks",
   // Household
   "sitCards.household": "Huishouden",
-  // In charge · 
-  "sitCards.inCharge": "Verantwoordelijk · ",
+  // {{name}}'s sit
+  "sitCards.namedSit": "Oppasperiode van {{name}}",
+  // {{name}}' sit
+  "sitCards.namedSitS": "Oppasperiode van {{name}}",
   // {{name}}'s household
   "sitCards.ownersHousehold": "Huishouden van {{name}}",
   // {{name}}' household
   "sitCards.ownersHouseholdS": "Huishouden van {{name}}",
-  // Past
-  "sitCards.past": "Afgelopen",
+  // {{start}} to {{end}}
+  "sitCards.rangeTo": "{{start}} tot {{end}}",
+  // See what {{name}} sees
+  "sitCards.seeWhatSees": "Bekijk wat {{name}} ziet",
+  // Show {{count}} more
+  "sitCards.showMore_one": "Nog {{count}} tonen",
+  // Show {{count}} more
+  "sitCards.showMore_other": "Nog {{count}} tonen",
   // Sitter
   "sitCards.sitter": "Oppas",
   // Sitter · day {{day}} of {{total}}
   "sitCards.sitterDayOf": "Oppas · dag {{day}} van {{total}}",
-  // View as caregiver
-  "sitCards.viewAsCaregiver": "Bekijk als verzorger",
-  // View as sitter
-  "sitCards.viewAsSitter": "Bekijk als oppas",
   // View care plan
   "sitCards.viewCarePlan": "Verzorgingsplan bekijken",
   // View health checks
@@ -5269,16 +5255,26 @@
   "sitCards.youreInCharge": "Jij bent verantwoordelijk",
   // Add
   "sitChecklist.add": "Toevoegen",
-  // Add a custom item
-  "sitChecklist.addCustomItem": "Eigen punt toevoegen",
+  // Add your own item
+  "sitChecklist.addYourOwnItem": "Eigen punt toevoegen",
+  // All done
+  "sitChecklist.allDone": "Alles klaar",
+  // Before you leave
+  "sitChecklist.beforeYouLeave": "Voordat je vertrekt",
   // Cancel
   "sitChecklist.cancel": "Annuleren",
+  // Check {{name}}'s contacts →
+  "sitChecklist.checkBirdContacts": "Contacten van {{name}} nakijken →",
+  // Check contacts →
+  "sitChecklist.checkContacts": "Contacten nakijken →",
   // Check off: {{label}}
   "sitChecklist.checkOffAria": "Afvinken: {{label}}",
   // Custom item
   "sitChecklist.customItem": "Eigen punt",
   // e.g. Top up humidifier
   "sitChecklist.customPlaceholder": "bijv. Luchtbevochtiger bijvullen",
+  // {{done}} of {{total}} done
+  "sitChecklist.doneOfTotal": "{{done}} van {{total}} klaar",
   // Cage cleaned
   "sitChecklist.item.cageClean": "Kooi schoongemaakt",
   // Care plans up to date
@@ -5295,56 +5291,30 @@
   "sitChecklist.item.foodPortioned": "Genoeg voer in porties voor de hele oppasperiode, plus extra",
   // Hazards handled (rooms closed, pets secured, windows checked)
   "sitChecklist.item.hazards": "Gevaren aangepakt (kamers dicht, andere huisdieren veilig, ramen gecontroleerd)",
-  // Sitter invite link tested
-  "sitChecklist.item.inviteTested": "Uitnodigingslink voor de oppas getest",
   // Sitter has access (key, code, or entry plan)
   "sitChecklist.item.sitterAccess": "Oppas kan naar binnen (sleutel, code of afspraak)",
-  // Keep editing
-  "sitChecklist.keepEditing": "Verder bewerken",
+  // Sitter link tested
+  "sitChecklist.item.sitterLinkTested": "Oppaslink getest",
   // Loading…
   "sitChecklist.loading": "Laden…",
-  // Marked ready · only visible to you for now
-  "sitChecklist.markedReadyOnlyYou": "Klaar gemarkeerd · voorlopig alleen zichtbaar voor jou",
-  // Marked ready. Just for your view — the sitter isn't notified yet.
-  "sitChecklist.markedReadyToast": "Klaar gemarkeerd. Alleen voor jezelf — de oppas krijgt nog geen melding.",
-  // Mark ready
-  "sitChecklist.markReady": "Klaar markeren",
-  // Mark ready anyway
-  "sitChecklist.markReadyAnyway": "Toch klaar markeren",
-  // A few items aren't checked off yet. Nothing is blocked — this is just for you.
-  "sitChecklist.markReadyAnywayBody": "Een paar punten zijn nog niet afgevinkt. Er wordt niets geblokkeerd — dit is alleen voor jezelf.",
-  // Mark ready anyway?
-  "sitChecklist.markReadyAnywayQ": "Toch klaar markeren?",
-  // Pre-leaving checklist
-  "sitChecklist.preLeavingChecklist": "Checklist voor vertrek",
-  // Ready
-  "sitChecklist.ready": "Klaar",
-  // {{sitter}} arrives in {{when}} — {{items}} left
-  "sitChecklist.reminder": "{{sitter}} komt over {{when}} — nog {{items}} te doen",
+  // Open {{name}}'s care plan →
+  "sitChecklist.openCarePlan": "Verzorgingsplan van {{name}} openen →",
   // Remove: {{label}}
   "sitChecklist.removeAria": "Verwijderen: {{label}}",
   // Uncheck: {{label}}
   "sitChecklist.uncheckAria": "Vinkje weghalen: {{label}}",
-  // Undo
-  "sitChecklist.undo": "Ongedaan maken",
-  // Your additions
-  "sitChecklist.yourAdditions": "Jouw toevoegingen",
-  // Your sitter
-  "sitChecklist.yourSitter": "Je oppas",
   // A bird
   "sitDetail.aBird": "Een vogel",
   // This sit is active right now — a sitter is covering. Deleting it ends their access immediately.
   "sitDetail.activeWarning": "Deze oppasperiode is nu bezig — er valt een oppas in. Als je hem verwijdert, verliest de oppas meteen de toegang.",
   // Activity
   "sitDetail.activity": "Activiteit",
-  // Birds covered:
-  "sitDetail.birdsCovered": "Vogels in deze oppasperiode:",
+  // Back
+  "sitDetail.back": "Terug",
+  // Birds
+  "sitDetail.birdsCoveredLabel": "Vogels",
   // Couldn't delete the sit.
   "sitDetail.couldNotDelete": "Kon de oppasperiode niet verwijderen.",
-  // Covered by {{name}}
-  "sitDetail.coveredBy": "{{name}} valt in",
-  // Danger zone
-  "sitDetail.dangerZone": "Gevarenzone",
   // Delete this sit? This can't be undone. Logs recorded during it (scans, weights, photos) are kept but no longer tied to the sit; its checklist and task completions are removed.
   "sitDetail.deleteConfirm": "Deze oppasperiode verwijderen? Dit kan niet ongedaan worden gemaakt. Notities van tijdens de oppasperiode (gezondheidschecks, gewichten, foto's) blijven bewaard, maar zijn niet meer aan de oppasperiode gekoppeld; de checklist en afgevinkte taken worden verwijderd.",
   // Sit deleted.
@@ -5357,16 +5327,12 @@
   "sitDetail.deleting": "Verwijderen…",
   // External sitter
   "sitDetail.externalSitter": "Externe oppas",
-  // Sit activity
-  "sitDetail.eyebrow": "Activiteit oppasperiode",
   // Health checks
   "sitDetail.healthChecks": "Gezondheidschecks",
   // Household
   "sitDetail.household": "Huishouden",
   // Household member
   "sitDetail.householdMember": "Lid van het huishouden",
-  // In charge · 
-  "sitDetail.inCharge": "Verantwoordelijk · ",
   // Journal
   "sitDetail.journal": "Dagboek",
   // Journal entry
@@ -5379,8 +5345,8 @@
   "sitDetail.noActivity": "Geen activiteit genoteerd tijdens deze oppasperiode.",
   // This sit isn't available.
   "sitDetail.notAvailable": "Deze oppasperiode is niet beschikbaar.",
-  // Sit not found.
-  "sitDetail.notFound": "Oppasperiode niet gevonden.",
+  // Sit not found
+  "sitDetail.notFoundNoDot": "Oppasperiode niet gevonden",
   // Sit activity — Kya & Co.
   "sitDetail.pageTitle": "Activiteit oppasperiode — Kya & Co.",
   // {{bird}} · photo
@@ -5395,8 +5361,8 @@
   "sitDetail.scanClear": "{{bird}} · gezondheidscheck — alles in orde",
   // {{bird}} · health check — concern flagged
   "sitDetail.scanConcern": "{{bird}} · gezondheidscheck — aandachtspunt gemarkeerd",
-  // Sit
-  "sitDetail.sit": "Oppasperiode",
+  // Sitter
+  "sitDetail.sitter": "Oppas",
   // Task complete — {{label}}
   "sitDetail.taskComplete": "Taak gedaan — {{label}}",
   // Tasks
@@ -5409,36 +5375,32 @@
   "sitForm.activeSitDeleteWarning": "Deze oppasperiode is nu bezig — er valt een oppas in. Als je hem verwijdert, verliest de oppas meteen de toegang.",
   // Add the sitter's email.
   "sitForm.addTheSitterSEmail": "Voeg het e-mailadres van de oppas toe.",
-  // A label to recognize this sit, e.g. June vacation, August work trip.
-  "sitForm.aLabelToRecognizeThis": "Een naam om deze oppasperiode te herkennen, bijv. zomervakantie juni, werkreis augustus.",
-  // Already has access · they'll see the daily checklist while you're away.
-  "sitForm.alreadyHasAccessTheyLl": "Heeft al toegang · ziet de dagelijkse checklist terwijl je weg bent.",
-  // An email + a per-trip link, no account needed.
-  "sitForm.anEmailAPerTrip": "Een e-mail + een link per reis, geen account nodig.",
-  // A sit is underway right now. Your sitter has their private link.
-  "sitForm.aSitIsUnderwayRight": "Er loopt nu een oppasperiode. Je oppas heeft een eigen privélink.",
+  // Anything else {{name}} should know?
+  "sitForm.anythingElseName": "Moet {{name}} nog iets weten?",
+  // Anything else your sitter should know?
+  "sitForm.anythingElseSitter": "Moet je oppas nog iets weten?",
   // Bird
   "sitForm.bird": "Vogel",
-  // Birds included
-  "sitForm.birdsIncluded": "Welke vogels",
-  // Cancel
-  "sitForm.cancel": "Annuleren",
+  // Close
+  "sitForm.close": "Sluiten",
+  // Copy link
+  "sitForm.copyLink": "Link kopiëren",
   // Could not create sit.
   "sitForm.couldNotCreate": "Kon de oppasperiode niet aanmaken.",
-  // Create a sit and send your sitter a private link with everything they need.
-  "sitForm.createASitAndSend": "Maak een oppasperiode aan en stuur je oppas een privélink met alles wat die nodig heeft.",
+  // Household members already have access. Anyone else gets a private link, no account needed.
+  "sitForm.coveringHint": "Huisgenoten hebben al toegang. Iemand anders krijgt een privélink, zonder account.",
+  // Create sit and email {{name}}
+  "sitForm.createAndEmail": "Oppasperiode maken en {{name}} mailen",
+  // Sit created. We couldn't email {{name}}, so copy the link and send it yourself.
+  "sitForm.createdCopyLink": "Oppasperiode gemaakt. We konden {{name}} niet mailen, dus kopieer de link en stuur hem zelf.",
   // Sit created — your household member is set.
   "sitForm.createdHousehold": "Oppasperiode aangemaakt — je huisgenoot is ingesteld.",
   // Sit created, but we couldn't email {{name}}. Let them know directly.
   "sitForm.createdHouseholdEmailFailed": "Oppasperiode aangemaakt, maar we konden {{name}} niet mailen. Laat het diegene zelf even weten.",
   // Sit created — invite sent to {{name}}.
   "sitForm.createdInviteSent": "Oppasperiode aangemaakt — uitnodiging verstuurd naar {{name}}.",
-  // Sit created, but we couldn't email {{name}} the invite. Open the sit and copy the link to send it yourself.
-  "sitForm.createdSitterEmailFailed": "Oppasperiode aangemaakt, maar we konden de uitnodiging niet naar {{name}} mailen. Open de oppasperiode en kopieer de link om hem zelf te sturen.",
   // Create sit
   "sitForm.createSit": "Oppasperiode aanmaken",
-  // Create sit & generate link
-  "sitForm.createSitAndLink": "Oppasperiode aanmaken & link maken",
   // Creating...
   "sitForm.creating": "Aanmaken...",
   // Sit deleted, but we couldn't email {{name}} the cancellation. Tell them directly so they don't show up.
@@ -5451,12 +5413,10 @@
   "sitForm.deleting": "Verwijderen…",
   // Edit sit
   "sitForm.editSit": "Oppasperiode bewerken",
-  // e.g. June vacation
-  "sitForm.eGJuneVacation": "bijv. zomervakantie juni",
-  // End
-  "sitForm.end": "Einde",
   // End date must be on or after start date.
   "sitForm.endDateMustBeOn": "De einddatum moet op of na de startdatum liggen.",
+  // Ends
+  "sitForm.ends": "Eindigt",
   // An external sitter has the link. {{who}} is current; you can edit the name or email below.
   "sitForm.externalSitterHasLink": "Een externe oppas heeft de link. {{who}} is nu ingesteld; je kunt de naam of het e-mailadres hieronder aanpassen.",
   // Add
@@ -5503,28 +5463,34 @@
   "sitForm.gaps.title": "{{name}} heeft nog wat meer nodig",
   // Your sitter
   "sitForm.gaps.yourSitter": "Je oppas",
-  // Going away soon?
-  "sitForm.goingAwaySoon": "Ga je binnenkort weg?",
   // Household
   "sitForm.household": "Huishouden",
   // A household member is assigned. Swapping caregiver type isn't available yet — delete this sit and create a new one to change it.
   "sitForm.householdAssigned": "Er is een lid van het huishouden toegewezen. Het type verzorger wisselen kan nog niet — verwijder deze oppasperiode en maak een nieuwe aan om het te veranderen.",
   // Keep
   "sitForm.keep": "Behouden",
+  // Edit sit — Kya & Co.
+  "sitForm.metaTitleEdit": "Oppasperiode bewerken — Kya & Co.",
+  // Set up a sit — Kya & Co.
+  "sitForm.metaTitleNew": "Oppasperiode instellen — Kya & Co.",
   // Add the required emergency contacts before sharing a sitter link — {{details}}. Set account defaults below, or open the bird's Emergency tab.
   "sitForm.missingContacts": "Voeg eerst de verplichte noodcontacten toe voordat je een oppaslink deelt — {{details}}. Stel hieronder standaardgegevens in, of open het tabblad Noodgeval van de vogel.",
+  // Just for you, so you can find it later.
+  "sitForm.nameHint": "Alleen voor jou, zodat je hem later terugvindt.",
+  // e.g. Thanksgiving trip
+  "sitForm.namePlaceholder": "bijv. Kerstvakantie",
+  // Name this sit
+  "sitForm.nameThisSit": "Geef deze oppasperiode een naam",
   // avian vet phone
   "sitForm.needAvianVetPhone": "telefoonnummer vogeldierenarts",
   // your phone
   "sitForm.needYourPhone": "je telefoonnummer",
-  // New sit
-  "sitForm.newSit": "Nieuwe oppasperiode",
-  // No household yet — <1>invite someone</1> or send a link to a sitter below.
-  "sitForm.noHouseholdYet": "Nog geen huishouden — <1>nodig iemand uit</1> of stuur hieronder een link naar een oppas.",
   // Notes for this sit
   "sitForm.notesForThisSit": "Notities voor deze oppasperiode",
-  // or
-  "sitForm.or": "of",
+  // Notes for this sit only. The care plan covers the everyday routine.
+  "sitForm.notesHint": "Notities alleen voor deze oppasperiode. Het verzorgingsplan dekt de dagelijkse routine.",
+  // e.g. The neighbor has a spare key.
+  "sitForm.notesPlaceholder": "bijv. De buren hebben een reservesleutel.",
   // Pick a bird above first.
   "sitForm.pickABirdAboveFirst": "Kies eerst hierboven een vogel.",
   // Pick a household member.
@@ -5539,40 +5505,48 @@
   "sitForm.saveChanges": "Wijzigingen opslaan",
   // Saving...
   "sitForm.saving": "Opslaan...",
+  // Your sitter gets the daily routine, a daily health check, and one-tap emergency contacts.
+  "sitForm.screenIntro": "Je oppas krijgt de dagelijkse routine, een dagelijkse gezondheidscheck en noodcontacten met één tik.",
   // Select all
   "sitForm.selectAll": "Alles selecteren",
-  // Send a link to someone else
-  "sitForm.sendALinkToSomeone": "Stuur een link naar iemand anders",
-  // Sit active
-  "sitForm.sitActive": "Oppasperiode actief",
+  // Set up a sit
+  "sitForm.setUpASit": "Oppasperiode instellen",
   // Sit deleted.
   "sitForm.sitDeleted": "Oppasperiode verwijderd.",
   // Sit deleted, but we couldn't email your household member the cancellation. Tell them directly so they don't show up to cover.
   "sitForm.sitDeletedButWeCouldn": "Oppasperiode verwijderd, maar we konden je huisgenoot niet mailen over de annulering. Laat het diegene zelf weten, zodat die niet voor niets komt invallen.",
   // Sit deleted, but we couldn't email {{name}} the cancellation. Tell them directly so they don't show up to cover.
   "sitForm.sitDeletedEmailFailedNamed": "Oppasperiode verwijderd, maar we konden {{name}} niet mailen over de annulering. Laat het diegene zelf weten, zodat die niet voor niets komt invallen.",
-  // Sit name
-  "sitForm.sitName": "Naam oppasperiode",
-  // Sitter email
-  "sitForm.sitterEmail": "E-mailadres oppas",
   // sitter@example.com
   "sitForm.sitterExampleCom": "oppas@voorbeeld.nl",
-  // Sitter name
-  "sitForm.sitterName": "Naam oppas",
+  // Sitter's email
+  "sitForm.sittersEmail": "E-mail van de oppas",
+  // Sitter's name
+  "sitForm.sittersName": "Naam van de oppas",
   // Sit updated.
   "sitForm.sitUpdated": "Oppasperiode bijgewerkt.",
-  // Start
-  "sitForm.start": "Start",
+  // Someone else
+  "sitForm.someoneElse": "Iemand anders",
+  // Starts
+  "sitForm.starts": "Begint",
   // Their info
   "sitForm.theirInfo": "Hun gegevens",
   // Sit updated, but we couldn't email {{name}} the change. Let them know directly.
   "sitForm.updatedHouseholdEmailFailed": "Oppasperiode bijgewerkt, maar we konden {{name}} niet mailen over de wijziging. Laat het diegene zelf even weten.",
   // Sit updated, but we couldn't email {{name}} the change. The link still works — send them the new details.
   "sitForm.updatedSitterEmailFailed": "Oppasperiode bijgewerkt, maar we konden {{name}} niet mailen over de wijziging. De link werkt nog — stuur diegene de nieuwe details.",
-  // Who's covering
-  "sitForm.whoSCovering": "Wie valt er in",
+  // We'll email them a link
+  "sitForm.weEmailThemALink": "We mailen een link",
+  // When?
+  "sitForm.when": "Wanneer?",
+  // Which birds?
+  "sitForm.whichBirds": "Welke vogels?",
+  // Who's covering?
+  "sitForm.whosCoveringQ": "Wie past op?",
   // You're signed out.
   "sitForm.youReSignedOut": "Je bent uitgelogd.",
+  // your sitter
+  "sitForm.yourSitterLower": "je oppas",
   // Link copied.
   "sitLink.copied": "Link gekopieerd.",
   // Add the required emergency contacts before sharing — {{missing}}. Set account defaults on the dashboard or fill the bird's Emergency tab.
@@ -5615,22 +5589,20 @@
   "sits.anOwner": "Een eigenaar",
   // Coming up
   "sits.comingUp": "Binnenkort",
-  // Sits
-  "sits.eyebrow": "Oppasperiodes",
-  // {{name}} arrives in {{n}} days.
-  "sits.heroArrivesInDays": "{{name}} komt over {{n}} dagen.",
-  // {{name}} arrives today.
-  "sits.heroArrivesToday": "{{name}} komt vandaag.",
-  // {{name}} arrives tomorrow.
-  "sits.heroArrivesTomorrow": "{{name}} komt morgen.",
+  // {{name}} arrives in {{count}} day
+  "sits.heroArrivesInDaysNoDot_one": "{{name}} komt over {{count}} dag",
+  // {{name}} arrives in {{count}} days
+  "sits.heroArrivesInDaysNoDot_other": "{{name}} komt over {{count}} dagen",
+  // {{name}} arrives today
+  "sits.heroArrivesTodayNoDot": "{{name}} komt vandaag",
+  // {{name}} arrives tomorrow
+  "sits.heroArrivesTomorrowNoDot": "{{name}} komt morgen",
   // Going away?
   "sits.heroGoingAway": "Ga je weg?",
   // For when you can't be there — set up a sit and share what they need to know.
   "sits.heroGoingAwayBody": "Voor als je er zelf niet kunt zijn — maak een oppasperiode aan en deel wat de oppas moet weten.",
-  // {{start}} → {{end}}.
-  "sits.heroRange": "{{start}} → {{end}}.",
-  // {{name}} is sitting now.
-  "sits.heroSittingNow": "{{name}} past nu op.",
+  // {{name}} is sitting now
+  "sits.heroSittingNowNoDot": "{{name}} past nu op",
   // Through {{date}}.
   "sits.heroThrough": "Tot en met {{date}}.",
   // {{list}}, and {{last}}
@@ -5645,14 +5617,16 @@
   "sits.onlyOwner": "Alleen de eigenaar van een vogel kan een oppasperiode aanmaken.",
   // Sits — Kya & Co.
   "sits.pageTitle": "Oppasperiodes — Kya & Co.",
-  // Past sits ({{n}})
-  "sits.pastSits": "Eerdere oppasperiodes ({{n}})",
+  // Past sits
+  "sits.pastSitsHeading": "Eerdere oppasperiodes",
+  // Set up another sit
+  "sits.setUpAnother": "Nog een oppasperiode instellen",
   // Set up a sit
   "sits.setUpSit": "Oppasperiode aanmaken",
-  // {{n}} sit
-  "sits.sitCountOne": "{{n}} oppasperiode",
-  // {{n}} sits
-  "sits.sitCountOther": "{{n}} oppasperiodes",
+  // {{count}} sit
+  "sits.sitCount_one": "{{count}} oppasperiode",
+  // {{count}} sits
+  "sits.sitCount_other": "{{count}} oppasperiodes",
   // Your sitter
   "sits.yourSitter": "Je oppas",
   // Owner-provided reference. For general care guidance, see the <guide>Care guide</guide>.

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useTranslation, Trans } from "react-i18next";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { useTranslation } from "react-i18next";
+import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
@@ -18,43 +18,35 @@ import {
 } from "@/lib/sits.functions";
 import { memberDisplayName, memberInitials } from "@/lib/memberDisplay";
 import { useHouseholdCapability, useMyPermissions } from "@/lib/useCapability";
-import { Feather, Plus, Mail, Check, Users, Trash2, AlertTriangle } from "lucide-react";
+import { Mail, Check, X, AlertTriangle } from "lucide-react";
+import { K, KyaHeader, KyaHeading, KyaIconButton, KyaLink } from "@/components/kya";
+import { copySitterLink } from "@/lib/sitLink";
 import { friendlyError } from "@/lib/errorMessage";
 import { localDateISO } from "@/lib/localDay";
 
 // Create OR edit a sit. In edit mode (`editSit` set) it preserves the existing
 // invite_token — the same sitter link keeps working; editing changes what it
 // grants (dates → access window, and which birds are included), not the link.
+// The full "Set up a sit" / "Edit sit" screen (routes /sits/new and
+// /sits/edit/$sitId). `onClose` leaves without saving; `onSaved` refreshes the
+// lists that show sits.
 export function SitForm({
   birds,
   onSaved,
-  initialOpen = false,
   preselectBirdId,
-  activeSit,
   editSit,
-  onCancel,
-  returnTo = "/dashboard",
-  hidePrompt = false,
+  onClose,
 }: {
   birds: any[];
   onSaved: () => void;
-  initialOpen?: boolean;
   preselectBirdId?: string;
-  activeSit?: any;
   editSit?: any;
-  onCancel?: () => void;
-  // Where to clear the ?newSit param back to after opening (the screen hosting
-  // the form). Defaults to /dashboard for back-compat.
-  returnTo?: string;
-  // Suppress the closed-state "New sit / Going away?" prompt card when the host
-  // screen already provides the open CTA (e.g. the Sits tab hero button).
-  hidePrompt?: boolean;
+  onClose: () => void;
 }) {
   const { t } = useTranslation();
   const theirInfo = t("sitForm.theirInfo", "Their info");
   const editing = !!editSit;
   const navigate = useNavigate();
-  const [open, setOpen] = useState(initialOpen || editing);
 
   const [selected, setSelected] = useState<Set<string>>(() => {
     if (editing) return new Set<string>(((editSit.sit_birds ?? []) as any[]).map((sb) => sb.bird_id));
@@ -165,7 +157,7 @@ export function SitForm({
       toast.success(t("sitForm.sitDeleted", "Sit deleted."));
     }
     onSaved();      // parent refreshes ["all-sits"]
-    onCancel?.();   // close the form
+    navigate({ to: "/sits" });
   }
 
   // Caregiver kind:
@@ -236,20 +228,6 @@ export function SitForm({
         .sort((a, b) => memberDisplayName(a).localeCompare(memberDisplayName(b)));
     },
   });
-
-  // Create-only: opens the form when ?newSit is set, then clears the param.
-  // Keyed on initialOpen (not just mount) so it also fires when the param flips
-  // true while the dashboard is already mounted — e.g. the checklist's "Create
-  // your first sit", which links to /dashboard?newSit while already there.
-  useEffect(() => {
-    if (initialOpen && !editing) {
-      setOpen(true);
-      navigate({ to: returnTo, search: {}, replace: true } as any);
-      // The form can be below the fold on the dashboard — bring it into view.
-      setTimeout(() => rootRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialOpen]);
 
   // Edit: load the sit's authoritative current birds (prefill + reconcile).
   useEffect(() => {
@@ -467,7 +445,7 @@ export function SitForm({
           toast.success(t("sitForm.sitUpdated", "Sit updated."));
         }
         onSaved();
-        onCancel?.();
+        navigate({ to: "/sits" });
       } else {
         // Insert shape depends on caregiver kind. The check constraint
         // sits_one_caregiver_chk requires EITHER (invite_token + no caregiver)
@@ -521,136 +499,196 @@ export function SitForm({
         if (assignFailedName) {
           toast.error(t("sitForm.createdHouseholdEmailFailed", "Sit created, but we couldn't email {{name}}. Let them know directly.", { name: assignFailedName }), { duration: 8000 });
         } else if (sitterInviteFailed) {
-          toast.error(t("sitForm.createdSitterEmailFailed", "Sit created, but we couldn't email {{name}} the invite. Open the sit and copy the link to send it yourself.", { name: sitterLabel }), { duration: 10000 });
+          const sitBirds = birdIds.map((id) => ({ id, name: (birds.find((b: any) => b.id === id)?.name ?? "") as string }));
+          toast.error(t("sitForm.createdCopyLink", "Sit created. We couldn't email {{name}}, so copy the link and send it yourself.", { name: sitterLabel }), {
+            duration: 15000,
+            action: { label: t("sitForm.copyLink", "Copy link"), onClick: () => { void copySitterLink(sit as any, sitBirds); } },
+          });
         } else {
           toast.success(
             kind === "household" ? t("sitForm.createdHousehold", "Sit created — your household member is set.") : t("sitForm.createdInviteSent", "Sit created — invite sent to {{name}}.", { name: sitterLabel }),
           );
         }
-        setOpen(false);
-        setTitle(""); setSitterName(""); setSitterEmail(""); setStart(""); setEnd(""); setNotes("");
-        setCaregiverKind(null); setHouseholdUserId(null);
-        setSelected(new Set(birds.length === 1 ? [birds[0].id] : []));
         onSaved();
-        // Land the owner on the Sits tab, where the sit they just created is
-        // the focal element — not back on Home. (No-op when already on /sits.)
-        navigate({ to: "/sits" });
+        // Back to the Sits tab with the new sit's card at the top.
+        navigate({ to: "/sits", search: { created: sit.id } });
       }
     } finally {
       setSaving(false);
     }
   }
 
-  // Closed prompt (create mode only).
-  if (!open && !editing) {
-    if (hidePrompt) return null;
-    if (activeSit) {
-      return (
-        <div className="rounded-[20px] bg-[#cdeab0] p-5">
-          <p className="text-lg font-medium text-[#1f3d12]">{t("sitForm.sitActive", "Sit active")}</p>
-          <p className="mt-1 text-sm text-[#3f5e22]">{t("sitForm.aSitIsUnderwayRight", "A sit is underway right now. Your sitter has their private link.")}</p>
-          <button onClick={() => setOpen(true)} className="mt-4 inline-flex items-center gap-2 rounded-[14px] bg-[#1a3d2e] px-4 py-2.5 text-sm font-medium text-white">
-            <Plus className="size-4" /> {t("sitForm.newSit", "New sit")}
-          </button>
-        </div>
-      );
-    }
-    return (
-      <div className="relative overflow-hidden rounded-[20px] bg-[#cdeab0] p-5">
-        <Feather className="pointer-events-none absolute -right-3 -top-3 size-20 rotate-12 text-[#1f3d12]/10" />
-        <p className="text-lg font-medium text-[#1f3d12]">{t("sitForm.goingAwaySoon", "Going away soon?")}</p>
-        <p className="mt-1 max-w-[18rem] text-sm text-[#3f5e22]">{t("sitForm.createASitAndSend", "Create a sit and send your sitter a private link with everything they need.")}</p>
-        <button onClick={() => setOpen(true)} className="mt-4 inline-flex items-center gap-2 rounded-[14px] bg-[#1a3d2e] px-4 py-2.5 text-sm font-medium text-white">
-          <Plus className="size-4" /> {t("sitForm.newSit", "New sit")}
-        </button>
-      </div>
-    );
-  }
+  // Who's covering, for the notes heading and the button.
+  const coverName: string | null =
+    caregiverKind === "household"
+      ? (() => { const m = eligibleMembers.find((x) => x.userId === householdUserId); return m ? firstNameOf(memberDisplayName(m)) : null; })()
+      : caregiverKind === "external" && sitterName.trim() ? sitterName.trim() : null;
+  const yourSitter = t("sitForm.yourSitterLower", "your sitter");
+  const submitLabel = saving
+    ? (editing ? t("sitForm.saving", "Saving...") : t("sitForm.creating", "Creating..."))
+    : editing
+      ? t("sitForm.saveChanges", "Save changes")
+      : caregiverKind === "external"
+        ? t("sitForm.createAndEmail", "Create sit and email {{name}}", { name: coverName ?? yourSitter })
+        : t("sitForm.createSit", "Create sit");
 
   return (
-    <form ref={rootRef} onSubmit={submit} noValidate className="space-y-3 rounded-[20px] bg-[#efe9da] p-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-medium text-[#1a3d2e]">{editing ? t("sitForm.editSit", "Edit sit") : t("sitForm.newSit", "New sit")}</p>
-        <button type="button" onClick={() => (editing ? onCancel?.() : setOpen(false))} className="text-xs text-[#5f5e5a] underline">{t("sitForm.cancel", "Cancel")}</button>
-      </div>
-
-      <div>
-        <label className="block">
-          <span className="mb-1 block text-xs font-medium uppercase tracking-wider text-[#5f5e5a]">{t("sitForm.sitName", "Sit name")}</span>
-          <input className="input" value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t("sitForm.eGJuneVacation", "e.g. June vacation")} />
-        </label>
-        <p className="mt-1 text-[11px] text-[#8a897f]">{t("sitForm.aLabelToRecognizeThis", "A label to recognize this sit, e.g. June vacation, August work trip.")}</p>
-      </div>
-
-      <div>
-        <div className="flex items-center justify-between">
-          <p className="text-[11px] font-medium uppercase tracking-wider text-[#5f5e5a]">{t("sitForm.birdsIncluded", "Birds included")}</p>
-          {birds.length > 1 && (
-            <button type="button" onClick={selectAll} className="text-[11px] font-medium text-[#1a3d2e] underline">{t("sitForm.selectAll", "Select all")}</button>
-          )}
-        </div>
-        <div className="mt-2 grid grid-cols-2 gap-2">
-          {birds.map((b: any) => {
-            const on = selected.has(b.id);
-            return (
-              <button
-                key={b.id}
-                type="button"
-                onClick={() => toggle(b.id)}
-                className={`flex items-center gap-2 rounded-lg border px-2 py-2 text-left text-sm ${on ? "border-[#2d6a4f] bg-[#e8f0ec]" : "border-[#e0d8c4] bg-white"}`}
-              >
-                <span className={`grid size-4 shrink-0 place-items-center rounded border-2 ${on ? "border-[#2d6a4f] bg-[#2d6a4f]" : "border-[#bcb6a3]"}`}>
-                  {on && <svg viewBox="0 0 20 20" className="size-3 text-white"><path fill="currentColor" d="M7.629 13.314 4.4 10.085l1.214-1.214 2.015 2.015 5.757-5.757 1.214 1.214z"/></svg>}
-                </span>
-                <span className="truncate text-[#1a3d2e]">{b.name}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Two equal columns, top-aligned. min-w-0 lets the cells shrink to the
-          column; the global input[type=date] appearance reset (styles.css) stops
-          the native iOS date control from overflowing/overlapping. */}
-      <div className="grid grid-cols-2 items-start gap-3">
-        <div className="min-w-0"><Field label={t("sitForm.start", "Start")}><input className="input min-w-0" type="date" value={start} onChange={(e) => setStart(e.target.value)} /></Field></div>
-        <div className="min-w-0"><Field label={t("sitForm.end", "End")}><input className="input min-w-0" type="date" value={end} onChange={(e) => setEnd(e.target.value)} /></Field></div>
-      </div>
-
-      {/* Who's covering — household member (no token, already has access) OR
-          an external sitter (the existing per-trip link flow). Edit mode keeps
-          the row's existing kind (PR 1 doesn't swap caregiver type yet). */}
-      {editing ? (
-        <div className="rounded-[14px] border border-[#e0d8c4] bg-white p-3">
-          <p className="text-[11px] font-medium uppercase tracking-wider text-[#5f5e5a]">{t("sitForm.whoSCovering", "Who's covering")}</p>
-          <p className="mt-1 text-[13px] text-[#1a3d2e]">
-            {initialKind === "household"
-              ? t("sitForm.householdAssigned", "A household member is assigned. Swapping caregiver type isn't available yet — delete this sit and create a new one to change it.")
-              : t("sitForm.externalSitterHasLink", "An external sitter has the link. {{who}} is current; you can edit the name or email below.", { who: sitterName?.trim() || sitterEmail || theirInfo })}
+    <form ref={rootRef} onSubmit={submit} noValidate className="setup-frame min-h-screen pb-nav" style={{ background: K.mist, color: K.forest }}>
+      <div className="mx-auto max-w-md">
+        <KyaHeader>
+          <div className="mt-1.5">
+            <KyaIconButton label={t("sitForm.close", "Close")} onClick={onClose}>
+              <X className="size-5" />
+            </KyaIconButton>
+          </div>
+          <KyaHeading as="h1" size={30} className="mt-4 text-white">{editing ? t("sitForm.editSit", "Edit sit") : t("sitForm.setUpASit", "Set up a sit")}</KyaHeading>
+          <p className="m-0 mt-2 text-[15px] leading-[1.5]" style={{ color: K.paleGreen }}>
+            {t("sitForm.screenIntro", "Your sitter gets the daily routine, a daily health check, and one-tap emergency contacts.")}
           </p>
-          {initialKind === "external" && (
-            <div className="mt-2 space-y-2">
-              <Field label={t("sitForm.sitterName", "Sitter name")}><input className="input" value={sitterName} onChange={(e) => setSitterName(e.target.value)} /></Field>
-              <Field label={t("sitForm.sitterEmail", "Sitter email")}><input className="input" type="email" value={sitterEmail} onChange={(e) => setSitterEmail(e.target.value)} /></Field>
-            </div>
-          )}
-        </div>
-      ) : (
-        <CaregiverPicker
-          eligibleMembers={eligibleMembers}
-          selectedBirdCount={selected.size}
-          caregiverKind={caregiverKind}
-          householdUserId={householdUserId}
-          sitterName={sitterName}
-          sitterEmail={sitterEmail}
-          onPickHousehold={(id) => { setCaregiverKind("household"); setHouseholdUserId(id); }}
-          onPickExternal={() => { setCaregiverKind("external"); setHouseholdUserId(null); }}
-          onChangeSitterName={setSitterName}
-          onChangeSitterEmail={setSitterEmail}
-        />
-      )}
+        </KyaHeader>
 
-      <Field label={t("sitForm.notesForThisSit", "Notes for this sit")}><textarea className="input area" value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
+        <main className="relative -mt-[26px] flex flex-col gap-7 rounded-t-[26px] bg-white px-5 pb-8 pt-6">
+          {/* 1. Which birds? */}
+          <section>
+            <Question>{t("sitForm.whichBirds", "Which birds?")}</Question>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              {birds.map((b: any) => {
+                const on = selected.has(b.id);
+                return (
+                  <button
+                    key={b.id}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => toggle(b.id)}
+                    className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full border-2 px-4 text-[15px] font-[700]"
+                    style={on ? { background: K.forest, borderColor: K.forest, color: "#fff" } : { background: "#fff", borderColor: "#d6dfd5", color: K.forest }}
+                  >
+                    {on && <Check className="size-4" strokeWidth={3} aria-hidden="true" />}
+                    {b.name}
+                  </button>
+                );
+              })}
+              {birds.length > 1 && <KyaLink onClick={selectAll} className="px-1">{t("sitForm.selectAll", "Select all")}</KyaLink>}
+            </div>
+          </section>
+
+          {/* 2. When? */}
+          <section>
+            <Question>{t("sitForm.when", "When?")}</Question>
+            {/* min-w-0 lets the cells shrink; the global date-input reset
+                (styles.css) keeps the native iOS control from overflowing. */}
+            <div className="mt-3 grid grid-cols-2 items-start gap-3">
+              <label className="block min-w-0">
+                <span className="mb-1.5 block text-[13.5px] font-[700]">{t("sitForm.starts", "Starts")}</span>
+                <input className={PILL_FIELD} style={PILL_STYLE} type="date" value={start} onChange={(e) => setStart(e.target.value)} />
+              </label>
+              <label className="block min-w-0">
+                <span className="mb-1.5 block text-[13.5px] font-[700]">{t("sitForm.ends", "Ends")}</span>
+                <input className={PILL_FIELD} style={PILL_STYLE} type="date" value={end} onChange={(e) => setEnd(e.target.value)} />
+              </label>
+            </div>
+          </section>
+
+          {/* 3. Who's covering? */}
+          <section>
+            <Question>{t("sitForm.whosCoveringQ", "Who's covering?")}</Question>
+            <Hint>{t("sitForm.coveringHint", "Household members already have access. Anyone else gets a private link, no account needed.")}</Hint>
+            {editing ? (
+              <div className="mt-3 flex flex-col gap-3">
+                <p className="m-0 rounded-[16px] p-3.5 text-[14px] leading-[1.5]" style={{ background: K.mist }}>
+                  {initialKind === "household"
+                    ? t("sitForm.householdAssigned", "A household member is assigned. Swapping caregiver type isn't available yet — delete this sit and create a new one to change it.")
+                    : t("sitForm.externalSitterHasLink", "An external sitter has the link. {{who}} is current; you can edit the name or email below.", { who: sitterName?.trim() || sitterEmail || theirInfo })}
+                </p>
+                {initialKind === "external" && (
+                  <SitterFields name={sitterName} email={sitterEmail} onName={setSitterName} onEmail={setSitterEmail} />
+                )}
+              </div>
+            ) : (
+              <CaregiverPicker
+                eligibleMembers={eligibleMembers}
+                selectedBirdCount={selected.size}
+                caregiverKind={caregiverKind}
+                householdUserId={householdUserId}
+                sitterName={sitterName}
+                sitterEmail={sitterEmail}
+                onPickHousehold={(id) => { setCaregiverKind("household"); setHouseholdUserId(id); }}
+                onPickExternal={() => { setCaregiverKind("external"); setHouseholdUserId(null); }}
+                onChangeSitterName={setSitterName}
+                onChangeSitterEmail={setSitterEmail}
+              />
+            )}
+          </section>
+
+          {/* 4. Name this sit */}
+          <section>
+            <Question>{t("sitForm.nameThisSit", "Name this sit")}</Question>
+            <Hint>{t("sitForm.nameHint", "Just for you, so you can find it later.")}</Hint>
+            <input className={`${PILL_FIELD} mt-3`} style={PILL_STYLE} value={title} onChange={(e) => setTitle(e.target.value)} placeholder={t("sitForm.namePlaceholder", "e.g. Thanksgiving trip")} aria-label={t("sitForm.nameThisSit", "Name this sit")} />
+          </section>
+
+          {/* 5. Anything else? */}
+          <section>
+            <Question>
+              {coverName
+                ? t("sitForm.anythingElseName", "Anything else {{name}} should know?", { name: coverName })
+                : t("sitForm.anythingElseSitter", "Anything else your sitter should know?")}
+            </Question>
+            <Hint>{t("sitForm.notesHint", "Notes for this sit only. The care plan covers the everyday routine.")}</Hint>
+            <textarea
+              className="mt-3 min-h-[110px] w-full rounded-[18px] border-2 bg-white px-4 py-3 text-[16px] outline-none focus:border-[#1a3d2e]"
+              style={PILL_STYLE}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder={t("sitForm.notesPlaceholder", "e.g. The neighbor has a spare key.")}
+              aria-label={t("sitForm.notesForThisSit", "Notes for this sit")}
+            />
+          </section>
+
+          {/* Delete sit — edit mode only, gated by manage_sits (RLS enforces). */}
+          {editing && canDelete && (
+            <section>
+              {confirmingDelete ? (
+                <div className="rounded-[16px] p-3.5" style={{ background: "#fcebeb" }}>
+                  {isActiveSit && (
+                    <p className="m-0 mb-2 flex items-start gap-1.5 text-[14px] font-[700]" style={{ color: K.red }}>
+                      <AlertTriangle className="mt-0.5 size-4 shrink-0" />
+                      {t("sitForm.activeSitDeleteWarning", "This sit is active right now — a sitter is covering. Deleting it ends their access immediately.")}
+                    </p>
+                  )}
+                  <p className="m-0 text-[14px] leading-[1.5]">
+                    {t("sitForm.deleteThisSitThisCan", "Delete this sit? This can't be undone. Its checklist and task completions are removed; logged scans, weights, and photos are kept but no longer tied to the sit.")}
+                  </p>
+                  <div className="mt-3 flex gap-2">
+                    <button type="button" onClick={deleteSit} disabled={deleting} className="min-h-[48px] flex-1 rounded-full px-4 text-[15px] font-[700] text-white disabled:opacity-50" style={{ background: K.red }}>
+                      {deleting ? t("sitForm.deleting", "Deleting…") : t("sitForm.deleteSit", "Delete sit")}
+                    </button>
+                    <button type="button" onClick={() => setConfirmingDelete(false)} disabled={deleting} className="min-h-[48px] rounded-full border-2 bg-white px-5 text-[15px] font-[700] disabled:opacity-50" style={{ borderColor: K.forest, color: K.forest }}>{t("sitForm.keep", "Keep")}</button>
+                  </div>
+                </div>
+              ) : (
+                <KyaLink color={K.red} onClick={() => setConfirmingDelete(true)}>{t("sitForm.deleteSit", "Delete sit")}</KyaLink>
+              )}
+            </section>
+          )}
+        </main>
+      </div>
+
+      {/* Pinned footer */}
+      {!gaps && (
+        <div className="sticky z-10 border-t bg-white px-4 pb-3 pt-3" style={{ bottom: "var(--nav-spacer)", borderColor: K.line }}>
+          <div className="mx-auto max-w-md">
+            <button
+              type="submit"
+              disabled={saving}
+              className="inline-flex min-h-[52px] w-full items-center justify-center rounded-full border-2 px-6 text-[16px] font-[700] disabled:opacity-45"
+              style={{ background: K.sunflower, borderColor: K.forest, color: K.forest }}
+            >
+              {submitLabel}
+            </button>
+          </div>
+        </div>
+      )}
 
       {gaps && (
         <BottomSheet onClose={() => { setGaps(null); setRequiredMissing(null); }}>
@@ -738,44 +776,37 @@ export function SitForm({
           </div>
         </BottomSheet>
       )}
-
-      {!gaps && <button type="submit" disabled={saving} className="w-full rounded-[14px] bg-[#1a3d2e] py-3 text-sm font-medium text-white disabled:opacity-50">
-        {saving
-          ? (editing ? t("sitForm.saving", "Saving...") : t("sitForm.creating", "Creating..."))
-          : editing
-            ? t("sitForm.saveChanges", "Save changes")
-            : caregiverKind === "household" ? t("sitForm.createSit", "Create sit") : t("sitForm.createSitAndLink", "Create sit & generate link")}
-      </button>}
-
-      {/* Delete sit — edit mode only, gated by manage_sits (RLS enforces). */}
-      {editing && canDelete && (
-        <div className="border-t border-[#e0d8c4] pt-3">
-          {confirmingDelete ? (
-            <div className="rounded-[12px] bg-[var(--red-fill)] p-3 ring-1 ring-[var(--red-deep)]/15">
-              {isActiveSit && (
-                <p className="mb-2 flex items-start gap-1.5 text-[13px] font-[500] text-[var(--red-deep)]">
-                  <AlertTriangle className="mt-0.5 size-4 shrink-0" />
-                  {t("sitForm.activeSitDeleteWarning", "This sit is active right now — a sitter is covering. Deleting it ends their access immediately.")}
-                </p>
-              )}
-              <p className="text-[13px] text-[#1a3d2e]">
-                {t("sitForm.deleteThisSitThisCan", "Delete this sit? This can't be undone. Its checklist and task completions are removed; logged scans, weights, and photos are kept but no longer tied to the sit.")}
-              </p>
-              <div className="mt-3 flex gap-2">
-                <button type="button" onClick={deleteSit} disabled={deleting} className="min-h-[44px] flex-1 rounded-[12px] bg-[var(--red-deep)] px-4 text-sm font-[600] text-white disabled:opacity-50">
-                  {deleting ? t("sitForm.deleting", "Deleting…") : t("sitForm.deleteSit", "Delete sit")}
-                </button>
-                <button type="button" onClick={() => setConfirmingDelete(false)} disabled={deleting} className="min-h-[44px] rounded-[12px] border border-[#c8bfa6] px-4 text-sm font-[500] text-[#5f5e5a] disabled:opacity-50">{t("sitForm.keep", "Keep")}</button>
-              </div>
-            </div>
-          ) : (
-            <button type="button" onClick={() => setConfirmingDelete(true)} className="inline-flex min-h-[44px] items-center gap-2 text-sm font-[500] text-[var(--red-deep)]">
-              <Trash2 className="size-4" /> {t("sitForm.deleteSit", "Delete sit")}
-            </button>
-          )}
-        </div>
-      )}
     </form>
+  );
+}
+
+const PILL_FIELD = "h-12 w-full min-w-0 rounded-full border-2 bg-white px-[18px] text-[16px] outline-none focus:border-[#1a3d2e]";
+const PILL_STYLE = { borderColor: "#d6dfd5", color: K.forest } as const;
+
+function firstNameOf(name: string): string {
+  return name.trim().split(/\s+/)[0] || name;
+}
+
+function Question({ children }: { children: React.ReactNode }) {
+  return <h2 className="m-0 text-[20px] font-[700] leading-[1.2]" style={{ fontFamily: SERIF }}>{children}</h2>;
+}
+function Hint({ children }: { children: React.ReactNode }) {
+  return <p className="m-0 mt-1 text-[14px] leading-[1.45]" style={{ color: K.quiet }}>{children}</p>;
+}
+
+function SitterFields({ name, email, onName, onEmail }: { name: string; email: string; onName: (v: string) => void; onEmail: (v: string) => void }) {
+  const { t } = useTranslation();
+  return (
+    <div className="flex flex-col gap-3">
+      <label className="block">
+        <span className="mb-1.5 block text-[13.5px] font-[700]">{t("sitForm.sittersName", "Sitter's name")}</span>
+        <input className={PILL_FIELD} style={PILL_STYLE} value={name} onChange={(e) => onName(e.target.value)} />
+      </label>
+      <label className="block">
+        <span className="mb-1.5 block text-[13.5px] font-[700]">{t("sitForm.sittersEmail", "Sitter's email")}</span>
+        <input className={PILL_FIELD} style={PILL_STYLE} type="email" value={email} onChange={(e) => onEmail(e.target.value)} placeholder={t("sitForm.sitterExampleCom", "sitter@example.com")} />
+      </label>
+    </div>
   );
 }
 
@@ -806,19 +837,9 @@ function gapDetail(t: TFunction, m: SitGapSection, name: string): string {
   }
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="block">
-      <span className="mb-1 block text-xs font-medium uppercase tracking-wider text-[#5f5e5a]">{label}</span>
-      {children}
-    </label>
-  );
-}
-
-// "Who's covering" — household member cards (filtered to people on every
-// selected bird) above an "or" divider and the external-sitter expander. Picks
-// are mutually exclusive: choosing a household member collapses the external
-// fields; opening external clears any household selection.
+// "Who's covering?" — one option card per household member who can see every
+// picked bird, then "Someone else". Picking one is exclusive; "Someone else"
+// shows the sitter's name and email underneath.
 function CaregiverPicker({
   eligibleMembers, selectedBirdCount,
   caregiverKind, householdUserId,
@@ -838,76 +859,55 @@ function CaregiverPicker({
   onChangeSitterEmail: (v: string) => void;
 }) {
   const { t } = useTranslation();
-  const noBirdsPicked = selectedBirdCount === 0;
-  const noEligible = !noBirdsPicked && eligibleMembers.length === 0;
+  if (selectedBirdCount === 0) {
+    return <p className="m-0 mt-3 text-[14px]" style={{ color: K.quiet }}>{t("sitForm.pickABirdAboveFirst", "Pick a bird above first.")}</p>;
+  }
+  const externalOn = caregiverKind === "external";
   return (
-    <div className="space-y-3 rounded-[14px] border border-[#e0d8c4] bg-white p-3">
-      <p className="text-[11px] font-medium uppercase tracking-wider text-[#5f5e5a]">{t("sitForm.whoSCovering", "Who's covering")}</p>
-
-      {noBirdsPicked ? (
-        <p className="text-[13px] text-[#5f5e5a]">{t("sitForm.pickABirdAboveFirst", "Pick a bird above first.")}</p>
-      ) : noEligible ? (
-        <div className="rounded-[10px] bg-[#f4f1e8] p-3 text-[13px] text-[#5f5e5a]">
-          <Trans i18nKey="sitForm.noHouseholdYet" defaults="No household yet — <1>invite someone</1> or send a link to a sitter below." components={{ 1: <Link to="/household" className="underline" /> }} />
+    <div className="mt-3 flex flex-col gap-2.5" role="radiogroup" aria-label={t("sitForm.whosCoveringQ", "Who's covering?")}>
+      {eligibleMembers.map((m) => {
+        const on = caregiverKind === "household" && householdUserId === m.userId;
+        const display = memberDisplayName(m);
+        return (
+          <OptionCard key={m.userId} on={on} onClick={() => onPickHousehold(m.userId)}
+            leading={<span className="grid size-11 shrink-0 place-items-center rounded-full text-[15px] font-[700] text-white" style={{ background: K.forest }}>{memberInitials(display)}</span>}
+            title={display}
+            detail={t("sitForm.household", "Household")}
+          />
+        );
+      })}
+      <OptionCard on={externalOn} onClick={onPickExternal}
+        leading={<span className="grid size-11 shrink-0 place-items-center rounded-full" style={{ background: K.lime, color: K.forest }}><Mail className="size-5" aria-hidden="true" /></span>}
+        title={t("sitForm.someoneElse", "Someone else")}
+        detail={t("sitForm.weEmailThemALink", "We'll email them a link")}
+      />
+      {externalOn && (
+        <div className="mt-1.5">
+          <SitterFields name={sitterName} email={sitterEmail} onName={onChangeSitterName} onEmail={onChangeSitterEmail} />
         </div>
-      ) : (
-        <div className="space-y-2">
-          {eligibleMembers.map((m) => {
-            const on = caregiverKind === "household" && householdUserId === m.userId;
-            const display = memberDisplayName(m);
-            const initial = memberInitials(display);
-            return (
-              <button
-                key={m.userId}
-                type="button"
-                onClick={() => onPickHousehold(m.userId)}
-                aria-pressed={on}
-                className={`flex w-full items-center gap-3 rounded-[12px] border p-3 text-left active:scale-[0.99] ${
-                  on ? "border-[#2d6a4f] bg-[#e8f0ec] ring-1 ring-[#2d6a4f]" : "border-[#e0d8c4] bg-white"
-                }`}
-              >
-                <span className={`grid size-10 shrink-0 place-items-center rounded-full text-sm font-medium ${on ? "bg-[#1a3d2e] text-white" : "bg-[#cfe3dc] text-[#1a5e3f]"}`}>{initial}</span>
-                <span className="min-w-0 flex-1">
-                  <span className="flex items-center gap-2">
-                    <span className="truncate text-[14px] font-medium text-[#1a3d2e]">{display}</span>
-                    <span className="shrink-0 rounded-full bg-[#cfe3dc] px-2 py-0.5 text-[10px] font-medium text-[#1a5e3f]">{t("sitForm.household", "Household")}</span>
-                  </span>
-                  <span className="mt-0.5 block text-[11.5px] text-[#5f5e5a]">{t("sitForm.alreadyHasAccessTheyLl", "Already has access · they'll see the daily checklist while you're away.")}</span>
-                </span>
-                {on && <Check className="size-4 shrink-0 text-[#2d6a4f]" aria-hidden />}
-              </button>
-            );
-          })}
-        </div>
-      )}
-
-      <div className="flex items-center gap-2 py-1 text-[11px] uppercase tracking-widest text-[#8a897f]">
-        <span className="h-px flex-1 bg-[#e0d8c4]" /> {t("sitForm.or", "or")} <span className="h-px flex-1 bg-[#e0d8c4]" />
-      </div>
-
-      {caregiverKind === "external" ? (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <Mail className="size-4 text-[#5f5e5a]" />
-            <p className="flex-1 text-[13px] font-medium text-[#1a3d2e]">{t("sitForm.sendALinkToSomeone", "Send a link to someone else")}</p>
-          </div>
-          <Field label={t("sitForm.sitterName", "Sitter name")}><input className="input" value={sitterName} onChange={(e) => onChangeSitterName(e.target.value)} /></Field>
-          <Field label={t("sitForm.sitterEmail", "Sitter email")}><input className="input" type="email" value={sitterEmail} onChange={(e) => onChangeSitterEmail(e.target.value)} placeholder={t("sitForm.sitterExampleCom", "sitter@example.com")} /></Field>
-        </div>
-      ) : (
-        <button
-          type="button"
-          onClick={onPickExternal}
-          className="flex w-full items-center gap-3 rounded-[12px] border border-dashed border-[#c8bfa6] bg-[#fbfaf2] p-3 text-left active:scale-[0.99]"
-        >
-          <Mail className="size-4 shrink-0 text-[#5f5e5a]" />
-          <span className="min-w-0 flex-1">
-            <span className="block text-[14px] font-medium text-[#1a3d2e]">{t("sitForm.sendALinkToSomeone", "Send a link to someone else")}</span>
-            <span className="mt-0.5 block text-[11.5px] text-[#5f5e5a]">{t("sitForm.anEmailAPerTrip", "An email + a per-trip link, no account needed.")}</span>
-          </span>
-          <Users className="size-4 shrink-0 text-[#8a897f]" aria-hidden />
-        </button>
       )}
     </div>
+  );
+}
+
+function OptionCard({ on, onClick, leading, title, detail }: { on: boolean; onClick: () => void; leading: React.ReactNode; title: string; detail: string }) {
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={on}
+      onClick={onClick}
+      className="flex min-h-[68px] w-full items-center gap-3 rounded-[18px] border-2 px-3.5 py-2.5 text-left"
+      style={on ? { borderColor: K.forest, background: K.mist, color: K.forest } : { borderColor: "#d6dfd5", background: "#fff", color: K.forest }}
+    >
+      {leading}
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[15px] font-[700]">{title}</span>
+        <span className="block text-[13px]" style={{ color: K.quiet }}>{detail}</span>
+      </span>
+      <span className="grid size-6 shrink-0 place-items-center rounded-full border-2" style={{ borderColor: on ? K.forest : "#b9c7ba" }} aria-hidden="true">
+        {on && <span className="size-3 rounded-full" style={{ background: K.forest }} />}
+      </span>
+    </button>
   );
 }

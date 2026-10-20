@@ -415,13 +415,8 @@ function BirdSetup() {
     const ok = await persistStep(TOTAL_STEPS, true);
     if (!ok) return;
     if (opts.to === "dashboard-newsit") {
-      // The new-sit form lives on the Sits tab (the dashboard stopped hosting it
-      // in the Home v3 redesign). Route there with ?newSit so it opens with this
-      // bird preselected; on save SitForm keeps the owner on /sits.
-      navigate({
-        to: "/sits",
-        search: { newSit: true, preselectBirdId: birdId },
-      });
+      // "Set up a sit" is its own screen, with this bird preselected.
+      navigate({ to: "/sits/new", search: { bird: birdId } });
     } else {
       // After finishing setup, land on Home so the owner sees their bird and the
       // getting-started checklist — not back at the start of the wizard.

@@ -7815,53 +7815,29 @@
     "sitCards.aHouseholdYouHelp": {
       "stamp": "57f824fd59cd7827"
     },
-    "sitCards.allBirds": {
-      "stamp": "bc61e5c90fd1b088"
-    },
-    "sitCards.allClear": {
-      "stamp": "30673836a852bc52"
-    },
-    "sitCards.birds": {
-      "stamp": "a5f0388c35c3053a"
-    },
-    "sitCards.caregiverDuringTrip": {
-      "stamp": "3f2740237694efa7"
-    },
     "sitCards.copyLink": {
       "stamp": "dc4c04995ccb896a"
     },
-    "sitCards.dateRange": {
-      "stamp": "d4fbbc56a107a68f"
+    "sitCards.copyNamesLink": {
+      "stamp": "7c86b3205add9632"
     },
-    "sitCards.dates": {
-      "stamp": "5670001a53537898"
+    "sitCards.dayCount_one": {
+      "stamp": "4fd978633030957c"
     },
-    "sitCards.dayCountOne": {
-      "stamp": "da56c11b415e11a9"
-    },
-    "sitCards.dayCountOther": {
-      "stamp": "e4eb664b0d3db46d"
+    "sitCards.dayCount_other": {
+      "stamp": "61aff90b101588bf"
     },
     "sitCards.editSit": {
       "stamp": "29bcfbb192f3b239"
     },
-    "sitCards.flaggedCount": {
-      "stamp": "6eeb9440f36abbde"
-    },
-    "sitCards.healthCheckCountOne": {
-      "stamp": "2a8c8764ac4fc4b1"
-    },
-    "sitCards.healthCheckCountOther": {
-      "stamp": "6872f53bf7a874f2"
-    },
-    "sitCards.healthChecks": {
-      "stamp": "76061176bb2950ed"
-    },
     "sitCards.household": {
       "stamp": "da35ceae68b17eed"
     },
-    "sitCards.inCharge": {
-      "stamp": "e4ca50c34bdc7ab2"
+    "sitCards.namedSit": {
+      "stamp": "eda41748e2111912"
+    },
+    "sitCards.namedSitS": {
+      "stamp": "5e3167dff6d58c6a"
     },
     "sitCards.ownersHousehold": {
       "stamp": "db8358dc681a5ea4"
@@ -7869,20 +7845,23 @@
     "sitCards.ownersHouseholdS": {
       "stamp": "23a161876d8b0d87"
     },
-    "sitCards.past": {
-      "stamp": "6c641189f8d16e32"
+    "sitCards.rangeTo": {
+      "stamp": "ae450d5bc05227c4"
+    },
+    "sitCards.seeWhatSees": {
+      "stamp": "1d7e8eef89ab89f4"
+    },
+    "sitCards.showMore_one": {
+      "stamp": "4fcc94608e5489a2"
+    },
+    "sitCards.showMore_other": {
+      "stamp": "4fcc94608e5489a2"
     },
     "sitCards.sitter": {
       "stamp": "c0d442a6b83178fb"
     },
     "sitCards.sitterDayOf": {
       "stamp": "345a544d554ff629"
-    },
-    "sitCards.viewAsCaregiver": {
-      "stamp": "d8f47fc7e260513a"
-    },
-    "sitCards.viewAsSitter": {
-      "stamp": "c87b907105d3a5ba"
     },
     "sitCards.viewCarePlan": {
       "stamp": "696cd1741e34815e"
@@ -7899,11 +7878,23 @@
     "sitChecklist.add": {
       "stamp": "7243fcbe9aec5d44"
     },
-    "sitChecklist.addCustomItem": {
-      "stamp": "b8126d84cde5a8a9"
+    "sitChecklist.addYourOwnItem": {
+      "stamp": "1465d51cf37e778c"
+    },
+    "sitChecklist.allDone": {
+      "stamp": "69054cf71667b626"
+    },
+    "sitChecklist.beforeYouLeave": {
+      "stamp": "1719a7c79de8ceb5"
     },
     "sitChecklist.cancel": {
       "stamp": "06c80f8b6f9f2b3b"
+    },
+    "sitChecklist.checkBirdContacts": {
+      "stamp": "69a51f3bc90fee0d"
+    },
+    "sitChecklist.checkContacts": {
+      "stamp": "cb6b5cf42c3a5b06"
     },
     "sitChecklist.checkOffAria": {
       "stamp": "ab8a5490f71326c9"
@@ -7913,6 +7904,9 @@
     },
     "sitChecklist.customPlaceholder": {
       "stamp": "4179cb5f7048dc40"
+    },
+    "sitChecklist.doneOfTotal": {
+      "stamp": "59efbd7d6145d298"
     },
     "sitChecklist.item.cageClean": {
       "stamp": "5bf11eb3095ec9c4"
@@ -7938,59 +7932,23 @@
     "sitChecklist.item.hazards": {
       "stamp": "ce9f14b8bbd848c5"
     },
-    "sitChecklist.item.inviteTested": {
-      "stamp": "acde7cf766d7bc07"
-    },
     "sitChecklist.item.sitterAccess": {
       "stamp": "a1a56ab3e9abdae4"
     },
-    "sitChecklist.keepEditing": {
-      "stamp": "2ea18db2ea90b63c"
+    "sitChecklist.item.sitterLinkTested": {
+      "stamp": "76a36ef74ca6c85f"
     },
     "sitChecklist.loading": {
       "stamp": "543c404f0e5a7d86"
     },
-    "sitChecklist.markedReadyOnlyYou": {
-      "stamp": "735424f737db5ecd"
-    },
-    "sitChecklist.markedReadyToast": {
-      "stamp": "2527509940a79463"
-    },
-    "sitChecklist.markReady": {
-      "stamp": "1aa3f8b68cc8ae5c"
-    },
-    "sitChecklist.markReadyAnyway": {
-      "stamp": "7896395365728d71"
-    },
-    "sitChecklist.markReadyAnywayBody": {
-      "stamp": "a0897295af167447"
-    },
-    "sitChecklist.markReadyAnywayQ": {
-      "stamp": "69123bbb61d279ee"
-    },
-    "sitChecklist.preLeavingChecklist": {
-      "stamp": "a6666c62c2d6cb66"
-    },
-    "sitChecklist.ready": {
-      "stamp": "febf31ddd8bcb7b1"
-    },
-    "sitChecklist.reminder": {
-      "stamp": "33d424faf5b90ab9"
+    "sitChecklist.openCarePlan": {
+      "stamp": "4e269e8913966be7"
     },
     "sitChecklist.removeAria": {
       "stamp": "253afd6b3548845c"
     },
     "sitChecklist.uncheckAria": {
       "stamp": "edb940e1318c5a7c"
-    },
-    "sitChecklist.undo": {
-      "stamp": "eff6798f17be1468"
-    },
-    "sitChecklist.yourAdditions": {
-      "stamp": "ec1f127a1ab71d05"
-    },
-    "sitChecklist.yourSitter": {
-      "stamp": "1f87da8fe21f5a1a"
     },
     "sitDetail.aBird": {
       "stamp": "391d8e02f5caabdf"
@@ -8001,17 +7959,14 @@
     "sitDetail.activity": {
       "stamp": "088db0cdd9feb542"
     },
-    "sitDetail.birdsCovered": {
-      "stamp": "d19ac198cc3a623a"
+    "sitDetail.back": {
+      "stamp": "5001815e48b3af8b"
+    },
+    "sitDetail.birdsCoveredLabel": {
+      "stamp": "a5f0388c35c3053a"
     },
     "sitDetail.couldNotDelete": {
       "stamp": "fb4a248c2a791d8f"
-    },
-    "sitDetail.coveredBy": {
-      "stamp": "fc61e091214905d7"
-    },
-    "sitDetail.dangerZone": {
-      "stamp": "307460ffb2eb18dc"
     },
     "sitDetail.deleteConfirm": {
       "stamp": "79167b55d368e913"
@@ -8031,9 +7986,6 @@
     "sitDetail.externalSitter": {
       "stamp": "f552b717ffb0a8cc"
     },
-    "sitDetail.eyebrow": {
-      "stamp": "fa144006a8df8643"
-    },
     "sitDetail.healthChecks": {
       "stamp": "76061176bb2950ed"
     },
@@ -8042,9 +7994,6 @@
     },
     "sitDetail.householdMember": {
       "stamp": "e5a61877c5a229f6"
-    },
-    "sitDetail.inCharge": {
-      "stamp": "e4ca50c34bdc7ab2"
     },
     "sitDetail.journal": {
       "stamp": "523da79a345720e4"
@@ -8064,8 +8013,8 @@
     "sitDetail.notAvailable": {
       "stamp": "062ab5fc1a576fb3"
     },
-    "sitDetail.notFound": {
-      "stamp": "ad3c032d32da86f1"
+    "sitDetail.notFoundNoDot": {
+      "stamp": "d7c737bb21df2c18"
     },
     "sitDetail.pageTitle": {
       "stamp": "37852d9f35933e40"
@@ -8088,8 +8037,8 @@
     "sitDetail.scanConcern": {
       "stamp": "a4abb77969f718dc"
     },
-    "sitDetail.sit": {
-      "stamp": "96f2d281b62015d9"
+    "sitDetail.sitter": {
+      "stamp": "c0d442a6b83178fb"
     },
     "sitDetail.taskComplete": {
       "stamp": "2b005b25c1719231"
@@ -8109,32 +8058,32 @@
     "sitForm.addTheSitterSEmail": {
       "stamp": "a567ca25b1ed2ee0"
     },
-    "sitForm.aLabelToRecognizeThis": {
-      "stamp": "9ad223f7fde94c33"
+    "sitForm.anythingElseName": {
+      "stamp": "23944c653755b6ab"
     },
-    "sitForm.alreadyHasAccessTheyLl": {
-      "stamp": "0b7781bdd995c0e0"
-    },
-    "sitForm.anEmailAPerTrip": {
-      "stamp": "5519e2eaefa53054"
-    },
-    "sitForm.aSitIsUnderwayRight": {
-      "stamp": "e84b53e1c6577215"
+    "sitForm.anythingElseSitter": {
+      "stamp": "7361b16d12eedd49"
     },
     "sitForm.bird": {
       "stamp": "7964d14d200e7108"
     },
-    "sitForm.birdsIncluded": {
-      "stamp": "1891f4d59125ca27"
+    "sitForm.close": {
+      "stamp": "d981ee660d866d8c"
     },
-    "sitForm.cancel": {
-      "stamp": "06c80f8b6f9f2b3b"
+    "sitForm.copyLink": {
+      "stamp": "dc4c04995ccb896a"
     },
     "sitForm.couldNotCreate": {
       "stamp": "0b1a8b7341ed6d6d"
     },
-    "sitForm.createASitAndSend": {
-      "stamp": "4ff06ef2481ff3d5"
+    "sitForm.coveringHint": {
+      "stamp": "04af74172e380308"
+    },
+    "sitForm.createAndEmail": {
+      "stamp": "29a65efbeac4e800"
+    },
+    "sitForm.createdCopyLink": {
+      "stamp": "274fae8f8b8cee04"
     },
     "sitForm.createdHousehold": {
       "stamp": "a269e4f682a620dd"
@@ -8145,14 +8094,8 @@
     "sitForm.createdInviteSent": {
       "stamp": "30e079385f86141e"
     },
-    "sitForm.createdSitterEmailFailed": {
-      "stamp": "b53ecb5cd852f5e3"
-    },
     "sitForm.createSit": {
       "stamp": "934022eb86192ef5"
-    },
-    "sitForm.createSitAndLink": {
-      "stamp": "9111b17e3b368f33"
     },
     "sitForm.creating": {
       "stamp": "9b78a5ef27f77a41"
@@ -8172,14 +8115,11 @@
     "sitForm.editSit": {
       "stamp": "29bcfbb192f3b239"
     },
-    "sitForm.eGJuneVacation": {
-      "stamp": "bf67f6b3c3a61d05"
-    },
-    "sitForm.end": {
-      "stamp": "c68c9e83ccd01e9f"
-    },
     "sitForm.endDateMustBeOn": {
       "stamp": "f2e543a75fa361a0"
+    },
+    "sitForm.ends": {
+      "stamp": "687040fcb382264a"
     },
     "sitForm.externalSitterHasLink": {
       "stamp": "de6821c02da9a8cb"
@@ -8250,9 +8190,6 @@
     "sitForm.gaps.yourSitter": {
       "stamp": "1f87da8fe21f5a1a"
     },
-    "sitForm.goingAwaySoon": {
-      "stamp": "4555756c599f4983"
-    },
     "sitForm.household": {
       "stamp": "da35ceae68b17eed"
     },
@@ -8262,8 +8199,23 @@
     "sitForm.keep": {
       "stamp": "6a37de9a420e6ec2"
     },
+    "sitForm.metaTitleEdit": {
+      "stamp": "48cfc8a6b9e55a1a"
+    },
+    "sitForm.metaTitleNew": {
+      "stamp": "9c53a72be9d9281c"
+    },
     "sitForm.missingContacts": {
       "stamp": "9329f0c9271f1828"
+    },
+    "sitForm.nameHint": {
+      "stamp": "b50da73e66164772"
+    },
+    "sitForm.namePlaceholder": {
+      "stamp": "4af5cb0cea0788c7"
+    },
+    "sitForm.nameThisSit": {
+      "stamp": "610a71977f04de90"
     },
     "sitForm.needAvianVetPhone": {
       "stamp": "8b0e38fb607a88dd"
@@ -8271,17 +8223,14 @@
     "sitForm.needYourPhone": {
       "stamp": "164ce4961523b9c9"
     },
-    "sitForm.newSit": {
-      "stamp": "7ab97a9d8ca43537"
-    },
-    "sitForm.noHouseholdYet": {
-      "stamp": "cbf5cdb8af5fce72"
-    },
     "sitForm.notesForThisSit": {
       "stamp": "45f66678a248431e"
     },
-    "sitForm.or": {
-      "stamp": "f3ea19e0f239e505"
+    "sitForm.notesHint": {
+      "stamp": "6da0d87403f99e50"
+    },
+    "sitForm.notesPlaceholder": {
+      "stamp": "949863a47fb5c07f"
     },
     "sitForm.pickABirdAboveFirst": {
       "stamp": "f5d97cc74ec0a339"
@@ -8304,14 +8253,14 @@
     "sitForm.saving": {
       "stamp": "0b6adadaf808c8a5"
     },
+    "sitForm.screenIntro": {
+      "stamp": "09c6fb33869f5c66"
+    },
     "sitForm.selectAll": {
       "stamp": "a3ff4724bc05c273"
     },
-    "sitForm.sendALinkToSomeone": {
-      "stamp": "c27d26b408191d0d"
-    },
-    "sitForm.sitActive": {
-      "stamp": "1e6b6e076e46c00d"
+    "sitForm.setUpASit": {
+      "stamp": "73f30331544a50a8"
     },
     "sitForm.sitDeleted": {
       "stamp": "e3d4c3240e823a10"
@@ -8322,23 +8271,23 @@
     "sitForm.sitDeletedEmailFailedNamed": {
       "stamp": "ac98237be91edec2"
     },
-    "sitForm.sitName": {
-      "stamp": "22b69b83ef94c8b2"
-    },
-    "sitForm.sitterEmail": {
-      "stamp": "ebab317182f1bfc2"
-    },
     "sitForm.sitterExampleCom": {
       "stamp": "b3a78a6d88d14cd9"
     },
-    "sitForm.sitterName": {
-      "stamp": "68ce046dbff8181d"
+    "sitForm.sittersEmail": {
+      "stamp": "ceb04a3fb5b4e2f5"
+    },
+    "sitForm.sittersName": {
+      "stamp": "1e59a4c0ca5d488e"
     },
     "sitForm.sitUpdated": {
       "stamp": "7cda215fc14eedc4"
     },
-    "sitForm.start": {
-      "stamp": "c30064b41a710fa9"
+    "sitForm.someoneElse": {
+      "stamp": "0fbbbb092a016c9e"
+    },
+    "sitForm.starts": {
+      "stamp": "707065f42e46590e"
     },
     "sitForm.theirInfo": {
       "stamp": "00f6fb73531cd11e"
@@ -8349,11 +8298,23 @@
     "sitForm.updatedSitterEmailFailed": {
       "stamp": "d3a2530a7e121b12"
     },
-    "sitForm.whoSCovering": {
-      "stamp": "0e9030c0837cb75e"
+    "sitForm.weEmailThemALink": {
+      "stamp": "47d9733794cdac0a"
+    },
+    "sitForm.when": {
+      "stamp": "1391a59a62eace9c"
+    },
+    "sitForm.whichBirds": {
+      "stamp": "2c5f93543bb6714f"
+    },
+    "sitForm.whosCoveringQ": {
+      "stamp": "6dfd260ed86e5dde"
     },
     "sitForm.youReSignedOut": {
       "stamp": "218f2b099d90ac6d"
+    },
+    "sitForm.yourSitterLower": {
+      "stamp": "707c76a7b363684a"
     },
     "sitLink.copied": {
       "stamp": "570ee0bf18d47361"
@@ -8418,17 +8379,17 @@
     "sits.comingUp": {
       "stamp": "1fd8b4ac6f292784"
     },
-    "sits.eyebrow": {
-      "stamp": "26a4b593fb834d48"
+    "sits.heroArrivesInDaysNoDot_one": {
+      "stamp": "922da825d48ab2f1"
     },
-    "sits.heroArrivesInDays": {
-      "stamp": "2a75c88b36c71c05"
+    "sits.heroArrivesInDaysNoDot_other": {
+      "stamp": "5cafc3d21eda0760"
     },
-    "sits.heroArrivesToday": {
-      "stamp": "05ccfcd55069618e"
+    "sits.heroArrivesTodayNoDot": {
+      "stamp": "3b33fe5c732647d2"
     },
-    "sits.heroArrivesTomorrow": {
-      "stamp": "aeab07fe85fd8193"
+    "sits.heroArrivesTomorrowNoDot": {
+      "stamp": "b54d7554917e9569"
     },
     "sits.heroGoingAway": {
       "stamp": "4cae4f4c8fa74f93"
@@ -8436,11 +8397,8 @@
     "sits.heroGoingAwayBody": {
       "stamp": "fe9b2fce64446c8e"
     },
-    "sits.heroRange": {
-      "stamp": "76e2f6455a3ab22b"
-    },
-    "sits.heroSittingNow": {
-      "stamp": "79ab13e034d0fc5f"
+    "sits.heroSittingNowNoDot": {
+      "stamp": "6f83ef4b010c0dd5"
     },
     "sits.heroThrough": {
       "stamp": "01897b11a3efc45a"
@@ -8463,17 +8421,20 @@
     "sits.pageTitle": {
       "stamp": "7a02ea01c357906b"
     },
-    "sits.pastSits": {
-      "stamp": "f0e2b5b71972998f"
+    "sits.pastSitsHeading": {
+      "stamp": "b2f6f1c4ce3e6f3f"
+    },
+    "sits.setUpAnother": {
+      "stamp": "bb4700a45fb6215b"
     },
     "sits.setUpSit": {
       "stamp": "73f30331544a50a8"
     },
-    "sits.sitCountOne": {
-      "stamp": "7ec6e7d9c187b7f4"
+    "sits.sitCount_one": {
+      "stamp": "50530f3c86b80498"
     },
-    "sits.sitCountOther": {
-      "stamp": "9f92b2a7297ec7d5"
+    "sits.sitCount_other": {
+      "stamp": "faf575b8e984891b"
     },
     "sits.yourSitter": {
       "stamp": "1f87da8fe21f5a1a"
