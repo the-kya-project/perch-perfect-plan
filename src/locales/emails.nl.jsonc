@@ -1098,5 +1098,77 @@
   // New daily health check
   "push.scan.clearTitle": "Nieuwe dagelijkse gezondheidscheck",
   // {{birdName}}'s sitter logged an all-clear health check.
-  "push.scan.clearBody": "De oppas van {{birdName}} heeft een gezondheidscheck genoteerd: alles in orde."
+  "push.scan.clearBody": "De oppas van {{birdName}} heeft een gezondheidscheck genoteerd: alles in orde.",
+
+  // ── Supabase auth emails (Send Email hook) ──
+  // Your account
+  "email.auth.kicker": "Je account",
+  // If you didn't ask for this, you can ignore this email.
+  "email.auth.foot": "Heb je hier niet om gevraagd? Dan kun je deze e-mail negeren.",
+  // Button not working? Copy this link into your browser:
+  "email.auth.linkFallback": "Werkt de knop niet? Kopieer deze link naar je browser:",
+  // Your code
+  "email.auth.codeLabel": "Je code",
+  // Confirm your email address
+  "email.auth.signup.subject": "Bevestig je e-mailadres",
+  // Welcome to Kya &amp; Co.
+  "email.auth.signup.kicker": "Welkom bij Kya &amp; Co.",
+  // Confirm your email address
+  "email.auth.signup.heading": "Bevestig je e-mailadres",
+  // Tap the button below to confirm this email address and finish signing up.
+  "email.auth.signup.body": "Tik op de knop hieronder om dit e-mailadres te bevestigen en je aanmelding af te ronden.",
+  // Confirm email address
+  "email.auth.signup.cta": "E-mailadres bevestigen",
+  // Reset your password
+  "email.auth.recovery.subject": "Stel je wachtwoord opnieuw in",
+  // Reset your password
+  "email.auth.recovery.heading": "Stel je wachtwoord opnieuw in",
+  // We received a request to reset your password. Tap the button below to choose a new one.
+  "email.auth.recovery.body": "We hebben een verzoek ontvangen om je wachtwoord opnieuw in te stellen. Tik op de knop hieronder om een nieuw wachtwoord te kiezen.",
+  // Choose a new password
+  "email.auth.recovery.cta": "Kies een nieuw wachtwoord",
+  // Your sign-in link
+  "email.auth.magiclink.subject": "Je inloglink",
+  // Your sign-in link
+  "email.auth.magiclink.heading": "Je inloglink",
+  // Tap the button below to sign in. The link works once and expires soon.
+  "email.auth.magiclink.body": "Tik op de knop hieronder om in te loggen. De link werkt één keer en verloopt binnenkort.",
+  // Sign in
+  "email.auth.magiclink.cta": "Inloggen",
+  // You've been invited to Kya & Co.
+  "email.auth.invite.subject": "Je bent uitgenodigd voor Kya & Co.",
+  // You've been invited
+  "email.auth.invite.heading": "Je bent uitgenodigd",
+  // You've been invited to create a Kya &amp; Co. account. Tap the button below to accept.
+  "email.auth.invite.body": "Je bent uitgenodigd om een account bij Kya &amp; Co. aan te maken. Tik op de knop hieronder om de uitnodiging te accepteren.",
+  // Accept invitation
+  "email.auth.invite.cta": "Uitnodiging accepteren",
+  // Confirm your new email address
+  "email.auth.emailChangeNew.subject": "Bevestig je nieuwe e-mailadres",
+  // Confirm your new email address
+  "email.auth.emailChangeNew.heading": "Bevestig je nieuwe e-mailadres",
+  // Tap the button below to confirm {{newEmail}} as the email address for your Kya &amp; Co. account.
+  "email.auth.emailChangeNew.body": "Tik op de knop hieronder om {{newEmail}} te bevestigen als het e-mailadres van je Kya &amp; Co.-account.",
+  // Confirm new email address
+  "email.auth.emailChangeNew.cta": "Nieuw e-mailadres bevestigen",
+  // Confirm your email change
+  "email.auth.emailChangeCurrent.subject": "Bevestig je e-mailwijziging",
+  // Confirm your email change
+  "email.auth.emailChangeCurrent.heading": "Bevestig je e-mailwijziging",
+  // Someone asked to change the email address on your Kya &amp; Co. account to {{newEmail}}. If that was you, tap the button below to confirm.
+  "email.auth.emailChangeCurrent.body": "Er is gevraagd om het e-mailadres van je Kya &amp; Co.-account te wijzigen naar {{newEmail}}. Was jij dat? Tik dan op de knop hieronder om te bevestigen.",
+  // Confirm the change
+  "email.auth.emailChangeCurrent.cta": "Wijziging bevestigen",
+  // If you didn't ask for this, don't tap the button, and change your password.
+  "email.auth.emailChangeCurrent.foot": "Heb je hier niet om gevraagd? Tik dan niet op de knop en wijzig je wachtwoord.",
+  // {{code}} is your verification code
+  "email.auth.reauthentication.subject": "{{code}} is je verificatiecode",
+  // Your verification code
+  "email.auth.reauthentication.heading": "Je verificatiecode",
+  // Enter this code in the app to continue. It expires soon.
+  "email.auth.reauthentication.body": "Vul deze code in de app in om verder te gaan. De code verloopt binnenkort.",
+  // {{heading}}\n\n{{body}}\n\n{{link}}\n\n{{foot}}
+  "email.auth.text": "{{heading}}\n\n{{body}}\n\n{{link}}\n\n{{foot}}",
+  // {{heading}}\n\n{{body}}\n\n{{code}}\n\n{{foot}}
+  "email.auth.textCode": "{{heading}}\n\n{{body}}\n\n{{code}}\n\n{{foot}}"
 }
