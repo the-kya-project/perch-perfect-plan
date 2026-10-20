@@ -59,6 +59,7 @@ export type AnalyticsEventName =
   // through this wrapper rather than its posthog-js provider rewrite.
   | "bird_added"
   | "weight_logged"
+  | "weight_edited"
   | "care_plan_viewed"
   | "care_plan_editor_opened"
   | "view_as_sitter_opened"

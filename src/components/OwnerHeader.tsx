@@ -13,8 +13,11 @@ import { useTranslation } from "react-i18next";
 // not red on one screen and lime on another.
 const HERO_ICON_BTN = "grid size-9 place-items-center rounded-full text-white active:scale-95";
 const HERO_ICON_BG = { background: "rgba(255,255,255,0.12)" } as const;
+const HERO_ICON_BTN_LG = "grid size-11 place-items-center rounded-full text-white active:scale-95";
+const HERO_ICON_BG_LG = { background: "#12291f" } as const;
 
-export function OwnerHeaderIcons() {
+/** `large`: 44px circles in darker forest (the Kya & Co. look on Home). */
+export function OwnerHeaderIcons({ large = false }: { large?: boolean } = {}) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: scanFeed = [] } = useQuery({ queryKey: ["scan-feed"], queryFn: fetchScanFeed });
@@ -31,12 +34,14 @@ export function OwnerHeaderIcons() {
     replayOwnerOnboarding();
   }
 
+  const btn = large ? HERO_ICON_BTN_LG : HERO_ICON_BTN;
+  const bg = large ? HERO_ICON_BG_LG : HERO_ICON_BG;
   return (
     <div className="flex items-center gap-2 text-white">
-      <button type="button" onClick={replayTour} className={HERO_ICON_BTN} style={HERO_ICON_BG} aria-label={t("ownerHeader.replayAppTour", "Replay app tour")}>
+      <button type="button" onClick={replayTour} className={btn} style={bg} aria-label={t("ownerHeader.replayAppTour", "Replay app tour")}>
         <HelpCircle className="size-[18px]" />
       </button>
-      <Link to="/scans" className={`relative ${HERO_ICON_BTN}`} style={HERO_ICON_BG} aria-label={t("ownerHeader.scans", "Scans")}>
+      <Link to="/scans" className={`relative ${btn}`} style={bg} aria-label={t("ownerHeader.scans", "Scans")}>
         <Bell className="size-[18px]" />
         {/* Unread badge: lime fill, ink text, no border — the ONE canonical
             treatment, tied to count not to which page you're on. */}
@@ -46,7 +51,7 @@ export function OwnerHeaderIcons() {
           </span>
         )}
       </Link>
-      <Link to="/account" className={HERO_ICON_BTN} style={HERO_ICON_BG} aria-label={t("ownerHeader.accountSettings", "Account settings")}>
+      <Link to="/account" className={btn} style={bg} aria-label={t("ownerHeader.accountSettings", "Account settings")}>
         <Settings className="size-[18px]" />
       </Link>
     </div>
