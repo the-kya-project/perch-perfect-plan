@@ -52,6 +52,7 @@ export function SetupShell({
   nextLabel: nextLabelProp,
   nextDisabled,
   footerNote,
+  tinted,
   saving,
   backDisabled,
   hideFooter,
@@ -79,6 +80,8 @@ export function SetupShell({
   nextDisabled?: boolean;
   /** A short line above the footer buttons, e.g. why Next is waiting. */
   footerNote?: string | null;
+  /** Light green body for screens made of white cards. */
+  tinted?: boolean;
   saving?: boolean;
   backDisabled?: boolean;
   hideFooter?: boolean;
@@ -137,6 +140,7 @@ export function SetupShell({
         backLabel={onBack && !backDisabled ? t("setupShell.previousStep", "Previous step") : exitLabel ?? t("setupFrame.back", "Back")}
         onPill={onNavigateStep ? (p) => { const key = PILL_STEP[p]; if (key) onNavigateStep(setupStepNumber(key)); } : undefined}
         footer={footer}
+        tinted={tinted}
         // The owner nav stays under the footer: leaving through it keeps the
         // current step (autosave flushes on unmount).
         belowFooter={<OwnerTabBar embedded />}

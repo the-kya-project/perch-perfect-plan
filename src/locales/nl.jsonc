@@ -999,16 +999,10 @@
   "birdSetup.addAnotherMedication": "Nog een medicijn toevoegen",
   // Add
   "birdSetup.addButton": "Toevoegen",
-  // Add custom task
-  "birdSetup.addCustomTask": "Eigen taak toevoegen",
   // Add photo
   "birdSetup.addPhoto": "Foto toevoegen",
-  // Add to {{block}}
-  "birdSetup.addToBlock": "Toevoegen aan {{block}}",
   // Add your own…
   "birdSetup.addYourOwn": "Zelf toevoegen…",
-  // Add your own
-  "birdSetup.addYourOwnChip": "Zelf toevoegen",
   // A few things are still thin or empty:
   "birdSetup.aFewThingsAreStill": "Een paar dingen zijn nog summier of leeg:",
   // Anything else a sitter should know.
@@ -1071,6 +1065,14 @@
   "birdSetup.couldnTRemoveTheClip": "Kon de clip niet verwijderen. Probeer het opnieuw.",
   // Couldn't save the clip. Please try again.
   "birdSetup.couldnTSaveTheClip": "Kon de clip niet opslaan. Probeer het opnieuw.",
+  // From Food and Health
+  "birdSetup.day.fromFoodAndHealth": "Uit Eten en Gezondheid",
+  // {{name}}'s day
+  "birdSetup.day.title": "De dag van {{name}}",
+  // + Your own
+  "birdSetup.day.yourOwn": "+ Zelf toevoegen",
+  // Your tasks
+  "birdSetup.day.yourTasks": "Jouw taken",
   // Describe the other diet
   "birdSetup.describeTheOtherDiet": "Beschrijf het andere voer",
   // e.g. A cat and a dog — keep them out of the bird room; never leave them together.
@@ -1109,8 +1111,6 @@
   "birdSetup.freshFoodSpoilsFastAnd": "Vers eten bederft snel en er kunnen bacteriën in groeien. Zo weet je oppas wanneer het eruit moet.",
   // Freshness & hygiene
   "birdSetup.freshnessHygiene": "Versheid & hygiëne",
-  // from {{source}}
-  "birdSetup.fromSource": "uit {{source}}",
   // Fully flighted
   "birdSetup.fullyFlighted": "Volledig vliegvaardig",
   // General defaults — adjust to fit your bird and routine.
@@ -1213,6 +1213,8 @@
   "birdSetup.howOftenWaterChanged": "Hoe vaak wordt het ververst?",
   // Anything else the sitter should know about food/water hygiene.
   "birdSetup.hygieneNotesPlaceholder": "Nog iets wat de oppas moet weten over hygiëne rond voer en water.",
+  // What does a normal day look like for {{name}}? Add the details that keep care smooth from morning to night.
+  "birdSetup.instr.day": "Hoe ziet een normale dag eruit voor {{name}}? Voeg de details toe waardoor de zorg van 's ochtends tot 's avonds soepel verloopt.",
   // What does {{name}} eat, and how much? Clear answers mean anyone caring for {{name}} knows exactly what to serve, and when.
   "birdSetup.instr.food": "Wat eet {{name}}, en hoeveel? Met duidelijke antwoorden weet iedereen die voor {{name}} zorgt precies wat er gegeven moet worden, en wanneer.",
   // Help anyone caring for {{name}} know what's normal, so they can spot what isn't. Everything here is optional.
@@ -1223,12 +1225,8 @@
   "birdSetup.instr.reminders": "Dit zijn dingen die jij zonder nadenken weet, maar waar een oppas misschien niet aan denkt. Noem elk gevaar dat een vogel in jouw huis kan tegenkomen.",
   // Here's exactly what everyone helping will see for {{name}}. Scroll inside the preview to explore the Today screen.
   "birdSetup.instr.review": "Dit is precies wat iedereen die helpt voor {{name}} te zien krijgt. Scroll in de preview om het Vandaag-scherm te bekijken.",
-  // Build {{name}}'s daily rhythm. Feedings, water, cleaning, and meds carry over automatically from the Food and Health steps. Add anything else here, like uncovering the cage or playtime. Auto-added items are tagged and live in their own step.
-  "birdSetup.instr.routine": "Stel het dagritme van {{name}} op. Voeren, water, schoonmaken en medicijnen komen automatisch mee uit de stappen Eten en Gezondheid. Voeg hier al het andere toe, zoals de kooi openmaken of speeltijd. Automatisch toegevoegde items zijn gelabeld en staan in hun eigen stap.",
   // Add short video clips, up to 60 seconds each. Record one now or upload from your phone.
   "birdSetup.instr.tips": "Voeg korte filmpjes toe, elk tot 60 seconden. Neem er nu een op of upload er een van je telefoon.",
-  // In the routine
-  "birdSetup.inTheRoutine": "In de routine",
   // No food & water details
   "birdSetup.issue.noFoodWaterDetails": "Geen gegevens over eten & water",
   // No health baseline (weight, photo, clip, or notes)
@@ -1291,8 +1289,6 @@
   "birdSetup.notesOnlyFromCertainPerches": "Notities (alleen vanaf bepaalde zitstokken? liever een hand dan een zitstok?)",
   // Notes (which room? how long? what to watch for?)
   "birdSetup.notesWhichRoomHowLong": "Notities (welke kamer? hoe lang? waar moet je op letten?)",
-  // Nothing added yet
-  "birdSetup.nothingAddedYet": "Nog niets toegevoegd",
   // 1 hour
   "birdSetup.opt.1Hour": "1 uur",
   // 2 hours
@@ -1361,6 +1357,10 @@
   "birdSetup.opt.keepInCage": "In de kooi houden",
   // Kitchen & nonstick cookware
   "birdSetup.opt.kitchenNonstickCookware": "Keuken & pannen met antiaanbaklaag",
+  // Lights on
+  "birdSetup.opt.lightsOn": "Licht aan",
+  // Lights out
+  "birdSetup.opt.lightsOut": "Licht uit",
   // Lights, sounds, bedtime routine.
   "birdSetup.opt.lightsSoundsBedtime": "Licht, geluiden, bedtijdroutine.",
   // Making chop, portioning a pre-made mix, or prepping freeze-dried.

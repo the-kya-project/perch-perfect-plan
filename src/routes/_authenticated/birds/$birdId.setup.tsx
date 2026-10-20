@@ -17,7 +17,7 @@ import { encodeSetupStep, basicsDone } from "@/lib/setupProgress";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { mergeHome, homeDifferences, seedShared, sameGroup, followSharedPatch, clearOwnPatch, birdHasOwn, HOME_GROUPS, HOME_GROUP_COLUMNS, type HomeRow } from "@/lib/homeDefaults";
 import { EmergencyInfo } from "@/components/EmergencyInfo";
-import { Plus, X, Check, Lightbulb, GripVertical, Sparkles, AlertTriangle, Pill, ChevronDown, Play, Video } from "lucide-react";
+import { Plus, X, Check, Lightbulb, GripVertical, Sparkles, AlertTriangle, Pill, ChevronDown, Play, Video, Sunrise, Sun, Sunset, Moon, Clock, Soup } from "lucide-react";
 import { PhotoCropper } from "@/components/PhotoCropper";
 import { AgePicker, BirdField, SpeciesPicker } from "@/components/BirdPickers";
 import { ClipRecorder, UploadProgress } from "@/components/ClipRecorder";
@@ -485,7 +485,9 @@ function BirdSetup() {
             ? t("birdSetup.behavior.title", "How {{name}} likes to be treated", { name: bird.name })
             : meta.key === "clips"
               ? t("birdSetup.tips.title", "Show your sitter how")
-              : setupStepTitle(t, meta.key)}
+              : meta.key === "day"
+                ? t("birdSetup.day.title", "{{name}}'s day", { name: bird.name })
+                : setupStepTitle(t, meta.key)}
       subtitle={onFoodPage2 ? t("birdSetup.food2.intro", "Everything here is optional, and the defaults are a good place to start.") : undefined}
       page={meta.key === "food" ? [foodPage, 2] : undefined}
       birdName={bird.name}
@@ -501,6 +503,7 @@ function BirdSetup() {
       backDisabled={step <= 1 && !(meta.key === "food" && foodPage === 2)}
       nextDisabled={blockNext}
       footerNote={footerNote}
+      tinted={meta.key === "day" && !atStopPoint}
       hideFooter={step === TOTAL_STEPS}
     >
       <SetupDirtyContext.Provider value={setDirty}>
@@ -595,6 +598,8 @@ const TIME_BLOCKS: { key: string; label: string }[] = [
 function displayLabel(t: TFunction, en: string): string {
   switch (en) {
     case "Uncover cage": return t("birdSetup.opt.uncoverCage", "Uncover cage");
+    case "Lights on": return t("birdSetup.opt.lightsOn", "Lights on");
+    case "Lights out": return t("birdSetup.opt.lightsOut", "Lights out");
     case "Open curtains": return t("birdSetup.opt.openCurtains", "Open curtains");
     case "Out-of-cage time": return t("birdSetup.opt.outOfCageTime", "Out-of-cage time");
     case "Training or play": return t("birdSetup.opt.trainingOrPlay", "Training or play");
@@ -683,14 +688,16 @@ function sourceLabel(t: TFunction, title: string): string {
 // water, cleaning, and medication are auto-derived from the Food / Health tabs
 // (see syncFeedingTasks / syncHygieneTasks / syncMedicationTask) and must not be
 // re-entered here, or they drift out of sync.
+// Quick-add suggestions for the owner's own tasks. "Uncover cage" and "Cover
+// for night" left the list; tasks owners already added keep their names.
 const COMMON_TASKS = [
-  "Uncover cage",
+  "Lights on",
   "Open curtains",
   "Out-of-cage time",
   "Training or play",
   "Misting or bath",
   "Close curtains",
-  "Cover for night",
+  "Lights out",
 ];
 
 export function BasicsStep({ birdId, onBlockNext, registerFlush }: { birdId: string; onBlockNext: (block: boolean) => void; registerFlush?: (fn: (() => Promise<void>) | null) => void }) {
@@ -898,8 +905,8 @@ export function DayInLifeStep({ birdId, birdName }: { birdId: string; birdName: 
   }
 
   return (
-    <div className="space-y-4">
-      <StepInstruction>{t("birdSetup.instr.routine", "Build {{name}}'s daily rhythm. Feedings, water, cleaning, and meds carry over automatically from the Food and Health steps. Add anything else here, like uncovering the cage or playtime. Auto-added items are tagged and live in their own step.", { name: birdName })}</StepInstruction>
+    <div className="flex flex-col gap-[14px]">
+      <StepInstruction>{t("birdSetup.instr.day", "What does a normal day look like for {{name}}? Add the details that keep care smooth from morning to night.", { name: birdName })}</StepInstruction>
 
       {showCopy && (!tasks.some(isOwnTask) || copyDone) && (
         <StartFromAnotherBird kind="day" birdName={birdName} sources={copySources} onCopy={(source) => copyDay(source.plan.id)} />
@@ -918,6 +925,23 @@ export function DayInLifeStep({ birdId, birdName }: { birdId: string; birdName: 
   );
 }
 
+function blockIcon(key: string) {
+  const cls = "size-[22px]";
+  switch (key) {
+    case "morning": return <Sunrise className={cls} aria-hidden="true" />;
+    case "midday": return <Sun className={cls} aria-hidden="true" />;
+    case "evening": return <Sunset className={cls} aria-hidden="true" />;
+    case "bedtime": return <Moon className={cls} aria-hidden="true" />;
+    default: return <Clock className={cls} aria-hidden="true" />;
+  }
+}
+
+/** A Food clock time on an automatic task ("7:30 AM"), if it has one. */
+function taskClock(task: any): string | null {
+  const v = (task.time_of_day ?? "").trim();
+  return /\d/.test(v) ? v : null;
+}
+
 function TimeBlockSection({
   block,
   planId,
@@ -932,16 +956,16 @@ function TimeBlockSection({
   const { t } = useTranslation();
   const [custom, setCustom] = useState("");
   const [addingCustom, setAddingCustom] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  // Derived tasks (feeding/water/hygiene/medication) are read-only here — they
-  // come from the Food / Health tabs. Only manual rhythm items are editable.
+  // Automatic tasks (feeding/water/hygiene/medication) are read-only here — they
+  // come from the Food and Health steps. Only the owner's own tasks are editable.
   const derivedTasks = tasks.filter((item) => isDerivedTask(item.title));
   const manualTasks = tasks.filter((item) => !isDerivedTask(item.title));
-  const present = new Map(manualTasks.map((item) => [item.title.trim().toLowerCase(), item]));
-  const hasItems = derivedTasks.length > 0 || manualTasks.length > 0;
-  // One-place rule: a common task is offered as an "add" chip only while it is
-  // NOT yet in the routine. Once added it moves into the "In the routine" list.
+  const present = new Set(manualTasks.map((item) => item.title.trim().toLowerCase()));
+  // A suggestion disappears once this block already has it.
   const availableChips = COMMON_TASKS.filter((item) => !present.has(item.trim().toLowerCase()));
+  const bedtime = block.key === "bedtime";
 
   async function add(title: string) {
     if (busy) return;
@@ -963,128 +987,120 @@ function TimeBlockSection({
     onChange();
   }
   async function addCustom() {
-    const t = custom.trim();
-    if (!t) return;
-    await add(t);
+    const title = custom.trim();
+    if (!title) return;
+    await add(title);
     setCustom("");
     setAddingCustom(false);
   }
   async function saveNote(id: string, value: string) {
-    await supabase.from("routine_tasks").update({ instructions: value || null } as any).eq("id", id);
+    await supabase.from("routine_tasks").update({ instructions: value.trim() || null } as any).eq("id", id);
     onChange();
   }
 
-  return (
-    <section className="rounded-[18px] bg-[#efe9da] p-4">
-      <h2 className="text-[11px] font-medium uppercase tracking-[0.05em] text-[#1a3d2e]">{displayLabel(t, block.label)}</h2>
+  const label = "m-0 text-[12.5px] font-[700] text-[#5f5e5a]";
+  const chip = "inline-flex min-h-[44px] items-center gap-1.5 rounded-full border-2 border-dashed border-[#9bb5a6] bg-white px-3.5 text-[14.5px] font-[700] text-[#1a3d2e] disabled:opacity-50";
 
-      {/* In the routine — everything currently scheduled for this day-part. */}
-      {hasItems ? (
-        <>
-          <p className="mt-3 text-[11px] font-medium text-[#6b6a60]">{t("birdSetup.inTheRoutine", "In the routine")}</p>
-          <ul className="mt-2 space-y-2">
-            {/* Auto-derived items, read-only — managed in their source step. */}
-            {derivedTasks.map((item) => (
-              <li key={item.id} className="flex items-start gap-2.5 rounded-[11px] bg-[#e8f0ec] px-3 py-2.5">
-                <Sparkles className="mt-0.5 size-3.5 shrink-0 text-[#2d6a4f]" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm text-[#1f1f1d]">
+  return (
+    <section className="flex flex-col gap-3 rounded-[20px] border-b bg-white p-4" style={{ borderColor: S.footerLine, color: S.forest }}>
+      <div className="flex items-center gap-3">
+        <span
+          className="grid size-11 shrink-0 place-items-center rounded-full"
+          style={bedtime ? { background: S.forest, color: S.lime } : { background: S.lime, color: S.forest }}
+        >
+          {blockIcon(block.key)}
+        </span>
+        <h2 className="m-0 text-[23px] font-[700] leading-[1.15]" style={{ fontFamily: SERIF }}>{displayLabel(t, block.label)}</h2>
+      </div>
+
+      {derivedTasks.length > 0 && (
+        <div>
+          <p className={label}>{t("birdSetup.day.fromFoodAndHealth", "From Food and Health")}</p>
+          <ul className="m-0 mt-1 list-none p-0">
+            {derivedTasks.map((item, i) => {
+              const clock = taskClock(item);
+              return (
+                <li key={item.id} className={`flex min-h-[42px] items-center gap-2.5 py-2 text-[15px] ${i > 0 ? "border-t border-[#e3ebe2]" : ""}`}>
+                  <span className="shrink-0" style={{ color: S.moss }}>
+                    {derivedSource(item.title) === "Health" ? <Pill className="size-4" aria-hidden="true" /> : <Soup className="size-4" aria-hidden="true" />}
+                  </span>
+                  <span className="min-w-0">
                     {item.title}
-                    {item.time_of_day && <span className="text-sage-500"> · {item.time_of_day}</span>}
-                  </p>
-                  {item.instructions && <p className="mt-0.5 whitespace-pre-line text-xs text-sage-600">{item.instructions}</p>}
-                </div>
-                <span className="mt-0.5 shrink-0 rounded-full bg-[#d2e6d9] px-2 py-0.5 text-[9px] font-medium uppercase tracking-wider text-[#2d6a4f]">
-                  {t("birdSetup.fromSource", "from {{source}}", { source: sourceLabel(t, item.title) })}
-                </span>
-              </li>
-            ))}
-            {/* Manual rhythm items, editable here. */}
-            {manualTasks.map((item) => (
-              <li key={item.id} className="rounded-[11px] bg-white px-3 py-2.5">
-                <div className="flex items-center gap-2.5">
-                  <GripVertical className="size-4 shrink-0 text-[#c0bba8]" />
-                  <p className="flex-1 text-sm text-[#1f1f1d]">{item.title}</p>
-                  <button
-                    type="button"
-                    onClick={() => remove(item.id)}
-                    className="shrink-0 rounded p-0.5 text-[#b0aea2] hover:bg-sage-100"
-                    aria-label={t("birdSetup.removeTask", "Remove {{title}}", { title: item.title })}
-                  >
-                    <X className="size-4" />
-                  </button>
-                </div>
-                <textarea
-                  className="input area mt-2 text-xs"
-                  placeholder={t("birdSetup.addANoteOptional", "Add a note (optional)")}
-                  defaultValue={item.instructions ?? ""}
-                  onBlur={(e) => {
-                    if ((e.target.value ?? "") !== (item.instructions ?? "")) {
-                      saveNote(item.id, e.target.value);
-                    }
-                  }}
-                />
-              </li>
-            ))}
+                    {clock && <span style={{ color: S.quiet }}> · {clock}</span>}
+                  </span>
+                </li>
+              );
+            })}
           </ul>
-        </>
-      ) : (
-        <p className="mt-3 text-[13px] text-[#a8a596]">{t("birdSetup.nothingAddedYet", "Nothing added yet")}</p>
+        </div>
       )}
 
-      {/* Add to [day-part] — clearly separated "tap to add" chips. */}
-      <div className="mb-2.5 mt-4 flex items-center gap-2">
-        <span className="text-[11px] font-medium text-[#8a897f]">{t("birdSetup.addToBlock", "Add to {{block}}", { block: displayLabel(t, block.label).toLowerCase() })}</span>
-        <span className="h-px flex-1 bg-black/10" />
-      </div>
+      {manualTasks.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <p className={label}>{t("birdSetup.day.yourTasks", "Your tasks")}</p>
+          {manualTasks.map((item) => (
+            <div key={item.id} className="rounded-[14px] px-3.5" style={{ background: S.lime }}>
+              <div className="flex min-h-[52px] items-center gap-2">
+                <button type="button" onClick={() => setEditingId(editingId === item.id ? null : item.id)} className="min-w-0 flex-1 py-2.5 text-left">
+                  <span className="block text-[15px] font-[700]">{displayLabel(t, item.title)}</span>
+                  {item.instructions && editingId !== item.id && <span className="mt-0.5 block whitespace-pre-line text-[14px]">{item.instructions}</span>}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => remove(item.id)}
+                  aria-label={t("birdSetup.removeTask", "Remove {{title}}", { title: item.title })}
+                  className="grid size-11 shrink-0 place-items-center rounded-full"
+                >
+                  <X className="size-5" aria-hidden="true" />
+                </button>
+              </div>
+              {editingId === item.id && (
+                <textarea
+                  autoFocus
+                  aria-label={t("birdSetup.addANoteOptional", "Add a note (optional)")}
+                  placeholder={t("birdSetup.addANoteOptional", "Add a note (optional)")}
+                  defaultValue={item.instructions ?? ""}
+                  maxLength={500}
+                  className="mb-3 min-h-[72px] w-full rounded-[12px] border-2 bg-white px-3.5 py-2.5 text-[15px] leading-[1.5] outline-none"
+                  style={{ borderColor: S.forest, color: S.forest }}
+                  onBlur={(e) => {
+                    if ((e.target.value ?? "").trim() !== (item.instructions ?? "")) saveNote(item.id, e.target.value);
+                    setEditingId(null);
+                  }}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+      )}
 
       <div className="flex flex-wrap gap-2">
         {availableChips.map((item) => (
-          <button
-            key={item}
-            type="button"
-            onClick={() => add(item)}
-            disabled={busy}
-            className="flex items-center gap-1 rounded-full border border-dashed border-[#b9c7bd] px-3 py-1.5 text-[13px] text-[#1a3d2e] transition hover:bg-white/50 disabled:opacity-50"
-          >
-            <Plus className="size-3.5 text-[#5f7a6e]" /> {displayLabel(t, item)}
+          <button key={item} type="button" onClick={() => add(item)} disabled={busy} className={chip}>
+            <Plus className="size-4" strokeWidth={2.6} aria-hidden="true" /> {displayLabel(t, item)}
           </button>
         ))}
         {!addingCustom && (
-          <button
-            type="button"
-            onClick={() => setAddingCustom(true)}
-            className="flex items-center gap-1 rounded-full border border-dashed border-[#b9c7bd] px-3 py-1.5 text-[13px] text-[#1a3d2e] transition hover:bg-white/50"
-          >
-            <Plus className="size-3.5 text-[#5f7a6e]" /> {t("birdSetup.addYourOwnChip", "Add your own")}
+          <button type="button" onClick={() => setAddingCustom(true)} className={chip}>
+            {t("birdSetup.day.yourOwn", "+ Your own")}
           </button>
         )}
       </div>
 
       {addingCustom && (
-        <div className="mt-2.5 flex gap-2">
-          <input
-            className="input flex-1"
-            value={custom}
-            autoFocus
-            onChange={(e) => setCustom(e.target.value)}
-            placeholder={t("birdSetup.addYourOwn", "Add your own…")}
-            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCustom(); } }}
-            onBlur={() => { if (!custom.trim()) setAddingCustom(false); }}
-          />
-          <button
-            type="button"
-            onClick={addCustom}
-            disabled={!custom.trim() || busy}
-            className="rounded-xl bg-[#1a3d2e] px-3 text-sm font-semibold text-white disabled:opacity-50"
-            aria-label={t("birdSetup.addCustomTask", "Add custom task")}
-          >
-            <Plus className="size-4" />
-          </button>
+        <div className="flex gap-2">
+          <div className="min-w-0 flex-1">
+            <TextField
+              value={custom}
+              onChange={setCustom}
+              maxLength={120}
+              ariaLabel={t("birdSetup.addYourOwn", "Add your own…")}
+              placeholder={t("birdSetup.addYourOwn", "Add your own…")}
+            />
+          </div>
+          <SetupTextButton onClick={addCustom} disabled={!custom.trim() || busy}>{t("birdSetup.addButton", "Add")}</SetupTextButton>
         </div>
       )}
-
-      <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.55rem .7rem;font-size:14px;outline:none}.input:focus{border-color:var(--sage-600);box-shadow:0 0 0 3px rgb(74 103 65 / .15)}.area{min-height:50px;line-height:1.4}`}</style>
     </section>
   );
 }

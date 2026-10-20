@@ -1494,20 +1494,11 @@
     "birdSetup.addButton": {
       "stamp": "7243fcbe9aec5d44"
     },
-    "birdSetup.addCustomTask": {
-      "stamp": "c38f8f4b3b2eb57c"
-    },
     "birdSetup.addPhoto": {
       "stamp": "919260493285cf40"
     },
-    "birdSetup.addToBlock": {
-      "stamp": "a06875d4999d6a14"
-    },
     "birdSetup.addYourOwn": {
       "stamp": "58072321d1034813"
-    },
-    "birdSetup.addYourOwnChip": {
-      "stamp": "832b0b063a346e19"
     },
     "birdSetup.aFewThingsAreStill": {
       "stamp": "3149f9bb1a482529"
@@ -1602,6 +1593,18 @@
     "birdSetup.couldnTSaveTheClip": {
       "stamp": "ef5055a588fd6bfc"
     },
+    "birdSetup.day.fromFoodAndHealth": {
+      "stamp": "4aaeeaab34cb8c55"
+    },
+    "birdSetup.day.title": {
+      "stamp": "425aa0efc2dbcd61"
+    },
+    "birdSetup.day.yourOwn": {
+      "stamp": "37d968d208277934"
+    },
+    "birdSetup.day.yourTasks": {
+      "stamp": "722319092763d83a"
+    },
     "birdSetup.describeTheOtherDiet": {
       "stamp": "7518cfa2fca94fe3"
     },
@@ -1658,9 +1661,6 @@
     },
     "birdSetup.freshnessHygiene": {
       "stamp": "289f2b844901c7be"
-    },
-    "birdSetup.fromSource": {
-      "stamp": "69a39b291eab1726"
     },
     "birdSetup.fullyFlighted": {
       "stamp": "9737a6091096d25b"
@@ -1815,6 +1815,9 @@
     "birdSetup.hygieneNotesPlaceholder": {
       "stamp": "956a155d01710976"
     },
+    "birdSetup.instr.day": {
+      "stamp": "5a295ec4872f09cd"
+    },
     "birdSetup.instr.food": {
       "stamp": "9b89c93ba8fdab76"
     },
@@ -1830,14 +1833,8 @@
     "birdSetup.instr.review": {
       "stamp": "bf0a387c9e79aa13"
     },
-    "birdSetup.instr.routine": {
-      "stamp": "f103da53204ae09c"
-    },
     "birdSetup.instr.tips": {
       "stamp": "635bbdd2201f8f0d"
-    },
-    "birdSetup.inTheRoutine": {
-      "stamp": "7f726d8c7dc03337"
     },
     "birdSetup.issue.noFoodWaterDetails": {
       "stamp": "b365652fd80f3800"
@@ -1931,9 +1928,6 @@
     },
     "birdSetup.notesWhichRoomHowLong": {
       "stamp": "51de47b139a5ec14"
-    },
-    "birdSetup.nothingAddedYet": {
-      "stamp": "b576405a58a41f75"
     },
     "birdSetup.opt.1Hour": {
       "stamp": "2f81172efa78db22"
@@ -2036,6 +2030,12 @@
     },
     "birdSetup.opt.kitchenNonstickCookware": {
       "stamp": "d547d1e4f58ca03c"
+    },
+    "birdSetup.opt.lightsOn": {
+      "stamp": "de35903430ff6939"
+    },
+    "birdSetup.opt.lightsOut": {
+      "stamp": "228ec93ff1a446dd"
     },
     "birdSetup.opt.lightsSoundsBedtime": {
       "stamp": "4ef3b1225e50eb8f"
