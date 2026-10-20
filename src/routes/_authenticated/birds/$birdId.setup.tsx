@@ -16,7 +16,7 @@ import { SetupShell, SETUP_STEPS, TOTAL_STEPS, setupStepTitle, setupStepNumber }
 import { encodeSetupStep, basicsDone } from "@/lib/setupProgress";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { mergeHome, homeDifferences, seedShared, sameGroup, followSharedPatch, clearOwnPatch, birdHasOwn, HOME_GROUPS, HOME_GROUP_COLUMNS, parseCleaning, formatCleaning, CLEANING_NEVER_DEFAULTS, type HomeRow } from "@/lib/homeDefaults";
-import { EmergencyInfo } from "@/components/EmergencyInfo";
+import { EmergencyContactsScreen, type EmergencySetupState } from "@/components/setup/EmergencyContactsScreen";
 import { Plus, X, Check, Lightbulb, GripVertical, Sparkles, AlertTriangle, Pill, ChevronDown, Play, Video, Sunrise, Sun, Sunset, Moon, Clock, Soup, DoorClosed, SprayCan } from "lucide-react";
 import { PhotoCropper } from "@/components/PhotoCropper";
 import { AgePicker, BirdField, SpeciesPicker } from "@/components/BirdPickers";
@@ -502,13 +502,14 @@ function BirdSetup() {
       onBack={onBack}
       onNext={onNext}
       onSaveAndExit={onSaveAndExit}
-      nextLabel={isLast ? t("birdSetup.finishSetup", "Finish setup") : onFoodPage2 ? t("birdSetup.food2.next", "Next: Health") : t("birdSetup.next", "Next")}
+      nextLabel={isLast ? t("birdSetup.finishSetup", "Finish setup") : onFoodPage2 ? t("birdSetup.food2.next", "Next: Health") : meta.key === "emergency" ? t("emergencySetup.saveContacts", "Save contacts") : t("birdSetup.next", "Next")}
       backDisabled={step <= 1 && !(meta.key === "food" && foodPage === 2)}
       nextDisabled={blockNext}
       footerNote={footerNote}
-      tinted={(meta.key === "day" || meta.key === "environment") && !atStopPoint}
+      tinted={(meta.key === "day" || meta.key === "environment" || meta.key === "emergency") && !atStopPoint}
       homeSubline={homeSubline ?? undefined}
-      onSkip={meta.key === "environment" ? onNext : undefined}
+      onSkip={meta.key === "environment" || meta.key === "emergency" ? onNext : undefined}
+      footerNoteWarn={meta.key === "emergency"}
       hideFooter={step === TOTAL_STEPS}
     >
       <SetupDirtyContext.Provider value={setDirty}>
@@ -584,7 +585,7 @@ function StepBody({
     case "clips": return <OwnerTipsClipsStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} />;
     case "day": return <DayInLifeStep birdId={birdId} birdName={birdName} />;
     case "environment": return <EnvironmentStep birdId={birdId} birdName={birdName} registerFlush={registerFlush} />;
-    case "emergency": return <EmergencyStep birdId={birdId} onBlockNext={onBlockNext} registerFlush={registerFlush} />;
+    case "emergency": return <EmergencyStep birdId={birdId} birdName={birdName} onBlockNext={onBlockNext} registerFlush={registerFlush} />;
     case "review": return <ReviewStep birdId={birdId} birdName={birdName} onJumpToStep={onJumpToStep} onFinish={onFinish} />;
     default: return null;
   }
@@ -3161,59 +3162,44 @@ function ClipSlotRow({
 // shows them read-only rather than asking the owner to re-enter from scratch.
 function EmergencyStep({
   birdId,
+  birdName,
   onBlockNext,
   registerFlush,
 }: {
   birdId: string;
+  birdName: string;
   onBlockNext: (block: boolean) => void;
   registerFlush?: (fn: (() => Promise<void>) | null) => void;
 }) {
   const { t } = useTranslation();
   const qc = useQueryClient();
+  const setFooterNote = useContext(SetupFooterNoteContext);
+  const setHomeSubline = useContext(SetupHomeSublineContext);
 
-  // EmergencyInfo saves each section on demand, so this step never blocks Next
-  // or registers a debounced flush.
-  useEffect(() => { onBlockNext(false); registerFlush?.(null); }, [onBlockNext, registerFlush]);
+  // Each row saves when its sheet closes, so there's no debounced flush.
+  useEffect(() => { registerFlush?.(null); }, [registerFlush]);
 
-  const { data: bird } = useQuery({
-    queryKey: ["bird-owner-emerg", birdId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("birds").select("id, owner_id, name").eq("id", birdId).single();
-      if (error) throw error;
-      return data as any;
-    },
-  });
-
-  const { data: contacts, isLoading } = useQuery({
-    queryKey: ["emergency-contacts", birdId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("emergency_contacts").select("*").eq("bird_id", birdId).maybeSingle();
-      if (error) throw error;
-      return data as any;
-    },
-  });
-
-  const { data: defaults } = useQuery({
-    queryKey: ["owner-emergency-defaults", bird?.owner_id],
-    enabled: !!bird?.owner_id,
-    queryFn: async () => {
-      const { data } = await supabase.from("owner_emergency_defaults").select("*").eq("owner_id", bird!.owner_id).maybeSingle();
-      return data as any;
-    },
-  });
-
-  if (isLoading || !bird) return <div className="h-32 animate-pulse rounded-2xl bg-sage-100" />;
+  const onState = useCallback(({ missingOwnerPhone, missingVetPhone }: EmergencySetupState) => {
+    // "Save contacts" waits for both required contacts; "Skip for now" doesn't.
+    onBlockNext(missingOwnerPhone || missingVetPhone);
+    const after = t("emergencySetup.neededForSit", "You'll need it before you can create a pet sit.");
+    setFooterNote(
+      missingOwnerPhone && missingVetPhone
+        ? `${t("emergencySetup.missingBoth", "Add your phone number and your avian vet's phone to finish.")} ${t("emergencySetup.neededForSitBoth", "You'll need them before you can create a pet sit.")}`
+        : missingOwnerPhone
+          ? `${t("emergencySetup.missingOwner", "Add your phone number to finish.")} ${after}`
+          : missingVetPhone
+            ? `${t("emergencySetup.missingVet", "Add your avian vet's phone to finish.")} ${after}`
+            : null,
+    );
+    qc.invalidateQueries({ queryKey: ["emergency-contacts", birdId] });
+  }, [onBlockNext, setFooterNote, t, qc, birdId]);
+  useEffect(() => () => setFooterNote(null), [setFooterNote]);
 
   return (
     <>
-      <StepInstruction>{t("birdSetup.theStuffYouHopeNo", "The stuff you hope no one needs, but everyone should have.")}</StepInstruction>
-      <EmergencyInfo
-        birdId={birdId}
-        birdName={bird.name ?? "this bird"}
-        contacts={contacts ?? null}
-        defaults={defaults ?? null}
-        onSaved={() => qc.invalidateQueries({ queryKey: ["emergency-contacts", birdId] })}
-      />
+      <StepInstruction>{t("birdSetup.instr.emergencyContacts", "Your birds' emergency contacts. Saved once for every bird.")}</StepInstruction>
+      <EmergencyContactsScreen birdId={birdId} birdName={birdName} onState={onState} onSubline={setHomeSubline} />
     </>
   );
 }

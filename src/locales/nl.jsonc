@@ -1209,6 +1209,8 @@
   "birdSetup.hygieneNotesPlaceholder": "Nog iets wat de oppas moet weten over hygiëne rond voer en water.",
   // What does a normal day look like for {{name}}? Add the details that keep care smooth from morning to night.
   "birdSetup.instr.day": "Hoe ziet een normale dag eruit voor {{name}}? Voeg de details toe waardoor de zorg van 's ochtends tot 's avonds soepel verloopt.",
+  // Your birds' emergency contacts. Saved once for every bird.
+  "birdSetup.instr.emergencyContacts": "De noodcontacten van je vogels. Eén keer opgeslagen voor al je vogels.",
   // What does {{name}} eat, and how much? Clear answers mean anyone caring for {{name}} knows exactly what to serve, and when.
   "birdSetup.instr.food": "Wat eet {{name}}, en hoeveel? Met duidelijke antwoorden weet iedereen die voor {{name}} zorgt precies wat er gegeven moet worden, en wanneer.",
   // Help anyone caring for {{name}} know what's normal, so they can spot what isn't. Everything here is optional.
@@ -1541,8 +1543,6 @@
   "birdSetup.tapAnyThatApplyThen": "Tik aan wat van toepassing is en voeg daarna je eigen toe.",
   // That photo's a bit too large even after resizing. Try a different photo.
   "birdSetup.thatPhotoSABit": "Die foto is zelfs na verkleinen nog net te groot. Probeer een andere foto.",
-  // The stuff you hope no one needs, but everyone should have.
-  "birdSetup.theStuffYouHopeNo": "De dingen waarvan je hoopt dat niemand ze nodig heeft, maar die iedereen moet hebben.",
   // This is washing the bowl itself — separate from how often you change the water.
   "birdSetup.thisIsWashingTheBowl": "Dit gaat over het afwassen van het bakje zelf — los van hoe vaak je het water ververst.",
   // Add a {{slot}} clip
@@ -2707,6 +2707,58 @@
   "emergencyInfo.usingAccountInfo": "De noodinformatie van je account wordt gebruikt",
   // This is the vet and emergency info you set for your account. You can change it just for {{name}} if it's different.
   "emergencyInfo.usingAccountInfoBody": "Dit is de dierenarts- en noodinformatie die je voor je account hebt ingesteld. Als het voor {{name}} anders is, kun je het alleen voor deze vogel aanpassen.",
+  // + Add
+  "emergencySetup.add": "+ Toevoegen",
+  // ASPCA Animal Poison Control
+  "emergencySetup.aspca": "ASPCA Animal Poison Control",
+  // Avian vet
+  "emergencySetup.avianVet": "Vogeldierenarts",
+  // Backup contact
+  "emergencySetup.backupContact": "Reservecontact",
+  // Where is your pet carrier?
+  "emergencySetup.carrier": "Waar staat je reismand?",
+  // Changes here apply to {{name}} only.
+  "emergencySetup.differentBody": "Wijzigingen hier gelden alleen voor {{name}}.",
+  // Emergency vet
+  "emergencySetup.emergencyVet": "Spoeddierenarts",
+  // Where is your first-aid kit?
+  "emergencySetup.firstAid": "Waar ligt je EHBO-set?",
+  // Make these different for {{name}}
+  "emergencySetup.makeDifferent": "Maak deze anders voor {{name}}",
+  // Add your phone number and your avian vet's phone to finish.
+  "emergencySetup.missingBoth": "Vul je telefoonnummer en dat van je vogeldierenarts in om af te ronden.",
+  // Add your phone number to finish.
+  "emergencySetup.missingOwner": "Vul je telefoonnummer in om af te ronden.",
+  // Add your avian vet's phone to finish.
+  "emergencySetup.missingVet": "Vul het telefoonnummer van je vogeldierenarts in om af te ronden.",
+  // Name
+  "emergencySetup.name": "Naam",
+  // You'll need it before you can create a pet sit.
+  "emergencySetup.neededForSit": "Je hebt het nodig voordat je een oppasperiode kunt maken.",
+  // You'll need them before you can create a pet sit.
+  "emergencySetup.neededForSitBoth": "Je hebt ze nodig voordat je een oppasperiode kunt maken.",
+  // Pick from contacts
+  "emergencySetup.pickFromContacts": "Kies uit contacten",
+  // Poison control
+  "emergencySetup.poisonControl": "Vergiftigingen Informatie Centrum",
+  // Save contacts
+  "emergencySetup.saveContacts": "Contacten opslaan",
+  // Saved for every bird
+  "emergencySetup.sharedTitle": "Opgeslagen voor al je vogels",
+  // Vet spending limit without calling you
+  "emergencySetup.spending": "Bedrag dat de dierenarts mag uitgeven zonder jou te bellen",
+  // Transport & spending
+  "emergencySetup.transport": "Vervoer & kosten",
+  // Use the shared contacts instead
+  "emergencySetup.useShared": "Gebruik in plaats daarvan de gedeelde contacten",
+  // Use your shared emergency contacts for {{name}}? The contacts that are different for {{name}} will be removed.
+  "emergencySetup.useSharedConfirm": "De gedeelde noodcontacten gebruiken voor {{name}}? De contacten die anders zijn voor {{name}} worden verwijderd.",
+  // Vets
+  "emergencySetup.vets": "Dierenartsen",
+  // You
+  "emergencySetup.you": "Jij",
+  // Your phone
+  "emergencySetup.yourPhone": "Je telefoon",
   // Coming soon
   "explore.comingSoon": "Binnenkort",
   // Latest from the blog

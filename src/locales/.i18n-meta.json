@@ -1809,6 +1809,9 @@
     "birdSetup.instr.day": {
       "stamp": "5a295ec4872f09cd"
     },
+    "birdSetup.instr.emergencyContacts": {
+      "stamp": "c12be2d27fd112c6"
+    },
     "birdSetup.instr.food": {
       "stamp": "9b89c93ba8fdab76"
     },
@@ -2306,9 +2309,6 @@
     },
     "birdSetup.thatPhotoSABit": {
       "stamp": "f2e0f11f5af98cca"
-    },
-    "birdSetup.theStuffYouHopeNo": {
-      "stamp": "3203734049bcca72"
     },
     "birdSetup.thisIsWashingTheBowl": {
       "stamp": "f29e8f28423acce4"
@@ -4055,6 +4055,84 @@
     },
     "emergencyInfo.usingAccountInfoBody": {
       "stamp": "bcc0b18db182d895"
+    },
+    "emergencySetup.add": {
+      "stamp": "8e40545cd3bef308"
+    },
+    "emergencySetup.aspca": {
+      "stamp": "571ae6c709b670d2"
+    },
+    "emergencySetup.avianVet": {
+      "stamp": "0168857d0c5b19a0"
+    },
+    "emergencySetup.backupContact": {
+      "stamp": "de60ad15d37d5edb"
+    },
+    "emergencySetup.carrier": {
+      "stamp": "89190f47820ad6e0"
+    },
+    "emergencySetup.differentBody": {
+      "stamp": "481331a5109d73e1"
+    },
+    "emergencySetup.emergencyVet": {
+      "stamp": "081619f31f33130a"
+    },
+    "emergencySetup.firstAid": {
+      "stamp": "32c284691d1e027f"
+    },
+    "emergencySetup.makeDifferent": {
+      "stamp": "cb44f99767767564"
+    },
+    "emergencySetup.missingBoth": {
+      "stamp": "31b176f7fc2e993b"
+    },
+    "emergencySetup.missingOwner": {
+      "stamp": "96d909947ae1218a"
+    },
+    "emergencySetup.missingVet": {
+      "stamp": "29c24a976ff95841"
+    },
+    "emergencySetup.name": {
+      "stamp": "007f731cba24111c"
+    },
+    "emergencySetup.neededForSit": {
+      "stamp": "85db18429f1cf1e0"
+    },
+    "emergencySetup.neededForSitBoth": {
+      "stamp": "214a429b665876f7"
+    },
+    "emergencySetup.pickFromContacts": {
+      "stamp": "4432d2c7aa5716a2"
+    },
+    "emergencySetup.poisonControl": {
+      "stamp": "a620c30255a26584"
+    },
+    "emergencySetup.saveContacts": {
+      "stamp": "e4db5a6df2964003"
+    },
+    "emergencySetup.sharedTitle": {
+      "stamp": "e7626554cdd66a95"
+    },
+    "emergencySetup.spending": {
+      "stamp": "d7ee52cf3235eca4"
+    },
+    "emergencySetup.transport": {
+      "stamp": "8e8ffe8c49fb23a6"
+    },
+    "emergencySetup.useShared": {
+      "stamp": "d396ffbd7197b752"
+    },
+    "emergencySetup.useSharedConfirm": {
+      "stamp": "150a254f980eacc6"
+    },
+    "emergencySetup.vets": {
+      "stamp": "9e1065e7f5ff7fd6"
+    },
+    "emergencySetup.you": {
+      "stamp": "082a30d4026bdff4"
+    },
+    "emergencySetup.yourPhone": {
+      "stamp": "6828130146b80ce2"
     },
     "explore.comingSoon": {
       "stamp": "14dc4387e91950ca"
