@@ -4,6 +4,7 @@ import {
   Link,
   createRootRouteWithContext,
   useRouter,
+  useRouterState,
   HeadContent,
   Scripts,
   type ErrorComponentProps,
@@ -30,6 +31,8 @@ import {
 } from "@/lib/sw-register";
 import { captureFirstTouch } from "@/lib/attribution";
 import { attachNativePushHandlers, syncNativePushToken } from "@/lib/pushNative";
+import { attachAppLinkHandler } from "@/lib/appLinkNative";
+import { smartAppBannerContent } from "@/lib/appLinks";
 import { savePushToken } from "@/lib/push.functions";
 // Side-effect import: registers the beforeinstallprompt/appinstalled listeners
 // at app start so the native install prompt is captured (it fires once, early).
@@ -180,9 +183,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 });
 
 function RootShell({ children }: { children: ReactNode }) {
+  // iOS Safari's Smart App Banner on app screens (see appLinks.ts). Rendered
+  // here rather than in head() because it carries the current URL, and Safari
+  // reads it from the first page load, which is the server render.
+  const location = useRouterState({ select: (s) => s.location });
+  const banner = smartAppBannerContent(location.pathname, location.searchStr);
   return (
     <html lang="en">
-      <head><HeadContent /></head>
+      <head>
+        <HeadContent />
+        {banner && <meta name="apple-itunes-app" content={banner} />}
+      </head>
       <body>{children}<Scripts /></body>
     </html>
   );
@@ -255,6 +266,9 @@ function RootComponent() {
     // Capacitor replays the event after launch, so a listener attached later
     // (e.g. only on the settings screen) would miss it entirely.
     void attachNativePushHandlers((url: string) => router.navigate({ href: url } as never));
+    // Native shell only: a tapped email or web link that opened the app (see
+    // appLinks.ts) lands on its screen. Attached at boot for the same reason.
+    void attachAppLinkHandler((href: string) => router.navigate({ href } as never));
     // Native shell only: keep the server's device token current (see
     // syncNativePushToken). Needs a session, since the row is per account.
     const syncPushToken = () =>

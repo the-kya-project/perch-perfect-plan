@@ -27,6 +27,55 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- App Links: these links open the app instead of the browser. The
+                 paths MUST match APP_LINK_PREFIXES in src/lib/appLinks.ts
+                 (scripts/app-links.test.ts checks). Verified against
+                 /.well-known/assetlinks.json on each host. On Android 11 and
+                 older, every autoVerify host must verify or none do, so
+                 links.thekyaproject.com has to be live before this ships. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="app.thekyaproject.com" />
+                <data android:path="/" />
+                <data android:path="/dashboard" />
+                <data android:pathPrefix="/dashboard/" />
+                <data android:path="/today" />
+                <data android:pathPrefix="/today/" />
+                <data android:path="/check" />
+                <data android:pathPrefix="/check/" />
+                <data android:path="/explore" />
+                <data android:pathPrefix="/explore/" />
+                <data android:path="/household" />
+                <data android:pathPrefix="/household/" />
+                <data android:path="/household-permissions" />
+                <data android:pathPrefix="/household-permissions/" />
+                <data android:path="/account" />
+                <data android:pathPrefix="/account/" />
+                <data android:path="/notifications" />
+                <data android:pathPrefix="/notifications/" />
+                <data android:path="/past-birds" />
+                <data android:pathPrefix="/past-birds/" />
+                <data android:path="/remembering" />
+                <data android:pathPrefix="/remembering/" />
+                <data android:path="/scans" />
+                <data android:pathPrefix="/scans/" />
+                <data android:path="/sits" />
+                <data android:pathPrefix="/sits/" />
+                <data android:path="/birds" />
+                <data android:pathPrefix="/birds/" />
+                <data android:path="/covering" />
+                <data android:pathPrefix="/covering/" />
+            </intent-filter>
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="links.thekyaproject.com" />
+                <data android:pathPrefix="/r/" />
+            </intent-filter>
+
             <!-- The kya:// OAuth deep-link filter was removed. That flow is gone:
                  native sign-in goes through @capgo/capacitor-social-login and
                  supabase.auth.signInWithIdToken(), and the only mention of the

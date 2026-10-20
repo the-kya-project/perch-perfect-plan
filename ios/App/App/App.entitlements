@@ -12,5 +12,14 @@
 	     the App ID and the provisioning profile regenerated, or signing fails. -->
 	<key>aps-environment</key>
 	<string>development</string>
+	<!-- Universal Links: links on these hosts open the app (see
+	     src/lib/appLinks.ts for which paths). REQUIRES the Associated Domains
+	     capability on the App ID and a regenerated provisioning profile, or
+	     signing fails. -->
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:app.thekyaproject.com</string>
+		<string>applinks:links.thekyaproject.com</string>
+	</array>
 </dict>
 </plist>

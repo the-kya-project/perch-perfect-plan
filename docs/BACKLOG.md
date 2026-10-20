@@ -47,36 +47,49 @@ one web-push row, one APNs row. The server can't tell they're the same device.
 ## Native app
 
 ### Deep links: open email links in the native app
-Status: planned for a future native build, not scheduled.
+Status: code built (feat/universal-links); waits on the setup below and a store build.
 
-Email links open in the browser today. Opening them in the installed app needs
-association files on both platforms plus a handler in the shell.
+What's in the code (the list of paths lives in `src/lib/appLinks.ts`):
+- `/.well-known/apple-app-site-association` and `/.well-known/assetlinks.json`, served by
+  the app. Host-aware: app.thekyaproject.com lists the app's screens; links.thekyaproject.com
+  lists only `/r/*`.
+- iOS Associated Domains entitlement and Android `autoVerify` intent filters for both hosts.
+  `npm run test:app-links` fails if the manifest drifts from the list.
+- `attachAppLinkHandler` (`src/lib/appLinkNative.ts`) routes `appUrlOpen` and the cold-start
+  launch URL. Signed out → the existing sign-in return path takes over.
+- Sign-in (`/auth`, `/welcome`), `/invite`, `/handoff`, anything with `?code=`, the sitter
+  view, `/r/` on app., unsubscribe and the store redirects stay in the browser. PKCE can only
+  finish a sign-in in the browser that started it.
+- Tracked email links: iOS won't open the app on a same-domain redirect, so app-screen links
+  go through `EMAIL_CLICK_ORIGIN` (https://links.thekyaproject.com). The app loads
+  app.thekyaproject.com/r/<token> itself, so the click is still logged.
+- `server.appendUserAgent: 'KyaApp'` rides along (below).
 
-- **iOS Universal Links:** serve `/.well-known/apple-app-site-association` from
-  app.thekyaproject.com; add the Associated Domains entitlement
-  `applinks:app.thekyaproject.com` (app ID 6795267221).
-- **Android App Links:** serve `/.well-known/assetlinks.json` with the **Play App Signing**
-  SHA-256 (not the upload key) for `com.thekyaproject.app`; add an `autoVerify` intent filter.
-- Handle `appUrlOpen` from `@capacitor/app` and route to the incoming path, including cold
-  start and the signed-out case (return to the path after sign-in).
-- Exclude paths that should stay in the browser: sitter token links, and the unsubscribe page.
-- Check Brevo click tracking — tracked redirect links bypass Universal Links.
-- Optional: Apple Smart App Banner on the website.
-- Needs a store rebuild for both platforms. Test in Apple Mail and the Gmail app, app
-  installed vs not, signed in vs out.
+Still to do, in order:
+1. Play Console → App integrity → App signing: copy the **app signing** SHA-256 into Vercel
+   env `ANDROID_APP_SIGNING_SHA256` (production), then redeploy.
+2. Apple Developer → Identifiers → com.thekyaproject.app: enable **Associated Domains**,
+   regenerate the provisioning profiles.
+3. Add `links.thekyaproject.com` to the Vercel project (DNS CNAME to Vercel). Check that
+   https://links.thekyaproject.com/.well-known/assetlinks.json returns 200 JSON.
+4. New store builds (`npx cap sync android` before `./gradlew bundleRelease`, as always).
+   Android 11 and older verify all hosts or none, so step 3 must be live first.
+5. Once the builds are live, set `EMAIL_CLICK_ORIGIN=https://links.thekyaproject.com` in Vercel.
+6. Brevo's own click tracking wraps our links in its redirect, which defeats Universal Links.
+   Turn it off for transactional sends (our tracker replaces it).
+7. Test in Apple Mail and the Gmail app, app installed vs not, signed in vs out. Gmail's
+   in-app browser may still open the web; that's Gmail's choice, not ours.
+
+Apple Smart App Banner: live on app screens (`smartAppBannerContent`), so people who land in Safari get an "Open" bar that goes to the same screen.
 
 ### `appendUserAgent: 'KyaApp'` so native requests are identifiable
-Status: same future native build as the deep links above.
+Status: set in `capacitor.config.ts` on feat/universal-links; takes effect with the same
+store build as the deep links above.
 
-The shell sets neither `appendUserAgent` nor `overrideUserAgent`, and it runs in
-remote-URL mode against app.thekyaproject.com — so a request from the installed app is
-indistinguishable from a mobile browser. That is why the app-launch email could not be
-targeted properly: iOS could be inferred from a Sign in with Apple identity (that button
-only renders inside the app), and Android left no trace at all.
+The shell ran in remote-URL mode against app.thekyaproject.com with no user-agent marker, so
+a request from the installed app was indistinguishable from a mobile browser. That is why the
+app-launch email could not be targeted properly.
 
-- Set `server.appendUserAgent: 'KyaApp'` in `capacitor.config.ts`. Every request from the
-  app then carries a marker, in Vercel logs and in anything reading `user-agent`.
-- Needs a store rebuild on both platforms, so it rides along with the deep-links work.
 - Only helps going forward; it cannot say anything about installs that already exist.
 - Complementary to `last_native_app_seen_at` on `profiles`, which is a web-deploy change
   and does not wait for a build.
