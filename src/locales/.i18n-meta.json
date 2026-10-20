@@ -1608,26 +1608,17 @@
     "birdSetup.describeTheOtherDiet": {
       "stamp": "7518cfa2fca94fe3"
     },
-    "birdSetup.eGACatAnd": {
-      "stamp": "c56ff6b217e540bd"
-    },
     "birdSetup.eGMetacam01ml": {
       "stamp": "189ca972540fbe4d"
     },
     "birdSetup.eGMildFeatherPlucking": {
       "stamp": "3ec2ddd0533c4a32"
     },
-    "birdSetup.eGNoAccessTo": {
-      "stamp": "4494ec287e54381f"
-    },
     "birdSetup.eGOnlyMeAnd": {
       "stamp": "43b32e2cd82f8351"
     },
     "birdSetup.eGPantryTopShelf": {
       "stamp": "90a9929ca21282e0"
-    },
-    "birdSetup.eGWipeTheCage": {
-      "stamp": "1cdad74abfd485f0"
     },
     "birdSetup.fearsTriggers": {
       "stamp": "da86a52df9cdf909"
@@ -1827,8 +1818,8 @@
     "birdSetup.instr.personalityOptional": {
       "stamp": "1bf1dccc785e00c5"
     },
-    "birdSetup.instr.reminders": {
-      "stamp": "cd9a79ec0a97558e"
+    "birdSetup.instr.remindersHome": {
+      "stamp": "6b991bf8b47c837e"
     },
     "birdSetup.instr.review": {
       "stamp": "bf0a387c9e79aa13"
@@ -2199,6 +2190,9 @@
     "birdSetup.progressSaved": {
       "stamp": "3aa63b3b80538afe"
     },
+    "birdSetup.reminders.addAnother": {
+      "stamp": "59e058c26a6cc08f"
+    },
     "birdSetup.reminders.differentBody": {
       "stamp": "481331a5109d73e1"
     },
@@ -2208,11 +2202,32 @@
     "birdSetup.reminders.makeDifferent": {
       "stamp": "cb44f99767767564"
     },
+    "birdSetup.reminders.neverUse": {
+      "stamp": "6444ec17b5509eab"
+    },
+    "birdSetup.reminders.neverUseLabel": {
+      "stamp": "814364e367a995a5"
+    },
+    "birdSetup.reminders.offLimitsPlaceholder": {
+      "stamp": "02ca0d18937d0a88"
+    },
+    "birdSetup.reminders.petsPlaceholder": {
+      "stamp": "a66c2727900cf619"
+    },
     "birdSetup.reminders.sharedBody": {
       "stamp": "422f809af85eb3a8"
     },
     "birdSetup.reminders.sharedTitle": {
       "stamp": "7303a0316c349404"
+    },
+    "birdSetup.reminders.useInstead": {
+      "stamp": "3f1173cce06a09f8"
+    },
+    "birdSetup.reminders.useInsteadLabel": {
+      "stamp": "fdd51716a4b8b234"
+    },
+    "birdSetup.reminders.useInsteadPlaceholder": {
+      "stamp": "21e9a053fdbfadf1"
     },
     "birdSetup.reminders.useShared": {
       "stamp": "cc5b1906a584c7e1"
@@ -7350,8 +7365,14 @@
     "setupFrame.pillDetails": {
       "stamp": "67a6143d0380d26d"
     },
+    "setupFrame.pillEmergency": {
+      "stamp": "13dc8bdb952a70e3"
+    },
     "setupFrame.pillPage": {
       "stamp": "3ec62addfed153c8"
+    },
+    "setupFrame.pillReminders": {
+      "stamp": "591dc7e3ea0c8ffa"
     },
     "setupFrame.pillTips": {
       "stamp": "b5599f17ff594655"
@@ -7388,6 +7409,12 @@
     },
     "setupShell.saving": {
       "stamp": "0b998d1b1ad7ec9e"
+    },
+    "setupShell.sharedByEveryBird": {
+      "stamp": "4489f6b12953a08d"
+    },
+    "setupShell.skipForNow": {
+      "stamp": "d2ca388c9178f86a"
     },
     "setupShell.stepOf": {
       "stamp": "c35676ac4c220cb5"

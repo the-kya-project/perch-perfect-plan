@@ -81,6 +81,23 @@ export function SectionCard({ title, helper, tag, emphasis, children }: {
   );
 }
 
+/** A white card led by a round icon tile (the "Your home" screens, on a light green body). */
+export function TileCard({ icon, tile = "lime", title, helper, children }: {
+  icon: ReactNode; tile?: "lime" | "teal" | "amber"; title: ReactNode; helper?: ReactNode; children?: ReactNode;
+}) {
+  const tileStyle = tile === "teal" ? { background: "#9bcab8", color: S.forest } : tile === "amber" ? { background: S.amberBg, color: S.amberText } : { background: S.lime, color: S.forest };
+  return (
+    <section className="flex flex-col gap-[14px] rounded-[20px] bg-white p-4" style={{ color: S.forest }}>
+      <div className="flex items-center gap-3">
+        <span className="grid size-11 shrink-0 place-items-center rounded-full" style={tileStyle} aria-hidden="true">{icon}</span>
+        <SectionHeading>{title}</SectionHeading>
+      </div>
+      {helper && <Helper>{helper}</Helper>}
+      {children}
+    </section>
+  );
+}
+
 export function SectionHeading({ children }: { children: ReactNode }) {
   return <h2 className="m-0 text-[21px] font-[700] leading-[1.2]" style={{ fontFamily: SERIF }}>{children}</h2>;
 }
@@ -313,8 +330,10 @@ export function TextBox({ id, value, onChange, placeholder, ariaLabel }: { id?: 
 
 // ---------- Editable list ----------
 
-export function EditableList({ items, onRemove, onAdd, addLabel, renderItem }: {
+export function EditableList({ items, onRemove, onAdd, addLabel, renderItem, tone = "plain" }: {
   items: string[]; onRemove: (index: number) => void; onAdd?: () => void; addLabel?: string; renderItem?: (item: string, index: number) => ReactNode;
+  /** "warn": amber rows with bold amber text, for things to avoid. */
+  tone?: "plain" | "warn";
 }) {
   const { t } = useTranslation();
   return (
@@ -322,14 +341,14 @@ export function EditableList({ items, onRemove, onAdd, addLabel, renderItem }: {
       {items.length > 0 && (
         <ul className="m-0 flex list-none flex-col gap-2 p-0">
           {items.map((item, i) => (
-            <li key={`${item}-${i}`} className="flex min-h-12 items-center gap-2 rounded-[14px] bg-white pl-4" style={{ color: S.forest }}>
-              <span className="min-w-0 flex-1 py-2 text-[16px]">{renderItem ? renderItem(item, i) : item}</span>
+            <li key={`${item}-${i}`} className="flex min-h-12 items-center gap-2 rounded-[14px] pl-4" style={tone === "warn" ? { background: S.amberBg, color: S.amberText } : { background: "#fff", color: S.forest }}>
+              <span className={`min-w-0 flex-1 py-2 text-[16px] ${tone === "warn" ? "font-[700]" : ""}`}>{renderItem ? renderItem(item, i) : item}</span>
               <button
                 type="button"
                 onClick={() => onRemove(i)}
                 aria-label={t("setupUi.removeItem", "Remove {{item}}", { item })}
                 className="grid size-11 shrink-0 place-items-center rounded-full"
-                style={{ color: S.forest }}
+                style={{ color: tone === "warn" ? S.amberText : S.forest }}
               >
                 <X className="size-5" aria-hidden="true" />
               </button>

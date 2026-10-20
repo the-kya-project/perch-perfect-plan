@@ -5,7 +5,7 @@ import { OwnerTabBar } from "@/components/OwnerTabBar";
 
 export { SETUP_STEPS, TOTAL_STEPS, NUMBERED_STEPS, setupStepNumber, type SetupStepKey } from "@/lib/setupSteps";
 import { SETUP_STEPS, setupStepNumber, type SetupStepKey } from "@/lib/setupSteps";
-import { SetupFrame, type SetupPill } from "@/components/setup/SetupFrame";
+import { SetupFrame, type SetupPill, type HomePill } from "@/components/setup/SetupFrame";
 import { SetupPrimaryButton, SetupTextButton } from "@/components/setup/controls";
 
 /** Display title for a setup step (SETUP_STEPS stays the English source). */
@@ -53,6 +53,8 @@ export function SetupShell({
   nextDisabled,
   footerNote,
   tinted,
+  homeSubline,
+  onSkip,
   saving,
   backDisabled,
   hideFooter,
@@ -82,6 +84,10 @@ export function SetupShell({
   footerNote?: string | null;
   /** Light green body for screens made of white cards. */
   tinted?: boolean;
+  /** "Your home" screens: the line under "Your home" (default "Shared by every bird"). */
+  homeSubline?: string;
+  /** Shows "Skip for now" in place of "Save & exit". */
+  onSkip?: () => void;
   saving?: boolean;
   backDisabled?: boolean;
   hideFooter?: boolean;
@@ -100,6 +106,7 @@ export function SetupShell({
   // Callers pass the English SETUP_STEPS title; show its translation.
   const displayTitle = current && title === current.title ? setupStepTitle(t, current.key) : title;
   const pill = current ? STEP_PILL[current.key] ?? null : null;
+  const homePill: HomePill | null = current?.key === "environment" ? "reminders" : current?.key === "emergency" ? "emergency" : null;
   const stepLabel = eyebrow
     ?? (current?.key === "review"
       ? t("setupShell.lastLook", "Last look")
@@ -115,7 +122,9 @@ export function SetupShell({
     <>
     {footerNote && <p role="status" className="m-0 mb-2.5 text-center text-[14px] text-[#3d4f45]">{footerNote}</p>}
     <div className="flex items-center gap-3">
-      {onSaveAndExit && (
+      {onSkip ? (
+        <SetupTextButton onClick={onSkip} disabled={saving}>{t("setupShell.skipForNow", "Skip for now")}</SetupTextButton>
+      ) : onSaveAndExit && (
         <SetupTextButton onClick={onSaveAndExit} disabled={saving}>{t("setupShell.saveAndExit", "Save & exit")}</SetupTextButton>
       )}
       <div className="min-w-0 flex-1">
@@ -141,6 +150,11 @@ export function SetupShell({
         onPill={onNavigateStep ? (p) => { const key = PILL_STEP[p]; if (key) onNavigateStep(setupStepNumber(key)); } : undefined}
         footer={footer}
         tinted={tinted}
+        home={homePill ? {
+          current: homePill,
+          subline: homeSubline ?? t("setupShell.sharedByEveryBird", "Shared by every bird"),
+          onPill: onNavigateStep ? (p) => onNavigateStep(setupStepNumber(p === "reminders" ? "environment" : "emergency")) : undefined,
+        } : undefined}
         // The owner nav stays under the footer: leaving through it keeps the
         // current step (autosave flushes on unmount).
         belowFooter={<OwnerTabBar embedded />}
