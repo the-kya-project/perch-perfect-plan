@@ -160,6 +160,7 @@ as $$
 begin
   if p_target is distinct from auth.uid()
      and coalesce(auth.jwt() ->> 'role', '') <> 'service_role'
+     and not (auth.jwt() is null and session_user in ('postgres', 'supabase_admin'))
      and not private.is_admin(auth.uid()) then
     raise exception 'not allowed' using errcode = '42501';
   end if;
@@ -258,9 +259,13 @@ security invoker
 set search_path = ''
 as $$
 begin
+  -- The owner exception applies only with no request JWT at all (dashboard
+  -- SQL editor, migrations). Any request context, including an editor
+  -- session impersonating a user via request.jwt.claims, is judged by its
+  -- claims like a real API call.
   if private.is_admin(auth.uid())
      or coalesce(auth.jwt() ->> 'role', '') = 'service_role'
-     or session_user in ('postgres', 'supabase_admin') then
+     or (auth.jwt() is null and session_user in ('postgres', 'supabase_admin')) then
     return;
   end if;
   raise exception 'admin only' using errcode = '42501';
