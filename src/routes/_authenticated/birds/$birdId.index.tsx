@@ -91,8 +91,7 @@ function BirdRecordHome() {
     <KyaPage>
       <div className="mx-auto max-w-md">
         <BirdRecordHero birdId={birdId} />
-        {/* The summary card overlaps the bottom of the hero a little. */}
-        <main className="relative z-[1] -mt-8 flex flex-col gap-4 px-4 pb-6">
+        <main className="flex flex-col gap-4 px-4 pb-6 pt-4">
           <BirdRecordBody birdId={birdId} />
           <MemberContextBanner birdId={birdId} />
         </main>
@@ -148,8 +147,9 @@ function BirdNoAccess() {
   );
 }
 
-// Full-width hero: the bird's photo with a dark forest fade at the bottom,
-// back and photo buttons over it, and the name with species · sex · age.
+// Hero card: the bird's photo in a rounded card (16px gutters, so the framing
+// matches what the owner set and heads aren't cut off), a dark forest fade at
+// the bottom, back and photo buttons over it, and the name with species · sex · age.
 function BirdRecordHero({ birdId }: { birdId: string }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -177,7 +177,9 @@ function BirdRecordHero({ birdId }: { birdId: string }) {
 
   return (
     <>
-      <div className="relative mx-[calc(50%-50vw)] h-[420px] overflow-hidden" style={{ background: K.forest }}>
+      {/* Status-bar-safe top padding so the card never clips. */}
+      <div className="px-4 pt-[max(env(safe-area-inset-top),14px)]">
+      <div className="relative h-[380px] w-full overflow-hidden rounded-[22px]" style={{ background: K.forest }}>
         {photo?.url ? (
           <BirdPhotoCrop url={photo.url} original={photo.original} position={bird?.photo_position} alt={name} eager />
         ) : (
@@ -186,9 +188,9 @@ function BirdRecordHero({ birdId }: { birdId: string }) {
             <img src="/brand/parrot-lime.svg" alt="" aria-hidden className="w-20 opacity-25" />
           </div>
         )}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[65%]" style={{ background: "linear-gradient(to top, rgba(26,61,46,0.97) 20%, rgba(26,61,46,0))" }} />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[60%]" style={{ background: "linear-gradient(to top, rgba(26,61,46,0.96), transparent)" }} />
 
-        <div className="absolute inset-x-0 top-0 mx-auto flex max-w-md items-center justify-between px-4 pt-[max(env(safe-area-inset-top),14px)]">
+        <div className="absolute inset-x-0 top-[14px] flex items-center justify-between px-[14px]">
           <HeroCircleBtn label={t("birdRecord.back", "Back")} onPress={goBack}>
             <ArrowLeft className="size-5" />
           </HeroCircleBtn>
@@ -201,11 +203,12 @@ function BirdRecordHero({ birdId }: { birdId: string }) {
           )}
         </div>
 
-        <div className="absolute inset-x-0 bottom-0 mx-auto max-w-md px-5 pb-12">
+        <div className="absolute inset-x-0 bottom-0 px-5 pb-5">
           {bird?.is_foster && <p className="m-0 mb-1 text-[14px]" style={{ color: K.teal }}>{t("birdRecord.inYourCareText", "In your care")}</p>}
           <KyaHeading as="h1" size={38} className="text-white">{name}</KyaHeading>
           {identity && <p className="m-0 mt-1.5 text-[15px] text-white/90">{identity}</p>}
         </div>
+      </div>
       </div>
 
       {photoSheet && bird && (
