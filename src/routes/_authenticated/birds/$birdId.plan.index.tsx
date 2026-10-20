@@ -163,7 +163,7 @@ function CarePlanOverview() {
   return (
     <div className="min-h-screen pb-nav" style={{ background: S.card }}>
       <div className="mx-auto max-w-md">
-        <header className="rounded-b-[26px] px-4 pb-6 pt-[max(env(safe-area-inset-top),14px)] text-white" style={{ background: S.forest }}>
+        <header className="rounded-b-[26px] px-4 pb-6 pt-[calc(env(safe-area-inset-top)+14px)] text-white" style={{ background: S.forest }}>
           <div className="flex items-center justify-between gap-3">
             <button
               type="button"
