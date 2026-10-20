@@ -106,11 +106,15 @@ function HealthTab() {
                   const w = (b.weight_entries ?? [])[0] as { grams: number; measured_at: string } | undefined;
                   const watch = latest && !latest.resolvedAt ? thingsToWatch(latest) : 0;
                   const checkedToday = latest && latest.at && localDateISO(new Date(latest.at)) === today;
+                  const allNormal = !!latest && thingsToWatch(latest) === 0;
+                  const checkedOn = latest ? monthDay(localDateISO(new Date(latest.at))) : "";
                   const status = !latest
                     ? (histLoading || histError ? "" : t("healthTab.notChecked", "Not checked yet"))
                     : checkedToday
-                      ? (thingsToWatch(latest) === 0 ? t("healthTab.checkedTodayNormal", "Checked today · All normal") : t("healthTab.checkedToday", "Checked today"))
-                      : t("healthTab.checkedOn", "Checked {{date}}", { date: monthDay(localDateISO(new Date(latest.at))) });
+                      ? (allNormal ? t("healthTab.checkedTodayNormal", "Checked today · All normal") : t("healthTab.checkedToday", "Checked today"))
+                      : allNormal
+                        ? t("healthTab.checkedOnNormal", "Checked {{date}} · All normal", { date: checkedOn })
+                        : t("healthTab.checkedOn", "Checked {{date}}", { date: checkedOn });
                   const notWeighed = w ? daysSince(w.measured_at) : null;
                   const photo = resolvePhoto(b.photo_url);
                   return (

@@ -113,8 +113,8 @@ function HealthHistoryPage() {
             })}
           </div>
 
-          {/* Bird + type */}
-          <div className="grid grid-cols-2 gap-2">
+          {/* Bird + type: each pill as wide as its current choice. */}
+          <div className="flex flex-wrap gap-2">
             <PillSelect
               label={t("healthHistory.birdLabel", "Bird")}
               value={search.bird ?? ""}
@@ -126,7 +126,7 @@ function HealthHistoryPage() {
               value={type}
               onChange={(v) => set({ type: v === "all" ? undefined : (v as EntryType) })}
               options={[
-                { value: "all", label: t("healthHistory.typeAll", "Checks and weights") },
+                { value: "all", label: t("healthHistory.typeEverything", "Everything") },
                 { value: "checks", label: t("healthHistory.typeChecks", "Daily checks") },
                 { value: "weights", label: t("healthHistory.typeWeights", "Weights") },
               ]}
@@ -174,20 +174,27 @@ function HealthHistoryPage() {
   );
 }
 
-/** A white 44px pill with a down chevron over a native select. */
+/** A white 44px pill with a down chevron, as wide as the chosen option. The
+ *  native select sits invisibly on top (it still opens the system picker and
+ *  takes focus); the pill underneath shows the current label, so it sizes to
+ *  that text instead of the longest option. */
 function PillSelect({ label, value, onChange, options }: { label: string; value: string; onChange: (v: string) => void; options: { value: string; label: string }[] }) {
+  const current = options.find((o) => o.value === value)?.label ?? options[0]?.label ?? "";
   return (
-    <label className="relative block">
+    <label
+      className="relative inline-flex min-h-[44px] max-w-full items-center gap-2 rounded-full bg-white py-2 pl-4 pr-3.5 text-[15px] font-[700] focus-within:ring-2"
+      style={{ color: K.forest }}
+    >
       <span className="sr-only">{label}</span>
+      <span className="truncate" aria-hidden="true">{current}</span>
+      <ChevronDown className="size-4 shrink-0" aria-hidden="true" />
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="min-h-[44px] w-full appearance-none truncate rounded-full border-0 bg-white py-2 pl-4 pr-9 text-[15px] font-[700] outline-none focus-visible:ring-2"
-        style={{ color: K.forest }}
+        className="absolute inset-0 h-full w-full cursor-pointer appearance-none rounded-full opacity-0"
       >
         {options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
-      <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 size-4 -translate-y-1/2" style={{ color: K.forest }} aria-hidden="true" />
     </label>
   );
 }

@@ -1,16 +1,16 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { Eye, X } from "lucide-react";
-import { ensureSitterPreviewToken } from "@/lib/sitterPreview";
+import { getSitterPreviewToken } from "@/lib/sitterPreview.functions";
 import { track } from "@/lib/analytics";
 import i18next from "i18next";
 import { useTranslation } from "react-i18next";
 import { friendlyError } from "@/lib/errorMessage";
 
 // "View as sitter" — opens the REAL token-based sitter read-only view in an
-// iframe (the exact same renderer a sitter gets), provisioned via a disposable
-// preview sit. A banner makes the mode obvious with an exit back to the record.
+// iframe (the exact same renderer a sitter gets), with a preview token that is
+// not a sit (sitterPreview.functions.ts). A banner makes the mode obvious with
+// an exit back to the record.
 export const Route = createFileRoute("/_authenticated/birds/$birdId/view-as-sitter")({
   head: () => ({ meta: [{ title: i18next.t("viewAsSitter.metaTitle", "View as sitter — Kya & Co.") }] }),
   component: ViewAsSitter,
@@ -27,11 +27,8 @@ function ViewAsSitter() {
     track("view_as_sitter_opened", {});
     let cancelled = false;
     (async () => {
-      const { data: bird, error: bErr } = await supabase.from("birds").select("owner_id").eq("id", birdId).maybeSingle();
-      if (cancelled) return;
-      if (bErr || !bird?.owner_id) { setError(t("viewAsSitter.loadFailed", "Couldn't load this bird.")); return; }
       try {
-        const tok = await ensureSitterPreviewToken(birdId, bird.owner_id);
+        const { token: tok } = await getSitterPreviewToken({ data: { birdId } });
         if (!cancelled) setToken(tok);
       } catch (e: any) {
         if (!cancelled) setError(friendlyError(e, t("viewAsSitter.buildFailed", "Couldn't build the sitter preview.")));
