@@ -19,6 +19,8 @@ export type HomePill = "reminders" | "emergency";
 export const InSetupFrame = createContext(false);
 /** The header's intro slot, so a step's own intro line can render up there. */
 export const SetupIntroSlot = createContext<HTMLElement | null>(null);
+/** The bottom of the header, so a step can put a panel there ("Start from another bird?"). */
+export const SetupHeaderPanelSlot = createContext<HTMLElement | null>(null);
 
 function pillLabel(t: TFunction, pill: SetupPill): string {
   switch (pill) {
@@ -79,6 +81,7 @@ export function SetupFrame({
   const name = birdName?.trim() || "";
   const currentIndex = current ? SETUP_PILLS.indexOf(current) : SETUP_PILLS.length;
   const [introSlot, setIntroSlot] = useState<HTMLElement | null>(null);
+  const [panelSlot, setPanelSlot] = useState<HTMLElement | null>(null);
 
   // Bring the current pill into view on load, scrolling only the strip.
   const stripRef = useRef<HTMLDivElement>(null);
@@ -196,13 +199,16 @@ export function SetupFrame({
             {intro && <p>{intro}</p>}
           </div>
           {headerPanel && <div className="mt-4">{headerPanel}</div>}
+          <div ref={setPanelSlot} className="empty:hidden [&>*]:mt-5" />
         </div>
       </header>
 
       <main className="relative z-[1] -mt-[26px] flex-1 rounded-t-[26px]" style={{ background: tinted ? S.card : "#fff" }}>
         <div className="mx-auto flex max-w-md flex-col gap-[14px] px-4 py-[22px]">
           <InSetupFrame.Provider value={true}>
-            <SetupIntroSlot.Provider value={introSlot}>{children}</SetupIntroSlot.Provider>
+            <SetupIntroSlot.Provider value={introSlot}>
+              <SetupHeaderPanelSlot.Provider value={panelSlot}>{children}</SetupHeaderPanelSlot.Provider>
+            </SetupIntroSlot.Provider>
           </InSetupFrame.Provider>
         </div>
       </main>

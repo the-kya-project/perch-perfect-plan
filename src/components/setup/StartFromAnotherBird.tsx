@@ -1,15 +1,18 @@
-// "Start from another bird?" — offered at the top of Food and Day during setup
-// when the owner has another bird whose answers can be copied. One tap copies;
-// the card then confirms what was copied and what's left to fill in.
+// "Start from another bird?" — a panel at the bottom of the setup header on Food
+// and Day, when the owner has another bird whose answers can be copied. Pick a
+// bird and copy; a bar then says what was copied, with Undo.
 // What gets copied is decided in src/lib/copyFromBird.ts.
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { FOOD_COLUMNS, hasFoodToCopy, isOwnTask } from "@/lib/copyFromBird";
 import { track } from "@/lib/analytics";
-import { SectionCard, SetupSecondaryButton, Helper } from "./controls";
+import { createPortal } from "react-dom";
+import { Check } from "lucide-react";
+import { S, SERIF, Dropdown, SetupPrimaryButton } from "./controls";
+import { SetupHeaderPanelSlot } from "./SetupFrame";
 
 export type CopyKind = "food" | "day";
 export type CopySource = { birdId: string; name: string; plan: Record<string, any> };
@@ -57,6 +60,14 @@ export function useCopySources(birdId: string, kind: CopyKind, enabled: boolean)
   });
 }
 
+/** What a copy did, so the bar can say so and undo it. */
+export type CopyResult = { count: number; undo: () => Promise<void> | void };
+
+/**
+ * The panel at the bottom of the setup header: pick one of the owner's other
+ * birds, copy, and after copying a bar with what was copied and Undo. "Start
+ * fresh" hides it. Rendered into the header through SetupHeaderPanelSlot.
+ */
 export function StartFromAnotherBird({
   kind,
   birdName,
@@ -66,20 +77,25 @@ export function StartFromAnotherBird({
   kind: CopyKind;
   birdName: string;
   sources: CopySource[];
-  /** Applies the copy. Throwing keeps the card open with an error line. */
-  onCopy: (source: CopySource) => Promise<void> | void;
+  /** Applies the copy. Throwing keeps the panel open with an error line. */
+  onCopy: (source: CopySource) => Promise<CopyResult>;
 }) {
   const { t } = useTranslation();
+  const slot = useContext(SetupHeaderPanelSlot);
+  const [picked, setPicked] = useState<string>(sources[0]?.birdId ?? "");
   const [busy, setBusy] = useState(false);
   const [failed, setFailed] = useState(false);
-  const [copied, setCopied] = useState<string | null>(null);
+  const [hidden, setHidden] = useState(false);
+  const [copied, setCopied] = useState<{ name: string; result: CopyResult } | null>(null);
+  const source = sources.find((s) => s.birdId === picked) ?? sources[0];
 
-  async function copy(source: CopySource) {
+  async function copy() {
+    if (!source) return;
     setBusy(true);
     setFailed(false);
     try {
-      await onCopy(source);
-      setCopied(source.name);
+      const result = await onCopy(source);
+      setCopied({ name: source.name, result });
       track("setup_copy_from_bird", { kind, sources: sources.length });
     } catch {
       setFailed(true);
@@ -88,37 +104,85 @@ export function StartFromAnotherBird({
     }
   }
 
-  if (copied) {
-    return (
-      <SectionCard
-        emphasis
-        title={t("copyFromBird.copiedTitle", "Copied from {{source}}", { source: copied })}
-        helper={kind === "food"
-          ? t("copyFromBird.copiedFood", "Add how much {{name}} eats for each item below, then change anything that's different.", { name: birdName })
-          : t("copyFromBird.copiedDay", "Change anything that's different for {{name}}.", { name: birdName })}
-      />
-    );
+  async function undo() {
+    if (!copied) return;
+    setBusy(true);
+    try {
+      await copied.result.undo();
+      setCopied(null);
+      track("setup_copy_from_bird_undo", { kind });
+    } catch {
+      setFailed(true);
+    } finally {
+      setBusy(false);
+    }
   }
 
-  const one = sources.length === 1 ? sources[0].name : null;
-  const helper = kind === "food"
-    ? (one
-      ? t("copyFromBird.foodHelperOne", "Copy {{source}}'s food, then add how much {{name}} eats.", { source: one, name: birdName })
-      : t("copyFromBird.foodHelperMany", "Copy another bird's food, then add how much {{name}} eats.", { name: birdName }))
-    : (one
-      ? t("copyFromBird.dayHelperOne", "Copy {{source}}'s daily tasks, then adjust them for {{name}}.", { source: one, name: birdName })
-      : t("copyFromBird.dayHelperMany", "Copy another bird's daily tasks, then adjust them for {{name}}.", { name: birdName }));
+  if (hidden || !slot || (!copied && !source)) return null;
 
-  return (
-    <SectionCard title={t("copyFromBird.title", "Start from another bird?")} helper={helper}>
-      <div className="flex flex-col gap-2.5">
-        {sources.map((s) => (
-          <SetupSecondaryButton key={s.birdId} onClick={() => copy(s)} disabled={busy}>
-            {t("copyFromBird.copyFrom", "Copy from {{source}}", { source: s.name })}
-          </SetupSecondaryButton>
-        ))}
+  const panel = copied ? (
+    <div role="status" className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-[18px] px-4 py-3.5 text-[15px] leading-[1.45]" style={{ background: S.forestDeep, color: S.mist }}>
+      <span className="min-w-0 flex-1">
+        {kind === "food"
+          ? t("copyFromBird.copiedFoods", "Copied {{count}} foods from {{source}}. Add {{name}}'s amounts to finish.", { count: copied.result.count, source: copied.name, name: birdName })
+          : t("copyFromBird.copiedTasks", "Copied {{count}} tasks from {{source}}.", { count: copied.result.count, source: copied.name })}
+      </span>
+      <button type="button" onClick={undo} disabled={busy} className="min-h-[44px] font-[700] text-white underline underline-offset-2 disabled:opacity-50">
+        {t("copyFromBird.undo", "Undo")}
+      </button>
+    </div>
+  ) : (
+    <div className="flex flex-col gap-3.5 rounded-[18px] p-4" style={{ background: S.forestDeep }}>
+      <div>
+        <h2 className="m-0 text-[21px] font-[700] leading-[1.2] text-white" style={{ fontFamily: SERIF }}>{t("copyFromBird.title", "Start from another bird?")}</h2>
+        <p className="m-0 mt-1.5 text-[15px] leading-[1.5]" style={{ color: S.mist }}>
+          {kind === "food"
+            ? t("copyFromBird.foodBody", "We'll copy their diet types and foods. Amounts stay blank, since every bird eats a little differently.")
+            : t("copyFromBird.dayBody", "We'll copy the tasks you added. Feeding and medications still come from {{name}}'s own plan.", { name: birdName })}
+        </p>
       </div>
-      {failed && <Helper>{t("copyFromBird.failed", "That didn't copy. Check your connection and try again.")}</Helper>}
-    </SectionCard>
+
+      {sources.length > 1 && sources.length <= 3 && (
+        <div role="group" aria-label={t("copyFromBird.pickBird", "Copy from")} className="flex flex-wrap gap-2">
+          {sources.map((s) => {
+            const on = s.birdId === source?.birdId;
+            return (
+              <button
+                key={s.birdId}
+                type="button"
+                aria-pressed={on}
+                onClick={() => setPicked(s.birdId)}
+                className="inline-flex min-h-[48px] items-center gap-1.5 rounded-full border-2 px-4 text-[15px] font-[700]"
+                style={on ? { background: S.forestDeep, borderColor: S.lime, color: S.lime } : { background: "transparent", borderColor: S.pillLine, color: "#fff" }}
+              >
+                {on && <Check className="size-4" strokeWidth={3} aria-hidden="true" />}
+                {s.name}
+              </button>
+            );
+          })}
+        </div>
+      )}
+      {sources.length > 3 && (
+        <Dropdown
+          ariaLabel={t("copyFromBird.pickBird", "Copy from")}
+          value={source?.birdId ?? ""}
+          onChange={setPicked}
+          options={sources.map((s) => ({ value: s.birdId, label: s.name }))}
+        />
+      )}
+
+      <SetupPrimaryButton onClick={copy} disabled={busy || !source}>
+        {kind === "food"
+          ? t("copyFromBird.copyFoods", "Copy {{source}}'s foods", { source: source?.name })
+          : t("copyFromBird.copyDay", "Copy {{source}}'s day", { source: source?.name })}
+      </SetupPrimaryButton>
+      {failed && <p className="m-0 text-[14px]" style={{ color: S.lime }}>{t("copyFromBird.failed", "That didn't copy. Check your connection and try again.")}</p>}
+      <div className="text-center">
+        <button type="button" onClick={() => setHidden(true)} className="min-h-[44px] text-[15px] font-[600] text-white underline underline-offset-2">
+          {t("copyFromBird.startFresh", "Start fresh")}
+        </button>
+      </div>
+    </div>
   );
+  return createPortal(panel, slot);
 }
