@@ -1140,6 +1140,15 @@
     "birdRecord.concernFlagged": {
       "stamp": "8f9ce45df6c88052"
     },
+    "birdRecord.continueCarePlan": {
+      "stamp": "b46519dd3daa5f4f"
+    },
+    "birdRecord.continueCarePlanIntro": {
+      "stamp": "9f74633c6a8adaf6"
+    },
+    "birdRecord.continueCarePlanTitle": {
+      "stamp": "0ab67dd502d4413b"
+    },
     "birdRecord.couldntCancel": {
       "stamp": "ea4a28d50accbd60"
     },

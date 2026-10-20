@@ -1,5 +1,5 @@
 import { friendlyError } from "@/lib/errorMessage";
-import { basicsDone } from "@/lib/setupProgress";
+import { basicsDone, setupStarted, resumeStep } from "@/lib/setupProgress";
 import { setupStepNumber } from "@/components/SetupShell";
 import { speciesLabel } from "@/lib/speciesLabel";
 import { ageLabel } from "@/components/BirdPickers";
@@ -375,15 +375,33 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
           </section>
         ) : (
         <section className="rounded-[18px] bg-white p-4 ring-1 ring-[var(--line2)]" style={{ boxShadow: "0 6px 14px -8px rgba(40,50,40,.08)" }}>
-          <p className="t-section">{t("birdRecord.setUpCarePlan", "Set up {{name}}'s care plan", { name })}</p>
-          <p className="t-body mt-1 text-[var(--ink2)]">
-            {t("birdRecord.buildCarePlanIntro", "Build {{name}}'s care plan so sitters and household members know exactly what to do. You can skip and set it up later.", { name })}
-          </p>
-          <div className="mt-3">
-            <PrimaryButton tone="lime" icon={<ClipboardList className="size-4" />} onPress={() => navigate({ to: "/birds/$birdId/setup", params: { birdId }, search: { step: 1 } })}>
-              {t("birdRecord.createCarePlan", "Create care plan")}
-            </PrimaryButton>
-          </div>
+          {/* Started but not past Health: pick up where they left off (the
+              header pills reach any earlier step to edit it). */}
+          {setupStarted(bird.setup_step) ? (
+            <>
+              <p className="t-section">{t("birdRecord.continueCarePlanTitle", "Continue {{name}}'s care plan", { name })}</p>
+              <p className="t-body mt-1 text-[var(--ink2)]">
+                {t("birdRecord.continueCarePlanIntro", "Pick up where you left off. What you've added so far is saved.")}
+              </p>
+              <div className="mt-3">
+                <PrimaryButton tone="lime" icon={<ClipboardList className="size-4" />} onPress={() => navigate({ to: "/birds/$birdId/setup", params: { birdId }, search: { step: resumeStep(bird.setup_step) } })}>
+                  {t("birdRecord.continueCarePlan", "Continue care plan")}
+                </PrimaryButton>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="t-section">{t("birdRecord.setUpCarePlan", "Set up {{name}}'s care plan", { name })}</p>
+              <p className="t-body mt-1 text-[var(--ink2)]">
+                {t("birdRecord.buildCarePlanIntro", "Build {{name}}'s care plan so sitters and household members know exactly what to do. You can skip and set it up later.", { name })}
+              </p>
+              <div className="mt-3">
+                <PrimaryButton tone="lime" icon={<ClipboardList className="size-4" />} onPress={() => navigate({ to: "/birds/$birdId/setup", params: { birdId }, search: { step: 1 } })}>
+                  {t("birdRecord.createCarePlan", "Create care plan")}
+                </PrimaryButton>
+              </div>
+            </>
+          )}
         </section>
         )
       )}

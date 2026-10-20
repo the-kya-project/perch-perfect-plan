@@ -763,6 +763,12 @@
   "birdRecord.clipped": "Geknipt",
   // concern flagged
   "birdRecord.concernFlagged": "aandachtspunt gemeld",
+  // Continue care plan
+  "birdRecord.continueCarePlan": "Verzorgingsplan verder invullen",
+  // Pick up where you left off. What you've added so far is saved.
+  "birdRecord.continueCarePlanIntro": "Ga verder waar je gebleven was. Wat je al hebt toegevoegd, is bewaard.",
+  // Continue {{name}}'s care plan
+  "birdRecord.continueCarePlanTitle": "Verder met het verzorgingsplan van {{name}}",
   // Couldn't cancel.
   "birdRecord.couldntCancel": "Kon niet annuleren.",
   // Couldn't delete.
