@@ -114,7 +114,7 @@ export function SetupShell({
   saving?: boolean;
   backDisabled?: boolean;
   hideFooter?: boolean;
-  eyebrow?: string; // replaces "Step N of M" (e.g. on the stop point)
+  eyebrow?: string | null; // replaces "Step N of M"; null hides it (the stop point)
 }) {
   const { t } = useTranslation();
   const exitConfirmTitle = exitConfirmTitleProp ?? t("setupShell.exitConfirmTitle", "Leave this step?");
@@ -183,12 +183,12 @@ export function SetupShell({
               {t("setupShell.allSteps", "All steps")} <ChevronDown className="size-4" />
             </button>
           </div>
-          <p className="t-eyebrow text-[var(--lime)]">
+          {eyebrow !== null && <p className="t-eyebrow text-[var(--lime)]">
             {eyebrow ?? (step > NUMBERED_STEPS
               ? t("setupShell.lastLook", "Last look")
               : t("setupShell.stepOf", "Step {{step}} of {{total}}", { step, total: NUMBERED_STEPS }))}
-          </p>
-          <h1 className="t-hero mt-1 text-white">{displayTitle}</h1>
+          </p>}
+          <h1 className={`t-hero text-white ${eyebrow === null ? "" : "mt-1"}`}>{displayTitle}</h1>
           <div className="mt-3 flex items-center gap-1" aria-hidden="true">
             {SETUP_STEPS.slice(0, NUMBERED_STEPS).map((s, i) => {
               const state = stepState(i, step);

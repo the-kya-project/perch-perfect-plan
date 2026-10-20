@@ -1092,8 +1092,8 @@
     "birdRecord.addSitterDetails": {
       "stamp": "e5c13e0743d10300"
     },
-    "birdRecord.addSitterDetailsIntro": {
-      "stamp": "f8e47bb03c3322ef"
+    "birdRecord.addSitterDetailsBody": {
+      "stamp": "998795e22df67304"
     },
     "birdRecord.adjustCrop": {
       "stamp": "5d330a9b86037c5c"
@@ -2117,9 +2117,6 @@
     },
     "birdSetup.stop.body": {
       "stamp": "f5bc63880fdeeb93"
-    },
-    "birdSetup.stop.eyebrow": {
-      "stamp": "db5b00d129a98fe2"
     },
     "birdSetup.stop.keepGoing": {
       "stamp": "5507dd17ff95fc22"
@@ -6081,8 +6078,8 @@
     "planOverview.headline": {
       "stamp": "9522364224d159e7"
     },
-    "planOverview.hintBehaviorCage": {
-      "stamp": "141df2dcdc65c53d"
+    "planOverview.hintBehaviorCageTime": {
+      "stamp": "b207eaa0835b9e41"
     },
     "planOverview.hintEmergency": {
       "stamp": "fa9b9ac5848441af"
@@ -6093,8 +6090,8 @@
     "planOverview.hintHealth": {
       "stamp": "5efc18b00de8bc0f"
     },
-    "planOverview.hintHomeWide": {
-      "stamp": "19268441ecb2a3fe"
+    "planOverview.hintHomeAreas": {
+      "stamp": "809e73c87192d04e"
     },
     "planOverview.hintRoutine": {
       "stamp": "1a4cbb8ffc601946"

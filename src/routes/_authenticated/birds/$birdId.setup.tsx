@@ -384,7 +384,7 @@ function BirdSetup() {
       <SetupShell
         step={setupStepNumber("health")}
         title={t("birdSetup.stop.title", "The basics are set for {{name}}.", { name: bird.name })}
-        eyebrow={t("birdSetup.stop.eyebrow", "Basics done")}
+        eyebrow={null}
         birdName={bird.name}
         birdSpecies={bird.species}
         onExit={exitToProfile}

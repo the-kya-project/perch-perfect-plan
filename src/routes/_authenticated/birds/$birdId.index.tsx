@@ -365,7 +365,7 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
           <section className="rounded-[18px] bg-white p-4 ring-1 ring-[var(--line2)]" style={{ boxShadow: "0 6px 14px -8px rgba(40,50,40,.08)" }}>
             <p className="t-section">{t("birdRecord.basicsSet", "The basics are set for {{name}}", { name })}</p>
             <p className="t-body mt-1 text-[var(--ink2)]">
-              {t("birdRecord.addSitterDetailsIntro", "Add behavior, tips and {{name}}'s day so a pet sitter has everything they need.", { name })}
+              {t("birdRecord.addSitterDetailsBody", "Add behavior, tips, and {{name}}'s day so a pet sitter has everything they need.", { name })}
             </p>
             <div className="mt-3">
               <PrimaryButton tone="lime" icon={<ClipboardList className="size-4" />} onPress={() => navigate({ to: "/birds/$birdId/setup", params: { birdId }, search: { step: setupStepNumber("personality") } })}>

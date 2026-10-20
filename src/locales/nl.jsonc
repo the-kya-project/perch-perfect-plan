@@ -731,8 +731,8 @@
   "birdPickers.unknown": "Onbekend",
   // Add pet-sitter details
   "birdRecord.addSitterDetails": "Oppasdetails toevoegen",
-  // Add behavior, tips and {{name}}'s day so a pet sitter has everything they need.
-  "birdRecord.addSitterDetailsIntro": "Voeg gedrag, tips en de dag van {{name}} toe, zodat een oppas alles heeft wat nodig is.",
+  // Add behavior, tips, and {{name}}'s day so a pet sitter has everything they need.
+  "birdRecord.addSitterDetailsBody": "Voeg gedrag, tips en de dag van {{name}} toe, zodat een oppas alles heeft wat nodig is.",
   // Adjust crop
   "birdRecord.adjustCrop": "Uitsnede aanpassen",
   // Age
@@ -1415,8 +1415,6 @@
   "birdSetup.startWithTheEssentialsWho": "Begin met de basis — wie je vogel is, en een foto zodat je oppas hem meteen herkent.",
   // Do you want to add more details for a pet sitter? We'll cover behavior and training, tips and tricks for {{name}}'s care, and more.
   "birdSetup.stop.body": "Wil je meer details toevoegen voor een oppas? We behandelen gedrag en training, tips en trucs voor de verzorging van {{name}}, en meer.",
-  // Basics done
-  "birdSetup.stop.eyebrow": "Basis klaar",
   // Keep going
   "birdSetup.stop.keepGoing": "Doorgaan",
   // Set up later
@@ -4057,16 +4055,16 @@
   "planOverview.footerOwner": "Dit ziet iedereen die helpt met {{name}}. Oppassen krijgen per oppasperiode een link via het tabblad Oppasperiodes; leden van je huishouden kunnen het altijd bekijken.",
   // Everything that makes {{name}}, {{name}}.
   "planOverview.headline": "Alles wat {{name}} tot {{name}} maakt.",
-  // Handling, likes, cage, out-of-cage
-  "planOverview.hintBehaviorCage": "Oppakken, voorkeuren, kooi, buiten de kooi",
+  // Handling, likes, cage, and out-of-cage time
+  "planOverview.hintBehaviorCageTime": "Oppakken, voorkeuren, kooi en tijd buiten de kooi",
   // Owner and vet contacts
   "planOverview.hintEmergency": "Contacten van eigenaar en dierenarts",
   // Diet and food instructions
   "planOverview.hintFood": "Dieet en voedingsinstructies",
   // Baseline and what's normal
   "planOverview.hintHealth": "Uitgangssituatie en wat normaal is",
-  // Hazards, off-limits, pets, cleaning
-  "planOverview.hintHomeWide": "Gevaren, verboden plekken, huisdieren, schoonmaken",
+  // Hazards, off-limits areas, pets, and cleaning
+  "planOverview.hintHomeAreas": "Gevaren, verboden plekken, huisdieren en schoonmaken",
   // Daily schedule and tasks
   "planOverview.hintRoutine": "Dagschema en taken",
   // Needs info
