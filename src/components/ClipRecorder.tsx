@@ -185,6 +185,8 @@ export function ClipRecorder({
   disabled,
   onBusy,
   onUploading,
+  onProgress,
+  cancelRef,
   onUploaded,
 }: {
   /** The bird this clip belongs to. Sent to createClipUpload, which registers
@@ -200,6 +202,10 @@ export function ClipRecorder({
   onBusy?: (busy: boolean) => void;
   /** Fires true while a clip is checking or uploading (the footer explains why Next waits). */
   onUploading?: (uploading: boolean) => void;
+  /** Upload progress (0–100) while sending; null otherwise. For callers that show it themselves. */
+  onProgress?: (pct: number | null) => void;
+  /** Set to a function that cancels the upload in progress, or null. */
+  cancelRef?: { current: (() => void) | null };
   /** Receives the persisted clip reference ("cfstream:<uid>") once the upload
    *  to Cloudflare Stream completes; the parent saves it on the clip column. */
   onUploaded: (ref: string) => void | Promise<void>;
@@ -225,7 +231,7 @@ export function ClipRecorder({
   const abortRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
-    return () => { stopAll(); revokeRecorded(); onBusy?.(false); onUploading?.(false); };
+    return () => { stopAll(); revokeRecorded(); onBusy?.(false); onUploading?.(false); onProgress?.(null); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -250,6 +256,7 @@ export function ClipRecorder({
     const busy = checking || !!stage || phase === "ready" || phase === "recording" || phase === "stopping" || phase === "review";
     onBusy?.(busy);
     onUploading?.(checking || !!stage);
+    onProgress?.(stage?.kind === "uploading" ? stage.pct ?? 0 : checking ? 0 : null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [checking, stage, phase]);
 
@@ -371,7 +378,7 @@ export function ClipRecorder({
     try {
       setStage({ kind: "uploading", pct: 0 });
       const { uploadURL, uid } = await createClipUpload({ data: { uploadLength: file.size, birdId } });
-      await tusUpload(uploadURL, file, (pct) => setStage({ kind: "uploading", pct }), (abort) => { abortRef.current = abort; });
+      await tusUpload(uploadURL, file, (pct) => setStage({ kind: "uploading", pct }), (abort) => { abortRef.current = abort; if (cancelRef) cancelRef.current = abort; });
       // The clip reference is valid the moment the bytes are up. Hand it off now
       // instead of blocking the owner on Cloudflare's server-side transcode
       // (previously up to ~2.5 min on "Processing…"). The clip keeps transcoding
@@ -391,6 +398,7 @@ export function ClipRecorder({
       return false;
     } finally {
       abortRef.current = null;
+      if (cancelRef) cancelRef.current = null;
       setStage(null);
       onBusy?.(false);
     }

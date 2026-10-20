@@ -1055,8 +1055,6 @@
   "birdSetup.cleaningProductsInstructions": "Schoonmaakmiddelen & instructies",
   // Clipped
   "birdSetup.clipped": "Geknipt",
-  // Clip saved
-  "birdSetup.clipSaved": "Clip opgeslagen",
   // {{label}} saved.
   "birdSetup.clipSlotSaved": "{{label}} opgeslagen.",
   // Common toxic foods are prefilled. Add anything specific to your bird.
@@ -1215,8 +1213,6 @@
   "birdSetup.howOftenWaterChanged": "Hoe vaak wordt het ververst?",
   // Anything else the sitter should know about food/water hygiene.
   "birdSetup.hygieneNotesPlaceholder": "Nog iets wat de oppas moet weten over hygiëne rond voer en water.",
-  // Record a few short clips so anyone helping can see how it's done. Clips stay private, shared only with the people you trust with {{name}}.
-  "birdSetup.instr.clips": "Neem een paar korte clips op, zodat iedereen die helpt kan zien hoe het moet. Clips blijven privé en worden alleen gedeeld met de mensen die je {{name}} toevertrouwt.",
   // What does {{name}} eat, and how much? Clear answers mean anyone caring for {{name}} knows exactly what to serve, and when.
   "birdSetup.instr.food": "Wat eet {{name}}, en hoeveel? Met duidelijke antwoorden weet iedereen die voor {{name}} zorgt precies wat er gegeven moet worden, en wanneer.",
   // Help anyone caring for {{name}} know what's normal, so they can spot what isn't. Everything here is optional.
@@ -1229,6 +1225,8 @@
   "birdSetup.instr.review": "Dit is precies wat iedereen die helpt voor {{name}} te zien krijgt. Scroll in de preview om het Vandaag-scherm te bekijken.",
   // Build {{name}}'s daily rhythm. Feedings, water, cleaning, and meds carry over automatically from the Food and Health steps. Add anything else here, like uncovering the cage or playtime. Auto-added items are tagged and live in their own step.
   "birdSetup.instr.routine": "Stel het dagritme van {{name}} op. Voeren, water, schoonmaken en medicijnen komen automatisch mee uit de stappen Eten en Gezondheid. Voeg hier al het andere toe, zoals de kooi openmaken of speeltijd. Automatisch toegevoegde items zijn gelabeld en staan in hun eigen stap.",
+  // Add short video clips, up to 60 seconds each. Record one now or upload from your phone.
+  "birdSetup.instr.tips": "Voeg korte filmpjes toe, elk tot 60 seconden. Neem er nu een op of upload er een van je telefoon.",
   // In the routine
   "birdSetup.inTheRoutine": "In de routine",
   // No food & water details
@@ -1323,8 +1321,6 @@
   "birdSetup.opt.closeCurtains": "Gordijnen dicht",
   // Cover for night
   "birdSetup.opt.coverForNight": "Kooi afdekken voor de nacht",
-  // Cover routine, lights, sounds.
-  "birdSetup.opt.coverRoutineLightsSounds": "Afdekroutine, lampen, geluiden.",
   // Custom
   "birdSetup.opt.custom": "Aangepast",
   // Daily
@@ -1365,6 +1361,8 @@
   "birdSetup.opt.keepInCage": "In de kooi houden",
   // Kitchen & nonstick cookware
   "birdSetup.opt.kitchenNonstickCookware": "Keuken & pannen met antiaanbaklaag",
+  // Lights, sounds, bedtime routine.
+  "birdSetup.opt.lightsSoundsBedtime": "Licht, geluiden, bedtijdroutine.",
   // Making chop, portioning a pre-made mix, or prepping freeze-dried.
   "birdSetup.opt.makingChopPortioningAPre": "Chop maken, een kant-en-klare mix afmeten of gevriesdroogd voer klaarmaken.",
   // Midday
@@ -1447,8 +1445,6 @@
   "birdSetup.opt.yes": "Ja",
   // Young children
   "birdSetup.opt.youngChildren": "Jonge kinderen",
-  // Optional
-  "birdSetup.optional": "Optioneel",
   // Other food hygiene notes
   "birdSetup.otherFoodHygieneNotes": "Andere notities over voedselhygiëne",
   // Other hazards
@@ -1471,8 +1467,6 @@
   "birdSetup.primaryDiet": "Hoofdvoeding",
   // Processing…
   "birdSetup.processing": "Verwerken…",
-  // Processing video…
-  "birdSetup.processingVideo": "Video verwerken…",
   // Progress saved.
   "birdSetup.progressSaved": "Voortgang opgeslagen.",
   // Changes here apply to {{name}} only.
@@ -1539,18 +1533,30 @@
   "birdSetup.thatPhotoSABit": "Die foto is zelfs na verkleinen nog net te groot. Probeer een andere foto.",
   // The stuff you hope no one needs, but everyone should have.
   "birdSetup.theStuffYouHopeNo": "De dingen waarvan je hoopt dat niemand ze nodig heeft, maar die iedereen moet hebben.",
-  // This can take a moment on slower connections. Please keep this screen open.
-  "birdSetup.thisCanTakeAMoment": "Dit kan even duren bij een tragere verbinding. Houd dit scherm open.",
   // This is washing the bowl itself — separate from how often you change the water.
   "birdSetup.thisIsWashingTheBowl": "Dit gaat over het afwassen van het bakje zelf — los van hoe vaak je het water ververst.",
+  // Add a {{slot}} clip
+  "birdSetup.tips.addClipAria": "Een filmpje toevoegen: {{slot}}",
+  // Cancel
+  "birdSetup.tips.cancel": "Annuleren",
+  // A clip is still uploading.
+  "birdSetup.tips.clipStillUploading": "Er wordt nog een filmpje geüpload.",
+  // {{n}} of 8 added
+  "birdSetup.tips.countAdded": "{{n}} van 8 toegevoegd",
+  // Edit
+  "birdSetup.tips.edit": "Bewerken",
+  // (optional)
+  "birdSetup.tips.optional": "(optioneel)",
+  // Show your sitter how
+  "birdSetup.tips.title": "Laat je oppas zien hoe het moet",
+  // Uploading… {{n}}%
+  "birdSetup.tips.uploadingPct": "Uploaden… {{n}}%",
   // Treats
   "birdSetup.treats": "Snacks",
   // e.g. millet spray, almond slivers
   "birdSetup.treatsPlaceholder": "bijv. trosgierst, amandelschilfers",
   // Unknown
   "birdSetup.unknown": "Onbekend",
-  // Uploading your clip…
-  "birdSetup.uploadingYourClip": "Je clip wordt geüpload…",
   // Wash food bowls
   "birdSetup.washFoodBowls": "Voerbakjes afwassen",
   // Wash water bowl or bottle
@@ -1567,8 +1573,6 @@
   "birdSetup.whereFoodIsStored": "Waar het eten staat",
   // Who can handle, and how
   "birdSetup.whoCanHandleAndHow": "Wie mag de vogel vastpakken, en hoe",
-  // Your clip is saved. It'll be viewable here once it finishes converting — usually under a minute.
-  "birdSetup.yourClipIsSavedIt": "Je clip is opgeslagen. Je kunt hem hier bekijken zodra hij is omgezet — meestal binnen een minuut.",
   // After meal
   "birdWeight.afterMeal": "Na het eten",
   // after meal
@@ -2145,6 +2149,8 @@
   "clipPlayer.clip": "Clip",
   // Loading clip…
   "clipPlayer.loading": "Clip laden…",
+  // Play clip
+  "clipPlayer.play": "Filmpje afspelen",
   // Couldn't access the camera. Check your browser permissions.
   "clipRecorder.cameraAccessFailed": "Kon de camera niet openen. Controleer de toestemmingen van je browser.",
   // Camera access was blocked. Allow camera access in your browser settings, then try again.

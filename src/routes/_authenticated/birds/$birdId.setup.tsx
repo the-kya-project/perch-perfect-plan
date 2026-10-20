@@ -17,11 +17,11 @@ import { encodeSetupStep, basicsDone } from "@/lib/setupProgress";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { mergeHome, homeDifferences, seedShared, sameGroup, followSharedPatch, clearOwnPatch, birdHasOwn, HOME_GROUPS, HOME_GROUP_COLUMNS, type HomeRow } from "@/lib/homeDefaults";
 import { EmergencyInfo } from "@/components/EmergencyInfo";
-import { Plus, X, Check, Lightbulb, GripVertical, Sparkles, AlertTriangle, Pill, ChevronDown } from "lucide-react";
+import { Plus, X, Check, Lightbulb, GripVertical, Sparkles, AlertTriangle, Pill, ChevronDown, Play, Video } from "lucide-react";
 import { PhotoCropper } from "@/components/PhotoCropper";
 import { AgePicker, BirdField, SpeciesPicker } from "@/components/BirdPickers";
 import { ClipRecorder, UploadProgress } from "@/components/ClipRecorder";
-import { ClipPlayer } from "@/components/ClipPlayer";
+import { PosterClipPlayer, clipLength } from "@/components/ClipPlayer";
 import { useOwnerClipPreview } from "@/lib/useOwnerClipPreview";
 import { commitClipRef } from "@/lib/clipReplace";
 import { FEED_PREFIX, HYG_REMOVE_PREFIX, HYG_WASH_FOOD_PREFIX, HYG_WASH_WATER_PREFIX, WATER_CHANGE_PREFIX, MED_TASK_PREFIX, isDerivedTask, derivedSource, feedTimeToDaypart } from "@/lib/routineTasks";
@@ -483,7 +483,9 @@ function BirdSetup() {
           ? t("birdSetup.health.title", "Keeping {{name}} healthy", { name: bird.name })
           : meta.key === "personality"
             ? t("birdSetup.behavior.title", "How {{name}} likes to be treated", { name: bird.name })
-            : setupStepTitle(t, meta.key)}
+            : meta.key === "clips"
+              ? t("birdSetup.tips.title", "Show your sitter how")
+              : setupStepTitle(t, meta.key)}
       subtitle={onFoodPage2 ? t("birdSetup.food2.intro", "Everything here is optional, and the defaults are a good place to start.") : undefined}
       page={meta.key === "food" ? [foodPage, 2] : undefined}
       birdName={bird.name}
@@ -659,7 +661,7 @@ function displayLabel(t: TFunction, en: string): string {
     case "Where everything is": return t("birdSetup.opt.whereEverythingIs", "Where everything is");
     case "Walkthrough: food, treats, towels, carrier, first aid.": return t("birdSetup.opt.walkthroughFoodTreatsTowelsCarrier", "Walkthrough: food, treats, towels, carrier, first aid.");
     case "Settling them for the night": return t("birdSetup.opt.settlingThemForTheNight", "Settling them for the night");
-    case "Cover routine, lights, sounds.": return t("birdSetup.opt.coverRoutineLightsSounds", "Cover routine, lights, sounds.");
+    case "Lights, sounds, bedtime routine.": return t("birdSetup.opt.lightsSoundsBedtime", "Lights, sounds, bedtime routine.");
     case "Food prep": return t("birdSetup.opt.foodPrep", "Food prep");
     case "Making chop, portioning a pre-made mix, or prepping freeze-dried.": return t("birdSetup.opt.makingChopPortioningAPre", "Making chop, portioning a pre-made mix, or prepping freeze-dried.");
     case "Toys & foraging": return t("birdSetup.opt.toysForaging", "Toys & foraging");
@@ -2573,7 +2575,7 @@ export function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlus
           <UploadProgress label={t("clipRecorder.gettingItReady", "Getting it ready…")} />
         ) : clipPreview.url && !replacingClip ? (
           <div className="flex flex-col gap-1">
-            <ClipPlayer src={clipPreview.url} className="h-[180px] w-full rounded-[16px]" />
+            <PosterClipPlayer src={clipPreview.url} duration={clipPreview.duration} className="h-[180px] w-full rounded-[16px]" />
             <div className="flex gap-4">
               <SetupTextButton onClick={() => setReplacingClip(true)}>{t("birdSetup.replace", "Replace")}</SetupTextButton>
               <SetupTextButton onClick={removeClip}>{t("birdSetup.remove", "Remove")}</SetupTextButton>
@@ -2839,7 +2841,7 @@ const CLIP_SLOTS: ClipSlot[] = [
   { key: "step_up", column: "clip_step_up_path", label: "How they step up", hint: "Hand position, cue word, what works." },
   { key: "food_water", column: "clip_food_water_path", label: "How to refill food & water safely", hint: "Show the bowls, fill amount, and any cage-door routine." },
   { key: "locations", column: "clip_locations_path", label: "Where everything is", hint: "Walkthrough: food, treats, towels, carrier, first aid." },
-  { key: "bedtime", column: "clip_bedtime_path", label: "Settling them for the night", hint: "Cover routine, lights, sounds." },
+  { key: "bedtime", column: "clip_bedtime_path", label: "Settling them for the night", hint: "Lights, sounds, bedtime routine." },
   { key: "food_prep", column: "clip_food_prep_path", label: "Food prep", hint: "Making chop, portioning a pre-made mix, or prepping freeze-dried." },
   { key: "toys_foraging", column: "clip_toys_foraging_path", label: "Toys & foraging", hint: "Setting up foraging toys, rotating enrichment, or hiding treats." },
   { key: "targeting", column: "clip_targeting_path", label: "Targeting & interaction", hint: "Targeting, tricks, and how you like to hang out together." },
@@ -2849,24 +2851,28 @@ const CLIP_SLOTS: ClipSlot[] = [
 export function OwnerTipsClipsStep({ birdId, birdName, onBlockNext }: { birdId: string; birdName: string; onBlockNext: (block: boolean) => void }) {
   const { t } = useTranslation();
   const qc = useQueryClient();
-  // Track which slots are mid-upload so Next is disabled until all settle.
+  // Next waits while any slot is recording or uploading; the footer says so
+  // while one is uploading.
   const busyRef = useRef<Set<string>>(new Set());
+  const uploadingRef = useRef<Set<string>>(new Set());
   const [anyBusy, setAnyBusy] = useState(false);
-  function reportBusy(key: string, busy: boolean) {
+  const [anyUploading, setAnyUploading] = useState(false);
+  const reportBusy = useCallback((key: string, busy: boolean) => {
     if (busy) busyRef.current.add(key);
     else busyRef.current.delete(key);
     setAnyBusy(busyRef.current.size > 0);
-  }
-  useEffect(() => { onBlockNext(anyBusy); }, [anyBusy, onBlockNext]);
-
-  const { data: bird } = useQuery({
-    queryKey: ["bird-owner", birdId],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("birds").select("id, owner_id").eq("id", birdId).single();
-      if (error) throw error;
-      return data as any;
-    },
-  });
+  }, []);
+  const reportUploading = useCallback((key: string, uploading: boolean) => {
+    if (uploading) uploadingRef.current.add(key);
+    else uploadingRef.current.delete(key);
+    setAnyUploading(uploadingRef.current.size > 0);
+  }, []);
+  useEffect(() => { onBlockNext(anyBusy || anyUploading); }, [anyBusy, anyUploading, onBlockNext]);
+  const setFooterNote = useContext(SetupFooterNoteContext);
+  useEffect(() => {
+    setFooterNote(anyUploading ? t("birdSetup.tips.clipStillUploading", "A clip is still uploading.") : null);
+    return () => setFooterNote(null);
+  }, [anyUploading, setFooterNote, t]);
 
   const { data: plan, isLoading } = useQuery({
     queryKey: ["plan-clips", birdId],
@@ -2877,115 +2883,202 @@ export function OwnerTipsClipsStep({ birdId, birdName, onBlockNext }: { birdId: 
     },
   });
 
-  if (isLoading || !plan || !bird) return <div className="h-32 animate-pulse rounded-2xl bg-sage-100" />;
+  if (isLoading || !plan) return <div className="h-32 animate-pulse rounded-2xl bg-sage-100" />;
+
+  const added = CLIP_SLOTS.filter((slot) => !!plan[slot.column]).length;
 
   return (
-    <div className="space-y-4">
-      <StepInstruction>{t("birdSetup.instr.clips", "Record a few short clips so anyone helping can see how it's done. Clips stay private, shared only with the people you trust with {{name}}.", { name: birdName })}</StepInstruction>
-
+    <div className="flex flex-col gap-2.5">
+      <StepInstruction>{t("birdSetup.instr.tips", "Add short video clips, up to 60 seconds each. Record one now or upload from your phone.")}</StepInstruction>
+      <p className="m-0 text-[13px] font-[700] text-[#5f5e5a]">{t("birdSetup.tips.countAdded", "{{n}} of 8 added", { n: added })}</p>
       {CLIP_SLOTS.map((slot) => (
-        <ClipSlotCard
+        <ClipSlotRow
           key={slot.key}
           slot={slot}
           path={plan[slot.column] ?? null}
-          ownerId={bird.owner_id}
           birdId={birdId}
           planId={plan.id}
           onBusy={reportBusy}
+          onUploading={reportUploading}
           onChange={() => qc.invalidateQueries({ queryKey: ["plan-clips", birdId] })}
         />
       ))}
-
-      <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.65rem .8rem;font-size:16px;outline:none}`}</style>
     </div>
   );
 }
 
-function ClipSlotCard({
-  slot, path, ownerId, birdId, planId, onBusy, onChange,
+/** Progress ring for a clip that's uploading, drawn inside the row's square. */
+function ProgressRing({ pct }: { pct: number }) {
+  const r = 18;
+  const c = 2 * Math.PI * r;
+  return (
+    <svg viewBox="0 0 44 44" className="size-11 -rotate-90" aria-hidden="true">
+      <circle cx="22" cy="22" r={r} fill="none" stroke="#e3ebe2" strokeWidth="4" />
+      <circle cx="22" cy="22" r={r} fill="none" stroke="#1a3d2e" strokeWidth="4" strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - Math.max(0, Math.min(100, pct)) / 100)} />
+    </svg>
+  );
+}
+
+/**
+ * One tip clip as a row: a square (camera, progress ring, or play), the slot's
+ * title and hint, and + / Cancel / Edit. Adding opens a small sheet with the
+ * recorder; once an upload starts the sheet steps out of sight (still mounted,
+ * so the upload carries on) and the row shows the progress.
+ */
+function ClipSlotRow({
+  slot, path, birdId, planId, onBusy, onUploading, onChange,
 }: {
   slot: ClipSlot;
   path: string | null;
-  ownerId: string;
   birdId: string;
   planId: string;
   onBusy: (key: string, busy: boolean) => void;
+  onUploading: (key: string, uploading: boolean) => void;
   onChange: () => void;
 }) {
   const { t } = useTranslation();
   const preview = useOwnerClipPreview(path);
-  const [busy, setBusy] = useState<"uploading" | null>(null);
+  const [sheet, setSheet] = useState<"add" | "edit" | null>(null);
   const [replacing, setReplacing] = useState(false);
+  const [progress, setProgress] = useState<number | null>(null);
+  const [saving, setSaving] = useState(false);
+  const cancelRef = useRef<(() => void) | null>(null);
+  const title = displayLabel(t, slot.label);
+  const uploading = progress != null || saving;
+
+  useEffect(() => { onUploading(slot.key, uploading); }, [uploading, slot.key, onUploading]);
+  useEffect(() => () => { onUploading(slot.key, false); onBusy(`${slot.key}:rec`, false); }, [slot.key, onUploading, onBusy]);
 
   // The recorder uploads to Cloudflare Stream and returns a "cfstream:<uid>" ref.
   async function upload(ref: string) {
-    setBusy("uploading");
-    onBusy(slot.key, true);
+    setSaving(true);
     try {
       // Save the new ref, then retire the one it replaced — see commitClipRef.
       await commitClipRef({ planId, column: slot.column, newRef: ref, oldRef: path });
       setReplacing(false);
-      toast.success(t("birdSetup.clipSlotSaved", "{{label}} saved.", { label: displayLabel(t, slot.label) }));
+      setSheet(null);
+      toast.success(t("birdSetup.clipSlotSaved", "{{label}} saved.", { label: title }));
       onChange();
     } catch {
       toast.error(t("birdSetup.couldnTSaveTheClip", "Couldn't save the clip. Please try again."));
     } finally {
-      setBusy(null);
-      onBusy(slot.key, false);
+      setSaving(false);
+      setProgress(null);
     }
   }
 
   async function remove() {
-    setBusy("uploading");
-    onBusy(slot.key, true);
+    setSaving(true);
     try {
-      // Clear the column, then retire the old clip — see commitClipRef. This
-      // used to delete a legacy object before clearing, and ignored the update's
-      // result entirely, so a failed remove said nothing and left the clip up.
+      // Clear the column, then retire the old clip — see commitClipRef.
       await commitClipRef({ planId, column: slot.column, newRef: null, oldRef: path });
+      setSheet(null);
       onChange();
     } catch {
       toast.error(t("birdSetup.couldnTRemoveTheClip", "Couldn't remove the clip. Please try again."));
     } finally {
-      setBusy(null);
-      onBusy(slot.key, false);
+      setSaving(false);
     }
   }
 
+  function cancelUpload() {
+    cancelRef.current?.();
+    setProgress(null);
+    setSheet(null);
+    setReplacing(false);
+  }
+
+  const hint = displayLabel(t, slot.hint);
+  const length = clipLength(preview.duration);
+  const hintLine = uploading
+    ? t("birdSetup.tips.uploadingPct", "Uploading… {{n}}%", { n: progress ?? 100 })
+    : path && preview.status === "processing"
+      ? t("clipRecorder.gettingItReady", "Getting it ready…")
+      : path && length ? `${length} · ${hint}` : hint;
+  const showRecorder = sheet === "add" || (sheet === "edit" && replacing);
+
   return (
-    <Card
-      title={displayLabel(t, slot.label)}
-      hint={displayLabel(t, slot.hint)}
-      badge={slot.optional ? <span className="rounded-full bg-sage-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-sage-600">{t("birdSetup.optional", "Optional")}</span> : undefined}
-    >
-      {busy === "uploading" ? (
-        <UploadProgress label={t("birdSetup.uploadingYourClip", "Uploading your clip…")} hint={t("birdSetup.thisCanTakeAMoment", "This can take a moment on slower connections. Please keep this screen open.")} />
-      ) : preview.status === "processing" && !replacing ? (
-        <UploadProgress label={t("birdSetup.processingVideo", "Processing video…")} hint={t("birdSetup.yourClipIsSavedIt", "Your clip is saved. It'll be viewable here once it finishes converting — usually under a minute.")} />
-      ) : preview.url && !replacing ? (
-        <div className="space-y-2">
-          <ClipPlayer src={preview.url} className="aspect-video w-full rounded-xl ring-1 ring-sage-200" />
-          <p className="flex items-center gap-1 text-xs font-semibold text-sage-600"><Check className="size-3.5" /> {t("birdSetup.clipSaved", "Clip saved")}</p>
-          <div className="flex gap-2">
-            <button type="button" onClick={() => setReplacing(true)} className="flex-1 rounded-xl border border-sage-200 bg-white py-2 text-xs font-semibold text-sage-700">
-              {t("birdSetup.replace", "Replace")}
-            </button>
-            <button type="button" onClick={remove} className="flex-1 rounded-xl border border-sage-200 bg-white py-2 text-xs font-semibold text-warn-red">
-              {t("birdSetup.remove", "Remove")}
-            </button>
-          </div>
-        </div>
+    <div className="flex items-center gap-3 rounded-[18px] p-3" style={{ background: S.card, color: S.forest }}>
+      <button
+        type="button"
+        onClick={() => (path && !uploading ? setSheet("edit") : undefined)}
+        tabIndex={path && !uploading ? 0 : -1}
+        aria-hidden={!path || uploading}
+        className="grid size-14 shrink-0 place-items-center rounded-[14px]"
+        style={{ background: path && !uploading ? S.forest : "#fff", color: path && !uploading ? S.lime : S.moss }}
+      >
+        {uploading ? <ProgressRing pct={progress ?? 100} /> : path ? <Play className="ml-0.5 size-6 fill-current" aria-hidden="true" /> : <Video className="size-6" aria-hidden="true" />}
+      </button>
+      <div className="min-w-0 flex-1">
+        <p className="m-0 text-[15.5px] font-[700] leading-[1.3]">
+          {title}
+          {slot.optional && <span className="ml-1 font-[500]" style={{ color: S.quiet }}>{t("birdSetup.tips.optional", "(optional)")}</span>}
+        </p>
+        <p className="m-0 mt-0.5 text-[14px] leading-[1.4]" style={{ color: S.helper }}>{hintLine}</p>
+      </div>
+      {uploading ? (
+        progress != null ? <SetupTextButton onClick={cancelUpload}>{t("birdSetup.tips.cancel", "Cancel")}</SetupTextButton> : null
+      ) : path ? (
+        <SetupTextButton onClick={() => setSheet("edit")}>{t("birdSetup.tips.edit", "Edit")}</SetupTextButton>
       ) : (
-        <div className="space-y-2">
-          <ClipRecorder birdId={birdId} onBusy={(b) => onBusy(`${slot.key}:rec`, b)} onUploaded={upload} />
-          {path && replacing && (
-            <button type="button" onClick={() => setReplacing(false)} className="w-full rounded-xl border border-sage-200 bg-white py-2 text-xs font-semibold text-sage-700">
-              {t("birdSetup.keepCurrentClip", "Keep current clip")}
-            </button>
-          )}
-        </div>
+        <button
+          type="button"
+          onClick={() => setSheet("add")}
+          aria-label={t("birdSetup.tips.addClipAria", "Add a {{slot}} clip", { slot: title })}
+          className="grid size-11 shrink-0 place-items-center rounded-full border-2 bg-white"
+          style={{ borderColor: S.forest, color: S.forest }}
+        >
+          <Plus className="size-5" strokeWidth={2.6} aria-hidden="true" />
+        </button>
       )}
-    </Card>
+
+      {sheet && (
+        <BottomSheet hidden={uploading} onClose={() => { setSheet(null); setReplacing(false); }}>
+          <div className="flex flex-col gap-4" style={{ color: S.forest }}>
+            <div className="flex items-start gap-3">
+              <h2 className="m-0 min-w-0 flex-1 break-words text-[24px] font-[700] leading-[1.15]" style={{ fontFamily: SERIF }}>{title}</h2>
+              <button
+                type="button"
+                onClick={() => { setSheet(null); setReplacing(false); }}
+                aria-label={t("foodEditor.closeSheet", "Close")}
+                className="grid size-11 shrink-0 place-items-center rounded-full"
+                style={{ background: S.card, color: S.forest }}
+              >
+                <X className="size-5" aria-hidden="true" />
+              </button>
+            </div>
+            {showRecorder ? (
+              <>
+                <ClipRecorder
+                  birdId={birdId}
+                  onBusy={(b) => onBusy(`${slot.key}:rec`, b)}
+                  onProgress={setProgress}
+                  cancelRef={cancelRef}
+                  onUploaded={upload}
+                />
+                {replacing && (
+                  <div>
+                    <SetupTextButton onClick={() => setReplacing(false)}>{t("birdSetup.keepCurrentClip", "Keep current clip")}</SetupTextButton>
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                {preview.status === "processing" || !preview.url ? (
+                  <UploadProgress label={t("clipRecorder.gettingItReady", "Getting it ready…")} />
+                ) : (
+                  <PosterClipPlayer src={preview.url} duration={preview.duration} label={title} className="h-[180px] w-full rounded-[16px]" />
+                )}
+                <div className="flex gap-4">
+                  <SetupTextButton onClick={() => setReplacing(true)}>{t("birdSetup.replace", "Replace")}</SetupTextButton>
+                  <SetupTextButton onClick={remove} disabled={saving}>{t("birdSetup.remove", "Remove")}</SetupTextButton>
+                </div>
+              </>
+            )}
+          </div>
+        </BottomSheet>
+      )}
+    </div>
   );
 }
 

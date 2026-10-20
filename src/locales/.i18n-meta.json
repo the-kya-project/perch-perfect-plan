@@ -1578,9 +1578,6 @@
     "birdSetup.clipped": {
       "stamp": "d98deea9d96f0c01"
     },
-    "birdSetup.clipSaved": {
-      "stamp": "c935a4d7501e8720"
-    },
     "birdSetup.clipSlotSaved": {
       "stamp": "16a5cf84a8e49e2b"
     },
@@ -1818,9 +1815,6 @@
     "birdSetup.hygieneNotesPlaceholder": {
       "stamp": "956a155d01710976"
     },
-    "birdSetup.instr.clips": {
-      "stamp": "f4d612758f4bc6e5"
-    },
     "birdSetup.instr.food": {
       "stamp": "9b89c93ba8fdab76"
     },
@@ -1838,6 +1832,9 @@
     },
     "birdSetup.instr.routine": {
       "stamp": "f103da53204ae09c"
+    },
+    "birdSetup.instr.tips": {
+      "stamp": "635bbdd2201f8f0d"
     },
     "birdSetup.inTheRoutine": {
       "stamp": "7f726d8c7dc03337"
@@ -1980,9 +1977,6 @@
     "birdSetup.opt.coverForNight": {
       "stamp": "89038aa7acc929de"
     },
-    "birdSetup.opt.coverRoutineLightsSounds": {
-      "stamp": "4ab775b5acbec5e9"
-    },
     "birdSetup.opt.custom": {
       "stamp": "1517a36c45253b5d"
     },
@@ -2042,6 +2036,9 @@
     },
     "birdSetup.opt.kitchenNonstickCookware": {
       "stamp": "d547d1e4f58ca03c"
+    },
+    "birdSetup.opt.lightsSoundsBedtime": {
+      "stamp": "4ef3b1225e50eb8f"
     },
     "birdSetup.opt.makingChopPortioningAPre": {
       "stamp": "e8721c1461029843"
@@ -2166,9 +2163,6 @@
     "birdSetup.opt.youngChildren": {
       "stamp": "41ca0232cf39c8b6"
     },
-    "birdSetup.optional": {
-      "stamp": "e301f0fddfd8d6a1"
-    },
     "birdSetup.otherFoodHygieneNotes": {
       "stamp": "1909645e28cca3e5"
     },
@@ -2201,9 +2195,6 @@
     },
     "birdSetup.processing": {
       "stamp": "63fceea81cd11c81"
-    },
-    "birdSetup.processingVideo": {
-      "stamp": "db5558ffa15c1ac0"
     },
     "birdSetup.progressSaved": {
       "stamp": "3aa63b3b80538afe"
@@ -2304,11 +2295,32 @@
     "birdSetup.theStuffYouHopeNo": {
       "stamp": "3203734049bcca72"
     },
-    "birdSetup.thisCanTakeAMoment": {
-      "stamp": "9ee64d02154c7cc2"
-    },
     "birdSetup.thisIsWashingTheBowl": {
       "stamp": "f29e8f28423acce4"
+    },
+    "birdSetup.tips.addClipAria": {
+      "stamp": "ca086d92aa85ea43"
+    },
+    "birdSetup.tips.cancel": {
+      "stamp": "06c80f8b6f9f2b3b"
+    },
+    "birdSetup.tips.clipStillUploading": {
+      "stamp": "549661395979f001"
+    },
+    "birdSetup.tips.countAdded": {
+      "stamp": "0e70d615a2ddd33f"
+    },
+    "birdSetup.tips.edit": {
+      "stamp": "dc46962c1249053f"
+    },
+    "birdSetup.tips.optional": {
+      "stamp": "496dc7b66847a4b7"
+    },
+    "birdSetup.tips.title": {
+      "stamp": "d11c118fd7cd15d1"
+    },
+    "birdSetup.tips.uploadingPct": {
+      "stamp": "d6e0b614d4d5a42d"
     },
     "birdSetup.treats": {
       "stamp": "f74a07c2d2ee143e"
@@ -2318,9 +2330,6 @@
     },
     "birdSetup.unknown": {
       "stamp": "e03b7c979c1f6ad7"
-    },
-    "birdSetup.uploadingYourClip": {
-      "stamp": "a84809157829ff5b"
     },
     "birdSetup.washFoodBowls": {
       "stamp": "803c0e0fd7242068"
@@ -2345,9 +2354,6 @@
     },
     "birdSetup.whoCanHandleAndHow": {
       "stamp": "fd32059a08210811"
-    },
-    "birdSetup.yourClipIsSavedIt": {
-      "stamp": "b7c99f720d1e8ad4"
     },
     "birdWeight.afterMeal": {
       "stamp": "83b8e70c4b8a3d21"
@@ -3212,6 +3218,9 @@
     },
     "clipPlayer.loading": {
       "stamp": "7fd541833f3aa57c"
+    },
+    "clipPlayer.play": {
+      "stamp": "dc1c2887b6075696"
     },
     "clipRecorder.cameraAccessFailed": {
       "stamp": "c7ef0a9854bdd21e"
