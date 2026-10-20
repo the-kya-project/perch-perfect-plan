@@ -14,7 +14,8 @@ import { BottomSheet } from "@/components/setup/BottomSheet";
 import { friendlyError } from "@/lib/errorMessage";
 import { daysAgo } from "@/lib/scanConcern";
 import { useLoggedBy } from "@/lib/useLoggedBy";
-import { K, SERIF, KyaPage, KyaHeader, KyaBody, KyaCard, KyaHeading, KyaIconButton, KyaLink, KyaPrimaryButton } from "@/components/kya";
+import { K, SERIF, KyaPage, KyaBody, KyaCard, KyaHeading, KyaLink, KyaPrimaryButton } from "@/components/kya";
+import { PageHeader } from "@/components/headers";
 import i18next from "i18next";
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
@@ -173,13 +174,7 @@ function WeightFacet() {
   return (
     <KyaPage>
       <div className="mx-auto max-w-md">
-        <KyaHeader>
-          <div className="mt-1.5">
-            <KyaIconButton label={t("birdWeight.back", "Back")} onClick={() => navigate({ to: "/birds/$birdId", params: { birdId } })}>
-              <ArrowLeft className="size-5" />
-            </KyaIconButton>
-          </div>
-          <KyaHeading as="h1" size={30} className="mt-4 text-white">{t("birdWeight.title", "{{name}}'s weight", { name })}</KyaHeading>
+        <PageHeader onBack={() => navigate({ to: "/birds/$birdId", params: { birdId } })} title={t("birdWeight.title", "{{name}}'s weight", { name })}>
           {latest ? (
             <div className="mt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1">
               <span className="text-[48px] font-[700] leading-none" style={{ fontFamily: SERIF }}>{grams(t, latest.grams)}</span>
@@ -188,7 +183,7 @@ function WeightFacet() {
           ) : (
             <p className="m-0 mt-2 text-[15px]" style={{ color: K.paleGreen }}>{t("birdWeight.bodyEmpty", "No weights yet. Pop {{name}} on a scale and log the first one.", { name })}</p>
           )}
-        </KyaHeader>
+        </PageHeader>
 
         <KyaBody>
           <MemberContextBanner birdId={birdId} />

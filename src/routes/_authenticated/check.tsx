@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate, useRouter, useCanGoBack } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowLeft, Check, ChevronUp } from "lucide-react";
+import { Check, ChevronUp } from "lucide-react";
 import i18next from "i18next";
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
@@ -14,6 +14,7 @@ import { noticedItems } from "@/lib/dailyCheckLabels";
 import { daysSince, staleThreshold } from "@/lib/homeData";
 import { DailyCheckCard } from "@/components/DailyCheckCard";
 import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
+import { TaskHeader } from "@/components/headers";
 import { speciesLabel } from "@/lib/speciesLabel";
 import { track } from "@/lib/analytics";
 
@@ -52,10 +53,6 @@ const C = {
 };
 const SERIF = "'Newsreader', Georgia, serif";
 
-function todayLabel(lang: string): string {
-  return new Date().toLocaleDateString(lang, { weekday: "long", month: "long", day: "numeric" });
-}
-
 function mealLabel(t: TFunction, m: string | null | undefined, lower = false): string | null {
   if (m === "before_meal") return lower ? t("dailyCheck.beforeMealLower", "before meal") : t("birdWeight.beforeMeal", "Before meal");
   if (m === "after_meal") return lower ? t("dailyCheck.afterMealLower", "after meal") : t("birdWeight.afterMeal", "After meal");
@@ -63,7 +60,7 @@ function mealLabel(t: TFunction, m: string | null | undefined, lower = false): s
 }
 
 function FlockCheck() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const router = useRouter();
   const canGoBack = useCanGoBack();
@@ -151,24 +148,16 @@ function FlockCheck() {
     );
   };
 
+  const oneBird = birds.length === 1 ? birds[0] : null;
   const header = (
-    <header className="text-white" style={{ background: C.forest }}>
-      <div className="mx-auto max-w-md px-5 pb-10 pt-[calc(env(safe-area-inset-top)+14px)]">
-        <div className="flex items-center gap-2">
-          <button type="button" onClick={goBack} aria-label={t("flockCheck.back", "Back")} className="-ml-2.5 grid size-11 shrink-0 place-items-center rounded-full text-white">
-            <ArrowLeft className="size-5" />
-          </button>
-          <span className="min-w-0 flex-1 truncate text-[13px]" style={{ color: C.mist }}>{todayLabel(i18n.language)}</span>
-          {total > 0 && <ProgressRing done={doneCount} total={total} complete={showDone || doneCount === total} />}
-        </div>
-        <h1 className="m-0 mt-2 text-[30px] font-[700] leading-[1.1]" style={{ fontFamily: SERIF }}>{t("flockCheck.heading", "Daily health check")}</h1>
-        <p className="m-0 mt-2 text-[14px] leading-[1.5]" style={{ color: C.mist }}>
-          {showDone
-            ? t("flockCheck.doneSubhead", "Nice work. Everything's saved to each bird's health log.")
-            : t("flockCheck.intro", "A quick once-over every day helps you spot early signs of illness. Record what you see for each bird here.")}
-        </p>
-      </div>
-    </header>
+    <TaskHeader
+      onClose={goBack}
+      title={oneBird ? t("flockCheck.headingOne", "{{name}}'s daily check", { name: oneBird.name }) : t("flockCheck.heading", "Daily health check")}
+      line={showDone
+        ? t("flockCheck.doneSubhead", "Nice work. Everything's saved to each bird's health log.")
+        : t("flockCheck.intro", "A quick once-over every day helps you spot early signs of illness. Record what you see for each bird here.")}
+      progress={total > 1 ? { label: t("flockCheck.progressChecked", "{{done}} of {{total}} checked", { done: doneCount, total }), value: doneCount / total } : undefined}
+    />
   );
 
   if (showDone) {
@@ -178,9 +167,9 @@ function FlockCheck() {
       return !!c && c.triage_status !== "green";
     });
     return (
-      <div className="setup-frame min-h-screen pb-nav" style={{ background: C.body, color: C.forest }}>
+      <div className="setup-frame min-h-screen pb-[calc(env(safe-area-inset-bottom)+24px)]" style={{ background: C.body, color: C.forest }}>
         {header}
-        <main className="relative mx-auto -mt-6 flex max-w-md flex-col gap-3.5 rounded-t-[24px] px-4 pb-6 pt-5" style={{ background: C.body }}>
+        <main className="relative mx-auto -mt-[26px] flex max-w-md flex-col gap-3.5 rounded-t-[26px] px-4 pb-6 pt-5" style={{ background: C.body }}>
           <section className="rounded-[16px] bg-white px-4 pb-2 pt-4">
             <h2 className="m-0 text-[19px] font-[700]" style={{ fontFamily: SERIF }}>{t("flockCheck.todaysWeights", "Today's weights")}</h2>
             <ul className="m-0 mt-2 list-none p-0">
@@ -307,9 +296,9 @@ function FlockCheck() {
   };
 
   return (
-    <div className="setup-frame min-h-screen pb-nav" style={{ background: C.body, color: C.forest }}>
+    <div className="setup-frame min-h-screen pb-[calc(env(safe-area-inset-bottom)+24px)]" style={{ background: C.body, color: C.forest }}>
       {header}
-      <main className="relative mx-auto -mt-6 flex max-w-md flex-col gap-2 rounded-t-[24px] px-4 pb-6 pt-5" style={{ background: C.body }}>
+      <main className="relative mx-auto -mt-[26px] flex max-w-md flex-col gap-2 rounded-t-[26px] px-4 pb-6 pt-5" style={{ background: C.body }}>
         {upNext.length > 0 && <SectionLabel>{t("flockCheck.upNext", "Up next · {{n}}", { n: upNext.length })}</SectionLabel>}
         {upNext.map((b) => {
           if (openId === b.id) return renderOpen(b);
@@ -393,22 +382,6 @@ function SectionLabel({ children, className = "" }: { children: React.ReactNode;
   return <p className={`m-0 px-1 text-[12px] font-[700] ${className}`} style={{ color: C.quiet }}>{children}</p>;
 }
 
-function ProgressRing({ done, total, complete }: { done: number; total: number; complete: boolean }) {
-  const r = 20;
-  const c = 2 * Math.PI * r;
-  const pct = complete ? 1 : total > 0 ? done / total : 0;
-  return (
-    <span className="relative grid size-12 shrink-0 place-items-center" role="img" aria-label={i18next.t("flockCheck.progressAria", "{{done}} of {{total}} birds checked", { done, total })}>
-      <svg width="48" height="48" viewBox="0 0 48 48" className="absolute inset-0 -rotate-90" aria-hidden="true">
-        <circle cx="24" cy="24" r={r} fill="none" stroke={C.ringTrack} strokeWidth="4" />
-        <circle cx="24" cy="24" r={r} fill="none" stroke={C.lime} strokeWidth="4" strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - pct)} />
-      </svg>
-      {complete
-        ? <Check className="relative size-5 text-[#cdeab0]" strokeWidth={3} aria-hidden="true" />
-        : <span className="relative text-[12px] font-[700] tabular-nums text-white" aria-hidden="true">{done}/{total}</span>}
-    </span>
-  );
-}
 
 function Footer({ children }: { children: React.ReactNode }) {
   return (

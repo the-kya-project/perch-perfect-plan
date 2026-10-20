@@ -9,7 +9,8 @@ import { fetchBirdList } from "@/lib/birdListSelect";
 import { useMyPermissions } from "@/lib/useCapability";
 import { useHealthHistory, filterEntries, type Who, type EntryType } from "@/lib/healthHistory";
 import { rangeTo, sitTitle } from "@/lib/sitText";
-import { K, KyaPage, KyaHeader, KyaBody, KyaHeading, KyaIconButton, KyaLink } from "@/components/kya";
+import { K, KyaPage, KyaBody, KyaLink } from "@/components/kya";
+import { PageHeader } from "@/components/headers";
 import { EntryDays, sitCaregiverName, type EntryContext } from "@/components/HealthEntries";
 
 // Every daily check and weight for the owner's birds, newest first, with
@@ -82,15 +83,11 @@ function HealthHistoryPage() {
   return (
     <KyaPage>
       <div className="mx-auto max-w-md">
-        <KyaHeader>
-          <div className="mt-1.5">
-            <KyaIconButton label={t("healthHistory.back", "Back")} onClick={goBack}><ArrowLeft className="size-5" /></KyaIconButton>
-          </div>
-          <KyaHeading as="h1" size={30} className="mt-5 text-white">{t("healthHistory.title", "Health history")}</KyaHeading>
-          <p className="m-0 mt-2 text-[15px] leading-[1.5]" style={{ color: K.paleGreen }}>
-            {t("healthHistory.body", "Every daily check and weight, by everyone who cares for your birds.")}
-          </p>
-        </KyaHeader>
+        <PageHeader
+          onBack={goBack}
+          title={t("healthHistory.title", "Health history")}
+          line={t("healthHistory.body", "Every daily check and weight, by everyone who cares for your birds.")}
+        />
 
         <KyaBody className="gap-4">
           {/* Who */}

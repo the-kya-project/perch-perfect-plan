@@ -7,7 +7,8 @@ import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { friendlyError } from "@/lib/errorMessage";
-import { K, KyaPage, KyaHeader, KyaBody, KyaBackRow, KyaTitle } from "@/components/kya";
+import { K, KyaPage, KyaBody } from "@/components/kya";
+import { PageHeader } from "@/components/headers";
 import { EmergencyList, EmergencyRowSheet, type EmergencyValues, type RowKey } from "@/components/EmergencyContacts";
 import { useOwnerEmergency, useOwnerName } from "@/lib/useOwnerEmergency";
 
@@ -54,13 +55,7 @@ function AccountEmergency() {
   return (
     <KyaPage>
       <div className="mx-auto max-w-md">
-        <KyaHeader>
-          <KyaBackRow label={t("accountEmergency.back", "Back")} onBack={goBack} />
-          <KyaTitle
-            title={t("accountEmergency.title", "Emergency info")}
-            line={t("accountEmergency.line", "What a sitter sees if something goes wrong. Tap any line to change it.")}
-          />
-        </KyaHeader>
+        <PageHeader onBack={goBack} title={t("accountEmergency.title", "Emergency info")} line={t("accountEmergency.line", "What a sitter sees if something goes wrong. Tap any line to change it.")} />
         <KyaBody className="gap-5">
           {defaults === undefined ? (
             <p className="m-0 px-1 text-[14px]" style={{ color: K.quiet }}>{t("accountEmergency.loading", "Loading…")}</p>

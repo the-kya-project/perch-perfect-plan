@@ -7,7 +7,7 @@ import { useTranslation, Trans } from "react-i18next";
 import i18next, { type TFunction } from "i18next";
 import { createFileRoute, useNavigate, useLocation } from "@tanstack/react-router";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { purgeBirdMedia } from "@/lib/birdMedia.functions";
 import { birdMediaPurgeFailedText } from "@/lib/i18n/serverErrors";
@@ -26,12 +26,13 @@ import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 import { toast } from "sonner";
 import {
   Scale, BookOpen, IdCard, CalendarHeart, ClipboardList,
-  FileText, Activity, Pencil, ArrowLeft, ArrowRight, Camera,
-  Check, X, Heart, Loader2, Crop, HeartCrack, Siren,
+  FileText, Pencil, ArrowRight, Camera, ChevronLeft, ChevronRight,
+  Check, X, Heart, Loader2, Crop, HeartCrack, Siren, HandHeart, Trash2,
 } from "lucide-react";
 import { formatLocalDate } from "@/lib/dates";
 import { useDailyCheckToday, type BirdToday } from "@/lib/dailyCheck";
-import { K, KyaPage, KyaCard, KyaHeading, KyaLink, KyaPrimaryButton, KyaRow, KyaTag, KyaAvatarStack } from "@/components/kya";
+import { K, KyaPage, KyaCard, KyaHeading, KyaIconButton, KyaLink, KyaPrimaryButton, KyaRow, KyaTag, KyaAvatarStack } from "@/components/kya";
+import { HeaderPill } from "@/components/headers";
 import { daysAgo } from "@/lib/scanConcern";
 import { useCarePlanStatus } from "@/lib/useCarePlanStatus";
 import { useLoggedBy } from "@/lib/useLoggedBy";
@@ -151,17 +152,19 @@ function BirdNoAccess() {
 
 // Hero card: the bird's photo in a rounded card (16px gutters, so the framing
 // matches what the owner set and heads aren't cut off), a dark forest fade at
-// the bottom, back and photo buttons over it, and the name with species · sex · age.
+// the bottom, and the name with species · sex · age. Page-header rule: back top
+// left, at most one labeled action pill top right (owner: edit photo). No logo,
+// help, bell or account icons here.
 function BirdRecordHero({ birdId }: { birdId: string }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  // Back always moves UP the hierarchy: the home screen, or Remembering when the
-  // visitor came from a memorial card (explicit router state, set by the
-  // Remembering row). NEVER history.back() here — facet pages (care plan,
-  // weight, …) hardcode their back as a PUSH to this page, so popping history
-  // from here would land back ON the facet and bounce forever.
+  // Back goes UP the hierarchy, not back in history: the bird's own pages
+  // (weight, identity, …) navigate here rather than back, so history would
+  // bounce between the two. Home, or Remembering when the visitor came from a
+  // memorial card (router state set by that row).
   const fromRemembering = useLocation({ select: (l) => !!(l.state as any)?.fromRemembering });
-  const goBack = () => navigate({ to: fromRemembering ? "/remembering" : "/dashboard" });
+  const fallback = useCallback(() => navigate({ to: fromRemembering ? "/remembering" : "/dashboard" }), [navigate, fromRemembering]);
+  const goBack = fallback;
   const role = useBirdRole(birdId);
   const isOwner = role === "owner";
   const { data: bird } = useBirdRecord(birdId);
@@ -192,16 +195,12 @@ function BirdRecordHero({ birdId }: { birdId: string }) {
         )}
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[60%]" style={{ background: "linear-gradient(to top, rgba(26,61,46,0.96), transparent)" }} />
 
-        <div className="absolute inset-x-0 top-[14px] flex items-center justify-between px-[14px]">
-          <HeroCircleBtn label={t("birdRecord.back", "Back")} onPress={goBack}>
-            <ArrowLeft className="size-5" />
-          </HeroCircleBtn>
-          {isOwner && bird ? (
-            <HeroCircleBtn label={t("birdRecord.editPhoto", "Edit photo")} onPress={() => setPhotoSheet(true)}>
-              <Camera className="size-5" />
-            </HeroCircleBtn>
-          ) : (
-            <span className="size-11" />
+        <div className="absolute inset-x-0 top-[14px] flex items-center justify-between gap-3 px-[14px]">
+          <KyaIconButton label={t("birdRecord.back", "Back")} onClick={goBack}>
+            <ChevronLeft className="size-6" aria-hidden="true" />
+          </KyaIconButton>
+          {isOwner && bird && (
+            <HeaderPill action={{ label: t("birdRecord.editPhoto", "Edit photo"), icon: <Camera className="size-4" aria-hidden="true" />, onClick: () => setPhotoSheet(true) }} />
           )}
         </div>
 
@@ -224,21 +223,6 @@ function BirdRecordHero({ birdId }: { birdId: string }) {
         />
       )}
     </>
-  );
-}
-
-// 44px round control over the hero photo: semi-transparent dark forest, white icon.
-function HeroCircleBtn({ label, onPress, children }: { label: string; onPress: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      onClick={onPress}
-      className="grid size-11 place-items-center rounded-full text-white backdrop-blur active:scale-95"
-      style={{ background: "rgba(18,41,31,0.55)" }}
-    >
-      {children}
-    </button>
   );
 }
 
@@ -425,8 +409,7 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
         <KyaRow leading={<IconTile size={38} icon={<IdCard className="size-5" />} />} title={t("birdRecord.identity", "Identity")} detail={t("birdRecord.chipBandHatchDateOrigin", "Chip, band, hatch date, origin, photo")} onClick={() => navigate({ to: "/birds/$birdId/identity", params: { birdId } })} />
         <KyaRow leading={<IconTile size={38} icon={<CalendarHeart className="size-5" />} />} title={t("birdRecord.moments", "Moments")} detail={t("birdRecord.markTheDaysWorthRemembering", "Mark the days worth remembering")} onClick={() => navigate({ to: "/birds/$birdId/moments", params: { birdId } })} />
         <KyaRow leading={<IconTile size={38} icon={<Siren className="size-5" />} />} title={t("birdRecord.emergencyInfo", "Emergency info")} detail={emCustom ? t("birdRecord.emergencyCustom", "Custom for {{name}}", { name }) : t("birdRecord.emergencyShared", "Uses your emergency info")} onClick={() => navigate({ to: "/birds/$birdId/emergency", params: { birdId } })} />
-        <KyaRow leading={<IconTile size={38} icon={<FileText className="size-5" />} />} title={t("birdRecord.vetSummary", "Vet summary")} detail={t("birdRecord.oneCleanSheetForThe", "One clean sheet for the vet")} onClick={() => navigate({ to: "/birds/$birdId/vet-summary", params: { birdId } })} last={!canHealth} />
-        {canHealth && <KyaRow leading={<IconTile size={38} icon={<Activity className="size-5" />} />} title={t("birdRecord.runAHealthScan", "Run a health scan")} detail={t("birdRecord.theSameDailyCheckA", "The same daily check a sitter runs")} onClick={() => navigate({ to: "/birds/$birdId/scan", params: { birdId } })} last />}
+        <KyaRow leading={<IconTile size={38} icon={<FileText className="size-5" />} />} title={t("birdRecord.vetSummary", "Vet summary")} detail={t("birdRecord.oneCleanSheetForThe", "One clean sheet for the vet")} onClick={() => navigate({ to: "/birds/$birdId/vet-summary", params: { birdId } })} last />
       </KyaCard>
 
       {/* About [bird] — Species / Age / Hatch date / Sex / Flight (owner-editable). */}
@@ -474,19 +457,27 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
       {/* Who can see [bird] — owner only */}
       {isOwner && <WhoCanSeeCard birdId={birdId} name={name} />}
 
-      {/* More actions: hand off, mark as passed, delete — plain links. */}
+      {/* If things change: hand off, mark as passed, delete — one card of rows. */}
       {canFlock && bird && (
-        <div className="flex flex-col items-start px-1 pt-1">
-          <HandoffSection birdId={birdId} name={name} part="handoff" />
-          {/* Mark as passed — owner-only. Opens the gentle confirm flow; the
-              record is preserved as a memorial, never deleted. */}
-          {isOwner && (
-            <KyaLink color={K.ink} onClick={() => navigate({ to: "/birds/$birdId/farewell", params: { birdId } })}>
-              {t("birdRecord.markNameAsPassed", "Mark {{name}} as passed", { name })}
-            </KyaLink>
-          )}
-          <DeleteBirdButton birdId={birdId} name={name} />
-        </div>
+        <section className="flex flex-col gap-2.5 pt-1">
+          <KyaHeading size={21} className="px-1">{t("birdRecord.ifThingsChangeHeading", "If things change for {{name}}", { name })}</KyaHeading>
+          <KyaCard>
+            <HandoffSection birdId={birdId} name={name} part="handoff" pronoun={pronounOf(bird.sex)} />
+            {/* Mark as passed — owner-only. Opens the gentle confirm flow; the
+                record is preserved as a memorial, never deleted. */}
+            {isOwner && (
+              <ChangeRow
+                icon={<Heart className="size-5" />}
+                tileBg={K.mist}
+                iconColor={K.forest}
+                title={t("birdRecord.markNameAsPassed", "Mark {{name}} as passed", { name })}
+                detail={passedDetail(t, pronounOf(bird.sex))}
+                onClick={() => navigate({ to: "/birds/$birdId/farewell", params: { birdId } })}
+              />
+            )}
+            <DeleteBirdButton birdId={birdId} name={name} pronoun={pronounOf(bird.sex)} />
+          </KyaCard>
+        </section>
       )}
 
       {/* Something's wrong — for whoever is COVERING an active sit for this
@@ -524,7 +515,9 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
   );
 }
 
-/** Weight, last weighed and today's check, then a lime line into today's check. */
+/** Weight, last weighed and today's check, then the two ways into a check:
+ *  the daily check (sunflower) and the full health check (white). Today's
+ *  status lives in the third tile, which opens the check once it's done. */
 function SummaryCard({ birdId, weights, today, canCheck }: { birdId: string; weights?: WeightRow[]; today?: BirdToday; canCheck: boolean }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -535,6 +528,7 @@ function SummaryCard({ birdId, weights, today, canCheck }: { birdId: string; wei
   const tile = "flex min-h-[74px] flex-col justify-center rounded-[14px] px-3 py-2.5 text-left";
   const label = "block text-[12.5px]";
   const value = "mt-0.5 block text-[17px] font-[700]";
+  const checkBtn = "inline-flex min-h-[48px] items-center justify-center rounded-full border-2 px-2 text-center text-[15px] font-[700] leading-tight active:scale-[0.99]";
   return (
     <KyaCard className="p-3.5" style={{ boxShadow: "0 10px 24px -16px rgba(18,41,31,.45)" }}>
       <div className="grid grid-cols-3 gap-2">
@@ -546,28 +540,43 @@ function SummaryCard({ birdId, weights, today, canCheck }: { birdId: string; wei
           <span className={label} style={{ color: K.quiet }}>{t("birdRecord.tileLastWeighed", "Last weighed")}</span>
           <span className={value} style={stale ? { color: K.red } : undefined}>{latest ? whenLabel(t, latest.measured_at) : t("birdRecord.notYet", "Not yet")}</span>
         </div>
-        <div className={tile} style={{ background: K.mist, color: K.forest }}>
-          <span className={label} style={{ color: K.quiet }}>{t("birdRecord.tileDailyCheck", "Daily check")}</span>
-          <span className={value}>{check ? t("birdRecord.checkDone", "Done") : t("birdRecord.notYet", "Not yet")}</span>
-        </div>
-      </div>
-      <div className="mt-2.5 flex min-h-[48px] items-center gap-2 rounded-[14px] pl-3.5 pr-2" style={{ background: K.lime, color: K.forest }}>
         {check ? (
-          <>
-            <Check className="size-4 shrink-0" strokeWidth={3} aria-hidden="true" />
-            <span className="min-w-0 flex-1 text-[14px]">
-              <b className="font-[700]">{t("birdRecord.checkedToday", "Checked today.")}</b>{" "}
-              {check.triage_status === "green" ? t("birdRecord.checkAllNormal", "All normal.") : t("birdRecord.checkNotedSomething", "You noted something.")}
-            </span>
-            <KyaLink onClick={() => navigate({ to: "/birds/$birdId/scans/$scanId", params: { birdId, scanId: check.id } })} className="px-1.5">{t("birdRecord.seeCheck", "See check")}</KyaLink>
-          </>
+          <button type="button" onClick={() => navigate({ to: "/birds/$birdId/scans/$scanId", params: { birdId, scanId: check.id } })} className={`${tile} active:opacity-80`} style={{ background: K.mist, color: K.forest }}>
+            <span className={label} style={{ color: K.quiet }}>{t("birdRecord.tileDailyCheck", "Daily check")}</span>
+            <span className={value}>{t("birdRecord.checkDone", "Done")}</span>
+          </button>
         ) : (
-          <>
-            <span className="min-w-0 flex-1 text-[14px]">{t("birdRecord.notCheckedToday", "Not checked yet today")}</span>
-            {canCheck && <KyaLink onClick={() => navigate({ to: "/check", search: { bird: birdId } })} className="px-1.5">{t("birdRecord.startCheck", "Start check")}</KyaLink>}
-          </>
+          <div className={tile} style={{ background: K.mist, color: K.forest }}>
+            <span className={label} style={{ color: K.quiet }}>{t("birdRecord.tileDailyCheck", "Daily check")}</span>
+            <span className={value}>{t("birdRecord.notYet", "Not yet")}</span>
+          </div>
         )}
       </div>
+      {canCheck && (
+        <>
+          <div className="mt-2.5 grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => navigate({ to: "/check", search: { bird: birdId } })}
+              className={checkBtn}
+              style={{ background: K.sunflower, borderColor: K.forest, color: K.forest }}
+            >
+              {t("birdRecord.dailyCheckButton", "Daily check")}
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate({ to: "/birds/$birdId/scan", params: { birdId } })}
+              className={checkBtn}
+              style={{ background: "#fff", borderColor: K.forest, color: K.forest }}
+            >
+              {t("birdRecord.fullHealthCheckButton", "Full health check")}
+            </button>
+          </div>
+          <p className="m-0 mt-2 px-0.5 text-[12.5px] leading-[1.45]" style={{ color: K.quiet }}>
+            {t("birdRecord.checkButtonsHint", "Daily check has an “all good” shortcut. The full check walks through all 10 questions, the same one a sitter does.")}
+          </p>
+        </>
+      )}
     </KyaCard>
   );
 }
@@ -628,13 +637,72 @@ function fmtMonthYear(iso: string): string {
   return formatLocalDate(new Date(`${iso.slice(0, 10)}T12:00:00`), { month: "short", year: "numeric" });
 }
 
+type Pronoun = "him" | "her" | "them";
+
+/** Object pronoun from birds.sex ("male"/"Male", "female"/"Female"); anything else → them. */
+function pronounOf(sex: string | null | undefined): Pronoun {
+  const k = (sex ?? "").toLowerCase();
+  return k === "male" ? "him" : k === "female" ? "her" : "them";
+}
+
+function handoffDetail(t: TFunction, name: string, p: Pronoun): string {
+  return p === "him"
+    ? t("birdRecord.handoffDetailHim", "{{name}}'s record goes with him", { name })
+    : p === "her"
+      ? t("birdRecord.handoffDetailHer", "{{name}}'s record goes with her", { name })
+      : t("birdRecord.handoffDetailThem", "{{name}}'s record goes with them", { name });
+}
+
+function passedDetail(t: TFunction, p: Pronoun): string {
+  return p === "him"
+    ? t("birdRecord.passedDetailHis", "Keep his record and moments as a memorial")
+    : p === "her"
+      ? t("birdRecord.passedDetailHer", "Keep her record and moments as a memorial")
+      : t("birdRecord.passedDetailTheir", "Keep their record and moments as a memorial");
+}
+
+function deleteDetail(t: TFunction, name: string, p: Pronoun): string {
+  return p === "him"
+    ? t("birdRecord.deleteDetailHim", "Removes {{name}} and everything logged for him", { name })
+    : p === "her"
+      ? t("birdRecord.deleteDetailHer", "Removes {{name}} and everything logged for her", { name })
+      : t("birdRecord.deleteDetailThem", "Removes {{name}} and everything logged for them", { name });
+}
+
+/** One 62px row in the "If things change" card: 40px tile, title, one-line detail, chevron. */
+function ChangeRow({ icon, tileBg, iconColor, title, detail, onClick, danger, last }: {
+  icon: React.ReactNode;
+  tileBg: string;
+  iconColor: string;
+  title: React.ReactNode;
+  detail: React.ReactNode;
+  onClick: () => void;
+  danger?: boolean;
+  last?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex min-h-[62px] w-full items-center gap-3 px-4 py-2.5 text-left active:bg-black/[0.03]"
+      style={{ borderBottom: last ? undefined : `1px solid ${K.line}`, color: K.forest }}
+    >
+      <span className="grid size-10 shrink-0 place-items-center rounded-[12px]" style={{ background: tileBg, color: iconColor }} aria-hidden="true">{icon}</span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[15px] font-[700]" style={danger ? { color: K.red } : undefined}>{title}</span>
+        <span className="mt-0.5 block truncate text-[13px]" style={{ color: K.quiet }}>{detail}</span>
+      </span>
+      <ChevronRight className="size-[18px] shrink-0" style={{ color: danger ? K.red : K.quiet }} aria-hidden="true" />
+    </button>
+  );
+}
+
 // Handoff + foster-fail actions, split by `part`:
 //   "welcome"  → the foster-fail "Welcome to the flock" button (stays near the
 //                top; it's not destructive, so it's separate from the More group).
-//   "handoff"  → the pending-handoff banner, else a "Hand off [name]" button
-//                (outline when prominent — fosters; quiet otherwise). Lives in
-//                the bottom "More" group alongside Delete.
-function HandoffSection({ birdId, name, part }: { birdId: string; name: string; part: "welcome" | "handoff" }) {
+//   "handoff"  → the pending-handoff row, else a "Hand [name] off" row. Lives
+//                in the bottom "If things change" card alongside Delete.
+function HandoffSection({ birdId, name, part, pronoun = "them" }: { birdId: string; name: string; part: "welcome" | "handoff"; pronoun?: Pronoun }) {
   const { t } = useTranslation();
   const qc = useQueryClient();
   const getPending = useServerFn(getPendingHandoff);
@@ -680,28 +748,35 @@ function HandoffSection({ birdId, name, part }: { birdId: string; name: string; 
   // part === "handoff"
   if (pending?.pending) {
     return (
-      <div className="flex w-full items-center gap-3 rounded-[20px] p-3" style={{ background: K.amberBg }}>
-        <Loader2 className="size-4 shrink-0 text-[var(--amber-ink)]" />
-        <p className="min-w-0 flex-1 text-[12.5px] text-[var(--amber-ink)]">
-          <Trans i18nKey="birdRecord.handoffPendingTo" defaults="Handoff pending — to <1>{{email}}</1>" values={{ email: pending.pending.email }} components={{ 1: <span className="font-[500]" /> }} />
+      <div className="flex min-h-[62px] w-full items-center gap-3 px-4 py-2.5" style={{ borderBottom: `1px solid ${K.line}`, background: K.amberBg }}>
+        <span className="grid size-10 shrink-0 place-items-center rounded-[12px] bg-white/60" style={{ color: K.amberText }} aria-hidden="true">
+          <Loader2 className="size-5" />
+        </span>
+        <p className="m-0 min-w-0 flex-1 text-[13px]" style={{ color: K.amberText }}>
+          <Trans i18nKey="birdRecord.handoffPendingTo" defaults="Handoff pending — to <1>{{email}}</1>" values={{ email: pending.pending.email }} components={{ 1: <span className="font-[700] [overflow-wrap:anywhere]" /> }} />
         </p>
-        <button type="button" disabled={cancelM.isPending} onClick={() => cancelM.mutate(pending.pending!.id)} className="shrink-0 text-[12.5px] font-[500] text-[var(--amber-ink)] underline disabled:opacity-50">
+        <button type="button" disabled={cancelM.isPending} onClick={() => cancelM.mutate(pending.pending!.id)} className="min-h-[44px] shrink-0 px-1 text-[14px] font-[700] underline disabled:opacity-50" style={{ color: K.amberText }}>
           {t("birdRecord.cancel", "Cancel")}
         </button>
       </div>
     );
   }
   return (
-    <KyaLink color={K.ink} onClick={() => navigate({ to: "/birds/$birdId/handoff", params: { birdId } })}>
-      {t("birdRecord.handOffToNewOwner", "Hand {{name}} off to a new owner", { name })}
-    </KyaLink>
+    <ChangeRow
+      icon={<HandHeart className="size-5" />}
+      tileBg={K.lime}
+      iconColor={K.forest}
+      title={t("birdRecord.handOffToNewOwner", "Hand {{name}} off to a new owner", { name })}
+      detail={handoffDetail(t, name, pronoun)}
+      onClick={() => navigate({ to: "/birds/$birdId/handoff", params: { birdId } })}
+    />
   );
 }
 
-// Quiet "Delete [name]" for the bottom More group — red text, expands to the
+// "Delete [name]" row for the bottom "If things change" card — red, opens the
 // type-the-name confirmation before the destructive cascade (same flow as the
 // editor's Danger zone). No accidental taps: delete is gated on an exact match.
-function DeleteBirdButton({ birdId, name }: { birdId: string; name: string }) {
+function DeleteBirdButton({ birdId, name, pronoun = "them" }: { birdId: string; name: string; pronoun?: Pronoun }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -751,9 +826,16 @@ function DeleteBirdButton({ birdId, name }: { birdId: string; name: string }) {
 
   return (
     <>
-      <KyaLink color={K.red} onClick={() => setConfirming(true)}>
-        {t("birdRecord.deleteName", "Delete {{name}}", { name })}
-      </KyaLink>
+      <ChangeRow
+        icon={<Trash2 className="size-5" />}
+        tileBg="#fbe9e9"
+        iconColor={K.red}
+        title={t("birdRecord.deleteName", "Delete {{name}}", { name })}
+        detail={deleteDetail(t, name, pronoun)}
+        onClick={() => setConfirming(true)}
+        danger
+        last
+      />
       {confirming && (
         // Modal renders ABOVE the bottom nav (z-50 vs nav's z-40), backdrop
         // does NOT dismiss (destructive + irreversible — explicit choice only),

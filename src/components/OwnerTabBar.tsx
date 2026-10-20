@@ -35,17 +35,34 @@ function tabForPath(pathname: string): OwnerTab | undefined {
   if (pathname.startsWith("/dashboard")) return "home";
   if (pathname.startsWith("/today")) return "sits";
   if (pathname.startsWith("/sits")) return "sits";
-  // Notification settings is opened from settings, not the Health tab.
+  // Notification settings is a page: it highlights the tab you came from.
   if (pathname.startsWith("/scans/settings")) return undefined;
   if (pathname.startsWith("/scans")) return "activity";
   if (pathname.startsWith("/explore")) return "explore";
-  return undefined; // deeper screens (bird editor, account, …) highlight nothing
+  return undefined;
+}
+
+/** A task screen: no bottom nav, Close instead of Back. */
+export function isTaskPath(pathname: string): boolean {
+  return pathname === "/check" || /^\/birds\/[^/]+\/scan$/.test(pathname) ||
+    pathname === "/sits/new" || pathname.startsWith("/sits/edit/");
+}
+
+// Pages opened from a tab (a bird, account, a sit…) highlight the tab the
+// person came from: the last tab screen visited, remembered for the session.
+const LAST_TAB_KEY = "kya_last_tab";
+function rememberedTab(): OwnerTab | undefined {
+  try { return (sessionStorage.getItem(LAST_TAB_KEY) as OwnerTab | null) ?? undefined; } catch { return undefined; }
 }
 
 export function OwnerTabBar({ active, embedded }: { active?: OwnerTab; embedded?: boolean }) {
   const { t } = useTranslation();
   const pathname = useLocation({ select: (l) => l.pathname });
-  const current = active ?? tabForPath(pathname);
+  const own = tabForPath(pathname);
+  if (own && typeof window !== "undefined") {
+    try { sessionStorage.setItem(LAST_TAB_KEY, own); } catch { /* ignore */ }
+  }
+  const current = active ?? own ?? rememberedTab() ?? "home";
   // ONE nav for every authenticated account — owning a bird is derived, not a
   // signup type, so there's no owner-vs-caregiver nav split (a recurring bug
   // source). A sit you're covering shows as a section on Home, not a nav tab.

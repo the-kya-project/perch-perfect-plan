@@ -1,15 +1,17 @@
-import { createFileRoute, useNavigate, useRouter, useCanGoBack } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, Camera, Plus, Share2, Check, X, Loader2, CalendarHeart } from "lucide-react";
+import { Camera, Plus, Share2, Loader2, CalendarHeart, Egg, House, Sparkles, Trash2 } from "lucide-react";
 import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
 import { uploadJournalPhoto, signJournalPhotos } from "@/lib/journalPhoto";
 import { useBirdPhotos } from "@/lib/useBirdPhotos";
 import { useBirdRole } from "@/lib/useBirdRole";
 import { shareMomentCard } from "@/lib/momentCard";
-import { InkHero, IconTile, SectionHead, Card, RecordRow } from "@/components/system";
+import { togetherSince, occurredYears } from "@/lib/togetherSince";
+import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaIconTile, KyaPrimaryButton, KyaSecondaryButton, KyaSheet, KyaField } from "@/components/kya";
+import { PageHeader, useGoBack } from "@/components/headers";
 import { friendlyError } from "@/lib/errorMessage";
 import { formatLocalDate } from "@/lib/dates";
 import { localDateISO } from "@/lib/localDay";
@@ -24,7 +26,7 @@ export const Route = createFileRoute("/_authenticated/birds/$birdId/moments")({
 type AnchorKey = "gotcha_day" | "hatch_day";
 type AnchorPhoto = { anchor: string; year: number; photo_path: string };
 type Custom = { id: string; title: string | null; on_date: string | null; photo_path: string | null };
-type Anchor = { key: AnchorKey; label: string; baseISO: string };
+type Anchor = { key: AnchorKey; baseISO: string };
 
 // ---- date helpers ----
 const todayMid = () => { const n = new Date(); return new Date(n.getFullYear(), n.getMonth(), n.getDate(), 12); };
@@ -45,18 +47,38 @@ function relDay(d: Date) {
 }
 const fmtDate = (iso: string) => formatLocalDate(new Date(`${iso}T12:00:00`), { month: "short", day: "numeric", year: "numeric" });
 const monthDay = (iso: string) => formatLocalDate(new Date(`${iso}T12:00:00`), { month: "short", day: "numeric" });
+/** Calendar position (MM-DD) for ordering the milestone list Jan → Dec. */
+const calKey = (iso: string) => iso.slice(5, 10);
+
+/** "2024, 2025, 2026", or "2016–2026" once the list gets long. */
+function yearsText(years: number[]): string {
+  if (years.length > 5) return `${years[0]}–${years[years.length - 1]}`;
+  return years.join(", ");
+}
+
+/** Sunflower pill, the compact form of the main button (Share). */
+function SunflowerPill({ children, onClick, icon }: { children: ReactNode; onClick: () => void; icon?: ReactNode }) {
+  return (
+    <button type="button" onClick={onClick} className="inline-flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-full border-2 px-5 text-[15px] font-[700] active:scale-[0.98]" style={{ background: K.sunflower, borderColor: K.forest, color: K.forest }}>
+      {icon}{children}
+    </button>
+  );
+}
+
+type MilestoneItem =
+  | { type: "anchor"; key: string; sort: string; anchor: Anchor }
+  | { type: "custom"; key: string; sort: string; custom: Custom };
 
 function MomentsFacet() {
   const { t } = useTranslation();
   const { birdId } = Route.useParams();
   const navigate = useNavigate();
-  const router = useRouter();
-  const canGoBack = useCanGoBack();
   // Return where the visitor came from (bird record, or a Remembering memorial
   // card); fall back to the bird record when there's no real history.
-  const goBack = () => (canGoBack && window.history.length > 1 ? router.history.back() : navigate({ to: "/birds/$birdId", params: { birdId } }));
+  const goBack = useGoBack(useCallback(() => navigate({ to: "/birds/$birdId", params: { birdId } }), [navigate, birdId]));
   const qc = useQueryClient();
-  const [adding, setAdding] = useState(false);
+  // One sheet at a time: adding/editing a milestone, or one anchor's year photos.
+  const [sheet, setSheet] = useState<{ kind: "add" } | { kind: "edit"; custom: Custom } | { kind: "anchor"; key: AnchorKey } | null>(null);
   const [busy, setBusy] = useState(false);
   // Moments/anchor photos are owner-curated (RLS: owner-write, member-read).
   // Household members view them but can't add — gate every write affordance so
@@ -111,17 +133,34 @@ function MomentsFacet() {
   const birdPhoto = birdPhotoOf(bird?.photo_url);
   const photoByYear = new Map(anchorPhotos.map((a) => [`${a.anchor}:${a.year}`, a.photo_path]));
 
-  // Derived anchors (only when the identity date exists).
+  // Derived anchors (only when the identity date exists). Gotcha-day is the
+  // came-home date, birds.acquired_on.
   const anchors: Anchor[] = [];
-  if (bird?.acquired_on) anchors.push({ key: "gotcha_day", label: "Gotcha-day", baseISO: bird.acquired_on });
-  if (bird?.birth_date) anchors.push({ key: "hatch_day", label: "Hatch-day", baseISO: bird.birth_date });
+  if (bird?.acquired_on) anchors.push({ key: "gotcha_day", baseISO: bird.acquired_on });
+  if (bird?.birth_date) anchors.push({ key: "hatch_day", baseISO: bird.birth_date });
 
-  const anchorTitle = (a: Anchor, years: number) =>
-    a.key === "gotcha_day"
-      ? years === 1
-        ? t("birdMoments.yearsTogetherOne", "{{n}} year together", { n: years })
-        : t("birdMoments.yearsTogetherOther", "{{n}} years together", { n: years })
-      : t("birdMoments.turns", "{{name}} turns {{n}}", { name, n: years });
+  const yearsTogetherText = (n: number) =>
+    t("birdMoments.yearsTogether", "{{count}} years together", { count: n, defaultValue_one: "{{count}} year together" });
+
+  /** The anniversary that falls in a given year (n = years since the base date). */
+  const anchorTitle = (a: Anchor, n: number) => {
+    if (n <= 0) {
+      return a.key === "gotcha_day"
+        ? t("birdMoments.cameHomeDay", "The day {{name}} came home", { name })
+        : t("birdMoments.hatchedDay", "The day {{name}} hatched", { name });
+    }
+    return a.key === "gotcha_day" ? yearsTogetherText(n) : t("birdMoments.turns", "{{name}} turns {{n}}", { name, n });
+  };
+
+  /** How long the bird has been home as of today — full years, birthday-style,
+   *  so Sep 13, 2024 reads "2 years together" on Oct 20, 2026. */
+  const togetherNow = (cameHomeISO: string) => {
+    const s = togetherSince(cameHomeISO, todayMid());
+    if (s.unit === "years") return yearsTogetherText(s.count);
+    if (s.unit === "months") return t("birdMoments.monthsTogether", "{{count}} months together", { count: s.count, defaultValue_one: "{{count}} month together" });
+    return t("birdMoments.lessThanMonthTogether", "Less than a month together");
+  };
+
   const anchorLabel = (a: Anchor) => (a.key === "gotcha_day" ? t("birdMoments.gotchaDay", "Gotcha-day") : t("birdMoments.hatchDay", "Hatch-day"));
 
   // Featured keepsake = soonest upcoming anchor.
@@ -136,12 +175,24 @@ function MomentsFacet() {
   const featuredFromBird = !featuredAnchorPhoto && !!birdPhoto?.url;
   const featuredPhoto = featuredAnchorPhoto ?? birdPhoto?.url ?? null;
   const featuredPosition = featuredFromBird ? (bird?.photo_position ?? "50% 50%") : "50% 50%";
+  // The gotcha-day card states how long they've been together now; hatch-day
+  // keeps naming the coming birthday.
+  const featuredTitle = featured
+    ? featured.a.key === "gotcha_day" ? togetherNow(featured.a.baseISO) : anchorTitle(featured.a, featured.occ.years)
+    : "";
 
-  // Nudge = an anchor within ~7 days.
+  // Nudge = an anchor within ~7 days. This one looks ahead, so it names the
+  // anniversary that's coming.
   const nudge = anchors
     .map((a) => ({ a, occ: nextOccurrence(a.baseISO) }))
     .filter((x) => daysUntil(x.occ.date) <= 7 && daysUntil(x.occ.date) >= 0)
     .sort((x, y) => +x.occ.date - +y.occ.date)[0];
+
+  // One list: the yearly anchors and the owner's own, in calendar order.
+  const items: MilestoneItem[] = [
+    ...anchors.map((a): MilestoneItem => ({ type: "anchor", key: a.key, sort: `${calKey(a.baseISO)}|${a.baseISO}`, anchor: a })),
+    ...customs.map((c): MilestoneItem => ({ type: "custom", key: c.id, sort: c.on_date ? `${calKey(c.on_date)}|${c.on_date}` : "99", custom: c })),
+  ].sort((x, y) => x.sort.localeCompare(y.sort));
 
   async function addAnchorPhoto(anchor: AnchorKey, year: number, file: File) {
     setBusy(true);
@@ -169,179 +220,258 @@ function MomentsFacet() {
     }
   }
 
+  const shareCustom = (c: Custom) => share({
+    photoUrl: urlFor(c.photo_path),
+    title: c.title || t("birdMoments.milestone", "Milestone"),
+    context: `${name}${c.on_date ? ` · ${monthDay(c.on_date)}` : ""}`,
+  });
+
+  const sheetAnchor = sheet?.kind === "anchor" ? anchors.find((a) => a.key === sheet.key) ?? null : null;
+  const refreshCustoms = () => qc.invalidateQueries({ queryKey: ["moments", birdId] });
+
   return (
-    <div className="min-h-screen bg-[var(--cream)] pb-nav">
-      <div className="mx-auto max-w-md">
-        <InkHero
-          eyebrow={t("birdMoments.eyebrow", "Moments")}
-          headline={t("birdMoments.headline", "{{name}} being {{name}}.", { name })}
-          body={t("birdMoments.body", "The highlight reel.")}
-          backIcon={<ArrowLeft className="size-5" />}
-          onBack={goBack}
-          trailingIcons={busy ? <Loader2 className="size-4 animate-spin text-white/80" /> : undefined}
-          cta={isOwner ? { label: t("birdMoments.addCustom", "Add custom milestone"), tone: "lime", icon: <Plus className="size-4" />, onPress: () => setAdding(true) } : undefined}
-        />
+    <KyaPage>
+      <PageHeader
+        onBack={goBack}
+        title={bird?.name
+          ? t("birdMoments.titleNamed", "{{name}}'s moments", { name: bird.name })
+          : t("birdMoments.titlePlain", "Moments")}
+        line={t("birdMoments.line", "The days worth remembering.")}
+      />
 
-        <main className="space-y-4 px-5 pt-5">
-          {/* Upcoming nudge — only within ~7 days, owner-only (it's an upload prompt) */}
-          {nudge && isOwner && (
-            <section>
-              <SectionHead title={t("birdMoments.upcoming", "Upcoming")} />
-              <Card>
-                <div className="flex items-center gap-3 px-4 py-3">
-                  <IconTile size={38} tone="pale" icon={<CalendarHeart className="size-5" />} />
-                  <p className="min-w-0 flex-1 t-body text-[var(--ink)]">
-                    {t("birdMoments.nudge", "{{title}} {{when}} — mark it with a photo.", { title: anchorTitle(nudge.a, nudge.occ.years), when: relDay(nudge.occ.date) })}
-                  </p>
-                  <label className="inline-flex min-h-[44px] shrink-0 cursor-pointer items-center gap-1.5 rounded-[12px] bg-[var(--ink)] px-4 text-[15px] font-[500] text-white active:scale-[0.99]">
-                    <Plus className="size-4" /> {t("birdMoments.add", "Add")}
-                    <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) addAnchorPhoto(nudge.a.key, nudge.occ.date.getFullYear(), f); }} />
-                  </label>
-                </div>
-              </Card>
-            </section>
-          )}
+      <KyaBody>
+        {busy && (
+          <p className="m-0 inline-flex items-center gap-2 px-1 text-[14px] font-[700]" style={{ color: K.moss }}>
+            <Loader2 className="size-4 animate-spin" aria-hidden="true" /> {t("birdMoments.savingPhoto", "Saving photo…")}
+          </p>
+        )}
 
-          {/* Featured keepsake card — photo gradient with the Kya Project mark */}
-          {featured && (
-            <section>
-              <div className="relative aspect-[4/5] w-full overflow-hidden rounded-[18px]">
-                {featuredPhoto ? (
-                  <img src={featuredPhoto} alt="" className="absolute inset-0 size-full object-cover" style={{ objectPosition: featuredPosition }} />
-                ) : (
-                  <div className="absolute inset-0" style={{ background: "linear-gradient(135deg,var(--moss),var(--lime))" }} />
-                )}
-                <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(26,61,46,.92) 0%, rgba(26,61,46,0) 48%)" }} />
-                <span className="absolute right-4 top-4 t-eyebrow text-white/90">The Kya Project</span>
-                <div className="absolute inset-x-0 bottom-0 p-5">
-                  <p className="text-[22px] font-[500] leading-tight tracking-[-0.01em] text-white">{anchorTitle(featured.a, featured.occ.years)}</p>
-                  <p className="mt-1 t-body text-white/85">{name} · {monthDay(featured.a.baseISO)}</p>
-                </div>
+        {/* Upcoming nudge — only within ~7 days, owner-only (it's an upload prompt) */}
+        {nudge && isOwner && (
+          <KyaCard>
+            <div className="flex items-center gap-3 px-4 py-3">
+              <KyaIconTile><CalendarHeart className="size-5" /></KyaIconTile>
+              <p className="m-0 min-w-0 flex-1 text-[15px] leading-[1.45]" style={{ color: K.forest }}>
+                {t("birdMoments.nudge", "{{title}} {{when}} — mark it with a photo.", { title: anchorTitle(nudge.a, nudge.occ.years), when: relDay(nudge.occ.date) })}
+              </p>
+              <label className="inline-flex min-h-[44px] shrink-0 cursor-pointer items-center gap-1.5 rounded-full border-2 bg-white px-4 text-[15px] font-[700] active:scale-[0.98]" style={{ borderColor: K.forest, color: K.forest }}>
+                <Plus className="size-4" /> {t("birdMoments.add", "Add")}
+                <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) addAnchorPhoto(nudge.a.key, nudge.occ.date.getFullYear(), f); }} />
+              </label>
+            </div>
+          </KyaCard>
+        )}
+
+        {/* Share card — the photo with the keepsake overlay, then the share row */}
+        {featured && (
+          <KyaCard>
+            <div className="relative aspect-[4/5] w-full overflow-hidden">
+              {featuredPhoto ? (
+                <img src={featuredPhoto} alt="" className="absolute inset-0 size-full object-cover" style={{ objectPosition: featuredPosition }} />
+              ) : (
+                <div className="absolute inset-0" style={{ background: `linear-gradient(135deg,${K.moss},${K.lime})` }} />
+              )}
+              <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(26,61,46,.92) 0%, rgba(26,61,46,0) 48%)" }} />
+              <span className="absolute right-4 top-4 text-[13px] font-[700] text-white/90">The Kya Project</span>
+              <div className="absolute inset-x-0 bottom-0 p-5">
+                <KyaHeading as="h2" size={26} className="text-white">{featuredTitle}</KyaHeading>
+                <p className="m-0 mt-1 text-[15px] text-white/85">{name} · {monthDay(featured.a.baseISO)}</p>
               </div>
-              <div className="mt-2 flex items-center justify-between gap-3 px-1">
-                <p className="t-meta">{t("birdMoments.saveOrShare", "Save to your photos or share anywhere.")}</p>
-                <button
-                  type="button"
-                  onClick={() => share({ photoUrl: featuredPhoto, title: anchorTitle(featured.a, featured.occ.years), context: `${name} · ${monthDay(featured.a.baseISO)}` })}
-                  className="inline-flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-full bg-[var(--ink)] px-4 text-[15px] font-[500] text-white active:scale-[0.99]"
-                >
-                  <Share2 className="size-4" /> {t("birdMoments.share", "Share")}
-                </button>
-              </div>
-            </section>
-          )}
+            </div>
+            <div className="flex items-center justify-between gap-3 px-4 py-3">
+              <p className="m-0 text-[14px] leading-[1.4]" style={{ color: K.quiet }}>{t("birdMoments.saveOrShare", "Save to your photos or share anywhere.")}</p>
+              <SunflowerPill
+                icon={<Share2 className="size-4" />}
+                onClick={() => share({ photoUrl: featuredPhoto, title: featuredTitle, context: `${name} · ${monthDay(featured.a.baseISO)}` })}
+              >
+                {t("birdMoments.share", "Share")}
+              </SunflowerPill>
+            </div>
+          </KyaCard>
+        )}
 
-          {/* Milestones — auto anchors with year-over-year photo slots */}
-          {anchors.length > 0 && (
-            <section>
-              <SectionHead title={t("birdMoments.milestones", "Milestones")} />
-              <div className="space-y-4">
-                {anchors.map((a) => {
-                  const baseYear = new Date(`${a.baseISO}T12:00:00`).getFullYear();
-                  const thisYear = todayMid().getFullYear();
-                  const years: number[] = [];
-                  for (let y = baseYear; y <= thisYear; y++) years.push(y);
-                  return (
-                    <Card key={a.key} className="p-4">
-                      <div className="flex items-baseline justify-between">
-                        <p className="t-item">{anchorLabel(a)}</p>
-                        <p className="t-meta">{t("birdMoments.yearly", "{{date}} · yearly", { date: monthDay(a.baseISO) })}</p>
-                      </div>
-                      <div className="mt-3 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                        {years.map((y) => {
-                          const path = photoByYear.get(`${a.key}:${y}`);
-                          const url = urlFor(path);
-                          const isCurrent = y === thisYear;
-                          return (
-                            <div key={y} className="shrink-0 text-center">
-                              {url ? (
-                                <button type="button" onClick={() => share({ photoUrl: url, title: anchorTitle(a, y - baseYear), context: `${name} · ${y}` })} className="block size-16 overflow-hidden rounded-xl ring-1 ring-[var(--line2)]">
-                                  <img src={url} alt="" className="size-full object-cover" />
-                                </button>
-                              ) : isOwner ? (
-                                <label className={`grid size-16 cursor-pointer place-items-center rounded-xl ${isCurrent ? "border-2 border-dashed border-[var(--moss)] text-[var(--moss)]" : "text-white/80"}`} style={isCurrent ? undefined : { background: "linear-gradient(135deg,var(--moss),var(--lime))" }}>
-                                  <Plus className="size-5" />
-                                  <input type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) addAnchorPhoto(a.key, y, f); }} />
-                                </label>
-                              ) : (
-                                // Members: non-interactive placeholder for a year with no photo yet.
-                                <span aria-hidden className={`grid size-16 place-items-center rounded-xl ${isCurrent ? "border border-dashed border-[var(--line)]" : "opacity-60"}`} style={isCurrent ? undefined : { background: "linear-gradient(135deg,var(--moss),var(--lime))" }} />
-                              )}
-                              <span className="mt-1 block t-meta">{y}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </Card>
-                  );
-                })}
-              </div>
-            </section>
-          )}
-
-          {anchors.length === 0 && (
-            <p className="rounded-[16px] bg-[var(--cream2)] p-6 text-center t-body text-[var(--mute)]">
+        {anchors.length === 0 && (
+          <KyaCard className="p-6 text-center">
+            <p className="m-0 text-[15px] leading-[1.5]" style={{ color: K.quiet }}>
               {isOwner
                 ? t("birdMoments.emptyOwner", "Add {{name}}'s hatch date and the day they came home in Identity, and their yearly moments will appear here.", { name })
                 : t("birdMoments.emptyMember", "Once {{name}}'s owner adds a hatch date or homecoming day, the yearly moments will appear here.", { name })}
             </p>
-          )}
+          </KyaCard>
+        )}
 
-          {/* Your own — secondary. Members see it only when there are entries to view. */}
-          {(customs.length > 0 || isOwner) && (
-          <section>
-            <SectionHead title={t("birdMoments.yourOwn", "Your own")} />
-            {customs.length > 0 && (
-              <Card className="mb-2">
-                {customs.map((c, i) => {
+        {/* Milestones — the yearly anchors and the owner's own, one list.
+            Members see it only when there's something to view. */}
+        {(items.length > 0 || isOwner) && (
+          <section className="flex flex-col gap-2.5">
+            <KyaHeading size={21} className="px-1">{t("birdMoments.milestones", "Milestones")}</KyaHeading>
+            {items.length > 0 && (
+              <KyaCard>
+                {items.map((it, i) => {
+                  const last = i === items.length - 1;
+                  if (it.type === "anchor") {
+                    const a = it.anchor;
+                    const years = occurredYears(a.baseISO, todayMid());
+                    const detail = years.length
+                      ? t("birdMoments.everyYearLine", "{{date}} · every year · {{years}}", { date: monthDay(a.baseISO), years: yearsText(years) })
+                      : t("birdMoments.everyYearShort", "{{date}} · every year", { date: monthDay(a.baseISO) });
+                    return (
+                      <MilestoneRow
+                        key={it.key}
+                        last={last}
+                        leading={<KyaIconTile>{a.key === "gotcha_day" ? <House className="size-5" /> : <Egg className="size-5" />}</KyaIconTile>}
+                        title={anchorLabel(a)}
+                        detail={detail}
+                        onClick={() => setSheet({ kind: "anchor", key: a.key })}
+                      />
+                    );
+                  }
+                  const c = it.custom;
                   const url = urlFor(c.photo_path);
                   return (
-                    <RecordRow
-                      key={c.id}
-                      leading={
-                        url
-                          ? <img src={url} alt="" className="size-11 shrink-0 rounded-[11px] object-cover" />
-                          : <span className="size-11 shrink-0 rounded-[11px]" style={{ background: "linear-gradient(135deg,var(--moss),var(--lime))" }} />
-                      }
+                    <MilestoneRow
+                      key={it.key}
+                      last={last}
+                      leading={url
+                        ? <img src={url} alt="" className="size-10 shrink-0 rounded-[12px] object-cover" />
+                        : <KyaIconTile><Sparkles className="size-5" /></KyaIconTile>}
                       title={c.title || t("birdMoments.milestone", "Milestone")}
-                      subtitle={c.on_date ? fmtDate(c.on_date) : undefined}
+                      detail={c.on_date ? t("birdMoments.ownLine", "{{date}} · your own", { date: fmtDate(c.on_date) }) : t("birdMoments.ownShort", "Your own")}
+                      onClick={isOwner ? () => setSheet({ kind: "edit", custom: c }) : () => shareCustom(c)}
                       trailing={
-                        <button type="button" onClick={() => share({ photoUrl: url, title: c.title || t("birdMoments.milestone", "Milestone"), context: `${name}${c.on_date ? ` · ${monthDay(c.on_date)}` : ""}` })} aria-label={t("birdMoments.share", "Share")} className="grid size-11 place-items-center rounded-full text-[var(--moss)] active:scale-95">
-                          <Share2 className="size-4" />
+                        <button type="button" onClick={() => shareCustom(c)} aria-label={t("birdMoments.share", "Share")} className="grid size-11 place-items-center rounded-full active:scale-95" style={{ color: K.moss }}>
+                          <Share2 className="size-[18px]" />
                         </button>
                       }
-                      chevron={false}
-                      last={i === customs.length - 1}
                     />
                   );
                 })}
-              </Card>
+              </KyaCard>
             )}
             {isOwner && (
-              <button type="button" onClick={() => setAdding(true)} className="mt-2 flex min-h-[44px] w-full items-center justify-center gap-2 rounded-[12px] border border-dashed border-[var(--line)] t-item text-[var(--mute)] active:scale-[0.99]">
-                <Plus className="size-4" /> {t("birdMoments.addMilestone", "Add a milestone")}
-              </button>
+              <KyaSecondaryButton className="w-full" icon={<Plus className="size-4" />} onClick={() => setSheet({ kind: "add" })}>
+                {t("birdMoments.addMilestone", "Add a milestone")}
+              </KyaSecondaryButton>
             )}
           </section>
-          )}
-        </main>
-      </div>
+        )}
+      </KyaBody>
 
-      {adding && (
-        <AddMilestone birdId={birdId} onClose={() => setAdding(false)} onSaved={() => { setAdding(false); qc.invalidateQueries({ queryKey: ["moments", birdId] }); }} />
+      {(sheet?.kind === "add" || sheet?.kind === "edit") && (
+        <MilestoneSheet
+          birdId={birdId}
+          custom={sheet.kind === "edit" ? sheet.custom : null}
+          photoUrl={sheet.kind === "edit" ? urlFor(sheet.custom.photo_path) : null}
+          onClose={() => setSheet(null)}
+          onSaved={() => { setSheet(null); refreshCustoms(); }}
+        />
       )}
+
+      {sheetAnchor && (
+        <KyaSheet
+          onClose={() => setSheet(null)}
+          closeLabel={t("birdMoments.close", "Close")}
+          title={
+            <>
+              <KyaHeading size={24}>{anchorLabel(sheetAnchor)}</KyaHeading>
+              <p className="m-0 mt-1 text-[14px]" style={{ color: K.quiet }}>{t("birdMoments.yearly", "{{date}} · yearly", { date: monthDay(sheetAnchor.baseISO) })}</p>
+            </>
+          }
+        >
+          <AnchorYears
+            anchor={sheetAnchor}
+            isOwner={isOwner}
+            busy={busy}
+            urlForYear={(y) => urlFor(photoByYear.get(`${sheetAnchor.key}:${y}`))}
+            onAdd={(y, f) => addAnchorPhoto(sheetAnchor.key, y, f)}
+            onShare={(y, url) => share({ photoUrl: url, title: anchorTitle(sheetAnchor, y - Number(sheetAnchor.baseISO.slice(0, 4))), context: `${name} · ${y}` })}
+          />
+        </KyaSheet>
+      )}
+    </KyaPage>
+  );
+}
+
+/** A milestone row: tile, bold title, muted line, optional trailing control.
+ *  The row and the trailing control are siblings so neither nests a button. */
+function MilestoneRow({ leading, title, detail, trailing, onClick, last }: { leading: ReactNode; title: ReactNode; detail: ReactNode; trailing?: ReactNode; onClick: () => void; last: boolean }) {
+  return (
+    <div className="flex items-center pr-2" style={{ borderBottom: last ? undefined : `1px solid ${K.line}` }}>
+      <button type="button" onClick={onClick} className="flex min-h-[64px] min-w-0 flex-1 items-center gap-3 py-2.5 pl-4 pr-2 text-left active:bg-black/[0.03]" style={{ color: K.forest }}>
+        {leading}
+        <span className="min-w-0 flex-1">
+          <span className="block text-[15px] font-[700]">{title}</span>
+          <span className="mt-0.5 block text-[13px] leading-[1.35]" style={{ color: K.quiet }}>{detail}</span>
+        </span>
+      </button>
+      {trailing}
     </div>
   );
 }
 
-function AddMilestone({ birdId, onClose, onSaved }: { birdId: string; onClose: () => void; onSaved: () => void }) {
+/** The year-over-year photo slots for one yearly anchor. */
+function AnchorYears({ anchor, isOwner, busy, urlForYear, onAdd, onShare }: {
+  anchor: Anchor;
+  isOwner: boolean;
+  busy: boolean;
+  urlForYear: (y: number) => string | null;
+  onAdd: (year: number, file: File) => void;
+  onShare: (year: number, url: string) => void;
+}) {
   const { t } = useTranslation();
-  const [title, setTitle] = useState("");
-  const [date, setDate] = useState(localDateISO());
-  const [photoData, setPhotoData] = useState<string | null>(null);
+  const baseYear = Number(anchor.baseISO.slice(0, 4));
+  const thisYear = todayMid().getFullYear();
+  const years: number[] = [];
+  for (let y = thisYear; y >= baseYear; y--) years.push(y);
+  return (
+    <>
+      <p className="m-0 text-[14px] leading-[1.45]" style={{ color: K.quiet }}>
+        {isOwner
+          ? t("birdMoments.yearsHintOwner", "One photo for each year. Tap a photo to share it.")
+          : t("birdMoments.yearsHintMember", "Tap a photo to share it.")}
+      </p>
+      <div className="mt-3 grid grid-cols-3 gap-3">
+        {years.map((y) => {
+          const url = urlForYear(y);
+          const isCurrent = y === thisYear;
+          return (
+            <div key={y} className="text-center">
+              {url ? (
+                <button type="button" onClick={() => onShare(y, url)} aria-label={t("birdMoments.shareYear", "Share {{year}}", { year: y })} className="block aspect-square w-full overflow-hidden rounded-[14px] active:opacity-90">
+                  <img src={url} alt="" className="size-full object-cover" />
+                </button>
+              ) : isOwner ? (
+                <label className={`grid aspect-square w-full place-items-center rounded-[14px] border-2 border-dashed ${busy ? "opacity-50" : "cursor-pointer active:scale-[0.98]"}`} style={{ borderColor: isCurrent ? K.moss : "#c4d2c4", color: K.moss, background: isCurrent ? "#fff" : K.mist }}>
+                  <span className="flex flex-col items-center gap-1 text-[13px] font-[700]"><Camera className="size-5" aria-hidden="true" />{t("birdMoments.add", "Add")}</span>
+                  <input type="file" accept="image/*" className="hidden" disabled={busy} onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) onAdd(y, f); }} />
+                </label>
+              ) : (
+                // Members: non-interactive placeholder for a year with no photo yet.
+                <span aria-hidden className="block aspect-square w-full rounded-[14px]" style={{ background: K.mist }} />
+              )}
+              <span className="mt-1 block text-[13px] font-[700]" style={{ color: K.quiet }}>{y}</span>
+            </div>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
+/** Add or edit one of the owner's own milestones. */
+function MilestoneSheet({ birdId, custom, photoUrl, onClose, onSaved }: { birdId: string; custom: Custom | null; photoUrl: string | null; onClose: () => void; onSaved: () => void }) {
+  const { t } = useTranslation();
+  const [title, setTitle] = useState(custom?.title ?? "");
+  const [date, setDate] = useState(custom?.on_date ?? localDateISO());
+  const [photoData, setPhotoData] = useState<string | null>(null); // new pick
+  const [keepPhoto, setKeepPhoto] = useState(true); // existing photo retained?
   const [photoBusy, setPhotoBusy] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const valid = title.trim().length > 0 && !!date;
+  const existingPhoto = custom?.photo_path ?? null;
+  const shownPhoto = photoData ?? (keepPhoto && existingPhoto ? photoUrl ?? "existing" : null);
+  const busy = saving || deleting;
 
   async function pick(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -352,6 +482,7 @@ function AddMilestone({ birdId, onClose, onSaved }: { birdId: string; onClose: (
       const d = await compressImageToDataUrl(file);
       if (dataUrlBytes(d) > MAX_UPLOAD_BYTES) { toast.error(t("birdMoments.photoTooLargeShort", "That photo's a bit too large even after resizing.")); return; }
       setPhotoData(d);
+      setKeepPhoto(false);
     } catch { toast.error(t("birdMoments.photoFailed", "Couldn't process that photo.")); }
     finally { setPhotoBusy(false); }
   }
@@ -360,13 +491,19 @@ function AddMilestone({ birdId, onClose, onSaved }: { birdId: string; onClose: (
     if (!valid) return;
     setSaving(true);
     try {
-      let photo_path: string | null = null;
+      let photo_path: string | null = keepPhoto ? existingPhoto : null;
       if (photoData) photo_path = await uploadJournalPhoto(birdId, photoData);
-      const { error } = await supabase.from("moments").insert({
-        bird_id: birdId, kind: "custom", title: title.trim(), on_date: date, recurs: false, auto_generated: false, photo_path,
-      });
-      if (error) throw error;
-      toast.success(t("birdMoments.milestoneAdded", "Milestone added."));
+      if (custom) {
+        const { error } = await supabase.from("moments").update({ title: title.trim(), on_date: date, photo_path }).eq("id", custom.id);
+        if (error) throw error;
+        toast.success(t("birdMoments.milestoneUpdated", "Milestone updated."));
+      } else {
+        const { error } = await supabase.from("moments").insert({
+          bird_id: birdId, kind: "custom", title: title.trim(), on_date: date, recurs: false, auto_generated: false, photo_path,
+        });
+        if (error) throw error;
+        toast.success(t("birdMoments.milestoneAdded", "Milestone added."));
+      }
       onSaved();
     } catch (e: any) {
       toast.error(friendlyError(e, t("birdMoments.saveFailed", "Couldn't save.")));
@@ -375,44 +512,78 @@ function AddMilestone({ birdId, onClose, onSaved }: { birdId: string; onClose: (
     }
   }
 
+  async function remove() {
+    if (!custom) return;
+    if (!window.confirm(t("birdMoments.confirmDelete", "Delete this milestone? This can't be undone."))) return;
+    setDeleting(true);
+    try {
+      const { error } = await supabase.from("moments").delete().eq("id", custom.id);
+      if (error) throw error;
+      toast.success(t("birdMoments.milestoneDeleted", "Milestone deleted."));
+      onSaved();
+    } catch (e: any) {
+      toast.error(friendlyError(e, t("birdMoments.deleteFailed", "Couldn't delete the milestone.")));
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   return (
-    <div className="fixed inset-0 z-50 grid place-items-end sm:place-items-center">
-      <div className="absolute inset-0 bg-black/30" onClick={saving ? undefined : onClose} />
-      <div className="relative w-full max-w-md rounded-t-2xl bg-[#f4f1e8] p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-xl sm:rounded-2xl">
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-medium text-[#1a3d2e]">{t("birdMoments.addMilestone", "Add a milestone")}</h2>
-          <button onClick={onClose} aria-label={t("birdMoments.close", "Close")} className="rounded-full p-1 text-[#5f5e5a]"><X className="size-5" /></button>
-        </div>
-        <label className="block">
-          <span className="mb-1 block text-xs font-medium text-[#5f5e5a]">{t("birdMoments.titleLabel", "Title")}</span>
-          <input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={80} placeholder={t("birdMoments.titlePlaceholder", "e.g. First free-flight trip")} className="h-11 w-full rounded-xl border border-[#c8bfa6] bg-[#fbfaf2] px-3 text-sm text-[#1a3d2e]" />
-        </label>
-        <label className="mt-3 block">
-          <span className="mb-1 block text-xs font-medium text-[#5f5e5a]">{t("birdMoments.dateLabel", "Date")}</span>
-          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="h-11 w-full rounded-xl border border-[#c8bfa6] bg-[#fbfaf2] px-3 text-sm text-[#1a3d2e]" />
-        </label>
-        <div className="mt-3">
-          <span className="mb-1 block text-xs font-medium text-[#5f5e5a]">{t("birdMoments.photoOptional", "Photo (optional)")}</span>
-          {photoData ? (
+    <KyaSheet
+      onClose={busy ? () => {} : onClose}
+      closeLabel={t("birdMoments.close", "Close")}
+      title={<KyaHeading size={24}>{custom ? t("birdMoments.editMilestone", "Edit milestone") : t("birdMoments.addMilestone", "Add a milestone")}</KyaHeading>}
+      footer={
+        <KyaPrimaryButton onClick={save} disabled={!valid || busy || photoBusy}>
+          {saving ? t("birdMoments.saving", "Saving…") : t("birdMoments.save", "Save")}
+        </KyaPrimaryButton>
+      }
+    >
+      <div className="flex flex-col gap-4">
+        <KyaField
+          id="milestone-title"
+          label={t("birdMoments.titleLabel", "Title")}
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          maxLength={80}
+          placeholder={t("birdMoments.titlePlaceholder", "e.g. First free-flight trip")}
+        />
+        <KyaField
+          id="milestone-date"
+          type="date"
+          label={t("birdMoments.dateLabel", "Date")}
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+        />
+        <div>
+          <p className="m-0 mb-1.5 text-[13.5px] font-[700]" style={{ color: K.forest }}>{t("birdMoments.photoOptional", "Photo (optional)")}</p>
+          {shownPhoto ? (
             <div className="flex items-center gap-3">
-              <img src={photoData} alt="" className="h-16 w-16 rounded-lg object-cover" />
-              <button type="button" onClick={() => setPhotoData(null)} className="text-xs font-medium text-[#854F0B] underline">{t("birdMoments.remove", "Remove")}</button>
+              {shownPhoto === "existing"
+                ? <span className="grid size-16 place-items-center rounded-[12px]" style={{ background: K.mist, color: K.quiet }}><Camera className="size-5" aria-hidden="true" /></span>
+                : <img src={shownPhoto} alt="" className="size-16 rounded-[12px] object-cover" />}
+              <button type="button" onClick={() => { setPhotoData(null); setKeepPhoto(false); }} className="min-h-[44px] px-2 text-[14px] font-[700] underline" style={{ color: K.red }}>{t("birdMoments.remove", "Remove")}</button>
             </div>
           ) : (
-            <label className="flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-[#c8bfa6] bg-[#fbfaf2] text-sm font-medium text-[#5f5e5a]">
+            <label className={`flex min-h-[48px] items-center justify-center gap-2 rounded-full border-[1.5px] border-dashed bg-white px-4 text-[15px] font-[700] ${photoBusy ? "opacity-50" : "cursor-pointer active:scale-[0.99]"}`} style={{ borderColor: "#c4d2c4", color: K.moss }}>
               {photoBusy ? <Loader2 className="size-4 animate-spin" /> : <Camera className="size-4" />}
               {photoBusy ? t("birdMoments.processing", "Processing…") : t("birdMoments.addPhoto", "Add a photo")}
               <input type="file" accept="image/*" className="hidden" disabled={photoBusy} onChange={pick} />
             </label>
           )}
         </div>
-        <div className="mt-5 flex gap-2">
-          <button type="button" onClick={save} disabled={!valid || saving || photoBusy} className="flex min-h-[44px] flex-1 items-center justify-center gap-1.5 rounded-[14px] bg-[#1a3d2e] text-sm font-medium text-white disabled:opacity-50">
-            <Check className="size-4" /> {saving ? t("birdMoments.saving", "Saving…") : t("birdMoments.save", "Save")}
+        {custom && (
+          <button
+            type="button"
+            onClick={remove}
+            disabled={busy}
+            className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-full border-2 bg-white text-[15px] font-[700] disabled:opacity-50"
+            style={{ borderColor: K.red, color: K.red }}
+          >
+            <Trash2 className="size-4" /> {deleting ? t("birdMoments.deleting", "Deleting…") : t("birdMoments.deleteMilestone", "Delete milestone")}
           </button>
-          <button type="button" onClick={onClose} disabled={saving} className="min-h-[44px] rounded-[14px] border border-[#c8bfa6] px-4 text-sm font-medium text-[#5f5e5a]">{t("birdMoments.cancel", "Cancel")}</button>
-        </div>
+        )}
       </div>
-    </div>
+    </KyaSheet>
   );
 }

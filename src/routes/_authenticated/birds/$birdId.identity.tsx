@@ -1,27 +1,35 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { speciesLabel } from "@/lib/speciesLabel";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import i18next, { type TFunction } from "i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, Pencil, Check, X } from "lucide-react";
+import { Pencil } from "lucide-react";
 import { PhotoCropper } from "@/components/PhotoCropper";
 import { OptionalDate, ageLabel } from "@/components/BirdPickers";
 import { useBirdPhotos } from "@/lib/useBirdPhotos";
-import { useBirdRole } from "@/lib/useBirdRole";
 import { useCapability } from "@/lib/useCapability";
 import { signBirdPhoto, persistBirdPhoto } from "@/lib/birdPhoto";
 import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
-import { InkHero, Card, PrimaryButton } from "@/components/system";
+import { K, KyaPage, KyaBody, KyaCard, KyaField, KyaHeading, KyaLink, KyaPrimaryButton, KyaSecondaryButton } from "@/components/kya";
+import { PageHeader, useGoBack } from "@/components/headers";
 import { friendlyError } from "@/lib/errorMessage";
 import { formatLocalDate } from "@/lib/dates";
 import { localDateISO } from "@/lib/localDay";
 
+type IdentitySearch = { edit?: 1 };
+
 export const Route = createFileRoute("/_authenticated/birds/$birdId/identity")({
   head: () => ({ meta: [{ title: i18next.t("birdIdentity.metaTitle", "Identity — Kya & Co.") }] }),
+  // ?edit=1 opens the edit form straight away (the vet summary's
+  // "Missing from [bird]'s record → Add them" link lands here).
+  validateSearch: (search: Record<string, unknown>): IdentitySearch => {
+    const e = search.edit;
+    return e === 1 || e === "1" || e === true ? { edit: 1 } : {};
+  },
   component: IdentityFacet,
 });
 
@@ -65,7 +73,7 @@ function methodLabel(t: TFunction, v: string): string {
 }
 function flightLabel(t: TFunction, v: string | null | undefined): string | null {
   const k = (v ?? "").trim();
-  if (!k || k === "unknown") return null; // hide the row when unset / Unknown
+  if (!k || k === "unknown") return null; // unset / Unknown reads as not added
   switch (k) {
     case "fully_flighted": return t("birdSetup.fullyFlighted", "Fully flighted");
     case "clipped": return t("birdSetup.clipped", "Clipped");
@@ -75,19 +83,15 @@ function flightLabel(t: TFunction, v: string | null | undefined): string | null 
 }
 const blank = (v: string | null | undefined) => !((v ?? "").trim());
 
-// Footer copy is pronoun-aware from the bird's sex (she's / he's / they're),
-// one whole-sentence key per pronoun so translations can inflect freely.
-// Defaults to "they" when sex is unknown or null.
-
 function IdentityFacet() {
   const { t } = useTranslation();
   const { birdId } = Route.useParams();
+  const search = Route.useSearch();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [editing, setEditing] = useState(false);
-  const role = useBirdRole(birdId);
-  const isOwner = role === "owner"; // household members view identity read-only
   // Editing the bird's identity is part of managing the flock (RLS: birds → manage_flock).
+  // Household members without it view identity read-only.
   const canEditIdentity = useCapability("manage_flock", { birdId });
 
   const { data: bird } = useQuery({
@@ -103,11 +107,21 @@ function IdentityFacet() {
     },
   });
 
+  // ?edit=1 → open the form once the bird and the permission have loaded,
+  // then drop the param so a refresh or back doesn't reopen it.
+  const editApplied = useRef(false);
+  useEffect(() => {
+    if (!search.edit || editApplied.current || !bird || !canEditIdentity) return;
+    editApplied.current = true;
+    setEditing(true);
+    navigate({ to: "/birds/$birdId/identity", params: { birdId }, search: {}, replace: true });
+  }, [search.edit, bird, canEditIdentity, navigate, birdId]);
+
   const name = bird?.name ?? t("planEditor.thisBird", "this bird");
   // 800px — the SAME width the Home flock card / bird-record hero resolve at, so
-  // the Identity circle gets byte-for-byte the same cropped image they do. A
+  // the Identity photo gets byte-for-byte the same cropped image they do. A
   // smaller transform (e.g. 256) crops to a different effective aspect on this
-  // bucket, which made the circle frame a different part of the bird than Home.
+  // bucket, which made the tile frame a different part of the bird than Home.
   const photoOf = useBirdPhotos([bird?.photo_url], 800);
   const photo = photoOf(bird?.photo_url);
   const initial = (bird?.name?.slice(0, 1) ?? "?").toUpperCase();
@@ -117,76 +131,68 @@ function IdentityFacet() {
     ["bird-identity", "bird-basics", "bird", "bird-setup", "bird-record", "vet-bird"].forEach((k) =>
       qc.invalidateQueries({ queryKey: [k, birdId] }));
 
-  const goBack = () => navigate({ to: "/birds/$birdId", params: { birdId } });
+  const goBack = useGoBack(useCallback(() => navigate({ to: "/birds/$birdId", params: { birdId } }), [navigate, birdId]));
+  const canEdit = !!bird && canEditIdentity;
+  const openEdit = canEdit ? () => setEditing(true) : undefined;
+
+  const sex = (bird?.sex ?? "").trim().toLowerCase();
+  const footnote = sex === "female"
+    ? t("birdIdentity.footnoteFemale", "These details build {{name}}'s vet summary and go with her if she's ever rehomed.", { name })
+    : sex === "male"
+      ? t("birdIdentity.footnoteMale", "These details build {{name}}'s vet summary and go with him if he's ever rehomed.", { name })
+      : t("birdIdentity.footnoteOther", "These details build {{name}}'s vet summary and go with them if they're ever rehomed.", { name });
 
   return (
-    <div className="min-h-screen bg-[var(--cream)] pb-nav">
-      <div className="mx-auto max-w-md">
-        <InkHero
-          eyebrow={t("birdIdentity.eyebrow", "Identity")}
-          headline={t("birdIdentity.headline", "{{name}}, on paper.", { name })}
-          body={t("birdIdentity.body", "The details that make {{name}} officially {{name}}.", { name })}
-          backIcon={<ArrowLeft className="size-5" />}
-          onBack={goBack}
-          trailingIcons={
-            bird && !editing && canEditIdentity ? (
-              <button type="button" onClick={() => setEditing(true)} className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full bg-white/10 px-3.5 text-[14px] font-[500] text-white active:bg-white/15">
-                <Pencil className="size-3.5" /> {t("birdIdentity.edit", "Edit")}
-              </button>
-            ) : undefined
-          }
-        />
+    <KyaPage>
+      <PageHeader
+        onBack={goBack}
+        title={bird ? t("birdIdentity.title", "{{name}}'s identity", { name: bird.name }) : t("birdIdentity.titleFallback", "Identity")}
+        line={t("birdIdentity.body", "The details that make {{name}} officially {{name}}.", { name })}
+        action={canEdit && !editing ? { label: t("birdIdentity.edit", "Edit"), icon: <Pencil className="size-4" />, onClick: () => setEditing(true) } : undefined}
+      />
 
-        <main className="space-y-4 px-5 pt-5">
-          {!bird ? (
-            <div className="h-40 animate-pulse rounded-[18px] bg-[var(--cream2)]" />
-          ) : editing ? (
-            <IdentityForm birdId={birdId} bird={bird} onClose={() => setEditing(false)} onSaved={() => { setEditing(false); crossInvalidate(); }} />
-          ) : (
-            <>
-              {/* Shared core (same birds columns the Basics tab edits) */}
-              <Card className="flex items-center gap-4 p-4">
-                {/* Same shared crop the flock card uses, so the circle frames
-                    the bird's face (stored focal point, or top-biased default
-                    for birds never repositioned) instead of centering on feet. */}
-                <div className="relative grid size-16 shrink-0 place-items-center overflow-hidden rounded-full bg-[var(--cream2)] ring-1 ring-[var(--line)]">
-                  {photo ? (
-                    <BirdPhotoCrop url={photo.url} original={photo.original} position={bird.photo_position ?? "50% 20%"} alt={name} />
-                  ) : (
-                    <span className="text-2xl font-[500] text-[var(--moss)]">{initial}</span>
-                  )}
-                </div>
-                <div className="min-w-0">
-                  <p className="t-item truncate text-[17px]">{bird.name}</p>
-                  <p className="t-meta mt-0.5 truncate">{[bird.species ? speciesLabel(t, bird.species) : t("planEditor.parrot", "Parrot"), bird.age ? ageLabel(t, bird.age) : null].filter(Boolean).join(" · ")}</p>
-                </div>
-              </Card>
+      <KyaBody>
+        {!bird ? (
+          <div className="h-40 animate-pulse rounded-[20px] bg-white/70" />
+        ) : editing ? (
+          <IdentityForm birdId={birdId} bird={bird} onClose={() => setEditing(false)} onSaved={() => { setEditing(false); crossInvalidate(); }} />
+        ) : (
+          <>
+            {/* Shared core (same birds columns the Basics tab edits) */}
+            <KyaCard className="flex items-center gap-3 p-4">
+              {/* Same shared crop the flock card uses, so the tile frames the
+                  bird's face (stored focal point, or top-biased default for
+                  birds never repositioned) instead of centering on feet. */}
+              <div className="relative grid size-14 shrink-0 place-items-center overflow-hidden rounded-[16px]" style={{ background: K.forest }}>
+                {photo ? (
+                  <BirdPhotoCrop url={photo.url} original={photo.original} position={bird.photo_position ?? "50% 20%"} alt={name} />
+                ) : (
+                  <span className="text-[22px] font-[700]" style={{ color: K.lime, fontFamily: "'Newsreader', Georgia, serif" }}>{initial}</span>
+                )}
+              </div>
+              <div className="min-w-0">
+                <p className="m-0 truncate text-[17px] font-[700]" style={{ color: K.forest }}>{bird.name}</p>
+                <p className="m-0 mt-0.5 truncate text-[14px]" style={{ color: K.quiet }}>
+                  {[bird.species ? speciesLabel(t, bird.species) : t("planEditor.parrot", "Parrot"), bird.age ? ageLabel(t, bird.age) : null].filter(Boolean).join(" · ")}
+                </p>
+              </div>
+            </KyaCard>
 
-              {/* Deeper record (Identity only) */}
-              <Card>
-                <Row label={t("birdSetup.sex", "Sex")} value={sexValue(t, bird)} />
-                <Row label={t("birdSetup.flight", "Flight")} value={flightLabel(t, bird.flight_status)} />
-                <Row label={t("birdPickers.hatchDate", "Hatch date")} value={bird.birth_date ? `${fmtDate(bird.birth_date)} (≈ ${approxAge(t, bird.birth_date)})` : null} />
-                <Row label={t("birdIdentity.microchip", "Microchip")} value={bird.microchip} />
-                <Row label={t("birdIdentity.legBand", "Leg band")} value={bird.band_number} emptyText={t("birdIdentity.none", "None")} />
-                <Row label={t("birdIdentity.origin", "Origin")} value={bird.origin} />
-                <Row label={t("birdIdentity.cameHome", "Came home")} value={bird.acquired_on ? fmtDate(bird.acquired_on) : null} last />
-              </Card>
-              <p className="t-meta px-1 text-center leading-relaxed">
-                {(() => {
-                  const s = (bird.sex ?? "").trim().toLowerCase();
-                  return s === "female"
-                    ? t("birdIdentity.footerFemale", "These details build the vet summary and travel with {{name}} if she's ever rehomed.", { name })
-                    : s === "male"
-                      ? t("birdIdentity.footerMale", "These details build the vet summary and travel with {{name}} if he's ever rehomed.", { name })
-                      : t("birdIdentity.footerOther", "These details build the vet summary and travel with {{name}} if they're ever rehomed.", { name });
-                })()}
-              </p>
-            </>
-          )}
-        </main>
-      </div>
-    </div>
+            {/* Deeper record (Identity only) */}
+            <KyaCard>
+              <Row label={t("birdSetup.sex", "Sex")} value={sexValue(t, bird)} onAdd={openEdit} />
+              <Row label={t("birdSetup.flight", "Flight")} value={flightLabel(t, bird.flight_status)} onAdd={openEdit} />
+              <Row label={t("birdPickers.hatchDate", "Hatch date")} value={bird.birth_date ? `${fmtDate(bird.birth_date)} (≈ ${approxAge(t, bird.birth_date)})` : null} onAdd={openEdit} />
+              <Row label={t("birdIdentity.microchip", "Microchip")} value={bird.microchip} onAdd={openEdit} />
+              <Row label={t("birdIdentity.legBand", "Leg band")} value={bird.band_number} onAdd={openEdit} />
+              <Row label={t("birdIdentity.origin", "Origin")} value={bird.origin} onAdd={openEdit} />
+              <Row label={t("birdIdentity.cameHome", "Came home")} value={bird.acquired_on ? fmtDate(bird.acquired_on) : null} onAdd={openEdit} last />
+            </KyaCard>
+            <p className="m-0 px-1 text-[13px] leading-[1.5]" style={{ color: K.quiet }}>{footnote}</p>
+          </>
+        )}
+      </KyaBody>
+    </KyaPage>
   );
 }
 
@@ -197,12 +203,20 @@ function sexValue(t: TFunction, b: Identity): string | null {
   return method ? `${sex} · ${method}` : sex;
 }
 
-function Row({ label, value, emptyText = "—", last }: { label: string; value: string | null | undefined; emptyText?: string; last?: boolean }) {
+function Row({ label, value, onAdd, last }: { label: string; value: string | null | undefined; onAdd?: () => void; last?: boolean }) {
+  const { t } = useTranslation();
   const filled = !blank(value);
   return (
-    <div className={`flex min-h-[44px] items-baseline gap-3 px-4 py-3 ${last ? "" : "border-b border-[var(--line2)]"}`}>
-      <span className="t-eyebrow w-28 shrink-0 text-[var(--mute2)]">{label}</span>
-      <span className={`min-w-0 flex-1 text-[14px] ${filled ? "text-[var(--ink)]" : "italic text-[var(--mute2)]"}`}>{filled ? value : emptyText}</span>
+    <div className="flex min-h-[52px] items-center gap-3 px-4 py-2" style={{ borderBottom: last ? undefined : `1px solid ${K.line}` }}>
+      <span className="w-[108px] shrink-0 text-[14px]" style={{ color: K.quiet }}>{label}</span>
+      {filled ? (
+        <span className="min-w-0 flex-1 break-words py-1.5 text-[15px] font-[600]" style={{ color: K.forest }}>{value}</span>
+      ) : (
+        <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
+          <span className="text-[15px]" style={{ color: K.quiet }}>{t("birdIdentity.notAdded", "Not added")}</span>
+          {onAdd && <KyaLink onClick={onAdd} className="px-1">{t("birdIdentity.add", "Add")}</KyaLink>}
+        </span>
+      )}
     </div>
   );
 }
@@ -286,105 +300,112 @@ function IdentityForm({ birdId, bird, onClose, onSaved }: { birdId: string; bird
 
   const today = localDateISO();
   return (
-    <Card className="space-y-3 p-4">
-      {/* Shared core: photo, name, species, age — same columns as the Basics tab */}
-      <div className="flex items-start gap-3">
-        {photoDisplay ? (
-          <PhotoCropper src={photoDisplay} position={photoPosition ?? undefined} onChange={setPhotoPosition} size={96} />
-        ) : (
-          <div className="t-eyebrow grid size-24 place-items-center rounded-xl bg-[var(--cream2)] text-[var(--mute2)]">{t("birdSetup.noPhoto", "No photo")}</div>
-        )}
-        <div className="flex-1 space-y-2 pt-1">
-          <label className={`inline-flex min-h-[44px] items-center rounded-lg bg-[var(--pale2)] px-3 text-[13px] font-[500] text-[var(--ink)] ${photoBusy ? "cursor-default opacity-60" : "cursor-pointer"}`}>
-            {photoBusy ? t("birdSetup.processing", "Processing…") : photoDisplay ? t("birdSetup.changePhoto", "Change photo") : t("birdSetup.addPhoto", "Add photo")}
-            <input type="file" accept="image/*,.heic,.heif" disabled={photoBusy} className="hidden" onChange={onPhoto} />
+    <>
+      <KyaCard className="flex flex-col gap-4 p-4">
+        <KyaHeading size={21}>{t("birdIdentity.editTitle", "Edit identity")}</KyaHeading>
+
+        {/* Shared core: photo, name, species, age — same columns as the Basics tab */}
+        <div className="flex items-start gap-3">
+          {photoDisplay ? (
+            <PhotoCropper src={photoDisplay} position={photoPosition ?? undefined} onChange={setPhotoPosition} size={96} />
+          ) : (
+            <div className="grid size-24 shrink-0 place-items-center rounded-[16px] text-center text-[13px]" style={{ background: K.mist, color: K.quiet }}>{t("birdSetup.noPhoto", "No photo")}</div>
+          )}
+          <div className="flex flex-1 flex-wrap items-center gap-x-3 gap-y-1 pt-1">
+            <label
+              className={`inline-flex min-h-[44px] items-center rounded-full border-2 bg-white px-4 text-[14px] font-[700] ${photoBusy ? "cursor-default opacity-60" : "cursor-pointer active:scale-[0.99]"}`}
+              style={{ borderColor: K.forest, color: K.forest }}
+            >
+              {photoBusy ? t("birdSetup.processing", "Processing…") : photoDisplay ? t("birdSetup.changePhoto", "Change photo") : t("birdSetup.addPhoto", "Add photo")}
+              <input type="file" accept="image/*,.heic,.heif" disabled={photoBusy} className="hidden" onChange={onPhoto} />
+            </label>
+            {photoDisplay && (
+              <KyaLink color={K.red} onClick={() => { setPhotoDisplay(null); setPhotoRef(null); setPhotoPosition(null); }}>{t("newBird.remove", "Remove")}</KyaLink>
+            )}
+          </div>
+        </div>
+
+        <KyaField id="identity-name" label={t("birdSetup.name", "Name")} value={f.name} maxLength={80} onChange={(e) => set("name", e.target.value)} />
+        <KyaField id="identity-species" label={t("birdPickers.species", "Species")} value={f.species} maxLength={80} onChange={(e) => set("species", e.target.value)} />
+        <KyaField id="identity-age" label={t("birdPickers.age", "Age")} value={f.age} maxLength={40} placeholder={t("birdIdentity.agePlaceholder", "e.g. 6 years")} onChange={(e) => set("age", e.target.value)} />
+
+        <FormField id="identity-sex" label={t("birdSetup.sex", "Sex")}>
+          <div className="grid grid-cols-2 gap-2">
+            <select id="identity-sex" className={INPUT} style={INPUT_STYLE} value={f.sex} onChange={(e) => set("sex", e.target.value)}>
+              <option value="">{t("birdIdentity.notSet", "Not set")}</option>
+              <option value="female">{t("birdSetup.female", "Female")}</option>
+              <option value="male">{t("birdSetup.male", "Male")}</option>
+              <option value="unknown">{t("birdSetup.unknown", "Unknown")}</option>
+            </select>
+            <select aria-label={t("birdIdentity.methodLabel", "How sex was determined")} className={INPUT} style={INPUT_STYLE} value={f.sex_method} onChange={(e) => set("sex_method", e.target.value)}>
+              <option value="">{t("birdIdentity.methodPlaceholder", "Method…")}</option>
+              <option value="dna">{t("birdIdentity.methodDna", "DNA")}</option>
+              <option value="surgical">{t("birdIdentity.methodSurgical", "Surgical")}</option>
+              <option value="visual">{t("birdIdentity.methodVisual", "Visual")}</option>
+              <option value="unknown">{t("birdSetup.unknown", "Unknown")}</option>
+            </select>
+          </div>
+        </FormField>
+
+        <FormField id="identity-flight" label={t("birdSetup.flight", "Flight")}>
+          <select id="identity-flight" className={INPUT} style={INPUT_STYLE} value={f.flight_status} onChange={(e) => set("flight_status", e.target.value)}>
+            <option value="unknown">{t("birdSetup.unknown", "Unknown")}</option>
+            <option value="fully_flighted">{t("birdSetup.fullyFlighted", "Fully flighted")}</option>
+            <option value="clipped">{t("birdSetup.clipped", "Clipped")}</option>
+            <option value="partially_clipped">{t("birdSetup.partiallyClipped", "Partially clipped")}</option>
+          </select>
+        </FormField>
+
+        <FormField label={t("birdPickers.hatchDate", "Hatch date")}>
+          <OptionalDate value={f.birth_date} max={today} addLabel={t("birdPickers.addHatchDate", "Add hatch date")} inputClassName={INPUT} onChange={(v) => set("birth_date", v)} />
+        </FormField>
+        <KyaField id="identity-microchip" label={t("birdIdentity.microchip", "Microchip")} value={f.microchip} maxLength={60} onChange={(e) => set("microchip", e.target.value)} />
+        <KyaField id="identity-band" label={t("birdIdentity.legBand", "Leg band")} value={f.band_number} maxLength={60} onChange={(e) => set("band_number", e.target.value)} />
+        <KyaField id="identity-origin" label={t("birdIdentity.origin", "Origin")} value={f.origin} maxLength={200} placeholder={t("birdIdentity.originPlaceholder", "e.g. captive-bred, wild-hatched / rescued")} onChange={(e) => set("origin", e.target.value)} />
+        <FormField label={t("birdIdentity.cameHome", "Came home")}>
+          <OptionalDate value={f.acquired_on} max={today} addLabel={t("birdPickers.addDate", "Add date")} inputClassName={INPUT} onChange={(v) => set("acquired_on", v)} />
+        </FormField>
+
+        <div className="rounded-[16px] p-3" style={{ background: K.mist }}>
+          <label className="flex min-h-[44px] cursor-pointer items-start gap-3">
+            <input type="checkbox" checked={f.is_foster} onChange={(e) => setF((p) => ({ ...p, is_foster: e.target.checked }))} className="mt-0.5 size-5 shrink-0" style={{ accentColor: K.forest }} />
+            <span className="min-w-0">
+              <span className="block text-[15px] font-[700]" style={{ color: K.forest }}>{t("newBird.isFoster", "This is a foster")}</span>
+              <span className="mt-0.5 block text-[13px] leading-[1.45]" style={{ color: K.quiet }}>{t("birdIdentity.fosterBody", "You're caring for them while they find a permanent home.")}</span>
+            </span>
           </label>
-          {photoDisplay && (
-            <button type="button" onClick={() => { setPhotoDisplay(null); setPhotoRef(null); setPhotoPosition(null); }} className="ml-2 text-[13px] font-[500] text-[var(--amber-ink)] underline">{t("newBird.remove", "Remove")}</button>
+          {f.is_foster && (
+            <div className="mt-3 border-t pt-3" style={{ borderColor: K.line }}>
+              <FormField label={t("newBird.cameToYou", "Came to you")}><OptionalDate value={f.intake_date} max={today} addLabel={t("birdPickers.addDate", "Add date")} inputClassName={INPUT} onChange={(v) => set("intake_date", v)} /></FormField>
+            </div>
           )}
         </div>
+
+        <p className="m-0 px-1 text-[13px] leading-[1.45]" style={{ color: K.quiet }}>{t("birdIdentity.allOptional", "All fields are optional — partial records are fine.")}</p>
+      </KyaCard>
+
+      <div className="flex flex-col gap-2.5">
+        <KyaPrimaryButton onClick={save} disabled={saving}>
+          {saving ? t("birdIdentity.saving", "Saving…") : t("birdIdentity.save", "Save")}
+        </KyaPrimaryButton>
+        <KyaSecondaryButton className="w-full" onClick={onClose} disabled={saving}>{t("birdIdentity.cancel", "Cancel")}</KyaSecondaryButton>
       </div>
-
-      <Field label={t("birdSetup.name", "Name")}><input className={INPUT} value={f.name} maxLength={80} onChange={(e) => set("name", e.target.value)} /></Field>
-      <Field label={t("birdPickers.species", "Species")}><input className={INPUT} value={f.species} maxLength={80} onChange={(e) => set("species", e.target.value)} /></Field>
-      <Field label={t("birdPickers.age", "Age")}><input className={INPUT} value={f.age} maxLength={40} placeholder={t("birdIdentity.agePlaceholder", "e.g. 6 years")} onChange={(e) => set("age", e.target.value)} /></Field>
-
-      <Field label={t("birdSetup.sex", "Sex")}>
-        <div className="grid grid-cols-2 gap-2">
-          <select className={INPUT} value={f.sex} onChange={(e) => set("sex", e.target.value)}>
-            <option value="">{t("birdIdentity.notSet", "Not set")}</option>
-            <option value="female">{t("birdSetup.female", "Female")}</option>
-            <option value="male">{t("birdSetup.male", "Male")}</option>
-            <option value="unknown">{t("birdSetup.unknown", "Unknown")}</option>
-          </select>
-          <select className={INPUT} value={f.sex_method} onChange={(e) => set("sex_method", e.target.value)}>
-            <option value="">{t("birdIdentity.methodPlaceholder", "Method…")}</option>
-            <option value="dna">{t("birdIdentity.methodDna", "DNA")}</option>
-            <option value="surgical">{t("birdIdentity.methodSurgical", "Surgical")}</option>
-            <option value="visual">{t("birdIdentity.methodVisual", "Visual")}</option>
-            <option value="unknown">{t("birdSetup.unknown", "Unknown")}</option>
-          </select>
-        </div>
-      </Field>
-
-      <Field label={t("birdSetup.flight", "Flight")}>
-        <select className={INPUT} value={f.flight_status} onChange={(e) => set("flight_status", e.target.value)}>
-          <option value="unknown">{t("birdSetup.unknown", "Unknown")}</option>
-          <option value="fully_flighted">{t("birdSetup.fullyFlighted", "Fully flighted")}</option>
-          <option value="clipped">{t("birdSetup.clipped", "Clipped")}</option>
-          <option value="partially_clipped">{t("birdSetup.partiallyClipped", "Partially clipped")}</option>
-        </select>
-      </Field>
-
-      <Field label={t("birdPickers.hatchDate", "Hatch date")}>
-        <OptionalDate value={f.birth_date} max={today} addLabel={t("birdPickers.addHatchDate", "Add hatch date")} inputClassName={INPUT} onChange={(v) => set("birth_date", v)} />
-      </Field>
-      <Field label={t("birdIdentity.microchip", "Microchip")}><input className={INPUT} value={f.microchip} maxLength={60} onChange={(e) => set("microchip", e.target.value)} /></Field>
-      <Field label={t("birdIdentity.legBand", "Leg band")}><input className={INPUT} value={f.band_number} maxLength={60} onChange={(e) => set("band_number", e.target.value)} /></Field>
-      <Field label={t("birdIdentity.origin", "Origin")}><input className={INPUT} value={f.origin} maxLength={200} placeholder={t("birdIdentity.originPlaceholder", "e.g. captive-bred, wild-hatched / rescued")} onChange={(e) => set("origin", e.target.value)} /></Field>
-      <Field label={t("birdIdentity.cameHome", "Came home")}>
-        <OptionalDate value={f.acquired_on} max={today} addLabel={t("birdPickers.addDate", "Add date")} inputClassName={INPUT} onChange={(v) => set("acquired_on", v)} />
-      </Field>
-
-      <div className="rounded-xl border border-[var(--line)] bg-[var(--cream2)] p-3">
-        <label className="flex cursor-pointer items-start gap-3">
-          <input type="checkbox" checked={f.is_foster} onChange={(e) => setF((p) => ({ ...p, is_foster: e.target.checked }))} className="mt-0.5 size-5 shrink-0 accent-[var(--ink)]" />
-          <span className="min-w-0">
-            <span className="t-item block">{t("newBird.isFoster", "This is a foster")}</span>
-            <span className="t-meta mt-0.5 block leading-relaxed">{t("birdIdentity.fosterBody", "You're caring for them while they find a permanent home.")}</span>
-          </span>
-        </label>
-        {f.is_foster && (
-          <div className="mt-3 border-t border-[var(--line2)] pt-3">
-            <Field label={t("newBird.cameToYou", "Came to you")}><OptionalDate value={f.intake_date} max={today} addLabel={t("birdPickers.addDate", "Add date")} inputClassName={INPUT} onChange={(v) => set("intake_date", v)} /></Field>
-          </div>
-        )}
-      </div>
-
-      <p className="t-meta">{t("birdIdentity.allOptional", "All fields are optional — partial records are fine.")}</p>
-
-      <div className="flex gap-2 pt-1">
-        <div className="flex-1">
-          <PrimaryButton tone="ink" type="button" onPress={save} disabled={saving} icon={<Check className="size-4" />}>
-            {saving ? t("birdIdentity.saving", "Saving…") : t("birdIdentity.save", "Save")}
-          </PrimaryButton>
-        </div>
-        <button type="button" onClick={onClose} disabled={saving} className="grid min-h-[44px] min-w-[44px] place-items-center rounded-[12px] border border-[var(--line)] px-4 text-[var(--mute)] disabled:opacity-50">
-          <X className="size-4" />
-        </button>
-      </div>
-    </Card>
+    </>
   );
 }
 
-const INPUT = "h-11 w-full rounded-xl border border-[var(--line)] bg-[var(--cream2)] px-3 text-sm text-[var(--ink)] outline-none focus:border-[var(--moss)]";
+// Matches KyaField's pill input, for the selects and date pickers.
+const INPUT = "min-h-[48px] w-full rounded-full border-[1.5px] border-[#d5dfd5] bg-white px-4 text-[16px] text-[#1a3d2e] outline-none focus:border-[#2d6a4f]";
+const INPUT_STYLE = { color: K.forest } as const;
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function FormField({ id, label, children }: { id?: string; label: string; children: ReactNode }) {
   return (
-    <label className="block">
-      <span className="mb-1 block text-[13px] font-[500] text-[var(--mute)]">{label}</span>
+    <div className="flex flex-col gap-1.5">
+      {id
+        ? <label htmlFor={id} className="text-[13.5px] font-[700]" style={{ color: K.forest }}>{label}</label>
+        : <span className="text-[13.5px] font-[700]" style={{ color: K.forest }}>{label}</span>}
       {children}
-    </label>
+    </div>
   );
 }
 

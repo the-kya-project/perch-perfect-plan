@@ -16,7 +16,6 @@ import {
   Plus, Settings, Users, ChevronRight, Scale, CalendarHeart, Calendar,
   Feather, AlertCircle, AlertTriangle, Check, Sun,
 } from "lucide-react";
-import { OwnerHeaderIcons } from "@/components/OwnerHeader";
 import { AppOnboarding } from "@/components/AppOnboarding";
 import { useTourDemo, DEMO_FLOCK, DEMO_FOSTERS, DEMO_HOUSEHOLD, demoGlanceFor, getDemoToday } from "@/lib/tourDemo";
 import { deriveConcernByBird, daysAgo } from "@/lib/scanConcern";
@@ -32,8 +31,8 @@ import { HomeChecklist } from "@/components/HomeChecklist";
 import { DailyCheckCard } from "@/components/DailyCheckCard";
 import { useDailyCheckToday } from "@/lib/dailyCheck";
 import { birdNames, namesAsCount } from "@/lib/birdNames";
-import { K, KyaPage, KyaHeader, KyaBody, KyaCard, KyaHeading, KyaLink, KyaPrimaryButton, KyaAvatarStack } from "@/components/kya";
-import { BrandLockup } from "@/components/BrandLogo";
+import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaLink, KyaPrimaryButton, KyaAvatarStack } from "@/components/kya";
+import { TabHeader } from "@/components/headers";
 import { HomePushBanner } from "@/components/HomePushBanner";
 import { getHouseholdHome, resolveOwnerNames, type HomeHousehold } from "@/lib/home.functions";
 import { useMyPermissions } from "@/lib/useCapability";
@@ -427,24 +426,17 @@ function HomeHeader({ firstName, stateCopy, cta }: { firstName: string; unreadNo
   // Greetings are spoken-to-the-user copy: no terminal period.
   const part = h < 12 ? t("dashboard.goodMorning", "Good morning") : h < 18 ? t("dashboard.goodAfternoon", "Good afternoon") : t("dashboard.goodEvening", "Good evening");
   const greeting = firstName ? t("dashboard.greetingWithName", "{{part}}, {{name}}", { part, name: firstName }) : part;
+  // Tab header rule: no label above the title. The date leads the line under
+  // it when there's no state copy.
   const dateLabel = formatLocalDate(new Date(), { weekday: "long", month: "long", day: "numeric" });
   return (
-    <KyaHeader>
-      {/* mt-1.5 keeps the icons clear of the native shell's status-bar scrim. */}
-      <div className="mt-1.5 flex items-center gap-2">
-        <BrandLockup orientation="horizontal" variant="ink" size={118} />
-        <div className="flex-1" />
-        <OwnerHeaderIcons large />
-      </div>
-      <p className="m-0 mt-9 text-[14px]" style={{ color: K.teal }}>{dateLabel}</p>
-      <KyaHeading as="h1" size={31} className="mt-1 text-white">{greeting}</KyaHeading>
-      {stateCopy && <p className="m-0 mt-2 text-[15px] leading-[1.5]" style={{ color: K.paleGreen }}>{stateCopy}</p>}
+    <TabHeader title={greeting} line={stateCopy || dateLabel}>
       {cta && (
         <div className="mt-4">
           <KyaPrimaryButton onClick={cta.onPress} disabled={cta.disabled} icon={cta.icon}>{cta.label}</KyaPrimaryButton>
         </div>
       )}
-    </KyaHeader>
+    </TabHeader>
   );
 }
 

@@ -1,16 +1,18 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { useBirdRole } from "@/lib/useBirdRole";
 import { useCapability, useMyPermissions } from "@/lib/useCapability";
 import { useActiveSitIdForBird } from "@/components/CaregiverHome";
 import { toast } from "sonner";
-import { ArrowLeft } from "lucide-react";
 import { buildDailyLogRow, type ScanAnswers } from "@/lib/dailyLog";
-import { ScanForm, type ScanSubmit } from "@/components/ScanForm";
-import { MemberContextBanner } from "@/components/MemberContextBanner";
+import { saveWeight, invalidateAfterCheck } from "@/lib/dailyCheck";
+import { mergeEmergency } from "@/lib/emergency";
+import { FullHealthCheck, type FullCheckSubmit } from "@/components/FullHealthCheck";
+import { K, KyaCard, KyaPage, KyaPrimaryButton, KyaSecondaryButton } from "@/components/kya";
+import { TaskHeader, useGoBack } from "@/components/headers";
 import { track } from "@/lib/analytics";
 import { uploadScanPhotoOrInline } from "@/lib/scanPhoto";
 import { friendlyError } from "@/lib/errorMessage";
@@ -20,14 +22,16 @@ import { useTranslation } from "react-i18next";
 import { triageReasonLines } from "./$birdId.scans.$scanId";
 import { triageMessageLabel } from "@/lib/triageLabels";
 
-// Owner-run health scan. Uses the SAME ScanForm + triage as the sitter; on submit
-// it writes a daily_logs row (source='owner', run_by, no sit) + optional photo +
-// weight_entries(source='owner') via the authenticated client under has_bird_access
-// RLS. No notifications (the owner ran it themselves).
+// Owner-run full health check. Same questions + triage as the sitter's scan; on
+// submit it writes a daily_logs row (source owner/household, run_by, sit_id when
+// covering a sit) + optional photo + weight_entries via the authenticated client
+// under has_bird_access RLS. No notifications (the owner ran it themselves).
 export const Route = createFileRoute("/_authenticated/birds/$birdId/scan")({
   head: () => ({ meta: [{ title: i18next.t("ownerScan.metaTitle", "Health check — Kya & Co.") }] }),
   component: OwnerScan,
 });
+
+type Result = { status: string; message: string; reasons: string[]; reasonCodes?: unknown };
 
 function OwnerScan() {
   const { t } = useTranslation();
@@ -49,24 +53,36 @@ function OwnerScan() {
   // tag the daily_log, the inline photo_log, and the inline weight_entry with
   // the sit_id so the sit's activity view can pull them by attribution.
   const activeSitId = useActiveSitIdForBird(birdId);
-  const [result, setResult] = useState<{ status: string; message: string; reasons: string[]; reasonCodes?: unknown } | null>(null);
+  const [result, setResult] = useState<Result | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const { data: bird } = useQuery({
-    queryKey: ["bird-name", birdId],
+    queryKey: ["full-check-bird", birdId],
     queryFn: async () => {
-      const { data } = await supabase.from("birds").select("name").eq("id", birdId).maybeSingle();
-      return data as { name: string } | null;
+      const { data } = await supabase.from("birds").select("name, sex, owner_id").eq("id", birdId).maybeSingle();
+      const b = data as { name: string; sex: string | null; owner_id: string | null } | null;
+      // The avian vet number: the bird's own, else the owner's account default.
+      const [{ data: ec }, { data: defs }] = await Promise.all([
+        supabase.from("emergency_contacts").select("avian_vet_phone").eq("bird_id", birdId).maybeSingle(),
+        b?.owner_id
+          ? supabase.from("owner_emergency_defaults").select("avian_vet_phone").eq("owner_id", b.owner_id).maybeSingle()
+          : Promise.resolve({ data: null } as any),
+      ]);
+      return { name: b?.name ?? null, sex: b?.sex ?? null, vetPhone: mergeEmergency(ec as any, defs as any).avian_vet_phone };
     },
   });
   const name = bird?.name ?? t("ownerScan.thisBird", "this bird");
 
-  async function onSubmit(p: ScanSubmit) {
+  const toRecord = useCallback(() => navigate({ to: "/birds/$birdId", params: { birdId } }), [navigate, birdId]);
+  const goBack = useGoBack(toRecord);
+
+  async function onSubmit(p: FullCheckSubmit) {
     setSubmitting(true);
     try {
       const { data: u } = await getLocalUser();
+      const runBy = u.user?.id ?? null;
       const { row: logRow, triage } = buildDailyLogRow(p.answers as ScanAnswers, {
-        birdId, sitId: activeSitId, source: scanSource, runBy: u.user?.id ?? null, logDate: localDateISO(),
+        birdId, sitId: activeSitId, source: scanSource, runBy, logDate: localDateISO(),
         notes: p.notes ?? null, itemNotes: p.itemNotes ?? null,
       });
       const a = p.answers;
@@ -89,15 +105,18 @@ function OwnerScan() {
         await supabase.from("photo_logs").insert({ bird_id: birdId, daily_log_id: row.id, photo_type: "other", photo_url: stored.value, notes: "Attached to health check", ...(activeSitId ? { sit_id: activeSitId } : {}) });
       }
       if (typeof p.weightGrams === "number") {
-        await supabase.from("weight_entries").insert({ bird_id: birdId, grams: p.weightGrams, source: scanSource, logged_by: u.user?.id ?? null, ...(activeSitId ? { sit_id: activeSitId } : {}) });
+        // Same weight_entries row as before (bird, grams, source, logged_by,
+        // sit_id) plus meal_relation when chosen, via the daily check's helper.
+        const err = await saveWeight({ birdId, grams: p.weightGrams, meal: p.meal, source: scanSource, sitId: activeSitId, loggedBy: runBy });
+        if (err) toast.error(t("fullCheck.weightFailed", "The check saved, but the weight didn't. Add it from the weight page."));
       }
 
       track("health_scan_run", { severity: triage.status, had_photo: !!p.photoDataUrl, source: scanSource, photo_fallback: photoFallback });
       setResult(triage);
-      // Show up immediately in the Scans tab, the record-home recent feed, and the weight timeline.
-      ["scan-feed", "bird-checkins", "weight-entries", "bird-weights"].forEach((k) =>
-        qc.invalidateQueries({ queryKey: k === "scan-feed" ? ["scan-feed"] : [k, birdId] }));
-      qc.invalidateQueries({ queryKey: ["birds"] }); // a weigh-in updates Home pills — weights embedded in the birds query
+      // Show up immediately in the Scans tab, Health history, the record-home
+      // recent feed, today's check box and the weight timeline; a weigh-in also
+      // updates Home pills (weights embedded in the birds query).
+      invalidateAfterCheck(qc, birdId);
     } catch (e: any) {
       toast.error(friendlyError(e, t("ownerScan.logFailed", "Couldn't log the health check.")));
     } finally {
@@ -105,43 +124,54 @@ function OwnerScan() {
     }
   }
 
-  return (
-    <div className="min-h-screen bg-[#f4f1e8] pb-nav">
-      <header className="sticky top-0 z-10 border-b border-[#e3ded0] bg-[#f4f1e8]/95 backdrop-blur">
-        <div className="mx-auto flex max-w-md items-center gap-3 px-5 pt-safe pb-3">
-          <Link to="/birds/$birdId" params={{ birdId }} aria-label={t("ownerScan.backAria", "Back to bird record")} className="-ml-1 rounded p-1 text-[#1a3d2e]">
-            <ArrowLeft className="size-5" />
-          </Link>
-          <h1 className="text-base font-medium text-[#1a3d2e]">{t("ownerScan.title", "Health check — {{name}}", { name })}</h1>
-        </div>
-      </header>
+  if (!result) {
+    return (
+      <FullHealthCheck
+        birdId={birdId}
+        name={name}
+        sex={bird?.sex}
+        vetPhone={bird?.vetPhone ?? null}
+        submitting={submitting}
+        onSubmit={onSubmit}
+        onLeave={goBack}
+      />
+    );
+  }
 
-      {result ? (
-        <main className="mx-auto max-w-md space-y-4 px-5 py-6">
-          <div className={`rounded-2xl p-6 text-white ${result.status === "red" ? "bg-warn-red" : result.status === "yellow" ? "bg-warn-amber" : "bg-warn-green"}`}>
-            <p className="text-[11px] font-medium uppercase tracking-widest opacity-80">{result.status === "red" ? t("ownerScan.eyebrowRed", "Call your vet now") : result.status === "yellow" ? t("ownerScan.eyebrowYellow", "Keep a close eye") : t("ownerScan.eyebrowGreen", "All good today")}</p>
-            <h2 className="mt-1 text-2xl font-medium leading-tight">{triageMessageLabel(t, result.message)}</h2>
-          </div>
-          {result.reasons.length > 0 && (
-            <div className="rounded-xl bg-[#efe9da] p-4">
-              <p className="text-[11px] font-medium uppercase tracking-widest text-[#5f5e5a]">{t("ownerScan.whatYouFlagged", "What you flagged")}</p>
-              <ul className="mt-2 list-disc pl-5 text-sm text-[#1a3d2e]">{(triageReasonLines(t, result.reasonCodes) ?? result.reasons).map((r, i) => <li key={i}>{r}</li>)}</ul>
-            </div>
+  const tone = result.status === "red"
+    ? { background: "#fcebeb", color: K.red }
+    : result.status === "yellow"
+      ? { background: K.amberBg, color: K.amberText }
+      : { background: K.lime, color: K.forest };
+  const title = result.status === "red"
+    ? t("ownerScan.eyebrowRed", "Call your vet now")
+    : result.status === "yellow"
+      ? t("ownerScan.eyebrowYellow", "Keep a close eye")
+      : t("ownerScan.eyebrowGreen", "All good today");
+  const reasons = triageReasonLines(t, result.reasonCodes) ?? result.reasons;
+
+  return (
+    <KyaPage>
+      <TaskHeader title={title} line={t("fullCheck.savedLine", "{{name}}'s check is saved to the health log.", { name })} onClose={toRecord} />
+      <main className="relative mx-auto -mt-[26px] flex max-w-md flex-col gap-4 rounded-t-[26px] px-4 pb-8 pt-5" style={{ background: K.mist, color: K.forest }}>
+        <section className="rounded-[20px] p-4 text-[15px] leading-[1.5]" style={tone}>
+          {triageMessageLabel(t, result.message)}
+        </section>
+        {reasons.length > 0 && (
+          <KyaCard className="p-4">
+            <p className="m-0 text-[13px] font-[700]" style={{ color: K.quiet }}>{t("ownerScan.whatYouFlagged", "What you flagged")}</p>
+            <ul className="m-0 mt-2 list-disc pl-5 text-[14.5px] leading-[1.5]">{reasons.map((r, i) => <li key={i}>{r}</li>)}</ul>
+          </KyaCard>
+        )}
+        <div className="flex flex-col gap-2.5">
+          {result.status !== "green" && (
+            <KyaPrimaryButton onClick={() => navigate({ to: "/birds/$birdId/emergency", params: { birdId } })}>{t("ownerScan.emergencyContacts", "Emergency contacts")}</KyaPrimaryButton>
           )}
-          <div className="flex gap-2">
-            {result.status !== "green" && (
-              <Link to="/birds/$birdId/emergency" params={{ birdId }} className="flex-1 rounded-xl bg-[#1a3d2e] py-3 text-center text-sm font-medium text-white">{t("ownerScan.emergencyContacts", "Emergency contacts")}</Link>
-            )}
-            <button type="button" onClick={() => navigate({ to: "/birds/$birdId", params: { birdId } })} className="flex-1 rounded-xl border border-[#c8bfa6] py-3 text-center text-sm font-medium text-[#1a3d2e]">{t("ownerScan.backToRecord", "Back to record")}</button>
-          </div>
-        </main>
-      ) : (
-        <>
-        <div className="mx-auto max-w-md px-5 pt-4"><MemberContextBanner birdId={birdId} /></div>
-        <p className="mx-auto max-w-md px-5 pt-2 text-sm leading-relaxed text-[#5f5e5a]">{t("ownerScan.intro", "A quick once-over to make sure {{name}}'s feeling like themselves.", { name })}</p>
-        <ScanForm submitting={submitting} submitLabel={t("ownerScan.submit", "Log health check")} onSubmit={onSubmit} />
-        </>
-      )}
-    </div>
+          {result.status === "green"
+            ? <KyaPrimaryButton onClick={toRecord}>{t("ownerScan.backToRecord", "Back to record")}</KyaPrimaryButton>
+            : <KyaSecondaryButton className="w-full" onClick={toRecord}>{t("ownerScan.backToRecord", "Back to record")}</KyaSecondaryButton>}
+        </div>
+      </main>
+    </KyaPage>
   );
 }

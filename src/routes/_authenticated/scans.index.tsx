@@ -13,9 +13,8 @@ import { daysSince } from "@/lib/homeData";
 import { monthDay } from "@/lib/dates";
 import { localDateISO } from "@/lib/localDay";
 import { rangeTo, sitTitle } from "@/lib/sitText";
-import { K, KyaPage, KyaHeader, KyaBody, KyaCard, KyaHeading, KyaPrimaryButton, KyaSecondaryButton, KyaTag } from "@/components/kya";
-import { BrandLockup } from "@/components/BrandLogo";
-import { OwnerHeaderIcons } from "@/components/OwnerHeader";
+import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaPrimaryButton, KyaSecondaryButton, KyaTag } from "@/components/kya";
+import { TabHeader } from "@/components/headers";
 import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 import { CaregiverAvatar } from "@/components/SitListCards";
 import { EntryDays, sitCaregiverName, type EntryContext } from "@/components/HealthEntries";
@@ -77,17 +76,7 @@ function HealthTab() {
   return (
     <KyaPage>
       <div className="mx-auto max-w-md">
-        <KyaHeader>
-          <div className="mt-1.5 flex items-center gap-2">
-            <BrandLockup orientation="horizontal" variant="ink" size={118} />
-            <div className="flex-1" />
-            <OwnerHeaderIcons large />
-          </div>
-          <KyaHeading as="h1" size={31} className="mt-9 text-white">{t("healthTab.title", "Flock health")}</KyaHeading>
-          <p className="m-0 mt-2 text-[15px] leading-[1.5]" style={{ color: K.paleGreen }}>
-            {t("healthTab.body", "Daily checks, weights, and anything you noticed, for all your birds.")}
-          </p>
-        </KyaHeader>
+        <TabHeader title={t("healthTab.title", "Flock health")} line={t("healthTab.body", "Daily checks, weights, and anything you noticed, for all your birds.")}></TabHeader>
 
         <KyaBody className="gap-5">
           {birds.length > 0 && <KyaPrimaryButton onClick={startCheck}>{t("healthTab.weighAndCheck", "Weigh & check your flock")}</KyaPrimaryButton>}

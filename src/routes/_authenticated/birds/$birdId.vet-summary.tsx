@@ -2,14 +2,16 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { speciesLabel } from "@/lib/speciesLabel";
 import { ageLabel } from "@/components/BirdPickers";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { ArrowLeft, FileText, Share2, Printer } from "lucide-react";
+import { FileText, Share2, Printer, ArrowRight } from "lucide-react";
 import { computeWeightTrend } from "@/lib/weightTrend";
 import { formatAmountUnitDisplay } from "@/lib/labels";
 import { normalizeFeedTimes, feedTimeLabel } from "@/lib/feedTimes";
-import { InkHero, PrimaryButton, Card } from "@/components/system";
+import { K, SERIF, KyaPage, KyaBody, KyaCard, KyaHeading, KyaIconTile, KyaLink, KyaPrimaryButton, KyaSecondaryButton } from "@/components/kya";
+import { PageHeader, useGoBack } from "@/components/headers";
+import { useCapability } from "@/lib/useCapability";
 import { SCAN_COLS, scanColLabel, formatTriageReasons } from "./$birdId.scans.$scanId";
 import { isNativeApp } from "@/lib/nativeApp";
 import { formatLocalDate, formatLocalDateTime } from "@/lib/dates";
@@ -52,10 +54,13 @@ function sexLabel(sex: string): string {
 }
 
 function VetSummary() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { birdId } = Route.useParams();
   const navigate = useNavigate();
   const [generated, setGenerated] = useState(false);
+  const goBack = useGoBack(useCallback(() => navigate({ to: "/birds/$birdId", params: { birdId } }), [navigate, birdId]));
+  // The "Add them" link opens the identity editor, which needs manage_flock.
+  const canEditIdentity = useCapability("manage_flock", { birdId });
 
   const { data: bird } = useQuery({
     queryKey: ["vet-bird", birdId],
@@ -212,106 +217,153 @@ function VetSummary() {
     }
   }
 
-  return (
-    <div className="min-h-screen bg-[var(--cream)] pb-nav">
-      <div className="mx-auto max-w-md">
-        <div data-noprint>
-          <InkHero
-            backIcon={<ArrowLeft className="size-5" />}
-            onBack={() => navigate({ to: "/birds/$birdId", params: { birdId } })}
-            eyebrow={t("vetSummary.eyebrow", "Vet summary")}
-            headline={t("vetSummary.headline", "One sheet for the vet.")}
-          />
-        </div>
+  // Identity fields the summary prints that are still empty on the record.
+  // Same columns as the `identity` list above (species, sex, age, microchip,
+  // band, origin), in plain lowercase words for the "Missing from" card.
+  const missing: string[] = bird ? [
+    !val(bird.species) && t("vetSummary.missingSpecies", "species"),
+    !val(bird.sex) && t("vetSummary.missingSex", "sex"),
+    !val(bird.age) && t("vetSummary.missingAge", "age"),
+    !val(bird.microchip) && t("vetSummary.missingMicrochip", "microchip"),
+    !val(bird.band_number) && t("vetSummary.missingBand", "leg band"),
+    !val(bird.origin) && t("vetSummary.missingOrigin", "origin"),
+  ].filter((x): x is string => !!x) : [];
+  const missingText = missing.length ? t("vetSummary.missingList", "{{items}}.", { items: cap(joinList(missing, i18n.language)) }) : null;
 
-        <main className="px-5 pt-5">
-          {!generated ? (
-            <Card className="px-8 py-8 text-center">
-              <FileText className="mx-auto size-7 text-[var(--moss)]" />
-              <p className="t-body mx-auto mt-3 text-[var(--ink)]">{t("vetSummary.intro", "A clean snapshot for the vet — identity, weight, diet, meds, handling, and flagged health checks, pulled from {{name}}'s record.", { name })}</p>
-              <div className="mt-4">
-                <PrimaryButton tone="ink" icon={<FileText className="size-4" />} onPress={() => setGenerated(true)}>{t("vetSummary.generate", "Generate summary")}</PrimaryButton>
-              </div>
-            </Card>
-          ) : (
-            <>
-              {/* Actions */}
-              <div data-noprint className="mb-4 flex gap-2">
-                <button type="button" onClick={share} className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-[12px] bg-white px-[18px] py-[11px] text-[15px] font-[500] text-[var(--ink)] ring-1 ring-[var(--line)] active:scale-[0.99]">
-                  <Share2 className="size-4" /> {t("vetSummary.share", "Share")}
-                </button>
-                {/* window.print() is a no-op inside the native shells: neither
-                    @capacitor/ios nor AppDelegate implements WebKit's print
-                    delegate, and Android's WebView has no window.print at all.
-                    Showing the button there is a control that silently does
-                    nothing. Share still works natively (navigator.share), so
-                    there is still a way to get this to a vet. Proper fix is a
-                    generated PDF -- see today-wip-backup (43fd077). */}
-                {!isNativeApp() && (
-                  <div className="flex-1">
-                    <PrimaryButton tone="lime" icon={<Printer className="size-4" />} onPress={() => window.print()}>{t("vetSummary.saveAsPdf", "Save as PDF")}</PrimaryButton>
-                  </div>
+  return (
+    <KyaPage>
+      <div data-noprint>
+        <PageHeader
+          onBack={goBack}
+          title={bird ? t("vetSummary.title", "{{name}}'s vet summary", { name: bird.name }) : t("vetSummary.titleFallback", "Vet summary")}
+          line={t("vetSummary.line", "One clean sheet to bring to the vet or send ahead.")}
+          action={generated ? { label: t("vetSummary.share", "Share"), icon: <Share2 className="size-4" />, onClick: share } : undefined}
+        />
+      </div>
+
+      <KyaBody>
+        {missingText && (
+          <div data-noprint>
+            <KyaCard className="flex items-start gap-3 p-4">
+              <KyaIconTile size={40}><span className="text-[19px] font-[700]" style={{ fontFamily: SERIF }}>!</span></KyaIconTile>
+              <div className="min-w-0 flex-1">
+                <p className="m-0 text-[15px] font-[700]" style={{ color: K.forest }}>{t("vetSummary.missingTitle", "Missing from {{name}}'s record", { name })}</p>
+                <p className="m-0 mt-0.5 text-[14px] leading-[1.45]" style={{ color: K.quiet }}>{missingText}</p>
+                {canEditIdentity && (
+                  <KyaLink onClick={() => navigate({ to: "/birds/$birdId/identity", params: { birdId }, search: { edit: 1 } })}>
+                    {t("vetSummary.addThem", "Add them")} <ArrowRight className="size-4" aria-hidden="true" />
+                  </KyaLink>
                 )}
               </div>
+            </KyaCard>
+          </div>
+        )}
 
-              {/* The sheet */}
-              <article id="vet-sheet">
-                <Card className="p-5">
-                  {/* Sections below each carry their own top hairline. */}
-                  <header className="pb-1">
-                    <h2 className="t-section text-[20px]">{name}</h2>
-                    {bird?.species && <p className="t-body mt-0.5 italic text-[var(--mute)]">{speciesLabel(t, bird.species)}</p>}
-                    <p className="t-meta mt-1">{t("vetSummary.generated", "Generated {{date}}", { date: fmtDate(new Date().toISOString()) })}</p>
-                  </header>
+        {!generated ? (
+          <>
+            <KyaCard className="p-5">
+              <KyaHeading size={21}>{t("vetSummary.includedTitle", "What's included")}</KyaHeading>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <IncludedTag>{t("vetSummary.tagIdentity", "Identity")}</IncludedTag>
+                <IncludedTag>{t("vetSummary.tagWeightTrend", "Weight trend")}</IncludedTag>
+                <IncludedTag>{t("vetSummary.tagDiet", "Diet")}</IncludedTag>
+                <IncludedTag>{t("vetSummary.tagMedications", "Medications")}</IncludedTag>
+                <IncludedTag>{t("vetSummary.tagHandling", "Handling notes")}</IncludedTag>
+                <IncludedTag amber>{t("vetSummary.tagFlagged", "Flagged checks")}</IncludedTag>
+              </div>
+              <p className="m-0 mt-3 text-[13px] leading-[1.5]" style={{ color: K.quiet }}>{t("vetSummary.pulledFrom", "Pulled from {{name}}'s record, so it's always current.", { name })}</p>
+            </KyaCard>
+            <KyaPrimaryButton icon={<FileText className="size-5" />} onClick={() => setGenerated(true)}>
+              {t("vetSummary.make", "Make {{name}}'s vet summary", { name })}
+            </KyaPrimaryButton>
+          </>
+        ) : (
+          <>
+            {/* window.print() is a no-op inside the native shells: neither
+                @capacitor/ios nor AppDelegate implements WebKit's print
+                delegate, and Android's WebView has no window.print at all.
+                Showing the button there is a control that silently does
+                nothing. Share (header pill) still works natively
+                (navigator.share), so there is still a way to get this to a
+                vet. Proper fix is a generated PDF -- see today-wip-backup
+                (43fd077). */}
+            {!isNativeApp() && (
+              <div data-noprint>
+                <KyaSecondaryButton className="w-full" icon={<Printer className="size-4" />} onClick={() => window.print()}>{t("vetSummary.saveAsPdf", "Save as PDF")}</KyaSecondaryButton>
+              </div>
+            )}
 
-                  <Section label={t("vetSummary.identity", "Identity")}>
-                    <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5">
-                      {identity.map(([l, v]) => (
-                        <div key={l}>
-                          <dt className="t-eyebrow text-[var(--mute2)]">{l}</dt>
-                          <dd className={`t-body ${v ? "text-[var(--ink)]" : "italic text-[var(--mute2)]"}`}>{v ?? none()}</dd>
-                        </div>
-                      ))}
-                    </dl>
-                  </Section>
+            {/* The sheet */}
+            <article id="vet-sheet" className="flex flex-col gap-3">
+              <KyaCard className="p-5">
+                <KyaHeading as="h2" size={26}>{name}</KyaHeading>
+                {bird?.species && <p className="m-0 mt-1 text-[15px]" style={{ color: K.ink }}>{speciesLabel(t, bird.species)}</p>}
+                <p className="m-0 mt-1 text-[13px]" style={{ color: K.quiet }}>{t("vetSummary.generated", "Generated {{date}}", { date: fmtDate(new Date().toISOString()) })}</p>
+              </KyaCard>
 
-                  <Section label={t("vetSummary.weight", "Weight")}>
-                    {current ? (
-                      <div>
-                        <p className="text-[22px] font-[550] leading-tight text-[var(--moss)]">{current.grams} g</p>
-                        <p className="t-meta mt-0.5">{trendLabel(trend, delta, baseline)} · {t("vetSummary.lastWeighed", "last weighed {{date}}", { date: fmtDate(current.measured_at) })}</p>
-                      </div>
-                    ) : (
-                      <Value text={null} />
-                    )}
-                  </Section>
-                  <Section label={t("vetSummary.diet", "Diet")}><Value text={dietText} multiline /></Section>
-                  <Section label={t("vetSummary.medsHealthFlags", "Meds & health flags")}><Value text={meds} multiline /></Section>
-                  <FlaggedForReview scans={flaggedScans ?? []} />
-                  <Section label={t("vetSummary.handling", "Handling")}><Value text={handling} multiline /></Section>
+              <Section label={t("vetSummary.identity", "Identity")}>
+                <dl className="m-0 grid grid-cols-2 gap-x-4 gap-y-3">
+                  {identity.map(([l, v]) => (
+                    <div key={l}>
+                      <dt className="text-[13px]" style={{ color: K.quiet }}>{l}</dt>
+                      <dd className={`m-0 mt-0.5 text-[15px] ${v ? "font-[600]" : "italic"}`} style={{ color: v ? K.forest : K.quiet }}>{v ?? cap(none())}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </Section>
 
-                </Card>
+              <Section label={t("vetSummary.weight", "Weight")}>
+                {current ? (
+                  <div>
+                    <p className="m-0 text-[26px] font-[700] leading-tight" style={{ color: K.moss, fontFamily: SERIF }}>{current.grams} g</p>
+                    <p className="m-0 mt-0.5 text-[13px]" style={{ color: K.quiet }}>{trendLabel(trend, delta, baseline)} · {t("vetSummary.lastWeighed", "last weighed {{date}}", { date: fmtDate(current.measured_at) })}</p>
+                  </div>
+                ) : (
+                  <Value text={null} />
+                )}
+              </Section>
+              <Section label={t("vetSummary.diet", "Diet")}><Value text={dietText} multiline /></Section>
+              <Section label={t("vetSummary.medsHealthFlags", "Meds & health flags")}><Value text={meds} multiline /></Section>
+              <FlaggedForReview scans={flaggedScans ?? []} />
+              <Section label={t("vetSummary.handling", "Handling")}><Value text={handling} multiline /></Section>
 
-                {/* Appendix — the complete raw weight series (the body keeps the
-                    summarized trend; this is in addition, for the vet to read). */}
-                <WeightAppendix entries={weights ?? []} />
-              </article>
-            </>
-          )}
-        </main>
-      </div>
+              {/* Appendix — the complete raw weight series (the body keeps the
+                  summarized trend; this is in addition, for the vet to read). */}
+              <WeightAppendix entries={weights ?? []} />
+            </article>
+          </>
+        )}
+      </KyaBody>
 
       {/* Print only the sheet, regardless of app chrome. */}
       <style>{`@media print {
         body * { visibility: hidden !important; }
         #vet-sheet, #vet-sheet * { visibility: visible !important; }
         #vet-sheet { position: absolute; left: 0; top: 0; width: 100%; border: none !important; }
-        #vet-sheet > div { box-shadow: none !important; }
+        #vet-sheet > section { box-shadow: none !important; border: 1px solid ${K.line}; }
         #vet-sheet .avoid-break { break-inside: avoid; page-break-inside: avoid; }
         [data-noprint] { display: none !important; }
       }`}</style>
-    </div>
+    </KyaPage>
   );
+}
+
+/** "What's included" tag: mist/moss, or amber for flagged checks. */
+function IncludedTag({ children, amber }: { children: ReactNode; amber?: boolean }) {
+  return (
+    <span className="inline-flex items-center rounded-full px-3 py-1.5 text-[13px] font-[700]" style={amber ? { background: K.amberBg, color: K.amberText } : { background: K.mist, color: K.moss }}>
+      {children}
+    </span>
+  );
+}
+
+/** "a, b and c" in the reader's language. */
+function joinList(items: string[], lang: string): string {
+  try {
+    return new Intl.ListFormat(lang || "en", { style: "long", type: "conjunction" }).format(items);
+  } catch {
+    return items.join(", ");
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -331,11 +383,11 @@ export function FlaggedForReview({ scans }: { scans: any[] }) {
   const TriageChip = ({ level }: { level: string }) => {
     const style =
       level === "red"
-        ? { background: "var(--red-fill)", color: "var(--red-ink)" }
+        ? { background: RED_BG, color: K.red }
         : level === "yellow"
-          ? { background: "var(--amber-fill)", color: "var(--amber-ink)" }
-          : { background: "var(--pale)", color: "var(--moss)" };
-    return <span className="inline-flex rounded-full px-2 py-0.5 text-[10.5px] font-[600] uppercase tracking-wide" style={style}>{triageLevelLabel(level)}</span>;
+          ? { background: K.amberBg, color: K.amberText }
+          : { background: K.lime, color: K.forest };
+    return <span className="inline-flex rounded-full px-2.5 py-0.5 text-[12px] font-[700]" style={style}>{cap(triageLevelLabel(level))}</span>;
   };
 
   const ScanRow = ({ r, serious: seriousRow }: { r: any; serious: boolean }) => {
@@ -343,30 +395,30 @@ export function FlaggedForReview({ scans }: { scans: any[] }) {
     const notes = (r.item_notes ?? {}) as Record<string, string>;
     return (
       <div
-        className="avoid-break mt-2 rounded-[10px] border border-[var(--line2)] p-2.5"
-        style={{ borderLeft: `3px solid ${seriousRow ? "var(--red-line)" : "var(--line)"}` }}
+        className="avoid-break mt-2 rounded-[14px] p-3"
+        style={{ border: `1px solid ${K.line}`, borderLeft: `3px solid ${seriousRow ? K.red : K.line}` }}
       >
         <div className="flex items-center justify-between gap-3">
-          <p className="text-[14px] font-[550] text-[var(--ink)]">{fmtDate(r.created_at)}</p>
-          <p className="flex shrink-0 items-center gap-1.5">
+          <p className="m-0 text-[14px] font-[700]" style={{ color: K.forest }}>{fmtDate(r.created_at)}</p>
+          <p className="m-0 flex shrink-0 items-center gap-1.5">
             <TriageChip level={r.triage_status} />
-            <span className={`text-[12px] ${r.resolved_at ? "text-[var(--mute)]" : "font-[550] text-[var(--ink)]"}`}>
+            <span className={`text-[12.5px] ${r.resolved_at ? "" : "font-[700]"}`} style={{ color: r.resolved_at ? K.quiet : K.forest }}>
               {r.resolved_at ? t("vetSummary.resolvedOn", "resolved {{date}}", { date: fmtDate(r.resolved_at) }) : t("vetSummary.unresolved", "unresolved")}
             </span>
           </p>
         </div>
-        <ul className="mt-1.5 space-y-1">
+        <ul className="m-0 mt-1.5 list-none space-y-1 p-0">
           {flagged.map((c) => (
-            <li key={c.col} className="text-[13px] leading-snug">
-              <span className="font-[550] text-[var(--ink)]">{scanColLabel(t, c.col, c.label)}</span>
-              <span className="font-[550]" style={{ color: r[c.col] === "concerning" ? "var(--red-ink)" : "var(--amber-ink)" }}>
+            <li key={c.col} className="text-[14px] leading-snug">
+              <span className="font-[700]" style={{ color: K.forest }}>{scanColLabel(t, c.col, c.label)}</span>
+              <span className="font-[700]" style={{ color: r[c.col] === "concerning" ? K.red : K.amberText }}>
                 {" "}· {r[c.col] === "concerning" ? t("vetSummary.answerConcerning", "concerning") : t("vetSummary.answerNotSure", "not sure")}
               </span>
-              {notes[c.fkey] && <span className="block pl-0 text-[12.5px] italic text-[var(--mute)]">"{notes[c.fkey]}"</span>}
+              {notes[c.fkey] && <span className="block text-[13px] italic" style={{ color: K.quiet }}>"{notes[c.fkey]}"</span>}
             </li>
           ))}
         </ul>
-        {formatTriageReasons(t, r) && <p className="t-meta mt-1.5">{formatTriageReasons(t, r)}</p>}
+        {formatTriageReasons(t, r) && <p className="m-0 mt-1.5 text-[13px] leading-[1.45]" style={{ color: K.quiet }}>{formatTriageReasons(t, r)}</p>}
       </div>
     );
   };
@@ -374,18 +426,18 @@ export function FlaggedForReview({ scans }: { scans: any[] }) {
   return (
     <Section label={t("vetSummary.flaggedTitle", "Flagged for review (last 6 months)")}>
       {scans.length === 0 ? (
-        <p className="t-body italic text-[var(--mute2)]">{t("vetSummary.noFlagged", "No flagged checks in the last 6 months.")}</p>
+        <p className="m-0 text-[15px] italic" style={{ color: K.quiet }}>{t("vetSummary.noFlagged", "No flagged checks in the last 6 months.")}</p>
       ) : (
         <>
           {serious.length > 0 && (
             <div className="avoid-break">
-              <p className="mt-1 text-[12px] font-[650] uppercase tracking-wide" style={{ color: "var(--red-ink)" }}>{t("vetSummary.seriousGroup", "Concerning items or red triage")}</p>
+              <p className="m-0 mt-1 text-[13px] font-[700]" style={{ color: K.red }}>{t("vetSummary.seriousGroup", "Concerning items or red triage")}</p>
               {serious.map((r) => <ScanRow key={r.id} r={r} serious />)}
             </div>
           )}
           {milder.length > 0 && (
             <div className={serious.length > 0 ? "mt-4" : ""}>
-              <p className="mt-1 text-[12px] font-[650] uppercase tracking-wide text-[var(--mute)]">{t("vetSummary.milderGroup", "Marked \"not sure\" only")}</p>
+              <p className="m-0 mt-1 text-[13px] font-[700]" style={{ color: K.quiet }}>{t("vetSummary.milderGroup", "Marked \"not sure\" only")}</p>
               {milder.map((r) => <ScanRow key={r.id} r={r} serious={false} />)}
             </div>
           )}
@@ -421,56 +473,56 @@ export function WeightAppendix({ entries }: { entries: WeightRow[] }) {
   const { t } = useTranslation();
   if (entries.length === 0) return null;
   return (
-    <Card className="mt-4 p-5">
-      <p className="t-eyebrow text-[var(--teal-on-cream)]">{t("vetSummary.appendixTitle", "Appendix · weight history")}</p>
-      <p className="t-meta mt-0.5">{entries.length === 1 ? t("vetSummary.entriesOne", "{{n}} entry, newest first", { n: entries.length }) : t("vetSummary.entriesOther", "{{n}} entries, newest first", { n: entries.length })}</p>
+    <KyaCard className="p-5">
+      <KyaHeading as="h3" size={19}>{t("vetSummary.appendixHeading", "Appendix: weight history")}</KyaHeading>
+      <p className="m-0 mt-1 text-[13px]" style={{ color: K.quiet }}>{entries.length === 1 ? t("vetSummary.entriesOne", "{{n}} entry, newest first", { n: entries.length }) : t("vetSummary.entriesOther", "{{n}} entries, newest first", { n: entries.length })}</p>
       {/* Column headers so the series reads as a table at a glance. */}
-      <div className="mt-3 flex items-baseline gap-3 border-b border-[var(--line)] pb-1.5">
-        <span className="w-40 shrink-0 text-[10.5px] font-[600] uppercase tracking-wide text-[var(--mute2)]">{t("vetSummary.colDate", "Date")}</span>
-        <span className="w-14 shrink-0 text-[10.5px] font-[600] uppercase tracking-wide text-[var(--mute2)]">{t("vetSummary.colWeight", "Weight")}</span>
-        <span className="min-w-0 flex-1 text-[10.5px] font-[600] uppercase tracking-wide text-[var(--mute2)]">{t("vetSummary.colContext", "Context")}</span>
+      <div className="mt-3 flex items-baseline gap-3 border-b pb-1.5" style={{ borderColor: K.line }}>
+        <span className="w-40 shrink-0 text-[13px] font-[700]" style={{ color: K.quiet }}>{t("vetSummary.colDate", "Date")}</span>
+        <span className="w-14 shrink-0 text-[13px] font-[700]" style={{ color: K.quiet }}>{t("vetSummary.colWeight", "Weight")}</span>
+        <span className="min-w-0 flex-1 text-[13px] font-[700]" style={{ color: K.quiet }}>{t("vetSummary.colContext", "Context")}</span>
       </div>
       <div>
         {entries.map((e, i) => {
           const context = [mealLabel(e.meal_relation), sourceLabel(e.source) && t("vetSummary.loggedBy", "logged by {{source}}", { source: sourceLabel(e.source) })].filter(Boolean).join(" · ");
           return (
-            <div key={e.id} className={`avoid-break flex items-baseline gap-3 py-1.5 ${i === entries.length - 1 ? "" : "border-b border-[var(--line2)]"}`}>
-              <span className="w-40 shrink-0 text-[12.5px] text-[var(--mute)]">{fmtDateTime(e.measured_at)}</span>
-              <span className="w-14 shrink-0 text-[14px] font-[600] text-[var(--ink)]">{e.grams} g</span>
-              <span className="min-w-0 flex-1 text-[12.5px] leading-snug text-[var(--mute)]">
+            <div key={e.id} className="avoid-break flex items-baseline gap-3 py-2" style={{ borderBottom: i === entries.length - 1 ? undefined : `1px solid ${K.line}` }}>
+              <span className="w-40 shrink-0 text-[13px]" style={{ color: K.quiet }}>{fmtDateTime(e.measured_at)}</span>
+              <span className="w-14 shrink-0 text-[14px] font-[700]" style={{ color: K.forest }}>{e.grams} g</span>
+              <span className="min-w-0 flex-1 text-[13px] leading-snug" style={{ color: K.quiet }}>
                 {context}
-                {e.note && <span className="italic text-[var(--ink2)]">{context ? " · " : ""}"{e.note}"</span>}
+                {e.note && <span className="italic" style={{ color: K.ink }}>{context ? " · " : ""}"{e.note}"</span>}
               </span>
             </div>
           );
         })}
       </div>
-    </Card>
+    </KyaCard>
   );
 }
 
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <section className="mt-5 border-t border-[var(--line2)] pt-4">
-      <p className="t-eyebrow text-[var(--teal-on-cream)]">{label}</p>
-      <div className="mt-1.5">{children}</div>
-    </section>
+    <KyaCard className="p-5">
+      <KyaHeading as="h3" size={19}>{label}</KyaHeading>
+      <div className="mt-2">{children}</div>
+    </KyaCard>
   );
 }
 
 function Value({ text, multiline }: { text: string | null | undefined; multiline?: boolean }) {
-  if (!text) return <p className="t-body italic text-[var(--mute2)]">{none()}</p>;
-  if (!multiline) return <p className="t-body text-[var(--ink)]">{text}</p>;
+  if (!text) return <p className="m-0 text-[15px] italic" style={{ color: K.quiet }}>{cap(none())}</p>;
+  if (!multiline) return <p className="m-0 text-[15px]" style={{ color: K.forest }}>{text}</p>;
   // Multiline values are "Label: detail" lines (Medications:, Conditions:,
   // Out of cage:, Pelleted:, …) — bold the label before the first colon so
   // each line's subject reads at a glance.
   return (
-    <div className="space-y-0.5">
+    <div className="space-y-1">
       {text.split("\n").map((line, i) => {
         const m = line.match(/^([^:]{1,60}):\s*(.*)$/);
         return (
-          <p key={i} className="t-body text-[var(--ink)]">
-            {m ? (<><span className="font-[600]">{m[1]}:</span> {m[2]}</>) : line}
+          <p key={i} className="m-0 text-[15px] leading-[1.5]" style={{ color: K.forest }}>
+            {m ? (<><span className="font-[700]">{m[1]}:</span> {m[2]}</>) : line}
           </p>
         );
       })}
@@ -478,6 +530,9 @@ function Value({ text, multiline }: { text: string | null | undefined; multiline
   );
 }
 
+
+// Light red behind red-triage chips (the K palette has the red ink only).
+const RED_BG = "#f6dede";
 
 function cap(s: string): string { return s.charAt(0).toUpperCase() + s.slice(1); }
 function val(s: unknown): s is string { return typeof s === "string" && s.trim().length > 0; }

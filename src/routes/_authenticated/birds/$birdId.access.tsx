@@ -1,5 +1,5 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,7 +9,9 @@ import {
 } from "@/lib/household.functions";
 import { HouseholdInviteSheet } from "@/components/HouseholdInviteSheet";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, ChevronRight, Calendar, MoreHorizontal, Loader2 } from "lucide-react";
+import { Plus, Calendar, MoreHorizontal, Loader2 } from "lucide-react";
+import { K, KyaPage, KyaBody, KyaCard, KyaRow, KyaGroupLabel, KyaIconTile, KyaHeading, KyaLink, KyaSheet } from "@/components/kya";
+import { PageHeader, useGoBack } from "@/components/headers";
 import { friendlyError } from "@/lib/errorMessage";
 import { formatLocalDate } from "@/lib/dates";
 import i18next from "i18next";
@@ -33,6 +35,7 @@ function AccessHub() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [inviting, setInviting] = useState(false);
+  const goBack = useGoBack(useCallback(() => navigate({ to: "/birds/$birdId", params: { birdId } }), [navigate, birdId]));
 
   const { data: bird } = useQuery({
     queryKey: ["bird-access-head", birdId],
@@ -58,85 +61,86 @@ function AccessHub() {
 
   const name = bird?.row?.name ?? t("birdAccess.thisBird", "this bird");
 
-  return (
-    <div className="min-h-screen bg-[#f4f1e8] pb-nav">
-      <header className="sticky top-0 z-10 border-b border-[#e3ded0] bg-[#f4f1e8]/95 backdrop-blur">
-        <div className="mx-auto flex max-w-md items-center gap-3 px-5 pt-safe pb-3">
-          <Link to="/birds/$birdId" params={{ birdId }} aria-label={t("birdAccess.backAria", "Back to bird record")} className="-ml-1 rounded p-1 text-[#1a3d2e]">
-            <ArrowLeft className="size-5" />
-          </Link>
-          <h1 className="truncate text-base font-medium text-[#1a3d2e]">{t("birdAccess.title", "Who can see {{name}}'s record", { name })}</h1>
-        </div>
-      </header>
+  const members = household?.members ?? [];
+  const pending = household?.pending ?? [];
+  const refresh = () => qc.invalidateQueries({ queryKey: ["household", birdId] });
 
-      <main className="mx-auto max-w-md space-y-6 px-5 py-5">
+  return (
+    <KyaPage>
+      <PageHeader title={t("birdAccess.title", "Who can see {{name}}'s record", { name })} onBack={goBack} />
+
+      <KyaBody className="gap-5">
         {/* You */}
-        <section className="space-y-2">
-          <h2 className="px-1 text-[11px] font-semibold uppercase tracking-widest text-[#5f5e5a]">{t("birdAccess.youHeading", "You")}</h2>
-          <div className="flex items-center gap-3 rounded-[14px] bg-white p-4 ring-1 ring-[#e3dcc9]">
-            <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[#1a3d2e] text-sm font-medium text-white">
-              <OwnerInitial />
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-[#1a3d2e]">{t("birdAccess.you", "You")}</p>
-              <p className="text-xs text-[#8a897f]">{t("birdAccess.ownerFullAccess", "Owner · full access")}</p>
-            </div>
-          </div>
+        <section className="flex flex-col gap-2">
+          <KyaGroupLabel>{t("birdAccess.youHeading", "You")}</KyaGroupLabel>
+          <KyaCard>
+            <KyaRow
+              last
+              leading={<Avatar tone="forest"><OwnerInitial /></Avatar>}
+              title={t("birdAccess.you", "You")}
+              detail={t("birdAccess.ownerFullAccess", "Owner · full access")}
+            />
+          </KyaCard>
         </section>
 
         {/* Household */}
-        <section className="space-y-2">
-          <h2 className="px-1 text-[11px] font-semibold uppercase tracking-widest text-[#5f5e5a]">{t("birdAccess.household", "Household")}</h2>
-          {isLoading ? (
-            <div className="flex items-center gap-2 rounded-[14px] bg-white p-4 text-sm text-[#8a897f] ring-1 ring-[#e3dcc9]">
-              <Loader2 className="size-4 animate-spin" /> {t("birdAccess.loading", "Loading…")}
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {(household?.members ?? []).map((m) => (
-                <MemberCard key={m.userId} birdId={birdId} member={m} onChanged={() => qc.invalidateQueries({ queryKey: ["household", birdId] })} />
-              ))}
-              {(household?.pending ?? []).map((p) => (
-                <PendingCard key={p.id} invite={p} onChanged={() => qc.invalidateQueries({ queryKey: ["household", birdId] })} />
-              ))}
-              <button
-                type="button"
-                onClick={() => setInviting(true)}
-                className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-[14px] border border-dashed border-[#c8bfa6] bg-[#fbfaf2] text-sm font-medium text-[#5f5e5a] active:scale-[0.99]"
-              >
-                <Plus className="size-4" /> {t("birdAccess.addMember", "Add a household member")}
-              </button>
-            </div>
-          )}
-          <p className="px-1 text-xs leading-relaxed text-[#5f5e5a]">
+        <section className="flex flex-col gap-2">
+          <KyaGroupLabel>{t("birdAccess.household", "Household")}</KyaGroupLabel>
+          <KyaCard>
+            {isLoading ? (
+              <div className="flex min-h-[60px] items-center gap-2 px-4 text-[14px]" style={{ color: K.quiet }}>
+                <Loader2 className="size-4 animate-spin" /> {t("birdAccess.loading", "Loading…")}
+              </div>
+            ) : (
+              <>
+                {members.map((m) => (
+                  <MemberRow key={m.userId} birdId={birdId} member={m} onChanged={refresh} />
+                ))}
+                {pending.map((p) => (
+                  <PendingRow key={p.id} invite={p} onChanged={refresh} />
+                ))}
+                <KyaRow
+                  last
+                  onClick={() => setInviting(true)}
+                  chevron={false}
+                  leading={<KyaIconTile tone="mist"><Plus className="size-5" /></KyaIconTile>}
+                  title={<span style={{ color: K.moss }}>{t("birdAccess.addMember", "Add a household member")}</span>}
+                />
+              </>
+            )}
+          </KyaCard>
+          <p className="m-0 px-1 text-[13.5px] leading-[1.5]" style={{ color: K.quiet }}>
             {t("birdAccess.householdHint", "Household members can view and log alongside you. Good for partners or family who help with {{name}}.", { name })}
           </p>
         </section>
 
         {/* Sitters */}
-        <section className="space-y-2">
-          <h2 className="px-1 text-[11px] font-semibold uppercase tracking-widest text-[#5f5e5a]">{t("birdAccess.sitters", "Sitters")}</h2>
-          <Link
-            to="/sits"
-            className="flex items-center gap-3 rounded-[14px] bg-white p-4 ring-1 ring-[#e3dcc9] active:bg-[#f4f1e8]"
-          >
-            <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[#efe9da] text-[#2d6a4f]">
-              <Calendar className="size-5" />
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-[#1a3d2e]">{t("birdAccess.sitterAccess", "Sitter access")}</p>
-              <p className="text-xs text-[#8a897f]">{t("birdAccess.sitterAccessHint", "Temporary links, managed per sit")}</p>
-            </div>
-            <ChevronRight className="size-4 shrink-0 text-[#bcb6a3]" />
-          </Link>
+        <section className="flex flex-col gap-2">
+          <KyaGroupLabel>{t("birdAccess.sitters", "Sitters")}</KyaGroupLabel>
+          <KyaCard>
+            <KyaRow
+              last
+              onClick={() => navigate({ to: "/sits" })}
+              leading={<KyaIconTile><Calendar className="size-5" /></KyaIconTile>}
+              title={t("birdAccess.sitterAccess", "Sitter access")}
+              detail={t("birdAccess.sitterAccessHint", "Temporary links, managed per sit")}
+            />
+          </KyaCard>
         </section>
-      </main>
+      </KyaBody>
 
       {inviting && (
-        <HouseholdInviteSheet initialBirdIds={[birdId]} onClose={() => setInviting(false)} onSent={() => { setInviting(false); qc.invalidateQueries({ queryKey: ["household", birdId] }); }} />
+        <HouseholdInviteSheet initialBirdIds={[birdId]} onClose={() => setInviting(false)} onSent={() => { setInviting(false); refresh(); }} />
       )}
-    </div>
+    </KyaPage>
   );
+}
+
+function Avatar({ children, tone }: { children: ReactNode; tone: "forest" | "lime" | "amber" }) {
+  const c = tone === "forest" ? { background: K.forest, color: "#fff" }
+    : tone === "lime" ? { background: K.lime, color: K.forest }
+    : { background: K.amberBg, color: K.amberText };
+  return <span className="grid size-10 shrink-0 place-items-center rounded-full text-[15px] font-[700]" style={c} aria-hidden="true">{children}</span>;
 }
 
 function OwnerInitial() {
@@ -155,51 +159,60 @@ function OwnerInitial() {
   return <>{data ?? "Y"}</>;
 }
 
-function MemberCard({ birdId, member, onChanged }: { birdId: string; member: { userId: string; name: string | null; email: string | null; addedAt: string }; onChanged: () => void }) {
+function MemberRow({ birdId, member, onChanged }: { birdId: string; member: { userId: string; name: string | null; email: string | null; addedAt: string }; onChanged: () => void }) {
   const { t } = useTranslation();
   const [menu, setMenu] = useState(false);
   const remove = useServerFn(removeHouseholdMember);
   const m = useMutation({
     mutationFn: () => remove({ data: { birdId, userId: member.userId } }),
-    onSuccess: () => { toast.success(t("birdAccess.removed", "Removed from household.")); onChanged(); },
+    onSuccess: () => { toast.success(t("birdAccess.removed", "Removed from household.")); setMenu(false); onChanged(); },
     onError: (e: any) => toast.error(friendlyError(e, t("birdAccess.removeFailed", "Couldn't remove."))),
   });
   const label = member.name?.trim() || member.email || t("birdAccess.householdMember", "Household member");
   return (
-    <div className="relative flex items-center gap-3 rounded-[14px] bg-white p-4 ring-1 ring-[#e3dcc9]">
-      <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[#cfe3dc] text-sm font-medium text-[#1a5e3f]">
-        {initialOf(member.name || member.email)}
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-[#1a3d2e]">{label}</p>
-        <p className="truncate text-xs text-[#8a897f]">{t("birdAccess.canViewLog", "Can view & log · added {{date}}", { date: fmtDate(member.addedAt) })}</p>
-      </div>
-      <button type="button" aria-label={t("birdAccess.memberOptions", "Member options")} onClick={() => setMenu((v) => !v)} className="-mr-1 shrink-0 rounded-full p-2 text-[#5f5e5a] active:bg-[#f4f1e8]">
-        <MoreHorizontal className="size-5" />
-      </button>
-      {menu && (
-        <>
-          <button type="button" aria-hidden className="fixed inset-0 z-10 cursor-default" onClick={() => setMenu(false)} />
-          <div className="absolute right-3 top-12 z-20 overflow-hidden rounded-xl bg-white shadow-lg ring-1 ring-[#e3dcc9]">
-            <button
-              type="button"
-              disabled={m.isPending}
-              onClick={() => {
-                setMenu(false);
-                if (window.confirm(t("birdAccess.confirmRemove", "Remove {{name}} from this bird's household? Their past logs stay in the record.", { name: label }))) m.mutate();
-              }}
-              className="block w-full px-4 py-3 text-left text-sm font-medium text-warn-red disabled:opacity-50"
-            >
-              {t("birdAccess.removeFromHousehold", "Remove from household")}
-            </button>
-          </div>
-        </>
-      )}
-    </div>
+    <>
+      <KyaRow
+        chevron={false}
+        leading={<Avatar tone="lime">{initialOf(member.name || member.email)}</Avatar>}
+        title={label}
+        detail={t("birdAccess.canViewLog", "Can view & log · added {{date}}", { date: fmtDate(member.addedAt) })}
+        trailing={
+          <button
+            type="button"
+            aria-label={t("birdAccess.memberOptions", "Member options")}
+            onClick={() => setMenu(true)}
+            className="-mr-2 grid size-11 place-items-center rounded-full active:bg-black/[0.04]"
+            style={{ color: K.quiet }}
+          >
+            <MoreHorizontal className="size-5" />
+          </button>
+        }
+      />
+      <KyaSheet
+        open={menu}
+        onClose={() => setMenu(false)}
+        closeLabel={t("birdAccess.close", "Close")}
+        title={<KyaHeading size={24}>{label}</KyaHeading>}
+      >
+        <p className="m-0 text-[15px] leading-[1.5]" style={{ color: K.quiet }}>
+          {t("birdAccess.confirmRemove", "Remove {{name}} from this bird's household? Their past logs stay in the record.", { name: label })}
+        </p>
+        <button
+          type="button"
+          disabled={m.isPending}
+          onClick={() => m.mutate()}
+          className="mt-4 inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full border-2 bg-white px-6 text-[16px] font-[700] disabled:opacity-45"
+          style={{ borderColor: K.red, color: K.red }}
+        >
+          {m.isPending && <Loader2 className="size-4 animate-spin" />}
+          {t("birdAccess.removeFromHousehold", "Remove from household")}
+        </button>
+      </KyaSheet>
+    </>
   );
 }
 
-function PendingCard({ invite, onChanged }: { invite: { id: string; email: string; name: string | null; expiresAt: string }; onChanged: () => void }) {
+function PendingRow({ invite, onChanged }: { invite: { id: string; email: string; name: string | null; expiresAt: string }; onChanged: () => void }) {
   const { t } = useTranslation();
   const cancel = useServerFn(cancelHouseholdInvite);
   const m = useMutation({
@@ -208,18 +221,16 @@ function PendingCard({ invite, onChanged }: { invite: { id: string; email: strin
     onError: (e: any) => toast.error(friendlyError(e, t("birdAccess.cancelFailed", "Couldn't cancel."))),
   });
   return (
-    <div className="flex items-center gap-3 rounded-[14px] border border-dashed bg-[#f6e7c4]/30 p-4" style={{ borderColor: "#d8b25a" }}>
-      <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[#f6e7c4] text-sm font-medium text-[#854F0B]">
-        {initialOf(invite.name || invite.email)}
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-[#1a3d2e]">{invite.name?.trim() || invite.email}</p>
-        <p className="truncate text-xs font-medium text-[#854F0B]">{t("birdAccess.invitedPending", "Invited · pending")}</p>
-      </div>
-      <button type="button" disabled={m.isPending} onClick={() => m.mutate()} className="shrink-0 rounded-full px-2.5 py-1 text-xs font-medium text-[#854F0B] underline disabled:opacity-50">
-        {t("birdAccess.cancel", "Cancel")}
-      </button>
-    </div>
+    <KyaRow
+      chevron={false}
+      leading={<Avatar tone="amber">{initialOf(invite.name || invite.email)}</Avatar>}
+      title={invite.name?.trim() || invite.email}
+      detail={<span className="font-[700]" style={{ color: K.amberText }}>{t("birdAccess.invitedPending", "Invited · pending")}</span>}
+      trailing={
+        <KyaLink onClick={() => { if (!m.isPending) m.mutate(); }} className="px-1">
+          {t("birdAccess.cancel", "Cancel")}
+        </KyaLink>
+      }
+    />
   );
 }
-

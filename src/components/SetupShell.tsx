@@ -1,7 +1,7 @@
 import { ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
-import { OwnerTabBar } from "@/components/OwnerTabBar";
+import { KyaHeading, KyaPrimaryButton, KyaSecondaryButton, KyaSheet } from "@/components/kya";
 
 export { SETUP_STEPS, TOTAL_STEPS, NUMBERED_STEPS, setupStepNumber, type SetupStepKey } from "@/lib/setupSteps";
 import { SETUP_STEPS, setupStepNumber, type SetupStepKey } from "@/lib/setupSteps";
@@ -152,8 +152,11 @@ export function SetupShell({
         stepLabel={stepLabel}
         title={displayTitle}
         intro={subtitle}
-        onBack={() => (onBack && !backDisabled ? onBack() : handleExit())}
-        backLabel={onBack && !backDisabled ? t("setupShell.previousStep", "Previous step") : exitLabel ?? t("setupFrame.back", "Back")}
+        // Task rule: the top-left button closes the task (asking first when
+        // there are unsaved changes). Earlier steps stay one tap away in the
+        // step pills.
+        onBack={handleExit}
+        backLabel={exitLabel ?? t("setupFrame.close", "Close")}
         onPill={onNavigateStep ? (p) => { const key = PILL_STEP[p]; if (key) onNavigateStep(setupStepNumber(key)); } : undefined}
         footer={footer}
         tinted={tinted}
@@ -163,45 +166,23 @@ export function SetupShell({
           subline: homeSubline ?? t("setupShell.sharedByEveryBird", "Shared by every bird"),
           onPill: onNavigateStep ? (p) => onNavigateStep(setupStepNumber(p === "reminders" ? "environment" : "emergency")) : undefined,
         } : undefined}
-        // The owner nav stays under the footer: leaving through it keeps the
-        // current step (autosave flushes on unmount).
-        belowFooter={<OwnerTabBar embedded />}
       >
         {children}
       </SetupFrame>
 
-      {/* Unsaved-changes confirmation before exiting to the bird profile */}
+      {/* Unsaved-changes confirmation before closing the task */}
       {confirmExit && (
-        <div className="fixed inset-0 z-[60] grid place-items-center p-6">
-          <div className="absolute inset-0 bg-[var(--ink)]/40" onClick={() => setConfirmExit(false)} />
-          <div
-            role="alertdialog"
-            aria-label={t("setupShell.leaveThisStep", "Leave this step")}
-            className="relative w-full max-w-sm rounded-2xl bg-white p-5 shadow-xl"
-          >
-            <h2 className="t-section">{exitConfirmTitle}</h2>
-            <p className="t-body mt-1 text-[var(--ink2)]">{exitConfirmBody}</p>
-            <div className="mt-4 flex gap-2">
-              <button
-                type="button"
-                onClick={() => setConfirmExit(false)}
-                className="min-h-[44px] flex-1 rounded-xl border border-[var(--line)] bg-white py-2.5 text-[15px] font-[500] text-[var(--ink)]"
-              >
-                {t("setupShell.cancel", "Cancel")}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setConfirmExit(false);
-                  onExit?.();
-                }}
-                className="min-h-[44px] flex-1 rounded-xl bg-[var(--ink)] py-2.5 text-[15px] font-[500] text-white"
-              >
-                {exitConfirmCta}
-              </button>
-            </div>
+        <KyaSheet
+          onClose={() => setConfirmExit(false)}
+          closeLabel={t("setupShell.cancel", "Cancel")}
+          title={<KyaHeading size={24}>{exitConfirmTitle}</KyaHeading>}
+        >
+          <p className="m-0 text-[15px] leading-[1.5] text-[#5f5e5a]">{exitConfirmBody}</p>
+          <div className="mt-4 flex flex-col gap-2.5">
+            <KyaPrimaryButton onClick={() => setConfirmExit(false)}>{t("headers.keepGoing", "Keep going")}</KyaPrimaryButton>
+            <KyaSecondaryButton className="w-full" onClick={() => { setConfirmExit(false); onExit?.(); }}>{exitConfirmCta}</KyaSecondaryButton>
           </div>
-        </div>
+        </KyaSheet>
       )}
     </>
   );

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Camera, Upload, Loader2 } from "lucide-react";
 import { SCAN_FIELDS, computeTriage, type ScanAnswer, type ScanFieldKey } from "@/lib/triage";
-import { scanQuestion, scanHelpNotSure, scanHelpConcerning } from "@/lib/scanFieldLabels";
+import { scanQuestionFor, scanHint, scanHelpNotSure, scanHelpConcerning } from "@/lib/scanFieldLabels";
 import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
 import { toast } from "sonner";
 
@@ -25,10 +25,13 @@ export function ScanForm({
   submitting,
   submitLabel,
   onSubmit,
+  birdName,
 }: {
   submitting: boolean;
   submitLabel?: string;
   onSubmit: (payload: ScanSubmit) => void;
+  /** Names the bird in the questions; without it they read "the bird". */
+  birdName?: string;
 }) {
   const { t } = useTranslation();
   const [answers, setAnswers] = useState<Partial<Record<ScanFieldKey, ScanAnswer>>>({});
@@ -94,7 +97,8 @@ export function ScanForm({
         const missing = showErrors && !a;
         return (
           <section key={f.key} id={`scan-field-${f.key}`} className={`rounded-2xl bg-[#efe9da] p-4 ${missing ? "ring-2 ring-warn-red" : ""}`}>
-            <p id={`scan-q-${f.key}`} className="text-sm font-medium">{scanQuestion(t, f)}</p>
+            <p id={`scan-q-${f.key}`} className="text-sm font-medium">{scanQuestionFor(t, f, birdName)}</p>
+            {scanHint(t, f) && <p className="mt-1 text-xs text-[#5f5e5a]">{scanHint(t, f)}</p>}
             {/* Semantic radio group: one answer per question. role+aria-checked
                 give it radio semantics for assistive tech; tap behavior is unchanged. */}
             <div role="radiogroup" aria-labelledby={`scan-q-${f.key}`} className="mt-3 grid grid-cols-3 gap-2">

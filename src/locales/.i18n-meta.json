@@ -3,9 +3,6 @@
     "account.account": {
       "stamp": "1c07d45c4fdb7a33"
     },
-    "account.back": {
-      "stamp": "5001815e48b3af8b"
-    },
     "account.birdsRehomed": {
       "stamp": "08088ccd6a5303a6"
     },
@@ -195,9 +192,6 @@
     "account.yourName": {
       "stamp": "62cd2c541af427c6"
     },
-    "accountEmergency.back": {
-      "stamp": "5001815e48b3af8b"
-    },
     "accountEmergency.line": {
       "stamp": "000bdb6099dcc3ce"
     },
@@ -239,9 +233,6 @@
     },
     "accountSecurity.emailResetLink": {
       "stamp": "0f77582846bbe0dd"
-    },
-    "accountSecurity.eyebrow": {
-      "stamp": "1c07d45c4fdb7a33"
     },
     "accountSecurity.headline": {
       "stamp": "e5855ab66732d352"
@@ -456,9 +447,6 @@
     "birdAccess.addMember": {
       "stamp": "3f145952b4361c71"
     },
-    "birdAccess.backAria": {
-      "stamp": "ce2a294ea463a84d"
-    },
     "birdAccess.cancel": {
       "stamp": "06c80f8b6f9f2b3b"
     },
@@ -467,6 +455,9 @@
     },
     "birdAccess.canViewLog": {
       "stamp": "e0b3f2211d595684"
+    },
+    "birdAccess.close": {
+      "stamp": "d981ee660d866d8c"
     },
     "birdAccess.confirmRemove": {
       "stamp": "7275c62fb1c5549a"
@@ -549,9 +540,6 @@
     "birdEmergency.allBirds": {
       "stamp": "bc61e5c90fd1b088"
     },
-    "birdEmergency.back": {
-      "stamp": "5001815e48b3af8b"
-    },
     "birdEmergency.close": {
       "stamp": "d981ee660d866d8c"
     },
@@ -614,9 +602,6 @@
     },
     "birdEmergency.yourBird": {
       "stamp": "fb5d7aead9178f25"
-    },
-    "birdHandoff.back": {
-      "stamp": "5001815e48b3af8b"
     },
     "birdHandoff.cantUndo": {
       "stamp": "fc340cd7c08a4fa3"
@@ -681,6 +666,9 @@
     "birdHandoff.title": {
       "stamp": "671f4d0204d9901a"
     },
+    "birdIdentity.add": {
+      "stamp": "7243fcbe9aec5d44"
+    },
     "birdIdentity.agePlaceholder": {
       "stamp": "55229ab55fbf98f8"
     },
@@ -693,6 +681,9 @@
     "birdIdentity.cameHome": {
       "stamp": "45ac061734497ce0"
     },
+    "birdIdentity.cancel": {
+      "stamp": "06c80f8b6f9f2b3b"
+    },
     "birdIdentity.daysOne": {
       "stamp": "da56c11b415e11a9"
     },
@@ -702,23 +693,20 @@
     "birdIdentity.edit": {
       "stamp": "dc46962c1249053f"
     },
-    "birdIdentity.eyebrow": {
-      "stamp": "34ae6a197bc7891c"
+    "birdIdentity.editTitle": {
+      "stamp": "b128156afe79e915"
     },
-    "birdIdentity.footerFemale": {
-      "stamp": "963ea11420ed17f3"
+    "birdIdentity.footnoteFemale": {
+      "stamp": "2f2f686b000b2cbd"
     },
-    "birdIdentity.footerMale": {
-      "stamp": "295ed54a9eb52597"
+    "birdIdentity.footnoteMale": {
+      "stamp": "f4c3504372b65a7d"
     },
-    "birdIdentity.footerOther": {
-      "stamp": "95a91fbd46da2b6d"
+    "birdIdentity.footnoteOther": {
+      "stamp": "63f5ecfd9ae11abc"
     },
     "birdIdentity.fosterBody": {
       "stamp": "edbee95e5ce6db6a"
-    },
-    "birdIdentity.headline": {
-      "stamp": "70b877fd1092ef6d"
     },
     "birdIdentity.legBand": {
       "stamp": "9a7c436dfde518c0"
@@ -731,6 +719,9 @@
     },
     "birdIdentity.methodDnaConfirmed": {
       "stamp": "c1769fb5832f82e3"
+    },
+    "birdIdentity.methodLabel": {
+      "stamp": "86d100ab37712f18"
     },
     "birdIdentity.methodPlaceholder": {
       "stamp": "e6c952abbd9ece45"
@@ -753,8 +744,8 @@
     "birdIdentity.monthsOther": {
       "stamp": "0ec1c5e4985f2924"
     },
-    "birdIdentity.none": {
-      "stamp": "8a487ee35f7324bd"
+    "birdIdentity.notAdded": {
+      "stamp": "369938ad2bbc6c71"
     },
     "birdIdentity.notSet": {
       "stamp": "bada2594e7fbfd74"
@@ -780,17 +771,20 @@
     "birdIdentity.saving": {
       "stamp": "0b998d1b1ad7ec9e"
     },
+    "birdIdentity.title": {
+      "stamp": "89e037b86627b91e"
+    },
+    "birdIdentity.titleFallback": {
+      "stamp": "34ae6a197bc7891c"
+    },
     "birdJournal.addAnEntry": {
       "stamp": "846b3fe5c8a1c4df"
     },
     "birdJournal.added": {
       "stamp": "b5c17eafb906bd4b"
     },
-    "birdJournal.addEntry": {
-      "stamp": "84f8ad0ba3c3095e"
-    },
-    "birdJournal.addFirst": {
-      "stamp": "8fd90fef6651c8df"
+    "birdJournal.addEntryTitle": {
+      "stamp": "846b3fe5c8a1c4df"
     },
     "birdJournal.addPhoto": {
       "stamp": "6fb2eafd03f3dc13"
@@ -807,17 +801,14 @@
     "birdJournal.body": {
       "stamp": "7a275ad76c791931"
     },
-    "birdJournal.cancel": {
-      "stamp": "06c80f8b6f9f2b3b"
-    },
     "birdJournal.close": {
       "stamp": "d981ee660d866d8c"
     },
     "birdJournal.confirmDelete": {
       "stamp": "b2263b9980f0e41b"
     },
-    "birdJournal.dateLabel": {
-      "stamp": "dd9d860749da2f96"
+    "birdJournal.dateField": {
+      "stamp": "411600a99346ac59"
     },
     "birdJournal.deleted": {
       "stamp": "7db42426b312c259"
@@ -852,9 +843,6 @@
     "birdJournal.emptyNotes": {
       "stamp": "51ffd9537f738f19"
     },
-    "birdJournal.eyebrow": {
-      "stamp": "523da79a345720e4"
-    },
     "birdJournal.filesFailed": {
       "stamp": "b318594017f3be28"
     },
@@ -876,17 +864,14 @@
     "birdJournal.filterHealth": {
       "stamp": "24701ea98bfb3f0a"
     },
+    "birdJournal.filterLabel": {
+      "stamp": "0a706bfac0b1e802"
+    },
     "birdJournal.filterNotes": {
       "stamp": "d19a3271a64d8524"
     },
-    "birdJournal.headline": {
-      "stamp": "75cfcf635b9b0dbe"
-    },
     "birdJournal.kindBehavior": {
       "stamp": "847b1e8ea2825cdf"
-    },
-    "birdJournal.kindLabel": {
-      "stamp": "abcbc32ce2790480"
     },
     "birdJournal.kindMeds": {
       "stamp": "bfdd74a2053f3e36"
@@ -899,6 +884,9 @@
     },
     "birdJournal.kindOther": {
       "stamp": "e9cb3684471d0067"
+    },
+    "birdJournal.kindPick": {
+      "stamp": "4833b5313c5957fa"
     },
     "birdJournal.kindVet": {
       "stamp": "0c59cb4bc0fc519c"
@@ -942,14 +930,17 @@
     "birdJournal.saving": {
       "stamp": "0b998d1b1ad7ec9e"
     },
-    "birdJournal.thisBird": {
-      "stamp": "e206dc027c390933"
+    "birdJournal.titleField": {
+      "stamp": "6e5ed655dd0033da"
     },
-    "birdJournal.titleLabel": {
-      "stamp": "50e65eb74d065a15"
+    "birdJournal.titleNamed": {
+      "stamp": "d73e46195df5f60d"
     },
     "birdJournal.titlePlaceholder": {
       "stamp": "8c97548db807b98b"
+    },
+    "birdJournal.titlePlain": {
+      "stamp": "523da79a345720e4"
     },
     "birdJournal.updated": {
       "stamp": "ff9b7f4df976c34f"
@@ -963,20 +954,14 @@
     "birdMoments.add": {
       "stamp": "7243fcbe9aec5d44"
     },
-    "birdMoments.addCustom": {
-      "stamp": "07f2dd9b802c515e"
-    },
     "birdMoments.addMilestone": {
       "stamp": "d1346fa1ab8d0376"
     },
     "birdMoments.addPhoto": {
       "stamp": "6fb2eafd03f3dc13"
     },
-    "birdMoments.body": {
-      "stamp": "c69a91227a5a09b4"
-    },
-    "birdMoments.cancel": {
-      "stamp": "06c80f8b6f9f2b3b"
+    "birdMoments.cameHomeDay": {
+      "stamp": "0274897eef003dc8"
     },
     "birdMoments.cardFailed": {
       "stamp": "67011de9b6b93149"
@@ -987,8 +972,23 @@
     "birdMoments.close": {
       "stamp": "d981ee660d866d8c"
     },
+    "birdMoments.confirmDelete": {
+      "stamp": "646b37e568b9c19f"
+    },
     "birdMoments.dateLabel": {
       "stamp": "411600a99346ac59"
+    },
+    "birdMoments.deleteFailed": {
+      "stamp": "50f10dbb3926ff96"
+    },
+    "birdMoments.deleteMilestone": {
+      "stamp": "c907be01d05eefe2"
+    },
+    "birdMoments.deleting": {
+      "stamp": "17dadddd53c0f524"
+    },
+    "birdMoments.editMilestone": {
+      "stamp": "ec00bc3b1d71e8ca"
     },
     "birdMoments.emptyMember": {
       "stamp": "44763759fc51a265"
@@ -996,8 +996,11 @@
     "birdMoments.emptyOwner": {
       "stamp": "5140dd4e0d2e3658"
     },
-    "birdMoments.eyebrow": {
-      "stamp": "3207ac5bdb45698a"
+    "birdMoments.everyYearLine": {
+      "stamp": "69c0271ff172236c"
+    },
+    "birdMoments.everyYearShort": {
+      "stamp": "56620cf3e1bb7c49"
     },
     "birdMoments.gotchaDay": {
       "stamp": "36b2813952f008bc"
@@ -1005,8 +1008,14 @@
     "birdMoments.hatchDay": {
       "stamp": "662fabd2d329d864"
     },
-    "birdMoments.headline": {
-      "stamp": "6a03a4a9b68d2b62"
+    "birdMoments.hatchedDay": {
+      "stamp": "76c2504d90451a56"
+    },
+    "birdMoments.lessThanMonthTogether": {
+      "stamp": "5e1c2ec6904b6e5d"
+    },
+    "birdMoments.line": {
+      "stamp": "1c438fa4a70def06"
     },
     "birdMoments.metaTitle": {
       "stamp": "5a3d50dc126bff25"
@@ -1017,14 +1026,32 @@
     "birdMoments.milestoneAdded": {
       "stamp": "0f933c1ee4cfc6ae"
     },
+    "birdMoments.milestoneDeleted": {
+      "stamp": "c4cb21a8b1472c26"
+    },
     "birdMoments.milestones": {
       "stamp": "6cc7a3e9480cba69"
+    },
+    "birdMoments.milestoneUpdated": {
+      "stamp": "0155ba0abdca8be5"
+    },
+    "birdMoments.monthsTogether_one": {
+      "stamp": "cc20aa3a2da6c269"
+    },
+    "birdMoments.monthsTogether_other": {
+      "stamp": "760d2934b7f0cd62"
     },
     "birdMoments.nudge": {
       "stamp": "e83cdcd8b5795dc8"
     },
     "birdMoments.onDate": {
       "stamp": "5d94b5740ee2ca39"
+    },
+    "birdMoments.ownLine": {
+      "stamp": "e3e8932cab661b11"
+    },
+    "birdMoments.ownShort": {
+      "stamp": "511a7eb06dd6830a"
     },
     "birdMoments.photoFailed": {
       "stamp": "03a0cdef35bb2203"
@@ -1062,8 +1089,14 @@
     "birdMoments.saving": {
       "stamp": "0b998d1b1ad7ec9e"
     },
+    "birdMoments.savingPhoto": {
+      "stamp": "74ca929f0aa6fe0b"
+    },
     "birdMoments.share": {
       "stamp": "cdcba29bb82cb786"
+    },
+    "birdMoments.shareYear": {
+      "stamp": "e9083a3194fd57e7"
     },
     "birdMoments.thisBird": {
       "stamp": "cf4aa8567187c910"
@@ -1071,8 +1104,14 @@
     "birdMoments.titleLabel": {
       "stamp": "6e5ed655dd0033da"
     },
+    "birdMoments.titleNamed": {
+      "stamp": "d1ee8c14efdf3f8c"
+    },
     "birdMoments.titlePlaceholder": {
       "stamp": "cb5e0d2288903122"
+    },
+    "birdMoments.titlePlain": {
+      "stamp": "3207ac5bdb45698a"
     },
     "birdMoments.today": {
       "stamp": "9fd613b7258b1a55"
@@ -1083,20 +1122,20 @@
     "birdMoments.turns": {
       "stamp": "00fb6728e28457bd"
     },
-    "birdMoments.upcoming": {
-      "stamp": "dc396b06a46b1b5f"
-    },
     "birdMoments.yearly": {
       "stamp": "146bdfe4936cd237"
     },
-    "birdMoments.yearsTogetherOne": {
-      "stamp": "44e30171d57ebb01"
+    "birdMoments.yearsHintMember": {
+      "stamp": "866713afa6111d3f"
     },
-    "birdMoments.yearsTogetherOther": {
-      "stamp": "a780ac5e5b1910bd"
+    "birdMoments.yearsHintOwner": {
+      "stamp": "07dd0e3810866223"
     },
-    "birdMoments.yourOwn": {
-      "stamp": "511a7eb06dd6830a"
+    "birdMoments.yearsTogether_one": {
+      "stamp": "db2096da6824d4cd"
+    },
+    "birdMoments.yearsTogether_other": {
+      "stamp": "eae4cf6373f09715"
     },
     "birdNames.and": {
       "stamp": "fbb6deca81886546"
@@ -1263,17 +1302,11 @@
     "birdRecord.carePlanSections": {
       "stamp": "7f31a0cdbcb9ff4b"
     },
-    "birdRecord.checkAllNormal": {
-      "stamp": "3268f24122381196"
+    "birdRecord.checkButtonsHint": {
+      "stamp": "b652917400e69b30"
     },
     "birdRecord.checkDone": {
       "stamp": "3e00dbef8dddb12e"
-    },
-    "birdRecord.checkedToday": {
-      "stamp": "7f14bec1f4de29ac"
-    },
-    "birdRecord.checkNotedSomething": {
-      "stamp": "cc567bf47874a64b"
     },
     "birdRecord.chipBandHatchDateOrigin": {
       "stamp": "7e85d3ad8ccc2740"
@@ -1301,6 +1334,18 @@
     },
     "birdRecord.createCarePlan": {
       "stamp": "829c6922dc4bd871"
+    },
+    "birdRecord.dailyCheckButton": {
+      "stamp": "a55b557383617330"
+    },
+    "birdRecord.deleteDetailHer": {
+      "stamp": "fa77e78a5195279d"
+    },
+    "birdRecord.deleteDetailHim": {
+      "stamp": "ab2502b60ee56a4b"
+    },
+    "birdRecord.deleteDetailThem": {
+      "stamp": "ed2891d0f103d2ce"
     },
     "birdRecord.deleteName": {
       "stamp": "ca7698c11a1f4fc7"
@@ -1344,6 +1389,9 @@
     "birdRecord.flight": {
       "stamp": "5bdc1919d90eeaf6"
     },
+    "birdRecord.fullHealthCheckButton": {
+      "stamp": "6849412e9ebe15d2"
+    },
     "birdRecord.fullyFlighted": {
       "stamp": "9737a6091096d25b"
     },
@@ -1352,6 +1400,15 @@
     },
     "birdRecord.handoffCanceled": {
       "stamp": "81ef2b36149f121b"
+    },
+    "birdRecord.handoffDetailHer": {
+      "stamp": "d124c753b8c807cd"
+    },
+    "birdRecord.handoffDetailHim": {
+      "stamp": "674f831ceff23114"
+    },
+    "birdRecord.handoffDetailThem": {
+      "stamp": "5b0aed5367e46176"
     },
     "birdRecord.handoffPendingTo": {
       "stamp": "b6238b3eb18afd4e"
@@ -1364,6 +1421,9 @@
     },
     "birdRecord.identity": {
       "stamp": "34ae6a197bc7891c"
+    },
+    "birdRecord.ifThingsChangeHeading": {
+      "stamp": "f29b3a4dcba8520d"
     },
     "birdRecord.inYourCareText": {
       "stamp": "bb01634e2bbbabcc"
@@ -1404,9 +1464,6 @@
     "birdRecord.notAdded": {
       "stamp": "369938ad2bbc6c71"
     },
-    "birdRecord.notCheckedToday": {
-      "stamp": "e6b57c19f3ccf2de"
-    },
     "birdRecord.nothingLoggedYetWeightsAnd": {
       "stamp": "a08f2ff81649a806"
     },
@@ -1427,6 +1484,15 @@
     },
     "birdRecord.partiallyClipped": {
       "stamp": "e2727959b14d9e48"
+    },
+    "birdRecord.passedDetailHer": {
+      "stamp": "e85bd90285fdbbf5"
+    },
+    "birdRecord.passedDetailHis": {
+      "stamp": "f6dfffa47841cbe6"
+    },
+    "birdRecord.passedDetailTheir": {
+      "stamp": "b5f672383b0dfc19"
     },
     "birdRecord.passedOrTrouble": {
       "stamp": "de186850fe0856dd"
@@ -1464,9 +1530,6 @@
     "birdRecord.removedToast": {
       "stamp": "eb532aa7c4544496"
     },
-    "birdRecord.runAHealthScan": {
-      "stamp": "8742eb92c7a2ef6f"
-    },
     "birdRecord.save": {
       "stamp": "8bb70b77034c99c6"
     },
@@ -1478,9 +1541,6 @@
     },
     "birdRecord.seeAll": {
       "stamp": "633093736fdd4e48"
-    },
-    "birdRecord.seeCheck": {
-      "stamp": "68e965b8e387a863"
     },
     "birdRecord.setUpCarePlan": {
       "stamp": "907e414f6df91e4c"
@@ -1499,12 +1559,6 @@
     },
     "birdRecord.species": {
       "stamp": "558943ff684792a6"
-    },
-    "birdRecord.startCheck": {
-      "stamp": "eb9668fb8459344d"
-    },
-    "birdRecord.theSameDailyCheckA": {
-      "stamp": "5d6f37d4ecdded9b"
     },
     "birdRecord.thisBird": {
       "stamp": "cf4aa8567187c910"
@@ -2523,9 +2577,6 @@
     "birdWeight.ago90": {
       "stamp": "474ea88e51fc6a83"
     },
-    "birdWeight.back": {
-      "stamp": "5001815e48b3af8b"
-    },
     "birdWeight.beforeMeal": {
       "stamp": "06ae1945ed81e6d3"
     },
@@ -2730,9 +2781,6 @@
     "careCards.stepUpYes": {
       "stamp": "3c2100d515be78f6"
     },
-    "caregiverConcern.back": {
-      "stamp": "5001815e48b3af8b"
-    },
     "caregiverConcern.loading": {
       "stamp": "543c404f0e5a7d86"
     },
@@ -2741,6 +2789,12 @@
     },
     "caregiverConcern.theOwner": {
       "stamp": "08ee0f36c66831a5"
+    },
+    "caregiverConcern.title": {
+      "stamp": "7b79ab629f6e00af"
+    },
+    "caregiverConcern.titleNoName": {
+      "stamp": "cce4dcbd2f394fd8"
     },
     "caregiverHome.afternoon": {
       "stamp": "8662597e3decf20a"
@@ -2759,6 +2813,9 @@
     },
     "caregiverHome.checkStarts": {
       "stamp": "f813e2b1fc49da86"
+    },
+    "caregiverHome.checkStartsTitle": {
+      "stamp": "e9945b4c339b3809"
     },
     "caregiverHome.couldntUpdate": {
       "stamp": "9a66f933ffd81633"
@@ -2816,6 +2873,9 @@
     },
     "caregiverHome.noActiveSitBody": {
       "stamp": "5ff4d9168f36458c"
+    },
+    "caregiverHome.noActiveSitTitle": {
+      "stamp": "bc20985e149105c7"
     },
     "caregiverHome.noRoutineItems": {
       "stamp": "40f9bfa3c67cb400"
@@ -3630,9 +3690,6 @@
     "copyFromBird.undo": {
       "stamp": "eff6798f17be1468"
     },
-    "covering.coveringFlock": {
-      "stamp": "45c78f6f408064f3"
-    },
     "covering.dailyCare": {
       "stamp": "993b59680044396a"
     },
@@ -3641,6 +3698,9 @@
     },
     "covering.ifPassed": {
       "stamp": "b4079c11bbda2f84"
+    },
+    "covering.lineCovering": {
+      "stamp": "8f046d208795d0c7"
     },
     "covering.notActive": {
       "stamp": "e627c1f502c8c957"
@@ -3660,8 +3720,8 @@
     "covering.somethingsWrong": {
       "stamp": "62bf3a02637c59d4"
     },
-    "covering.todaysCareFor": {
-      "stamp": "ac0f10e53df5cf4c"
+    "covering.theOwner": {
+      "stamp": "08ee0f36c66831a5"
     },
     "dailyCheck.addAnotherWeight": {
       "stamp": "105e7e3d331899ce"
@@ -4314,9 +4374,6 @@
     "exportRecord.age": {
       "stamp": "0d774c505c12bcc1"
     },
-    "exportRecord.back": {
-      "stamp": "5001815e48b3af8b"
-    },
     "exportRecord.band": {
       "stamp": "b33bc195bf09241d"
     },
@@ -4329,6 +4386,9 @@
     "exportRecord.cantUndo": {
       "stamp": "fc340cd7c08a4fa3"
     },
+    "exportRecord.close": {
+      "stamp": "d981ee660d866d8c"
+    },
     "exportRecord.conditionsLine": {
       "stamp": "ac11ea00f9b2c981"
     },
@@ -4337,6 +4397,9 @@
     },
     "exportRecord.confirmPromptWeb": {
       "stamp": "c386864cbd2436c7"
+    },
+    "exportRecord.confirmTitle": {
+      "stamp": "bbd85e3355874d4a"
     },
     "exportRecord.copied": {
       "stamp": "b5401788a1b4d0c7"
@@ -4407,11 +4470,17 @@
     "exportRecord.notYet": {
       "stamp": "02d6f1a346f6bfe1"
     },
+    "exportRecord.optional": {
+      "stamp": "e301f0fddfd8d6a1"
+    },
     "exportRecord.origin": {
       "stamp": "d8511d5921012052"
     },
     "exportRecord.outOfCageLine": {
       "stamp": "b81883c3968cf022"
+    },
+    "exportRecord.recipientLabel": {
+      "stamp": "be32f5a78e340b0f"
     },
     "exportRecord.recipientPlaceholder": {
       "stamp": "5ff623ceb3ec0200"
@@ -4491,8 +4560,8 @@
     "farewell.guidanceEyebrow": {
       "stamp": "923eba13039b63ae"
     },
-    "farewell.guidanceHeadline": {
-      "stamp": "d87e4a534a5fd53e"
+    "farewell.guidanceTitle": {
+      "stamp": "501c93b742a80f80"
     },
     "farewell.necropsyBody": {
       "stamp": "c797255fdb2f87b3"
@@ -4511,9 +4580,6 @@
     },
     "flockCheck.addWeight": {
       "stamp": "1e7d56b6177867b4"
-    },
-    "flockCheck.back": {
-      "stamp": "5001815e48b3af8b"
     },
     "flockCheck.backToHome": {
       "stamp": "5707ed08861e2e51"
@@ -4547,6 +4613,9 @@
     },
     "flockCheck.heading": {
       "stamp": "01e38b3413c0e455"
+    },
+    "flockCheck.headingOne": {
+      "stamp": "d9868029d8f12750"
     },
     "flockCheck.intro": {
       "stamp": "9d20775447934dcd"
@@ -4584,8 +4653,8 @@
     "flockCheck.notWeighedYet": {
       "stamp": "79118c3c5e1ec058"
     },
-    "flockCheck.progressAria": {
-      "stamp": "3fc6eb3aebd3498b"
+    "flockCheck.progressChecked": {
+      "stamp": "0cf9f0853847bb4e"
     },
     "flockCheck.saveNext": {
       "stamp": "ccd66bb87fa51b6c"
@@ -5256,6 +5325,150 @@
     "foodEditor.whereFoodIsStored": {
       "stamp": "336933d9f7c898a9"
     },
+    "fullCheck.callVet": {
+      "stamp": "b9fea054aa89202f"
+    },
+    "fullCheck.gramsLabel": {
+      "stamp": "c16c233dc0323cb7"
+    },
+    "fullCheck.gramsPlaceholder": {
+      "stamp": "a18beb5e16bf8307"
+    },
+    "fullCheck.itemNoteAria": {
+      "stamp": "634fc174a9d59324"
+    },
+    "fullCheck.itemNotePlaceholder": {
+      "stamp": "97431dbc231eff90"
+    },
+    "fullCheck.line_other": {
+      "stamp": "52d00361a6cb0a70"
+    },
+    "fullCheck.line_female": {
+      "stamp": "45e38d8be8289fde"
+    },
+    "fullCheck.line_male": {
+      "stamp": "c3a433474376ff73"
+    },
+    "fullCheck.notesPlaceholder": {
+      "stamp": "8f9c817d69a8998d"
+    },
+    "fullCheck.notesTitle": {
+      "stamp": "a1ad2dfae6851fd1"
+    },
+    "fullCheck.noun.alertness": {
+      "stamp": "3846c410d2799cf7"
+    },
+    "fullCheck.noun.breathing": {
+      "stamp": "5d9ccee68975a08f"
+    },
+    "fullCheck.noun.droppings": {
+      "stamp": "a8cfc5e10faf8687"
+    },
+    "fullCheck.noun.exposure": {
+      "stamp": "77caf4be5ebfe90a"
+    },
+    "fullCheck.noun.fluffed": {
+      "stamp": "a6a3953577fc2196"
+    },
+    "fullCheck.noun.food": {
+      "stamp": "f2771ea9447bb708"
+    },
+    "fullCheck.noun.injury": {
+      "stamp": "012d8dac503f297c"
+    },
+    "fullCheck.noun.noise": {
+      "stamp": "03887640f1eb76d1"
+    },
+    "fullCheck.noun.posture": {
+      "stamp": "54292087eb2c0ec4"
+    },
+    "fullCheck.noun.vomiting": {
+      "stamp": "436e88614b5e28b2"
+    },
+    "fullCheck.nounCap.alertness": {
+      "stamp": "2d881a7420a6db72"
+    },
+    "fullCheck.nounCap.breathing": {
+      "stamp": "1fdac70f20912e98"
+    },
+    "fullCheck.nounCap.droppings": {
+      "stamp": "c2281305e71cfa48"
+    },
+    "fullCheck.nounCap.exposure": {
+      "stamp": "3db16d5706707bc9"
+    },
+    "fullCheck.nounCap.fluffed": {
+      "stamp": "4dcf546b8754ce8a"
+    },
+    "fullCheck.nounCap.food": {
+      "stamp": "ff4a84c349e35ef1"
+    },
+    "fullCheck.nounCap.injury": {
+      "stamp": "349ca9446b4de23b"
+    },
+    "fullCheck.nounCap.noise": {
+      "stamp": "c06a56812f2898ca"
+    },
+    "fullCheck.nounCap.posture": {
+      "stamp": "bd82ae1d35111232"
+    },
+    "fullCheck.nounCap.vomiting": {
+      "stamp": "b55e6a7f08c94d4f"
+    },
+    "fullCheck.photoLine": {
+      "stamp": "e86a7a614279ddf6"
+    },
+    "fullCheck.photoTitle": {
+      "stamp": "47dfa670aae66280"
+    },
+    "fullCheck.progress": {
+      "stamp": "b392267cab5f2a2c"
+    },
+    "fullCheck.removePhoto": {
+      "stamp": "7a3c74b21c1d6ef1"
+    },
+    "fullCheck.save": {
+      "stamp": "5c4d966fcf523a55"
+    },
+    "fullCheck.savedLine": {
+      "stamp": "fa507f0edb671666"
+    },
+    "fullCheck.saving": {
+      "stamp": "0b998d1b1ad7ec9e"
+    },
+    "fullCheck.title": {
+      "stamp": "132bc6c2fe1ada93"
+    },
+    "fullCheck.upload": {
+      "stamp": "5e357452596e54d2"
+    },
+    "fullCheck.watchConcerning": {
+      "stamp": "38ef036fe5c47043"
+    },
+    "fullCheck.watchCount_one": {
+      "stamp": "88a4c58bbebbc215"
+    },
+    "fullCheck.watchCount_other": {
+      "stamp": "f11d69746ef53e03"
+    },
+    "fullCheck.watchNotSure": {
+      "stamp": "54e2847e562f4851"
+    },
+    "fullCheck.weighLine_other": {
+      "stamp": "58f9b7276ea5be4a"
+    },
+    "fullCheck.weighLine_female": {
+      "stamp": "60dec45605e9a4c2"
+    },
+    "fullCheck.weighLine_male": {
+      "stamp": "2dffd6cf1671357d"
+    },
+    "fullCheck.weightFailed": {
+      "stamp": "16d74c955b86d2e6"
+    },
+    "fullCheck.weighTitle": {
+      "stamp": "458cdff43be73c31"
+    },
     "handoff.accept": {
       "stamp": "6f6cd477ba9e12fe"
     },
@@ -5376,11 +5589,26 @@
     "handoff.youllReceive": {
       "stamp": "4c727b1cf0780c84"
     },
+    "headers.back": {
+      "stamp": "5001815e48b3af8b"
+    },
+    "headers.close": {
+      "stamp": "d981ee660d866d8c"
+    },
+    "headers.keepGoing": {
+      "stamp": "5507dd17ff95fc22"
+    },
+    "headers.leave": {
+      "stamp": "6966839840e0da0a"
+    },
+    "headers.leaveBody": {
+      "stamp": "75196f7a0a9aaeb6"
+    },
+    "headers.leaveTitle": {
+      "stamp": "a1c6a5ee0bb8bd66"
+    },
     "healthHistory.allBirds": {
       "stamp": "bc61e5c90fd1b088"
-    },
-    "healthHistory.back": {
-      "stamp": "5001815e48b3af8b"
     },
     "healthHistory.birdLabel": {
       "stamp": "7964d14d200e7108"
@@ -5786,9 +6014,6 @@
     },
     "household.alwaysSeeEverything": {
       "stamp": "ead527ddab6716df"
-    },
-    "household.back": {
-      "stamp": "5001815e48b3af8b"
     },
     "household.cancelInvite": {
       "stamp": "cf569938de0631d8"
@@ -6474,9 +6699,6 @@
     "notifSettings.alwaysOnBody": {
       "stamp": "dc1decc3ac0f10e1"
     },
-    "notifSettings.back": {
-      "stamp": "5001815e48b3af8b"
-    },
     "notifSettings.bodyNew": {
       "stamp": "d050d5b462a31283"
     },
@@ -6789,9 +7011,6 @@
     "ownerOnboarding.welcomeHeadline": {
       "stamp": "0275773220fe4071"
     },
-    "ownerScan.backAria": {
-      "stamp": "ce2a294ea463a84d"
-    },
     "ownerScan.backToRecord": {
       "stamp": "ee0e281721196281"
     },
@@ -6806,9 +7025,6 @@
     },
     "ownerScan.eyebrowYellow": {
       "stamp": "20c46bf1c27d8d75"
-    },
-    "ownerScan.intro": {
-      "stamp": "e3888ea672197d9f"
     },
     "ownerScan.logFailed": {
       "stamp": "66e9cb90c397bb3b"
@@ -6828,14 +7044,8 @@
     "ownerScan.msgYellowOne": {
       "stamp": "747ad6091967e8ab"
     },
-    "ownerScan.submit": {
-      "stamp": "fd5f7d8321cbe4b2"
-    },
     "ownerScan.thisBird": {
       "stamp": "e206dc027c390933"
-    },
-    "ownerScan.title": {
-      "stamp": "ab5efa80938561b1"
     },
     "ownerScan.whatYouFlagged": {
       "stamp": "fb034de4725f780f"
@@ -6942,9 +7152,6 @@
     "pastBirds.empty": {
       "stamp": "e301dfc8fd4288e6"
     },
-    "pastBirds.eyebrow": {
-      "stamp": "b2cdf60578d720a7"
-    },
     "pastBirds.footer": {
       "stamp": "b30f9b5ad51ade3c"
     },
@@ -6957,17 +7164,17 @@
     "pastBirds.foundNewHome": {
       "stamp": "f4a7dc778693c803"
     },
-    "pastBirds.headline": {
-      "stamp": "b2cdf60578d720a7"
-    },
     "pastBirds.leftAsPdf": {
       "stamp": "6a9a5a44cf63253a"
     },
     "pastBirds.loading": {
       "stamp": "543c404f0e5a7d86"
     },
-    "pastBirds.metaTitle": {
-      "stamp": "409843ae004c92ba"
+    "pastBirds.metaTitleRehome": {
+      "stamp": "b72506298b002de5"
+    },
+    "pastBirds.title": {
+      "stamp": "08088ccd6a5303a6"
     },
     "pastBirds.withYouFromTo": {
       "stamp": "f74c50ddf41d0d91"
@@ -7152,6 +7359,9 @@
     "planEditor.thisBird": {
       "stamp": "e206dc027c390933"
     },
+    "planEditor.titleNamed": {
+      "stamp": "43afd22261e8c11c"
+    },
     "planEditor.triageGreen": {
       "stamp": "a0656d81073d87d2"
     },
@@ -7170,8 +7380,8 @@
     "planEditor.viewAsSitter": {
       "stamp": "c87b907105d3a5ba"
     },
-    "planOverview.birds": {
-      "stamp": "a5f0388c35c3053a"
+    "planOverview.back": {
+      "stamp": "5001815e48b3af8b"
     },
     "planOverview.cardCarePlan": {
       "stamp": "024068f55f21e2cd"
@@ -7236,8 +7446,11 @@
     "planOverview.tagToDo": {
       "stamp": "b7e7ae329f2bbae8"
     },
-    "planOverview.viewAsYourSitter": {
-      "stamp": "346587f81036b8b6"
+    "planOverview.titleNamed": {
+      "stamp": "43afd22261e8c11c"
+    },
+    "planOverview.viewAsSitterPill": {
+      "stamp": "c87b907105d3a5ba"
     },
     "planOverview.walkThroughAgain": {
       "stamp": "c17db41869163dc6"
@@ -7265,9 +7478,6 @@
     },
     "remembering.empty": {
       "stamp": "b08946f9e04deee2"
-    },
-    "remembering.eyebrow": {
-      "stamp": "346e83632daf2991"
     },
     "remembering.headline": {
       "stamp": "346e83632daf2991"
@@ -7385,9 +7595,6 @@
     },
     "scanDetail.answerNotSure": {
       "stamp": "eb9500b24d3697db"
-    },
-    "scanDetail.back": {
-      "stamp": "5001815e48b3af8b"
     },
     "scanDetail.byName": {
       "stamp": "8a77fbeac94a8353"
@@ -7635,6 +7842,24 @@
     "scanForm.grams": {
       "stamp": "8c346e68b6fc24fa"
     },
+    "scanForm.hint.breathing": {
+      "stamp": "06c82ae39d3e8bfe"
+    },
+    "scanForm.hint.droppings": {
+      "stamp": "f3aeabe9f1d18ce4"
+    },
+    "scanForm.hint.exposure": {
+      "stamp": "972dc22b8f7582c4"
+    },
+    "scanForm.hint.fluffed": {
+      "stamp": "b481c8ef9593e110"
+    },
+    "scanForm.hint.injury": {
+      "stamp": "196af6d2d2cd9f74"
+    },
+    "scanForm.hint.vomiting": {
+      "stamp": "5ee8023321c98df5"
+    },
     "scanForm.itemNoteLabel": {
       "stamp": "9fd6646340e1df08"
     },
@@ -7737,11 +7962,44 @@
     "scanForm.q.vomiting": {
       "stamp": "c9092a51e7d2ee98"
     },
+    "scanForm.q2.alertness": {
+      "stamp": "74e8d093b6acf36c"
+    },
+    "scanForm.q2.breathing": {
+      "stamp": "d37521f9a42b8bc0"
+    },
+    "scanForm.q2.droppings": {
+      "stamp": "336e55d57656dd7f"
+    },
+    "scanForm.q2.exposure": {
+      "stamp": "c3113d2d64d6fc70"
+    },
+    "scanForm.q2.fluffed": {
+      "stamp": "a24ee617d65bb3db"
+    },
+    "scanForm.q2.food": {
+      "stamp": "a131c5fc671053d6"
+    },
+    "scanForm.q2.injury": {
+      "stamp": "bd2c2abdb2158f06"
+    },
+    "scanForm.q2.noise": {
+      "stamp": "69d8b35ad97147ea"
+    },
+    "scanForm.q2.posture": {
+      "stamp": "6849024926f2eb8e"
+    },
+    "scanForm.q2.vomiting": {
+      "stamp": "78e0461adbf96a6b"
+    },
     "scanForm.submitDefault": {
       "stamp": "31da3c6d7c59ae5f"
     },
     "scanForm.takePhoto": {
       "stamp": "50efb39246e27bcf"
+    },
+    "scanForm.theBird": {
+      "stamp": "362c30e8d718e002"
     },
     "scanForm.uploadPhoto": {
       "stamp": "794b79e9417bd8f4"
@@ -7890,8 +8148,8 @@
     "setupCheck.reminders": {
       "stamp": "3729415b74f79da5"
     },
-    "setupFrame.back": {
-      "stamp": "5001815e48b3af8b"
+    "setupFrame.close": {
+      "stamp": "d981ee660d866d8c"
     },
     "setupFrame.done": {
       "stamp": "08103d4ee528bd92"
@@ -7938,14 +8196,8 @@
     "setupShell.lastLook": {
       "stamp": "ef313f754a4b2bd2"
     },
-    "setupShell.leaveThisStep": {
-      "stamp": "31d7f6b4d7aa94ed"
-    },
     "setupShell.next": {
       "stamp": "1968e42a073fd8cb"
-    },
-    "setupShell.previousStep": {
-      "stamp": "7a4e49d7eda779d7"
     },
     "setupShell.saveAndExit": {
       "stamp": "714ac1a03939bd0d"
@@ -8274,9 +8526,6 @@
     "sitDetail.activity": {
       "stamp": "088db0cdd9feb542"
     },
-    "sitDetail.back": {
-      "stamp": "5001815e48b3af8b"
-    },
     "sitDetail.birdsCoveredLabel": {
       "stamp": "a5f0388c35c3053a"
     },
@@ -8381,9 +8630,6 @@
     },
     "sitForm.bird": {
       "stamp": "7964d14d200e7108"
-    },
-    "sitForm.close": {
-      "stamp": "d981ee660d866d8c"
     },
     "sitForm.copyLink": {
       "stamp": "dc4c04995ccb896a"
@@ -9645,11 +9891,8 @@
     "system.share": {
       "stamp": "cdcba29bb82cb786"
     },
-    "todayPage.loading": {
-      "stamp": "543c404f0e5a7d86"
-    },
-    "todayPage.nothingOnForToday": {
-      "stamp": "ee532fec5cfad456"
+    "todayPage.nothingOnTitle": {
+      "stamp": "31f40393f12a70a8"
     },
     "todayPage.pageTitle": {
       "stamp": "c90a17a22f7583dc"
@@ -9674,9 +9917,6 @@
     },
     "tourDemo.willowHatchDay": {
       "stamp": "8927fc1ba2186989"
-    },
-    "updates.back": {
-      "stamp": "5001815e48b3af8b"
     },
     "updates.careplanTitle": {
       "stamp": "68599b911afa4d77"
@@ -9768,6 +10008,9 @@
     "updates.yourSitter": {
       "stamp": "1f87da8fe21f5a1a"
     },
+    "vetSummary.addThem": {
+      "stamp": "e9113bf03821bc94"
+    },
     "vetSummary.afterMeal": {
       "stamp": "cb3f28c121a1c4af"
     },
@@ -9780,8 +10023,8 @@
     "vetSummary.answerNotSure": {
       "stamp": "22d8bbe5a7825b25"
     },
-    "vetSummary.appendixTitle": {
-      "stamp": "69e9c227b6e29f55"
+    "vetSummary.appendixHeading": {
+      "stamp": "a7e0803196ca6641"
     },
     "vetSummary.band": {
       "stamp": "b33bc195bf09241d"
@@ -9840,17 +10083,11 @@
     "vetSummary.entriesOther": {
       "stamp": "2430f15688bddf9f"
     },
-    "vetSummary.eyebrow": {
-      "stamp": "8ca6a6e1b512ba7b"
-    },
     "vetSummary.flaggedTitle": {
       "stamp": "5677c845b5bb426b"
     },
     "vetSummary.freeFed": {
       "stamp": "0617803387af94e6"
-    },
-    "vetSummary.generate": {
-      "stamp": "1d13d4e5158f7ddb"
     },
     "vetSummary.generated": {
       "stamp": "bdcc345739536f24"
@@ -9858,20 +10095,23 @@
     "vetSummary.handling": {
       "stamp": "8673cafcd7261475"
     },
-    "vetSummary.headline": {
-      "stamp": "21e653f9ff104b6c"
-    },
     "vetSummary.identity": {
       "stamp": "34ae6a197bc7891c"
     },
-    "vetSummary.intro": {
-      "stamp": "a098e5fa29adb28c"
+    "vetSummary.includedTitle": {
+      "stamp": "0de02b6f1d4aaffc"
     },
     "vetSummary.lastWeighed": {
       "stamp": "18fbe5a3362e3c07"
     },
+    "vetSummary.line": {
+      "stamp": "ad8a9d538e2ce7c5"
+    },
     "vetSummary.loggedBy": {
       "stamp": "8b4cd3fe3a14f8b2"
+    },
+    "vetSummary.make": {
+      "stamp": "0945faa7e86409df"
     },
     "vetSummary.medicationsLine": {
       "stamp": "1e71cb2c9b711de7"
@@ -9888,6 +10128,30 @@
     "vetSummary.milderGroup": {
       "stamp": "de8a549256f3d44c"
     },
+    "vetSummary.missingAge": {
+      "stamp": "0b2b5e5e915c06bd"
+    },
+    "vetSummary.missingBand": {
+      "stamp": "7bcdf76cfb3f216e"
+    },
+    "vetSummary.missingList": {
+      "stamp": "6f1e087a7afb70a3"
+    },
+    "vetSummary.missingMicrochip": {
+      "stamp": "40f57a7517b4c179"
+    },
+    "vetSummary.missingOrigin": {
+      "stamp": "23ba19b2196f2292"
+    },
+    "vetSummary.missingSex": {
+      "stamp": "10c2a6d391ce8a0c"
+    },
+    "vetSummary.missingSpecies": {
+      "stamp": "fba3e379fd643d0f"
+    },
+    "vetSummary.missingTitle": {
+      "stamp": "8d7473bcc7cc5a08"
+    },
     "vetSummary.neverFeedLine": {
       "stamp": "b8ca526954b3faec"
     },
@@ -9899,6 +10163,9 @@
     },
     "vetSummary.origin": {
       "stamp": "d8511d5921012052"
+    },
+    "vetSummary.pulledFrom": {
+      "stamp": "5d08b066efd3bc2e"
     },
     "vetSummary.resolvedOn": {
       "stamp": "66f3bff6e344f047"
@@ -9984,8 +10251,32 @@
     "vetSummary.stepUpYes": {
       "stamp": "3c2100d515be78f6"
     },
+    "vetSummary.tagDiet": {
+      "stamp": "f077a06150dfe1b2"
+    },
+    "vetSummary.tagFlagged": {
+      "stamp": "4be52a9f4521f31d"
+    },
+    "vetSummary.tagHandling": {
+      "stamp": "70e3c5b4c13c6cc6"
+    },
+    "vetSummary.tagIdentity": {
+      "stamp": "34ae6a197bc7891c"
+    },
+    "vetSummary.tagMedications": {
+      "stamp": "9c8b4b785e2a6a3b"
+    },
+    "vetSummary.tagWeightTrend": {
+      "stamp": "ed911c3a8cd488c7"
+    },
     "vetSummary.thisBird": {
       "stamp": "cf4aa8567187c910"
+    },
+    "vetSummary.title": {
+      "stamp": "94d79e453be8fc48"
+    },
+    "vetSummary.titleFallback": {
+      "stamp": "8ca6a6e1b512ba7b"
     },
     "vetSummary.trendDown": {
       "stamp": "65cc85a0864202b1"

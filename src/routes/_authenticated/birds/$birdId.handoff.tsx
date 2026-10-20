@@ -1,5 +1,5 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useCallback, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
@@ -7,7 +7,9 @@ import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { createHandoff } from "@/lib/handoff.functions";
 import { track } from "@/lib/analytics";
 import { toast } from "sonner";
-import { ArrowLeft, ArrowRightLeft, AlertTriangle } from "lucide-react";
+import { ArrowRightLeft, AlertTriangle } from "lucide-react";
+import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaField, KyaPrimaryButton, KyaLink } from "@/components/kya";
+import { PageHeader, useGoBack } from "@/components/headers";
 import { friendlyError } from "@/lib/errorMessage";
 import i18next from "i18next";
 import { useTranslation } from "react-i18next";
@@ -24,6 +26,7 @@ function HandoffFlow() {
   const qc = useQueryClient();
   const [email, setEmail] = useState("");
   const [recipientName, setRecipientName] = useState("");
+  const goBack = useGoBack(useCallback(() => navigate({ to: "/birds/$birdId", params: { birdId } }), [navigate, birdId]));
 
   const { data: bird } = useQuery({
     queryKey: ["handoff-bird", birdId],
@@ -56,63 +59,61 @@ function HandoffFlow() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f4f1e8] pb-[calc(var(--nav-spacer)+6rem)]">
-      <header className="sticky top-0 z-10 border-b border-[#e3ded0] bg-[#f4f1e8]/95 backdrop-blur">
-        <div className="mx-auto flex max-w-md items-center gap-3 px-5 pt-safe pb-3">
-          <Link to="/birds/$birdId" params={{ birdId }} aria-label={t("birdHandoff.back", "Back")} className="-ml-1 rounded p-1 text-[#1a3d2e]"><ArrowLeft className="size-5" /></Link>
-          <h1 className="truncate text-base font-medium text-[#1a3d2e]">{t("birdHandoff.title", "Hand off {{name}}", { name })}</h1>
-        </div>
-      </header>
+    <KyaPage>
+      <PageHeader
+        title={t("birdHandoff.title", "Hand off {{name}}", { name })}
+        line={t("birdHandoff.intro", "Pass {{name}}'s record to the adopter so they have everything you've learned. The record goes with the bird; once accepted, you won't have access anymore.", { name })}
+        onBack={goBack}
+      />
 
-      <main className="mx-auto max-w-md space-y-4 px-5 py-5">
-        <p className="text-sm leading-relaxed text-[#5f5e5a]">
-          {t("birdHandoff.intro", "Pass {{name}}'s record to the adopter so they have everything you've learned. The record goes with the bird; once accepted, you won't have access anymore.", { name })}
-        </p>
+      <KyaBody>
+        <KyaCard className="flex flex-col gap-4 p-4">
+          <KyaField
+            id="handoff-email"
+            label={t("birdHandoff.emailLabel", "Adopter's email")}
+            type="email" inputMode="email" autoCapitalize="off" autoCorrect="off"
+            value={email} onChange={(e) => setEmail(e.target.value)}
+            placeholder={t("birdHandoff.emailPlaceholder", "adopter@example.com")}
+          />
+          <KyaField
+            id="handoff-name"
+            label={t("birdHandoff.nameLabel", "Adopter's name (optional)")}
+            value={recipientName} maxLength={120} onChange={(e) => setRecipientName(e.target.value)}
+            placeholder={t("birdHandoff.namePlaceholder", "e.g. Sam")}
+          />
+        </KyaCard>
 
-        <label className="block">
-          <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#5f5e5a]">{t("birdHandoff.emailLabel", "Adopter's email")}</span>
-          <input className="input" type="email" inputMode="email" autoCapitalize="off" autoCorrect="off" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={t("birdHandoff.emailPlaceholder", "adopter@example.com")} />
-        </label>
-        <label className="block">
-          <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#5f5e5a]">{t("birdHandoff.nameLabel", "Adopter's name (optional)")}</span>
-          <input className="input" value={recipientName} maxLength={120} onChange={(e) => setRecipientName(e.target.value)} placeholder={t("birdHandoff.namePlaceholder", "e.g. Sam")} />
-        </label>
-
-        <div className="rounded-[14px] bg-white p-4 ring-1 ring-[#e3dcc9]">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e5a]">{t("birdHandoff.goesWith", "What goes with {{name}}", { name })}</p>
-          <ul className="mt-2 space-y-1 text-xs text-[#5f5e5a]">
+        <KyaCard className="p-4">
+          <KyaHeading>{t("birdHandoff.goesWith", "What goes with {{name}}", { name })}</KyaHeading>
+          <ul className="m-0 mt-2 list-disc space-y-1 pl-5 text-[14px] leading-[1.5]" style={{ color: K.ink }}>
             <li>{t("birdHandoff.goesItem1", "Care plan, identity, weight history, journal, moments")}</li>
             <li>{t("birdHandoff.goesItem2", "The photos in those records")}</li>
           </ul>
-        </div>
-        <div className="rounded-[14px] bg-white p-4 ring-1 ring-[#e3dcc9]">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e5a]">{t("birdHandoff.staysWithYou", "What stays with you")}</p>
-          <ul className="mt-2 space-y-1 text-xs text-[#5f5e5a]">
+        </KyaCard>
+        <KyaCard className="p-4">
+          <KyaHeading>{t("birdHandoff.staysWithYou", "What stays with you")}</KyaHeading>
+          <ul className="m-0 mt-2 list-disc space-y-1 pl-5 text-[14px] leading-[1.5]" style={{ color: K.ink }}>
             <li>{t("birdHandoff.staysItem1", "Your contact info — it doesn't transfer")}</li>
             <li>{t("birdHandoff.staysItem2", "A memory entry in Past birds (name, dates, where they went)")}</li>
           </ul>
-        </div>
+        </KyaCard>
 
-        <div className="rounded-[14px] p-4" style={{ background: "#FCEBEB", border: "1px solid #E24B4A" }}>
-          <p className="flex items-start gap-2 text-sm" style={{ color: "#791F1F" }}>
-            <AlertTriangle className="mt-0.5 size-4 shrink-0" style={{ color: "#A32D2D" }} />
-            <span><span className="font-medium">{t("birdHandoff.cantUndo", "This can't be undone.")}</span> {t("birdHandoff.cantUndoBody", "Once they accept, the record is theirs. You won't be able to view or edit it.")}</span>
+        <div className="rounded-[20px] p-4" style={{ background: "#fcebeb", border: `1.5px solid ${K.red}` }}>
+          <p className="m-0 flex items-start gap-2 text-[14px] leading-[1.5]" style={{ color: "#791f1f" }}>
+            <AlertTriangle className="mt-0.5 size-4 shrink-0" style={{ color: K.red }} aria-hidden="true" />
+            <span><span className="font-[700]">{t("birdHandoff.cantUndo", "This can't be undone.")}</span> {t("birdHandoff.cantUndoBody", "Once they accept, the record is theirs. You won't be able to view or edit it.")}</span>
           </p>
         </div>
-      </main>
 
-      <footer className="fixed inset-x-0 bottom-[var(--nav-spacer)] border-t border-[#e3ded0] bg-[#f4f1e8] px-5 py-3">
-        <div className="mx-auto max-w-md space-y-2">
-          <button type="button" disabled={!emailOk || m.isPending} onClick={() => m.mutate()} className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-[14px] bg-[#1a3d2e] text-sm font-medium text-white disabled:opacity-50">
-            <ArrowRightLeft className="size-4" /> {m.isPending ? t("birdHandoff.sending", "Sending…") : t("birdHandoff.send", "Send handoff")}
-          </button>
-          <button type="button" onClick={() => navigate({ to: "/birds/$birdId/export", params: { birdId } })} className="block w-full py-1 text-center text-xs font-medium text-[#5f5e5a] underline">
+        <div className="flex flex-col items-center gap-1 pt-1">
+          <KyaPrimaryButton disabled={!emailOk || m.isPending} onClick={() => m.mutate()} icon={<ArrowRightLeft className="size-4" />}>
+            {m.isPending ? t("birdHandoff.sending", "Sending…") : t("birdHandoff.send", "Send handoff")}
+          </KyaPrimaryButton>
+          <KyaLink className="text-center" onClick={() => navigate({ to: "/birds/$birdId/export", params: { birdId } })}>
             {t("birdHandoff.exportInstead", "They're not on the app — export as PDF instead")}
-          </button>
+          </KyaLink>
         </div>
-      </footer>
-
-      <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.65rem .8rem;font-size:16px;outline:none}`}</style>
-    </div>
+      </KyaBody>
+    </KyaPage>
   );
 }

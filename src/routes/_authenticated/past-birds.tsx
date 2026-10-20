@@ -1,10 +1,11 @@
-import { createFileRoute, Link, useNavigate, useRouter, useCanGoBack } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useRouter, useCanGoBack } from "@tanstack/react-router";
 import { speciesLabel } from "@/lib/speciesLabel";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { getPastBirds } from "@/lib/handoff.functions";
-import { ArrowLeft, Feather, Loader2 } from "lucide-react";
-import { InkHero, Card, IconTile, StatusPill, PrimaryButton } from "@/components/system";
+import { Feather, Loader2 } from "lucide-react";
+import { K, KyaPage, KyaBody, KyaCard, KyaIconTile, KyaTag, KyaSecondaryButton } from "@/components/kya";
+import { PageHeader } from "@/components/headers";
 import { formatLocalDate } from "@/lib/dates";
 import i18next from "i18next";
 import { useTranslation } from "react-i18next";
@@ -12,7 +13,7 @@ import { useTranslation } from "react-i18next";
 // Past birds archive — read-only, sender-side memory of birds handed off.
 // Snapshots only (not linked to live records). Newest departures first.
 export const Route = createFileRoute("/_authenticated/past-birds")({
-  head: () => ({ meta: [{ title: i18next.t("pastBirds.metaTitle", "Past birds — Kya & Co.") }] }),
+  head: () => ({ meta: [{ title: i18next.t("pastBirds.metaTitleRehome", "Birds you've helped rehome — Kya & Co.") }] }),
   component: PastBirds,
 });
 
@@ -28,45 +29,36 @@ function PastBirds() {
   const birds = data?.birds ?? [];
 
   return (
-    <div className="min-h-screen bg-[var(--cream)] pb-nav">
-      <div className="mx-auto max-w-md">
-        <InkHero
-          backIcon={<ArrowLeft className="size-5" />}
-          onBack={goBack}
-          eyebrow={t("pastBirds.eyebrow", "Past birds")}
-          headline={t("pastBirds.headline", "Past birds")}
-        />
+    <KyaPage>
+      <PageHeader title={t("pastBirds.title", "Birds you've helped rehome")} onBack={goBack} />
 
-        <main className="space-y-4 px-5 pt-5">
-          {isLoading ? (
-            <div className="flex items-center justify-center gap-2 py-12 t-meta">
-              <Loader2 className="size-4 animate-spin" /> {t("pastBirds.loading", "Loading…")}
+      <KyaBody>
+        {isLoading ? (
+          <div className="flex items-center justify-center gap-2 py-12 text-[14px]" style={{ color: K.quiet }}>
+            <Loader2 className="size-4 animate-spin" /> {t("pastBirds.loading", "Loading…")}
+          </div>
+        ) : birds.length === 0 ? (
+          <KyaCard className="flex flex-col items-center p-8 text-center">
+            <KyaIconTile tone="mist"><Feather className="size-5" /></KyaIconTile>
+            <p className="m-0 mt-3 text-[15px] leading-[1.5]" style={{ color: K.ink }}>{t("pastBirds.empty", "No past birds yet. When you hand off a bird, a memory of them will live here.")}</p>
+            <div className="mt-4">
+              <KyaSecondaryButton onClick={() => navigate({ to: "/dashboard" })}>{t("pastBirds.backToFlock", "Back to your flock")}</KyaSecondaryButton>
             </div>
-          ) : birds.length === 0 ? (
-            <Card className="p-8 text-center">
-              <IconTile tone="pale" icon={<Feather className="size-5" />} />
-              <p className="mt-3 t-body">{t("pastBirds.empty", "No past birds yet. When you hand off a bird, a memory of them will live here.")}</p>
-              <div className="mt-4">
-                <Link to="/dashboard">
-                  <PrimaryButton tone="ink" full={false}>{t("pastBirds.backToFlock", "Back to your flock")}</PrimaryButton>
-                </Link>
-              </div>
-            </Card>
-          ) : (
-            <>
-              <Card>
-                {birds.map((b: any, i: number) => (
-                  <PastBirdCard key={b.id} bird={b} last={i === birds.length - 1} />
-                ))}
-              </Card>
-              <p className="px-1 pt-2 text-center t-meta leading-relaxed">
-                {t("pastBirds.footer", "Their full records went with them. These are your keepsakes: who they were and where they went.")}
-              </p>
-            </>
-          )}
-        </main>
-      </div>
-    </div>
+          </KyaCard>
+        ) : (
+          <>
+            <KyaCard>
+              {birds.map((b: any, i: number) => (
+                <PastBirdCard key={b.id} bird={b} last={i === birds.length - 1} />
+              ))}
+            </KyaCard>
+            <p className="m-0 px-1 pt-1 text-center text-[13.5px] leading-[1.5]" style={{ color: K.quiet }}>
+              {t("pastBirds.footer", "Their full records went with them. These are your keepsakes: who they were and where they went.")}
+            </p>
+          </>
+        )}
+      </KyaBody>
+    </KyaPage>
   );
 }
 
@@ -75,22 +67,22 @@ function PastBirds() {
 function PastBirdCard({ bird: b, last }: { bird: any; last: boolean }) {
   const { t } = useTranslation();
   return (
-    <div className={`px-4 py-3.5 ${last ? "" : "border-b border-[var(--line2)]"}`}>
+    <div className="px-4 py-3.5" style={{ borderBottom: last ? undefined : `1px solid ${K.line}` }}>
       <div className="flex items-start gap-3">
         {b.photo_thumb ? (
-          <img src={b.photo_thumb} alt="" className="size-10 shrink-0 rounded-full object-cover ring-1 ring-[var(--line2)]" />
+          <img src={b.photo_thumb} alt="" className="size-10 shrink-0 rounded-full object-cover" />
         ) : (
-          <IconTile tone="pale" icon={<Feather className="size-5" />} />
+          <KyaIconTile tone="mist"><Feather className="size-5" /></KyaIconTile>
         )}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="t-item">{b.bird_name}</span>
-            {b.was_foster && <StatusPill tone="good">{t("pastBirds.foster", "Foster")}</StatusPill>}
+            <span className="text-[15px] font-[700]">{b.bird_name}</span>
+            {b.was_foster && <KyaTag tone="lime">{t("pastBirds.foster", "Foster")}</KyaTag>}
           </div>
-          {b.species && <p className="t-meta mt-0.5">{speciesLabel(t, b.species)}</p>}
-          <div className="mt-2 space-y-0.5">
-            <p className="t-meta leading-relaxed">{withYouLabel(b.intake_date, b.departed_on)}</p>
-            <p className="t-meta leading-relaxed">{whereLabel(b)}</p>
+          {b.species && <p className="m-0 mt-0.5 text-[13px]" style={{ color: K.quiet }}>{speciesLabel(t, b.species)}</p>}
+          <div className="mt-2 space-y-0.5 text-[13px] leading-[1.5]" style={{ color: K.quiet }}>
+            <p className="m-0">{withYouLabel(b.intake_date, b.departed_on)}</p>
+            <p className="m-0">{whereLabel(b)}</p>
           </div>
         </div>
       </div>

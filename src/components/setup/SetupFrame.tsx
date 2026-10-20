@@ -5,7 +5,7 @@
 import { createContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
-import { Check, ChevronLeft, Home } from "lucide-react";
+import { Check, Home, X } from "lucide-react";
 import { S, SERIF } from "./controls";
 
 /** The six steps an owner sees, in flow order. */
@@ -101,11 +101,11 @@ export function SetupFrame({
             <button
               type="button"
               onClick={onBack}
-              aria-label={backLabel ?? t("setupFrame.back", "Back")}
+              aria-label={backLabel ?? t("setupFrame.close", "Close")}
               className="grid size-11 shrink-0 place-items-center rounded-full text-white"
               style={{ background: S.forestDeep }}
             >
-              <ChevronLeft className="size-6" aria-hidden="true" />
+              <X className="size-5" aria-hidden="true" />
             </button>
             <span
               aria-hidden="true"
@@ -125,7 +125,7 @@ export function SetupFrame({
                   <span className="block text-[13px]" style={{ color: S.mist }}>{t("setupFrame.settingUp", "Setting up")}</span>
                   <span className="block truncate text-[17px] font-[700] text-white">{name || t("setupFrame.newBird", "New bird")}</span>
                 </span>
-                <span className={`shrink-0 text-[13px] ${allDone ? "font-[700]" : ""}`} style={{ color: allDone ? S.lime : S.mist }}>
+                <span className="shrink-0 text-[14px] font-[700]" style={{ color: S.lime }}>
                   {allDone ?? stepLabel ?? t("setupShell.stepOf", "Step {{step}} of {{total}}", { step: currentIndex + 1, total: SETUP_PILLS.length })}
                 </span>
               </>

@@ -4,7 +4,8 @@ import i18next from "i18next";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useBirdRole } from "@/lib/useBirdRole";
-import { K, KyaPage, KyaHeader, KyaBody, KyaBackRow, KyaTitle } from "@/components/kya";
+import { K, KyaPage, KyaBody } from "@/components/kya";
+import { PageHeader } from "@/components/headers";
 import { EmergencyInfo } from "@/components/EmergencyInfo";
 import { useOwnerEmergency, useOwnerName } from "@/lib/useOwnerEmergency";
 
@@ -45,13 +46,7 @@ function BirdEmergency() {
   return (
     <KyaPage>
       <div className="mx-auto max-w-md">
-        <KyaHeader>
-          <KyaBackRow label={t("birdEmergency.back", "Back")} onBack={goBack} />
-          <KyaTitle
-            title={t("birdEmergency.title", "{{name}}'s emergency info", { name })}
-            line={t("birdEmergency.line", "Same as your other birds, unless you change something here.")}
-          />
-        </KyaHeader>
+        <PageHeader onBack={goBack} title={t("birdEmergency.title", "{{name}}'s emergency info", { name })} line={t("birdEmergency.line", "Same as your other birds, unless you change something here.")} />
         <KyaBody className="gap-5">
           {ready ? (
             <EmergencyInfo

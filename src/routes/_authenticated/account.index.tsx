@@ -15,7 +15,8 @@ import {
   APP_STORE_BADGE, APP_STORE_BADGE_SIZE, APP_STORE_URL,
   PLAY_STORE_BADGE, PLAY_STORE_BADGE_SIZE, PLAY_STORE_URL,
 } from "@/lib/storeLinks";
-import { K, KyaPage, KyaHeader, KyaBody, KyaCard, KyaHeading, KyaRow, KyaTag, KyaLink, KyaIconTile, KyaPrimaryButton, KyaSheet, KyaBackRow, KyaTitle } from "@/components/kya";
+import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaRow, KyaTag, KyaLink, KyaIconTile, KyaPrimaryButton, KyaSheet } from "@/components/kya";
+import { PageHeader } from "@/components/headers";
 import { useOwnerEmergency } from "@/lib/useOwnerEmergency";
 import { missingRequired, type EmergencyValues } from "@/components/EmergencyContacts";
 import { getHouseholdAccount } from "@/lib/household.functions";
@@ -165,10 +166,7 @@ function AccountPage() {
   return (
     <KyaPage>
       <div className="mx-auto max-w-md">
-        <KyaHeader>
-          <KyaBackRow label={t("account.back", "Back")} onBack={goBack} />
-          <KyaTitle title={t("account.yourAccount", "Your account")} />
-        </KyaHeader>
+        <PageHeader onBack={goBack} title={t("account.yourAccount", "Your account")} />
 
         <KyaBody className="gap-5">
           {/* Identity */}
