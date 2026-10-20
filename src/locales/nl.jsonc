@@ -1099,14 +1099,14 @@
   "birdSetup.homeSpecificHazards": "Gevaren in jouw huis",
   // Record a few short clips so anyone helping can see how it's done. Clips stay private, shared only with the people you trust with {{name}}.
   "birdSetup.instr.clips": "Neem een paar korte clips op, zodat iedereen die helpt kan zien hoe het moet. Clips blijven privé en worden alleen gedeeld met de mensen die je {{name}} toevertrouwt.",
-  // What should someone know about your home to keep {{name}} safe?
-  "birdSetup.instr.environment": "Wat moet iemand over je huis weten om {{name}} veilig te houden?",
   // What does {{name}} eat, and how much? Clear answers mean anyone caring for {{name}} knows exactly what to serve, and when.
   "birdSetup.instr.food": "Wat eet {{name}}, en hoeveel? Met duidelijke antwoorden weet iedereen die voor {{name}} zorgt precies wat er gegeven moet worden, en wanneer.",
   // Help anyone caring for {{name}} know what's normal, so they can spot what isn't.
   "birdSetup.instr.health": "Help iedereen die voor {{name}} zorgt te weten wat normaal is, zodat ze zien wanneer iets niet klopt.",
   // How does {{name}} like to be treated? Give whoever's helping a feel for {{name}}'s quirks.
   "birdSetup.instr.personality": "Hoe wil {{name}} behandeld worden? Geef wie er helpt een gevoel voor de eigenaardigheden van {{name}}.",
+  // These are things you know without thinking that a sitter might not consider. Include any safety hazard a bird might run into in your home.
+  "birdSetup.instr.reminders": "Dit zijn dingen die jij zonder nadenken weet, maar waar een oppas misschien niet aan denkt. Noem elk gevaar dat een vogel in jouw huis kan tegenkomen.",
   // Here's exactly what everyone helping will see for {{name}}. Scroll inside the preview to explore the Today screen.
   "birdSetup.instr.review": "Dit is precies wat iedereen die helpt voor {{name}} te zien krijgt. Scroll in de preview om het Vandaag-scherm te bekijken.",
   // Build {{name}}'s daily rhythm. Feedings, water, cleaning, and meds carry over automatically from the Food and Health steps. Add anything else here, like uncovering the cage or playtime. Auto-added items are tagged and live in their own step.
@@ -1115,14 +1115,14 @@
   "birdSetup.instructionsEGInThe": "Instructies (bijv. in de linkerwang, met eten)",
   // In the routine
   "birdSetup.inTheRoutine": "In de routine",
-  // No environment & safety details
-  "birdSetup.issue.noEnvironmentSafetyDetails": "Geen gegevens over omgeving & veiligheid",
   // No food & water details
   "birdSetup.issue.noFoodWaterDetails": "Geen gegevens over eten & water",
   // No health baseline (weight, photo, clip, or notes)
   "birdSetup.issue.noHealthBaselineWeightPhoto": "Geen gezondheidsreferentie (gewicht, foto, clip of notities)",
   // No personality & handling notes
   "birdSetup.issue.noPersonalityHandlingNotes": "Geen notities over karakter & omgang",
+  // No reminders for your sitter
+  "birdSetup.issue.noReminders": "Geen herinneringen voor je oppas",
   // No routine tasks yet
   "birdSetup.issue.noRoutineTasksYet": "Nog geen routinetaken",
   // No tips-from-the-owner clips
@@ -1381,6 +1381,20 @@
   "birdSetup.processingVideo": "Video verwerken…",
   // Progress saved.
   "birdSetup.progressSaved": "Voortgang opgeslagen.",
+  // Changes here apply to {{name}} only.
+  "birdSetup.reminders.differentBody": "Wijzigingen hier gelden alleen voor {{name}}.",
+  // Different for {{name}}
+  "birdSetup.reminders.differentTitle": "Anders voor {{name}}",
+  // Make these different for {{name}}
+  "birdSetup.reminders.makeDifferent": "Maak deze anders voor {{name}}",
+  // Changes here apply to every bird that uses the shared reminders.
+  "birdSetup.reminders.sharedBody": "Wijzigingen hier gelden voor elke vogel die de gedeelde herinneringen gebruikt.",
+  // Shared by all your birds
+  "birdSetup.reminders.sharedTitle": "Gedeeld door al je vogels",
+  // Use the shared reminders instead
+  "birdSetup.reminders.useShared": "Gebruik toch de gedeelde herinneringen",
+  // Use your shared reminders for {{name}}? The answers that are different for {{name}} will be removed.
+  "birdSetup.reminders.useSharedConfirm": "De gedeelde herinneringen gebruiken voor {{name}}? De antwoorden die anders zijn voor {{name}} worden verwijderd.",
   // Remove
   "birdSetup.remove": "Verwijderen",
   // Remove {{type}} and the items you've added to it?
@@ -1747,6 +1761,8 @@
   "carePlan.callVet": "Bel de dierenarts: {{info}}",
   // Change water
   "carePlan.changeWater": "Water verversen",
+  // Cleaning products
+  "carePlan.cleaningProducts": "Schoonmaakmiddelen",
   // Daily rhythm
   "carePlan.dailyRhythm": "Dagritme",
   // Diet overview
@@ -1927,6 +1943,8 @@
   "careSheet.field.brandAmount": "Merk & hoeveelheid",
   // Cage location
   "careSheet.field.cageLocation": "Plek van de kooi",
+  // Cleaning products
+  "careSheet.field.cleaningProducts": "Schoonmaakmiddelen",
   // Diet overview
   "careSheet.field.dietOverview": "Dieetoverzicht",
   // Diet types
@@ -4013,10 +4031,10 @@
   "planEditor.tabFood": "Voeding",
   // Health
   "planEditor.tabHealth": "Gezondheid",
-  // Home
-  "planEditor.tabHome": "Thuis",
   // Logs
   "planEditor.tabLogs": "Notities",
+  // Reminders
+  "planEditor.tabReminders": "Herinneringen",
   // Routine
   "planEditor.tabRoutine": "Routine",
   // Sits
@@ -4047,6 +4065,8 @@
   "planOverview.clipCountOther": "{{n}} clips",
   // Optional — short how-to videos for sitters
   "planOverview.clipsOptional": "Optioneel — korte instructievideo's voor oppassen",
+  // Different for {{name}}
+  "planOverview.differentFor": "Anders voor {{name}}",
   // Care plan
   "planOverview.eyebrow": "Verzorgingsplan",
   // Only {{name}}'s owner can make changes. You can view the plan and log weights, journal entries, and health checks.
@@ -4071,10 +4091,14 @@
   "planOverview.needsInfo": "Info nodig",
   // Ready
   "planOverview.ready": "Klaar",
+  // Emergency contacts
+  "planOverview.rowEmergencyContacts": "Noodcontacten",
+  // Reminders for your sitter
+  "planOverview.rowReminders": "Herinneringen voor je oppas",
+  // Shared
+  "planOverview.shared": "Gedeeld",
   // Tips from the owner
   "planOverview.tipsFromOwner": "Tips van de eigenaar",
-  // Using your account defaults
-  "planOverview.usingAccountDefaults": "Gebruikt je standaardinstellingen",
   // View as your sitter
   "planOverview.viewAsYourSitter": "Bekijken als je oppas",
   // Walk through it again
@@ -4529,16 +4553,16 @@
   "setupCheck.clips": "Tips van de eigenaar",
   // A day in the life
   "setupCheck.day": "Een dag uit het leven",
-  // Emergency info
-  "setupCheck.emergency": "Noodinformatie",
-  // Environment & safety
-  "setupCheck.environment": "Omgeving & veiligheid",
+  // Emergency contacts
+  "setupCheck.emergencyContacts": "Noodcontacten",
   // Food & water
   "setupCheck.food": "Eten & water",
   // Health baseline
   "setupCheck.health": "Gezondheid: uitgangssituatie",
   // Personality & handling
   "setupCheck.personality": "Karakter & omgang",
+  // Reminders for your sitter
+  "setupCheck.reminders": "Herinneringen voor je oppas",
   // Back
   "setupFrame.back": "Terug",
   // (done)
@@ -4593,16 +4617,16 @@
   "setupShell.titleClips": "Tips van de eigenaar",
   // A day in the life
   "setupShell.titleDay": "Een dag uit het leven",
-  // Emergency info
-  "setupShell.titleEmergency": "Noodinformatie",
-  // Environment & safety
-  "setupShell.titleEnvironment": "Omgeving & veiligheid",
+  // Emergency contacts
+  "setupShell.titleEmergencyContacts": "Noodcontacten",
   // Food & water
   "setupShell.titleFood": "Eten & water",
   // Health baseline
   "setupShell.titleHealth": "Gezondheid: uitgangssituatie",
   // Personality & handling
   "setupShell.titlePersonality": "Karakter & omgang",
+  // Reminders for your sitter
+  "setupShell.titleReminders": "Herinneringen voor je oppas",
   // Review & finish
   "setupShell.titleReview": "Controleren & afronden",
   // Add…

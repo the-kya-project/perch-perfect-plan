@@ -7,8 +7,9 @@ import { OwnerTabBar } from "@/components/OwnerTabBar";
 export const SETUP_STEPS = [
   // Details (name, species, photo…) is the Add-a-bird page, which saves the bird
   // before the wizard opens. Food → Health are the basics; the wizard then offers
-  // a stop point before the pet-sitter details (Behavior, Tips, Day). Home and
-  // Emergency come last until they move to the shared "Your home" section.
+  // a stop point before the pet-sitter details (Behavior, Tips, Day). Then the
+  // owner's shared "Your home" screens (reminders, emergency contacts), which
+  // the walkthrough skips once they're filled in.
   // Food still comes before Day because Day auto-derives feeding/water items
   // from Food. Review is the finishing screen, not a numbered step.
   { key: "food", title: "Food & water", short: "Food" },
@@ -16,8 +17,8 @@ export const SETUP_STEPS = [
   { key: "personality", title: "Personality & handling", short: "Behavior" },
   { key: "clips", title: "Tips from the owner", short: "Clips" },
   { key: "day", title: "A day in the life", short: "Routine" },
-  { key: "environment", title: "Environment & safety", short: "Home" },
-  { key: "emergency", title: "Emergency info", short: "Emergency" },
+  { key: "environment", title: "Reminders for your sitter", short: "Reminders" },
+  { key: "emergency", title: "Emergency contacts", short: "Emergency" },
   { key: "review", title: "Review & finish", short: "Review" },
 ] as const;
 
@@ -38,11 +39,11 @@ export function setupStepTitle(t: TFunction, key: SetupStepKey): string {
   switch (key) {
     case "food": return t("setupShell.titleFood", "Food & water");
     case "personality": return t("setupShell.titlePersonality", "Personality & handling");
-    case "environment": return t("setupShell.titleEnvironment", "Environment & safety");
+    case "environment": return t("setupShell.titleReminders", "Reminders for your sitter");
     case "health": return t("setupShell.titleHealth", "Health baseline");
     case "day": return t("setupShell.titleDay", "A day in the life");
     case "clips": return t("setupShell.titleClips", "Tips from the owner");
-    case "emergency": return t("setupShell.titleEmergency", "Emergency info");
+    case "emergency": return t("setupShell.titleEmergencyContacts", "Emergency contacts");
     case "review": return t("setupShell.titleReview", "Review & finish");
   }
 }
@@ -52,7 +53,7 @@ export function setupStepShort(t: TFunction, key: SetupStepKey): string {
   switch (key) {
     case "food": return t("planEditor.tabFood", "Food");
     case "personality": return t("planEditor.tabBehavior", "Behavior");
-    case "environment": return t("planEditor.tabHome", "Home");
+    case "environment": return t("planEditor.tabReminders", "Reminders");
     case "health": return t("planEditor.tabHealth", "Health");
     case "day": return t("planEditor.tabRoutine", "Routine");
     case "clips": return t("planEditor.tabClips", "Clips");

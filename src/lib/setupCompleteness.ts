@@ -89,7 +89,7 @@ export function computeSetupCompleteness(args: {
     {
       step: setupStepNumber("environment"),
       key: "environment",
-      label: i18next.t("setupCheck.environment", "Environment & safety"),
+      label: i18next.t("setupCheck.reminders", "Reminders for your sitter"),
       // Cage location and out-of-cage rules count toward Behavior now; this is
       // the home-wide part (hazards, off-limits, other pets, cleaning).
       done:
@@ -102,7 +102,7 @@ export function computeSetupCompleteness(args: {
     {
       step: setupStepNumber("emergency"),
       key: "emergency",
-      label: i18next.t("setupCheck.emergency", "Emergency info"),
+      label: i18next.t("setupCheck.emergencyContacts", "Emergency contacts"),
       done: !!eff("owner_phone") && !!eff("avian_vet_phone"),
     },
   ];

@@ -116,3 +116,11 @@ export function isInherited(
 ): boolean {
   return clean(bird?.[field]) === null;
 }
+
+/** True when a bird's own emergency contacts differ from the account defaults
+ *  in any field (a per-bird change the owner made on purpose). */
+export function emergencyDifferent(contacts: Record<string, any> | null | undefined, defaults: Record<string, any> | null | undefined): boolean {
+  if (!contacts) return false;
+  const v = (row: Record<string, any> | null | undefined, k: string) => (row?.[k] ?? "").toString().trim();
+  return EMERGENCY_FIELDS.some((k) => v(contacts, k) !== "" && v(contacts, k) !== v(defaults, k));
+}

@@ -62,7 +62,7 @@ function tabLabel(t: TFunction, tab: Tab): string {
     case "food": return t("planEditor.tabFood", "Food");
     case "routine": return t("planEditor.tabRoutine", "Routine");
     case "behavior": return t("planEditor.tabBehavior", "Behavior");
-    case "home": return t("planEditor.tabHome", "Home");
+    case "home": return t("planEditor.tabReminders", "Reminders");
     case "health": return t("planEditor.tabHealth", "Health");
     case "clips": return t("planEditor.tabClips", "Clips");
     case "emergency": return t("planEditor.tabEmergency", "Emergency");

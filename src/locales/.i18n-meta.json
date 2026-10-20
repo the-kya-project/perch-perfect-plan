@@ -1644,9 +1644,6 @@
     "birdSetup.instr.clips": {
       "stamp": "f4d612758f4bc6e5"
     },
-    "birdSetup.instr.environment": {
-      "stamp": "2e5fdc6a3633d13c"
-    },
     "birdSetup.instr.food": {
       "stamp": "9b89c93ba8fdab76"
     },
@@ -1655,6 +1652,9 @@
     },
     "birdSetup.instr.personality": {
       "stamp": "57e6bb853dbd1eda"
+    },
+    "birdSetup.instr.reminders": {
+      "stamp": "cd9a79ec0a97558e"
     },
     "birdSetup.instr.review": {
       "stamp": "bf0a387c9e79aa13"
@@ -1668,9 +1668,6 @@
     "birdSetup.inTheRoutine": {
       "stamp": "7f726d8c7dc03337"
     },
-    "birdSetup.issue.noEnvironmentSafetyDetails": {
-      "stamp": "7718058d4ed0abd4"
-    },
     "birdSetup.issue.noFoodWaterDetails": {
       "stamp": "b365652fd80f3800"
     },
@@ -1679,6 +1676,9 @@
     },
     "birdSetup.issue.noPersonalityHandlingNotes": {
       "stamp": "0ddddea6e67de489"
+    },
+    "birdSetup.issue.noReminders": {
+      "stamp": "106633a32a83c7ba"
     },
     "birdSetup.issue.noRoutineTasksYet": {
       "stamp": "af3c6fecd9c7914e"
@@ -2066,6 +2066,27 @@
     },
     "birdSetup.progressSaved": {
       "stamp": "3aa63b3b80538afe"
+    },
+    "birdSetup.reminders.differentBody": {
+      "stamp": "481331a5109d73e1"
+    },
+    "birdSetup.reminders.differentTitle": {
+      "stamp": "a35fa62fc823d056"
+    },
+    "birdSetup.reminders.makeDifferent": {
+      "stamp": "cb44f99767767564"
+    },
+    "birdSetup.reminders.sharedBody": {
+      "stamp": "422f809af85eb3a8"
+    },
+    "birdSetup.reminders.sharedTitle": {
+      "stamp": "7303a0316c349404"
+    },
+    "birdSetup.reminders.useShared": {
+      "stamp": "cc5b1906a584c7e1"
+    },
+    "birdSetup.reminders.useSharedConfirm": {
+      "stamp": "ec58c1d07f80ff23"
     },
     "birdSetup.remove": {
       "stamp": "7a3c74b21c1d6ef1"
@@ -2616,6 +2637,9 @@
     "carePlan.changeWater": {
       "stamp": "b8f918b21b0df7b4"
     },
+    "carePlan.cleaningProducts": {
+      "stamp": "a1212537a6219355"
+    },
     "carePlan.dailyRhythm": {
       "stamp": "a505c530e0c424f6"
     },
@@ -2885,6 +2909,9 @@
     },
     "careSheet.field.cageLocation": {
       "stamp": "d50a947b391a00ad"
+    },
+    "careSheet.field.cleaningProducts": {
+      "stamp": "a1212537a6219355"
     },
     "careSheet.field.dietOverview": {
       "stamp": "18a3fa84ad88aa11"
@@ -6015,11 +6042,11 @@
     "planEditor.tabHealth": {
       "stamp": "24701ea98bfb3f0a"
     },
-    "planEditor.tabHome": {
-      "stamp": "e0780ad0fc0251d0"
-    },
     "planEditor.tabLogs": {
       "stamp": "543f9c9409437bd4"
+    },
+    "planEditor.tabReminders": {
+      "stamp": "591dc7e3ea0c8ffa"
     },
     "planEditor.tabRoutine": {
       "stamp": "acc337a43620f922"
@@ -6066,6 +6093,9 @@
     "planOverview.clipsOptional": {
       "stamp": "43c2ba6d7d280d4a"
     },
+    "planOverview.differentFor": {
+      "stamp": "a35fa62fc823d056"
+    },
     "planOverview.eyebrow": {
       "stamp": "024068f55f21e2cd"
     },
@@ -6102,11 +6132,17 @@
     "planOverview.ready": {
       "stamp": "febf31ddd8bcb7b1"
     },
+    "planOverview.rowEmergencyContacts": {
+      "stamp": "13dc8bdb952a70e3"
+    },
+    "planOverview.rowReminders": {
+      "stamp": "3729415b74f79da5"
+    },
+    "planOverview.shared": {
+      "stamp": "a56e579df5c162f1"
+    },
     "planOverview.tipsFromOwner": {
       "stamp": "3b89e17ce4472fbc"
-    },
-    "planOverview.usingAccountDefaults": {
-      "stamp": "3d28e477a00238f0"
     },
     "planOverview.viewAsYourSitter": {
       "stamp": "346587f81036b8b6"
@@ -6789,11 +6825,8 @@
     "setupCheck.day": {
       "stamp": "842b98fec8b60b1c"
     },
-    "setupCheck.emergency": {
-      "stamp": "42e2ceae4046d956"
-    },
-    "setupCheck.environment": {
-      "stamp": "cb65d933a6ca7011"
+    "setupCheck.emergencyContacts": {
+      "stamp": "13dc8bdb952a70e3"
     },
     "setupCheck.food": {
       "stamp": "b8180411718d76ef"
@@ -6803,6 +6836,9 @@
     },
     "setupCheck.personality": {
       "stamp": "bdd45b3f310e36f3"
+    },
+    "setupCheck.reminders": {
+      "stamp": "3729415b74f79da5"
     },
     "setupFrame.back": {
       "stamp": "5001815e48b3af8b"
@@ -6885,11 +6921,8 @@
     "setupShell.titleDay": {
       "stamp": "842b98fec8b60b1c"
     },
-    "setupShell.titleEmergency": {
-      "stamp": "42e2ceae4046d956"
-    },
-    "setupShell.titleEnvironment": {
-      "stamp": "cb65d933a6ca7011"
+    "setupShell.titleEmergencyContacts": {
+      "stamp": "13dc8bdb952a70e3"
     },
     "setupShell.titleFood": {
       "stamp": "b8180411718d76ef"
@@ -6899,6 +6932,9 @@
     },
     "setupShell.titlePersonality": {
       "stamp": "bdd45b3f310e36f3"
+    },
+    "setupShell.titleReminders": {
+      "stamp": "3729415b74f79da5"
     },
     "setupShell.titleReview": {
       "stamp": "872d2c409f44066f"

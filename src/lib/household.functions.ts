@@ -15,7 +15,8 @@ import { activeOwnerBirdsMin } from "@/lib/activeBirds";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { buildHouseholdInviteEmail } from "./emailTemplates";
 import { localeForUser, joinNamesLocalized, fallbackOwnerLabel } from "./emailLocale.server";
-import { mergeEmergency } from "./emergency";
+import { mergeEmergency, emergencyDifferent } from "./emergency";
+import { mergeHome, homeDifferences, birdHasOwn, HOME_GROUPS } from "./homeDefaults";
 import { isCfClip, cfUid } from "./clipRef";
 
 async function getAdmin() {
@@ -470,7 +471,18 @@ export const getBirdEmergencyReadiness = createServerFn({ method: "GET" })
       .maybeSingle();
     const merged = mergeEmergency(contacts, defaults) as Record<string, unknown>;
     const has = (k: string) => !!(merged?.[k] ?? "").toString().trim();
-    return { ready: has("owner_phone") && has("avian_vet_phone") };
+    // "Your home" reminders, judged on the same merged data the read view shows.
+    const [{ data: plan }, { data: home }] = await Promise.all([
+      sb.from("care_plans").select("hazards, hazards_other, off_limits, off_limits_rooms, other_pets, cleaning_instructions").eq("bird_id", data.birdId).maybeSingle(),
+      sb.from("owner_home_defaults").select("*").eq("owner_id", (bird as any).owner_id).maybeSingle(),
+    ]);
+    const mergedPlan = mergeHome(plan ?? {}, home);
+    return {
+      ready: has("owner_phone") && has("avian_vet_phone"),
+      homeReady: HOME_GROUPS.some((g) => birdHasOwn(mergedPlan, g)),
+      homeDifferent: homeDifferences(plan, home).length > 0,
+      emergencyDifferent: emergencyDifferent(contacts, defaults),
+    };
   });
 
 export const getHouseholdCarePlanView = createServerFn({ method: "GET" })
@@ -513,6 +525,11 @@ export const getHouseholdCarePlanView = createServerFn({ method: "GET" })
       .eq("owner_id", (bird as any).owner_id)
       .maybeSingle();
     const mergedContacts = { ...mergeEmergency(contacts, defaults) };
+    const { data: home } = await sb
+      .from("owner_home_defaults")
+      .select("*")
+      .eq("owner_id", (bird as any).owner_id)
+      .maybeSingle();
 
     // Sign photo + clips.
     const signedBird = { ...bird, photo_url: await signBirdPhotoPath(sb, (bird as any).photo_url) };
@@ -539,7 +556,8 @@ export const getHouseholdCarePlanView = createServerFn({ method: "GET" })
       if (bcp) baselineClipUrl = await resolveClipUrl(sb, bcp);
     }
 
-    return { bird: signedBird, plan: plan ?? null, contacts: mergedContacts, tasks, watchClips, baselineClipUrl };
+    // Shared "Your home" reminders fill in wherever this bird has none of its own.
+    return { bird: signedBird, plan: plan ? mergeHome(plan, home) : null, contacts: mergedContacts, tasks, watchClips, baselineClipUrl };
   });
 
 // ---- Owner: account-level household (aggregate across all owned birds) ------

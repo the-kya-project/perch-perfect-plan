@@ -9,6 +9,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { SetupShell, SETUP_STEPS, TOTAL_STEPS, setupStepTitle, setupStepNumber } from "@/components/SetupShell";
 import { encodeSetupStep, basicsDone } from "@/lib/setupProgress";
+import { getLocalUser } from "@/integrations/supabase/currentUser";
+import { mergeHome, homeDifferences, seedShared, sameGroup, followSharedPatch, clearOwnPatch, birdHasOwn, HOME_GROUPS, HOME_GROUP_COLUMNS, type HomeRow } from "@/lib/homeDefaults";
 import { EmergencyInfo } from "@/components/EmergencyInfo";
 import { Plus, X, Check, Lightbulb, GripVertical, Sparkles, AlertTriangle } from "lucide-react";
 import { PhotoCropper } from "@/components/PhotoCropper";
@@ -176,6 +178,32 @@ function BirdSetup() {
   // first time it gets past Health (a finished bird walking through again, or a
   // bird that already passed it, goes straight on to Behavior).
   const [atStopPoint, setAtStopPoint] = useState(false);
+  // "Your home" screens (shared reminders, emergency contacts) are entered once
+  // for every bird: the walkthrough skips the ones the owner already filled in.
+  // Read once when the wizard opens, so filling one in now doesn't make Back
+  // jump over it. The "All steps" list still opens them.
+  const skipRef = useRef<Set<string> | null>(null);
+  const { data: homeDone } = useQuery({
+    queryKey: ["setup-your-home-done", birdId],
+    enabled: !!bird,
+    queryFn: async () => {
+      const { data: u } = await getLocalUser();
+      const userId = u.user?.id;
+      if (!userId || bird?.owner_id !== userId) return { reminders: false, emergency: false };
+      const [{ data: home }, { data: ec }] = await Promise.all([
+        supabase.from("owner_home_defaults").select("owner_id").eq("owner_id", userId).maybeSingle(),
+        supabase.from("owner_emergency_defaults").select("owner_phone, avian_vet_phone").eq("owner_id", userId).maybeSingle(),
+      ]);
+      const filled = (v: unknown) => !!(v ?? "").toString().trim();
+      return { reminders: !!home, emergency: filled((ec as any)?.owner_phone) && filled((ec as any)?.avian_vet_phone) };
+    },
+  });
+  if (homeDone && !skipRef.current) {
+    skipRef.current = new Set([...(homeDone.reminders ? ["environment"] : []), ...(homeDone.emergency ? ["emergency"] : [])]);
+  }
+  const skipped = (n: number) => skipRef.current?.has(SETUP_STEPS[n - 1]?.key) ?? false;
+  const stepAfter = (n: number) => { let x = n + 1; while (x < TOTAL_STEPS && skipped(x)) x++; return x; };
+  const stepBefore = (n: number) => { let x = n - 1; while (x > 1 && skipped(x)) x--; return x; };
   const stopPointSeenRef = useRef(false);
   const qc = useQueryClient();
 
@@ -285,7 +313,7 @@ function BirdSetup() {
       }
       return;
     }
-    const next = step + 1;
+    const next = stepAfter(step);
     const showStop = completedSection === "health" && !stopPointSeenRef.current && !basicsDone(bird?.setup_step, bird?.setup_complete);
     const ok = await persistStep(next);
     if (ok) {
@@ -320,7 +348,7 @@ function BirdSetup() {
     if (atStopPoint) { setAtStopPoint(false); setStep(setupStepNumber("health")); return; }
     if (step <= 1) return;
     if (!(await flushPending())) return;
-    const prev = step - 1;
+    const prev = stepBefore(step);
     const ok = await persistStep(prev);
     if (ok) setStep(prev);
   }
@@ -1782,55 +1810,120 @@ const HAZARD_OPTIONS = [
 ];
 
 export function EnvironmentStep({ birdId, birdName, registerFlush }: { birdId: string; birdName: string; registerFlush?: (fn: (() => Promise<void>) | null) => void }) {
+  // "Reminders for your sitter": the owner's shared "Your home" answers
+  // (owner_home_defaults), used by every bird that has none of its own. The
+  // owner can make them different for this bird, which saves to the bird's
+  // care plan instead. Household members editing a plan can't change the
+  // owner's shared answers, so they always edit this bird's own.
   const { t } = useTranslation();
   const qc = useQueryClient();
-  const { data: plan, isLoading } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ["plan-environment", birdId],
     gcTime: 0, // drop cache on unmount so Back refetches saved values (see BasicsStep)
     queryFn: async () => {
-      const { data, error } = await supabase.from("care_plans").select("*").eq("bird_id", birdId).maybeSingle();
+      const [{ data: plan, error }, { data: u }, { data: bird }] = await Promise.all([
+        supabase.from("care_plans").select("*").eq("bird_id", birdId).maybeSingle(),
+        getLocalUser(),
+        supabase.from("birds").select("owner_id").eq("id", birdId).maybeSingle(),
+      ]);
       if (error) throw error;
-      return data as any;
+      const userId = u.user?.id ?? null;
+      const isOwner = !!userId && (bird as any)?.owner_id === userId;
+      if (!isOwner) return { plan: plan as any, isOwner, userId, home: null as HomeRow | null, otherPlans: [] as any[] };
+      const [{ data: home }, { data: owned }] = await Promise.all([
+        supabase.from("owner_home_defaults").select("*").eq("owner_id", userId).maybeSingle(),
+        supabase.from("birds").select("id").eq("owner_id", userId),
+      ]);
+      const otherIds = ((owned ?? []) as { id: string }[]).map((b) => b.id).filter((id) => id !== birdId);
+      const { data: otherPlans } = otherIds.length
+        ? await supabase.from("care_plans").select("id, bird_id, hazards, hazards_other, off_limits, off_limits_rooms, other_pets, cleaning_instructions").in("bird_id", otherIds)
+        : { data: [] as any[] };
+      return { plan: plan as any, isOwner, userId, home: (home ?? null) as HomeRow | null, otherPlans: (otherPlans ?? []) as any[] };
     },
   });
+  const plan = data?.plan;
 
+  const [mode, setMode] = useState<"shared" | "bird">("shared");
   const [hazards, setHazards] = useState<string[]>([]);
   const [hazardsOther, setHazardsOther] = useState("");
   const [offLimits, setOffLimits] = useState("");
   const [otherPets, setOtherPets] = useState("");
   const [cleaning, setCleaning] = useState("");
   const [hydrated, setHydrated] = useState(false);
+  // The shared answers as last saved — what "different" is measured against.
+  const sharedRef = useRef<HomeRow | null>(null);
+  // Whether a shared row existed when this screen opened: the first save
+  // brings the owner's other birds along (see followSharedPatch).
+  const firstSaveRef = useRef(false);
+  const birdClearedRef = useRef(false);
+
+  function fill(row: any) {
+    setHazards(Array.isArray(row?.hazards) ? row.hazards : []);
+    setHazardsOther(row?.hazards_other ?? "");
+    setOffLimits(row?.off_limits ?? row?.off_limits_rooms ?? "");
+    setOtherPets(row?.other_pets ?? "");
+    setCleaning(row?.cleaning_instructions ?? "");
+  }
 
   useEffect(() => {
-    if (!plan || hydrated) return;
-    setHazards(plan.hazards ?? []);
-    setHazardsOther(plan.hazards_other ?? "");
-    setOffLimits(plan.off_limits ?? plan.off_limits_rooms ?? "");
-    setOtherPets(plan.other_pets ?? "");
-    setCleaning(plan.cleaning_instructions ?? "");
+    if (!data?.plan || hydrated) return;
+    const { plan: p, isOwner, home, otherPlans } = data;
+    sharedRef.current = home;
+    firstSaveRef.current = isOwner && !home;
+    const m = !isOwner || (home && homeDifferences(p, home).length > 0) ? "bird" : "shared";
+    setMode(m);
+    // Bird mode shows the full picture: its own answers, shared ones elsewhere.
+    fill(m === "bird" ? mergeHome(p, home) : home ?? seedShared(p, otherPlans));
     setHydrated(true);
-  }, [plan, hydrated]);
+  }, [data, hydrated]);
 
   useDebouncedAutosave(
     async () => {
-      if (!plan) return;
-      await supabase
-        .from("care_plans")
-        .update({
-          hazards,
-          hazards_other: hazardsOther || null,
-          off_limits: offLimits || null,
-          // Denormalized mirror the sitter view reads as a fallback. The
-          // out_of_cage_rules / safety_rules free-text blobs are no longer
-          // written — the sitter assembles those from the structured fields.
-          off_limits_rooms: offLimits || null,
-          other_pets: otherPets || null,
-          cleaning_instructions: cleaning || null,
-        } as any)
-        .eq("id", plan.id);
+      if (!data?.plan) return;
+      const row: HomeRow = {
+        hazards,
+        hazards_other: hazardsOther || null,
+        off_limits: offLimits || null,
+        other_pets: otherPets || null,
+        cleaning_instructions: cleaning || null,
+      };
+      if (mode === "shared" && data.isOwner && data.userId) {
+        const { error } = await supabase.from("owner_home_defaults").upsert({ owner_id: data.userId, ...row } as any, { onConflict: "owner_id" });
+        if (error) throw error;
+        sharedRef.current = row;
+        // This bird follows the shared answers from now on.
+        if (!birdClearedRef.current && HOME_GROUPS.some((g) => birdHasOwn(data.plan, g))) {
+          const { error: clearErr } = await supabase.from("care_plans").update(clearOwnPatch() as any).eq("id", data.plan.id);
+          if (clearErr) throw clearErr;
+        }
+        birdClearedRef.current = true;
+        // First save: every other bird whose answers match (or are empty)
+        // follows the shared answers; birds with different answers keep theirs.
+        if (firstSaveRef.current) {
+          firstSaveRef.current = false;
+          for (const other of data.otherPlans) {
+            const patch = followSharedPatch(other, row);
+            if (patch) await supabase.from("care_plans").update(patch as any).eq("id", other.id);
+          }
+        }
+        qc.invalidateQueries({ queryKey: ["owner-home-defaults"] });
+      } else {
+        // This bird's own answers. Groups that match the shared answers are
+        // cleared so they keep following them; only real differences are kept.
+        const shared = data.isOwner ? sharedRef.current : null;
+        const patch: Record<string, unknown> = {};
+        const own = { ...row, off_limits_rooms: row.off_limits };
+        for (const g of HOME_GROUPS) {
+          const follow = !!shared && sameGroup(own, shared, g);
+          for (const col of HOME_GROUP_COLUMNS[g]) {
+            patch[col] = follow ? (col === "hazards" ? [] : null) : (own as any)[col];
+          }
+        }
+        await supabase.from("care_plans").update(patch as any).eq("id", data.plan.id);
+      }
       qc.invalidateQueries({ queryKey: ["plan", birdId] });
     },
-    [hazards, hazardsOther, offLimits, otherPets, cleaning],
+    [mode, hazards, hazardsOther, offLimits, otherPets, cleaning],
     !!plan && hydrated,
     registerFlush,
   );
@@ -1841,9 +1934,43 @@ export function EnvironmentStep({ birdId, birdName, registerFlush }: { birdId: s
     setHazards(hazards.includes(v) ? hazards.filter((x) => x !== v) : [...hazards, v]);
   }
 
+  async function switchToShared() {
+    if (!window.confirm(t("birdSetup.reminders.useSharedConfirm", "Use your shared reminders for {{name}}? The answers that are different for {{name}} will be removed.", { name: birdName }))) return;
+    const { error } = await supabase.from("care_plans").update(clearOwnPatch() as any).eq("id", plan.id);
+    if (error) { toast.error(friendlyError(error)); return; }
+    birdClearedRef.current = true;
+    fill(sharedRef.current ?? {});
+    setMode("shared");
+    qc.invalidateQueries({ queryKey: ["plan", birdId] });
+  }
+
   return (
     <div className="space-y-4">
-      <StepInstruction>{t("birdSetup.instr.environment", "What should someone know about your home to keep {{name}} safe?", { name: birdName })}</StepInstruction>
+      <StepInstruction>{t("birdSetup.instr.reminders", "These are things you know without thinking that a sitter might not consider. Include any safety hazard a bird might run into in your home.")}</StepInstruction>
+
+      {data?.isOwner && (
+        <div className="rounded-2xl bg-white p-3.5 text-sm text-[#1a3d2e] ring-1 ring-sage-100">
+          {mode === "shared" ? (
+            <>
+              <p className="font-medium">{t("birdSetup.reminders.sharedTitle", "Shared by all your birds")}</p>
+              <p className="mt-0.5 text-xs text-sage-600">{t("birdSetup.reminders.sharedBody", "Changes here apply to every bird that uses the shared reminders.")}</p>
+              <button type="button" onClick={() => setMode("bird")} className="mt-2 min-h-[44px] text-xs font-semibold text-[#2d6a4f] underline">
+                {t("birdSetup.reminders.makeDifferent", "Make these different for {{name}}", { name: birdName })}
+              </button>
+            </>
+          ) : (
+            <>
+              <p className="font-medium">{t("birdSetup.reminders.differentTitle", "Different for {{name}}", { name: birdName })}</p>
+              <p className="mt-0.5 text-xs text-sage-600">{t("birdSetup.reminders.differentBody", "Changes here apply to {{name}} only.", { name: birdName })}</p>
+              {sharedRef.current && (
+                <button type="button" onClick={switchToShared} className="mt-2 min-h-[44px] text-xs font-semibold text-[#2d6a4f] underline">
+                  {t("birdSetup.reminders.useShared", "Use the shared reminders instead")}
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      )}
 
       <Card title={t("birdSetup.homeSpecificHazards", "Home-specific hazards")} hint={t("birdSetup.tapAnyThatApplyThen", "Tap any that apply, then add your own.")}>
         <div className="flex flex-wrap gap-2">
@@ -2780,6 +2907,15 @@ function ReviewStep({
       return data as any;
     },
   });
+  // Shared "Your home" reminders, so a bird that uses them isn't listed as thin.
+  const { data: homeDefaults } = useQuery({
+    queryKey: ["home-defaults-review", bird?.owner_id],
+    enabled: !!bird?.owner_id,
+    queryFn: async () => {
+      const { data } = await supabase.from("owner_home_defaults").select("*").eq("owner_id", bird!.owner_id).maybeSingle();
+      return data ?? null;
+    },
+  });
 
   // Find-or-create a preview sit so we can render the REAL sitter view.
   const [previewToken, setPreviewToken] = useState<string | null>(null);
@@ -2808,7 +2944,7 @@ function ReviewStep({
     if ((tasks?.length ?? 0) === 0) list.push({ label: t("birdSetup.issue.noRoutineTasksYet", "No routine tasks yet"), step: stepOf("day") });
     if (!plan?.diet_types?.length && !plan?.food_instructions) list.push({ label: t("birdSetup.issue.noFoodWaterDetails", "No food & water details"), step: stepOf("food") });
     if (!plan?.handlers && !plan?.likes && !plan?.fears_triggers && !plan?.cage_location && !plan?.out_of_cage_mode) list.push({ label: t("birdSetup.issue.noPersonalityHandlingNotes", "No personality & handling notes"), step: stepOf("personality") });
-    if (!(plan?.hazards?.length) && !plan?.hazards_other && !plan?.off_limits && !plan?.other_pets && !plan?.cleaning_instructions) list.push({ label: t("birdSetup.issue.noEnvironmentSafetyDetails", "No environment & safety details"), step: stepOf("environment") });
+    if (!HOME_GROUPS.some((g) => birdHasOwn(mergeHome(plan, homeDefaults), g))) list.push({ label: t("birdSetup.issue.noReminders", "No reminders for your sitter"), step: stepOf("environment") });
     if (!bird?.normal_weight && !plan?.baseline_clip_path && !plan?.whats_normal) {
       list.push({ label: t("birdSetup.issue.noHealthBaselineWeightPhoto", "No health baseline (weight, photo, clip, or notes)"), step: stepOf("health") });
     }
@@ -2820,7 +2956,7 @@ function ReviewStep({
       list.push({ label: t("birdSetup.issue.requiredEmergencyContactsMissing", "Required emergency contacts missing"), step: stepOf("emergency") });
     }
     return list;
-  }, [tasks, plan, bird, contacts, defaults, t]);
+  }, [tasks, plan, bird, contacts, defaults, homeDefaults, t]);
 
   const previewSrc = previewToken ? `/sitter/${previewToken}?birdId=${birdId}&preview=1` : null;
 

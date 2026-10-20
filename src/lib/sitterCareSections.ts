@@ -45,7 +45,8 @@ export function presentCareSections(ctx: any): CareSectionKey[] {
   const showHome =
     has(plan.cage_location) || has(plan.out_of_cage_mode) || has(plan.out_of_cage_notes) ||
     has(plan.out_of_cage_rules) || hazards.length > 0 || has(plan.hazards_other) ||
-    has(plan.off_limits) || has(plan.off_limits_rooms) || has(plan.safety_rules) || has(plan.other_pets);
+    has(plan.off_limits) || has(plan.off_limits_rooms) || has(plan.safety_rules) || has(plan.other_pets) ||
+    has(plan.cleaning_instructions);
   const showHealth =
     has(bird.normal_weight) || has(bird.normal_weight_min) || has(bird.normal_weight_max) ||
     has(plan.whats_normal) || has(plan.normal_appetite) || has(plan.normal_droppings) ||

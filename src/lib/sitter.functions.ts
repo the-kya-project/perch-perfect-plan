@@ -14,6 +14,7 @@ import { resolveToday } from "./localDay";
 import { buildDailyLogEmail, buildSitterConcernEmail } from "./emailTemplates";
 import { emailT } from "./i18n/emailI18n.server";
 import { mergeEmergency } from "./emergency";
+import { mergeHome } from "./homeDefaults";
 import { isCfClip, cfUid } from "./clipRef";
 import { resolveScanPhotoUrls } from "./scanPhoto";
 
@@ -193,8 +194,9 @@ export const getSitterContext = createServerFn({ method: "GET" })
       return "the owner";
     };
 
-    const [defaultsRow, tasksRes, clips, ownerName] = await Promise.all([
+    const [defaultsRow, homeRow, tasksRes, clips, ownerName] = await Promise.all([
       sb.from("owner_emergency_defaults").select("*").eq("owner_id", activeBird.owner_id).maybeSingle().then((r: any) => r.data),
+      sb.from("owner_home_defaults").select("*").eq("owner_id", activeBird.owner_id).maybeSingle().then((r: any) => r.data),
       planRes.data
         ? sb.from("routine_tasks").select("*").eq("care_plan_id", planRes.data.id).order("category").order("sort_order")
         : Promise.resolve({ data: [] as any[], error: null }),
@@ -223,7 +225,8 @@ export const getSitterContext = createServerFn({ method: "GET" })
       birds: signedBirds,
       activeBirdId: activeId,
       bird: signedActiveBird,
-      plan: planRes.data,
+      // Shared "Your home" reminders fill in wherever this bird has none of its own.
+      plan: mergeHome(planRes.data, homeRow),
       contacts: mergedContacts,
       // Paused (sitter pause or owner mark-as-passed) → no daily prompts.
       tasks: remindersPaused ? [] : (tasksRes.data ?? []),

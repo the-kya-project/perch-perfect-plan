@@ -255,6 +255,7 @@ export const deleteMyAccount = createServerFn({ method: "POST" })
     await del("sits", supabaseAdmin.from("sits").delete().eq("owner_id", userId));
     await del("birds", supabaseAdmin.from("birds").delete().eq("owner_id", userId));
     await del("owner_emergency_defaults", supabaseAdmin.from("owner_emergency_defaults").delete().eq("owner_id", userId));
+    await del("owner_home_defaults", supabaseAdmin.from("owner_home_defaults").delete().eq("owner_id", userId));
     await del("profiles", supabaseAdmin.from("profiles").delete().eq("id", userId));
 
     if (rowFailures.length) {
