@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { ChopIngredientPicker } from "./ChopIngredientPicker";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
@@ -534,7 +535,11 @@ function ChopSection({ items, onChange, chop, validationActive }: {
   );
 }
 
-/** Bottom sheet for editing one food item. */
+/**
+ * Bottom sheet for editing one food item. Rendered into <body>: inside the
+ * setup shell's body it would sit under the sticky footer, which cut off its
+ * bottom (fields and "Looks good") on phones.
+ */
 function ItemSheet({ onClose, children }: { onClose: () => void; children: React.ReactNode }) {
   const { t } = useTranslation();
   useEffect(() => {
@@ -542,13 +547,22 @@ function ItemSheet({ onClose, children }: { onClose: () => void; children: React
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [onClose]);
-  return (
-    <div className="fixed inset-0 z-[70] flex items-end justify-center">
+  // Keep the page behind still while the sheet is open.
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+  if (typeof document === "undefined") return null;
+  return createPortal(
+    <div className="setup-frame fixed inset-0 z-[70] flex items-end justify-center">
       <button type="button" aria-label={t("foodEditor.closeSheet", "Close")} onClick={onClose} className="absolute inset-0 bg-[#1a3d2e]/40" />
-      <div role="dialog" aria-modal="true" className="relative max-h-[88vh] w-full max-w-md overflow-y-auto rounded-t-[26px] bg-white px-4 pb-[max(env(safe-area-inset-bottom),20px)] pt-3">
+      {/* dvh: the visible height, so the sheet fits above the phone's keyboard and browser bars. */}
+      <div role="dialog" aria-modal="true" className="relative max-h-[88vh] w-full max-w-md overflow-y-auto overscroll-contain rounded-t-[26px] bg-white px-4 pb-[max(env(safe-area-inset-bottom),24px)] pt-3 [max-height:88dvh]">
         <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-[#d5dfd5]" />
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
