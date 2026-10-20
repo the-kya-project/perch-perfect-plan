@@ -481,7 +481,9 @@ function BirdSetup() {
         ? t("birdSetup.food2.title", "Water, treats and hygiene")
         : meta.key === "health"
           ? t("birdSetup.health.title", "Keeping {{name}} healthy", { name: bird.name })
-          : setupStepTitle(t, meta.key)}
+          : meta.key === "personality"
+            ? t("birdSetup.behavior.title", "How {{name}} likes to be treated", { name: bird.name })
+            : setupStepTitle(t, meta.key)}
       subtitle={onFoodPage2 ? t("birdSetup.food2.intro", "Everything here is optional, and the defaults are a good place to start.") : undefined}
       page={meta.key === "food" ? [foodPage, 2] : undefined}
       birdName={bird.name}
@@ -1808,90 +1810,81 @@ export function PersonalityStep({ birdId, birdName, registerFlush }: { birdId: s
 
   if (isLoading || !plan) return <div className="h-32 animate-pulse rounded-2xl bg-sage-100" />;
 
+  const stepUpOptions = STEP_UP_OPTIONS.map((o) => ({ value: o.value, label: displayLabel(t, o.label) }));
+  const oocOptions = OUT_OF_CAGE_OPTIONS.map((o) => ({ value: o.value, label: displayLabel(t, o.label) }));
+
   return (
-    <div className="space-y-4">
-      <StepInstruction>{t("birdSetup.instr.personality", "How does {{name}} like to be treated? Give whoever's helping a feel for {{name}}'s quirks.", { name: birdName })}</StepInstruction>
+    <div className="flex flex-col gap-[14px]">
+      <StepInstruction>{t("birdSetup.instr.personalityOptional", "Give whoever's helping a feel for {{name}}'s personality and little habits. Everything here is optional.", { name: birdName })}</StepInstruction>
 
-      <Card title={t("birdSetup.doesTheBirdStepUp", "Does the bird step up?")}>
-        <select className="input" value={stepUp} onChange={(e) => setStepUp(e.target.value)}>
-          <option value="">{t("birdSetup.pickOne", "Pick one…")}</option>
-          {STEP_UP_OPTIONS.map((o) => <option key={o.value} value={o.value}>{displayLabel(t, o.label)}</option>)}
-        </select>
-        <textarea
-          className="input area mt-2"
-          placeholder={t("birdSetup.notesOnlyFromCertainPerches", "Notes (only from certain perches? prefers a hand vs. perch?)")}
-          value={stepUpNotes}
-          maxLength={400}
-          onChange={(e) => setStepUpNotes(e.target.value)}
-        />
-      </Card>
+      <SectionCard emphasis title={t("birdSetup.behavior.handling", "Handling")}>
+        <Field label={t("birdSetup.behavior.doesStepUp", "Does {{name}} step up?", { name: birdName })} htmlFor="behavior-step-up">
+          <Dropdown id="behavior-step-up" value={stepUp} onChange={setStepUp} options={stepUpOptions} placeholder={t("birdSetup.pickOne", "Pick one…")} />
+          <TextBox
+            ariaLabel={t("birdSetup.behavior.stepUpNotes", "Step-up notes")}
+            value={stepUpNotes}
+            onChange={(v) => setStepUpNotes(v.slice(0, 400))}
+            placeholder={t("birdSetup.notesOnlyFromCertainPerches", "Notes (only from certain perches? prefers a hand vs. perch?)")}
+          />
+        </Field>
+        <Field label={t("birdSetup.whoCanHandleAndHow", "Who can handle, and how")} htmlFor="behavior-handlers">
+          <TextBox
+            id="behavior-handlers"
+            value={handlers}
+            onChange={(v) => setHandlers(v.slice(0, 500))}
+            placeholder={t("birdSetup.eGOnlyMeAnd", "e.g. Only me and my partner. Sitter: don't try to handle — talk only.")}
+          />
+        </Field>
+        <Field label={t("birdSetup.biteRiskWarningSigns", "Bite risk & warning signs")} htmlFor="behavior-bite">
+          <TextBox
+            id="behavior-bite"
+            value={bite}
+            onChange={(v) => setBite(v.slice(0, 500))}
+            placeholder={t("birdSetup.behavior.bitePlaceholder", "e.g. Low risk, but pinned eyes and a fanned tail mean back off")}
+          />
+        </Field>
+      </SectionCard>
 
-      <Card title={t("birdSetup.whoCanHandleAndHow", "Who can handle, and how")}>
-        <textarea
-          className="input area"
-          placeholder={t("birdSetup.eGOnlyMeAnd", "e.g. Only me and my partner. Sitter: don't try to handle — talk only.")}
-          value={handlers}
-          maxLength={500}
-          onChange={(e) => setHandlers(e.target.value)}
-        />
-      </Card>
+      <SectionCard title={t("birdSetup.behavior.likesAndFears", "Likes and fears")}>
+        <Field label={t("birdSetup.likes", "Likes")} htmlFor="behavior-likes">
+          <TextField
+            id="behavior-likes"
+            value={likes}
+            maxLength={300}
+            onChange={setLikes}
+            placeholder={t("birdSetup.behavior.likesPlaceholder", "e.g. Head scratches, millet, shoulder rides")}
+          />
+        </Field>
+        <Field label={t("birdSetup.fearsTriggers", "Fears & triggers")} htmlFor="behavior-fears">
+          <TextField
+            id="behavior-fears"
+            value={fears}
+            maxLength={500}
+            onChange={setFears}
+            placeholder={t("birdSetup.behavior.fearsPlaceholder", "e.g. Panics at the vacuum, hates hats")}
+          />
+        </Field>
+      </SectionCard>
 
-      <Card title={t("birdSetup.likes", "Likes")}>
-        <input
-          className="input"
-          placeholder={t("birdSetup.eGHeadScratchesMillet", "e.g. head scratches, millet, shoulder rides")}
-          value={likes}
-          maxLength={300}
-          onChange={(e) => setLikes(e.target.value)}
-        />
-      </Card>
-
-      <Card title={t("birdSetup.fearsTriggers", "Fears & triggers")}>
-        <textarea
-          className="input area"
-          placeholder={t("birdSetup.eGPanicsAtThe", "e.g. panics at the vacuum, hates hats")}
-          value={fears}
-          maxLength={500}
-          onChange={(e) => setFears(e.target.value)}
-        />
-      </Card>
-
-      <Card title={t("birdSetup.biteRiskWarningSigns", "Bite risk & warning signs")}>
-        <textarea
-          className="input area"
-          placeholder={t("birdSetup.eGLowRiskBut", "e.g. low risk, but pinned eyes and tail fan = back off")}
-          value={bite}
-          maxLength={500}
-          onChange={(e) => setBite(e.target.value)}
-        />
-      </Card>
-
-      <Card title={t("birdSetup.cageLocationSetupNotes", "Cage location & setup notes")}>
-        <textarea
-          className="input area"
-          placeholder={t("birdSetup.eGLivingRoomAway", "e.g. Living room, away from the kitchen. Cover is on the side table.")}
-          value={cageLoc}
-          maxLength={500}
-          onChange={(e) => setCageLoc(e.target.value)}
-        />
-      </Card>
-
-      <Card title={t("birdSetup.outOfCageRules", "Out-of-cage rules")}>
-        <select className="input" value={oocMode} onChange={(e) => setOocMode(e.target.value)}>
-          <option value="">{t("birdSetup.pickOne", "Pick one…")}</option>
-          {OUT_OF_CAGE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{displayLabel(t, o.label)}</option>)}
-        </select>
-        <textarea
-          className="input area mt-2"
-          placeholder={t("birdSetup.notesWhichRoomHowLong", "Notes (which room? how long? what to watch for?)")}
-          value={oocNotes}
-          maxLength={500}
-          onChange={(e) => setOocNotes(e.target.value)}
-        />
-      </Card>
-
-
-      <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.65rem .8rem;font-size:16px;outline:none}.input:focus{border-color:var(--sage-600);box-shadow:0 0 0 3px rgb(74 103 65 / .15)}.area{min-height:60px;line-height:1.4}`}</style>
+      <SectionCard title={t("birdSetup.behavior.birdsSpace", "{{name}}'s space", { name: birdName })}>
+        <Field label={t("birdSetup.cageLocationSetupNotes", "Cage location & setup notes")} htmlFor="behavior-cage">
+          <TextBox
+            id="behavior-cage"
+            value={cageLoc}
+            onChange={(v) => setCageLoc(v.slice(0, 500))}
+            placeholder={t("birdSetup.behavior.cagePlaceholder", "e.g. Living room, away from the kitchen.")}
+          />
+        </Field>
+        <Field label={t("birdSetup.outOfCageRules", "Out-of-cage rules")} htmlFor="behavior-ooc">
+          <Dropdown id="behavior-ooc" value={oocMode} onChange={setOocMode} options={oocOptions} placeholder={t("birdSetup.pickOne", "Pick one…")} />
+          <TextBox
+            ariaLabel={t("birdSetup.behavior.oocNotes", "Out-of-cage notes")}
+            value={oocNotes}
+            onChange={(v) => setOocNotes(v.slice(0, 500))}
+            placeholder={t("birdSetup.notesWhichRoomHowLong", "Notes (which room? how long? what to watch for?)")}
+          />
+        </Field>
+      </SectionCard>
     </div>
   );
 }

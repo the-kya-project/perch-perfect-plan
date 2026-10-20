@@ -1527,6 +1527,39 @@
     "birdSetup.beforeYouShare": {
       "stamp": "8b6da0ff7118c645"
     },
+    "birdSetup.behavior.birdsSpace": {
+      "stamp": "7ad97a7783071e23"
+    },
+    "birdSetup.behavior.bitePlaceholder": {
+      "stamp": "b4176600620cf61c"
+    },
+    "birdSetup.behavior.cagePlaceholder": {
+      "stamp": "74699af79bff3fe0"
+    },
+    "birdSetup.behavior.doesStepUp": {
+      "stamp": "ad59e5982c597300"
+    },
+    "birdSetup.behavior.fearsPlaceholder": {
+      "stamp": "fe915d905e64ad02"
+    },
+    "birdSetup.behavior.handling": {
+      "stamp": "8673cafcd7261475"
+    },
+    "birdSetup.behavior.likesAndFears": {
+      "stamp": "ece6f65a7681bef5"
+    },
+    "birdSetup.behavior.likesPlaceholder": {
+      "stamp": "0d7157b7ae835857"
+    },
+    "birdSetup.behavior.oocNotes": {
+      "stamp": "168918516c63f3a5"
+    },
+    "birdSetup.behavior.stepUpNotes": {
+      "stamp": "ddf3d706972825f6"
+    },
+    "birdSetup.behavior.title": {
+      "stamp": "f7496476c36fa6e5"
+    },
     "birdSetup.biteRiskWarningSigns": {
       "stamp": "ec4b3b1787df1cf8"
     },
@@ -1575,20 +1608,8 @@
     "birdSetup.describeTheOtherDiet": {
       "stamp": "7518cfa2fca94fe3"
     },
-    "birdSetup.doesTheBirdStepUp": {
-      "stamp": "87511c051d3b3cee"
-    },
     "birdSetup.eGACatAnd": {
       "stamp": "c56ff6b217e540bd"
-    },
-    "birdSetup.eGHeadScratchesMillet": {
-      "stamp": "ac2b3f0d29a47a0e"
-    },
-    "birdSetup.eGLivingRoomAway": {
-      "stamp": "eec05c2aadeb4473"
-    },
-    "birdSetup.eGLowRiskBut": {
-      "stamp": "e862b522070a3258"
     },
     "birdSetup.eGMetacam01ml": {
       "stamp": "189ca972540fbe4d"
@@ -1601,9 +1622,6 @@
     },
     "birdSetup.eGOnlyMeAnd": {
       "stamp": "43b32e2cd82f8351"
-    },
-    "birdSetup.eGPanicsAtThe": {
-      "stamp": "f99b95d453f46533"
     },
     "birdSetup.eGPantryTopShelf": {
       "stamp": "90a9929ca21282e0"
@@ -1809,8 +1827,8 @@
     "birdSetup.instr.healthOptional": {
       "stamp": "03ef3de0b2129251"
     },
-    "birdSetup.instr.personality": {
-      "stamp": "57e6bb853dbd1eda"
+    "birdSetup.instr.personalityOptional": {
+      "stamp": "1bf1dccc785e00c5"
     },
     "birdSetup.instr.reminders": {
       "stamp": "cd9a79ec0a97558e"

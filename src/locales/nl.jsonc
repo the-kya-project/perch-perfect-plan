@@ -1021,6 +1021,28 @@
   "birdSetup.baselineClipSaved": "Referentieclip opgeslagen.",
   // Before you share
   "birdSetup.beforeYouShare": "Voordat je deelt",
+  // {{name}}'s space
+  "birdSetup.behavior.birdsSpace": "De plek van {{name}}",
+  // e.g. Low risk, but pinned eyes and a fanned tail mean back off
+  "birdSetup.behavior.bitePlaceholder": "bijv. Laag risico, maar pinnende ogen (snel vernauwende pupillen) en een gespreide staart betekenen afstand houden",
+  // e.g. Living room, away from the kitchen.
+  "birdSetup.behavior.cagePlaceholder": "bijv. Woonkamer, uit de buurt van de keuken.",
+  // Does {{name}} step up?
+  "birdSetup.behavior.doesStepUp": "Stapt {{name}} op de hand?",
+  // e.g. Panics at the vacuum, hates hats
+  "birdSetup.behavior.fearsPlaceholder": "bijv. Raakt in paniek van de stofzuiger, haat hoeden",
+  // Handling
+  "birdSetup.behavior.handling": "Omgang",
+  // Likes and fears
+  "birdSetup.behavior.likesAndFears": "Leuk en eng",
+  // e.g. Head scratches, millet, shoulder rides
+  "birdSetup.behavior.likesPlaceholder": "bijv. Kopkriebels, kolfjes gierst, op de schouder zitten",
+  // Out-of-cage notes
+  "birdSetup.behavior.oocNotes": "Notities over tijd buiten de kooi",
+  // Step-up notes
+  "birdSetup.behavior.stepUpNotes": "Notities over opstappen",
+  // How {{name}} likes to be treated
+  "birdSetup.behavior.title": "Zo wil {{name}} behandeld worden",
   // Bite risk & warning signs
   "birdSetup.biteRiskWarningSigns": "Bijtrisico & waarschuwingssignalen",
   // Cage location & setup notes
@@ -1053,16 +1075,8 @@
   "birdSetup.couldnTSaveTheClip": "Kon de clip niet opslaan. Probeer het opnieuw.",
   // Describe the other diet
   "birdSetup.describeTheOtherDiet": "Beschrijf het andere voer",
-  // Does the bird step up?
-  "birdSetup.doesTheBirdStepUp": "Stapt de vogel op de hand?",
   // e.g. A cat and a dog — keep them out of the bird room; never leave them together.
   "birdSetup.eGACatAnd": "bijv. Een kat en een hond — houd ze uit de vogelkamer; laat ze nooit samen alleen.",
-  // e.g. head scratches, millet, shoulder rides
-  "birdSetup.eGHeadScratchesMillet": "bijv. kopje krauwen, trosgierst, op de schouder zitten",
-  // e.g. Living room, away from the kitchen. Cover is on the side table.
-  "birdSetup.eGLivingRoomAway": "bijv. Woonkamer, uit de buurt van de keuken. De kooideken ligt op het bijzettafeltje.",
-  // e.g. low risk, but pinned eyes and tail fan = back off
-  "birdSetup.eGLowRiskBut": "bijv. laag risico, maar pinnende ogen (snel vernauwende pupillen) en een gespreide staart = afstand houden",
   // e.g. Metacam 0.1ml
   "birdSetup.eGMetacam01ml": "bijv. Metacam 0,1 ml",
   // e.g. Mild feather plucking; old wing injury (no flight).
@@ -1071,8 +1085,6 @@
   "birdSetup.eGNoAccessTo": "bijv. Geen toegang tot keuken of badkamer; slaapkamerdeur blijft dicht.",
   // e.g. Only me and my partner. Sitter: don't try to handle — talk only.
   "birdSetup.eGOnlyMeAnd": "bijv. Alleen ik en mijn partner. Oppas: niet proberen op te pakken — alleen praten.",
-  // e.g. panics at the vacuum, hates hats
-  "birdSetup.eGPanicsAtThe": "bijv. raakt in paniek van de stofzuiger, haat hoeden",
   // e.g. Pantry, top shelf; fridge bin
   "birdSetup.eGPantryTopShelf": "bijv. Voorraadkast, bovenste plank; bak in de koelkast",
   // e.g. Wipe the cage tray daily; use only bird-safe cleaner under the sink. No aerosols near the bird.
@@ -1209,8 +1221,8 @@
   "birdSetup.instr.food": "Wat eet {{name}}, en hoeveel? Met duidelijke antwoorden weet iedereen die voor {{name}} zorgt precies wat er gegeven moet worden, en wanneer.",
   // Help anyone caring for {{name}} know what's normal, so they can spot what isn't. Everything here is optional.
   "birdSetup.instr.healthOptional": "Laat iedereen die voor {{name}} zorgt weten wat normaal is, zodat ze zien wat niet normaal is. Alles hier is optioneel.",
-  // How does {{name}} like to be treated? Give whoever's helping a feel for {{name}}'s quirks.
-  "birdSetup.instr.personality": "Hoe wil {{name}} behandeld worden? Geef wie er helpt een gevoel voor de eigenaardigheden van {{name}}.",
+  // Give whoever's helping a feel for {{name}}'s personality and little habits. Everything here is optional.
+  "birdSetup.instr.personalityOptional": "Geef wie er helpt een gevoel voor het karakter en de kleine gewoontes van {{name}}. Alles hier is optioneel.",
   // These are things you know without thinking that a sitter might not consider. Include any safety hazard a bird might run into in your home.
   "birdSetup.instr.reminders": "Dit zijn dingen die jij zonder nadenken weet, maar waar een oppas misschien niet aan denkt. Noem elk gevaar dat een vogel in jouw huis kan tegenkomen.",
   // Here's exactly what everyone helping will see for {{name}}. Scroll inside the preview to explore the Today screen.
