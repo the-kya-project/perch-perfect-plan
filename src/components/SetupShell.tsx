@@ -52,6 +52,7 @@ export function SetupShell({
   nextLabel: nextLabelProp,
   nextDisabled,
   footerNote,
+  footerNoteWarn,
   tinted,
   homeSubline,
   onSkip,
@@ -82,6 +83,8 @@ export function SetupShell({
   nextDisabled?: boolean;
   /** A short line above the footer buttons, e.g. why Next is waiting. */
   footerNote?: string | null;
+  /** Show the footer note as an amber warning. */
+  footerNoteWarn?: boolean;
   /** Light green body for screens made of white cards. */
   tinted?: boolean;
   /** "Your home" screens: the line under "Your home" (default "Shared by every bird"). */
@@ -120,7 +123,11 @@ export function SetupShell({
 
   const footer = footerProp ?? (hideFooter ? null : (
     <>
-    {footerNote && <p role="status" className="m-0 mb-2.5 text-center text-[14px] text-[#3d4f45]">{footerNote}</p>}
+    {footerNote && (footerNoteWarn ? (
+      <p role="status" className="m-0 mb-2.5 rounded-[14px] px-3.5 py-2.5 text-[14px] font-[500]" style={{ background: "#f6e7c4", color: "#854f0b" }}>{footerNote}</p>
+    ) : (
+      <p role="status" className="m-0 mb-2.5 text-center text-[14px] text-[#3d4f45]">{footerNote}</p>
+    ))}
     <div className="flex items-center gap-3">
       {onSkip ? (
         <SetupTextButton onClick={onSkip} disabled={saving}>{t("setupShell.skipForNow", "Skip for now")}</SetupTextButton>
