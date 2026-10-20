@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { ChopIngredientPicker } from "./ChopIngredientPicker";
+import { chopIngredientCount } from "@/lib/chopIngredients";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { Clock, Plus, X } from "lucide-react";
@@ -27,19 +28,20 @@ import { S, SERIF, SetupPrimaryButton, SetupTextButton, Field, TextField, TextBo
  * `expandSignal` opens the first incomplete item's sheet.
  *
  * "Fresh chop / formulated" is special (ChopSection): pre-made items (brand
- * required), a single auto-named "Homemade chop" item with its ingredients,
- * or both. Which parts show follows the items the bird has.
+ * required), a single auto-named "Homemade chop" item, or both. Which parts
+ * show follows the items the bird has. The homemade item's sheet also holds
+ * its ingredients, so everything about it is edited in one place.
  */
 
-// Old-style field look, still used by the chop ingredient search.
-const FIELD =
-  "w-full rounded-xl border bg-[#fbfaf2] px-3 py-2.5 text-sm text-[#1a3d2e] outline-none focus:border-[#2d6a4f] focus:ring-2 focus:ring-[#2d6a4f]/15";
-const BORDER_OK = "border-[#c8bfa6]";
+// The chop ingredient search, matching the setup text fields.
+const SEARCH_FIELD =
+  "h-12 w-full rounded-full border-2 border-[#d6dfd5] bg-white pr-[18px] text-[16px] text-[#1a3d2e] outline-none focus:border-[#1a3d2e] [&::-webkit-search-cancel-button]:appearance-none";
 const NEEDS_BORDER = "#e0b96a";
 
 export type ChopConfig = {
-  /** Removes the homemade item and its ingredients (the caller confirms first). */
-  onRemoveHomemade: () => void;
+  /** Removes the homemade item and its ingredients, after the caller confirms.
+   *  Returns false when the owner cancels. */
+  onRemoveHomemade: () => boolean;
   ingredients: string[];
   onToggleIngredient: (label: string) => void;
   /** The bird's never-feed list: searching one of these warns instead of adding. */
@@ -82,6 +84,17 @@ function typeWords(t: TFunction, type: string) {
   }
 }
 
+/** The "Brand or name" placeholder, matched to the food type. */
+function brandPlaceholder(t: TFunction, type: string): string {
+  switch (type) {
+    case "seed": return t("foodEditor.brandPlaceholderSeed", "e.g. Higgins Sunburst");
+    case "pellet_seed":
+    case "chop": return t("foodEditor.brandPlaceholderBag", "e.g. The name on the bag");
+    case "other": return t("foodEditor.brandPlaceholderOther", "e.g. Sprouted seed mix");
+    default: return t("foodEditor.brandPlaceholder", "e.g. Harrison's High Potency");
+  }
+}
+
 function whenLabels(t: TFunction, it: FoodItem): string {
   return normalizeFeedTimes(it.times)
     .map((ft) => FEED_PERIODS.find((p) => p.value === ft.period)?.label)
@@ -93,6 +106,22 @@ function whenLabels(t: TFunction, it: FoodItem): string {
 function summaryLine(t: TFunction, it: FoodItem): string {
   if (it.freeFed) return t("foodEditor.summaryAllDay", "Available all day");
   return [formatAmountUnitDisplay(it.amount, it.unit, t), whenLabels(t, it)].filter(Boolean).join(" · ");
+}
+
+/** The homemade chop's row line: "4 ingredients · 2 tbsp · Morning", or what's
+ *  still missing. With no ingredients yet, the count is left off. */
+function homemadeLine(t: TFunction, it: FoodItem, count: number): string {
+  if (count === 0) return isFoodItemComplete(it) ? summaryLine(t, it) : missingLine(t, it);
+  const n = t("foodEditor.nIngredients", "{{count}} ingredients", { count });
+  if (isFoodItemComplete(it)) return [n, summaryLine(t, it)].filter(Boolean).join(" · ");
+  const m = foodItemMissing(it);
+  const qty = m.qty || m.unit;
+  const rest = qty && m.when
+    ? t("foodEditor.homemadeMissingQtyWhen", "add how much and when")
+    : qty
+      ? t("foodEditor.homemadeMissingQty", "add how much")
+      : t("foodEditor.homemadeMissingWhen", "add when it's served");
+  return `${n} · ${rest}`;
 }
 
 /** What an incomplete item still needs, as one short line. */
@@ -210,12 +239,40 @@ export function FoodItemsEditor({
         );
       })}
 
-      {sheet && sheetItem && (
+      {sheet && sheetItem?.homemade && chop && (
+        <ItemSheet
+          onClose={() => setSheet(null)}
+          footer={
+            <div className="flex flex-col gap-3">
+              {!isFoodItemComplete(sheetItem) && (
+                <p className="m-0 text-center text-[13.5px] leading-[1.45]" style={{ color: S.quiet }}>
+                  {t("foodEditor.homemadeSavedNote", "Your ingredients are saved. Add how much and when whenever you're ready.")}
+                </p>
+              )}
+              <SetupPrimaryButton onClick={() => setSheet(null)} arrow={false}>{t("foodEditor.done", "Done")}</SetupPrimaryButton>
+            </div>
+          }
+        >
+          <ItemSheetBody
+            item={sheetItem}
+            typeLabel={t("birdSetup.opt.freshChopFormulated", "Fresh chop / formulated")}
+            freshTitle={t("foodEditor.homemadeChopItem", "Homemade chop")}
+            validationActive={validationActive}
+            onChange={(patch) => onChangeType(sheet.type, sheetItems.map((it, i) => (i === sheet.idx ? { ...it, ...patch } : it)))}
+            onDone={() => setSheet(null)}
+            chop={chop}
+            onRemove={() => { if (chop.onRemoveHomemade()) setSheet(null); }}
+          />
+        </ItemSheet>
+      )}
+
+      {sheet && sheetItem && !(sheetItem.homemade && chop) && (
         <ItemSheet onClose={() => setSheet(null)}>
           <ItemSheetBody
             item={sheetItem}
             typeLabel={sheetItem.homemade ? t("birdSetup.opt.freshChopFormulated", "Fresh chop / formulated") : sheetTypeLabel}
             freshTitle={sheetItem.homemade ? t("foodEditor.homemadeChopItem", "Homemade chop") : typeWords(t, sheet.type).fresh}
+            namePlaceholder={brandPlaceholder(t, sheet.type)}
             validationActive={validationActive}
             onChange={(patch) => onChangeType(sheet.type, sheetItems.map((it, i) => (i === sheet.idx ? { ...it, ...patch } : it)))}
             onDone={() => setSheet(null)}
@@ -242,20 +299,24 @@ function ReadyTag({ complete }: { complete: boolean }) {
 }
 
 /** One food item as a row: name over its summary, with its status. Opens the sheet. */
-function ItemRow({ item, name, onOpen, flat }: { item: FoodItem; name: string; onOpen: () => void; flat?: boolean }) {
+function ItemRow({ item, name, onOpen, line }: {
+  item: FoodItem; name: string; onOpen: () => void;
+  /** Replaces the usual summary / missing line. */
+  line?: string;
+}) {
   const { t } = useTranslation();
   const complete = isFoodItemComplete(item);
   return (
     <button
       type="button"
       onClick={onOpen}
-      className={`flex min-h-[62px] w-full items-center gap-3 px-4 py-3 text-left ${flat ? "" : "rounded-[16px] border-2 bg-white"}`}
-      style={{ color: S.forest, borderColor: flat ? undefined : complete ? "#fff" : NEEDS_BORDER }}
+      className="flex min-h-[62px] w-full items-center gap-3 rounded-[16px] border-2 bg-white px-4 py-3 text-left"
+      style={{ color: S.forest, borderColor: complete ? "#fff" : NEEDS_BORDER }}
     >
       <span className="min-w-0 flex-1">
         <span className="block truncate text-[15.5px] font-[700]">{name}</span>
-        <span className="mt-0.5 block truncate text-[14px]" style={{ color: complete ? S.helper : S.amberText }}>
-          {complete ? summaryLine(t, item) : missingLine(t, item)}
+        <span className={`mt-0.5 block text-[14px] ${line ? "" : "truncate"}`} style={{ color: complete ? S.helper : S.amberText }}>
+          {line ?? (complete ? summaryLine(t, item) : missingLine(t, item))}
         </span>
       </span>
       <ReadyTag complete={complete} />
@@ -301,8 +362,10 @@ function ChopSection({ items, onChange, chop, onOpen, onAddPremade }: {
   const needsDetails = items.length === 0 || items.some((it) => !isFoodItemComplete(it));
 
   const addHomemade = () => {
-    // The homemade item leads the list; pre-made items follow.
+    // The homemade item leads the list; pre-made items follow. Its sheet opens
+    // straight away, ingredients first.
     onChange([{ ...blankFoodItem(), name: HOMEMADE_CHOP_NAME, homemade: true }, ...items]);
+    onOpen(0);
   };
 
   return (
@@ -354,26 +417,12 @@ function ChopSection({ items, onChange, chop, onOpen, onAddPremade }: {
       ) : (
         <div className="flex flex-col gap-2">
           <p className="m-0 text-[14px] font-[700]">{t("foodEditor.homemade", "Homemade")}</p>
-          <div
-            className="overflow-hidden rounded-[16px] border-2 bg-white"
-            style={{ borderColor: isFoodItemComplete(items[homemadeIdx]) ? "#fff" : NEEDS_BORDER }}
-          >
-            <ItemRow flat item={items[homemadeIdx]} name={t("foodEditor.homemadeChopItem", "Homemade chop")} onOpen={() => onOpen(homemadeIdx)} />
-            <hr className="m-0 border-0 border-t border-[#e3eae2]" />
-            <div className="px-4 pb-3 pt-3.5">
-              <ChopIngredientPicker
-                ingredients={chop.ingredients}
-                onToggle={chop.onToggleIngredient}
-                other={chop.other}
-                onOtherChange={chop.onOtherChange}
-                neverFeed={chop.neverFeed}
-                fieldClass={`${FIELD} ${BORDER_OK}`}
-              />
-              <button type="button" onClick={chop.onRemoveHomemade} className="mt-2 inline-flex min-h-[44px] items-center text-[15px] font-[700] text-[#2d6a4f]">
-                {t("foodEditor.removeHomemadeChop", "Remove homemade chop")}
-              </button>
-            </div>
-          </div>
+          <ItemRow
+            item={items[homemadeIdx]}
+            name={t("foodEditor.homemadeChopItem", "Homemade chop")}
+            line={homemadeLine(t, items[homemadeIdx], chopIngredientCount(chop.ingredients, chop.other))}
+            onOpen={() => onOpen(homemadeIdx)}
+          />
         </div>
       )}
     </section>
@@ -386,8 +435,10 @@ function Missing({ children }: { children: React.ReactNode }) {
 }
 
 /** The sheet's fields for one item: brand, how much, when, all day, note. */
-function ItemSheetBody({ item, typeLabel, freshTitle, validationActive, onChange, onDone, onRemove }: {
+function ItemSheetBody({ item, typeLabel, freshTitle, namePlaceholder, validationActive, onChange, onDone, onRemove, chop }: {
   item: FoodItem;
+  /** "Brand or name" placeholder for this food type. */
+  namePlaceholder?: string;
   typeLabel: string;
   /** Title until a brand is typed ("New pellet"), or the homemade item's name. */
   freshTitle: string;
@@ -395,6 +446,9 @@ function ItemSheetBody({ item, typeLabel, freshTitle, validationActive, onChange
   onChange: (patch: Partial<FoodItem>) => void;
   onDone: () => void;
   onRemove?: () => void;
+  /** The homemade chop: ingredients and "How much and when" as two panels;
+   *  Done lives in the sheet's footer. */
+  chop?: ChopConfig;
 }) {
   const { t } = useTranslation();
   const complete = isFoodItemComplete(item);
@@ -402,6 +456,8 @@ function ItemSheetBody({ item, typeLabel, freshTitle, validationActive, onChange
   const times = normalizeFeedTimes(item.times);
   const [editingAt, setEditingAt] = useState<FeedPeriod | null>(null);
   const title = item.homemade ? freshTitle : item.name.trim() || freshTitle;
+  // Time rows sit on white inside the homemade panel, on the light card elsewhere.
+  const rowBg = chop ? "#fff" : S.card;
   const unitOptions = [
     ...(item.unit && !FOOD_UNITS.includes(item.unit as any) ? [{ value: item.unit, label: item.unit }] : []),
     ...FOOD_UNITS.map((u) => ({ value: u, label: foodLabel(t, u) })),
@@ -445,118 +501,246 @@ function ItemSheetBody({ item, typeLabel, freshTitle, validationActive, onChange
             maxLength={120}
             invalid={validationActive && miss.brand}
             onChange={(v) => onChange({ name: v })}
-            placeholder={t("foodEditor.brandPlaceholder", "e.g. Harrison's High Potency")}
+            placeholder={namePlaceholder ?? t("foodEditor.brandPlaceholder", "e.g. Harrison's High Potency")}
           />
           {validationActive && miss.brand && <Missing>{t("foodEditor.helperBrand", "Add the brand or food name.")}</Missing>}
         </Field>
       )}
 
-      {!item.freeFed && (
+      {chop ? (
         <>
-          <Field label={t("foodEditor.howMuch", "How much?")} htmlFor="food-item-amount">
-            <div className="flex gap-2">
-              <div className="w-[110px] shrink-0">
-                <TextField
-                  id="food-item-amount"
-                  inputMode="decimal"
-                  value={item.amount}
-                  invalid={validationActive && miss.qty}
-                  onChange={(v) => onChange({ amount: v.replace(/[^0-9.]/g, "") })}
-                  placeholder={t("foodEditor.amount", "Amount")}
-                />
-              </div>
-              <div className="min-w-0 flex-1">
-                <Dropdown
-                  ariaLabel={t("foodEditor.unit", "Unit")}
-                  value={item.unit}
-                  invalid={validationActive && miss.unit}
-                  onChange={(v) => onChange({ unit: v })}
-                  options={unitOptions}
-                  placeholder={t("foodEditor.unit", "Unit")}
-                />
-              </div>
-            </div>
-            {validationActive && (miss.qty || miss.unit) && <Missing>{t("foodEditor.helperHowMuch", "Add how much.")}</Missing>}
-          </Field>
-
-          <Field label={t("foodEditor.when", "When?")}>
-            <CheckChips
-              label={t("foodEditor.when", "When?")}
-              options={FEED_PERIODS.map((p) => ({ value: p.value, label: foodLabel(t, p.label) }))}
-              value={times.map((ft) => ft.period)}
-              onChange={setPeriods}
+          <section className="rounded-[18px] p-4" style={{ background: S.card }}>
+            <ChopIngredientPicker
+              ingredients={chop.ingredients}
+              onToggle={chop.onToggleIngredient}
+              other={chop.other}
+              onOtherChange={chop.onOtherChange}
+              neverFeed={chop.neverFeed}
+              fieldClass={SEARCH_FIELD}
             />
-            {validationActive && miss.when && <Missing>{t("foodEditor.helperWhen", "Pick at least one feeding time.")}</Missing>}
-            {times.length > 0 && (
-              <div className="mt-1 flex flex-col gap-2">
-                {times.map((ft) => {
-                  const period = FEED_PERIODS.find((p) => p.value === ft.period)!;
-                  const shown = formatAt(ft.at);
-                  return (
-                    <div key={ft.period} className="flex min-h-[52px] items-center justify-between gap-2 rounded-[14px] px-4" style={{ background: S.card }}>
-                      <span className="text-[15px] font-[700]">{foodLabel(t, period.label)}</span>
-                      {editingAt === ft.period ? (
-                        <span className="flex items-center gap-1">
-                          <input
-                            type="time"
-                            autoFocus
-                            aria-label={t("foodEditor.timeFor", "Time for {{period}}", { period: foodLabel(t, period.label) })}
-                            value={ft.at ?? ""}
-                            onChange={(e) => setAt(ft.period, e.target.value)}
-                            onBlur={() => setEditingAt(null)}
-                            className="h-10 w-[128px] rounded-full border-2 bg-white px-3 text-[15px] outline-none focus:border-[#1a3d2e]"
-                            style={{ borderColor: S.line, color: S.forest }}
-                          />
-                          {ft.at && (
-                            <SetupTextButton onClick={() => { setAt(ft.period, ""); setEditingAt(null); }}>
-                              {t("foodEditor.clear", "Clear")}
+          </section>
+          <section className="flex flex-col gap-5 rounded-[18px] p-4" style={{ background: S.card }}>
+            <h3 className="m-0 text-[20px] font-[700] leading-[1.2]" style={{ fontFamily: SERIF }}>
+              {t("foodEditor.howMuchAndWhen", "How much and when")}
+            </h3>
+            {!item.freeFed && (
+              <>
+                <Field label={t("foodEditor.howMuch", "How much?")} htmlFor="food-item-amount">
+                  <div className="flex gap-2">
+                    <div className="w-[110px] shrink-0">
+                      <TextField
+                        id="food-item-amount"
+                        inputMode="decimal"
+                        value={item.amount}
+                        invalid={validationActive && miss.qty}
+                        onChange={(v) => onChange({ amount: v.replace(/[^0-9.]/g, "") })}
+                        placeholder={t("foodEditor.amount", "Amount")}
+                      />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <Dropdown
+                        ariaLabel={t("foodEditor.unit", "Unit")}
+                        value={item.unit}
+                        invalid={validationActive && miss.unit}
+                        onChange={(v) => onChange({ unit: v })}
+                        options={unitOptions}
+                        placeholder={t("foodEditor.unit", "Unit")}
+                      />
+                    </div>
+                  </div>
+                  {validationActive && (miss.qty || miss.unit) && <Missing>{t("foodEditor.helperHowMuch", "Add how much.")}</Missing>}
+                </Field>
+
+                <Field label={t("foodEditor.when", "When?")}>
+                  <CheckChips
+                    label={t("foodEditor.when", "When?")}
+                    options={FEED_PERIODS.map((p) => ({ value: p.value, label: foodLabel(t, p.label) }))}
+                    value={times.map((ft) => ft.period)}
+                    onChange={setPeriods}
+                  />
+                  {validationActive && miss.when && <Missing>{t("foodEditor.helperWhen", "Pick at least one feeding time.")}</Missing>}
+                  {times.length > 0 && (
+                    <div className="mt-1 flex flex-col gap-2">
+                      {times.map((ft) => {
+                        const period = FEED_PERIODS.find((p) => p.value === ft.period)!;
+                        const shown = formatAt(ft.at);
+                        return (
+                          <div key={ft.period} className="flex min-h-[52px] items-center justify-between gap-2 rounded-[14px] px-4" style={{ background: rowBg }}>
+                            <span className="text-[15px] font-[700]">{foodLabel(t, period.label)}</span>
+                            {editingAt === ft.period ? (
+                              <span className="flex items-center gap-1">
+                                <input
+                                  type="time"
+                                  autoFocus
+                                  aria-label={t("foodEditor.timeFor", "Time for {{period}}", { period: foodLabel(t, period.label) })}
+                                  value={ft.at ?? ""}
+                                  onChange={(e) => setAt(ft.period, e.target.value)}
+                                  onBlur={() => setEditingAt(null)}
+                                  className="h-10 w-[128px] rounded-full border-2 bg-white px-3 text-[15px] outline-none focus:border-[#1a3d2e]"
+                                  style={{ borderColor: S.line, color: S.forest }}
+                                />
+                                {ft.at && (
+                                  <SetupTextButton onClick={() => { setAt(ft.period, ""); setEditingAt(null); }}>
+                                    {t("foodEditor.clear", "Clear")}
+                                  </SetupTextButton>
+                                )}
+                              </span>
+                            ) : (
+                              <SetupTextButton onClick={() => setEditingAt(ft.period)} icon={shown ? undefined : <Clock className="size-4" aria-hidden="true" />}>
+                                {shown ?? t("foodEditor.addATime", "Add a time")}
+                              </SetupTextButton>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </Field>
+              </>
+            )}
+
+            <div className="flex flex-col gap-2 border-y py-4" style={{ borderColor: S.footerLine }}>
+              <Switch
+                checked={!!item.freeFed}
+                onChange={(on) => onChange({ freeFed: on, ...(on ? { times: [] } : {}) })}
+              >
+                <span className="block">{t("foodEditor.availableAllDayFreeFed", "Available all day / free-fed")}</span>
+                <span className="mt-0.5 block text-[14px] font-[400]" style={{ color: S.helper }}>
+                  {t("foodEditor.freeFedNote", "Left in the cage — no set amount or times needed.")}
+                </span>
+              </Switch>
+              {item.freeFed && (
+                <p className="m-0 text-[14px]" style={{ color: S.helper }}>
+                  {t("foodEditor.freeFedHiddenNote", "How much and When are hidden while this is on. Your sitter will see “Available all day.”")}
+                </p>
+              )}
+            </div>
+
+            <Field label={t("foodEditor.anythingElse", "Anything else?")} optional htmlFor="food-item-note">
+              <TextBox
+                id="food-item-note"
+                value={item.note ?? ""}
+                onChange={(v) => onChange({ note: v ? v.slice(0, 300) : null })}
+                placeholder={t("foodEditor.notePlaceholderPrep", "Any prep or serving details")}
+              />
+            </Field>
+          </section>
+          {onRemove && (
+            <div className="text-center">
+              <SetupTextButton onClick={onRemove}>{t("foodEditor.removeHomemadeChop", "Remove homemade chop")}</SetupTextButton>
+            </div>
+          )}
+        </>
+      ) : (
+        <>
+          {!item.freeFed && (
+            <>
+              <Field label={t("foodEditor.howMuch", "How much?")} htmlFor="food-item-amount">
+                <div className="flex gap-2">
+                  <div className="w-[110px] shrink-0">
+                    <TextField
+                      id="food-item-amount"
+                      inputMode="decimal"
+                      value={item.amount}
+                      invalid={validationActive && miss.qty}
+                      onChange={(v) => onChange({ amount: v.replace(/[^0-9.]/g, "") })}
+                      placeholder={t("foodEditor.amount", "Amount")}
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <Dropdown
+                      ariaLabel={t("foodEditor.unit", "Unit")}
+                      value={item.unit}
+                      invalid={validationActive && miss.unit}
+                      onChange={(v) => onChange({ unit: v })}
+                      options={unitOptions}
+                      placeholder={t("foodEditor.unit", "Unit")}
+                    />
+                  </div>
+                </div>
+                {validationActive && (miss.qty || miss.unit) && <Missing>{t("foodEditor.helperHowMuch", "Add how much.")}</Missing>}
+              </Field>
+
+              <Field label={t("foodEditor.when", "When?")}>
+                <CheckChips
+                  label={t("foodEditor.when", "When?")}
+                  options={FEED_PERIODS.map((p) => ({ value: p.value, label: foodLabel(t, p.label) }))}
+                  value={times.map((ft) => ft.period)}
+                  onChange={setPeriods}
+                />
+                {validationActive && miss.when && <Missing>{t("foodEditor.helperWhen", "Pick at least one feeding time.")}</Missing>}
+                {times.length > 0 && (
+                  <div className="mt-1 flex flex-col gap-2">
+                    {times.map((ft) => {
+                      const period = FEED_PERIODS.find((p) => p.value === ft.period)!;
+                      const shown = formatAt(ft.at);
+                      return (
+                        <div key={ft.period} className="flex min-h-[52px] items-center justify-between gap-2 rounded-[14px] px-4" style={{ background: rowBg }}>
+                          <span className="text-[15px] font-[700]">{foodLabel(t, period.label)}</span>
+                          {editingAt === ft.period ? (
+                            <span className="flex items-center gap-1">
+                              <input
+                                type="time"
+                                autoFocus
+                                aria-label={t("foodEditor.timeFor", "Time for {{period}}", { period: foodLabel(t, period.label) })}
+                                value={ft.at ?? ""}
+                                onChange={(e) => setAt(ft.period, e.target.value)}
+                                onBlur={() => setEditingAt(null)}
+                                className="h-10 w-[128px] rounded-full border-2 bg-white px-3 text-[15px] outline-none focus:border-[#1a3d2e]"
+                                style={{ borderColor: S.line, color: S.forest }}
+                              />
+                              {ft.at && (
+                                <SetupTextButton onClick={() => { setAt(ft.period, ""); setEditingAt(null); }}>
+                                  {t("foodEditor.clear", "Clear")}
+                                </SetupTextButton>
+                              )}
+                            </span>
+                          ) : (
+                            <SetupTextButton onClick={() => setEditingAt(ft.period)} icon={shown ? undefined : <Clock className="size-4" aria-hidden="true" />}>
+                              {shown ?? t("foodEditor.addATime", "Add a time")}
                             </SetupTextButton>
                           )}
-                        </span>
-                      ) : (
-                        <SetupTextButton onClick={() => setEditingAt(ft.period)} icon={shown ? undefined : <Clock className="size-4" aria-hidden="true" />}>
-                          {shown ?? t("foodEditor.addATime", "Add a time")}
-                        </SetupTextButton>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </Field>
+            </>
+          )}
+
+          <div className="flex flex-col gap-2 border-y py-4" style={{ borderColor: S.footerLine }}>
+            <Switch
+              checked={!!item.freeFed}
+              onChange={(on) => onChange({ freeFed: on, ...(on ? { times: [] } : {}) })}
+            >
+              <span className="block">{t("foodEditor.availableAllDayFreeFed", "Available all day / free-fed")}</span>
+              <span className="mt-0.5 block text-[14px] font-[400]" style={{ color: S.helper }}>
+                {t("foodEditor.freeFedNote", "Left in the cage — no set amount or times needed.")}
+              </span>
+            </Switch>
+            {item.freeFed && (
+              <p className="m-0 text-[14px]" style={{ color: S.helper }}>
+                {t("foodEditor.freeFedHiddenNote", "How much and When are hidden while this is on. Your sitter will see “Available all day.”")}
+              </p>
             )}
+          </div>
+
+          <Field label={t("foodEditor.anythingElse", "Anything else?")} optional htmlFor="food-item-note">
+            <TextBox
+              id="food-item-note"
+              value={item.note ?? ""}
+              onChange={(v) => onChange({ note: v ? v.slice(0, 300) : null })}
+              placeholder={t("foodEditor.notePlaceholderPrep", "Any prep or serving details")}
+            />
           </Field>
+
+          <div className="flex flex-col items-center gap-1">
+            <SetupPrimaryButton onClick={onDone} arrow={false}>{t("foodEditor.done", "Done")}</SetupPrimaryButton>
+            {onRemove && <SetupTextButton onClick={onRemove}>{t("foodEditor.removeThisItem", "Remove this item")}</SetupTextButton>}
+          </div>
         </>
       )}
-
-      <div className="flex flex-col gap-2 border-y py-4" style={{ borderColor: S.footerLine }}>
-        <Switch
-          checked={!!item.freeFed}
-          onChange={(on) => onChange({ freeFed: on, ...(on ? { times: [] } : {}) })}
-        >
-          <span className="block">{t("foodEditor.availableAllDayFreeFed", "Available all day / free-fed")}</span>
-          <span className="mt-0.5 block text-[14px] font-[400]" style={{ color: S.helper }}>
-            {t("foodEditor.freeFedNote", "Left in the cage — no set amount or times needed.")}
-          </span>
-        </Switch>
-        {item.freeFed && (
-          <p className="m-0 text-[14px]" style={{ color: S.helper }}>
-            {t("foodEditor.freeFedHiddenNote", "How much and When are hidden while this is on. Your sitter will see “Available all day.”")}
-          </p>
-        )}
-      </div>
-
-      <Field label={t("foodEditor.anythingElse", "Anything else?")} optional htmlFor="food-item-note">
-        <TextBox
-          id="food-item-note"
-          value={item.note ?? ""}
-          onChange={(v) => onChange({ note: v ? v.slice(0, 300) : null })}
-          placeholder={t("foodEditor.notePlaceholderPrep", "Any prep or serving details")}
-        />
-      </Field>
-
-      <div className="flex flex-col items-center gap-1">
-        <SetupPrimaryButton onClick={onDone} arrow={false}>{t("foodEditor.done", "Done")}</SetupPrimaryButton>
-        {onRemove && <SetupTextButton onClick={onRemove}>{t("foodEditor.removeThisItem", "Remove this item")}</SetupTextButton>}
-      </div>
     </div>
   );
 }

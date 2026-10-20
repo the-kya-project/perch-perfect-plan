@@ -105,3 +105,8 @@ export function searchChopIngredients(query: string, label: (en: string) => stri
   if (term) return { matches, warning: { food: query.trim(), onNeverList: false } };
   return { matches, warning: null };
 }
+
+/** How many ingredients the homemade chop has: picks plus typed extras. */
+export function chopIngredientCount(ingredients: string[], other: string): number {
+  return ingredients.length + other.split(",").map((x) => x.trim()).filter(Boolean).length;
+}
