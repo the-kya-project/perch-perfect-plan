@@ -7,7 +7,7 @@ import { parseAddress, composeAddress, type AddressParts } from "@/lib/address";
 // holds the parts in local state while editing — re-parsing only when the
 // external value changes to something we didn't just produce — so typing never
 // glitches on the compose→parse round-trip.
-export function AddressInput({ value, onChange }: { value: string; onChange: (composed: string) => void }) {
+export function AddressInput({ value, onChange, inputClassName = "input", inputStyle }: { value: string; onChange: (composed: string) => void; inputClassName?: string; inputStyle?: React.CSSProperties }) {
   const { t } = useTranslation();
   const [parts, setParts] = useState<AddressParts>(() => parseAddress(value));
 
@@ -27,14 +27,16 @@ export function AddressInput({ value, onChange }: { value: string; onChange: (co
   return (
     <div className="space-y-2">
       <input
-        className="input"
+        className={inputClassName}
+        style={inputStyle}
         placeholder={t("addressInput.street", "Street address")}
         autoComplete="address-line1"
         value={parts.street}
         onChange={(e) => update({ street: e.target.value })}
       />
       <input
-        className="input"
+        className={inputClassName}
+        style={inputStyle}
         placeholder={t("addressInput.city", "City")}
         autoComplete="address-level2"
         value={parts.city}
@@ -42,7 +44,8 @@ export function AddressInput({ value, onChange }: { value: string; onChange: (co
       />
       <div className="grid grid-cols-2 gap-2">
         <input
-          className="input"
+          className={inputClassName}
+        style={inputStyle}
           placeholder={t("addressInput.state", "State")}
           autoComplete="address-level1"
           autoCapitalize="characters"
@@ -50,7 +53,8 @@ export function AddressInput({ value, onChange }: { value: string; onChange: (co
           onChange={(e) => update({ state: e.target.value })}
         />
         <input
-          className="input"
+          className={inputClassName}
+        style={inputStyle}
           placeholder={t("addressInput.zip", "ZIP")}
           inputMode="numeric"
           autoComplete="postal-code"

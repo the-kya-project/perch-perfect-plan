@@ -27,7 +27,7 @@ import { toast } from "sonner";
 import {
   Scale, BookOpen, IdCard, CalendarHeart, ClipboardList,
   FileText, Activity, Pencil, ArrowLeft, ArrowRight, Camera,
-  Check, X, Heart, Loader2, Crop, HeartCrack,
+  Check, X, Heart, Loader2, Crop, HeartCrack, Siren,
 } from "lucide-react";
 import { formatLocalDate } from "@/lib/dates";
 import { useDailyCheckToday, type BirdToday } from "@/lib/dailyCheck";
@@ -37,6 +37,8 @@ import { useCarePlanStatus } from "@/lib/useCarePlanStatus";
 import { useLoggedBy } from "@/lib/useLoggedBy";
 import { birdNames } from "@/lib/birdNames";
 import { getHouseholdForBird } from "@/lib/household.functions";
+import { useOwnerEmergency } from "@/lib/useOwnerEmergency";
+import { emergencyDifferent } from "@/lib/emergency";
 
 // Bird-record home — the new landing when you tap a bird. A glanceable hub for
 // the living record; the care plan is one facet among several. Facet screens
@@ -262,6 +264,16 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
   const isOwner = role === "owner";
   // Capability gates (mirror RLS): show write affordances members actually have.
   const canHealth = useCapability("record_health", { birdId });
+  // Emergency info row: custom for this bird, or the account's.
+  const { data: emContacts } = useQuery({
+    queryKey: ["contacts", birdId],
+    queryFn: async () => {
+      const { data } = await supabase.from("emergency_contacts").select("*").eq("bird_id", birdId).maybeSingle();
+      return data;
+    },
+  });
+  const { data: emDefaults } = useOwnerEmergency();
+  const emCustom = emergencyDifferent(emContacts, emDefaults);
   const canEditPlan = useCapability("edit_care_plans", { birdId });
   const canFlock = useCapability("manage_flock", { birdId });
   // Covering an active sit for this bird (household caregiver) — gates the
@@ -412,6 +424,7 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
         <KyaRow leading={<IconTile size={38} icon={<BookOpen className="size-5" />} />} title={t("birdRecord.journal", "Journal")} detail={t("birdRecord.moltMedsVetVisits", "Molt, meds, vet visits")} onClick={() => navigate({ to: "/birds/$birdId/journal", params: { birdId } })} />
         <KyaRow leading={<IconTile size={38} icon={<IdCard className="size-5" />} />} title={t("birdRecord.identity", "Identity")} detail={t("birdRecord.chipBandHatchDateOrigin", "Chip, band, hatch date, origin, photo")} onClick={() => navigate({ to: "/birds/$birdId/identity", params: { birdId } })} />
         <KyaRow leading={<IconTile size={38} icon={<CalendarHeart className="size-5" />} />} title={t("birdRecord.moments", "Moments")} detail={t("birdRecord.markTheDaysWorthRemembering", "Mark the days worth remembering")} onClick={() => navigate({ to: "/birds/$birdId/moments", params: { birdId } })} />
+        <KyaRow leading={<IconTile size={38} icon={<Siren className="size-5" />} />} title={t("birdRecord.emergencyInfo", "Emergency info")} detail={emCustom ? t("birdRecord.emergencyCustom", "Custom for {{name}}", { name }) : t("birdRecord.emergencyShared", "Uses your emergency info")} onClick={() => navigate({ to: "/birds/$birdId/emergency", params: { birdId } })} />
         <KyaRow leading={<IconTile size={38} icon={<FileText className="size-5" />} />} title={t("birdRecord.vetSummary", "Vet summary")} detail={t("birdRecord.oneCleanSheetForThe", "One clean sheet for the vet")} onClick={() => navigate({ to: "/birds/$birdId/vet-summary", params: { birdId } })} last={!canHealth} />
         {canHealth && <KyaRow leading={<IconTile size={38} icon={<Activity className="size-5" />} />} title={t("birdRecord.runAHealthScan", "Run a health scan")} detail={t("birdRecord.theSameDailyCheckA", "The same daily check a sitter runs")} onClick={() => navigate({ to: "/birds/$birdId/scan", params: { birdId } })} last />}
       </KyaCard>

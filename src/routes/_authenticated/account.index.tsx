@@ -1,6 +1,6 @@
-import { createFileRoute, Link, useNavigate, useRouter, useCanGoBack } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useRouter, useCanGoBack } from "@tanstack/react-router";
 import { useTranslation, Trans } from "react-i18next";
-import i18next from "i18next";
+import i18next, { type TFunction } from "i18next";
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQueryClient } from "@tanstack/react-query";
@@ -8,14 +8,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { deleteMyAccount } from "@/lib/account.functions";
 import { APP_VERSION } from "@/lib/version";
-import { ArrowLeft, ShieldAlert, Bell, Smartphone, Lock, X, Archive, Users, Flower2, Languages, Check } from "lucide-react";
+import { ShieldAlert, Bell, Smartphone, Lock, Archive, Users, Flower2, Languages, Check } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useAppSurface } from "@/lib/appSurface";
 import {
   APP_STORE_BADGE, APP_STORE_BADGE_SIZE, APP_STORE_URL,
   PLAY_STORE_BADGE, PLAY_STORE_BADGE_SIZE, PLAY_STORE_URL,
 } from "@/lib/storeLinks";
-import { InkHero, Card, RecordRow, IconTile, SectionHead, PrimaryButton } from "@/components/system";
+import { K, KyaPage, KyaHeader, KyaBody, KyaCard, KyaHeading, KyaRow, KyaTag, KyaLink, KyaIconTile, KyaPrimaryButton, KyaSheet, KyaBackRow, KyaTitle } from "@/components/kya";
+import { useOwnerEmergency } from "@/lib/useOwnerEmergency";
+import { missingRequired, type EmergencyValues } from "@/components/EmergencyContacts";
+import { getHouseholdAccount } from "@/lib/household.functions";
+import { SUPPORT_EMAIL } from "@/lib/support";
 import { toast } from "sonner";
 import { friendlyError } from "@/lib/errorMessage";
 import { OWNER_I18N_ENABLED, SUPPORTED_LOCALES, isLocale, type Locale } from "@/lib/i18n/config";
@@ -25,9 +29,6 @@ import { saveOwnerLocale } from "@/lib/i18n/ownerLocale";
 // Nederlands has to recognise it whatever language the app is showing.
 const LANGUAGE_NAMES: Record<Locale, string> = { en: "English", nl: "Nederlands" };
 
-// Support inbox for the "Help & support" row. If this address changes, update it
-// here (and ideally point it at a monitored mailbox).
-const SUPPORT_EMAIL = "brittany@thekyaproject.com";
 
 export const Route = createFileRoute("/_authenticated/account/")({
   head: () => ({ meta: [{ title: i18next.t("account.pageTitle", "Account — Kya & Co.") }] }),
@@ -46,6 +47,7 @@ function AccountPage() {
   const [email, setEmail] = useState("");
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
   const [name, setName] = useState("");
+  const [providers, setProviders] = useState<string[]>([]);
 
   // The Remembering entry shows only when there's a passed bird to remember.
   const { data: rememberingCount = 0 } = useQuery({
@@ -94,6 +96,9 @@ function AccountPage() {
       setUserId(user.id);
       setEmail(user.email ?? "");
       setPendingEmail((user as { new_email?: string | null }).new_email ?? null);
+      const fromMeta = ((user.app_metadata as { providers?: string[] } | undefined)?.providers ?? []) as string[];
+      const fromIds = (user.identities ?? []).map((i) => i.provider);
+      setProviders(Array.from(new Set([...fromMeta, ...fromIds])));
       const { data: p } = await supabase
         .from("profiles")
         .select("display_name")
@@ -102,6 +107,44 @@ function AccountPage() {
       setName(p?.display_name ?? "");
     })();
   }, []);
+
+  // Care settings status lines.
+  const { data: emergency } = useOwnerEmergency();
+  const emergencyGaps = missingRequired((emergency ?? {}) as EmergencyValues);
+  const getHousehold = useServerFn(getHouseholdAccount);
+  const { data: household } = useQuery({ queryKey: ["household-account"], queryFn: () => getHousehold() });
+  const { data: notif } = useQuery({
+    queryKey: ["account-notif-status"],
+    queryFn: async () => {
+      const { data: u } = await getLocalUser();
+      if (!u.user) return null;
+      const [{ data: p }, { count }] = await Promise.all([
+        (supabase as any).from("profiles").select("notify_sitter_log, notify_care_plan_reminder, notify_monthly_letter, notify_onboarding").eq("id", u.user.id).maybeSingle(),
+        supabase.from("push_subscriptions").select("id", { count: "exact", head: true }).eq("user_id", u.user.id),
+      ]);
+      const emailOn = !!p && Object.values(p as Record<string, unknown>).some(Boolean);
+      return { emailOn, pushOn: (count ?? 0) > 0 };
+    },
+  });
+
+  const memberNames = ((household?.members ?? []) as { name: string | null; email: string | null }[])
+    .map((m) => (m.name?.trim() || m.email?.split("@")[0] || "").split(/\s+/)[0])
+    .filter(Boolean);
+  const householdLine = memberNames.length === 0
+    ? t("account.householdJustYou", "Just you")
+    : memberNames.length > 3
+      ? t("account.householdYouAndOthers", "You and {{count}} others", { count: memberNames.length })
+      : t("account.householdYouAnd", "You and {{names}}", { names: joinAnd(t, memberNames) });
+  const notifLine = notif
+    ? [notif.emailOn ? t("account.emailOn", "Email on") : t("account.emailOff", "Email off"), notif.pushOn ? t("account.pushOn", "Push on") : t("account.pushOff", "Push off")].join(" · ")
+    : "";
+  const providerName = (p: string) => p === "google" ? "Google" : p === "apple" ? "Apple" : p === "email" ? t("account.emailAndPassword", "Email and password") : p;
+  const signInLine = providers.length ? joinAnd(t, providers.map(providerName)) : "";
+  const emergencyTag = emergencyGaps.length === 0
+    ? <KyaTag tone="lime">{t("account.ready", "Ready")}</KyaTag>
+    : emergencyGaps.length === 2
+      ? <KyaTag tone="amber">{t("account.needsTwoNumbers", "Needs 2 numbers")}</KyaTag>
+      : <KyaTag tone="amber">{emergencyGaps[0] === "owner_phone" ? t("account.needsYourPhone", "Needs your phone") : t("account.needsVetPhone", "Needs vet phone")}</KyaTag>;
 
   const goBack = () => (canGoBack ? router.history.back() : navigate({ to: "/dashboard" }));
 
@@ -114,150 +157,83 @@ function AccountPage() {
   const initial = (name.trim()[0] || email.trim()[0] || "?").toUpperCase();
   const emailPending = pendingEmail && pendingEmail.toLowerCase() !== email.toLowerCase();
 
-  return (
-    <div className="min-h-screen bg-[var(--cream)] pb-nav">
-      <div className="mx-auto max-w-md">
-        <InkHero
-          backIcon={<ArrowLeft className="size-5" />}
-          onBack={goBack}
-          eyebrow={t("account.account", "Account")}
-          headline={t("account.yourAccount", "Your account")}
-        />
+  const row = (icon: React.ReactNode, title: string, detail: React.ReactNode | undefined, onClick: () => void, opts: { trailing?: React.ReactNode; last?: boolean; wrap?: boolean } = {}) => (
+    <KyaRow leading={<KyaIconTile>{icon}</KyaIconTile>} title={title} detail={detail} trailing={opts.trailing} onClick={onClick} last={opts.last} wrap={opts.wrap} />
+  );
+  const plain = (title: string, onClick: () => void, last = false) => <KyaRow title={title} onClick={onClick} last={last} />;
 
-        <main className="space-y-6 px-5 pt-5">
+  return (
+    <KyaPage>
+      <div className="mx-auto max-w-md">
+        <KyaHeader>
+          <KyaBackRow label={t("account.back", "Back")} onBack={goBack} />
+          <KyaTitle title={t("account.yourAccount", "Your account")} />
+        </KyaHeader>
+
+        <KyaBody className="gap-5">
           {/* Identity */}
-          <Card>
+          <KyaCard>
             <div className="flex items-center gap-3 p-4">
-              <div className="grid size-14 shrink-0 place-items-center rounded-full bg-[var(--ink)] text-xl font-[500] text-white">
+              <div className="grid size-14 shrink-0 place-items-center rounded-full text-[20px] font-[700]" style={{ background: K.forest, color: K.lime }}>
                 {initial}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="t-item truncate">{name.trim() || t("account.yourName", "Your name")}</p>
-                <p className="t-meta truncate">{email}</p>
+                <p className="m-0 truncate text-[17px] font-[700]">{name.trim() || t("account.yourName", "Your name")}</p>
+                <p className="m-0 truncate text-[14px]" style={{ color: K.quiet }}>{email}</p>
                 {emailPending && (
-                  <p className="mt-0.5 truncate text-[11px] text-[var(--amber-ink)]">{t("account.emailChangePending", "Change to {{email}} pending — confirm the emailed links.", { email: pendingEmail })}</p>
+                  <p className="m-0 mt-0.5 truncate text-[12.5px]" style={{ color: K.amberText }}>{t("account.emailChangePending", "Change to {{email}} pending — confirm the emailed links.", { email: pendingEmail })}</p>
                 )}
               </div>
-              <button onClick={() => setEditOpen(true)} className="shrink-0 text-[13px] font-[500] text-[var(--moss)] active:opacity-70">{t("account.edit", "Edit")}</button>
+              <KyaLink onClick={() => setEditOpen(true)}>{t("account.edit", "Edit")}</KyaLink>
             </div>
-          </Card>
+          </KyaCard>
 
           {/* Care settings */}
-          <div>
-            <SectionHead title={t("account.careSettings", "Care settings")} />
-            <Card>
-              <Link to="/dashboard" search={{ emergencyDefaults: true }} className="block">
-                <RecordRow
-                  leading={<IconTile tone="pale" icon={<ShieldAlert className="size-5" />} />}
-                  title={t("account.emergencyDefaults", "Emergency defaults")}
-                  subtitle={t("account.vetContactsSpendLimitUsed", "Vet, contacts & spend limit — used for every bird.")}
-                />
-              </Link>
-              <Link to="/scans/settings" className="block">
-                <RecordRow
-                  leading={<IconTile icon={<Bell className="size-5" />} />}
-                  title={t("account.notifications", "Notifications")}
-                  subtitle={t("account.howYouHearAboutHealth", "How you hear about health checks and updates.")}
-                />
-              </Link>
-              <Link to="/household" className="block">
-                <RecordRow
-                  leading={<IconTile icon={<Users className="size-5" />} />}
-                  title={t("account.household", "Household")}
-                  subtitle={t("account.peopleWhoHelpCareFor", "People who help care for your birds.")}
-                  last={!showGetApp}
-                />
-              </Link>
-              {showGetApp && (
-                <>
-                  <RecordRow
-                    onClick={() => window.open(surface.storePlatform === "ios" ? APP_STORE_URL : PLAY_STORE_URL, "_blank", "noopener")}
-                    leading={<IconTile icon={<Smartphone className="size-5" />} />}
-                    title={t("account.getTheKyaCoApp", "Get the Kya & Co. app")}
-                    subtitle={t("account.remindersQuickLoggingAndYour", "Reminders, quick logging, and your flock's whole record, right on your phone. Same account, nothing to move over.")}
-                    last
-                  />
-                  <div className="px-4 pb-4">
-                    <img
-                      src={surface.storePlatform === "ios" ? APP_STORE_BADGE : PLAY_STORE_BADGE}
-                      width={(surface.storePlatform === "ios" ? APP_STORE_BADGE_SIZE : PLAY_STORE_BADGE_SIZE).width}
-                      height={(surface.storePlatform === "ios" ? APP_STORE_BADGE_SIZE : PLAY_STORE_BADGE_SIZE).height}
-                      alt={surface.storePlatform === "ios" ? t("account.appStoreBadgeAlt", "Download on the App Store") : t("account.playStoreBadgeAlt", "Get it on Google Play")}
-                      className="block"
-                    />
-                  </div>
-                </>
+          <section className="flex flex-col gap-2.5">
+            <KyaHeading>{t("account.careSettings", "Care settings")}</KyaHeading>
+            <KyaCard>
+              {row(<ShieldAlert className="size-5" />, t("account.emergencyInfo", "Emergency info"), <>{t("account.emergencyInfoDetail", "Your phone, vets, and where things are")}{emergency !== undefined && <span className="mt-1.5 block">{emergencyTag}</span>}</>, () => navigate({ to: "/account/emergency" }), { wrap: true })}
+              {row(<Users className="size-5" />, t("account.household", "Household"), household ? householdLine : undefined, () => navigate({ to: "/household" }))}
+              {row(<Bell className="size-5" />, t("account.notifications", "Notifications"), notifLine || undefined, () => navigate({ to: "/scans/settings" }), { last: !showGetApp })}
+              {showGetApp && row(
+                <Smartphone className="size-5" />,
+                t("account.getTheKyaCoApp", "Get the Kya & Co. app"),
+                t("account.getTheAppShort", "Reminders and quick logging on your phone"),
+                () => window.open(surface.storePlatform === "ios" ? APP_STORE_URL : PLAY_STORE_URL, "_blank", "noopener"),
+                { last: true },
               )}
-            </Card>
-          </div>
+            </KyaCard>
+          </section>
 
           {/* Account */}
-          <div>
-            <SectionHead title={t("account.account", "Account")} />
-            <Card>
-              <Link to="/account/security" className="block">
-                <RecordRow
-                  leading={<IconTile icon={<Lock className="size-5" />} />}
-                  title={t("account.passwordSignIn", "Password & sign-in")}
-                  subtitle={t("account.manageHowYouLogIn", "Manage how you log in.")}
-                />
-              </Link>
-              {OWNER_I18N_ENABLED && (
-                <RecordRow
-                  onClick={() => setLanguageOpen(true)}
-                  leading={<IconTile icon={<Languages className="size-5" />} />}
-                  title={t("account.language", "Language")}
-                  subtitle={locale ? LANGUAGE_NAMES[locale] : t("account.sameAsPhone", "Same as your phone")}
-                />
-              )}
-              <Link to="/past-birds" className="block">
-                <RecordRow
-                  leading={<IconTile icon={<Archive className="size-5" />} />}
-                  title={t("account.birdsYouVeHelpedFind", "Birds you've helped find a home")}
-                  last={!hasRemembering}
-                />
-              </Link>
+          <section className="flex flex-col gap-2.5">
+            <KyaHeading>{t("account.account", "Account")}</KyaHeading>
+            <KyaCard>
+              {row(<Lock className="size-5" />, t("account.passwordSignIn", "Password & sign-in"), signInLine || undefined, () => navigate({ to: "/account/security" }))}
+              {OWNER_I18N_ENABLED && row(<Languages className="size-5" />, t("account.language", "Language"), locale ? LANGUAGE_NAMES[locale] : t("account.sameAsPhone", "Same as your phone"), () => setLanguageOpen(true))}
+              {row(<Archive className="size-5" />, t("account.birdsRehomed", "Birds you've helped rehome"), t("account.birdsRehomedDetail", "Birds you've handed off to new owners"), () => navigate({ to: "/past-birds" }), { last: !hasRemembering })}
               {/* Remembering — memorials for birds that have passed. Shown only
                   when there is someone to remember; visited by choice, no count. */}
-              {hasRemembering && (
-                <Link to="/remembering" className="block">
-                  <RecordRow
-                    leading={<IconTile icon={<Flower2 className="size-5" />} />}
-                    title={t("account.remembering", "Remembering")}
-                    last
-                  />
-                </Link>
-              )}
-            </Card>
+              {hasRemembering && row(<Flower2 className="size-5" />, t("account.remembering", "Remembering"), undefined, () => navigate({ to: "/remembering" }), { last: true })}
+            </KyaCard>
+          </section>
+
+          {/* Help and legal */}
+          <section className="flex flex-col gap-2.5">
+            <KyaHeading>{t("account.helpAndLegal", "Help and legal")}</KyaHeading>
+            <KyaCard>
+              {plain(t("account.helpSupport", "Help & support"), () => { window.location.href = `mailto:${SUPPORT_EMAIL}?subject=Kya%20%26%20Co.%20support`; })}
+              {plain(t("account.privacyPolicy", "Privacy policy"), () => navigate({ to: "/privacy" }))}
+              {plain(t("account.termsOfService", "Terms of service"), () => navigate({ to: "/terms" }), true)}
+            </KyaCard>
+          </section>
+
+          <div className="flex flex-col items-start px-1">
+            <p className="m-0 text-[12px]" style={{ color: K.quiet }}>{t("account.version", "Version {{version}}", { version: APP_VERSION })}</p>
+            <KyaLink color={K.red} onClick={signOut}>{t("account.signOut", "Sign out")}</KyaLink>
+            <KyaLink color={K.red} onClick={() => setDeleteOpen(true)}>{t("account.deleteAccount", "Delete account")}</KyaLink>
           </div>
-
-          {/* Legal / meta */}
-          <div>
-            <SectionHead title={t("account.legal", "Legal")} />
-            <Card>
-              <a href={`mailto:${SUPPORT_EMAIL}?subject=Kya%20%26%20Co.%20support`} className="block">
-                <RecordRow title={t("account.helpSupport", "Help & support")} chevron />
-              </a>
-              <Link to="/privacy" className="block">
-                <RecordRow title={t("account.privacyPolicy", "Privacy policy")} chevron />
-              </Link>
-              <Link to="/terms" className="block">
-                <RecordRow title={t("account.termsOfService", "Terms of service")} chevron last />
-              </Link>
-            </Card>
-          </div>
-
-          <p className="t-meta text-center">{t("account.version", "Version {{version}}", { version: APP_VERSION })}</p>
-
-          <PrimaryButton tone="outline" onPress={signOut}>{t("account.signOut", "Sign out")}</PrimaryButton>
-
-          <button
-            onClick={() => setDeleteOpen(true)}
-            className="block w-full min-h-[44px] py-1 text-center text-[13px] font-[500] text-[var(--red-ink)] active:opacity-70"
-          >
-            {t("account.deleteAccount", "Delete account")}
-          </button>
-        </main>
+        </KyaBody>
       </div>
 
       {languageOpen && (
@@ -286,8 +262,14 @@ function AccountPage() {
           }}
         />
       )}
-    </div>
+    </KyaPage>
   );
+}
+
+/** "Sam", "Sam and Alex", "Sam, Alex and Jo". */
+function joinAnd(t: TFunction, items: string[]): string {
+  if (items.length <= 1) return items[0] ?? "";
+  return t("account.joinAnd", "{{list}} and {{last}}", { list: items.slice(0, -1).join(", "), last: items[items.length - 1] });
 }
 
 // ---------- Modals ----------
@@ -319,18 +301,18 @@ function LanguageModal({
 
   return (
     <ModalShell title={t("account.language", "Language")} onClose={onClose}>
-      <p className="mb-3 text-sm text-[var(--mute)]">{t("account.usedInTheAppAnd", "Used in the app and in emails we send you.")}</p>
-      <div className="overflow-hidden rounded-xl bg-white">
+      <p className="m-0 mb-3 text-[15px] text-[#5f5e5a]">{t("account.usedInTheAppAnd", "Used in the app and in emails we send you.")}</p>
+      <div className="overflow-hidden rounded-[20px] bg-[#f1f5f0]">
         {SUPPORTED_LOCALES.map((l, i) => (
           <button
             key={l}
             lang={l}
             onClick={() => void choose(l)}
             disabled={saving !== null}
-            className={`flex w-full items-center justify-between px-4 py-3 text-left text-[var(--ink)] ${i > 0 ? "border-t border-black/5" : ""}`}
+            className={`flex min-h-[52px] w-full items-center justify-between px-4 text-left text-[16px] font-[700] text-[#1a3d2e] ${i > 0 ? "border-t border-[#e3ebe2]" : ""}`}
           >
             <span>{LANGUAGE_NAMES[l]}</span>
-            {(saving ?? current) === l && <Check className="size-5 text-[var(--ink)]" />}
+            {(saving ?? current) === l && <Check className="size-5 text-[#1a3d2e]" />}
           </button>
         ))}
       </div>
@@ -341,18 +323,9 @@ function LanguageModal({
 function ModalShell({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   const { t } = useTranslation();
   return (
-    <div className="fixed inset-0 z-50 grid place-items-end sm:place-items-center">
-      <div className="absolute inset-0 bg-black/30" onClick={onClose} />
-      <div className="relative w-full max-w-md rounded-t-2xl bg-[var(--cream)] p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-xl sm:rounded-2xl">
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-[500] text-[var(--ink)]">{title}</h2>
-          <button onClick={onClose} aria-label={t("account.close", "Close")} className="rounded-full p-1 text-[var(--mute)] hover:bg-black/5">
-            <X className="size-5" />
-          </button>
-        </div>
-        {children}
-      </div>
-    </div>
+    <KyaSheet onClose={onClose} closeLabel={t("account.close", "Close")} title={<KyaHeading size={24}>{title}</KyaHeading>}>
+      {children}
+    </KyaSheet>
   );
 }
 
@@ -415,39 +388,39 @@ function EditIdentityModal({
     <ModalShell title={t("account.editYourDetails", "Edit your details")} onClose={onClose}>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="t-eyebrow block text-[var(--mute)]">{t("account.firstName", "First name")}</label>
+          <label className="mb-1.5 block text-[13.5px] font-[700] text-[#1a3d2e]">{t("account.firstName", "First name")}</label>
           <input
             value={firstInput}
             onChange={(e) => setFirstInput(e.target.value)}
             placeholder={t("account.brittany", "Brittany")}
             autoComplete="given-name"
-            className="mt-1 w-full rounded-xl border border-[var(--line)] bg-white px-3 py-2.5 text-sm outline-none focus:border-[var(--moss)]"
+            className="min-h-[48px] w-full rounded-full border-[1.5px] border-[#d5dfd5] bg-white px-4 text-[16px] text-[#1a3d2e] outline-none focus:border-[#2d6a4f]"
           />
         </div>
         <div>
-          <label className="t-eyebrow block text-[var(--mute)]">{t("account.lastName", "Last name")}</label>
+          <label className="mb-1.5 block text-[13.5px] font-[700] text-[#1a3d2e]">{t("account.lastName", "Last name")}</label>
           <input
             value={lastInput}
             onChange={(e) => setLastInput(e.target.value)}
             placeholder={t("account.king", "King")}
             autoComplete="family-name"
-            className="mt-1 w-full rounded-xl border border-[var(--line)] bg-white px-3 py-2.5 text-sm outline-none focus:border-[var(--moss)]"
+            className="min-h-[48px] w-full rounded-full border-[1.5px] border-[#d5dfd5] bg-white px-4 text-[16px] text-[#1a3d2e] outline-none focus:border-[#2d6a4f]"
           />
         </div>
       </div>
-      <label className="t-eyebrow mt-4 block text-[var(--mute)]">{t("account.emailAddress", "Email address")}</label>
+      <label className="mb-1.5 mt-4 block text-[13.5px] font-[700] text-[#1a3d2e]">{t("account.emailAddress", "Email address")}</label>
       <input
         type="email"
         value={emailInput}
         onChange={(e) => setEmailInput(e.target.value)}
         placeholder={t("account.youExampleCom", "you@example.com")}
-        className="mt-1 w-full rounded-xl border border-[var(--line)] bg-white px-3 py-2.5 text-sm outline-none focus:border-[var(--moss)]"
+        className="min-h-[48px] w-full rounded-full border-[1.5px] border-[#d5dfd5] bg-white px-4 text-[16px] text-[#1a3d2e] outline-none focus:border-[#2d6a4f]"
       />
-      <p className="t-meta mt-1.5">{t("account.changingYourEmailSendsA", "Changing your email sends a confirmation link to both your current and new address. Both must be confirmed.")}</p>
+      <p className="m-0 mt-1.5 px-1 text-[13px] text-[#5f5e5a]">{t("account.changingYourEmailSendsA", "Changing your email sends a confirmation link to both your current and new address. Both must be confirmed.")}</p>
       <div className="mt-4">
-        <PrimaryButton tone="ink" onPress={save} disabled={saving || (!nameDirty && !emailDirty)}>
+        <KyaPrimaryButton onClick={save} disabled={saving || (!nameDirty && !emailDirty)}>
           {saving ? t("account.saving", "Saving…") : t("account.saveChanges", "Save changes")}
-        </PrimaryButton>
+        </KyaPrimaryButton>
       </div>
     </ModalShell>
   );
@@ -472,29 +445,29 @@ function DeleteAccountModal({ onClose, onConfirm }: { onClose: () => void; onCon
 
   return (
     <ModalShell title={t("account.deleteAccount", "Delete account")} onClose={deleting ? () => {} : onClose}>
-      <p className="t-body text-[var(--mute)]">
+      <p className="m-0 text-[15px] leading-[1.5] text-[#5f5e5a]">
         <Trans
           i18nKey="account.deletePermanentlyBody"
           defaults="This permanently deletes your account and <1>everything in it</1> — your birds, care plans, clips, sits, sitter logs, and your contact record. Sitter links stop working. This cannot be undone."
-          components={{ 1: <strong className="text-[var(--ink)]" /> }}
+          components={{ 1: <strong className="text-[#1a3d2e]" /> }}
         />
       </p>
-      <label className="t-eyebrow mt-4 block text-[var(--mute)]">{t("account.typeDeleteToConfirm", "Type DELETE to confirm")}</label>
+      <label className="mb-1.5 mt-4 block text-[13.5px] font-[700] text-[#1a3d2e]">{t("account.typeDeleteToConfirm", "Type DELETE to confirm")}</label>
       <input
         value={confirmText}
         onChange={(e) => setConfirmText(e.target.value)}
         placeholder={t("account.delete", "DELETE")}
         autoCapitalize="characters"
-        className="mt-1 w-full rounded-xl border border-[var(--line)] bg-white px-3 py-2.5 text-sm outline-none focus:border-[var(--red-line)]"
+        className="min-h-[48px] w-full rounded-full border-[1.5px] border-[#d5dfd5] bg-white px-4 text-[16px] text-[#1a3d2e] outline-none focus:border-[#2d6a4f]"
       />
       <button
         onClick={run}
         disabled={!ready || deleting}
-        className="mt-4 w-full min-h-[44px] rounded-[12px] bg-[var(--red-deep)] py-3 text-[15px] font-[500] text-white disabled:opacity-50"
+        className="mt-4 min-h-[52px] w-full rounded-full text-[16px] font-[700] text-white disabled:opacity-50" style={{ background: K.red }}
       >
         {deleting ? t("account.deleting", "Deleting…") : t("account.permanentlyDelete", "Permanently delete my account")}
       </button>
-      <button onClick={onClose} disabled={deleting} className="mt-2 w-full min-h-[44px] py-2 text-center text-[13px] font-[500] text-[var(--mute)] disabled:opacity-50">
+      <button onClick={onClose} disabled={deleting} className="mt-2 min-h-[44px] w-full py-2 text-center text-[15px] font-[700] text-[#2d6a4f] disabled:opacity-50">
         {t("account.cancel", "Cancel")}
       </button>
     </ModalShell>

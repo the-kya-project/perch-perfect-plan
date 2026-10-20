@@ -139,7 +139,7 @@ export function SitChecklist({
             {t("sitChecklist.openCarePlan", "Open {{name}}'s care plan →", { name: b.name })}
           </Link>
         ) : (
-          <Link key={b.id} to="/birds/$birdId/plan/editor" params={{ birdId: b.id }} search={{ tab: "emergency" }} className={linkPill} style={{ background: "#fff", color: K.moss }}>
+          <Link key={b.id} to="/birds/$birdId/emergency" params={{ birdId: b.id }} className={linkPill} style={{ background: "#fff", color: K.moss }}>
             {birds.length > 1 ? t("sitChecklist.checkBirdContacts", "Check {{name}}'s contacts →", { name: b.name }) : t("sitChecklist.checkContacts", "Check contacts →")}
           </Link>
         ))}

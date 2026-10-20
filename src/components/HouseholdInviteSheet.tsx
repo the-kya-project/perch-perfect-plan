@@ -100,7 +100,7 @@ export function HouseholdInviteSheet({
     <div className="fixed inset-0 z-50 flex flex-col bg-[#f4f1e8]">
       <header className="flex items-center justify-between border-b border-[#e3ded0] px-5 py-3 pt-[max(env(safe-area-inset-top),0.75rem)]">
         <button type="button" onClick={onClose} className="text-sm font-medium text-[#5f5e5a]">{t("householdInvite.cancel", "Cancel")}</button>
-        <h2 className="text-base font-medium text-[#1a3d2e]">{t("householdInvite.title", "Invite a household member")}</h2>
+        <h2 className="text-base font-medium text-[#1a3d2e]">{t("householdInvite.titleInviteSomeone", "Invite someone")}</h2>
         <span className="w-12" />
       </header>
 
@@ -181,7 +181,7 @@ export function HouseholdInviteSheet({
               </label>
             ))}
           </div>
-          <p className="mt-1.5 px-1 text-[11px] text-[#8a897f]">{t("householdInvite.fineTune", "You can fine-tune this anytime on the permissions screen.")}</p>
+          <p className="mt-1.5 px-1 text-[11px] text-[#8a897f]">{t("householdInvite.fineTuneHousehold", "You can change this anytime from your household.")}</p>
         </div>
 
         <div className="rounded-[14px] bg-[#f6e7c4]/40 p-4 ring-1 ring-[#e3dcc9]">

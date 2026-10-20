@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
-import { ArrowLeft, ShieldAlert, Bell, Smartphone } from "lucide-react";
+import { ShieldCheck, Smartphone } from "lucide-react";
+import { Trans } from "react-i18next";
 import { toast } from "sonner";
 import {
   detectPushSupport,
@@ -21,7 +22,7 @@ import {
   savePushToken,
   deletePushToken,
 } from "@/lib/push.functions";
-import { isNativeApp, nativePlatform } from "@/lib/nativeApp";
+import { isNativeApp } from "@/lib/nativeApp";
 import {
   registerForNativePush,
   unregisterNativePush,
@@ -31,10 +32,8 @@ import {
   setNativePushOptedOut,
 } from "@/lib/pushNative";
 import { markNotificationsReviewed } from "@/components/OwnerChecklist";
-import { NotificationsCallout } from "@/components/NotificationsCallout";
-import { calloutState } from "@/lib/notificationsCallout";
-import { detectWebPlatform } from "@/lib/storeLinks";
-import { InkHero, IconTile, Card, PrimaryButton, CtaLink } from "@/components/system";
+import { detectWebPlatform, APP_STORE_URL, PLAY_STORE_URL } from "@/lib/storeLinks";
+import { K, KyaPage, KyaHeader, KyaBody, KyaCard, KyaIconTile, KyaGroupLabel, KyaSwitch, KyaLink, KyaPrimaryButton, KyaSecondaryButton, KyaBackRow, KyaTitle } from "@/components/kya";
 import { friendlyError } from "@/lib/errorMessage";
 import i18next from "i18next";
 import type { TFunction } from "i18next";
@@ -134,9 +133,6 @@ function NotificationsSettingsPage() {
   const [nativeToken, setNativeToken] = useState<string | null>(null);
   // Which store to point at when this is a phone BROWSER rather than the app.
   const webPlatform = detectWebPlatform();
-  // The account's bird, for the reminder copy. More than one and the sentence
-  // names none of them rather than picking a favourite.
-  const [birdLabel, setBirdLabel] = useState(() => t("notifSettings.yourBird", "your bird"));
 
   useEffect(() => {
     // Visiting/reviewing notification preferences checks off that getting-started step.
@@ -153,14 +149,6 @@ function NotificationsSettingsPage() {
         .maybeSingle();
       // push_weight_reminder/push_checkin_reminder postdate the generated types
       if (data) setPrefs(data as unknown as Prefs);
-      const { data: birds } = await supabase
-        .from("birds")
-        .select("name")
-        .eq("owner_id", u.user.id)
-        .is("passed_at", null)
-        .order("created_at");
-      if (birds?.length === 1) setBirdLabel(birds[0].name);
-      else if ((birds?.length ?? 0) > 1) setBirdLabel(t("notifSettings.yourBirds", "your birds"));
       if (native) {
         // Older shells (shipped before native push) do not contain the plugin.
         // A Vercel deploy reaches them instantly, so without this they'd get an
@@ -324,198 +312,139 @@ function NotificationsSettingsPage() {
   // Supported here, but the user/phone has blocked notifications in settings.
   const permissionDenied = !!support?.ok && permission === "denied" && !pushEnabled;
 
-  // No button, on either platform. Opening the OS settings page needs a plugin
-  // we do not ship: @capacitor/app has no openUrl in this version, and
-  // @capacitor/browser only opens web URLs, so `app-settings:` goes nowhere. A
-  // button that silently does nothing is worse than the sentence on its own.
-  // Add a settings plugin and this becomes `nativePlatform() === "ios"`.
-  const canOpenSettings = false;
+  // The push card: in the app (or a desktop browser that supports web push)
+  // it turns push on; on a phone browser the answer is the app.
+  const canTogglePush = native ? !pushBlocked : (webPlatform === "desktop" && !!support?.ok);
+  const pushLine = permissionDenied
+    ? t("notifSettings.deniedBody", "Notifications are turned off for this app in your device settings. Turn them on there to get sitter alerts on this device.")
+    : pushEnabled
+      ? t("notifSettings.pushOnLine", "Push is on. The switches below choose what reaches this device.")
+      : t("notifSettings.pushLine", "Hear about sitter activity right away.");
 
-  // An older shell with no push plugin still has nothing to offer: it needs an
-  // app update, not a permission prompt. Treat it as already-handled so the
-  // callout stays silent instead of showing a button that cannot work.
-  const callout = calloutState({
-    native,
-    permission: pushBlocked && support?.reason === "native-app"
-      ? "granted"
-      : permission === "granted" || permission === "denied" ? permission : "default",
-    webPlatform,
-    canOpenSettings,
-  });
+  const sw = (key: keyof Prefs | undefined, label: string, needsPush = false) =>
+    key ? (
+      <span className="inline-flex items-center gap-2 text-[14px] font-[700]">
+        {label}
+        <KyaSwitch
+          label={label}
+          checked={prefs ? Boolean(prefs[key]) : false}
+          disabled={!prefs || saving === key || (needsPush && !pushEnabled)}
+          onChange={(v) => toggle(key, v)}
+        />
+      </span>
+    ) : null;
+
+  const item = (row: Row, last: boolean) => (
+    <div key={row.pushKey} className="px-4 py-3" style={{ borderBottom: last ? undefined : `1px solid ${K.line}` }}>
+      <p className="m-0 text-[15px] font-[700]">{row.title}</p>
+      <p className="m-0 mt-0.5 text-[13.5px] leading-[1.45]" style={{ color: K.quiet }}>{row.desc}</p>
+      <div className="mt-1 flex flex-wrap items-center gap-x-6">
+        {sw(row.emailKey, t("notifSettings.email", "Email"))}
+        {sw(row.pushKey, t("notifSettings.colPush", "Push"), true)}
+      </div>
+    </div>
+  );
+  const [sitLog, carePlan, weight, checkin] = ROWS;
 
   return (
-    <div className="min-h-screen bg-[var(--cream)] pb-nav">
+    <KyaPage>
       <div className="mx-auto max-w-md">
-        <InkHero
-          backIcon={<ArrowLeft className="size-5" />}
-          onBack={goBack}
-          eyebrow={t("notifSettings.eyebrow", "Notifications")}
-          headline={t("notifSettings.headline", "Notifications")}
-          body={t("notifSettings.body", "Choose which sitter activity reaches you, by email and on this device.")}
-        />
+        <KyaHeader>
+          <KyaBackRow label={t("notifSettings.back", "Back")} onBack={goBack} />
+          <KyaTitle title={t("notifSettings.headline", "Notifications")} line={t("notifSettings.bodyNew", "Choose what reaches you by email and on this device.")} />
+        </KyaHeader>
 
-        <main className="space-y-4 px-5 pt-5">
-          {/* The notifications callout. Inside the app this asks for push (or
-              points at the OS settings, or says nothing at all when it is
-              already on); on a phone browser it points at the store; on
-              desktop it is one quiet line. The old "add this to your home
-              screen" advice is gone — it only ever existed to get iOS web
-              push, which the native shells now do properly. */}
-          <NotificationsCallout
-            state={callout}
-            birdLabel={birdLabel}
-            busy={busy}
-            onEnable={enablePush}
-          />
-
-          {/* Web push still works on a desktop browser, so the enable/disable
-              control stays there. It is deliberately NOT offered on a phone
-              browser any more: that path existed to work around iOS, and the
-              answer there is now the app. */}
-          {!native && webPlatform === "desktop" && support?.ok && (
-          <Card>
-            <div className="flex items-start gap-3 p-4">
-              <IconTile size={38} icon={<Smartphone className="size-5" />} />
-              <div className="min-w-0 flex-1">
-                <div className="t-item">{t("notifSettings.pushOnDevice", "Push on this device")}</div>
-                {permissionDenied ? (
-                  <p className="t-body mt-1 text-[var(--mute)]">
-                    {t("notifSettings.deniedBody", "Notifications are turned off for this app in your device settings. Turn them on there to get sitter alerts on this device.")}
-                  </p>
-                ) : pushEnabled ? (
-                  <p className="t-body mt-1 text-[var(--mute)]">
-                    {t("notifSettings.enabledBody", "Enabled. Per-event push toggles below control what reaches this device.")}
-                  </p>
-                ) : (
-                  <p className="t-body mt-1 text-[var(--mute)]">
-                    {t("notifSettings.offBody", "Get instant alerts for sitter activity without needing to check email.")}
-                  </p>
-                )}
-                {permissionDenied && (
-                  <div className="mt-2">
-                    <CtaLink label={t("notifSettings.howToTurnOn", "How to turn on notifications")} onPress={() => setBlockedOpen(true)} />
-                  </div>
-                )}
-                {!permissionDenied && (
-                  <div className="mt-3">
-                    <PrimaryButton
-                      tone={pushEnabled ? "outline" : "ink"}
-                      full={false}
-                      onPress={pushEnabled ? disablePush : enablePush}
-                      disabled={busy}
-                    >
-                      {pushEnabled ? t("notifSettings.turnOff", "Turn off") : t("notifSettings.enablePush", "Enable push")}
-                    </PrimaryButton>
-                  </div>
-                )}
+        <KyaBody className="gap-5">
+          {/* Push on this device */}
+          {(canTogglePush || !native) && (
+            <KyaCard className="p-4">
+              <div className="flex items-start gap-3">
+                <KyaIconTile><Smartphone className="size-5" /></KyaIconTile>
+                <div className="min-w-0 flex-1">
+                  <p className="m-0 text-[16px] font-[700]">{t("notifSettings.pushOnDevice", "Push on this device")}</p>
+                  {canTogglePush ? (
+                    <p className="m-0 mt-1 text-[14px] leading-[1.45]" style={{ color: K.quiet }}>{pushLine}</p>
+                  ) : (
+                    <p className="m-0 mt-1 text-[14px] leading-[1.45]" style={{ color: K.quiet }}>{t("notifSettings.pushInApp", "Push works in the Kya & Co. app.")}</p>
+                  )}
+                </div>
               </div>
-            </div>
-          </Card>
+              {canTogglePush && (permissionDenied ? (
+                <div className="mt-2"><KyaLink onClick={() => setBlockedOpen(true)}>{t("notifSettings.howToTurnOn", "How to turn on notifications")}</KyaLink></div>
+              ) : (
+                <div className="mt-3">
+                  {pushEnabled
+                    ? <KyaSecondaryButton className="w-full" onClick={disablePush} disabled={busy}>{t("notifSettings.turnOffPush", "Turn off push")}</KyaSecondaryButton>
+                    : <KyaPrimaryButton onClick={enablePush} disabled={busy}>{t("notifSettings.turnOnPush", "Turn on push")}</KyaPrimaryButton>}
+                </div>
+              ))}
+              {!native && (
+                <p className="m-0 mt-3 text-[14px]" style={{ color: K.quiet }}>
+                  <Trans
+                    i18nKey="notifSettings.orGetTheApp"
+                    defaults="Or get the app for <1>iPhone</1> or <2>Android</2>."
+                    components={{
+                      1: <a href={APP_STORE_URL} target="_blank" rel="noopener noreferrer" className="-my-3 inline-block py-3 font-[700]" style={{ color: K.moss }} />,
+                      2: <a href={PLAY_STORE_URL} target="_blank" rel="noopener noreferrer" className="-my-3 inline-block py-3 font-[700]" style={{ color: K.moss }} />,
+                    }}
+                  />
+                </p>
+              )}
+            </KyaCard>
           )}
 
-          {/* The two email programmes a reader can turn off. Separate from the
-              per-event grid below, which is about transactional alerts: those
-              keep coming whatever these say, and the line underneath says so. */}
-          <div>
-            <div className="mb-2 px-4">
-              <span className="t-eyebrow text-[var(--mute2)]">{t("notifSettings.email", "Email")}</span>
-            </div>
-            <Card>
+          <section className="flex flex-col gap-2">
+            <KyaGroupLabel>{t("notifSettings.duringSits", "During sits")}</KyaGroupLabel>
+            <KyaCard>
+              {item({ ...sitLog, title: t("notifSettings.sitterPostedLog", "Sitter posted a daily log"), desc: t("notifSettings.sitterPostedLogDesc", "When a sitter's daily check comes back all normal. Anything flagged always reaches you.") }, false)}
+              {item({ ...carePlan, title: t("notifSettings.reviewCarePlan", "Review the care plan before a sit"), desc: t("notifSettings.reviewCarePlanDesc", "A reminder a few days before a sit starts.") }, true)}
+            </KyaCard>
+          </section>
+
+          <section className="flex flex-col gap-2">
+            <KyaGroupLabel>{t("notifSettings.reminders", "Reminders")}</KyaGroupLabel>
+            <KyaCard>
+              {item(weight, false)}
+              {item(checkin, true)}
+            </KyaCard>
+          </section>
+
+          <section className="flex flex-col gap-2">
+            <KyaGroupLabel>{t("notifSettings.emailFromUs", "Email from us")}</KyaGroupLabel>
+            <KyaCard>
               {EMAIL_ROWS.map((row, i) => (
-                <div
-                  key={row.key}
-                  className={`flex items-start gap-4 px-4 py-3 ${i < EMAIL_ROWS.length - 1 ? "border-b border-[var(--line2)]" : ""}`}
-                >
+                <div key={row.key} className="flex items-center gap-3 px-4 py-3" style={{ borderBottom: i < EMAIL_ROWS.length - 1 ? `1px solid ${K.line}` : undefined }}>
                   <div className="min-w-0 flex-1">
-                    <div className="t-item">{row.title}</div>
-                    <p className="t-meta mt-0.5">{row.desc}</p>
+                    <p className="m-0 text-[15px] font-[700]">{row.title}</p>
+                    <p className="m-0 mt-0.5 text-[13.5px] leading-[1.45]" style={{ color: K.quiet }}>{row.desc}</p>
                   </div>
-                  <input
-                    type="checkbox"
-                    aria-label={row.title}
-                    className="mt-1 size-5 w-12 rounded border-[var(--line)] accent-[var(--moss)]"
+                  <KyaSwitch
+                    label={row.title}
                     checked={prefs ? Boolean(prefs[row.key]) : false}
                     disabled={!prefs || saving === row.key}
-                    onChange={(e) => toggle(row.key, e.target.checked)}
+                    onChange={(v) => toggle(row.key, v)}
                   />
                 </div>
               ))}
-            </Card>
-            <p className="t-meta mt-2 px-4 text-[var(--mute)]">
-              {t("notifSettings.alwaysComeThrough", "Sit updates, invites, and alerts always come through.")}
-            </p>
-          </div>
+            </KyaCard>
+          </section>
 
-          {/* Per-event toggles: email | push */}
-          <div>
-            <div className="mb-2 flex items-center gap-6 px-4">
-              <span className="t-eyebrow flex-1 text-[var(--mute2)]">{t("notifSettings.colEvent", "Event")}</span>
-              <span className="t-eyebrow w-12 text-center text-[var(--mute2)]">{t("notifSettings.email", "Email")}</span>
-              <span className="t-eyebrow w-12 text-center text-[var(--mute2)]">{t("notifSettings.colPush", "Push")}</span>
-            </div>
-            <Card>
-              {ROWS.map((row, i) => {
-                const emailChecked = prefs && row.emailKey ? Boolean(prefs[row.emailKey]) : false;
-                const pushChecked = prefs ? Boolean(prefs[row.pushKey]) : false;
-                return (
-                  <div
-                    key={row.pushKey}
-                    className={`flex items-start gap-4 px-4 py-3 ${i < ROWS.length - 1 ? "border-b border-[var(--line2)]" : ""}`}
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="t-item">{row.title}</div>
-                      <p className="t-meta mt-0.5">{row.desc}</p>
-                    </div>
-                    {row.emailKey ? (
-                      <input
-                        type="checkbox"
-                        aria-label={t("notifSettings.emailAria", "Email: {{title}}", { title: row.title })}
-                        className="mt-1 size-5 w-12 rounded border-[var(--line)] accent-[var(--moss)]"
-                        checked={emailChecked}
-                        disabled={!prefs || saving === row.emailKey}
-                        onChange={(e) => toggle(row.emailKey!, e.target.checked)}
-                      />
-                    ) : (
-                      <span aria-hidden className="t-meta mt-1 w-12 text-center text-[var(--mute2)]">—</span>
-                    )}
-                    <input
-                      type="checkbox"
-                      aria-label={t("notifSettings.pushAria", "Push: {{title}}", { title: row.title })}
-                      className="mt-1 size-5 w-12 rounded border-[var(--line)] accent-[var(--moss)] disabled:opacity-40"
-                      checked={pushChecked}
-                      disabled={!prefs || saving === row.pushKey || !pushEnabled}
-                      onChange={(e) => toggle(row.pushKey, e.target.checked)}
-                    />
-                  </div>
-                );
-              })}
-            </Card>
-          </div>
-
-          <div className="flex items-start gap-3 rounded-[18px] border border-[var(--amber-line)] bg-[var(--amber-fill)] p-4">
-            <IconTile size={38} tone="amber" icon={<ShieldAlert className="size-5" />} />
-            <div className="min-w-0 flex-1">
-              <div className="t-item text-[var(--amber-ink)]">
-                {t("notifSettings.safetyTitle", "Health & behavior alerts are always on")}
+          <KyaCard className="p-4">
+            <div className="flex items-start gap-3">
+              <KyaIconTile><ShieldCheck className="size-5" /></KyaIconTile>
+              <div className="min-w-0 flex-1">
+                <p className="m-0 text-[16px] font-[700]">{t("notifSettings.alwaysOn", "Always on")}</p>
+                <p className="m-0 mt-1 text-[14px] leading-[1.45]" style={{ color: K.quiet }}>
+                  {t("notifSettings.alwaysOnBody", "Health and behavior alerts from a sitter, sit updates, and invites always reach you by email.")}
+                </p>
               </div>
-              <p className="t-body mt-1 text-[var(--amber-ink)]">
-                {t("notifSettings.safetyBody", "If a sitter flags a health or behavior concern, we'll always send the alert by email and (if enabled) push. This safety alert can't be turned off.")}
-              </p>
             </div>
-          </div>
+          </KyaCard>
 
-          <p className="t-meta flex items-center justify-center gap-1.5 pt-2 text-center">
-            <Bell className="size-3.5" />
-            {t("notifSettings.flaggedAlwaysEmail", "Flagged scans always send email; all other events follow the toggles above.")}
-          </p>
-
-          {/* Changes save automatically as each toggle flips; this is just a clear
-              way to finish and leave the screen on phones. */}
-          <PrimaryButton tone="ink" onPress={goBack}>{t("notifSettings.done", "Done")}</PrimaryButton>
-          <p className="t-meta text-center">{t("notifSettings.autoSave", "Your choices save automatically.")}</p>
-        </main>
+          <p className="m-0 px-1 text-[13.5px]" style={{ color: K.quiet }}>{t("notifSettings.savesAsYouGo", "Changes save as you go.")}</p>
+        </KyaBody>
       </div>
       {blockedOpen && <NotificationsBlockedModal onClose={() => setBlockedOpen(false)} />}
-    </div>
+    </KyaPage>
   );
 }

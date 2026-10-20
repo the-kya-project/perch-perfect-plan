@@ -2,8 +2,9 @@
 // Same system as the new-bird setup and the daily health check — a forest
 // header, a mist body with rounded top corners, white cards, Newsreader
 // headings, DM Sans text, sunflower main buttons and moss text links.
-import type { CSSProperties, ReactNode } from "react";
-import { ChevronRight } from "lucide-react";
+import { useEffect, type CSSProperties, type InputHTMLAttributes, type ReactNode } from "react";
+import { createPortal } from "react-dom";
+import { ChevronRight, X } from "lucide-react";
 
 export const K = {
   forest: "#1a3d2e",
@@ -110,7 +111,7 @@ export function KyaSecondaryButton({ children, onClick, disabled, icon, classNam
 
 /** One row in a white list card: leading, title + one-line detail, trailing,
  *  chevron. About 60px tall; rows are divided by thin lines. */
-export function KyaRow({ leading, title, detail, trailing, onClick, chevron = true, last }: {
+export function KyaRow({ leading, title, detail, trailing, onClick, chevron = true, last, wrap }: {
   leading?: ReactNode;
   title: ReactNode;
   detail?: ReactNode;
@@ -118,13 +119,15 @@ export function KyaRow({ leading, title, detail, trailing, onClick, chevron = tr
   onClick?: () => void;
   chevron?: boolean;
   last?: boolean;
+  /** Let the title and detail wrap instead of truncating. */
+  wrap?: boolean;
 }) {
   const inner = (
     <>
       {leading && <span className="shrink-0">{leading}</span>}
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[15px] font-[700]">{title}</span>
-        {detail && <span className="mt-0.5 block truncate text-[13px]" style={{ color: K.quiet }}>{detail}</span>}
+        <span className={`block text-[15px] font-[700] ${wrap ? "" : "truncate"}`}>{title}</span>
+        {detail && <span className={`mt-0.5 block text-[13px] ${wrap ? "" : "truncate"}`} style={{ color: K.quiet }}>{detail}</span>}
       </span>
       {trailing && <span className="shrink-0">{trailing}</span>}
       {chevron && onClick && <ChevronRight className="size-[18px] shrink-0" style={{ color: K.quiet }} aria-hidden="true" />}
@@ -156,5 +159,119 @@ export function KyaAvatarStack({ initials, ring = "#fff" }: { initials: string[]
         </span>
       ))}
     </span>
+  );
+}
+
+/** Forest tile with a light icon, the bird page's row icon style. */
+export function KyaIconTile({ children, size = 40, tone = "forest" }: { children: ReactNode; size?: number; tone?: "forest" | "amber" | "mist" | "lime" }) {
+  const c = tone === "amber" ? { background: K.amberBg, color: K.amberText }
+    : tone === "mist" ? { background: K.mist, color: K.forest }
+    : tone === "lime" ? { background: K.forest, color: K.lime }
+    : { background: K.forest, color: K.lime };
+  return <span className="grid shrink-0 place-items-center rounded-[12px]" style={{ width: size, height: size, ...c }} aria-hidden="true">{children}</span>;
+}
+
+/** 13px bold muted group label ("New", "Quick answers"). Sentence case. */
+export function KyaGroupLabel({ children, className = "" }: { children: ReactNode; className?: string }) {
+  return <p className={`m-0 px-1 text-[13px] font-[700] ${className}`} style={{ color: K.quiet }}>{children}</p>;
+}
+
+/** On/off switch, on = forest. At least 44px tall to tap. */
+export function KyaSwitch({ checked, onChange, label, disabled }: { checked: boolean; onChange: (v: boolean) => void; label: string; disabled?: boolean }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      disabled={disabled}
+      onClick={() => onChange(!checked)}
+      className="inline-flex min-h-[44px] shrink-0 items-center disabled:opacity-45"
+    >
+      <span className="relative inline-block h-[30px] w-[50px] rounded-full transition-colors" style={{ background: checked ? K.forest : "#cfd8cf" }}>
+        <span className="absolute top-[3px] size-6 rounded-full bg-white shadow transition-[left]" style={{ left: checked ? 23 : 3 }} />
+      </span>
+    </button>
+  );
+}
+
+/** 13.5px bold label above a 48px white pill field with a 1.5px border. */
+export function KyaField({ label, tag, hint, id, ...input }: { label: ReactNode; tag?: ReactNode; hint?: ReactNode; id: string } & InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={id} className="flex items-center gap-2 text-[13.5px] font-[700]" style={{ color: K.forest }}>{label}{tag}</label>
+      <input
+        id={id}
+        {...input}
+        className={`min-h-[48px] w-full rounded-full border-[1.5px] bg-white px-4 text-[16px] outline-none focus:border-[#2d6a4f] ${input.className ?? ""}`}
+        style={{ borderColor: "#d5dfd5", color: K.forest, ...(input.style ?? {}) }}
+      />
+      {hint && <p className="m-0 px-1 text-[13px] leading-[1.4]" style={{ color: K.quiet }}>{hint}</p>}
+    </div>
+  );
+}
+
+/** Small "Required" tag for a field label. */
+export function KyaRequiredTag({ children }: { children: ReactNode }) {
+  return <span className="rounded-full px-2 py-[1px] text-[11.5px] font-[700]" style={{ background: K.amberBg, color: K.amberText }}>{children}</span>;
+}
+
+/** Bottom sheet: white, 26px top corners, grab handle, 44px round Close top
+ *  right, dark overlay. `footer` is pinned under the scrolling content. */
+export function KyaSheet({ open = true, onClose, title, closeLabel, children, footer }: {
+  open?: boolean;
+  onClose: () => void;
+  title?: ReactNode;
+  closeLabel: string;
+  children: ReactNode;
+  footer?: ReactNode;
+}) {
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { window.removeEventListener("keydown", onKey); document.body.style.overflow = prev; };
+  }, [open, onClose]);
+  if (!open || typeof document === "undefined") return null;
+  return createPortal(
+    <div className="setup-frame fixed inset-0 z-[70] flex items-end justify-center">
+      <button type="button" aria-label={closeLabel} tabIndex={-1} onClick={onClose} className="absolute inset-0 bg-black/50" />
+      <div role="dialog" aria-modal="true" className="relative flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-t-[26px] bg-white [max-height:90dvh]" style={{ color: K.forest }}>
+        <div className={`min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pt-2.5 ${footer ? "pb-5" : "pb-[max(env(safe-area-inset-bottom),24px)]"}`}>
+          <div className="mx-auto h-1 w-10 rounded-full bg-[#d5dfd5]" />
+          <div className="mt-2 flex items-start gap-3">
+            <div className="min-w-0 flex-1 pt-2">{title}</div>
+            <button type="button" aria-label={closeLabel} onClick={onClose} className="grid size-11 shrink-0 place-items-center rounded-full active:scale-95" style={{ background: K.mist, color: K.forest }}>
+              <X className="size-5" />
+            </button>
+          </div>
+          <div className="mt-3">{children}</div>
+        </div>
+        {footer && <div className="shrink-0 border-t bg-white px-5 pb-[max(env(safe-area-inset-bottom),16px)] pt-3" style={{ borderColor: K.line }}>{footer}</div>}
+      </div>
+    </div>,
+    document.body,
+  );
+}
+
+/** Forest header top row with a 44px back button and an optional right slot. */
+export function KyaBackRow({ label, onBack, right }: { label: string; onBack: () => void; right?: ReactNode }) {
+  return (
+    <div className="mt-1.5 flex items-center justify-between gap-3">
+      <KyaIconButton label={label} onClick={onBack}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M19 12H5" /><path d="m12 19-7-7 7-7" /></svg></KyaIconButton>
+      {right}
+    </div>
+  );
+}
+
+/** Title + line in the forest header. */
+export function KyaTitle({ title, line, size = 30 }: { title: ReactNode; line?: ReactNode; size?: number }) {
+  return (
+    <>
+      <KyaHeading as="h1" size={size} className="mt-5 text-white">{title}</KyaHeading>
+      {line && <p className="m-0 mt-2 text-[15px] leading-[1.5]" style={{ color: K.paleGreen }}>{line}</p>}
+    </>
   );
 }

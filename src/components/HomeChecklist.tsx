@@ -204,7 +204,7 @@ export function HomeChecklist() {
       label: t("homeChecklist.addEmergencyInfo", "Add emergency info"),
       icon: <Siren className="size-4" />,
       done: data.emergencyDone,
-      onAction: () => navigate({ to: "/dashboard", search: { emergencyDefaults: true } }),
+      onAction: () => navigate({ to: "/account/emergency" }),
     });
   }
 
