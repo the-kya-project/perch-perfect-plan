@@ -729,6 +729,10 @@
   "birdPickers.species": "Soort",
   // Unknown
   "birdPickers.unknown": "Onbekend",
+  // Add pet-sitter details
+  "birdRecord.addSitterDetails": "Oppasdetails toevoegen",
+  // Add behavior, tips, and {{name}}'s day so a pet sitter has everything they need.
+  "birdRecord.addSitterDetailsBody": "Voeg gedrag, tips en de dag van {{name}} toe, zodat een oppas alles heeft wat nodig is.",
   // Adjust crop
   "birdRecord.adjustCrop": "Uitsnede aanpassen",
   // Age
@@ -743,6 +747,8 @@
   "birdRecord.backToYourFlock": "Terug naar je vogels",
   // Basic info
   "birdRecord.basicInfo": "Basisgegevens",
+  // The basics are set for {{name}}
+  "birdRecord.basicsSet": "De basis voor {{name}} staat",
   // Build {{name}}'s care plan so sitters and household members know exactly what to do. You can skip and set it up later.
   "birdRecord.buildCarePlanIntro": "Stel het verzorgingsplan van {{name}} op, zodat oppassen en leden van je huishouden precies weten wat ze moeten doen. Je kunt dit overslaan en later instellen.",
   // Cancel
@@ -757,6 +763,12 @@
   "birdRecord.clipped": "Geknipt",
   // concern flagged
   "birdRecord.concernFlagged": "aandachtspunt gemeld",
+  // Continue care plan
+  "birdRecord.continueCarePlan": "Verzorgingsplan verder invullen",
+  // Pick up where you left off. What you've added so far is saved.
+  "birdRecord.continueCarePlanIntro": "Ga verder waar je gebleven was. Wat je al hebt toegevoegd, is bewaard.",
+  // Continue {{name}}'s care plan
+  "birdRecord.continueCarePlanTitle": "Verder met het verzorgingsplan van {{name}}",
   // Couldn't cancel.
   "birdRecord.couldntCancel": "Kon niet annuleren.",
   // Couldn't delete.
@@ -985,12 +997,12 @@
   "birdSetup.addAnotherFoodToNever": "Nog een verboden voedingsmiddel toevoegen",
   // Add another medication
   "birdSetup.addAnotherMedication": "Nog een medicijn toevoegen",
+  // Add
+  "birdSetup.addButton": "Toevoegen",
   // Add custom task
   "birdSetup.addCustomTask": "Eigen taak toevoegen",
   // Add photo
   "birdSetup.addPhoto": "Foto toevoegen",
-  // Add the brand, how much, and when it's served. Use “Available all day” for food left in the cage.
-  "birdSetup.addTheBrandHowMuch": "Vul het merk in, hoeveel, en wanneer het gegeven wordt. Kies “Hele dag beschikbaar” voor eten dat in de kooi blijft staan.",
   // Add to {{block}}
   "birdSetup.addToBlock": "Toevoegen aan {{block}}",
   // Add your own…
@@ -1005,12 +1017,32 @@
   "birdSetup.anythingOffLimits": "Verboden plekken",
   // ← Back to Emergency
   "birdSetup.backToEmergency": "← Terug naar Noodgevallen",
-  // Optional, up to {{seconds}} seconds and {{mb}} MB. Record at 720p in your browser or upload an existing video. Private — only your assigned sitter can view it.
-  "birdSetup.baselineClipHint": "Optioneel, tot {{seconds}} seconden en {{mb}} MB. Neem op in 720p in je browser of upload een bestaande video. Privé — alleen je toegewezen oppas kan hem bekijken.",
   // Baseline clip saved.
   "birdSetup.baselineClipSaved": "Referentieclip opgeslagen.",
   // Before you share
   "birdSetup.beforeYouShare": "Voordat je deelt",
+  // {{name}}'s space
+  "birdSetup.behavior.birdsSpace": "De plek van {{name}}",
+  // e.g. Low risk, but pinned eyes and a fanned tail mean back off
+  "birdSetup.behavior.bitePlaceholder": "bijv. Laag risico, maar pinnende ogen (snel vernauwende pupillen) en een gespreide staart betekenen afstand houden",
+  // e.g. Living room, away from the kitchen.
+  "birdSetup.behavior.cagePlaceholder": "bijv. Woonkamer, uit de buurt van de keuken.",
+  // Does {{name}} step up?
+  "birdSetup.behavior.doesStepUp": "Stapt {{name}} op de hand?",
+  // e.g. Panics at the vacuum, hates hats
+  "birdSetup.behavior.fearsPlaceholder": "bijv. Raakt in paniek van de stofzuiger, haat hoeden",
+  // Handling
+  "birdSetup.behavior.handling": "Omgang",
+  // Likes and fears
+  "birdSetup.behavior.likesAndFears": "Leuk en eng",
+  // e.g. Head scratches, millet, shoulder rides
+  "birdSetup.behavior.likesPlaceholder": "bijv. Kopkriebels, kolfjes gierst, op de schouder zitten",
+  // Out-of-cage notes
+  "birdSetup.behavior.oocNotes": "Notities over tijd buiten de kooi",
+  // Step-up notes
+  "birdSetup.behavior.stepUpNotes": "Notities over opstappen",
+  // How {{name}} likes to be treated
+  "birdSetup.behavior.title": "Zo wil {{name}} behandeld worden",
   // Bite risk & warning signs
   "birdSetup.biteRiskWarningSigns": "Bijtrisico & waarschuwingssignalen",
   // Cage location & setup notes
@@ -1023,8 +1055,6 @@
   "birdSetup.cleaningProductsInstructions": "Schoonmaakmiddelen & instructies",
   // Clipped
   "birdSetup.clipped": "Geknipt",
-  // Clip saved
-  "birdSetup.clipSaved": "Clip opgeslagen",
   // {{label}} saved.
   "birdSetup.clipSlotSaved": "{{label}} opgeslagen.",
   // Common toxic foods are prefilled. Add anything specific to your bird.
@@ -1043,18 +1073,8 @@
   "birdSetup.couldnTSaveTheClip": "Kon de clip niet opslaan. Probeer het opnieuw.",
   // Describe the other diet
   "birdSetup.describeTheOtherDiet": "Beschrijf het andere voer",
-  // Does the bird step up?
-  "birdSetup.doesTheBirdStepUp": "Stapt de vogel op de hand?",
   // e.g. A cat and a dog — keep them out of the bird room; never leave them together.
   "birdSetup.eGACatAnd": "bijv. Een kat en een hond — houd ze uit de vogelkamer; laat ze nooit samen alleen.",
-  // e.g. head scratches, millet, shoulder rides
-  "birdSetup.eGHeadScratchesMillet": "bijv. kopje krauwen, trosgierst, op de schouder zitten",
-  // e.g. Living room, away from the kitchen. Cover is on the side table.
-  "birdSetup.eGLivingRoomAway": "bijv. Woonkamer, uit de buurt van de keuken. De kooideken ligt op het bijzettafeltje.",
-  // e.g. Loud whistles at sunrise and sunset are normal. Naps mid-afternoon for ~30 min. Likes to flap on the perch for exercise.
-  "birdSetup.eGLoudWhistlesAt": "bijv. Hard fluiten bij zonsopkomst en zonsondergang is normaal. Doet halverwege de middag ~30 min een dutje. Fladdert graag op de zitstok voor beweging.",
-  // e.g. low risk, but pinned eyes and tail fan = back off
-  "birdSetup.eGLowRiskBut": "bijv. laag risico, maar pinnende ogen (snel vernauwende pupillen) en een gespreide staart = afstand houden",
   // e.g. Metacam 0.1ml
   "birdSetup.eGMetacam01ml": "bijv. Metacam 0,1 ml",
   // e.g. Mild feather plucking; old wing injury (no flight).
@@ -1063,8 +1083,6 @@
   "birdSetup.eGNoAccessTo": "bijv. Geen toegang tot keuken of badkamer; slaapkamerdeur blijft dicht.",
   // e.g. Only me and my partner. Sitter: don't try to handle — talk only.
   "birdSetup.eGOnlyMeAnd": "bijv. Alleen ik en mijn partner. Oppas: niet proberen op te pakken — alleen praten.",
-  // e.g. panics at the vacuum, hates hats
-  "birdSetup.eGPanicsAtThe": "bijv. raakt in paniek van de stofzuiger, haat hoeden",
   // e.g. Pantry, top shelf; fridge bin
   "birdSetup.eGPantryTopShelf": "bijv. Voorraadkast, bovenste plank; bak in de koelkast",
   // e.g. Wipe the cage tray daily; use only bird-safe cleaner under the sink. No aerosols near the bird.
@@ -1075,10 +1093,18 @@
   "birdSetup.female": "Vrouwtje",
   // Finish setup
   "birdSetup.finishSetup": "Instellen afronden",
-  // — fix in step {{step}}
-  "birdSetup.fixInStep": "— aanpassen in stap {{step}}",
+  // — fix it
+  "birdSetup.fixIt": "— oplossen",
   // Flight
   "birdSetup.flight": "Vliegen",
+  // Everything here is optional, and the defaults are a good place to start.
+  "birdSetup.food2.intro": "Alles hier is optioneel, en de standaardinstellingen zijn een goed begin.",
+  // Next: Health
+  "birdSetup.food2.next": "Volgende: Gezondheid",
+  // Water, treats and hygiene
+  "birdSetup.food2.title": "Water, snacks en hygiëne",
+  // For each food, add the brand, how much, and when it's served.
+  "birdSetup.forEachFoodAdd": "Vul bij elk voer het merk in, hoeveel, en wanneer het gegeven wordt.",
   // Fresh food spoils fast and can grow bacteria. This tells your sitter when to take it out.
   "birdSetup.freshFoodSpoilsFastAnd": "Vers eten bederft snel en er kunnen bacteriën in groeien. Zo weet je oppas wanneer het eruit moet.",
   // Freshness & hygiene
@@ -1089,46 +1115,136 @@
   "birdSetup.fullyFlighted": "Volledig vliegvaardig",
   // General defaults — adjust to fit your bird and routine.
   "birdSetup.generalDefaultsAdjustToFit": "Algemene standaardwaarden — pas ze aan op je vogel en jullie routine.",
+  // Activity
+  "birdSetup.health.activity": "Activiteit",
+  // Add a medication
+  "birdSetup.health.addAMedication": "Een medicijn toevoegen",
+  // Add more detail
+  "birdSetup.health.addMoreDetail": "Meer details toevoegen",
+  // + Add
+  "birdSetup.health.addPlus": "+ Toevoegen",
+  // Anytime · no time set
+  "birdSetup.health.anytimeNoTime": "Altijd · geen tijd ingesteld",
+  // Appetite
+  "birdSetup.health.appetite": "Eetlust",
+  // Normal behavior or sounds, up to 60 seconds. Only your sitter can see it.
+  "birdSetup.health.clipHelper": "Normaal gedrag of geluiden, tot 60 seconden. Alleen je oppas kan het zien.",
+  // Your clip is still uploading.
+  "birdSetup.health.clipStillUploading": "Je filmpje wordt nog geüpload.",
+  // A short clip of {{name}}
+  "birdSetup.health.clipTitle": "Een kort filmpje van {{name}}",
+  // Droppings
+  "birdSetup.health.droppings": "Poep",
+  // Each time you pick becomes its own check-off.
+  "birdSetup.health.eachTimeCheckOff": "Elk tijdstip dat je kiest wordt een eigen vinkje.",
+  // Healthy range
+  "birdSetup.health.healthyRange": "Gezond bereik",
+  // Healthy range, high
+  "birdSetup.health.healthyRangeHigh": "Gezond bereik, hoog",
+  // High
+  "birdSetup.health.high": "Hoog",
+  // Instructions
+  "birdSetup.health.instructions": "Instructies",
+  // e.g. With food, in the left cheek
+  "birdSetup.health.instructionsPlaceholder": "bijv. Met eten, in de linkerwang",
+  // Low
+  "birdSetup.health.low": "Laag",
+  // Medication
+  "birdSetup.health.medication": "Medicijn",
+  // Each time you pick becomes a check-off on your sitter's daily list.
+  "birdSetup.health.medsHelper": "Elk tijdstip dat je kiest wordt een vinkje op de dagelijkse lijst van je oppas.",
+  // More detail · {{n}} of 6
+  "birdSetup.health.moreDetailCount": "Meer details · {{n}} van 6",
+  // Appetite, droppings, noise, activity, sleep, and strangers
+  "birdSetup.health.moreDetailList": "Eetlust, poep, geluid, activiteit, slaap en vreemden",
+  // Name and dose
+  "birdSetup.health.nameAndDose": "Naam en dosis",
+  // Name, dose, and when it's given
+  "birdSetup.health.nameDoseWhen": "Naam, dosis, en wanneer het gegeven wordt",
+  // New medication
+  "birdSetup.health.newMedication": "Nieuw medicijn",
+  // Noise level
+  "birdSetup.health.noiseLevel": "Geluidsniveau",
+  // Normal weight
+  "birdSetup.health.normalWeight": "Normaal gewicht",
+  // No time picked, so your sitter will see this under Anytime. Each time you pick becomes its own check-off.
+  "birdSetup.health.noTimePicked": "Geen tijdstip gekozen, dus je oppas ziet dit onder Altijd. Elk tijdstip dat je kiest wordt een eigen vinkje.",
+  // Remove this medication
+  "birdSetup.health.removeMedication": "Dit medicijn verwijderen",
+  // Show less
+  "birdSetup.health.showLess": "Minder tonen",
+  // Sleep and naps
+  "birdSetup.health.sleepAndNaps": "Slaap en dutjes",
+  // e.g. Lights out by 8pm, sleeps about 12 hours; short afternoon nap.
+  "birdSetup.health.sleepPlaceholder": "bijv. Licht uit om 20.00 uur, slaapt ongeveer 12 uur; kort middagdutje.",
+  // Keeping {{name}} healthy
+  "birdSetup.health.title": "{{name}} gezond houden",
+  // to
+  "birdSetup.health.to": "tot",
+  // e.g. Trouble breathing, bleeding, a fall, or fluffed up all day.
+  "birdSetup.health.vetPlaceholder": "bijv. Moeite met ademen, bloeding, een val, of de hele dag opgezet.",
+  // Weight
+  "birdSetup.health.weight": "Gewicht",
+  // A healthy range helps you and your sitter notice a change early. Saving a new normal weight also adds it to {{name}}'s weight log.
+  "birdSetup.health.weightHelper": "Met een gezond bereik zien jij en je oppas een verandering vroeg. Een nieuw normaal gewicht wordt ook in het gewichtslogboek van {{name}} gezet.",
+  // e.g. 1,080
+  "birdSetup.health.weightPlaceholder": "bijv. 1.080",
+  // What's normal for {{name}}
+  "birdSetup.health.whatsNormalFor": "Wat normaal is voor {{name}}",
+  // In your own words: sounds, naps, droppings, anything you'd notice if it changed.
+  "birdSetup.health.whatsNormalHelper": "In je eigen woorden: geluiden, dutjes, poep, alles wat je zou opvallen als het verandert.",
+  // e.g. Loud whistles at sunrise and sunset. Naps mid-afternoon for about 30 minutes.
+  "birdSetup.health.whatsNormalPlaceholder": "bijv. Luid fluiten bij zonsopkomst en zonsondergang. Halverwege de middag een dutje van ongeveer 30 minuten.",
+  // When is it given?
+  "birdSetup.health.whenIsItGiven": "Wanneer wordt het gegeven?",
+  // The first thing a sitter checks when something seems off.
+  "birdSetup.health.whenToCallHelper": "Het eerste waar een oppas naar kijkt als er iets niet lijkt te kloppen.",
+  // When to call the vet
+  "birdSetup.health.whenToCallTheVet": "Wanneer je de dierenarts belt",
+  // When to call you
+  "birdSetup.health.whenToCallYou": "Wanneer je mij belt",
+  // With strangers
+  "birdSetup.health.withStrangers": "Bij vreemden",
   // Home-specific hazards
   "birdSetup.homeSpecificHazards": "Gevaren in jouw huis",
-  // Record a few short clips so anyone helping can see how it's done. Clips stay private, shared only with the people you trust with {{name}}.
-  "birdSetup.instr.clips": "Neem een paar korte clips op, zodat iedereen die helpt kan zien hoe het moet. Clips blijven privé en worden alleen gedeeld met de mensen die je {{name}} toevertrouwt.",
-  // What should someone know about your home to keep {{name}} safe?
-  "birdSetup.instr.environment": "Wat moet iemand over je huis weten om {{name}} veilig te houden?",
+  // How often?
+  "birdSetup.howOften": "Hoe vaak?",
+  // How often is it changed?
+  "birdSetup.howOftenWaterChanged": "Hoe vaak wordt het ververst?",
+  // Anything else the sitter should know about food/water hygiene.
+  "birdSetup.hygieneNotesPlaceholder": "Nog iets wat de oppas moet weten over hygiëne rond voer en water.",
   // What does {{name}} eat, and how much? Clear answers mean anyone caring for {{name}} knows exactly what to serve, and when.
   "birdSetup.instr.food": "Wat eet {{name}}, en hoeveel? Met duidelijke antwoorden weet iedereen die voor {{name}} zorgt precies wat er gegeven moet worden, en wanneer.",
-  // Help anyone caring for {{name}} know what's normal, so they can spot what isn't.
-  "birdSetup.instr.health": "Help iedereen die voor {{name}} zorgt te weten wat normaal is, zodat ze zien wanneer iets niet klopt.",
-  // How does {{name}} like to be treated? Give whoever's helping a feel for {{name}}'s quirks.
-  "birdSetup.instr.personality": "Hoe wil {{name}} behandeld worden? Geef wie er helpt een gevoel voor de eigenaardigheden van {{name}}.",
+  // Help anyone caring for {{name}} know what's normal, so they can spot what isn't. Everything here is optional.
+  "birdSetup.instr.healthOptional": "Laat iedereen die voor {{name}} zorgt weten wat normaal is, zodat ze zien wat niet normaal is. Alles hier is optioneel.",
+  // Give whoever's helping a feel for {{name}}'s personality and little habits. Everything here is optional.
+  "birdSetup.instr.personalityOptional": "Geef wie er helpt een gevoel voor het karakter en de kleine gewoontes van {{name}}. Alles hier is optioneel.",
+  // These are things you know without thinking that a sitter might not consider. Include any safety hazard a bird might run into in your home.
+  "birdSetup.instr.reminders": "Dit zijn dingen die jij zonder nadenken weet, maar waar een oppas misschien niet aan denkt. Noem elk gevaar dat een vogel in jouw huis kan tegenkomen.",
   // Here's exactly what everyone helping will see for {{name}}. Scroll inside the preview to explore the Today screen.
   "birdSetup.instr.review": "Dit is precies wat iedereen die helpt voor {{name}} te zien krijgt. Scroll in de preview om het Vandaag-scherm te bekijken.",
   // Build {{name}}'s daily rhythm. Feedings, water, cleaning, and meds carry over automatically from the Food and Health steps. Add anything else here, like uncovering the cage or playtime. Auto-added items are tagged and live in their own step.
   "birdSetup.instr.routine": "Stel het dagritme van {{name}} op. Voeren, water, schoonmaken en medicijnen komen automatisch mee uit de stappen Eten en Gezondheid. Voeg hier al het andere toe, zoals de kooi openmaken of speeltijd. Automatisch toegevoegde items zijn gelabeld en staan in hun eigen stap.",
-  // Instructions (e.g. in the left cheek, with food)
-  "birdSetup.instructionsEGInThe": "Instructies (bijv. in de linkerwang, met eten)",
+  // Add short video clips, up to 60 seconds each. Record one now or upload from your phone.
+  "birdSetup.instr.tips": "Voeg korte filmpjes toe, elk tot 60 seconden. Neem er nu een op of upload er een van je telefoon.",
   // In the routine
   "birdSetup.inTheRoutine": "In de routine",
-  // No environment & safety details
-  "birdSetup.issue.noEnvironmentSafetyDetails": "Geen gegevens over omgeving & veiligheid",
   // No food & water details
   "birdSetup.issue.noFoodWaterDetails": "Geen gegevens over eten & water",
   // No health baseline (weight, photo, clip, or notes)
   "birdSetup.issue.noHealthBaselineWeightPhoto": "Geen gezondheidsreferentie (gewicht, foto, clip of notities)",
   // No personality & handling notes
   "birdSetup.issue.noPersonalityHandlingNotes": "Geen notities over karakter & omgang",
+  // No reminders for your sitter
+  "birdSetup.issue.noReminders": "Geen herinneringen voor je oppas",
   // No routine tasks yet
   "birdSetup.issue.noRoutineTasksYet": "Nog geen routinetaken",
   // No tips-from-the-owner clips
   "birdSetup.issue.noTipsFromTheOwner": "Geen clips met tips van de eigenaar",
   // Required emergency contacts missing
   "birdSetup.issue.requiredEmergencyContactsMissing": "Verplichte noodcontacten ontbreken",
-  // Item, amount & timing
-  "birdSetup.itemAmountTiming": "Voer, hoeveelheid & tijdstip",
   // {{n}} item needs details. Add the brand, amount, and timing for: {{list}}.
   "birdSetup.itemNeedsDetails": "{{n}} item heeft nog gegevens nodig. Vul merk, hoeveelheid en tijdstip in voor: {{list}}.",
-  // Items, amounts & timing per food type
-  "birdSetup.itemsAmountsTimingPerType": "Voer, hoeveelheden & tijdstippen per soort voer",
   // {{n}} items need details. Add the brand, amount, and timing for: {{list}}.
   "birdSetup.itemsNeedDetails": "{{n}} items hebben nog gegevens nodig. Vul merk, hoeveelheid en tijdstip in voor: {{list}}.",
   // Keep current clip
@@ -1145,14 +1261,8 @@
   "birdSetup.looksGoodSave": "Ziet er goed uit — opslaan",
   // Male
   "birdSetup.male": "Mannetje",
-  // Max
-  "birdSetup.max": "Max",
   // Medications
   "birdSetup.medications": "Medicatie",
-  // Min
-  "birdSetup.min": "Min",
-  // More detail (optional)
-  "birdSetup.moreDetailOptional": "Meer details (optioneel)",
   // Name
   "birdSetup.name": "Naam",
   // Alcohol
@@ -1175,20 +1285,14 @@
   "birdSetup.next": "Volgende",
   // No photo
   "birdSetup.noPhoto": "Geen foto",
-  // Normal
-  "birdSetup.normal": "Normaal",
-  // Normal weight (grams)
-  "birdSetup.normalWeightGrams": "Normaal gewicht (gram)",
-  // Notes (filter, bottle vs bowl, etc.)
-  "birdSetup.notesFilterBottleVsBowl": "Notities (filter, drinkflesje of bakje, enz.)",
+  // Notes
+  "birdSetup.notesLabel": "Notities",
   // Notes (only from certain perches? prefers a hand vs. perch?)
   "birdSetup.notesOnlyFromCertainPerches": "Notities (alleen vanaf bepaalde zitstokken? liever een hand dan een zitstok?)",
   // Notes (which room? how long? what to watch for?)
   "birdSetup.notesWhichRoomHowLong": "Notities (welke kamer? hoe lang? waar moet je op letten?)",
   // Nothing added yet
   "birdSetup.nothingAddedYet": "Nog niets toegevoegd",
-  // No time set — sitters will see this under Anytime.
-  "birdSetup.noTimeSetSittersWill": "Geen tijd ingesteld — oppassen zien dit onder Altijd.",
   // 1 hour
   "birdSetup.opt.1Hour": "1 uur",
   // 2 hours
@@ -1217,8 +1321,6 @@
   "birdSetup.opt.closeCurtains": "Gordijnen dicht",
   // Cover for night
   "birdSetup.opt.coverForNight": "Kooi afdekken voor de nacht",
-  // Cover routine, lights, sounds.
-  "birdSetup.opt.coverRoutineLightsSounds": "Afdekroutine, lampen, geluiden.",
   // Custom
   "birdSetup.opt.custom": "Aangepast",
   // Daily
@@ -1259,6 +1361,8 @@
   "birdSetup.opt.keepInCage": "In de kooi houden",
   // Kitchen & nonstick cookware
   "birdSetup.opt.kitchenNonstickCookware": "Keuken & pannen met antiaanbaklaag",
+  // Lights, sounds, bedtime routine.
+  "birdSetup.opt.lightsSoundsBedtime": "Licht, geluiden, bedtijdroutine.",
   // Making chop, portioning a pre-made mix, or prepping freeze-dried.
   "birdSetup.opt.makingChopPortioningAPre": "Chop maken, een kant-en-klare mix afmeten of gevriesdroogd voer klaarmaken.",
   // Midday
@@ -1341,12 +1445,6 @@
   "birdSetup.opt.yes": "Ja",
   // Young children
   "birdSetup.opt.youngChildren": "Jonge kinderen",
-  // Optional
-  "birdSetup.optional": "Optioneel",
-  // Optional — anything else the sitter should know about food/water hygiene.
-  "birdSetup.optionalAnythingElseTheSitter": "Optioneel — wat de oppas verder moet weten over hygiëne van eten en water.",
-  // Optional. Updating the normal weight adds an entry to the weight log.
-  "birdSetup.optionalUpdatingTheNormalWeight": "Optioneel. Als je het normale gewicht aanpast, komt er een notitie bij in het gewichtslogboek.",
   // Other food hygiene notes
   "birdSetup.otherFoodHygieneNotes": "Andere notities over voedselhygiëne",
   // Other hazards
@@ -1365,26 +1463,34 @@
   "birdSetup.pickAFrequency": "Kies hoe vaak…",
   // Pick one…
   "birdSetup.pickOne": "Kies er een…",
-  // Pick when each dose is given — every selected time becomes its own check-off on the sitter's daily list.
-  "birdSetup.pickWhenEachDoseIs": "Kies wanneer elke dosis gegeven wordt — elk gekozen tijdstip wordt een eigen vinkje op de dagelijkse lijst van de oppas.",
   // Primary diet
   "birdSetup.primaryDiet": "Hoofdvoeding",
   // Processing…
   "birdSetup.processing": "Verwerken…",
-  // Processing video…
-  "birdSetup.processingVideo": "Video verwerken…",
   // Progress saved.
   "birdSetup.progressSaved": "Voortgang opgeslagen.",
+  // Changes here apply to {{name}} only.
+  "birdSetup.reminders.differentBody": "Wijzigingen hier gelden alleen voor {{name}}.",
+  // Different for {{name}}
+  "birdSetup.reminders.differentTitle": "Anders voor {{name}}",
+  // Make these different for {{name}}
+  "birdSetup.reminders.makeDifferent": "Maak deze anders voor {{name}}",
+  // Changes here apply to every bird that uses the shared reminders.
+  "birdSetup.reminders.sharedBody": "Wijzigingen hier gelden voor elke vogel die de gedeelde herinneringen gebruikt.",
+  // Shared by all your birds
+  "birdSetup.reminders.sharedTitle": "Gedeeld door al je vogels",
+  // Use the shared reminders instead
+  "birdSetup.reminders.useShared": "Gebruik toch de gedeelde herinneringen",
+  // Use your shared reminders for {{name}}? The answers that are different for {{name}} will be removed.
+  "birdSetup.reminders.useSharedConfirm": "De gedeelde herinneringen gebruiken voor {{name}}? De antwoorden die anders zijn voor {{name}} worden verwijderd.",
   // Remove
   "birdSetup.remove": "Verwijderen",
   // Remove {{type}} and the items you've added to it?
   "birdSetup.removeDietTypeConfirm": "{{type}} verwijderen, samen met de items die je eraan hebt toegevoegd?",
   // Remove fresh or wet food after
   "birdSetup.removeFreshOrWetFood": "Vers of nat eten weghalen na",
-  // Remove {{item}}
-  "birdSetup.removeItemAria": "{{item}} verwijderen",
-  // Remove medication
-  "birdSetup.removeMedication": "Medicijn verwijderen",
+  // Remove homemade chop? This clears its amount, timing and ingredients.
+  "birdSetup.removeHomemadeConfirm": "Zelfgemaakte chop verwijderen? Dan worden de hoeveelheid, tijden en ingrediënten gewist.",
   // Remove {{title}}
   "birdSetup.removeTask": "{{title}} verwijderen",
   // Replace
@@ -1395,56 +1501,78 @@
   "birdSetup.setupComplete": "{{name}} is ingesteld.",
   // Sex
   "birdSetup.sex": "Geslacht",
-  // Short clip of normal behavior or vocalizing
-  "birdSetup.shortClipOfNormalBehavior": "Korte clip van normaal gedrag of geluiden",
   // Sitter preview
   "birdSetup.sitterPreview": "Preview voor de oppas",
   // Food
   "birdSetup.sourceFood": "Eten",
   // Health
   "birdSetup.sourceHealth": "Gezondheid",
-  // Specifics help a sitter spot when something's off.
-  "birdSetup.specificsHelpASitterSpot": "Met details ziet een oppas sneller wanneer er iets niet klopt.",
   // Start with the essentials — who your bird is, and a photo so your sitter recognizes them right away.
   "birdSetup.startWithTheEssentialsWho": "Begin met de basis — wie je vogel is, en een foto zodat je oppas hem meteen herkent.",
-  // Switch to homemade? This clears the chop items you've added.
-  "birdSetup.switchToHomemadeConfirm": "Overstappen op zelfgemaakt? Dan worden de chop-items die je hebt toegevoegd gewist.",
-  // Switch to pre-made? This clears the chop items you've added.
-  "birdSetup.switchToPremadeConfirm": "Overstappen op kant-en-klaar? Dan worden de chop-items die je hebt toegevoegd gewist.",
+  // Do you want to add more details for a pet sitter? We'll cover behavior and training, tips and tricks for {{name}}'s care, and more.
+  "birdSetup.stop.body": "Wil je meer details toevoegen voor een oppas? We behandelen gedrag en training, tips en trucs voor de verzorging van {{name}}, en meer.",
+  // Done
+  "birdSetup.stop.doneHeading": "Klaar",
+  // Keep going
+  "birdSetup.stop.keepGoing": "Doorgaan",
+  // Set up later
+  "birdSetup.stop.later": "Later instellen",
+  // Behavior and training
+  "birdSetup.stop.nextBehavior": "Gedrag en training",
+  // {{name}}'s day
+  "birdSetup.stop.nextDay": "De dag van {{name}}",
+  // Next, for a pet sitter
+  "birdSetup.stop.nextHeading": "Hierna, voor een oppas",
+  // Tips and tricks
+  "birdSetup.stop.nextTips": "Tips en trucs",
+  // The basics are set for {{name}}.
+  "birdSetup.stop.title": "De basis voor {{name}} staat.",
   // Tap any that apply, then add your own.
   "birdSetup.tapAnyThatApplyThen": "Tik aan wat van toepassing is en voeg daarna je eigen toe.",
   // That photo's a bit too large even after resizing. Try a different photo.
   "birdSetup.thatPhotoSABit": "Die foto is zelfs na verkleinen nog net te groot. Probeer een andere foto.",
   // The stuff you hope no one needs, but everyone should have.
   "birdSetup.theStuffYouHopeNo": "De dingen waarvan je hoopt dat niemand ze nodig heeft, maar die iedereen moet hebben.",
-  // This can take a moment on slower connections. Please keep this screen open.
-  "birdSetup.thisCanTakeAMoment": "Dit kan even duren bij een tragere verbinding. Houd dit scherm open.",
   // This is washing the bowl itself — separate from how often you change the water.
   "birdSetup.thisIsWashingTheBowl": "Dit gaat over het afwassen van het bakje zelf — los van hoe vaak je het water ververst.",
+  // Add a {{slot}} clip
+  "birdSetup.tips.addClipAria": "Een filmpje toevoegen: {{slot}}",
+  // Cancel
+  "birdSetup.tips.cancel": "Annuleren",
+  // A clip is still uploading.
+  "birdSetup.tips.clipStillUploading": "Er wordt nog een filmpje geüpload.",
+  // {{n}} of 8 added
+  "birdSetup.tips.countAdded": "{{n}} van 8 toegevoegd",
+  // Edit
+  "birdSetup.tips.edit": "Bewerken",
+  // (optional)
+  "birdSetup.tips.optional": "(optioneel)",
+  // Show your sitter how
+  "birdSetup.tips.title": "Laat je oppas zien hoe het moet",
+  // Uploading… {{n}}%
+  "birdSetup.tips.uploadingPct": "Uploaden… {{n}}%",
   // Treats
   "birdSetup.treats": "Snacks",
+  // e.g. millet spray, almond slivers
+  "birdSetup.treatsPlaceholder": "bijv. trosgierst, amandelschilfers",
   // Unknown
   "birdSetup.unknown": "Onbekend",
-  // Uploading your clip…
-  "birdSetup.uploadingYourClip": "Je clip wordt geüpload…",
   // Wash food bowls
   "birdSetup.washFoodBowls": "Voerbakjes afwassen",
   // Wash water bowl or bottle
   "birdSetup.washWaterBowlOrBottle": "Waterbakje of drinkflesje afwassen",
   // Water
   "birdSetup.water": "Water",
-  // What's normal for this bird
-  "birdSetup.whatSNormalForThis": "Wat normaal is voor deze vogel",
-  // What treats are OK? (e.g. millet spray, almond slivers)
-  "birdSetup.whatTreatsAreOkE": "Welke snoepjes mogen? (bijv. trosgierst, amandelschilfers)",
+  // Filter, bottle vs bowl, etc.
+  "birdSetup.waterNotesPlaceholder": "Filter, fles of bak, enz.",
+  // What treats are OK?
+  "birdSetup.whatTreatsAreOk": "Welke snacks mogen?",
   // When to call
   "birdSetup.whenToCall": "Wanneer bellen",
   // Where food is stored
   "birdSetup.whereFoodIsStored": "Waar het eten staat",
   // Who can handle, and how
   "birdSetup.whoCanHandleAndHow": "Wie mag de vogel vastpakken, en hoe",
-  // Your clip is saved. It'll be viewable here once it finishes converting — usually under a minute.
-  "birdSetup.yourClipIsSavedIt": "Je clip is opgeslagen. Je kunt hem hier bekijken zodra hij is omgezet — meestal binnen een minuut.",
   // After meal
   "birdWeight.afterMeal": "Na het eten",
   // after meal
@@ -1733,6 +1861,8 @@
   "carePlan.callVet": "Bel de dierenarts: {{info}}",
   // Change water
   "carePlan.changeWater": "Water verversen",
+  // Cleaning products
+  "carePlan.cleaningProducts": "Schoonmaakmiddelen",
   // Daily rhythm
   "carePlan.dailyRhythm": "Dagritme",
   // Diet overview
@@ -1913,6 +2043,8 @@
   "careSheet.field.brandAmount": "Merk & hoeveelheid",
   // Cage location
   "careSheet.field.cageLocation": "Plek van de kooi",
+  // Cleaning products
+  "careSheet.field.cleaningProducts": "Schoonmaakmiddelen",
   // Diet overview
   "careSheet.field.dietOverview": "Dieetoverzicht",
   // Diet types
@@ -2017,12 +2149,16 @@
   "clipPlayer.clip": "Clip",
   // Loading clip…
   "clipPlayer.loading": "Clip laden…",
+  // Play clip
+  "clipPlayer.play": "Filmpje afspelen",
   // Couldn't access the camera. Check your browser permissions.
   "clipRecorder.cameraAccessFailed": "Kon de camera niet openen. Controleer de toestemmingen van je browser.",
   // Camera access was blocked. Allow camera access in your browser settings, then try again.
   "clipRecorder.cameraBlocked": "Toegang tot de camera is geblokkeerd. Sta cameratoegang toe in de instellingen van je browser en probeer het opnieuw.",
   // Cancel
   "clipRecorder.cancel": "Annuleren",
+  // Cancel upload
+  "clipRecorder.cancelUpload": "Upload annuleren",
   // Your browser can't record video here. Try Safari on iPhone or Chrome.
   "clipRecorder.cantRecord": "Je browser kan hier geen video opnemen. Probeer Safari op iPhone of Chrome.",
   // Checking video…
@@ -2037,14 +2173,10 @@
   "clipRecorder.couldntProcess": "Deze video kon niet worden verwerkt. Probeer een andere clip.",
   // Finalizing…
   "clipRecorder.finalizing": "Afronden…",
-  // Converting your clip so it plays on every device — usually just a few seconds. Please keep this screen open.
-  "clipRecorder.hintConverting": "We zetten je clip om zodat hij op elk apparaat afspeelt — meestal duurt dat maar een paar seconden. Houd dit scherm open.",
-  // Large video — this can take a few minutes to send on your connection. Keep this screen open. Tip: recording in-app uploads much faster.
-  "clipRecorder.hintLarge": "Grote video — het versturen kan met jouw verbinding een paar minuten duren. Houd dit scherm open. Tip: opnemen in de app uploadt veel sneller.",
-  // Sending your clip to be converted. Please keep this screen open.
-  "clipRecorder.hintSending": "Je clip wordt verstuurd om te worden omgezet. Houd dit scherm open.",
-  // Up to {{seconds}} seconds and {{size}} per clip. Large phone videos can take a few minutes to upload — recording here is faster.
-  "clipRecorder.limits": "Maximaal {{seconds}} seconden en {{size}} per clip. Grote video's van je telefoon kunnen een paar minuten nodig hebben om te uploaden — hier opnemen gaat sneller.",
+  // Getting it ready…
+  "clipRecorder.gettingItReady": "Bezig met klaarmaken…",
+  // Keep this screen open. You can move on once it's done.
+  "clipRecorder.keepScreenOpen": "Houd dit scherm open. Je kunt verder als het klaar is.",
   // Live preview
   "clipRecorder.livePreview": "Live voorbeeld",
   // No camera was found. Check that another app isn't using it.
@@ -2053,20 +2185,18 @@
   "clipRecorder.notConfigured": "Video-uploads zijn nog niet ingesteld — probeer het later opnieuw.",
   // No video was captured. Please try recording again.
   "clipRecorder.nothingCaptured": "Er is geen video opgenomen. Probeer opnieuw op te nemen.",
-  // or
-  "clipRecorder.or": "of",
-  // Processing video…
-  "clipRecorder.processing": "Video verwerken…",
   // REC {{elapsed}} / {{max}}
   "clipRecorder.rec": "REC {{elapsed}} / {{max}}",
-  // Record a clip (up to 60 seconds)
-  "clipRecorder.recordClip": "Neem een clip op (max. 60 seconden)",
+  // Record
+  "clipRecorder.record": "Opnemen",
   // Clip recorded — review it below.
   "clipRecorder.recordedReview": "Clip opgenomen — bekijk hem hieronder.",
   // Couldn't start the recorder.
   "clipRecorder.recorderStartFailed": "Kon de opname niet starten.",
   // Recording failed. Please try again.
   "clipRecorder.recordingFailed": "Opnemen mislukt. Probeer het opnieuw.",
+  // Recording here is quicker than uploading a long phone video.
+  "clipRecorder.recordingQuicker": "Hier opnemen gaat sneller dan een lange video van je telefoon uploaden.",
   // That recording is too large. Please record a shorter clip.
   "clipRecorder.recordingTooLarge": "Die opname is te groot. Neem een kortere clip op.",
   // Re-record
@@ -2077,14 +2207,14 @@
   "clipRecorder.startRecording": "Opname starten",
   // Stop & save
   "clipRecorder.stopSave": "Stoppen & opslaan",
+  // Upload
+  "clipRecorder.upload": "Uploaden",
   // Upload failed. Please try again.
   "clipRecorder.uploadFailed": "Uploaden mislukt. Probeer het opnieuw.",
   // Upload failed after retrying — check your connection and try again.
   "clipRecorder.uploadFailedRetrying": "Uploaden mislukt, ook na opnieuw proberen — controleer je verbinding en probeer het opnieuw.",
-  // Uploading…
-  "clipRecorder.uploading": "Uploaden…",
-  // Upload a video
-  "clipRecorder.uploadVideo": "Video uploaden",
+  // Uploading your clip
+  "clipRecorder.uploadingYourClip": "Je filmpje wordt geüpload",
   // Use this clip
   "clipRecorder.useClip": "Deze clip gebruiken",
   // That video is too large (over {{size}}). Please record a shorter clip.
@@ -2153,6 +2283,26 @@
   "confirmEmail.weSentLinkTo": "We hebben een bevestigingslink gestuurd naar",
   // Wrong email address?
   "confirmEmail.wrongEmail": "Verkeerd e-mailadres?",
+  // Change anything that's different for {{name}}.
+  "copyFromBird.copiedDay": "Pas aan wat anders is voor {{name}}.",
+  // Add how much {{name}} eats for each item below, then change anything that's different.
+  "copyFromBird.copiedFood": "Vul bij elk item in hoeveel {{name}} eet en pas aan wat anders is.",
+  // Copied from {{source}}
+  "copyFromBird.copiedTitle": "Gekopieerd van {{source}}",
+  // Copy from {{source}}
+  "copyFromBird.copyFrom": "Kopieer van {{source}}",
+  // Copy another bird's daily tasks, then adjust them for {{name}}.
+  "copyFromBird.dayHelperMany": "Kopieer de dagelijkse taken van een andere vogel en pas ze aan voor {{name}}.",
+  // Copy {{source}}'s daily tasks, then adjust them for {{name}}.
+  "copyFromBird.dayHelperOne": "Kopieer de dagelijkse taken van {{source}} en pas ze aan voor {{name}}.",
+  // That didn't copy. Check your connection and try again.
+  "copyFromBird.failed": "Kopiëren is niet gelukt. Controleer je verbinding en probeer het opnieuw.",
+  // Copy another bird's food, then add how much {{name}} eats.
+  "copyFromBird.foodHelperMany": "Kopieer het eten van een andere vogel en vul daarna in hoeveel {{name}} eet.",
+  // Copy {{source}}'s food, then add how much {{name}} eats.
+  "copyFromBird.foodHelperOne": "Kopieer het eten van {{source}} en vul daarna in hoeveel {{name}} eet.",
+  // Start from another bird?
+  "copyFromBird.title": "Beginnen met een andere vogel?",
   // Covering {{owner}}'s flock
   "covering.coveringFlock": "Je valt in voor de vogels van {{owner}}",
   // Daily care
@@ -2743,10 +2893,40 @@
   "flockCheck.title": "Dagelijkse gezondheidscheck · alle vogels",
   // View
   "flockCheck.view": "Bekijk",
-  // Add another {{type}} item
-  "foodEditor.addAnotherItem": "Nog een {{type}}-item toevoegen",
+  // Add an ingredient
+  "foodEditor.addAnIngredient": "Voeg een ingrediënt toe",
+  // Add another blend
+  "foodEditor.addAnotherBlend": "Nog een mix toevoegen",
+  // Add another food
+  "foodEditor.addAnotherFood": "Nog een voer toevoegen",
+  // Add another pellet
+  "foodEditor.addAnotherPellet": "Nog een pellet toevoegen",
+  // Add another pre-made chop
+  "foodEditor.addAnotherPremadeChop": "Nog een kant-en-klare chop toevoegen",
+  // Add another seed mix
+  "foodEditor.addAnotherSeedMix": "Nog een zadenmix toevoegen",
+  // Add “{{food}}” as written
+  "foodEditor.addAsWritten": "“{{food}}” toevoegen zoals getypt",
+  // Add a time
+  "foodEditor.addATime": "Tijd toevoegen",
+  // Add your first blend
+  "foodEditor.addFirstBlend": "Je eerste mix toevoegen",
+  // Add your first food
+  "foodEditor.addFirstFood": "Je eerste voer toevoegen",
+  // Add your first pellet
+  "foodEditor.addFirstPellet": "Je eerste pellet toevoegen",
+  // Add your first seed mix
+  "foodEditor.addFirstSeedMix": "Je eerste zadenmix toevoegen",
+  // Add your homemade chop
+  "foodEditor.addHomemadeChop": "Je zelfgemaakte chop toevoegen",
+  // What goes in it, how much, and when
+  "foodEditor.addHomemadeChopDetail": "Wat erin zit, hoeveel en wanneer",
   // Add item
   "foodEditor.addItem": "Item toevoegen",
+  // Add a pre-made chop
+  "foodEditor.addPremadeChop": "Een kant-en-klare chop toevoegen",
+  // A brand you buy, like Harrison's
+  "foodEditor.addPremadeChopDetail": "Een merk dat je koopt, zoals Harrison's",
   // Amount
   "foodEditor.amount": "Hoeveelheid",
   // Amount (e.g. 2)
@@ -2757,8 +2937,8 @@
   "foodEditor.anythingElse": "Nog iets?",
   // Available all day / free-fed
   "foodEditor.availableAllDayFreeFed": "Hele dag beschikbaar / vrij voeren",
-  // Available all day.
-  "foodEditor.availableAllDaySentence": "Hele dag beschikbaar.",
+  // Brand, how much, and when
+  "foodEditor.brandHowMuchWhen": "Merk, hoeveel, en wanneer",
   // Brand or item name
   "foodEditor.brandOrItemName": "Merk of naam van het item",
   // Brand or name
@@ -2769,48 +2949,206 @@
   "foodEditor.chooseAllThatApply": "Kies alles wat van toepassing is.",
   // Pick fresh foods above or tap “Add item” to list your own.
   "foodEditor.chopEmpty": "Kies hierboven vers voer of tik op “Item toevoegen” om je eigen items te noteren.",
-  // So the caregiver knows what to prep.
-  "foodEditor.chopKindHint": "Zodat de verzorger weet wat er klaargemaakt moet worden.",
-  // What kind of fresh chop?
-  "foodEditor.chopKindQuestion": "Wat voor verse chop?",
+  // Add a pre-made chop, your own homemade mix, or both.
+  "foodEditor.chopHelper": "Voeg een kant-en-klare chop toe, je eigen zelfgemaakte mix, of allebei.",
   // e.g. Morning chop mix
   "foodEditor.chopNamePlaceholder": "bijv. Ochtend-chopmix",
   // Clear
   "foodEditor.clear": "Wissen",
   // Clear {{period}} time
   "foodEditor.clearPeriodTime": "Tijd voor {{period}} wissen",
+  // Close
+  "foodEditor.closeSheet": "Sluiten",
+  // Common picks
+  "foodEditor.commonPicks": "Veelgekozen",
   // Describe the other diet
   "foodEditor.describeOtherDiet": "Beschrijf de andere voeding",
+  // Done
+  "foodEditor.done": "Klaar",
+  // How much and When are hidden while this is on. Your sitter will see “Available all day.”
+  "foodEditor.freeFedHiddenNote": "Hoeveel en Wanneer zijn verborgen zolang dit aan staat. Je oppas ziet “Hele dag beschikbaar.”",
   // Left in the cage — no set amount or times needed.
   "foodEditor.freeFedNote": "Blijft in de kooi — geen vaste hoeveelheid of tijden nodig.",
+  // Amaranth
+  "foodEditor.fresh.amaranth": "Amarant",
   // Apple (no seeds)
   "foodEditor.fresh.appleNoSeeds": "Appel (zonder pitten)",
+  // Apricot (no pit)
+  "foodEditor.fresh.apricotNoPit": "Abrikoos (zonder pit)",
+  // Arugula
+  "foodEditor.fresh.arugula": "Rucola",
+  // Asparagus
+  "foodEditor.fresh.asparagus": "Asperge",
   // Banana
   "foodEditor.fresh.banana": "Banaan",
+  // Barley (cooked)
+  "foodEditor.fresh.barleyCooked": "Gerst (gekookt)",
+  // Basil
+  "foodEditor.fresh.basil": "Basilicum",
+  // Beet
+  "foodEditor.fresh.beet": "Biet",
+  // Beet greens
+  "foodEditor.fresh.beetGreens": "Bietenblad",
   // Bell pepper
   "foodEditor.fresh.bellPepper": "Paprika",
   // Berries
   "foodEditor.fresh.berries": "Bessen",
+  // Black beans (cooked)
+  "foodEditor.fresh.blackBeansCooked": "Zwarte bonen (gekookt)",
+  // Blackberries
+  "foodEditor.fresh.blackberries": "Bramen",
+  // Blueberries
+  "foodEditor.fresh.blueberries": "Blauwe bessen",
+  // Bok choy
+  "foodEditor.fresh.bokChoy": "Paksoi",
   // Broccoli
   "foodEditor.fresh.broccoli": "Broccoli",
+  // Brown rice (cooked)
+  "foodEditor.fresh.brownRiceCooked": "Zilvervliesrijst (gekookt)",
+  // Brussels sprouts
+  "foodEditor.fresh.brusselsSprouts": "Spruitjes",
+  // Buckwheat
+  "foodEditor.fresh.buckwheat": "Boekweit",
+  // Butternut squash
+  "foodEditor.fresh.butternutSquash": "Flespompoen",
+  // Cabbage
+  "foodEditor.fresh.cabbage": "Kool",
+  // Cantaloupe
+  "foodEditor.fresh.cantaloupe": "Cantaloupe",
   // Carrot
   "foodEditor.fresh.carrot": "Wortel",
+  // Carrot tops
+  "foodEditor.fresh.carrotTops": "Wortelloof",
+  // Cauliflower
+  "foodEditor.fresh.cauliflower": "Bloemkool",
+  // Celery
+  "foodEditor.fresh.celery": "Bleekselderij",
+  // Cherries (no pits)
+  "foodEditor.fresh.cherriesNoPits": "Kersen (zonder pitten)",
+  // Chia seeds
+  "foodEditor.fresh.chiaSeeds": "Chiazaad",
+  // Chickpeas (cooked)
+  "foodEditor.fresh.chickpeasCooked": "Kikkererwten (gekookt)",
+  // Chili pepper
+  "foodEditor.fresh.chiliPepper": "Chilipeper",
+  // Cilantro
+  "foodEditor.fresh.cilantro": "Koriander",
+  // Coconut
+  "foodEditor.fresh.coconut": "Kokosnoot",
+  // Collard greens
+  "foodEditor.fresh.collardGreens": "Bladkool",
   // Cooked grains
   "foodEditor.fresh.cookedGrains": "Gekookte granen",
   // Cooked legumes
   "foodEditor.fresh.cookedLegumes": "Gekookte peulvruchten",
+  // Corn
+  "foodEditor.fresh.corn": "Mais",
+  // Cranberries
+  "foodEditor.fresh.cranberries": "Cranberry's",
+  // Cucumber
+  "foodEditor.fresh.cucumber": "Komkommer",
+  // Dandelion greens
+  "foodEditor.fresh.dandelionGreens": "Paardenbloemblad",
+  // Dill
+  "foodEditor.fresh.dill": "Dille",
+  // Egg (cooked)
+  "foodEditor.fresh.eggCooked": "Ei (gekookt)",
+  // Fennel
+  "foodEditor.fresh.fennel": "Venkel",
+  // Fig
+  "foodEditor.fresh.fig": "Vijg",
+  // Flaxseed
+  "foodEditor.fresh.flaxseed": "Lijnzaad",
+  // Ginger
+  "foodEditor.fresh.ginger": "Gember",
+  // Grapes
+  "foodEditor.fresh.grapes": "Druiven",
+  // Green beans
+  "foodEditor.fresh.greenBeans": "Sperziebonen",
+  // Hemp seeds
+  "foodEditor.fresh.hempSeeds": "Hennepzaad",
+  // Jalapeño
+  "foodEditor.fresh.jalapeno": "Jalapeño",
+  // Kale
+  "foodEditor.fresh.kale": "Boerenkool",
+  // Kiwi
+  "foodEditor.fresh.kiwi": "Kiwi",
   // Leafy greens
   "foodEditor.fresh.leafyGreens": "Bladgroenten",
+  // Lentils (cooked)
+  "foodEditor.fresh.lentilsCooked": "Linzen (gekookt)",
+  // Mango
+  "foodEditor.fresh.mango": "Mango",
+  // Melon
+  "foodEditor.fresh.melon": "Meloen",
+  // Millet
+  "foodEditor.fresh.millet": "Gierst",
+  // Mint
+  "foodEditor.fresh.mint": "Munt",
+  // Mustard greens
+  "foodEditor.fresh.mustardGreens": "Mosterdblad",
+  // Nectarine (no pit)
+  "foodEditor.fresh.nectarineNoPit": "Nectarine (zonder pit)",
+  // Oats
+  "foodEditor.fresh.oats": "Haver",
+  // Okra
+  "foodEditor.fresh.okra": "Okra",
+  // Orange
+  "foodEditor.fresh.orange": "Sinaasappel",
+  // Papaya
+  "foodEditor.fresh.papaya": "Papaja",
+  // Parsley
+  "foodEditor.fresh.parsley": "Peterselie",
+  // Parsnip
+  "foodEditor.fresh.parsnip": "Pastinaak",
+  // Peach (no pit)
+  "foodEditor.fresh.peachNoPit": "Perzik (zonder pit)",
+  // Pear (no seeds)
+  "foodEditor.fresh.pearNoSeeds": "Peer (zonder pitjes)",
+  // Peas
+  "foodEditor.fresh.peas": "Doperwten",
+  // Pineapple
+  "foodEditor.fresh.pineapple": "Ananas",
+  // Plum (no pit)
+  "foodEditor.fresh.plumNoPit": "Pruim (zonder pit)",
+  // Pomegranate
+  "foodEditor.fresh.pomegranate": "Granaatappel",
   // Pre-made chop
   "foodEditor.fresh.preMadeChop": "Kant-en-klare chop",
+  // Pumpkin
+  "foodEditor.fresh.pumpkin": "Pompoen",
+  // Pumpkin seeds
+  "foodEditor.fresh.pumpkinSeeds": "Pompoenpitten",
   // Quinoa
   "foodEditor.fresh.quinoa": "Quinoa",
+  // Radish
+  "foodEditor.fresh.radish": "Radijs",
+  // Raspberries
+  "foodEditor.fresh.raspberries": "Frambozen",
+  // Romaine lettuce
+  "foodEditor.fresh.romaineLettuce": "Romaine sla",
+  // Snap peas
+  "foodEditor.fresh.snapPeas": "Peultjes",
   // Sprouts
   "foodEditor.fresh.sprouts": "Kiemgroenten",
   // Squash
   "foodEditor.fresh.squash": "Pompoen",
+  // Strawberries
+  "foodEditor.fresh.strawberries": "Aardbeien",
   // Sweet potato
   "foodEditor.fresh.sweetPotato": "Zoete aardappel",
+  // Swiss chard
+  "foodEditor.fresh.swissChard": "Snijbiet",
+  // Turmeric
+  "foodEditor.fresh.turmeric": "Kurkuma",
+  // Turnip
+  "foodEditor.fresh.turnip": "Raap",
+  // Watermelon
+  "foodEditor.fresh.watermelon": "Watermeloen",
+  // Whole-wheat pasta (cooked)
+  "foodEditor.fresh.wholeWheatPastaCooked": "Volkoren pasta (gekookt)",
+  // Zucchini
+  "foodEditor.fresh.zucchini": "Courgette",
   // Fresh foods offered — tap to add as items
   "foodEditor.freshFoodsOffered": "Aangeboden vers voer — tik om als item toe te voegen",
   // Freshness & hygiene
@@ -2819,14 +3157,16 @@
   "foodEditor.freshnessHygieneHint": "Algemene standaardwaarden — pas ze aan op je vogel en jullie routine.",
   // Fresh food spoils fast and can grow bacteria. This tells your sitter when to take it out.
   "foodEditor.freshSpoilsHint": "Vers voer bederft snel en er kunnen bacteriën in groeien. Zo weet je oppas wanneer het eruit moet.",
-  // Add the amount and pick a unit.
-  "foodEditor.helperAmountUnit": "Vul de hoeveelheid in en kies een eenheid.",
   // Add the brand or food name.
   "foodEditor.helperBrand": "Vul het merk of de naam van het voer in.",
+  // Add how much.
+  "foodEditor.helperHowMuch": "Vul in hoeveel.",
   // Pick at least one feeding time.
   "foodEditor.helperWhen": "Kies minstens één voedertijd.",
   // Homemade
   "foodEditor.homemade": "Zelfgemaakt",
+  // Homemade chop
+  "foodEditor.homemadeChopItem": "Zelfgemaakte chop",
   // How much?
   "foodEditor.howMuch": "Hoeveel?",
   // Optional — anything else the sitter should know about food/water hygiene.
@@ -2839,50 +3179,70 @@
   "foodEditor.itemsEmpty": "Nog geen items. Tik op “Item toevoegen” om een merk of voer te noteren.",
   // For each item, add the amount and when it's served. Use “Available all day” for food left in the cage.
   "foodEditor.itemsHint": "Vul per item de hoeveelheid in en wanneer het gegeven wordt. Gebruik “Hele dag beschikbaar” voor voer dat in de kooi blijft.",
-  // Looks good
-  "foodEditor.looksGood": "Ziet er goed uit",
+  // Add the brand, how much, and when
+  "foodEditor.missingAll": "Vul het merk in, hoeveel, en wanneer",
+  // Add the brand
+  "foodEditor.missingBrand": "Vul het merk in",
+  // Add the brand and how much
+  "foodEditor.missingBrandQty": "Vul het merk in en hoeveel",
+  // Add the brand and when
+  "foodEditor.missingBrandWhen": "Vul het merk in en wanneer",
+  // Add how much
+  "foodEditor.missingQty": "Vul in hoeveel",
+  // Add how much and when
+  "foodEditor.missingQtyWhen": "Vul in hoeveel en wanneer",
+  // Add when it's served
+  "foodEditor.missingWhen": "Vul in wanneer het gegeven wordt",
   // Never feed
   "foodEditor.neverFeed": "Nooit geven",
   // Add anything specific to your bird.
   "foodEditor.neverFeedHint": "Voeg alles toe wat specifiek voor je vogel geldt.",
   // Add another food to never feed
   "foodEditor.neverFeedPlaceholder": "Nog een voedingsmiddel toevoegen dat nooit mag",
+  // New blend
+  "foodEditor.newBlend": "Nieuwe mix",
+  // New food
+  "foodEditor.newFood": "Nieuw voer",
+  // New pellet
+  "foodEditor.newPellet": "Nieuwe pellet",
+  // New pre-made chop
+  "foodEditor.newPremadeChop": "Nieuwe kant-en-klare chop",
+  // New seed mix
+  "foodEditor.newSeedMix": "Nieuwe zadenmix",
   // Note (optional)
   "foodEditor.noteOptional": "Notitie (optioneel)",
-  // Optional — any prep or serving details
-  "foodEditor.notePlaceholder": "Optioneel — details over bereiden of geven",
   // e.g. any prep or serving details
   "foodEditor.notePlaceholderEg": "bijv. details over bereiden of geven",
+  // Any prep or serving details
+  "foodEditor.notePlaceholderPrep": "Eventuele bereiding of manier van serveren",
   // Nothing added yet.
   "foodEditor.nothingAddedYet": "Nog niets toegevoegd.",
+  // {{food}} isn't safe for birds, so it can't go in the chop.
+  "foodEditor.notSafeForBirds": "{{food}} is niet veilig voor vogels, dus het kan niet in de chop.",
+  // {{food}} is on the never-feed list, so it can't go in the chop.
+  "foodEditor.onNeverFeedList": "{{food}} staat op de lijst met verboden voedsel, dus het kan niet in de chop.",
   // optional time
   "foodEditor.optionalTime": "tijd optioneel",
   // Other fresh foods (free text)
   "foodEditor.otherFreshFoodsPlaceholder": "Ander vers voer (vrije tekst)",
   // Other food hygiene notes
   "foodEditor.otherHygieneNotes": "Andere notities over voerhygiëne",
-  // Other ingredients (free text)
-  "foodEditor.otherIngredientsPlaceholder": "Andere ingrediënten (vrije tekst)",
   // Pick a frequency…
   "foodEditor.pickAFrequency": "Kies hoe vaak…",
   // Pick at least one period.
   "foodEditor.pickAtLeastOnePeriod": "Kies minstens één dagdeel.",
   // Pick a unit…
   "foodEditor.pickAUnit": "Kies een eenheid…",
-  // Needs details
-  "foodEditor.pillNeedsDetails": "Details nodig",
-  // Pick one
-  "foodEditor.pillPickOne": "Kies er één",
-  // Ready
-  "foodEditor.pillReady": "Klaar",
-  // Set
-  "foodEditor.pillSet": "Ingesteld",
   // Pre-made
   "foodEditor.preMade": "Kant-en-klaar",
+  // Pre-made chop
+  "foodEditor.preMadeChopItem": "Kant-en-klare chop",
   // Primary diet
   "foodEditor.primaryDiet": "Hoofdvoeding",
   // Remove fresh or wet food after
   "foodEditor.removeFreshAfter": "Vers of nat voer weghalen na",
+  // Remove homemade chop
+  "foodEditor.removeHomemadeChop": "Zelfgemaakte chop verwijderen",
   // Remove item
   "foodEditor.removeItem": "Item verwijderen",
   // Remove {{name}}
@@ -2891,12 +3251,16 @@
   "foodEditor.removeThisItem": "Dit item verwijderen",
   // e.g. Pantry, top shelf; fridge bin
   "foodEditor.storagePlaceholder": "bijv. voorraadkast, bovenste plank; bak in de koelkast",
-  // Tap to add the details your sitter needs.
-  "foodEditor.tapToAddDetails": "Tik om de details toe te voegen die je oppas nodig heeft.",
+  // Available all day
+  "foodEditor.summaryAllDay": "Hele dag beschikbaar",
+  // Time for {{period}}
+  "foodEditor.timeFor": "Tijd voor {{period}}",
   // Treats
   "foodEditor.treats": "Snacks",
   // What treats are OK? (e.g. millet spray, almond slivers)
   "foodEditor.treatsPlaceholder": "Welke snoepjes mogen? (bijv. trosgierst, amandelschilfers)",
+  // Unit
+  "foodEditor.unit": "Eenheid",
   // cups
   "foodEditor.unit.cups": "kopjes",
   // grams
@@ -2917,8 +3281,6 @@
   "foodEditor.unit.tbsp": "el",
   // tsp
   "foodEditor.unit.tsp": "tl",
-  // Unit…
-  "foodEditor.unitPlaceholder": "Eenheid…",
   // This is washing the bowl itself — separate from how often you change the water.
   "foodEditor.washBowlHint": "Dit gaat over het afwassen van de bak zelf — los van hoe vaak je het water ververst.",
   // Wash food bowls
@@ -2929,8 +3291,10 @@
   "foodEditor.water": "Water",
   // Notes (filter, bottle vs bowl, etc.)
   "foodEditor.waterNotesPlaceholder": "Notities (filter, fles of bak, enz.)",
-  // What's in it? Tap the ingredients.
-  "foodEditor.whatsInIt": "Wat zit erin? Tik op de ingrediënten.",
+  // What's in it · {{count}}
+  "foodEditor.whatsInItCount_one": "Wat zit erin · {{count}}",
+  // What's in it · {{count}}
+  "foodEditor.whatsInItCount_other": "Wat zit erin · {{count}}",
   // When?
   "foodEditor.when": "Wanneer?",
   // When is it fed?
@@ -3469,8 +3833,6 @@
   "nameList.yourBird": "je vogel",
   // your birds
   "nameList.yourBirds": "je vogels",
-  // Add bird
-  "newBird.addBird": "Vogel toevoegen",
   // {{name}} added.
   "newBird.added": "{{name}} toegevoegd.",
   // Adding…
@@ -3481,14 +3843,14 @@
   "newBird.cameToYou": "Bij jou gekomen",
   // Couldn't set up the care plan: {{reason}}
   "newBird.carePlanSetupFailed": "Het verzorgingsplan kon niet worden aangemaakt: {{reason}}",
+  // Continue
+  "newBird.continue": "Doorgaan",
   // Could not create bird.
   "newBird.createFailed": "De vogel kon niet worden aangemaakt.",
   // Discard this bird? You haven't saved it yet.
   "newBird.discardConfirm": "Deze vogel weggooien? Je hebt hem nog niet opgeslagen.",
   // Couldn't set up emergency info: {{reason}}
   "newBird.emergencySetupFailed": "De noodinfo kon niet worden aangemaakt: {{reason}}",
-  // New bird
-  "newBird.eyebrow": "Nieuwe vogel",
   // It's okay if you don't know much yet — add what you know now, fill the rest in as you learn.
   "newBird.fosterReassure": "Het is niet erg als je nog niet veel weet — voeg toe wat je nu weet en vul de rest aan zodra je meer leert.",
   // Add a bird.
@@ -3999,10 +4361,10 @@
   "planEditor.tabFood": "Voeding",
   // Health
   "planEditor.tabHealth": "Gezondheid",
-  // Home
-  "planEditor.tabHome": "Thuis",
   // Logs
   "planEditor.tabLogs": "Notities",
+  // Reminders
+  "planEditor.tabReminders": "Herinneringen",
   // Routine
   "planEditor.tabRoutine": "Routine",
   // Sits
@@ -4033,6 +4395,8 @@
   "planOverview.clipCountOther": "{{n}} clips",
   // Optional — short how-to videos for sitters
   "planOverview.clipsOptional": "Optioneel — korte instructievideo's voor oppassen",
+  // Different for {{name}}
+  "planOverview.differentFor": "Anders voor {{name}}",
   // Care plan
   "planOverview.eyebrow": "Verzorgingsplan",
   // Only {{name}}'s owner can make changes. You can view the plan and log weights, journal entries, and health checks.
@@ -4041,26 +4405,30 @@
   "planOverview.footerOwner": "Dit ziet iedereen die helpt met {{name}}. Oppassen krijgen per oppasperiode een link via het tabblad Oppasperiodes; leden van je huishouden kunnen het altijd bekijken.",
   // Everything that makes {{name}}, {{name}}.
   "planOverview.headline": "Alles wat {{name}} tot {{name}} maakt.",
-  // Handling, likes, triggers
-  "planOverview.hintBehavior": "Oppakken, voorkeuren, triggers",
+  // Handling, likes, cage, and out-of-cage time
+  "planOverview.hintBehaviorCageTime": "Oppakken, voorkeuren, kooi en tijd buiten de kooi",
   // Owner and vet contacts
   "planOverview.hintEmergency": "Contacten van eigenaar en dierenarts",
   // Diet and food instructions
   "planOverview.hintFood": "Dieet en voedingsinstructies",
   // Baseline and what's normal
   "planOverview.hintHealth": "Uitgangssituatie en wat normaal is",
-  // Cage, out-of-cage, hazards
-  "planOverview.hintHome": "Kooi, buiten de kooi, gevaren",
+  // Hazards, off-limits areas, pets, and cleaning
+  "planOverview.hintHomeAreas": "Gevaren, verboden plekken, huisdieren en schoonmaken",
   // Daily schedule and tasks
   "planOverview.hintRoutine": "Dagschema en taken",
   // Needs info
   "planOverview.needsInfo": "Info nodig",
   // Ready
   "planOverview.ready": "Klaar",
+  // Emergency contacts
+  "planOverview.rowEmergencyContacts": "Noodcontacten",
+  // Reminders for your sitter
+  "planOverview.rowReminders": "Herinneringen voor je oppas",
+  // Shared
+  "planOverview.shared": "Gedeeld",
   // Tips from the owner
   "planOverview.tipsFromOwner": "Tips van de eigenaar",
-  // Using your account defaults
-  "planOverview.usingAccountDefaults": "Gebruikt je standaardinstellingen",
   // View as your sitter
   "planOverview.viewAsYourSitter": "Bekijken als je oppas",
   // Walk through it again
@@ -4515,34 +4883,42 @@
   "setupCheck.clips": "Tips van de eigenaar",
   // A day in the life
   "setupCheck.day": "Een dag uit het leven",
-  // Emergency info
-  "setupCheck.emergency": "Noodinformatie",
-  // Environment & safety
-  "setupCheck.environment": "Omgeving & veiligheid",
+  // Emergency contacts
+  "setupCheck.emergencyContacts": "Noodcontacten",
   // Food & water
   "setupCheck.food": "Eten & water",
   // Health baseline
   "setupCheck.health": "Gezondheid: uitgangssituatie",
   // Personality & handling
   "setupCheck.personality": "Karakter & omgang",
-  // All steps
-  "setupShell.allSteps": "Alle stappen",
-  // Back to {{name}}
-  "setupShell.backTo": "Terug naar {{name}}",
-  // Bird
-  "setupShell.bird": "Vogel",
+  // Reminders for your sitter
+  "setupCheck.reminders": "Herinneringen voor je oppas",
+  // Back
+  "setupFrame.back": "Terug",
+  // (done)
+  "setupFrame.done": "(klaar)",
+  // New bird
+  "setupFrame.newBird": "Nieuwe vogel",
+  // Day
+  "setupFrame.pillDay": "Dag",
+  // Details
+  "setupFrame.pillDetails": "Gegevens",
+  // {{step}} · {{n}} of {{total}}
+  "setupFrame.pillPage": "{{step}} · {{n}} van {{total}}",
+  // Tips
+  "setupFrame.pillTips": "Tips",
+  // Setting up
+  "setupFrame.settingUp": "Instellen",
   // Cancel
   "setupShell.cancel": "Annuleren",
-  // Done
-  "setupShell.done": "Klaar",
   // Your progress is saved — you can pick up right where you left off.
   "setupShell.exitConfirmBody": "Je voortgang is opgeslagen — je kunt verder waar je gebleven was.",
   // Leave
   "setupShell.exitConfirmCta": "Verlaten",
   // Leave this step?
   "setupShell.exitConfirmTitle": "Deze stap verlaten?",
-  // Here now
-  "setupShell.hereNow": "Je bent hier",
+  // Last look
+  "setupShell.lastLook": "Laatste blik",
   // Leave this step
   "setupShell.leaveThisStep": "Deze stap verlaten",
   // Next
@@ -4553,26 +4929,38 @@
   "setupShell.saveAndExit": "Opslaan & sluiten",
   // Saving…
   "setupShell.saving": "Opslaan…",
-  // Review
-  "setupShell.shortReview": "Controleren",
   // Step {{step}} of {{total}}
   "setupShell.stepOf": "Stap {{step}} van {{total}}",
   // Tips from the owner
   "setupShell.titleClips": "Tips van de eigenaar",
   // A day in the life
   "setupShell.titleDay": "Een dag uit het leven",
-  // Emergency info
-  "setupShell.titleEmergency": "Noodinformatie",
-  // Environment & safety
-  "setupShell.titleEnvironment": "Omgeving & veiligheid",
+  // Emergency contacts
+  "setupShell.titleEmergencyContacts": "Noodcontacten",
   // Food & water
   "setupShell.titleFood": "Eten & water",
   // Health baseline
   "setupShell.titleHealth": "Gezondheid: uitgangssituatie",
   // Personality & handling
   "setupShell.titlePersonality": "Karakter & omgang",
+  // Reminders for your sitter
+  "setupShell.titleReminders": "Herinneringen voor je oppas",
   // Review & finish
   "setupShell.titleReview": "Controleren & afronden",
+  // Your home
+  "setupShell.yourHome": "Je huis",
+  // Add…
+  "setupUi.add": "Toevoegen…",
+  // Needs details
+  "setupUi.needsDetails": "Details nodig",
+  // Optional
+  "setupUi.optional": "Optioneel",
+  // Ready
+  "setupUi.ready": "Klaar",
+  // Remove {{item}}
+  "setupUi.removeItem": "{{item}} verwijderen",
+  // Required
+  "setupUi.required": "Verplicht",
   // You can change who sees {{bird}} anytime from Household.
   "shareNewBird.changeAnytime": "Je kunt altijd via Huishouden aanpassen wie {{bird}} kan zien.",
   // Continue
@@ -4597,8 +4985,6 @@
   "shareNewBird.shareFailed": "Kon {{bird}} niet delen met {{names}}. Je kunt ze toevoegen via Huishouden.",
   // Who else helps?
   "shareNewBird.title": "Wie helpt er nog meer?",
-  // Your household
-  "shareNewBird.yourHousehold": "Jouw huishouden",
   // That file couldn't be opened.
   "signedFile.openFailed": "Dat bestand kon niet worden geopend.",
   // Active
@@ -4903,6 +5289,14 @@
   "sitForm.endDateMustBeOn": "De einddatum moet op of na de startdatum liggen.",
   // An external sitter has the link. {{who}} is current; you can edit the name or email below.
   "sitForm.externalSitterHasLink": "Een externe oppas heeft de link. {{who}} is nu ingesteld; je kunt de naam of het e-mailadres hieronder aanpassen.",
+  // Create the sit anyway
+  "sitForm.gaps.createAnyway": "Toch een oppasperiode aanmaken",
+  // Fill these in
+  "sitForm.gaps.fillIn": "Vul deze in",
+  // {{name}} will need a little more
+  "sitForm.gaps.title": "{{name}} heeft nog wat meer nodig",
+  // Your sitter
+  "sitForm.gaps.yourSitter": "Je oppas",
   // Going away soon?
   "sitForm.goingAwaySoon": "Ga je binnenkort weg?",
   // Household

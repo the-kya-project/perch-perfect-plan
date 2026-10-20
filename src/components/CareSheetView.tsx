@@ -68,7 +68,7 @@ export function CareSheetView({ data }: { data: CareSheetData }) {
   const showBasics = has(bird.name) || has(bird.species) || has(bird.age) || has(bird.photo_url);
   const showFeeding = diet.length || plan.food_brand || plan.amount_value || feedingTimes.length || freshFoods.length || plan.fresh_foods_other || plan.treats_notes || plan.treats_frequency || plan.water_frequency || plan.water_notes || plan.food_storage || plan.food_hygiene_notes || plan.food_instructions || plan.water_instructions || plan.fresh_food_removal_minutes;
   const showHandling = has(plan.step_up) || has(plan.step_up_notes) || has(plan.handlers) || has(plan.likes) || has(plan.fears_triggers) || has(plan.bite_risk) || has(plan.handling_rules) || has(plan.known_triggers);
-  const showHome = has(plan.cage_location) || has(plan.out_of_cage_mode) || has(plan.out_of_cage_notes) || has(plan.out_of_cage_rules) || hazards.length || has(plan.hazards_other) || has(plan.off_limits) || has(plan.off_limits_rooms) || has(plan.safety_rules) || has(plan.other_pets);
+  const showHome = has(plan.cage_location) || has(plan.out_of_cage_mode) || has(plan.out_of_cage_notes) || has(plan.out_of_cage_rules) || hazards.length || has(plan.hazards_other) || has(plan.off_limits) || has(plan.off_limits_rooms) || has(plan.safety_rules) || has(plan.other_pets) || has(plan.cleaning_instructions);
 
   const hasStructuredFood =
     diet.length > 0 ||
@@ -243,6 +243,7 @@ export function CareSheetView({ data }: { data: CareSheetData }) {
           )}
           {hazards.length === 0 && has(plan.safety_rules) && <Field label={t("careSheet.field.safetyRules", "Safety rules")}>{plan.safety_rules}</Field>}
           {has(plan.other_pets) && <Field label={t("careSheet.field.otherPets", "Other pets")}>{plan.other_pets}</Field>}
+          {has(plan.cleaning_instructions) && <Field label={t("careSheet.field.cleaningProducts", "Cleaning products")}>{plan.cleaning_instructions}</Field>}
         </SectionCard>
       )}
 

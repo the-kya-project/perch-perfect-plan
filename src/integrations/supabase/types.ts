@@ -1023,6 +1023,36 @@ export type Database = {
         }
         Relationships: []
       }
+      owner_home_defaults: {
+        Row: {
+          cleaning_instructions: string | null
+          hazards: string[]
+          hazards_other: string | null
+          off_limits: string | null
+          other_pets: string | null
+          owner_id: string
+          updated_at: string
+        }
+        Insert: {
+          cleaning_instructions?: string | null
+          hazards?: string[]
+          hazards_other?: string | null
+          off_limits?: string | null
+          other_pets?: string | null
+          owner_id: string
+          updated_at?: string
+        }
+        Update: {
+          cleaning_instructions?: string | null
+          hazards?: string[]
+          hazards_other?: string | null
+          off_limits?: string | null
+          other_pets?: string | null
+          owner_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       past_birds: {
         Row: {
           bird_name: string

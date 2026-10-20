@@ -8,6 +8,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { computeSetupCompleteness, type SetupCheck } from "@/lib/setupCompleteness";
+import { mergeHome, homeDifferences } from "@/lib/homeDefaults";
+import { emergencyDifferent } from "@/lib/emergency";
 import { useBirdRole } from "@/lib/useBirdRole";
 import { useCapability } from "@/lib/useCapability";
 import { track } from "@/lib/analytics";
@@ -43,11 +45,11 @@ const READ_SECTION: Record<SectionKey, "food" | "behavior" | "home" | "health" |
 
 const sectionList = (t: TFunction): { key: SectionKey; tab: "food" | "routine" | "behavior" | "home" | "health" | "emergency"; label: string; icon: React.ReactNode; needsInfoHint: string; readyHint: string }[] => [
   { key: "food",        tab: "food",      label: t("planEditor.tabFood", "Food"),           icon: <Utensils className="size-5" />,     needsInfoHint: t("planOverview.hintFood", "Diet and food instructions"), readyHint: t("planOverview.hintFood", "Diet and food instructions") },
-  { key: "personality", tab: "behavior",  label: t("planEditor.tabBehavior", "Behavior"),   icon: <Smile className="size-5" />,        needsInfoHint: t("planOverview.hintBehavior", "Handling, likes, triggers"),  readyHint: t("planOverview.hintBehavior", "Handling, likes, triggers") },
-  { key: "environment", tab: "home",      label: t("planEditor.tabHome", "Home"),           icon: <HomeIcon className="size-5" />,     needsInfoHint: t("planOverview.hintHome", "Cage, out-of-cage, hazards"), readyHint: t("planOverview.hintHome", "Cage, out-of-cage, hazards") },
   { key: "health",      tab: "health",    label: t("planEditor.tabHealth", "Health"),       icon: <Stethoscope className="size-5" />,  needsInfoHint: t("planOverview.hintHealth", "Baseline and what's normal"), readyHint: t("planOverview.hintHealth", "Baseline and what's normal") },
+  { key: "personality", tab: "behavior",  label: t("planEditor.tabBehavior", "Behavior"),   icon: <Smile className="size-5" />,        needsInfoHint: t("planOverview.hintBehaviorCageTime", "Handling, likes, cage, and out-of-cage time"),  readyHint: t("planOverview.hintBehaviorCageTime", "Handling, likes, cage, and out-of-cage time") },
   { key: "day",         tab: "routine",   label: t("planEditor.tabRoutine", "Routine"),     icon: <CalendarClock className="size-5" />,needsInfoHint: t("planOverview.hintRoutine", "Daily schedule and tasks"),   readyHint: t("planOverview.hintRoutine", "Daily schedule and tasks") },
-  { key: "emergency",   tab: "emergency", label: t("planEditor.tabEmergency", "Emergency"), icon: <Siren className="size-5" />,        needsInfoHint: t("planOverview.hintEmergency", "Owner and vet contacts"),     readyHint: t("planOverview.hintEmergency", "Owner and vet contacts") },
+  { key: "environment", tab: "home",      label: t("planOverview.rowReminders", "Reminders for your sitter"),           icon: <HomeIcon className="size-5" />,     needsInfoHint: t("planOverview.hintHomeAreas", "Hazards, off-limits areas, pets, and cleaning"), readyHint: t("planOverview.hintHomeAreas", "Hazards, off-limits areas, pets, and cleaning") },
+  { key: "emergency",   tab: "emergency", label: t("planOverview.rowEmergencyContacts", "Emergency contacts"), icon: <Siren className="size-5" />,        needsInfoHint: t("planOverview.hintEmergency", "Owner and vet contacts"),     readyHint: t("planOverview.hintEmergency", "Owner and vet contacts") },
 ];
 
 function CarePlanOverview() {
@@ -116,6 +118,18 @@ function CarePlanOverview() {
     },
   });
 
+  // The owner's shared "Your home" reminders (owner only, like the defaults above).
+  const { data: homeDefaults } = useQuery({
+    queryKey: ["owner-home-defaults"],
+    enabled: isOwner,
+    queryFn: async () => {
+      const { data: u } = await getLocalUser();
+      if (!u.user) return null;
+      const { data } = await supabase.from("owner_home_defaults").select("*").eq("owner_id", u.user.id).maybeSingle();
+      return data ?? null;
+    },
+  });
+
   const getEmergencyReadiness = useServerFn(getBirdEmergencyReadiness);
   const { data: memberEmergency } = useQuery({
     queryKey: ["member-emergency-ready", birdId],
@@ -124,16 +138,21 @@ function CarePlanOverview() {
     queryFn: async () => await getEmergencyReadiness({ data: { birdId } }),
   });
 
-  const completeness = computeSetupCompleteness({ bird, plan, tasksCount: tasks.length, contacts, defaults });
-  // Members judge emergency readiness against the owner's merged data (same
-  // source the read view renders) rather than their own empty defaults.
-  if (!isOwner && memberEmergency?.ready) {
-    const c = completeness.checks.find((x) => x.key === "emergency");
-    if (c && !c.done) {
-      c.done = true;
-      completeness.doneCount += 1;
+  const completeness = computeSetupCompleteness({ bird, plan: mergeHome(plan, homeDefaults), tasksCount: tasks.length, contacts, defaults });
+  // Members judge emergency and home readiness against the owner's merged data
+  // (same source the read view renders) rather than their own empty defaults.
+  if (!isOwner) {
+    for (const [key, ready] of [["emergency", memberEmergency?.ready], ["environment", memberEmergency?.homeReady]] as const) {
+      const c = completeness.checks.find((x) => x.key === key);
+      if (ready && c && !c.done) {
+        c.done = true;
+        completeness.doneCount += 1;
+      }
     }
   }
+  // "Your home" rows say whether this bird uses the shared answers.
+  const homeIsDifferent = isOwner ? homeDifferences(plan, homeDefaults).length > 0 : !!memberEmergency?.homeDifferent;
+  const emergencyIsDifferent = isOwner ? emergencyDifferent(contacts, defaults) : !!memberEmergency?.emergencyDifferent;
   const checksByKey = new Map<string, SetupCheck>(completeness.checks.map((c) => [c.key, c]));
 
   useEffect(() => {
@@ -142,14 +161,6 @@ function CarePlanOverview() {
 
   const name = bird?.name ?? t("planEditor.thisBird", "this bird");
 
-  // Emergency "Using your account defaults" copy: true when no per-bird value
-  // has been entered and account defaults supply at least the required fields.
-  const emergencyUsesDefaults = (() => {
-    const ownerOverridden = (contacts?.owner_phone ?? "").toString().trim();
-    const vetOverridden = (contacts?.avian_vet_phone ?? "").toString().trim();
-    const hasDefaults = !!(defaults?.owner_phone || defaults?.avian_vet_phone);
-    return !ownerOverridden && !vetOverridden && hasDefaults;
-  })();
 
   return (
     <div className="min-h-screen bg-[var(--cream)] pb-nav">
@@ -183,11 +194,14 @@ function CarePlanOverview() {
               const check = checksByKey.get(s.key);
               const done = !!check?.done;
               const isEmergency = s.key === "emergency";
-              // For Emergency, "done" considers account defaults via the check
-              // (eff() in setupCompleteness). The subtitle reflects WHY it's
-              // ready: per-bird contacts vs. account defaults.
-              const subtitle = isEmergency && done && emergencyUsesDefaults
-                ? t("planOverview.usingAccountDefaults", "Using your account defaults")
+              // Reminders and emergency contacts are shared by every bird; their
+              // rows say whether this bird uses the shared answers or its own.
+              const isShared = s.key === "environment" || isEmergency;
+              const different = s.key === "environment" ? homeIsDifferent : emergencyIsDifferent;
+              const subtitle = isShared
+                ? different
+                  ? t("planOverview.differentFor", "Different for {{name}}", { name })
+                  : t("planOverview.shared", "Shared")
                 : done
                   ? s.readyHint
                   : s.needsInfoHint;

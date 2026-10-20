@@ -61,3 +61,87 @@ export function foodLabel(t: TFunction, en: string): string {
     default: return en;
   }
 }
+
+/** Display label for a homemade-chop ingredient (saved in English). Falls back
+ *  to foodLabel for the original checklist, then to the saved text itself. */
+export function chopIngredientLabel(t: TFunction, en: string): string {
+  switch (en) {
+    case "Kale": return t("foodEditor.fresh.kale", "Kale");
+    case "Swiss chard": return t("foodEditor.fresh.swissChard", "Swiss chard");
+    case "Romaine lettuce": return t("foodEditor.fresh.romaineLettuce", "Romaine lettuce");
+    case "Collard greens": return t("foodEditor.fresh.collardGreens", "Collard greens");
+    case "Mustard greens": return t("foodEditor.fresh.mustardGreens", "Mustard greens");
+    case "Dandelion greens": return t("foodEditor.fresh.dandelionGreens", "Dandelion greens");
+    case "Bok choy": return t("foodEditor.fresh.bokChoy", "Bok choy");
+    case "Arugula": return t("foodEditor.fresh.arugula", "Arugula");
+    case "Beet greens": return t("foodEditor.fresh.beetGreens", "Beet greens");
+    case "Carrot tops": return t("foodEditor.fresh.carrotTops", "Carrot tops");
+    case "Cilantro": return t("foodEditor.fresh.cilantro", "Cilantro");
+    case "Parsley": return t("foodEditor.fresh.parsley", "Parsley");
+    case "Basil": return t("foodEditor.fresh.basil", "Basil");
+    case "Mint": return t("foodEditor.fresh.mint", "Mint");
+    case "Dill": return t("foodEditor.fresh.dill", "Dill");
+    case "Zucchini": return t("foodEditor.fresh.zucchini", "Zucchini");
+    case "Cucumber": return t("foodEditor.fresh.cucumber", "Cucumber");
+    case "Butternut squash": return t("foodEditor.fresh.butternutSquash", "Butternut squash");
+    case "Pumpkin": return t("foodEditor.fresh.pumpkin", "Pumpkin");
+    case "Green beans": return t("foodEditor.fresh.greenBeans", "Green beans");
+    case "Peas": return t("foodEditor.fresh.peas", "Peas");
+    case "Snap peas": return t("foodEditor.fresh.snapPeas", "Snap peas");
+    case "Corn": return t("foodEditor.fresh.corn", "Corn");
+    case "Cauliflower": return t("foodEditor.fresh.cauliflower", "Cauliflower");
+    case "Brussels sprouts": return t("foodEditor.fresh.brusselsSprouts", "Brussels sprouts");
+    case "Cabbage": return t("foodEditor.fresh.cabbage", "Cabbage");
+    case "Beet": return t("foodEditor.fresh.beet", "Beet");
+    case "Radish": return t("foodEditor.fresh.radish", "Radish");
+    case "Okra": return t("foodEditor.fresh.okra", "Okra");
+    case "Asparagus": return t("foodEditor.fresh.asparagus", "Asparagus");
+    case "Celery": return t("foodEditor.fresh.celery", "Celery");
+    case "Turnip": return t("foodEditor.fresh.turnip", "Turnip");
+    case "Parsnip": return t("foodEditor.fresh.parsnip", "Parsnip");
+    case "Fennel": return t("foodEditor.fresh.fennel", "Fennel");
+    case "Chili pepper": return t("foodEditor.fresh.chiliPepper", "Chili pepper");
+    case "Jalapeño": return t("foodEditor.fresh.jalapeno", "Jalapeño");
+    case "Pear (no seeds)": return t("foodEditor.fresh.pearNoSeeds", "Pear (no seeds)");
+    case "Blueberries": return t("foodEditor.fresh.blueberries", "Blueberries");
+    case "Strawberries": return t("foodEditor.fresh.strawberries", "Strawberries");
+    case "Raspberries": return t("foodEditor.fresh.raspberries", "Raspberries");
+    case "Blackberries": return t("foodEditor.fresh.blackberries", "Blackberries");
+    case "Cranberries": return t("foodEditor.fresh.cranberries", "Cranberries");
+    case "Mango": return t("foodEditor.fresh.mango", "Mango");
+    case "Papaya": return t("foodEditor.fresh.papaya", "Papaya");
+    case "Pineapple": return t("foodEditor.fresh.pineapple", "Pineapple");
+    case "Kiwi": return t("foodEditor.fresh.kiwi", "Kiwi");
+    case "Melon": return t("foodEditor.fresh.melon", "Melon");
+    case "Watermelon": return t("foodEditor.fresh.watermelon", "Watermelon");
+    case "Cantaloupe": return t("foodEditor.fresh.cantaloupe", "Cantaloupe");
+    case "Grapes": return t("foodEditor.fresh.grapes", "Grapes");
+    case "Orange": return t("foodEditor.fresh.orange", "Orange");
+    case "Pomegranate": return t("foodEditor.fresh.pomegranate", "Pomegranate");
+    case "Peach (no pit)": return t("foodEditor.fresh.peachNoPit", "Peach (no pit)");
+    case "Plum (no pit)": return t("foodEditor.fresh.plumNoPit", "Plum (no pit)");
+    case "Apricot (no pit)": return t("foodEditor.fresh.apricotNoPit", "Apricot (no pit)");
+    case "Cherries (no pits)": return t("foodEditor.fresh.cherriesNoPits", "Cherries (no pits)");
+    case "Nectarine (no pit)": return t("foodEditor.fresh.nectarineNoPit", "Nectarine (no pit)");
+    case "Fig": return t("foodEditor.fresh.fig", "Fig");
+    case "Coconut": return t("foodEditor.fresh.coconut", "Coconut");
+    case "Brown rice (cooked)": return t("foodEditor.fresh.brownRiceCooked", "Brown rice (cooked)");
+    case "Oats": return t("foodEditor.fresh.oats", "Oats");
+    case "Barley (cooked)": return t("foodEditor.fresh.barleyCooked", "Barley (cooked)");
+    case "Millet": return t("foodEditor.fresh.millet", "Millet");
+    case "Buckwheat": return t("foodEditor.fresh.buckwheat", "Buckwheat");
+    case "Amaranth": return t("foodEditor.fresh.amaranth", "Amaranth");
+    case "Whole-wheat pasta (cooked)": return t("foodEditor.fresh.wholeWheatPastaCooked", "Whole-wheat pasta (cooked)");
+    case "Lentils (cooked)": return t("foodEditor.fresh.lentilsCooked", "Lentils (cooked)");
+    case "Chickpeas (cooked)": return t("foodEditor.fresh.chickpeasCooked", "Chickpeas (cooked)");
+    case "Black beans (cooked)": return t("foodEditor.fresh.blackBeansCooked", "Black beans (cooked)");
+    case "Egg (cooked)": return t("foodEditor.fresh.eggCooked", "Egg (cooked)");
+    case "Chia seeds": return t("foodEditor.fresh.chiaSeeds", "Chia seeds");
+    case "Flaxseed": return t("foodEditor.fresh.flaxseed", "Flaxseed");
+    case "Hemp seeds": return t("foodEditor.fresh.hempSeeds", "Hemp seeds");
+    case "Pumpkin seeds": return t("foodEditor.fresh.pumpkinSeeds", "Pumpkin seeds");
+    case "Ginger": return t("foodEditor.fresh.ginger", "Ginger");
+    case "Turmeric": return t("foodEditor.fresh.turmeric", "Turmeric");
+    default: return foodLabel(t, en);
+  }
+}

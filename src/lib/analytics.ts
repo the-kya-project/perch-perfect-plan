@@ -40,6 +40,11 @@ import { hashUserId } from "./userHash";
 export type AnalyticsEventName =
   | "owner_signup"
   | "guided_editor_opened"
+  | "setup_stop_point_viewed"
+  | "setup_stop_point_choice"
+  | "sit_gaps_shown"
+  | "sit_gaps_choice"
+  | "setup_copy_from_bird"
   | "care_plan_section_completed"
   | "care_plan_progress"
   | "sit_created"

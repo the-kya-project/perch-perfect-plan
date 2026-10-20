@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Loader2, AlertTriangle } from "lucide-react";
+import { Loader2, AlertTriangle, Play } from "lucide-react";
 import { track } from "@/lib/analytics";
 import { isStreamUrl } from "@/lib/clipRef";
 import { useTranslation } from "react-i18next";
@@ -80,5 +80,44 @@ export function ClipPlayer({
         </div>
       )}
     </div>
+  );
+}
+
+/** "0:42" from seconds. */
+export function clipLength(seconds: number | null | undefined): string | null {
+  if (!seconds || seconds <= 0) return null;
+  const s = Math.round(seconds);
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+}
+
+/**
+ * A clip behind a cover: forest panel with a lime play button and the length
+ * in a pill. Tapping it loads the real player (Stream clips start playing).
+ */
+export function PosterClipPlayer({ src, duration, className = "", label }: { src: string; duration?: number | null; className?: string; label?: string }) {
+  const { t } = useTranslation();
+  const [playing, setPlaying] = useState(false);
+  if (playing) {
+    let url = src;
+    if (isStreamUrl(src)) {
+      try { const u = new URL(src); u.searchParams.set("autoplay", "true"); url = u.toString(); } catch { /* keep src */ }
+    }
+    return <ClipPlayer src={url} label={label} className={className} />;
+  }
+  const length = clipLength(duration);
+  return (
+    <button
+      type="button"
+      onClick={() => setPlaying(true)}
+      aria-label={t("clipPlayer.play", "Play clip")}
+      className={`relative grid place-items-center overflow-hidden bg-[#1a3d2e] ${className}`}
+    >
+      <span className="grid size-14 place-items-center rounded-full bg-[#cdeab0] text-[#1a3d2e]">
+        <Play className="ml-0.5 size-6 fill-current" aria-hidden="true" />
+      </span>
+      {length && (
+        <span className="absolute bottom-3 left-3 rounded-full bg-black/45 px-2.5 py-1 text-[13px] font-[700] tabular-nums text-white">{length}</span>
+      )}
+    </button>
   );
 }

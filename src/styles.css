@@ -268,3 +268,14 @@ input[type="date"]::-webkit-date-and-time-value {
   text-align: left;
   margin: 0; /* iOS adds a margin here that skews height/alignment */
 }
+
+/* New setup screens (SetupFrame): DM Sans throughout, Newsreader set inline on
+   headings, and one visible focus ring for every control. Unlayered so it wins
+   over Tailwind's utilities. */
+.setup-frame {
+  font-family: "DM Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+.setup-frame :focus-visible {
+  outline: 3px solid #2d6a4f;
+  outline-offset: 3px;
+}

@@ -5,21 +5,22 @@ import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import i18next from "i18next";
 import { getHouseholdAccount } from "@/lib/household.functions";
-import { ShareNewBirdSheet, type ShareCandidate } from "@/components/ShareNewBirdSheet";
+import { ShareNewBirdStep, type ShareCandidate } from "@/components/ShareNewBirdStep";
+import { SetupFrame } from "@/components/setup/SetupFrame";
+import { SetupPrimaryButton } from "@/components/setup/controls";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { toast } from "sonner";
 import { PhotoCropper } from "@/components/PhotoCropper";
 import { SpeciesPicker, AgePicker, BirdField, OptionalDate } from "@/components/BirdPickers";
-import { InkHero, PrimaryButton } from "@/components/system";
 import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
 import { persistBirdPhoto } from "@/lib/birdPhoto";
 import { track } from "@/lib/analytics";
-import { ArrowLeft } from "lucide-react";
 import { z } from "zod";
 import { friendlyError } from "@/lib/errorMessage";
 import { BIRD_FEATURES } from "@/lib/onboardingPlan";
 import { localDateISO } from "@/lib/localDay";
+import { encodeSetupStep } from "@/lib/setupProgress";
 
 export const Route = createFileRoute("/_authenticated/birds/new")({
   head: () => ({ meta: [{ title: i18next.t("newBird.metaTitle", "Add a bird — Kya & Co.") }] }),
@@ -124,7 +125,7 @@ function NewBird() {
       is_foster: isFoster,
       intake_date: intakeDate || null,
       setup_complete: false,
-      setup_step: targetStep,
+      setup_step: encodeSetupStep(targetStep),
     } as any).select().single();
     if (error || !bird) {
       toast.error(friendlyError(error, t("newBird.createFailed", "Could not create bird.")));
@@ -161,8 +162,9 @@ function NewBird() {
     return bird.id;
   }
 
-  // Add the bird, then guide straight into the care-plan wizard (Food · Step 1
-  // of 8) — the obvious next step instead of leaving the owner to find the CTA.
+  // Continue saves the bird (Details is the first step of setup), then goes
+  // straight into the care-plan wizard at Food — the obvious next step instead
+  // of leaving the owner to find the CTA.
   // Skippable: the wizard's "Save & exit" drops onto the bird's record, which
   // keeps a "Set up <name>'s care plan" invite until setup is complete.
   //
@@ -171,7 +173,7 @@ function NewBird() {
   // right after a deploy), a retry NEVER inserts again — it reuses the id and
   // just retries the navigation, hard-navigating as a last resort (a full page
   // load always lands on the fresh build).
-  // The navigation half of onAddBird, reused by the share sheet's two exits.
+  // The navigation half of onAddBird, reused by the share step's two exits.
   // `saving` deliberately stays true throughout (see createBird).
   async function goToSetup(id: string) {
     // Arrived from an email about one feature: land on it. The bird's page still
@@ -221,19 +223,36 @@ function NewBird() {
 
   const canAdd = !!name.trim() && !!species.trim();
 
-  return (
-    <div className="min-h-screen bg-[var(--cream)] pb-28">
-      <div className="mx-auto max-w-md">
-        <InkHero
-          backIcon={<ArrowLeft className="size-5" />}
-          onBack={onCancel}
-          eyebrow={t("newBird.eyebrow", "New bird")}
-          headline={fosterParam ? t("newBird.headlineFoster", "Take in a bird.") : t("newBird.headline", "Add a bird.")}
-          body={t("newBird.body", "Start with the basics. The full care plan comes next.")}
-        />
+  // Details · 2 of 2: the bird is already saved by this point. Not now and
+  // Continue go on to Food; Back leaves for the bird's page (nothing to undo).
+  if (share) {
+    return (
+      <ShareNewBirdStep
+        birdName={name}
+        birdId={share.birdId}
+        members={share.members}
+        onContinue={() => goToSetup(share.birdId)}
+        onBack={() => navigate({ to: "/birds/$birdId", params: { birdId: share.birdId } })}
+      />
+    );
+  }
 
-        <main className="space-y-4 px-5 pt-5">
-      <section className="rounded-2xl bg-white p-4 space-y-3 ring-1 ring-sage-100">
+  return (
+    <SetupFrame
+      birdName={name}
+      current="details"
+      // "Who else helps?" follows when there's a household to share with.
+      page={shareCandidates.length ? [1, 2] : undefined}
+      title={fosterParam ? t("newBird.headlineFoster", "Take in a bird.") : t("newBird.headline", "Add a bird.")}
+      intro={t("newBird.body", "Start with the basics. The full care plan comes next.")}
+      onBack={onCancel}
+      footer={
+        <SetupPrimaryButton disabled={saving || !canAdd} onClick={onAddBird}>
+          {saving ? t("newBird.adding", "Adding…") : t("newBird.continue", "Continue")}
+        </SetupPrimaryButton>
+      }
+    >
+      <section className="rounded-[18px] bg-[#f1f5f0] p-4 space-y-3">
         <div className="flex items-start gap-3">
           {photo ? (
             <PhotoCropper src={photo} position={photoPos} onChange={setPhotoPos} size={120} />
@@ -276,7 +295,7 @@ function NewBird() {
 
       {/* Foster status — a meta-question about your relationship with the bird,
           not basic info, so it sits last after all the actual bird details. */}
-      <section className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
+      <section className="rounded-[18px] bg-[#f1f5f0] p-4">
         <label className="flex cursor-pointer items-start gap-3">
           <input type="checkbox" checked={isFoster} onChange={(e) => setIsFoster(e.target.checked)} className="mt-0.5 size-5 shrink-0 accent-[#1a3d2e]" />
           <span className="min-w-0">
@@ -301,26 +320,6 @@ function NewBird() {
       </section>
 
       <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.65rem .8rem;font-size:16px;outline:none}.input:focus{border-color:var(--sage-600);box-shadow:0 0 0 3px rgb(74 103 65 / .15)}`}</style>
-        </main>
-      </div>
-
-      <footer className="fixed inset-x-0 bottom-0 border-t border-[var(--line)] bg-[var(--cream)]/95 px-5 py-3 pb-[max(env(safe-area-inset-bottom),0.75rem)] backdrop-blur">
-        <div className="mx-auto max-w-md">
-          <PrimaryButton tone="lime" disabled={saving || !canAdd} onPress={onAddBird}>
-            {saving ? t("newBird.adding", "Adding…") : t("newBird.addBird", "Add bird")}
-          </PrimaryButton>
-        </div>
-      </footer>
-
-      {/* The bird is already saved by this point — both exits continue to setup. */}
-      {share && (
-        <ShareNewBirdSheet
-          birdName={name}
-          birdId={share.birdId}
-          members={share.members}
-          onContinue={() => goToSetup(share.birdId)}
-        />
-      )}
-    </div>
+    </SetupFrame>
   );
 }
