@@ -5292,6 +5292,189 @@
     "handoff.youllReceive": {
       "stamp": "4c727b1cf0780c84"
     },
+    "healthHistory.allBirds": {
+      "stamp": "bc61e5c90fd1b088"
+    },
+    "healthHistory.back": {
+      "stamp": "5001815e48b3af8b"
+    },
+    "healthHistory.birdLabel": {
+      "stamp": "7964d14d200e7108"
+    },
+    "healthHistory.body": {
+      "stamp": "ba55e07610d81488"
+    },
+    "healthHistory.checkAllNormal": {
+      "stamp": "65bf0db61558625a"
+    },
+    "healthHistory.checkToWatch_one": {
+      "stamp": "60f1f5ef4afcd994"
+    },
+    "healthHistory.checkToWatch_other": {
+      "stamp": "b50067634aa797b1"
+    },
+    "healthHistory.clearSit": {
+      "stamp": "2608b44f7a974719"
+    },
+    "healthHistory.dailyCheck": {
+      "stamp": "a55b557383617330"
+    },
+    "healthHistory.dayDuringSit": {
+      "stamp": "107b50ab70424aa1"
+    },
+    "healthHistory.everyone": {
+      "stamp": "36743c1ca0178902"
+    },
+    "healthHistory.grams": {
+      "stamp": "32a06ffb524410f9"
+    },
+    "healthHistory.householdMember": {
+      "stamp": "e5a61877c5a229f6"
+    },
+    "healthHistory.loadOlder": {
+      "stamp": "8b3d5a920d69d789"
+    },
+    "healthHistory.metaTitle": {
+      "stamp": "33964a50e9f7eb6e"
+    },
+    "healthHistory.nConcerning_one": {
+      "stamp": "a5114d5e12afd603"
+    },
+    "healthHistory.nConcerning_other": {
+      "stamp": "a5114d5e12afd603"
+    },
+    "healthHistory.nNormal_one": {
+      "stamp": "86d01cf164714878"
+    },
+    "healthHistory.nNormal_other": {
+      "stamp": "86d01cf164714878"
+    },
+    "healthHistory.nNotSure_one": {
+      "stamp": "b3e7d05068133b89"
+    },
+    "healthHistory.nNotSure_other": {
+      "stamp": "b3e7d05068133b89"
+    },
+    "healthHistory.nOfNNormal": {
+      "stamp": "6dde7d3a6f80c585"
+    },
+    "healthHistory.sitters": {
+      "stamp": "2c81e96b0b276701"
+    },
+    "healthHistory.sitterTag": {
+      "stamp": "c0d442a6b83178fb"
+    },
+    "healthHistory.thisSit": {
+      "stamp": "8546d04be168441c"
+    },
+    "healthHistory.title": {
+      "stamp": "47a7d1d7ec2e1bd2"
+    },
+    "healthHistory.typeAll": {
+      "stamp": "bd0a230a89f4a626"
+    },
+    "healthHistory.typeChecks": {
+      "stamp": "38a99d5760ae0da9"
+    },
+    "healthHistory.typeLabel": {
+      "stamp": "8d0ea98aeaee4f82"
+    },
+    "healthHistory.typeWeights": {
+      "stamp": "74128dec81688186"
+    },
+    "healthHistory.weighed": {
+      "stamp": "eba25cac0ffefab7"
+    },
+    "healthHistory.whoLabel": {
+      "stamp": "9340f1d8d2a43126"
+    },
+    "healthHistory.you": {
+      "stamp": "082a30d4026bdff4"
+    },
+    "healthHistory.yourSitter": {
+      "stamp": "1f87da8fe21f5a1a"
+    },
+    "healthTab.body": {
+      "stamp": "9da860b6dd8c0427"
+    },
+    "healthTab.checkedOn": {
+      "stamp": "6bd0a3d20ebc341c"
+    },
+    "healthTab.checkedToday": {
+      "stamp": "0893b49880237ad9"
+    },
+    "healthTab.checkedTodayNormal": {
+      "stamp": "3aab79857b048efc"
+    },
+    "healthTab.duringSits": {
+      "stamp": "410ee53fe7928741"
+    },
+    "healthTab.loadError": {
+      "stamp": "84b28c09a03f3f0a"
+    },
+    "healthTab.loading": {
+      "stamp": "543c404f0e5a7d86"
+    },
+    "healthTab.metaTitle": {
+      "stamp": "6167ff7a3600127c"
+    },
+    "healthTab.nChecks_one": {
+      "stamp": "88c76f40f8a9f07a"
+    },
+    "healthTab.nChecks_other": {
+      "stamp": "3a6b53a872c57889"
+    },
+    "healthTab.noBirds": {
+      "stamp": "f8d49576c0b193b6"
+    },
+    "healthTab.notChecked": {
+      "stamp": "da4820767bef144b"
+    },
+    "healthTab.nothingYet": {
+      "stamp": "ce0679f3539f4b84"
+    },
+    "healthTab.notWeighedDays_one": {
+      "stamp": "2fd678bafd66e1bc"
+    },
+    "healthTab.notWeighedDays_other": {
+      "stamp": "c8f2b82ac97a3fde"
+    },
+    "healthTab.nWeights_one": {
+      "stamp": "6bac13bc6deb849f"
+    },
+    "healthTab.nWeights_other": {
+      "stamp": "6a78e655b5fbbf7e"
+    },
+    "healthTab.recent": {
+      "stamp": "a74b75f2bbd0edb9"
+    },
+    "healthTab.seeHistory": {
+      "stamp": "aaeaf230ad1fe107"
+    },
+    "healthTab.thingsFlagged_one": {
+      "stamp": "fc937f069c4341a3"
+    },
+    "healthTab.thingsFlagged_other": {
+      "stamp": "bb5b582fabf5b2cd"
+    },
+    "healthTab.thingsToWatch_one": {
+      "stamp": "88a4c58bbebbc215"
+    },
+    "healthTab.thingsToWatch_other": {
+      "stamp": "f11d69746ef53e03"
+    },
+    "healthTab.title": {
+      "stamp": "ad8fc5e0802d4e9c"
+    },
+    "healthTab.weighAndCheck": {
+      "stamp": "1ef05daeda7e5e11"
+    },
+    "healthTab.yourBird": {
+      "stamp": "19f01978083a5dce"
+    },
+    "healthTab.yourBirds": {
+      "stamp": "06e9a8855418fc39"
+    },
     "home.moment.gotchaDay": {
       "stamp": "f0adabab58593b7b"
     },
@@ -7029,14 +7212,20 @@
     "scanDetail.answerNotSure": {
       "stamp": "eb9500b24d3697db"
     },
-    "scanDetail.bannerGreen": {
-      "stamp": "cd1da091b248cf0c"
+    "scanDetail.back": {
+      "stamp": "5001815e48b3af8b"
     },
-    "scanDetail.bannerRed": {
-      "stamp": "5e40f642ac2a2ff0"
+    "scanDetail.byName": {
+      "stamp": "8a77fbeac94a8353"
     },
-    "scanDetail.bannerYellow": {
-      "stamp": "9002774571289a35"
+    "scanDetail.bySitter": {
+      "stamp": "0ed38e3f260b40e7"
+    },
+    "scanDetail.byYou": {
+      "stamp": "8f33f5d1950b7e72"
+    },
+    "scanDetail.callVet": {
+      "stamp": "b9fea054aa89202f"
     },
     "scanDetail.col.alertness": {
       "stamp": "20d5c809b02e8a8d"
@@ -7054,7 +7243,7 @@
       "stamp": "2886ed3493cc74d1"
     },
     "scanDetail.col.exposure": {
-      "stamp": "e35dcee8bdcc899f"
+      "stamp": "ab4adec73f1db231"
     },
     "scanDetail.col.food": {
       "stamp": "3326d38424aed65b"
@@ -7074,35 +7263,29 @@
     "scanDetail.confirmResolve": {
       "stamp": "f0a5ddc9d11aaddb"
     },
-    "scanDetail.deleteCheck": {
-      "stamp": "0311129172f7e625"
+    "scanDetail.deletedCheck": {
+      "stamp": "1b46bef9380dbaac"
     },
-    "scanDetail.deleted": {
-      "stamp": "42bcc8551a26f6b2"
+    "scanDetail.deleteThisCheck": {
+      "stamp": "36e6ada1f8df5a8f"
     },
     "scanDetail.deleting": {
       "stamp": "17dadddd53c0f524"
     },
-    "scanDetail.emergencyContacts": {
-      "stamp": "13dc8bdb952a70e3"
+    "scanDetail.everyAnswer": {
+      "stamp": "f52830a0e5f4cd26"
     },
-    "scanDetail.eyebrow": {
-      "stamp": "8e03faf2e5f1ee54"
+    "scanDetail.householdMemberCap": {
+      "stamp": "bd1e4a989efa1a38"
     },
-    "scanDetail.headlineGreen": {
-      "stamp": "20d22d2512a147c8"
-    },
-    "scanDetail.headlineRed": {
-      "stamp": "1515028763508fd6"
-    },
-    "scanDetail.headlineYellow": {
-      "stamp": "5994c844727c0591"
+    "scanDetail.householdMemberLower": {
+      "stamp": "1cb15acb8fb6a332"
     },
     "scanDetail.loading": {
       "stamp": "543c404f0e5a7d86"
     },
-    "scanDetail.markedResolved": {
-      "stamp": "539052ad37e3deca"
+    "scanDetail.markedResolvedOn": {
+      "stamp": "506dfd3a6c0b66d3"
     },
     "scanDetail.markResolved": {
       "stamp": "69c4349bbd555b39"
@@ -7110,32 +7293,59 @@
     "scanDetail.metaTitle": {
       "stamp": "72e00a358836ec2f"
     },
-    "scanDetail.notAvailable": {
-      "stamp": "f1c507695c1cf56d"
+    "scanDetail.notAnswered": {
+      "stamp": "faa74bb463832f6b"
+    },
+    "scanDetail.notAvailableCheck": {
+      "stamp": "00e7182512a1916f"
     },
     "scanDetail.notes": {
       "stamp": "d19a3271a64d8524"
     },
-    "scanDetail.notFound": {
-      "stamp": "7fab47aebfdd1dbf"
+    "scanDetail.notFoundCheck": {
+      "stamp": "529e168920dfa36d"
     },
-    "scanDetail.notSureOtherOne": {
-      "stamp": "c0c201139cc8ed85"
+    "scanDetail.noun.alertness": {
+      "stamp": "3846c410d2799cf7"
     },
-    "scanDetail.notSureOtherOther": {
-      "stamp": "ccc04ed30ed92b8f"
+    "scanDetail.noun.breathing": {
+      "stamp": "5d9ccee68975a08f"
     },
-    "scanDetail.notSureYouOne": {
-      "stamp": "d627bb308dadffea"
+    "scanDetail.noun.droppings": {
+      "stamp": "a8cfc5e10faf8687"
     },
-    "scanDetail.notSureYouOther": {
-      "stamp": "266a5ea80f5d97d7"
+    "scanDetail.noun.exposure": {
+      "stamp": "900b59c3709df6d2"
+    },
+    "scanDetail.noun.fluffed": {
+      "stamp": "59be16c9c47c5523"
+    },
+    "scanDetail.noun.food": {
+      "stamp": "f2771ea9447bb708"
+    },
+    "scanDetail.noun.injury": {
+      "stamp": "8579e37b79695f01"
+    },
+    "scanDetail.noun.noise": {
+      "stamp": "03887640f1eb76d1"
+    },
+    "scanDetail.noun.posture": {
+      "stamp": "54292087eb2c0ec4"
+    },
+    "scanDetail.noun.vomiting": {
+      "stamp": "b9d2d8dc34957e7c"
+    },
+    "scanDetail.otherConcerning": {
+      "stamp": "b16586649bb1baef"
+    },
+    "scanDetail.otherNotSure": {
+      "stamp": "58435b217a38de8b"
     },
     "scanDetail.photo": {
       "stamp": "1353378311b6aed1"
     },
-    "scanDetail.photoAlt": {
-      "stamp": "988eaf3168326b5e"
+    "scanDetail.photoAltCheck": {
+      "stamp": "effe60b67594ce27"
     },
     "scanDetail.photos": {
       "stamp": "4935c6a16f6a68ce"
@@ -7179,17 +7389,32 @@
     "scanDetail.resolved": {
       "stamp": "ccbcbf4fbddc1314"
     },
-    "scanDetail.runBy": {
-      "stamp": "268c66c14bbe84a3"
+    "scanDetail.thingsToWatch_one": {
+      "stamp": "88a4c58bbebbc215"
     },
-    "scanDetail.runByYou": {
-      "stamp": "8c447436bb5d3d17"
+    "scanDetail.thingsToWatch_other": {
+      "stamp": "f11d69746ef53e03"
     },
-    "scanDetail.theCheck": {
-      "stamp": "ec66692b49f47add"
+    "scanDetail.titleCheck": {
+      "stamp": "d9868029d8f12750"
+    },
+    "scanDetail.weightThatDay": {
+      "stamp": "c93d12ce8b312526"
+    },
+    "scanDetail.youConcerning": {
+      "stamp": "eebdca3f49c83431"
+    },
+    "scanDetail.youNotSure": {
+      "stamp": "636a83c6a5d45e21"
     },
     "scanDetail.yourBird": {
       "stamp": "fb5d7aead9178f25"
+    },
+    "scanDetail.yourSitterCap": {
+      "stamp": "1f87da8fe21f5a1a"
+    },
+    "scanDetail.yourSitterLower": {
+      "stamp": "707c76a7b363684a"
     },
     "scanForm.answerAllError": {
       "stamp": "e014a67a5bc0a84e"
@@ -7364,90 +7589,6 @@
     },
     "scanRunBy.yourSitter": {
       "stamp": "1f87da8fe21f5a1a"
-    },
-    "scansInbox.body": {
-      "stamp": "514c77252469fd25"
-    },
-    "scansInbox.clearFilter": {
-      "stamp": "03d2c4a2a7507374"
-    },
-    "scansInbox.daysAgo": {
-      "stamp": "d3ca70a940d95775"
-    },
-    "scansInbox.emptyBody": {
-      "stamp": "8875af45d7220d9a"
-    },
-    "scansInbox.emptyBodySit": {
-      "stamp": "5bd0be5721204d92"
-    },
-    "scansInbox.emptyTitle": {
-      "stamp": "1a8b66213763e3aa"
-    },
-    "scansInbox.emptyTitleSit": {
-      "stamp": "f15c65cbb62fec94"
-    },
-    "scansInbox.eyebrow": {
-      "stamp": "76061176bb2950ed"
-    },
-    "scansInbox.headline": {
-      "stamp": "d0e92074280ee495"
-    },
-    "scansInbox.hoursAgo": {
-      "stamp": "9f5cbb578ddadcab"
-    },
-    "scansInbox.household": {
-      "stamp": "da35ceae68b17eed"
-    },
-    "scansInbox.justNow": {
-      "stamp": "a71cc98be31fa392"
-    },
-    "scansInbox.loading": {
-      "stamp": "543c404f0e5a7d86"
-    },
-    "scansInbox.metaTitle": {
-      "stamp": "c4d345ee35ede53e"
-    },
-    "scansInbox.minsAgo": {
-      "stamp": "25a58dbc5729f0a7"
-    },
-    "scansInbox.nameSit": {
-      "stamp": "eda41748e2111912"
-    },
-    "scansInbox.runBy": {
-      "stamp": "268c66c14bbe84a3"
-    },
-    "scansInbox.runByYou": {
-      "stamp": "8c447436bb5d3d17"
-    },
-    "scansInbox.runCheck": {
-      "stamp": "8e9dc0bdb7b57193"
-    },
-    "scansInbox.sitter": {
-      "stamp": "c0d442a6b83178fb"
-    },
-    "scansInbox.thisSit": {
-      "stamp": "95881febdc941e50"
-    },
-    "scansInbox.titleGreen": {
-      "stamp": "a69cbc554b791637"
-    },
-    "scansInbox.titleRed": {
-      "stamp": "bea90a18da1f41c3"
-    },
-    "scansInbox.titleYellow": {
-      "stamp": "0cfb1e0b2cf6e037"
-    },
-    "scansInbox.unread": {
-      "stamp": "5f979e3bf2e590ed"
-    },
-    "scansInbox.yourBird": {
-      "stamp": "19f01978083a5dce"
-    },
-    "scansInbox.yourCaregiver": {
-      "stamp": "2242bea989ba60bf"
-    },
-    "scansInbox.yourSitter": {
-      "stamp": "707c76a7b363684a"
     },
     "serverError.alreadyHaveAccess": {
       "stamp": "5e68bf71234fea7a"

@@ -1,193 +1,204 @@
-import { createFileRoute, Link, useRouter, useCanGoBack, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
-import { ArrowLeft, Settings, AlertTriangle, CheckCircle2, Feather, Activity, X } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { activeOwnerBirdsMin, type ActiveBirdMin } from "@/lib/activeBirds";
-import { fetchScanFeed, markNotifsSeen, getNotifSeenAt, scanRunBy, isUnreadScan, type ScanFeedItem } from "@/lib/notificationsFeed";
-import { useMyPermissions } from "@/lib/useCapability";
-import { InkHero, IconTile, StatusPill, RecordRow, Card } from "@/components/system";
-import { OwnerHeaderIcons } from "@/components/OwnerHeader";
-import { formatLocalDate, monthDay } from "@/lib/dates";
 import i18next from "i18next";
 import { useTranslation } from "react-i18next";
+import { fetchBirdList } from "@/lib/birdListSelect";
+import { markNotifsSeen } from "@/lib/notificationsFeed";
+import { useMyPermissions } from "@/lib/useCapability";
+import { useBirdPhotos } from "@/lib/useBirdPhotos";
+import { useHealthHistory, thingsToWatch, type CheckEntry, type HistorySit } from "@/lib/healthHistory";
+import { daysSince } from "@/lib/homeData";
+import { monthDay } from "@/lib/dates";
+import { localDateISO } from "@/lib/localDay";
+import { rangeTo, sitTitle } from "@/lib/sitText";
+import { K, KyaPage, KyaHeader, KyaBody, KyaCard, KyaHeading, KyaPrimaryButton, KyaSecondaryButton, KyaTag } from "@/components/kya";
+import { BrandLockup } from "@/components/BrandLogo";
+import { OwnerHeaderIcons } from "@/components/OwnerHeader";
+import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
+import { CaregiverAvatar } from "@/components/SitListCards";
+import { EntryDays, sitCaregiverName, type EntryContext } from "@/components/HealthEntries";
+import { ChevronRight } from "lucide-react";
 
+// The Health tab: a flock summary. Each bird's latest daily check and weight,
+// the current (or last) sit, and the five latest entries, with the full list
+// one tap away on Health history. Old ?sitId links forward to that page.
 export const Route = createFileRoute("/_authenticated/scans/")({
-  head: () => ({ meta: [{ title: i18next.t("scansInbox.metaTitle", "Health checks — Kya & Co.") }] }),
+  head: () => ({ meta: [{ title: i18next.t("healthTab.metaTitle", "Flock health — Kya & Co.") }] }),
   validateSearch: (s: Record<string, unknown>) => z.object({ sitId: z.string().uuid().optional() }).parse(s),
-  component: NotificationsInbox,
+  beforeLoad: ({ search }) => {
+    if (search.sitId) throw redirect({ to: "/scans/history", search: { sitId: search.sitId } });
+  },
+  component: HealthTab,
 });
 
-function relativeTime(iso: string): string {
-  const then = new Date(iso).getTime();
-  const diff = Date.now() - then;
-  const mins = Math.round(diff / 60000);
-  if (mins < 1) return i18next.t("scansInbox.justNow", "just now");
-  if (mins < 60) return i18next.t("scansInbox.minsAgo", "{{n}}m ago", { n: mins });
-  const hrs = Math.round(mins / 60);
-  if (hrs < 24) return i18next.t("scansInbox.hoursAgo", "{{n}}h ago", { n: hrs });
-  const days = Math.round(hrs / 24);
-  if (days < 7) return i18next.t("scansInbox.daysAgo", "{{n}}d ago", { n: days });
-  return formatLocalDate(new Date(iso), { month: "short", day: "numeric" });
-}
+const OVERDUE_DAYS = 7;
 
-function NotificationsInbox() {
+function HealthTab() {
   const { t } = useTranslation();
-  const router = useRouter();
-  const canGoBack = useCanGoBack();
   const navigate = useNavigate();
-  // Reachable from the Scans tab and the header bell on any screen, so return
-  // to wherever the user came from; fall back to Home if there's no history.
-  const goBack = () => (canGoBack ? router.history.back() : navigate({ to: "/dashboard" }));
-  const seenAt = getNotifSeenAt();
   const myId = useMyPermissions().data?.myId;
-  const { sitId } = Route.useSearch();
-  const { data: feed = [], isLoading } = useQuery({ queryKey: ["scan-feed"], queryFn: fetchScanFeed, refetchOnWindowFocus: true });
-
-  // "View scans" from a sit card filters to that sit's scans (each sitter/
-  // caregiver scan is tagged with sit_id). The banner names the sit + range.
-  const { data: filterSit } = useQuery({
-    queryKey: ["scan-filter-sit", sitId],
-    enabled: !!sitId,
+  const { data: birdsRaw, isLoading: birdsLoading } = useQuery({
+    queryKey: ["birds"],
     queryFn: async () => {
-      const { data: s } = await supabase.from("sits").select("id, start_date, end_date, sitter_name, caregiver_user_id").eq("id", sitId!).maybeSingle();
-      if (!s) return null;
-      let label = (s.sitter_name ?? "").trim() || t("scansInbox.yourSitter", "your sitter");
-      if (s.caregiver_user_id) {
-        const { data: p } = await supabase.from("profiles").select("display_name").eq("id", s.caregiver_user_id).maybeSingle();
-        label = (p?.display_name ?? "").toString().trim() || t("scansInbox.yourCaregiver", "your caregiver");
-      }
-      return { label, range: `${monthDay(s.start_date)} → ${monthDay(s.end_date)}` };
+      const { data, error } = await fetchBirdList();
+      if (error) throw error;
+      return data ?? [];
     },
   });
-  const filterLabel = filterSit?.label ?? t("scansInbox.thisSit", "this sit");
-  const shownFeed = sitId ? (feed as ScanFeedItem[]).filter((n) => n.sit_id === sitId) : (feed as ScanFeedItem[]);
-  const { data: birds = [] } = useQuery({
-    queryKey: ["owner-birds-min-scans"],
-    queryFn: async () => {
-      // Active birds only — you don't run a health check on a passed bird.
-      const { data } = await activeOwnerBirdsMin(supabase).order("name");
-      return (data ?? []) as ActiveBirdMin[];
-    },
-  });
-  const [picking, setPicking] = useState(false);
+  const birds = ((birdsRaw ?? []) as any[]).slice().sort((a, b) => String(a.name).localeCompare(String(b.name)));
+  const { data: hist, isLoading: histLoading, isError: histError } = useHealthHistory(birds.map((b) => b.id), myId);
+  const resolvePhoto = useBirdPhotos(birds.map((b) => b.photo_url), 800);
 
-  // Mark everything seen on open so the bell badge clears.
-  useEffect(() => {
-    markNotifsSeen();
-  }, []);
+  // The header bell opens this tab: clear its badge.
+  useEffect(() => { markNotifsSeen(); }, []);
 
-  // "Run a scan" is per-bird. With exactly one bird the hero's lime primary goes
-  // straight to that bird's scan; with several it toggles an in-body bird picker
-  // (InkHero's single onPress can't host the picker), and with none it's omitted.
+  const entries = hist?.entries ?? [];
+  const sits = useMemo(() => hist?.sits ?? [], [hist]);
+  const names = hist?.names ?? {};
+  const ctx: EntryContext = {
+    birdName: (id) => birds.find((b) => b.id === id)?.name ?? t("healthTab.yourBird", "Your bird"),
+    sits, names, myId,
+  };
+
+  // The sit to show: the one running now, else the most recent past one.
+  const today = localDateISO();
+  const shownSit = useMemo<HistorySit | null>(() => {
+    const live = sits.filter((s) => s.start_date <= today && today <= s.end_date);
+    if (live.length) return live[0];
+    const past = sits.filter((s) => s.end_date < today).sort((a, b) => (a.end_date < b.end_date ? 1 : -1));
+    return past[0] ?? null;
+  }, [sits, today]);
+
+  const startCheck = () =>
+    birds.length === 1 ? navigate({ to: "/check", search: { bird: birds[0].id } }) : navigate({ to: "/check" });
+
   return (
-    <div className="min-h-screen bg-[var(--cream)] pb-nav">
+    <KyaPage>
       <div className="mx-auto max-w-md">
-        <InkHero
-          eyebrow={t("scansInbox.eyebrow", "Health checks")}
-          headline={t("scansInbox.headline", "A daily check, archived.")}
-          body={t("scansInbox.body", "A small daily look that adds up to a record.")}
-          backIcon={<ArrowLeft className="size-5" />}
-          onBack={goBack}
-          cta={
-            birds.length === 1
-              ? { label: t("scansInbox.runCheck", "Run a health check"), tone: "lime", icon: <Activity className="size-4" />, onPress: () => navigate({ to: "/birds/$birdId/scan", params: { birdId: birds[0].id } }) }
-              : birds.length > 1
-              ? { label: t("scansInbox.runCheck", "Run a health check"), tone: "lime", icon: <Activity className="size-4" />, onPress: () => setPicking((v) => !v) }
-              : undefined
-          }
-          trailingIcons={<OwnerHeaderIcons />}
-        />
+        <KyaHeader>
+          <div className="mt-1.5 flex items-center gap-2">
+            <BrandLockup orientation="horizontal" variant="ink" size={118} />
+            <div className="flex-1" />
+            <OwnerHeaderIcons large />
+          </div>
+          <KyaHeading as="h1" size={31} className="mt-9 text-white">{t("healthTab.title", "Flock health")}</KyaHeading>
+          <p className="m-0 mt-2 text-[15px] leading-[1.5]" style={{ color: K.paleGreen }}>
+            {t("healthTab.body", "Daily checks, weights, and anything you noticed, for all your birds.")}
+          </p>
+        </KyaHeader>
 
-        <main className="space-y-4 px-5 pt-5">
-          {/* Sit filter indicator — names the sit + range, with a clear link. */}
-          {sitId && (
-            <div className="flex items-center justify-between gap-3 rounded-[14px] bg-[var(--cream2)] px-4 py-2.5 ring-1 ring-[var(--line)]">
-              <span className="min-w-0 text-[13px] text-[var(--ink)]">
-                <span className="font-[500]">{t("scansInbox.nameSit", "{{name}}'s sit", { name: filterLabel })}</span>
-                {filterSit?.range && <span className="text-[var(--mute)]"> · {filterSit.range}</span>}
-              </span>
-              <Link to="/scans" search={{}} className="inline-flex shrink-0 items-center gap-1 text-[13px] font-[500] text-[var(--moss)]">
-                <X className="size-3.5" /> {t("scansInbox.clearFilter", "Clear filter")}
-              </Link>
-            </div>
-          )}
+        <KyaBody className="gap-5">
+          {birds.length > 0 && <KyaPrimaryButton onClick={startCheck}>{t("healthTab.weighAndCheck", "Weigh & check your flock")}</KyaPrimaryButton>}
 
-          {/* Run a scan — bird picker (only when there's more than one bird) */}
-          {birds.length > 1 && picking && (
-            <Card>
-              {birds.map((b, i) => (
-                <RecordRow
-                  key={b.id}
-                  title={b.name}
-                  onClick={() => navigate({ to: "/birds/$birdId/scan", params: { birdId: b.id } })}
-                  last={i === birds.length - 1}
-                />
-              ))}
-            </Card>
-          )}
+          {/* Your birds */}
+          <section className="flex flex-col gap-3">
+            <KyaHeading>{t("healthTab.yourBirds", "Your birds")}</KyaHeading>
+            {birdsLoading ? (
+              <p className="m-0 px-1 text-[14px]" style={{ color: K.quiet }}>{t("healthTab.loading", "Loading…")}</p>
+            ) : birds.length === 0 ? (
+              <KyaCard className="p-5"><p className="m-0 text-[14px]" style={{ color: K.quiet }}>{t("healthTab.noBirds", "Add a bird to start daily checks.")}</p></KyaCard>
+            ) : (
+              <KyaCard>
+                {birds.map((b, i) => {
+                  const latest = entries.find((e): e is CheckEntry => e.kind === "check" && e.birdId === b.id);
+                  const w = (b.weight_entries ?? [])[0] as { grams: number; measured_at: string } | undefined;
+                  const watch = latest && !latest.resolvedAt ? thingsToWatch(latest) : 0;
+                  const checkedToday = latest && latest.at && localDateISO(new Date(latest.at)) === today;
+                  const status = !latest
+                    ? (histLoading || histError ? "" : t("healthTab.notChecked", "Not checked yet"))
+                    : checkedToday
+                      ? (thingsToWatch(latest) === 0 ? t("healthTab.checkedTodayNormal", "Checked today · All normal") : t("healthTab.checkedToday", "Checked today"))
+                      : t("healthTab.checkedOn", "Checked {{date}}", { date: monthDay(localDateISO(new Date(latest.at))) });
+                  const notWeighed = w ? daysSince(w.measured_at) : null;
+                  const photo = resolvePhoto(b.photo_url);
+                  return (
+                    <button
+                      key={b.id}
+                      type="button"
+                      onClick={() => navigate({ to: "/birds/$birdId/weight", params: { birdId: b.id } })}
+                      className="flex min-h-[68px] w-full items-center gap-3 px-4 py-2.5 text-left active:bg-black/[0.03]"
+                      style={{ borderBottom: i === birds.length - 1 ? undefined : `1px solid ${K.line}`, color: K.forest }}
+                    >
+                      <span className="relative grid size-12 shrink-0 place-items-center overflow-hidden rounded-[14px] text-[18px] font-[700] text-white" style={{ background: K.moss }} aria-hidden="true">
+                        {photo ? <BirdPhotoCrop url={photo.url} original={photo.original} position={b.photo_position ?? "50% 20%"} alt="" /> : String(b.name).slice(0, 1).toUpperCase()}
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-[15px] font-[700]">{b.name}</span>
+                        {status && <span className="mt-0.5 block truncate text-[13px]" style={{ color: K.quiet }}>{status}</span>}
+                        {notWeighed != null && notWeighed > OVERDUE_DAYS && (
+                          <span className="mt-0.5 block truncate text-[13px] font-[700]" style={{ color: K.red }}>
+                            {t("healthTab.notWeighedDays", "Not weighed in {{count}} days", { count: notWeighed })}
+                          </span>
+                        )}
+                        {watch > 0 && <span className="mt-1 block"><KyaTag tone="amber">{t("healthTab.thingsToWatch", "{{count}} things to watch", { count: watch })}</KyaTag></span>}
+                      </span>
+                      {w && <span className="shrink-0 text-[15px] font-[700]">{t("healthHistory.grams", "{{n}} g", { n: Number(w.grams).toLocaleString() })}</span>}
+                      <ChevronRight className="size-[18px] shrink-0" style={{ color: K.quiet }} aria-hidden="true" />
+                    </button>
+                  );
+                })}
+              </KyaCard>
+            )}
+          </section>
 
-          {isLoading ? (
-            <p className="t-body text-[var(--mute)]">{t("scansInbox.loading", "Loading…")}</p>
-          ) : shownFeed.length === 0 ? (
-            <section className="rounded-[18px] bg-white p-8 text-center ring-1 ring-[var(--line2)]" style={{ boxShadow: "0 6px 14px -8px rgba(40,50,40,.08)" }}>
-              <div className="flex justify-center"><IconTile size={48} tone="pale" icon={<Feather className="size-6" />} /></div>
-              <h2 className="t-section mt-3">{sitId ? t("scansInbox.emptyTitleSit", "No health checks yet for this sit") : t("scansInbox.emptyTitle", "No health checks yet")}</h2>
-              <p className="t-body mx-auto mt-1.5 max-w-[34ch] text-[var(--ink2)]">
-                {sitId ? t("scansInbox.emptyBodySit", "{{name}} is asked to run a health check daily — their checks will show up here.", { name: filterLabel }) : t("scansInbox.emptyBody", "Run a health check above, or a sitter's daily health checks will show up here.")}
-              </p>
+          {/* During sits — only once there's a sit to show (live or past). */}
+          {shownSit && (() => {
+            const name = sitCaregiverName(t, shownSit, names);
+            const inSit = entries.filter((e) => e.sitId === shownSit.id);
+            const checks = inSit.filter((e): e is CheckEntry => e.kind === "check");
+            const weights = inSit.length - checks.length;
+            const flagged = checks.reduce((n, c) => n + thingsToWatch(c), 0);
+            return (
+              <section className="flex flex-col gap-3">
+                <KyaHeading>{t("healthTab.duringSits", "During sits")}</KyaHeading>
+                <KyaCard>
+                  <button
+                    type="button"
+                    onClick={() => navigate({ to: "/scans/history", search: { sitId: shownSit.id } })}
+                    className="flex min-h-[68px] w-full items-center gap-3 px-4 py-3 text-left active:bg-black/[0.03]"
+                    style={{ color: K.forest }}
+                  >
+                    <CaregiverAvatar name={name} household={!!shownSit.caregiver_user_id} />
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[15px] font-[700]">{sitTitle(t, {}, name)} · {rangeTo(t, shownSit.start_date, shownSit.end_date)}</span>
+                      <span className="mt-0.5 block truncate text-[13px]" style={{ color: K.quiet }}>
+                        {t("healthTab.nChecks", "{{count}} daily checks", { count: checks.length })} · {t("healthTab.nWeights", "{{count}} weights", { count: weights })}
+                      </span>
+                      {flagged > 0 && <span className="mt-1 block"><KyaTag tone="amber">{t("healthTab.thingsFlagged", "{{count}} things {{name}} flagged", { count: flagged, name })}</KyaTag></span>}
+                    </span>
+                    <ChevronRight className="size-[18px] shrink-0" style={{ color: K.quiet }} aria-hidden="true" />
+                  </button>
+                </KyaCard>
+              </section>
+            );
+          })()}
+
+          {/* Recent */}
+          {birds.length > 0 && (
+            <section className="flex flex-col gap-3">
+              <KyaHeading>{t("healthTab.recent", "Recent")}</KyaHeading>
+              {histError && !hist ? (
+                <p className="m-0 px-1 text-[14px]" style={{ color: K.quiet }}>{t("healthTab.loadError", "We couldn't load your health history. Try again in a moment.")}</p>
+              ) : histLoading ? (
+                <p className="m-0 px-1 text-[14px]" style={{ color: K.quiet }}>{t("healthTab.loading", "Loading…")}</p>
+              ) : entries.length === 0 ? (
+                <p className="m-0 px-1 text-[14px]" style={{ color: K.quiet }}>{t("healthTab.nothingYet", "Nothing here yet.")}</p>
+              ) : (
+                <EntryDays entries={entries.slice(0, 5)} ctx={ctx} />
+              )}
+              <KyaSecondaryButton className="w-full" onClick={() => navigate({ to: "/scans/history" })}>
+                {t("healthTab.seeHistory", "See full health history")}
+              </KyaSecondaryButton>
             </section>
-          ) : (
-            <Card>
-              {shownFeed.map((n, i) => {
-                const flagged = n.triage_status === "red" || n.triage_status === "yellow";
-                const unread = isUnreadScan(n, seenAt, myId);
-                const birdName = n.bird?.name ?? t("scansInbox.yourBird", "Your bird");
-                const runBy = scanRunBy(n);
-                const title = n.triage_status === "red"
-                  ? t("scansInbox.titleRed", "{{name}}: health concern flagged", { name: birdName })
-                  : n.triage_status === "yellow"
-                  ? t("scansInbox.titleYellow", "{{name}}: something to check", { name: birdName })
-                  : t("scansInbox.titleGreen", "{{name}}: all-clear scan", { name: birdName });
-                // scanRunBy returns the literal "You" sentinel for the viewer's own scans.
-                const runByLabel = runBy === "You" ? t("scansInbox.runByYou", "Run by you") : t("scansInbox.runBy", "Run by {{name}}", { name: runBy });
-                const runnerPill = n.source === "household"
-                  ? <StatusPill tone="household">{t("scansInbox.household", "Household")}</StatusPill>
-                  : n.source === "sitter"
-                  ? <StatusPill tone="off">{t("scansInbox.sitter", "Sitter")}</StatusPill>
-                  : undefined;
-                return (
-                  <RecordRow
-                    key={n.id}
-                    last={i === shownFeed.length - 1}
-                    leading={
-                      <IconTile
-                        size={38}
-                        tone={flagged ? "amber" : "pale"}
-                        icon={flagged ? <AlertTriangle className="size-5" /> : <CheckCircle2 className="size-5" />}
-                      />
-                    }
-                    title={
-                      <span className="inline-flex items-center gap-2">
-                        {title}
-                        {unread && <span className="size-2 shrink-0 rounded-full bg-[var(--moss)]" aria-label={t("scansInbox.unread", "Unread")} />}
-                      </span>
-                    }
-                    subtitle={
-                      <span className="inline-flex items-center gap-2">
-                        <span>{relativeTime(n.created_at)} · {runByLabel}</span>
-                        {runnerPill}
-                      </span>
-                    }
-                    onClick={() => navigate({ to: "/birds/$birdId/scans/$scanId", params: { birdId: n.bird_id, scanId: n.id } })}
-                  />
-                );
-              })}
-            </Card>
           )}
-        </main>
+
+          <p className="m-0 px-1 text-[12.5px] leading-[1.45]" style={{ color: K.quiet }}>
+            {t("disclaimer.noteLabel", "Note:")} {t("disclaimer.compactBody", "Not a substitute for veterinary care. Call a vet for any medical concern.")}
+          </p>
+        </KyaBody>
       </div>
-    </div>
+    </KyaPage>
   );
 }

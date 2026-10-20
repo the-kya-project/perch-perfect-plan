@@ -38,7 +38,7 @@ function initialsOf(name: string): string {
 
 // Caregiver avatar — a forest rounded tile with a house for a household member,
 // the sitter's initials on lime otherwise.
-function CaregiverAvatar({ name, household, size = 44 }: { name: string; household: boolean; size?: number }) {
+export function CaregiverAvatar({ name, household, size = 44 }: { name: string; household: boolean; size?: number }) {
   if (household) {
     return (
       <span className="grid shrink-0 place-items-center rounded-[14px]" style={{ width: size, height: size, background: K.forest, color: K.lime }} aria-hidden="true">
@@ -127,7 +127,7 @@ export function ActiveSitCard({ sit, birds, caregiverName, iAmLead, iOwnSit, con
       {birds.length > 0 && <div className="mt-3"><BirdStack birds={birds} onDark /></div>}
 
       <div className="mt-3.5 flex flex-col gap-2">
-        <Link to="/scans" search={{ sitId: sit.id }} className="inline-flex min-h-[48px] items-center justify-center gap-1.5 rounded-full text-[15px] font-[700] active:scale-[0.99]" style={{ background: K.lime, color: K.forest }}>
+        <Link to="/scans/history" search={{ sitId: sit.id }} className="inline-flex min-h-[48px] items-center justify-center gap-1.5 rounded-full text-[15px] font-[700] active:scale-[0.99]" style={{ background: K.lime, color: K.forest }}>
           <Activity className="size-4" /> {t("sitCards.viewHealthChecks", "View health checks")}
         </Link>
         {iOwnSit ? (

@@ -9,7 +9,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { computeTriage, type ScanAnswer, type ScanFieldKey } from "./triage";
+import { computeTriage, SCAN_FIELDS, type ScanAnswer, type ScanFieldKey } from "./triage";
 import { resolveToday } from "./localDay";
 import { buildDailyLogEmail, buildSitterConcernEmail } from "./emailTemplates";
 import { emailT } from "./i18n/emailI18n.server";
@@ -452,6 +452,9 @@ export const submitHealthScan = createServerFn({ method: "POST" })
           // The sitter's local date, so an evening check isn't filed under tomorrow.
           today: z.string().optional(),
         })
+        // Sitters answer every question: there is no all-good shortcut, and
+        // the form already blocks a partial check. Enforce it here too.
+        .refine((v) => SCAN_FIELDS.every((f) => v.answers[f.key] !== undefined), { message: "Please answer every question before submitting." })
         .parse(d),
   )
   .handler(async ({ data }) => {
@@ -514,6 +517,7 @@ export const submitHealthScan = createServerFn({ method: "POST" })
         bird_id: data.birdId,
         grams: data.weightGrams,
         source: "sitter",
+        sit_id: sit.id,
         // No auth user for a token-based sitter; note carries who logged it.
         note: sit.sitter_name ? `Logged by ${sit.sitter_name}` : null,
       });
