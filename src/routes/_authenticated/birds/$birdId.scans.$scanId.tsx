@@ -245,14 +245,21 @@ function ScanDetail() {
       : t("scanDetail.byName", "by {{name}}", { name: actor ?? memberFallback });
   const whoShort = mine ? null : (actor?.split(/\s+/)[0] ?? (isSitter ? t("scanDetail.yourSitterCap", "Your sitter") : t("scanDetail.householdMemberCap", "A household member")));
   const notes = (row.item_notes ?? null) as Record<string, string> | null;
-  const flagged = SCAN_COLS.filter((f) => row[f.col] === "not_sure" || row[f.col] === "concerning");
+  // A question whose column isn't in the database (vomiting_status before
+  // 20260619170000 is applied) has no stored answer: use its triage code if
+  // it was flagged, else leave the question out rather than call it unanswered.
+  const codes = (Array.isArray(row.triage_reason_codes) ? row.triage_reason_codes : []) as { key?: string; answer?: string }[];
+  const answerOf = (f: (typeof SCAN_COLS)[number]): string | null | undefined =>
+    f.col in row ? row[f.col] : codes.find((c) => c.key === f.fkey)?.answer;
+  const shownCols = SCAN_COLS.filter((f) => answerOf(f) !== undefined);
+  const flagged = shownCols.filter((f) => answerOf(f) === "not_sure" || answerOf(f) === "concerning");
   // A flag with no per-question answers (older rows) still counts as one thing.
   const watchCount = flagged.length || (row.triage_status && row.triage_status !== "green" ? 1 : 0);
   const reasonsText = flagged.length ? null : formatTriageReasons(t, row);
 
   const sentence = (f: (typeof SCAN_COLS)[number]) => {
     const noun = itemNoun(t, f.fkey);
-    const notSure = row[f.col] === "not_sure";
+    const notSure = answerOf(f) === "not_sure";
     if (whoShort === null) {
       return notSure
         ? t("scanDetail.youNotSure", "You weren't sure about {{bird}}'s {{item}}", { bird: birdName, item: noun })
@@ -307,13 +314,13 @@ function ScanDetail() {
 
       <KyaCard>
         <div className="px-4 pb-1 pt-4"><KyaHeading size={20}>{t("scanDetail.everyAnswer", "Every answer")}</KyaHeading></div>
-        {SCAN_COLS.map((f, i) => {
+        {shownCols.map((f, i) => {
           const note = notes?.[f.fkey];
           return (
-            <div key={f.col} className="px-4 py-1.5" style={{ borderBottom: i === SCAN_COLS.length - 1 ? undefined : `1px solid ${K.line}` }}>
+            <div key={f.col} className="px-4 py-1.5" style={{ borderBottom: i === shownCols.length - 1 ? undefined : `1px solid ${K.line}` }}>
               <div className="flex min-h-[44px] items-center gap-3">
                 <span className="min-w-0 flex-1 text-[15px]" style={{ color: K.forest }}>{scanColLabel(t, f.col, f.label)}</span>
-                <AnswerTag value={row[f.col]} />
+                <AnswerTag value={answerOf(f) ?? null} />
               </div>
               {note && <p className="m-0 pb-2 text-[13px] leading-[1.45]" style={{ color: K.quiet }}>{note}</p>}
             </div>

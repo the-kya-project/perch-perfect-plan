@@ -60,28 +60,32 @@ export type CheckEntry = Base & {
 export type WeightEntry = Base & { kind: "weight"; grams: number; meal: string | null };
 export type HistoryEntry = CheckEntry | WeightEntry;
 
-/** Not-normal answers on a check ("things to watch"). Falls back to the
- *  triage reason codes when the per-question columns are empty. */
+/** Not-normal answers on a check ("things to watch"): the stored answers,
+ *  plus any flagged question the triage codes name whose answer has no
+ *  column (vomiting before 20260619170000 is applied). */
 export function thingsToWatch(e: CheckEntry): number {
-  const n = SCAN_FIELDS.filter((f) => {
+  const keys = new Set<string>(SCAN_FIELDS.filter((f) => {
     const a = e.answers[f.key];
     return a === "not_sure" || a === "concerning";
-  }).length;
-  if (n > 0) return n;
-  if (e.triage !== "green" && Array.isArray(e.reasonCodes)) return (e.reasonCodes as unknown[]).length || 1;
+  }).map((f) => f.key));
+  if (Array.isArray(e.reasonCodes)) {
+    for (const c of e.reasonCodes as { key?: string }[]) if (c?.key && !(c.key in e.answers)) keys.add(c.key);
+  }
+  if (keys.size > 0) return keys.size;
   return e.triage !== "green" ? 1 : 0;
 }
 
-/** Answer counts across every question in the check. */
+/** Answer counts across the questions the check stored. */
 export function answerCounts(e: CheckEntry): { normal: number; notSure: number; concerning: number; total: number } {
   let normal = 0, notSure = 0, concerning = 0;
-  for (const f of SCAN_FIELDS) {
+  const stored = SCAN_FIELDS.filter((f) => f.key in e.answers);
+  for (const f of stored) {
     const a = e.answers[f.key];
     if (a === "normal") normal++;
     else if (a === "not_sure") notSure++;
     else if (a === "concerning") concerning++;
   }
-  return { normal, notSure, concerning, total: SCAN_FIELDS.length };
+  return { normal, notSure, concerning, total: stored.length };
 }
 
 /** The sit an entry belongs to. A stored sit_id wins; a sitter weight without
@@ -131,9 +135,10 @@ export function localDay(iso: string): string {
   return localDateISO(new Date(iso));
 }
 
-const LOG_SELECT =
-  "id, bird_id, sit_id, source, run_by, created_at, triage_status, triage_reason_codes, resolved_at, item_notes, " +
-  Object.values(STATUS_COL).join(", ");
+// "*", not a column list: a question whose column isn't in the database yet
+// (vomiting_status, see 20260619170000) would fail the whole query, and the
+// history would read as empty. Missing columns just come back absent.
+const LOG_SELECT = "*";
 
 export type HealthHistory = {
   entries: HistoryEntry[];
@@ -173,7 +178,8 @@ export async function fetchHealthHistory(birdIds: string[], ownerId: string | nu
     sitId: r.sit_id ?? null,
     triage: r.triage_status ?? "green",
     resolvedAt: r.resolved_at ?? null,
-    answers: Object.fromEntries(SCAN_FIELDS.map((f) => [f.key, r[STATUS_COL[f.key]] ?? null])),
+    // Only questions with a stored column: an absent one isn't "not answered".
+    answers: Object.fromEntries(SCAN_FIELDS.filter((f) => STATUS_COL[f.key] in r).map((f) => [f.key, r[STATUS_COL[f.key]] ?? null])),
     itemNotes: (r.item_notes ?? null) as Record<string, string> | null,
     reasonCodes: r.triage_reason_codes,
   }));

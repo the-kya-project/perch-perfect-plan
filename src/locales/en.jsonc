@@ -1802,6 +1802,7 @@
   "healthTab.checkedToday": "Checked today",
   "healthTab.checkedTodayNormal": "Checked today · All normal",
   "healthTab.duringSits": "During sits",
+  "healthTab.loadError": "We couldn't load your health history. Try again in a moment.",
   "healthTab.loading": "Loading…",
   "healthTab.metaTitle": "Flock health — Kya & Co.",
   "healthTab.nChecks_one": "{{count}} daily check",

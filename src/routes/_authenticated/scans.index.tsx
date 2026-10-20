@@ -48,7 +48,7 @@ function HealthTab() {
     },
   });
   const birds = ((birdsRaw ?? []) as any[]).slice().sort((a, b) => String(a.name).localeCompare(String(b.name)));
-  const { data: hist, isLoading: histLoading } = useHealthHistory(birds.map((b) => b.id), myId);
+  const { data: hist, isLoading: histLoading, isError: histError } = useHealthHistory(birds.map((b) => b.id), myId);
   const resolvePhoto = useBirdPhotos(birds.map((b) => b.photo_url), 96);
 
   // The header bell opens this tab: clear its badge.
@@ -107,7 +107,7 @@ function HealthTab() {
                   const watch = latest && !latest.resolvedAt ? thingsToWatch(latest) : 0;
                   const checkedToday = latest && latest.at && localDateISO(new Date(latest.at)) === today;
                   const status = !latest
-                    ? (histLoading ? "" : t("healthTab.notChecked", "Not checked yet"))
+                    ? (histLoading || histError ? "" : t("healthTab.notChecked", "Not checked yet"))
                     : checkedToday
                       ? (thingsToWatch(latest) === 0 ? t("healthTab.checkedTodayNormal", "Checked today · All normal") : t("healthTab.checkedToday", "Checked today"))
                       : t("healthTab.checkedOn", "Checked {{date}}", { date: monthDay(localDateISO(new Date(latest.at))) });
@@ -179,7 +179,9 @@ function HealthTab() {
           {birds.length > 0 && (
             <section className="flex flex-col gap-3">
               <KyaHeading>{t("healthTab.recent", "Recent")}</KyaHeading>
-              {histLoading ? (
+              {histError && !hist ? (
+                <p className="m-0 px-1 text-[14px]" style={{ color: K.quiet }}>{t("healthTab.loadError", "We couldn't load your health history. Try again in a moment.")}</p>
+              ) : histLoading ? (
                 <p className="m-0 px-1 text-[14px]" style={{ color: K.quiet }}>{t("healthTab.loading", "Loading…")}</p>
               ) : entries.length === 0 ? (
                 <p className="m-0 px-1 text-[14px]" style={{ color: K.quiet }}>{t("healthTab.nothingYet", "Nothing here yet.")}</p>

@@ -3609,6 +3609,8 @@
   "healthTab.checkedTodayNormal": "Vandaag gecheckt · Alles normaal",
   // During sits
   "healthTab.duringSits": "Tijdens oppassen",
+  // We couldn't load your health history. Try again in a moment.
+  "healthTab.loadError": "We konden je gezondheidsgeschiedenis niet laden. Probeer het zo nog eens.",
   // Loading…
   "healthTab.loading": "Laden…",
   // Flock health — Kya & Co.

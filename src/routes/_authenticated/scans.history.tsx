@@ -50,7 +50,7 @@ function HealthHistoryPage() {
     },
   });
   const birds = ((birdsRaw ?? []) as any[]).slice().sort((a, b) => String(a.name).localeCompare(String(b.name)));
-  const { data: hist, isLoading } = useHealthHistory(birds.map((b) => b.id), myId, limit);
+  const { data: hist, isLoading, isError } = useHealthHistory(birds.map((b) => b.id), myId, limit);
 
   const sits = hist?.sits ?? [];
   const names = hist?.names ?? {};
@@ -152,7 +152,9 @@ function HealthHistoryPage() {
             </div>
           )}
 
-          {isLoading && !hist ? (
+          {isError && !hist ? (
+            <p className="m-0 px-1 py-4 text-[15px]" style={{ color: K.quiet }}>{t("healthTab.loadError", "We couldn't load your health history. Try again in a moment.")}</p>
+          ) : isLoading && !hist ? (
             <p className="m-0 px-1 text-[14px]" style={{ color: K.quiet }}>{t("healthTab.loading", "Loading…")}</p>
           ) : visible.length === 0 ? (
             <p className="m-0 px-1 py-4 text-[15px]" style={{ color: K.quiet }}>{t("healthTab.nothingYet", "Nothing here yet.")}</p>
