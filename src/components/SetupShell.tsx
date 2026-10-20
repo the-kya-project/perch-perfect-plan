@@ -51,6 +51,7 @@ export function SetupShell({
   onSaveAndExit,
   nextLabel: nextLabelProp,
   nextDisabled,
+  footerNote,
   saving,
   backDisabled,
   hideFooter,
@@ -76,6 +77,8 @@ export function SetupShell({
   onSaveAndExit?: () => void;
   nextLabel?: string;
   nextDisabled?: boolean;
+  /** A short line above the footer buttons, e.g. why Next is waiting. */
+  footerNote?: string | null;
   saving?: boolean;
   backDisabled?: boolean;
   hideFooter?: boolean;
@@ -106,6 +109,8 @@ export function SetupShell({
   }
 
   const footer = footerProp ?? (hideFooter ? null : (
+    <>
+    {footerNote && <p role="status" className="m-0 mb-2.5 text-center text-[14px] text-[#3d4f45]">{footerNote}</p>}
     <div className="flex items-center gap-3">
       {onSaveAndExit && (
         <SetupTextButton onClick={onSaveAndExit} disabled={saving}>{t("setupShell.saveAndExit", "Save & exit")}</SetupTextButton>
@@ -116,6 +121,7 @@ export function SetupShell({
         </SetupPrimaryButton>
       </div>
     </div>
+    </>
   ));
 
   return (

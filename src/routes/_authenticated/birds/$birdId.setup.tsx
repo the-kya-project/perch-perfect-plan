@@ -3,7 +3,8 @@ import { createPortal } from "react-dom";
 import { InSetupFrame, SetupIntroSlot } from "@/components/setup/SetupFrame";
 import { StartFromAnotherBird, useCopySources } from "@/components/setup/StartFromAnotherBird";
 import { foodCopy, dayCopy, isOwnTask } from "@/lib/copyFromBird";
-import { SetupPrimaryButton, SetupTextButton, SectionCard, Field, TextField, TextBox, Dropdown, Segmented, EditableList, Helper } from "@/components/setup/controls";
+import { S, SERIF, SetupPrimaryButton, SetupTextButton, SectionCard, Field, TextField, TextBox, Dropdown, Segmented, EditableList, Helper, CheckChips } from "@/components/setup/controls";
+import { BottomSheet } from "@/components/setup/BottomSheet";
 import { useTranslation } from "react-i18next";
 import i18next, { type TFunction } from "i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -16,10 +17,10 @@ import { encodeSetupStep, basicsDone } from "@/lib/setupProgress";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { mergeHome, homeDifferences, seedShared, sameGroup, followSharedPatch, clearOwnPatch, birdHasOwn, HOME_GROUPS, HOME_GROUP_COLUMNS, type HomeRow } from "@/lib/homeDefaults";
 import { EmergencyInfo } from "@/components/EmergencyInfo";
-import { Plus, X, Check, Lightbulb, GripVertical, Sparkles, AlertTriangle } from "lucide-react";
+import { Plus, X, Check, Lightbulb, GripVertical, Sparkles, AlertTriangle, Pill, ChevronDown } from "lucide-react";
 import { PhotoCropper } from "@/components/PhotoCropper";
 import { AgePicker, BirdField, SpeciesPicker } from "@/components/BirdPickers";
-import { ClipRecorder, UploadProgress, MAX_SECONDS as CLIP_MAX_SECONDS, MAX_BYTES as CLIP_MAX_BYTES } from "@/components/ClipRecorder";
+import { ClipRecorder, UploadProgress } from "@/components/ClipRecorder";
 import { ClipPlayer } from "@/components/ClipPlayer";
 import { useOwnerClipPreview } from "@/lib/useOwnerClipPreview";
 import { commitClipRef } from "@/lib/clipReplace";
@@ -47,6 +48,8 @@ const setupSearch = z.object({
  * so steps work outside the wizard too.
  */
 const SetupDirtyContext = createContext<(dirty: boolean) => void>(() => {});
+/** Lets a step put a short line above the footer (e.g. "Your clip is still uploading."). */
+const SetupFooterNoteContext = createContext<(note: string | null) => void>(() => {});
 
 /**
  * Hides the per-step instruction banner. The bird editor renders these same step
@@ -177,8 +180,9 @@ function BirdSetup() {
 
   const [step, setStep] = useState<number>(1);
   const [blockNext, setBlockNext] = useState(false);
+  const [footerNote, setFooterNote] = useState<string | null>(null);
   const [dirty, setDirty] = useState(false);
-  useEffect(() => { setBlockNext(false); setDirty(false); }, [step]);
+  useEffect(() => { setBlockNext(false); setDirty(false); setFooterNote(null); }, [step]);
   const [saving, setSaving] = useState(false);
   // The stop point after Health: "The basics are set". Shown once per bird, the
   // first time it gets past Health (a finished bird walking through again, or a
@@ -473,7 +477,11 @@ function BirdSetup() {
   return (
     <SetupShell
       step={step}
-      title={onFoodPage2 ? t("birdSetup.food2.title", "Water, treats and hygiene") : setupStepTitle(t, meta.key)}
+      title={onFoodPage2
+        ? t("birdSetup.food2.title", "Water, treats and hygiene")
+        : meta.key === "health"
+          ? t("birdSetup.health.title", "Keeping {{name}} healthy", { name: bird.name })
+          : setupStepTitle(t, meta.key)}
       subtitle={onFoodPage2 ? t("birdSetup.food2.intro", "Everything here is optional, and the defaults are a good place to start.") : undefined}
       page={meta.key === "food" ? [foodPage, 2] : undefined}
       birdName={bird.name}
@@ -488,9 +496,11 @@ function BirdSetup() {
       nextLabel={isLast ? t("birdSetup.finishSetup", "Finish setup") : onFoodPage2 ? t("birdSetup.food2.next", "Next: Health") : t("birdSetup.next", "Next")}
       backDisabled={step <= 1 && !(meta.key === "food" && foodPage === 2)}
       nextDisabled={blockNext}
+      footerNote={footerNote}
       hideFooter={step === TOTAL_STEPS}
     >
       <SetupDirtyContext.Provider value={setDirty}>
+        <SetupFooterNoteContext.Provider value={setFooterNote}>
         <StepBody
           step={step}
           birdId={birdId}
@@ -502,6 +512,7 @@ function BirdSetup() {
           registerValidate={registerValidate}
           foodPage={foodPage}
         />
+        </SetupFooterNoteContext.Provider>
       </SetupDirtyContext.Provider>
     </SetupShell>
   );
@@ -2172,7 +2183,13 @@ export function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlus
   // care_plans.medications_details (jsonb); the legacy text columns
   // (birds.medications, care_plans.medication_schedule) are kept in sync as
   // joined summaries so every read surface keeps working unchanged.
-  const [medRows, setMedRows] = useState<MedRow[]>([{ name: "", times: [], notes: "" }]);
+  const [medRows, setMedRows] = useState<MedRow[]>([]);
+  // The medication open in the sheet, and which "more detail" row is being typed in.
+  const [medSheet, setMedSheet] = useState<number | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [editingDetail, setEditingDetail] = useState<string | null>(null);
+  const [clipUploading, setClipUploading] = useState(false);
+  const setFooterNote = useContext(SetupFooterNoteContext);
   const [whatsNormal, setWhatsNormal] = useState("");
   const [notes, setNotes] = useState("");
   // Granular "what's normal" + when-to-call fields, keyed by care_plans column.
@@ -2190,6 +2207,10 @@ export function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlus
 
   // Don't let the owner advance mid-upload (prevents re-trigger / partial saves).
   useEffect(() => { onBlockNext(clipBusy); }, [clipBusy, onBlockNext]);
+  useEffect(() => {
+    setFooterNote(clipUploading ? t("birdSetup.health.clipStillUploading", "Your clip is still uploading.") : null);
+    return () => setFooterNote(null);
+  }, [clipUploading, setFooterNote, t]);
 
   useEffect(() => {
     if (!plan || !bird || hydrated) return;
@@ -2341,209 +2362,313 @@ export function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlus
 
   if (isLoading || !plan || !bird) return <div className="h-32 animate-pulse rounded-2xl bg-sage-100" />;
 
+  const detailCount = HEALTH_DETAIL_FIELDS.filter(([k]) => (detail[k] ?? "").trim()).length;
+  const setDetailField = (k: string, v: string) => setDetail((d) => ({ ...d, [k]: v.slice(0, 500) }));
+  const medTimeLabel = (key: MedTime) => displayLabel(t, MED_TIMES.find((x) => x.key === key)!.label);
+  const medSummary = (m: MedRow) => {
+    const when = m.times.length
+      ? MED_TIMES.filter((x) => m.times.includes(x.key)).map((x) => medTimeLabel(x.key)).join(", ")
+      : t("birdSetup.health.anytimeNoTime", "Anytime · no time set");
+    return m.times.length && m.notes.trim() ? `${when} · ${m.notes.trim()}` : when;
+  };
+  const openNewMed = () => { setMedRows((rows) => [...rows, { name: "", times: [], notes: "" }]); setMedSheet(medRows.length); };
+  // Closing the sheet drops a medication that was opened but left blank.
+  const closeMedSheet = () => {
+    setMedRows((rows) => rows.filter((m, i) => i !== medSheet || m.name.trim() || m.times.length || m.notes.trim()));
+    setMedSheet(null);
+  };
+  const updateMed = (i: number, patch: Partial<MedRow>) => setMedRows((rows) => rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
+  const sheetMed = medSheet != null ? medRows[medSheet] : undefined;
+  const detailLabel = (k: string) => {
+    switch (k) {
+      case "normal_appetite": return t("birdSetup.health.appetite", "Appetite");
+      case "normal_droppings": return t("birdSetup.health.droppings", "Droppings");
+      case "normal_noise": return t("birdSetup.health.noiseLevel", "Noise level");
+      case "normal_activity": return t("birdSetup.health.activity", "Activity");
+      case "normal_sleep": return t("birdSetup.health.sleepAndNaps", "Sleep and naps");
+      default: return t("birdSetup.health.withStrangers", "With strangers");
+    }
+  };
+  const detailPlaceholder = (k: string, ph: string) =>
+    k === "normal_sleep" ? t("birdSetup.health.sleepPlaceholder", "e.g. Lights out by 8pm, sleeps about 12 hours; short afternoon nap.") : displayLabel(t, ph);
+
   return (
-    <div className="space-y-4">
-      <StepInstruction>{t("birdSetup.instr.health", "Help anyone caring for {{name}} know what's normal, so they can spot what isn't.", { name: birdName })}</StepInstruction>
+    <div className="flex flex-col gap-[14px]">
+      <StepInstruction>{t("birdSetup.instr.healthOptional", "Help anyone caring for {{name}} know what's normal, so they can spot what isn't. Everything here is optional.", { name: birdName })}</StepInstruction>
 
-      <Card title={t("birdSetup.normalWeightGrams", "Normal weight (grams)")} hint={t("birdSetup.optionalUpdatingTheNormalWeight", "Optional. Updating the normal weight adds an entry to the weight log.")}>
-        <div className="grid grid-cols-3 gap-2">
-          <label className="block">
-            <span className="mb-1 block text-[11px] font-medium text-[#5f5e5a]">{t("birdSetup.normal", "Normal")}</span>
-            <input className="input" inputMode="decimal" placeholder="410" value={weight} onChange={(e) => setWeight(e.target.value.replace(/[^0-9.]/g, ""))} />
-          </label>
-          <label className="block">
-            <span className="mb-1 block text-[11px] font-medium text-[#5f5e5a]">{t("birdSetup.min", "Min")}</span>
-            <input className="input" inputMode="decimal" placeholder="395" value={weightMin} onChange={(e) => setWeightMin(e.target.value.replace(/[^0-9.]/g, ""))} />
-          </label>
-          <label className="block">
-            <span className="mb-1 block text-[11px] font-medium text-[#5f5e5a]">{t("birdSetup.max", "Max")}</span>
-            <input className="input" inputMode="decimal" placeholder="425" value={weightMax} onChange={(e) => setWeightMax(e.target.value.replace(/[^0-9.]/g, ""))} />
-          </label>
-        </div>
-      </Card>
-
-      <Card title={t("birdSetup.shortClipOfNormalBehavior", "Short clip of normal behavior or vocalizing")} hint={t("birdSetup.baselineClipHint", "Optional, up to {{seconds}} seconds and {{mb}} MB. Record at 720p in your browser or upload an existing video. Private — only your assigned sitter can view it.", { seconds: CLIP_MAX_SECONDS, mb: Math.round(CLIP_MAX_BYTES / (1024 * 1024)) })}>
-        {clipPreview.status === "processing" && !replacingClip ? (
-          <UploadProgress label={t("birdSetup.processingVideo", "Processing video…")} hint={t("birdSetup.yourClipIsSavedIt", "Your clip is saved. It'll be viewable here once it finishes converting — usually under a minute.")} />
-        ) : clipPreview.url && !replacingClip ? (
-          <div className="space-y-2">
-            <ClipPlayer src={clipPreview.url} className="aspect-video w-full rounded-xl ring-1 ring-sage-200" />
-            <p className="flex items-center gap-1 text-xs font-semibold text-sage-600"><Check className="size-3.5" /> {t("birdSetup.clipSaved", "Clip saved")}</p>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setReplacingClip(true)}
-                className="flex-1 rounded-xl border border-sage-200 bg-white py-2 text-xs font-semibold text-sage-700"
-              >
-                {t("birdSetup.replace", "Replace")}
-              </button>
-              <button
-                type="button"
-                onClick={removeClip}
-                className="flex-1 rounded-xl border border-sage-200 bg-white py-2 text-xs font-semibold text-warn-red"
-              >
-                {t("birdSetup.remove", "Remove")}
-              </button>
+      <SectionCard
+        title={t("birdSetup.health.weight", "Weight")}
+        helper={t("birdSetup.health.weightHelper", "A healthy range helps you and your sitter notice a change early. Saving a new normal weight also adds it to {{name}}'s weight log.", { name: birdName })}
+      >
+        <Field label={t("birdSetup.health.normalWeight", "Normal weight")} htmlFor="health-weight">
+          <GramsField id="health-weight" value={weight} onChange={setWeight} placeholder={t("birdSetup.health.weightPlaceholder", "e.g. 1,080")} />
+        </Field>
+        <Field label={t("birdSetup.health.healthyRange", "Healthy range")} htmlFor="health-weight-min">
+          <div className="flex items-center gap-2.5">
+            <div className="min-w-0 flex-1">
+              <GramsField id="health-weight-min" value={weightMin} onChange={setWeightMin} placeholder={t("birdSetup.health.low", "Low")} />
+            </div>
+            <span className="text-[15px]" style={{ color: S.helper }}>{t("birdSetup.health.to", "to")}</span>
+            <div className="min-w-0 flex-1">
+              <GramsField value={weightMax} onChange={setWeightMax} placeholder={t("birdSetup.health.high", "High")} ariaLabel={t("birdSetup.health.healthyRangeHigh", "Healthy range, high")} />
             </div>
           </div>
-        ) : (
-          <div className="space-y-2">
-            <ClipRecorder birdId={birdId} onBusy={setClipBusy} onUploaded={uploadClip} />
-            {clipPath && replacingClip && (
-              <button type="button" onClick={() => setReplacingClip(false)} className="w-full rounded-xl border border-sage-200 bg-white py-2 text-xs font-semibold text-sage-700">
-                {t("birdSetup.keepCurrentClip", "Keep current clip")}
-              </button>
-            )}
-          </div>
-        )}
-      </Card>
+        </Field>
+      </SectionCard>
 
-      <Card title={t("birdSetup.knownConditions", "Known conditions")}>
-        <textarea
-          className="input area"
-          placeholder={t("birdSetup.eGMildFeatherPlucking", "e.g. Mild feather plucking; old wing injury (no flight).")}
-          value={conditions}
-          maxLength={500}
-          onChange={(e) => setConditions(e.target.value)}
-        />
-      </Card>
-
-      <Card title={t("birdSetup.medications", "Medications")} hint={t("birdSetup.pickWhenEachDoseIs", "Pick when each dose is given — every selected time becomes its own check-off on the sitter's daily list.")}>
-        <div className="space-y-3">
-          {medRows.map((m, i) => (
-            <div key={i} className={i > 0 ? "border-t border-[#ece6d6] pt-3" : ""}>
-              <div className="flex items-start gap-2">
-                <div className="min-w-0 flex-1 space-y-2">
-                  <input
-                    className="input"
-                    placeholder={t("birdSetup.eGMetacam01ml", "e.g. Metacam 0.1ml")}
-                    value={m.name}
-                    maxLength={300}
-                    onChange={(e) => setMedRows((rows) => rows.map((r, j) => (j === i ? { ...r, name: e.target.value } : r)))}
-                  />
-                  <div className="flex flex-wrap gap-1.5">
-                    {MED_TIMES.map((item) => {
-                      const on = m.times.includes(item.key);
-                      return (
-                        <button
-                          key={item.key}
-                          type="button"
-                          aria-pressed={on}
-                          onClick={() =>
-                            setMedRows((rows) =>
-                              rows.map((r, j) =>
-                                j === i
-                                  ? { ...r, times: on ? r.times.filter((x) => x !== item.key) : [...r.times, item.key] }
-                                  : r,
-                              ),
-                            )
-                          }
-                          className={`min-h-[36px] rounded-full px-3.5 text-[13px] font-[500] ring-1 ${
-                            on ? "bg-[#1a3d2e] text-white ring-[#1a3d2e]" : "bg-white text-[#1a3d2e] ring-[#d8d2c0]"
-                          }`}
-                        >
-                          {displayLabel(t, item.label)}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  {m.name.trim() !== "" && m.times.length === 0 && (
-                    <p className="text-xs leading-relaxed text-[#8a897f]">
-                      {t("birdSetup.noTimeSetSittersWill", "No time set — sitters will see this under Anytime.")}
-                    </p>
-                  )}
-                  <input
-                    className="input"
-                    placeholder={t("birdSetup.instructionsEGInThe", "Instructions (e.g. in the left cheek, with food)")}
-                    value={m.notes}
-                    maxLength={300}
-                    onChange={(e) => setMedRows((rows) => rows.map((r, j) => (j === i ? { ...r, notes: e.target.value } : r)))}
-                  />
-                </div>
-                {medRows.length > 1 && (
-                  <button
-                    type="button"
-                    aria-label={t("birdSetup.removeMedication", "Remove medication")}
-                    onClick={() => setMedRows((rows) => rows.filter((_, j) => j !== i))}
-                    className="mt-1 grid size-9 shrink-0 place-items-center rounded-lg text-[var(--mute)] hover:bg-sage-100"
-                  >
-                    <X className="size-4" />
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
+      <SectionCard
+        title={t("birdSetup.medications", "Medications")}
+        helper={medRows.length > 0 ? t("birdSetup.health.medsHelper", "Each time you pick becomes a check-off on your sitter's daily list.") : undefined}
+      >
+        {medRows.length === 0 ? (
           <button
             type="button"
-            onClick={() => setMedRows((rows) => [...rows, { name: "", times: [], notes: "" }])}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-sage-100 px-3 py-2 text-xs font-semibold text-sage-700"
+            onClick={openNewMed}
+            className="flex min-h-[62px] w-full items-center gap-3 rounded-[16px] border-2 border-dashed bg-white px-4 py-3 text-left"
+            style={{ borderColor: "#b9b19a", color: S.forest }}
           >
-            <Plus className="size-3.5" /> {t("birdSetup.addAnotherMedication", "Add another medication")}
+            <span className="grid size-8 shrink-0 place-items-center rounded-full" style={{ background: S.forest, color: S.lime }}>
+              <Plus className="size-4" strokeWidth={2.6} aria-hidden="true" />
+            </span>
+            <span className="min-w-0">
+              <span className="block text-[15.5px] font-[700]">{t("birdSetup.health.addAMedication", "Add a medication")}</span>
+              <span className="block text-[13.5px]" style={{ color: S.helper }}>{t("birdSetup.health.nameDoseWhen", "Name, dose, and when it's given")}</span>
+            </span>
           </button>
-        </div>
-      </Card>
+        ) : (
+          <>
+            <div className="flex flex-col gap-2">
+              {medRows.map((m, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => setMedSheet(i)}
+                  className="flex min-h-[64px] w-full items-center gap-3 rounded-[16px] bg-white px-3.5 py-3 text-left"
+                  style={{ color: S.forest }}
+                >
+                  <span className="grid size-10 shrink-0 place-items-center rounded-[12px]" style={{ background: S.lime }}>
+                    <Pill className="size-5" aria-hidden="true" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[15.5px] font-[700]">{m.name.trim() || t("birdSetup.health.newMedication", "New medication")}</span>
+                    <span className="mt-0.5 block truncate text-[14px]" style={{ color: S.helper }}>{medSummary(m)}</span>
+                  </span>
+                </button>
+              ))}
+            </div>
+            <div>
+              <SetupTextButton onClick={openNewMed} icon={<Plus className="size-4" strokeWidth={2.6} aria-hidden="true" />}>
+                {t("birdSetup.addAnotherMedication", "Add another medication")}
+              </SetupTextButton>
+            </div>
+          </>
+        )}
+      </SectionCard>
 
-      <Card title={t("birdSetup.whatSNormalForThis", "What's normal for this bird")}>
+      <SectionCard emphasis title={t("birdSetup.whenToCall", "When to call")} helper={t("birdSetup.health.whenToCallHelper", "The first thing a sitter checks when something seems off.")}>
+        <Field label={t("birdSetup.health.whenToCallYou", "When to call you")} htmlFor="health-call-owner">
+          <TextBox
+            id="health-call-owner"
+            value={detail.when_to_call_owner ?? ""}
+            onChange={(v) => setDetailField("when_to_call_owner", v)}
+            placeholder={displayLabel(t, "e.g. Any change in droppings, eating less, or seems off.")}
+          />
+        </Field>
+        <Field label={t("birdSetup.health.whenToCallTheVet", "When to call the vet")} htmlFor="health-call-vet">
+          <TextBox
+            id="health-call-vet"
+            value={detail.when_to_call_vet ?? ""}
+            onChange={(v) => setDetailField("when_to_call_vet", v)}
+            placeholder={t("birdSetup.health.vetPlaceholder", "e.g. Trouble breathing, bleeding, a fall, or fluffed up all day.")}
+          />
+        </Field>
+      </SectionCard>
+
+      <SectionCard
+        title={t("birdSetup.health.whatsNormalFor", "What's normal for {{name}}", { name: birdName })}
+        helper={t("birdSetup.health.whatsNormalHelper", "In your own words: sounds, naps, droppings, anything you'd notice if it changed.")}
+      >
         <textarea
-          className="input area"
-          placeholder={t("birdSetup.eGLoudWhistlesAt", "e.g. Loud whistles at sunrise and sunset are normal. Naps mid-afternoon for ~30 min. Likes to flap on the perch for exercise.")}
+          aria-label={t("birdSetup.health.whatsNormalFor", "What's normal for {{name}}", { name: birdName })}
+          className="min-h-[96px] w-full rounded-[18px] border-2 bg-white px-4 py-3 text-[16px] leading-[1.5] outline-none focus:border-[#1a3d2e]"
+          style={{ borderColor: S.line, color: S.forest }}
+          placeholder={t("birdSetup.health.whatsNormalPlaceholder", "e.g. Loud whistles at sunrise and sunset. Naps mid-afternoon for about 30 minutes.")}
           value={whatsNormal}
           maxLength={800}
           onChange={(e) => setWhatsNormal(e.target.value)}
         />
-      </Card>
+        {!detailOpen ? (
+          <button
+            type="button"
+            onClick={() => setDetailOpen(true)}
+            aria-expanded={false}
+            className="flex min-h-[62px] w-full items-center gap-3 rounded-[16px] bg-white px-4 py-3 text-left"
+            style={{ color: S.forest }}
+          >
+            <span className="min-w-0 flex-1">
+              {detailCount > 0 ? (
+                <span className="block text-[15.5px] font-[700]">{t("birdSetup.health.moreDetailCount", "More detail · {{n}} of 6", { n: detailCount })}</span>
+              ) : (
+                <>
+                  <span className="block text-[15.5px] font-[700]">{t("birdSetup.health.addMoreDetail", "Add more detail")}</span>
+                  <span className="block text-[13.5px]" style={{ color: S.helper }}>{t("birdSetup.health.moreDetailList", "Appetite, droppings, noise, activity, sleep, and strangers")}</span>
+                </>
+              )}
+            </span>
+            <ChevronDown className="size-5 shrink-0" aria-hidden="true" />
+          </button>
+        ) : (
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-[15px] font-[700]">{t("birdSetup.health.moreDetailCount", "More detail · {{n}} of 6", { n: detailCount })}</span>
+              <SetupTextButton onClick={() => { setDetailOpen(false); setEditingDetail(null); }}>{t("birdSetup.health.showLess", "Show less")}</SetupTextButton>
+            </div>
+            <div className="overflow-hidden rounded-[16px] bg-white">
+              {HEALTH_DETAIL_FIELDS.map(([k, , ph], i) => {
+                const value = detail[k] ?? "";
+                const divider = i > 0 ? "border-t border-[#e3eae2]" : "";
+                return editingDetail === k ? (
+                  <div key={k} className={`flex flex-col gap-1.5 px-4 py-3 ${divider}`}>
+                    <label htmlFor={`health-detail-${k}`} className="text-[15px] font-[700]">{detailLabel(k)}</label>
+                    <textarea
+                      id={`health-detail-${k}`}
+                      autoFocus
+                      className="min-h-[72px] w-full rounded-[14px] border-2 bg-white px-3.5 py-2.5 text-[16px] leading-[1.5] outline-none"
+                      style={{ borderColor: S.forest, color: S.forest }}
+                      placeholder={detailPlaceholder(k, ph)}
+                      value={value}
+                      maxLength={500}
+                      onChange={(e) => setDetailField(k, e.target.value)}
+                      onBlur={() => setEditingDetail(null)}
+                    />
+                  </div>
+                ) : (
+                  <button
+                    key={k}
+                    type="button"
+                    onClick={() => setEditingDetail(k)}
+                    className={`flex min-h-[52px] w-full items-center justify-between gap-3 px-4 py-3 text-left ${divider}`}
+                    style={{ color: S.forest }}
+                  >
+                    <span className="min-w-0">
+                      <span className="block text-[15px] font-[700]">{detailLabel(k)}</span>
+                      {value.trim() && <span className="mt-0.5 block text-[14.5px]" style={{ color: S.helper }}>{value}</span>}
+                    </span>
+                    {!value.trim() && <span className="shrink-0 text-[15px] font-[700]" style={{ color: S.moss }}>{t("birdSetup.health.addPlus", "+ Add")}</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </SectionCard>
 
-      <Card title={t("birdSetup.moreDetailOptional", "More detail (optional)")} hint={t("birdSetup.specificsHelpASitterSpot", "Specifics help a sitter spot when something's off.")}>
-        <div className="space-y-3">
-          {HEALTH_DETAIL_FIELDS.map(([k, label, ph]) => (
-            <label key={k} className="block">
-              <span className="mb-1 block text-xs font-medium text-[#5f5e5a]">{displayLabel(t, label)}</span>
-              <textarea
-                className="input area"
-                placeholder={displayLabel(t, ph)}
-                value={detail[k] ?? ""}
-                maxLength={500}
-                onChange={(e) => setDetail((d) => ({ ...d, [k]: e.target.value }))}
-              />
-            </label>
-          ))}
-        </div>
-      </Card>
-
-      <Card title={t("birdSetup.whenToCall", "When to call")}>
-        <div className="space-y-3">
-          {HEALTH_CALL_FIELDS.map(([k, label, ph]) => (
-            <label key={k} className="block">
-              <span className="mb-1 block text-xs font-medium text-[#5f5e5a]">{displayLabel(t, label)}</span>
-              <textarea
-                className="input area"
-                placeholder={displayLabel(t, ph)}
-                value={detail[k] ?? ""}
-                maxLength={500}
-                onChange={(e) => setDetail((d) => ({ ...d, [k]: e.target.value }))}
-              />
-            </label>
-          ))}
-        </div>
-      </Card>
-
-      <Card title={t("birdSetup.otherNotes", "Other notes")}>
-        <textarea
-          className="input area"
-          placeholder={t("birdSetup.anythingElseASitterShould", "Anything else a sitter should know.")}
-          value={notes}
-          maxLength={800}
-          onChange={(e) => setNotes(e.target.value)}
+      <SectionCard title={t("birdSetup.knownConditions", "Known conditions")}>
+        <TextBox
+          ariaLabel={t("birdSetup.knownConditions", "Known conditions")}
+          value={conditions}
+          onChange={(v) => setConditions(v.slice(0, 500))}
+          placeholder={t("birdSetup.eGMildFeatherPlucking", "e.g. Mild feather plucking; old wing injury (no flight).")}
         />
-      </Card>
+      </SectionCard>
 
-      <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.65rem .8rem;font-size:16px;outline:none}.input:focus{border-color:var(--sage-600);box-shadow:0 0 0 3px rgb(74 103 65 / .15)}.area{min-height:60px;line-height:1.4}`}</style>
+      <SectionCard
+        title={t("birdSetup.health.clipTitle", "A short clip of {{name}}", { name: birdName })}
+        helper={t("birdSetup.health.clipHelper", "Normal behavior or sounds, up to 60 seconds. Only your sitter can see it.")}
+      >
+        {clipPreview.status === "processing" && !replacingClip ? (
+          <UploadProgress label={t("clipRecorder.gettingItReady", "Getting it ready…")} />
+        ) : clipPreview.url && !replacingClip ? (
+          <div className="flex flex-col gap-1">
+            <ClipPlayer src={clipPreview.url} className="h-[180px] w-full rounded-[16px]" />
+            <div className="flex gap-4">
+              <SetupTextButton onClick={() => setReplacingClip(true)}>{t("birdSetup.replace", "Replace")}</SetupTextButton>
+              <SetupTextButton onClick={removeClip}>{t("birdSetup.remove", "Remove")}</SetupTextButton>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-1">
+            <ClipRecorder birdId={birdId} onBusy={setClipBusy} onUploading={setClipUploading} onUploaded={uploadClip} />
+            {clipPath && replacingClip && (
+              <div>
+                <SetupTextButton onClick={() => setReplacingClip(false)}>{t("birdSetup.keepCurrentClip", "Keep current clip")}</SetupTextButton>
+              </div>
+            )}
+          </div>
+        )}
+      </SectionCard>
+
+      <SectionCard title={t("birdSetup.otherNotes", "Other notes")}>
+        <TextBox
+          ariaLabel={t("birdSetup.otherNotes", "Other notes")}
+          value={notes}
+          onChange={(v) => setNotes(v.slice(0, 800))}
+          placeholder={t("birdSetup.anythingElseASitterShould", "Anything else a sitter should know.")}
+        />
+      </SectionCard>
+
+      {sheetMed && medSheet != null && (
+        <BottomSheet onClose={closeMedSheet}>
+          <div className="flex flex-col gap-5" style={{ color: S.forest }}>
+            <div className="flex items-start gap-3">
+              <div className="min-w-0 flex-1">
+                <p className="m-0 text-[13px]" style={{ color: S.quiet }}>{t("birdSetup.health.medication", "Medication")}</p>
+                <h2 className="m-0 mt-0.5 break-words text-[26px] font-[700] leading-[1.15]" style={{ fontFamily: SERIF }}>
+                  {sheetMed.name.trim() || t("birdSetup.health.newMedication", "New medication")}
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={closeMedSheet}
+                aria-label={t("foodEditor.closeSheet", "Close")}
+                className="grid size-11 shrink-0 place-items-center rounded-full"
+                style={{ background: S.card, color: S.forest }}
+              >
+                <X className="size-5" aria-hidden="true" />
+              </button>
+            </div>
+            <Field label={t("birdSetup.health.nameAndDose", "Name and dose")} htmlFor="med-name">
+              <TextField id="med-name" value={sheetMed.name} maxLength={300} onChange={(v) => updateMed(medSheet, { name: v })} placeholder={t("birdSetup.eGMetacam01ml", "e.g. Metacam 0.1ml")} />
+            </Field>
+            <Field label={t("birdSetup.health.whenIsItGiven", "When is it given?")}>
+              <CheckChips
+                label={t("birdSetup.health.whenIsItGiven", "When is it given?")}
+                options={MED_TIMES.map((x) => ({ value: x.key, label: medTimeLabel(x.key) }))}
+                value={sheetMed.times}
+                onChange={(next) => updateMed(medSheet, { times: MED_TIMES.filter((x) => next.includes(x.key)).map((x) => x.key) })}
+              />
+              <p className="m-0 mt-1 rounded-[14px] px-4 py-3 text-[14.5px] leading-[1.45]" style={{ background: S.card, color: S.helper }}>
+                {sheetMed.times.length === 0
+                  ? t("birdSetup.health.noTimePicked", "No time picked, so your sitter will see this under Anytime. Each time you pick becomes its own check-off.")
+                  : t("birdSetup.health.eachTimeCheckOff", "Each time you pick becomes its own check-off.")}
+              </p>
+            </Field>
+            <Field label={t("birdSetup.health.instructions", "Instructions")} optional htmlFor="med-notes">
+              <TextField id="med-notes" value={sheetMed.notes} maxLength={300} onChange={(v) => updateMed(medSheet, { notes: v })} placeholder={t("birdSetup.health.instructionsPlaceholder", "e.g. With food, in the left cheek")} />
+            </Field>
+            <div className="flex flex-col items-center gap-1">
+              <SetupPrimaryButton onClick={closeMedSheet} arrow={false}>{t("foodEditor.done", "Done")}</SetupPrimaryButton>
+              <SetupTextButton onClick={() => { setMedRows((rows) => rows.filter((_, j) => j !== medSheet)); setMedSheet(null); }}>
+                {t("birdSetup.health.removeMedication", "Remove this medication")}
+              </SetupTextButton>
+            </div>
+          </div>
+        </BottomSheet>
+      )}
     </div>
   );
 }
 
-// Day-part choices for medication doses. Keys match routine_tasks.category
-// values so the sitter checklist buckets them without any text inference.
+/** A number box with "g" inside its right edge. */
+function GramsField({ id, value, onChange, placeholder, ariaLabel }: { id?: string; value: string; onChange: (v: string) => void; placeholder?: string; ariaLabel?: string }) {
+  return (
+    <div className="relative">
+      <TextField id={id} ariaLabel={ariaLabel} inputMode="decimal" value={value} onChange={(v) => onChange(v.replace(/[^0-9.]/g, ""))} placeholder={placeholder} className="pr-10" />
+      <span aria-hidden="true" className="pointer-events-none absolute right-[18px] top-1/2 -translate-y-1/2 text-[16px]" style={{ color: S.quiet }}>g</span>
+    </div>
+  );
+}
+
 const MED_TIMES = [
   { key: "morning", label: "Morning" },
   { key: "midday", label: "Midday" },

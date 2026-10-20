@@ -86,7 +86,7 @@ function readDuration(file: File): Promise<number | null> {
  * and resumes on transient network drops (common on mobile) instead of failing
  * the whole transfer — which is what the old single multipart POST did.
  */
-async function tusUpload(uploadURL: string, file: File, onProgress: (pct: number) => void): Promise<void> {
+async function tusUpload(uploadURL: string, file: File, onProgress: (pct: number) => void, onStart?: (abort: () => void) => void): Promise<void> {
   // Load tus only when an upload actually starts — it's ~100KB and otherwise
   // would sit in the main bundle that loads on every screen.
   const tus = await import("tus-js-client");
@@ -106,7 +106,16 @@ async function tusUpload(uploadURL: string, file: File, onProgress: (pct: number
       onSuccess: () => resolve(),
     });
     upload.start();
+    // "Cancel upload": stop sending and settle as cancelled (not an error).
+    onStart?.(() => {
+      void upload.abort(true).catch(() => {});
+      reject(new UploadCancelled());
+    });
   });
+}
+
+class UploadCancelled extends Error {
+  constructor() { super("cancelled"); }
 }
 
 /** Poll the transcode status until ready (best-effort; resolves on timeout so a
@@ -138,27 +147,34 @@ function friendlyUploadError(err: any): string {
   return i18next.t("clipRecorder.uploadFailed", "Upload failed. Please try again.");
 }
 
-/** Prominent, labeled progress block shared by the checking/uploading/processing states. */
-export function UploadProgress({ label, hint, ratio }: { label: string; hint?: string; ratio?: number }) {
+/** The clip's in-progress panel (checking, uploading, getting it ready): a
+ *  white panel with a bold line, an optional percentage bar, a note, and an
+ *  optional cancel. Without `ratio` it shows a spinner instead of a bar. */
+export function UploadProgress({ label, hint, ratio, onCancel }: { label: string; hint?: string; ratio?: number; onCancel?: () => void }) {
+  const { t } = useTranslation();
   const pct = typeof ratio === "number" ? Math.max(0, Math.min(100, Math.round(ratio * 100))) : null;
   return (
-    <div className="rounded-xl border-2 border-sage-200 bg-sage-50 p-4">
-      <div className="flex items-center justify-between gap-2 text-sm font-semibold text-sage-700">
+    <div className="flex flex-col gap-2.5 rounded-[16px] bg-white p-4 text-[#1a3d2e]" role="status">
+      <div className="flex items-center justify-between gap-2 text-[15.5px] font-[700]">
         <span className="flex items-center gap-2">
-          <Loader2 className="size-4 animate-spin" />
+          {pct == null && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
           {label}
         </span>
-        {pct != null && <span className="tabular-nums text-sage-600">{pct}%</span>}
+        {pct != null && <span className="tabular-nums">{pct}%</span>}
       </div>
-      <div className="mt-2.5 h-2 w-full overflow-hidden rounded-full bg-sage-200">
-        {pct != null ? (
-          <div className="h-full rounded-full bg-sage-600 transition-[width] duration-200" style={{ width: `${pct}%` }} />
-        ) : (
-          <div className="h-full w-2/5 rounded-full bg-sage-600" style={{ animation: "clip-indeterminate 1.2s ease-in-out infinite" }} />
-        )}
-      </div>
-      {hint && <p className="mt-2 text-xs text-sage-500">{hint}</p>}
-      <style>{`@keyframes clip-indeterminate{0%{transform:translateX(-110%)}100%{transform:translateX(260%)}}`}</style>
+      {pct != null && (
+        <div className="h-2.5 w-full overflow-hidden rounded-full bg-[#e3ebe2]">
+          <div className="h-full rounded-full bg-[#1a3d2e] transition-[width] duration-200" style={{ width: `${pct}%` }} />
+        </div>
+      )}
+      {hint && <p className="m-0 text-[14px] leading-[1.45] text-[#3d4f45]">{hint}</p>}
+      {onCancel && (
+        <div>
+          <button type="button" onClick={onCancel} className="inline-flex min-h-[44px] items-center text-[15px] font-[700] text-[#2d6a4f]">
+            {t("clipRecorder.cancelUpload", "Cancel upload")}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -168,6 +184,7 @@ export function ClipRecorder({
   baseName,
   disabled,
   onBusy,
+  onUploading,
   onUploaded,
 }: {
   /** The bird this clip belongs to. Sent to createClipUpload, which registers
@@ -181,6 +198,8 @@ export function ClipRecorder({
   /** Fires true while the recorder is mid-flow (framing, recording, uploading,
    *  processing) so the parent can disable Next / re-trigger. */
   onBusy?: (busy: boolean) => void;
+  /** Fires true while a clip is checking or uploading (the footer explains why Next waits). */
+  onUploading?: (uploading: boolean) => void;
   /** Receives the persisted clip reference ("cfstream:<uid>") once the upload
    *  to Cloudflare Stream completes; the parent saves it on the clip column. */
   onUploaded: (ref: string) => void | Promise<void>;
@@ -200,15 +219,13 @@ export function ClipRecorder({
   const [elapsed, setElapsed] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
-  // Uploaded (not recorded) videos aren't downscaled, so a 4K phone clip can be
-  // 150+ MB and take minutes to send. Track it to set expectations mid-upload.
-  const [bigUpload, setBigUpload] = useState(false);
   const [checking, setChecking] = useState(false);
   const [stage, setStage] = useState<{ kind: "uploading" | "processing"; pct?: number } | null>(null);
   const [recordedUrl, setRecordedUrl] = useState<string | null>(null);
+  const abortRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
-    return () => { stopAll(); revokeRecorded(); onBusy?.(false); };
+    return () => { stopAll(); revokeRecorded(); onBusy?.(false); onUploading?.(false); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -232,6 +249,7 @@ export function ClipRecorder({
   useEffect(() => {
     const busy = checking || !!stage || phase === "ready" || phase === "recording" || phase === "stopping" || phase === "review";
     onBusy?.(busy);
+    onUploading?.(checking || !!stage);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [checking, stage, phase]);
 
@@ -353,7 +371,7 @@ export function ClipRecorder({
     try {
       setStage({ kind: "uploading", pct: 0 });
       const { uploadURL, uid } = await createClipUpload({ data: { uploadLength: file.size, birdId } });
-      await tusUpload(uploadURL, file, (pct) => setStage({ kind: "uploading", pct }));
+      await tusUpload(uploadURL, file, (pct) => setStage({ kind: "uploading", pct }), (abort) => { abortRef.current = abort; });
       // The clip reference is valid the moment the bytes are up. Hand it off now
       // instead of blocking the owner on Cloudflare's server-side transcode
       // (previously up to ~2.5 min on "Processing…"). The clip keeps transcoding
@@ -367,10 +385,12 @@ export function ClipRecorder({
       });
       return true;
     } catch (err) {
+      if (err instanceof UploadCancelled) return false;
       console.error("[clip] upload failed", err);
       setError(friendlyUploadError(err));
       return false;
     } finally {
+      abortRef.current = null;
       setStage(null);
       onBusy?.(false);
     }
@@ -434,9 +454,6 @@ export function ClipRecorder({
       duration_s: duration != null ? Math.round(duration) : null,
       platform: nativePlatform(),
     });
-    // >40 MB → warn it may be a few-minute upload (uploaded videos aren't
-    // shrunk on-device; a 4K phone clip is large).
-    setBigUpload(file.size > 40 * 1024 * 1024);
     if (duration != null && duration > MAX_SECONDS + 1) {
       setError(t("clipRecorder.clipTooLong", "That clip is {{duration}} long. Please keep clips under 60 seconds.", { duration: fmt(Math.round(duration)) }));
       return;
@@ -471,15 +488,10 @@ export function ClipRecorder({
     return (
       <div className="space-y-2">
         <UploadProgress
-          label={stage.kind === "uploading" ? t("clipRecorder.uploading", "Uploading…") : t("clipRecorder.processing", "Processing video…")}
+          label={stage.kind === "uploading" ? t("clipRecorder.uploadingYourClip", "Uploading your clip") : t("clipRecorder.gettingItReady", "Getting it ready…")}
           ratio={stage.kind === "uploading" ? (stage.pct ?? 0) / 100 : undefined}
-          hint={
-            stage.kind === "uploading"
-              ? bigUpload
-                ? t("clipRecorder.hintLarge", "Large video — this can take a few minutes to send on your connection. Keep this screen open. Tip: recording in-app uploads much faster.")
-                : t("clipRecorder.hintSending", "Sending your clip to be converted. Please keep this screen open.")
-              : t("clipRecorder.hintConverting", "Converting your clip so it plays on every device — usually just a few seconds. Please keep this screen open.")
-          }
+          hint={stage.kind === "uploading" ? t("clipRecorder.keepScreenOpen", "Keep this screen open. You can move on once it's done.") : undefined}
+          onCancel={stage.kind === "uploading" ? () => abortRef.current?.() : undefined}
         />
         {noteEl}
       </div>
@@ -510,45 +522,34 @@ export function ClipRecorder({
   }
 
   if (phase === "idle") {
+    const half = "inline-flex h-12 min-w-0 flex-1 items-center justify-center gap-2 rounded-full border-2 border-[#1a3d2e] bg-white px-3 text-[16px] font-[700] text-[#1a3d2e]";
     return (
-      <div className="space-y-2">
-        <button
-          type="button"
-          disabled={disabled}
-          onClick={start}
-          className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-sage-200 bg-sage-50 p-4 text-sm font-semibold text-sage-700 disabled:opacity-50"
-        >
-          <Video className="size-4" /> {t("clipRecorder.recordClip", "Record a clip (up to 60 seconds)")}
-        </button>
-
-        <div className="flex items-center gap-3 text-[11px] uppercase tracking-widest text-sage-500">
-          <div className="h-px flex-1 bg-sage-200" />
-          {t("clipRecorder.or", "or")}
-          <div className="h-px flex-1 bg-sage-200" />
+      <div className="flex flex-col gap-2.5">
+        <div className="flex gap-2.5">
+          <button type="button" disabled={disabled} onClick={start} className={`${half} disabled:opacity-45`}>
+            <Video className="size-5" aria-hidden="true" /> {t("clipRecorder.record", "Record")}
+          </button>
+          <label className={`${half} cursor-pointer ${disabled ? "pointer-events-none opacity-45" : ""}`}>
+            <Upload className="size-5" aria-hidden="true" />
+            {t("clipRecorder.upload", "Upload")}
+            <input
+              ref={fileInputRef}
+              type="file"
+              // Plain "video/*" only. Adding specific MIME types (video/quicktime)
+              // and raw extensions (.mov/.hevc) makes Android's chooser drop the
+              // Gallery/Photos option and offer only Camcorder + Files. "video/*"
+              // still includes .mov on both platforms; onPick validates by
+              // MIME-or-extension so iPhone .mov/HEVC clips are still accepted.
+              accept="video/*"
+              className="hidden"
+              disabled={disabled}
+              onChange={onPick}
+            />
+          </label>
         </div>
 
-        <label
-          className={`flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-sage-200 bg-sage-50 p-4 text-sm font-semibold text-sage-700 ${disabled ? "pointer-events-none opacity-50" : ""}`}
-        >
-          <Upload className="size-4" />
-          {t("clipRecorder.uploadVideo", "Upload a video")}
-          <input
-            ref={fileInputRef}
-            type="file"
-            // Plain "video/*" only. Adding specific MIME types (video/quicktime)
-            // and raw extensions (.mov/.hevc) makes Android's chooser drop the
-            // Gallery/Photos option and offer only Camcorder + Files. "video/*"
-            // still includes .mov on both platforms; onPick validates by
-            // MIME-or-extension so iPhone .mov/HEVC clips are still accepted.
-            accept="video/*"
-            className="hidden"
-            disabled={disabled}
-            onChange={onPick}
-          />
-        </label>
-
-        <p className="text-center text-[11px] text-sage-500">
-          {t("clipRecorder.limits", "Up to {{seconds}} seconds and {{size}} per clip. Large phone videos can take a few minutes to upload — recording here is faster.", { seconds: MAX_SECONDS, size: mb(MAX_BYTES) })}
+        <p className="m-0 text-[13.5px] text-[#5f5e5a]">
+          {t("clipRecorder.recordingQuicker", "Recording here is quicker than uploading a long phone video.")}
         </p>
 
         {errorEl}
