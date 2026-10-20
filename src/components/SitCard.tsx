@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { namesAsCount } from "@/lib/birdNames";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -144,7 +145,9 @@ export function SitCard({ sit, birds = [], allBirds, onChange }: { sit: any; bir
       )}
       {birds.length > 0 && (
         <p className="mt-1 text-xs text-sage-700">
-          {t("sitCard.birdsLabel", "Birds:")} <span className="font-medium">{birds.map((b) => b.name).join(", ")}</span>
+          {namesAsCount(birds.map((b) => b.name))
+            ? <span className="font-medium">{t("birdNames.count", "{{count}} birds", { count: birds.length })}</span>
+            : <>{t("sitCard.birdsLabel", "Birds:")} <span className="font-medium">{birds.map((b) => b.name).join(", ")}</span></>}
         </p>
       )}
       {/* Per-trip link strip — external sitter only; household has no token. */}

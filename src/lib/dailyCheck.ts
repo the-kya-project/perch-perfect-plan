@@ -9,9 +9,9 @@ import type { TriageResult } from "@/lib/triage";
 
 export type Meal = "before_meal" | "after_meal" | null;
 
-export type TodayCheck = { id: string; triage_status: string; created_at: string };
+export type TodayCheck = { id: string; triage_status: string; created_at: string; reason_codes?: unknown; notes?: string | null };
 export type TodayWeight = { id: string; grams: number; measured_at: string; meal_relation: string | null };
-export type BirdToday = { check: TodayCheck | null; weights: TodayWeight[]; lastGrams: number | null };
+export type BirdToday = { check: TodayCheck | null; weights: TodayWeight[]; lastGrams: number | null; lastWeighedAt?: string | null };
 
 const KEY = "daily-check-today";
 
@@ -31,7 +31,7 @@ export function useDailyCheckToday(birdIds: string[]) {
     enabled: ids.length > 0,
     queryFn: async (): Promise<Record<string, BirdToday>> => {
       const [logs, todayW, lastW] = await Promise.all([
-        supabase.from("daily_logs").select("id, bird_id, triage_status, created_at")
+        supabase.from("daily_logs").select("id, bird_id, triage_status, created_at, triage_reason_codes, notes")
           .in("bird_id", ids).eq("log_date", day).order("created_at", { ascending: false }),
         supabase.from("weight_entries").select("id, bird_id, grams, measured_at, meal_relation")
           .in("bird_id", ids).gte("measured_at", localMidnightISO()).order("measured_at", { ascending: false }),
@@ -44,14 +44,15 @@ export function useDailyCheckToday(birdIds: string[]) {
       if (logs.error) throw logs.error;
       if (todayW.error) throw todayW.error;
       if (lastW.error) throw lastW.error;
-      const lastById = new Map(((lastW.data ?? []) as any[]).map((b) => [b.id as string, (b.weight_entries?.[0]?.grams ?? null) as number | null]));
+      const lastById = new Map(((lastW.data ?? []) as any[]).map((b) => [b.id as string, (b.weight_entries?.[0] ?? null) as { grams: number; measured_at: string } | null]));
       const out: Record<string, BirdToday> = {};
       for (const id of ids) {
         const l = (logs.data ?? []).find((r: any) => r.bird_id === id) as any;
         out[id] = {
-          check: l ? { id: l.id, triage_status: l.triage_status, created_at: l.created_at } : null,
+          check: l ? { id: l.id, triage_status: l.triage_status, created_at: l.created_at, reason_codes: l.triage_reason_codes, notes: l.notes } : null,
           weights: ((todayW.data ?? []) as any[]).filter((w) => w.bird_id === id),
-          lastGrams: lastById.get(id) ?? null,
+          lastGrams: lastById.get(id)?.grams ?? null,
+          lastWeighedAt: lastById.get(id)?.measured_at ?? null,
         };
       }
       return out;

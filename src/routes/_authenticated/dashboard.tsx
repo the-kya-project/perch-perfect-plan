@@ -32,6 +32,7 @@ import { CaregiverCoveringSection, useActiveCaregiver } from "@/components/Careg
 import { HomeChecklist } from "@/components/HomeChecklist";
 import { DailyCheckCard } from "@/components/DailyCheckCard";
 import { useDailyCheckToday } from "@/lib/dailyCheck";
+import { birdNames, namesAsCount } from "@/lib/birdNames";
 import { HomePushBanner } from "@/components/HomePushBanner";
 import { getHouseholdHome, resolveOwnerNames, type HomeHousehold } from "@/lib/home.functions";
 import { useMyPermissions } from "@/lib/useCapability";
@@ -310,6 +311,7 @@ function Dashboard() {
               <FlockCheckPrompt
                 loading={!dailyToday}
                 onOpen={() => navigate({ to: "/check" })}
+                onOpenDone={() => navigate({ to: "/check", search: { view: "done" } })}
                 birds={checkBirds.map((b) => {
                   const d = dailyToday?.[b.id];
                   return {
@@ -445,85 +447,54 @@ function SectionHeaderCTA({ title, pill, ctaLabel, onCta }: { title: string; pil
 // ---------------------------------------------------------------------------
 type PromptBird = { id: string; name: string; species: string | null; photo: SignedPhoto | null; position?: string | null; checked: boolean; checkedAt: string | null; triage: string | null; grams: number | null; overdueDays: number | null };
 
-// Up to 8 birds show as a 4-per-row grid; a bigger flock gets the summary.
-const SUMMARY_AFTER = 8;
+// Up to 4 birds show in one row; a bigger flock collapses into a tappable bar.
+const ROW_MAX = 4;
 // Overdue weigh-ins are red; amber stays for health results.
 const OVERDUE_RED = "#a32d2d";
+// The red "over a week" line on the bar counts birds weighed more than this many days ago.
+const WEEK_DAYS = 7;
 
-// The Home prompt into the flock check: one avatar per bird with its status for
-// today, then the button. Once every bird is checked it turns into a summary.
-function FlockCheckPrompt({ birds, loading, onOpen }: { birds: PromptBird[]; loading: boolean; onOpen: () => void }) {
+function avatar(b: PromptBird, size: number, initialPx: number) {
+  return b.photo
+    ? <BirdPhotoCrop url={b.photo.url} original={b.photo.original} position={b.position} alt="" />
+    : <span className="grid size-full place-items-center font-[500] text-white/90" style={{ fontSize: initialPx, width: size, height: size }}>{b.name.slice(0, 1).toUpperCase()}</span>;
+}
+
+// The Home prompt into the flock check. Up to four birds: one row with each
+// bird's status. Five or more: one bar of overlapping photos that opens the
+// list, with up to two summary lines under it. Once every bird is checked the
+// button opens the all-done summary.
+function FlockCheckPrompt({ birds, loading, onOpen, onOpenDone }: { birds: PromptBird[]; loading: boolean; onOpen: () => void; onOpenDone: () => void }) {
   const { t } = useTranslation();
   const total = birds.length;
   const done = birds.filter((b) => b.checked).length;
   const allDone = !loading && done >= total;
-  const normal = birds.filter((b) => b.checked && b.triage === "green").length;
-  const flagged = birds.filter((b) => b.checked && b.triage && b.triage !== "green");
-  const lastAt = birds.map((b) => b.checkedAt).filter(Boolean).sort().pop();
-  const overdue = birds.filter((b) => b.overdueDays != null).sort((a, b) => (b.overdueDays ?? 0) - (a.overdueDays ?? 0));
+  const grams = (n: number) => t("dashboard.gramsShort", "{{n}} g", { n: n.toLocaleString() });
   return (
     <section className="space-y-3.5 rounded-[22px] bg-[var(--lime)] p-[18px]" style={{ boxShadow: "0 12px 26px -14px rgba(45,106,79,.55)" }}>
       <div className="flex items-center gap-3">
         <span className="grid size-10 shrink-0 place-items-center rounded-[12px] bg-[var(--ink)] text-[var(--lime)]">
-          {allDone ? <Check className="size-5" /> : <Sun className="size-5" />}
+          <Sun className="size-5" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-[17px] font-[500] text-[var(--ink)]">
-            {allDone
-              ? (total === 2 ? t("dashboard.flockCheckDoneTwo", "Both birds checked") : t("dashboard.flockCheckDoneN", "All {{n}} birds checked", { n: total }))
-              : t("dashboard.dailyHealthCheck", "Daily health check")}
-          </p>
-          <p className="mt-0.5 text-[12px] text-[#2b3a31]">
-            {allDone && lastAt ? t("dashboard.flockCheckDoneAt", "Done at {{time}}", { time: new Date(lastAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }).toLowerCase() }) : t("dashboard.flockCheckBody", "Grab a weight and a quick once-over of your birds.")}
-          </p>
+          <p className="text-[17px] font-[500] text-[var(--ink)]">{t("dashboard.dailyHealthCheck", "Daily health check")}</p>
+          <p className="mt-0.5 text-[12px] text-[#2b3a31]">{t("dashboard.flockCheckBody", "Grab a weight and a quick once-over of your birds.")}</p>
         </div>
       </div>
 
-      {allDone ? (
-        <div className="flex flex-wrap gap-1.5">
-          {normal > 0 && <span className="rounded-full bg-white px-2.5 py-1 text-[12px] font-[500] text-[var(--ink)]">{t("dashboard.nAllNormal", "{{n}} all normal", { n: normal })}</span>}
-          {flagged.map((b) => (
-            <span key={b.id} className="rounded-full bg-[#f6e7c4] px-2.5 py-1 text-[12px] font-[500] text-[#854f0b]">{t("dashboard.birdSomethingToCheck", "{{name}}: something to check", { name: b.name })}</span>
-          ))}
-        </div>
-      ) : birds.length > SUMMARY_AFTER ? (
-        // A big flock: overlapping photos, a count, and who's overdue by name.
-        <div className="space-y-2.5 rounded-[14px] bg-white/60 p-3">
-          <div className="flex items-center gap-3">
-            <div className="flex pl-2">
-              {birds.slice(0, 5).map((b) => (
-                <span key={b.id} className="relative -ml-2 block size-[34px] overflow-hidden rounded-full" style={{ background: gradientFor(b.species || b.name), boxShadow: `0 0 0 ${b.overdueDays != null ? `2.5px ${OVERDUE_RED}` : "2px #fff"}` }} aria-hidden="true">
-                  {b.photo
-                    ? <BirdPhotoCrop url={b.photo.url} original={b.photo.original} position={b.position} alt="" />
-                    : <span className="grid size-full place-items-center text-[12px] font-[500] text-white/90">{b.name.slice(0, 1).toUpperCase()}</span>}
-                </span>
-              ))}
-              {birds.length > 5 && (
-                <span className="-ml-2 grid size-[34px] place-items-center rounded-full bg-[var(--ink)] text-[11.5px] font-[500] text-[var(--lime)]" style={{ boxShadow: "0 0 0 2px #fff" }}>+{birds.length - 5}</span>
-              )}
-            </div>
-            <p className="min-w-0 flex-1 text-[14px] font-[500] text-[var(--ink)]">{t("dashboard.nOfTotalChecked", "{{done}} of {{total}} checked", { done, total })}</p>
-          </div>
-          {overdue.length > 0 && (
-            <p className="flex items-start gap-1.5 text-[12px] font-[600]" style={{ color: OVERDUE_RED }}>
-              <AlertCircle className="mt-px size-[13px] shrink-0" strokeWidth={2.6} aria-hidden="true" />
-              <span>{t("dashboard.weighInsOverdue", "Weigh-ins overdue: {{list}}", { list: overdue.map((b) => t("dashboard.birdDays", "{{name}} {{n}} days", { name: b.name, n: b.overdueDays })).join(", ") })}</span>
-            </p>
-          )}
-        </div>
+      {total > ROW_MAX ? (
+        <FlockBar birds={birds} done={done} onOpen={allDone ? onOpenDone : onOpen} />
       ) : (
-        <div className="grid grid-cols-4 gap-x-1 gap-y-3.5">
+        <div className="grid grid-cols-4 gap-x-1">
           {birds.map((b) => (
             <span key={b.id} className="flex min-w-0 flex-col items-center gap-[3px]">
               <span className="relative size-[46px] shrink-0">
                 <span
                   className="relative block size-[46px] overflow-hidden rounded-full"
-                  style={{ background: gradientFor(b.species || b.name), boxShadow: `0 0 0 ${b.overdueDays != null ? `2.5px ${OVERDUE_RED}` : b.checked ? "2px var(--moss)" : "2px #fff"}` }}
+                  style={{ background: gradientFor(b.species || b.name), boxShadow: `0 0 0 ${b.overdueDays != null ? `2.5px ${OVERDUE_RED}` : b.checked ? "2.5px var(--ink)" : "2px #fff"}` }}
                   aria-hidden="true"
                 >
-                  {b.photo
-                    ? <BirdPhotoCrop url={b.photo.url} original={b.photo.original} position={b.position} alt="" />
-                    : <span className="grid size-full place-items-center text-[15px] font-[500] text-white/90">{b.name.slice(0, 1).toUpperCase()}</span>}
+                  {avatar(b, 46, 15)}
                 </span>
                 {/* Badges live on the photo: overdue weigh-in wins over done. */}
                 {b.overdueDays != null ? (
@@ -531,21 +502,21 @@ function FlockCheckPrompt({ birds, loading, onOpen }: { birds: PromptBird[]; loa
                     <Scale className="size-[10px]" strokeWidth={2.6} />
                   </span>
                 ) : b.checked ? (
-                  <span className="absolute -bottom-[3px] -right-[3px] grid size-[18px] place-items-center rounded-full bg-[var(--moss)] text-white" style={{ boxShadow: "0 0 0 2px var(--lime)" }} aria-hidden="true">
+                  <span className="absolute -bottom-[3px] -right-[3px] grid size-[18px] place-items-center rounded-full bg-[var(--ink)] text-[var(--lime)]" style={{ boxShadow: "0 0 0 2px var(--lime)" }} aria-hidden="true">
                     <Check className="size-[10px]" strokeWidth={3.2} />
                   </span>
                 ) : null}
               </span>
               <span className="mt-[3px] max-w-full truncate text-[11.5px] font-[500] text-[var(--ink)]">{b.name}</span>
-              <span className={`max-w-full text-center text-[10.5px] font-[500] leading-[1.25] ${b.checked ? "text-[var(--moss)]" : "text-[#2b3a31]"}`}>
-                {b.checked
-                  ? (b.grams != null ? t("dashboard.gramsDone", "{{n}} g ✓", { n: b.grams }) : t("dashboard.checkedDone", "Checked ✓"))
-                  : t("dashboard.needsDailyCheck", "Needs daily check")}
+              <span className="max-w-full text-center text-[10.5px] font-[500] leading-[1.25] text-[#2b3a31]">
+                {b.checked ? t("dashboard.checked", "Checked") : t("dashboard.needsDailyCheck", "Needs daily check")}
               </span>
+              {b.checked && b.grams != null && (
+                <span className="max-w-full text-center text-[10.5px] font-[500] leading-[1.25] text-[var(--ink)]">{grams(b.grams)}</span>
+              )}
               {b.overdueDays != null && (
-                <span className="inline-flex items-center gap-[3px] whitespace-nowrap text-[10.5px] font-[600]" style={{ color: OVERDUE_RED }}>
-                  <AlertCircle className="size-[11px]" strokeWidth={2.6} aria-hidden="true" />
-                  {t("dashboard.overdueDays", "{{n}} days", { n: b.overdueDays })}
+                <span className="max-w-full text-center text-[10.5px] font-[700] leading-[1.25]" style={{ color: OVERDUE_RED }}>
+                  {t("dashboard.notWeighedInDays", "Not weighed in {{count}} days", { count: b.overdueDays })}
                 </span>
               )}
             </span>
@@ -553,16 +524,82 @@ function FlockCheckPrompt({ birds, loading, onOpen }: { birds: PromptBird[]; loa
         </div>
       )}
 
-      {allDone ? (
-        <button type="button" onClick={onOpen} className="text-[13px] font-[500] text-[var(--ink)]">{t("dashboard.seeTodaysChecks", "See today's checks →")}</button>
-      ) : (
-        <PrimaryButton tone="ink" onPress={onOpen}>
-          {done > 0
+      <PrimaryButton tone="ink" onPress={allDone ? onOpenDone : onOpen}>
+        {allDone
+          ? t("dashboard.seeTodaysChecksButton", "See today's checks")
+          : done > 0
             ? t("dashboard.flockCheckFinish", "Finish your flock check ({{done}} of {{total}} done)", { done, total })
             : t("dashboard.flockCheckCta", "Weigh & check your flock")}
-        </PrimaryButton>
-      )}
+      </PrimaryButton>
     </section>
+  );
+}
+
+// Five or more birds: four overlapping photos and a "+n" circle in one white
+// bar (tap opens the list), then who still needs checking and who hasn't been
+// weighed in over a week.
+function FlockBar({ birds, done, onOpen }: { birds: PromptBird[]; done: number; onOpen: () => void }) {
+  const { t } = useTranslation();
+  const total = birds.length;
+  // Overdue weigh-ins first, then not checked yet, then checked.
+  const rank = (b: PromptBird) => (b.overdueDays != null ? 0 : b.checked ? 2 : 1);
+  const ordered = [...birds].sort((a, b) => rank(a) - rank(b) || (b.overdueDays ?? 0) - (a.overdueDays ?? 0));
+  const shown = ordered.slice(0, 4);
+  const more = total - shown.length;
+  const left = total - done;
+  const overWeek = ordered.filter((b) => b.overdueDays != null && b.overdueDays > WEEK_DAYS).map((b) => b.name);
+  return (
+    <>
+      <button
+        type="button"
+        onClick={onOpen}
+        aria-label={t("dashboard.openDailyCheckList", "Open the daily check list ({{done}} of {{total}} checked)", { done, total })}
+        className="flex w-full items-center gap-2 rounded-[18px] border-0 bg-white px-3 py-2.5 text-left"
+      >
+        <span className="flex flex-1 items-center pl-[14px]">
+          {shown.map((b) => (
+            <span
+              key={b.id}
+              className="relative -ml-[14px] block size-[52px] shrink-0 overflow-hidden rounded-full"
+              style={{ background: gradientFor(b.species || b.name), border: "3px solid var(--lime)", boxShadow: b.overdueDays != null ? `0 0 0 2.5px ${OVERDUE_RED}` : undefined }}
+              aria-hidden="true"
+            >
+              {avatar(b, 46, 16)}
+            </span>
+          ))}
+          {more > 0 && (
+            <span className="relative -ml-[14px] grid size-[52px] shrink-0 place-items-center rounded-full bg-[var(--ink)] text-[15px] font-[700] text-[var(--lime)]" style={{ border: "3px solid var(--lime)" }} aria-hidden="true">
+              +{more}
+            </span>
+          )}
+        </span>
+        <ChevronRight className="size-5 shrink-0 text-[var(--ink)]" aria-hidden="true" />
+      </button>
+      <div className="space-y-2">
+        <p className="flex items-center gap-2.5 text-[14px] text-[var(--ink)]">
+          {left === 0 ? (
+            <span className="grid size-[26px] shrink-0 place-items-center rounded-full bg-[var(--ink)] text-[var(--lime)]" aria-hidden="true"><Check className="size-3.5" strokeWidth={3} /></span>
+          ) : (
+            <span className="size-[26px] shrink-0 rounded-full border-2 border-[var(--ink)] bg-white" aria-hidden="true" />
+          )}
+          <span>
+            {left === 0
+              ? t("dashboard.allBirdsCheckedToday", "All {{count}} birds checked today", { count: total })
+              : t("dashboard.birdsStillNeedCheck", "{{count}} birds still need a daily check and weight", { count: left })}
+          </span>
+        </p>
+        {overWeek.length > 0 && (
+          <p className="flex items-center gap-2.5 text-[14px] font-[500]" style={{ color: OVERDUE_RED }}>
+            <span className="grid size-[26px] shrink-0 place-items-center rounded-full text-white" style={{ background: OVERDUE_RED }} aria-hidden="true"><Scale className="size-3.5" strokeWidth={2.4} /></span>
+            <span>
+              {namesAsCount(overWeek)
+                ? t("dashboard.nBirdsNotWeighedWeek", "{{count}} birds haven't been weighed in over a week", { count: overWeek.length })
+                : t("dashboard.namesNotWeighedWeek", "{{names}} haven't been weighed in over a week", { names: birdNames(t, overWeek), count: overWeek.length })}
+            </span>
+          </p>
+        )}
+      </div>
+    </>
   );
 }
 

@@ -653,6 +653,12 @@
   "birdMoments.yearsTogetherOther": "{{n}} jaar samen",
   // Your own
   "birdMoments.yourOwn": "Je eigen",
+  // {{first}} and {{last}}
+  "birdNames.and": "{{first}} en {{last}}",
+  // {{count}} bird
+  "birdNames.count_one": "{{count}} vogel",
+  // {{count}} birds
+  "birdNames.count_other": "{{count}} vogels",
   // Adjust crop
   "birdPhotoSheet.adjustCrop": "Uitsnede aanpassen",
   // Back
@@ -2489,14 +2495,20 @@
   "dashboard.addSomeoneWhoHelps": "Voeg iemand toe die helpt met de zorg voor je vogels",
   // A household you help with
   "dashboard.aHouseholdYouHelpWith": "Een huishouden waar je helpt",
+  // {{count}} bird checked today
+  "dashboard.allBirdsCheckedToday_one": "{{count}} vogel vandaag gecheckt",
+  // All {{count}} birds checked today
+  "dashboard.allBirdsCheckedToday_other": "Alle {{count}} vogels vandaag gecheckt",
   // All good
   "dashboard.allGood": "Alles goed",
   // An owner
   "dashboard.anOwner": "Een eigenaar",
-  // {{name}}: something to check
-  "dashboard.birdSomethingToCheck": "{{name}}: iets om op te letten",
-  // Checked ✓
-  "dashboard.checkedDone": "Gecheckt ✓",
+  // {{count}} bird still needs a daily check and weight
+  "dashboard.birdsStillNeedCheck_one": "{{count}} vogel heeft nog een dagelijkse check en weging nodig",
+  // {{count}} birds still need a daily check and weight
+  "dashboard.birdsStillNeedCheck_other": "{{count}} vogels hebben nog een dagelijkse check en weging nodig",
+  // Checked
+  "dashboard.checked": "Gecheckt",
   // Close
   "dashboard.close": "Sluiten",
   // Concern flagged
@@ -2545,12 +2557,6 @@
   "dashboard.flockCheckBody": "Even wegen en snel een blik op je vogels.",
   // Weigh & check your flock
   "dashboard.flockCheckCta": "Weeg & check je vogels",
-  // Done at {{time}}
-  "dashboard.flockCheckDoneAt": "Klaar om {{time}}",
-  // All {{n}} birds checked
-  "dashboard.flockCheckDoneN": "Alle {{n}} vogels gecheckt",
-  // Both birds checked
-  "dashboard.flockCheckDoneTwo": "Beide vogels gecheckt",
   // Finish your flock check ({{done}} of {{total}} done)
   "dashboard.flockCheckFinish": "Maak de check af ({{done}} van {{total}} klaar)",
   // Foster
@@ -2567,8 +2573,8 @@
   "dashboard.goodEvening": "Goedenavond",
   // Good morning
   "dashboard.goodMorning": "Goedemorgen",
-  // {{n}} g ✓
-  "dashboard.gramsDone": "{{n}} g ✓",
+  // {{n}} g
+  "dashboard.gramsShort": "{{n}} g",
   // g
   "dashboard.gramsUnit": "g",
   // {{part}}, {{name}}
@@ -2593,8 +2599,14 @@
   "dashboard.joinTwo": "{{a}} en {{b}}",
   // {{n}} min ago
   "dashboard.minAgo": "{{n}} min geleden",
-  // {{n}} all normal
-  "dashboard.nAllNormal": "{{n}} alles normaal",
+  // {{names}} hasn't been weighed in over a week
+  "dashboard.namesNotWeighedWeek_one": "{{names}} is al meer dan een week niet gewogen",
+  // {{names}} haven't been weighed in over a week
+  "dashboard.namesNotWeighedWeek_other": "{{names}} zijn al meer dan een week niet gewogen",
+  // {{count}} bird hasn't been weighed in over a week
+  "dashboard.nBirdsNotWeighedWeek_one": "{{count}} vogel is al meer dan een week niet gewogen",
+  // {{count}} birds haven't been weighed in over a week
+  "dashboard.nBirdsNotWeighedWeek_other": "{{count}} vogels zijn al meer dan een week niet gewogen",
   // Needs a weigh-in
   "dashboard.needsAWeighIn": "Moet gewogen worden",
   // Needs daily check
@@ -2603,12 +2615,14 @@
   "dashboard.noBirdsYet": "Nog geen vogels — begin met je eerste.",
   // No defaults set yet — each bird needs its own contacts until you fill these in.
   "dashboard.noDefaultsYet": "Nog geen standaardgegevens ingesteld — elke vogel heeft eigen contacten nodig totdat je deze invult.",
-  // {{done}} of {{total}} checked
-  "dashboard.nOfTotalChecked": "{{done}} van {{total}} gecheckt",
+  // Not weighed in {{count}} day
+  "dashboard.notWeighedInDays_one": "{{count}} dag niet gewogen",
+  // Not weighed in {{count}} days
+  "dashboard.notWeighedInDays_other": "{{count}} dagen niet gewogen",
   // No weights yet
   "dashboard.noWeightsYet": "Nog geen gewichten",
-  // {{n}} days
-  "dashboard.overdueDays": "{{n}} dagen",
+  // Open the daily check list ({{done}} of {{total}} checked)
+  "dashboard.openDailyCheckList": "Open de lijst met dagelijkse checks ({{done}} van {{total}} gecheckt)",
   // {{name}}'s household
   "dashboard.ownersHousehold": "Huishouden van {{name}}",
   // {{name}}' household
@@ -2621,8 +2635,8 @@
   "dashboard.saveAccountDefaults": "Standaardgegevens opslaan",
   // Saving...
   "dashboard.saving": "Opslaan...",
-  // See today's checks →
-  "dashboard.seeTodaysChecks": "Bekijk de checks van vandaag →",
+  // See today's checks
+  "dashboard.seeTodaysChecksButton": "Bekijk de checks van vandaag",
   // Set up
   "dashboard.setUp": "Instellen",
   // Sharing all your birds
@@ -2639,8 +2653,6 @@
   "dashboard.thingCountOther": "{{n}} dingen",
   // Today
   "dashboard.today": "Vandaag",
-  // Weigh-ins overdue: {{list}}
-  "dashboard.weighInsOverdue": "Moeten gewogen worden: {{list}}",
   // Welcome to your flock
   "dashboard.welcomeToYourFlock": "Welkom bij je vogels",
   // With you since {{date}}
@@ -2953,40 +2965,74 @@
   "farewell.you": "jij",
   // your bird
   "farewell.yourBird": "je vogel",
-  // Every bird is checked.
-  "flockCheck.allDone": "Alle vogels zijn gecheckt.",
+  // Add weight
+  "flockCheck.addWeight": "Gewicht toevoegen",
   // Back
   "flockCheck.back": "Terug",
-  // Concerning
-  "flockCheck.concerning": "Zorgelijk",
+  // Back to home
+  "flockCheck.backToHome": "Terug naar home",
+  // {{name}} · {{items}}
+  "flockCheck.birdNoticed": "{{name}} · {{items}}",
+  // Checked, not weighed
+  "flockCheck.checkedNotWeighed": "Gecheckt, niet gewogen",
+  // Check {{name}} next →
+  "flockCheck.checkNext": "Check {{name}} hierna →",
+  // Nice work. Everything's saved to each bird's health log.
+  "flockCheck.doneSubhead": "Goed gedaan. Alles staat in het gezondheidslogboek van elke vogel.",
+  // Done
+  "flockCheck.doneTag": "Klaar",
+  // Done today · {{n}}
+  "flockCheck.doneToday": "Vandaag klaar · {{n}}",
+  // Everyone else looked like usual.
+  "flockCheck.everyoneElseUsual": "De rest zag er uit zoals altijd.",
+  // Everyone looked like usual.
+  "flockCheck.everyoneUsual": "Iedereen zag er uit zoals altijd.",
   // {{n}} g
   "flockCheck.grams": "{{n}} g",
+  // Daily health check
+  "flockCheck.heading": "Dagelijkse gezondheidscheck",
+  // A quick once-over every day helps you spot early signs of illness. Record what you see for each bird here.
+  "flockCheck.intro": "Elke dag even goed kijken helpt je vroege tekenen van ziekte op te merken. Noteer hier wat je bij elke vogel ziet.",
+  // Last weighed {{count}} day ago
+  "flockCheck.lastWeighedDaysAgo_one": "{{count}} dag geleden gewogen",
+  // Last weighed {{count}} days ago
+  "flockCheck.lastWeighedDaysAgo_other": "{{count}} dagen geleden gewogen",
+  // Last weighed today
+  "flockCheck.lastWeighedToday": "Vandaag gewogen",
+  // Last weighed yesterday
+  "flockCheck.lastWeighedYesterday": "Gisteren gewogen",
   // last {{n}} g
   "flockCheck.lastWeight": "laatst {{n}} g",
+  // looks normal
+  "flockCheck.looksNormal": "ziet er normaal uit",
   // Flock check — Kya & Co.
   "flockCheck.metaTitle": "Check van je vogels — Kya & Co.",
-  // Health check normal
-  "flockCheck.normal": "Gezondheidscheck normaal",
-  // Not checked yet
-  "flockCheck.notChecked": "Nog niet gecheckt",
-  // {{done}} of {{total}} done
-  "flockCheck.progress": "{{done}} van {{total}} klaar",
+  // Noticed something
+  "flockCheck.noticedSomething": "Iets opgemerkt",
+  // Not weighed in {{count}} day
+  "flockCheck.notWeighedInDays_one": "{{count}} dag niet gewogen",
+  // Not weighed in {{count}} days
+  "flockCheck.notWeighedInDays_other": "{{count}} dagen niet gewogen",
+  // Not weighed yet
+  "flockCheck.notWeighedYet": "Nog niet gewogen",
   // {{done}} of {{total}} birds checked
   "flockCheck.progressAria": "{{done}} van {{total}} vogels gecheckt",
   // Save · next: {{name}}
   "flockCheck.saveNext": "Opslaan · volgende: {{name}}",
-  // Each bird saves as soon as you finish it.
-  "flockCheck.savesAsYouGo": "Elke vogel wordt opgeslagen zodra je klaar bent.",
-  // See you tomorrow.
-  "flockCheck.seeYouTomorrow": "Tot morgen.",
-  // Something to check
-  "flockCheck.somethingToCheck": "Iets om op te letten",
+  // See {{name}}'s health →
+  "flockCheck.seeBirdsHealth": "Bekijk de gezondheid van {{name}} →",
+  // See today's summary →
+  "flockCheck.seeSummary": "Bekijk het overzicht van vandaag →",
   // Start
   "flockCheck.start": "Begin",
-  // Daily health check · all birds
-  "flockCheck.title": "Dagelijkse gezondheidscheck · alle vogels",
-  // View
-  "flockCheck.view": "Bekijk",
+  // Today's weights
+  "flockCheck.todaysWeights": "Gewichten van vandaag",
+  // Up next · {{n}}
+  "flockCheck.upNext": "Hierna · {{n}}",
+  // You noticed something
+  "flockCheck.youNoticed": "Je hebt iets opgemerkt",
+  // you noticed: {{items}}
+  "flockCheck.youNoticedItems": "je zag: {{items}}",
   // Add an ingredient
   "foodEditor.addAnIngredient": "Voeg een ingrediënt toe",
   // Add another blend
@@ -5419,6 +5465,10 @@
   "sitForm.gaps.addContactsFirst": "Voeg je noodcontacten toe om de oppasperiode te maken.",
   // {{names}}'s plan is missing a few things a sitter leans on.
   "sitForm.gaps.body": "Het plan van {{names}} mist nog een paar dingen waar een oppas op leunt.",
+  // {{count}} bird's plan is missing a few things a sitter leans on.
+  "sitForm.gaps.bodyCount_one": "In het plan van {{count}} vogel ontbreken een paar dingen waar een oppas op leunt.",
+  // {{count}} birds' plans are missing a few things a sitter leans on.
+  "sitForm.gaps.bodyCount_other": "In de plannen van {{count}} vogels ontbreken een paar dingen waar een oppas op leunt.",
   // {{names}}'s plans are missing a few things a sitter leans on.
   "sitForm.gaps.bodyMany": "De plannen van {{names}} missen nog een paar dingen waar een oppas op leunt.",
   // Create the sit anyway
