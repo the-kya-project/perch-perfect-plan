@@ -10,6 +10,7 @@ import { ArrowLeft } from "lucide-react";
 import { track } from "@/lib/analytics";
 import { captureLead } from "@/lib/captureLead";
 import { attributionMetadata, getFirstTouch } from "@/lib/attribution";
+import { currentLocale } from "@/lib/i18n/ownerLocale";
 import { PENDING_EMAIL_KEY } from "./confirm-email";
 import { InkHero, PrimaryButton, CtaLink, Card } from "@/components/system";
 import { authErrorMessage } from "@/lib/authErrorMessage";
@@ -108,6 +109,8 @@ function AuthPage() {
             data: {
               display_name: [firstName, lastName].filter(Boolean).join(" ") || email.split("@")[0],
               marketing_opt_in: marketingOptIn,
+              // Read by the "Confirm signup" email template ({{ .Data.locale }}).
+              locale: currentLocale(),
               // First-touch attribution → handle_new_user trigger writes it onto
               // the profile (works even when email confirmation defers the session).
               ...attributionMetadata(),
