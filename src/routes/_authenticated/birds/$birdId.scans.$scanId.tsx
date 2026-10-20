@@ -12,6 +12,8 @@ import { friendlyError } from "@/lib/errorMessage";
 import { formatLocalDate, formatLocalTime, monthDay } from "@/lib/dates";
 import { localDateISO } from "@/lib/localDay";
 import { mergeEmergency } from "@/lib/emergency";
+import { isStored } from "@/lib/healthHistory";
+import type { ScanFieldKey } from "@/lib/triage";
 import i18next from "i18next";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
@@ -245,12 +247,11 @@ function ScanDetail() {
       : t("scanDetail.byName", "by {{name}}", { name: actor ?? memberFallback });
   const whoShort = mine ? null : (actor?.split(/\s+/)[0] ?? (isSitter ? t("scanDetail.yourSitterCap", "Your sitter") : t("scanDetail.householdMemberCap", "A household member")));
   const notes = (row.item_notes ?? null) as Record<string, string> | null;
-  // A question whose column isn't in the database (vomiting_status before
-  // 20260619170000 is applied) has no stored answer: use its triage code if
-  // it was flagged, else leave the question out rather than call it unanswered.
+  // A question with no stored answer (vomiting before 20261020230000) uses its
+  // triage code if it was flagged, else is left out rather than called unanswered.
   const codes = (Array.isArray(row.triage_reason_codes) ? row.triage_reason_codes : []) as { key?: string; answer?: string }[];
   const answerOf = (f: (typeof SCAN_COLS)[number]): string | null | undefined =>
-    f.col in row ? row[f.col] : codes.find((c) => c.key === f.fkey)?.answer;
+    isStored(row, f.fkey as ScanFieldKey) ? row[f.col] : codes.find((c) => c.key === f.fkey)?.answer;
   const shownCols = SCAN_COLS.filter((f) => answerOf(f) !== undefined);
   const flagged = shownCols.filter((f) => answerOf(f) === "not_sure" || answerOf(f) === "concerning");
   // A flag with no per-question answers (older rows) still counts as one thing.

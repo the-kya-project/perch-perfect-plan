@@ -27,6 +27,15 @@ export const STATUS_COL: Record<ScanFieldKey, string> = {
   exposure: "exposure_status",
 };
 
+/** Whether a check row holds an answer slot for this question. vomiting_status
+ *  only exists from 20261020230000 and was dropped before it, so a null there
+ *  means "never stored", not "skipped". */
+export function isStored(row: Record<string, unknown>, key: ScanFieldKey): boolean {
+  const col = STATUS_COL[key];
+  if (!(col in row)) return false;
+  return key !== "vomiting" || row[col] != null;
+}
+
 export type HistorySit = {
   id: string;
   title: string | null;
@@ -62,7 +71,7 @@ export type HistoryEntry = CheckEntry | WeightEntry;
 
 /** Not-normal answers on a check ("things to watch"): the stored answers,
  *  plus any flagged question the triage codes name whose answer has no
- *  column (vomiting before 20260619170000 is applied). */
+ *  column (vomiting before 20261020230000). */
 export function thingsToWatch(e: CheckEntry): number {
   const keys = new Set<string>(SCAN_FIELDS.filter((f) => {
     const a = e.answers[f.key];
@@ -136,7 +145,7 @@ export function localDay(iso: string): string {
 }
 
 // "*", not a column list: a question whose column isn't in the database yet
-// (vomiting_status, see 20260619170000) would fail the whole query, and the
+// (as vomiting_status was before 20261020230000) would fail the whole query, and the
 // history would read as empty. Missing columns just come back absent.
 const LOG_SELECT = "*";
 
@@ -178,8 +187,8 @@ export async function fetchHealthHistory(birdIds: string[], ownerId: string | nu
     sitId: r.sit_id ?? null,
     triage: r.triage_status ?? "green",
     resolvedAt: r.resolved_at ?? null,
-    // Only questions with a stored column: an absent one isn't "not answered".
-    answers: Object.fromEntries(SCAN_FIELDS.filter((f) => STATUS_COL[f.key] in r).map((f) => [f.key, r[STATUS_COL[f.key]] ?? null])),
+    // Only stored answers: an absent column isn't "not answered".
+    answers: Object.fromEntries(SCAN_FIELDS.filter((f) => isStored(r, f.key)).map((f) => [f.key, r[STATUS_COL[f.key]] ?? null])),
     itemNotes: (r.item_notes ?? null) as Record<string, string> | null,
     reasonCodes: r.triage_reason_codes,
   }));

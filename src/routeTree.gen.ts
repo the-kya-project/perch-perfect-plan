@@ -19,7 +19,6 @@ import { Route as GetAppRouteImport } from './routes/get-app'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ReviewRouteImport } from './routes/review'
-import { Route as RTokenRouteImport } from './routes/r.$token'
 import { Route as TermsRouteImport } from './routes/terms'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedCheckRouteImport } from './routes/_authenticated/check'
@@ -35,6 +34,7 @@ import { Route as AuthenticatedTodayRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedWelcomeRouteImport } from './routes/_authenticated/welcome'
 import { Route as HandoffTokenRouteImport } from './routes/handoff.$token'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
+import { Route as RTokenRouteImport } from './routes/r.$token'
 import { Route as SitterTokenRouteRouteImport } from './routes/sitter/$token/route'
 import { Route as AuthenticatedAccountIndexRouteImport } from './routes/_authenticated/account.index'
 import { Route as AuthenticatedAccountSecurityRouteImport } from './routes/_authenticated/account.security'
@@ -132,11 +132,6 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
-const RTokenRoute = RTokenRouteImport.update({
-  id: '/r/$token',
-  path: '/r/$token',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const ReviewRoute = ReviewRouteImport.update({
   id: '/review',
   path: '/review',
@@ -218,6 +213,11 @@ const HandoffTokenRoute = HandoffTokenRouteImport.update({
 const InviteTokenRoute = InviteTokenRouteImport.update({
   id: '/invite/$token',
   path: '/invite/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RTokenRoute = RTokenRouteImport.update({
+  id: '/r/$token',
+  path: '/r/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SitterTokenRouteRoute = SitterTokenRouteRouteImport.update({
@@ -519,7 +519,6 @@ const ApiPublicUnsubscribeCategoryUserIdSigRoute =
   } as any)
 
 export interface FileRoutesByFullPath {
-  '/r/$token': typeof RTokenRoute
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/confirm-email': typeof ConfirmEmailRoute
@@ -545,6 +544,7 @@ export interface FileRoutesByFullPath {
   '/welcome': typeof AuthenticatedWelcomeRoute
   '/handoff/$token': typeof HandoffTokenRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/r/$token': typeof RTokenRoute
   '/account/security': typeof AuthenticatedAccountSecurityRoute
   '/birds/$birdId': typeof AuthenticatedBirdsBirdIdRouteWithChildren
   '/birds/new': typeof AuthenticatedBirdsNewRoute
@@ -598,7 +598,6 @@ export interface FileRoutesByFullPath {
   '/api/public/unsubscribe/$category/$userId/$sig': typeof ApiPublicUnsubscribeCategoryUserIdSigRoute
 }
 export interface FileRoutesByTo {
-  '/r/$token': typeof RTokenRoute
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/confirm-email': typeof ConfirmEmailRoute
@@ -620,6 +619,7 @@ export interface FileRoutesByTo {
   '/welcome': typeof AuthenticatedWelcomeRoute
   '/handoff/$token': typeof HandoffTokenRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/r/$token': typeof RTokenRoute
   '/account/security': typeof AuthenticatedAccountSecurityRoute
   '/birds/new': typeof AuthenticatedBirdsNewRoute
   '/notifications/settings': typeof AuthenticatedNotificationsSettingsRoute
@@ -671,7 +671,6 @@ export interface FileRoutesByTo {
   '/api/public/unsubscribe/$category/$userId/$sig': typeof ApiPublicUnsubscribeCategoryUserIdSigRoute
 }
 export interface FileRoutesById {
-  '/r/$token': typeof RTokenRoute
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
@@ -699,6 +698,7 @@ export interface FileRoutesById {
   '/_authenticated/welcome': typeof AuthenticatedWelcomeRoute
   '/handoff/$token': typeof HandoffTokenRoute
   '/invite/$token': typeof InviteTokenRoute
+  '/r/$token': typeof RTokenRoute
   '/_authenticated/account/security': typeof AuthenticatedAccountSecurityRoute
   '/_authenticated/birds/$birdId': typeof AuthenticatedBirdsBirdIdRouteWithChildren
   '/_authenticated/birds/new': typeof AuthenticatedBirdsNewRoute
@@ -754,7 +754,6 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    | '/r/$token'
     | '/'
     | '/auth'
     | '/confirm-email'
@@ -780,6 +779,7 @@ export interface FileRouteTypes {
     | '/welcome'
     | '/handoff/$token'
     | '/invite/$token'
+    | '/r/$token'
     | '/account/security'
     | '/birds/$birdId'
     | '/birds/new'
@@ -833,7 +833,6 @@ export interface FileRouteTypes {
     | '/api/public/unsubscribe/$category/$userId/$sig'
   fileRoutesByTo: FileRoutesByTo
   to:
-    | '/r/$token'
     | '/'
     | '/auth'
     | '/confirm-email'
@@ -855,6 +854,7 @@ export interface FileRouteTypes {
     | '/welcome'
     | '/handoff/$token'
     | '/invite/$token'
+    | '/r/$token'
     | '/account/security'
     | '/birds/new'
     | '/notifications/settings'
@@ -905,7 +905,6 @@ export interface FileRouteTypes {
     | '/api/public/chart/$birdId/$month/$sig'
     | '/api/public/unsubscribe/$category/$userId/$sig'
   id:
-    | '/r/$token'
     | '__root__'
     | '/'
     | '/_authenticated'
@@ -933,6 +932,7 @@ export interface FileRouteTypes {
     | '/_authenticated/welcome'
     | '/handoff/$token'
     | '/invite/$token'
+    | '/r/$token'
     | '/_authenticated/account/security'
     | '/_authenticated/birds/$birdId'
     | '/_authenticated/birds/new'
@@ -987,7 +987,6 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  RTokenRoute: typeof RTokenRoute
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
@@ -1002,6 +1001,7 @@ export interface RootRouteChildren {
   SitterTokenRouteRoute: typeof SitterTokenRouteRouteWithChildren
   HandoffTokenRoute: typeof HandoffTokenRoute
   InviteTokenRoute: typeof InviteTokenRoute
+  RTokenRoute: typeof RTokenRoute
   ApiPublicCspReportRoute: typeof ApiPublicCspReportRoute
   ApiPublicHooksBereavementNoteRoute: typeof ApiPublicHooksBereavementNoteRoute
   ApiPublicHooksCarePlanRemindersRoute: typeof ApiPublicHooksCarePlanRemindersRoute
@@ -1016,13 +1016,6 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/r/$token': {
-      id: '/r/$token'
-      path: '/r/$token'
-      fullPath: '/r/$token'
-      preLoaderRoute: typeof RTokenRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
@@ -1196,6 +1189,13 @@ declare module '@tanstack/react-router' {
       path: '/invite/$token'
       fullPath: '/invite/$token'
       preLoaderRoute: typeof InviteTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/r/$token': {
+      id: '/r/$token'
+      path: '/r/$token'
+      fullPath: '/r/$token'
+      preLoaderRoute: typeof RTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sitter/$token': {
@@ -1755,7 +1755,6 @@ const SitterTokenRouteRouteWithChildren =
   SitterTokenRouteRoute._addFileChildren(SitterTokenRouteRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
-  RTokenRoute: RTokenRoute,
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
@@ -1770,6 +1769,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitterTokenRouteRoute: SitterTokenRouteRouteWithChildren,
   HandoffTokenRoute: HandoffTokenRoute,
   InviteTokenRoute: InviteTokenRoute,
+  RTokenRoute: RTokenRoute,
   ApiPublicCspReportRoute: ApiPublicCspReportRoute,
   ApiPublicHooksBereavementNoteRoute: ApiPublicHooksBereavementNoteRoute,
   ApiPublicHooksCarePlanRemindersRoute: ApiPublicHooksCarePlanRemindersRoute,
