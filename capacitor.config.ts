@@ -12,6 +12,10 @@ const config: CapacitorConfig = {
   webDir: '.vercel/output/static',
   server: {
     url: 'https://app.thekyaproject.com',
+    // Marks every request from the installed app (Vercel logs, email click
+    // logs, anything reading user-agent), which otherwise looks exactly like
+    // a mobile browser. Takes effect with the next store build.
+    appendUserAgent: 'KyaApp',
   },
   plugins: {
     // Kya signs in with Google and Apple only. The Facebook provider is unused,
