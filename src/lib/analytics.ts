@@ -44,6 +44,7 @@ export type AnalyticsEventName =
   | "setup_stop_point_choice"
   | "sit_gaps_shown"
   | "sit_gaps_choice"
+  | "setup_copy_from_bird"
   | "care_plan_section_completed"
   | "care_plan_progress"
   | "sit_created"

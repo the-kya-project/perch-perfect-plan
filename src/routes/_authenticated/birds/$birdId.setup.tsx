@@ -1,6 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { createPortal } from "react-dom";
 import { InSetupFrame, SetupIntroSlot } from "@/components/setup/SetupFrame";
+import { StartFromAnotherBird, useCopySources } from "@/components/setup/StartFromAnotherBird";
+import { foodCopy, dayCopy, isOwnTask } from "@/lib/copyFromBird";
 import { SetupPrimaryButton, SetupTextButton, SectionCard, Field, TextField, TextBox, Dropdown, Segmented, EditableList, Helper } from "@/components/setup/controls";
 import { useTranslation } from "react-i18next";
 import i18next, { type TFunction } from "i18next";
@@ -856,6 +858,26 @@ export function DayInLifeStep({ birdId, birdName }: { birdId: string; birdName: 
     if (plan?.id) qc.invalidateQueries({ queryKey: ["tasks", plan.id] });
   }
 
+  // "Start from another bird?" — walkthrough only, while this bird has none of its own tasks.
+  const inFrame = useContext(InSetupFrame);
+  const offerCopy = inFrame && !isLoading && !!plan && !tasks.some(isOwnTask);
+  const { data: copySources = [] } = useCopySources(birdId, "day", offerCopy);
+  const [showCopy, setShowCopy] = useState(false);
+  const [copyDone, setCopyDone] = useState(false);
+  useEffect(() => { if (offerCopy && copySources.length) setShowCopy(true); }, [offerCopy, copySources.length]);
+
+  async function copyDay(sourcePlanId: string) {
+    const { data: rows, error } = await supabase.from("routine_tasks").select("*").eq("care_plan_id", sourcePlanId);
+    if (error) throw error;
+    const inserts = dayCopy(rows ?? [], plan!.id);
+    if (inserts.length) {
+      const { error: insertError } = await supabase.from("routine_tasks").insert(inserts as any);
+      if (insertError) throw insertError;
+    }
+    setCopyDone(true);
+    refresh();
+  }
+
   if (isLoading || !plan) {
     return <div className="h-32 animate-pulse rounded-2xl bg-sage-100" />;
   }
@@ -863,6 +885,10 @@ export function DayInLifeStep({ birdId, birdName }: { birdId: string; birdName: 
   return (
     <div className="space-y-4">
       <StepInstruction>{t("birdSetup.instr.routine", "Build {{name}}'s daily rhythm. Feedings, water, cleaning, and meds carry over automatically from the Food and Health steps. Add anything else here, like uncovering the cage or playtime. Auto-added items are tagged and live in their own step.", { name: birdName })}</StepInstruction>
+
+      {showCopy && (!tasks.some(isOwnTask) || copyDone) && (
+        <StartFromAnotherBird kind="day" birdName={birdName} sources={copySources} onCopy={(source) => copyDay(source.plan.id)} />
+      )}
 
       {TIME_BLOCKS.map((block) => (
         <TimeBlockSection
@@ -1180,8 +1206,9 @@ export function FoodWaterStep({
   // Per-row in-flight "add a time" input, keyed by `${type}:${index}`.
   const [hydrated, setHydrated] = useState(false);
 
-  useEffect(() => {
-    if (!plan || hydrated) return;
+  // Fill the form from a care_plans row: the bird's own plan on load, or the
+  // bird's plan overlaid with another bird's food ("Start from another bird?").
+  function hydrate(plan: any) {
     const dietTypes = (plan.diet_types ?? []) as string[];
     setDiet(dietTypes);
     setDietOther(plan.diet_other ?? "");
@@ -1242,7 +1269,19 @@ export function FoodWaterStep({
     setWaterBowlWash(plan.water_bowl_wash_cadence ?? "once_daily");
     setHygieneNotes(plan.food_hygiene_notes ?? "");
     setHydrated(true);
+  }
+  useEffect(() => {
+    if (plan && !hydrated) hydrate(plan);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [plan, hydrated]);
+
+  // "Start from another bird?" — walkthrough only, while this bird's food is empty.
+  const inFrame = useContext(InSetupFrame);
+  const offerCopy = inFrame && page !== 2 && hydrated && diet.length === 0;
+  const { data: copySources = [] } = useCopySources(birdId, "food", offerCopy);
+  const [showCopy, setShowCopy] = useState(false);
+  const [copyDone, setCopyDone] = useState(false);
+  useEffect(() => { if (offerCopy && copySources.length) setShowCopy(true); }, [offerCopy, copySources.length]);
 
   // ---- Completeness + wizard validation gate ----
   const [validationActive, setValidationActive] = useState(false);
@@ -1476,6 +1515,15 @@ export function FoodWaterStep({
       {page !== 2 && (
         <>
       <StepInstruction>{t("birdSetup.instr.food", "What does {{name}} eat, and how much? Clear answers mean anyone caring for {{name}} knows exactly what to serve, and when.", { name: birdName })}</StepInstruction>
+
+      {showCopy && (diet.length === 0 || copyDone) && (
+        <StartFromAnotherBird
+          kind="food"
+          birdName={birdName}
+          sources={copySources}
+          onCopy={(source) => { hydrate({ ...plan, ...foodCopy(source.plan) }); setCopyDone(true); }}
+        />
+      )}
 
       {/* Primary diet */}
       <Card title={t("birdSetup.primaryDiet", "Primary diet")} hint={t("birdSetup.chooseAllThatApply", "Choose all that apply.")}>

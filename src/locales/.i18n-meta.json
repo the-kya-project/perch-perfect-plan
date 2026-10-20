@@ -3315,6 +3315,36 @@
     "confirmEmail.wrongEmail": {
       "stamp": "cbd9b23f63595263"
     },
+    "copyFromBird.copiedDay": {
+      "stamp": "c19987bf658400d2"
+    },
+    "copyFromBird.copiedFood": {
+      "stamp": "58f6c12ee9d0056e"
+    },
+    "copyFromBird.copiedTitle": {
+      "stamp": "d9d8be72ce3ce4bb"
+    },
+    "copyFromBird.copyFrom": {
+      "stamp": "53468b2b77f74892"
+    },
+    "copyFromBird.dayHelperMany": {
+      "stamp": "7911e9445a763417"
+    },
+    "copyFromBird.dayHelperOne": {
+      "stamp": "c54dde4b9b91c05b"
+    },
+    "copyFromBird.failed": {
+      "stamp": "1132c747c0fe6cf6"
+    },
+    "copyFromBird.foodHelperMany": {
+      "stamp": "45311c899a3e5fdc"
+    },
+    "copyFromBird.foodHelperOne": {
+      "stamp": "84442a947e764110"
+    },
+    "copyFromBird.title": {
+      "stamp": "1567c17de869f000"
+    },
     "covering.coveringFlock": {
       "stamp": "45c78f6f408064f3"
     },

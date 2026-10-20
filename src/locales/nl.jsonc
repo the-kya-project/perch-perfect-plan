@@ -2213,6 +2213,26 @@
   "confirmEmail.weSentLinkTo": "We hebben een bevestigingslink gestuurd naar",
   // Wrong email address?
   "confirmEmail.wrongEmail": "Verkeerd e-mailadres?",
+  // Change anything that's different for {{name}}.
+  "copyFromBird.copiedDay": "Pas aan wat anders is voor {{name}}.",
+  // Add how much {{name}} eats for each item below, then change anything that's different.
+  "copyFromBird.copiedFood": "Vul bij elk item in hoeveel {{name}} eet en pas aan wat anders is.",
+  // Copied from {{source}}
+  "copyFromBird.copiedTitle": "Gekopieerd van {{source}}",
+  // Copy from {{source}}
+  "copyFromBird.copyFrom": "Kopieer van {{source}}",
+  // Copy another bird's daily tasks, then adjust them for {{name}}.
+  "copyFromBird.dayHelperMany": "Kopieer de dagelijkse taken van een andere vogel en pas ze aan voor {{name}}.",
+  // Copy {{source}}'s daily tasks, then adjust them for {{name}}.
+  "copyFromBird.dayHelperOne": "Kopieer de dagelijkse taken van {{source}} en pas ze aan voor {{name}}.",
+  // That didn't copy. Check your connection and try again.
+  "copyFromBird.failed": "Kopiëren is niet gelukt. Controleer je verbinding en probeer het opnieuw.",
+  // Copy another bird's food, then add how much {{name}} eats.
+  "copyFromBird.foodHelperMany": "Kopieer het eten van een andere vogel en vul daarna in hoeveel {{name}} eet.",
+  // Copy {{source}}'s food, then add how much {{name}} eats.
+  "copyFromBird.foodHelperOne": "Kopieer het eten van {{source}} en vul daarna in hoeveel {{name}} eet.",
+  // Start from another bird?
+  "copyFromBird.title": "Beginnen met een andere vogel?",
   // Covering {{owner}}'s flock
   "covering.coveringFlock": "Je valt in voor de vogels van {{owner}}",
   // Daily care

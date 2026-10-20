@@ -29,6 +29,7 @@
     "test:setup-progress": "npx --yes vite-node scripts/setup-progress.test.ts",
     "test:home-defaults": "npx --yes vite-node scripts/home-defaults.test.ts",
     "test:chop-ingredients": "npx --yes vite-node scripts/chop-ingredients.test.ts",
+    "test:copy-from-bird": "npx --yes vite-node scripts/copy-from-bird.test.ts",
     "test:daily-log": "npx --yes vite-node scripts/daily-log.test.ts",
     "test:email-tracking": "npx --yes vite-node scripts/email-tracking.test.ts",
     "test:auth-email-hook": "npx --yes vite-node scripts/auth-email-hook.test.ts"
