@@ -270,7 +270,7 @@ $$;
 revoke all on function private.assert_entitlement_admin() from public, anon;
 grant execute on function private.assert_entitlement_admin() to authenticated, service_role;
 
-create or replace function public.admin_grant_entitlement(
+create or replace function private.grant_manual_entitlement(
   p_email      text,
   p_plan       text,
   p_period_end timestamptz default null,
@@ -312,7 +312,7 @@ end;
 $$;
 
 -- Revoking ends access now but keeps the row as a record.
-create or replace function public.admin_revoke_entitlement(p_email text)
+create or replace function private.revoke_manual_entitlement(p_email text)
 returns public.entitlements
 language plpgsql
 volatile
@@ -345,6 +345,38 @@ begin
 
   return v_row;
 end;
+$$;
+
+revoke all on function private.grant_manual_entitlement(text, text, timestamptz, text) from public, anon;
+revoke all on function private.revoke_manual_entitlement(text) from public, anon;
+grant execute on function private.grant_manual_entitlement(text, text, timestamptz, text) to authenticated, service_role;
+grant execute on function private.revoke_manual_entitlement(text) to authenticated, service_role;
+
+-- RPC entry points. SECURITY INVOKER: the elevated write happens only inside
+-- the private functions above, after their admin check.
+create or replace function public.admin_grant_entitlement(
+  p_email      text,
+  p_plan       text,
+  p_period_end timestamptz default null,
+  p_note       text default null
+)
+returns public.entitlements
+language sql
+volatile
+security invoker
+set search_path = ''
+as $$
+  select * from private.grant_manual_entitlement(p_email, p_plan, p_period_end, p_note);
+$$;
+
+create or replace function public.admin_revoke_entitlement(p_email text)
+returns public.entitlements
+language sql
+volatile
+security invoker
+set search_path = ''
+as $$
+  select * from private.revoke_manual_entitlement(p_email);
 $$;
 
 revoke all on function public.admin_grant_entitlement(text, text, timestamptz, text) from public, anon;
