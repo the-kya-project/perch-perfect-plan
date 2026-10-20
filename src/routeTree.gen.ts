@@ -30,7 +30,6 @@ import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authen
 import { Route as AuthenticatedPastBirdsRouteImport } from './routes/_authenticated/past-birds'
 import { Route as AuthenticatedRememberingRouteImport } from './routes/_authenticated/remembering'
 import { Route as AuthenticatedScansRouteImport } from './routes/_authenticated/scans'
-import { Route as AuthenticatedSitsRouteImport } from './routes/_authenticated/sits'
 import { Route as AuthenticatedTodayRouteImport } from './routes/_authenticated/today'
 import { Route as AuthenticatedWelcomeRouteImport } from './routes/_authenticated/welcome'
 import { Route as HandoffTokenRouteImport } from './routes/handoff.$token'
@@ -45,7 +44,9 @@ import { Route as AuthenticatedNotificationsSettingsRouteImport } from './routes
 import { Route as AuthenticatedScansIndexRouteImport } from './routes/_authenticated/scans.index'
 import { Route as AuthenticatedScansSettingsRouteImport } from './routes/_authenticated/scans.settings'
 import { Route as AuthenticatedSitPreviewSitIdRouteImport } from './routes/_authenticated/sit-preview.$sitId'
+import { Route as AuthenticatedSitsIndexRouteImport } from './routes/_authenticated/sits.index'
 import { Route as AuthenticatedSitsSitIdRouteImport } from './routes/_authenticated/sits.$sitId'
+import { Route as AuthenticatedSitsNewRouteImport } from './routes/_authenticated/sits.new'
 import { Route as ApiPublicCspReportRouteImport } from './routes/api/public/csp-report'
 import { Route as SitterTokenIndexRouteImport } from './routes/sitter/$token/index'
 import { Route as SitterTokenCareSheetRouteImport } from './routes/sitter/$token/care-sheet'
@@ -71,6 +72,7 @@ import { Route as AuthenticatedBirdsBirdIdVetSummaryRouteImport } from './routes
 import { Route as AuthenticatedBirdsBirdIdViewAsSitterRouteImport } from './routes/_authenticated/birds/$birdId.view-as-sitter'
 import { Route as AuthenticatedBirdsBirdIdWeightRouteImport } from './routes/_authenticated/birds/$birdId.weight'
 import { Route as AuthenticatedCoveringSitIdBirdIdRouteImport } from './routes/_authenticated/covering.$sitId.$birdId'
+import { Route as AuthenticatedSitsEditSitIdRouteImport } from './routes/_authenticated/sits.edit.$sitId'
 import { Route as ApiPublicHooksBereavementNoteRouteImport } from './routes/api/public/hooks/bereavement-note'
 import { Route as ApiPublicHooksCarePlanRemindersRouteImport } from './routes/api/public/hooks/care-plan-reminders'
 import { Route as ApiPublicHooksEngagementNudgesRouteImport } from './routes/api/public/hooks/engagement-nudges'
@@ -191,11 +193,6 @@ const AuthenticatedScansRoute = AuthenticatedScansRouteImport.update({
   path: '/scans',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedSitsRoute = AuthenticatedSitsRouteImport.update({
-  id: '/sits',
-  path: '/sits',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedTodayRoute = AuthenticatedTodayRouteImport.update({
   id: '/today',
   path: '/today',
@@ -273,10 +270,20 @@ const AuthenticatedSitPreviewSitIdRoute =
     path: '/sit-preview/$sitId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedSitsIndexRoute = AuthenticatedSitsIndexRouteImport.update({
+  id: '/sits/',
+  path: '/sits/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedSitsSitIdRoute = AuthenticatedSitsSitIdRouteImport.update({
-  id: '/$sitId',
-  path: '/$sitId',
-  getParentRoute: () => AuthenticatedSitsRoute,
+  id: '/sits/$sitId',
+  path: '/sits/$sitId',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedSitsNewRoute = AuthenticatedSitsNewRouteImport.update({
+  id: '/sits/new',
+  path: '/sits/new',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const ApiPublicCspReportRoute = ApiPublicCspReportRouteImport.update({
   id: '/api/public/csp-report',
@@ -420,6 +427,12 @@ const AuthenticatedCoveringSitIdBirdIdRoute =
     path: '/covering/$sitId/$birdId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedSitsEditSitIdRoute =
+  AuthenticatedSitsEditSitIdRouteImport.update({
+    id: '/sits/edit/$sitId',
+    path: '/sits/edit/$sitId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const ApiPublicHooksBereavementNoteRoute =
   ApiPublicHooksBereavementNoteRouteImport.update({
     id: '/api/public/hooks/bereavement-note',
@@ -514,7 +527,6 @@ export interface FileRoutesByFullPath {
   '/past-birds': typeof AuthenticatedPastBirdsRoute
   '/remembering': typeof AuthenticatedRememberingRoute
   '/scans': typeof AuthenticatedScansRouteWithChildren
-  '/sits': typeof AuthenticatedSitsRouteWithChildren
   '/today': typeof AuthenticatedTodayRoute
   '/welcome': typeof AuthenticatedWelcomeRoute
   '/handoff/$token': typeof HandoffTokenRoute
@@ -526,6 +538,7 @@ export interface FileRoutesByFullPath {
   '/scans/settings': typeof AuthenticatedScansSettingsRoute
   '/sit-preview/$sitId': typeof AuthenticatedSitPreviewSitIdRoute
   '/sits/$sitId': typeof AuthenticatedSitsSitIdRoute
+  '/sits/new': typeof AuthenticatedSitsNewRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/sitter/$token/care-sheet': typeof SitterTokenCareSheetRoute
   '/sitter/$token/concern': typeof SitterTokenConcernRoute
@@ -536,6 +549,7 @@ export interface FileRoutesByFullPath {
   '/account/': typeof AuthenticatedAccountIndexRoute
   '/notifications/': typeof AuthenticatedNotificationsIndexRoute
   '/scans/': typeof AuthenticatedScansIndexRoute
+  '/sits/': typeof AuthenticatedSitsIndexRoute
   '/sitter/$token/': typeof SitterTokenIndexRoute
   '/birds/$birdId/access': typeof AuthenticatedBirdsBirdIdAccessRoute
   '/birds/$birdId/care-plan': typeof AuthenticatedBirdsBirdIdCarePlanRoute
@@ -553,6 +567,7 @@ export interface FileRoutesByFullPath {
   '/birds/$birdId/view-as-sitter': typeof AuthenticatedBirdsBirdIdViewAsSitterRoute
   '/birds/$birdId/weight': typeof AuthenticatedBirdsBirdIdWeightRoute
   '/covering/$sitId/$birdId': typeof AuthenticatedCoveringSitIdBirdIdRoute
+  '/sits/edit/$sitId': typeof AuthenticatedSitsEditSitIdRoute
   '/api/public/hooks/bereavement-note': typeof ApiPublicHooksBereavementNoteRoute
   '/api/public/hooks/care-plan-reminders': typeof ApiPublicHooksCarePlanRemindersRoute
   '/api/public/hooks/engagement-nudges': typeof ApiPublicHooksEngagementNudgesRoute
@@ -585,7 +600,6 @@ export interface FileRoutesByTo {
   '/household-permissions': typeof AuthenticatedHouseholdPermissionsRoute
   '/past-birds': typeof AuthenticatedPastBirdsRoute
   '/remembering': typeof AuthenticatedRememberingRoute
-  '/sits': typeof AuthenticatedSitsRouteWithChildren
   '/today': typeof AuthenticatedTodayRoute
   '/welcome': typeof AuthenticatedWelcomeRoute
   '/handoff/$token': typeof HandoffTokenRoute
@@ -596,6 +610,7 @@ export interface FileRoutesByTo {
   '/scans/settings': typeof AuthenticatedScansSettingsRoute
   '/sit-preview/$sitId': typeof AuthenticatedSitPreviewSitIdRoute
   '/sits/$sitId': typeof AuthenticatedSitsSitIdRoute
+  '/sits/new': typeof AuthenticatedSitsNewRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/sitter/$token/care-sheet': typeof SitterTokenCareSheetRoute
   '/sitter/$token/concern': typeof SitterTokenConcernRoute
@@ -606,6 +621,7 @@ export interface FileRoutesByTo {
   '/account': typeof AuthenticatedAccountIndexRoute
   '/notifications': typeof AuthenticatedNotificationsIndexRoute
   '/scans': typeof AuthenticatedScansIndexRoute
+  '/sits': typeof AuthenticatedSitsIndexRoute
   '/sitter/$token': typeof SitterTokenIndexRoute
   '/birds/$birdId/access': typeof AuthenticatedBirdsBirdIdAccessRoute
   '/birds/$birdId/care-plan': typeof AuthenticatedBirdsBirdIdCarePlanRoute
@@ -622,6 +638,7 @@ export interface FileRoutesByTo {
   '/birds/$birdId/view-as-sitter': typeof AuthenticatedBirdsBirdIdViewAsSitterRoute
   '/birds/$birdId/weight': typeof AuthenticatedBirdsBirdIdWeightRoute
   '/covering/$sitId/$birdId': typeof AuthenticatedCoveringSitIdBirdIdRoute
+  '/sits/edit/$sitId': typeof AuthenticatedSitsEditSitIdRoute
   '/api/public/hooks/bereavement-note': typeof ApiPublicHooksBereavementNoteRoute
   '/api/public/hooks/care-plan-reminders': typeof ApiPublicHooksCarePlanRemindersRoute
   '/api/public/hooks/engagement-nudges': typeof ApiPublicHooksEngagementNudgesRoute
@@ -660,7 +677,6 @@ export interface FileRoutesById {
   '/_authenticated/past-birds': typeof AuthenticatedPastBirdsRoute
   '/_authenticated/remembering': typeof AuthenticatedRememberingRoute
   '/_authenticated/scans': typeof AuthenticatedScansRouteWithChildren
-  '/_authenticated/sits': typeof AuthenticatedSitsRouteWithChildren
   '/_authenticated/today': typeof AuthenticatedTodayRoute
   '/_authenticated/welcome': typeof AuthenticatedWelcomeRoute
   '/handoff/$token': typeof HandoffTokenRoute
@@ -672,6 +688,7 @@ export interface FileRoutesById {
   '/_authenticated/scans/settings': typeof AuthenticatedScansSettingsRoute
   '/_authenticated/sit-preview/$sitId': typeof AuthenticatedSitPreviewSitIdRoute
   '/_authenticated/sits/$sitId': typeof AuthenticatedSitsSitIdRoute
+  '/_authenticated/sits/new': typeof AuthenticatedSitsNewRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
   '/sitter/$token/care-sheet': typeof SitterTokenCareSheetRoute
   '/sitter/$token/concern': typeof SitterTokenConcernRoute
@@ -682,6 +699,7 @@ export interface FileRoutesById {
   '/_authenticated/account/': typeof AuthenticatedAccountIndexRoute
   '/_authenticated/notifications/': typeof AuthenticatedNotificationsIndexRoute
   '/_authenticated/scans/': typeof AuthenticatedScansIndexRoute
+  '/_authenticated/sits/': typeof AuthenticatedSitsIndexRoute
   '/sitter/$token/': typeof SitterTokenIndexRoute
   '/_authenticated/birds/$birdId/access': typeof AuthenticatedBirdsBirdIdAccessRoute
   '/_authenticated/birds/$birdId/care-plan': typeof AuthenticatedBirdsBirdIdCarePlanRoute
@@ -699,6 +717,7 @@ export interface FileRoutesById {
   '/_authenticated/birds/$birdId/view-as-sitter': typeof AuthenticatedBirdsBirdIdViewAsSitterRoute
   '/_authenticated/birds/$birdId/weight': typeof AuthenticatedBirdsBirdIdWeightRoute
   '/_authenticated/covering/$sitId/$birdId': typeof AuthenticatedCoveringSitIdBirdIdRoute
+  '/_authenticated/sits/edit/$sitId': typeof AuthenticatedSitsEditSitIdRoute
   '/api/public/hooks/bereavement-note': typeof ApiPublicHooksBereavementNoteRoute
   '/api/public/hooks/care-plan-reminders': typeof ApiPublicHooksCarePlanRemindersRoute
   '/api/public/hooks/engagement-nudges': typeof ApiPublicHooksEngagementNudgesRoute
@@ -737,7 +756,6 @@ export interface FileRouteTypes {
     | '/past-birds'
     | '/remembering'
     | '/scans'
-    | '/sits'
     | '/today'
     | '/welcome'
     | '/handoff/$token'
@@ -749,6 +767,7 @@ export interface FileRouteTypes {
     | '/scans/settings'
     | '/sit-preview/$sitId'
     | '/sits/$sitId'
+    | '/sits/new'
     | '/api/public/csp-report'
     | '/sitter/$token/care-sheet'
     | '/sitter/$token/concern'
@@ -759,6 +778,7 @@ export interface FileRouteTypes {
     | '/account/'
     | '/notifications/'
     | '/scans/'
+    | '/sits/'
     | '/sitter/$token/'
     | '/birds/$birdId/access'
     | '/birds/$birdId/care-plan'
@@ -776,6 +796,7 @@ export interface FileRouteTypes {
     | '/birds/$birdId/view-as-sitter'
     | '/birds/$birdId/weight'
     | '/covering/$sitId/$birdId'
+    | '/sits/edit/$sitId'
     | '/api/public/hooks/bereavement-note'
     | '/api/public/hooks/care-plan-reminders'
     | '/api/public/hooks/engagement-nudges'
@@ -808,7 +829,6 @@ export interface FileRouteTypes {
     | '/household-permissions'
     | '/past-birds'
     | '/remembering'
-    | '/sits'
     | '/today'
     | '/welcome'
     | '/handoff/$token'
@@ -819,6 +839,7 @@ export interface FileRouteTypes {
     | '/scans/settings'
     | '/sit-preview/$sitId'
     | '/sits/$sitId'
+    | '/sits/new'
     | '/api/public/csp-report'
     | '/sitter/$token/care-sheet'
     | '/sitter/$token/concern'
@@ -829,6 +850,7 @@ export interface FileRouteTypes {
     | '/account'
     | '/notifications'
     | '/scans'
+    | '/sits'
     | '/sitter/$token'
     | '/birds/$birdId/access'
     | '/birds/$birdId/care-plan'
@@ -845,6 +867,7 @@ export interface FileRouteTypes {
     | '/birds/$birdId/view-as-sitter'
     | '/birds/$birdId/weight'
     | '/covering/$sitId/$birdId'
+    | '/sits/edit/$sitId'
     | '/api/public/hooks/bereavement-note'
     | '/api/public/hooks/care-plan-reminders'
     | '/api/public/hooks/engagement-nudges'
@@ -882,7 +905,6 @@ export interface FileRouteTypes {
     | '/_authenticated/past-birds'
     | '/_authenticated/remembering'
     | '/_authenticated/scans'
-    | '/_authenticated/sits'
     | '/_authenticated/today'
     | '/_authenticated/welcome'
     | '/handoff/$token'
@@ -894,6 +916,7 @@ export interface FileRouteTypes {
     | '/_authenticated/scans/settings'
     | '/_authenticated/sit-preview/$sitId'
     | '/_authenticated/sits/$sitId'
+    | '/_authenticated/sits/new'
     | '/api/public/csp-report'
     | '/sitter/$token/care-sheet'
     | '/sitter/$token/concern'
@@ -904,6 +927,7 @@ export interface FileRouteTypes {
     | '/_authenticated/account/'
     | '/_authenticated/notifications/'
     | '/_authenticated/scans/'
+    | '/_authenticated/sits/'
     | '/sitter/$token/'
     | '/_authenticated/birds/$birdId/access'
     | '/_authenticated/birds/$birdId/care-plan'
@@ -921,6 +945,7 @@ export interface FileRouteTypes {
     | '/_authenticated/birds/$birdId/view-as-sitter'
     | '/_authenticated/birds/$birdId/weight'
     | '/_authenticated/covering/$sitId/$birdId'
+    | '/_authenticated/sits/edit/$sitId'
     | '/api/public/hooks/bereavement-note'
     | '/api/public/hooks/care-plan-reminders'
     | '/api/public/hooks/engagement-nudges'
@@ -1112,13 +1137,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedScansRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/sits': {
-      id: '/_authenticated/sits'
-      path: '/sits'
-      fullPath: '/sits'
-      preLoaderRoute: typeof AuthenticatedSitsRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/today': {
       id: '/_authenticated/today'
       path: '/today'
@@ -1217,12 +1235,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSitPreviewSitIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/sits/': {
+      id: '/_authenticated/sits/'
+      path: '/sits'
+      fullPath: '/sits/'
+      preLoaderRoute: typeof AuthenticatedSitsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/sits/$sitId': {
       id: '/_authenticated/sits/$sitId'
-      path: '/$sitId'
+      path: '/sits/$sitId'
       fullPath: '/sits/$sitId'
       preLoaderRoute: typeof AuthenticatedSitsSitIdRouteImport
-      parentRoute: typeof AuthenticatedSitsRoute
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/sits/new': {
+      id: '/_authenticated/sits/new'
+      path: '/sits/new'
+      fullPath: '/sits/new'
+      preLoaderRoute: typeof AuthenticatedSitsNewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/api/public/csp-report': {
       id: '/api/public/csp-report'
@@ -1399,6 +1431,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCoveringSitIdBirdIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/sits/edit/$sitId': {
+      id: '/_authenticated/sits/edit/$sitId'
+      path: '/sits/edit/$sitId'
+      fullPath: '/sits/edit/$sitId'
+      preLoaderRoute: typeof AuthenticatedSitsEditSitIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/api/public/hooks/bereavement-note': {
       id: '/api/public/hooks/bereavement-note'
       path: '/api/public/hooks/bereavement-note'
@@ -1529,17 +1568,6 @@ const AuthenticatedScansRouteChildren: AuthenticatedScansRouteChildren = {
 const AuthenticatedScansRouteWithChildren =
   AuthenticatedScansRoute._addFileChildren(AuthenticatedScansRouteChildren)
 
-interface AuthenticatedSitsRouteChildren {
-  AuthenticatedSitsSitIdRoute: typeof AuthenticatedSitsSitIdRoute
-}
-
-const AuthenticatedSitsRouteChildren: AuthenticatedSitsRouteChildren = {
-  AuthenticatedSitsSitIdRoute: AuthenticatedSitsSitIdRoute,
-}
-
-const AuthenticatedSitsRouteWithChildren =
-  AuthenticatedSitsRoute._addFileChildren(AuthenticatedSitsRouteChildren)
-
 interface AuthenticatedBirdsBirdIdPlanRouteChildren {
   AuthenticatedBirdsBirdIdPlanEditorRoute: typeof AuthenticatedBirdsBirdIdPlanEditorRoute
   AuthenticatedBirdsBirdIdPlanIndexRoute: typeof AuthenticatedBirdsBirdIdPlanIndexRoute
@@ -1622,13 +1650,16 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPastBirdsRoute: typeof AuthenticatedPastBirdsRoute
   AuthenticatedRememberingRoute: typeof AuthenticatedRememberingRoute
   AuthenticatedScansRoute: typeof AuthenticatedScansRouteWithChildren
-  AuthenticatedSitsRoute: typeof AuthenticatedSitsRouteWithChildren
   AuthenticatedTodayRoute: typeof AuthenticatedTodayRoute
   AuthenticatedWelcomeRoute: typeof AuthenticatedWelcomeRoute
   AuthenticatedBirdsBirdIdRoute: typeof AuthenticatedBirdsBirdIdRouteWithChildren
   AuthenticatedBirdsNewRoute: typeof AuthenticatedBirdsNewRoute
   AuthenticatedSitPreviewSitIdRoute: typeof AuthenticatedSitPreviewSitIdRoute
+  AuthenticatedSitsSitIdRoute: typeof AuthenticatedSitsSitIdRoute
+  AuthenticatedSitsNewRoute: typeof AuthenticatedSitsNewRoute
+  AuthenticatedSitsIndexRoute: typeof AuthenticatedSitsIndexRoute
   AuthenticatedCoveringSitIdBirdIdRoute: typeof AuthenticatedCoveringSitIdBirdIdRoute
+  AuthenticatedSitsEditSitIdRoute: typeof AuthenticatedSitsEditSitIdRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -1643,13 +1674,16 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedPastBirdsRoute: AuthenticatedPastBirdsRoute,
   AuthenticatedRememberingRoute: AuthenticatedRememberingRoute,
   AuthenticatedScansRoute: AuthenticatedScansRouteWithChildren,
-  AuthenticatedSitsRoute: AuthenticatedSitsRouteWithChildren,
   AuthenticatedTodayRoute: AuthenticatedTodayRoute,
   AuthenticatedWelcomeRoute: AuthenticatedWelcomeRoute,
   AuthenticatedBirdsBirdIdRoute: AuthenticatedBirdsBirdIdRouteWithChildren,
   AuthenticatedBirdsNewRoute: AuthenticatedBirdsNewRoute,
   AuthenticatedSitPreviewSitIdRoute: AuthenticatedSitPreviewSitIdRoute,
+  AuthenticatedSitsSitIdRoute: AuthenticatedSitsSitIdRoute,
+  AuthenticatedSitsNewRoute: AuthenticatedSitsNewRoute,
+  AuthenticatedSitsIndexRoute: AuthenticatedSitsIndexRoute,
   AuthenticatedCoveringSitIdBirdIdRoute: AuthenticatedCoveringSitIdBirdIdRoute,
+  AuthenticatedSitsEditSitIdRoute: AuthenticatedSitsEditSitIdRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

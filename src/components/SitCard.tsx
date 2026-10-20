@@ -1,13 +1,11 @@
-import { useState } from "react";
 import { namesAsCount } from "@/lib/birdNames";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { Calendar, Link2, Copy, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { SitChecklist } from "@/components/SitChecklist";
-import { SitForm } from "@/components/SitForm";
 import { formatDateRangeUS } from "@/lib/dates";
 import { useTranslation, Trans } from "react-i18next";
 
@@ -15,7 +13,7 @@ type Bird = { id: string; name: string };
 
 export function SitCard({ sit, birds = [], allBirds, onChange }: { sit: any; birds?: Bird[]; allBirds?: any[]; onChange: () => void }) {
   const { t } = useTranslation();
-  const [editing, setEditing] = useState(false);
+  const navigate = useNavigate();
   // Two caregiver kinds — see migration sits_one_caregiver_chk. A household sit
   // has no token (and never expires by a token window); it just runs from
   // start_date through end_date.
@@ -98,17 +96,6 @@ export function SitCard({ sit, birds = [], allBirds, onChange }: { sit: any; bir
     toast.success(t("sitCard.linkCopied", "Link copied."));
   }
 
-  if (editing && allBirds) {
-    return (
-      <SitForm
-        birds={allBirds}
-        editSit={sit}
-        onSaved={onChange}
-        onCancel={() => setEditing(false)}
-      />
-    );
-  }
-
   return (
     <div className="rounded-[20px] bg-[#efe9da] p-4 shadow-sm">
       <div className="flex items-start justify-between gap-2">
@@ -173,7 +160,7 @@ export function SitCard({ sit, birds = [], allBirds, onChange }: { sit: any; bir
       )}
       <div className="mt-3 flex gap-3 text-xs font-medium">
         {allBirds && !sit.revoked && (
-          <button onClick={() => setEditing(true)} className="text-[#1a3d2e] underline">{t("sitCard.edit", "Edit")}</button>
+          <button onClick={() => navigate({ to: "/sits/edit/$sitId", params: { sitId: sit.id } })} className="text-[#1a3d2e] underline">{t("sitCard.edit", "Edit")}</button>
         )}
         <Link to="/sits/$sitId" params={{ sitId: sit.id }} className="text-[#1a3d2e] underline">{t("sitCard.activity", "Activity")}</Link>
         {!isHousehold && !sit.revoked && !expired && (
