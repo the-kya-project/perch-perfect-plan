@@ -18,6 +18,7 @@ import { localeForUser, joinNamesLocalized, fallbackOwnerLabel } from "./emailLo
 import { mergeEmergency, emergencyDifferent } from "./emergency";
 import { mergeHome, homeDifferences, birdHasOwn, HOME_GROUPS } from "./homeDefaults";
 import { isCfClip, cfUid } from "./clipRef";
+import { computeSetupCompleteness, type SetupCheck } from "./setupCompleteness";
 
 async function getAdmin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -482,6 +483,60 @@ export const getBirdEmergencyReadiness = createServerFn({ method: "GET" })
       homeReady: HOME_GROUPS.some((g) => birdHasOwn(mergedPlan, g)),
       homeDifferent: homeDifferences(plan, home).length > 0,
       emergencyDifferent: emergencyDifferent(contacts, defaults),
+    };
+  });
+
+/** The care-plan sections a sit's birds are still missing, for the soft
+ *  "will need a little more" reminder before a sit is created. Judged on the
+ *  same merged data the sitter sees (per-bird answers over the owner's shared
+ *  "Your home" answers and emergency defaults). Tips are optional, so they're
+ *  never listed. The caller must be a member (owner or household) of each bird. */
+export type SitGapSection = Exclude<SetupCheck["key"], "clips">;
+export const getSitReadiness = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { birdIds: string[] }) => z.object({ birdIds: z.array(z.string().uuid()).min(1).max(50) }).parse(d))
+  .handler(async ({ data, context }) => {
+    const sb = await getAdmin();
+    const userId = context.userId as string;
+    const birdIds = [...new Set(data.birdIds)];
+    const { data: memberships } = await sb.from("bird_members").select("bird_id").eq("user_id", userId).in("bird_id", birdIds);
+    const allowed = new Set(((memberships ?? []) as { bird_id: string }[]).map((m) => m.bird_id));
+    const ids = birdIds.filter((id) => allowed.has(id));
+    if (!ids.length) return { birds: [] as { birdId: string; missing: SitGapSection[] }[] };
+
+    const [{ data: birds }, { data: plans }, { data: contacts }] = await Promise.all([
+      sb.from("birds").select("id, owner_id, normal_weight").in("id", ids),
+      sb.from("care_plans").select("*").in("bird_id", ids),
+      sb.from("emergency_contacts").select("*").in("bird_id", ids),
+    ]);
+    const ownerIds = [...new Set(((birds ?? []) as any[]).map((b) => b.owner_id as string))];
+    const planIds = ((plans ?? []) as any[]).map((p) => p.id as string);
+    const [{ data: ecDefaults }, { data: homeDefaults }, { data: tasks }] = await Promise.all([
+      sb.from("owner_emergency_defaults").select("*").in("owner_id", ownerIds),
+      sb.from("owner_home_defaults").select("*").in("owner_id", ownerIds),
+      planIds.length ? sb.from("routine_tasks").select("care_plan_id").in("care_plan_id", planIds) : Promise.resolve({ data: [] as any[] }),
+    ]);
+    const byBird = <T,>(rows: T[] | null, key: string) => new Map(((rows ?? []) as any[]).map((r) => [r[key] as string, r as T]));
+    const planByBird = byBird(plans as any[], "bird_id");
+    const contactsByBird = byBird(contacts as any[], "bird_id");
+    const ecByOwner = byBird(ecDefaults as any[], "owner_id");
+    const homeByOwner = byBird(homeDefaults as any[], "owner_id");
+    const taskCount = new Map<string, number>();
+    for (const r of (tasks ?? []) as any[]) taskCount.set(r.care_plan_id, (taskCount.get(r.care_plan_id) ?? 0) + 1);
+
+    return {
+      birds: ((birds ?? []) as any[]).map((b) => {
+        const plan = planByBird.get(b.id) as any;
+        const { checks } = computeSetupCompleteness({
+          bird: b,
+          plan: mergeHome(plan ?? null, homeByOwner.get(b.owner_id) as any),
+          tasksCount: plan ? taskCount.get(plan.id) ?? 0 : 0,
+          contacts: contactsByBird.get(b.id) ?? null,
+          defaults: ecByOwner.get(b.owner_id) ?? null,
+        });
+        const missing = checks.filter((c) => !c.done && c.key !== "clips").map((c) => c.key as SitGapSection);
+        return { birdId: b.id as string, missing };
+      }),
     };
   });
 

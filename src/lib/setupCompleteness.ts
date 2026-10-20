@@ -2,7 +2,7 @@
 // Mirrors the "before you share" checks in the Review step.
 
 import i18next from "i18next";
-import { setupStepNumber } from "@/components/SetupShell";
+import { setupStepNumber } from "@/lib/setupSteps";
 
 export type SetupCheck = {
   step: number;

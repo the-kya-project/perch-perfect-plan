@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { track } from "@/lib/analytics";
 import { useServerFn } from "@tanstack/react-start";
 import { resolveHouseholdNames } from "@/lib/home.functions";
+import { getSitReadiness, type SitGapSection } from "@/lib/household.functions";
 import {
   notifySitAssigned, notifySitUpdated, notifySitCancelled,
   notifySitterInvite, notifySitterInviteUpdated, notifySitterCancelled,
@@ -188,6 +189,12 @@ export function SitForm({
   // reads bird_members via the existing owner RLS — no new permission.
   const birdIdsKey = useMemo(() => Array.from(selected).sort().join(","), [selected]);
   const resolveNames = useServerFn(resolveHouseholdNames);
+  const sitReadiness = useServerFn(getSitReadiness);
+  // Soft reminder before creating a sit: care-plan sections the birds are still
+  // missing. Only the emergency phones for an outside sitter block a sit (the
+  // check in submit); everything here can be skipped with "Create the sit anyway".
+  const [gaps, setGaps] = useState<{ birdId: string; name: string; missing: SitGapSection[] }[] | null>(null);
+  const acceptGapsRef = useRef(false);
   // Household-caregiver sit notifications (owner -> caregiver email). Called
   // AFTER the client-side sits write succeeds; external sits never touch these.
   const notifyAssigned = useServerFn(notifySitAssigned);
@@ -261,6 +268,19 @@ export function SitForm({
     setSelected(new Set(birds.map((b) => b.id)));
   }
 
+  // Who the reminder is about: the chosen household member or outside sitter.
+  function caregiverLabel(): string {
+    if (caregiverKind === "household") {
+      const m = eligibleMembers.find((x) => x.userId === householdUserId);
+      if (m) return memberDisplayName(m);
+    }
+    if (caregiverKind === "external" && sitterName.trim()) return sitterName.trim();
+    return t("sitForm.gaps.yourSitter", "Your sitter");
+  }
+
+  // A different set of birds or caregiver means a fresh look at the gaps.
+  useEffect(() => { setGaps(null); acceptGapsRef.current = false; }, [birdIdsKey, caregiverKind, householdUserId]);
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (selected.size === 0) { toast.error(t("sitForm.pickAtLeastOneBird", "Pick at least one bird.")); return; }
@@ -321,6 +341,26 @@ export function SitForm({
           return;
         }
       }
+
+      // Soft reminder (create only): list what the plan is still missing and
+      // let the owner fill it in or go ahead. A failed check never blocks a sit.
+      if (!editing && !acceptGapsRef.current) {
+        try {
+          const { birds: ready } = await sitReadiness({ data: { birdIds } });
+          const withGaps = ready
+            .filter((r) => r.missing.length > 0)
+            .map((r) => ({ ...r, name: (birds.find((b: any) => b.id === r.birdId)?.name ?? "") as string }));
+          if (withGaps.length) {
+            setGaps(withGaps);
+            setSaving(false);
+            track("sit_gaps_shown", { bird_count: withGaps.length, caregiver_kind: kind });
+            return;
+          }
+        } catch (err) {
+          console.error("[sit] readiness check failed — continuing", err);
+        }
+      }
+      acceptGapsRef.current = false;
 
       // External sits keep a token window ending at end-of-day on the end
       // date. Household sits have no token — token_expires_at stays null.
@@ -580,13 +620,62 @@ export function SitForm({
 
       <Field label={t("sitForm.notesForThisSit", "Notes for this sit")}><textarea className="input area" value={notes} onChange={(e) => setNotes(e.target.value)} /></Field>
 
-      <button type="submit" disabled={saving} className="w-full rounded-[14px] bg-[#1a3d2e] py-3 text-sm font-medium text-white disabled:opacity-50">
+      {gaps && (
+        <div role="alert" className="space-y-2.5 rounded-[14px] bg-white p-3.5 ring-1 ring-[#e0d8c4]">
+          <p className="text-sm font-medium text-[#1a3d2e]">
+            {t("sitForm.gaps.title", "{{name}} will need a little more", { name: caregiverLabel() })}
+          </p>
+          <ul className="space-y-1.5">
+            {gaps.map((g) => (
+              <li key={g.birdId} className="text-sm text-[#1a3d2e]">
+                <span className="font-medium">{g.name}:</span>{" "}
+                {g.missing.map((m, i) => (
+                  <span key={m}>
+                    {i > 0 && ", "}
+                    <Link to="/birds/$birdId/plan/editor" params={{ birdId: g.birdId }} search={{ tab: GAP_TAB[m] } as any} className="text-[#2d6a4f] underline">
+                      {gapLabel(t, m)}
+                    </Link>
+                  </span>
+                ))}
+              </li>
+            ))}
+          </ul>
+          <div className="flex flex-col gap-2 pt-1">
+            <button
+              type="button"
+              onClick={() => {
+                track("sit_gaps_choice", { choice: "fill_in" });
+                const first = gaps[0];
+                navigate({ to: "/birds/$birdId/plan/editor", params: { birdId: first.birdId }, search: { tab: GAP_TAB[first.missing[0]] } as any });
+              }}
+              className="min-h-[44px] w-full rounded-[14px] bg-[#1a3d2e] text-sm font-medium text-white"
+            >
+              {t("sitForm.gaps.fillIn", "Fill these in")}
+            </button>
+            <button
+              type="button"
+              disabled={saving}
+              onClick={() => {
+                track("sit_gaps_choice", { choice: "create_anyway" });
+                acceptGapsRef.current = true;
+                setGaps(null);
+                rootRef.current?.requestSubmit();
+              }}
+              className="min-h-[44px] w-full rounded-[14px] bg-white text-sm font-medium text-[#1a3d2e] ring-1 ring-[#c8bfa6] disabled:opacity-50"
+            >
+              {t("sitForm.gaps.createAnyway", "Create the sit anyway")}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {!gaps && <button type="submit" disabled={saving} className="w-full rounded-[14px] bg-[#1a3d2e] py-3 text-sm font-medium text-white disabled:opacity-50">
         {saving
           ? (editing ? t("sitForm.saving", "Saving...") : t("sitForm.creating", "Creating..."))
           : editing
             ? t("sitForm.saveChanges", "Save changes")
             : caregiverKind === "household" ? t("sitForm.createSit", "Create sit") : t("sitForm.createSitAndLink", "Create sit & generate link")}
-      </button>
+      </button>}
 
       {/* Delete sit — edit mode only, gated by manage_sits (RLS enforces). */}
       {editing && canDelete && (
@@ -618,6 +707,21 @@ export function SitForm({
       )}
     </form>
   );
+}
+
+// Where each missing section is filled in (the care plan editor's tabs).
+const GAP_TAB: Record<SitGapSection, string> = {
+  food: "food", health: "health", personality: "behavior", day: "routine", environment: "home", emergency: "emergency",
+};
+function gapLabel(t: (k: string, d: string) => string, m: SitGapSection): string {
+  switch (m) {
+    case "food": return t("planEditor.tabFood", "Food");
+    case "health": return t("planEditor.tabHealth", "Health");
+    case "personality": return t("planEditor.tabBehavior", "Behavior");
+    case "day": return t("planEditor.tabRoutine", "Routine");
+    case "environment": return t("planOverview.rowReminders", "Reminders for your sitter");
+    case "emergency": return t("planOverview.rowEmergencyContacts", "Emergency contacts");
+  }
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {

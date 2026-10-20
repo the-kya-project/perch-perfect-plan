@@ -4969,6 +4969,14 @@
   "sitForm.endDateMustBeOn": "De einddatum moet op of na de startdatum liggen.",
   // An external sitter has the link. {{who}} is current; you can edit the name or email below.
   "sitForm.externalSitterHasLink": "Een externe oppas heeft de link. {{who}} is nu ingesteld; je kunt de naam of het e-mailadres hieronder aanpassen.",
+  // Create the sit anyway
+  "sitForm.gaps.createAnyway": "Toch een oppasperiode aanmaken",
+  // Fill these in
+  "sitForm.gaps.fillIn": "Vul deze in",
+  // {{name}} will need a little more
+  "sitForm.gaps.title": "{{name}} heeft nog wat meer nodig",
+  // Your sitter
+  "sitForm.gaps.yourSitter": "Je oppas",
   // Going away soon?
   "sitForm.goingAwaySoon": "Ga je binnenkort weg?",
   // Household

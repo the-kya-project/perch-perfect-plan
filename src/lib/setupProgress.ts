@@ -4,7 +4,7 @@
 // Values written before the change are 1–8 in the OLD order, so new values are
 // stored as 100 + the step's position in SETUP_STEPS. That keeps old and new
 // apart without a schema change: anything under 100 is read in the old order.
-import { setupStepNumber } from "@/components/SetupShell";
+import { setupStepNumber } from "@/lib/setupSteps";
 
 const OFFSET = 100;
 

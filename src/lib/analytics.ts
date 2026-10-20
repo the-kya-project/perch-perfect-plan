@@ -42,6 +42,8 @@ export type AnalyticsEventName =
   | "guided_editor_opened"
   | "setup_stop_point_viewed"
   | "setup_stop_point_choice"
+  | "sit_gaps_shown"
+  | "sit_gaps_choice"
   | "care_plan_section_completed"
   | "care_plan_progress"
   | "sit_created"
