@@ -29,6 +29,8 @@ import {
   Check, X, Users, ArrowRightLeft, Heart, Loader2, Trash2, Crop, Flower2, HeartCrack,
 } from "lucide-react";
 import { formatLocalDate } from "@/lib/dates";
+import { DailyCheckCard } from "@/components/DailyCheckCard";
+import { useDailyCheckToday } from "@/lib/dailyCheck";
 
 // Bird-record home — the new landing when you tap a bird. A glanceable hub for
 // the living record; the care plan is one facet among several. Facet screens
@@ -264,6 +266,7 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
   const activeSitId = useActiveSitIdForBird(birdId);
 
   const { data: bird } = useBirdRecord(birdId);
+  const { data: dailyToday } = useDailyCheckToday([birdId]);
 
   const { data: weights } = useQuery({
     queryKey: ["bird-weights", birdId],
@@ -392,8 +395,14 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
         </div>
       )}
 
+      {/* Today's weight & health check. Replaces the latest-weight card for
+          anyone who can record health; the weight chart stays on the Weight page. */}
+      {canHealth && (
+        <DailyCheckCard birdId={birdId} name={name} today={dailyToday?.[birdId]} surface="bird_page" canWeigh={canLogCare} />
+      )}
+
       {/* Latest weight */}
-      <LimeStat
+      {!canHealth && <LimeStat
         eyebrow={t("birdRecord.latestWeight", "Latest weight")}
         value={current ? <>{current.grams}<span className="text-[16px] font-[400] text-[var(--moss)]"> g</span></> : "—"}
         meta={current
@@ -406,7 +415,7 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
             </button>
           ) : undefined
         }
-      />
+      />}
 
       {/* Welcome to the flock — foster-fail, near the top (not destructive, so
           it's kept out of the More group). */}

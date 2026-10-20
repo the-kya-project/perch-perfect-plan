@@ -8,7 +8,7 @@ import { useCapability, useMyPermissions } from "@/lib/useCapability";
 import { useActiveSitIdForBird } from "@/components/CaregiverHome";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
-import { computeTriage, type ScanFieldKey, type ScanAnswer } from "@/lib/triage";
+import { buildDailyLogRow, type ScanAnswers } from "@/lib/dailyLog";
 import { ScanForm, type ScanSubmit } from "@/components/ScanForm";
 import { MemberContextBanner } from "@/components/MemberContextBanner";
 import { track } from "@/lib/analytics";
@@ -16,9 +16,9 @@ import { uploadScanPhotoOrInline } from "@/lib/scanPhoto";
 import { friendlyError } from "@/lib/errorMessage";
 import { localDateISO } from "@/lib/localDay";
 import i18next from "i18next";
-import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import { triageReasonLines } from "./$birdId.scans.$scanId";
+import { triageMessageLabel } from "@/lib/triageLabels";
 
 // Owner-run health scan. Uses the SAME ScanForm + triage as the sitter; on submit
 // it writes a daily_logs row (source='owner', run_by, no sit) + optional photo +
@@ -28,22 +28,6 @@ export const Route = createFileRoute("/_authenticated/birds/$birdId/scan")({
   head: () => ({ meta: [{ title: i18next.t("ownerScan.metaTitle", "Health check — Kya & Co.") }] }),
   component: OwnerScan,
 });
-
-// triage.ts composes its result message in English; display it localized.
-function triageMessageLabel(t: TFunction, en: string): string {
-  switch (en) {
-    case "This may be urgent. Call the owner and the avian vet now. Keep the bird warm, quiet, and minimize handling.":
-      return t("ownerScan.msgRed", "This may be urgent. Call the owner and the avian vet now. Keep the bird warm, quiet, and minimize handling.");
-    case "Two or more concerning signs together — this combination is worth a call. Message the owner now and call the avian vet if it continues or worsens.":
-      return t("ownerScan.msgYellowMulti", "Two or more concerning signs together — this combination is worth a call. Message the owner now and call the avian vet if it continues or worsens.");
-    case "Something may be off. Message the owner, take photos if helpful, and keep monitoring. Call the avian vet if this continues or appears with other signs.":
-      return t("ownerScan.msgYellowOne", "Something may be off. Message the owner, take photos if helpful, and keep monitoring. Call the avian vet if this continues or appears with other signs.");
-    case "Nothing concerning logged. Keep following the care plan and watching for any changes.":
-      return t("ownerScan.msgGreen", "Nothing concerning logged. Keep following the care plan and watching for any changes.");
-    default:
-      return en;
-  }
-}
 
 function OwnerScan() {
   const { t } = useTranslation();
@@ -81,31 +65,14 @@ function OwnerScan() {
     setSubmitting(true);
     try {
       const { data: u } = await getLocalUser();
-      const triage = computeTriage(p.answers as Record<ScanFieldKey, ScanAnswer>);
+      const { row: logRow, triage } = buildDailyLogRow(p.answers as ScanAnswers, {
+        birdId, sitId: activeSitId, source: scanSource, runBy: u.user?.id ?? null, logDate: localDateISO(),
+        notes: p.notes ?? null, itemNotes: p.itemNotes ?? null,
+      });
       const a = p.answers;
       const { data: row, error } = await supabase
         .from("daily_logs")
-        .insert({
-          bird_id: birdId,
-          sit_id: activeSitId,
-          source: scanSource,
-          run_by: u.user?.id ?? null,
-          log_date: localDateISO(),
-          alertness_status: a.alertness,
-          food_status: a.food,
-          droppings_status: a.droppings,
-          breathing_status: a.breathing,
-          posture_status: a.posture,
-          behavior_status: a.noise,
-          energy_status: a.fluffed,
-          injury_status: a.injury,
-          exposure_status: a.exposure,
-          notes: p.notes ?? null,
-          item_notes: p.itemNotes ?? null,
-          triage_status: triage.status,
-          triage_reasons: triage.reasons.join(" | "),
-          triage_reason_codes: triage.reasonCodes,
-        } as any)
+        .insert(logRow as any)
         .select()
         .single();
       if (error) throw error;

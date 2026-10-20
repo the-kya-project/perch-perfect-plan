@@ -5,7 +5,8 @@ import { z } from "zod";
 import { ArrowLeft, Settings, AlertTriangle, CheckCircle2, Feather, Activity, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { activeOwnerBirdsMin, type ActiveBirdMin } from "@/lib/activeBirds";
-import { fetchScanFeed, markNotifsSeen, getNotifSeenAt, scanRunBy, type ScanFeedItem } from "@/lib/notificationsFeed";
+import { fetchScanFeed, markNotifsSeen, getNotifSeenAt, scanRunBy, isUnreadScan, type ScanFeedItem } from "@/lib/notificationsFeed";
+import { useMyPermissions } from "@/lib/useCapability";
 import { InkHero, IconTile, StatusPill, RecordRow, Card } from "@/components/system";
 import { OwnerHeaderIcons } from "@/components/OwnerHeader";
 import { formatLocalDate, monthDay } from "@/lib/dates";
@@ -40,6 +41,7 @@ function NotificationsInbox() {
   // to wherever the user came from; fall back to Home if there's no history.
   const goBack = () => (canGoBack ? router.history.back() : navigate({ to: "/dashboard" }));
   const seenAt = getNotifSeenAt();
+  const myId = useMyPermissions().data?.myId;
   const { sitId } = Route.useSearch();
   const { data: feed = [], isLoading } = useQuery({ queryKey: ["scan-feed"], queryFn: fetchScanFeed, refetchOnWindowFocus: true });
 
@@ -140,7 +142,7 @@ function NotificationsInbox() {
             <Card>
               {shownFeed.map((n, i) => {
                 const flagged = n.triage_status === "red" || n.triage_status === "yellow";
-                const unread = new Date(n.created_at).getTime() > seenAt;
+                const unread = isUnreadScan(n, seenAt, myId);
                 const birdName = n.bird?.name ?? t("scansInbox.yourBird", "Your bird");
                 const runBy = scanRunBy(n);
                 const title = n.triage_status === "red"
