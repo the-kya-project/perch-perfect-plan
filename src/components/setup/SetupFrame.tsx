@@ -41,6 +41,7 @@ export function SetupFrame({
   onPill,
   footer,
   belowFooter,
+  tinted,
   children,
 }: {
   birdName?: string | null;
@@ -60,6 +61,8 @@ export function SetupFrame({
   footer?: ReactNode;
   /** Rendered under the footer, inside the sticky area (the owner tab bar). */
   belowFooter?: ReactNode;
+  /** A light green body instead of white, for screens of white cards (Day). */
+  tinted?: boolean;
   children: ReactNode;
 }) {
   const { t } = useTranslation();
@@ -119,7 +122,7 @@ export function SetupFrame({
                   state === "done" ? { background: S.forestDeep, color: S.lime, borderColor: S.forestDeep }
                   : state === "current" ? { background: S.lime, color: S.forest, borderColor: S.lime }
                   : { background: "transparent", color: S.mist, borderColor: S.pillLine };
-                const cls = "inline-flex h-[34px] items-center gap-1.5 whitespace-nowrap rounded-full border px-3.5 text-[13px] font-[700]";
+                const cls = "relative inline-flex h-[34px] items-center gap-1.5 whitespace-nowrap rounded-full border px-3.5 text-[13px] font-[700]";
                 const content = (
                   <>
                     {state === "done" && <Check className="size-3.5" strokeWidth={3} aria-hidden="true" />}
@@ -162,7 +165,7 @@ export function SetupFrame({
         </div>
       </header>
 
-      <main className="relative z-[1] -mt-[26px] flex-1 rounded-t-[26px] bg-white">
+      <main className="relative z-[1] -mt-[26px] flex-1 rounded-t-[26px]" style={{ background: tinted ? S.card : "#fff" }}>
         <div className="mx-auto flex max-w-md flex-col gap-[14px] px-4 py-[22px]">
           <InSetupFrame.Provider value={true}>
             <SetupIntroSlot.Provider value={introSlot}>{children}</SetupIntroSlot.Provider>
