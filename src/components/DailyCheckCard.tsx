@@ -262,7 +262,7 @@ export function DailyCheckCard({
         {result && result.triage.status !== "green" && (
           <div className="rounded-[12px] px-3 py-2.5 text-[12.5px] leading-[1.45]" style={result.triage.status === "red" ? { background: C.redFill, color: C.redInk } : { background: C.amberFill, color: C.amberInk }}>
             {triageMessageLabel(t, result.triage.message)}
-            <button type="button" onClick={() => navigate({ to: "/birds/$birdId/plan/editor", params: { birdId }, search: { tab: "emergency" } as any })} className="mt-1.5 block font-[500] underline">
+            <button type="button" onClick={() => navigate({ to: "/birds/$birdId/emergency", params: { birdId } })} className="mt-1.5 block font-[500] underline">
               {t("ownerScan.emergencyContacts", "Emergency contacts")}
             </button>
           </div>

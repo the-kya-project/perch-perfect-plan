@@ -1,16 +1,15 @@
+import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
 import { Bell, Settings, HelpCircle } from "lucide-react";
-import { fetchScanFeed, getNotifSeenAt, isUnreadScan } from "@/lib/notificationsFeed";
-import { useMyPermissions } from "@/lib/useCapability";
+import { useUpdates } from "@/lib/updates";
 import { replayOwnerOnboarding } from "@/components/OwnerOnboarding";
+import { HelpSheet } from "@/components/HelpSheet";
 import { useTranslation } from "react-i18next";
 
-// THE single shared top-right hero icon cluster — help (replay tour), bell
-// (with unread badge), settings (gear) — in a consistent dark-circle treatment.
-// Used on every in-app hero (Home, Sits, Scans, scan detail, Explore). Keeping
-// it in one place means the unread badge is ALWAYS the same lime-on-ink chip,
-// not red on one screen and lime on another.
+// THE single shared top-right hero icon cluster — help (the help sheet), bell
+// (Updates, with an unread dot), settings (gear) — in a consistent
+// dark-circle treatment. Used on every in-app hero (Home, Sits, Health,
+// Explore).
 const HERO_ICON_BTN = "grid size-9 place-items-center rounded-full text-white active:scale-95";
 const HERO_ICON_BG = { background: "rgba(255,255,255,0.12)" } as const;
 const HERO_ICON_BTN_LG = "grid size-11 place-items-center rounded-full text-white active:scale-95";
@@ -20,16 +19,15 @@ const HERO_ICON_BG_LG = { background: "#12291f" } as const;
 export function OwnerHeaderIcons({ large = false }: { large?: boolean } = {}) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { data: scanFeed = [] } = useQuery({ queryKey: ["scan-feed"], queryFn: fetchScanFeed });
-  const seenAt = getNotifSeenAt();
-  const myId = useMyPermissions().data?.myId;
-  const unread = (scanFeed as any[]).filter((n) => isUnreadScan(n, seenAt, myId)).length;
+  const { unread } = useUpdates();
+  const [helpOpen, setHelpOpen] = useState(false);
 
-  // "?" replays the onboarding tour. It navigates Home first (the tour lives on
-  // the dashboard); replayOwnerOnboarding sets a session flag so the tour
-  // re-triggers once the dashboard mounts, plus dispatches an event for the
-  // already-on-Home case.
+  // "Take the tour" in the help sheet replays the onboarding tour. It navigates
+  // Home first (the tour lives on the dashboard); replayOwnerOnboarding sets a
+  // session flag so the tour re-triggers once the dashboard mounts, plus
+  // dispatches an event for the already-on-Home case.
   function replayTour() {
+    setHelpOpen(false);
     navigate({ to: "/dashboard" });
     replayOwnerOnboarding();
   }
@@ -38,22 +36,18 @@ export function OwnerHeaderIcons({ large = false }: { large?: boolean } = {}) {
   const bg = large ? HERO_ICON_BG_LG : HERO_ICON_BG;
   return (
     <div className="flex items-center gap-2 text-white">
-      <button type="button" onClick={replayTour} className={btn} style={bg} aria-label={t("ownerHeader.replayAppTour", "Replay app tour")}>
+      <button type="button" onClick={() => setHelpOpen(true)} className={btn} style={bg} aria-label={t("ownerHeader.help", "Help")}>
         <HelpCircle className="size-[18px]" />
       </button>
-      <Link to="/scans" className={`relative ${btn}`} style={bg} aria-label={t("ownerHeader.scans", "Scans")}>
+      <Link to="/updates" className={`relative ${btn}`} style={bg} aria-label={unread > 0 ? t("ownerHeader.updatesUnread", "Updates, new") : t("ownerHeader.updates", "Updates")}>
         <Bell className="size-[18px]" />
-        {/* Unread badge: lime fill, ink text, no border — the ONE canonical
-            treatment, tied to count not to which page you're on. */}
-        {unread > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 grid min-w-[16px] place-items-center rounded-full bg-[var(--lime)] px-1 text-[10px] font-medium leading-4 text-[var(--ink)]">
-            {unread > 9 ? "9+" : unread}
-          </span>
-        )}
+        {/* Unread: a small sunflower dot with a forest outline. */}
+        {unread > 0 && <span className="absolute right-[7px] top-[7px] size-[10px] rounded-full" style={{ background: "#f2b33d", boxShadow: "0 0 0 2px #1a3d2e" }} aria-hidden="true" />}
       </Link>
       <Link to="/account" className={btn} style={bg} aria-label={t("ownerHeader.accountSettings", "Account settings")}>
         <Settings className="size-[18px]" />
       </Link>
+      <HelpSheet open={helpOpen} onClose={() => setHelpOpen(false)} onTakeTour={replayTour} />
     </div>
   );
 }

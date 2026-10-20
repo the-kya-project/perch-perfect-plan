@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { BrandLockup } from "@/components/BrandLogo";
+import { K } from "@/components/kya";
 import { ChevronLeft, ArrowRight, Feather } from "lucide-react";
 import { setTourDemo } from "@/lib/tourDemo";
 import { useTranslation } from "react-i18next";
@@ -87,6 +88,7 @@ export function OwnerOnboarding() {
   const isNavTarget = !!activeTarget && activeTarget.startsWith("owner-tab-");
 
   // Owned-bird count from the DB (owner_id = me) — refreshed at every tour start.
+  // Also picks the welcome copy, so the welcome waits for it (no copy flash).
   async function loadBirdCount() {
     try {
       const { data: u } = await getLocalUser();
@@ -104,13 +106,17 @@ export function OwnerOnboarding() {
       const { data } = await supabase.from("profiles").select("welcome_seen_at, display_name").eq("id", u.user.id).maybeSingle();
       if (cancelled) return;
       setFirstName(((data?.display_name ?? "").toString().trim().split(/\s+/)[0]) || "");
-      void loadBirdCount();
+      await loadBirdCount();
+      if (cancelled) return;
       let replay = false;
       try { replay = sessionStorage.getItem(REPLAY_FLAG) === "1"; } catch { /* ignore */ }
       if (replay) { try { sessionStorage.removeItem(REPLAY_FLAG); } catch { /* ignore */ } setStep(0); setPhase("welcome"); return; }
       if (!data?.welcome_seen_at) { setStep(0); setPhase("welcome"); }
     })();
-    const onReplay = () => { try { sessionStorage.removeItem(REPLAY_FLAG); } catch { /* ignore */ } void loadBirdCount(); setStep(0); setPhase("welcome"); };
+    const onReplay = () => {
+      try { sessionStorage.removeItem(REPLAY_FLAG); } catch { /* ignore */ }
+      void loadBirdCount().then(() => { setStep(0); setPhase("welcome"); });
+    };
     window.addEventListener(REPLAY_EVENT, onReplay);
     // Safety: never leave demo mode on if this unmounts mid-tour.
     return () => { cancelled = true; setTourDemo(false); window.removeEventListener(REPLAY_EVENT, onReplay); };
@@ -180,6 +186,12 @@ export function OwnerOnboarding() {
 
   // ---- Welcome ----
   if (phase === "welcome") {
+    // People who already have a bird get a "here's what it can do" welcome;
+    // brand-new accounts keep the set-up-your-first-bird welcome.
+    const hasBird = birdCount > 0;
+    const hiName = t("ownerOnboarding.hiName", "Hi, {{name}}.", { name: firstName });
+    const hiNameReturning = t("ownerOnboarding.hiNameReturning", "Hi, {{name}}", { name: firstName });
+    const hiThere = t("ownerOnboarding.hiThere", "Hi there");
     return (
       // Every `sm:` below is iPad/desktop only (Tailwind sm = 640px; the widest
       // iPhone is 440pt), so the phone layout — text up top, CTA pinned to the
@@ -193,19 +205,33 @@ export function OwnerOnboarding() {
           <BrandLockup orientation="horizontal" variant="ink" size={100} />
         </div>
         <div className="flex-1 px-6 pt-[80px] sm:mx-auto sm:w-full sm:max-w-md sm:flex-none sm:pt-0">
-          <p className="t-eyebrow text-[var(--teal)]">{t("ownerOnboarding.welcomeEyebrow", "Welcome")}</p>
-          <h1 className="mt-3 text-[38px] font-[400] leading-[1.05] tracking-[-0.02em]">{firstName ? t("ownerOnboarding.hiName", "Hi, {{name}}.", { name: firstName }) : t("ownerOnboarding.welcomeHeadline", "Welcome.")}</h1>
-          <p className="mt-3.5 max-w-[30ch] text-[15px] leading-[1.55] text-white/80">{t("ownerOnboarding.welcomeBody", "A quick walkthrough first, then we'll set up your bird.")}</p>
+          {hasBird ? (
+            <>
+              <h1 className="text-[38px] font-[400] leading-[1.05] tracking-[-0.02em]">{firstName ? hiNameReturning : hiThere}</h1>
+              <p className="mt-3.5 max-w-[30ch] text-[15px] leading-[1.55] text-white/80">{t("ownerOnboarding.welcomeBodyReturning", "Here's a quick tour of what Kya & Co. can do.")}</p>
+            </>
+          ) : (
+            <>
+              <p className="t-eyebrow text-[var(--teal)]">{t("ownerOnboarding.welcomeEyebrow", "Welcome")}</p>
+              <h1 className="mt-3 text-[38px] font-[400] leading-[1.05] tracking-[-0.02em]">{firstName ? hiName : t("ownerOnboarding.welcomeHeadline", "Welcome.")}</h1>
+              <p className="mt-3.5 max-w-[30ch] text-[15px] leading-[1.55] text-white/80">{t("ownerOnboarding.welcomeBody", "A quick walkthrough first, then we'll set up your bird.")}</p>
+            </>
+          )}
         </div>
         <div className="px-6 pb-[max(env(safe-area-inset-bottom),24px)] sm:mx-auto sm:w-full sm:max-w-md sm:pb-0 sm:pt-8">
           <button
             onClick={startCoach}
-            className="flex w-full items-center justify-center gap-2 rounded-[13px] bg-[var(--lime)] py-3.5 text-[14.5px] font-[500] text-[var(--ink)] active:scale-[0.99]"
+            className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full py-3.5 text-[16px] font-[700] active:scale-[0.99]"
+            style={{ background: K.sunflower, color: K.forest }}
           >
             <ArrowRight className="size-4" /> {t("ownerOnboarding.showMeAround", "Show me around")}
           </button>
-          <div className="mt-3.5 text-center">
-            <button onClick={addBird} className="text-[13px] font-[500] text-white/60 underline underline-offset-[3px]">{t("ownerOnboarding.skipAndAddMyBird", "Skip and add my bird")}</button>
+          <div className="mt-2 text-center">
+            {hasBird ? (
+              <button onClick={finish} className="min-h-[44px] px-3 text-[13px] font-[500] text-white/60 underline underline-offset-[3px]">{t("ownerOnboarding.notNow", "Not now")}</button>
+            ) : (
+              <button onClick={addBird} className="min-h-[44px] px-3 text-[13px] font-[500] text-white/60 underline underline-offset-[3px]">{t("ownerOnboarding.skipAndAddMyBird", "Skip and add my bird")}</button>
+            )}
           </div>
         </div>
       </div>

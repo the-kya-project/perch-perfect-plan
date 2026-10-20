@@ -68,7 +68,9 @@ export function OwnerChecklist({ birds, sits }: { birds: any[]; sits: any[] }) {
       if (!u.user) return null;
       const { data } = await supabase
         .from("owner_emergency_defaults")
-        .select("owner_phone, avian_vet_phone")
+        // "*": the ["owner-defaults"] cache is shared with screens that read
+        // every field, so it must hold the whole row.
+        .select("*")
         .eq("owner_id", u.user.id)
         .maybeSingle();
       return data ?? null;
@@ -91,7 +93,7 @@ export function OwnerChecklist({ birds, sits }: { birds: any[]; sits: any[] }) {
     home?: boolean;
   };
   const steps: Step[] = [
-    { key: "defaults", name: t("ownerChecklist.setEmergencyDefaults", "Set your emergency defaults"), desc: t("ownerChecklist.setEmergencyDefaultsDesc", "Account-level vet & emergency contacts — they carry over to every bird."), done: defaultsDone, to: "/dashboard", search: { emergencyDefaults: true } },
+    { key: "defaults", name: t("ownerChecklist.setEmergencyInfo", "Add your emergency info"), desc: t("ownerChecklist.setEmergencyDefaultsDesc", "Account-level vet & emergency contacts — they carry over to every bird."), done: defaultsDone, to: "/account/emergency" },
     { key: "bird", name: t("ownerChecklist.addFirstBird", "Add your first bird"), desc: t("ownerChecklist.addFirstBirdDesc", "Build their care plan."), done: birds.length > 0, to: "/birds/new" },
     // Only a phone browser gets this. Inside the app there is nothing to
     // install, and on a desktop we do not push an install at all — the same

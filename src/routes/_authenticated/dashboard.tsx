@@ -1,7 +1,7 @@
 import type { TFunction } from "i18next";
 import { speciesLabel } from "@/lib/speciesLabel";
 import { friendlyError } from "@/lib/errorMessage";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
@@ -48,20 +48,22 @@ import i18next from "i18next";
 const dashboardSearch = z.object({
   newSit: z.coerce.boolean().optional(),
   preselectBirdId: z.string().uuid().optional(),
-  // Deep-link from a bird's Emergency tab / Account → open account defaults.
+  // Old deep-link to the account emergency sheet: now its own page.
   emergencyDefaults: z.coerce.boolean().optional(),
 });
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({ meta: [{ title: i18next.t("dashboard.pageTitle", "Home — Kya & Co.") }] }),
   validateSearch: dashboardSearch,
+  beforeLoad: ({ search }) => {
+    if (search.emergencyDefaults) throw redirect({ to: "/account/emergency" });
+  },
   component: Dashboard,
 });
 
 function Dashboard() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { emergencyDefaults } = Route.useSearch();
 
   // One-shot: the inline pre-hydration head script (see __root.tsx) redirects a
   // signed-in owner from "/" to here on cold launch and drops a sessionStorage
@@ -282,7 +284,6 @@ function Dashboard() {
       <HomeHeader firstName={firstName} unreadNotifs={unreadNotifs} stateCopy={stateCopy} cta={heroCta} />
 
       <KyaBody className="gap-6">
-        {emergencyDefaults && <DefaultsPanel />}
 
         {/* Reminders only reach a phone registered for push, so Home asks until
             it is on (in the app only) — see HomePushBanner. */}
@@ -871,125 +872,4 @@ function joinNames(names: string[]): string {
   if (n.length === 1) return n[0];
   if (n.length === 2) return i18next.t("dashboard.joinTwo", "{{a}} and {{b}}", { a: n[0], b: n[1] });
   return i18next.t("dashboard.joinMany", "{{list}}, and {{last}}", { list: n.slice(0, -1).join(", "), last: n[n.length - 1] });
-}
-
-// ---------------------------------------------------------------------------
-// Account emergency defaults — deep-link target only (Account / Emergency tab
-// link to /dashboard?emergencyDefaults=true). Kept here so those links keep
-// working without cluttering the redesigned Home.
-// ---------------------------------------------------------------------------
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="block">
-      <span className="mb-1 block text-xs font-medium uppercase tracking-wider text-[#5f5e5a]">{label}</span>
-      {children}
-    </label>
-  );
-}
-
-function DefaultsPanel() {
-  const { t } = useTranslation();
-  const qc = useQueryClient();
-  const [open, setOpen] = useState(false);
-  const sectionRef = useRef<HTMLElement>(null);
-  const { data: defaults } = useQuery({
-    queryKey: ["owner-defaults"],
-    queryFn: async () => {
-      const { data: u } = await getLocalUser();
-      if (!u.user) return null;
-      const { data } = await supabase.from("owner_emergency_defaults").select("*").eq("owner_id", u.user.id).maybeSingle();
-      return data ?? { owner_id: u.user.id };
-    },
-  });
-  const seedDefaults = (base: any) => {
-    const v = { ...(base ?? {}) };
-    if (!(typeof v.poison_control === "string" && v.poison_control.trim())) v.poison_control = ASPCA_POISON_CONTROL;
-    return v;
-  };
-  const [d, setD] = useState<any>(() => seedDefaults(defaults));
-  const [saving, setSaving] = useState(false);
-  const fields: [string, string, boolean?][] = [
-    ["owner_phone", t("dashboard.field.ownerPhone", "Owner phone"), true],
-    ["backup_name", t("dashboard.field.backupContactName", "Backup contact name")],
-    ["backup_phone", t("dashboard.field.backupContactPhone", "Backup contact phone")],
-    ["avian_vet_name", t("dashboard.field.avianVetName", "Avian vet name")],
-    ["avian_vet_phone", t("dashboard.field.avianVetPhone", "Avian vet phone"), true],
-    ["avian_vet_address", t("dashboard.field.avianVetAddress", "Avian vet address")],
-    ["emergency_vet_name", t("dashboard.field.emergencyVetName", "Emergency vet name")],
-    ["emergency_vet_phone", t("dashboard.field.emergencyVetPhone", "Emergency vet phone")],
-    ["emergency_vet_address", t("dashboard.field.emergencyVetAddress", "Emergency vet address")],
-    ["poison_control", t("dashboard.field.poisonControlNumber", "Poison control number")],
-    ["carrier_location", t("dashboard.field.carrierLocation", "Carrier location")],
-    ["first_aid_kit_location", t("dashboard.field.firstAidKitLocation", "First-aid kit location")],
-    ["spending_limit", t("dashboard.field.approvedSpendingLimit", "Approved spending limit")],
-  ];
-  const filledCount = defaults
-    ? fields.filter(([k]) => typeof (defaults as any)[k] === "string" && (defaults as any)[k].trim()).length
-    : 0;
-
-  const seededRef = useRef(false);
-  useEffect(() => {
-    if (seededRef.current || defaults === undefined) return;
-    seededRef.current = true;
-    setD(seedDefaults(defaults));
-    setOpen(true);
-    setTimeout(() => sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
-  }, [defaults]);
-
-  async function save() {
-    setSaving(true);
-    const { data: u } = await getLocalUser();
-    if (!u.user) { toast.error(t("dashboard.signedOut", "Signed out.")); setSaving(false); return; }
-    const row: Record<string, any> = { owner_id: u.user.id };
-    for (const [k] of fields) {
-      const v = d[k];
-      row[k] = typeof v === "string" && v.trim() === "" ? null : v ?? null;
-    }
-    const { error } = await supabase.from("owner_emergency_defaults").upsert(row, { onConflict: "owner_id" });
-    setSaving(false);
-    if (error) { toast.error(friendlyError(error)); return; }
-    toast.success(t("dashboard.defaultsSaved", "Saved. Every bird uses this account info unless you edit it for that bird."));
-    setOpen(false);
-    qc.invalidateQueries({ queryKey: ["owner-defaults"] });
-  }
-
-  return (
-    <section ref={sectionRef} id="emergency-defaults" className="scroll-mt-4 space-y-3">
-      <div className="flex items-end justify-between">
-        <h2 className="t-section">{t("dashboard.accountEmergencyDefaults", "Account emergency defaults")}</h2>
-        <button type="button" onClick={() => { setD(seedDefaults(defaults)); setOpen((o) => !o); }} className="text-sm font-medium text-[#1a3d2e] underline">
-          {open ? t("dashboard.close", "Close") : filledCount > 0 ? t("dashboard.edit", "Edit") : t("dashboard.setUp", "Set up")}
-        </button>
-      </div>
-      <p className="text-xs text-[#5f5e5a]"><Trans i18nKey="dashboard.defaultsIntro" defaults="Set owner phone, avian vet, and other emergency info <1>once</1>. Every bird uses this unless you edit it for that bird on its Emergency tab." components={{ 1: <em /> }} /></p>
-      {!open ? (
-        <div className="rounded-[18px] bg-[#efe9da] p-4 text-xs text-[#5f5e5a]">
-          {filledCount === 0 ? t("dashboard.noDefaultsYet", "No defaults set yet — each bird needs its own contacts until you fill these in.") : t("dashboard.defaultsFilled", "{{filled}} of {{total}} default fields set.", { filled: filledCount, total: fields.length })}
-        </div>
-      ) : (
-        <div className="space-y-3 rounded-[18px] bg-[#efe9da] p-4">
-          {fields.map(([k, l, required]) => {
-            const warn = isPhoneField(k) ? phoneWarning(d[k]) : null;
-            return (
-              <Field key={k} label={required ? `${l} *` : l}>
-                {isAddressField(k) ? (
-                  <AddressInput value={d[k] ?? ""} onChange={(v) => setD((prev: any) => ({ ...prev, [k]: v }))} />
-                ) : (
-                  <input
-                    className="input" inputMode={isPhoneField(k) ? "tel" : undefined} value={d[k] ?? ""}
-                    onChange={(e) => setD({ ...d, [k]: e.target.value })}
-                    onBlur={isPhoneField(k) ? (e) => setD((prev: any) => ({ ...prev, [k]: formatPhoneOnBlur(e.target.value) })) : undefined}
-                  />
-                )}
-                {warn && <span className="mt-1 block text-[11px] text-warn-red">{warn}</span>}
-              </Field>
-            );
-          })}
-          <button disabled={saving || fields.some(([k]) => isPhoneField(k) && !!phoneWarning(d[k]))} onClick={save} className="mt-2 w-full rounded-[14px] bg-[#1a3d2e] py-3 text-sm font-medium text-white disabled:opacity-50">
-            {saving ? t("dashboard.saving", "Saving...") : t("dashboard.saveAccountDefaults", "Save account defaults")}
-          </button>
-        </div>
-      )}
-    </section>
-  );
 }

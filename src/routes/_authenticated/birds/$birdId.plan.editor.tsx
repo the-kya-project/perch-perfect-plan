@@ -265,7 +265,7 @@ function BirdEditor() {
           {tab === "routine" && <DayInLifeStep birdId={birdId} birdName={birdName} />}
           {tab === "behavior" && <PersonalityStep birdId={birdId} birdName={birdName} />}
           {tab === "clips" && <OwnerTipsClipsStep birdId={birdId} birdName={birdName} onBlockNext={() => {}} />}
-          {tab === "emergency" && contacts && <EmergencyInfo birdId={birdId} birdName={birdName} contacts={contacts} defaults={defaults ?? null} onSaved={() => qc.invalidateQueries({ queryKey: ["contacts", birdId] })} />}
+          {tab === "emergency" && contacts !== undefined && <EmergencyInfo birdId={birdId} birdName={birdName} contacts={contacts ?? null} defaults={defaults ?? null} isOwner={role === "owner"} onSaved={() => qc.invalidateQueries({ queryKey: ["contacts", birdId] })} />}
           {tab === "sits" && <SitsPanel birdId={birdId} sits={sits} onChange={() => qc.invalidateQueries({ queryKey: ["sits", birdId] })} />}
           {tab === "logs" && <LogsPanel birdId={birdId} initialScan={scanParam} />}
         </HideStepInstruction.Provider>

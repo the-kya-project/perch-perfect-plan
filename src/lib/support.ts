@@ -1,3 +1,3 @@
-// The address error screens point people to. PLACEHOLDER until the owner
-// supplies the real one — it must be replaced before this ships to production.
-export const SUPPORT_EMAIL = "[YOUR SUPPORT EMAIL]";
+// The support inbox: error screens, the help sheet and Account's
+// "Help & support" row all point people here.
+export const SUPPORT_EMAIL = "brittany@thekyaproject.com";

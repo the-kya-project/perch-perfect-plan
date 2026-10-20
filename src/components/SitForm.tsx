@@ -264,6 +264,7 @@ export function SitForm({
 
   // Leave for the editor tab where a missing section is filled in.
   function openGap(birdId: string, m: SitGapSection) {
+    if (m === "emergency") { navigate({ to: "/birds/$birdId/emergency", params: { birdId } }); return; }
     navigate({ to: "/birds/$birdId/plan/editor", params: { birdId }, search: { tab: GAP_TAB[m] } as any });
   }
   // The birds the sheet is about, e.g. "Mango" or "Mango and Kiwi".

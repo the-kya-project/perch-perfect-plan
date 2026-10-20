@@ -2,36 +2,42 @@ import { createFileRoute, useNavigate, useRouter, useCanGoBack } from "@tanstack
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import {
-  getHouseholdAccount, cancelHouseholdInvite, removeHouseholdMember, removeHouseholdMemberEverywhere,
-  addExistingHouseholdMember,
-} from "@/lib/household.functions";
+import { getHouseholdAccount, cancelHouseholdInvite } from "@/lib/household.functions";
+import { supabase } from "@/integrations/supabase/client";
+import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { HouseholdInviteSheet } from "@/components/HouseholdInviteSheet";
+import {
+  HouseholdMemberSheet, MemberAvatar, capabilitySummary, type HouseholdAccountMember,
+} from "@/components/HouseholdMemberSheet";
 import { toast } from "sonner";
-import { ArrowLeft, Plus, Mail, MoreHorizontal, Loader2, X, Check, SlidersHorizontal } from "lucide-react";
-import { InkHero, Card, RecordRow, IconTile } from "@/components/system";
+import { Plus, Mail, Loader2, User } from "lucide-react";
+import {
+  K, KyaPage, KyaHeader, KyaBody, KyaCard, KyaHeading, KyaLink, KyaPrimaryButton, KyaRow,
+  KyaIconTile, KyaBackRow, KyaTitle,
+} from "@/components/kya";
 import { friendlyError } from "@/lib/errorMessage";
-import { formatLocalDate } from "@/lib/dates";
+import { namesAsCount } from "@/lib/birdNames";
+import { memberDisplayName } from "@/lib/memberDisplay";
+import type { Capability } from "@/lib/capabilities";
 import { useTranslation } from "react-i18next";
 import i18next from "i18next";
 
 // Account-level household management — every person who can help with the
 // owner's birds, each shown ONCE (memberships grouped by user, invites by
-// email). Per-bird scoping/removal reuses removeHouseholdMember; the per-bird
-// access hub (/birds/$id/access) is unchanged.
+// email). Tapping a member opens HouseholdMemberSheet: which birds (per-bird
+// add/remove via the same server fns as the per-bird access hub), what they
+// can do (household_member_permissions — formerly /household-permissions), and
+// remove from the household.
 export const Route = createFileRoute("/_authenticated/household")({
   head: () => ({ meta: [{ title: i18next.t("household.pageTitle", "Your household — Kya & Co.") }] }),
   component: HouseholdScreen,
 });
 
-type AccountMember = {
-  userId: string; name: string | null; email: string | null;
-  birdIds: string[]; birdNames: string[]; scope: "all" | "scoped"; since: string;
-};
 type AccountPending = {
   email: string; inviteIds: string[]; name: string | null;
   birdIds: string[]; birdNames: string[]; scope: "all" | "scoped"; expiresAt: string;
 };
+type PermRow = { member_user_id: string; capabilities: string[]; preset: string };
 
 function HouseholdScreen() {
   const { t } = useTranslation();
@@ -39,7 +45,7 @@ function HouseholdScreen() {
   const router = useRouter();
   const canGoBack = useCanGoBack();
   const qc = useQueryClient();
-  const goBack = () => (canGoBack ? router.history.back() : navigate({ to: "/dashboard" }));
+  const goBack = () => (canGoBack ? router.history.back() : navigate({ to: "/account" }));
 
   const [inviting, setInviting] = useState(false);
   const [manageUserId, setManageUserId] = useState<string | null>(null);
@@ -48,136 +54,144 @@ function HouseholdScreen() {
   const { data, isLoading } = useQuery({ queryKey: ["household-account"], queryFn: () => getAccount() });
   const refresh = () => qc.invalidateQueries({ queryKey: ["household-account"] });
 
-  const members = (data?.members ?? []) as AccountMember[];
+  // Same key + shape as sits.index / useOwnedBirds.
+  const { data: myId = null } = useQuery({
+    queryKey: ["me-id"],
+    queryFn: async () => (await getLocalUser()).data.user?.id ?? null,
+  });
+
+  // Each member's stored permissions (owner reads all rows for their household;
+  // RLS "hmp" is owner-writable). No row = no capabilities beyond seeing.
+  const permKey = ["household-permissions", myId] as const;
+  const { data: permRows, isLoading: permsLoading } = useQuery({
+    queryKey: permKey,
+    enabled: !!myId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("household_member_permissions")
+        .select("member_user_id, capabilities, preset")
+        .eq("owner_id", myId!);
+      if (error) throw error;
+      return (data ?? []) as PermRow[];
+    },
+  });
+  const capsByMember = new Map((permRows ?? []).map((r) => [r.member_user_id, r.capabilities ?? []]));
+
+  const members = (data?.members ?? []) as HouseholdAccountMember[];
   const pending = (data?.pending ?? []) as AccountPending[];
-  // Derive the managed member from live data so per-bird removals reflect
+  const allBirds = (data?.birds ?? []) as { id: string; name: string }[];
+  // Derive the managed member from live data so per-bird changes reflect
   // immediately; if they're removed entirely the sheet closes on its own.
   const manage = members.find((m) => m.userId === manageUserId) ?? null;
-  const isEmpty = !isLoading && members.length === 0 && pending.length === 0;
+
+  function birdsSummary(m: HouseholdAccountMember): string {
+    const allIds = new Set(allBirds.map((b) => b.id));
+    const hasAll = allBirds.length > 0 && allBirds.every((b) => m.birdIds.includes(b.id));
+    if (hasAll || m.scope === "all") return t("household.allBirds", "All birds");
+    const names = m.birdIds.filter((id) => allIds.has(id)).map((id) => allBirds.find((b) => b.id === id)!.name);
+    if (namesAsCount(names)) return t("birdNames.count", "{{count}} birds", { count: names.length });
+    if (names.length <= 1) return names[0] ?? t("household.noBirds", "no birds");
+    return t("birdNames.and", "{{first}} and {{last}}", { first: names.slice(0, -1).join(", "), last: names[names.length - 1] });
+  }
+
+  function onCapsSaved(userId: string, caps: Capability[], preset: string) {
+    qc.setQueryData<PermRow[]>(permKey, (rows) => {
+      const list = rows ?? [];
+      const row = { member_user_id: userId, capabilities: caps, preset };
+      return list.some((r) => r.member_user_id === userId)
+        ? list.map((r) => (r.member_user_id === userId ? row : r))
+        : [...list, row];
+    });
+    qc.invalidateQueries({ queryKey: permKey });
+  }
 
   return (
-    <div className="min-h-screen bg-[var(--cream)] pb-nav">
-      <div className="mx-auto max-w-md">
-        <InkHero
-          backIcon={<ArrowLeft className="size-5" />}
-          onBack={goBack}
-          eyebrow={t("household.eyebrow", "Household")}
-          headline={t("household.headline", "Your household")}
-          body={t("household.body", "People you've given access to your birds. By default they can help with all your birds — you can scope it to specific ones if you'd like.")}
+    <KyaPage>
+      <KyaHeader>
+        <KyaBackRow label={t("household.back", "Back")} onBack={goBack} />
+        <KyaTitle
+          title={t("household.headline", "Your household")}
+          line={t("household.intro", "People who help with your birds every day. You decide what each person can see and do.")}
         />
+      </KyaHeader>
 
-        <main className="space-y-5 px-5 pt-5">
+      <KyaBody>
+        <KyaCard>
+          <KyaRow
+            leading={
+              <span className="grid size-10 place-items-center rounded-full" style={{ background: K.forest, color: K.lime }} aria-hidden="true">
+                <User className="size-5" />
+              </span>
+            }
+            title={t("household.you", "You")}
+            detail={t("household.ownerAllBirds", "Owner · all birds")}
+            last={!isLoading && members.length === 0 && pending.length === 0}
+          />
           {isLoading ? (
-            <Card>
-              <div className="flex items-center gap-2 px-4 py-4 text-sm text-[var(--mute2)]">
-                <Loader2 className="size-4 animate-spin" /> {t("household.loading", "Loading…")}
-              </div>
-            </Card>
+            <div className="flex min-h-[60px] items-center gap-2 px-4 text-[14px]" style={{ color: K.quiet }}>
+              <Loader2 className="size-4 animate-spin" /> {t("household.loading", "Loading…")}
+            </div>
           ) : (
             <>
-              <Card>
-                {isEmpty ? (
-                  <p className="t-body px-4 py-5 text-[var(--mute)]">{t("household.empty", "No one yet. Invite a partner or family member who helps care for your birds.")}</p>
-                ) : (
-                  <>
-                    {members.map((m, i) => (
-                      <MemberRow
-                        key={m.userId}
-                        member={m}
-                        last={i === members.length - 1 && pending.length === 0}
-                        onManage={() => setManageUserId(m.userId)}
-                      />
-                    ))}
-                    {pending.map((p, i) => (
-                      <PendingRow key={p.email} invite={p} last={i === pending.length - 1} onChanged={refresh} />
-                    ))}
-                  </>
-                )}
-              </Card>
-
-              <button
-                type="button"
-                onClick={() => setInviting(true)}
-                className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-[16px] border border-dashed border-[var(--line)] bg-white/40 text-[15px] font-[500] text-[var(--moss)] active:scale-[0.99]"
-              >
-                <Plus className="size-4" /> {t("household.inviteMember", "Invite a household member")}
-              </button>
-
-              {members.length > 0 && (
-                <Card>
-                  <RecordRow
-                    leading={<IconTile tone="pale" icon={<SlidersHorizontal className="size-5" />} />}
-                    title={t("household.permissions", "Permissions")}
-                    subtitle={t("household.permissionsSubtitle", "Choose what each member can do")}
-                    onClick={() => navigate({ to: "/household-permissions" })}
+              {members.map((m, i) => {
+                const display = memberDisplayName(m);
+                const caps = capsByMember.get(m.userId) ?? [];
+                const capText = permsLoading ? "" : ` · ${capabilitySummary(caps)}`;
+                return (
+                  <KyaRow
+                    key={m.userId}
+                    leading={<MemberAvatar name={display} />}
+                    title={display}
+                    detail={`${birdsSummary(m)}${capText}`}
+                    onClick={() => setManageUserId(m.userId)}
+                    last={i === members.length - 1 && pending.length === 0}
                   />
-                </Card>
-              )}
-
-              <Card className="p-4">
-                <h2 className="t-section text-[14.5px]">{t("household.inControl", "You're in control")}</h2>
-                <p className="mt-2 text-[14px] leading-relaxed text-[var(--mute)]">{t("household.inControlBody", "You decide what everyone who helps can see and do, and you can change it any time.")}</p>
-              </Card>
-
-              <p className="t-meta text-center italic">
-                {t("household.sittersNote", "Sitters are managed per-trip from the Sits tab.")}
-              </p>
+                );
+              })}
+              {pending.map((p, i) => (
+                <PendingRow key={p.email} invite={p} last={i === pending.length - 1} onChanged={refresh} />
+              ))}
             </>
           )}
-        </main>
-      </div>
+        </KyaCard>
+
+        {!isLoading && members.length === 0 && pending.length === 0 && (
+          <p className="m-0 px-1 text-[14px] leading-[1.5]" style={{ color: K.quiet }}>
+            {t("household.empty", "No one yet. Invite a partner or family member who helps care for your birds.")}
+          </p>
+        )}
+
+        <KyaPrimaryButton icon={<Plus className="size-5" />} onClick={() => setInviting(true)}>
+          {t("household.inviteSomeone", "Invite someone")}
+        </KyaPrimaryButton>
+
+        <KyaCard className="p-4">
+          <KyaHeading as="h2" size={18}>{t("household.orSitterTitle", "Household or sitter?")}</KyaHeading>
+          <p className="m-0 mt-2 text-[15px] leading-[1.5]" style={{ color: K.ink }}>
+            {t("household.orSitterBody", "Household members help every day and keep access until you remove them. Sitters cover a trip and only have access during that sit.")}
+          </p>
+          <KyaLink className="mt-1" onClick={() => navigate({ to: "/sits/new" })}>
+            {t("household.setUpSitInstead", "Set up a sit instead →")}
+          </KyaLink>
+        </KyaCard>
+      </KyaBody>
 
       {inviting && (
         <HouseholdInviteSheet onClose={() => setInviting(false)} onSent={() => { setInviting(false); refresh(); }} />
       )}
       {manage && (
-        <MemberManageSheet
+        <HouseholdMemberSheet
+          key={manage.userId}
           member={manage}
-          allBirds={(data?.birds ?? []) as { id: string; name: string }[]}
+          allBirds={allBirds}
+          ownerId={myId}
+          storedCaps={permsLoading || !permRows ? null : (capsByMember.get(manage.userId) ?? [])}
           onClose={() => setManageUserId(null)}
           onChanged={refresh}
+          onCapsSaved={(caps, preset) => onCapsSaved(manage.userId, caps, preset)}
         />
       )}
-    </div>
-  );
-}
-
-function Can({ children, yes }: { children: React.ReactNode; yes?: boolean }) {
-  return (
-    <li className="flex items-start gap-2 text-[14px] leading-relaxed text-[var(--mute)]">
-      {yes
-        ? <Check className="mt-0.5 size-4 shrink-0 text-[var(--moss)]" />
-        : <X className="mt-0.5 size-4 shrink-0 text-[var(--mute2)]" />}
-      <span>{children}</span>
-    </li>
-  );
-}
-
-function MemberRow({ member, last, onManage }: { member: AccountMember; last?: boolean; onManage: () => void }) {
-  const { t } = useTranslation();
-  const label = member.name?.trim() || member.email || t("household.householdMember", "Household member");
-  const scopeLabel = member.scope === "all" ? t("household.allBirds", "All birds") : t("household.sharingNames", "Sharing {{names}}", { names: truncNames(member.birdNames) });
-  return (
-    <RecordRow
-      leading={
-        <span className="grid size-10 place-items-center rounded-full bg-[var(--pale)] text-sm font-[500] text-[var(--moss)]">
-          {initialOf(member.name || member.email)}
-        </span>
-      }
-      title={label}
-      subtitle={t("household.memberSubtitle", "{{scope}} · since {{month}}", { scope: scopeLabel, month: fmtMonth(member.since) })}
-      last={last}
-      trailing={
-        <button
-          type="button"
-          aria-label={t("household.manageLabel", "Manage {{name}}", { name: label })}
-          onClick={onManage}
-          className="-mr-1 grid size-9 shrink-0 place-items-center rounded-full text-[var(--mute)] active:bg-[var(--cream)]"
-        >
-          <MoreHorizontal className="size-5" />
-        </button>
-      }
-    />
+    </KyaPage>
   );
 }
 
@@ -189,136 +203,21 @@ function PendingRow({ invite, last, onChanged }: { invite: AccountPending; last?
     onSuccess: () => { toast.success(t("household.inviteCanceled", "Invite canceled.")); onChanged(); },
     onError: (e: any) => toast.error(friendlyError(e, t("household.couldNotCancel", "Couldn't cancel."))),
   });
+  const display = invite.name?.trim() || invite.email;
   return (
-    <div className={`flex min-h-[44px] items-center gap-3 bg-[var(--amber-fill)]/30 px-4 py-3 ${last ? "" : "border-b border-[var(--line2)]"}`}>
-      <IconTile tone="amber" size={40} icon={<Mail className="size-[18px]" />} />
-      <div className="min-w-0 flex-1">
-        <p className="t-item truncate">{invite.name?.trim() || invite.email}</p>
-        <p className="t-meta mt-0.5 truncate font-[500] text-[var(--amber-ink)]">{t("household.invitedPending", "Invited · pending")}</p>
-      </div>
-      <button
-        type="button"
-        disabled={m.isPending}
-        onClick={() => m.mutate()}
-        className="min-h-[44px] shrink-0 px-2 text-xs font-[500] text-[var(--amber-ink)] underline disabled:opacity-50"
-      >
-        {t("household.cancel", "Cancel")}
-      </button>
-    </div>
-  );
-}
-
-// Manage a member: toggle which birds they can help with — checking grants via
-// addExistingHouseholdMember, unchecking revokes via removeHouseholdMember
-// (single source, shared with the per-bird access hub) — or remove them from the
-// household entirely. Unchecking their LAST bird is the same thing as removing
-// them, so it confirms and routes to removeHouseholdMemberEverywhere.
-function MemberManageSheet({ member, allBirds, onClose, onChanged }: {
-  member: AccountMember; allBirds: { id: string; name: string }[]; onClose: () => void; onChanged: () => void;
-}) {
-  const { t } = useTranslation();
-  const removeOne = useServerFn(removeHouseholdMember);
-  const removeAll = useServerFn(removeHouseholdMemberEverywhere);
-  const addOne = useServerFn(addExistingHouseholdMember);
-  const has = new Set(member.birdIds);
-  const label = member.name?.trim() || member.email || t("household.thisMember", "this member");
-
-  // Optimistic per-bird overrides so a toggle paints immediately. A key is
-  // dropped on failure, which reverts the box to `has` (server truth) rather
-  // than leaving it showing access the member doesn't have. On success the
-  // override is kept — it already agrees with the server, and holding it until
-  // onChanged's refetch lands avoids a flicker back to the old value.
-  const [pending, setPending] = useState<string | null>(null);
-  const [optimistic, setOptimistic] = useState<Record<string, boolean>>({});
-  const hasAccess = (id: string) => optimistic[id] ?? has.has(id);
-  const accessCount = allBirds.filter((b) => hasAccess(b.id)).length;
-
-  const removeEverywhere = useMutation({
-    mutationFn: () => removeAll({ data: { userId: member.userId } }),
-    onSuccess: () => { toast.success(t("household.removedToast", "{{name}} removed from your household.", { name: label })); onChanged(); onClose(); },
-    onError: (e: any) => toast.error(friendlyError(e, t("household.couldNotRemove", "Couldn't remove."))),
-  });
-
-  async function toggleBird(bird: { id: string; name: string }) {
-    if (pending || removeEverywhere.isPending) return;
-    const granting = !hasAccess(bird.id);
-    // Unchecking the only bird they can help with removes them from the
-    // household — same confirm and same server call as before.
-    if (!granting && accessCount === 1) {
-      if (window.confirm(t("household.confirmLastBird", "{{bird}} is the only bird {{name}} can help with. Removing it takes them out of your household. Continue?", { bird: bird.name, name: label }))) removeEverywhere.mutate();
-      return;
-    }
-    setPending(bird.id);
-    setOptimistic((o) => ({ ...o, [bird.id]: granting }));
-    try {
-      const data = { birdId: bird.id, userId: member.userId };
-      await (granting ? addOne({ data }) : removeOne({ data }));
-      toast.success(t("household.updated", "Updated."));
-      onChanged();
-    } catch (e: any) {
-      setOptimistic((o) => { const n = { ...o }; delete n[bird.id]; return n; });
-      toast.error(friendlyError(e, t("household.couldNotUpdate", "Couldn't update.")));
-    } finally {
-      setPending(null);
-    }
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 grid place-items-end sm:place-items-center" role="dialog" aria-modal="true">
-      <button type="button" aria-label={t("household.close", "Close")} className="absolute inset-0 bg-black/30" onClick={onClose} />
-      <div className="relative w-full max-w-md rounded-t-2xl bg-[var(--cream)] p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-xl sm:rounded-2xl">
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="t-section text-[19px]">{label}</h2>
-          <button onClick={onClose} aria-label={t("household.close", "Close")} className="grid size-9 place-items-center rounded-full text-[var(--mute)] active:bg-black/5"><X className="size-5" /></button>
-        </div>
-
-        <p className="t-eyebrow text-[var(--mute2)]">{t("household.canHelpWith", "Can help with")}</p>
-        <Card className="mt-1.5">
-          {allBirds.map((b, i) => (
-            <label
-              key={b.id}
-              className={`flex min-h-[48px] cursor-pointer items-center gap-3 px-4 ${i ? "border-t border-[var(--line2)]" : ""}`}
-            >
-              <input
-                type="checkbox"
-                checked={hasAccess(b.id)}
-                disabled={!!pending || removeEverywhere.isPending}
-                onChange={() => toggleBird(b)}
-                className="size-4 shrink-0 accent-[var(--moss)] disabled:opacity-50"
-              />
-              <span className="t-item flex-1 font-[400]">{b.name}</span>
-              {pending === b.id && <Loader2 className="size-4 shrink-0 animate-spin text-[var(--mute2)]" />}
-            </label>
-          ))}
-        </Card>
-
-        <button
-          type="button"
-          disabled={removeEverywhere.isPending}
-          onClick={() => { if (window.confirm(t("household.confirmRemove", "Remove {{name}} from your household? They'll lose access to all your birds. Their past logs stay in the record.\n\nIf they're currently covering a sit, that sit keeps its own access until it ends — cancel the sit from the Sits tab to end that too.", { name: label }))) removeEverywhere.mutate(); }}
-          className="mt-4 flex min-h-[48px] w-full items-center justify-center rounded-[14px] border border-[var(--red-line)] bg-white text-[15px] font-[500] text-[var(--red-ink)] disabled:opacity-50"
+    <KyaRow
+      leading={<KyaIconTile tone="amber"><Mail className="size-[18px]" /></KyaIconTile>}
+      title={display}
+      detail={t("household.invitedPending", "Invited · pending")}
+      last={last}
+      trailing={
+        <KyaLink
+          className="px-2 text-[14px]"
+          onClick={() => { if (!m.isPending) m.mutate(); }}
         >
-          {removeEverywhere.isPending ? t("household.removing", "Removing…") : t("household.removeFromHousehold", "Remove from household")}
-        </button>
-        <p className="t-meta mt-2 px-1">
-          {t("household.removeNote", "Removing from the household won't end an active sit they're covering. To end that too, cancel the sit from the Sits tab.")}
-        </p>
-      </div>
-    </div>
+          {m.isPending ? <Loader2 className="size-4 animate-spin" /> : t("household.cancelInvite", "Cancel invite")}
+        </KyaLink>
+      }
+    />
   );
-}
-
-// ---- helpers ----
-function initialOf(s: string | null | undefined, fallback = "?") {
-  return (s?.trim()?.slice(0, 1) || fallback).toUpperCase();
-}
-function fmtMonth(iso: string): string {
-  return formatLocalDate(new Date(iso), { month: "short", year: "numeric" });
-}
-function truncNames(names: string[]): string {
-  const n = names.filter(Boolean);
-  if (n.length === 0) return i18next.t("household.noBirds", "no birds");
-  if (n.length === 1) return n[0];
-  if (n.length === 2) return i18next.t("household.twoNames", "{{a}} & {{b}}", { a: n[0], b: n[1] });
-  return i18next.t("household.namesAndMore", "{{a}}, {{b}} and {{n}} more", { a: n[0], b: n[1], n: n.length - 2 });
 }

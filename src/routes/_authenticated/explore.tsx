@@ -3,6 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { ArrowRight, ArrowUpRight, Headphones, Compass } from "lucide-react";
 import { OwnerHeaderIcons } from "@/components/OwnerHeader";
+import { BrandLockup } from "@/components/BrandLogo";
+import { K, KyaPage, KyaHeader, KyaBody, KyaCard, KyaHeading, KyaIconTile } from "@/components/kya";
 import { WaitlistCard } from "@/components/WaitlistCard";
 import { getBlogPosts, type BlogPost } from "@/lib/blogFeed.functions";
 import { useTranslation } from "react-i18next";
@@ -27,71 +29,65 @@ function Explore() {
   });
 
   return (
-    <div className="min-h-screen bg-[#f4f1e8] pb-nav">
-      {/* Mission band — full-bleed dark green, leads the page and carries the
-          header icons (bell + gear) top-right. */}
-      <section className="bg-[#1a3d2e] pt-[max(env(safe-area-inset-top),1rem)]">
-        <div className="mx-auto max-w-md px-5 pb-9 pt-3">
-          <div className="flex justify-end">
-            <OwnerHeaderIcons />
+    <KyaPage>
+      <div className="mx-auto max-w-md">
+        <KyaHeader>
+          <div className="mt-1.5 flex items-center gap-2">
+            <BrandLockup orientation="horizontal" variant="ink" size={118} />
+            <div className="flex-1" />
+            <OwnerHeaderIcons large />
           </div>
-          <p className="mt-2 text-[11px] font-medium uppercase tracking-[0.18em] text-[#9FE1CB]">The Kya Project</p>
-          <h1 className="mt-2 text-[30px] font-medium leading-[1.1] text-white">{t("explore.missionHeadline", "Better care, wilder futures.")}</h1>
-          <p className="mt-3 text-sm leading-relaxed text-white/80">
+          <KyaHeading as="h1" size={31} className="mt-9 text-white">{t("explore.missionTitle", "Better care, wilder futures")}</KyaHeading>
+          <p className="m-0 mt-2 text-[15px] leading-[1.5]" style={{ color: K.paleGreen }}>
             {t("explore.missionBody", "We help parrots thrive, at home and in the wild, through education, community, and support for rescue and conservation.")}
           </p>
-          <a
-            href={MISSION_URL}
-            target="_blank"
-            rel="noreferrer"
-            className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-[#cdeab0]"
-          >
+          <a href={MISSION_URL} target="_blank" rel="noreferrer" className="mt-2 inline-flex min-h-[44px] items-center gap-1.5 text-[15px] font-[700]" style={{ color: K.lime }}>
             {t("explore.ourMission", "Our mission")} <ArrowRight className="size-4" />
           </a>
-        </div>
-      </section>
+        </KyaHeader>
 
-      <main className="mx-auto max-w-md space-y-8 px-5 pt-7">
-        {/* Community waitlist — the single lime accent moment. */}
-        <WaitlistCard />
+        <KyaBody className="gap-6">
+          {/* Community waitlist */}
+          <WaitlistCard />
 
-        {/* Latest from the blog — live pull from the site's JSON Feed. */}
-        <section className="space-y-3">
-          <div className="flex items-end justify-between">
-            <h2 className="text-[21px] font-medium text-[#1a3d2e]">{t("explore.latestFromTheBlog", "Latest from the blog")}</h2>
-            <a href={BLOG_URL} target="_blank" rel="noreferrer" className="text-sm font-medium text-[#2d6a4f]">
-              {t("explore.viewAll", "View all")}
-            </a>
-          </div>
-          <BlogSection loading={blogLoading} connected={blog?.connected ?? false} posts={blog?.posts ?? []} />
-        </section>
-
-        {/* Podcast — dormant, built to activate without redesign. */}
-        <section className="rounded-[22px] bg-[#efe9da] p-5">
-          <div className="flex items-start gap-3">
-            <div className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[#1a3d2e]">
-              <Headphones className="size-5 text-[#cdeab0]" />
+          {/* Latest from the blog: the two newest posts, then the rest on the site. */}
+          <section className="flex flex-col gap-3">
+            <div className="flex items-center justify-between gap-3">
+              <KyaHeading size={23}>{t("explore.latestFromTheBlog", "Latest from the blog")}</KyaHeading>
+              <a href={BLOG_URL} target="_blank" rel="noreferrer" className="inline-flex min-h-[44px] items-center text-[15px] font-[700]" style={{ color: K.moss }}>
+                {t("explore.viewAll", "View all")}
+              </a>
             </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2">
-                <h3 className="text-base font-medium text-[#1a3d2e]">The Kya Project Podcast</h3>
-                <span className="shrink-0 rounded-full bg-[#e3dcc9] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-[#5f5e5a]">{t("explore.comingSoon", "Coming soon")}</span>
+            <BlogSection loading={blogLoading} connected={blog?.connected ?? false} posts={(blog?.posts ?? []).slice(0, 2)} />
+            {blog?.connected && (blog?.posts?.length ?? 0) > 0 && (
+              <a href={BLOG_URL} target="_blank" rel="noreferrer" className="inline-flex min-h-[48px] w-full items-center justify-center rounded-full border-2 bg-white text-[15px] font-[700] active:scale-[0.99]" style={{ borderColor: K.forest, color: K.forest }}>
+                {t("explore.moreArticles", "More articles")}
+              </a>
+            )}
+          </section>
+
+          {/* Podcast: not live yet. */}
+          <KyaCard className="p-5">
+            <div className="flex items-start gap-3">
+              <KyaIconTile size={44}><Headphones className="size-5" /></KyaIconTile>
+              <div className="min-w-0 flex-1">
+                <span className="inline-flex rounded-full px-2.5 py-1 text-[12px] font-[700]" style={{ background: K.mist, color: K.forest }}>{t("explore.comingSoonTag", "Coming soon")}</span>
+                <KyaHeading size={20} as="h3" className="mt-2">{t("explore.podcastTitle", "The Kya Project Podcast")}</KyaHeading>
+                <p className="m-0 mt-1 text-[15px] leading-[1.45]" style={{ color: K.quiet }}>{t("explore.podcastBody", "Conversations on parrots, rescue, and the wild.")}</p>
               </div>
-              <p className="mt-1 text-sm text-[#5f5e5a]">{t("explore.podcastBody", "Conversations on parrots, rescue, and the wild.")}</p>
             </div>
-          </div>
-        </section>
+          </KyaCard>
 
-        {/* Membership preview — dark green, preview only (no purchase). */}
-        <section className="rounded-[22px] bg-[#1a3d2e] p-5">
-          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#9FE1CB]">{t("explore.membership", "Membership")}</p>
-          <h2 className="mt-1.5 text-xl font-medium text-white">{t("explore.membershipHeadline", "Support the mission and get more")}</h2>
-          <p className="mt-2 text-sm leading-relaxed text-white/80">
-            {t("explore.membershipBody", "When the community launches, members get AMAs, chapter access, and 20% of every membership funds rescue and conservation.")}
-          </p>
-        </section>
-      </main>
-    </div>
+          {/* Membership preview (no purchase yet). */}
+          <KyaCard className="p-5">
+            <KyaHeading size={21}>{t("explore.membershipHeadline", "Support the mission and get more")}</KyaHeading>
+            <p className="m-0 mt-2 text-[15px] leading-[1.5]" style={{ color: K.quiet }}>
+              {t("explore.membershipBody", "When the community launches, members get AMAs, chapter access, and 20% of every membership funds rescue and conservation.")}
+            </p>
+          </KyaCard>
+        </KyaBody>
+      </div>
+    </KyaPage>
   );
 }
 
@@ -101,11 +97,11 @@ function BlogSection({ loading, connected, posts }: { loading: boolean; connecte
     return (
       <div className="space-y-4">
         {[0, 1].map((i) => (
-          <div key={i} className="overflow-hidden rounded-[20px] bg-[#efe9da]">
-            <div className="aspect-[16/9] w-full animate-pulse bg-[#e3dcc9]" />
+          <div key={i} className="overflow-hidden rounded-[20px] bg-white">
+            <div className="aspect-[16/9] w-full animate-pulse bg-[#e3ebe2]" />
             <div className="space-y-2 p-4">
-              <div className="h-3 w-1/4 animate-pulse rounded bg-[#e3dcc9]" />
-              <div className="h-4 w-3/4 animate-pulse rounded bg-[#e3dcc9]" />
+              <div className="h-3 w-1/4 animate-pulse rounded bg-[#e3ebe2]" />
+              <div className="h-4 w-3/4 animate-pulse rounded bg-[#e3ebe2]" />
             </div>
           </div>
         ))}
@@ -117,7 +113,7 @@ function BlogSection({ loading, connected, posts }: { loading: boolean; connecte
   // calm state, never a broken-looking empty section.
   if (!connected || posts.length === 0) {
     return (
-      <div className="rounded-[20px] border border-dashed border-[#d8cfb8] bg-[#efe9da] p-8 text-center">
+      <div className="rounded-[20px] bg-white p-8 text-center">
         <Compass className="mx-auto size-7 text-[#2d6a4f]" />
         <p className="mt-3 font-medium text-[#1a3d2e]">{connected ? t("explore.noPostsYet", "No posts yet") : t("explore.storiesOnTheWay", "Stories are on the way")}</p>
         <p className="mt-1 text-sm text-[#5f5e5a]">
@@ -142,6 +138,12 @@ function BlogSection({ loading, connected, posts }: { loading: boolean; connecte
 // ~450px card needs. Route it through the weserv image proxy to serve a
 // card-sized WebP; the <img> onError falls back to the original if the proxy is
 // ever unavailable, so blog images always load.
+/** "HUSBANDRY" / "husbandry" → "Husbandry". */
+function sentenceCase(s: string): string {
+  const v = s.trim().toLowerCase();
+  return v.charAt(0).toUpperCase() + v.slice(1);
+}
+
 function sizedImage(url: string, width = 820): string {
   return `https://images.weserv.nl/?url=${encodeURIComponent(url)}&w=${width}&q=72&output=webp&we`;
 }
@@ -151,7 +153,7 @@ function BlogCard({ post }: { post: BlogPost }) {
   const inner = (
     <>
       {img ? (
-        <div className="aspect-[16/9] w-full overflow-hidden bg-[#e3dcc9]">
+        <div className="aspect-[16/9] w-full overflow-hidden bg-[#e3ebe2]">
           <img
             src={sizedImage(img)}
             onError={(e) => { if (e.currentTarget.src !== img) e.currentTarget.src = img; }}
@@ -162,16 +164,16 @@ function BlogCard({ post }: { post: BlogPost }) {
           />
         </div>
       ) : (
-        <div className="grid aspect-[16/9] w-full place-items-center bg-[#e3dcc9]">
+        <div className="grid aspect-[16/9] w-full place-items-center bg-[#e3ebe2]">
           <Compass className="size-7 text-[#2d6a4f]/60" />
         </div>
       )}
       <div className="p-4">
         {post.category && (
-          <p className="text-[11px] font-medium uppercase tracking-wider text-[#2d6a4f]">{post.category}</p>
+          <span className="inline-flex rounded-full px-2.5 py-1 text-[12px] font-[700]" style={{ background: K.mist, color: K.forest }}>{sentenceCase(post.category)}</span>
         )}
-        <h3 className="mt-1 text-base font-medium leading-snug text-[#1a3d2e]">{post.title}</h3>
-        <div className="mt-1.5 flex items-center gap-1.5 text-xs text-[#5f5e5a]">
+        <h3 className="m-0 mt-2 text-[17px] font-[700] leading-snug" style={{ color: K.forest }}>{post.title}</h3>
+        <div className="mt-1.5 flex items-center gap-1.5 text-[13px]" style={{ color: K.quiet }}>
           {post.meta && <span>{post.meta}</span>}
           {post.url && <ArrowUpRight className="size-3.5" />}
         </div>
@@ -179,7 +181,7 @@ function BlogCard({ post }: { post: BlogPost }) {
     </>
   );
 
-  const cls = "block overflow-hidden rounded-[20px] bg-[#efe9da] shadow-sm";
+  const cls = "block overflow-hidden rounded-[20px] bg-white";
   return post.url ? (
     <a href={post.url} target="_blank" rel="noreferrer" className={`${cls} active:scale-[0.99]`}>
       {inner}

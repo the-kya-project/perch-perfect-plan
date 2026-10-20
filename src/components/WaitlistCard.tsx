@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { Check, X } from "lucide-react";
+import { Check } from "lucide-react";
 import { joinWaitlist } from "@/lib/waitlist.functions";
+import { K, KyaHeading, KyaPrimaryButton, KyaSheet } from "@/components/kya";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 
@@ -36,8 +37,8 @@ function chapterLabel(t: TFunction, value: string, en: string): string {
   }
 }
 
-const inputCls =
-  "w-full rounded-[12px] border border-[#1a3d2e]/15 bg-white px-3.5 py-2.5 text-base text-[#1a3d2e] placeholder:text-[#9a978c] outline-none focus:border-[#1a3d2e]/40";
+const inputCls = "min-h-[48px] w-full rounded-full border-[1.5px] bg-white px-4 text-[16px] outline-none focus:border-[#2d6a4f]";
+const inputStyle = { borderColor: "#d5dfd5", color: "#1a3d2e" };
 
 // Lime community-waitlist card on Explore — the single accent moment. The button
 // opens a popup form whose fields map 1:1 to the Brevo waitlist form.
@@ -45,19 +46,13 @@ export function WaitlistCard() {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   return (
-    <section className="rounded-[22px] bg-[#cdeab0] p-5">
-      <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-[#3f5e22]">{t("waitlist.comingSoon", "Coming soon")}</p>
-      <h2 className="mt-1.5 text-xl font-medium text-[#1f3d12]">{t("waitlist.joinTheCommunity", "Join the community")}</h2>
-      <p className="mt-2 text-sm leading-relaxed text-[#3f5e22]">
-        {t("waitlist.cardBody", "A place for parrot people. Experience expert AMAs, local chapters, and a community that gives back to rescue.")}
+    <section className="rounded-[20px] p-5" style={{ background: K.lime, color: K.forest }}>
+      <span className="inline-flex rounded-full px-2.5 py-1 text-[12px] font-[700] text-white" style={{ background: K.forest }}>{t("waitlist.comingSoonTag", "Coming soon")}</span>
+      <KyaHeading size={21} className="mt-2.5">{t("waitlist.joinTheCommunity", "Join the community")}</KyaHeading>
+      <p className="m-0 mt-2 text-[15px] leading-[1.5]">
+        {t("waitlist.cardBodyShort", "A place for parrot people. Expert AMAs, local chapters, and a community that gives back to rescue.")}
       </p>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="mt-4 w-full rounded-[14px] bg-[#1a3d2e] py-3 text-sm font-medium text-white active:scale-[0.99]"
-      >
-        {t("waitlist.joinTheWaitlist", "Join the waitlist")}
-      </button>
+      <div className="mt-4"><KyaPrimaryButton onClick={() => setOpen(true)}>{t("waitlist.joinTheWaitlist", "Join the waitlist")}</KyaPrimaryButton></div>
       {open && <WaitlistModal onClose={() => setOpen(false)} />}
     </section>
   );
@@ -73,15 +68,6 @@ function WaitlistModal({ onClose }: { onClose: () => void }) {
   const [chapter, setChapter] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
-
-  // Close on Esc; lock body scroll while open.
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    document.addEventListener("keydown", onKey);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => { document.removeEventListener("keydown", onKey); document.body.style.overflow = prev; };
-  }, [onClose]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -111,99 +97,77 @@ function WaitlistModal({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4"
-      onClick={onClose}
-      role="dialog"
-      aria-modal="true"
+    <KyaSheet
+      onClose={onClose}
+      closeLabel={t("waitlist.close", "Close")}
+      title={<KyaHeading size={24}>{done ? t("waitlist.onTheListTitle", "You're on the list") : t("waitlist.modalTitle", "Join the community waitlist")}</KyaHeading>}
     >
-      <div
-        className="max-h-[92vh] w-full max-w-md overflow-y-auto rounded-t-[24px] bg-[#f4f1e8] p-5 pb-[max(env(safe-area-inset-bottom),1.25rem)] sm:rounded-[24px]"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-start justify-between gap-3">
-          <h2 className="text-xl font-medium text-[#1a3d2e]">
-            {done ? t("waitlist.onTheList", "You're on the list!") : t("waitlist.modalTitle", "Join the community waitlist")}
-          </h2>
-          <button type="button" onClick={onClose} aria-label={t("waitlist.close", "Close")} className="-mr-1 rounded-full p-1.5 text-[#5f5e5a] hover:bg-black/5">
-            <X className="size-5" />
-          </button>
-        </div>
-
-        {done ? (
-          <div className="mt-3">
-            <div className="flex items-center gap-2 rounded-[14px] bg-[#cdeab0] px-4 py-3 text-sm font-medium text-[#1f3d12]">
-              <Check className="size-4 shrink-0" />
-              {t("waitlist.thanks", "Thanks for joining — we'll email you when the community opens.")}
-            </div>
-            <button
-              type="button"
-              onClick={onClose}
-              className="mt-4 w-full rounded-[14px] bg-[#1a3d2e] py-3 text-sm font-medium text-white active:scale-[0.99]"
-            >
-              {t("waitlist.done", "Done")}
-            </button>
+      {done ? (
+        <div>
+          <div className="flex items-center gap-2 rounded-[16px] px-4 py-3 text-[15px] font-[700]" style={{ background: K.lime, color: K.forest }}>
+            <Check className="size-4 shrink-0" />
+            {t("waitlist.thanks", "Thanks for joining — we'll email you when the community opens.")}
           </div>
-        ) : (
-          <form onSubmit={submit} className="mt-4 space-y-3">
+          <div className="mt-4"><KyaPrimaryButton onClick={onClose}>{t("waitlist.done", "Done")}</KyaPrimaryButton></div>
+        </div>
+      ) : (
+        <form onSubmit={submit} className="flex flex-col gap-4">
+          <div className="grid grid-cols-2 gap-2">
+            <Field label={t("waitlist.firstName", "First name")}>
+              <input type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} autoComplete="given-name" className={inputCls} style={inputStyle} />
+            </Field>
+            <Field label={t("waitlist.lastName", "Last name")}>
+              <input type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} autoComplete="family-name" className={inputCls} style={inputStyle} />
+            </Field>
+          </div>
+          <Field label={t("waitlist.email", "Email")}>
+            <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" inputMode="email" placeholder="you@example.com" className={inputCls} style={inputStyle} />
+          </Field>
+
+          <Field label={t("waitlist.leadChapterQ", "Would you be interested in leading a local chapter?")}>
             <div className="grid grid-cols-2 gap-2">
-              <Field label={t("waitlist.firstName", "First name")}>
-                <input type="text" value={firstName} onChange={(e) => setFirstName(e.target.value)} autoComplete="given-name" className={inputCls} />
-              </Field>
-              <Field label={t("waitlist.lastName", "Last name")}>
-                <input type="text" value={lastName} onChange={(e) => setLastName(e.target.value)} autoComplete="family-name" className={inputCls} />
-              </Field>
+              {([["1", t("waitlist.yes", "Yes")], ["2", t("waitlist.no", "No")]] as const).map(([val, lbl]) => (
+                <button
+                  key={val}
+                  type="button"
+                  onClick={() => setChapterLead(val)}
+                  aria-pressed={chapterLead === val}
+                  className="min-h-[48px] rounded-full border-[1.5px] px-3 text-[15px] font-[700]"
+                  style={chapterLead === val ? { background: K.forest, borderColor: K.forest, color: "#fff" } : { background: "#fff", borderColor: "#d5dfd5", color: K.forest }}
+                >
+                  {lbl}
+                </button>
+              ))}
             </div>
-            <Field label={t("waitlist.email", "Email")}>
-              <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" inputMode="email" placeholder="you@example.com" className={inputCls} />
-            </Field>
+          </Field>
 
-            <Field label={t("waitlist.leadChapterQ", "Would you be interested in leading a local chapter?")}>
-              <div className="grid grid-cols-2 gap-2">
-                {([["1", t("waitlist.yes", "Yes")], ["2", t("waitlist.no", "No")]] as const).map(([val, lbl]) => (
-                  <button
-                    key={val}
-                    type="button"
-                    onClick={() => setChapterLead(val)}
-                    className={`rounded-[12px] border px-3 py-2.5 text-sm font-medium transition ${
-                      chapterLead === val
-                        ? "border-[#1a3d2e] bg-[#1a3d2e] text-white"
-                        : "border-[#1a3d2e]/15 bg-white text-[#1a3d2e]"
-                    }`}
-                  >
-                    {lbl}
-                  </button>
-                ))}
-              </div>
-            </Field>
+          <Field label={t("waitlist.whereLocated", "Where are you located?")}>
+            <select value={chapter} onChange={(e) => setChapter(e.target.value)} className={`${inputCls} appearance-none`} style={inputStyle}>
+              <option value="">{t("waitlist.selectRegion", "Select your region")}</option>
+              {CHAPTERS.map((c) => (
+                <option key={c.value} value={c.value}>{chapterLabel(t, c.value, c.label)}</option>
+              ))}
+            </select>
+          </Field>
 
-            <Field label={t("waitlist.whereLocated", "Where are you located?")}>
-              <select value={chapter} onChange={(e) => setChapter(e.target.value)} className={`${inputCls} appearance-none`}>
-                <option value="">{t("waitlist.selectRegion", "Select your region")}</option>
-                {CHAPTERS.map((c) => (
-                  <option key={c.value} value={c.value}>{chapterLabel(t, c.value, c.label)}</option>
-                ))}
-              </select>
-            </Field>
-
-            <button
-              type="submit"
-              disabled={submitting}
-              className="!mt-5 w-full rounded-[14px] bg-[#1a3d2e] py-3 text-sm font-medium text-white active:scale-[0.99] disabled:opacity-50"
-            >
-              {submitting ? t("waitlist.joining", "Joining…") : t("waitlist.joinTheWaitlist", "Join the waitlist")}
-            </button>
-          </form>
-        )}
-      </div>
-    </div>
+          <button
+            type="submit"
+            disabled={submitting}
+            className="mt-1 inline-flex min-h-[52px] w-full items-center justify-center rounded-full border-2 text-[16px] font-[700] disabled:opacity-45"
+            style={{ background: K.sunflower, borderColor: K.forest, color: K.forest }}
+          >
+            {submitting ? t("waitlist.joining", "Joining…") : t("waitlist.joinTheWaitlist", "Join the waitlist")}
+          </button>
+        </form>
+      )}
+    </KyaSheet>
   );
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-xs font-medium text-[#5f5e5a]">{label}</span>
+      <span className="mb-1.5 block text-[13.5px] font-[700] text-[#1a3d2e]">{label}</span>
       {children}
     </label>
   );

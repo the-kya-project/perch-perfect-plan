@@ -5,10 +5,12 @@
 
   // Account
   "account.account": "Account",
-  // Download on the App Store
-  "account.appStoreBadgeAlt": "Download in de App Store",
-  // Birds you've helped find a home
-  "account.birdsYouVeHelpedFind": "Vogels die je aan een thuis hebt geholpen",
+  // Back
+  "account.back": "Terug",
+  // Birds you've helped rehome
+  "account.birdsRehomed": "Vogels die je een nieuw thuis hebt helpen vinden",
+  // Birds you've handed off to new owners
+  "account.birdsRehomedDetail": "Vogels die je aan nieuwe eigenaren hebt overgedragen",
   // Brittany
   "account.brittany": "Brittany",
   // Cancel
@@ -39,50 +41,72 @@
   "account.editYourDetails": "Je gegevens bewerken",
   // Email address
   "account.emailAddress": "E-mailadres",
+  // Email and password
+  "account.emailAndPassword": "E-mail en wachtwoord",
   // Change to {{email}} pending — confirm the emailed links.
   "account.emailChangePending": "Wijziging naar {{email}} in behandeling — bevestig de gemailde links.",
-  // Emergency defaults
-  "account.emergencyDefaults": "Standaard noodgegevens",
+  // Email off
+  "account.emailOff": "E-mail uit",
+  // Email on
+  "account.emailOn": "E-mail aan",
+  // Emergency info
+  "account.emergencyInfo": "Noodinformatie",
+  // Your phone, vets, and where things are
+  "account.emergencyInfoDetail": "Je telefoonnummer, dierenartsen en waar dingen liggen",
   // First name
   "account.firstName": "Voornaam",
+  // Reminders and quick logging on your phone
+  "account.getTheAppShort": "Herinneringen en snel bijhouden op je telefoon",
   // Get the Kya & Co. app
   "account.getTheKyaCoApp": "Download de Kya & Co.-app",
+  // Help and legal
+  "account.helpAndLegal": "Hulp en juridisch",
   // Help & support
   "account.helpSupport": "Hulp & ondersteuning",
   // Household
   "account.household": "Huishouden",
-  // How you hear about health checks and updates.
-  "account.howYouHearAboutHealth": "Hoe je hoort over gezondheidschecks en updates.",
+  // Just you
+  "account.householdJustYou": "Alleen jij",
+  // You and {{names}}
+  "account.householdYouAnd": "Jij en {{names}}",
+  // You and {{count}} other
+  "account.householdYouAndOthers_one": "Jij en {{count}} ander",
+  // You and {{count}} others
+  "account.householdYouAndOthers_other": "Jij en {{count}} anderen",
+  // {{list}} and {{last}}
+  "account.joinAnd": "{{list}} en {{last}}",
   // King
   "account.king": "King",
   // Language
   "account.language": "Taal",
   // Last name
   "account.lastName": "Achternaam",
-  // Legal
-  "account.legal": "Juridisch",
-  // Manage how you log in.
-  "account.manageHowYouLogIn": "Beheer hoe je inlogt.",
   // Name updated.
   "account.nameUpdated": "Naam bijgewerkt.",
+  // Needs 2 numbers
+  "account.needsTwoNumbers": "2 nummers nodig",
+  // Needs vet phone
+  "account.needsVetPhone": "Nummer dierenarts nodig",
+  // Needs your phone
+  "account.needsYourPhone": "Jouw nummer nodig",
   // Notifications
   "account.notifications": "Meldingen",
   // Account — Kya & Co.
   "account.pageTitle": "Account — Kya & Co.",
   // Password & sign-in
   "account.passwordSignIn": "Wachtwoord & inloggen",
-  // People who help care for your birds.
-  "account.peopleWhoHelpCareFor": "Mensen die helpen voor je vogels te zorgen.",
   // Permanently delete my account
   "account.permanentlyDelete": "Mijn account definitief verwijderen",
-  // Get it on Google Play
-  "account.playStoreBadgeAlt": "Ontdek het op Google Play",
   // Privacy policy
   "account.privacyPolicy": "Privacybeleid",
+  // Push off
+  "account.pushOff": "Push uit",
+  // Push on
+  "account.pushOn": "Push aan",
+  // Ready
+  "account.ready": "Klaar",
   // Remembering
   "account.remembering": "In herinnering",
-  // Reminders, quick logging, and your flock's whole record, right on your phone. Same account, nothing to move over.
-  "account.remindersQuickLoggingAndYour": "Herinneringen, snel noteren en het hele dossier van je vogels, gewoon op je telefoon. Zelfde account, niets over te zetten.",
   // Same as your phone
   "account.sameAsPhone": "Zelfde als je telefoon",
   // Save changes
@@ -101,8 +125,6 @@
   "account.usedInTheAppAnd": "Gebruikt in de app en in e-mails die we je sturen.",
   // Version {{version}}
   "account.version": "Versie {{version}}",
-  // Vet, contacts & spend limit — used for every bird.
-  "account.vetContactsSpendLimitUsed": "Dierenarts, contacten & bestedingslimiet — geldt voor elke vogel.",
   // you@example.com
   "account.youExampleCom": "jij@voorbeeld.nl",
   // Your account
@@ -111,6 +133,20 @@
   "account.yourAccountAndAllData": "Je account en alle gegevens zijn verwijderd.",
   // Your name
   "account.yourName": "Je naam",
+  // Back
+  "accountEmergency.back": "Terug",
+  // What a sitter sees if something goes wrong. Tap any line to change it.
+  "accountEmergency.line": "Wat een oppas ziet als er iets misgaat. Tik op een regel om die te wijzigen.",
+  // Loading…
+  "accountEmergency.loading": "Laden…",
+  // Emergency info — Kya & Co.
+  "accountEmergency.metaTitle": "Noodinformatie — Kya & Co.",
+  // Saved for all your birds.
+  "accountEmergency.saved": "Opgeslagen voor al je vogels.",
+  // Signed out.
+  "accountEmergency.signedOut": "Afgemeld.",
+  // Emergency info
+  "accountEmergency.title": "Noodinformatie",
   // Choose a new password for signing in with your email.
   "accountSecurity.changeBody": "Kies een nieuw wachtwoord om met je e-mailadres in te loggen.",
   // Change password
@@ -331,6 +367,52 @@
   "birdCareCard.healthCheckNotDone": "Gezondheidscheck nog niet gedaan",
   // No routine tasks
   "birdCareCard.noRoutineTasks": "Geen vaste taken",
+  // All birds
+  "birdEmergency.allBirds": "Alle vogels",
+  // Back
+  "birdEmergency.back": "Terug",
+  // Close
+  "birdEmergency.close": "Sluiten",
+  // Use my emergency info
+  "birdEmergency.confirmMine": "Mijn noodinformatie gebruiken",
+  // The details you changed for {{name}} will be cleared.
+  "birdEmergency.confirmMineBody": "Wat je voor {{name}} hebt aangepast, wordt gewist.",
+  // Use your emergency info for {{name}}?
+  "birdEmergency.confirmMineTitle": "Je eigen noodinformatie gebruiken voor {{name}}?",
+  // Custom for {{name}}
+  "birdEmergency.customFor": "Aangepast voor {{name}}",
+  // Different for {{name}}
+  "birdEmergency.differentFor": "Anders voor {{name}}",
+  // Edit emergency info for all birds →
+  "birdEmergency.editForAll": "Noodinformatie voor alle vogels bewerken →",
+  // Just {{name}}
+  "birdEmergency.justBird": "Alleen {{name}}",
+  // Keep {{name}}'s details
+  "birdEmergency.keepCustom": "Gegevens van {{name}} houden",
+  // Same as your other birds, unless you change something here.
+  "birdEmergency.line": "Hetzelfde als bij je andere vogels, tenzij je hier iets verandert.",
+  // Loading…
+  "birdEmergency.loading": "Laden…",
+  // Emergency info — Kya & Co.
+  "birdEmergency.metaTitle": "Noodinformatie — Kya & Co.",
+  // {{name}} uses your emergency info.
+  "birdEmergency.nowUsesYours": "{{name}} gebruikt nu je eigen noodinformatie.",
+  // Saved for {{name}}.
+  "birdEmergency.savedFor": "Opgeslagen voor {{name}}.",
+  // Saved for all your birds.
+  "birdEmergency.savedForAll": "Opgeslagen voor al je vogels.",
+  // Signed out.
+  "birdEmergency.signedOut": "Afgemeld.",
+  // {{name}}'s emergency info
+  "birdEmergency.title": "Noodinformatie van {{name}}",
+  // Use my emergency info
+  "birdEmergency.useMine": "Mijn noodinformatie gebruiken",
+  // Which emergency info
+  "birdEmergency.whichInfo": "Welke noodinformatie",
+  // Change this for {{name}} only, or for all your birds?
+  "birdEmergency.whoQuestion": "Dit alleen voor {{name}} wijzigen, of voor al je vogels?",
+  // your bird
+  "birdEmergency.yourBird": "je vogel",
   // Back
   "birdHandoff.back": "Terug",
   // This can't be undone.
@@ -803,6 +885,12 @@
   "birdRecord.edit": "Bewerken",
   // Edit photo
   "birdRecord.editPhoto": "Foto bewerken",
+  // Custom for {{name}}
+  "birdRecord.emergencyCustom": "Aangepast voor {{name}}",
+  // Emergency info
+  "birdRecord.emergencyInfo": "Noodinformatie",
+  // Uses your emergency info
+  "birdRecord.emergencyShared": "Gebruikt je eigen noodinformatie",
   // {{n}} entries
   "birdRecord.entriesCount": "{{n}} metingen",
   // {{n}} entry
@@ -2457,8 +2545,6 @@
   "dailyCheck.weightFailed": "Het gewicht is niet opgeslagen. Probeer het opnieuw.",
   // What's different with {{name}}?
   "dailyCheck.whatsDifferent": "Wat is er anders aan {{name}}?",
-  // Account emergency defaults
-  "dashboard.accountEmergencyDefaults": "Standaard noodinfo voor je account",
   // added a journal note
   "dashboard.activityJournalNote": "schreef een dagboeknotitie",
   // added a journal note — {{title}}
@@ -2493,50 +2579,14 @@
   "dashboard.birdsStillNeedCheck_other": "{{count}} vogels hebben nog een dagelijkse check en weging nodig",
   // Checked
   "dashboard.checked": "Gecheckt",
-  // Close
-  "dashboard.close": "Sluiten",
   // Concern flagged
   "dashboard.concernFlagged": "Aandachtspunt gemeld",
   // {{name}}'s weight and health check
   "dashboard.dailyCheckFor": "Gewicht en gezondheidscheck van {{name}}",
   // Daily health check
   "dashboard.dailyHealthCheck": "Dagelijkse gezondheidscheck",
-  // {{filled}} of {{total}} default fields set.
-  "dashboard.defaultsFilled": "{{filled}} van {{total}} standaardvelden ingevuld.",
-  // Set owner phone, avian vet, and other emergency info <1>once</1>. Every bird uses this unless you edit it for that bird on its Emergency tab.
-  "dashboard.defaultsIntro": "Vul het telefoonnummer van de eigenaar, de vogeldierenarts en andere noodinfo <1>één keer</1> in. Elke vogel gebruikt dit, tenzij je het voor die vogel aanpast op het tabblad Noodgeval.",
-  // Saved. Every bird uses this account info unless you edit it for that bird.
-  "dashboard.defaultsSaved": "Opgeslagen. Elke vogel gebruikt deze accountgegevens, tenzij je ze voor die vogel aanpast.",
-  // Edit
-  "dashboard.edit": "Bewerken",
   // Start their living record — care plan, weight, moments, and more. Tap Add a bird above to begin.
   "dashboard.emptyHomeBody": "Begin hun levende dossier — verzorgingsplan, gewicht, momenten en meer. Tik hierboven op Vogel toevoegen om te beginnen.",
-  // Approved spending limit
-  "dashboard.field.approvedSpendingLimit": "Goedgekeurde bestedingslimiet",
-  // Avian vet address
-  "dashboard.field.avianVetAddress": "Adres vogeldierenarts",
-  // Avian vet name
-  "dashboard.field.avianVetName": "Naam vogeldierenarts",
-  // Avian vet phone
-  "dashboard.field.avianVetPhone": "Telefoon vogeldierenarts",
-  // Backup contact name
-  "dashboard.field.backupContactName": "Naam reservecontact",
-  // Backup contact phone
-  "dashboard.field.backupContactPhone": "Telefoon reservecontact",
-  // Carrier location
-  "dashboard.field.carrierLocation": "Plek van de reisbox",
-  // Emergency vet address
-  "dashboard.field.emergencyVetAddress": "Adres spoeddierenarts",
-  // Emergency vet name
-  "dashboard.field.emergencyVetName": "Naam spoeddierenarts",
-  // Emergency vet phone
-  "dashboard.field.emergencyVetPhone": "Telefoon spoeddierenarts",
-  // First-aid kit location
-  "dashboard.field.firstAidKitLocation": "Plek van de EHBO-kit",
-  // Owner phone
-  "dashboard.field.ownerPhone": "Telefoon eigenaar",
-  // Poison control number
-  "dashboard.field.poisonControlNumber": "Nummer Vergiftigingen Informatie Centrum",
   // Grab a weight and a quick once-over of your birds.
   "dashboard.flockCheckBody": "Even wegen en snel een blik op je vogels.",
   // Weigh & check your flock
@@ -2585,8 +2635,6 @@
   "dashboard.needsDailyCheck": "Dagelijkse check nodig",
   // No birds yet — start with your first.
   "dashboard.noBirdsYet": "Nog geen vogels — begin met je eerste.",
-  // No defaults set yet — each bird needs its own contacts until you fill these in.
-  "dashboard.noDefaultsYet": "Nog geen standaardgegevens ingesteld — elke vogel heeft eigen contacten nodig totdat je deze invult.",
   // Not weighed in {{count}} day
   "dashboard.notWeighedInDays_one": "{{count}} dag niet gewogen",
   // Not weighed in {{count}} days
@@ -2603,20 +2651,12 @@
   "dashboard.pageTitle": "Home — Kya & Co.",
   // Parrot
   "dashboard.parrot": "Papegaai",
-  // Save account defaults
-  "dashboard.saveAccountDefaults": "Standaardgegevens opslaan",
-  // Saving...
-  "dashboard.saving": "Opslaan...",
   // See today's checks
   "dashboard.seeTodaysChecksButton": "Bekijk de checks van vandaag",
-  // Set up
-  "dashboard.setUp": "Instellen",
   // Sharing all your birds
   "dashboard.sharingAllYourBirds": "Al je vogels gedeeld",
   // Sharing {{names}}
   "dashboard.sharingNames": "{{names}} gedeeld",
-  // Signed out.
-  "dashboard.signedOut": "Uitgelogd.",
   // Take in a bird
   "dashboard.takeInABird": "Een vogel opvangen",
   // {{n}} thing
@@ -2685,60 +2725,74 @@
   "emergencyBar.nav.home": "Home",
   // Today
   "emergencyBar.nav.today": "Vandaag",
-  // Account: {{value}}
-  "emergencyInfo.accountPlaceholder": "Account: {{value}}",
-  // Cancel
-  "emergencyInfo.cancel": "Annuleren",
-  // Need to change this for every bird? <1>Edit your account emergency info</1>.
-  "emergencyInfo.changeForEveryBird": "Wil je dit voor al je vogels aanpassen? <1>Bewerk de noodinformatie van je account</1>.",
-  // Edited for {{name}}
-  "emergencyInfo.editedFor": "Aangepast voor {{name}}",
-  // Edit for {{name}}
-  "emergencyInfo.editFor": "Aanpassen voor {{name}}",
   // Address
   "emergencyInfo.fieldAddress": "Adres",
-  // Backup name
-  "emergencyInfo.fieldBackupName": "Naam reservecontact",
-  // Backup phone
-  "emergencyInfo.fieldBackupPhone": "Reservetelefoon",
-  // Carrier
-  "emergencyInfo.fieldCarrier": "Reismand",
   // Clinic
   "emergencyInfo.fieldClinic": "Kliniek",
-  // First-aid kit
-  "emergencyInfo.fieldFirstAidKit": "EHBO-doos",
   // Phone
   "emergencyInfo.fieldPhone": "Telefoon",
-  // Spending limit
-  "emergencyInfo.fieldSpendingLimit": "Bestedingslimiet",
-  // You haven't set your account emergency info yet. <1>Set it once</1> and every bird uses it.
-  "emergencyInfo.noDefaults": "Je hebt de noodinformatie van je account nog niet ingesteld. <1>Stel het één keer in</1> en al je vogels gebruiken het.",
-  // Not provided
-  "emergencyInfo.notProvided": "Niet ingevuld",
-  // Reset to account
-  "emergencyInfo.resetToAccount": "Terugzetten naar account",
-  // {{section}} reset to your account info.
-  "emergencyInfo.resetToast": "{{section}} teruggezet naar je accountgegevens.",
-  // Saved for {{name}}.
-  "emergencyInfo.savedFor": "Opgeslagen voor {{name}}.",
-  // Save for {{name}}
-  "emergencyInfo.saveFor": "Opslaan voor {{name}}",
-  // Saving…
-  "emergencyInfo.saving": "Opslaan…",
+  // Add
+  "emergencyList.add": "Toevoegen",
+  // Around the house
+  "emergencyList.aroundTheHouse": "In huis",
   // Avian vet
-  "emergencyInfo.sectionAvianVet": "Vogeldierenarts",
-  // Emergency vet
-  "emergencyInfo.sectionEmergencyVet": "Spoeddierenarts",
+  "emergencyList.avianVet": "Vogeldierenarts",
+  // Backup contact
+  "emergencyList.backup": "Reservecontact",
+  // Call {{who}}
+  "emergencyList.call": "{{who}} bellen",
+  // Carrier
+  "emergencyList.carrier": "Reismand",
+  // Close
+  "emergencyList.close": "Sluiten",
+  // After-hours emergency vet
+  "emergencyList.emergencyVet": "Spoeddierenarts buiten kantooruren",
+  // Address
+  "emergencyList.field.address": "Adres",
+  // Where's the carrier?
+  "emergencyList.field.carrier": "Waar staat de reismand?",
+  // Clinic name
+  "emergencyList.field.clinicName": "Naam van de kliniek",
+  // Where's the first-aid kit?
+  "emergencyList.field.firstAid": "Waar ligt de EHBO-doos?",
+  // Name
+  "emergencyList.field.name": "Naam",
+  // Phone
+  "emergencyList.field.phone": "Telefoon",
+  // Poison control number
+  "emergencyList.field.poisonNumber": "Nummer van de vergiftigingenlijn",
+  // Vet spending limit
+  "emergencyList.field.spending": "Bestedingslimiet dierenarts",
+  // Vet or clinic name
+  "emergencyList.field.vetName": "Naam dierenarts of kliniek",
+  // Your phone
+  "emergencyList.field.yourPhone": "Jouw telefoonnummer",
+  // First-aid kit
+  "emergencyList.firstAid": "EHBO-doos",
+  // Needed before a sitter can start
+  "emergencyList.neededBeforeSit": "Nodig voordat een oppas kan beginnen",
+  // Not added
+  "emergencyList.notAdded": "Niet toegevoegd",
+  // People to call
+  "emergencyList.peopleToCall": "Wie je belt",
   // Poison control
-  "emergencyInfo.sectionPoisonControl": "Vergiftigingen Informatie Centrum",
-  // Transport & spending
-  "emergencyInfo.sectionTransport": "Vervoer & kosten",
-  // Your contact
-  "emergencyInfo.sectionYourContact": "Jouw contactgegevens",
-  // Using your account emergency info
-  "emergencyInfo.usingAccountInfo": "De noodinformatie van je account wordt gebruikt",
-  // This is the vet and emergency info you set for your account. You can change it just for {{name}} if it's different.
-  "emergencyInfo.usingAccountInfoBody": "Dit is de dierenarts- en noodinformatie die je voor je account hebt ingesteld. Als het voor {{name}} anders is, kun je het alleen voor deze vogel aanpassen.",
+  "emergencyList.poison": "Vergiftigingenlijn",
+  // Required
+  "emergencyList.required": "Verplicht",
+  // Save
+  "emergencyList.save": "Opslaan",
+  // Saving…
+  "emergencyList.saving": "Opslaan…",
+  // Vet spending limit
+  "emergencyList.spending": "Bestedingslimiet dierenarts",
+  // The most a sitter can approve for vet care if they can't reach you.
+  "emergencyList.spendingHint": "Het hoogste bedrag dat een oppas aan dierenartszorg mag uitgeven als die jou niet kan bereiken.",
+  // e.g. $300
+  "emergencyList.spendingPlaceholder": "bijv. € 300",
+  // Up to ${{amount}} without reaching you
+  "emergencyList.spendingUpTo": "Tot ${{amount}} zonder jou te bereiken",
+  // You
+  "emergencyList.you": "Jij",
   // + Add
   "emergencySetup.add": "+ Toevoegen",
   // ASPCA Animal Poison Control
@@ -2792,21 +2846,21 @@
   // Your phone
   "emergencySetup.yourPhone": "Je telefoon",
   // Coming soon
-  "explore.comingSoon": "Binnenkort",
+  "explore.comingSoonTag": "Binnenkort",
   // Latest from the blog
   "explore.latestFromTheBlog": "Nieuw op de blog",
   // We're lining up guides and stories on parrot care, rescue, and the wild.
   "explore.liningUpStories": "We zetten gidsen en verhalen klaar over papegaaienverzorging, opvang en het wild.",
-  // Membership
-  "explore.membership": "Lidmaatschap",
   // When the community launches, members get AMAs, chapter access, and 20% of every membership funds rescue and conservation.
   "explore.membershipBody": "Zodra de community live gaat, krijgen leden AMA's en toegang tot lokale afdelingen, en gaat 20% van elk lidmaatschap naar opvang en natuurbehoud.",
   // Support the mission and get more
   "explore.membershipHeadline": "Steun de missie en krijg er meer voor terug",
   // We help parrots thrive, at home and in the wild, through education, community, and support for rescue and conservation.
   "explore.missionBody": "We helpen papegaaien gedijen, thuis en in het wild, met educatie, community en steun voor opvang en natuurbehoud.",
-  // Better care, wilder futures.
-  "explore.missionHeadline": "Betere zorg, wildere toekomst.",
+  // Better care, wilder futures
+  "explore.missionTitle": "Betere zorg, een wildere toekomst",
+  // More articles
+  "explore.moreArticles": "Meer artikelen",
   // New writing from The Kya Project will appear here.
   "explore.newWritingWillAppear": "Nieuwe verhalen van The Kya Project verschijnen hier.",
   // No posts yet
@@ -2817,6 +2871,8 @@
   "explore.pageTitle": "Ontdekken — The Kya Project",
   // Conversations on parrots, rescue, and the wild.
   "explore.podcastBody": "Gesprekken over papegaaien, opvang en het wild.",
+  // The Kya Project Podcast
+  "explore.podcastTitle": "De Kya Project-podcast",
   // Stories are on the way
   "explore.storiesOnTheWay": "Er komen verhalen aan",
   // View all
@@ -3583,10 +3639,10 @@
   "healthHistory.thisSit": "Deze oppas",
   // Health history
   "healthHistory.title": "Gezondheidsgeschiedenis",
-  // Checks and weights
-  "healthHistory.typeAll": "Checks en gewichten",
   // Daily checks
   "healthHistory.typeChecks": "Dagelijkse checks",
+  // Everything
+  "healthHistory.typeEverything": "Alles",
   // Type
   "healthHistory.typeLabel": "Soort",
   // Weights
@@ -3603,6 +3659,8 @@
   "healthTab.body": "Dagelijkse checks, gewichten en alles wat je opviel, voor al je vogels.",
   // Checked {{date}}
   "healthTab.checkedOn": "Gecheckt op {{date}}",
+  // Checked {{date}} · All normal
+  "healthTab.checkedOnNormal": "Gecheckt op {{date}} · Alles normaal",
   // Checked today
   "healthTab.checkedToday": "Vandaag gecheckt",
   // Checked today · All normal
@@ -3653,6 +3711,50 @@
   "healthTab.yourBird": "Je vogel",
   // Your birds
   "healthTab.yourBirds": "Je vogels",
+  // It's a quick once-over: how your bird looks, eats, breathes, and acts. Birds tend to hide illness, so small changes you notice over a few days can be the first sign something's off. It's a record you can share with your vet, not a diagnosis.
+  "help.checkAnswer": "Het is een snelle controle: hoe je vogel eruitziet, eet, ademt en zich gedraagt. Vogels verbergen ziekte vaak, dus kleine veranderingen die je over een paar dagen opmerkt, kunnen het eerste teken zijn dat er iets mis is. Het is een overzicht dat je met je dierenarts kunt delen, geen diagnose.",
+  // What's the daily health check for?
+  "help.checkQuestion": "Waar is de dagelijkse gezondheidscheck voor?",
+  // Close
+  "help.close": "Sluiten",
+  // We usually reply within a day
+  "help.emailDetail": "We antwoorden meestal binnen een dag",
+  // Email us
+  "help.emailTitle": "Mail ons",
+  // Household members help every day and keep access until you remove them. Sitters cover a specific trip and only have access during that sit.
+  "help.householdAnswer": "Huisgenoten helpen elke dag en houden toegang tot je ze verwijdert. Oppassers dekken een bepaalde reis en hebben alleen toegang tijdens die oppasperiode.",
+  // Household members vs. sitters
+  "help.householdQuestion": "Huisgenoten of oppassers",
+  // Your birds' information is visible to you, the household members you invite, and anyone you send a sit link to. A sit link works from the day you create the sit until the sit ends, and you can revoke it anytime.
+  "help.privacyAnswer": "De informatie over je vogels is zichtbaar voor jou, de huisgenoten die je uitnodigt en iedereen naar wie je een oppaslink stuurt. Een oppaslink werkt vanaf de dag dat je de oppas aanmaakt tot de oppas afloopt, en je kunt hem altijd intrekken.",
+  // Is my information private?
+  "help.privacyQuestion": "Is mijn informatie privé?",
+  // Quick answers
+  "help.quickAnswers": "Snelle antwoorden",
+  // Tell us what went wrong
+  "help.reportDetail": "Vertel ons wat er misging",
+  // Report a problem
+  "help.reportTitle": "Een probleem melden",
+  // See emergency info →
+  "help.seeEmergency": "Noodinformatie bekijken →",
+  // Set up a sit when someone else is caring for your birds. Household members already have access. Anyone else gets a private link by email, no account needed. During the sit they see the day's routine, do a daily health check for each bird, and have your emergency info one tap away. You'll see everything they log.
+  "help.sitsAnswer": "Maak een oppas aan als iemand anders voor je vogels zorgt. Huisgenoten hebben al toegang. Iedereen anders krijgt per e-mail een privélink, zonder account. Tijdens de oppas zien ze de dagindeling, doen ze voor elke vogel een dagelijkse gezondheidscheck en hebben ze je noodinformatie met één tik bij de hand. Jij ziet alles wat ze bijhouden.",
+  // How do sits work?
+  "help.sitsQuestion": "Hoe werkt oppassen?",
+  // Still stuck?
+  "help.stillStuck": "Kom je er niet uit?",
+  // How can we help?
+  "help.title": "Waarmee kunnen we helpen?",
+  // Two minutes on what Kya & Co. can do
+  "help.tourDetail": "Twee minuten over wat Kya & Co. kan",
+  // Take the tour
+  "help.tourTitle": "Doe de rondleiding",
+  // Worried about your bird right now? Call your avian vet.
+  "help.urgent": "Maak je je nu zorgen om je vogel? Bel je vogeldierenarts.",
+  // Use a gram scale with a perch or a small container. Weigh at about the same time each day, ideally in the morning before food, and log the number even when it looks the same. Slow changes are easier to see over a few weeks than from one day to the next.
+  "help.weighAnswer": "Gebruik een weegschaal in grammen met een zitstok of een klein bakje. Weeg elke dag rond hetzelfde tijdstip, het liefst 's ochtends voor het eten, en noteer het getal ook als het hetzelfde lijkt. Langzame veranderingen zie je beter over een paar weken dan van dag tot dag.",
+  // How do I weigh my bird?
+  "help.weighQuestion": "Hoe weeg ik mijn vogel?",
   // Gotcha day
   "home.moment.gotchaDay": "Adoptiedag",
   // gotcha day
@@ -3757,12 +3859,50 @@
   "homePushBanner.yourBirds": "je vogels",
   // All birds
   "household.allBirds": "Alle vogels",
-  // People you've given access to your birds. By default they can help with all your birds — you can scope it to specific ones if you'd like.
-  "household.body": "Mensen aan wie je toegang tot je vogels hebt gegeven. Standaard kunnen ze helpen met al je vogels — je kunt het beperken tot bepaalde vogels als je wilt.",
-  // Cancel
-  "household.cancel": "Annuleren",
-  // Can help with
-  "household.canHelpWith": "Kan helpen met",
+  // They can always see everything
+  "household.alwaysSeeEverything": "Ze kunnen altijd alles zien",
+  // Back
+  "household.back": "Terug",
+  // Cancel invite
+  "household.cancelInvite": "Uitnodiging intrekken",
+  // Edit care plans
+  "household.capEditCarePlans": "Zorgplannen bewerken",
+  // Log weights and daily tasks
+  "household.capLogDailyCare": "Gewichten en dagelijkse taken bijhouden",
+  // Edit emergency info
+  "household.capManageEmergency": "Noodinformatie bewerken",
+  // Edit, hand off and delete birds
+  "household.capManageFlock": "Vogels bewerken, overdragen en verwijderen",
+  // Invite and manage household members
+  "household.capManageHousehold": "Huisgenoten uitnodigen en beheren",
+  // Delete sits
+  "household.capManageSits": "Oppassen verwijderen",
+  // Run daily checks and write journal entries
+  "household.capRecordHealthCheck": "Dagelijkse checks doen en dagboeknotities schrijven",
+  // edit care plans
+  "household.capShortEditCarePlans": "zorgplannen bewerken",
+  // log weights
+  "household.capShortLogDailyCare": "gewichten bijhouden",
+  // edit emergency info
+  "household.capShortManageEmergency": "noodinformatie bewerken",
+  // manage birds
+  "household.capShortManageFlock": "vogels beheren",
+  // manage the household
+  "household.capShortManageHousehold": "het huishouden beheren",
+  // delete sits
+  "household.capShortManageSits": "oppassen verwijderen",
+  // run daily checks
+  "household.capShortRecordHealthCheck": "dagelijkse checks doen",
+  // full access
+  "household.capSummaryAll": "volledige toegang",
+  // can {{a}}, {{b}} and more
+  "household.capSummaryMore": "kan {{a}}, {{b}} en meer",
+  // can see everything
+  "household.capSummaryNone": "kan alles zien",
+  // can {{a}}
+  "household.capSummaryOne": "kan {{a}}",
+  // can {{a}} and {{b}}
+  "household.capSummaryTwo": "kan {{a}} en {{b}}",
   // Close
   "household.close": "Sluiten",
   // {{bird}} is the only bird {{name}} can help with. Removing it takes them out of your household. Continue?
@@ -3773,60 +3913,54 @@
   "household.couldNotCancel": "Annuleren is niet gelukt.",
   // Couldn't remove.
   "household.couldNotRemove": "Verwijderen is niet gelukt.",
+  // Couldn't save that change.
+  "household.couldNotSaveCaps": "Die wijziging kon niet worden opgeslagen.",
   // Couldn't update.
   "household.couldNotUpdate": "Bijwerken is niet gelukt.",
   // No one yet. Invite a partner or family member who helps care for your birds.
   "household.empty": "Nog niemand. Nodig een partner of familielid uit die helpt met de zorg voor je vogels.",
-  // Household
-  "household.eyebrow": "Huishouden",
   // Your household
   "household.headline": "Jouw huishouden",
-  // Household member
-  "household.householdMember": "Lid van het huishouden",
-  // You're in control
-  "household.inControl": "Jij hebt de regie",
-  // You decide what everyone who helps can see and do, and you can change it any time.
-  "household.inControlBody": "Jij bepaalt wat iedereen die helpt kan zien en doen, en je kunt het altijd aanpassen.",
+  // Household since {{month}}
+  "household.householdSince": "Huisgenoot sinds {{month}}",
+  // People who help with your birds every day. You decide what each person can see and do.
+  "household.intro": "Mensen die elke dag helpen met je vogels. Jij bepaalt wat iedereen kan zien en doen.",
   // Invite canceled.
   "household.inviteCanceled": "Uitnodiging geannuleerd.",
   // Invited · pending
   "household.invitedPending": "Uitgenodigd · in afwachting",
-  // Invite a household member
-  "household.inviteMember": "Nodig een lid van je huishouden uit",
+  // Invite someone
+  "household.inviteSomeone": "Iemand uitnodigen",
   // Loading…
   "household.loading": "Laden…",
-  // Manage {{name}}
-  "household.manageLabel": "{{name}} beheren",
-  // {{scope}} · since {{month}}
-  "household.memberSubtitle": "{{scope}} · sinds {{month}}",
-  // {{a}}, {{b}} and {{n}} more
-  "household.namesAndMore": "{{a}}, {{b}} en nog {{n}}",
   // no birds
   "household.noBirds": "geen vogels",
+  // Household members help every day and keep access until you remove them. Sitters cover a trip and only have access during that sit.
+  "household.orSitterBody": "Huisgenoten helpen elke dag en houden toegang tot je ze verwijdert. Oppassers dekken een reis en hebben alleen toegang tijdens die oppasperiode.",
+  // Household or sitter?
+  "household.orSitterTitle": "Huisgenoot of oppas?",
+  // Owner · all birds
+  "household.ownerAllBirds": "Eigenaar · alle vogels",
   // Your household — Kya & Co.
   "household.pageTitle": "Jouw huishouden — Kya & Co.",
-  // Permissions
-  "household.permissions": "Rechten",
-  // Choose what each member can do
-  "household.permissionsSubtitle": "Kies wat elk lid mag doen",
   // {{name}} removed from your household.
   "household.removedToast": "{{name}} is uit je huishouden verwijderd.",
-  // Remove from household
-  "household.removeFromHousehold": "Uit huishouden verwijderen",
-  // Removing from the household won't end an active sit they're covering. To end that too, cancel the sit from the Sits tab.
-  "household.removeNote": "Verwijderen uit het huishouden beëindigt geen lopende oppasperiode waarvoor ze invallen. Wil je die ook beëindigen, annuleer de oppasperiode dan via het tabblad Oppasperiodes.",
+  // Remove {{name}} from your household
+  "household.removeNameFromHousehold": "{{name}} uit je huishouden verwijderen",
   // Removing…
   "household.removing": "Verwijderen…",
-  // Sharing {{names}}
-  "household.sharingNames": "Deelt {{names}}",
-  // Sitters are managed per-trip from the Sits tab.
-  "household.sittersNote": "Oppassen beheer je per reis via het tabblad Oppasperiodes.",
+  // Changes save as you go.
+  "household.savesAsYouGo": "Wijzigingen worden meteen opgeslagen.",
+  // Set up a sit instead →
+  "household.setUpSitInstead": "Liever een oppas aanmaken →",
   // this member
   "household.thisMember": "dit lid",
-  // {{a}} & {{b}}
-  "household.twoNames": "{{a}} & {{b}}",
-  // Updated.
-  "household.updated": "Bijgewerkt.",
+  // What can they do?
+  "household.whatCanTheyDo": "Wat mogen ze doen?",
+  // Which birds?
+  "household.whichBirds": "Welke vogels?",
+  // You
+  "household.you": "Jij",
   // Add
   "householdInvite.add": "Toevoegen",
   // {{name}} added.
@@ -3845,8 +3979,8 @@
   "householdInvite.couldNotSend": "De uitnodiging kon niet worden verstuurd.",
   // Email
   "householdInvite.email": "E-mail",
-  // You can fine-tune this anytime on the permissions screen.
-  "householdInvite.fineTune": "Je kunt dit altijd verfijnen op het scherm Rechten.",
+  // You can change this anytime from your household.
+  "householdInvite.fineTuneHousehold": "Je kunt dit altijd aanpassen vanuit je huishouden.",
   // Household member
   "householdInvite.householdMember": "Lid van het huishouden",
   // They'll get an email invite to create an account and help care for your birds.
@@ -3867,42 +4001,12 @@
   "householdInvite.sent": "Uitnodiging verstuurd.",
   // Their name (optional)
   "householdInvite.theirName": "Naam (optioneel)",
-  // Invite a household member
-  "householdInvite.title": "Nodig een lid van je huishouden uit",
+  // Invite someone
+  "householdInvite.titleInviteSomeone": "Iemand uitnodigen",
   // Which birds can they access?
   "householdInvite.whichBirds": "Tot welke vogels hebben ze toegang?",
   // They won't see your private notes or other people's contact info
   "householdInvite.wontSee": "Ze zien je privénotities en de contactgegevens van anderen niet",
-  // Always on
-  "householdPermissions.alwaysOn": "Altijd aan",
-  // Choose what each member can do. Everyone can always see everything; you control what they can change.
-  "householdPermissions.body": "Kies wat elk lid mag doen. Iedereen kan altijd alles zien; jij bepaalt wat ze kunnen wijzigen.",
-  // Couldn't save.
-  "householdPermissions.couldNotSave": "Opslaan is niet gelukt.",
-  // No household members yet. Invite someone from the Household screen.
-  "householdPermissions.empty": "Nog geen leden in je huishouden. Nodig iemand uit via het scherm Huishouden.",
-  // Household
-  "householdPermissions.eyebrow": "Huishouden",
-  // Full access
-  "householdPermissions.fullAccess": "Volledige toegang",
-  // Permissions
-  "householdPermissions.headline": "Rechten",
-  // Loading…
-  "householdPermissions.loading": "Laden…",
-  // Owner · You
-  "householdPermissions.ownerYou": "Eigenaar · Jij",
-  // Permissions — Kya & Co.
-  "householdPermissions.pageTitle": "Rechten — Kya & Co.",
-  // Save
-  "householdPermissions.save": "Opslaan",
-  // Permissions saved.
-  "householdPermissions.saved": "Rechten opgeslagen.",
-  // Saving…
-  "householdPermissions.saving": "Opslaan…",
-  // See everything
-  "householdPermissions.seeEverything": "Alles zien",
-  // You
-  "householdPermissions.you": "Jij",
   // Accept
   "invite.accept": "Accepteren",
   // Accept & create account
@@ -4211,38 +4315,30 @@
   "notificationsCallout.turnOnReminders": "Zet herinneringen aan",
   // We'll let you know when it's time to weigh {{bird}} and when a check-in is due. You can change this anytime.
   "notificationsCallout.turnOnRemindersBody": "We laten je weten wanneer het tijd is om {{bird}} te wegen en wanneer er een check-in nodig is. Je kunt dit altijd aanpassen.",
-  // Sit updates, invites, and alerts always come through.
-  "notifSettings.alwaysComeThrough": "Updates over oppasperiodes, uitnodigingen en meldingen komen altijd door.",
-  // Your choices save automatically.
-  "notifSettings.autoSave": "Je keuzes worden automatisch opgeslagen.",
-  // Choose which sitter activity reaches you, by email and on this device.
-  "notifSettings.body": "Kies welke activiteit van je oppas je bereikt, per e-mail en op dit apparaat.",
-  // Event
-  "notifSettings.colEvent": "Gebeurtenis",
+  // Always on
+  "notifSettings.alwaysOn": "Altijd aan",
+  // Health and behavior alerts from a sitter, sit updates, and invites always reach you by email.
+  "notifSettings.alwaysOnBody": "Gezondheids- en gedragsmeldingen van een oppas, oppasupdates en uitnodigingen bereiken je altijd per e-mail.",
+  // Back
+  "notifSettings.back": "Terug",
+  // Choose what reaches you by email and on this device.
+  "notifSettings.bodyNew": "Kies wat je per e-mail en op dit apparaat bereikt.",
   // Push
   "notifSettings.colPush": "Push",
   // Notifications are turned off for this app in your device settings. Turn them on there to get sitter alerts on this device.
   "notifSettings.deniedBody": "Meldingen staan uit voor deze app in de instellingen van je apparaat. Zet ze daar aan om meldingen over je oppas op dit apparaat te krijgen.",
   // Could not disable push.
   "notifSettings.disableFailed": "Pushmeldingen konden niet worden uitgezet.",
-  // Done
-  "notifSettings.done": "Klaar",
+  // During sits
+  "notifSettings.duringSits": "Tijdens oppassen",
   // Email
   "notifSettings.email": "E-mail",
-  // Email: {{title}}
-  "notifSettings.emailAria": "E-mail: {{title}}",
-  // Enabled. Per-event push toggles below control what reaches this device.
-  "notifSettings.enabledBody": "Aan. Met de pushschakelaars per gebeurtenis hieronder bepaal je wat dit apparaat bereikt.",
+  // Email from us
+  "notifSettings.emailFromUs": "E-mail van ons",
   // Could not enable push.
   "notifSettings.enableFailed": "Pushmeldingen konden niet worden aangezet.",
   // Could not turn on notifications. Please try again.
   "notifSettings.enableFailedRetry": "Meldingen konden niet worden aangezet. Probeer het opnieuw.",
-  // Enable push
-  "notifSettings.enablePush": "Pushmeldingen aanzetten",
-  // Notifications
-  "notifSettings.eyebrow": "Meldingen",
-  // Flagged scans always send email; all other events follow the toggles above.
-  "notifSettings.flaggedAlwaysEmail": "Bij gemarkeerde gezondheidschecks krijg je altijd een e-mail; alle andere gebeurtenissen volgen de schakelaars hierboven.",
   // A monthly look at your flock's numbers, a care note, and the latest from The Kya Project. Sent on the 2nd.
   "notifSettings.flockReportDesc": "Elke maand een overzicht van de cijfers van je vogels, een verzorgingstip en het laatste nieuws van The Kya Project. Verstuurd op de 2e.",
   // The Flock Report
@@ -4255,22 +4351,32 @@
   "notifSettings.iosNotInstalled": "Op iPhone moet je deze app eerst aan je beginscherm toevoegen.",
   // Notification settings — Kya & Co.
   "notifSettings.metaTitle": "Instellingen voor meldingen — Kya & Co.",
-  // Get instant alerts for sitter activity without needing to check email.
-  "notifSettings.offBody": "Krijg direct een melding bij activiteit van je oppas, zonder je e-mail te hoeven checken.",
   // A short tour of the app over your first couple of weeks.
   "notifSettings.onboardingDesc": "Een korte rondleiding door de app in je eerste paar weken.",
   // Getting-started emails
   "notifSettings.onboardingTitle": "Starte-mails",
+  // Or get the app for <1>iPhone</1> or <2>Android</2>.
+  "notifSettings.orGetTheApp": "Of download de app voor <1>iPhone</1> of <2>Android</2>.",
   // Notification permission was not granted.
   "notifSettings.permissionNotGranted": "Er is geen toestemming gegeven voor meldingen.",
-  // Push: {{title}}
-  "notifSettings.pushAria": "Push: {{title}}",
   // Push notifications turned off on this device.
   "notifSettings.pushDisabled": "Pushmeldingen staan uit op dit apparaat.",
   // Push notifications enabled on this device.
   "notifSettings.pushEnabled": "Pushmeldingen staan aan op dit apparaat.",
+  // Push works in the Kya & Co. app.
+  "notifSettings.pushInApp": "Pushmeldingen werken in de Kya & Co.-app.",
+  // Hear about sitter activity right away.
+  "notifSettings.pushLine": "Hoor meteen wat een oppas doet.",
   // Push on this device
   "notifSettings.pushOnDevice": "Push op dit apparaat",
+  // Push is on. The switches below choose what reaches this device.
+  "notifSettings.pushOnLine": "Push staat aan. Met de schakelaars hieronder kies je wat dit apparaat bereikt.",
+  // Reminders
+  "notifSettings.reminders": "Herinneringen",
+  // Review the care plan before a sit
+  "notifSettings.reviewCarePlan": "Het zorgplan nakijken voor een oppas",
+  // A reminder a few days before a sit starts.
+  "notifSettings.reviewCarePlanDesc": "Een herinnering een paar dagen voordat een oppas begint.",
   // Remind me to review the care plan before an upcoming sit.
   "notifSettings.rowCarePlanDesc": "Herinner me eraan het verzorgingsplan na te kijken voor een komende oppasperiode.",
   // Care plan update reminder
@@ -4287,18 +4393,18 @@
   "notifSettings.rowWeightDesc": "Herinner me eraan wanneer een vogel gewogen moet worden, op basis van mijn eigen ritme van noteren.",
   // Weigh-in reminders
   "notifSettings.rowWeightTitle": "Herinneringen om te wegen",
-  // If a sitter flags a health or behavior concern, we'll always send the alert by email and (if enabled) push. This safety alert can't be turned off.
-  "notifSettings.safetyBody": "Als een oppas een aandachtspunt over gezondheid of gedrag markeert, sturen we de melding altijd per e-mail en (als dat aanstaat) als pushmelding. Deze veiligheidsmelding kun je niet uitzetten.",
-  // Health & behavior alerts are always on
-  "notifSettings.safetyTitle": "Meldingen over gezondheid & gedrag staan altijd aan",
   // Could not save preference.
   "notifSettings.saveFailed": "Voorkeur kon niet worden opgeslagen.",
-  // Turn off
-  "notifSettings.turnOff": "Uitzetten",
-  // your bird
-  "notifSettings.yourBird": "je vogel",
-  // your birds
-  "notifSettings.yourBirds": "je vogels",
+  // Changes save as you go.
+  "notifSettings.savesAsYouGo": "Wijzigingen worden meteen opgeslagen.",
+  // Sitter posted a daily log
+  "notifSettings.sitterPostedLog": "Oppas heeft een dagverslag geplaatst",
+  // When a sitter's daily check comes back all normal. Anything flagged always reaches you.
+  "notifSettings.sitterPostedLogDesc": "Als de dagelijkse check van een oppas helemaal normaal is. Alles wat gemeld wordt, bereikt je altijd.",
+  // Turn off push
+  "notifSettings.turnOffPush": "Push uitzetten",
+  // Turn on push
+  "notifSettings.turnOnPush": "Push aanzetten",
   // Add your first bird
   "ownerChecklist.addFirstBird": "Voeg je eerste vogel toe",
   // Build their care plan.
@@ -4327,10 +4433,10 @@
   "ownerChecklist.letsGetYouSetUp": "Laten we je op weg helpen",
   // Get it on Google Play
   "ownerChecklist.playStoreBadgeAlt": "Ontdek het op Google Play",
-  // Set your emergency defaults
-  "ownerChecklist.setEmergencyDefaults": "Stel je standaard noodgegevens in",
   // Account-level vet & emergency contacts — they carry over to every bird.
   "ownerChecklist.setEmergencyDefaultsDesc": "Dierenarts en noodcontacten op accountniveau — ze gelden voor elke vogel.",
+  // Add your emergency info
+  "ownerChecklist.setEmergencyInfo": "Voeg je noodinformatie toe",
   // Set notification preferences
   "ownerChecklist.setNotificationPrefs": "Stel je meldingsvoorkeuren in",
   // How you hear about scans and updates.
@@ -4339,10 +4445,12 @@
   "ownerChecklist.start": "Starten",
   // Account settings
   "ownerHeader.accountSettings": "Accountinstellingen",
-  // Replay app tour
-  "ownerHeader.replayAppTour": "Rondleiding opnieuw bekijken",
-  // Scans
-  "ownerHeader.scans": "Gezondheidschecks",
+  // Help
+  "ownerHeader.help": "Hulp",
+  // Updates
+  "ownerHeader.updates": "Updates",
+  // Updates, new
+  "ownerHeader.updatesUnread": "Updates, nieuw",
   // Quick questions to track health. Pet sitters are asked to run a health check daily. Flags show up fast when something's off.
   "ownerOnboarding.activityBody": "Korte vragen om de gezondheid te volgen. Oppassen wordt gevraagd elke dag een gezondheidscheck te doen. Als er iets niet klopt, zie je het snel.",
   // Daily health checks.
@@ -4373,6 +4481,10 @@
   "ownerOnboarding.handoffHeadline": "Afscheid nemen? Draag het dossier over.",
   // Hi, {{name}}.
   "ownerOnboarding.hiName": "Hoi {{name}}.",
+  // Hi, {{name}}
+  "ownerOnboarding.hiNameReturning": "Hoi {{name}}",
+  // Hi there
+  "ownerOnboarding.hiThere": "Hoi",
   // Here you'll find daily check-ins, your flock, and anything happening soon. It's the screen you'll open most.
   "ownerOnboarding.homeBody": "Hier vind je de dagelijkse check-ins, je vogels en alles wat binnenkort gebeurt. Dit scherm open je het vaakst.",
   // Home is where you land.
@@ -4383,6 +4495,8 @@
   "ownerOnboarding.householdHeadline": "Deel je de zorg met je gezin?",
   // Next
   "ownerOnboarding.next": "Volgende",
+  // Not now
+  "ownerOnboarding.notNow": "Niet nu",
   // Now the fun part — let's set up your first bird.
   "ownerOnboarding.nowTheFunPart": "Nu het leuke deel — laten we je eerste vogel toevoegen.",
   // Anytime you need a refresher, the ? is right up top.
@@ -4409,6 +4523,8 @@
   "ownerOnboarding.todayHeadline": "Vandaag, in één oogopslag.",
   // A quick walkthrough first, then we'll set up your bird.
   "ownerOnboarding.welcomeBody": "Eerst een korte rondleiding, daarna voegen we je vogel toe.",
+  // Here's a quick tour of what Kya & Co. can do.
+  "ownerOnboarding.welcomeBodyReturning": "Hier is een korte rondleiding langs wat Kya & Co. kan.",
   // Welcome
   "ownerOnboarding.welcomeEyebrow": "Welkom",
   // Welcome.
@@ -6185,8 +6301,6 @@
   "sitterOnboarding.welcome.cta": "Leid me rond",
   // You're caring for {{names}}.
   "sitterOnboarding.welcome.title": "Je zorgt voor {{names}}.",
-  // Could not build the sitter preview.
-  "sitterPreview.buildFailed": "Kon het oppasvoorbeeld niet maken.",
   // African Grey (Congo)
   "species.africanGreyCongo": "Grijze roodstaartpapegaai (Congo)",
   // African Grey (Timneh)
@@ -6339,6 +6453,68 @@
   "tourDemo.turning": "Wordt {{n}}",
   // Willow's hatch day Saturday
   "tourDemo.willowHatchDay": "Uitkomstdag van Willow op zaterdag",
+  // Back
+  "updates.back": "Terug",
+  // Review {{bird}}'s care plan before {{sit}}
+  "updates.careplanTitle": "Bekijk het zorgplan van {{bird}} voor {{sit}}",
+  // You're all caught up.
+  "updates.caughtUp": "Je bent helemaal bij.",
+  // Due since {{when}}
+  "updates.dueSince": "Nodig sinds {{when}}",
+  // Earlier
+  "updates.earlier": "Eerder",
+  // {{sitter}} finished the day's checks
+  "updates.finishedDay": "{{sitter}} heeft de checks van die dag afgerond",
+  // {{sitter}} finished today's checks
+  "updates.finishedToday": "{{sitter}} heeft de checks van vandaag afgerond",
+  // {{sitter}} flagged something on {{bird}}'s check
+  "updates.flagTitle": "{{sitter}} heeft iets gemeld bij de check van {{bird}}",
+  // {{list}} and {{last}}
+  "updates.joinAnd": "{{list}} en {{last}}",
+  // {{name}} joined your household
+  "updates.joinedTitle": "{{name}} is lid geworden van je huishouden",
+  // What's happened with your birds while you weren't looking.
+  "updates.line": "Wat er met je vogels gebeurde terwijl je niet keek.",
+  // Loading…
+  "updates.loading": "Laden…",
+  // Mark all read
+  "updates.markAllRead": "Alles gelezen",
+  // Updates — Kya & Co.
+  "updates.metaTitle": "Updates — Kya & Co.",
+  // {{count}} bird
+  "updates.nBirds_one": "{{count}} vogel",
+  // {{count}} birds
+  "updates.nBirds_other": "{{count}} vogels",
+  // New
+  "updates.new": "Nieuw",
+  // Notification settings
+  "updates.notificationSettings": "Meldingsinstellingen",
+  // {{count}} weight
+  "updates.nWeights_one": "{{count}} gewicht",
+  // {{count}} weights
+  "updates.nWeights_other": "{{count}} gewichten",
+  // The sit starts {{date}}
+  "updates.sitStarts": "De oppas begint op {{date}}",
+  // the sit
+  "updates.theSit": "de oppas",
+  // Updates
+  "updates.title": "Updates",
+  // Unread
+  "updates.unread": "Ongelezen",
+  // {{count}} bird is due for a weigh-in
+  "updates.weighCount_one": "{{count}} vogel moet gewogen worden",
+  // {{count}} birds are due for a weigh-in
+  "updates.weighCount_other": "{{count}} vogels moeten gewogen worden",
+  // {{names}} are due for a weigh-in
+  "updates.weighMany": "{{names}} moeten gewogen worden",
+  // {{bird}} is due for a weigh-in
+  "updates.weighOne": "{{bird}} moet gewogen worden",
+  // Yesterday
+  "updates.yesterday": "Gisteren",
+  // your bird
+  "updates.yourBird": "je vogel",
+  // Your sitter
+  "updates.yourSitter": "Je oppas",
   // after meal
   "vetSummary.afterMeal": "na het eten",
   // Age
@@ -6517,12 +6693,10 @@
   "viewAsSitter.exit": "Sluiten",
   // Sitter view
   "viewAsSitter.iframeTitle": "Oppasweergave",
-  // Couldn't load this bird.
-  "viewAsSitter.loadFailed": "Kon deze vogel niet laden.",
   // View as sitter — Kya & Co.
   "viewAsSitter.metaTitle": "Bekijk als oppas — Kya & Co.",
-  // A place for parrot people. Experience expert AMAs, local chapters, and a community that gives back to rescue.
-  "waitlist.cardBody": "Een plek voor papegaaienmensen. Met AMA's van experts, lokale afdelingen en een community die teruggeeft aan opvangcentra.",
+  // A place for parrot people. Expert AMAs, local chapters, and a community that gives back to rescue.
+  "waitlist.cardBodyShort": "Een plek voor papegaaimensen. AMA's met experts, lokale afdelingen en een community die iets teruggeeft aan opvang.",
   // California
   "waitlist.chapter.california": "Californië",
   // Florida
@@ -6544,7 +6718,7 @@
   // Close
   "waitlist.close": "Sluiten",
   // Coming soon
-  "waitlist.comingSoon": "Binnenkort",
+  "waitlist.comingSoonTag": "Binnenkort",
   // Couldn't add you just now. Please try again.
   "waitlist.couldntAdd": "We konden je nu niet toevoegen. Probeer het nog eens.",
   // Done
@@ -6569,8 +6743,8 @@
   "waitlist.modalTitle": "Zet je op de wachtlijst voor de community",
   // No
   "waitlist.no": "Nee",
-  // You're on the list!
-  "waitlist.onTheList": "Je staat op de lijst!",
+  // You're on the list
+  "waitlist.onTheListTitle": "Je staat op de lijst",
   // Select your region
   "waitlist.selectRegion": "Kies je regio",
   // Thanks for joining — we'll email you when the community opens.
