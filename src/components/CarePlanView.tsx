@@ -525,7 +525,7 @@ export function CarePlanView({
                     type="button"
                     aria-pressed={on}
                     onClick={() => scrollToSection(n.id)}
-                    className="inline-flex min-h-[40px] shrink-0 items-center rounded-full border-[1.5px] px-4 text-[14.5px] font-[700] transition-colors"
+                    className="inline-flex min-h-[44px] shrink-0 items-center rounded-full border-[1.5px] px-4 text-[14.5px] font-[700] transition-colors"
                     style={on ? { background: K.forest, borderColor: K.forest, color: "#fff" } : { background: "#fff", borderColor: "#d5dfd5", color: K.forest }}
                   >
                     {navLabel(n)}
