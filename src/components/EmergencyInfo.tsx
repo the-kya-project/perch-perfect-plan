@@ -1,7 +1,9 @@
-// A bird's emergency info: the account's contact list by default ("Use my
-// emergency info"), or its own values ("Different for [bird]"). There is no
-// stored flag: a bird uses the account value for every field it leaves empty
-// (mergeEmergency), so "different" means it has at least one value of its own.
+// A bird's emergency info: the account's contact list by default ("Use mine"),
+// or its own contacts ("Just for [bird]"). There is no stored flag. Merging is
+// per CONTACT ROW (mergeEmergency): a row the bird has any value of its own in
+// is the bird's whole row, blanks and all; every other row is the account's.
+// So "different" means the bird has at least one row of its own, and saving a
+// row for the bird stores the whole row, never only the fields that differ.
 // Used by the bird's emergency page and the care plan editor's Emergency tab.
 // `defaults` is always the bird OWNER's account info (useBirdOwnerEmergency);
 // for a household member (isOwner false) it's labeled with the owner's name.
@@ -13,9 +15,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { useQueryClient } from "@tanstack/react-query";
 import { friendlyError } from "@/lib/errorMessage";
-import { EMERGENCY_FIELDS, emergencyDifferent, mergeEmergency } from "@/lib/emergency";
+import { EMERGENCY_FIELDS, birdOwnsRow, birdRowPatch, emergencyDifferent, mergeEmergency } from "@/lib/emergency";
 import { K, KyaHeading, KyaLink, KyaSecondaryButton, KyaSheet, KyaPrimaryButton } from "@/components/kya";
-import { EmergencyList, EmergencyRowSheet, ROW_FIELDS, type EmergencyValues, type RowKey } from "@/components/EmergencyContacts";
+import { EmergencyList, EmergencyRowSheet, type EmergencyValues, type RowKey } from "@/components/EmergencyContacts";
 
 export function EmergencyInfo({ birdId, birdName, contacts, defaults, onSaved, ownerName, isOwner }: {
   birdId: string;
@@ -30,7 +32,7 @@ export function EmergencyInfo({ birdId, birdName, contacts, defaults, onSaved, o
   const { t } = useTranslation();
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const custom = emergencyDifferent(contacts, defaults);
+  const custom = emergencyDifferent(contacts);
   const [mode, setMode] = useState<"mine" | "different">(custom ? "different" : "mine");
   const [editing, setEditing] = useState<RowKey | null>(null);
   const [pending, setPending] = useState<Record<string, string | null> | null>(null);
@@ -45,13 +47,12 @@ export function EmergencyInfo({ birdId, birdName, contacts, defaults, onSaved, o
     : t("birdEmergency.useOwners", "Use {{owner}}'s emergency info", { owner });
   const effective = mergeEmergency(contacts, defaults) as EmergencyValues;
   const accountValues = (defaults ?? {}) as EmergencyValues;
-  const rowIsOwn = (k: RowKey) => ROW_FIELDS[k].some((f) => trim(contacts?.[f]) !== "" && trim(contacts?.[f]) !== trim(defaults?.[f]));
+  const rowIsOwn = (k: RowKey) => birdOwnsRow(contacts, k);
 
   async function writeBird(patch: Record<string, string | null>) {
-    // Store a value only when it differs from the account's, so the bird keeps
-    // following the account for everything else.
-    const row: Record<string, string | null> = {};
-    for (const [k, v] of Object.entries(patch)) row[k] = v === null || v === trim(defaults?.[k]) ? null : v;
+    // Store the whole contact row being edited (every field, blanks as null),
+    // so the bird's row never borrows a field from the account's.
+    const row = editing ? birdRowPatch(editing, patch) : patch;
     const { error } = await supabase.from("emergency_contacts").upsert({ bird_id: birdId, ...row } as any, { onConflict: "bird_id" });
     if (error) throw error;
   }
@@ -115,10 +116,11 @@ export function EmergencyInfo({ birdId, birdName, contacts, defaults, onSaved, o
           if (key === "mine" && custom) setConfirmMine(true);
           else setMode(key);
         }}
-        className="min-h-[44px] flex-1 rounded-full px-3 text-[14.5px] font-[700]"
+        title={label}
+        className="min-h-[44px] min-w-0 flex-1 rounded-full px-3 text-[14.5px] font-[700]"
         style={on ? { background: K.forest, color: "#fff" } : { color: K.forest }}
       >
-        {label}
+        <span className="block truncate">{label}</span>
       </button>
     );
   };
@@ -126,8 +128,11 @@ export function EmergencyInfo({ birdId, birdName, contacts, defaults, onSaved, o
   return (
     <div className="flex flex-col gap-5">
       <div role="radiogroup" aria-label={t("birdEmergency.whichInfo", "Which emergency info")} className="flex gap-1 rounded-full bg-white p-1">
-        {segment("mine", useAccountLabel)}
-        {segment("different", t("birdEmergency.differentFor", "Different for {{name}}", { name: birdName }))}
+        {/* Short labels so both fit side by side at 375px. */}
+        {segment("mine", isOwner
+          ? t("birdEmergency.segUseMine", "Use mine")
+          : t("birdEmergency.segUseOwners", "Use {{owner}}'s", { owner }))}
+        {segment("different", t("birdEmergency.segJustFor", "Just for {{name}}", { name: birdName }))}
       </div>
 
       {mode === "mine" ? (

@@ -130,6 +130,8 @@ function NewBird() {
       // hidden for other birds, so saving it for them stamped every bird's
       // creation day as "Came to you".
       intake_date: isFoster ? intakeDate || null : null,
+      // Shown on screen for a foster, so it's the owner's date (src/lib/intakeDate.ts).
+      intake_date_source: isFoster && intakeDate ? "owner" : null,
       setup_complete: false,
       setup_step: encodeSetupStep(targetStep),
     } as any).select().single();

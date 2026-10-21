@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { toast } from "sonner";
 import i18next from "i18next";
+import { mergeEmergency } from "@/lib/emergency";
 
 type SitLike = { invite_token?: string | null; caregiver_user_id?: string | null };
 
@@ -22,14 +23,15 @@ export async function copySitterLink(sit: SitLike, birds: Array<{ id: string; na
   const birdIds = birds.map((b) => b.id);
   if (birdIds.length) {
     const [{ data: contacts }, { data: u }] = await Promise.all([
-      supabase.from("emergency_contacts").select("bird_id, owner_phone, avian_vet_phone").in("bird_id", birdIds),
+      supabase.from("emergency_contacts").select("bird_id, owner_phone, avian_vet_name, avian_vet_phone, avian_vet_address").in("bird_id", birdIds),
       getLocalUser(),
     ]);
     const { data: defaults } = u.user
-      ? await supabase.from("owner_emergency_defaults").select("owner_phone, avian_vet_phone").eq("owner_id", u.user.id).maybeSingle()
+      ? await supabase.from("owner_emergency_defaults").select("owner_phone, avian_vet_name, avian_vet_phone, avian_vet_address").eq("owner_id", u.user.id).maybeSingle()
       : { data: null };
     const byBird = new Map((contacts ?? []).map((c: any) => [c.bird_id, c]));
-    const eff = (c: any, k: string) => (c?.[k]?.trim?.() || (defaults as any)?.[k]?.trim?.() || "");
+    // Per contact row (a bird's own vet never borrows the account's number).
+    const eff = (c: any, k: string) => (mergeEmergency(c, defaults as any) as Record<string, string | null>)[k] ?? "";
     const missing = birds
       .map((b) => {
         const c = byBird.get(b.id);

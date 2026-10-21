@@ -27,6 +27,7 @@ import { copySitterLink } from "@/lib/sitLink";
 import { friendlyError } from "@/lib/errorMessage";
 import { localDateISO } from "@/lib/localDay";
 import { birdNames } from "@/lib/birdNames";
+import { mergeEmergency } from "@/lib/emergency";
 
 // Create OR edit a sit. In edit mode (`editSit` set) it preserves the existing
 // invite_token — the same sitter link keeps working; editing changes what it
@@ -304,7 +305,7 @@ export function SitForm({
       const [{ data: contacts, error: ecErr }, { data: u }] = await Promise.all([
         supabase
           .from("emergency_contacts")
-          .select("bird_id, owner_phone, avian_vet_phone")
+          .select("bird_id, owner_phone, avian_vet_name, avian_vet_phone, avian_vet_address")
           .in("bird_id", birdIds),
         getLocalUser(),
       ]);
@@ -326,12 +327,12 @@ export function SitForm({
       if (kind === "external") {
         const { data: defaults } = await supabase
           .from("owner_emergency_defaults")
-          .select("owner_phone, avian_vet_phone")
+          .select("owner_phone, avian_vet_name, avian_vet_phone, avian_vet_address")
           .eq("owner_id", u.user.id)
           .maybeSingle();
         const contactByBird = new Map((contacts ?? []).map((c: any) => [c.bird_id, c]));
-        const eff = (c: any, k: string) =>
-          (c?.[k]?.trim?.() || (defaults as any)?.[k]?.trim?.() || "");
+        // Per contact row (a bird's own vet never borrows the account's number).
+        const eff = (c: any, k: string) => (mergeEmergency(c, defaults as any) as Record<string, string | null>)[k] ?? "";
         const missing = birdIds
           .map((id) => {
             const c = contactByBird.get(id);

@@ -89,6 +89,7 @@ export type Database = {
           flight_status: string | null
           id: string
           intake_date: string | null
+          intake_date_source: string | null
           is_foster: boolean
           lineage_notes: string | null
           medical_conditions: string | null
@@ -123,6 +124,7 @@ export type Database = {
           flight_status?: string | null
           id?: string
           intake_date?: string | null
+          intake_date_source?: string | null
           is_foster?: boolean
           lineage_notes?: string | null
           medical_conditions?: string | null
@@ -157,6 +159,7 @@ export type Database = {
           flight_status?: string | null
           id?: string
           intake_date?: string | null
+          intake_date_source?: string | null
           is_foster?: boolean
           lineage_notes?: string | null
           medical_conditions?: string | null
@@ -1137,6 +1140,7 @@ export type Database = {
           departed_on: string
           id: string
           intake_date: string | null
+          intake_date_source: string | null
           mode: string
           original_owner_id: string
           photo_thumb: string | null
@@ -1150,6 +1154,7 @@ export type Database = {
           departed_on: string
           id?: string
           intake_date?: string | null
+          intake_date_source?: string | null
           mode: string
           original_owner_id: string
           photo_thumb?: string | null
@@ -1163,6 +1168,7 @@ export type Database = {
           departed_on?: string
           id?: string
           intake_date?: string | null
+          intake_date_source?: string | null
           mode?: string
           original_owner_id?: string
           photo_thumb?: string | null
