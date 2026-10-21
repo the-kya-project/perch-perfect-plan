@@ -10,7 +10,7 @@ import { K, KyaHeading, KyaTag } from "@/components/kya";
 // copy as a sitter-link account. The host supplies chrome + the pause action;
 // this owns the exact strings. Copy-exact: do not paraphrase.
 export function ConcernFlow({
-  name, ownerName, ownerPhone, vet, paused, onPause, pausePending, look,
+  name, ownerName, ownerPhone, vet, paused, onPause, pausePending, look, ownerCallShown,
 }: {
   name: string;
   ownerName: string;
@@ -24,6 +24,10 @@ export function ConcernFlow({
   /** "kya" = the owner app's current look (covering household member). Leave
    *  unset on the sitter route so its rendering stays exactly as it is. */
   look?: GuidanceLook;
+  /** Sitter view only: the host already shows the owner's call row above the
+   *  flow, so the "kya" pause step leaves out its own "Call [owner]" button.
+   *  Unset (owner app) = unchanged. */
+  ownerCallShown?: boolean;
 }) {
   const { t } = useTranslation();
   // Literal-key path-choice labels (moved off PassingGuidance's module-scope
@@ -46,6 +50,7 @@ export function ConcernFlow({
     <KyaConcernSteps
       step={step} setStep={setStep} name={name} ownerName={ownerName} ownerPhone={ownerPhone}
       vet={vet} onPause={onPause} pausePending={pausePending} pathChoiceLabel={pathChoiceLabel}
+      ownerCallShown={ownerCallShown}
     />
   );
 
@@ -122,7 +127,7 @@ export function ConcernFlow({
 // current text styles: Newsreader headings, 15px K.ink body, sunflower call
 // button, amber "Reminders paused" tag.
 function KyaConcernSteps({
-  step, setStep, name, ownerName, ownerPhone, vet, onPause, pausePending, pathChoiceLabel,
+  step, setStep, name, ownerName, ownerPhone, vet, onPause, pausePending, pathChoiceLabel, ownerCallShown,
 }: {
   step: "pause" | "paths" | PassingPath;
   setStep: (s: "pause" | "paths" | PassingPath) => void;
@@ -133,6 +138,7 @@ function KyaConcernSteps({
   onPause: () => void;
   pausePending: boolean;
   pathChoiceLabel: (p: PassingPath, birdName: string) => string;
+  ownerCallShown?: boolean;
 }) {
   const { t } = useTranslation();
   const body = "m-0 text-[15px] leading-[1.5]";
@@ -144,7 +150,7 @@ function KyaConcernSteps({
         <p className={body} style={{ color: K.ink }}>
           {t("concernFlow.pauseBody", "If {{name}} has passed or is in serious trouble, call {{ownerName}} first. We can pause {{name}}'s reminders so your phone isn't asking you to check on them.", { name, ownerName })}
         </p>
-        {ownerPhone && (
+        {ownerPhone && !ownerCallShown && (
           <a
             href={`tel:${ownerPhone}`}
             className="inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full border-2 px-6 text-[16px] font-[700] active:scale-[0.99]"
