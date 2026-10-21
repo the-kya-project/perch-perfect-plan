@@ -282,8 +282,11 @@
     "accountSecurity.setAPassword": {
       "stamp": "a35098807450e12f"
     },
-    "accountSecurity.setBody": {
-      "stamp": "7e1df63383e1c7f1"
+    "accountSecurity.setBodyNoProvider": {
+      "stamp": "51f037d658744a0f"
+    },
+    "accountSecurity.setBodyProviders": {
+      "stamp": "bd6570280d2e0162"
     },
     "accountSecurity.setPassword": {
       "stamp": "8089df55a6631e59"
@@ -546,6 +549,9 @@
     "birdEmergency.confirmMineTitle": {
       "stamp": "df7c707beb1d6172"
     },
+    "birdEmergency.confirmOwnersTitle": {
+      "stamp": "1ef1a46fcf741336"
+    },
     "birdEmergency.customFor": {
       "stamp": "fa9d4b88734674e1"
     },
@@ -564,11 +570,17 @@
     "birdEmergency.line": {
       "stamp": "c8cd6e8635780efe"
     },
+    "birdEmergency.lineMember": {
+      "stamp": "21948c2ee66df382"
+    },
     "birdEmergency.loading": {
       "stamp": "543c404f0e5a7d86"
     },
     "birdEmergency.metaTitle": {
       "stamp": "4298402d8b8b14bc"
+    },
+    "birdEmergency.nowUsesOwners": {
+      "stamp": "b135661666d41edb"
     },
     "birdEmergency.nowUsesYours": {
       "stamp": "d7e682c1a4378f33"
@@ -582,11 +594,17 @@
     "birdEmergency.signedOut": {
       "stamp": "c968129a185a2b35"
     },
+    "birdEmergency.theOwner": {
+      "stamp": "08ee0f36c66831a5"
+    },
     "birdEmergency.title": {
       "stamp": "302184202c833939"
     },
     "birdEmergency.useMine": {
       "stamp": "8fa7853d621c806a"
+    },
+    "birdEmergency.useOwners": {
+      "stamp": "209a23086e01dd5f"
     },
     "birdEmergency.whichInfo": {
       "stamp": "e87d27706d69e341"
@@ -1389,6 +1407,9 @@
     "birdRecord.emergencyShared": {
       "stamp": "77ab33e201518af2"
     },
+    "birdRecord.emergencySharedOwner": {
+      "stamp": "720f95cea6e02da6"
+    },
     "birdRecord.entriesCount": {
       "stamp": "29b2b7f693915fa7"
     },
@@ -1718,6 +1739,9 @@
     },
     "birdSetup.cageLocationSetupNotes": {
       "stamp": "9dd98696464fef07"
+    },
+    "birdSetup.carePlanTitle": {
+      "stamp": "024068f55f21e2cd"
     },
     "birdSetup.changePhoto": {
       "stamp": "6bdd6d01964ac32d"
@@ -2682,6 +2706,9 @@
     "birdWeight.noneInRange": {
       "stamp": "f8fb71a4945a523c"
     },
+    "birdWeight.noWeightThen": {
+      "stamp": "410e41a0df0f233f"
+    },
     "birdWeight.plusG": {
       "stamp": "e18979808b44ba55"
     },
@@ -3471,6 +3498,9 @@
     "careSheet.value.within": {
       "stamp": "ff7d2aaab3cb2bcf"
     },
+    "checkEmail.alreadyConfirmedSignIn": {
+      "stamp": "6c073dc11cef7c5a"
+    },
     "checkEmail.canTakeAMinute": {
       "stamp": "2c8b49bba341f97a"
     },
@@ -4119,14 +4149,8 @@
     "dashboard.youHelpHere": {
       "stamp": "b8b0f55d4969f67f"
     },
-    "dashboard.yourBirds": {
-      "stamp": "06e9a8855418fc39"
-    },
     "dashboard.yourBirdsLower": {
       "stamp": "6afed180f92c7f4e"
-    },
-    "dashboard.yourFlock": {
-      "stamp": "39c2272ca6b15b64"
     },
     "datedTimeline.nothingLoggedYet": {
       "stamp": "d85fe8d396b1a190"
@@ -4221,6 +4245,9 @@
     "emergencyList.field.name": {
       "stamp": "007f731cba24111c"
     },
+    "emergencyList.field.ownerPhone": {
+      "stamp": "b197d3e1e159e6e0"
+    },
     "emergencyList.field.phone": {
       "stamp": "ef8e43dbb51cef62"
     },
@@ -4244,6 +4271,9 @@
     },
     "emergencyList.notAdded": {
       "stamp": "369938ad2bbc6c71"
+    },
+    "emergencyList.owner": {
+      "stamp": "1bdb0dd4efcd0156"
     },
     "emergencyList.peopleToCall": {
       "stamp": "3d4b0c8df2b78689"
@@ -4491,6 +4521,9 @@
     "exportRecord.neverFeedLine": {
       "stamp": "b8ca526954b3faec"
     },
+    "exportRecord.noDate": {
+      "stamp": "ae5d3aa2dce4f792"
+    },
     "exportRecord.noneOnFile": {
       "stamp": "ca04031848372e34"
     },
@@ -4631,6 +4664,12 @@
     },
     "flockCheck.doneToday": {
       "stamp": "b11c08778204a011"
+    },
+    "flockCheck.emptyBody": {
+      "stamp": "8647e395424b56cd"
+    },
+    "flockCheck.emptyTitle": {
+      "stamp": "a9b35b7b63ec2a8b"
     },
     "flockCheck.everyoneElseUsual": {
       "stamp": "4be09588cdc741cb"
@@ -5373,6 +5412,9 @@
     "fullCheck.callVet": {
       "stamp": "b9fea054aa89202f"
     },
+    "fullCheck.callVetNamed": {
+      "stamp": "3da387ebba168a59"
+    },
     "fullCheck.gramsLabel": {
       "stamp": "c16c233dc0323cb7"
     },
@@ -5526,6 +5568,15 @@
     "handoff.alreadyHome": {
       "stamp": "e5b23047021ecf4d"
     },
+    "handoff.alreadyHomeSignIn": {
+      "stamp": "97e5f9b6a1461d02"
+    },
+    "handoff.canceledLine": {
+      "stamp": "b0fa6388b2ac2594"
+    },
+    "handoff.canceledTitle": {
+      "stamp": "32e88439e8902c2d"
+    },
     "handoff.carePlanHer": {
       "stamp": "23f590a1997fa9df"
     },
@@ -5538,17 +5589,20 @@
     "handoff.confirmSentBody": {
       "stamp": "d9745c36cffe4b3f"
     },
-    "handoff.confirmToFinish": {
-      "stamp": "561b193ef3657f74"
-    },
-    "handoff.continueWithGoogle": {
-      "stamp": "d94703f4fb00fed2"
-    },
     "handoff.couldNotAccept": {
       "stamp": "197605b545d6bb19"
     },
     "handoff.couldNotCreate": {
       "stamp": "b554a7a1df4655a5"
+    },
+    "handoff.couldNotDecline": {
+      "stamp": "34102ef2dcc0c87e"
+    },
+    "handoff.couldNotLoadLine": {
+      "stamp": "01fd210211148aa7"
+    },
+    "handoff.couldNotLoadTitle": {
+      "stamp": "39b6f434e32b80d8"
     },
     "handoff.createAndAccept": {
       "stamp": "49d897c2bb4cc20b"
@@ -5559,6 +5613,12 @@
     "handoff.creating": {
       "stamp": "609e7ddff60150cf"
     },
+    "handoff.declinedLine": {
+      "stamp": "e84b503efc6bd730"
+    },
+    "handoff.declinedTitle": {
+      "stamp": "13b6d5ca2db2eafd"
+    },
     "handoff.declineHandoff": {
       "stamp": "20288537a0f3333b"
     },
@@ -5568,6 +5628,9 @@
     "handoff.enterFirstName": {
       "stamp": "1fbf4a429c3011e2"
     },
+    "handoff.expiredLine": {
+      "stamp": "04d7fa7e243bff09"
+    },
     "handoff.expiredTitle": {
       "stamp": "41d4790c68063904"
     },
@@ -5576,9 +5639,6 @@
     },
     "handoff.firstNamePlaceholder": {
       "stamp": "5ae9633985225e36"
-    },
-    "handoff.googleFailed": {
-      "stamp": "916d62629302d809"
     },
     "handoff.goToApp": {
       "stamp": "4f27904dee72234b"
@@ -5607,6 +5667,12 @@
     "handoff.loading": {
       "stamp": "543c404f0e5a7d86"
     },
+    "handoff.notFoundLine": {
+      "stamp": "045a4c2d2b77127c"
+    },
+    "handoff.notFoundTitle": {
+      "stamp": "69a2859b2fb68ebe"
+    },
     "handoff.notNow": {
       "stamp": "e09226312af9076b"
     },
@@ -5628,6 +5694,9 @@
     "handoff.recordComesWithThem": {
       "stamp": "b37f3e0fd21d9e7b"
     },
+    "handoff.signIn": {
+      "stamp": "dc9922893e139658"
+    },
     "handoff.signOutAndAccept": {
       "stamp": "c671ea1d53b1f2bc"
     },
@@ -5639,6 +5708,12 @@
     },
     "handoff.titleHandingOff": {
       "stamp": "ef298d4dde7d4d7a"
+    },
+    "handoff.tryAgain": {
+      "stamp": "5c0ecee5e225e041"
+    },
+    "handoff.tryingAgain": {
+      "stamp": "e59ea868a5c64f8f"
     },
     "handoff.useEightChars": {
       "stamp": "23292ac3cf673c21"
@@ -5783,9 +5858,6 @@
     },
     "healthTab.duringSits": {
       "stamp": "410ee53fe7928741"
-    },
-    "healthTab.loadError": {
-      "stamp": "84b28c09a03f3f0a"
     },
     "healthTab.loading": {
       "stamp": "543c404f0e5a7d86"
@@ -6312,6 +6384,15 @@
     "invite.acceptInvite": {
       "stamp": "1cd07c7876a522ca"
     },
+    "invite.alreadyAcceptedSignedIn": {
+      "stamp": "0a3813e155498f91"
+    },
+    "invite.alreadyAcceptedSignIn": {
+      "stamp": "6fa2ae0caf96f7fc"
+    },
+    "invite.alreadyAcceptedTitle": {
+      "stamp": "64bda0a7e8537269"
+    },
     "invite.anOwner": {
       "stamp": "2d725f2fa21f976d"
     },
@@ -6326,6 +6407,15 @@
     },
     "invite.canCancelSits": {
       "stamp": "2fcc28146648561d"
+    },
+    "invite.canceledAsk": {
+      "stamp": "0406315566ec4e09"
+    },
+    "invite.canceledAskOwner": {
+      "stamp": "a48e6f04f9bc8619"
+    },
+    "invite.canceledTitle": {
+      "stamp": "7afe469c83f199f7"
     },
     "invite.canEditPlans": {
       "stamp": "3dffdea895822261"
@@ -6357,17 +6447,20 @@
     "invite.confirmSentBody": {
       "stamp": "3807b159a465c376"
     },
-    "invite.confirmToFinish": {
-      "stamp": "561b193ef3657f74"
-    },
-    "invite.continueWithGoogle": {
-      "stamp": "d94703f4fb00fed2"
-    },
     "invite.couldNotAccept": {
       "stamp": "e4c888076d351b50"
     },
     "invite.couldNotCreate": {
       "stamp": "b554a7a1df4655a5"
+    },
+    "invite.couldNotDecline": {
+      "stamp": "f00cbff55c771a05"
+    },
+    "invite.couldNotLoadLine": {
+      "stamp": "01fd210211148aa7"
+    },
+    "invite.couldNotLoadTitle": {
+      "stamp": "8d7b9e5865c60b10"
     },
     "invite.createAndAccept": {
       "stamp": "49d897c2bb4cc20b"
@@ -6377,6 +6470,15 @@
     },
     "invite.creating": {
       "stamp": "609e7ddff60150cf"
+    },
+    "invite.declinedAsk": {
+      "stamp": "501b1dc3ebd7a2df"
+    },
+    "invite.declinedAskOwner": {
+      "stamp": "b9a3402de14479af"
+    },
+    "invite.declinedTitle": {
+      "stamp": "bded2238b3b56daf"
     },
     "invite.declineInvite": {
       "stamp": "ff345617379abd30"
@@ -6396,9 +6498,6 @@
     "invite.firstNamePlaceholder": {
       "stamp": "5ae9633985225e36"
     },
-    "invite.googleFailed": {
-      "stamp": "916d62629302d809"
-    },
     "invite.goToApp": {
       "stamp": "4f27904dee72234b"
     },
@@ -6414,6 +6513,12 @@
     "invite.loading": {
       "stamp": "a5e351578ff27475"
     },
+    "invite.notFoundLine": {
+      "stamp": "add0aa082201d8e3"
+    },
+    "invite.notFoundTitle": {
+      "stamp": "3eb316539ed2d586"
+    },
     "invite.notNow": {
       "stamp": "e09226312af9076b"
     },
@@ -6425,6 +6530,9 @@
     },
     "invite.passwordPlaceholder": {
       "stamp": "a87fc8e001edbbb6"
+    },
+    "invite.signIn": {
+      "stamp": "dc9922893e139658"
     },
     "invite.signInNext": {
       "stamp": "b3dbcc5d99697dd5"
@@ -6440,6 +6548,12 @@
     },
     "invite.titleManyBirds_other": {
       "stamp": "010929bb9ec1141b"
+    },
+    "invite.tryAgain": {
+      "stamp": "5c0ecee5e225e041"
+    },
+    "invite.tryingAgain": {
+      "stamp": "e59ea868a5c64f8f"
     },
     "invite.useEightChars": {
       "stamp": "23292ac3cf673c21"
@@ -6488,6 +6602,27 @@
     },
     "landing.subheadV2": {
       "stamp": "bc14842b9dcf5ef7"
+    },
+    "loadError.backHome": {
+      "stamp": "5707ed08861e2e51"
+    },
+    "loadError.body": {
+      "stamp": "01fd210211148aa7"
+    },
+    "loadError.goBack": {
+      "stamp": "8c50c8b56a25859f"
+    },
+    "loadError.missingBody": {
+      "stamp": "3ed9824759ba8386"
+    },
+    "loadError.missingTitle": {
+      "stamp": "3d7f66405286adbd"
+    },
+    "loadError.title": {
+      "stamp": "3ca7652030d5ebed"
+    },
+    "loadError.tryAgain": {
+      "stamp": "5c0ecee5e225e041"
     },
     "loggedBy.household": {
       "stamp": "da35ceae68b17eed"
@@ -7308,6 +7443,12 @@
     "planEditor.cancel": {
       "stamp": "06c80f8b6f9f2b3b"
     },
+    "planEditor.carePlanTitle": {
+      "stamp": "024068f55f21e2cd"
+    },
+    "planEditor.checkNotes": {
+      "stamp": "d19a3271a64d8524"
+    },
     "planEditor.dangerZone": {
       "stamp": "307460ffb2eb18dc"
     },
@@ -7329,11 +7470,23 @@
     "planEditor.flagged": {
       "stamp": "0bc4dd09a90f224e"
     },
-    "planEditor.healthChecksFromSitters": {
-      "stamp": "202a1d79c3272849"
+    "planEditor.healthChecks": {
+      "stamp": "76061176bb2950ed"
     },
     "planEditor.loading": {
       "stamp": "97b1ea667eeab22c"
+    },
+    "planEditor.loggedByHousehold": {
+      "stamp": "e5a61877c5a229f6"
+    },
+    "planEditor.loggedByOwner": {
+      "stamp": "1bdb0dd4efcd0156"
+    },
+    "planEditor.loggedBySomeone": {
+      "stamp": "6928cafbfcbdfbdf"
+    },
+    "planEditor.loggedByYou": {
+      "stamp": "082a30d4026bdff4"
     },
     "planEditor.metaTitle": {
       "stamp": "5c3d94760718e0f0"
@@ -7404,8 +7557,8 @@
     "planEditor.sectionsAria": {
       "stamp": "473ee89fa6d698bf"
     },
-    "planEditor.sitsCreatedFrom": {
-      "stamp": "58570eac04aeba2d"
+    "planEditor.sitsSetUpFromSits": {
+      "stamp": "1fd00c118d0be2a9"
     },
     "planEditor.sitter": {
       "stamp": "c0d442a6b83178fb"
@@ -7469,6 +7622,9 @@
     },
     "planEditor.viewAsSitter": {
       "stamp": "c87b907105d3a5ba"
+    },
+    "planEditor.youNotSure": {
+      "stamp": "67222ceea598498c"
     },
     "planOverview.cardCarePlan": {
       "stamp": "024068f55f21e2cd"
@@ -8451,6 +8607,9 @@
     "sitCards.aHouseholdYouHelp": {
       "stamp": "57f824fd59cd7827"
     },
+    "sitCards.close": {
+      "stamp": "d981ee660d866d8c"
+    },
     "sitCards.copyLink": {
       "stamp": "dc4c04995ccb896a"
     },
@@ -8505,8 +8664,17 @@
     "sitCards.viewHealthChecks": {
       "stamp": "cc84d86591bb0eff"
     },
+    "sitCards.whichCarePlan": {
+      "stamp": "b5dd0e0fbcbed46a"
+    },
+    "sitCards.you": {
+      "stamp": "082a30d4026bdff4"
+    },
     "sitCards.yourBirds": {
       "stamp": "06e9a8855418fc39"
+    },
+    "sitCards.youreCovering": {
+      "stamp": "ceafa7f1b1fcfd00"
     },
     "sitCards.youreInCharge": {
       "stamp": "e29096cbda749414"
@@ -8964,20 +9132,17 @@
     "sitPreview.backToSits": {
       "stamp": "85512a735ad0bfcd"
     },
-    "sitPreview.caregiverBanner": {
-      "stamp": "518c204ab05d6943"
-    },
     "sitPreview.exit": {
       "stamp": "6c91aa4ca6bc5812"
-    },
-    "sitPreview.householdNoLink": {
-      "stamp": "d3bfa471754b7843"
     },
     "sitPreview.iframeTitle": {
       "stamp": "086678f18187d74b"
     },
     "sitPreview.loading": {
       "stamp": "cbb457a5590dfc82"
+    },
+    "sitPreview.noSitterLink": {
+      "stamp": "a0ced4e85b6735f2"
     },
     "sitPreview.pageTitle": {
       "stamp": "8ed82bde623a23bb"
@@ -8993,9 +9158,6 @@
     },
     "sitPreview.they": {
       "stamp": "ce9cec94628048ff"
-    },
-    "sitPreview.yourCaregiver": {
-      "stamp": "2242bea989ba60bf"
     },
     "sitPreview.yourSitter": {
       "stamp": "707c76a7b363684a"
@@ -9038,6 +9200,21 @@
     },
     "sits.heroThrough": {
       "stamp": "01897b11a3efc45a"
+    },
+    "sits.heroYoureCovering": {
+      "stamp": "ceafa7f1b1fcfd00"
+    },
+    "sits.heroYouStartInDays_one": {
+      "stamp": "e4e6d4a491210ac3"
+    },
+    "sits.heroYouStartInDays_other": {
+      "stamp": "e4e6d4a491210ac3"
+    },
+    "sits.heroYouStartToday": {
+      "stamp": "0c3684bfcf9276c6"
+    },
+    "sits.heroYouStartTomorrow": {
+      "stamp": "1e63f5c64ec7c4db"
     },
     "sits.joinMany": {
       "stamp": "37a97f174c0787a9"
@@ -9477,6 +9654,15 @@
     "sitter.error.invalid.title": {
       "stamp": "3307dac1580b074b"
     },
+    "sitter.error.noBirds.body": {
+      "stamp": "bc8f906b5b2de994"
+    },
+    "sitter.error.noBirds.bodyName": {
+      "stamp": "95e25c3e99e94963"
+    },
+    "sitter.error.noBirds.title": {
+      "stamp": "f62e09020082e948"
+    },
     "sitter.error.paused.body": {
       "stamp": "00148cdffb7792de"
     },
@@ -9728,6 +9914,9 @@
     },
     "sitter.today.openEmergencyInfo": {
       "stamp": "2080a305dcbd7c7a"
+    },
+    "sitter.today.previewOnly": {
+      "stamp": "8155b3e8f0718133"
     },
     "sitter.today.remindersPaused": {
       "stamp": "79f5a6255ab6e19e"
