@@ -107,7 +107,7 @@ export function BirdCareCard({
       className="flex w-full items-center gap-3 rounded-2xl bg-[#efe9da] p-3 text-left shadow-sm active:scale-[0.99]"
     >
       {photoUrl ? (
-        <div className="relative size-16 shrink-0 overflow-hidden rounded-xl ring-1 ring-[#e3ded0]">
+        <div className="relative size-16 shrink-0 overflow-hidden rounded-xl ring-1 ring-[#d5dfd5]">
           <BirdPhotoCrop url={photoUrl} original={photoUrl} position={photoPosition ?? "50% 20%"} alt={name} />
         </div>
       ) : (

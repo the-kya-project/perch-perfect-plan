@@ -395,7 +395,7 @@ function DeleteBirdCard({ birdId, bird, plan }: { birdId: string; bird: any; pla
     <KyaCard className="flex flex-col gap-3 p-4" style={{ boxShadow: `inset 0 0 0 2px ${K.red}33` }}>
       <KyaHeading size={19} className="text-[#a32d2d]">{t("planEditor.dangerZone", "Danger zone")}</KyaHeading>
       <p className="m-0 text-[14px] leading-[1.5]" style={{ color: K.ink }}>
-        {t("planEditor.deleteWarning", "Permanently delete {{name}} and all of their care plan, routine, emergency info, weight logs, daily scans, and photos. This cannot be undone.", { name: bird.name })}
+        {t("planEditor.deleteWarningChecks", "Permanently delete {{name}} and all of their care plan, routine, emergency info, weight logs, daily checks, and photos. This can't be undone.", { name: bird.name })}
       </p>
       {!confirmDelete ? (
         <button

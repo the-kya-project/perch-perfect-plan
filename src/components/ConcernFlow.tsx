@@ -73,7 +73,7 @@ export function ConcernFlow({
           type="button"
           disabled={pausePending}
           onClick={onPause}
-          className="flex min-h-[48px] w-full items-center justify-center rounded-xl border border-[#c8bfa6] bg-white text-sm font-medium text-[#1a3d2e] active:scale-[0.99] disabled:opacity-60"
+          className="flex min-h-[48px] w-full items-center justify-center rounded-xl border border-[#d5dfd5] bg-white text-sm font-medium text-[#1a3d2e] active:scale-[0.99] disabled:opacity-60"
         >
           {pausePending ? <Loader2 className="size-4 animate-spin" /> : t("concernFlow.pauseButton", "Pause {{name}}'s reminders", { name })}
         </button>
