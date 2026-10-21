@@ -17,11 +17,13 @@ export function SitterLanguageToggle({ token }: { token: string }) {
     void sitterI18n.changeLanguage(next);
   }
 
+  // Darker-forest pill on the forest header; the selected language is lime.
   return (
     <div
       role="group"
       aria-label={i18n.t("sitter.lang.aria", "Change language")}
-      className="flex shrink-0 items-center overflow-hidden rounded-full border border-[#cfe0d4] bg-white text-[11px] font-semibold"
+      className="flex h-11 shrink-0 items-center gap-0.5 rounded-full p-1 text-[13px] font-[700]"
+      style={{ background: "#12291f" }}
     >
       {(["en", "nl"] as const).map((loc) => {
         const active = current === loc;
@@ -31,7 +33,8 @@ export function SitterLanguageToggle({ token }: { token: string }) {
             type="button"
             onClick={() => choose(loc)}
             aria-pressed={active}
-            className={`px-2 py-1 leading-none transition ${active ? "bg-[#1a3d2e] text-white" : "text-[#2d6a4f]"}`}
+            className="grid h-9 min-w-[40px] place-items-center rounded-full px-2.5 leading-none transition"
+            style={active ? { background: "#cdeab0", color: "#1a3d2e" } : { color: "#ffffff" }}
           >
             {loc.toUpperCase()}
           </button>
