@@ -185,6 +185,7 @@ function ScanDetail() {
       title: t("scanDetail.confirmResolveTitle", "Mark this concern as resolved?"),
       body: t("scanDetail.confirmResolveBody", "Caregivers will see the bird's status return to normal."),
       confirmLabel: t("scanDetail.markResolved", "Mark resolved"),
+      tone: "primary",
     });
     if (!ok) return;
     setResolving(true);
