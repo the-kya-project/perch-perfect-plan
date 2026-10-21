@@ -23,7 +23,7 @@ It is **not** a pet-sitting app. Sharing the care plan with a sitter began as th
 
 ## Project structure
 - `src/routes/` — file-based routes; the authenticated app lives under `src/routes/_authenticated/`.
-  - `birds/$birdId.setup.tsx` — guided care-plan walkthrough (SetupShell, 8 steps: food, day, personality, environment, health, clips, emergency, review). Basics moved to the bird main page.
+  - `birds/$birdId.setup.tsx` — guided care-plan walkthrough (SetupShell, 8 steps in this order: food, health, personality, clips, day, environment, emergency, review; the order lives in `src/lib/setupSteps.ts`). Basics moved to the bird main page.
   - `birds/$birdId.index.tsx` — bird main page (record home). Shows identity, weight glance, quick actions, "Create care plan" CTA for fresh birds, and the facet list.
   - `birds/$birdId.plan.tsx` — care-plan overview (front door): six section rows with Ready/Needs info status, "View as your sitter", "Walk through it again".
   - `birds/$birdId.plan.editor.tsx` — tabbed section editor. Visible strip: Food, Routine, Behavior, Home, Health, Emergency. Reached from the overview; back returns to the overview. basics/clips/sits/logs are still accepted via `?tab=…` for back-compat (delete-bird card, notification deep-links, sit panel).
