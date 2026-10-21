@@ -1,8 +1,9 @@
 -- Test accounts and birds for the persistent "staging" Supabase branch, which
 -- Vercel previews use when a PR has no database changes of its own.
 --
--- NEVER run this against production. It refuses to: the guard below checks the
--- database it is connected to for real production rows first.
+-- NEVER run this against production. It refuses to: the guard below looks for
+-- accounts only production has. (A user-count threshold would not work:
+-- production had 45 accounts when this was written.)
 --
 -- The password is not in this file. Run it with psql and pass one in:
 --   psql "$STAGING_DB_URL" -v seed_password="<choose one>" -f supabase/staging/seed.sql
@@ -18,9 +19,13 @@
 
 do $$
 begin
-  if (select count(*) from auth.users) > 50 then
-    raise exception 'Refusing to seed: this database has % users, so it is not staging.',
-      (select count(*) from auth.users);
+  -- Production's admin and App Review accounts are @thekyaproject.com; a fresh
+  -- branch has none. Real sign-ups pile up there too, so cap those as well.
+  if exists (select 1 from auth.users where email ilike '%@thekyaproject.com') then
+    raise exception 'Refusing to seed: a @thekyaproject.com account exists, so this looks like production.';
+  end if;
+  if (select count(*) from auth.users where email not ilike '%@example.com') > 10 then
+    raise exception 'Refusing to seed: more than 10 non-test accounts, so this is not staging.';
   end if;
 end $$;
 
