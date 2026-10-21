@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Eye, X } from "lucide-react";
+import { Eye } from "lucide-react";
 import { getSitterPreviewToken } from "@/lib/sitterPreview.functions";
 import { track } from "@/lib/analytics";
 import i18next from "i18next";
@@ -40,17 +40,18 @@ function ViewAsSitter() {
   const src = token ? `/sitter/${token}?birdId=${birdId}&preview=1` : null;
 
   return (
-    <div className="flex h-[100dvh] flex-col bg-[#f4f1e8]">
+    <div className="flex h-[100dvh] flex-col bg-[#f1f5f0]">
       {/* Read-only mode banner + exit */}
-      <div className="flex items-center justify-between gap-3 bg-[#1a3d2e] px-4 py-2.5 pt-[max(env(safe-area-inset-top),0.625rem)] text-white">
-        <span className="flex items-center gap-2 text-sm font-medium">
-          <Eye className="size-4 shrink-0" /> {t("viewAsSitter.banner", "Viewing as your sitter — read only")}
+      <div className="setup-frame flex items-center justify-between gap-3 bg-[#12291f] px-4 py-2 pt-[max(env(safe-area-inset-top),0.5rem)] text-white">
+        <span className="flex min-w-0 items-center gap-2 text-[13.5px] font-[500] text-white">
+          <Eye className="size-4 shrink-0" aria-hidden="true" />
+          <span className="truncate">{t("viewAsSitter.bannerReadOnly", "Viewing as your sitter · read only")}</span>
         </span>
         <Link
           to="/dashboard"
-          className="inline-flex items-center gap-1 rounded-full bg-white/15 px-3 py-1 text-xs font-medium text-white"
+          className="inline-flex min-h-[32px] shrink-0 items-center rounded-full bg-white/15 px-3.5 text-[13px] font-[700] text-white"
         >
-          <X className="size-3.5" /> {t("viewAsSitter.exit", "Exit")}
+          {t("viewAsSitter.exit", "Exit")}
         </Link>
       </div>
 
@@ -64,9 +65,9 @@ function ViewAsSitter() {
           </div>
         </div>
       ) : src ? (
-        <iframe src={src} title={t("viewAsSitter.iframeTitle", "Sitter view")} className="w-full flex-1 border-0 bg-[#f4f1e8]" />
+        <iframe src={src} title={t("viewAsSitter.iframeTitle", "Sitter view")} className="w-full flex-1 border-0 bg-[#f1f5f0]" />
       ) : (
-        <div className="flex-1 animate-pulse bg-[#efe9da]" />
+        <div className="flex-1 animate-pulse bg-[#e3ebe2]" />
       )}
     </div>
   );

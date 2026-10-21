@@ -55,6 +55,7 @@ import { Route as AuthenticatedSitsSitIdRouteImport } from './routes/_authentica
 import { Route as AuthenticatedSitsNewRouteImport } from './routes/_authenticated/sits.new'
 import { Route as ApiPublicCspReportRouteImport } from './routes/api/public/csp-report'
 import { Route as SitterTokenIndexRouteImport } from './routes/sitter/$token/index'
+import { Route as SitterTokenAroundRouteImport } from './routes/sitter/$token/around'
 import { Route as SitterTokenCareSheetRouteImport } from './routes/sitter/$token/care-sheet'
 import { Route as SitterTokenConcernRouteImport } from './routes/sitter/$token/concern'
 import { Route as SitterTokenEmergencyRouteImport } from './routes/sitter/$token/emergency'
@@ -336,6 +337,11 @@ const SitterTokenIndexRoute = SitterTokenIndexRouteImport.update({
   path: '/',
   getParentRoute: () => SitterTokenRouteRoute,
 } as any)
+const SitterTokenAroundRoute = SitterTokenAroundRouteImport.update({
+  id: '/around',
+  path: '/around',
+  getParentRoute: () => SitterTokenRouteRoute,
+} as any)
 const SitterTokenCareSheetRoute = SitterTokenCareSheetRouteImport.update({
   id: '/care-sheet',
   path: '/care-sheet',
@@ -593,6 +599,7 @@ export interface FileRoutesByFullPath {
   '/sits/$sitId': typeof AuthenticatedSitsSitIdRoute
   '/sits/new': typeof AuthenticatedSitsNewRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
+  '/sitter/$token/around': typeof SitterTokenAroundRoute
   '/sitter/$token/care-sheet': typeof SitterTokenCareSheetRoute
   '/sitter/$token/concern': typeof SitterTokenConcernRoute
   '/sitter/$token/emergency': typeof SitterTokenEmergencyRoute
@@ -672,6 +679,7 @@ export interface FileRoutesByTo {
   '/sits/$sitId': typeof AuthenticatedSitsSitIdRoute
   '/sits/new': typeof AuthenticatedSitsNewRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
+  '/sitter/$token/around': typeof SitterTokenAroundRoute
   '/sitter/$token/care-sheet': typeof SitterTokenCareSheetRoute
   '/sitter/$token/concern': typeof SitterTokenConcernRoute
   '/sitter/$token/emergency': typeof SitterTokenEmergencyRoute
@@ -757,6 +765,7 @@ export interface FileRoutesById {
   '/_authenticated/sits/$sitId': typeof AuthenticatedSitsSitIdRoute
   '/_authenticated/sits/new': typeof AuthenticatedSitsNewRoute
   '/api/public/csp-report': typeof ApiPublicCspReportRoute
+  '/sitter/$token/around': typeof SitterTokenAroundRoute
   '/sitter/$token/care-sheet': typeof SitterTokenCareSheetRoute
   '/sitter/$token/concern': typeof SitterTokenConcernRoute
   '/sitter/$token/emergency': typeof SitterTokenEmergencyRoute
@@ -843,6 +852,7 @@ export interface FileRouteTypes {
     | '/sits/$sitId'
     | '/sits/new'
     | '/api/public/csp-report'
+    | '/sitter/$token/around'
     | '/sitter/$token/care-sheet'
     | '/sitter/$token/concern'
     | '/sitter/$token/emergency'
@@ -922,6 +932,7 @@ export interface FileRouteTypes {
     | '/sits/$sitId'
     | '/sits/new'
     | '/api/public/csp-report'
+    | '/sitter/$token/around'
     | '/sitter/$token/care-sheet'
     | '/sitter/$token/concern'
     | '/sitter/$token/emergency'
@@ -1006,6 +1017,7 @@ export interface FileRouteTypes {
     | '/_authenticated/sits/$sitId'
     | '/_authenticated/sits/new'
     | '/api/public/csp-report'
+    | '/sitter/$token/around'
     | '/sitter/$token/care-sheet'
     | '/sitter/$token/concern'
     | '/sitter/$token/emergency'
@@ -1402,6 +1414,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/sitter/$token/'
       preLoaderRoute: typeof SitterTokenIndexRouteImport
+      parentRoute: typeof SitterTokenRouteRoute
+    }
+    '/sitter/$token/around': {
+      id: '/sitter/$token/around'
+      path: '/around'
+      fullPath: '/sitter/$token/around'
+      preLoaderRoute: typeof SitterTokenAroundRouteImport
       parentRoute: typeof SitterTokenRouteRoute
     }
     '/sitter/$token/care-sheet': {
@@ -1840,6 +1859,7 @@ const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
 interface SitterTokenRouteRouteChildren {
+  SitterTokenAroundRoute: typeof SitterTokenAroundRoute
   SitterTokenCareSheetRoute: typeof SitterTokenCareSheetRoute
   SitterTokenConcernRoute: typeof SitterTokenConcernRoute
   SitterTokenEmergencyRoute: typeof SitterTokenEmergencyRoute
@@ -1850,6 +1870,7 @@ interface SitterTokenRouteRouteChildren {
 }
 
 const SitterTokenRouteRouteChildren: SitterTokenRouteRouteChildren = {
+  SitterTokenAroundRoute: SitterTokenAroundRoute,
   SitterTokenCareSheetRoute: SitterTokenCareSheetRoute,
   SitterTokenConcernRoute: SitterTokenConcernRoute,
   SitterTokenEmergencyRoute: SitterTokenEmergencyRoute,

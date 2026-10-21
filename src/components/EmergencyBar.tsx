@@ -1,46 +1,51 @@
 import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { Home, ClipboardList, BookOpen, AlertTriangle } from "lucide-react";
+import { K } from "@/components/kya";
+import { useSitterShell } from "@/components/sitter/sitterShared";
 
-// Persistent sitter bottom nav: Home / Today / Parrots 101, plus the
-// always-present Emergency pill. Home is the all-birds home base; Today is the
-// selected bird's day (its nav link carries the active bird so it's never
-// blank); the scan lives inside Today (per-bird), not the nav. Home / Today /
-// Parrots 101 are icon-above-label (active = forest and bold, inactive = muted
-// #5f5e5a) on a white bar with a #d5dfd5 top rule, matching the owner nav.
-// Emergency is always a solid red pill — the loudest item, never muted.
+// Sitter bottom bar (sitter view only — no owner screen uses it): Home, Today,
+// Parrots 101, and the always-present red Emergency pill. White, with a 1px
+// #d5dfd5 top rule. Home is hidden for one-bird sits (the one-bird rule, see
+// SitterShellContext). Today carries the active bird so it's never blank.
+// Emergency stays a solid red 48px pill with the warning icon — the loudest
+// item, never muted.
 export function EmergencyBar({ token, activeBirdId }: { token: string; activeBirdId?: string }) {
   const { t } = useTranslation();
-  const item = "flex flex-col items-center gap-0.5 text-[#5f5e5a] [&.active]:text-[#1a3d2e] [&.active_span]:font-bold";
+  const { multi } = useSitterShell();
+  const item = "flex min-h-[48px] min-w-[56px] flex-col items-center justify-center gap-0.5 text-[#5f5e5a] [&.active]:text-[#1a3d2e] [&.active_span]:font-[700]";
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-[#d5dfd5] bg-white px-4 pb-[max(env(safe-area-inset-bottom),0.75rem)] pt-2.5">
+    <nav className="setup-frame fixed inset-x-0 bottom-0 z-30 border-t border-[#d5dfd5] bg-white px-4 pb-[max(env(safe-area-inset-bottom),0.625rem)] pt-2">
       <div className="mx-auto flex max-w-md items-center justify-between gap-2">
-        <Link to="/sitter/$token/home" params={{ token }} className={item} data-coach="nav-home">
-          <Home className="size-5" />
-          <span className="text-[11px] font-medium">{t("emergencyBar.nav.home", "Home")}</span>
-        </Link>
+        {multi && (
+          <Link to="/sitter/$token/home" params={{ token }} className={item} data-coach="nav-home">
+            <Home className="size-[22px]" />
+            <span className="text-[11.5px] font-[500]">{t("emergencyBar.nav.home", "Home")}</span>
+          </Link>
+        )}
         <Link
           to="/sitter/$token"
           params={{ token }}
           search={activeBirdId ? { birdId: activeBirdId } : undefined}
-          activeOptions={{ exact: true }}
+          activeOptions={{ exact: true, includeSearch: false }}
           className={item}
           data-coach="nav-today"
         >
-          <ClipboardList className="size-5" />
-          <span className="text-[11px] font-medium">{t("emergencyBar.nav.today", "Today")}</span>
+          <ClipboardList className="size-[22px]" />
+          <span className="text-[11.5px] font-[500]">{t("emergencyBar.nav.today", "Today")}</span>
         </Link>
         <Link to="/sitter/$token/guide" params={{ token }} className={item} data-coach="nav-guide">
-          <BookOpen className="size-5" />
-          <span className="text-[11px] font-medium">{t("emergencyBar.nav.guide", "Parrots 101")}</span>
+          <BookOpen className="size-[22px]" />
+          <span className="text-[11.5px] font-[500]">{t("emergencyBar.nav.guide", "Parrots 101")}</span>
         </Link>
         <Link
           to="/sitter/$token/emergency"
           params={{ token }}
           data-coach="nav-emergency"
-          className="flex items-center gap-2 rounded-full bg-[#993C1D] px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#993C1D]/20 active:scale-95"
+          className="inline-flex h-12 shrink-0 items-center gap-2 rounded-full px-5 text-[15px] font-[700] text-white active:scale-95"
+          style={{ background: K.red, boxShadow: "0 6px 16px rgba(163,45,45,0.22)" }}
         >
-          <AlertTriangle className="size-4 shrink-0" />
+          <AlertTriangle className="size-[18px] shrink-0" aria-hidden="true" />
           {t("emergencyBar.emergency", "Emergency")}
         </Link>
       </div>

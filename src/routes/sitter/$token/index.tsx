@@ -1,22 +1,30 @@
-import { createFileRoute, Link, Navigate, useSearch } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate, useNavigate, useSearch } from "@tanstack/react-router";
 import { speciesLabel } from "@/lib/speciesLabel";
 import { birdAgeLabel } from "@/lib/birdAge";
 import { clipSlotLabel } from "@/lib/clipSlotLabels";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type TouchEvent } from "react";
 import { useSitterContext } from "./route";
 import { toggleTaskCompletion } from "@/lib/sitter.functions";
 import { isOwnerPreview } from "@/lib/sitterPreviewMode";
-import { Disclaimer } from "@/components/Disclaimer";
-import { Stethoscope, Calendar, BookOpen, ChevronRight, ChevronDown, HeartCrack } from "lucide-react";
+import { ChevronRight, ChevronDown, Check, ArrowRight } from "lucide-react";
 import { ClipPlayer } from "@/components/ClipPlayer";
 import { taskDaypart, hourToDaypart, parseTaskMinutes, DAYPARTS, DAYPART_LABEL, type Daypart } from "@/lib/routineTasks";
 import { renderDerivedTask } from "@/lib/routineTaskRender";
 import type { DerivedTask } from "@/lib/derivedTasks";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 import { localDateISO } from "@/lib/localDay";
+import { K, SERIF, KyaBody, KyaCard, KyaHeading } from "@/components/kya";
+import { SitterTabHeader } from "@/components/sitter/SitterChrome";
+import {
+  AroundHouseCard, BirdAvatar, VetNote, WalkthroughPill,
+  greeting, ownerFirstName, sitLine, sitterFirstName, useSitterShell,
+} from "@/components/sitter/sitterShared";
+import { useSitterDashboard } from "@/components/SitterDashboard";
+import { VetCallRow } from "@/components/sitter/CallRows";
 
 export const Route = createFileRoute("/sitter/$token/")({
   component: SitterHome,
@@ -50,16 +58,21 @@ function SitterHome() {
   const { token } = Route.useParams();
   const { data: ctx } = useSitterContext(token);
   const { birdId } = useSearch({ from: "/sitter/$token" });
-  // Multi-bird sits land on the Home tab until a bird is picked; the Today nav
-  // item always carries a birdId, so this only fires on the initial open.
-  // Single-bird sits go straight to that bird's Today.
-  if (ctx.birds.length > 1 && !birdId) return <Navigate to="/sitter/$token/home" params={{ token }} />;
+  const { multi, pinnedBirdId } = useSitterShell();
+  // Multi-bird sits open on Home until a bird is picked; the Today nav item
+  // always carries a birdId, so this only fires on the initial open. One-bird
+  // sits go straight to that bird's Today (the one-bird rule, decided once per
+  // open) — and stay on the bird they opened on even if a refetch now lists a
+  // newer bird first.
+  if (multi && !birdId) return <Navigate to="/sitter/$token/home" params={{ token }} replace />;
+  if (!multi && !birdId && pinnedBirdId && ctx.activeBirdId !== pinnedBirdId) {
+    return <Navigate to="/sitter/$token" params={{ token }} search={{ birdId: pinnedBirdId }} replace />;
+  }
   return <SitterToday />;
 }
 
 // Literal-key daypart labels (not a dynamic `daypart.${dp}` key) so i18next-parser
-// can extract them statically. Capitalized for chips/headers; call .toLowerCase()
-// for mid-sentence use so English reads "done this morning" exactly as before.
+// can extract them statically.
 function useDaypartLabel() {
   const { t } = useTranslation();
   return (dp: string, fallback: string): string => {
@@ -78,11 +91,19 @@ function SitterToday() {
   const daypartLabel = useDaypartLabel();
   const { token } = Route.useParams();
   const { data: ctx } = useSitterContext(token);
+  const { saved } = useSearch({ from: "/sitter/$token" });
+  const { multi } = useSitterShell();
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const toggle = useServerFn(toggleTaskCompletion);
+  const { data: dash } = useSitterDashboard(token);
 
   const sitId = ctx.sit.id;
   const birdId = ctx.activeBirdId;
+  const birds = (ctx.birds ?? []) as any[];
+  const birdIndex = Math.max(0, birds.findIndex((b) => b.id === birdId));
+  const nextBird = birdIndex < birds.length - 1 ? birds[birdIndex + 1] : null;
+  const owner = ownerFirstName(ctx, t);
 
   const [timers, setTimers] = useState<Record<string, FreshTimer>>(() => loadTimers(sitId, birdId));
   // Per-item expandable detail (collapsed by default).
@@ -109,13 +130,30 @@ function SitterToday() {
     const id = setInterval(() => setTick((n) => n + 1), 60_000);
     return () => clearInterval(id);
   }, []);
-  // Reload timers if the active bird changes.
+  // Reload timers if the active bird changes; a new bird starts at the top.
   useEffect(() => { setTimers(loadTimers(sitId, birdId)); }, [sitId, birdId]);
+  const firstBirdRef = useRef(birdId);
+  useEffect(() => {
+    if (firstBirdRef.current === birdId) return;
+    firstBirdRef.current = birdId;
+    window.scrollTo({ top: 0 });
+  }, [birdId]);
+
+  // Post-save confirmation. The daily check lands back here with `saved`;
+  // hold it in local state for this bird and clear it from the URL so a
+  // refresh or back doesn't show it again.
+  const [savedFor, setSavedFor] = useState<string | null>(null);
+  useEffect(() => {
+    if (saved == null) return;
+    setSavedFor(birdId);
+    qc.invalidateQueries({ queryKey: ["sitter-dashboard", token] });
+    navigate({ to: "/sitter/$token", params: { token }, search: { birdId }, replace: true });
+  }, [saved, multi, birdId, token, navigate, qc]);
 
   const m = useMutation({
     mutationFn: (vars: { taskId: string; completed: boolean; title: string }) =>
       toggle({ data: { token, taskId: vars.taskId, completed: vars.completed, today: localDateISO(), preview: isOwnerPreview() } }),
-    // OPTIMISTIC: flip the checkbox instantly by patching ctx.completions in the
+    // OPTIMISTIC: flip the check instantly by patching ctx.completions in the
     // cache, then sync in the background. The old flow waited for the toggle
     // round trip AND a full sitter-context refetch (a 15-call waterfall) before
     // the check appeared — 1-3s of lag per tap on mobile.
@@ -131,15 +169,15 @@ function SitterToday() {
       return { prev };
     },
     onError: (_e, _vars, mctx) => {
-      // Roll the checkbox back and say so — never leave a silent mismatch.
+      // Roll the check back and say so — never leave a silent mismatch.
       mctx?.prev?.forEach(([key, data]) => qc.setQueryData(key as any, data));
       toast.error(t("sitter.today.saveFailed", "That didn't save. Please tap it again."));
     },
     onSuccess: (_data, vars) => {
       // Cache is already correct (optimistic patch + confirmed write): no
-      // context refetch. Mark the multi-bird dashboard stale so its done-counts
-      // refresh on next visit (inactive query — marking stale costs nothing now).
-      qc.invalidateQueries({ queryKey: ["sitter-dashboard", token], refetchType: "inactive" });
+      // context refetch. Mark the per-bird counts stale so Home and the bird
+      // chips catch up (refetches if they're on screen).
+      qc.invalidateQueries({ queryKey: ["sitter-dashboard", token] });
       // Manage the fresh-food removal timer.
       const isFresh = FRESH_FOOD_TASK_PATTERN.test(vars.title) && !REMOVAL_TASK_PATTERN.test(vars.title);
       if (!isFresh) return;
@@ -167,12 +205,11 @@ function SitterToday() {
   }, [ctx.completions]);
 
   // Group tasks by daypart, then sort chronologically within each group: timed
-  // items by their time, untimed items after (by sort order). Fixes the
-  // out-of-order bug for timed items within a section.
+  // items by their time, untimed items after (by sort order).
   const byDaypart: Record<string, any[]> = {};
-  for (const t of ctx.tasks) {
-    const dp = taskDaypart(t);
-    (byDaypart[dp] ??= []).push(t);
+  for (const task of ctx.tasks) {
+    const dp = taskDaypart(task);
+    (byDaypart[dp] ??= []).push(task);
   }
   for (const dp of Object.keys(byDaypart)) {
     byDaypart[dp].sort((a, b) => {
@@ -184,301 +221,458 @@ function SitterToday() {
 
   const now = new Date();
   const nowDp = currentDaypart(now);
-  const dloc = i18n.language === "nl" ? "nl-NL" : undefined;
-  const timeLabel = now.toLocaleTimeString(dloc, { hour: "numeric", minute: "2-digit" });
-  const todayLabel = now.toLocaleDateString(dloc, { month: "short", day: "numeric", year: "numeric" });
+  const nowLabel = daypartLabel(nowDp, DAYPART_LABEL[nowDp]);
 
   const currentList = byDaypart[nowDp] ?? [];
-  const currentDone = currentList.filter((t) => completedIds.has(t.id)).length;
+  const currentDone = currentList.filter((task) => completedIds.has(task.id)).length;
   const allCurrentDone = currentList.length > 0 && currentDone === currentList.length;
-
-  const ci = DAYPARTS.indexOf(nowDp);
   const otherSections = DAYPARTS.filter((dp) => dp !== nowDp && (byDaypart[dp]?.length ?? 0) > 0);
-  const nextUp = DAYPARTS.find((dp, i) => i > ci && (byDaypart[dp]?.length ?? 0) > 0) ?? null;
 
   // First feeding item in chronological order carries the new-foods caution.
   let firstFeedingId: string | null = null;
   for (const dp of DAYPARTS) {
-    for (const t of byDaypart[dp] ?? []) {
-      if (!firstFeedingId && FEEDING_TASK_PATTERN.test(t.title) && !REMOVAL_TASK_PATTERN.test(t.title)) firstFeedingId = t.id;
+    for (const task of byDaypart[dp] ?? []) {
+      if (!firstFeedingId && FEEDING_TASK_PATTERN.test(task.title) && !REMOVAL_TASK_PATTERN.test(task.title)) firstFeedingId = task.id;
     }
   }
 
-  function renderTask(task: any) {
+  // "[n] left" per bird for the switcher: tasks not ticked + the daily check.
+  // The active bird counts from this screen's own (optimistic) data; the
+  // others from the per-bird summary Home uses.
+  const dashById = new Map(((dash?.birds ?? []) as any[]).map((b) => [b.id, b]));
+  function leftFor(b: any): number | null {
+    if (b.id === birdId) {
+      const tasksLeft = (ctx.tasks as any[]).filter((task) => !completedIds.has(task.id)).length;
+      return tasksLeft + (ctx.todayLog ? 0 : 1);
+    }
+    const d = dashById.get(b.id);
+    if (!d) return null;
+    return Math.max(0, (d.tasksTotal ?? 0) - (d.tasksDone ?? 0)) + (d.scanDone ? 0 : 1);
+  }
+  function needsCheck(b: any): boolean {
+    if (b.id === birdId) return !ctx.todayLog;
+    return !dashById.get(b.id)?.scanDone;
+  }
+
+  function goToBird(id: string) {
+    navigate({ to: "/sitter/$token", params: { token }, search: { birdId: id } });
+  }
+
+  // Swipe left/right on the day to move between birds (multi-bird sits).
+  // Ignores swipes that start in a horizontal scroller (the clip strip, the
+  // bird chips) and anything mostly vertical.
+  const touch = useRef<{ x: number; y: number; skip: boolean } | null>(null);
+  function onTouchStart(e: TouchEvent) {
+    if (!multi || e.touches.length !== 1) { touch.current = null; return; }
+    const target = e.target as HTMLElement;
+    touch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, skip: !!target.closest("[data-noswipe]") };
+  }
+  function onTouchEnd(e: TouchEvent) {
+    const start = touch.current;
+    touch.current = null;
+    if (!start || start.skip) return;
+    const dx = e.changedTouches[0].clientX - start.x;
+    const dy = e.changedTouches[0].clientY - start.y;
+    if (Math.abs(dx) < 70 || Math.abs(dy) > Math.abs(dx) * 0.6) return;
+    const to = dx < 0 ? birdIndex + 1 : birdIndex - 1;
+    if (to >= 0 && to < birds.length) goToBird(birds[to].id);
+  }
+
+  function renderTask(task: any, last: boolean) {
     const done = completedIds.has(task.id);
     const open = expandedIds.has(task.id);
     // Localize derived tasks for DISPLAY only. Owner-typed tasks (no descriptor)
-    // render verbatim, and all task-matching logic below keeps the stored title.
+    // render verbatim, and all task-matching logic keeps the stored title.
     const disp = task.derived
       ? renderDerivedTask(task.derived as DerivedTask, i18n.getFixedT(i18n.language, "routine"), i18n.language)
       : { title: task.title as string, instructions: task.instructions as string | null };
     const detail = typeof disp.instructions === "string" ? disp.instructions.trim() : "";
     const hasDetail = detail.length > 0;
     const showCaution = task.id === firstFeedingId;
-    const showPill = !!task.time_of_day && parseTaskMinutes(task.time_of_day) != null;
+    const time = task.time_of_day && parseTaskMinutes(task.time_of_day) != null ? (task.time_of_day as string) : null;
     return (
-      <div key={task.id} className="py-2.5 first:pt-0 last:pb-0">
-        <div className="flex items-start gap-3">
+      <div key={task.id} style={{ borderBottom: last ? undefined : `1px solid ${K.line}` }}>
+        <div className="flex items-start">
           <button
+            type="button"
             onClick={() => m.mutate({ taskId: task.id, completed: !done, title: task.title })}
-            className="flex flex-1 items-start gap-3 text-left"
+            aria-pressed={done}
+            className="flex min-h-[56px] flex-1 items-start gap-3 py-3 pl-4 text-left"
           >
-            <span className={`mt-0.5 grid size-6 shrink-0 place-items-center rounded border-2 ${done ? "border-warn-green bg-warn-green" : "border-[#bcb6a3] bg-white"}`}>
-              {done && <svg viewBox="0 0 20 20" className="size-4 text-white"><path fill="currentColor" d="M7.629 13.314 4.4 10.085l1.214-1.214 2.015 2.015 5.757-5.757 1.214 1.214z"/></svg>}
+            <span
+              className="mt-px grid size-[26px] shrink-0 place-items-center rounded-full border-2"
+              style={done ? { background: K.forest, borderColor: K.forest } : { background: "#fff", borderColor: "#b9c6bb" }}
+              aria-hidden="true"
+            >
+              {done && <Check className="size-4 text-white" strokeWidth={3} />}
             </span>
-            <span className="flex-1">
-              <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                <span className={done ? "text-sm text-sage-400 line-through" : "text-sm font-medium text-sage-900"}>{disp.title}</span>
-                {showPill && <span className="rounded-full bg-[#e8f0ec] px-2 py-0.5 text-[10px] font-medium text-[#2d6a4f]">{task.time_of_day}</span>}
+            <span className="min-w-0 flex-1">
+              <span className="block text-[15px] leading-[1.35]" style={done ? { color: K.quiet, textDecoration: "line-through", fontWeight: 500 } : { color: K.forest, fontWeight: 700 }}>
+                {disp.title}
+                {time && <span className="ml-1.5 text-[12.5px] font-[500]" style={{ color: K.quiet, textDecoration: "none" }}>{time}</span>}
               </span>
-              {showCaution && <span className="mt-1 block text-[11px] font-semibold text-warn-amber">{t("sitter.today.noNewFoods", "Don't introduce new foods while the owner is away.")}</span>}
+              {showCaution && (
+                <span className="mt-1 block text-[12.5px] leading-[1.4]" style={{ color: K.amberText }}>
+                  {t("sitter.today.noNewFoodsOwner", "Don't introduce new foods while {{owner}} is away.", { owner })}
+                </span>
+              )}
             </span>
           </button>
-          {hasDetail && (
+          {hasDetail ? (
             <button
               type="button"
               onClick={() => toggleExpanded(task.id)}
               aria-expanded={open}
               aria-label={open ? t("sitter.today.hideDetails", "Hide details") : t("sitter.today.showDetails", "Show details")}
-              className="grid shrink-0 place-items-center p-1 text-[#8a897f]"
+              className="grid size-[52px] shrink-0 place-items-center"
+              style={{ color: K.quiet }}
             >
-              <ChevronDown className={`size-4 transition-transform ${open ? "rotate-180" : ""}`} />
+              <ChevronDown className={`size-[18px] transition-transform ${open ? "rotate-180" : ""}`} />
             </button>
-          )}
+          ) : <span className="w-4 shrink-0" />}
         </div>
         {hasDetail && open && (
-          <p className="mt-1 pl-9 text-xs leading-relaxed text-sage-600 whitespace-pre-line">{detail}</p>
+          <p className="m-0 whitespace-pre-line pb-3 pl-[54px] pr-4 text-[13.5px] leading-[1.5]" style={{ color: K.ink }}>{detail}</p>
         )}
       </div>
     );
   }
 
-  return (
-    <main className="mx-auto max-w-md space-y-5 px-5 py-5">
-      <WelcomeCard bird={ctx.bird} token={token} />
-
-      <ScanCard bird={ctx.bird} todayLog={ctx.todayLog} token={token} />
-
-      {/* Today header: daypart chip + date */}
-      <div className="flex items-center justify-between gap-2">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-[#e8f0ec] px-3 py-1 text-xs font-semibold text-[#2d6a4f]">
-          {daypartLabel(nowDp, DAYPART_LABEL[nowDp])} · {timeLabel}
-        </span>
-        <span className="flex items-center gap-1 text-xs text-sage-600"><Calendar className="size-3.5" />{todayLabel}</span>
-      </div>
-
-      {(ctx as any).remindersPaused ? (
-        <p className="rounded-2xl bg-[#efe9da] p-4 text-sm text-sage-600">{t("sitter.today.remindersPaused", "{{name}}'s reminders are paused.", { name: ctx.bird.name })}</p>
-      ) : ctx.tasks.length === 0 ? (
-        <p className="rounded-2xl bg-[#efe9da] p-4 text-sm text-sage-600">{t("sitter.today.noTasks", "The owner hasn't added any routine tasks yet.")}</p>
-      ) : (
-        <>
-          {/* Progress for the current daypart */}
-          {currentList.length > 0 && (
-            <div>
-              <p className="text-xs text-sage-600">{t("sitter.today.doneThisDaypart", "{{done}} of {{total}} daily tasks done this {{daypart}}", { done: currentDone, total: currentList.length, daypart: daypartLabel(nowDp, DAYPART_LABEL[nowDp]).toLowerCase() })}</p>
-              <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-sage-100">
-                <div className="h-full rounded-full bg-[#2d6a4f] transition-all" style={{ width: `${Math.round((currentDone / currentList.length) * 100)}%` }} />
-              </div>
-            </div>
-          )}
-
-          {/* Due-now card — the one heavily-bordered element on screen */}
-          <section data-coach="daily-checklist" className="rounded-2xl border-2 border-[#1a3d2e] bg-white p-4 shadow-sm">
-            <p className="text-[10px] font-medium uppercase tracking-widest text-[#1a3d2e]">{t("sitter.today.dueNow", "Due now — {{daypart}}", { daypart: daypartLabel(nowDp, DAYPART_LABEL[nowDp]).toLowerCase() })}</p>
-            {currentList.length === 0 ? (
-              <p className="mt-2 text-sm text-sage-600">{t("sitter.today.nothingScheduled", "Nothing scheduled for this {{daypart}}.", { daypart: daypartLabel(nowDp, DAYPART_LABEL[nowDp]).toLowerCase() })}</p>
-            ) : allCurrentDone ? (
-              <p className="mt-2 text-sm font-medium text-[#2d6a4f]">{t("sitter.today.allDone", "All done for this {{daypart}} — nicely done.", { daypart: daypartLabel(nowDp, DAYPART_LABEL[nowDp]).toLowerCase() })}</p>
-            ) : (
-              <div className="mt-2 divide-y divide-sage-100">
-                {currentList.map(renderTask)}
-              </div>
-            )}
-          </section>
-
-          {/* Other daypart sections — collapsed by default */}
-          {otherSections.map((dp) => {
-            const list = byDaypart[dp] ?? [];
-            const done = list.filter((t) => completedIds.has(t.id)).length;
-            const open = expandedSections.has(dp);
-            return (
-              <div key={dp}>
-                <button
-                  onClick={() => toggleSection(dp)}
-                  aria-expanded={open}
-                  className="flex w-full items-center justify-between rounded-2xl bg-[#efe9da] p-4 shadow-sm"
-                >
-                  <span className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-sage-900">{daypartLabel(dp, DAYPART_LABEL[dp])}</span>
-                    <span className="text-xs text-[#5f5e5a]">{t("sitter.today.doneCount", "{{done}}/{{total}} done", { done, total: list.length })}</span>
-                  </span>
-                  <ChevronDown className={`size-5 shrink-0 text-[#8a897f] transition-transform ${open ? "rotate-180" : ""}`} />
-                </button>
-                {!open && dp === nextUp && (
-                  <p className="mt-1 truncate px-4 text-xs text-[#5f5e5a]">{t("sitter.today.next", "Next:")} {list.map((task) => (task.derived ? renderDerivedTask(task.derived as DerivedTask, i18n.getFixedT(i18n.language, "routine"), i18n.language).title : task.title)).join(", ")}</p>
-                )}
-                {open && (
-                  <div className="mt-2 rounded-2xl bg-[#efe9da] px-4 shadow-sm">
-                    <div className="divide-y divide-sage-100 py-2">
-                      {list.map(renderTask)}
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </>
-      )}
-
-      {/* Tips from the owner — owner-recorded clips */}
-      {ctx.watchClips && ctx.watchClips.length > 0 && (
-        <section data-coach="owner-tips" className="space-y-2">
-          <h2 className="text-lg font-medium tracking-tight">{t("sitter.today.tipsTitle", "Tips from the owner")}</h2>
-          <p className="text-xs text-sage-600">{t("sitter.today.tipsSubtitle", "See how it's done — short clips from {{name}}'s owner, private to you.", { name: ctx.bird.name })}</p>
-          <div className="-mx-5 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 pb-1">
-            {ctx.watchClips.map((c: any) => (
-              <div
-                key={c.key}
-                className="flex w-60 shrink-0 snap-start flex-col overflow-hidden rounded-2xl bg-[#efe9da] shadow-sm"
-              >
-                <ClipPlayer src={c.url} label={clipSlotLabel(c.key, c.label, t)} className="aspect-video" />
-                <div className="p-3">
-                  <p className="text-sm font-medium leading-tight">{clipSlotLabel(c.key, c.label, t)}</p>
-                  <p className="mt-0.5 text-[11px] uppercase tracking-wider text-sage-600">{t("sitter.today.ownerRecorded", "Owner-recorded")}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      <Disclaimer compact />
-
-      {/* Full care plan — final, quieter outlined action */}
-      <Link
-        to="/sitter/$token/care-sheet" params={{ token }}
-        className="flex w-full items-center gap-3 rounded-2xl border-2 border-[#1a3d2e] bg-white p-4 text-left active:scale-[0.99]"
-      >
-        <BookOpen className="size-5 shrink-0 text-[#1a3d2e]" />
-        <span className="flex-1">
-          <span className="block text-base font-medium leading-tight text-[#1a3d2e]">{t("sitter.today.viewCarePlan", "View {{name}}'s full care plan", { name: ctx.bird.name })}</span>
-          <span className="mt-0.5 block text-xs text-sage-600">{t("sitter.today.carePlanSubtitle", "Diet, behavior, home, health — the source of truth")}</span>
-        </span>
-        <ChevronRight className="size-5 shrink-0 text-[#1a3d2e]" />
-      </Link>
-
-      {/* Something's wrong — quiet, last on the page. Opens the pause + guidance
-          flow (call the owner, pause this bird's reminders). Never marks the
-          bird as passed; only the owner can do that. */}
-      <div>
-        <Link
-          to="/sitter/$token/concern" params={{ token }}
-          className="flex w-full items-center gap-3 rounded-2xl border border-[#e0d8c4] bg-white p-4 text-left active:scale-[0.99]"
-        >
-          <HeartCrack className="size-5 shrink-0 text-sage-600" />
-          <span className="flex-1 text-sm font-medium text-[#1a3d2e]">{t("sitter.today.somethingWrong", "Something's wrong with {{name}}", { name: ctx.bird.name })}</span>
-          <ChevronRight className="size-4 shrink-0 text-sage-600" />
-        </Link>
-        <p className="mt-1.5 px-1 text-xs text-sage-600">{t("sitter.today.somethingWrongHint", "If {{name}} has passed or is in serious trouble", { name: ctx.bird.name })}</p>
-      </div>
-    </main>
-  );
-}
-
-// Prominent, status-aware entry to the per-bird daily scan. This is the sole
-// entry point to the scan now that it's not a nav tab, so it stays unmissable
-// and shows today's done/not-done state at a glance (amber = not done yet,
-// green = done; red/amber if today's scan was flagged).
-function ScanCard({ bird, todayLog, token }: { bird: any; todayLog: any; token: string }) {
-  const { t } = useTranslation();
-  const done = !!todayLog;
-  const status = (todayLog?.triage_status ?? "") as string;
-  const flagged = status === "red" || status === "yellow";
-  const accent = !done ? "amber" : status === "red" ? "red" : flagged ? "amber" : "green";
-  const styles = {
-    green: { wrap: "border-warn-green bg-warn-green/5", chip: "bg-warn-green/15 text-warn-green" },
-    amber: { wrap: "border-warn-amber bg-warn-amber/5", chip: "bg-warn-amber/15 text-warn-amber" },
-    red: { wrap: "border-warn-red bg-warn-red/5", chip: "bg-warn-red/15 text-warn-red" },
-  }[accent];
-  const heading = !done
-    ? t("sitter.today.scanNotDone", "Today's health check — not done yet")
-    : flagged
-    ? t("sitter.today.scanFlagged", "Health check done — flagged for review")
-    : t("sitter.today.scanDone", "Health check done today ✓");
-  return (
-    <Link
-      to="/sitter/$token/scan"
-      params={{ token }}
-      data-coach="scan-card"
-      className={`flex items-center gap-3 rounded-2xl border-2 ${styles.wrap} p-4 shadow-sm active:scale-[0.99]`}
-    >
-      <span className={`grid size-11 shrink-0 place-items-center rounded-full ${styles.chip}`}>
-        <Stethoscope className="size-5" />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-[10px] font-semibold uppercase tracking-widest text-sage-500">{t("sitter.today.scanLabel", "Daily health check · {{name}}", { name: bird.name })}</span>
-        <span className="block text-base font-medium leading-tight text-sage-900">{heading}</span>
-      </span>
-      <span className="shrink-0 rounded-xl bg-[#1a3d2e] px-4 py-2 text-sm font-medium text-white">{done ? t("sitter.today.redo", "Redo") : t("sitter.today.start", "Start")}</span>
-    </Link>
-  );
-}
-
-// Permanent identity card at the top of the sitter Today tab. Always shown,
-// full size, for the active bird. FACTS ONLY — name + species/age. No generated
-// prose: paraphrasing the care plan into sentences flattened/contradicted the
-// owner's actual input (e.g. step-up "yes" + "Only I can handle" rendered as
-// "happy to step up onto a familiar hand" — a safety bug). The owner's exact
-// words live in the structured "Full care plan" view this card links to.
-function WelcomeCard({ bird, token }: { bird: any; token: string }) {
-  const { t } = useTranslation();
+  const bird = ctx.bird as any;
   const species = (bird.species ?? "").trim() ? speciesLabel(t, (bird.species ?? "").trim()) : t("sitter.today.speciesDefault", "Parrot");
-  // Same age as the owner's screens: from the hatch date when there is one.
+  const showSaved = savedFor === birdId;
+  const nextToCheck = showSaved && multi
+    ? [...birds.slice(birdIndex + 1), ...birds.slice(0, birdIndex)].find((b) => needsCheck(b)) ?? null
+    : null;
+
+  return (
+    <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd}>
+      {multi ? (
+        <SitterTabHeader token={token}>
+          <BirdSwitcher birds={birds} activeId={birdId} leftFor={leftFor} onPick={goToBird} />
+          <div data-coach="welcome-card" className="mt-6">
+            <KyaHeading as="h1" size={30} className="text-white">{t("sitter.today.birdsDay", "{{name}}'s day", { name: bird.name })}</KyaHeading>
+            <p className="m-0 mt-2 text-[15px] leading-[1.5]" style={{ color: K.paleGreen }}>
+              {species} ·{" "}
+              <Link to="/sitter/$token/care-sheet" params={{ token }} data-coach="care-plan-link" className="inline-flex min-h-[44px] items-center font-[700] align-middle" style={{ color: K.lime }}>
+                {t("sitter.today.carePlanArrow", "Care plan →")}
+              </Link>
+            </p>
+          </div>
+        </SitterTabHeader>
+      ) : (
+        <SitterTabHeader token={token} title={greeting(t, sitterFirstName(ctx))} line={sitLine(ctx, t, i18n.language)}>
+          <WalkthroughPill />
+        </SitterTabHeader>
+      )}
+
+      <KyaBody>
+        {!multi && <SinglePhotoCard bird={bird} species={species} token={token} />}
+
+        {showSaved && (
+          <KyaCard className="flex flex-col gap-3 p-4" style={{ border: `2px solid ${K.forest}` }}>
+            <p className="m-0 flex items-start gap-2 text-[15px] font-[700] leading-[1.4]" role="status">
+              <Check className="mt-0.5 size-[18px] shrink-0" style={{ color: K.moss }} strokeWidth={3} aria-hidden="true" />
+              {!multi
+                ? t("sitter.today.saved", "Saved")
+                : nextToCheck
+                ? t("sitter.today.savedNext", "Saved. Next: {{name}} still needs a check", { name: nextToCheck.name })
+                : t("sitter.today.savedAll", "Saved. Every bird has had a check today")}
+            </p>
+            {nextToCheck && (
+              <Link
+                to="/sitter/$token/scan"
+                params={{ token }}
+                search={{ birdId: nextToCheck.id }}
+                className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full border-2 px-5 text-[15px] font-[700]"
+                style={{ background: K.sunflower, borderColor: K.forest, color: K.forest }}
+              >
+                {t("sitter.today.checkBird", "Check {{name}}", { name: nextToCheck.name })}
+              </Link>
+            )}
+          </KyaCard>
+        )}
+
+        <DailyCheckCard bird={bird} todayLog={ctx.todayLog} contacts={(ctx as any).contacts} token={token} />
+
+        {(ctx as any).remindersPaused ? (
+          <KyaCard className="p-4">
+            <p className="m-0 text-[15px]" style={{ color: K.quiet }}>{t("sitter.today.remindersPaused", "{{name}}'s reminders are paused.", { name: bird.name })}</p>
+          </KyaCard>
+        ) : ctx.tasks.length === 0 ? (
+          <KyaCard className="p-4">
+            <p className="m-0 text-[15px]" style={{ color: K.quiet }}>{t("sitter.today.noTasks", "The owner hasn't added any routine tasks yet.")}</p>
+          </KyaCard>
+        ) : (
+          <>
+            {/* The current block — the one heavily bordered card on screen. */}
+            <section className="flex flex-col gap-2.5">
+              <div className="flex items-baseline justify-between gap-3 px-1">
+                <KyaHeading size={21}>{nowLabel}</KyaHeading>
+                {currentList.length > 0 && (
+                  <span className="shrink-0 text-[13px]" style={{ color: K.quiet }}>
+                    {t("sitter.today.dueNowCount", "Due now · {{done}} of {{total}} done", { done: currentDone, total: currentList.length })}
+                  </span>
+                )}
+              </div>
+              <div data-coach="daily-checklist" className="overflow-hidden rounded-[20px] bg-white" style={{ border: `2px solid ${K.forest}` }}>
+                {currentList.length === 0 ? (
+                  <p className="m-0 p-4 text-[15px]" style={{ color: K.quiet }}>{t("sitter.today.nothingScheduled", "Nothing scheduled for this {{daypart}}.", { daypart: nowLabel.toLowerCase() })}</p>
+                ) : (
+                  <>
+                    {currentList.map((task, i) => renderTask(task, i === currentList.length - 1 && !allCurrentDone))}
+                    {allCurrentDone && (
+                      <p className="m-0 px-4 py-3 text-[14px] font-[700]" style={{ color: K.moss }}>{t("sitter.today.allDone", "All done for this {{daypart}} — nicely done.", { daypart: nowLabel.toLowerCase() })}</p>
+                    )}
+                  </>
+                )}
+              </div>
+            </section>
+
+            {/* Other blocks — collapsed rows, expand in place. */}
+            {otherSections.map((dp) => {
+              const list = byDaypart[dp] ?? [];
+              const done = list.filter((task) => completedIds.has(task.id)).length;
+              const open = expandedSections.has(dp);
+              const titles = list.map((task) => (task.derived ? renderDerivedTask(task.derived as DerivedTask, i18n.getFixedT(i18n.language, "routine"), i18n.language).title : task.title) as string);
+              const preview = titles.length <= 3 ? titles.join(", ") : t("sitter.today.nTasks", "{{n}} tasks", { n: titles.length });
+              return (
+                <KyaCard key={dp}>
+                  <button
+                    type="button"
+                    onClick={() => toggleSection(dp)}
+                    aria-expanded={open}
+                    className="flex min-h-[64px] w-full items-center gap-3 px-4 py-3 text-left active:bg-black/[0.03]"
+                    style={{ color: K.forest, borderBottom: open ? `1px solid ${K.line}` : undefined }}
+                  >
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[15px] font-[700]">{daypartLabel(dp, DAYPART_LABEL[dp])}</span>
+                      <span className="mt-0.5 block truncate text-[13px]" style={{ color: K.quiet }}>{preview}</span>
+                    </span>
+                    <span className="shrink-0 text-[13px]" style={{ color: K.quiet }}>{t("sitter.today.doneOfTotal", "{{done}} of {{total}}", { done, total: list.length })}</span>
+                    <ChevronDown className={`size-[18px] shrink-0 transition-transform ${open ? "rotate-180" : ""}`} style={{ color: K.quiet }} aria-hidden="true" />
+                  </button>
+                  {open && list.map((task, i) => renderTask(task, i === list.length - 1))}
+                </KyaCard>
+              );
+            })}
+          </>
+        )}
+
+        {/* Tips from the owner — owner-recorded clips. */}
+        {ctx.watchClips && ctx.watchClips.length > 0 && (
+          <section data-coach="owner-tips" className="flex flex-col gap-1">
+            <KyaHeading size={21} className="px-1">{t("sitter.today.tipsFrom", "Tips from {{owner}}", { owner })}</KyaHeading>
+            <p className="m-0 px-1 text-[14px]" style={{ color: K.quiet }}>{t("sitter.today.tipsLine", "Short clips from {{owner}}, just for you.", { owner })}</p>
+            <div data-noswipe className="-mx-4 mt-2 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {ctx.watchClips.map((c: any) => (
+                <div key={c.key} className="flex w-60 shrink-0 snap-start flex-col overflow-hidden rounded-[20px] bg-white">
+                  <ClipPlayer src={c.url} label={clipSlotLabel(c.key, c.label, t)} className="aspect-video bg-[#12291f]" />
+                  <div className="px-3.5 py-3">
+                    <p className="m-0 text-[15px] font-[700] leading-[1.3]" style={{ color: K.forest }}>{clipSlotLabel(c.key, c.label, t)}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* The bird's care plan + Something's wrong, side by side. */}
+        <div className="grid grid-cols-2 gap-2.5">
+          <Link
+            to="/sitter/$token/care-sheet"
+            params={{ token }}
+            data-coach={multi ? undefined : "care-plan-link"}
+            className="inline-flex min-h-[52px] items-center justify-center rounded-full border-2 bg-white px-3 text-center text-[14.5px] font-[700] leading-[1.2] active:scale-[0.99]"
+            style={{ borderColor: K.forest, color: K.forest }}
+          >
+            {t("sitter.today.birdCarePlan", "{{name}}'s care plan", { name: bird.name })}
+          </Link>
+          <Link
+            to="/sitter/$token/concern"
+            params={{ token }}
+            className="inline-flex min-h-[52px] items-center justify-center gap-1.5 rounded-full border-2 px-3 text-center text-[14.5px] font-[700] leading-[1.2] active:scale-[0.99]"
+            style={{ background: K.amberBg, borderColor: K.amberText, color: K.amberText }}
+          >
+            {t("sitter.today.somethingsWrong", "Something's wrong")}
+          </Link>
+        </div>
+
+        {multi && (nextBird ? (
+          <button
+            type="button"
+            onClick={() => goToBird(nextBird.id)}
+            className="inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full border-2 px-6 text-[16px] font-[700]"
+            style={{ background: K.sunflower, borderColor: K.forest, color: K.forest }}
+          >
+            {t("sitter.today.nextBird", "Next: {{name}}", { name: nextBird.name })}
+            <ArrowRight className="size-[18px]" aria-hidden="true" />
+          </button>
+        ) : (
+          <Link
+            to="/sitter/$token/home"
+            params={{ token }}
+            className="inline-flex min-h-[52px] w-full items-center justify-center rounded-full border-2 bg-white px-6 text-[16px] font-[700]"
+            style={{ borderColor: K.forest, color: K.forest }}
+          >
+            {t("sitter.today.backToAllBirds", "Back to all birds")}
+          </Link>
+        ))}
+
+        {!multi && <AroundHouseCard ctx={ctx} token={token} />}
+
+        <VetNote />
+      </KyaBody>
+    </div>
+  );
+}
+
+/** Today's bird switcher (multi-bird sits): 48px pills with a 38px round
+ *  photo, the name and "[n] left" (✓ when everything is done). Selected =
+ *  lime with forest text; others darker forest with white text. Scrolls
+ *  sideways when there are more birds than fit. */
+function BirdSwitcher({ birds, activeId, leftFor, onPick }: {
+  birds: any[];
+  activeId: string;
+  leftFor: (b: any) => number | null;
+  onPick: (id: string) => void;
+}) {
+  const { t } = useTranslation();
+  const ref = useRef<HTMLDivElement>(null);
+  // Keep the selected chip in view when the bird changes (swipe, Next).
+  useEffect(() => {
+    const el = ref.current?.querySelector<HTMLElement>("[aria-pressed='true']");
+    el?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [activeId]);
+  return (
+    <div
+      ref={ref}
+      data-coach="bird-switcher"
+      data-noswipe
+      className="-mx-5 mt-5 flex items-center gap-2 overflow-x-auto px-5 pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+    >
+      {birds.map((b) => {
+        const active = b.id === activeId;
+        const left = leftFor(b);
+        return (
+          <button
+            key={b.id}
+            type="button"
+            onClick={() => onPick(b.id)}
+            aria-pressed={active}
+            className="flex h-12 shrink-0 items-center gap-2 rounded-full pl-[5px] pr-4 active:scale-95"
+            style={active ? { background: K.lime, color: K.forest } : { background: K.forestDeep, color: "#fff" }}
+          >
+            <BirdAvatar bird={b} size={38} />
+            <span className="flex flex-col items-start leading-[1.15]">
+              <span className="text-[14.5px] font-[700]">{b.name}</span>
+              {left != null && (
+                <span className="text-[12px] font-[500]" style={{ color: active ? K.moss : K.teal }}>
+                  {left === 0 ? "✓" : t("sitter.today.nLeft", "{{n}} left", { n: left })}
+                </span>
+              )}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/** One-bird sits: the bird's photo, name and species over a dark fade. */
+function SinglePhotoCard({ bird, species, token }: { bird: any; species: string; token: string }) {
+  const { t } = useTranslation();
   const age = birdAgeLabel(t, bird) ?? "";
   const speciesAge = [species, age].filter(Boolean).join(" · ");
   const initial = (bird.name?.slice(0, 1) ?? "?").toUpperCase();
-
   return (
     <Link
       to="/sitter/$token/care-sheet"
       params={{ token }}
       data-coach="welcome-card"
-      className="block overflow-hidden rounded-2xl bg-[#1a3d2e] text-white active:scale-[0.99]"
+      className="relative block h-[210px] overflow-hidden rounded-[20px] active:scale-[0.99]"
+      style={{ background: K.forest }}
+      aria-label={t("sitter.today.birdCarePlan", "{{name}}'s care plan", { name: bird.name })}
     >
-      {/* Photo hero — 4:3 keeps a vertical bird subject in frame; the crop
-          biases toward the top (head/face) unless the owner set a focal point.
-          Bird name is overlaid on a bottom gradient. */}
-      <div className="relative aspect-[4/3] w-full bg-white/10">
-        {bird.photo_url ? (
-          <img
-            src={bird.photo_url}
-            alt={bird.name}
-            // Not lazy: this is the first thing on the page, and inside the
-            // owner's preview frame on iPhone a lazy image may never load.
-            loading="eager"
-            style={{ objectPosition: bird.photo_position ?? "50% 20%" }}
-            className="absolute inset-0 size-full object-cover"
-          />
-        ) : (
-          <div className="grid size-full place-items-center">
-            <span className="text-4xl font-semibold text-white/90">{initial}</span>
-          </div>
-        )}
-        <div className="absolute inset-x-0 top-0 bg-gradient-to-b from-black/30 to-transparent px-4 pb-8 pt-3">
-          <p className="text-[10px] font-medium uppercase tracking-widest text-[#cdeab0]">{t("sitter.today.sayHi", "Say hi to who you're caring for")}</p>
-        </div>
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#1a3d2e] via-[#1a3d2e]/70 to-transparent px-5 pb-3 pt-12">
-          <h1 className="text-[22px] font-medium leading-tight text-white">{bird.name}</h1>
-          {speciesAge && <p className="mt-0.5 text-sm text-[#cdeab0]">{speciesAge}</p>}
-        </div>
-      </div>
-
-      {/* Visible CTA so it's clearly an action, for sitters who don't tap the card. */}
-      <div data-coach="care-plan-link" className="flex items-center justify-between gap-3 border-t border-white/10 px-5 py-3">
-        <span className="text-sm font-medium text-[#cdeab0]">{t("sitter.today.viewCarePlan", "View {{name}}'s full care plan", { name: bird.name })}</span>
-        <ChevronRight className="size-5 shrink-0 text-[#cdeab0]" />
-      </div>
+      {bird.photo_url ? (
+        <img
+          src={bird.photo_url}
+          alt=""
+          // Not lazy: first thing on the page, and inside the owner's preview
+          // frame on iPhone a lazy image may never load.
+          loading="eager"
+          style={{ objectPosition: bird.photo_position ?? "50% 20%" }}
+          className="absolute inset-0 size-full object-cover"
+        />
+      ) : (
+        <span className="absolute inset-0 grid place-items-center text-[56px] font-[700] text-white/85" style={{ fontFamily: SERIF }} aria-hidden="true">{initial}</span>
+      )}
+      <span className="absolute inset-x-0 bottom-0 block bg-gradient-to-t from-black/75 via-black/35 to-transparent px-4 pb-3.5 pt-14">
+        <span className="block text-[24px] font-[700] leading-[1.15] text-white" style={{ fontFamily: SERIF }}>{bird.name}</span>
+        {speciesAge && <span className="mt-0.5 block text-[14px]" style={{ color: K.lime }}>{speciesAge}</span>}
+      </span>
     </Link>
   );
+}
+
+function thingsToWatch(log: any): number {
+  if (!log) return 0;
+  if (Array.isArray(log.triage_reason_codes)) return log.triage_reason_codes.length;
+  const r = (log.triage_reasons ?? "").toString().trim();
+  return r ? r.split(" | ").filter(Boolean).length : 0;
+}
+
+/** The daily health check entry: lime card, status line, Start / See check. */
+function DailyCheckCard({ bird, todayLog, contacts, token }: { bird: any; todayLog: any; contacts: any; token: string }) {
+  const { t, i18n } = useTranslation();
+  const done = !!todayLog;
+  const n = thingsToWatch(todayLog);
+  const time = done && todayLog.created_at
+    ? new Date(todayLog.created_at).toLocaleTimeString(i18n.language === "nl" ? "nl-NL" : "en-US", { hour: "numeric", minute: "2-digit" })
+    : "";
+  // A red check ("call the vet") replaced the old result screen: make it
+  // unmissable here with the vet call row and the way to Emergency.
+  const red = done && todayLog.triage_status === "red";
+  const line = red ? t("sitter.today.checkDoneCallVet", "Done at {{time}} · call the vet", { time }) : statusLine(t, done, time, n);
+  const useAvian = !!contacts?.avian_vet_phone;
+  return (
+    <section data-coach="scan-card" className="flex flex-col gap-3 rounded-[20px] p-4" style={{ background: K.lime, color: K.forest }}>
+      <div className="flex items-center gap-3">
+      <div className="min-w-0 flex-1">
+        <KyaHeading size={19}>{t("sitter.today.birdsCheck", "{{name}}'s daily check", { name: bird.name })}</KyaHeading>
+        <p className="m-0 mt-1 text-[14px] leading-[1.4]" style={{ color: red ? K.red : done && n > 0 ? K.amberText : K.forest, fontWeight: red ? 700 : undefined }}>{line}</p>
+      </div>
+      <Link
+        to="/sitter/$token/scan"
+        params={{ token }}
+        className="inline-flex min-h-[48px] shrink-0 items-center gap-1 rounded-full border-2 px-5 text-[15px] font-[700] active:scale-95"
+        style={done ? { background: "#fff", borderColor: K.forest, color: K.forest } : { background: K.sunflower, borderColor: K.forest, color: K.forest }}
+      >
+        {done ? t("sitter.today.seeCheck", "See check") : t("sitter.today.start", "Start")}
+        {done && <ChevronRight className="-mr-1 size-4" aria-hidden="true" />}
+      </Link>
+      </div>
+      {red && (
+        <>
+          <VetCallRow
+            surface="mist"
+            label={useAvian ? t("sitter.calls.avianVet", "Avian vet") : t("sitter.calls.emergencyVet", "After-hours emergency vet")}
+            name={useAvian ? contacts?.avian_vet_name : contacts?.emergency_vet_name}
+            phone={useAvian ? contacts?.avian_vet_phone : contacts?.emergency_vet_phone}
+          />
+          <Link to="/sitter/$token/emergency" params={{ token }} className="inline-flex min-h-[44px] items-center gap-1 self-start text-[15px] font-[700]" style={{ color: K.moss }}>
+            {t("sitter.today.openEmergencyInfo", "Open emergency info")}
+            <ChevronRight className="size-4" aria-hidden="true" />
+          </Link>
+        </>
+      )}
+    </section>
+  );
+}
+
+function statusLine(t: TFunction, done: boolean, time: string, n: number): string {
+  if (!done) return t("sitter.today.checkNotDone", "Not done yet today");
+  if (n === 0) return t("sitter.today.checkDoneNormal", "Done at {{time}} · all normal", { time });
+  if (n === 1) return t("sitter.today.checkDoneWatchOne", "Done at {{time}} · 1 thing to watch", { time });
+  return t("sitter.today.checkDoneWatchMany", "Done at {{time}} · {{n}} things to watch", { time, n });
 }

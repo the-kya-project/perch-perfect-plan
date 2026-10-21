@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate, useLocation } from "@tanstack/react
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Eye, ArrowLeft, Loader2 } from "lucide-react";
+import { Eye, Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import i18next from "i18next";
 
@@ -62,17 +62,17 @@ function SitPreview() {
   const [frameReady, setFrameReady] = useState(false);
 
   return (
-    <div className="flex h-[100dvh] flex-col bg-[var(--cream)]">
-      <div className="flex items-center justify-between gap-3 bg-[var(--ink)] px-4 py-2.5 pt-[max(env(safe-area-inset-top),0.625rem)] text-white">
-        <span className="flex min-w-0 items-center gap-2 text-[13.5px] font-[500]">
-          <Eye className="size-4 shrink-0 text-[var(--lime)]" />
+    <div className="flex h-[100dvh] flex-col bg-[#f1f5f0]">
+      <div className="setup-frame flex items-center justify-between gap-3 bg-[#12291f] px-4 py-2 pt-[max(env(safe-area-inset-top),0.5rem)] text-white">
+        <span className="flex min-w-0 items-center gap-2 text-[13.5px] font-[500] text-white">
+          <Eye className="size-4 shrink-0" aria-hidden="true" />
           <span className="truncate">{household ? t("sitPreview.caregiverBanner", "Caregiver preview · how {{label}} will see this sit", { label }) : t("sitPreview.sitterBanner", "Sitter preview · how {{label}} will see this sit", { label })}</span>
         </span>
         <Link
           to="/sits"
-          className="inline-flex shrink-0 items-center gap-1 rounded-full bg-white/15 px-3 py-1 text-xs font-[500] text-white"
+          className="inline-flex min-h-[32px] shrink-0 items-center rounded-full bg-white/15 px-3.5 text-[13px] font-[700] text-white"
         >
-          <ArrowLeft className="size-3.5" /> {t("sitPreview.sits", "Sits")}
+          {t("sitPreview.exit", "Exit")}
         </Link>
       </div>
 
@@ -86,10 +86,10 @@ function SitPreview() {
             src={src}
             title={t("sitPreview.iframeTitle", "Sitter view preview")}
             onLoad={() => setFrameReady(true)}
-            className="absolute inset-0 size-full border-0 bg-[var(--cream)]"
+            className="absolute inset-0 size-full border-0 bg-[#f1f5f0]"
           />
           {!frameReady && (
-            <div className="pointer-events-none absolute inset-0 flex items-center justify-center gap-2 bg-[var(--cream)] text-[14px] text-[var(--mute)]">
+            <div className="pointer-events-none absolute inset-0 flex items-center justify-center gap-2 bg-[#f1f5f0] text-[14px] text-[var(--mute)]">
               <Loader2 className="size-4 animate-spin" /> {t("sitPreview.loading", "Loading preview…")}
             </div>
           )}
