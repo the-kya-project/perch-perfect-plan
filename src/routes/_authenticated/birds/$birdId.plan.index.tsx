@@ -96,7 +96,8 @@ function CarePlanOverview() {
   // Edit access is capability-based now: owner OR a member with edit_care_plans
   // can open the section editor; everyone else sees the read-only care plan.
   const canEdit = useCapability("edit_care_plans", { birdId });
-  const isOwner = role === "owner";
+  // Owner and household members alike can see the read-only sitter preview.
+  const canPreview = role === "owner" || role === "household";
 
   const { bird, isDone, todo, homeIsDifferent, emergencyIsDifferent } = useCarePlanStatus(birdId);
 
@@ -164,7 +165,7 @@ function CarePlanOverview() {
           onBack={() => navigate({ to: "/birds/$birdId", params: { birdId } })}
           title={t("planOverview.titleNamed", "{{name}}'s care plan", { name })}
           line={bird?.species ? speciesLabel(t, bird.species) : undefined}
-          action={isOwner ? { label: t("planOverview.viewAsSitterPill", "View as sitter"), icon: <Eye className="size-4" />, onClick: () => navigate({ to: "/birds/$birdId/view-as-sitter", params: { birdId } }) } : undefined}
+          action={canPreview ? { label: t("planOverview.viewAsSitterPill", "View as sitter"), icon: <Eye className="size-4" />, onClick: () => navigate({ to: "/birds/$birdId/view-as-sitter", params: { birdId } }) } : undefined}
         >
           <div className="mt-5 flex flex-col gap-3 rounded-[16px] p-4" style={{ background: K.forestDeep }}>
             <p className="m-0 text-[16px] leading-[1.45] text-white">{status}</p>
