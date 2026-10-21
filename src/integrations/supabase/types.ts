@@ -447,6 +447,7 @@ export type Database = {
           id: string
           injury_status: string | null
           item_notes: Json | null
+          kind: string | null
           log_date: string
           notes: string | null
           posture_status: string | null
@@ -472,6 +473,7 @@ export type Database = {
           id?: string
           injury_status?: string | null
           item_notes?: Json | null
+          kind?: string | null
           log_date?: string
           notes?: string | null
           posture_status?: string | null
@@ -497,6 +499,7 @@ export type Database = {
           id?: string
           injury_status?: string | null
           item_notes?: Json | null
+          kind?: string | null
           log_date?: string
           notes?: string | null
           posture_status?: string | null

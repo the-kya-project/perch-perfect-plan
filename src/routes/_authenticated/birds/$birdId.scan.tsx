@@ -8,6 +8,7 @@ import { useCapability, useMyPermissions } from "@/lib/useCapability";
 import { useActiveSitIdForBird } from "@/components/CaregiverHome";
 import { toast } from "sonner";
 import { buildDailyLogRow, type ScanAnswers } from "@/lib/dailyLog";
+import { FULL_CHECK_PHOTO_NOTE, insertWithKind } from "@/lib/checkKind";
 import { saveWeight, invalidateAfterCheck } from "@/lib/dailyCheck";
 import { mergeEmergency, pickVet } from "@/lib/emergency";
 import { useBirdOwnerEmergency } from "@/lib/useOwnerEmergency";
@@ -82,15 +83,15 @@ function OwnerScan() {
       const { data: u } = await getLocalUser();
       const runBy = u.user?.id ?? null;
       const { row: logRow, triage } = buildDailyLogRow(p.answers as ScanAnswers, {
-        birdId, sitId: activeSitId, source: scanSource, runBy, logDate: localDateISO(),
+        kind: "full", birdId, sitId: activeSitId, source: scanSource, runBy, logDate: localDateISO(),
         notes: p.notes ?? null, itemNotes: p.itemNotes ?? null,
       });
       const a = p.answers;
-      const { data: row, error } = await supabase
+      const { data: row, error } = await insertWithKind(logRow, (r) => supabase
         .from("daily_logs")
-        .insert(logRow as any)
+        .insert(r as any)
         .select()
-        .single();
+        .single());
       if (error) throw error;
 
       // vomiting_status / photo / weight — best-effort, never block the scan.
@@ -102,7 +103,7 @@ function OwnerScan() {
         // scan still saves (see uploadScanPhotoOrInline in scanPhoto.ts).
         const stored = await uploadScanPhotoOrInline(birdId, p.photoDataUrl);
         photoFallback = !stored.storedAsPath;
-        await supabase.from("photo_logs").insert({ bird_id: birdId, daily_log_id: row.id, photo_type: "other", photo_url: stored.value, notes: "Attached to health check", ...(activeSitId ? { sit_id: activeSitId } : {}) });
+        await supabase.from("photo_logs").insert({ bird_id: birdId, daily_log_id: row.id, photo_type: "other", photo_url: stored.value, notes: FULL_CHECK_PHOTO_NOTE, ...(activeSitId ? { sit_id: activeSitId } : {}) });
       }
       if (typeof p.weightGrams === "number") {
         // Same weight_entries row as before (bird, grams, source, logged_by,

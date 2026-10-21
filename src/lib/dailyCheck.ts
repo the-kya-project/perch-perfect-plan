@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { localDateISO } from "@/lib/localDay";
 import { buildDailyLogRow, type ScanAnswers } from "@/lib/dailyLog";
+import { insertWithKind } from "@/lib/checkKind";
 import type { TriageResult } from "@/lib/triage";
 
 export type Meal = "before_meal" | "after_meal" | null;
@@ -82,9 +83,9 @@ export async function saveDailyCheck(p: {
   const { data: u } = await getLocalUser();
   const runBy = u.user?.id ?? null;
   const { row, vomiting, triage } = buildDailyLogRow(p.answers, {
-    birdId: p.birdId, sitId: p.sitId, source: p.source, runBy, logDate: localDateISO(), notes: p.notes,
+    kind: "daily", birdId: p.birdId, sitId: p.sitId, source: p.source, runBy, logDate: localDateISO(), notes: p.notes,
   });
-  const { data: log, error } = await supabase.from("daily_logs").insert(row as any).select("id").single();
+  const { data: log, error } = await insertWithKind(row, (r) => supabase.from("daily_logs").insert(r as any).select("id").single());
   if (error) throw error;
   if (vomiting) await supabase.from("daily_logs").update({ vomiting_status: vomiting } as any).eq("id", log.id);
 

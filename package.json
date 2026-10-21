@@ -41,7 +41,8 @@
     "test:weight-then": "npx --yes vite-node scripts/weight-then.test.ts",
     "test:bird-names": "npx --yes vite-node scripts/bird-names.test.ts",
     "test:emergency-merge": "npx --yes vite-node scripts/emergency-merge.test.ts",
-    "test:intake-date": "npx --yes vite-node scripts/intake-date.test.ts"
+    "test:intake-date": "npx --yes vite-node scripts/intake-date.test.ts",
+    "test:check-kind": "npx --yes vite-node scripts/check-kind.test.ts"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.2",
