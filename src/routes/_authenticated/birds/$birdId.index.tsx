@@ -40,6 +40,7 @@ import { birdNames } from "@/lib/birdNames";
 import { getHouseholdForBird } from "@/lib/household.functions";
 import { useBirdOwnerEmergency } from "@/lib/useOwnerEmergency";
 import { emergencyDifferent } from "@/lib/emergency";
+import { checkKindOf } from "@/lib/checkKind";
 
 // Bird-record home — the new landing when you tap a bird. A glanceable hub for
 // the living record; the care plan is one facet among several. Facet screens
@@ -233,7 +234,7 @@ function BirdRecordHero({ birdId }: { birdId: string }) {
 }
 
 type WeightRow = { id: string; grams: number; measured_at: string; source: string; logged_by: string | null; sit_id: string | null };
-type CheckRow = { id: string; log_date: string; triage_status: string; created_at: string; source: string | null; run_by: string | null; sit_id: string | null };
+type CheckRow = { id: string; log_date: string; triage_status: string; created_at: string; source: string | null; run_by: string | null; sit_id: string | null; kind?: string | null; item_notes?: unknown };
 
 // A weigh-in older than this many days reads red.
 const STALE_DAYS = 7;
@@ -296,7 +297,7 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("daily_logs")
-        .select("id, log_date, triage_status, created_at, source, run_by, sit_id")
+        .select("*") // "*": works before daily_logs.kind exists (lib/missingColumn.ts)
         .eq("bird_id", birdId)
         .order("created_at", { ascending: false })
         .limit(30);
@@ -328,7 +329,7 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
   // Weights and checks, newest first.
   const recent = [
     ...(weights ?? []).map((w) => ({ kind: "weight" as const, at: w.measured_at, id: `w-${w.id}`, rawId: w.id, grams: w.grams, status: null as string | null, by: w.logged_by, source: w.source as string | null, sitId: w.sit_id })),
-    ...(checkins ?? []).map((c) => ({ kind: "checkin" as const, at: c.created_at, id: `c-${c.id}`, rawId: c.id, grams: null as number | null, status: c.triage_status, by: c.run_by, source: c.source ?? "sitter", sitId: c.sit_id })),
+    ...(checkins ?? []).map((c) => ({ kind: "checkin" as const, at: c.created_at, id: `c-${c.id}`, rawId: c.id, grams: null as number | null, status: c.triage_status, by: c.run_by, source: c.source ?? "sitter", sitId: c.sit_id, checkKind: checkKindOf(c as any) })),
   ].sort((a, b) => +new Date(b.at) - +new Date(a.at)).slice(0, 12);
   const loggedBy = useLoggedBy(recent, isOwner);
   const [showAllRecent, setShowAllRecent] = useState(false);
@@ -455,7 +456,7 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
                   <span className="min-w-0 flex-1 text-[14px]">
                     {r.kind === "weight"
                       ? <>{t("birdRecord.recentWeighed", "Weighed")} · <b className="font-[700]">{t("birdRecord.grams", "{{n}} g", { n: r.grams?.toLocaleString() })}</b></>
-                      : <>{t("birdRecord.recentDailyCheck", "Daily check")} · {checkinLabel(t, r.status ?? "green")}</>}
+                      : <>{(r as { checkKind?: string }).checkKind === "full" ? t("birdRecord.recentFullCheck", "Full health check") : t("birdRecord.recentDailyCheck", "Daily check")} · {checkinLabel(t, r.status ?? "green")}</>}
                   </span>
                   <span className="max-w-[40%] shrink-0 truncate text-right text-[13px]" style={{ color: K.quiet }}>{loggedBy(t, r)}</span>
                 </button>

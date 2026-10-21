@@ -25,7 +25,7 @@ import type { TFunction } from "i18next";
 function presetLineFor(t: TFunction, p: AssignablePreset): string {
   switch (p) {
     case "viewer": return t("householdInvite.presetLine.viewer", "Sees each bird's record and care plan, but can't change anything");
-    case "caregiver": return t("householdInvite.presetLine.caregiver", "Plus daily checks, weights, and notes");
+    case "caregiver": return t("householdInvite.presetLine.caregiverPhotos", "Plus daily checks, weights, notes, and photos");
     case "care_manager": return t("householdInvite.presetLine.careManager", "Plus editing care plans, emergency info, and sits");
     case "co_owner": return t("householdInvite.presetLine.coOwner", "Everything, including editing birds and inviting people");
   }
