@@ -20,7 +20,7 @@ import { isTaskPath } from "@/components/OwnerTabBar";
 import { SETUP_STEPS } from "@/components/SetupShell";
 // The editor renders the guided-setup step components directly so the two UIs
 // are identical (same fields, pickers, autosave, clip recording).
-import { BasicsStep, DayInLifeStep, PersonalityStep, OwnerTipsClipsStep, FoodWaterStep, EnvironmentStep, HealthBaselineStep, HideStepInstruction } from "./$birdId.setup";
+import { BasicsStep, DayInLifeStep, PersonalityStep, OwnerTipsClipsStep, FoodWaterStep, EnvironmentStep, HealthBaselineStep, HideStepInstruction, useEnsureCarePlan } from "./$birdId.setup";
 import { SitCard } from "@/components/SitCard";
 import { toast } from "sonner";
 import { Disclaimer } from "@/components/Disclaimer";
@@ -111,6 +111,9 @@ function BirdEditor() {
   const canEdit = useCapability("edit_care_plans", { birdId });
   const canEmergency = useCapability("manage_emergency", { birdId });
   const { data: perms } = useMyPermissions();
+  // A bird with no care plan row would leave every tab waiting; create it (as
+  // the walkthrough does) for anyone allowed to edit the plan.
+  useEnsureCarePlan(birdId, role === "owner" || canEdit);
   // A task page hides the bottom nav (isTaskPath); until this route is listed
   // there the nav still shows, so the Done footer sits just above it.
   const navHidden = useLocation({ select: (l) => isTaskPath(l.pathname) });
@@ -169,7 +172,7 @@ function BirdEditor() {
     },
   });
   // The bird OWNER's account emergency info (not the viewer's), with their name.
-  const { defaults, ownerName } = useBirdOwnerEmergency(birdId);
+  const { defaults, ownerName, failed: ownerEmergencyFailed } = useBirdOwnerEmergency(birdId);
   const { data: tasks = [] } = useQuery({
     queryKey: ["tasks", plan?.id],
     enabled: !!plan?.id,
@@ -304,8 +307,13 @@ function BirdEditor() {
             {tab === "routine" && <DayInLifeStep birdId={birdId} birdName={birdName} />}
             {tab === "behavior" && <PersonalityStep birdId={birdId} birdName={birdName} />}
             {tab === "clips" && <OwnerTipsClipsStep birdId={birdId} birdName={birdName} onBlockNext={() => {}} />}
-            {tab === "emergency" && contacts !== undefined && <EmergencyInfo birdId={birdId} birdName={birdName} contacts={contacts ?? null} defaults={defaults ?? null} ownerName={ownerName} isOwner={role === "owner"} onSaved={() => qc.invalidateQueries({ queryKey: ["contacts", birdId] })} />}
-            {tab === "sits" && <SitsPanel birdId={birdId} sits={sits} onChange={() => qc.invalidateQueries({ queryKey: ["sits", birdId] })} />}
+            {/* Wait for the owner's info as well as the bird's: saving before it
+                arrives would store a copy of the owner's values on this bird. */}
+            {tab === "emergency" && ownerEmergencyFailed && (
+              <LoadError onRetry={() => void qc.refetchQueries({ queryKey: ["bird-owner-emergency", birdId] })} />
+            )}
+            {tab === "emergency" && !ownerEmergencyFailed && contacts !== undefined && defaults !== undefined && role !== undefined && <EmergencyInfo birdId={birdId} birdName={birdName} contacts={contacts ?? null} defaults={defaults ?? null} ownerName={ownerName} isOwner={role === "owner"} onSaved={() => qc.invalidateQueries({ queryKey: ["contacts", birdId] })} />}
+            {tab === "sits" && <SitsPanel birdId={birdId} sits={sits} onChange={() => { qc.invalidateQueries({ queryKey: ["sits", birdId] }); qc.invalidateQueries({ queryKey: ["sit-birds-for-sits"] }); }} />}
             {tab === "logs" && <LogsPanel birdId={birdId} initialScan={scanParam} />}
           </HideStepInstruction.Provider>
         </KyaBody>

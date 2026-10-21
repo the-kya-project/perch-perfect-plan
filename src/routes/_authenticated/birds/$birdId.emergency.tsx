@@ -43,14 +43,14 @@ function BirdEmergency() {
     },
   });
   // Always the bird OWNER's account info, even for a household member.
-  const { defaults, ownerName } = useBirdOwnerEmergency(birdId);
+  const { defaults, ownerName, failed: ownerFailed } = useBirdOwnerEmergency(birdId);
   const name = bird?.name ?? t("birdEmergency.yourBird", "your bird");
   const goBack = () => (canGoBack ? router.history.back() : navigate({ to: "/birds/$birdId", params: { birdId } }));
   const ready = contacts !== undefined && defaults !== undefined && !!bird;
   // Never "Loading…" forever: a missing bird says so, a failed load (or one
   // still waiting after 10 s) offers a retry.
   const birdMissing = birdKnown && !bird;
-  const { tooLong, restart } = useTooLong(!ready && !birdMissing && !birdError);
+  const { tooLong, restart } = useTooLong(!ready && !birdMissing && !birdError && !ownerFailed);
   const retry = () => { restart(); void qc.refetchQueries({ type: "active" }); };
 
   return (
@@ -60,7 +60,7 @@ function BirdEmergency() {
           ? t("birdEmergency.line", "Same as your other birds, unless you change something here.")
           : t("birdEmergency.lineMember", "Same as {{owner}}'s other birds, unless it's changed here.", { owner: ownerName || t("birdEmergency.theOwner", "the owner") })} />
         <KyaBody className="gap-5">
-          {birdMissing || birdError || tooLong ? (
+          {birdMissing || birdError || ownerFailed || tooLong ? (
             <LoadError
               missing={birdMissing}
               onRetry={retry}

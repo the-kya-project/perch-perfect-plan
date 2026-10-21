@@ -66,3 +66,14 @@ export function sitPhase(today: string, start: string | null | undefined, end: s
   if (t === e) return { kind: "lastDay", day, total };
   return { kind: "during", day, total, daysLeft: e - t };
 }
+
+/**
+ * True when a write failed only because sits.time_zone isn't in the database
+ * yet (the web app can go live moments before its migration is applied). The
+ * caller retries without the field, so creating or editing a sit never breaks
+ * in that window; the link then keeps the old UTC end until the zone is filled.
+ */
+export function isMissingTimeZoneColumn(error: { code?: string; message?: string } | null | undefined): boolean {
+  if (!error) return false;
+  return (error.code === "PGRST204" || error.code === "42703") && /time_zone/.test(error.message ?? "");
+}

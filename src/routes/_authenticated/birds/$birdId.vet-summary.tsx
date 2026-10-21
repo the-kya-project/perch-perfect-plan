@@ -113,7 +113,7 @@ function VetSummary() {
         .eq("bird_id", birdId)
         .gte("log_date", cutoff)
         .order("created_at", { ascending: false });
-      return ((data ?? []) as any[]).filter((r) => flaggedAnswers(r).length > 0);
+      return ((data ?? []) as any[]).filter((r) => flaggedAnswers(r).length > 0 || legacyWaterAnswer(r) !== null);
     },
   });
 
@@ -373,16 +373,28 @@ function IncludedTag({ children, amber }: { children: ReactNode; amber?: boolean
  *  worded as the check asks it today, with the owner's note for that item. */
 function flaggedItems(t: TFunction, r: any, birdName: string | null | undefined) {
   const notes = (r.item_notes ?? {}) as Record<string, string>;
-  return flaggedAnswers(r).map(({ key, answer }) => {
+  const answerText = (answer: string) =>
+    answer === "concerning" ? t("vetSummary.answerConcerning", "concerning") : t("vetSummary.answerNotSure", "not sure");
+  const water = legacyWaterAnswer(r);
+  const legacy = water
+    ? [{ key: "water", answer: water, question: t("vetSummary.legacyWater", "Drinking water (asked in older checks)"), answerText: answerText(water), note: notes.water || null }]
+    : [];
+  return [...flaggedAnswers(r).map(({ key, answer }) => {
     const field = SCAN_FIELDS.find((f) => f.key === key)!;
     return {
       key,
       answer,
       question: scanQuestionFor(t, field, birdName),
-      answerText: answer === "concerning" ? t("vetSummary.answerConcerning", "concerning") : t("vetSummary.answerNotSure", "not sure"),
+      answerText: answerText(answer),
       note: notes[key] || null,
     };
-  });
+  }), ...legacy];
+}
+
+/** Older checks asked about drinking water; that question is gone from
+ *  SCAN_FIELDS, but a flag it recorded still belongs in the vet summary. */
+function legacyWaterAnswer(r: any): "not_sure" | "concerning" | null {
+  return r?.water_status === "not_sure" || r?.water_status === "concerning" ? r.water_status : null;
 }
 
 /** "a, b and c" in the reader's language. */
@@ -402,7 +414,7 @@ function joinList(items: string[], lang: string): string {
 // ---------------------------------------------------------------------------
 export function FlaggedForReview({ scans, birdName }: { scans: any[]; birdName?: string | null }) {
   const { t } = useTranslation();
-  const isSerious = (r: any) => r.triage_status === "red" || flaggedAnswers(r).some((a) => a.answer === "concerning");
+  const isSerious = (r: any) => r.triage_status === "red" || flaggedAnswers(r).some((a) => a.answer === "concerning") || legacyWaterAnswer(r) === "concerning";
   const serious = scans.filter(isSerious);
   const milder = scans.filter((r) => !isSerious(r));
 

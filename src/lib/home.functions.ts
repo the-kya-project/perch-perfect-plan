@@ -163,19 +163,26 @@ export const resolveHouseholdNames = createServerFn({ method: "GET" })
     // of birds the caller owns, and — for birds the caller is a member of — that
     // bird's owner and its other members (so a household member sees the names
     // of the owner and co-members on sits, logs, and checks too).
+    // Emails go only to the caller and the owner of the birds (as before); people
+    // reached through a bird the caller merely helps with get a name only.
     const allowed = new Set<string>([ownerId]);
+    const withEmail = new Set<string>([ownerId]);
     const [{ data: ownedBirds }, { data: myMemberships }] = await Promise.all([
       sb.from("birds").select("id").eq("owner_id", ownerId),
       sb.from("bird_members").select("bird_id").eq("user_id", ownerId),
     ]);
+    const ownedIds = (ownedBirds ?? []).map((b: any) => b.id as string);
     const memberOfIds = (myMemberships ?? []).map((m: any) => m.bird_id as string);
-    const birdIds = [...new Set([...(ownedBirds ?? []).map((b: any) => b.id as string), ...memberOfIds])];
-    if (birdIds.length) {
-      const { data: mem } = await sb.from("bird_members").select("user_id").in("bird_id", birdIds);
-      for (const m of (mem ?? []) as any[]) allowed.add(m.user_id);
+    if (ownedIds.length) {
+      const { data: mem } = await sb.from("bird_members").select("user_id").in("bird_id", ownedIds);
+      for (const m of (mem ?? []) as any[]) { allowed.add(m.user_id); withEmail.add(m.user_id); }
     }
     if (memberOfIds.length) {
-      const { data: owners } = await sb.from("birds").select("owner_id").in("id", memberOfIds);
+      const [{ data: mem }, { data: owners }] = await Promise.all([
+        sb.from("bird_members").select("user_id").in("bird_id", memberOfIds),
+        sb.from("birds").select("owner_id").in("id", memberOfIds),
+      ]);
+      for (const m of (mem ?? []) as any[]) allowed.add(m.user_id);
       for (const o of (owners ?? []) as any[]) if (o.owner_id) allowed.add(o.owner_id);
     }
     const ids = want.filter((id) => allowed.has(id));
@@ -186,7 +193,7 @@ export const resolveHouseholdNames = createServerFn({ method: "GET" })
     for (const p of (profs ?? []) as any[]) {
       out[p.id] = {
         name: (p.display_name ?? "").toString().trim() || null,
-        email: (p.email ?? "").toString().trim() || null,
+        email: withEmail.has(p.id) ? (p.email ?? "").toString().trim() || null : null,
       };
     }
     return out;

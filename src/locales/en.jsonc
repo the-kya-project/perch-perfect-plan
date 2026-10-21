@@ -3500,6 +3500,7 @@
   "vetSummary.identity": "Identity",
   "vetSummary.includedTitle": "What's included",
   "vetSummary.lastWeighed": "last weighed {{date}}",
+  "vetSummary.legacyWater": "Drinking water (asked in older checks)",
   "vetSummary.line": "One clean sheet to bring to the vet or send ahead.",
   "vetSummary.loggedBy": "logged by {{source}}",
   "vetSummary.make": "Make {{name}}'s vet summary",

@@ -19,7 +19,7 @@ export function useLoggedBy(rows: LoggedRow[], viewerIsOwner: boolean) {
     enabled: people.length > 0,
     staleTime: 5 * 60_000,
     // Server-side: profiles RLS is self-only, so a direct read comes back empty.
-    queryFn: () => fetchDisplayNames(people),
+    queryFn: () => fetchDisplayNames(people, { rethrow: true }),
   });
   const { data: sitters } = useQuery({
     queryKey: ["logged-by-sitters", sitIds.join(",")],

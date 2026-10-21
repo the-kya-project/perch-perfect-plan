@@ -98,6 +98,31 @@ function StepSkeleton({ failed, onRetry }: { failed?: boolean; onRetry: () => vo
   return <div className="h-32 animate-pulse rounded-[18px] bg-[#e3ebe2]" />;
 }
 
+/**
+ * Self-heal: guarantee a care_plan exists for this bird so no step can silently
+ * no-op and lose the owner's input, or wait forever on a plan row that isn't
+ * there. The original creation in new.tsx can fail; this also repairs any bird
+ * that ended up without a plan. Used by the walkthrough and the plan editor
+ * (enable it only for someone allowed to edit the plan).
+ */
+export function useEnsureCarePlan(birdId: string, enabled: boolean) {
+  const qc = useQueryClient();
+  const planEnsuredRef = useRef(false);
+  useEffect(() => {
+    if (!enabled || planEnsuredRef.current) return;
+    planEnsuredRef.current = true;
+    (async () => {
+      const { data, error } = await supabase
+        .from("care_plans").select("id").eq("bird_id", birdId).maybeSingle();
+      if (error || data) return; // already exists, or transient — steps will retry
+      const { error: upErr } = await supabase
+        .from("care_plans").upsert({ bird_id: birdId }, { onConflict: "bird_id" });
+      if (upErr) { toast.error(i18next.t("birdSetup.couldNotLoadPlan", "Couldn't load this bird's care plan: {{reason}}", { reason: friendlyError(upErr, i18next.t("birdSetup.pleaseTryAgainLower", "please try again.")) })); return; }
+      qc.invalidateQueries(); // plan now exists — refetch the per-step queries
+    })();
+  }, [enabled, birdId, qc]);
+}
+
 function useDebouncedAutosave(
   save: () => Promise<void>,
   deps: React.DependencyList,
@@ -246,23 +271,7 @@ function BirdSetup() {
   const stopPointSeenRef = useRef(false);
   const qc = useQueryClient();
 
-  // Self-heal: guarantee a care_plan exists for this bird so no setup step can
-  // silently no-op and lose the owner's input. The original creation in new.tsx
-  // can fail; this also repairs any bird that ended up without a plan.
-  const planEnsuredRef = useRef(false);
-  useEffect(() => {
-    if (!bird || planEnsuredRef.current) return;
-    planEnsuredRef.current = true;
-    (async () => {
-      const { data, error } = await supabase
-        .from("care_plans").select("id").eq("bird_id", birdId).maybeSingle();
-      if (error || data) return; // already exists, or transient — steps will retry
-      const { error: upErr } = await supabase
-        .from("care_plans").upsert({ bird_id: birdId }, { onConflict: "bird_id" });
-      if (upErr) { toast.error(i18next.t("birdSetup.couldNotLoadPlan", "Couldn't load this bird's care plan: {{reason}}", { reason: friendlyError(upErr, i18next.t("birdSetup.pleaseTryAgainLower", "please try again.")) })); return; }
-      qc.invalidateQueries(); // plan now exists — refetch the per-step queries
-    })();
-  }, [bird, birdId, qc]);
+  useEnsureCarePlan(birdId, !!bird);
 
   useEffect(() => {
     track("guided_editor_opened", { entry_step: stepParam ?? 1 });

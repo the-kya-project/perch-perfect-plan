@@ -9,7 +9,7 @@ import { track } from "@/lib/analytics";
 import { useServerFn } from "@tanstack/react-start";
 import { resolveHouseholdNames } from "@/lib/home.functions";
 import { getSitReadiness, type SitGapSection } from "@/lib/household.functions";
-import { deviceTimeZone } from "@/lib/sitTimeZone";
+import { deviceTimeZone, isMissingTimeZoneColumn } from "@/lib/sitTimeZone";
 import { BottomSheet } from "@/components/setup/BottomSheet";
 import type { TFunction } from "i18next";
 import { S, SERIF, Tag, SetupPrimaryButton, SetupSecondaryButton, SetupTextButton } from "@/components/setup/controls";
@@ -405,7 +405,11 @@ export function SitForm({
           update.sitter_name = sitterName || null;
           update.sitter_email = sitterEmail || null;
         }
-        const { error } = await supabase.from("sits").update(update).eq("id", editSit.id);
+        let { error } = await supabase.from("sits").update(update).eq("id", editSit.id);
+        if (isMissingTimeZoneColumn(error)) {
+          delete update.time_zone;
+          ({ error } = await supabase.from("sits").update(update).eq("id", editSit.id));
+        }
         if (error) { toast.error(friendlyError(error)); setSaving(false); return; }
 
         // Reconcile which birds the token grants access to.
@@ -481,7 +485,11 @@ export function SitForm({
           insert.sitter_name = null;
           insert.sitter_email = null;
         }
-        const { data: sit, error } = await supabase.from("sits").insert(insert).select().single();
+        let { data: sit, error } = await supabase.from("sits").insert(insert).select().single();
+        if (isMissingTimeZoneColumn(error)) {
+          delete insert.time_zone;
+          ({ data: sit, error } = await supabase.from("sits").insert(insert).select().single());
+        }
         if (error || !sit) { toast.error(friendlyError(error, t("sitForm.couldNotCreate", "Could not create sit."))); setSaving(false); return; }
         const rows = birdIds.map((bird_id) => ({ sit_id: sit.id, bird_id }));
         const { error: linkErr } = await supabase.from("sit_birds").insert(rows);

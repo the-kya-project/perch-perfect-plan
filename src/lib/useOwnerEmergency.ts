@@ -37,7 +37,9 @@ export function useOwnerName() {
  * defaults. For the owner that's their own row (the ["owner-defaults"] cache);
  * household members can't read another user's defaults under RLS, so theirs
  * come from a membership-checked server function. `defaults` is `undefined`
- * while loading. `viewerIsOwner` drives "You" vs the owner's name in labels.
+ * while loading AND when the load failed; `failed` tells them apart, so a
+ * failed load is never shown as "the owner has no emergency info".
+ * `viewerIsOwner` drives "You" vs the owner's name in labels.
  */
 export function useBirdOwnerEmergency(birdId: string) {
   const role = useBirdRole(birdId);
@@ -51,12 +53,15 @@ export function useBirdOwnerEmergency(birdId: string) {
     staleTime: 60_000,
     queryFn: () => fetchOwner({ data: { birdId } }),
   });
-  if (role === undefined) return { defaults: undefined, ownerName: "", viewerIsOwner: false };
-  if (viewerIsOwner) return { defaults: own.data, ownerName: ownName.data ?? "", viewerIsOwner: true };
-  if (role === null) return { defaults: null, ownerName: "", viewerIsOwner: false };
+  if (role === undefined) return { defaults: undefined, ownerName: "", viewerIsOwner: false, failed: false };
+  if (viewerIsOwner) {
+    return { defaults: own.data, ownerName: ownName.data ?? "", viewerIsOwner: true, failed: own.isError && own.data === undefined };
+  }
+  if (role === null) return { defaults: null, ownerName: "", viewerIsOwner: false, failed: false };
   return {
-    defaults: other.isError ? null : other.data ? other.data.defaults : undefined,
+    defaults: other.data ? other.data.defaults : undefined,
     ownerName: other.data?.ownerName ?? "",
     viewerIsOwner: false,
+    failed: other.isError && !other.data,
   };
 }

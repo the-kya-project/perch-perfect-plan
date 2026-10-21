@@ -36,7 +36,7 @@ export function SitCard({ sit, birds = [], allBirds, onChange }: { sit: any; bir
     queryKey: ["sit-caregiver-name", sit.caregiver_user_id],
     enabled: isHousehold,
     staleTime: 5 * 60_000,
-    queryFn: async () => (await fetchDisplayNames([sit.caregiver_user_id]))[sit.caregiver_user_id] ?? "",
+    queryFn: async () => (await fetchDisplayNames([sit.caregiver_user_id], { rethrow: true }))[sit.caregiver_user_id] ?? "",
   });
 
   // Empty display name → "Household member" (translated at display, not cached).

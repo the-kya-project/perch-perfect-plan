@@ -261,7 +261,9 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
   });
   // The bird OWNER's account info — not the viewer's, for household members.
   const { defaults: emDefaults, ownerName: emOwnerName } = useBirdOwnerEmergency(birdId);
-  const emCustom = emergencyDifferent(emContacts, emDefaults);
+  // Only once the owner's info is known; before that every stored value would
+  // read as "custom".
+  const emCustom = emDefaults === undefined ? false : emergencyDifferent(emContacts, emDefaults);
   const canEditPlan = useCapability("edit_care_plans", { birdId });
   const canFlock = useCapability("manage_flock", { birdId });
   // Covering an active sit for this bird (household caregiver) — gates the

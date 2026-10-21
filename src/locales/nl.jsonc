@@ -7005,6 +7005,8 @@
   "vetSummary.includedTitle": "Wat erin staat",
   // last weighed {{date}}
   "vetSummary.lastWeighed": "laatst gewogen op {{date}}",
+  // Drinking water (asked in older checks)
+  "vetSummary.legacyWater": "Drinkwater (gevraagd in oudere checks)",
   // One clean sheet to bring to the vet or send ahead.
   "vetSummary.line": "Eén overzichtelijk blad om mee te nemen naar de dierenarts of vooraf te sturen.",
   // logged by {{source}}
