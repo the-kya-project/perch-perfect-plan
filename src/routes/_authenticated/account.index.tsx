@@ -390,7 +390,7 @@ function EditIdentityModal({
           <input
             value={firstInput}
             onChange={(e) => setFirstInput(e.target.value)}
-            placeholder={t("account.brittany", "Brittany")}
+            placeholder={t("account.firstNamePlaceholder", "First name")}
             autoComplete="given-name"
             className="min-h-[48px] w-full rounded-full border-[1.5px] border-[#d5dfd5] bg-white px-4 text-[16px] text-[#1a3d2e] outline-none focus:border-[#2d6a4f]"
           />
@@ -400,7 +400,7 @@ function EditIdentityModal({
           <input
             value={lastInput}
             onChange={(e) => setLastInput(e.target.value)}
-            placeholder={t("account.king", "King")}
+            placeholder={t("account.lastNamePlaceholder", "Last name")}
             autoComplete="family-name"
             className="min-h-[48px] w-full rounded-full border-[1.5px] border-[#d5dfd5] bg-white px-4 text-[16px] text-[#1a3d2e] outline-none focus:border-[#2d6a4f]"
           />
