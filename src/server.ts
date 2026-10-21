@@ -57,8 +57,32 @@ async function reportEntryError(error: unknown, request: Request) {
   });
 }
 
+// /assets/* is hashed build output, served by Vercel straight from the static
+// files. A request only reaches this function when that file is missing, e.g.
+// a page from one deploy asking for a file during the switch to another. The
+// build's routing gives every /assets/* response `max-age=31536000, immutable`,
+// so without our own header the browser stores that 404 for a year and never
+// asks again: on 2026-10-21 the installed iOS app kept a saved 404 for the
+// stylesheet across later deploys and ran with no styles. A Cache-Control set
+// here overrides the routing header, so a miss is never stored.
+function missingAssetResponse(request: Request): Response | null {
+  let pathname: string;
+  try {
+    pathname = new URL(request.url).pathname;
+  } catch {
+    return null;
+  }
+  if (!pathname.startsWith("/assets/")) return null;
+  return new Response("Not found", {
+    status: 404,
+    headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" },
+  });
+}
+
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
+    const missingAsset = missingAssetResponse(request);
+    if (missingAsset) return missingAsset;
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
