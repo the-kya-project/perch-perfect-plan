@@ -10,7 +10,8 @@ import { useBirdPhotos } from "@/lib/useBirdPhotos";
 import { useBirdRole } from "@/lib/useBirdRole";
 import { shareMomentCard } from "@/lib/momentCard";
 import { togetherSince, occurredYears } from "@/lib/togetherSince";
-import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaIconTile, KyaPrimaryButton, KyaSecondaryButton, KyaSheet, KyaField } from "@/components/kya";
+import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaIconTile, KyaPrimaryButton, KyaSecondaryButton, KyaSheet, KyaField, KyaRequiredTag } from "@/components/kya";
+import { useConfirm } from "@/components/ConfirmSheet";
 import { PageHeader, useGoBack } from "@/components/headers";
 import { friendlyError } from "@/lib/errorMessage";
 import { formatLocalDate } from "@/lib/dates";
@@ -480,6 +481,7 @@ function MilestoneSheet({ birdId, custom, photoUrl, onClose, onSaved }: { birdId
   const [photoBusy, setPhotoBusy] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const { confirm, sheet: confirmSheet } = useConfirm();
   const valid = title.trim().length > 0 && !!date;
   const existingPhoto = custom?.photo_path ?? null;
   const shownPhoto = photoData ?? (keepPhoto && existingPhoto ? photoUrl ?? "existing" : null);
@@ -526,7 +528,13 @@ function MilestoneSheet({ birdId, custom, photoUrl, onClose, onSaved }: { birdId
 
   async function remove() {
     if (!custom) return;
-    if (!window.confirm(t("birdMoments.confirmDelete", "Delete this milestone? This can't be undone."))) return;
+    const yes = await confirm({
+      title: t("birdMoments.confirmDeleteTitle", "Delete this milestone?"),
+      body: t("birdMoments.confirmDeleteBody", "It comes off the timeline, with its photo. This can't be undone."),
+      confirmLabel: t("birdMoments.delete", "Delete"),
+      cancelLabel: t("birdMoments.keep", "Keep"),
+    });
+    if (!yes) return;
     setDeleting(true);
     try {
       const { error } = await supabase.from("moments").delete().eq("id", custom.id);
@@ -541,6 +549,7 @@ function MilestoneSheet({ birdId, custom, photoUrl, onClose, onSaved }: { birdId
   }
 
   return (
+    <>
     <KyaSheet
       onClose={busy ? () => {} : onClose}
       closeLabel={t("birdMoments.close", "Close")}
@@ -555,6 +564,7 @@ function MilestoneSheet({ birdId, custom, photoUrl, onClose, onSaved }: { birdId
         <KyaField
           id="milestone-title"
           label={t("birdMoments.titleLabel", "Title")}
+          tag={<KyaRequiredTag tone="forest">{t("birdMoments.required", "Required")}</KyaRequiredTag>}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           maxLength={80}
@@ -597,5 +607,7 @@ function MilestoneSheet({ birdId, custom, photoUrl, onClose, onSaved }: { birdId
         )}
       </div>
     </KyaSheet>
+    {confirmSheet}
+    </>
   );
 }

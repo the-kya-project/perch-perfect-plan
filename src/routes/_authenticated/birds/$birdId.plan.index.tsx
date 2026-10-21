@@ -9,8 +9,8 @@ import { track } from "@/lib/analytics";
 import { MemberContextBanner } from "@/components/MemberContextBanner";
 import { speciesLabel } from "@/lib/speciesLabel";
 import { setupStepNumber, type SetupStepKey } from "@/lib/setupSteps";
-import { S, SERIF, SetupPrimaryButton } from "@/components/setup/controls";
-import { K, KyaPage, KyaBody } from "@/components/kya";
+import { S, SERIF } from "@/components/setup/controls";
+import { K, KyaPage, KyaBody, KyaIconTile, KyaPrimaryButton, KyaTag } from "@/components/kya";
 import { PageHeader } from "@/components/headers";
 import {
   Eye, Feather, Soup, Heart, Hand, Video, Sun, Home as HomeIcon, Phone, Wand2,
@@ -107,11 +107,16 @@ function CarePlanOverview() {
 
   const name = bird?.name ?? t("planEditor.thisBird", "this bird");
 
+  // Health-first: the plan is for anyone looking after the bird, not only a sitter.
   const status = todo.length === 0
-    ? t("planOverview.statusDone", "{{name}}'s plan has everything a sitter needs.", { name })
+    ? t("planOverview.statusReady", "Anyone caring for {{name}} has the details they need.", { name })
     : todo.length === 1
-      ? t("planOverview.statusOne", "One more section and {{name}}'s plan will have everything a sitter needs.", { name })
-      : t("planOverview.statusMany", "{{words}} more sections and {{name}}'s plan will have everything a sitter needs.", { words: countWord(t, todo.length), name });
+      ? t("planOverview.statusOneLeft", "One more section and anyone caring for {{name}} will have the details they need.", { name })
+      : t("planOverview.statusManyLeft", "{{words}} more sections and anyone caring for {{name}} will have the details they need.", { words: countWord(t, todo.length), name });
+  // Same words as the bird page's care plan row.
+  const overallTag = todo.length === 0
+    ? <KyaTag tone="lime">{t("birdRecord.planReady", "Ready")}</KyaTag>
+    : <KyaTag tone="amber">{t("birdRecord.planToFinish", "{{count}} to finish", { count: todo.length })}</KyaTag>;
   // The button picks up at the first section still to do, in flow order.
   const firstTodo = todo.find((k) => k !== "details");
 
@@ -127,15 +132,10 @@ function CarePlanOverview() {
     }
   }
 
-  const tag = (k: RowKey) => {
-    if (isDone(k)) {
-      return <span className="shrink-0 rounded-full px-[10px] py-[5px] text-[12px] font-[700] leading-none" style={{ background: S.forest, color: S.lime }}>{t("planOverview.tagDone", "Done")}</span>;
-    }
-    if (k === "emergency") {
-      return <span className="shrink-0 rounded-full border-2 border-dashed px-[9px] py-[3px] text-[12px] font-[700]" style={{ borderColor: S.amberText, color: S.amberText }}>{t("planOverview.tagNeededForSit", "Needed for a sit")}</span>;
-    }
-    return <span className="shrink-0 rounded-full border-2 border-dashed px-[9px] py-[3px] text-[12px] font-[700]" style={{ borderColor: "#b9b19a", color: S.helper }}>{t("planOverview.tagToDo", "To do")}</span>;
-  };
+  // Same status words as the bird page: "Ready", or still to finish.
+  const tag = (k: RowKey) => (isDone(k)
+    ? <KyaTag tone="lime">{t("birdRecord.planReady", "Ready")}</KyaTag>
+    : <KyaTag tone="amber">{t("planOverview.tagToFinish", "To finish")}</KyaTag>);
 
   const row = (k: RowKey, i: number) => {
     const shared = k === "environment" || k === "emergency";
@@ -143,7 +143,7 @@ function CarePlanOverview() {
     return (
       <li key={k} className={i > 0 ? "border-t border-[#e3ebe2]" : ""}>
         <button type="button" onClick={() => openRow(k)} className="flex min-h-[60px] w-full items-center gap-3 py-2 text-left" style={{ color: S.forest }}>
-          <span className="grid size-11 shrink-0 place-items-center rounded-[14px]" style={{ background: i % 2 === 0 ? S.lime : "#9bcab8", color: S.forest }}>{rowIcon(k)}</span>
+          <KyaIconTile>{rowIcon(k)}</KyaIconTile>
           <span className="min-w-0 flex-1">
             <span className="block text-[16px] font-[700]">{rowLabel(t, k)}</span>
             {shared && (
@@ -168,11 +168,12 @@ function CarePlanOverview() {
           action={canPreview ? { label: t("planOverview.viewAsSitterPill", "View as sitter"), icon: <Eye className="size-4" />, onClick: () => navigate({ to: "/birds/$birdId/view-as-sitter", params: { birdId } }) } : undefined}
         >
           <div className="mt-5 flex flex-col gap-3 rounded-[16px] p-4" style={{ background: K.forestDeep }}>
+            <div>{overallTag}</div>
             <p className="m-0 text-[16px] leading-[1.45] text-white">{status}</p>
             {canEdit && firstTodo && (
-              <SetupPrimaryButton onClick={() => navigate({ to: "/birds/$birdId/setup", params: { birdId }, search: { step: setupStepNumber(firstTodo as SetupStepKey) } })}>
-                {t("birdRecord.addSitterDetails", "Add pet-sitter details")}
-              </SetupPrimaryButton>
+              <KyaPrimaryButton onClick={() => navigate({ to: "/birds/$birdId/setup", params: { birdId }, search: { step: setupStepNumber(firstTodo as SetupStepKey) } })}>
+                {t("birdRecord.addCareDetails", "Add care details")}
+              </KyaPrimaryButton>
             )}
           </div>
         </PageHeader>

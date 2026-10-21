@@ -9,12 +9,14 @@ import { SitChecklist } from "@/components/SitChecklist";
 import { formatDateRangeUS } from "@/lib/dates";
 import { fetchDisplayNames } from "@/lib/resolveNames";
 import { useTranslation, Trans } from "react-i18next";
+import { useConfirm } from "@/components/ConfirmSheet";
 
 type Bird = { id: string; name: string };
 
 export function SitCard({ sit, birds = [], allBirds, onChange }: { sit: any; birds?: Bird[]; allBirds?: any[]; onChange: () => void }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { confirm, sheet: confirmSheet } = useConfirm();
   // Two caregiver kinds — see migration sits_one_caregiver_chk. A household sit
   // has no token (and never expires by a token window); it just runs from
   // start_date through end_date.
@@ -27,7 +29,7 @@ export function SitCard({ sit, birds = [], allBirds, onChange }: { sit: any; bir
     : expired || ended
       ? (isHousehold && ended ? t("sitCard.ended", "Ended") : t("sitCard.expired", "Expired"))
       : upcoming ? t("sitCard.upcoming", "Upcoming") : t("sitCard.active", "Active");
-  const tone = sit.revoked || expired || ended ? "bg-[#e8e1d0] text-[#5f5e5a]" : upcoming ? "bg-[#f4e4c4] text-[#84600f]" : "bg-[#d6e8dc] text-[#1a5e3f]";
+  const tone = sit.revoked || expired || ended ? "bg-[#f1f5f0] text-[#5f5e5a]" : upcoming ? "bg-[#f6e7c4] text-[#854f0b]" : "bg-[#d6e8dc] text-[#1a5e3f]";
   const url = !isHousehold && typeof window !== "undefined" ? `${window.location.origin}/sitter/${sit.invite_token}` : "";
 
   // Resolve the household caregiver's display name for the card — server-side,
@@ -43,13 +45,25 @@ export function SitCard({ sit, birds = [], allBirds, onChange }: { sit: any; bir
   const caregiverName = rawCaregiverName === undefined ? undefined : rawCaregiverName || t("sitCard.householdMember", "Household member");
 
   async function revoke() {
-    if (!confirm(t("sitCard.confirmRevoke", "Revoke this invite link? The sitter will lose access."))) return;
+    const yes = await confirm({
+      title: t("sitCard.confirmRevokeTitle", "Revoke this invite link?"),
+      body: t("sitCard.confirmRevokeBody", "The sitter will lose access to the care plan right away."),
+      confirmLabel: t("sitCard.revokeLinkAction", "Revoke link"),
+      cancelLabel: t("sitCard.keepLink", "Keep link"),
+    });
+    if (!yes) return;
     await supabase.from("sits").update({ revoked: true }).eq("id", sit.id);
     toast.success(t("sitCard.linkRevoked", "Link revoked."));
     onChange();
   }
   async function remove() {
-    if (!confirm(t("sitCard.confirmDelete", "Delete this sit? This removes all sitter logs for it."))) return;
+    const yes = await confirm({
+      title: t("sitCard.confirmDeleteTitle", "Delete this sit?"),
+      body: t("sitCard.confirmDeleteBodyKeepsLogs", "Its checklist is removed. Daily checks, weights, and photos logged during it are kept. This can't be undone."),
+      confirmLabel: t("sitCard.delete", "Delete"),
+      cancelLabel: t("sitCard.keep", "Keep"),
+    });
+    if (!yes) return;
     await supabase.from("sits").delete().eq("id", sit.id);
     toast.success(t("sitCard.deleted", "Sit deleted."));
     onChange();
@@ -158,7 +172,7 @@ export function SitCard({ sit, birds = [], allBirds, onChange }: { sit: any; bir
           ))}
         </div>
       )}
-      <div className="mt-3 flex gap-3 text-xs font-medium">
+      <div className="mt-1 flex gap-4 text-xs font-medium [&>*]:inline-flex [&>*]:min-h-[44px] [&>*]:items-center">
         {allBirds && !sit.revoked && (
           <button onClick={() => navigate({ to: "/sits/edit/$sitId", params: { sitId: sit.id } })} className="text-[#1a3d2e] underline">{t("sitCard.edit", "Edit")}</button>
         )}
@@ -168,6 +182,7 @@ export function SitCard({ sit, birds = [], allBirds, onChange }: { sit: any; bir
         )}
         <button onClick={remove} className="ml-auto text-[#5f5e5a] underline">{t("sitCard.delete", "Delete")}</button>
       </div>
+      {confirmSheet}
     </div>
   );
 }

@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { Camera, Image as ImageIcon, Crop, Trash2 } from "lucide-react";
 import { K, KyaSheet, KyaHeading, KyaPrimaryButton, KyaSecondaryButton, KyaIconTile } from "@/components/kya";
 import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
+import { useConfirm } from "@/components/ConfirmSheet";
 import { friendlyError } from "@/lib/errorMessage";
 import { Trans, useTranslation } from "react-i18next";
 
@@ -30,6 +31,7 @@ export function BirdPhotoSheet({
 }) {
   const { t } = useTranslation();
   const qc = useQueryClient();
+  const { confirm, sheet: confirmSheet } = useConfirm();
   const adjustNow = startAdjusting && !!currentPhoto && !!displayUrl;
   const [mode, setMode] = useState<"menu" | "reposition">(adjustNow ? "reposition" : "menu");
   // The image being repositioned: a freshly-picked data URL, or the current
@@ -96,7 +98,13 @@ export function BirdPhotoSheet({
   }
 
   async function remove() {
-    if (!window.confirm(t("birdPhotoSheet.confirmRemove", "Remove this bird's photo? You can add one again any time."))) return;
+    const yes = await confirm({
+      title: t("birdPhotoSheet.confirmRemoveTitle", "Remove this photo?"),
+      body: t("birdPhotoSheet.confirmRemoveBody", "You can add one again any time."),
+      confirmLabel: t("birdPhotoSheet.remove", "Remove"),
+      cancelLabel: t("birdPhotoSheet.keep", "Keep"),
+    });
+    if (!yes) return;
     setBusy(true);
     try {
       const { error } = await supabase.from("birds").update({ photo_url: null, photo_position: null } as any).eq("id", birdId);
@@ -114,6 +122,7 @@ export function BirdPhotoSheet({
   const close = () => { if (!busy) onClose(); };
 
   return (
+    <>
     <KyaSheet
       onClose={close}
       closeLabel={t("birdPhotoSheet.close", "Close")}
@@ -142,6 +151,8 @@ export function BirdPhotoSheet({
         </div>
       )}
     </KyaSheet>
+    {confirmSheet}
+    </>
   );
 }
 

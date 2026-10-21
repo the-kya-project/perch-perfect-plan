@@ -66,11 +66,12 @@ function tabLabel(t: TFunction, tab: Tab): string {
   switch (tab) {
     case "basics": return t("planEditor.tabBasics", "Basics");
     case "food": return t("planEditor.tabFood", "Food");
-    case "routine": return t("planEditor.tabRoutine", "Routine");
+    // Same names as the care plan overview's rows (shared keys).
+    case "routine": return t("planOverview.rowDay", "Day");
     case "behavior": return t("planEditor.tabBehavior", "Behavior");
-    case "home": return t("planEditor.tabReminders", "Reminders");
+    case "home": return t("planOverview.rowReminders", "Reminders for your sitter");
     case "health": return t("planEditor.tabHealth", "Health");
-    case "clips": return t("planEditor.tabClips", "Clips");
+    case "clips": return t("planOverview.rowTips", "Tips");
     case "emergency": return t("planEditor.tabEmergency", "Emergency");
     case "sits": return t("planEditor.tabSits", "Sits");
     case "logs": return t("planEditor.tabLogs", "Logs");
@@ -216,12 +217,16 @@ function BirdEditor() {
 
   if (!bird) {
     return (
-      <div className="setup-frame min-h-screen px-4 pt-[calc(env(safe-area-inset-top)+24px)]" style={{ background: K.mist, color: K.quiet }} role="status">
-        <div className="mx-auto flex max-w-md flex-col gap-3">
-          <p className="m-0 text-[15px]">{t("planEditor.loading", "Loading...")}</p>
-          <div className="h-28 animate-pulse rounded-[20px]" style={{ background: K.line }} />
-          <div className="h-48 animate-pulse rounded-[20px]" style={{ background: K.line }} />
-        </div>
+      // Same header as the error state, so there's a way out while it loads.
+      <div className="setup-frame min-h-screen" style={{ background: K.mist, color: K.forest }}>
+        <TaskHeader onClose={() => navigate({ to: "/birds/$birdId/plan", params: { birdId } })} title={t("planEditor.carePlanTitle", "Care plan")} />
+        <KyaBody>
+          <div role="status" className="flex flex-col gap-3">
+            <span className="sr-only">{t("planEditor.loading", "Loading...")}</span>
+            <div className="h-28 animate-pulse rounded-[20px] bg-white" aria-hidden="true" />
+            <div className="h-48 animate-pulse rounded-[20px] bg-white" aria-hidden="true" />
+          </div>
+        </KyaBody>
       </div>
     );
   }
@@ -274,10 +279,11 @@ function BirdEditor() {
                   role="tab"
                   aria-selected={on}
                   onClick={() => setTab(tb.id)}
-                  // 40px chips; the strip's own padding brings the tap row to 44px.
-                  className="inline-flex h-10 shrink-0 items-center rounded-full border-[1.5px] px-4 text-[14.5px] font-[700]"
+                  // 44px chips. Selected: forest fill, white text (the header
+                  // band is forest, so the darker forest reads as pressed in).
+                  className="inline-flex h-11 shrink-0 items-center rounded-full border-[1.5px] px-4 text-[14.5px] font-[700]"
                   style={on
-                    ? { background: K.lime, borderColor: K.lime, color: K.forest }
+                    ? { background: K.forestDeep, borderColor: "#ffffff", color: "#ffffff" }
                     : { background: "transparent", borderColor: "rgba(255,255,255,0.32)", color: K.paleGreen }}
                 >
                   {tb.label}
@@ -572,7 +578,8 @@ function LogsPanel({ birdId, initialScan }: { birdId: string; initialScan?: stri
     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
   });
   const answerStyle = (a: string | null) =>
-    a === "concerning" ? { background: RED_FILL, color: K.red }
+    // Concerning fills amber, never red (the check's red is the triage tag).
+    a === "concerning" ? { background: K.amberBg, color: K.amberText }
     : a === "not_sure" ? { background: K.amberBg, color: K.amberText }
     : a === "normal" ? { background: K.lime, color: K.forest }
     : { background: K.mist, color: K.quiet };
@@ -595,9 +602,9 @@ function LogsPanel({ birdId, initialScan }: { birdId: string; initialScan?: stri
               const notSureItems = SCAN_COLS.filter((f) => d[f.col] === "not_sure");
               const linkedPhotos = photos.filter((p: any) => p.daily_log_id === d.id);
               const wrap = d.triage_status === "red"
-                ? { border: `2px solid ${K.red}`, background: RED_FILL }
+                ? { border: `2px solid ${K.red}`, background: "#fff" }
                 : d.triage_status === "yellow"
-                ? { border: `2px solid ${K.amberText}`, background: "#fbf3e1" }
+                ? { border: `2px solid ${K.amberText}`, background: "#fff" }
                 : { border: `1.5px solid ${K.line}`, background: "#fff" };
               const attentionColor = d.triage_status === "red" ? K.red : K.amberText;
               return (
