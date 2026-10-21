@@ -16,7 +16,12 @@ import { Loader2 } from "lucide-react";
 import { globalI18n } from "@/lib/i18n";
 import { StartupSplash } from "@/components/StartupSplash";
 
-import appCss from "../styles.css?url";
+// The app's styles are inlined into every page, not linked as a file. On
+// 2026-10-21 the installed iOS app received pages naming a stylesheet
+// (/assets/styles-k2-B5IZw7cm.css) that the server answered with "not found",
+// so it ran with no styles at all (reported by stylesCheck.ts). Inline styles
+// arrive with the page itself and can't go missing.
+import appCss from "../styles.css?inline";
 import { installErrorListeners, primeAccountRole, registerErrorReportingContext, reportError } from "@/lib/errorReporting";
 import { SUPPORT_EMAIL } from "@/lib/support";
 import { ERROR_TEST_ACCOUNT, errorTestMessage } from "@/lib/errorTest"; // TEMPORARY
@@ -177,6 +182,7 @@ const STARTUP_GUARD = `(function(){try{` +
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
     scripts: [{ children: STARTUP_GUARD }, { children: COLD_LAUNCH_REDIRECT }],
+    styles: [{ children: appCss }],
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
@@ -204,7 +210,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
-      { rel: "stylesheet", href: appCss },
       // Setup screens: Newsreader for headings, DM Sans for everything else.
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
