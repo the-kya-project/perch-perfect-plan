@@ -36,6 +36,22 @@ export function isStored(row: Record<string, unknown>, key: ScanFieldKey): boole
   return key !== "vomiting" || row[col] != null;
 }
 
+export type FlaggedAnswer = { key: ScanFieldKey; answer: "not_sure" | "concerning" };
+
+/** Every question a daily_logs row answered Not sure or Concerning, in the
+ *  check's question order. Driven by SCAN_FIELDS, so a new question is covered
+ *  without another list to update. A question with no stored answer (vomiting
+ *  before 20261020230000) uses its triage reason code instead. */
+export function flaggedAnswers(row: Record<string, unknown>): FlaggedAnswer[] {
+  const codes = Array.isArray(row.triage_reason_codes) ? (row.triage_reason_codes as { key?: string; answer?: string }[]) : [];
+  const out: FlaggedAnswer[] = [];
+  for (const f of SCAN_FIELDS) {
+    const a = isStored(row, f.key) ? row[STATUS_COL[f.key]] : codes.find((c) => c?.key === f.key)?.answer;
+    if (a === "not_sure" || a === "concerning") out.push({ key: f.key, answer: a });
+  }
+  return out;
+}
+
 export type HistorySit = {
   id: string;
   title: string | null;

@@ -12,11 +12,14 @@ import { normalizeFeedTimes, feedTimeLabel } from "@/lib/feedTimes";
 import { K, SERIF, KyaPage, KyaBody, KyaCard, KyaHeading, KyaIconTile, KyaLink, KyaPrimaryButton, KyaSecondaryButton } from "@/components/kya";
 import { PageHeader, useGoBack } from "@/components/headers";
 import { useCapability } from "@/lib/useCapability";
-import { SCAN_COLS, scanColLabel, formatTriageReasons } from "./$birdId.scans.$scanId";
+import { flaggedAnswers } from "@/lib/healthHistory";
+import { SCAN_FIELDS } from "@/lib/triage";
+import { scanQuestionFor } from "@/lib/scanFieldLabels";
 import { isNativeApp } from "@/lib/nativeApp";
 import { formatLocalDate, formatLocalDateTime } from "@/lib/dates";
 import i18next from "i18next";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
 
 type WeightRow = { id: string; grams: number; measured_at: string; source: string | null; meal_relation: string | null; note: string | null };
 
@@ -94,20 +97,23 @@ function VetSummary() {
 
   // Flagged for review: every health check in the last 6 months where ANY item
   // came back not_sure/concerning — regardless of overall triage. Fetch the
-  // window (indexed bird_id + log_date) and filter client-side.
+  // window (indexed bird_id + log_date) and filter client-side. The questions
+  // come from SCAN_FIELDS via flaggedAnswers, not a column list kept here: the
+  // old hand-kept list left out vomiting_status, so those concerns never
+  // reached the vet. "*" for the same reason as the health history: a status
+  // column not yet in the database comes back absent instead of failing the
+  // whole query.
   const { data: flaggedScans } = useQuery({
     queryKey: ["vet-flagged", birdId],
     queryFn: async () => {
       const cutoff = new Date(Date.now() - 183 * 86_400_000).toISOString().slice(0, 10);
       const { data } = await supabase
         .from("daily_logs")
-        .select("id, log_date, created_at, triage_status, triage_reasons, triage_reason_codes, resolved_at, item_notes, alertness_status, food_status, water_status, droppings_status, energy_status, breathing_status, posture_status, behavior_status, injury_status, exposure_status")
+        .select("*")
         .eq("bird_id", birdId)
         .gte("log_date", cutoff)
         .order("created_at", { ascending: false });
-      return ((data ?? []) as any[]).filter((r) =>
-        SCAN_COLS.some((c) => r[c.col] === "not_sure" || r[c.col] === "concerning"),
-      );
+      return ((data ?? []) as any[]).filter((r) => flaggedAnswers(r).length > 0);
     },
   });
 
@@ -182,9 +188,8 @@ function VetSummary() {
       ...(!(flaggedScans ?? []).length
         ? [`  ${t("vetSummary.noFlagged", "No flagged checks in the last 6 months.")}`]
         : (flaggedScans ?? []).map((r: any) => {
-            const items = SCAN_COLS
-              .filter((c) => r[c.col] === "not_sure" || r[c.col] === "concerning")
-              .map((c) => `${scanColLabel(t, c.col, c.label)}: ${r[c.col] === "concerning" ? t("vetSummary.answerConcerning", "concerning") : t("vetSummary.answerNotSure", "not sure")}${((r.item_notes ?? {}) as any)[c.fkey] ? ` ("${((r.item_notes ?? {}) as any)[c.fkey]}")` : ""}`)
+            const items = flaggedItems(t, r, bird?.name)
+              .map((i) => `${i.question} · ${i.answerText}${i.note ? ` ("${i.note}")` : ""}`)
               .join("; ");
             return `  ${fmtDate(r.created_at)} · ${t("vetSummary.triageLevel", "triage {{level}}", { level: triageLevelLabel(r.triage_status) })} · ${r.resolved_at ? t("vetSummary.resolvedOn", "resolved {{date}}", { date: fmtDate(r.resolved_at) }) : t("vetSummary.unresolved", "unresolved")} — ${items}`;
           })),
@@ -330,7 +335,7 @@ function VetSummary() {
               </Section>
               <Section label={t("vetSummary.diet", "Diet")}><Value text={dietText} multiline /></Section>
               <Section label={t("vetSummary.medsHealthFlags", "Meds & health flags")}><Value text={meds} multiline /></Section>
-              <FlaggedForReview scans={flaggedScans ?? []} />
+              <FlaggedForReview scans={flaggedScans ?? []} birdName={bird?.name} />
               <Section label={t("vetSummary.handling", "Handling")}><Value text={handling} multiline /></Section>
 
               {/* Appendix — the complete raw weight series (the body keeps the
@@ -363,6 +368,23 @@ function IncludedTag({ children, amber }: { children: ReactNode; amber?: boolean
   );
 }
 
+/** A check's Not sure / Concerning answers for the summary and its shared
+ *  text: every daily-check question (from SCAN_FIELDS, via flaggedAnswers),
+ *  worded as the check asks it today, with the owner's note for that item. */
+function flaggedItems(t: TFunction, r: any, birdName: string | null | undefined) {
+  const notes = (r.item_notes ?? {}) as Record<string, string>;
+  return flaggedAnswers(r).map(({ key, answer }) => {
+    const field = SCAN_FIELDS.find((f) => f.key === key)!;
+    return {
+      key,
+      answer,
+      question: scanQuestionFor(t, field, birdName),
+      answerText: answer === "concerning" ? t("vetSummary.answerConcerning", "concerning") : t("vetSummary.answerNotSure", "not sure"),
+      note: notes[key] || null,
+    };
+  });
+}
+
 /** "a, b and c" in the reader's language. */
 function joinList(items: string[], lang: string): string {
   try {
@@ -378,9 +400,9 @@ function joinList(items: string[], lang: string): string {
 // any 'concerning' item or a red triage, then not-sure-only scans. Purely
 // descriptive: dates, items, the app-recorded triage, owner notes, resolution.
 // ---------------------------------------------------------------------------
-export function FlaggedForReview({ scans }: { scans: any[] }) {
+export function FlaggedForReview({ scans, birdName }: { scans: any[]; birdName?: string | null }) {
   const { t } = useTranslation();
-  const isSerious = (r: any) => r.triage_status === "red" || SCAN_COLS.some((c) => r[c.col] === "concerning");
+  const isSerious = (r: any) => r.triage_status === "red" || flaggedAnswers(r).some((a) => a.answer === "concerning");
   const serious = scans.filter(isSerious);
   const milder = scans.filter((r) => !isSerious(r));
 
@@ -397,8 +419,7 @@ export function FlaggedForReview({ scans }: { scans: any[] }) {
   };
 
   const ScanRow = ({ r, serious: seriousRow }: { r: any; serious: boolean }) => {
-    const flagged = SCAN_COLS.filter((c) => r[c.col] === "not_sure" || r[c.col] === "concerning");
-    const notes = (r.item_notes ?? {}) as Record<string, string>;
+    const flagged = flaggedItems(t, r, birdName);
     return (
       <div
         className="avoid-break mt-2 rounded-[14px] p-3"
@@ -414,17 +435,16 @@ export function FlaggedForReview({ scans }: { scans: any[] }) {
           </p>
         </div>
         <ul className="m-0 mt-1.5 list-none space-y-1 p-0">
-          {flagged.map((c) => (
-            <li key={c.col} className="text-[14px] leading-snug">
-              <span className="font-[700]" style={{ color: K.forest }}>{scanColLabel(t, c.col, c.label)}</span>
-              <span className="font-[700]" style={{ color: r[c.col] === "concerning" ? K.red : K.amberText }}>
-                {" "}· {r[c.col] === "concerning" ? t("vetSummary.answerConcerning", "concerning") : t("vetSummary.answerNotSure", "not sure")}
+          {flagged.map((i) => (
+            <li key={i.key} className="text-[14px] leading-snug">
+              <span className="font-[700]" style={{ color: K.forest }}>{i.question}</span>
+              <span className="font-[700]" style={{ color: i.answer === "concerning" ? K.red : K.amberText }}>
+                {" "}· {i.answerText}
               </span>
-              {notes[c.fkey] && <span className="block text-[13px] italic" style={{ color: K.quiet }}>"{notes[c.fkey]}"</span>}
+              {i.note && <span className="block text-[13px] italic" style={{ color: K.quiet }}>"{i.note}"</span>}
             </li>
           ))}
         </ul>
-        {formatTriageReasons(t, r) && <p className="m-0 mt-1.5 text-[13px] leading-[1.45]" style={{ color: K.quiet }}>{formatTriageReasons(t, r)}</p>}
       </div>
     );
   };
