@@ -3651,11 +3651,17 @@
     "confirmEmail.checkYourEmail": {
       "stamp": "c94dd8d62fe75e35"
     },
-    "confirmEmail.clickToActivate": {
-      "stamp": "93ebaf859312efc7"
+    "confirmEmail.codeInvalid": {
+      "stamp": "df6dd0683245f534"
+    },
+    "confirmEmail.codeLabel": {
+      "stamp": "65945ecfff39d1a5"
     },
     "confirmEmail.couldNotResend": {
       "stamp": "e502e488544911e0"
+    },
+    "confirmEmail.enterCode": {
+      "stamp": "c198e99a76e58c98"
     },
     "confirmEmail.goBackAndFix": {
       "stamp": "4dcff0436c96fada"
@@ -3678,8 +3684,14 @@
     "confirmEmail.signIn": {
       "stamp": "dc9922893e139658"
     },
-    "confirmEmail.weSentLinkTo": {
-      "stamp": "856cf3240c31ccc2"
+    "confirmEmail.verify": {
+      "stamp": "4716acc7fc8c7874"
+    },
+    "confirmEmail.verifying": {
+      "stamp": "e9721fdda7f70658"
+    },
+    "confirmEmail.weSentCodeTo": {
+      "stamp": "ec9a3e65819f0c85"
     },
     "confirmEmail.wrongEmail": {
       "stamp": "cbd9b23f63595263"
