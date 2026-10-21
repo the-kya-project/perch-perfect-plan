@@ -4,6 +4,7 @@ import { Stethoscope, HeartCrack } from "lucide-react";
 import { K, KyaPage, KyaBody, KyaCard, KyaRow, KyaIconTile } from "@/components/kya";
 import { PageHeader, useGoBack } from "@/components/headers";
 import { useActiveCaregiver } from "@/components/CaregiverHome";
+import { useCapability } from "@/lib/useCapability";
 import { KyaCaregiverChecklist, KyaCaregiverLoading } from "@/components/CaregiverToday";
 import type { ActiveCaregiverBird } from "@/lib/caregiver.functions";
 import { useTranslation } from "react-i18next";
@@ -21,11 +22,15 @@ export const Route = createFileRoute("/_authenticated/covering/$sitId/$birdId")(
   component: CoveringBirdPage,
 });
 
-// Status-aware entry to today's health scan — mirrors the sitter ScanCard's
-// treatment (amber = not done, red/amber = flagged, green = done) but links to
-// the authenticated scan route. Not parallel scan logic: /birds/$birdId/scan IS
-// the shared scan flow.
-function ScanEntry({ bird, birdId }: { bird: ActiveCaregiverBird; birdId: string }) {
+// Status-aware entry to today's daily health check — mirrors the sitter
+// ScanCard's treatment (amber = not done, red/amber = flagged, green = done).
+// A covering household member gets the same daily check an owner does (with
+// the all-good shortcut), so this opens /check?bird= (DailyCheckCard), not the
+// full health check; only sitters are asked for the full check. DailyCheckCard
+// saves kind "daily", source "household" and tags the row with the active sit
+// id (useActiveSitIdForBird), the same attribution the full check used, so the
+// status here and the sit's activity view still pick it up.
+function DailyCheckEntry({ bird, birdId }: { bird: ActiveCaregiverBird; birdId: string }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const done = bird.scanDone;
@@ -41,7 +46,7 @@ function ScanEntry({ bird, birdId }: { bird: ActiveCaregiverBird; birdId: string
     <KyaCard>
       <KyaRow
         last
-        onClick={() => navigate({ to: "/birds/$birdId/scan", params: { birdId } })}
+        onClick={() => navigate({ to: "/check", search: { bird: birdId } })}
         leading={tone === "green" ? <KyaIconTile><Stethoscope className="size-5" /></KyaIconTile> : (
           <span className="grid size-10 shrink-0 place-items-center rounded-[12px]" style={tone === "red" ? { background: "#f6dede", color: K.red } : { background: K.amberBg, color: K.amberText }} aria-hidden="true">
             <Stethoscope className="size-5" />
@@ -63,6 +68,9 @@ function CoveringBirdPage() {
   const sit = data?.sits?.find((s) => s.id === sitId) ?? null;
   const bird = sit?.birds.find((b) => b.id === birdId) ?? null;
   const ownerName = sit?.ownerName || t("covering.theOwner", "the owner");
+  // The daily check writes daily_logs, which RLS gates on record_health; a
+  // member whose household preset lacks it doesn't get the entry.
+  const canHealth = useCapability("record_health", { birdId });
 
   return (
     <KyaPage>
@@ -82,11 +90,10 @@ function CoveringBirdPage() {
           </KyaCard>
         ) : (
           <>
-            {/* Daily health scan — a distinct daily action, shown alongside the
-                routine tasks. Reuses the authenticated scan flow
-                (/birds/$birdId/scan, gated by record_health; it tags the scan
-                with the active sit id via useActiveSitIdForBird). */}
-            <ScanEntry bird={bird} birdId={birdId} />
+            {/* Daily health check — a distinct daily action, shown alongside
+                the routine tasks. Opens the owner's daily check (/check?bird=),
+                gated by record_health like the daily_logs insert policy. */}
+            {canHealth && <DailyCheckEntry bird={bird} birdId={birdId} />}
             <KyaCaregiverChecklist sit={sit} birdId={birdId} />
 
             {/* Something's wrong — quiet, last on the page. The covering

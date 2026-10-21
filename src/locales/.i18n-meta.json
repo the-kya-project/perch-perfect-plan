@@ -348,8 +348,8 @@
     "addressInput.zip": {
       "stamp": "3cc2fbb686d0c392"
     },
-    "auth.agreeToTerms": {
-      "stamp": "c0a0967a25f86ae5"
+    "auth.agreeToTermsOfService": {
+      "stamp": "e6d5bbd4ee8a7cac"
     },
     "auth.appleSignInFailed": {
       "stamp": "5b5b6aad1137423b"
@@ -2949,9 +2949,6 @@
     "careCards.freeFed": {
       "stamp": "b56e602269f54471"
     },
-    "careCards.showMe": {
-      "stamp": "439eaa083630d277"
-    },
     "careCards.stepUp": {
       "stamp": "3fdb4eeedf55eea7"
     },
@@ -2997,9 +2994,6 @@
     "caregiverHome.backTomorrow": {
       "stamp": "1e2150064beaf591"
     },
-    "caregiverHome.checkStarts": {
-      "stamp": "f813e2b1fc49da86"
-    },
     "caregiverHome.checkStartsTitle": {
       "stamp": "e9945b4c339b3809"
     },
@@ -3033,9 +3027,6 @@
     "caregiverHome.fromTheOwner": {
       "stamp": "ba78753e6aad72c3"
     },
-    "caregiverHome.greetingHeadline": {
-      "stamp": "97ff4ba19a2fb779"
-    },
     "caregiverHome.inDays": {
       "stamp": "d6d036b8d5d4bf53"
     },
@@ -3047,9 +3038,6 @@
     },
     "caregiverHome.morning": {
       "stamp": "2955bc8248288d8b"
-    },
-    "caregiverHome.noActiveSit": {
-      "stamp": "9b5ab329f859060b"
     },
     "caregiverHome.noActiveSitBody": {
       "stamp": "5ff4d9168f36458c"
@@ -3458,186 +3446,6 @@
     },
     "carePlanPage.title": {
       "stamp": "024068f55f21e2cd"
-    },
-    "careSheet.behavior.biteWarning": {
-      "stamp": "8b8e84c9a7fa417a"
-    },
-    "careSheet.behavior.eyebrow": {
-      "stamp": "847b1e8ea2825cdf"
-    },
-    "careSheet.behavior.restrictions": {
-      "stamp": "4e0024905b84e934"
-    },
-    "careSheet.behavior.title": {
-      "stamp": "336371b17e2de76a"
-    },
-    "careSheet.callout.fearsTriggers": {
-      "stamp": "da86a52df9cdf909"
-    },
-    "careSheet.emergency.callOwner": {
-      "stamp": "f14aeea0f95aa615"
-    },
-    "careSheet.emergency.callVet": {
-      "stamp": "bee63bfb08eefe2b"
-    },
-    "careSheet.emergency.eyebrow": {
-      "stamp": "16fdfafb12402299"
-    },
-    "careSheet.emergency.whenToCall": {
-      "stamp": "2a1f27f5960e7d00"
-    },
-    "careSheet.field.brandAmount": {
-      "stamp": "77d2c43e0d10ed99"
-    },
-    "careSheet.field.cageLocation": {
-      "stamp": "d50a947b391a00ad"
-    },
-    "careSheet.field.cleaningProducts": {
-      "stamp": "a1212537a6219355"
-    },
-    "careSheet.field.dietOverview": {
-      "stamp": "18a3fa84ad88aa11"
-    },
-    "careSheet.field.dietTypes": {
-      "stamp": "e000dde49b335ce9"
-    },
-    "careSheet.field.feedingTimes": {
-      "stamp": "402fcefc4bc3f8f3"
-    },
-    "careSheet.field.foodStorage": {
-      "stamp": "fb25af017d19de8a"
-    },
-    "careSheet.field.freshFoods": {
-      "stamp": "5e3b658687dd80e3"
-    },
-    "careSheet.field.freshnessHygiene": {
-      "stamp": "289f2b844901c7be"
-    },
-    "careSheet.field.handlingRules": {
-      "stamp": "95ac9084f9abe0a8"
-    },
-    "careSheet.field.likes": {
-      "stamp": "144345008760dd0f"
-    },
-    "careSheet.field.medicalConditions": {
-      "stamp": "b7cb87cd68a2c1a9"
-    },
-    "careSheet.field.medications": {
-      "stamp": "9c8b4b785e2a6a3b"
-    },
-    "careSheet.field.normalActivity": {
-      "stamp": "696b080e9aadc335"
-    },
-    "careSheet.field.normalAppetite": {
-      "stamp": "b0c67382fd16df8d"
-    },
-    "careSheet.field.normalDroppings": {
-      "stamp": "b147234756d1da26"
-    },
-    "careSheet.field.normalNoise": {
-      "stamp": "5457f4eb16187b5a"
-    },
-    "careSheet.field.normalSleep": {
-      "stamp": "f0acab1f7591aa9f"
-    },
-    "careSheet.field.offLimitsAreas": {
-      "stamp": "834d8f58643d0667"
-    },
-    "careSheet.field.otherDiet": {
-      "stamp": "f26546936cb25346"
-    },
-    "careSheet.field.otherFreshFoods": {
-      "stamp": "aea672b96f02ef93"
-    },
-    "careSheet.field.otherPets": {
-      "stamp": "df57199f57fe5624"
-    },
-    "careSheet.field.outOfCageRules": {
-      "stamp": "36d78f4bfb1efbfd"
-    },
-    "careSheet.field.safetyRules": {
-      "stamp": "d9dc3e7f568158ef"
-    },
-    "careSheet.field.treats": {
-      "stamp": "f74a07c2d2ee143e"
-    },
-    "careSheet.field.water": {
-      "stamp": "81b5c0d6c66b3a7d"
-    },
-    "careSheet.field.whatsNormalOverall": {
-      "stamp": "1c00fa5b465e9782"
-    },
-    "careSheet.field.whoCanHandle": {
-      "stamp": "4779b25be6b78674"
-    },
-    "careSheet.field.withStrangers": {
-      "stamp": "7f40f4f58c72233c"
-    },
-    "careSheet.food.eyebrow": {
-      "stamp": "225420650888dd0d"
-    },
-    "careSheet.food.keepOutOfReach": {
-      "stamp": "53e0ba5547e678e1"
-    },
-    "careSheet.food.neverFeedTitle": {
-      "stamp": "3b206f1b425c40d6"
-    },
-    "careSheet.food.noNewFoods": {
-      "stamp": "1543a9c27c7a73d2"
-    },
-    "careSheet.food.title": {
-      "stamp": "1596cf6ed93e9602"
-    },
-    "careSheet.health.eyebrow": {
-      "stamp": "24701ea98bfb3f0a"
-    },
-    "careSheet.health.normalBehaviorClip": {
-      "stamp": "6c42727de14e214a"
-    },
-    "careSheet.health.title": {
-      "stamp": "f907f1010f1498b6"
-    },
-    "careSheet.home.eyebrow": {
-      "stamp": "3deba11ef08fb86a"
-    },
-    "careSheet.home.hazardsTitle": {
-      "stamp": "442fdd4926b24727"
-    },
-    "careSheet.home.title": {
-      "stamp": "163826a90064d624"
-    },
-    "careSheet.kv.changeWater": {
-      "stamp": "b8f918b21b0df7b4"
-    },
-    "careSheet.kv.frequency": {
-      "stamp": "692f8e958a1a7fec"
-    },
-    "careSheet.kv.removeFreshFood": {
-      "stamp": "22bdeb6f39acbd09"
-    },
-    "careSheet.kv.washFoodBowls": {
-      "stamp": "803c0e0fd7242068"
-    },
-    "careSheet.kv.washWaterBowl": {
-      "stamp": "ac6cbc71eebe746c"
-    },
-    "careSheet.metric.normalWeight": {
-      "stamp": "329e38bd3bbda089"
-    },
-    "careSheet.thisBird": {
-      "stamp": "e206dc027c390933"
-    },
-    "careSheet.tips.eyebrow": {
-      "stamp": "b5599f17ff594655"
-    },
-    "careSheet.tips.subtitle": {
-      "stamp": "484e645aaf6cc19c"
-    },
-    "careSheet.tips.title": {
-      "stamp": "3b89e17ce4472fbc"
-    },
-    "careSheet.value.within": {
-      "stamp": "ff7d2aaab3cb2bcf"
     },
     "checkEmail.alreadyConfirmedSignIn": {
       "stamp": "6c073dc11cef7c5a"
@@ -4293,9 +4101,6 @@
     "dashboard.yourBirdsLower": {
       "stamp": "6afed180f92c7f4e"
     },
-    "datedTimeline.nothingLoggedYet": {
-      "stamp": "d85fe8d396b1a190"
-    },
     "dbError.alreadyExists": {
       "stamp": "78e0651affa7280c"
     },
@@ -4316,6 +4121,114 @@
     },
     "dbError.wrongFormat": {
       "stamp": "261ab24bc29c343b"
+    },
+    "deleteAccountPage.cantSignIn": {
+      "stamp": "c71be2df28ffb6c7"
+    },
+    "deleteAccountPage.howBody": {
+      "stamp": "b2522a6a31ef3632"
+    },
+    "deleteAccountPage.howHeading": {
+      "stamp": "d0ec66a5cb1a369c"
+    },
+    "deleteAccountPage.intro": {
+      "stamp": "3855f7caf7361c13"
+    },
+    "deleteAccountPage.keepBackups": {
+      "stamp": "871ed50ca25da8ad"
+    },
+    "deleteAccountPage.keepEmailRecord": {
+      "stamp": "9a3595b4b683ae0a"
+    },
+    "deleteAccountPage.keepHeading": {
+      "stamp": "7d58187c0dd7903a"
+    },
+    "deleteAccountPage.keepIntro": {
+      "stamp": "9b25af0c0c9c2852"
+    },
+    "deleteAccountPage.lastUpdated": {
+      "stamp": "41895719633ffb58"
+    },
+    "deleteAccountPage.metaDescription": {
+      "stamp": "32c31e6d690c97a0"
+    },
+    "deleteAccountPage.metaTitle": {
+      "stamp": "ca9d4b464b23d0da"
+    },
+    "deleteAccountPage.noWaiting": {
+      "stamp": "7012e31ed90ac5c4"
+    },
+    "deleteAccountPage.questionsBody": {
+      "stamp": "6a1e4374a7f7b723"
+    },
+    "deleteAccountPage.questionsHeading": {
+      "stamp": "4d5f93ec19048c70"
+    },
+    "deleteAccountPage.sharedHeading": {
+      "stamp": "55a4e5feece20971"
+    },
+    "deleteAccountPage.sharedIntro": {
+      "stamp": "1f0ec1af1bdeb28b"
+    },
+    "deleteAccountPage.sharedLogged": {
+      "stamp": "34d8956446e1f031"
+    },
+    "deleteAccountPage.sharedSits": {
+      "stamp": "77ebe8e291b61a9f"
+    },
+    "deleteAccountPage.sharedTransferred": {
+      "stamp": "0ef7dd3442430d5c"
+    },
+    "deleteAccountPage.sharedWithYou": {
+      "stamp": "daa6b22a8afec27e"
+    },
+    "deleteAccountPage.step1": {
+      "stamp": "dfcbe7f276fadb60"
+    },
+    "deleteAccountPage.step2": {
+      "stamp": "09efc121219b636f"
+    },
+    "deleteAccountPage.step3": {
+      "stamp": "c7216de9a59d1c67"
+    },
+    "deleteAccountPage.step4": {
+      "stamp": "53089119ff72a792"
+    },
+    "deleteAccountPage.title": {
+      "stamp": "808b91e77e7b43da"
+    },
+    "deleteAccountPage.whatAnalytics": {
+      "stamp": "77baf2a942f60206"
+    },
+    "deleteAccountPage.whatBirds": {
+      "stamp": "0aba12713e5c3daa"
+    },
+    "deleteAccountPage.whatDefaults": {
+      "stamp": "bd09f84c4cba6d8e"
+    },
+    "deleteAccountPage.whatFiles": {
+      "stamp": "0d88d160dab2f7c1"
+    },
+    "deleteAccountPage.whatHeading": {
+      "stamp": "566898aad4bab39c"
+    },
+    "deleteAccountPage.whatHousehold": {
+      "stamp": "aca6f75bc8bdc4b0"
+    },
+    "deleteAccountPage.whatIntro": {
+      "stamp": "174b3613bbf483d6"
+    },
+    "deleteAccountPage.whatProfile": {
+      "stamp": "5021c47e4780060b"
+    },
+    "deleteAccountPage.whatPush": {
+      "stamp": "49e85f1b2fb5aed4"
+    },
+    "deleteAccountPage.whatSignIn": {
+      "stamp": "60f379d291a61b52"
+    },
+    "deleteAccountPage.whatSits": {
+      "stamp": "d36de26111674888"
     },
     "disclaimer.compactBody": {
       "stamp": "52f56abf42e19540"
@@ -4749,12 +4662,6 @@
     "exportRecord.yesHandOff": {
       "stamp": "642816f3e3884f68"
     },
-    "facetStub.back": {
-      "stamp": "5001815e48b3af8b"
-    },
-    "facetStub.comingSoon": {
-      "stamp": "ce0751316cbe4473"
-    },
     "farewell.askBody": {
       "stamp": "c9e5f4d454fd9889"
     },
@@ -4947,9 +4854,6 @@
     "foodEditor.addHomemadeChopDetail": {
       "stamp": "030147b96a0dfa4e"
     },
-    "foodEditor.addItem": {
-      "stamp": "fd3d4b789e31c37a"
-    },
     "foodEditor.addPremadeChop": {
       "stamp": "b15c6cff5391e47f"
     },
@@ -4959,12 +4863,6 @@
     "foodEditor.amount": {
       "stamp": "53cfd9a31133bbe4"
     },
-    "foodEditor.amountEg": {
-      "stamp": "6aaee0eaaf8b7171"
-    },
-    "foodEditor.amountUnitBoth": {
-      "stamp": "f50c84bfdaf8480b"
-    },
     "foodEditor.anythingElse": {
       "stamp": "a1ad2dfae6851fd1"
     },
@@ -4973,9 +4871,6 @@
     },
     "foodEditor.brandHowMuchWhen": {
       "stamp": "cec68e45f6bda5fb"
-    },
-    "foodEditor.brandOrItemName": {
-      "stamp": "8a4488659d886ef6"
     },
     "foodEditor.brandOrName": {
       "stamp": "2a2641843802a0c7"
@@ -4992,32 +4887,17 @@
     "foodEditor.brandPlaceholderSeed": {
       "stamp": "8f8df33ad68a2500"
     },
-    "foodEditor.chooseAllThatApply": {
-      "stamp": "6fcf4c51b8594ea1"
-    },
-    "foodEditor.chopEmpty": {
-      "stamp": "ccb44ff5727fea10"
-    },
     "foodEditor.chopHelper": {
       "stamp": "18ee2a59f327c1c8"
     },
-    "foodEditor.chopNamePlaceholder": {
-      "stamp": "656dc6cbca5174b0"
-    },
     "foodEditor.clear": {
       "stamp": "e6f570920ffd4640"
-    },
-    "foodEditor.clearPeriodTime": {
-      "stamp": "a5bc4aea8f131e95"
     },
     "foodEditor.closeSheet": {
       "stamp": "d981ee660d866d8c"
     },
     "foodEditor.commonPicks": {
       "stamp": "6ba1d1e680b71d16"
-    },
-    "foodEditor.describeOtherDiet": {
-      "stamp": "7518cfa2fca94fe3"
     },
     "foodEditor.done": {
       "stamp": "3e00dbef8dddb12e"
@@ -5298,18 +5178,6 @@
     "foodEditor.fresh.zucchini": {
       "stamp": "d693380d9d744fe5"
     },
-    "foodEditor.freshFoodsOffered": {
-      "stamp": "8e94837ecfac9acd"
-    },
-    "foodEditor.freshnessHygiene": {
-      "stamp": "289f2b844901c7be"
-    },
-    "foodEditor.freshnessHygieneHint": {
-      "stamp": "6fa80a2ed0e028bb"
-    },
-    "foodEditor.freshSpoilsHint": {
-      "stamp": "c66b3dd24fff205c"
-    },
     "foodEditor.helperBrand": {
       "stamp": "e1e13971d4b1ce4e"
     },
@@ -5343,21 +5211,6 @@
     "foodEditor.howMuchAndWhen": {
       "stamp": "229490e27c2010bc"
     },
-    "foodEditor.hygieneNotesPlaceholder": {
-      "stamp": "6c15c24e583b894b"
-    },
-    "foodEditor.itemsAmountsFeedTimes": {
-      "stamp": "005c39c75c9df962"
-    },
-    "foodEditor.itemsAmountsPerType": {
-      "stamp": "70046f02328e5490"
-    },
-    "foodEditor.itemsEmpty": {
-      "stamp": "bb71cda9d5a8afd2"
-    },
-    "foodEditor.itemsHint": {
-      "stamp": "8be4f1768569342f"
-    },
     "foodEditor.missingAll": {
       "stamp": "4a7e2ac51f205dc0"
     },
@@ -5385,15 +5238,6 @@
     "foodEditor.nAdded_other": {
       "stamp": "d4a11f2abad3b5a2"
     },
-    "foodEditor.neverFeed": {
-      "stamp": "6ddfe75182cfb725"
-    },
-    "foodEditor.neverFeedHint": {
-      "stamp": "6a50f1d3afe40893"
-    },
-    "foodEditor.neverFeedPlaceholder": {
-      "stamp": "b1be272405920445"
-    },
     "foodEditor.newBlend": {
       "stamp": "e724594da0e566d2"
     },
@@ -5415,17 +5259,8 @@
     "foodEditor.nIngredients_other": {
       "stamp": "61ed34ef8be1977f"
     },
-    "foodEditor.noteOptional": {
-      "stamp": "1c9c81d2c9ea79a7"
-    },
-    "foodEditor.notePlaceholderEg": {
-      "stamp": "7c78e5536b148986"
-    },
     "foodEditor.notePlaceholderPrep": {
       "stamp": "89c67bc2d9ae5fae"
-    },
-    "foodEditor.nothingAddedYet": {
-      "stamp": "6cd66b156be9763c"
     },
     "foodEditor.notSafeForBirds": {
       "stamp": "773c34318e5ada15"
@@ -5433,62 +5268,23 @@
     "foodEditor.onNeverFeedList": {
       "stamp": "cee353a630cc730f"
     },
-    "foodEditor.optionalTime": {
-      "stamp": "f04bde8da1a662f5"
-    },
-    "foodEditor.otherFreshFoodsPlaceholder": {
-      "stamp": "2bc28a131bd35770"
-    },
-    "foodEditor.otherHygieneNotes": {
-      "stamp": "1909645e28cca3e5"
-    },
-    "foodEditor.pickAFrequency": {
-      "stamp": "6d2220534874f0ec"
-    },
-    "foodEditor.pickAtLeastOnePeriod": {
-      "stamp": "9ae448ac1ebc3b88"
-    },
-    "foodEditor.pickAUnit": {
-      "stamp": "b7410aa295d2854e"
-    },
     "foodEditor.preMade": {
       "stamp": "77230f26282c3507"
     },
     "foodEditor.preMadeChopItem": {
       "stamp": "416d216fbce033ba"
     },
-    "foodEditor.primaryDiet": {
-      "stamp": "c2e6663a7d06f952"
-    },
-    "foodEditor.removeFreshAfter": {
-      "stamp": "c7c8c5de7c15ce84"
-    },
     "foodEditor.removeHomemadeChop": {
       "stamp": "011f75638c707215"
     },
-    "foodEditor.removeItem": {
-      "stamp": "778db6b4b0a97a7d"
-    },
-    "foodEditor.removeNamed": {
-      "stamp": "0369c81faaef363f"
-    },
     "foodEditor.removeThisItem": {
       "stamp": "38ca1b406d0af019"
-    },
-    "foodEditor.storagePlaceholder": {
-      "stamp": "90a9929ca21282e0"
     },
     "foodEditor.summaryAllDay": {
       "stamp": "d3deb55a27756893"
     },
     "foodEditor.timeFor": {
       "stamp": "090dc6ed6018c095"
-    },
-    "foodEditor.treats": {
-      "stamp": "f74a07c2d2ee143e"
-    },
-    "foodEditor.treatsPlaceholder": {
-      "stamp": "d388568adafe3193"
     },
     "foodEditor.unit": {
       "stamp": "80fecb184799e67b"
@@ -5523,32 +5319,11 @@
     "foodEditor.unit.tsp": {
       "stamp": "7078337e00fa28ff"
     },
-    "foodEditor.washBowlHint": {
-      "stamp": "f29e8f28423acce4"
-    },
-    "foodEditor.washFoodBowls": {
-      "stamp": "803c0e0fd7242068"
-    },
-    "foodEditor.washWaterBowl": {
-      "stamp": "a0a5d005b04c4f3b"
-    },
-    "foodEditor.water": {
-      "stamp": "81b5c0d6c66b3a7d"
-    },
-    "foodEditor.waterNotesPlaceholder": {
-      "stamp": "93a2558fbaeed292"
-    },
     "foodEditor.whatsInIt": {
       "stamp": "f7f74ddda7e5dafb"
     },
     "foodEditor.when": {
       "stamp": "1391a59a62eace9c"
-    },
-    "foodEditor.whenIsItFed": {
-      "stamp": "cea60da28a936b37"
-    },
-    "foodEditor.whereFoodIsStored": {
-      "stamp": "336933d9f7c898a9"
     },
     "frontDoor.back": {
       "stamp": "5001815e48b3af8b"
@@ -6783,6 +6558,27 @@
     "landing.subheadV2": {
       "stamp": "bc14842b9dcf5ef7"
     },
+    "legal.lastUpdated": {
+      "stamp": "c1f9fb01b7399c7c"
+    },
+    "legal.privacyMetaDescription": {
+      "stamp": "1ae69c146a23fc6c"
+    },
+    "legal.privacyMetaTitle": {
+      "stamp": "357ab642016403ed"
+    },
+    "legal.privacyTitle": {
+      "stamp": "dcdff161c6d25180"
+    },
+    "legal.termsMetaDescription": {
+      "stamp": "37ccaf6db0402447"
+    },
+    "legal.termsMetaTitle": {
+      "stamp": "5a7855b651314143"
+    },
+    "legal.termsTitle": {
+      "stamp": "3716c46040c949b6"
+    },
     "loadError.backHome": {
       "stamp": "5707ed08861e2e51"
     },
@@ -7239,63 +7035,6 @@
     "notifSettings.turnOnPush": {
       "stamp": "e51ff6b84be59843"
     },
-    "ownerChecklist.addFirstBird": {
-      "stamp": "9105dea1093a6669"
-    },
-    "ownerChecklist.addFirstBirdDesc": {
-      "stamp": "48b497b4a275a461"
-    },
-    "ownerChecklist.allSet": {
-      "stamp": "57883fad2bdb81ef"
-    },
-    "ownerChecklist.allSetBody": {
-      "stamp": "aefe746acbc9ff0f"
-    },
-    "ownerChecklist.appStoreBadgeAlt": {
-      "stamp": "5b8981e5bc6393b7"
-    },
-    "ownerChecklist.createFirstSit": {
-      "stamp": "c96287334465a617"
-    },
-    "ownerChecklist.createFirstSitDesc": {
-      "stamp": "06e6ba3aaa46c3fc"
-    },
-    "ownerChecklist.dismiss": {
-      "stamp": "05169f810de68ec3"
-    },
-    "ownerChecklist.doneCount": {
-      "stamp": "59efbd7d6145d298"
-    },
-    "ownerChecklist.getTheApp": {
-      "stamp": "a287f019876e3637"
-    },
-    "ownerChecklist.getTheAppDesc": {
-      "stamp": "81978ef6357d59ce"
-    },
-    "ownerChecklist.hideThis": {
-      "stamp": "31dcc3b259ce80c4"
-    },
-    "ownerChecklist.letsGetYouSetUp": {
-      "stamp": "f160137413e889d1"
-    },
-    "ownerChecklist.playStoreBadgeAlt": {
-      "stamp": "2cd8697a2ecfaeee"
-    },
-    "ownerChecklist.setEmergencyDefaultsDesc": {
-      "stamp": "9a280e5f599daaee"
-    },
-    "ownerChecklist.setEmergencyInfo": {
-      "stamp": "dea75284a68c170e"
-    },
-    "ownerChecklist.setNotificationPrefs": {
-      "stamp": "c2bba712dc5e11a9"
-    },
-    "ownerChecklist.setNotificationPrefsDesc": {
-      "stamp": "de9b3961b92b56d3"
-    },
-    "ownerChecklist.start": {
-      "stamp": "c30064b41a710fa9"
-    },
     "ownerHeader.accountSettings": {
       "stamp": "c0dc472d9a2b691d"
     },
@@ -7623,29 +7362,11 @@
     "planEditor.awaitingResponse": {
       "stamp": "ddf1423f426d1604"
     },
-    "planEditor.birdRemoved": {
-      "stamp": "eb532aa7c4544496"
-    },
-    "planEditor.cancel": {
-      "stamp": "06c80f8b6f9f2b3b"
-    },
     "planEditor.carePlanTitle": {
       "stamp": "024068f55f21e2cd"
     },
     "planEditor.checkNotes": {
       "stamp": "d19a3271a64d8524"
-    },
-    "planEditor.dangerZone": {
-      "stamp": "307460ffb2eb18dc"
-    },
-    "planEditor.deleteNamed": {
-      "stamp": "ca7698c11a1f4fc7"
-    },
-    "planEditor.deleteWarningChecks": {
-      "stamp": "071e0fdfce8fae91"
-    },
-    "planEditor.deleting": {
-      "stamp": "1ff01e037a7f6dcc"
     },
     "planEditor.done": {
       "stamp": "3e00dbef8dddb12e"
@@ -7655,6 +7376,9 @@
     },
     "planEditor.flagged": {
       "stamp": "0bc4dd09a90f224e"
+    },
+    "planEditor.goToSits": {
+      "stamp": "f276c925b8aa7d33"
     },
     "planEditor.healthChecks": {
       "stamp": "76061176bb2950ed"
@@ -7692,14 +7416,11 @@
     "planEditor.noPhotos": {
       "stamp": "327e687c035f14af"
     },
-    "planEditor.noSits": {
-      "stamp": "b4df5986b40daafa"
+    "planEditor.openAccountEmergency": {
+      "stamp": "4b479e1480fcddf1"
     },
     "planEditor.parrot": {
       "stamp": "aced62a75d27e4c1"
-    },
-    "planEditor.permanentlyDeleteNamed": {
-      "stamp": "3114f1b06521d74e"
     },
     "planEditor.perQuestionAnswers": {
       "stamp": "7472d47f7f9297a1"
@@ -7743,8 +7464,17 @@
     "planEditor.sectionsAria": {
       "stamp": "473ee89fa6d698bf"
     },
-    "planEditor.sitsSetUpFromSits": {
-      "stamp": "1fd00c118d0be2a9"
+    "planEditor.setUpSitFor": {
+      "stamp": "37c6822959eed007"
+    },
+    "planEditor.sitsMovedBody": {
+      "stamp": "50d8f0211f18aa08"
+    },
+    "planEditor.sitsMovedTitle": {
+      "stamp": "4297e226e71dac83"
+    },
+    "planEditor.sitsNeedEmergency": {
+      "stamp": "68fa24ef1e8ddd9e"
     },
     "planEditor.sitter": {
       "stamp": "c0d442a6b83178fb"
@@ -7790,12 +7520,6 @@
     },
     "planEditor.triageYellow": {
       "stamp": "5a21cf2f208d753b"
-    },
-    "planEditor.typeNameExactly": {
-      "stamp": "394843e19e9544ea"
-    },
-    "planEditor.typeToConfirm": {
-      "stamp": "1e4f5e7e64d374b3"
     },
     "planEditor.viewAsSitter": {
       "stamp": "c87b907105d3a5ba"
@@ -7980,11 +7704,14 @@
     "resetPassword.updated": {
       "stamp": "03a59c3d624d1de0"
     },
-    "root.errorBodyReload": {
-      "stamp": "672c359d9ffba1b3"
+    "root.emailUs": {
+      "stamp": "67107f1b0994526e"
     },
-    "root.goHome": {
-      "stamp": "e42c11dbc8ca8616"
+    "root.errorLine": {
+      "stamp": "c8a8bea0ec225be9"
+    },
+    "root.goToKya": {
+      "stamp": "4f27904dee72234b"
     },
     "root.metaDescription": {
       "stamp": "e970d15f4079c439"
@@ -7992,17 +7719,17 @@
     "root.metaTitle": {
       "stamp": "28c565a53420b548"
     },
-    "root.pageNotFound": {
-      "stamp": "e0ced10d896f3eb5"
+    "root.notFoundLine": {
+      "stamp": "1004e4499d103164"
     },
-    "root.pageNotFoundBody": {
-      "stamp": "2a61b3f8a58e2cea"
-    },
-    "root.reload": {
-      "stamp": "24634d75d839c914"
+    "root.notFoundTitle": {
+      "stamp": "2da6381a0b778659"
     },
     "root.somethingWentWrong": {
       "stamp": "7240889e0bebf7a8"
+    },
+    "root.tryAgain": {
+      "stamp": "5c0ecee5e225e041"
     },
     "scanDetail.answerConcerning": {
       "stamp": "8676a7a66f6b1267"
@@ -8235,9 +7962,6 @@
     "scanDetail.yourSitterLower": {
       "stamp": "707c76a7b363684a"
     },
-    "scanForm.answerAllError": {
-      "stamp": "e014a67a5bc0a84e"
-    },
     "scanForm.answerConcerning": {
       "stamp": "8676a7a66f6b1267"
     },
@@ -8246,39 +7970,6 @@
     },
     "scanForm.answerNotSure": {
       "stamp": "eb9500b24d3697db"
-    },
-    "scanForm.concerning.alertness": {
-      "stamp": "8e5a0b25035db081"
-    },
-    "scanForm.concerning.breathing": {
-      "stamp": "463304a513d9679a"
-    },
-    "scanForm.concerning.droppings": {
-      "stamp": "1bb50f2b4358182a"
-    },
-    "scanForm.concerning.exposure": {
-      "stamp": "9b71e3e3333add57"
-    },
-    "scanForm.concerning.fluffed": {
-      "stamp": "3a8081dc42fd6913"
-    },
-    "scanForm.concerning.food": {
-      "stamp": "00f47e007a6695b7"
-    },
-    "scanForm.concerning.injury": {
-      "stamp": "37e74dc152e39d25"
-    },
-    "scanForm.concerning.noise": {
-      "stamp": "781d2da85e99093e"
-    },
-    "scanForm.concerning.posture": {
-      "stamp": "b1df94d5f0394e17"
-    },
-    "scanForm.concerning.vomiting": {
-      "stamp": "11c55dccf5c68175"
-    },
-    "scanForm.grams": {
-      "stamp": "8c346e68b6fc24fa"
     },
     "scanForm.hint.breathing": {
       "stamp": "06c82ae39d3e8bfe"
@@ -8298,74 +7989,14 @@
     "scanForm.hint.vomiting": {
       "stamp": "5ee8023321c98df5"
     },
-    "scanForm.itemNoteLabel": {
-      "stamp": "9fd6646340e1df08"
-    },
-    "scanForm.itemNotePlaceholder": {
-      "stamp": "763d6374b3e3d725"
-    },
-    "scanForm.logging": {
-      "stamp": "ef9926e4c8056069"
-    },
-    "scanForm.lookAgainLabel": {
-      "stamp": "fb0d6f1222b0bd56"
-    },
-    "scanForm.missingAnswer": {
-      "stamp": "902a71e9a9852a53"
-    },
-    "scanForm.notesLabel": {
-      "stamp": "d19a3271a64d8524"
-    },
-    "scanForm.notSure.alertness": {
-      "stamp": "d3f06182d29fad45"
-    },
-    "scanForm.notSure.breathing": {
-      "stamp": "da7628178f93a07d"
-    },
-    "scanForm.notSure.droppings": {
-      "stamp": "790ef259b7d716bb"
-    },
-    "scanForm.notSure.exposure": {
-      "stamp": "5a2b1cb1a8ee442d"
-    },
-    "scanForm.notSure.fluffed": {
-      "stamp": "db4aa0622fa17dd8"
-    },
-    "scanForm.notSure.food": {
-      "stamp": "18a7889e458693bb"
-    },
-    "scanForm.notSure.injury": {
-      "stamp": "3b996b09e4dffade"
-    },
-    "scanForm.notSure.noise": {
-      "stamp": "fe033c852c3f809c"
-    },
-    "scanForm.notSure.posture": {
-      "stamp": "0699b230ab519a80"
-    },
-    "scanForm.notSure.vomiting": {
-      "stamp": "7ab62d198b12d89f"
-    },
     "scanForm.photoAlt": {
       "stamp": "e5bf19e7668bdb5b"
-    },
-    "scanForm.photoHelpEmpty": {
-      "stamp": "04cd0fc22f9fe011"
-    },
-    "scanForm.photoHelpHas": {
-      "stamp": "4ab3bf90c8185e36"
     },
     "scanForm.photoProcessError": {
       "stamp": "b83157cd8a3882dd"
     },
-    "scanForm.photoSectionTitle": {
-      "stamp": "e4136428dfe55a1c"
-    },
     "scanForm.photoTooLarge": {
       "stamp": "fc8d661b04fef2fb"
-    },
-    "scanForm.previewLabel": {
-      "stamp": "2e7173bd45791cad"
     },
     "scanForm.processing": {
       "stamp": "63fceea81cd11c81"
@@ -8430,29 +8061,11 @@
     "scanForm.q2.vomiting": {
       "stamp": "78e0461adbf96a6b"
     },
-    "scanForm.submitDefault": {
-      "stamp": "31da3c6d7c59ae5f"
-    },
     "scanForm.takePhoto": {
       "stamp": "50efb39246e27bcf"
     },
     "scanForm.theBird": {
       "stamp": "362c30e8d718e002"
-    },
-    "scanForm.uploadPhoto": {
-      "stamp": "794b79e9417bd8f4"
-    },
-    "scanForm.watchForLabel": {
-      "stamp": "c76c336e987769a2"
-    },
-    "scanForm.weighInHelp": {
-      "stamp": "2ff892966be7177f"
-    },
-    "scanForm.weighInTitle": {
-      "stamp": "5a050fb68abd17b1"
-    },
-    "scanForm.weightPlaceholder": {
-      "stamp": "0dd0fe8ef5f38df5"
     },
     "scanRunBy.householdMember": {
       "stamp": "bd1e4a989efa1a38"
@@ -8714,99 +8327,6 @@
     },
     "signedFile.openFailed": {
       "stamp": "a667e55c910dceb5"
-    },
-    "sitCard.active": {
-      "stamp": "7c5bda6b68763754"
-    },
-    "sitCard.activity": {
-      "stamp": "088db0cdd9feb542"
-    },
-    "sitCard.birdsLabel": {
-      "stamp": "33fa4beb52893498"
-    },
-    "sitCard.confirmDeleteBodyKeepsLogs": {
-      "stamp": "2965b7bbe557959a"
-    },
-    "sitCard.confirmDeleteTitle": {
-      "stamp": "3b7953be40db9fc9"
-    },
-    "sitCard.confirmRevokeBody": {
-      "stamp": "77caa8cac7aba238"
-    },
-    "sitCard.confirmRevokeTitle": {
-      "stamp": "bcc4000308998d7e"
-    },
-    "sitCard.copyLink": {
-      "stamp": "dc4c04995ccb896a"
-    },
-    "sitCard.coveredBy": {
-      "stamp": "684fdfb3c32b1013"
-    },
-    "sitCard.delete": {
-      "stamp": "97e6c24eab9130b3"
-    },
-    "sitCard.deleted": {
-      "stamp": "e3d4c3240e823a10"
-    },
-    "sitCard.edit": {
-      "stamp": "dc46962c1249053f"
-    },
-    "sitCard.ended": {
-      "stamp": "a3b14e609c375c17"
-    },
-    "sitCard.expired": {
-      "stamp": "6d2367cfc16e67a3"
-    },
-    "sitCard.household": {
-      "stamp": "da35ceae68b17eed"
-    },
-    "sitCard.householdMember": {
-      "stamp": "e5a61877c5a229f6"
-    },
-    "sitCard.householdMemberLower": {
-      "stamp": "deeb76792e03ee01"
-    },
-    "sitCard.keep": {
-      "stamp": "6a37de9a420e6ec2"
-    },
-    "sitCard.keepLink": {
-      "stamp": "4395661f62f85f15"
-    },
-    "sitCard.linkCopied": {
-      "stamp": "570ee0bf18d47361"
-    },
-    "sitCard.linkRevoked": {
-      "stamp": "a25eb69c59115e7a"
-    },
-    "sitCard.missingContacts": {
-      "stamp": "5434c54969c05fa2"
-    },
-    "sitCard.needVetPhone": {
-      "stamp": "8b0e38fb607a88dd"
-    },
-    "sitCard.needYourPhone": {
-      "stamp": "164ce4961523b9c9"
-    },
-    "sitCard.previewAsSitter": {
-      "stamp": "81cc6612189051e9"
-    },
-    "sitCard.revoked": {
-      "stamp": "1db70f934db852c3"
-    },
-    "sitCard.revokeLink": {
-      "stamp": "4efa6df45ae9d280"
-    },
-    "sitCard.revokeLinkAction": {
-      "stamp": "4efa6df45ae9d280"
-    },
-    "sitCard.sitterLabel": {
-      "stamp": "b95f9a328b0a1b70"
-    },
-    "sitCard.upcoming": {
-      "stamp": "dc396b06a46b1b5f"
-    },
-    "sitCard.view": {
-      "stamp": "5c82e762c70a893a"
     },
     "sitCards.active": {
       "stamp": "7c5bda6b68763754"
@@ -9324,8 +8844,8 @@
     "sitLink.copied": {
       "stamp": "570ee0bf18d47361"
     },
-    "sitLink.missingContacts": {
-      "stamp": "5434c54969c05fa2"
+    "sitLink.missingContactsAccount": {
+      "stamp": "46fafee3da75f2e2"
     },
     "sitLink.needJoin": {
       "stamp": "03065114e67e4feb"
@@ -9348,8 +8868,17 @@
     "sitPreview.loading": {
       "stamp": "cbb457a5590dfc82"
     },
+    "sitPreview.mode": {
+      "stamp": "2f62b4b99467797b"
+    },
+    "sitPreview.noLinkTitle": {
+      "stamp": "23f91e0ab6eb994b"
+    },
     "sitPreview.noSitterLink": {
       "stamp": "a0ced4e85b6735f2"
+    },
+    "sitPreview.openingSit": {
+      "stamp": "c192793712029537"
     },
     "sitPreview.pageTitle": {
       "stamp": "8ed82bde623a23bb"
@@ -9357,8 +8886,11 @@
     "sitPreview.seeActivity": {
       "stamp": "e755cd61b183a215"
     },
-    "sitPreview.sitGone": {
-      "stamp": "86845a71432bb13f"
+    "sitPreview.sitGoneBody": {
+      "stamp": "20f7f1a4dabe6791"
+    },
+    "sitPreview.sitGoneTitle": {
+      "stamp": "c4c1d4492adfe206"
     },
     "sitPreview.sitterBanner": {
       "stamp": "56b6a26776b03a20"
@@ -10476,18 +10008,6 @@
     "species.yellowNapedAmazon": {
       "stamp": "6115e328a2b6ae4c"
     },
-    "system.back": {
-      "stamp": "5001815e48b3af8b"
-    },
-    "system.changePhoto": {
-      "stamp": "6bdd6d01964ac32d"
-    },
-    "system.more": {
-      "stamp": "e8432d18b3836377"
-    },
-    "system.share": {
-      "stamp": "cdcba29bb82cb786"
-    },
     "todayPage.nothingOnTitle": {
       "stamp": "31f40393f12a70a8"
     },
@@ -10911,8 +10431,11 @@
     "vetSummary.whoCanHandleLine": {
       "stamp": "84125a1302cc70e5"
     },
-    "viewAsSitter.backHome": {
-      "stamp": "5707ed08861e2e51"
+    "viewAsSitter.backToBird": {
+      "stamp": "829aa07ea34b8d18"
+    },
+    "viewAsSitter.backToRecord": {
+      "stamp": "b487bc78c6e5cdc1"
     },
     "viewAsSitter.bannerReadOnly": {
       "stamp": "4780e45ff9b67238"
@@ -10923,11 +10446,17 @@
     "viewAsSitter.closePreview": {
       "stamp": "9f4de33b4a2f166c"
     },
+    "viewAsSitter.errorTitle": {
+      "stamp": "c393996cfb5ad0fc"
+    },
     "viewAsSitter.iframeTitle": {
       "stamp": "c0f19828e68f0ec0"
     },
     "viewAsSitter.metaTitle": {
       "stamp": "023c187dd1abbc96"
+    },
+    "viewAsSitter.mode": {
+      "stamp": "bfa5c86b2628a362"
     },
     "waitlist.cardBodyShort": {
       "stamp": "babba979c1847023"

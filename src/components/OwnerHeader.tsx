@@ -51,17 +51,3 @@ export function OwnerHeaderIcons({ large = false }: { large?: boolean } = {}) {
     </div>
   );
 }
-
-// Shared owner-screen header: dark-green brand band with a title and the two
-// header icons. The dashboard keeps its own bespoke header (greeting + sign
-// out); this is for the other primary tab screens (e.g. Sits).
-export function OwnerHeader({ title }: { title: string }) {
-  return (
-    <header className="bg-[#1a3d2e] pt-[max(env(safe-area-inset-top),1rem)]">
-      <div className="mx-auto flex max-w-md items-center justify-between gap-3 px-5 pb-6 pt-3">
-        <h1 className="text-[27px] font-medium leading-tight text-white">{title}</h1>
-        <OwnerHeaderIcons />
-      </div>
-    </header>
-  );
-}

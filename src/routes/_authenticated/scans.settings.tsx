@@ -31,7 +31,7 @@ import {
   nativePushOptedOut,
   setNativePushOptedOut,
 } from "@/lib/pushNative";
-import { markNotificationsReviewed } from "@/components/OwnerChecklist";
+import { markNotificationsReviewed } from "@/lib/notificationsReviewed";
 import { detectWebPlatform, APP_STORE_URL, PLAY_STORE_URL } from "@/lib/storeLinks";
 import { K, KyaPage, KyaBody, KyaCard, KyaIconTile, KyaGroupLabel, KyaSwitch, KyaLink, KyaPrimaryButton, KyaSecondaryButton } from "@/components/kya";
 import { PageHeader } from "@/components/headers";

@@ -428,8 +428,8 @@ function AuthPage() {
               {mode === "signup" && (
                 <p className="m-0 text-center text-[12px] leading-[1.45]" style={{ color: K.quiet }}>
                   <Trans
-                    i18nKey="auth.agreeToTerms"
-                    defaults="By creating an account you agree to our <terms>Terms</terms> and <privacy>Privacy Policy</privacy>."
+                    i18nKey="auth.agreeToTermsOfService"
+                    defaults="By creating an account you agree to our <terms>Terms of service</terms> and <privacy>Privacy policy</privacy>."
                     components={{
                       terms: <Link to="/terms" className={legalLinkCls} style={{ color: K.moss }} />,
                       privacy: <Link to="/privacy" className={legalLinkCls} style={{ color: K.moss }} />,

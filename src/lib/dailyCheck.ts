@@ -66,6 +66,9 @@ export function invalidateAfterCheck(qc: QueryClient, birdId: string) {
   qc.invalidateQueries({ queryKey: ["scan-feed"] });
   ["bird-checkins", "weight-entries", "bird-weights"].forEach((k) => qc.invalidateQueries({ queryKey: [k, birdId] }));
   qc.invalidateQueries({ queryKey: ["birds"] }); // Home pills read weights embedded in the birds query
+  // A covering household member's check (tagged with the sit id) flips the
+  // "Daily health check" status on the covering page and the Home bird cards.
+  qc.invalidateQueries({ queryKey: ["active-caregiver-sits"] });
 }
 
 export type SaveResult = { logId: string; triage: TriageResult; weightSaved: boolean; weightError: unknown };

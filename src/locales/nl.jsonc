@@ -235,8 +235,8 @@
   "addressInput.streetLabel": "Straat",
   // ZIP
   "addressInput.zip": "Postcode",
-  // By creating an account you agree to our <terms>Terms</terms> and <privacy>Privacy Policy</privacy>.
-  "auth.agreeToTerms": "Door een account aan te maken ga je akkoord met onze <terms>Voorwaarden</terms> en ons <privacy>Privacybeleid</privacy>.",
+  // By creating an account you agree to our <terms>Terms of service</terms> and <privacy>Privacy policy</privacy>.
+  "auth.agreeToTermsOfService": "Door een account aan te maken ga je akkoord met onze <terms>servicevoorwaarden</terms> en ons <privacy>privacybeleid</privacy>.",
   // Apple sign-in failed.
   "auth.appleSignInFailed": "Inloggen met Apple mislukt.",
   // Back to sign in
@@ -1969,8 +1969,6 @@
   "capabilities.recordHealth": "Gezondheid bijhouden",
   // Free-fed
   "careCards.freeFed": "Vrij voeren",
-  // Show me
-  "careCards.showMe": "Laat me zien",
   // Step up
   "careCards.stepUp": "Op de hand",
   // No
@@ -2001,8 +1999,6 @@
   "caregiverHome.backToHome": "Terug naar home",
   // {{owner}} is back tomorrow. Here's today's check.
   "caregiverHome.backTomorrow": "{{owner}} is morgen terug. Hier is de check van vandaag.",
-  // Today's check starts {{when}}.
-  "caregiverHome.checkStarts": "De dagelijkse check begint {{when}}.",
   // Today's check starts {{when}}
   "caregiverHome.checkStartsTitle": "De check van vandaag begint {{when}}",
   // Couldn't update.
@@ -2025,8 +2021,6 @@
   "caregiverHome.evening": "Avond",
   // From the owner
   "caregiverHome.fromTheOwner": "Van de eigenaar",
-  // {{greeting}}.
-  "caregiverHome.greetingHeadline": "{{greeting}}.",
   // in {{n}} days
   "caregiverHome.inDays": "over {{n}} dagen",
   // later today
@@ -2035,8 +2029,6 @@
   "caregiverHome.loading": "Laden…",
   // Morning
   "caregiverHome.morning": "Ochtend",
-  // No active sit right now.
-  "caregiverHome.noActiveSit": "Op dit moment geen actieve oppasperiode.",
   // When an owner assigns you to cover a sit, the daily checklist shows up here for the dates of that sit.
   "caregiverHome.noActiveSitBody": "Als een eigenaar je vraagt om in te vallen tijdens een oppasperiode, verschijnt de dagelijkse checklist hier voor de data van die oppasperiode.",
   // No active sit right now
@@ -2309,126 +2301,6 @@
   "carePlanPage.readOnlyFooter": "Alleen-lezen. Alleen de eigenaar van {{name}} kan wijzigingen maken.",
   // Care plan
   "carePlanPage.title": "Zorgplan",
-  // Bite warning signs
-  "careSheet.behavior.biteWarning": "Waarschuwingssignalen voor bijten",
-  // Behavior
-  "careSheet.behavior.eyebrow": "Gedrag",
-  // This bird has handling restrictions — read this section before any contact.
-  "careSheet.behavior.restrictions": "Deze vogel heeft beperkingen voor omgang — lees dit deel voordat je contact maakt.",
-  // Handling {{name}}
-  "careSheet.behavior.title": "Omgaan met {{name}}",
-  // Fears & triggers
-  "careSheet.callout.fearsTriggers": "Angsten & triggers",
-  // Call the owner: {{info}}
-  "careSheet.emergency.callOwner": "Bel de eigenaar: {{info}}",
-  // Call the vet: {{info}}
-  "careSheet.emergency.callVet": "Bel de dierenarts: {{info}}",
-  // Emergency
-  "careSheet.emergency.eyebrow": "Noodgeval",
-  // When to call
-  "careSheet.emergency.whenToCall": "Wanneer bellen",
-  // Brand & amount
-  "careSheet.field.brandAmount": "Merk & hoeveelheid",
-  // Cage location
-  "careSheet.field.cageLocation": "Plek van de kooi",
-  // Cleaning products
-  "careSheet.field.cleaningProducts": "Schoonmaakmiddelen",
-  // Diet overview
-  "careSheet.field.dietOverview": "Dieetoverzicht",
-  // Diet types
-  "careSheet.field.dietTypes": "Dieettypes",
-  // Feeding times
-  "careSheet.field.feedingTimes": "Voedertijden",
-  // Food storage
-  "careSheet.field.foodStorage": "Eten bewaren",
-  // Fresh foods
-  "careSheet.field.freshFoods": "Vers eten",
-  // Freshness & hygiene
-  "careSheet.field.freshnessHygiene": "Versheid & hygiëne",
-  // Handling rules
-  "careSheet.field.handlingRules": "Regels voor omgang",
-  // Likes
-  "careSheet.field.likes": "Houdt van",
-  // Medical conditions
-  "careSheet.field.medicalConditions": "Medische aandoeningen",
-  // Medications
-  "careSheet.field.medications": "Medicatie",
-  // Normal activity
-  "careSheet.field.normalActivity": "Normale activiteit",
-  // Normal appetite
-  "careSheet.field.normalAppetite": "Normale eetlust",
-  // Normal droppings
-  "careSheet.field.normalDroppings": "Normale ontlasting",
-  // Normal noise
-  "careSheet.field.normalNoise": "Normaal geluid",
-  // Normal sleep
-  "careSheet.field.normalSleep": "Normale slaap",
-  // Off-limits areas
-  "careSheet.field.offLimitsAreas": "Verboden plekken",
-  // Other diet
-  "careSheet.field.otherDiet": "Ander dieet",
-  // Other fresh foods
-  "careSheet.field.otherFreshFoods": "Ander vers eten",
-  // Other pets
-  "careSheet.field.otherPets": "Andere huisdieren",
-  // Out-of-cage rules
-  "careSheet.field.outOfCageRules": "Regels buiten de kooi",
-  // Safety rules
-  "careSheet.field.safetyRules": "Veiligheidsregels",
-  // Treats
-  "careSheet.field.treats": "Snacks",
-  // Water
-  "careSheet.field.water": "Water",
-  // What's normal (overall)
-  "careSheet.field.whatsNormalOverall": "Wat normaal is (algemeen)",
-  // Who can handle
-  "careSheet.field.whoCanHandle": "Wie mag omgaan met de vogel",
-  // With strangers
-  "careSheet.field.withStrangers": "Met vreemden",
-  // Food
-  "careSheet.food.eyebrow": "Eten",
-  // Keep these completely out of reach.
-  "careSheet.food.keepOutOfReach": "Houd deze volledig buiten bereik.",
-  // Never feed · toxic to this bird
-  "careSheet.food.neverFeedTitle": "Nooit geven · giftig voor deze vogel",
-  // Don't introduce new foods while the owner is away.
-  "careSheet.food.noNewFoods": "Geef geen nieuw eten terwijl de eigenaar weg is.",
-  // What {{name}} eats
-  "careSheet.food.title": "Wat {{name}} eet",
-  // Health
-  "careSheet.health.eyebrow": "Gezondheid",
-  // Normal-behavior clip
-  "careSheet.health.normalBehaviorClip": "Clip van normaal gedrag",
-  // What's normal for {{name}}
-  "careSheet.health.title": "Wat normaal is voor {{name}}",
-  // Home & safety
-  "careSheet.home.eyebrow": "Thuis & veiligheid",
-  // Household hazards · keep away
-  "careSheet.home.hazardsTitle": "Gevaren in huis · uit de buurt houden",
-  // {{name}}'s home & safety
-  "careSheet.home.title": "{{name}}'s thuis & veiligheid",
-  // Change water
-  "careSheet.kv.changeWater": "Water verversen",
-  // Frequency
-  "careSheet.kv.frequency": "Frequentie",
-  // Remove fresh food
-  "careSheet.kv.removeFreshFood": "Vers eten weghalen",
-  // Wash food bowls
-  "careSheet.kv.washFoodBowls": "Eetbakjes wassen",
-  // Wash water bowl
-  "careSheet.kv.washWaterBowl": "Waterbakje wassen",
-  // Normal weight
-  "careSheet.metric.normalWeight": "Normaal gewicht",
-  // this bird
-  "careSheet.thisBird": "deze vogel",
-  // Tips
-  "careSheet.tips.eyebrow": "Tips",
-  // Short clips from the owner showing how things are done.
-  "careSheet.tips.subtitle": "Korte clips van de eigenaar die laten zien hoe dingen gaan.",
-  // Tips from the owner
-  "careSheet.tips.title": "Tips van de eigenaar",
-  // Within {{duration}}
-  "careSheet.value.within": "Binnen {{duration}}",
   // Already confirmed? <go>Sign in</go>
   "checkEmail.alreadyConfirmedSignIn": "Al bevestigd? <go>Inloggen</go>",
   // It can take a minute. Check spam if it isn't there.
@@ -2869,8 +2741,6 @@
   "dashboard.yourBirdsLower": "je vogels",
   // Your flock today
   "dashboard.yourFlock": "Je vogels",
-  // Nothing logged yet.
-  "datedTimeline.nothingLoggedYet": "Nog niets genoteerd.",
   // That already exists.
   "dbError.alreadyExists": "Dat bestaat al.",
   // Something required was missing.
@@ -2885,6 +2755,78 @@
   "dbError.stillConnected": "Dit is nog aan iets anders gekoppeld, dus het kan nu niet worden gewijzigd.",
   // Some of those details aren't in the right format.
   "dbError.wrongFormat": "Sommige gegevens hebben niet de juiste vorm.",
+  // If you can't sign in, email <mail>{{email}}</mail> from the address registered to the account, with the subject "Delete my account". We will confirm the request and complete the deletion within 30 days.
+  "deleteAccountPage.cantSignIn": "Kun je niet inloggen? Mail dan naar <mail>{{email}}</mail> vanaf het e-mailadres van het account, met als onderwerp \"Verwijder mijn account\". We bevestigen het verzoek en ronden de verwijdering binnen 30 dagen af.",
+  // You can delete your own account from inside the app, without contacting us. It takes effect immediately.
+  "deleteAccountPage.howBody": "Je kunt je account zelf in de app verwijderen, zonder contact met ons op te nemen. Het gaat meteen in.",
+  // How to request deletion
+  "deleteAccountPage.howHeading": "Zo vraag je verwijdering aan",
+  // Kya & Co. is published by The Kya Project, LLC. This page explains how to delete your account and exactly what happens to your data when you do.
+  "deleteAccountPage.intro": "Kya & Co. wordt uitgegeven door The Kya Project, LLC. Op deze pagina lees je hoe je je account verwijdert en wat er dan precies met je gegevens gebeurt.",
+  // <b>Encrypted database backups.</b> Your written records — birds, care plans, logs, journal entries — may remain in our encrypted daily backups for up to seven days after deletion, and then roll off permanently. Those backups exist only to recover from an outage; they are never used to bring back a deleted account. Your uploaded files work differently: photos, video clips and PDF attachments are removed from storage straight away, and are not part of those backups at all.
+  "deleteAccountPage.keepBackups": "<b>Versleutelde databaseback-ups.</b> Je geschreven gegevens — vogels, verzorgingsplannen, notities, dagboekitems — kunnen tot zeven dagen na verwijdering in onze versleutelde dagelijkse back-ups blijven staan en verdwijnen daarna definitief. Die back-ups bestaan alleen om na een storing te herstellen; ze worden nooit gebruikt om een verwijderd account terug te zetten. Geüploade bestanden werken anders: foto's, videoclips en pdf-bijlagen worden meteen uit de opslag verwijderd en zitten helemaal niet in die back-ups.",
+  // <b>Email contact record.</b> When you sign up, our email provider keeps a contact record with your email address, name and how you found us, whether or not you opted in to marketing. It is not removed by deleting your account. The unsubscribe link in any of our emails stops further email; to have the record deleted, email <mail>{{email}}</mail> and we will delete it for you.
+  "deleteAccountPage.keepEmailRecord": "<b>Contactgegevens bij onze e-maildienst.</b> Als je je aanmeldt, bewaart onze e-mailprovider een contactrecord met je e-mailadres, naam en hoe je ons hebt gevonden, of je nu wel of niet voor marketing hebt gekozen. Dat record wordt niet verwijderd als je je account verwijdert. Met de afmeldlink in onze e-mails stoppen verdere e-mails; wil je het record laten verwijderen, mail dan naar <mail>{{email}}</mail> en wij verwijderen het voor je.",
+  // What we keep, and for how long
+  "deleteAccountPage.keepHeading": "Wat we bewaren, en hoe lang",
+  // We keep nothing about you for legal or billing reasons. Kya & Co. takes no payments and holds no financial records. Two things outlive the deletion:
+  "deleteAccountPage.keepIntro": "We bewaren niets over jou om juridische of financiële redenen. Kya & Co. neemt geen betalingen aan en houdt geen financiële gegevens bij. Twee dingen blijven na de verwijdering bestaan:",
+  // Last updated: 5 September 2026.
+  "deleteAccountPage.lastUpdated": "Laatst bijgewerkt: 5 september 2026.",
+  // How to delete your Kya & Co. account and what happens to your data.
+  "deleteAccountPage.metaDescription": "Hoe je je Kya & Co.-account verwijdert en wat er met je gegevens gebeurt.",
+  // Delete your account — Kya & Co.
+  "deleteAccountPage.metaTitle": "Je account verwijderen — Kya & Co.",
+  // There is no waiting period and no recovery step. Everything listed below is removed as soon as you confirm, and you are signed out.
+  "deleteAccountPage.noWaiting": "Er is geen wachttijd en geen herstelmogelijkheid. Alles hieronder wordt verwijderd zodra je bevestigt, en je wordt uitgelogd.",
+  // Email <mail>{{email}}</mail>. See also our <privacy>Privacy policy</privacy>.
+  "deleteAccountPage.questionsBody": "Mail naar <mail>{{email}}</mail>. Zie ook ons <privacy>privacybeleid</privacy>.",
+  // Questions
+  "deleteAccountPage.questionsHeading": "Vragen",
+  // Content shared with others
+  "deleteAccountPage.sharedHeading": "Wat je met anderen hebt gedeeld",
+  // Kya & Co. lets several people care for the same bird, so some of what you wrote may live in another person's account. We do not delete their records of their own bird's care, but your identity is removed from them.
+  "deleteAccountPage.sharedIntro": "In Kya & Co. kunnen meerdere mensen voor dezelfde vogel zorgen, dus wat je hebt geschreven kan in het account van iemand anders staan. We verwijderen hun gegevens over de zorg voor hun eigen vogel niet, maar jouw naam wordt eruit gehaald.",
+  // Care you logged on someone else's bird — journal entries, weight readings, daily logs — stays with that bird's owner. Your name is removed, and the entry no longer points back to you.
+  "deleteAccountPage.sharedLogged": "Zorg die je hebt genoteerd bij de vogel van iemand anders — dagboekitems, gewichten, dagelijkse notities — blijft bij de eigenaar van die vogel. Je naam wordt verwijderd en het item verwijst niet meer naar jou.",
+  // If you were a caregiver or sitter on someone else's sit, the sit itself stays with its owner; your link to it is removed.
+  "deleteAccountPage.sharedSits": "Was je verzorger of oppas bij de oppasperiode van iemand anders, dan blijft die oppasperiode bij de eigenaar; jouw koppeling eraan wordt verwijderd.",
+  // A bird you transferred to someone else already belongs to them, and is not affected by deleting your account.
+  "deleteAccountPage.sharedTransferred": "Een vogel die je aan iemand anders hebt overgedragen, is al van die persoon en wordt niet geraakt door het verwijderen van je account.",
+  // Birds that someone shared with you are not deleted. Your access ends immediately, and the bird and its full history stay with its owner.
+  "deleteAccountPage.sharedWithYou": "Vogels die iemand met jou heeft gedeeld, worden niet verwijderd. Je toegang stopt meteen, en de vogel en zijn hele geschiedenis blijven bij de eigenaar.",
+  // Sign in to Kya & Co. — in the app, or at app.thekyaproject.com.
+  "deleteAccountPage.step1": "Log in bij Kya & Co. — in de app of op app.thekyaproject.com.",
+  // On Home, tap the settings (gear) icon in the top right.
+  "deleteAccountPage.step2": "Tik op Home rechtsboven op het instellingenicoon (tandwiel).",
+  // Scroll to the bottom of the Account screen and tap <b>Delete account</b>.
+  "deleteAccountPage.step3": "Scrol naar onderen op het scherm Account en tik op <b>Account verwijderen</b>.",
+  // Type <b>DELETE</b> to confirm, then tap <b>Permanently delete my account</b>.
+  "deleteAccountPage.step4": "Typ <b>DELETE</b> om te bevestigen en tik dan op <b>Mijn account definitief verwijderen</b>.",
+  // Delete your account
+  "deleteAccountPage.title": "Je account verwijderen",
+  // The analytics and error reports our analytics provider holds about your account.
+  "deleteAccountPage.whatAnalytics": "De analyse- en foutgegevens die onze analyseprovider over je account bewaart.",
+  // Every bird you own, and everything attached to it: care plans and routine tasks, journal entries and their PDF attachments, weight history, daily care logs, health checks, emergency contacts, and moments.
+  "deleteAccountPage.whatBirds": "Elke vogel van jou en alles wat erbij hoort: verzorgingsplannen en vaste taken, dagboekitems en hun pdf-bijlagen, gewichtsgeschiedenis, dagelijkse notities, gezondheidschecks, noodcontacten en momenten.",
+  // Your saved emergency contact defaults, and your archive of past birds.
+  "deleteAccountPage.whatDefaults": "Je opgeslagen standaardnoodcontacten en je archief van eerdere vogels.",
+  // Every file you uploaded — bird photos, journal photos, health-check photos and PDF attachments — together with any care-plan video clips held by our video provider.
+  "deleteAccountPage.whatFiles": "Elk bestand dat je hebt geüpload — vogelfoto's, dagboekfoto's, foto's bij gezondheidschecks en pdf-bijlagen — samen met eventuele videoclips uit verzorgingsplannen bij onze videoprovider.",
+  // What gets deleted
+  "deleteAccountPage.whatHeading": "Wat er wordt verwijderd",
+  // Household access you granted: invitations you sent, each member's permissions, and their access to your birds.
+  "deleteAccountPage.whatHousehold": "Toegang tot je huishouden die je hebt gegeven: verstuurde uitnodigingen, de rechten van elk lid en hun toegang tot je vogels.",
+  // Deleting your account permanently removes:
+  "deleteAccountPage.whatIntro": "Als je je account verwijdert, wordt dit definitief verwijderd:",
+  // Your profile — name, email address, language, and onboarding state.
+  "deleteAccountPage.whatProfile": "Je profiel — naam, e-mailadres, taal en de stand van de introductie.",
+  // Push-notification subscriptions and your notification and email history.
+  "deleteAccountPage.whatPush": "Je pushmeldingen en je geschiedenis van meldingen en e-mails.",
+  // Your sign-in and every active session.
+  "deleteAccountPage.whatSignIn": "Je inloggegevens en elke actieve sessie.",
+  // Sits you created, including sitter checklists, completed tasks, and the sitter links themselves — any link you shared stops working immediately.
+  "deleteAccountPage.whatSits": "Oppasperiodes die je hebt gemaakt, inclusief checklists voor de oppas, afgevinkte taken en de oppaslinks zelf — elke link die je hebt gedeeld werkt meteen niet meer.",
   // Not a substitute for veterinary care. Call a vet for any medical concern.
   "disclaimer.compactBody": "Geen vervanging voor diergeneeskundige zorg. Bel een dierenarts bij elk medisch probleem.",
   // Note:
@@ -3173,10 +3115,6 @@
   "exportRecord.willLeave": "{{name}} hoort dan niet meer bij je vogels en gaat naar Eerdere vogels.",
   // Yes, hand off {{name}}
   "exportRecord.yesHandOff": "Ja, {{name}} overdragen",
-  // Back
-  "facetStub.back": "Terug",
-  // Coming soon.
-  "facetStub.comingSoon": "Binnenkort beschikbaar.",
   // We're so sorry. This gently pauses {{name}}'s daily reminders, and if a sit is active, lets their sitter know they can stop too. {{name}}'s record, journal, and moments are kept, so you can look back whenever you'd like.
   "farewell.askBody": "Het spijt ons zo. Hiermee pauzeer je rustig de dagelijkse herinneringen voor {{name}}, en als er een oppasperiode loopt, laten we de oppas weten dat die ook kan stoppen. Het dossier, het dagboek en de momenten van {{name}} blijven bewaard, zodat je kunt terugkijken wanneer je maar wilt.",
   // Take your time
@@ -3305,26 +3243,18 @@
   "foodEditor.addHomemadeChop": "Je zelfgemaakte chop toevoegen",
   // What goes in it, how much, and when
   "foodEditor.addHomemadeChopDetail": "Wat erin zit, hoeveel en wanneer",
-  // Add item
-  "foodEditor.addItem": "Item toevoegen",
   // Add a pre-made chop
   "foodEditor.addPremadeChop": "Een kant-en-klare chop toevoegen",
   // A brand you buy, like Harrison's
   "foodEditor.addPremadeChopDetail": "Een merk dat je koopt, zoals Harrison's",
   // Amount
   "foodEditor.amount": "Hoeveelheid",
-  // Amount (e.g. 2)
-  "foodEditor.amountEg": "Hoeveelheid (bijv. 2)",
-  // Add both an amount and a unit, or clear both.
-  "foodEditor.amountUnitBoth": "Vul zowel een hoeveelheid als een eenheid in, of maak beide leeg.",
   // Anything else?
   "foodEditor.anythingElse": "Nog iets?",
   // Available all day / free-fed
   "foodEditor.availableAllDayFreeFed": "Hele dag beschikbaar / vrij voeren",
   // Brand, how much, and when
   "foodEditor.brandHowMuchWhen": "Merk, hoeveel, en wanneer",
-  // Brand or item name
-  "foodEditor.brandOrItemName": "Merk of naam van het item",
   // Brand or name
   "foodEditor.brandOrName": "Merk of naam",
   // e.g. Harrison's High Potency
@@ -3335,24 +3265,14 @@
   "foodEditor.brandPlaceholderOther": "bijv. gekiemd zaadmengsel",
   // e.g. Higgins Sunburst
   "foodEditor.brandPlaceholderSeed": "bijv. Higgins Sunburst",
-  // Choose all that apply.
-  "foodEditor.chooseAllThatApply": "Kies alles wat van toepassing is.",
-  // Pick fresh foods above or tap “Add item” to list your own.
-  "foodEditor.chopEmpty": "Kies hierboven vers voer of tik op “Item toevoegen” om je eigen items te noteren.",
   // Add a pre-made chop, your own homemade mix, or both.
   "foodEditor.chopHelper": "Voeg een kant-en-klare chop toe, je eigen zelfgemaakte mix, of allebei.",
-  // e.g. Morning chop mix
-  "foodEditor.chopNamePlaceholder": "bijv. Ochtend-chopmix",
   // Clear
   "foodEditor.clear": "Wissen",
-  // Clear {{period}} time
-  "foodEditor.clearPeriodTime": "Tijd voor {{period}} wissen",
   // Close
   "foodEditor.closeSheet": "Sluiten",
   // Common picks
   "foodEditor.commonPicks": "Veelgekozen",
-  // Describe the other diet
-  "foodEditor.describeOtherDiet": "Beschrijf de andere voeding",
   // Done
   "foodEditor.done": "Klaar",
   // How much and When are hidden while this is on. Your sitter will see “Available all day.”
@@ -3539,14 +3459,6 @@
   "foodEditor.fresh.wholeWheatPastaCooked": "Volkoren pasta (gekookt)",
   // Zucchini
   "foodEditor.fresh.zucchini": "Courgette",
-  // Fresh foods offered — tap to add as items
-  "foodEditor.freshFoodsOffered": "Aangeboden vers voer — tik om als item toe te voegen",
-  // Freshness & hygiene
-  "foodEditor.freshnessHygiene": "Versheid & hygiëne",
-  // General defaults — adjust to fit your bird and routine.
-  "foodEditor.freshnessHygieneHint": "Algemene standaardwaarden — pas ze aan op je vogel en jullie routine.",
-  // Fresh food spoils fast and can grow bacteria. This tells your sitter when to take it out.
-  "foodEditor.freshSpoilsHint": "Vers voer bederft snel en er kunnen bacteriën in groeien. Zo weet je oppas wanneer het eruit moet.",
   // Add the brand or food name.
   "foodEditor.helperBrand": "Vul het merk of de naam van het voer in.",
   // Add how much.
@@ -3569,16 +3481,6 @@
   "foodEditor.howMuch": "Hoeveel?",
   // How much and when
   "foodEditor.howMuchAndWhen": "Hoeveel en wanneer",
-  // Optional — anything else the sitter should know about food/water hygiene.
-  "foodEditor.hygieneNotesPlaceholder": "Optioneel — nog iets wat de oppas moet weten over hygiëne van voer en water.",
-  // Items, amounts & feed time(s)
-  "foodEditor.itemsAmountsFeedTimes": "Items, hoeveelheden & voedertijd(en)",
-  // Items & amounts per food type
-  "foodEditor.itemsAmountsPerType": "Items & hoeveelheden per soort voer",
-  // No items yet. Tap “Add item” to list a brand or food.
-  "foodEditor.itemsEmpty": "Nog geen items. Tik op “Item toevoegen” om een merk of voer te noteren.",
-  // For each item, add the amount and when it's served. Use “Available all day” for food left in the cage.
-  "foodEditor.itemsHint": "Vul per item de hoeveelheid in en wanneer het gegeven wordt. Gebruik “Hele dag beschikbaar” voor voer dat in de kooi blijft.",
   // Add the brand, how much, and when
   "foodEditor.missingAll": "Vul het merk in, hoeveel, en wanneer",
   // Add the brand
@@ -3597,12 +3499,6 @@
   "foodEditor.nAdded_one": "{{count}} toegevoegd",
   // {{count}} added
   "foodEditor.nAdded_other": "{{count}} toegevoegd",
-  // Never feed
-  "foodEditor.neverFeed": "Nooit geven",
-  // Add anything specific to your bird.
-  "foodEditor.neverFeedHint": "Voeg alles toe wat specifiek voor je vogel geldt.",
-  // Add another food to never feed
-  "foodEditor.neverFeedPlaceholder": "Nog een voedingsmiddel toevoegen dat nooit mag",
   // New blend
   "foodEditor.newBlend": "Nieuwe mix",
   // New food
@@ -3617,56 +3513,24 @@
   "foodEditor.nIngredients_one": "{{count}} ingrediënt",
   // {{count}} ingredients
   "foodEditor.nIngredients_other": "{{count}} ingrediënten",
-  // Note (optional)
-  "foodEditor.noteOptional": "Notitie (optioneel)",
-  // e.g. any prep or serving details
-  "foodEditor.notePlaceholderEg": "bijv. details over bereiden of geven",
   // Any prep or serving details
   "foodEditor.notePlaceholderPrep": "Eventuele bereiding of manier van serveren",
-  // Nothing added yet.
-  "foodEditor.nothingAddedYet": "Nog niets toegevoegd.",
   // {{food}} isn't safe for birds, so it can't go in the chop.
   "foodEditor.notSafeForBirds": "{{food}} is niet veilig voor vogels, dus het kan niet in de chop.",
   // {{food}} is on the never-feed list, so it can't go in the chop.
   "foodEditor.onNeverFeedList": "{{food}} staat op de lijst met verboden voedsel, dus het kan niet in de chop.",
-  // optional time
-  "foodEditor.optionalTime": "tijd optioneel",
-  // Other fresh foods (free text)
-  "foodEditor.otherFreshFoodsPlaceholder": "Ander vers voer (vrije tekst)",
-  // Other food hygiene notes
-  "foodEditor.otherHygieneNotes": "Andere notities over voerhygiëne",
-  // Pick a frequency…
-  "foodEditor.pickAFrequency": "Kies hoe vaak…",
-  // Pick at least one period.
-  "foodEditor.pickAtLeastOnePeriod": "Kies minstens één dagdeel.",
-  // Pick a unit…
-  "foodEditor.pickAUnit": "Kies een eenheid…",
   // Pre-made
   "foodEditor.preMade": "Kant-en-klaar",
   // Pre-made chop
   "foodEditor.preMadeChopItem": "Kant-en-klare chop",
-  // Primary diet
-  "foodEditor.primaryDiet": "Hoofdvoeding",
-  // Remove fresh or wet food after
-  "foodEditor.removeFreshAfter": "Vers of nat voer weghalen na",
   // Remove homemade chop
   "foodEditor.removeHomemadeChop": "Zelfgemaakte chop verwijderen",
-  // Remove item
-  "foodEditor.removeItem": "Item verwijderen",
-  // Remove {{name}}
-  "foodEditor.removeNamed": "{{name}} verwijderen",
   // Remove this item
   "foodEditor.removeThisItem": "Dit item verwijderen",
-  // e.g. Pantry, top shelf; fridge bin
-  "foodEditor.storagePlaceholder": "bijv. voorraadkast, bovenste plank; bak in de koelkast",
   // Available all day
   "foodEditor.summaryAllDay": "Hele dag beschikbaar",
   // Time for {{period}}
   "foodEditor.timeFor": "Tijd voor {{period}}",
-  // Treats
-  "foodEditor.treats": "Snacks",
-  // What treats are OK? (e.g. millet spray, almond slivers)
-  "foodEditor.treatsPlaceholder": "Welke snoepjes mogen? (bijv. trosgierst, amandelschilfers)",
   // Unit
   "foodEditor.unit": "Eenheid",
   // cups
@@ -3689,24 +3553,10 @@
   "foodEditor.unit.tbsp": "el",
   // tsp
   "foodEditor.unit.tsp": "tl",
-  // This is washing the bowl itself — separate from how often you change the water.
-  "foodEditor.washBowlHint": "Dit gaat over het afwassen van de bak zelf — los van hoe vaak je het water ververst.",
-  // Wash food bowls
-  "foodEditor.washFoodBowls": "Voerbakjes afwassen",
-  // Wash water bowl or bottle
-  "foodEditor.washWaterBowl": "Waterbak of drinkfles afwassen",
-  // Water
-  "foodEditor.water": "Water",
-  // Notes (filter, bottle vs bowl, etc.)
-  "foodEditor.waterNotesPlaceholder": "Notities (filter, fles of bak, enz.)",
   // What's in it
   "foodEditor.whatsInIt": "Wat zit erin",
   // When?
   "foodEditor.when": "Wanneer?",
-  // When is it fed?
-  "foodEditor.whenIsItFed": "Wanneer wordt het gegeven?",
-  // Where food is stored
-  "foodEditor.whereFoodIsStored": "Waar het voer bewaard wordt",
   // Back
   "frontDoor.back": "Terug",
   // Delete account
@@ -4529,6 +4379,20 @@
   "landing.pageTitle": "Kya & Co. — Rustige, duidelijke zorg voor je vogel",
   // A care plan and health record for each bird: routine, diet, weight, and the little things only you know. Share it with family, sitters, and anyone who helps.
   "landing.subheadV2": "Een verzorgingsplan en gezondheidsdossier voor elke vogel: dagritme, voeding, gewicht en de kleine dingen die alleen jij weet. Deel het met familie, oppassen en iedereen die helpt.",
+  // Last updated: {{date}}
+  "legal.lastUpdated": "Laatst bijgewerkt: {{date}}",
+  // How Kya & Co. handles your data.
+  "legal.privacyMetaDescription": "Hoe Kya & Co. met je gegevens omgaat.",
+  // Privacy policy — Kya & Co.
+  "legal.privacyMetaTitle": "Privacybeleid — Kya & Co.",
+  // Privacy policy
+  "legal.privacyTitle": "Privacybeleid",
+  // Terms of service for Kya & Co.
+  "legal.termsMetaDescription": "Servicevoorwaarden van Kya & Co.",
+  // Terms of service — Kya & Co.
+  "legal.termsMetaTitle": "Servicevoorwaarden — Kya & Co.",
+  // Terms of service
+  "legal.termsTitle": "Servicevoorwaarden",
   // Back to home
   "loadError.backHome": "Terug naar home",
   // Check your connection and try again.
@@ -4833,44 +4697,6 @@
   "notifSettings.turnOffPush": "Push uitzetten",
   // Turn on push
   "notifSettings.turnOnPush": "Push aanzetten",
-  // Add your first bird
-  "ownerChecklist.addFirstBird": "Voeg je eerste vogel toe",
-  // Build their care plan.
-  "ownerChecklist.addFirstBirdDesc": "Stel het verzorgingsplan op.",
-  // You're all set!
-  "ownerChecklist.allSet": "Je bent er klaar voor!",
-  // Your account is ready. Everything you need is on the dashboard.
-  "ownerChecklist.allSetBody": "Je account is klaar. Alles wat je nodig hebt staat op het dashboard.",
-  // Download on the App Store
-  "ownerChecklist.appStoreBadgeAlt": "Download in de App Store",
-  // Create your first sit
-  "ownerChecklist.createFirstSit": "Maak je eerste oppasperiode aan",
-  // Send a sitter a private link.
-  "ownerChecklist.createFirstSitDesc": "Stuur een oppas een privélink.",
-  // Dismiss
-  "ownerChecklist.dismiss": "Sluiten",
-  // {{done}} of {{total}} done
-  "ownerChecklist.doneCount": "{{done}} van {{total}} klaar",
-  // Get the app
-  "ownerChecklist.getTheApp": "Download de app",
-  // Reminders, quick logging, and your flock's whole record, right on your phone. Same account, nothing to move over.
-  "ownerChecklist.getTheAppDesc": "Herinneringen, snel noteren en het hele dossier van je vogels, gewoon op je telefoon. Zelfde account, niets over te zetten.",
-  // Hide this
-  "ownerChecklist.hideThis": "Verbergen",
-  // Let's get you set up
-  "ownerChecklist.letsGetYouSetUp": "Laten we je op weg helpen",
-  // Get it on Google Play
-  "ownerChecklist.playStoreBadgeAlt": "Ontdek het op Google Play",
-  // Account-level vet & emergency contacts — they carry over to every bird.
-  "ownerChecklist.setEmergencyDefaultsDesc": "Dierenarts en noodcontacten op accountniveau — ze gelden voor elke vogel.",
-  // Add your emergency info
-  "ownerChecklist.setEmergencyInfo": "Voeg je noodinformatie toe",
-  // Set notification preferences
-  "ownerChecklist.setNotificationPrefs": "Stel je meldingsvoorkeuren in",
-  // How you hear about scans and updates.
-  "ownerChecklist.setNotificationPrefsDesc": "Hoe je hoort over gezondheidschecks en updates.",
-  // Start
-  "ownerChecklist.start": "Starten",
   // Account settings
   "ownerHeader.accountSettings": "Accountinstellingen",
   // Help
@@ -5089,28 +4915,18 @@
   "planEditor.answerNotSure": "Niet zeker",
   // Awaiting your response
   "planEditor.awaitingResponse": "Wacht op je reactie",
-  // {{name}} removed.
-  "planEditor.birdRemoved": "{{name}} verwijderd.",
-  // Cancel
-  "planEditor.cancel": "Annuleren",
   // Care plan
   "planEditor.carePlanTitle": "Verzorgingsplan",
   // Notes
   "planEditor.checkNotes": "Notities",
-  // Danger zone
-  "planEditor.dangerZone": "Gevarenzone",
-  // Delete {{name}}
-  "planEditor.deleteNamed": "{{name}} verwijderen",
-  // Permanently delete {{name}} and all of their care plan, routine, emergency info, weight logs, daily checks, and photos. This can't be undone.
-  "planEditor.deleteWarningChecks": "{{name}} definitief verwijderen, met het hele verzorgingsplan, de routine, noodinformatie, gewichten, dagelijkse checks en foto's. Dit kan niet ongedaan worden gemaakt.",
-  // Deleting...
-  "planEditor.deleting": "Verwijderen...",
   // Done
   "planEditor.done": "Klaar",
   // Edit {{name}}'s care plan
   "planEditor.editTitleNamed": "Zorgplan van {{name}} bewerken",
   // Flagged
   "planEditor.flagged": "Gemarkeerd",
+  // Go to Sits
+  "planEditor.goToSits": "Naar Oppasperiodes",
   // Health checks
   "planEditor.healthChecks": "Gezondheidschecks",
   // Loading...
@@ -5135,12 +4951,10 @@
   "planEditor.noHealthChecks": "Nog geen gezondheidschecks genoteerd.",
   // No photos logged yet.
   "planEditor.noPhotos": "Nog geen foto's toegevoegd.",
-  // This bird isn't part of any sit yet.
-  "planEditor.noSits": "Deze vogel hoort nog bij geen enkele oppasperiode.",
+  // Account → Emergency info
+  "planEditor.openAccountEmergency": "Account → Noodinformatie",
   // Parrot
   "planEditor.parrot": "Papegaai",
-  // Permanently delete {{name}}
-  "planEditor.permanentlyDeleteNamed": "{{name}} definitief verwijderen",
   // Per-question answers
   "planEditor.perQuestionAnswers": "Antwoorden per vraag",
   // Photos
@@ -5169,8 +4983,14 @@
   "planEditor.scanVomiting": "Schoon gezicht, niet overgegeven",
   // Care plan sections
   "planEditor.sectionsAria": "Onderdelen van het zorgplan",
-  // To add a sit, <1>set up a sit</1> from the Sits tab. One sit can include several birds.
-  "planEditor.sitsSetUpFromSits": "Wil je een oppasperiode toevoegen? <1>Plan een oppasperiode</1> via het tabblad Oppasperiodes. Eén oppasperiode kan meerdere vogels bevatten.",
+  // Set up a sit for {{name}}
+  "planEditor.setUpSitFor": "Plan een oppasperiode voor {{name}}",
+  // Set up, share and follow every sit there. One sit can cover several birds, so they all live in one place.
+  "planEditor.sitsMovedBody": "Daar plan, deel en volg je elke oppasperiode. Eén oppasperiode kan meerdere vogels omvatten, dus ze staan allemaal op één plek.",
+  // Sits are on the Sits tab
+  "planEditor.sitsMovedTitle": "Oppasperiodes staan op het tabblad Oppasperiodes",
+  // A sitter link needs your phone number and an avian vet. Your account's emergency info covers every bird.
+  "planEditor.sitsNeedEmergency": "Een oppaslink heeft je telefoonnummer en een vogeldierenarts nodig. De noodinformatie van je account geldt voor al je vogels.",
   // Sitter
   "planEditor.sitter": "Oppas",
   // Sitter notes
@@ -5201,10 +5021,6 @@
   "planEditor.triageRed": "rood",
   // yellow
   "planEditor.triageYellow": "geel",
-  // Type "{{name}}" exactly to confirm.
-  "planEditor.typeNameExactly": "Typ precies \"{{name}}\" om te bevestigen.",
-  // Type <1>{{name}}</1> to confirm
-  "planEditor.typeToConfirm": "Typ <1>{{name}}</1> om te bevestigen",
   // View as sitter
   "planEditor.viewAsSitter": "Bekijk als oppas",
   // You weren't sure about these:
@@ -5327,22 +5143,24 @@
   "resetPassword.tooShort": "Je wachtwoord moet minstens 6 tekens hebben.",
   // Password updated. You're signed in.
   "resetPassword.updated": "Wachtwoord bijgewerkt. Je bent ingelogd.",
-  // Sorry, the app didn't load properly. Tap Reload, and if it keeps happening, email us at {{email}}.
-  "root.errorBodyReload": "Sorry, de app is niet goed geladen. Tik op Opnieuw laden, en mail ons op {{email}} als het blijft gebeuren.",
-  // Go home
-  "root.goHome": "Naar home",
+  // Email us
+  "root.emailUs": "Mail ons",
+  // It's not you. Try again, and if it keeps happening, let us know.
+  "root.errorLine": "Het ligt niet aan jou. Probeer het opnieuw, en laat het ons weten als het blijft gebeuren.",
+  // Go to Kya & Co.
+  "root.goToKya": "Naar Kya & Co.",
   // Shared care for your bird. Build one care plan, then share it so family, pet sitters, and household members all stay on the same page.
   "root.metaDescription": "Gedeelde zorg voor je vogel. Maak één verzorgingsplan en deel het, zodat familie, oppassen en je huishouden allemaal op één lijn zitten.",
   // Kya & Co. — Calm, clear care for your bird
   "root.metaTitle": "Kya & Co. — Rustige, duidelijke zorg voor je vogel",
-  // Page not found
-  "root.pageNotFound": "Pagina niet gevonden",
-  // The page you're looking for doesn't exist or the sitter link is invalid.
-  "root.pageNotFoundBody": "De pagina die je zoekt bestaat niet, of de oppaslink is ongeldig.",
-  // Reload
-  "root.reload": "Opnieuw laden",
+  // The link may be old or mistyped.
+  "root.notFoundLine": "De link is misschien oud of verkeerd getypt.",
+  // We couldn't find that page
+  "root.notFoundTitle": "We konden die pagina niet vinden",
   // Something went wrong
   "root.somethingWentWrong": "Er ging iets mis",
+  // Try again
+  "root.tryAgain": "Opnieuw proberen",
   // Concerning
   "scanDetail.answerConcerning": "Zorgelijk",
   // Normal
@@ -5497,36 +5315,12 @@
   "scanDetail.yourSitterCap": "Je oppas",
   // your sitter
   "scanDetail.yourSitterLower": "je oppas",
-  // Please answer every question before submitting.
-  "scanForm.answerAllError": "Beantwoord elke vraag voordat je verstuurt.",
   // Concerning
   "scanForm.answerConcerning": "Zorgelijk",
   // Normal
   "scanForm.answerNormal": "Normaal",
   // Not sure
   "scanForm.answerNotSure": "Niet zeker",
-  // Eyes closing, not responding to your voice, sitting still for long stretches.
-  "scanForm.concerning.alertness": "Ogen vallen dicht, reageert niet op je stem, zit lange tijd stil.",
-  // Open-mouth breathing, wheeze, click, or tail bobbing at rest.
-  "scanForm.concerning.breathing": "Ademen met open snavel, piepen, klikken of op en neer wippen met de staart in rust.",
-  // Bright red blood, black/tarry stool, yellow or lime urates.
-  "scanForm.concerning.droppings": "Helderrood bloed, zwarte/teerachtige ontlasting, geel of limoengroen urinezuur.",
-  // Known exposure to smoke, aerosols, toxic food, metal, or a cat/dog.
-  "scanForm.concerning.exposure": "Bekend contact met rook, spuitbussen, giftig voedsel, metaal of een kat/hond.",
-  // Fluffed for long periods, eyes closed, low on perch.
-  "scanForm.concerning.fluffed": "Lange tijd opgezet, ogen dicht, laag op de zitstok.",
-  // No food touched and no droppings produced.
-  "scanForm.concerning.food": "Geen eten aangeraakt en geen poep geproduceerd.",
-  // Any wound, blood, limp, missing feathers, or fall from height.
-  "scanForm.concerning.injury": "Elke wond, bloed, manken, ontbrekende veren of een val van hoogte.",
-  // Unusually silent, or unusual repeated distress screaming.
-  "scanForm.concerning.noise": "Ongewoon stil, of ongewoon herhaald angstig krijsen.",
-  // Sitting on cage floor, unable to perch, weak grip, collapse.
-  "scanForm.concerning.posture": "Zit op de kooibodem, kan niet op de zitstok zitten, zwakke grip, in elkaar zakken.",
-  // Repeated head-flicking with wet matter, wet face/chest feathers.
-  "scanForm.concerning.vomiting": "Herhaald schudden met de kop met nat materiaal, natte veren op gezicht/borst.",
-  // grams
-  "scanForm.grams": "gram",
   // No tail bobbing, clicking, or open-mouth breathing
   "scanForm.hint.breathing": "Geen wippende staart, geklik of ademen met open snavel",
   // Color, shape, and amount
@@ -5539,52 +5333,12 @@
   "scanForm.hint.injury": "Geen val, beet of kras",
   // No vomiting or discharge
   "scanForm.hint.vomiting": "Geen braaksel of afscheiding",
-  // What did you notice? (optional)
-  "scanForm.itemNoteLabel": "Wat is je opgevallen? (optioneel)",
-  // Add a note, e.g. left foot looks swollen
-  "scanForm.itemNotePlaceholder": "Voeg een notitie toe, bijv. linkervoet lijkt gezwollen",
-  // Logging…
-  "scanForm.logging": "Bezig met noteren…",
-  // Look again: 
-  "scanForm.lookAgainLabel": "Kijk nog eens: ",
-  // Please answer this before submitting.
-  "scanForm.missingAnswer": "Beantwoord dit voordat je verstuurt.",
-  // Notes
-  "scanForm.notesLabel": "Notities",
-  // Watch quietly for 30s. Does the bird turn its head, blink, or shift position?
-  "scanForm.notSure.alertness": "Kijk 30 seconden rustig toe. Draait de vogel zijn kop, knippert hij of verplaatst hij zich?",
-  // Watch the tail for 30s while perched. Look for slight bobbing.
-  "scanForm.notSure.breathing": "Let 30 seconden op de staart terwijl de vogel zit. Kijk of die licht op en neer wipt.",
-  // Color may shift with food. Compare against the owner's notes and the care guide.
-  "scanForm.notSure.droppings": "De kleur kan veranderen door het eten. Vergelijk met de notities van de eigenaar en de verzorgingsgids.",
-  // Think back: any spray, candle, non-stick cooking, new plant, or pet contact today?
-  "scanForm.notSure.exposure": "Denk even terug: vandaag spray, een kaars, koken met antiaanbaklaag, een nieuwe plant of contact met een huisdier?",
-  // Watch for 5+ minutes. Does the bird unfluff and move around?
-  "scanForm.notSure.fluffed": "Kijk 5 minuten of langer. Gaan de veren weer plat en beweegt de vogel rond?",
-  // Offer a familiar treat. Did the bird take it?
-  "scanForm.notSure.food": "Bied een bekend snoepje aan. Pakte de vogel het aan?",
-  // Check whole body — feet, wings, chest. Compare to owner photos if available.
-  "scanForm.notSure.injury": "Controleer het hele lichaam — poten, vleugels, borst. Vergelijk met foto's van de eigenaar als die er zijn.",
-  // Compare to the owner's notes on normal noise level.
-  "scanForm.notSure.noise": "Vergelijk met de notities van de eigenaar over het normale geluidsniveau.",
-  // Watch for a minute. Is the bird leaning, sitting low, or shifting feet often?
-  "scanForm.notSure.posture": "Kijk een minuut. Leunt de vogel, zit hij laag of verplaatst hij vaak zijn poten?",
-  // Check face, chest, and cage walls for wet flecks.
-  "scanForm.notSure.vomiting": "Controleer gezicht, borst en kooiwanden op natte spatjes.",
   // Health check photo preview
   "scanForm.photoAlt": "Voorbeeld van gezondheidscheck-foto",
-  // Take a photo or upload one if anything looks off.
-  "scanForm.photoHelpEmpty": "Maak een foto of upload er een als er iets niet in orde lijkt.",
-  // Take a new photo or upload a different one.
-  "scanForm.photoHelpHas": "Maak een nieuwe foto of upload een andere.",
   // Couldn't process that photo. Try a different one.
   "scanForm.photoProcessError": "Kon die foto niet verwerken. Probeer een andere.",
-  // Optional: add a photo
-  "scanForm.photoSectionTitle": "Optioneel: voeg een foto toe",
   // That photo's a bit too large even after resizing. Try a different one.
   "scanForm.photoTooLarge": "Die foto is zelfs na verkleinen nog wat te groot. Probeer een andere.",
-  // Preview:
-  "scanForm.previewLabel": "Voorbeeld:",
   // Processing…
   "scanForm.processing": "Verwerken…",
   // Is the bird alert and responsive?
@@ -5627,22 +5381,10 @@
   "scanForm.q2.posture": "Zit {{name}} normaal op de stok?",
   // Is {{name}}'s face clean and dry?
   "scanForm.q2.vomiting": "Is het gezicht van {{name}} schoon en droog?",
-  // Submit health check
-  "scanForm.submitDefault": "Gezondheidscheck versturen",
   // Take photo
   "scanForm.takePhoto": "Foto maken",
   // the bird
   "scanForm.theBird": "de vogel",
-  // Upload photo
-  "scanForm.uploadPhoto": "Foto uploaden",
-  // Watch for: 
-  "scanForm.watchForLabel": "Let op: ",
-  // If you weighed them, add the grams — it goes straight to the weight tracker.
-  "scanForm.weighInHelp": "Als je ze hebt gewogen, voeg de grammen toe — het gaat rechtstreeks naar de gewichtstracker.",
-  // Optional: weigh-in
-  "scanForm.weighInTitle": "Optioneel: wegen",
-  // e.g. 410
-  "scanForm.weightPlaceholder": "bijv. 410",
   // A household member
   "scanRunBy.householdMember": "Iemand uit je huishouden",
   // Your sitter
@@ -5817,68 +5559,6 @@
   "shareNewBird.titleNamed": "Wie helpt er nog met {{bird}}?",
   // That file couldn't be opened.
   "signedFile.openFailed": "Dat bestand kon niet worden geopend.",
-  // Active
-  "sitCard.active": "Actief",
-  // Activity
-  "sitCard.activity": "Activiteit",
-  // Birds:
-  "sitCard.birdsLabel": "Vogels:",
-  // Its checklist is removed. Daily checks, weights, and photos logged during it are kept. This can't be undone.
-  "sitCard.confirmDeleteBodyKeepsLogs": "De checklist wordt verwijderd. Dagelijkse checks, gewichten en foto's uit deze periode blijven bewaard. Dit kan niet ongedaan worden gemaakt.",
-  // Delete this sit?
-  "sitCard.confirmDeleteTitle": "Deze oppasperiode verwijderen?",
-  // The sitter will lose access to the care plan right away.
-  "sitCard.confirmRevokeBody": "De oppas heeft dan meteen geen toegang meer tot het verzorgingsplan.",
-  // Revoke this invite link?
-  "sitCard.confirmRevokeTitle": "Deze uitnodigingslink intrekken?",
-  // Copy link
-  "sitCard.copyLink": "Link kopiëren",
-  // Covered by <b>{{name}}</b>
-  "sitCard.coveredBy": "<b>{{name}}</b> valt in",
-  // Delete
-  "sitCard.delete": "Verwijderen",
-  // Sit deleted.
-  "sitCard.deleted": "Oppasperiode verwijderd.",
-  // Edit
-  "sitCard.edit": "Bewerken",
-  // Ended
-  "sitCard.ended": "Afgelopen",
-  // Expired
-  "sitCard.expired": "Verlopen",
-  // Household
-  "sitCard.household": "Huishouden",
-  // Household member
-  "sitCard.householdMember": "Lid van het huishouden",
-  // household member
-  "sitCard.householdMemberLower": "lid van het huishouden",
-  // Keep
-  "sitCard.keep": "Bewaren",
-  // Keep link
-  "sitCard.keepLink": "Link houden",
-  // Link copied.
-  "sitCard.linkCopied": "Link gekopieerd.",
-  // Link revoked.
-  "sitCard.linkRevoked": "Link ingetrokken.",
-  // Add the required emergency contacts before sharing — {{missing}}. Set account defaults on the dashboard or fill the bird's Emergency tab.
-  "sitCard.missingContacts": "Voeg eerst de verplichte noodcontacten toe voordat je deelt — {{missing}}. Stel standaardgegevens in op het dashboard of vul het tabblad Noodgeval van de vogel in.",
-  // avian vet phone
-  "sitCard.needVetPhone": "telefoonnummer vogeldierenarts",
-  // your phone
-  "sitCard.needYourPhone": "je telefoonnummer",
-  // Preview as your sitter:
-  "sitCard.previewAsSitter": "Bekijk als je oppas:",
-  // Revoked
-  "sitCard.revoked": "Ingetrokken",
-  // Revoke link
-  "sitCard.revokeLink": "Link intrekken",
-  // Revoke link
-  "sitCard.revokeLinkAction": "Link intrekken",
-  // Sitter: {{name}}
-  "sitCard.sitterLabel": "Oppas: {{name}}",
-  // Upcoming
-  "sitCard.upcoming": "Gepland",
-  // View
-  "sitCard.view": "Bekijken",
   // Active
   "sitCards.active": "Actief",
   // A household you help with
@@ -6223,8 +5903,8 @@
   "sitForm.yourSitterLower": "je oppas",
   // Link copied.
   "sitLink.copied": "Link gekopieerd.",
-  // Add the required emergency contacts before sharing — {{missing}}. Set account defaults on the dashboard or fill the bird's Emergency tab.
-  "sitLink.missingContacts": "Voeg eerst de verplichte noodcontacten toe voordat je deelt — {{missing}}. Stel standaardgegevens in op het dashboard of vul het tabblad Noodgeval van de vogel in.",
+  // A sitter needs emergency contacts before you share this link — {{missing}}. Add them in Account → Emergency info, or on the bird's Emergency tab.
+  "sitLink.missingContactsAccount": "Een oppas heeft noodcontacten nodig voordat je deze link deelt — {{missing}}. Voeg ze toe via Account → Noodinformatie, of op het tabblad Noodinformatie van de vogel.",
   //  & 
   "sitLink.needJoin": " & ",
   // avian vet phone
@@ -6239,14 +5919,22 @@
   "sitPreview.iframeTitle": "Voorbeeld oppasweergave",
   // Loading preview…
   "sitPreview.loading": "Voorbeeld laden…",
+  // Sitter preview
+  "sitPreview.mode": "Voorbeeld voor de oppas",
+  // No sitter link
+  "sitPreview.noLinkTitle": "Geen oppaslink",
   // This sit doesn't have a sitter link, so there's nothing to preview.
   "sitPreview.noSitterLink": "Deze oppasperiode heeft geen oppaslink, dus er is niets om te bekijken.",
+  // Opening this sit…
+  "sitPreview.openingSit": "Oppasperiode openen…",
   // Sitter preview — Kya & Co.
   "sitPreview.pageTitle": "Voorbeeld oppas — Kya & Co.",
   // See this sit's activity
   "sitPreview.seeActivity": "Bekijk de activiteit van deze oppasperiode",
-  // This sit was deleted, so there's nothing to preview.
-  "sitPreview.sitGone": "Deze oppasperiode is verwijderd, dus er is niets te bekijken.",
+  // Its sitter link stopped working when it was deleted, so there's nothing to preview.
+  "sitPreview.sitGoneBody": "De oppaslink werkte niet meer toen deze werd verwijderd, dus er is niets om te bekijken.",
+  // This sit was deleted
+  "sitPreview.sitGoneTitle": "Deze oppasperiode is verwijderd",
   // Sitter preview · how {{label}} will see this sit
   "sitPreview.sitterBanner": "Voorbeeld oppas · zo ziet {{label}} deze oppasperiode",
   // they
@@ -6991,14 +6679,6 @@
   "species.yellowCrownedAmazon": "Geelvoorhoofdamazone",
   // Yellow-naped Amazon
   "species.yellowNapedAmazon": "Geelnekamazone",
-  // Back
-  "system.back": "Terug",
-  // Change photo
-  "system.changePhoto": "Foto wijzigen",
-  // More
-  "system.more": "Meer",
-  // Share
-  "system.share": "Delen",
   // Nothing on for today
   "todayPage.nothingOnTitle": "Niets gepland voor vandaag",
   // Today — Kya & Co.
@@ -7281,18 +6961,24 @@
   "vetSummary.weight": "Gewicht",
   // Who can handle: {{value}}
   "vetSummary.whoCanHandleLine": "Wie kan hem hanteren: {{value}}",
-  // Back to home
-  "viewAsSitter.backHome": "Terug naar home",
+  // Back to {{name}}
+  "viewAsSitter.backToBird": "Terug naar {{name}}",
+  // Back to the record
+  "viewAsSitter.backToRecord": "Terug naar het dossier",
   // Viewing as your sitter · read only
   "viewAsSitter.bannerReadOnly": "Je kijkt mee als je oppas · alleen lezen",
   // Couldn't build the sitter preview.
   "viewAsSitter.buildFailed": "Kon het oppasvoorbeeld niet maken.",
   // Close preview
   "viewAsSitter.closePreview": "Voorbeeld sluiten",
+  // The preview didn't load
+  "viewAsSitter.errorTitle": "Het voorbeeld kon niet worden geladen",
   // Sitter view
   "viewAsSitter.iframeTitle": "Oppasweergave",
   // View as sitter — Kya & Co.
   "viewAsSitter.metaTitle": "Bekijk als oppas — Kya & Co.",
+  // Viewing as your sitter
+  "viewAsSitter.mode": "Bekijken als je oppas",
   // A place for parrot people. Expert AMAs, local chapters, and a community that gives back to rescue.
   "waitlist.cardBodyShort": "Een plek voor papegaaimensen. AMA's met experts, lokale afdelingen en een community die iets teruggeeft aan opvang.",
   // California

@@ -2,7 +2,7 @@
  * The page a desktop visitor gets from /get-app or /review.
  *
  * Its only job is to move the link to a phone, so the QR is the point and the
- * badges are the fallback. Flock Club styling, hand-written rather than pulled
+ * badges are the fallback. The app's own look (see BASE_CSS), hand-written rather than pulled
  * from the email shell: that shell builds a whole email document (preheader,
  * unsubscribe footer, disclaimer), none of which belongs on a web page.
  */
@@ -30,16 +30,43 @@ const SHARE_IMAGE_WIDTH = "1200";
 const SHARE_IMAGE_HEIGHT = "630";
 const SHARE_IMAGE_ALT = "Kya & Co. bird care app";
 
-/** Fallback QR asset, used for /review and if QR generation ever fails. */
+/**
+ * Fallback QR asset for /get and /get-app, if QR generation ever fails. It
+ * encodes https://app.thekyaproject.com/get-app?utm_source=email&utm_campaign=app-launch&utm_content=qr
+ * (the launch email's download link), so it must never stand in for /review.
+ */
 const STATIC_QR = "/brand/store/get-app-qr.png";
 
+// The app's design system (src/components/kya.tsx), restated here because this
+// is server-built HTML: forest header with the logo, mist body with rounded top
+// corners, white cards, Newsreader headings, DM Sans text, sunflower main button.
 const FOREST = "#1a3d2e";
-const LIME = "#cdeab0";
-const PAGE = "#e9e6dc";
-const CARD = "#fbf9f3";
+const MIST = "#f1f5f0";
+const SUNFLOWER = "#f2b33d";
+const PALE_GREEN = "#d6e8dc";
 const MUTED = "#5f5e5a";
+const MOSS = "#2d6a4f";
 const BODY = "'DM Sans','Helvetica Neue',Helvetica,'Segoe UI',sans-serif";
-const HEAD = "'Bricolage Grotesque','Avenir Next','Segoe UI',Helvetica,sans-serif";
+const HEAD = "'Newsreader',Georgia,serif";
+/** The same lockup the app's forest headers use (BrandLockup horizontal, ink). */
+const LOGO = "/brand/lockups/horizontal-ink.svg";
+/** The same Google Fonts request as the app (__root.tsx). */
+const FONTS = `<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Newsreader:opsz,wght@6..72,600;6..72,700&display=swap" />`;
+
+/** Shared styles for both pages: header, mist body, white card, text. */
+const BASE_CSS = `
+  body { margin:0; background:${MIST}; color:${FOREST}; font-family:${BODY}; -webkit-text-size-adjust:100%; }
+  .head { background:${FOREST}; color:#fff; }
+  .head-in { max-width:520px; margin:0 auto; box-sizing:border-box; padding:calc(env(safe-area-inset-top) + 18px) calc(env(safe-area-inset-right) + 20px) 46px calc(env(safe-area-inset-left) + 20px); text-align:center; }
+  .logo { display:block; width:118px; height:auto; margin:0 auto; }
+  h1 { margin:28px 0 0; font-family:${HEAD}; font-size:30px; line-height:1.15; font-weight:700; color:#fff; }
+  .line { margin:8px auto 0; max-width:36ch; font-size:15px; line-height:1.5; color:${PALE_GREEN}; }
+  .body { position:relative; margin:-26px auto 0; max-width:520px; box-sizing:border-box; border-radius:26px 26px 0 0; background:${MIST}; padding:20px calc(env(safe-area-inset-right) + 16px) calc(env(safe-area-inset-bottom) + 40px) calc(env(safe-area-inset-left) + 16px); }
+  .card { background:#fff; border-radius:20px; padding:24px 20px; text-align:center; }
+  p { margin:0 0 20px; font-size:15px; line-height:1.55; color:${MUTED}; }
+  @media (max-width:420px) { h1 { font-size:26px; } }`;
 
 /** Escape a string for use inside a double-quoted HTML attribute. */
 function attr(v: string): string {
@@ -63,10 +90,10 @@ function attr(v: string): string {
  * UTM and is never forwarded to a store — readUtms ignores it.
  *
  * Never throws: a QR that cannot be built (an absurdly long URL exceeding the
- * format's capacity) falls back to the static asset rather than 500ing a page
- * whose whole job is to hand someone a link.
+ * format's capacity) falls back to `fallback` rather than 500ing a page whose
+ * whole job is to hand someone a link.
  */
-function qrMarkup(target: string): string {
+function qrMarkup(target: string, fallback: string): string {
   try {
     const qr = qrcode(0, "M");
     qr.addData(target);
@@ -75,7 +102,7 @@ function qrMarkup(target: string): string {
     // below keeps controlling the rendered size.
     return qr.createSvgTag({ cellSize: 4, margin: 1, scalable: true });
   } catch {
-    return `<img class="qr" src="${STATIC_QR}" width="200" height="200" alt="" />`;
+    return fallback;
   }
 }
 
@@ -106,20 +133,25 @@ export function chooserPage(
   const ios = kind === "get" ? withUtms(`${basePath}?store=ios`, utms) : STORE.iosReview;
   const android = kind === "get" ? withUtms(`${basePath}?store=android`, utms) : STORE.androidReview;
 
-  // The QR points back through this same entry path, carrying the UTMs plus
-  // qr=1. /review keeps the static asset: its chooser is a different job and is
-  // out of scope here.
+  // /get and /get-app: the QR points back through this same entry path,
+  // carrying the UTMs plus qr=1. /review: the QR opens /review itself, which on
+  // a phone goes straight to that store's review flow — what the page says
+  // scanning does. (It used to show the static get-app-qr.png, which encodes
+  // the launch email's /get-app download link, so a scan opened the store
+  // listing rather than the review.)
   const utmQs = UTM_KEYS.filter((k) => utms[k])
     .map((k) => `${k}=${encodeURIComponent(utms[k]!)}`)
     .join("&");
-  const qrTarget = `${origin}${basePath}?${utmQs ? `${utmQs}&` : ""}qr=1`;
-  const qr =
-    kind === "get"
-      // data-qr-target states in the markup what the code actually encodes, so
-      // "where does this QR go?" is answerable from view-source or a curl
-      // rather than by pointing a phone at it.
-      ? `<div class="qr" data-qr-target="${attr(qrTarget)}">${qrMarkup(qrTarget)}</div>`
-      : `<img class="qr" src="${STATIC_QR}" width="200" height="200" alt="QR code linking to this page on your phone" />`;
+  const qrTarget = kind === "get" ? `${origin}${basePath}?${utmQs ? `${utmQs}&` : ""}qr=1` : `${origin}/review`;
+  const qrFallback =
+    kind === "get" ? `<img src="${STATIC_QR}" width="200" height="200" alt="" />` : "";
+  const qrInner = qrMarkup(qrTarget, qrFallback);
+  // data-qr-target states in the markup what the code actually encodes, so
+  // "where does this QR go?" is answerable from view-source or a curl rather
+  // than by pointing a phone at it.
+  const qr = qrInner
+    ? `<div class="qr" data-qr-target="${attr(qrTarget)}">${qrInner}</div>`
+    : "";
 
   // Link-preview tags. Only /get gets them: it is the link that goes in bios
   // and DMs, and this copy is written for it. og:url is the clean canonical
@@ -149,45 +181,38 @@ export function chooserPage(
   return `<!doctype html>
 <html lang="en"><head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
 <meta name="robots" content="noindex" />
+<meta name="theme-color" content="${FOREST}" />
 <title>${title.replace(/&amp;/g, "&")} — Kya &amp; Co.</title>${preview}
-<link href="/fonts/fonts.css" rel="stylesheet" />
-<style>
-  body { margin:0; background:${PAGE}; font-family:${BODY}; -webkit-text-size-adjust:100%; }
-  .wrap { max-width:520px; margin:0 auto; padding:24px 16px 48px; }
-  .card { background:${CARD}; border-radius:20px; overflow:hidden; }
-  .bar { background:${FOREST}; padding:18px 22px; color:#fff; font-family:${HEAD}; font-weight:800; letter-spacing:-.3px; }
-  .body { padding:24px 22px 28px; text-align:center; }
-  h1 { margin:0 0 10px; font-family:${HEAD}; font-size:28px; line-height:34px; font-weight:800; letter-spacing:-.5px; color:${FOREST}; }
-  p { margin:0 0 20px; font-size:15px; line-height:23px; color:${MUTED}; }
+${FONTS}
+<style>${BASE_CSS}
   .qr { width:200px; height:200px; display:block; margin:0 auto 22px; border-radius:12px; background:#fff; padding:10px; box-sizing:content-box; }
   /* The generated QR is an inline <svg> inside .qr — make it fill the box. */
-  .qr svg { display:block; width:100%; height:100%; }
+  .qr svg, .qr img { display:block; width:100%; height:100%; }
   .badges { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; align-items:center; }
   /* Each badge is at least a 44px tap target: 48px tall, and the link itself
      is a 48px-tall box so the whole badge (not just its pixels) takes the tap. */
   .badges a { display:inline-flex; align-items:center; min-height:48px; }
   .badges img { display:block; height:48px; width:auto; }
-  .pill { display:inline-block; background:${LIME}; color:${FOREST}; border-radius:999px; padding:5px 13px; font-size:11.5px; font-weight:700; margin:0 0 14px; }
-  @media (max-width:420px) { h1 { font-size:24px; line-height:30px; } }
 </style>
 </head><body>
-  <div class="wrap">
+  <header class="head">
+    <div class="head-in">
+      <img class="logo" src="${LOGO}" width="118" alt="Kya &amp; Co." />
+      <h1>${title}</h1>
+      <p class="line">${blurb}</p>
+    </div>
+  </header>
+  <main class="body">
     <div class="card">
-      <div class="bar">Kya &amp; Co.</div>
-      <div class="body">
-        <span class="pill">On your phone</span>
-        <h1>${title}</h1>
-        <p>${blurb}</p>
-        ${qr}
-        <div class="badges">
-          <a href="${ios}"><img src="/brand/store/app-store-badge.svg" width="144" height="48" alt="Download on the App Store" /></a>
-          <a href="${android}"><img src="/brand/store/google-play-badge.png" width="124" height="48" alt="Get it on Google Play" /></a>
-        </div>
+      ${qr}
+      <div class="badges">
+        <a href="${ios}"><img src="/brand/store/app-store-badge.svg" width="144" height="48" alt="Download on the App Store" /></a>
+        <a href="${android}"><img src="/brand/store/google-play-badge.png" width="124" height="48" alt="Get it on Google Play" /></a>
       </div>
     </div>
-  </div>
+  </main>
 </body></html>`;
 }
 
@@ -214,36 +239,31 @@ export function androidHandoffPage(utms: Utms = {}, opts: { basePath?: "/get" | 
   return `<!doctype html>
 <html lang="en"><head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
 <meta name="robots" content="noindex" />
+<meta name="theme-color" content="${FOREST}" />
 <title>Get Kya &amp; Co. on Google Play</title>
-<link href="/fonts/fonts.css" rel="stylesheet" />
-<style>
-  body { margin:0; background:${PAGE}; font-family:${BODY}; -webkit-text-size-adjust:100%; }
-  .wrap { max-width:520px; margin:0 auto; padding:24px 16px 48px; }
-  .card { background:${CARD}; border-radius:20px; overflow:hidden; }
-  .bar { background:${FOREST}; padding:18px 22px; color:#fff; font-family:${HEAD}; font-weight:800; letter-spacing:-.3px; }
-  .body { padding:24px 22px 28px; text-align:center; }
-  h1 { margin:0 0 10px; font-family:${HEAD}; font-size:26px; line-height:32px; font-weight:800; letter-spacing:-.5px; color:${FOREST}; }
-  p { margin:0 0 20px; font-size:15px; line-height:23px; color:${MUTED}; }
-  .cta { display:block; background:${FOREST}; color:#fff; text-decoration:none; font-weight:700; font-size:16px; border-radius:999px; padding:15px 20px; margin:0 0 18px; }
-  .small { font-size:13px; line-height:20px; margin:0; }
-  .small a { color:${FOREST}; font-weight:700; display:inline-flex; align-items:center; min-height:44px; }
-  .pill { display:inline-block; background:${LIME}; color:${FOREST}; border-radius:999px; padding:5px 13px; font-size:11.5px; font-weight:700; margin:0 0 14px; }
+${FONTS}
+<style>${BASE_CSS}
+  /* The one sunflower main button: 2px forest border, 52px tall. */
+  .cta { display:flex; align-items:center; justify-content:center; box-sizing:border-box; min-height:52px; background:${SUNFLOWER}; color:${FOREST}; border:2px solid ${FOREST}; text-decoration:none; font-weight:700; font-size:16px; border-radius:999px; padding:0 24px; margin:0 0 14px; }
+  .small { font-size:13.5px; line-height:1.5; margin:0; }
+  .small a { color:${MOSS}; font-weight:700; display:inline-flex; align-items:center; min-height:44px; }
 </style>
 </head><body>
-  <div class="wrap">
-    <div class="card">
-      <div class="bar">Kya &amp; Co.</div>
-      <div class="body">
-        <span class="pill">One more tap</span>
-        <h1>Open Google Play</h1>
-        <p>TikTok's browser can't install apps. Tap below to get Kya &amp; Co. in the Play Store app.</p>
-        <a class="cta" href="${attr(app)}" data-tap="${attr(tapApp)}">Open in Google Play</a>
-        <p class="small">Nothing happening? Tap the menu at the top and choose Open in browser, or <a href="${attr(web)}" data-tap="${attr(tapWeb)}">open the Play Store page</a>.</p>
-      </div>
+  <header class="head">
+    <div class="head-in">
+      <img class="logo" src="${LOGO}" width="118" alt="Kya &amp; Co." />
+      <h1>Open Google Play</h1>
+      <p class="line">TikTok's browser can't install apps. Tap below to get Kya &amp; Co. in the Play Store app.</p>
     </div>
-  </div>
+  </header>
+  <main class="body">
+    <div class="card">
+      <a class="cta" href="${attr(app)}" data-tap="${attr(tapApp)}">Open in Google Play</a>
+      <p class="small">Nothing happening? Tap the menu at the top and choose Open in browser, or <a href="${attr(web)}" data-tap="${attr(tapWeb)}">open the Play Store page</a>.</p>
+    </div>
+  </main>
 <script>
   document.querySelectorAll("a[data-tap]").forEach(function (a) {
     a.addEventListener("click", function () {

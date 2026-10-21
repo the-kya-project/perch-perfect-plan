@@ -99,7 +99,6 @@ function ConcernPage() {
             paused={!!(ctx as any).remindersPaused || m.isSuccess}
             onPause={() => m.mutate()}
             pausePending={m.isPending}
-            look="kya"
             ownerCallShown
           />
         </KyaCard>
