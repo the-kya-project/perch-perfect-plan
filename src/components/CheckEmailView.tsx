@@ -10,21 +10,42 @@ import { K, KyaHeading, KyaLink, KyaPrimaryButton, KyaSecondaryButton } from "@/
 import { FrontDoorBody, FrontDoorError, FrontDoorHeader, FrontDoorPage } from "@/components/frontDoor";
 import { nativePlatform } from "@/lib/nativeApp";
 
-/** Where "Open email app" goes, or null where there's no reliable way to open
- *  the inbox (desktop, and the Android app shell — Capacitor hands non-app
- *  URLs to ACTION_VIEW, which can't resolve an intent:// URI).
+type MailTarget = { href: string; newTab: boolean };
+
+/** The big webmail inboxes, by the address's domain. On a desktop these open
+ *  the actual inbox in a new tab, which beats mailto: (a blank compose window,
+ *  and nothing at all when no desktop mail app is set up). */
+const WEBMAIL: [RegExp, string][] = [
+  [/^(gmail|googlemail)\.com$/, "https://mail.google.com/mail/u/0/#inbox"],
+  [/^(outlook|hotmail|live|msn)\.[a-z.]+$/, "https://outlook.live.com/mail/0/inbox"],
+  [/^(yahoo|ymail)\.[a-z.]+$/, "https://mail.yahoo.com/"],
+  [/^(icloud|me|mac)\.com$/, "https://www.icloud.com/mail"],
+  [/^aol\.com$/, "https://mail.aol.com/"],
+  [/^(proton\.me|protonmail\.com|pm\.me)$/, "https://mail.proton.me/"],
+];
+
+/** Where "Open email app" goes. There's always somewhere to go, so it's
+ *  always the one sunflower button:
  *  - iOS (app or Safari): message:// opens Mail's inbox.
- *  - Android browser: Chrome resolves the APP_EMAIL intent to the default mail app. */
-function mailAppUrl(): string | null {
-  if (typeof window === "undefined") return null;
+ *  - Android browser: Chrome resolves the APP_EMAIL intent to the default mail app.
+ *  - Android app shell: mailto:. Capacitor hands non-app URLs to ACTION_VIEW,
+ *    which can't resolve an intent:// URI but does open the default mail app
+ *    for mailto:.
+ *  - Desktop: the webmail inbox for the big providers, otherwise mailto:,
+ *    which opens the default mail client. */
+function mailTarget(email: string): MailTarget {
+  const mailto = { href: "mailto:", newTab: false };
+  if (typeof window === "undefined") return mailto;
   const platform = nativePlatform();
-  if (platform === "ios") return "message://";
-  if (platform === "android") return null;
+  if (platform === "ios") return { href: "message://", newTab: false };
+  if (platform === "android") return mailto;
   const ua = window.navigator.userAgent;
   const iOSWeb = /iPhone|iPad|iPod/i.test(ua) || (/Macintosh/i.test(ua) && window.navigator.maxTouchPoints > 1);
-  if (iOSWeb) return "message://";
-  if (/Android/i.test(ua)) return "intent://#Intent;action=android.intent.action.MAIN;category=android.intent.category.APP_EMAIL;end";
-  return null;
+  if (iOSWeb) return { href: "message://", newTab: false };
+  if (/Android/i.test(ua)) return { href: "intent://#Intent;action=android.intent.action.MAIN;category=android.intent.category.APP_EMAIL;end", newTab: false };
+  const domain = email.split("@")[1]?.trim().toLowerCase() ?? "";
+  const webmail = WEBMAIL.find(([re]) => re.test(domain))?.[1];
+  return webmail ? { href: webmail, newTab: true } : mailto;
 }
 
 export function CheckEmailView({ email, kind, message, onBack, onResend, resending, cooldown, justSent, error, onUseDifferentEmail, footer }: {
@@ -46,10 +67,15 @@ export function CheckEmailView({ email, kind, message, onBack, onResend, resendi
   footer?: ReactNode;
 }) {
   const { t } = useTranslation();
-  // Read after mount: the server can't know the platform, and rendering the
-  // button from it directly would make the server and client HTML disagree.
-  const [mailUrl, setMailUrl] = useState<string | null>(null);
-  useEffect(() => setMailUrl(mailAppUrl()), []);
+  // Read after mount: the server can't know the platform. The button itself
+  // renders the same everywhere (only where it goes changes), so the server
+  // and client HTML agree and there's no flash of a different main button.
+  const [mail, setMail] = useState<MailTarget>({ href: "mailto:", newTab: false });
+  useEffect(() => setMail(mailTarget(email)), [email]);
+  const openMail = () => {
+    if (mail.newTab) window.open(mail.href, "_blank", "noopener,noreferrer");
+    else window.location.href = mail.href;
+  };
 
   const resendLabel = resending
     ? t("checkEmail.sending", "Sending…")
@@ -94,11 +120,12 @@ export function CheckEmailView({ email, kind, message, onBack, onResend, resendi
         {error && <div className="w-full text-left"><FrontDoorError>{error}</FrontDoorError></div>}
 
         <div className="mt-2 flex w-full flex-col gap-3">
-          {mailUrl && (
-            <KyaPrimaryButton onClick={() => { window.location.href = mailUrl; }}>
-              {t("checkEmail.openEmailApp", "Open email app")}
-            </KyaPrimaryButton>
-          )}
+          {/* The one sunflower button, in every state: always tappable, so
+              the resend cooldown never leaves a disabled main button with
+              nothing else to tap. Send it again stays the white secondary. */}
+          <KyaPrimaryButton onClick={openMail}>
+            {t("checkEmail.openEmailApp", "Open email app")}
+          </KyaPrimaryButton>
           <KyaSecondaryButton
             className="w-full"
             onClick={onResend}
