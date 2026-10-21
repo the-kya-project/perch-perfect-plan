@@ -124,6 +124,15 @@ export function reloadForStaleChunk() {
   void hardResetAndReload();
 }
 
+/** The page's stylesheet didn't apply: one hard reset if the automatic
+ *  attempt is unspent, otherwise leave the (working, unstyled) page alone. */
+export function recoverMissingStyles(): boolean {
+  if (typeof window === "undefined" || reloadScheduled || !claimAutoReload()) return false;
+  reloadScheduled = true;
+  void hardResetAndReload();
+  return true;
+}
+
 /** Does this error look like a code file that failed to load (the
  *  recoverable kind), rather than a real crash? Message shapes vary by browser. */
 export function isStaleChunkError(error: unknown): boolean {

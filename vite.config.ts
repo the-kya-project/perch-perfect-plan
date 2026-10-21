@@ -158,8 +158,9 @@ export default defineConfig({
           // real output or the precache manifest comes out empty.
           globDirectory: ".vercel/output/static",
           // Don't precache big media; runtime caching in src/sw.ts picks up
-          // anything not matched here on demand.
-          globPatterns: ["**/*.{js,css,html,svg,ico,woff2}"],
+          // anything not matched here on demand. Stylesheets are left out on
+          // purpose: they load straight from the network (see src/sw.ts).
+          globPatterns: ["**/*.{js,html,svg,ico,woff2}"],
         },
       }),
       // NOTE: the plugin emits the finished worker to dist/sw.js (the root
