@@ -756,9 +756,6 @@
     "birdIdentity.cameHome": {
       "stamp": "45ac061734497ce0"
     },
-    "birdIdentity.cancel": {
-      "stamp": "06c80f8b6f9f2b3b"
-    },
     "birdIdentity.daysOne": {
       "stamp": "da56c11b415e11a9"
     },
@@ -2862,6 +2859,9 @@
     "birdWeight.range": {
       "stamp": "8b39e10d76b690b9"
     },
+    "birdWeight.rangeLabel": {
+      "stamp": "f42468eb28b653d2"
+    },
     "birdWeight.save": {
       "stamp": "8bb70b77034c99c6"
     },
@@ -4247,9 +4247,6 @@
     },
     "disclaimer.noteLabel": {
       "stamp": "f1b62af1ae02f79d"
-    },
-    "disclaimer.notePrefix": {
-      "stamp": "8bb8d2694d68b2bf"
     },
     "emergencyBar.emergency": {
       "stamp": "16fdfafb12402299"
@@ -8729,6 +8726,9 @@
     },
     "sitForm.keep": {
       "stamp": "6a37de9a420e6ec2"
+    },
+    "sitForm.loading": {
+      "stamp": "543c404f0e5a7d86"
     },
     "sitForm.metaTitleEdit": {
       "stamp": "48cfc8a6b9e55a1a"

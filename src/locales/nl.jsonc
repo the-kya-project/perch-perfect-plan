@@ -507,8 +507,6 @@
   "birdIdentity.body": "De details die {{name}} officieel {{name}} maken.",
   // Came home
   "birdIdentity.cameHome": "Kwam thuis",
-  // Cancel
-  "birdIdentity.cancel": "Annuleren",
   // {{n}} day
   "birdIdentity.daysOne": "{{n}} dag",
   // {{n}} days
@@ -1911,6 +1909,8 @@
   "birdWeight.plusG": "+{{n}} g",
   // Enter a weight between {{min}} and {{max}} grams.
   "birdWeight.range": "Vul een gewicht in tussen {{min}} en {{max}} gram.",
+  // Time range
+  "birdWeight.rangeLabel": "Tijdsbereik",
   // Save
   "birdWeight.save": "Opslaan",
   // Couldn't save the weight.
@@ -2839,8 +2839,6 @@
   "disclaimer.compactBody": "Geen vervanging voor diergeneeskundige zorg. Bel een dierenarts bij elk medisch probleem.",
   // Note:
   "disclaimer.noteLabel": "Let op:",
-  // Note: 
-  "disclaimer.notePrefix": "Let op: ",
   // Emergency
   "emergencyBar.emergency": "Noodgeval",
   // Parrots 101
@@ -5827,6 +5825,8 @@
   "sitForm.householdAssigned": "Er is een lid van het huishouden toegewezen. Het type verzorger wisselen kan nog niet — verwijder deze oppasperiode en maak een nieuwe aan om het te veranderen.",
   // Keep
   "sitForm.keep": "Behouden",
+  // Loading…
+  "sitForm.loading": "Laden…",
   // Edit sit — Kya & Co.
   "sitForm.metaTitleEdit": "Oppasperiode bewerken — Kya & Co.",
   // Set up a sit — Kya & Co.
