@@ -317,6 +317,9 @@ export const leaveHousehold = createServerFn({ method: "POST" })
   });
 
 // ---- Public: read an invite by token (safe fields only) --------------------
+/** Why an invite link can't be used; the invite screen picks the copy. */
+export type InviteLinkProblem = "expired" | "accepted" | "declined" | "canceled" | "not_found";
+
 export const getHouseholdInvite = createServerFn({ method: "GET" })
   .inputValidator((d: { token: string }) => z.object({ token: z.string().min(16) }).parse(d))
   .handler(async ({ data }) => {
@@ -328,7 +331,10 @@ export const getHouseholdInvite = createServerFn({ method: "GET" })
       .select("id, owner_id, invitee_email, invitee_name, bird_ids, status, expires_at, preset")
       .eq("token", data.token)
       .maybeSingle();
-    if (!invite) return { valid: false as const, inviterName: null as string | null };
+    // Why an invite can't be used, as a code the screen turns into copy.
+    // Only the inviter's name comes back with it (the link holder already has
+    // it from the email) so the screen can say who to ask. No bird data.
+    if (!invite) return { valid: false as const, reason: "not_found" as InviteLinkProblem, inviterName: null as string | null };
 
     const expired = new Date(invite.expires_at).getTime() <= Date.now();
     if (invite.status !== "pending" || expired) {
@@ -336,9 +342,12 @@ export const getHouseholdInvite = createServerFn({ method: "GET" })
       if (invite.status === "pending" && expired) {
         await sb.from("household_invites").update({ status: "expired" }).eq("id", invite.id);
       }
-      // Only the inviter's name (the link holder already has it from the
-      // email) so the screen can say who to ask for a new one. No bird data.
-      return { valid: false as const, inviterName: (await ownerDisplayNameRaw(sb, invite.owner_id)) as string | null };
+      const reason: InviteLinkProblem =
+        invite.status === "accepted" ? "accepted"
+        : invite.status === "declined" ? "declined"
+        : invite.status === "canceled" ? "canceled"
+        : "expired";
+      return { valid: false as const, reason, inviterName: (await ownerDisplayNameRaw(sb, invite.owner_id)) as string | null };
     }
 
     // Raw data only: the invite screen joins the names and supplies the
@@ -448,11 +457,13 @@ export const declineHouseholdInvite = createServerFn({ method: "POST" })
   .inputValidator((d: { token: string }) => z.object({ token: z.string().min(16) }).parse(d))
   .handler(async ({ data }) => {
     const sb = await getAdmin();
-    await sb
+    const { error } = await sb
       .from("household_invites")
       .update({ status: "declined" })
       .eq("token", data.token)
       .eq("status", "pending");
+    // A code, not copy: the invite screen shows its own message.
+    if (error) { console.error("[invite] decline failed", error); throw new Error("decline_failed"); }
     return { ok: true };
   });
 

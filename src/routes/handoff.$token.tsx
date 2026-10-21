@@ -3,16 +3,17 @@ import { useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { signInWithGoogle } from "@/lib/nativeOAuth";
-import { getHandoff, acceptHandoff, declineHandoff } from "@/lib/handoff.functions";
+import { getHandoff, acceptHandoff, declineHandoff, type HandoffLinkProblem } from "@/lib/handoff.functions";
 import { captureLead } from "@/lib/captureLead";
 import { firstName as firstNameOf } from "@/lib/memberDisplay";
 import { speciesLabel } from "@/lib/speciesLabel";
 import { birdAgeLabel } from "@/lib/birdAge";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
-import { K, SERIF, KyaCard, KyaHeading, KyaLabel, KyaLink, KyaPrimaryButton, KyaSecondaryButton } from "@/components/kya";
+import { K, SERIF, KyaCard, KyaHeading, KyaLabel, KyaLink, KyaPrimaryButton } from "@/components/kya";
 import { FrontDoorPage, FrontDoorHeader, FrontDoorBody, FrontDoorError, CheckListCard, SignInInstead } from "@/components/frontDoor";
+import { SocialSignInButtons } from "@/components/SocialSignInButtons";
+import { AcceptCheckEmail } from "@/components/AcceptCheckEmail";
 import { BrandLockup } from "@/components/BrandLogo";
 import { friendlyError } from "@/lib/errorMessage";
 import { authErrorMessage } from "@/lib/authErrorMessage";
@@ -45,7 +46,10 @@ function HandoffAccept() {
   const { token } = Route.useParams();
   const navigate = useNavigate();
   const getH = useServerFn(getHandoff);
-  const { data: handoff, isLoading } = useQuery({ queryKey: ["handoff", token], queryFn: () => getH({ data: { token } }), retry: false });
+  const { data: handoff, isLoading, isFetching, refetch } = useQuery({ queryKey: ["handoff", token], queryFn: () => getH({ data: { token } }), retry: false });
+  // A new account waiting on its confirmation email: the whole screen becomes
+  // "Check your email" until they confirm (or go back).
+  const [confirmSent, setConfirmSent] = useState(false);
   const { data: session } = useQuery({
     queryKey: ["handoff-session"],
     queryFn: async () => {
@@ -64,19 +68,47 @@ function HandoffAccept() {
     );
   }
 
-  if (!handoff?.valid) {
-    const doneName = handoff?.accepted ? handoff.birdName : null;
+  // Couldn't reach the server (offline, or it failed): say so and offer a retry,
+  // rather than calling a good link expired. (Keyed on having no data, so a
+  // background refetch that fails doesn't replace a screen that loaded.)
+  if (!handoff) {
     return (
       <FrontDoorPage>
         <FrontDoorHeader
-          title={handoff?.accepted
-            ? t("handoff.alreadyHome", "{{bird}} is already home with you", { bird: doneName ?? t("handoff.yourBird", "Your bird") })
-            : t("handoff.expiredTitle", "This handoff link has expired")}
+          title={t("handoff.couldNotLoadTitle", "We couldn't load this handoff")}
+          line={t("handoff.couldNotLoadLine", "Check your connection and try again.")}
         />
         <FrontDoorBody>
-          <KyaPrimaryButton onClick={() => { window.location.href = "/"; }}>{t("handoff.goToApp", "Go to Kya & Co.")}</KyaPrimaryButton>
+          <KyaPrimaryButton disabled={isFetching} onClick={() => { void refetch(); }}>
+            {isFetching ? t("handoff.tryingAgain", "Trying again…") : t("handoff.tryAgain", "Try again")}
+          </KyaPrimaryButton>
+          <div className="flex justify-center">
+            <KyaLink onClick={() => { window.location.href = "/"; }}>{t("handoff.goToApp", "Go to Kya & Co.")}</KyaLink>
+          </div>
         </FrontDoorBody>
       </FrontDoorPage>
+    );
+  }
+
+  if (!handoff.valid) {
+    return <HandoffProblem reason={handoff.reason} birdName={handoff.birdName} signedIn={!!session?.signedIn} />;
+  }
+
+  if (confirmSent && !session?.signedIn) {
+    return (
+      <AcceptCheckEmail
+        email={handoff.recipientEmail}
+        returnPath={`/handoff/${token}`}
+        onBack={() => setConfirmSent(false)}
+        message={
+          <Trans
+            i18nKey="handoff.confirmSentBody"
+            defaults="We sent a confirmation link to <b>{{email}}</b>. Open it and you'll come right back here to accept."
+            values={{ email: handoff.recipientEmail }}
+            components={{ b: <span className="font-[700] [overflow-wrap:anywhere]" style={{ color: K.forest }} /> }}
+          />
+        }
+      />
     );
   }
 
@@ -130,9 +162,57 @@ function HandoffAccept() {
           ) : matches ? (
             <SignedInAccept token={token} birdName={birdName} onDone={() => navigate({ to: "/dashboard" })} onLeave={leave} />
           ) : (
-            <LoggedOutAccept token={token} birdName={birdName} inviteEmail={handoff.recipientEmail} onLeave={leave} />
+            <LoggedOutAccept token={token} birdName={birdName} inviteEmail={handoff.recipientEmail} onLeave={leave} onConfirmSent={() => setConfirmSent(true)} />
           )}
         </div>
+      </FrontDoorBody>
+    </FrontDoorPage>
+  );
+}
+
+/** Why the link can't be used, in words, with the way forward for each. The
+ *  server names nobody here (only the bird, once it's already home), so the
+ *  copy points back to "the person handing off the bird". */
+function HandoffProblem({ reason, birdName, signedIn }: { reason: HandoffLinkProblem; birdName: string | null; signedIn: boolean }) {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  let title: string;
+  let line: string | undefined;
+  switch (reason) {
+    case "accepted":
+      title = t("handoff.alreadyHome", "{{bird}} is already home with you", { bird: birdName ?? t("handoff.yourBird", "Your bird") });
+      line = signedIn ? undefined : t("handoff.alreadyHomeSignIn", "Sign in to see their record.");
+      break;
+    case "declined":
+      title = t("handoff.declinedTitle", "This handoff was declined");
+      line = t("handoff.declinedLine", "Changed your mind? Ask the person handing off the bird to send a new link.");
+      break;
+    case "canceled":
+      title = t("handoff.canceledTitle", "This handoff was canceled");
+      line = t("handoff.canceledLine", "Ask the person handing off the bird if you think that's a mistake.");
+      break;
+    case "not_found":
+      title = t("handoff.notFoundTitle", "We couldn't find this handoff");
+      line = t("handoff.notFoundLine", "Check that you opened the whole link from the email, or ask the person handing off the bird to send a new one.");
+      break;
+    default:
+      title = t("handoff.expiredTitle", "This handoff link has expired");
+      line = t("handoff.expiredLine", "Ask the person handing off the bird to send a new link.");
+  }
+  const signInToApp = reason === "accepted" && !signedIn;
+  return (
+    <FrontDoorPage>
+      <FrontDoorHeader title={title} line={line} />
+      <FrontDoorBody>
+        {signInToApp ? (
+          <KyaPrimaryButton onClick={() => navigate({ to: "/auth", search: { mode: "signin", redirect: "/dashboard" } })}>
+            {t("handoff.signIn", "Sign in")}
+          </KyaPrimaryButton>
+        ) : (
+          <KyaPrimaryButton onClick={() => { window.location.href = reason === "accepted" ? "/dashboard" : "/"; }}>
+            {t("handoff.goToApp", "Go to Kya & Co.")}
+          </KyaPrimaryButton>
+        )}
       </FrontDoorBody>
     </FrontDoorPage>
   );
@@ -175,13 +255,18 @@ function useAcceptDecline(token: string, onDone: () => void) {
     setError(null);
     try { await accept({ data: { token } }); toast.success(t("handoff.acceptedToast", "The bird is yours — welcome!")); onDone(); }
     catch (e: any) {
-      const msg = friendlyError(e, t("handoff.couldNotAccept", "Couldn't accept."));
-      toast.error(msg); setError(msg); setBusy(null);
+      setError(friendlyError(e, t("handoff.couldNotAccept", "Couldn't accept."))); setBusy(null);
     }
   }
   async function doDecline() {
     setBusy("decline");
-    try { await decline({ data: { token } }); window.location.href = "/"; } catch { setBusy(null); }
+    setError(null);
+    try { await decline({ data: { token } }); window.location.href = "/"; }
+    catch {
+      // Stay on the handoff so they can try again or just leave.
+      setError(t("handoff.couldNotDecline", "Couldn't decline the handoff. Check your connection and try again."));
+      setBusy(null);
+    }
   }
   return { busy, error, doAccept, doDecline };
 }
@@ -232,18 +317,19 @@ function WrongAccount({ inviteEmail, token, onLeave }: { inviteEmail: string; to
   );
 }
 
-function LoggedOutAccept({ token, birdName, inviteEmail, onLeave }: { token: string; birdName: string; inviteEmail: string; onLeave: () => void }) {
+function LoggedOutAccept({ token, birdName, inviteEmail, onLeave, onConfirmSent }: { token: string; birdName: string; inviteEmail: string; onLeave: () => void; onConfirmSent: () => void }) {
   const { t } = useTranslation();
-  const { busy, doDecline } = useAcceptDecline(token, () => {});
+  const { busy, error: declineError, doDecline } = useAcceptDecline(token, () => {});
   const [creating, setCreating] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [password, setPassword] = useState("");
   const [pending, setPending] = useState(false);
-  const [confirmSent, setConfirmSent] = useState(false);
+  const [socialBusy, setSocialBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const redirect = `${window.location.origin}/handoff/${token}`;
-  const fail = (msg: string) => { toast.error(msg); setError(msg); };
+  // The card (FrontDoorError) is the one place an error shows.
+  const fail = (msg: string) => setError(msg);
 
   async function createAndAccept() {
     const first = firstName.trim();
@@ -260,29 +346,14 @@ function LoggedOutAccept({ token, birdName, inviteEmail, onLeave }: { token: str
       // Land the new account in Brevo with a real name (no marketing consent).
       void captureLead({ email: inviteEmail, firstName: first, lastName: last || undefined, source: "handoff", marketingConsent: false, attribution: null });
       if (data.session) { window.location.href = redirect; return; }
-      setConfirmSent(true); setPending(false);
+      setPending(false); onConfirmSent();
     } catch (e: any) { fail(authErrorMessage(e, t("handoff.couldNotCreate", "Couldn't create your account."))); setPending(false); }
-  }
-  async function google() {
-    setError(null);
-    try { await signInWithGoogle(redirect); }
-    catch (e: any) { fail(authErrorMessage(e, t("handoff.googleFailed", "Google sign-in failed."))); }
-  }
-
-  if (confirmSent) {
-    return (
-      <KyaCard className="p-5 text-center">
-        <KyaHeading size={21}>{t("handoff.confirmToFinish", "Confirm your email to finish")}</KyaHeading>
-        <p className="m-0 mt-2 text-[15px] leading-[1.45]" style={{ color: K.ink }}>
-          <Trans i18nKey="handoff.confirmSentBody" defaults="We sent a confirmation link to <b>{{email}}</b>. Open it and you'll come right back here to accept." values={{ email: inviteEmail }} components={{ b: <span className="font-[700]" style={{ color: K.forest }} /> }} />
-        </p>
-      </KyaCard>
-    );
   }
   if (!creating) {
     return (
       <>
         <KyaPrimaryButton onClick={() => setCreating(true)}>{t("handoff.welcomeHome", "Welcome {{bird}} home", { bird: birdName })}</KyaPrimaryButton>
+        {declineError && <FrontDoorError>{declineError}</FrontDoorError>}
         <LeaveLinks onLeave={onLeave} onDecline={doDecline} busy={!!busy} />
       </>
     );
@@ -307,11 +378,16 @@ function LoggedOutAccept({ token, birdName, inviteEmail, onLeave }: { token: str
           or: t("handoff.or", "or"),
         }}
         submit={
-          <KyaPrimaryButton disabled={pending} onClick={createAndAccept}>
+          <KyaPrimaryButton disabled={pending || socialBusy} onClick={createAndAccept}>
             {pending ? t("handoff.creating", "Creating…") : t("handoff.createAndAccept", "Create account & accept")}
           </KyaPrimaryButton>
         }
-        google={<KyaSecondaryButton className="w-full" onClick={google}>{t("handoff.continueWithGoogle", "Continue with Google")}</KyaSecondaryButton>}
+        social={
+          // Same buttons, conditions, and sign-in code as /auth; the provider
+          // brings them straight back here (web redirect, or the native shell
+          // pushes this path once signed in).
+          <SocialSignInButtons redirectPath={`/handoff/${token}`} disabled={pending} onBusyChange={setSocialBusy} onError={setError} />
+        }
       />
       <SignInInstead returnTo={`/handoff/${token}`} />
       <LeaveLinks onLeave={onLeave} />
@@ -320,8 +396,8 @@ function LoggedOutAccept({ token, birdName, inviteEmail, onLeave }: { token: str
 }
 
 /** Name, the handoff's (fixed) email, a password; then the create button,
- *  "or", and Google. */
-function CreateAccountForm({ idPrefix, email, firstName, setFirstName, lastName, setLastName, password, setPassword, labels, submit, google }: {
+ *  "or", and the provider buttons (Google, and Apple where /auth offers it). */
+function CreateAccountForm({ idPrefix, email, firstName, setFirstName, lastName, setLastName, password, setPassword, labels, submit, social }: {
   idPrefix: string;
   email: string;
   firstName: string; setFirstName: (v: string) => void;
@@ -329,7 +405,7 @@ function CreateAccountForm({ idPrefix, email, firstName, setFirstName, lastName,
   password: string; setPassword: (v: string) => void;
   labels: { firstName: string; firstNamePlaceholder: string; lastName: string; lastNamePlaceholder: string; email: string; password: string; passwordPlaceholder: string; or: string };
   submit: ReactNode;
-  google: ReactNode;
+  social: ReactNode;
 }) {
   return (
     <KyaCard className="flex flex-col gap-4 p-4">
@@ -355,7 +431,7 @@ function CreateAccountForm({ idPrefix, email, firstName, setFirstName, lastName,
       <div className="flex items-center gap-3 text-[13px]" style={{ color: K.quiet }}>
         <span className="h-px flex-1" style={{ background: K.line }} /> {labels.or} <span className="h-px flex-1" style={{ background: K.line }} />
       </div>
-      {google}
+      {social}
     </KyaCard>
   );
 }

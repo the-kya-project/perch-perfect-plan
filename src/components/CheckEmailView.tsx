@@ -27,9 +27,12 @@ function mailAppUrl(): string | null {
   return null;
 }
 
-export function CheckEmailView({ email, kind, onBack, onResend, resending, cooldown, justSent, error, onUseDifferentEmail, footer }: {
+export function CheckEmailView({ email, kind, message, onBack, onResend, resending, cooldown, justSent, error, onUseDifferentEmail, footer }: {
   email: string;
   kind: "signup" | "reset";
+  /** Replaces the "We sent a link to …" line, for screens that say where the
+   *  link leads (the invite and handoff accept screens). */
+  message?: ReactNode;
   onBack: () => void;
   onResend: () => void;
   resending: boolean;
@@ -38,7 +41,8 @@ export function CheckEmailView({ email, kind, onBack, onResend, resending, coold
   /** True for a moment after a resend succeeds, to show "Sent". */
   justSent: boolean;
   error?: ReactNode;
-  onUseDifferentEmail: () => void;
+  /** Left out where the address is fixed (an invite or handoff goes to one email). */
+  onUseDifferentEmail?: () => void;
   footer?: ReactNode;
 }) {
   const { t } = useTranslation();
@@ -67,7 +71,7 @@ export function CheckEmailView({ email, kind, onBack, onResend, resending, coold
         </span>
         <KyaHeading as="h1" size={28} className="mt-1">{t("checkEmail.title", "Check your email")}</KyaHeading>
         <p className="m-0 max-w-[340px] text-[15px] leading-[1.5]" style={{ color: K.ink }}>
-          {kind === "signup" ? (
+          {message ?? (kind === "signup" ? (
             <Trans
               i18nKey="checkEmail.sentLinkSignup"
               defaults="We sent a link to <b>{{email}}</b>. Tap it to finish signing up."
@@ -81,7 +85,7 @@ export function CheckEmailView({ email, kind, onBack, onResend, resending, coold
               values={{ email }}
               components={{ b: <strong className="font-[700] [overflow-wrap:anywhere]" style={{ color: K.forest }} /> }}
             />
-          )}
+          ))}
         </p>
         <p className="m-0 max-w-[340px] text-[13.5px] leading-[1.45]" style={{ color: K.quiet }}>
           {t("checkEmail.canTakeAMinute", "It can take a minute. Check spam if it isn't there.")}
@@ -103,9 +107,11 @@ export function CheckEmailView({ email, kind, onBack, onResend, resending, coold
           >
             {resendLabel}
           </KyaSecondaryButton>
-          <div className="flex justify-center">
-            <KyaLink onClick={onUseDifferentEmail}>{t("checkEmail.useDifferentEmail", "Use a different email")}</KyaLink>
-          </div>
+          {onUseDifferentEmail && (
+            <div className="flex justify-center">
+              <KyaLink onClick={onUseDifferentEmail}>{t("checkEmail.useDifferentEmail", "Use a different email")}</KyaLink>
+            </div>
+          )}
         </div>
         {footer}
       </FrontDoorBody>
