@@ -85,7 +85,6 @@ function CaregiverConcern() {
               paused={ctx.paused || m.isSuccess}
               onPause={() => m.mutate()}
               pausePending={m.isPending}
-              look="kya"
             />
           </KyaCard>
         )}
