@@ -41,11 +41,14 @@ function tabForPath(pathname: string): OwnerTab | undefined {
   return undefined;
 }
 
-/** A task screen: no bottom nav, Close instead of Back. */
-export function isTaskPath(pathname: string): boolean {
+/** A task screen: no bottom nav, Close instead of Back. Some pages become a
+ *  task via a search param (identity's ?edit=1 drives its edit form), so the
+ *  caller may pass the parsed search alongside the pathname. */
+export function isTaskPath(pathname: string, search?: Record<string, unknown>): boolean {
   return pathname === "/check" || /^\/birds\/[^/]+\/scan$/.test(pathname) ||
     pathname === "/sits/new" || pathname.startsWith("/sits/edit/") ||
-    /^\/birds\/[^/]+\/plan\/editor$/.test(pathname);
+    /^\/birds\/[^/]+\/plan\/editor$/.test(pathname) ||
+    (/^\/birds\/[^/]+\/identity$/.test(pathname) && !!search?.edit);
 }
 
 // Pages opened from a tab (a bird, account, a sit…) highlight the tab the
