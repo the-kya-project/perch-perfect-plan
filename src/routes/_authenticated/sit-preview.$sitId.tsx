@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate, useLocation } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Eye, Loader2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -39,18 +39,16 @@ function SitPreview() {
         .select("id, invite_token, sitter_name, caregiver_user_id")
         .eq("id", sitId)
         .maybeSingle();
-      let label = (sit?.sitter_name ?? "").trim() || i18next.t("sitPreview.yourSitter", "your sitter");
-      if (sit?.caregiver_user_id) {
-        const { data: p } = await supabase.from("profiles").select("display_name").eq("id", sit.caregiver_user_id).maybeSingle();
-        label = (p?.display_name ?? "").toString().trim() || i18next.t("sitPreview.yourCaregiver", "your caregiver");
-      }
+      // Household sits have no preview (they redirect below), so only an
+      // external sitter's name is ever needed here.
+      const label = (sit?.sitter_name ?? "").trim() || i18next.t("sitPreview.yourSitter", "your sitter");
       return { sit: sit as any, label };
     },
   });
 
   const household = hasState ? !!state.previewHousehold : !!data?.sit?.caregiver_user_id;
   // Opened without the sit card's state (a reload, an old link) and the sit
-  // isn't there: it was deleted. Say so, rather than the household message.
+  // isn't there: it was deleted. Say so, rather than the no-link message.
   const missing = !hasState && !isLoading && !data?.sit;
   const token = (hasState ? state.previewToken : data?.sit?.invite_token) as string | null | undefined;
   const label = (hasState ? state.previewLabel : data?.label) || t("sitPreview.they", "they");
@@ -61,12 +59,27 @@ function SitPreview() {
   // booting, so the load reads as progress instead of a frozen blank frame.
   const [frameReady, setFrameReady] = useState(false);
 
+  // Household caregivers use the app itself — there's no sitter view to
+  // preview. The sit cards no longer offer it, but an old link or a reload can
+  // still land here: send them to the sit's own page instead.
+  useEffect(() => {
+    if (household && !missing && !resolving) navigate({ to: "/sits/$sitId", params: { sitId }, replace: true });
+  }, [household, missing, resolving, navigate, sitId]);
+  if (household && !missing) {
+    return (
+      <div className="flex h-[100dvh] items-center justify-center gap-2 bg-[#f1f5f0] text-[14px] text-[var(--mute)]">
+        <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-[100dvh] flex-col bg-[#f1f5f0]">
       <div className="setup-frame flex items-center justify-between gap-3 bg-[#12291f] px-4 py-2 pt-[max(env(safe-area-inset-top),0.5rem)] text-white">
         <span className="flex min-w-0 items-center gap-2 text-[13.5px] font-[500] text-white">
           <Eye className="size-4 shrink-0" aria-hidden="true" />
-          <span className="truncate">{household ? t("sitPreview.caregiverBanner", "Caregiver preview · how {{label}} will see this sit", { label }) : t("sitPreview.sitterBanner", "Sitter preview · how {{label}} will see this sit", { label })}</span>
+          {/* Blank until we know it's a sitter sit (a household sit redirects). */}
+          <span className="truncate">{!resolving && t("sitPreview.sitterBanner", "Sitter preview · how {{label}} will see this sit", { label })}</span>
         </span>
         <Link
           to="/sits"
@@ -110,13 +123,12 @@ function SitPreview() {
           </div>
         </div>
       ) : (
-        // Household caregivers don't use a token view — they see the in-app
-        // caregiver Today screen when signed in. Point the owner to the sit's
-        // activity so the button is never a dead end.
+        // A sitter sit with no link (household sits redirect above). Point the
+        // owner to the sit's activity so the screen is never a dead end.
         <div className="grid flex-1 place-items-center p-6 text-center">
           <div className="max-w-[34ch]">
             <p className="t-body text-[var(--ink2)]">
-              {t("sitPreview.householdNoLink", "Household caregivers use the app's caregiver Today screen — there's no shareable preview link.")}
+              {t("sitPreview.noSitterLink", "This sit doesn't have a sitter link, so there's nothing to preview.")}
             </p>
             <button
               type="button"

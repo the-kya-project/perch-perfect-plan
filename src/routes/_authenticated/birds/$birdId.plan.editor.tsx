@@ -421,11 +421,29 @@ function SitsPanel({ birdId, sits, onChange }: { birdId: string; sits: any[]; on
       return data ?? [];
     },
   });
+  // Each sit's birds (a sit can cover several), so the cards can list them,
+  // link each one's sitter preview and checklist, and check emergency contacts
+  // before a link is copied. RLS limits the embed to birds the user can see.
+  const sitIds = sits.map((s) => s.id as string).sort();
+  const { data: birdsBySit = {} } = useQuery({
+    queryKey: ["sit-birds-for-sits", sitIds.join(",")],
+    enabled: sitIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("sit_birds").select("sit_id, birds(id, name)").in("sit_id", sitIds);
+      if (error) throw error;
+      const out: Record<string, { id: string; name: string }[]> = {};
+      for (const r of (data ?? []) as any[]) {
+        if (!r.birds) continue;
+        (out[r.sit_id] ??= []).push({ id: r.birds.id, name: r.birds.name });
+      }
+      return out;
+    },
+  });
   return (
     <>
       <KyaCard className="p-4">
         <p className="m-0 text-[15px] leading-[1.5]" style={{ color: K.ink }}>
-          <Trans i18nKey="planEditor.sitsCreatedFrom" defaults="Sits are created from the <1>owner dashboard</1>, where you can include multiple birds in one sit." components={{ 1: <Link to="/dashboard" className="font-[700] underline" style={{ color: K.moss }} /> }} />
+          <Trans i18nKey="planEditor.sitsSetUpFromSits" defaults="To add a sit, <1>set up a sit</1> from the Sits tab. One sit can include several birds." components={{ 1: <Link to="/sits/new" search={{ bird: birdId }} className="font-[700] underline" style={{ color: K.moss }} /> }} />
         </p>
       </KyaCard>
       {sits.length === 0 && (
@@ -433,7 +451,7 @@ function SitsPanel({ birdId, sits, onChange }: { birdId: string; sits: any[]; on
           <p className="m-0 text-[15px]" style={{ color: K.quiet }}>{t("planEditor.noSits", "This bird isn't part of any sit yet.")}</p>
         </KyaCard>
       )}
-      {sits.map((s) => <SitCard key={s.id} sit={s} allBirds={allBirds} onChange={onChange} />)}
+      {sits.map((s) => <SitCard key={s.id} sit={s} birds={birdsBySit[s.id] ?? []} allBirds={allBirds} onChange={onChange} />)}
     </>
   );
 }

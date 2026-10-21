@@ -20,7 +20,7 @@ import { localDateISO } from "@/lib/localDay";
 import { K, SERIF, KyaBody, KyaCard, KyaHeading } from "@/components/kya";
 import { SitterTabHeader } from "@/components/sitter/SitterChrome";
 import {
-  AroundHouseCard, BirdAvatar, VetNote, WalkthroughPill,
+  AroundHouseCard, BirdAvatar, VetNote, WalkthroughPill, isBirdPreview,
   greeting, ownerFirstName, sitLine, sitterFirstName, useSitterShell,
 } from "@/components/sitter/sitterShared";
 import { useSitterDashboard } from "@/components/SitterDashboard";
@@ -96,6 +96,12 @@ function SitterToday() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const toggle = useServerFn(toggleTaskCompletion);
+  // An owner preview ("View as your sitter", "See what [sitter] sees") is
+  // read-only: the server refuses task ticks, so the checkboxes are shown
+  // disabled with a "Preview only" note instead of failing on tap. Read after
+  // mount (it inspects window) so server and client render the same markup.
+  const [readOnly, setReadOnly] = useState(false);
+  useEffect(() => { setReadOnly(isOwnerPreview() || isBirdPreview(ctx)); }, [ctx]);
   const { data: dash } = useSitterDashboard(token);
 
   const sitId = ctx.sit.id;
@@ -297,13 +303,14 @@ function SitterToday() {
         <div className="flex items-start">
           <button
             type="button"
-            onClick={() => m.mutate({ taskId: task.id, completed: !done, title: task.title })}
+            onClick={() => { if (!readOnly) m.mutate({ taskId: task.id, completed: !done, title: task.title }); }}
+            disabled={readOnly}
             aria-pressed={done}
-            className="flex min-h-[56px] flex-1 items-start gap-3 py-3 pl-4 text-left"
+            className="flex min-h-[56px] flex-1 items-start gap-3 py-3 pl-4 text-left disabled:cursor-default"
           >
             <span
               className="mt-px grid size-[26px] shrink-0 place-items-center rounded-full border-2"
-              style={done ? { background: K.forest, borderColor: K.forest } : { background: "#fff", borderColor: "#b9c6bb" }}
+              style={{ ...(done ? { background: K.forest, borderColor: K.forest } : { background: "#fff", borderColor: "#b9c6bb" }), ...(readOnly ? { opacity: 0.4 } : {}) }}
               aria-hidden="true"
             >
               {done && <Check className="size-4 text-white" strokeWidth={3} />}
@@ -418,6 +425,7 @@ function SitterToday() {
                 )}
               </div>
               <div data-coach="daily-checklist" className="overflow-hidden rounded-[20px] bg-white" style={{ border: `2px solid ${K.forest}` }}>
+                {readOnly && currentList.length > 0 && <PreviewOnlyNote />}
                 {currentList.length === 0 ? (
                   <p className="m-0 p-4 text-[15px]" style={{ color: K.quiet }}>{t("sitter.today.nothingScheduled", "Nothing scheduled for this {{daypart}}.", { daypart: nowLabel.toLowerCase() })}</p>
                 ) : (
@@ -454,6 +462,7 @@ function SitterToday() {
                     <span className="shrink-0 text-[13px]" style={{ color: K.quiet }}>{t("sitter.today.doneOfTotal", "{{done}} of {{total}}", { done, total: list.length })}</span>
                     <ChevronDown className={`size-[18px] shrink-0 transition-transform ${open ? "rotate-180" : ""}`} style={{ color: K.quiet }} aria-hidden="true" />
                   </button>
+                  {open && readOnly && <PreviewOnlyNote />}
                   {open && list.map((task, i) => renderTask(task, i === list.length - 1))}
                 </KyaCard>
               );
@@ -625,6 +634,16 @@ function thingsToWatch(log: any): number {
   if (Array.isArray(log.triage_reason_codes)) return log.triage_reason_codes.length;
   const r = (log.triage_reasons ?? "").toString().trim();
   return r ? r.split(" | ").filter(Boolean).length : 0;
+}
+
+/** Once per task list in an owner preview, where the checkboxes are disabled. */
+function PreviewOnlyNote() {
+  const { t } = useTranslation();
+  return (
+    <p className="m-0 px-4 pt-3 text-[13px] font-[700]" style={{ color: K.quiet }}>
+      {t("sitter.today.previewOnly", "Preview only")}
+    </p>
+  );
 }
 
 /** The daily health check entry: lime card, status line, Start / See check. */

@@ -4,6 +4,7 @@
 import { useQuery } from "@tanstack/react-query";
 import type { TFunction } from "i18next";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchDisplayNames } from "@/lib/resolveNames";
 import { useMyPermissions } from "@/lib/useCapability";
 
 export type LoggedRow = { by: string | null; source: string | null; sitId: string | null };
@@ -17,10 +18,8 @@ export function useLoggedBy(rows: LoggedRow[], viewerIsOwner: boolean) {
     queryKey: ["logged-by-names", people.join(",")],
     enabled: people.length > 0,
     staleTime: 5 * 60_000,
-    queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("id, display_name").in("id", people);
-      return Object.fromEntries((data ?? []).map((p: any) => [p.id as string, ((p.display_name ?? "") as string).trim()]));
-    },
+    // Server-side: profiles RLS is self-only, so a direct read comes back empty.
+    queryFn: () => fetchDisplayNames(people),
   });
   const { data: sitters } = useQuery({
     queryKey: ["logged-by-sitters", sitIds.join(",")],

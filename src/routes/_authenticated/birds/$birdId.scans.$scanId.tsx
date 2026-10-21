@@ -14,6 +14,7 @@ import { formatLocalDate, formatLocalTime, monthDay } from "@/lib/dates";
 import { localDateISO } from "@/lib/localDay";
 import { mergeEmergency } from "@/lib/emergency";
 import { isStored } from "@/lib/healthHistory";
+import { fetchDisplayNames } from "@/lib/resolveNames";
 import type { ScanFieldKey } from "@/lib/triage";
 import i18next from "i18next";
 import { useTranslation } from "react-i18next";
@@ -178,8 +179,8 @@ function ScanDetail() {
         const r = row as any;
         if (r.source === "sitter") actor = r.sit?.sitter_name || r.sit?.sitter_email || null;
         else if (r.run_by) {
-          const { data: p } = await supabase.from("profiles").select("display_name").eq("id", r.run_by).maybeSingle();
-          actor = (p?.display_name ?? "").trim() || null;
+          // Server-side: profiles RLS is self-only, so a direct read comes back empty.
+          actor = (await fetchDisplayNames([r.run_by]))[r.run_by] || null;
         }
       }
       const { data: bird } = await supabase.from("birds").select("name, owner_id").eq("id", birdId).maybeSingle();
