@@ -23,6 +23,7 @@ import { LoadError } from "@/components/LoadError";
 import { useLoadState } from "@/lib/useTooLong";
 import { formatLocalDate } from "@/lib/dates";
 import { localDateISO } from "@/lib/localDay";
+import { ownerIntakeDate } from "@/lib/intakeDate";
 
 type IdentitySearch = { edit?: 1 };
 
@@ -54,6 +55,8 @@ type Identity = {
   acquired_on: string | null;
   is_foster: boolean | null;
   intake_date: string | null;
+  /** 'auto' = set by the app, not the owner: never shown (src/lib/intakeDate.ts). */
+  intake_date_source: string | null;
 };
 
 // Shared core (photo, name, species, age) lives in the same birds columns the
@@ -103,7 +106,7 @@ function IdentityFacet() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("birds")
-        .select("owner_id, name, species, age, photo_url, photo_position, sex, sex_method, flight_status, birth_date, microchip, band_number, origin, acquired_on, is_foster, intake_date")
+        .select("owner_id, name, species, age, photo_url, photo_position, sex, sex_method, flight_status, birth_date, microchip, band_number, origin, acquired_on, is_foster, intake_date, intake_date_source")
         .eq("id", birdId)
         .maybeSingle();
       if (error) throw error;
@@ -202,7 +205,11 @@ function IdentityFacet() {
               <Row label={t("birdIdentity.microchip", "Microchip")} value={bird.microchip} onAdd={openEdit} />
               <Row label={t("birdIdentity.legBand", "Leg band")} value={bird.band_number} onAdd={openEdit} />
               <Row label={t("birdIdentity.origin", "Origin")} value={bird.origin} onAdd={openEdit} />
-              <Row label={t("birdIdentity.cameHome", "Came home")} value={bird.acquired_on ? fmtDate(bird.acquired_on) : null} onAdd={openEdit} last />
+              <Row label={t("birdIdentity.cameHome", "Came home")} value={bird.acquired_on ? fmtDate(bird.acquired_on) : null} onAdd={openEdit} last={!bird.is_foster} />
+              {/* A foster's "Came to you": only a date the owner entered. */}
+              {bird.is_foster && (
+                <Row label={t("newBird.cameToYou", "Came to you")} value={ownerIntakeDate(bird) ? fmtDate(ownerIntakeDate(bird)!) : null} onAdd={openEdit} last />
+              )}
             </KyaCard>
             <p className="m-0 px-1 text-[13px] leading-[1.5]" style={{ color: K.quiet }}>{footnote}</p>
           </>
@@ -252,7 +259,8 @@ function IdentityForm({ birdId, bird, onClose, onSaved }: { birdId: string; bird
     origin: bird.origin ?? "",
     acquired_on: bird.acquired_on ?? "",
     is_foster: !!bird.is_foster,
-    intake_date: bird.intake_date ?? "",
+    // An intake date the app set on its own starts empty ("Add date").
+    intake_date: ownerIntakeDate(bird) ?? "",
   });
   // Photo: display value (signed/data URL) vs the value to persist (path/data/null).
   const [photoDisplay, setPhotoDisplay] = useState<string | null>(null);
@@ -301,7 +309,9 @@ function IdentityForm({ birdId, bird, onClose, onSaved }: { birdId: string; bird
         origin: clean(f.origin),
         acquired_on: f.acquired_on || null,
         is_foster: f.is_foster,
-        intake_date: f.intake_date || null,
+        // "Came to you" is on screen only for a foster, so only then is it
+        // saved, and what's saved is the owner's. Otherwise it's left as is.
+        ...(f.is_foster ? { intake_date: f.intake_date || null, intake_date_source: f.intake_date ? "owner" : null } : {}),
         photo_url: ref,
         photo_position: photoPosition,
       } as any).eq("id", birdId);

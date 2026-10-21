@@ -12,6 +12,7 @@ import { buildHandoffInviteEmail, buildHandoffAcceptedEmail, buildHandoffDecline
 import { localeForUser, fallbackSomeoneLabel } from "./emailLocale.server";
 import { emailT } from "./i18n/emailI18n.server";
 import { purgeBirdMediaWith, pdfHandoffFailedMessage } from "./birdMedia.functions";
+import { ownerIntakeDate } from "./intakeDate";
 
 async function getAdmin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -192,7 +193,7 @@ export async function completePdfHandoffWith(
   data: { birdId: string; recipientName?: string },
 ): Promise<{ ok: true }> {
   const { data: bird } = await sb.from("birds")
-    .select("id, name, species, intake_date, is_foster, owner_id, photo_url").eq("id", data.birdId).maybeSingle();
+    .select("id, name, species, intake_date, intake_date_source, is_foster, owner_id, photo_url").eq("id", data.birdId).maybeSingle();
   if (!bird || (bird as any).owner_id !== senderId) throw new Error("Not allowed.");
   const birdName = ((bird as any).name ?? "This bird") as string;
 
@@ -208,7 +209,9 @@ export async function completePdfHandoffWith(
       original_owner_id: senderId,
       bird_name: (bird as any).name,
       species: (bird as any).species ?? null,
+      // Keepsake keeps the date with its marker; an automatic one stays hidden.
       intake_date: (bird as any).intake_date ?? null,
+      intake_date_source: (bird as any).intake_date ? (bird as any).intake_date_source ?? null : null,
       departed_on: new Date().toISOString().slice(0, 10),
       recipient_name: data.recipientName?.trim() || null,
       mode: "pdf",
@@ -272,10 +275,16 @@ export const getPastBirds = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const sb = await getAdmin();
     const { data } = await sb.from("past_birds")
-      .select("id, bird_name, species, intake_date, departed_on, recipient_name, mode, was_foster, photo_thumb")
+      .select("id, bird_name, species, intake_date, intake_date_source, departed_on, recipient_name, mode, was_foster, photo_thumb")
       .eq("original_owner_id", context.userId as string)
       .order("departed_on", { ascending: false });
-    return { birds: data ?? [] };
+    // "With you from": only a date the owner entered. One the app set on its
+    // own (intake_date_source 'auto') reads as "With you until".
+    const birds = ((data ?? []) as any[]).map(({ intake_date_source, ...b }) => ({
+      ...b,
+      intake_date: ownerIntakeDate({ intake_date: b.intake_date, intake_date_source }),
+    }));
+    return { birds };
   });
 
 // ---- Public: read a handoff by token (safe fields only) --------------------

@@ -11,6 +11,7 @@ import { LoadError } from "@/components/LoadError";
 import { useLoadState } from "@/lib/useTooLong";
 import i18next from "i18next";
 import { useTranslation } from "react-i18next";
+import { ownerIntakeDate } from "@/lib/intakeDate";
 
 // Remembering — the memorial home for birds that have passed. Reached from the
 // app menu by choice, never from Home (a passed bird leaves the active flock
@@ -36,7 +37,7 @@ function Remembering() {
       if (!u.user) return [] as any[];
       const { data, error } = await supabase
         .from("birds")
-        .select("id, name, species, photo_url, photo_position, acquired_on, intake_date, created_at, passed_at")
+        .select("id, name, species, photo_url, photo_position, acquired_on, intake_date, intake_date_source, created_at, passed_at")
         .eq("owner_id", u.user.id)
         .not("passed_at", "is", null)
         .order("passed_at", { ascending: false });
@@ -100,10 +101,12 @@ function Remembering() {
   );
 }
 
-// "{species} · with you {years}" — the span from when they joined (acquired /
-// intake / record creation) to when they passed.
+// "{species} · with you {years}" — the span from when they joined to when they
+// passed. Only dates the owner entered: came home (acquired_on), else a "came
+// to you" date that wasn't set automatically. Not the record's creation day,
+// which says when the app met them, not the owner. With neither: "always".
 function memorialSubtitle(b: any): string {
-  const start = b.acquired_on ?? b.intake_date ?? b.created_at;
+  const start = b.acquired_on ?? ownerIntakeDate(b);
   const span = withYouSpan(start, b.passed_at);
   return b.species
     ? i18next.t("remembering.speciesWithYou", "{{species}} · with you {{span}}", { species: speciesLabel(i18next.t, b.species), span })

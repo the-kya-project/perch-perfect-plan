@@ -10,11 +10,12 @@ import { completePdfHandoff } from "@/lib/handoff.functions";
 import { pdfHandoffFailedText } from "@/lib/i18n/serverErrors";
 import { toast } from "sonner";
 import { Printer, Share2, Loader2, AlertTriangle } from "lucide-react";
-import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaField, KyaPrimaryButton, KyaSecondaryButton, KyaSheet } from "@/components/kya";
+import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaField, KyaLink, KyaPrimaryButton, KyaSecondaryButton, KyaSheet } from "@/components/kya";
 import { PageHeader, useGoBack } from "@/components/headers";
 import { isNativeApp } from "@/lib/nativeApp";
 import { formatLocalDate } from "@/lib/dates";
 import { parseCalendarDate } from "@/lib/localDay";
+import { ownerIntakeDate } from "@/lib/intakeDate";
 import i18next from "i18next";
 import { useTranslation } from "react-i18next";
 
@@ -59,7 +60,7 @@ function ExportRecord() {
     queryFn: async () => {
       const { data: u } = await getLocalUser();
       const { data } = await supabase.from("birds")
-        .select("name, species, sex, age, birth_date, microchip, band_number, origin, medications, medical_conditions, acquired_on, intake_date, is_foster, owner_id")
+        .select("name, species, sex, age, birth_date, microchip, band_number, origin, medications, medical_conditions, acquired_on, intake_date, intake_date_source, is_foster, owner_id")
         .eq("id", birdId).maybeSingle();
       return { row: data as any, uid: u.user?.id ?? null };
     },
@@ -107,11 +108,13 @@ function ExportRecord() {
     [t("exportRecord.species", "Species"), row?.species ? speciesLabel(t, row.species) : null], [t("exportRecord.sex", "Sex"), row?.sex ? sexLabel(row.sex) : null], [t("exportRecord.age", "Age"), birdAgeLabel(t, row)],
     [t("exportRecord.microchip", "Microchip"), row?.microchip ?? null], [t("exportRecord.band", "Band"), row?.band_number ?? null], [t("exportRecord.origin", "Origin"), row?.origin ?? null],
   ];
-  // When the bird came home (birds.acquired_on); a foster without one falls
-  // back to its intake date. Left out when neither is set. intake_date alone
-  // isn't enough: new birds used to save it as their creation day.
-  const cameToYou = row?.acquired_on || (row?.is_foster ? row?.intake_date : null);
-  if (cameToYou) identity.push([t("exportRecord.cameToYou", "Came to you"), fmtDate(cameToYou)]);
+  // When the bird came home (birds.acquired_on), else the intake date — but
+  // only one the owner entered. New birds used to save their creation day as
+  // the intake date automatically (intake_date_source 'auto'); that one is
+  // never shown or handed on. Missing: "Not added", with an Add link to the
+  // identity editor that stays off the PDF and the shared text.
+  const cameToYou = row?.acquired_on || ownerIntakeDate(row);
+  const cameToYouLabel = t("exportRecord.cameToYou", "Came to you");
   const dietText = buildDiet(plan);
   const meds = [
     val(row?.medications) && t("exportRecord.medicationsLine", "Medications: {{value}}", { value: row.medications.trim() }),
@@ -130,7 +133,12 @@ function ExportRecord() {
   // honest — whatever the adopter receives is what the page shows — and avoids
   // a second, drift-prone serialiser for the same record.
   async function shareRecord() {
-    const text = document.getElementById("export-sheet")?.innerText?.trim() ?? "";
+    // Screen-only controls (the "Add" link) stay out of the shared text.
+    const sheet = document.getElementById("export-sheet");
+    const screenOnly = Array.from(sheet?.querySelectorAll<HTMLElement>("[data-noprint]") ?? []);
+    screenOnly.forEach((el) => { el.style.display = "none"; });
+    const text = sheet?.innerText?.trim() ?? "";
+    screenOnly.forEach((el) => { el.style.display = ""; });
     if (!text) { toast.error(t("exportRecord.nothingToShare", "Nothing to share yet — give the record a moment to load.")); return; }
     if (navigator.share) {
       try {
@@ -188,6 +196,19 @@ function ExportRecord() {
                   <dd className={`m-0 text-[14px] ${v ? "" : "italic"}`} style={v ? undefined : { color: K.quiet }}>{v ?? none()}</dd>
                 </div>
               ))}
+              <div>
+                <dt className="text-[12.5px] font-[700]" style={{ color: K.quiet }}>{cameToYouLabel}</dt>
+                {cameToYou ? (
+                  <dd className="m-0 text-[14px]">{fmtDate(cameToYou)}</dd>
+                ) : (
+                  <dd className="m-0 flex flex-wrap items-center gap-x-2 text-[14px]">
+                    <span className="italic" style={{ color: K.quiet }}>{t("exportRecord.notAdded", "Not added")}</span>
+                    <span data-noprint>
+                      <KyaLink onClick={() => navigate({ to: "/birds/$birdId/identity", params: { birdId }, search: { edit: 1 } })}>{t("exportRecord.add", "Add")}</KyaLink>
+                    </span>
+                  </dd>
+                )}
+              </div>
             </dl>
           </Section>
 
