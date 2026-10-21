@@ -338,7 +338,7 @@ function Dashboard() {
             ))}
 
             <section className="space-y-3" data-coach="owner-flock">
-              <SectionHeaderCTA title={showHouseholds ? t("dashboard.yourBirds", "Your birds") : t("dashboard.yourFlock", "Your flock")} ctaLabel={t("dashboard.addABirdLink", "+ Add a bird")} onCta={() => navigate({ to: "/birds/new" })} />
+              <SectionHeaderCTA title={showHouseholds ? t("dashboard.yourBirds", "Your birds today") : t("dashboard.yourFlock", "Your flock today")} ctaLabel={t("dashboard.addABirdLink", "+ Add a bird")} onCta={() => navigate({ to: "/birds/new" })} />
               {flockBirds.length === 0 ? (
                 <p className="px-1 text-[14px]" style={{ color: K.quiet }}>{t("dashboard.noBirdsYet", "No birds yet — start with your first.")}</p>
               ) : (
