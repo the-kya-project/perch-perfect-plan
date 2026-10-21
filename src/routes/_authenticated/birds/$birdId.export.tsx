@@ -14,6 +14,7 @@ import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaField, KyaPrimaryButton, K
 import { PageHeader, useGoBack } from "@/components/headers";
 import { isNativeApp } from "@/lib/nativeApp";
 import { formatLocalDate } from "@/lib/dates";
+import { parseCalendarDate } from "@/lib/localDay";
 import i18next from "i18next";
 import { useTranslation } from "react-i18next";
 
@@ -58,7 +59,7 @@ function ExportRecord() {
     queryFn: async () => {
       const { data: u } = await getLocalUser();
       const { data } = await supabase.from("birds")
-        .select("name, species, sex, age, birth_date, microchip, band_number, origin, medications, medical_conditions, intake_date, is_foster, owner_id")
+        .select("name, species, sex, age, birth_date, microchip, band_number, origin, medications, medical_conditions, acquired_on, intake_date, is_foster, owner_id")
         .eq("id", birdId).maybeSingle();
       return { row: data as any, uid: u.user?.id ?? null };
     },
@@ -77,7 +78,7 @@ function ExportRecord() {
   });
   const { data: moments } = useQuery({
     queryKey: ["export-moments", birdId],
-    queryFn: async () => ((await supabase.from("moments").select("title, on_date").eq("bird_id", birdId).order("on_date", { ascending: true }).limit(100)).data ?? []) as { title: string; on_date: string }[],
+    queryFn: async () => ((await supabase.from("moments").select("title, on_date").eq("bird_id", birdId).order("on_date", { ascending: true }).limit(100)).data ?? []) as { title: string; on_date: string | null }[],
   });
 
   const row = bird?.row;
@@ -105,8 +106,12 @@ function ExportRecord() {
   const identity: [string, string | null][] = [
     [t("exportRecord.species", "Species"), row?.species ? speciesLabel(t, row.species) : null], [t("exportRecord.sex", "Sex"), row?.sex ? sexLabel(row.sex) : null], [t("exportRecord.age", "Age"), birdAgeLabel(t, row)],
     [t("exportRecord.microchip", "Microchip"), row?.microchip ?? null], [t("exportRecord.band", "Band"), row?.band_number ?? null], [t("exportRecord.origin", "Origin"), row?.origin ?? null],
-    [t("exportRecord.cameToYou", "Came to you"), row?.intake_date ? fmtDate(row.intake_date) : null],
   ];
+  // When the bird came home (birds.acquired_on); a foster without one falls
+  // back to its intake date. Left out when neither is set. intake_date alone
+  // isn't enough: new birds used to save it as their creation day.
+  const cameToYou = row?.acquired_on || (row?.is_foster ? row?.intake_date : null);
+  if (cameToYou) identity.push([t("exportRecord.cameToYou", "Came to you"), fmtDate(cameToYou)]);
   const dietText = buildDiet(plan);
   const meds = [
     val(row?.medications) && t("exportRecord.medicationsLine", "Medications: {{value}}", { value: row.medications.trim() }),
@@ -201,7 +206,7 @@ function ExportRecord() {
           <Section label={t("exportRecord.moments", "Moments")}>
             {moments && moments.length ? (
               <ul className="m-0 list-none space-y-1 p-0 text-[14px]">
-                {moments.map((m, i) => <li key={i} className="flex justify-between gap-3"><span>{m.title}</span><span className="shrink-0" style={{ color: K.quiet }}>{fmtDate(m.on_date)}</span></li>)}
+                {moments.map((m, i) => <li key={i} className="flex justify-between gap-3"><span>{m.title}</span><span className="shrink-0" style={{ color: K.quiet }}>{m.on_date ? fmtDate(m.on_date) : t("exportRecord.noDate", "No date")}</span></li>)}
               </ul>
             ) : <Value text={null} />}
           </Section>
@@ -288,7 +293,11 @@ function Value({ text, multiline }: { text: string | null | undefined; multiline
 }
 function cap(s: string): string { return s.charAt(0).toUpperCase() + s.slice(1); }
 function val(s: unknown): s is string { return typeof s === "string" && s.trim().length > 0; }
-function fmtDate(iso: string): string { return formatLocalDate(new Date(iso), { year: "numeric", month: "short", day: "numeric" }); }
+// Date-only values (intake, came-home, moments) read as local calendar days.
+function fmtDate(iso: string): string {
+  const d = parseCalendarDate(iso);
+  return d ? formatLocalDate(d, { year: "numeric", month: "short", day: "numeric" }) : "";
+}
 
 function buildDiet(plan: any): string | null {
   if (!plan) return null;

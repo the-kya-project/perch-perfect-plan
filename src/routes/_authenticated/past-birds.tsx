@@ -7,6 +7,7 @@ import { Feather, Loader2 } from "lucide-react";
 import { K, KyaPage, KyaBody, KyaCard, KyaIconTile, KyaTag, KyaSecondaryButton } from "@/components/kya";
 import { PageHeader } from "@/components/headers";
 import { formatLocalDate } from "@/lib/dates";
+import { parseCalendarDate } from "@/lib/localDay";
 import i18next from "i18next";
 import { useTranslation } from "react-i18next";
 
@@ -103,6 +104,8 @@ function withYouLabel(intake: string | null, departed: string): string {
     ? i18next.t("pastBirds.withYouFromTo", "With you from {{from}} to {{to}}", { from: fmt(intake), to: fmt(departed) })
     : i18next.t("pastBirds.withYouUntil", "With you until {{date}}", { date: fmt(departed) });
 }
+// intake_date / departed_on are date-only: read them as local calendar days.
 function fmt(iso: string): string {
-  return formatLocalDate(new Date(iso), { year: "numeric", month: "short", day: "numeric" });
+  const d = parseCalendarDate(iso);
+  return d ? formatLocalDate(d, { year: "numeric", month: "short", day: "numeric" }) : "";
 }

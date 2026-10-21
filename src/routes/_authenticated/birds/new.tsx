@@ -124,7 +124,10 @@ function NewBird() {
       photo_url: photoRef,
       photo_position: photoRef ? photoPos : null,
       is_foster: isFoster,
-      intake_date: intakeDate || null,
+      // Only a foster has an intake date. The field defaults to today and is
+      // hidden for other birds, so saving it for them stamped every bird's
+      // creation day as "Came to you".
+      intake_date: isFoster ? intakeDate || null : null,
       setup_complete: false,
       setup_step: encodeSetupStep(targetStep),
     } as any).select().single();
