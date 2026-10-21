@@ -20,7 +20,6 @@ import { MemberContextBanner } from "@/components/MemberContextBanner";
 import { PhotoCropper } from "@/components/PhotoCropper";
 import { useServerFn } from "@tanstack/react-start";
 import { getPendingHandoff, cancelHandoff, makePermanent } from "@/lib/handoff.functions";
-import { IconTile } from "@/components/system";
 import { BirdPhotoSheet } from "@/components/BirdPhotoSheet";
 import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 import { toast } from "sonner";
@@ -31,7 +30,7 @@ import {
 } from "lucide-react";
 import { formatLocalDate } from "@/lib/dates";
 import { useDailyCheckToday, type BirdToday } from "@/lib/dailyCheck";
-import { K, KyaPage, KyaCard, KyaHeading, KyaIconButton, KyaLink, KyaPrimaryButton, KyaSecondaryButton, KyaRow, KyaTag, KyaAvatarStack, KyaSheet, KyaLabel } from "@/components/kya";
+import { K, KyaPage, KyaCard, KyaHeading, KyaIconButton, KyaLink, KyaPrimaryButton, KyaSecondaryButton, KyaRow, KyaTag, KyaAvatarStack, KyaSheet, KyaLabel, KyaIconTile } from "@/components/kya";
 import { HeaderPill } from "@/components/headers";
 import { daysAgo } from "@/lib/scanConcern";
 import { useCarePlanStatus } from "@/lib/useCarePlanStatus";
@@ -396,7 +395,7 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
         <KyaHeading size={21} className="px-4 pb-1 pt-4">{t("birdRecord.recordHeading", "{{name}}'s record", { name })}</KyaHeading>
         {bird?.setup_complete && (
           <KyaRow
-            leading={<IconTile size={38} icon={<ClipboardList className="size-5" />} />}
+            leading={<KyaIconTile size={38}><ClipboardList className="size-5" /></KyaIconTile>}
             title={t("birdRecord.carePlan", "Care plan")}
             detail={t("birdRecord.carePlanSections", "Food, health, behavior, tips and day")}
             trailing={planStatus.loaded
@@ -408,12 +407,12 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
             onClick={() => navigate({ to: "/birds/$birdId/plan", params: { birdId } })}
           />
         )}
-        <KyaRow leading={<IconTile size={38} icon={<Scale className="size-5" />} />} title={t("birdRecord.weight", "Weight")} detail={weightCount > 0 ? (weightCount === 1 ? t("birdRecord.entryCount", "{{n}} entry", { n: weightCount }) : t("birdRecord.entriesCount", "{{n}} entries", { n: weightCount })) : t("birdRecord.notStarted", "Not started")} onClick={() => navigate({ to: "/birds/$birdId/weight", params: { birdId } })} />
-        <KyaRow leading={<IconTile size={38} icon={<BookOpen className="size-5" />} />} title={t("birdRecord.journal", "Journal")} detail={t("birdRecord.moltMedsVetVisits", "Molt, meds, vet visits")} onClick={() => navigate({ to: "/birds/$birdId/journal", params: { birdId } })} />
-        <KyaRow leading={<IconTile size={38} icon={<IdCard className="size-5" />} />} title={t("birdRecord.identity", "Identity")} detail={t("birdRecord.chipBandHatchDateOrigin", "Chip, band, hatch date, origin, photo")} onClick={() => navigate({ to: "/birds/$birdId/identity", params: { birdId } })} />
-        <KyaRow leading={<IconTile size={38} icon={<CalendarHeart className="size-5" />} />} title={t("birdRecord.moments", "Moments")} detail={t("birdRecord.markTheDaysWorthRemembering", "Mark the days worth remembering")} onClick={() => navigate({ to: "/birds/$birdId/moments", params: { birdId } })} />
-        <KyaRow leading={<IconTile size={38} icon={<Siren className="size-5" />} />} title={t("birdRecord.emergencyInfo", "Emergency info")} detail={emCustom ? t("birdRecord.emergencyCustom", "Custom for {{name}}", { name }) : t("birdRecord.emergencyShared", "Uses your emergency info")} onClick={() => navigate({ to: "/birds/$birdId/emergency", params: { birdId } })} />
-        <KyaRow leading={<IconTile size={38} icon={<FileText className="size-5" />} />} title={t("birdRecord.vetSummary", "Vet summary")} detail={t("birdRecord.oneCleanSheetForThe", "One clean sheet for the vet")} onClick={() => navigate({ to: "/birds/$birdId/vet-summary", params: { birdId } })} last />
+        <KyaRow leading={<KyaIconTile size={38}><Scale className="size-5" /></KyaIconTile>} title={t("birdRecord.weight", "Weight")} detail={weightCount > 0 ? (weightCount === 1 ? t("birdRecord.entryCount", "{{n}} entry", { n: weightCount }) : t("birdRecord.entriesCount", "{{n}} entries", { n: weightCount })) : t("birdRecord.notStarted", "Not started")} onClick={() => navigate({ to: "/birds/$birdId/weight", params: { birdId } })} />
+        <KyaRow leading={<KyaIconTile size={38}><BookOpen className="size-5" /></KyaIconTile>} title={t("birdRecord.journal", "Journal")} detail={t("birdRecord.moltMedsVetVisits", "Molt, meds, vet visits")} onClick={() => navigate({ to: "/birds/$birdId/journal", params: { birdId } })} />
+        <KyaRow leading={<KyaIconTile size={38}><IdCard className="size-5" /></KyaIconTile>} title={t("birdRecord.identity", "Identity")} detail={t("birdRecord.chipBandHatchDateOrigin", "Chip, band, hatch date, origin, photo")} onClick={() => navigate({ to: "/birds/$birdId/identity", params: { birdId } })} />
+        <KyaRow leading={<KyaIconTile size={38}><CalendarHeart className="size-5" /></KyaIconTile>} title={t("birdRecord.moments", "Moments")} detail={t("birdRecord.markTheDaysWorthRemembering", "Mark the days worth remembering")} onClick={() => navigate({ to: "/birds/$birdId/moments", params: { birdId } })} />
+        <KyaRow leading={<KyaIconTile size={38}><Siren className="size-5" /></KyaIconTile>} title={t("birdRecord.emergencyInfo", "Emergency info")} detail={emCustom ? t("birdRecord.emergencyCustom", "Custom for {{name}}", { name }) : t("birdRecord.emergencyShared", "Uses your emergency info")} onClick={() => navigate({ to: "/birds/$birdId/emergency", params: { birdId } })} />
+        <KyaRow leading={<KyaIconTile size={38}><FileText className="size-5" /></KyaIconTile>} title={t("birdRecord.vetSummary", "Vet summary")} detail={t("birdRecord.oneCleanSheetForThe", "One clean sheet for the vet")} onClick={() => navigate({ to: "/birds/$birdId/vet-summary", params: { birdId } })} last />
       </KyaCard>
 
       {/* About [bird] — Species / Age / Hatch date / Sex / Flight (owner-editable). */}
