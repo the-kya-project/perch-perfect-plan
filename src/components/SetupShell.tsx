@@ -2,6 +2,7 @@ import { ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { KyaHeading, KyaPrimaryButton, KyaSecondaryButton, KyaSheet } from "@/components/kya";
+import { ArrowLeft } from "lucide-react";
 
 export { SETUP_STEPS, TOTAL_STEPS, NUMBERED_STEPS, setupStepNumber, type SetupStepKey } from "@/lib/setupSteps";
 import { SETUP_STEPS, setupStepNumber, type SetupStepKey } from "@/lib/setupSteps";
@@ -31,7 +32,6 @@ const STEP_PILL: Partial<Record<SetupStepKey, SetupPill>> = {
   clips: "tips",
   day: "day",
 };
-const PILL_STEP: Partial<Record<SetupPill, SetupStepKey>> = { food: "food", health: "health", behavior: "personality", tips: "clips", day: "day" };
 
 export function SetupShell({
   step,
@@ -39,7 +39,6 @@ export function SetupShell({
   subtitle,
   children,
   birdName,
-  onNavigateStep,
   onExit,
   exitLabel,
   exitConfirmTitle: exitConfirmTitleProp,
@@ -69,14 +68,13 @@ export function SetupShell({
   children: ReactNode;
   birdName?: string;
   birdSpecies?: string;
-  onNavigateStep?: (target: number) => void; // pill navigation (1-indexed)
   onExit?: () => void; // Back on the first step -> bird profile
   exitLabel?: string;
   exitConfirmTitle?: string;
   exitConfirmBody?: string;
   exitConfirmCta?: string;
   isDirty?: boolean;
-  onBack?: () => void; // header Back: previous step
+  onBack?: () => void; // footer Back: previous step
   onNext?: () => void;
   onSaveAndExit?: () => void;
   nextLabel?: string;
@@ -129,6 +127,9 @@ export function SetupShell({
       <p role="status" className="m-0 mb-2.5 text-center text-[14px] text-[#3d4f45]">{footerNote}</p>
     ))}
     <div className="flex items-center gap-3">
+      {onBack && !backDisabled && (
+        <SetupTextButton onClick={onBack} disabled={saving} icon={<ArrowLeft className="size-4" aria-hidden="true" />}>{t("setupShell.back", "Back")}</SetupTextButton>
+      )}
       {onSkip ? (
         <SetupTextButton onClick={onSkip} disabled={saving}>{t("setupShell.skipForNow", "Skip for now")}</SetupTextButton>
       ) : onSaveAndExit && (
@@ -153,18 +154,15 @@ export function SetupShell({
         title={displayTitle}
         intro={subtitle}
         // Task rule: the top-left button closes the task (asking first when
-        // there are unsaved changes). Earlier steps stay one tap away in the
-        // step pills.
+        // there are unsaved changes). Back to the previous step is in the footer.
         onBack={handleExit}
         backLabel={exitLabel ?? t("setupFrame.close", "Close")}
-        onPill={onNavigateStep ? (p) => { const key = PILL_STEP[p]; if (key) onNavigateStep(setupStepNumber(key)); } : undefined}
         footer={footer}
         tinted={tinted}
         allDone={current?.key === "review" ? t("setupShell.allStepsDone", "All 6 steps done") : undefined}
         home={homePill ? {
           current: homePill,
           subline: homeSubline ?? t("setupShell.sharedByEveryBird", "Shared by every bird"),
-          onPill: onNavigateStep ? (p) => onNavigateStep(setupStepNumber(p === "reminders" ? "environment" : "emergency")) : undefined,
         } : undefined}
       >
         {children}

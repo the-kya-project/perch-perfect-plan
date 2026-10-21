@@ -2,7 +2,7 @@ import { friendlyError } from "@/lib/errorMessage";
 import { basicsDone, setupStarted, resumeStep } from "@/lib/setupProgress";
 import { setupStepNumber } from "@/components/SetupShell";
 import { speciesLabel } from "@/lib/speciesLabel";
-import { ageLabel } from "@/components/BirdPickers";
+import { birdAgeLabel } from "@/lib/birdAge";
 import { useTranslation, Trans } from "react-i18next";
 import i18next, { type TFunction } from "i18next";
 import { createFileRoute, useNavigate, useLocation } from "@tanstack/react-router";
@@ -141,7 +141,7 @@ function BirdNoAccess() {
           {t("birdRecord.youMayHaveHandedThis", "You may have handed this bird off, or your access may have been removed. If you think that's wrong, ask whoever looks after the record now.")}
         </p>
         <div className="mt-5">
-          <PrimaryButton tone="ink" onPress={() => navigate({ to: "/dashboard" })}>
+          <PrimaryButton tone="sunflower" onPress={() => navigate({ to: "/dashboard" })}>
             {t("birdRecord.backToYourFlock", "Back to your flock")}
           </PrimaryButton>
         </div>
@@ -175,7 +175,7 @@ function BirdRecordHero({ birdId }: { birdId: string }) {
   const identity = [
     bird?.species ? speciesLabel(t, bird.species) : null,
     sexKey === "male" ? t("birdRecord.male", "Male") : sexKey === "female" ? t("birdRecord.female", "Female") : null,
-    bird?.age ? t("birdRecord.ageOld", "{{age}} old", { age: ageLabel(t, bird.age) }) : null,
+    birdAgeLabel(t, bird) ? t("birdRecord.ageOld", "{{age}} old", { age: birdAgeLabel(t, bird) }) : null,
     bird?.is_foster && bird?.intake_date ? t("birdRecord.withYouSince", "With you since {{date}}", { date: fmtMonthYear(bird.intake_date) }) : null,
   ].filter(Boolean).join(" · ");
   const [photoSheet, setPhotoSheet] = useState(false);
@@ -957,7 +957,7 @@ function BasicInfoCard({ birdId, bird, name, editable = true }: { birdId: string
 
   // null = not added yet (shows "Not added" and an Add link).
   const speciesView = (bird.species?.trim() && speciesLabel(t, bird.species.trim())) || null;
-  const ageView = (bird.age?.trim() && ageLabel(t, bird.age.trim())) || null;
+  const ageView = birdAgeLabel(t, bird);
   // Setup saves "Male"/"Female"; look up case-insensitively.
   const sexKey = (bird.sex ?? "").toLowerCase();
   const sexView = sexKey === "male" ? t("birdRecord.male", "Male") : sexKey === "female" ? t("birdRecord.female", "Female") : sexKey === "unknown" ? t("birdRecord.unknown", "Unknown") : (bird.sex || null);
@@ -970,7 +970,7 @@ function BasicInfoCard({ birdId, bird, name, editable = true }: { birdId: string
     : flightKey !== "unknown" && FLIGHT_LABEL[flightKey] ? FLIGHT_LABEL[flightKey]
     : null;
   const hatchView = bird.birth_date
-    ? formatLocalDate(new Date(bird.birth_date), { month: "short", day: "numeric", year: "numeric" })
+    ? formatLocalDate(new Date(`${bird.birth_date}T12:00:00`), { month: "short", day: "numeric", year: "numeric" })
     : null;
   const rows: [string, string | null][] = [
     [t("birdRecord.species", "Species"), speciesView],

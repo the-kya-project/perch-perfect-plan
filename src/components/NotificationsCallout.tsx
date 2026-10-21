@@ -90,7 +90,7 @@ export function NotificationsCallout({
               {t("notificationsCallout.turnOnRemindersBody", "We'll let you know when it's time to weigh {{bird}} and when a check-in is due. You can change this anytime.", { bird: birdLabel })}
             </p>
             <div className="mt-3 flex items-center gap-2">
-              <PrimaryButton tone="ink" full={false} onPress={onEnable} disabled={busy}>
+              <PrimaryButton tone="sunflower" full={false} onPress={onEnable} disabled={busy}>
                 {/* Shorter beside "Not now" so the pair fits one line on a phone. */}
                 {onDismiss ? t("notificationsCallout.turnOn", "Turn on") : t("notificationsCallout.turnOnNotifications", "Turn on notifications")}
               </PrimaryButton>
@@ -118,7 +118,7 @@ export function NotificationsCallout({
             {((state.canOpenSettings && onOpenSettings) || notNow) && (
               <div className="mt-3 flex items-center gap-2">
                 {state.canOpenSettings && onOpenSettings && (
-                  <PrimaryButton tone="ink" full={false} onPress={onOpenSettings} disabled={busy}>
+                  <PrimaryButton tone="sunflower" full={false} onPress={onOpenSettings} disabled={busy}>
                     {t("notificationsCallout.openSettings", "Open settings")}
                   </PrimaryButton>
                 )}

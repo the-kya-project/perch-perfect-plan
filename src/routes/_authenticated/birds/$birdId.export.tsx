@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { speciesLabel } from "@/lib/speciesLabel";
-import { ageLabel } from "@/components/BirdPickers";
+import { birdAgeLabel } from "@/lib/birdAge";
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
@@ -58,7 +58,7 @@ function ExportRecord() {
     queryFn: async () => {
       const { data: u } = await getLocalUser();
       const { data } = await supabase.from("birds")
-        .select("name, species, sex, age, microchip, band_number, origin, medications, medical_conditions, intake_date, is_foster, owner_id")
+        .select("name, species, sex, age, birth_date, microchip, band_number, origin, medications, medical_conditions, intake_date, is_foster, owner_id")
         .eq("id", birdId).maybeSingle();
       return { row: data as any, uid: u.user?.id ?? null };
     },
@@ -103,7 +103,7 @@ function ExportRecord() {
   }
 
   const identity: [string, string | null][] = [
-    [t("exportRecord.species", "Species"), row?.species ? speciesLabel(t, row.species) : null], [t("exportRecord.sex", "Sex"), row?.sex ? sexLabel(row.sex) : null], [t("exportRecord.age", "Age"), row?.age ? ageLabel(t, row.age) : null],
+    [t("exportRecord.species", "Species"), row?.species ? speciesLabel(t, row.species) : null], [t("exportRecord.sex", "Sex"), row?.sex ? sexLabel(row.sex) : null], [t("exportRecord.age", "Age"), birdAgeLabel(t, row)],
     [t("exportRecord.microchip", "Microchip"), row?.microchip ?? null], [t("exportRecord.band", "Band"), row?.band_number ?? null], [t("exportRecord.origin", "Origin"), row?.origin ?? null],
     [t("exportRecord.cameToYou", "Came to you"), row?.intake_date ? fmtDate(row.intake_date) : null],
   ];

@@ -35,7 +35,8 @@
     "test:auth-email-hook": "npx --yes vite-node scripts/auth-email-hook.test.ts",
     "test:email-clicks": "npx --yes vite-node scripts/email-clicks.test.ts",
     "test:app-links": "npx --yes vite-node scripts/app-links.test.ts",
-    "test:together-since": "npx --yes vite-node scripts/together-since.test.ts"
+    "test:together-since": "npx --yes vite-node scripts/together-since.test.ts",
+    "test:bird-age": "npx --yes vite-node scripts/bird-age.test.ts"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.2",

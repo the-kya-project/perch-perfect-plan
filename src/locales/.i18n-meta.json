@@ -1011,6 +1011,9 @@
     "birdMoments.hatchedDay": {
       "stamp": "76c2504d90451a56"
     },
+    "birdMoments.hatchedOn": {
+      "stamp": "8053132827e4bff8"
+    },
     "birdMoments.lessThanMonthTogether": {
       "stamp": "5e1c2ec6904b6e5d"
     },
@@ -1121,6 +1124,9 @@
     },
     "birdMoments.turns": {
       "stamp": "00fb6728e28457bd"
+    },
+    "birdMoments.turnsOn": {
+      "stamp": "dfaf08000f319384"
     },
     "birdMoments.yearly": {
       "stamp": "146bdfe4936cd237"
@@ -5883,6 +5889,18 @@
     "home.state.dueForWeighIn": {
       "stamp": "b2b06e16a7999e1b"
     },
+    "home.state.dueForWeighInCount_one": {
+      "stamp": "4a855aae4180785c"
+    },
+    "home.state.dueForWeighInCount_other": {
+      "stamp": "1ad9cd10ff9c19f6"
+    },
+    "home.state.dueForWeighInThree": {
+      "stamp": "c15ee882b6cab7ae"
+    },
+    "home.state.dueForWeighInTwo": {
+      "stamp": "b0068e97e77c3667"
+    },
     "home.state.momentIs": {
       "stamp": "8c89eeb2ce477335"
     },
@@ -8151,35 +8169,14 @@
     "setupFrame.close": {
       "stamp": "d981ee660d866d8c"
     },
-    "setupFrame.done": {
-      "stamp": "08103d4ee528bd92"
-    },
-    "setupFrame.newBird": {
-      "stamp": "bdf86184291c6b49"
-    },
-    "setupFrame.pillDay": {
-      "stamp": "d3234f936e818a35"
-    },
     "setupFrame.pillDetails": {
       "stamp": "67a6143d0380d26d"
     },
-    "setupFrame.pillEmergency": {
-      "stamp": "13dc8bdb952a70e3"
-    },
-    "setupFrame.pillPage": {
-      "stamp": "3ec62addfed153c8"
-    },
-    "setupFrame.pillReminders": {
-      "stamp": "591dc7e3ea0c8ffa"
-    },
-    "setupFrame.pillTips": {
-      "stamp": "b5599f17ff594655"
-    },
-    "setupFrame.settingUp": {
-      "stamp": "9b3438f9000b0f04"
-    },
     "setupShell.allStepsDone": {
       "stamp": "319be695823ed88a"
+    },
+    "setupShell.back": {
+      "stamp": "5001815e48b3af8b"
     },
     "setupShell.cancel": {
       "stamp": "06c80f8b6f9f2b3b"
@@ -10095,6 +10092,9 @@
     "vetSummary.handling": {
       "stamp": "8673cafcd7261475"
     },
+    "vetSummary.hatchDate": {
+      "stamp": "4145fc39b1020f6b"
+    },
     "vetSummary.identity": {
       "stamp": "34ae6a197bc7891c"
     },
@@ -10160,6 +10160,9 @@
     },
     "vetSummary.noneOnFile": {
       "stamp": "ca04031848372e34"
+    },
+    "vetSummary.notAdded": {
+      "stamp": "369938ad2bbc6c71"
     },
     "vetSummary.origin": {
       "stamp": "d8511d5921012052"

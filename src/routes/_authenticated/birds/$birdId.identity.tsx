@@ -8,7 +8,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Pencil } from "lucide-react";
 import { PhotoCropper } from "@/components/PhotoCropper";
-import { OptionalDate, ageLabel } from "@/components/BirdPickers";
+import { OptionalDate } from "@/components/BirdPickers";
+import { birdAgeLabel } from "@/lib/birdAge";
+import { ageFromBirthDate } from "@/lib/parrot-data";
 import { useBirdPhotos } from "@/lib/useBirdPhotos";
 import { useCapability } from "@/lib/useCapability";
 import { signBirdPhoto, persistBirdPhoto } from "@/lib/birdPhoto";
@@ -173,7 +175,7 @@ function IdentityFacet() {
               <div className="min-w-0">
                 <p className="m-0 truncate text-[17px] font-[700]" style={{ color: K.forest }}>{bird.name}</p>
                 <p className="m-0 mt-0.5 truncate text-[14px]" style={{ color: K.quiet }}>
-                  {[bird.species ? speciesLabel(t, bird.species) : t("planEditor.parrot", "Parrot"), bird.age ? ageLabel(t, bird.age) : null].filter(Boolean).join(" · ")}
+                  {[bird.species ? speciesLabel(t, bird.species) : t("planEditor.parrot", "Parrot"), birdAgeLabel(t, bird)].filter(Boolean).join(" · ")}
                 </p>
               </div>
             </KyaCard>
@@ -274,7 +276,8 @@ function IdentityForm({ birdId, bird, onClose, onSaved }: { birdId: string; bird
       const { error } = await supabase.from("birds").update({
         name: clean(f.name) ?? bird.name, // name is required — keep the old one if blanked
         species: clean(f.species),
-        age: clean(f.age),
+        // A hatch date sets the age, so the two never disagree.
+        age: f.birth_date ? ageFromBirthDate(f.birth_date) : clean(f.age),
         sex: clean(f.sex),
         sex_method: clean(f.sex_method),
         flight_status: f.flight_status || "unknown",
@@ -416,8 +419,9 @@ function fmtDate(iso: string): string {
 function approxAge(t: TFunction, iso: string): string {
   const days = Math.floor((Date.now() - +new Date(`${iso}T12:00:00`)) / 86_400_000);
   if (days < 0) return "—";
-  const years = Math.floor(days / 365);
-  if (years >= 1) return years === 1 ? t("birdPickers.ageYearsOne", "{{n}} year", { n: years }) : t("birdPickers.ageYearsOther", "{{n}} years", { n: years });
+  // Full years come from the shared age helper, so this matches every other age.
+  const years = ageFromBirthDate(iso);
+  if (years && years !== "<1 year") return birdAgeLabel(t, { birth_date: iso })!;
   const months = Math.floor(days / 30);
   if (months >= 1) return months === 1 ? t("birdIdentity.monthsOne", "{{n}} month", { n: months }) : t("birdIdentity.monthsOther", "{{n}} months", { n: months });
   return days === 1 ? t("birdIdentity.daysOne", "{{n}} day", { n: days }) : t("birdIdentity.daysOther", "{{n}} days", { n: days });

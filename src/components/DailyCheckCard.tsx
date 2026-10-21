@@ -90,8 +90,8 @@ function PrimaryBtn({ children, onClick, disabled, tall = true, className = "" }
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`flex w-full items-center justify-center rounded-[12px] border-0 text-[15px] font-[500] text-white disabled:opacity-50 ${tall ? "min-h-[50px]" : "min-h-[46px]"} ${className}`}
-      style={{ background: C.ink }}
+      className={`flex w-full items-center justify-center rounded-full border-2 text-[15px] font-[700] disabled:opacity-45 ${tall ? "min-h-[52px]" : "min-h-[46px]"} ${className}`}
+      style={{ background: "#f2b33d", borderColor: C.ink, color: C.ink }}
     >
       {children}
     </button>

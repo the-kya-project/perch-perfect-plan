@@ -88,7 +88,7 @@ check("big weight change is flagged, small is not", () => {
   assert.equal(bigWeightChange(null, 112), null);
 });
 
-check("welcome line names the longest-overdue bird", () => {
+check("welcome line names every bird due for a weigh-in, like Updates", () => {
   const now = new Date("2026-10-19T09:00:00");
   const ago = (d: number) => new Date(now.getTime() - d * 86_400_000).toISOString();
   const birds = [
@@ -101,7 +101,16 @@ check("welcome line names the longest-overdue bird", () => {
     ["b", [{ bird_id: "b", grams: 1100, measured_at: ago(15) } as WeightEntry]],
     ["c", [{ bird_id: "c", grams: 412, measured_at: ago(1) } as WeightEntry]],
   ]);
-  assert.equal(buildHomeStateCopy(birds, w, [], [], now), "Max is due for a weigh-in.");
+  assert.equal(buildHomeStateCopy(birds, w, [], [], now), "Buzz and Max are due for a weigh-in.");
+  assert.equal(buildHomeStateCopy(birds.slice(1), w, [], [], now), "Max is due for a weigh-in.");
+  w.set("c", [{ bird_id: "c", grams: 412, measured_at: ago(9) } as WeightEntry]);
+  assert.equal(buildHomeStateCopy(birds, w, [], [], now), "Buzz, Echo, and Max are due for a weigh-in.");
+  const four = [...birds, { id: "d", name: "Kiwi", is_foster: false }] as unknown as HomeBird[];
+  w.set("d", [{ bird_id: "d", grams: 90, measured_at: ago(30) } as WeightEntry]);
+  assert.equal(buildHomeStateCopy(four, w, [], [], now), "4 birds are due for a weigh-in.");
+  // Never weighed: new, not overdue (same as the bell).
+  w.delete("d");
+  assert.equal(buildHomeStateCopy(four, w, [], [], now), "Buzz, Echo, and Max are due for a weigh-in.");
 });
 
 check("your own checks never light the bell; others' new ones do", () => {
