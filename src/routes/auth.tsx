@@ -6,13 +6,15 @@ import { signInWithGoogle, signInWithApple } from "@/lib/nativeOAuth";
 import { isIOSApp } from "@/lib/nativeApp";
 import { lovable } from "@/integrations/lovable";
 import { toast } from "sonner";
-import { ArrowLeft } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { track } from "@/lib/analytics";
 import { captureLead } from "@/lib/captureLead";
 import { attributionMetadata, getFirstTouch } from "@/lib/attribution";
 import { currentLocale } from "@/lib/i18n/ownerLocale";
 import { PENDING_EMAIL_KEY } from "./confirm-email";
-import { InkHero, PrimaryButton, CtaLink, Card } from "@/components/system";
+import { K, KyaLabel, KyaSecondaryButton } from "@/components/kya";
+import { FrontDoorBody, FrontDoorError, FrontDoorHeader, FrontDoorPage, LegalLinks } from "@/components/frontDoor";
+import { CheckEmailView } from "@/components/CheckEmailView";
 import { authErrorMessage } from "@/lib/authErrorMessage";
 import { useTranslation, Trans } from "react-i18next";
 import i18next from "i18next";
@@ -47,6 +49,15 @@ function AuthPage() {
   const [lastName, setLastName] = useState("");
   const [marketingOptIn, setMarketingOptIn] = useState(true);
   const [loading, setLoading] = useState(false);
+  // Which button started the current request, for its spinner.
+  const [busy, setBusy] = useState<"email" | "google" | "apple" | "reset" | null>(null);
+  // Errors show in a card on the page (FrontDoorError), never only as a toast.
+  const [error, setError] = useState<string | null>(null);
+  // Forgot password lives on this page as a step of sign in, not a URL mode:
+  // "forgot" asks for the email, "resetSent" is the check-your-email screen.
+  const [view, setView] = useState<"form" | "forgot" | "resetSent">("form");
+  const [resetCooldown, setResetCooldown] = useState(0);
+  const [resetJustSent, setResetJustSent] = useState(false);
   // Read after mount, not during render: the server can't tell it's rendering
   // for the iOS app, so rendering the Apple button from isIOSApp() directly made
   // the server HTML and the app's first render disagree whenever the app opened
@@ -99,7 +110,9 @@ function AuthPage() {
 
   async function handleEmail(e: React.FormEvent) {
     e.preventDefault();
+    setError(null);
     setLoading(true);
+    setBusy("email");
     try {
       if (mode === "signup") {
         const { data, error } = await supabase.auth.signUp({
@@ -134,6 +147,8 @@ function AuthPage() {
           (!!error && /already\s*(registered|exist)/i.test(error.message ?? "")) ||
           (!error && Array.isArray(identities) && identities.length === 0);
         if (alreadyRegistered) {
+          // The card stays on the sign-in form this lands on (same page).
+          setError(t("auth.emailAlreadyHasAccount", "That email already has an account — sign in instead."));
           toast.error(t("auth.emailAlreadyHasAccount", "That email already has an account — sign in instead."));
           navigate({ to: "/auth", search: { mode: "signin" } });
           return;
@@ -165,7 +180,7 @@ function AuthPage() {
         const attemptsKey = `signin:attempts:${email.toLowerCase()}`;
         const wait = remainingCooldown(cooldownKey);
         if (wait > 0) {
-          toast.error(t("auth.tooManyAttemptsWait", "Too many attempts. Try again in {{wait}}s.", { wait }));
+          setError(t("auth.tooManyAttemptsWait", "Too many attempts. Try again in {{wait}}s.", { wait }));
           return;
         }
         const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -174,9 +189,9 @@ function AuthPage() {
           if (n >= 5) {
             setCooldown(cooldownKey, 60);
             clearAttempts(attemptsKey);
-            toast.error(t("auth.tooManyFailedAttempts", "Too many failed attempts. Try again in 60s, or reset your password."));
+            setError(t("auth.tooManyFailedAttempts", "Too many failed attempts. Try again in 60s, or reset your password."));
           } else {
-            toast.error(authErrorMessage(error));
+            setError(authErrorMessage(error));
           }
           return;
         }
@@ -187,14 +202,17 @@ function AuthPage() {
         navigate({ href: returnTo ?? "/welcome" });
       }
     } catch (err: any) {
-      toast.error(authErrorMessage(err, t("auth.somethingWentWrong", "Something went wrong.")));
+      setError(authErrorMessage(err, t("auth.somethingWentWrong", "Something went wrong.")));
     } finally {
       setLoading(false);
+      setBusy(null);
     }
   }
 
   async function handleGoogle() {
+    setError(null);
     setLoading(true);
+    setBusy("google");
     try {
       // Land on the one-time welcome; it redirects returning owners straight to
       // the dashboard (gated by an account flag), so only new owners see it.
@@ -203,233 +221,310 @@ function AuthPage() {
       stashReturnTo(returnTo);
       await signInWithGoogle(window.location.origin + "/welcome");
       setLoading(false);
+      setBusy(null);
     } catch (err: any) {
-      toast.error(authErrorMessage(err, t("auth.googleSignInFailed", "Google sign-in failed.")));
+      setError(authErrorMessage(err, t("auth.googleSignInFailed", "Google sign-in failed.")));
       setLoading(false);
+      setBusy(null);
     }
   }
 
   async function handleApple() {
+    setError(null);
     setLoading(true);
+    setBusy("apple");
     try {
       stashReturnTo(returnTo);
       await signInWithApple(window.location.origin + "/welcome");
       setLoading(false);
+      setBusy(null);
     } catch (err: any) {
-      toast.error(authErrorMessage(err, t("auth.appleSignInFailed", "Apple sign-in failed.")));
+      setError(authErrorMessage(err, t("auth.appleSignInFailed", "Apple sign-in failed.")));
       setLoading(false);
+      setBusy(null);
     }
   }
 
   async function handleForgotPassword() {
+    setError(null);
     const trimmed = email.trim();
     if (!trimmed) {
-      toast.error(t("auth.enterEmailFirst", "Enter your email above first, then tap Forgot password."));
+      setError(t("auth.enterEmailForReset", "Enter the email you signed up with."));
       return;
     }
     const cooldownKey = `reset:cooldown:${trimmed.toLowerCase()}`;
     const wait = remainingCooldown(cooldownKey);
     if (wait > 0) {
-      toast.error(t("auth.waitBeforeReset", "Please wait {{wait}}s before requesting another reset email.", { wait }));
+      setError(t("auth.waitBeforeReset", "Please wait {{wait}}s before requesting another reset email.", { wait }));
       return;
     }
     setLoading(true);
+    setBusy("reset");
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(trimmed, {
         redirectTo: `${window.location.origin}/reset-password`,
       });
       if (error) throw error;
       setCooldown(cooldownKey, 60);
-      toast.success(t("auth.resetLinkSent", "If that email is registered, a reset link is on its way."));
+      setResetCooldown(60);
+      if (view === "resetSent") setResetJustSent(true);
+      setView("resetSent");
     } catch (err: any) {
-      toast.error(authErrorMessage(err, t("auth.couldNotSendReset", "Could not send reset email.")));
+      setError(authErrorMessage(err, t("auth.couldNotSendReset", "Could not send reset email.")));
     } finally {
       setLoading(false);
+      setBusy(null);
     }
   }
 
+  // Countdown for "Send it again" on the reset-link-sent screen, from the same
+  // per-email cooldown the reset request sets (60s).
+  useEffect(() => {
+    if (view !== "resetSent") return;
+    const key = `reset:cooldown:${email.trim().toLowerCase()}`;
+    const tick = () => setResetCooldown(remainingCooldown(key));
+    tick();
+    const id = window.setInterval(tick, 1000);
+    return () => window.clearInterval(id);
+    // remainingCooldown only reads sessionStorage.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, email]);
+  useEffect(() => {
+    if (!resetJustSent) return;
+    const id = window.setTimeout(() => setResetJustSent(false), 2500);
+    return () => window.clearTimeout(id);
+  }, [resetJustSent]);
 
+  function backToSignInForm() {
+    setError(null);
+    setView("form");
+  }
+
+  if (view === "resetSent") {
+    return (
+      <CheckEmailView
+        email={email.trim()}
+        kind="reset"
+        onBack={backToSignInForm}
+        onResend={() => { if (!loading) void handleForgotPassword(); }}
+        resending={busy === "reset"}
+        cooldown={resetCooldown}
+        justSent={resetJustSent}
+        error={error}
+        onUseDifferentEmail={() => { setError(null); setView("forgot"); }}
+      />
+    );
+  }
+
+  const forgot = view === "forgot";
+  const title = forgot
+    ? t("auth.resetTitle", "Reset your password")
+    : mode === "signup" ? t("auth.signupTitle", "Create your account") : t("auth.signinTitle", "Welcome back");
+  const line = forgot
+    ? t("auth.resetLine", "We'll email you a link to set a new one.")
+    : mode === "signup" ? t("auth.signupLine", "Free, and it takes a minute.") : t("auth.signinLine", "Sign in to pick up where you left off.");
+  const linkCls = "inline-flex min-h-[44px] items-center font-[700]";
 
   return (
-    <div className="min-h-screen bg-[var(--cream)]">
-      <div className="mx-auto max-w-md">
-        <InkHero
-          // Sign-up keeps the lockup as chrome; sign-in removes it so the
-          // welcome carries the screen.
-          showBrand={mode === "signup"}
-          eyebrow={mode === "signup" ? t("auth.getStarted", "Get started") : t("auth.welcomeBack", "Welcome back")}
-          headline={mode === "signup" ? t("auth.createYourAccount", "Create your account.") : t("auth.pickUpWhereYouLeftOff", "Pick up where you left off.")}
-          body={
-            mode === "signup"
-              ? t("auth.signupBody", "Build one care plan and share it with the family, pet sitters, and household members who help.")
-              : t("auth.signinBody", "Sign in to your bird's record.")
-          }
-          backIcon={<ArrowLeft className="size-5" />}
-          onBack={() => navigate({ to: "/" })}
-        />
+    <FrontDoorPage>
+      <FrontDoorHeader
+        onBack={forgot ? backToSignInForm : () => navigate({ to: "/" })}
+        title={title}
+        line={line}
+      />
+      <FrontDoorBody>
+        {error && <FrontDoorError>{error}</FrontDoorError>}
 
-        <main className="px-5 py-7">
-          <Card className="p-5">
-            <PrimaryButton
-              tone="outline"
-              icon={<GoogleIcon />}
-              onPress={handleGoogle}
+        {forgot ? (
+          <form
+            onSubmit={(e) => { e.preventDefault(); if (!loading) void handleForgotPassword(); }}
+            className="flex flex-col gap-4"
+          >
+            <div className="flex flex-col gap-1.5">
+              <KyaLabel htmlFor="auth-reset-email">{t("auth.email", "Email")}</KyaLabel>
+              <input
+                id="auth-reset-email"
+                type="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="kya-input"
+                placeholder="you@example.com"
+              />
+            </div>
+            <SubmitButton disabled={loading} busy={busy === "reset"}>
+              {t("auth.sendResetLink", "Send reset link")}
+            </SubmitButton>
+            <p className="m-0 text-center text-[12.5px]">
+              <button type="button" onClick={backToSignInForm} className={linkCls} style={{ color: K.moss }}>
+                {t("auth.backToSignIn", "Back to sign in")}
+              </button>
+            </p>
+          </form>
+        ) : (
+          <>
+            <KyaSecondaryButton
+              className="w-full"
+              icon={busy === "google" ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <GoogleIcon />}
+              onClick={handleGoogle}
               disabled={loading}
             >
               {t("auth.continueWithGoogle", "Continue with Google")}
-            </PrimaryButton>
+            </KyaSecondaryButton>
 
             {showApple && (
-              <div className="mt-3">
-                <PrimaryButton
-                  tone="outline"
-                  icon={<AppleIcon />}
-                  onPress={handleApple}
-                  disabled={loading}
-                >
-                  {t("auth.continueWithApple", "Continue with Apple")}
-                </PrimaryButton>
-              </div>
+              <KyaSecondaryButton
+                className="w-full"
+                icon={busy === "apple" ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <AppleIcon />}
+                onClick={handleApple}
+                disabled={loading}
+              >
+                {t("auth.continueWithApple", "Continue with Apple")}
+              </KyaSecondaryButton>
             )}
 
-            <div className="my-5 flex items-center gap-3">
-              <div className="h-px flex-1 bg-[var(--line2)]" />
-              <span className="t-eyebrow text-[var(--mute2)]">{t("auth.orWithEmail", "Or with email")}</span>
-              <div className="h-px flex-1 bg-[var(--line2)]" />
+            <div className="flex items-center gap-3 py-1" style={{ color: K.quiet }}>
+              <div className="h-px flex-1" style={{ background: "#d5dfd5" }} />
+              <span className="text-[13px] font-[600]">{t("auth.orWithEmailLine", "or with email")}</span>
+              <div className="h-px flex-1" style={{ background: "#d5dfd5" }} />
             </div>
 
-            <form onSubmit={handleEmail} className="space-y-3">
+            <form onSubmit={handleEmail} className="flex flex-col gap-4">
               {mode === "signup" && (
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label={t("auth.firstName", "First name")}>
+                  <div className="flex min-w-0 flex-col gap-1.5">
+                    <KyaLabel htmlFor="auth-first">{t("auth.firstName", "First name")}</KyaLabel>
                     <input
+                      id="auth-first"
                       type="text"
+                      autoComplete="given-name"
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
-                      className="input"
+                      className="kya-input"
                       placeholder={t("auth.firstNamePlaceholder", "Maya")}
                     />
-                  </Field>
-                  <Field label={t("auth.lastName", "Last name")}>
+                  </div>
+                  <div className="flex min-w-0 flex-col gap-1.5">
+                    <KyaLabel htmlFor="auth-last">{t("auth.lastName", "Last name")}</KyaLabel>
                     <input
+                      id="auth-last"
                       type="text"
+                      autoComplete="family-name"
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
-                      className="input"
+                      className="kya-input"
                       placeholder={t("auth.lastNamePlaceholder", "Lopez")}
                     />
-                  </Field>
+                  </div>
                 </div>
               )}
-              <Field label={t("auth.email", "Email")}>
+              <div className="flex flex-col gap-1.5">
+                <KyaLabel htmlFor="auth-email">{t("auth.email", "Email")}</KyaLabel>
                 <input
+                  id="auth-email"
                   type="email"
+                  autoComplete="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="input"
+                  className="kya-input"
                   placeholder="you@example.com"
                 />
-              </Field>
-              <Field label={t("auth.password", "Password")}>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <KyaLabel htmlFor="auth-password">{t("auth.password", "Password")}</KyaLabel>
                 <input
+                  id="auth-password"
                   type="password"
+                  autoComplete={mode === "signup" ? "new-password" : "current-password"}
                   required
                   minLength={6}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="input"
+                  className="kya-input"
                   placeholder="••••••••"
                 />
-              </Field>
-              {mode === "signin" && (
-                <div className="flex justify-end">
-                  <CtaLink
-                    label={t("auth.forgotPassword", "Forgot password?")}
-                    icon={<span />}
-                    onPress={() => { if (!loading) handleForgotPassword(); }}
-                  />
-                </div>
-              )}
+                {mode === "signin" && (
+                  <div className="-mb-2 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => { setError(null); setView("forgot"); }}
+                      className="inline-flex min-h-[44px] items-center px-1 text-[14px] font-[700]"
+                      style={{ color: K.moss }}
+                    >
+                      {t("auth.forgotPassword", "Forgot password?")}
+                    </button>
+                  </div>
+                )}
+              </div>
               {mode === "signup" && (
-                <label className="mt-2 flex items-start gap-2 text-[13px] text-[var(--mute)]">
+                <label className="flex min-h-[44px] cursor-pointer items-start gap-3 text-[13.5px] leading-[1.45]" style={{ color: K.ink }}>
                   <input
                     type="checkbox"
                     checked={marketingOptIn}
                     onChange={(e) => { setMarketingOptIn(e.target.checked); if (e.target.checked) track("marketing_opt_in_checked", { context: "checkbox" }); }}
-                    className="mt-0.5 size-4 rounded border-[var(--line)]"
+                    className="mt-0.5 size-5 shrink-0 rounded"
+                    style={{ accentColor: K.forest }}
                   />
                   <span>{t("auth.marketingOptIn", "Email me about The Kya Project community and updates. (Optional)")}</span>
                 </label>
               )}
-              <div className="pt-1">
-                <PrimaryButton
-                  tone="lime"
-                  type="submit"
-                  disabled={loading}
-                >
-                  {loading ? "..." : mode === "signup" ? t("auth.createAccount", "Create account") : t("auth.signIn", "Sign in")}
-                </PrimaryButton>
-              </div>
+              <SubmitButton disabled={loading} busy={busy === "email"}>
+                {mode === "signup" ? t("auth.createAccount", "Create account") : t("auth.signIn", "Sign in")}
+              </SubmitButton>
               {mode === "signup" && (
-                <p className="text-center text-[11px] text-[var(--mute2)]">
+                <p className="m-0 text-center text-[12px] leading-[1.45]" style={{ color: K.quiet }}>
                   <Trans
                     i18nKey="auth.agreeToTerms"
                     defaults="By creating an account you agree to our <terms>Terms</terms> and <privacy>Privacy Policy</privacy>."
                     components={{
-                      terms: <Link to="/terms" className="text-[var(--moss)] underline" />,
-                      privacy: <Link to="/privacy" className="text-[var(--moss)] underline" />,
+                      terms: <Link to="/terms" className="font-[700] underline" style={{ color: K.moss }} />,
+                      privacy: <Link to="/privacy" className="font-[700] underline" style={{ color: K.moss }} />,
                     }}
                   />
                 </p>
               )}
             </form>
-          </Card>
 
-          <p className="mt-6 text-center text-[14px] text-[var(--mute)]">
-            {mode === "signup" ? (
-              <Link to="/auth" search={{ mode: "signin" }} className="font-[500] text-[var(--moss)] underline">
-                {t("auth.alreadyHaveAccount", "Already have an account? Sign in")}
-              </Link>
-            ) : (
-              <Link to="/auth" search={{ mode: "signup" }} className="font-[500] text-[var(--moss)] underline">
-                {t("auth.needAccount", "Need an account? Sign up")}
-              </Link>
-            )}
-          </p>
+            <p className="m-0 text-center text-[12.5px]" style={{ color: K.quiet }}>
+              {mode === "signup" ? (
+                <Trans
+                  i18nKey="auth.haveAccountSignIn"
+                  defaults="Already have an account? <go>Sign in</go>"
+                  components={{ go: <Link to="/auth" search={{ mode: "signin" }} onClick={() => setError(null)} className={linkCls} style={{ color: K.moss }} /> }}
+                />
+              ) : (
+                <Trans
+                  i18nKey="auth.newHereCreate"
+                  defaults="New here? <go>Create an account</go>"
+                  components={{ go: <Link to="/auth" search={{ mode: "signup" }} onClick={() => setError(null)} className={linkCls} style={{ color: K.moss }} /> }}
+                />
+              )}
+            </p>
+          </>
+        )}
 
-          <p className="mt-4 text-center text-[11px] text-[var(--mute2)]">
-            <Link to="/privacy" className="text-[var(--moss)] underline">{t("auth.privacy", "Privacy")}</Link>
-            {" · "}
-            <Link to="/terms" className="text-[var(--moss)] underline">{t("auth.terms", "Terms")}</Link>
-            {" · "}
-            <Link to="/delete-account" className="text-[var(--moss)] underline">{t("auth.deleteAccount", "Delete account")}</Link>
-          </p>
-        </main>
-      </div>
-
-      <style>{`
-        .input {
-          width: 100%;
-          border-radius: 0.75rem;
-          background: white;
-          border: 1px solid var(--sage-200);
-          padding: 0.75rem 0.875rem;
-          font-size: 16px;
-          outline: none;
-        }
-        .input:focus { border-color: var(--sage-600); box-shadow: 0 0 0 3px rgb(74 103 65 / 0.15); }
-      `}</style>
-    </div>
+        <div className="mt-auto pt-2">
+          <LegalLinks />
+        </div>
+      </FrontDoorBody>
+    </FrontDoorPage>
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+/** KyaPrimaryButton's look as a real submit button, so Enter submits the form. */
+function SubmitButton({ children, disabled, busy }: { children: React.ReactNode; disabled?: boolean; busy?: boolean }) {
   return (
-    <label className="block">
-      <span className="mb-1 block text-[11px] font-[500] uppercase tracking-wider text-[var(--mute)]">{label}</span>
+    <button
+      type="submit"
+      disabled={disabled}
+      className="mt-1 inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full border-2 px-6 text-[16px] font-[700] disabled:opacity-45"
+      style={{ background: K.sunflower, borderColor: K.forest, color: K.forest }}
+    >
+      {busy && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
       {children}
-    </label>
+    </button>
   );
 }
 
