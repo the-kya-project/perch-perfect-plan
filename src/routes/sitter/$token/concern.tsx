@@ -1,7 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { useCallback } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft } from "lucide-react";
 import { useSitterContext } from "./route";
 import { pauseSitterReminders } from "@/lib/sitter.functions";
 import { isOwnerPreview } from "@/lib/sitterPreviewMode";
@@ -11,6 +11,9 @@ import type { VetContact } from "@/components/PassingGuidance";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { friendlyError } from "@/lib/errorMessage";
+import { K, KyaPage, KyaBody, KyaCard } from "@/components/kya";
+import { PageHeader, useGoBack } from "@/components/headers";
+import { VetCallRow, PersonCallRow } from "@/components/sitter/CallRows";
 
 // "Something's wrong" — sitter-link entry into the shared ConcernFlow (pause →
 // path choice → path detail). The flow + copy live in ConcernFlow, shared with
@@ -26,6 +29,8 @@ function ConcernPage() {
   const { data: ctx } = useSitterContext(token);
   const qc = useQueryClient();
   const pauseFn = useServerFn(pauseSitterReminders);
+  const navigate = useNavigate();
+  const goBack = useGoBack(useCallback(() => navigate({ to: "/sitter/$token", params: { token } }), [navigate, token]));
 
   const name = ctx.bird.name as string;
   const owner = ((ctx as any).ownerName ?? "the owner") as string;
@@ -46,25 +51,57 @@ function ConcernPage() {
     onError: (e: any) => toast.error(friendlyError(e, t("sitter.concern.pauseError", "Couldn't pause the reminders. Please try again."), t)),
   });
 
+  const sexInitial = typeof (ctx.bird as any).sex === "string" ? ((ctx.bird as any).sex as string).trim().charAt(0).toLowerCase() : "";
+  const line = sexInitial === "m"
+    ? t("sitter.concern.line_m", "If he's sick, hurt, or has passed, here's what to do.")
+    : sexInitial === "f"
+    ? t("sitter.concern.line_f", "If she's sick, hurt, or has passed, here's what to do.")
+    : t("sitter.concern.line_n", "If they're sick, hurt, or have passed, here's what to do.");
+  const vetIsAvian = !!(ctx.contacts as any)?.avian_vet_phone;
+
   return (
-    <div className="min-h-screen bg-[#f4f1e8]">
-      <header className="border-b border-[#e0d8c4] bg-[#f4f1e8]">
-        <div className="mx-auto flex max-w-md items-center gap-3 px-5 py-3">
-          <Link to="/sitter/$token" params={{ token }} className="rounded p-1 text-[#5f5e5a]"><ArrowLeft className="size-5" /></Link>
-          <h1 className="text-sm font-medium text-[#1a3d2e]">{name}</h1>
+    <KyaPage>
+      <PageHeader
+        title={t("sitter.concern.title", "Something's wrong with {{name}}", { name })}
+        line={line}
+        onBack={goBack}
+      />
+      <KyaBody className="pb-32">
+        {/* Calls first: the avian vet (red, same as Emergency), then the owner. */}
+        <div className="flex flex-col gap-2.5">
+          <VetCallRow
+            surface="mist"
+            label={vetIsAvian ? t("sitter.calls.avianVet", "Avian vet") : t("sitter.calls.emergencyVet", "After-hours emergency vet")}
+            name={vet.name}
+            phone={vet.phone}
+          />
+          <PersonCallRow
+            surface="mist"
+            label={t("sitter.calls.owner", "Owner")}
+            name={owner !== "the owner" ? owner : null}
+            phone={ownerPhone}
+          />
         </div>
-      </header>
-      <main className="mx-auto max-w-md px-5 py-6">
-        <ConcernFlow
-          name={name}
-          ownerName={owner}
-          ownerPhone={ownerPhone}
-          vet={vet}
-          paused={!!(ctx as any).remindersPaused || m.isSuccess}
-          onPause={() => m.mutate()}
-          pausePending={m.isPending}
-        />
-      </main>
-    </div>
+
+        {/* Moved here from Today: the line that used to sit under the
+            "Something's wrong" link. */}
+        <p className="m-0 mt-2 px-1 text-[13.5px] font-[700]" style={{ color: K.quiet }}>
+          {t("sitter.today.somethingWrongHint", "If {{name}} has passed or is in serious trouble", { name })}
+        </p>
+        <KyaCard className="p-5">
+          <ConcernFlow
+            name={name}
+            ownerName={owner}
+            ownerPhone={ownerPhone}
+            vet={vet}
+            paused={!!(ctx as any).remindersPaused || m.isSuccess}
+            onPause={() => m.mutate()}
+            pausePending={m.isPending}
+            look="kya"
+            ownerCallShown
+          />
+        </KyaCard>
+      </KyaBody>
+    </KyaPage>
   );
 }

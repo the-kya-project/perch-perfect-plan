@@ -1,14 +1,16 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useCallback, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSitterContext } from "./route";
 import { submitHealthScan, getSitterScans } from "@/lib/sitter.functions";
 import { isOwnerPreview } from "@/lib/sitterPreviewMode";
-import { SCAN_FIELDS, type ScanAnswer, type ScanFieldKey, computeTriage } from "@/lib/triage";
-import { ScanForm, type ScanSubmit } from "@/components/ScanForm";
-import { scanQuestion } from "@/lib/scanFieldLabels";
-import { ArrowLeft, History, ChevronDown, Loader2 } from "lucide-react";
+import { SCAN_FIELDS, type ScanFieldKey } from "@/lib/triage";
+import { FullHealthCheck, type FullCheckSubmit } from "@/components/FullHealthCheck";
+import { K, KyaBody, KyaCard, KyaPage } from "@/components/kya";
+import { PageHeader } from "@/components/headers";
+import { scanQuestionFor } from "@/lib/scanFieldLabels";
+import { ChevronDown, History, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { track } from "@/lib/analytics";
 import { useTranslation } from "react-i18next";
@@ -35,14 +37,13 @@ const COL_BY_KEY: Record<ScanFieldKey, string> = {
   exposure: "exposure_status",
 };
 
+/** Answer pill: forest for Normal, amber for Not sure / Concerning (as in the check). */
 function answerStyle(a: string | null | undefined) {
-  return a === "concerning"
-    ? "bg-warn-red/10 text-warn-red"
-    : a === "not_sure"
-    ? "bg-warn-amber/10 text-warn-amber"
+  return a === "concerning" || a === "not_sure"
+    ? { background: K.amberBg, color: K.amberText }
     : a === "normal"
-    ? "bg-warn-green/10 text-warn-green"
-    : "bg-[#e8e1d0] text-[#8a897f]";
+    ? { background: K.lime, color: K.forest }
+    : { background: K.mist, color: K.quiet };
 }
 function answerLabel(a: string | null | undefined, t: TFunction) {
   return a === "concerning"
@@ -53,26 +54,38 @@ function answerLabel(a: string | null | undefined, t: TFunction) {
     ? t("sitter.scan.answer.normal", "Normal")
     : "—";
 }
+function statusLabel(s: string | null | undefined, t: TFunction) {
+  return s === "red"
+    ? t("sitter.scan.history.statusRed", "Call the vet")
+    : s === "yellow"
+    ? t("sitter.scan.history.statusYellow", "Things to watch")
+    : t("sitter.scan.history.statusGreen", "All normal");
+}
 
 function ScanPage() {
   const { token } = Route.useParams();
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { data: ctx } = useSitterContext(token);
-  const [mode, setMode] = useState<"form" | "history">("form");
-  const [result, setResult] = useState<{ status: string; message: string; reasons: string[] } | null>(null);
+  const birdId = ctx.activeBirdId as string;
+  const [showHistory, setShowHistory] = useState(false);
 
-  // Reset when the selected bird changes; the form's own state lives in ScanForm
-  // and is reset by re-keying it on activeBirdId.
-  useEffect(() => { setResult(null); setMode("form"); }, [ctx.activeBirdId]);
+  // Close (no save) and a successful save both return to Today on this bird.
+  const toToday = useCallback(
+    (saved?: boolean) => navigate({ to: "/sitter/$token", params: { token }, search: saved ? ({ birdId, saved: 1 } as any) : { birdId } }),
+    [navigate, token, birdId],
+  );
 
   const submit = useServerFn(submitHealthScan);
   const qc = useQueryClient();
   const m = useMutation({
-    mutationFn: async (p: ScanSubmit) =>
+    // Same payload the sitter ScanForm sent: the 10 answers, per-item notes,
+    // notes, photo data URL and grams. No meal (the sitter save has no field).
+    mutationFn: async (p: FullCheckSubmit) =>
       submit({
         data: {
           token,
-          birdId: ctx.activeBirdId,
+          birdId,
           answers: p.answers,
           itemNotes: p.itemNotes,
           notes: p.notes,
@@ -82,68 +95,50 @@ function ScanPage() {
           preview: isOwnerPreview(),
         },
       }),
-    onSuccess: (res, p) => {
-      setResult(res.triage as any);
+    onSuccess: async (res, p) => {
       track("health_scan_run", { severity: (res.triage as any)?.status ?? "unknown", had_photo: !!p.photoDataUrl });
-      toast.success(t("sitter.scan.loggedToast", "Health scan logged."));
-      // Refresh the Today scan card + the multi-bird dashboard so the new
-      // done/flagged state shows immediately.
-      qc.invalidateQueries({ queryKey: ["sitter-ctx", token] });
-      qc.invalidateQueries({ queryKey: ["sitter-dashboard", token] });
+      // Refresh the Today check card + the multi-bird dashboard so "Done at"
+      // shows as soon as Today renders.
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["sitter-ctx", token] }),
+        qc.invalidateQueries({ queryKey: ["sitter-dashboard", token] }),
+        qc.invalidateQueries({ queryKey: ["sitter-scans", token, birdId] }),
+      ]);
+      toToday(true);
     },
     onError: (e: any) => toast.error(friendlyError(e, t("sitter.scan.errorToast", "Could not log health check."), t)),
   });
 
-  if (mode === "history") {
-    return <ScanHistory token={token} birdId={ctx.activeBirdId} birdName={ctx.bird.name} onBack={() => setMode("form")} />;
-  }
-
-  if (result) {
-    const color = result.status === "red" ? "bg-warn-red" : result.status === "yellow" ? "bg-warn-amber" : "bg-warn-green";
-    return (
-      <main className="mx-auto max-w-md space-y-4 px-5 py-6">
-        <div className={`rounded-2xl ${color} p-6 text-white`}>
-          <p className="text-[11px] font-medium uppercase tracking-widest opacity-80">{result.status === "red" ? t("sitter.scan.result.red", "Call vet now") : result.status === "yellow" ? t("sitter.scan.result.yellow", "Monitor & message owner") : t("sitter.scan.result.green", "All clear logged")}</p>
-          <h1 className="mt-1 text-2xl font-medium leading-tight">{result.message}</h1>
-        </div>
-        {result.reasons.length > 0 && (
-          <div className="rounded-xl bg-[#efe9da] p-4">
-            <p className="text-[11px] font-medium uppercase tracking-widest text-[#5f5e5a]">{t("sitter.scan.whatYouFlagged", "What you flagged")}</p>
-            <ul className="mt-2 list-disc pl-5 text-sm text-[#1a3d2e]">
-              {result.reasons.map((r, i) => <li key={i}>{r}</li>)}
-            </ul>
-          </div>
-        )}
-        <div className="flex gap-2">
-          {result.status !== "green" && (
-            <Link to="/sitter/$token/emergency" params={{ token }} className="flex-1 rounded-xl bg-[#1a3d2e] py-3 text-center text-sm font-medium text-white">{t("sitter.scan.openEmergency", "Open emergency contacts")}</Link>
-          )}
-          <Link to="/sitter/$token" params={{ token }} className="flex-1 rounded-xl border border-[#e0d8c4] py-3 text-center text-sm font-medium">{t("sitter.scan.backToToday", "Back to today")}</Link>
-        </div>
-        <button onClick={() => setMode("history")} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#efe9da] py-3 text-sm font-medium text-[#1a3d2e]">
-          <History className="size-4" /> {t("sitter.scan.seePastForSit", "See past health checks for this sit")}
-        </button>
-      </main>
-    );
-  }
+  const vetPhone = ((ctx.contacts as any)?.avian_vet_phone as string | null | undefined) || null;
 
   return (
-    <div className="min-h-screen bg-[#f4f1e8]">
-      <header className="border-b border-[#e0d8c4] bg-[#f4f1e8]">
-        <div className="mx-auto flex max-w-md items-center gap-3 px-5 py-3">
-          <Link to="/sitter/$token" params={{ token }} className="rounded p-1 text-[#5f5e5a]"><ArrowLeft className="size-5" /></Link>
-          <h1 className="flex-1 text-sm font-medium">{t("sitter.scan.headerTitle", "Daily health check — {{name}}", { name: ctx.bird.name })}</h1>
-          <button
-            onClick={() => setMode("history")}
-            className="inline-flex items-center gap-1.5 rounded-full bg-[#efe9da] px-3 py-1.5 text-xs font-medium text-[#1a3d2e]"
-          >
-            <History className="size-3.5" /> {t("sitter.scan.pastHealthChecks", "Past health checks")}
-          </button>
-        </div>
-      </header>
-      <p className="mx-auto max-w-md px-5 pt-4 text-sm leading-relaxed text-[#5f5e5a]">{t("sitter.scan.intro", "A quick once-over to make sure {{name}}'s doing well.", { name: ctx.bird.name })}</p>
-      <ScanForm key={ctx.activeBirdId} birdName={ctx.bird.name} submitting={m.isPending} submitLabel={t("sitter.scan.submit", "Submit health check")} onSubmit={(p) => m.mutate(p)} />
-    </div>
+    <>
+      {/* The form stays mounted while past checks are open, so answers survive a peek. */}
+      <div style={showHistory ? { display: "none" } : undefined}>
+        <FullHealthCheck
+          key={birdId}
+          variant="sitter"
+          birdId={birdId}
+          name={ctx.bird.name}
+          sex={(ctx.bird as any).sex}
+          vetPhone={vetPhone}
+          submitting={m.isPending}
+          onSubmit={(p) => m.mutate(p)}
+          onLeave={() => toToday()}
+          extra={
+            <button
+              type="button"
+              onClick={() => { setShowHistory(true); window.scrollTo(0, 0); }}
+              className="mt-2 inline-flex min-h-[44px] items-center gap-2 self-start text-[14px] font-[700]"
+              style={{ color: K.moss }}
+            >
+              <History className="size-4" /> {t("sitter.scan.seePast", "See past checks for this sit")}
+            </button>
+          }
+        />
+      </div>
+      {showHistory && <ScanHistory token={token} birdId={birdId} birdName={ctx.bird.name} onBack={() => setShowHistory(false)} />}
+    </>
   );
 }
 
@@ -158,77 +153,75 @@ function ScanHistory({ token, birdId, birdName, onBack }: { token: string; birdI
   const [open, setOpen] = useState<string | null>(null);
 
   return (
-    <div className="min-h-screen bg-[#f4f1e8]">
-      <header className="border-b border-[#e0d8c4] bg-[#f4f1e8]">
-        <div className="mx-auto flex max-w-md items-center gap-3 px-5 py-3">
-          <button onClick={onBack} className="rounded p-1 text-[#5f5e5a]"><ArrowLeft className="size-5" /></button>
-          <h1 className="text-sm font-medium">{t("sitter.scan.history.title", "Past health checks — {{name}}", { name: birdName })}</h1>
-        </div>
-      </header>
-      <main className="mx-auto max-w-md space-y-3 px-5 py-5 pb-32">
-        <p className="text-xs text-[#5f5e5a]">{t("sitter.scan.history.subtitle", "Health checks you've logged during this sit, newest first.")}</p>
+    <KyaPage>
+      <PageHeader
+        title={t("sitter.scan.history.pageTitle", "{{name}}'s past checks", { name: birdName })}
+        line={t("sitter.scan.history.subtitle", "Health checks you've logged during this sit, newest first.")}
+        onBack={onBack}
+      />
+      <KyaBody className="pb-10">
         {isLoading ? (
-          <div className="flex items-center gap-2 rounded-xl bg-[#efe9da] p-4 text-sm text-[#5f5e5a]"><Loader2 className="size-4 animate-spin" /> {t("sitter.scan.history.loading", "Loading…")}</div>
+          <KyaCard className="flex items-center gap-2 p-4 text-[14.5px]" style={{ color: K.quiet }}><Loader2 className="size-4 animate-spin" /> {t("sitter.scan.history.loading", "Loading…")}</KyaCard>
         ) : scans.length === 0 ? (
-          <div className="rounded-xl bg-[#efe9da] p-4 text-sm text-[#5f5e5a]">{t("sitter.scan.history.empty", "No health checks logged yet for this sit.")}</div>
+          <KyaCard className="p-4 text-[14.5px]" style={{ color: K.quiet }}>{t("sitter.scan.history.empty", "No health checks logged yet for this sit.")}</KyaCard>
         ) : (
-          <ul className="space-y-3">
+          <ul className="m-0 flex list-none flex-col gap-3 p-0">
             {(scans as any[]).map((s) => {
               const isOpen = open === s.id;
-              const wrap = s.triage_status === "red"
-                ? "border-2 border-warn-red bg-warn-red/5"
-                : s.triage_status === "yellow"
-                ? "border-2 border-warn-amber bg-warn-amber/5"
-                : "border border-[#e0d8c4] bg-[#efe9da]";
+              const flagged = s.triage_status === "red" || s.triage_status === "yellow";
               return (
-                <li key={s.id} className={`rounded-xl ${wrap}`}>
-                  <button onClick={() => setOpen(isOpen ? null : s.id)} className="flex w-full items-center justify-between gap-2 p-3 text-left" aria-expanded={isOpen}>
-                    <div className="flex items-center gap-2">
-                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${answerStyle(s.triage_status === "red" ? "concerning" : s.triage_status === "yellow" ? "not_sure" : "normal")}`}>
-                        {s.triage_status}
+                <li key={s.id}>
+                  <KyaCard className="overflow-hidden" style={flagged ? { boxShadow: `inset 0 0 0 2px ${K.amberText}` } : undefined}>
+                    <button onClick={() => setOpen(isOpen ? null : s.id)} className="flex min-h-[56px] w-full items-center justify-between gap-3 px-4 py-3 text-left" aria-expanded={isOpen}>
+                      <span className="min-w-0">
+                        <span className="block text-[15px] font-[700]">
+                          {new Date(s.created_at).toLocaleString(dloc, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                        </span>
+                        <span className="mt-1 inline-block rounded-full px-2.5 py-0.5 text-[12.5px] font-[700]" style={answerStyle(flagged ? "concerning" : "normal")}>
+                          {statusLabel(s.triage_status, t)}
+                        </span>
                       </span>
-                      <span className="text-[11px] text-[#5f5e5a]">{new Date(s.created_at).toLocaleString(dloc, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
-                    </div>
-                    <ChevronDown className={`size-4 shrink-0 text-[#8a897f] transition ${isOpen ? "rotate-180" : ""}`} />
-                  </button>
-                  {isOpen && (
-                    <div className="space-y-3 border-t border-[#e0d8c4] px-3 py-3">
-                      <ul className="space-y-1.5">
-                        {SCAN_FIELDS.map((f) => (
-                          <li key={f.key} className="flex items-center justify-between gap-3 text-xs">
-                            <span className="text-[#1a3d2e]">{scanQuestion(t, f).replace(/\?$/, "")}</span>
-                            <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${answerStyle(s[COL_BY_KEY[f.key]])}`}>
-                              {answerLabel(s[COL_BY_KEY[f.key]], t)}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
-                      {s.notes && (
-                        <div>
-                          <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e5a]">{t("sitter.scan.notesLabel", "Notes")}</p>
-                          <p className="mt-1 text-xs italic text-[#1a3d2e]">"{s.notes}"</p>
-                        </div>
-                      )}
-                      {s.photos?.length > 0 && (
-                        <div>
-                          <p className="text-[10px] font-bold uppercase tracking-widest text-[#5f5e5a]">{t("sitter.scan.photoLabel", "Photo")}</p>
-                          <div className="mt-2 grid grid-cols-3 gap-2">
-                            {s.photos.map((p: any) => (
-                              <a key={p.id} href={p.photo_url} target="_blank" rel="noreferrer" className="block aspect-square overflow-hidden rounded-lg bg-[#e8e1d0]">
-                                <img src={p.photo_url} alt={t("sitter.scan.photoAlt", "Scan photo")} className="size-full object-cover" />
-                              </a>
-                            ))}
+                      <ChevronDown className={`size-5 shrink-0 transition ${isOpen ? "rotate-180" : ""}`} style={{ color: K.quiet }} />
+                    </button>
+                    {isOpen && (
+                      <div className="flex flex-col gap-3 px-4 pb-4 pt-3" style={{ borderTop: `1px solid ${K.line}` }}>
+                        <ul className="m-0 flex list-none flex-col gap-2 p-0">
+                          {SCAN_FIELDS.map((f) => (
+                            <li key={f.key} className="flex items-center justify-between gap-3 text-[13.5px]">
+                              <span>{scanQuestionFor(t, f, birdName).replace(/\?$/, "")}</span>
+                              <span className="shrink-0 rounded-full px-2.5 py-0.5 text-[12px] font-[700]" style={answerStyle(s[COL_BY_KEY[f.key]])}>
+                                {answerLabel(s[COL_BY_KEY[f.key]], t)}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                        {s.notes && (
+                          <div>
+                            <p className="m-0 text-[12.5px] font-[700]" style={{ color: K.quiet }}>{t("sitter.scan.notesLabel", "Notes")}</p>
+                            <p className="m-0 mt-1 text-[14px]">"{s.notes}"</p>
                           </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
+                        )}
+                        {s.photos?.length > 0 && (
+                          <div>
+                            <p className="m-0 text-[12.5px] font-[700]" style={{ color: K.quiet }}>{t("sitter.scan.photoLabel", "Photo")}</p>
+                            <div className="mt-2 grid grid-cols-3 gap-2">
+                              {s.photos.map((p: any) => (
+                                <a key={p.id} href={p.photo_url} target="_blank" rel="noreferrer" className="block aspect-square overflow-hidden rounded-[12px]" style={{ background: K.mist }}>
+                                  <img src={p.photo_url} alt={t("sitter.scan.photoAlt", "Scan photo")} className="size-full object-cover" />
+                                </a>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </KyaCard>
                 </li>
               );
             })}
           </ul>
         )}
-      </main>
-    </div>
+      </KyaBody>
+    </KyaPage>
   );
 }

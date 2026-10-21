@@ -2125,8 +2125,12 @@
   "carePlan.medicalConditions": "Medische aandoeningen",
   // Medications
   "carePlan.medications": "Medicatie",
+  // Never feed {{name}}
+  "carePlan.neverFeedNamed": "Nooit voeren aan {{name}}",
   // Never feed · toxic to this bird
   "carePlan.neverFeedToxicToThis": "Nooit geven · giftig voor deze vogel",
+  // Don't introduce new foods while {{owner}} is away.
+  "carePlan.noNewFoodsNamed": "Geef geen nieuw voer zolang {{owner}} weg is.",
   // Normal activity
   "carePlan.normalActivity": "Normale activiteit",
   // Normal appetite
@@ -3653,6 +3657,8 @@
   "fullCheck.savedLine": "De check van {{name}} staat in het gezondheidslogboek.",
   // Saving…
   "fullCheck.saving": "Opslaan…",
+  // {{name}}'s daily check
+  "fullCheck.sitterTitle": "Dagelijkse check van {{name}}",
   // {{name}}'s full health check
   "fullCheck.title": "Volledige gezondheidscheck van {{name}}",
   // Upload
@@ -5975,6 +5981,8 @@
   "sitPreview.backToSits": "Terug naar Oppasperiodes",
   // Caregiver preview · how {{label}} will see this sit
   "sitPreview.caregiverBanner": "Voorbeeld verzorger · zo ziet {{label}} deze oppasperiode",
+  // Exit
+  "sitPreview.exit": "Sluiten",
   // Household caregivers use the app's caregiver Today screen — there's no shareable preview link.
   "sitPreview.householdNoLink": "Verzorgers uit het huishouden gebruiken het Vandaag-scherm voor verzorgers in de app — er is geen deelbare voorbeeldlink.",
   // Sitter view preview
@@ -5987,8 +5995,6 @@
   "sitPreview.seeActivity": "Bekijk de activiteit van deze oppasperiode",
   // This sit was deleted, so there's nothing to preview.
   "sitPreview.sitGone": "Deze oppasperiode is verwijderd, dus er is niets te bekijken.",
-  // Sits
-  "sitPreview.sits": "Oppasperiodes",
   // Sitter preview · how {{label}} will see this sit
   "sitPreview.sitterBanner": "Voorbeeld oppas · zo ziet {{label}} deze oppasperiode",
   // they
@@ -6047,34 +6053,76 @@
   "sits.sitCount_other": "{{count}} oppasperiodes",
   // Your sitter
   "sits.yourSitter": "Je oppas",
+  // Carrier, first-aid kit, and house notes
+  "sitter.around.cardLine": "Reismand, EHBO-doos en huisnotities",
+  // Carrier
+  "sitter.around.carrier": "Reismand",
+  // Cleaning products
+  "sitter.around.cleaning": "Schoonmaakmiddelen",
+  // Nothing has been added about the house yet.
+  "sitter.around.empty": "Er is nog niets over het huis toegevoegd.",
+  // First-aid kit
+  "sitter.around.firstAid": "EHBO-doos",
+  // Where things are, and what to know about the home
+  "sitter.around.line": "Waar alles ligt, en wat je over het huis moet weten",
+  // Off-limits areas
+  "sitter.around.offLimits": "Verboden ruimtes",
+  // Other pets
+  "sitter.around.otherPets": "Andere huisdieren",
+  // Around the house
+  "sitter.around.title": "In en om het huis",
+  // Avian vet
+  "sitter.calls.avianVet": "Vogeldierenarts",
+  // Backup contact
+  "sitter.calls.backup": "Reservecontact",
+  // Call {{who}}, {{phone}}
+  "sitter.calls.callAria": "Bel {{who}}, {{phone}}",
+  // After-hours emergency vet
+  "sitter.calls.emergencyVet": "Spoeddierenarts buiten kantooruren",
+  // Owner
+  "sitter.calls.owner": "Eigenaar",
+  // Everything {{owner}} wants you to know.
+  "sitter.caresheet.lineNamed": "Alles wat {{owner}} wil dat je weet.",
   // Owner-provided reference. For general care guidance, see the <guide>Care guide</guide>.
   "sitter.caresheet.reference": "Referentie van de eigenaar. Voor algemene verzorgingstips, zie de <guide>verzorgingsgids</guide>.",
   // Everything the owner wants you to know.
   "sitter.caresheet.subtitle": "Alles wat de eigenaar wil dat je weet.",
-  // {{name}}'s care sheet.
-  "sitter.caresheet.title": "Verzorgingsoverzicht van {{name}}.",
+  // Short clips from the owner, just for you.
+  "sitter.caresheet.tipsLine": "Korte filmpjes van de eigenaar, speciaal voor jou.",
+  // Short clips from {{owner}}, just for you.
+  "sitter.caresheet.tipsLineNamed": "Korte filmpjes van {{owner}}, speciaal voor jou.",
+  // Tips from the owner
+  "sitter.caresheet.tipsTitle": "Tips van de eigenaar",
+  // Tips from {{owner}}
+  "sitter.caresheet.tipsTitleNamed": "Tips van {{owner}}",
+  // {{name}}'s care plan
+  "sitter.caresheet.titlePlan": "Verzorgingsplan van {{name}}",
+  // the owner
+  "sitter.common.theOwner": "de eigenaar",
+  // If she's sick, hurt, or has passed, here's what to do.
+  "sitter.concern.line_f": "Als ze ziek of gewond is, of is overleden, lees je hier wat je moet doen.",
+  // If he's sick, hurt, or has passed, here's what to do.
+  "sitter.concern.line_m": "Als hij ziek of gewond is, of is overleden, lees je hier wat je moet doen.",
+  // If they're sick, hurt, or have passed, here's what to do.
+  "sitter.concern.line_n": "Als je vogel ziek of gewond is, of is overleden, lees je hier wat je moet doen.",
   // Couldn't pause the reminders. Please try again.
   "sitter.concern.pauseError": "Kon de herinneringen niet pauzeren. Probeer het opnieuw.",
-  // Call avian vet
-  "sitter.emergency.callAvianVet": "Bel de vogeldierenarts",
-  // Call backup contact
-  "sitter.emergency.callBackup": "Bel de reservecontactpersoon",
-  // Call emergency vet
-  "sitter.emergency.callEmergencyVet": "Bel de spoeddierenarts",
-  // Call owner
-  "sitter.emergency.callOwner": "Bel de eigenaar",
-  // You will never be in trouble for calling too soon.
-  "sitter.emergency.callSoon": "Je krijgt nooit problemen omdat je te vroeg belt.",
+  // Something's wrong with {{name}}
+  "sitter.concern.title": "Er is iets mis met {{name}}",
+  // You'll never be in trouble for calling too soon.
+  "sitter.emergency.callSoonNever": "Je krijgt nooit problemen omdat je te vroeg belt.",
   // Carrier
   "sitter.emergency.carrier": "Reismand",
-  // Critical info
-  "sitter.emergency.criticalInfo": "Cruciale informatie",
+  // Different for {{name}}
+  "sitter.emergency.differentFor": "Anders voor {{name}}",
   // First-aid kit
   "sitter.emergency.firstAidKit": "EHBO-kit",
   // Care guidance from The Kya Project · Parrot Care Bible for Pet Sitters.
   "sitter.emergency.footer": "Verzorgingsadvies van The Kya Project · Parrot Care Bible for Pet Sitters.",
   // not provided by owner.
   "sitter.emergency.notProvided": "niet opgegeven door de eigenaar.",
+  // Emergency
+  "sitter.emergency.pageTitle": "Noodgeval",
   // Any contact between a cat/dog and the bird — even with no visible wound.
   "sitter.emergency.pb_bite_signs": "Elk contact tussen een kat/hond en de vogel — ook zonder zichtbare wond.",
   // Treat as life-threatening — bacteria from cat/dog mouths and claws can kill a bird within hours.
@@ -6227,26 +6275,38 @@
   "sitter.emergency.pb_transport_title": "Vervoer naar de dierenarts",
   // Poison control
   "sitter.emergency.poisonControl": "Gifcentrum",
-  // Quick playbooks
-  "sitter.emergency.quickPlaybooks": "Snelle draaiboeken",
   // Stay calm.
   "sitter.emergency.rule1": "Blijf rustig.",
-  // Keep {{name}} warm — about 85–90°F if sick or shocky. Heat on one side only.
-  "sitter.emergency.rule2": "Houd {{name}} warm — ongeveer 85–90°F als hij ziek of in shock is. Verwarm maar aan één kant.",
-  // Keep the bird quiet, dim, and minimally handled.
-  "sitter.emergency.rule3": "Houd de vogel rustig, in het donker en pak hem zo min mogelijk op.",
-  // Call the avian vet and prepare to transport.
-  "sitter.emergency.rule4": "Bel de vogeldierenarts en maak je klaar om te vervoeren.",
-  // The four emergency rules
-  "sitter.emergency.rulesLabel": "De vier noodregels",
-  // Signs:
-  "sitter.emergency.signs": "Signalen:",
+  // Keep {{name}} warm: about 85–90°F if she seems sick or in shock. Heat on one side only.
+  "sitter.emergency.rule2_f": "Houd {{name}} warm: ongeveer 85–90°F als ze ziek lijkt of in shock is. Verwarm maar aan één kant.",
+  // Keep {{name}} warm: about 85–90°F if he seems sick or in shock. Heat on one side only.
+  "sitter.emergency.rule2_m": "Houd {{name}} warm: ongeveer 85–90°F als hij ziek lijkt of in shock is. Verwarm maar aan één kant.",
+  // Keep {{name}} warm: about 85–90°F if they seem sick or in shock. Heat on one side only.
+  "sitter.emergency.rule2_n": "Houd {{name}} warm: ongeveer 85–90°F als de vogel ziek lijkt of in shock is. Verwarm maar aan één kant.",
+  // Keep your bird warm: about 85–90°F if they seem sick or in shock. Heat on one side only.
+  "sitter.emergency.rule2_your": "Houd je vogel warm: ongeveer 85–90°F als de vogel ziek lijkt of in shock is. Verwarm maar aan één kant.",
+  // Keep her somewhere quiet and dim, and handle her as little as possible.
+  "sitter.emergency.rule3_f": "Houd haar op een rustige, schemerige plek en pak haar zo min mogelijk op.",
+  // Keep him somewhere quiet and dim, and handle him as little as possible.
+  "sitter.emergency.rule3_m": "Houd hem op een rustige, schemerige plek en pak hem zo min mogelijk op.",
+  // Keep them somewhere quiet and dim, and handle them as little as possible.
+  "sitter.emergency.rule3_n": "Houd de vogel op een rustige, schemerige plek en pak de vogel zo min mogelijk op.",
+  // Keep your bird somewhere quiet and dim, and handle them as little as possible.
+  "sitter.emergency.rule3_your": "Houd je vogel op een rustige, schemerige plek en pak de vogel zo min mogelijk op.",
+  // Call the avian vet and get ready to go.
+  "sitter.emergency.rule4_go": "Bel de vogeldierenarts en maak je klaar om te gaan.",
+  // Signs
+  "sitter.emergency.signsLabel": "Signalen",
   // Spending limit
   "sitter.emergency.spendingLimit": "Uitgavenlimiet",
   // Take a breath. Here's exactly what to do.
   "sitter.emergency.subtitle": "Haal even adem. Dit is precies wat je moet doen.",
-  // Emergency mode
-  "sitter.emergency.title": "Noodmodus",
+  // What's happening?
+  "sitter.emergency.whatsHappening": "Wat is er aan de hand?",
+  // Which bird
+  "sitter.emergency.whichBird": "Welke vogel",
+  // While you wait for the vet
+  "sitter.emergency.whileYouWait": "Terwijl je op de dierenarts wacht",
   // Ask the owner to send you a new link.
   "sitter.error.askNew": "Vraag de eigenaar om je een nieuwe link te sturen.",
   // Sorry, that page didn't load properly. Try refreshing, and if it keeps happening, email us at {{email}}.
@@ -6275,8 +6335,18 @@
   "sitter.error.unavailable.body": "De link is misschien verlopen of uitgezet. Controleer je verbinding en probeer het opnieuw.",
   // This sitter link can't be opened
   "sitter.error.unavailable.title": "Deze oppaslink kan niet worden geopend",
-  // Back
-  "sitter.guide.back": "Terug",
+  // Good afternoon
+  "sitter.greeting.afternoon": "Goedemiddag",
+  // Good afternoon, {{name}}
+  "sitter.greeting.afternoonName": "Goedemiddag, {{name}}",
+  // Good evening
+  "sitter.greeting.evening": "Goedenavond",
+  // Good evening, {{name}}
+  "sitter.greeting.eveningName": "Goedenavond, {{name}}",
+  // Good morning
+  "sitter.greeting.morning": "Goedemorgen",
+  // Good morning, {{name}}
+  "sitter.greeting.morningName": "Goedemorgen, {{name}}",
   // General guidance, not vet-reviewed. For anything urgent, use {{name}}'s emergency info.
   "sitter.guide.disclaimer": "Algemene richtlijnen, niet gecontroleerd door een dierenarts. Bij een noodgeval gebruik je {{name}}'s noodinformatie.",
   // .
@@ -6291,8 +6361,14 @@
   "sitter.guide.searchPlaceholder": "Wat wil je weten?",
   // The essentials, in one place.
   "sitter.guide.subhead.golden": "Het belangrijkste, op één plek.",
-  // The basics of parrot care. For {{name}}'s own needs, always follow {{poss}} care plan.
-  "sitter.guide.subtitle": "De basis van papegaaienverzorging. Voor de eigen behoeften van {{name}} volg je altijd {{poss}} verzorgingsplan.",
+  // The basics of parrot care. For {{name}}'s own needs, always follow his care plan.
+  "sitter.guide.subtitleHe": "De basis van papegaaienverzorging. Voor de eigen behoeften van {{name}} volg je altijd zijn verzorgingsplan.",
+  // The basics of parrot care. For each bird's own needs, always follow their care plan.
+  "sitter.guide.subtitleMulti": "De basis van papegaaienverzorging. Voor de eigen behoeften van elke vogel volg je altijd het verzorgingsplan van die vogel.",
+  // The basics of parrot care. For {{name}}'s own needs, always follow her care plan.
+  "sitter.guide.subtitleShe": "De basis van papegaaienverzorging. Voor de eigen behoeften van {{name}} volg je altijd haar verzorgingsplan.",
+  // The basics of parrot care. For {{name}}'s own needs, always follow their care plan.
+  "sitter.guide.subtitleThey": "De basis van papegaaienverzorging. Voor de eigen behoeften van {{name}} volg je altijd het eigen verzorgingsplan.",
   // Parrots 101
   "sitter.guide.title": "Papegaaien 101",
   // Behavior
@@ -6313,12 +6389,8 @@
   "sitter.guide.whatToDo": "Wat je doet:",
   // When to call the vet:
   "sitter.guide.whenToCallVet": "Wanneer je de dierenarts belt:",
-  // Caring for {{n}} birds
-  "sitter.header.caringForCount": "Je zorgt voor {{n}} vogels",
   // Replay walkthrough
   "sitter.header.replayWalkthrough": "Rondleiding opnieuw bekijken",
-  // Sit active
-  "sitter.header.sitActive": "Oppasperiode actief",
   // Change language
   "sitter.lang.aria": "Taal wijzigen",
   // Concerning
@@ -6327,50 +6399,66 @@
   "sitter.scan.answer.normal": "Normaal",
   // Not sure
   "sitter.scan.answer.notSure": "Niet zeker",
-  // Back to today
-  "sitter.scan.backToToday": "Terug naar vandaag",
   // Could not log health check.
   "sitter.scan.errorToast": "Kon de gezondheidscheck niet noteren.",
-  // Daily health check — {{name}}
-  "sitter.scan.headerTitle": "Dagelijkse gezondheidscheck — {{name}}",
   // No health checks logged yet for this sit.
   "sitter.scan.history.empty": "Nog geen gezondheidschecks genoteerd voor deze oppasperiode.",
   // Loading…
   "sitter.scan.history.loading": "Laden…",
+  // {{name}}'s past checks
+  "sitter.scan.history.pageTitle": "Eerdere checks van {{name}}",
+  // All normal
+  "sitter.scan.history.statusGreen": "Alles normaal",
+  // Call the vet
+  "sitter.scan.history.statusRed": "Bel de dierenarts",
+  // Things to watch
+  "sitter.scan.history.statusYellow": "Aandachtspunten",
   // Health checks you've logged during this sit, newest first.
   "sitter.scan.history.subtitle": "Gezondheidschecks die je tijdens deze oppasperiode hebt genoteerd, nieuwste eerst.",
-  // Past health checks — {{name}}
-  "sitter.scan.history.title": "Eerdere gezondheidschecks — {{name}}",
-  // A quick once-over to make sure {{name}}'s doing well.
-  "sitter.scan.intro": "Een snelle controle om te zien of het goed gaat met {{name}}.",
-  // Health scan logged.
-  "sitter.scan.loggedToast": "Gezondheidscheck genoteerd.",
   // Notes
   "sitter.scan.notesLabel": "Notities",
-  // Open emergency contacts
-  "sitter.scan.openEmergency": "Open noodcontacten",
-  // Past health checks
-  "sitter.scan.pastHealthChecks": "Eerdere gezondheidschecks",
   // Scan photo
   "sitter.scan.photoAlt": "Foto van de gezondheidscheck",
   // Photo
   "sitter.scan.photoLabel": "Foto",
-  // All clear logged
-  "sitter.scan.result.green": "Alles in orde genoteerd",
-  // Call vet now
-  "sitter.scan.result.red": "Bel nu de dierenarts",
-  // Monitor & message owner
-  "sitter.scan.result.yellow": "Houd in de gaten & stuur de eigenaar een bericht",
-  // See past health checks for this sit
-  "sitter.scan.seePastForSit": "Bekijk eerdere gezondheidschecks voor deze oppasperiode",
-  // Submit health check
-  "sitter.scan.submit": "Gezondheidscheck versturen",
-  // What you flagged
-  "sitter.scan.whatYouFlagged": "Wat je hebt gemarkeerd",
+  // See past checks for this sit
+  "sitter.scan.seePast": "Bekijk eerdere checks tijdens deze oppasperiode",
+  // Caring for {{names}}
+  "sitter.sitLine.caringFor": "Je zorgt voor {{names}}",
+  // Day {{n}} of {{total}} caring for {{names}} · {{owner}} is back {{date}}
+  "sitter.sitLine.dayOf": "Dag {{n}} van {{total}} met {{names}} · {{owner}} is {{date}} terug",
+  // Last day · {{owner}} is back today
+  "sitter.sitLine.lastDayToday": "Laatste dag · {{owner}} is vandaag terug",
+  // {{n}} birds
+  "sitter.sitLine.nBirds": "{{n}} vogels",
+  // Your sit starts {{date}}
+  "sitter.sitLine.startsOn": "Je oppasperiode begint {{date}}",
+  // tomorrow
+  "sitter.sitLine.tomorrow": "morgen",
   // All done for this {{daypart}} — nicely done.
   "sitter.today.allDone": "Alles klaar voor deze {{daypart}} — goed gedaan.",
-  // Diet, behavior, home, health — the source of truth
-  "sitter.today.carePlanSubtitle": "Voeding, gedrag, thuis, gezondheid — de bron van waarheid",
+  // Back to all birds
+  "sitter.today.backToAllBirds": "Terug naar alle vogels",
+  // {{name}}'s care plan
+  "sitter.today.birdCarePlan": "Verzorgingsplan van {{name}}",
+  // {{name}}'s daily check
+  "sitter.today.birdsCheck": "Dagelijkse check van {{name}}",
+  // {{name}}'s day
+  "sitter.today.birdsDay": "De dag van {{name}}",
+  // Care plan →
+  "sitter.today.carePlanArrow": "Verzorgingsplan →",
+  // Check {{name}}
+  "sitter.today.checkBird": "Check {{name}}",
+  // Done at {{time}} · call the vet
+  "sitter.today.checkDoneCallVet": "Gedaan om {{time}} · bel de dierenarts",
+  // Done at {{time}} · all normal
+  "sitter.today.checkDoneNormal": "Gedaan om {{time}} · alles normaal",
+  // Done at {{time}} · {{n}} things to watch
+  "sitter.today.checkDoneWatchMany": "Gedaan om {{time}} · {{n}} aandachtspunten",
+  // Done at {{time}} · 1 thing to watch
+  "sitter.today.checkDoneWatchOne": "Gedaan om {{time}} · 1 aandachtspunt",
+  // Not done yet today
+  "sitter.today.checkNotDone": "Vandaag nog niet gedaan",
   // Anytime
   "sitter.today.daypart.anytime": "Altijd",
   // Evening
@@ -6379,76 +6467,74 @@
   "sitter.today.daypart.midday": "Middag",
   // Morning
   "sitter.today.daypart.morning": "Ochtend",
-  // {{done}}/{{total}} done
-  "sitter.today.doneCount": "{{done}}/{{total}} klaar",
-  // {{done}} of {{total}} daily tasks done this {{daypart}}
-  "sitter.today.doneThisDaypart": "{{done}} van {{total}} dagelijkse taken klaar deze {{daypart}}",
-  // Due now — {{daypart}}
-  "sitter.today.dueNow": "Nu aan de beurt — {{daypart}}",
+  // {{done}} of {{total}}
+  "sitter.today.doneOfTotal": "{{done}} van {{total}}",
+  // Due now · {{done}} of {{total}} done
+  "sitter.today.dueNowCount": "Nu aan de beurt · {{done}} van {{total}} gedaan",
   // Hide details
   "sitter.today.hideDetails": "Details verbergen",
-  // Next:
-  "sitter.today.next": "Volgende:",
-  // Don't introduce new foods while the owner is away.
-  "sitter.today.noNewFoods": "Geef geen nieuw voer terwijl de eigenaar weg is.",
+  // Next: {{name}}
+  "sitter.today.nextBird": "Volgende: {{name}}",
+  // {{n}} left
+  "sitter.today.nLeft": "nog {{n}}",
+  // Don't introduce new foods while {{owner}} is away.
+  "sitter.today.noNewFoodsOwner": "Geef geen nieuw voer zolang {{owner}} weg is.",
   // The owner hasn't added any routine tasks yet.
   "sitter.today.noTasks": "De eigenaar heeft nog geen routinetaken toegevoegd.",
   // Nothing scheduled for this {{daypart}}.
   "sitter.today.nothingScheduled": "Niets gepland voor deze {{daypart}}.",
-  // Owner-recorded
-  "sitter.today.ownerRecorded": "Opgenomen door de eigenaar",
-  // Redo
-  "sitter.today.redo": "Opnieuw",
+  // {{n}} tasks
+  "sitter.today.nTasks": "{{n}} taken",
+  // Open emergency info
+  "sitter.today.openEmergencyInfo": "Open noodinfo",
   // {{name}}'s reminders are paused.
   "sitter.today.remindersPaused": "De herinneringen van {{name}} staan op pauze.",
+  // Saved
+  "sitter.today.saved": "Opgeslagen",
+  // Saved. Every bird has had a check today
+  "sitter.today.savedAll": "Opgeslagen. Elke vogel heeft vandaag een check gehad",
+  // Saved. Next: {{name}} still needs a check
+  "sitter.today.savedNext": "Opgeslagen. Volgende: {{name}} heeft nog een check nodig",
   // That didn't save. Please tap it again.
   "sitter.today.saveFailed": "Dat is niet opgeslagen. Tik er nog een keer op.",
-  // Say hi to who you're caring for
-  "sitter.today.sayHi": "Zeg hallo tegen wie je verzorgt",
-  // Health check done today ✓
-  "sitter.today.scanDone": "Gezondheidscheck vandaag gedaan ✓",
-  // Health check done — flagged for review
-  "sitter.today.scanFlagged": "Gezondheidscheck gedaan — gemarkeerd voor controle",
-  // Daily health check · {{name}}
-  "sitter.today.scanLabel": "Dagelijkse gezondheidscheck · {{name}}",
-  // Today's health check — not done yet
-  "sitter.today.scanNotDone": "Gezondheidscheck van vandaag — nog niet gedaan",
+  // See check
+  "sitter.today.seeCheck": "Bekijk check",
   // Show details
   "sitter.today.showDetails": "Details tonen",
-  // Something's wrong with {{name}}
-  "sitter.today.somethingWrong": "Er is iets mis met {{name}}",
+  // Something's wrong
+  "sitter.today.somethingsWrong": "Er is iets mis",
   // If {{name}} has passed or is in serious trouble
   "sitter.today.somethingWrongHint": "Als {{name}} is overleden of in ernstige problemen is",
   // Parrot
   "sitter.today.speciesDefault": "Papegaai",
   // Start
   "sitter.today.start": "Starten",
-  // See how it's done — short clips from {{name}}'s owner, private to you.
-  "sitter.today.tipsSubtitle": "Zie hoe het moet — korte clips van de eigenaar van {{name}}, privé voor jou.",
-  // Tips from the owner
-  "sitter.today.tipsTitle": "Tips van de eigenaar",
-  // View {{name}}'s full care plan
-  "sitter.today.viewCarePlan": "Bekijk het volledige verzorgingsplan van {{name}}",
+  // Tips from {{owner}}
+  "sitter.today.tipsFrom": "Tips van {{owner}}",
+  // Short clips from {{owner}}, just for you.
+  "sitter.today.tipsLine": "Korte filmpjes van {{owner}}, speciaal voor jou.",
+  // Take the 1-minute walkthrough
+  "sitter.walkthroughPill": "Volg de rondleiding van 1 minuut",
   // Birds in your care
   "sitterDashboard.birdsInYourCare": "Vogels in jouw zorg",
-  // You're looking after {{names}}. Tap any bird to see their day and how they're doing.
-  "sitterDashboard.intro": "Je zorgt voor {{names}}. Tik op een vogel om hun dag te zien en hoe het met ze gaat.",
-  // Loading…
-  "sitterDashboard.loading": "Laden…",
-  // Getting the birds ready for you…
-  "sitterDashboard.loadingIntro": "De vogels worden voor je klaargezet…",
-  // Walkthrough
-  "sitterDashboard.walkthrough": "Rondleiding",
-  // Welcome
-  "sitterDashboard.welcome": "Welkom",
+  // Checked ✓
+  "sitterDashboard.checked": "Gecheckt ✓",
+  // {{done}} of {{total}} checks done
+  "sitterDashboard.checksDone": "{{done}} van {{total}} checks gedaan",
+  // Daily check to do
+  "sitterDashboard.checkToDo": "Dagelijkse check te doen",
+  // {{done}} of {{total}} tasks
+  "sitterDashboard.tasksDone": "{{done}} van {{total}} taken",
+  // Close
+  "sitterOnboarding.close": "Sluiten",
   // Want to see this again? Tap the question mark in the upper right anytime.
   "sitterOnboarding.closing.body": "Wil je dit nog eens zien? Tik wanneer je maar wilt op het vraagteken rechtsboven.",
-  // Let's go
-  "sitterOnboarding.closing.cta": "Aan de slag",
   // That's everything! You're all set to care for {{names}}.
   "sitterOnboarding.closing.title": "Dat was alles! Je bent helemaal klaar om voor {{names}} te zorgen.",
   // Back
   "sitterOnboarding.coach.back": "Terug",
+  // Got it
+  "sitterOnboarding.coach.gotIt": "Begrepen",
   // Next
   "sitterOnboarding.coach.next": "Volgende",
   // Step {{current}} of {{total}}
@@ -6929,8 +7015,8 @@
   "vetSummary.whoCanHandleLine": "Wie kan hem hanteren: {{value}}",
   // Back to home
   "viewAsSitter.backHome": "Terug naar home",
-  // Viewing as your sitter — read only
-  "viewAsSitter.banner": "Je kijkt als je oppas — alleen lezen",
+  // Viewing as your sitter · read only
+  "viewAsSitter.bannerReadOnly": "Je kijkt mee als je oppas · alleen lezen",
   // Couldn't build the sitter preview.
   "viewAsSitter.buildFailed": "Kon het oppasvoorbeeld niet maken.",
   // Exit

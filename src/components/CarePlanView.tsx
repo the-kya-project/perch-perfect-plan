@@ -31,7 +31,9 @@ import {
 // for true danger, deep-link-to-section. Purely presentational: it takes the
 // plan DATA + context as props and never fetches. Rendered by the owner /
 // member page (/birds/$birdId/care-plan) and the walkthrough's Review step.
-// The sitter care-sheet has its own renderer (CareSheetView).
+// The sitter care sheet (/sitter/$token/care-sheet) renders it too, read-only,
+// with the sitter-only props (chipsOnForest, separateNeverFeed, ownerName,
+// tipsTitle/tipsLine); owner surfaces never pass those.
 //
 // The six cards follow the care-plan overview: Food, Health, Behavior, Tips
 // (the owner's clips), Day (the routine) and Your home (home & safety, with
@@ -286,6 +288,11 @@ export function CarePlanView({
   footer,
   contextBanner,
   showViewOnlyTag = false,
+  chipsOnForest = false,
+  separateNeverFeed = false,
+  ownerName,
+  tipsTitle,
+  tipsLine,
 }: {
   data: CarePlanData;
   /** Which sections this surface may show (in addition to data-presence gating). */
@@ -308,6 +315,20 @@ export function CarePlanView({
   /** When the viewer lacks edit access, show a quiet "View only" tag where the
    *  Edit entry would be (member surfaces only). */
   showViewOnlyTag?: boolean;
+  /** Sitter care sheet: the chip row sits on a forest band that continues the
+   *  page header, with the mist body's rounded top under it. Place the view
+   *  straight under the header (it pulls itself up into the header's
+   *  bottom padding). Owner surfaces leave this off. */
+  chipsOnForest?: boolean;
+  /** Sitter care sheet: the never-feed list gets its own amber card
+   *  ("Never feed [bird]") instead of the red callout inside Food. */
+  separateNeverFeed?: boolean;
+  /** Sitter care sheet: the owner's first name, used in "Don't introduce new
+   *  foods while [owner] is away." Leave unset for the owner's own wording. */
+  ownerName?: string;
+  /** Sitter care sheet: title / line for the Tips card. */
+  tipsTitle?: string;
+  tipsLine?: string;
 }) {
   const { t } = useTranslation();
   // Inside the walkthrough the view sits on SetupFrame's white body, so the
@@ -373,7 +394,7 @@ export function CarePlanView({
 
   // present = has content AND the surface allows the section.
   const present: Record<CareSection, boolean> = {
-    food: canShow("food") && (showFeeding || neverFeed.length > 0),
+    food: canShow("food") && (showFeeding || (!separateNeverFeed && neverFeed.length > 0)),
     behavior: canShow("behavior") && showHandling,
     home: canShow("home") && showHome,
     health: canShow("health") && showHealth,
@@ -437,12 +458,45 @@ export function CarePlanView({
   }, []);
 
   const setRef = (id: string) => (el: HTMLElement | null) => { sectionRefs.current[id] = el; };
-  const stickyHasContent = !!header || presentNav.length > 1;
+  const stickyHasContent = !!header || presentNav.length > 1 || chipsOnForest;
+  const neverFeedCard = separateNeverFeed && canShow("food") && neverFeed.length > 0;
   const tileIcon = "size-5";
 
   return (
-    <div className={`flex flex-col gap-4 ${inFrame ? "rounded-[20px] p-2.5" : ""}`} style={inFrame ? { background: K.mist } : undefined}>
-      {stickyHasContent && (
+    <div className={`flex flex-col gap-4 ${inFrame ? "rounded-[20px] p-2.5" : ""} ${chipsOnForest ? "-mt-[46px]" : ""}`} style={inFrame ? { background: K.mist } : undefined}>
+      {stickyHasContent && chipsOnForest ? (
+        // Forest band continuing the page header: chips, then the mist body's
+        // rounded top. Full-bleed like KyaHeader.
+        <div
+          ref={topRef}
+          style={{ top: `calc(env(safe-area-inset-top) + ${stickyTopPx}px)`, background: K.forest }}
+          className="sticky z-20 -mb-2.5 mx-[calc(50%-50vw)]"
+        >
+          <div className="mx-auto max-w-md">
+            {header && <div className="px-4 pb-2">{header}</div>}
+            {presentNav.length > 1 && (
+              <div className="flex gap-2 overflow-x-auto px-4 pb-3 pt-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                {presentNav.map((n) => {
+                  const on = active === n.id;
+                  return (
+                    <button
+                      key={n.id}
+                      type="button"
+                      aria-pressed={on}
+                      onClick={() => scrollToSection(n.id)}
+                      className="inline-flex min-h-[40px] shrink-0 items-center rounded-full px-4 text-[14.5px] font-[700] transition-colors"
+                      style={on ? { background: K.lime, color: K.forest } : { background: K.forestDeep, color: "#fff" }}
+                    >
+                      {displayLabel(t, n.label)}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            <div className="h-[26px] rounded-t-[26px]" style={{ background: K.mist }} aria-hidden="true" />
+          </div>
+        </div>
+      ) : stickyHasContent && (
         <div
           ref={topRef}
           style={{ top: `calc(env(safe-area-inset-top) + ${stickyTopPx}px)`, background: K.mist }}
@@ -482,16 +536,38 @@ export function CarePlanView({
         </div>
       ) : null}
 
+      {/* ------------------------------------------- NEVER FEED (sitter) */}
+      {neverFeedCard && (
+        <section className="rounded-[20px] p-4" style={{ background: K.amberBg, color: K.amberText }}>
+          <div className="flex items-center gap-2">
+            <AlertOctagon className="size-5 shrink-0" aria-hidden="true" />
+            <KyaHeading size={21}>{t("carePlan.neverFeedNamed", "Never feed {{name}}", { name })}</KyaHeading>
+          </div>
+          <ul className="m-0 mt-3 flex list-none flex-wrap gap-1.5 p-0">
+            {neverFeed.map((s) => (
+              <li key={s} className="rounded-full bg-white px-3 py-1.5 text-[14px] font-[700]" style={{ color: K.amberText }}>{s}</li>
+            ))}
+          </ul>
+          <p className="m-0 mt-3 text-[14px] font-[600]">{t("carePlan.keepTheseCompletelyOutOf", "Keep these completely out of reach.")}</p>
+        </section>
+      )}
+
       {/* ------------------------------------------------------------ FOOD */}
       {present.food && (
         <Card id="food" coach={COACH.food} setRef={setRef("food")} icon={<Soup className={tileIcon} />} title={t("carePlan.food", "Food")} line={t("carePlan.whatEats", "What {{name}} eats", { name })}>
-          {neverFeed.length > 0 && (
+          {!separateNeverFeed && neverFeed.length > 0 && (
             <DangerCallout title={t("carePlan.neverFeedToxicToThis", "Never feed · toxic to this bird")}>
               <DangerChips items={neverFeed} />
               <p className="m-0 mt-2 text-[13.5px] font-[600]">{t("carePlan.keepTheseCompletelyOutOf", "Keep these completely out of reach.")}</p>
             </DangerCallout>
           )}
-          {showFeeding && <Callout>{t("carePlan.donTIntroduceNewFoods", "Don't introduce new foods while the owner is away.")}</Callout>}
+          {showFeeding && (
+            <Callout>
+              {ownerName
+                ? t("carePlan.noNewFoodsNamed", "Don't introduce new foods while {{owner}} is away.", { owner: ownerName })
+                : t("carePlan.donTIntroduceNewFoods", "Don't introduce new foods while the owner is away.")}
+            </Callout>
+          )}
           {!hasStructuredFood && has(plan.food_instructions) && <Row label={t("carePlan.dietOverview", "Diet overview")}><RichText text={plan.food_instructions} /></Row>}
           {diet.length > 0 && <Row label={t("carePlan.dietTypes", "Diet types")}><Chips items={diet} /></Row>}
           {has(plan.diet_other) && <Row label={t("carePlan.otherDiet", "Other diet")}>{plan.diet_other}</Row>}
@@ -608,7 +684,7 @@ export function CarePlanView({
 
       {/* ------------------------------------------------------------ TIPS */}
       {present.tips && (
-        <Card id="tips" setRef={setRef("tips")} icon={<Video className={tileIcon} />} title={t("carePlan.tips", "Tips")} line={t("carePlan.tipsLine", "Short clips that show how it's done")}>
+        <Card id="tips" setRef={setRef("tips")} icon={<Video className={tileIcon} />} title={tipsTitle ?? t("carePlan.tips", "Tips")} line={tipsLine ?? t("carePlan.tipsLine", "Short clips that show how it's done")}>
           <div className="cp-row flex flex-col gap-3 py-3">
             {watchClips.map((c) => (
               <ClipTile key={c.key} src={c.url} label={clipSlotLabel(c.key, c.label, t)} />

@@ -13,7 +13,7 @@ import { computeTriage, SCAN_FIELDS, type ScanAnswer, type ScanFieldKey } from "
 import { resolveToday } from "./localDay";
 import { buildDailyLogEmail, buildSitterConcernEmail } from "./emailTemplates";
 import { emailT } from "./i18n/emailI18n.server";
-import { mergeEmergency } from "./emergency";
+import { mergeEmergency, emergencyDifferent } from "./emergency";
 import { mergeHome } from "./homeDefaults";
 import { isCfClip, cfUid } from "./clipRef";
 import { resolveScanPhotoUrls } from "./scanPhoto";
@@ -163,8 +163,12 @@ export const getSitterContext = createServerFn({ method: "GET" })
 
     const { data: allBirds, error: bErr } = await sb
       .from("birds")
-      .select("id, name, species, photo_url, photo_position, passed_at")
-      .in("id", birdIds);
+      .select("id, name, species, sex, photo_url, photo_position, passed_at, created_at")
+      .in("id", birdIds)
+      // One bird order everywhere the sitter looks (Home cards, Today's bird
+      // chips, emergency lists): the owner's order, newest first — the same
+      // order as the owner's Home (fetchBirdList). There is no manual order.
+      .order("created_at", { ascending: false });
     if (bErr) throw new Error(bErr.message);
     // A bird the owner marked as passed leaves the caregiver's list entirely —
     // there is nothing left to care for. If every bird in the sit has passed,
@@ -181,7 +185,9 @@ export const getSitterContext = createServerFn({ method: "GET" })
     const [birdRes, planRes, contactsRes, completionsRes, todayLogRes, sitBirdRes, signedBirds] = await Promise.all([
       sb.from("birds").select("*").eq("id", activeId).maybeSingle(),
       sb.from("care_plans").select("*").eq("bird_id", activeId).maybeSingle(),
-      sb.from("emergency_contacts").select("*").eq("bird_id", activeId).maybeSingle(),
+      // Every sit bird's own emergency row in ONE query: the active bird's is
+      // merged below, and all of them feed each bird's `emergencyDifferent`.
+      sb.from("emergency_contacts").select("*").in("bird_id", activeIds),
       sb.from("task_completions").select("*").eq("sit_id", sit.id).eq("completed_date", today),
       sb.from("daily_logs").select("*").eq("sit_id", sit.id).eq("bird_id", activeId).eq("log_date", today)
         .order("created_at", { ascending: false }).limit(1).maybeSingle(),
@@ -248,9 +254,12 @@ export const getSitterContext = createServerFn({ method: "GET" })
     ]);
     const { watchClips, baselineClipUrl } = clips;
 
+    const contactRows = ((contactsRes as any).data ?? []) as Record<string, any>[];
+    const contactsByBird = new Map(contactRows.map((r) => [r.bird_id as string, r]));
+    const activeContacts = contactsByBird.get(activeId) ?? null;
     const mergedContacts = {
-      ...(contactsRes.data ?? { bird_id: activeId }),
-      ...mergeEmergency(contactsRes.data, defaultsRow),
+      ...(activeContacts ?? { bird_id: activeId }),
+      ...mergeEmergency(activeContacts, defaultsRow),
     };
 
     // The active bird is one of the (already signed) list birds — reuse its
@@ -265,7 +274,13 @@ export const getSitterContext = createServerFn({ method: "GET" })
 
     return {
       sit,
-      birds: signedBirds,
+      // Newest first (owner's order). `emergencyDifferent`: this bird has its
+      // own emergency details that differ from the owner's defaults, so the
+      // Emergency screen shows a bird switcher.
+      birds: (signedBirds as any[]).map((b) => ({
+        ...b,
+        emergencyDifferent: emergencyDifferent(contactsByBird.get(b.id) ?? null, defaultsRow),
+      })),
       activeBirdId: activeId,
       bird: signedActiveBird,
       // Shared "Your home" reminders fill in wherever this bird has none of its own.
@@ -716,7 +731,9 @@ export const getSitterDashboard = createServerFn({ method: "GET" })
 
     const [birdsRes, plansRes, compsRes, scansRes] = await Promise.all([
       // Passed birds leave the caregiver's list entirely (nothing left to care for).
-      sb.from("birds").select("id, name, species, photo_url, photo_position").in("id", birdIds).is("passed_at", null),
+      // Newest first: the owner's bird order, same as getSitterContext.
+      sb.from("birds").select("id, name, species, photo_url, photo_position, created_at").in("id", birdIds).is("passed_at", null)
+        .order("created_at", { ascending: false }),
       sb.from("care_plans").select("id, bird_id").in("bird_id", birdIds),
       sb.from("task_completions").select("routine_task_id").eq("sit_id", sit.id).eq("completed_date", today),
       sb.from("daily_logs").select("bird_id, triage_status").eq("sit_id", sit.id).eq("log_date", today).in("bird_id", birdIds),
@@ -732,7 +749,6 @@ export const getSitterDashboard = createServerFn({ method: "GET" })
     const doneTaskIds = new Set((compsRes.data ?? []).map((c: any) => c.routine_task_id));
     const scans = scansRes.data ?? [];
     const rank = (s: string) => (s === "red" ? 0 : s === "yellow" ? 1 : 2);
-    const order = new Map(birdIds.map((id, i) => [id, i]));
 
     const summary = (birdsRes.data ?? [])
       .map((b: any) => {
@@ -753,8 +769,7 @@ export const getSitterDashboard = createServerFn({ method: "GET" })
           scanDone: birdScans.length > 0,
           scanStatus,
         };
-      })
-      .sort((a: any, b: any) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0));
+      });
 
     // Sign photo paths → URLs (legacy data: URLs pass through).
     const signedSummary = await Promise.all(

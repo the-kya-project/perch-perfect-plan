@@ -2,7 +2,7 @@
 // note, then one save. A task screen (Close, progress, pinned save button, no
 // bottom nav). This file is the form only; the route owns the save so the
 // daily_logs row is written exactly as before.
-import { useCallback, useState } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { Camera, Loader2, Phone, Upload } from "lucide-react";
@@ -86,7 +86,7 @@ function weighLine(t: TFunction, sex: Sex): string {
   return t("fullCheck.weighLine_other", "Optional. It goes straight to their weight history.");
 }
 
-export function FullHealthCheck({ birdId, name, sex, vetPhone, submitting, onSubmit, onLeave }: {
+export function FullHealthCheck({ birdId, name, sex, vetPhone, submitting, onSubmit, onLeave, variant = "owner", extra }: {
   birdId: string;
   name: string;
   /** The birds.sex column as stored ("Male" / "Female" / null). */
@@ -96,9 +96,20 @@ export function FullHealthCheck({ birdId, name, sex, vetPhone, submitting, onSub
   submitting: boolean;
   onSubmit: (p: FullCheckSubmit) => void;
   onLeave: () => void;
+  /**
+   * "sitter" = the sitter's daily check through a sit link: titled "[Bird]'s
+   * daily check", no household banner (no signed-in user) and no before/after
+   * meal choice (the sitter save has no meal field). Questions, hints, pills,
+   * weigh/photo/notes, the things-to-watch card and the all-10-required save
+   * are the same. Omitted = the owner check, unchanged.
+   */
+  variant?: "owner" | "sitter";
+  /** Extra content at the end of the body (sitter: the past-checks link). */
+  extra?: ReactNode;
 }) {
   const { t } = useTranslation();
   const sx = sexOf(sex);
+  const sitter = variant === "sitter";
   const [answers, setAnswers] = useState<Partial<Record<ScanFieldKey, ScanAnswer>>>({});
   const [itemNotes, setItemNotes] = useState<Partial<Record<ScanFieldKey, string>>>({});
   const [notes, setNotes] = useState("");
@@ -152,7 +163,7 @@ export function FullHealthCheck({ birdId, name, sex, vetPhone, submitting, onSub
       notes: notes || undefined,
       photoDataUrl: photo || undefined,
       weightGrams: typeof parsedWeight === "number" ? parsedWeight : undefined,
-      meal: typeof parsedWeight === "number" ? meal : null,
+      meal: typeof parsedWeight === "number" && !sitter ? meal : null,
     });
   }
 
@@ -164,13 +175,13 @@ export function FullHealthCheck({ birdId, name, sex, vetPhone, submitting, onSub
   return (
     <KyaPage>
       <TaskHeader
-        title={t("fullCheck.title", "{{name}}'s full health check", { name })}
+        title={sitter ? t("fullCheck.sitterTitle", "{{name}}'s daily check", { name }) : t("fullCheck.title", "{{name}}'s full health check", { name })}
         line={headerLine(t, name, sx)}
         onClose={requestClose}
         progress={{ label: t("fullCheck.progress", "{{n}} of {{total}} answered", { n: answered, total: TOTAL }), value: answered / TOTAL }}
       />
       <main className={`relative mx-auto -mt-[26px] flex max-w-md flex-col rounded-t-[26px] bg-white px-5 pt-3 ${TASK_FOOTER_SPACE}`} style={{ color: K.forest }}>
-        <MemberContextBanner birdId={birdId} className="mt-2" />
+        {!sitter && <MemberContextBanner birdId={birdId} className="mt-2" />}
 
         {SCAN_FIELDS.map((f, i) => {
           const a = answers[f.key];
@@ -232,7 +243,7 @@ export function FullHealthCheck({ birdId, name, sex, vetPhone, submitting, onSub
             onChange={(e) => setGrams(e.target.value.replace(/[^0-9.]/g, ""))}
             hint={weightInvalid ? <span style={{ color: K.amberText }}>{t("birdWeight.range", "Enter a weight between {{min}} and {{max}} grams.", { min: MIN_WEIGHT_G, max: MAX_WEIGHT_G })}</span> : undefined}
           />
-          <div role="radiogroup" aria-label={t("birdWeight.mealLabel", "Relative to a meal (optional)")} className="grid grid-cols-2 gap-2 rounded-full p-1" style={{ background: K.mist }}>
+          {!sitter && <div role="radiogroup" aria-label={t("birdWeight.mealLabel", "Relative to a meal (optional)")} className="grid grid-cols-2 gap-2 rounded-full p-1" style={{ background: K.mist }}>
             {(["before_meal", "after_meal"] as const).map((m) => {
               const on = meal === m;
               return (
@@ -249,7 +260,7 @@ export function FullHealthCheck({ birdId, name, sex, vetPhone, submitting, onSub
                 </button>
               );
             })}
-          </div>
+          </div>}
         </section>
 
         <section className="flex flex-col gap-3 py-5" style={{ borderTop: `1px solid ${LINE}` }}>
@@ -315,6 +326,7 @@ export function FullHealthCheck({ birdId, name, sex, vetPhone, submitting, onSub
             )}
           </section>
         )}
+        {extra}
       </main>
 
       <TaskFooter>
