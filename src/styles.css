@@ -184,7 +184,8 @@ select {
 .area { min-height: 70px; }
 
 /* The Kya & Co. field (owner screens): 48px white pill, 1.5px #d5dfd5 border,
-   2px forest border on focus, 15px text, muted placeholder. Text areas get
+   2px forest border on focus, 16px text (under 16px, iOS zooms the page on
+   focus), muted placeholder. Text areas get
    18px corners; selects get a down chevron. `.input` above stays for the
    screens not yet restyled (sign-in, invite, handoff). */
 .kya-input {
@@ -194,7 +195,7 @@ select {
   background: #fff;
   border: 1.5px solid #d5dfd5;
   padding: 0 18px;
-  font-size: 15px;
+  font-size: 16px;
   color: #1a3d2e;
   outline: none;
 }
@@ -235,10 +236,12 @@ select.kya-input {
 }
 
 /* Native shell only (html.native-app is set at boot inside the App Store /
-   Play Store builds): a frosted backdrop the height of the status bar, so
-   scrolled content blurs away under the clock instead of colliding with it —
-   the standard iOS treatment. pointer-events: none keeps it inert; browsers
-   and the PWA never get the class. */
+   Play Store builds): a solid strip the height of the status bar, so scrolled
+   content never collides with the clock. It is forest, the color of the
+   header nearly every screen opens with; a screen without a forest header
+   sets --status-bar-bg to its own top color with useStatusBarColor()
+   (src/lib/statusBar.ts). pointer-events: none keeps it inert; browsers and
+   the PWA never get the class. */
 html.native-app body::before {
   content: "";
   position: fixed;
@@ -248,9 +251,7 @@ html.native-app body::before {
   height: env(safe-area-inset-top);
   z-index: 60;
   pointer-events: none;
-  background: color-mix(in srgb, var(--cream) 45%, transparent);
-  -webkit-backdrop-filter: blur(14px);
-  backdrop-filter: blur(14px);
+  background: var(--status-bar-bg, #1a3d2e);
 }
 
 /* ---- Typography tokens (weights 400/500 only — never 600/700) ----------

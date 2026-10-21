@@ -15,6 +15,7 @@ import i18next from "i18next";
 import { Loader2 } from "lucide-react";
 import { globalI18n } from "@/lib/i18n";
 import { StartupSplash } from "@/components/StartupSplash";
+import { useStatusBarColor } from "@/lib/statusBar";
 
 // The app's styles are inlined into every page, not linked as a file. On
 // 2026-10-21 the installed iOS app received pages naming a stylesheet
@@ -45,8 +46,13 @@ import { savePushToken } from "@/lib/push.functions";
 // Side-effect import: registers the beforeinstallprompt/appinstalled listeners
 // at app start so the native install prompt is captured (it fires once, early).
 
+// The not-found and error screens have no forest header: the native status
+// bar takes their page color (--sage-50).
+const PLAIN_PAGE_TOP = "#f4f7f4";
+
 function NotFoundComponent() {
   const { t } = useTranslation();
+  useStatusBarColor(PLAIN_PAGE_TOP);
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
@@ -96,6 +102,7 @@ function ErrorComponent({ error }: ErrorComponentProps) {
  *  can quote data back. It goes to the error report. */
 function SomethingWentWrong() {
   const { t } = useTranslation();
+  useStatusBarColor(PLAIN_PAGE_TOP);
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">

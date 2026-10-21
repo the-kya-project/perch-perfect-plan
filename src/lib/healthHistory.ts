@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { SCAN_FIELDS, type ScanFieldKey } from "@/lib/triage";
 import { localDateISO } from "@/lib/localDay";
 import { fetchDisplayNames } from "@/lib/resolveNames";
+import { checkKindOf, type CheckKind } from "@/lib/checkKind";
 
 // Status column per question (noise → behavior, fluffed → energy).
 export const STATUS_COL: Record<ScanFieldKey, string> = {
@@ -77,6 +78,10 @@ type Base = {
 };
 export type CheckEntry = Base & {
   kind: "check";
+  /** Daily check or full health check: the stored daily_logs.kind, else the
+   *  guess from the row (checkKind.ts; no photos here, so a pre-kind full
+   *  check whose only sign was a photo reads as daily). */
+  checkKind: CheckKind;
   triage: string;
   resolvedAt: string | null;
   answers: Partial<Record<ScanFieldKey, string | null>>;
@@ -162,8 +167,9 @@ export function localDay(iso: string): string {
 }
 
 // "*", not a column list: a question whose column isn't in the database yet
-// (as vomiting_status was before 20261020230000) would fail the whole query, and the
-// history would read as empty. Missing columns just come back absent.
+// (as vomiting_status was before 20261020230000, or kind before 20261021200000)
+// would fail the whole query, and the history would read as empty. Missing
+// columns just come back absent.
 const LOG_SELECT = "*";
 
 export type HealthHistory = {
@@ -204,6 +210,7 @@ export async function fetchHealthHistory(birdIds: string[], ownerId: string | nu
     sitId: r.sit_id ?? null,
     triage: r.triage_status ?? "green",
     resolvedAt: r.resolved_at ?? null,
+    checkKind: checkKindOf(r),
     // Only stored answers: an absent column isn't "not answered".
     answers: Object.fromEntries(SCAN_FIELDS.filter((f) => isStored(r, f.key)).map((f) => [f.key, r[STATUS_COL[f.key]] ?? null])),
     itemNotes: (r.item_notes ?? null) as Record<string, string> | null,

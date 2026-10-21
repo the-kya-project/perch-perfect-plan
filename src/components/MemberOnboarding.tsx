@@ -125,10 +125,10 @@ export function MemberOnboarding() {
   // member's own empty flock or a nonexistent target. {Owner} = the household
   // owner's real display name (from the onboarding context, first household).
   const steps: Step[] = [
-    { target: "member-household", headline: t("memberOnboarding.householdHeadline", "Here are the birds you help with."), body: t("memberOnboarding.householdBody", "Tap any bird in {{owner}}'s household to read their care plan: food, handling, home, health, and emergency info, all in one place.", { owner: ownerName }) },
-    { target: "member-household-bird", headline: t("memberOnboarding.birdHeadline", "Pitch in on daily care."), body: t("memberOnboarding.birdBody", "Open a bird to check off today's tasks, log a weight, or add a moment as you go.") },
-    { target: "owner-tab-sits", headline: t("memberOnboarding.sitsHeadline", "When {{owner}}'s away, you've got this.", { owner: ownerName }), body: t("memberOnboarding.sitsBody", "If {{owner}} puts you in charge of a sit, you'll get a simple daily checklist for their birds, so nothing slips while they're gone.", { owner: ownerName }) },
-    { target: "owner-flock", headline: t("memberOnboarding.flockHeadline", "Got your own flock? Add them too."), body: t("memberOnboarding.flockBody", "Have birds of your own? Or will you soon? It's just a matter of time. Add them here whenever and manage everyone in one place.") },
+    { target: "member-household", headline: t("memberOnboarding.householdTitle", "Here are the birds you help with"), body: t("memberOnboarding.householdBody", "Tap any bird in {{owner}}'s household to read their care plan: food, handling, home, health, and emergency info, all in one place.", { owner: ownerName }) },
+    { target: "member-household-bird", headline: t("memberOnboarding.birdTitle", "Pitch in on daily care"), body: t("memberOnboarding.birdBody", "Open a bird to check off today's tasks, log a weight, or add a moment as you go.") },
+    { target: "owner-tab-sits", headline: t("memberOnboarding.sitsTitle", "When {{owner}}'s away, you've got this", { owner: ownerName }), body: t("memberOnboarding.sitsBody", "If {{owner}} puts you in charge of a sit, you'll get a simple daily checklist for their birds, so nothing slips while they're gone.", { owner: ownerName }) },
+    { target: "owner-flock", headline: t("memberOnboarding.flockTitle", "Got your own flock? Add them too"), body: t("memberOnboarding.flockBody", "Have birds of your own? Or will you soon? It's just a matter of time. Add them here whenever and manage everyone in one place.") },
   ];
   const TOTAL = steps.length + 1; // + wrap-up
 
@@ -222,11 +222,12 @@ export function MemberOnboarding() {
       // iPad as an owner.
       <div className="setup-frame fixed inset-0 z-[60] flex flex-col overflow-y-auto" style={{ background: K.mist, color: K.forest }}>
         <KyaHeader>
+          {/* Close top left, like every task header. */}
           <div className="mt-1.5 flex items-center justify-between gap-3">
-            <BrandLockup orientation="horizontal" variant="ink" size={118} />
             <KyaIconButton label={t("headers.close", "Close")} onClick={finish}><X className="size-5" /></KyaIconButton>
+            <BrandLockup orientation="horizontal" variant="ink" size={118} />
           </div>
-          <KyaHeading as="h1" size={32} className="mt-9 text-white">{t("memberOnboarding.welcomeHeadline", "Welcome. You're helping with a flock.")}</KyaHeading>
+          <KyaHeading as="h1" size={32} className="mt-9 text-white">{t("memberOnboarding.welcomeTitle", "Welcome, you're helping with a flock")}</KyaHeading>
           <p className="m-0 mt-2 max-w-[34ch] text-[15px] leading-[1.5]" style={{ color: K.paleGreen }}>{t("memberOnboarding.welcomeBody", "{{owner}} added you to help care for their birds. Here's how everything works.", { owner: ownerName })}</p>
         </KyaHeader>
         <main className="relative mx-auto -mt-[26px] flex w-full max-w-md flex-1 flex-col rounded-t-[26px] px-4 pb-[max(env(safe-area-inset-bottom),24px)] pt-5 sm:flex-none" style={{ background: K.mist }}>
@@ -283,17 +284,12 @@ export function MemberOnboarding() {
         <div className="absolute inset-0" style={{ background: "rgba(26,61,46,0.55)" }} />
       )}
 
-      {!isWrapUp && (
-        <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-end px-5 pt-[max(env(safe-area-inset-top),0.9rem)]">
-          <button type="button" onClick={finish} className="pointer-events-auto min-h-[44px] rounded-full bg-white px-4 text-[14px] font-[700] shadow" style={{ color: K.forest }}>{t("memberOnboarding.skipTour", "Skip tour")}</button>
-        </div>
-      )}
-
+      {/* "Skip tour" is shown once, in the bubble under Back / Next. */}
       <div ref={bubbleRef} className="pointer-events-auto absolute rounded-[20px] bg-white p-4 shadow-xl" style={bubbleStyle}>
         {isWrapUp ? (
           <div className="flex flex-col items-center text-center">
             <ProgressDots n={TOTAL} total={TOTAL} label={t("memberOnboarding.stepOfSr", "Step {{n}} of {{total}}", { n: TOTAL, total: TOTAL })} />
-            <KyaHeading size={22} className="mt-3">{t("memberOnboarding.allSet", "You're all set.")}</KyaHeading>
+            <KyaHeading size={22} className="mt-3">{t("memberOnboarding.allSetTitle", "You're all set")}</KyaHeading>
             <p className="m-0 mt-2 text-[15px] leading-[1.5]" style={{ color: K.ink }}>{t("memberOnboarding.ownerManages", "{{owner}} manages everything else. Just reach out to them if you ever need to do more.", { owner: ownerName })}</p>
             <div className="mt-4 w-full">
               <KyaPrimaryButton onClick={finish} icon={<Check className="size-4" />}>{t("memberOnboarding.gotIt", "Got it")}</KyaPrimaryButton>

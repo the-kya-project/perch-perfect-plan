@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { ArrowLeft, Loader2, Phone } from "lucide-react";
 import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaLink, KyaSecondaryButton } from "@/components/kya";
 import { PageHeader } from "@/components/headers";
+import { useConfirm } from "@/components/ConfirmSheet";
 import { useCapability, useMyPermissions } from "@/lib/useCapability";
 import { useBirdRole } from "@/lib/useBirdRole";
 import { resolveScanPhotoUrls } from "@/lib/scanPhoto";
@@ -15,6 +16,7 @@ import { localDateISO } from "@/lib/localDay";
 import { mergeEmergency, pickVet } from "@/lib/emergency";
 import { useBirdOwnerEmergency } from "@/lib/useOwnerEmergency";
 import { isStored } from "@/lib/healthHistory";
+import { checkKindOf } from "@/lib/checkKind";
 import { fetchDisplayNames } from "@/lib/resolveNames";
 import type { ScanFieldKey } from "@/lib/triage";
 import i18next from "i18next";
@@ -139,16 +141,24 @@ function ScanDetail() {
   const canGoBack = useCanGoBack();
   const [resolving, setResolving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const { confirm, sheet: confirmSheet } = useConfirm();
   const goBack = () => (canGoBack ? router.history.back() : navigate({ to: "/scans" }));
 
   // Owner-only delete (RLS also enforces birds.owner_id).
-  async function deleteScan() {
-    if (!window.confirm(t("scanDetail.confirmDelete", "Delete this health check? This can't be undone."))) return;
+  async function deleteScan(full: boolean) {
+    const ok = await confirm({
+      title: full
+        ? t("scanDetail.confirmDeleteFullTitle", "Delete this full health check?")
+        : t("scanDetail.confirmDeleteDailyTitle", "Delete this daily check?"),
+      body: t("scanDetail.confirmDeleteBody", "This can't be undone."),
+      confirmLabel: t("scanDetail.confirmDeleteAction", "Delete"),
+    });
+    if (!ok) return;
     setDeleting(true);
     const { error } = await supabase.from("daily_logs").delete().eq("id", scanId);
     setDeleting(false);
     if (error) { toast.error(friendlyError(error)); return; }
-    toast.success(t("scanDetail.deletedCheck", "Daily check deleted."));
+    toast.success(full ? t("scanDetail.deletedFullCheck", "Full health check deleted.") : t("scanDetail.deletedCheck", "Daily check deleted."));
     qc.invalidateQueries({ queryKey: ["scan-feed"] });
     qc.invalidateQueries({ queryKey: ["health-history"] });
     qc.invalidateQueries({ queryKey: ["bird-checkins", birdId] });
@@ -157,7 +167,13 @@ function ScanDetail() {
   }
 
   async function markResolved() {
-    if (!window.confirm(t("scanDetail.confirmResolve", "Mark this concern as resolved? Caregivers will see the bird's status return to normal."))) return;
+    const ok = await confirm({
+      title: t("scanDetail.confirmResolveTitle", "Mark this concern as resolved?"),
+      body: t("scanDetail.confirmResolveBody", "Caregivers will see the bird's status return to normal."),
+      confirmLabel: t("scanDetail.markResolved", "Mark resolved"),
+      tone: "primary",
+    });
+    if (!ok) return;
     setResolving(true);
     const { error } = await supabase.from("daily_logs").update({ resolved_at: new Date().toISOString() } as any).eq("id", scanId);
     setResolving(false);
@@ -188,7 +204,7 @@ function ScanDetail() {
       // Photos attached to this check: legacy data: URLs or scan-photos paths.
       const { data: photos } = await supabase
         .from("photo_logs")
-        .select("id, photo_url")
+        .select("id, photo_url, notes")
         .eq("daily_log_id", scanId)
         .order("created_at", { ascending: true });
       const scanUrls = await resolveScanPhotoUrls(supabase.storage, (photos ?? []).map((p) => p.photo_url));
@@ -212,7 +228,11 @@ function ScanDetail() {
       // (useBirdOwnerEmergency below — household members can't read those directly).
       const { data: ec } = await supabase.from("emergency_contacts").select("*").eq("bird_id", birdId).maybeSingle();
 
-      return { row: row as any, actor, birdName: (bird?.name ?? null) as string | null, photos: resolvedPhotos as { id: string; photo_url: string }[], weight, contacts: ec ?? null };
+      // Full or daily: the stored kind (20261021200000), else the guess from
+      // the row and its photos (checkKind.ts). select("*") above, so a database
+      // without the column yet still loads the check.
+      const full = !!row && checkKindOf(row as any, (photos ?? []).map((p) => p.notes ?? null)) === "full";
+      return { row: row as any, actor, birdName: (bird?.name ?? null) as string | null, photos: resolvedPhotos as { id: string; photo_url: string }[], weight, contacts: ec ?? null, full };
     },
   });
 
@@ -234,6 +254,7 @@ function ScanDetail() {
   }
 
   const birdName = data!.birdName ?? t("scanDetail.yourBird", "your bird");
+  const full = !!data!.full;
   const at = new Date(row.created_at);
   const when = `${formatLocalDate(at, { weekday: "long", month: "long", day: "numeric" })}, ${formatLocalTime(at, { hour: "numeric", minute: "2-digit" })}`;
   const isSitter = row.source === "sitter";
@@ -274,7 +295,9 @@ function ScanDetail() {
 
   return (
     <Shell
-      headline={t("scanDetail.titleCheck", "{{name}}'s daily check", { name: birdName })}
+      headline={full
+        ? t("scanDetail.titleFullCheck", "{{name}}'s full health check", { name: birdName })
+        : t("scanDetail.titleCheck", "{{name}}'s daily check", { name: birdName })}
       body={`${when} · ${by}`}
       onBack={goBack}
     >
@@ -355,7 +378,7 @@ function ScanDetail() {
           <KyaHeading size={20}>{data!.photos.length === 1 ? t("scanDetail.photo", "Photo") : t("scanDetail.photos", "Photos")}</KyaHeading>
           <div className="mt-3 flex flex-col gap-3">
             {data!.photos.map((p) => (
-              <img key={p.id} src={p.photo_url} alt={t("scanDetail.photoAltCheck", "Photo attached to this daily check")} className="block w-full rounded-[14px] object-contain" />
+              <img key={p.id} src={p.photo_url} alt={full ? t("scanDetail.photoAltFullCheck", "Photo attached to this full health check") : t("scanDetail.photoAltCheck", "Photo attached to this daily check")} className="block w-full rounded-[14px] object-contain" />
             ))}
           </div>
         </KyaCard>
@@ -363,11 +386,12 @@ function ScanDetail() {
 
       {isOwner && (
         <div className="flex justify-center">
-          <KyaLink color={K.red} onClick={deleting ? undefined : deleteScan}>
+          <KyaLink color={K.red} onClick={deleting ? undefined : () => void deleteScan(full)}>
             {deleting ? t("scanDetail.deleting", "Deleting…") : t("scanDetail.deleteThisCheck", "Delete this check")}
           </KyaLink>
         </div>
       )}
+      {confirmSheet}
     </Shell>
   );
 }

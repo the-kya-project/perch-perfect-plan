@@ -83,13 +83,20 @@ export function EntryRow({ e, ctx, last }: { e: HistoryEntry; ctx: EntryContext;
     detail = [time, mealText(t, e.meal), who].filter(Boolean) as string[];
   } else {
     const n = thingsToWatch(e);
-    if (e.bySitter) {
-      what = n > 0 ? t("healthHistory.checkToWatch", "Daily check, {{count}} things to watch", { count: n }) : t("healthHistory.dailyCheck", "Daily check");
-      detail = [sitterAnswerLine(t, e), time, who];
+    // "Daily check" or "Full health check", from the stored kind (or its guess).
+    const full = e.checkKind === "full";
+    if (n > 0) {
+      what = full
+        ? t("healthHistory.fullCheckToWatch", "Full health check, {{count}} things to watch", { count: n })
+        : t("healthHistory.checkToWatch", "Daily check, {{count}} things to watch", { count: n });
+    } else if (e.bySitter) {
+      what = full ? t("healthHistory.fullCheck", "Full health check") : t("healthHistory.dailyCheck", "Daily check");
     } else {
-      what = n > 0 ? t("healthHistory.checkToWatch", "Daily check, {{count}} things to watch", { count: n }) : t("healthHistory.checkAllNormal", "Daily check, all normal");
-      detail = [time, who];
+      what = full
+        ? t("healthHistory.fullCheckAllNormal", "Full health check, all normal")
+        : t("healthHistory.checkAllNormal", "Daily check, all normal");
     }
+    detail = e.bySitter ? [sitterAnswerLine(t, e), time, who] : [time, who];
   }
   const open = () =>
     e.kind === "check"

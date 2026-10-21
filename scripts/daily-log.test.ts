@@ -26,7 +26,7 @@ function check(name: string, fn: () => void) {
   }
 }
 
-const ctx = { birdId: "b1", sitId: null, source: "owner" as const, runBy: "u1", logDate: "2026-10-19" };
+const ctx = { kind: "daily" as const, birdId: "b1", sitId: null, source: "owner" as const, runBy: "u1", logDate: "2026-10-19" };
 
 check("all normal answers every question normal", () => {
   const a = allNormalAnswers();
@@ -43,6 +43,12 @@ check("all normal writes ten normal columns and triages green", () => {
   assert.equal(row.triage_status, "green");
   assert.equal(row.log_date, "2026-10-19");
   assert.equal(row.source, "owner");
+  assert.equal(row.kind, "daily");
+});
+
+check("the full health check writes kind full", () => {
+  const { row } = buildDailyLogRow(allNormalAnswers(), { ...ctx, kind: "full" });
+  assert.equal(row.kind, "full");
 });
 
 check("one concerning on a red field triages red", () => {

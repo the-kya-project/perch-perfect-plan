@@ -14,6 +14,7 @@ import { K, KyaPage, KyaBody, KyaCard, KyaRow, KyaGroupLabel, KyaIconTile, KyaHe
 import { PageHeader, useGoBack } from "@/components/headers";
 import { friendlyError } from "@/lib/errorMessage";
 import { formatLocalDate } from "@/lib/dates";
+import { capabilitySummary } from "@/components/HouseholdMemberSheet";
 import i18next from "i18next";
 import { useTranslation } from "react-i18next";
 
@@ -24,6 +25,10 @@ export const Route = createFileRoute("/_authenticated/birds/$birdId/access")({
 
 function fmtDate(iso: string): string {
   return formatLocalDate(new Date(iso), { month: "short", day: "numeric", year: "numeric" });
+}
+/** "can log weights" → "Can log weights" (the summary is written mid-sentence). */
+function sentenceStart(s: string): string {
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 }
 function initialOf(s: string | null | undefined, fallback = "?") {
   return (s?.trim()?.slice(0, 1) || fallback).toUpperCase();
@@ -61,6 +66,28 @@ function AccessHub() {
 
   const name = bird?.row?.name ?? t("birdAccess.thisBird", "this bird");
 
+  // Each member's real permissions (household_member_permissions; no row =
+  // can see only). Always refetched on open (staleTime 0), so a change made on
+  // the Household page shows here straight away.
+  const { data: myId = null } = useQuery({
+    queryKey: ["me-id"],
+    queryFn: async () => (await getLocalUser()).data.user?.id ?? null,
+  });
+  const { data: permRows } = useQuery({
+    queryKey: ["household-permissions", myId] as const,
+    enabled: !!myId,
+    staleTime: 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("household_member_permissions")
+        .select("member_user_id, capabilities, preset")
+        .eq("owner_id", myId!);
+      if (error) throw error;
+      return (data ?? []) as { member_user_id: string; capabilities: string[] | null; preset: string | null }[];
+    },
+  });
+  const capsByMember = permRows ? new Map(permRows.map((r) => [r.member_user_id, r.capabilities ?? []])) : null;
+
   const members = household?.members ?? [];
   const pending = household?.pending ?? [];
   const refresh = () => qc.invalidateQueries({ queryKey: ["household", birdId] });
@@ -94,7 +121,7 @@ function AccessHub() {
             ) : (
               <>
                 {members.map((m) => (
-                  <MemberRow key={m.userId} birdId={birdId} member={m} onChanged={refresh} />
+                  <MemberRow key={m.userId} birdId={birdId} member={m} caps={capsByMember ? capsByMember.get(m.userId) ?? [] : null} onChanged={refresh} />
                 ))}
                 {pending.map((p) => (
                   <PendingRow key={p.id} invite={p} onChanged={refresh} />
@@ -110,7 +137,7 @@ function AccessHub() {
             )}
           </KyaCard>
           <p className="m-0 px-1 text-[13.5px] leading-[1.5]" style={{ color: K.quiet }}>
-            {t("birdAccess.householdHint", "Household members can view and log alongside you. Good for partners or family who help with {{name}}.", { name })}
+            {t("birdAccess.householdHintPerms", "Household members see {{name}}'s record and can do what you allow each of them. Good for partners or family who help with {{name}}.", { name })}
           </p>
         </section>
 
@@ -159,7 +186,7 @@ function OwnerInitial() {
   return <>{data ?? "Y"}</>;
 }
 
-function MemberRow({ birdId, member, onChanged }: { birdId: string; member: { userId: string; name: string | null; email: string | null; addedAt: string }; onChanged: () => void }) {
+function MemberRow({ birdId, member, caps, onChanged }: { birdId: string; member: { userId: string; name: string | null; email: string | null; addedAt: string }; caps: string[] | null; onChanged: () => void }) {
   const { t } = useTranslation();
   const [menu, setMenu] = useState(false);
   const remove = useServerFn(removeHouseholdMember);
@@ -175,7 +202,9 @@ function MemberRow({ birdId, member, onChanged }: { birdId: string; member: { us
         chevron={false}
         leading={<Avatar tone="lime">{initialOf(member.name || member.email)}</Avatar>}
         title={label}
-        detail={t("birdAccess.canViewLog", "Can view & log · added {{date}}", { date: fmtDate(member.addedAt) })}
+        detail={caps === null
+          ? t("birdAccess.addedOn", "Added {{date}}", { date: fmtDate(member.addedAt) })
+          : t("birdAccess.permsAdded", "{{perms}} · added {{date}}", { perms: sentenceStart(capabilitySummary(caps)), date: fmtDate(member.addedAt) })}
         trailing={
           <button
             type="button"

@@ -190,6 +190,7 @@ export function ClipRecorder({
   onProgress,
   cancelRef,
   onUploaded,
+  inPage = false,
 }: {
   /** The bird this clip belongs to. Sent to createClipUpload, which registers
    *  the minted uid against it in clip_assets — the server-authored binding
@@ -211,6 +212,9 @@ export function ClipRecorder({
   /** Receives the persisted clip reference ("cfstream:<uid>") once the upload
    *  to Cloudflare Stream completes; the parent saves it on the clip column. */
   onUploaded: (ref: string) => void | Promise<void>;
+  /** Shown in a page next to the footer's Next/Save (not in a sheet): the
+   *  recorder's buttons are white so the footer keeps the one sunflower button. */
+  inPage?: boolean;
 }) {
   const { t } = useTranslation();
   const videoRef = useRef<HTMLVideoElement | null>(null);
@@ -499,8 +503,9 @@ export function ClipRecorder({
   // ---- Render ----------------------------------------------------------------
 
   // The Kya buttons: sunflower for the one main action, white with a forest
-  // border for the other.
-  const MAIN_BTN = "inline-flex min-h-[52px] min-w-0 items-center justify-center gap-2 rounded-full border-2 border-[#1a3d2e] bg-[#f2b33d] px-5 text-[16px] font-[700] text-[#1a3d2e] disabled:opacity-45";
+  // border for the other. Inside a page (`inPage`) the footer's Next/Save is
+  // the screen's one sunflower button, so the recorder's own buttons are white.
+  const MAIN_BTN = `inline-flex min-h-[52px] min-w-0 items-center justify-center gap-2 rounded-full border-2 border-[#1a3d2e] ${inPage ? "bg-white" : "bg-[#f2b33d]"} px-5 text-[16px] font-[700] text-[#1a3d2e] disabled:opacity-45`;
   const SECOND_BTN = "inline-flex min-h-[52px] shrink-0 items-center justify-center gap-1.5 rounded-full border-2 border-[#1a3d2e] bg-white px-4 text-[15px] font-[700] text-[#1a3d2e] disabled:opacity-45";
 
   const noteEl = note && (
@@ -607,7 +612,7 @@ export function ClipRecorder({
         {phase === "recording" && (
           <div className="absolute left-2 top-2 flex items-center gap-1.5 rounded-full bg-[#a32d2d] px-2.5 py-1 text-[12px] font-[700] text-white">
             <span className="size-1.5 animate-pulse rounded-full bg-white" />
-            {t("clipRecorder.rec", "REC {{elapsed}} / {{max}}", { elapsed: fmt(elapsed), max: fmt(MAX_SECONDS) })}
+            {t("clipRecorder.recording", "Recording {{elapsed}} / {{max}}", { elapsed: fmt(elapsed), max: fmt(MAX_SECONDS) })}
           </div>
         )}
         {phase === "ready" && (

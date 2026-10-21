@@ -46,15 +46,17 @@ function StoreBadge({ platform }: { platform: "ios" | "android" }) {
   );
 }
 
-/** The sunflower main button, sized to its label so "Not now" fits beside it. */
-function CompactPrimary({ children, onClick, disabled }: { children: ReactNode; onClick: () => void; disabled?: boolean }) {
+/** The callout's button, sized to its label so "Not now" fits beside it.
+ *  Sunflower in Settings; white secondary on Home, where the daily check owns
+ *  the screen's one sunflower button. */
+function CompactPrimary({ children, onClick, disabled, secondary }: { children: ReactNode; onClick: () => void; disabled?: boolean; secondary?: boolean }) {
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
       className="inline-flex min-h-[48px] items-center justify-center rounded-full border-2 px-5 text-[15px] font-[700] disabled:opacity-45"
-      style={{ background: K.sunflower, borderColor: K.forest, color: K.forest }}
+      style={{ background: secondary ? "#fff" : K.sunflower, borderColor: K.forest, color: K.forest }}
     >
       {children}
     </button>
@@ -84,6 +86,7 @@ export function NotificationsCallout({
   onEnable,
   onOpenSettings,
   onDismiss,
+  secondaryButton,
 }: {
   state: CalloutState;
   /** The bird's name, or "your birds" when there is more than one. */
@@ -94,6 +97,8 @@ export function NotificationsCallout({
   onOpenSettings?: () => void;
   /** Home only: adds "Not now" to the two in-app states. Settings has none. */
   onDismiss?: () => void;
+  /** Home: the button is white secondary, not the screen's sunflower one. */
+  secondaryButton?: boolean;
 }) {
   const { t } = useTranslation();
   const notNow = onDismiss && (
@@ -120,7 +125,7 @@ export function NotificationsCallout({
         body={t("notificationsCallout.turnOnRemindersBody", "We'll let you know when it's time to weigh {{bird}} and when a check-in is due. You can change this anytime.", { bird: birdLabel })}
       >
         <div className="mt-3 flex flex-wrap items-center gap-2">
-          <CompactPrimary onClick={onEnable} disabled={busy}>
+          <CompactPrimary onClick={onEnable} disabled={busy} secondary={secondaryButton}>
             {/* Shorter beside "Not now" so the pair fits one line on a phone. */}
             {onDismiss ? t("notificationsCallout.turnOn", "Turn on") : t("notificationsCallout.turnOnNotifications", "Turn on notifications")}
           </CompactPrimary>
@@ -143,7 +148,7 @@ export function NotificationsCallout({
         {((state.canOpenSettings && onOpenSettings) || notNow) && (
           <div className="mt-3 flex flex-wrap items-center gap-2">
             {state.canOpenSettings && onOpenSettings && (
-              <CompactPrimary onClick={onOpenSettings} disabled={busy}>
+              <CompactPrimary onClick={onOpenSettings} disabled={busy} secondary={secondaryButton}>
                 {t("notificationsCallout.openSettings", "Open settings")}
               </CompactPrimary>
             )}

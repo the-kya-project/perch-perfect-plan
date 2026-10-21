@@ -17,6 +17,7 @@ import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { friendlyError } from "@/lib/errorMessage";
 import { pickVet } from "@/lib/emergency";
+import { ownerFirstName } from "@/components/sitter/sitterShared";
 import { localDateISO } from "@/lib/localDay";
 
 export const Route = createFileRoute("/sitter/$token/scan")({
@@ -124,6 +125,7 @@ function ScanPage() {
           name={ctx.bird.name}
           sex={(ctx.bird as any).sex}
           vet={vet}
+          ownerName={ownerFirstName(ctx, t)}
           submitting={m.isPending}
           onSubmit={(p) => m.mutate(p)}
           onLeave={() => toToday()}
@@ -209,7 +211,7 @@ function ScanHistory({ token, birdId, birdName, onBack }: { token: string; birdI
                             <div className="mt-2 grid grid-cols-3 gap-2">
                               {s.photos.map((p: any) => (
                                 <a key={p.id} href={p.photo_url} target="_blank" rel="noreferrer" className="block aspect-square overflow-hidden rounded-[12px]" style={{ background: K.mist }}>
-                                  <img src={p.photo_url} alt={t("sitter.scan.photoAlt", "Scan photo")} className="size-full object-cover" />
+                                  <img src={p.photo_url} alt={t("sitter.scan.photoAltCheck", "Health check photo")} className="size-full object-cover" />
                                 </a>
                               ))}
                             </div>

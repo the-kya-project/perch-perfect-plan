@@ -14,7 +14,7 @@ import { noticedItems } from "@/lib/dailyCheckLabels";
 import { daysSince, staleThreshold } from "@/lib/homeData";
 import { DailyCheckCard } from "@/components/DailyCheckCard";
 import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
-import { TaskHeader } from "@/components/headers";
+import { TaskFooter, TaskHeader, TASK_FOOTER_SPACE } from "@/components/headers";
 import { K, SERIF, KyaCard, KyaGroupLabel, KyaHeading, KyaPrimaryButton } from "@/components/kya";
 import { speciesLabel } from "@/lib/speciesLabel";
 import { track } from "@/lib/analytics";
@@ -184,7 +184,7 @@ function FlockCheck() {
       return !!c && c.triage_status !== "green";
     });
     return (
-      <div className={`setup-frame min-h-screen ${FOOTER_SPACE}`} style={{ background: C.body, color: C.forest }}>
+      <div className={`setup-frame min-h-screen ${TASK_FOOTER_SPACE}`} style={{ background: C.body, color: C.forest }}>
         {header}
         <main className="relative mx-auto -mt-[26px] flex max-w-md flex-col gap-3.5 rounded-t-[26px] px-4 pb-6 pt-5" style={{ background: C.body }}>
           <section className="rounded-[20px] bg-white px-4 pb-2 pt-4">
@@ -250,15 +250,17 @@ function FlockCheck() {
             </p>
           )}
         </main>
-        <Footer>
-          <FooterButton onClick={goHome}>{t("flockCheck.backToHome", "Back to home")}</FooterButton>
-        </Footer>
+        <TaskFooter>
+          <KyaPrimaryButton onClick={goHome}>{t("flockCheck.backToHome", "Back to home")}</KyaPrimaryButton>
+        </TaskFooter>
       </div>
     );
   }
 
   // Footer target: the next unchecked bird whose form isn't already open.
   const footerNext = upNext.find((b) => b.id !== openId) ?? null;
+  // The footer is pinned to the bottom of the screen; leave room for it.
+  const showFooter = total > 0 && (!!footerNext || upNext.length === 0);
   const openBird = (id: string) => setOpenId(id);
 
   const renderOpen = (b: (typeof birds)[number]) => {
@@ -295,6 +297,9 @@ function FlockCheck() {
           showHeading={done}
           flat
           saveLabel={!done && next ? t("flockCheck.saveNext", "Save · next: {{name}}", { name: next.name }) : undefined}
+          // The footer's "Check [bird] next" is the screen's main button while
+          // there is another bird to check; on the last bird, Save is.
+          saveSecondary={showFooter}
           onSaved={(r) => {
             const after = new Set(savedHere).add(b.id);
             setSavedHere(after);
@@ -313,10 +318,8 @@ function FlockCheck() {
     );
   };
 
-  // The footer is pinned to the bottom of the screen; leave room for it.
-  const showFooter = total > 0 && (!!footerNext || upNext.length === 0);
   return (
-    <div className={`setup-frame min-h-screen ${showFooter ? FOOTER_SPACE : "pb-[calc(env(safe-area-inset-bottom)+24px)]"}`} style={{ background: C.body, color: C.forest }}>
+    <div className={`setup-frame min-h-screen ${showFooter ? TASK_FOOTER_SPACE : "pb-[calc(env(safe-area-inset-bottom)+24px)]"}`} style={{ background: C.body, color: C.forest }}>
       {header}
       <main className="relative mx-auto -mt-[26px] flex max-w-md flex-col gap-2 rounded-t-[26px] px-4 pb-6 pt-5" style={{ background: C.body }}>
         {upNext.length > 0 && <SectionLabel>{t("flockCheck.upNext", "Up next · {{n}}", { n: upNext.length })}</SectionLabel>}
@@ -374,13 +377,13 @@ function FlockCheck() {
         })}
       </main>
       {showFooter && (
-        <Footer>
+        <TaskFooter>
           {footerNext ? (
-            <FooterButton onClick={() => openBird(footerNext.id)}>{t("flockCheck.checkNext", "Check {{name}} next →", { name: footerNext.name })}</FooterButton>
+            <KyaPrimaryButton onClick={() => openBird(footerNext.id)}>{t("flockCheck.checkNext", "Check {{name}} next →", { name: footerNext.name })}</KyaPrimaryButton>
           ) : (
-            <FooterButton onClick={() => navigate({ to: "/check", search: { view: "done" } })}>{t("flockCheck.seeSummary", "See today's summary →")}</FooterButton>
+            <KyaPrimaryButton onClick={() => navigate({ to: "/check", search: { view: "done" } })}>{t("flockCheck.seeSummary", "See today's summary →")}</KyaPrimaryButton>
           )}
-        </Footer>
+        </TaskFooter>
       )}
     </div>
   );
@@ -400,27 +403,4 @@ function weighedLine(t: TFunction, d: BirdToday | undefined, isFoster: boolean |
 
 function SectionLabel({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return <KyaGroupLabel className={className}>{children}</KyaGroupLabel>;
-}
-
-
-// Pinned to the very bottom: /check is a task screen, so the tab bar is hidden
-// (isTaskPath in OwnerTabBar) and there's no nav to sit above, only the
-// home-indicator safe area. Pages that show it reserve FOOTER_SPACE (12px top
-// + 48px button + the safe area or 12px, plus a gap) so it never covers the
-// last card.
-const FOOTER_SPACE = "pb-[calc(max(env(safe-area-inset-bottom),12px)+84px)]";
-function Footer({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="fixed inset-x-0 bottom-0 z-40 border-t px-4 pb-[max(env(safe-area-inset-bottom),12px)] pt-3" style={{ background: C.body, borderColor: C.line }}>
-      <div className="mx-auto max-w-md">{children}</div>
-    </div>
-  );
-}
-
-function FooterButton({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
-  return (
-    <button type="button" onClick={onClick} className="flex h-[48px] w-full items-center justify-center rounded-full border-2 px-5 text-[15px] font-[700]" style={{ background: C.sunflower, borderColor: C.forest, color: C.forest }}>
-      {children}
-    </button>
-  );
 }

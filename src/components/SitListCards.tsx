@@ -11,7 +11,7 @@ import { copySitterLink } from "@/lib/sitLink";
 import { SitChecklist } from "@/components/SitChecklist";
 import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 import { K, KyaCard, KyaLink, KyaRow, KyaSheet, KyaHeading } from "@/components/kya";
-import { namesAsCount } from "@/lib/birdNames";
+import { birdNames } from "@/lib/birdNames";
 import { useTranslation } from "react-i18next";
 
 export type SitBird = { id: string; name: string; photo_url?: string | null; photo_original?: string | null; photo_position?: string | null };
@@ -73,9 +73,7 @@ function BirdStack({ birds, onDark }: { birds: SitBird[]; onDark?: boolean }) {
   const { t } = useTranslation();
   if (!birds.length) return null;
   const names = birds.map((b) => b.name);
-  const label = namesAsCount(names)
-    ? t("birdNames.count", "{{count}} birds", { count: names.length })
-    : names.length === 1 ? names[0] : t("birdNames.and", "{{first}} and {{last}}", { first: names.slice(0, -1).join(", "), last: names[names.length - 1] });
+  const label = birdNames(t, names);
   return (
     <div className="flex items-center gap-2.5">
       <span className="flex pl-1.5" aria-hidden="true">
@@ -169,7 +167,7 @@ export function ActiveSitCard({ sit, birds, caregiverName, iAmLead, iOwnSit, con
       {birds.length > 0 && <div className="mt-3"><BirdStack birds={birds} onDark /></div>}
 
       <div className="mt-3.5 flex flex-col gap-2">
-        <Link to="/scans/history" search={{ sitId: sit.id }} className="inline-flex min-h-[48px] items-center justify-center gap-1.5 rounded-full text-[15px] font-[700] active:scale-[0.99]" style={{ background: K.lime, color: K.forest }}>
+        <Link to="/scans/history" search={{ sitId: sit.id }} className="inline-flex min-h-[48px] items-center justify-center gap-1.5 rounded-full border-2 bg-white text-[15px] font-[700] active:scale-[0.99]" style={{ borderColor: K.forest, color: K.forest }}>
           <Activity className="size-4" /> {t("sitCards.viewHealthChecks", "View health checks")}
         </Link>
         {iOwnSit ? (

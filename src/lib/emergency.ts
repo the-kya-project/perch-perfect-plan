@@ -98,31 +98,81 @@ function clean(v: unknown): string | null {
   return t.length ? t : null;
 }
 
-/** Merge per-bird contacts over owner defaults. Per-bird wins when non-empty. */
+// Emergency info is grouped into CONTACT ROWS: one person, clinic, or place
+// each. A row's fields always travel together, so a bird's own vet never
+// shows the account vet's name or address in one of its blanks.
+export type EmergencyRowKey = "you" | "backup" | "avian_vet" | "emergency_vet" | "poison" | "carrier" | "first_aid" | "spending";
+
+export const EMERGENCY_ROWS: Record<EmergencyRowKey, EmergencyField[]> = {
+  you: ["owner_phone"],
+  backup: ["backup_name", "backup_phone"],
+  avian_vet: ["avian_vet_name", "avian_vet_phone", "avian_vet_address"],
+  emergency_vet: ["emergency_vet_name", "emergency_vet_phone", "emergency_vet_address"],
+  poison: ["poison_control"],
+  carrier: ["carrier_location"],
+  first_aid: ["first_aid_kit_location"],
+  spending: ["spending_limit"],
+};
+
+export const EMERGENCY_ROW_KEYS = Object.keys(EMERGENCY_ROWS) as EmergencyRowKey[];
+
+/**
+ * True when the bird has its OWN version of this contact row: any of the
+ * row's fields is set on the bird's emergency_contacts row. A row stored
+ * partially under the old per-field rule (only the fields that differed from
+ * the account were saved) counts as the bird's own, and its blanks stay blank.
+ */
+export function birdOwnsRow(bird: Record<string, any> | null | undefined, row: EmergencyRowKey): boolean {
+  return EMERGENCY_ROWS[row].some((f) => clean(bird?.[f]) !== null);
+}
+
+/** The contact rows a bird has its own version of ("Custom for [bird]"). */
+export function birdOwnRows(bird: Record<string, any> | null | undefined): EmergencyRowKey[] {
+  return EMERGENCY_ROW_KEYS.filter((r) => birdOwnsRow(bird, r));
+}
+
+/**
+ * The emergency info a bird actually uses, merged per CONTACT ROW: a row the
+ * bird has its own version of is taken whole from the bird (its blanks stay
+ * blank and show as "Not added"); every other row is taken whole from the
+ * account. Never mixes the two inside one row. The one merge every screen,
+ * server function, and sitter view uses.
+ */
 export function mergeEmergency(
   bird: Record<string, any> | null | undefined,
   defaults: Record<string, any> | null | undefined,
 ): Record<EmergencyField, string | null> {
   const out = {} as Record<EmergencyField, string | null>;
-  for (const f of EMERGENCY_FIELDS) {
-    out[f] = clean(bird?.[f]) ?? clean(defaults?.[f]);
+  for (const row of EMERGENCY_ROW_KEYS) {
+    const src = birdOwnsRow(bird, row) ? bird : defaults;
+    for (const f of EMERGENCY_ROWS[row]) out[f] = clean(src?.[f]);
   }
   return out;
 }
 
+/** True when this field comes from the account (its row isn't the bird's own). */
 export function isInherited(
   field: EmergencyField,
   bird: Record<string, any> | null | undefined,
 ): boolean {
-  return clean(bird?.[field]) === null;
+  const row = EMERGENCY_ROW_KEYS.find((r) => EMERGENCY_ROWS[r].includes(field));
+  return !row || !birdOwnsRow(bird, row);
 }
 
-/** True when a bird's own emergency contacts differ from the account defaults
- *  in any field (a per-bird change the owner made on purpose). */
-export function emergencyDifferent(contacts: Record<string, any> | null | undefined, defaults: Record<string, any> | null | undefined): boolean {
-  if (!contacts) return false;
-  const v = (row: Record<string, any> | null | undefined, k: string) => (row?.[k] ?? "").toString().trim();
-  return EMERGENCY_FIELDS.some((k) => v(contacts, k) !== "" && v(contacts, k) !== v(defaults, k));
+/** True when a bird has its own version of any contact row ("Different for
+ *  [bird]"), so it no longer follows the account for that row. A row counts
+ *  whether or not its values happen to match the account's today. `defaults`
+ *  is accepted for the existing call sites and not needed. */
+export function emergencyDifferent(contacts: Record<string, any> | null | undefined, _defaults?: Record<string, any> | null | undefined): boolean {
+  return birdOwnRows(contacts).length > 0;
+}
+
+/** What to store when the bird saves its own version of a row: EVERY field of
+ *  the row (blanks as null), never only the ones that differ from the account. */
+export function birdRowPatch(row: EmergencyRowKey, values: Record<string, string | null | undefined>): Record<EmergencyField, string | null> {
+  const out = {} as Record<EmergencyField, string | null>;
+  for (const f of EMERGENCY_ROWS[row]) out[f] = clean(values[f]);
+  return out;
 }
 
 export type VetRecord = { kind: "avian" | "emergency"; name: string | null; phone: string | null; address: string | null };
@@ -148,4 +198,34 @@ export function pickVet(contacts: Record<string, any> | null | undefined): VetRe
   if (avian.name || avian.address) return avian;
   if (emergency.name || emergency.address) return emergency;
   return null;
+}
+
+export type VetRowKey = "avian_vet" | "emergency_vet";
+export const VET_ROWS: VetRowKey[] = ["avian_vet", "emergency_vet"];
+export type IncompleteVet = { row: VetRowKey; missing: ("name" | "phone")[] };
+
+const VET_FIELDS: Record<VetRowKey, { name: EmergencyField; phone: EmergencyField }> = {
+  avian_vet: { name: "avian_vet_name", phone: "avian_vet_phone" },
+  emergency_vet: { name: "emergency_vet_name", phone: "emergency_vet_phone" },
+};
+
+/**
+ * The bird's OWN vet rows that are half filled: a vet row the bird owns (any
+ * of its fields set, see birdOwnsRow) whose name or phone is blank. Old
+ * partial rows saved under the per-field rule land here. The blanks are never
+ * filled from the account; the owner is asked to finish them. The address is
+ * optional and never counts. A vet row the bird doesn't own follows the
+ * account and is never listed. Avian vet first, then the after-hours vet.
+ * Pass the bird's emergency_contacts row (NOT the merged values).
+ */
+export function incompleteOwnVets(contacts: Record<string, any> | null | undefined): IncompleteVet[] {
+  const out: IncompleteVet[] = [];
+  for (const row of VET_ROWS) {
+    if (!birdOwnsRow(contacts, row)) continue;
+    const missing: IncompleteVet["missing"] = [];
+    if (clean(contacts?.[VET_FIELDS[row].name]) === null) missing.push("name");
+    if (clean(contacts?.[VET_FIELDS[row].phone]) === null) missing.push("phone");
+    if (missing.length) out.push({ row, missing });
+  }
+  return out;
 }

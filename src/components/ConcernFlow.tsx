@@ -73,7 +73,7 @@ export function ConcernFlow({
           type="button"
           disabled={pausePending}
           onClick={onPause}
-          className="flex min-h-[48px] w-full items-center justify-center rounded-xl border border-[#c8bfa6] bg-white text-sm font-medium text-[#1a3d2e] active:scale-[0.99] disabled:opacity-60"
+          className="flex min-h-[48px] w-full items-center justify-center rounded-xl border border-[#d5dfd5] bg-white text-sm font-medium text-[#1a3d2e] active:scale-[0.99] disabled:opacity-60"
         >
           {pausePending ? <Loader2 className="size-4 animate-spin" /> : t("concernFlow.pauseButton", "Pause {{name}}'s reminders", { name })}
         </button>
@@ -88,7 +88,7 @@ export function ConcernFlow({
     return (
       <div className="space-y-4">
         <p className="text-[11px] font-medium uppercase tracking-widest text-[#5f5e5a]">{t("concernFlow.pausedBadge", "Reminders paused · {{ownerName}} notified", { ownerName })}</p>
-        <h2 className="text-xl font-medium text-[#1a3d2e]">{t("concernFlow.pathsTitle", "Thank you for caring for {{name}}.", { name })}</h2>
+        <h2 className="text-xl font-medium text-[#1a3d2e]">{t("concernFlow.pathsHeading", "Thank you for caring for {{name}}", { name })}</h2>
         <p className="text-sm leading-relaxed text-[#5f5e5a]">
           {t("concernFlow.pathsBody", "{{ownerName}} would rather you have this here than talk it through right now. Tap what {{ownerName}} asked you to do.", { ownerName })}
         </p>
@@ -179,7 +179,7 @@ function KyaConcernSteps({
     return (
       <div className="flex flex-col gap-4" style={{ color: K.forest }}>
         <div><KyaTag tone="amber">{t("concernFlow.pausedBadge", "Reminders paused · {{ownerName}} notified", { ownerName })}</KyaTag></div>
-        <KyaHeading size={24}>{t("concernFlow.pathsTitle", "Thank you for caring for {{name}}.", { name })}</KyaHeading>
+        <KyaHeading size={24}>{t("concernFlow.pathsHeading", "Thank you for caring for {{name}}", { name })}</KyaHeading>
         <p className={body} style={{ color: K.ink }}>
           {t("concernFlow.pathsBody", "{{ownerName}} would rather you have this here than talk it through right now. Tap what {{ownerName}} asked you to do.", { ownerName })}
         </p>

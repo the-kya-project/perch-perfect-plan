@@ -17,6 +17,7 @@ import { formatLocalTime } from "@/lib/dates";
 import { localDateISO } from "@/lib/localDay";
 import { useTranslation } from "react-i18next";
 import i18next, { type TFunction } from "i18next";
+import { birdNames } from "@/lib/birdNames";
 
 // Kya-styled versions of the active-caregiver views used by the /today and
 // /covering/$sitId/$birdId pages. Same data and the same task-completion path
@@ -294,9 +295,7 @@ export function KyaCaregiverLoading() {
 function joinNames(names: string[]): string {
   const n = names.filter(Boolean);
   if (n.length === 0) return i18next.t("caregiverHome.yourBirds", "your birds");
-  if (n.length === 1) return n[0];
-  if (n.length === 2) return i18next.t("caregiverHome.joinTwo", "{{a}} & {{b}}", { a: n[0], b: n[1] });
-  return i18next.t("caregiverHome.joinMany", "{{list}} & {{last}}", { list: n.slice(0, -1).join(", "), last: n[n.length - 1] });
+  return birdNames(i18next.t, n);
 }
 function daypartLabel(t: TFunction, dp: Daypart): string {
   switch (dp) {

@@ -1,6 +1,8 @@
 // One rule for every line that names birds: up to three names are written out
-// ("Buzz", "Buzz and Max", "Buzz, Max and Kiwi"); more than three become a
-// count ("4 birds").
+// ("Echo", "Echo and Buzz", "Echo, Buzz, and Max" — Oxford comma in English;
+// the Dutch catalog drops it), and more than three become a count ("4 birds").
+// Use this for every list of bird names; joinNamesDisplay (lib/i18n/joinNames)
+// is for lists that aren't birds, like sign-in providers.
 import type { TFunction } from "i18next";
 
 export const MAX_NAMED_BIRDS = 3;
@@ -10,9 +12,11 @@ export function namesAsCount(names: string[]): boolean {
   return names.length > MAX_NAMED_BIRDS;
 }
 
-/** "Buzz", "Buzz and Max", "Buzz, Max and Kiwi", or "4 birds". */
+/** "Echo", "Echo and Buzz", "Echo, Buzz, and Max", or "4 birds". */
 export function birdNames(t: TFunction, names: string[]): string {
-  if (namesAsCount(names)) return t("birdNames.count", "{{count}} birds", { count: names.length });
-  if (names.length <= 1) return names[0] ?? "";
-  return t("birdNames.and", "{{first}} and {{last}}", { first: names.slice(0, -1).join(", "), last: names[names.length - 1] });
+  const n = names.filter(Boolean);
+  if (namesAsCount(n)) return t("birdNames.count", "{{count}} birds", { count: n.length });
+  if (n.length <= 1) return n[0] ?? "";
+  if (n.length === 2) return t("birdNames.pair", "{{a}} and {{b}}", { a: n[0], b: n[1] });
+  return t("birdNames.many", "{{head}}, and {{last}}", { head: n.slice(0, -1).join(", "), last: n[n.length - 1] });
 }

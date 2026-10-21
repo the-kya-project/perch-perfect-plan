@@ -3,7 +3,7 @@ import { useCallback, useEffect } from "react";
 import { useTranslation, Trans } from "react-i18next";
 import { useSitterContext } from "./route";
 import { CarePlanView, type CareSection } from "@/components/CarePlanView";
-import { K, KyaPage, KyaCard } from "@/components/kya";
+import { K, KyaCard } from "@/components/kya";
 import { PageHeader, useGoBack } from "@/components/headers";
 import { speciesLabel } from "@/lib/speciesLabel";
 import { birdAgeLabel } from "@/lib/birdAge";
@@ -46,8 +46,10 @@ function CareSheet() {
   const age = birdAgeLabel(t, bird);
   const showIdentity = !!(name || species || age || bird?.photo_url);
 
+  // No KyaPage: its bottom padding is for the owner's tab bar, and the sitter
+  // layout already leaves room for the sitter's bar and the safe area.
   return (
-    <KyaPage>
+    <div>
       <div className="mx-auto max-w-md">
         <div data-coach="cp-header">
           <PageHeader
@@ -66,6 +68,7 @@ function CareSheet() {
             chipsOnForest
             separateNeverFeed
             ownerName={owner || undefined}
+            audience="sitter"
             tipsTitle={owner ? t("sitter.caresheet.tipsTitleNamed", "Tips from {{owner}}", { owner }) : t("sitter.caresheet.tipsTitle", "Tips from the owner")}
             tipsLine={owner ? t("sitter.caresheet.tipsLineNamed", "Short clips from {{owner}}, just for you.", { owner }) : t("sitter.caresheet.tipsLine", "Short clips from the owner, just for you.")}
             contextBanner={showIdentity ? (
@@ -85,8 +88,8 @@ function CareSheet() {
             footer={
               <p className="m-0 px-1 text-center text-[13px]" style={{ color: K.quiet }}>
                 <Trans
-                  i18nKey="sitter.caresheet.reference"
-                  defaults="Owner-provided reference. For general care guidance, see the <guide>Care guide</guide>."
+                  i18nKey="sitter.caresheet.referenceParrots101"
+                  defaults="Owner-provided reference. For general care guidance, see <guide>Parrots 101</guide>."
                   components={{ guide: <Link to="/sitter/$token/guide" params={{ token }} className="font-[700] underline" style={{ color: K.moss }} /> }}
                 />
               </p>
@@ -94,6 +97,6 @@ function CareSheet() {
           />
         </div>
       </div>
-    </KyaPage>
+    </div>
   );
 }

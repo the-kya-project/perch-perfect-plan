@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Eye } from "lucide-react";
+import { Eye, X } from "lucide-react";
 import { getSitterPreviewToken } from "@/lib/sitterPreview.functions";
 import { track } from "@/lib/analytics";
 import i18next from "i18next";
@@ -41,18 +41,19 @@ function ViewAsSitter() {
 
   return (
     <div className="flex h-[100dvh] flex-col bg-[#f1f5f0]">
-      {/* Read-only mode banner + exit */}
-      <div className="setup-frame flex items-center justify-between gap-3 bg-[#12291f] px-4 py-2 pt-[max(env(safe-area-inset-top),0.5rem)] text-white">
+      {/* Read-only mode banner: 44px Close top left, then the mode line. */}
+      <div className="setup-frame flex items-center gap-3 bg-[#12291f] px-4 py-2 pt-[max(env(safe-area-inset-top),0.5rem)] text-white">
+        <Link
+          to="/dashboard"
+          aria-label={t("viewAsSitter.closePreview", "Close preview")}
+          className="grid size-11 shrink-0 place-items-center rounded-full bg-white/15 text-white active:scale-95"
+        >
+          <X className="size-5" aria-hidden="true" />
+        </Link>
         <span className="flex min-w-0 items-center gap-2 text-[13.5px] font-[500] text-white">
           <Eye className="size-4 shrink-0" aria-hidden="true" />
           <span className="truncate">{t("viewAsSitter.bannerReadOnly", "Viewing as your sitter · read only")}</span>
         </span>
-        <Link
-          to="/dashboard"
-          className="inline-flex min-h-[32px] shrink-0 items-center rounded-full bg-white/15 px-3.5 text-[13px] font-[700] text-white"
-        >
-          {t("viewAsSitter.exit", "Exit")}
-        </Link>
       </div>
 
       {error ? (

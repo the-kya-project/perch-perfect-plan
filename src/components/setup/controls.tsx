@@ -81,11 +81,12 @@ export function SectionCard({ title, helper, tag, emphasis, children }: {
   );
 }
 
-/** A white card led by a round icon tile (the "Your home" screens, on a light green body). */
-export function TileCard({ icon, tile = "lime", title, helper, children }: {
-  icon: ReactNode; tile?: "lime" | "teal" | "amber"; title: ReactNode; helper?: ReactNode; children?: ReactNode;
+/** A white card led by a round forest icon tile (the "Your home" screens, on a light green body). */
+export function TileCard({ icon, title, helper, children }: {
+  icon: ReactNode; title: ReactNode; helper?: ReactNode; children?: ReactNode;
 }) {
-  const tileStyle = tile === "teal" ? { background: "#9bcab8", color: S.forest } : tile === "amber" ? { background: S.amberBg, color: S.amberText } : { background: S.lime, color: S.forest };
+  // Every tile is forest with a lime icon, the bird page's icon style.
+  const tileStyle = { background: S.forest, color: S.lime };
   return (
     <section className="flex flex-col gap-[14px] rounded-[20px] bg-white p-4" style={{ color: S.forest }}>
       <div className="flex items-center gap-3">
@@ -269,7 +270,7 @@ export function Switch({ checked, onChange, label, children }: { checked: boolea
       aria-label={children ? undefined : label}
       aria-labelledby={children ? id : undefined}
       onClick={() => onChange(!checked)}
-      className="relative h-8 w-[52px] shrink-0 rounded-full transition-colors"
+      className="relative h-8 w-[52px] shrink-0 rounded-full transition-colors after:absolute after:-inset-y-1.5 after:inset-x-0 after:content-['']"
       style={{ background: checked ? S.forest : S.line }}
     >
       <span

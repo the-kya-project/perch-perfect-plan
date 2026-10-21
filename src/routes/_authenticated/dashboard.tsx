@@ -458,7 +458,7 @@ const WEEK_DAYS = 7;
 function avatar(b: PromptBird, size: number, initialPx: number) {
   return b.photo
     ? <BirdPhotoCrop url={b.photo.url} original={b.photo.original} position={b.position} alt="" />
-    : <span className="grid size-full place-items-center font-[500] text-white/90" style={{ fontSize: initialPx, width: size, height: size }}>{b.name.slice(0, 1).toUpperCase()}</span>;
+    : <span className="grid size-full place-items-center font-[700]" style={{ fontSize: initialPx, width: size, height: size, color: K.forest }}>{b.name.slice(0, 1).toUpperCase()}</span>;
 }
 
 // The Home prompt into the flock check. Up to four birds: one row with each
@@ -478,7 +478,7 @@ function FlockCheckPrompt({ birds, loading, onOpen, onOpenDone }: { birds: Promp
           <Sun className="size-5" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-[17px] font-[500] text-[var(--ink)]">{t("dashboard.dailyHealthCheck", "Daily health check")}</p>
+          <KyaHeading size={20} className="text-[var(--ink)]">{t("dashboard.dailyHealthCheck", "Daily health check")}</KyaHeading>
           <p className="mt-0.5 text-[12px] text-[#2b3a31]">{t("dashboard.flockCheckBody", "Grab a weight and a quick once-over of your birds.")}</p>
         </div>
       </div>
@@ -492,7 +492,7 @@ function FlockCheckPrompt({ birds, loading, onOpen, onOpenDone }: { birds: Promp
               <span className="relative size-[46px] shrink-0">
                 <span
                   className="relative block size-[46px] overflow-hidden rounded-full"
-                  style={{ background: gradientFor(b.species || b.name), boxShadow: `0 0 0 ${b.overdueDays != null ? `2.5px ${OVERDUE_RED}` : b.checked ? "2.5px var(--ink)" : "2px #fff"}` }}
+                  style={{ background: tileFor(b.id), boxShadow: `0 0 0 ${b.overdueDays != null ? `2.5px ${OVERDUE_RED}` : b.checked ? "2.5px var(--ink)" : "2px #fff"}` }}
                   aria-hidden="true"
                 >
                   {avatar(b, 46, 15)}
@@ -562,7 +562,7 @@ function FlockBar({ birds, done, onOpen }: { birds: PromptBird[]; done: number; 
             <span
               key={b.id}
               className="relative -ml-[14px] block size-[52px] shrink-0 overflow-hidden rounded-full"
-              style={{ background: gradientFor(b.species || b.name), border: "3px solid var(--lime)", boxShadow: b.overdueDays != null ? `0 0 0 2.5px ${OVERDUE_RED}` : undefined }}
+              style={{ background: tileFor(b.id), border: "3px solid var(--lime)", boxShadow: b.overdueDays != null ? `0 0 0 2.5px ${OVERDUE_RED}` : undefined }}
               aria-hidden="true"
             >
               {avatar(b, 46, 16)}
@@ -637,29 +637,27 @@ function TodayPanel({ items, onNavigate }: { items: TodayItem[]; onNavigate: (i:
 // ---------------------------------------------------------------------------
 // Bird / foster card
 // ---------------------------------------------------------------------------
-const GRADIENTS = [
-  ["#cdeab0", "#a7d68f"], ["#d6e8dc", "#aecdbb"], ["#e8dcc0", "#d2c19a"],
-  ["#cfe0e8", "#a8c5d2"], ["#e6d4d0", "#cfb0aa"],
-];
-function gradientFor(seed: string) {
+// A bird with no photo shows its initial (forest) on a flat Kya tile: mist,
+// teal, or lime, picked from the bird's id so each bird keeps its color.
+const TILE_COLORS = [K.mist, K.teal, K.lime];
+function tileFor(seed: string) {
   let h = 0;
   for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
-  const [a, b] = GRADIENTS[h % GRADIENTS.length];
-  return `linear-gradient(135deg,${a},${b})`;
+  return TILE_COLORS[h % TILE_COLORS.length];
 }
 
 type LatestWeight = { grams: number; at: string | null } | null;
 // A weigh-in older than this many days reads red on the Home row.
 const HOME_STALE_DAYS = 7;
 
-function BirdThumb({ photo, name, species, position }: { photo: SignedPhoto | null; name: string; species: string | null; position?: string | null }) {
+function BirdThumb({ photo, name, seed, position }: { photo: SignedPhoto | null; name: string; seed: string; position?: string | null }) {
   const initial = (name?.slice(0, 1) ?? "?").toUpperCase();
   return (
-    <span className="relative block size-[52px] shrink-0 overflow-hidden rounded-[14px]" style={{ background: gradientFor(species || name) }}>
+    <span className="relative block size-[52px] shrink-0 overflow-hidden rounded-[14px]" style={{ background: tileFor(seed) }}>
       {photo ? (
         <BirdPhotoCrop url={photo.url} original={photo.original} position={position} alt="" />
       ) : (
-        <span className="grid size-full place-items-center text-[20px] font-[600] text-white/90">{initial}</span>
+        <span className="grid size-full place-items-center text-[20px] font-[700]" style={{ color: K.forest }}>{initial}</span>
       )}
     </span>
   );
@@ -693,7 +691,7 @@ function BirdRow({ bird, photo, latest, foster, concern, last }: { bird: HomeBir
       className="flex min-h-[72px] items-center gap-3 px-4 py-2.5 active:bg-black/[0.03]"
       style={{ borderBottom: last ? undefined : `1px solid ${K.line}`, color: K.forest }}
     >
-      <BirdThumb photo={photo} name={bird.name} species={bird.species} position={bird.photo_position} />
+      <BirdThumb photo={photo} name={bird.name} seed={bird.id} position={bird.photo_position} />
       <span className="min-w-0 flex-1">
         <span className="block truncate text-[15px] font-[700]">{bird.name}</span>
         <span className="block truncate text-[13px]" style={{ color: K.quiet }}>
@@ -850,8 +848,5 @@ function fmtAgo(iso: string): string {
 function joinNames(names: string[]): string {
   const n = names.filter(Boolean);
   if (n.length === 0) return i18next.t("dashboard.yourBirdsLower", "your birds");
-  if (namesAsCount(n)) return i18next.t("birdNames.count", "{{count}} birds", { count: n.length });
-  if (n.length === 1) return n[0];
-  if (n.length === 2) return i18next.t("dashboard.joinTwo", "{{a}} and {{b}}", { a: n[0], b: n[1] });
-  return i18next.t("dashboard.joinMany", "{{list}}, and {{last}}", { list: n.slice(0, -1).join(", "), last: n[n.length - 1] });
+  return birdNames(i18next.t, n);
 }

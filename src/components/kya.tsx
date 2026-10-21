@@ -2,7 +2,7 @@
 // Same system as the new-bird setup and the daily health check — a forest
 // header, a mist body with rounded top corners, white cards, Newsreader
 // headings, DM Sans text, sunflower main buttons and moss text links.
-import { useEffect, type CSSProperties, type InputHTMLAttributes, type ReactNode } from "react";
+import { useEffect, useRef, type CSSProperties, type InputHTMLAttributes, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { ChevronRight, X } from "lucide-react";
 
@@ -233,6 +233,14 @@ export function KyaLabel({ children, htmlFor, required, requiredLabel = "Require
 
 /** Bottom sheet: white, 26px top corners, grab handle, 44px round Close top
  *  right, dark overlay. `footer` is pinned under the scrolling content. */
+/** True when `el` is the last open modal dialog on the page (the one on top). */
+export function isTopmostDialog(el: HTMLElement | null): boolean {
+  if (!el || typeof document === "undefined") return true;
+  // Visible ones only: a sheet kept mounted but hidden (display: none) doesn't count.
+  const all = Array.from(document.querySelectorAll<HTMLElement>('[role="dialog"][aria-modal="true"]')).filter((d) => d.getClientRects().length > 0);
+  return all.length === 0 || all[all.length - 1] === el;
+}
+
 export function KyaSheet({ open = true, onClose, title, closeLabel, children, footer }: {
   open?: boolean;
   onClose: () => void;
@@ -241,9 +249,11 @@ export function KyaSheet({ open = true, onClose, title, closeLabel, children, fo
   children: ReactNode;
   footer?: ReactNode;
 }) {
+  const dialogRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    // Only the topmost sheet closes on Escape (a confirm can open over another sheet).
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape" && isTopmostDialog(dialogRef.current)) onClose(); };
     window.addEventListener("keydown", onKey);
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -253,7 +263,7 @@ export function KyaSheet({ open = true, onClose, title, closeLabel, children, fo
   return createPortal(
     <div className="setup-frame fixed inset-0 z-[70] flex items-end justify-center">
       <button type="button" aria-label={closeLabel} tabIndex={-1} onClick={onClose} className="absolute inset-0 bg-black/50" />
-      <div role="dialog" aria-modal="true" className="relative flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-t-[26px] bg-white [max-height:90dvh]" style={{ color: K.forest }}>
+      <div ref={dialogRef} role="dialog" aria-modal="true" className="relative flex max-h-[90vh] w-full max-w-md flex-col overflow-hidden rounded-t-[26px] bg-white [max-height:90dvh]" style={{ color: K.forest }}>
         <div className={`min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pt-2.5 ${footer ? "pb-5" : "pb-[max(env(safe-area-inset-bottom),24px)]"}`}>
           <div className="mx-auto h-1 w-10 rounded-full bg-[#d5dfd5]" />
           <div className="mt-2 flex items-start gap-3">

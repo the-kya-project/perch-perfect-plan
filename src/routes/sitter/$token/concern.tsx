@@ -12,7 +12,7 @@ import { pickVet } from "@/lib/emergency";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { friendlyError } from "@/lib/errorMessage";
-import { K, KyaPage, KyaBody, KyaCard } from "@/components/kya";
+import { K, KyaBody, KyaCard } from "@/components/kya";
 import { PageHeader, useGoBack } from "@/components/headers";
 import { VetCallRow, PersonCallRow } from "@/components/sitter/CallRows";
 
@@ -59,14 +59,16 @@ function ConcernPage() {
     : t("sitter.concern.line_n", "If they're sick, hurt, or have passed, here's what to do.");
   const vetIsAvian = picked?.kind !== "emergency";
 
+  // No KyaPage (owner tab-bar padding) and no extra bottom padding: the
+  // sitter layout already leaves room for the bottom bar and the safe area.
   return (
-    <KyaPage>
+    <div>
       <PageHeader
         title={t("sitter.concern.title", "Something's wrong with {{name}}", { name })}
         line={line}
         onBack={goBack}
       />
-      <KyaBody className="pb-32">
+      <KyaBody>
         {/* Calls first: the avian vet (red, same as Emergency), then the owner. */}
         <div className="flex flex-col gap-2.5">
           <VetCallRow
@@ -102,6 +104,6 @@ function ConcernPage() {
           />
         </KyaCard>
       </KyaBody>
-    </KyaPage>
+    </div>
   );
 }

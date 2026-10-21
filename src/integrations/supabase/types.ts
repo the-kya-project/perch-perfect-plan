@@ -89,6 +89,7 @@ export type Database = {
           flight_status: string | null
           id: string
           intake_date: string | null
+          intake_date_source: string | null
           is_foster: boolean
           lineage_notes: string | null
           medical_conditions: string | null
@@ -123,6 +124,7 @@ export type Database = {
           flight_status?: string | null
           id?: string
           intake_date?: string | null
+          intake_date_source?: string | null
           is_foster?: boolean
           lineage_notes?: string | null
           medical_conditions?: string | null
@@ -157,6 +159,7 @@ export type Database = {
           flight_status?: string | null
           id?: string
           intake_date?: string | null
+          intake_date_source?: string | null
           is_foster?: boolean
           lineage_notes?: string | null
           medical_conditions?: string | null
@@ -444,6 +447,7 @@ export type Database = {
           id: string
           injury_status: string | null
           item_notes: Json | null
+          kind: string | null
           log_date: string
           notes: string | null
           posture_status: string | null
@@ -469,6 +473,7 @@ export type Database = {
           id?: string
           injury_status?: string | null
           item_notes?: Json | null
+          kind?: string | null
           log_date?: string
           notes?: string | null
           posture_status?: string | null
@@ -494,6 +499,7 @@ export type Database = {
           id?: string
           injury_status?: string | null
           item_notes?: Json | null
+          kind?: string | null
           log_date?: string
           notes?: string | null
           posture_status?: string | null
@@ -1137,6 +1143,7 @@ export type Database = {
           departed_on: string
           id: string
           intake_date: string | null
+          intake_date_source: string | null
           mode: string
           original_owner_id: string
           photo_thumb: string | null
@@ -1150,6 +1157,7 @@ export type Database = {
           departed_on: string
           id?: string
           intake_date?: string | null
+          intake_date_source?: string | null
           mode: string
           original_owner_id: string
           photo_thumb?: string | null
@@ -1163,6 +1171,7 @@ export type Database = {
           departed_on?: string
           id?: string
           intake_date?: string | null
+          intake_date_source?: string | null
           mode?: string
           original_owner_id?: string
           photo_thumb?: string | null
@@ -1254,6 +1263,7 @@ export type Database = {
           signup_referrer: string | null
           signup_source: string | null
           signup_term: string | null
+          time_zone: string | null
           updated_at: string
           welcome_seen_at: string | null
         }
@@ -1283,6 +1293,7 @@ export type Database = {
           signup_referrer?: string | null
           signup_source?: string | null
           signup_term?: string | null
+          time_zone?: string | null
           updated_at?: string
           welcome_seen_at?: string | null
         }
@@ -1312,6 +1323,7 @@ export type Database = {
           signup_referrer?: string | null
           signup_source?: string | null
           signup_term?: string | null
+          time_zone?: string | null
           updated_at?: string
           welcome_seen_at?: string | null
         }

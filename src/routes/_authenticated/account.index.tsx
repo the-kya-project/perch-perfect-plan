@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { deleteMyAccount } from "@/lib/account.functions";
 import { APP_VERSION } from "@/lib/version";
-import { ShieldAlert, Bell, Smartphone, Lock, Archive, Users, Flower2, Languages, Check } from "lucide-react";
+import { ShieldAlert, Bell, Smartphone, Lock, Archive, Users, Flower2, Languages, Check, Globe } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useAppSurface } from "@/lib/appSurface";
 import {
@@ -19,12 +19,17 @@ import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaRow, KyaTag, KyaLink, KyaI
 import { PageHeader } from "@/components/headers";
 import { useOwnerEmergency } from "@/lib/useOwnerEmergency";
 import { missingRequired, type EmergencyValues } from "@/components/EmergencyContacts";
+import { incompleteOwnVets } from "@/lib/emergency";
+import { birdNames } from "@/lib/birdNames";
 import { getHouseholdAccount } from "@/lib/household.functions";
 import { SUPPORT_EMAIL } from "@/lib/support";
 import { toast } from "sonner";
 import { friendlyError } from "@/lib/errorMessage";
 import { OWNER_I18N_ENABLED, SUPPORTED_LOCALES, isLocale, type Locale } from "@/lib/i18n/config";
 import { saveOwnerLocale } from "@/lib/i18n/ownerLocale";
+import { TimeZoneSheet, ACCOUNT_TIME_ZONE_KEY } from "@/components/TimeZoneSheet";
+import { fetchAccountTimeZone } from "@/lib/sitTimeZoneBackfill";
+import { timeZoneRowLabel } from "@/lib/sitTimeZoneNames";
 
 // Each language is named in itself, never translated: someone looking for
 // Nederlands has to recognise it whatever language the app is showing.
@@ -37,7 +42,7 @@ export const Route = createFileRoute("/_authenticated/account/")({
 });
 
 function AccountPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const router = useRouter();
   const canGoBack = useCanGoBack();
@@ -81,6 +86,16 @@ function AccountPage() {
   });
   const [languageOpen, setLanguageOpen] = useState(false);
 
+  // Home time zone (profiles.time_zone): sits follow it, not the phone's.
+  const { data: timeZone = null } = useQuery({
+    queryKey: ACCOUNT_TIME_ZONE_KEY,
+    queryFn: async () => {
+      const { data: u } = await getLocalUser();
+      return u.user ? fetchAccountTimeZone(u.user.id) : null;
+    },
+  });
+  const [timeZoneOpen, setTimeZoneOpen] = useState(false);
+
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   // Same per-surface rule as Settings and the checklists: inside the app there
@@ -112,6 +127,21 @@ function AccountPage() {
   // Care settings status lines.
   const { data: emergency } = useOwnerEmergency();
   const emergencyGaps = missingRequired((emergency ?? {}) as EmergencyValues);
+  // The owner's birds whose OWN vet row is missing a name or phone
+  // (incompleteOwnVets). One birds select + one emergency_contacts select.
+  const { data: vetGapBirds = [] } = useQuery({
+    queryKey: ["account-vet-gaps"],
+    queryFn: async (): Promise<{ id: string; name: string }[]> => {
+      const { data: u } = await getLocalUser();
+      if (!u.user) return [];
+      const { data: birds } = await supabase.from("birds").select("id, name").eq("owner_id", u.user.id).is("passed_at", null).order("created_at");
+      const ids = (birds ?? []).map((b) => b.id);
+      if (!ids.length) return [];
+      const { data: rows } = await supabase.from("emergency_contacts").select("*").in("bird_id", ids);
+      const gappy = new Set((rows ?? []).filter((r) => incompleteOwnVets(r).length > 0).map((r) => r.bird_id));
+      return (birds ?? []).filter((b) => gappy.has(b.id)).map((b) => ({ id: b.id, name: b.name }));
+    },
+  });
   const getHousehold = useServerFn(getHouseholdAccount);
   const { data: household } = useQuery({ queryKey: ["household-account"], queryFn: () => getHousehold() });
   const { data: notif } = useQuery({
@@ -141,8 +171,14 @@ function AccountPage() {
     : "";
   const providerName = (p: string) => p === "google" ? "Google" : p === "apple" ? "Apple" : p === "email" ? t("account.emailAndPassword", "Email and password") : p;
   const signInLine = providers.length ? joinAnd(t, providers.map(providerName)) : "";
+  // The account's own missing numbers come first; with those filled, a bird's
+  // half-filled own vet replaces "Ready".
   const emergencyTag = emergencyGaps.length === 0
-    ? <KyaTag tone="lime">{t("account.ready", "Ready")}</KyaTag>
+    ? vetGapBirds.length === 1
+      ? <KyaTag tone="amber">{t("account.needsBirdVetDetails", "Needs {{name}}'s vet details", { name: vetGapBirds[0].name })}</KyaTag>
+      : vetGapBirds.length > 1
+        ? <KyaTag tone="amber">{t("account.needsVetDetailsFor", "Needs vet details for {{names}}", { names: birdNames(t, vetGapBirds.map((b) => b.name)) })}</KyaTag>
+        : <KyaTag tone="lime">{t("account.ready", "Ready")}</KyaTag>
     : emergencyGaps.length === 2
       ? <KyaTag tone="amber">{t("account.needsTwoNumbers", "Needs 2 numbers")}</KyaTag>
       : <KyaTag tone="amber">{emergencyGaps[0] === "owner_phone" ? t("account.needsYourPhone", "Needs your phone") : t("account.needsVetPhone", "Needs vet phone")}</KyaTag>;
@@ -190,7 +226,12 @@ function AccountPage() {
           <section className="flex flex-col gap-2.5">
             <KyaHeading>{t("account.careSettings", "Care settings")}</KyaHeading>
             <KyaCard>
-              {row(<ShieldAlert className="size-5" />, t("account.emergencyInfo", "Emergency info"), <>{t("account.emergencyInfoDetail", "Your phone, vets, and where things are")}{emergency !== undefined && <span className="mt-1.5 block">{emergencyTag}</span>}</>, () => navigate({ to: "/account/emergency" }), { wrap: true })}
+              {row(<ShieldAlert className="size-5" />, t("account.emergencyInfo", "Emergency info"), <>{t("account.emergencyInfoDetail", "Your phone, vets, and where things are")}{emergency !== undefined && <span className="mt-1.5 block">{emergencyTag}</span>}</>, () => (
+                // One bird to finish: go straight to its page, where the card's Add opens the vet.
+                emergencyGaps.length === 0 && vetGapBirds.length === 1
+                  ? navigate({ to: "/birds/$birdId/emergency", params: { birdId: vetGapBirds[0].id } })
+                  : navigate({ to: "/account/emergency" })
+              ), { wrap: true })}
               {row(<Users className="size-5" />, t("account.household", "Household"), household ? householdLine : undefined, () => navigate({ to: "/household" }))}
               {row(<Bell className="size-5" />, t("account.notifications", "Notifications"), notifLine || undefined, () => navigate({ to: "/scans/settings" }), { last: !showGetApp })}
               {showGetApp && row(
@@ -209,6 +250,7 @@ function AccountPage() {
             <KyaCard>
               {row(<Lock className="size-5" />, t("account.passwordSignIn", "Password & sign-in"), signInLine || undefined, () => navigate({ to: "/account/security" }))}
               {OWNER_I18N_ENABLED && row(<Languages className="size-5" />, t("account.language", "Language"), locale ? LANGUAGE_NAMES[locale] : t("account.sameAsPhone", "Same as your phone"), () => setLanguageOpen(true))}
+              {row(<Globe className="size-5" />, t("account.timeZone", "Time zone"), timeZone ? timeZoneRowLabel(timeZone, i18n.language) : t("account.timeZoneNotSet", "Not set yet"), () => setTimeZoneOpen(true))}
               {row(<Archive className="size-5" />, t("account.birdsRehomed", "Birds you've helped rehome"), t("account.birdsRehomedDetail", "Birds you've handed off to new owners"), () => navigate({ to: "/past-birds" }), { last: !hasRemembering })}
               {/* Remembering — memorials for birds that have passed. Shown only
                   when there is someone to remember; visited by choice, no count. */}
@@ -236,6 +278,9 @@ function AccountPage() {
 
       {languageOpen && (
         <LanguageModal userId={userId} current={locale} onClose={() => setLanguageOpen(false)} />
+      )}
+      {timeZoneOpen && (
+        <TimeZoneSheet userId={userId} current={timeZone} onClose={() => setTimeZoneOpen(false)} />
       )}
       {editOpen && (
         <EditIdentityModal
@@ -390,7 +435,7 @@ function EditIdentityModal({
           <input
             value={firstInput}
             onChange={(e) => setFirstInput(e.target.value)}
-            placeholder={t("account.brittany", "Brittany")}
+            placeholder={t("account.firstNamePlaceholder", "First name")}
             autoComplete="given-name"
             className="min-h-[48px] w-full rounded-full border-[1.5px] border-[#d5dfd5] bg-white px-4 text-[16px] text-[#1a3d2e] outline-none focus:border-[#2d6a4f]"
           />
@@ -400,7 +445,7 @@ function EditIdentityModal({
           <input
             value={lastInput}
             onChange={(e) => setLastInput(e.target.value)}
-            placeholder={t("account.king", "King")}
+            placeholder={t("account.lastNamePlaceholder", "Last name")}
             autoComplete="family-name"
             className="min-h-[48px] w-full rounded-full border-[1.5px] border-[#d5dfd5] bg-white px-4 text-[16px] text-[#1a3d2e] outline-none focus:border-[#2d6a4f]"
           />

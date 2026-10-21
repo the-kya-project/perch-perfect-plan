@@ -17,12 +17,14 @@ import { signBirdPhoto, persistBirdPhoto } from "@/lib/birdPhoto";
 import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
 import { K, KyaPage, KyaBody, KyaCard, KyaField, KyaHeading, KyaLink, KyaPrimaryButton, KyaSecondaryButton } from "@/components/kya";
-import { PageHeader, useGoBack } from "@/components/headers";
+import { PageHeader, TaskHeader, useGoBack, useLeaveGuard } from "@/components/headers";
 import { friendlyError } from "@/lib/errorMessage";
 import { LoadError } from "@/components/LoadError";
 import { useLoadState } from "@/lib/useTooLong";
 import { formatLocalDate } from "@/lib/dates";
 import { localDateISO } from "@/lib/localDay";
+import { ownerIntakeDate } from "@/lib/intakeDate";
+import { isMissingColumn } from "@/lib/missingColumn";
 
 type IdentitySearch = { edit?: 1 };
 
@@ -54,6 +56,8 @@ type Identity = {
   acquired_on: string | null;
   is_foster: boolean | null;
   intake_date: string | null;
+  /** 'auto' = set by the app, not the owner: never shown (src/lib/intakeDate.ts). */
+  intake_date_source: string | null;
 };
 
 // Shared core (photo, name, species, age) lives in the same birds columns the
@@ -103,7 +107,7 @@ function IdentityFacet() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("birds")
-        .select("owner_id, name, species, age, photo_url, photo_position, sex, sex_method, flight_status, birth_date, microchip, band_number, origin, acquired_on, is_foster, intake_date")
+        .select("*") // "*" so the page works before intake_date_source exists (lib/missingColumn.ts)
         .eq("id", birdId)
         .maybeSingle();
       if (error) throw error;
@@ -143,6 +147,11 @@ function IdentityFacet() {
   const goBack = useGoBack(useCallback(() => navigate({ to: "/birds/$birdId", params: { birdId } }), [navigate, birdId]));
   const canEdit = !!bird && canEditIdentity;
   const openEdit = canEdit ? () => setEditing(true) : undefined;
+  // Editing is a task: Close top left, and "Leave without saving?" when
+  // something has changed. The form reports whether it has.
+  const [formDirty, setFormDirty] = useState(false);
+  const stopEditing = useCallback(() => { setEditing(false); setFormDirty(false); }, []);
+  const { requestClose, guard: leaveGuard } = useLeaveGuard(formDirty, stopEditing);
 
   const sex = (bird?.sex ?? "").trim().toLowerCase();
   const footnote = sex === "female"
@@ -153,12 +162,20 @@ function IdentityFacet() {
 
   return (
     <KyaPage>
-      <PageHeader
-        onBack={goBack}
-        title={bird ? t("birdIdentity.title", "{{name}}'s identity", { name: bird.name }) : t("birdIdentity.titleFallback", "Identity")}
-        line={t("birdIdentity.body", "The details that make {{name}} officially {{name}}.", { name })}
-        action={canEdit && !editing ? { label: t("birdIdentity.edit", "Edit"), icon: <Pencil className="size-4" />, onClick: () => setEditing(true) } : undefined}
-      />
+      {editing && bird ? (
+        <TaskHeader
+          onClose={requestClose}
+          title={t("birdIdentity.editTitleNamed", "Edit {{name}}'s identity", { name: bird.name })}
+        />
+      ) : (
+        <PageHeader
+          onBack={goBack}
+          title={bird ? t("birdIdentity.title", "{{name}}'s identity", { name: bird.name }) : t("birdIdentity.titleFallback", "Identity")}
+          line={t("birdIdentity.body", "The details that make {{name}} officially {{name}}.", { name })}
+          action={canEdit && !editing ? { label: t("birdIdentity.edit", "Edit"), icon: <Pencil className="size-4" />, onClick: () => setEditing(true) } : undefined}
+        />
+      )}
+      {leaveGuard}
 
       <KyaBody>
         {birdMissing || load.failed ? (
@@ -171,7 +188,7 @@ function IdentityFacet() {
         ) : !bird ? (
           <div className="h-40 animate-pulse rounded-[20px] bg-white/70" />
         ) : editing ? (
-          <IdentityForm birdId={birdId} bird={bird} onClose={() => setEditing(false)} onSaved={() => { setEditing(false); crossInvalidate(); }} />
+          <IdentityForm birdId={birdId} bird={bird} onClose={requestClose} onDirtyChange={setFormDirty} onSaved={() => { stopEditing(); crossInvalidate(); }} />
         ) : (
           <>
             {/* Shared core (same birds columns the Basics tab edits) */}
@@ -202,7 +219,11 @@ function IdentityFacet() {
               <Row label={t("birdIdentity.microchip", "Microchip")} value={bird.microchip} onAdd={openEdit} />
               <Row label={t("birdIdentity.legBand", "Leg band")} value={bird.band_number} onAdd={openEdit} />
               <Row label={t("birdIdentity.origin", "Origin")} value={bird.origin} onAdd={openEdit} />
-              <Row label={t("birdIdentity.cameHome", "Came home")} value={bird.acquired_on ? fmtDate(bird.acquired_on) : null} onAdd={openEdit} last />
+              <Row label={t("birdIdentity.cameHome", "Came home")} value={bird.acquired_on ? fmtDate(bird.acquired_on) : null} onAdd={openEdit} last={!bird.is_foster} />
+              {/* A foster's "Came to you": only a date the owner entered. */}
+              {bird.is_foster && (
+                <Row label={t("newBird.cameToYou", "Came to you")} value={ownerIntakeDate(bird) ? fmtDate(ownerIntakeDate(bird)!) : null} onAdd={openEdit} last />
+              )}
             </KyaCard>
             <p className="m-0 px-1 text-[13px] leading-[1.5]" style={{ color: K.quiet }}>{footnote}</p>
           </>
@@ -237,7 +258,7 @@ function Row({ label, value, onAdd, last }: { label: string; value: string | nul
   );
 }
 
-function IdentityForm({ birdId, bird, onClose, onSaved }: { birdId: string; bird: Identity; onClose: () => void; onSaved: () => void }) {
+function IdentityForm({ birdId, bird, onClose, onSaved, onDirtyChange }: { birdId: string; bird: Identity; onClose: () => void; onSaved: () => void; onDirtyChange?: (dirty: boolean) => void }) {
   const { t } = useTranslation();
   const [f, setF] = useState({
     name: bird.name ?? "",
@@ -252,7 +273,8 @@ function IdentityForm({ birdId, bird, onClose, onSaved }: { birdId: string; bird
     origin: bird.origin ?? "",
     acquired_on: bird.acquired_on ?? "",
     is_foster: !!bird.is_foster,
-    intake_date: bird.intake_date ?? "",
+    // An intake date the app set on its own starts empty ("Add date").
+    intake_date: ownerIntakeDate(bird) ?? "",
   });
   // Photo: display value (signed/data URL) vs the value to persist (path/data/null).
   const [photoDisplay, setPhotoDisplay] = useState<string | null>(null);
@@ -261,6 +283,11 @@ function IdentityForm({ birdId, bird, onClose, onSaved }: { birdId: string; bird
   const [photoBusy, setPhotoBusy] = useState(false);
   const [saving, setSaving] = useState(false);
   const set = (k: keyof typeof f, v: string) => setF((p) => ({ ...p, [k]: v }));
+  const startIntake = useRef(f.intake_date);
+  // Changed since the form opened? Drives the leave-without-saving guard.
+  const initial = useRef(JSON.stringify({ f, photoRef, photoPosition }));
+  const dirty = JSON.stringify({ f, photoRef, photoPosition }) !== initial.current;
+  useEffect(() => { onDirtyChange?.(dirty); }, [dirty, onDirtyChange]);
 
   useEffect(() => { signBirdPhoto(bird.photo_url).then(setPhotoDisplay); }, [bird.photo_url]);
 
@@ -287,7 +314,7 @@ function IdentityForm({ birdId, bird, onClose, onSaved }: { birdId: string; bird
       const clean = (v: string) => (v.trim() ? v.trim() : null);
       let ref = photoRef;
       if (typeof ref === "string" && ref.startsWith("data:")) ref = await persistBirdPhoto(bird.owner_id, ref);
-      const { error } = await supabase.from("birds").update({
+      const patch: Record<string, unknown> = {
         name: clean(f.name) ?? bird.name, // name is required — keep the old one if blanked
         species: clean(f.species),
         // A hatch date sets the age, so the two never disagree.
@@ -301,10 +328,21 @@ function IdentityForm({ birdId, bird, onClose, onSaved }: { birdId: string; bird
         origin: clean(f.origin),
         acquired_on: f.acquired_on || null,
         is_foster: f.is_foster,
-        intake_date: f.intake_date || null,
+        // "Came to you" is on screen only for a foster, so only then is it
+        // saved, and what's saved is the owner's. Otherwise it's left as is.
+        // Written only when the owner changed it: a hidden automatic date
+        // starts the form empty, and saving untouched must not erase it.
+        ...(f.is_foster && f.intake_date !== startIntake.current
+          ? { intake_date: f.intake_date || null, intake_date_source: f.intake_date ? "owner" : null }
+          : {}),
         photo_url: ref,
         photo_position: photoPosition,
-      } as any).eq("id", birdId);
+      };
+      let { error } = await supabase.from("birds").update(patch as any).eq("id", birdId);
+      if (isMissingColumn(error, "intake_date_source")) {
+        delete patch.intake_date_source;
+        ({ error } = await supabase.from("birds").update(patch as any).eq("id", birdId));
+      }
       if (error) throw error;
       toast.success(t("birdIdentity.saved", "Identity saved."));
       onSaved();

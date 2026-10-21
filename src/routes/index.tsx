@@ -70,8 +70,9 @@ function Welcome() {
           style={{ background: `linear-gradient(to bottom, rgba(18,41,31,0.55) 0%, rgba(18,41,31,0) 26%, rgba(26,61,46,0) 42%, rgba(26,61,46,0.82) 74%, ${K.forest} 100%)` }}
         />
         <div className="absolute inset-x-0 top-0">
-          <div className="mx-auto max-w-md px-5 pt-[calc(env(safe-area-inset-top)+14px)]">
-            {/* White on the photo: the transparent lockup, knocked out to white. */}
+          <div className="mx-auto flex max-w-md justify-center px-5 pt-[calc(env(safe-area-inset-top)+14px)]">
+            {/* White on the photo: the transparent lockup, knocked out to white,
+                centered like every front-door header. */}
             <BrandLockup orientation="horizontal" variant="white" size={124} />
           </div>
         </div>

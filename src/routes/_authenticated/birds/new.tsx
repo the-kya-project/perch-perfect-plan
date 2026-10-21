@@ -22,6 +22,8 @@ import { friendlyError } from "@/lib/errorMessage";
 import { BIRD_FEATURES } from "@/lib/onboardingPlan";
 import { localDateISO } from "@/lib/localDay";
 import { encodeSetupStep } from "@/lib/setupProgress";
+import { useConfirm } from "@/components/ConfirmSheet";
+import { isMissingColumn } from "@/lib/missingColumn";
 
 export const Route = createFileRoute("/_authenticated/birds/new")({
   head: () => ({ meta: [{ title: i18next.t("newBird.metaTitle", "Add a bird — Kya & Co.") }] }),
@@ -42,6 +44,7 @@ function NewBird() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { foster: fosterParam, next } = Route.useSearch();
+  const { confirm, sheet: confirmSheet } = useConfirm();
   const [name, setName] = useState("");
   const [species, setSpecies] = useState("");
   const [age, setAge] = useState("");
@@ -113,7 +116,7 @@ function NewBird() {
       console.error("[new bird] photo upload failed", e);
       toast.error(t("newBird.photoUploadFailed", "We couldn't upload that photo, so we added your bird without it. You can add one from the bird's page."));
     }
-    const { data: bird, error } = await supabase.from("birds").insert({
+    const row: Record<string, unknown> = {
       owner_id: u.user.id,
       name,
       species: species || null,
@@ -128,9 +131,16 @@ function NewBird() {
       // hidden for other birds, so saving it for them stamped every bird's
       // creation day as "Came to you".
       intake_date: isFoster ? intakeDate || null : null,
+      // Shown on screen for a foster, so it's the owner's date (src/lib/intakeDate.ts).
+      intake_date_source: isFoster && intakeDate ? "owner" : null,
       setup_complete: false,
       setup_step: encodeSetupStep(targetStep),
-    } as any).select().single();
+    };
+    let { data: bird, error } = await supabase.from("birds").insert(row as any).select().single();
+    if (isMissingColumn(error, "intake_date_source")) {
+      delete row.intake_date_source;
+      ({ data: bird, error } = await supabase.from("birds").insert(row as any).select().single());
+    }
     if (error || !bird) {
       toast.error(friendlyError(error, t("newBird.createFailed", "Could not create bird.")));
       setSaving(false);
@@ -218,9 +228,14 @@ function NewBird() {
   // If the bird WAS created (a prior tap saved it but navigation failed), leaving
   // is safe — never warn about discarding a bird that's already saved.
   const hasInput = !!(name.trim() || species.trim() || age || birthDate || sex || photo || flight !== "unknown");
-  function onCancel() {
+  async function onCancel() {
     if (createdIdRef.current) { navigate({ to: "/dashboard" }); return; }
-    if (!hasInput || window.confirm(t("newBird.discardConfirm", "Discard this bird? You haven't saved it yet."))) {
+    if (!hasInput || await confirm({
+      title: t("newBird.discardConfirmTitle", "Discard this bird?"),
+      body: t("newBird.discardConfirmBody", "You haven't saved it yet."),
+      confirmLabel: t("newBird.discardConfirmAction", "Discard"),
+      cancelLabel: t("newBird.discardConfirmKeep", "Keep editing"),
+    })) {
       navigate({ to: "/dashboard" });
     }
   }
@@ -247,9 +262,9 @@ function NewBird() {
       current="details"
       // "Who else helps?" follows when there's a household to share with.
       page={shareCandidates.length ? [1, 2] : undefined}
-      title={fosterParam ? t("newBird.headlineFoster", "Take in a bird.") : t("newBird.headline", "Add a bird.")}
+      title={fosterParam ? t("newBird.headlineFosterNoPeriod", "Take in a bird") : t("newBird.headlineNoPeriod", "Add a bird")}
       intro={t("newBird.body", "Start with the basics. The full care plan comes next.")}
-      onBack={onCancel}
+      onBack={() => void onCancel()}
       footer={
         <SetupPrimaryButton disabled={saving || !canAdd} onClick={onAddBird}>
           {saving ? t("newBird.adding", "Adding…") : t("newBird.continue", "Continue")}
@@ -285,7 +300,8 @@ function NewBird() {
           birthDate={birthDate}
           onChange={(next) => { setAge(next.age); setBirthDate(next.birthDate ?? ""); }}
         />
-        <div className="grid grid-cols-2 gap-3">
+        {/* One column on phones, so "Partially clipped" isn't cut off. */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <BirdField label={t("birdSetup.sex", "Sex")}>
             <select className="kya-input" value={sex} onChange={(e) => setSex(e.target.value)}>
               <option value="">{t("birdSetup.unknown", "Unknown")}</option><option value="Male">{t("birdSetup.male", "Male")}</option><option value="Female">{t("birdSetup.female", "Female")}</option>
@@ -327,7 +343,7 @@ function NewBird() {
           </div>
         )}
       </section>
-
+      {confirmSheet}
     </SetupFrame>
   );
 }

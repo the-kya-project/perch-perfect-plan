@@ -180,7 +180,10 @@ function Emergency() {
   return (
     <div className="setup-frame min-h-screen" style={{ background: K.forest, color: "#fff" }}>
       <PageHeader
-        title={t("sitter.emergency.pageTitle", "Emergency")}
+        // Named for the bird when the screen is about one bird (a one-bird
+        // sit, or a bird picked in the switcher); plain "Emergency" when
+        // several birds share it.
+        title={ruleName ? t("sitter.emergency.pageTitleFor", "Emergency for {{name}}", { name: ruleName }) : t("sitter.emergency.pageTitle", "Emergency")}
         line={t("sitter.emergency.subtitle", "Take a breath. Here's exactly what to do.")}
         onBack={goBack}
       >
@@ -197,9 +200,15 @@ function Emergency() {
                   className="inline-flex h-12 shrink-0 items-center gap-2 rounded-full pl-[5px] pr-4 text-[15px] font-[700] active:scale-95"
                   style={active ? { background: K.lime, color: K.forest } : { background: K.forestDeep, color: "#fff" }}
                 >
-                  <span className="size-[38px] shrink-0 overflow-hidden rounded-full" style={{ background: active ? "#fff" : K.forest }}>
-                    {b.photo_url && <img src={b.photo_url} alt="" className="size-full object-cover" style={{ objectPosition: b.photo_position || "center" }} />}
-                  </span>
+                  {b.photo_url ? (
+                    <span className="size-[38px] shrink-0 overflow-hidden rounded-full" style={{ background: active ? "#fff" : K.forest }}>
+                      <img src={b.photo_url} alt="" className="size-full object-cover" style={{ objectPosition: b.photo_position || "center" }} />
+                    </span>
+                  ) : (
+                    <span className="grid size-[38px] shrink-0 place-items-center rounded-full text-[16px] font-[700]" style={{ background: K.teal, color: K.forest }} aria-hidden="true">
+                      {((b.name as string | undefined)?.trim().slice(0, 1) || "?").toUpperCase()}
+                    </span>
+                  )}
                   {b.name}
                 </button>
               );

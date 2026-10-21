@@ -9,7 +9,8 @@ import { track } from "@/lib/analytics";
 import { useServerFn } from "@tanstack/react-start";
 import { resolveHouseholdNames } from "@/lib/home.functions";
 import { getSitReadiness, type SitGapSection } from "@/lib/household.functions";
-import { deviceTimeZone, isMissingTimeZoneColumn } from "@/lib/sitTimeZone";
+import { isMissingTimeZoneColumn } from "@/lib/sitTimeZone";
+import { resolveSitTimeZone } from "@/lib/sitTimeZoneBackfill";
 import { BottomSheet } from "@/components/setup/BottomSheet";
 import type { TFunction } from "i18next";
 import { S, SERIF, Tag, SetupPrimaryButton, SetupSecondaryButton, SetupTextButton } from "@/components/setup/controls";
@@ -20,11 +21,13 @@ import {
 import { memberDisplayName, memberInitials } from "@/lib/memberDisplay";
 import { useHouseholdCapability, useMyPermissions } from "@/lib/useCapability";
 import { Mail, Check, X, AlertTriangle } from "lucide-react";
-import { K, KyaLink } from "@/components/kya";
+import { K, KyaLink, KyaRequiredTag } from "@/components/kya";
 import { TaskHeader, useLeaveGuard } from "@/components/headers";
 import { copySitterLink } from "@/lib/sitLink";
 import { friendlyError } from "@/lib/errorMessage";
 import { localDateISO } from "@/lib/localDay";
+import { birdNames } from "@/lib/birdNames";
+import { mergeEmergency } from "@/lib/emergency";
 
 // Create OR edit a sit. In edit mode (`editSit` set) it preserves the existing
 // invite_token — the same sitter link keeps working; editing changes what it
@@ -279,8 +282,7 @@ export function SitForm({
   function gapBirdNames(): string {
     const ids = gapBirdIds();
     const names = Array.from(selected).filter((id) => ids.has(id)).map((id) => (birds.find((b: any) => b.id === id)?.name ?? "") as string).filter(Boolean);
-    if (names.length <= 1) return names[0] ?? "";
-    return t("sitForm.gaps.namesAnd", "{{first}} and {{last}}", { first: names.slice(0, -1).join(", "), last: names[names.length - 1] });
+    return birdNames(t, names);
   }
 
   // A different set of birds or caregiver means a fresh look at the gaps.
@@ -303,7 +305,7 @@ export function SitForm({
       const [{ data: contacts, error: ecErr }, { data: u }] = await Promise.all([
         supabase
           .from("emergency_contacts")
-          .select("bird_id, owner_phone, avian_vet_phone")
+          .select("bird_id, owner_phone, avian_vet_name, avian_vet_phone, avian_vet_address")
           .in("bird_id", birdIds),
         getLocalUser(),
       ]);
@@ -325,12 +327,12 @@ export function SitForm({
       if (kind === "external") {
         const { data: defaults } = await supabase
           .from("owner_emergency_defaults")
-          .select("owner_phone, avian_vet_phone")
+          .select("owner_phone, avian_vet_name, avian_vet_phone, avian_vet_address")
           .eq("owner_id", u.user.id)
           .maybeSingle();
         const contactByBird = new Map((contacts ?? []).map((c: any) => [c.bird_id, c]));
-        const eff = (c: any, k: string) =>
-          (c?.[k]?.trim?.() || (defaults as any)?.[k]?.trim?.() || "");
+        // Per contact row (a bird's own vet never borrows the account's number).
+        const eff = (c: any, k: string) => (mergeEmergency(c, defaults as any) as Record<string, string | null>)[k] ?? "";
         const missing = birdIds
           .map((id) => {
             const c = contactByBird.get(id);
@@ -381,9 +383,11 @@ export function SitForm({
 
       // External sits keep a token window ending at the end of the end date in
       // the owner's time zone. The sits trigger (enforce_sit_token_rules)
-      // computes token_expires_at from end_date + time_zone, so we only send the
-      // zone: this device's, saved once and kept. Household sits have no token.
-      const tz = deviceTimeZone();
+      // computes token_expires_at from end_date + time_zone and applies the
+      // ACCOUNT's home zone (Account → Time zone), never the device's current
+      // one. We send that zone too (the device's only before the account has
+      // one, which also saves it there). Household sits have no token.
+      const tz = await resolveSitTimeZone(u.user.id);
 
       if (editing) {
         // PR 1: caregiver KIND is locked on edit (UI disables the picker too).
@@ -399,7 +403,7 @@ export function SitForm({
           lead_user_id: leadUserId,
         };
         // Sits made before time zones were saved: fill it in now (the trigger
-        // then moves the link's end to the end of the last day locally).
+        // then moves the link's end to the end of the last day in that zone).
         if (!editSit.time_zone && tz) update.time_zone = tz;
         if (kind === "external") {
           update.sitter_name = sitterName || null;
@@ -563,7 +567,7 @@ export function SitForm({
         <main className="relative -mt-[26px] flex flex-col gap-7 rounded-t-[26px] bg-white px-5 pb-8 pt-6">
           {/* 1. Which birds? */}
           <section>
-            <Question>{t("sitForm.whichBirds", "Which birds?")}</Question>
+            <Question required>{t("sitForm.whichBirds", "Which birds?")}</Question>
             <div className="mt-3 flex flex-wrap items-center gap-2">
               {birds.map((b: any) => {
                 const on = selected.has(b.id);
@@ -587,7 +591,7 @@ export function SitForm({
 
           {/* 2. When? */}
           <section>
-            <Question>{t("sitForm.when", "When?")}</Question>
+            <Question required>{t("sitForm.when", "When?")}</Question>
             {/* min-w-0 lets the cells shrink; the global date-input reset
                 (styles.css) keeps the native iOS control from overflowing. */}
             <div className="mt-3 grid grid-cols-2 items-start gap-3">
@@ -604,7 +608,7 @@ export function SitForm({
 
           {/* 3. Who's covering? */}
           <section>
-            <Question>{t("sitForm.whosCoveringQ", "Who's covering?")}</Question>
+            <Question required={!editing}>{t("sitForm.whosCoveringQ", "Who's covering?")}</Question>
             <Hint>{t("sitForm.coveringHint", "Household members already have access. Anyone else gets a private link, no account needed.")}</Hint>
             {editing ? (
               <div className="mt-3 flex flex-col gap-3">
@@ -670,7 +674,7 @@ export function SitForm({
                     </p>
                   )}
                   <p className="m-0 text-[14px] leading-[1.5]">
-                    {t("sitForm.deleteThisSitThisCan", "Delete this sit? This can't be undone. Its checklist and task completions are removed; logged scans, weights, and photos are kept but no longer tied to the sit.")}
+                    {t("sitForm.deleteThisSitConfirm", "Delete this sit? This can't be undone. Its checklist and task completions are removed; logged daily checks, weights, and photos are kept but no longer tied to the sit.")}
                   </p>
                   <div className="mt-3 flex gap-2">
                     <button type="button" onClick={deleteSit} disabled={deleting} className="min-h-[48px] flex-1 rounded-full px-4 text-[15px] font-[700] text-white disabled:opacity-50" style={{ background: K.red }}>
@@ -801,14 +805,23 @@ function firstNameOf(name: string): string {
   return name.trim().split(/\s+/)[0] || name;
 }
 
-function Question({ children }: { children: React.ReactNode }) {
+function Question({ children, required }: { children: React.ReactNode; required?: boolean }) {
+  const { t } = useTranslation();
+  if (required) {
+    return (
+      <div className="flex flex-wrap items-center gap-2">
+        <h2 className="m-0 text-[20px] font-[700] leading-[1.2]" style={{ fontFamily: SERIF }}>{children}</h2>
+        <KyaRequiredTag tone="forest">{t("sitForm.required", "Required")}</KyaRequiredTag>
+      </div>
+    );
+  }
   return <h2 className="m-0 text-[20px] font-[700] leading-[1.2]" style={{ fontFamily: SERIF }}>{children}</h2>;
 }
 function Hint({ children }: { children: React.ReactNode }) {
   return <p className="m-0 mt-1 text-[14px] leading-[1.45]" style={{ color: K.quiet }}>{children}</p>;
 }
 
-function SitterFields({ name, email, onName, onEmail }: { name: string; email: string; onName: (v: string) => void; onEmail: (v: string) => void }) {
+function SitterFields({ name, email, onName, onEmail, emailRequired }: { name: string; email: string; onName: (v: string) => void; onEmail: (v: string) => void; emailRequired?: boolean }) {
   const { t } = useTranslation();
   return (
     <div className="flex flex-col gap-3">
@@ -817,7 +830,7 @@ function SitterFields({ name, email, onName, onEmail }: { name: string; email: s
         <input className={PILL_FIELD} style={PILL_STYLE} value={name} onChange={(e) => onName(e.target.value)} />
       </label>
       <label className="block">
-        <span className="mb-1.5 block text-[13.5px] font-[700]">{t("sitForm.sittersEmail", "Sitter's email")}</span>
+        <span className="mb-1.5 flex flex-wrap items-center gap-2 text-[13.5px] font-[700]">{t("sitForm.sittersEmail", "Sitter's email")}{emailRequired && <KyaRequiredTag tone="forest">{t("sitForm.required", "Required")}</KyaRequiredTag>}</span>
         <input className={PILL_FIELD} style={PILL_STYLE} type="email" value={email} onChange={(e) => onEmail(e.target.value)} placeholder={t("sitForm.sitterExampleCom", "sitter@example.com")} />
       </label>
     </div>
@@ -897,7 +910,7 @@ function CaregiverPicker({
       />
       {externalOn && (
         <div className="mt-1.5">
-          <SitterFields name={sitterName} email={sitterEmail} onName={onChangeSitterName} onEmail={onChangeSitterEmail} />
+          <SitterFields name={sitterName} email={sitterEmail} onName={onChangeSitterName} onEmail={onChangeSitterEmail} emailRequired />
         </div>
       )}
     </div>

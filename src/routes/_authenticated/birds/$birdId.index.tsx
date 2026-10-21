@@ -30,8 +30,9 @@ import {
 } from "lucide-react";
 import { formatLocalDate } from "@/lib/dates";
 import { useDailyCheckToday, type BirdToday } from "@/lib/dailyCheck";
-import { K, KyaPage, KyaCard, KyaHeading, KyaIconButton, KyaLink, KyaPrimaryButton, KyaSecondaryButton, KyaRow, KyaTag, KyaAvatarStack, KyaSheet, KyaLabel, KyaIconTile } from "@/components/kya";
-import { HeaderPill } from "@/components/headers";
+import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaIconButton, KyaLink, KyaPrimaryButton, KyaSecondaryButton, KyaRow, KyaTag, KyaAvatarStack, KyaSheet, KyaLabel, KyaIconTile } from "@/components/kya";
+import { HeaderPill, PageHeader } from "@/components/headers";
+import { useConfirm } from "@/components/ConfirmSheet";
 import { daysAgo } from "@/lib/scanConcern";
 import { useCarePlanStatus } from "@/lib/useCarePlanStatus";
 import { useLoggedBy } from "@/lib/useLoggedBy";
@@ -39,6 +40,7 @@ import { birdNames } from "@/lib/birdNames";
 import { getHouseholdForBird } from "@/lib/household.functions";
 import { useBirdOwnerEmergency } from "@/lib/useOwnerEmergency";
 import { emergencyDifferent } from "@/lib/emergency";
+import { checkKindOf } from "@/lib/checkKind";
 
 // Bird-record home — the new landing when you tap a bird. A glanceable hub for
 // the living record; the care plan is one facet among several. Facet screens
@@ -94,8 +96,9 @@ function BirdRecordHome() {
       <div className="mx-auto max-w-md">
         <BirdRecordHero birdId={birdId} />
         <main className="flex flex-col gap-4 px-4 pb-6 pt-4">
-          <BirdRecordBody birdId={birdId} />
+          {/* Household-only: who you are here, first thing under the hero. */}
           <MemberContextBanner birdId={birdId} />
+          <BirdRecordBody birdId={birdId} />
         </main>
       </div>
     </KyaPage>
@@ -116,16 +119,17 @@ function BirdRecordHome() {
  */
 function BirdOffline() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   return (
     <KyaPage>
-      <div className="mx-auto grid min-h-screen max-w-md place-items-center px-4 text-center">
-        <KyaCard className="w-full px-5 py-6">
-          <KyaHeading as="h1" size={26}>{t("birdRecord.youReOffline", "You're offline")}</KyaHeading>
-          <p className="m-0 mx-auto mt-3 max-w-[28rem] text-[15px] leading-[1.5]" style={{ color: K.ink }}>
+      <PageHeader title={t("birdRecord.youReOffline", "You're offline")} onBack={() => navigate({ to: "/dashboard" })} />
+      <KyaBody>
+        <KyaCard className="px-5 py-6">
+          <p className="m-0 text-[15px] leading-[1.5]" style={{ color: K.ink }}>
             {t("birdRecord.thisRecordNeedsAConnection", "This record needs a connection. Nothing has been lost — it'll be here when you're back.")}
           </p>
         </KyaCard>
-      </div>
+      </KyaBody>
     </KyaPage>
   );
 }
@@ -136,10 +140,10 @@ function BirdNoAccess() {
   const navigate = useNavigate();
   return (
     <KyaPage>
-      <div className="mx-auto grid min-h-screen max-w-md place-items-center px-4 text-center">
-        <KyaCard className="w-full px-5 py-6">
-          <KyaHeading as="h1" size={26}>{t("birdRecord.thisRecordIsnTYours", "This record isn't yours anymore")}</KyaHeading>
-          <p className="m-0 mx-auto mt-3 max-w-[28rem] text-[15px] leading-[1.5]" style={{ color: K.ink }}>
+      <PageHeader title={t("birdRecord.thisRecordIsnTYours", "This record isn't yours anymore")} onBack={() => navigate({ to: "/dashboard" })} />
+      <KyaBody>
+        <KyaCard className="px-5 py-6">
+          <p className="m-0 text-[15px] leading-[1.5]" style={{ color: K.ink }}>
             {t("birdRecord.youMayHaveHandedThis", "You may have handed this bird off, or your access may have been removed. If you think that's wrong, ask whoever looks after the record now.")}
           </p>
           <div className="mt-5">
@@ -148,7 +152,7 @@ function BirdNoAccess() {
             </KyaPrimaryButton>
           </div>
         </KyaCard>
-      </div>
+      </KyaBody>
     </KyaPage>
   );
 }
@@ -230,7 +234,7 @@ function BirdRecordHero({ birdId }: { birdId: string }) {
 }
 
 type WeightRow = { id: string; grams: number; measured_at: string; source: string; logged_by: string | null; sit_id: string | null };
-type CheckRow = { id: string; log_date: string; triage_status: string; created_at: string; source: string | null; run_by: string | null; sit_id: string | null };
+type CheckRow = { id: string; log_date: string; triage_status: string; created_at: string; source: string | null; run_by: string | null; sit_id: string | null; kind?: string | null; item_notes?: unknown };
 
 // A weigh-in older than this many days reads red.
 const STALE_DAYS = 7;
@@ -293,7 +297,7 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("daily_logs")
-        .select("id, log_date, triage_status, created_at, source, run_by, sit_id")
+        .select("*") // "*": works before daily_logs.kind exists (lib/missingColumn.ts)
         .eq("bird_id", birdId)
         .order("created_at", { ascending: false })
         .limit(30);
@@ -325,7 +329,7 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
   // Weights and checks, newest first.
   const recent = [
     ...(weights ?? []).map((w) => ({ kind: "weight" as const, at: w.measured_at, id: `w-${w.id}`, rawId: w.id, grams: w.grams, status: null as string | null, by: w.logged_by, source: w.source as string | null, sitId: w.sit_id })),
-    ...(checkins ?? []).map((c) => ({ kind: "checkin" as const, at: c.created_at, id: `c-${c.id}`, rawId: c.id, grams: null as number | null, status: c.triage_status, by: c.run_by, source: c.source ?? "sitter", sitId: c.sit_id })),
+    ...(checkins ?? []).map((c) => ({ kind: "checkin" as const, at: c.created_at, id: `c-${c.id}`, rawId: c.id, grams: null as number | null, status: c.triage_status, by: c.run_by, source: c.source ?? "sitter", sitId: c.sit_id, checkKind: checkKindOf(c as any) })),
   ].sort((a, b) => +new Date(b.at) - +new Date(a.at)).slice(0, 12);
   const loggedBy = useLoggedBy(recent, isOwner);
   const [showAllRecent, setShowAllRecent] = useState(false);
@@ -340,15 +344,15 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
       {/* Fresh bird → guide straight into the care plan. Prominent but skippable. */}
       {bird && !bird.setup_complete && canEditPlan && (
         // After the stop point ("Set up later") the basics are in, so the invite
-        // picks up at the pet-sitter details instead of starting over at Food.
+        // picks up at behavior, tips, and the day instead of starting over at Food.
         <KyaCard className="p-4">
           {basicsDone(bird.setup_step, bird.setup_complete) ? (
             <>
               <KyaHeading size={21}>{t("birdRecord.basicsSet", "The basics are set for {{name}}", { name })}</KyaHeading>
-              <p className="m-0 mt-1.5 text-[15px] leading-[1.5]" style={{ color: K.ink }}>{t("birdRecord.addSitterDetailsBody", "Add behavior, tips, and {{name}}'s day so a pet sitter has everything they need.", { name })}</p>
+              <p className="m-0 mt-1.5 text-[15px] leading-[1.5]" style={{ color: K.ink }}>{t("birdRecord.addCareDetailsBody", "Add the details anyone caring for {{name}} needs: behavior, tips, and {{name}}'s day.", { name })}</p>
               <div className="mt-3.5">
                 <KyaPrimaryButton icon={<ClipboardList className="size-5" />} onClick={() => navigate({ to: "/birds/$birdId/setup", params: { birdId }, search: { step: setupStepNumber("personality") } })}>
-                  {t("birdRecord.addSitterDetails", "Add pet-sitter details")}
+                  {t("birdRecord.addCareDetails", "Add care details")}
                 </KyaPrimaryButton>
               </div>
             </>
@@ -365,7 +369,7 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
           ) : (
             <>
               <KyaHeading size={21}>{t("birdRecord.setUpCarePlan", "Set up {{name}}'s care plan", { name })}</KyaHeading>
-              <p className="m-0 mt-1.5 text-[15px] leading-[1.5]" style={{ color: K.ink }}>{t("birdRecord.buildCarePlanIntro", "Build {{name}}'s care plan so sitters and household members know exactly what to do. You can skip and set it up later.", { name })}</p>
+              <p className="m-0 mt-1.5 text-[15px] leading-[1.5]" style={{ color: K.ink }}>{t("birdRecord.buildCarePlanIntroHealth", "Build {{name}}'s care plan so everyone who looks after {{name}} keeps the same healthy routine. You can skip and set it up later.", { name })}</p>
               <div className="mt-3.5">
                 <KyaPrimaryButton icon={<ClipboardList className="size-5" />} onClick={() => navigate({ to: "/birds/$birdId/setup", params: { birdId }, search: { step: 1 } })}>
                   {t("birdRecord.createCarePlan", "Create care plan")}
@@ -400,7 +404,7 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
           <KyaRow
             leading={<KyaIconTile size={38}><ClipboardList className="size-5" /></KyaIconTile>}
             title={t("birdRecord.carePlan", "Care plan")}
-            detail={t("birdRecord.carePlanSections", "Food, health, behavior, tips and day")}
+            detail={t("birdRecord.carePlanSectionsList", "Food, health, behavior, tips, and day")}
             trailing={planStatus.loaded
               ? planStatus.todo.length === 0
                 ? <KyaTag tone="lime">{t("birdRecord.planReady", "Ready")}</KyaTag>
@@ -434,7 +438,7 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
           )}
         </div>
         {recent.length === 0 ? (
-          <p className="m-0 px-4 pb-4 pt-1 text-[14px]" style={{ color: K.quiet }}>{t("birdRecord.nothingLoggedYetWeightsAnd", "Nothing logged yet. Weights and sitter check-ins will show up here.")}</p>
+          <p className="m-0 px-4 pb-4 pt-1 text-[14px]" style={{ color: K.quiet }}>{t("birdRecord.nothingLoggedYetWeightsChecks", "Nothing logged yet. Weights and daily checks will show up here.")}</p>
         ) : (
           <ul className="m-0 list-none p-0 pb-1">
             {recentShown.map((r, i) => (
@@ -452,7 +456,7 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
                   <span className="min-w-0 flex-1 text-[14px]">
                     {r.kind === "weight"
                       ? <>{t("birdRecord.recentWeighed", "Weighed")} · <b className="font-[700]">{t("birdRecord.grams", "{{n}} g", { n: r.grams?.toLocaleString() })}</b></>
-                      : <>{t("birdRecord.recentDailyCheck", "Daily check")} · {checkinLabel(t, r.status ?? "green")}</>}
+                      : <>{(r as { checkKind?: string }).checkKind === "full" ? t("birdRecord.recentFullCheck", "Full health check") : t("birdRecord.recentDailyCheck", "Daily check")} · {checkinLabel(t, r.status ?? "green")}</>}
                   </span>
                   <span className="max-w-[40%] shrink-0 truncate text-right text-[13px]" style={{ color: K.quiet }}>{loggedBy(t, r)}</span>
                 </button>
@@ -748,19 +752,32 @@ function HandoffSection({ birdId, name, part, pronoun = "them" }: { birdId: stri
     onError: (e: any) => toast.error(friendlyError(e, t("birdRecord.couldntUpdate", "Couldn't update."))),
   });
 
+  const { confirm, sheet } = useConfirm();
   const outlineBtn = "flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full border-2 bg-white text-[16px] font-[700] active:scale-[0.99] disabled:opacity-50";
 
   if (part === "welcome") {
     return (
-      <button
-        type="button"
-        disabled={permanentM.isPending}
-        onClick={() => { if (window.confirm(t("birdRecord.makePermanentConfirm", "Make {{name}} a permanent member of your flock? You can change your mind later.", { name }))) permanentM.mutate(); }}
-        className={outlineBtn}
-        style={{ borderColor: K.forest, color: K.forest }}
-      >
-        <Heart className="size-4" /> {t("birdRecord.welcomeToFlock", "Welcome to the flock")}
-      </button>
+      <>
+        <button
+          type="button"
+          disabled={permanentM.isPending}
+          onClick={async () => {
+            const yes = await confirm({
+              title: t("birdRecord.makePermanentTitle", "Make {{name}} a permanent member of your flock?", { name }),
+              body: t("birdRecord.makePermanentBody", "You can change your mind later."),
+              confirmLabel: t("birdRecord.welcomeToFlock", "Welcome to the flock"),
+              cancelLabel: t("birdRecord.notNow", "Not now"),
+              tone: "primary",
+            });
+            if (yes) permanentM.mutate();
+          }}
+          className={outlineBtn}
+          style={{ borderColor: K.forest, color: K.forest }}
+        >
+          <Heart className="size-4" /> {t("birdRecord.welcomeToFlock", "Welcome to the flock")}
+        </button>
+        {sheet}
+      </>
     );
   }
 
@@ -990,12 +1007,7 @@ function BasicInfoCard({ birdId, bird, name, editable = true }: { birdId: string
       <div className="flex items-center justify-between gap-3 px-4 pt-3">
         <KyaHeading size={21}>{t("birdRecord.aboutName", "About {{name}}", { name })}</KyaHeading>
         {editing ? (
-          <div className="flex gap-1">
-            <KyaLink color={K.quiet} onClick={() => setEditing(false)}>{t("birdRecord.cancel", "Cancel")}</KyaLink>
-            <button type="button" onClick={save} disabled={saving} className="inline-flex min-h-[44px] items-center gap-1 rounded-full px-4 text-[15px] font-[700] text-white disabled:opacity-50" style={{ background: K.forest }}>
-              <Check className="size-4" /> {saving ? t("birdRecord.saving", "Saving…") : t("birdRecord.save", "Save")}
-            </button>
-          </div>
+          <KyaLink color={K.quiet} onClick={() => setEditing(false)}>{t("birdRecord.cancel", "Cancel")}</KyaLink>
         ) : editable ? (
           <KyaLink onClick={openEdit}><Pencil className="size-4" /> {t("birdRecord.edit", "Edit")}</KyaLink>
         ) : null}
@@ -1030,6 +1042,11 @@ function BasicInfoCard({ birdId, bird, name, editable = true }: { birdId: string
               <option value="partially_clipped">{t("birdRecord.partiallyClipped", "Partially clipped")}</option>
             </select>
           </BirdField>
+          <div className="pt-1">
+            <KyaPrimaryButton onClick={save} disabled={saving} icon={<Check className="size-5" />}>
+              {saving ? t("birdRecord.saving", "Saving…") : t("birdRecord.save", "Save")}
+            </KyaPrimaryButton>
+          </div>
         </div>
       ) : (
         <dl className="m-0 pb-1">

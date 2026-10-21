@@ -1,3 +1,4 @@
+import type { TFunction } from "i18next";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
@@ -5,6 +6,7 @@ import { pickLocale } from "@/lib/i18n";
 import { objectPronoun, possessivePronoun } from "@/lib/i18n/pronouns";
 import { AlertTriangle, ChevronLeft, Check, X } from "lucide-react";
 import { K, SERIF } from "@/components/kya";
+import { birdNames } from "@/lib/birdNames";
 
 // First-visit sitter onboarding: a two-screen welcome, then a coach-mark bubble
 // walkthrough that points at the REAL on-screen elements (tagged with
@@ -20,12 +22,11 @@ export function replaySitterOnboarding() {
 }
 
 // "Willow" / "Willow and Moxie" / "Willow, Moxie, and Kiwi"
-function formatNames(names: string[]): string {
+// Takes the sitter view's own t: it runs its own i18n instance and language.
+function formatNames(t: TFunction, names: string[]): string {
   const n = names.filter(Boolean);
-  if (n.length === 0) return "your bird";
-  if (n.length === 1) return n[0];
-  if (n.length === 2) return `${n[0]} and ${n[1]}`;
-  return `${n.slice(0, -1).join(", ")}, and ${n[n.length - 1]}`;
+  if (n.length === 0) return t("nameList.yourBird", "your bird");
+  return birdNames(t, n);
 }
 
 
@@ -68,7 +69,7 @@ export function SitterOnboarding({ birds, bird, careSections, hasClips, token }:
 
   const list = Array.isArray(birds) && birds.length ? birds : bird ? [bird] : [];
   const names = list.map((b) => (b?.name ?? "").toString().trim()).filter(Boolean);
-  const allNames = formatNames(names);
+  const allNames = formatNames(t, names);
   const activeName = (bird?.name ?? names[0] ?? "your bird").toString().trim() || "your bird";
   const obj = objectPronoun(bird?.sex, locale);
   const poss = possessivePronoun(bird?.sex, locale);
@@ -395,7 +396,7 @@ export function SitterOnboarding({ birds, bird, careSections, hasClips, token }:
                     ),
                   )}
                 </div>
-                {title(t("sitterOnboarding.welcome.title", "You're caring for {{names}}.", { names: allNames }))}
+                {title(t("sitterOnboarding.welcome.heading", "You're caring for {{names}}", { names: allNames }))}
                 {body(t("sitterOnboarding.welcome.body", "Everything you need is right here. Let's take a minute to show you around."))}
                 <button type="button" onClick={() => setPhase("overview")} className={`${primaryBtn} mt-6`} style={primaryStyle}>
                   {t("sitterOnboarding.welcome.cta", "Show me around")}
@@ -416,8 +417,8 @@ export function SitterOnboarding({ birds, bird, careSections, hasClips, token }:
                 <div className="mx-auto grid size-14 place-items-center rounded-full" style={{ background: K.forest, color: K.lime }}>
                   <Check className="size-7" aria-hidden="true" />
                 </div>
-                {title(t("sitterOnboarding.closing.title", "That's everything! You're all set to care for {{names}}.", { names: allNames }))}
-                {body(t("sitterOnboarding.closing.body", "Want to see this again? Tap the question mark in the upper right anytime."))}
+                {title(t("sitterOnboarding.closing.heading", "That's everything"))}
+                {body(t("sitterOnboarding.closing.allSet", "You're all set to care for {{names}}. Want to see this again? Tap the question mark in the upper right anytime.", { names: allNames }))}
                 <button type="button" onClick={finishWalkthrough} className={`${primaryBtn} mt-6`} style={primaryStyle}>
                   {t("sitterOnboarding.coach.gotIt", "Got it")}
                 </button>

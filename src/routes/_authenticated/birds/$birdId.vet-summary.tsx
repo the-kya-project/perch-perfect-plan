@@ -173,18 +173,18 @@ function VetSummary() {
       bird?.species ? t("vetSummary.shareSpecies", "Species: {{species}}", { species: speciesLabel(t, bird.species) }) : "",
       t("vetSummary.generated", "Generated {{date}}", { date: fmtDate(new Date().toISOString()) }),
       "",
-      t("vetSummary.shareIdentity", "IDENTITY"),
+      t("vetSummary.shareIdentityLabel", "Identity"),
       ...identity.map(([l, v, empty]) => `  ${l}: ${v ?? empty ?? none()}`),
       "",
-      t("vetSummary.shareWeight", "WEIGHT: {{value}}", { value: weightText ?? none() }),
+      t("vetSummary.shareWeightLabel", "Weight: {{value}}", { value: weightText ?? none() }),
       "",
-      t("vetSummary.shareDiet", "DIET: {{value}}", { value: dietText ?? none() }),
+      t("vetSummary.shareDietLabel", "Diet: {{value}}", { value: dietText ?? none() }),
       "",
-      t("vetSummary.shareMeds", "MEDS & HEALTH FLAGS: {{value}}", { value: meds || none() }),
+      t("vetSummary.shareMedsLabel", "Meds & health flags: {{value}}", { value: meds || none() }),
       "",
-      t("vetSummary.shareHandling", "HANDLING: {{value}}", { value: handling || none() }),
+      t("vetSummary.shareHandlingLabel", "Handling: {{value}}", { value: handling || none() }),
       "",
-      t("vetSummary.shareFlagged", "FLAGGED FOR REVIEW (LAST 6 MONTHS)"),
+      t("vetSummary.shareFlaggedLabel", "Flagged for review (last 6 months)"),
       ...(!(flaggedScans ?? []).length
         ? [`  ${t("vetSummary.noFlagged", "No flagged checks in the last 6 months.")}`]
         : (flaggedScans ?? []).map((r: any) => {
@@ -194,7 +194,7 @@ function VetSummary() {
             return `  ${fmtDate(r.created_at)} · ${t("vetSummary.triageLevel", "triage {{level}}", { level: triageLevelLabel(r.triage_status) })} · ${r.resolved_at ? t("vetSummary.resolvedOn", "resolved {{date}}", { date: fmtDate(r.resolved_at) }) : t("vetSummary.unresolved", "unresolved")} — ${items}`;
           })),
       "",
-      t("vetSummary.shareWeightHistory", "WEIGHT HISTORY ({{n}} entries, newest first)", { n: (weights ?? []).length }),
+      t("vetSummary.shareWeightHistoryLabel", "Weight history ({{n}} entries, newest first)", { n: (weights ?? []).length }),
       ...(weights ?? []).map((e) => {
         const bits = [
           `${e.grams} g`,
@@ -514,23 +514,28 @@ export function WeightAppendix({ entries }: { entries: WeightRow[] }) {
     <KyaCard className="p-5">
       <KyaHeading as="h3" size={19}>{t("vetSummary.appendixHeading", "Appendix: weight history")}</KyaHeading>
       <p className="m-0 mt-1 text-[13px]" style={{ color: K.quiet }}>{entries.length === 1 ? t("vetSummary.entriesOne", "{{n}} entry, newest first", { n: entries.length }) : t("vetSummary.entriesOther", "{{n}} entries, newest first", { n: entries.length })}</p>
-      {/* Column headers so the series reads as a table at a glance. */}
-      <div className="mt-3 flex items-baseline gap-3 border-b pb-1.5" style={{ borderColor: K.line }}>
-        <span className="w-40 shrink-0 text-[13px] font-[700]" style={{ color: K.quiet }}>{t("vetSummary.colDate", "Date")}</span>
-        <span className="w-14 shrink-0 text-[13px] font-[700]" style={{ color: K.quiet }}>{t("vetSummary.colWeight", "Weight")}</span>
-        <span className="min-w-0 flex-1 text-[13px] font-[700]" style={{ color: K.quiet }}>{t("vetSummary.colContext", "Context")}</span>
+      {/* Column headers so the series reads as a table at a glance. Two
+          columns that fit 375px: date with its context underneath, weight on
+          the right (no fixed widths squeezing the context). */}
+      <div className="mt-3 flex items-baseline justify-between gap-3 border-b pb-1.5" style={{ borderColor: K.line }}>
+        <span className="min-w-0 flex-1 text-[13px] font-[700]" style={{ color: K.quiet }}>{t("vetSummary.colDate", "Date")}</span>
+        <span className="shrink-0 text-right text-[13px] font-[700]" style={{ color: K.quiet }}>{t("vetSummary.colWeight", "Weight")}</span>
       </div>
       <div>
         {entries.map((e, i) => {
           const context = [mealLabel(e.meal_relation), sourceLabel(e.source) && t("vetSummary.loggedBy", "logged by {{source}}", { source: sourceLabel(e.source) })].filter(Boolean).join(" · ");
           return (
-            <div key={e.id} className="avoid-break flex items-baseline gap-3 py-2" style={{ borderBottom: i === entries.length - 1 ? undefined : `1px solid ${K.line}` }}>
-              <span className="w-40 shrink-0 text-[13px]" style={{ color: K.quiet }}>{fmtDateTime(e.measured_at)}</span>
-              <span className="w-14 shrink-0 text-[14px] font-[700]" style={{ color: K.forest }}>{e.grams} g</span>
-              <span className="min-w-0 flex-1 text-[13px] leading-snug" style={{ color: K.quiet }}>
-                {context}
-                {e.note && <span className="italic" style={{ color: K.ink }}>{context ? " · " : ""}"{e.note}"</span>}
+            <div key={e.id} className="avoid-break flex items-baseline justify-between gap-3 py-2" style={{ borderBottom: i === entries.length - 1 ? undefined : `1px solid ${K.line}` }}>
+              <span className="min-w-0 flex-1">
+                <span className="block text-[13px]" style={{ color: K.forest }}>{fmtDateTime(e.measured_at)}</span>
+                {(context || e.note) && (
+                  <span className="mt-0.5 block text-[13px] leading-snug [overflow-wrap:anywhere]" style={{ color: K.quiet }}>
+                    {context}
+                    {e.note && <span className="italic" style={{ color: K.ink }}>{context ? " · " : ""}"{e.note}"</span>}
+                  </span>
+                )}
               </span>
+              <span className="shrink-0 whitespace-nowrap text-right text-[14px] font-[700]" style={{ color: K.forest }}>{e.grams} g</span>
             </div>
           );
         })}

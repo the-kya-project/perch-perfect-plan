@@ -9,9 +9,6 @@
     "account.birdsRehomedDetail": {
       "stamp": "4715492ca07f5ba2"
     },
-    "account.brittany": {
-      "stamp": "5ae9633985225e36"
-    },
     "account.cancel": {
       "stamp": "06c80f8b6f9f2b3b"
     },
@@ -75,6 +72,9 @@
     "account.firstName": {
       "stamp": "4ee0c9f6a0e12e77"
     },
+    "account.firstNamePlaceholder": {
+      "stamp": "4ee0c9f6a0e12e77"
+    },
     "account.getTheAppShort": {
       "stamp": "624e9e4ee537210d"
     },
@@ -105,20 +105,26 @@
     "account.joinAnd": {
       "stamp": "e5a3a5728546dfb7"
     },
-    "account.king": {
-      "stamp": "51793bb119e32b61"
-    },
     "account.language": {
       "stamp": "fd4d95511bdce123"
     },
     "account.lastName": {
       "stamp": "cb2dd938c96fbba5"
     },
+    "account.lastNamePlaceholder": {
+      "stamp": "cb2dd938c96fbba5"
+    },
     "account.nameUpdated": {
       "stamp": "fcab517792082776"
     },
+    "account.needsBirdVetDetails": {
+      "stamp": "9616362c10a93960"
+    },
     "account.needsTwoNumbers": {
       "stamp": "0e88089de61ebd99"
+    },
+    "account.needsVetDetailsFor": {
+      "stamp": "01d89c92b0965475"
     },
     "account.needsVetPhone": {
       "stamp": "9759d6bcaeba20d3"
@@ -170,6 +176,33 @@
     },
     "account.termsOfService": {
       "stamp": "3716c46040c949b6"
+    },
+    "account.timeZone": {
+      "stamp": "6dbef53dca8a094d"
+    },
+    "account.timeZoneIntro": {
+      "stamp": "48369c0e30b871fd"
+    },
+    "account.timeZoneNoMatch": {
+      "stamp": "7ed25058d4c3564e"
+    },
+    "account.timeZoneNotSet": {
+      "stamp": "be60108dffca8554"
+    },
+    "account.timeZoneSaved": {
+      "stamp": "cf6ccab104cbe2ee"
+    },
+    "account.timeZoneSearch": {
+      "stamp": "bd3bde562b8e7074"
+    },
+    "account.timeZoneSearchLabel": {
+      "stamp": "aea9468591bb223a"
+    },
+    "account.timeZoneSelected": {
+      "stamp": "e355bcaed6a763f8"
+    },
+    "account.timeZoneUseDevice": {
+      "stamp": "a6fb2851fad8865f"
     },
     "account.typeDeleteToConfirm": {
       "stamp": "713455d3093317f1"
@@ -270,6 +303,9 @@
     "accountSecurity.reenterPassword": {
       "stamp": "5816769ef701c8e3"
     },
+    "accountSecurity.required": {
+      "stamp": "dba5a2479ac6f5fa"
+    },
     "accountSecurity.resetSent": {
       "stamp": "71d0fa1f0ca33338"
     },
@@ -306,8 +342,8 @@
     "addressInput.state": {
       "stamp": "bf533f88e474ed84"
     },
-    "addressInput.street": {
-      "stamp": "a99c994fd4a9be07"
+    "addressInput.streetLabel": {
+      "stamp": "7bdd02fd46c45336"
     },
     "addressInput.zip": {
       "stamp": "3cc2fbb686d0c392"
@@ -345,8 +381,8 @@
     "auth.firstName": {
       "stamp": "4ee0c9f6a0e12e77"
     },
-    "auth.firstNamePlaceholder": {
-      "stamp": "71cae250eb7d1728"
+    "auth.firstNamePlaceholderLabel": {
+      "stamp": "4ee0c9f6a0e12e77"
     },
     "auth.forgotPassword": {
       "stamp": "c6241b1c19f11641"
@@ -360,8 +396,8 @@
     "auth.lastName": {
       "stamp": "cb2dd938c96fbba5"
     },
-    "auth.lastNamePlaceholder": {
-      "stamp": "ca9bf70951252fde"
+    "auth.lastNamePlaceholderLabel": {
+      "stamp": "cb2dd938c96fbba5"
     },
     "auth.marketingOptIn": {
       "stamp": "76b66ba603441afb"
@@ -441,6 +477,9 @@
     "authError.weakPasswordLength": {
       "stamp": "ea494383dc75d7be"
     },
+    "birdAccess.addedOn": {
+      "stamp": "92aa1e6fa7dd266f"
+    },
     "birdAccess.addMember": {
       "stamp": "3f145952b4361c71"
     },
@@ -449,9 +488,6 @@
     },
     "birdAccess.cancelFailed": {
       "stamp": "ea4a28d50accbd60"
-    },
-    "birdAccess.canViewLog": {
-      "stamp": "e0b3f2211d595684"
     },
     "birdAccess.close": {
       "stamp": "d981ee660d866d8c"
@@ -462,8 +498,8 @@
     "birdAccess.household": {
       "stamp": "da35ceae68b17eed"
     },
-    "birdAccess.householdHint": {
-      "stamp": "da73053bfeeb6db5"
+    "birdAccess.householdHintPerms": {
+      "stamp": "111f5f324fe44493"
     },
     "birdAccess.householdMember": {
       "stamp": "e5a61877c5a229f6"
@@ -485,6 +521,9 @@
     },
     "birdAccess.ownerFullAccess": {
       "stamp": "4c182f33fe9a84cd"
+    },
+    "birdAccess.permsAdded": {
+      "stamp": "e736a661752d70cb"
     },
     "birdAccess.removed": {
       "stamp": "946718fb87f2c43b"
@@ -555,9 +594,6 @@
     "birdEmergency.customFor": {
       "stamp": "fa9d4b88734674e1"
     },
-    "birdEmergency.differentFor": {
-      "stamp": "a35fa62fc823d056"
-    },
     "birdEmergency.editForAll": {
       "stamp": "23abc0276afa17d5"
     },
@@ -569,9 +605,6 @@
     },
     "birdEmergency.line": {
       "stamp": "c8cd6e8635780efe"
-    },
-    "birdEmergency.lineMember": {
-      "stamp": "21948c2ee66df382"
     },
     "birdEmergency.loading": {
       "stamp": "543c404f0e5a7d86"
@@ -591,6 +624,15 @@
     "birdEmergency.savedForAll": {
       "stamp": "990d3dfc4e71b31b"
     },
+    "birdEmergency.segJustFor": {
+      "stamp": "b2eeb7d9ae32d014"
+    },
+    "birdEmergency.segUseMine": {
+      "stamp": "abb39cf6a118287f"
+    },
+    "birdEmergency.segUseOwners": {
+      "stamp": "e4410af428f0a1ba"
+    },
     "birdEmergency.signedOut": {
       "stamp": "c968129a185a2b35"
     },
@@ -605,6 +647,27 @@
     },
     "birdEmergency.useOwners": {
       "stamp": "209a23086e01dd5f"
+    },
+    "birdEmergency.vetGap.avianBoth": {
+      "stamp": "33d84135218108ab"
+    },
+    "birdEmergency.vetGap.avianName": {
+      "stamp": "4774fef4c065b4e4"
+    },
+    "birdEmergency.vetGap.avianPhone": {
+      "stamp": "8b3a4dcb104c0c08"
+    },
+    "birdEmergency.vetGap.erBoth": {
+      "stamp": "235ed5a2b643d94f"
+    },
+    "birdEmergency.vetGap.erName": {
+      "stamp": "3e9a0f8d8f90f0fe"
+    },
+    "birdEmergency.vetGap.erPhone": {
+      "stamp": "cddb5d333b3ae079"
+    },
+    "birdEmergency.vetGap.title": {
+      "stamp": "aacb12fad8bfaccf"
     },
     "birdEmergency.whichInfo": {
       "stamp": "e87d27706d69e341"
@@ -707,6 +770,9 @@
     },
     "birdIdentity.editTitle": {
       "stamp": "b128156afe79e915"
+    },
+    "birdIdentity.editTitleNamed": {
+      "stamp": "677fcde98cca258a"
     },
     "birdIdentity.footnoteFemale": {
       "stamp": "2f2f686b000b2cbd"
@@ -816,11 +882,17 @@
     "birdJournal.close": {
       "stamp": "d981ee660d866d8c"
     },
-    "birdJournal.confirmDelete": {
-      "stamp": "b2263b9980f0e41b"
+    "birdJournal.confirmDeleteBody": {
+      "stamp": "116abc678de724eb"
+    },
+    "birdJournal.confirmDeleteTitle": {
+      "stamp": "d647baa9d47bf6f0"
     },
     "birdJournal.dateField": {
       "stamp": "411600a99346ac59"
+    },
+    "birdJournal.delete": {
+      "stamp": "97e6c24eab9130b3"
     },
     "birdJournal.deleted": {
       "stamp": "7db42426b312c259"
@@ -840,20 +912,20 @@
     "birdJournal.editEntry": {
       "stamp": "64fbec3b97079ffc"
     },
-    "birdJournal.emptyAll": {
-      "stamp": "003a694255118cea"
+    "birdJournal.emptyAllEntries": {
+      "stamp": "83bb393adc09f3ec"
     },
-    "birdJournal.emptyBehavior": {
-      "stamp": "3395c609ea043067"
+    "birdJournal.emptyBehaviorEntries": {
+      "stamp": "26780cfd51b46b1f"
     },
-    "birdJournal.emptyHealth": {
-      "stamp": "9445b66827357ee9"
+    "birdJournal.emptyHealthEntries": {
+      "stamp": "a315cd3260ffa995"
     },
     "birdJournal.emptyIntro": {
       "stamp": "237742a11d11014e"
     },
-    "birdJournal.emptyNotes": {
-      "stamp": "51ffd9537f738f19"
+    "birdJournal.emptyNotesEntries": {
+      "stamp": "795780ad2012d8e1"
     },
     "birdJournal.filesFailed": {
       "stamp": "b318594017f3be28"
@@ -881,6 +953,9 @@
     },
     "birdJournal.filterNotes": {
       "stamp": "d19a3271a64d8524"
+    },
+    "birdJournal.keep": {
+      "stamp": "6a37de9a420e6ec2"
     },
     "birdJournal.kindBehavior": {
       "stamp": "847b1e8ea2825cdf"
@@ -929,6 +1004,9 @@
     },
     "birdJournal.removePhoto": {
       "stamp": "bb3e96aaf42e33bd"
+    },
+    "birdJournal.required": {
+      "stamp": "dba5a2479ac6f5fa"
     },
     "birdJournal.save": {
       "stamp": "8bb70b77034c99c6"
@@ -984,11 +1062,17 @@
     "birdMoments.close": {
       "stamp": "d981ee660d866d8c"
     },
-    "birdMoments.confirmDelete": {
-      "stamp": "646b37e568b9c19f"
+    "birdMoments.confirmDeleteBody": {
+      "stamp": "32e8a7abaea261c8"
+    },
+    "birdMoments.confirmDeleteTitle": {
+      "stamp": "b254abf9db1b0ff9"
     },
     "birdMoments.dateLabel": {
       "stamp": "411600a99346ac59"
+    },
+    "birdMoments.delete": {
+      "stamp": "97e6c24eab9130b3"
     },
     "birdMoments.deleteFailed": {
       "stamp": "50f10dbb3926ff96"
@@ -1025,6 +1109,9 @@
     },
     "birdMoments.hatchedOn": {
       "stamp": "8053132827e4bff8"
+    },
+    "birdMoments.keep": {
+      "stamp": "6a37de9a420e6ec2"
     },
     "birdMoments.lessThanMonthTogether": {
       "stamp": "5e1c2ec6904b6e5d"
@@ -1092,6 +1179,9 @@
     "birdMoments.remove": {
       "stamp": "7a3c74b21c1d6ef1"
     },
+    "birdMoments.required": {
+      "stamp": "dba5a2479ac6f5fa"
+    },
     "birdMoments.save": {
       "stamp": "8bb70b77034c99c6"
     },
@@ -1155,14 +1245,17 @@
     "birdMoments.yearsTogether_other": {
       "stamp": "eae4cf6373f09715"
     },
-    "birdNames.and": {
-      "stamp": "fbb6deca81886546"
-    },
     "birdNames.count_one": {
       "stamp": "77ebd0a5b87711fa"
     },
     "birdNames.count_other": {
       "stamp": "1c68e78e777ef117"
+    },
+    "birdNames.many": {
+      "stamp": "7fd25b43e95a52e7"
+    },
+    "birdNames.pair": {
+      "stamp": "8ae4b5e718dd5811"
     },
     "birdPhotoSheet.adjustCrop": {
       "stamp": "5d330a9b86037c5c"
@@ -1176,8 +1269,11 @@
     "birdPhotoSheet.close": {
       "stamp": "d981ee660d866d8c"
     },
-    "birdPhotoSheet.confirmRemove": {
-      "stamp": "4948e59b3ea1472c"
+    "birdPhotoSheet.confirmRemoveBody": {
+      "stamp": "d5f1a25740887f92"
+    },
+    "birdPhotoSheet.confirmRemoveTitle": {
+      "stamp": "6a60b5cb5c82c3fe"
     },
     "birdPhotoSheet.dragAria": {
       "stamp": "645ca589c839492f"
@@ -1191,11 +1287,17 @@
     "birdPhotoSheet.frameHint": {
       "stamp": "984346a1d4075c28"
     },
+    "birdPhotoSheet.keep": {
+      "stamp": "6a37de9a420e6ec2"
+    },
     "birdPhotoSheet.processFailed": {
       "stamp": "b83157cd8a3882dd"
     },
     "birdPhotoSheet.recordHeader": {
       "stamp": "83b447f4f9d39d7a"
+    },
+    "birdPhotoSheet.remove": {
+      "stamp": "7a3c74b21c1d6ef1"
     },
     "birdPhotoSheet.removed": {
       "stamp": "f5c4e956c0240ba8"
@@ -1287,11 +1389,11 @@
     "birdRecord.add": {
       "stamp": "7243fcbe9aec5d44"
     },
-    "birdRecord.addSitterDetails": {
-      "stamp": "e5c13e0743d10300"
+    "birdRecord.addCareDetails": {
+      "stamp": "d8cb39e97fa4b49b"
     },
-    "birdRecord.addSitterDetailsBody": {
-      "stamp": "998795e22df67304"
+    "birdRecord.addCareDetailsBody": {
+      "stamp": "c05385183d83e91c"
     },
     "birdRecord.adjustCrop": {
       "stamp": "5d330a9b86037c5c"
@@ -1311,8 +1413,8 @@
     "birdRecord.basicsSet": {
       "stamp": "a9c949375c1823c9"
     },
-    "birdRecord.buildCarePlanIntro": {
-      "stamp": "94e1eca2bb07c712"
+    "birdRecord.buildCarePlanIntroHealth": {
+      "stamp": "db085728f8766a9b"
     },
     "birdRecord.cancel": {
       "stamp": "06c80f8b6f9f2b3b"
@@ -1320,8 +1422,8 @@
     "birdRecord.carePlan": {
       "stamp": "024068f55f21e2cd"
     },
-    "birdRecord.carePlanSections": {
-      "stamp": "7f31a0cdbcb9ff4b"
+    "birdRecord.carePlanSectionsList": {
+      "stamp": "d03c5398b3c1abd7"
     },
     "birdRecord.checkButtonsHint": {
       "stamp": "b652917400e69b30"
@@ -1473,8 +1575,11 @@
     "birdRecord.keepName": {
       "stamp": "fac8f29215824a8e"
     },
-    "birdRecord.makePermanentConfirm": {
-      "stamp": "ab9aa85c818d3521"
+    "birdRecord.makePermanentBody": {
+      "stamp": "ad314a8b1fd84261"
+    },
+    "birdRecord.makePermanentTitle": {
+      "stamp": "6460da0d55ca035b"
     },
     "birdRecord.makeSureTheBirdS": {
       "stamp": "64388eb2221f1a4d"
@@ -1500,8 +1605,11 @@
     "birdRecord.notAdded": {
       "stamp": "369938ad2bbc6c71"
     },
-    "birdRecord.nothingLoggedYetWeightsAnd": {
-      "stamp": "a08f2ff81649a806"
+    "birdRecord.nothingLoggedYetWeightsChecks": {
+      "stamp": "40ac21a0d66d5165"
+    },
+    "birdRecord.notNow": {
+      "stamp": "e09226312af9076b"
     },
     "birdRecord.notSet": {
       "stamp": "bada2594e7fbfd74"
@@ -1553,6 +1661,9 @@
     },
     "birdRecord.recentDailyCheck": {
       "stamp": "a55b557383617330"
+    },
+    "birdRecord.recentFullCheck": {
+      "stamp": "6849412e9ebe15d2"
     },
     "birdRecord.recentSomethingToCheck": {
       "stamp": "334cb9928400c46a"
@@ -1761,6 +1872,9 @@
     "birdSetup.commonToxicFoodsArePrefilled": {
       "stamp": "06c4d192608764e6"
     },
+    "birdSetup.confirmKeep": {
+      "stamp": "6a37de9a420e6ec2"
+    },
     "birdSetup.couldNotBuildPreview": {
       "stamp": "38b2a35aae358ed8"
     },
@@ -1806,6 +1920,9 @@
     "birdSetup.eGPantryTopShelf": {
       "stamp": "90a9929ca21282e0"
     },
+    "birdSetup.emergency.titleNamed": {
+      "stamp": "bbbae5cb3e6c79ad"
+    },
     "birdSetup.fearsTriggers": {
       "stamp": "da86a52df9cdf909"
     },
@@ -1827,8 +1944,8 @@
     "birdSetup.food2.next": {
       "stamp": "6e32a093b3648350"
     },
-    "birdSetup.food2.title": {
-      "stamp": "00afcfc58a360f9e"
+    "birdSetup.food2.titleNamed": {
+      "stamp": "00bc136678aecb8e"
     },
     "birdSetup.forEachFoodAdd": {
       "stamp": "646631c41d8a5376"
@@ -1863,8 +1980,8 @@
     "birdSetup.health.appetite": {
       "stamp": "c36fef4718ad49c5"
     },
-    "birdSetup.health.clipHelper": {
-      "stamp": "f1508413ae8c0e1b"
+    "birdSetup.health.clipHelperAnyone": {
+      "stamp": "5e6ec19eafd14c2b"
     },
     "birdSetup.health.clipStillUploading": {
       "stamp": "4c34f05afac1bf3a"
@@ -2397,20 +2514,35 @@
     "birdSetup.reminders.useShared": {
       "stamp": "cc5b1906a584c7e1"
     },
-    "birdSetup.reminders.useSharedConfirm": {
-      "stamp": "ec58c1d07f80ff23"
+    "birdSetup.reminders.useSharedConfirmAction": {
+      "stamp": "1f2fa2eeb5bf6d2e"
+    },
+    "birdSetup.reminders.useSharedConfirmBody": {
+      "stamp": "7c99a998f536f61b"
+    },
+    "birdSetup.reminders.useSharedConfirmTitle": {
+      "stamp": "82a70168c0595bef"
     },
     "birdSetup.remove": {
       "stamp": "7a3c74b21c1d6ef1"
     },
-    "birdSetup.removeDietTypeConfirm": {
-      "stamp": "8dbe1d55c583124f"
+    "birdSetup.removeDietTypeConfirmAction": {
+      "stamp": "7a3c74b21c1d6ef1"
+    },
+    "birdSetup.removeDietTypeConfirmBody": {
+      "stamp": "0504dbb7ca082f15"
+    },
+    "birdSetup.removeDietTypeConfirmTitle": {
+      "stamp": "6154db8384cc9775"
     },
     "birdSetup.removeFreshOrWetFood": {
       "stamp": "c7c8c5de7c15ce84"
     },
-    "birdSetup.removeHomemadeConfirm": {
-      "stamp": "9de36acf2a3425f9"
+    "birdSetup.removeHomemadeConfirmBody": {
+      "stamp": "253a4621ceae9eeb"
+    },
+    "birdSetup.removeHomemadeConfirmTitle": {
+      "stamp": "2ac6ca128312039d"
     },
     "birdSetup.removeTask": {
       "stamp": "0992443e480b189a"
@@ -2487,8 +2619,8 @@
     "birdSetup.review.stillThin": {
       "stamp": "8cadbc4dcc43edd3"
     },
-    "birdSetup.review.title": {
-      "stamp": "3f253b53e8c6e8df"
+    "birdSetup.review.titleNamed": {
+      "stamp": "04b08a52d6615728"
     },
     "birdSetup.review.viewLabel": {
       "stamp": "5b4680732706d9f7"
@@ -2535,8 +2667,8 @@
     "birdSetup.stop.nextTips": {
       "stamp": "70e116d8a8c029d3"
     },
-    "birdSetup.stop.title": {
-      "stamp": "8f143832e0f0a434"
+    "birdSetup.stop.titleNoPeriod": {
+      "stamp": "a9c949375c1823c9"
     },
     "birdSetup.tapAnyThatApplyThen": {
       "stamp": "140d5f8cf3b3e618"
@@ -2565,8 +2697,8 @@
     "birdSetup.tips.optional": {
       "stamp": "496dc7b66847a4b7"
     },
-    "birdSetup.tips.title": {
-      "stamp": "d11c118fd7cd15d1"
+    "birdSetup.tips.titleNamed": {
+      "stamp": "999c944b72526ba5"
     },
     "birdSetup.tips.uploadingPct": {
       "stamp": "d6e0b614d4d5a42d"
@@ -2637,8 +2769,11 @@
     "birdWeight.close": {
       "stamp": "d981ee660d866d8c"
     },
-    "birdWeight.confirmDelete": {
-      "stamp": "a7a6f8d672de7aeb"
+    "birdWeight.confirmDeleteBody": {
+      "stamp": "b0543165fcc4933a"
+    },
+    "birdWeight.confirmDeleteTitle": {
+      "stamp": "1fa0dbe79a14f5f6"
     },
     "birdWeight.delete": {
       "stamp": "97e6c24eab9130b3"
@@ -2672,6 +2807,9 @@
     },
     "birdWeight.history": {
       "stamp": "fd12ada8c47dccd3"
+    },
+    "birdWeight.keep": {
+      "stamp": "6a37de9a420e6ec2"
     },
     "birdWeight.legendOthers": {
       "stamp": "935a6d5e29232362"
@@ -2729,6 +2867,9 @@
     },
     "birdWeight.tapToEdit": {
       "stamp": "8d819715272444b3"
+    },
+    "birdWeight.tapToEditOnly": {
+      "stamp": "6b459dbe0d30dce1"
     },
     "birdWeight.thisBird": {
       "stamp": "e206dc027c390933"
@@ -2897,12 +3038,6 @@
     },
     "caregiverHome.inDays": {
       "stamp": "d6d036b8d5d4bf53"
-    },
-    "caregiverHome.joinMany": {
-      "stamp": "53501f8407841d61"
-    },
-    "caregiverHome.joinTwo": {
-      "stamp": "8125b9de58d7fbc4"
     },
     "caregiverHome.laterToday": {
       "stamp": "fd53102e0a0b43aa"
@@ -3255,11 +3390,17 @@
     "carePlan.outOfCageRules": {
       "stamp": "36d78f4bfb1efbfd"
     },
+    "carePlan.ownerHome": {
+      "stamp": "f75c648ca3582f21"
+    },
     "carePlan.removeFreshFood": {
       "stamp": "22bdeb6f39acbd09"
     },
     "carePlan.safetyRules": {
       "stamp": "d9dc3e7f568158ef"
+    },
+    "carePlan.theOwnersHome": {
+      "stamp": "92334eb5786f181a"
     },
     "carePlan.thisBirdHasHandlingRestrictions": {
       "stamp": "4e0024905b84e934"
@@ -3531,14 +3672,14 @@
     "checkEmail.useDifferentEmail": {
       "stamp": "b562efa6940f9f9d"
     },
-    "clipPlayer.askReupload": {
-      "stamp": "b0334b9c0dcb18d2"
-    },
-    "clipPlayer.cantPlay": {
-      "stamp": "cd3d809f53706829"
-    },
     "clipPlayer.clip": {
       "stamp": "9ab451e992ce4185"
+    },
+    "clipPlayer.didntLoadOwner": {
+      "stamp": "4eb3446a1c18fbe1"
+    },
+    "clipPlayer.didntLoadSitter": {
+      "stamp": "0aec764ca4ac1ab1"
     },
     "clipPlayer.loading": {
       "stamp": "7fd541833f3aa57c"
@@ -3597,9 +3738,6 @@
     "clipRecorder.nothingCaptured": {
       "stamp": "2fc43b26c7b6164d"
     },
-    "clipRecorder.rec": {
-      "stamp": "2ff502ae33352e05"
-    },
     "clipRecorder.record": {
       "stamp": "e74904bc8b002db1"
     },
@@ -3608,6 +3746,9 @@
     },
     "clipRecorder.recorderStartFailed": {
       "stamp": "8e3a9c30f57096ef"
+    },
+    "clipRecorder.recording": {
+      "stamp": "9beb6db4ca5212ce"
     },
     "clipRecorder.recordingFailed": {
       "stamp": "6c9de915f85ffd5f"
@@ -3684,8 +3825,8 @@
     "concernFlow.pathsBody": {
       "stamp": "a167cf05ae2e5feb"
     },
-    "concernFlow.pathsTitle": {
-      "stamp": "8b1b94559c1ddd3a"
+    "concernFlow.pathsHeading": {
+      "stamp": "f8bb19e87efeb24e"
     },
     "concernFlow.pauseBody": {
       "stamp": "faf38b64fc467684"
@@ -3713,6 +3854,12 @@
     },
     "confirmEmail.signIn": {
       "stamp": "dc9922893e139658"
+    },
+    "confirmSheet.cancel": {
+      "stamp": "06c80f8b6f9f2b3b"
+    },
+    "confirmSheet.close": {
+      "stamp": "d981ee660d866d8c"
     },
     "copyFromBird.copiedFoods_one": {
       "stamp": "053be84af97d58f0"
@@ -4041,12 +4188,6 @@
     "dashboard.inYourCare": {
       "stamp": "bb01634e2bbbabcc"
     },
-    "dashboard.joinMany": {
-      "stamp": "37a97f174c0787a9"
-    },
-    "dashboard.joinTwo": {
-      "stamp": "8ae4b5e718dd5811"
-    },
     "dashboard.minAgo": {
       "stamp": "6e102612f2738fb6"
     },
@@ -4371,8 +4512,17 @@
     "emergencySetup.useShared": {
       "stamp": "d396ffbd7197b752"
     },
-    "emergencySetup.useSharedConfirm": {
-      "stamp": "150a254f980eacc6"
+    "emergencySetup.useSharedConfirmAction": {
+      "stamp": "79c1253391ac59c1"
+    },
+    "emergencySetup.useSharedConfirmBody": {
+      "stamp": "847fbc3a372e3b23"
+    },
+    "emergencySetup.useSharedConfirmKeep": {
+      "stamp": "428fc3ed3d716eb3"
+    },
+    "emergencySetup.useSharedConfirmTitle": {
+      "stamp": "796ac78a1800a42e"
     },
     "emergencySetup.vets": {
       "stamp": "9e1065e7f5ff7fd6"
@@ -4430,6 +4580,9 @@
     },
     "explore.viewAll": {
       "stamp": "5fc8577d53e07b6e"
+    },
+    "exportRecord.add": {
+      "stamp": "7243fcbe9aec5d44"
     },
     "exportRecord.age": {
       "stamp": "0d774c505c12bcc1"
@@ -4526,6 +4679,9 @@
     },
     "exportRecord.noneOnFile": {
       "stamp": "ca04031848372e34"
+    },
+    "exportRecord.notAdded": {
+      "stamp": "369938ad2bbc6c71"
     },
     "exportRecord.nothingToShare": {
       "stamp": "6de3c54b353deb33"
@@ -5535,6 +5691,9 @@
     "fullCheck.watchConcerning": {
       "stamp": "38ef036fe5c47043"
     },
+    "fullCheck.watchConcerningSitter": {
+      "stamp": "aa7f37037dde96a3"
+    },
     "fullCheck.watchCount_one": {
       "stamp": "88a4c58bbebbc215"
     },
@@ -5543,6 +5702,9 @@
     },
     "fullCheck.watchNotSure": {
       "stamp": "54e2847e562f4851"
+    },
+    "fullCheck.watchNotSureSitter": {
+      "stamp": "273c0048ffdbc186"
     },
     "fullCheck.weighLine_other": {
       "stamp": "58f9b7276ea5be4a"
@@ -5558,9 +5720,6 @@
     },
     "fullCheck.weighTitle": {
       "stamp": "458cdff43be73c31"
-    },
-    "handoff.acceptedToast": {
-      "stamp": "4e2e77436308131f"
     },
     "handoff.accepting": {
       "stamp": "3337ed9d23ba2758"
@@ -5637,9 +5796,6 @@
     "handoff.firstName": {
       "stamp": "4ee0c9f6a0e12e77"
     },
-    "handoff.firstNamePlaceholder": {
-      "stamp": "5ae9633985225e36"
-    },
     "handoff.goToApp": {
       "stamp": "4f27904dee72234b"
     },
@@ -5660,9 +5816,6 @@
     },
     "handoff.lastName": {
       "stamp": "cb2dd938c96fbba5"
-    },
-    "handoff.lastNamePlaceholder": {
-      "stamp": "51793bb119e32b61"
     },
     "handoff.loading": {
       "stamp": "543c404f0e5a7d86"
@@ -5685,14 +5838,14 @@
     "handoff.passwordPlaceholder": {
       "stamp": "a87fc8e001edbbb6"
     },
-    "handoff.recordComesWithHer": {
-      "stamp": "4286419c9deffaad"
+    "handoff.recordComesWithHerHeading": {
+      "stamp": "ebaf6a4ced252ca9"
     },
-    "handoff.recordComesWithHim": {
-      "stamp": "feed752d4fa2d4c8"
+    "handoff.recordComesWithHimHeading": {
+      "stamp": "0b59985332ccd0f5"
     },
-    "handoff.recordComesWithThem": {
-      "stamp": "b37f3e0fd21d9e7b"
+    "handoff.recordComesWithThemHeading": {
+      "stamp": "241fa9f14a9264cc"
     },
     "handoff.signIn": {
       "stamp": "dc9922893e139658"
@@ -5720,6 +5873,9 @@
     },
     "handoff.welcomeHome": {
       "stamp": "466bc665dc7e6dc8"
+    },
+    "handoff.welcomeHomeToast": {
+      "stamp": "fa4e8ca906c85ab6"
     },
     "handoff.wrongAccount": {
       "stamp": "1ee7f20665993e78"
@@ -5772,6 +5928,18 @@
     "healthHistory.everyone": {
       "stamp": "36743c1ca0178902"
     },
+    "healthHistory.fullCheck": {
+      "stamp": "6849412e9ebe15d2"
+    },
+    "healthHistory.fullCheckAllNormal": {
+      "stamp": "e81431d90ea34cdb"
+    },
+    "healthHistory.fullCheckToWatch_one": {
+      "stamp": "0eb47b6d3971da36"
+    },
+    "healthHistory.fullCheckToWatch_other": {
+      "stamp": "a0242f9d5e65ac1c"
+    },
     "healthHistory.grams": {
       "stamp": "32a06ffb524410f9"
     },
@@ -5817,11 +5985,11 @@
     "healthHistory.title": {
       "stamp": "47a7d1d7ec2e1bd2"
     },
-    "healthHistory.typeChecks": {
-      "stamp": "38a99d5760ae0da9"
-    },
     "healthHistory.typeEverything": {
       "stamp": "59db49f7708f7b73"
+    },
+    "healthHistory.typeHealthChecks": {
+      "stamp": "76061176bb2950ed"
     },
     "healthHistory.typeLabel": {
       "stamp": "8d0ea98aeaee4f82"
@@ -6222,11 +6390,14 @@
     "household.close": {
       "stamp": "d981ee660d866d8c"
     },
-    "household.confirmLastBird": {
-      "stamp": "fb76460e5e72dc03"
+    "household.confirmLastBirdBody": {
+      "stamp": "de3a9e6a9765cb9d"
     },
-    "household.confirmRemove": {
-      "stamp": "1ec7008532dc8475"
+    "household.confirmRemoveBody": {
+      "stamp": "381c60498bf69390"
+    },
+    "household.confirmRemoveTitle": {
+      "stamp": "5077709c29cdee55"
     },
     "household.couldNotCancel": {
       "stamp": "ea4a28d50accbd60"
@@ -6278,6 +6449,9 @@
     },
     "household.pageTitle": {
       "stamp": "a900be9345697386"
+    },
+    "household.removeConfirmLabel": {
+      "stamp": "7a3c74b21c1d6ef1"
     },
     "household.removedToast": {
       "stamp": "937e2fcc0b260804"
@@ -6345,14 +6519,26 @@
     "householdInvite.loading": {
       "stamp": "543c404f0e5a7d86"
     },
-    "householdInvite.namePlaceholder": {
-      "stamp": "4d1b829f45cef133"
+    "householdInvite.namePlaceholderFirstName": {
+      "stamp": "4ee0c9f6a0e12e77"
     },
     "householdInvite.orInviteNew": {
       "stamp": "7c42d016cc762e31"
     },
     "householdInvite.permissionLevel": {
       "stamp": "ee40b8819ff9d1f8"
+    },
+    "householdInvite.presetLine.caregiverPhotos": {
+      "stamp": "c085e78f02ba70af"
+    },
+    "householdInvite.presetLine.careManager": {
+      "stamp": "7254724ea8df3c50"
+    },
+    "householdInvite.presetLine.coOwner": {
+      "stamp": "f48284cda35e2e5e"
+    },
+    "householdInvite.presetLine.viewer": {
+      "stamp": "5c6a44690c5bc248"
     },
     "householdInvite.required": {
       "stamp": "dba5a2479ac6f5fa"
@@ -6495,9 +6681,6 @@
     "invite.firstName": {
       "stamp": "4ee0c9f6a0e12e77"
     },
-    "invite.firstNamePlaceholder": {
-      "stamp": "5ae9633985225e36"
-    },
     "invite.goToApp": {
       "stamp": "4f27904dee72234b"
     },
@@ -6506,9 +6689,6 @@
     },
     "invite.lastName": {
       "stamp": "cb2dd938c96fbba5"
-    },
-    "invite.lastNamePlaceholder": {
-      "stamp": "51793bb119e32b61"
     },
     "invite.loading": {
       "stamp": "a5e351578ff27475"
@@ -6681,17 +6861,14 @@
     "memberOnboarding.addedToOwnersHouseholdAndOthers": {
       "stamp": "550382ad96d009a2"
     },
-    "memberOnboarding.allSet": {
-      "stamp": "13d32952020bb0e6"
+    "memberOnboarding.allSetTitle": {
+      "stamp": "c10e9c73a75a3e91"
     },
     "memberOnboarding.back": {
       "stamp": "5001815e48b3af8b"
     },
     "memberOnboarding.birdBody": {
       "stamp": "028c8fc0b379ca34"
-    },
-    "memberOnboarding.birdHeadline": {
-      "stamp": "840844e7140e5fb0"
     },
     "memberOnboarding.birdsMore": {
       "stamp": "a8034a54677ba89a"
@@ -6702,11 +6879,14 @@
     "memberOnboarding.birdsTwo": {
       "stamp": "8ae4b5e718dd5811"
     },
+    "memberOnboarding.birdTitle": {
+      "stamp": "59f3eeb29adb8023"
+    },
     "memberOnboarding.flockBody": {
       "stamp": "8ed2caac06b3e4c4"
     },
-    "memberOnboarding.flockHeadline": {
-      "stamp": "baa67d635b18ff37"
+    "memberOnboarding.flockTitle": {
+      "stamp": "7ce4d9ffdb894a26"
     },
     "memberOnboarding.gotIt": {
       "stamp": "dea25a84086025ca"
@@ -6714,8 +6894,8 @@
     "memberOnboarding.householdBody": {
       "stamp": "7f6c2cc244a8ad11"
     },
-    "memberOnboarding.householdHeadline": {
-      "stamp": "cd69a66e4c2b8f66"
+    "memberOnboarding.householdTitle": {
+      "stamp": "cbebd71dfe652e62"
     },
     "memberOnboarding.next": {
       "stamp": "1968e42a073fd8cb"
@@ -6732,8 +6912,8 @@
     "memberOnboarding.sitsBody": {
       "stamp": "6ab833c3bb97c6b9"
     },
-    "memberOnboarding.sitsHeadline": {
-      "stamp": "d959293d6a6c51cc"
+    "memberOnboarding.sitsTitle": {
+      "stamp": "938a516ff451b488"
     },
     "memberOnboarding.skipForNow": {
       "stamp": "d2ca388c9178f86a"
@@ -6750,8 +6930,8 @@
     "memberOnboarding.welcomeBody": {
       "stamp": "4d3ecc8112d2040b"
     },
-    "memberOnboarding.welcomeHeadline": {
-      "stamp": "e65a29b25acbb514"
+    "memberOnboarding.welcomeTitle": {
+      "stamp": "088025d24e219afb"
     },
     "memberOnboarding.yourHouseholdsOwner": {
       "stamp": "ea8d528f8621d4a5"
@@ -6798,8 +6978,17 @@
     "newBird.createFailed": {
       "stamp": "a84846bbc2a1445a"
     },
-    "newBird.discardConfirm": {
-      "stamp": "2381c9cd2f93e960"
+    "newBird.discardConfirmAction": {
+      "stamp": "d82d887937806aed"
+    },
+    "newBird.discardConfirmBody": {
+      "stamp": "c9ad9a61def9be97"
+    },
+    "newBird.discardConfirmKeep": {
+      "stamp": "2ea18db2ea90b63c"
+    },
+    "newBird.discardConfirmTitle": {
+      "stamp": "64c44b8f59426b91"
     },
     "newBird.emergencySetupFailed": {
       "stamp": "3a79a312c976d3cd"
@@ -6807,11 +6996,11 @@
     "newBird.fosterReassure": {
       "stamp": "ccbd8f979ec81674"
     },
-    "newBird.headline": {
-      "stamp": "804cbb6b870839d4"
+    "newBird.headlineFosterNoPeriod": {
+      "stamp": "03568b1390419dbb"
     },
-    "newBird.headlineFoster": {
-      "stamp": "2ed859812ec08a81"
+    "newBird.headlineNoPeriod": {
+      "stamp": "560ff679efabdff6"
     },
     "newBird.isFoster": {
       "stamp": "3a475d20f17632f0"
@@ -7122,8 +7311,8 @@
     "ownerOnboarding.activityBody": {
       "stamp": "df0383d991dae925"
     },
-    "ownerOnboarding.activityHeadline": {
-      "stamp": "fcb1c8efea141f40"
+    "ownerOnboarding.activityTitle": {
+      "stamp": "57afe320a4b36eff"
     },
     "ownerOnboarding.addAnytime": {
       "stamp": "a0dbf8f255435788"
@@ -7137,14 +7326,14 @@
     "ownerOnboarding.exploreBody": {
       "stamp": "239f30fcb7cae47e"
     },
-    "ownerOnboarding.exploreHeadline": {
-      "stamp": "b0c8f0ee4e195f78"
+    "ownerOnboarding.exploreTitle": {
+      "stamp": "8cca8ab8b614a4e8"
     },
     "ownerOnboarding.flockBody": {
       "stamp": "02cf6273f9870585"
     },
-    "ownerOnboarding.flockHeadline": {
-      "stamp": "db3433f0d1456a7b"
+    "ownerOnboarding.flockTitle": {
+      "stamp": "69a1ce1e5513bd52"
     },
     "ownerOnboarding.fostersBody": {
       "stamp": "61ae57c270276620"
@@ -7158,11 +7347,8 @@
     "ownerOnboarding.handoffBody": {
       "stamp": "5d84a019bbdc11ac"
     },
-    "ownerOnboarding.handoffHeadline": {
-      "stamp": "ee6e270e865d344c"
-    },
-    "ownerOnboarding.hiName": {
-      "stamp": "37a88e75cc616145"
+    "ownerOnboarding.handoffTitle": {
+      "stamp": "76a05ca7f41e5a3a"
     },
     "ownerOnboarding.hiNameReturning": {
       "stamp": "bbb7229e1d4756ad"
@@ -7173,8 +7359,8 @@
     "ownerOnboarding.homeBody": {
       "stamp": "3d1e9c7107ba871c"
     },
-    "ownerOnboarding.homeHeadline": {
-      "stamp": "e48b31520d61cbb4"
+    "ownerOnboarding.homeTitle": {
+      "stamp": "033a478f2910c8e6"
     },
     "ownerOnboarding.householdBody": {
       "stamp": "c66dd1fd96ae75fb"
@@ -7200,8 +7386,8 @@
     "ownerOnboarding.sitsBody": {
       "stamp": "e43ab1a9f08cb252"
     },
-    "ownerOnboarding.sitsHeadline": {
-      "stamp": "cd665a9ff9362f67"
+    "ownerOnboarding.sitsTitle": {
+      "stamp": "680ee42aa733ed86"
     },
     "ownerOnboarding.skipAndAddMyBird": {
       "stamp": "f3890d213d56c792"
@@ -7215,14 +7401,14 @@
     "ownerOnboarding.stepOfSr": {
       "stamp": "567f9f4266f4a2af"
     },
-    "ownerOnboarding.thatsTheTour": {
-      "stamp": "f95a9f8e1aa4b2de"
+    "ownerOnboarding.thatsTheTourTitle": {
+      "stamp": "89c7f264ec777a32"
     },
     "ownerOnboarding.todayBody": {
       "stamp": "d1961cf291d8dda5"
     },
-    "ownerOnboarding.todayHeadline": {
-      "stamp": "4f15ef58cc191c2c"
+    "ownerOnboarding.todayTitle": {
+      "stamp": "dccc268e02e38749"
     },
     "ownerOnboarding.welcomeBody": {
       "stamp": "f7566275b837895a"
@@ -7230,23 +7416,14 @@
     "ownerOnboarding.welcomeBodyReturning": {
       "stamp": "f3700821a152fd20"
     },
-    "ownerOnboarding.welcomeHeadline": {
-      "stamp": "0275773220fe4071"
+    "ownerOnboarding.welcomeTitle": {
+      "stamp": "368df544e13214b2"
     },
     "ownerScan.backToRecord": {
       "stamp": "ee0e281721196281"
     },
     "ownerScan.emergencyContacts": {
       "stamp": "13dc8bdb952a70e3"
-    },
-    "ownerScan.eyebrowGreen": {
-      "stamp": "e4cf188945770508"
-    },
-    "ownerScan.eyebrowRed": {
-      "stamp": "ce833c541bd39e13"
-    },
-    "ownerScan.eyebrowYellow": {
-      "stamp": "20c46bf1c27d8d75"
     },
     "ownerScan.logFailed": {
       "stamp": "66e9cb90c397bb3b"
@@ -7268,6 +7445,15 @@
     },
     "ownerScan.thisBird": {
       "stamp": "e206dc027c390933"
+    },
+    "ownerScan.titleGreen": {
+      "stamp": "6d803fe7fb3c82b7"
+    },
+    "ownerScan.titleRed": {
+      "stamp": "2d6038b573b87f35"
+    },
+    "ownerScan.titleYellow": {
+      "stamp": "4b1326ff8e0e7ca3"
     },
     "ownerScan.whatYouFlagged": {
       "stamp": "fb034de4725f780f"
@@ -7455,8 +7641,8 @@
     "planEditor.deleteNamed": {
       "stamp": "ca7698c11a1f4fc7"
     },
-    "planEditor.deleteWarning": {
-      "stamp": "65f1bb6279c9af9e"
+    "planEditor.deleteWarningChecks": {
+      "stamp": "071e0fdfce8fae91"
     },
     "planEditor.deleting": {
       "stamp": "1ff01e037a7f6dcc"
@@ -7578,9 +7764,6 @@
     "planEditor.tabBehavior": {
       "stamp": "847b1e8ea2825cdf"
     },
-    "planEditor.tabClips": {
-      "stamp": "c4b5bc8fdc35a6be"
-    },
     "planEditor.tabEmergency": {
       "stamp": "16fdfafb12402299"
     },
@@ -7592,12 +7775,6 @@
     },
     "planEditor.tabLogs": {
       "stamp": "543f9c9409437bd4"
-    },
-    "planEditor.tabReminders": {
-      "stamp": "591dc7e3ea0c8ffa"
-    },
-    "planEditor.tabRoutine": {
-      "stamp": "acc337a43620f922"
     },
     "planEditor.tabSits": {
       "stamp": "26a4b593fb834d48"
@@ -7671,23 +7848,17 @@
     "planOverview.shared": {
       "stamp": "a56e579df5c162f1"
     },
-    "planOverview.statusDone": {
-      "stamp": "640d9be3aa585884"
+    "planOverview.statusManyLeft": {
+      "stamp": "518cbdca1b6a070a"
     },
-    "planOverview.statusMany": {
-      "stamp": "ef700c7441a3c6db"
+    "planOverview.statusOneLeft": {
+      "stamp": "0bab1dffe0658adc"
     },
-    "planOverview.statusOne": {
-      "stamp": "47c5f3ef417ccb19"
+    "planOverview.statusReady": {
+      "stamp": "c21de19de1dee149"
     },
-    "planOverview.tagDone": {
-      "stamp": "3e00dbef8dddb12e"
-    },
-    "planOverview.tagNeededForSit": {
-      "stamp": "b6249a1f6c373074"
-    },
-    "planOverview.tagToDo": {
-      "stamp": "b7e7ae329f2bbae8"
+    "planOverview.tagToFinish": {
+      "stamp": "497060f341542076"
     },
     "planOverview.titleNamed": {
       "stamp": "43afd22261e8c11c"
@@ -7884,14 +8055,29 @@
     "scanDetail.col.vomiting": {
       "stamp": "383c8da7639cee0a"
     },
-    "scanDetail.confirmDelete": {
-      "stamp": "a3d0f5c290371bbd"
+    "scanDetail.confirmDeleteAction": {
+      "stamp": "97e6c24eab9130b3"
     },
-    "scanDetail.confirmResolve": {
-      "stamp": "f0a5ddc9d11aaddb"
+    "scanDetail.confirmDeleteBody": {
+      "stamp": "fc340cd7c08a4fa3"
+    },
+    "scanDetail.confirmDeleteDailyTitle": {
+      "stamp": "5341f5ce230dc529"
+    },
+    "scanDetail.confirmDeleteFullTitle": {
+      "stamp": "cd61179a0da89b1b"
+    },
+    "scanDetail.confirmResolveBody": {
+      "stamp": "cd90d81aeaedfd59"
+    },
+    "scanDetail.confirmResolveTitle": {
+      "stamp": "459cd04a3ad9e3a8"
     },
     "scanDetail.deletedCheck": {
       "stamp": "1b46bef9380dbaac"
+    },
+    "scanDetail.deletedFullCheck": {
+      "stamp": "c0c7112934a010bd"
     },
     "scanDetail.deleteThisCheck": {
       "stamp": "36e6ada1f8df5a8f"
@@ -7974,6 +8160,9 @@
     "scanDetail.photoAltCheck": {
       "stamp": "effe60b67594ce27"
     },
+    "scanDetail.photoAltFullCheck": {
+      "stamp": "ac1a02bca945082a"
+    },
     "scanDetail.photos": {
       "stamp": "4935c6a16f6a68ce"
     },
@@ -8024,6 +8213,9 @@
     },
     "scanDetail.titleCheck": {
       "stamp": "d9868029d8f12750"
+    },
+    "scanDetail.titleFullCheck": {
+      "stamp": "132bc6c2fe1ada93"
     },
     "scanDetail.weightThatDay": {
       "stamp": "c93d12ce8b312526"
@@ -8517,8 +8709,8 @@
     "shareNewBird.shareFailed": {
       "stamp": "3d557bed2c311374"
     },
-    "shareNewBird.title": {
-      "stamp": "bad5c4865fcd9db3"
+    "shareNewBird.titleNamed": {
+      "stamp": "b44954fa1c169128"
     },
     "signedFile.openFailed": {
       "stamp": "a667e55c910dceb5"
@@ -8532,11 +8724,17 @@
     "sitCard.birdsLabel": {
       "stamp": "33fa4beb52893498"
     },
-    "sitCard.confirmDelete": {
-      "stamp": "0b0011b42bb5a541"
+    "sitCard.confirmDeleteBodyKeepsLogs": {
+      "stamp": "2965b7bbe557959a"
     },
-    "sitCard.confirmRevoke": {
-      "stamp": "9406048d7709c021"
+    "sitCard.confirmDeleteTitle": {
+      "stamp": "3b7953be40db9fc9"
+    },
+    "sitCard.confirmRevokeBody": {
+      "stamp": "77caa8cac7aba238"
+    },
+    "sitCard.confirmRevokeTitle": {
+      "stamp": "bcc4000308998d7e"
     },
     "sitCard.copyLink": {
       "stamp": "dc4c04995ccb896a"
@@ -8568,6 +8766,12 @@
     "sitCard.householdMemberLower": {
       "stamp": "deeb76792e03ee01"
     },
+    "sitCard.keep": {
+      "stamp": "6a37de9a420e6ec2"
+    },
+    "sitCard.keepLink": {
+      "stamp": "4395661f62f85f15"
+    },
     "sitCard.linkCopied": {
       "stamp": "570ee0bf18d47361"
     },
@@ -8590,6 +8794,9 @@
       "stamp": "1db70f934db852c3"
     },
     "sitCard.revokeLink": {
+      "stamp": "4efa6df45ae9d280"
+    },
+    "sitCard.revokeLinkAction": {
       "stamp": "4efa6df45ae9d280"
     },
     "sitCard.sitterLabel": {
@@ -8769,8 +8976,8 @@
     "sitDetail.couldNotDelete": {
       "stamp": "fb4a248c2a791d8f"
     },
-    "sitDetail.deleteConfirm": {
-      "stamp": "79167b55d368e913"
+    "sitDetail.deleteConfirmChecks": {
+      "stamp": "84f7e962f580142b"
     },
     "sitDetail.deleted": {
       "stamp": "e3d4c3240e823a10"
@@ -8904,8 +9111,8 @@
     "sitForm.deleteSit": {
       "stamp": "b2ad2bdb476277b8"
     },
-    "sitForm.deleteThisSitThisCan": {
-      "stamp": "451a36c07f2ca7a3"
+    "sitForm.deleteThisSitConfirm": {
+      "stamp": "6fbf715cb9a20cd7"
     },
     "sitForm.deleting": {
       "stamp": "17dadddd53c0f524"
@@ -8966,9 +9173,6 @@
     },
     "sitForm.gaps.goodToAdd": {
       "stamp": "81d900f2ca16dc59"
-    },
-    "sitForm.gaps.namesAnd": {
-      "stamp": "fbb6deca81886546"
     },
     "sitForm.gaps.needBoth": {
       "stamp": "3847f3ecac256c83"
@@ -9044,6 +9248,9 @@
     },
     "sitForm.pickWhoSCoveringThis": {
       "stamp": "a52bff7b5113a79d"
+    },
+    "sitForm.required": {
+      "stamp": "dba5a2479ac6f5fa"
     },
     "sitForm.saveChanges": {
       "stamp": "3dc2f8e8fc14e4eb"
@@ -9132,8 +9339,8 @@
     "sitPreview.backToSits": {
       "stamp": "85512a735ad0bfcd"
     },
-    "sitPreview.exit": {
-      "stamp": "6c91aa4ca6bc5812"
+    "sitPreview.closePreview": {
+      "stamp": "9f4de33b4a2f166c"
     },
     "sitPreview.iframeTitle": {
       "stamp": "086678f18187d74b"
@@ -9216,17 +9423,20 @@
     "sits.heroYouStartTomorrow": {
       "stamp": "1e63f5c64ec7c4db"
     },
-    "sits.joinMany": {
-      "stamp": "37a97f174c0787a9"
+    "sits.memberNoSitsLine": {
+      "stamp": "743b891e9e8808a5"
     },
-    "sits.joinTwo": {
-      "stamp": "8ae4b5e718dd5811"
+    "sits.memberNoSitsLineNoName": {
+      "stamp": "cd4f5546c7b66d44"
     },
-    "sits.noSits": {
-      "stamp": "67eb10fea4cd7cf9"
+    "sits.memberNoSitsTitle": {
+      "stamp": "4b4148cdc2247e98"
     },
     "sits.noSitsBody": {
       "stamp": "c9b8823dffc1f2a4"
+    },
+    "sits.noSitsTitle": {
+      "stamp": "de2da6053a60cfa5"
     },
     "sits.onlyOwner": {
       "stamp": "38e565cc749c81c0"
@@ -9297,8 +9507,8 @@
     "sitter.caresheet.lineNamed": {
       "stamp": "6a19f974a6c0e060"
     },
-    "sitter.caresheet.reference": {
-      "stamp": "6bda9093c78d4ff6"
+    "sitter.caresheet.referenceParrots101": {
+      "stamp": "fac7eef57baa083d"
     },
     "sitter.caresheet.subtitle": {
       "stamp": "a418c311ec7bc9c6"
@@ -9356,6 +9566,9 @@
     },
     "sitter.emergency.pageTitle": {
       "stamp": "16fdfafb12402299"
+    },
+    "sitter.emergency.pageTitleFor": {
+      "stamp": "6b48f5887a301ac4"
     },
     "sitter.emergency.pb_bite_signs": {
       "stamp": "5b2aef3fe7e65f37"
@@ -9711,8 +9924,8 @@
     "sitter.guide.droppingsHint.before": {
       "stamp": "20f2c1497b4ef7bc"
     },
-    "sitter.guide.droppingsHint.link": {
-      "stamp": "5de39940b59a8fcc"
+    "sitter.guide.droppingsHint.linkCheck": {
+      "stamp": "7838826501a9881c"
     },
     "sitter.guide.noMatches": {
       "stamp": "320647e932223a9b"
@@ -9807,8 +10020,8 @@
     "sitter.scan.notesLabel": {
       "stamp": "d19a3271a64d8524"
     },
-    "sitter.scan.photoAlt": {
-      "stamp": "5570eaa72ebca500"
+    "sitter.scan.photoAltCheck": {
+      "stamp": "6b952b92fde986cd"
     },
     "sitter.scan.photoLabel": {
       "stamp": "1353378311b6aed1"
@@ -9824,9 +10037,6 @@
     },
     "sitter.sitLine.lastDayToday": {
       "stamp": "492b75b9db7101b5"
-    },
-    "sitter.sitLine.nBirds": {
-      "stamp": "10e553b288b64793"
     },
     "sitter.sitLine.startsOn": {
       "stamp": "e00131239d52fd39"
@@ -9978,11 +10188,11 @@
     "sitterOnboarding.close": {
       "stamp": "d981ee660d866d8c"
     },
-    "sitterOnboarding.closing.body": {
-      "stamp": "25e3274c6a8ffbee"
+    "sitterOnboarding.closing.allSet": {
+      "stamp": "318f82048eb9e586"
     },
-    "sitterOnboarding.closing.title": {
-      "stamp": "8d0d41536f9fff79"
+    "sitterOnboarding.closing.heading": {
+      "stamp": "a1739496c5af3bc3"
     },
     "sitterOnboarding.coach.back": {
       "stamp": "5001815e48b3af8b"
@@ -10077,8 +10287,8 @@
     "sitterOnboarding.welcome.cta": {
       "stamp": "5d15a7a3b2a0cec7"
     },
-    "sitterOnboarding.welcome.title": {
-      "stamp": "375a144159adafbd"
+    "sitterOnboarding.welcome.heading": {
+      "stamp": "6e533d3362b4aea6"
     },
     "species.africanGreyCongo": {
       "stamp": "dfb11d16a0fb076e"
@@ -10326,12 +10536,6 @@
     "updates.flagTitle": {
       "stamp": "6d3830f97a37c55c"
     },
-    "updates.joinAnd": {
-      "stamp": "e5a3a5728546dfb7"
-    },
-    "updates.joinAndSerial": {
-      "stamp": "37a97f174c0787a9"
-    },
     "updates.joinedTitle": {
       "stamp": "fba2bf6dc254dd00"
     },
@@ -10427,9 +10631,6 @@
     },
     "vetSummary.bySource": {
       "stamp": "dfcb04f8d8b5d1e4"
-    },
-    "vetSummary.colContext": {
-      "stamp": "aa33e63fbdd60f0a"
     },
     "vetSummary.colDate": {
       "stamp": "411600a99346ac59"
@@ -10599,20 +10800,20 @@
     "vetSummary.share": {
       "stamp": "cdcba29bb82cb786"
     },
-    "vetSummary.shareDiet": {
-      "stamp": "4d4054e729b47549"
+    "vetSummary.shareDietLabel": {
+      "stamp": "39eec973a2f9b477"
     },
-    "vetSummary.shareFlagged": {
-      "stamp": "35a40d0f66b9a5c9"
+    "vetSummary.shareFlaggedLabel": {
+      "stamp": "5677c845b5bb426b"
     },
-    "vetSummary.shareHandling": {
-      "stamp": "69d8f94446c1aea8"
+    "vetSummary.shareHandlingLabel": {
+      "stamp": "a10c1c1d80f7351d"
     },
-    "vetSummary.shareIdentity": {
-      "stamp": "718b1cfff64b2903"
+    "vetSummary.shareIdentityLabel": {
+      "stamp": "34ae6a197bc7891c"
     },
-    "vetSummary.shareMeds": {
-      "stamp": "c44dc961850b108e"
+    "vetSummary.shareMedsLabel": {
+      "stamp": "ba8383d11eb61d19"
     },
     "vetSummary.shareSpecies": {
       "stamp": "f0cd162497564b51"
@@ -10620,11 +10821,11 @@
     "vetSummary.shareTitle": {
       "stamp": "bda9df9f1130b521"
     },
-    "vetSummary.shareWeight": {
-      "stamp": "23b0ad1d4c6ca469"
+    "vetSummary.shareWeightHistoryLabel": {
+      "stamp": "2c4ddd43a8631c40"
     },
-    "vetSummary.shareWeightHistory": {
-      "stamp": "587583cf5a4d7825"
+    "vetSummary.shareWeightLabel": {
+      "stamp": "68df0a23c1eee4cc"
     },
     "vetSummary.sourceHousehold": {
       "stamp": "86d7ed87132349a1"
@@ -10719,8 +10920,8 @@
     "viewAsSitter.buildFailed": {
       "stamp": "c68aa340e5d8ee8c"
     },
-    "viewAsSitter.exit": {
-      "stamp": "6c91aa4ca6bc5812"
+    "viewAsSitter.closePreview": {
+      "stamp": "9f4de33b4a2f166c"
     },
     "viewAsSitter.iframeTitle": {
       "stamp": "c0f19828e68f0ec0"
@@ -10802,6 +11003,9 @@
     },
     "waitlist.onTheListTitle": {
       "stamp": "fde477743abda0d0"
+    },
+    "waitlist.required": {
+      "stamp": "dba5a2479ac6f5fa"
     },
     "waitlist.selectRegion": {
       "stamp": "aa0d3b406c0e407d"

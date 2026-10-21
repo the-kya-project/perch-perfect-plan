@@ -10,6 +10,7 @@ import { namesAsCount } from "@/lib/birdNames";
 import { formatLocalDate, formatLocalTime, monthDay } from "@/lib/dates";
 import { localDateISO } from "@/lib/localDay";
 import { sitTitle } from "@/lib/sitText";
+import { birdNames } from "@/lib/birdNames";
 
 // The bell: what's happened with your birds (see src/lib/updates.ts for where
 // each update comes from).
@@ -28,11 +29,7 @@ function when(t: TFunction, iso: string): string {
 }
 
 function joinNames(t: TFunction, names: string[]): string {
-  if (names.length <= 1) return names[0] ?? "";
-  const last = names[names.length - 1];
-  // Two names: "Buzz and Max". Three: "Buzz, Kiwi, and Max" (matches Home).
-  if (names.length === 2) return t("updates.joinAnd", "{{list}} and {{last}}", { list: names[0], last });
-  return t("updates.joinAndSerial", "{{list}}, and {{last}}", { list: names.slice(0, -1).join(", "), last });
+  return birdNames(t, names);
 }
 
 function copy(t: TFunction, u: Update): { title: string; detail: string } {

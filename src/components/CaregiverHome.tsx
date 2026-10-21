@@ -17,6 +17,7 @@ import { K, KyaHeading } from "@/components/kya";
 import { localDateISO } from "@/lib/localDay";
 import { useTranslation } from "react-i18next";
 import i18next, { type TFunction } from "i18next";
+import { birdNames } from "@/lib/birdNames";
 
 // The active-caregiver Home variant. Rendered when the signed-in user is the
 // assigned caregiver on at least one sit whose window covers today. Mirrors the
@@ -322,9 +323,7 @@ export function CaregiverLoading() {
 function joinNames(names: string[]): string {
   const n = names.filter(Boolean);
   if (n.length === 0) return i18next.t("caregiverHome.yourBirds", "your birds");
-  if (n.length === 1) return n[0];
-  if (n.length === 2) return i18next.t("caregiverHome.joinTwo", "{{a}} & {{b}}", { a: n[0], b: n[1] });
-  return i18next.t("caregiverHome.joinMany", "{{list}} & {{last}}", { list: n.slice(0, -1).join(", "), last: n[n.length - 1] });
+  return birdNames(i18next.t, n);
 }
 // DAYPART_LABEL stays the English source; translate only at display.
 function daypartLabel(t: TFunction, dp: Daypart): string {
