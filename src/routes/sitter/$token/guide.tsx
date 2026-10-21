@@ -5,7 +5,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useTranslation } from "react-i18next";
 import { useSitterContext } from "./route";
 import { SitterTabHeader } from "@/components/sitter/SitterChrome";
-import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaIconTile } from "@/components/kya";
+import { K, KyaBody, KyaCard, KyaHeading, KyaIconTile } from "@/components/kya";
 import { getGuideCards } from "@/lib/sitter.functions";
 import {
   Search, ChevronDown, Info,
@@ -162,8 +162,10 @@ function Guide() {
   }
   useEffect(() => { updateChipFades(); }, [searching]);
 
+  // No KyaPage: its bottom padding is for the owner's tab bar, and the sitter
+  // layout already leaves room for the sitter's bar and the safe area.
   return (
-    <KyaPage>
+    <div>
       <div className="mx-auto max-w-md">
         <div data-coach="guide-header">
           <SitterTabHeader token={token} title={t("sitter.guide.title", "Parrots 101")} line={line}>
@@ -202,7 +204,7 @@ function Guide() {
                         type="button"
                         onClick={() => { setTopic(t_.key); setOpen(null); }}
                         aria-pressed={on}
-                        className="inline-flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-full border-[1.5px] px-4 text-[14.5px] font-[700] transition-colors"
+                        className="inline-flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-full border-[1.5px] px-4 text-[14.5px] font-[700] transition-colors"
                         style={on ? { background: K.forest, borderColor: K.forest, color: "#fff" } : { background: "#fff", borderColor: "#d5dfd5", color: K.forest }}
                       >
                         <CIcon className="size-4" aria-hidden="true" />
@@ -263,7 +265,7 @@ function Guide() {
                         {isDroppings(c) && (
                           <p className="m-0 mt-3 text-[13px]" style={{ color: K.quiet }}>
                             {t("sitter.guide.droppingsHint.before", "If unsure, snap a photo for the owner in the")}{" "}
-                            <Link to="/sitter/$token/scan" params={{ token }} className="font-[700] underline" style={{ color: K.moss }}>{t("sitter.guide.droppingsHint.link", "health scan")}</Link>{t("sitter.guide.droppingsHint.after", ".")}
+                            <Link to="/sitter/$token/scan" params={{ token }} className="font-[700] underline" style={{ color: K.moss }}>{t("sitter.guide.droppingsHint.linkCheck", "daily health check")}</Link>{t("sitter.guide.droppingsHint.after", ".")}
                           </p>
                         )}
                       </div>
@@ -283,6 +285,6 @@ function Guide() {
           </p>
         </KyaBody>
       </div>
-    </KyaPage>
+    </div>
   );
 }
