@@ -211,9 +211,24 @@ export function KyaField({ label, tag, hint, id, ...input }: { label: ReactNode;
   );
 }
 
-/** Small "Required" tag for a field label. */
-export function KyaRequiredTag({ children }: { children: ReactNode }) {
-  return <span className="rounded-full px-2 py-[1px] text-[11.5px] font-[700]" style={{ background: K.amberBg, color: K.amberText }}>{children}</span>;
+/** Small tag after a field label. Amber flags something missing; forest
+ *  marks a required field ("Required"). */
+export function KyaRequiredTag({ children, tone = "amber" }: { children: ReactNode; tone?: "amber" | "forest" }) {
+  const c = tone === "forest" ? { background: K.forest, color: "#fff" } : { background: K.amberBg, color: K.amberText };
+  return <span className="rounded-full px-2 py-[1px] text-[11.5px] font-[700]" style={c}>{children}</span>;
+}
+
+/** Field label: 13.5px bold, sentence case, above the field. A required
+ *  field gets a small forest "Required" tag after the label. */
+export function KyaLabel({ children, htmlFor, required, requiredLabel = "Required", as: Tag = "label" }: {
+  children: ReactNode; htmlFor?: string; required?: boolean; requiredLabel?: string; as?: "label" | "span";
+}) {
+  return (
+    <Tag htmlFor={Tag === "label" ? htmlFor : undefined} className="flex flex-wrap items-center gap-2 text-[13.5px] font-[700]" style={{ color: K.forest }}>
+      {children}
+      {required && <KyaRequiredTag tone="forest">{requiredLabel}</KyaRequiredTag>}
+    </Tag>
+  );
 }
 
 /** Bottom sheet: white, 26px top corners, grab handle, 44px round Close top
