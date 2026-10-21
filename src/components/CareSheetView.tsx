@@ -1,6 +1,6 @@
 import { ShieldAlert, Utensils, Smile, Home as HomeIcon, Stethoscope, Siren, Video } from "lucide-react";
 import { speciesLabel } from "@/lib/speciesLabel";
-import { ageLabel } from "@/components/BirdPickers";
+import { birdAgeLabel } from "@/lib/birdAge";
 import { clipSlotLabel } from "@/lib/clipSlotLabels";
 import { useTranslation } from "react-i18next";
 import { ClipPlayer } from "@/components/ClipPlayer";
@@ -65,7 +65,8 @@ export function CareSheetView({ data }: { data: CareSheetData }) {
   ).filter((f) => f.name || has(f.amount) || f.times.length || f.note);
   const hasPerFoodDetails = foodRows.length > 0;
 
-  const showBasics = has(bird.name) || has(bird.species) || has(bird.age) || has(bird.photo_url);
+  const age = birdAgeLabel(t, bird);
+  const showBasics = has(bird.name) || has(bird.species) || !!age || has(bird.photo_url);
   const showFeeding = diet.length || plan.food_brand || plan.amount_value || feedingTimes.length || freshFoods.length || plan.fresh_foods_other || plan.treats_notes || plan.treats_frequency || plan.water_frequency || plan.water_notes || plan.food_storage || plan.food_hygiene_notes || plan.food_instructions || plan.water_instructions || plan.fresh_food_removal_minutes;
   const showHandling = has(plan.step_up) || has(plan.step_up_notes) || has(plan.handlers) || has(plan.likes) || has(plan.fears_triggers) || has(plan.bite_risk) || has(plan.handling_rules) || has(plan.known_triggers);
   const showHome = has(plan.cage_location) || has(plan.out_of_cage_mode) || has(plan.out_of_cage_notes) || has(plan.out_of_cage_rules) || hazards.length || has(plan.hazards_other) || has(plan.off_limits) || has(plan.off_limits_rooms) || has(plan.safety_rules) || has(plan.other_pets) || has(plan.cleaning_instructions);
@@ -108,7 +109,7 @@ export function CareSheetView({ data }: { data: CareSheetData }) {
             <div className="min-w-0">
               <p className="t-section leading-tight">{bird.name}</p>
               {has(bird.species) && <p className="text-sm text-[var(--mute)]">{speciesLabel(t, bird.species)}</p>}
-              {has(bird.age) && <p className="text-xs text-[var(--mute)]">{ageLabel(t, bird.age)}</p>}
+              {age && <p className="text-xs text-[var(--mute)]">{age}</p>}
             </div>
           </div>
         </section>
