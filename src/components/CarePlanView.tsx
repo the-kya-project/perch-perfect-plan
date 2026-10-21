@@ -266,10 +266,10 @@ function StepUpRow({ stepUp, notes }: { stepUp?: string | null; notes?: string |
 }
 
 /** A clip with its caption under it. */
-function ClipTile({ src, label, audience, ownerName }: { src: string; label: string; audience?: "owner" | "sitter"; ownerName?: string }) {
+function ClipTile({ src, label, audience, ownerName, refreshSrc }: { src: string; label: string; audience?: "owner" | "sitter"; ownerName?: string; refreshSrc?: () => Promise<string | null | undefined> }) {
   return (
     <div className="overflow-hidden rounded-[14px]" style={{ background: K.mist }}>
-      <ClipPlayer src={src} label={label} className="aspect-video" audience={audience} ownerName={ownerName} />
+      <ClipPlayer src={src} label={label} className="aspect-video" audience={audience} ownerName={ownerName} refreshSrc={refreshSrc} />
       <p className="m-0 px-3 py-2 text-[14px] font-[700] leading-tight" style={{ color: K.forest }}>{label}</p>
     </div>
   );
@@ -293,6 +293,7 @@ export function CarePlanView({
   audience = "owner",
   tipsTitle,
   tipsLine,
+  refreshClipUrl,
 }: {
   data: CarePlanData;
   /** Which sections this surface may show (in addition to data-presence gating). */
@@ -332,6 +333,9 @@ export function CarePlanView({
   /** Sitter care sheet: title / line for the Tips card. */
   tipsTitle?: string;
   tipsLine?: string;
+  /** Re-mint one clip's signed URL after it expires (key = slot key, or
+   *  "baseline" for the normal-behavior clip). Resolve the fresh URL or null. */
+  refreshClipUrl?: (key: string) => Promise<string | null | undefined>;
 }) {
   const { t } = useTranslation();
   // Inside the walkthrough the view sits on SetupFrame's white body, so the
@@ -664,7 +668,7 @@ export function CarePlanView({
           )}
           {baselineClipUrl && (
             <div className="cp-row py-3">
-              <ClipTile src={baselineClipUrl} label={t("carePlan.normalBehaviorClip", "Normal-behavior clip")} audience={audience} ownerName={ownerName} />
+              <ClipTile src={baselineClipUrl} label={t("carePlan.normalBehaviorClip", "Normal-behavior clip")} audience={audience} ownerName={ownerName} refreshSrc={refreshClipUrl ? () => refreshClipUrl("baseline") : undefined} />
             </div>
           )}
         </Card>
@@ -698,7 +702,7 @@ export function CarePlanView({
         <Card id="tips" setRef={setRef("tips")} icon={<Video className={tileIcon} />} title={tipsTitle ?? t("carePlan.tips", "Tips")} line={tipsLine ?? t("carePlan.tipsLine", "Short clips that show how it's done")}>
           <div className="cp-row flex flex-col gap-3 py-3">
             {watchClips.map((c) => (
-              <ClipTile key={c.key} src={c.url} label={clipSlotLabel(c.key, c.label, t)} audience={audience} ownerName={ownerName} />
+              <ClipTile key={c.key} src={c.url} label={clipSlotLabel(c.key, c.label, t)} audience={audience} ownerName={ownerName} refreshSrc={refreshClipUrl ? () => refreshClipUrl(c.key) : undefined} />
             ))}
           </div>
         </Card>

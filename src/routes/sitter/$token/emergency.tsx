@@ -7,6 +7,7 @@ import { useSitterContext } from "./route";
 import { K, KyaHeading } from "@/components/kya";
 import { PageHeader, useGoBack } from "@/components/headers";
 import { VetCallRow, PersonCallRow } from "@/components/sitter/CallRows";
+import { BirdAvatar } from "@/components/sitter/sitterShared";
 
 export const Route = createFileRoute("/sitter/$token/emergency")({
   component: Emergency,
@@ -200,15 +201,8 @@ function Emergency() {
                   className="inline-flex h-12 shrink-0 items-center gap-2 rounded-full pl-[5px] pr-4 text-[15px] font-[700] active:scale-95"
                   style={active ? { background: K.lime, color: K.forest } : { background: K.forestDeep, color: "#fff" }}
                 >
-                  {b.photo_url ? (
-                    <span className="size-[38px] shrink-0 overflow-hidden rounded-full" style={{ background: active ? "#fff" : K.forest }}>
-                      <img src={b.photo_url} alt="" className="size-full object-cover" style={{ objectPosition: b.photo_position || "center" }} />
-                    </span>
-                  ) : (
-                    <span className="grid size-[38px] shrink-0 place-items-center rounded-full text-[16px] font-[700]" style={{ background: K.teal, color: K.forest }} aria-hidden="true">
-                      {((b.name as string | undefined)?.trim().slice(0, 1) || "?").toUpperCase()}
-                    </span>
-                  )}
+                  {/* Shared avatar treatment (photo, or the initial on moss) — same as Today's bird switcher. */}
+                  <BirdAvatar bird={b} size={38} />
                   {b.name}
                 </button>
               );

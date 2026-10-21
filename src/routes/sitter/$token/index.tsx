@@ -90,7 +90,8 @@ function SitterToday() {
   const { t, i18n } = useTranslation();
   const daypartLabel = useDaypartLabel();
   const { token } = Route.useParams();
-  const { data: ctx } = useSitterContext(token);
+  const ctxQ = useSitterContext(token);
+  const { data: ctx } = ctxQ;
   const { saved } = useSearch({ from: "/sitter/$token" });
   const { multi } = useSitterShell();
   const navigate = useNavigate();
@@ -248,6 +249,7 @@ function SitterToday() {
   // counts from this screen's own (optimistic) data; the others from the
   // per-bird summary Home uses.
   const dashById = new Map(((dash?.birds ?? []) as any[]).map((b) => [b.id, b]));
+  const dashLoaded = !!dash?.birds;
   function leftFor(b: any): { tasksLeft: number; checkDone: boolean } | null {
     if (b.id === birdId) {
       const tasksLeft = (ctx.tasks as any[]).filter((task) => !completedIds.has(task.id)).length;
@@ -257,9 +259,13 @@ function SitterToday() {
     if (!d) return null;
     return { tasksLeft: Math.max(0, (d.tasksTotal ?? 0) - (d.tasksDone ?? 0)), checkDone: !!d.scanDone };
   }
+  // Only claim a bird "still needs a check" when the per-bird summary GENUINELY
+  // says so for today — a bird with no summary row (or no summary yet) must
+  // never be named, or the notice can point at a bird that was already checked.
   function needsCheck(b: any): boolean {
     if (b.id === birdId) return !ctx.todayLog;
-    return !dashById.get(b.id)?.scanDone;
+    const d = dashById.get(b.id);
+    return !!d && !d.scanDone;
   }
 
   function goToBird(id: string) {
@@ -351,7 +357,9 @@ function SitterToday() {
   const species = (bird.species ?? "").trim() ? speciesLabel(t, (bird.species ?? "").trim()) : t("sitter.today.speciesDefault", "Parrot");
   const showSaved = savedFor === birdId;
   const checkDone = !!ctx.todayLog;
-  const nextToCheck = showSaved && multi
+  // Named only from a loaded per-bird summary (see needsCheck): before it
+  // arrives, the notice shows a plain "Saved" rather than guessing a name.
+  const nextToCheck = showSaved && multi && dashLoaded
     ? [...birds.slice(birdIndex + 1), ...birds.slice(0, birdIndex)].find((b) => needsCheck(b)) ?? null
     : null;
 
@@ -388,7 +396,7 @@ function SitterToday() {
           <KyaCard className="flex flex-col gap-3 p-4" style={{ border: `2px solid ${K.forest}` }}>
             <p className="m-0 flex items-start gap-2 text-[15px] font-[700] leading-[1.4]" role="status">
               <Check className="mt-0.5 size-[18px] shrink-0" style={{ color: K.moss }} strokeWidth={3} aria-hidden="true" />
-              {!multi
+              {!multi || !dashLoaded
                 ? t("sitter.today.saved", "Saved")
                 : nextToCheck
                 ? t("sitter.today.savedNext", "Saved. Next: {{name}} still needs a check", { name: nextToCheck.name })
@@ -484,7 +492,19 @@ function SitterToday() {
             <div data-noswipe className="-mx-4 mt-2 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {ctx.watchClips.map((c: any) => (
                 <div key={c.key} className="flex w-60 shrink-0 snap-start flex-col overflow-hidden rounded-[20px] bg-white">
-                  <ClipPlayer src={c.url} label={clipSlotLabel(c.key, c.label, t)} className="aspect-video bg-[#12291f]" audience="sitter" ownerName={owner} />
+                  <ClipPlayer
+                    src={c.url}
+                    label={clipSlotLabel(c.key, c.label, t)}
+                    className="aspect-video bg-[#12291f]"
+                    audience="sitter"
+                    ownerName={owner}
+                    // An expired signed clip link: refetch the sitter context (the
+                    // same path that minted it) and hand back this clip's fresh URL.
+                    refreshSrc={async () => {
+                      const r = await ctxQ.refetch();
+                      return ((r.data?.watchClips ?? []) as { key: string; url: string }[]).find((x) => x.key === c.key)?.url ?? null;
+                    }}
+                  />
                   <div className="px-3.5 py-3">
                     <p className="m-0 text-[15px] font-[700] leading-[1.3]" style={{ color: K.forest }}>{clipSlotLabel(c.key, c.label, t)}</p>
                   </div>
