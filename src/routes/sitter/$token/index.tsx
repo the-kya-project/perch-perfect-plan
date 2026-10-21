@@ -236,18 +236,20 @@ function SitterToday() {
     }
   }
 
-  // "[n] left" per bird for the switcher: tasks not ticked + the daily check.
-  // The active bird counts from this screen's own (optimistic) data; the
-  // others from the per-bird summary Home uses.
+  // Switcher status per bird. "[n] left" counts routine tasks only, the same
+  // tasks Home's "[done] of [total] tasks" counts; the daily check is tracked
+  // separately and the chip shows ✓ only when both are done. The active bird
+  // counts from this screen's own (optimistic) data; the others from the
+  // per-bird summary Home uses.
   const dashById = new Map(((dash?.birds ?? []) as any[]).map((b) => [b.id, b]));
-  function leftFor(b: any): number | null {
+  function leftFor(b: any): { tasksLeft: number; checkDone: boolean } | null {
     if (b.id === birdId) {
       const tasksLeft = (ctx.tasks as any[]).filter((task) => !completedIds.has(task.id)).length;
-      return tasksLeft + (ctx.todayLog ? 0 : 1);
+      return { tasksLeft, checkDone: !!ctx.todayLog };
     }
     const d = dashById.get(b.id);
     if (!d) return null;
-    return Math.max(0, (d.tasksTotal ?? 0) - (d.tasksDone ?? 0)) + (d.scanDone ? 0 : 1);
+    return { tasksLeft: Math.max(0, (d.tasksTotal ?? 0) - (d.tasksDone ?? 0)), checkDone: !!d.scanDone };
   }
   function needsCheck(b: any): boolean {
     if (b.id === birdId) return !ctx.todayLog;
@@ -528,13 +530,14 @@ function SitterToday() {
 }
 
 /** Today's bird switcher (multi-bird sits): 48px pills with a 38px round
- *  photo, the name and "[n] left" (✓ when everything is done). Selected =
+ *  photo, the name and "[n] left" (routine tasks; ✓ once tasks and the daily
+ *  check are both done, "Check to do" when only the check is left). Selected =
  *  lime with forest text; others darker forest with white text. Scrolls
  *  sideways when there are more birds than fit. */
 function BirdSwitcher({ birds, activeId, leftFor, onPick }: {
   birds: any[];
   activeId: string;
-  leftFor: (b: any) => number | null;
+  leftFor: (b: any) => { tasksLeft: number; checkDone: boolean } | null;
   onPick: (id: string) => void;
 }) {
   const { t } = useTranslation();
@@ -568,7 +571,9 @@ function BirdSwitcher({ birds, activeId, leftFor, onPick }: {
               <span className="text-[14.5px] font-[700]">{b.name}</span>
               {left != null && (
                 <span className="text-[12px] font-[500]" style={{ color: active ? K.moss : K.teal }}>
-                  {left === 0 ? "✓" : t("sitter.today.nLeft", "{{n}} left", { n: left })}
+                  {left.tasksLeft > 0
+                    ? t("sitter.today.nLeft", "{{n}} left", { n: left.tasksLeft })
+                    : left.checkDone ? "✓" : t("sitter.today.checkLeft", "Check to do")}
                 </span>
               )}
             </span>
