@@ -6,6 +6,8 @@ import { toast } from "sonner";
 import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaField, KyaPrimaryButton, KyaLink, KyaGroupLabel, KyaRow, KyaIconTile, KyaTag } from "@/components/kya";
 import { PageHeader } from "@/components/headers";
 import { authErrorMessage } from "@/lib/authErrorMessage";
+import { joinNamesDisplay } from "@/lib/i18n/joinNames";
+import { isIOSApp } from "@/lib/nativeApp";
 import { useTranslation } from "react-i18next";
 import i18next from "i18next";
 
@@ -23,6 +25,11 @@ function SecurityPage() {
   const [email, setEmail] = useState("");
   const [providers, setProviders] = useState<string[]>([]);
   const [googleEmail, setGoogleEmail] = useState<string | null>(null);
+  const [appleEmail, setAppleEmail] = useState<string | null>(null);
+  // Apple sign-in is offered only in the iOS app (see SocialSignInButtons), so
+  // the row shows there, or anywhere once Apple is connected. Read after mount.
+  const [offersApple, setOffersApple] = useState(false);
+  useEffect(() => setOffersApple(isIOSApp()), []);
   const [loaded, setLoaded] = useState(false);
 
   const [pw, setPw] = useState("");
@@ -41,6 +48,8 @@ function SecurityPage() {
         setProviders(Array.from(new Set([...fromMeta, ...fromIdentities])));
         const g = (user.identities ?? []).find((i) => i.provider === "google");
         setGoogleEmail((g?.identity_data as { email?: string } | undefined)?.email ?? null);
+        const a = (user.identities ?? []).find((i) => i.provider === "apple");
+        setAppleEmail((a?.identity_data as { email?: string } | undefined)?.email ?? null);
       }
       setLoaded(true);
     })();
@@ -48,6 +57,10 @@ function SecurityPage() {
 
   const hasPassword = providers.includes("email");
   const googleConnected = providers.includes("google");
+  const appleConnected = providers.includes("apple");
+  const showApple = appleConnected || offersApple;
+  // Brand names, not translated: "Google and Apple".
+  const connectedProviders = [googleConnected ? "Google" : null, appleConnected ? "Apple" : null].filter((n): n is string => !!n);
 
   const goBack = () => (canGoBack ? router.history.back() : navigate({ to: "/account" }));
 
@@ -95,7 +108,9 @@ function SecurityPage() {
           <p className="m-0 mt-1.5 text-[15px] leading-[1.5]" style={{ color: K.quiet }}>
             {hasPassword
               ? t("accountSecurity.changeBody", "Choose a new password for signing in with your email.")
-              : t("accountSecurity.setBody", "Add a password so you can sign in with your email as well as Google.")}
+              : connectedProviders.length > 0
+                ? t("accountSecurity.setBodyProviders", "Add a password so you can sign in with your email as well as {{providers}}.", { providers: joinNamesDisplay(connectedProviders, "bird", t) })
+                : t("accountSecurity.setBodyNoProvider", "Add a password so you can sign in with your email.")}
           </p>
 
           <div className="mt-4 flex flex-col gap-3">
@@ -143,7 +158,7 @@ function SecurityPage() {
               }
             />
             <KyaRow
-              last
+              last={!showApple}
               leading={
                 <span className="grid size-10 shrink-0 place-items-center rounded-[12px] bg-white" style={{ boxShadow: `inset 0 0 0 1px ${K.line}` }}>
                   <GoogleGlyph />
@@ -157,8 +172,25 @@ function SecurityPage() {
                   : <KyaTag tone="amber">{t("accountSecurity.notConnected", "Not connected")}</KyaTag>
               }
             />
+            {showApple && (
+              <KyaRow
+                last
+                leading={
+                  <span className="grid size-10 shrink-0 place-items-center rounded-[12px] bg-white" style={{ boxShadow: `inset 0 0 0 1px ${K.line}`, color: "#000" }}>
+                    <AppleGlyph />
+                  </span>
+                }
+                title="Apple"
+                detail={appleConnected ? (appleEmail ?? t("accountSecurity.connected", "Connected")) : t("accountSecurity.notConnected", "Not connected")}
+                trailing={
+                  appleConnected
+                    ? <KyaTag tone="lime"><Check className="mr-1 size-3" /> {t("accountSecurity.connected", "Connected")}</KyaTag>
+                    : <KyaTag tone="amber">{t("accountSecurity.notConnected", "Not connected")}</KyaTag>
+                }
+              />
+            )}
           </KyaCard>
-          {loaded && !hasPassword && !googleConnected && (
+          {loaded && !hasPassword && !googleConnected && !appleConnected && (
             <p className="m-0 px-1 text-[14px] leading-[1.5]" style={{ color: K.quiet }}>{t("accountSecurity.noMethod", "No sign-in method detected — set a password above to be safe.")}</p>
           )}
         </section>
@@ -174,6 +206,14 @@ function GoogleGlyph() {
       <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84A11 11 0 0 0 12 23Z" />
       <path fill="#FBBC05" d="M5.84 14.1a6.6 6.6 0 0 1 0-4.2V7.06H2.18a11 11 0 0 0 0 9.88l3.66-2.84Z" />
       <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1A11 11 0 0 0 2.18 7.06l3.66 2.84C6.71 7.31 9.14 5.38 12 5.38Z" />
+    </svg>
+  );
+}
+
+function AppleGlyph() {
+  return (
+    <svg viewBox="0 0 24 24" className="size-5" aria-hidden fill="currentColor">
+      <path d="M16.365 1.43c0 1.14-.417 2.2-1.11 2.98-.833.94-2.2 1.66-3.32 1.57-.14-1.1.42-2.27 1.06-2.99.72-.82 2-1.44 3.02-1.56.02.14.35.6.35 0zM20.5 17.02c-.55 1.27-.82 1.84-1.53 2.96-.99 1.56-2.39 3.5-4.12 3.51-1.54.02-1.93-1-4.02-.99-2.09.01-2.52 1.01-4.06.99-1.73-.02-3.05-1.77-4.04-3.33C-.05 16.5-.36 11.2 1.94 8.36 3.05 6.98 4.66 6.11 6.2 6.11c1.57 0 2.55 1 3.85 1 1.26 0 2.03-1 3.85-1 1.36 0 2.8.74 3.83 2.02-3.36 1.84-2.81 6.63.77 7.89z" />
     </svg>
   );
 }

@@ -279,23 +279,34 @@ export const getPastBirds = createServerFn({ method: "GET" })
   });
 
 // ---- Public: read a handoff by token (safe fields only) --------------------
+/** Why a handoff link can't be used; the handoff screen picks the copy. */
+export type HandoffLinkProblem = "expired" | "accepted" | "declined" | "canceled" | "not_found";
+
 export const getHandoff = createServerFn({ method: "GET" })
   .inputValidator((d: { token: string }) => z.object({ token: z.string().min(16) }).parse(d))
   .handler(async ({ data }) => {
     const sb = await getAdmin();
     const { data: h } = await sb.from("handoffs")
       .select("id, bird_id, sender_user_id, recipient_email, status, expires_at").eq("token", data.token).maybeSingle();
-    if (!h) return { valid: false as const, accepted: false, birdName: null as string | null };
+    // Why a link can't be used, as a code the screen turns into copy. Nothing
+    // about the bird or sender comes back with it, except that an accepted
+    // link names the bird (which the link holder had from the email) to say
+    // it's already home.
+    if (!h) return { valid: false as const, reason: "not_found" as HandoffLinkProblem, birdName: null as string | null };
     const expired = new Date(h.expires_at as string).getTime() <= Date.now();
     if (h.status !== "pending" || expired) {
       if (h.status === "pending" && expired) await sb.from("handoffs").update({ status: "expired" }).eq("id", h.id);
-      // An accepted link says the bird is already home; only the name (which
-      // the link holder had from the email) — nothing else about the record.
       if (h.status === "accepted") {
         const { data: done } = await sb.from("birds").select("name").eq("id", h.bird_id).maybeSingle();
-        return { valid: false as const, accepted: true, birdName: (done?.name ?? null) as string | null };
+        return { valid: false as const, reason: "accepted" as HandoffLinkProblem, birdName: (done?.name ?? null) as string | null };
       }
-      return { valid: false as const, accepted: false, birdName: null as string | null };
+      // offline_completed: the sender closed it and finished the handoff
+      // outside the app, so to the recipient it reads as canceled.
+      const reason: HandoffLinkProblem =
+        h.status === "declined" ? "declined"
+        : h.status === "canceled" || h.status === "offline_completed" ? "canceled"
+        : "expired";
+      return { valid: false as const, reason, birdName: null as string | null };
     }
     // Raw data only: the handoff screen supplies the "Someone" / "this bird"
     // fallbacks in the reader's language.
@@ -387,7 +398,9 @@ export const declineHandoff = createServerFn({ method: "POST" })
     const sb = await getAdmin();
     const { data: h } = await sb.from("handoffs").select("id, bird_id, sender_user_id, status").eq("token", data.token).maybeSingle();
     if (!h || h.status !== "pending") return { ok: true };
-    await sb.from("handoffs").update({ status: "declined" }).eq("id", h.id);
+    const { error } = await sb.from("handoffs").update({ status: "declined" }).eq("id", h.id);
+    // A code, not copy: the handoff screen shows its own message.
+    if (error) { console.error("[handoff] decline failed", error); throw new Error("decline_failed"); }
     try {
       const { data: bird } = await sb.from("birds").select("name").eq("id", h.bird_id).maybeSingle();
       const { data: su } = await sb.auth.admin.getUserById(h.sender_user_id as string);

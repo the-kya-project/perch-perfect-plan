@@ -3,17 +3,18 @@ import { useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { signInWithGoogle } from "@/lib/nativeOAuth";
 import { joinNamesDisplay } from "@/lib/i18n/joinNames";
 import { currentLocale } from "@/lib/i18n/ownerLocale";
-import { getHouseholdInvite, acceptHouseholdInvite, declineHouseholdInvite } from "@/lib/household.functions";
+import { getHouseholdInvite, acceptHouseholdInvite, declineHouseholdInvite, type InviteLinkProblem } from "@/lib/household.functions";
 import { captureLead } from "@/lib/captureLead";
 import { firstName as firstNameOf } from "@/lib/memberDisplay";
 import type { Capability } from "@/lib/capabilities";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
-import { K, SERIF, KyaCard, KyaHeading, KyaLabel, KyaLink, KyaPrimaryButton, KyaSecondaryButton } from "@/components/kya";
+import { K, SERIF, KyaCard, KyaHeading, KyaLabel, KyaLink, KyaPrimaryButton } from "@/components/kya";
 import { FrontDoorPage, FrontDoorHeader, FrontDoorBody, FrontDoorError, CheckListCard, SignInInstead } from "@/components/frontDoor";
+import { SocialSignInButtons } from "@/components/SocialSignInButtons";
+import { AcceptCheckEmail } from "@/components/AcceptCheckEmail";
 import { friendlyError } from "@/lib/errorMessage";
 import { authErrorMessage } from "@/lib/authErrorMessage";
 import { useTranslation, Trans } from "react-i18next";
@@ -40,11 +41,14 @@ function InviteAccept() {
   const navigate = useNavigate();
 
   const getInvite = useServerFn(getHouseholdInvite);
-  const { data: invite, isLoading } = useQuery({
+  const { data: invite, isLoading, isFetching, refetch } = useQuery({
     queryKey: ["invite", token],
     queryFn: () => getInvite({ data: { token } }),
     retry: false,
   });
+  // A new account waiting on its confirmation email: the whole screen becomes
+  // "Check your email" until they confirm (or go back).
+  const [confirmSent, setConfirmSent] = useState(false);
 
   // Current session (to decide one-tap vs create-account).
   const { data: session } = useQuery({
@@ -65,20 +69,47 @@ function InviteAccept() {
     );
   }
 
-  if (!invite?.valid) {
-    const owner = invite?.inviterName ? firstNameOf(invite.inviterName) : null;
+  // Couldn't reach the server (offline, or it failed): say so and offer a retry,
+  // rather than calling a good invite expired. (Keyed on having no data, so a
+  // background refetch that fails doesn't replace a screen that loaded.)
+  if (!invite) {
     return (
       <FrontDoorPage>
         <FrontDoorHeader
-          title={t("invite.expiredTitle", "This invite has expired")}
-          line={owner
-            ? t("invite.askOwnerForNew", "Ask {{owner}} to send a new one.", { owner })
-            : t("invite.askForNew", "Ask the owner to send you a new one.")}
+          title={t("invite.couldNotLoadTitle", "We couldn't load this invite")}
+          line={t("invite.couldNotLoadLine", "Check your connection and try again.")}
         />
         <FrontDoorBody>
-          <KyaPrimaryButton onClick={() => { window.location.href = "/"; }}>{t("invite.goToApp", "Go to Kya & Co.")}</KyaPrimaryButton>
+          <KyaPrimaryButton disabled={isFetching} onClick={() => { void refetch(); }}>
+            {isFetching ? t("invite.tryingAgain", "Trying again…") : t("invite.tryAgain", "Try again")}
+          </KyaPrimaryButton>
+          <div className="flex justify-center">
+            <KyaLink onClick={() => { window.location.href = "/"; }}>{t("invite.goToApp", "Go to Kya & Co.")}</KyaLink>
+          </div>
         </FrontDoorBody>
       </FrontDoorPage>
+    );
+  }
+
+  if (!invite.valid) {
+    return <InviteProblem reason={invite.reason} inviterName={invite.inviterName} signedIn={!!session?.signedIn} />;
+  }
+
+  if (confirmSent && !session?.signedIn) {
+    return (
+      <AcceptCheckEmail
+        email={invite.inviteeEmail}
+        returnPath={`/invite/${token}`}
+        onBack={() => setConfirmSent(false)}
+        message={
+          <Trans
+            i18nKey="invite.confirmSentBody"
+            defaults="We sent a confirmation link to <b>{{email}}</b>. Open it and you'll come right back here to join the household."
+            values={{ email: invite.inviteeEmail }}
+            components={{ b: <span className="font-[700] [overflow-wrap:anywhere]" style={{ color: K.forest }} /> }}
+          />
+        }
+      />
     );
   }
 
@@ -114,9 +145,66 @@ function InviteAccept() {
           ) : matches ? (
             <SignedInAccept token={token} onDone={() => navigate({ to: "/dashboard" })} onLeave={leave} />
           ) : (
-            <LoggedOutAccept token={token} inviteEmail={invite.inviteeEmail} onLeave={leave} />
+            <LoggedOutAccept token={token} inviteEmail={invite.inviteeEmail} onLeave={leave} onConfirmSent={() => setConfirmSent(true)} />
           )}
         </div>
+      </FrontDoorBody>
+    </FrontDoorPage>
+  );
+}
+
+/** Why the link can't be used, in words, with the way forward for each:
+ *  expired, declined, or canceled → ask the owner; already accepted → into the
+ *  app (or sign in); not found → check the link. */
+function InviteProblem({ reason, inviterName, signedIn }: { reason: InviteLinkProblem; inviterName: string | null; signedIn: boolean }) {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const owner = inviterName ? firstNameOf(inviterName) : null;
+  let title: string;
+  let line: string;
+  switch (reason) {
+    case "accepted":
+      title = t("invite.alreadyAcceptedTitle", "You've already accepted this invite");
+      line = signedIn
+        ? t("invite.alreadyAcceptedSignedIn", "The birds you help care for are in the app.")
+        : t("invite.alreadyAcceptedSignIn", "Sign in to see the birds you help care for.");
+      break;
+    case "declined":
+      title = t("invite.declinedTitle", "This invite was declined");
+      line = owner
+        ? t("invite.declinedAskOwner", "Changed your mind? Ask {{owner}} to send a new one.", { owner })
+        : t("invite.declinedAsk", "Changed your mind? Ask the owner to send a new one.");
+      break;
+    case "canceled":
+      title = t("invite.canceledTitle", "This invite was canceled");
+      line = owner
+        ? t("invite.canceledAskOwner", "Ask {{owner}} if you think that's a mistake.", { owner })
+        : t("invite.canceledAsk", "Ask the owner if you think that's a mistake.");
+      break;
+    case "not_found":
+      title = t("invite.notFoundTitle", "We couldn't find this invite");
+      line = t("invite.notFoundLine", "Check that you opened the whole link from the email, or ask the owner to send a new one.");
+      break;
+    default:
+      title = t("invite.expiredTitle", "This invite has expired");
+      line = owner
+        ? t("invite.askOwnerForNew", "Ask {{owner}} to send a new one.", { owner })
+        : t("invite.askForNew", "Ask the owner to send you a new one.");
+  }
+  const signInToApp = reason === "accepted" && !signedIn;
+  return (
+    <FrontDoorPage>
+      <FrontDoorHeader title={title} line={line} />
+      <FrontDoorBody>
+        {signInToApp ? (
+          <KyaPrimaryButton onClick={() => navigate({ to: "/auth", search: { mode: "signin", redirect: "/dashboard" } })}>
+            {t("invite.signIn", "Sign in")}
+          </KyaPrimaryButton>
+        ) : (
+          <KyaPrimaryButton onClick={() => { window.location.href = reason === "accepted" ? "/dashboard" : "/"; }}>
+            {t("invite.goToApp", "Go to Kya & Co.")}
+          </KyaPrimaryButton>
+        )}
       </FrontDoorBody>
     </FrontDoorPage>
   );
@@ -182,18 +270,19 @@ function useAcceptDecline(token: string, onDone: () => void) {
       toast.success(t("invite.acceptedToast", "You're in — welcome to the household."));
       onDone();
     } catch (e: any) {
-      const msg = friendlyError(e, t("invite.couldNotAccept", "Couldn't accept the invite."));
-      toast.error(msg);
-      setError(msg);
+      setError(friendlyError(e, t("invite.couldNotAccept", "Couldn't accept the invite.")));
       setBusy(null);
     }
   }
   async function doDecline() {
     setBusy("decline");
+    setError(null);
     try {
       await decline({ data: { token } });
       window.location.href = "/";
     } catch {
+      // Stay on the invite so they can try again or just leave.
+      setError(t("invite.couldNotDecline", "Couldn't decline the invite. Check your connection and try again."));
       setBusy(null);
     }
   }
@@ -257,19 +346,20 @@ function WrongAccount({ inviteEmail, token, onLeave }: { inviteEmail: string; to
   );
 }
 
-function LoggedOutAccept({ token, inviteEmail, onLeave }: { token: string; inviteEmail: string; onLeave: () => void }) {
+function LoggedOutAccept({ token, inviteEmail, onLeave, onConfirmSent }: { token: string; inviteEmail: string; onLeave: () => void; onConfirmSent: () => void }) {
   const { t } = useTranslation();
-  const { busy, doDecline } = useAcceptDecline(token, () => {});
+  const { busy, error: declineError, doDecline } = useAcceptDecline(token, () => {});
   const [creating, setCreating] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [password, setPassword] = useState("");
   const [pending, setPending] = useState(false);
-  const [confirmSent, setConfirmSent] = useState(false);
+  const [socialBusy, setSocialBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const redirect = `${window.location.origin}/invite/${token}`;
-  const fail = (msg: string) => { toast.error(msg); setError(msg); };
+  // The card (FrontDoorError) is the one place an error shows.
+  const fail = (msg: string) => setError(msg);
 
   async function createAndAccept() {
     const first = firstName.trim();
@@ -300,34 +390,12 @@ function LoggedOutAccept({ token, inviteEmail, onLeave }: { token: string; invit
       }
       // Email confirmation required: they'll return to this screen after clicking
       // the link (now signed-in with a matching email) and can tap Accept.
-      setConfirmSent(true);
       setPending(false);
+      onConfirmSent();
     } catch (e: any) {
       fail(authErrorMessage(e, t("invite.couldNotCreate", "Couldn't create your account.")));
       setPending(false);
     }
-  }
-
-  async function google() {
-    setError(null);
-    try { await signInWithGoogle(redirect); }
-    catch (e: any) { fail(authErrorMessage(e, t("invite.googleFailed", "Google sign-in failed."))); }
-  }
-
-  if (confirmSent) {
-    return (
-      <KyaCard className="p-5 text-center">
-        <KyaHeading size={21}>{t("invite.confirmToFinish", "Confirm your email to finish")}</KyaHeading>
-        <p className="m-0 mt-2 text-[15px] leading-[1.45]" style={{ color: K.ink }}>
-          <Trans
-            i18nKey="invite.confirmSentBody"
-            defaults="We sent a confirmation link to <b>{{email}}</b>. Open it and you'll come right back here to join the household."
-            values={{ email: inviteEmail }}
-            components={{ b: <span className="font-[700]" style={{ color: K.forest }} /> }}
-          />
-        </p>
-      </KyaCard>
-    );
   }
 
   if (!creating) {
@@ -337,6 +405,7 @@ function LoggedOutAccept({ token, inviteEmail, onLeave }: { token: string; invit
         <p className="m-0 text-center text-[12.5px]" style={{ color: K.quiet }}>
           {t("invite.signInNext", "You'll sign in or create a free account next.")}
         </p>
+        {declineError && <FrontDoorError>{declineError}</FrontDoorError>}
         <LeaveLinks onLeave={onLeave} onDecline={doDecline} busy={!!busy} />
       </>
     );
@@ -362,11 +431,16 @@ function LoggedOutAccept({ token, inviteEmail, onLeave }: { token: string; invit
           or: t("invite.or", "or"),
         }}
         submit={
-          <KyaPrimaryButton disabled={pending} onClick={createAndAccept}>
+          <KyaPrimaryButton disabled={pending || socialBusy} onClick={createAndAccept}>
             {pending ? t("invite.creating", "Creating…") : t("invite.createAndAccept", "Create account & accept")}
           </KyaPrimaryButton>
         }
-        google={<KyaSecondaryButton className="w-full" onClick={google}>{t("invite.continueWithGoogle", "Continue with Google")}</KyaSecondaryButton>}
+        social={
+          // Same buttons, conditions, and sign-in code as /auth; the provider
+          // brings them straight back here (web redirect, or the native shell
+          // pushes this path once signed in).
+          <SocialSignInButtons redirectPath={`/invite/${token}`} disabled={pending} onBusyChange={setSocialBusy} onError={setError} />
+        }
       />
       <SignInInstead returnTo={`/invite/${token}`} />
       <LeaveLinks onLeave={onLeave} />
@@ -375,8 +449,8 @@ function LoggedOutAccept({ token, inviteEmail, onLeave }: { token: string; invit
 }
 
 /** Name, the invite's (fixed) email, a password; then the create button,
- *  "or", and Google. */
-function CreateAccountForm({ idPrefix, email, firstName, setFirstName, lastName, setLastName, password, setPassword, labels, submit, google }: {
+ *  "or", and the provider buttons (Google, and Apple where /auth offers it). */
+function CreateAccountForm({ idPrefix, email, firstName, setFirstName, lastName, setLastName, password, setPassword, labels, submit, social }: {
   idPrefix: string;
   email: string;
   firstName: string; setFirstName: (v: string) => void;
@@ -384,7 +458,7 @@ function CreateAccountForm({ idPrefix, email, firstName, setFirstName, lastName,
   password: string; setPassword: (v: string) => void;
   labels: { firstName: string; firstNamePlaceholder: string; lastName: string; lastNamePlaceholder: string; email: string; password: string; passwordPlaceholder: string; or: string };
   submit: ReactNode;
-  google: ReactNode;
+  social: ReactNode;
 }) {
   return (
     <KyaCard className="flex flex-col gap-4 p-4">
@@ -410,7 +484,7 @@ function CreateAccountForm({ idPrefix, email, firstName, setFirstName, lastName,
       <div className="flex items-center gap-3 text-[13px]" style={{ color: K.quiet }}>
         <span className="h-px flex-1" style={{ background: K.line }} /> {labels.or} <span className="h-px flex-1" style={{ background: K.line }} />
       </div>
-      {google}
+      {social}
     </KyaCard>
   );
 }
