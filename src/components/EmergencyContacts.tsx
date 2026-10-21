@@ -42,9 +42,11 @@ export function missingRequired(vals: EmergencyValues): EmergencyField[] {
   return REQUIRED_FIELDS.filter((f) => !v(vals, f));
 }
 
-export function rowLabel(t: TFunction, k: RowKey): string {
+/** `viewerIsOwner` false (a household member viewing someone else's bird):
+ *  the "you" row is the bird's owner, not the viewer. */
+export function rowLabel(t: TFunction, k: RowKey, viewerIsOwner = true): string {
   switch (k) {
-    case "you": return t("emergencyList.you", "You");
+    case "you": return viewerIsOwner ? t("emergencyList.you", "You") : t("emergencyList.owner", "Owner");
     case "backup": return t("emergencyList.backup", "Backup contact");
     case "avian_vet": return t("emergencyList.avianVet", "Avian vet");
     case "emergency_vet": return t("emergencyList.emergencyVet", "After-hours emergency vet");
@@ -55,9 +57,9 @@ export function rowLabel(t: TFunction, k: RowKey): string {
   }
 }
 
-function fieldLabel(t: TFunction, f: EmergencyField): string {
+function fieldLabel(t: TFunction, f: EmergencyField, viewerIsOwner = true): string {
   switch (f) {
-    case "owner_phone": return t("emergencyList.field.yourPhone", "Your phone");
+    case "owner_phone": return viewerIsOwner ? t("emergencyList.field.yourPhone", "Your phone") : t("emergencyList.field.ownerPhone", "Owner's phone");
     case "backup_name": return t("emergencyList.field.name", "Name");
     case "backup_phone": return t("emergencyList.field.phone", "Phone");
     case "avian_vet_name": return t("emergencyList.field.vetName", "Vet or clinic name");
@@ -121,10 +123,12 @@ function CallButton({ phone, label }: { phone: string; label: string }) {
   );
 }
 
-export function EmergencyList({ values, ownerName, editable, onEdit, badge }: {
+export function EmergencyList({ values, ownerName, editable, onEdit, badge, viewerIsOwner = true }: {
   values: EmergencyValues;
   /** The owner's name, for the "You" row. */
   ownerName: string;
+  /** False when a household member views the owner's info ("Owner", not "You"). */
+  viewerIsOwner?: boolean;
   editable: boolean;
   onEdit?: (k: RowKey) => void;
   /** Optional per-row tag (e.g. "Custom for Max"). */
@@ -145,7 +149,7 @@ export function EmergencyList({ values, ownerName, editable, onEdit, badge }: {
     let title = "";
     let detail = "";
     let address = "";
-    if (k === "you") { title = ownerName || t("emergencyList.you", "You"); detail = phone; }
+    if (k === "you") { title = ownerName || rowLabel(t, k, viewerIsOwner); detail = phone; }
     else if (k === "poison") { title = phone; }
     else if (isHouse) {
       const val = shownValue(values, fields[0]);
@@ -162,7 +166,7 @@ export function EmergencyList({ values, ownerName, editable, onEdit, badge }: {
         <Avatar k={k} name={title} />
         <span className="min-w-0 flex-1">
           <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12.5px]" style={{ color: requiredGap ? K.amberText : K.quiet }}>
-            {rowLabel(t, k)}
+            {rowLabel(t, k, viewerIsOwner)}
             {badge?.(k)}
           </span>
           {requiredGap && <span className="block text-[12.5px] font-[700]" style={{ color: K.amberText }}>{t("emergencyList.neededBeforeSit", "Needed before a sitter can start")}</span>}
@@ -177,7 +181,7 @@ export function EmergencyList({ values, ownerName, editable, onEdit, badge }: {
           )}
         </span>
         {!isHouse && phone ? (
-          <CallButton phone={phone} label={t("emergencyList.call", "Call {{who}}", { who: title || rowLabel(t, k) })} />
+          <CallButton phone={phone} label={t("emergencyList.call", "Call {{who}}", { who: title || rowLabel(t, k, viewerIsOwner) })} />
         ) : !filled && editable ? (
           <span className="inline-flex shrink-0 items-center gap-1 text-[15px] font-[700]" style={{ color: K.moss }}>
             <Plus className="size-4" /> {t("emergencyList.add", "Add")}
@@ -222,8 +226,9 @@ const PILL = "min-h-[48px] w-full rounded-full border-[1.5px] bg-white px-4 text
 const PILL_STYLE = { borderColor: "#d5dfd5", color: K.forest };
 
 /** The edit sheet for one row: only that row's fields, pinned Save. */
-export function EmergencyRowSheet({ rowKey, initial, saving, onSave, onClose, extra }: {
+export function EmergencyRowSheet({ rowKey, initial, saving, onSave, onClose, extra, viewerIsOwner = true }: {
   rowKey: RowKey;
+  viewerIsOwner?: boolean;
   initial: EmergencyValues;
   saving: boolean;
   onSave: (patch: Record<string, string | null>) => void;
@@ -242,7 +247,7 @@ export function EmergencyRowSheet({ rowKey, initial, saving, onSave, onClose, ex
     <KyaSheet
       onClose={onClose}
       closeLabel={t("emergencyList.close", "Close")}
-      title={<KyaHeading size={24}>{rowLabel(t, rowKey)}</KyaHeading>}
+      title={<KyaHeading size={24}>{rowLabel(t, rowKey, viewerIsOwner)}</KyaHeading>}
       footer={<KyaPrimaryButton onClick={save} disabled={saving || bad}>{saving ? t("emergencyList.saving", "Saving…") : t("emergencyList.save", "Save")}</KyaPrimaryButton>}
     >
       <div className="flex flex-col gap-4">
@@ -252,7 +257,7 @@ export function EmergencyRowSheet({ rowKey, initial, saving, onSave, onClose, ex
           if (isAddressField(f)) {
             return (
               <div key={f} className="flex flex-col gap-1.5">
-                <span className="text-[13.5px] font-[700]">{fieldLabel(t, f)}</span>
+                <span className="text-[13.5px] font-[700]">{fieldLabel(t, f, viewerIsOwner)}</span>
                 <AddressInput value={form[f] ?? ""} onChange={(val) => setForm((p) => ({ ...p, [f]: val }))} inputClassName={PILL} inputStyle={PILL_STYLE} />
               </div>
             );
@@ -265,7 +270,7 @@ export function EmergencyRowSheet({ rowKey, initial, saving, onSave, onClose, ex
             <KyaField
               key={f}
               id={id}
-              label={fieldLabel(t, f)}
+              label={fieldLabel(t, f, viewerIsOwner)}
               tag={tag}
               hint={hint}
               value={form[f] ?? ""}

@@ -505,6 +505,46 @@ export const getBirdEmergencyReadiness = createServerFn({ method: "GET" })
     };
   });
 
+/**
+ * The bird OWNER's account emergency defaults and display name, for a bird the
+ * caller is a member of. RLS on owner_emergency_defaults only lets a user read
+ * their own row, so household members would otherwise see their OWN defaults
+ * on someone else's bird. Read-only: members can never edit the owner's
+ * account defaults (writes stay owner-only through RLS).
+ */
+export const getBirdOwnerEmergency = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { birdId: string }) => z.object({ birdId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const sb = await getAdmin();
+    const userId = context.userId as string;
+    const { data: membership } = await sb
+      .from("bird_members")
+      .select("role")
+      .eq("bird_id", data.birdId)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (!membership) throw new Error("Not found.");
+
+    const { data: bird } = await sb.from("birds").select("owner_id").eq("id", data.birdId).maybeSingle();
+    if (!bird) throw new Error("Not found.");
+    const ownerId = (bird as any).owner_id as string;
+    const [{ data: defaults }, { data: prof }] = await Promise.all([
+      sb.from("owner_emergency_defaults").select("*").eq("owner_id", ownerId).maybeSingle(),
+      sb.from("profiles").select("display_name").eq("id", ownerId).maybeSingle(),
+    ]);
+    // Real name only — never an email prefix. Empty → the client shows a
+    // localized "the owner" fallback.
+    let ownerName = ((prof as any)?.display_name ?? "").toString().trim();
+    if (!ownerName) {
+      try {
+        const { data: u } = await sb.auth.admin.getUserById(ownerId);
+        ownerName = (u?.user?.user_metadata?.display_name ?? "").toString().trim();
+      } catch { /* keep empty */ }
+    }
+    return { defaults: (defaults ?? null) as Record<string, any> | null, ownerName };
+  });
+
 /** The care-plan sections a sit's birds are still missing, for the soft
  *  "will need a little more" reminder before a sit is created. Judged on the
  *  same merged data the sitter sees (per-bird answers over the owner's shared

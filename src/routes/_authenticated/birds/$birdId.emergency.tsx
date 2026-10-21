@@ -7,7 +7,7 @@ import { useBirdRole } from "@/lib/useBirdRole";
 import { K, KyaPage, KyaBody } from "@/components/kya";
 import { PageHeader } from "@/components/headers";
 import { EmergencyInfo } from "@/components/EmergencyInfo";
-import { useOwnerEmergency, useOwnerName } from "@/lib/useOwnerEmergency";
+import { useBirdOwnerEmergency } from "@/lib/useOwnerEmergency";
 
 // A bird's emergency info page (from the bird's record list).
 export const Route = createFileRoute("/_authenticated/birds/$birdId/emergency")({
@@ -37,8 +37,8 @@ function BirdEmergency() {
       return data;
     },
   });
-  const { data: defaults } = useOwnerEmergency();
-  const { data: ownerName = "" } = useOwnerName();
+  // Always the bird OWNER's account info, even for a household member.
+  const { defaults, ownerName } = useBirdOwnerEmergency(birdId);
   const name = bird?.name ?? t("birdEmergency.yourBird", "your bird");
   const goBack = () => (canGoBack ? router.history.back() : navigate({ to: "/birds/$birdId", params: { birdId } }));
   const ready = contacts !== undefined && defaults !== undefined && !!bird;
@@ -46,7 +46,9 @@ function BirdEmergency() {
   return (
     <KyaPage>
       <div className="mx-auto max-w-md">
-        <PageHeader onBack={goBack} title={t("birdEmergency.title", "{{name}}'s emergency info", { name })} line={t("birdEmergency.line", "Same as your other birds, unless you change something here.")} />
+        <PageHeader onBack={goBack} title={t("birdEmergency.title", "{{name}}'s emergency info", { name })} line={isOwner
+          ? t("birdEmergency.line", "Same as your other birds, unless you change something here.")
+          : t("birdEmergency.lineMember", "Same as {{owner}}'s other birds, unless it's changed here.", { owner: ownerName || t("birdEmergency.theOwner", "the owner") })} />
         <KyaBody className="gap-5">
           {ready ? (
             <EmergencyInfo

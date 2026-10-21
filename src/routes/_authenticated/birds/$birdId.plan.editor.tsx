@@ -10,9 +10,9 @@ import { useServerFn } from "@tanstack/react-start";
 import { purgeBirdMedia } from "@/lib/birdMedia.functions";
 import { birdMediaPurgeFailedText } from "@/lib/i18n/serverErrors";
 import { activeOwnerBirdsMin } from "@/lib/activeBirds";
-import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { Trash2, ChevronDown, AlertTriangle, Eye } from "lucide-react";
 import { EmergencyInfo } from "@/components/EmergencyInfo";
+import { useBirdOwnerEmergency } from "@/lib/useOwnerEmergency";
 import { K, KyaBody, KyaCard, KyaHeading, KyaTag, KyaLabel, KyaSecondaryButton, KyaPrimaryButton } from "@/components/kya";
 import { HeaderPill, TaskHeader, TaskFooter, TASK_FOOTER_SPACE } from "@/components/headers";
 import { isTaskPath } from "@/components/OwnerTabBar";
@@ -160,19 +160,8 @@ function BirdEditor() {
       return data;
     },
   });
-  const { data: defaults } = useQuery({
-    queryKey: ["owner-defaults"],
-    queryFn: async () => {
-      const { data: u } = await getLocalUser();
-      if (!u.user) return null;
-      const { data } = await supabase
-        .from("owner_emergency_defaults")
-        .select("*")
-        .eq("owner_id", u.user.id)
-        .maybeSingle();
-      return data;
-    },
-  });
+  // The bird OWNER's account emergency info (not the viewer's), with their name.
+  const { defaults, ownerName } = useBirdOwnerEmergency(birdId);
   const { data: tasks = [] } = useQuery({
     queryKey: ["tasks", plan?.id],
     enabled: !!plan?.id,
@@ -289,7 +278,7 @@ function BirdEditor() {
             {tab === "routine" && <DayInLifeStep birdId={birdId} birdName={birdName} />}
             {tab === "behavior" && <PersonalityStep birdId={birdId} birdName={birdName} />}
             {tab === "clips" && <OwnerTipsClipsStep birdId={birdId} birdName={birdName} onBlockNext={() => {}} />}
-            {tab === "emergency" && contacts !== undefined && <EmergencyInfo birdId={birdId} birdName={birdName} contacts={contacts ?? null} defaults={defaults ?? null} isOwner={role === "owner"} onSaved={() => qc.invalidateQueries({ queryKey: ["contacts", birdId] })} />}
+            {tab === "emergency" && contacts !== undefined && <EmergencyInfo birdId={birdId} birdName={birdName} contacts={contacts ?? null} defaults={defaults ?? null} ownerName={ownerName} isOwner={role === "owner"} onSaved={() => qc.invalidateQueries({ queryKey: ["contacts", birdId] })} />}
             {tab === "sits" && <SitsPanel birdId={birdId} sits={sits} onChange={() => qc.invalidateQueries({ queryKey: ["sits", birdId] })} />}
             {tab === "logs" && <LogsPanel birdId={birdId} initialScan={scanParam} />}
           </HideStepInstruction.Provider>

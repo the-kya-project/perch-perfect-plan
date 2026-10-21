@@ -3,6 +3,8 @@
 // stored flag: a bird uses the account value for every field it leaves empty
 // (mergeEmergency), so "different" means it has at least one value of its own.
 // Used by the bird's emergency page and the care plan editor's Emergency tab.
+// `defaults` is always the bird OWNER's account info (useBirdOwnerEmergency);
+// for a household member (isOwner false) it's labeled with the owner's name.
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
@@ -36,6 +38,11 @@ export function EmergencyInfo({ birdId, birdName, contacts, defaults, onSaved, o
   const [saving, setSaving] = useState(false);
 
   const trim = (v: unknown) => (v ?? "").toString().trim();
+  // Household members see the owner's info: "Use Sam's emergency info", not "my".
+  const owner = trim(ownerName) || t("birdEmergency.theOwner", "the owner");
+  const useAccountLabel = isOwner
+    ? t("birdEmergency.useMine", "Use my emergency info")
+    : t("birdEmergency.useOwners", "Use {{owner}}'s emergency info", { owner });
   const effective = mergeEmergency(contacts, defaults) as EmergencyValues;
   const accountValues = (defaults ?? {}) as EmergencyValues;
   const rowIsOwn = (k: RowKey) => ROW_FIELDS[k].some((f) => trim(contacts?.[f]) !== "" && trim(contacts?.[f]) !== trim(defaults?.[f]));
@@ -91,7 +98,9 @@ export function EmergencyInfo({ birdId, birdName, contacts, defaults, onSaved, o
       if (error) throw error;
       setMode("mine");
       setConfirmMine(false);
-    }, t("birdEmergency.nowUsesYours", "{{name}} uses your emergency info.", { name: birdName }));
+    }, isOwner
+      ? t("birdEmergency.nowUsesYours", "{{name}} uses your emergency info.", { name: birdName })
+      : t("birdEmergency.nowUsesOwners", "{{name}} uses {{owner}}'s emergency info.", { name: birdName, owner }));
   }
 
   const segment = (key: "mine" | "different", label: string) => {
@@ -117,13 +126,13 @@ export function EmergencyInfo({ birdId, birdName, contacts, defaults, onSaved, o
   return (
     <div className="flex flex-col gap-5">
       <div role="radiogroup" aria-label={t("birdEmergency.whichInfo", "Which emergency info")} className="flex gap-1 rounded-full bg-white p-1">
-        {segment("mine", t("birdEmergency.useMine", "Use my emergency info"))}
+        {segment("mine", useAccountLabel)}
         {segment("different", t("birdEmergency.differentFor", "Different for {{name}}", { name: birdName }))}
       </div>
 
       {mode === "mine" ? (
         <>
-          <EmergencyList values={accountValues} ownerName={ownerName ?? ""} editable={false} />
+          <EmergencyList values={accountValues} ownerName={ownerName ?? ""} viewerIsOwner={!!isOwner} editable={false} />
           {isOwner && (
             <KyaLink onClick={() => navigate({ to: "/account/emergency" })}>{t("birdEmergency.editForAll", "Edit emergency info for all birds →")}</KyaLink>
           )}
@@ -132,6 +141,7 @@ export function EmergencyInfo({ birdId, birdName, contacts, defaults, onSaved, o
         <EmergencyList
           values={effective}
           ownerName={ownerName ?? ""}
+          viewerIsOwner={!!isOwner}
           editable
           onEdit={setEditing}
           badge={(k) => rowIsOwn(k)
@@ -141,7 +151,7 @@ export function EmergencyInfo({ birdId, birdName, contacts, defaults, onSaved, o
       )}
 
       {editing && !pending && (
-        <EmergencyRowSheet rowKey={editing} initial={effective} saving={saving} onSave={onSaveRow} onClose={() => setEditing(null)} />
+        <EmergencyRowSheet rowKey={editing} initial={effective} viewerIsOwner={!!isOwner} saving={saving} onSave={onSaveRow} onClose={() => setEditing(null)} />
       )}
 
       {pending && (
@@ -165,13 +175,15 @@ export function EmergencyInfo({ birdId, birdName, contacts, defaults, onSaved, o
         <KyaSheet
           onClose={() => setConfirmMine(false)}
           closeLabel={t("birdEmergency.close", "Close")}
-          title={<KyaHeading size={22}>{t("birdEmergency.confirmMineTitle", "Use your emergency info for {{name}}?", { name: birdName })}</KyaHeading>}
+          title={<KyaHeading size={22}>{isOwner
+            ? t("birdEmergency.confirmMineTitle", "Use your emergency info for {{name}}?", { name: birdName })
+            : t("birdEmergency.confirmOwnersTitle", "Use {{owner}}'s emergency info for {{name}}?", { name: birdName, owner })}</KyaHeading>}
         >
           <p className="m-0 text-[15px] leading-[1.5]" style={{ color: K.quiet }}>
             {t("birdEmergency.confirmMineBody", "The details you changed for {{name}} will be cleared.", { name: birdName })}
           </p>
           <div className="mt-4 flex flex-col gap-2.5">
-            <KyaPrimaryButton disabled={saving} onClick={() => void switchToMine()}>{t("birdEmergency.confirmMine", "Use my emergency info")}</KyaPrimaryButton>
+            <KyaPrimaryButton disabled={saving} onClick={() => void switchToMine()}>{isOwner ? t("birdEmergency.confirmMine", "Use my emergency info") : useAccountLabel}</KyaPrimaryButton>
             <KyaSecondaryButton className="w-full" disabled={saving} onClick={() => setConfirmMine(false)}>{t("birdEmergency.keepCustom", "Keep {{name}}'s details", { name: birdName })}</KyaSecondaryButton>
           </div>
         </KyaSheet>
