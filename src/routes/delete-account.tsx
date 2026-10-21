@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, useRouter, useCanGoBack, Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
-import { InkHero } from "@/components/system";
+import { K, KyaCard, KyaHeading, SERIF } from "@/components/kya";
 
 const SUPPORT_EMAIL = "brittany@thekyaproject.com";
 
@@ -33,134 +33,143 @@ function DeleteAccountPage() {
     }
   };
   return (
-    <div className="min-h-screen bg-sage-50">
-      <InkHero
-        backIcon={<ArrowLeft className="size-5" />}
-        onBack={goBack}
-        eyebrow="Legal"
-        headline="Delete your Kya & Co. account"
-      />
-      <main className="mx-auto max-w-2xl px-5 py-8">
-        <div className="prose prose-sage space-y-4 text-sm leading-relaxed text-sage-700">
-          <p>
-            Kya & Co. is published by The Kya Project, LLC. This page explains how to delete your
-            account and exactly what happens to your data when you do.
-          </p>
+    // Public page (no tab bar): a plain mist body rather than KyaPage, which
+    // reserves room for the owner nav.
+    <div className="setup-frame min-h-screen" style={{ background: K.mist, color: K.forest }}>
+      <main className="mx-auto max-w-2xl px-4 pb-[max(env(safe-area-inset-bottom),32px)] pt-[calc(env(safe-area-inset-top)+14px)]">
+        <button
+          type="button"
+          aria-label="Back"
+          onClick={goBack}
+          className="grid size-11 place-items-center rounded-full bg-white active:scale-95"
+          style={{ color: K.forest }}
+        >
+          <ArrowLeft className="size-5" />
+        </button>
+        <KyaCard className="mt-4 px-5 py-6">
+          <p className="m-0 text-[13.5px] font-[700]" style={{ color: K.quiet }}>Legal</p>
+          <KyaHeading as="h1" size={28} className="mt-1.5">Delete your Kya &amp; Co. account</KyaHeading>
+          <div className="mt-5 space-y-4 text-[15px] leading-[1.6]" style={{ color: K.ink }}>
+            <p>
+              Kya & Co. is published by The Kya Project, LLC. This page explains how to delete your
+              account and exactly what happens to your data when you do.
+            </p>
 
-          <h2 className="text-base font-bold text-sage-900">How to request deletion</h2>
-          <p>
-            You can delete your own account from inside the app, without contacting us. It takes
-            effect immediately.
-          </p>
-          <ol className="list-decimal space-y-1 pl-5">
-            <li>Sign in to Kya &amp; Co. — in the app, or at app.thekyaproject.com.</li>
-            <li>On Home, tap the settings (gear) icon in the top right.</li>
-            <li>
-              Scroll to the bottom of the Account screen and tap{" "}
-              <strong className="font-medium text-sage-900">Delete account</strong>.
-            </li>
-            <li>
-              Type <strong className="font-medium text-sage-900">DELETE</strong> to confirm, then tap{" "}
-              <strong className="font-medium text-sage-900">Permanently delete my account</strong>.
-            </li>
-          </ol>
-          <p>
-            There is no waiting period and no recovery step. Everything listed below is removed as
-            soon as you confirm, and you are signed out.
-          </p>
-          <p>
-            If you can't sign in, email {SUPPORT_EMAIL} from the address registered to the account,
-            with the subject "Delete my account". We will confirm the request and complete the
-            deletion within 30 days.
-          </p>
+            <h2 className="pt-3 text-[19px] font-[700] leading-[1.2]" style={{ fontFamily: SERIF, color: K.forest }}>How to request deletion</h2>
+            <p>
+              You can delete your own account from inside the app, without contacting us. It takes
+              effect immediately.
+            </p>
+            <ol className="list-decimal space-y-1 pl-5">
+              <li>Sign in to Kya &amp; Co. — in the app, or at app.thekyaproject.com.</li>
+              <li>On Home, tap the settings (gear) icon in the top right.</li>
+              <li>
+                Scroll to the bottom of the Account screen and tap{" "}
+                <strong className="font-[700]" style={{ color: K.forest }}>Delete account</strong>.
+              </li>
+              <li>
+                Type <strong className="font-[700]" style={{ color: K.forest }}>DELETE</strong> to confirm, then tap{" "}
+                <strong className="font-[700]" style={{ color: K.forest }}>Permanently delete my account</strong>.
+              </li>
+            </ol>
+            <p>
+              There is no waiting period and no recovery step. Everything listed below is removed as
+              soon as you confirm, and you are signed out.
+            </p>
+            <p>
+              If you can't sign in, email {SUPPORT_EMAIL} from the address registered to the account,
+              with the subject "Delete my account". We will confirm the request and complete the
+              deletion within 30 days.
+            </p>
 
-          <h2 className="text-base font-bold text-sage-900">What gets deleted</h2>
-          <p>Deleting your account permanently removes:</p>
-          <ul className="list-disc space-y-1 pl-5">
-            <li>Your sign-in and every active session.</li>
-            <li>Your profile — name, email address, language, and onboarding state.</li>
-            <li>
-              Every bird you own, and everything attached to it: care plans and routine tasks,
-              journal entries and their PDF attachments, weight history, daily care logs, health
-              checks, emergency contacts, and moments.
-            </li>
-            <li>
-              Sits you created, including sitter checklists, completed tasks, and the sitter links
-              themselves — any link you shared stops working immediately.
-            </li>
-            <li>
-              Household access you granted: invitations you sent, each member's permissions, and
-              their access to your birds.
-            </li>
-            <li>Your saved emergency contact defaults, and your archive of past birds.</li>
-            <li>Push-notification subscriptions and your notification and email history.</li>
-            <li>
-              Every file you uploaded — bird photos, journal photos, health-check photos and PDF
-              attachments — together with any care-plan video clips held by our video provider.
-            </li>
-            <li>
-              The analytics and error reports our analytics provider holds about your account.
-            </li>
-          </ul>
+            <h2 className="pt-3 text-[19px] font-[700] leading-[1.2]" style={{ fontFamily: SERIF, color: K.forest }}>What gets deleted</h2>
+            <p>Deleting your account permanently removes:</p>
+            <ul className="list-disc space-y-1 pl-5">
+              <li>Your sign-in and every active session.</li>
+              <li>Your profile — name, email address, language, and onboarding state.</li>
+              <li>
+                Every bird you own, and everything attached to it: care plans and routine tasks,
+                journal entries and their PDF attachments, weight history, daily care logs, health
+                checks, emergency contacts, and moments.
+              </li>
+              <li>
+                Sits you created, including sitter checklists, completed tasks, and the sitter links
+                themselves — any link you shared stops working immediately.
+              </li>
+              <li>
+                Household access you granted: invitations you sent, each member's permissions, and
+                their access to your birds.
+              </li>
+              <li>Your saved emergency contact defaults, and your archive of past birds.</li>
+              <li>Push-notification subscriptions and your notification and email history.</li>
+              <li>
+                Every file you uploaded — bird photos, journal photos, health-check photos and PDF
+                attachments — together with any care-plan video clips held by our video provider.
+              </li>
+              <li>
+                The analytics and error reports our analytics provider holds about your account.
+              </li>
+            </ul>
 
-          <h2 className="text-base font-bold text-sage-900">What we keep, and for how long</h2>
-          <p>
-            We keep nothing about you for legal or billing reasons. Kya &amp; Co. takes no payments
-            and holds no financial records. Two things outlive the deletion:
-          </p>
-          <ul className="list-disc space-y-1 pl-5">
-            <li>
-              <strong className="font-medium text-sage-900">Encrypted database backups.</strong>{" "}
-              Your written records — birds, care plans, logs, journal entries — may remain in our
-              encrypted daily backups for up to seven days after deletion, and then roll off
-              permanently. Those backups exist only to recover from an outage; they are never
-              used to bring back a deleted account. Your uploaded files work differently: photos,
-              video clips and PDF attachments are removed from storage straight away, and are not
-              part of those backups at all.
-            </li>
-            <li>
-              <strong className="font-medium text-sage-900">Email contact record.</strong> When you
-              sign up, our email provider keeps a contact record with your email address, name and
-              how you found us, whether or not you opted in to marketing. It is not removed by
-              deleting your account. The unsubscribe link in any of our emails stops further email;
-              to have the record deleted, email {SUPPORT_EMAIL} and we will delete it for you.
-            </li>
-          </ul>
+            <h2 className="pt-3 text-[19px] font-[700] leading-[1.2]" style={{ fontFamily: SERIF, color: K.forest }}>What we keep, and for how long</h2>
+            <p>
+              We keep nothing about you for legal or billing reasons. Kya &amp; Co. takes no payments
+              and holds no financial records. Two things outlive the deletion:
+            </p>
+            <ul className="list-disc space-y-1 pl-5">
+              <li>
+                <strong className="font-[700]" style={{ color: K.forest }}>Encrypted database backups.</strong>{" "}
+                Your written records — birds, care plans, logs, journal entries — may remain in our
+                encrypted daily backups for up to seven days after deletion, and then roll off
+                permanently. Those backups exist only to recover from an outage; they are never
+                used to bring back a deleted account. Your uploaded files work differently: photos,
+                video clips and PDF attachments are removed from storage straight away, and are not
+                part of those backups at all.
+              </li>
+              <li>
+                <strong className="font-[700]" style={{ color: K.forest }}>Email contact record.</strong> When you
+                sign up, our email provider keeps a contact record with your email address, name and
+                how you found us, whether or not you opted in to marketing. It is not removed by
+                deleting your account. The unsubscribe link in any of our emails stops further email;
+                to have the record deleted, email {SUPPORT_EMAIL} and we will delete it for you.
+              </li>
+            </ul>
 
-          <h2 className="text-base font-bold text-sage-900">Content shared with others</h2>
-          <p>
-            Kya &amp; Co. lets several people care for the same bird, so some of what you wrote may
-            live in another person's account. We do not delete their records of their own bird's
-            care, but your identity is removed from them.
-          </p>
-          <ul className="list-disc space-y-1 pl-5">
-            <li>
-              Care you logged on someone else's bird — journal entries, weight readings, daily logs —
-              stays with that bird's owner. Your name is removed, and the entry no longer points back
-              to you.
-            </li>
-            <li>
-              If you were a caregiver or sitter on someone else's sit, the sit itself stays with its
-              owner; your link to it is removed.
-            </li>
-            <li>
-              Birds that someone shared with you are not deleted. Your access ends immediately, and
-              the bird and its full history stay with its owner.
-            </li>
-            <li>
-              A bird you transferred to someone else already belongs to them, and is not affected by
-              deleting your account.
-            </li>
-          </ul>
+            <h2 className="pt-3 text-[19px] font-[700] leading-[1.2]" style={{ fontFamily: SERIF, color: K.forest }}>Content shared with others</h2>
+            <p>
+              Kya &amp; Co. lets several people care for the same bird, so some of what you wrote may
+              live in another person's account. We do not delete their records of their own bird's
+              care, but your identity is removed from them.
+            </p>
+            <ul className="list-disc space-y-1 pl-5">
+              <li>
+                Care you logged on someone else's bird — journal entries, weight readings, daily logs —
+                stays with that bird's owner. Your name is removed, and the entry no longer points back
+                to you.
+              </li>
+              <li>
+                If you were a caregiver or sitter on someone else's sit, the sit itself stays with its
+                owner; your link to it is removed.
+              </li>
+              <li>
+                Birds that someone shared with you are not deleted. Your access ends immediately, and
+                the bird and its full history stay with its owner.
+              </li>
+              <li>
+                A bird you transferred to someone else already belongs to them, and is not affected by
+                deleting your account.
+              </li>
+            </ul>
 
-          <h2 className="text-base font-bold text-sage-900">Questions</h2>
-          <p>
-            Email {SUPPORT_EMAIL}. See also our{" "}
-            <Link to="/privacy" className="font-medium text-sage-900 underline">Privacy Policy</Link>.
-          </p>
+            <h2 className="pt-3 text-[19px] font-[700] leading-[1.2]" style={{ fontFamily: SERIF, color: K.forest }}>Questions</h2>
+            <p>
+              Email {SUPPORT_EMAIL}. See also our{" "}
+              <Link to="/privacy" className="font-[700] underline" style={{ color: K.moss }}>Privacy Policy</Link>.
+            </p>
 
-          <p className="text-xs text-sage-600">Last updated: 5 September 2026.</p>
-        </div>
+            <p className="text-[13px]" style={{ color: K.quiet }}>Last updated: 5 September 2026.</p>
+          </div>
+        </KyaCard>
       </main>
     </div>
   );

@@ -1,5 +1,5 @@
 // Presentational context for both-roles users. On a bird the signed-in user
-// does NOT own, a compact house/teal banner explains the relationship so that
+// does NOT own, a compact white card with a forest house tile explains the relationship so that
 // gated controls read as intentional rather than missing. Renders nothing on
 // birds the user owns (no clutter) — and nothing until we know the user is a
 // member, so it never flashes on an owner's own birds.
@@ -7,6 +7,7 @@ import { House, Eye } from "lucide-react";
 import { useBirdContext } from "@/lib/useBirdContext";
 import { useTranslation, Trans } from "react-i18next";
 import type { TFunction } from "i18next";
+import { K, KyaIconTile } from "@/components/kya";
 
 /** "Sarah's household" / "Chris' household". The English possessive picks
  *  between two keys so translators get a plain {{name}} (Dutch can't reuse the
@@ -31,18 +32,19 @@ export function MemberContextBanner({ birdId, className = "" }: { birdId: string
     ? ownersHousehold(t, ownerName)
     : t("memberContext.thisHousehold", "this household");
   return (
+    // White card: sits on the mist bodies (bird page, weight, journal, plan);
+    // the thin line keeps its edge where it lands on a white body (full check).
     <div
-      className={`flex items-center gap-2.5 rounded-[14px] bg-[#e8f0f4] px-3.5 py-2.5 ring-1 ring-[var(--house)]/15 ${className}`}
+      className={`flex items-center gap-3 rounded-[20px] border bg-white px-4 py-3 ${className}`}
+      style={{ borderColor: K.line }}
     >
-      <span className="grid size-7 shrink-0 place-items-center rounded-full bg-[#dbe9ef] text-[var(--house)]">
-        <House className="size-4" />
-      </span>
-      <p className="text-[13px] leading-snug text-[var(--ink)]">
+      <KyaIconTile size={36}><House className="size-[18px]" /></KyaIconTile>
+      <p className="m-0 text-[14px] leading-[1.45]" style={{ color: K.quiet }}>
         <Trans
           i18nKey="memberContext.youreARole"
           defaults="You're a <1>{{role}}</1> in {{where}}."
           values={{ role, where }}
-          components={{ 1: <span className="font-[500]" /> }}
+          components={{ 1: <span className="font-[700]" style={{ color: K.forest }} /> }}
         />
       </p>
     </div>

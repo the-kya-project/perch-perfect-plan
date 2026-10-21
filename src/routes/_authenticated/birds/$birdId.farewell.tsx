@@ -177,7 +177,7 @@ function GuidancePaths({ name, ownerName, vet }: { name: string; ownerName: stri
             </button>
             {isOpen && (
               <div className="px-4 pb-4 pt-1">
-                <PathDetail path={p.key} name={name} ownerName={ownerName} vet={vet} audience="owner" />
+                <PathDetail path={p.key} name={name} ownerName={ownerName} vet={vet} audience="owner" look="kya" />
               </div>
             )}
           </div>

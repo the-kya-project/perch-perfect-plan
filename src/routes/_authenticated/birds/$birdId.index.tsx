@@ -15,12 +15,12 @@ import { useBirdPhotos } from "@/lib/useBirdPhotos";
 import { useBirdRole } from "@/lib/useBirdRole";
 import { useActiveSitIdForBird } from "@/components/CaregiverHome";
 import { useCapability } from "@/lib/useCapability";
-import { AgePicker } from "@/components/BirdPickers";
+import { AgePicker, BirdField } from "@/components/BirdPickers";
 import { MemberContextBanner } from "@/components/MemberContextBanner";
 import { PhotoCropper } from "@/components/PhotoCropper";
 import { useServerFn } from "@tanstack/react-start";
 import { getPendingHandoff, cancelHandoff, makePermanent } from "@/lib/handoff.functions";
-import { IconTile, PrimaryButton } from "@/components/system";
+import { IconTile } from "@/components/system";
 import { BirdPhotoSheet } from "@/components/BirdPhotoSheet";
 import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 import { toast } from "sonner";
@@ -31,7 +31,7 @@ import {
 } from "lucide-react";
 import { formatLocalDate } from "@/lib/dates";
 import { useDailyCheckToday, type BirdToday } from "@/lib/dailyCheck";
-import { K, KyaPage, KyaCard, KyaHeading, KyaIconButton, KyaLink, KyaPrimaryButton, KyaRow, KyaTag, KyaAvatarStack } from "@/components/kya";
+import { K, KyaPage, KyaCard, KyaHeading, KyaIconButton, KyaLink, KyaPrimaryButton, KyaSecondaryButton, KyaRow, KyaTag, KyaAvatarStack, KyaSheet, KyaLabel } from "@/components/kya";
 import { HeaderPill } from "@/components/headers";
 import { daysAgo } from "@/lib/scanConcern";
 import { useCarePlanStatus } from "@/lib/useCarePlanStatus";
@@ -118,14 +118,16 @@ function BirdRecordHome() {
 function BirdOffline() {
   const { t } = useTranslation();
   return (
-    <div className="setup-frame grid min-h-screen place-items-center px-8 pb-nav text-center" style={{ background: K.mist }}>
-      <div>
-        <h1 className="t-h2 text-[var(--ink)]">{t("birdRecord.youReOffline", "You're offline")}</h1>
-        <p className="t-body mx-auto mt-3 max-w-[28rem] text-[var(--mute2)]">
-          {t("birdRecord.thisRecordNeedsAConnection", "This record needs a connection. Nothing has been lost — it'll be here when you're back.")}
-        </p>
+    <KyaPage>
+      <div className="mx-auto grid min-h-screen max-w-md place-items-center px-4 text-center">
+        <KyaCard className="w-full px-5 py-6">
+          <KyaHeading as="h1" size={26}>{t("birdRecord.youReOffline", "You're offline")}</KyaHeading>
+          <p className="m-0 mx-auto mt-3 max-w-[28rem] text-[15px] leading-[1.5]" style={{ color: K.ink }}>
+            {t("birdRecord.thisRecordNeedsAConnection", "This record needs a connection. Nothing has been lost — it'll be here when you're back.")}
+          </p>
+        </KyaCard>
       </div>
-    </div>
+    </KyaPage>
   );
 }
 
@@ -134,19 +136,21 @@ function BirdNoAccess() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   return (
-    <div className="setup-frame grid min-h-screen place-items-center px-8 pb-nav text-center" style={{ background: K.mist }}>
-      <div>
-        <h1 className="t-h2 text-[var(--ink)]">{t("birdRecord.thisRecordIsnTYours", "This record isn't yours anymore")}</h1>
-        <p className="t-body mx-auto mt-3 max-w-[28rem] text-[var(--mute2)]">
-          {t("birdRecord.youMayHaveHandedThis", "You may have handed this bird off, or your access may have been removed. If you think that's wrong, ask whoever looks after the record now.")}
-        </p>
-        <div className="mt-5">
-          <PrimaryButton tone="sunflower" onPress={() => navigate({ to: "/dashboard" })}>
-            {t("birdRecord.backToYourFlock", "Back to your flock")}
-          </PrimaryButton>
-        </div>
+    <KyaPage>
+      <div className="mx-auto grid min-h-screen max-w-md place-items-center px-4 text-center">
+        <KyaCard className="w-full px-5 py-6">
+          <KyaHeading as="h1" size={26}>{t("birdRecord.thisRecordIsnTYours", "This record isn't yours anymore")}</KyaHeading>
+          <p className="m-0 mx-auto mt-3 max-w-[28rem] text-[15px] leading-[1.5]" style={{ color: K.ink }}>
+            {t("birdRecord.youMayHaveHandedThis", "You may have handed this bird off, or your access may have been removed. If you think that's wrong, ask whoever looks after the record now.")}
+          </p>
+          <div className="mt-5">
+            <KyaPrimaryButton onClick={() => navigate({ to: "/dashboard" })}>
+              {t("birdRecord.backToYourFlock", "Back to your flock")}
+            </KyaPrimaryButton>
+          </div>
+        </KyaCard>
       </div>
-    </div>
+    </KyaPage>
   );
 }
 
@@ -639,10 +643,11 @@ function fmtMonthYear(iso: string): string {
 
 type Pronoun = "him" | "her" | "them";
 
-/** Object pronoun from birds.sex ("male"/"Male", "female"/"Female"); anything else → them. */
+/** Object pronoun from birds.sex ("Male"/"male"/"m", "Female"/"female"/"f"),
+ *  matched on the first letter; anything else (or nothing) → them. */
 function pronounOf(sex: string | null | undefined): Pronoun {
-  const k = (sex ?? "").toLowerCase();
-  return k === "male" ? "him" : k === "female" ? "her" : "them";
+  const k = (sex ?? "").trim().toLowerCase().charAt(0);
+  return k === "m" ? "him" : k === "f" ? "her" : "them";
 }
 
 function handoffDetail(t: TFunction, name: string, p: Pronoun): string {
@@ -667,6 +672,16 @@ function deleteDetail(t: TFunction, name: string, p: Pronoun): string {
     : p === "her"
       ? t("birdRecord.deleteDetailHer", "Removes {{name}} and everything logged for her", { name })
       : t("birdRecord.deleteDetailThem", "Removes {{name}} and everything logged for them", { name });
+}
+
+/** The line in the delete confirmation. One key per pronoun so translations
+ *  can inflect the whole sentence. */
+function deleteConfirmLine(t: TFunction, name: string, p: Pronoun): string {
+  return p === "him"
+    ? t("birdRecord.deleteConfirmHim", "This removes {{name}} and everything logged for him. You can't undo this.", { name })
+    : p === "her"
+      ? t("birdRecord.deleteConfirmHer", "This removes {{name}} and everything logged for her. You can't undo this.", { name })
+      : t("birdRecord.deleteConfirmThem", "This removes {{name}} and everything logged for them. You can't undo this.", { name });
 }
 
 /** One 62px row in the "If things change" card: 40px tile, title, one-line detail, chevron. */
@@ -837,59 +852,45 @@ function DeleteBirdButton({ birdId, name, pronoun = "them" }: { birdId: string; 
         last
       />
       {confirming && (
-        // Modal renders ABOVE the bottom nav (z-50 vs nav's z-40), backdrop
-        // does NOT dismiss (destructive + irreversible — explicit choice only),
-        // and the sheet is bottom-anchored with max-h-[100dvh]: on iOS Safari
-        // the dynamic viewport shrinks when the keyboard appears so the action
-        // buttons (sticky-bottom inside the modal) ride up with it instead of
-        // disappearing behind the keyboard. The status-bar inset is also
-        // honoured so the top of the modal isn't hidden under the notch.
-        <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-labelledby="delete-bird-title">
-          <div className="absolute inset-0 bg-[var(--ink)]/55" aria-hidden="true" />
-          <div className="absolute inset-0 flex flex-col justify-end p-3">
-            <div
-              className="mx-auto flex w-full max-w-md flex-col overflow-hidden rounded-[18px] bg-white shadow-xl"
-              style={{ maxHeight: "calc(100dvh - max(env(safe-area-inset-top), 12px) - 1.5rem)" }}
-            >
-              <div className="overflow-y-auto p-5" style={{ background: "var(--red-fill)", borderBottom: "1px solid var(--red-line)" }}>
-                <h2 id="delete-bird-title" className="t-section" style={{ color: "var(--red-deep)" }}>{t("birdRecord.deleteNameQ", "Delete {{name}}?", { name })}</h2>
-                <p className="t-body mt-2" style={{ color: "var(--red-deep)" }}>
-                  {t("birdRecord.deleteWarning", "Permanently delete {{name}} and everything in their record — care plan, weights, scans, journal, and photos. This can't be undone.", { name })}
-                </p>
-                <label htmlFor="delete-confirm" className="t-eyebrow mt-4 block" style={{ color: "var(--red-deep)" }}>{t("birdRecord.typeToConfirm", "Type {{name}} to confirm", { name })}</label>
-                <input
-                  id="delete-confirm"
-                  className="input mt-1"
-                  value={text}
-                  onChange={(e) => setText(e.target.value)}
-                  placeholder={name}
-                  autoFocus
-                  autoCapitalize="off"
-                  autoCorrect="off"
-                />
-              </div>
-              <div className="flex shrink-0 gap-2 bg-white p-3 pb-[max(env(safe-area-inset-bottom),0.75rem)]">
-                <button
-                  type="button"
-                  disabled={deleting}
-                  onClick={() => { setConfirming(false); setText(""); }}
-                  className="min-h-[48px] flex-1 rounded-[12px] border border-[var(--line)] bg-white text-[15px] font-[500] text-[var(--ink)] disabled:opacity-50"
-                >
-                  {t("birdRecord.cancel", "Cancel")}
-                </button>
-                <button
-                  type="button"
-                  disabled={deleting || !ready}
-                  onClick={del}
-                  className="min-h-[48px] flex-1 rounded-[12px] text-[15px] font-[500] text-white disabled:opacity-50"
-                  style={{ background: "var(--red-ink)" }}
-                >
-                  {deleting ? t("birdRecord.deleting", "Deleting…") : t("birdRecord.deleteName", "Delete {{name}}", { name })}
-                </button>
-              </div>
+        // Dismissing (backdrop, Escape, Close) is the same as "Keep" and is
+        // blocked while the delete runs. The type-the-name gate is unchanged:
+        // Delete stays disabled until the name matches exactly.
+        <KyaSheet
+          onClose={() => { if (!deleting) { setConfirming(false); setText(""); } }}
+          closeLabel={t("birdRecord.close", "Close")}
+          title={<KyaHeading size={24}>{t("birdRecord.deleteNameQ", "Delete {{name}}?", { name })}</KyaHeading>}
+          footer={
+            <div className="flex flex-col gap-2.5">
+              <button
+                type="button"
+                disabled={deleting || !ready}
+                onClick={del}
+                className="inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full border-2 px-6 text-[16px] font-[700] text-white disabled:opacity-45"
+                style={{ background: K.red, borderColor: K.red }}
+              >
+                {deleting ? t("birdRecord.deleting", "Deleting…") : t("birdRecord.deleteName", "Delete {{name}}", { name })}
+              </button>
+              <KyaSecondaryButton className="w-full" disabled={deleting} onClick={() => { setConfirming(false); setText(""); }}>
+                {t("birdRecord.keepName", "Keep {{name}}", { name })}
+              </KyaSecondaryButton>
             </div>
+          }
+        >
+          <p className="m-0 text-[15px] leading-[1.5]" style={{ color: K.ink }}>{deleteConfirmLine(t, name, pronoun)}</p>
+          <div className="mt-4 flex flex-col gap-1.5">
+            <KyaLabel htmlFor="delete-confirm">{t("birdRecord.typeToConfirm", "Type {{name}} to confirm", { name })}</KyaLabel>
+            <input
+              id="delete-confirm"
+              className="kya-input"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder={name}
+              autoFocus
+              autoCapitalize="off"
+              autoCorrect="off"
+            />
           </div>
-        </div>
+        </KyaSheet>
       )}
     </>
   );
@@ -998,9 +999,9 @@ function BasicInfoCard({ birdId, bird, name, editable = true }: { birdId: string
 
       {editing ? (
         <div className="space-y-3 p-4">
-          <BasicField label={t("birdRecord.species", "Species")}>
-            <input className="input" value={f.species} maxLength={80} onChange={(e) => setF((p) => ({ ...p, species: e.target.value }))} />
-          </BasicField>
+          <BirdField label={t("birdRecord.species", "Species")}>
+            <input className="kya-input" value={f.species} maxLength={80} onChange={(e) => setF((p) => ({ ...p, species: e.target.value }))} />
+          </BirdField>
           {/* Age + Hatch date are coupled — AgePicker disables Age when a
               hatch date is set and derives age from it. */}
           <AgePicker
@@ -1009,22 +1010,22 @@ function BasicInfoCard({ birdId, bird, name, editable = true }: { birdId: string
             birthDate={f.birth_date}
             onChange={(next) => setF((p) => ({ ...p, age: next.age, birth_date: next.birthDate ?? "" }))}
           />
-          <BasicField label={t("birdRecord.sex", "Sex")}>
-            <select className="input" value={f.sex} onChange={(e) => setF((p) => ({ ...p, sex: e.target.value }))}>
+          <BirdField label={t("birdRecord.sex", "Sex")}>
+            <select className="kya-input" value={f.sex} onChange={(e) => setF((p) => ({ ...p, sex: e.target.value }))}>
               <option value="">{t("birdRecord.notSet", "Not set")}</option>
               <option value="male">{t("birdRecord.male", "Male")}</option>
               <option value="female">{t("birdRecord.female", "Female")}</option>
               <option value="unknown">{t("birdRecord.unknown", "Unknown")}</option>
             </select>
-          </BasicField>
-          <BasicField label={t("birdRecord.flight", "Flight")}>
-            <select className="input" value={f.flight_status} onChange={(e) => setF((p) => ({ ...p, flight_status: e.target.value }))}>
+          </BirdField>
+          <BirdField label={t("birdRecord.flight", "Flight")}>
+            <select className="kya-input" value={f.flight_status} onChange={(e) => setF((p) => ({ ...p, flight_status: e.target.value }))}>
               <option value="unknown">{t("birdRecord.unknown", "Unknown")}</option>
               <option value="fully_flighted">{t("birdRecord.fullyFlighted", "Fully flighted")}</option>
               <option value="clipped">{t("birdRecord.clipped", "Clipped")}</option>
               <option value="partially_clipped">{t("birdRecord.partiallyClipped", "Partially clipped")}</option>
             </select>
-          </BasicField>
+          </BirdField>
         </div>
       ) : (
         <dl className="m-0 pb-1">
@@ -1040,14 +1041,5 @@ function BasicInfoCard({ birdId, bird, name, editable = true }: { birdId: string
         </dl>
       )}
     </KyaCard>
-  );
-}
-
-function BasicField({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <label className="block">
-      <span className="mb-1 block text-[13px] font-[600]" style={{ color: K.quiet }}>{label}</span>
-      {children}
-    </label>
   );
 }

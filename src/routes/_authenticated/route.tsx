@@ -6,6 +6,8 @@ import { AuthClientStalled, getReadySession } from "@/lib/authReady";
 import { applyOAuthAttribution } from "@/lib/attribution";
 import { PullToRefresh } from "@/components/PullToRefresh";
 import { OwnerTabBar, isTaskPath } from "@/components/OwnerTabBar";
+import { BrandLockup } from "@/components/BrandLogo";
+import { K } from "@/components/kya";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -53,8 +55,11 @@ export const Route = createFileRoute("/_authenticated")({
 
 function AuthPending() {
   return (
-    <div className="grid min-h-screen place-items-center bg-[var(--cream)]" aria-hidden>
-      <Loader2 className="size-5 animate-spin text-[var(--moss)]" />
+    // Forest splash with the stacked lockup (the "ink" variant is drawn for
+    // forest surfaces: white wordmark). Static markup only — see above.
+    <div className="flex min-h-screen flex-col items-center justify-center gap-6" style={{ background: K.forest }} aria-hidden>
+      <BrandLockup orientation="stacked" variant="ink" size={180} alt="" />
+      <Loader2 className="size-5 animate-spin" style={{ color: K.lime }} />
     </div>
   );
 }
