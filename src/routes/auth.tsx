@@ -354,7 +354,7 @@ function AuthPage() {
                       value={firstName}
                       onChange={(e) => setFirstName(e.target.value)}
                       className="kya-input"
-                      placeholder={t("auth.firstNamePlaceholder", "Maya")}
+                      placeholder={t("auth.firstNamePlaceholderLabel", "First name")}
                     />
                   </div>
                   <div className="flex min-w-0 flex-col gap-1.5">
@@ -366,7 +366,7 @@ function AuthPage() {
                       value={lastName}
                       onChange={(e) => setLastName(e.target.value)}
                       className="kya-input"
-                      placeholder={t("auth.lastNamePlaceholder", "Lopez")}
+                      placeholder={t("auth.lastNamePlaceholderLabel", "Last name")}
                     />
                   </div>
                 </div>
