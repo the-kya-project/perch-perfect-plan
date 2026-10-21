@@ -23,6 +23,14 @@ function appUrl() {
 function makeToken() {
   return (crypto.randomUUID() + crypto.randomUUID()).replace(/-/g, "");
 }
+/** Signed URL for a bird photo stored in the private bird-photos bucket
+ *  (legacy data:/http values pass through). Same as household/sitter. */
+async function signBirdPhotoPath(sb: any, value: string | null | undefined): Promise<string | null> {
+  if (!value) return null;
+  if (value.startsWith("data:") || value.startsWith("http")) return value;
+  const { data } = await sb.storage.from("bird-photos").createSignedUrl(value, 3600);
+  return data?.signedUrl ?? null;
+}
 /** Display name, or null when there's nothing to show. Callers supply the fallback. */
 async function displayNameRaw(sb: any, userId: string): Promise<string | null> {
   const { data } = await sb.from("profiles").select("display_name").eq("id", userId).maybeSingle();
@@ -277,20 +285,35 @@ export const getHandoff = createServerFn({ method: "GET" })
     const sb = await getAdmin();
     const { data: h } = await sb.from("handoffs")
       .select("id, bird_id, sender_user_id, recipient_email, status, expires_at").eq("token", data.token).maybeSingle();
-    if (!h) return { valid: false as const };
+    if (!h) return { valid: false as const, accepted: false, birdName: null as string | null };
     const expired = new Date(h.expires_at as string).getTime() <= Date.now();
     if (h.status !== "pending" || expired) {
       if (h.status === "pending" && expired) await sb.from("handoffs").update({ status: "expired" }).eq("id", h.id);
-      return { valid: false as const };
+      // An accepted link says the bird is already home; only the name (which
+      // the link holder had from the email) — nothing else about the record.
+      if (h.status === "accepted") {
+        const { data: done } = await sb.from("birds").select("name").eq("id", h.bird_id).maybeSingle();
+        return { valid: false as const, accepted: true, birdName: (done?.name ?? null) as string | null };
+      }
+      return { valid: false as const, accepted: false, birdName: null as string | null };
     }
     // Raw data only: the handoff screen supplies the "Someone" / "this bird"
     // fallbacks in the reader's language.
     const senderName: string | null = await displayNameRaw(sb, h.sender_user_id as string);
-    const { data: bird } = await sb.from("birds").select("name").eq("id", h.bird_id).maybeSingle();
+    const { data: bird } = await sb.from("birds")
+      .select("name, species, sex, age, birth_date, photo_url, photo_position").eq("id", h.bird_id).maybeSingle();
     return {
       valid: true as const,
       senderName,
       birdName: (bird?.name ?? null) as string | null,
+      // Preview for the accept screen: signed photo from the private bucket,
+      // species/age/sex for the line under the title and the pronoun.
+      birdPhotoUrl: await signBirdPhotoPath(sb, bird?.photo_url),
+      birdPhotoPosition: (bird?.photo_position ?? null) as string | null,
+      species: (bird?.species ?? null) as string | null,
+      sex: (bird?.sex ?? null) as string | null,
+      age: (bird?.age ?? null) as string | null,
+      birthDate: (bird?.birth_date ?? null) as string | null,
       recipientEmail: h.recipient_email as string,
     };
   });
