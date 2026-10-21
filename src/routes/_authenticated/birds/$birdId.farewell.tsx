@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -62,15 +62,17 @@ function Farewell() {
   const name = bird?.name ?? t("farewell.yourBird", "your bird");
 
   // Never ambient: if the bird is already passed and we're not mid-flow (i.e.
-  // someone revisits this URL later), the memorial is the destination.
-  if (bird?.passed_at && step === "ask") {
-    navigate({ to: "/remembering", replace: true });
-    return null;
-  }
-  if (bird && !isOwner) {
-    navigate({ to: "/birds/$birdId", params: { birdId }, replace: true });
-    return null;
-  }
+  // someone revisits this URL later), the memorial is the destination. And a
+  // non-owner is bounced back to the bird page. Both redirect from an effect,
+  // not during render (navigating while rendering is a React warning and can
+  // loop); render nothing meanwhile.
+  const toMemorial = !!bird?.passed_at && step === "ask";
+  const notOwner = !!bird && !isOwner;
+  useEffect(() => {
+    if (toMemorial) navigate({ to: "/remembering", replace: true });
+    else if (notOwner) navigate({ to: "/birds/$birdId", params: { birdId }, replace: true });
+  }, [toMemorial, notOwner, navigate, birdId]);
+  if (toMemorial || notOwner) return null;
 
   async function confirm() {
     setBusy(true);

@@ -20,7 +20,7 @@ import { encodeSetupStep, basicsDone } from "@/lib/setupProgress";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { mergeHome, homeDifferences, seedShared, sameGroup, followSharedPatch, clearOwnPatch, birdHasOwn, HOME_GROUPS, HOME_GROUP_COLUMNS, parseCleaning, formatCleaning, CLEANING_NEVER_DEFAULTS, type HomeRow } from "@/lib/homeDefaults";
 import { EmergencyContactsScreen, type EmergencySetupState } from "@/components/setup/EmergencyContactsScreen";
-import { Plus, X, Check, Lightbulb, GripVertical, Sparkles, AlertTriangle, Pill, ChevronDown, Play, Video, Sunrise, Sun, Sunset, Moon, Clock, Soup, DoorClosed, SprayCan, Camera } from "lucide-react";
+import { ArrowLeft, Plus, X, Check, Lightbulb, GripVertical, Sparkles, AlertTriangle, Pill, ChevronDown, Play, Video, Sunrise, Sun, Sunset, Moon, Clock, Soup, DoorClosed, SprayCan, Camera } from "lucide-react";
 import { PhotoCropper } from "@/components/PhotoCropper";
 import { AgePicker, BirdField, SpeciesPicker } from "@/components/BirdPickers";
 import { ClipRecorder, UploadProgress } from "@/components/ClipRecorder";
@@ -496,6 +496,9 @@ function BirdSetup() {
         onBack={onBack}
         footer={
           <div className="flex items-center gap-3">
+            {/* Not a dead end: Back returns to the Health step (onBack's
+                stop-point branch), same control as every other step's footer. */}
+            <SetupTextButton onClick={onBack} icon={<ArrowLeft className="size-4" aria-hidden="true" />}>{t("setupShell.back", "Back")}</SetupTextButton>
             <SetupTextButton onClick={setUpLater}>{t("birdSetup.stop.later", "Set up later")}</SetupTextButton>
             <div className="min-w-0 flex-1">
               <SetupPrimaryButton onClick={keepGoing}>{t("birdSetup.stop.keepGoing", "Keep going")}</SetupPrimaryButton>

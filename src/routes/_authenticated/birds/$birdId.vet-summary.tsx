@@ -11,6 +11,8 @@ import { formatAmountUnitDisplay } from "@/lib/labels";
 import { normalizeFeedTimes, feedTimeLabel } from "@/lib/feedTimes";
 import { K, SERIF, KyaPage, KyaBody, KyaCard, KyaHeading, KyaIconTile, KyaLink, KyaPrimaryButton, KyaSecondaryButton } from "@/components/kya";
 import { PageHeader, useGoBack } from "@/components/headers";
+import { LoadError } from "@/components/LoadError";
+import { useLoadState } from "@/lib/useTooLong";
 import { useCapability } from "@/lib/useCapability";
 import { flaggedAnswers } from "@/lib/healthHistory";
 import { SCAN_FIELDS } from "@/lib/triage";
@@ -65,35 +67,44 @@ function VetSummary() {
   // The "Add them" link opens the identity editor, which needs manage_flock.
   const canEditIdentity = useCapability("manage_flock", { birdId });
 
-  const { data: bird } = useQuery({
+  // Every query here throws on a failed request: a summary rendered from a
+  // failed load reads as a record full of "Not added", which is not the same
+  // thing as a record that is genuinely empty.
+  const birdQ = useQuery({
     queryKey: ["vet-bird", birdId],
     queryFn: async () => {
-      const { data } = await supabase.from("birds")
+      const { data, error } = await supabase.from("birds")
         .select("name, species, sex, sex_method, age, birth_date, microchip, band_number, origin, medications, medical_conditions, owner_id")
         .eq("id", birdId).maybeSingle();
+      if (error) throw error;
       return data as any;
     },
   });
-  const { data: plan } = useQuery({
+  const { data: bird } = birdQ;
+  const planQ = useQuery({
     queryKey: ["vet-plan", birdId],
     queryFn: async () => {
-      const { data } = await supabase.from("care_plans").select("*").eq("bird_id", birdId).maybeSingle();
+      const { data, error } = await supabase.from("care_plans").select("*").eq("bird_id", birdId).maybeSingle();
+      if (error) throw error;
       return data as any;
     },
   });
-  const { data: weights } = useQuery({
+  const { data: plan } = planQ;
+  const weightsQ = useQuery({
     queryKey: ["weight-entries", birdId],
     queryFn: async () => {
       // IDENTICAL query to the weight page (same shared key, same shape) — the
       // two previously selected different columns under one key, so whichever
       // loaded last poisoned the other's cache. The full row feeds both the
       // trend line in the body AND the complete weight appendix.
-      const { data } = await supabase.from("weight_entries")
+      const { data, error } = await supabase.from("weight_entries")
         .select("*").eq("bird_id", birdId)
         .order("measured_at", { ascending: false }).limit(2000);
+      if (error) throw error;
       return (data ?? []) as unknown as WeightRow[];
     },
   });
+  const { data: weights } = weightsQ;
 
   // Flagged for review: every health check in the last 6 months where ANY item
   // came back not_sure/concerning — regardless of overall triage. Fetch the
@@ -103,19 +114,25 @@ function VetSummary() {
   // reached the vet. "*" for the same reason as the health history: a status
   // column not yet in the database comes back absent instead of failing the
   // whole query.
-  const { data: flaggedScans } = useQuery({
+  const flaggedQ = useQuery({
     queryKey: ["vet-flagged", birdId],
     queryFn: async () => {
       const cutoff = new Date(Date.now() - 183 * 86_400_000).toISOString().slice(0, 10);
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("daily_logs")
         .select("*")
         .eq("bird_id", birdId)
         .gte("log_date", cutoff)
         .order("created_at", { ascending: false });
+      if (error) throw error;
       return ((data ?? []) as any[]).filter((r) => flaggedAnswers(r).length > 0 || legacyWaterAnswer(r) !== null);
     },
   });
+  const { data: flaggedScans } = flaggedQ;
+
+  // A failed load (or one still waiting after 10 s) shows a retry instead of a
+  // summary full of "Not added" — failure is not the same as empty.
+  const load = useLoadState([birdQ, planQ, weightsQ, flaggedQ]);
 
   const name = bird?.name ?? t("vetSummary.thisBird", "This bird");
   const { current, baseline, trend, delta } = computeWeightTrend(weights ?? [], 90);
@@ -253,6 +270,10 @@ function VetSummary() {
       </div>
 
       <KyaBody>
+        {load.failed ? (
+          <LoadError onRetry={load.retry} onBack={goBack} />
+        ) : (
+        <>
         {missingText && (
           <div data-noprint>
             <KyaCard className="flex items-start gap-3 p-4">
@@ -343,6 +364,8 @@ function VetSummary() {
               <WeightAppendix entries={weights ?? []} />
             </article>
           </>
+        )}
+        </>
         )}
       </KyaBody>
 

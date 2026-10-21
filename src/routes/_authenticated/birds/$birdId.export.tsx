@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { speciesLabel } from "@/lib/speciesLabel";
 import { birdAgeLabel } from "@/lib/birdAge";
 import { useQuery } from "@tanstack/react-query";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
@@ -12,6 +12,8 @@ import { toast } from "sonner";
 import { Printer, Share2, Loader2, AlertTriangle } from "lucide-react";
 import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaField, KyaLink, KyaPrimaryButton, KyaSecondaryButton, KyaSheet } from "@/components/kya";
 import { PageHeader, useGoBack } from "@/components/headers";
+import { LoadError } from "@/components/LoadError";
+import { useLoadState } from "@/lib/useTooLong";
 import { isNativeApp } from "@/lib/nativeApp";
 import { formatLocalDate } from "@/lib/dates";
 import { parseCalendarDate } from "@/lib/localDay";
@@ -55,39 +57,74 @@ function ExportRecord() {
   const [recipientName, setRecipientName] = useState("");
   const goBack = useGoBack(useCallback(() => navigate({ to: "/birds/$birdId/handoff", params: { birdId } }), [navigate, birdId]));
 
-  const { data: bird } = useQuery({
+  // Every query throws on a failed request: a sheet rendered from a failed load
+  // reads as a record full of "none on file", which is not the same thing as a
+  // record that is genuinely empty — and this one gets handed to an adopter.
+  const birdQ = useQuery({
     queryKey: ["export-bird", birdId],
     queryFn: async () => {
       const { data: u } = await getLocalUser();
-      const { data } = await supabase.from("birds")
+      const { data, error } = await supabase.from("birds")
         .select("*") // "*" so the page works before intake_date_source exists (lib/missingColumn.ts)
         .eq("id", birdId).maybeSingle();
+      if (error) throw error;
       return { row: data as any, uid: u.user?.id ?? null };
     },
   });
-  const { data: plan } = useQuery({
+  const { data: bird } = birdQ;
+  const planQ = useQuery({
     queryKey: ["export-plan", birdId],
-    queryFn: async () => (await supabase.from("care_plans").select("*").eq("bird_id", birdId).maybeSingle()).data as any,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("care_plans").select("*").eq("bird_id", birdId).maybeSingle();
+      if (error) throw error;
+      return data as any;
+    },
   });
-  const { data: weights } = useQuery({
+  const { data: plan } = planQ;
+  const weightsQ = useQuery({
     queryKey: ["export-weights", birdId],
-    queryFn: async () => ((await supabase.from("weight_entries").select("grams, measured_at").eq("bird_id", birdId).order("measured_at", { ascending: false }).limit(40)).data ?? []) as { grams: number; measured_at: string }[],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("weight_entries").select("grams, measured_at").eq("bird_id", birdId).order("measured_at", { ascending: false }).limit(40);
+      if (error) throw error;
+      return (data ?? []) as { grams: number; measured_at: string }[];
+    },
   });
-  const { data: journal } = useQuery({
+  const { data: weights } = weightsQ;
+  const journalQ = useQuery({
     queryKey: ["export-journal", birdId],
-    queryFn: async () => ((await supabase.from("journal_entries").select("body, created_at").eq("bird_id", birdId).order("created_at", { ascending: false }).limit(50)).data ?? []) as { body: string; created_at: string }[],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("journal_entries").select("body, created_at").eq("bird_id", birdId).order("created_at", { ascending: false }).limit(50);
+      if (error) throw error;
+      return (data ?? []) as { body: string; created_at: string }[];
+    },
   });
-  const { data: moments } = useQuery({
+  const { data: journal } = journalQ;
+  const momentsQ = useQuery({
     queryKey: ["export-moments", birdId],
-    queryFn: async () => ((await supabase.from("moments").select("title, on_date").eq("bird_id", birdId).order("on_date", { ascending: true }).limit(100)).data ?? []) as { title: string; on_date: string | null }[],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("moments").select("title, on_date").eq("bird_id", birdId).order("on_date", { ascending: true }).limit(100);
+      if (error) throw error;
+      return (data ?? []) as { title: string; on_date: string | null }[];
+    },
   });
+  const { data: moments } = momentsQ;
+
+  // A failed load (or one still waiting after 10 s) shows a retry instead of an
+  // empty sheet — failure is not the same as empty.
+  const load = useLoadState([birdQ, planQ, weightsQ, journalQ, momentsQ]);
 
   const row = bird?.row;
   const name = row?.name ?? t("exportRecord.thisBird", "This bird");
   const complete = useServerFn(completePdfHandoff);
   const [busy, setBusy] = useState(false);
-  const notOwner = row && bird?.uid && row.owner_id !== bird.uid;
-  if (notOwner) { navigate({ to: "/birds/$birdId", params: { birdId }, replace: true }); return null; }
+  // Not the owner → this screen isn't for them. Redirect from an effect, not
+  // during render (navigating while rendering is a React warning and can loop);
+  // render nothing meanwhile.
+  const notOwner = !!(row && bird?.uid && row.owner_id !== bird.uid);
+  useEffect(() => {
+    if (notOwner) navigate({ to: "/birds/$birdId", params: { birdId }, replace: true });
+  }, [notOwner, navigate, birdId]);
+  if (notOwner) return null;
 
   async function confirmHandoff() {
     setBusy(true);
@@ -166,6 +203,10 @@ function ExportRecord() {
       />
 
       <KyaBody>
+        {load.failed ? (
+          <LoadError onRetry={load.retry} onBack={goBack} />
+        ) : (
+        <>
         {/* window.print() does nothing inside the native shells — no WebKit print
             delegate on iOS, no window.print at all in Android's WebView (see
             BUG-7). Here that mattered more than on the vet summary: this is the
@@ -248,6 +289,8 @@ function ExportRecord() {
               : t("exportRecord.confirmPromptWeb", "I gave them the PDF — did you hand off {{name}}?", { name })}
           </KyaSecondaryButton>
         </div>
+        </>
+        )}
       </KyaBody>
 
       <KyaSheet
