@@ -9,11 +9,12 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
-import { Check, Cross, Phone, AlertTriangle, ShoppingBag, Contact } from "lucide-react";
+import { Check, Cross, Phone, AlertTriangle, ShoppingBag, Contact, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { ASPCA_POISON_CONTROL, EMERGENCY_FIELDS, isPhoneField, phoneWarning, formatPhoneOnBlur } from "@/lib/emergency";
 import { friendlyError } from "@/lib/errorMessage";
+import { useConfirm } from "@/components/ConfirmSheet";
 import { BottomSheet } from "./BottomSheet";
 import { S, SERIF, TileCard, Tag, Field, TextField, SetupPrimaryButton, SetupTextButton, SetupSecondaryButton } from "./controls";
 
@@ -76,6 +77,7 @@ export function EmergencyContactsScreen({
   const [sheet, setSheet] = useState<RowKey | null>(null);
   const [form, setForm] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const { confirm, sheet: confirmSheet } = useConfirm();
 
   const clean = (row: any) => Object.fromEntries(EMERGENCY_FIELDS.map((k) => [k, (row?.[k] ?? "").toString().trim()]));
 
@@ -168,7 +170,13 @@ export function EmergencyContactsScreen({
   }
 
   async function useShared() {
-    if (!window.confirm(t("emergencySetup.useSharedConfirm", "Use your shared emergency contacts for {{name}}? The contacts that are different for {{name}} will be removed.", { name: birdName }))) return;
+    const ok = await confirm({
+      title: t("emergencySetup.useSharedConfirmTitle", "Use your shared contacts for {{name}}?", { name: birdName }),
+      body: t("emergencySetup.useSharedConfirmBody", "The contacts that are different for {{name}} will be removed.", { name: birdName }),
+      confirmLabel: t("emergencySetup.useSharedConfirmAction", "Use shared contacts"),
+      cancelLabel: t("emergencySetup.useSharedConfirmKeep", "Keep them different"),
+    });
+    if (!ok) return;
     const clear = Object.fromEntries(EMERGENCY_FIELDS.map((f) => [f, null]));
     const { error } = await supabase.from("emergency_contacts").update(clear as any).eq("bird_id", birdId);
     if (error) { toast.error(friendlyError(error)); return; }
@@ -204,7 +212,7 @@ export function EmergencyContactsScreen({
         type="button"
         onClick={() => open(k)}
         className={`flex min-h-[60px] w-full items-center gap-3 rounded-[14px] px-4 py-2.5 text-left ${filled ? "" : "border-2 border-dashed bg-white"}`}
-        style={filled ? { background: S.card, color: S.forest } : { borderColor: "#b9b19a", color: S.forest }}
+        style={filled ? { background: S.card, color: S.forest } : { borderColor: S.footerLine, color: S.forest }}
       >
         <span className="min-w-0 flex-1">
           <span className="block text-[13px]" style={{ color: S.quiet }}>{rowLabel(t, k)}</span>
@@ -249,10 +257,10 @@ export function EmergencyContactsScreen({
       <TileCard icon={<Cross className="size-5" />} title={t("emergencySetup.vets", "Vets")}>
         <div className="flex flex-col gap-2">{row("avian_vet", true)}{row("emergency_vet")}</div>
       </TileCard>
-      <TileCard tile="teal" icon={<Phone className="size-5" />} title={t("emergencySetup.you", "You")}>
+      <TileCard icon={<Phone className="size-5" />} title={t("emergencySetup.you", "You")}>
         <div className="flex flex-col gap-2">{row("owner_phone", true)}{row("backup")}</div>
       </TileCard>
-      <TileCard tile="amber" icon={<AlertTriangle className="size-5" />} title={t("emergencySetup.poisonControl", "Poison control")}>
+      <TileCard icon={<AlertTriangle className="size-5" />} title={t("emergencySetup.poisonControl", "Poison control")}>
         {row("poison_control")}
       </TileCard>
       <TileCard icon={<ShoppingBag className="size-5" />} title={t("emergencySetup.transport", "Transport & spending")}>
@@ -262,7 +270,18 @@ export function EmergencyContactsScreen({
       {sheet && (
         <BottomSheet onClose={() => setSheet(null)}>
           <div className="flex flex-col gap-4" style={{ color: S.forest }}>
-            <h2 className="m-0 text-[24px] font-[700] leading-[1.15]" style={{ fontFamily: SERIF }}>{rowLabel(t, sheet)}</h2>
+            <div className="flex items-start gap-3">
+              <h2 className="m-0 min-w-0 flex-1 pt-2 text-[24px] font-[700] leading-[1.15]" style={{ fontFamily: SERIF }}>{rowLabel(t, sheet)}</h2>
+              <button
+                type="button"
+                aria-label={t("foodEditor.closeSheet", "Close")}
+                onClick={() => setSheet(null)}
+                className="grid size-11 shrink-0 place-items-center rounded-full active:scale-95"
+                style={{ background: S.card, color: S.forest }}
+              >
+                <X className="size-5" aria-hidden="true" />
+              </button>
+            </div>
             {sheet === "backup" && canPickContacts && (
               <SetupSecondaryButton onClick={pickContact}>
                 <Contact className="size-5" aria-hidden="true" /> {t("emergencySetup.pickFromContacts", "Pick from contacts")}
@@ -293,6 +312,7 @@ export function EmergencyContactsScreen({
           </div>
         </BottomSheet>
       )}
+      {confirmSheet}
     </div>
   );
 }
