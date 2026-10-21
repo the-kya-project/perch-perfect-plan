@@ -124,3 +124,28 @@ export function emergencyDifferent(contacts: Record<string, any> | null | undefi
   const v = (row: Record<string, any> | null | undefined, k: string) => (row?.[k] ?? "").toString().trim();
   return EMERGENCY_FIELDS.some((k) => v(contacts, k) !== "" && v(contacts, k) !== v(defaults, k));
 }
+
+export type VetRecord = { kind: "avian" | "emergency"; name: string | null; phone: string | null; address: string | null };
+
+/**
+ * The one vet to call when a screen shows a single vet row: the avian vet if
+ * it has a number, else the after-hours emergency vet. The record is picked
+ * FIRST and its name, phone, and address are read together, so a row never
+ * shows one vet's name with the other's number. `kind` drives the row label
+ * ("Avian vet" vs "After-hours emergency vet"). Null when neither has anything.
+ */
+export function pickVet(contacts: Record<string, any> | null | undefined): VetRecord | null {
+  const rec = (kind: VetRecord["kind"]): VetRecord => ({
+    kind,
+    name: clean(contacts?.[`${kind}_vet_name`]),
+    phone: clean(contacts?.[`${kind}_vet_phone`]),
+    address: clean(contacts?.[`${kind}_vet_address`]),
+  });
+  const avian = rec("avian");
+  const emergency = rec("emergency");
+  if (avian.phone) return avian;
+  if (emergency.phone) return emergency;
+  if (avian.name || avian.address) return avian;
+  if (emergency.name || emergency.address) return emergency;
+  return null;
+}

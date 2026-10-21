@@ -293,8 +293,10 @@ export const getCaregiverConcernContext = createServerFn({ method: "GET" })
       sb.from("emergency_contacts").select("*").eq("bird_id", data.birdId).maybeSingle(),
       sb.from("owner_emergency_defaults").select("*").eq("owner_id", (bird as any).owner_id).maybeSingle(),
     ]);
-    const { mergeEmergency } = await import("./emergency");
+    const { mergeEmergency, pickVet } = await import("./emergency");
     const merged = { ...(contacts ?? {}), ...mergeEmergency(contacts as any, defaults as any) } as any;
+    // One vet record, picked first, so the name and number always match.
+    const vet = pickVet(merged);
     // Raw name or null — the client supplies the localized "the owner" fallback.
     const resolvedOwner = await resolveDisplayName(sb, (bird as any).owner_id, "");
     const ownerName: string | null = resolvedOwner || null;
@@ -304,8 +306,8 @@ export const getCaregiverConcernContext = createServerFn({ method: "GET" })
       birdName: (bird as any).name as string,
       ownerName,
       ownerPhone: (merged?.owner_phone ?? null) as string | null,
-      vetName: (merged?.avian_vet_name ?? merged?.emergency_vet_name ?? null) as string | null,
-      vetPhone: (merged?.avian_vet_phone ?? merged?.emergency_vet_phone ?? null) as string | null,
+      vetName: vet?.name ?? null,
+      vetPhone: vet?.phone ?? null,
       paused: !!(covering.remindersPausedAt || (bird as any).passed_at),
     };
   });

@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { useBirdRole } from "@/lib/useBirdRole";
 import { markBirdPassed } from "@/lib/passed.functions";
-import { mergeEmergency } from "@/lib/emergency";
+import { mergeEmergency, pickVet } from "@/lib/emergency";
 import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaPrimaryButton, KyaSecondaryButton } from "@/components/kya";
 import { PageHeader, useGoBack } from "@/components/headers";
 import { PathDetail, type PassingPath, type VetContact } from "@/components/PassingGuidance";
@@ -47,10 +47,9 @@ function Farewell() {
         u.user ? supabase.from("profiles").select("display_name").eq("id", u.user.id).maybeSingle() : Promise.resolve({ data: null } as any),
       ]);
       const merged = mergeEmergency(contacts.data as any, defaults.data as any) as any;
-      const vet: VetContact = {
-        name: merged?.avian_vet_name ?? merged?.emergency_vet_name ?? null,
-        phone: merged?.avian_vet_phone ?? merged?.emergency_vet_phone ?? null,
-      };
+      // One vet record, picked first, so the name and number always match.
+      const picked = pickVet(merged);
+      const vet: VetContact = { name: picked?.name ?? null, phone: picked?.phone ?? null };
       return {
         bird: bird.data as any,
         vet,

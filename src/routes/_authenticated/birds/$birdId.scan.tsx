@@ -9,7 +9,8 @@ import { useActiveSitIdForBird } from "@/components/CaregiverHome";
 import { toast } from "sonner";
 import { buildDailyLogRow, type ScanAnswers } from "@/lib/dailyLog";
 import { saveWeight, invalidateAfterCheck } from "@/lib/dailyCheck";
-import { mergeEmergency } from "@/lib/emergency";
+import { mergeEmergency, pickVet } from "@/lib/emergency";
+import { useBirdOwnerEmergency } from "@/lib/useOwnerEmergency";
 import { FullHealthCheck, type FullCheckSubmit } from "@/components/FullHealthCheck";
 import { K, KyaCard, KyaPage, KyaPrimaryButton, KyaSecondaryButton } from "@/components/kya";
 import { TaskHeader, useGoBack } from "@/components/headers";
@@ -61,17 +62,16 @@ function OwnerScan() {
     queryFn: async () => {
       const { data } = await supabase.from("birds").select("name, sex, owner_id").eq("id", birdId).maybeSingle();
       const b = data as { name: string; sex: string | null; owner_id: string | null } | null;
-      // The avian vet number: the bird's own, else the owner's account default.
-      const [{ data: ec }, { data: defs }] = await Promise.all([
-        supabase.from("emergency_contacts").select("avian_vet_phone").eq("bird_id", birdId).maybeSingle(),
-        b?.owner_id
-          ? supabase.from("owner_emergency_defaults").select("avian_vet_phone").eq("owner_id", b.owner_id).maybeSingle()
-          : Promise.resolve({ data: null } as any),
-      ]);
-      return { name: b?.name ?? null, sex: b?.sex ?? null, vetPhone: mergeEmergency(ec as any, defs as any).avian_vet_phone };
+      // The bird's own vet details; the owner's account defaults fill the rest
+      // (useBirdOwnerEmergency — household members can't read those directly).
+      const { data: ec } = await supabase.from("emergency_contacts").select("*").eq("bird_id", birdId).maybeSingle();
+      return { name: b?.name ?? null, sex: b?.sex ?? null, contacts: ec ?? null };
     },
   });
   const name = bird?.name ?? t("ownerScan.thisBird", "this bird");
+  const { defaults: vetDefaults } = useBirdOwnerEmergency(birdId);
+  // One vet record (avian, else after-hours), so the name and number match.
+  const vet = pickVet(mergeEmergency(bird?.contacts as any, vetDefaults ?? null));
 
   const toRecord = useCallback(() => navigate({ to: "/birds/$birdId", params: { birdId } }), [navigate, birdId]);
   const goBack = useGoBack(toRecord);
@@ -130,7 +130,7 @@ function OwnerScan() {
         birdId={birdId}
         name={name}
         sex={bird?.sex}
-        vetPhone={bird?.vetPhone ?? null}
+        vet={vet}
         submitting={submitting}
         onSubmit={onSubmit}
         onLeave={goBack}

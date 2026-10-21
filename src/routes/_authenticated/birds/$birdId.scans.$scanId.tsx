@@ -12,7 +12,8 @@ import { resolveScanPhotoUrls } from "@/lib/scanPhoto";
 import { friendlyError } from "@/lib/errorMessage";
 import { formatLocalDate, formatLocalTime, monthDay } from "@/lib/dates";
 import { localDateISO } from "@/lib/localDay";
-import { mergeEmergency } from "@/lib/emergency";
+import { mergeEmergency, pickVet } from "@/lib/emergency";
+import { useBirdOwnerEmergency } from "@/lib/useOwnerEmergency";
 import { isStored } from "@/lib/healthHistory";
 import type { ScanFieldKey } from "@/lib/triage";
 import i18next from "i18next";
@@ -206,20 +207,18 @@ function ScanDetail() {
         weight = (ws?.[0] as any) ?? null;
       }
 
-      // The avian vet number: the bird's own, else the owner's account default.
-      const [{ data: ec }, { data: defs }] = await Promise.all([
-        supabase.from("emergency_contacts").select("avian_vet_phone").eq("bird_id", birdId).maybeSingle(),
-        bird?.owner_id
-          ? supabase.from("owner_emergency_defaults").select("avian_vet_phone").eq("owner_id", bird.owner_id).maybeSingle()
-          : Promise.resolve({ data: null } as any),
-      ]);
-      const vetPhone = mergeEmergency(ec as any, defs as any).avian_vet_phone;
+      // The bird's own vet details; the owner's account defaults fill the rest
+      // (useBirdOwnerEmergency below — household members can't read those directly).
+      const { data: ec } = await supabase.from("emergency_contacts").select("*").eq("bird_id", birdId).maybeSingle();
 
-      return { row: row as any, actor, birdName: (bird?.name ?? null) as string | null, photos: resolvedPhotos as { id: string; photo_url: string }[], weight, vetPhone };
+      return { row: row as any, actor, birdName: (bird?.name ?? null) as string | null, photos: resolvedPhotos as { id: string; photo_url: string }[], weight, contacts: ec ?? null };
     },
   });
 
   const row = data?.row;
+  const { defaults: vetDefaults } = useBirdOwnerEmergency(birdId);
+  // One vet record (avian, else after-hours), so the number is a real vet's.
+  const vetPhone = pickVet(mergeEmergency(data?.contacts as any, vetDefaults ?? null))?.phone ?? null;
 
   if (isLoading || !row) {
     return (
@@ -293,16 +292,16 @@ function ScanDetail() {
             <p className="m-0 mt-3 text-[15px] font-[700]">
               {t("scanDetail.markedResolvedOn", "Marked resolved {{date}}", { date: monthDay(localDateISO(new Date(row.resolved_at))) })}
             </p>
-          ) : (canHealth || data!.vetPhone) ? (
+          ) : (canHealth || vetPhone) ? (
             <div className="mt-3 flex gap-2">
               {canHealth && (
                 <KyaSecondaryButton className="flex-1" onClick={markResolved} disabled={resolving} icon={resolving ? <Loader2 className="size-4 animate-spin" /> : undefined}>
                   {t("scanDetail.markResolved", "Mark resolved")}
                 </KyaSecondaryButton>
               )}
-              {data!.vetPhone && (
+              {vetPhone && (
                 <a
-                  href={`tel:${data!.vetPhone.replace(/[^\d+]/g, "")}`}
+                  href={`tel:${vetPhone.replace(/[^\d+]/g, "")}`}
                   className="inline-flex min-h-[48px] flex-1 items-center justify-center gap-2 rounded-full border-2 bg-white px-4 text-[15px] font-[700] active:scale-[0.99]"
                   style={{ borderColor: K.forest, color: K.forest }}
                 >

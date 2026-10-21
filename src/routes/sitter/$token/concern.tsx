@@ -8,6 +8,7 @@ import { isOwnerPreview } from "@/lib/sitterPreviewMode";
 import { ConcernFlow } from "@/components/ConcernFlow";
 import { track } from "@/lib/analytics";
 import type { VetContact } from "@/components/PassingGuidance";
+import { pickVet } from "@/lib/emergency";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 import { friendlyError } from "@/lib/errorMessage";
@@ -35,10 +36,9 @@ function ConcernPage() {
   const name = ctx.bird.name as string;
   const owner = ((ctx as any).ownerName ?? "the owner") as string;
   const ownerPhone = ((ctx.contacts as any)?.owner_phone ?? null) as string | null;
-  const vet: VetContact = {
-    name: ((ctx.contacts as any)?.avian_vet_name ?? (ctx.contacts as any)?.emergency_vet_name ?? null) as string | null,
-    phone: ((ctx.contacts as any)?.avian_vet_phone ?? (ctx.contacts as any)?.emergency_vet_phone ?? null) as string | null,
-  };
+  // One vet record, picked first, so the name and number always match.
+  const picked = pickVet(ctx.contacts as any);
+  const vet: VetContact = { name: picked?.name ?? null, phone: picked?.phone ?? null };
 
   const m = useMutation({
     mutationFn: () => pauseFn({ data: { token, birdId: ctx.activeBirdId as string, preview: isOwnerPreview() } }),
@@ -57,7 +57,7 @@ function ConcernPage() {
     : sexInitial === "f"
     ? t("sitter.concern.line_f", "If she's sick, hurt, or has passed, here's what to do.")
     : t("sitter.concern.line_n", "If they're sick, hurt, or have passed, here's what to do.");
-  const vetIsAvian = !!(ctx.contacts as any)?.avian_vet_phone;
+  const vetIsAvian = picked?.kind !== "emergency";
 
   return (
     <KyaPage>

@@ -16,6 +16,7 @@ import { track } from "@/lib/analytics";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { friendlyError } from "@/lib/errorMessage";
+import { pickVet } from "@/lib/emergency";
 import { localDateISO } from "@/lib/localDay";
 
 export const Route = createFileRoute("/sitter/$token/scan")({
@@ -109,7 +110,8 @@ function ScanPage() {
     onError: (e: any) => toast.error(friendlyError(e, t("sitter.scan.errorToast", "Could not log health check."), t)),
   });
 
-  const vetPhone = ((ctx.contacts as any)?.avian_vet_phone as string | null | undefined) || null;
+  // One vet record (avian, else after-hours), so the name and number match.
+  const vet = pickVet(ctx.contacts as any);
 
   return (
     <>
@@ -121,7 +123,7 @@ function ScanPage() {
           birdId={birdId}
           name={ctx.bird.name}
           sex={(ctx.bird as any).sex}
-          vetPhone={vetPhone}
+          vet={vet}
           submitting={m.isPending}
           onSubmit={(p) => m.mutate(p)}
           onLeave={() => toToday()}
