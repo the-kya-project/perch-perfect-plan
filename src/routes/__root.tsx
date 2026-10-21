@@ -28,6 +28,7 @@ import { applyOwnerLocale } from "@/lib/i18n/ownerLocale";
 import {
   registerServiceWorker, installChunkErrorRecovery, hardResetAndReload,
   isStaleChunkError, staleChunkRecoveryExhausted, reloadForStaleChunk,
+  markAppHealthySoon, STARTUP_FAILED_EVENT,
 } from "@/lib/sw-register";
 import { captureFirstTouch } from "@/lib/attribution";
 import { attachNativePushHandlers, syncNativePushToken } from "@/lib/pushNative";
@@ -61,16 +62,14 @@ function NotFoundComponent() {
 }
 
 function ErrorComponent({ error }: ErrorComponentProps) {
-  const { t } = useTranslation();
   console.error(error);
   // A stale-build chunk 404 (lazy route import after a deploy swapped the
   // precache) is SELF-HEALING: installChunkErrorRecovery reloads onto the fresh
   // build. Rendering the error screen during that window reads as "the app
   // broke" — show a calm loader instead and trigger the reload ourselves
-  // (belt-and-braces with the vite:preloadError listener). reloadForStaleChunk
-  // retries with backoff, because a deploy's alias swap can outlast a single
-  // attempt; only once that whole budget is spent do we fall through to the
-  // real error screen, so a genuinely broken build still surfaces.
+  // (belt-and-braces with the vite:preloadError listener). It gets ONE
+  // automatic attempt (see reloadForStaleChunk); if the page that comes back
+  // still can't load, this shows the error screen and never reloads again.
   const recovering = isStaleChunkError(error) && !staleChunkRecoveryExhausted();
   useEffect(() => {
     if (recovering) reloadForStaleChunk();
@@ -83,21 +82,28 @@ function ErrorComponent({ error }: ErrorComponentProps) {
       </div>
     );
   }
-  // The raw error message is deliberately NOT shown: it means nothing to the
-  // person reading it and can quote data back. It goes to the error report.
+  return <SomethingWentWrong />;
+}
+
+/** The error screen: "Something went wrong" and a Reload button that clears
+ *  the service worker and caches before loading fresh. The raw error message
+ *  is deliberately NOT shown: it means nothing to the person reading it and
+ *  can quote data back. It goes to the error report. */
+function SomethingWentWrong() {
+  const { t } = useTranslation();
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold">{t("root.somethingWentWrong", "Something went wrong")}</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          {t("root.errorBody", "Sorry, that page didn't load properly. Try refreshing, and if it keeps happening, email us at {{email}}.", { email: SUPPORT_EMAIL })}
+          {t("root.errorBodyReload", "Sorry, the app didn't load properly. Tap Reload, and if it keeps happening, email us at {{email}}.", { email: SUPPORT_EMAIL })}
         </p>
         <div className="mt-6 flex justify-center">
           <button
             onClick={() => { void hardResetAndReload(); }}
             className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
           >
-            {t("root.refresh", "Refresh")}
+            {t("root.reload", "Reload")}
           </button>
         </div>
       </div>
@@ -233,6 +239,15 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
   const [renderTest, setRenderTest] = useState<string | null>(null); // TEMPORARY
+  // A code file failed to load and the one automatic reload is already spent:
+  // show the error screen instead of reloading again (sw-register.ts).
+  const [startupFailed, setStartupFailed] = useState(false);
+  useEffect(() => {
+    const onFailed = () => setStartupFailed(true);
+    window.addEventListener(STARTUP_FAILED_EVENT, onFailed);
+    markAppHealthySoon();
+    return () => window.removeEventListener(STARTUP_FAILED_EVENT, onFailed);
+  }, []);
   useEffect(() => { void runErrorTest(setRenderTest); }, []); // TEMPORARY
 
   useEffect(() => {
@@ -311,7 +326,7 @@ function RootComponent() {
     // its own <I18nextProvider> to switch its subtree to Dutch; this stays en.
     <I18nextProvider i18n={globalI18n} defaultNS="translation">
       <QueryClientProvider client={queryClient}>
-        {renderTest ? <ThrowOnRender nonce={renderTest} /> : <Outlet />}
+        {startupFailed ? <SomethingWentWrong /> : renderTest ? <ThrowOnRender nonce={renderTest} /> : <Outlet />}
         <Toaster />
       </QueryClientProvider>
     </I18nextProvider>

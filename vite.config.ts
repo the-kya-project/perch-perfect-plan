@@ -117,7 +117,21 @@ export default defineConfig({
     // (scripts/sourcemaps.mjs) uploads them, then deletes every .map file and
     // strips the sourceMappingURL comments before deploy, and fails the build
     // if any survive. They are never served.
-    build: { sourcemap: true },
+    build: {
+      sourcemap: true,
+      // "k2" is a one-time rename of every code file. On 2026-10-21 the iOS
+      // app looped on startup because the phone kept serving a bad cached
+      // copy of a code file under its old name; new names mean no device
+      // ever asks its cache for those URLs again. Bump it only to force the
+      // same clean slate after a similar incident.
+      rollupOptions: {
+        output: {
+          entryFileNames: "assets/[name]-k2-[hash].js",
+          chunkFileNames: "assets/[name]-k2-[hash].js",
+          assetFileNames: "assets/[name]-k2-[hash][extname]",
+        },
+      },
+    },
     resolve: {
       alias: [
         { find: /^@supabase\/realtime-js$/, replacement: realtimeStub },
