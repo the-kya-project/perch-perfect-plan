@@ -40,7 +40,6 @@ const en = JSON.parse(stripLineComments(readFileSync(join(ROOT, "src/locales/en.
 const SHARED_FILES = [
   "src/components/carePlanCards.tsx",
   "src/components/ConcernFlow.tsx",
-  "src/components/ScanForm.tsx",
   "src/components/Disclaimer.tsx",
   "src/components/PassingGuidance.tsx",
 ];

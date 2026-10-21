@@ -15,9 +15,8 @@ import {
   formatAmountUnitDisplay,
   formatRemovalMinutesDisplay,
 } from "@/lib/labels";
-// Only the pure helpers come from carePlanCards: its card primitives are the
-// sitter care-sheet's look (CareSheetView) and stay as they are. The Kya-look
-// primitives this view renders with live below.
+// Only the pure helpers come from carePlanCards. The Kya-look primitives this
+// view renders with live below.
 import { has, joinUnique, mealPillLabel, RichText } from "@/components/carePlanCards";
 import {
   ShieldAlert, Phone, Pencil, AlertTriangle, AlertOctagon,

@@ -1,33 +1,29 @@
 import { createFileRoute, useLocation, useNavigate } from "@tanstack/react-router";
 import { speciesLabel } from "@/lib/speciesLabel";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Trans, useTranslation } from "react-i18next";
+import { useTranslation } from "react-i18next";
 import i18next, { type TFunction } from "i18next";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
-import { purgeBirdMedia } from "@/lib/birdMedia.functions";
 import { resolveHouseholdNames } from "@/lib/home.functions";
-import { birdMediaPurgeFailedText } from "@/lib/i18n/serverErrors";
-import { Trash2, ChevronDown, AlertTriangle, Eye } from "lucide-react";
+import { ChevronDown, AlertTriangle, Eye } from "lucide-react";
 import { EmergencyInfo } from "@/components/EmergencyInfo";
 import { useBirdOwnerEmergency } from "@/lib/useOwnerEmergency";
-import { K, KyaBody, KyaCard, KyaHeading, KyaTag, KyaLabel, KyaSecondaryButton, KyaPrimaryButton, KyaLink } from "@/components/kya";
+import { K, KyaBody, KyaCard, KyaHeading, KyaTag, KyaSecondaryButton, KyaPrimaryButton, KyaLink } from "@/components/kya";
 import { HeaderPill, TaskHeader, TaskFooter, TASK_FOOTER_SPACE } from "@/components/headers";
 import { isTaskPath } from "@/components/OwnerTabBar";
 import { SETUP_STEPS } from "@/components/SetupShell";
 // The editor renders the guided-setup step components directly so the two UIs
 // are identical (same fields, pickers, autosave, clip recording).
 import { BasicsStep, DayInLifeStep, PersonalityStep, OwnerTipsClipsStep, FoodWaterStep, EnvironmentStep, HealthBaselineStep, HideStepInstruction, useEnsureCarePlan } from "./$birdId.setup";
-import { toast } from "sonner";
 import { Disclaimer } from "@/components/Disclaimer";
 import { useBirdPhotos } from "@/lib/useBirdPhotos";
 import { resolveScanPhotoUrls } from "@/lib/scanPhoto";
 import { useBirdRole } from "@/lib/useBirdRole";
 import { useCapability, useMyPermissions } from "@/lib/useCapability";
 import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
-import { friendlyError } from "@/lib/errorMessage";
 import { formatLocalDateTime } from "@/lib/dates";
 import { LoadError } from "@/components/LoadError";
 import { useLoadState } from "@/lib/useTooLong";
@@ -327,101 +323,6 @@ function BirdEditor() {
         </div>
       )}
     </div>
-  );
-}
-
-// Delete-bird control shown under the Basics tab (the only editor-only extra in
-// the section tabs — the rest render the shared setup step components).
-function DeleteBirdCard({ birdId, bird, plan }: { birdId: string; bird: any; plan: any }) {
-  const { t } = useTranslation();
-  const navigate = useNavigate();
-  const qc = useQueryClient();
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const [deleteText, setDeleteText] = useState("");
-  const [deleting, setDeleting] = useState(false);
-  const purgeMedia = useServerFn(purgeBirdMedia);
-
-  async function deleteBird() {
-    if (deleteText.trim() !== (bird.name ?? "").trim()) {
-      toast.error(t("planEditor.typeNameExactly", "Type \"{{name}}\" exactly to confirm.", { name: bird.name }));
-      return;
-    }
-    setDeleting(true);
-    // Media BEFORE rows: the rows are the only record of these files and clip
-    // uids, so a failure must abort with the bird intact rather than orphan
-    // them permanently. Same ordering as deleteAccount.
-    try {
-      await purgeMedia({ data: { birdId } });
-    } catch (e: any) {
-      setDeleting(false);
-      // Never e.message: it could carry storage paths / clip uids. The server
-      // logs those; the owner gets the one shared message.
-      console.error("[deleteBird] media purge failed", e);
-      toast.error(birdMediaPurgeFailedText());
-      return;
-    }
-    await supabase.from("sit_birds").delete().eq("bird_id", birdId);
-    await supabase.from("weight_logs").delete().eq("bird_id", birdId);
-    await supabase.from("photo_logs").delete().eq("bird_id", birdId);
-    await supabase.from("daily_logs").delete().eq("bird_id", birdId);
-    await supabase.from("emergency_contacts").delete().eq("bird_id", birdId);
-    if (plan?.id) {
-      await supabase.from("routine_tasks").delete().eq("care_plan_id", plan.id);
-      await supabase.from("care_plans").delete().eq("id", plan.id);
-    }
-    const { error } = await supabase.from("birds").delete().eq("id", birdId);
-    setDeleting(false);
-    if (error) { toast.error(friendlyError(error)); return; }
-    toast.success(t("planEditor.birdRemoved", "{{name}} removed.", { name: bird.name }));
-    qc.invalidateQueries({ queryKey: ["birds"] });
-    navigate({ to: "/dashboard" });
-  }
-
-  return (
-    <KyaCard className="flex flex-col gap-3 p-4" style={{ boxShadow: `inset 0 0 0 2px ${K.red}33` }}>
-      <KyaHeading size={19} className="text-[#a32d2d]">{t("planEditor.dangerZone", "Danger zone")}</KyaHeading>
-      <p className="m-0 text-[14px] leading-[1.5]" style={{ color: K.ink }}>
-        {t("planEditor.deleteWarningChecks", "Permanently delete {{name}} and all of their care plan, routine, emergency info, weight logs, daily checks, and photos. This can't be undone.", { name: bird.name })}
-      </p>
-      {!confirmDelete ? (
-        <button
-          type="button"
-          onClick={() => setConfirmDelete(true)}
-          className="inline-flex min-h-[48px] items-center justify-center gap-2 self-start rounded-full border-2 bg-white px-4 text-[15px] font-[700]"
-          style={{ borderColor: K.red, color: K.red }}
-        >
-          <Trash2 className="size-4" /> {t("planEditor.deleteNamed", "Delete {{name}}", { name: bird.name })}
-        </button>
-      ) : (
-        <div className="flex flex-col gap-2.5">
-          <KyaLabel htmlFor="delete-bird-confirm">
-            <Trans i18nKey="planEditor.typeToConfirm" defaults="Type <1>{{name}}</1> to confirm" values={{ name: bird.name }} components={{ 1: <span className="font-bold" /> }} />
-          </KyaLabel>
-          <input
-            id="delete-bird-confirm"
-            className="kya-input"
-            value={deleteText}
-            onChange={(e) => setDeleteText(e.target.value)}
-            placeholder={bird.name}
-            autoFocus
-          />
-          <div className="flex gap-2.5">
-            <button
-              type="button"
-              disabled={deleting || deleteText.trim() !== (bird.name ?? "").trim()}
-              onClick={deleteBird}
-              className="min-h-[48px] flex-1 rounded-full px-4 text-[15px] font-[700] text-white disabled:opacity-45"
-              style={{ background: K.red }}
-            >
-              {deleting ? t("planEditor.deleting", "Deleting...") : t("planEditor.permanentlyDeleteNamed", "Permanently delete {{name}}", { name: bird.name })}
-            </button>
-            <KyaSecondaryButton onClick={() => { setConfirmDelete(false); setDeleteText(""); }}>
-              {t("planEditor.cancel", "Cancel")}
-            </KyaSecondaryButton>
-          </div>
-        </div>
-      )}
-    </KyaCard>
   );
 }
 
