@@ -9,6 +9,7 @@ import { SitChecklist } from "@/components/SitChecklist";
 import { formatDateRangeUS } from "@/lib/dates";
 import { fetchDisplayNames } from "@/lib/resolveNames";
 import { useTranslation, Trans } from "react-i18next";
+import { mergeEmergency } from "@/lib/emergency";
 
 type Bird = { id: string; name: string };
 
@@ -60,20 +61,20 @@ export function SitCard({ sit, birds = [], allBirds, onChange }: { sit: any; bir
       const [{ data: contacts }, { data: u }] = await Promise.all([
         supabase
           .from("emergency_contacts")
-          .select("bird_id, owner_phone, avian_vet_phone")
+          .select("bird_id, owner_phone, avian_vet_name, avian_vet_phone, avian_vet_address")
           .in("bird_id", birdIds),
         getLocalUser(),
       ]);
       const { data: defaults } = u.user
         ? await supabase
             .from("owner_emergency_defaults")
-            .select("owner_phone, avian_vet_phone")
+            .select("owner_phone, avian_vet_name, avian_vet_phone, avian_vet_address")
             .eq("owner_id", u.user.id)
             .maybeSingle()
         : { data: null };
       const byBird = new Map((contacts ?? []).map((c: any) => [c.bird_id, c]));
-      const eff = (c: any, k: string) =>
-        (c?.[k]?.trim?.() || (defaults as any)?.[k]?.trim?.() || "");
+      // Per contact row (a bird's own vet never borrows the account's number).
+      const eff = (c: any, k: string) => (mergeEmergency(c, defaults as any) as Record<string, string | null>)[k] ?? "";
       const missing = birds
         .map((b) => {
           const c = byBird.get(b.id);

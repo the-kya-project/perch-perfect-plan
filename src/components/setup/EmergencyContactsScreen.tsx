@@ -3,8 +3,9 @@
 // control and Transport & spending; tapping a row opens a sheet for it.
 //
 // The owner can make the contacts different for one bird, which saves to that
-// bird's emergency_contacts row instead (an override only where it differs
-// from the shared value — the same rule as EmergencyInfo). Household members
+// bird's emergency_contacts row instead: the whole contact row, so it never
+// borrows a blank from the shared one (mergeEmergency, the same rule as
+// EmergencyInfo). Household members
 // can't change the owner's shared contacts, so they always edit the bird's own.
 import { useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
@@ -12,7 +13,7 @@ import type { TFunction } from "i18next";
 import { Check, Cross, Phone, AlertTriangle, ShoppingBag, Contact } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { ASPCA_POISON_CONTROL, EMERGENCY_FIELDS, isPhoneField, phoneWarning, formatPhoneOnBlur } from "@/lib/emergency";
+import { ASPCA_POISON_CONTROL, EMERGENCY_FIELDS, emergencyDifferent, isPhoneField, mergeEmergency, phoneWarning, formatPhoneOnBlur } from "@/lib/emergency";
 import { friendlyError } from "@/lib/errorMessage";
 import { BottomSheet } from "./BottomSheet";
 import { S, SERIF, TileCard, Tag, Field, TextField, SetupPrimaryButton, SetupTextButton, SetupSecondaryButton } from "./controls";
@@ -108,16 +109,17 @@ export function EmergencyContactsScreen({
       setIsOwner(owner);
       setOwn(o);
       setShared(d);
-      // Different for this bird when it has a value of its own that isn't the shared one.
-      const different = EMERGENCY_FIELDS.some((k) => o[k] !== "" && o[k] !== d[k]);
+      // Different for this bird when it has a contact row of its own.
+      const different = emergencyDifferent(o);
       setMode(!owner || different ? "bird" : "shared");
       setLoaded(true);
     })();
     return () => { cancelled = true; };
   }, [birdId]);
 
-  // What this bird uses: its own value, else the shared one.
-  const eff = (k: string) => own[k] || shared[k] || "";
+  // What this bird uses, per contact row: its own row, else the shared one.
+  const merged = mergeEmergency(own, shared) as Record<string, string | null>;
+  const eff = (k: string) => merged[k] ?? "";
   const display = (k: string) => eff(k) || (k === "poison_control" ? ASPCA_POISON_CONTROL : "");
 
   const missingOwnerPhone = loaded && !eff("owner_phone");
@@ -153,8 +155,8 @@ export function EmergencyContactsScreen({
         setShared((s) => ({ ...s, ...Object.fromEntries(fields.map((f) => [f, values[f]])) }));
         setOwn((o) => ({ ...o, ...Object.fromEntries(fields.map((f) => [f, ""])) }));
       } else {
-        // An override only where it differs from the shared value.
-        const patch = Object.fromEntries(fields.map((f) => [f, values[f] === "" || values[f] === shared[f] ? null : values[f]]));
+        // The bird's own version of the whole row: every field, blanks as null.
+        const patch = Object.fromEntries(fields.map((f) => [f, values[f] === "" ? null : values[f]]));
         const { error } = await supabase.from("emergency_contacts").update(patch as any).eq("bird_id", birdId);
         if (error) throw error;
         setOwn((o) => ({ ...o, ...Object.fromEntries(fields.map((f) => [f, (patch[f] as string | null) ?? ""])) }));

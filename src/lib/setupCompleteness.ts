@@ -3,6 +3,7 @@
 
 import i18next from "i18next";
 import { setupStepNumber } from "@/lib/setupSteps";
+import { mergeEmergency } from "@/lib/emergency";
 
 export type SetupCheck = {
   step: number;
@@ -36,9 +37,9 @@ export function computeSetupCompleteness(args: {
   defaults?: any | null;
 }): SetupCompleteness {
   const { bird, plan, tasksCount = 0, contacts, defaults } = args;
-  const eff = (k: string) =>
-    (contacts?.[k] ?? "").toString().trim() ||
-    (defaults?.[k] ?? "").toString().trim();
+  // Per contact row, the same merge every screen and the sitter view use.
+  const merged = mergeEmergency(contacts, defaults) as Record<string, string | null>;
+  const eff = (k: string) => merged[k] ?? "";
 
   // Listed in flow order; step numbers come from SETUP_STEPS, so they follow
   // any reorder.

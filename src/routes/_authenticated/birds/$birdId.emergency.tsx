@@ -56,9 +56,11 @@ function BirdEmergency() {
   return (
     <KyaPage>
       <div className="mx-auto max-w-md">
+        {/* The "same as your other birds" line is for the owner only;
+            household members get no line. */}
         <PageHeader onBack={goBack} title={t("birdEmergency.title", "{{name}}'s emergency info", { name })} line={isOwner
           ? t("birdEmergency.line", "Same as your other birds, unless you change something here.")
-          : t("birdEmergency.lineMember", "Same as {{owner}}'s other birds, unless it's changed here.", { owner: ownerName || t("birdEmergency.theOwner", "the owner") })} />
+          : undefined} />
         <KyaBody className="gap-5">
           {birdMissing || birdError || ownerFailed || tooLong ? (
             <LoadError

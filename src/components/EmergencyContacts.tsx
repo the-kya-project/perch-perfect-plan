@@ -9,23 +9,15 @@ import type { TFunction } from "i18next";
 import { Phone, Stethoscope, Siren, FlaskConical, Briefcase, Cross, Wallet, Plus, UserRound } from "lucide-react";
 import { K, KyaCard, KyaHeading, KyaField, KyaPrimaryButton, KyaRequiredTag, KyaSheet } from "@/components/kya";
 import { AddressInput } from "@/components/AddressInput";
-import { ASPCA_POISON_CONTROL, REQUIRED_FIELDS, formatPhoneOnBlur, isPhoneField, phoneWarning, type EmergencyField } from "@/lib/emergency";
+import { ASPCA_POISON_CONTROL, EMERGENCY_ROWS, REQUIRED_FIELDS, formatPhoneOnBlur, isPhoneField, phoneWarning, type EmergencyField, type EmergencyRowKey } from "@/lib/emergency";
 import { isAddressField } from "@/lib/address";
 
 export type EmergencyValues = Partial<Record<EmergencyField, string | null>>;
 
-export type RowKey = "you" | "backup" | "avian_vet" | "emergency_vet" | "poison" | "carrier" | "first_aid" | "spending";
-
-export const ROW_FIELDS: Record<RowKey, EmergencyField[]> = {
-  you: ["owner_phone"],
-  backup: ["backup_name", "backup_phone"],
-  avian_vet: ["avian_vet_name", "avian_vet_phone", "avian_vet_address"],
-  emergency_vet: ["emergency_vet_name", "emergency_vet_phone", "emergency_vet_address"],
-  poison: ["poison_control"],
-  carrier: ["carrier_location"],
-  first_aid: ["first_aid_kit_location"],
-  spending: ["spending_limit"],
-};
+// The contact rows live in src/lib/emergency.ts so the one merge
+// (mergeEmergency) and these screens group fields the same way.
+export type RowKey = EmergencyRowKey;
+export const ROW_FIELDS: Record<RowKey, EmergencyField[]> = EMERGENCY_ROWS;
 
 const PEOPLE: RowKey[] = ["you", "backup", "avian_vet", "emergency_vet", "poison"];
 const HOUSE: RowKey[] = ["carrier", "first_aid", "spending"];
@@ -222,8 +214,6 @@ export function EmergencyList({ values, ownerName, editable, onEdit, badge, view
   );
 }
 
-const PILL = "min-h-[48px] w-full rounded-full border-[1.5px] bg-white px-4 text-[16px] outline-none focus:border-[#2d6a4f]";
-const PILL_STYLE = { borderColor: "#d5dfd5", color: K.forest };
 
 /** The edit sheet for one row: only that row's fields, pinned Save. */
 export function EmergencyRowSheet({ rowKey, initial, saving, onSave, onClose, extra, viewerIsOwner = true }: {
@@ -256,9 +246,10 @@ export function EmergencyRowSheet({ rowKey, initial, saving, onSave, onClose, ex
           const tag = REQUIRED_FIELDS.includes(f) ? <KyaRequiredTag>{t("emergencyList.required", "Required")}</KyaRequiredTag> : undefined;
           if (isAddressField(f)) {
             return (
-              <div key={f} className="flex flex-col gap-1.5">
-                <span className="text-[13.5px] font-[700]">{fieldLabel(t, f, viewerIsOwner)}</span>
-                <AddressInput value={form[f] ?? ""} onChange={(val) => setForm((p) => ({ ...p, [f]: val }))} inputClassName={PILL} inputStyle={PILL_STYLE} />
+              <div key={f} className="flex flex-col gap-2 pt-1">
+                {/* Group heading; Street, City, State, and ZIP each have their label above. */}
+                <span className="text-[15px] font-[700]" aria-hidden="true">{fieldLabel(t, f, viewerIsOwner)}</span>
+                <AddressInput label={fieldLabel(t, f, viewerIsOwner)} value={form[f] ?? ""} onChange={(val) => setForm((p) => ({ ...p, [f]: val }))} />
               </div>
             );
           }
