@@ -12,7 +12,8 @@ import { track } from "@/lib/analytics";
 import { toast } from "sonner";
 import { Loader2, Plus } from "lucide-react";
 import { friendlyError } from "@/lib/errorMessage";
-import { K, KyaSheet, KyaHeading, KyaLabel, KyaPrimaryButton } from "@/components/kya";
+import { K, KyaSheet, KyaHeading, KyaLabel, KyaPrimaryButton, KyaSwitch } from "@/components/kya";
+import { CheckChip } from "@/components/setup/controls";
 
 // Shared household invite flow — used by the per-bird access hub and the
 // account-level /household screen. The invite defaults to ALL of the owner's
@@ -160,32 +161,32 @@ export function HouseholdInviteSheet({
         </div>
         <div className="flex flex-col gap-1.5">
           <KyaLabel htmlFor="invite-name">{t("householdInvite.theirName", "Their name (optional)")}</KyaLabel>
-          <input id="invite-name" className="kya-input" value={name} maxLength={120} onChange={(e) => setName(e.target.value)} placeholder={t("householdInvite.namePlaceholder", "e.g. Daniel")} />
+          <input id="invite-name" className="kya-input" value={name} maxLength={120} onChange={(e) => setName(e.target.value)} placeholder={t("householdInvite.namePlaceholderFirstName", "First name")} />
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <KyaLabel as="span">{t("householdInvite.whichBirds", "Which birds can they access?")}</KyaLabel>
-          <div className={listBox} style={{ borderColor: K.line }}>
-            {birds.map((b, i) => (
-              <label key={b.id} className="flex min-h-[52px] cursor-pointer items-center gap-3 px-4" style={i ? { borderTop: `1px solid ${K.line}` } : undefined}>
-                <input type="checkbox" checked={selected.has(b.id)} onChange={() => toggle(b.id)} className="size-5 shrink-0 accent-[#1a3d2e]" />
-                <span className="text-[15px] font-[700]">{b.name}</span>
-              </label>
+          <KyaLabel as="span" required requiredLabel={t("householdInvite.required", "Required")}>{t("householdInvite.whichBirds", "Which birds can they access?")}</KyaLabel>
+          {/* Check chips, the same as the member sheet's "Which birds?". */}
+          <div role="group" aria-label={t("householdInvite.whichBirds", "Which birds can they access?")} className="flex flex-wrap gap-2">
+            {birds.map((b) => (
+              <CheckChip key={b.id} on={selected.has(b.id)} onClick={() => toggle(b.id)}>{b.name}</CheckChip>
             ))}
           </div>
         </div>
 
         <div className="flex flex-col gap-1.5">
           <KyaLabel as="span">{t("householdInvite.permissionLevel", "Permission level")}</KyaLabel>
+          {/* One switch per level; turning one on turns the others off. The
+              level that's on stays on until another is picked. */}
           <div className={listBox} style={{ borderColor: K.line }}>
             {ASSIGNABLE_PRESETS.map((p, i) => (
-              <label key={p} className="flex min-h-[60px] cursor-pointer items-start gap-3 px-4 py-3" style={i ? { borderTop: `1px solid ${K.line}` } : undefined}>
-                <input type="radio" name="preset" checked={preset === p} onChange={() => setPreset(p)} className="mt-0.5 size-5 shrink-0 accent-[#1a3d2e]" />
-                <span className="min-w-0">
+              <div key={p} className="flex min-h-[60px] items-center gap-3 px-4 py-2" style={i ? { borderTop: `1px solid ${K.line}` } : undefined}>
+                <span className="min-w-0 flex-1">
                   <span className="block text-[15px] font-[700]">{presetLabel(p)}</span>
                   <span className="mt-0.5 block text-[13px] leading-[1.45]" style={{ color: K.quiet }}>{presetDescription(p)}</span>
                 </span>
-              </label>
+                <KyaSwitch checked={preset === p} onChange={(v) => { if (v) setPreset(p); }} label={presetLabel(p)} />
+              </div>
             ))}
           </div>
           <p className="m-0 px-1 text-[13px]" style={{ color: K.quiet }}>{t("householdInvite.fineTuneHousehold", "You can change this anytime from your household.")}</p>
