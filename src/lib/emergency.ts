@@ -199,3 +199,33 @@ export function pickVet(contacts: Record<string, any> | null | undefined): VetRe
   if (emergency.name || emergency.address) return emergency;
   return null;
 }
+
+export type VetRowKey = "avian_vet" | "emergency_vet";
+export const VET_ROWS: VetRowKey[] = ["avian_vet", "emergency_vet"];
+export type IncompleteVet = { row: VetRowKey; missing: ("name" | "phone")[] };
+
+const VET_FIELDS: Record<VetRowKey, { name: EmergencyField; phone: EmergencyField }> = {
+  avian_vet: { name: "avian_vet_name", phone: "avian_vet_phone" },
+  emergency_vet: { name: "emergency_vet_name", phone: "emergency_vet_phone" },
+};
+
+/**
+ * The bird's OWN vet rows that are half filled: a vet row the bird owns (any
+ * of its fields set, see birdOwnsRow) whose name or phone is blank. Old
+ * partial rows saved under the per-field rule land here. The blanks are never
+ * filled from the account; the owner is asked to finish them. The address is
+ * optional and never counts. A vet row the bird doesn't own follows the
+ * account and is never listed. Avian vet first, then the after-hours vet.
+ * Pass the bird's emergency_contacts row (NOT the merged values).
+ */
+export function incompleteOwnVets(contacts: Record<string, any> | null | undefined): IncompleteVet[] {
+  const out: IncompleteVet[] = [];
+  for (const row of VET_ROWS) {
+    if (!birdOwnsRow(contacts, row)) continue;
+    const missing: IncompleteVet["missing"] = [];
+    if (clean(contacts?.[VET_FIELDS[row].name]) === null) missing.push("name");
+    if (clean(contacts?.[VET_FIELDS[row].phone]) === null) missing.push("phone");
+    if (missing.length) out.push({ row, missing });
+  }
+  return out;
+}

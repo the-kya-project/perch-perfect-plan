@@ -15,11 +15,26 @@ import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { useQueryClient } from "@tanstack/react-query";
 import { friendlyError } from "@/lib/errorMessage";
-import { EMERGENCY_FIELDS, birdOwnsRow, birdRowPatch, emergencyDifferent, mergeEmergency } from "@/lib/emergency";
+import type { TFunction } from "i18next";
+import { EMERGENCY_FIELDS, birdOwnsRow, birdRowPatch, emergencyDifferent, incompleteOwnVets, mergeEmergency, type IncompleteVet } from "@/lib/emergency";
 import { K, KyaHeading, KyaLink, KyaSecondaryButton, KyaSheet, KyaPrimaryButton } from "@/components/kya";
 import { EmergencyList, EmergencyRowSheet, type EmergencyValues, type RowKey } from "@/components/EmergencyContacts";
 
-export function EmergencyInfo({ birdId, birdName, contacts, defaults, onSaved, ownerName, isOwner }: {
+/** "The avian vet's phone number is missing." — one sentence per vet. */
+function vetGapSentence(t: TFunction, gap: IncompleteVet): string {
+  const both = gap.missing.length === 2;
+  const name = gap.missing[0] === "name";
+  if (gap.row === "avian_vet") {
+    return both ? t("birdEmergency.vetGap.avianBoth", "The avian vet's name and phone number are missing.")
+      : name ? t("birdEmergency.vetGap.avianName", "The avian vet's name is missing.")
+      : t("birdEmergency.vetGap.avianPhone", "The avian vet's phone number is missing.");
+  }
+  return both ? t("birdEmergency.vetGap.erBoth", "The after-hours vet's name and phone number are missing.")
+    : name ? t("birdEmergency.vetGap.erName", "The after-hours vet's name is missing.")
+    : t("birdEmergency.vetGap.erPhone", "The after-hours vet's phone number is missing.");
+}
+
+export function EmergencyInfo({ birdId, birdName, contacts, defaults, onSaved, ownerName, isOwner, vetGapCard, canEdit = true }: {
   birdId: string;
   birdName: string;
   contacts: any;
@@ -28,6 +43,12 @@ export function EmergencyInfo({ birdId, birdName, contacts, defaults, onSaved, o
   ownerName?: string;
   /** Only the owner can change the account values ("All birds"). */
   isOwner?: boolean;
+  /** Show the amber "Finish [bird]'s vet details" card at the top when one of
+   *  the bird's own vet rows is missing a name or phone (incompleteOwnVets). */
+  vetGapCard?: boolean;
+  /** Whether the viewer can edit emergency info (owner, or manage_emergency).
+   *  Without it the vet card shows no Add button. */
+  canEdit?: boolean;
 }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -125,8 +146,25 @@ export function EmergencyInfo({ birdId, birdName, contacts, defaults, onSaved, o
     );
   };
 
+  // The bird's own vet rows with a blank name or phone. Never filled from the
+  // account: the card asks for them and Add opens that vet's row sheet.
+  const vetGaps = vetGapCard ? incompleteOwnVets(contacts) : [];
+
   return (
     <div className="flex flex-col gap-5">
+      {vetGaps.length > 0 && (
+        <section className="flex flex-col gap-3 rounded-[20px] p-4" style={{ background: K.amberBg, color: K.amberText }}>
+          <KyaHeading size={21}>{t("birdEmergency.vetGap.title", "Finish {{name}}'s vet details", { name: birdName })}</KyaHeading>
+          <p className="m-0 text-[15px] font-[600] leading-[1.45]">{vetGaps.map((g) => vetGapSentence(t, g)).join(" ")}</p>
+          {canEdit && (
+            // The only sunflower on this page (the row sheets are their own screens).
+            <KyaPrimaryButton onClick={() => { setMode("different"); setEditing(vetGaps[0].row); }}>
+              {t("emergencyList.add", "Add")}
+            </KyaPrimaryButton>
+          )}
+        </section>
+      )}
+
       <div role="radiogroup" aria-label={t("birdEmergency.whichInfo", "Which emergency info")} className="flex gap-1 rounded-full bg-white p-1">
         {/* Short labels so both fit side by side at 375px. */}
         {segment("mine", isOwner
