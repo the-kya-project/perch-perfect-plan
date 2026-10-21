@@ -34,7 +34,11 @@ function ConcernPage() {
   const goBack = useGoBack(useCallback(() => navigate({ to: "/sitter/$token", params: { token } }), [navigate, token]));
 
   const name = ctx.bird.name as string;
-  const owner = ((ctx as any).ownerName ?? "the owner") as string;
+  // Localized "the owner" fallback: the server sends a raw name or its own
+  // English placeholder; the client supplies the translated fallback.
+  const rawOwner = (((ctx as any).ownerName ?? "") as string).trim();
+  const hasOwnerName = !!rawOwner && rawOwner !== "the owner";
+  const owner = hasOwnerName ? rawOwner : t("sitter.common.theOwner", "the owner");
   const ownerPhone = ((ctx.contacts as any)?.owner_phone ?? null) as string | null;
   // One vet record, picked first, so the name and number always match.
   const picked = pickVet(ctx.contacts as any);
@@ -80,7 +84,7 @@ function ConcernPage() {
           <PersonCallRow
             surface="mist"
             label={t("sitter.calls.owner", "Owner")}
-            name={owner !== "the owner" ? owner : null}
+            name={hasOwnerName ? owner : null}
             phone={ownerPhone}
           />
         </div>

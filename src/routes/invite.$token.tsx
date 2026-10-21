@@ -117,10 +117,10 @@ function InviteAccept() {
   const owner = invite.inviterName ? firstNameOf(invite.inviterName) : t("invite.anOwner", "An owner");
   const names = invite.birdNames;
   const birds: BirdPreview[] = invite.birds ?? names.map((name) => ({ name, photoUrl: null, photoPosition: null }));
-  const many = names.length > 3;
-  const title = many
-    ? t("invite.titleManyBirds", "{{owner}} invited you to help care for {{count}} birds", { owner, count: names.length })
-    : t("invite.titleBirds", "{{owner}} invited you to help care for {{birds}}", { owner, birds: names.length ? birdNames(t, names) : t("nameList.yourBirds", "your birds") });
+  // birdNames handles every shape (incl. 4+ → "{{count}} birds"), so one key
+  // covers the title; the old invite.titleManyBirds carried a bogus _one
+  // plural form and is gone.
+  const title = t("invite.titleBirds", "{{owner}} invited you to help care for {{birds}}", { owner, birds: names.length ? birdNames(t, names) : t("nameList.yourBirds", "your birds") });
   const inviteEmail = invite.inviteeEmail.toLowerCase();
   const matches = !!session?.signedIn && session.email === inviteEmail;
   const wrongAccount = !!session?.signedIn && session.email !== inviteEmail;

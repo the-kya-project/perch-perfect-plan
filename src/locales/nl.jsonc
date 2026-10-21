@@ -1141,6 +1141,8 @@
   "birdRecord.somethingsWrong": "Er is iets mis met {{name}}",
   // Species
   "birdRecord.species": "Soort",
+  // the owner
+  "birdRecord.theOwner": "de eigenaar",
   // This bird
   "birdRecord.thisBird": "Deze vogel",
   // This record isn't yours anymore
@@ -1233,6 +1235,8 @@
   "birdSetup.behavior.stepUpNotes": "Notities over opstappen",
   // How {{name}} likes to be treated
   "birdSetup.behavior.title": "Zo wil {{name}} behandeld worden",
+  // Bird
+  "birdSetup.birdFallback": "Vogel",
   // Bite risk & warning signs
   "birdSetup.biteRiskWarningSigns": "Bijtrisico & waarschuwingssignalen",
   // Cage location & setup notes
@@ -1645,6 +1649,8 @@
   "birdSetup.pickAFrequency": "Kies hoe vaak…",
   // Pick one…
   "birdSetup.pickOne": "Kies er een…",
+  // please try again.
+  "birdSetup.pleaseTryAgainLower": "probeer het opnieuw.",
   // Primary diet
   "birdSetup.primaryDiet": "Hoofdvoeding",
   // Processing…
@@ -2517,8 +2523,8 @@
   "dailyCheck.checkedAt": "Gecheckt om {{time}}",
   // Call your avian vet today. We'll keep this flagged on {{name}}'s page.
   "dailyCheck.concerningRed": "Bel vandaag nog je vogeldierenarts. We houden dit gemarkeerd op de pagina van {{name}}.",
-  // Concerning signs.
-  "dailyCheck.concerningTitle": "Zorgelijke signalen.",
+  // Concerning signs
+  "dailyCheck.concerningSigns": "Zorgelijke signalen",
   // Keep a close eye, and call your avian vet if it continues. We'll keep this flagged on {{name}}'s page.
   "dailyCheck.concerningWatch": "Houd het goed in de gaten en bel je vogeldierenarts als het aanhoudt. We houden dit gemarkeerd op de pagina van {{name}}.",
   // Fix
@@ -2595,6 +2601,8 @@
   "dailyCheck.weightFailed": "Het gewicht is niet opgeslagen. Probeer het opnieuw.",
   // What's different with {{name}}?
   "dailyCheck.whatsDifferent": "Wat is er anders aan {{name}}?",
+  // A bird
+  "dashboard.activityABird": "Een vogel",
   // added a journal note
   "dashboard.activityJournalNote": "schreef een dagboeknotitie",
   // added a journal note — {{title}}
@@ -3777,6 +3785,8 @@
   "handoff.welcomeHomeToast": "Welkom thuis, {{bird}}",
   // This handoff was sent to <b>{{email}}</b>, but you're signed in with a different account.
   "handoff.wrongAccount": "Deze overdracht is gestuurd naar <b>{{email}}</b>, maar je bent ingelogd met een ander account.",
+  // Your bird
+  "handoff.yourBird": "Je vogel",
   // Back
   "headers.back": "Terug",
   // Close
@@ -3979,14 +3989,8 @@
   "home.state.arrives": "{{who}} komt {{when}}.",
   // {{bird}} is due for a weigh-in.
   "home.state.dueForWeighIn": "{{bird}} moet weer gewogen worden.",
-  // {{count}} bird is due for a weigh-in.
-  "home.state.dueForWeighInCount_one": "{{count}} vogel moet gewogen worden.",
-  // {{count}} birds are due for a weigh-in.
-  "home.state.dueForWeighInCount_other": "{{count}} vogels moeten gewogen worden.",
-  // {{first}}, {{second}}, and {{third}} are due for a weigh-in.
-  "home.state.dueForWeighInThree": "{{first}}, {{second}} en {{third}} moeten gewogen worden.",
-  // {{first}} and {{second}} are due for a weigh-in.
-  "home.state.dueForWeighInTwo": "{{first}} en {{second}} moeten gewogen worden.",
+  // {{birds}} are due for a weigh-in.
+  "home.state.dueForWeighInMany": "{{birds}} moeten gewogen worden.",
   // {{bird}}'s {{label}} is {{when}}.
   "home.state.momentIs": "De {{label}} van {{bird}} is {{when}}.",
   // on {{day}}
@@ -4019,6 +4023,10 @@
   "home.today.concernFlagged": "{{bird}} — aandachtspunt gemeld",
   // {{when}} · Run by {{name}}
   "home.today.concernMeta": "{{when}} · Gedaan door {{name}}",
+  // {{n}} day ago
+  "home.today.dayAgoOne": "{{n}} dag geleden",
+  // {{n}} days ago
+  "home.today.dayAgoOther": "{{n}} dagen geleden",
   // Last weighed {{days}} days ago
   "home.today.lastWeighed": "{{days}} dagen geleden voor het laatst gewogen",
   // {{bird}}'s {{label}} {{when}}
@@ -4033,6 +4041,8 @@
   "home.today.sitStartsToday": "Oppasperiode begint vandaag",
   // Sit starts tomorrow
   "home.today.sitStartsTomorrow": "Oppasperiode begint morgen",
+  // Today
+  "home.today.today": "Vandaag",
   // in {{n}} days
   "home.today.whenInDays": "over {{n}} dagen",
   // today
@@ -4203,6 +4213,8 @@
   "householdInvite.intro": "Ze krijgen een uitnodiging per e-mail om een account aan te maken en te helpen met de zorg voor je vogels.",
   // Loading…
   "householdInvite.loading": "Laden…",
+  // Member
+  "householdInvite.member": "Huisgenoot",
   // First name
   "householdInvite.namePlaceholderFirstName": "Voornaam",
   // or invite someone new
@@ -4339,10 +4351,6 @@
   "invite.signOutAndAccept": "Uitloggen en accepteren als {{email}}",
   // {{owner}} invited you to help care for {{birds}}
   "invite.titleBirds": "{{owner}} nodigt je uit om mee te zorgen voor {{birds}}",
-  // {{owner}} invited you to help care for {{count}} birds
-  "invite.titleManyBirds_one": "{{owner}} nodigt je uit om mee te zorgen voor {{count}} vogel",
-  // {{owner}} invited you to help care for {{count}} birds
-  "invite.titleManyBirds_other": "{{owner}} nodigt je uit om mee te zorgen voor {{count}} vogels",
   // Try again
   "invite.tryAgain": "Opnieuw proberen",
   // Trying again…
@@ -4451,12 +4459,6 @@
   "memberOnboarding.back": "Terug",
   // Open a bird to check off today's tasks, log a weight, or add a moment as you go.
   "memberOnboarding.birdBody": "Open een vogel om de taken van vandaag af te vinken, een gewicht te noteren of tussendoor een moment toe te voegen.",
-  // {{a}}, {{b}}, and {{n}} more
-  "memberOnboarding.birdsMore": "{{a}}, {{b}} en nog {{n}}",
-  // {{a}}, {{b}}, and {{c}}
-  "memberOnboarding.birdsThree": "{{a}}, {{b}} en {{c}}",
-  // {{a}} and {{b}}
-  "memberOnboarding.birdsTwo": "{{a}} en {{b}}",
   // Pitch in on daily care
   "memberOnboarding.birdTitle": "Help mee met de dagelijkse zorg",
   // Have birds of your own? Or will you soon? It's just a matter of time. Add them here whenever and manage everyone in one place.
@@ -4503,6 +4505,8 @@
   "nameList.many": "{{head}} en {{last}}",
   // {{a}} and {{b}}
   "nameList.pair": "{{a}} en {{b}}",
+  // , 
+  "nameList.sep": ", ",
   // your bird
   "nameList.yourBird": "je vogel",
   // your birds
@@ -4555,6 +4559,8 @@
   "newBird.photoTooLarge": "Die foto is zelfs na verkleinen nog te groot. Probeer een andere foto.",
   // We couldn't upload that photo, so we added your bird without it. You can add one from the bird's page.
   "newBird.photoUploadFailed": "We konden die foto niet uploaden, dus we hebben je vogel zonder foto toegevoegd. Je kunt er een toevoegen op de pagina van je vogel.",
+  // please try again.
+  "newBird.pleaseTryAgain": "probeer het opnieuw.",
   // Remove
   "newBird.remove": "Verwijderen",
   // Android
@@ -5899,6 +5905,8 @@
   "sitForm.whosCoveringQ": "Wie past op?",
   // You're signed out.
   "sitForm.youReSignedOut": "Je bent uitgelogd.",
+  // your household member
+  "sitForm.yourHouseholdMember": "je huisgenoot",
   // your sitter
   "sitForm.yourSitterLower": "je oppas",
   // Link copied.
@@ -6679,6 +6687,8 @@
   "species.yellowCrownedAmazon": "Geelvoorhoofdamazone",
   // Yellow-naped Amazon
   "species.yellowNapedAmazon": "Geelnekamazone",
+  // Dismiss
+  "toast.dismiss": "Sluiten",
   // Nothing on for today
   "todayPage.nothingOnTitle": "Niets gepland voor vandaag",
   // Today — Kya & Co.
@@ -6735,6 +6745,8 @@
   "updates.nWeights_other": "{{count}} gewichten",
   // The sit starts {{date}}
   "updates.sitStarts": "De oppas begint op {{date}}",
+  // Someone
+  "updates.someone": "Iemand",
   // the sit
   "updates.theSit": "de oppas",
   // Updates

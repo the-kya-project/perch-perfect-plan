@@ -1707,6 +1707,9 @@
     "birdRecord.species": {
       "stamp": "558943ff684792a6"
     },
+    "birdRecord.theOwner": {
+      "stamp": "08ee0f36c66831a5"
+    },
     "birdRecord.thisBird": {
       "stamp": "cf4aa8567187c910"
     },
@@ -1844,6 +1847,9 @@
     },
     "birdSetup.behavior.title": {
       "stamp": "f7496476c36fa6e5"
+    },
+    "birdSetup.birdFallback": {
+      "stamp": "7964d14d200e7108"
     },
     "birdSetup.biteRiskWarningSigns": {
       "stamp": "ec4b3b1787df1cf8"
@@ -2462,6 +2468,9 @@
     },
     "birdSetup.pickOne": {
       "stamp": "876a9f2af83fc2bb"
+    },
+    "birdSetup.pleaseTryAgainLower": {
+      "stamp": "e0975aa819843f53"
     },
     "birdSetup.primaryDiet": {
       "stamp": "c2e6663a7d06f952"
@@ -3771,8 +3780,8 @@
     "dailyCheck.concerningRed": {
       "stamp": "6ee1759fd5174ec8"
     },
-    "dailyCheck.concerningTitle": {
-      "stamp": "94a77bb8d856c3ac"
+    "dailyCheck.concerningSigns": {
+      "stamp": "4bdbf98dd6446842"
     },
     "dailyCheck.concerningWatch": {
       "stamp": "6391af817678d05c"
@@ -3887,6 +3896,9 @@
     },
     "dailyCheck.whatsDifferent": {
       "stamp": "5dcfd0093f333f8b"
+    },
+    "dashboard.activityABird": {
+      "stamp": "391d8e02f5caabdf"
     },
     "dashboard.activityJournalNote": {
       "stamp": "73e2f70896379c6e"
@@ -5655,6 +5667,9 @@
     "handoff.wrongAccount": {
       "stamp": "1ee7f20665993e78"
     },
+    "handoff.yourBird": {
+      "stamp": "19f01978083a5dce"
+    },
     "headers.back": {
       "stamp": "5001815e48b3af8b"
     },
@@ -5958,17 +5973,8 @@
     "home.state.dueForWeighIn": {
       "stamp": "b2b06e16a7999e1b"
     },
-    "home.state.dueForWeighInCount_one": {
-      "stamp": "4a855aae4180785c"
-    },
-    "home.state.dueForWeighInCount_other": {
-      "stamp": "1ad9cd10ff9c19f6"
-    },
-    "home.state.dueForWeighInThree": {
-      "stamp": "c15ee882b6cab7ae"
-    },
-    "home.state.dueForWeighInTwo": {
-      "stamp": "b0068e97e77c3667"
+    "home.state.dueForWeighInMany": {
+      "stamp": "b9c84def4120089e"
     },
     "home.state.momentIs": {
       "stamp": "8c89eeb2ce477335"
@@ -6018,6 +6024,12 @@
     "home.today.concernMeta": {
       "stamp": "d1f341cb80a095d4"
     },
+    "home.today.dayAgoOne": {
+      "stamp": "eaf5a9345b8beee0"
+    },
+    "home.today.dayAgoOther": {
+      "stamp": "2f696e4c47612f82"
+    },
     "home.today.lastWeighed": {
       "stamp": "2a543db4c2f4479d"
     },
@@ -6038,6 +6050,9 @@
     },
     "home.today.sitStartsTomorrow": {
       "stamp": "2e3cf4d49ca162c8"
+    },
+    "home.today.today": {
+      "stamp": "65e7700b50124553"
     },
     "home.today.whenInDays": {
       "stamp": "d6d036b8d5d4bf53"
@@ -6294,6 +6309,9 @@
     "householdInvite.loading": {
       "stamp": "543c404f0e5a7d86"
     },
+    "householdInvite.member": {
+      "stamp": "f10b7eed417fdde3"
+    },
     "householdInvite.namePlaceholderFirstName": {
       "stamp": "4ee0c9f6a0e12e77"
     },
@@ -6498,12 +6516,6 @@
     "invite.titleBirds": {
       "stamp": "253f7a95f3161357"
     },
-    "invite.titleManyBirds_one": {
-      "stamp": "010929bb9ec1141b"
-    },
-    "invite.titleManyBirds_other": {
-      "stamp": "010929bb9ec1141b"
-    },
     "invite.tryAgain": {
       "stamp": "5c0ecee5e225e041"
     },
@@ -6666,15 +6678,6 @@
     "memberOnboarding.birdBody": {
       "stamp": "028c8fc0b379ca34"
     },
-    "memberOnboarding.birdsMore": {
-      "stamp": "a8034a54677ba89a"
-    },
-    "memberOnboarding.birdsThree": {
-      "stamp": "92b3848b8c217e19"
-    },
-    "memberOnboarding.birdsTwo": {
-      "stamp": "8ae4b5e718dd5811"
-    },
     "memberOnboarding.birdTitle": {
       "stamp": "59f3eeb29adb8023"
     },
@@ -6743,6 +6746,9 @@
     },
     "nameList.pair": {
       "stamp": "8ae4b5e718dd5811"
+    },
+    "nameList.sep": {
+      "stamp": "8e29da4f54dc385f"
     },
     "nameList.yourBird": {
       "stamp": "fb5d7aead9178f25"
@@ -6821,6 +6827,9 @@
     },
     "newBird.photoUploadFailed": {
       "stamp": "09abb787ab17f443"
+    },
+    "newBird.pleaseTryAgain": {
+      "stamp": "e0975aa819843f53"
     },
     "newBird.remove": {
       "stamp": "7a3c74b21c1d6ef1"
@@ -8838,6 +8847,9 @@
     "sitForm.youReSignedOut": {
       "stamp": "218f2b099d90ac6d"
     },
+    "sitForm.yourHouseholdMember": {
+      "stamp": "7031e4c4a6a35caf"
+    },
     "sitForm.yourSitterLower": {
       "stamp": "707c76a7b363684a"
     },
@@ -10008,6 +10020,9 @@
     "species.yellowNapedAmazon": {
       "stamp": "6115e328a2b6ae4c"
     },
+    "toast.dismiss": {
+      "stamp": "05169f810de68ec3"
+    },
     "todayPage.nothingOnTitle": {
       "stamp": "31f40393f12a70a8"
     },
@@ -10091,6 +10106,9 @@
     },
     "updates.sitStarts": {
       "stamp": "fde0d840711e763f"
+    },
+    "updates.someone": {
+      "stamp": "6928cafbfcbdfbdf"
     },
     "updates.theSit": {
       "stamp": "7c973c518d62f15a"

@@ -9,6 +9,7 @@ import { ChevronLeft, ArrowRight, Check, X } from "lucide-react";
 import { getMemberOnboardingContext, type MemberHousehold } from "@/lib/onboarding.functions";
 import { useTranslation } from "react-i18next";
 import i18next from "i18next";
+import { birdNames } from "@/lib/birdNames";
 
 // First-run orientation for an ACCOUNT-HOLDING household member (someone added
 // to an existing household via invite — NOT the external link-sitter, which has
@@ -31,14 +32,12 @@ type Step = {
   body: string;
 };
 
-// "Buzz" / "Buzz and Willow" / "Buzz, Willow, and Kiwi" / "Buzz, Willow, and 2 more"
+// "Buzz" / "Buzz and Willow" / "Buzz, Willow, and Kiwi" / "4 birds" — the one
+// bird-name rule (lib/birdNames), shared with every other line that names birds.
 function formatBirds(names: string[]): string {
   const n = names.filter(Boolean);
   if (n.length === 0) return i18next.t("memberOnboarding.theirBirds", "their birds");
-  if (n.length === 1) return n[0];
-  if (n.length === 2) return i18next.t("memberOnboarding.birdsTwo", "{{a}} and {{b}}", { a: n[0], b: n[1] });
-  if (n.length === 3) return i18next.t("memberOnboarding.birdsThree", "{{a}}, {{b}}, and {{c}}", { a: n[0], b: n[1], c: n[2] });
-  return i18next.t("memberOnboarding.birdsMore", "{{a}}, {{b}}, and {{n}} more", { a: n[0], b: n[1], n: n.length - 2 });
+  return birdNames(i18next.t, n);
 }
 
 function welcomeBody(households: MemberHousehold[]): string {
