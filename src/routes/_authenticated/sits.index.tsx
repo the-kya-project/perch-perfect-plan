@@ -10,6 +10,8 @@ import { ActiveSitCard, UpcomingSitCard, PastSitsList, type SitBird, type ListSi
 import { rangeTo } from "@/lib/sitText";
 import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaPrimaryButton } from "@/components/kya";
 import { TabHeader } from "@/components/headers";
+import { LoadError } from "@/components/LoadError";
+import { useLoadState } from "@/lib/useTooLong";
 import { useServerFn } from "@tanstack/react-start";
 import { resolveHouseholdNames, resolveOwnerNames } from "@/lib/home.functions";
 import { memberDisplayName } from "@/lib/memberDisplay";
@@ -58,7 +60,7 @@ function SitsPage() {
     if (newSit) navigate({ to: "/sits/new", search: preselectBirdId ? { bird: preselectBirdId } : {}, replace: true });
   }, [newSit, preselectBirdId, navigate]);
 
-  const { data: birds = [] } = useQuery({
+  const birdsQ = useQuery({
     queryKey: ["birds"],
     queryFn: async () => {
       // Identical to the dashboard's fetch (fetchBirdList) so the shared ["birds"]
@@ -70,7 +72,9 @@ function SitsPage() {
     },
   });
 
-  const { data: sits = [], isLoading: sitsLoading } = useQuery({
+  const birds = birdsQ.data ?? [];
+
+  const sitsQ = useQuery({
     // Own key (not the dashboard's ["all-sits"]) — different shape, so no cache
     // collision. No per-mount refetch: 60s staleTime paints from cache; sit
     // create/edit/delete calls refreshSits() to update immediately.
@@ -85,6 +89,11 @@ function SitsPage() {
       return data ?? [];
     },
   });
+
+  const sits = sitsQ.data ?? [];
+  // Neither "Add a bird first" nor "No sits scheduled" until both lists are
+  // actually known; a failed load offers a retry instead of an empty state.
+  const load = useLoadState([birdsQ, sitsQ]);
 
   const birdLookup = Object.fromEntries(birds.map((b: any) => [b.id, b]));
 
@@ -204,7 +213,13 @@ function SitsPage() {
         <TabHeader title={heroHeadline} line={heroBody}></TabHeader>
 
         <KyaBody className="gap-5">
-          {birds.length === 0 ? (
+          {load.failed ? (
+            <LoadError onRetry={load.retry} />
+          ) : load.loading ? (
+            <div className="space-y-3">
+              {[0, 1].map((i) => <div key={i} className="h-28 animate-pulse rounded-[20px] bg-white" />)}
+            </div>
+          ) : birds.length === 0 ? (
             <KyaCard className="p-6 text-center">
               <div className="flex justify-center">
                 <span className="grid size-12 place-items-center rounded-[14px]" style={{ background: K.mist, color: K.moss }}><Calendar className="size-6" /></span>
@@ -215,10 +230,6 @@ function SitsPage() {
               </p>
               <div className="mt-4"><KyaPrimaryButton onClick={() => navigate({ to: "/birds/new" })} icon={<Plus className="size-5" />}>{t("sits.addBird", "Add bird")}</KyaPrimaryButton></div>
             </KyaCard>
-          ) : sitsLoading ? (
-            <div className="space-y-3">
-              {[0, 1].map((i) => <div key={i} className="h-28 animate-pulse rounded-[20px] bg-white" />)}
-            </div>
           ) : (
             <>
               {actives.map((s) => (

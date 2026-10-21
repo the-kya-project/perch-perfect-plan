@@ -6,6 +6,8 @@ import { getPastBirds } from "@/lib/handoff.functions";
 import { Feather, Loader2 } from "lucide-react";
 import { K, KyaPage, KyaBody, KyaCard, KyaIconTile, KyaTag, KyaSecondaryButton } from "@/components/kya";
 import { PageHeader } from "@/components/headers";
+import { LoadError } from "@/components/LoadError";
+import { useLoadState } from "@/lib/useTooLong";
 import { formatLocalDate } from "@/lib/dates";
 import { parseCalendarDate } from "@/lib/localDay";
 import i18next from "i18next";
@@ -26,7 +28,9 @@ function PastBirds() {
   const goBack = () => (canGoBack ? router.history.back() : navigate({ to: "/account" }));
 
   const getBirds = useServerFn(getPastBirds);
-  const { data, isLoading } = useQuery({ queryKey: ["past-birds"], queryFn: () => getBirds() });
+  const pastQ = useQuery({ queryKey: ["past-birds"], queryFn: () => getBirds() });
+  const { data } = pastQ;
+  const load = useLoadState([pastQ]);
   const birds = data?.birds ?? [];
 
   return (
@@ -34,7 +38,9 @@ function PastBirds() {
       <PageHeader title={t("pastBirds.title", "Birds you've helped rehome")} onBack={goBack} />
 
       <KyaBody>
-        {isLoading ? (
+        {load.failed ? (
+          <LoadError onRetry={load.retry} />
+        ) : load.loading ? (
           <div className="flex items-center justify-center gap-2 py-12 text-[14px]" style={{ color: K.quiet }}>
             <Loader2 className="size-4 animate-spin" /> {t("pastBirds.loading", "Loading…")}
           </div>

@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -7,6 +7,8 @@ import { K, KyaPage, KyaBody, KyaCard } from "@/components/kya";
 import { PageHeader, useGoBack } from "@/components/headers";
 import { getCaregiverConcernContext, pauseCaregiverReminders } from "@/lib/caregiver.functions";
 import { ConcernFlow } from "@/components/ConcernFlow";
+import { LoadError } from "@/components/LoadError";
+import { useLoadState } from "@/lib/useTooLong";
 import { toast } from "sonner";
 import { friendlyError } from "@/lib/errorMessage";
 import { useTranslation } from "react-i18next";
@@ -30,10 +32,14 @@ function CaregiverConcern() {
   const pauseFn = useServerFn(pauseCaregiverReminders);
   const goBack = useGoBack(useCallback(() => navigate({ to: "/birds/$birdId", params: { birdId } }), [navigate, birdId]));
 
-  const { data: ctx, isLoading } = useQuery({
+  const ctxQ = useQuery({
     queryKey: ["caregiver-concern", birdId],
     queryFn: () => ctxFn({ data: { birdId } }),
   });
+  const { data: ctx } = ctxQ;
+  // A failed request (or one still waiting after 10 s) offers a retry rather
+  // than spinning forever.
+  const load = useLoadState([ctxQ]);
 
   const m = useMutation({
     mutationFn: () => pauseFn({ data: { birdId } }),
@@ -45,11 +51,14 @@ function CaregiverConcern() {
     onError: (e: any) => toast.error(friendlyError(e, t("caregiverConcern.pauseFailed", "Couldn't pause the reminders. Please try again."))),
   });
 
-  // Not covering (or bird gone) → this screen isn't for them.
-  if (ctx && !ctx.covering) {
-    navigate({ to: "/birds/$birdId", params: { birdId }, replace: true });
-    return null;
-  }
+  // Not covering (or bird gone) → this screen isn't for them. Redirect from an
+  // effect, not during render (navigating while rendering is a React warning
+  // and can loop); render nothing meanwhile.
+  const notCovering = !!ctx && !ctx.covering;
+  useEffect(() => {
+    if (notCovering) navigate({ to: "/birds/$birdId", params: { birdId }, replace: true });
+  }, [notCovering, navigate, birdId]);
+  if (notCovering) return null;
 
   return (
     <KyaPage>
@@ -60,7 +69,9 @@ function CaregiverConcern() {
         onBack={goBack}
       />
       <KyaBody>
-        {isLoading || !ctx?.covering ? (
+        {load.failed ? (
+          <LoadError onRetry={load.retry} onBack={goBack} />
+        ) : !ctx?.covering ? (
           <div className="flex items-center justify-center gap-2 py-12 text-[14px]" style={{ color: K.quiet }}>
             <Loader2 className="size-4 animate-spin" /> {t("caregiverConcern.loading", "Loading…")}
           </div>
