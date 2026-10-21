@@ -97,7 +97,13 @@ function ConfirmEmail() {
     setResending(true);
     setError(null);
     try {
-      const { error } = await supabase.auth.resend({ type: "signup", email });
+      // Same redirect the sign-up email carries (src/routes/auth.tsx), so the
+      // resent link also lands the confirmed owner on /welcome.
+      const { error } = await supabase.auth.resend({
+        type: "signup",
+        email,
+        options: { emailRedirectTo: window.location.origin + "/welcome" },
+      });
       if (error) throw error;
       writeResendUntil(Date.now() + RESEND_COOLDOWN_S * 1000);
       setCooldown(RESEND_COOLDOWN_S);

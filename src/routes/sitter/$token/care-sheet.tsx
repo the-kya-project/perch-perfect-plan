@@ -27,7 +27,8 @@ function CareSheet() {
   const { token } = Route.useParams();
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { data: ctx } = useSitterContext(token);
+  const ctxQ = useSitterContext(token);
+  const { data: ctx } = ctxQ;
   const bird = ctx.bird as any;
   const name = (bird?.name ?? "") as string;
 
@@ -63,6 +64,13 @@ function CareSheet() {
         <div className="px-4 pb-6">
           <CarePlanView
             data={{ bird: ctx.bird, plan: ctx.plan, watchClips: ctx.watchClips ?? [], baselineClipUrl: ctx.baselineClipUrl }}
+            // An expired signed clip link: refetch the sitter context (the same
+            // path that minted it) and hand back that clip's fresh URL.
+            refreshClipUrl={async (key) => {
+              const r = await ctxQ.refetch();
+              if (key === "baseline") return r.data?.baselineClipUrl ?? null;
+              return ((r.data?.watchClips ?? []) as { key: string; url: string }[]).find((x) => x.key === key)?.url ?? null;
+            }}
             visibleSections={SITTER_SECTIONS}
             showEmergencyContacts={false}
             chipsOnForest
