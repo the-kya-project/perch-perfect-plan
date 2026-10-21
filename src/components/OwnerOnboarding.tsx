@@ -3,8 +3,8 @@ import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { BrandLockup } from "@/components/BrandLogo";
-import { K } from "@/components/kya";
-import { ChevronLeft, ArrowRight, Feather } from "lucide-react";
+import { K, KyaHeader, KyaHeading, KyaIconButton, KyaLink, KyaPrimaryButton } from "@/components/kya";
+import { ChevronLeft, ArrowRight, Feather, X } from "lucide-react";
 import { setTourDemo } from "@/lib/tourDemo";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
@@ -67,6 +67,37 @@ function isFixedEl(el: HTMLElement | null): boolean {
 }
 
 type Phase = null | "welcome" | "coach";
+
+/** Tour progress as dots (forest = reached), with the step count for screen readers. */
+function ProgressDots({ n, total, label }: { n: number; total: number; label: string }) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className="sr-only">{label}</span>
+      {Array.from({ length: total }, (_, i) => (
+        <span
+          key={i}
+          aria-hidden="true"
+          className={`h-2 rounded-full transition-all ${i === n - 1 ? "w-5" : "w-2"}`}
+          style={{ background: i < n ? K.forest : "#c9d6c9" }}
+        />
+      ))}
+    </div>
+  );
+}
+
+/** Sunflower main button for the coach bubble, sized to its label. */
+function CoachNext({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-full border-2 px-5 text-[15px] font-[700] active:scale-[0.99]"
+      style={{ background: K.sunflower, borderColor: K.forest, color: K.forest }}
+    >
+      {children}
+    </button>
+  );
+}
 type Spot = { rect: { top: number; left: number; width: number; height: number; bottom: number } | null; vw: number; vh: number };
 
 export function OwnerOnboarding() {
@@ -194,46 +225,38 @@ export function OwnerOnboarding() {
     const hiThere = t("ownerOnboarding.hiThere", "Hi there");
     return (
       // Every `sm:` below is iPad/desktop only (Tailwind sm = 640px; the widest
-      // iPhone is 440pt), so the phone layout — text up top, CTA pinned to the
-      // bottom — is untouched by construction. On a 13" iPad that same layout
-      // left roughly 80% of the screen empty dark green, with the copy crammed
-      // into the top-left and the CTA stranded a screen below it. This is the
-      // first thing a new owner sees, and the app ships declaring iPad support.
-      // Above sm the column stops stretching and the block centres instead.
-      <div className="fixed inset-0 z-[60] flex flex-col bg-[var(--ink)] text-white sm:justify-center">
-        <div className="px-[22px] pt-[max(env(safe-area-inset-top),18px)] sm:absolute sm:inset-x-0 sm:top-0">
-          <BrandLockup orientation="horizontal" variant="ink" size={100} />
-        </div>
-        <div className="flex-1 px-6 pt-[80px] sm:mx-auto sm:w-full sm:max-w-md sm:flex-none sm:pt-0">
+      // iPhone is 440pt), so the phone layout — forest header up top, CTA pinned
+      // to the bottom of the mist body — is untouched by construction. Above sm
+      // the CTA follows the header instead of sitting a screen below it.
+      <div className="setup-frame fixed inset-0 z-[60] flex flex-col overflow-y-auto" style={{ background: K.mist, color: K.forest }}>
+        <KyaHeader>
+          <div className="mt-1.5 flex items-center justify-between gap-3">
+            <BrandLockup orientation="horizontal" variant="ink" size={118} />
+            <KyaIconButton label={t("headers.close", "Close")} onClick={finish}><X className="size-5" /></KyaIconButton>
+          </div>
           {hasBird ? (
             <>
-              <h1 className="text-[38px] font-[400] leading-[1.05] tracking-[-0.02em]">{firstName ? hiNameReturning : hiThere}</h1>
-              <p className="mt-3.5 max-w-[30ch] text-[15px] leading-[1.55] text-white/80">{t("ownerOnboarding.welcomeBodyReturning", "Here's a quick tour of what Kya & Co. can do.")}</p>
+              <KyaHeading as="h1" size={34} className="mt-9 text-white">{firstName ? hiNameReturning : hiThere}</KyaHeading>
+              <p className="m-0 mt-2 max-w-[32ch] text-[15px] leading-[1.5]" style={{ color: K.paleGreen }}>{t("ownerOnboarding.welcomeBodyReturning", "Here's a quick tour of what Kya & Co. can do.")}</p>
             </>
           ) : (
             <>
-              <p className="t-eyebrow text-[var(--teal)]">{t("ownerOnboarding.welcomeEyebrow", "Welcome")}</p>
-              <h1 className="mt-3 text-[38px] font-[400] leading-[1.05] tracking-[-0.02em]">{firstName ? hiName : t("ownerOnboarding.welcomeHeadline", "Welcome.")}</h1>
-              <p className="mt-3.5 max-w-[30ch] text-[15px] leading-[1.55] text-white/80">{t("ownerOnboarding.welcomeBody", "A quick walkthrough first, then we'll set up your bird.")}</p>
+              <KyaHeading as="h1" size={34} className="mt-9 text-white">{firstName ? hiName : t("ownerOnboarding.welcomeHeadline", "Welcome.")}</KyaHeading>
+              <p className="m-0 mt-2 max-w-[32ch] text-[15px] leading-[1.5]" style={{ color: K.paleGreen }}>{t("ownerOnboarding.welcomeBody", "A quick walkthrough first, then we'll set up your bird.")}</p>
             </>
           )}
-        </div>
-        <div className="px-6 pb-[max(env(safe-area-inset-bottom),24px)] sm:mx-auto sm:w-full sm:max-w-md sm:pb-0 sm:pt-8">
-          <button
-            onClick={startCoach}
-            className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full py-3.5 text-[16px] font-[700] active:scale-[0.99]"
-            style={{ background: K.sunflower, color: K.forest }}
-          >
-            <ArrowRight className="size-4" /> {t("ownerOnboarding.showMeAround", "Show me around")}
-          </button>
-          <div className="mt-2 text-center">
+        </KyaHeader>
+        <main className="relative mx-auto -mt-[26px] flex w-full max-w-md flex-1 flex-col rounded-t-[26px] px-4 pb-[max(env(safe-area-inset-bottom),24px)] pt-5 sm:flex-none" style={{ background: K.mist }}>
+          <div className="flex-1 sm:hidden" />
+          <KyaPrimaryButton onClick={startCoach}>{t("ownerOnboarding.showMeAround", "Show me around")}</KyaPrimaryButton>
+          <div className="mt-1 text-center">
             {hasBird ? (
-              <button onClick={finish} className="min-h-[44px] px-3 text-[13px] font-[500] text-white/60 underline underline-offset-[3px]">{t("ownerOnboarding.notNow", "Not now")}</button>
+              <KyaLink onClick={finish} className="px-3">{t("ownerOnboarding.notNow", "Not now")}</KyaLink>
             ) : (
-              <button onClick={addBird} className="min-h-[44px] px-3 text-[13px] font-[500] text-white/60 underline underline-offset-[3px]">{t("ownerOnboarding.skipAndAddMyBird", "Skip and add my bird")}</button>
+              <KyaLink onClick={addBird} className="px-3">{t("ownerOnboarding.skipAndAddMyBird", "Skip and add my bird")}</KyaLink>
             )}
           </div>
-        </div>
+        </main>
       </div>
     );
   }
@@ -269,10 +292,10 @@ export function OwnerOnboarding() {
   }
 
   return (
-    <div className="fixed inset-0 z-[60]">
+    <div className="setup-frame fixed inset-0 z-[60]" style={{ color: K.forest }}>
       {!centered ? (
         <div
-          className="pointer-events-none absolute rounded-[14px] ring-2 ring-[var(--lime)] transition-all duration-200"
+          className="pointer-events-none absolute rounded-[14px] ring-2 ring-[#cdeab0] transition-all duration-200"
           style={{
             top: rect!.top - PAD,
             left: rect!.left - PAD,
@@ -282,59 +305,54 @@ export function OwnerOnboarding() {
           }}
         />
       ) : (
-        <div className="absolute inset-0 bg-[var(--ink)]/55" />
+        <div className="absolute inset-0" style={{ background: "rgba(26,61,46,0.55)" }} />
       )}
 
       {/* Skip — always available, top-right (hidden on wrap-up, which has its own actions). */}
       {!isWrapUp && (
         <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-end px-5 pt-[max(env(safe-area-inset-top),0.9rem)]">
-          <button onClick={finish} className="pointer-events-auto rounded-full bg-white/90 px-3 py-1.5 text-xs font-[500] text-[var(--ink)] shadow">{t("ownerOnboarding.skipTour", "Skip tour")}</button>
+          <button type="button" onClick={finish} className="pointer-events-auto min-h-[44px] rounded-full bg-white px-4 text-[14px] font-[700] shadow" style={{ color: K.forest }}>{t("ownerOnboarding.skipTour", "Skip tour")}</button>
         </div>
       )}
 
-      <div ref={bubbleRef} className="pointer-events-auto absolute rounded-[18px] border border-[var(--line)] bg-[var(--cream)] p-4 shadow-xl" style={bubbleStyle}>
+      <div ref={bubbleRef} className="pointer-events-auto absolute rounded-[20px] bg-white p-4 shadow-xl" style={bubbleStyle}>
         {isWrapUp ? (
-          <div className="text-center">
-            <p className="t-eyebrow text-[var(--mute2)]">{t("ownerOnboarding.stepOf", "{{n}} of {{total}}", { n: TOTAL, total: TOTAL })}</p>
-            <h2 className="mt-1.5 text-[18px] font-[500] text-[var(--ink)]">{t("ownerOnboarding.thatsTheTour", "That's the tour.")}</h2>
+          <div className="flex flex-col items-center text-center">
+            <ProgressDots n={TOTAL} total={TOTAL} label={t("ownerOnboarding.stepOfSr", "Step {{n}} of {{total}}", { n: TOTAL, total: TOTAL })} />
+            <KyaHeading size={22} className="mt-3">{t("ownerOnboarding.thatsTheTour", "That's the tour.")}</KyaHeading>
             {birdCount === 0 ? (
               <>
-                <p className="mt-2 text-[13px] leading-[1.5] text-[var(--ink2)]">{t("ownerOnboarding.nowTheFunPart", "Now the fun part — let's set up your first bird.")}</p>
-                <button onClick={addBird} className="mt-3.5 flex w-full items-center justify-center gap-2 rounded-[13px] bg-[var(--lime)] py-3 text-[14px] font-[500] text-[var(--ink)] active:scale-[0.99]">
-                  <Feather className="size-4" /> {t("ownerOnboarding.addMyFirstBird", "Add my first bird")}
-                </button>
-                <button onClick={finish} className="mt-2 w-full rounded-[13px] py-2.5 text-[13px] font-[500] text-[var(--mute)] active:scale-[0.99]">
-                  {t("ownerOnboarding.skipForNow", "Skip for now")}
-                </button>
-                <p className="mt-2.5 text-[11.5px] leading-[1.45] text-[var(--mute)]">{t("ownerOnboarding.addAnytime", "You can add a bird anytime from Home — tap the ? to revisit the tour.")}</p>
+                <p className="m-0 mt-2 text-[15px] leading-[1.5]" style={{ color: K.ink }}>{t("ownerOnboarding.nowTheFunPart", "Now the fun part — let's set up your first bird.")}</p>
+                <div className="mt-4 w-full">
+                  <KyaPrimaryButton onClick={addBird} icon={<Feather className="size-4" />}>{t("ownerOnboarding.addMyFirstBird", "Add my first bird")}</KyaPrimaryButton>
+                </div>
+                <KyaLink onClick={finish} className="mt-1">{t("ownerOnboarding.skipForNow", "Skip for now")}</KyaLink>
+                <p className="m-0 mt-1 text-[13px] leading-[1.45]" style={{ color: K.quiet }}>{t("ownerOnboarding.addAnytime", "You can add a bird anytime from Home — tap the ? to revisit the tour.")}</p>
               </>
             ) : (
               <>
-                <p className="mt-2 text-[13px] leading-[1.5] text-[var(--ink2)]">{t("ownerOnboarding.refresher", "Anytime you need a refresher, the ? is right up top.")}</p>
-                <button onClick={finish} className="mt-3.5 flex w-full items-center justify-center rounded-[13px] bg-[var(--lime)] py-3 text-[14px] font-[500] text-[var(--ink)] active:scale-[0.99]">
-                  {t("ownerOnboarding.gotIt", "Got it")}
-                </button>
+                <p className="m-0 mt-2 text-[15px] leading-[1.5]" style={{ color: K.ink }}>{t("ownerOnboarding.refresher", "Anytime you need a refresher, the ? is right up top.")}</p>
+                <div className="mt-4 w-full">
+                  <KyaPrimaryButton onClick={finish}>{t("ownerOnboarding.gotIt", "Got it")}</KyaPrimaryButton>
+                </div>
               </>
             )}
           </div>
         ) : (
           <>
-            <p className="t-eyebrow text-[var(--mute2)]">{t("ownerOnboarding.stepOf", "{{n}} of {{total}}", { n: step + 1, total: TOTAL })}</p>
-            <h2 className="mt-1.5 text-[15px] font-[500] leading-[1.2] text-[var(--ink)]">{stepDef!.headline}</h2>
-            <p className="mt-1.5 text-[13px] leading-[1.5] text-[var(--ink2)]">{stepDef!.body}</p>
+            <ProgressDots n={step + 1} total={TOTAL} label={t("ownerOnboarding.stepOfSr", "Step {{n}} of {{total}}", { n: step + 1, total: TOTAL })} />
+            <KyaHeading size={20} className="mt-3">{stepDef!.headline}</KyaHeading>
+            <p className="m-0 mt-1.5 text-[15px] leading-[1.5]" style={{ color: K.ink }}>{stepDef!.body}</p>
             <div className="mt-3 flex items-center justify-between gap-2">
-              <button onClick={back} className="inline-flex shrink-0 items-center gap-1 rounded-lg px-1.5 py-1.5 text-xs font-[500] text-[var(--mute)]">
+              <KyaLink onClick={back} className="shrink-0 pr-2">
                 <ChevronLeft className="size-4" /> {t("ownerOnboarding.back", "Back")}
-              </button>
-              <div className="mx-1 h-1 flex-1 overflow-hidden rounded-full bg-[#e8e1d0]">
-                <div className="h-full rounded-full bg-[var(--ink)] transition-[width]" style={{ width: `${Math.round(((step + 1) / TOTAL) * 100)}%` }} />
-              </div>
-              <button onClick={next} className="inline-flex shrink-0 items-center gap-1 rounded-[10px] bg-[var(--lime)] px-4 py-2 text-[13px] font-[500] text-[var(--ink)]">
-                {t("ownerOnboarding.next", "Next")} <ArrowRight className="size-3.5" />
-              </button>
+              </KyaLink>
+              <CoachNext onClick={next}>
+                {t("ownerOnboarding.next", "Next")} <ArrowRight className="size-4" />
+              </CoachNext>
             </div>
-            <div className="mt-2 text-center">
-              <button onClick={finish} className="text-[12px] font-[500] text-[var(--mute)] underline underline-offset-2">{t("ownerOnboarding.skipTour", "Skip tour")}</button>
+            <div className="text-center">
+              <KyaLink onClick={finish} color={K.quiet}>{t("ownerOnboarding.skipTour", "Skip tour")}</KyaLink>
             </div>
           </>
         )}

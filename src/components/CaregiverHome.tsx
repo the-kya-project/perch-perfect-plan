@@ -12,7 +12,8 @@ import { BirdCareCard } from "@/components/BirdCareCard";
 import { Check, CalendarHeart, Sun, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { friendlyError } from "@/lib/errorMessage";
-import { formatLocalTime } from "@/lib/dates";
+import { formatLocalDate, formatLocalTime } from "@/lib/dates";
+import { K, KyaHeading } from "@/components/kya";
 import { localDateISO } from "@/lib/localDay";
 import { useTranslation } from "react-i18next";
 import i18next, { type TFunction } from "i18next";
@@ -98,8 +99,12 @@ export function CaregiverCoveringSection({ sit, hideHeader }: { sit: ActiveCareg
     <section className="space-y-3">
       {!hideHeader && (
         <div className="px-1">
-          <h2 className="t-section">{t("caregiverHome.covering", "Covering {{where}}", { where })}</h2>
-          <p className="t-meta text-[var(--teal-on-cream)]">{t("caregiverHome.sitActive", "Sit active — daily care while {{owner}}'s away", { owner: sit.ownerName || t("caregiverHome.theOwner", "the owner") })}</p>
+          <KyaHeading size={23}>{t("caregiverHome.covering", "Covering {{where}}", { where })}</KyaHeading>
+          <p className="m-0 mt-0.5 text-[13px] leading-[1.45]" style={{ color: K.quiet }}>
+            {t("caregiverHome.sitActive", "Sit active — daily care while {{owner}}'s away", { owner: sit.ownerName || t("caregiverHome.theOwner", "the owner") })}
+            {" · "}
+            {t("caregiverHome.sitDates", "{{start}} – {{end}}", { start: fmtDay(sit.startDate), end: fmtDay(sit.endDate) })}
+          </p>
         </div>
       )}
       <div className="space-y-3">
@@ -117,6 +122,7 @@ export function CaregiverCoveringSection({ sit, hideHeader }: { sit: ActiveCareg
               tasksTotal={total}
               scan={{ done: b.scanDone, status: b.scanStatus }}
               onClick={() => navigate({ to: "/covering/$sitId/$birdId", params: { sitId: sit.id, birdId: b.id } })}
+              look="kya"
             />
           );
         })}
@@ -329,6 +335,9 @@ function daypartLabel(t: TFunction, dp: Daypart): string {
     case "anytime": return t("caregiverHome.daypart.anytime", "Anytime");
     default: return DAYPART_LABEL[dp];
   }
+}
+function fmtDay(iso: string): string {
+  return formatLocalDate(new Date(`${iso.slice(0, 10)}T12:00:00`), { month: "short", day: "numeric" });
 }
 function fmtTime(iso: string): string {
   try { return formatLocalTime(new Date(iso), { hour: "numeric", minute: "2-digit" }); } catch { return ""; }

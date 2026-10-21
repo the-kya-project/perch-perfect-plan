@@ -315,3 +315,5 @@ input[type="date"]::-webkit-date-and-time-value {
   outline: 3px solid #2d6a4f;
   outline-offset: 3px;
 }
+/* Fields show focus with their own forest border. */
+.setup-frame .kya-input:focus-visible { outline: none; }

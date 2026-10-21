@@ -4,7 +4,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { BrandLockup } from "@/components/BrandLogo";
-import { ChevronLeft, ArrowRight, Check } from "lucide-react";
+import { K, KyaHeader, KyaHeading, KyaIconButton, KyaLink, KyaPrimaryButton } from "@/components/kya";
+import { ChevronLeft, ArrowRight, Check, X } from "lucide-react";
 import { getMemberOnboardingContext, type MemberHousehold } from "@/lib/onboarding.functions";
 import { useTranslation } from "react-i18next";
 import i18next from "i18next";
@@ -67,6 +68,37 @@ function isFixedEl(el: HTMLElement | null): boolean {
 }
 
 type Phase = null | "welcome" | "coach";
+
+/** Tour progress as dots (forest = reached), with the step count for screen readers. */
+function ProgressDots({ n, total, label }: { n: number; total: number; label: string }) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <span className="sr-only">{label}</span>
+      {Array.from({ length: total }, (_, i) => (
+        <span
+          key={i}
+          aria-hidden="true"
+          className={`h-2 rounded-full transition-all ${i === n - 1 ? "w-5" : "w-2"}`}
+          style={{ background: i < n ? K.forest : "#c9d6c9" }}
+        />
+      ))}
+    </div>
+  );
+}
+
+/** Sunflower main button for the coach bubble, sized to its label. */
+function CoachNext({ children, onClick }: { children: React.ReactNode; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex min-h-[44px] shrink-0 items-center gap-1.5 rounded-full border-2 px-5 text-[15px] font-[700] active:scale-[0.99]"
+      style={{ background: K.sunflower, borderColor: K.forest, color: K.forest }}
+    >
+      {children}
+    </button>
+  );
+}
 type Spot = { rect: { top: number; left: number; width: number; height: number; bottom: number } | null; vw: number; vh: number };
 
 export function MemberOnboarding() {
@@ -188,26 +220,22 @@ export function MemberOnboarding() {
       // Same large-screen treatment as the owner welcome — `sm:` and up only, so
       // phones are untouched. A household member is just as likely to be on an
       // iPad as an owner.
-      <div className="fixed inset-0 z-[60] flex flex-col bg-[var(--ink)] text-white sm:justify-center">
-        <div className="px-[22px] pt-[max(env(safe-area-inset-top),18px)] sm:absolute sm:inset-x-0 sm:top-0">
-          <BrandLockup orientation="horizontal" variant="ink" size={100} />
-        </div>
-        <div className="flex-1 px-6 pt-[80px] sm:mx-auto sm:w-full sm:max-w-md sm:flex-none sm:pt-0">
-          <p className="t-eyebrow text-[var(--teal)]">{t("memberOnboarding.welcomeEyebrow", "Welcome")}</p>
-          <h1 className="mt-3 text-[32px] font-[400] leading-[1.08] tracking-[-0.02em]">{t("memberOnboarding.welcomeHeadline", "Welcome. You're helping with a flock.")}</h1>
-          <p className="mt-3.5 max-w-[34ch] text-[15px] leading-[1.55] text-white/80">{t("memberOnboarding.welcomeBody", "{{owner}} added you to help care for their birds. Here's how everything works.", { owner: ownerName })}</p>
-        </div>
-        <div className="px-6 pb-[max(env(safe-area-inset-bottom),24px)] sm:mx-auto sm:w-full sm:max-w-md sm:pb-0 sm:pt-8">
-          <button
-            onClick={startCoach}
-            className="flex w-full items-center justify-center gap-2 rounded-[13px] bg-[var(--lime)] py-3.5 text-[14.5px] font-[500] text-[var(--ink)] active:scale-[0.99]"
-          >
-            <ArrowRight className="size-4" /> {t("memberOnboarding.showMeAround", "Show me around")}
-          </button>
-          <div className="mt-3.5 text-center">
-            <button onClick={finish} className="text-[13px] font-[500] text-white/60 underline underline-offset-[3px]">{t("memberOnboarding.skipForNow", "Skip for now")}</button>
+      <div className="setup-frame fixed inset-0 z-[60] flex flex-col overflow-y-auto" style={{ background: K.mist, color: K.forest }}>
+        <KyaHeader>
+          <div className="mt-1.5 flex items-center justify-between gap-3">
+            <BrandLockup orientation="horizontal" variant="ink" size={118} />
+            <KyaIconButton label={t("headers.close", "Close")} onClick={finish}><X className="size-5" /></KyaIconButton>
           </div>
-        </div>
+          <KyaHeading as="h1" size={32} className="mt-9 text-white">{t("memberOnboarding.welcomeHeadline", "Welcome. You're helping with a flock.")}</KyaHeading>
+          <p className="m-0 mt-2 max-w-[34ch] text-[15px] leading-[1.5]" style={{ color: K.paleGreen }}>{t("memberOnboarding.welcomeBody", "{{owner}} added you to help care for their birds. Here's how everything works.", { owner: ownerName })}</p>
+        </KyaHeader>
+        <main className="relative mx-auto -mt-[26px] flex w-full max-w-md flex-1 flex-col rounded-t-[26px] px-4 pb-[max(env(safe-area-inset-bottom),24px)] pt-5 sm:flex-none" style={{ background: K.mist }}>
+          <div className="flex-1 sm:hidden" />
+          <KyaPrimaryButton onClick={startCoach}>{t("memberOnboarding.showMeAround", "Show me around")}</KyaPrimaryButton>
+          <div className="mt-1 text-center">
+            <KyaLink onClick={finish} className="px-3">{t("memberOnboarding.skipForNow", "Skip for now")}</KyaLink>
+          </div>
+        </main>
       </div>
     );
   }
@@ -239,10 +267,10 @@ export function MemberOnboarding() {
   }
 
   return (
-    <div className="fixed inset-0 z-[60]">
+    <div className="setup-frame fixed inset-0 z-[60]" style={{ color: K.forest }}>
       {!centered ? (
         <div
-          className="pointer-events-none absolute rounded-[14px] ring-2 ring-[var(--lime)] transition-all duration-200"
+          className="pointer-events-none absolute rounded-[14px] ring-2 ring-[#cdeab0] transition-all duration-200"
           style={{
             top: rect!.top - PAD,
             left: rect!.left - PAD,
@@ -252,44 +280,41 @@ export function MemberOnboarding() {
           }}
         />
       ) : (
-        <div className="absolute inset-0 bg-[var(--ink)]/55" />
+        <div className="absolute inset-0" style={{ background: "rgba(26,61,46,0.55)" }} />
       )}
 
       {!isWrapUp && (
         <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-end px-5 pt-[max(env(safe-area-inset-top),0.9rem)]">
-          <button onClick={finish} className="pointer-events-auto rounded-full bg-white/90 px-3 py-1.5 text-xs font-[500] text-[var(--ink)] shadow">{t("memberOnboarding.skipTour", "Skip tour")}</button>
+          <button type="button" onClick={finish} className="pointer-events-auto min-h-[44px] rounded-full bg-white px-4 text-[14px] font-[700] shadow" style={{ color: K.forest }}>{t("memberOnboarding.skipTour", "Skip tour")}</button>
         </div>
       )}
 
-      <div ref={bubbleRef} className="pointer-events-auto absolute rounded-[18px] border border-[var(--line)] bg-[var(--cream)] p-4 shadow-xl" style={bubbleStyle}>
+      <div ref={bubbleRef} className="pointer-events-auto absolute rounded-[20px] bg-white p-4 shadow-xl" style={bubbleStyle}>
         {isWrapUp ? (
-          <div className="text-center">
-            <p className="t-eyebrow text-[var(--mute2)]">{t("memberOnboarding.stepOf", "{{n}} of {{total}}", { n: TOTAL, total: TOTAL })}</p>
-            <h2 className="mt-1.5 text-[18px] font-[500] text-[var(--ink)]">{t("memberOnboarding.allSet", "You're all set.")}</h2>
-            <p className="mt-2 text-[13px] leading-[1.5] text-[var(--ink2)]">{t("memberOnboarding.ownerManages", "{{owner}} manages everything else. Just reach out to them if you ever need to do more.", { owner: ownerName })}</p>
-            <button onClick={finish} className="mt-3.5 flex w-full items-center justify-center gap-2 rounded-[13px] bg-[var(--lime)] py-3 text-[14px] font-[500] text-[var(--ink)] active:scale-[0.99]">
-              <Check className="size-4" /> {t("memberOnboarding.gotIt", "Got it")}
-            </button>
-            <p className="mt-2.5 text-[11.5px] leading-[1.45] text-[var(--mute)]">{t("memberOnboarding.revisit", "Tap the ? in the top bar anytime to revisit this.")}</p>
+          <div className="flex flex-col items-center text-center">
+            <ProgressDots n={TOTAL} total={TOTAL} label={t("memberOnboarding.stepOfSr", "Step {{n}} of {{total}}", { n: TOTAL, total: TOTAL })} />
+            <KyaHeading size={22} className="mt-3">{t("memberOnboarding.allSet", "You're all set.")}</KyaHeading>
+            <p className="m-0 mt-2 text-[15px] leading-[1.5]" style={{ color: K.ink }}>{t("memberOnboarding.ownerManages", "{{owner}} manages everything else. Just reach out to them if you ever need to do more.", { owner: ownerName })}</p>
+            <div className="mt-4 w-full">
+              <KyaPrimaryButton onClick={finish} icon={<Check className="size-4" />}>{t("memberOnboarding.gotIt", "Got it")}</KyaPrimaryButton>
+            </div>
+            <p className="m-0 mt-2.5 text-[13px] leading-[1.45]" style={{ color: K.quiet }}>{t("memberOnboarding.revisit", "Tap the ? in the top bar anytime to revisit this.")}</p>
           </div>
         ) : (
           <>
-            <p className="t-eyebrow text-[var(--mute2)]">{t("memberOnboarding.stepOf", "{{n}} of {{total}}", { n: step + 1, total: TOTAL })}</p>
-            <h2 className="mt-1.5 text-[15px] font-[500] leading-[1.2] text-[var(--ink)]">{stepDef!.headline}</h2>
-            <p className="mt-1.5 text-[13px] leading-[1.5] text-[var(--ink2)]">{stepDef!.body}</p>
+            <ProgressDots n={step + 1} total={TOTAL} label={t("memberOnboarding.stepOfSr", "Step {{n}} of {{total}}", { n: step + 1, total: TOTAL })} />
+            <KyaHeading size={20} className="mt-3">{stepDef!.headline}</KyaHeading>
+            <p className="m-0 mt-1.5 text-[15px] leading-[1.5]" style={{ color: K.ink }}>{stepDef!.body}</p>
             <div className="mt-3 flex items-center justify-between gap-2">
-              <button onClick={back} className="inline-flex shrink-0 items-center gap-1 rounded-lg px-1.5 py-1.5 text-xs font-[500] text-[var(--mute)]">
+              <KyaLink onClick={back} className="shrink-0 pr-2">
                 <ChevronLeft className="size-4" /> {t("memberOnboarding.back", "Back")}
-              </button>
-              <div className="mx-1 h-1 flex-1 overflow-hidden rounded-full bg-[#e8e1d0]">
-                <div className="h-full rounded-full bg-[var(--ink)] transition-[width]" style={{ width: `${Math.round(((step + 1) / TOTAL) * 100)}%` }} />
-              </div>
-              <button onClick={next} className="inline-flex shrink-0 items-center gap-1 rounded-[10px] bg-[var(--lime)] px-4 py-2 text-[13px] font-[500] text-[var(--ink)]">
-                {t("memberOnboarding.next", "Next")} <ArrowRight className="size-3.5" />
-              </button>
+              </KyaLink>
+              <CoachNext onClick={next}>
+                {t("memberOnboarding.next", "Next")} <ArrowRight className="size-4" />
+              </CoachNext>
             </div>
-            <div className="mt-2 text-center">
-              <button onClick={finish} className="text-[12px] font-[500] text-[var(--mute)] underline underline-offset-2">{t("memberOnboarding.skipTour", "Skip tour")}</button>
+            <div className="text-center">
+              <KyaLink onClick={finish} color={K.quiet}>{t("memberOnboarding.skipTour", "Skip tour")}</KyaLink>
             </div>
           </>
         )}

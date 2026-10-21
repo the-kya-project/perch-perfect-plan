@@ -15,6 +15,7 @@ import { daysSince, staleThreshold } from "@/lib/homeData";
 import { DailyCheckCard } from "@/components/DailyCheckCard";
 import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 import { TaskHeader } from "@/components/headers";
+import { K, SERIF, KyaGroupLabel, KyaHeading } from "@/components/kya";
 import { speciesLabel } from "@/lib/speciesLabel";
 import { track } from "@/lib/analytics";
 
@@ -37,21 +38,19 @@ type Bird = { id: string; name: string; species: string | null; photo_url: strin
 type Photo = { url: string; original?: string } | null;
 
 const C = {
-  forest: "#1a3d2e",
-  moss: "#2d6a4f",
-  lime: "#cdeab0",
-  mist: "#d6e8dc",
-  ringTrack: "#2f5a47",
-  body: "#f1f5f0",
-  line: "#d5dfd5",
+  forest: K.forest,
+  moss: K.moss,
+  lime: K.lime,
+  body: K.mist,
+  line: K.line,
   avatarLine: "#c9d6c9",
-  quiet: "#5f5e5a",
-  red: "#a32d2d",
-  amberBg: "#f6e7c4",
-  amberText: "#854f0b",
-  sunflower: "#f2b33d",
+  quiet: K.quiet,
+  ink: K.ink,
+  red: K.red,
+  amberBg: K.amberBg,
+  amberText: K.amberText,
+  sunflower: K.sunflower,
 };
-const SERIF = "'Newsreader', Georgia, serif";
 
 function mealLabel(t: TFunction, m: string | null | undefined, lower = false): string | null {
   if (m === "before_meal") return lower ? t("dailyCheck.beforeMealLower", "before meal") : t("birdWeight.beforeMeal", "Before meal");
@@ -170,8 +169,8 @@ function FlockCheck() {
       <div className="setup-frame min-h-screen pb-[calc(env(safe-area-inset-bottom)+24px)]" style={{ background: C.body, color: C.forest }}>
         {header}
         <main className="relative mx-auto -mt-[26px] flex max-w-md flex-col gap-3.5 rounded-t-[26px] px-4 pb-6 pt-5" style={{ background: C.body }}>
-          <section className="rounded-[16px] bg-white px-4 pb-2 pt-4">
-            <h2 className="m-0 text-[19px] font-[700]" style={{ fontFamily: SERIF }}>{t("flockCheck.todaysWeights", "Today's weights")}</h2>
+          <section className="rounded-[20px] bg-white px-4 pb-2 pt-4">
+            <KyaHeading size={21}>{t("flockCheck.todaysWeights", "Today's weights")}</KyaHeading>
             <ul className="m-0 mt-2 list-none p-0">
               {checked.map((b) => {
                 const w = today?.[b.id]?.weights[0];
@@ -180,15 +179,15 @@ function FlockCheck() {
                   <li key={b.id} className="flex min-h-[56px] items-center gap-3 border-b py-2 last:border-b-0" style={{ borderColor: C.line }}>
                     {avatar(b, 36, C.avatarLine)}
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate text-[14px] font-[700]">{b.name}</span>
-                      {w ? (meal && <span className="block text-[12px]" style={{ color: C.quiet }}>{meal}</span>) : (
-                        <span className="block text-[12px]" style={{ color: C.quiet }}>{t("flockCheck.checkedNotWeighed", "Checked, not weighed")}</span>
+                      <span className="block truncate text-[15px] font-[700]">{b.name}</span>
+                      {w ? (meal && <span className="block text-[13px]" style={{ color: C.quiet }}>{meal}</span>) : (
+                        <span className="block text-[13px]" style={{ color: C.quiet }}>{t("flockCheck.checkedNotWeighed", "Checked, not weighed")}</span>
                       )}
                     </span>
                     {w ? (
                       <span className="shrink-0 text-[15px] font-[700]">{w.grams.toLocaleString()}<span className="ml-0.5 text-[12px] font-[500]" style={{ color: C.quiet }}>g</span></span>
                     ) : (
-                      <button type="button" onClick={() => navigate({ to: "/check", search: { bird: b.id } })} className="min-h-[44px] shrink-0 px-1 text-[14px] font-[700]" style={{ color: C.moss }}>
+                      <button type="button" onClick={() => navigate({ to: "/check", search: { bird: b.id } })} className="inline-flex min-h-[44px] shrink-0 items-center rounded-full border-2 bg-white px-4 text-[15px] font-[700]" style={{ borderColor: C.forest, color: C.forest }}>
                         {t("flockCheck.addWeight", "Add weight")}
                       </button>
                     )}
@@ -199,8 +198,8 @@ function FlockCheck() {
           </section>
 
           {noticed.length > 0 && (
-            <section className="rounded-[16px] px-4 pb-2 pt-4" style={{ background: C.amberBg }}>
-              <h2 className="m-0 text-[19px] font-[700]" style={{ fontFamily: SERIF, color: C.amberText }}>{t("flockCheck.youNoticed", "You noticed something")}</h2>
+            <section className="rounded-[20px] px-4 pb-2 pt-4" style={{ background: C.amberBg, color: C.amberText }}>
+              <KyaHeading size={21}>{t("flockCheck.youNoticed", "You noticed something")}</KyaHeading>
               <ul className="m-0 mt-2 list-none p-0">
                 {noticed.map((b) => {
                   const c = today?.[b.id]?.check;
@@ -208,7 +207,7 @@ function FlockCheck() {
                   return (
                     <li key={b.id} className="flex items-start gap-3 py-2">
                       {avatar(b, 36, C.amberBg)}
-                      <span className="min-w-0 flex-1 text-[14px] leading-[1.45]">
+                      <span className="min-w-0 flex-1 text-[15px] leading-[1.45]">
                         <span className="block font-[700]">{items ? t("flockCheck.birdNoticed", "{{name}} · {{items}}", { name: b.name, items }) : b.name}</span>
                         {c?.notes?.trim() && <span className="mt-0.5 block" style={{ color: C.amberText }}>“{c.notes.trim()}”</span>}
                         <button
@@ -228,7 +227,7 @@ function FlockCheck() {
           )}
 
           {noticed.length < checked.length && (
-            <p className="m-0 px-1 text-[14px]" style={{ color: C.forest }}>
+            <p className="m-0 px-1 text-[15px]" style={{ color: C.ink }}>
               {noticed.length > 0 ? t("flockCheck.everyoneElseUsual", "Everyone else looked like usual.") : t("flockCheck.everyoneUsual", "Everyone looked like usual.")}
             </p>
           )}
@@ -253,7 +252,8 @@ function FlockCheck() {
       <section
         key={b.id}
         ref={(el) => { if (el) sectionRefs.current.set(b.id, el); else sectionRefs.current.delete(b.id); }}
-        className="flex scroll-mt-4 flex-col gap-3.5 rounded-[18px] bg-[#cdeab0] p-[16px]"
+        className="flex scroll-mt-4 flex-col gap-3.5 rounded-[20px] p-[16px]"
+        style={{ background: C.lime }}
       >
         <button type="button" aria-expanded onClick={() => setOpenId(null)} className="flex min-h-[44px] items-center gap-3 border-0 bg-transparent p-0 text-left text-inherit">
           <span className="relative size-[46px] shrink-0 overflow-hidden rounded-full" style={{ background: b.color }} aria-hidden="true">
@@ -262,7 +262,7 @@ function FlockCheck() {
           <span className="min-w-0 flex-1">
             <span className="block truncate text-[20px] font-[700]" style={{ fontFamily: SERIF }}>{b.name}</span>
             {(b.speciesText || d?.lastGrams != null) && (
-              <span className="mt-px block truncate text-[12px] text-[#2b3a31]">
+              <span className="mt-px block truncate text-[13px]" style={{ color: C.ink }}>
                 {[b.speciesText, d?.lastGrams != null ? t("flockCheck.lastWeight", "last {{n}} g", { n: d.lastGrams }) : null].filter(Boolean).join(" · ")}
               </span>
             )}
@@ -305,10 +305,10 @@ function FlockCheck() {
           const d = today?.[b.id];
           const line = weighedLine(t, d, b.is_foster ?? null);
           return (
-            <div key={b.id} className="flex min-h-[68px] items-center gap-3 rounded-[16px] bg-white px-3.5 py-2.5" style={{ borderBottom: `1px solid ${C.line}` }}>
+            <div key={b.id} className="flex min-h-[68px] items-center gap-3 rounded-[20px] bg-white px-3.5 py-2.5">
               {avatar(b, 46, line.overdue ? C.red : C.avatarLine)}
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-[14.5px] font-[700]">{b.name}</span>
+                <span className="block truncate text-[15px] font-[700]">{b.name}</span>
                 <span className={`mt-px block truncate text-[13px] ${line.overdue ? "font-[700]" : ""}`} style={{ color: line.overdue ? C.red : C.quiet }}>{line.text}</span>
               </span>
               <button type="button" onClick={() => openBird(b.id)} className="inline-flex h-[44px] shrink-0 items-center rounded-full border-2 bg-white px-4 text-[15px] font-[700]" style={{ borderColor: C.forest, color: C.forest }}>
@@ -338,12 +338,12 @@ function FlockCheck() {
               key={b.id}
               type="button"
               onClick={() => openBird(b.id)}
-              className="flex min-h-[68px] w-full items-center gap-3 rounded-[16px] border-0 bg-white px-3.5 py-2.5 text-left"
-              style={{ borderBottom: `1px solid ${C.line}`, color: C.forest }}
+              className="flex min-h-[68px] w-full items-center gap-3 rounded-[20px] border-0 bg-white px-3.5 py-2.5 text-left"
+              style={{ color: C.forest }}
             >
               {avatar(b, 46, C.avatarLine, true)}
               <span className="min-w-0 flex-1">
-                <span className="block truncate text-[14.5px] font-[700]">{b.name}</span>
+                <span className="block truncate text-[15px] font-[700]">{b.name}</span>
                 <span className="mt-px line-clamp-2 block text-[13px] leading-[1.35]" style={{ color: C.quiet }}>{parts.join(" · ")}</span>
               </span>
               <span className="shrink-0 rounded-full px-2.5 py-1 text-[12px] font-[700]" style={flagged ? { background: C.amberBg, color: C.amberText } : { background: C.lime, color: C.forest }}>
@@ -379,7 +379,7 @@ function weighedLine(t: TFunction, d: BirdToday | undefined, isFoster: boolean |
 }
 
 function SectionLabel({ children, className = "" }: { children: React.ReactNode; className?: string }) {
-  return <p className={`m-0 px-1 text-[12px] font-[700] ${className}`} style={{ color: C.quiet }}>{children}</p>;
+  return <KyaGroupLabel className={className}>{children}</KyaGroupLabel>;
 }
 
 
