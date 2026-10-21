@@ -141,7 +141,7 @@ export function deriveFoodLegacyFields(v: FoodValue): {
 function Group({ title, hint, children }: { title: string; hint?: string; children: React.ReactNode }) {
   return (
     <div className="rounded-xl bg-sage-50/60 p-3 ring-1 ring-sage-100">
-      <p className="text-xs font-bold uppercase tracking-wider text-sage-700">{title}</p>
+      <p className="text-xs font-bold text-sage-700">{title}</p>
       {hint && <p className="mt-1 text-[11px] text-sage-600">{hint}</p>}
       <div className="mt-3">{children}</div>
     </div>
@@ -206,7 +206,7 @@ export function FoodEditor({ value, onChange }: { value: FoodValue; onChange: (p
         </div>
         {diet.includes("other") && (
           <input
-            className="input mt-3"
+            className="kya-input mt-3"
             placeholder={t("foodEditor.describeOtherDiet", "Describe the other diet")}
             value={value.diet_other ?? ""}
             maxLength={200}
@@ -252,7 +252,7 @@ export function FoodEditor({ value, onChange }: { value: FoodValue; onChange: (p
                         ))}
                       </div>
                       <input
-                        className="input mt-2 text-sm"
+                        className="kya-input mt-2 text-sm"
                         placeholder={t("foodEditor.otherFreshFoodsPlaceholder", "Other fresh foods (free text)")}
                         value={value.fresh_foods_other ?? ""}
                         maxLength={300}
@@ -275,7 +275,7 @@ export function FoodEditor({ value, onChange }: { value: FoodValue; onChange: (p
                         <div key={idx} className="rounded-lg bg-sage-50/60 p-2 ring-1 ring-sage-100">
                           <div className="grid grid-cols-[1fr,auto] gap-2">
                             <input
-                              className="input"
+                              className="kya-input"
                               placeholder={isChop ? t("foodEditor.chopNamePlaceholder", "e.g. Morning chop mix") : t("foodEditor.brandOrItemName", "Brand or item name")}
                               value={it.name}
                               maxLength={120}
@@ -296,7 +296,7 @@ export function FoodEditor({ value, onChange }: { value: FoodValue; onChange: (p
                           </div>
                           <div className="mt-2 grid grid-cols-[1fr,1.4fr] gap-2">
                             <input
-                              className="input"
+                              className="kya-input"
                               inputMode="decimal"
                               placeholder={t("foodEditor.amountEg", "Amount (e.g. 2)")}
                               value={it.amount}
@@ -307,7 +307,7 @@ export function FoodEditor({ value, onChange }: { value: FoodValue; onChange: (p
                               }}
                             />
                             <select
-                              className="input"
+                              className="kya-input"
                               value={it.unit}
                               onChange={(e) => {
                                 const next = items.slice();
@@ -347,13 +347,13 @@ export function FoodEditor({ value, onChange }: { value: FoodValue; onChange: (p
 
       <Group title={t("foodEditor.treats", "Treats")}>
         <input
-          className="input"
+          className="kya-input"
           placeholder={t("foodEditor.treatsPlaceholder", "What treats are OK? (e.g. millet spray, almond slivers)")}
           value={value.treats_notes ?? ""}
           maxLength={300}
           onChange={(e) => onChange({ treats_notes: e.target.value || null })}
         />
-        <select className="input mt-2" value={value.treats_frequency ?? ""} onChange={(e) => onChange({ treats_frequency: e.target.value || null })}>
+        <select className="kya-input mt-2" value={value.treats_frequency ?? ""} onChange={(e) => onChange({ treats_frequency: e.target.value || null })}>
           <option value="">{t("foodEditor.pickAFrequency", "Pick a frequency…")}</option>
           {TREAT_FREQ.map((o) => <option key={o.value} value={o.value}>{foodLabel(t, o.label)}</option>)}
         </select>
@@ -378,7 +378,7 @@ export function FoodEditor({ value, onChange }: { value: FoodValue; onChange: (p
         </div>
         <div className="mt-3 flex gap-2">
           <input
-            className="input flex-1"
+            className="kya-input flex-1"
             placeholder={t("foodEditor.neverFeedPlaceholder", "Add another food to never feed")}
             value={newNever}
             maxLength={80}
@@ -392,12 +392,12 @@ export function FoodEditor({ value, onChange }: { value: FoodValue; onChange: (p
       </Group>
 
       <Group title={t("foodEditor.water", "Water")}>
-        <select className="input" value={value.water_frequency ?? ""} onChange={(e) => onChange({ water_frequency: e.target.value || null })}>
+        <select className="kya-input" value={value.water_frequency ?? ""} onChange={(e) => onChange({ water_frequency: e.target.value || null })}>
           <option value="">{t("foodEditor.pickAFrequency", "Pick a frequency…")}</option>
           {WATER_FREQ.map((o) => <option key={o.value} value={o.value}>{foodLabel(t, o.label)}</option>)}
         </select>
         <textarea
-          className="input area mt-2"
+          className="kya-input mt-2"
           placeholder={t("foodEditor.waterNotesPlaceholder", "Notes (filter, bottle vs bowl, etc.)")}
           value={value.water_notes ?? ""}
           maxLength={400}
@@ -407,7 +407,7 @@ export function FoodEditor({ value, onChange }: { value: FoodValue; onChange: (p
 
       <Group title={t("foodEditor.whereFoodIsStored", "Where food is stored")}>
         <input
-          className="input"
+          className="kya-input"
           placeholder={t("foodEditor.storagePlaceholder", "e.g. Pantry, top shelf; fridge bin")}
           value={value.food_storage ?? ""}
           maxLength={200}
@@ -418,7 +418,7 @@ export function FoodEditor({ value, onChange }: { value: FoodValue; onChange: (p
       <Group title={t("foodEditor.freshnessHygiene", "Freshness & hygiene")} hint={t("foodEditor.freshnessHygieneHint", "General defaults — adjust to fit your bird and routine.")}>
         <label className="text-xs font-semibold text-sage-700">{t("foodEditor.removeFreshAfter", "Remove fresh or wet food after")}</label>
         <select
-          className="input mt-1"
+          className="kya-input mt-1"
           value={String(value.fresh_food_removal_minutes ?? 120)}
           onChange={(e) => onChange({ fresh_food_removal_minutes: Number(e.target.value) })}
         >
@@ -427,19 +427,19 @@ export function FoodEditor({ value, onChange }: { value: FoodValue; onChange: (p
         <p className="mt-1 text-[11px] text-sage-600">{t("foodEditor.freshSpoilsHint", "Fresh food spoils fast and can grow bacteria. This tells your sitter when to take it out.")}</p>
 
         <label className="mt-3 block text-xs font-semibold text-sage-700">{t("foodEditor.washFoodBowls", "Wash food bowls")}</label>
-        <select className="input mt-1" value={value.food_bowl_wash_cadence ?? "after_each_fresh"} onChange={(e) => onChange({ food_bowl_wash_cadence: e.target.value })}>
+        <select className="kya-input mt-1" value={value.food_bowl_wash_cadence ?? "after_each_fresh"} onChange={(e) => onChange({ food_bowl_wash_cadence: e.target.value })}>
           {FOOD_BOWL_WASH_OPTIONS.map((o) => <option key={o.value} value={o.value}>{foodLabel(t, o.label)}</option>)}
         </select>
 
         <label className="mt-3 block text-xs font-semibold text-sage-700">{t("foodEditor.washWaterBowl", "Wash water bowl or bottle")}</label>
-        <select className="input mt-1" value={value.water_bowl_wash_cadence ?? "once_daily"} onChange={(e) => onChange({ water_bowl_wash_cadence: e.target.value })}>
+        <select className="kya-input mt-1" value={value.water_bowl_wash_cadence ?? "once_daily"} onChange={(e) => onChange({ water_bowl_wash_cadence: e.target.value })}>
           {WATER_BOWL_WASH_OPTIONS.map((o) => <option key={o.value} value={o.value}>{foodLabel(t, o.label)}</option>)}
         </select>
         <p className="mt-1 text-[11px] text-sage-600">{t("foodEditor.washBowlHint", "This is washing the bowl itself — separate from how often you change the water.")}</p>
 
         <label className="mt-3 block text-xs font-semibold text-sage-700">{t("foodEditor.otherHygieneNotes", "Other food hygiene notes")}</label>
         <textarea
-          className="input area mt-1"
+          className="kya-input mt-1"
           placeholder={t("foodEditor.hygieneNotesPlaceholder", "Optional — anything else the sitter should know about food/water hygiene.")}
           value={value.food_hygiene_notes ?? ""}
           maxLength={500}

@@ -31,13 +31,13 @@ export function BirdField({ label, hint, required, children }: { label: string; 
   );
 }
 
-export function SpeciesPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+export function SpeciesPicker({ value, onChange, required }: { value: string; onChange: (v: string) => void; required?: boolean }) {
   const known = PARROT_SPECIES.includes(value);
   const isOther = value !== "" && !known;
   const { t } = useTranslation();
   const [mode, setMode] = useState<"known" | "other">(isOther ? "other" : "known");
   return (
-    <BirdField label={t("birdPickers.species", "Species")}>
+    <BirdField label={t("birdPickers.species", "Species")} required={required}>
       <select
         className="kya-input"
         value={mode === "other" ? "__other__" : value}

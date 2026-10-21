@@ -45,7 +45,8 @@ function tabForPath(pathname: string): OwnerTab | undefined {
 /** A task screen: no bottom nav, Close instead of Back. */
 export function isTaskPath(pathname: string): boolean {
   return pathname === "/check" || /^\/birds\/[^/]+\/scan$/.test(pathname) ||
-    pathname === "/sits/new" || pathname.startsWith("/sits/edit/");
+    pathname === "/sits/new" || pathname.startsWith("/sits/edit/") ||
+    /^\/birds\/[^/]+\/plan\/editor$/.test(pathname);
 }
 
 // Pages opened from a tab (a bird, account, a sit…) highlight the tab the

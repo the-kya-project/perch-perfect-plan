@@ -61,7 +61,7 @@ export function PhotoCropper({ src, position, onChange, onCommit, size = 160, sh
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
-        className={`touch-none select-none overflow-hidden ring-1 ring-sage-200 ${shape === "circle" ? "rounded-full" : "rounded-xl"}`}
+        className={`touch-none select-none overflow-hidden ring-2 ring-[#1a3d2e] ${shape === "circle" ? "rounded-full" : "rounded-xl"}`}
         style={{
           width: size,
           height: size,
@@ -69,14 +69,14 @@ export function PhotoCropper({ src, position, onChange, onCommit, size = 160, sh
           // Fill the frame; dragging nudges which part of the photo shows.
           backgroundSize: "cover",
           backgroundRepeat: "no-repeat",
-          backgroundColor: "#e3dcc9",
+          backgroundColor: "#e3ebe2",
           backgroundPosition: `${pos.x}% ${pos.y}%`,
           cursor: dragging ? "grabbing" : "grab",
         }}
         role="img"
         aria-label={t("photoCropper.aria", "Drag to reposition photo")}
       />
-      {showHint && <p className="text-[10px] text-sage-600">{t("photoCropper.hint", "Drag inside the frame to adjust what shows.")}</p>}
+      {showHint && <p className="m-0 text-[13px] leading-[1.4] text-[#5f5e5a]" style={{ maxWidth: size }}>{t("photoCropper.hint", "Drag inside the frame to adjust what shows.")}</p>}
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { Camera } from "lucide-react";
 import i18next from "i18next";
 import { getHouseholdAccount } from "@/lib/household.functions";
 import { ShareNewBirdStep, type ShareCandidate } from "@/components/ShareNewBirdStep";
@@ -257,20 +258,25 @@ function NewBird() {
           {photo ? (
             <PhotoCropper src={photo} position={photoPos} onChange={setPhotoPos} size={120} />
           ) : (
-            <div className="flex size-[120px] items-center justify-center rounded-xl bg-sage-100 text-[10px] uppercase tracking-wider text-sage-600">{t("birdSetup.noPhoto", "No photo")}</div>
+            // Empty photo tile: tapping it opens the picker, same as the button.
+            <label className={`flex size-[120px] shrink-0 flex-col items-center justify-center gap-1.5 rounded-xl border-[1.5px] border-[#d5dfd5] bg-[#f1f5f0] text-center text-[13.5px] font-[700] text-[#1a3d2e] ${photoBusy ? "cursor-default opacity-60" : "cursor-pointer"}`}>
+              <Camera className="size-6" aria-hidden="true" />
+              {t("newBird.addAPhoto", "Add a photo")}
+              <input type="file" accept="image/*,.heic,.heif" disabled={photoBusy} className="hidden" onChange={onPhoto} />
+            </label>
           )}
-          <div className="flex-1 space-y-2 pt-1">
-            <label className={`inline-block rounded-lg bg-sage-100 px-3 py-1.5 text-xs font-semibold text-sage-700 ${photoBusy ? "cursor-default opacity-60" : "cursor-pointer"}`}>
+          <div className="flex flex-1 flex-wrap items-center gap-x-3 gap-y-1">
+            <label className={`inline-flex min-h-[44px] items-center rounded-full border-2 border-[#1a3d2e] bg-white px-4 text-[15px] font-[700] text-[#1a3d2e] ${photoBusy ? "cursor-default opacity-60" : "cursor-pointer"}`}>
               {photoBusy ? t("birdSetup.processing", "Processing…") : photo ? t("birdSetup.changePhoto", "Change photo") : t("birdSetup.addPhoto", "Add photo")}
               <input type="file" accept="image/*,.heic,.heif" disabled={photoBusy} className="hidden" onChange={onPhoto} />
             </label>
             {photo && (
-              <button type="button" onClick={() => { setPhoto(null); setPhotoPos("50% 50%"); }} className="ml-2 text-xs font-semibold text-warn-red underline">{t("newBird.remove", "Remove")}</button>
+              <button type="button" onClick={() => { setPhoto(null); setPhotoPos("50% 50%"); }} className="min-h-[44px] text-[15px] font-[700] text-[#a32d2d]">{t("newBird.remove", "Remove")}</button>
             )}
           </div>
         </div>
-        <BirdField label={t("birdSetup.name", "Name")}><input className="input" value={name} onChange={(e) => setName(e.target.value)} /></BirdField>
-        <SpeciesPicker value={species} onChange={setSpecies} />
+        <BirdField label={t("birdSetup.name", "Name")} required><input className="kya-input" value={name} onChange={(e) => setName(e.target.value)} /></BirdField>
+        <SpeciesPicker required value={species} onChange={setSpecies} />
         <AgePicker
           age={age}
           birthDate={birthDate}
@@ -278,12 +284,12 @@ function NewBird() {
         />
         <div className="grid grid-cols-2 gap-3">
           <BirdField label={t("birdSetup.sex", "Sex")}>
-            <select className="input" value={sex} onChange={(e) => setSex(e.target.value)}>
+            <select className="kya-input" value={sex} onChange={(e) => setSex(e.target.value)}>
               <option value="">{t("birdSetup.unknown", "Unknown")}</option><option value="Male">{t("birdSetup.male", "Male")}</option><option value="Female">{t("birdSetup.female", "Female")}</option>
             </select>
           </BirdField>
           <BirdField label={t("birdSetup.flight", "Flight")}>
-            <select className="input" value={flight} onChange={(e) => setFlight(e.target.value)}>
+            <select className="kya-input" value={flight} onChange={(e) => setFlight(e.target.value)}>
               <option value="unknown">{t("birdSetup.unknown", "Unknown")}</option>
               <option value="fully_flighted">{t("birdSetup.fullyFlighted", "Fully flighted")}</option>
               <option value="clipped">{t("birdSetup.clipped", "Clipped")}</option>
@@ -299,19 +305,19 @@ function NewBird() {
         <label className="flex cursor-pointer items-start gap-3">
           <input type="checkbox" checked={isFoster} onChange={(e) => setIsFoster(e.target.checked)} className="mt-0.5 size-5 shrink-0 accent-[#1a3d2e]" />
           <span className="min-w-0">
-            <span className="block text-sm font-medium text-[#1a3d2e]">{t("newBird.isFoster", "This is a foster")}</span>
-            <span className="mt-0.5 block text-xs leading-relaxed text-[#5f5e5a]">
+            <span className="block text-[15px] font-[700] text-[#1a3d2e]">{t("newBird.isFoster", "This is a foster")}</span>
+            <span className="mt-0.5 block text-[13.5px] leading-[1.45] text-[#5f5e5a]">
               {t("newBird.isFosterBody", "You're caring for them while they find a permanent home. You'll be able to hand off their record to the adopter.")}
             </span>
           </span>
         </label>
         {isFoster && (
-          <div className="mt-3 space-y-3 border-t border-[#ece6d6] pt-3">
+          <div className="mt-3 space-y-3 border-t border-[#e3ebe2] pt-3">
             <BirdField label={t("newBird.cameToYou", "Came to you")}>
               <OptionalDate value={intakeDate} max={todayStr} addLabel={t("birdPickers.addDate", "Add date")} onChange={(v) => setIntakeDate(v)} />
             </BirdField>
-            <div className="rounded-xl bg-[#efe9da] p-3">
-              <p className="text-sm leading-relaxed text-[#5f5e5a]">
+            <div className="rounded-xl bg-white p-3">
+              <p className="m-0 text-[14px] leading-[1.5] text-[#3d4f45]">
                 {t("newBird.fosterReassure", "It's okay if you don't know much yet — add what you know now, fill the rest in as you learn.")}
               </p>
             </div>
@@ -319,7 +325,6 @@ function NewBird() {
         )}
       </section>
 
-      <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.65rem .8rem;font-size:16px;outline:none}.input:focus{border-color:var(--sage-600);box-shadow:0 0 0 3px rgb(74 103 65 / .15)}`}</style>
     </SetupFrame>
   );
 }

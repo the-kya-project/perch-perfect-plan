@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { InSetupFrame, SetupIntroSlot } from "@/components/setup/SetupFrame";
 import { StartFromAnotherBird, useCopySources, type CopyResult } from "@/components/setup/StartFromAnotherBird";
 import { foodCopy, dayCopy, isOwnTask } from "@/lib/copyFromBird";
-import { S, SERIF, SetupPrimaryButton, SetupSecondaryButton, SetupTextButton, SectionCard, TileCard, Field, TextField, TextBox, Dropdown, Segmented, EditableList, Helper, CheckChips } from "@/components/setup/controls";
+import { S, SERIF, SetupPrimaryButton, SetupSecondaryButton, SetupTextButton, SectionCard, TileCard, Field, TextField, TextBox, Dropdown, Segmented, EditableList, Helper, CheckChip, CheckChips } from "@/components/setup/controls";
 import { BottomSheet } from "@/components/setup/BottomSheet";
 import { useTranslation } from "react-i18next";
 import i18next, { type TFunction } from "i18next";
@@ -20,7 +20,7 @@ import { encodeSetupStep, basicsDone } from "@/lib/setupProgress";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { mergeHome, homeDifferences, seedShared, sameGroup, followSharedPatch, clearOwnPatch, birdHasOwn, HOME_GROUPS, HOME_GROUP_COLUMNS, parseCleaning, formatCleaning, CLEANING_NEVER_DEFAULTS, type HomeRow } from "@/lib/homeDefaults";
 import { EmergencyContactsScreen, type EmergencySetupState } from "@/components/setup/EmergencyContactsScreen";
-import { Plus, X, Check, Lightbulb, GripVertical, Sparkles, AlertTriangle, Pill, ChevronDown, Play, Video, Sunrise, Sun, Sunset, Moon, Clock, Soup, DoorClosed, SprayCan } from "lucide-react";
+import { Plus, X, Check, Lightbulb, GripVertical, Sparkles, AlertTriangle, Pill, ChevronDown, Play, Video, Sunrise, Sun, Sunset, Moon, Clock, Soup, DoorClosed, SprayCan, Camera } from "lucide-react";
 import { PhotoCropper } from "@/components/PhotoCropper";
 import { AgePicker, BirdField, SpeciesPicker } from "@/components/BirdPickers";
 import { ClipRecorder, UploadProgress } from "@/components/ClipRecorder";
@@ -427,7 +427,7 @@ function BirdSetup() {
   if (isLoading || !bird) {
     return (
       <SetupShell step={step} title={t("birdSetup.loading", "Loading…")}>
-        <div className="h-32 animate-pulse rounded-2xl bg-sage-100" />
+        <div className="h-32 animate-pulse rounded-[18px] bg-[#e3ebe2]" />
       </SetupShell>
     );
   }
@@ -785,7 +785,7 @@ export function BasicsStep({ birdId, onBlockNext, registerFlush }: { birdId: str
     registerFlush,
   );
 
-  if (isLoading || !form) return <div className="h-32 animate-pulse rounded-2xl bg-sage-100" />;
+  if (isLoading || !form) return <div className="h-32 animate-pulse rounded-[18px] bg-[#e3ebe2]" />;
 
   async function onPhoto(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -810,34 +810,39 @@ export function BasicsStep({ birdId, onBlockNext, registerFlush }: { birdId: str
   return (
     <div className="space-y-4">
       <StepInstruction>{t("birdSetup.startWithTheEssentialsWho", "Start with the essentials — who your bird is, and a photo so your sitter recognizes them right away.")}</StepInstruction>
-      <section className="rounded-2xl bg-[#efe9da] p-4 space-y-3">
+      <section className="rounded-[18px] bg-[#f1f5f0] p-4 space-y-3">
         <div className="flex items-start gap-3">
           {form.photo_url ? (
             <PhotoCropper src={form.photo_url} position={form.photo_position} onChange={(pos) => setForm({ ...form, photo_position: pos })} size={120} />
           ) : (
-            <div className="flex size-[120px] items-center justify-center rounded-xl bg-sage-100 text-[10px] uppercase tracking-wider text-sage-600">{t("birdSetup.noPhoto", "No photo")}</div>
+            // Empty photo tile: tapping it opens the picker, same as the button.
+            <label className={`flex size-[120px] shrink-0 flex-col items-center justify-center gap-1.5 rounded-xl border-[1.5px] border-[#d5dfd5] bg-[#f1f5f0] text-center text-[13.5px] font-[700] text-[#1a3d2e] ${photoBusy ? "cursor-default opacity-60" : "cursor-pointer"}`}>
+              <Camera className="size-6" aria-hidden="true" />
+              {t("birdSetup.addAPhoto", "Add a photo")}
+              <input type="file" accept="image/*,.heic,.heif" disabled={photoBusy} className="hidden" onChange={onPhoto} />
+            </label>
           )}
-          <div className="flex-1 space-y-2 pt-1">
-            <label className={`inline-block rounded-lg bg-sage-100 px-3 py-1.5 text-xs font-semibold text-sage-700 ${photoBusy ? "cursor-default opacity-60" : "cursor-pointer"}`}>
+          <div className="flex flex-1 flex-wrap items-center gap-x-3 gap-y-1">
+            <label className={`inline-flex min-h-[44px] items-center rounded-full border-2 border-[#1a3d2e] bg-white px-4 text-[15px] font-[700] text-[#1a3d2e] ${photoBusy ? "cursor-default opacity-60" : "cursor-pointer"}`}>
               {photoBusy ? t("birdSetup.processing", "Processing…") : form.photo_url ? t("birdSetup.changePhoto", "Change photo") : t("birdSetup.addPhoto", "Add photo")}
               <input type="file" accept="image/*,.heic,.heif" disabled={photoBusy} className="hidden" onChange={onPhoto} />
             </label>
             {form.photo_url && (
-              <button type="button" onClick={() => { setForm({ ...form, photo_url: null, photo_position: null }); setPhotoRef(null); }} className="ml-2 text-xs font-semibold text-warn-red underline">{t("birdSetup.remove", "Remove")}</button>
+              <button type="button" onClick={() => { setForm({ ...form, photo_url: null, photo_position: null }); setPhotoRef(null); }} className="min-h-[44px] text-[15px] font-[700] text-[#a32d2d]">{t("birdSetup.remove", "Remove")}</button>
             )}
           </div>
         </div>
-        <BirdField label={t("birdSetup.name", "Name")}><input className="input" value={form.name ?? ""} onChange={(e) => setForm({ ...form, name: e.target.value })} /></BirdField>
-        <SpeciesPicker value={form.species ?? ""} onChange={(v) => setForm({ ...form, species: v })} />
+        <BirdField label={t("birdSetup.name", "Name")} required><input className="kya-input" value={form.name ?? ""} onChange={(e) => setForm({ ...form, name: e.target.value })} /></BirdField>
+        <SpeciesPicker required value={form.species ?? ""} onChange={(v) => setForm({ ...form, species: v })} />
         <AgePicker age={form.age ?? ""} birthDate={form.birth_date ?? ""} onChange={(next) => setForm({ ...form, age: next.age, birth_date: next.birthDate })} />
         <div className="grid grid-cols-2 gap-3">
           <BirdField label={t("birdSetup.sex", "Sex")}>
-            <select className="input" value={form.sex ?? ""} onChange={(e) => setForm({ ...form, sex: e.target.value || null })}>
+            <select className="kya-input" value={form.sex ?? ""} onChange={(e) => setForm({ ...form, sex: e.target.value || null })}>
               <option value="">{t("birdSetup.unknown", "Unknown")}</option><option value="Male">{t("birdSetup.male", "Male")}</option><option value="Female">{t("birdSetup.female", "Female")}</option>
             </select>
           </BirdField>
           <BirdField label={t("birdSetup.flight", "Flight")}>
-            <select className="input" value={form.flight_status ?? "unknown"} onChange={(e) => setForm({ ...form, flight_status: e.target.value })}>
+            <select className="kya-input" value={form.flight_status ?? "unknown"} onChange={(e) => setForm({ ...form, flight_status: e.target.value })}>
               <option value="unknown">{t("birdSetup.unknown", "Unknown")}</option>
               <option value="fully_flighted">{t("birdSetup.fullyFlighted", "Fully flighted")}</option>
               <option value="clipped">{t("birdSetup.clipped", "Clipped")}</option>
@@ -847,11 +852,10 @@ export function BasicsStep({ birdId, onBlockNext, registerFlush }: { birdId: str
         </div>
       </section>
       {(!form.name?.trim() || !form.species?.trim()) && (
-        <p className="rounded-xl bg-warn-amber/10 px-3 py-2 text-xs font-medium text-warn-amber">
+        <p className="m-0 rounded-[14px] px-3.5 py-2.5 text-[14px] font-[700]" style={{ background: S.amberBg, color: S.amberText }}>
           {t("birdSetup.addANameAndSpecies", "Add a name and species to continue.")}
         </p>
       )}
-      <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.65rem .8rem;font-size:16px;outline:none}.input:focus{border-color:var(--sage-600);box-shadow:0 0 0 3px rgb(74 103 65 / .15)}`}</style>
     </div>
   );
 }
@@ -927,7 +931,7 @@ export function DayInLifeStep({ birdId, birdName }: { birdId: string; birdName: 
   }
 
   if (isLoading || !plan) {
-    return <div className="h-32 animate-pulse rounded-2xl bg-sage-100" />;
+    return <div className="h-32 animate-pulse rounded-[18px] bg-[#e3ebe2]" />;
   }
 
   return (
@@ -1519,7 +1523,7 @@ export function FoodWaterStep({
     registerFlush,
   );
 
-  if (isLoading || !plan) return <div className="h-32 animate-pulse rounded-2xl bg-sage-100" />;
+  if (isLoading || !plan) return <div className="h-32 animate-pulse rounded-[18px] bg-[#e3ebe2]" />;
 
   const setItemsForType = (type: string, items: DietItem[]) =>
     setDietDetails((prev) => ({ ...prev, [type]: items }));
@@ -1587,15 +1591,15 @@ export function FoodWaterStep({
       )}
 
       {/* Primary diet */}
-      <Card title={t("birdSetup.primaryDiet", "Primary diet")} hint={t("birdSetup.chooseAllThatApply", "Choose all that apply.")}>
-        <div className="flex flex-wrap gap-2">
+      <SectionCard title={t("birdSetup.primaryDiet", "Primary diet")} helper={t("birdSetup.chooseAllThatApply", "Choose all that apply.")}>
+        <div role="group" aria-label={t("birdSetup.primaryDiet", "Primary diet")} className="flex flex-wrap gap-2">
           {DIET_OPTIONS.map((o) => (
-            <Chip key={o.value} on={diet.includes(o.value)} onClick={() => toggleDietType(o.value)}>
+            <CheckChip key={o.value} on={diet.includes(o.value)} onClick={() => toggleDietType(o.value)}>
               {displayLabel(t, o.label)}
-            </Chip>
+            </CheckChip>
           ))}
         </div>
-      </Card>
+      </SectionCard>
 
       {/* One card per selected food type, in chip order — shared FoodItemsEditor */}
       {diet.length > 0 && (
@@ -1737,7 +1741,6 @@ export function FoodWaterStep({
         </>
       )}
 
-      <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.65rem .8rem;font-size:16px;outline:none}.input:focus{border-color:var(--sage-600);box-shadow:0 0 0 3px rgb(74 103 65 / .15)}.area{min-height:60px;line-height:1.4}`}</style>
     </div>
   );
 
@@ -1747,38 +1750,6 @@ export function FoodWaterStep({
     setNewNever("");
     setAddingNever(false);
   }
-}
-
-function Card({ title, hint, badge, children }: { title: string; hint?: string; badge?: React.ReactNode; children: React.ReactNode }) {
-  // Inside the setup shell: the new section-card fill on the white body.
-  const inFrame = useContext(InSetupFrame);
-  return (
-    <section className={`rounded-2xl p-4 ${inFrame ? "bg-[#f1f5f0]" : "bg-[#efe9da]"}`}>
-      <h2 className="flex items-center gap-2 text-sm font-medium">
-        {title}
-        {badge}
-      </h2>
-      {hint && <p className="mt-1 text-xs text-sage-600">{hint}</p>}
-      <div className="mt-3">{children}</div>
-    </section>
-  );
-}
-
-function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={
-        "rounded-full border px-3 py-1.5 text-xs font-semibold transition " +
-        (on
-          ? "border-sage-600 bg-sage-600 text-white"
-          : "border-sage-200 bg-white text-sage-700 hover:bg-sage-50")
-      }
-    >
-      {on ? "✓ " : "+ "}{children}
-    </button>
-  );
 }
 
 function capitalize(s: string | null | undefined) {
@@ -1863,7 +1834,7 @@ export function PersonalityStep({ birdId, birdName, registerFlush }: { birdId: s
     registerFlush,
   );
 
-  if (isLoading || !plan) return <div className="h-32 animate-pulse rounded-2xl bg-sage-100" />;
+  if (isLoading || !plan) return <div className="h-32 animate-pulse rounded-[18px] bg-[#e3ebe2]" />;
 
   const stepUpOptions = STEP_UP_OPTIONS.map((o) => ({ value: o.value, label: displayLabel(t, o.label) }));
   const oocOptions = OUT_OF_CAGE_OPTIONS.map((o) => ({ value: o.value, label: displayLabel(t, o.label) }));
@@ -2098,7 +2069,7 @@ export function EnvironmentStep({ birdId, birdName, registerFlush }: { birdId: s
     return () => setHomeSubline(null);
   }, [hydrated, mode, birdName, setHomeSubline, t]);
 
-  if (isLoading || !plan) return <div className="h-32 animate-pulse rounded-2xl bg-sage-100" />;
+  if (isLoading || !plan) return <div className="h-32 animate-pulse rounded-[18px] bg-[#e3ebe2]" />;
 
   function addClean() {
     const v = newClean.trim();
@@ -2456,7 +2427,7 @@ export function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlus
     setClipPath(null);
   }
 
-  if (isLoading || !plan || !bird) return <div className="h-32 animate-pulse rounded-2xl bg-sage-100" />;
+  if (isLoading || !plan || !bird) return <div className="h-32 animate-pulse rounded-[18px] bg-[#e3ebe2]" />;
 
   const detailCount = HEALTH_DETAIL_FIELDS.filter(([k]) => (detail[k] ?? "").trim()).length;
   const setDetailField = (k: string, v: string) => setDetail((d) => ({ ...d, [k]: v.slice(0, 500) }));
@@ -2984,7 +2955,7 @@ export function OwnerTipsClipsStep({ birdId, birdName, onBlockNext }: { birdId: 
     },
   });
 
-  if (isLoading || !plan) return <div className="h-32 animate-pulse rounded-2xl bg-sage-100" />;
+  if (isLoading || !plan) return <div className="h-32 animate-pulse rounded-[18px] bg-[#e3ebe2]" />;
 
   const added = CLIP_SLOTS.filter((slot) => !!plan[slot.column]).length;
 
@@ -3360,7 +3331,7 @@ function ReviewStep({
 
   // A tap on a section of the sitter's care plan opens the screen that edits it
   // (buttons, links and clips inside keep working as they are).
-  const SECTION_STEP: Record<string, string> = { food: "food", behavior: "personality", home: "environment", health: "health", routine: "day", emergency: "emergency" };
+  const SECTION_STEP: Record<string, string> = { food: "food", behavior: "personality", home: "environment", health: "health", routine: "day", emergency: "emergency", tips: "clips" };
   function onPlanClick(e: React.MouseEvent) {
     const target = e.target as HTMLElement;
     if (target.closest("button, a, video, iframe, input, select, textarea")) return;

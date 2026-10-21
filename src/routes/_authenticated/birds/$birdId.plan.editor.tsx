@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { speciesLabel } from "@/lib/speciesLabel";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Trans, useTranslation } from "react-i18next";
@@ -11,10 +11,11 @@ import { purgeBirdMedia } from "@/lib/birdMedia.functions";
 import { birdMediaPurgeFailedText } from "@/lib/i18n/serverErrors";
 import { activeOwnerBirdsMin } from "@/lib/activeBirds";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
-import { ArrowLeft, Trash2, ChevronDown, AlertTriangle, Eye } from "lucide-react";
+import { Trash2, ChevronDown, AlertTriangle, Eye } from "lucide-react";
 import { EmergencyInfo } from "@/components/EmergencyInfo";
-import { KyaIconButton } from "@/components/kya";
-import { HeaderPill } from "@/components/headers";
+import { K, KyaBody, KyaCard, KyaHeading, KyaTag, KyaLabel, KyaSecondaryButton, KyaPrimaryButton } from "@/components/kya";
+import { HeaderPill, TaskHeader, TaskFooter, TASK_FOOTER_SPACE } from "@/components/headers";
+import { isTaskPath } from "@/components/OwnerTabBar";
 import { SETUP_STEPS } from "@/components/SetupShell";
 // The editor renders the guided-setup step components directly so the two UIs
 // are identical (same fields, pickers, autosave, clip recording).
@@ -107,6 +108,9 @@ function BirdEditor() {
   const canEdit = useCapability("edit_care_plans", { birdId });
   const canEmergency = useCapability("manage_emergency", { birdId });
   const { data: perms } = useMyPermissions();
+  // A task page hides the bottom nav (isTaskPath); until this route is listed
+  // there the nav still shows, so the Done footer sits just above it.
+  const navHidden = useLocation({ select: (l) => isTaskPath(l.pathname) });
   useEffect(() => {
     if (role === "owner") return;
     if (role == null || !perms) return; // still loading
@@ -192,7 +196,17 @@ function BirdEditor() {
 
   const resolvePhoto = useBirdPhotos([bird?.photo_url], 96);
 
-  if (!bird) return <div className="p-6 text-sm text-sage-600">{t("planEditor.loading", "Loading...")}</div>;
+  if (!bird) {
+    return (
+      <div className="setup-frame min-h-screen px-4 pt-[calc(env(safe-area-inset-top)+24px)]" style={{ background: K.mist, color: K.quiet }} role="status">
+        <div className="mx-auto flex max-w-md flex-col gap-3">
+          <p className="m-0 text-[15px]">{t("planEditor.loading", "Loading...")}</p>
+          <div className="h-28 animate-pulse rounded-[20px]" style={{ background: K.line }} />
+          <div className="h-48 animate-pulse rounded-[20px]" style={{ background: K.line }} />
+        </div>
+      </div>
+    );
+  }
 
   const headerPhoto = resolvePhoto(bird.photo_url);
 
@@ -210,85 +224,93 @@ function BirdEditor() {
     qc.invalidateQueries({ queryKey: ["birds"] });
   };
 
+  const goToOverview = () => navigate({ to: "/birds/$birdId/plan", params: { birdId } });
+  const done = () => { onPlanSaved(); goToOverview(); };
+  const doneButton = <KyaPrimaryButton onClick={done}>{t("planEditor.done", "Done")}</KyaPrimaryButton>;
+
   return (
-    <div className="setup-frame min-h-screen pb-nav" style={{ background: "#f1f5f0" }}>
-      <header className="sticky top-0 z-10 text-white" style={{ background: "#1a3d2e" }}>
-        <div className="mx-auto max-w-md px-5 pb-3 pt-[calc(env(safe-area-inset-top)+14px)]">
-          <div className="flex items-center justify-between gap-3">
-            <KyaIconButton label={t("planEditor.backToOverview", "Back to care plan overview")} onClick={() => navigate({ to: "/birds/$birdId/plan", params: { birdId } })}>
-              <ArrowLeft className="size-5" />
-            </KyaIconButton>
-            <HeaderPill action={{ label: t("planEditor.viewAsSitter", "View as sitter"), icon: <Eye className="size-4" />, onClick: () => navigate({ to: "/birds/$birdId/view-as-sitter", params: { birdId } }) }} />
-          </div>
-          <div className="mt-4 flex items-center gap-3">
+    <div className={`setup-frame min-h-screen ${navHidden ? "" : "pb-nav"}`} style={{ background: K.mist, color: K.forest }}>
+      <TaskHeader
+        onClose={goToOverview}
+        // Top right holds the one header action instead of a progress count.
+        progress={{ label: <HeaderPill action={{ label: t("planEditor.viewAsSitter", "View as sitter"), icon: <Eye className="size-4" />, onClick: () => navigate({ to: "/birds/$birdId/view-as-sitter", params: { birdId } }) }} /> }}
+        title={
+          <span className="flex items-center gap-3">
             {headerPhoto && (
-              <div className="relative size-11 shrink-0 overflow-hidden rounded-full">
+              <span className="relative block size-11 shrink-0 overflow-hidden rounded-full">
                 <BirdPhotoCrop url={headerPhoto.url} original={headerPhoto.original} position={bird.photo_position ?? "50% 20%"} alt={bird.name} />
-              </div>
+              </span>
             )}
-            <h1 className="m-0 min-w-0 flex-1 text-[30px] font-[700] leading-[1.1]" style={{ fontFamily: "'Newsreader', Georgia, serif" }}>{t("planEditor.titleNamed", "{{name}}'s care plan", { name: bird.name })}</h1>
-          </div>
-          <div className="relative mt-3">
-            <div ref={tabStripRef} onScroll={updateTabFades} className="-mx-1 flex gap-1 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              {tabs.map((tb) => (
+            <span className="min-w-0 flex-1">{t("planEditor.editTitleNamed", "Edit {{name}}'s care plan", { name: bird.name })}</span>
+          </span>
+        }
+      >
+        <div className="relative mt-5">
+          <div ref={tabStripRef} onScroll={updateTabFades} role="tablist" aria-label={t("planEditor.sectionsAria", "Care plan sections")} className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {tabs.map((tb) => {
+              const on = tab === tb.id;
+              return (
                 <button
                   key={tb.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={on}
                   onClick={() => setTab(tb.id)}
-                  className={`min-h-[44px] shrink-0 rounded-full px-4 text-[14px] font-[700] ${tab === tb.id ? "bg-[#cdeab0] text-[#1a3d2e]" : "bg-[#12291f] text-white"}`}
+                  // 40px chips; the strip's own padding brings the tap row to 44px.
+                  className="inline-flex h-10 shrink-0 items-center rounded-full border-[1.5px] px-4 text-[14.5px] font-[700]"
+                  style={on
+                    ? { background: K.lime, borderColor: K.lime, color: K.forest }
+                    : { background: "transparent", borderColor: "rgba(255,255,255,0.32)", color: K.paleGreen }}
                 >
                   {tb.label}
                 </button>
-              ))}
-              <span aria-hidden className="shrink-0 pl-1" />
-            </div>
-            {!tabAtStart && <div className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-[#1a3d2e] to-transparent" />}
-            {!tabAtEnd && <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-[#1a3d2e] to-transparent" />}
+              );
+            })}
+            <span aria-hidden className="shrink-0 pl-1" />
           </div>
+          {!tabAtStart && <div className="pointer-events-none absolute inset-y-0 left-0 w-8 bg-gradient-to-r from-[#1a3d2e] to-transparent" />}
+          {!tabAtEnd && <div className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-[#1a3d2e] to-transparent" />}
         </div>
-      </header>
+      </TaskHeader>
 
-      <main className="mx-auto max-w-md space-y-4 px-5 py-5 pb-28">
-        {/* Every section tab renders the guided-setup step component directly, so
-            the editor and the setup wizard are the exact same UI — except the
-            green per-step instruction banner, hidden here via HideStepInstruction
-            (it shows only in the guided setup). */}
-        <HideStepInstruction.Provider value={true}>
-          {/* Delete bird moved to the bird main page's "More" group (grouped with
-              Hand off). The editor's basics tab is just the basics fields now. */}
-          {tab === "basics" && <BasicsStep birdId={birdId} onBlockNext={() => {}} />}
-          {tab === "food" && <FoodWaterStep birdId={birdId} birdName={birdName} onBlockNext={() => {}} />}
-          {tab === "home" && <EnvironmentStep birdId={birdId} birdName={birdName} />}
-          {tab === "health" && <HealthBaselineStep birdId={birdId} birdName={birdName} onBlockNext={() => {}} />}
-          {tab === "routine" && <DayInLifeStep birdId={birdId} birdName={birdName} />}
-          {tab === "behavior" && <PersonalityStep birdId={birdId} birdName={birdName} />}
-          {tab === "clips" && <OwnerTipsClipsStep birdId={birdId} birdName={birdName} onBlockNext={() => {}} />}
-          {tab === "emergency" && contacts !== undefined && <EmergencyInfo birdId={birdId} birdName={birdName} contacts={contacts ?? null} defaults={defaults ?? null} isOwner={role === "owner"} onSaved={() => qc.invalidateQueries({ queryKey: ["contacts", birdId] })} />}
-          {tab === "sits" && <SitsPanel birdId={birdId} sits={sits} onChange={() => qc.invalidateQueries({ queryKey: ["sits", birdId] })} />}
-          {tab === "logs" && <LogsPanel birdId={birdId} initialScan={scanParam} />}
-        </HideStepInstruction.Provider>
-      </main>
+      <div className={TASK_FOOTER_SPACE}>
+        <KyaBody>
+          {/* Every section tab renders the guided-setup step component directly, so
+              the editor and the setup wizard are the exact same UI — except the
+              green per-step instruction banner, hidden here via HideStepInstruction
+              (it shows only in the guided setup). */}
+          <HideStepInstruction.Provider value={true}>
+            {/* Delete bird moved to the bird main page's "More" group (grouped with
+                Hand off). The editor's basics tab is just the basics fields now. */}
+            {tab === "basics" && <BasicsStep birdId={birdId} onBlockNext={() => {}} />}
+            {tab === "food" && <FoodWaterStep birdId={birdId} birdName={birdName} onBlockNext={() => {}} />}
+            {tab === "home" && <EnvironmentStep birdId={birdId} birdName={birdName} />}
+            {tab === "health" && <HealthBaselineStep birdId={birdId} birdName={birdName} onBlockNext={() => {}} />}
+            {tab === "routine" && <DayInLifeStep birdId={birdId} birdName={birdName} />}
+            {tab === "behavior" && <PersonalityStep birdId={birdId} birdName={birdName} />}
+            {tab === "clips" && <OwnerTipsClipsStep birdId={birdId} birdName={birdName} onBlockNext={() => {}} />}
+            {tab === "emergency" && contacts !== undefined && <EmergencyInfo birdId={birdId} birdName={birdName} contacts={contacts ?? null} defaults={defaults ?? null} isOwner={role === "owner"} onSaved={() => qc.invalidateQueries({ queryKey: ["contacts", birdId] })} />}
+            {tab === "sits" && <SitsPanel birdId={birdId} sits={sits} onChange={() => qc.invalidateQueries({ queryKey: ["sits", birdId] })} />}
+            {tab === "logs" && <LogsPanel birdId={birdId} initialScan={scanParam} />}
+          </HideStepInstruction.Provider>
+        </KyaBody>
+      </div>
 
       {/* Explicit Done control. Each section autosaves as you edit (that's why
           there's no per-field Save), but owners/editors expect a clear "I'm
           finished" button — the affordance dropped in the overview-front-door
-          refactor (#163), which left onPlanSaved orphaned. Sits above the owner
-          nav; autosave has already persisted, so Done just refreshes derived
-          views (via onPlanSaved) and returns to the overview. Everyone who
-          reaches the editor is an editor (others are redirected), so it's shown
-          for editors only. */}
-      <div className="fixed inset-x-0 bottom-[var(--nav-spacer)] z-20 border-t border-[#e3ded0] bg-[#f4f1e8]/95 backdrop-blur">
-        <div className="mx-auto max-w-md px-5 py-3">
-          <button
-            type="button"
-            onClick={() => { onPlanSaved(); navigate({ to: "/birds/$birdId/plan", params: { birdId } }); }}
-            className="min-h-[48px] w-full rounded-[14px] bg-[var(--lime)] text-[15px] font-[500] text-[var(--ink)] active:scale-[0.99]"
-          >
-            {t("planEditor.done", "Done")}
-          </button>
+          refactor (#163), which left onPlanSaved orphaned. Autosave has already
+          persisted, so Done just refreshes derived views (via onPlanSaved) and
+          returns to the overview. Everyone who reaches the editor is an editor
+          (others are redirected), so it's shown for editors only. While the
+          bottom nav shows on this route, the same white footer sits above it. */}
+      {navHidden ? (
+        <TaskFooter>{doneButton}</TaskFooter>
+      ) : (
+        <div className="fixed inset-x-0 bottom-[var(--nav-spacer)] z-30 border-t bg-white py-3" style={{ borderColor: K.line }}>
+          <div className="mx-auto max-w-md px-4">{doneButton}</div>
         </div>
-      </div>
-
-      <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.65rem .8rem;font-size:16px;outline:none}.input:focus{border-color:var(--sage-600);box-shadow:0 0 0 3px rgb(74 103 65 / .15)}.area{min-height:80px;line-height:1.4}`}</style>
+      )}
     </div>
   );
 }
@@ -341,51 +363,50 @@ function DeleteBirdCard({ birdId, bird, plan }: { birdId: string; bird: any; pla
   }
 
   return (
-    <section className="rounded-2xl border-2 border-warn-red/30 bg-warn-red/5 p-4 space-y-3">
-      <h2 className="text-sm font-bold text-warn-red">{t("planEditor.dangerZone", "Danger zone")}</h2>
-      <p className="text-xs text-sage-700">
+    <KyaCard className="flex flex-col gap-3 p-4" style={{ boxShadow: `inset 0 0 0 2px ${K.red}33` }}>
+      <KyaHeading size={19} className="text-[#a32d2d]">{t("planEditor.dangerZone", "Danger zone")}</KyaHeading>
+      <p className="m-0 text-[14px] leading-[1.5]" style={{ color: K.ink }}>
         {t("planEditor.deleteWarning", "Permanently delete {{name}} and all of their care plan, routine, emergency info, weight logs, daily scans, and photos. This cannot be undone.", { name: bird.name })}
       </p>
       {!confirmDelete ? (
         <button
           type="button"
           onClick={() => setConfirmDelete(true)}
-          className="inline-flex items-center gap-2 rounded-xl border border-warn-red/40 bg-white px-3 py-2 text-xs font-semibold text-warn-red"
+          className="inline-flex min-h-[48px] items-center justify-center gap-2 self-start rounded-full border-2 bg-white px-4 text-[15px] font-[700]"
+          style={{ borderColor: K.red, color: K.red }}
         >
           <Trash2 className="size-4" /> {t("planEditor.deleteNamed", "Delete {{name}}", { name: bird.name })}
         </button>
       ) : (
-        <div className="space-y-2">
-          <label className="block text-[11px] font-semibold text-sage-700">
+        <div className="flex flex-col gap-2.5">
+          <KyaLabel htmlFor="delete-bird-confirm">
             <Trans i18nKey="planEditor.typeToConfirm" defaults="Type <1>{{name}}</1> to confirm" values={{ name: bird.name }} components={{ 1: <span className="font-bold" /> }} />
-          </label>
+          </KyaLabel>
           <input
-            className="input"
+            id="delete-bird-confirm"
+            className="kya-input"
             value={deleteText}
             onChange={(e) => setDeleteText(e.target.value)}
             placeholder={bird.name}
             autoFocus
           />
-          <div className="flex gap-2">
+          <div className="flex gap-2.5">
             <button
               type="button"
               disabled={deleting || deleteText.trim() !== (bird.name ?? "").trim()}
               onClick={deleteBird}
-              className="flex-1 rounded-xl bg-warn-red py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+              className="min-h-[48px] flex-1 rounded-full px-4 text-[15px] font-[700] text-white disabled:opacity-45"
+              style={{ background: K.red }}
             >
               {deleting ? t("planEditor.deleting", "Deleting...") : t("planEditor.permanentlyDeleteNamed", "Permanently delete {{name}}", { name: bird.name })}
             </button>
-            <button
-              type="button"
-              onClick={() => { setConfirmDelete(false); setDeleteText(""); }}
-              className="rounded-xl border border-sage-200 px-3 py-2.5 text-sm"
-            >
+            <KyaSecondaryButton onClick={() => { setConfirmDelete(false); setDeleteText(""); }}>
               {t("planEditor.cancel", "Cancel")}
-            </button>
+            </KyaSecondaryButton>
           </div>
         </div>
       )}
-    </section>
+    </KyaCard>
   );
 }
 
@@ -402,10 +423,16 @@ function SitsPanel({ birdId, sits, onChange }: { birdId: string; sits: any[]; on
   });
   return (
     <>
-      <div className="rounded-xl bg-sage-100/60 p-3 text-xs text-sage-700">
-        <Trans i18nKey="planEditor.sitsCreatedFrom" defaults="Sits are created from the <1>owner dashboard</1>, where you can include multiple birds in one sit." components={{ 1: <Link to="/dashboard" className="font-semibold underline" /> }} />
-      </div>
-      {sits.length === 0 && <p className="text-sm text-sage-600">{t("planEditor.noSits", "This bird isn't part of any sit yet.")}</p>}
+      <KyaCard className="p-4">
+        <p className="m-0 text-[15px] leading-[1.5]" style={{ color: K.ink }}>
+          <Trans i18nKey="planEditor.sitsCreatedFrom" defaults="Sits are created from the <1>owner dashboard</1>, where you can include multiple birds in one sit." components={{ 1: <Link to="/dashboard" className="font-[700] underline" style={{ color: K.moss }} /> }} />
+        </p>
+      </KyaCard>
+      {sits.length === 0 && (
+        <KyaCard className="p-4">
+          <p className="m-0 text-[15px]" style={{ color: K.quiet }}>{t("planEditor.noSits", "This bird isn't part of any sit yet.")}</p>
+        </KyaCard>
+      )}
       {sits.map((s) => <SitCard key={s.id} sit={s} allBirds={allBirds} onChange={onChange} />)}
     </>
   );
@@ -454,10 +481,11 @@ function LogsPanel({ birdId, initialScan }: { birdId: string; initialScan?: stri
     : s === "yellow" ? t("planEditor.triageYellow", "yellow")
     : s === "green" ? t("planEditor.triageGreen", "green")
     : s;
-  const triageColor = (s: string) =>
-    s === "red" ? "bg-warn-red/10 text-warn-red"
-    : s === "yellow" ? "bg-warn-amber/10 text-warn-amber"
-    : "bg-warn-green/10 text-warn-green";
+  // Sentence case for the stored lower-case triage words ("red" → "Red").
+  const cap = (v: string) => v.charAt(0).toUpperCase() + v.slice(1);
+  const triageTag = (s: string) =>
+    s === "red" ? <RedTag>{cap(triageLabel(s))}</RedTag>
+    : <KyaTag tone={s === "yellow" ? "amber" : "lime"}>{cap(triageLabel(s))}</KyaTag>;
   const SCAN_COLS: { col: string; label: string }[] = [
     { col: "alertness_status", label: t("planEditor.scanAlertness", "Alert and responsive") },
     { col: "food_status", label: t("planEditor.scanFood", "Eating normally") },
@@ -478,10 +506,10 @@ function LogsPanel({ birdId, initialScan }: { birdId: string; initialScan?: stri
     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
   });
   const answerStyle = (a: string | null) =>
-    a === "concerning" ? "bg-warn-red/10 text-warn-red"
-    : a === "not_sure" ? "bg-warn-amber/10 text-warn-amber"
-    : a === "normal" ? "bg-warn-green/10 text-warn-green"
-    : "bg-sage-100 text-sage-500";
+    a === "concerning" ? { background: RED_FILL, color: K.red }
+    : a === "not_sure" ? { background: K.amberBg, color: K.amberText }
+    : a === "normal" ? { background: K.lime, color: K.forest }
+    : { background: K.mist, color: K.quiet };
   const answerLabel = (a: string | null) =>
     a === "concerning" ? t("planEditor.answerConcerning", "Concerning") : a === "not_sure" ? t("planEditor.answerNotSure", "Not sure") : a === "normal" ? t("planEditor.answerNormal", "Normal") : "—";
 
@@ -489,73 +517,74 @@ function LogsPanel({ birdId, initialScan }: { birdId: string; initialScan?: stri
     <>
       <Disclaimer compact />
 
-      <section className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
-        <h2 className="text-sm font-bold">{t("planEditor.healthChecksFromSitters", "Health checks from sitters")}</h2>
+      <KyaCard className="p-4">
+        <KyaHeading size={19}>{t("planEditor.healthChecksFromSitters", "Health checks from sitters")}</KyaHeading>
         {daily.length === 0 ? (
-          <p className="mt-2 text-sm text-sage-600">{t("planEditor.noHealthChecks", "No health checks logged yet.")}</p>
+          <p className="m-0 mt-2 text-[15px]" style={{ color: K.quiet }}>{t("planEditor.noHealthChecks", "No health checks logged yet.")}</p>
         ) : (
-          <ul className="mt-3 space-y-3">
+          <ul className="m-0 mt-3 flex list-none flex-col gap-2.5 p-0">
             {sortedDaily.map((d: any) => {
               const isOpen = expandedScan === d.id;
               const needsAttention = d.triage_status === "red" || d.triage_status === "yellow";
               const notSureItems = SCAN_COLS.filter((f) => d[f.col] === "not_sure");
               const linkedPhotos = photos.filter((p: any) => p.daily_log_id === d.id);
               const wrap = d.triage_status === "red"
-                ? "border-2 border-warn-red bg-warn-red/5"
+                ? { border: `2px solid ${K.red}`, background: RED_FILL }
                 : d.triage_status === "yellow"
-                ? "border-2 border-warn-amber bg-warn-amber/5"
-                : "border border-sage-100 bg-sage-50";
+                ? { border: `2px solid ${K.amberText}`, background: "#fbf3e1" }
+                : { border: `1.5px solid ${K.line}`, background: "#fff" };
+              const attentionColor = d.triage_status === "red" ? K.red : K.amberText;
               return (
-                <li key={d.id} id={`scan-${d.id}`} className={`rounded-xl ${wrap}`}>
+                <li key={d.id} id={`scan-${d.id}`} className="overflow-hidden rounded-[16px]" style={wrap}>
                   <button
                     type="button"
                     onClick={() => setExpandedScan(isOpen ? null : d.id)}
-                    className="flex w-full items-center justify-between gap-2 p-3 text-left"
+                    className="flex min-h-[60px] w-full items-center justify-between gap-2 px-3.5 py-3 text-left"
                     aria-expanded={isOpen}
                   >
-                    <div className="flex min-w-0 flex-1 items-center gap-2">
-                      {needsAttention && <AlertTriangle className={`size-4 shrink-0 ${d.triage_status === "red" ? "text-warn-red" : "text-warn-amber"}`} />}
+                    <div className="flex min-w-0 flex-1 items-center gap-2.5">
+                      {needsAttention && <AlertTriangle className="size-5 shrink-0" style={{ color: attentionColor }} aria-hidden="true" />}
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${triageColor(d.triage_status)}`}>{triageLabel(d.triage_status)}</span>
+                          {triageTag(d.triage_status)}
                           {needsAttention && (
-                            <span className={`text-[11px] font-bold uppercase tracking-wide ${d.triage_status === "red" ? "text-warn-red" : "text-warn-amber"}`}>
+                            <span className="text-[13.5px] font-[700]" style={{ color: attentionColor }}>
                               {t("planEditor.needsAttention", "Needs attention")}
                             </span>
                           )}
                           {notSureItems.length > 0 && (
-                            <span className="rounded-full bg-warn-amber/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-warn-amber">
+                            <KyaTag tone="amber">
                               {notSureItems.length === 1
                                 ? t("planEditor.needsYourInputOne", "{{n}} needs your input", { n: notSureItems.length })
                                 : t("planEditor.needsYourInputOther", "{{n}} need your input", { n: notSureItems.length })}
-                            </span>
+                            </KyaTag>
                           )}
                         </div>
-                        <p className="mt-1 text-[11px] text-sage-600">
+                        <p className="m-0 mt-1 text-[13px]" style={{ color: K.quiet }}>
                           {formatLocalDateTime(new Date(d.created_at), { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })} · {sitterLabel(d)}
                         </p>
                       </div>
                     </div>
-                    <ChevronDown className={`size-4 shrink-0 text-sage-500 transition ${isOpen ? "rotate-180" : ""}`} />
+                    <ChevronDown className={`size-[18px] shrink-0 transition ${isOpen ? "rotate-180" : ""}`} style={{ color: K.quiet }} aria-hidden="true" />
                   </button>
                   {isOpen && (
-                    <div className="space-y-3 border-t border-sage-100 px-3 py-3">
+                    <div className="flex flex-col gap-3.5 border-t px-3.5 py-3.5" style={{ borderColor: K.line, background: "#fff" }}>
                       {notSureItems.length > 0 && (
-                        <div className="rounded-xl border border-warn-amber/40 bg-warn-amber/10 p-3">
-                          <p className="text-[10px] font-bold uppercase tracking-widest text-warn-amber">{t("planEditor.awaitingResponse", "Awaiting your response")}</p>
-                          <p className="mt-1 text-[11px] text-sage-700">{t("planEditor.sitterNotSure", "{{sitter}} wasn't sure about these and is looking for your input:", { sitter: sitterLabel(d) })}</p>
-                          <ul className="mt-2 list-disc space-y-0.5 pl-5 text-xs font-medium text-sage-800">
+                        <div className="rounded-[14px] p-3" style={{ background: K.amberBg }}>
+                          <KyaTag tone="amber">{t("planEditor.awaitingResponse", "Awaiting your response")}</KyaTag>
+                          <p className="m-0 mt-2 text-[14px] leading-[1.45]" style={{ color: K.amberText }}>{t("planEditor.sitterNotSure", "{{sitter}} wasn't sure about these and is looking for your input:", { sitter: sitterLabel(d) })}</p>
+                          <ul className="m-0 mt-1.5 list-disc space-y-0.5 pl-5 text-[14px] font-[700]" style={{ color: K.amberText }}>
                             {notSureItems.map((f) => <li key={f.col}>{f.label}</li>)}
                           </ul>
                         </div>
                       )}
                       <div>
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-sage-600">{t("planEditor.perQuestionAnswers", "Per-question answers")}</p>
-                        <ul className="mt-2 space-y-1.5">
+                        <LogLabel>{t("planEditor.perQuestionAnswers", "Per-question answers")}</LogLabel>
+                        <ul className="m-0 mt-2 flex list-none flex-col gap-2 p-0">
                           {SCAN_COLS.map((f) => (
-                            <li key={f.col} className="flex items-center justify-between gap-3 text-xs">
-                              <span className="text-sage-800">{f.label}</span>
-                              <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${answerStyle(d[f.col])}`}>
+                            <li key={f.col} className="flex items-center justify-between gap-3 text-[14px]">
+                              <span style={{ color: K.ink }}>{f.label}</span>
+                              <span className="shrink-0 rounded-full px-2.5 py-1 text-[12px] font-[700]" style={answerStyle(d[f.col])}>
                                 {answerLabel(d[f.col])}
                               </span>
                             </li>
@@ -564,22 +593,22 @@ function LogsPanel({ birdId, initialScan }: { birdId: string; initialScan?: stri
                       </div>
                       {d.triage_reasons && (
                         <div>
-                          <p className="text-[10px] font-bold uppercase tracking-widest text-sage-600">{t("planEditor.flagged", "Flagged")}</p>
-                          <p className="mt-1 whitespace-pre-line text-xs text-sage-800">{d.triage_reasons}</p>
+                          <LogLabel>{t("planEditor.flagged", "Flagged")}</LogLabel>
+                          <p className="m-0 mt-1 whitespace-pre-line text-[14px] leading-[1.5]" style={{ color: K.ink }}>{d.triage_reasons}</p>
                         </div>
                       )}
                       {d.notes && (
                         <div>
-                          <p className="text-[10px] font-bold uppercase tracking-widest text-sage-600">{t("planEditor.sitterNotes", "Sitter notes")}</p>
-                          <p className="mt-1 text-xs italic text-sage-700">"{d.notes}"</p>
+                          <LogLabel>{t("planEditor.sitterNotes", "Sitter notes")}</LogLabel>
+                          <p className="m-0 mt-1 text-[14px] italic leading-[1.5]" style={{ color: K.ink }}>"{d.notes}"</p>
                         </div>
                       )}
                       {linkedPhotos.length > 0 && (
                         <div>
-                          <p className="text-[10px] font-bold uppercase tracking-widest text-sage-600">{t("planEditor.photos", "Photos")}</p>
+                          <LogLabel>{t("planEditor.photos", "Photos")}</LogLabel>
                           <div className="mt-2 grid grid-cols-3 gap-2">
                             {linkedPhotos.map((p: any) => (
-                              <a key={p.id} href={p.photo_url} target="_blank" rel="noreferrer" className="block aspect-square overflow-hidden rounded-lg bg-sage-100">
+                              <a key={p.id} href={p.photo_url} target="_blank" rel="noreferrer" className="block aspect-square overflow-hidden rounded-[12px]" style={{ background: K.line }}>
                                 <img src={p.photo_url} alt={t("planEditor.sitterPhotoAlt", "Sitter photo")} className="size-full object-cover" />
                               </a>
                             ))}
@@ -593,22 +622,33 @@ function LogsPanel({ birdId, initialScan }: { birdId: string; initialScan?: stri
             })}
           </ul>
         )}
-      </section>
+      </KyaCard>
 
-      <section className="rounded-2xl bg-white p-4 ring-1 ring-sage-100">
-        <h2 className="text-sm font-bold">{t("planEditor.photosFromSitters", "Photos from sitters")}</h2>
+      <KyaCard className="p-4">
+        <KyaHeading size={19}>{t("planEditor.photosFromSitters", "Photos from sitters")}</KyaHeading>
         {photos.length === 0 ? (
-          <p className="mt-2 text-sm text-sage-600">{t("planEditor.noPhotos", "No photos logged yet.")}</p>
+          <p className="m-0 mt-2 text-[15px]" style={{ color: K.quiet }}>{t("planEditor.noPhotos", "No photos logged yet.")}</p>
         ) : (
           <div className="mt-3 grid grid-cols-3 gap-2">
             {photos.map((p: any) => (
-              <a key={p.id} href={p.photo_url} target="_blank" rel="noreferrer" className="block aspect-square overflow-hidden rounded-lg bg-sage-100">
+              <a key={p.id} href={p.photo_url} target="_blank" rel="noreferrer" className="block aspect-square overflow-hidden rounded-[12px]" style={{ background: K.line }}>
                 <img src={p.photo_url} alt={t("planEditor.sitterPhotoAlt", "Sitter photo")} className="size-full object-cover" />
               </a>
             ))}
           </div>
         )}
-      </section>
+      </KyaCard>
     </>
   );
+}
+
+// The red counterpart of KyaTag, for a red health-check result.
+const RED_FILL = "#fcebeb";
+function RedTag({ children }: { children: React.ReactNode }) {
+  return <span className="inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-[12px] font-[700]" style={{ background: RED_FILL, color: K.red, boxShadow: `inset 0 0 0 1px ${K.red}40` }}>{children}</span>;
+}
+
+/** 13px bold muted label over a block of a health check. Sentence case. */
+function LogLabel({ children }: { children: React.ReactNode }) {
+  return <p className="m-0 text-[13px] font-[700]" style={{ color: K.quiet }}>{children}</p>;
 }

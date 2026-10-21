@@ -54,7 +54,7 @@ export function FeedTimePicker({
 
       {!freeFed && (
         <div className="mt-2">
-          <p className="mb-1 text-[11px] font-semibold uppercase tracking-wider text-sage-600">{t("foodEditor.whenIsItFed", "When is it fed?")}</p>
+          <p className="mb-1 text-[11px] font-semibold text-sage-600">{t("foodEditor.whenIsItFed", "When is it fed?")}</p>
           <div className="flex flex-wrap gap-1.5">
             {FEED_PERIODS.map((p) => {
               const on = selected.has(p.value);
@@ -83,7 +83,7 @@ export function FeedTimePicker({
                     <span className="w-16 shrink-0 font-medium">{foodLabel(t, p.label)}</span>
                     <input
                       type="time"
-                      className="input flex-1 text-sm"
+                      className="kya-input flex-1 text-sm"
                       value={at}
                       onChange={(e) => setAt(p.value, e.target.value)}
                     />
@@ -111,9 +111,9 @@ export function FeedTimePicker({
 
       {/* Optional per-food note — any prep or serving detail. */}
       <div className="mt-2">
-        <label className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-sage-600">{t("foodEditor.noteOptional", "Note (optional)")}</label>
+        <label className="mb-1 block text-[11px] font-semibold text-sage-600">{t("foodEditor.noteOptional", "Note (optional)")}</label>
         <textarea
-          className="input area text-sm"
+          className="kya-input text-sm"
           placeholder={t("foodEditor.notePlaceholderEg", "e.g. any prep or serving details")}
           maxLength={300}
           value={note ?? ""}
