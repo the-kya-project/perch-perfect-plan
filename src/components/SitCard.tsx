@@ -29,7 +29,7 @@ export function SitCard({ sit, birds = [], allBirds, onChange }: { sit: any; bir
     : expired || ended
       ? (isHousehold && ended ? t("sitCard.ended", "Ended") : t("sitCard.expired", "Expired"))
       : upcoming ? t("sitCard.upcoming", "Upcoming") : t("sitCard.active", "Active");
-  const tone = sit.revoked || expired || ended ? "bg-[#e8e1d0] text-[#5f5e5a]" : upcoming ? "bg-[#f4e4c4] text-[#84600f]" : "bg-[#d6e8dc] text-[#1a5e3f]";
+  const tone = sit.revoked || expired || ended ? "bg-[#f1f5f0] text-[#5f5e5a]" : upcoming ? "bg-[#f6e7c4] text-[#854f0b]" : "bg-[#d6e8dc] text-[#1a5e3f]";
   const url = !isHousehold && typeof window !== "undefined" ? `${window.location.origin}/sitter/${sit.invite_token}` : "";
 
   // Resolve the household caregiver's display name for the card — server-side,
