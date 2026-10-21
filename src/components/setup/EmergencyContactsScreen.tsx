@@ -13,6 +13,8 @@ import type { TFunction } from "i18next";
 import { Check, Cross, Phone, AlertTriangle, ShoppingBag, Contact, X } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
+import { getBirdOwnerEmergency } from "@/lib/household.functions";
 import { ASPCA_POISON_CONTROL, EMERGENCY_FIELDS, emergencyDifferent, isPhoneField, mergeEmergency, phoneWarning, formatPhoneOnBlur } from "@/lib/emergency";
 import { friendlyError } from "@/lib/errorMessage";
 import { useConfirm } from "@/components/ConfirmSheet";
@@ -82,6 +84,7 @@ export function EmergencyContactsScreen({
 
   const clean = (row: any) => Object.fromEntries(EMERGENCY_FIELDS.map((k) => [k, (row?.[k] ?? "").toString().trim()]));
 
+  const fetchOwnerEmergency = useServerFn(getBirdOwnerEmergency);
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -92,9 +95,12 @@ export function EmergencyContactsScreen({
       ]);
       const uid = session.session?.user?.id ?? null;
       const owner = !!uid && (bird as any)?.owner_id === uid;
+      // A household member can't read the owner's account info directly (RLS);
+      // it comes through the membership-checked server fn, so the rows that
+      // follow the account show its values here and a saved row starts from them.
       const { data: defaults } = owner
         ? await supabase.from("owner_emergency_defaults").select("*").eq("owner_id", uid!).maybeSingle()
-        : { data: null };
+        : { data: await fetchOwnerEmergency({ data: { birdId } }).then((r) => r?.defaults ?? null).catch(() => null) };
       if (cancelled) return;
       const o = clean(contacts);
       let d = clean(defaults);

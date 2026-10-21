@@ -41,6 +41,7 @@ import { friendlyError } from "@/lib/errorMessage";
 import { LoadError } from "@/components/LoadError";
 import { useConfirm } from "@/components/ConfirmSheet";
 import { useLoadState, useTooLong } from "@/lib/useTooLong";
+import { mergeEmergency } from "@/lib/emergency";
 
 const setupSearch = z.object({
   step: z.coerce.number().int().min(1).max(TOTAL_STEPS).optional(),
@@ -3391,7 +3392,9 @@ function ReviewStep({
     if (!HOME_GROUPS.some((g) => birdHasOwn(mergeHome(plan, homeDefaults), g))) {
       list.push({ key: "environment", title: t("birdSetup.review.gapReminders", "Reminders"), note: t("birdSetup.review.gapRemindersNote", "nothing yet, so your sitter won't know your home's hazards."), step: stepOf("environment") });
     }
-    const eff = (k: string) => ((contacts?.[k] ?? "").toString().trim() || (defaults?.[k] ?? "").toString().trim());
+    // Same per-contact rule as the sit form and the sitter view (lib/emergency.ts).
+    const merged = mergeEmergency(contacts, defaults) as Record<string, string | null>;
+    const eff = (k: string) => (merged[k] ?? "").toString().trim();
     if (!eff("owner_phone") || !eff("avian_vet_phone")) {
       list.push({ key: "emergency", title: t("birdSetup.review.gapEmergency", "Emergency contacts"), note: t("birdSetup.review.gapEmergencyNeed", "your phone or your avian vet's phone is missing. You'll need both before you can create a pet sit."), step: stepOf("emergency") });
     }

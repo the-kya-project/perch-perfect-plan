@@ -283,6 +283,7 @@ function IdentityForm({ birdId, bird, onClose, onSaved, onDirtyChange }: { birdI
   const [photoBusy, setPhotoBusy] = useState(false);
   const [saving, setSaving] = useState(false);
   const set = (k: keyof typeof f, v: string) => setF((p) => ({ ...p, [k]: v }));
+  const startIntake = useRef(f.intake_date);
   // Changed since the form opened? Drives the leave-without-saving guard.
   const initial = useRef(JSON.stringify({ f, photoRef, photoPosition }));
   const dirty = JSON.stringify({ f, photoRef, photoPosition }) !== initial.current;
@@ -329,7 +330,11 @@ function IdentityForm({ birdId, bird, onClose, onSaved, onDirtyChange }: { birdI
         is_foster: f.is_foster,
         // "Came to you" is on screen only for a foster, so only then is it
         // saved, and what's saved is the owner's. Otherwise it's left as is.
-        ...(f.is_foster ? { intake_date: f.intake_date || null, intake_date_source: f.intake_date ? "owner" : null } : {}),
+        // Written only when the owner changed it: a hidden automatic date
+        // starts the form empty, and saving untouched must not erase it.
+        ...(f.is_foster && f.intake_date !== startIntake.current
+          ? { intake_date: f.intake_date || null, intake_date_source: f.intake_date ? "owner" : null }
+          : {}),
         photo_url: ref,
         photo_position: photoPosition,
       };

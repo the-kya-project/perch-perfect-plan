@@ -48,6 +48,9 @@ set search_path = public
 as $$
   select n.name from pg_catalog.pg_timezone_names n where n.name = nullif(btrim(tz), '') limit 1
 $$;
+-- Used by the triggers below; not meant as an API for signed-out callers.
+revoke execute on function public.valid_time_zone(text) from public, anon;
+grant execute on function public.valid_time_zone(text) to authenticated, service_role;
 
 -- ---------------------------------------------------------------------------
 -- profiles.time_zone: normalise and validate on write.
@@ -133,6 +136,10 @@ $$;
 -- profiles.time_zone set or changed -> move that owner's current and upcoming
 -- sits. The UPDATE fires enforce_sit_token_rules per row, which applies the
 -- account zone and recomputes token_expires_at.
+-- The FIRST time a zone is saved (old value null) only sits with no zone yet
+-- get it: that first value can come from a device that's away from home, and a
+-- sit already stamped with a zone keeps it. A deliberate change of home zone
+-- (old value set) moves every current and upcoming sit.
 create or replace function public.apply_profile_time_zone_to_sits()
 returns trigger
 language plpgsql
@@ -145,6 +152,7 @@ begin
    where s.owner_id = new.id
      and not s.revoked
      and s.time_zone is distinct from new.time_zone
+     and (old.time_zone is not null or s.time_zone is null)
      and s.end_date >= (now() at time zone coalesce(public.valid_time_zone(s.time_zone), 'UTC'))::date;
   return null;
 end;

@@ -78,10 +78,28 @@ export async function ensureAccountTimeZone(userId: string): Promise<void> {
     if (isMissingTimeZoneColumn(error)) { await legacySitBackfill(userId, tz); return; }
     if (error) { console.warn("ensureAccountTimeZone failed", error.message); return; }
     if (!data || (data as { time_zone?: string | null }).time_zone) return;
-    if (!(await fillAccountTimeZone(userId, tz))) await legacySitBackfill(userId, tz);
+    // Seed the home zone from the owner's most recent sit when it has one (set
+    // at home, by an earlier build), else this device: the first open after
+    // this ships may well be from somewhere else.
+    const home = (await latestSitTimeZone(userId)) ?? tz;
+    if (!(await fillAccountTimeZone(userId, home))) await legacySitBackfill(userId, tz);
   } catch (err) {
     console.warn("ensureAccountTimeZone failed", err);
   }
+}
+
+/** The zone on the owner's most recently created sit, if any (and valid). */
+async function latestSitTimeZone(userId: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from("sits")
+    .select("time_zone")
+    .eq("owner_id", userId)
+    .not("time_zone", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(1);
+  if (error) return null;
+  const z = (data?.[0] as { time_zone?: string | null } | undefined)?.time_zone;
+  return isValidTimeZone(z) ? z : null;
 }
 
 // Only while profiles.time_zone isn't in the database yet (the web app can go
