@@ -1,179 +1,125 @@
-import { createFileRoute, useNavigate, useRouter, useCanGoBack, Link } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
-import { K, KyaCard, KyaHeading, SERIF } from "@/components/kya";
-import { useStatusBarColor } from "@/lib/statusBar";
-
-const SUPPORT_EMAIL = "brittany@thekyaproject.com";
+import { createFileRoute } from "@tanstack/react-router";
+import { Trans, useTranslation } from "react-i18next";
+import i18next from "i18next";
+import { SUPPORT_EMAIL } from "@/lib/support";
+import { LegalHeading, LegalLink, LegalMail, LegalPage, LegalStrong, LegalUpdated } from "@/components/legal";
 
 export const Route = createFileRoute("/delete-account")({
   head: () => ({
     meta: [
-      { title: "Delete your account — Kya & Co." },
-      { name: "description", content: "How to delete your Kya & Co. account and what happens to your data." },
+      { title: i18next.t("deleteAccountPage.metaTitle", "Delete your account — Kya & Co.") },
+      { name: "description", content: i18next.t("deleteAccountPage.metaDescription", "How to delete your Kya & Co. account and what happens to your data.") },
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),
   component: DeleteAccountPage,
 });
 
+/** The support address as a mailto link. */
+const mail = <LegalMail href={`mailto:${SUPPORT_EMAIL}`} />;
+const b = <LegalStrong />;
+
 function DeleteAccountPage() {
-  // No forest header here: the status bar takes the mist page color.
-  useStatusBarColor(K.mist);
-  const router = useRouter();
-  const canGoBack = useCanGoBack();
-  const navigate = useNavigate();
-  // Return to the actual previous screen (signup / settings) when we truly can.
-  // canGoBack alone can be true while the browser tab has no prior entry — opened
-  // from an email/deep link or a fresh (PWA) load — where router.history.back() is
-  // a silent no-op (the reported "back does nothing"). Require a real browser
-  // history entry too; otherwise fall back to "/" (which redirects authed users to
-  // the dashboard) so the button is never dead.
-  const goBack = () => {
-    if (canGoBack && typeof window !== "undefined" && window.history.length > 1) {
-      router.history.back();
-    } else {
-      navigate({ to: "/" });
-    }
-  };
+  const { t } = useTranslation();
+  const email = { email: SUPPORT_EMAIL };
   return (
-    // Public page (no tab bar): a plain mist body rather than KyaPage, which
-    // reserves room for the owner nav.
-    <div className="setup-frame min-h-screen" style={{ background: K.mist, color: K.forest }}>
-      <main className="mx-auto max-w-2xl px-4 pb-[max(env(safe-area-inset-bottom),32px)] pt-[calc(env(safe-area-inset-top)+14px)]">
-        <button
-          type="button"
-          aria-label="Back"
-          onClick={goBack}
-          className="grid size-11 place-items-center rounded-full bg-white active:scale-95"
-          style={{ color: K.forest }}
-        >
-          <ArrowLeft className="size-5" />
-        </button>
-        <KyaCard className="mt-4 px-5 py-6">
-          <p className="m-0 text-[13.5px] font-[700]" style={{ color: K.quiet }}>Legal</p>
-          <KyaHeading as="h1" size={28} className="mt-1.5">Delete your Kya &amp; Co. account</KyaHeading>
-          <div className="mt-5 space-y-4 text-[15px] leading-[1.6]" style={{ color: K.ink }}>
-            <p>
-              Kya & Co. is published by The Kya Project, LLC. This page explains how to delete your
-              account and exactly what happens to your data when you do.
-            </p>
+    <LegalPage title={t("deleteAccountPage.title", "Delete your account")}>
+      <p>
+        {t("deleteAccountPage.intro", "Kya & Co. is published by The Kya Project, LLC. This page explains how to delete your account and exactly what happens to your data when you do.")}
+      </p>
 
-            <h2 className="pt-3 text-[19px] font-[700] leading-[1.2]" style={{ fontFamily: SERIF, color: K.forest }}>How to request deletion</h2>
-            <p>
-              You can delete your own account from inside the app, without contacting us. It takes
-              effect immediately.
-            </p>
-            <ol className="list-decimal space-y-1 pl-5">
-              <li>Sign in to Kya &amp; Co. — in the app, or at app.thekyaproject.com.</li>
-              <li>On Home, tap the settings (gear) icon in the top right.</li>
-              <li>
-                Scroll to the bottom of the Account screen and tap{" "}
-                <strong className="font-[700]" style={{ color: K.forest }}>Delete account</strong>.
-              </li>
-              <li>
-                Type <strong className="font-[700]" style={{ color: K.forest }}>DELETE</strong> to confirm, then tap{" "}
-                <strong className="font-[700]" style={{ color: K.forest }}>Permanently delete my account</strong>.
-              </li>
-            </ol>
-            <p>
-              There is no waiting period and no recovery step. Everything listed below is removed as
-              soon as you confirm, and you are signed out.
-            </p>
-            <p>
-              If you can't sign in, email {SUPPORT_EMAIL} from the address registered to the account,
-              with the subject "Delete my account". We will confirm the request and complete the
-              deletion within 30 days.
-            </p>
+      <LegalHeading>{t("deleteAccountPage.howHeading", "How to request deletion")}</LegalHeading>
+      <p>
+        {t("deleteAccountPage.howBody", "You can delete your own account from inside the app, without contacting us. It takes effect immediately.")}
+      </p>
+      <ol className="list-decimal space-y-1 pl-5">
+        <li>{t("deleteAccountPage.step1", "Sign in to Kya & Co. — in the app, or at app.thekyaproject.com.")}</li>
+        <li>{t("deleteAccountPage.step2", "On Home, tap the settings (gear) icon in the top right.")}</li>
+        <li>
+          <Trans
+            i18nKey="deleteAccountPage.step3"
+            defaults="Scroll to the bottom of the Account screen and tap <b>Delete account</b>."
+            components={{ b }}
+          />
+        </li>
+        <li>
+          <Trans
+            i18nKey="deleteAccountPage.step4"
+            defaults="Type <b>DELETE</b> to confirm, then tap <b>Permanently delete my account</b>."
+            components={{ b }}
+          />
+        </li>
+      </ol>
+      <p>
+        {t("deleteAccountPage.noWaiting", "There is no waiting period and no recovery step. Everything listed below is removed as soon as you confirm, and you are signed out.")}
+      </p>
+      <p>
+        <Trans
+          i18nKey="deleteAccountPage.cantSignIn"
+          defaults={'If you can\'t sign in, email <mail>{{email}}</mail> from the address registered to the account, with the subject "Delete my account". We will confirm the request and complete the deletion within 30 days.'}
+          values={email}
+          components={{ mail }}
+        />
+      </p>
 
-            <h2 className="pt-3 text-[19px] font-[700] leading-[1.2]" style={{ fontFamily: SERIF, color: K.forest }}>What gets deleted</h2>
-            <p>Deleting your account permanently removes:</p>
-            <ul className="list-disc space-y-1 pl-5">
-              <li>Your sign-in and every active session.</li>
-              <li>Your profile — name, email address, language, and onboarding state.</li>
-              <li>
-                Every bird you own, and everything attached to it: care plans and routine tasks,
-                journal entries and their PDF attachments, weight history, daily care logs, health
-                checks, emergency contacts, and moments.
-              </li>
-              <li>
-                Sits you created, including sitter checklists, completed tasks, and the sitter links
-                themselves — any link you shared stops working immediately.
-              </li>
-              <li>
-                Household access you granted: invitations you sent, each member's permissions, and
-                their access to your birds.
-              </li>
-              <li>Your saved emergency contact defaults, and your archive of past birds.</li>
-              <li>Push-notification subscriptions and your notification and email history.</li>
-              <li>
-                Every file you uploaded — bird photos, journal photos, health-check photos and PDF
-                attachments — together with any care-plan video clips held by our video provider.
-              </li>
-              <li>
-                The analytics and error reports our analytics provider holds about your account.
-              </li>
-            </ul>
+      <LegalHeading>{t("deleteAccountPage.whatHeading", "What gets deleted")}</LegalHeading>
+      <p>{t("deleteAccountPage.whatIntro", "Deleting your account permanently removes:")}</p>
+      <ul className="list-disc space-y-1 pl-5">
+        <li>{t("deleteAccountPage.whatSignIn", "Your sign-in and every active session.")}</li>
+        <li>{t("deleteAccountPage.whatProfile", "Your profile — name, email address, language, and onboarding state.")}</li>
+        <li>{t("deleteAccountPage.whatBirds", "Every bird you own, and everything attached to it: care plans and routine tasks, journal entries and their PDF attachments, weight history, daily care logs, health checks, emergency contacts, and moments.")}</li>
+        <li>{t("deleteAccountPage.whatSits", "Sits you created, including sitter checklists, completed tasks, and the sitter links themselves — any link you shared stops working immediately.")}</li>
+        <li>{t("deleteAccountPage.whatHousehold", "Household access you granted: invitations you sent, each member's permissions, and their access to your birds.")}</li>
+        <li>{t("deleteAccountPage.whatDefaults", "Your saved emergency contact defaults, and your archive of past birds.")}</li>
+        <li>{t("deleteAccountPage.whatPush", "Push-notification subscriptions and your notification and email history.")}</li>
+        <li>{t("deleteAccountPage.whatFiles", "Every file you uploaded — bird photos, journal photos, health-check photos and PDF attachments — together with any care-plan video clips held by our video provider.")}</li>
+        <li>{t("deleteAccountPage.whatAnalytics", "The analytics and error reports our analytics provider holds about your account.")}</li>
+      </ul>
 
-            <h2 className="pt-3 text-[19px] font-[700] leading-[1.2]" style={{ fontFamily: SERIF, color: K.forest }}>What we keep, and for how long</h2>
-            <p>
-              We keep nothing about you for legal or billing reasons. Kya &amp; Co. takes no payments
-              and holds no financial records. Two things outlive the deletion:
-            </p>
-            <ul className="list-disc space-y-1 pl-5">
-              <li>
-                <strong className="font-[700]" style={{ color: K.forest }}>Encrypted database backups.</strong>{" "}
-                Your written records — birds, care plans, logs, journal entries — may remain in our
-                encrypted daily backups for up to seven days after deletion, and then roll off
-                permanently. Those backups exist only to recover from an outage; they are never
-                used to bring back a deleted account. Your uploaded files work differently: photos,
-                video clips and PDF attachments are removed from storage straight away, and are not
-                part of those backups at all.
-              </li>
-              <li>
-                <strong className="font-[700]" style={{ color: K.forest }}>Email contact record.</strong> When you
-                sign up, our email provider keeps a contact record with your email address, name and
-                how you found us, whether or not you opted in to marketing. It is not removed by
-                deleting your account. The unsubscribe link in any of our emails stops further email;
-                to have the record deleted, email {SUPPORT_EMAIL} and we will delete it for you.
-              </li>
-            </ul>
+      <LegalHeading>{t("deleteAccountPage.keepHeading", "What we keep, and for how long")}</LegalHeading>
+      <p>
+        {t("deleteAccountPage.keepIntro", "We keep nothing about you for legal or billing reasons. Kya & Co. takes no payments and holds no financial records. Two things outlive the deletion:")}
+      </p>
+      <ul className="list-disc space-y-1 pl-5">
+        <li>
+          <Trans
+            i18nKey="deleteAccountPage.keepBackups"
+            defaults="<b>Encrypted database backups.</b> Your written records — birds, care plans, logs, journal entries — may remain in our encrypted daily backups for up to seven days after deletion, and then roll off permanently. Those backups exist only to recover from an outage; they are never used to bring back a deleted account. Your uploaded files work differently: photos, video clips and PDF attachments are removed from storage straight away, and are not part of those backups at all."
+            components={{ b }}
+          />
+        </li>
+        <li>
+          <Trans
+            i18nKey="deleteAccountPage.keepEmailRecord"
+            defaults="<b>Email contact record.</b> When you sign up, our email provider keeps a contact record with your email address, name and how you found us, whether or not you opted in to marketing. It is not removed by deleting your account. The unsubscribe link in any of our emails stops further email; to have the record deleted, email <mail>{{email}}</mail> and we will delete it for you."
+            values={email}
+            components={{ b, mail }}
+          />
+        </li>
+      </ul>
 
-            <h2 className="pt-3 text-[19px] font-[700] leading-[1.2]" style={{ fontFamily: SERIF, color: K.forest }}>Content shared with others</h2>
-            <p>
-              Kya &amp; Co. lets several people care for the same bird, so some of what you wrote may
-              live in another person's account. We do not delete their records of their own bird's
-              care, but your identity is removed from them.
-            </p>
-            <ul className="list-disc space-y-1 pl-5">
-              <li>
-                Care you logged on someone else's bird — journal entries, weight readings, daily logs —
-                stays with that bird's owner. Your name is removed, and the entry no longer points back
-                to you.
-              </li>
-              <li>
-                If you were a caregiver or sitter on someone else's sit, the sit itself stays with its
-                owner; your link to it is removed.
-              </li>
-              <li>
-                Birds that someone shared with you are not deleted. Your access ends immediately, and
-                the bird and its full history stay with its owner.
-              </li>
-              <li>
-                A bird you transferred to someone else already belongs to them, and is not affected by
-                deleting your account.
-              </li>
-            </ul>
+      <LegalHeading>{t("deleteAccountPage.sharedHeading", "Content shared with others")}</LegalHeading>
+      <p>
+        {t("deleteAccountPage.sharedIntro", "Kya & Co. lets several people care for the same bird, so some of what you wrote may live in another person's account. We do not delete their records of their own bird's care, but your identity is removed from them.")}
+      </p>
+      <ul className="list-disc space-y-1 pl-5">
+        <li>{t("deleteAccountPage.sharedLogged", "Care you logged on someone else's bird — journal entries, weight readings, daily logs — stays with that bird's owner. Your name is removed, and the entry no longer points back to you.")}</li>
+        <li>{t("deleteAccountPage.sharedSits", "If you were a caregiver or sitter on someone else's sit, the sit itself stays with its owner; your link to it is removed.")}</li>
+        <li>{t("deleteAccountPage.sharedWithYou", "Birds that someone shared with you are not deleted. Your access ends immediately, and the bird and its full history stay with its owner.")}</li>
+        <li>{t("deleteAccountPage.sharedTransferred", "A bird you transferred to someone else already belongs to them, and is not affected by deleting your account.")}</li>
+      </ul>
 
-            <h2 className="pt-3 text-[19px] font-[700] leading-[1.2]" style={{ fontFamily: SERIF, color: K.forest }}>Questions</h2>
-            <p>
-              Email {SUPPORT_EMAIL}. See also our{" "}
-              <Link to="/privacy" className="font-[700] underline" style={{ color: K.moss }}>Privacy Policy</Link>.
-            </p>
+      <LegalHeading>{t("deleteAccountPage.questionsHeading", "Questions")}</LegalHeading>
+      <p>
+        <Trans
+          i18nKey="deleteAccountPage.questionsBody"
+          defaults="Email <mail>{{email}}</mail>. See also our <privacy>Privacy policy</privacy>."
+          values={email}
+          components={{ mail, privacy: <LegalLink to="/privacy" /> }}
+        />
+      </p>
 
-            <p className="text-[13px]" style={{ color: K.quiet }}>Last updated: 5 September 2026.</p>
-          </div>
-        </KyaCard>
-      </main>
-    </div>
+      <LegalUpdated>{t("deleteAccountPage.lastUpdated", "Last updated: 5 September 2026.")}</LegalUpdated>
+    </LegalPage>
   );
 }
