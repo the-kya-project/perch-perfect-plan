@@ -6629,6 +6629,8 @@
   "updates.flagTitle": "{{sitter}} heeft iets gemeld bij de check van {{bird}}",
   // {{list}} and {{last}}
   "updates.joinAnd": "{{list}} en {{last}}",
+  // {{list}}, and {{last}}
+  "updates.joinAndSerial": "{{list}} en {{last}}",
   // {{name}} joined your household
   "updates.joinedTitle": "{{name}} is lid geworden van je huishouden",
   // What's happened with your birds while you weren't looking.

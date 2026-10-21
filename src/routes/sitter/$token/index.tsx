@@ -1,6 +1,6 @@
 import { createFileRoute, Link, Navigate, useSearch } from "@tanstack/react-router";
 import { speciesLabel } from "@/lib/speciesLabel";
-import { ageLabel } from "@/components/BirdPickers";
+import { birdAgeLabel } from "@/lib/birdAge";
 import { clipSlotLabel } from "@/lib/clipSlotLabels";
 import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -433,7 +433,8 @@ function ScanCard({ bird, todayLog, token }: { bird: any; todayLog: any; token: 
 function WelcomeCard({ bird, token }: { bird: any; token: string }) {
   const { t } = useTranslation();
   const species = (bird.species ?? "").trim() ? speciesLabel(t, (bird.species ?? "").trim()) : t("sitter.today.speciesDefault", "Parrot");
-  const age = (bird.age ?? "").trim() ? ageLabel(t, (bird.age ?? "").trim()) : "";
+  // Same age as the owner's screens: from the hatch date when there is one.
+  const age = birdAgeLabel(t, bird) ?? "";
   const speciesAge = [species, age].filter(Boolean).join(" · ");
   const initial = (bird.name?.slice(0, 1) ?? "?").toUpperCase();
 

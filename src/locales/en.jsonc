@@ -3312,6 +3312,7 @@
   "updates.finishedToday": "{{sitter}} finished today's checks",
   "updates.flagTitle": "{{sitter}} flagged something on {{bird}}'s check",
   "updates.joinAnd": "{{list}} and {{last}}",
+  "updates.joinAndSerial": "{{list}}, and {{last}}",
   "updates.joinedTitle": "{{name}} joined your household",
   "updates.line": "What's happened with your birds while you weren't looking.",
   "updates.loading": "Loading…",

@@ -29,7 +29,10 @@ function when(t: TFunction, iso: string): string {
 
 function joinNames(t: TFunction, names: string[]): string {
   if (names.length <= 1) return names[0] ?? "";
-  return t("updates.joinAnd", "{{list}} and {{last}}", { list: names.slice(0, -1).join(", "), last: names[names.length - 1] });
+  const last = names[names.length - 1];
+  // Two names: "Buzz and Max". Three: "Buzz, Kiwi, and Max" (matches Home).
+  if (names.length === 2) return t("updates.joinAnd", "{{list}} and {{last}}", { list: names[0], last });
+  return t("updates.joinAndSerial", "{{list}}, and {{last}}", { list: names.slice(0, -1).join(", "), last });
 }
 
 function copy(t: TFunction, u: Update): { title: string; detail: string } {
