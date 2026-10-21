@@ -225,7 +225,7 @@ function SitDetail() {
                 </p>
               )}
               <p className="m-0 text-[14px] leading-[1.5]">
-                {t("sitDetail.deleteConfirm", "Delete this sit? This can't be undone. Logs recorded during it (scans, weights, photos) are kept but no longer tied to the sit; its checklist and task completions are removed.")}
+                {t("sitDetail.deleteConfirmChecks", "Delete this sit? This can't be undone. Logs recorded during it (daily checks, weights, and photos) are kept but no longer tied to the sit; its checklist and task completions are removed.")}
               </p>
               <div className="mt-3 flex gap-2">
                 <button type="button" onClick={deleteSit} disabled={deleting} className="min-h-[48px] flex-1 rounded-full px-4 text-[15px] font-[700] text-white disabled:opacity-50" style={{ background: K.red }}>

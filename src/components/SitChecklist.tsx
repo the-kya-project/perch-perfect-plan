@@ -220,7 +220,7 @@ export function SitChecklist({
                 onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addCustom(); } }}
               />
               <div className="flex gap-2">
-                <button type="button" onClick={addCustom} disabled={!newLabel.trim()} className="min-h-[44px] flex-1 rounded-full border-2 text-[15px] font-[700] disabled:opacity-45" style={{ background: K.forest, borderColor: K.forest, color: "#fff" }}>
+                <button type="button" onClick={addCustom} disabled={!newLabel.trim()} className="min-h-[48px] flex-1 rounded-full border-2 bg-white text-[15px] font-[700] disabled:opacity-45" style={{ borderColor: K.forest, color: K.forest }}>
                   {t("sitChecklist.add", "Add")}
                 </button>
                 <button type="button" onClick={() => { setAdding(false); setNewLabel(""); }} className="min-h-[44px] rounded-full px-4 text-[15px] font-[700]" style={{ color: K.quiet }}>
@@ -229,7 +229,7 @@ export function SitChecklist({
               </div>
             </div>
           ) : (
-            <button type="button" onClick={() => setAdding(true)} className="mt-2 flex min-h-[48px] w-full items-center justify-center gap-1.5 rounded-full border-2 border-dashed bg-white/60 text-[15px] font-[700]" style={{ borderColor: "#9fb3a3", color: K.forest }}>
+            <button type="button" onClick={() => setAdding(true)} className="mt-2 flex min-h-[48px] w-full items-center justify-center gap-1.5 rounded-full border-2 bg-white text-[15px] font-[700]" style={{ borderColor: K.forest, color: K.forest }}>
               <Plus className="size-4" /> {t("sitChecklist.addYourOwnItem", "Add your own item")}
             </button>
           )}

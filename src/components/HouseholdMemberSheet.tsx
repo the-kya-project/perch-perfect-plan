@@ -14,6 +14,7 @@ import { friendlyError } from "@/lib/errorMessage";
 import { formatLocalDate } from "@/lib/dates";
 import { memberDisplayName, memberInitials } from "@/lib/memberDisplay";
 import { K, KyaSheet, KyaHeading, KyaSwitch, KyaLink } from "@/components/kya";
+import { useConfirm } from "@/components/ConfirmSheet";
 
 export type HouseholdAccountMember = {
   userId: string; name: string | null; email: string | null;
@@ -96,6 +97,7 @@ export function HouseholdMemberSheet({ member, allBirds, ownerId, storedCaps, on
   const { t } = useTranslation();
   const removeOne = useServerFn(removeHouseholdMember);
   const removeAll = useServerFn(removeHouseholdMemberEverywhere);
+  const { confirm, sheet: confirmSheet } = useConfirm();
   const addOne = useServerFn(addExistingHouseholdMember);
   const has = new Set(member.birdIds);
   const display = memberDisplayName(member);
@@ -127,7 +129,12 @@ export function HouseholdMemberSheet({ member, allBirds, ownerId, storedCaps, on
     // Unchecking the only bird they can help with removes them from the
     // household — same confirm and same server call as before.
     if (!granting && accessCount === 1) {
-      if (window.confirm(t("household.confirmLastBird", "{{bird}} is the only bird {{name}} can help with. Removing it takes them out of your household. Continue?", { bird: bird.name, name: label }))) removeEverywhere.mutate();
+      const yes = await confirm({
+        title: t("household.confirmRemoveTitle", "Remove {{name}} from your household?", { name: label }),
+        body: t("household.confirmLastBirdBody", "{{bird}} is the only bird {{name}} can help with, so removing it takes them out of your household.", { bird: bird.name, name: label }),
+        confirmLabel: t("household.removeConfirmLabel", "Remove"),
+      });
+      if (yes) removeEverywhere.mutate();
       return;
     }
     setPendingBird(bird.id);
@@ -235,9 +242,14 @@ export function HouseholdMemberSheet({ member, allBirds, ownerId, storedCaps, on
       <div className="mt-4">
         <KyaLink
           color={K.red}
-          onClick={() => {
+          onClick={async () => {
             if (removeEverywhere.isPending) return;
-            if (window.confirm(t("household.confirmRemove", "Remove {{name}} from your household? They'll lose access to all your birds. Their past logs stay in the record.\n\nIf they're currently covering a sit, that sit keeps its own access until it ends — cancel the sit from the Sits tab to end that too.", { name: label }))) removeEverywhere.mutate();
+            const yes = await confirm({
+              title: t("household.confirmRemoveTitle", "Remove {{name}} from your household?", { name: label }),
+              body: t("household.confirmRemoveBody", "They'll lose access to all your birds. Their past logs stay in the record. If they're covering a sit right now, that sit keeps its own access until it ends; cancel the sit from the Sits tab to end that too."),
+              confirmLabel: t("household.removeConfirmLabel", "Remove"),
+            });
+            if (yes) removeEverywhere.mutate();
           }}
         >
           {removeEverywhere.isPending
@@ -245,6 +257,7 @@ export function HouseholdMemberSheet({ member, allBirds, ownerId, storedCaps, on
             : t("household.removeNameFromHousehold", "Remove {{name}} from your household", { name: display })}
         </KyaLink>
       </div>
+      {confirmSheet}
     </KyaSheet>
   );
 }

@@ -670,7 +670,7 @@ export function SitForm({
                     </p>
                   )}
                   <p className="m-0 text-[14px] leading-[1.5]">
-                    {t("sitForm.deleteThisSitThisCan", "Delete this sit? This can't be undone. Its checklist and task completions are removed; logged scans, weights, and photos are kept but no longer tied to the sit.")}
+                    {t("sitForm.deleteThisSitConfirm", "Delete this sit? This can't be undone. Its checklist and task completions are removed; logged daily checks, weights, and photos are kept but no longer tied to the sit.")}
                   </p>
                   <div className="mt-3 flex gap-2">
                     <button type="button" onClick={deleteSit} disabled={deleting} className="min-h-[48px] flex-1 rounded-full px-4 text-[15px] font-[700] text-white disabled:opacity-50" style={{ background: K.red }}>
