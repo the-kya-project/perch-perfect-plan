@@ -1,13 +1,13 @@
 import { createFileRoute, useNavigate, useRouter, useCanGoBack } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, ChevronUp } from "lucide-react";
 import i18next from "i18next";
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
-import { fetchBirdList } from "@/lib/birdListSelect";
-import { useMyPermissions } from "@/lib/useCapability";
+import { useDailyCheckBirds } from "@/lib/checkBirds";
+import { useLoadState } from "@/lib/useTooLong";
+import { LoadError, ListSkeleton } from "@/components/LoadError";
 import { useBirdPhotos } from "@/lib/useBirdPhotos";
 import { useDailyCheckToday, type BirdToday } from "@/lib/dailyCheck";
 import { noticedItems } from "@/lib/dailyCheckLabels";
@@ -15,7 +15,7 @@ import { daysSince, staleThreshold } from "@/lib/homeData";
 import { DailyCheckCard } from "@/components/DailyCheckCard";
 import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 import { TaskHeader } from "@/components/headers";
-import { K, SERIF, KyaGroupLabel, KyaHeading } from "@/components/kya";
+import { K, SERIF, KyaCard, KyaGroupLabel, KyaHeading, KyaPrimaryButton } from "@/components/kya";
 import { speciesLabel } from "@/lib/speciesLabel";
 import { track } from "@/lib/analytics";
 
@@ -67,28 +67,21 @@ function FlockCheck() {
   const goHome = () => navigate({ to: "/dashboard" });
   const goBack = () => (canGoBack ? router.history.back() : goHome());
 
-  const { data: allBirds } = useQuery({
-    queryKey: ["birds"],
-    queryFn: async () => {
-      const { data, error } = await fetchBirdList();
-      if (error) throw error;
-      return (data ?? []) as any[];
-    },
-  });
-  const { data: perms } = useMyPermissions();
-  const myId = perms?.myId ?? null;
-  // Same set as the Home prompt: the viewer's own flock, then fosters. A bird
-  // opened from its own page (?bird=) that someone else owns is added too.
+  // The birds this viewer can daily-check (own birds, then helped birds whose
+  // household lets them record health) — the same set the Health tab's
+  // "Weigh & check your flock" counts. A bird opened from its own page
+  // (?bird=) that isn't in that set is added too.
+  const { birds: checkable, birdsQ, permsQ } = useDailyCheckBirds();
+  const load = useLoadState([birdsQ, permsQ]);
   const birds = useMemo(() => {
-    if (!allBirds || !myId) return [];
-    const own = (allBirds as Bird[]).filter((b) => b.owner_id === myId);
-    const extra = birdParam ? (allBirds as Bird[]).filter((b) => b.id === birdParam && b.owner_id !== myId) : [];
-    return [...own.filter((b) => !b.is_foster), ...own.filter((b) => b.is_foster), ...extra].map((b) => ({
+    const all = (birdsQ.data ?? []) as Bird[];
+    const extra = birdParam && !checkable.some((b) => b.id === birdParam) ? all.filter((b) => b.id === birdParam) : [];
+    return [...(checkable as Bird[]), ...extra].map((b) => ({
       ...b,
       color: "#adbca7", // sage tile behind a missing or loading photo
       speciesText: b.species ? speciesLabel(t, b.species) : null,
     }));
-  }, [allBirds, myId, t, birdParam]);
+  }, [birdsQ.data, checkable, t, birdParam]);
   // 800px, the same width every other bird tile uses: a smaller transform crops
   // to a different aspect and the photo comes out zoomed in (see BirdPhotoCrop).
   const photoOf = useBirdPhotos(birds.map((b) => b.photo_url), 800);
@@ -159,6 +152,31 @@ function FlockCheck() {
     />
   );
 
+  // Until the bird set is known, show placeholders (not an empty body); then
+  // a retry if it didn't load, or say so when there's truly nobody to check.
+  if (load.loading || load.failed || birds.length === 0) {
+    return (
+      <div className="setup-frame min-h-screen pb-[calc(env(safe-area-inset-bottom)+24px)]" style={{ background: C.body, color: C.forest }}>
+        {header}
+        <main className="relative mx-auto -mt-[26px] flex max-w-md flex-col gap-3 rounded-t-[26px] px-4 pb-6 pt-5" style={{ background: C.body }}>
+          {load.failed ? (
+            <LoadError onRetry={load.retry} onBack={goBack} />
+          ) : load.loading ? (
+            <ListSkeleton rows={3} />
+          ) : (
+            <KyaCard className="px-5 py-6">
+              <KyaHeading size={22}>{t("flockCheck.emptyTitle", "No birds to check")}</KyaHeading>
+              <p className="m-0 mt-2 text-[15px] leading-[1.5]" style={{ color: C.ink }}>
+                {t("flockCheck.emptyBody", "Daily checks are for your own birds and the birds you can record health for.")}
+              </p>
+              <div className="mt-5"><KyaPrimaryButton onClick={goHome}>{t("flockCheck.backToHome", "Back to home")}</KyaPrimaryButton></div>
+            </KyaCard>
+          )}
+        </main>
+      </div>
+    );
+  }
+
   if (showDone) {
     const checked = birds.filter((b) => isDone(b.id));
     const noticed = checked.filter((b) => {
@@ -166,7 +184,7 @@ function FlockCheck() {
       return !!c && c.triage_status !== "green";
     });
     return (
-      <div className="setup-frame min-h-screen pb-[calc(env(safe-area-inset-bottom)+24px)]" style={{ background: C.body, color: C.forest }}>
+      <div className={`setup-frame min-h-screen ${FOOTER_SPACE}`} style={{ background: C.body, color: C.forest }}>
         {header}
         <main className="relative mx-auto -mt-[26px] flex max-w-md flex-col gap-3.5 rounded-t-[26px] px-4 pb-6 pt-5" style={{ background: C.body }}>
           <section className="rounded-[20px] bg-white px-4 pb-2 pt-4">
@@ -295,8 +313,10 @@ function FlockCheck() {
     );
   };
 
+  // The footer is pinned to the bottom of the screen; leave room for it.
+  const showFooter = total > 0 && (!!footerNext || upNext.length === 0);
   return (
-    <div className="setup-frame min-h-screen pb-[calc(env(safe-area-inset-bottom)+24px)]" style={{ background: C.body, color: C.forest }}>
+    <div className={`setup-frame min-h-screen ${showFooter ? FOOTER_SPACE : "pb-[calc(env(safe-area-inset-bottom)+24px)]"}`} style={{ background: C.body, color: C.forest }}>
       {header}
       <main className="relative mx-auto -mt-[26px] flex max-w-md flex-col gap-2 rounded-t-[26px] px-4 pb-6 pt-5" style={{ background: C.body }}>
         {upNext.length > 0 && <SectionLabel>{t("flockCheck.upNext", "Up next · {{n}}", { n: upNext.length })}</SectionLabel>}
@@ -353,7 +373,7 @@ function FlockCheck() {
           );
         })}
       </main>
-      {total > 0 && (footerNext || upNext.length === 0) && (
+      {showFooter && (
         <Footer>
           {footerNext ? (
             <FooterButton onClick={() => openBird(footerNext.id)}>{t("flockCheck.checkNext", "Check {{name}} next →", { name: footerNext.name })}</FooterButton>
@@ -383,9 +403,15 @@ function SectionLabel({ children, className = "" }: { children: React.ReactNode;
 }
 
 
+// Pinned to the very bottom: /check is a task screen, so the tab bar is hidden
+// (isTaskPath in OwnerTabBar) and there's no nav to sit above, only the
+// home-indicator safe area. Pages that show it reserve FOOTER_SPACE (12px top
+// + 48px button + the safe area or 12px, plus a gap) so it never covers the
+// last card.
+const FOOTER_SPACE = "pb-[calc(max(env(safe-area-inset-bottom),12px)+84px)]";
 function Footer({ children }: { children: React.ReactNode }) {
   return (
-    <div className="sticky z-10 border-t px-4 pb-3 pt-3" style={{ bottom: "var(--nav-spacer)", background: C.body, borderColor: C.line }}>
+    <div className="fixed inset-x-0 bottom-0 z-40 border-t px-4 pb-[max(env(safe-area-inset-bottom),12px)] pt-3" style={{ background: C.body, borderColor: C.line }}>
       <div className="mx-auto max-w-md">{children}</div>
     </div>
   );

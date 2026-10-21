@@ -19,6 +19,9 @@ import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 import { CaregiverAvatar } from "@/components/SitListCards";
 import { EntryDays, sitCaregiverName, type EntryContext } from "@/components/HealthEntries";
 import { ChevronRight } from "lucide-react";
+import { LoadError, ListSkeleton } from "@/components/LoadError";
+import { useLoadState } from "@/lib/useTooLong";
+import { useDailyCheckBirds } from "@/lib/checkBirds";
 
 // The Health tab: a flock summary. Each bird's latest daily check and weight,
 // the current (or last) sit, and the five latest entries, with the full list
@@ -38,7 +41,7 @@ function HealthTab() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const myId = useMyPermissions().data?.myId;
-  const { data: birdsRaw, isLoading: birdsLoading } = useQuery({
+  const birdsQ = useQuery({
     queryKey: ["birds"],
     queryFn: async () => {
       const { data, error } = await fetchBirdList();
@@ -46,8 +49,17 @@ function HealthTab() {
       return data ?? [];
     },
   });
+  const { data: birdsRaw } = birdsQ;
+  const birdsLoad = useLoadState([birdsQ]);
+  const birdsLoading = birdsLoad.loading;
   const birds = ((birdsRaw ?? []) as any[]).slice().sort((a, b) => String(a.name).localeCompare(String(b.name)));
-  const { data: hist, isLoading: histLoading, isError: histError } = useHealthHistory(birds.map((b) => b.id), myId);
+  const histQ = useHealthHistory(birds.map((b) => b.id), myId);
+  const { data: hist, isError: histError } = histQ;
+  const histLoad = useLoadState([histQ]);
+  const histLoading = histLoad.loading;
+  // "Weigh & check your flock" opens /check with exactly the birds /check lists
+  // (own birds, plus helped birds the viewer can record health for).
+  const { birds: checkBirds } = useDailyCheckBirds();
   const resolvePhoto = useBirdPhotos(birds.map((b) => b.photo_url), 800);
 
   // The header bell opens this tab: clear its badge.
@@ -71,7 +83,7 @@ function HealthTab() {
   }, [sits, today]);
 
   const startCheck = () =>
-    birds.length === 1 ? navigate({ to: "/check", search: { bird: birds[0].id } }) : navigate({ to: "/check" });
+    checkBirds.length === 1 ? navigate({ to: "/check", search: { bird: checkBirds[0].id } }) : navigate({ to: "/check" });
 
   return (
     <KyaPage>
@@ -79,13 +91,15 @@ function HealthTab() {
         <TabHeader title={t("healthTab.title", "Flock health")} line={t("healthTab.body", "Daily checks, weights, and anything you noticed, for all your birds.")}></TabHeader>
 
         <KyaBody className="gap-5">
-          {birds.length > 0 && <KyaPrimaryButton onClick={startCheck}>{t("healthTab.weighAndCheck", "Weigh & check your flock")}</KyaPrimaryButton>}
+          {checkBirds.length > 0 && <KyaPrimaryButton onClick={startCheck}>{t("healthTab.weighAndCheck", "Weigh & check your flock")}</KyaPrimaryButton>}
 
           {/* Your birds */}
           <section className="flex flex-col gap-3">
             <KyaHeading>{t("healthTab.yourBirds", "Your birds")}</KyaHeading>
-            {birdsLoading ? (
-              <p className="m-0 px-1 text-[14px]" style={{ color: K.quiet }}>{t("healthTab.loading", "Loading…")}</p>
+            {birdsLoad.failed ? (
+              <LoadError onRetry={birdsLoad.retry} />
+            ) : birdsLoading ? (
+              <ListSkeleton />
             ) : birds.length === 0 ? (
               <KyaCard className="p-5"><p className="m-0 text-[14px]" style={{ color: K.quiet }}>{t("healthTab.noBirds", "Add a bird to start daily checks.")}</p></KyaCard>
             ) : (
@@ -172,8 +186,8 @@ function HealthTab() {
           {birds.length > 0 && (
             <section className="flex flex-col gap-3">
               <KyaHeading>{t("healthTab.recent", "Recent")}</KyaHeading>
-              {histError && !hist ? (
-                <p className="m-0 px-1 text-[14px]" style={{ color: K.quiet }}>{t("healthTab.loadError", "We couldn't load your health history. Try again in a moment.")}</p>
+              {histLoad.failed ? (
+                <LoadError onRetry={histLoad.retry} />
               ) : histLoading ? (
                 <p className="m-0 px-1 text-[14px]" style={{ color: K.quiet }}>{t("healthTab.loading", "Loading…")}</p>
               ) : entries.length === 0 ? (
