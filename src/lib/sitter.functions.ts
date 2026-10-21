@@ -729,7 +729,7 @@ export const getSitterDashboard = createServerFn({ method: "GET" })
     const birdIds = await loadSitBirdIds(sit);
     const today = resolveToday(data.today);
 
-    const [birdsRes, plansRes, compsRes, scansRes] = await Promise.all([
+    const [birdsRes, plansRes, compsRes, scansRes, pausedRes] = await Promise.all([
       // Passed birds leave the caregiver's list entirely (nothing left to care for).
       // Newest first: the owner's bird order, same as getSitterContext.
       sb.from("birds").select("id, name, species, photo_url, photo_position, created_at").in("id", birdIds).is("passed_at", null)
@@ -737,7 +737,10 @@ export const getSitterDashboard = createServerFn({ method: "GET" })
       sb.from("care_plans").select("id, bird_id").in("bird_id", birdIds),
       sb.from("task_completions").select("routine_task_id").eq("sit_id", sit.id).eq("completed_date", today),
       sb.from("daily_logs").select("bird_id, triage_status").eq("sit_id", sit.id).eq("log_date", today).in("bird_id", birdIds),
+      // Paused birds show no tasks on Today, so they count none here either.
+      sb.from("sit_birds").select("bird_id, reminders_paused_at").eq("sit_id", sit.id),
     ]);
+    const pausedIds = new Set(((pausedRes.data ?? []) as any[]).filter((r) => r.reminders_paused_at).map((r) => r.bird_id));
 
     const plans = plansRes.data ?? [];
     const planByBird = new Map(plans.map((p: any) => [p.bird_id, p.id]));
@@ -753,7 +756,7 @@ export const getSitterDashboard = createServerFn({ method: "GET" })
     const summary = (birdsRes.data ?? [])
       .map((b: any) => {
         const planId = planByBird.get(b.id);
-        const birdTasks = tasks.filter((t: any) => t.care_plan_id === planId);
+        const birdTasks = pausedIds.has(b.id) ? [] : tasks.filter((t: any) => t.care_plan_id === planId);
         const birdScans = scans.filter((s: any) => s.bird_id === b.id);
         const scanStatus = birdScans.length
           ? birdScans.slice().sort((x: any, y: any) => rank(x.triage_status) - rank(y.triage_status))[0].triage_status

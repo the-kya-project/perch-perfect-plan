@@ -3226,6 +3226,7 @@
   "sitter.today.checkDoneNormal": "Done at {{time}} · all normal",
   "sitter.today.checkDoneWatchMany": "Done at {{time}} · {{n}} things to watch",
   "sitter.today.checkDoneWatchOne": "Done at {{time}} · 1 thing to watch",
+  "sitter.today.checkLeft": "Check to do",
   "sitter.today.checkNotDone": "Not done yet today",
   "sitter.today.daypart.anytime": "Anytime",
   "sitter.today.daypart.evening": "Evening",

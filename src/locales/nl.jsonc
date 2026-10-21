@@ -6457,6 +6457,8 @@
   "sitter.today.checkDoneWatchMany": "Gedaan om {{time}} · {{n}} aandachtspunten",
   // Done at {{time}} · 1 thing to watch
   "sitter.today.checkDoneWatchOne": "Gedaan om {{time}} · 1 aandachtspunt",
+  // Check to do
+  "sitter.today.checkLeft": "Check te doen",
   // Not done yet today
   "sitter.today.checkNotDone": "Vandaag nog niet gedaan",
   // Anytime
