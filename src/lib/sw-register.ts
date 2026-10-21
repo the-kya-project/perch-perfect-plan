@@ -175,11 +175,14 @@ export function registerServiceWorker() {
   if (isNativeApp()) document.documentElement.classList.add("native-app");
   if (!("serviceWorker" in navigator)) return;
 
+  // A page inside a frame (the owner's sitter preview) shares the app's worker
+  // with the page around it: leave it alone. Unregistering here used to remove
+  // the installed app's worker every time an owner opened a preview.
   const inIframe = (() => { try { return window.self !== window.top; } catch { return true; } })();
+  if (inIframe) return;
   const url = new URL(window.location.href);
   const refuse =
     !import.meta.env.PROD ||
-    inIframe ||
     // The native shell registers the worker like the PWA does. Hashed asset
     // filenames make cache-first assets immutable, and app-shell navigations
     // are network-first (see src/sw.ts), so a new build always lands — the
@@ -195,25 +198,14 @@ export function registerServiceWorker() {
     return;
   }
 
-  // Whether this page is already controlled by an existing worker. If so, a
-  // later controllerchange means a NEW build took over → reload to drop the
-  // stale cached assets. If not (first install), the initial claim is not an
-  // update and must NOT trigger a reload.
-  const hadController = !!navigator.serviceWorker.controller;
-  let reloading = false;
-  navigator.serviceWorker.addEventListener("controllerchange", () => {
-    if (reloading || !hadController) return;
-    // A new build is now in control; reload once to run its fresh JS/CSS —
-    // unless this device already reloaded automatically and hasn't run
-    // healthily since. Then the page keeps running what it has: an update
-    // must never become a reload loop.
-    if (!claimAutoReload()) return;
-    reloading = true;
-    window.location.reload();
-  });
+  // No reload here when a new build takes over: the new worker reloads the
+  // open pages itself, once, as it activates (src/sw.ts). It has to, because
+  // a page stuck on old HTML has no working code to run a handler like this.
 
-  // Register after load so it never competes with first paint.
-  window.addEventListener("load", () => {
+  // Register after load so it never competes with first paint. This runs from
+  // an effect, which on a fast load is already after "load" has fired, and a
+  // listener added then never runs: check, rather than only listening.
+  const register = () => {
     navigator.serviceWorker
       .register(SW_URL, { scope: "/" })
       .then((reg) => {
@@ -221,9 +213,8 @@ export function registerServiceWorker() {
         // for new deploys — otherwise it serves the build it was opened with
         // forever (CacheFirst assets). Check on registration, hourly, and every
         // time the app returns to the foreground (the common case on iOS: the
-        // user reopens the home-screen app). When workbox (autoUpdate →
-        // skipWaiting + clientsClaim) finds a new build, it activates and the
-        // controllerchange handler above reloads to apply it.
+        // user reopens the home-screen app). A new build's worker activates
+        // straight away (skipWaiting + clientsClaim) and reloads this page.
         const check = () => { reg.update().catch(() => {}); };
         check();
         setInterval(check, 60 * 60 * 1000);
@@ -232,5 +223,7 @@ export function registerServiceWorker() {
         });
       })
       .catch(() => { /* swallow */ });
-  });
+  };
+  if (document.readyState === "complete") register();
+  else window.addEventListener("load", register, { once: true });
 }
