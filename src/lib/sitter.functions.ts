@@ -56,8 +56,12 @@ async function getAdmin() {
 export const PREVIEW_SITTER_NAME = "__preview__";
 const PREVIEW_SIT_ID = "00000000-0000-0000-0000-000000000000";
 type LoadedSit = Record<string, any> & { id: string; sitter_name?: string | null; preview_bird_id?: string };
-function assertNotPreview(sit: { sitter_name?: string | null }) {
-  if (sit.sitter_name === PREVIEW_SITTER_NAME) throw new Error("This is a read-only preview — changes aren't saved.");
+/** No writes from a preview: a bird preview (its stand-in sit), or the owner
+ *  previewing a real sit, which the sitter view flags with `preview`. Without
+ *  the flag a preview of a real sit would save task ticks, health checks and
+ *  pauses as that sitter's activity. */
+function assertNotPreview(sit: { sitter_name?: string | null }, preview?: boolean) {
+  if (preview || sit.sitter_name === PREVIEW_SITTER_NAME) throw new Error("This is a read-only preview — changes aren't saved.");
 }
 
 async function loadSitByToken(token: string): Promise<LoadedSit> {
@@ -284,13 +288,13 @@ export const getSitterContext = createServerFn({ method: "GET" })
 // NOT marking the bird as passed — the sitter never changes the bird's record;
 // only the owner marks a bird as passed.
 export const pauseSitterReminders = createServerFn({ method: "POST" })
-  .inputValidator((d: { token: string; birdId: string }) =>
-    z.object({ token: z.string().min(8), birdId: z.string().uuid() }).parse(d),
+  .inputValidator((d: { token: string; birdId: string; preview?: boolean }) =>
+    z.object({ token: z.string().min(8), birdId: z.string().uuid(), preview: z.boolean().optional() }).parse(d),
   )
   .handler(async ({ data }) => {
     const sb = await getAdmin();
     const sit = await loadSitByToken(data.token);
-    assertNotPreview(sit);
+    assertNotPreview(sit, data.preview);
     const birdIds = await loadSitBirdIds(sit);
     if (!birdIds.includes(data.birdId)) throw new Error("Bird not in this sit.");
 
@@ -375,18 +379,19 @@ export async function notifyOwnerSomethingWrong(
 }
 
 export const toggleTaskCompletion = createServerFn({ method: "POST" })
-  .inputValidator((d: { token: string; taskId: string; completed: boolean; today?: string }) =>
+  .inputValidator((d: { token: string; taskId: string; completed: boolean; today?: string; preview?: boolean }) =>
     z.object({
       token: z.string().min(8),
       taskId: z.string().uuid(),
       completed: z.boolean(),
       today: z.string().optional(),
+      preview: z.boolean().optional(),
     }).parse(d),
   )
   .handler(async ({ data }) => {
     const sb = await getAdmin();
     const sit = await loadSitByToken(data.token);
-    assertNotPreview(sit);
+    assertNotPreview(sit, data.preview);
     await assertTaskInSit(sit, data.taskId);
     const today = resolveToday(data.today);
     if (data.completed) {
@@ -475,7 +480,7 @@ function escapeHtml(s: string): string {
 
 export const submitHealthScan = createServerFn({ method: "POST" })
   .inputValidator(
-    (d: { token: string; birdId: string; answers: Record<string, ScanAnswer>; itemNotes?: Record<string, string>; notes?: string; photoDataUrl?: string; weightGrams?: number; today?: string }) =>
+    (d: { token: string; birdId: string; answers: Record<string, ScanAnswer>; itemNotes?: Record<string, string>; notes?: string; photoDataUrl?: string; weightGrams?: number; today?: string; preview?: boolean }) =>
       z
         .object({
           token: z.string().min(8),
@@ -490,6 +495,8 @@ export const submitHealthScan = createServerFn({ method: "POST" })
           weightGrams: z.number().positive().max(5000).optional(),
           // The sitter's local date, so an evening check isn't filed under tomorrow.
           today: z.string().optional(),
+          // Set by an owner preview: refused below.
+          preview: z.boolean().optional(),
         })
         // Sitters answer every question: there is no all-good shortcut, and
         // the form already blocks a partial check. Enforce it here too.
@@ -499,7 +506,7 @@ export const submitHealthScan = createServerFn({ method: "POST" })
   .handler(async ({ data }) => {
     const sb = await getAdmin();
     const sit = await loadSitByToken(data.token);
-    assertNotPreview(sit);
+    assertNotPreview(sit, data.preview);
     await assertBirdInSit(sit, data.birdId);
     const triage = computeTriage(data.answers as Record<ScanFieldKey, ScanAnswer>);
     const today = resolveToday(data.today);

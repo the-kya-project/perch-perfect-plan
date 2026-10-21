@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { ArrowLeft } from "lucide-react";
 import { useSitterContext } from "./route";
 import { pauseSitterReminders } from "@/lib/sitter.functions";
+import { isOwnerPreview } from "@/lib/sitterPreviewMode";
 import { ConcernFlow } from "@/components/ConcernFlow";
 import { track } from "@/lib/analytics";
 import type { VetContact } from "@/components/PassingGuidance";
@@ -35,7 +36,7 @@ function ConcernPage() {
   };
 
   const m = useMutation({
-    mutationFn: () => pauseFn({ data: { token, birdId: ctx.activeBirdId as string } }),
+    mutationFn: () => pauseFn({ data: { token, birdId: ctx.activeBirdId as string, preview: isOwnerPreview() } }),
     onSuccess: () => {
       track("concern_flow_started", { actor: "sitter" });
       qc.invalidateQueries({ queryKey: ["sitter-ctx", token] });

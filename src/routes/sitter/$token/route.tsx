@@ -16,6 +16,7 @@ import { I18nextProvider, useTranslation } from "react-i18next";
 import { sitterI18n, ensureSitterI18n, resolveSitterLocale } from "@/lib/i18n";
 import { SitterLanguageToggle } from "@/components/SitterLanguageToggle";
 import { localDateISO } from "@/lib/localDay";
+import { isOwnerPreview } from "@/lib/sitterPreviewMode";
 
 const searchSchema = z.object({ birdId: z.string().uuid().optional() });
 
@@ -147,10 +148,8 @@ function SitterLayout() {
   const firedRef = useRef(false);
   useEffect(() => {
     if (firedRef.current) return;
-    // Owner "View as sitter" preview (?preview=1) must NOT count as a sitter
-    // visit — skip the analytics entirely.
-    const isPreview = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("preview") === "1";
-    if (isPreview) return;
+    // An owner preview must NOT count as a sitter visit — skip the analytics.
+    if (isOwnerPreview()) return;
     firedRef.current = true;
     track("sitter_link_opened", { bird_count: ctx.birds?.length ?? 0 });
   }, [ctx]);

@@ -5945,6 +5945,8 @@
   "sitLink.needVetPhone": "telefoonnummer vogeldierenarts",
   // your phone
   "sitLink.needYourPhone": "je telefoonnummer",
+  // Back to Sits
+  "sitPreview.backToSits": "Terug naar Oppasperiodes",
   // Caregiver preview · how {{label}} will see this sit
   "sitPreview.caregiverBanner": "Voorbeeld verzorger · zo ziet {{label}} deze oppasperiode",
   // Household caregivers use the app's caregiver Today screen — there's no shareable preview link.
@@ -5957,6 +5959,8 @@
   "sitPreview.pageTitle": "Voorbeeld oppas — Kya & Co.",
   // See this sit's activity
   "sitPreview.seeActivity": "Bekijk de activiteit van deze oppasperiode",
+  // This sit was deleted, so there's nothing to preview.
+  "sitPreview.sitGone": "Deze oppasperiode is verwijderd, dus er is niets te bekijken.",
   // Sits
   "sitPreview.sits": "Oppasperiodes",
   // Sitter preview · how {{label}} will see this sit

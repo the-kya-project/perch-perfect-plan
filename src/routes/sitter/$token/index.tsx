@@ -7,6 +7,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useSitterContext } from "./route";
 import { toggleTaskCompletion } from "@/lib/sitter.functions";
+import { isOwnerPreview } from "@/lib/sitterPreviewMode";
 import { Disclaimer } from "@/components/Disclaimer";
 import { Stethoscope, Calendar, BookOpen, ChevronRight, ChevronDown, HeartCrack } from "lucide-react";
 import { ClipPlayer } from "@/components/ClipPlayer";
@@ -113,7 +114,7 @@ function SitterToday() {
 
   const m = useMutation({
     mutationFn: (vars: { taskId: string; completed: boolean; title: string }) =>
-      toggle({ data: { token, taskId: vars.taskId, completed: vars.completed, today: localDateISO() } }),
+      toggle({ data: { token, taskId: vars.taskId, completed: vars.completed, today: localDateISO(), preview: isOwnerPreview() } }),
     // OPTIMISTIC: flip the checkbox instantly by patching ctx.completions in the
     // cache, then sync in the background. The old flow waited for the toggle
     // round trip AND a full sitter-context refetch (a 15-call waterfall) before
@@ -453,7 +454,9 @@ function WelcomeCard({ bird, token }: { bird: any; token: string }) {
           <img
             src={bird.photo_url}
             alt={bird.name}
-            loading="lazy"
+            // Not lazy: this is the first thing on the page, and inside the
+            // owner's preview frame on iPhone a lazy image may never load.
+            loading="eager"
             style={{ objectPosition: bird.photo_position ?? "50% 20%" }}
             className="absolute inset-0 size-full object-cover"
           />
