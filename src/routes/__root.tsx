@@ -15,7 +15,8 @@ import i18next from "i18next";
 import { Loader2 } from "lucide-react";
 import { globalI18n } from "@/lib/i18n";
 import { StartupSplash } from "@/components/StartupSplash";
-import { useStatusBarColor } from "@/lib/statusBar";
+import { K, KyaPrimaryButton } from "@/components/kya";
+import { FrontDoorBody, FrontDoorHeader, FrontDoorPage } from "@/components/frontDoor";
 
 // The app's styles are inlined into every page, not linked as a file. On
 // 2026-10-21 the installed iOS app received pages naming a stylesheet
@@ -46,31 +47,28 @@ import { savePushToken } from "@/lib/push.functions";
 // Side-effect import: registers the beforeinstallprompt/appinstalled listeners
 // at app start so the native install prompt is captured (it fires once, early).
 
-// The not-found and error screens have no forest header: the native status
-// bar takes their page color (--sage-50).
-const PLAIN_PAGE_TOP = "#f4f7f4";
+// The not-found and error screens use the front-door frame: a forest header
+// with the logo, so the native status-bar strip stays forest with a white clock.
 
 function NotFoundComponent() {
   const { t } = useTranslation();
-  useStatusBarColor(PLAIN_PAGE_TOP);
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-6xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold">{t("root.pageNotFound", "Page not found")}</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          {t("root.pageNotFoundBody", "The page you're looking for doesn't exist or the sitter link is invalid.")}
-        </p>
-        <div className="mt-6">
-          <Link
-            to="/"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
-          >
-            {t("root.goHome", "Go home")}
-          </Link>
-        </div>
-      </div>
-    </div>
+    <FrontDoorPage>
+      <FrontDoorHeader
+        title={t("root.notFoundTitle", "We couldn't find that page")}
+        line={t("root.notFoundLine", "The link may be old or mistyped.")}
+      />
+      <FrontDoorBody>
+        {/* "/" sends a signed-in owner straight on to Home. */}
+        <Link
+          to="/"
+          className="inline-flex min-h-[52px] w-full items-center justify-center rounded-full border-2 px-6 text-[16px] font-[700]"
+          style={{ background: K.sunflower, borderColor: K.forest, color: K.forest }}
+        >
+          {t("root.goToKya", "Go to Kya & Co.")}
+        </Link>
+      </FrontDoorBody>
+    </FrontDoorPage>
   );
 }
 
@@ -96,30 +94,31 @@ function ErrorComponent({ error }: ErrorComponentProps) {
   return <SomethingWentWrong />;
 }
 
-/** The error screen: "Something went wrong" and a Reload button that clears
- *  the service worker and caches before loading fresh. The raw error message
- *  is deliberately NOT shown: it means nothing to the person reading it and
- *  can quote data back. It goes to the error report. */
+/** The error screen: "Something went wrong", a Try again button that clears
+ *  the service worker and caches before loading fresh, and Email us. The raw
+ *  error message is deliberately NOT shown: it means nothing to the person
+ *  reading it and can quote data back. It goes to the error report. */
 function SomethingWentWrong() {
   const { t } = useTranslation();
-  useStatusBarColor(PLAIN_PAGE_TOP);
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold">{t("root.somethingWentWrong", "Something went wrong")}</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          {t("root.errorBodyReload", "Sorry, the app didn't load properly. Tap Reload, and if it keeps happening, email us at {{email}}.", { email: SUPPORT_EMAIL })}
-        </p>
-        <div className="mt-6 flex justify-center">
-          <button
-            onClick={() => { void hardResetAndReload(); }}
-            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
-          >
-            {t("root.reload", "Reload")}
-          </button>
-        </div>
-      </div>
-    </div>
+    <FrontDoorPage>
+      <FrontDoorHeader
+        title={t("root.somethingWentWrong", "Something went wrong")}
+        line={t("root.errorLine", "It's not you. Try again, and if it keeps happening, let us know.")}
+      />
+      <FrontDoorBody className="gap-3">
+        <KyaPrimaryButton onClick={() => { void hardResetAndReload(); }}>
+          {t("root.tryAgain", "Try again")}
+        </KyaPrimaryButton>
+        <a
+          href={`mailto:${SUPPORT_EMAIL}`}
+          className="inline-flex min-h-[48px] w-full items-center justify-center rounded-full border-2 bg-white px-4 text-[15px] font-[700] active:scale-[0.99]"
+          style={{ borderColor: K.forest, color: K.forest }}
+        >
+          {t("root.emailUs", "Email us")}
+        </a>
+      </FrontDoorBody>
+    </FrontDoorPage>
   );
 }
 
