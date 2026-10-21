@@ -79,9 +79,10 @@ function spendingLine(t: TFunction, raw: string): string {
   return m ? t("emergencyList.spendingUpTo", "Up to ${{amount}} without reaching you", { amount: m[1] }) : raw;
 }
 
-/** The first line of an address (street), for the short row detail. */
-function shortAddress(a: string): string {
-  return a.split(/\n|,/)[0]?.trim() ?? a;
+/** The whole address on one run of text (line breaks become commas); the row
+ *  lets it wrap to two lines. */
+function oneLineAddress(a: string): string {
+  return a.split(/\n+/).map((l) => l.trim()).filter(Boolean).join(", ");
 }
 
 function initialsOf(name: string): string {
@@ -143,6 +144,7 @@ export function EmergencyList({ values, ownerName, editable, onEdit, badge }: {
 
     let title = "";
     let detail = "";
+    let address = "";
     if (k === "you") { title = ownerName || t("emergencyList.you", "You"); detail = phone; }
     else if (k === "poison") { title = phone; }
     else if (isHouse) {
@@ -151,7 +153,8 @@ export function EmergencyList({ values, ownerName, editable, onEdit, badge }: {
     } else {
       title = (nameField && shownValue(values, nameField)) || phone;
       const addr = addressField ? shownValue(values, addressField) : "";
-      detail = [nameField && shownValue(values, nameField) ? phone : "", addr ? shortAddress(addr) : ""].filter(Boolean).join(" · ");
+      detail = nameField && shownValue(values, nameField) ? phone : "";
+      address = addr ? oneLineAddress(addr) : "";
     }
 
     const body = (
@@ -167,6 +170,7 @@ export function EmergencyList({ values, ownerName, editable, onEdit, badge }: {
             <>
               <span className="mt-0.5 block truncate text-[15px] font-[700]">{title}</span>
               {detail && <span className="block truncate text-[13px]" style={{ color: K.quiet }}>{detail}</span>}
+              {address && <span className="line-clamp-2 text-[13px] leading-[1.4]" style={{ color: K.quiet }}>{address}</span>}
             </>
           ) : (
             <span className="mt-0.5 block text-[15px]" style={{ color: K.quiet }}>{t("emergencyList.notAdded", "Not added")}</span>

@@ -446,7 +446,6 @@ function BirdSetup() {
         birdSpecies={bird.species}
         onExit={exitToProfile}
         onBack={onBack}
-        onNavigateStep={jumpToStep}
         footer={
           <div className="flex items-center gap-3">
             <SetupTextButton onClick={setUpLater}>{t("birdSetup.stop.later", "Set up later")}</SetupTextButton>
@@ -499,7 +498,6 @@ function BirdSetup() {
       saving={saving}
       isDirty={dirty}
       onExit={exitToProfile}
-      onNavigateStep={jumpToStep}
       onBack={onBack}
       onNext={onNext}
       onSaveAndExit={onSaveAndExit}

@@ -677,6 +677,8 @@
   "birdMoments.hatchDay": "Uitkomstdag",
   // The day {{name}} hatched
   "birdMoments.hatchedDay": "De dag dat {{name}} uit het ei kwam",
+  // Hatched {{date}}
+  "birdMoments.hatchedOn": "Uit het ei gekomen op {{date}}",
   // Less than a month together
   "birdMoments.lessThanMonthTogether": "Nog geen maand samen",
   // The days worth remembering.
@@ -751,6 +753,8 @@
   "birdMoments.tomorrow": "morgen",
   // {{name}} turns {{n}}
   "birdMoments.turns": "{{name}} wordt {{n}}",
+  // {{name}} turns {{n}} on {{date}}
+  "birdMoments.turnsOn": "{{name}} wordt {{n}} op {{date}}",
   // {{date}} · yearly
   "birdMoments.yearly": "{{date}} · jaarlijks",
   // Tap a photo to share it.
@@ -3925,6 +3929,14 @@
   "home.state.arrives": "{{who}} komt {{when}}.",
   // {{bird}} is due for a weigh-in.
   "home.state.dueForWeighIn": "{{bird}} moet weer gewogen worden.",
+  // {{count}} bird is due for a weigh-in.
+  "home.state.dueForWeighInCount_one": "{{count}} vogel moet gewogen worden.",
+  // {{count}} birds are due for a weigh-in.
+  "home.state.dueForWeighInCount_other": "{{count}} vogels moeten gewogen worden.",
+  // {{first}}, {{second}}, and {{third}} are due for a weigh-in.
+  "home.state.dueForWeighInThree": "{{first}}, {{second}} en {{third}} moeten gewogen worden.",
+  // {{first}} and {{second}} are due for a weigh-in.
+  "home.state.dueForWeighInTwo": "{{first}} en {{second}} moeten gewogen worden.",
   // {{bird}}'s {{label}} is {{when}}.
   "home.state.momentIs": "De {{label}} van {{bird}} is {{when}}.",
   // on {{day}}
@@ -5437,26 +5449,12 @@
   "setupCheck.reminders": "Herinneringen voor je oppas",
   // Close
   "setupFrame.close": "Sluiten",
-  // (done)
-  "setupFrame.done": "(klaar)",
-  // New bird
-  "setupFrame.newBird": "Nieuwe vogel",
-  // Day
-  "setupFrame.pillDay": "Dag",
   // Details
   "setupFrame.pillDetails": "Gegevens",
-  // Emergency contacts
-  "setupFrame.pillEmergency": "Noodcontacten",
-  // {{step}} · {{n}} of {{total}}
-  "setupFrame.pillPage": "{{step}} · {{n}} van {{total}}",
-  // Reminders
-  "setupFrame.pillReminders": "Herinneringen",
-  // Tips
-  "setupFrame.pillTips": "Tips",
-  // Setting up
-  "setupFrame.settingUp": "Instellen",
   // All 6 steps done
   "setupShell.allStepsDone": "Alle 6 stappen klaar",
+  // Back
+  "setupShell.back": "Terug",
   // Cancel
   "setupShell.cancel": "Annuleren",
   // Your progress is saved — you can pick up right where you left off.
@@ -6733,6 +6731,8 @@
   "vetSummary.generated": "Gemaakt op {{date}}",
   // Handling
   "vetSummary.handling": "Hanteren",
+  // Hatch date
+  "vetSummary.hatchDate": "Uitkomstdatum",
   // Identity
   "vetSummary.identity": "Identiteit",
   // What's included
@@ -6777,6 +6777,8 @@
   "vetSummary.noFlagged": "Geen gemarkeerde checks in de afgelopen 6 maanden.",
   // none on file
   "vetSummary.noneOnFile": "niets vastgelegd",
+  // Not added
+  "vetSummary.notAdded": "Niet toegevoegd",
   // Origin
   "vetSummary.origin": "Herkomst",
   // Pulled from {{name}}'s record, so it's always current.

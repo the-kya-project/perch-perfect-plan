@@ -15,7 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { fetchBirdList } from "@/lib/birdListSelect";
 import { getHouseholdAccount } from "@/lib/household.functions";
-import { daysSince, staleThreshold } from "@/lib/homeData";
+import { birdsDueForWeighIn, staleThreshold } from "@/lib/homeData";
 import { localDateISO } from "@/lib/localDay";
 
 export const UPDATE_DAYS = 60;
@@ -90,10 +90,8 @@ export function deriveUpdates(src: UpdateSources, now: Date = new Date()): Updat
   }
 
   // Weigh-in due (Home's rule: past the bird's threshold; never-weighed birds skipped).
-  const due = src.birds
-    .filter((b) => b.lastWeighedAt && daysSince(b.lastWeighedAt, now) > staleThreshold(b.is_foster))
+  const due = birdsDueForWeighIn(src.birds, now)
     .map((b) => ({ b, dueAt: new Date(new Date(b.lastWeighedAt!).getTime() + (staleThreshold(b.is_foster) + 1) * DAY_MS) }))
-    .sort((a, c) => a.b.name.localeCompare(c.b.name));
   if (due.length) {
     const first = due.reduce((m, d) => (d.dueAt < m ? d.dueAt : m), due[0].dueAt);
     out.push({

@@ -205,10 +205,27 @@ export function buildTodayItems(
   return [...concernItems, ...rest];
 }
 
+// ---- Weigh-ins due ----------------------------------------------------------
+// One rule for Home and the Updates bell: a bird is due once its last weight is
+// older than its threshold. Never-weighed birds are new, not overdue. A–Z.
+export function birdsDueForWeighIn<B extends { name: string; is_foster: boolean | null; lastWeighedAt: string | null }>(birds: B[], now = new Date()): B[] {
+  return birds
+    .filter((b) => b.lastWeighedAt && daysSince(b.lastWeighedAt, now) > staleThreshold(b.is_foster))
+    .sort((a, c) => a.name.localeCompare(c.name));
+}
+
+/** "Max is due…", "Buzz and Max are due…", "Buzz, Kiwi, and Max are due…", "4 birds are due…". */
+export function weighInDueLine(names: string[]): string {
+  if (names.length === 1) return i18next.t("home.state.dueForWeighIn", "{{bird}} is due for a weigh-in.", { bird: names[0] });
+  if (names.length === 2) return i18next.t("home.state.dueForWeighInTwo", "{{first}} and {{second}} are due for a weigh-in.", { first: names[0], second: names[1] });
+  if (names.length === 3) return i18next.t("home.state.dueForWeighInThree", "{{first}}, {{second}}, and {{third}} are due for a weigh-in.", { first: names[0], second: names[1], third: names[2] });
+  return i18next.t("home.state.dueForWeighInCount", "{{count}} birds are due for a weigh-in.", { count: names.length });
+}
+
 // ---- Home greeting body line (state-aware) --------------------------------
 // Returns the body line that sits under the "Good morning, X" greeting on Home.
 // Priority order — first match wins:
-//   1) Stale weigh-in:  "[Bird] is due for a weigh-in." (the longest-overdue bird)
+//   1) Weigh-ins due:   "[Bird] is due for a weigh-in." (every due bird, as Updates lists them)
 //   2) Sit imminent:    "[Caregiver] arrives [day]." (≤ SIT_SOON_DAYS)
 //   3) Celebration:     hatch / foster-fail anniversary within MOMENT_SOON_DAYS
 //   4) New bird:        bird.created_at within last 7 days — "[Bird] is settling in."
@@ -224,19 +241,12 @@ export function buildHomeStateCopy(
 ): string | undefined {
   if (!birds.length) return undefined;
 
-  // 1) Stale weigh-in — the bird waiting longest (ties keep flock order).
-  let mostOverdue: { name: string; days: number } | null = null;
-  for (const b of birds) {
-    const entries = weightsByBird.get(b.id) ?? [];
-    if (!entries.length) continue;
-    const days = daysSince(entries[0].measured_at, now);
-    if (days > staleThreshold(b.is_foster) && (!mostOverdue || days > mostOverdue.days)) {
-      mostOverdue = { name: b.name, days };
-    }
-  }
-  if (mostOverdue) {
-    return i18next.t("home.state.dueForWeighIn", "{{bird}} is due for a weigh-in.", { bird: mostOverdue.name });
-  }
+  // 1) Weigh-ins due — the same birds, in the same order, as the Updates bell.
+  const due = birdsDueForWeighIn(
+    birds.map((b) => ({ ...b, lastWeighedAt: (weightsByBird.get(b.id) ?? [])[0]?.measured_at ?? null })),
+    now,
+  ).map((b) => b.name);
+  if (due.length) return weighInDueLine(due);
 
   // 2) Sit imminent — within SIT_SOON_DAYS.
   const sitSoon = sits.find((s) => s.daysUntil >= 0 && s.daysUntil <= SIT_SOON_DAYS);

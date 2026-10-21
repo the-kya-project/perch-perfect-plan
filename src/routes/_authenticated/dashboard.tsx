@@ -537,13 +537,13 @@ function FlockCheckPrompt({ birds, loading, onOpen, onOpenDone }: { birds: Promp
         </div>
       )}
 
-      <PrimaryButton tone="ink" onPress={allDone ? onOpenDone : onOpen}>
+      <KyaPrimaryButton onClick={allDone ? onOpenDone : onOpen}>
         {allDone
           ? t("dashboard.seeTodaysChecksButton", "See today's checks")
           : done > 0
             ? t("dashboard.flockCheckFinish", "Finish your flock check ({{done}} of {{total}} done)", { done, total })
             : t("dashboard.flockCheckCta", "Weigh & check your flock")}
-      </PrimaryButton>
+      </KyaPrimaryButton>
     </section>
   );
 }

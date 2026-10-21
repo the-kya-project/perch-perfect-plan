@@ -176,9 +176,19 @@ function MomentsFacet() {
   const featuredPhoto = featuredAnchorPhoto ?? birdPhoto?.url ?? null;
   const featuredPosition = featuredFromBird ? (bird?.photo_position ?? "50% 50%") : "50% 50%";
   // The gotcha-day card states how long they've been together now; hatch-day
-  // keeps naming the coming birthday.
+  // names the coming birthday, counted from the saved hatch date (the same
+  // date the bird page's age comes from, via lib/birdAge).
   const featuredTitle = featured
-    ? featured.a.key === "gotcha_day" ? togetherNow(featured.a.baseISO) : anchorTitle(featured.a, featured.occ.years)
+    ? featured.a.key === "gotcha_day"
+      ? togetherNow(featured.a.baseISO)
+      : featured.occ.years > 0
+        ? t("birdMoments.turnsOn", "{{name}} turns {{n}} on {{date}}", { name, n: featured.occ.years, date: formatLocalDate(featured.occ.date, { month: "long", day: "numeric" }) })
+        : anchorTitle(featured.a, featured.occ.years)
+    : "";
+  const featuredContext = featured
+    ? featured.a.key === "hatch_day"
+      ? t("birdMoments.hatchedOn", "Hatched {{date}}", { date: fmtDate(featured.a.baseISO) })
+      : `${name} · ${monthDay(featured.a.baseISO)}`
     : "";
 
   // Nudge = an anchor within ~7 days. This one looks ahead, so it names the
@@ -275,14 +285,14 @@ function MomentsFacet() {
               <span className="absolute right-4 top-4 text-[13px] font-[700] text-white/90">The Kya Project</span>
               <div className="absolute inset-x-0 bottom-0 p-5">
                 <KyaHeading as="h2" size={26} className="text-white">{featuredTitle}</KyaHeading>
-                <p className="m-0 mt-1 text-[15px] text-white/85">{name} · {monthDay(featured.a.baseISO)}</p>
+                <p className="m-0 mt-1 text-[15px] text-white/85">{featuredContext}</p>
               </div>
             </div>
             <div className="flex items-center justify-between gap-3 px-4 py-3">
               <p className="m-0 text-[14px] leading-[1.4]" style={{ color: K.quiet }}>{t("birdMoments.saveOrShare", "Save to your photos or share anywhere.")}</p>
               <SunflowerPill
                 icon={<Share2 className="size-4" />}
-                onClick={() => share({ photoUrl: featuredPhoto, title: featuredTitle, context: `${name} · ${monthDay(featured.a.baseISO)}` })}
+                onClick={() => share({ photoUrl: featuredPhoto, title: featuredTitle, context: featuredContext })}
               >
                 {t("birdMoments.share", "Share")}
               </SunflowerPill>

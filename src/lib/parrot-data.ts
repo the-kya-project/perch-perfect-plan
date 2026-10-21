@@ -101,7 +101,9 @@ export const AGE_OPTIONS: string[] = [
 
 export function ageFromBirthDate(birthDate: string | null | undefined): string | null {
   if (!birthDate) return null;
-  const b = new Date(birthDate);
+  // Noon local time: a bare "YYYY-MM-DD" parses as UTC midnight, which is the
+  // day before in the Americas and would shift the birthday by one.
+  const b = new Date(/^\d{4}-\d{2}-\d{2}$/.test(birthDate) ? `${birthDate}T12:00:00` : birthDate);
   if (isNaN(b.getTime())) return null;
   const now = new Date();
   let years = now.getFullYear() - b.getFullYear();

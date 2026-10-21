@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { speciesLabel } from "@/lib/speciesLabel";
-import { ageLabel } from "@/components/BirdPickers";
+import { birdAgeLabel } from "@/lib/birdAge";
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -66,7 +66,7 @@ function VetSummary() {
     queryKey: ["vet-bird", birdId],
     queryFn: async () => {
       const { data } = await supabase.from("birds")
-        .select("name, species, sex, sex_method, age, microchip, band_number, origin, medications, medical_conditions, owner_id")
+        .select("name, species, sex, sex_method, age, birth_date, microchip, band_number, origin, medications, medical_conditions, owner_id")
         .eq("id", birdId).maybeSingle();
       return data as any;
     },
@@ -118,10 +118,16 @@ function VetSummary() {
   const sexText = bird?.sex
     ? `${sexLabel(bird.sex)}${sexMethodLabel(bird.sex_method) ? ` (${sexMethodLabel(bird.sex_method)})` : ""}`
     : null;
-  const identity: [string, string | null][] = [
+  // [label, value, text when empty (default "None on file")]
+  const identity: [string, string | null, string?][] = [
     [t("vetSummary.species", "Species"), bird?.species ? speciesLabel(t, bird.species) : null],
     [t("vetSummary.sex", "Sex"), sexText],
-    [t("vetSummary.age", "Age"), bird?.age ? ageLabel(t, bird.age) : null],
+    [t("vetSummary.age", "Age"), birdAgeLabel(t, bird)],
+    [
+      t("vetSummary.hatchDate", "Hatch date"),
+      bird?.birth_date ? formatLocalDate(new Date(`${bird.birth_date}T12:00:00`), { year: "numeric", month: "short", day: "numeric" }) : null,
+      t("vetSummary.notAdded", "Not added"),
+    ],
     [t("vetSummary.microchip", "Microchip"), bird?.microchip ?? null],
     [t("vetSummary.band", "Band"), bird?.band_number ?? null],
     [t("vetSummary.origin", "Origin"), bird?.origin ?? null],
@@ -162,7 +168,7 @@ function VetSummary() {
       t("vetSummary.generated", "Generated {{date}}", { date: fmtDate(new Date().toISOString()) }),
       "",
       t("vetSummary.shareIdentity", "IDENTITY"),
-      ...identity.map(([l, v]) => `  ${l}: ${v ?? none()}`),
+      ...identity.map(([l, v, empty]) => `  ${l}: ${v ?? empty ?? none()}`),
       "",
       t("vetSummary.shareWeight", "WEIGHT: {{value}}", { value: weightText ?? none() }),
       "",
@@ -223,7 +229,7 @@ function VetSummary() {
   const missing: string[] = bird ? [
     !val(bird.species) && t("vetSummary.missingSpecies", "species"),
     !val(bird.sex) && t("vetSummary.missingSex", "sex"),
-    !val(bird.age) && t("vetSummary.missingAge", "age"),
+    !birdAgeLabel(t, bird) && t("vetSummary.missingAge", "age"),
     !val(bird.microchip) && t("vetSummary.missingMicrochip", "microchip"),
     !val(bird.band_number) && t("vetSummary.missingBand", "leg band"),
     !val(bird.origin) && t("vetSummary.missingOrigin", "origin"),
@@ -303,10 +309,10 @@ function VetSummary() {
 
               <Section label={t("vetSummary.identity", "Identity")}>
                 <dl className="m-0 grid grid-cols-2 gap-x-4 gap-y-3">
-                  {identity.map(([l, v]) => (
+                  {identity.map(([l, v, empty]) => (
                     <div key={l}>
                       <dt className="text-[13px]" style={{ color: K.quiet }}>{l}</dt>
-                      <dd className={`m-0 mt-0.5 text-[15px] ${v ? "font-[600]" : "italic"}`} style={{ color: v ? K.forest : K.quiet }}>{v ?? cap(none())}</dd>
+                      <dd className={`m-0 mt-0.5 text-[15px] ${v ? "font-[600]" : "italic"}`} style={{ color: v ? K.forest : K.quiet }}>{v ?? empty ?? cap(none())}</dd>
                     </div>
                   ))}
                 </dl>

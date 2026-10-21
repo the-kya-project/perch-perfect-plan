@@ -209,18 +209,31 @@ export function CtaLink({ label, icon, onPress, onInk }: { label: ReactNode; ico
 }
 
 // 8) PrimaryButton — every primary CTA. lime-on-ink for ink contexts,
-// ink-on-cream (ink fill, white text) for cream contexts.
+// ink-on-cream (ink fill, white text) for cream contexts. "sunflower" is the
+// Kya kit's main button (KyaPrimaryButton) for screens not yet on the kit.
 export function PrimaryButton({
   children, tone = "ink", icon, onPress, disabled, type = "button", full = true,
 }: {
   children: ReactNode;
-  tone?: "lime" | "ink" | "outline";
+  tone?: "lime" | "ink" | "outline" | "sunflower";
   icon?: ReactNode;
   onPress?: () => void;
   disabled?: boolean;
   type?: "button" | "submit";
   full?: boolean;
 }) {
+  if (tone === "sunflower") {
+    return (
+      <button
+        type={type}
+        onClick={onPress}
+        disabled={disabled}
+        className={`inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full border-2 border-[#1a3d2e] bg-[#f2b33d] px-5 text-[15px] font-[700] text-[#1a3d2e] active:scale-[0.99] disabled:opacity-45 ${full ? "w-full" : ""}`}
+      >
+        {icon}{children}
+      </button>
+    );
+  }
   const cls = tone === "lime"
     ? "bg-[var(--lime)] text-[var(--ink)]"
     : tone === "outline"
