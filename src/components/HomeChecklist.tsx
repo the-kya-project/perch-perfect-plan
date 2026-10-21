@@ -6,10 +6,11 @@
 // Role-aware: everyone sees install + notifications; bird owners also get
 // "create a care plan" + "add emergency info" (a member helping someone else's
 // flock owns no birds, so those don't apply to them).
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Check, ChevronRight, X, Download, Bell, ClipboardList, Siren } from "lucide-react";
+import { Check, ChevronRight, X } from "lucide-react";
+import { K, KyaCard, KyaHeading } from "@/components/kya";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { getNotificationPermission } from "@/lib/push";
@@ -110,7 +111,7 @@ export function HomeChecklist() {
   if (!data || dismissed || !isNew) return null;
 
   type Item = {
-    key: string; label: string; icon: ReactNode; done: boolean;
+    key: string; label: string; done: boolean;
     onAction?: () => void; hint?: string; badge?: "ios" | "android";
   };
 
@@ -125,14 +126,12 @@ export function HomeChecklist() {
         ? {
             key: "reminders",
             label: t("homeChecklist.turnOnReminders", "Turn on reminders"),
-            icon: <Bell className="size-4" />,
             done: false,
             hint: t("homeChecklist.notificationsOffHint", "Notifications are off. Turn them on in your phone's settings."),
           }
         : {
             key: "reminders",
             label: t("homeChecklist.turnOnReminders", "Turn on reminders"),
-            icon: <Bell className="size-4" />,
             done: surface.nativePermission === "granted",
             onAction:
               surface.nativePermission === "granted"
@@ -156,7 +155,6 @@ export function HomeChecklist() {
             // the app, and this replaces both old rows.
             key: "reminders",
             label: t("homeChecklist.getTheApp", "Get the app"),
-            icon: <Download className="size-4" />,
             done: surface.hasNativeDevice,
             onAction: surface.hasNativeDevice
               ? undefined
@@ -171,7 +169,6 @@ export function HomeChecklist() {
             // relabelled to match Settings and the app.
             key: "reminders",
             label: t("homeChecklist.turnOnReminders", "Turn on reminders"),
-            icon: <Bell className="size-4" />,
             done: notifGranted,
             onAction: notifGranted
               ? undefined
@@ -192,7 +189,6 @@ export function HomeChecklist() {
     items.push({
       key: "care-plan",
       label: t("homeChecklist.createACarePlan", "Create a care plan"),
-      icon: <ClipboardList className="size-4" />,
       done: data.carePlanDone,
       onAction: () =>
         data.firstBirdId
@@ -202,7 +198,6 @@ export function HomeChecklist() {
     items.push({
       key: "emergency",
       label: t("homeChecklist.addEmergencyInfo", "Add emergency info"),
-      icon: <Siren className="size-4" />,
       done: data.emergencyDone,
       onAction: () => navigate({ to: "/account/emergency" }),
     });
@@ -216,18 +211,25 @@ export function HomeChecklist() {
     try { localStorage.setItem(dismissKey(data!.id), "1"); } catch { /* ignore */ }
   }
 
+  const pct = Math.round((doneCount / items.length) * 100);
+
+  // Same look as the Sits screen's "Before you leave": a white card, a forest
+  // progress bar and round check circles.
   return (
-    <section className="rounded-[18px] bg-white p-4 ring-1 ring-[var(--line2)]" style={{ boxShadow: "0 6px 14px -8px rgba(40,50,40,.08)" }}>
+    <KyaCard className="p-4" style={{ color: K.forest }}>
       <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="t-section">{t("homeChecklist.finishSettingUp", "Finish setting up")}</p>
-          <p className="t-meta mt-0.5">{t("homeChecklist.doneCount", "{{done}} of {{total}} done", { done: doneCount, total: items.length })}</p>
+        <div className="min-w-0 flex-1 pt-1">
+          <KyaHeading size={21}>{t("homeChecklist.finishSettingUp", "Finish setting up")}</KyaHeading>
+          <p className="m-0 mt-1 text-[13px] font-[700]" style={{ color: K.quiet }}>{t("homeChecklist.doneCount", "{{done}} of {{total}} done", { done: doneCount, total: items.length })}</p>
         </div>
-        <button type="button" onClick={dismiss} aria-label={t("homeChecklist.dismissChecklist", "Dismiss checklist")} className="grid size-8 shrink-0 place-items-center rounded-full text-[var(--mute2)] active:bg-black/[0.04]">
-          <X className="size-4" />
+        <button type="button" onClick={dismiss} aria-label={t("homeChecklist.dismissChecklist", "Dismiss checklist")} className="-mr-1.5 -mt-1 grid size-11 shrink-0 place-items-center rounded-full active:bg-black/[0.04]" style={{ color: K.quiet }}>
+          <X className="size-5" />
         </button>
       </div>
-      <ul className="mt-3 space-y-1.5">
+      <div className="mt-3 h-1.5 overflow-hidden rounded-full" style={{ background: "#d6dfd5" }} aria-hidden="true">
+        <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: K.forest }} />
+      </div>
+      <ul className="m-0 mt-2 list-none p-0">
         {items.map((it) => {
           const tappable = !it.done && !!it.onAction;
           return (
@@ -236,16 +238,18 @@ export function HomeChecklist() {
                 type="button"
                 disabled={!tappable}
                 onClick={it.onAction}
-                className={`flex w-full items-center gap-3 rounded-[12px] px-2 py-2 text-left ${tappable ? "active:bg-black/[0.03]" : "cursor-default"}`}
+                className={`flex min-h-[48px] w-full items-center gap-3 py-1.5 text-left ${tappable ? "active:opacity-70" : "cursor-default"}`}
               >
                 <span
-                  className={`grid size-7 shrink-0 place-items-center rounded-full ${it.done ? "bg-[var(--lime)] text-[var(--ink)]" : "bg-[var(--cream2)] text-[var(--moss)]"}`}
+                  className="mt-1 grid size-7 shrink-0 place-items-center self-start rounded-full border-2"
+                  style={it.done ? { background: K.forest, borderColor: K.forest, color: "#fff" } : { background: "#fff", borderColor: "#b9c7ba" }}
+                  aria-hidden="true"
                 >
-                  {it.done ? <Check className="size-4" /> : it.icon}
+                  {it.done && <Check className="size-4" strokeWidth={3} />}
                 </span>
-                <span className="min-w-0 flex-1">
-                  <span className={`block text-[14px] font-[500] ${it.done ? "text-[var(--mute)] line-through" : "text-[var(--ink)]"}`}>{it.label}</span>
-                  {!it.done && it.hint && <span className="block text-[12px] leading-snug text-[var(--mute)]">{it.hint}</span>}
+                <span className="min-w-0 flex-1 py-2">
+                  <span className={`block text-[15px] leading-[1.4] ${it.done ? "line-through" : "font-[700]"}`} style={{ color: it.done ? K.quiet : K.forest }}>{it.label}</span>
+                  {!it.done && it.hint && <span className="mt-0.5 block text-[13px] leading-[1.4]" style={{ color: K.quiet }}>{it.hint}</span>}
                   {!it.done && it.badge && (
                     <img
                       src={it.badge === "ios" ? APP_STORE_BADGE : PLAY_STORE_BADGE}
@@ -256,12 +260,12 @@ export function HomeChecklist() {
                     />
                   )}
                 </span>
-                {tappable && <ChevronRight className="size-4 shrink-0 text-[var(--mute2)]" />}
+                {tappable && <ChevronRight className="size-[18px] shrink-0" style={{ color: K.quiet }} aria-hidden="true" />}
               </button>
             </li>
           );
         })}
       </ul>
-    </section>
+    </KyaCard>
   );
 }

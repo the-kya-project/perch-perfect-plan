@@ -25,13 +25,12 @@ import { ASPCA_POISON_CONTROL, isPhoneField, phoneWarning, formatPhoneOnBlur } f
 import { isAddressField } from "@/lib/address";
 import { AddressInput } from "@/components/AddressInput";
 import { fetchScanFeed, getNotifSeenAt, isUnreadScan } from "@/lib/notificationsFeed";
-import { IconTile, PrimaryButton, type HeroCta } from "@/components/system";
 import { CaregiverCoveringSection, useActiveCaregiver } from "@/components/CaregiverHome";
 import { HomeChecklist } from "@/components/HomeChecklist";
 import { DailyCheckCard } from "@/components/DailyCheckCard";
 import { useDailyCheckToday } from "@/lib/dailyCheck";
 import { birdNames, namesAsCount } from "@/lib/birdNames";
-import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaLink, KyaPrimaryButton, KyaAvatarStack } from "@/components/kya";
+import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaLink, KyaPrimaryButton, KyaAvatarStack, KyaRow, KyaIconTile } from "@/components/kya";
 import { TabHeader } from "@/components/headers";
 import { HomePushBanner } from "@/components/HomePushBanner";
 import { getHouseholdHome, resolveOwnerNames, type HomeHousehold } from "@/lib/home.functions";
@@ -265,10 +264,6 @@ function Dashboard() {
   const stateCopy = birdsLoading ? undefined
     : birds.length === 0 ? t("dashboard.addFirstBirdBody", "Add your first bird to start their record.")
     : buildHomeStateCopy(homeBirds, weightsByBird, sitsForStateCopy, moments);
-  const heroCta: HeroCta | undefined =
-    !birdsLoading && birds.length === 0
-      ? { label: t("dashboard.addABird", "Add a bird"), tone: "lime", icon: <Plus className="size-4" />, onPress: () => navigate({ to: "/birds/new" }) }
-      : undefined;
 
   // No caregiver "takeover": ONE Home for every account. Owning a bird is derived
   // (birds.owner_id === me), not a signup type — so a caregiver-only account gets
@@ -280,7 +275,7 @@ function Dashboard() {
   return (
     <KyaPage>
       <div className="mx-auto max-w-md">
-      <HomeHeader firstName={firstName} unreadNotifs={unreadNotifs} stateCopy={stateCopy} cta={heroCta} />
+      <HomeHeader firstName={firstName} unreadNotifs={unreadNotifs} stateCopy={stateCopy} />
 
       <KyaBody className="gap-6">
 
@@ -295,7 +290,7 @@ function Dashboard() {
         {birdsLoading && !demo ? (
           <HomeSkeleton />
         ) : !demo && birds.length === 0 ? (
-          <EmptyHome />
+          <EmptyHome onAdd={() => navigate({ to: "/birds/new" })} />
         ) : (
           // ONE Home for everyone — one bird or twenty. (Previously birds.length
           // === 1 rendered the bird record inline, which stripped the flock list,
@@ -412,7 +407,6 @@ function Dashboard() {
       </div>
 
       <AppOnboarding />
-      <style>{`.input{width:100%;border-radius:.75rem;background:white;border:1px solid var(--sage-200);padding:.65rem .8rem;font-size:16px;outline:none}.input:focus{border-color:var(--sage-600);box-shadow:0 0 0 3px rgb(74 103 65 / .15)}`}</style>
     </KyaPage>
   );
 }
@@ -420,7 +414,7 @@ function Dashboard() {
 // ---------------------------------------------------------------------------
 // Header
 // ---------------------------------------------------------------------------
-function HomeHeader({ firstName, stateCopy, cta }: { firstName: string; unreadNotifs: number; stateCopy?: string; cta?: HeroCta }) {
+function HomeHeader({ firstName, stateCopy }: { firstName: string; unreadNotifs: number; stateCopy?: string }) {
   const { t } = useTranslation();
   const h = new Date().getHours();
   // Greetings are spoken-to-the-user copy: no terminal period.
@@ -430,13 +424,7 @@ function HomeHeader({ firstName, stateCopy, cta }: { firstName: string; unreadNo
   // it when there's no state copy.
   const dateLabel = formatLocalDate(new Date(), { weekday: "long", month: "long", day: "numeric" });
   return (
-    <TabHeader title={greeting} line={stateCopy || dateLabel}>
-      {cta && (
-        <div className="mt-4">
-          <KyaPrimaryButton onClick={cta.onPress} disabled={cta.disabled} icon={cta.icon}>{cta.label}</KyaPrimaryButton>
-        </div>
-      )}
-    </TabHeader>
+    <TabHeader title={greeting} line={stateCopy || dateLabel} />
   );
 }
 
@@ -620,26 +608,25 @@ function TodayPanel({ items, onNavigate }: { items: TodayItem[]; onNavigate: (i:
   const { t } = useTranslation();
   if (items.length === 0) return null;
   return (
-    <section data-coach="owner-today" className="overflow-hidden rounded-[20px] bg-white">
-      <div className="flex items-baseline justify-between px-4 pb-1.5 pt-4">
+    <section data-coach="owner-today" className="overflow-hidden rounded-[20px] bg-white" style={{ color: K.forest }}>
+      <div className="flex items-baseline justify-between px-4 pb-3 pt-4">
         <KyaHeading size={21}>{t("dashboard.today", "Today")}</KyaHeading>
         <span className="text-[13px]" style={{ color: K.quiet }}>{items.length === 1 ? t("dashboard.thingCountOne", "{{n}} thing", { n: items.length }) : t("dashboard.thingCountOther", "{{n}} things", { n: items.length })}</span>
       </div>
-      <ul className="m-0 list-none p-0">
-        {items.map((it) => (
-          <li key={it.id} className="border-t first:border-t-0" style={{ borderColor: K.line }}>
-            <button type="button" onClick={() => onNavigate(it)} className="flex min-h-[60px] w-full items-center gap-3 px-4 py-3 text-left active:bg-black/[0.03]">
-              <IconTile
-                size={34}
-                tone={it.tone === "amber" ? "amber" : "ink-lime"}
-                icon={it.to.kind === "scan" ? <AlertTriangle className="size-4" /> : it.tone === "amber" ? <AlertCircle className="size-4" /> : it.to.kind === "sits" ? <Calendar className="size-4" /> : <CalendarHeart className="size-4" />}
-              />
-              <span className="min-w-0 flex-1">
-                <span className="t-item block truncate">{it.title}</span>
-                <span className="t-meta block truncate">{it.meta}</span>
-              </span>
-              <ChevronRight className="size-4 shrink-0 text-[var(--mute2)]" />
-            </button>
+      <ul className="m-0 list-none p-0" style={{ borderTop: `1px solid ${K.line}` }}>
+        {items.map((it, i) => (
+          <li key={it.id}>
+            <KyaRow
+              onClick={() => onNavigate(it)}
+              last={i === items.length - 1}
+              leading={
+                <KyaIconTile tone={it.tone === "amber" ? "amber" : "forest"}>
+                  {it.to.kind === "scan" ? <AlertTriangle className="size-[18px]" /> : it.tone === "amber" ? <AlertCircle className="size-[18px]" /> : it.to.kind === "sits" ? <Calendar className="size-[18px]" /> : <CalendarHeart className="size-[18px]" />}
+                </KyaIconTile>
+              }
+              title={it.title}
+              detail={it.meta}
+            />
           </li>
         ))}
       </ul>
@@ -757,8 +744,8 @@ function HouseholdActivity({ household }: { household?: HomeHousehold }) {
           <li key={a.id} className="flex items-start gap-2.5 rounded-[20px] bg-white px-4 py-3">
             <span className="mt-1.5 size-2 shrink-0 rounded-full" style={{ background: "var(--house)" }} />
             <div className="min-w-0 flex-1">
-              <p className="text-[14px] text-[var(--ink)]"><span className="font-[500]">{a.actorName || t("dashboard.activitySomeone", "Someone")}</span> {t("dashboard.activitySummary", "{{summary}} for {{bird}}", { summary: activitySummary(t, a), bird: a.birdName ?? t("dashboard.activityABird", "A bird") })}</p>
-              <p className="t-meta">{fmtAgo(a.at)}</p>
+              <p className="m-0 text-[15px] leading-[1.45]" style={{ color: K.ink }}><span className="font-[700]" style={{ color: K.forest }}>{a.actorName || t("dashboard.activitySomeone", "Someone")}</span> {t("dashboard.activitySummary", "{{summary}} for {{bird}}", { summary: activitySummary(t, a), bird: a.birdName ?? t("dashboard.activityABird", "A bird") })}</p>
+              <p className="m-0 mt-0.5 text-[13px]" style={{ color: K.quiet }}>{fmtAgo(a.at)}</p>
             </div>
           </li>
         ))}
@@ -810,17 +797,20 @@ function HouseholdRow({ household, firstName }: { household?: HomeHousehold; fir
 // Foster footer
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
-// Empty + skeleton — the header already carries the "Add a bird" main button,
-// so this is a calm explanatory card, no competing button.
+// Empty + skeleton — the empty card carries the one main button, "Add your
+// first bird".
 // ---------------------------------------------------------------------------
-function EmptyHome() {
+function EmptyHome({ onAdd }: { onAdd: () => void }) {
   const { t } = useTranslation();
   return (
-    <section className="rounded-[20px] bg-white p-8 text-center">
-      <div className="flex justify-center"><IconTile size={48} icon={<Feather className="size-6" />} /></div>
-      <KyaHeading size={23} className="mt-3">{t("dashboard.welcomeToYourFlock", "Welcome to your flock")}</KyaHeading>
-      <p className="t-body mx-auto mt-1.5 max-w-[34ch] text-[var(--ink2)]">{t("dashboard.emptyHomeBody", "Start their living record — care plan, weight, moments, and more. Tap Add a bird above to begin.")}</p>
-    </section>
+    <KyaCard className="px-5 py-7 text-center" style={{ color: K.forest }}>
+      <div className="flex justify-center"><KyaIconTile size={52}><Feather className="size-6" /></KyaIconTile></div>
+      <KyaHeading size={24} className="mt-3">{t("dashboard.welcomeToYourFlock", "Welcome to your flock")}</KyaHeading>
+      <p className="mx-auto m-0 mt-2 max-w-[34ch] text-[15px] leading-[1.5]" style={{ color: K.ink }}>{t("dashboard.emptyHomeBodyNoArrow", "Start their living record — care plan, weight, moments, and more.")}</p>
+      <div className="mt-5">
+        <KyaPrimaryButton onClick={onAdd} icon={<Plus className="size-[18px]" />}>{t("dashboard.addYourFirstBird", "Add your first bird")}</KyaPrimaryButton>
+      </div>
+    </KyaCard>
   );
 }
 

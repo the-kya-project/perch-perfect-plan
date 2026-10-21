@@ -498,15 +498,20 @@ export function ClipRecorder({
 
   // ---- Render ----------------------------------------------------------------
 
+  // The Kya buttons: sunflower for the one main action, white with a forest
+  // border for the other.
+  const MAIN_BTN = "inline-flex min-h-[52px] min-w-0 items-center justify-center gap-2 rounded-full border-2 border-[#1a3d2e] bg-[#f2b33d] px-5 text-[16px] font-[700] text-[#1a3d2e] disabled:opacity-45";
+  const SECOND_BTN = "inline-flex min-h-[52px] shrink-0 items-center justify-center gap-1.5 rounded-full border-2 border-[#1a3d2e] bg-white px-4 text-[15px] font-[700] text-[#1a3d2e] disabled:opacity-45";
+
   const noteEl = note && (
-    <p className="flex items-start gap-1.5 text-xs text-warn-amber">
-      <AlertTriangle className="size-3.5 shrink-0" />
+    <p className="m-0 flex items-start gap-1.5 text-[13.5px] leading-[1.45] text-[#854f0b]">
+      <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
       <span>{note}</span>
     </p>
   );
   const errorEl = error && (
-    <p className="flex items-start gap-1.5 text-xs text-warn-red">
-      <AlertTriangle className="size-3.5 shrink-0" />
+    <p className="m-0 flex items-start gap-1.5 text-[13.5px] font-[700] leading-[1.45] text-[#a32d2d]">
+      <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
       <span>{error}</span>
     </p>
   );
@@ -532,17 +537,17 @@ export function ClipRecorder({
 
   if (phase === "review") {
     return (
-      <div className="space-y-2">
-        <div className="overflow-hidden rounded-xl bg-black ring-1 ring-sage-200">
+      <div className="flex flex-col gap-2.5">
+        <div className="overflow-hidden rounded-[16px] bg-black">
           {recordedUrl && <video src={recordedUrl} controls playsInline className="aspect-video w-full object-contain" />}
         </div>
-        <p className="flex items-center gap-1 text-xs font-semibold text-sage-600"><Check className="size-3.5" /> {t("clipRecorder.recordedReview", "Clip recorded — review it below.")}</p>
-        <div className="flex gap-2">
-          <button type="button" onClick={useRecorded} disabled={disabled} className="flex-1 rounded-xl bg-sage-900 py-2 text-sm font-semibold text-white disabled:opacity-50">
-            <span className="inline-flex items-center justify-center gap-1.5"><Check className="size-4" /> {t("clipRecorder.useClip", "Use this clip")}</span>
+        <p className="m-0 flex items-center gap-1.5 text-[13.5px] font-[700] text-[#5f5e5a]"><Check className="size-4" aria-hidden="true" /> {t("clipRecorder.recordedReview", "Clip recorded — review it below.")}</p>
+        <div className="flex gap-2.5">
+          <button type="button" onClick={useRecorded} disabled={disabled} className={`${MAIN_BTN} flex-1`}>
+            <Check className="size-5" aria-hidden="true" /> {t("clipRecorder.useClip", "Use this clip")}
           </button>
-          <button type="button" onClick={reRecord} disabled={disabled} className="rounded-xl border border-sage-200 bg-white px-3 py-2 text-sm font-semibold text-sage-700 disabled:opacity-50">
-            <span className="inline-flex items-center gap-1.5"><RotateCcw className="size-4" /> {t("clipRecorder.reRecord", "Re-record")}</span>
+          <button type="button" onClick={reRecord} disabled={disabled} className={SECOND_BTN}>
+            <RotateCcw className="size-4" aria-hidden="true" /> {t("clipRecorder.reRecord", "Re-record")}
           </button>
         </div>
         {errorEl}
@@ -589,8 +594,8 @@ export function ClipRecorder({
 
   // ready | recording | stopping — live camera preview
   return (
-    <div className="space-y-2">
-      <div className="relative overflow-hidden rounded-xl bg-black ring-1 ring-sage-200">
+    <div className="flex flex-col gap-2.5">
+      <div className="relative overflow-hidden rounded-[16px] bg-black">
         <video
           ref={videoRef}
           autoPlay
@@ -600,34 +605,34 @@ export function ClipRecorder({
           className="aspect-video w-full object-contain"
         />
         {phase === "recording" && (
-          <div className="absolute left-2 top-2 flex items-center gap-1.5 rounded-full bg-warn-red/90 px-2 py-0.5 text-[11px] font-bold text-white">
+          <div className="absolute left-2 top-2 flex items-center gap-1.5 rounded-full bg-[#a32d2d] px-2.5 py-1 text-[12px] font-[700] text-white">
             <span className="size-1.5 animate-pulse rounded-full bg-white" />
             {t("clipRecorder.rec", "REC {{elapsed}} / {{max}}", { elapsed: fmt(elapsed), max: fmt(MAX_SECONDS) })}
           </div>
         )}
         {phase === "ready" && (
-          <div className="absolute left-2 top-2 rounded-full bg-black/60 px-2 py-0.5 text-[11px] font-semibold text-white">
+          <div className="absolute left-2 top-2 rounded-full bg-black/60 px-2.5 py-1 text-[12px] font-[700] text-white">
             {t("clipRecorder.livePreview", "Live preview")}
           </div>
         )}
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex gap-2.5">
         {phase === "ready" && (
           <>
             <button
               type="button"
               onClick={beginRecording}
-              className="flex-1 rounded-xl bg-warn-red py-2 text-sm font-semibold text-white"
+              className={`${MAIN_BTN} flex-1`}
             >
-              <span className="inline-flex items-center justify-center gap-1.5"><Video className="size-4" /> {t("clipRecorder.startRecording", "Start recording")}</span>
+              <Video className="size-5" aria-hidden="true" /> {t("clipRecorder.startRecording", "Start recording")}
             </button>
             <button
               type="button"
               onClick={cancel}
-              className="rounded-xl border border-sage-200 bg-white px-3 py-2 text-sm font-semibold text-sage-700"
+              className={SECOND_BTN}
             >
-              <span className="inline-flex items-center gap-1.5"><RotateCcw className="size-4" /> {t("clipRecorder.cancel", "Cancel")}</span>
+              <RotateCcw className="size-4" aria-hidden="true" /> {t("clipRecorder.cancel", "Cancel")}
             </button>
           </>
         )}
@@ -635,14 +640,14 @@ export function ClipRecorder({
           <button
             type="button"
             onClick={stop}
-            className="flex-1 rounded-xl bg-sage-900 py-2 text-sm font-semibold text-white"
+            className={`${MAIN_BTN} flex-1`}
           >
-            <span className="inline-flex items-center justify-center gap-1.5"><Square className="size-4" /> {t("clipRecorder.stopSave", "Stop & save")}</span>
+            <Square className="size-4" aria-hidden="true" /> {t("clipRecorder.stopSave", "Stop & save")}
           </button>
         )}
         {phase === "stopping" && (
-          <div className="flex-1 rounded-xl bg-sage-100 py-2 text-center text-sm font-semibold text-sage-700">
-            <span className="inline-flex items-center gap-1.5"><Loader2 className="size-4 animate-spin" /> {t("clipRecorder.finalizing", "Finalizing…")}</span>
+          <div className="inline-flex min-h-[52px] flex-1 items-center justify-center gap-2 rounded-full bg-[#f1f5f0] text-[16px] font-[700] text-[#1a3d2e]">
+            <Loader2 className="size-5 animate-spin" aria-hidden="true" /> {t("clipRecorder.finalizing", "Finalizing…")}
           </div>
         )}
       </div>

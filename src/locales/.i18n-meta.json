@@ -1257,6 +1257,9 @@
     "birdPickers.otherEllipsis": {
       "stamp": "d53d2770807d0f01"
     },
+    "birdPickers.required": {
+      "stamp": "dba5a2479ac6f5fa"
+    },
     "birdPickers.selectSpecies": {
       "stamp": "83d722acdbfc86b8"
     },
@@ -1320,6 +1323,9 @@
     "birdRecord.clipped": {
       "stamp": "d98deea9d96f0c01"
     },
+    "birdRecord.close": {
+      "stamp": "d981ee660d866d8c"
+    },
     "birdRecord.continueCarePlan": {
       "stamp": "b46519dd3daa5f4f"
     },
@@ -1344,6 +1350,15 @@
     "birdRecord.dailyCheckButton": {
       "stamp": "a55b557383617330"
     },
+    "birdRecord.deleteConfirmHer": {
+      "stamp": "f219dd96e6e6dafd"
+    },
+    "birdRecord.deleteConfirmHim": {
+      "stamp": "231cef49c9fd3a4b"
+    },
+    "birdRecord.deleteConfirmThem": {
+      "stamp": "c609ca602f8582ff"
+    },
     "birdRecord.deleteDetailHer": {
       "stamp": "fa77e78a5195279d"
     },
@@ -1358,9 +1373,6 @@
     },
     "birdRecord.deleteNameQ": {
       "stamp": "0122876916c2e393"
-    },
-    "birdRecord.deleteWarning": {
-      "stamp": "456a1b43cdb07a09"
     },
     "birdRecord.deleting": {
       "stamp": "17dadddd53c0f524"
@@ -1442,6 +1454,9 @@
     },
     "birdRecord.justYou": {
       "stamp": "165c659ad6254d0a"
+    },
+    "birdRecord.keepName": {
+      "stamp": "fac8f29215824a8e"
     },
     "birdRecord.makePermanentConfirm": {
       "stamp": "ab9aa85c818d3521"
@@ -1649,6 +1664,9 @@
     },
     "birdSetup.addAnotherMedication": {
       "stamp": "434257a57cb30fc9"
+    },
+    "birdSetup.addAPhoto": {
+      "stamp": "6fb2eafd03f3dc13"
     },
     "birdSetup.addButton": {
       "stamp": "7243fcbe9aec5d44"
@@ -2895,6 +2913,9 @@
     "caregiverHome.sitActive": {
       "stamp": "095ae6e4bba77d48"
     },
+    "caregiverHome.sitDates": {
+      "stamp": "05d79984a81e5abd"
+    },
     "caregiverHome.theOwner": {
       "stamp": "08ee0f36c66831a5"
     },
@@ -3030,6 +3051,9 @@
     "carePlan.dailyRhythm": {
       "stamp": "a505c530e0c424f6"
     },
+    "carePlan.day": {
+      "stamp": "d3234f936e818a35"
+    },
     "carePlan.dietOverview": {
       "stamp": "18a3fa84ad88aa11"
     },
@@ -3075,9 +3099,6 @@
     "carePlan.health": {
       "stamp": "24701ea98bfb3f0a"
     },
-    "carePlan.homeSafety": {
-      "stamp": "3deba11ef08fb86a"
-    },
     "carePlan.homeSafetyTitle": {
       "stamp": "163826a90064d624"
     },
@@ -3114,8 +3135,8 @@
     "carePlan.label.carrierLocation": {
       "stamp": "f78f3d76ac0d1f1c"
     },
-    "carePlan.label.emergency": {
-      "stamp": "16fdfafb12402299"
+    "carePlan.label.day": {
+      "stamp": "d3234f936e818a35"
     },
     "carePlan.label.emergencyVet": {
       "stamp": "081619f31f33130a"
@@ -3138,9 +3159,6 @@
     "carePlan.label.health": {
       "stamp": "24701ea98bfb3f0a"
     },
-    "carePlan.label.home": {
-      "stamp": "e0780ad0fc0251d0"
-    },
     "carePlan.label.midday": {
       "stamp": "cbbc35e6d7d25161"
     },
@@ -3156,8 +3174,11 @@
     "carePlan.label.poisonControl": {
       "stamp": "a620c30255a26584"
     },
-    "carePlan.label.routine": {
-      "stamp": "acc337a43620f922"
+    "carePlan.label.tips": {
+      "stamp": "b5599f17ff594655"
+    },
+    "carePlan.label.yourHome": {
+      "stamp": "a0b55ed740b3c6f2"
     },
     "carePlan.likes": {
       "stamp": "144345008760dd0f"
@@ -3210,14 +3231,17 @@
     "carePlan.removeFreshFood": {
       "stamp": "22bdeb6f39acbd09"
     },
-    "carePlan.routine": {
-      "stamp": "acc337a43620f922"
-    },
     "carePlan.safetyRules": {
       "stamp": "d9dc3e7f568158ef"
     },
     "carePlan.thisBirdHasHandlingRestrictions": {
       "stamp": "4e0024905b84e934"
+    },
+    "carePlan.tips": {
+      "stamp": "b5599f17ff594655"
+    },
+    "carePlan.tipsLine": {
+      "stamp": "a3370947ae01286f"
     },
     "carePlan.treats": {
       "stamp": "f74a07c2d2ee143e"
@@ -3252,8 +3276,8 @@
     "carePlan.withStrangers": {
       "stamp": "7f40f4f58c72233c"
     },
-    "carePlanPage.back": {
-      "stamp": "c6d4fa0e0b2de623"
+    "carePlan.yourHome": {
+      "stamp": "a0b55ed740b3c6f2"
     },
     "carePlanPage.loadError": {
       "stamp": "55a6307ea398f248"
@@ -3263,6 +3287,9 @@
     },
     "carePlanPage.readOnlyFooter": {
       "stamp": "4ea2733c60aca65d"
+    },
+    "carePlanPage.title": {
+      "stamp": "024068f55f21e2cd"
     },
     "careSheet.behavior.biteWarning": {
       "stamp": "8b8e84c9a7fa417a"
@@ -3771,9 +3798,6 @@
     "dailyCheck.gramsPlaceholder": {
       "stamp": "a18beb5e16bf8307"
     },
-    "dailyCheck.healthCheck": {
-      "stamp": "8e03faf2e5f1ee54"
-    },
     "dailyCheck.item.alertness": {
       "stamp": "2d881a7420a6db72"
     },
@@ -3897,9 +3921,6 @@
     "dashboard.activitySummary": {
       "stamp": "478ec8f79a5dfd34"
     },
-    "dashboard.addABird": {
-      "stamp": "560ff679efabdff6"
-    },
     "dashboard.addABirdLink": {
       "stamp": "62058cab5b587de1"
     },
@@ -3908,6 +3929,9 @@
     },
     "dashboard.addSomeoneWhoHelps": {
       "stamp": "cc301b63f4ac0ada"
+    },
+    "dashboard.addYourFirstBird": {
+      "stamp": "9105dea1093a6669"
     },
     "dashboard.aHouseholdYouHelpWith": {
       "stamp": "57f824fd59cd7827"
@@ -3939,8 +3963,8 @@
     "dashboard.dailyHealthCheck": {
       "stamp": "01e38b3413c0e455"
     },
-    "dashboard.emptyHomeBody": {
-      "stamp": "4ffbb36f685b6fba"
+    "dashboard.emptyHomeBodyNoArrow": {
+      "stamp": "ea6de4ce1dc60bf4"
     },
     "dashboard.flockCheckBody": {
       "stamp": "4be05364bac6f8b6"
@@ -6192,11 +6216,11 @@
     "householdInvite.always": {
       "stamp": "824b733f77d251fa"
     },
-    "householdInvite.cancel": {
-      "stamp": "06c80f8b6f9f2b3b"
-    },
     "householdInvite.canView": {
       "stamp": "5f945f9a1ff4aba3"
+    },
+    "householdInvite.close": {
+      "stamp": "d981ee660d866d8c"
     },
     "householdInvite.couldNotAdd": {
       "stamp": "21d1a62ac698a515"
@@ -6227,6 +6251,9 @@
     },
     "householdInvite.permissionLevel": {
       "stamp": "ee40b8819ff9d1f8"
+    },
+    "householdInvite.required": {
+      "stamp": "dba5a2479ac6f5fa"
     },
     "householdInvite.sending": {
       "stamp": "2696b1cead25f426"
@@ -6534,17 +6561,14 @@
     "memberOnboarding.skipTour": {
       "stamp": "2c05920e71c769d0"
     },
-    "memberOnboarding.stepOf": {
-      "stamp": "cb7aea27942c20d8"
+    "memberOnboarding.stepOfSr": {
+      "stamp": "567f9f4266f4a2af"
     },
     "memberOnboarding.theirBirds": {
       "stamp": "b009c3d8137a253b"
     },
     "memberOnboarding.welcomeBody": {
       "stamp": "4d3ecc8112d2040b"
-    },
-    "memberOnboarding.welcomeEyebrow": {
-      "stamp": "368df544e13214b2"
     },
     "memberOnboarding.welcomeHeadline": {
       "stamp": "e65a29b25acbb514"
@@ -6569,6 +6593,9 @@
     },
     "nameList.yourBirds": {
       "stamp": "6afed180f92c7f4e"
+    },
+    "newBird.addAPhoto": {
+      "stamp": "6fb2eafd03f3dc13"
     },
     "newBird.added": {
       "stamp": "d2caaa8d33215c8a"
@@ -7005,8 +7032,8 @@
     "ownerOnboarding.skipTour": {
       "stamp": "2c05920e71c769d0"
     },
-    "ownerOnboarding.stepOf": {
-      "stamp": "cb7aea27942c20d8"
+    "ownerOnboarding.stepOfSr": {
+      "stamp": "567f9f4266f4a2af"
     },
     "ownerOnboarding.thatsTheTour": {
       "stamp": "f95a9f8e1aa4b2de"
@@ -7022,9 +7049,6 @@
     },
     "ownerOnboarding.welcomeBodyReturning": {
       "stamp": "f3700821a152fd20"
-    },
-    "ownerOnboarding.welcomeEyebrow": {
-      "stamp": "368df544e13214b2"
     },
     "ownerOnboarding.welcomeHeadline": {
       "stamp": "0275773220fe4071"
@@ -7158,6 +7182,9 @@
     "passingGuidance.vetIntro": {
       "stamp": "1741398e128b2a6b"
     },
+    "passingGuidance.vetLabel": {
+      "stamp": "8997a02d51c0f18d"
+    },
     "passingGuidance.vetTitle": {
       "stamp": "879f2e73d52a8933"
     },
@@ -7230,9 +7257,6 @@
     "planEditor.awaitingResponse": {
       "stamp": "ddf1423f426d1604"
     },
-    "planEditor.backToOverview": {
-      "stamp": "28b0f82bab206c0a"
-    },
     "planEditor.birdRemoved": {
       "stamp": "eb532aa7c4544496"
     },
@@ -7253,6 +7277,9 @@
     },
     "planEditor.done": {
       "stamp": "3e00dbef8dddb12e"
+    },
+    "planEditor.editTitleNamed": {
+      "stamp": "0365bc160d6e5c03"
     },
     "planEditor.flagged": {
       "stamp": "0bc4dd09a90f224e"
@@ -7329,6 +7356,9 @@
     "planEditor.scanVomiting": {
       "stamp": "383c8da7639cee0a"
     },
+    "planEditor.sectionsAria": {
+      "stamp": "473ee89fa6d698bf"
+    },
     "planEditor.sitsCreatedFrom": {
       "stamp": "58570eac04aeba2d"
     },
@@ -7377,9 +7407,6 @@
     "planEditor.thisBird": {
       "stamp": "e206dc027c390933"
     },
-    "planEditor.titleNamed": {
-      "stamp": "43afd22261e8c11c"
-    },
     "planEditor.triageGreen": {
       "stamp": "a0656d81073d87d2"
     },
@@ -7397,9 +7424,6 @@
     },
     "planEditor.viewAsSitter": {
       "stamp": "c87b907105d3a5ba"
-    },
-    "planOverview.back": {
-      "stamp": "5001815e48b3af8b"
     },
     "planOverview.cardCarePlan": {
       "stamp": "024068f55f21e2cd"

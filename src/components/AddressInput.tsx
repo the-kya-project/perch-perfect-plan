@@ -7,7 +7,7 @@ import { parseAddress, composeAddress, type AddressParts } from "@/lib/address";
 // holds the parts in local state while editing — re-parsing only when the
 // external value changes to something we didn't just produce — so typing never
 // glitches on the compose→parse round-trip.
-export function AddressInput({ value, onChange, inputClassName = "input", inputStyle }: { value: string; onChange: (composed: string) => void; inputClassName?: string; inputStyle?: React.CSSProperties }) {
+export function AddressInput({ value, onChange, inputClassName = "kya-input", inputStyle }: { value: string; onChange: (composed: string) => void; inputClassName?: string; inputStyle?: React.CSSProperties }) {
   const { t } = useTranslation();
   const [parts, setParts] = useState<AddressParts>(() => parseAddress(value));
 
@@ -45,7 +45,7 @@ export function AddressInput({ value, onChange, inputClassName = "input", inputS
       <div className="grid grid-cols-2 gap-2">
         <input
           className={inputClassName}
-        style={inputStyle}
+          style={inputStyle}
           placeholder={t("addressInput.state", "State")}
           autoComplete="address-level1"
           autoCapitalize="characters"
@@ -54,7 +54,7 @@ export function AddressInput({ value, onChange, inputClassName = "input", inputS
         />
         <input
           className={inputClassName}
-        style={inputStyle}
+          style={inputStyle}
           placeholder={t("addressInput.zip", "ZIP")}
           inputMode="numeric"
           autoComplete="postal-code"

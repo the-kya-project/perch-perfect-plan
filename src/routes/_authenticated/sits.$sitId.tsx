@@ -6,8 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   ArrowLeft, Activity, Scale, BookOpen, CheckSquare, Image as ImageIcon, Loader2, Home, AlertTriangle,
 } from "lucide-react";
-import { IconTile } from "@/components/system";
-import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaLink } from "@/components/kya";
+import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaLink, KyaIconTile } from "@/components/kya";
 import { PageHeader } from "@/components/headers";
 import { rangeTo, sitTitle } from "@/lib/sitText";
 import { durationDays } from "@/lib/dates";
@@ -250,7 +249,7 @@ function ActivityRow({ a, last, birdLabel }: { a: Activity; last: boolean; birdL
   if (a.kind === "scan") {
     const triage = a.status === "red" || a.status === "yellow";
     return (
-      <Row last={last} leading={<IconTile size={34} tone={triage ? "amber" : "pale"} icon={<Activity className="size-4" />} />}
+      <Row last={last} leading={<KyaIconTile tone={triage ? "amber" : "forest"}><Activity className="size-[18px]" /></KyaIconTile>}
         title={a.status === "red"
           ? t("sitDetail.scanConcern", "{{bird}} · health check — concern flagged", { bird: birdLabel(a.bird_id) })
           : a.status === "yellow"
@@ -262,7 +261,7 @@ function ActivityRow({ a, last, birdLabel }: { a: Activity; last: boolean; birdL
   }
   if (a.kind === "weight") {
     return (
-      <Row last={last} leading={<IconTile size={34} tone="pale" icon={<Scale className="size-4" />} />}
+      <Row last={last} leading={<KyaIconTile><Scale className="size-[18px]" /></KyaIconTile>}
         title={t("sitDetail.weightRow", "{{bird}} · {{grams}} g", { bird: birdLabel(a.bird_id), grams: a.grams })}
         subtitle={when}
       />
@@ -270,7 +269,7 @@ function ActivityRow({ a, last, birdLabel }: { a: Activity; last: boolean; birdL
   }
   if (a.kind === "journal") {
     return (
-      <Row last={last} leading={<IconTile size={34} tone="pale" icon={<BookOpen className="size-4" />} />}
+      <Row last={last} leading={<KyaIconTile><BookOpen className="size-[18px]" /></KyaIconTile>}
         title={`${birdLabel(a.bird_id)} · ${a.title}`}
         subtitle={`${a.kindLabel ? `${a.kindLabel} · ` : ""}${when}`}
       />
@@ -278,7 +277,7 @@ function ActivityRow({ a, last, birdLabel }: { a: Activity; last: boolean; birdL
   }
   if (a.kind === "photo") {
     return (
-      <Row last={last} leading={<IconTile size={34} tone="pale" icon={<ImageIcon className="size-4" />} />}
+      <Row last={last} leading={<KyaIconTile><ImageIcon className="size-[18px]" /></KyaIconTile>}
         title={t("sitDetail.photoRow", "{{bird}} · photo", { bird: birdLabel(a.bird_id) })}
         subtitle={when}
       />
@@ -289,7 +288,7 @@ function ActivityRow({ a, last, birdLabel }: { a: Activity; last: boolean; birdL
     ? renderDerivedTask(a.derived as DerivedTask, i18n.getFixedT(i18n.language, "routine"), i18n.language).title
     : (a.label ?? t("sitDetail.routineTask", "Routine task"));
   return (
-    <Row last={last} leading={<IconTile size={34} tone="pale" icon={<CheckSquare className="size-4" />} />}
+    <Row last={last} leading={<KyaIconTile><CheckSquare className="size-[18px]" /></KyaIconTile>}
       title={t("sitDetail.taskComplete", "Task complete — {{label}}", { label: taskLabel })}
       subtitle={when}
     />
@@ -331,7 +330,7 @@ function Shell({ goBack, headline, body, children }: { goBack: () => void; headl
 
 function Loader() {
   const { t } = useTranslation();
-  return <div className="flex items-center justify-center gap-2 py-10 text-[var(--mute)]"><Loader2 className="size-4 animate-spin" /> {t("sitDetail.loading", "Loading…")}</div>;
+  return <div className="flex items-center justify-center gap-2 py-10 text-[15px]" style={{ color: K.quiet }}><Loader2 className="size-4 animate-spin" /> {t("sitDetail.loading", "Loading…")}</div>;
 }
 
 function fmtWhen(iso: string): string {

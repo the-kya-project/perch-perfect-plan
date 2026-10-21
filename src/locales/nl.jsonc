@@ -841,6 +841,8 @@
   "birdPickers.hatchDateHint": "Optioneel — berekent de leeftijd automatisch",
   // Other…
   "birdPickers.otherEllipsis": "Anders…",
+  // Required
+  "birdPickers.required": "Verplicht",
   // Select species…
   "birdPickers.selectSpecies": "Kies een soort…",
   // Species
@@ -883,6 +885,8 @@
   "birdRecord.chipBandHatchDateOrigin": "Chip, ring, uitkomstdatum, herkomst, foto",
   // Clipped
   "birdRecord.clipped": "Geknipt",
+  // Close
+  "birdRecord.close": "Sluiten",
   // Continue care plan
   "birdRecord.continueCarePlan": "Verzorgingsplan verder invullen",
   // Pick up where you left off. What you've added so far is saved.
@@ -899,6 +903,12 @@
   "birdRecord.createCarePlan": "Verzorgingsplan maken",
   // Daily check
   "birdRecord.dailyCheckButton": "Dagelijkse check",
+  // This removes {{name}} and everything logged for her. You can't undo this.
+  "birdRecord.deleteConfirmHer": "Dit verwijdert {{name}} en alles wat voor haar is vastgelegd. Dit kan niet ongedaan worden gemaakt.",
+  // This removes {{name}} and everything logged for him. You can't undo this.
+  "birdRecord.deleteConfirmHim": "Dit verwijdert {{name}} en alles wat voor hem is vastgelegd. Dit kan niet ongedaan worden gemaakt.",
+  // This removes {{name}} and everything logged for them. You can't undo this.
+  "birdRecord.deleteConfirmThem": "Dit verwijdert {{name}} en alles wat is vastgelegd. Dit kan niet ongedaan worden gemaakt.",
   // Removes {{name}} and everything logged for her
   "birdRecord.deleteDetailHer": "Verwijdert {{name}} en alles wat voor haar is bijgehouden",
   // Removes {{name}} and everything logged for him
@@ -909,8 +919,6 @@
   "birdRecord.deleteName": "{{name}} verwijderen",
   // Delete {{name}}?
   "birdRecord.deleteNameQ": "{{name}} verwijderen?",
-  // Permanently delete {{name}} and everything in their record — care plan, weights, scans, journal, and photos. This can't be undone.
-  "birdRecord.deleteWarning": "Verwijder {{name}} en alles in het dossier definitief — verzorgingsplan, gewichten, gezondheidschecks, dagboek en foto's. Dit kan niet ongedaan worden gemaakt.",
   // Deleting…
   "birdRecord.deleting": "Verwijderen…",
   // Dismiss
@@ -965,6 +973,8 @@
   "birdRecord.journal": "Dagboek",
   // Just you
   "birdRecord.justYou": "Alleen jij",
+  // Keep {{name}}
+  "birdRecord.keepName": "{{name}} houden",
   // Make {{name}} a permanent member of your flock? You can change your mind later.
   "birdRecord.makePermanentConfirm": "Wil je {{name}} voorgoed bij je vogels opnemen? Je kunt later nog van gedachten veranderen.",
   // Make sure the bird's face is centered.
@@ -1103,6 +1113,8 @@
   "birdSetup.addAnotherFoodToNever": "Nog een verboden voedingsmiddel toevoegen",
   // Add another medication
   "birdSetup.addAnotherMedication": "Nog een medicijn toevoegen",
+  // Add a photo
+  "birdSetup.addAPhoto": "Foto toevoegen",
   // Add
   "birdSetup.addButton": "Toevoegen",
   // Add photo
@@ -1933,6 +1945,8 @@
   "caregiverHome.ownersBirdsS": "de vogels van {{name}}",
   // Sit active — daily care while {{owner}}'s away
   "caregiverHome.sitActive": "Oppasperiode actief — dagelijkse verzorging terwijl {{owner}} weg is",
+  // {{start}} – {{end}}
+  "caregiverHome.sitDates": "{{start}} – {{end}}",
   // the owner
   "caregiverHome.theOwner": "de eigenaar",
   // the owner's birds
@@ -2023,6 +2037,8 @@
   "carePlan.cleaningProducts": "Schoonmaakmiddelen",
   // Daily rhythm
   "carePlan.dailyRhythm": "Dagritme",
+  // Day
+  "carePlan.day": "Dag",
   // Diet overview
   "carePlan.dietOverview": "Dieetoverzicht",
   // Diet types
@@ -2053,8 +2069,6 @@
   "carePlan.handlingRules": "Regels voor omgang",
   // Health
   "carePlan.health": "Gezondheid",
-  // Home & safety
-  "carePlan.homeSafety": "Thuis & veiligheid",
   // {{name}}'s home & safety
   "carePlan.homeSafetyTitle": "Thuis & veiligheid van {{name}}",
   // Household hazards · keep away
@@ -2079,8 +2093,8 @@
   "carePlan.label.behavior": "Gedrag",
   // Carrier location
   "carePlan.label.carrierLocation": "Plek van de reisbox",
-  // Emergency
-  "carePlan.label.emergency": "Noodgeval",
+  // Day
+  "carePlan.label.day": "Dag",
   // Emergency vet
   "carePlan.label.emergencyVet": "Spoeddierenarts",
   // Emergency vet address
@@ -2095,8 +2109,6 @@
   "carePlan.label.food": "Eten",
   // Health
   "carePlan.label.health": "Gezondheid",
-  // Home
-  "carePlan.label.home": "Thuis",
   // Midday
   "carePlan.label.midday": "Middag",
   // Morning
@@ -2107,8 +2119,10 @@
   "carePlan.label.owner": "Eigenaar",
   // Poison control
   "carePlan.label.poisonControl": "Vergiftigingen Informatie Centrum",
-  // Routine
-  "carePlan.label.routine": "Routine",
+  // Tips
+  "carePlan.label.tips": "Tips",
+  // Your home
+  "carePlan.label.yourHome": "Je huis",
   // Likes
   "carePlan.likes": "Houdt van",
   // Medical conditions
@@ -2143,12 +2157,14 @@
   "carePlan.outOfCageRules": "Regels buiten de kooi",
   // Remove fresh food
   "carePlan.removeFreshFood": "Vers eten weghalen",
-  // Routine
-  "carePlan.routine": "Routine",
   // Safety rules
   "carePlan.safetyRules": "Veiligheidsregels",
   // This bird has handling restrictions — read this section before any contact.
   "carePlan.thisBirdHasHandlingRestrictions": "Deze vogel heeft beperkingen voor omgang — lees dit deel voordat je contact maakt.",
+  // Tips
+  "carePlan.tips": "Tips",
+  // Short clips that show how it's done
+  "carePlan.tipsLine": "Korte clips die laten zien hoe het moet",
   // Treats
   "carePlan.treats": "Snacks",
   // Wash food bowls
@@ -2171,14 +2187,16 @@
   "carePlan.withinDuration": "Binnen {{duration}}",
   // With strangers
   "carePlan.withStrangers": "Met vreemden",
-  // Back to care plan
-  "carePlanPage.back": "Terug naar verzorgingsplan",
+  // Your home
+  "carePlan.yourHome": "Je huis",
   // Couldn't load this care plan.
   "carePlanPage.loadError": "Kon dit verzorgingsplan niet laden.",
   // Loading the care plan…
   "carePlanPage.loading": "Verzorgingsplan laden…",
   // Read-only. Only {{name}}'s owner can make changes.
   "carePlanPage.readOnlyFooter": "Alleen-lezen. Alleen de eigenaar van {{name}} kan wijzigingen maken.",
+  // Care plan
+  "carePlanPage.title": "Zorgplan",
   // Bite warning signs
   "careSheet.behavior.biteWarning": "Waarschuwingssignalen voor bijten",
   // Behavior
@@ -2517,8 +2535,6 @@
   "dailyCheck.fix": "Aanpassen",
   // e.g. 95
   "dailyCheck.gramsPlaceholder": "bijv. 95",
-  // Health check
-  "dailyCheck.healthCheck": "Gezondheidscheck",
   // Alertness
   "dailyCheck.item.alertness": "Alertheid",
   // Breathing
@@ -2601,14 +2617,14 @@
   "dashboard.activitySomeone": "Iemand",
   // {{summary}} for {{bird}}
   "dashboard.activitySummary": "{{summary}} voor {{bird}}",
-  // Add a bird
-  "dashboard.addABird": "Vogel toevoegen",
   // + Add a bird
   "dashboard.addABirdLink": "+ Vogel toevoegen",
   // Add your first bird to start their record.
   "dashboard.addFirstBirdBody": "Voeg je eerste vogel toe om het dossier te starten.",
   // Add someone who helps care for your birds
   "dashboard.addSomeoneWhoHelps": "Voeg iemand toe die helpt met de zorg voor je vogels",
+  // Add your first bird
+  "dashboard.addYourFirstBird": "Voeg je eerste vogel toe",
   // A household you help with
   "dashboard.aHouseholdYouHelpWith": "Een huishouden waar je helpt",
   // {{count}} bird checked today
@@ -2629,8 +2645,8 @@
   "dashboard.dailyCheckFor": "Gewicht en gezondheidscheck van {{name}}",
   // Daily health check
   "dashboard.dailyHealthCheck": "Dagelijkse gezondheidscheck",
-  // Start their living record — care plan, weight, moments, and more. Tap Add a bird above to begin.
-  "dashboard.emptyHomeBody": "Begin hun levende dossier — verzorgingsplan, gewicht, momenten en meer. Tik hierboven op Vogel toevoegen om te beginnen.",
+  // Start their living record — care plan, weight, moments, and more.
+  "dashboard.emptyHomeBodyNoArrow": "Begin hun levende dossier — verzorgingsplan, gewicht, momenten en meer.",
   // Grab a weight and a quick once-over of your birds.
   "dashboard.flockCheckBody": "Even wegen en snel een blik op je vogels.",
   // Weigh & check your flock
@@ -4131,10 +4147,10 @@
   "householdInvite.alreadyInHousehold": "Al in je huishouden",
   // Always
   "householdInvite.always": "Altijd",
-  // Cancel
-  "householdInvite.cancel": "Annuleren",
   // They can view each selected bird's care plan, weight, journal, and identity
   "householdInvite.canView": "Ze kunnen van elke gekozen vogel het verzorgingsplan, gewicht, dagboek en identiteit bekijken",
+  // Close
+  "householdInvite.close": "Sluiten",
   // Couldn't add them.
   "householdInvite.couldNotAdd": "Toevoegen is niet gelukt.",
   // Couldn't send the invite.
@@ -4155,6 +4171,8 @@
   "householdInvite.orInviteNew": "of nodig iemand nieuw uit",
   // Permission level
   "householdInvite.permissionLevel": "Rechten",
+  // Required
+  "householdInvite.required": "Verplicht",
   // Sending…
   "householdInvite.sending": "Versturen…",
   // Send invite
@@ -4359,14 +4377,12 @@
   "memberOnboarding.skipForNow": "Nu overslaan",
   // Skip tour
   "memberOnboarding.skipTour": "Rondleiding overslaan",
-  // {{n}} of {{total}}
-  "memberOnboarding.stepOf": "{{n}} van {{total}}",
+  // Step {{n}} of {{total}}
+  "memberOnboarding.stepOfSr": "Stap {{n}} van {{total}}",
   // their birds
   "memberOnboarding.theirBirds": "hun vogels",
   // {{owner}} added you to help care for their birds. Here's how everything works.
   "memberOnboarding.welcomeBody": "{{owner}} heeft je toegevoegd om te helpen met de zorg voor hun vogels. Zo werkt alles.",
-  // Welcome
-  "memberOnboarding.welcomeEyebrow": "Welkom",
   // Welcome. You're helping with a flock.
   "memberOnboarding.welcomeHeadline": "Welkom. Je helpt mee met de zorg voor een stel vogels.",
   // Your household's owner
@@ -4383,6 +4399,8 @@
   "nameList.yourBird": "je vogel",
   // your birds
   "nameList.yourBirds": "je vogels",
+  // Add a photo
+  "newBird.addAPhoto": "Foto toevoegen",
   // {{name}} added.
   "newBird.added": "{{name}} toegevoegd.",
   // Adding…
@@ -4673,8 +4691,8 @@
   "ownerOnboarding.skipForNow": "Nu overslaan",
   // Skip tour
   "ownerOnboarding.skipTour": "Rondleiding overslaan",
-  // {{n}} of {{total}}
-  "ownerOnboarding.stepOf": "{{n}} van {{total}}",
+  // Step {{n}} of {{total}}
+  "ownerOnboarding.stepOfSr": "Stap {{n}} van {{total}}",
   // That's the tour.
   "ownerOnboarding.thatsTheTour": "Dat was de rondleiding.",
   // Sits starting, hatch days, a foster settling in — whatever's worth knowing today shows up here first.
@@ -4685,8 +4703,6 @@
   "ownerOnboarding.welcomeBody": "Eerst een korte rondleiding, daarna voegen we je vogel toe.",
   // Here's a quick tour of what Kya & Co. can do.
   "ownerOnboarding.welcomeBodyReturning": "Hier is een korte rondleiding langs wat Kya & Co. kan.",
-  // Welcome
-  "ownerOnboarding.welcomeEyebrow": "Welkom",
   // Welcome.
   "ownerOnboarding.welcomeHeadline": "Welkom.",
   // Back to record
@@ -4775,6 +4791,8 @@
   "passingGuidance.vetDisclaimer": "De dierenarts helpt je verder.",
   // {{ownerName}} would like {{name}} brought to the vet, who can care for them and talk through options.
   "passingGuidance.vetIntro": "{{ownerName}} wil dat {{name}} naar de dierenarts wordt gebracht, die voor ze kan zorgen en de opties met je kan bespreken.",
+  // Vet
+  "passingGuidance.vetLabel": "Dierenarts",
   // Bringing {{name}} to the vet
   "passingGuidance.vetTitle": "{{name}} naar de dierenarts brengen",
   // Call the vet before you go, they'll let you know if there's anything you need to do for the drive.
@@ -4823,8 +4841,6 @@
   "planEditor.answerNotSure": "Niet zeker",
   // Awaiting your response
   "planEditor.awaitingResponse": "Wacht op je reactie",
-  // Back to care plan overview
-  "planEditor.backToOverview": "Terug naar overzicht verzorgingsplan",
   // {{name}} removed.
   "planEditor.birdRemoved": "{{name}} verwijderd.",
   // Cancel
@@ -4839,6 +4855,8 @@
   "planEditor.deleting": "Verwijderen...",
   // Done
   "planEditor.done": "Klaar",
+  // Edit {{name}}'s care plan
+  "planEditor.editTitleNamed": "Zorgplan van {{name}} bewerken",
   // Flagged
   "planEditor.flagged": "Gemarkeerd",
   // Health checks from sitters
@@ -4889,6 +4907,8 @@
   "planEditor.scanPosture": "Zit normaal op de zitstok",
   // Face clean, no vomiting
   "planEditor.scanVomiting": "Schoon gezicht, niet overgegeven",
+  // Care plan sections
+  "planEditor.sectionsAria": "Onderdelen van het zorgplan",
   // Sits are created from the <1>owner dashboard</1>, where you can include multiple birds in one sit.
   "planEditor.sitsCreatedFrom": "Oppasperiodes maak je aan vanuit het <1>eigenaarsdashboard</1>, waar je meerdere vogels in één oppasperiode kunt opnemen.",
   // Sitter
@@ -4921,8 +4941,6 @@
   "planEditor.tabSits": "Oppasperiodes",
   // this bird
   "planEditor.thisBird": "deze vogel",
-  // {{name}}'s care plan
-  "planEditor.titleNamed": "Zorgplan van {{name}}",
   // green
   "planEditor.triageGreen": "groen",
   // red
@@ -4935,8 +4953,6 @@
   "planEditor.typeToConfirm": "Typ <1>{{name}}</1> om te bevestigen",
   // View as sitter
   "planEditor.viewAsSitter": "Bekijk als oppas",
-  // Back
-  "planOverview.back": "Terug",
   // Care plan
   "planOverview.cardCarePlan": "Verzorgingsplan",
   // Your home

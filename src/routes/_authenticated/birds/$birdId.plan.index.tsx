@@ -7,22 +7,21 @@ import { useBirdRole } from "@/lib/useBirdRole";
 import { useCapability } from "@/lib/useCapability";
 import { track } from "@/lib/analytics";
 import { MemberContextBanner } from "@/components/MemberContextBanner";
-import { useBirdPhotos } from "@/lib/useBirdPhotos";
-import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 import { speciesLabel } from "@/lib/speciesLabel";
 import { setupStepNumber, type SetupStepKey } from "@/lib/setupSteps";
 import { S, SERIF, SetupPrimaryButton } from "@/components/setup/controls";
-import { KyaIconButton } from "@/components/kya";
-import { HeaderPill } from "@/components/headers";
+import { K, KyaPage, KyaBody } from "@/components/kya";
+import { PageHeader } from "@/components/headers";
 import {
-  ChevronLeft, Eye, Feather, Soup, Heart, Hand, Video, Sun, Home as HomeIcon, Phone, Wand2,
+  Eye, Feather, Soup, Heart, Hand, Video, Sun, Home as HomeIcon, Phone, Wand2,
 } from "lucide-react";
 
 // Care-plan overview — the front door an owner sees when they tap "Care plan"
 // on the bird main page. Lists the six care-plan sections with completion
 // status; tapping a section opens it in the existing tabbed editor.
 // "Walk through it again" launches the guided wizard with answers prefilled.
-// Per design: page #f4f1e8, white section list card, sentence case, AA contrast.
+// Standard page header (back to the bird, "View as sitter" pill for the
+// owner), mist body, white section list cards, sentence case, AA contrast.
 //
 // This is the INDEX of the /plan route. The sibling /plan/editor renders into
 // the plan layout's <Outlet/> (src/routes/_authenticated/birds/$birdId.plan.tsx)
@@ -106,10 +105,6 @@ function CarePlanOverview() {
   }, []);
 
   const name = bird?.name ?? t("planEditor.thisBird", "this bird");
-  // 800px, the same width every other bird tile uses: a smaller transform crops
-  // to a different aspect and the photo comes out zoomed in (see BirdPhotoCrop).
-  const photoOf = useBirdPhotos([bird?.photo_url], 800);
-  const photo = photoOf(bird?.photo_url);
 
   const status = todo.length === 0
     ? t("planOverview.statusDone", "{{name}}'s plan has everything a sitter needs.", { name })
@@ -125,7 +120,7 @@ function CarePlanOverview() {
       track("care_plan_editor_opened", { tab: EDITOR_TAB[k], section_ready: isDone(k) });
       navigate({ to: "/birds/$birdId/plan/editor", params: { birdId }, search: { tab: EDITOR_TAB[k] } });
     } else if (k === "clips") {
-      navigate({ to: "/birds/$birdId/care-plan", params: { birdId } });
+      navigate({ to: "/birds/$birdId/care-plan", params: { birdId }, search: { section: "tips" } });
     } else {
       navigate({ to: "/birds/$birdId/care-plan", params: { birdId }, search: { section: READ_SECTION[k as SectionKey] } });
     }
@@ -163,35 +158,15 @@ function CarePlanOverview() {
   };
 
   return (
-    <div className="min-h-screen pb-nav" style={{ background: S.card }}>
+    <KyaPage>
       <div className="mx-auto max-w-md">
-        <header className="rounded-b-[26px] px-4 pb-6 pt-[calc(env(safe-area-inset-top)+14px)] text-white" style={{ background: S.forest }}>
-          <div className="flex items-center justify-between gap-3">
-            <KyaIconButton label={t("planOverview.back", "Back")} onClick={() => navigate({ to: "/birds/$birdId", params: { birdId } })}>
-              <ChevronLeft className="size-5" aria-hidden="true" />
-            </KyaIconButton>
-            {isOwner && (
-              <HeaderPill action={{ label: t("planOverview.viewAsSitterPill", "View as sitter"), icon: <Eye className="size-4" />, onClick: () => navigate({ to: "/birds/$birdId/view-as-sitter", params: { birdId } }) }} />
-            )}
-          </div>
-
-          <div className="mt-5 flex items-center gap-4">
-            {photo?.url ? (
-              <div className="relative size-[76px] shrink-0 overflow-hidden rounded-full">
-                <BirdPhotoCrop url={photo.url} original={photo.original} position={bird?.photo_position} alt={name} />
-              </div>
-            ) : (
-              <span className="grid size-[76px] shrink-0 place-items-center rounded-full text-[34px] font-[700]" style={{ background: S.lime, color: S.forest, fontFamily: SERIF }} aria-hidden="true">
-                {name.slice(0, 1).toUpperCase()}
-              </span>
-            )}
-            <div className="min-w-0">
-              <h1 className="m-0 text-[30px] font-[700] leading-[1.1]" style={{ fontFamily: SERIF }}>{t("planOverview.titleNamed", "{{name}}'s care plan", { name })}</h1>
-              {bird?.species && <p className="m-0 mt-1 text-[15px]" style={{ color: S.mist }}>{speciesLabel(t, bird.species)}</p>}
-            </div>
-          </div>
-
-          <div className="mt-5 flex flex-col gap-3 rounded-[16px] p-4" style={{ background: S.forestDeep }}>
+        <PageHeader
+          onBack={() => navigate({ to: "/birds/$birdId", params: { birdId } })}
+          title={t("planOverview.titleNamed", "{{name}}'s care plan", { name })}
+          line={bird?.species ? speciesLabel(t, bird.species) : undefined}
+          action={isOwner ? { label: t("planOverview.viewAsSitterPill", "View as sitter"), icon: <Eye className="size-4" />, onClick: () => navigate({ to: "/birds/$birdId/view-as-sitter", params: { birdId } }) } : undefined}
+        >
+          <div className="mt-5 flex flex-col gap-3 rounded-[16px] p-4" style={{ background: K.forestDeep }}>
             <p className="m-0 text-[16px] leading-[1.45] text-white">{status}</p>
             {canEdit && firstTodo && (
               <SetupPrimaryButton onClick={() => navigate({ to: "/birds/$birdId/setup", params: { birdId }, search: { step: setupStepNumber(firstTodo as SetupStepKey) } })}>
@@ -199,9 +174,9 @@ function CarePlanOverview() {
               </SetupPrimaryButton>
             )}
           </div>
-        </header>
+        </PageHeader>
 
-        <main className="flex flex-col gap-[14px] px-4 pt-5">
+        <KyaBody>
           <MemberContextBanner birdId={birdId} />
           <section className="rounded-[20px] bg-white px-4 py-3" style={{ color: S.forest }}>
             <h2 className="m-0 pt-1 text-[21px] font-[700]" style={{ fontFamily: SERIF }}>{t("planOverview.cardCarePlan", "Care plan")}</h2>
@@ -222,8 +197,8 @@ function CarePlanOverview() {
               <Wand2 className="size-4" aria-hidden="true" /> {t("planOverview.walkThroughAgain", "Walk through it again")}
             </button>
           )}
-        </main>
+        </KyaBody>
       </div>
-    </div>
+    </KyaPage>
   );
 }

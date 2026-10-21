@@ -1,10 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { ClipPlayer } from "@/components/ClipPlayer";
-import { CtaLink } from "@/components/system";
 import { ViewOnlyTag } from "@/components/MemberContextBanner";
-import { normalizeFeedTimes } from "@/lib/feedTimes";
+import { InSetupFrame } from "@/components/setup/SetupFrame";
+import { K, SERIF, KyaHeading, KyaIconTile, KyaLink } from "@/components/kya";
+import { normalizeFeedTimes, type FeedTime } from "@/lib/feedTimes";
+import { clipSlotLabel } from "@/lib/clipSlotLabels";
 import {
   waterFreqLabel,
   treatsFreqLabel,
@@ -13,34 +15,34 @@ import {
   formatAmountUnitDisplay,
   formatRemovalMinutesDisplay,
 } from "@/lib/labels";
+// Only the pure helpers come from carePlanCards: its card primitives are the
+// sitter care-sheet's look (CareSheetView) and stay as they are. The Kya-look
+// primitives this view renders with live below.
+import { has, joinUnique, mealPillLabel, RichText } from "@/components/carePlanCards";
 import {
-  has, joinUnique, SectionCard, Field, KVList, Metric, FeedingItem,
-  Callout, DangerCallout, RichText, Chips, DangerChips, StepUpField, ClipField,
-} from "@/components/carePlanCards";
-import {
-  ShieldAlert, Phone, Pencil,
-  Utensils, Smile, Home as HomeIcon, Stethoscope, CalendarClock, Siren,
+  ShieldAlert, Phone, Pencil, AlertTriangle, AlertOctagon,
+  Soup, Hand, Home as HomeIcon, Heart, Sun, Video, Siren,
 } from "lucide-react";
 
-// THE single read-only care-plan view. Redesigned "Option A" layout — sticky
-// scrollable section nav (scroll-spy + tap-to-scroll), structured section cards
-// (icon + title + labeled teal rows), amber callouts for soft rules and red
-// callouts for true danger, deep-link-to-section. Purely presentational: it
-// takes the plan DATA + context as props and never fetches. Rendered by all
-// three surfaces — owner, household member/caregiver, and the external sitter
-// care-sheet — each supplying its own data, visibleSections, and canEdit.
+// THE owner / household read-only care-plan view, in the Kya look: a row of
+// section chips (scroll-spy + tap-to-scroll), then one white card per section
+// (forest icon tile + Newsreader title) holding labeled rows — a 13.5px bold
+// muted label above (or beside) the value. Amber callouts for soft rules, red
+// for true danger, deep-link-to-section. Purely presentational: it takes the
+// plan DATA + context as props and never fetches. Rendered by the owner /
+// member page (/birds/$birdId/care-plan) and the walkthrough's Review step.
+// The sitter care-sheet has its own renderer (CareSheetView).
 //
-// Card anatomy (consistent across all six sections): section header (moss icon
-// + teal eyebrow + title) → callouts that interrupt → key facts that pop
-// (feeding amounts as moss figures, weight as a metric) → key-value rows (muted
-// label / emphasized value, hairline dividers) → prose. Two label tiers: teal
-// eyebrows mark structure; muted micro-labels mark leaf fields.
+// The six cards follow the care-plan overview: Food, Health, Behavior, Tips
+// (the owner's clips), Day (the routine) and Your home (home & safety, with
+// the emergency details nested inside it).
 //
 // Section anchors carry BOTH a stable `id` (food/behavior/home/health/routine/
-// emergency, for deep-linking) and the sitter-onboarding `data-coach` keys
-// (cp-food / cp-handling / cp-home / cp-health / cp-emergency).
+// emergency/tips, for deep-linking and the Review step's tap-to-fix) and the
+// sitter-onboarding `data-coach` keys (cp-food / cp-handling / cp-home /
+// cp-health / cp-emergency).
 
-export const CARE_PLAN_SECTIONS = ["food", "behavior", "home", "health", "routine", "emergency"] as const;
+export const CARE_PLAN_SECTIONS = ["food", "behavior", "home", "health", "routine", "emergency", "tips"] as const;
 export type CareSection = (typeof CARE_PLAN_SECTIONS)[number];
 
 export type CarePlanData = {
@@ -72,17 +74,20 @@ const CONTACT_ROWS: { key: string; label: string }[] = [
   { key: "first_aid_kit_location", label: "First-aid kit" },
 ];
 
-const NAV: { id: CareSection; label: string; icon: React.ReactNode }[] = [
-  { id: "food", label: "Food", icon: <Utensils className="size-3.5" /> },
-  { id: "behavior", label: "Behavior", icon: <Smile className="size-3.5" /> },
-  { id: "home", label: "Home", icon: <HomeIcon className="size-3.5" /> },
-  { id: "health", label: "Health", icon: <Stethoscope className="size-3.5" /> },
-  { id: "routine", label: "Routine", icon: <CalendarClock className="size-3.5" /> },
-  { id: "emergency", label: "Emergency", icon: <Siren className="size-3.5" /> },
+// The six cards, in the overview's order. "home" is the Your home card, which
+// also holds the emergency details.
+type CardKey = "food" | "health" | "behavior" | "tips" | "routine" | "home";
+const NAV: { id: CardKey; label: string }[] = [
+  { id: "food", label: "Food" },
+  { id: "health", label: "Health" },
+  { id: "behavior", label: "Behavior" },
+  { id: "tips", label: "Tips" },
+  { id: "routine", label: "Day" },
+  { id: "home", label: "Your home" },
 ];
 
 // data-coach anchors the sitter onboarding points at (CP_TARGET in
-// SitterOnboarding). Routine has no coach step.
+// SitterOnboarding). Routine and Tips have no coach step.
 const COACH: Partial<Record<CareSection, string>> = {
   food: "cp-food", behavior: "cp-handling", home: "cp-home", health: "cp-health", emergency: "cp-emergency",
 };
@@ -111,12 +116,162 @@ function displayLabel(t: TFunction, en: string): string {
     case "First-aid kit": return t("carePlan.label.firstAidKit", "First-aid kit");
     case "Food": return t("carePlan.label.food", "Food");
     case "Behavior": return t("carePlan.label.behavior", "Behavior");
-    case "Home": return t("carePlan.label.home", "Home");
     case "Health": return t("carePlan.label.health", "Health");
-    case "Routine": return t("carePlan.label.routine", "Routine");
-    case "Emergency": return t("carePlan.label.emergency", "Emergency");
+    case "Tips": return t("carePlan.label.tips", "Tips");
+    case "Day": return t("carePlan.label.day", "Day");
+    case "Your home": return t("carePlan.label.yourHome", "Your home");
     default: return en;
   }
+}
+
+// ---- Kya-look primitives ----------------------------------------------------
+
+const LABEL = "m-0 text-[13.5px] font-[700]";
+
+/** One section card: forest icon tile + Newsreader title (+ a quiet line),
+ *  then its rows. White, 20px corners. */
+function Card({ id, coach, setRef, icon, title, line, children }: {
+  id?: string;
+  coach?: string;
+  setRef?: (el: HTMLElement | null) => void;
+  icon: ReactNode;
+  title: string;
+  line?: string;
+  children: ReactNode;
+}) {
+  return (
+    <section id={id} data-coach={coach} ref={setRef} className="scroll-mt-2 rounded-[20px] bg-white px-4 pb-2 pt-4" style={{ color: K.forest }}>
+      <div className="flex items-center gap-3">
+        <KyaIconTile size={40}>{icon}</KyaIconTile>
+        <div className="min-w-0">
+          <KyaHeading size={21}>{title}</KyaHeading>
+          {line && <p className="m-0 mt-0.5 text-[13.5px] leading-[1.35]" style={{ color: K.quiet }}>{line}</p>}
+        </div>
+      </div>
+      <div className="mt-2 flex flex-col [&>.cp-row+.cp-row]:border-t [&>.cp-row+.cp-row]:border-[#e3ebe2]">{children}</div>
+    </section>
+  );
+}
+
+/** A labeled row: muted label above the value. Empty values render nothing. */
+function Row({ label, children }: { label: string; children: ReactNode }) {
+  if (!has(children as any)) return null;
+  return (
+    <div className="cp-row py-3">
+      <p className={LABEL} style={{ color: K.quiet }}>{label}</p>
+      <div className="mt-1 whitespace-pre-line text-[15px] leading-[1.45]" style={{ color: K.ink }}>{children}</div>
+    </div>
+  );
+}
+
+/** Short label:value pairs side by side (frequencies, contacts). */
+function PairRows({ rows }: { rows: { label: string; value: ReactNode }[] }) {
+  const shown = rows.filter((r) => has(r.value as any));
+  if (!shown.length) return null;
+  return (
+    <div className="flex flex-col">
+      {shown.map((r, i) => (
+        <div key={r.label} className={`flex items-baseline justify-between gap-4 py-1.5 ${i > 0 ? "border-t" : ""}`} style={{ borderColor: K.line }}>
+          <span className="shrink-0 text-[13.5px] font-[700]" style={{ color: K.quiet }}>{r.label}</span>
+          <span className="min-w-0 whitespace-pre-line text-right text-[15px] font-[600]" style={{ color: K.forest }}>{r.value}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Lime chips (diet types, fresh foods, feeding times). */
+function Chips({ items }: { items: string[] }) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {items.map((s) => <span key={s} className="rounded-full px-2.5 py-1 text-[13px] font-[600]" style={{ background: K.lime, color: K.forest }}>{s}</span>)}
+    </div>
+  );
+}
+
+function DangerChips({ items }: { items: string[] }) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {items.map((s) => <span key={s} className="rounded-full px-2.5 py-1 text-[13px] font-[600] text-white" style={{ background: K.red }}>{s}</span>)}
+    </div>
+  );
+}
+
+/** Amber callout: soft rules and warnings. */
+function Callout({ label, children }: { label?: string; children: ReactNode }) {
+  return (
+    <div className="cp-callout my-2 flex items-start gap-2.5 rounded-[14px] p-3" style={{ background: K.amberBg, color: K.amberText }}>
+      <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+      <div className="min-w-0 flex-1">
+        {label && <p className={LABEL}>{label}</p>}
+        <div className={`whitespace-pre-line text-[14.5px] leading-[1.45] ${label ? "mt-1" : ""}`}>{children}</div>
+      </div>
+    </div>
+  );
+}
+
+/** Red callout: true danger (toxic foods, hazards, bite risk). */
+function DangerCallout({ title, icon, children }: { title: string; icon?: ReactNode; children: ReactNode }) {
+  return (
+    <div className="cp-callout my-2 rounded-[14px] border-[1.5px] p-3" style={{ background: "#fbeeee", borderColor: "#ecc9c9", color: K.red }}>
+      <p className={`${LABEL} flex items-center gap-1.5`}>{icon ?? <AlertOctagon className="size-4" aria-hidden="true" />}{title}</p>
+      <div className="mt-2">{children}</div>
+    </div>
+  );
+}
+
+/** One food: name left, amount right, feeding times as lime pills. */
+function FeedingItem({ typeLabel, name, amountStr, times, freeFed, note }: {
+  typeLabel: string; name: string; amountStr: string; times: FeedTime[]; freeFed: boolean; note: string;
+}) {
+  const { t } = useTranslation();
+  return (
+    <div className="rounded-[14px] p-3" style={{ background: K.mist }}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="m-0 text-[15px] font-[700]" style={{ color: K.forest }}>{name || typeLabel}</p>
+          {name && <p className="m-0 mt-0.5 text-[13px]" style={{ color: K.quiet }}>{typeLabel}</p>}
+        </div>
+        {amountStr && <p className="m-0 shrink-0 text-[17px] font-[700] leading-tight" style={{ color: K.moss }}>{amountStr}</p>}
+      </div>
+      {(times.length > 0 || freeFed) && (
+        <div className="mt-2">
+          <Chips items={[...times.map(mealPillLabel), ...(freeFed ? [t("careCards.freeFed", "Free-fed")] : [])]} />
+        </div>
+      )}
+      {note && <p className="m-0 mt-2 whitespace-pre-line text-[14px]" style={{ color: K.ink }}>{note}</p>}
+    </div>
+  );
+}
+
+/** Step-up answer as a tag + the owner's exact qualifier verbatim. */
+function StepUpRow({ stepUp, notes }: { stepUp?: string | null; notes?: string | null }) {
+  const { t } = useTranslation();
+  const raw = (stepUp ?? "").trim().toLowerCase();
+  const qualifier = (notes ?? "").trim();
+  const base = raw === "yes" ? t("careCards.stepUpYes", "Yes") : raw === "no" ? t("careCards.stepUpNo", "No") : raw === "sometimes" ? t("careCards.stepUpSometimes", "Sometimes") : null;
+  if (!base && !qualifier) return null;
+  const label = base ? (qualifier ? t("careCards.stepUpWithCaveats", "{{base}}, with caveats", { base }) : base) : null;
+  const cautionary = !base || raw === "no" || !!qualifier;
+  return (
+    <div className="cp-row py-3">
+      <p className={LABEL} style={{ color: K.quiet }}>{t("careCards.stepUp", "Step up")}</p>
+      {label && (
+        <span className="mt-1.5 inline-flex items-center rounded-full px-2.5 py-1 text-[13px] font-[700]" style={cautionary ? { background: K.amberBg, color: K.amberText } : { background: K.lime, color: K.forest }}>{label}</span>
+      )}
+      {qualifier && <p className="m-0 mt-1.5 whitespace-pre-line text-[15px] leading-[1.45]" style={{ color: K.ink }}>{qualifier}</p>}
+    </div>
+  );
+}
+
+/** A clip with its caption under it. */
+function ClipTile({ src, label }: { src: string; label: string }) {
+  return (
+    <div className="overflow-hidden rounded-[14px]" style={{ background: K.mist }}>
+      <ClipPlayer src={src} label={label} className="aspect-video" />
+      <p className="m-0 px-3 py-2 text-[14px] font-[700] leading-tight" style={{ color: K.forest }}>{label}</p>
+    </div>
+  );
 }
 
 export function CarePlanView({
@@ -135,33 +290,35 @@ export function CarePlanView({
   data: CarePlanData;
   /** Which sections this surface may show (in addition to data-presence gating). */
   visibleSections?: readonly CareSection[];
-  /** Include the emergency contacts list in the Emergency card (sitter: false). */
+  /** Include the emergency contacts list in the Emergency details (Review step: false). */
   showEmergencyContacts?: boolean;
-  /** Show an edit entry (UX only; RLS enforces). Never true for the sitter. */
+  /** Show an edit entry (UX only; RLS enforces). */
   canEdit?: boolean;
   onEdit?: () => void;
   /** Deep-link target — scrolls this section into view on mount. */
   targetSection?: CareSection;
-  /** Where the sticky nav pins, when another sticky bar sits above it (sitter). */
+  /** Where the sticky chip row pins, when another sticky bar sits above it. */
   stickyTopPx?: number;
-  /** Optional header content rendered inside the sticky block, above the nav. */
-  header?: React.ReactNode;
+  /** Optional header content rendered inside the sticky block, above the chips. */
+  header?: ReactNode;
   /** Optional content rendered after the section cards. */
-  footer?: React.ReactNode;
+  footer?: ReactNode;
   /** Optional context banner (member "you help here") rendered atop the content. */
-  contextBanner?: React.ReactNode;
+  contextBanner?: ReactNode;
   /** When the viewer lacks edit access, show a quiet "View only" tag where the
-   *  Edit entry would be (member surfaces only — never the sitter). */
+   *  Edit entry would be (member surfaces only). */
   showViewOnlyTag?: boolean;
 }) {
   const { t } = useTranslation();
+  // Inside the walkthrough the view sits on SetupFrame's white body, so the
+  // white cards go in a mist container (like the Review checklist's cards).
+  const inFrame = useContext(InSetupFrame);
   const bird = (data.bird ?? {}) as any;
   const plan = (data.plan ?? {}) as any;
   const name = (bird.name ?? "this bird") as string;
   const tasks = (data.tasks ?? []) as any[];
   const contacts = (data.contacts ?? {}) as Record<string, string | null>;
   const watchClips = (data.watchClips ?? []) as { key: string; label: string; url: string }[];
-  const clipByKey = (k: string) => watchClips.find((c) => c.key === k) ?? null;
   const baselineClipUrl = data.baselineClipUrl ?? null;
   const canShow = (id: CareSection) => visibleSections.includes(id);
 
@@ -210,8 +367,7 @@ export function CarePlanView({
   const ungrouped = tasks.filter((x) => !TIME_ORDER.includes(x.time_of_day || "anytime"));
   if (ungrouped.length) groups.push({ time: "anytime", items: ungrouped });
 
-  // Contacts only when the surface includes them (sitter shows them on its own
-  // Emergency tab, so the care-sheet omits them).
+  // Contacts only when the surface includes them (the Review step omits them).
   const contactRows = showEmergencyContacts ? CONTACT_ROWS.filter((r) => (contacts[r.key] ?? "").toString().trim()) : [];
   const hasWhenToCall = has(plan.when_to_call_owner) || has(plan.when_to_call_vet);
 
@@ -223,19 +379,30 @@ export function CarePlanView({
     health: canShow("health") && showHealth,
     routine: canShow("routine") && groups.length > 0,
     emergency: canShow("emergency") && (contactRows.length > 0 || hasWhenToCall),
+    tips: canShow("tips") && watchClips.length > 0,
   };
-  const presentNav = NAV.filter((n) => present[n.id]);
+  // The Your home card shows for either of its parts.
+  const cardPresent: Record<CardKey, boolean> = {
+    food: present.food, health: present.health, behavior: present.behavior, tips: present.tips, routine: present.routine,
+    home: present.home || present.emergency,
+  };
+  const presentNav = NAV.filter((n) => cardPresent[n.id]);
   const presentKey = presentNav.map((n) => n.id).join(",");
 
-  // ---- sticky-nav offset, scroll-spy, tap-to-scroll, deep-link -------------
+  // ---- sticky-chip offset, scroll-spy, tap-to-scroll, deep-link ------------
   const topRef = useRef<HTMLDivElement>(null);
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
-  const [active, setActive] = useState<CareSection | null>(null);
+  const [active, setActive] = useState<CardKey | null>(null);
   const deepLinked = useRef(false);
 
-  const offsetOf = () => stickyTopPx + (topRef.current?.offsetHeight ?? 0) + 8;
+  // The chip row pins below the safe area, so read its resolved `top`.
+  const offsetOf = () => {
+    const el = topRef.current;
+    if (!el) return stickyTopPx + 8;
+    return (parseFloat(getComputedStyle(el).top) || stickyTopPx) + el.offsetHeight + 8;
+  };
 
-  const scrollToSection = (id: CareSection, behavior: ScrollBehavior = "smooth") => {
+  const scrollToSection = (id: string, behavior: ScrollBehavior = "smooth") => {
     const el = sectionRefs.current[id];
     if (!el) return;
     const y = el.getBoundingClientRect().top + window.scrollY - offsetOf();
@@ -244,10 +411,10 @@ export function CarePlanView({
 
   useEffect(() => {
     if (!presentKey) return;
-    const ids = presentKey.split(",") as CareSection[];
+    const ids = presentKey.split(",") as CardKey[];
     const onScroll = () => {
       const off = offsetOf() + 4;
-      let current: CareSection = ids[0];
+      let current: CardKey = ids[0];
       for (const id of ids) {
         const el = sectionRefs.current[id];
         if (el && el.getBoundingClientRect().top - off <= 1) current = id;
@@ -269,256 +436,281 @@ export function CarePlanView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const setRef = (id: CareSection) => (el: HTMLElement | null) => { sectionRefs.current[id] = el; };
+  const setRef = (id: string) => (el: HTMLElement | null) => { sectionRefs.current[id] = el; };
   const stickyHasContent = !!header || presentNav.length > 1;
+  const tileIcon = "size-5";
 
   return (
-    <>
+    <div className={`flex flex-col gap-4 ${inFrame ? "rounded-[20px] p-2.5" : ""}`} style={inFrame ? { background: K.mist } : undefined}>
       {stickyHasContent && (
-        <div ref={topRef} style={{ top: stickyTopPx }} className="sticky z-20 border-b border-[var(--line)] bg-[var(--cream)]/95 backdrop-blur">
-          {header && <div className="mx-auto max-w-md px-5 pt-safe pb-2.5">{header}</div>}
+        <div
+          ref={topRef}
+          style={{ top: `calc(env(safe-area-inset-top) + ${stickyTopPx}px)`, background: K.mist }}
+          className={`sticky z-20 ${inFrame ? "-mx-2.5 px-2.5" : "-mx-4 px-4"} py-2`}
+        >
+          {header && <div className="pb-2">{header}</div>}
           {presentNav.length > 1 && (
-            <div className="mx-auto max-w-md">
-              <div className={`flex gap-2 overflow-x-auto px-5 pb-2.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${header ? "" : "pt-2.5"}`}>
-                {presentNav.map((n) => {
-                  const on = active === n.id;
-                  return (
-                    <button
-                      key={n.id}
-                      type="button"
-                      onClick={() => scrollToSection(n.id)}
-                      className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[12.5px] font-medium transition-colors ${
-                        on ? "bg-[var(--ink)] text-white" : "bg-white text-[var(--ink)] ring-1 ring-[var(--line2)]"
-                      }`}
-                    >
-                      {n.icon}{displayLabel(t, n.label)}
-                    </button>
-                  );
-                })}
-              </div>
+            <div className="flex gap-2 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              {presentNav.map((n) => {
+                const on = active === n.id;
+                return (
+                  <button
+                    key={n.id}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => scrollToSection(n.id)}
+                    className="inline-flex min-h-[40px] shrink-0 items-center rounded-full border-[1.5px] px-4 text-[14.5px] font-[700] transition-colors"
+                    style={on ? { background: K.forest, borderColor: K.forest, color: "#fff" } : { background: "#fff", borderColor: "#d5dfd5", color: K.forest }}
+                  >
+                    {displayLabel(t, n.label)}
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>
       )}
 
-      <main className="mx-auto max-w-md space-y-4 px-5 py-5">
-        {contextBanner}
-        {canEdit && onEdit ? (
-          <div className="-mb-1 flex justify-end">
-            <CtaLink label={t("carePlan.editCarePlan", "Edit care plan")} icon={<Pencil className="size-3.5" />} onPress={onEdit} />
-          </div>
-        ) : showViewOnlyTag ? (
-          <div className="-mb-1 flex justify-end">
-            <ViewOnlyTag />
-          </div>
-        ) : null}
+      {contextBanner}
+      {canEdit && onEdit ? (
+        <div className="-my-2 flex justify-end">
+          <KyaLink onClick={onEdit}><Pencil className="size-4" aria-hidden="true" />{t("carePlan.editCarePlan", "Edit care plan")}</KyaLink>
+        </div>
+      ) : showViewOnlyTag ? (
+        <div className="-mb-1 flex justify-end">
+          <ViewOnlyTag />
+        </div>
+      ) : null}
 
-        {/* ------------------------------------------------------------ FOOD */}
-        {present.food && (
-          <SectionCard id="food" coach={COACH.food} setRef={setRef("food")} icon={<Utensils className="size-5" />} eyebrow={t("carePlan.food", "Food")} title={t("carePlan.whatEats", "What {{name}} eats", { name })}>
-            {neverFeed.length > 0 && (
-              <DangerCallout title={t("carePlan.neverFeedToxicToThis", "Never feed · toxic to this bird")}>
-                <DangerChips items={neverFeed} />
-                <p className="mt-2 text-xs font-medium">{t("carePlan.keepTheseCompletelyOutOf", "Keep these completely out of reach.")}</p>
-              </DangerCallout>
-            )}
-            {showFeeding && <Callout>{t("carePlan.donTIntroduceNewFoods", "Don't introduce new foods while the owner is away.")}</Callout>}
-            {!hasStructuredFood && has(plan.food_instructions) && <Field label={t("carePlan.dietOverview", "Diet overview")}><RichText text={plan.food_instructions} /></Field>}
-            {diet.length > 0 && <Field label={t("carePlan.dietTypes", "Diet types")}><Chips items={diet} /></Field>}
-            {has(plan.diet_other) && <Field label={t("carePlan.otherDiet", "Other diet")}>{plan.diet_other}</Field>}
-            {hasPerFoodDetails ? (
-              <div className="space-y-2">
-                {foodRows.map((f, i) => (
-                  <FeedingItem
-                    key={`${f.type}-${i}`}
-                    typeLabel={f.type.charAt(0).toUpperCase() + f.type.slice(1).replace(/_/g, " ")}
-                    name={f.name}
-                    amountStr={has(f.amount) ? (f.unit ? formatAmountUnitDisplay(f.amount, f.unit, t) : String(f.amount)) : ""}
-                    times={f.times}
-                    freeFed={f.freeFed}
-                    note={f.note}
-                  />
-                ))}
-              </div>
-            ) : (
-              (has(plan.food_brand) || has(plan.amount_value)) && (
-                <Field label={t("carePlan.brandAmount", "Brand & amount")}>{`${plan.food_brand ?? ""}${has(plan.amount_value) ? ` · ${formatAmountUnitDisplay(plan.amount_value, plan.amount_unit, t)}` : ""}`.trim()}</Field>
-              )
-            )}
-            {!foodRows.some((f) => f.times.length > 0) && feedingTimes.length > 0 && (
-              <Field label={t("carePlan.feedingTimes", "Feeding times")}><Chips items={feedingTimes} /></Field>
-            )}
-            {freshFoods.length > 0 && <Field label={t("carePlan.freshFoods", "Fresh foods")}><Chips items={freshFoods} /></Field>}
-            {has(plan.fresh_foods_other) && <Field label={t("carePlan.otherFreshFoods", "Other fresh foods")}>{plan.fresh_foods_other}</Field>}
-            {(has(plan.treats_notes) || has(plan.treats_frequency)) && (
-              <Field label={t("carePlan.treats", "Treats")}>
-                {has(plan.treats_frequency) && (
-                  <KVList rows={[{ label: t("carePlan.frequency", "Frequency"), value: treatsFreqLabel(plan.treats_frequency, t) }]} />
-                )}
-                {has(plan.treats_notes) && (
-                  <p className={`text-sm text-[var(--ink)] whitespace-pre-line ${has(plan.treats_frequency) ? "mt-2" : ""}`}>{plan.treats_notes}</p>
-                )}
-              </Field>
-            )}
-            {(has(plan.water_frequency) || has(plan.water_notes) || has(plan.water_instructions)) && (
-              <Field label={t("carePlan.water", "Water")}>
-                {has(plan.water_frequency) && (
-                  <KVList rows={[{ label: t("carePlan.changeWater", "Change water"), value: waterFreqLabel(plan.water_frequency, t) }]} />
-                )}
-                {(has(plan.water_notes) || (!has(plan.water_frequency) && has(plan.water_instructions))) && (
-                  <p className={`text-sm text-[var(--ink)] whitespace-pre-line ${has(plan.water_frequency) ? "mt-2" : ""}`}>
-                    {has(plan.water_notes) ? plan.water_notes : plan.water_instructions}
-                  </p>
-                )}
-              </Field>
-            )}
-            <Field label={t("carePlan.freshnessHygiene", "Freshness & hygiene")}>
-              <KVList
-                rows={[
-                  { label: t("carePlan.removeFreshFood", "Remove fresh food"), value: t("carePlan.withinDuration", "Within {{duration}}", { duration: formatRemovalMinutesDisplay(plan.fresh_food_removal_minutes, t) }) },
-                  { label: t("carePlan.washFoodBowls", "Wash food bowls"), value: bowlWashLabel(plan.food_bowl_wash_cadence, t) },
-                  { label: t("carePlan.washWaterBowl", "Wash water bowl"), value: bowlWashLabel(plan.water_bowl_wash_cadence, t) },
-                ]}
-              />
-              {has(plan.food_hygiene_notes) && <p className="mt-2 text-xs text-[var(--mute)] whitespace-pre-line">{plan.food_hygiene_notes}</p>}
-            </Field>
-            {has(plan.food_storage) && <Field label={t("carePlan.foodStorage", "Food storage")}>{plan.food_storage}</Field>}
-            <ClipField clip={clipByKey("food_water")} />
-          </SectionCard>
-        )}
+      {/* ------------------------------------------------------------ FOOD */}
+      {present.food && (
+        <Card id="food" coach={COACH.food} setRef={setRef("food")} icon={<Soup className={tileIcon} />} title={t("carePlan.food", "Food")} line={t("carePlan.whatEats", "What {{name}} eats", { name })}>
+          {neverFeed.length > 0 && (
+            <DangerCallout title={t("carePlan.neverFeedToxicToThis", "Never feed · toxic to this bird")}>
+              <DangerChips items={neverFeed} />
+              <p className="m-0 mt-2 text-[13.5px] font-[600]">{t("carePlan.keepTheseCompletelyOutOf", "Keep these completely out of reach.")}</p>
+            </DangerCallout>
+          )}
+          {showFeeding && <Callout>{t("carePlan.donTIntroduceNewFoods", "Don't introduce new foods while the owner is away.")}</Callout>}
+          {!hasStructuredFood && has(plan.food_instructions) && <Row label={t("carePlan.dietOverview", "Diet overview")}><RichText text={plan.food_instructions} /></Row>}
+          {diet.length > 0 && <Row label={t("carePlan.dietTypes", "Diet types")}><Chips items={diet} /></Row>}
+          {has(plan.diet_other) && <Row label={t("carePlan.otherDiet", "Other diet")}>{plan.diet_other}</Row>}
+          {hasPerFoodDetails ? (
+            <div className="cp-row flex flex-col gap-2 py-3">
+              {foodRows.map((f, i) => (
+                <FeedingItem
+                  key={`${f.type}-${i}`}
+                  typeLabel={f.type.charAt(0).toUpperCase() + f.type.slice(1).replace(/_/g, " ")}
+                  name={f.name}
+                  amountStr={has(f.amount) ? (f.unit ? formatAmountUnitDisplay(f.amount, f.unit, t) : String(f.amount)) : ""}
+                  times={f.times}
+                  freeFed={f.freeFed}
+                  note={f.note}
+                />
+              ))}
+            </div>
+          ) : (
+            (has(plan.food_brand) || has(plan.amount_value)) && (
+              <Row label={t("carePlan.brandAmount", "Brand & amount")}>{`${plan.food_brand ?? ""}${has(plan.amount_value) ? ` · ${formatAmountUnitDisplay(plan.amount_value, plan.amount_unit, t)}` : ""}`.trim()}</Row>
+            )
+          )}
+          {!foodRows.some((f) => f.times.length > 0) && feedingTimes.length > 0 && (
+            <Row label={t("carePlan.feedingTimes", "Feeding times")}><Chips items={feedingTimes} /></Row>
+          )}
+          {freshFoods.length > 0 && <Row label={t("carePlan.freshFoods", "Fresh foods")}><Chips items={freshFoods} /></Row>}
+          {has(plan.fresh_foods_other) && <Row label={t("carePlan.otherFreshFoods", "Other fresh foods")}>{plan.fresh_foods_other}</Row>}
+          {(has(plan.treats_notes) || has(plan.treats_frequency)) && (
+            <Row label={t("carePlan.treats", "Treats")}>
+              {has(plan.treats_frequency) && (
+                <PairRows rows={[{ label: t("carePlan.frequency", "Frequency"), value: treatsFreqLabel(plan.treats_frequency, t) }]} />
+              )}
+              {has(plan.treats_notes) && (
+                <p className={`m-0 whitespace-pre-line ${has(plan.treats_frequency) ? "mt-1" : ""}`}>{plan.treats_notes}</p>
+              )}
+            </Row>
+          )}
+          {(has(plan.water_frequency) || has(plan.water_notes) || has(plan.water_instructions)) && (
+            <Row label={t("carePlan.water", "Water")}>
+              {has(plan.water_frequency) && (
+                <PairRows rows={[{ label: t("carePlan.changeWater", "Change water"), value: waterFreqLabel(plan.water_frequency, t) }]} />
+              )}
+              {(has(plan.water_notes) || (!has(plan.water_frequency) && has(plan.water_instructions))) && (
+                <p className={`m-0 whitespace-pre-line ${has(plan.water_frequency) ? "mt-1" : ""}`}>
+                  {has(plan.water_notes) ? plan.water_notes : plan.water_instructions}
+                </p>
+              )}
+            </Row>
+          )}
+          <Row label={t("carePlan.freshnessHygiene", "Freshness & hygiene")}>
+            <PairRows
+              rows={[
+                { label: t("carePlan.removeFreshFood", "Remove fresh food"), value: t("carePlan.withinDuration", "Within {{duration}}", { duration: formatRemovalMinutesDisplay(plan.fresh_food_removal_minutes, t) }) },
+                { label: t("carePlan.washFoodBowls", "Wash food bowls"), value: bowlWashLabel(plan.food_bowl_wash_cadence, t) },
+                { label: t("carePlan.washWaterBowl", "Wash water bowl"), value: bowlWashLabel(plan.water_bowl_wash_cadence, t) },
+              ]}
+            />
+            {has(plan.food_hygiene_notes) && <p className="m-0 mt-1 whitespace-pre-line text-[14px]" style={{ color: K.quiet }}>{plan.food_hygiene_notes}</p>}
+          </Row>
+          {has(plan.food_storage) && <Row label={t("carePlan.foodStorage", "Food storage")}>{plan.food_storage}</Row>}
+        </Card>
+      )}
 
-        {/* -------------------------------------------------------- BEHAVIOR */}
-        {present.behavior && (
-          <SectionCard id="behavior" coach={COACH.behavior} setRef={setRef("behavior")} icon={<Smile className="size-5" />} eyebrow={t("carePlan.behavior", "Behavior")} title={t("carePlan.handling", "Handling {{name}}", { name })}>
-            {(handlingDangerous || has(plan.bite_risk)) && (
-              <Callout>{t("carePlan.thisBirdHasHandlingRestrictions", "This bird has handling restrictions — read this section before any contact.")}</Callout>
-            )}
-            <StepUpField stepUp={plan.step_up} notes={plan.step_up_notes} />
-            {has(plan.handlers) && <Field label={t("carePlan.whoCanHandle", "Who can handle")}>{plan.handlers}</Field>}
-            {!has(plan.step_up) && !has(plan.step_up_notes) && !has(plan.handlers) && has(plan.handling_rules) && (
-              <Field label={t("carePlan.handlingRules", "Handling rules")}>{plan.handling_rules}</Field>
-            )}
-            {has(plan.likes) && <Field label={t("carePlan.likes", "Likes")}>{plan.likes}</Field>}
-            {(has(plan.fears_triggers) || has(plan.known_triggers)) && (
-              <Callout label={t("carePlan.fearsTriggers", "Fears & triggers")}>{joinUnique([plan.fears_triggers, plan.known_triggers])}</Callout>
-            )}
-            {has(plan.bite_risk) && (
-              <DangerCallout title={t("carePlan.biteWarningSigns", "Bite warning signs")} icon={<ShieldAlert className="size-3.5" />}>
-                <p className="text-sm whitespace-pre-line">{plan.bite_risk}</p>
-              </DangerCallout>
-            )}
-            <ClipField clip={clipByKey("step_up")} />
-          </SectionCard>
-        )}
+      {/* ---------------------------------------------------------- HEALTH */}
+      {present.health && (
+        <Card id="health" coach={COACH.health} setRef={setRef("health")} icon={<Heart className={tileIcon} />} title={t("carePlan.health", "Health")} line={t("carePlan.whatsNormal", "What's normal for {{name}}", { name })}>
+          {weightStr && (
+            <div className="cp-row py-3">
+              <p className={LABEL} style={{ color: K.quiet }}>{t("carePlan.normalWeight", "Normal weight")}</p>
+              <p className="m-0 mt-1 text-[26px] font-[700] leading-none" style={{ color: K.forest, fontFamily: SERIF }}>{weightStr}</p>
+            </div>
+          )}
+          {has(plan.whats_normal) && <Row label={t("carePlan.whatSNormalOverall", "What's normal (overall)")}>{plan.whats_normal}</Row>}
+          {has(plan.normal_appetite) && <Row label={t("carePlan.normalAppetite", "Normal appetite")}>{plan.normal_appetite}</Row>}
+          {has(plan.normal_droppings) && <Row label={t("carePlan.normalDroppings", "Normal droppings")}>{plan.normal_droppings}</Row>}
+          {has(plan.normal_noise) && <Row label={t("carePlan.normalNoise", "Normal noise")}>{plan.normal_noise}</Row>}
+          {has(plan.normal_activity) && <Row label={t("carePlan.normalActivity", "Normal activity")}>{plan.normal_activity}</Row>}
+          {has(plan.normal_sleep) && <Row label={t("carePlan.normalSleep", "Normal sleep")}>{plan.normal_sleep}</Row>}
+          {has(plan.normal_behavior_with_strangers) && <Row label={t("carePlan.withStrangers", "With strangers")}>{plan.normal_behavior_with_strangers}</Row>}
+          {has(bird.medical_conditions) && <Row label={t("carePlan.medicalConditions", "Medical conditions")}>{bird.medical_conditions}</Row>}
+          {(has(bird.medications) || has(plan.medication_schedule)) && (
+            <Row label={t("carePlan.medications", "Medications")}>{joinUnique([bird.medications, plan.medication_schedule])}</Row>
+          )}
+          {baselineClipUrl && (
+            <div className="cp-row py-3">
+              <ClipTile src={baselineClipUrl} label={t("carePlan.normalBehaviorClip", "Normal-behavior clip")} />
+            </div>
+          )}
+        </Card>
+      )}
 
-        {/* ------------------------------------------------------------ HOME */}
-        {present.home && (
-          <SectionCard id="home" coach={COACH.home} setRef={setRef("home")} icon={<HomeIcon className="size-5" />} eyebrow={t("carePlan.homeSafety", "Home & safety")} title={t("carePlan.homeSafetyTitle", "{{name}}'s home & safety", { name })}>
-            {hazards.length > 0 && (
-              <DangerCallout title={t("carePlan.householdHazardsKeepAway", "Household hazards · keep away")}>
-                <DangerChips items={hazards} />
-                {has(plan.hazards_other) && <p className="mt-2 text-sm whitespace-pre-line">{plan.hazards_other}</p>}
-              </DangerCallout>
-            )}
-            {has(plan.cage_location) && <Field label={t("carePlan.cageLocation", "Cage location")}>{plan.cage_location}</Field>}
-            {(has(plan.out_of_cage_mode) || has(plan.out_of_cage_notes) || has(plan.out_of_cage_rules)) && (
-              <Field label={t("carePlan.outOfCageRules", "Out-of-cage rules")}>
-                {has(plan.out_of_cage_mode) || has(plan.out_of_cage_notes)
-                  ? joinUnique([outOfCageLabel(plan.out_of_cage_mode, t), plan.out_of_cage_notes])
-                  : plan.out_of_cage_rules}
-              </Field>
-            )}
-            {(has(plan.off_limits) || has(plan.off_limits_rooms)) && (
-              <Field label={t("carePlan.offLimitsAreas", "Off-limits areas")}>{joinUnique([plan.off_limits, plan.off_limits_rooms])}</Field>
-            )}
-            {hazards.length === 0 && has(plan.safety_rules) && <Field label={t("carePlan.safetyRules", "Safety rules")}>{plan.safety_rules}</Field>}
-            {has(plan.other_pets) && <Field label={t("carePlan.otherPets", "Other pets")}>{plan.other_pets}</Field>}
-            {has(plan.cleaning_instructions) && <Field label={t("carePlan.cleaningProducts", "Cleaning products")}>{plan.cleaning_instructions}</Field>}
-            <ClipField clip={clipByKey("locations")} />
-          </SectionCard>
-        )}
+      {/* -------------------------------------------------------- BEHAVIOR */}
+      {present.behavior && (
+        <Card id="behavior" coach={COACH.behavior} setRef={setRef("behavior")} icon={<Hand className={tileIcon} />} title={t("carePlan.behavior", "Behavior")} line={t("carePlan.handling", "Handling {{name}}", { name })}>
+          {(handlingDangerous || has(plan.bite_risk)) && (
+            <Callout>{t("carePlan.thisBirdHasHandlingRestrictions", "This bird has handling restrictions — read this section before any contact.")}</Callout>
+          )}
+          <StepUpRow stepUp={plan.step_up} notes={plan.step_up_notes} />
+          {has(plan.handlers) && <Row label={t("carePlan.whoCanHandle", "Who can handle")}>{plan.handlers}</Row>}
+          {!has(plan.step_up) && !has(plan.step_up_notes) && !has(plan.handlers) && has(plan.handling_rules) && (
+            <Row label={t("carePlan.handlingRules", "Handling rules")}>{plan.handling_rules}</Row>
+          )}
+          {has(plan.likes) && <Row label={t("carePlan.likes", "Likes")}>{plan.likes}</Row>}
+          {(has(plan.fears_triggers) || has(plan.known_triggers)) && (
+            <Callout label={t("carePlan.fearsTriggers", "Fears & triggers")}>{joinUnique([plan.fears_triggers, plan.known_triggers])}</Callout>
+          )}
+          {has(plan.bite_risk) && (
+            <DangerCallout title={t("carePlan.biteWarningSigns", "Bite warning signs")} icon={<ShieldAlert className="size-4" aria-hidden="true" />}>
+              <p className="m-0 whitespace-pre-line text-[14.5px]">{plan.bite_risk}</p>
+            </DangerCallout>
+          )}
+        </Card>
+      )}
 
-        {/* ---------------------------------------------------------- HEALTH */}
-        {present.health && (
-          <SectionCard id="health" coach={COACH.health} setRef={setRef("health")} icon={<Stethoscope className="size-5" />} eyebrow={t("carePlan.health", "Health")} title={t("carePlan.whatsNormal", "What's normal for {{name}}", { name })}>
-            {weightStr && <Metric value={weightStr} caption={t("carePlan.normalWeight", "Normal weight")} />}
-            {has(plan.whats_normal) && <Field label={t("carePlan.whatSNormalOverall", "What's normal (overall)")}>{plan.whats_normal}</Field>}
-            {has(plan.normal_appetite) && <Field label={t("carePlan.normalAppetite", "Normal appetite")}>{plan.normal_appetite}</Field>}
-            {has(plan.normal_droppings) && <Field label={t("carePlan.normalDroppings", "Normal droppings")}>{plan.normal_droppings}</Field>}
-            {has(plan.normal_noise) && <Field label={t("carePlan.normalNoise", "Normal noise")}>{plan.normal_noise}</Field>}
-            {has(plan.normal_activity) && <Field label={t("carePlan.normalActivity", "Normal activity")}>{plan.normal_activity}</Field>}
-            {has(plan.normal_sleep) && <Field label={t("carePlan.normalSleep", "Normal sleep")}>{plan.normal_sleep}</Field>}
-            {has(plan.normal_behavior_with_strangers) && <Field label={t("carePlan.withStrangers", "With strangers")}>{plan.normal_behavior_with_strangers}</Field>}
-            {has(bird.medical_conditions) && <Field label={t("carePlan.medicalConditions", "Medical conditions")}>{bird.medical_conditions}</Field>}
-            {(has(bird.medications) || has(plan.medication_schedule)) && (
-              <Field label={t("carePlan.medications", "Medications")}>{joinUnique([bird.medications, plan.medication_schedule])}</Field>
-            )}
-            {baselineClipUrl && (
-              <div className="overflow-hidden rounded-[12px] ring-1 ring-[var(--line2)]">
-                <ClipPlayer src={baselineClipUrl} label={t("carePlan.normalBehaviorClip", "Normal-behavior clip")} className="aspect-video" />
-                <p className="bg-white px-2 py-1.5 text-[11px] font-medium text-[var(--ink)]">{t("carePlan.normalBehaviorClip", "Normal-behavior clip")}</p>
-              </div>
-            )}
-          </SectionCard>
-        )}
-
-        {/* --------------------------------------------------------- ROUTINE */}
-        {present.routine && (
-          <SectionCard id="routine" setRef={setRef("routine")} icon={<CalendarClock className="size-5" />} eyebrow={t("carePlan.routine", "Routine")} title={t("carePlan.dailyRhythm", "Daily rhythm")}>
-            {groups.map((g) => (
-              <div key={g.time}>
-                <p className="t-eyebrow text-[var(--teal-on-cream)]">{displayLabel(t, TIME_LABEL[g.time] ?? g.time)}</p>
-                <ul className="mt-1.5 space-y-1.5">
-                  {g.items.map((it) => (
-                    <li key={it.id} className="text-sm font-medium text-[var(--ink)]">
-                      {it.title}
-                      {it.instructions && <span className="mt-0.5 block text-xs font-normal text-[var(--mute)] whitespace-pre-line">{it.instructions}</span>}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+      {/* ------------------------------------------------------------ TIPS */}
+      {present.tips && (
+        <Card id="tips" setRef={setRef("tips")} icon={<Video className={tileIcon} />} title={t("carePlan.tips", "Tips")} line={t("carePlan.tipsLine", "Short clips that show how it's done")}>
+          <div className="cp-row flex flex-col gap-3 py-3">
+            {watchClips.map((c) => (
+              <ClipTile key={c.key} src={c.url} label={clipSlotLabel(c.key, c.label, t)} />
             ))}
-            <ClipField clip={clipByKey("bedtime")} />
-          </SectionCard>
-        )}
+          </div>
+        </Card>
+      )}
 
-        {/* ------------------------------------------------------- EMERGENCY */}
-        {present.emergency && (
-          <SectionCard id="emergency" coach={COACH.emergency} setRef={setRef("emergency")} icon={<Siren className="size-5" />} eyebrow={t("carePlan.emergency", "Emergency")} title={t("carePlan.emergency", "Emergency")} tone="red">
-            {hasWhenToCall && (
-              <Callout label={t("carePlan.whenToCall", "When to call")}>
-                {joinUnique([
-                  has(plan.when_to_call_owner) && t("carePlan.callOwner", "Call the owner: {{info}}", { info: plan.when_to_call_owner }),
-                  has(plan.when_to_call_vet) && t("carePlan.callVet", "Call the vet: {{info}}", { info: plan.when_to_call_vet }),
-                ])}
-              </Callout>
-            )}
-            {contactRows.length > 0 && (
-              <div className="rounded-[12px] bg-[var(--cream)] px-3">
-                {contactRows.map((r, i) => {
-                  const v = (contacts[r.key] ?? "").toString();
-                  const isPhone = /phone|control|owner/.test(r.key) && /[0-9]/.test(v);
-                  return (
-                    <div key={r.key} className={`flex items-baseline justify-between gap-4 py-2 ${i > 0 ? "border-t border-[var(--line)]" : ""}`}>
-                      <span className="shrink-0 text-[13px] text-[var(--mute)]">{displayLabel(t, r.label)}</span>
-                      <span className="min-w-0 text-right text-sm font-medium text-[var(--ink)]">
-                        {isPhone ? (
-                          <a href={`tel:${v.replace(/[^0-9+]/g, "")}`} className="inline-flex items-center gap-1.5 text-[var(--ink)] underline">
-                            <Phone className="size-3.5 shrink-0" />{v}
-                          </a>
-                        ) : v}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </SectionCard>
-        )}
+      {/* ---------------------------------------------------------- DAY */}
+      {present.routine && (
+        <Card id="routine" setRef={setRef("routine")} icon={<Sun className={tileIcon} />} title={t("carePlan.day", "Day")} line={t("carePlan.dailyRhythm", "Daily rhythm")}>
+          {groups.map((g) => (
+            <div key={g.time} className="cp-row py-3">
+              <p className={LABEL} style={{ color: K.quiet }}>{displayLabel(t, TIME_LABEL[g.time] ?? g.time)}</p>
+              <ul className="m-0 mt-1.5 flex list-none flex-col gap-2 p-0">
+                {g.items.map((it) => (
+                  <li key={it.id} className="text-[15px] font-[600]" style={{ color: K.forest }}>
+                    {it.title}
+                    {it.instructions && <span className="mt-0.5 block whitespace-pre-line text-[14px] font-[400]" style={{ color: K.ink }}>{it.instructions}</span>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </Card>
+      )}
 
-        {footer}
-      </main>
-    </>
+      {/* -------------------------------------------- YOUR HOME (+ EMERGENCY) */}
+      {cardPresent.home && (
+        <Card
+          id={present.home ? "home" : undefined}
+          coach={present.home ? COACH.home : undefined}
+          setRef={setRef("home")}
+          icon={<HomeIcon className={tileIcon} />}
+          title={t("carePlan.yourHome", "Your home")}
+          line={present.home ? t("carePlan.homeSafetyTitle", "{{name}}'s home & safety", { name }) : undefined}
+        >
+          {present.home && (
+            <>
+              {hazards.length > 0 && (
+                <DangerCallout title={t("carePlan.householdHazardsKeepAway", "Household hazards · keep away")}>
+                  <DangerChips items={hazards} />
+                  {has(plan.hazards_other) && <p className="m-0 mt-2 whitespace-pre-line text-[14.5px]">{plan.hazards_other}</p>}
+                </DangerCallout>
+              )}
+              {has(plan.cage_location) && <Row label={t("carePlan.cageLocation", "Cage location")}>{plan.cage_location}</Row>}
+              {(has(plan.out_of_cage_mode) || has(plan.out_of_cage_notes) || has(plan.out_of_cage_rules)) && (
+                <Row label={t("carePlan.outOfCageRules", "Out-of-cage rules")}>
+                  {has(plan.out_of_cage_mode) || has(plan.out_of_cage_notes)
+                    ? joinUnique([outOfCageLabel(plan.out_of_cage_mode, t), plan.out_of_cage_notes])
+                    : plan.out_of_cage_rules}
+                </Row>
+              )}
+              {(has(plan.off_limits) || has(plan.off_limits_rooms)) && (
+                <Row label={t("carePlan.offLimitsAreas", "Off-limits areas")}>{joinUnique([plan.off_limits, plan.off_limits_rooms])}</Row>
+              )}
+              {hazards.length === 0 && has(plan.safety_rules) && <Row label={t("carePlan.safetyRules", "Safety rules")}>{plan.safety_rules}</Row>}
+              {has(plan.other_pets) && <Row label={t("carePlan.otherPets", "Other pets")}>{plan.other_pets}</Row>}
+              {has(plan.cleaning_instructions) && <Row label={t("carePlan.cleaningProducts", "Cleaning products")}>{plan.cleaning_instructions}</Row>}
+            </>
+          )}
+
+          {/* Emergency: its own anchor (deep link, Review tap-to-fix, coach). */}
+          {present.emergency && (
+            <section id="emergency" data-coach={COACH.emergency} ref={setRef("emergency")} className="cp-row scroll-mt-2 py-3">
+              <p className="m-0 flex items-center gap-1.5 text-[15px] font-[700]" style={{ color: K.red }}>
+                <Siren className="size-4" aria-hidden="true" />{t("carePlan.emergency", "Emergency")}
+              </p>
+              {hasWhenToCall && (
+                <Callout label={t("carePlan.whenToCall", "When to call")}>
+                  {joinUnique([
+                    has(plan.when_to_call_owner) && t("carePlan.callOwner", "Call the owner: {{info}}", { info: plan.when_to_call_owner }),
+                    has(plan.when_to_call_vet) && t("carePlan.callVet", "Call the vet: {{info}}", { info: plan.when_to_call_vet }),
+                  ])}
+                </Callout>
+              )}
+              {contactRows.length > 0 && (
+                <div className="mt-1 flex flex-col">
+                  {contactRows.map((r, i) => {
+                    const v = (contacts[r.key] ?? "").toString();
+                    const isPhone = /phone|control|owner/.test(r.key) && /[0-9]/.test(v);
+                    return (
+                      <div key={r.key} className={`flex min-h-[44px] items-center justify-between gap-4 py-1.5 ${i > 0 ? "border-t" : ""}`} style={{ borderColor: K.line }}>
+                        <span className="shrink-0 text-[13.5px] font-[700]" style={{ color: K.quiet }}>{displayLabel(t, r.label)}</span>
+                        <span className="min-w-0 text-right text-[15px] font-[600]" style={{ color: K.forest }}>
+                          {isPhone ? (
+                            <a href={`tel:${v.replace(/[^0-9+]/g, "")}`} className="inline-flex min-h-[44px] items-center gap-1.5 underline" style={{ color: K.moss }}>
+                              <Phone className="size-4 shrink-0" aria-hidden="true" />{v}
+                            </a>
+                          ) : v}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+          )}
+        </Card>
+      )}
+
+      {footer}
+    </div>
   );
 }
-

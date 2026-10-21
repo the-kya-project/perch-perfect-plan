@@ -2,8 +2,9 @@
 // one-bird Home and each section of the flock check. A normal day is: type a
 // weight (optional), leave "Yes, looks normal" selected, save. The faded last
 // weight in the box is a hint only; an empty box saves the health check alone.
-// Visuals follow the "Daily health check" mock-ups: a lime card, white inputs,
-// ink primary buttons, amber for "something's different".
+// Visuals follow the Kya system: a lime card, white `kya-input` fields,
+// check-chip choices (white with a border, forest when on), one sunflower
+// save button, white secondary buttons, amber for "something's different".
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
@@ -11,6 +12,8 @@ import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 import { toast } from "sonner";
 import { Check, CheckCircle2, AlertTriangle, Plus, Search } from "lucide-react";
+import { K, SERIF, KyaHeading, KyaLabel, KyaLink, KyaSecondaryButton, KyaTag } from "@/components/kya";
+import { CheckChip } from "@/components/setup/controls";
 import { useBirdRole } from "@/lib/useBirdRole";
 import { useActiveSitIdForBird } from "@/components/CaregiverHome";
 import { answersWithChanges, allNormalAnswers, weightToSave, bigWeightChange, MIN_WEIGHT_G, MAX_WEIGHT_G } from "@/lib/dailyLog";
@@ -23,20 +26,18 @@ import { dailyCheckItemLabel } from "@/lib/dailyCheckLabels";
 
 export type DailyCheckSurface = "bird_page" | "home_one" | "flock";
 
-// Mock-up palette (Kya design system values used across the app's lime cards).
+// Kya palette, plus the red message fill and the check-chip border.
 const C = {
-  lime: "#cdeab0",
-  ink: "#1a3d2e",
-  moss: "#2d6a4f",
-  sub: "#2b3a31",
-  mute: "#5b6b61",
-  line: "#e0d8c4",
-  line2: "#eee6d4",
-  cream: "#f4f1e8",
-  amber: "#c47e1e",
-  amberFill: "#f6e7c4",
-  amberInk: "#854f0b",
-  red: "#a32d2d",
+  lime: K.lime,
+  ink: K.forest,
+  moss: K.moss,
+  sub: K.ink,
+  mute: K.quiet,
+  chipLine: "#c9d6c9",
+  line2: K.line,
+  amberFill: K.amberBg,
+  amberInk: K.amberText,
+  red: K.red,
   redFill: "#fcebeb",
   redInk: "#791f1f",
   divider: "rgba(45,106,79,0.25)",
@@ -51,10 +52,23 @@ function timeLabel(iso: string | Date): string {
   return new Date(iso).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }).toLowerCase();
 }
 
-const LABEL = "mb-1 block text-[12px] font-[500]";
-const EYEBROW = "text-[11px] font-[500] uppercase tracking-[0.13em]";
-const inputStyle = { boxShadow: `inset 0 0 0 1px ${C.line}`, color: C.ink };
-const INPUT = "box-border h-11 w-full rounded-[12px] border-0 bg-white px-3 text-[18px] font-[500] outline-none placeholder:font-[400] placeholder:text-[#9a9684] focus:shadow-[inset_0_0_0_2px_#2d6a4f]";
+/** A pick-one choice in the check-chip look (white with a border, forest
+ *  when on; `onColor` overrides the fill, e.g. red for "Concerning"). */
+function RadioChip({ on, onClick, children, onColor = C.ink, className = "" }: { on: boolean; onClick: () => void; children: React.ReactNode; onColor?: string; className?: string }) {
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={on}
+      onClick={onClick}
+      className={`inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-full border-2 px-4 text-[15px] ${on ? "font-[700]" : "font-[500]"} ${className}`}
+      style={on ? { background: onColor, borderColor: onColor, color: "#fff" } : { background: "#fff", borderColor: C.chipLine, color: C.ink }}
+    >
+      {on && <Check className="size-4 shrink-0" strokeWidth={3} aria-hidden="true" />}
+      {children}
+    </button>
+  );
+}
 
 function MealButtons({ meal, setMeal, labelId }: { meal: Meal; setMeal: (m: Meal) => void; labelId: string }) {
   const { t } = useTranslation();
@@ -63,17 +77,9 @@ function MealButtons({ meal, setMeal, labelId }: { meal: Meal; setMeal: (m: Meal
       {(["before_meal", "after_meal"] as const).map((m) => {
         const on = meal === m;
         return (
-          <button
-            key={m}
-            type="button"
-            role="radio"
-            aria-checked={on}
-            onClick={() => setMeal(on ? null : m)}
-            className="min-h-[44px] rounded-[12px] border-0 text-[14px] font-[500]"
-            style={on ? { background: C.ink, color: "#fff" } : { background: "#fff", color: C.ink, boxShadow: `inset 0 0 0 1px ${C.line}` }}
-          >
+          <RadioChip key={m} on={on} onClick={() => setMeal(on ? null : m)} className="px-2">
             {m === "before_meal" ? t("birdWeight.beforeMeal", "Before meal") : t("birdWeight.afterMeal", "After meal")}
-          </button>
+          </RadioChip>
         );
       })}
     </div>
@@ -90,8 +96,8 @@ function PrimaryBtn({ children, onClick, disabled, tall = true, className = "" }
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`flex w-full items-center justify-center rounded-full border-2 text-[15px] font-[700] disabled:opacity-45 ${tall ? "min-h-[52px]" : "min-h-[46px]"} ${className}`}
-      style={{ background: "#f2b33d", borderColor: C.ink, color: C.ink }}
+      className={`flex w-full items-center justify-center rounded-full border-2 px-4 text-[16px] font-[700] disabled:opacity-45 ${tall ? "min-h-[52px]" : "min-h-[48px]"} ${className}`}
+      style={{ background: K.sunflower, borderColor: C.ink, color: C.ink }}
     >
       {children}
     </button>
@@ -200,8 +206,8 @@ export function DailyCheckCard({
       : (
         <section
           aria-busy={busy || undefined}
-          className="flex flex-col gap-3 rounded-[18px] px-[18px] py-4"
-          style={{ background: C.lime, color: C.ink, boxShadow: "0 8px 20px -12px rgba(45,106,79,.45)" }}
+          className="flex flex-col gap-3.5 rounded-[20px] px-[18px] py-4"
+          style={{ background: C.lime, color: C.ink }}
         >
           {children}
         </section>
@@ -221,48 +227,49 @@ export function DailyCheckCard({
       <>
         <div>
           {showHeading && (
-            <p className={EYEBROW} style={{ color: C.moss }}>
+            <p className="m-0 text-[13px] font-[700]" style={{ color: C.moss }}>
               {latestW ? t("dailyCheck.todayAtEyebrow", "Today · {{time}}", { time: timeLabel(latestW.measured_at) }) : t("dailyCheck.today", "Today")}
             </p>
           )}
           {latestW ? (
             <>
-              <p className="mt-0.5 text-[30px] font-[400] leading-none tracking-[-0.015em]">
-                {latestW.grams}<span className="text-[16px]" style={{ color: C.moss }}> g</span>
+              <p className="m-0 mt-1 text-[30px] font-[700] leading-none" style={{ fontFamily: SERIF }}>
+                {latestW.grams}<span className="text-[16px] font-[500]" style={{ color: C.moss, fontFamily: "inherit" }}> g</span>
               </p>
               {(mealText(t, latestW.meal_relation) || weights.length > 1) && (
-                <p className="mt-1.5 text-[11.5px]" style={{ color: C.mute }}>
+                <p className="m-0 mt-1.5 text-[13px]" style={{ color: C.mute }}>
                   {[mealText(t, latestW.meal_relation), weights.length > 1 ? t("dailyCheck.weighInsToday", "{{n}} today", { n: weights.length }) : null].filter(Boolean).join(" · ")}
                 </p>
               )}
             </>
           ) : (
-            <p className="mt-0.5 text-[16px] font-[500]">{t("dailyCheck.noWeightToday", "No weight today")}</p>
+            <p className="m-0 mt-0.5 text-[16px] font-[700]">{t("dailyCheck.noWeightToday", "No weight today")}</p>
           )}
         </div>
 
         <button
           type="button"
           onClick={() => navigate({ to: "/birds/$birdId/scans/$scanId", params: { birdId, scanId: check.id } })}
-          className="flex w-full items-center gap-3 rounded-[12px] border-0 bg-white px-3 py-2.5 text-left"
+          className="flex min-h-[60px] w-full items-center gap-3 rounded-[16px] border-0 bg-white px-3.5 py-2.5 text-left"
+          style={{ color: C.ink }}
         >
-          <span className="grid size-8 shrink-0 place-items-center rounded-[10px]" style={good ? { background: "#e8f0ec", color: C.moss } : { background: C.amberFill, color: C.amberInk }}>
+          <span className="grid size-10 shrink-0 place-items-center rounded-[12px]" style={good ? { background: C.ink, color: C.lime } : { background: C.amberFill, color: C.amberInk }} aria-hidden="true">
             {good ? <CheckCircle2 className="size-[18px]" /> : <AlertTriangle className="size-[18px]" />}
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block text-[14px] font-[500]">
+            <span className="block text-[15px] font-[700]">
               {status === "red" ? t("dailyCheck.resultRed", "Health check: call your vet")
                 : status === "yellow" ? t("dailyCheck.resultYellow", "Health check: something to check")
                 : t("dailyCheck.resultGreen", "Health check: all normal")}
             </span>
-            <span className="mt-px block text-[11.5px]" style={{ color: "#8a8270" }}>{t("dailyCheck.checkedAt", "Checked {{time}}", { time: timeLabel(check.created_at) })}</span>
+            <span className="mt-0.5 block text-[13px]" style={{ color: C.mute }}>{t("dailyCheck.checkedAt", "Checked {{time}}", { time: timeLabel(check.created_at) })}</span>
           </span>
         </button>
 
         {result && result.triage.status !== "green" && (
-          <div className="rounded-[12px] px-3 py-2.5 text-[12.5px] leading-[1.45]" style={result.triage.status === "red" ? { background: C.redFill, color: C.redInk } : { background: C.amberFill, color: C.amberInk }}>
+          <div className="rounded-[14px] px-3.5 py-3 text-[14px] leading-[1.45]" style={result.triage.status === "red" ? { background: C.redFill, color: C.redInk } : { background: C.amberFill, color: C.amberInk }}>
             {triageMessageLabel(t, result.triage.message)}
-            <button type="button" onClick={() => navigate({ to: "/birds/$birdId/emergency", params: { birdId } })} className="mt-1.5 block font-[500] underline">
+            <button type="button" onClick={() => navigate({ to: "/birds/$birdId/emergency", params: { birdId } })} className="mt-1 flex min-h-[44px] items-center font-[700] underline">
               {t("ownerScan.emergencyContacts", "Emergency contacts")}
             </button>
           </div>
@@ -272,13 +279,13 @@ export function DailyCheckCard({
           <ExtraWeight birdId={birdId} name={name} lastGrams={latestW?.grams ?? today?.lastGrams ?? null} surface={surface} onDone={() => setAdding(false)} />
         )}
         {canWeigh && !adding && (
-          <div className="flex items-center justify-between">
-            <button type="button" onClick={() => setAdding(true)} className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full border-0 px-3 text-[12.5px] font-[500]" style={{ background: C.ink, color: C.lime }}>
-              <Plus className="size-3.5" strokeWidth={2.4} /> {latestW ? t("dailyCheck.addAnotherWeight", "Add another weight") : t("dailyCheck.addTodaysWeight", "Add today's weight")}
-            </button>
-            <button type="button" onClick={() => navigate({ to: "/birds/$birdId/weight", params: { birdId } })} className="min-h-[36px] text-[13px] font-[500]" style={{ color: C.ink }}>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <KyaSecondaryButton onClick={() => setAdding(true)} icon={<Plus className="size-4" strokeWidth={2.4} />}>
+              {latestW ? t("dailyCheck.addAnotherWeight", "Add another weight") : t("dailyCheck.addTodaysWeight", "Add today's weight")}
+            </KyaSecondaryButton>
+            <KyaLink onClick={() => navigate({ to: "/birds/$birdId/weight", params: { birdId } })} color={C.ink}>
               {t("dailyCheck.weightChart", "Weight chart →")}
-            </button>
+            </KyaLink>
           </div>
         )}
       </>,
@@ -294,13 +301,13 @@ export function DailyCheckCard({
   const mealId = `dc-meal-${birdId}`;
 
   const confirm = confirmPct != null && (
-    <div className="rounded-[12px] px-3 py-2.5 text-[13px]" style={{ background: C.amberFill, color: C.amberInk }}>
+    <div className="rounded-[14px] px-3.5 py-3 text-[14px] leading-[1.45]" style={{ background: C.amberFill, color: C.amberInk }}>
       {confirmPct < 0
         ? t("dailyCheck.bigDrop", "That's {{pct}}% lower than last time. Save anyway?", { pct: Math.abs(confirmPct) })
         : t("dailyCheck.bigRise", "That's {{pct}}% higher than last time. Save anyway?", { pct: confirmPct })}
       <div className="mt-2 flex gap-2">
-        <button type="button" onClick={() => save(true)} className="min-h-[40px] flex-1 rounded-[10px] border-0 text-[13.5px] font-[500] text-white" style={{ background: C.ink }}>{t("dailyCheck.saveAnyway", "Save anyway")}</button>
-        <button type="button" onClick={() => setConfirmPct(null)} className="min-h-[40px] flex-1 rounded-[10px] border-0 bg-white text-[13.5px] font-[500]" style={{ color: C.ink, boxShadow: `inset 0 0 0 1px ${C.line}` }}>{t("dailyCheck.fix", "Fix")}</button>
+        <KyaSecondaryButton onClick={() => save(true)} className="flex-1">{t("dailyCheck.saveAnyway", "Save anyway")}</KyaSecondaryButton>
+        <KyaSecondaryButton onClick={() => setConfirmPct(null)} className="flex-1">{t("dailyCheck.fix", "Fix")}</KyaSecondaryButton>
       </div>
     </div>
   );
@@ -310,36 +317,34 @@ export function DailyCheckCard({
       {showHeading && (
         <div className="flex items-start gap-2.5">
           <div className="min-w-0 flex-1">
-            <p className={EYEBROW} style={{ color: C.moss }}>{t("dailyCheck.today", "Today")}</p>
-            <h2 className="mt-0.5 text-[16px] font-[500]">{title ?? t("dailyCheck.title", "Weight and health check")}</h2>
+            <KyaHeading size={21}>{title ?? t("dailyCheck.title", "Weight and health check")}</KyaHeading>
           </div>
-          <span className="shrink-0 rounded-full px-[9px] py-[3px] text-[11.5px] font-[500]" style={{ background: C.amberFill, color: C.amberInk }}>{t("dailyCheck.notDone", "Not done yet")}</span>
+          <KyaTag tone="amber">{t("dailyCheck.notDone", "Not done yet")}</KyaTag>
         </div>
       )}
 
       {canWeigh && (
         <div className="flex flex-col gap-3">
           <div>
-            <label htmlFor={`dc-g-${birdId}`} className={LABEL} style={{ color: C.sub }}>{t("birdWeight.gramsLabel", "Weight (grams)")}</label>
+            <div className="mb-1.5"><KyaLabel htmlFor={`dc-g-${birdId}`}>{t("birdWeight.gramsLabel", "Weight (grams)")}</KyaLabel></div>
             <input
               id={`dc-g-${birdId}`}
-              className={INPUT}
-              style={inputStyle}
+              className="kya-input"
               inputMode="decimal"
               value={grams}
               placeholder={hint}
               onChange={(e) => { setGrams(e.target.value.replace(/[^0-9.]/g, "")); setConfirmPct(null); }}
             />
             {weightInvalid && (
-              <p className="mt-1 text-[11px]" style={{ color: C.amberInk }}>{t("birdWeight.range", "Enter a weight between {{min}} and {{max}} grams.", { min: MIN_WEIGHT_G, max: MAX_WEIGHT_G })}</p>
+              <p className="m-0 mt-1.5 px-1 text-[13px]" style={{ color: C.amberInk }}>{t("birdWeight.range", "Enter a weight between {{min}} and {{max}} grams.", { min: MIN_WEIGHT_G, max: MAX_WEIGHT_G })}</p>
             )}
           </div>
           <div>
-            <span className={LABEL} style={{ color: C.sub }}>{t("birdWeight.whenLabel", "When")}</span>
-            <p className="text-[14px]">{t("dailyCheck.todayAt", "Today, {{time}}", { time: timeLabel(now) })}</p>
+            <KyaLabel as="span">{t("birdWeight.whenLabel", "When")}</KyaLabel>
+            <p className="m-0 mt-1 text-[15px]" style={{ color: C.sub }}>{t("dailyCheck.todayAt", "Today, {{time}}", { time: timeLabel(now) })}</p>
           </div>
           <div>
-            <span id={mealId} className={LABEL} style={{ color: C.sub }}>{t("birdWeight.mealLabel", "Relative to a meal (optional)")}</span>
+            <div className="mb-1.5"><span id={mealId}><KyaLabel as="span">{t("birdWeight.mealLabel", "Relative to a meal (optional)")}</KyaLabel></span></div>
             <MealButtons meal={meal} setMeal={setMeal} labelId={mealId} />
           </div>
         </div>
@@ -349,104 +354,86 @@ export function DailyCheckCard({
         <>
           {canWeigh && <div className="h-px" style={{ background: C.divider }} />}
           <div className="flex flex-col gap-2">
-            <span className={EYEBROW} style={{ color: C.moss }}>{t("dailyCheck.healthCheck", "Health check")}</span>
-            <span className="text-[16px] font-[500]">{t("dailyCheck.lookUsual", "Does {{name}} look like usual?", { name })}</span>
+            <span className="text-[17px] font-[700]">{t("dailyCheck.lookUsual", "Does {{name}} look like usual?", { name })}</span>
 
             {!different ? (
               <>
-                <span className="text-[12px] leading-[1.45]" style={{ color: C.sub }}>{t("dailyCheck.usualHelp", "Alert, eating, normal droppings, breathing easy, perching well.")}</span>
-                <div role="radiogroup" aria-label={t("dailyCheck.lookUsual", "Does {{name}} look like usual?", { name })} className="mt-0.5 grid grid-cols-2 gap-1.5">
-                  <button type="button" role="radio" aria-checked="true" className="flex min-h-[46px] items-center justify-center gap-1.5 rounded-[12px] border-0 bg-white text-[14px] font-[500]" style={{ color: C.ink, boxShadow: `inset 0 0 0 2px ${C.ink}` }}>
-                    <Check className="size-[15px]" strokeWidth={2.6} /> {t("dailyCheck.looksNormal", "Yes, looks normal")}
-                  </button>
-                  <button
-                    type="button"
-                    role="radio"
-                    aria-checked="false"
+                <span className="text-[14px] leading-[1.45]" style={{ color: C.sub }}>{t("dailyCheck.usualHelp", "Alert, eating, normal droppings, breathing easy, perching well.")}</span>
+                <div role="radiogroup" aria-label={t("dailyCheck.lookUsual", "Does {{name}} look like usual?", { name })} className="mt-0.5 grid grid-cols-2 gap-2">
+                  <RadioChip on onClick={() => {}} className="px-2">{t("dailyCheck.looksNormal", "Yes, looks normal")}</RadioChip>
+                  <RadioChip
+                    on={false}
                     onClick={() => { track("daily_check_different_opened", { surface }); setDifferent(true); setConfirmPct(null); }}
-                    className="flex min-h-[46px] items-center justify-center rounded-[12px] border-0 text-[14px] font-[500]"
-                    style={{ background: "rgba(255,255,255,0.55)", color: C.sub }}
+                    className="px-2"
                   >
                     {t("dailyCheck.somethingDifferent", "Something's different")}
-                  </button>
+                  </RadioChip>
                 </div>
                 {confirm}
                 {confirmPct == null && <PrimaryBtn onClick={() => save()} disabled={saving || weightInvalid}>{label}</PrimaryBtn>}
               </>
             ) : (
-              <div className="mt-1 flex flex-col gap-3 rounded-[18px] bg-white p-4" style={{ boxShadow: "0 6px 16px -10px rgba(26,61,46,.35)" }}>
+              <div className="mt-1 flex flex-col gap-3 rounded-[18px] bg-white p-4">
                 <div className="flex items-center gap-2.5">
-                  <span className="grid size-[34px] shrink-0 place-items-center rounded-[11px]" style={{ background: C.amberFill, color: C.amberInk }}><Search className="size-[18px]" /></span>
+                  <span className="grid size-10 shrink-0 place-items-center rounded-[12px]" style={{ background: C.amberFill, color: C.amberInk }} aria-hidden="true"><Search className="size-[18px]" /></span>
                   <span>
-                    <span className="block text-[16px] font-[500]">{t("dailyCheck.whatsDifferent", "What's different with {{name}}?", { name })}</span>
-                    <span className="block text-[12px]" style={{ color: C.mute }}>{t("dailyCheck.tapEverything", "Tap everything you noticed.")}</span>
+                    <span className="block text-[16px] font-[700]">{t("dailyCheck.whatsDifferent", "What's different with {{name}}?", { name })}</span>
+                    <span className="block text-[13px]" style={{ color: C.mute }}>{t("dailyCheck.tapEverything", "Tap everything you noticed.")}</span>
                   </span>
                 </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {ITEM_KEYS.map((k) => {
-                    const on = !!changes[k];
-                    return (
-                      <button
-                        key={k}
-                        type="button"
-                        aria-pressed={on}
-                        onClick={() => setChanges((c) => { const n = { ...c }; if (n[k]) delete n[k]; else n[k] = "not_sure"; return n; })}
-                        className="min-h-[36px] rounded-full border-0 px-3 text-[12.5px] font-[500]"
-                        style={on ? { background: C.amber, color: "#fff" } : { background: C.cream, color: C.sub, boxShadow: `inset 0 0 0 1px ${C.line}` }}
-                      >
-                        {itemLabel(t, k)}
-                      </button>
-                    );
-                  })}
+                <div className="flex flex-wrap gap-2">
+                  {ITEM_KEYS.map((k) => (
+                    <CheckChip
+                      key={k}
+                      on={!!changes[k]}
+                      onClick={() => setChanges((c) => { const n = { ...c }; if (n[k]) delete n[k]; else n[k] = "not_sure"; return n; })}
+                    >
+                      {itemLabel(t, k)}
+                    </CheckChip>
+                  ))}
                 </div>
                 {ITEM_KEYS.filter((k) => changes[k]).map((k) => (
-                  <div key={k} className="flex items-center gap-2 pt-2" style={{ borderTop: `1px solid ${C.line2}` }}>
-                    <span className="flex-1 text-[13px] font-[500]">{itemLabel(t, k)}</span>
-                    <div role="radiogroup" aria-label={itemLabel(t, k)} className="flex gap-1">
-                      {(["not_sure", "concerning"] as const).map((v) => {
-                        const on = changes[k] === v;
-                        const onStyle = v === "concerning" ? { background: C.red, color: "#fff" } : { background: C.amber, color: "#fff" };
-                        return (
-                          <button
-                            key={v}
-                            type="button"
-                            role="radio"
-                            aria-checked={on}
-                            onClick={() => setChanges((c) => ({ ...c, [k]: v }))}
-                            className="min-h-[34px] rounded-[9px] border-0 px-2.5 text-[12px] font-[500]"
-                            style={on ? onStyle : { background: C.cream, color: C.sub, boxShadow: `inset 0 0 0 1px ${C.line}` }}
-                          >
-                            {v === "concerning" ? t("scanForm.answerConcerning", "Concerning") : t("scanForm.answerNotSure", "Not sure")}
-                          </button>
-                        );
-                      })}
+                  <div key={k} className="flex flex-wrap items-center gap-2 pt-2.5" style={{ borderTop: `1px solid ${C.line2}` }}>
+                    <span className="min-w-0 flex-1 text-[15px] font-[700]">{itemLabel(t, k)}</span>
+                    <div role="radiogroup" aria-label={itemLabel(t, k)} className="flex gap-1.5">
+                      {(["not_sure", "concerning"] as const).map((v) => (
+                        <RadioChip
+                          key={v}
+                          on={changes[k] === v}
+                          onColor={v === "concerning" ? C.red : C.ink}
+                          onClick={() => setChanges((c) => ({ ...c, [k]: v }))}
+                          className="px-3 text-[14px]"
+                        >
+                          {v === "concerning" ? t("scanForm.answerConcerning", "Concerning") : t("scanForm.answerNotSure", "Not sure")}
+                        </RadioChip>
+                      ))}
                     </div>
                   </div>
                 ))}
                 {anyConcerning && (
-                  <p className="rounded-[12px] px-3 py-2.5 text-[12.5px] leading-[1.45]" style={{ background: C.redFill, color: C.redInk }}>
-                    <b className="font-[500]">{t("dailyCheck.concerningTitle", "Concerning signs.")}</b>{" "}
+                  <p className="m-0 rounded-[14px] px-3.5 py-3 text-[14px] leading-[1.45]" style={{ background: C.redFill, color: C.redInk }}>
+                    <b className="font-[700]">{t("dailyCheck.concerningTitle", "Concerning signs.")}</b>{" "}
                     {[...Object.entries(changes)].some(([k, v]) => v === "concerning" && RED_KEYS.has(k as ScanFieldKey))
                       ? t("dailyCheck.concerningRed", "Call your avian vet today. We'll keep this flagged on {{name}}'s page.", { name })
                       : t("dailyCheck.concerningWatch", "Keep a close eye, and call your avian vet if it continues. We'll keep this flagged on {{name}}'s page.", { name })}
                   </p>
                 )}
-                <label className="flex flex-col gap-1 text-[12px]" style={{ color: C.mute }}>
-                  {t("dailyCheck.noteLabel", "Note (optional)")}
+                <div className="flex flex-col gap-1.5">
+                  <KyaLabel htmlFor={`dc-note-${birdId}`}>{t("dailyCheck.noteLabel", "Note (optional)")}</KyaLabel>
                   <input
+                    id={`dc-note-${birdId}`}
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
                     placeholder={t("dailyCheck.notePlaceholder", "What did you notice?")}
-                    className="min-h-[40px] rounded-[10px] bg-white px-2.5 text-[16px] outline-none"
-                    style={{ border: `1px solid ${C.line}`, color: C.ink }}
+                    className="kya-input"
                   />
-                </label>
+                </div>
                 {confirm}
                 {confirmPct == null && (
                   <div className="flex gap-2">
-                    <button type="button" onClick={() => { setDifferent(false); setChanges({}); setNote(""); }} className="min-h-[46px] rounded-[12px] border-0 bg-transparent px-3.5 text-[14px] font-[500]" style={{ color: C.ink }}>
+                    <KyaLink onClick={() => { setDifferent(false); setChanges({}); setNote(""); }} className="shrink-0 px-2">
                       {t("dailyCheck.back", "Back")}
-                    </button>
+                    </KyaLink>
                     <PrimaryBtn onClick={() => save()} disabled={saving || weightInvalid} tall={false} className="flex-1">{label}</PrimaryBtn>
                   </div>
                 )}
@@ -487,23 +474,23 @@ function ExtraWeight({ birdId, name, lastGrams, surface, onDone }: { birdId: str
   }
 
   return (
-    <div className="flex flex-col gap-3 rounded-[18px] bg-white p-4" style={{ color: C.ink, boxShadow: "0 6px 16px -10px rgba(26,61,46,.35)" }}>
-      <p className="text-[16px] font-[500]">{t("dailyCheck.addWeightFor", "Add a weight for {{name}}", { name })}</p>
+    <div className="flex flex-col gap-3 rounded-[18px] bg-white p-4" style={{ color: C.ink }}>
+      <p className="m-0 text-[16px] font-[700]">{t("dailyCheck.addWeightFor", "Add a weight for {{name}}", { name })}</p>
       <div>
-        <label htmlFor={`dc-x-${birdId}`} className={LABEL} style={{ color: C.mute }}>{t("birdWeight.gramsLabel", "Weight (grams)")}</label>
-        <input id={`dc-x-${birdId}`} className={INPUT} style={inputStyle} inputMode="decimal" autoFocus value={grams} placeholder={lastGrams != null ? String(lastGrams) : ""} onChange={(e) => setGrams(e.target.value.replace(/[^0-9.]/g, ""))} />
-        {parsed === undefined && <p className="mt-1 text-[11px]" style={{ color: C.amberInk }}>{t("birdWeight.range", "Enter a weight between {{min}} and {{max}} grams.", { min: MIN_WEIGHT_G, max: MAX_WEIGHT_G })}</p>}
+        <div className="mb-1.5"><KyaLabel htmlFor={`dc-x-${birdId}`}>{t("birdWeight.gramsLabel", "Weight (grams)")}</KyaLabel></div>
+        <input id={`dc-x-${birdId}`} className="kya-input" inputMode="decimal" autoFocus value={grams} placeholder={lastGrams != null ? String(lastGrams) : ""} onChange={(e) => setGrams(e.target.value.replace(/[^0-9.]/g, ""))} />
+        {parsed === undefined && <p className="m-0 mt-1.5 px-1 text-[13px]" style={{ color: C.amberInk }}>{t("birdWeight.range", "Enter a weight between {{min}} and {{max}} grams.", { min: MIN_WEIGHT_G, max: MAX_WEIGHT_G })}</p>}
       </div>
       <div>
-        <span className={LABEL} style={{ color: C.mute }}>{t("birdWeight.whenLabel", "When")}</span>
-        <p className="text-[14px]">{t("dailyCheck.todayAt", "Today, {{time}}", { time: timeLabel(new Date()) })}</p>
+        <KyaLabel as="span">{t("birdWeight.whenLabel", "When")}</KyaLabel>
+        <p className="m-0 mt-1 text-[15px]" style={{ color: C.sub }}>{t("dailyCheck.todayAt", "Today, {{time}}", { time: timeLabel(new Date()) })}</p>
       </div>
       <div>
-        <span id={mealId} className={LABEL} style={{ color: C.mute }}>{t("birdWeight.mealLabel", "Relative to a meal (optional)")}</span>
+        <div className="mb-1.5"><span id={mealId}><KyaLabel as="span">{t("birdWeight.mealLabel", "Relative to a meal (optional)")}</KyaLabel></span></div>
         <MealButtons meal={meal} setMeal={setMeal} labelId={mealId} />
       </div>
       <div className="flex gap-2">
-        <button type="button" onClick={onDone} disabled={saving} className="min-h-[46px] rounded-[12px] border-0 bg-transparent px-3.5 text-[14px] font-[500]" style={{ color: C.ink }}>
+        <button type="button" onClick={onDone} disabled={saving} className="min-h-[48px] shrink-0 border-0 bg-transparent px-3 text-[15px] font-[700] disabled:opacity-45" style={{ color: C.moss }}>
           {t("birdWeight.cancel", "Cancel")}
         </button>
         <PrimaryBtn onClick={save} disabled={!valid || saving} tall={false} className="flex-1">

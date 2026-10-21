@@ -14,8 +14,9 @@
  *   mobile browser                  -> get the app, one store badge
  *   desktop browser                 -> one quiet line, no install push
  */
+import type { ReactNode } from "react";
 import { Bell, BellOff } from "lucide-react";
-import { Card, IconTile, PrimaryButton } from "@/components/system";
+import { K, KyaCard, KyaHeading, KyaIconTile } from "@/components/kya";
 import {
   APP_STORE_BADGE, APP_STORE_BADGE_SIZE, APP_STORE_URL,
   PLAY_STORE_BADGE, PLAY_STORE_BADGE_SIZE, PLAY_STORE_URL,
@@ -45,6 +46,37 @@ function StoreBadge({ platform }: { platform: "ios" | "android" }) {
   );
 }
 
+/** The sunflower main button, sized to its label so "Not now" fits beside it. */
+function CompactPrimary({ children, onClick, disabled }: { children: ReactNode; onClick: () => void; disabled?: boolean }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="inline-flex min-h-[48px] items-center justify-center rounded-full border-2 px-5 text-[15px] font-[700] disabled:opacity-45"
+      style={{ background: K.sunflower, borderColor: K.forest, color: K.forest }}
+    >
+      {children}
+    </button>
+  );
+}
+
+/** White card: forest icon tile, Newsreader title, muted body, actions. */
+function CalloutCard({ icon, title, body, children }: { icon: ReactNode; title: ReactNode; body: ReactNode; children?: ReactNode }) {
+  return (
+    <KyaCard style={{ color: K.forest }}>
+      <div className="flex items-start gap-3 p-4">
+        <KyaIconTile size={40}>{icon}</KyaIconTile>
+        <div className="min-w-0 flex-1">
+          <KyaHeading size={19} as="h2">{title}</KyaHeading>
+          <p className="m-0 mt-1 text-[15px] leading-[1.5]" style={{ color: K.quiet }}>{body}</p>
+          {children}
+        </div>
+      </div>
+    </KyaCard>
+  );
+}
+
 export function NotificationsCallout({
   state,
   birdLabel,
@@ -69,7 +101,8 @@ export function NotificationsCallout({
       type="button"
       onClick={onDismiss}
       disabled={busy}
-      className="min-h-[44px] whitespace-nowrap px-2.5 text-[15px] text-[var(--mute)] disabled:opacity-50"
+      className="min-h-[44px] whitespace-nowrap px-2.5 text-[15px] font-[700] disabled:opacity-50"
+      style={{ color: K.moss }}
     >
       {t("notificationsCallout.notNow", "Not now")}
     </button>
@@ -81,77 +114,62 @@ export function NotificationsCallout({
 
   if (state.kind === "native-prompt") {
     return (
-      <Card>
-        <div className="flex items-start gap-3 p-4">
-          <IconTile size={38} icon={<Bell className="size-5" />} />
-          <div className="min-w-0 flex-1">
-            <div className="t-item">{t("notificationsCallout.turnOnReminders", "Turn on reminders")}</div>
-            <p className="t-body mt-1 text-[var(--mute)]">
-              {t("notificationsCallout.turnOnRemindersBody", "We'll let you know when it's time to weigh {{bird}} and when a check-in is due. You can change this anytime.", { bird: birdLabel })}
-            </p>
-            <div className="mt-3 flex items-center gap-2">
-              <PrimaryButton tone="sunflower" full={false} onPress={onEnable} disabled={busy}>
-                {/* Shorter beside "Not now" so the pair fits one line on a phone. */}
-                {onDismiss ? t("notificationsCallout.turnOn", "Turn on") : t("notificationsCallout.turnOnNotifications", "Turn on notifications")}
-              </PrimaryButton>
-              {notNow}
-            </div>
-          </div>
+      <CalloutCard
+        icon={<Bell className="size-5" />}
+        title={t("notificationsCallout.turnOnReminders", "Turn on reminders")}
+        body={t("notificationsCallout.turnOnRemindersBody", "We'll let you know when it's time to weigh {{bird}} and when a check-in is due. You can change this anytime.", { bird: birdLabel })}
+      >
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <CompactPrimary onClick={onEnable} disabled={busy}>
+            {/* Shorter beside "Not now" so the pair fits one line on a phone. */}
+            {onDismiss ? t("notificationsCallout.turnOn", "Turn on") : t("notificationsCallout.turnOnNotifications", "Turn on notifications")}
+          </CompactPrimary>
+          {notNow}
         </div>
-      </Card>
+      </CalloutCard>
     );
   }
 
   if (state.kind === "native-denied") {
     return (
-      <Card>
-        <div className="flex items-start gap-3 p-4">
-          <IconTile size={38} icon={<BellOff className="size-5" />} />
-          <div className="min-w-0 flex-1">
-            <div className="t-item">{t("notificationsCallout.notificationsAreOff", "Notifications are off")}</div>
-            <p className="t-body mt-1 text-[var(--mute)]">
-              {t("notificationsCallout.notificationsAreOffBody", "To get reminders, turn on notifications for Kya & Co. in your phone's settings.")}
-            </p>
-            {/* Android has no supported way to open the app's settings page
-                without another plugin, so it gets the sentence and no button
-                rather than a button that does nothing. */}
-            {((state.canOpenSettings && onOpenSettings) || notNow) && (
-              <div className="mt-3 flex items-center gap-2">
-                {state.canOpenSettings && onOpenSettings && (
-                  <PrimaryButton tone="sunflower" full={false} onPress={onOpenSettings} disabled={busy}>
-                    {t("notificationsCallout.openSettings", "Open settings")}
-                  </PrimaryButton>
-                )}
-                {notNow}
-              </div>
+      <CalloutCard
+        icon={<BellOff className="size-5" />}
+        title={t("notificationsCallout.notificationsAreOff", "Notifications are off")}
+        body={t("notificationsCallout.notificationsAreOffBody", "To get reminders, turn on notifications for Kya & Co. in your phone's settings.")}
+      >
+        {/* Android has no supported way to open the app's settings page
+            without another plugin, so it gets the sentence and no button
+            rather than a button that does nothing. */}
+        {((state.canOpenSettings && onOpenSettings) || notNow) && (
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            {state.canOpenSettings && onOpenSettings && (
+              <CompactPrimary onClick={onOpenSettings} disabled={busy}>
+                {t("notificationsCallout.openSettings", "Open settings")}
+              </CompactPrimary>
             )}
+            {notNow}
           </div>
-        </div>
-      </Card>
+        )}
+      </CalloutCard>
     );
   }
 
   if (state.kind === "web-mobile") {
     return (
-      <Card>
-        <div className="flex items-start gap-3 p-4">
-          <IconTile size={38} icon={<Bell className="size-5" />} />
-          <div className="min-w-0 flex-1">
-            <div className="t-item">{t("notificationsCallout.getTheApp", "Get the Kya & Co. app")}</div>
-            <p className="t-body mt-1 text-[var(--mute)]">
-              {t("notificationsCallout.getTheAppBody", "Reminders, quick logging, and your flock's whole record, right on your phone. Same account, nothing to move over.")}
-            </p>
-            <StoreBadge platform={state.platform} />
-          </div>
-        </div>
-      </Card>
+      <CalloutCard
+        icon={<Bell className="size-5" />}
+        title={t("notificationsCallout.getTheApp", "Get the Kya & Co. app")}
+        body={t("notificationsCallout.getTheAppBody", "Reminders, quick logging, and your flock's whole record, right on your phone. Same account, nothing to move over.")}
+      >
+        <StoreBadge platform={state.platform} />
+      </CalloutCard>
     );
   }
 
   // Desktop: no install prompt. One line, so the per-event push toggles below
   // are not mysterious on a machine that will never receive a push.
   return (
-    <p className="t-meta px-4 text-[var(--mute)]">
+    <p className="m-0 px-4 text-[13px] leading-[1.45]" style={{ color: K.quiet }}>
       <Trans
         i18nKey="notificationsCallout.desktopLine"
         defaults="Reminders go to your phone. Get the app for <1>iPhone</1> or <2>Android</2>."

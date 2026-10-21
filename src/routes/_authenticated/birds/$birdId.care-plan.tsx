@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { speciesLabel } from "@/lib/speciesLabel";
 import { ageLabel } from "@/components/BirdPickers";
 import { useQuery } from "@tanstack/react-query";
@@ -9,16 +9,19 @@ import { getHouseholdCarePlanView } from "@/lib/household.functions";
 import { useCapability } from "@/lib/useCapability";
 import { MemberContextBanner } from "@/components/MemberContextBanner";
 import { CarePlanView, CARE_PLAN_SECTIONS, type CareSection } from "@/components/CarePlanView";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { K, KyaPage, KyaBody, KyaCard } from "@/components/kya";
+import { PageHeader } from "@/components/headers";
+import { Loader2 } from "lucide-react";
 
 // Owner / household-member read-only care plan. Thin data layer: fetches the
 // plan via the authenticated server fn and hands it to the shared CarePlanView
-// (the redesigned read view shared with the sitter care-sheet). All six
-// sections; edit entry gated by edit_care_plans (UX only — RLS enforces).
+// (the Kya-look read view, also the walkthrough's Review). Standard page
+// header with back to the overview, mist body. All sections; edit entry gated
+// by edit_care_plans (UX only — RLS enforces).
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/care-plan")({
   head: () => ({ meta: [{ title: i18next.t("planEditor.metaTitle", "Care plan — Kya & Co.") }] }),
-  // Deep-link target: ?section=food|behavior|home|health|routine|emergency.
+  // Deep-link target: ?section=food|behavior|home|health|routine|emergency|tips.
   validateSearch: (search: Record<string, unknown>): { section?: CareSection } => {
     const s = search.section;
     return { section: typeof s === "string" && (CARE_PLAN_SECTIONS as readonly string[]).includes(s) ? (s as CareSection) : undefined };
@@ -44,45 +47,41 @@ function HouseholdCarePlan() {
   const speciesAge = [bird.species ? speciesLabel(t, bird.species) : null, bird.age ? ageLabel(t, bird.age) : null].filter((x: any) => (x ?? "").toString().trim()).join(" · ");
 
   return (
-    <div className="min-h-screen bg-[var(--cream)] pb-nav">
-      {isLoading ? (
-        <main className="mx-auto flex max-w-md items-center justify-center gap-2 px-5 py-10 text-sm text-[var(--mute)]">
-          <Loader2 className="size-4 animate-spin" /> {t("carePlanPage.loading", "Loading the care plan…")}
-        </main>
-      ) : isError || !data ? (
-        <main className="mx-auto max-w-md px-5 py-5">
-          <div className="rounded-[18px] bg-white p-6 text-center text-sm text-[var(--mute)] ring-1 ring-[var(--line2)]">
-            {t("carePlanPage.loadError", "Couldn't load this care plan.")}
-          </div>
-        </main>
-      ) : (
-        <CarePlanView
-          data={data}
-          targetSection={section}
-          canEdit={canEdit}
-          onEdit={() => navigate({ to: "/birds/$birdId/plan/editor", params: { birdId }, search: { tab: "food" } })}
-          contextBanner={<MemberContextBanner birdId={birdId} />}
-          showViewOnlyTag={!canEdit}
-          header={
-            <div className="flex items-center gap-3">
-              <Link to="/birds/$birdId/plan" params={{ birdId }} aria-label={t("carePlanPage.back", "Back to care plan")} className="-ml-1 rounded p-1 text-[var(--ink)]">
-                <ArrowLeft className="size-5" />
-              </Link>
-              <div className="min-w-0">
-                <h1 className="truncate text-base font-medium leading-tight text-[var(--ink)]">{name}</h1>
-                {speciesAge && <p className="truncate text-xs text-[var(--mute)]">{speciesAge}</p>}
-              </div>
-            </div>
-          }
-          footer={
-            !canEdit ? (
-              <p className="px-1 text-center text-[11px] text-[var(--mute)]">
-                {t("carePlanPage.readOnlyFooter", "Read-only. Only {{name}}'s owner can make changes.", { name })}
-              </p>
-            ) : undefined
-          }
+    <KyaPage>
+      <div className="mx-auto max-w-md">
+        <PageHeader
+          onBack={() => navigate({ to: "/birds/$birdId/plan", params: { birdId } })}
+          title={data ? t("planOverview.titleNamed", "{{name}}'s care plan", { name }) : t("carePlanPage.title", "Care plan")}
+          line={speciesAge || undefined}
         />
-      )}
-    </div>
+        <KyaBody>
+          {isLoading ? (
+            <p className="m-0 flex items-center justify-center gap-2 py-10 text-[15px]" style={{ color: K.quiet }}>
+              <Loader2 className="size-4 animate-spin" aria-hidden="true" /> {t("carePlanPage.loading", "Loading the care plan…")}
+            </p>
+          ) : isError || !data ? (
+            <KyaCard className="p-6 text-center">
+              <p className="m-0 text-[15px]" style={{ color: K.quiet }}>{t("carePlanPage.loadError", "Couldn't load this care plan.")}</p>
+            </KyaCard>
+          ) : (
+            <CarePlanView
+              data={data}
+              targetSection={section}
+              canEdit={canEdit}
+              onEdit={() => navigate({ to: "/birds/$birdId/plan/editor", params: { birdId }, search: { tab: "food" } })}
+              contextBanner={<MemberContextBanner birdId={birdId} />}
+              showViewOnlyTag={!canEdit}
+              footer={
+                !canEdit ? (
+                  <p className="m-0 px-1 text-center text-[13px]" style={{ color: K.quiet }}>
+                    {t("carePlanPage.readOnlyFooter", "Read-only. Only {{name}}'s owner can make changes.", { name })}
+                  </p>
+                ) : undefined
+              }
+            />
+          )}
+        </KyaBody>
+      </div>
+    </KyaPage>
   );
 }

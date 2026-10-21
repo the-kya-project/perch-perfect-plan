@@ -12,6 +12,7 @@ import { track } from "@/lib/analytics";
 import { toast } from "sonner";
 import { Loader2, Plus } from "lucide-react";
 import { friendlyError } from "@/lib/errorMessage";
+import { K, KyaSheet, KyaHeading, KyaLabel, KyaPrimaryButton } from "@/components/kya";
 
 // Shared household invite flow — used by the per-bird access hub and the
 // account-level /household screen. The invite defaults to ALL of the owner's
@@ -96,111 +97,108 @@ export function HouseholdInviteSheet({
   const canSend = emailOk && selected.size > 0 && !m.isPending;
   const toggle = (id: string) => setSelected((p) => { const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n; });
 
-  return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-[#f4f1e8]">
-      <header className="flex items-center justify-between border-b border-[#e3ded0] px-5 py-3 pt-[max(env(safe-area-inset-top),0.75rem)]">
-        <button type="button" onClick={onClose} className="text-sm font-medium text-[#5f5e5a]">{t("householdInvite.cancel", "Cancel")}</button>
-        <h2 className="text-base font-medium text-[#1a3d2e]">{t("householdInvite.titleInviteSomeone", "Invite someone")}</h2>
-        <span className="w-12" />
-      </header>
+  const listBox = "overflow-hidden rounded-[20px] border-[1.5px] bg-white";
 
-      <div className="mx-auto w-full max-w-md flex-1 space-y-4 overflow-y-auto px-5 py-5">
+  return (
+    <KyaSheet
+      onClose={onClose}
+      closeLabel={t("householdInvite.close", "Close")}
+      title={<KyaHeading size={24}>{t("householdInvite.titleInviteSomeone", "Invite someone")}</KyaHeading>}
+      footer={
+        <KyaPrimaryButton disabled={!canSend} onClick={() => m.mutate()}>
+          {m.isPending ? t("householdInvite.sending", "Sending…") : t("householdInvite.sendInvite", "Send invite")}
+        </KyaPrimaryButton>
+      }
+    >
+      <div className="flex flex-col gap-4">
         {/* Quick-add from people already in the household (single-bird context). */}
         {targetBirdId && (accountLoading || eligible.length > 0) && (
-          <div>
-            <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#5f5e5a]">{t("householdInvite.alreadyInHousehold", "Already in your household")}</span>
-            <div className="overflow-hidden rounded-[14px] bg-white ring-1 ring-[#e3dcc9]">
+          <div className="flex flex-col gap-1.5">
+            <KyaLabel as="span">{t("householdInvite.alreadyInHousehold", "Already in your household")}</KyaLabel>
+            <div className={listBox} style={{ borderColor: K.line }}>
               {accountLoading ? (
-                <div className="flex items-center gap-2 px-4 py-4 text-sm text-[#8a897f]"><Loader2 className="size-4 animate-spin" /> {t("householdInvite.loading", "Loading…")}</div>
+                <div className="flex items-center gap-2 px-4 py-4 text-[15px]" style={{ color: K.quiet }}><Loader2 className="size-4 animate-spin" /> {t("householdInvite.loading", "Loading…")}</div>
               ) : (
                 eligible.map((m, i) => {
                   const label = m.name?.trim() || m.email || t("householdInvite.householdMember", "Household member");
                   return (
-                    <div key={m.userId} className={`flex min-h-[56px] items-center gap-3 px-4 ${i ? "border-t border-[#ece6d6]" : ""}`}>
-                      <span className="grid size-9 shrink-0 place-items-center rounded-full bg-[#cfe3dc] text-sm font-medium text-[#1a5e3f]">
+                    <div key={m.userId} className="flex min-h-[60px] items-center gap-3 px-4 py-2" style={i ? { borderTop: `1px solid ${K.line}` } : undefined}>
+                      <span className="grid size-9 shrink-0 place-items-center rounded-full text-[13px] font-[700] text-white" style={{ background: K.forest }}>
                         {(label.slice(0, 1) || "?").toUpperCase()}
                       </span>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium text-[#1a3d2e]">{label}</p>
-                        {m.email && m.name && <p className="truncate text-xs text-[#8a897f]">{m.email}</p>}
+                        <p className="m-0 truncate text-[15px] font-[700]">{label}</p>
+                        {m.email && m.name && <p className="m-0 truncate text-[13px]" style={{ color: K.quiet }}>{m.email}</p>}
                       </div>
                       <button
                         type="button"
                         disabled={addingId === m.userId}
                         onClick={() => quickAdd(m)}
-                        className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#1a3d2e] px-3 py-1.5 text-xs font-medium text-white active:scale-95 disabled:opacity-50"
+                        className="inline-flex min-h-[44px] shrink-0 items-center gap-1 rounded-full border-2 bg-white px-4 text-[14px] font-[700] active:scale-95 disabled:opacity-50"
+                        style={{ borderColor: K.forest, color: K.forest }}
                       >
-                        {addingId === m.userId ? <Loader2 className="size-3.5 animate-spin" /> : <Plus className="size-3.5" />} {t("householdInvite.add", "Add")}
+                        {addingId === m.userId ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />} {t("householdInvite.add", "Add")}
                       </button>
                     </div>
                   );
                 })
               )}
             </div>
-            <div className="mt-4 flex items-center gap-3">
-              <div className="h-px flex-1 bg-[#e3ded0]" />
-              <span className="text-[11px] font-medium uppercase tracking-wider text-[#8a897f]">{t("householdInvite.orInviteNew", "or invite someone new")}</span>
-              <div className="h-px flex-1 bg-[#e3ded0]" />
+            <div className="mt-3 flex items-center gap-3">
+              <div className="h-px flex-1" style={{ background: K.line }} />
+              <span className="text-[13px] font-[700]" style={{ color: K.quiet }}>{t("householdInvite.orInviteNew", "or invite someone new")}</span>
+              <div className="h-px flex-1" style={{ background: K.line }} />
             </div>
           </div>
         )}
 
-        <p className="text-sm text-[#5f5e5a]">{t("householdInvite.intro", "They'll get an email invite to create an account and help care for your birds.")}</p>
+        <p className="m-0 text-[15px] leading-[1.5]" style={{ color: K.ink }}>{t("householdInvite.intro", "They'll get an email invite to create an account and help care for your birds.")}</p>
 
-        <label className="block">
-          <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#5f5e5a]">{t("householdInvite.email", "Email")}</span>
-          <input className="input" type="email" inputMode="email" autoCapitalize="off" autoCorrect="off" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="partner@example.com" />
-        </label>
-        <label className="block">
-          <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#5f5e5a]">{t("householdInvite.theirName", "Their name (optional)")}</span>
-          <input className="input" value={name} maxLength={120} onChange={(e) => setName(e.target.value)} placeholder={t("householdInvite.namePlaceholder", "e.g. Daniel")} />
-        </label>
+        <div className="flex flex-col gap-1.5">
+          <KyaLabel htmlFor="invite-email" required requiredLabel={t("householdInvite.required", "Required")}>{t("householdInvite.email", "Email")}</KyaLabel>
+          <input id="invite-email" className="kya-input" type="email" inputMode="email" autoCapitalize="off" autoCorrect="off" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="partner@example.com" />
+        </div>
+        <div className="flex flex-col gap-1.5">
+          <KyaLabel htmlFor="invite-name">{t("householdInvite.theirName", "Their name (optional)")}</KyaLabel>
+          <input id="invite-name" className="kya-input" value={name} maxLength={120} onChange={(e) => setName(e.target.value)} placeholder={t("householdInvite.namePlaceholder", "e.g. Daniel")} />
+        </div>
 
-        <div>
-          <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#5f5e5a]">{t("householdInvite.whichBirds", "Which birds can they access?")}</span>
-          <div className="overflow-hidden rounded-[14px] bg-white ring-1 ring-[#e3dcc9]">
+        <div className="flex flex-col gap-1.5">
+          <KyaLabel as="span">{t("householdInvite.whichBirds", "Which birds can they access?")}</KyaLabel>
+          <div className={listBox} style={{ borderColor: K.line }}>
             {birds.map((b, i) => (
-              <label key={b.id} className={`flex min-h-[48px] cursor-pointer items-center gap-3 px-4 ${i ? "border-t border-[#ece6d6]" : ""}`}>
-                <input type="checkbox" checked={selected.has(b.id)} onChange={() => toggle(b.id)} className="size-4 accent-[#1a3d2e]" />
-                <span className="text-sm text-[#1a3d2e]">{b.name}</span>
+              <label key={b.id} className="flex min-h-[52px] cursor-pointer items-center gap-3 px-4" style={i ? { borderTop: `1px solid ${K.line}` } : undefined}>
+                <input type="checkbox" checked={selected.has(b.id)} onChange={() => toggle(b.id)} className="size-5 shrink-0 accent-[#1a3d2e]" />
+                <span className="text-[15px] font-[700]">{b.name}</span>
               </label>
             ))}
           </div>
         </div>
 
-        <div>
-          <span className="mb-1 block text-[11px] font-semibold uppercase tracking-wider text-[#5f5e5a]">{t("householdInvite.permissionLevel", "Permission level")}</span>
-          <div className="overflow-hidden rounded-[14px] bg-white ring-1 ring-[#e3dcc9]">
+        <div className="flex flex-col gap-1.5">
+          <KyaLabel as="span">{t("householdInvite.permissionLevel", "Permission level")}</KyaLabel>
+          <div className={listBox} style={{ borderColor: K.line }}>
             {ASSIGNABLE_PRESETS.map((p, i) => (
-              <label key={p} className={`flex min-h-[56px] cursor-pointer items-start gap-3 px-4 py-3 ${i ? "border-t border-[#ece6d6]" : ""}`}>
-                <input type="radio" name="preset" checked={preset === p} onChange={() => setPreset(p)} className="mt-0.5 size-4 shrink-0 accent-[#1a3d2e]" />
+              <label key={p} className="flex min-h-[60px] cursor-pointer items-start gap-3 px-4 py-3" style={i ? { borderTop: `1px solid ${K.line}` } : undefined}>
+                <input type="radio" name="preset" checked={preset === p} onChange={() => setPreset(p)} className="mt-0.5 size-5 shrink-0 accent-[#1a3d2e]" />
                 <span className="min-w-0">
-                  <span className="block text-sm font-medium text-[#1a3d2e]">{presetLabel(p)}</span>
-                  <span className="mt-0.5 block text-xs leading-relaxed text-[#5f5e5a]">{presetDescription(p)}</span>
+                  <span className="block text-[15px] font-[700]">{presetLabel(p)}</span>
+                  <span className="mt-0.5 block text-[13px] leading-[1.45]" style={{ color: K.quiet }}>{presetDescription(p)}</span>
                 </span>
               </label>
             ))}
           </div>
-          <p className="mt-1.5 px-1 text-[11px] text-[#8a897f]">{t("householdInvite.fineTuneHousehold", "You can change this anytime from your household.")}</p>
+          <p className="m-0 px-1 text-[13px]" style={{ color: K.quiet }}>{t("householdInvite.fineTuneHousehold", "You can change this anytime from your household.")}</p>
         </div>
 
-        <div className="rounded-[14px] bg-[#f6e7c4]/40 p-4 ring-1 ring-[#e3dcc9]">
-          <p className="text-[10px] font-bold uppercase tracking-widest text-[#854F0B]">{t("householdInvite.always", "Always")}</p>
-          <ul className="mt-2 space-y-1 text-xs text-[#5f5e5a]">
+        <div className="rounded-[20px] p-4" style={{ background: K.amberBg }}>
+          <p className="m-0 text-[13.5px] font-[700]" style={{ color: K.amberText }}>{t("householdInvite.always", "Always")}</p>
+          <ul className="m-0 mt-2 list-disc space-y-1 pl-5 text-[14px] leading-[1.45]" style={{ color: K.ink }}>
             <li>{t("householdInvite.canView", "They can view each selected bird's care plan, weight, journal, and identity")}</li>
             <li>{t("householdInvite.wontSee", "They won't see your private notes or other people's contact info")}</li>
           </ul>
         </div>
       </div>
-
-      <footer className="border-t border-[#e3ded0] px-5 py-3 pb-[max(env(safe-area-inset-bottom),0.75rem)]">
-        <div className="mx-auto flex max-w-md gap-2">
-          <button type="button" onClick={onClose} className="min-h-[44px] flex-1 rounded-[14px] border border-[#c8bfa6] text-sm font-medium text-[#1a3d2e]">{t("householdInvite.cancel", "Cancel")}</button>
-          <button type="button" disabled={!canSend} onClick={() => m.mutate()} className="min-h-[44px] flex-1 rounded-[14px] bg-[#1a3d2e] text-sm font-medium text-white disabled:opacity-50">
-            {m.isPending ? t("householdInvite.sending", "Sending…") : t("householdInvite.sendInvite", "Send invite")}
-          </button>
-        </div>
-      </footer>
-    </div>
+    </KyaSheet>
   );
 }

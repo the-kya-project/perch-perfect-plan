@@ -183,6 +183,42 @@ select {
 }
 .area { min-height: 70px; }
 
+/* The Kya & Co. field (owner screens): 48px white pill, 1.5px #d5dfd5 border,
+   2px forest border on focus, 15px text, muted placeholder. Text areas get
+   18px corners; selects get a down chevron. `.input` above stays for the
+   screens not yet restyled (sign-in, invite, handoff). */
+.kya-input {
+  width: 100%;
+  min-height: 48px;
+  border-radius: 9999px;
+  background: #fff;
+  border: 1.5px solid #d5dfd5;
+  padding: 0 18px;
+  font-size: 15px;
+  color: #1a3d2e;
+  outline: none;
+}
+.kya-input:focus {
+  border-color: #1a3d2e;
+  box-shadow: inset 0 0 0 0.5px #1a3d2e;
+}
+.kya-input::placeholder { color: #8a958e; }
+.kya-input:disabled { opacity: 0.6; }
+textarea.kya-input {
+  border-radius: 18px;
+  padding: 12px 16px;
+  min-height: 96px;
+  line-height: 1.5;
+}
+select.kya-input {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 44px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='none' stroke='%231a3d2e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 16px center;
+}
+
 /* Reserved bottom space for every owner scroll container under _authenticated.
    Equals nav height + iPhone home-indicator safe area + a comfortable buffer,
    so the last actionable element is never clipped by the OwnerTabBar. */
@@ -279,3 +315,5 @@ input[type="date"]::-webkit-date-and-time-value {
   outline: 3px solid #2d6a4f;
   outline-offset: 3px;
 }
+/* Fields show focus with their own forest border. */
+.setup-frame .kya-input:focus-visible { outline: none; }

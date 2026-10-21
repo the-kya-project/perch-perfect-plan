@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft, Phone, Loader2, ChevronRight } from "lucide-react";
-import { PathDetail, type PassingPath, type VetContact } from "@/components/PassingGuidance";
+import { PathDetail, type GuidanceLook, type PassingPath, type VetContact } from "@/components/PassingGuidance";
+import { K, KyaHeading, KyaTag } from "@/components/kya";
 
 // The ONE "something's wrong" flow — pause screen → path choice → path detail.
 // Rendered by BOTH the token sitter route and the authenticated covering-member
@@ -9,7 +10,7 @@ import { PathDetail, type PassingPath, type VetContact } from "@/components/Pass
 // copy as a sitter-link account. The host supplies chrome + the pause action;
 // this owns the exact strings. Copy-exact: do not paraphrase.
 export function ConcernFlow({
-  name, ownerName, ownerPhone, vet, paused, onPause, pausePending,
+  name, ownerName, ownerPhone, vet, paused, onPause, pausePending, look,
 }: {
   name: string;
   ownerName: string;
@@ -20,6 +21,9 @@ export function ConcernFlow({
   paused: boolean;
   onPause: () => void;
   pausePending: boolean;
+  /** "kya" = the owner app's current look (covering household member). Leave
+   *  unset on the sitter route so its rendering stays exactly as it is. */
+  look?: GuidanceLook;
 }) {
   const { t } = useTranslation();
   // Literal-key path-choice labels (moved off PassingGuidance's module-scope
@@ -37,6 +41,13 @@ export function ConcernFlow({
   useEffect(() => {
     if (paused && step === "pause") setStep("paths");
   }, [paused, step]);
+
+  if (look === "kya") return (
+    <KyaConcernSteps
+      step={step} setStep={setStep} name={name} ownerName={ownerName} ownerPhone={ownerPhone}
+      vet={vet} onPause={onPause} pausePending={pausePending} pathChoiceLabel={pathChoiceLabel}
+    />
+  );
 
   if (step === "pause") {
     return (
@@ -103,6 +114,98 @@ export function ConcernFlow({
         <ArrowLeft className="size-4" /> {t("concernFlow.back", "Back")}
       </button>
       <PathDetail path={step} name={name} ownerName={ownerName} vet={vet} audience="sitter" />
+    </div>
+  );
+}
+
+// Owner-app rendering of the same three steps — identical strings and actions,
+// current text styles: Newsreader headings, 15px K.ink body, sunflower call
+// button, amber "Reminders paused" tag.
+function KyaConcernSteps({
+  step, setStep, name, ownerName, ownerPhone, vet, onPause, pausePending, pathChoiceLabel,
+}: {
+  step: "pause" | "paths" | PassingPath;
+  setStep: (s: "pause" | "paths" | PassingPath) => void;
+  name: string;
+  ownerName: string;
+  ownerPhone: string | null;
+  vet: VetContact;
+  onPause: () => void;
+  pausePending: boolean;
+  pathChoiceLabel: (p: PassingPath, birdName: string) => string;
+}) {
+  const { t } = useTranslation();
+  const body = "m-0 text-[15px] leading-[1.5]";
+
+  if (step === "pause") {
+    return (
+      <div className="flex flex-col gap-4" style={{ color: K.forest }}>
+        <KyaHeading size={24}>{t("concernFlow.pauseTitle", "Is {{name}} okay?", { name })}</KyaHeading>
+        <p className={body} style={{ color: K.ink }}>
+          {t("concernFlow.pauseBody", "If {{name}} has passed or is in serious trouble, call {{ownerName}} first. We can pause {{name}}'s reminders so your phone isn't asking you to check on them.", { name, ownerName })}
+        </p>
+        {ownerPhone && (
+          <a
+            href={`tel:${ownerPhone}`}
+            className="inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full border-2 px-6 text-[16px] font-[700] active:scale-[0.99]"
+            style={{ background: K.sunflower, borderColor: K.forest, color: K.forest }}
+          >
+            <Phone className="size-5" /> {t("concernFlow.callOwner", "Call {{ownerName}}", { ownerName })}
+          </a>
+        )}
+        <button
+          type="button"
+          disabled={pausePending}
+          onClick={onPause}
+          className="inline-flex min-h-[48px] w-full items-center justify-center rounded-full border-2 bg-white px-4 text-[15px] font-[700] active:scale-[0.99] disabled:opacity-60"
+          style={{ borderColor: K.forest, color: K.forest }}
+        >
+          {pausePending ? <Loader2 className="size-4 animate-spin" /> : t("concernFlow.pauseButton", "Pause {{name}}'s reminders", { name })}
+        </button>
+        <p className="m-0 text-[13.5px] leading-[1.5]" style={{ color: K.quiet }}>
+          {t("concernFlow.pauseFootnote", "Pausing won't change {{name}}'s record. {{ownerName}} decides what happens next.", { name, ownerName })}
+        </p>
+      </div>
+    );
+  }
+
+  if (step === "paths") {
+    return (
+      <div className="flex flex-col gap-4" style={{ color: K.forest }}>
+        <div><KyaTag tone="amber">{t("concernFlow.pausedBadge", "Reminders paused · {{ownerName}} notified", { ownerName })}</KyaTag></div>
+        <KyaHeading size={24}>{t("concernFlow.pathsTitle", "Thank you for caring for {{name}}.", { name })}</KyaHeading>
+        <p className={body} style={{ color: K.ink }}>
+          {t("concernFlow.pathsBody", "{{ownerName}} would rather you have this here than talk it through right now. Tap what {{ownerName}} asked you to do.", { ownerName })}
+        </p>
+        <div className="overflow-hidden rounded-[16px] border" style={{ borderColor: K.line }}>
+          {(["necropsy", "burial", "vet"] as PassingPath[]).map((p, i, all) => (
+            <button
+              key={p}
+              type="button"
+              onClick={() => { setStep(p); window.scrollTo(0, 0); }}
+              className="flex min-h-[60px] w-full items-center gap-3 bg-white px-4 py-3 text-left active:bg-black/[0.03]"
+              style={{ borderBottom: i === all.length - 1 ? undefined : `1px solid ${K.line}`, color: K.forest }}
+            >
+              <span className="flex-1 text-[15px] font-[700]">{pathChoiceLabel(p, name)}</span>
+              <ChevronRight className="size-[18px] shrink-0" style={{ color: K.quiet }} aria-hidden="true" />
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-3" style={{ color: K.forest }}>
+      <button
+        type="button"
+        onClick={() => { setStep("paths"); window.scrollTo(0, 0); }}
+        className="inline-flex min-h-[44px] items-center gap-1.5 self-start text-[15px] font-[700]"
+        style={{ color: K.moss }}
+      >
+        <ArrowLeft className="size-4" /> {t("concernFlow.back", "Back")}
+      </button>
+      <PathDetail path={step} name={name} ownerName={ownerName} vet={vet} audience="sitter" look="kya" />
     </div>
   );
 }

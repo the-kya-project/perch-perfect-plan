@@ -15,25 +15,31 @@ export function ageLabel(t: TFunction, age: string): string {
   return n === 1 ? t("birdPickers.ageYearsOne", "{{n}} year", { n }) : t("birdPickers.ageYearsOther", "{{n}} years", { n });
 }
 
-export function BirdField({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+/** The shared field: 13.5px bold sentence-case label (plus a forest
+ *  "Required" tag when required), an optional muted hint, then the control. */
+export function BirdField({ label, hint, required, children }: { label: string; hint?: string; required?: boolean; children: React.ReactNode }) {
+  const { t } = useTranslation();
   return (
-    <label className="block">
-      <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-sage-600">{label}</span>
-      {hint && <span className="mb-1 block text-[11px] text-sage-600">{hint}</span>}
+    <label className="flex flex-col gap-1.5">
+      <span className="flex flex-wrap items-center gap-2 text-[13.5px] font-[700] text-[#1a3d2e]">
+        {label}
+        {required && <span className="rounded-full bg-[#1a3d2e] px-2 py-[1px] text-[11.5px] font-[700] text-white">{t("birdPickers.required", "Required")}</span>}
+      </span>
+      {hint && <span className="text-[13px] leading-[1.4] text-[#5f5e5a]">{hint}</span>}
       {children}
     </label>
   );
 }
 
-export function SpeciesPicker({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+export function SpeciesPicker({ value, onChange, required }: { value: string; onChange: (v: string) => void; required?: boolean }) {
   const known = PARROT_SPECIES.includes(value);
   const isOther = value !== "" && !known;
   const { t } = useTranslation();
   const [mode, setMode] = useState<"known" | "other">(isOther ? "other" : "known");
   return (
-    <BirdField label={t("birdPickers.species", "Species")}>
+    <BirdField label={t("birdPickers.species", "Species")} required={required}>
       <select
-        className="input"
+        className="kya-input"
         value={mode === "other" ? "__other__" : value}
         onChange={(e) => {
           if (e.target.value === "__other__") { setMode("other"); onChange(""); }
@@ -50,7 +56,7 @@ export function SpeciesPicker({ value, onChange }: { value: string; onChange: (v
       </select>
       {mode === "other" && (
         <input
-          className="input mt-2"
+          className="kya-input mt-2"
           placeholder={t("birdPickers.enterSpecies", "Enter species")}
           value={value}
           onChange={(e) => onChange(e.target.value)}
@@ -69,7 +75,7 @@ export function OptionalDate({
   onChange,
   max,
   addLabel: addLabelProp,
-  inputClassName = "input",
+  inputClassName = "kya-input",
 }: {
   value: string;
   onChange: (v: string) => void;
@@ -126,7 +132,7 @@ export function OptionalDate({
     );
   }
   return (
-    <button type="button" onClick={() => setPicking(true)} className={`${inputClassName} flex items-center text-left text-[#9a978c]`}>
+    <button type="button" onClick={() => setPicking(true)} className={`${inputClassName} flex items-center text-left text-[#8a958e]`}>
       {addLabel}
     </button>
   );
@@ -142,7 +148,7 @@ export function AgePicker({ age, birthDate, onChange, layout = "grid" }: { age: 
     <div className={layout === "stacked" ? "space-y-3" : "grid grid-cols-2 gap-3"}>
       <BirdField label={t("birdPickers.age", "Age")} hint={hasBirth ? t("birdPickers.fromHatchDate", "From hatch date") : undefined}>
         <select
-          className="input disabled:opacity-60"
+          className="kya-input"
           disabled={hasBirth}
           value={hasBirth ? (computed ?? "") : age}
           onChange={(e) => onChange({ age: e.target.value, birthDate: null })}
