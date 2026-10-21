@@ -49,6 +49,9 @@ function SitPreview() {
   });
 
   const household = hasState ? !!state.previewHousehold : !!data?.sit?.caregiver_user_id;
+  // Opened without the sit card's state (a reload, an old link) and the sit
+  // isn't there: it was deleted. Say so, rather than the household message.
+  const missing = !hasState && !isLoading && !data?.sit;
   const token = (hasState ? state.previewToken : data?.sit?.invite_token) as string | null | undefined;
   const label = (hasState ? state.previewLabel : data?.label) || t("sitPreview.they", "they");
   const src = token ? `/sitter/${token}?preview=1` : null;
@@ -90,6 +93,21 @@ function SitPreview() {
               <Loader2 className="size-4 animate-spin" /> {t("sitPreview.loading", "Loading preview…")}
             </div>
           )}
+        </div>
+      ) : missing ? (
+        <div className="grid flex-1 place-items-center p-6 text-center">
+          <div className="max-w-[34ch]">
+            <p className="t-body text-[var(--ink2)]">
+              {t("sitPreview.sitGone", "This sit was deleted, so there's nothing to preview.")}
+            </p>
+            <button
+              type="button"
+              onClick={() => navigate({ to: "/sits" })}
+              className="mt-4 inline-flex min-h-[44px] items-center justify-center rounded-[12px] bg-[var(--ink)] px-[18px] text-[15px] font-[500] text-white"
+            >
+              {t("sitPreview.backToSits", "Back to Sits")}
+            </button>
+          </div>
         </div>
       ) : (
         // Household caregivers don't use a token view — they see the in-app

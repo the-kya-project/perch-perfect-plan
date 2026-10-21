@@ -8913,6 +8913,9 @@
     "sitLink.needYourPhone": {
       "stamp": "164ce4961523b9c9"
     },
+    "sitPreview.backToSits": {
+      "stamp": "85512a735ad0bfcd"
+    },
     "sitPreview.caregiverBanner": {
       "stamp": "518c204ab05d6943"
     },
@@ -8930,6 +8933,9 @@
     },
     "sitPreview.seeActivity": {
       "stamp": "e755cd61b183a215"
+    },
+    "sitPreview.sitGone": {
+      "stamp": "86845a71432bb13f"
     },
     "sitPreview.sits": {
       "stamp": "26a4b593fb834d48"

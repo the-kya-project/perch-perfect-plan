@@ -4,6 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSitterContext } from "./route";
 import { submitHealthScan, getSitterScans } from "@/lib/sitter.functions";
+import { isOwnerPreview } from "@/lib/sitterPreviewMode";
 import { SCAN_FIELDS, type ScanAnswer, type ScanFieldKey, computeTriage } from "@/lib/triage";
 import { ScanForm, type ScanSubmit } from "@/components/ScanForm";
 import { scanQuestion } from "@/lib/scanFieldLabels";
@@ -78,6 +79,7 @@ function ScanPage() {
           photoDataUrl: p.photoDataUrl,
           weightGrams: p.weightGrams,
           today: localDateISO(),
+          preview: isOwnerPreview(),
         },
       }),
     onSuccess: (res, p) => {
