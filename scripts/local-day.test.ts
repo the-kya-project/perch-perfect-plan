@@ -13,7 +13,7 @@
  * failure so it can gate a merge.
  */
 import assert from "node:assert/strict";
-import { localDateISO, resolveToday } from "@/lib/localDay";
+import { localDateISO, resolveToday, parseCalendarDate } from "@/lib/localDay";
 
 let passed = 0;
 function check(name: string, fn: () => void) {
@@ -71,6 +71,21 @@ check("the server ignores anything that isn't a plain date", () => {
   assert.equal(resolveToday("tomorrow"), today);
   assert.equal(resolveToday(`${today}T00:00:00Z`), today);
   assert.equal(resolveToday("2026-13-45"), today);
+});
+
+check("a date-only value stays on its calendar day west of UTC", () => {
+  // new Date("2026-05-12") is UTC midnight: May 11 in Los Angeles.
+  const d = inZone("America/Los_Angeles", () => parseCalendarDate("2026-05-12"));
+  assert.ok(d);
+  assert.equal(inZone("America/Los_Angeles", () => localDateISO(d)), "2026-05-12");
+  assert.equal(inZone("Pacific/Kiritimati", () => localDateISO(parseCalendarDate("2026-05-12")!)), "2026-05-12");
+});
+
+check("timestamps parse as usual; empty and invalid give null", () => {
+  assert.equal(parseCalendarDate("2026-10-19T02:30:00Z")?.toISOString(), "2026-10-19T02:30:00.000Z");
+  assert.equal(parseCalendarDate(null), null);
+  assert.equal(parseCalendarDate(""), null);
+  assert.equal(parseCalendarDate("someday"), null);
 });
 
 console.log(`\n${passed} passed${process.exitCode ? " — WITH FAILURES" : ""}`);

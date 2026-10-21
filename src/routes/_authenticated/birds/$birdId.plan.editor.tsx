@@ -8,6 +8,7 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { purgeBirdMedia } from "@/lib/birdMedia.functions";
+import { resolveHouseholdNames } from "@/lib/home.functions";
 import { birdMediaPurgeFailedText } from "@/lib/i18n/serverErrors";
 import { activeOwnerBirdsMin } from "@/lib/activeBirds";
 import { Trash2, ChevronDown, AlertTriangle, Eye } from "lucide-react";
@@ -448,6 +449,8 @@ function SitsPanel({ birdId, sits, onChange }: { birdId: string; sits: any[]; on
 function LogsPanel({ birdId, initialScan }: { birdId: string; initialScan?: string }) {
   const { t } = useTranslation();
   const [expandedScan, setExpandedScan] = useState<string | null>(initialScan ?? null);
+  const { data: myPerms } = useMyPermissions();
+  const role = useBirdRole(birdId);
 
   // Deep link from a notification: expand and scroll to that scan once rendered.
   useEffect(() => {
@@ -505,7 +508,30 @@ function LogsPanel({ birdId, initialScan }: { birdId: string; initialScan?: stri
     { col: "injury_status", label: t("planEditor.scanInjury", "No injury, fall, bite, or scratch") },
     { col: "exposure_status", label: t("planEditor.scanExposure", "No exposure to fumes / unsafe items") },
   ];
-  const sitterLabel = (d: any) => d.sit?.sitter_name || d.sit?.sitter_email || t("planEditor.sitter", "Sitter");
+  // Who ran each check. daily_logs.source is owner | household | sitter;
+  // run_by is the signed-in user who ran it (null for a sitter link, and on
+  // owner checks from before run_by existed); sit_id ties sitter checks to the
+  // sit, whose sitter_name we already join. Other people's names come from
+  // resolveHouseholdNames: profiles RLS is self-only, so they can't be read here.
+  const myId = myPerms?.myId ?? null;
+  const runByIds = [...new Set(daily.map((d: any) => d.run_by as string | null).filter((id): id is string => !!id && id !== myId))].sort();
+  const resolveNames = useServerFn(resolveHouseholdNames);
+  const { data: runByNames = {} } = useQuery({
+    queryKey: ["check-runner-names", runByIds.join(",")],
+    enabled: runByIds.length > 0,
+    staleTime: 5 * 60_000,
+    queryFn: () => resolveNames({ data: { userIds: runByIds } }),
+  });
+  const isMine = (d: any) => (!!myId && d.run_by === myId) || (d.source === "owner" && !d.run_by && role === "owner");
+  const loggerLabel = (d: any): string => {
+    if (isMine(d)) return t("planEditor.loggedByYou", "You");
+    if (d.source === "sitter") return d.sit?.sitter_name || d.sit?.sitter_email || t("planEditor.sitter", "Sitter");
+    const who = d.run_by ? (runByNames as Record<string, { name: string | null; email: string | null }>)[d.run_by] : undefined;
+    if (who?.name || who?.email) return (who.name || who.email) as string;
+    if (d.source === "owner") return t("planEditor.loggedByOwner", "Owner");
+    if (d.source === "household") return t("planEditor.loggedByHousehold", "Household member");
+    return t("planEditor.loggedBySomeone", "Someone");
+  };
   const severityRank = (s: string) => (s === "red" ? 0 : s === "yellow" ? 1 : 2);
   const sortedDaily = [...daily].sort((a: any, b: any) => {
     const r = severityRank(a.triage_status) - severityRank(b.triage_status);
@@ -525,7 +551,7 @@ function LogsPanel({ birdId, initialScan }: { birdId: string; initialScan?: stri
       <Disclaimer compact />
 
       <KyaCard className="p-4">
-        <KyaHeading size={19}>{t("planEditor.healthChecksFromSitters", "Health checks from sitters")}</KyaHeading>
+        <KyaHeading size={19}>{t("planEditor.healthChecks", "Health checks")}</KyaHeading>
         {daily.length === 0 ? (
           <p className="m-0 mt-2 text-[15px]" style={{ color: K.quiet }}>{t("planEditor.noHealthChecks", "No health checks logged yet.")}</p>
         ) : (
@@ -568,7 +594,7 @@ function LogsPanel({ birdId, initialScan }: { birdId: string; initialScan?: stri
                           )}
                         </div>
                         <p className="m-0 mt-1 text-[13px]" style={{ color: K.quiet }}>
-                          {formatLocalDateTime(new Date(d.created_at), { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })} · {sitterLabel(d)}
+                          {formatLocalDateTime(new Date(d.created_at), { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })} · {loggerLabel(d)}
                         </p>
                       </div>
                     </div>
@@ -579,7 +605,11 @@ function LogsPanel({ birdId, initialScan }: { birdId: string; initialScan?: stri
                       {notSureItems.length > 0 && (
                         <div className="rounded-[14px] p-3" style={{ background: K.amberBg }}>
                           <KyaTag tone="amber">{t("planEditor.awaitingResponse", "Awaiting your response")}</KyaTag>
-                          <p className="m-0 mt-2 text-[14px] leading-[1.45]" style={{ color: K.amberText }}>{t("planEditor.sitterNotSure", "{{sitter}} wasn't sure about these and is looking for your input:", { sitter: sitterLabel(d) })}</p>
+                          <p className="m-0 mt-2 text-[14px] leading-[1.45]" style={{ color: K.amberText }}>
+                            {isMine(d)
+                              ? t("planEditor.youNotSure", "You weren't sure about these:")
+                              : t("planEditor.sitterNotSure", "{{sitter}} wasn't sure about these and is looking for your input:", { sitter: loggerLabel(d) })}
+                          </p>
                           <ul className="m-0 mt-1.5 list-disc space-y-0.5 pl-5 text-[14px] font-[700]" style={{ color: K.amberText }}>
                             {notSureItems.map((f) => <li key={f.col}>{f.label}</li>)}
                           </ul>
@@ -606,7 +636,7 @@ function LogsPanel({ birdId, initialScan }: { birdId: string; initialScan?: stri
                       )}
                       {d.notes && (
                         <div>
-                          <LogLabel>{t("planEditor.sitterNotes", "Sitter notes")}</LogLabel>
+                          <LogLabel>{d.source === "sitter" ? t("planEditor.sitterNotes", "Sitter notes") : t("planEditor.checkNotes", "Notes")}</LogLabel>
                           <p className="m-0 mt-1 text-[14px] italic leading-[1.5]" style={{ color: K.ink }}>"{d.notes}"</p>
                         </div>
                       )}
