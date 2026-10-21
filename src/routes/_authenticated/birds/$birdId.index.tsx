@@ -339,7 +339,7 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
 
   return (
     <>
-      <SummaryCard birdId={birdId} weights={weights} today={dailyToday?.[birdId]} canCheck={canHealth} planExists={!!bird?.setup_complete} />
+      <SummaryCard birdId={birdId} weights={weights} today={dailyToday?.[birdId]} canCheck={canHealth} planExists={bird ? !!bird.setup_complete : true} />
 
       {/* Fresh bird → guide straight into the care plan. Prominent but skippable. */}
       {bird && !bird.setup_complete && canEditPlan && (

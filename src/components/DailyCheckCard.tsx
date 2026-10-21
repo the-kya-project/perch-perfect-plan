@@ -420,7 +420,7 @@ export function DailyCheckCard({
                 {anyConcerning && (
                   // Amber, like the answer; red only when it's a call-the-vet-today sign.
                   <p className="m-0 rounded-[14px] px-3.5 py-3 text-[14px] leading-[1.45]" style={concerningRed ? { background: C.redFill, color: C.redInk } : { background: C.amberFill, color: C.amberInk }}>
-                    <b className="font-[700]">{t("dailyCheck.concerningSigns", "Concerning signs")}</b>{" "}
+                    <b className="block font-[700]">{t("dailyCheck.concerningSigns", "Concerning signs")}</b>
                     {concerningRed
                       ? t("dailyCheck.concerningRed", "Call your avian vet today. We'll keep this flagged on {{name}}'s page.", { name })
                       : t("dailyCheck.concerningWatch", "Keep a close eye, and call your avian vet if it continues. We'll keep this flagged on {{name}}'s page.", { name })}

@@ -56,12 +56,12 @@ function NewSit() {
   const { bird } = Route.useSearch();
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const { owned, loading } = useOwnedBirds();
+  const { owned, loading, failed } = useOwnedBirds();
   const refresh = useRefreshSits();
   const close = () => navigate({ to: "/sits" });
   // Never "Loading…" forever: after 10 s, offer a retry (emergency.tsx pattern).
-  const { tooLong, restart } = useTooLong(loading);
+  const { tooLong, restart } = useTooLong(loading && !failed);
   const retry = () => { restart(); void qc.refetchQueries({ type: "active" }); };
-  if (loading) return <SitFormLoading onClose={close} failed={tooLong} onRetry={retry} />;
+  if (loading || failed) return <SitFormLoading onClose={close} failed={failed || tooLong} onRetry={retry} />;
   return <SitForm birds={owned} preselectBirdId={bird} onSaved={refresh} onClose={close} />;
 }

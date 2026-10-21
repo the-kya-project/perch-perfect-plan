@@ -60,11 +60,13 @@ export function ClipPlayer({
   const refreshingRef = useRef(false);
   const iframeLoadedRef = useRef(false);
 
-  // A new clip from the parent resets the player and the retry budget.
+  // A new src from the parent resets the player — but NOT the retry budget:
+  // refreshSrc often refetches the parent, which re-signs this same clip and
+  // passes a new URL, and resetting the budget there would loop forever on a
+  // clip that never loads. One auto-refresh per mount is the budget.
   useEffect(() => {
     setCurrentSrc(src);
     setState("loading");
-    retriedRef.current = false;
   }, [src]);
 
   // On a load/playback failure: refresh the signed link once through the
@@ -98,7 +100,7 @@ export function ClipPlayer({
   // is lazy-loaded, so the clock only starts once the player is actually on
   // screen — an offscreen clip that hasn't begun loading is not a failure.
   useEffect(() => {
-    if (!stream || state === "error") return;
+    if (!stream) return;
     iframeLoadedRef.current = false;
     let timer: number | null = null;
     const arm = () => {
@@ -122,7 +124,7 @@ export function ClipPlayer({
       io?.disconnect();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stream, currentSrc, attempt, state]);
+  }, [stream, currentSrc, attempt]);
 
   const errorOverlay = (
     <div className="absolute inset-0 grid place-items-center p-4 text-center text-white" style={{ background: OVERLAY_DARK }} role="alert">
@@ -142,23 +144,25 @@ export function ClipPlayer({
   if (stream) {
     return (
       <div ref={frameRef} className={`relative overflow-hidden bg-black ${className}`}>
-        {state !== "error" && (
-          <iframe
-            key={attempt}
-            src={currentSrc}
-            title={label ?? t("clipPlayer.clip", "Clip")}
-            loading="lazy"
-            className="size-full"
-            style={{ border: 0 }}
-            allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
-            allowFullScreen
-            onLoad={() => {
-              iframeLoadedRef.current = true;
-              if (!firedRef.current) { firedRef.current = true; track("clip_viewed", { has_label: !!label }); }
-            }}
-            onError={() => void handleLoadFailure()}
-          />
-        )}
+        {/* Stays mounted under the error overlay: the watchdog can't tell a dead
+            link from a slow one, so a load that finishes late clears the error
+            instead of having its download thrown away. */}
+        <iframe
+          key={attempt}
+          src={currentSrc}
+          title={label ?? t("clipPlayer.clip", "Clip")}
+          loading="lazy"
+          className="size-full"
+          style={{ border: 0 }}
+          allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+          allowFullScreen
+          onLoad={() => {
+            iframeLoadedRef.current = true;
+            setState((s) => (s === "error" ? "ready" : s));
+            if (!firedRef.current) { firedRef.current = true; track("clip_viewed", { has_label: !!label }); }
+          }}
+          onError={() => void handleLoadFailure()}
+        />
         {state === "error" && errorOverlay}
       </div>
     );

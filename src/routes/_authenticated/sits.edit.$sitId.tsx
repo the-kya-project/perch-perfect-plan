@@ -18,7 +18,7 @@ function EditSit() {
   const { sitId } = Route.useParams();
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const { owned, loading } = useOwnedBirds();
+  const { owned, loading, failed: birdsFailed } = useOwnedBirds();
   const refresh = useRefreshSits();
   const sitQ = useQuery({
     queryKey: ["sit-edit", sitId],
@@ -37,10 +37,11 @@ function EditSit() {
   // Close) instead of a blank screen; a failed load — or one still waiting
   // after 10 s — offers a retry rather than hanging forever.
   const waiting = loading || (!sit && !sitQ.isError);
-  const { tooLong, restart } = useTooLong(waiting && !missing && !sitQ.isError);
+  const failed = sitQ.isError || birdsFailed;
+  const { tooLong, restart } = useTooLong(waiting && !missing && !failed);
   const retry = () => { restart(); void qc.refetchQueries({ type: "active" }); };
-  if (missing || waiting || sitQ.isError || !sit) {
-    return <SitFormLoading editing onClose={close} failed={sitQ.isError || tooLong} onRetry={retry} />;
+  if (missing || waiting || failed || !sit) {
+    return <SitFormLoading editing onClose={close} failed={failed || tooLong} onRetry={retry} />;
   }
   return <SitForm key={sit.id} birds={owned} editSit={sit} onSaved={refresh} onClose={close} />;
 }

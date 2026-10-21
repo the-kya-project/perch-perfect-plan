@@ -403,7 +403,15 @@ function BirdSetup() {
   }
 
   async function onBack() {
-    if (atStopPoint) { setAtStopPoint(false); setStep(setupStepNumber("health")); return; }
+    if (atStopPoint) {
+      // Persist too: the stop point showed after the saved step already
+      // advanced past Health, and a resume should land where the user is.
+      setAtStopPoint(false);
+      const health = setupStepNumber("health");
+      const ok = await persistStep(health);
+      if (ok) setStep(health);
+      return;
+    }
     if (SETUP_STEPS[step - 1]?.key === "food" && foodPage === 2) {
       if (!(await flushPending())) return;
       setFoodPage(1);

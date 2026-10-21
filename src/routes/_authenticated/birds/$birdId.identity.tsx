@@ -149,7 +149,8 @@ function IdentityFacet() {
   const [formDirty, setFormDirty] = useState(false);
   const stopEditing = useCallback(() => {
     setFormDirty(false);
-    navigate({ to: "/birds/$birdId/identity", params: { birdId }, search: {} });
+    // Replace, so the browser Back button doesn't reopen the edit form.
+    navigate({ to: "/birds/$birdId/identity", params: { birdId }, search: {}, replace: true });
   }, [navigate, birdId]);
   const { requestClose, guard: leaveGuard } = useLeaveGuard(formDirty, stopEditing);
 
