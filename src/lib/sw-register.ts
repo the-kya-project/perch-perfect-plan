@@ -39,94 +39,93 @@ async function unregisterAppWorkers() {
 }
 
 /**
- * Recover from "chunk 404 after deploy". When a client is running an older
- * build and code-splits to a lazily-imported chunk, the hashed filename it asks
- * for may have been removed by a newer deploy → 404 → the dynamic import throws
- * and the view fails to render (e.g. the sitter preview, which renders inside an
- * iframe the active SW still controls). Vite fires `vite:preloadError` for this;
- * we reload to pull the current build (the shell is fetched network-first, so
- * the reload lands on fresh chunk names).
+ * Recover from a code file that won't load — the "chunk 404 after deploy"
+ * case, or a device whose cache is holding a bad copy of a file.
  *
- * ONE retry is not enough. A Vercel production alias swap can leave chunks
- * briefly unfetchable for longer than a single reload round-trip, so a one-shot
- * guard spends its only attempt mid-swap and then surfaces "This page didn't
- * load" for a condition that clears itself seconds later — seen 2026-09-28,
- * ~90s after a prod deploy, on the vet-summary route. So we spend a small
- * budget of reloads with backoff instead. A genuinely broken build still
- * reaches the error screen, just ~17s of waiting later rather than ~10s.
+ * ONE automatic attempt, then a "Something went wrong" screen with a Reload
+ * button. Never a loop. On 2026-10-21 the iOS app looped (spinner, black,
+ * spinner…) for minutes: a dashboard code file failed to load on that phone,
+ * the old recovery reloaded with backoff, and because every reload asked the
+ * same broken cache for the same file, it failed the same way each time; the
+ * budget reset after a minute and the cycle started over.
+ *
+ * So the single attempt is a HARD reset (unregister the service worker, clear
+ * every Cache Storage entry, cache-busted page load), which is the only reload
+ * with a real chance of landing on different bytes. If the page that comes
+ * back still can't load its code, the attempt is spent and the person gets the
+ * error screen instead of another reload. The attempt is stored in
+ * localStorage (sessionStorage doesn't reliably survive the native shell's
+ * reloads) and cleared once the app has stayed up for a few seconds, so a
+ * future failure, days later, gets its own attempt.
  */
-const CHUNK_RELOAD_KEY = "chunk-reload-state";
-/** Wait before each successive recovery reload; the length is the attempt budget. */
-const RELOAD_BACKOFF_MS = [1_000, 4_000, 12_000];
-/** Failures further apart than this are separate incidents — the budget resets. */
-const INCIDENT_WINDOW_MS = 60_000;
+const AUTO_RELOAD_KEY = "kya-auto-reload";
+/** An automatic reload this recent, with no healthy run since, is "spent". */
+const AUTO_RELOAD_WINDOW_MS = 5 * 60_000;
+/** How long the app must stay up before the attempt is handed back. */
+const HEALTHY_AFTER_MS = 8_000;
 
-type ReloadState = { n: number; at: number };
-
-function readReloadState(): ReloadState {
-  const empty = { n: 0, at: 0 };
-  if (typeof window === "undefined") return empty;
+function readAutoReloadAt(): number {
+  if (typeof window === "undefined") return 0;
   try {
-    const raw = sessionStorage.getItem(CHUNK_RELOAD_KEY);
-    if (!raw) return empty;
-    const parsed = JSON.parse(raw) as Partial<ReloadState> | null;
-    const n = Number(parsed?.n) || 0;
-    const at = Number(parsed?.at) || 0;
-    // A failure long after the last one is a new incident, not a continuing
-    // one — hand it a full budget rather than the tail of an old attempt.
-    return Date.now() - at > INCIDENT_WINDOW_MS ? empty : { n, at };
+    const at = Number(localStorage.getItem(AUTO_RELOAD_KEY)) || 0;
+    return Date.now() - at < AUTO_RELOAD_WINDOW_MS ? at : 0;
   } catch {
-    return empty;
+    return 0;
   }
 }
 
-/** True once the reload budget is spent — the caller should surface the real
- *  error instead of reloading again. Pure read, safe to call during render. */
+/** True once this device has used its automatic reload and hasn't run
+ *  healthily since — the caller should show the error screen, not reload.
+ *  Pure read, safe to call during render. */
 export function staleChunkRecoveryExhausted(): boolean {
-  return readReloadState().n >= RELOAD_BACKOFF_MS.length;
+  // An attempt claimed by THIS page is in flight, not spent.
+  return readAutoReloadAt() > 0 && !reloadScheduled;
 }
 
-/** At most one scheduled reload per page load: the `vite:preloadError` listener
- *  and the root error boundary both fire for the same failure, and must not
- *  each spend an attempt out of the budget. */
+/** Claim the one automatic reload. False when it's already spent. */
+function claimAutoReload(): boolean {
+  if (readAutoReloadAt() > 0) return false;
+  try {
+    localStorage.setItem(AUTO_RELOAD_KEY, String(Date.now()));
+  } catch {
+    // Storage blocked: without a record the next load can't tell it already
+    // tried, so refuse rather than risk a loop.
+    return false;
+  }
+  return true;
+}
+
+/** Called once the app has mounted: after a few seconds up, the automatic
+ *  reload is available again for a future, unrelated failure. */
+export function markAppHealthySoon() {
+  if (typeof window === "undefined") return;
+  window.setTimeout(() => {
+    try { localStorage.removeItem(AUTO_RELOAD_KEY); } catch { /* ignore */ }
+  }, HEALTHY_AFTER_MS);
+}
+
+/** Fired when a reload was needed but the attempt is spent: the root shows
+ *  the error screen (see __root.tsx). */
+export const STARTUP_FAILED_EVENT = "kya:startup-failed";
+
+/** At most one reload per page load: the `vite:preloadError` listener and the
+ *  root error boundary both fire for the same failure. */
 let reloadScheduled = false;
 
-/** Reload to recover from a stale-build chunk 404, backing off across attempts
- *  and standing down once the budget is spent. */
+/** Recover from a code file that failed to load: one hard reset, then the
+ *  error screen. */
 export function reloadForStaleChunk() {
   if (typeof window === "undefined" || reloadScheduled) return;
-  const { n } = readReloadState();
-  const delay = RELOAD_BACKOFF_MS[n];
-  if (delay === undefined) return; // budget spent — the error boundary takes over
+  if (!claimAutoReload()) {
+    window.dispatchEvent(new Event(STARTUP_FAILED_EVENT));
+    return;
+  }
   reloadScheduled = true;
-  try {
-    sessionStorage.setItem(CHUNK_RELOAD_KEY, JSON.stringify({ n: n + 1, at: Date.now() }));
-  } catch {
-    // sessionStorage blocked (private mode, some iframes). The attempt still
-    // runs, but nothing persists across the reload, so every load reads n=0 and
-    // the budget never advances. `reloadScheduled` is then the only loop guard,
-    // exactly as it was before the backoff existed — unchanged, not newly broken.
-  }
-  window.setTimeout(doStaleChunkReload, delay);
+  void hardResetAndReload();
 }
 
-function doStaleChunkReload() {
-  if (isNativeApp()) {
-    // The shell's WKWebView caches the document itself, so a plain reload can
-    // re-read the SAME stale HTML that references dead chunk URLs (seen on
-    // device after a deploy). Cache-bust the document fetch instead.
-    try {
-      const u = new URL(window.location.href);
-      u.searchParams.set("_r", String(Date.now()));
-      window.location.replace(u.toString());
-      return;
-    } catch { /* fall through to a plain reload */ }
-  }
-  window.location.reload();
-}
-
-/** Does this error look like a stale-build lazy-chunk load failure (the
- *  self-healing kind), rather than a real crash? Message shapes vary by browser. */
+/** Does this error look like a code file that failed to load (the
+ *  recoverable kind), rather than a real crash? Message shapes vary by browser. */
 export function isStaleChunkError(error: unknown): boolean {
   const msg = (error as Error | null)?.message ?? "";
   return /failed to fetch dynamically imported module|error loading dynamically imported module|importing a module script failed|failed to load module script|unable to preload/i.test(msg);
@@ -135,7 +134,7 @@ export function isStaleChunkError(error: unknown): boolean {
 export function installChunkErrorRecovery() {
   if (typeof window === "undefined") return;
   window.addEventListener("vite:preloadError", (e) => {
-    e.preventDefault(); // don't let it surface as an unhandled error; we handle it by reloading
+    e.preventDefault(); // don't let it surface as an unhandled error; we handle it here
     reloadForStaleChunk();
   });
 }
@@ -204,8 +203,12 @@ export function registerServiceWorker() {
   let reloading = false;
   navigator.serviceWorker.addEventListener("controllerchange", () => {
     if (reloading || !hadController) return;
+    // A new build is now in control; reload once to run its fresh JS/CSS —
+    // unless this device already reloaded automatically and hasn't run
+    // healthily since. Then the page keeps running what it has: an update
+    // must never become a reload loop.
+    if (!claimAutoReload()) return;
     reloading = true;
-    // A new build is now in control; reload once to run its fresh JS/CSS.
     window.location.reload();
   });
 
