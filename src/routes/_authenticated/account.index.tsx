@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { deleteMyAccount } from "@/lib/account.functions";
 import { APP_VERSION } from "@/lib/version";
-import { ShieldAlert, Bell, Smartphone, Lock, Archive, Users, Flower2, Languages, Check } from "lucide-react";
+import { ShieldAlert, Bell, Smartphone, Lock, Archive, Users, Flower2, Languages, Check, Globe } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useAppSurface } from "@/lib/appSurface";
 import {
@@ -25,6 +25,9 @@ import { toast } from "sonner";
 import { friendlyError } from "@/lib/errorMessage";
 import { OWNER_I18N_ENABLED, SUPPORTED_LOCALES, isLocale, type Locale } from "@/lib/i18n/config";
 import { saveOwnerLocale } from "@/lib/i18n/ownerLocale";
+import { TimeZoneSheet, ACCOUNT_TIME_ZONE_KEY } from "@/components/TimeZoneSheet";
+import { fetchAccountTimeZone } from "@/lib/sitTimeZoneBackfill";
+import { timeZoneRowLabel } from "@/lib/sitTimeZoneNames";
 
 // Each language is named in itself, never translated: someone looking for
 // Nederlands has to recognise it whatever language the app is showing.
@@ -37,7 +40,7 @@ export const Route = createFileRoute("/_authenticated/account/")({
 });
 
 function AccountPage() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const router = useRouter();
   const canGoBack = useCanGoBack();
@@ -80,6 +83,16 @@ function AccountPage() {
     },
   });
   const [languageOpen, setLanguageOpen] = useState(false);
+
+  // Home time zone (profiles.time_zone): sits follow it, not the phone's.
+  const { data: timeZone = null } = useQuery({
+    queryKey: ACCOUNT_TIME_ZONE_KEY,
+    queryFn: async () => {
+      const { data: u } = await getLocalUser();
+      return u.user ? fetchAccountTimeZone(u.user.id) : null;
+    },
+  });
+  const [timeZoneOpen, setTimeZoneOpen] = useState(false);
 
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
@@ -209,6 +222,7 @@ function AccountPage() {
             <KyaCard>
               {row(<Lock className="size-5" />, t("account.passwordSignIn", "Password & sign-in"), signInLine || undefined, () => navigate({ to: "/account/security" }))}
               {OWNER_I18N_ENABLED && row(<Languages className="size-5" />, t("account.language", "Language"), locale ? LANGUAGE_NAMES[locale] : t("account.sameAsPhone", "Same as your phone"), () => setLanguageOpen(true))}
+              {row(<Globe className="size-5" />, t("account.timeZone", "Time zone"), timeZone ? timeZoneRowLabel(timeZone, i18n.language) : t("account.timeZoneNotSet", "Not set yet"), () => setTimeZoneOpen(true))}
               {row(<Archive className="size-5" />, t("account.birdsRehomed", "Birds you've helped rehome"), t("account.birdsRehomedDetail", "Birds you've handed off to new owners"), () => navigate({ to: "/past-birds" }), { last: !hasRemembering })}
               {/* Remembering — memorials for birds that have passed. Shown only
                   when there is someone to remember; visited by choice, no count. */}
@@ -236,6 +250,9 @@ function AccountPage() {
 
       {languageOpen && (
         <LanguageModal userId={userId} current={locale} onClose={() => setLanguageOpen(false)} />
+      )}
+      {timeZoneOpen && (
+        <TimeZoneSheet userId={userId} current={timeZone} onClose={() => setTimeZoneOpen(false)} />
       )}
       {editOpen && (
         <EditIdentityModal
