@@ -1,4 +1,4 @@
-import i18next from "i18next";
+import type { TFunction } from "i18next";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
@@ -22,10 +22,11 @@ export function replaySitterOnboarding() {
 }
 
 // "Willow" / "Willow and Moxie" / "Willow, Moxie, and Kiwi"
-function formatNames(names: string[]): string {
+// Takes the sitter view's own t: it runs its own i18n instance and language.
+function formatNames(t: TFunction, names: string[]): string {
   const n = names.filter(Boolean);
-  if (n.length === 0) return i18next.t("nameList.yourBird", "your bird");
-  return birdNames(i18next.t, n);
+  if (n.length === 0) return t("nameList.yourBird", "your bird");
+  return birdNames(t, n);
 }
 
 
@@ -68,7 +69,7 @@ export function SitterOnboarding({ birds, bird, careSections, hasClips, token }:
 
   const list = Array.isArray(birds) && birds.length ? birds : bird ? [bird] : [];
   const names = list.map((b) => (b?.name ?? "").toString().trim()).filter(Boolean);
-  const allNames = formatNames(names);
+  const allNames = formatNames(t, names);
   const activeName = (bird?.name ?? names[0] ?? "your bird").toString().trim() || "your bird";
   const obj = objectPronoun(bird?.sex, locale);
   const poss = possessivePronoun(bird?.sex, locale);
