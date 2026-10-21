@@ -312,11 +312,11 @@
     "auth.agreeToTerms": {
       "stamp": "c0a0967a25f86ae5"
     },
-    "auth.alreadyHaveAccount": {
-      "stamp": "c0940267d43907d5"
-    },
     "auth.appleSignInFailed": {
       "stamp": "5b5b6aad1137423b"
+    },
+    "auth.backToSignIn": {
+      "stamp": "9c8f60e559c93e73"
     },
     "auth.continueWithApple": {
       "stamp": "ab4037c281b95f3b"
@@ -330,20 +330,14 @@
     "auth.createAccount": {
       "stamp": "5a5196c8fa7aa3f7"
     },
-    "auth.createYourAccount": {
-      "stamp": "8331a317e5299aa6"
-    },
-    "auth.deleteAccount": {
-      "stamp": "7dd739f7992e24b2"
-    },
     "auth.email": {
       "stamp": "e5b1775d3be10b14"
     },
     "auth.emailAlreadyHasAccount": {
       "stamp": "b948d8aeb6195800"
     },
-    "auth.enterEmailFirst": {
-      "stamp": "d89922e6f75bfcc1"
+    "auth.enterEmailForReset": {
+      "stamp": "264e9630da86d509"
     },
     "auth.firstName": {
       "stamp": "4ee0c9f6a0e12e77"
@@ -354,11 +348,11 @@
     "auth.forgotPassword": {
       "stamp": "c6241b1c19f11641"
     },
-    "auth.getStarted": {
-      "stamp": "5e96f3aee9b8a9fa"
-    },
     "auth.googleSignInFailed": {
       "stamp": "916d62629302d809"
+    },
+    "auth.haveAccountSignIn": {
+      "stamp": "c12daaa530fa3577"
     },
     "auth.lastName": {
       "stamp": "cb2dd938c96fbba5"
@@ -372,11 +366,11 @@
     "auth.metaDescription": {
       "stamp": "c12ba6331bd82838"
     },
-    "auth.needAccount": {
-      "stamp": "63c1d421ca88adc7"
+    "auth.newHereCreate": {
+      "stamp": "2da0019b7e41c4c4"
     },
-    "auth.orWithEmail": {
-      "stamp": "5ed385d300fab12b"
+    "auth.orWithEmailLine": {
+      "stamp": "6b4f409ee4565240"
     },
     "auth.pageTitle": {
       "stamp": "75066990584f9ca6"
@@ -384,29 +378,32 @@
     "auth.password": {
       "stamp": "03ba02a186c36edb"
     },
-    "auth.pickUpWhereYouLeftOff": {
-      "stamp": "0a9a7b20b38eb448"
+    "auth.resetLine": {
+      "stamp": "fcdc098b427b5853"
     },
-    "auth.privacy": {
-      "stamp": "7e4f176cd281246c"
+    "auth.resetTitle": {
+      "stamp": "636cdfe8e9d916c1"
     },
-    "auth.resetLinkSent": {
-      "stamp": "77896906889e4113"
+    "auth.sendResetLink": {
+      "stamp": "01dd9b772b9a655d"
     },
     "auth.signIn": {
       "stamp": "dc9922893e139658"
     },
-    "auth.signinBody": {
-      "stamp": "c62ee846bbfd2af4"
+    "auth.signinLine": {
+      "stamp": "1a57f18b9bd352a1"
     },
-    "auth.signupBody": {
-      "stamp": "180e01cfe071e8bb"
+    "auth.signinTitle": {
+      "stamp": "b9e6f3e0f3888ae9"
+    },
+    "auth.signupLine": {
+      "stamp": "61548c7ca3d244d9"
+    },
+    "auth.signupTitle": {
+      "stamp": "4980bb13bcc4ed54"
     },
     "auth.somethingWentWrong": {
       "stamp": "77ed77475d0a7980"
-    },
-    "auth.terms": {
-      "stamp": "a9836601525b3e08"
     },
     "auth.tooManyAttemptsWait": {
       "stamp": "bea26c8b7367c812"
@@ -416,9 +413,6 @@
     },
     "auth.waitBeforeReset": {
       "stamp": "1b44c9ff2bd85b45"
-    },
-    "auth.welcomeBack": {
-      "stamp": "b9e6f3e0f3888ae9"
     },
     "authError.emailNotConfirmed": {
       "stamp": "9db889eb0733fb0d"
@@ -3471,6 +3465,36 @@
     "careSheet.value.within": {
       "stamp": "ff7d2aaab3cb2bcf"
     },
+    "checkEmail.canTakeAMinute": {
+      "stamp": "2c8b49bba341f97a"
+    },
+    "checkEmail.openEmailApp": {
+      "stamp": "665ca3360bfe8625"
+    },
+    "checkEmail.sendAgain": {
+      "stamp": "caa5cbf5ae116baa"
+    },
+    "checkEmail.sendAgainIn": {
+      "stamp": "d1eebae95316d162"
+    },
+    "checkEmail.sending": {
+      "stamp": "2696b1cead25f426"
+    },
+    "checkEmail.sent": {
+      "stamp": "bbdcf2d61c12d3a5"
+    },
+    "checkEmail.sentLinkReset": {
+      "stamp": "ad6d92870240fa67"
+    },
+    "checkEmail.sentLinkSignup": {
+      "stamp": "9a177ebf5cdb1791"
+    },
+    "checkEmail.title": {
+      "stamp": "c94dd8d62fe75e35"
+    },
+    "checkEmail.useDifferentEmail": {
+      "stamp": "b562efa6940f9f9d"
+    },
     "clipPlayer.askReupload": {
       "stamp": "b0334b9c0dcb18d2"
     },
@@ -3645,44 +3669,14 @@
     "confirmEmail.alreadyConfirmed": {
       "stamp": "ce240e274b7af684"
     },
-    "confirmEmail.checkSpam": {
-      "stamp": "d6ab06523a39eaab"
-    },
-    "confirmEmail.checkYourEmail": {
-      "stamp": "c94dd8d62fe75e35"
-    },
-    "confirmEmail.clickToActivate": {
-      "stamp": "93ebaf859312efc7"
-    },
     "confirmEmail.couldNotResend": {
       "stamp": "e502e488544911e0"
-    },
-    "confirmEmail.goBackAndFix": {
-      "stamp": "4dcff0436c96fada"
     },
     "confirmEmail.pageTitle": {
       "stamp": "351cec5a3e02af4b"
     },
-    "confirmEmail.resend": {
-      "stamp": "47ffe94a6afc6095"
-    },
-    "confirmEmail.resendCooldown": {
-      "stamp": "9b37e78132c96f81"
-    },
-    "confirmEmail.sending": {
-      "stamp": "2696b1cead25f426"
-    },
-    "confirmEmail.sentAgain": {
-      "stamp": "b28c00e898ce09a9"
-    },
     "confirmEmail.signIn": {
       "stamp": "dc9922893e139658"
-    },
-    "confirmEmail.weSentLinkTo": {
-      "stamp": "856cf3240c31ccc2"
-    },
-    "confirmEmail.wrongEmail": {
-      "stamp": "cbd9b23f63595263"
     },
     "copyFromBird.copiedFoods_one": {
       "stamp": "053be84af97d58f0"
@@ -5355,6 +5349,18 @@
     "foodEditor.whereFoodIsStored": {
       "stamp": "336933d9f7c898a9"
     },
+    "frontDoor.back": {
+      "stamp": "5001815e48b3af8b"
+    },
+    "frontDoor.deleteAccount": {
+      "stamp": "7dd739f7992e24b2"
+    },
+    "frontDoor.privacy": {
+      "stamp": "7e4f176cd281246c"
+    },
+    "frontDoor.terms": {
+      "stamp": "a9836601525b3e08"
+    },
     "fullCheck.callVet": {
       "stamp": "b9fea054aa89202f"
     },
@@ -5499,23 +5505,23 @@
     "fullCheck.weighTitle": {
       "stamp": "458cdff43be73c31"
     },
-    "handoff.accept": {
-      "stamp": "6f6cd477ba9e12fe"
-    },
-    "handoff.acceptAndCreate": {
-      "stamp": "827790870380df2d"
-    },
     "handoff.acceptedToast": {
       "stamp": "4e2e77436308131f"
     },
     "handoff.accepting": {
       "stamp": "3337ed9d23ba2758"
     },
-    "handoff.askSender": {
-      "stamp": "062cfbb20398d27f"
+    "handoff.alreadyHome": {
+      "stamp": "e5b23047021ecf4d"
     },
-    "handoff.body": {
-      "stamp": "f170a9ab463952df"
+    "handoff.carePlanHer": {
+      "stamp": "23f590a1997fa9df"
+    },
+    "handoff.carePlanHis": {
+      "stamp": "ebb79edd0fc2cf51"
+    },
+    "handoff.carePlanTheir": {
+      "stamp": "d77e0967c82446fe"
     },
     "handoff.confirmSentBody": {
       "stamp": "d9745c36cffe4b3f"
@@ -5541,8 +5547,8 @@
     "handoff.creating": {
       "stamp": "609e7ddff60150cf"
     },
-    "handoff.decline": {
-      "stamp": "44bde86f2bc0d422"
+    "handoff.declineHandoff": {
+      "stamp": "20288537a0f3333b"
     },
     "handoff.email": {
       "stamp": "e5b1775d3be10b14"
@@ -5550,8 +5556,8 @@
     "handoff.enterFirstName": {
       "stamp": "1fbf4a429c3011e2"
     },
-    "handoff.eyebrow": {
-      "stamp": "d9a8599dfdafcee0"
+    "handoff.expiredTitle": {
+      "stamp": "41d4790c68063904"
     },
     "handoff.firstName": {
       "stamp": "4ee0c9f6a0e12e77"
@@ -5565,11 +5571,20 @@
     "handoff.goToApp": {
       "stamp": "4f27904dee72234b"
     },
-    "handoff.headline": {
-      "stamp": "c0b102c6ba301666"
+    "handoff.healthHistory": {
+      "stamp": "362ff0d697908ad9"
     },
-    "handoff.inactiveHeadline": {
-      "stamp": "d8be6a23f3932134"
+    "handoff.identityHer": {
+      "stamp": "77bbcc4f11bd7d9d"
+    },
+    "handoff.identityHis": {
+      "stamp": "09615b2579e5fa2e"
+    },
+    "handoff.identityTheir": {
+      "stamp": "3abc5fb0b883a931"
+    },
+    "handoff.journalMoments": {
+      "stamp": "17363373d7d1cc05"
     },
     "handoff.lastName": {
       "stamp": "cb2dd938c96fbba5"
@@ -5580,8 +5595,8 @@
     "handoff.loading": {
       "stamp": "543c404f0e5a7d86"
     },
-    "handoff.onceYouAccept": {
-      "stamp": "a942f9ab2763e7d1"
+    "handoff.notNow": {
+      "stamp": "e09226312af9076b"
     },
     "handoff.or": {
       "stamp": "f3ea19e0f239e505"
@@ -5592,14 +5607,14 @@
     "handoff.passwordPlaceholder": {
       "stamp": "a87fc8e001edbbb6"
     },
-    "handoff.receiveCarePlan": {
-      "stamp": "57c512c63780e1b5"
+    "handoff.recordComesWithHer": {
+      "stamp": "4286419c9deffaad"
     },
-    "handoff.receiveHistory": {
-      "stamp": "ae16b69380f1777a"
+    "handoff.recordComesWithHim": {
+      "stamp": "feed752d4fa2d4c8"
     },
-    "handoff.receivePhotos": {
-      "stamp": "763d6aca1b573fb2"
+    "handoff.recordComesWithThem": {
+      "stamp": "b37f3e0fd21d9e7b"
     },
     "handoff.signOutAndAccept": {
       "stamp": "c671ea1d53b1f2bc"
@@ -5610,14 +5625,17 @@
     "handoff.thisBird": {
       "stamp": "e206dc027c390933"
     },
+    "handoff.titleHandingOff": {
+      "stamp": "ef298d4dde7d4d7a"
+    },
     "handoff.useEightChars": {
       "stamp": "23292ac3cf673c21"
     },
+    "handoff.welcomeHome": {
+      "stamp": "466bc665dc7e6dc8"
+    },
     "handoff.wrongAccount": {
       "stamp": "1ee7f20665993e78"
-    },
-    "handoff.youllReceive": {
-      "stamp": "4c727b1cf0780c84"
     },
     "headers.back": {
       "stamp": "5001815e48b3af8b"
@@ -6276,14 +6294,11 @@
     "householdInvite.wontSee": {
       "stamp": "219bc0b92b64ef3b"
     },
-    "invite.accept": {
-      "stamp": "6f6cd477ba9e12fe"
-    },
-    "invite.acceptAndCreate": {
-      "stamp": "827790870380df2d"
-    },
     "invite.acceptedToast": {
       "stamp": "4d2437145a66eb13"
+    },
+    "invite.acceptInvite": {
+      "stamp": "1cd07c7876a522ca"
     },
     "invite.anOwner": {
       "stamp": "2d725f2fa21f976d"
@@ -6291,14 +6306,41 @@
     "invite.askForNew": {
       "stamp": "59ae9f584423ad1e"
     },
-    "invite.canHelp": {
-      "stamp": "18f99dcfd210d951"
+    "invite.askOwnerForNew": {
+      "stamp": "7beaf2bc6ddd6cf1"
     },
-    "invite.canLog": {
-      "stamp": "d3ae6bebf5a9c76f"
+    "invite.asPartOfHousehold": {
+      "stamp": "c53783c279bdc945"
     },
-    "invite.canSee": {
-      "stamp": "658c3977b36d0c25"
+    "invite.canCancelSits": {
+      "stamp": "2fcc28146648561d"
+    },
+    "invite.canEditPlans": {
+      "stamp": "3dffdea895822261"
+    },
+    "invite.canLogChecksWeights": {
+      "stamp": "f3008c8b3ff6b554"
+    },
+    "invite.canLogWeightsTasks": {
+      "stamp": "c9dbf7cf658984fc"
+    },
+    "invite.canManageBirds": {
+      "stamp": "f169bba38e464a76"
+    },
+    "invite.canManageHousehold": {
+      "stamp": "06b8bd640107aed4"
+    },
+    "invite.canReachVet": {
+      "stamp": "e77f8844ebae77a3"
+    },
+    "invite.canRunChecks": {
+      "stamp": "8e8fc66b432d091a"
+    },
+    "invite.canSeePlan": {
+      "stamp": "6061f430e88f69ac"
+    },
+    "invite.canUpdateEmergency": {
+      "stamp": "8f1500e13d02664b"
     },
     "invite.confirmSentBody": {
       "stamp": "3807b159a465c376"
@@ -6324,8 +6366,8 @@
     "invite.creating": {
       "stamp": "609e7ddff60150cf"
     },
-    "invite.decline": {
-      "stamp": "44bde86f2bc0d422"
+    "invite.declineInvite": {
+      "stamp": "ff345617379abd30"
     },
     "invite.email": {
       "stamp": "e5b1775d3be10b14"
@@ -6333,11 +6375,8 @@
     "invite.enterFirstName": {
       "stamp": "1fbf4a429c3011e2"
     },
-    "invite.expiredBody": {
-      "stamp": "c6a2a768842e31b8"
-    },
-    "invite.eyebrow": {
-      "stamp": "58f29e1e752455bb"
+    "invite.expiredTitle": {
+      "stamp": "c0a3acd767f7f58d"
     },
     "invite.firstName": {
       "stamp": "4ee0c9f6a0e12e77"
@@ -6351,12 +6390,6 @@
     "invite.goToApp": {
       "stamp": "4f27904dee72234b"
     },
-    "invite.inactiveHeadline": {
-      "stamp": "d6f563fe8cbcf92a"
-    },
-    "invite.joinBody": {
-      "stamp": "8862d11673c93dfd"
-    },
     "invite.joining": {
       "stamp": "46519b6c7afff570"
     },
@@ -6369,6 +6402,9 @@
     "invite.loading": {
       "stamp": "a5e351578ff27475"
     },
+    "invite.notNow": {
+      "stamp": "e09226312af9076b"
+    },
     "invite.or": {
       "stamp": "f3ea19e0f239e505"
     },
@@ -6378,23 +6414,26 @@
     "invite.passwordPlaceholder": {
       "stamp": "a87fc8e001edbbb6"
     },
-    "invite.sharedWithYou": {
-      "stamp": "f58219452e4f186e"
+    "invite.signInNext": {
+      "stamp": "b3dbcc5d99697dd5"
     },
     "invite.signOutAndAccept": {
       "stamp": "c671ea1d53b1f2bc"
     },
-    "invite.staysOwner": {
-      "stamp": "41016019ae55fa60"
+    "invite.titleBirds": {
+      "stamp": "253f7a95f3161357"
+    },
+    "invite.titleManyBirds_one": {
+      "stamp": "010929bb9ec1141b"
+    },
+    "invite.titleManyBirds_other": {
+      "stamp": "010929bb9ec1141b"
     },
     "invite.useEightChars": {
       "stamp": "23292ac3cf673c21"
     },
     "invite.wrongAccount": {
       "stamp": "1d790d18c08ffebd"
-    },
-    "invite.youllBeAbleTo": {
-      "stamp": "f3e9ee06ee0b5377"
     },
     "journalAttachment.empty": {
       "stamp": "8556372d62a5e8fd"
@@ -6420,14 +6459,14 @@
     "landing.addYourFirstBird": {
       "stamp": "9105dea1093a6669"
     },
-    "landing.alreadyHaveAccount": {
-      "stamp": "86114a4caa15fdd2"
+    "landing.alreadyHaveAccountButton": {
+      "stamp": "31eafc49113151c7"
     },
-    "landing.headline": {
-      "stamp": "81aa6a6610f20fac"
+    "landing.headlineV2": {
+      "stamp": "c1e18b8028e66169"
     },
-    "landing.invitedHint": {
-      "stamp": "5e2e6f6928794760"
+    "landing.invitedHintV2": {
+      "stamp": "9d4668060d0c9f98"
     },
     "landing.metaDescription": {
       "stamp": "91eeeae9a42ea1d3"
@@ -6435,14 +6474,8 @@
     "landing.pageTitle": {
       "stamp": "28c565a53420b548"
     },
-    "landing.signIn": {
-      "stamp": "dc9922893e139658"
-    },
-    "landing.startHere": {
-      "stamp": "665040d449066196"
-    },
-    "landing.subhead": {
-      "stamp": "be0ad71dfe6bae9b"
+    "landing.subheadV2": {
+      "stamp": "bc14842b9dcf5ef7"
     },
     "loggedBy.household": {
       "stamp": "da35ceae68b17eed"
@@ -7578,14 +7611,17 @@
     "resetPassword.bodyReady": {
       "stamp": "410803f1c31d823b"
     },
-    "resetPassword.confirmPassword": {
-      "stamp": "944a7d82cce947c8"
+    "resetPassword.checkingLink": {
+      "stamp": "c015955d0df27063"
+    },
+    "resetPassword.confirmNewPassword": {
+      "stamp": "e621501c0b3aab2c"
     },
     "resetPassword.couldNotUpdate": {
       "stamp": "073ddac5a1661a85"
     },
-    "resetPassword.headline": {
-      "stamp": "d16f790b82d449e9"
+    "resetPassword.headlineV2": {
+      "stamp": "0c6825171d3f2803"
     },
     "resetPassword.mismatch": {
       "stamp": "cfc019999e52c96c"
@@ -7596,14 +7632,14 @@
     "resetPassword.pageTitle": {
       "stamp": "bcd7ceb31cec4a7a"
     },
+    "resetPassword.saveNewPassword": {
+      "stamp": "c7b2d9a43b8da9dc"
+    },
     "resetPassword.tooShort": {
       "stamp": "20a45c858edf31a7"
     },
     "resetPassword.updated": {
       "stamp": "03a59c3d624d1de0"
-    },
-    "resetPassword.updatePassword": {
-      "stamp": "22e63e81809b3896"
     },
     "root.errorBodyReload": {
       "stamp": "672c359d9ffba1b3"

@@ -211,10 +211,10 @@
   "addressInput.zip": "Postcode",
   // By creating an account you agree to our <terms>Terms</terms> and <privacy>Privacy Policy</privacy>.
   "auth.agreeToTerms": "Door een account aan te maken ga je akkoord met onze <terms>Voorwaarden</terms> en ons <privacy>Privacybeleid</privacy>.",
-  // Already have an account? Sign in
-  "auth.alreadyHaveAccount": "Heb je al een account? Log in",
   // Apple sign-in failed.
   "auth.appleSignInFailed": "Inloggen met Apple mislukt.",
+  // Back to sign in
+  "auth.backToSignIn": "Terug naar inloggen",
   // Continue with Apple
   "auth.continueWithApple": "Doorgaan met Apple",
   // Continue with Google
@@ -223,26 +223,22 @@
   "auth.couldNotSendReset": "Kon de resetmail niet versturen.",
   // Create account
   "auth.createAccount": "Account aanmaken",
-  // Create your account.
-  "auth.createYourAccount": "Maak je account aan.",
-  // Delete account
-  "auth.deleteAccount": "Account verwijderen",
   // Email
   "auth.email": "E-mail",
   // That email already has an account — sign in instead.
   "auth.emailAlreadyHasAccount": "Er is al een account met dit e-mailadres — log in plaats daarvan in.",
-  // Enter your email above first, then tap Forgot password.
-  "auth.enterEmailFirst": "Vul eerst hierboven je e-mailadres in en tik dan op Wachtwoord vergeten.",
+  // Enter the email you signed up with.
+  "auth.enterEmailForReset": "Vul het e-mailadres in waarmee je je hebt aangemeld.",
   // First name
   "auth.firstName": "Voornaam",
   // Maya
   "auth.firstNamePlaceholder": "Sanne",
   // Forgot password?
   "auth.forgotPassword": "Wachtwoord vergeten?",
-  // Get started
-  "auth.getStarted": "Aan de slag",
   // Google sign-in failed.
   "auth.googleSignInFailed": "Inloggen met Google mislukt.",
+  // Already have an account? <go>Sign in</go>
+  "auth.haveAccountSignIn": "Heb je al een account? <go>Inloggen</go>",
   // Last name
   "auth.lastName": "Achternaam",
   // Lopez
@@ -251,38 +247,38 @@
   "auth.marketingOptIn": "Mail me over de community van The Kya Project en updates. (Optioneel)",
   // Sign in or create an owner account to build a bird care plan.
   "auth.metaDescription": "Log in of maak een eigenaarsaccount aan om een verzorgingsplan voor je vogel op te stellen.",
-  // Need an account? Sign up
-  "auth.needAccount": "Nog geen account? Meld je aan",
-  // Or with email
-  "auth.orWithEmail": "Of met e-mail",
+  // New here? <go>Create an account</go>
+  "auth.newHereCreate": "Nieuw hier? <go>Maak een account aan</go>",
+  // or with email
+  "auth.orWithEmailLine": "of met e-mail",
   // Sign in — Kya & Co.
   "auth.pageTitle": "Inloggen — Kya & Co.",
   // Password
   "auth.password": "Wachtwoord",
-  // Pick up where you left off.
-  "auth.pickUpWhereYouLeftOff": "Ga verder waar je gebleven was.",
-  // Privacy
-  "auth.privacy": "Privacy",
-  // If that email is registered, a reset link is on its way.
-  "auth.resetLinkSent": "Als dat e-mailadres bij ons bekend is, is er een resetlink onderweg.",
+  // We'll email you a link to set a new one.
+  "auth.resetLine": "We mailen je een link om een nieuw wachtwoord in te stellen.",
+  // Reset your password
+  "auth.resetTitle": "Wachtwoord opnieuw instellen",
+  // Send reset link
+  "auth.sendResetLink": "Stuur resetlink",
   // Sign in
   "auth.signIn": "Inloggen",
-  // Sign in to your bird's record.
-  "auth.signinBody": "Log in op het dossier van je vogel.",
-  // Build one care plan and share it with the family, pet sitters, and household members who help.
-  "auth.signupBody": "Stel één verzorgingsplan op en deel het met familie, oppassen en huisgenoten die helpen.",
+  // Sign in to pick up where you left off.
+  "auth.signinLine": "Log in en ga verder waar je gebleven was.",
+  // Welcome back
+  "auth.signinTitle": "Welkom terug",
+  // Free, and it takes a minute.
+  "auth.signupLine": "Gratis, en het kost je maar een minuut.",
+  // Create your account
+  "auth.signupTitle": "Maak je account aan",
   // Something went wrong.
   "auth.somethingWentWrong": "Er ging iets mis.",
-  // Terms
-  "auth.terms": "Voorwaarden",
   // Too many attempts. Try again in {{wait}}s.
   "auth.tooManyAttemptsWait": "Te veel pogingen. Probeer het over {{wait}}s opnieuw.",
   // Too many failed attempts. Try again in 60s, or reset your password.
   "auth.tooManyFailedAttempts": "Te veel mislukte pogingen. Probeer het over 60s opnieuw, of reset je wachtwoord.",
   // Please wait {{wait}}s before requesting another reset email.
   "auth.waitBeforeReset": "Wacht {{wait}}s voordat je nog een resetmail aanvraagt.",
-  // Welcome back
-  "auth.welcomeBack": "Welkom terug",
   // Email not confirmed
   "authError.emailNotConfirmed": "E-mailadres niet bevestigd",
   // Email rate limit exceeded
@@ -2317,6 +2313,26 @@
   "careSheet.tips.title": "Tips van de eigenaar",
   // Within {{duration}}
   "careSheet.value.within": "Binnen {{duration}}",
+  // It can take a minute. Check spam if it isn't there.
+  "checkEmail.canTakeAMinute": "Het kan even duren. Kijk ook in je spammap als hij er niet is.",
+  // Open email app
+  "checkEmail.openEmailApp": "Open e-mailapp",
+  // Send it again
+  "checkEmail.sendAgain": "Stuur opnieuw",
+  // Send it again ({{cooldown}}s)
+  "checkEmail.sendAgainIn": "Stuur opnieuw ({{cooldown}}s)",
+  // Sending…
+  "checkEmail.sending": "Versturen…",
+  // Sent
+  "checkEmail.sent": "Verstuurd",
+  // We sent a link to <b>{{email}}</b>. Tap it to set a new password.
+  "checkEmail.sentLinkReset": "We hebben een link gestuurd naar <b>{{email}}</b>. Tik erop om een nieuw wachtwoord in te stellen.",
+  // We sent a link to <b>{{email}}</b>. Tap it to finish signing up.
+  "checkEmail.sentLinkSignup": "We hebben een link gestuurd naar <b>{{email}}</b>. Tik erop om je aanmelding af te ronden.",
+  // Check your email
+  "checkEmail.title": "Check je e-mail",
+  // Use a different email
+  "checkEmail.useDifferentEmail": "Gebruik een ander e-mailadres",
   // Ask the owner to re-upload it from the bird's setup so it's converted for all devices.
   "clipPlayer.askReupload": "Vraag de eigenaar om de clip opnieuw te uploaden via de instellingen van de vogel, zodat hij op alle apparaten werkt.",
   // This clip can't play here.
@@ -2433,32 +2449,12 @@
   "concernFlow.pauseTitle": "Gaat het goed met {{name}}?",
   // Already confirmed?
   "confirmEmail.alreadyConfirmed": "Al bevestigd?",
-  // Don't see it? Check your spam or junk folder — and give it a minute to arrive.
-  "confirmEmail.checkSpam": "Zie je hem niet? Kijk in je spam- of ongewenste map — en geef hem even de tijd om aan te komen.",
-  // Check your email
-  "confirmEmail.checkYourEmail": "Check je e-mail",
-  // Click it to activate your account. Keep this tab open — once you confirm, we'll take you straight in.
-  "confirmEmail.clickToActivate": "Klik erop om je account te activeren. Houd dit tabblad open — zodra je bevestigt, brengen we je meteen naar binnen.",
   // Couldn't resend. Try again in a moment.
   "confirmEmail.couldNotResend": "Opnieuw versturen lukte niet. Probeer het zo nog eens.",
-  // Go back and fix it
-  "confirmEmail.goBackAndFix": "Ga terug en pas het aan",
   // Confirm your email — Kya & Co.
   "confirmEmail.pageTitle": "Bevestig je e-mail — Kya & Co.",
-  // Didn't get it? Resend email
-  "confirmEmail.resend": "Niet ontvangen? Verstuur de e-mail opnieuw",
-  // Resend email ({{cooldown}}s)
-  "confirmEmail.resendCooldown": "E-mail opnieuw versturen ({{cooldown}}s)",
-  // Sending…
-  "confirmEmail.sending": "Versturen…",
-  // Confirmation email sent again.
-  "confirmEmail.sentAgain": "Bevestigingsmail opnieuw verstuurd.",
   // Sign in
   "confirmEmail.signIn": "Inloggen",
-  // We sent a confirmation link to
-  "confirmEmail.weSentLinkTo": "We hebben een bevestigingslink gestuurd naar",
-  // Wrong email address?
-  "confirmEmail.wrongEmail": "Verkeerd e-mailadres?",
   // Copied {{count}} food from {{source}}. Add {{name}}'s amounts to finish.
   "copyFromBird.copiedFoods_one": "{{count}} soort voer gekopieerd van {{source}}. Vul de hoeveelheden van {{name}} in om af te ronden.",
   // Copied {{count}} foods from {{source}}. Add {{name}}'s amounts to finish.
@@ -3573,6 +3569,14 @@
   "foodEditor.whenIsItFed": "Wanneer wordt het gegeven?",
   // Where food is stored
   "foodEditor.whereFoodIsStored": "Waar het voer bewaard wordt",
+  // Back
+  "frontDoor.back": "Terug",
+  // Delete account
+  "frontDoor.deleteAccount": "Account verwijderen",
+  // Privacy
+  "frontDoor.privacy": "Privacy",
+  // Terms
+  "frontDoor.terms": "Voorwaarden",
   // Call vet
   "fullCheck.callVet": "Bel de dierenarts",
   // Weight in grams
@@ -3669,18 +3673,18 @@
   "fullCheck.weightFailed": "De check is opgeslagen, maar het gewicht niet. Voeg het toe via de gewichtspagina.",
   // Weigh {{name}} too?
   "fullCheck.weighTitle": "{{name}} ook wegen?",
-  // Accept
-  "handoff.accept": "Accepteren",
-  // Accept & create account
-  "handoff.acceptAndCreate": "Accepteren & account maken",
   // The bird is yours — welcome!
   "handoff.acceptedToast": "De vogel is van jou — welkom!",
   // Accepting…
   "handoff.accepting": "Accepteren…",
-  // Ask the sender to start a new one.
-  "handoff.askSender": "Vraag de afzender om een nieuwe te starten.",
-  // So you have everything they learned while caring for {{bird}}.
-  "handoff.body": "Zodat je alles hebt wat ze hebben geleerd tijdens de zorg voor {{bird}}.",
+  // {{bird}} is already home with you
+  "handoff.alreadyHome": "{{bird}} is al bij jou thuis",
+  // Her care plan: food, routine, and behavior
+  "handoff.carePlanHer": "Haar verzorgingsplan: voer, dagritme en gedrag",
+  // His care plan: food, routine, and behavior
+  "handoff.carePlanHis": "Zijn verzorgingsplan: voer, dagritme en gedrag",
+  // Their care plan: food, routine, and behavior
+  "handoff.carePlanTheir": "Het verzorgingsplan: voer, dagritme en gedrag",
   // We sent a confirmation link to <b>{{email}}</b>. Open it and you'll come right back here to accept.
   "handoff.confirmSentBody": "We hebben een bevestigingslink gestuurd naar <b>{{email}}</b>. Open die en je komt meteen hier terug om te accepteren.",
   // Confirm your email to finish
@@ -3697,14 +3701,14 @@
   "handoff.createPassword": "Kies een wachtwoord",
   // Creating…
   "handoff.creating": "Aanmaken…",
-  // Decline
-  "handoff.decline": "Weigeren",
+  // Decline handoff
+  "handoff.declineHandoff": "Overdracht weigeren",
   // Email
   "handoff.email": "E-mailadres",
   // Enter your first name.
   "handoff.enterFirstName": "Vul je voornaam in.",
-  // Bird handoff
-  "handoff.eyebrow": "Overdracht van een vogel",
+  // This handoff link has expired
+  "handoff.expiredTitle": "Deze overdrachtslink is verlopen",
   // First name
   "handoff.firstName": "Voornaam",
   // Brittany
@@ -3713,42 +3717,50 @@
   "handoff.googleFailed": "Inloggen met Google is mislukt.",
   // Go to Kya & Co.
   "handoff.goToApp": "Naar Kya & Co.",
-  // {{sender}} is handing {{bird}} to you.
-  "handoff.headline": "{{sender}} draagt {{bird}} aan je over.",
-  // This handoff isn't active anymore
-  "handoff.inactiveHeadline": "Deze overdracht is niet meer actief",
+  // Health history, weights, and vet notes
+  "handoff.healthHistory": "Gezondheidsgeschiedenis, gewichten en notities van de dierenarts",
+  // Her identity: band, microchip, and hatch date
+  "handoff.identityHer": "Haar gegevens: ring, chip en uitkomstdatum",
+  // His identity: band, microchip, and hatch date
+  "handoff.identityHis": "Zijn gegevens: ring, chip en uitkomstdatum",
+  // Their identity: band, microchip, and hatch date
+  "handoff.identityTheir": "De gegevens: ring, chip en uitkomstdatum",
+  // Journal entries and moments
+  "handoff.journalMoments": "Dagboeknotities en momenten",
   // Last name
   "handoff.lastName": "Achternaam",
   // King
   "handoff.lastNamePlaceholder": "King",
   // Loading…
   "handoff.loading": "Laden…",
-  // Once you accept, {{bird}}'s record is yours and {{sender}} no longer has access.
-  "handoff.onceYouAccept": "Zodra je accepteert, is het dossier van {{bird}} van jou en heeft {{sender}} geen toegang meer.",
+  // Not now
+  "handoff.notNow": "Niet nu",
   // or
   "handoff.or": "of",
   // A bird is being handed off to you — Kya & Co.
   "handoff.pageTitle": "Er wordt een vogel aan je overgedragen — Kya & Co.",
   // At least 8 characters
   "handoff.passwordPlaceholder": "Minstens 8 tekens",
-  // {{bird}}'s care plan and identity
-  "handoff.receiveCarePlan": "Het verzorgingsplan en de identiteit van {{bird}}",
-  // Weight history, journal, and moments
-  "handoff.receiveHistory": "Gewichtsgeschiedenis, dagboek en momenten",
-  // The photos in those records
-  "handoff.receivePhotos": "De foto's in die dossiers",
+  // {{bird}}'s record comes with her, so you won't start from scratch.
+  "handoff.recordComesWithHer": "Het dossier van {{bird}} gaat met haar mee, dus je begint niet bij nul.",
+  // {{bird}}'s record comes with him, so you won't start from scratch.
+  "handoff.recordComesWithHim": "Het dossier van {{bird}} gaat met hem mee, dus je begint niet bij nul.",
+  // {{bird}}'s record comes with them, so you won't start from scratch.
+  "handoff.recordComesWithThem": "Het dossier van {{bird}} gaat mee, dus je begint niet bij nul.",
   // Sign out and accept as {{email}}
   "handoff.signOutAndAccept": "Uitloggen en accepteren als {{email}}",
   // Someone
   "handoff.someone": "Iemand",
   // this bird
   "handoff.thisBird": "deze vogel",
+  // {{sender}} is handing {{bird}} off to you
+  "handoff.titleHandingOff": "{{sender}} draagt {{bird}} aan je over",
   // Use at least 8 characters.
   "handoff.useEightChars": "Gebruik minstens 8 tekens.",
+  // Welcome {{bird}} home
+  "handoff.welcomeHome": "Heet {{bird}} welkom thuis",
   // This handoff was sent to <b>{{email}}</b>, but you're signed in with a different account.
   "handoff.wrongAccount": "Deze overdracht is gestuurd naar <b>{{email}}</b>, maar je bent ingelogd met een ander account.",
-  // You'll receive
-  "handoff.youllReceive": "Je krijgt",
   // Back
   "headers.back": "Terug",
   // Close
@@ -4187,22 +4199,38 @@
   "householdInvite.whichBirds": "Tot welke vogels hebben ze toegang?",
   // They won't see your private notes or other people's contact info
   "householdInvite.wontSee": "Ze zien je privénotities en de contactgegevens van anderen niet",
-  // Accept
-  "invite.accept": "Accepteren",
-  // Accept & create account
-  "invite.acceptAndCreate": "Accepteren & account aanmaken",
   // You're in — welcome to the household.
   "invite.acceptedToast": "Je bent erbij — welkom in het huishouden.",
+  // Accept invite
+  "invite.acceptInvite": "Uitnodiging accepteren",
   // An owner
   "invite.anOwner": "Een eigenaar",
   // Ask the owner to send you a new one.
   "invite.askForNew": "Vraag de eigenaar om je een nieuwe te sturen.",
-  // Help care for {{birds}} alongside {{inviter}}
-  "invite.canHelp": "Samen met {{inviter}} zorgen voor {{birds}}",
-  // Log weights, journal entries, and daily health checks
-  "invite.canLog": "Gewicht, dagboeknotities en dagelijkse gezondheidschecks noteren",
-  // See each bird's care plan, weight, journal, identity, and health checks
-  "invite.canSee": "Van elke vogel het verzorgingsplan, gewicht, dagboek, identiteit en gezondheidschecks bekijken",
+  // Ask {{owner}} to send a new one.
+  "invite.askOwnerForNew": "Vraag {{owner}} om een nieuwe te sturen.",
+  // As part of the household, you can
+  "invite.asPartOfHousehold": "Als lid van het huishouden kun je",
+  // Cancel sits
+  "invite.canCancelSits": "Oppasperiodes annuleren",
+  // Edit care plans
+  "invite.canEditPlans": "Verzorgingsplannen bewerken",
+  // Log daily checks and weights
+  "invite.canLogChecksWeights": "Dagelijkse checks en gewichten noteren",
+  // Log weights and daily tasks
+  "invite.canLogWeightsTasks": "Gewichten en dagelijkse taken noteren",
+  // Edit, hand off, and delete birds
+  "invite.canManageBirds": "Vogels bewerken, overdragen en verwijderen",
+  // Invite and manage household members
+  "invite.canManageHousehold": "Leden van het huishouden uitnodigen en beheren",
+  // Reach the vet and emergency info in one tap
+  "invite.canReachVet": "Met één tik de dierenarts en noodinfo bereiken",
+  // Run daily checks and write journal entries
+  "invite.canRunChecks": "Dagelijkse checks doen en dagboeknotities schrijven",
+  // See each bird's care plan and routine
+  "invite.canSeePlan": "Het verzorgingsplan en dagritme van elke vogel bekijken",
+  // Update emergency info
+  "invite.canUpdateEmergency": "Noodinfo bijwerken",
   // We sent a confirmation link to <b>{{email}}</b>. Open it and you'll come right back here to join the household.
   "invite.confirmSentBody": "We hebben een bevestigingslink gestuurd naar <b>{{email}}</b>. Open die en je komt direct hier terug om lid te worden van het huishouden.",
   // Confirm your email to finish
@@ -4219,16 +4247,14 @@
   "invite.createPassword": "Kies een wachtwoord",
   // Creating…
   "invite.creating": "Aanmaken…",
-  // Decline
-  "invite.decline": "Weigeren",
+  // Decline invite
+  "invite.declineInvite": "Uitnodiging weigeren",
   // Email
   "invite.email": "E-mail",
   // Enter your first name.
   "invite.enterFirstName": "Vul je voornaam in.",
-  // This link has expired or already been used. Ask the owner to send you a new one.
-  "invite.expiredBody": "Deze link is verlopen of al gebruikt. Vraag de eigenaar om je een nieuwe te sturen.",
-  // Household invite
-  "invite.eyebrow": "Uitnodiging huishouden",
+  // This invite has expired
+  "invite.expiredTitle": "Deze uitnodiging is verlopen",
   // First name
   "invite.firstName": "Voornaam",
   // Brittany
@@ -4237,10 +4263,6 @@
   "invite.googleFailed": "Inloggen met Google is mislukt.",
   // Go to Kya & Co.
   "invite.goToApp": "Naar Kya & Co.",
-  // This invite isn't active anymore.
-  "invite.inactiveHeadline": "Deze uitnodiging is niet meer actief.",
-  // Join the household to help care for them.
-  "invite.joinBody": "Word lid van het huishouden om mee te helpen met hun verzorging.",
   // Joining…
   "invite.joining": "Lid worden…",
   // Last name
@@ -4249,24 +4271,28 @@
   "invite.lastNamePlaceholder": "King",
   // Loading your invite…
   "invite.loading": "Je uitnodiging wordt geladen…",
+  // Not now
+  "invite.notNow": "Niet nu",
   // or
   "invite.or": "of",
   // You're invited — Kya & Co.
   "invite.pageTitle": "Je bent uitgenodigd — Kya & Co.",
   // At least 8 characters
   "invite.passwordPlaceholder": "Minstens 8 tekens",
-  // {{inviter}} shared {{birds}} with you.
-  "invite.sharedWithYou": "{{inviter}} heeft {{birds}} met je gedeeld.",
+  // You'll sign in or create a free account next.
+  "invite.signInNext": "Hierna log je in of maak je een gratis account aan.",
   // Sign out and accept as {{email}}
   "invite.signOutAndAccept": "Uitloggen en accepteren als {{email}}",
-  // {{inviter}} stays the owner — you can't change the care plan or who has access, and you can leave the household any time.
-  "invite.staysOwner": "{{inviter}} blijft de eigenaar — je kunt het verzorgingsplan en wie er toegang heeft niet wijzigen, en je kunt het huishouden altijd verlaten.",
+  // {{owner}} invited you to help care for {{birds}}
+  "invite.titleBirds": "{{owner}} nodigt je uit om mee te zorgen voor {{birds}}",
+  // {{owner}} invited you to help care for {{count}} birds
+  "invite.titleManyBirds_one": "{{owner}} nodigt je uit om mee te zorgen voor {{count}} vogel",
+  // {{owner}} invited you to help care for {{count}} birds
+  "invite.titleManyBirds_other": "{{owner}} nodigt je uit om mee te zorgen voor {{count}} vogels",
   // Use at least 8 characters.
   "invite.useEightChars": "Gebruik minstens 8 tekens.",
   // This invite was sent to <b>{{email}}</b>, but you're signed in with a different account.
   "invite.wrongAccount": "Deze uitnodiging is gestuurd naar <b>{{email}}</b>, maar je bent ingelogd met een ander account.",
-  // You'll be able to
-  "invite.youllBeAbleTo": "Je kunt dan",
   // That file looks empty.
   "journalAttachment.empty": "Dat bestand lijkt leeg.",
   // That file is too large — attachments are capped at {{mb}} MB.
@@ -4283,22 +4309,18 @@
   "journalEntryView.openPhoto": "Foto op volledig formaat openen",
   // Add your first bird
   "landing.addYourFirstBird": "Voeg je eerste vogel toe",
-  // Already have an account?
-  "landing.alreadyHaveAccount": "Heb je al een account?",
-  // Everything it takes to care for your parrots, in one place you can share.
-  "landing.headline": "Alles wat nodig is om voor je papegaaien te zorgen, op één plek die je kunt delen.",
-  // Were you invited by someone? Open the link they sent you.
-  "landing.invitedHint": "Ben je door iemand uitgenodigd? Open de link die je hebt gekregen.",
+  // I already have an account
+  "landing.alreadyHaveAccountButton": "Ik heb al een account",
+  // Everything it takes to care for your parrots, in one place you can share
+  "landing.headlineV2": "Alles wat de zorg voor je papegaaien vraagt, op één plek die je kunt delen",
+  // Invited by someone? Open the link they sent you.
+  "landing.invitedHintV2": "Uitgenodigd door iemand? Open de link die je hebt gekregen.",
   // A shared care plan and health record for every bird — routine, diet, weight, and emergency info, shared with everyone who helps.
   "landing.metaDescription": "Een gedeeld verzorgingsplan en gezondheidsdossier voor elke vogel — routine, voeding, gewicht en noodinfo, gedeeld met iedereen die helpt.",
   // Kya & Co. — Calm, clear care for your bird
   "landing.pageTitle": "Kya & Co. — Rustige, duidelijke zorg voor je vogel",
-  // Sign in
-  "landing.signIn": "Inloggen",
-  // Start here
-  "landing.startHere": "Begin hier",
-  // Keep a complete care plan and health record for each of your birds — routine, diet, weight, and the little things only you know. Share it with the family, sitters, and household members who help.
-  "landing.subhead": "Houd voor elk van je vogels een compleet verzorgingsplan en gezondheidsdossier bij — routine, voeding, gewicht en de kleine dingen die alleen jij weet. Deel het met familie, oppassen en leden van je huishouden die helpen.",
+  // A care plan and health record for each bird: routine, diet, weight, and the little things only you know. Share it with family, sitters, and anyone who helps.
+  "landing.subheadV2": "Een verzorgingsplan en gezondheidsdossier voor elke vogel: dagritme, voeding, gewicht en de kleine dingen die alleen jij weet. Deel het met familie, oppassen en iedereen die helpt.",
   // Household
   "loggedBy.household": "Huisgenoot",
   // Owner
@@ -5055,24 +5077,26 @@
   "resetPassword.bodyNotReady": "Open deze pagina via de e-mail om je wachtwoord opnieuw in te stellen.",
   // Choose a new password for your account.
   "resetPassword.bodyReady": "Kies een nieuw wachtwoord voor je account.",
-  // Confirm password
-  "resetPassword.confirmPassword": "Bevestig wachtwoord",
+  // Checking your link…
+  "resetPassword.checkingLink": "Je link wordt gecontroleerd…",
+  // Confirm new password
+  "resetPassword.confirmNewPassword": "Bevestig nieuw wachtwoord",
   // Could not update password.
   "resetPassword.couldNotUpdate": "Kon het wachtwoord niet bijwerken.",
-  // Set a new password.
-  "resetPassword.headline": "Stel een nieuw wachtwoord in.",
+  // Set a new password
+  "resetPassword.headlineV2": "Stel een nieuw wachtwoord in",
   // Passwords don't match.
   "resetPassword.mismatch": "De wachtwoorden komen niet overeen.",
   // New password
   "resetPassword.newPassword": "Nieuw wachtwoord",
   // Reset password — Kya & Co.
   "resetPassword.pageTitle": "Wachtwoord opnieuw instellen — Kya & Co.",
+  // Save new password
+  "resetPassword.saveNewPassword": "Nieuw wachtwoord opslaan",
   // Password must be at least 6 characters.
   "resetPassword.tooShort": "Je wachtwoord moet minstens 6 tekens hebben.",
   // Password updated. You're signed in.
   "resetPassword.updated": "Wachtwoord bijgewerkt. Je bent ingelogd.",
-  // Update password
-  "resetPassword.updatePassword": "Wachtwoord bijwerken",
   // Sorry, the app didn't load properly. Tap Reload, and if it keeps happening, email us at {{email}}.
   "root.errorBodyReload": "Sorry, de app is niet goed geladen. Tik op Opnieuw laden, en mail ons op {{email}} als het blijft gebeuren.",
   // Go home
