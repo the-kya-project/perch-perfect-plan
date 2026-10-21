@@ -116,6 +116,22 @@ async function loadPreviewByToken(token: string): Promise<LoadedSit> {
   };
 }
 
+/** The owner's first name for sitter-facing copy, or null. Real names only —
+ *  never an email prefix. */
+async function ownerFirstNameFor(sb: any, ownerId: string): Promise<string | null> {
+  const first = (v: unknown) => (v ?? "").toString().trim().split(/\s+/)[0] || null;
+  try {
+    const { data: prof } = await sb.from("profiles").select("first_name, display_name").eq("id", ownerId).maybeSingle();
+    const fromProfile = first(prof?.first_name) ?? first(prof?.display_name);
+    if (fromProfile) return fromProfile;
+    const { data: u } = await sb.auth.admin.getUserById(ownerId);
+    const m = u?.user?.user_metadata ?? {};
+    return first(m.first_name) ?? first(m.display_name) ?? first(m.full_name) ?? first(m.name);
+  } catch {
+    return null;
+  }
+}
+
 async function loadSitBirdIds(sit: LoadedSit): Promise<string[]> {
   if (sit.preview_bird_id) return [sit.preview_bird_id];
   const sb = await getAdmin();
@@ -159,7 +175,13 @@ export const getSitterContext = createServerFn({ method: "GET" })
     const sit = await loadSitByToken(data.token);
 
     const birdIds = await loadSitBirdIds(sit);
-    if (birdIds.length === 0) throw new Error("This sit has no birds.");
+    // A sit with no birds is a link state, not a crash: answer with a code and
+    // the owner's first name so the sitter screen can say who to ask. Returned
+    // rather than thrown so the name reaches the client intact (the sitter
+    // route turns it into its SITTER_SIT_NO_BIRDS link-error screen).
+    if (birdIds.length === 0) {
+      return { code: "SITTER_SIT_NO_BIRDS" as const, ownerFirstName: await ownerFirstNameFor(sb, sit.owner_id as string) };
+    }
 
     const { data: allBirds, error: bErr } = await sb
       .from("birds")
