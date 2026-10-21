@@ -86,7 +86,7 @@ function weighLine(t: TFunction, sex: Sex): string {
   return t("fullCheck.weighLine_other", "Optional. It goes straight to their weight history.");
 }
 
-export function FullHealthCheck({ birdId, name, sex, vet, submitting, onSubmit, onLeave, variant = "owner", extra }: {
+export function FullHealthCheck({ birdId, name, sex, vet, submitting, onSubmit, onLeave, variant = "owner", extra, ownerName }: {
   birdId: string;
   name: string;
   /** The birds.sex column as stored ("Male" / "Female" / null). */
@@ -107,6 +107,8 @@ export function FullHealthCheck({ birdId, name, sex, vet, submitting, onSubmit, 
   variant?: "owner" | "sitter";
   /** Extra content at the end of the body (sitter: the past-checks link). */
   extra?: ReactNode;
+  /** Sitter variant: the owner's first name ("Call [owner]'s avian vet"). */
+  ownerName?: string;
 }) {
   const { t } = useTranslation();
   const sx = sexOf(sex);
@@ -314,7 +316,11 @@ export function FullHealthCheck({ birdId, name, sex, vet, submitting, onSubmit, 
             <ul className="m-0 flex list-none flex-col gap-1.5 p-0 text-[14px] leading-[1.45]">
               {flagged.map((f) => (
                 <li key={f.key}>
-                  {answers[f.key] === "concerning"
+                  {sitter && ownerName
+                    ? (answers[f.key] === "concerning"
+                      ? t("fullCheck.watchConcerningSitter", "{{item}} looked concerning. Call {{owner}}'s avian vet.", { item: itemNounCap(t, f.key), owner: ownerName })
+                      : t("fullCheck.watchNotSureSitter", "You weren't sure about {{name}}'s {{item}}. If it doesn't clear up, call {{owner}}'s avian vet.", { name, item: itemNoun(t, f.key), owner: ownerName }))
+                    : answers[f.key] === "concerning"
                     ? t("fullCheck.watchConcerning", "{{item}} looked concerning. Call your avian vet.", { item: itemNounCap(t, f.key) })
                     : t("fullCheck.watchNotSure", "You weren't sure about {{name}}'s {{item}}. If it doesn't clear up, call your avian vet.", { name, item: itemNoun(t, f.key) })}
                 </li>
