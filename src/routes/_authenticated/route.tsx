@@ -1,13 +1,11 @@
 import { createFileRoute, Outlet, redirect, useLocation, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthClientStalled, getReadySession } from "@/lib/authReady";
 import { applyOAuthAttribution } from "@/lib/attribution";
 import { PullToRefresh } from "@/components/PullToRefresh";
 import { OwnerTabBar, isTaskPath } from "@/components/OwnerTabBar";
-import { BrandLockup } from "@/components/BrandLogo";
-import { K } from "@/components/kya";
+import { StartupSplash } from "@/components/StartupSplash";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -54,14 +52,9 @@ export const Route = createFileRoute("/_authenticated")({
 });
 
 function AuthPending() {
-  return (
-    // Forest splash with the stacked lockup (the "ink" variant is drawn for
-    // forest surfaces: white wordmark). Static markup only — see above.
-    <div className="flex min-h-screen flex-col items-center justify-center gap-6" style={{ background: K.forest }} aria-hidden>
-      <BrandLockup orientation="stacked" variant="ink" size={180} alt="" />
-      <Loader2 className="size-5 animate-spin" style={{ color: K.lime }} />
-    </div>
-  );
+  // Forest splash with the stacked lockup (shared with the root's recovery
+  // screen). Static markup only — see above.
+  return <StartupSplash />;
 }
 
 /**

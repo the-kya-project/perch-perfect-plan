@@ -14,6 +14,7 @@ import { I18nextProvider, useTranslation } from "react-i18next";
 import i18next from "i18next";
 import { Loader2 } from "lucide-react";
 import { globalI18n } from "@/lib/i18n";
+import { StartupSplash } from "@/components/StartupSplash";
 
 import appCss from "../styles.css?url";
 import { installErrorListeners, primeAccountRole, registerErrorReportingContext, reportError } from "@/lib/errorReporting";
@@ -77,9 +78,7 @@ function ErrorComponent({ error }: ErrorComponentProps) {
   }, [error, recovering]);
   if (recovering) {
     return (
-      <div className="grid min-h-screen place-items-center bg-[var(--cream)]" aria-hidden>
-        <Loader2 className="size-5 animate-spin text-[var(--moss)]" />
-      </div>
+      <StartupSplash />
     );
   }
   return <SomethingWentWrong />;
@@ -139,9 +138,44 @@ const COLD_LAUNCH_REDIRECT = `(function(){try{` +
   `window.location.replace("/dashboard");return;}}` +
   `}catch(e){}})();`;
 
+// Startup safety net, inline in <head> so it works even when the app's own
+// code never loads (a page whose scripts 404 can't run anything from the
+// bundle, which is why the bundle-side recovery in sw-register.ts didn't help
+// the 2026-10-21 stuck installs). Two jobs, no dependencies:
+//  1. A code or style file of this page fails to load → ONE automatic hard
+//     reset (unregister the worker, clear caches, reload). The attempt is
+//     shared with sw-register.ts through the same "kya-auto-reload" record,
+//     so the two together still reload at most once; after that, or offline,
+//     it shows the screen below instead.
+//  2. The app hasn't finished starting after 10 seconds → "Something's taking
+//     too long" with a Try again button. Never an automatic reload.
+// The app sets window.__kyaReady once the first screen has loaded (see
+// RootComponent), which also removes the screen if it's showing.
+const STARTUP_GUARD = `(function(){try{` +
+  `var K="kya-auto-reload",W=300000,shown=false;` +
+  `function nl(){try{return /^nl/i.test(navigator.language||"")}catch(e){return false}}` +
+  `function reset(){var done=function(){try{var u=new URL(location.href);u.searchParams.set("_r",String(Date.now()));location.replace(u.toString())}catch(e){location.reload()}};` +
+  `var p=[];try{if(navigator.serviceWorker)p.push(navigator.serviceWorker.getRegistrations().then(function(rs){return Promise.all(rs.map(function(r){return r.unregister()}))}))}catch(e){}` +
+  `try{if(window.caches)p.push(caches.keys().then(function(ks){return Promise.all(ks.map(function(k){return caches.delete(k)}))}))}catch(e){}` +
+  `Promise.all(p).then(done,done);setTimeout(done,3000)}` +
+  `function show(){if(shown||window.__kyaReady||!document.body)return;shown=true;var d=document.createElement("div");d.id="kya-startup-slow";d.setAttribute("role","alert");` +
+  `d.style.cssText="position:fixed;inset:0;z-index:2147483647;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;background:#1a3d2e;color:#fff;font-family:'DM Sans',system-ui,-apple-system,sans-serif;padding:calc(env(safe-area-inset-top) + 24px) 28px calc(env(safe-area-inset-bottom) + 24px)";` +
+  `var h=document.createElement("h1");h.textContent=nl()?"Dit duurt te lang":"Something's taking too long";h.style.cssText="margin:0;font:700 28px/1.2 Newsreader,Georgia,serif";` +
+  `var t=document.createElement("p");t.textContent=nl()?"Controleer je verbinding en probeer het opnieuw.":"Check your connection, then try again.";t.style.cssText="margin:0;max-width:30ch;font-size:15px;line-height:1.5;color:#d6e8dc";` +
+  `var b=document.createElement("button");b.type="button";b.textContent=nl()?"Opnieuw proberen":"Try again";b.style.cssText="margin-top:12px;min-height:52px;padding:0 32px;border-radius:999px;border:2px solid #12291f;background:#f2b33d;color:#1a3d2e;font:700 16px 'DM Sans',system-ui,sans-serif";` +
+  `b.onclick=function(){b.disabled=true;reset()};d.appendChild(h);d.appendChild(t);d.appendChild(b);document.body.appendChild(d)}` +
+  `window.__kyaHideStartupGuard=function(){var d=document.getElementById("kya-startup-slow");if(d)d.remove()};` +
+  `setTimeout(function(){if(!window.__kyaReady){if(document.body)show();else addEventListener("DOMContentLoaded",show)}},10000);` +
+  `addEventListener("error",function(e){var el=e&&e.target;if(!el||(el.tagName!=="SCRIPT"&&el.tagName!=="LINK"))return;` +
+  `var u=el.src||el.href||"";if(u.indexOf(location.origin+"/assets/")!==0||window.__kyaReady)return;` +
+  `var at=0;try{at=Number(localStorage.getItem(K))||0}catch(x){}` +
+  `if(navigator.onLine!==false&&!(Date.now()-at<W)){try{localStorage.setItem(K,String(Date.now()));reset();return}catch(x){}}` +
+  `if(document.body)show();else addEventListener("DOMContentLoaded",show)},true);` +
+  `}catch(e){}})();`;
+
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
-    scripts: [{ children: COLD_LAUNCH_REDIRECT }],
+    scripts: [{ children: STARTUP_GUARD }, { children: COLD_LAUNCH_REDIRECT }],
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
@@ -248,6 +282,17 @@ function RootComponent() {
     markAppHealthySoon();
     return () => window.removeEventListener(STARTUP_FAILED_EVENT, onFailed);
   }, []);
+  // Tell the startup safety net (STARTUP_GUARD) the first screen has loaded:
+  // the router has finished its first load, including the session check.
+  useEffect(() => {
+    const ready = () => {
+      const w = window as unknown as { __kyaReady?: boolean; __kyaHideStartupGuard?: () => void };
+      w.__kyaReady = true;
+      w.__kyaHideStartupGuard?.();
+    };
+    if (router.state.status === "idle" && !router.state.isLoading) ready();
+    return router.subscribe("onResolved", ready);
+  }, [router]);
   useEffect(() => { void runErrorTest(setRenderTest); }, []); // TEMPORARY
 
   useEffect(() => {
