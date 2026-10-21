@@ -6,6 +6,7 @@
 
 import i18next from "i18next";
 import { supabase } from "@/integrations/supabase/client";
+import { fetchDisplayNames } from "@/lib/resolveNames";
 
 export const NOTIF_SEEN_KEY = "ppc_notif_seen_at";
 
@@ -69,9 +70,9 @@ export async function fetchScanFeed(): Promise<ScanFeedItem[]> {
   // Resolve names for household-run scans ("Daniel · household").
   const ids = Array.from(new Set(items.filter((n) => n.source === "household" && n.run_by).map((n) => n.run_by as string)));
   if (ids.length) {
-    const { data: profs } = await supabase.from("profiles").select("id, display_name").in("id", ids);
-    const byId = new Map((profs ?? []).map((p: any) => [p.id, (p.display_name ?? "").toString().trim()]));
-    for (const n of items) if (n.source === "household" && n.run_by) n.runner_name = byId.get(n.run_by) || null;
+    // Server-side: profiles RLS is self-only, so a direct read comes back empty.
+    const byId = await fetchDisplayNames(ids);
+    for (const n of items) if (n.source === "household" && n.run_by) n.runner_name = byId[n.run_by] || null;
   }
   return items;
 }
