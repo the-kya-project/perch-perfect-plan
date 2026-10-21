@@ -18,6 +18,7 @@ import {
 // Only the pure helpers come from carePlanCards. The Kya-look primitives this
 // view renders with live below.
 import { has, joinUnique, mealPillLabel, RichText } from "@/components/carePlanCards";
+import { dietTypeLabel } from "@/components/careEditors/foodLabels";
 import {
   ShieldAlert, Phone, Pencil, AlertTriangle, AlertOctagon,
   Soup, Hand, Home as HomeIcon, Heart, Sun, Video, Siren,
@@ -580,14 +581,14 @@ export function CarePlanView({
             </Callout>
           )}
           {!hasStructuredFood && has(plan.food_instructions) && <Row label={t("carePlan.dietOverview", "Diet overview")}><RichText text={plan.food_instructions} /></Row>}
-          {diet.length > 0 && <Row label={t("carePlan.dietTypes", "Diet types")}><Chips items={diet} /></Row>}
+          {diet.length > 0 && <Row label={t("carePlan.dietTypes", "Diet types")}><Chips items={diet.map((d) => dietTypeLabel(t, d))} /></Row>}
           {has(plan.diet_other) && <Row label={t("carePlan.otherDiet", "Other diet")}>{plan.diet_other}</Row>}
           {hasPerFoodDetails ? (
             <div className="cp-row flex flex-col gap-2 py-3">
               {foodRows.map((f, i) => (
                 <FeedingItem
                   key={`${f.type}-${i}`}
-                  typeLabel={f.type.charAt(0).toUpperCase() + f.type.slice(1).replace(/_/g, " ")}
+                  typeLabel={dietTypeLabel(t, f.type)}
                   name={f.name}
                   amountStr={has(f.amount) ? (f.unit ? formatAmountUnitDisplay(f.amount, f.unit, t) : String(f.amount)) : ""}
                   times={f.times}
