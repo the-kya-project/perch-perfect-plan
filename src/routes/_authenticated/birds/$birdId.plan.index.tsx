@@ -99,7 +99,7 @@ function CarePlanOverview() {
   // Owner and household members alike can see the read-only sitter preview.
   const canPreview = role === "owner" || role === "household";
 
-  const { bird, isDone, todo, homeIsDifferent, emergencyIsDifferent } = useCarePlanStatus(birdId);
+  const { bird, isDone, todo, loaded, homeIsDifferent, emergencyIsDifferent } = useCarePlanStatus(birdId);
 
   useEffect(() => {
     track("care_plan_viewed", {});
@@ -168,7 +168,8 @@ function CarePlanOverview() {
           action={canPreview ? { label: t("planOverview.viewAsSitterPill", "View as sitter"), icon: <Eye className="size-4" />, onClick: () => navigate({ to: "/birds/$birdId/view-as-sitter", params: { birdId } }) } : undefined}
         >
           <div className="mt-5 flex flex-col gap-3 rounded-[16px] p-4" style={{ background: K.forestDeep }}>
-            <div>{overallTag}</div>
+            {/* Wait for the data, or it flashes "8 to finish" first. */}
+            {loaded && <div>{overallTag}</div>}
             <p className="m-0 text-[16px] leading-[1.45] text-white">{status}</p>
             {canEdit && firstTodo && (
               <KyaPrimaryButton onClick={() => navigate({ to: "/birds/$birdId/setup", params: { birdId }, search: { step: setupStepNumber(firstTodo as SetupStepKey) } })}>

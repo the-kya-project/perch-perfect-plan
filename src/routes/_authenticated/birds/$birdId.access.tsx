@@ -67,8 +67,8 @@ function AccessHub() {
   const name = bird?.row?.name ?? t("birdAccess.thisBird", "this bird");
 
   // Each member's real permissions (household_member_permissions; no row =
-  // can see only). Same key and shape as the Household page, so the two share
-  // the cache and always say the same thing.
+  // can see only). Always refetched on open (staleTime 0), so a change made on
+  // the Household page shows here straight away.
   const { data: myId = null } = useQuery({
     queryKey: ["me-id"],
     queryFn: async () => (await getLocalUser()).data.user?.id ?? null,
@@ -76,6 +76,7 @@ function AccessHub() {
   const { data: permRows } = useQuery({
     queryKey: ["household-permissions", myId] as const,
     enabled: !!myId,
+    staleTime: 0,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("household_member_permissions")
