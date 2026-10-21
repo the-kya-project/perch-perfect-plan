@@ -116,7 +116,10 @@ function JournalFacet() {
   const { data: bird } = useQuery({
     queryKey: ["bird-name", birdId],
     queryFn: async () => {
-      const { data } = await supabase.from("birds").select("name").eq("id", birdId).maybeSingle();
+      // Throws on a failed request (same key as the emergency page, which tells
+      // a missing bird from a dropped connection by it).
+      const { data, error } = await supabase.from("birds").select("name").eq("id", birdId).maybeSingle();
+      if (error) throw error;
       return data as { name: string } | null;
     },
   });

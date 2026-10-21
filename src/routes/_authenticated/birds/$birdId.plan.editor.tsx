@@ -30,6 +30,8 @@ import { useCapability, useMyPermissions } from "@/lib/useCapability";
 import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 import { friendlyError } from "@/lib/errorMessage";
 import { formatLocalDateTime } from "@/lib/dates";
+import { LoadError } from "@/components/LoadError";
+import { useLoadState } from "@/lib/useTooLong";
 
 
 // The care-plan editor is reached via the new overview front door (/plan).
@@ -130,13 +132,18 @@ function BirdEditor() {
     setTabAtEnd(el.scrollLeft + el.clientWidth >= el.scrollWidth - 1);
   }
 
-  const { data: bird } = useQuery({
+  // maybeSingle: a missing bird (deleted / no access) is null, not an error, so
+  // the page can say so instead of retrying into a forever "Loading...".
+  const birdQ = useQuery({
     queryKey: ["bird", birdId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("birds").select("*").eq("id", birdId).single();
+      const { data, error } = await supabase.from("birds").select("*").eq("id", birdId).maybeSingle();
       if (error) throw error; return data;
     },
   });
+  const { data: bird } = birdQ;
+  const birdLoad = useLoadState([birdQ]);
+  const birdMissing = birdQ.isSuccess && !bird;
 
   // Re-measure after the strip mounts (it only renders once the bird loads) and
   // on resize, so the right fade reliably shows when the tabs overflow.
@@ -195,6 +202,24 @@ function BirdEditor() {
   });
 
   const resolvePhoto = useBirdPhotos([bird?.photo_url], 96);
+
+  if (birdMissing || birdLoad.failed) {
+    const goHome = () => navigate({ to: "/dashboard" });
+    const goOverview = () => navigate({ to: "/birds/$birdId/plan", params: { birdId } });
+    return (
+      <div className="setup-frame min-h-screen" style={{ background: K.mist, color: K.forest }}>
+        <TaskHeader onClose={birdMissing ? goHome : goOverview} title={t("planEditor.carePlanTitle", "Care plan")} />
+        <KyaBody>
+          <LoadError
+            missing={birdMissing}
+            onRetry={birdLoad.retry}
+            onBack={birdMissing ? goHome : goOverview}
+            backLabel={birdMissing ? t("loadError.backHome", "Back to home") : undefined}
+          />
+        </KyaBody>
+      </div>
+    );
+  }
 
   if (!bird) {
     return (
