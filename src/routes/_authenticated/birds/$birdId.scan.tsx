@@ -144,10 +144,10 @@ function OwnerScan() {
       ? { background: K.amberBg, color: K.amberText }
       : { background: K.lime, color: K.forest };
   const title = result.status === "red"
-    ? t("ownerScan.eyebrowRed", "Call your vet now")
+    ? t("ownerScan.titleRed", "Call your vet about {{name}} now", { name })
     : result.status === "yellow"
-      ? t("ownerScan.eyebrowYellow", "Keep a close eye")
-      : t("ownerScan.eyebrowGreen", "All good today");
+      ? t("ownerScan.titleYellow", "Keep a close eye on {{name}}", { name })
+      : t("ownerScan.titleGreen", "{{name}} looks good today", { name });
   const reasons = triageReasonLines(t, result.reasonCodes) ?? result.reasons;
 
   return (

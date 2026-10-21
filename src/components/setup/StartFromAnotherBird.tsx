@@ -11,7 +11,7 @@ import { FOOD_COLUMNS, hasFoodToCopy, isOwnTask } from "@/lib/copyFromBird";
 import { track } from "@/lib/analytics";
 import { createPortal } from "react-dom";
 import { Check } from "lucide-react";
-import { S, SERIF, Dropdown, SetupPrimaryButton } from "./controls";
+import { S, SERIF, Dropdown, SetupSecondaryButton } from "./controls";
 import { SetupHeaderPanelSlot } from "./SetupFrame";
 
 export type CopyKind = "food" | "day";
@@ -171,11 +171,11 @@ export function StartFromAnotherBird({
         />
       )}
 
-      <SetupPrimaryButton onClick={copy} disabled={busy || !source}>
+      <SetupSecondaryButton onClick={copy} disabled={busy || !source}>
         {kind === "food"
           ? t("copyFromBird.copyFoods", "Copy {{source}}'s foods", { source: source?.name })
           : t("copyFromBird.copyDay", "Copy {{source}}'s day", { source: source?.name })}
-      </SetupPrimaryButton>
+      </SetupSecondaryButton>
       {failed && <p className="m-0 text-[14px]" style={{ color: S.lime }}>{t("copyFromBird.failed", "That didn't copy. Check your connection and try again.")}</p>}
       <div className="text-center">
         <button type="button" onClick={() => setHidden(true)} className="min-h-[44px] text-[15px] font-[600] text-white underline underline-offset-2">

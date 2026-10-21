@@ -39,6 +39,7 @@ import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/im
 import { persistBirdPhoto, signBirdPhoto } from "@/lib/birdPhoto";
 import { friendlyError } from "@/lib/errorMessage";
 import { LoadError } from "@/components/LoadError";
+import { useConfirm } from "@/components/ConfirmSheet";
 import { useLoadState, useTooLong } from "@/lib/useTooLong";
 
 const setupSearch = z.object({
@@ -486,7 +487,7 @@ function BirdSetup() {
     return (
       <SetupShell
         step={setupStepNumber("health")}
-        title={t("birdSetup.stop.title", "The basics are set for {{name}}.", { name: bird.name })}
+        title={t("birdSetup.stop.titleNoPeriod", "The basics are set for {{name}}", { name: bird.name })}
         subtitle={t("birdSetup.stop.body", "Do you want to add more details for a pet sitter? We'll cover behavior and training, tips and tricks for {{name}}'s care, and more.", { name: bird.name })}
         birdName={bird.name}
         birdSpecies={bird.species}
@@ -523,7 +524,7 @@ function BirdSetup() {
     <SetupShell
       step={step}
       title={onFoodPage2
-        ? t("birdSetup.food2.title", "Water, treats and hygiene")
+        ? t("birdSetup.food2.titleNamed", "{{name}}'s water, treats, and hygiene", { name: bird.name })
         : meta.key === "food"
           ? t("birdSetup.food.title", "What {{name}} eats", { name: bird.name })
         : meta.key === "health"
@@ -531,12 +532,14 @@ function BirdSetup() {
           : meta.key === "personality"
             ? t("birdSetup.behavior.title", "How {{name}} likes to be treated", { name: bird.name })
             : meta.key === "clips"
-              ? t("birdSetup.tips.title", "Show your sitter how")
+              ? t("birdSetup.tips.titleNamed", "Show your sitter how {{name}} does it", { name: bird.name })
               : meta.key === "day"
                 ? t("birdSetup.day.title", "{{name}}'s day", { name: bird.name })
                 : meta.key === "review"
-                  ? t("birdSetup.review.title", "Here's what your sitter sees")
-                  : setupStepTitle(t, meta.key)}
+                  ? t("birdSetup.review.titleNamed", "Here's what your sitter sees for {{name}}", { name: bird.name })
+                  : meta.key === "emergency"
+                    ? t("birdSetup.emergency.titleNamed", "Emergency contacts for {{name}}", { name: bird.name })
+                    : setupStepTitle(t, meta.key)}
       subtitle={onFoodPage2 ? t("birdSetup.food2.intro", "Everything here is optional, and the defaults are a good place to start.") : undefined}
       page={meta.key === "food" ? [foodPage, 2] : undefined}
       birdName={bird.name}
@@ -881,7 +884,7 @@ export function BasicsStep({ birdId, onBlockNext, registerFlush }: { birdId: str
         <BirdField label={t("birdSetup.name", "Name")} required><input className="kya-input" value={form.name ?? ""} onChange={(e) => setForm({ ...form, name: e.target.value })} /></BirdField>
         <SpeciesPicker required value={form.species ?? ""} onChange={(v) => setForm({ ...form, species: v })} />
         <AgePicker age={form.age ?? ""} birthDate={form.birth_date ?? ""} onChange={(next) => setForm({ ...form, age: next.age, birth_date: next.birthDate })} />
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <BirdField label={t("birdSetup.sex", "Sex")}>
             <select className="kya-input" value={form.sex ?? ""} onChange={(e) => setForm({ ...form, sex: e.target.value || null })}>
               <option value="">{t("birdSetup.unknown", "Unknown")}</option><option value="Male">{t("birdSetup.male", "Male")}</option><option value="Female">{t("birdSetup.female", "Female")}</option>
@@ -1082,7 +1085,7 @@ function TimeBlockSection({
       <div className="flex items-center gap-3">
         <span
           className="grid size-11 shrink-0 place-items-center rounded-full"
-          style={bedtime ? { background: S.forest, color: S.lime } : { background: S.lime, color: S.forest }}
+          style={{ background: S.forest, color: S.lime }}
         >
           {blockIcon(block.key)}
         </span>
@@ -1272,6 +1275,7 @@ export function FoodWaterStep({
   registerValidate?: (fn: (() => boolean) | null) => void;
 }) {
   const { t } = useTranslation();
+  const { confirm, sheet: confirmSheet } = useConfirm();
   const qc = useQueryClient();
 
   const { data: plan, isLoading, isError, refetch } = useQuery({
@@ -1577,11 +1581,16 @@ export function FoodWaterStep({
   // Selecting a type creates its card with one auto-expanded "needs details"
   // item (chop waits for the pre-made/homemade choice instead). Deselecting a
   // type that has filled-in content confirms before discarding.
-  function toggleDietType(value: string) {
+  async function toggleDietType(value: string) {
     if (diet.includes(value)) {
       const items = dietDetails[value] ?? [];
       const hasContent = items.some(foodItemHasContent) || (value === "chop" && chopIngredients.length > 0);
-      if (hasContent && !window.confirm(t("birdSetup.removeDietTypeConfirm", "Remove {{type}} and the items you've added to it?", { type: typeLabel(value) }))) return;
+      if (hasContent && !(await confirm({
+        title: t("birdSetup.removeDietTypeConfirmTitle", "Remove {{type}}?", { type: typeLabel(value) }),
+        body: t("birdSetup.removeDietTypeConfirmBody", "The items you've added to it will be removed too."),
+        confirmLabel: t("birdSetup.removeDietTypeConfirmAction", "Remove"),
+        cancelLabel: t("birdSetup.confirmKeep", "Keep"),
+      }))) return;
       setDiet(diet.filter((d) => d !== value));
       setDietDetails((prev) => { const next = { ...prev }; delete next[value]; return next; });
       if (value === "chop") setChopIngredients([]);
@@ -1593,10 +1602,15 @@ export function FoodWaterStep({
 
   // Chop: remove the homemade item and its ingredients (asks first when there's
   // anything to lose). Pre-made items are added and removed in the editor.
-  function removeHomemadeChop(): boolean {
+  async function removeHomemadeChop(): Promise<boolean> {
     const homemade = chopItemsState.filter((i) => i.homemade);
     const hasContent = homemade.some(foodItemHasContent) || chopIngredients.length > 0 || freshOther.trim() !== "";
-    if (hasContent && !window.confirm(t("birdSetup.removeHomemadeConfirm", "Remove homemade chop? This clears its amount, timing and ingredients."))) return false;
+    if (hasContent && !(await confirm({
+      title: t("birdSetup.removeHomemadeConfirmTitle", "Remove homemade chop?"),
+      body: t("birdSetup.removeHomemadeConfirmBody", "This clears its amount, timing, and ingredients."),
+      confirmLabel: t("birdSetup.removeDietTypeConfirmAction", "Remove"),
+      cancelLabel: t("birdSetup.confirmKeep", "Keep"),
+    }))) return false;
     setItemsForType("chop", chopItemsState.filter((i) => !i.homemade));
     setChopIngredients([]);
     setFreshOther("");
@@ -1640,7 +1654,7 @@ export function FoodWaterStep({
       <SectionCard title={t("birdSetup.primaryDiet", "Primary diet")} helper={t("birdSetup.chooseAllThatApply", "Choose all that apply.")}>
         <div role="group" aria-label={t("birdSetup.primaryDiet", "Primary diet")} className="flex flex-wrap gap-2">
           {DIET_OPTIONS.map((o) => (
-            <CheckChip key={o.value} on={diet.includes(o.value)} onClick={() => toggleDietType(o.value)}>
+            <CheckChip key={o.value} on={diet.includes(o.value)} onClick={() => void toggleDietType(o.value)}>
               {displayLabel(t, o.label)}
             </CheckChip>
           ))}
@@ -1787,6 +1801,7 @@ export function FoodWaterStep({
         </>
       )}
 
+      {confirmSheet}
     </div>
   );
 
@@ -1986,6 +2001,7 @@ export function EnvironmentStep({ birdId, birdName, registerFlush }: { birdId: s
   // care plan instead. Household members editing a plan can't change the
   // owner's shared answers, so they always edit this bird's own.
   const { t } = useTranslation();
+  const { confirm, sheet: confirmSheet } = useConfirm();
   const qc = useQueryClient();
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["plan-environment", birdId],
@@ -2129,7 +2145,13 @@ export function EnvironmentStep({ birdId, birdName, registerFlush }: { birdId: s
   }
 
   async function switchToShared() {
-    if (!window.confirm(t("birdSetup.reminders.useSharedConfirm", "Use your shared reminders for {{name}}? The answers that are different for {{name}} will be removed.", { name: birdName }))) return;
+    const ok = await confirm({
+      title: t("birdSetup.reminders.useSharedConfirmTitle", "Use your shared reminders for {{name}}?", { name: birdName }),
+      body: t("birdSetup.reminders.useSharedConfirmBody", "The answers that are different for {{name}} will be removed.", { name: birdName }),
+      confirmLabel: t("birdSetup.reminders.useSharedConfirmAction", "Use shared reminders"),
+      cancelLabel: t("emergencySetup.useSharedConfirmKeep", "Keep them different"),
+    });
+    if (!ok) return;
     const { error } = await supabase.from("care_plans").update(clearOwnPatch() as any).eq("id", plan.id);
     if (error) { toast.error(friendlyError(error)); return; }
     birdClearedRef.current = true;
@@ -2193,7 +2215,7 @@ export function EnvironmentStep({ birdId, birdName, registerFlush }: { birdId: s
         />
       </TileCard>
 
-      <TileCard tile="teal" icon={<DoorClosed className="size-5" />} title={t("birdSetup.anythingOffLimits", "Anything off-limits")}>
+      <TileCard icon={<DoorClosed className="size-5" />} title={t("birdSetup.anythingOffLimits", "Anything off-limits")}>
         <TextField
           value={offLimits}
           maxLength={400}
@@ -2236,6 +2258,7 @@ export function EnvironmentStep({ birdId, birdName, registerFlush }: { birdId: s
           />
         </Field>
       </TileCard>
+      {confirmSheet}
     </div>
   );
 }
@@ -2538,7 +2561,7 @@ export function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlus
             type="button"
             onClick={openNewMed}
             className="flex min-h-[62px] w-full items-center gap-3 rounded-[16px] border-2 border-dashed bg-white px-4 py-3 text-left"
-            style={{ borderColor: "#b9b19a", color: S.forest }}
+            style={{ borderColor: S.footerLine, color: S.forest }}
           >
             <span className="grid size-8 shrink-0 place-items-center rounded-full" style={{ background: S.forest, color: S.lime }}>
               <Plus className="size-4" strokeWidth={2.6} aria-hidden="true" />
@@ -2559,7 +2582,7 @@ export function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlus
                   className="flex min-h-[64px] w-full items-center gap-3 rounded-[16px] bg-white px-3.5 py-3 text-left"
                   style={{ color: S.forest }}
                 >
-                  <span className="grid size-10 shrink-0 place-items-center rounded-[12px]" style={{ background: S.lime }}>
+                  <span className="grid size-10 shrink-0 place-items-center rounded-[12px]" style={{ background: S.forest, color: S.lime }}>
                     <Pill className="size-5" aria-hidden="true" />
                   </span>
                   <span className="min-w-0 flex-1">
@@ -2687,7 +2710,7 @@ export function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlus
 
       <SectionCard
         title={t("birdSetup.health.clipTitle", "A short clip of {{name}}", { name: birdName })}
-        helper={t("birdSetup.health.clipHelper", "Normal behavior or sounds, up to 60 seconds. Only your sitter can see it.")}
+        helper={t("birdSetup.health.clipHelperAnyone", "Normal behavior or sounds, up to 60 seconds. Anyone caring for {{name}} can watch this.", { name: birdName })}
       >
         {clipPreview.status === "processing" && !replacingClip ? (
           <UploadProgress label={t("clipRecorder.gettingItReady", "Getting it ready…")} />
@@ -2701,7 +2724,7 @@ export function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlus
           </div>
         ) : (
           <div className="flex flex-col gap-1">
-            <ClipRecorder birdId={birdId} onBusy={setClipBusy} onUploading={setClipUploading} onUploaded={uploadClip} />
+            <ClipRecorder inPage birdId={birdId} onBusy={setClipBusy} onUploading={setClipUploading} onUploaded={uploadClip} />
             {clipPath && replacingClip && (
               <div>
                 <SetupTextButton onClick={() => setReplacingClip(false)}>{t("birdSetup.keepCurrentClip", "Keep current clip")}</SetupTextButton>
@@ -3417,7 +3440,7 @@ function ReviewStep({
                     onClick={() => onJumpToStep(taskStep(task.title))}
                     className="flex min-h-[52px] w-full items-start gap-3 rounded-[14px] bg-white px-3.5 py-3 text-left"
                   >
-                    <span aria-hidden="true" className="mt-0.5 size-[22px] shrink-0 rounded-[6px] border-2" style={{ borderColor: S.line }} />
+                    <span aria-hidden="true" className="mt-0.5 size-[22px] shrink-0 rounded-full border-2" style={{ borderColor: S.line }} />
                     <span className="min-w-0">
                       <span className="block text-[15px] font-[600]">
                         {displayLabel(t, task.title)}
@@ -3445,7 +3468,7 @@ function ReviewStep({
         <section className="flex flex-col gap-2.5">
           <h2 className="m-0 mt-2 text-[22px] font-[700] leading-[1.2]" style={{ fontFamily: SERIF }}>{t("birdSetup.review.stillThin", "Still thin or empty")}</h2>
           {gaps.map((g) => (
-            <div key={g.key} className="flex items-center gap-3 rounded-[14px] border-2 border-dashed bg-white px-4 py-3" style={{ borderColor: "#b9b19a" }}>
+            <div key={g.key} className="flex items-center gap-3 rounded-[14px] border-2 border-dashed bg-white px-4 py-3" style={{ borderColor: S.footerLine }}>
               <p className="m-0 min-w-0 flex-1 text-[14.5px] leading-[1.45]">
                 <span className="font-[700]">{g.title}</span>
                 <span style={{ color: S.helper }}> · {g.note}</span>

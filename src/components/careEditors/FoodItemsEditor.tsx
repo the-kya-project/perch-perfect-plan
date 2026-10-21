@@ -41,7 +41,7 @@ const NEEDS_BORDER = "#e0b96a";
 export type ChopConfig = {
   /** Removes the homemade item and its ingredients, after the caller confirms.
    *  Returns false when the owner cancels. */
-  onRemoveHomemade: () => boolean;
+  onRemoveHomemade: () => boolean | Promise<boolean>;
   ingredients: string[];
   onToggleIngredient: (label: string) => void;
   /** The bird's never-feed list: searching one of these warns instead of adding. */
@@ -261,7 +261,7 @@ export function FoodItemsEditor({
             onChange={(patch) => onChangeType(sheet.type, sheetItems.map((it, i) => (i === sheet.idx ? { ...it, ...patch } : it)))}
             onDone={() => setSheet(null)}
             chop={chop}
-            onRemove={() => { if (chop.onRemoveHomemade()) setSheet(null); }}
+            onRemove={() => { void Promise.resolve(chop.onRemoveHomemade()).then((removed) => { if (removed) setSheet(null); }); }}
           />
         </ItemSheet>
       )}
@@ -576,7 +576,7 @@ function ItemSheetBody({ item, typeLabel, freshTitle, namePlaceholder, validatio
                                   value={ft.at ?? ""}
                                   onChange={(e) => setAt(ft.period, e.target.value)}
                                   onBlur={() => setEditingAt(null)}
-                                  className="h-10 w-[128px] rounded-full border-2 bg-white px-3 text-[15px] outline-none focus:border-[#1a3d2e]"
+                                  className="h-12 w-[136px] rounded-full border-2 bg-white px-3 text-[16px] outline-none focus:border-[#1a3d2e]"
                                   style={{ borderColor: S.line, color: S.forest }}
                                 />
                                 {ft.at && (
@@ -686,7 +686,7 @@ function ItemSheetBody({ item, typeLabel, freshTitle, namePlaceholder, validatio
                                 value={ft.at ?? ""}
                                 onChange={(e) => setAt(ft.period, e.target.value)}
                                 onBlur={() => setEditingAt(null)}
-                                className="h-10 w-[128px] rounded-full border-2 bg-white px-3 text-[15px] outline-none focus:border-[#1a3d2e]"
+                                className="h-12 w-[136px] rounded-full border-2 bg-white px-3 text-[16px] outline-none focus:border-[#1a3d2e]"
                                 style={{ borderColor: S.line, color: S.forest }}
                               />
                               {ft.at && (

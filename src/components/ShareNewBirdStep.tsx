@@ -93,7 +93,7 @@ export function ShareNewBirdStep({
       birdName={birdName}
       current="details"
       page={[2, 2]}
-      title={t("shareNewBird.title", "Who else helps?")}
+      title={t("shareNewBird.titleNamed", "Who else helps with {{bird}}?", { bird: birdName })}
       intro={t("shareNewBird.intro", "{{bird}} is saved. These people help with your other birds — pick anyone who should see {{bird}} too.", { bird: birdName })}
       onBack={onBack}
       footer={

@@ -69,17 +69,17 @@ export function ChopIngredientPicker({
       {count > 0 && (
         <div className="flex flex-wrap gap-2">
           {ingredients.map((en) => (
-            <span key={en} className="inline-flex min-h-[40px] items-center gap-1 rounded-full bg-[#1a3d2e] pl-3.5 pr-1 text-[14px] font-[500] text-white">
+            <span key={en} className="inline-flex min-h-[44px] items-center gap-1 rounded-full bg-[#1a3d2e] pl-3.5 pr-0 text-[14px] font-[500] text-white">
               {label(en)}
-              <button type="button" onClick={() => onToggle(en)} aria-label={t("setupUi.removeItem", "Remove {{item}}", { item: label(en) })} className="grid size-9 place-items-center rounded-full">
+              <button type="button" onClick={() => onToggle(en)} aria-label={t("setupUi.removeItem", "Remove {{item}}", { item: label(en) })} className="grid size-11 place-items-center rounded-full">
                 <X className="size-4" aria-hidden="true" />
               </button>
             </span>
           ))}
           {extras.map((x, i) => (
-            <span key={`${x}-${i}`} className="inline-flex min-h-[40px] items-center gap-1 rounded-full border-2 border-dashed border-[#1a3d2e] bg-white pl-3.5 pr-1 text-[14px] font-[500]">
+            <span key={`${x}-${i}`} className="inline-flex min-h-[44px] items-center gap-1 rounded-full border-2 border-dashed border-[#1a3d2e] bg-white pl-3.5 pr-0 text-[14px] font-[500]">
               {x}
-              <button type="button" onClick={() => removeExtra(i)} aria-label={t("setupUi.removeItem", "Remove {{item}}", { item: x })} className="grid size-9 place-items-center rounded-full">
+              <button type="button" onClick={() => removeExtra(i)} aria-label={t("setupUi.removeItem", "Remove {{item}}", { item: x })} className="grid size-11 place-items-center rounded-full">
                 <X className="size-4" aria-hidden="true" />
               </button>
             </span>
@@ -108,7 +108,7 @@ export function ChopIngredientPicker({
           />
         </div>
         {typed && (suggestions.length > 0 || result.warning || canAddTyped) && (
-          <div className="mt-1.5 overflow-hidden rounded-xl border border-[#c8bfa6] bg-white">
+          <div className="mt-1.5 overflow-hidden rounded-xl border border-[#d5dfd5] bg-white">
             {suggestions.map((en) => (
               <button
                 key={en}
@@ -148,7 +148,7 @@ export function ChopIngredientPicker({
                 key={en}
                 type="button"
                 onClick={() => onToggle(en)}
-                className="inline-flex min-h-[40px] items-center gap-1 rounded-full border-2 border-[#c9d6c9] bg-white px-3.5 text-[14px] font-[500]"
+                className="inline-flex min-h-[44px] items-center gap-1 rounded-full border-2 border-[#c9d6c9] bg-white px-3.5 text-[14px] font-[500]"
               >
                 <Plus className="size-3.5" strokeWidth={2.6} aria-hidden="true" />
                 {label(en)}
