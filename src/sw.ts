@@ -79,7 +79,7 @@ self.addEventListener("activate", (event) => {
 
 // ── Caching ────────────────────────────────────────────────────────────────
 
-// Hashed build assets (js/css/html/svg/ico/woff2 — see the injectManifest
+// Hashed build assets (js/html/svg/ico/woff2, not css — see the injectManifest
 // globPatterns in vite.config.ts). Served cache-first; each new build swaps
 // the manifest and workbox drops entries the new build no longer references.
 precacheAndRoute(self.__WB_MANIFEST);
@@ -165,7 +165,11 @@ registerRoute(
     // /ingest/* is the PostHog reverse proxy — its SDK script isn't hashed,
     // so a 30-day cache-first would pin a stale analytics build.
     !url.pathname.startsWith("/ingest/") &&
-    ["style", "script", "worker", "font"].includes(request.destination),
+    // Not stylesheets: on 2026-10-21 the installed iOS app ran current code
+    // with NO styles while Safari on the same phone was fine. Stylesheets now
+    // skip the worker and use the browser's normal HTTP cache (hashed names,
+    // immutable on Vercel), the same path Safari takes.
+    ["script", "worker", "font"].includes(request.destination),
   new CacheFirst({
     cacheName: "static-assets",
     plugins: [

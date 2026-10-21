@@ -32,6 +32,7 @@ import {
   markAppHealthySoon, STARTUP_FAILED_EVENT,
 } from "@/lib/sw-register";
 import { captureFirstTouch } from "@/lib/attribution";
+import { checkStylesApplied } from "@/lib/stylesCheck";
 import { attachNativePushHandlers, syncNativePushToken } from "@/lib/pushNative";
 import { attachAppLinkHandler } from "@/lib/appLinkNative";
 import { smartAppBannerContent } from "@/lib/appLinks";
@@ -320,6 +321,7 @@ function RootComponent() {
       initAnalytics();
     }
     installChunkErrorRecovery(); // self-heal stale-build chunk 404s (incl. the sitter preview iframe)
+    checkStylesApplied(); // report + one reset if the stylesheet never applied
     registerServiceWorker();
     // Native shell only: make a tapped push land on the screen it refers to.
     // Attached once at boot because the tap can happen while the app is cold —
