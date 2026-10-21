@@ -33,7 +33,6 @@ function tabLabel(t: TFunction, key: OwnerTab, fallback: string): string {
 // fixed container (e.g. above the setup footer).
 function tabForPath(pathname: string): OwnerTab | undefined {
   if (pathname.startsWith("/dashboard")) return "home";
-  if (pathname.startsWith("/today")) return "sits";
   if (pathname.startsWith("/sits")) return "sits";
   // Notification settings is a page: it highlights the tab you came from.
   if (pathname.startsWith("/scans/settings")) return undefined;
@@ -63,7 +62,9 @@ export function OwnerTabBar({ active, embedded }: { active?: OwnerTab; embedded?
   if (own && typeof window !== "undefined") {
     try { sessionStorage.setItem(LAST_TAB_KEY, own); } catch { /* ignore */ }
   }
-  const current = active ?? own ?? rememberedTab() ?? "home";
+  // /today opens with a Back header (a page, not a tab), so no tab is lit.
+  const noTab = pathname.startsWith("/today");
+  const current = noTab ? undefined : active ?? own ?? rememberedTab() ?? "home";
   // ONE nav for every authenticated account — owning a bird is derived, not a
   // signup type, so there's no owner-vs-caregiver nav split (a recurring bug
   // source). A sit you're covering shows as a section on Home, not a nav tab.

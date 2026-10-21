@@ -136,6 +136,7 @@ export function HomePushBanner({ birdNames }: { birdNames: string[] }) {
       busy={busy}
       onEnable={enable}
       onDismiss={dismiss}
+      secondaryButton
     />
   );
 }
