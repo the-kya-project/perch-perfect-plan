@@ -3,7 +3,8 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
 import { pickLocale } from "@/lib/i18n";
 import { objectPronoun, possessivePronoun } from "@/lib/i18n/pronouns";
-import { AlertTriangle, ChevronLeft, Check } from "lucide-react";
+import { AlertTriangle, ChevronLeft, Check, X } from "lucide-react";
+import { K, SERIF } from "@/components/kya";
 
 // First-visit sitter onboarding: a two-screen welcome, then a coach-mark bubble
 // walkthrough that points at the REAL on-screen elements (tagged with
@@ -76,6 +77,7 @@ export function SitterOnboarding({ birds, bird, careSections, hasClips, token }:
 
   const steps = useMemo<CoachStep[]>(() => {
     const s: CoachStep[] = [];
+    const single = list.length <= 1;
     const cpText: Record<string, string> = {
       food: t("sitterOnboarding.step.cp.food", "What {{name}} eats, how much, and when.", { name: activeName }),
       handling: t("sitterOnboarding.step.cp.handling", "How to interact with {{name}} safely.", { name: activeName }),
@@ -84,16 +86,16 @@ export function SitterOnboarding({ birds, bird, careSections, hasClips, token }:
       emergency: t("sitterOnboarding.step.cp.emergency", "Vet and owner contacts if something's wrong."),
     };
 
-    const single = list.length <= 1;
-
     // Home — intro the Home nav tab, then the birds, then tapping into one.
-    s.push({
+    // One-bird sits have no Home tab (they open straight on Today), so these
+    // two steps would point at nothing.
+    if (!single) s.push({
       target: "nav-home",
       route: "home",
       place: "top",
       text: t("sitterOnboarding.step.homeNav", "This is your home base — every bird you're caring for and what each one still needs today."),
     });
-    s.push({
+    if (!single) s.push({
       target: "bird-card",
       route: "home",
       place: "auto",
@@ -152,8 +154,12 @@ export function SitterOnboarding({ birds, bird, careSections, hasClips, token }:
       text: t("sitterOnboarding.step.carePlanLink", "For everything specific to {{name}}, tap here for {{their}} full care plan — your source of truth for caring for {{them}}.", { name: activeName, their: poss, them: obj }),
     });
 
-    // Full care plan — section by section, the bird-specific source of truth.
-    for (const key of careSections ?? []) {
+    // Full care plan — section by section, the bird-specific source of truth,
+    // in the order the care plan view shows them (food, health, behavior, home
+    // with the emergency details last).
+    const CP_ORDER = ["food", "health", "handling", "home", "emergency"];
+    const orderedCare = [...(careSections ?? [])].sort((a, b) => CP_ORDER.indexOf(a) - CP_ORDER.indexOf(b));
+    for (const key of orderedCare) {
       if (CP_TARGET[key]) s.push({ target: CP_TARGET[key], route: "careplan", place: "auto", text: cpText[key] });
     }
 
@@ -327,76 +333,98 @@ export function SitterOnboarding({ birds, bird, careSections, hasClips, token }:
       to="/sitter/$token/emergency"
       params={{ token }}
       onClick={markSeenAndClose}
-      className="pointer-events-auto inline-flex items-center gap-1.5 rounded-full bg-[#993C1D] px-3 py-1.5 text-xs font-semibold text-white shadow"
+      className="pointer-events-auto inline-flex min-h-[44px] items-center gap-1.5 rounded-full px-4 text-[14px] font-[700] text-white shadow"
+      style={{ background: K.red }}
     >
-      <AlertTriangle className="size-3.5" /> {t("sitterOnboarding.emergency", "Emergency")}
+      <AlertTriangle className="size-4" aria-hidden="true" /> {t("sitterOnboarding.emergency", "Emergency")}
     </Link>
   );
+  // Close (X), top left: same as Skip — dismiss and land on the home base.
+  const CloseButton = (
+    <button
+      type="button"
+      onClick={finishWalkthrough}
+      aria-label={t("sitterOnboarding.close", "Close")}
+      className="pointer-events-auto grid size-11 shrink-0 place-items-center rounded-full bg-white shadow active:scale-95"
+      style={{ color: K.forest }}
+    >
+      <X className="size-5" aria-hidden="true" />
+    </button>
+  );
+  const primaryBtn = "inline-flex min-h-[52px] w-full items-center justify-center rounded-full border-2 px-6 text-[16px] font-[700] active:scale-[0.99]";
+  const primaryStyle = { background: K.sunflower, borderColor: K.forest, color: K.forest };
+  const skipLink = (
+    <button type="button" onClick={finishWalkthrough} className="mt-2 inline-flex min-h-[44px] items-center text-[15px] font-[700] underline" style={{ color: K.moss }}>
+      {t("sitterOnboarding.skip", "Skip")}
+    </button>
+  );
 
-  // ---- Welcome + overview (full-screen warm cards) ----
+  // ---- Welcome + overview + closing (white card on mist) ----
   if (phase === "welcome" || phase === "overview" || phase === "closing") {
+    const title = (text: string) => (
+      <h1 className="m-0 mt-5 text-[26px] font-[700] leading-[1.15]" style={{ fontFamily: SERIF, color: K.forest }}>{text}</h1>
+    );
+    const body = (text: string) => (
+      <p className="m-0 mt-3 text-[15px] leading-[1.55]" style={{ color: K.ink }}>{text}</p>
+    );
     return (
-      <div className="fixed inset-0 z-50 flex flex-col bg-[#1a3d2e] text-white">
-        <div className="flex items-center justify-between px-5 pt-[max(env(safe-area-inset-top),0.9rem)] pb-2">
+      <div className="setup-frame fixed inset-0 z-50 flex flex-col overflow-y-auto" style={{ background: K.mist, color: K.forest }}>
+        <div className="mx-auto flex w-full max-w-md items-center justify-between px-4 pb-2 pt-[max(env(safe-area-inset-top),0.9rem)]">
+          {CloseButton}
           {EmergencyLink}
-          {phase !== "closing" && (
-            <button onClick={finishWalkthrough} className="text-sm font-medium text-[#cdeab0] underline">{t("sitterOnboarding.skip", "Skip")}</button>
-          )}
         </div>
 
-        {phase === "welcome" ? (
-          <div className="flex flex-1 flex-col items-center justify-center px-6 pb-10 text-center">
-            <div className="flex items-center justify-center -space-x-3">
-              {list.slice(0, 4).map((b, i) =>
-                b?.photo_url ? (
-                  <img
-                    key={b.id ?? i}
-                    src={b.photo_url}
-                    alt={b.name ?? ""}
-                    style={{ objectPosition: b.photo_position ?? "50% 20%" }}
-                    className="size-16 rounded-2xl object-cover ring-2 ring-[#1a3d2e]"
-                  />
-                ) : (
-                  <div key={b?.id ?? i} className="grid size-16 place-items-center rounded-2xl bg-white/10 text-2xl font-medium ring-2 ring-[#1a3d2e]">
-                    {(b?.name?.slice(0, 1) ?? "?").toUpperCase()}
-                  </div>
-                ),
-              )}
-            </div>
-            <h1 className="mt-5 text-[22px] font-medium leading-tight">{t("sitterOnboarding.welcome.title", "You're caring for {{names}}.", { names: allNames })}</h1>
-            <p className="mt-2 max-w-xs text-sm leading-relaxed text-white/85">
-              {t("sitterOnboarding.welcome.body", "Everything you need is right here. Let's take a minute to show you around.")}
-            </p>
-            <button onClick={() => setPhase("overview")} className="mt-7 w-full max-w-xs rounded-2xl bg-[#cdeab0] py-3 text-sm font-semibold text-[#1a3d2e]">
-              {t("sitterOnboarding.welcome.cta", "Show me around")}
-            </button>
-            <button onClick={finishWalkthrough} className="mt-3 text-sm font-medium text-[#cdeab0] underline">{t("sitterOnboarding.skip", "Skip")}</button>
+        <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-4 pb-10">
+          <div className="rounded-[20px] bg-white px-5 pb-5 pt-6 text-center">
+            {phase === "welcome" ? (
+              <>
+                <div className="flex items-center justify-center -space-x-3">
+                  {list.slice(0, 4).map((b, i) =>
+                    b?.photo_url ? (
+                      <img
+                        key={b.id ?? i}
+                        src={b.photo_url}
+                        alt={b.name ?? ""}
+                        style={{ objectPosition: b.photo_position ?? "50% 20%" }}
+                        className="size-16 rounded-[16px] object-cover ring-[3px] ring-white"
+                      />
+                    ) : (
+                      <div key={b?.id ?? i} className="grid size-16 place-items-center rounded-[16px] text-2xl font-[700] ring-[3px] ring-white" style={{ background: K.lime, color: K.forest }}>
+                        {(b?.name?.slice(0, 1) ?? "?").toUpperCase()}
+                      </div>
+                    ),
+                  )}
+                </div>
+                {title(t("sitterOnboarding.welcome.title", "You're caring for {{names}}.", { names: allNames }))}
+                {body(t("sitterOnboarding.welcome.body", "Everything you need is right here. Let's take a minute to show you around."))}
+                <button type="button" onClick={() => setPhase("overview")} className={`${primaryBtn} mt-6`} style={primaryStyle}>
+                  {t("sitterOnboarding.welcome.cta", "Show me around")}
+                </button>
+                {skipLink}
+              </>
+            ) : phase === "overview" ? (
+              <>
+                <h1 className="m-0 text-[26px] font-[700] leading-[1.15]" style={{ fontFamily: SERIF, color: K.forest }}>{t("sitterOnboarding.overview.title", "How this app works")}</h1>
+                {body(t("sitterOnboarding.overview.body", "This app has everything you need to care for {{names}}: a daily routine and a quick health check, a parrot care guide, and an emergency button if anything's ever wrong. It takes about a minute to learn — we'll point out each part.", { names: allNames }))}
+                <button type="button" onClick={startCoach} className={`${primaryBtn} mt-6`} style={primaryStyle}>
+                  {t("sitterOnboarding.overview.cta", "Got it, show me around")}
+                </button>
+                {skipLink}
+              </>
+            ) : (
+              <>
+                <div className="mx-auto grid size-14 place-items-center rounded-full" style={{ background: K.forest, color: K.lime }}>
+                  <Check className="size-7" aria-hidden="true" />
+                </div>
+                {title(t("sitterOnboarding.closing.title", "That's everything! You're all set to care for {{names}}.", { names: allNames }))}
+                {body(t("sitterOnboarding.closing.body", "Want to see this again? Tap the question mark in the upper right anytime."))}
+                <button type="button" onClick={finishWalkthrough} className={`${primaryBtn} mt-6`} style={primaryStyle}>
+                  {t("sitterOnboarding.coach.gotIt", "Got it")}
+                </button>
+              </>
+            )}
           </div>
-        ) : phase === "overview" ? (
-          <div className="flex flex-1 flex-col items-center justify-center px-6 pb-10 text-center">
-            <h1 className="text-[22px] font-medium leading-tight">{t("sitterOnboarding.overview.title", "How this app works")}</h1>
-            <p className="mt-3 max-w-sm text-sm leading-relaxed text-white/85">
-              {t("sitterOnboarding.overview.body", "This app has everything you need to care for {{names}}: a daily routine and a quick health check, a parrot care guide, and an emergency button if anything's ever wrong. It takes about a minute to learn — we'll point out each part.", { names: allNames })}
-            </p>
-            <button onClick={startCoach} className="mt-7 w-full max-w-xs rounded-2xl bg-[#cdeab0] py-3 text-sm font-semibold text-[#1a3d2e]">
-              {t("sitterOnboarding.overview.cta", "Got it, show me around")}
-            </button>
-            <button onClick={finishWalkthrough} className="mt-3 text-sm font-medium text-[#cdeab0] underline">{t("sitterOnboarding.skip", "Skip")}</button>
-          </div>
-        ) : (
-          <div className="flex flex-1 flex-col items-center justify-center px-6 pb-10 text-center">
-            <div className="grid size-14 place-items-center rounded-2xl bg-[#cdeab0]/15 text-[#cdeab0]">
-              <Check className="size-7" />
-            </div>
-            <h1 className="mt-5 text-[22px] font-medium leading-tight">{t("sitterOnboarding.closing.title", "That's everything! You're all set to care for {{names}}.", { names: allNames })}</h1>
-            <p className="mt-3 max-w-xs text-sm leading-relaxed text-white/85">
-              {t("sitterOnboarding.closing.body", "Want to see this again? Tap the question mark in the upper right anytime.")}
-            </p>
-            <button onClick={finishWalkthrough} className="mt-7 w-full max-w-xs rounded-2xl bg-[#cdeab0] py-3 text-sm font-semibold text-[#1a3d2e]">
-              {t("sitterOnboarding.closing.cta", "Let's go")}
-            </button>
-          </div>
-        )}
+        </div>
       </div>
     );
   }
@@ -439,7 +467,7 @@ export function SitterOnboarding({ birds, bird, careSections, hasClips, token }:
       {/* Spotlight: a transparent hole over the target with a huge dimming shadow. */}
       {rect && (
         <div
-          className={`pointer-events-none absolute rounded-xl ring-2 transition-all duration-200 ${cur.emphasis ? "ring-[#f4a259]" : "ring-[#cdeab0]"}`}
+          className={`pointer-events-none absolute rounded-[16px] ring-[3px] transition-all duration-200 ${cur.emphasis ? "ring-[#f2b33d]" : "ring-[#cdeab0]"}`}
           style={{
             top: rect.top - PAD,
             left: rect.left - PAD,
@@ -452,28 +480,36 @@ export function SitterOnboarding({ birds, bird, careSections, hasClips, token }:
       {/* When the target isn't found, dim the whole screen so the bubble still reads. */}
       {!rect && <div className="absolute inset-0 bg-[#1a3d2e]/60" />}
 
-      {/* Persistent Emergency (top-left) + Skip (top-right). */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 flex items-center justify-between px-5 pt-[max(env(safe-area-inset-top),0.9rem)]">
+      {/* Close (top left) + persistent Emergency (top right). */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 mx-auto flex max-w-md items-center justify-between px-4 pt-[max(env(safe-area-inset-top),0.9rem)]">
+        {CloseButton}
         {EmergencyLink}
-        <button onClick={finishWalkthrough} className="pointer-events-auto rounded-full bg-white/90 px-3 py-1.5 text-xs font-semibold text-[#1a3d2e] shadow">
-          {t("sitterOnboarding.skip", "Skip")}
-        </button>
       </div>
 
-      {/* Bubble */}
-      <div ref={bubbleRef} className="pointer-events-auto absolute rounded-2xl bg-white p-4 shadow-xl" style={bubbleStyle}>
-        <p className="text-[11px] font-semibold uppercase tracking-widest text-[#5f5e5a]">{t("sitterOnboarding.coach.stepProgress", "Step {{current}} of {{total}}", { current: step + 1, total: steps.length })}</p>
-        <p className="mt-1.5 text-sm font-medium leading-snug text-[#1a3d2e]">{cur.text}</p>
+      {/* Bubble: white card, step count, forest progress dots, Back + sunflower Next */}
+      <div ref={bubbleRef} className="setup-frame pointer-events-auto absolute rounded-[20px] bg-white p-4 shadow-xl" style={{ ...bubbleStyle, color: K.forest }}>
+        <p className="m-0 text-[13px] font-[700]" style={{ color: K.quiet }}>{t("sitterOnboarding.coach.stepProgress", "Step {{current}} of {{total}}", { current: step + 1, total: steps.length })}</p>
+        <p className="m-0 mt-1.5 text-[15px] leading-[1.45]" style={{ color: K.forest }}>{cur.text}</p>
+        {/* Dots wrap onto a second line on long tours instead of pushing Next off the card. */}
+        <div className="mt-3 flex flex-wrap items-center gap-1" aria-hidden="true">
+          {steps.map((_, i) => (
+            <span
+              key={i}
+              className="h-1.5 rounded-full transition-all"
+              style={{ width: i === step ? 16 : 6, background: i <= step ? K.forest : "#d5dfd5" }}
+            />
+          ))}
+        </div>
         <div className="mt-3 flex items-center justify-between gap-2">
-          <button onClick={back} className="inline-flex shrink-0 items-center gap-1 rounded-lg px-2 py-1.5 text-xs font-medium text-[#5f5e5a]">
-            <ChevronLeft className="size-4" /> {t("sitterOnboarding.coach.back", "Back")}
+          <button type="button" onClick={back} className="inline-flex min-h-[44px] shrink-0 items-center gap-1 rounded-full px-2 text-[14px] font-[700]" style={{ color: K.quiet }}>
+            <ChevronLeft className="size-4" aria-hidden="true" /> {t("sitterOnboarding.coach.back", "Back")}
           </button>
-          {/* Slim progress bar (scales to any step count, unlike per-step dots
-              which overflowed the bubble and pushed Next off the edge). */}
-          <div className="mx-1 h-1 flex-1 overflow-hidden rounded-full bg-[#e8e1d0]">
-            <div className="h-full rounded-full bg-[#1a3d2e] transition-[width]" style={{ width: `${Math.round(((step + 1) / steps.length) * 100)}%` }} />
-          </div>
-          <button onClick={next} className="shrink-0 rounded-lg bg-[#1a3d2e] px-4 py-1.5 text-xs font-semibold text-white">
+          <button
+            type="button"
+            onClick={next}
+            className="inline-flex min-h-[44px] shrink-0 items-center rounded-full border-2 px-5 text-[15px] font-[700] active:scale-[0.98]"
+            style={{ background: K.sunflower, borderColor: K.forest, color: K.forest }}
+          >
             {t("sitterOnboarding.coach.next", "Next")}
           </button>
         </div>

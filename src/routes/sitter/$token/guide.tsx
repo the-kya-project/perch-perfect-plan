@@ -3,12 +3,12 @@ import { useEffect, useRef, useState } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { useTranslation } from "react-i18next";
-import { pickLocale } from "@/lib/i18n";
-import { objectPronoun, possessivePronoun } from "@/lib/i18n/pronouns";
 import { useSitterContext } from "./route";
+import { SitterTabHeader } from "@/components/sitter/SitterChrome";
+import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaIconTile } from "@/components/kya";
 import { getGuideCards } from "@/lib/sitter.functions";
 import {
-  Search, ArrowLeft, ChevronDown, Info,
+  Search, ChevronDown, Info,
   Star, Utensils, Smile, Heart, AlertTriangle, Home,
   Hand, Droplet, Activity, Moon, Wind,
   type LucideIcon,
@@ -81,9 +81,9 @@ function iconForEntry(card: any): LucideIcon {
 function EntryIcon({ card }: { card: any }) {
   const Icon = iconForEntry(card);
   return (
-    <span className="grid size-[38px] shrink-0 place-items-center rounded-[11px] bg-[#e2ddcb] text-[#2d6a4f]">
-      <Icon className="size-5" />
-    </span>
+    <KyaIconTile size={38}>
+      <Icon className="size-[19px]" />
+    </KyaIconTile>
   );
 }
 
@@ -108,8 +108,7 @@ function useTopicLabels() {
 }
 
 function Guide() {
-  const { t, i18n } = useTranslation();
-  const locale = pickLocale(i18n.language);
+  const { t } = useTranslation();
   const { topicLabel, subheadLabel } = useTopicLabels();
   const { token } = Route.useParams();
   const { data: ctx } = useSitterContext(token);
@@ -121,8 +120,16 @@ function Guide() {
   const [open, setOpen] = useState<string | null>(null);
 
   const bird = ctx.bird as any;
-  const pron = objectPronoun(bird.sex, locale);
-  const poss = possessivePronoun(bird.sex, locale);
+  const multi = (ctx.birds?.length ?? 0) > 1;
+  const sex = (bird?.sex ?? "").toString().trim().toLowerCase();
+  // One sentence per pronoun form (Dutch needs whole sentences, not a slot).
+  const line = multi
+    ? t("sitter.guide.subtitleMulti", "The basics of parrot care. For each bird's own needs, always follow their care plan.")
+    : sex.startsWith("f")
+    ? t("sitter.guide.subtitleShe", "The basics of parrot care. For {{name}}'s own needs, always follow her care plan.", { name: bird.name })
+    : sex.startsWith("m")
+    ? t("sitter.guide.subtitleHe", "The basics of parrot care. For {{name}}'s own needs, always follow his care plan.", { name: bird.name })
+    : t("sitter.guide.subtitleThey", "The basics of parrot care. For {{name}}'s own needs, always follow their care plan.", { name: bird.name });
 
   const searching = q.trim().length > 0;
   const ql = q.trim().toLowerCase();
@@ -156,130 +163,126 @@ function Guide() {
   useEffect(() => { updateChipFades(); }, [searching]);
 
   return (
-    <div className="min-h-screen bg-[#f4f1e8] pb-28">
-      <header data-coach="guide-header" className="bg-[#1a3d2e] pt-[max(env(safe-area-inset-top),0.75rem)]">
-        <div className="mx-auto max-w-md px-5 pb-5 pt-2">
-          <div className="flex items-center gap-2">
-            <Link to="/sitter/$token" params={{ token }} className="-ml-1 rounded-full p-1 text-white/90 hover:bg-white/10" aria-label={t("sitter.guide.back", "Back")}>
-              <ArrowLeft className="size-5" />
-            </Link>
-            <h1 className="text-lg font-medium text-white">{t("sitter.guide.title", "Parrots 101")}</h1>
-          </div>
-          <p className="mt-2 text-sm leading-relaxed text-[#cdeab0]">
-            {t("sitter.guide.subtitle", "The basics of parrot care. For {{name}}'s own needs, always follow {{poss}} care plan.", { name: bird.name, poss })}
-          </p>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-md space-y-4 px-5 py-5">
-        {/* Search — the hero */}
-        <div data-coach="guide-search" className="relative">
-          <Search className="absolute left-4 top-1/2 size-5 -translate-y-1/2 text-[#8a897f]" />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder={t("sitter.guide.searchPlaceholder", "What do you need to know?")}
-            className="w-full rounded-2xl border border-[#e0d8c4] bg-[#efe9da] py-3.5 pl-12 pr-4 text-sm text-[#1a3d2e] outline-none placeholder:text-[#8a897f] focus:border-[#2d6a4f]"
-          />
+    <KyaPage>
+      <div className="mx-auto max-w-md">
+        <div data-coach="guide-header">
+          <SitterTabHeader token={token} title={t("sitter.guide.title", "Parrots 101")} line={line}>
+            {/* Search lives in the header */}
+            <div data-coach="guide-search" className="relative mt-5">
+              <Search className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2" style={{ color: K.quiet }} aria-hidden="true" />
+              <input
+                type="search"
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder={t("sitter.guide.searchPlaceholder", "What do you need to know?")}
+                aria-label={t("sitter.guide.searchPlaceholder", "What do you need to know?")}
+                className="h-12 w-full rounded-full border-0 bg-white pl-12 pr-4 text-[16px] outline-none placeholder:text-[#8a958d] focus:ring-2 focus:ring-[#cdeab0]"
+                style={{ color: K.forest }}
+              />
+            </div>
+          </SitterTabHeader>
         </div>
 
-        {/* Topic chips + section label give way to search results when typing */}
-        {!searching && (
-          <>
-            <div data-coach="guide-topics" className="relative -mx-5">
-              <div
-                ref={chipScrollRef}
-                onScroll={updateChipFades}
-                className="flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-              >
-                {TOPICS.map((t_) => {
-                  const on = topic === t_.key;
-                  const CIcon = t_.icon;
-                  return (
-                    <button
-                      key={t_.key}
-                      onClick={() => setTopic(t_.key)}
-                      aria-pressed={on}
-                      className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition ${
-                        on ? "bg-[#1a3d2e] text-white" : "bg-[#efe9da] text-[#1a3d2e]"
-                      }`}
-                    >
-                      <CIcon className="size-3.5" />
-                      {topicLabel(t_.key, t_.label)}
-                    </button>
-                  );
-                })}
-                {/* trailing spacer so the last chip can scroll clear of the fade */}
-                <span aria-hidden className="shrink-0 pl-1" />
-              </div>
-              {!chipAtStart && (
-                <div className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-[#f4f1e8] to-transparent" />
-              )}
-              {!chipAtEnd && (
-                <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-[#f4f1e8] to-transparent" />
-              )}
-            </div>
-
-            <div>
-              <p className="text-[11px] font-medium uppercase tracking-widest text-[#8a897f]">{topicLabel(topic, activeTopic?.label ?? "")}</p>
-              {TOPIC_SUBHEAD[topic] && (
-                <p className="mt-0.5 text-xs text-[#5f5e5a]">{subheadLabel(topic, TOPIC_SUBHEAD[topic])}</p>
-              )}
-            </div>
-          </>
-        )}
-
-        {/* Entries — collapsed by default, one open at a time */}
-        <div className="space-y-2.5">
-          {list.map((c: any) => {
-            const isOpen = open === c.id;
-            const hasDeeper = !!(c.what_to_check || c.what_to_do || c.when_to_call_vet);
-            return (
-              <div key={c.id} className="overflow-hidden rounded-2xl bg-[#efe9da]">
-                <button
-                  onClick={() => setOpen(isOpen ? null : c.id)}
-                  aria-expanded={isOpen}
-                  className="flex w-full items-center gap-3 p-3 text-left"
+        <KyaBody>
+          {/* Topic chips + section heading give way to search results when typing */}
+          {!searching && (
+            <>
+              <div data-coach="guide-topics" className="relative -mx-4">
+                <div
+                  ref={chipScrollRef}
+                  onScroll={updateChipFades}
+                  className="flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
                 >
-                  <EntryIcon card={c} />
-                  <span className="flex-1 text-sm font-medium text-[#1a3d2e]">{c.title}</span>
-                  <ChevronDown className={`size-4 shrink-0 text-[#8a897f] transition-transform ${isOpen ? "rotate-180" : ""}`} />
-                </button>
-
-                {isOpen && (
-                  <div className="px-3 pb-4 pl-[3.75rem]">
-                    {c.quick_answer && (
-                      <p className="text-sm leading-relaxed text-[#3a3a36]">{c.quick_answer}</p>
-                    )}
-                    {hasDeeper && (
-                      <div className="mt-3 space-y-2 border-t border-[#e0d8c4] pt-3 text-sm leading-relaxed text-[#3a3a36]">
-                        {c.what_to_check && <p><span className="font-medium text-[#1a3d2e]">{t("sitter.guide.whatToCheck", "What to check:")}</span> {c.what_to_check}</p>}
-                        {c.what_to_do && <p><span className="font-medium text-[#1a3d2e]">{t("sitter.guide.whatToDo", "What to do:")}</span> {c.what_to_do}</p>}
-                        {c.when_to_call_vet && <p><span className="font-medium text-[#1a3d2e]">{t("sitter.guide.whenToCallVet", "When to call the vet:")}</span> {c.when_to_call_vet}</p>}
-                      </div>
-                    )}
-                    {isDroppings(c) && (
-                      <p className="mt-3 text-xs leading-relaxed text-[#5f5e5a]">
-                        {t("sitter.guide.droppingsHint.before", "If unsure, snap a photo for the owner in the")}{" "}
-                        <Link to="/sitter/$token/scan" params={{ token }} className="font-medium text-[#2d6a4f] underline">{t("sitter.guide.droppingsHint.link", "health scan")}</Link>{t("sitter.guide.droppingsHint.after", ".")}
-                      </p>
-                    )}
-                  </div>
+                  {TOPICS.map((t_) => {
+                    const on = topic === t_.key;
+                    const CIcon = t_.icon;
+                    return (
+                      <button
+                        key={t_.key}
+                        type="button"
+                        onClick={() => { setTopic(t_.key); setOpen(null); }}
+                        aria-pressed={on}
+                        className="inline-flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-full border-[1.5px] px-4 text-[14.5px] font-[700] transition-colors"
+                        style={on ? { background: K.forest, borderColor: K.forest, color: "#fff" } : { background: "#fff", borderColor: "#d5dfd5", color: K.forest }}
+                      >
+                        <CIcon className="size-4" aria-hidden="true" />
+                        {topicLabel(t_.key, t_.label)}
+                      </button>
+                    );
+                  })}
+                  {/* trailing spacer so the last chip can scroll clear of the fade */}
+                  <span aria-hidden className="shrink-0 pl-1" />
+                </div>
+                {!chipAtStart && (
+                  <div className="pointer-events-none absolute inset-y-0 left-0 w-6 bg-gradient-to-r from-[#f1f5f0] to-transparent" />
+                )}
+                {!chipAtEnd && (
+                  <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-[#f1f5f0] to-transparent" />
                 )}
               </div>
-            );
-          })}
-          {list.length === 0 && (
-            <p className="px-1 text-sm text-[#5f5e5a]">{t("sitter.guide.noMatches", "No entries match “{{q}}”.", { q })}</p>
-          )}
-        </div>
 
-        {/* Quiet disclaimer */}
-        <p className="flex items-start gap-1.5 px-1 pt-2 text-[11px] leading-snug text-[#8a897f]">
-          <Info className="mt-px size-3.5 shrink-0 text-[#8a897f]" />
-          <span>{t("sitter.guide.disclaimer", "General guidance, not vet-reviewed. For anything urgent, use {{name}}'s emergency info.", { name: bird.name })}</span>
-        </p>
-      </main>
-    </div>
+              <div className="px-1">
+                <KyaHeading size={21}>{topicLabel(topic, activeTopic?.label ?? "")}</KyaHeading>
+                {TOPIC_SUBHEAD[topic] && (
+                  <p className="m-0 mt-1 text-[14px]" style={{ color: K.quiet }}>{subheadLabel(topic, TOPIC_SUBHEAD[topic])}</p>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* Entries — one white card of rows, collapsed by default, one open at a time */}
+          {list.length > 0 ? (
+            <KyaCard>
+              {list.map((c: any, i: number) => {
+                const isOpen = open === c.id;
+                const hasDeeper = !!(c.what_to_check || c.what_to_do || c.when_to_call_vet);
+                return (
+                  <div key={c.id} style={{ borderTop: i > 0 ? `1px solid ${K.line}` : undefined }}>
+                    <button
+                      type="button"
+                      onClick={() => setOpen(isOpen ? null : c.id)}
+                      aria-expanded={isOpen}
+                      className="flex min-h-[62px] w-full items-center gap-3 px-4 py-2.5 text-left active:bg-black/[0.03]"
+                      style={{ color: K.forest }}
+                    >
+                      <EntryIcon card={c} />
+                      <span className="min-w-0 flex-1 text-[15px] font-[700] leading-[1.3]">{c.title}</span>
+                      <ChevronDown className={`size-[18px] shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`} style={{ color: K.quiet }} aria-hidden="true" />
+                    </button>
+
+                    {isOpen && (
+                      <div className="pb-4 pl-[66px] pr-4 text-[14px] leading-[1.5]" style={{ color: K.ink }}>
+                        {c.quick_answer && <p className="m-0">{c.quick_answer}</p>}
+                        {hasDeeper && (
+                          <div className={`flex flex-col gap-2 ${c.quick_answer ? "mt-3 border-t pt-3" : ""}`} style={{ borderColor: K.line }}>
+                            {c.what_to_check && <p className="m-0"><span className="font-[700]" style={{ color: K.forest }}>{t("sitter.guide.whatToCheck", "What to check:")}</span> {c.what_to_check}</p>}
+                            {c.what_to_do && <p className="m-0"><span className="font-[700]" style={{ color: K.forest }}>{t("sitter.guide.whatToDo", "What to do:")}</span> {c.what_to_do}</p>}
+                            {c.when_to_call_vet && <p className="m-0"><span className="font-[700]" style={{ color: K.forest }}>{t("sitter.guide.whenToCallVet", "When to call the vet:")}</span> {c.when_to_call_vet}</p>}
+                          </div>
+                        )}
+                        {isDroppings(c) && (
+                          <p className="m-0 mt-3 text-[13px]" style={{ color: K.quiet }}>
+                            {t("sitter.guide.droppingsHint.before", "If unsure, snap a photo for the owner in the")}{" "}
+                            <Link to="/sitter/$token/scan" params={{ token }} className="font-[700] underline" style={{ color: K.moss }}>{t("sitter.guide.droppingsHint.link", "health scan")}</Link>{t("sitter.guide.droppingsHint.after", ".")}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </KyaCard>
+          ) : (
+            <p className="m-0 px-1 text-[15px]" style={{ color: K.quiet }}>{t("sitter.guide.noMatches", "No entries match “{{q}}”.", { q })}</p>
+          )}
+
+          {/* Quiet disclaimer */}
+          <p className="m-0 flex items-start gap-1.5 px-1 text-[12.5px] leading-[1.45]" style={{ color: K.quiet }}>
+            <Info className="mt-px size-3.5 shrink-0" aria-hidden="true" />
+            <span>{t("sitter.guide.disclaimer", "General guidance, not vet-reviewed. For anything urgent, use {{name}}'s emergency info.", { name: bird.name })}</span>
+          </p>
+        </KyaBody>
+      </div>
+    </KyaPage>
   );
 }
