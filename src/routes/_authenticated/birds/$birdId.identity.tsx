@@ -17,7 +17,7 @@ import { signBirdPhoto, persistBirdPhoto } from "@/lib/birdPhoto";
 import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
 import { K, KyaPage, KyaBody, KyaCard, KyaField, KyaHeading, KyaLink, KyaPrimaryButton, KyaSecondaryButton } from "@/components/kya";
-import { PageHeader, useGoBack } from "@/components/headers";
+import { PageHeader, TaskHeader, useGoBack, useLeaveGuard } from "@/components/headers";
 import { friendlyError } from "@/lib/errorMessage";
 import { LoadError } from "@/components/LoadError";
 import { useLoadState } from "@/lib/useTooLong";
@@ -143,6 +143,11 @@ function IdentityFacet() {
   const goBack = useGoBack(useCallback(() => navigate({ to: "/birds/$birdId", params: { birdId } }), [navigate, birdId]));
   const canEdit = !!bird && canEditIdentity;
   const openEdit = canEdit ? () => setEditing(true) : undefined;
+  // Editing is a task: Close top left, and "Leave without saving?" when
+  // something has changed. The form reports whether it has.
+  const [formDirty, setFormDirty] = useState(false);
+  const stopEditing = useCallback(() => { setEditing(false); setFormDirty(false); }, []);
+  const { requestClose, guard: leaveGuard } = useLeaveGuard(formDirty, stopEditing);
 
   const sex = (bird?.sex ?? "").trim().toLowerCase();
   const footnote = sex === "female"
@@ -153,12 +158,20 @@ function IdentityFacet() {
 
   return (
     <KyaPage>
-      <PageHeader
-        onBack={goBack}
-        title={bird ? t("birdIdentity.title", "{{name}}'s identity", { name: bird.name }) : t("birdIdentity.titleFallback", "Identity")}
-        line={t("birdIdentity.body", "The details that make {{name}} officially {{name}}.", { name })}
-        action={canEdit && !editing ? { label: t("birdIdentity.edit", "Edit"), icon: <Pencil className="size-4" />, onClick: () => setEditing(true) } : undefined}
-      />
+      {editing && bird ? (
+        <TaskHeader
+          onClose={requestClose}
+          title={t("birdIdentity.editTitleNamed", "Edit {{name}}'s identity", { name: bird.name })}
+        />
+      ) : (
+        <PageHeader
+          onBack={goBack}
+          title={bird ? t("birdIdentity.title", "{{name}}'s identity", { name: bird.name }) : t("birdIdentity.titleFallback", "Identity")}
+          line={t("birdIdentity.body", "The details that make {{name}} officially {{name}}.", { name })}
+          action={canEdit && !editing ? { label: t("birdIdentity.edit", "Edit"), icon: <Pencil className="size-4" />, onClick: () => setEditing(true) } : undefined}
+        />
+      )}
+      {leaveGuard}
 
       <KyaBody>
         {birdMissing || load.failed ? (
@@ -171,7 +184,7 @@ function IdentityFacet() {
         ) : !bird ? (
           <div className="h-40 animate-pulse rounded-[20px] bg-white/70" />
         ) : editing ? (
-          <IdentityForm birdId={birdId} bird={bird} onClose={() => setEditing(false)} onSaved={() => { setEditing(false); crossInvalidate(); }} />
+          <IdentityForm birdId={birdId} bird={bird} onClose={requestClose} onDirtyChange={setFormDirty} onSaved={() => { stopEditing(); crossInvalidate(); }} />
         ) : (
           <>
             {/* Shared core (same birds columns the Basics tab edits) */}
@@ -237,7 +250,7 @@ function Row({ label, value, onAdd, last }: { label: string; value: string | nul
   );
 }
 
-function IdentityForm({ birdId, bird, onClose, onSaved }: { birdId: string; bird: Identity; onClose: () => void; onSaved: () => void }) {
+function IdentityForm({ birdId, bird, onClose, onSaved, onDirtyChange }: { birdId: string; bird: Identity; onClose: () => void; onSaved: () => void; onDirtyChange?: (dirty: boolean) => void }) {
   const { t } = useTranslation();
   const [f, setF] = useState({
     name: bird.name ?? "",
@@ -261,6 +274,10 @@ function IdentityForm({ birdId, bird, onClose, onSaved }: { birdId: string; bird
   const [photoBusy, setPhotoBusy] = useState(false);
   const [saving, setSaving] = useState(false);
   const set = (k: keyof typeof f, v: string) => setF((p) => ({ ...p, [k]: v }));
+  // Changed since the form opened? Drives the leave-without-saving guard.
+  const initial = useRef(JSON.stringify({ f, photoRef, photoPosition }));
+  const dirty = JSON.stringify({ f, photoRef, photoPosition }) !== initial.current;
+  useEffect(() => { onDirtyChange?.(dirty); }, [dirty, onDirtyChange]);
 
   useEffect(() => { signBirdPhoto(bird.photo_url).then(setPhotoDisplay); }, [bird.photo_url]);
 
