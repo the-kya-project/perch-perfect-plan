@@ -26,6 +26,9 @@ export const CHECKLIST_ITEMS: StandardItem[] = [
   { key: "invite_tested", label: "Sitter link tested" },
 ];
 
+// Items about the external sitter's link/access — not shown for household sits.
+const SITTER_LINK_ITEMS = new Set(["sitter_access", "invite_tested"]);
+
 // Labels above stay the English source (only item_key is stored); translate at display.
 function itemLabel(t: TFunction, key: string, en: string): string {
   switch (key) {
@@ -58,7 +61,7 @@ export function SitChecklist({
   sit,
   birds,
 }: {
-  sit: { id: string; start_date: string; end_date: string; sitter_name?: string | null };
+  sit: { id: string; start_date: string; end_date: string; sitter_name?: string | null; caregiver_user_id?: string | null };
   birds: Bird[];
   onSitChanged?: () => void;
 }) {
@@ -80,10 +83,14 @@ export function SitChecklist({
     },
   });
 
+  // A household sit has no sitter link, so the sitter-link items don't apply.
+  // Completion is stored per item_key, so hiding them just leaves any old
+  // ticks out of the count; nothing stored changes.
+  const standardItems = sit.caregiver_user_id ? CHECKLIST_ITEMS.filter((i) => !SITTER_LINK_ITEMS.has(i.key)) : CHECKLIST_ITEMS;
   const checkedSet = new Set(rows.filter((r) => r.checked).map((r) => r.item_key));
   const customRows = rows.filter((r) => r.is_custom);
   const allEntries: { key: string; label: string }[] = [
-    ...CHECKLIST_ITEMS.map((i) => ({ key: i.key, label: itemLabel(t, i.key, i.label) })),
+    ...standardItems.map((i) => ({ key: i.key, label: itemLabel(t, i.key, i.label) })),
     ...customRows.map((r) => ({ key: r.item_key, label: r.custom_label ?? t("sitChecklist.customItem", "Custom item") })),
   ];
   const totalCount = allEntries.length;
@@ -189,7 +196,7 @@ export function SitChecklist({
         <div className="mt-2">
           {isLoading && <p className="m-0 py-2 text-[14px]" style={{ color: K.quiet }}>{t("sitChecklist.loading", "Loading…")}</p>}
           <ul className="m-0 list-none p-0">
-            {CHECKLIST_ITEMS.map((i) => (
+            {standardItems.map((i) => (
               <div key={i.key}>
                 {item(i.key, itemLabel(t, i.key, i.label))}
                 {(i.key === "care_plans" || i.key === "emergency_contacts") && birds.length > 0 && (

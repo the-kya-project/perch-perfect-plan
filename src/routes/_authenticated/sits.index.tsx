@@ -173,13 +173,21 @@ function SitsPage() {
   let heroBody = t("sits.heroGoingAwayBody", "For when you can't be there — set up a sit and share what they need to know.");
   if (actives.length > 0) {
     const a = actives[0];
-    heroHeadline = t("sits.heroSittingNowNoDot", "{{name}} is sitting now", { name: caregiverName(a) });
+    // The viewer is the one covering: speak to them, not about them.
+    heroHeadline = iAmLead(a)
+      ? t("sits.heroYoureCovering", "You're covering this sit")
+      : t("sits.heroSittingNowNoDot", "{{name}} is sitting now", { name: caregiverName(a) });
     heroBody = t("sits.heroThrough", "Through {{date}}.", { date: weekdayMonthDay(a.end_date) });
   } else if (upcoming.length > 0) {
     const n = [...upcoming].sort((a, b) => a.start_date.localeCompare(b.start_date))[0];
     const d = daysUntil(n.start_date);
-    heroHeadline =
-      d <= 0
+    heroHeadline = iAmLead(n)
+      ? d <= 0
+        ? t("sits.heroYouStartToday", "You start covering today")
+        : d === 1
+          ? t("sits.heroYouStartTomorrow", "You start covering tomorrow")
+          : t("sits.heroYouStartInDays", "You start covering in {{count}} days", { count: d })
+      : d <= 0
         ? t("sits.heroArrivesTodayNoDot", "{{name}} arrives today", { name: caregiverName(n) })
         : d === 1
           ? t("sits.heroArrivesTomorrowNoDot", "{{name}} arrives tomorrow", { name: caregiverName(n) })
@@ -281,7 +289,7 @@ function SitsPage() {
               {pastSits.length > 0 && (
                 <section className="flex flex-col gap-3">
                   <KyaHeading size={21} className="px-1">{t("sits.pastSitsHeading", "Past sits")}</KyaHeading>
-                  <PastSitsList sits={pastSits as ListSit[]} caregiverName={(s) => caregiverName(s)} />
+                  <PastSitsList sits={pastSits as ListSit[]} caregiverName={(s) => (iAmLead(s) ? t("sitCards.you", "You") : caregiverName(s))} />
                 </section>
               )}
             </>
