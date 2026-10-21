@@ -9,6 +9,7 @@ import { track } from "@/lib/analytics";
 import { useServerFn } from "@tanstack/react-start";
 import { resolveHouseholdNames } from "@/lib/home.functions";
 import { getSitReadiness, type SitGapSection } from "@/lib/household.functions";
+import { deviceTimeZone } from "@/lib/sitTimeZone";
 import { BottomSheet } from "@/components/setup/BottomSheet";
 import type { TFunction } from "i18next";
 import { S, SERIF, Tag, SetupPrimaryButton, SetupSecondaryButton, SetupTextButton } from "@/components/setup/controls";
@@ -378,9 +379,11 @@ export function SitForm({
       }
       acceptGapsRef.current = false;
 
-      // External sits keep a token window ending at end-of-day on the end
-      // date. Household sits have no token — token_expires_at stays null.
-      const expires = new Date(end + "T23:59:59Z").toISOString();
+      // External sits keep a token window ending at the end of the end date in
+      // the owner's time zone. The sits trigger (enforce_sit_token_rules)
+      // computes token_expires_at from end_date + time_zone, so we only send the
+      // zone: this device's, saved once and kept. Household sits have no token.
+      const tz = deviceTimeZone();
 
       if (editing) {
         // PR 1: caregiver KIND is locked on edit (UI disables the picker too).
@@ -395,10 +398,12 @@ export function SitForm({
           notes: notes || null,
           lead_user_id: leadUserId,
         };
+        // Sits made before time zones were saved: fill it in now (the trigger
+        // then moves the link's end to the end of the last day locally).
+        if (!editSit.time_zone && tz) update.time_zone = tz;
         if (kind === "external") {
           update.sitter_name = sitterName || null;
           update.sitter_email = sitterEmail || null;
-          update.token_expires_at = expires;
         }
         const { error } = await supabase.from("sits").update(update).eq("id", editSit.id);
         if (error) { toast.error(friendlyError(error)); setSaving(false); return; }
@@ -464,11 +469,11 @@ export function SitForm({
           notes: notes || null,
           status: "upcoming",
           lead_user_id: leadUserId,
+          time_zone: tz,
         };
         if (kind === "external") {
           insert.sitter_name = sitterName || null;
           insert.sitter_email = sitterEmail || null;
-          insert.token_expires_at = expires;
         } else {
           insert.caregiver_user_id = householdUserId;
           insert.invite_token = null;

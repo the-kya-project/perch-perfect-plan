@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthClientStalled, getReadySession } from "@/lib/authReady";
 import { applyOAuthAttribution } from "@/lib/attribution";
+import { backfillSitTimeZones } from "@/lib/sitTimeZoneBackfill";
 import { PullToRefresh } from "@/components/PullToRefresh";
 import { OwnerTabBar, isTaskPath } from "@/components/OwnerTabBar";
 import { StartupSplash } from "@/components/StartupSplash";
@@ -101,6 +102,9 @@ function AuthenticatedLayout() {
     let cancelled = false;
     supabase.auth.getSession().then(({ data }) => {
       if (!cancelled && data.session?.user) void applyOAuthAttribution(data.session.user as any);
+      // Older sits have no saved time zone, so their sitter link ends at UTC
+      // midnight; save this device's zone on the owner's current sits.
+      if (!cancelled && data.session?.user) void backfillSitTimeZones(data.session.user.id);
     });
     return () => { cancelled = true; };
   }, []);

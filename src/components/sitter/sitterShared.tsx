@@ -11,7 +11,7 @@ import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 import { replaySitterOnboarding } from "@/components/SitterOnboarding";
 import { has, joinUnique } from "@/components/carePlanCards";
 import { firstName } from "@/lib/memberDisplay";
-import { localDateISO } from "@/lib/localDay";
+import { dateInTimeZone, sitPhase } from "@/lib/sitTimeZone";
 
 // ---- One-bird rule ----------------------------------------------------------
 // The tab set is decided ONCE per app open (the layout's first context load)
@@ -65,9 +65,6 @@ function parseISODate(s: string | null | undefined): Date | null {
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s ?? "");
   return m ? new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : null;
 }
-function dayDiff(a: Date, b: Date): number {
-  return Math.round((b.getTime() - a.getTime()) / 86_400_000);
-}
 
 /** "Willow" / "Willow and Moxie" / "3 birds" */
 export function caringForNames(t: TFunction, names: string[]): string {
@@ -82,25 +79,36 @@ export function caringForNames(t: TFunction, names: string[]): string {
  *   "Day 2 of 3 caring for Willow · Sam is back Sun, Oct 26"
  *   before the sit: "Your sit starts Fri, Oct 24"
  *   on the last day: "Last day · Sam is back today"
- * An owner's bird preview has no real sit dates: "Caring for Willow".
+ * An owner's bird preview has no real sit dates, and a sit whose end date has
+ * passed has no day to count: "Caring for Willow".
+ *
+ * "Today" is the date in the sit's time zone (the owner's, saved with the sit)
+ * when known, else this device's — so the line matches the day the link ends.
  */
 export function sitLine(ctx: any, t: TFunction, lang: string): string {
   const names = (ctx?.birds ?? []).map((b: any) => (b?.name ?? "").toString().trim());
   const who = caringForNames(t, names);
-  if (isBirdPreview(ctx)) return t("sitter.sitLine.caringFor", "Caring for {{names}}", { names: who });
+  const caringFor = () => t("sitter.sitLine.caringFor", "Caring for {{names}}", { names: who });
+  if (isBirdPreview(ctx)) return caringFor();
   const owner = ownerFirstName(ctx, t);
-  const today = parseISODate(localDateISO());
   const start = parseISODate(ctx?.sit?.start_date);
   const end = parseISODate(ctx?.sit?.end_date);
-  if (!today || !start || !end) return t("sitter.sitLine.caringFor", "Caring for {{names}}", { names: who });
+  const phase = sitPhase(dateInTimeZone(ctx?.sit?.time_zone), ctx?.sit?.start_date, ctx?.sit?.end_date);
+  if (!start || !end) return caringFor();
   const loc = lang === "nl" ? "nl-NL" : "en-US";
   const fmt = (d: Date) => d.toLocaleDateString(loc, { weekday: "short", month: "short", day: "numeric" });
-  if (dayDiff(today, start) > 0) return t("sitter.sitLine.startsOn", "Your sit starts {{date}}", { date: fmt(start) });
-  if (dayDiff(today, end) <= 0) return t("sitter.sitLine.lastDayToday", "Last day · {{owner}} is back today", { owner });
-  const n = dayDiff(start, today) + 1;
-  const total = dayDiff(start, end) + 1;
-  const back = dayDiff(today, end) === 1 ? t("sitter.sitLine.tomorrow", "tomorrow") : fmt(end);
-  return t("sitter.sitLine.dayOf", "Day {{n}} of {{total}} caring for {{names}} · {{owner}} is back {{date}}", { n, total, names: who, owner, date: back });
+  switch (phase.kind) {
+    case "before":
+      return t("sitter.sitLine.startsOn", "Your sit starts {{date}}", { date: fmt(start) });
+    case "lastDay":
+      return t("sitter.sitLine.lastDayToday", "Last day · {{owner}} is back today", { owner });
+    case "during": {
+      const back = phase.daysLeft === 1 ? t("sitter.sitLine.tomorrow", "tomorrow") : fmt(end);
+      return t("sitter.sitLine.dayOf", "Day {{n}} of {{total}} caring for {{names}} · {{owner}} is back {{date}}", { n: phase.day, total: phase.total, names: who, owner, date: back });
+    }
+    default:
+      return caringFor();
+  }
 }
 
 /** Small darker-forest pill under the greeting: replays the walkthrough. */
