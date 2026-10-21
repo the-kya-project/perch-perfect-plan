@@ -16,7 +16,7 @@ import { PageHeader } from "@/components/headers";
 import { LoadError } from "@/components/LoadError";
 import { useLoadState } from "@/lib/useTooLong";
 import { friendlyError } from "@/lib/errorMessage";
-import { namesAsCount } from "@/lib/birdNames";
+import { birdNames } from "@/lib/birdNames";
 import { memberDisplayName } from "@/lib/memberDisplay";
 import type { Capability } from "@/lib/capabilities";
 import { useTranslation } from "react-i18next";
@@ -93,9 +93,8 @@ function HouseholdScreen() {
     const hasAll = allBirds.length > 0 && allBirds.every((b) => m.birdIds.includes(b.id));
     if (hasAll || m.scope === "all") return t("household.allBirds", "All birds");
     const names = m.birdIds.filter((id) => allIds.has(id)).map((id) => allBirds.find((b) => b.id === id)!.name);
-    if (namesAsCount(names)) return t("birdNames.count", "{{count}} birds", { count: names.length });
-    if (names.length <= 1) return names[0] ?? t("household.noBirds", "no birds");
-    return t("birdNames.and", "{{first}} and {{last}}", { first: names.slice(0, -1).join(", "), last: names[names.length - 1] });
+    if (names.length === 0) return t("household.noBirds", "no birds");
+    return birdNames(t, names);
   }
 
   function onCapsSaved(userId: string, caps: Capability[], preset: string) {

@@ -12,6 +12,7 @@ import { replaySitterOnboarding } from "@/components/SitterOnboarding";
 import { has, joinUnique } from "@/components/carePlanCards";
 import { firstName } from "@/lib/memberDisplay";
 import { dateInTimeZone, sitPhase } from "@/lib/sitTimeZone";
+import { birdNames } from "@/lib/birdNames";
 
 // ---- One-bird rule ----------------------------------------------------------
 // The tab set is decided ONCE per app open (the layout's first context load)
@@ -69,9 +70,8 @@ function parseISODate(s: string | null | undefined): Date | null {
 /** "Willow" / "Willow and Moxie" / "3 birds" */
 export function caringForNames(t: TFunction, names: string[]): string {
   const n = names.filter(Boolean);
-  if (n.length <= 1) return n[0] ?? t("nameList.yourBird", "your bird");
-  if (n.length === 2) return t("nameList.pair", "{{a}} and {{b}}", { a: n[0], b: n[1] });
-  return t("sitter.sitLine.nBirds", "{{n}} birds", { n: n.length });
+  if (n.length === 0) return t("nameList.yourBird", "your bird");
+  return birdNames(t, n);
 }
 
 /**

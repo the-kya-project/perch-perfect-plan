@@ -850,8 +850,5 @@ function fmtAgo(iso: string): string {
 function joinNames(names: string[]): string {
   const n = names.filter(Boolean);
   if (n.length === 0) return i18next.t("dashboard.yourBirdsLower", "your birds");
-  if (namesAsCount(n)) return i18next.t("birdNames.count", "{{count}} birds", { count: n.length });
-  if (n.length === 1) return n[0];
-  if (n.length === 2) return i18next.t("dashboard.joinTwo", "{{a}} and {{b}}", { a: n[0], b: n[1] });
-  return i18next.t("dashboard.joinMany", "{{list}}, and {{last}}", { list: n.slice(0, -1).join(", "), last: n[n.length - 1] });
+  return birdNames(i18next.t, n);
 }

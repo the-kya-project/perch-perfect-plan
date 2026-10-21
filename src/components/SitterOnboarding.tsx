@@ -1,3 +1,4 @@
+import i18next from "i18next";
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
@@ -5,6 +6,7 @@ import { pickLocale } from "@/lib/i18n";
 import { objectPronoun, possessivePronoun } from "@/lib/i18n/pronouns";
 import { AlertTriangle, ChevronLeft, Check, X } from "lucide-react";
 import { K, SERIF } from "@/components/kya";
+import { birdNames } from "@/lib/birdNames";
 
 // First-visit sitter onboarding: a two-screen welcome, then a coach-mark bubble
 // walkthrough that points at the REAL on-screen elements (tagged with
@@ -22,10 +24,8 @@ export function replaySitterOnboarding() {
 // "Willow" / "Willow and Moxie" / "Willow, Moxie, and Kiwi"
 function formatNames(names: string[]): string {
   const n = names.filter(Boolean);
-  if (n.length === 0) return "your bird";
-  if (n.length === 1) return n[0];
-  if (n.length === 2) return `${n[0]} and ${n[1]}`;
-  return `${n.slice(0, -1).join(", ")}, and ${n[n.length - 1]}`;
+  if (n.length === 0) return i18next.t("nameList.yourBird", "your bird");
+  return birdNames(i18next.t, n);
 }
 
 

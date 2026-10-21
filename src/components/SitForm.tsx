@@ -25,6 +25,7 @@ import { TaskHeader, useLeaveGuard } from "@/components/headers";
 import { copySitterLink } from "@/lib/sitLink";
 import { friendlyError } from "@/lib/errorMessage";
 import { localDateISO } from "@/lib/localDay";
+import { birdNames } from "@/lib/birdNames";
 
 // Create OR edit a sit. In edit mode (`editSit` set) it preserves the existing
 // invite_token — the same sitter link keeps working; editing changes what it
@@ -279,8 +280,7 @@ export function SitForm({
   function gapBirdNames(): string {
     const ids = gapBirdIds();
     const names = Array.from(selected).filter((id) => ids.has(id)).map((id) => (birds.find((b: any) => b.id === id)?.name ?? "") as string).filter(Boolean);
-    if (names.length <= 1) return names[0] ?? "";
-    return t("sitForm.gaps.namesAnd", "{{first}} and {{last}}", { first: names.slice(0, -1).join(", "), last: names[names.length - 1] });
+    return birdNames(t, names);
   }
 
   // A different set of birds or caregiver means a fresh look at the gaps.

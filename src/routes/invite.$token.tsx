@@ -3,7 +3,6 @@ import { useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
-import { joinNamesDisplay } from "@/lib/i18n/joinNames";
 import { currentLocale } from "@/lib/i18n/ownerLocale";
 import { getHouseholdInvite, acceptHouseholdInvite, declineHouseholdInvite, type InviteLinkProblem } from "@/lib/household.functions";
 import { captureLead } from "@/lib/captureLead";
@@ -20,6 +19,7 @@ import { authErrorMessage } from "@/lib/authErrorMessage";
 import { useTranslation, Trans } from "react-i18next";
 import type { TFunction } from "i18next";
 import i18next from "i18next";
+import { birdNames } from "@/lib/birdNames";
 
 // Public household-invite accept screen. Renders for logged-out visitors too;
 // the token is the access check. Never reveals bird data for an
@@ -120,7 +120,7 @@ function InviteAccept() {
   const many = names.length > 3;
   const title = many
     ? t("invite.titleManyBirds", "{{owner}} invited you to help care for {{count}} birds", { owner, count: names.length })
-    : t("invite.titleBirds", "{{owner}} invited you to help care for {{birds}}", { owner, birds: joinNamesDisplay(names, "bird", t) });
+    : t("invite.titleBirds", "{{owner}} invited you to help care for {{birds}}", { owner, birds: names.length ? birdNames(t, names) : t("nameList.yourBirds", "your birds") });
   const inviteEmail = invite.inviteeEmail.toLowerCase();
   const matches = !!session?.signedIn && session.email === inviteEmail;
   const wrongAccount = !!session?.signedIn && session.email !== inviteEmail;
@@ -131,7 +131,6 @@ function InviteAccept() {
       <FrontDoorHeader>
         {birds.length > 0 && <BirdAvatars birds={birds} />}
         <KyaHeading as="h1" size={30} className={`${birds.length > 0 ? "mt-5" : "mt-7"} text-white`}>{title}</KyaHeading>
-        {many && <p className="m-0 mt-2 text-[15px] leading-[1.5]" style={{ color: K.paleGreen }}>{joinNamesDisplay(names, "bird", t)}</p>}
       </FrontDoorHeader>
       <FrontDoorBody>
         <p className="m-0 px-1 text-[20px] font-[700] leading-[1.25]" style={{ fontFamily: SERIF, color: K.forest }}>
