@@ -60,7 +60,7 @@ function ExportRecord() {
     queryFn: async () => {
       const { data: u } = await getLocalUser();
       const { data } = await supabase.from("birds")
-        .select("name, species, sex, age, birth_date, microchip, band_number, origin, medications, medical_conditions, acquired_on, intake_date, intake_date_source, is_foster, owner_id")
+        .select("*") // "*" so the page works before intake_date_source exists (lib/missingColumn.ts)
         .eq("id", birdId).maybeSingle();
       return { row: data as any, uid: u.user?.id ?? null };
     },

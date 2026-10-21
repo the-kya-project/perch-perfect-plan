@@ -13,6 +13,7 @@ import { localeForUser, fallbackSomeoneLabel } from "./emailLocale.server";
 import { emailT } from "./i18n/emailI18n.server";
 import { purgeBirdMediaWith, pdfHandoffFailedMessage } from "./birdMedia.functions";
 import { ownerIntakeDate } from "./intakeDate";
+import { isMissingColumn } from "@/lib/missingColumn";
 
 async function getAdmin() {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -193,7 +194,7 @@ export async function completePdfHandoffWith(
   data: { birdId: string; recipientName?: string },
 ): Promise<{ ok: true }> {
   const { data: bird } = await sb.from("birds")
-    .select("id, name, species, intake_date, intake_date_source, is_foster, owner_id, photo_url").eq("id", data.birdId).maybeSingle();
+    .select("*").eq("id", data.birdId).maybeSingle(); // "*": works before intake_date_source exists
   if (!bird || (bird as any).owner_id !== senderId) throw new Error("Not allowed.");
   const birdName = ((bird as any).name ?? "This bird") as string;
 
@@ -205,7 +206,7 @@ export async function completePdfHandoffWith(
     await purgeBirdMediaWith(sb, { id: (bird as any).id, photo_url: (bird as any).photo_url ?? null });
 
     // 3. Snapshot the sender's memory.
-    const { error: pbErr } = await sb.from("past_birds").insert({
+    const keepsake: Record<string, unknown> = {
       original_owner_id: senderId,
       bird_name: (bird as any).name,
       species: (bird as any).species ?? null,
@@ -217,7 +218,12 @@ export async function completePdfHandoffWith(
       mode: "pdf",
       was_foster: !!(bird as any).is_foster,
       photo_thumb: thumb,
-    } as any);
+    };
+    let { error: pbErr } = await sb.from("past_birds").insert(keepsake as any);
+    if (isMissingColumn(pbErr, "intake_date_source")) {
+      delete keepsake.intake_date_source;
+      ({ error: pbErr } = await sb.from("past_birds").insert(keepsake as any));
+    }
     if (pbErr) throw new Error(`past_birds insert failed: ${pbErr.message}`);
 
     // 4. The record left as a PDF — delete the DB record (cascades its data).
@@ -275,7 +281,7 @@ export const getPastBirds = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const sb = await getAdmin();
     const { data } = await sb.from("past_birds")
-      .select("id, bird_name, species, intake_date, intake_date_source, departed_on, recipient_name, mode, was_foster, photo_thumb")
+      .select("*") // "*": works before intake_date_source exists
       .eq("original_owner_id", context.userId as string)
       .order("departed_on", { ascending: false });
     // "With you from": only a date the owner entered. One the app set on its

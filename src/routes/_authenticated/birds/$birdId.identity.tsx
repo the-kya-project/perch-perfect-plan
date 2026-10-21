@@ -24,6 +24,7 @@ import { useLoadState } from "@/lib/useTooLong";
 import { formatLocalDate } from "@/lib/dates";
 import { localDateISO } from "@/lib/localDay";
 import { ownerIntakeDate } from "@/lib/intakeDate";
+import { isMissingColumn } from "@/lib/missingColumn";
 
 type IdentitySearch = { edit?: 1 };
 
@@ -106,7 +107,7 @@ function IdentityFacet() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("birds")
-        .select("owner_id, name, species, age, photo_url, photo_position, sex, sex_method, flight_status, birth_date, microchip, band_number, origin, acquired_on, is_foster, intake_date, intake_date_source")
+        .select("*") // "*" so the page works before intake_date_source exists (lib/missingColumn.ts)
         .eq("id", birdId)
         .maybeSingle();
       if (error) throw error;
@@ -312,7 +313,7 @@ function IdentityForm({ birdId, bird, onClose, onSaved, onDirtyChange }: { birdI
       const clean = (v: string) => (v.trim() ? v.trim() : null);
       let ref = photoRef;
       if (typeof ref === "string" && ref.startsWith("data:")) ref = await persistBirdPhoto(bird.owner_id, ref);
-      const { error } = await supabase.from("birds").update({
+      const patch: Record<string, unknown> = {
         name: clean(f.name) ?? bird.name, // name is required — keep the old one if blanked
         species: clean(f.species),
         // A hatch date sets the age, so the two never disagree.
@@ -331,7 +332,12 @@ function IdentityForm({ birdId, bird, onClose, onSaved, onDirtyChange }: { birdI
         ...(f.is_foster ? { intake_date: f.intake_date || null, intake_date_source: f.intake_date ? "owner" : null } : {}),
         photo_url: ref,
         photo_position: photoPosition,
-      } as any).eq("id", birdId);
+      };
+      let { error } = await supabase.from("birds").update(patch as any).eq("id", birdId);
+      if (isMissingColumn(error, "intake_date_source")) {
+        delete patch.intake_date_source;
+        ({ error } = await supabase.from("birds").update(patch as any).eq("id", birdId));
+      }
       if (error) throw error;
       toast.success(t("birdIdentity.saved", "Identity saved."));
       onSaved();

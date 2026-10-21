@@ -23,6 +23,7 @@ import { BIRD_FEATURES } from "@/lib/onboardingPlan";
 import { localDateISO } from "@/lib/localDay";
 import { encodeSetupStep } from "@/lib/setupProgress";
 import { useConfirm } from "@/components/ConfirmSheet";
+import { isMissingColumn } from "@/lib/missingColumn";
 
 export const Route = createFileRoute("/_authenticated/birds/new")({
   head: () => ({ meta: [{ title: i18next.t("newBird.metaTitle", "Add a bird — Kya & Co.") }] }),
@@ -115,7 +116,7 @@ function NewBird() {
       console.error("[new bird] photo upload failed", e);
       toast.error(t("newBird.photoUploadFailed", "We couldn't upload that photo, so we added your bird without it. You can add one from the bird's page."));
     }
-    const { data: bird, error } = await supabase.from("birds").insert({
+    const row: Record<string, unknown> = {
       owner_id: u.user.id,
       name,
       species: species || null,
@@ -134,7 +135,12 @@ function NewBird() {
       intake_date_source: isFoster && intakeDate ? "owner" : null,
       setup_complete: false,
       setup_step: encodeSetupStep(targetStep),
-    } as any).select().single();
+    };
+    let { data: bird, error } = await supabase.from("birds").insert(row as any).select().single();
+    if (isMissingColumn(error, "intake_date_source")) {
+      delete row.intake_date_source;
+      ({ data: bird, error } = await supabase.from("birds").insert(row as any).select().single());
+    }
     if (error || !bird) {
       toast.error(friendlyError(error, t("newBird.createFailed", "Could not create bird.")));
       setSaving(false);

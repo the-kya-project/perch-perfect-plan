@@ -37,7 +37,7 @@ function Remembering() {
       if (!u.user) return [] as any[];
       const { data, error } = await supabase
         .from("birds")
-        .select("id, name, species, photo_url, photo_position, acquired_on, intake_date, intake_date_source, created_at, passed_at")
+        .select("*") // "*" so the page works before intake_date_source exists (lib/missingColumn.ts)
         .eq("owner_id", u.user.id)
         .not("passed_at", "is", null)
         .order("passed_at", { ascending: false });
