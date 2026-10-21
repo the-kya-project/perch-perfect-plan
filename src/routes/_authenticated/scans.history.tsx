@@ -132,7 +132,7 @@ function HealthHistoryPage() {
               onChange={(v) => set({ type: v === "all" ? undefined : (v as EntryType) })}
               options={[
                 { value: "all", label: t("healthHistory.typeEverything", "Everything") },
-                { value: "checks", label: t("healthHistory.typeChecks", "Daily checks") },
+                { value: "checks", label: t("healthHistory.typeHealthChecks", "Health checks") },
                 { value: "weights", label: t("healthHistory.typeWeights", "Weights") },
               ]}
             />

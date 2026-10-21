@@ -16,26 +16,12 @@ import { localDateISO } from "@/lib/localDay";
 import { mergeEmergency, pickVet } from "@/lib/emergency";
 import { useBirdOwnerEmergency } from "@/lib/useOwnerEmergency";
 import { isStored } from "@/lib/healthHistory";
+import { checkKindOf } from "@/lib/checkKind";
 import { fetchDisplayNames } from "@/lib/resolveNames";
 import type { ScanFieldKey } from "@/lib/triage";
 import i18next from "i18next";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
-
-// Full or daily? daily_logs has no column for it: the full health check
-// (birds/$birdId/scan) and the daily check card write the same row shape via
-// buildDailyLogRow. Only the full check can store per-answer notes
-// (item_notes) or attach a photo (photo_logs.notes "Attached to health
-// check"), so either of those marks a full check. A sitter's check is titled
-// "[Bird]'s daily check" wherever the sitter runs it, so source "sitter" is
-// always daily. Anything else reads as a daily check (the more common kind):
-// an all-normal full check with no notes or photo can't be told apart.
-function isFullCheck(row: { source?: string | null; item_notes?: unknown }, photoNotes: (string | null)[]): boolean {
-  if (row.source === "sitter") return false;
-  const notes = row.item_notes;
-  if (notes && typeof notes === "object" && Object.values(notes as Record<string, unknown>).some((v) => typeof v === "string" && v.trim())) return true;
-  return photoNotes.some((n) => n === "Attached to health check");
-}
 
 // One daily check: what needed watching (with Mark resolved and Call vet),
 // every answer, the weight logged that day, and the photo. Reached from the
@@ -242,7 +228,10 @@ function ScanDetail() {
       // (useBirdOwnerEmergency below — household members can't read those directly).
       const { data: ec } = await supabase.from("emergency_contacts").select("*").eq("bird_id", birdId).maybeSingle();
 
-      const full = !!row && isFullCheck(row as any, (photos ?? []).map((p) => p.notes ?? null));
+      // Full or daily: the stored kind (20261021200000), else the guess from
+      // the row and its photos (checkKind.ts). select("*") above, so a database
+      // without the column yet still loads the check.
+      const full = !!row && checkKindOf(row as any, (photos ?? []).map((p) => p.notes ?? null)) === "full";
       return { row: row as any, actor, birdName: (bird?.name ?? null) as string | null, photos: resolvedPhotos as { id: string; photo_url: string }[], weight, contacts: ec ?? null, full };
     },
   });

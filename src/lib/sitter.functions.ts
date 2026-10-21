@@ -17,6 +17,7 @@ import { mergeEmergency, emergencyDifferent } from "./emergency";
 import { mergeHome } from "./homeDefaults";
 import { isCfClip, cfUid } from "./clipRef";
 import { resolveScanPhotoUrls } from "./scanPhoto";
+import { FULL_CHECK_PHOTO_NOTE, insertWithKind } from "./checkKind";
 
 // Resolve a clip column value to a playable URL: a signed Cloudflare Stream
 // iframe URL for "cfstream:<uid>" refs, or a signed Supabase Storage URL for
@@ -548,29 +549,29 @@ export const submitHealthScan = createServerFn({ method: "POST" })
     const triage = computeTriage(data.answers as Record<ScanFieldKey, ScanAnswer>);
     const today = resolveToday(data.today);
     const a = data.answers as Record<string, string>;
-    const { data: row, error } = await sb
-      .from("daily_logs")
-      .insert({
-        sit_id: sit.id,
-        bird_id: data.birdId,
-        log_date: today,
-        alertness_status: a.alertness,
-        food_status: a.food,
-        droppings_status: a.droppings,
-        breathing_status: a.breathing,
-        posture_status: a.posture,
-        behavior_status: a.noise,
-        energy_status: a.fluffed,
-        injury_status: a.injury,
-        exposure_status: a.exposure,
-        notes: data.notes ?? null,
-        item_notes: data.itemNotes ?? null,
-        triage_status: triage.status,
-        triage_reasons: triage.reasons.join(" | "),
-        triage_reason_codes: triage.reasonCodes,
-      } as any)
-      .select()
-      .single();
+    // The sitter's check is always the daily check (kind 'daily'), though it
+    // asks the full set of questions. insertWithKind retries without kind
+    // while the column doesn't exist yet (20261021200000).
+    const { data: row, error } = await insertWithKind({
+      sit_id: sit.id,
+      bird_id: data.birdId,
+      log_date: today,
+      kind: "daily",
+      alertness_status: a.alertness,
+      food_status: a.food,
+      droppings_status: a.droppings,
+      breathing_status: a.breathing,
+      posture_status: a.posture,
+      behavior_status: a.noise,
+      energy_status: a.fluffed,
+      injury_status: a.injury,
+      exposure_status: a.exposure,
+      notes: data.notes ?? null,
+      item_notes: data.itemNotes ?? null,
+      triage_status: triage.status,
+      triage_reasons: triage.reasons.join(" | "),
+      triage_reason_codes: triage.reasonCodes,
+    }, (r) => sb.from("daily_logs").insert(r as any).select().single());
     if (error) throw new Error(error.message);
 
     // vomiting_status is added by a later migration that may not be applied yet,
@@ -588,7 +589,7 @@ export const submitHealthScan = createServerFn({ method: "POST" })
         daily_log_id: row.id,
         photo_type: "other",
         photo_url: data.photoDataUrl,
-        notes: "Attached to health check",
+        notes: FULL_CHECK_PHOTO_NOTE,
       });
       if (pErr) console.error("[submitHealthScan] photo insert failed", pErr.message);
     }

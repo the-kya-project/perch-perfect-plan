@@ -3,6 +3,7 @@
 // daily_logs insert here so the column mapping lives in one place.
 // No imports beyond triage, so it is safe to unit test without a client.
 import { computeTriage, SCAN_FIELDS, type ScanAnswer, type ScanFieldKey, type TriageResult } from "./triage";
+import type { CheckKind } from "./checkKind";
 
 export type ScanAnswers = Record<ScanFieldKey, ScanAnswer>;
 
@@ -17,6 +18,8 @@ export function answersWithChanges(changes: Partial<Record<ScanFieldKey, Exclude
 }
 
 export type DailyLogContext = {
+  /** Which check wrote the row: the daily check card or the full health check. */
+  kind: CheckKind;
   birdId: string;
   sitId: string | null;
   source: "owner" | "household";
@@ -27,7 +30,9 @@ export type DailyLogContext = {
 };
 
 /** The daily_logs insert for a set of answers, plus its triage. vomiting_status
- *  is returned separately: the scan has always written it as a follow-up update. */
+ *  is returned separately: the scan has always written it as a follow-up update.
+ *  Insert it with insertWithKind (checkKind.ts) so a database without the kind
+ *  column still takes the row. */
 export function buildDailyLogRow(answers: ScanAnswers, ctx: DailyLogContext): { row: Record<string, unknown>; vomiting: ScanAnswer; triage: TriageResult } {
   const triage = computeTriage(answers);
   const a = answers;
@@ -40,6 +45,7 @@ export function buildDailyLogRow(answers: ScanAnswers, ctx: DailyLogContext): { 
       source: ctx.source,
       run_by: ctx.runBy,
       log_date: ctx.logDate,
+      kind: ctx.kind,
       alertness_status: a.alertness,
       food_status: a.food,
       droppings_status: a.droppings,
