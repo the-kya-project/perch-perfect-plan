@@ -9,6 +9,22 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import { VitePWA } from "vite-plugin-pwa";
+import { PRODUCTION_SUPABASE_REF, resolvePreviewSupabase } from "./src/lib/supabaseEnv";
+
+// Vercel previews talk to a Supabase branch (the PR's own, or staging), never
+// production. resolvePreviewSupabase throws -- failing the build -- when the
+// preview's settings are missing or point at production. The resolved values
+// are written to the VITE_ names the client reads, which Vite picks up from
+// process.env after this file runs. Production and local builds skip all of
+// this and read their variables exactly as before. See src/lib/supabaseEnv.ts.
+const previewSupabase =
+  process.env.VERCEL_ENV === "preview" ? resolvePreviewSupabase(process.env) : null;
+if (previewSupabase) {
+  process.env.VITE_SUPABASE_URL = previewSupabase.url;
+  process.env.VITE_SUPABASE_PUBLISHABLE_KEY = previewSupabase.publishableKey;
+  process.env.VITE_SUPABASE_PROJECT_ID = previewSupabase.ref;
+  console.log(`[supabase] preview build uses Supabase project ${previewSupabase.ref}`);
+}
 
 // The app never uses Supabase Realtime (no channels/subscriptions), but
 // supabase-js always bundles realtime-js + phoenix (~54KB minified) on every
@@ -28,7 +44,9 @@ const pkgVersion = JSON.parse(
 // .vercel/output/config.json — a root vercel.json headers block is ignored by
 // this build). CSP ships REPORT-ONLY first: it observes and reports violations
 // but never blocks, so we can verify the real flows before flipping to enforce.
-const SUPABASE_ORIGIN = "https://koyqdyamazuuwvqbttnj.supabase.co";
+const SUPABASE_ORIGIN = previewSupabase
+  ? new URL(previewSupabase.url).origin
+  : `https://${PRODUCTION_SUPABASE_REF}.supabase.co`;
 // Same-origin, and under /api/public/* so it bypasses the published-site auth.
 const CSP_REPORT_PATH = "/api/public/csp-report";
 const CSP = [

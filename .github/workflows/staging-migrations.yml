@@ -1,0 +1,58 @@
+# Keeps the persistent Supabase "staging" branch on main's schema.
+#
+# Vercel previews for PRs that don't change supabase/ run against staging, so
+# staging has to have every migration main has. Production gets main's
+# migrations from the Supabase GitHub integration on merge; staging is not
+# linked to a git branch, so this job applies them: on every push to main that
+# touches supabase/migrations, `supabase db push` runs only the files staging
+# hasn't recorded yet.
+#
+# Needs one repository secret, STAGING_DB_URL: the staging branch's *session
+# pooler* connection string (Supabase → switch to the staging branch → Connect).
+# GitHub runners have no IPv6, so the direct db.<ref>.supabase.co host won't
+# connect. That string reaches the staging database only, never production,
+# and the job refuses to run if it ever names the production project.
+name: Staging migrations
+
+on:
+  push:
+    branches: [main]
+    paths: ["supabase/migrations/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: staging-migrations
+  cancel-in-progress: false
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    env:
+      STAGING_DB_URL: ${{ secrets.STAGING_DB_URL }}
+    steps:
+      - name: Refuse a missing or production connection string
+        run: |
+          if [ -z "$STAGING_DB_URL" ]; then
+            echo "::error::Repository secret STAGING_DB_URL is not set."
+            exit 1
+          fi
+          case "$STAGING_DB_URL" in
+            *koyqdyamazuuwvqbttnj*)
+              echo "::error::STAGING_DB_URL names the production project. It must be the staging branch."
+              exit 1
+              ;;
+          esac
+
+      - uses: actions/checkout@v4
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      # --include-all also applies a migration whose timestamp is older than
+      # the newest one staging already has (PRs merge out of order).
+      - name: Apply new migrations to staging
+        run: supabase db push --db-url "$STAGING_DB_URL" --include-all --yes
