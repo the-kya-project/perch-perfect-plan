@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate, useLocation } from "@tanstack/react
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Eye, Loader2 } from "lucide-react";
+import { Eye, Loader2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import i18next from "i18next";
 
@@ -75,18 +75,20 @@ function SitPreview() {
 
   return (
     <div className="flex h-[100dvh] flex-col bg-[#f1f5f0]">
-      <div className="setup-frame flex items-center justify-between gap-3 bg-[#12291f] px-4 py-2 pt-[max(env(safe-area-inset-top),0.5rem)] text-white">
+      {/* Close top left (44px), like a task's Close, then the mode line. */}
+      <div className="setup-frame flex items-center gap-3 bg-[#12291f] px-4 py-2 pt-[max(env(safe-area-inset-top),0.5rem)] text-white">
+        <Link
+          to="/sits"
+          aria-label={t("sitPreview.closePreview", "Close preview")}
+          className="grid size-11 shrink-0 place-items-center rounded-full bg-white/15 text-white active:scale-95"
+        >
+          <X className="size-5" aria-hidden="true" />
+        </Link>
         <span className="flex min-w-0 items-center gap-2 text-[13.5px] font-[500] text-white">
           <Eye className="size-4 shrink-0" aria-hidden="true" />
           {/* Blank until we know it's a sitter sit (a household sit redirects). */}
           <span className="truncate">{!resolving && t("sitPreview.sitterBanner", "Sitter preview · how {{label}} will see this sit", { label })}</span>
         </span>
-        <Link
-          to="/sits"
-          className="inline-flex min-h-[32px] shrink-0 items-center rounded-full bg-white/15 px-3.5 text-[13px] font-[700] text-white"
-        >
-          {t("sitPreview.exit", "Exit")}
-        </Link>
       </div>
 
       {resolving ? (

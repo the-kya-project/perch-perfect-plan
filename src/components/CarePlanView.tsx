@@ -267,10 +267,10 @@ function StepUpRow({ stepUp, notes }: { stepUp?: string | null; notes?: string |
 }
 
 /** A clip with its caption under it. */
-function ClipTile({ src, label }: { src: string; label: string }) {
+function ClipTile({ src, label, audience, ownerName }: { src: string; label: string; audience?: "owner" | "sitter"; ownerName?: string }) {
   return (
     <div className="overflow-hidden rounded-[14px]" style={{ background: K.mist }}>
-      <ClipPlayer src={src} label={label} className="aspect-video" />
+      <ClipPlayer src={src} label={label} className="aspect-video" audience={audience} ownerName={ownerName} />
       <p className="m-0 px-3 py-2 text-[14px] font-[700] leading-tight" style={{ color: K.forest }}>{label}</p>
     </div>
   );
@@ -291,6 +291,7 @@ export function CarePlanView({
   chipsOnForest = false,
   separateNeverFeed = false,
   ownerName,
+  audience = "owner",
   tipsTitle,
   tipsLine,
 }: {
@@ -326,6 +327,9 @@ export function CarePlanView({
   /** Sitter care sheet: the owner's first name, used in "Don't introduce new
    *  foods while [owner] is away." Leave unset for the owner's own wording. */
   ownerName?: string;
+  /** Who is reading. The sitter's care sheet says "[Owner]'s home" instead of
+   *  "Your home" and tells the sitter to ask the owner when a clip won't load. */
+  audience?: "owner" | "sitter";
   /** Sitter care sheet: title / line for the Tips card. */
   tipsTitle?: string;
   tipsLine?: string;
@@ -461,6 +465,14 @@ export function CarePlanView({
   const stickyHasContent = !!header || presentNav.length > 1 || chipsOnForest;
   const neverFeedCard = separateNeverFeed && canShow("food") && neverFeed.length > 0;
   const tileIcon = "size-5";
+  const sitter = audience === "sitter";
+  // "Your home" is the owner's own wording; a sitter reads it as the owner's.
+  const homeTitle = !sitter
+    ? t("carePlan.yourHome", "Your home")
+    : ownerName
+    ? t("carePlan.ownerHome", "{{owner}}'s home", { owner: ownerName })
+    : t("carePlan.theOwnersHome", "The owner's home");
+  const navLabel = (n: { id: CardKey; label: string }) => (n.id === "home" ? homeTitle : displayLabel(t, n.label));
 
   return (
     <div className={`flex flex-col gap-4 ${inFrame ? "rounded-[20px] p-2.5" : ""} ${chipsOnForest ? "-mt-[46px]" : ""}`} style={inFrame ? { background: K.mist } : undefined}>
@@ -484,10 +496,10 @@ export function CarePlanView({
                       type="button"
                       aria-pressed={on}
                       onClick={() => scrollToSection(n.id)}
-                      className="inline-flex min-h-[40px] shrink-0 items-center rounded-full px-4 text-[14.5px] font-[700] transition-colors"
+                      className="inline-flex min-h-[44px] shrink-0 items-center rounded-full px-4 text-[14.5px] font-[700] transition-colors"
                       style={on ? { background: K.lime, color: K.forest } : { background: K.forestDeep, color: "#fff" }}
                     >
-                      {displayLabel(t, n.label)}
+                      {navLabel(n)}
                     </button>
                   );
                 })}
@@ -516,7 +528,7 @@ export function CarePlanView({
                     className="inline-flex min-h-[40px] shrink-0 items-center rounded-full border-[1.5px] px-4 text-[14.5px] font-[700] transition-colors"
                     style={on ? { background: K.forest, borderColor: K.forest, color: "#fff" } : { background: "#fff", borderColor: "#d5dfd5", color: K.forest }}
                   >
-                    {displayLabel(t, n.label)}
+                    {navLabel(n)}
                   </button>
                 );
               })}
@@ -653,7 +665,7 @@ export function CarePlanView({
           )}
           {baselineClipUrl && (
             <div className="cp-row py-3">
-              <ClipTile src={baselineClipUrl} label={t("carePlan.normalBehaviorClip", "Normal-behavior clip")} />
+              <ClipTile src={baselineClipUrl} label={t("carePlan.normalBehaviorClip", "Normal-behavior clip")} audience={audience} ownerName={ownerName} />
             </div>
           )}
         </Card>
@@ -687,7 +699,7 @@ export function CarePlanView({
         <Card id="tips" setRef={setRef("tips")} icon={<Video className={tileIcon} />} title={tipsTitle ?? t("carePlan.tips", "Tips")} line={tipsLine ?? t("carePlan.tipsLine", "Short clips that show how it's done")}>
           <div className="cp-row flex flex-col gap-3 py-3">
             {watchClips.map((c) => (
-              <ClipTile key={c.key} src={c.url} label={clipSlotLabel(c.key, c.label, t)} />
+              <ClipTile key={c.key} src={c.url} label={clipSlotLabel(c.key, c.label, t)} audience={audience} ownerName={ownerName} />
             ))}
           </div>
         </Card>
@@ -719,7 +731,7 @@ export function CarePlanView({
           coach={present.home ? COACH.home : undefined}
           setRef={setRef("home")}
           icon={<HomeIcon className={tileIcon} />}
-          title={t("carePlan.yourHome", "Your home")}
+          title={homeTitle}
           line={present.home ? t("carePlan.homeSafetyTitle", "{{name}}'s home & safety", { name }) : undefined}
         >
           {present.home && (

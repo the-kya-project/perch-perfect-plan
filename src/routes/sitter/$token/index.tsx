@@ -350,6 +350,7 @@ function SitterToday() {
   const bird = ctx.bird as any;
   const species = (bird.species ?? "").trim() ? speciesLabel(t, (bird.species ?? "").trim()) : t("sitter.today.speciesDefault", "Parrot");
   const showSaved = savedFor === birdId;
+  const checkDone = !!ctx.todayLog;
   const nextToCheck = showSaved && multi
     ? [...birds.slice(birdIndex + 1), ...birds.slice(0, birdIndex)].find((b) => needsCheck(b)) ?? null
     : null;
@@ -376,7 +377,12 @@ function SitterToday() {
       )}
 
       <KyaBody>
-        {!multi && <SinglePhotoCard bird={bird} species={species} token={token} />}
+        {!multi && (
+          <>
+            <KyaHeading size={24} className="px-1">{t("sitter.today.birdsDay", "{{name}}'s day", { name: bird.name })}</KyaHeading>
+            <SinglePhotoCard bird={bird} species={species} token={token} />
+          </>
+        )}
 
         {showSaved && (
           <KyaCard className="flex flex-col gap-3 p-4" style={{ border: `2px solid ${K.forest}` }}>
@@ -393,8 +399,8 @@ function SitterToday() {
                 to="/sitter/$token/scan"
                 params={{ token }}
                 search={{ birdId: nextToCheck.id }}
-                className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full border-2 px-5 text-[15px] font-[700]"
-                style={{ background: K.sunflower, borderColor: K.forest, color: K.forest }}
+                className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full border-2 bg-white px-5 text-[15px] font-[700] active:scale-[0.99]"
+                style={{ borderColor: K.forest, color: K.forest }}
               >
                 {t("sitter.today.checkBird", "Check {{name}}", { name: nextToCheck.name })}
               </Link>
@@ -478,7 +484,7 @@ function SitterToday() {
             <div data-noswipe className="-mx-4 mt-2 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {ctx.watchClips.map((c: any) => (
                 <div key={c.key} className="flex w-60 shrink-0 snap-start flex-col overflow-hidden rounded-[20px] bg-white">
-                  <ClipPlayer src={c.url} label={clipSlotLabel(c.key, c.label, t)} className="aspect-video bg-[#12291f]" />
+                  <ClipPlayer src={c.url} label={clipSlotLabel(c.key, c.label, t)} className="aspect-video bg-[#12291f]" audience="sitter" ownerName={owner} />
                   <div className="px-3.5 py-3">
                     <p className="m-0 text-[15px] font-[700] leading-[1.3]" style={{ color: K.forest }}>{clipSlotLabel(c.key, c.label, t)}</p>
                   </div>
@@ -513,8 +519,10 @@ function SitterToday() {
           <button
             type="button"
             onClick={() => goToBird(nextBird.id)}
-            className="inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full border-2 px-6 text-[16px] font-[700]"
-            style={{ background: K.sunflower, borderColor: K.forest, color: K.forest }}
+            className="inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full border-2 px-6 text-[16px] font-[700] active:scale-[0.99]"
+            // One sunflower per screen: Start on the check card while the
+            // check isn't done, otherwise this button.
+            style={{ background: checkDone ? K.sunflower : "#fff", borderColor: K.forest, color: K.forest }}
           >
             {t("sitter.today.nextBird", "Next: {{name}}", { name: nextBird.name })}
             <ArrowRight className="size-[18px]" aria-hidden="true" />
@@ -523,8 +531,9 @@ function SitterToday() {
           <Link
             to="/sitter/$token/home"
             params={{ token }}
-            className="inline-flex min-h-[52px] w-full items-center justify-center rounded-full border-2 bg-white px-6 text-[16px] font-[700]"
-            style={{ borderColor: K.forest, color: K.forest }}
+            className="inline-flex min-h-[52px] w-full items-center justify-center rounded-full border-2 px-6 text-[16px] font-[700] active:scale-[0.99]"
+            // The last bird's "Next": the main button once its check is done.
+            style={{ background: checkDone ? K.sunflower : "#fff", borderColor: K.forest, color: K.forest }}
           >
             {t("sitter.today.backToAllBirds", "Back to all birds")}
           </Link>
