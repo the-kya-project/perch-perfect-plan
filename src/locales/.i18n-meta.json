@@ -117,8 +117,14 @@
     "account.nameUpdated": {
       "stamp": "fcab517792082776"
     },
+    "account.needsBirdVetDetails": {
+      "stamp": "9616362c10a93960"
+    },
     "account.needsTwoNumbers": {
       "stamp": "0e88089de61ebd99"
+    },
+    "account.needsVetDetailsFor": {
+      "stamp": "01d89c92b0965475"
     },
     "account.needsVetPhone": {
       "stamp": "9759d6bcaeba20d3"
@@ -641,6 +647,27 @@
     },
     "birdEmergency.useOwners": {
       "stamp": "209a23086e01dd5f"
+    },
+    "birdEmergency.vetGap.avianBoth": {
+      "stamp": "33d84135218108ab"
+    },
+    "birdEmergency.vetGap.avianName": {
+      "stamp": "4774fef4c065b4e4"
+    },
+    "birdEmergency.vetGap.avianPhone": {
+      "stamp": "8b3a4dcb104c0c08"
+    },
+    "birdEmergency.vetGap.erBoth": {
+      "stamp": "235ed5a2b643d94f"
+    },
+    "birdEmergency.vetGap.erName": {
+      "stamp": "3e9a0f8d8f90f0fe"
+    },
+    "birdEmergency.vetGap.erPhone": {
+      "stamp": "cddb5d333b3ae079"
+    },
+    "birdEmergency.vetGap.title": {
+      "stamp": "aacb12fad8bfaccf"
     },
     "birdEmergency.whichInfo": {
       "stamp": "e87d27706d69e341"
@@ -1634,6 +1661,9 @@
     },
     "birdRecord.recentDailyCheck": {
       "stamp": "a55b557383617330"
+    },
+    "birdRecord.recentFullCheck": {
+      "stamp": "6849412e9ebe15d2"
     },
     "birdRecord.recentSomethingToCheck": {
       "stamp": "334cb9928400c46a"
@@ -5898,6 +5928,18 @@
     "healthHistory.everyone": {
       "stamp": "36743c1ca0178902"
     },
+    "healthHistory.fullCheck": {
+      "stamp": "6849412e9ebe15d2"
+    },
+    "healthHistory.fullCheckAllNormal": {
+      "stamp": "e81431d90ea34cdb"
+    },
+    "healthHistory.fullCheckToWatch_one": {
+      "stamp": "0eb47b6d3971da36"
+    },
+    "healthHistory.fullCheckToWatch_other": {
+      "stamp": "a0242f9d5e65ac1c"
+    },
     "healthHistory.grams": {
       "stamp": "32a06ffb524410f9"
     },
@@ -5943,11 +5985,11 @@
     "healthHistory.title": {
       "stamp": "47a7d1d7ec2e1bd2"
     },
-    "healthHistory.typeChecks": {
-      "stamp": "38a99d5760ae0da9"
-    },
     "healthHistory.typeEverything": {
       "stamp": "59db49f7708f7b73"
+    },
+    "healthHistory.typeHealthChecks": {
+      "stamp": "76061176bb2950ed"
     },
     "healthHistory.typeLabel": {
       "stamp": "8d0ea98aeaee4f82"
@@ -6485,6 +6527,18 @@
     },
     "householdInvite.permissionLevel": {
       "stamp": "ee40b8819ff9d1f8"
+    },
+    "householdInvite.presetLine.caregiverPhotos": {
+      "stamp": "c085e78f02ba70af"
+    },
+    "householdInvite.presetLine.careManager": {
+      "stamp": "7254724ea8df3c50"
+    },
+    "householdInvite.presetLine.coOwner": {
+      "stamp": "f48284cda35e2e5e"
+    },
+    "householdInvite.presetLine.viewer": {
+      "stamp": "5c6a44690c5bc248"
     },
     "householdInvite.required": {
       "stamp": "dba5a2479ac6f5fa"

@@ -81,8 +81,12 @@
   "account.lastNamePlaceholder": "Achternaam",
   // Name updated.
   "account.nameUpdated": "Naam bijgewerkt.",
+  // Needs {{name}}'s vet details
+  "account.needsBirdVetDetails": "Dierenartsgegevens van {{name}} nodig",
   // Needs 2 numbers
   "account.needsTwoNumbers": "2 nummers nodig",
+  // Needs vet details for {{names}}
+  "account.needsVetDetailsFor": "Dierenartsgegevens nodig voor {{names}}",
   // Needs vet phone
   "account.needsVetPhone": "Nummer dierenarts nodig",
   // Needs your phone
@@ -431,6 +435,20 @@
   "birdEmergency.useMine": "Mijn noodinformatie gebruiken",
   // Use {{owner}}'s emergency info
   "birdEmergency.useOwners": "De noodinformatie van {{owner}} gebruiken",
+  // The avian vet's name and phone number are missing.
+  "birdEmergency.vetGap.avianBoth": "De naam en het telefoonnummer van de vogeldierenarts ontbreken.",
+  // The avian vet's name is missing.
+  "birdEmergency.vetGap.avianName": "De naam van de vogeldierenarts ontbreekt.",
+  // The avian vet's phone number is missing.
+  "birdEmergency.vetGap.avianPhone": "Het telefoonnummer van de vogeldierenarts ontbreekt.",
+  // The after-hours vet's name and phone number are missing.
+  "birdEmergency.vetGap.erBoth": "De naam en het telefoonnummer van de spoeddierenarts ontbreken.",
+  // The after-hours vet's name is missing.
+  "birdEmergency.vetGap.erName": "De naam van de spoeddierenarts ontbreekt.",
+  // The after-hours vet's phone number is missing.
+  "birdEmergency.vetGap.erPhone": "Het telefoonnummer van de spoeddierenarts ontbreekt.",
+  // Finish {{name}}'s vet details
+  "birdEmergency.vetGap.title": "Maak de dierenartsgegevens van {{name}} af",
   // Which emergency info
   "birdEmergency.whichInfo": "Welke noodinformatie",
   // Change this for {{name}} only, or for all your birds?
@@ -1093,6 +1111,8 @@
   "birdRecord.recentConcern": "Zorg gemeld",
   // Daily check
   "birdRecord.recentDailyCheck": "Dagelijkse check",
+  // Full health check
+  "birdRecord.recentFullCheck": "Volledige gezondheidscheck",
   // Something to check
   "birdRecord.recentSomethingToCheck": "Iets om na te kijken",
   // Weighed
@@ -3939,6 +3959,14 @@
   "healthHistory.dayDuringSit": "{{day}} · tijdens {{sit}}",
   // Everyone
   "healthHistory.everyone": "Iedereen",
+  // Full health check
+  "healthHistory.fullCheck": "Volledige gezondheidscheck",
+  // Full health check, all normal
+  "healthHistory.fullCheckAllNormal": "Volledige gezondheidscheck, alles normaal",
+  // Full health check, {{count}} thing to watch
+  "healthHistory.fullCheckToWatch_one": "Volledige gezondheidscheck, {{count}} ding om op te letten",
+  // Full health check, {{count}} things to watch
+  "healthHistory.fullCheckToWatch_other": "Volledige gezondheidscheck, {{count}} dingen om op te letten",
   // {{n}} g
   "healthHistory.grams": "{{n}} g",
   // Household member
@@ -3969,10 +3997,10 @@
   "healthHistory.thisSit": "Deze oppas",
   // Health history
   "healthHistory.title": "Gezondheidsgeschiedenis",
-  // Daily checks
-  "healthHistory.typeChecks": "Dagelijkse checks",
   // Everything
   "healthHistory.typeEverything": "Alles",
+  // Health checks
+  "healthHistory.typeHealthChecks": "Gezondheidschecks",
   // Type
   "healthHistory.typeLabel": "Soort",
   // Weights
@@ -4331,6 +4359,14 @@
   "householdInvite.orInviteNew": "of nodig iemand nieuw uit",
   // Permission level
   "householdInvite.permissionLevel": "Rechten",
+  // Plus daily checks, weights, notes, and photos
+  "householdInvite.presetLine.caregiverPhotos": "Plus dagelijkse checks, gewichten, notities en foto's",
+  // Plus editing care plans, emergency info, and sits
+  "householdInvite.presetLine.careManager": "Plus verzorgingsplannen, noodinformatie en oppasperiodes bewerken",
+  // Everything, including editing birds and inviting people
+  "householdInvite.presetLine.coOwner": "Alles, inclusief vogels bewerken en mensen uitnodigen",
+  // Sees each bird's record and care plan, but can't change anything
+  "householdInvite.presetLine.viewer": "Ziet het dossier en verzorgingsplan van elke vogel, maar kan niets wijzigen",
   // Required
   "householdInvite.required": "Verplicht",
   // Sending…
