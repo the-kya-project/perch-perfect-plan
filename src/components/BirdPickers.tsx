@@ -124,7 +124,9 @@ export function OptionalDate({
           type="button"
           onPointerDown={() => { ignoreTodayRef.current = true; }}
           onClick={() => { setPicking(false); onChange(""); requestAnimationFrame(() => { ignoreTodayRef.current = false; }); }}
-          className="shrink-0 rounded-lg border border-[#c8bfa6] bg-white px-2.5 py-2 text-xs font-medium text-[#5f5e5a]"
+          // 44px tap target, rounded-full, DM Sans 15px/700 like a secondary button.
+          className="inline-flex min-h-[44px] shrink-0 items-center rounded-full border-[1.5px] border-[#d5dfd5] bg-white px-4 text-[15px] font-[700] text-[#1a3d2e]"
+          style={{ fontFamily: '"DM Sans", ui-sans-serif, system-ui, sans-serif' }}
         >
           {t("birdPickers.clear", "Clear")}
         </button>

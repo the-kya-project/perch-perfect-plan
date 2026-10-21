@@ -184,7 +184,8 @@ select {
 .area { min-height: 70px; }
 
 /* The Kya & Co. field (owner screens): 48px white pill, 1.5px #d5dfd5 border,
-   2px forest border on focus, 15px text, muted placeholder. Text areas get
+   2px forest border on focus, 16px text (under 16px, iOS zooms the page on
+   focus), muted placeholder. Text areas get
    18px corners; selects get a down chevron. `.input` above stays for the
    screens not yet restyled (sign-in, invite, handoff). */
 .kya-input {
@@ -194,7 +195,7 @@ select {
   background: #fff;
   border: 1.5px solid #d5dfd5;
   padding: 0 18px;
-  font-size: 15px;
+  font-size: 16px;
   color: #1a3d2e;
   outline: none;
 }
