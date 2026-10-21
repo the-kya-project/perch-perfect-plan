@@ -16,7 +16,7 @@ import { friendlyError } from "@/lib/errorMessage";
 import { daysAgo } from "@/lib/scanConcern";
 import { useLoggedBy } from "@/lib/useLoggedBy";
 import { weightThen } from "@/lib/weightThen";
-import { K, SERIF, KyaPage, KyaBody, KyaCard, KyaHeading, KyaLink, KyaPrimaryButton } from "@/components/kya";
+import { K, SERIF, KyaPage, KyaBody, KyaCard, KyaField, KyaHeading, KyaLabel, KyaLink, KyaPrimaryButton } from "@/components/kya";
 import { PageHeader } from "@/components/headers";
 import { LoadError } from "@/components/LoadError";
 import { useLoadState } from "@/lib/useTooLong";
@@ -332,7 +332,7 @@ function ChartCard({ entries, win, setWin, isMine }: { entries: Entry[]; win: Wi
 
   return (
     <KyaCard className="p-4">
-      <div role="radiogroup" aria-label={t("birdWeight.range", "Range")} className="grid grid-cols-3 gap-1 rounded-full p-1" style={{ background: K.mist }}>
+      <div role="radiogroup" aria-label={t("birdWeight.rangeLabel", "Time range")} className="grid grid-cols-3 gap-1 rounded-full p-1" style={{ background: K.mist }}>
         {WINDOWS.map((w) => {
           const on = w === win;
           return (
@@ -484,34 +484,36 @@ function LogPanel({ birdId, entry, lastGrams, onClose, onSaved }: { birdId: stri
     }
   }
 
-  const field = "h-12 w-full rounded-full border-2 bg-white px-[18px] text-[16px] outline-none focus:border-[#1a3d2e]";
   return (
     <div ref={ref} className="scroll-mt-4">
     <KyaCard className="flex flex-col gap-4 p-4">
       <KyaHeading size={21}>{entry ? t("birdWeight.editWeight", "Edit weight") : t("birdWeight.logAWeight", "Log a weight")}</KyaHeading>
 
-      <label className="block">
-        <span className="mb-1.5 block text-[15px] font-[700]">{t("birdWeight.gramsLabel", "Weight (grams)")}</span>
-        <input
-          className={field}
-          style={{ borderColor: "#d6dfd5", color: K.forest }}
+      <div>
+        <KyaField
+          id="weight-grams"
+          label={t("birdWeight.gramsLabel", "Weight (grams)")}
           inputMode="decimal"
           value={gramsIn}
           placeholder={lastGrams ? String(lastGrams) : t("birdWeight.gramsPlaceholder", "e.g. 410")}
           onChange={(e) => setGrams(e.target.value.replace(/[^0-9.]/g, ""))}
         />
         {gramsIn !== "" && (Number(gramsIn) < MIN_G || Number(gramsIn) > MAX_G) && (
-          <span className="mt-1 block text-[13px]" style={{ color: K.amberText }}>{t("birdWeight.range", "Enter a weight between {{min}} and {{max}} grams.", { min: MIN_G, max: MAX_G })}</span>
+          <span className="mt-1 block px-1 text-[13px]" style={{ color: K.amberText }}>{t("birdWeight.range", "Enter a weight between {{min}} and {{max}} grams.", { min: MIN_G, max: MAX_G })}</span>
         )}
-      </label>
+      </div>
 
-      <label className="block">
-        <span className="mb-1.5 block text-[15px] font-[700]">{t("birdWeight.whenLabel", "When")}</span>
-        <input type="datetime-local" className={field} style={{ borderColor: "#d6dfd5", color: K.forest }} value={when} max={nowLocal()} onChange={(e) => setWhen(e.target.value)} />
-      </label>
+      <KyaField
+        id="weight-when"
+        type="datetime-local"
+        label={t("birdWeight.whenLabel", "When")}
+        value={when}
+        max={nowLocal()}
+        onChange={(e) => setWhen(e.target.value)}
+      />
 
-      <div>
-        <span className="mb-1.5 block text-[15px] font-[700]">{t("birdWeight.mealLabel", "Relative to a meal (optional)")}</span>
+      <div className="flex flex-col gap-1.5">
+        <KyaLabel as="span">{t("birdWeight.mealLabel", "Relative to a meal (optional)")}</KyaLabel>
         <div className="grid grid-cols-2 gap-2">
           {(["before_meal", "after_meal"] as const).map((m) => {
             const on = meal === m;

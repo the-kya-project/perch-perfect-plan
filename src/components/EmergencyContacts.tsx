@@ -243,7 +243,7 @@ export function EmergencyRowSheet({ rowKey, initial, saving, onSave, onClose, ex
       <div className="flex flex-col gap-4">
         {fields.map((f) => {
           const id = `em-${f}`;
-          const tag = REQUIRED_FIELDS.includes(f) ? <KyaRequiredTag>{t("emergencyList.required", "Required")}</KyaRequiredTag> : undefined;
+          const tag = REQUIRED_FIELDS.includes(f) ? <KyaRequiredTag tone="forest">{t("emergencyList.required", "Required")}</KyaRequiredTag> : undefined;
           if (isAddressField(f)) {
             return (
               <div key={f} className="flex flex-col gap-2 pt-1">

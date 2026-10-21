@@ -112,16 +112,15 @@ function AuthenticatedLayout() {
   // Persistent owner bottom nav on every authenticated screen. Two deliberate
   // exceptions: the add-bird/setup wizard (SetupShell renders its own nav stacked
   // with the wizard footer), and the one-time welcome splash.
-  const pathname = useLocation({ select: (l) => l.pathname });
-  const hideNav =
-    pathname === "/welcome" || pathname === "/birds/new" ||
-    pathname.endsWith("/setup") || pathname.endsWith("/view-as-sitter") ||
+  const hideNav = useLocation({ select: (l) =>
+    l.pathname === "/welcome" || l.pathname === "/birds/new" ||
+    l.pathname.endsWith("/setup") || l.pathname.endsWith("/view-as-sitter") ||
     // The sitter preview renders the sitter's OWN chrome (its iframe) — the
     // owner's bottom nav must not show under it.
-    pathname.startsWith("/sit-preview") ||
-    // Tasks (daily check, full health check, set up / edit a sit) end with
-    // one pinned button instead of the nav.
-    isTaskPath(pathname);
+    l.pathname.startsWith("/sit-preview") ||
+    // Tasks (daily check, full health check, set up / edit a sit, edit a
+    // bird's identity) end with one pinned button instead of the nav.
+    isTaskPath(l.pathname, l.search as Record<string, unknown>) });
 
   return (
     <>
