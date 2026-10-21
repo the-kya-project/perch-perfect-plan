@@ -1082,7 +1082,7 @@ function TimeBlockSection({
   const chip = "inline-flex min-h-[44px] items-center gap-1.5 rounded-full border-2 border-dashed border-[#9bb5a6] bg-white px-3.5 text-[14.5px] font-[700] text-[#1a3d2e] disabled:opacity-50";
 
   return (
-    <section className="flex flex-col gap-3 rounded-[20px] border-b bg-white p-4" style={{ borderColor: S.footerLine, color: S.forest }}>
+    <section className="flex flex-col gap-3 rounded-[20px] bg-white p-4" style={{ color: S.forest }}>
       <div className="flex items-center gap-3">
         <span
           className="grid size-11 shrink-0 place-items-center rounded-full"

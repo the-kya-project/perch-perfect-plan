@@ -466,7 +466,7 @@ function LogsPanel({ birdId, initialScan }: { birdId: string; initialScan?: stri
 
   return (
     <>
-      <Disclaimer compact />
+      <Disclaimer />
 
       <KyaCard className="p-4">
         <KyaHeading size={19}>{t("planEditor.healthChecks", "Health checks")}</KyaHeading>

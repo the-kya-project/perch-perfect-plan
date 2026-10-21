@@ -27,7 +27,7 @@ export function TabHeader({ title, line, children }: { title: ReactNode; line?: 
       <div className="mt-1.5 flex items-center gap-2">
         <BrandLockup orientation="horizontal" variant="ink" size={118} />
         <div className="flex-1" />
-        <OwnerHeaderIcons large />
+        <OwnerHeaderIcons />
       </div>
       <KyaHeading as="h1" size={31} className="mt-9 text-white">{title}</KyaHeading>
       {line && <p className="m-0 mt-2 text-[15px] leading-[1.5]" style={{ color: K.paleGreen }}>{line}</p>}
