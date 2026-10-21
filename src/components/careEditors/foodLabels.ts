@@ -145,3 +145,20 @@ export function chopIngredientLabel(t: TFunction, en: string): string {
     default: return foodLabel(t, en);
   }
 }
+
+/** The label for a stored diet type key (care_plans.diet_types and the keys
+ *  of diet_details are "pelleted", "seed", "pellet_seed", "chop", "other"; see
+ *  DIET_OPTIONS in FoodEditor). Unknown keys fall back to a readable form. */
+const DIET_TYPE_LABELS: Record<string, string> = {
+  pelleted: "Pelleted diet",
+  seed: "Seed mix",
+  pellet_seed: "Pellet & seed blend",
+  chop: "Fresh chop / formulated",
+  other: "Other",
+};
+export function dietTypeLabel(t: TFunction, key: string): string {
+  const en = DIET_TYPE_LABELS[key];
+  if (en) return foodLabel(t, en);
+  const s = key.replace(/_/g, " ");
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
