@@ -97,7 +97,7 @@ export function SitCard({ sit, birds = [], allBirds, onChange }: { sit: any; bir
   }
 
   return (
-    <div className="rounded-[20px] bg-[#efe9da] p-4 shadow-sm">
+    <div className="rounded-[20px] bg-white p-4">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           {sit.title?.trim() && (
@@ -131,7 +131,7 @@ export function SitCard({ sit, birds = [], allBirds, onChange }: { sit: any; bir
         </p>
       )}
       {birds.length > 0 && (
-        <p className="mt-1 text-xs text-sage-700">
+        <p className="mt-1 text-[13px] text-[#5f5e5a]">
           {namesAsCount(birds.map((b) => b.name))
             ? <span className="font-medium">{t("birdNames.count", "{{count}} birds", { count: birds.length })}</span>
             : <>{t("sitCard.birdsLabel", "Birds:")} <span className="font-medium">{birds.map((b) => b.name).join(", ")}</span></>}
@@ -139,10 +139,10 @@ export function SitCard({ sit, birds = [], allBirds, onChange }: { sit: any; bir
       )}
       {/* Per-trip link strip — external sitter only; household has no token. */}
       {!isHousehold && !sit.revoked && !expired && (
-        <div className="mt-3 flex items-center gap-2 rounded-[12px] bg-[#e8e1d0] p-2">
+        <div className="mt-3 flex items-center gap-2 rounded-[12px] bg-[#f1f5f0] p-2">
           <Link2 className="size-3.5 text-[#5f5e5a]" />
-          <span className="flex-1 truncate text-[11px] text-sage-700">{url}</span>
-          <button onClick={copy} className="rounded p-1 text-[#5f5e5a]" aria-label={t("sitCard.copyLink", "Copy link")}><Copy className="size-3.5" /></button>
+          <span className="flex-1 truncate text-[13px] text-[#5f5e5a]">{url}</span>
+          <button onClick={copy} className="grid size-11 shrink-0 place-items-center rounded-full text-[#1a3d2e]" aria-label={t("sitCard.copyLink", "Copy link")}><Copy className="size-3.5" /></button>
         </div>
       )}
       {!sit.revoked && (
