@@ -395,7 +395,7 @@ export function SitterOnboarding({ birds, bird, careSections, hasClips, token }:
                     ),
                   )}
                 </div>
-                {title(t("sitterOnboarding.welcome.title", "You're caring for {{names}}.", { names: allNames }))}
+                {title(t("sitterOnboarding.welcome.heading", "You're caring for {{names}}", { names: allNames }))}
                 {body(t("sitterOnboarding.welcome.body", "Everything you need is right here. Let's take a minute to show you around."))}
                 <button type="button" onClick={() => setPhase("overview")} className={`${primaryBtn} mt-6`} style={primaryStyle}>
                   {t("sitterOnboarding.welcome.cta", "Show me around")}
@@ -416,8 +416,8 @@ export function SitterOnboarding({ birds, bird, careSections, hasClips, token }:
                 <div className="mx-auto grid size-14 place-items-center rounded-full" style={{ background: K.forest, color: K.lime }}>
                   <Check className="size-7" aria-hidden="true" />
                 </div>
-                {title(t("sitterOnboarding.closing.title", "That's everything! You're all set to care for {{names}}.", { names: allNames }))}
-                {body(t("sitterOnboarding.closing.body", "Want to see this again? Tap the question mark in the upper right anytime."))}
+                {title(t("sitterOnboarding.closing.heading", "That's everything"))}
+                {body(t("sitterOnboarding.closing.allSet", "You're all set to care for {{names}}. Want to see this again? Tap the question mark in the upper right anytime.", { names: allNames }))}
                 <button type="button" onClick={finishWalkthrough} className={`${primaryBtn} mt-6`} style={primaryStyle}>
                   {t("sitterOnboarding.coach.gotIt", "Got it")}
                 </button>

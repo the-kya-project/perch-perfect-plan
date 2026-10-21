@@ -7,7 +7,8 @@ import { getSitterContext } from "@/lib/sitter.functions";
 import { EmergencyBar } from "@/components/EmergencyBar";
 import { SitterOnboarding } from "@/components/SitterOnboarding";
 import { SitterShellContext, type SitterShell } from "@/components/sitter/sitterShared";
-import { K, SERIF } from "@/components/kya";
+import { K, KyaBody, KyaCard, KyaHeader, KyaHeading, KyaPrimaryButton } from "@/components/kya";
+import { BrandLockup } from "@/components/BrandLogo";
 import { presentCareSections } from "@/lib/sitterCareSections";
 import { track } from "@/lib/analytics";
 import { reportError } from "@/lib/errorReporting";
@@ -94,31 +95,41 @@ function SitterLinkError({ error }: { error: Error }) {
   }, [error, unexpected]);
   if (unexpected) {
     return (
-      <div className="setup-frame grid min-h-screen place-items-center bg-[#f1f5f0] p-6 text-center text-[#1a3d2e]">
-        <div className="max-w-sm rounded-[20px] bg-white p-6">
-          <h1 className="m-0 text-[22px] font-[700] leading-[1.2]" style={{ fontFamily: SERIF }}>{t("sitter.error.crash.title", "Something went wrong")}</h1>
-          <p className="mt-2 text-sm text-[#5f5e5a]">
-            {t("sitter.error.crash.body", "Sorry, that page didn't load properly. Try refreshing, and if it keeps happening, email us at {{email}}.", { email: SUPPORT_EMAIL })}
-          </p>
-          <button
-            onClick={() => window.location.reload()}
-            className="mt-5 inline-flex min-h-[48px] items-center rounded-full border-2 border-[#1a3d2e] bg-[#f2b33d] px-6 text-[15px] font-[700] text-[#1a3d2e]"
-          >
-            {t("sitter.error.refresh", "Refresh")}
-          </button>
+      <LinkErrorScreen title={t("sitter.error.crash.title", "Something went wrong")}>
+        <p className="m-0 text-[15px] leading-[1.5]" style={{ color: K.ink }}>
+          {t("sitter.error.crash.body", "Sorry, that page didn't load properly. Try refreshing, and if it keeps happening, email us at {{email}}.", { email: SUPPORT_EMAIL })}
+        </p>
+        <div className="mt-5">
+          <KyaPrimaryButton onClick={() => window.location.reload()}>{t("sitter.error.refresh", "Refresh")}</KyaPrimaryButton>
         </div>
-      </div>
+      </LinkErrorScreen>
     );
   }
   return (
-    <div className="setup-frame grid min-h-screen place-items-center bg-[#f1f5f0] p-6 text-center text-[#1a3d2e]">
-      <div className="max-w-sm rounded-[20px] bg-white p-6">
-        <h1 className="m-0 text-[22px] font-[700] leading-[1.2]" style={{ fontFamily: SERIF }}>{copy.title}</h1>
-        <p className="mt-2 text-sm text-[#5f5e5a]">{copy.body}</p>
-        {code !== "SITTER_SIT_PAUSED" && code !== "SITTER_SIT_NO_BIRDS" && (
-          <p className="mt-4 text-xs text-[#5f5e5a]">{t("sitter.error.askNew", "Ask the owner to send you a new link.")}</p>
-        )}
-      </div>
+    <LinkErrorScreen title={copy.title}>
+      <p className="m-0 text-[15px] leading-[1.5]" style={{ color: K.ink }}>{copy.body}</p>
+      {code !== "SITTER_SIT_PAUSED" && code !== "SITTER_SIT_NO_BIRDS" && (
+        <p className="m-0 mt-3 text-[14px] leading-[1.5]" style={{ color: K.quiet }}>{t("sitter.error.askNew", "Ask the owner to send you a new link.")}</p>
+      )}
+    </LinkErrorScreen>
+  );
+}
+
+/** The link error screens' frame: the sitter view's tab-home header (logo, no
+ *  Back — there's nowhere to go back to) with the title, then the message in a
+ *  white card on mist. No language switch or walkthrough: there's no sit. */
+function LinkErrorScreen({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div className="setup-frame min-h-screen" style={{ background: K.mist, color: K.forest }}>
+      <KyaHeader>
+        <div className="mt-1.5 flex min-h-[44px] items-center gap-2">
+          <BrandLockup orientation="horizontal" variant="ink" size={118} />
+        </div>
+        <KyaHeading as="h1" size={31} className="mt-8 text-white">{title}</KyaHeading>
+      </KyaHeader>
+      <KyaBody>
+        <KyaCard className="p-5">{children}</KyaCard>
+      </KyaBody>
     </div>
   );
 }
