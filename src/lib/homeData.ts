@@ -3,6 +3,7 @@
 // /  network so it's trivially testable and the dashboard stays declarative.
 import { weightTrendPill } from "./weightTrend";
 import { formatLocalDate } from "@/lib/dates";
+import { birdNames } from "@/lib/birdNames";
 import i18next from "i18next";
 
 // ---- Tunable thresholds (surfaced as named constants) ----------------------
@@ -214,12 +215,11 @@ export function birdsDueForWeighIn<B extends { name: string; is_foster: boolean 
     .sort((a, c) => a.name.localeCompare(c.name));
 }
 
-/** "Max is due…", "Buzz and Max are due…", "Buzz, Kiwi, and Max are due…", "4 birds are due…". */
+/** "Max is due…", "Buzz and Max are due…", "Buzz, Kiwi, and Max are due…", "4 birds are due…".
+ *  The name list comes from the one bird-name rule (lib/birdNames). */
 export function weighInDueLine(names: string[]): string {
   if (names.length === 1) return i18next.t("home.state.dueForWeighIn", "{{bird}} is due for a weigh-in.", { bird: names[0] });
-  if (names.length === 2) return i18next.t("home.state.dueForWeighInTwo", "{{first}} and {{second}} are due for a weigh-in.", { first: names[0], second: names[1] });
-  if (names.length === 3) return i18next.t("home.state.dueForWeighInThree", "{{first}}, {{second}}, and {{third}} are due for a weigh-in.", { first: names[0], second: names[1], third: names[2] });
-  return i18next.t("home.state.dueForWeighInCount", "{{count}} birds are due for a weigh-in.", { count: names.length });
+  return i18next.t("home.state.dueForWeighInMany", "{{birds}} are due for a weigh-in.", { birds: birdNames(i18next.t, names) });
 }
 
 // ---- Home greeting body line (state-aware) --------------------------------

@@ -100,10 +100,14 @@ function ScanPage() {
     onSuccess: async (res, p) => {
       track("health_scan_run", { severity: (res.triage as any)?.status ?? "unknown", had_photo: !!p.photoDataUrl });
       // Refresh the Today check card + the multi-bird dashboard so "Done at"
-      // shows as soon as Today renders.
+      // shows as soon as Today renders. The dashboard query isn't mounted on
+      // this screen, so a plain invalidate would only mark it stale — Today
+      // would then render its "Next: [bird] still needs a check" notice from
+      // the old per-bird statuses. refetchType "all" makes the await actually
+      // wait for fresh data before navigating.
       await Promise.all([
         qc.invalidateQueries({ queryKey: ["sitter-ctx", token] }),
-        qc.invalidateQueries({ queryKey: ["sitter-dashboard", token] }),
+        qc.invalidateQueries({ queryKey: ["sitter-dashboard", token], refetchType: "all" }),
         qc.invalidateQueries({ queryKey: ["sitter-scans", token, birdId] }),
       ]);
       toToday(true);

@@ -124,10 +124,6 @@ export function chooserPage(
   const basePath = opts.basePath ?? "/get-app";
   const origin = (opts.origin ?? PROD_ORIGIN).replace(/\/$/, "");
   const title = kind === "get" ? "Get Kya &amp; Co. on your phone" : "Leave a review from your phone";
-  const blurb =
-    kind === "get"
-      ? "Scan the code with your phone's camera, or open the store you use."
-      : "Reviews are written from the store app on your phone. Scan the code, or open the store you use.";
   // Back through the redirect rather than straight to the store, so a desktop
   // visitor who taps a badge is counted and attributed like everyone else.
   const ios = kind === "get" ? withUtms(`${basePath}?store=ios`, utms) : STORE.iosReview;
@@ -146,12 +142,24 @@ export function chooserPage(
   const qrFallback =
     kind === "get" ? `<img src="${STATIC_QR}" width="200" height="200" alt="" />` : "";
   const qrInner = qrMarkup(qrTarget, qrFallback);
+  const hasQr = qrInner.trim().length > 0;
+
+  // No QR at all (generation failed and there is no static stand-in, i.e.
+  // /review): don't tell the visitor to scan a code that isn't there — show
+  // the link itself to open on their phone instead.
+  const blurb =
+    kind === "get"
+      ? "Scan the code with your phone's camera, or open the store you use."
+      : hasQr
+        ? "Reviews are written from the store app on your phone. Scan the code, or open the store you use."
+        : "Reviews are written from the store app on your phone. Open this link on your phone, or open the store you use.";
+
   // data-qr-target states in the markup what the code actually encodes, so
   // "where does this QR go?" is answerable from view-source or a curl rather
   // than by pointing a phone at it.
-  const qr = qrInner
+  const qr = hasQr
     ? `<div class="qr" data-qr-target="${attr(qrTarget)}">${qrInner}</div>`
-    : "";
+    : `<p class="qr-link"><a href="${attr(qrTarget)}">${attr(qrTarget.replace(/^https?:\/\//, ""))}</a></p>`;
 
   // Link-preview tags. Only /get gets them: it is the link that goes in bios
   // and DMs, and this copy is written for it. og:url is the clean canonical
@@ -190,6 +198,9 @@ ${FONTS}
   .qr { width:200px; height:200px; display:block; margin:0 auto 22px; border-radius:12px; background:#fff; padding:10px; box-sizing:content-box; }
   /* The generated QR is an inline <svg> inside .qr — make it fill the box. */
   .qr svg, .qr img { display:block; width:100%; height:100%; }
+  /* The link-only fallback when no QR could be built. */
+  .qr-link { margin:0 0 22px; font-size:16px; }
+  .qr-link a { color:${MOSS}; font-weight:700; word-break:break-all; display:inline-flex; align-items:center; min-height:44px; }
   .badges { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; align-items:center; }
   /* Each badge is at least a 44px tap target: 48px tall, and the link itself
      is a 48px-tall box so the whole badge (not just its pixels) takes the tap. */

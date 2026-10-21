@@ -16,8 +16,8 @@ import { useCapability } from "@/lib/useCapability";
 import { signBirdPhoto, persistBirdPhoto } from "@/lib/birdPhoto";
 import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
-import { K, KyaPage, KyaBody, KyaCard, KyaField, KyaHeading, KyaLink, KyaPrimaryButton, KyaSecondaryButton } from "@/components/kya";
-import { PageHeader, TaskHeader, useGoBack, useLeaveGuard } from "@/components/headers";
+import { K, KyaPage, KyaBody, KyaCard, KyaField, KyaHeading, KyaLink, KyaPrimaryButton } from "@/components/kya";
+import { PageHeader, TaskFooter, TASK_FOOTER_SPACE, TaskHeader, useGoBack, useLeaveGuard } from "@/components/headers";
 import { friendlyError } from "@/lib/errorMessage";
 import { LoadError } from "@/components/LoadError";
 import { useLoadState } from "@/lib/useTooLong";
@@ -30,8 +30,9 @@ type IdentitySearch = { edit?: 1 };
 
 export const Route = createFileRoute("/_authenticated/birds/$birdId/identity")({
   head: () => ({ meta: [{ title: i18next.t("birdIdentity.metaTitle", "Identity — Kya & Co.") }] }),
-  // ?edit=1 opens the edit form straight away (the vet summary's
-  // "Missing from [bird]'s record → Add them" link lands here).
+  // ?edit=1 IS the edit mode (the vet summary's "Missing from [bird]'s record
+  // → Add them" link lands here with it set). Keeping it in the URL lets the
+  // layout treat editing as a task (isTaskPath) and hide the bottom nav.
   validateSearch: (search: Record<string, unknown>): IdentitySearch => {
     const e = search.edit;
     return e === 1 || e === "1" || e === true ? { edit: 1 } : {};
@@ -97,7 +98,6 @@ function IdentityFacet() {
   const search = Route.useSearch();
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const [editing, setEditing] = useState(false);
   // Editing the bird's identity is part of managing the flock (RLS: birds → manage_flock).
   // Household members without it view identity read-only.
   const canEditIdentity = useCapability("manage_flock", { birdId });
@@ -120,15 +120,12 @@ function IdentityFacet() {
   const load = useLoadState([birdQ]);
   const birdMissing = birdQ.isSuccess && !bird;
 
-  // ?edit=1 → open the form once the bird and the permission have loaded,
-  // then drop the param so a refresh or back doesn't reopen it.
-  const editApplied = useRef(false);
-  useEffect(() => {
-    if (!search.edit || editApplied.current || !bird || !canEditIdentity) return;
-    editApplied.current = true;
-    setEditing(true);
-    navigate({ to: "/birds/$birdId/identity", params: { birdId }, search: {}, replace: true });
-  }, [search.edit, bird, canEditIdentity, navigate, birdId]);
+  // Edit mode lives in the URL (?edit=1): the layout hides the bottom nav via
+  // isTaskPath, and the back gesture leaves the form the same way Close does.
+  // Only once the bird and the permission have loaded — a read-only member
+  // deep-linking with ?edit=1 stays on the view.
+  const editing = !!search.edit && !!bird && canEditIdentity;
+  const startEditing = useCallback(() => navigate({ to: "/birds/$birdId/identity", params: { birdId }, search: { edit: 1 } }), [navigate, birdId]);
 
   const name = bird?.name ?? t("planEditor.thisBird", "this bird");
   // 800px — the SAME width the Home flock card / bird-record hero resolve at, so
@@ -146,11 +143,15 @@ function IdentityFacet() {
 
   const goBack = useGoBack(useCallback(() => navigate({ to: "/birds/$birdId", params: { birdId } }), [navigate, birdId]));
   const canEdit = !!bird && canEditIdentity;
-  const openEdit = canEdit ? () => setEditing(true) : undefined;
+  const openEdit = canEdit ? startEditing : undefined;
   // Editing is a task: Close top left, and "Leave without saving?" when
   // something has changed. The form reports whether it has.
   const [formDirty, setFormDirty] = useState(false);
-  const stopEditing = useCallback(() => { setEditing(false); setFormDirty(false); }, []);
+  const stopEditing = useCallback(() => {
+    setFormDirty(false);
+    // Replace, so the browser Back button doesn't reopen the edit form.
+    navigate({ to: "/birds/$birdId/identity", params: { birdId }, search: {}, replace: true });
+  }, [navigate, birdId]);
   const { requestClose, guard: leaveGuard } = useLeaveGuard(formDirty, stopEditing);
 
   const sex = (bird?.sex ?? "").trim().toLowerCase();
@@ -172,7 +173,7 @@ function IdentityFacet() {
           onBack={goBack}
           title={bird ? t("birdIdentity.title", "{{name}}'s identity", { name: bird.name }) : t("birdIdentity.titleFallback", "Identity")}
           line={t("birdIdentity.body", "The details that make {{name}} officially {{name}}.", { name })}
-          action={canEdit && !editing ? { label: t("birdIdentity.edit", "Edit"), icon: <Pencil className="size-4" />, onClick: () => setEditing(true) } : undefined}
+          action={canEdit && !editing ? { label: t("birdIdentity.edit", "Edit"), icon: <Pencil className="size-4" />, onClick: startEditing } : undefined}
         />
       )}
       {leaveGuard}
@@ -188,7 +189,10 @@ function IdentityFacet() {
         ) : !bird ? (
           <div className="h-40 animate-pulse rounded-[20px] bg-white/70" />
         ) : editing ? (
-          <IdentityForm birdId={birdId} bird={bird} onClose={requestClose} onDirtyChange={setFormDirty} onSaved={() => { stopEditing(); crossInvalidate(); }} />
+          // Room at the end so the pinned Save footer never covers the form.
+          <div className={`flex flex-col gap-4 ${TASK_FOOTER_SPACE}`}>
+            <IdentityForm birdId={birdId} bird={bird} onDirtyChange={setFormDirty} onSaved={() => { stopEditing(); crossInvalidate(); }} />
+          </div>
         ) : (
           <>
             {/* Shared core (same birds columns the Basics tab edits) */}
@@ -258,7 +262,7 @@ function Row({ label, value, onAdd, last }: { label: string; value: string | nul
   );
 }
 
-function IdentityForm({ birdId, bird, onClose, onSaved, onDirtyChange }: { birdId: string; bird: Identity; onClose: () => void; onSaved: () => void; onDirtyChange?: (dirty: boolean) => void }) {
+function IdentityForm({ birdId, bird, onSaved, onDirtyChange }: { birdId: string; bird: Identity; onSaved: () => void; onDirtyChange?: (dirty: boolean) => void }) {
   const { t } = useTranslation();
   const [f, setF] = useState({
     name: bird.name ?? "",
@@ -439,12 +443,13 @@ function IdentityForm({ birdId, bird, onClose, onSaved, onDirtyChange }: { birdI
         <p className="m-0 px-1 text-[13px] leading-[1.45]" style={{ color: K.quiet }}>{t("birdIdentity.allOptional", "All fields are optional — partial records are fine.")}</p>
       </KyaCard>
 
-      <div className="flex flex-col gap-2.5">
+      {/* Pinned Save, the one task button (Close top left leaves, with the
+          leave-without-saving guard when something changed). */}
+      <TaskFooter>
         <KyaPrimaryButton onClick={save} disabled={saving}>
           {saving ? t("birdIdentity.saving", "Saving…") : t("birdIdentity.save", "Save")}
         </KyaPrimaryButton>
-        <KyaSecondaryButton className="w-full" onClick={onClose} disabled={saving}>{t("birdIdentity.cancel", "Cancel")}</KyaSecondaryButton>
-      </div>
+      </TaskFooter>
     </>
   );
 }

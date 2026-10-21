@@ -108,7 +108,7 @@ function useTopicLabels() {
 }
 
 function Guide() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { topicLabel, subheadLabel } = useTopicLabels();
   const { token } = Route.useParams();
   const { data: ctx } = useSitterContext(token);
@@ -131,6 +131,26 @@ function Guide() {
     ? t("sitter.guide.subtitleHe", "The basics of parrot care. For {{name}}'s own needs, always follow his care plan.", { name: bird.name })
     : t("sitter.guide.subtitleThey", "The basics of parrot care. For {{name}}'s own needs, always follow their care plan.", { name: bird.name });
 
+  // Guide content is data: guide_cards carries hand-translated *_nl columns
+  // (20261021220000_guide_cards_dutch.sql). Dutch readers get those, falling
+  // back per field to the English text; slugs, categories and search_keywords
+  // stay English (they're mapping/search inputs, not visible copy). Localizing
+  // before the search filter means search matches what's on screen, and the
+  // English search_keywords still work in both languages.
+  const isNl = ((i18n.resolvedLanguage ?? i18n.language) || "").startsWith("nl");
+  const localizedCards = (cards as any[]).map((c) =>
+    isNl
+      ? {
+          ...c,
+          title: c.title_nl || c.title,
+          quick_answer: c.quick_answer_nl || c.quick_answer,
+          what_to_check: c.what_to_check_nl || c.what_to_check,
+          what_to_do: c.what_to_do_nl || c.what_to_do,
+          when_to_call_vet: c.when_to_call_vet_nl || c.when_to_call_vet,
+        }
+      : c,
+  );
+
   const searching = q.trim().length > 0;
   const ql = q.trim().toLowerCase();
   const matches = (c: any) =>
@@ -143,8 +163,8 @@ function Guide() {
   // Search overrides the active chip and spans every category; otherwise show
   // only the active topic's entries.
   const list = searching
-    ? (cards as any[]).filter(matches)
-    : (cards as any[]).filter((c) => topicForCard(c) === topic);
+    ? localizedCards.filter(matches)
+    : localizedCards.filter((c) => topicForCard(c) === topic);
 
   const activeTopic = TOPICS.find((t) => t.key === topic);
 

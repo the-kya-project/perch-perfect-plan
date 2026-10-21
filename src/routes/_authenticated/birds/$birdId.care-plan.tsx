@@ -36,7 +36,7 @@ function HouseholdCarePlan() {
   const navigate = useNavigate();
   const canEdit = useCapability("edit_care_plans", { birdId });
   const getView = useServerFn(getHouseholdCarePlanView);
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["household-care-plan", birdId],
     queryFn: () => getView({ data: { birdId } }),
     retry: false,
@@ -66,6 +66,13 @@ function HouseholdCarePlan() {
           ) : (
             <CarePlanView
               data={data}
+              // An expired signed clip link: refetch the plan view (the same
+              // path that minted it) and hand back that clip's fresh URL.
+              refreshClipUrl={async (key) => {
+                const r = await refetch();
+                if (key === "baseline") return r.data?.baselineClipUrl ?? null;
+                return ((r.data?.watchClips ?? []) as { key: string; url: string }[]).find((x) => x.key === key)?.url ?? null;
+              }}
               targetSection={section}
               canEdit={canEdit}
               onEdit={() => navigate({ to: "/birds/$birdId/plan/editor", params: { birdId }, search: { tab: "food" } })}

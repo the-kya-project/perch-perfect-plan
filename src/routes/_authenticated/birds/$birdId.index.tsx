@@ -25,7 +25,7 @@ import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 import { toast } from "sonner";
 import {
   Scale, BookOpen, IdCard, CalendarHeart, ClipboardList,
-  FileText, Pencil, ArrowRight, Camera, ChevronLeft, ChevronRight,
+  FileText, Pencil, ArrowRight, ArrowLeft, Camera, ChevronRight,
   Check, X, Heart, Loader2, Crop, HeartCrack, Siren, HandHeart, Trash2,
 } from "lucide-react";
 import { formatLocalDate } from "@/lib/dates";
@@ -204,7 +204,7 @@ function BirdRecordHero({ birdId }: { birdId: string }) {
 
         <div className="absolute inset-x-0 top-[14px] flex items-center justify-between gap-3 px-[14px]">
           <KyaIconButton label={t("birdRecord.back", "Back")} onClick={goBack}>
-            <ChevronLeft className="size-6" aria-hidden="true" />
+            <ArrowLeft className="size-5" aria-hidden="true" />
           </KyaIconButton>
           {isOwner && bird && (
             <HeaderPill action={{ label: t("birdRecord.editPhoto", "Edit photo"), icon: <Camera className="size-4" aria-hidden="true" />, onClick: () => setPhotoSheet(true) }} />
@@ -339,7 +339,7 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
 
   return (
     <>
-      <SummaryCard birdId={birdId} weights={weights} today={dailyToday?.[birdId]} canCheck={canHealth} />
+      <SummaryCard birdId={birdId} weights={weights} today={dailyToday?.[birdId]} canCheck={canHealth} planExists={bird ? !!bird.setup_complete : true} />
 
       {/* Fresh bird → guide straight into the care plan. Prominent but skippable. */}
       {bird && !bird.setup_complete && canEditPlan && (
@@ -530,7 +530,7 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
 /** Weight, last weighed and today's check, then the two ways into a check:
  *  the daily check (sunflower) and the full health check (white). Today's
  *  status lives in the third tile, which opens the check once it's done. */
-function SummaryCard({ birdId, weights, today, canCheck }: { birdId: string; weights?: WeightRow[]; today?: BirdToday; canCheck: boolean }) {
+function SummaryCard({ birdId, weights, today, canCheck, planExists }: { birdId: string; weights?: WeightRow[]; today?: BirdToday; canCheck: boolean; planExists: boolean }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const latest = weights?.[0];
@@ -571,7 +571,9 @@ function SummaryCard({ birdId, weights, today, canCheck }: { birdId: string; wei
               type="button"
               onClick={() => navigate({ to: "/check", search: { bird: birdId } })}
               className={checkBtn}
-              style={{ background: K.sunflower, borderColor: K.forest, color: K.forest }}
+              // Fresh bird: "Create care plan" above is the one sunflower
+              // button, so Daily check stays white until the plan exists.
+              style={{ background: planExists ? K.sunflower : "#fff", borderColor: K.forest, color: K.forest }}
             >
               {t("birdRecord.dailyCheckButton", "Daily check")}
             </button>

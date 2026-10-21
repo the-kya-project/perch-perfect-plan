@@ -20,12 +20,13 @@ import { encodeSetupStep, basicsDone } from "@/lib/setupProgress";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { mergeHome, homeDifferences, seedShared, sameGroup, followSharedPatch, clearOwnPatch, birdHasOwn, HOME_GROUPS, HOME_GROUP_COLUMNS, parseCleaning, formatCleaning, CLEANING_NEVER_DEFAULTS, type HomeRow } from "@/lib/homeDefaults";
 import { EmergencyContactsScreen, type EmergencySetupState } from "@/components/setup/EmergencyContactsScreen";
-import { Plus, X, Check, Lightbulb, GripVertical, Sparkles, AlertTriangle, Pill, ChevronDown, Play, Video, Sunrise, Sun, Sunset, Moon, Clock, Soup, DoorClosed, SprayCan, Camera } from "lucide-react";
+import { ArrowLeft, Plus, X, Check, Lightbulb, GripVertical, Sparkles, AlertTriangle, Pill, ChevronDown, Play, Video, Sunrise, Sun, Sunset, Moon, Clock, Soup, DoorClosed, SprayCan, Camera } from "lucide-react";
 import { PhotoCropper } from "@/components/PhotoCropper";
 import { AgePicker, BirdField, SpeciesPicker } from "@/components/BirdPickers";
 import { ClipRecorder, UploadProgress } from "@/components/ClipRecorder";
 import { PosterClipPlayer, clipLength } from "@/components/ClipPlayer";
 import { useOwnerClipPreview } from "@/lib/useOwnerClipPreview";
+import { resolveOwnerClipUrl } from "@/lib/clipUrl";
 import { commitClipRef } from "@/lib/clipReplace";
 import { FEED_PREFIX, HYG_REMOVE_PREFIX, HYG_WASH_FOOD_PREFIX, HYG_WASH_WATER_PREFIX, WATER_CHANGE_PREFIX, MED_TASK_PREFIX, isDerivedTask, derivedSource, feedTimeToDaypart, taskDaypart, parseTaskMinutes, DAYPARTS, type Daypart } from "@/lib/routineTasks";
 import { FoodItemsEditor } from "@/components/careEditors/FoodItemsEditor";
@@ -402,7 +403,15 @@ function BirdSetup() {
   }
 
   async function onBack() {
-    if (atStopPoint) { setAtStopPoint(false); setStep(setupStepNumber("health")); return; }
+    if (atStopPoint) {
+      // Persist too: the stop point showed after the saved step already
+      // advanced past Health, and a resume should land where the user is.
+      setAtStopPoint(false);
+      const health = setupStepNumber("health");
+      const ok = await persistStep(health);
+      if (ok) setStep(health);
+      return;
+    }
     if (SETUP_STEPS[step - 1]?.key === "food" && foodPage === 2) {
       if (!(await flushPending())) return;
       setFoodPage(1);
@@ -496,6 +505,9 @@ function BirdSetup() {
         onBack={onBack}
         footer={
           <div className="flex items-center gap-3">
+            {/* Not a dead end: Back returns to the Health step (onBack's
+                stop-point branch), same control as every other step's footer. */}
+            <SetupTextButton onClick={onBack} icon={<ArrowLeft className="size-4" aria-hidden="true" />}>{t("setupShell.back", "Back")}</SetupTextButton>
             <SetupTextButton onClick={setUpLater}>{t("birdSetup.stop.later", "Set up later")}</SetupTextButton>
             <div className="min-w-0 flex-1">
               <SetupPrimaryButton onClick={keepGoing}>{t("birdSetup.stop.keepGoing", "Keep going")}</SetupPrimaryButton>
@@ -1082,7 +1094,7 @@ function TimeBlockSection({
   const chip = "inline-flex min-h-[44px] items-center gap-1.5 rounded-full border-2 border-dashed border-[#9bb5a6] bg-white px-3.5 text-[14.5px] font-[700] text-[#1a3d2e] disabled:opacity-50";
 
   return (
-    <section className="flex flex-col gap-3 rounded-[20px] border-b bg-white p-4" style={{ borderColor: S.footerLine, color: S.forest }}>
+    <section className="flex flex-col gap-3 rounded-[20px] bg-white p-4" style={{ color: S.forest }}>
       <div className="flex items-center gap-3">
         <span
           className="grid size-11 shrink-0 place-items-center rounded-full"
@@ -2717,7 +2729,7 @@ export function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlus
           <UploadProgress label={t("clipRecorder.gettingItReady", "Getting it ready…")} />
         ) : clipPreview.url && !replacingClip ? (
           <div className="flex flex-col gap-1">
-            <PosterClipPlayer src={clipPreview.url} duration={clipPreview.duration} className="h-[180px] w-full rounded-[16px]" />
+            <PosterClipPlayer src={clipPreview.url} duration={clipPreview.duration} className="h-[180px] w-full rounded-[16px]" refreshSrc={() => resolveOwnerClipUrl(clipPath)} />
             <div className="flex gap-4">
               <SetupTextButton onClick={() => setReplacingClip(true)}>{t("birdSetup.replace", "Replace")}</SetupTextButton>
               <SetupTextButton onClick={removeClip}>{t("birdSetup.remove", "Remove")}</SetupTextButton>
@@ -3209,7 +3221,7 @@ function ClipSlotRow({
                 {preview.status === "processing" || !preview.url ? (
                   <UploadProgress label={t("clipRecorder.gettingItReady", "Getting it ready…")} />
                 ) : (
-                  <PosterClipPlayer src={preview.url} duration={preview.duration} label={title} className="h-[180px] w-full rounded-[16px]" />
+                  <PosterClipPlayer src={preview.url} duration={preview.duration} label={title} className="h-[180px] w-full rounded-[16px]" refreshSrc={() => resolveOwnerClipUrl(path)} />
                 )}
                 <div className="flex gap-4">
                   <SetupTextButton onClick={() => setReplacing(true)}>{t("birdSetup.replace", "Replace")}</SetupTextButton>
@@ -3339,7 +3351,7 @@ function ReviewStep({
   // The sitter's section-by-section view, from the same server function the
   // household care plan page uses (shared home answers merged in).
   const getView = useServerFn(getHouseholdCarePlanView);
-  const { data: planView, isError: planViewError } = useQuery({
+  const { data: planView, isError: planViewError, refetch: refetchPlanView } = useQuery({
     queryKey: ["review-care-plan", birdId],
     enabled: view === "plan",
     queryFn: () => getView({ data: { birdId } }),
@@ -3463,7 +3475,15 @@ function ReviewStep({
         <div className="h-64 animate-pulse rounded-[18px]" style={{ background: S.card }} />
       ) : (
         <div onClick={onPlanClick} className="cursor-pointer">
-          <CarePlanView data={planView} showEmergencyContacts={false} />
+          <CarePlanView
+            data={planView}
+            showEmergencyContacts={false}
+            refreshClipUrl={async (key) => {
+              const r = await refetchPlanView();
+              if (key === "baseline") return r.data?.baselineClipUrl ?? null;
+              return ((r.data?.watchClips ?? []) as { key: string; url: string }[]).find((x) => x.key === key)?.url ?? null;
+            }}
+          />
         </div>
       )}
 

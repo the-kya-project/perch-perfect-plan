@@ -2,7 +2,6 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
 import { Loader2 } from "lucide-react";
 import { track } from "@/lib/analytics";
 import { captureLead } from "@/lib/captureLead";

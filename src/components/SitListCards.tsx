@@ -1,5 +1,6 @@
-// The Sits tab's cards, in the Kya & Co. look: the active sit (forest card), one
-// white card per upcoming sit, and past sits as rows in one white card. They're
+// The Sits tab's cards, in the Kya & Co. look: the active sit (white card with
+// a lime Active tag), one white card per upcoming sit, and past sits as rows in
+// one white card. They're
 // presentational — the page resolves caregiver names and passes them in. These
 // are the only sit cards; the plan editor's ?tab=sits points here.
 import { useState, type CSSProperties, type ReactNode } from "react";
@@ -130,7 +131,7 @@ function CarePlanButton({ birds, className, style, children }: { birds: SitBird[
 const SECONDARY = "inline-flex min-h-[48px] flex-1 items-center justify-center gap-1.5 rounded-full border-2 bg-white px-3 text-center text-[15px] font-[700] active:scale-[0.99]";
 
 // ---------------------------------------------------------------------------
-// ACTIVE — the forest card, the focal element.
+// ACTIVE — a white card with a lime "Active" tag, the focal element.
 // ---------------------------------------------------------------------------
 export function ActiveSitCard({ sit, birds, caregiverName, iAmLead, iOwnSit, contextTag, canEdit }: { sit: ListSit; birds: SitBird[]; caregiverName: string; iAmLead?: boolean; iOwnSit?: boolean; contextTag?: SitContextTag; canEdit?: boolean }) {
   const { t } = useTranslation();
@@ -146,13 +147,13 @@ export function ActiveSitCard({ sit, birds, caregiverName, iAmLead, iOwnSit, con
   const title = youCover ? sit.title?.trim() || t("sitCards.youreCovering", "You're covering this sit") : sitTitle(t, sit, caregiverName);
 
   return (
-    <section className="rounded-[20px] p-4 text-white" style={{ background: K.forest }}>
+    <KyaCard className="p-4" style={{ color: K.forest }}>
       <div className="flex items-center gap-3">
         <CaregiverAvatar name={caregiverName} household={household} />
         <div className="min-w-0 flex-1">
-          {contextTag && <div className="mb-1"><ContextTag tag={contextTag} onDark /></div>}
+          {contextTag && <div className="mb-1"><ContextTag tag={contextTag} /></div>}
           <p className="m-0 truncate text-[16px] font-[700]">{title}</p>
-          <p className="m-0 mt-0.5 text-[13.5px]" style={{ color: K.paleGreen }}>{youCover ? t("sitCards.you", "You") : caregiverName} · {who} · {rangeTo(t, sit.start_date, sit.end_date)}</p>
+          <p className="m-0 mt-0.5 text-[13.5px]" style={{ color: K.quiet }}>{youCover ? t("sitCards.you", "You") : caregiverName} · {who} · {rangeTo(t, sit.start_date, sit.end_date)}</p>
           {iAmLead && !(youCover && !sit.title?.trim()) && (
             <span className="mt-1 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[12px] font-[700]" style={{ background: K.lime, color: K.forest }}>
               <Star className="size-3" /> {t("sitCards.youreInCharge", "You're in charge")}
@@ -164,7 +165,7 @@ export function ActiveSitCard({ sit, birds, caregiverName, iAmLead, iOwnSit, con
         </span>
       </div>
 
-      {birds.length > 0 && <div className="mt-3"><BirdStack birds={birds} onDark /></div>}
+      {birds.length > 0 && <div className="mt-3"><BirdStack birds={birds} /></div>}
 
       <div className="mt-3.5 flex flex-col gap-2">
         <Link to="/scans/history" search={{ sitId: sit.id }} className="inline-flex min-h-[48px] items-center justify-center gap-1.5 rounded-full border-2 bg-white text-[15px] font-[700] active:scale-[0.99]" style={{ borderColor: K.forest, color: K.forest }}>
@@ -177,15 +178,15 @@ export function ActiveSitCard({ sit, birds, caregiverName, iAmLead, iOwnSit, con
               to="/sit-preview/$sitId"
               params={{ sitId: sit.id }}
               state={{ previewToken: sit.invite_token ?? null, previewLabel: caregiverName, previewHousehold: household } as any}
-              className="inline-flex min-h-[48px] items-center justify-center gap-1.5 rounded-full border-2 text-[15px] font-[700] text-white active:scale-[0.99]"
-              style={{ borderColor: "rgba(255,255,255,0.45)" }}
+              className="inline-flex min-h-[48px] items-center justify-center gap-1.5 rounded-full border-2 bg-white text-[15px] font-[700] active:scale-[0.99]"
+              style={{ borderColor: K.forest, color: K.forest }}
             >
               <Eye className="size-4" /> {t("sitCards.seeWhatSees", "See what {{name}} sees", { name: firstWord(caregiverName) })}
             </Link>
           )
         ) : (
           // Covering caregiver: their actual care view, not the owner's preview.
-          <CarePlanButton birds={birds} className="inline-flex min-h-[48px] items-center justify-center gap-1.5 rounded-full border-2 text-[15px] font-[700] text-white" style={{ borderColor: "rgba(255,255,255,0.45)" }}>
+          <CarePlanButton birds={birds} className="inline-flex min-h-[48px] items-center justify-center gap-1.5 rounded-full border-2 bg-white text-[15px] font-[700]" style={{ borderColor: K.forest, color: K.forest }}>
             <Eye className="size-4" /> {t("sitCards.viewCarePlan", "View care plan")}
           </CarePlanButton>
         )}
@@ -194,14 +195,14 @@ export function ActiveSitCard({ sit, birds, caregiverName, iAmLead, iOwnSit, con
       {(showCopyLink || canEdit) && (
         <div className="mt-1.5 flex items-center justify-center gap-4">
           {showCopyLink && (
-            <KyaLink color={K.lime} onClick={() => copySitterLink(sit, birds)}><Link2 className="size-4" /> {t("sitCards.copyLink", "Copy link")}</KyaLink>
+            <KyaLink onClick={() => copySitterLink(sit, birds)}><Link2 className="size-4" /> {t("sitCards.copyLink", "Copy link")}</KyaLink>
           )}
           {canEdit && (
-            <KyaLink color={K.lime} onClick={() => navigate({ to: "/sits/edit/$sitId", params: { sitId: sit.id } })}><Pencil className="size-4" /> {t("sitCards.editSit", "Edit sit")}</KyaLink>
+            <KyaLink onClick={() => navigate({ to: "/sits/edit/$sitId", params: { sitId: sit.id } })}><Pencil className="size-4" /> {t("sitCards.editSit", "Edit sit")}</KyaLink>
           )}
         </div>
       )}
-    </section>
+    </KyaCard>
   );
 }
 
