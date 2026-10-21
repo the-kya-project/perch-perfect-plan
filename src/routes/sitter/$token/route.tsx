@@ -47,8 +47,20 @@ export const Route = createFileRoute("/sitter/$token")({
  * expired, or deleted link. React Query requires an error boundary paired with
  * the Suspense boundary, so SitterErrorBoundary (below) renders this too.
  */
+/** The sit has no birds yet. Carries the owner's first name (null when the
+ *  server had none) so the screen can say who to ask. */
+class SitterNoBirdsError extends Error {
+  ownerFirstName: string | null;
+  constructor(ownerFirstName: string | null) {
+    super("SITTER_SIT_NO_BIRDS");
+    this.name = "SitterNoBirdsError";
+    this.ownerFirstName = ownerFirstName;
+  }
+}
+
 function SitterLinkError({ error }: { error: Error }) {
   const code = error.message;
+  const noBirdsOwner = error instanceof SitterNoBirdsError ? error.ownerFirstName : null;
   // Rendered outside the sitter <I18nextProvider> in the router case, so read
   // the sitter instance directly. Resolve the locale from the browser (no token
   // here) and translate — errors are rare, so the per-token override isn't
@@ -64,6 +76,13 @@ function SitterLinkError({ error }: { error: Error }) {
       ? { title: t("sitter.error.invalid.title", "This sitter link isn't valid"), body: t("sitter.error.invalid.body", "Double-check the link, or ask the owner to resend it.") }
       : code === "SITTER_SIT_PAUSED"
       ? { title: t("sitter.error.paused.title", "This sit is paused"), body: t("sitter.error.paused.body", "There's nothing that needs doing right now. The owner will be in touch.") }
+      : code === "SITTER_SIT_NO_BIRDS"
+      ? {
+          title: t("sitter.error.noBirds.title", "This sit doesn't have any birds yet"),
+          body: noBirdsOwner
+            ? t("sitter.error.noBirds.bodyName", "Ask {{name}} to add one.", { name: noBirdsOwner })
+            : t("sitter.error.noBirds.body", "Ask the owner to add one."),
+        }
       : code === "SITTER_LINK_UNAVAILABLE"
       ? { title: t("sitter.error.unavailable.title", "This sitter link can't be opened"), body: t("sitter.error.unavailable.body", "It may have expired or been turned off. Check your connection and try again.") }
       : null;
@@ -96,7 +115,7 @@ function SitterLinkError({ error }: { error: Error }) {
       <div className="max-w-sm rounded-[20px] bg-white p-6">
         <h1 className="m-0 text-[22px] font-[700] leading-[1.2]" style={{ fontFamily: SERIF }}>{copy.title}</h1>
         <p className="mt-2 text-sm text-[#5f5e5a]">{copy.body}</p>
-        {code !== "SITTER_SIT_PAUSED" && (
+        {code !== "SITTER_SIT_PAUSED" && code !== "SITTER_SIT_NO_BIRDS" && (
           <p className="mt-4 text-xs text-[#5f5e5a]">{t("sitter.error.askNew", "Ask the owner to send you a new link.")}</p>
         )}
       </div>
@@ -214,6 +233,7 @@ const TERMINAL_SITTER_ERRORS = new Set([
   "SITTER_LINK_REVOKED",
   "SITTER_LINK_EXPIRED",
   "SITTER_SIT_PAUSED",
+  "SITTER_SIT_NO_BIRDS",
 ]);
 
 function isTerminalSitterError(error: unknown): boolean {
@@ -236,7 +256,12 @@ export function useSitterContext(token: string) {
   const fn = useServerFn(getSitterContext);
   return useSuspenseQuery({
     queryKey: ["sitter-ctx", token, birdId ?? null],
-    queryFn: () => withSettleGuard(fn({ data: { token, birdId, today: localDateISO() } })),
+    queryFn: () => withSettleGuard(fn({ data: { token, birdId, today: localDateISO() } })).then((ctx) => {
+      // A sit with no birds comes back as a code (with the owner's first name)
+      // instead of a context: raise it as a link state for the error boundary.
+      if ("code" in ctx) throw new SitterNoBirdsError(ctx.ownerFirstName ?? null);
+      return ctx;
+    }),
     // Retry a transient blip, but never a verdict. A token that is invalid,
     // revoked, expired, or whose sit is paused will not become valid on a
     // second attempt — retrying it only doubles how long the sitter waits for

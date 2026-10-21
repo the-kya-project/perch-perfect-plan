@@ -12,6 +12,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { SCAN_FIELDS, type ScanFieldKey } from "@/lib/triage";
 import { localDateISO } from "@/lib/localDay";
+import { fetchDisplayNames } from "@/lib/resolveNames";
 
 // Status column per question (noise → behavior, fluffed → energy).
 export const STATUS_COL: Record<ScanFieldKey, string> = {
@@ -34,6 +35,22 @@ export function isStored(row: Record<string, unknown>, key: ScanFieldKey): boole
   const col = STATUS_COL[key];
   if (!(col in row)) return false;
   return key !== "vomiting" || row[col] != null;
+}
+
+export type FlaggedAnswer = { key: ScanFieldKey; answer: "not_sure" | "concerning" };
+
+/** Every question a daily_logs row answered Not sure or Concerning, in the
+ *  check's question order. Driven by SCAN_FIELDS, so a new question is covered
+ *  without another list to update. A question with no stored answer (vomiting
+ *  before 20261020230000) uses its triage reason code instead. */
+export function flaggedAnswers(row: Record<string, unknown>): FlaggedAnswer[] {
+  const codes = Array.isArray(row.triage_reason_codes) ? (row.triage_reason_codes as { key?: string; answer?: string }[]) : [];
+  const out: FlaggedAnswer[] = [];
+  for (const f of SCAN_FIELDS) {
+    const a = isStored(row, f.key) ? row[STATUS_COL[f.key]] : codes.find((c) => c?.key === f.key)?.answer;
+    if (a === "not_sure" || a === "concerning") out.push({ key: f.key, answer: a });
+  }
+  return out;
 }
 
 export type HistorySit = {
@@ -209,14 +226,8 @@ export async function fetchHealthHistory(birdIds: string[], ownerId: string | nu
   const ids = new Set<string>();
   for (const e of entries) if (e.userId) ids.add(e.userId);
   for (const s of sitList) if (s.caregiver_user_id) ids.add(s.caregiver_user_id);
-  const names: Record<string, string> = {};
-  if (ids.size) {
-    const { data: profs } = await supabase.from("profiles").select("id, display_name").in("id", [...ids]);
-    for (const p of (profs ?? []) as any[]) {
-      const n = (p.display_name ?? "").toString().trim();
-      if (n) names[p.id] = n;
-    }
-  }
+  // Other users' names resolve server-side (profiles RLS is self-only).
+  const names: Record<string, string> = ids.size ? await fetchDisplayNames([...ids]) : {};
   const more = (logs.data ?? []).length >= limit || (weights.data ?? []).length >= limit;
   return { entries, sits: sitList, names, more };
 }

@@ -13,6 +13,8 @@ import { toast } from "sonner";
 import { Plus, Mail, Loader2, User } from "lucide-react";
 import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaLink, KyaPrimaryButton, KyaRow, KyaIconTile } from "@/components/kya";
 import { PageHeader } from "@/components/headers";
+import { LoadError } from "@/components/LoadError";
+import { useLoadState } from "@/lib/useTooLong";
 import { friendlyError } from "@/lib/errorMessage";
 import { namesAsCount } from "@/lib/birdNames";
 import { memberDisplayName } from "@/lib/memberDisplay";
@@ -49,7 +51,11 @@ function HouseholdScreen() {
   const [manageUserId, setManageUserId] = useState<string | null>(null);
 
   const getAccount = useServerFn(getHouseholdAccount);
-  const { data, isLoading } = useQuery({ queryKey: ["household-account"], queryFn: () => getAccount() });
+  const accountQ = useQuery({ queryKey: ["household-account"], queryFn: () => getAccount() });
+  const { data } = accountQ;
+  // A failed load must not read as "No one yet": offer a retry instead.
+  const load = useLoadState([accountQ]);
+  const isLoading = load.loading;
   const refresh = () => qc.invalidateQueries({ queryKey: ["household-account"] });
 
   // Same key + shape as sits.index / useOwnedBirds.
@@ -117,9 +123,9 @@ function HouseholdScreen() {
             }
             title={t("household.you", "You")}
             detail={t("household.ownerAllBirds", "Owner · all birds")}
-            last={!isLoading && members.length === 0 && pending.length === 0}
+            last={load.failed || (!isLoading && members.length === 0 && pending.length === 0)}
           />
-          {isLoading ? (
+          {load.failed ? null : isLoading ? (
             <div className="flex min-h-[60px] items-center gap-2 px-4 text-[14px]" style={{ color: K.quiet }}>
               <Loader2 className="size-4 animate-spin" /> {t("household.loading", "Loading…")}
             </div>
@@ -147,7 +153,9 @@ function HouseholdScreen() {
           )}
         </KyaCard>
 
-        {!isLoading && members.length === 0 && pending.length === 0 && (
+        {load.failed && <LoadError onRetry={load.retry} />}
+
+        {!load.failed && !isLoading && members.length === 0 && pending.length === 0 && (
           <p className="m-0 px-1 text-[14px] leading-[1.5]" style={{ color: K.quiet }}>
             {t("household.empty", "No one yet. Invite a partner or family member who helps care for your birds.")}
           </p>

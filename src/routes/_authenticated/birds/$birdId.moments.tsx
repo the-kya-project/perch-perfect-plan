@@ -300,7 +300,9 @@ function MomentsFacet() {
           </KyaCard>
         )}
 
-        {anchors.length === 0 && (
+        {/* Only once the bird has loaded: before that there are no anchors yet,
+            which isn't the same as none being set. */}
+        {bird !== undefined && anchors.length === 0 && (
           <KyaCard className="p-6 text-center">
             <p className="m-0 text-[15px] leading-[1.5]" style={{ color: K.quiet }}>
               {isOwner

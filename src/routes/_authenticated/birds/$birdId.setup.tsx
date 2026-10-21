@@ -38,6 +38,8 @@ import { track } from "@/lib/analytics";
 import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/imageUpload";
 import { persistBirdPhoto, signBirdPhoto } from "@/lib/birdPhoto";
 import { friendlyError } from "@/lib/errorMessage";
+import { LoadError } from "@/components/LoadError";
+import { useLoadState, useTooLong } from "@/lib/useTooLong";
 
 const setupSearch = z.object({
   step: z.coerce.number().int().min(1).max(TOTAL_STEPS).optional(),
@@ -81,6 +83,44 @@ function StepInstruction({ children }: { children: React.ReactNode }) {
       <p className="text-[13px] leading-relaxed text-white">{children}</p>
     </div>
   );
+}
+
+/**
+ * A step's placeholder while its data loads. It used to be the only thing a
+ * step could show, so a failed or missing load (no care plan row, a dropped
+ * request) left the step pulsing forever. Now: on `failed`, or after 10 s
+ * still waiting, it offers "Try again" (which calls `onRetry` and restarts the
+ * clock). Shared by the walkthrough and the plan editor tabs.
+ */
+function StepSkeleton({ failed, onRetry }: { failed?: boolean; onRetry: () => void }) {
+  const { tooLong, restart } = useTooLong(!failed);
+  if (failed || tooLong) return <LoadError onRetry={() => { restart(); onRetry(); }} />;
+  return <div className="h-32 animate-pulse rounded-[18px] bg-[#e3ebe2]" />;
+}
+
+/**
+ * Self-heal: guarantee a care_plan exists for this bird so no step can silently
+ * no-op and lose the owner's input, or wait forever on a plan row that isn't
+ * there. The original creation in new.tsx can fail; this also repairs any bird
+ * that ended up without a plan. Used by the walkthrough and the plan editor
+ * (enable it only for someone allowed to edit the plan).
+ */
+export function useEnsureCarePlan(birdId: string, enabled: boolean) {
+  const qc = useQueryClient();
+  const planEnsuredRef = useRef(false);
+  useEffect(() => {
+    if (!enabled || planEnsuredRef.current) return;
+    planEnsuredRef.current = true;
+    (async () => {
+      const { data, error } = await supabase
+        .from("care_plans").select("id").eq("bird_id", birdId).maybeSingle();
+      if (error || data) return; // already exists, or transient — steps will retry
+      const { error: upErr } = await supabase
+        .from("care_plans").upsert({ bird_id: birdId }, { onConflict: "bird_id" });
+      if (upErr) { toast.error(i18next.t("birdSetup.couldNotLoadPlan", "Couldn't load this bird's care plan: {{reason}}", { reason: friendlyError(upErr, i18next.t("birdSetup.pleaseTryAgainLower", "please try again.")) })); return; }
+      qc.invalidateQueries(); // plan now exists — refetch the per-step queries
+    })();
+  }, [enabled, birdId, qc]);
 }
 
 function useDebouncedAutosave(
@@ -169,18 +209,24 @@ function BirdSetup() {
   const { step: stepParam } = Route.useSearch();
   const navigate = useNavigate();
 
-  const { data: bird, isLoading } = useQuery({
+  // maybeSingle, not single: a bird that's gone (deleted, handed off, access
+  // removed) comes back as null rather than an error, so the page can say it
+  // isn't available instead of retrying and then pulsing "Loading…" forever.
+  const birdQ = useQuery({
     queryKey: ["bird-setup", birdId],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("birds")
         .select("*")
         .eq("id", birdId)
-        .single();
+        .maybeSingle();
       if (error) throw error;
       return data as any;
     },
   });
+  const { data: bird } = birdQ;
+  const birdLoad = useLoadState([birdQ]);
+  const birdMissing = birdQ.isSuccess && !bird;
 
   const [step, setStep] = useState<number>(1);
   const [blockNext, setBlockNext] = useState(false);
@@ -225,23 +271,7 @@ function BirdSetup() {
   const stopPointSeenRef = useRef(false);
   const qc = useQueryClient();
 
-  // Self-heal: guarantee a care_plan exists for this bird so no setup step can
-  // silently no-op and lose the owner's input. The original creation in new.tsx
-  // can fail; this also repairs any bird that ended up without a plan.
-  const planEnsuredRef = useRef(false);
-  useEffect(() => {
-    if (!bird || planEnsuredRef.current) return;
-    planEnsuredRef.current = true;
-    (async () => {
-      const { data, error } = await supabase
-        .from("care_plans").select("id").eq("bird_id", birdId).maybeSingle();
-      if (error || data) return; // already exists, or transient — steps will retry
-      const { error: upErr } = await supabase
-        .from("care_plans").upsert({ bird_id: birdId }, { onConflict: "bird_id" });
-      if (upErr) { toast.error(i18next.t("birdSetup.couldNotLoadPlan", "Couldn't load this bird's care plan: {{reason}}", { reason: friendlyError(upErr, i18next.t("birdSetup.pleaseTryAgainLower", "please try again.")) })); return; }
-      qc.invalidateQueries(); // plan now exists — refetch the per-step queries
-    })();
-  }, [bird, birdId, qc]);
+  useEnsureCarePlan(birdId, !!bird);
 
   useEffect(() => {
     track("guided_editor_opened", { entry_step: stepParam ?? 1 });
@@ -424,9 +454,25 @@ function BirdSetup() {
     }
   }
 
-  if (isLoading || !bird) {
+  if (birdMissing || birdLoad.failed) {
+    // Close stays in the header. A missing bird has no profile to go back to,
+    // so both ways out lead Home; a failed load can retry.
+    const goHome = () => navigate({ to: "/dashboard" });
     return (
-      <SetupShell step={step} title={t("birdSetup.loading", "Loading…")}>
+      <SetupShell step={step} title={t("birdSetup.carePlanTitle", "Care plan")} onExit={birdMissing ? goHome : exitToProfile} hideFooter>
+        <LoadError
+          missing={birdMissing}
+          onRetry={birdLoad.retry}
+          onBack={birdMissing ? goHome : exitToProfile}
+          backLabel={birdMissing ? t("loadError.backHome", "Back to home") : undefined}
+        />
+      </SetupShell>
+    );
+  }
+
+  if (!bird) {
+    return (
+      <SetupShell step={step} title={t("birdSetup.loading", "Loading…")} onExit={exitToProfile} hideFooter>
         <div className="h-32 animate-pulse rounded-[18px] bg-[#e3ebe2]" />
       </SetupShell>
     );
@@ -715,7 +761,7 @@ const COMMON_TASKS = [
 export function BasicsStep({ birdId, onBlockNext, registerFlush }: { birdId: string; onBlockNext: (block: boolean) => void; registerFlush?: (fn: (() => Promise<void>) | null) => void }) {
   const { t } = useTranslation();
   const qc = useQueryClient();
-  const { data: bird, isLoading } = useQuery({
+  const { data: bird, isLoading, isError, refetch } = useQuery({
     queryKey: ["bird-basics", birdId],
     // Drop the cache when the step unmounts so navigating Back refetches the
     // just-saved values, rather than re-hydrating the form from a stale (still
@@ -785,7 +831,7 @@ export function BasicsStep({ birdId, onBlockNext, registerFlush }: { birdId: str
     registerFlush,
   );
 
-  if (isLoading || !form) return <div className="h-32 animate-pulse rounded-[18px] bg-[#e3ebe2]" />;
+  if (isLoading || !form) return <StepSkeleton failed={isError} onRetry={() => void refetch()} />;
 
   async function onPhoto(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -864,7 +910,7 @@ export function DayInLifeStep({ birdId, birdName }: { birdId: string; birdName: 
   const { t } = useTranslation();
   const qc = useQueryClient();
 
-  const { data: plan } = useQuery({
+  const { data: plan, refetch: refetchPlan } = useQuery({
     queryKey: ["plan", birdId],
     queryFn: async () => {
       const { data } = await supabase.from("care_plans").select("id").eq("bird_id", birdId).maybeSingle();
@@ -872,7 +918,7 @@ export function DayInLifeStep({ birdId, birdName }: { birdId: string; birdName: 
     },
   });
 
-  const { data: tasks = [], isLoading } = useQuery({
+  const { data: tasks = [], isLoading, isError: tasksError, refetch: refetchTasks } = useQuery({
     queryKey: ["tasks", plan?.id],
     enabled: !!plan?.id,
     queryFn: async () => {
@@ -931,7 +977,7 @@ export function DayInLifeStep({ birdId, birdName }: { birdId: string; birdName: 
   }
 
   if (isLoading || !plan) {
-    return <div className="h-32 animate-pulse rounded-[18px] bg-[#e3ebe2]" />;
+    return <StepSkeleton failed={tasksError} onRetry={() => { void refetchPlan(); if (plan) void refetchTasks(); }} />;
   }
 
   return (
@@ -1228,7 +1274,7 @@ export function FoodWaterStep({
   const { t } = useTranslation();
   const qc = useQueryClient();
 
-  const { data: plan, isLoading } = useQuery({
+  const { data: plan, isLoading, isError, refetch } = useQuery({
     queryKey: ["plan-food", birdId],
     gcTime: 0, // drop cache on unmount so Back refetches saved values (see BasicsStep)
     queryFn: async () => {
@@ -1523,7 +1569,7 @@ export function FoodWaterStep({
     registerFlush,
   );
 
-  if (isLoading || !plan) return <div className="h-32 animate-pulse rounded-[18px] bg-[#e3ebe2]" />;
+  if (isLoading || !plan) return <StepSkeleton failed={isError} onRetry={() => void refetch()} />;
 
   const setItemsForType = (type: string, items: DietItem[]) =>
     setDietDetails((prev) => ({ ...prev, [type]: items }));
@@ -1768,7 +1814,7 @@ const STEP_UP_OPTIONS = [
 export function PersonalityStep({ birdId, birdName, registerFlush }: { birdId: string; birdName: string; registerFlush?: (fn: (() => Promise<void>) | null) => void }) {
   const { t } = useTranslation();
   const qc = useQueryClient();
-  const { data: plan, isLoading } = useQuery({
+  const { data: plan, isLoading, isError, refetch } = useQuery({
     queryKey: ["plan-personality", birdId],
     gcTime: 0, // drop cache on unmount so Back refetches saved values (see BasicsStep)
     queryFn: async () => {
@@ -1834,7 +1880,7 @@ export function PersonalityStep({ birdId, birdName, registerFlush }: { birdId: s
     registerFlush,
   );
 
-  if (isLoading || !plan) return <div className="h-32 animate-pulse rounded-[18px] bg-[#e3ebe2]" />;
+  if (isLoading || !plan) return <StepSkeleton failed={isError} onRetry={() => void refetch()} />;
 
   const stepUpOptions = STEP_UP_OPTIONS.map((o) => ({ value: o.value, label: displayLabel(t, o.label) }));
   const oocOptions = OUT_OF_CAGE_OPTIONS.map((o) => ({ value: o.value, label: displayLabel(t, o.label) }));
@@ -1941,7 +1987,7 @@ export function EnvironmentStep({ birdId, birdName, registerFlush }: { birdId: s
   // owner's shared answers, so they always edit this bird's own.
   const { t } = useTranslation();
   const qc = useQueryClient();
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["plan-environment", birdId],
     gcTime: 0, // drop cache on unmount so Back refetches saved values (see BasicsStep)
     queryFn: async () => {
@@ -2069,7 +2115,7 @@ export function EnvironmentStep({ birdId, birdName, registerFlush }: { birdId: s
     return () => setHomeSubline(null);
   }, [hydrated, mode, birdName, setHomeSubline, t]);
 
-  if (isLoading || !plan) return <div className="h-32 animate-pulse rounded-[18px] bg-[#e3ebe2]" />;
+  if (isLoading || !plan) return <StepSkeleton failed={isError} onRetry={() => void refetch()} />;
 
   function addClean() {
     const v = newClean.trim();
@@ -2215,7 +2261,7 @@ export function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlus
   const { t } = useTranslation();
   const qc = useQueryClient();
 
-  const { data: bird } = useQuery({
+  const { data: bird, isError: birdError, refetch: refetchBird } = useQuery({
     queryKey: ["bird-health", birdId],
     gcTime: 0, // drop cache on unmount so Back refetches saved values (see BasicsStep)
     queryFn: async () => {
@@ -2229,7 +2275,7 @@ export function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlus
     },
   });
 
-  const { data: plan, isLoading } = useQuery({
+  const { data: plan, isLoading, isError, refetch } = useQuery({
     queryKey: ["plan-health", birdId],
     gcTime: 0, // drop cache on unmount so Back refetches saved values (see BasicsStep)
     queryFn: async () => {
@@ -2427,7 +2473,7 @@ export function HealthBaselineStep({ birdId, birdName, onBlockNext, registerFlus
     setClipPath(null);
   }
 
-  if (isLoading || !plan || !bird) return <div className="h-32 animate-pulse rounded-[18px] bg-[#e3ebe2]" />;
+  if (isLoading || !plan || !bird) return <StepSkeleton failed={isError || birdError} onRetry={() => { void refetch(); void refetchBird(); }} />;
 
   const detailCount = HEALTH_DETAIL_FIELDS.filter(([k]) => (detail[k] ?? "").trim()).length;
   const setDetailField = (k: string, v: string) => setDetail((d) => ({ ...d, [k]: v.slice(0, 500) }));
@@ -2946,7 +2992,7 @@ export function OwnerTipsClipsStep({ birdId, birdName, onBlockNext }: { birdId: 
     return () => setFooterNote(null);
   }, [anyUploading, setFooterNote, t]);
 
-  const { data: plan, isLoading } = useQuery({
+  const { data: plan, isLoading, isError, refetch } = useQuery({
     queryKey: ["plan-clips", birdId],
     queryFn: async () => {
       const { data, error } = await supabase.from("care_plans").select("*").eq("bird_id", birdId).maybeSingle();
@@ -2955,7 +3001,7 @@ export function OwnerTipsClipsStep({ birdId, birdName, onBlockNext }: { birdId: 
     },
   });
 
-  if (isLoading || !plan) return <div className="h-32 animate-pulse rounded-[18px] bg-[#e3ebe2]" />;
+  if (isLoading || !plan) return <StepSkeleton failed={isError} onRetry={() => void refetch()} />;
 
   const added = CLIP_SLOTS.filter((slot) => !!plan[slot.column]).length;
 

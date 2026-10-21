@@ -8,18 +8,19 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { purgeBirdMedia } from "@/lib/birdMedia.functions";
+import { resolveHouseholdNames } from "@/lib/home.functions";
 import { birdMediaPurgeFailedText } from "@/lib/i18n/serverErrors";
 import { activeOwnerBirdsMin } from "@/lib/activeBirds";
-import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { Trash2, ChevronDown, AlertTriangle, Eye } from "lucide-react";
 import { EmergencyInfo } from "@/components/EmergencyInfo";
+import { useBirdOwnerEmergency } from "@/lib/useOwnerEmergency";
 import { K, KyaBody, KyaCard, KyaHeading, KyaTag, KyaLabel, KyaSecondaryButton, KyaPrimaryButton } from "@/components/kya";
 import { HeaderPill, TaskHeader, TaskFooter, TASK_FOOTER_SPACE } from "@/components/headers";
 import { isTaskPath } from "@/components/OwnerTabBar";
 import { SETUP_STEPS } from "@/components/SetupShell";
 // The editor renders the guided-setup step components directly so the two UIs
 // are identical (same fields, pickers, autosave, clip recording).
-import { BasicsStep, DayInLifeStep, PersonalityStep, OwnerTipsClipsStep, FoodWaterStep, EnvironmentStep, HealthBaselineStep, HideStepInstruction } from "./$birdId.setup";
+import { BasicsStep, DayInLifeStep, PersonalityStep, OwnerTipsClipsStep, FoodWaterStep, EnvironmentStep, HealthBaselineStep, HideStepInstruction, useEnsureCarePlan } from "./$birdId.setup";
 import { SitCard } from "@/components/SitCard";
 import { toast } from "sonner";
 import { Disclaimer } from "@/components/Disclaimer";
@@ -30,6 +31,8 @@ import { useCapability, useMyPermissions } from "@/lib/useCapability";
 import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 import { friendlyError } from "@/lib/errorMessage";
 import { formatLocalDateTime } from "@/lib/dates";
+import { LoadError } from "@/components/LoadError";
+import { useLoadState } from "@/lib/useTooLong";
 
 
 // The care-plan editor is reached via the new overview front door (/plan).
@@ -108,6 +111,9 @@ function BirdEditor() {
   const canEdit = useCapability("edit_care_plans", { birdId });
   const canEmergency = useCapability("manage_emergency", { birdId });
   const { data: perms } = useMyPermissions();
+  // A bird with no care plan row would leave every tab waiting; create it (as
+  // the walkthrough does) for anyone allowed to edit the plan.
+  useEnsureCarePlan(birdId, role === "owner" || canEdit);
   // A task page hides the bottom nav (isTaskPath); until this route is listed
   // there the nav still shows, so the Done footer sits just above it.
   const navHidden = useLocation({ select: (l) => isTaskPath(l.pathname) });
@@ -130,13 +136,18 @@ function BirdEditor() {
     setTabAtEnd(el.scrollLeft + el.clientWidth >= el.scrollWidth - 1);
   }
 
-  const { data: bird } = useQuery({
+  // maybeSingle: a missing bird (deleted / no access) is null, not an error, so
+  // the page can say so instead of retrying into a forever "Loading...".
+  const birdQ = useQuery({
     queryKey: ["bird", birdId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("birds").select("*").eq("id", birdId).single();
+      const { data, error } = await supabase.from("birds").select("*").eq("id", birdId).maybeSingle();
       if (error) throw error; return data;
     },
   });
+  const { data: bird } = birdQ;
+  const birdLoad = useLoadState([birdQ]);
+  const birdMissing = birdQ.isSuccess && !bird;
 
   // Re-measure after the strip mounts (it only renders once the bird loads) and
   // on resize, so the right fade reliably shows when the tabs overflow.
@@ -160,19 +171,8 @@ function BirdEditor() {
       return data;
     },
   });
-  const { data: defaults } = useQuery({
-    queryKey: ["owner-defaults"],
-    queryFn: async () => {
-      const { data: u } = await getLocalUser();
-      if (!u.user) return null;
-      const { data } = await supabase
-        .from("owner_emergency_defaults")
-        .select("*")
-        .eq("owner_id", u.user.id)
-        .maybeSingle();
-      return data;
-    },
-  });
+  // The bird OWNER's account emergency info (not the viewer's), with their name.
+  const { defaults, ownerName, failed: ownerEmergencyFailed } = useBirdOwnerEmergency(birdId);
   const { data: tasks = [] } = useQuery({
     queryKey: ["tasks", plan?.id],
     enabled: !!plan?.id,
@@ -195,6 +195,24 @@ function BirdEditor() {
   });
 
   const resolvePhoto = useBirdPhotos([bird?.photo_url], 96);
+
+  if (birdMissing || birdLoad.failed) {
+    const goHome = () => navigate({ to: "/dashboard" });
+    const goOverview = () => navigate({ to: "/birds/$birdId/plan", params: { birdId } });
+    return (
+      <div className="setup-frame min-h-screen" style={{ background: K.mist, color: K.forest }}>
+        <TaskHeader onClose={birdMissing ? goHome : goOverview} title={t("planEditor.carePlanTitle", "Care plan")} />
+        <KyaBody>
+          <LoadError
+            missing={birdMissing}
+            onRetry={birdLoad.retry}
+            onBack={birdMissing ? goHome : goOverview}
+            backLabel={birdMissing ? t("loadError.backHome", "Back to home") : undefined}
+          />
+        </KyaBody>
+      </div>
+    );
+  }
 
   if (!bird) {
     return (
@@ -289,8 +307,13 @@ function BirdEditor() {
             {tab === "routine" && <DayInLifeStep birdId={birdId} birdName={birdName} />}
             {tab === "behavior" && <PersonalityStep birdId={birdId} birdName={birdName} />}
             {tab === "clips" && <OwnerTipsClipsStep birdId={birdId} birdName={birdName} onBlockNext={() => {}} />}
-            {tab === "emergency" && contacts !== undefined && <EmergencyInfo birdId={birdId} birdName={birdName} contacts={contacts ?? null} defaults={defaults ?? null} isOwner={role === "owner"} onSaved={() => qc.invalidateQueries({ queryKey: ["contacts", birdId] })} />}
-            {tab === "sits" && <SitsPanel birdId={birdId} sits={sits} onChange={() => qc.invalidateQueries({ queryKey: ["sits", birdId] })} />}
+            {/* Wait for the owner's info as well as the bird's: saving before it
+                arrives would store a copy of the owner's values on this bird. */}
+            {tab === "emergency" && ownerEmergencyFailed && (
+              <LoadError onRetry={() => void qc.refetchQueries({ queryKey: ["bird-owner-emergency", birdId] })} />
+            )}
+            {tab === "emergency" && !ownerEmergencyFailed && contacts !== undefined && defaults !== undefined && role !== undefined && <EmergencyInfo birdId={birdId} birdName={birdName} contacts={contacts ?? null} defaults={defaults ?? null} ownerName={ownerName} isOwner={role === "owner"} onSaved={() => qc.invalidateQueries({ queryKey: ["contacts", birdId] })} />}
+            {tab === "sits" && <SitsPanel birdId={birdId} sits={sits} onChange={() => { qc.invalidateQueries({ queryKey: ["sits", birdId] }); qc.invalidateQueries({ queryKey: ["sit-birds-for-sits"] }); }} />}
             {tab === "logs" && <LogsPanel birdId={birdId} initialScan={scanParam} />}
           </HideStepInstruction.Provider>
         </KyaBody>
@@ -421,11 +444,29 @@ function SitsPanel({ birdId, sits, onChange }: { birdId: string; sits: any[]; on
       return data ?? [];
     },
   });
+  // Each sit's birds (a sit can cover several), so the cards can list them,
+  // link each one's sitter preview and checklist, and check emergency contacts
+  // before a link is copied. RLS limits the embed to birds the user can see.
+  const sitIds = sits.map((s) => s.id as string).sort();
+  const { data: birdsBySit = {} } = useQuery({
+    queryKey: ["sit-birds-for-sits", sitIds.join(",")],
+    enabled: sitIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase.from("sit_birds").select("sit_id, birds(id, name)").in("sit_id", sitIds);
+      if (error) throw error;
+      const out: Record<string, { id: string; name: string }[]> = {};
+      for (const r of (data ?? []) as any[]) {
+        if (!r.birds) continue;
+        (out[r.sit_id] ??= []).push({ id: r.birds.id, name: r.birds.name });
+      }
+      return out;
+    },
+  });
   return (
     <>
       <KyaCard className="p-4">
         <p className="m-0 text-[15px] leading-[1.5]" style={{ color: K.ink }}>
-          <Trans i18nKey="planEditor.sitsCreatedFrom" defaults="Sits are created from the <1>owner dashboard</1>, where you can include multiple birds in one sit." components={{ 1: <Link to="/dashboard" className="font-[700] underline" style={{ color: K.moss }} /> }} />
+          <Trans i18nKey="planEditor.sitsSetUpFromSits" defaults="To add a sit, <1>set up a sit</1> from the Sits tab. One sit can include several birds." components={{ 1: <Link to="/sits/new" search={{ bird: birdId }} className="font-[700] underline" style={{ color: K.moss }} /> }} />
         </p>
       </KyaCard>
       {sits.length === 0 && (
@@ -433,7 +474,7 @@ function SitsPanel({ birdId, sits, onChange }: { birdId: string; sits: any[]; on
           <p className="m-0 text-[15px]" style={{ color: K.quiet }}>{t("planEditor.noSits", "This bird isn't part of any sit yet.")}</p>
         </KyaCard>
       )}
-      {sits.map((s) => <SitCard key={s.id} sit={s} allBirds={allBirds} onChange={onChange} />)}
+      {sits.map((s) => <SitCard key={s.id} sit={s} birds={birdsBySit[s.id] ?? []} allBirds={allBirds} onChange={onChange} />)}
     </>
   );
 }
@@ -441,6 +482,8 @@ function SitsPanel({ birdId, sits, onChange }: { birdId: string; sits: any[]; on
 function LogsPanel({ birdId, initialScan }: { birdId: string; initialScan?: string }) {
   const { t } = useTranslation();
   const [expandedScan, setExpandedScan] = useState<string | null>(initialScan ?? null);
+  const { data: myPerms } = useMyPermissions();
+  const role = useBirdRole(birdId);
 
   // Deep link from a notification: expand and scroll to that scan once rendered.
   useEffect(() => {
@@ -498,7 +541,30 @@ function LogsPanel({ birdId, initialScan }: { birdId: string; initialScan?: stri
     { col: "injury_status", label: t("planEditor.scanInjury", "No injury, fall, bite, or scratch") },
     { col: "exposure_status", label: t("planEditor.scanExposure", "No exposure to fumes / unsafe items") },
   ];
-  const sitterLabel = (d: any) => d.sit?.sitter_name || d.sit?.sitter_email || t("planEditor.sitter", "Sitter");
+  // Who ran each check. daily_logs.source is owner | household | sitter;
+  // run_by is the signed-in user who ran it (null for a sitter link, and on
+  // owner checks from before run_by existed); sit_id ties sitter checks to the
+  // sit, whose sitter_name we already join. Other people's names come from
+  // resolveHouseholdNames: profiles RLS is self-only, so they can't be read here.
+  const myId = myPerms?.myId ?? null;
+  const runByIds = [...new Set(daily.map((d: any) => d.run_by as string | null).filter((id): id is string => !!id && id !== myId))].sort();
+  const resolveNames = useServerFn(resolveHouseholdNames);
+  const { data: runByNames = {} } = useQuery({
+    queryKey: ["check-runner-names", runByIds.join(",")],
+    enabled: runByIds.length > 0,
+    staleTime: 5 * 60_000,
+    queryFn: () => resolveNames({ data: { userIds: runByIds } }),
+  });
+  const isMine = (d: any) => (!!myId && d.run_by === myId) || (d.source === "owner" && !d.run_by && role === "owner");
+  const loggerLabel = (d: any): string => {
+    if (isMine(d)) return t("planEditor.loggedByYou", "You");
+    if (d.source === "sitter") return d.sit?.sitter_name || d.sit?.sitter_email || t("planEditor.sitter", "Sitter");
+    const who = d.run_by ? (runByNames as Record<string, { name: string | null; email: string | null }>)[d.run_by] : undefined;
+    if (who?.name || who?.email) return (who.name || who.email) as string;
+    if (d.source === "owner") return t("planEditor.loggedByOwner", "Owner");
+    if (d.source === "household") return t("planEditor.loggedByHousehold", "Household member");
+    return t("planEditor.loggedBySomeone", "Someone");
+  };
   const severityRank = (s: string) => (s === "red" ? 0 : s === "yellow" ? 1 : 2);
   const sortedDaily = [...daily].sort((a: any, b: any) => {
     const r = severityRank(a.triage_status) - severityRank(b.triage_status);
@@ -518,7 +584,7 @@ function LogsPanel({ birdId, initialScan }: { birdId: string; initialScan?: stri
       <Disclaimer compact />
 
       <KyaCard className="p-4">
-        <KyaHeading size={19}>{t("planEditor.healthChecksFromSitters", "Health checks from sitters")}</KyaHeading>
+        <KyaHeading size={19}>{t("planEditor.healthChecks", "Health checks")}</KyaHeading>
         {daily.length === 0 ? (
           <p className="m-0 mt-2 text-[15px]" style={{ color: K.quiet }}>{t("planEditor.noHealthChecks", "No health checks logged yet.")}</p>
         ) : (
@@ -561,7 +627,7 @@ function LogsPanel({ birdId, initialScan }: { birdId: string; initialScan?: stri
                           )}
                         </div>
                         <p className="m-0 mt-1 text-[13px]" style={{ color: K.quiet }}>
-                          {formatLocalDateTime(new Date(d.created_at), { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })} · {sitterLabel(d)}
+                          {formatLocalDateTime(new Date(d.created_at), { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })} · {loggerLabel(d)}
                         </p>
                       </div>
                     </div>
@@ -572,7 +638,11 @@ function LogsPanel({ birdId, initialScan }: { birdId: string; initialScan?: stri
                       {notSureItems.length > 0 && (
                         <div className="rounded-[14px] p-3" style={{ background: K.amberBg }}>
                           <KyaTag tone="amber">{t("planEditor.awaitingResponse", "Awaiting your response")}</KyaTag>
-                          <p className="m-0 mt-2 text-[14px] leading-[1.45]" style={{ color: K.amberText }}>{t("planEditor.sitterNotSure", "{{sitter}} wasn't sure about these and is looking for your input:", { sitter: sitterLabel(d) })}</p>
+                          <p className="m-0 mt-2 text-[14px] leading-[1.45]" style={{ color: K.amberText }}>
+                            {isMine(d)
+                              ? t("planEditor.youNotSure", "You weren't sure about these:")
+                              : t("planEditor.sitterNotSure", "{{sitter}} wasn't sure about these and is looking for your input:", { sitter: loggerLabel(d) })}
+                          </p>
                           <ul className="m-0 mt-1.5 list-disc space-y-0.5 pl-5 text-[14px] font-[700]" style={{ color: K.amberText }}>
                             {notSureItems.map((f) => <li key={f.col}>{f.label}</li>)}
                           </ul>
@@ -599,7 +669,7 @@ function LogsPanel({ birdId, initialScan }: { birdId: string; initialScan?: stri
                       )}
                       {d.notes && (
                         <div>
-                          <LogLabel>{t("planEditor.sitterNotes", "Sitter notes")}</LogLabel>
+                          <LogLabel>{d.source === "sitter" ? t("planEditor.sitterNotes", "Sitter notes") : t("planEditor.checkNotes", "Notes")}</LogLabel>
                           <p className="m-0 mt-1 text-[14px] italic leading-[1.5]" style={{ color: K.ink }}>"{d.notes}"</p>
                         </div>
                       )}

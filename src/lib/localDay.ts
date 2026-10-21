@@ -20,3 +20,14 @@ export function resolveToday(clientDay?: string | null): string {
   const diff = Math.abs(Date.parse(`${clientDay}T00:00:00Z`) - Date.parse(`${utc}T00:00:00Z`));
   return diff <= 86_400_000 ? clientDay : utc;
 }
+
+/** A stored date as a Date to display. A date-only "YYYY-MM-DD" (intake dates,
+ *  moments, came-home dates) is that calendar day at local noon:
+ *  `new Date("YYYY-MM-DD")` is UTC midnight, which is the day before anywhere
+ *  west of UTC. A full timestamp is parsed as usual. Null when empty or invalid. */
+export function parseCalendarDate(value: string | null | undefined): Date | null {
+  if (!value) return null;
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value.trim());
+  const d = m ? new Date(+m[1], +m[2] - 1, +m[3], 12) : new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+}

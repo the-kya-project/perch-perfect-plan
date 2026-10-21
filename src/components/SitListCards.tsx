@@ -2,7 +2,7 @@
 // white card per upcoming sit, and past sits as rows in one white card. They're
 // presentational — the page resolves caregiver names and passes them in. (The
 // older SitCard stays in the bird plan editor.)
-import { useState } from "react";
+import { useState, type CSSProperties, type ReactNode } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Activity, Eye, Link2, Home, Pencil, Star, ChevronRight } from "lucide-react";
 import { durationDays, daysUntil } from "@/lib/dates";
@@ -10,7 +10,7 @@ import { rangeTo, sitTitle } from "@/lib/sitText";
 import { copySitterLink } from "@/lib/sitLink";
 import { SitChecklist } from "@/components/SitChecklist";
 import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
-import { K, KyaCard, KyaLink } from "@/components/kya";
+import { K, KyaCard, KyaLink, KyaRow, KyaSheet, KyaHeading } from "@/components/kya";
 import { namesAsCount } from "@/lib/birdNames";
 import { useTranslation } from "react-i18next";
 
@@ -90,6 +90,45 @@ function BirdStack({ birds, onDark }: { birds: SitBird[]; onDark?: boolean }) {
   );
 }
 
+/** "View care plan" for a covering caregiver. One bird opens its care plan
+ *  directly; a multi-bird sit asks which bird first. */
+function CarePlanButton({ birds, className, style, children }: { birds: SitBird[]; className: string; style: CSSProperties; children: ReactNode }) {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const [picking, setPicking] = useState(false);
+  if (!birds.length) return null;
+  if (birds.length === 1) {
+    return <Link to="/birds/$birdId/care-plan" params={{ birdId: birds[0].id }} className={className} style={style}>{children}</Link>;
+  }
+  return (
+    <>
+      <button type="button" onClick={() => setPicking(true)} className={className} style={style}>{children}</button>
+      <KyaSheet
+        open={picking}
+        onClose={() => setPicking(false)}
+        closeLabel={t("sitCards.close", "Close")}
+        title={<KyaHeading size={22}>{t("sitCards.whichCarePlan", "Whose care plan?")}</KyaHeading>}
+      >
+        <KyaCard>
+          {birds.map((b, i) => (
+            <KyaRow
+              key={b.id}
+              last={i === birds.length - 1}
+              leading={
+                <span className="relative grid size-10 place-items-center overflow-hidden rounded-full text-[15px] font-[700] text-white" style={{ background: K.moss }} aria-hidden="true">
+                  {b.photo_url ? <BirdPhotoCrop url={b.photo_url} original={b.photo_original} position={b.photo_position ?? "50% 20%"} alt="" /> : b.name.slice(0, 1).toUpperCase()}
+                </span>
+              }
+              title={b.name}
+              onClick={() => { setPicking(false); navigate({ to: "/birds/$birdId/care-plan", params: { birdId: b.id } }); }}
+            />
+          ))}
+        </KyaCard>
+      </KyaSheet>
+    </>
+  );
+}
+
 const SECONDARY = "inline-flex min-h-[48px] flex-1 items-center justify-center gap-1.5 rounded-full border-2 bg-white px-3 text-center text-[15px] font-[700] active:scale-[0.99]";
 
 // ---------------------------------------------------------------------------
@@ -104,6 +143,9 @@ export function ActiveSitCard({ sit, birds, caregiverName, iAmLead, iOwnSit, con
   // The per-trip link, so the owner can re-send it mid-sit. Household sits have none.
   const showCopyLink = !household && !sit.revoked && !!sit.invite_token;
   const who = household ? t("sitCards.household", "Household") : t("sitCards.sitterDayOf", "Sitter · day {{day}} of {{total}}", { day: dayOf, total });
+  // The signed-in member is the one covering: speak to them, not about them.
+  const youCover = household && !!iAmLead;
+  const title = youCover ? sit.title?.trim() || t("sitCards.youreCovering", "You're covering this sit") : sitTitle(t, sit, caregiverName);
 
   return (
     <section className="rounded-[20px] p-4 text-white" style={{ background: K.forest }}>
@@ -111,9 +153,9 @@ export function ActiveSitCard({ sit, birds, caregiverName, iAmLead, iOwnSit, con
         <CaregiverAvatar name={caregiverName} household={household} />
         <div className="min-w-0 flex-1">
           {contextTag && <div className="mb-1"><ContextTag tag={contextTag} onDark /></div>}
-          <p className="m-0 truncate text-[16px] font-[700]">{sitTitle(t, sit, caregiverName)}</p>
-          <p className="m-0 mt-0.5 text-[13.5px]" style={{ color: K.paleGreen }}>{caregiverName} · {who} · {rangeTo(t, sit.start_date, sit.end_date)}</p>
-          {iAmLead && (
+          <p className="m-0 truncate text-[16px] font-[700]">{title}</p>
+          <p className="m-0 mt-0.5 text-[13.5px]" style={{ color: K.paleGreen }}>{youCover ? t("sitCards.you", "You") : caregiverName} · {who} · {rangeTo(t, sit.start_date, sit.end_date)}</p>
+          {iAmLead && !(youCover && !sit.title?.trim()) && (
             <span className="mt-1 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[12px] font-[700]" style={{ background: K.lime, color: K.forest }}>
               <Star className="size-3" /> {t("sitCards.youreInCharge", "You're in charge")}
             </span>
@@ -131,21 +173,24 @@ export function ActiveSitCard({ sit, birds, caregiverName, iAmLead, iOwnSit, con
           <Activity className="size-4" /> {t("sitCards.viewHealthChecks", "View health checks")}
         </Link>
         {iOwnSit ? (
-          <Link
-            to="/sit-preview/$sitId"
-            params={{ sitId: sit.id }}
-            state={{ previewToken: sit.invite_token ?? null, previewLabel: caregiverName, previewHousehold: household } as any}
-            className="inline-flex min-h-[48px] items-center justify-center gap-1.5 rounded-full border-2 text-[15px] font-[700] text-white active:scale-[0.99]"
-            style={{ borderColor: "rgba(255,255,255,0.45)" }}
-          >
-            <Eye className="size-4" /> {t("sitCards.seeWhatSees", "See what {{name}} sees", { name: firstWord(caregiverName) })}
-          </Link>
-        ) : birds.length > 0 ? (
+          // Household caregivers use the app itself — there's no sitter view to preview.
+          !household && (
+            <Link
+              to="/sit-preview/$sitId"
+              params={{ sitId: sit.id }}
+              state={{ previewToken: sit.invite_token ?? null, previewLabel: caregiverName, previewHousehold: household } as any}
+              className="inline-flex min-h-[48px] items-center justify-center gap-1.5 rounded-full border-2 text-[15px] font-[700] text-white active:scale-[0.99]"
+              style={{ borderColor: "rgba(255,255,255,0.45)" }}
+            >
+              <Eye className="size-4" /> {t("sitCards.seeWhatSees", "See what {{name}} sees", { name: firstWord(caregiverName) })}
+            </Link>
+          )
+        ) : (
           // Covering caregiver: their actual care view, not the owner's preview.
-          <Link to="/birds/$birdId/care-plan" params={{ birdId: birds[0].id }} className="inline-flex min-h-[48px] items-center justify-center gap-1.5 rounded-full border-2 text-[15px] font-[700] text-white" style={{ borderColor: "rgba(255,255,255,0.45)" }}>
+          <CarePlanButton birds={birds} className="inline-flex min-h-[48px] items-center justify-center gap-1.5 rounded-full border-2 text-[15px] font-[700] text-white" style={{ borderColor: "rgba(255,255,255,0.45)" }}>
             <Eye className="size-4" /> {t("sitCards.viewCarePlan", "View care plan")}
-          </Link>
-        ) : null}
+          </CarePlanButton>
+        )}
       </div>
 
       {(showCopyLink || canEdit) && (
@@ -176,6 +221,9 @@ export function UpcomingSitCard({
   const navigate = useNavigate();
   const household = !!sit.caregiver_user_id;
   const first = firstWord(caregiverName);
+  // The signed-in member is the one covering: speak to them, not about them.
+  const youCover = household && !!iAmLead;
+  const title = youCover ? sit.title?.trim() || t("sitCards.youreCovering", "You're covering this sit") : sitTitle(t, sit, caregiverName);
 
   return (
     <KyaCard className="p-4">
@@ -183,11 +231,11 @@ export function UpcomingSitCard({
         <CaregiverAvatar name={caregiverName} household={household} />
         <div className="min-w-0 flex-1">
           {contextTag && <div className="mb-1"><ContextTag tag={contextTag} /></div>}
-          <p className="m-0 truncate text-[16px] font-[700]">{sitTitle(t, sit, caregiverName)}</p>
+          <p className="m-0 truncate text-[16px] font-[700]">{title}</p>
           <p className="m-0 mt-0.5 text-[13.5px]" style={{ color: K.quiet }}>
-            {caregiverName} · {household ? t("sitCards.household", "Household") : t("sitCards.sitter", "Sitter")} · {rangeTo(t, sit.start_date, sit.end_date)}
+            {youCover ? t("sitCards.you", "You") : caregiverName} · {household ? t("sitCards.household", "Household") : t("sitCards.sitter", "Sitter")} · {rangeTo(t, sit.start_date, sit.end_date)}
           </p>
-          {iAmLead && (
+          {iAmLead && !(youCover && !sit.title?.trim()) && (
             <span className="mt-1 inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[12px] font-[700]" style={{ background: K.lime, color: K.forest }}>
               <Star className="size-3" /> {t("sitCards.youreInCharge", "You're in charge")}
             </span>
@@ -213,15 +261,18 @@ export function UpcomingSitCard({
               </button>
             )}
             <div className="flex gap-2">
-              <Link
-                to="/sit-preview/$sitId"
-                params={{ sitId: sit.id }}
-                state={{ previewToken: sit.invite_token ?? null, previewLabel: caregiverName, previewHousehold: household } as any}
-                className={SECONDARY}
-                style={{ borderColor: K.forest, color: K.forest }}
-              >
-                {t("sitCards.seeWhatSees", "See what {{name}} sees", { name: first })}
-              </Link>
+              {/* Household caregivers use the app itself — there's no sitter view to preview. */}
+              {!household && (
+                <Link
+                  to="/sit-preview/$sitId"
+                  params={{ sitId: sit.id }}
+                  state={{ previewToken: sit.invite_token ?? null, previewLabel: caregiverName, previewHousehold: household } as any}
+                  className={SECONDARY}
+                  style={{ borderColor: K.forest, color: K.forest }}
+                >
+                  {t("sitCards.seeWhatSees", "See what {{name}} sees", { name: first })}
+                </Link>
+              )}
               {canEdit && (
                 <button type="button" onClick={() => navigate({ to: "/sits/edit/$sitId", params: { sitId: sit.id } })} className={SECONDARY} style={{ borderColor: K.forest, color: K.forest }}>
                   {t("sitCards.editSit", "Edit sit")}
@@ -234,9 +285,9 @@ export function UpcomingSitCard({
         // Covering caregiver / member: their care view.
         birds.length > 0 && (
           <div className="mt-3.5">
-            <Link to="/birds/$birdId/care-plan" params={{ birdId: birds[0].id }} className={`${SECONDARY} w-full`} style={{ borderColor: K.forest, color: K.forest }}>
+            <CarePlanButton birds={birds} className={`${SECONDARY} w-full`} style={{ borderColor: K.forest, color: K.forest }}>
               <Eye className="size-4" /> {t("sitCards.viewCarePlan", "View care plan")}
-            </Link>
+            </CarePlanButton>
           </div>
         )
       )}

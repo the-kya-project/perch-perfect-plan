@@ -7,6 +7,7 @@ import { Calendar, Link2, Copy, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { SitChecklist } from "@/components/SitChecklist";
 import { formatDateRangeUS } from "@/lib/dates";
+import { fetchDisplayNames } from "@/lib/resolveNames";
 import { useTranslation, Trans } from "react-i18next";
 
 type Bird = { id: string; name: string };
@@ -29,15 +30,13 @@ export function SitCard({ sit, birds = [], allBirds, onChange }: { sit: any; bir
   const tone = sit.revoked || expired || ended ? "bg-[#e8e1d0] text-[#5f5e5a]" : upcoming ? "bg-[#f4e4c4] text-[#84600f]" : "bg-[#d6e8dc] text-[#1a5e3f]";
   const url = !isHousehold && typeof window !== "undefined" ? `${window.location.origin}/sitter/${sit.invite_token}` : "";
 
-  // Resolve the household caregiver's display name for the card.
+  // Resolve the household caregiver's display name for the card — server-side,
+  // since profiles RLS is self-only (a direct read of their row comes back empty).
   const { data: rawCaregiverName } = useQuery({
     queryKey: ["sit-caregiver-name", sit.caregiver_user_id],
     enabled: isHousehold,
     staleTime: 5 * 60_000,
-    queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("display_name").eq("id", sit.caregiver_user_id).maybeSingle();
-      return (data?.display_name ?? "").toString().trim();
-    },
+    queryFn: async () => (await fetchDisplayNames([sit.caregiver_user_id], { rethrow: true }))[sit.caregiver_user_id] ?? "",
   });
 
   // Empty display name → "Household member" (translated at display, not cached).
@@ -148,7 +147,8 @@ export function SitCard({ sit, birds = [], allBirds, onChange }: { sit: any; bir
       {!sit.revoked && (
         <SitChecklist sit={sit} birds={birds} onSitChanged={onChange} />
       )}
-      {birds.length > 0 && (
+      {/* Household caregivers use the app itself — there's no sitter view to preview. */}
+      {!isHousehold && birds.length > 0 && (
         <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs font-medium">
           <span className="text-[#5f5e5a]">{t("sitCard.previewAsSitter", "Preview as your sitter:")}</span>
           {birds.map((b) => (

@@ -13,6 +13,8 @@ import {
   greeting, sitLine, sitterFirstName,
 } from "@/components/sitter/sitterShared";
 import { useSitterContext } from "@/routes/sitter/$token/route";
+import { LoadError } from "@/components/LoadError";
+import { useLoadState } from "@/lib/useTooLong";
 
 // Sitter Home tab (sits with 2+ birds): the greeting and sit line, then one
 // white card per bird with today's task progress and daily-check status, then
@@ -32,7 +34,12 @@ export function SitterDashboard({ token }: { token: string }) {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { data: ctx } = useSitterContext(token);
-  const { data, isLoading } = useSitterDashboard(token);
+  const dashQ = useSitterDashboard(token);
+  const { data } = dashQ;
+  // If the summary fails, say so with a retry rather than an empty "Birds in
+  // your care" (which reads as no birds on this sit).
+  const load = useLoadState([dashQ]);
+  const isLoading = load.loading;
   const birds = (data?.birds ?? []) as any[];
   const checksDone = birds.filter((b) => b.scanDone).length;
 
@@ -46,13 +53,15 @@ export function SitterDashboard({ token }: { token: string }) {
         <section data-coach="home-overview" className="flex flex-col gap-3">
           <div className="flex items-baseline justify-between gap-3 px-1">
             <KyaHeading size={21}>{t("sitterDashboard.birdsInYourCare", "Birds in your care")}</KyaHeading>
-            {!isLoading && birds.length > 0 && (
+            {!isLoading && !load.failed && birds.length > 0 && (
               <span className="shrink-0 text-[13px]" style={{ color: K.quiet }}>
                 {t("sitterDashboard.checksDone", "{{done}} of {{total}} checks done", { done: checksDone, total: birds.length })}
               </span>
             )}
           </div>
-          {isLoading ? (
+          {load.failed ? (
+            <LoadError onRetry={load.retry} />
+          ) : isLoading ? (
             <ul className="m-0 flex list-none flex-col gap-3 p-0" aria-busy="true">
               {(ctx.birds ?? []).map((b: any) => (
                 <li key={b.id} className="h-[104px] animate-pulse rounded-[20px] bg-white" />

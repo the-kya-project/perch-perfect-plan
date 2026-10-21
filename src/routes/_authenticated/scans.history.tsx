@@ -12,6 +12,8 @@ import { rangeTo, sitTitle } from "@/lib/sitText";
 import { K, KyaPage, KyaBody, KyaLink } from "@/components/kya";
 import { PageHeader } from "@/components/headers";
 import { EntryDays, sitCaregiverName, type EntryContext } from "@/components/HealthEntries";
+import { LoadError } from "@/components/LoadError";
+import { useLoadState } from "@/lib/useTooLong";
 
 // Every daily check and weight for the owner's birds, newest first, with
 // filters for who logged it, the bird, the type, and (from a sit card) one sit.
@@ -42,7 +44,7 @@ function HealthHistoryPage() {
   const [shown, setShown] = useState(PAGE);
   const [limit, setLimit] = useState(300);
 
-  const { data: birdsRaw } = useQuery({
+  const birdsQ = useQuery({
     queryKey: ["birds"],
     queryFn: async () => {
       const { data, error } = await fetchBirdList();
@@ -50,8 +52,14 @@ function HealthHistoryPage() {
       return data ?? [];
     },
   });
+  const birdsRaw = birdsQ.data;
   const birds = ((birdsRaw ?? []) as any[]).slice().sort((a, b) => String(a.name).localeCompare(String(b.name)));
-  const { data: hist, isLoading, isError } = useHealthHistory(birds.map((b) => b.id), myId, limit);
+  const histQ = useHealthHistory(birds.map((b) => b.id), myId, limit);
+  const { data: hist } = histQ;
+  // The history query is disabled until the bird list lands (no ids yet), so
+  // its own isLoading is false meanwhile: count the bird list as loading too,
+  // or "Nothing here yet" flashes before anything was fetched.
+  const load = useLoadState([birdsQ, histQ]);
 
   const sits = hist?.sits ?? [];
   const names = hist?.names ?? {};
@@ -149,9 +157,9 @@ function HealthHistoryPage() {
             </div>
           )}
 
-          {isError && !hist ? (
-            <p className="m-0 px-1 py-4 text-[15px]" style={{ color: K.quiet }}>{t("healthTab.loadError", "We couldn't load your health history. Try again in a moment.")}</p>
-          ) : isLoading && !hist ? (
+          {load.failed ? (
+            <LoadError onRetry={load.retry} />
+          ) : load.loading ? (
             <p className="m-0 px-1 text-[14px]" style={{ color: K.quiet }}>{t("healthTab.loading", "Loading…")}</p>
           ) : visible.length === 0 ? (
             <p className="m-0 px-1 py-4 text-[15px]" style={{ color: K.quiet }}>{t("healthTab.nothingYet", "Nothing here yet.")}</p>

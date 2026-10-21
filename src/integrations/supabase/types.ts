@@ -1549,6 +1549,7 @@ export type Database = {
           sitter_name: string | null
           start_date: string
           status: string
+          time_zone: string | null
           title: string | null
           token_expires_at: string | null
         }
@@ -1567,6 +1568,7 @@ export type Database = {
           sitter_name?: string | null
           start_date: string
           status?: string
+          time_zone?: string | null
           title?: string | null
           token_expires_at?: string | null
         }
@@ -1585,6 +1587,7 @@ export type Database = {
           sitter_name?: string | null
           start_date?: string
           status?: string
+          time_zone?: string | null
           title?: string | null
           token_expires_at?: string | null
         }

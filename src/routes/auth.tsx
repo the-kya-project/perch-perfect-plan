@@ -2,8 +2,6 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
-import { signInWithGoogle, signInWithApple } from "@/lib/nativeOAuth";
-import { isIOSApp } from "@/lib/nativeApp";
 import { lovable } from "@/integrations/lovable";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
@@ -12,9 +10,10 @@ import { captureLead } from "@/lib/captureLead";
 import { attributionMetadata, getFirstTouch } from "@/lib/attribution";
 import { currentLocale } from "@/lib/i18n/ownerLocale";
 import { PENDING_EMAIL_KEY } from "./confirm-email";
-import { K, KyaLabel, KyaSecondaryButton } from "@/components/kya";
+import { K, KyaLabel } from "@/components/kya";
 import { FrontDoorBody, FrontDoorError, FrontDoorHeader, FrontDoorPage, LegalLinks } from "@/components/frontDoor";
 import { CheckEmailView } from "@/components/CheckEmailView";
+import { SocialSignInButtons } from "@/components/SocialSignInButtons";
 import { authErrorMessage } from "@/lib/authErrorMessage";
 import { useTranslation, Trans } from "react-i18next";
 import i18next from "i18next";
@@ -50,7 +49,7 @@ function AuthPage() {
   const [marketingOptIn, setMarketingOptIn] = useState(true);
   const [loading, setLoading] = useState(false);
   // Which button started the current request, for its spinner.
-  const [busy, setBusy] = useState<"email" | "google" | "apple" | "reset" | null>(null);
+  const [busy, setBusy] = useState<"email" | "reset" | null>(null);
   // Errors show in a card on the page (FrontDoorError), never only as a toast.
   const [error, setError] = useState<string | null>(null);
   // Forgot password lives on this page as a step of sign in, not a URL mode:
@@ -58,12 +57,6 @@ function AuthPage() {
   const [view, setView] = useState<"form" | "forgot" | "resetSent">("form");
   const [resetCooldown, setResetCooldown] = useState(0);
   const [resetJustSent, setResetJustSent] = useState(false);
-  // Read after mount, not during render: the server can't tell it's rendering
-  // for the iOS app, so rendering the Apple button from isIOSApp() directly made
-  // the server HTML and the app's first render disagree whenever the app opened
-  // straight onto /auth (React errors #422/#520, recovered by a re-render).
-  const [showApple, setShowApple] = useState(false);
-  useEffect(() => setShowApple(isIOSApp()), []);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -209,42 +202,6 @@ function AuthPage() {
     }
   }
 
-  async function handleGoogle() {
-    setError(null);
-    setLoading(true);
-    setBusy("google");
-    try {
-      // Land on the one-time welcome; it redirects returning owners straight to
-      // the dashboard (gated by an account flag), so only new owners see it.
-      // The provider round trip can't carry a deep link, so /welcome picks it
-      // up from the stash and forwards there instead.
-      stashReturnTo(returnTo);
-      await signInWithGoogle(window.location.origin + "/welcome");
-      setLoading(false);
-      setBusy(null);
-    } catch (err: any) {
-      setError(authErrorMessage(err, t("auth.googleSignInFailed", "Google sign-in failed.")));
-      setLoading(false);
-      setBusy(null);
-    }
-  }
-
-  async function handleApple() {
-    setError(null);
-    setLoading(true);
-    setBusy("apple");
-    try {
-      stashReturnTo(returnTo);
-      await signInWithApple(window.location.origin + "/welcome");
-      setLoading(false);
-      setBusy(null);
-    } catch (err: any) {
-      setError(authErrorMessage(err, t("auth.appleSignInFailed", "Apple sign-in failed.")));
-      setLoading(false);
-      setBusy(null);
-    }
-  }
-
   async function handleForgotPassword() {
     setError(null);
     const trimmed = email.trim();
@@ -364,25 +321,17 @@ function AuthPage() {
           </form>
         ) : (
           <>
-            <KyaSecondaryButton
-              className="w-full"
-              icon={busy === "google" ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <GoogleIcon />}
-              onClick={handleGoogle}
+            {/* Land on the one-time welcome; it redirects returning owners
+                straight to the dashboard (gated by an account flag), so only new
+                owners see it. The provider round trip can't carry a deep link,
+                so /welcome picks it up from the stash and forwards there instead. */}
+            <SocialSignInButtons
+              redirectPath="/welcome"
+              beforeStart={() => stashReturnTo(returnTo)}
               disabled={loading}
-            >
-              {t("auth.continueWithGoogle", "Continue with Google")}
-            </KyaSecondaryButton>
-
-            {showApple && (
-              <KyaSecondaryButton
-                className="w-full"
-                icon={busy === "apple" ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <AppleIcon />}
-                onClick={handleApple}
-                disabled={loading}
-              >
-                {t("auth.continueWithApple", "Continue with Apple")}
-              </KyaSecondaryButton>
-            )}
+              onBusyChange={setLoading}
+              onError={setError}
+            />
 
             <div className="flex items-center gap-3 py-1" style={{ color: K.quiet }}>
               <div className="h-px flex-1" style={{ background: "#d5dfd5" }} />
@@ -525,21 +474,5 @@ function SubmitButton({ children, disabled, busy }: { children: React.ReactNode;
       {busy && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
       {children}
     </button>
-  );
-}
-
-function GoogleIcon() {
-  return (
-    <svg className="size-4" viewBox="0 0 24 24" aria-hidden>
-      <path fill="#EA4335" d="M12 10.2v3.9h5.5c-.2 1.4-1.6 4-5.5 4-3.3 0-6-2.7-6-6.1s2.7-6.1 6-6.1c1.9 0 3.1.8 3.8 1.5l2.6-2.5C16.7 3.3 14.6 2.3 12 2.3 6.7 2.3 2.4 6.6 2.4 12s4.3 9.7 9.6 9.7c5.6 0 9.2-3.9 9.2-9.4 0-.6-.1-1.1-.2-1.6H12z"/>
-    </svg>
-  );
-}
-
-function AppleIcon() {
-  return (
-    <svg className="size-4" viewBox="0 0 24 24" aria-hidden fill="currentColor">
-      <path d="M16.365 1.43c0 1.14-.417 2.2-1.11 2.98-.833.94-2.2 1.66-3.32 1.57-.14-1.1.42-2.27 1.06-2.99.72-.82 2-1.44 3.02-1.56.02.14.35.6.35 0zM20.5 17.02c-.55 1.27-.82 1.84-1.53 2.96-.99 1.56-2.39 3.5-4.12 3.51-1.54.02-1.93-1-4.02-.99-2.09.01-2.52 1.01-4.06.99-1.73-.02-3.05-1.77-4.04-3.33C-.05 16.5-.36 11.2 1.94 8.36 3.05 6.98 4.66 6.11 6.2 6.11c1.57 0 2.55 1 3.85 1 1.26 0 2.03-1 3.85-1 1.36 0 2.8.74 3.83 2.02-3.36 1.84-2.81 6.63.77 7.89z"/>
-    </svg>
   );
 }

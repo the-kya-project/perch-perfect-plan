@@ -19,6 +19,8 @@ import { compressImageToDataUrl, dataUrlBytes, MAX_UPLOAD_BYTES } from "@/lib/im
 import { K, KyaPage, KyaBody, KyaCard, KyaField, KyaHeading, KyaLink, KyaPrimaryButton, KyaSecondaryButton } from "@/components/kya";
 import { PageHeader, useGoBack } from "@/components/headers";
 import { friendlyError } from "@/lib/errorMessage";
+import { LoadError } from "@/components/LoadError";
+import { useLoadState } from "@/lib/useTooLong";
 import { formatLocalDate } from "@/lib/dates";
 import { localDateISO } from "@/lib/localDay";
 
@@ -96,7 +98,7 @@ function IdentityFacet() {
   // Household members without it view identity read-only.
   const canEditIdentity = useCapability("manage_flock", { birdId });
 
-  const { data: bird } = useQuery({
+  const birdQ = useQuery({
     queryKey: ["bird-identity", birdId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -108,6 +110,11 @@ function IdentityFacet() {
       return data as Identity | null;
     },
   });
+  const { data: bird } = birdQ;
+  // null = the bird is gone or no longer shared with you (no retry); a failed
+  // or stalled request gets "Try again". Neither pulses forever.
+  const load = useLoadState([birdQ]);
+  const birdMissing = birdQ.isSuccess && !bird;
 
   // ?edit=1 → open the form once the bird and the permission have loaded,
   // then drop the param so a refresh or back doesn't reopen it.
@@ -154,7 +161,14 @@ function IdentityFacet() {
       />
 
       <KyaBody>
-        {!bird ? (
+        {birdMissing || load.failed ? (
+          <LoadError
+            missing={birdMissing}
+            onRetry={load.retry}
+            onBack={birdMissing ? () => navigate({ to: "/dashboard" }) : undefined}
+            backLabel={birdMissing ? t("loadError.backHome", "Back to home") : undefined}
+          />
+        ) : !bird ? (
           <div className="h-40 animate-pulse rounded-[20px] bg-white/70" />
         ) : editing ? (
           <IdentityForm birdId={birdId} bird={bird} onClose={() => setEditing(false)} onSaved={() => { setEditing(false); crossInvalidate(); }} />

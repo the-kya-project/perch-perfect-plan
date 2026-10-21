@@ -145,8 +145,8 @@ export const getHouseholdHome = createServerFn({ method: "GET" })
 // The authenticated client can't read other users' profiles (profiles RLS is
 // self-only), so name-display surfaces (sit cover picker, sit card/detail
 // "in charge"/caregiver) must resolve through here. Scoped for safety: only
-// returns names for the caller themselves + members of birds the caller owns,
-// so it can't be used to look up arbitrary users.
+// returns names for the caller themselves + people who share a bird with the
+// caller (owner or member), so it can't be used to look up arbitrary users.
 export type ResolvedName = { name: string | null; email: string | null };
 export const resolveHouseholdNames = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
@@ -159,13 +159,31 @@ export const resolveHouseholdNames = createServerFn({ method: "GET" })
     const want = Array.from(new Set((data.userIds ?? []).filter(Boolean)));
     if (!want.length) return {};
 
-    // Allowed = the caller + everyone who is a member of a bird the caller owns.
+    // Allowed = the caller + everyone who shares a bird with the caller: members
+    // of birds the caller owns, and — for birds the caller is a member of — that
+    // bird's owner and its other members (so a household member sees the names
+    // of the owner and co-members on sits, logs, and checks too).
+    // Emails go only to the caller and the owner of the birds (as before); people
+    // reached through a bird the caller merely helps with get a name only.
     const allowed = new Set<string>([ownerId]);
-    const { data: ownedBirds } = await sb.from("birds").select("id").eq("owner_id", ownerId);
-    const birdIds = (ownedBirds ?? []).map((b: any) => b.id);
-    if (birdIds.length) {
-      const { data: mem } = await sb.from("bird_members").select("user_id").in("bird_id", birdIds);
+    const withEmail = new Set<string>([ownerId]);
+    const [{ data: ownedBirds }, { data: myMemberships }] = await Promise.all([
+      sb.from("birds").select("id").eq("owner_id", ownerId),
+      sb.from("bird_members").select("bird_id").eq("user_id", ownerId),
+    ]);
+    const ownedIds = (ownedBirds ?? []).map((b: any) => b.id as string);
+    const memberOfIds = (myMemberships ?? []).map((m: any) => m.bird_id as string);
+    if (ownedIds.length) {
+      const { data: mem } = await sb.from("bird_members").select("user_id").in("bird_id", ownedIds);
+      for (const m of (mem ?? []) as any[]) { allowed.add(m.user_id); withEmail.add(m.user_id); }
+    }
+    if (memberOfIds.length) {
+      const [{ data: mem }, { data: owners }] = await Promise.all([
+        sb.from("bird_members").select("user_id").in("bird_id", memberOfIds),
+        sb.from("birds").select("owner_id").in("id", memberOfIds),
+      ]);
       for (const m of (mem ?? []) as any[]) allowed.add(m.user_id);
+      for (const o of (owners ?? []) as any[]) if (o.owner_id) allowed.add(o.owner_id);
     }
     const ids = want.filter((id) => allowed.has(id));
     if (!ids.length) return {};
@@ -175,7 +193,7 @@ export const resolveHouseholdNames = createServerFn({ method: "GET" })
     for (const p of (profs ?? []) as any[]) {
       out[p.id] = {
         name: (p.display_name ?? "").toString().trim() || null,
-        email: (p.email ?? "").toString().trim() || null,
+        email: withEmail.has(p.id) ? (p.email ?? "").toString().trim() || null : null,
       };
     }
     return out;

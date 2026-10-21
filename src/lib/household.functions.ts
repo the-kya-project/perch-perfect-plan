@@ -317,6 +317,9 @@ export const leaveHousehold = createServerFn({ method: "POST" })
   });
 
 // ---- Public: read an invite by token (safe fields only) --------------------
+/** Why an invite link can't be used; the invite screen picks the copy. */
+export type InviteLinkProblem = "expired" | "accepted" | "declined" | "canceled" | "not_found";
+
 export const getHouseholdInvite = createServerFn({ method: "GET" })
   .inputValidator((d: { token: string }) => z.object({ token: z.string().min(16) }).parse(d))
   .handler(async ({ data }) => {
@@ -328,7 +331,10 @@ export const getHouseholdInvite = createServerFn({ method: "GET" })
       .select("id, owner_id, invitee_email, invitee_name, bird_ids, status, expires_at, preset")
       .eq("token", data.token)
       .maybeSingle();
-    if (!invite) return { valid: false as const, inviterName: null as string | null };
+    // Why an invite can't be used, as a code the screen turns into copy.
+    // Only the inviter's name comes back with it (the link holder already has
+    // it from the email) so the screen can say who to ask. No bird data.
+    if (!invite) return { valid: false as const, reason: "not_found" as InviteLinkProblem, inviterName: null as string | null };
 
     const expired = new Date(invite.expires_at).getTime() <= Date.now();
     if (invite.status !== "pending" || expired) {
@@ -336,9 +342,12 @@ export const getHouseholdInvite = createServerFn({ method: "GET" })
       if (invite.status === "pending" && expired) {
         await sb.from("household_invites").update({ status: "expired" }).eq("id", invite.id);
       }
-      // Only the inviter's name (the link holder already has it from the
-      // email) so the screen can say who to ask for a new one. No bird data.
-      return { valid: false as const, inviterName: (await ownerDisplayNameRaw(sb, invite.owner_id)) as string | null };
+      const reason: InviteLinkProblem =
+        invite.status === "accepted" ? "accepted"
+        : invite.status === "declined" ? "declined"
+        : invite.status === "canceled" ? "canceled"
+        : "expired";
+      return { valid: false as const, reason, inviterName: (await ownerDisplayNameRaw(sb, invite.owner_id)) as string | null };
     }
 
     // Raw data only: the invite screen joins the names and supplies the
@@ -448,11 +457,13 @@ export const declineHouseholdInvite = createServerFn({ method: "POST" })
   .inputValidator((d: { token: string }) => z.object({ token: z.string().min(16) }).parse(d))
   .handler(async ({ data }) => {
     const sb = await getAdmin();
-    await sb
+    const { error } = await sb
       .from("household_invites")
       .update({ status: "declined" })
       .eq("token", data.token)
       .eq("status", "pending");
+    // A code, not copy: the invite screen shows its own message.
+    if (error) { console.error("[invite] decline failed", error); throw new Error("decline_failed"); }
     return { ok: true };
   });
 
@@ -503,6 +514,46 @@ export const getBirdEmergencyReadiness = createServerFn({ method: "GET" })
       homeDifferent: homeDifferences(plan, home).length > 0,
       emergencyDifferent: emergencyDifferent(contacts, defaults),
     };
+  });
+
+/**
+ * The bird OWNER's account emergency defaults and display name, for a bird the
+ * caller is a member of. RLS on owner_emergency_defaults only lets a user read
+ * their own row, so household members would otherwise see their OWN defaults
+ * on someone else's bird. Read-only: members can never edit the owner's
+ * account defaults (writes stay owner-only through RLS).
+ */
+export const getBirdOwnerEmergency = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: { birdId: string }) => z.object({ birdId: z.string().uuid() }).parse(d))
+  .handler(async ({ data, context }) => {
+    const sb = await getAdmin();
+    const userId = context.userId as string;
+    const { data: membership } = await sb
+      .from("bird_members")
+      .select("role")
+      .eq("bird_id", data.birdId)
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (!membership) throw new Error("Not found.");
+
+    const { data: bird } = await sb.from("birds").select("owner_id").eq("id", data.birdId).maybeSingle();
+    if (!bird) throw new Error("Not found.");
+    const ownerId = (bird as any).owner_id as string;
+    const [{ data: defaults }, { data: prof }] = await Promise.all([
+      sb.from("owner_emergency_defaults").select("*").eq("owner_id", ownerId).maybeSingle(),
+      sb.from("profiles").select("display_name").eq("id", ownerId).maybeSingle(),
+    ]);
+    // Real name only — never an email prefix. Empty → the client shows a
+    // localized "the owner" fallback.
+    let ownerName = ((prof as any)?.display_name ?? "").toString().trim();
+    if (!ownerName) {
+      try {
+        const { data: u } = await sb.auth.admin.getUserById(ownerId);
+        ownerName = (u?.user?.user_metadata?.display_name ?? "").toString().trim();
+      } catch { /* keep empty */ }
+    }
+    return { defaults: (defaults ?? null) as Record<string, any> | null, ownerName };
   });
 
 /** The care-plan sections a sit's birds are still missing, for the soft

@@ -14,8 +14,11 @@ import { BottomSheet } from "@/components/setup/BottomSheet";
 import { friendlyError } from "@/lib/errorMessage";
 import { daysAgo } from "@/lib/scanConcern";
 import { useLoggedBy } from "@/lib/useLoggedBy";
+import { weightThen } from "@/lib/weightThen";
 import { K, SERIF, KyaPage, KyaBody, KyaCard, KyaHeading, KyaLink, KyaPrimaryButton } from "@/components/kya";
 import { PageHeader } from "@/components/headers";
+import { LoadError } from "@/components/LoadError";
+import { useLoadState } from "@/lib/useTooLong";
 import i18next from "i18next";
 import type { TFunction } from "i18next";
 import { useTranslation } from "react-i18next";
@@ -100,13 +103,16 @@ function WeightFacet() {
   const { data: bird } = useQuery({
     queryKey: ["bird-name", birdId],
     queryFn: async () => {
-      const { data } = await supabase.from("birds").select("name").eq("id", birdId).maybeSingle();
+      // Throws on a failed request (same key as the emergency page, which tells
+      // a missing bird from a dropped connection by it).
+      const { data, error } = await supabase.from("birds").select("name").eq("id", birdId).maybeSingle();
+      if (error) throw error;
       return data as { name: string } | null;
     },
   });
   const name = bird?.name ?? t("birdWeight.thisBird", "this bird");
 
-  const { data: entries } = useQuery({
+  const entriesQ = useQuery({
     queryKey: ["weight-entries", birdId],
     // A freshly-logged weight (or a sitter weigh-in) must show without a manual
     // reload — refetch when the screen regains focus.
@@ -125,6 +131,10 @@ function WeightFacet() {
     },
   });
 
+  const entries = entriesQ.data;
+  // "No weights yet" only once the entries are actually known; a failed load
+  // gets a retry instead.
+  const load = useLoadState([entriesQ]);
   const all = entries ?? [];
   const latest = all[0];
   const loggedBy = useLoggedBy(all.map((e) => ({ by: e.logged_by, source: e.source, sitId: e.sit_id })), isOwner);
@@ -180,6 +190,8 @@ function WeightFacet() {
               <span className="text-[48px] font-[700] leading-none" style={{ fontFamily: SERIF }}>{grams(t, latest.grams)}</span>
               {latestMeta && <span className="text-[14px]" style={{ color: K.paleGreen }}>{latestMeta}</span>}
             </div>
+          ) : entries === undefined ? (
+            !load.failed && <div className="mt-3 h-[44px] w-32 animate-pulse rounded-[10px] bg-white/15" aria-hidden="true" />
           ) : (
             <p className="m-0 mt-2 text-[15px]" style={{ color: K.paleGreen }}>{t("birdWeight.bodyEmpty", "No weights yet. Pop {{name}} on a scale and log the first one.", { name })}</p>
           )}
@@ -202,6 +214,8 @@ function WeightFacet() {
               onSaved={() => { setLogOpen(false); setEditing(null); refresh(); }}
             />
           )}
+
+          {load.failed && <LoadError onRetry={load.retry} />}
 
           {all.length > 0 && (
             <>
@@ -297,11 +311,10 @@ function ChartCard({ entries, win, setWin, isMine }: { entries: Entry[]; win: Wi
   const values = inRange.map((e) => e.grams);
   const lowest = values.length ? Math.min(...values) : null;
   const highest = values.length ? Math.max(...values) : null;
-  // The weight closest to the start of the range.
-  const then = entries.reduce<Entry | null>((best, e) => {
-    const d = Math.abs(+new Date(e.measured_at) - start);
-    return !best || d < Math.abs(+new Date(best.measured_at) - start) ? e : best;
-  }, null);
+  // The weight logged near the start of the range (±7 / ±14 / ±30 days for
+  // 30 days / 90 days / 1 year), or none: a weight from last week isn't
+  // "1 year ago".
+  const then = weightThen(entries, win, now);
 
   return (
     <KyaCard className="p-4">
@@ -336,14 +349,20 @@ function ChartCard({ entries, win, setWin, isMine }: { entries: Entry[]; win: Wi
       </div>
 
       <div className="mt-3 grid grid-cols-3 gap-2 pt-3" style={{ borderTop: `1px solid ${K.line}` }}>
-        {[
-          [t("birdWeight.lowest", "Lowest"), lowest],
-          [t("birdWeight.highest", "Highest"), highest],
-          [agoLabel(t, win), then?.grams ?? null],
-        ].map(([label, value]) => (
-          <div key={label as string}>
+        {([
+          [t("birdWeight.lowest", "Lowest"), lowest, null],
+          [t("birdWeight.highest", "Highest"), highest, null],
+          [agoLabel(t, win), then?.grams ?? null, t("birdWeight.noWeightThen", "No weight then")],
+        ] as [string, number | null, string | null][]).map(([label, value, emptyText]) => (
+          <div key={label}>
             <p className="m-0 text-[12.5px]" style={{ color: K.quiet }}>{label}</p>
-            <p className="m-0 mt-0.5 text-[16px] font-[700]">{value != null ? grams(t, value as number) : "—"}</p>
+            {value != null ? (
+              <p className="m-0 mt-0.5 text-[16px] font-[700]">{grams(t, value)}</p>
+            ) : emptyText ? (
+              <p className="m-0 mt-0.5 text-[14px]" style={{ color: K.quiet }}>{emptyText}</p>
+            ) : (
+              <p className="m-0 mt-0.5 text-[16px] font-[700]">—</p>
+            )}
           </div>
         ))}
       </div>

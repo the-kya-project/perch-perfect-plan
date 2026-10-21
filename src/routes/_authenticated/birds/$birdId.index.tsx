@@ -37,7 +37,7 @@ import { useCarePlanStatus } from "@/lib/useCarePlanStatus";
 import { useLoggedBy } from "@/lib/useLoggedBy";
 import { birdNames } from "@/lib/birdNames";
 import { getHouseholdForBird } from "@/lib/household.functions";
-import { useOwnerEmergency } from "@/lib/useOwnerEmergency";
+import { useBirdOwnerEmergency } from "@/lib/useOwnerEmergency";
 import { emergencyDifferent } from "@/lib/emergency";
 
 // Bird-record home — the new landing when you tap a bird. A glanceable hub for
@@ -259,8 +259,11 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
       return data;
     },
   });
-  const { data: emDefaults } = useOwnerEmergency();
-  const emCustom = emergencyDifferent(emContacts, emDefaults);
+  // The bird OWNER's account info — not the viewer's, for household members.
+  const { defaults: emDefaults, ownerName: emOwnerName } = useBirdOwnerEmergency(birdId);
+  // Only once the owner's info is known; before that every stored value would
+  // read as "custom".
+  const emCustom = emDefaults === undefined ? false : emergencyDifferent(emContacts, emDefaults);
   const canEditPlan = useCapability("edit_care_plans", { birdId });
   const canFlock = useCapability("manage_flock", { birdId });
   // Covering an active sit for this bird (household caregiver) — gates the
@@ -411,7 +414,9 @@ export function BirdRecordBody({ birdId }: { birdId: string }) {
         <KyaRow leading={<KyaIconTile size={38}><BookOpen className="size-5" /></KyaIconTile>} title={t("birdRecord.journal", "Journal")} detail={t("birdRecord.moltMedsVetVisits", "Molt, meds, vet visits")} onClick={() => navigate({ to: "/birds/$birdId/journal", params: { birdId } })} />
         <KyaRow leading={<KyaIconTile size={38}><IdCard className="size-5" /></KyaIconTile>} title={t("birdRecord.identity", "Identity")} detail={t("birdRecord.chipBandHatchDateOrigin", "Chip, band, hatch date, origin, photo")} onClick={() => navigate({ to: "/birds/$birdId/identity", params: { birdId } })} />
         <KyaRow leading={<KyaIconTile size={38}><CalendarHeart className="size-5" /></KyaIconTile>} title={t("birdRecord.moments", "Moments")} detail={t("birdRecord.markTheDaysWorthRemembering", "Mark the days worth remembering")} onClick={() => navigate({ to: "/birds/$birdId/moments", params: { birdId } })} />
-        <KyaRow leading={<KyaIconTile size={38}><Siren className="size-5" /></KyaIconTile>} title={t("birdRecord.emergencyInfo", "Emergency info")} detail={emCustom ? t("birdRecord.emergencyCustom", "Custom for {{name}}", { name }) : t("birdRecord.emergencyShared", "Uses your emergency info")} onClick={() => navigate({ to: "/birds/$birdId/emergency", params: { birdId } })} />
+        <KyaRow leading={<KyaIconTile size={38}><Siren className="size-5" /></KyaIconTile>} title={t("birdRecord.emergencyInfo", "Emergency info")} detail={emCustom ? t("birdRecord.emergencyCustom", "Custom for {{name}}", { name }) : (isOwner
+          ? t("birdRecord.emergencyShared", "Uses your emergency info")
+          : t("birdRecord.emergencySharedOwner", "Uses {{owner}}'s emergency info", { owner: emOwnerName || t("birdRecord.theOwner", "the owner") }))} onClick={() => navigate({ to: "/birds/$birdId/emergency", params: { birdId } })} />
         <KyaRow leading={<KyaIconTile size={38}><FileText className="size-5" /></KyaIconTile>} title={t("birdRecord.vetSummary", "Vet summary")} detail={t("birdRecord.oneCleanSheetForThe", "One clean sheet for the vet")} onClick={() => navigate({ to: "/birds/$birdId/vet-summary", params: { birdId } })} last />
       </KyaCard>
 

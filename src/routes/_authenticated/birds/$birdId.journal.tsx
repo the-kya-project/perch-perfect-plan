@@ -8,6 +8,8 @@ import { Plus, BookOpen, ImagePlus, Loader2, Trash2, Paperclip, FileText } from 
 import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaPrimaryButton, KyaGroupLabel, KyaSheet, KyaField } from "@/components/kya";
 import { PageHeader, useGoBack } from "@/components/headers";
 import { MemberContextBanner } from "@/components/MemberContextBanner";
+import { LoadError } from "@/components/LoadError";
+import { useLoadState } from "@/lib/useTooLong";
 import { useCapability } from "@/lib/useCapability";
 import { useBirdRole } from "@/lib/useBirdRole";
 import { useActiveSitIdForBird } from "@/components/CaregiverHome";
@@ -114,12 +116,15 @@ function JournalFacet() {
   const { data: bird } = useQuery({
     queryKey: ["bird-name", birdId],
     queryFn: async () => {
-      const { data } = await supabase.from("birds").select("name").eq("id", birdId).maybeSingle();
+      // Throws on a failed request (same key as the emergency page, which tells
+      // a missing bird from a dropped connection by it).
+      const { data, error } = await supabase.from("birds").select("name").eq("id", birdId).maybeSingle();
+      if (error) throw error;
       return data as { name: string } | null;
     },
   });
 
-  const { data: entries } = useQuery({
+  const entriesQ = useQuery({
     queryKey: ["journal-entries", birdId],
     refetchOnWindowFocus: true,
     queryFn: async () => {
@@ -135,6 +140,10 @@ function JournalFacet() {
     },
   });
 
+  const entries = entriesQ.data;
+  // Placeholders while entries load, and a retry if they didn't: neither should
+  // read as an empty journal.
+  const load = useLoadState([entriesQ]);
   const all = entries ?? [];
   const paths = all.map((e) => e.photo_path).filter(Boolean) as string[];
   const { data: photoUrls } = useQuery({
@@ -210,7 +219,13 @@ function JournalFacet() {
           })}
         </div>
 
-        {all.length === 0 ? (
+        {load.failed ? (
+          <LoadError onRetry={load.retry} />
+        ) : load.loading ? (
+          <div className="space-y-3" aria-hidden="true">
+            {[0, 1].map((i) => <div key={i} className="h-24 animate-pulse rounded-[20px] bg-white" />)}
+          </div>
+        ) : all.length === 0 ? (
           <KyaCard className="p-7 text-center">
             <BookOpen className="mx-auto size-7" style={{ color: K.moss }} aria-hidden="true" />
             <p className="m-0 mt-3 text-[15px] leading-[1.5]" style={{ color: K.ink }}>{t("birdJournal.emptyIntro", "Nothing here yet. The journal is where you track health and behavior over time — molts, meds, vet visits, a new word, an off day. Add an entry whenever something's worth noting for the record.")}</p>

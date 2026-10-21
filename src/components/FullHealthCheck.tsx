@@ -86,13 +86,14 @@ function weighLine(t: TFunction, sex: Sex): string {
   return t("fullCheck.weighLine_other", "Optional. It goes straight to their weight history.");
 }
 
-export function FullHealthCheck({ birdId, name, sex, vetPhone, submitting, onSubmit, onLeave, variant = "owner", extra }: {
+export function FullHealthCheck({ birdId, name, sex, vet, submitting, onSubmit, onLeave, variant = "owner", extra }: {
   birdId: string;
   name: string;
   /** The birds.sex column as stored ("Male" / "Female" / null). */
   sex: string | null | undefined;
-  /** The bird's effective avian vet phone, or null to hide Call vet. */
-  vetPhone: string | null;
+  /** The bird's vet to call (one record: avian, else after-hours — see
+   *  pickVet), or null / no phone to hide Call vet. */
+  vet: { name: string | null; phone: string | null } | null;
   submitting: boolean;
   onSubmit: (p: FullCheckSubmit) => void;
   onLeave: () => void;
@@ -126,7 +127,7 @@ export function FullHealthCheck({ birdId, name, sex, vetPhone, submitting, onSub
   const { requestClose, guard } = useLeaveGuard(dirty, onLeave);
 
   const flagged = SCAN_FIELDS.filter((f) => answers[f.key] === "not_sure" || answers[f.key] === "concerning");
-  const telHref = vetPhone ? `tel:${vetPhone.replace(/[^\d+]/g, "")}` : null;
+  const telHref = vet?.phone ? `tel:${vet.phone.replace(/[^\d+]/g, "")}` : null;
 
   const handlePhoto = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -321,7 +322,7 @@ export function FullHealthCheck({ birdId, name, sex, vetPhone, submitting, onSub
             </ul>
             {telHref && (
               <a href={telHref} className={`${SECONDARY} mt-1 self-start`} style={{ borderColor: K.forest, color: K.forest }}>
-                <Phone className="size-[18px]" /> {t("fullCheck.callVet", "Call vet")}
+                <Phone className="size-[18px]" /> {vet?.name ? t("fullCheck.callVetNamed", "Call {{name}}", { name: vet.name }) : t("fullCheck.callVet", "Call vet")}
               </a>
             )}
           </section>
