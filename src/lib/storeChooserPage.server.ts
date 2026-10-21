@@ -165,7 +165,10 @@ export function chooserPage(
   /* The generated QR is an inline <svg> inside .qr — make it fill the box. */
   .qr svg { display:block; width:100%; height:100%; }
   .badges { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; align-items:center; }
-  .badges img { display:block; }
+  /* Each badge is at least a 44px tap target: 48px tall, and the link itself
+     is a 48px-tall box so the whole badge (not just its pixels) takes the tap. */
+  .badges a { display:inline-flex; align-items:center; min-height:48px; }
+  .badges img { display:block; height:48px; width:auto; }
   .pill { display:inline-block; background:${LIME}; color:${FOREST}; border-radius:999px; padding:5px 13px; font-size:11.5px; font-weight:700; margin:0 0 14px; }
   @media (max-width:420px) { h1 { font-size:24px; line-height:30px; } }
 </style>
@@ -179,8 +182,8 @@ export function chooserPage(
         <p>${blurb}</p>
         ${qr}
         <div class="badges">
-          <a href="${ios}"><img src="/brand/store/app-store-badge.svg" width="120" height="40" alt="Download on the App Store" /></a>
-          <a href="${android}"><img src="/brand/store/google-play-badge.png" width="103" height="40" alt="Get it on Google Play" /></a>
+          <a href="${ios}"><img src="/brand/store/app-store-badge.svg" width="144" height="48" alt="Download on the App Store" /></a>
+          <a href="${android}"><img src="/brand/store/google-play-badge.png" width="124" height="48" alt="Get it on Google Play" /></a>
         </div>
       </div>
     </div>
@@ -225,7 +228,7 @@ export function androidHandoffPage(utms: Utms = {}, opts: { basePath?: "/get" | 
   p { margin:0 0 20px; font-size:15px; line-height:23px; color:${MUTED}; }
   .cta { display:block; background:${FOREST}; color:#fff; text-decoration:none; font-weight:700; font-size:16px; border-radius:999px; padding:15px 20px; margin:0 0 18px; }
   .small { font-size:13px; line-height:20px; margin:0; }
-  .small a { color:${FOREST}; font-weight:700; }
+  .small a { color:${FOREST}; font-weight:700; display:inline-flex; align-items:center; min-height:44px; }
   .pill { display:inline-block; background:${LIME}; color:${FOREST}; border-radius:999px; padding:5px 13px; font-size:11.5px; font-weight:700; margin:0 0 14px; }
 </style>
 </head><body>

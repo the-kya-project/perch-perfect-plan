@@ -104,7 +104,7 @@ function ResetPasswordPage() {
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <KyaLabel htmlFor="reset-new">{t("resetPassword.newPassword", "New password")}</KyaLabel>
+            <KyaLabel htmlFor="reset-new" required requiredLabel={t("setupUi.required", "Required")}>{t("resetPassword.newPassword", "New password")}</KyaLabel>
             <input
               id="reset-new"
               type="password"
@@ -119,7 +119,7 @@ function ResetPasswordPage() {
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <KyaLabel htmlFor="reset-confirm">{t("resetPassword.confirmNewPassword", "Confirm new password")}</KyaLabel>
+            <KyaLabel htmlFor="reset-confirm" required requiredLabel={t("setupUi.required", "Required")}>{t("resetPassword.confirmNewPassword", "Confirm new password")}</KyaLabel>
             <input
               id="reset-confirm"
               type="password"
