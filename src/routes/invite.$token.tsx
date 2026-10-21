@@ -422,13 +422,14 @@ function LoggedOutAccept({ token, inviteEmail, onLeave, onConfirmSent }: { token
         password={password} setPassword={setPassword}
         labels={{
           firstName: t("invite.firstName", "First name"),
-          firstNamePlaceholder: t("invite.firstNamePlaceholder", "Brittany"),
+          firstNamePlaceholder: t("invite.firstName", "First name"),
           lastName: t("invite.lastName", "Last name"),
-          lastNamePlaceholder: t("invite.lastNamePlaceholder", "King"),
+          lastNamePlaceholder: t("invite.lastName", "Last name"),
           email: t("invite.email", "Email"),
           password: t("invite.createPassword", "Create a password"),
           passwordPlaceholder: t("invite.passwordPlaceholder", "At least 8 characters"),
           or: t("invite.or", "or"),
+          required: t("setupUi.required", "Required"),
         }}
         submit={
           <KyaPrimaryButton disabled={pending || socialBusy} onClick={createAndAccept}>
@@ -456,7 +457,7 @@ function CreateAccountForm({ idPrefix, email, firstName, setFirstName, lastName,
   firstName: string; setFirstName: (v: string) => void;
   lastName: string; setLastName: (v: string) => void;
   password: string; setPassword: (v: string) => void;
-  labels: { firstName: string; firstNamePlaceholder: string; lastName: string; lastNamePlaceholder: string; email: string; password: string; passwordPlaceholder: string; or: string };
+  labels: { firstName: string; firstNamePlaceholder: string; lastName: string; lastNamePlaceholder: string; email: string; password: string; passwordPlaceholder: string; or: string; required: string };
   submit: ReactNode;
   social: ReactNode;
 }) {
@@ -464,8 +465,8 @@ function CreateAccountForm({ idPrefix, email, firstName, setFirstName, lastName,
     <KyaCard className="flex flex-col gap-4 p-4">
       <div className="grid grid-cols-2 gap-3">
         <div className="flex min-w-0 flex-col gap-1.5">
-          <KyaLabel htmlFor={`${idPrefix}-first`}>{labels.firstName}</KyaLabel>
-          <input id={`${idPrefix}-first`} className="kya-input" value={firstName} maxLength={60} onChange={(e) => setFirstName(e.target.value)} placeholder={labels.firstNamePlaceholder} autoComplete="given-name" />
+          <KyaLabel htmlFor={`${idPrefix}-first`} required requiredLabel={labels.required}>{labels.firstName}</KyaLabel>
+          <input id={`${idPrefix}-first`} className="kya-input" value={firstName} maxLength={60} onChange={(e) => setFirstName(e.target.value)} placeholder={labels.firstNamePlaceholder} autoComplete="given-name" required />
         </div>
         <div className="flex min-w-0 flex-col gap-1.5">
           <KyaLabel htmlFor={`${idPrefix}-last`}>{labels.lastName}</KyaLabel>
@@ -477,8 +478,8 @@ function CreateAccountForm({ idPrefix, email, firstName, setFirstName, lastName,
         <input id={`${idPrefix}-email`} className="kya-input" value={email} readOnly disabled />
       </div>
       <div className="flex flex-col gap-1.5">
-        <KyaLabel htmlFor={`${idPrefix}-password`}>{labels.password}</KyaLabel>
-        <input id={`${idPrefix}-password`} className="kya-input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder={labels.passwordPlaceholder} autoComplete="new-password" />
+        <KyaLabel htmlFor={`${idPrefix}-password`} required requiredLabel={labels.required}>{labels.password}</KyaLabel>
+        <input id={`${idPrefix}-password`} className="kya-input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder={labels.passwordPlaceholder} autoComplete="new-password" required minLength={8} />
       </div>
       {submit}
       <div className="flex items-center gap-3 text-[13px]" style={{ color: K.quiet }}>

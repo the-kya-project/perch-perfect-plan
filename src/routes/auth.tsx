@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
-import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { track } from "@/lib/analytics";
 import { captureLead } from "@/lib/captureLead";
@@ -140,9 +139,9 @@ function AuthPage() {
           (!!error && /already\s*(registered|exist)/i.test(error.message ?? "")) ||
           (!error && Array.isArray(identities) && identities.length === 0);
         if (alreadyRegistered) {
-          // The card stays on the sign-in form this lands on (same page).
+          // The card stays on the sign-in form this lands on (same page);
+          // it's the one place this shows, no toast on top of it.
           setError(t("auth.emailAlreadyHasAccount", "That email already has an account — sign in instead."));
-          toast.error(t("auth.emailAlreadyHasAccount", "That email already has an account — sign in instead."));
           navigate({ to: "/auth", search: { mode: "signin" } });
           return;
         }
@@ -281,6 +280,10 @@ function AuthPage() {
     ? t("auth.resetLine", "We'll email you a link to set a new one.")
     : mode === "signup" ? t("auth.signupLine", "Free, and it takes a minute.") : t("auth.signinLine", "Sign in to pick up where you left off.");
   const linkCls = "inline-flex min-h-[44px] items-center font-[700]";
+  const requiredLabel = t("setupUi.required", "Required");
+  // Terms and Privacy inside the sign-up sentence: each link is its own 44px
+  // tap target, laid out inline so the sentence still reads as one line.
+  const legalLinkCls = "inline-flex min-h-[44px] items-center px-0.5 align-middle font-[700] underline underline-offset-2";
 
   return (
     <FrontDoorPage>
@@ -298,7 +301,7 @@ function AuthPage() {
             className="flex flex-col gap-4"
           >
             <div className="flex flex-col gap-1.5">
-              <KyaLabel htmlFor="auth-reset-email">{t("auth.email", "Email")}</KyaLabel>
+              <KyaLabel htmlFor="auth-reset-email" required requiredLabel={requiredLabel}>{t("auth.email", "Email")}</KyaLabel>
               <input
                 id="auth-reset-email"
                 type="email"
@@ -369,7 +372,7 @@ function AuthPage() {
                 </div>
               )}
               <div className="flex flex-col gap-1.5">
-                <KyaLabel htmlFor="auth-email">{t("auth.email", "Email")}</KyaLabel>
+                <KyaLabel htmlFor="auth-email" required requiredLabel={requiredLabel}>{t("auth.email", "Email")}</KyaLabel>
                 <input
                   id="auth-email"
                   type="email"
@@ -382,7 +385,7 @@ function AuthPage() {
                 />
               </div>
               <div className="flex flex-col gap-1.5">
-                <KyaLabel htmlFor="auth-password">{t("auth.password", "Password")}</KyaLabel>
+                <KyaLabel htmlFor="auth-password" required requiredLabel={requiredLabel}>{t("auth.password", "Password")}</KyaLabel>
                 <input
                   id="auth-password"
                   type="password"
@@ -428,8 +431,8 @@ function AuthPage() {
                     i18nKey="auth.agreeToTerms"
                     defaults="By creating an account you agree to our <terms>Terms</terms> and <privacy>Privacy Policy</privacy>."
                     components={{
-                      terms: <Link to="/terms" className="font-[700] underline" style={{ color: K.moss }} />,
-                      privacy: <Link to="/privacy" className="font-[700] underline" style={{ color: K.moss }} />,
+                      terms: <Link to="/terms" className={legalLinkCls} style={{ color: K.moss }} />,
+                      privacy: <Link to="/privacy" className={legalLinkCls} style={{ color: K.moss }} />,
                     }}
                   />
                 </p>

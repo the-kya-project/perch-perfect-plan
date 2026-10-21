@@ -138,7 +138,7 @@ function HandoffAccept() {
           )}
           {/* Darken the top for the logo; fade the bottom into forest. */}
           <div className="absolute inset-0" style={{ background: `linear-gradient(to bottom, rgba(18,41,31,0.55) 0%, rgba(18,41,31,0) 28%, rgba(26,61,46,0) 50%, ${K.forest} 100%)` }} aria-hidden="true" />
-          <div className="absolute left-5 top-[calc(env(safe-area-inset-top)+14px)] flex min-h-[44px] items-center">
+          <div className="absolute inset-x-5 top-[calc(env(safe-area-inset-top)+14px)] flex min-h-[44px] items-center justify-center">
             {/* All-white lockup over the photo (the ink lockup carries its own forest box). */}
             <BrandLockup orientation="horizontal" variant="white" size={118} />
           </div>
@@ -220,9 +220,9 @@ function HandoffProblem({ reason, birdName, signedIn }: { reason: HandoffLinkPro
 
 function recordComesWith(t: TFunction, p: Pronoun, bird: string): string {
   switch (p) {
-    case "him": return t("handoff.recordComesWithHim", "{{bird}}'s record comes with him, so you won't start from scratch.", { bird });
-    case "her": return t("handoff.recordComesWithHer", "{{bird}}'s record comes with her, so you won't start from scratch.", { bird });
-    case "them": return t("handoff.recordComesWithThem", "{{bird}}'s record comes with them, so you won't start from scratch.", { bird });
+    case "him": return t("handoff.recordComesWithHimHeading", "{{bird}}'s record comes with him, so you won't start from scratch", { bird });
+    case "her": return t("handoff.recordComesWithHerHeading", "{{bird}}'s record comes with her, so you won't start from scratch", { bird });
+    case "them": return t("handoff.recordComesWithThemHeading", "{{bird}}'s record comes with them, so you won't start from scratch", { bird });
   }
 }
 
@@ -244,7 +244,7 @@ function transferLines(t: TFunction, p: Pronoun): string[] {
   ];
 }
 
-function useAcceptDecline(token: string, onDone: () => void) {
+function useAcceptDecline(token: string, birdName: string, onDone: () => void) {
   const { t } = useTranslation();
   const accept = useServerFn(acceptHandoff);
   const decline = useServerFn(declineHandoff);
@@ -253,7 +253,7 @@ function useAcceptDecline(token: string, onDone: () => void) {
   async function doAccept() {
     setBusy("accept");
     setError(null);
-    try { await accept({ data: { token } }); toast.success(t("handoff.acceptedToast", "The bird is yours — welcome!")); onDone(); }
+    try { await accept({ data: { token } }); toast.success(t("handoff.welcomeHomeToast", "Welcome home, {{bird}}", { bird: birdName })); onDone(); }
     catch (e: any) {
       setError(friendlyError(e, t("handoff.couldNotAccept", "Couldn't accept."))); setBusy(null);
     }
@@ -289,7 +289,7 @@ function LeaveLinks({ onLeave, onDecline, busy }: { onLeave: () => void; onDecli
 
 function SignedInAccept({ token, birdName, onDone, onLeave }: { token: string; birdName: string; onDone: () => void; onLeave: () => void }) {
   const { t } = useTranslation();
-  const { busy, error, doAccept, doDecline } = useAcceptDecline(token, onDone);
+  const { busy, error, doAccept, doDecline } = useAcceptDecline(token, birdName, onDone);
   return (
     <>
       {error && <FrontDoorError>{error}</FrontDoorError>}
@@ -319,7 +319,7 @@ function WrongAccount({ inviteEmail, token, onLeave }: { inviteEmail: string; to
 
 function LoggedOutAccept({ token, birdName, inviteEmail, onLeave, onConfirmSent }: { token: string; birdName: string; inviteEmail: string; onLeave: () => void; onConfirmSent: () => void }) {
   const { t } = useTranslation();
-  const { busy, error: declineError, doDecline } = useAcceptDecline(token, () => {});
+  const { busy, error: declineError, doDecline } = useAcceptDecline(token, birdName, () => {});
   const [creating, setCreating] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -369,13 +369,14 @@ function LoggedOutAccept({ token, birdName, inviteEmail, onLeave, onConfirmSent 
         password={password} setPassword={setPassword}
         labels={{
           firstName: t("handoff.firstName", "First name"),
-          firstNamePlaceholder: t("handoff.firstNamePlaceholder", "Brittany"),
+          firstNamePlaceholder: t("handoff.firstName", "First name"),
           lastName: t("handoff.lastName", "Last name"),
-          lastNamePlaceholder: t("handoff.lastNamePlaceholder", "King"),
+          lastNamePlaceholder: t("handoff.lastName", "Last name"),
           email: t("handoff.email", "Email"),
           password: t("handoff.createPassword", "Create a password"),
           passwordPlaceholder: t("handoff.passwordPlaceholder", "At least 8 characters"),
           or: t("handoff.or", "or"),
+          required: t("setupUi.required", "Required"),
         }}
         submit={
           <KyaPrimaryButton disabled={pending || socialBusy} onClick={createAndAccept}>
@@ -403,7 +404,7 @@ function CreateAccountForm({ idPrefix, email, firstName, setFirstName, lastName,
   firstName: string; setFirstName: (v: string) => void;
   lastName: string; setLastName: (v: string) => void;
   password: string; setPassword: (v: string) => void;
-  labels: { firstName: string; firstNamePlaceholder: string; lastName: string; lastNamePlaceholder: string; email: string; password: string; passwordPlaceholder: string; or: string };
+  labels: { firstName: string; firstNamePlaceholder: string; lastName: string; lastNamePlaceholder: string; email: string; password: string; passwordPlaceholder: string; or: string; required: string };
   submit: ReactNode;
   social: ReactNode;
 }) {
@@ -411,8 +412,8 @@ function CreateAccountForm({ idPrefix, email, firstName, setFirstName, lastName,
     <KyaCard className="flex flex-col gap-4 p-4">
       <div className="grid grid-cols-2 gap-3">
         <div className="flex min-w-0 flex-col gap-1.5">
-          <KyaLabel htmlFor={`${idPrefix}-first`}>{labels.firstName}</KyaLabel>
-          <input id={`${idPrefix}-first`} className="kya-input" value={firstName} maxLength={60} onChange={(e) => setFirstName(e.target.value)} placeholder={labels.firstNamePlaceholder} autoComplete="given-name" />
+          <KyaLabel htmlFor={`${idPrefix}-first`} required requiredLabel={labels.required}>{labels.firstName}</KyaLabel>
+          <input id={`${idPrefix}-first`} className="kya-input" value={firstName} maxLength={60} onChange={(e) => setFirstName(e.target.value)} placeholder={labels.firstNamePlaceholder} autoComplete="given-name" required />
         </div>
         <div className="flex min-w-0 flex-col gap-1.5">
           <KyaLabel htmlFor={`${idPrefix}-last`}>{labels.lastName}</KyaLabel>
@@ -424,8 +425,8 @@ function CreateAccountForm({ idPrefix, email, firstName, setFirstName, lastName,
         <input id={`${idPrefix}-email`} className="kya-input" value={email} readOnly disabled />
       </div>
       <div className="flex flex-col gap-1.5">
-        <KyaLabel htmlFor={`${idPrefix}-password`}>{labels.password}</KyaLabel>
-        <input id={`${idPrefix}-password`} className="kya-input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder={labels.passwordPlaceholder} autoComplete="new-password" />
+        <KyaLabel htmlFor={`${idPrefix}-password`} required requiredLabel={labels.required}>{labels.password}</KyaLabel>
+        <input id={`${idPrefix}-password`} className="kya-input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder={labels.passwordPlaceholder} autoComplete="new-password" required minLength={8} />
       </div>
       {submit}
       <div className="flex items-center gap-3 text-[13px]" style={{ color: K.quiet }}>
