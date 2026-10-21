@@ -72,7 +72,7 @@ function Welcome() {
         <div className="absolute inset-x-0 top-0">
           <div className="mx-auto max-w-md px-5 pt-[calc(env(safe-area-inset-top)+14px)]">
             {/* White on the photo: the transparent lockup, knocked out to white. */}
-            <BrandLockup orientation="horizontal" variant="transparent" size={124} className="[filter:brightness(0)_invert(1)]" />
+            <BrandLockup orientation="horizontal" variant="white" size={124} />
           </div>
         </div>
         <div className="absolute inset-x-0 bottom-0">

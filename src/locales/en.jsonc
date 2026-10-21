@@ -1784,6 +1784,7 @@
   "foodEditor.whereFoodIsStored": "Where food is stored",
   "frontDoor.back": "Back",
   "frontDoor.deleteAccount": "Delete account",
+  "frontDoor.haveAccountSignIn": "Already have an account? <go>Sign in</go>",
   "frontDoor.privacy": "Privacy",
   "frontDoor.terms": "Terms",
   "fullCheck.callVet": "Call vet",

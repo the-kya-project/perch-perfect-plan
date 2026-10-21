@@ -13,7 +13,7 @@ import type { Capability } from "@/lib/capabilities";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { K, SERIF, KyaCard, KyaHeading, KyaLabel, KyaLink, KyaPrimaryButton, KyaSecondaryButton } from "@/components/kya";
-import { FrontDoorPage, FrontDoorHeader, FrontDoorBody, FrontDoorError, CheckListCard } from "@/components/frontDoor";
+import { FrontDoorPage, FrontDoorHeader, FrontDoorBody, FrontDoorError, CheckListCard, SignInInstead } from "@/components/frontDoor";
 import { friendlyError } from "@/lib/errorMessage";
 import { authErrorMessage } from "@/lib/authErrorMessage";
 import { useTranslation, Trans } from "react-i18next";
@@ -368,6 +368,7 @@ function LoggedOutAccept({ token, inviteEmail, onLeave }: { token: string; invit
         }
         google={<KyaSecondaryButton className="w-full" onClick={google}>{t("invite.continueWithGoogle", "Continue with Google")}</KyaSecondaryButton>}
       />
+      <SignInInstead returnTo={`/invite/${token}`} />
       <LeaveLinks onLeave={onLeave} />
     </>
   );

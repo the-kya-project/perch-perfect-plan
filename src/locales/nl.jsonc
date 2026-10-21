@@ -3573,6 +3573,8 @@
   "frontDoor.back": "Terug",
   // Delete account
   "frontDoor.deleteAccount": "Account verwijderen",
+  // Already have an account? <go>Sign in</go>
+  "frontDoor.haveAccountSignIn": "Heb je al een account? <go>Inloggen</go>",
   // Privacy
   "frontDoor.privacy": "Privacy",
   // Terms

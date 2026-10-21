@@ -4,7 +4,7 @@
 // the interface stays sans (Inter) per the visual system.
 
 type MarkVariant = "cream" | "white" | "ink" | "lime";
-type LockupVariant = "cream" | "ink" | "transparent";
+type LockupVariant = "cream" | "ink" | "transparent" | "white";
 type LockupOrientation = "horizontal" | "stacked";
 
 const MARK_SRC: Record<MarkVariant, string> = {

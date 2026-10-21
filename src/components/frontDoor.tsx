@@ -6,7 +6,8 @@
 // the page fills the screen and the body runs to the bottom.
 import type { ReactNode } from "react";
 import { ArrowLeft, Check } from "lucide-react";
-import { useTranslation } from "react-i18next";
+import { Link } from "@tanstack/react-router";
+import { Trans, useTranslation } from "react-i18next";
 import { K, KyaHeading, KyaIconButton } from "@/components/kya";
 import { BrandLockup } from "@/components/BrandLogo";
 
@@ -110,6 +111,20 @@ export function LegalLinks() {
       <a href="/terms" className={link}>{t("frontDoor.terms", "Terms")}</a>
       <span aria-hidden="true">·</span>
       <a href="/delete-account" className={link}>{t("frontDoor.deleteAccount", "Delete account")}</a>
+    </p>
+  );
+}
+
+/** "Already have an account? Sign in", for the invite and handoff create-account
+ *  forms: signs in on /auth and comes straight back to `returnTo`. */
+export function SignInInstead({ returnTo }: { returnTo: string }) {
+  return (
+    <p className="m-0 text-center text-[14.5px]" style={{ color: K.quiet }}>
+      <Trans
+        i18nKey="frontDoor.haveAccountSignIn"
+        defaults="Already have an account? <go>Sign in</go>"
+        components={{ go: <Link to="/auth" search={{ mode: "signin", redirect: returnTo }} className="inline-flex min-h-[44px] items-center font-[700]" style={{ color: K.moss }} /> }}
+      />
     </p>
   );
 }

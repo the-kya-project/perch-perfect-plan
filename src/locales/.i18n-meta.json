@@ -5355,6 +5355,9 @@
     "frontDoor.deleteAccount": {
       "stamp": "7dd739f7992e24b2"
     },
+    "frontDoor.haveAccountSignIn": {
+      "stamp": "c12daaa530fa3577"
+    },
     "frontDoor.privacy": {
       "stamp": "7e4f176cd281246c"
     },

@@ -12,7 +12,7 @@ import { birdAgeLabel } from "@/lib/birdAge";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { K, SERIF, KyaCard, KyaHeading, KyaLabel, KyaLink, KyaPrimaryButton, KyaSecondaryButton } from "@/components/kya";
-import { FrontDoorPage, FrontDoorHeader, FrontDoorBody, FrontDoorError, CheckListCard } from "@/components/frontDoor";
+import { FrontDoorPage, FrontDoorHeader, FrontDoorBody, FrontDoorError, CheckListCard, SignInInstead } from "@/components/frontDoor";
 import { BrandLockup } from "@/components/BrandLogo";
 import { friendlyError } from "@/lib/errorMessage";
 import { authErrorMessage } from "@/lib/authErrorMessage";
@@ -108,7 +108,7 @@ function HandoffAccept() {
           <div className="absolute inset-0" style={{ background: `linear-gradient(to bottom, rgba(18,41,31,0.55) 0%, rgba(18,41,31,0) 28%, rgba(26,61,46,0) 50%, ${K.forest} 100%)` }} aria-hidden="true" />
           <div className="absolute left-5 top-[calc(env(safe-area-inset-top)+14px)] flex min-h-[44px] items-center">
             {/* All-white lockup over the photo (the ink lockup carries its own forest box). */}
-            <BrandLockup orientation="horizontal" variant="transparent" size={118} className="brightness-0 invert" />
+            <BrandLockup orientation="horizontal" variant="white" size={118} />
           </div>
         </div>
         <div className="mx-auto -mt-10 max-w-md px-5 pb-[46px]">
@@ -313,6 +313,7 @@ function LoggedOutAccept({ token, birdName, inviteEmail, onLeave }: { token: str
         }
         google={<KyaSecondaryButton className="w-full" onClick={google}>{t("handoff.continueWithGoogle", "Continue with Google")}</KyaSecondaryButton>}
       />
+      <SignInInstead returnTo={`/handoff/${token}`} />
       <LeaveLinks onLeave={onLeave} />
     </>
   );
