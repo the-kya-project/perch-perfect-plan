@@ -6,6 +6,9 @@ import { track } from "@/lib/analytics";
 import i18next from "i18next";
 import { useTranslation } from "react-i18next";
 import { friendlyError } from "@/lib/errorMessage";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { PreviewNotice } from "@/components/PreviewNotice";
 
 // "View as sitter" — opens the REAL token-based sitter read-only view in an
 // iframe (the exact same renderer a sitter gets), with a preview token that is
@@ -38,6 +41,33 @@ function ViewAsSitter() {
   }, [birdId]);
 
   const src = token ? `/sitter/${token}?birdId=${birdId}&preview=1` : null;
+  // The bird's name for "Back to Mango" on the error card; only fetched then.
+  const { data: birdName } = useQuery({
+    queryKey: ["view-as-sitter-bird-name", birdId],
+    enabled: !!error,
+    queryFn: async () => {
+      const { data } = await supabase.from("birds").select("name").eq("id", birdId).maybeSingle();
+      return ((data as { name: string | null } | null)?.name ?? "").trim() || null;
+    },
+  });
+
+  if (error) {
+    return (
+      <PreviewNotice
+        closeLabel={t("viewAsSitter.closePreview", "Close preview")}
+        onClose={() => navigate({ to: "/dashboard" })}
+        mode={t("viewAsSitter.mode", "Viewing as your sitter")}
+        title={t("viewAsSitter.errorTitle", "The preview didn't load")}
+        body={error}
+        action={{
+          label: birdName
+            ? t("viewAsSitter.backToBird", "Back to {{name}}", { name: birdName })
+            : t("viewAsSitter.backToRecord", "Back to the record"),
+          onClick: () => navigate({ to: "/birds/$birdId", params: { birdId } }),
+        }}
+      />
+    );
+  }
 
   return (
     <div className="flex h-[100dvh] flex-col bg-[#f1f5f0]">
@@ -56,16 +86,7 @@ function ViewAsSitter() {
         </span>
       </div>
 
-      {error ? (
-        <div className="grid flex-1 place-items-center p-6 text-center">
-          <div>
-            <p className="text-sm text-[#854F0B]">{error}</p>
-            <button type="button" onClick={() => navigate({ to: "/dashboard" })} className="mt-4 rounded-xl bg-[#1a3d2e] px-4 py-2 text-sm font-medium text-white">
-              {t("viewAsSitter.backHome", "Back to home")}
-            </button>
-          </div>
-        </div>
-      ) : src ? (
+      {src ? (
         <iframe src={src} title={t("viewAsSitter.iframeTitle", "Sitter view")} className="w-full flex-1 border-0 bg-[#f1f5f0]" />
       ) : (
         <div className="flex-1 animate-pulse bg-[#e3ebe2]" />
