@@ -3,7 +3,7 @@ import { speciesLabel } from "@/lib/speciesLabel";
 import { friendlyError } from "@/lib/errorMessage";
 import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { z } from "zod";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,7 +24,7 @@ import { toast } from "sonner";
 import { ASPCA_POISON_CONTROL, isPhoneField, phoneWarning, formatPhoneOnBlur } from "@/lib/emergency";
 import { isAddressField } from "@/lib/address";
 import { AddressInput } from "@/components/AddressInput";
-import { fetchScanFeed, getNotifSeenAt, isUnreadScan } from "@/lib/notificationsFeed";
+import { fetchScanFeed } from "@/lib/notificationsFeed";
 import { CaregiverCoveringSection, useActiveCaregiver } from "@/components/CaregiverHome";
 import { HomeChecklist } from "@/components/HomeChecklist";
 import { DailyCheckCard } from "@/components/DailyCheckCard";
@@ -98,11 +98,8 @@ function Dashboard() {
   // (existing accounts, or before the migration populates first_name).
   const firstName = (me?.firstName || (me?.displayName ?? "").trim().split(/\s+/)[0]) || "";
 
-  // Bell badge — unread scans (seen state is per-device).
+  // Scan feed — feeds the per-bird concern flags below (not an unread badge).
   const { data: scanFeed = [] } = useQuery({ queryKey: ["scan-feed"], queryFn: fetchScanFeed });
-  const [notifSeenAt] = useState(() => getNotifSeenAt());
-  const myUserId = useMyPermissions().data?.myId;
-  const unreadNotifs = scanFeed.filter((n) => isUnreadScan(n, notifSeenAt, myUserId)).length;
 
   const { data: birds = [], isLoading: birdsLoading } = useQuery({
     queryKey: ["birds"],
@@ -275,7 +272,7 @@ function Dashboard() {
   return (
     <KyaPage>
       <div className="mx-auto max-w-md">
-      <HomeHeader firstName={firstName} unreadNotifs={unreadNotifs} stateCopy={stateCopy} />
+      <HomeHeader firstName={firstName} stateCopy={stateCopy} />
 
       <KyaBody className="gap-6">
 
@@ -414,7 +411,7 @@ function Dashboard() {
 // ---------------------------------------------------------------------------
 // Header
 // ---------------------------------------------------------------------------
-function HomeHeader({ firstName, stateCopy }: { firstName: string; unreadNotifs: number; stateCopy?: string }) {
+function HomeHeader({ firstName, stateCopy }: { firstName: string; stateCopy?: string }) {
   const { t } = useTranslation();
   const h = new Date().getHours();
   // Greetings are spoken-to-the-user copy: no terminal period.
@@ -436,7 +433,7 @@ function SectionHeaderCTA({ title, pill, ctaLabel, onCta }: { title: string; pil
     <div className="flex items-center justify-between gap-3 px-1">
       <KyaHeading size={23} className="inline-flex items-center gap-2">
         {title}
-        {pill && <span className="rounded-full px-2.5 py-1 text-[12px] font-[700]" style={{ background: K.lime, color: K.forest, fontFamily: "inherit" }}>{pill}</span>}
+        {pill && <span className="rounded-full px-2.5 py-1 text-[12px] font-[700]" style={{ background: K.lime, color: K.forest, fontFamily: "'DM Sans', ui-sans-serif, system-ui, sans-serif" }}>{pill}</span>}
       </KyaHeading>
       <KyaLink onClick={onCta}>{ctaLabel}</KyaLink>
     </div>
@@ -509,14 +506,14 @@ function FlockCheckPrompt({ birds, loading, onOpen, onOpenDone }: { birds: Promp
                 ) : null}
               </span>
               <span className="mt-[3px] max-w-full truncate text-[11.5px] font-[500] text-[var(--ink)]">{b.name}</span>
-              <span className="max-w-full text-center text-[10.5px] font-[500] leading-[1.25] text-[#2b3a31]">
+              <span className="max-w-full text-center text-[12px] font-[500] leading-[1.25] text-[#2b3a31]">
                 {b.checked ? t("dashboard.checked", "Checked") : t("dashboard.needsDailyCheck", "Needs daily check")}
               </span>
               {b.checked && b.grams != null && (
-                <span className="max-w-full text-center text-[10.5px] font-[500] leading-[1.25] text-[var(--ink)]">{grams(b.grams)}</span>
+                <span className="max-w-full text-center text-[12px] font-[500] leading-[1.25] text-[var(--ink)]">{grams(b.grams)}</span>
               )}
               {b.overdueDays != null && (
-                <span className="max-w-full text-center text-[10.5px] font-[700] leading-[1.25]" style={{ color: OVERDUE_RED }}>
+                <span className="max-w-full text-center text-[12px] font-[700] leading-[1.25]" style={{ color: OVERDUE_RED }}>
                   {t("dashboard.notWeighedInDays", "Not weighed in {{count}} days", { count: b.overdueDays })}
                 </span>
               )}

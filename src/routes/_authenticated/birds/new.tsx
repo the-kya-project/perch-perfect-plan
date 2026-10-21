@@ -8,7 +8,7 @@ import i18next from "i18next";
 import { getHouseholdAccount } from "@/lib/household.functions";
 import { ShareNewBirdStep, type ShareCandidate } from "@/components/ShareNewBirdStep";
 import { SetupFrame } from "@/components/setup/SetupFrame";
-import { SetupPrimaryButton } from "@/components/setup/controls";
+import { SetupPrimaryButton, Switch } from "@/components/setup/controls";
 import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { toast } from "sonner";
@@ -321,15 +321,12 @@ function NewBird() {
       {/* Foster status — a meta-question about your relationship with the bird,
           not basic info, so it sits last after all the actual bird details. */}
       <section className="rounded-[18px] bg-[#f1f5f0] p-4">
-        <label className="flex cursor-pointer items-start gap-3">
-          <input type="checkbox" checked={isFoster} onChange={(e) => setIsFoster(e.target.checked)} className="mt-0.5 size-5 shrink-0 accent-[#1a3d2e]" />
-          <span className="min-w-0">
-            <span className="block text-[15px] font-[700] text-[#1a3d2e]">{t("newBird.isFoster", "This is a foster")}</span>
-            <span className="mt-0.5 block text-[13.5px] leading-[1.45] text-[#5f5e5a]">
-              {t("newBird.isFosterBody", "You're caring for them while they find a permanent home. You'll be able to hand off their record to the adopter.")}
-            </span>
+        <Switch checked={isFoster} onChange={setIsFoster}>
+          <span className="block">{t("newBird.isFoster", "This is a foster")}</span>
+          <span className="mt-0.5 block text-[13.5px] font-[400] leading-[1.45] text-[#5f5e5a]">
+            {t("newBird.isFosterBody", "You're caring for them while they find a permanent home. You'll be able to hand off their record to the adopter.")}
           </span>
-        </label>
+        </Switch>
         {isFoster && (
           <div className="mt-3 space-y-3 border-t border-[#e3ebe2] pt-3">
             <BirdField label={t("newBird.cameToYou", "Came to you")}>

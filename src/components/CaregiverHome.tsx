@@ -96,7 +96,6 @@ export function CaregiverCoveringSection({ sit }: { sit: ActiveCaregiverSit }) {
               tasksTotal={total}
               scan={{ done: b.scanDone, status: b.scanStatus }}
               onClick={() => navigate({ to: "/covering/$sitId/$birdId", params: { sitId: sit.id, birdId: b.id } })}
-              look="kya"
             />
           );
         })}
