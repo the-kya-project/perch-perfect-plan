@@ -20,8 +20,8 @@ export function FrontDoorPage({ children }: { children: ReactNode }) {
   );
 }
 
-/** Forest header: back top left (or the logo there when there's no back),
- *  the Kya & Co. logo centered when there is a back, 44px balance on the right. */
+/** Forest header: back top left (only the back), the Kya & Co. logo centered
+ *  on the screen with or without a back, 44px balance on the right. */
 export function FrontDoorHeader({ onBack, backLabel, title, line, children }: {
   onBack?: () => void;
   backLabel?: string;
@@ -33,17 +33,18 @@ export function FrontDoorHeader({ onBack, backLabel, title, line, children }: {
   return (
     <header className="text-white">
       <div className="mx-auto max-w-md px-5 pb-[46px] pt-[calc(env(safe-area-inset-top)+14px)]">
-        {onBack ? (
-          <div className="flex items-center justify-between gap-3">
-            <KyaIconButton label={backLabel ?? t("frontDoor.back", "Back")} onClick={onBack}><ArrowLeft className="size-5" /></KyaIconButton>
+        {/* Three columns: back (or an empty 44px slot) | logo | 44px balance.
+            The logo always sits in the middle column, centered on the screen,
+            whether or not there's a back button; it never shares a side with Back. */}
+        <div className="grid min-h-[44px] grid-cols-[44px_minmax(0,1fr)_44px] items-center gap-3">
+          {onBack
+            ? <KyaIconButton label={backLabel ?? t("frontDoor.back", "Back")} onClick={onBack}><ArrowLeft className="size-5" /></KyaIconButton>
+            : <span className="size-11" aria-hidden="true" />}
+          <div className="flex min-w-0 justify-center">
             <BrandLockup orientation="horizontal" variant="ink" size={118} />
-            <span className="size-11 shrink-0" aria-hidden="true" />
           </div>
-        ) : (
-          <div className="flex min-h-[44px] items-center">
-            <BrandLockup orientation="horizontal" variant="ink" size={118} />
-          </div>
-        )}
+          <span className="size-11" aria-hidden="true" />
+        </div>
         {title && <KyaHeading as="h1" size={30} className="mt-7 text-white">{title}</KyaHeading>}
         {line && <p className="m-0 mt-2 text-[15px] leading-[1.5]" style={{ color: K.paleGreen }}>{line}</p>}
         {children}
