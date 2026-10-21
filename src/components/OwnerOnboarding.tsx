@@ -40,15 +40,15 @@ type Step = {
 // 9 explained steps; step index 9 is the wrap-up CTA (rendered specially).
 function getSteps(t: TFunction): Step[] {
   return [
-    { target: "owner-tab-home", headline: t("ownerOnboarding.homeHeadline", "Home is where you land."), body: t("ownerOnboarding.homeBody", "Here you'll find daily check-ins, your flock, and anything happening soon. It's the screen you'll open most.") },
-    { target: "owner-today", headline: t("ownerOnboarding.todayHeadline", "Today, at a glance."), body: t("ownerOnboarding.todayBody", "Sits starting, hatch days, a foster settling in — whatever's worth knowing today shows up here first.") },
-    { target: "owner-flock", headline: t("ownerOnboarding.flockHeadline", "Each bird gets a record."), body: t("ownerOnboarding.flockBody", "Tap a bird to see their care plan, weight history, journal, identity, and photos. The works.") },
+    { target: "owner-tab-home", headline: t("ownerOnboarding.homeTitle", "Home is where you land"), body: t("ownerOnboarding.homeBody", "Here you'll find daily check-ins, your flock, and anything happening soon. It's the screen you'll open most.") },
+    { target: "owner-today", headline: t("ownerOnboarding.todayTitle", "Today, at a glance"), body: t("ownerOnboarding.todayBody", "Sits starting, hatch days, a foster settling in — whatever's worth knowing today shows up here first.") },
+    { target: "owner-flock", headline: t("ownerOnboarding.flockTitle", "Each bird gets a record"), body: t("ownerOnboarding.flockBody", "Tap a bird to see their care plan, weight history, journal, identity, and photos. The works.") },
     { target: "owner-fosters", headline: t("ownerOnboarding.fostersHeadline", "Fostering a bird?"), body: t("ownerOnboarding.fostersBody", "They live here while they're with you — until they're adopted, or until you decide they're staying. (It happens.)") },
-    { headline: t("ownerOnboarding.handoffHeadline", "Saying goodbye? Hand off the record."), body: t("ownerOnboarding.handoffBody", "When a bird moves to a new home their full record can transfer with them. Care plan, history, identity, everything.") },
+    { headline: t("ownerOnboarding.handoffTitle", "Saying goodbye? Hand off the record"), body: t("ownerOnboarding.handoffBody", "When a bird moves to a new home their full record can transfer with them. Care plan, history, identity, everything.") },
     { target: "owner-household", headline: t("ownerOnboarding.householdHeadline", "Family who shares the care?"), body: t("ownerOnboarding.householdBody", "Spouse, partner, kids, roommates — add them as household. They get access to your care plan and health checks so they can step in when needed.") },
-    { target: "owner-tab-sits", headline: t("ownerOnboarding.sitsHeadline", "Going away? Set up a sit."), body: t("ownerOnboarding.sitsBody", "Pet sitters get a temporary link — just for the trip. Household members get more details and a daily checklist.") },
-    { target: "owner-tab-activity", headline: t("ownerOnboarding.activityHeadline", "Daily health checks."), body: t("ownerOnboarding.activityBody", "Quick questions to track health. Pet sitters are asked to run a health check daily. Flags show up fast when something's off.") },
-    { target: "owner-tab-explore", headline: t("ownerOnboarding.exploreHeadline", "Stories, education, conservation."), body: t("ownerOnboarding.exploreBody", "What The Kya Project is up to. Field notes, deep dives, community and other ways to get involved. Read when you have a minute.") },
+    { target: "owner-tab-sits", headline: t("ownerOnboarding.sitsTitle", "Going away? Set up a sit"), body: t("ownerOnboarding.sitsBody", "Pet sitters get a temporary link — just for the trip. Household members get more details and a daily checklist.") },
+    { target: "owner-tab-activity", headline: t("ownerOnboarding.activityTitle", "Daily health checks"), body: t("ownerOnboarding.activityBody", "Quick questions to track health. Pet sitters are asked to run a health check daily. Flags show up fast when something's off.") },
+    { target: "owner-tab-explore", headline: t("ownerOnboarding.exploreTitle", "Stories, education, and conservation"), body: t("ownerOnboarding.exploreBody", "What The Kya Project is up to. Field notes, deep dives, community and other ways to get involved. Read when you have a minute.") },
   ];
 }
 const STEP_COUNT = 9;
@@ -220,7 +220,6 @@ export function OwnerOnboarding() {
     // People who already have a bird get a "here's what it can do" welcome;
     // brand-new accounts keep the set-up-your-first-bird welcome.
     const hasBird = birdCount > 0;
-    const hiName = t("ownerOnboarding.hiName", "Hi, {{name}}.", { name: firstName });
     const hiNameReturning = t("ownerOnboarding.hiNameReturning", "Hi, {{name}}", { name: firstName });
     const hiThere = t("ownerOnboarding.hiThere", "Hi there");
     return (
@@ -230,9 +229,10 @@ export function OwnerOnboarding() {
       // the CTA follows the header instead of sitting a screen below it.
       <div className="setup-frame fixed inset-0 z-[60] flex flex-col overflow-y-auto" style={{ background: K.mist, color: K.forest }}>
         <KyaHeader>
+          {/* Close top left, like every task header. */}
           <div className="mt-1.5 flex items-center justify-between gap-3">
-            <BrandLockup orientation="horizontal" variant="ink" size={118} />
             <KyaIconButton label={t("headers.close", "Close")} onClick={finish}><X className="size-5" /></KyaIconButton>
+            <BrandLockup orientation="horizontal" variant="ink" size={118} />
           </div>
           {hasBird ? (
             <>
@@ -241,7 +241,7 @@ export function OwnerOnboarding() {
             </>
           ) : (
             <>
-              <KyaHeading as="h1" size={34} className="mt-9 text-white">{firstName ? hiName : t("ownerOnboarding.welcomeHeadline", "Welcome.")}</KyaHeading>
+              <KyaHeading as="h1" size={34} className="mt-9 text-white">{firstName ? hiNameReturning : t("ownerOnboarding.welcomeTitle", "Welcome")}</KyaHeading>
               <p className="m-0 mt-2 max-w-[32ch] text-[15px] leading-[1.5]" style={{ color: K.paleGreen }}>{t("ownerOnboarding.welcomeBody", "A quick walkthrough first, then we'll set up your bird.")}</p>
             </>
           )}
@@ -308,18 +308,12 @@ export function OwnerOnboarding() {
         <div className="absolute inset-0" style={{ background: "rgba(26,61,46,0.55)" }} />
       )}
 
-      {/* Skip — always available, top-right (hidden on wrap-up, which has its own actions). */}
-      {!isWrapUp && (
-        <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-end px-5 pt-[max(env(safe-area-inset-top),0.9rem)]">
-          <button type="button" onClick={finish} className="pointer-events-auto min-h-[44px] rounded-full bg-white px-4 text-[14px] font-[700] shadow" style={{ color: K.forest }}>{t("ownerOnboarding.skipTour", "Skip tour")}</button>
-        </div>
-      )}
-
+      {/* "Skip tour" is shown once, in the bubble under Back / Next. */}
       <div ref={bubbleRef} className="pointer-events-auto absolute rounded-[20px] bg-white p-4 shadow-xl" style={bubbleStyle}>
         {isWrapUp ? (
           <div className="flex flex-col items-center text-center">
             <ProgressDots n={TOTAL} total={TOTAL} label={t("ownerOnboarding.stepOfSr", "Step {{n}} of {{total}}", { n: TOTAL, total: TOTAL })} />
-            <KyaHeading size={22} className="mt-3">{t("ownerOnboarding.thatsTheTour", "That's the tour.")}</KyaHeading>
+            <KyaHeading size={22} className="mt-3">{t("ownerOnboarding.thatsTheTourTitle", "That's the tour")}</KyaHeading>
             {birdCount === 0 ? (
               <>
                 <p className="m-0 mt-2 text-[15px] leading-[1.5]" style={{ color: K.ink }}>{t("ownerOnboarding.nowTheFunPart", "Now the fun part — let's set up your first bird.")}</p>

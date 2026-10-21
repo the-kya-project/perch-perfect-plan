@@ -8,7 +8,7 @@ import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { Plus, Calendar, CalendarPlus } from "lucide-react";
 import { ActiveSitCard, UpcomingSitCard, PastSitsList, type SitBird, type ListSit } from "@/components/SitListCards";
 import { rangeTo } from "@/lib/sitText";
-import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaPrimaryButton } from "@/components/kya";
+import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaPrimaryButton, KyaSecondaryButton } from "@/components/kya";
 import { TabHeader } from "@/components/headers";
 import { LoadError } from "@/components/LoadError";
 import { useLoadState } from "@/lib/useTooLong";
@@ -141,7 +141,10 @@ function SitsPage() {
   // resolveHouseholdNames only resolves the user's OWN household members.
   const bothContexts =
     !!myId && allSits.some((s) => s.owner_id === myId) && allSits.some((s) => s.owner_id && s.owner_id !== myId);
-  const sitOwnerIds = [...new Set(allSits.map((s) => s.owner_id).filter((o) => !!o && o !== myId) as string[])];
+  // Owners of the households this person helps with (birds they can see but
+  // don't own): a member with no sits is told who sets them up.
+  const helpedOwnerIds = [...new Set(birds.map((b: any) => b.owner_id as string | null).filter((o): o is string => !!o && !!myId && o !== myId))];
+  const sitOwnerIds = [...new Set([...allSits.map((s) => s.owner_id as string | null), ...helpedOwnerIds].filter((o): o is string => !!o && o !== myId))];
   const resolveOwners = useServerFn(resolveOwnerNames);
   const { data: ownerNames = {} } = useQuery({
     queryKey: ["sit-owner-names", sitOwnerIds.slice().sort().join(",")],
@@ -202,6 +205,18 @@ function SitsPage() {
   }
 
   const noSits = actives.length === 0 && upcoming.length === 0;
+  // A household member (no birds of their own) with nothing scheduled: say who
+  // sets sits up instead of "Going away?". The owner's first name when they
+  // help one household; a nameless line otherwise.
+  const memberNoSits = !!myId && !load.loading && !load.failed && birds.length > 0 && !canManageSits && noSits;
+  if (memberNoSits) {
+    const ownerFull = helpedOwnerIds.length === 1 ? ((ownerNames as Record<string, string | null>)[helpedOwnerIds[0]] ?? "") : "";
+    const ownerFirst = ownerFull.trim().split(/\s+/)[0] ?? "";
+    heroHeadline = t("sits.memberNoSitsTitle", "No sits right now");
+    heroBody = ownerFirst
+      ? t("sits.memberNoSitsLine", "When {{name}} sets up a sit for you, it'll show here.", { name: ownerFirst })
+      : t("sits.memberNoSitsLineNoName", "When a sit is set up for you, it'll show here.");
+  }
 
   return (
     <KyaPage>
@@ -262,12 +277,12 @@ function SitsPage() {
                 </section>
               )}
 
-              {noSits && (
+              {noSits && !memberNoSits && (
                 <KyaCard className="p-6 text-center">
                   <div className="flex justify-center">
                     <span className="grid size-12 place-items-center rounded-[14px]" style={{ background: K.forest, color: K.lime }}><CalendarPlus className="size-6" /></span>
                   </div>
-                  <KyaHeading size={21} className="mt-3">{t("sits.noSits", "No sits scheduled.")}</KyaHeading>
+                  <KyaHeading size={21} className="mt-3">{t("sits.noSitsTitle", "No sits scheduled")}</KyaHeading>
                   <p className="m-0 mx-auto mt-1.5 max-w-[34ch] text-[15px] leading-[1.5]" style={{ color: K.ink }}>
                     {t("sits.noSitsBody", "A sit shares today's routine, a daily health check, and one-tap emergency contacts with whoever's covering.")}
                   </p>
@@ -278,14 +293,9 @@ function SitsPage() {
                 noSits ? (
                   <KyaPrimaryButton onClick={() => navigate({ to: "/sits/new" })}>{t("sits.setUpSit", "Set up a sit")}</KyaPrimaryButton>
                 ) : (
-                  <button
-                    type="button"
-                    onClick={() => navigate({ to: "/sits/new" })}
-                    className="flex min-h-[52px] w-full items-center justify-center gap-1.5 rounded-full border-2 border-dashed text-[15px] font-[700]"
-                    style={{ borderColor: "#9fb3a3", color: K.forest }}
-                  >
-                    <Plus className="size-4" /> {upcoming.length > 0 ? t("sits.setUpAnother", "Set up another sit") : t("sits.setUpSit", "Set up a sit")}
-                  </button>
+                  <KyaSecondaryButton className="w-full" onClick={() => navigate({ to: "/sits/new" })} icon={<Plus className="size-4" />}>
+                    {upcoming.length > 0 ? t("sits.setUpAnother", "Set up another sit") : t("sits.setUpSit", "Set up a sit")}
+                  </KyaSecondaryButton>
                 )
               ) : (
                 // Household members can view sits they're covering, but only a

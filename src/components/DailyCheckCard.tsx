@@ -53,8 +53,8 @@ function timeLabel(iso: string | Date): string {
 }
 
 /** A pick-one choice in the check-chip look (white with a border, forest
- *  when on; `onColor` overrides the fill, e.g. red for "Concerning"). */
-function RadioChip({ on, onClick, children, onColor = C.ink, className = "" }: { on: boolean; onClick: () => void; children: React.ReactNode; onColor?: string; className?: string }) {
+ *  when on; `amber` fills it amber instead, for "Concerning"). */
+function RadioChip({ on, onClick, children, amber = false, className = "" }: { on: boolean; onClick: () => void; children: React.ReactNode; amber?: boolean; className?: string }) {
   return (
     <button
       type="button"
@@ -62,7 +62,7 @@ function RadioChip({ on, onClick, children, onColor = C.ink, className = "" }: {
       aria-checked={on}
       onClick={onClick}
       className={`inline-flex min-h-[44px] items-center justify-center gap-1.5 rounded-full border-2 px-4 text-[15px] ${on ? "font-[700]" : "font-[500]"} ${className}`}
-      style={on ? { background: onColor, borderColor: onColor, color: "#fff" } : { background: "#fff", borderColor: C.chipLine, color: C.ink }}
+      style={on ? (amber ? { background: C.amberFill, borderColor: C.amberInk, color: C.amberInk } : { background: C.ink, borderColor: C.ink, color: "#fff" }) : { background: "#fff", borderColor: C.chipLine, color: C.ink }}
     >
       {on && <Check className="size-4 shrink-0" strokeWidth={3} aria-hidden="true" />}
       {children}
@@ -90,14 +90,16 @@ function mealText(t: TFunction, m: string | null): string | null {
   return m === "before_meal" ? t("dailyCheck.beforeMealLower", "before meal") : m === "after_meal" ? t("dailyCheck.afterMealLower", "after meal") : null;
 }
 
-function PrimaryBtn({ children, onClick, disabled, tall = true, className = "" }: { children: React.ReactNode; onClick: () => void; disabled?: boolean; tall?: boolean; className?: string }) {
+/** Save. Sunflower, unless the screen's main button is elsewhere (the flock
+ *  check's "Check [bird] next"), then white secondary. */
+function PrimaryBtn({ children, onClick, disabled, tall = true, secondary = false, className = "" }: { children: React.ReactNode; onClick: () => void; disabled?: boolean; tall?: boolean; secondary?: boolean; className?: string }) {
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`flex w-full items-center justify-center rounded-full border-2 px-4 text-[16px] font-[700] disabled:opacity-45 ${tall ? "min-h-[52px]" : "min-h-[48px]"} ${className}`}
-      style={{ background: K.sunflower, borderColor: C.ink, color: C.ink }}
+      className={`flex w-full items-center justify-center rounded-full border-2 px-4 font-[700] disabled:opacity-45 ${secondary ? "text-[15px]" : "text-[16px]"} ${tall && !secondary ? "min-h-[52px]" : "min-h-[48px]"} ${className}`}
+      style={{ background: secondary ? "#fff" : K.sunflower, borderColor: C.ink, color: C.ink }}
     >
       {children}
     </button>
@@ -105,7 +107,7 @@ function PrimaryBtn({ children, onClick, disabled, tall = true, className = "" }
 }
 
 export function DailyCheckCard({
-  birdId, name, today, surface, saveLabel, onSaved, canWeigh = true, showHeading = true, title, flat = false,
+  birdId, name, today, surface, saveLabel, onSaved, canWeigh = true, showHeading = true, title, flat = false, saveSecondary = false,
 }: {
   birdId: string;
   name: string;
@@ -121,6 +123,10 @@ export function DailyCheckCard({
   title?: string;
   /** Inside another lime card (the flock check): no card surface of its own. */
   flat?: boolean;
+  /** Save buttons are white secondary: the screen's main button is elsewhere
+   *  (the flock check's pinned "Check [bird] next"). Home and the bird page
+   *  leave this off, so Save stays sunflower there. */
+  saveSecondary?: boolean;
 }) {
   const { t } = useTranslation();
   const qc = useQueryClient();
@@ -150,6 +156,7 @@ export function DailyCheckCard({
   const hasWeight = canWeigh && typeof parsed === "number";
   const hint = today?.lastGrams != null ? String(today.lastGrams) : t("dailyCheck.gramsPlaceholder", "e.g. 95");
   const anyConcerning = Object.values(changes).some((v) => v === "concerning");
+  const concerningRed = Object.entries(changes).some(([k, v]) => v === "concerning" && RED_KEYS.has(k as ScanFieldKey));
 
   async function save(skipConfirm = false) {
     if (saving || weightInvalid) return;
@@ -276,7 +283,7 @@ export function DailyCheckCard({
         )}
 
         {canWeigh && adding && (
-          <ExtraWeight birdId={birdId} name={name} lastGrams={latestW?.grams ?? today?.lastGrams ?? null} surface={surface} onDone={() => setAdding(false)} />
+          <ExtraWeight secondary={saveSecondary} birdId={birdId} name={name} lastGrams={latestW?.grams ?? today?.lastGrams ?? null} surface={surface} onDone={() => setAdding(false)} />
         )}
         {canWeigh && !adding && (
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -370,7 +377,7 @@ export function DailyCheckCard({
                   </RadioChip>
                 </div>
                 {confirm}
-                {confirmPct == null && <PrimaryBtn onClick={() => save()} disabled={saving || weightInvalid}>{label}</PrimaryBtn>}
+                {confirmPct == null && <PrimaryBtn onClick={() => save()} disabled={saving || weightInvalid} secondary={saveSecondary}>{label}</PrimaryBtn>}
               </>
             ) : (
               <div className="mt-1 flex flex-col gap-3 rounded-[18px] bg-white p-4">
@@ -400,7 +407,7 @@ export function DailyCheckCard({
                         <RadioChip
                           key={v}
                           on={changes[k] === v}
-                          onColor={v === "concerning" ? C.red : C.ink}
+                          amber={v === "concerning"}
                           onClick={() => setChanges((c) => ({ ...c, [k]: v }))}
                           className="px-3 text-[14px]"
                         >
@@ -411,9 +418,10 @@ export function DailyCheckCard({
                   </div>
                 ))}
                 {anyConcerning && (
-                  <p className="m-0 rounded-[14px] px-3.5 py-3 text-[14px] leading-[1.45]" style={{ background: C.redFill, color: C.redInk }}>
+                  // Amber, like the answer; red only when it's a call-the-vet-today sign.
+                  <p className="m-0 rounded-[14px] px-3.5 py-3 text-[14px] leading-[1.45]" style={concerningRed ? { background: C.redFill, color: C.redInk } : { background: C.amberFill, color: C.amberInk }}>
                     <b className="font-[700]">{t("dailyCheck.concerningTitle", "Concerning signs.")}</b>{" "}
-                    {[...Object.entries(changes)].some(([k, v]) => v === "concerning" && RED_KEYS.has(k as ScanFieldKey))
+                    {concerningRed
                       ? t("dailyCheck.concerningRed", "Call your avian vet today. We'll keep this flagged on {{name}}'s page.", { name })
                       : t("dailyCheck.concerningWatch", "Keep a close eye, and call your avian vet if it continues. We'll keep this flagged on {{name}}'s page.", { name })}
                   </p>
@@ -434,7 +442,7 @@ export function DailyCheckCard({
                     <KyaLink onClick={() => { setDifferent(false); setChanges({}); setNote(""); }} className="shrink-0 px-2">
                       {t("dailyCheck.back", "Back")}
                     </KyaLink>
-                    <PrimaryBtn onClick={() => save()} disabled={saving || weightInvalid} tall={false} className="flex-1">{label}</PrimaryBtn>
+                    <PrimaryBtn onClick={() => save()} disabled={saving || weightInvalid} tall={false} secondary={saveSecondary} className="flex-1">{label}</PrimaryBtn>
                   </div>
                 )}
               </div>
@@ -443,13 +451,13 @@ export function DailyCheckCard({
         </>
       )}
 
-      {weightFailed && <PrimaryBtn onClick={() => save()} disabled={saving || !hasWeight}>{label}</PrimaryBtn>}
+      {weightFailed && <PrimaryBtn onClick={() => save()} disabled={saving || !hasWeight} secondary={saveSecondary}>{label}</PrimaryBtn>}
     </>,
   );
 }
 
 /** "Add another weight" after today's check: weight, When = now, meal, save. */
-function ExtraWeight({ birdId, name, lastGrams, surface, onDone }: { birdId: string; name: string; lastGrams: number | null; surface: DailyCheckSurface; onDone: () => void }) {
+function ExtraWeight({ birdId, name, lastGrams, surface, onDone, secondary = false }: { secondary?: boolean; birdId: string; name: string; lastGrams: number | null; surface: DailyCheckSurface; onDone: () => void }) {
   const { t } = useTranslation();
   const qc = useQueryClient();
   const role = useBirdRole(birdId);
@@ -493,7 +501,7 @@ function ExtraWeight({ birdId, name, lastGrams, surface, onDone }: { birdId: str
         <button type="button" onClick={onDone} disabled={saving} className="min-h-[48px] shrink-0 border-0 bg-transparent px-3 text-[15px] font-[700] disabled:opacity-45" style={{ color: C.moss }}>
           {t("birdWeight.cancel", "Cancel")}
         </button>
-        <PrimaryBtn onClick={save} disabled={!valid || saving} tall={false} className="flex-1">
+        <PrimaryBtn onClick={save} disabled={!valid || saving} tall={false} secondary={secondary} className="flex-1">
           {saving ? t("birdWeight.saving", "Saving…") : t("dailyCheck.saveWeight", "Save weight")}
         </PrimaryBtn>
       </div>

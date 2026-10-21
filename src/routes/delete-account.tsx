@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate, useRouter, useCanGoBack, Link } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { K, KyaCard, KyaHeading, SERIF } from "@/components/kya";
+import { useStatusBarColor } from "@/lib/statusBar";
 
 const SUPPORT_EMAIL = "brittany@thekyaproject.com";
 
@@ -16,6 +17,8 @@ export const Route = createFileRoute("/delete-account")({
 });
 
 function DeleteAccountPage() {
+  // No forest header here: the status bar takes the mist page color.
+  useStatusBarColor(K.mist);
   const router = useRouter();
   const canGoBack = useCanGoBack();
   const navigate = useNavigate();

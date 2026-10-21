@@ -103,15 +103,17 @@ function BlogSection({ loading, connected, posts }: { loading: boolean; connecte
   // calm state, never a broken-looking empty section.
   if (!connected || posts.length === 0) {
     return (
-      <div className="rounded-[20px] bg-white p-8 text-center">
-        <Compass className="mx-auto size-7 text-[#2d6a4f]" />
-        <p className="mt-3 font-medium text-[#1a3d2e]">{connected ? t("explore.noPostsYet", "No posts yet") : t("explore.storiesOnTheWay", "Stories are on the way")}</p>
-        <p className="mt-1 text-sm text-[#5f5e5a]">
+      <KyaCard className="px-5 py-6 text-center" style={{ color: K.forest }}>
+        <div className="flex justify-center">
+          <KyaIconTile size={48}><Compass className="size-6" /></KyaIconTile>
+        </div>
+        <KyaHeading size={21} as="h3" className="mt-3">{connected ? t("explore.noPostsYet", "No posts yet") : t("explore.storiesOnTheWay", "Stories are on the way")}</KyaHeading>
+        <p className="m-0 mx-auto mt-1.5 max-w-[34ch] text-[15px] leading-[1.5]" style={{ color: K.quiet }}>
           {connected
             ? t("explore.newWritingWillAppear", "New writing from The Kya Project will appear here.")
             : t("explore.liningUpStories", "We're lining up guides and stories on parrot care, rescue, and the wild.")}
         </p>
-      </div>
+      </KyaCard>
     );
   }
 

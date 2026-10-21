@@ -3,7 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Check } from "lucide-react";
 import { joinWaitlist } from "@/lib/waitlist.functions";
-import { K, KyaHeading, KyaPrimaryButton, KyaSheet } from "@/components/kya";
+import { K, KyaHeading, KyaPrimaryButton, KyaRequiredTag, KyaSheet } from "@/components/kya";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 
@@ -164,10 +164,12 @@ function WaitlistModal({ onClose }: { onClose: () => void }) {
   );
 }
 
+// Every waitlist field is required, so each label carries the Required tag.
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  const { t } = useTranslation();
   return (
     <label className="block">
-      <span className="mb-1.5 block text-[13.5px] font-[700] text-[#1a3d2e]">{label}</span>
+      <span className="mb-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[13.5px] font-[700] text-[#1a3d2e]">{label}<KyaRequiredTag tone="forest">{t("waitlist.required", "Required")}</KyaRequiredTag></span>
       {children}
     </label>
   );

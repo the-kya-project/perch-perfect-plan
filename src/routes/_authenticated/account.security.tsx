@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Check, Mail } from "lucide-react";
 import { toast } from "sonner";
-import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaField, KyaPrimaryButton, KyaLink, KyaGroupLabel, KyaRow, KyaIconTile, KyaTag } from "@/components/kya";
+import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaField, KyaPrimaryButton, KyaLink, KyaGroupLabel, KyaRow, KyaIconTile, KyaTag, KyaRequiredTag } from "@/components/kya";
 import { PageHeader } from "@/components/headers";
 import { authErrorMessage } from "@/lib/authErrorMessage";
 import { joinNamesDisplay } from "@/lib/i18n/joinNames";
@@ -117,12 +117,14 @@ function SecurityPage() {
             <KyaField
               id="security-new-password"
               label={t("accountSecurity.newPassword", "New password")}
+              tag={<KyaRequiredTag tone="forest">{t("accountSecurity.required", "Required")}</KyaRequiredTag>}
               type="password" value={pw} onChange={(e) => setPw(e.target.value)} autoComplete="new-password"
               placeholder={t("accountSecurity.newPasswordPlaceholder", "At least 6 characters")}
             />
             <KyaField
               id="security-confirm-password"
               label={t("accountSecurity.confirmNewPassword", "Confirm new password")}
+              tag={<KyaRequiredTag tone="forest">{t("accountSecurity.required", "Required")}</KyaRequiredTag>}
               type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="new-password"
               placeholder={t("accountSecurity.reenterPassword", "Re-enter password")}
             />
