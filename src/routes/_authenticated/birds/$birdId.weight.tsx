@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { useBirdRole } from "@/lib/useBirdRole";
 import { useCapability, useMyPermissions } from "@/lib/useCapability";
+import { useConfirm } from "@/components/ConfirmSheet";
 import { useActiveSitIdForBird } from "@/components/CaregiverHome";
 import { toast } from "sonner";
 import { ArrowLeft, Check, X } from "lucide-react";
@@ -94,6 +95,7 @@ function WeightFacet() {
   const [openEntry, setOpenEntry] = useState<Entry | null>(null);
   const [editing, setEditing] = useState<Entry | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const { confirm, sheet: confirmSheet } = useConfirm();
 
   // ?log=1 deep-link → open the entry once we know the caller may log.
   useEffect(() => {
@@ -149,7 +151,13 @@ function WeightFacet() {
 
   // Owner-only delete (RLS also enforces birds.owner_id).
   async function deleteWeight(id: string) {
-    if (!window.confirm(t("birdWeight.confirmDelete", "Delete this weight entry? This can't be undone."))) return;
+    const yes = await confirm({
+      title: t("birdWeight.confirmDeleteTitle", "Delete this weight entry?"),
+      body: t("birdWeight.confirmDeleteBody", "It comes off {{name}}'s chart and history. This can't be undone.", { name }),
+      confirmLabel: t("birdWeight.delete", "Delete"),
+      cancelLabel: t("birdWeight.keep", "Keep"),
+    });
+    if (!yes) return;
     setDeleting(true);
     try {
       const { error } = await supabase.from("weight_entries").delete().eq("id", id);
@@ -263,9 +271,14 @@ function WeightFacet() {
                   </div>
                 )}
               </KyaCard>
-              {(canLogCare || isOwner) && (
+              {/* Only what this person can actually do: edit needs log_daily_care
+                  (RLS update policy), delete is owner-only. View-only members
+                  get no hint. */}
+              {isOwner ? (
                 <p className="m-0 -mt-2 px-1 text-[12.5px]" style={{ color: K.quiet }}>{t("birdWeight.tapToEdit", "Tap a weight to edit or delete it.")}</p>
-              )}
+              ) : canLogCare ? (
+                <p className="m-0 -mt-2 px-1 text-[12.5px]" style={{ color: K.quiet }}>{t("birdWeight.tapToEditOnly", "Tap a weight to edit it.")}</p>
+              ) : null}
             </>
           )}
         </KyaBody>
@@ -297,6 +310,7 @@ function WeightFacet() {
           </div>
         </BottomSheet>
       )}
+      {confirmSheet}
     </KyaPage>
   );
 }

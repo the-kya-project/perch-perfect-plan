@@ -10,7 +10,7 @@
 //   return <>{...}{sheet}</>;
 import { useCallback, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { K, KyaHeading, KyaSecondaryButton, KyaSheet } from "@/components/kya";
+import { K, KyaHeading, KyaPrimaryButton, KyaSecondaryButton, KyaSheet } from "@/components/kya";
 
 export type ConfirmOptions = {
   title: ReactNode;
@@ -20,6 +20,9 @@ export type ConfirmOptions = {
   confirmLabel: string;
   /** Defaults to "Cancel". Use "Keep" when backing out keeps something. */
   cancelLabel?: string;
+  /** Defaults to true (red button). False for a confirm that isn't destructive:
+   *  the choice is then the sunflower main button. */
+  destructive?: boolean;
 };
 
 /** Red pill for the destructive choice: same size as the sunflower main button. */
@@ -47,7 +50,9 @@ export function ConfirmSheet({ open, options, onAnswer }: { open: boolean; optio
     >
       {options.body && <p className="m-0 text-[15px] leading-[1.5]" style={{ color: K.quiet }}>{options.body}</p>}
       <div className="mt-4 flex flex-col gap-2.5">
-        <DestructiveButton onClick={() => onAnswer(true)}>{options.confirmLabel}</DestructiveButton>
+        {options.destructive === false
+          ? <KyaPrimaryButton onClick={() => onAnswer(true)}>{options.confirmLabel}</KyaPrimaryButton>
+          : <DestructiveButton onClick={() => onAnswer(true)}>{options.confirmLabel}</DestructiveButton>}
         <KyaSecondaryButton className="w-full" onClick={() => onAnswer(false)}>
           {options.cancelLabel ?? t("confirmSheet.cancel", "Cancel")}
         </KyaSecondaryButton>

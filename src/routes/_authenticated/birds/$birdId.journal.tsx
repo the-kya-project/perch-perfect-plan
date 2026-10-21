@@ -5,7 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { toast } from "sonner";
 import { Plus, BookOpen, ImagePlus, Loader2, Trash2, Paperclip, FileText } from "lucide-react";
-import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaPrimaryButton, KyaGroupLabel, KyaSheet, KyaField } from "@/components/kya";
+import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaPrimaryButton, KyaGroupLabel, KyaSheet, KyaField, KyaRequiredTag } from "@/components/kya";
+import { useConfirm } from "@/components/ConfirmSheet";
 import { PageHeader, useGoBack } from "@/components/headers";
 import { MemberContextBanner } from "@/components/MemberContextBanner";
 import { LoadError } from "@/components/LoadError";
@@ -71,10 +72,10 @@ function filterLabel(t: TFunction, f: Filter): string {
 }
 function emptyFilterText(t: TFunction, f: Filter): string {
   switch (f) {
-    case "all": return t("birdJournal.emptyAll", "No all entries yet.");
-    case "health": return t("birdJournal.emptyHealth", "No health entries yet.");
-    case "behavior": return t("birdJournal.emptyBehavior", "No behavior entries yet.");
-    case "notes": return t("birdJournal.emptyNotes", "No notes entries yet.");
+    case "all": return t("birdJournal.emptyAllEntries", "No entries yet");
+    case "health": return t("birdJournal.emptyHealthEntries", "No health entries yet");
+    case "behavior": return t("birdJournal.emptyBehaviorEntries", "No behavior entries yet");
+    case "notes": return t("birdJournal.emptyNotesEntries", "No notes yet");
   }
 }
 
@@ -340,10 +341,17 @@ function PickButton({ icon, children, accept, multiple, disabled, onChange }: { 
 function EntryForm({ birdId, entry, isOwner, onClose, onSaved, onDeleted }: { birdId: string; entry: Entry | null; isOwner: boolean; onClose: () => void; onSaved: () => void; onDeleted: () => void }) {
   const { t } = useTranslation();
   const [deleting, setDeleting] = useState(false);
+  const { confirm, sheet: confirmSheet } = useConfirm();
 
   async function remove() {
     if (!entry) return;
-    if (!window.confirm(t("birdJournal.confirmDelete", "Delete this journal entry? This can't be undone."))) return;
+    const yes = await confirm({
+      title: t("birdJournal.confirmDeleteTitle", "Delete this journal entry?"),
+      body: t("birdJournal.confirmDeleteBody", "Its photo and attachments go with it. This can't be undone."),
+      confirmLabel: t("birdJournal.delete", "Delete"),
+      cancelLabel: t("birdJournal.keep", "Keep"),
+    });
+    if (!yes) return;
     setDeleting(true);
     try {
       const { error } = await supabase.from("journal_entries").delete().eq("id", entry.id);
@@ -498,6 +506,7 @@ function EntryForm({ birdId, entry, isOwner, onClose, onSaved, onDeleted }: { bi
   const removeLink = "shrink-0 px-2 min-h-[44px] text-[14px] font-[700] underline disabled:opacity-50";
 
   return (
+    <>
     <KyaSheet
       onClose={busy ? () => {} : onClose}
       closeLabel={t("birdJournal.close", "Close")}
@@ -530,6 +539,7 @@ function EntryForm({ birdId, entry, isOwner, onClose, onSaved, onDeleted }: { bi
         <KyaField
           id="journal-title"
           label={t("birdJournal.titleField", "Title")}
+          tag={<KyaRequiredTag tone="forest">{t("birdJournal.required", "Required")}</KyaRequiredTag>}
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           maxLength={120}
@@ -635,5 +645,7 @@ function EntryForm({ birdId, entry, isOwner, onClose, onSaved, onDeleted }: { bi
         )}
       </div>
     </KyaSheet>
+    {confirmSheet}
+    </>
   );
 }
