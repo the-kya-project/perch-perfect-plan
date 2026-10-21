@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,14 +6,30 @@ import { activeOwnerBirdsMin, type ActiveBirdMin } from "@/lib/activeBirds";
 import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { createHouseholdInvite, getHouseholdAccount, addExistingHouseholdMember } from "@/lib/household.functions";
 import { ASSIGNABLE_PRESETS, type AssignablePreset } from "@/lib/capabilities";
-import { presetLabel, presetDescription } from "@/lib/capabilityLabels";
+import { presetLabel } from "@/lib/capabilityLabels";
 import { useTranslation } from "react-i18next";
 import { track } from "@/lib/analytics";
 import { toast } from "sonner";
-import { Loader2, Plus } from "lucide-react";
+import { Check, Loader2, Plus } from "lucide-react";
 import { friendlyError } from "@/lib/errorMessage";
-import { K, KyaSheet, KyaHeading, KyaLabel, KyaPrimaryButton, KyaSwitch } from "@/components/kya";
+import { K, KyaSheet, KyaHeading, KyaLabel, KyaPrimaryButton } from "@/components/kya";
 import { CheckChip } from "@/components/setup/controls";
+import type { TFunction } from "i18next";
+
+/** One line on what each preset includes, read off PRESET_CAPABILITIES
+ *  (src/lib/capabilities.ts) and the RLS each capability gates: caregiver adds
+ *  log_daily_care (weights, photos) + record_health (daily checks, journal
+ *  notes); care manager adds edit_care_plans, manage_emergency, manage_sits;
+ *  co-owner adds manage_flock (the birds themselves) + manage_household
+ *  (invites). Keep in step with those bundles. */
+function presetLineFor(t: TFunction, p: AssignablePreset): string {
+  switch (p) {
+    case "viewer": return t("householdInvite.presetLine.viewer", "Sees each bird's record and care plan, but can't change anything");
+    case "caregiver": return t("householdInvite.presetLine.caregiver", "Plus daily checks, weights, and notes");
+    case "care_manager": return t("householdInvite.presetLine.careManager", "Plus editing care plans, emergency info, and sits");
+    case "co_owner": return t("householdInvite.presetLine.coOwner", "Everything, including editing birds and inviting people");
+  }
+}
 
 // Shared household invite flow — used by the per-bird access hub and the
 // account-level /household screen. The invite defaults to ALL of the owner's
@@ -35,6 +51,8 @@ export function HouseholdInviteSheet({
   const [selected, setSelected] = useState<Set<string>>(new Set(initialBirdIds ?? []));
   const [seeded, setSeeded] = useState(!!initialBirdIds?.length);
   const [preset, setPreset] = useState<AssignablePreset>("caregiver");
+  const presetRefs = useRef<Partial<Record<AssignablePreset, HTMLButtonElement | null>>>({});
+  const presetLine = (p: AssignablePreset) => presetLineFor(t, p);
 
   // When adding to a single bird (the per-bird access hub), offer people already
   // in the household — they can be added directly, no email round-trip.
@@ -176,18 +194,50 @@ export function HouseholdInviteSheet({
 
         <div className="flex flex-col gap-1.5">
           <KyaLabel as="span">{t("householdInvite.permissionLevel", "Permission level")}</KyaLabel>
-          {/* One switch per level; turning one on turns the others off. The
-              level that's on stays on until another is picked. */}
-          <div className={listBox} style={{ borderColor: K.line }}>
-            {ASSIGNABLE_PRESETS.map((p, i) => (
-              <div key={p} className="flex min-h-[60px] items-center gap-3 px-4 py-2" style={i ? { borderTop: `1px solid ${K.line}` } : undefined}>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-[15px] font-[700]">{presetLabel(p)}</span>
-                  <span className="mt-0.5 block text-[13px] leading-[1.45]" style={{ color: K.quiet }}>{presetDescription(p)}</span>
-                </span>
-                <KyaSwitch checked={preset === p} onChange={(v) => { if (v) setPreset(p); }} label={presetLabel(p)} />
-              </div>
-            ))}
+          {/* Pick one: a card per preset (radio style). The whole card is the
+              tap target; arrow keys move the choice, like native radios. */}
+          <div
+            role="radiogroup"
+            aria-label={t("householdInvite.permissionLevel", "Permission level")}
+            className="flex flex-col gap-2"
+            onKeyDown={(e) => {
+              const step = e.key === "ArrowDown" || e.key === "ArrowRight" ? 1 : e.key === "ArrowUp" || e.key === "ArrowLeft" ? -1 : 0;
+              if (!step) return;
+              e.preventDefault();
+              const i = ASSIGNABLE_PRESETS.indexOf(preset);
+              const next = ASSIGNABLE_PRESETS[(i + step + ASSIGNABLE_PRESETS.length) % ASSIGNABLE_PRESETS.length];
+              setPreset(next);
+              presetRefs.current[next]?.focus();
+            }}
+          >
+            {ASSIGNABLE_PRESETS.map((p) => {
+              const on = preset === p;
+              return (
+                <button
+                  key={p}
+                  ref={(el) => { presetRefs.current[p] = el; }}
+                  type="button"
+                  role="radio"
+                  aria-checked={on}
+                  tabIndex={on ? 0 : -1}
+                  onClick={() => setPreset(p)}
+                  className="flex min-h-[56px] w-full items-center gap-3 rounded-[16px] border-2 bg-white px-4 py-2.5 text-left active:scale-[0.99]"
+                  style={{ borderColor: on ? K.forest : "#d5dfd5", color: K.forest }}
+                >
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-[15px] font-[700]">{presetLabel(p)}</span>
+                    <span className="mt-0.5 block text-[13px] leading-[1.45]" style={{ color: K.quiet }}>{presetLine(p)}</span>
+                  </span>
+                  <span
+                    aria-hidden="true"
+                    className="grid size-6 shrink-0 place-items-center rounded-full border-2"
+                    style={on ? { background: K.forest, borderColor: K.forest, color: "#fff" } : { borderColor: "#d5dfd5" }}
+                  >
+                    {on && <Check className="size-3.5" strokeWidth={3} />}
+                  </span>
+                </button>
+              );
+            })}
           </div>
           <p className="m-0 px-1 text-[13px]" style={{ color: K.quiet }}>{t("householdInvite.fineTuneHousehold", "You can change this anytime from your household.")}</p>
         </div>

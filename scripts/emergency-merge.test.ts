@@ -14,7 +14,7 @@
  * failure so it can gate a merge.
  */
 import assert from "node:assert/strict";
-import { birdOwnRows, birdOwnsRow, birdRowPatch, emergencyDifferent, isInherited, mergeEmergency, pickVet } from "@/lib/emergency";
+import { birdOwnRows, birdOwnsRow, birdRowPatch, emergencyDifferent, incompleteOwnVets, isInherited, mergeEmergency, pickVet } from "@/lib/emergency";
 
 let passed = 0;
 function check(name: string, fn: () => void) {
@@ -124,6 +124,40 @@ check("pickVet on the merge: bird's own avian vet without a phone falls to the A
 check("pickVet never pairs the bird's vet number with the account vet's name", () => {
   const vet = pickVet(mergeEmergency({ avian_vet_phone: "(555) 999-1111" }, account));
   assert.deepEqual(vet, { kind: "avian", name: null, phone: "(555) 999-1111", address: null });
+});
+
+check("incompleteOwnVets: no bird row, or vets that follow the account, are never incomplete", () => {
+  assert.deepEqual(incompleteOwnVets(null), []);
+  assert.deepEqual(incompleteOwnVets({ owner_phone: "555", avian_vet_name: " ", emergency_vet_phone: "" }), []);
+});
+
+check("incompleteOwnVets: own avian vet with only a name is missing its phone", () => {
+  assert.deepEqual(incompleteOwnVets({ avian_vet_name: "Bird Clinic" }), [{ row: "avian_vet", missing: ["phone"] }]);
+});
+
+check("incompleteOwnVets: own avian vet with only a phone is missing its name", () => {
+  assert.deepEqual(incompleteOwnVets({ avian_vet_phone: "(555) 999-1111" }), [{ row: "avian_vet", missing: ["name"] }]);
+});
+
+check("incompleteOwnVets: an address alone owns the row, so name and phone are both missing", () => {
+  assert.deepEqual(incompleteOwnVets({ emergency_vet_address: "3 Bird Rd" }), [{ row: "emergency_vet", missing: ["name", "phone"] }]);
+});
+
+check("incompleteOwnVets: a complete own vet without an address is fine", () => {
+  assert.deepEqual(incompleteOwnVets({ avian_vet_name: "A", avian_vet_phone: "1" }), []);
+});
+
+check("incompleteOwnVets: both own vets half filled are listed, avian first", () => {
+  assert.deepEqual(
+    incompleteOwnVets({ emergency_vet_name: "ER", avian_vet_phone: "1" }),
+    [{ row: "avian_vet", missing: ["name"] }, { row: "emergency_vet", missing: ["phone"] }],
+  );
+});
+
+check("incompleteOwnVets: the account never fills the gap (the merged row keeps it too)", () => {
+  const bird = { avian_vet_name: "Bird Clinic" };
+  assert.equal(mergeEmergency(bird, account).avian_vet_phone, null);
+  assert.deepEqual(incompleteOwnVets(bird), [{ row: "avian_vet", missing: ["phone"] }]);
 });
 
 console.log(`\n${passed} passed${process.exitCode ? ", some FAILED" : ""}`);

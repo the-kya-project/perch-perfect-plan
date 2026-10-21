@@ -19,6 +19,8 @@ import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaRow, KyaTag, KyaLink, KyaI
 import { PageHeader } from "@/components/headers";
 import { useOwnerEmergency } from "@/lib/useOwnerEmergency";
 import { missingRequired, type EmergencyValues } from "@/components/EmergencyContacts";
+import { incompleteOwnVets } from "@/lib/emergency";
+import { birdNames } from "@/lib/birdNames";
 import { getHouseholdAccount } from "@/lib/household.functions";
 import { SUPPORT_EMAIL } from "@/lib/support";
 import { toast } from "sonner";
@@ -125,6 +127,21 @@ function AccountPage() {
   // Care settings status lines.
   const { data: emergency } = useOwnerEmergency();
   const emergencyGaps = missingRequired((emergency ?? {}) as EmergencyValues);
+  // The owner's birds whose OWN vet row is missing a name or phone
+  // (incompleteOwnVets). One birds select + one emergency_contacts select.
+  const { data: vetGapBirds = [] } = useQuery({
+    queryKey: ["account-vet-gaps"],
+    queryFn: async (): Promise<{ id: string; name: string }[]> => {
+      const { data: u } = await getLocalUser();
+      if (!u.user) return [];
+      const { data: birds } = await supabase.from("birds").select("id, name").eq("owner_id", u.user.id).is("passed_at", null).order("created_at");
+      const ids = (birds ?? []).map((b) => b.id);
+      if (!ids.length) return [];
+      const { data: rows } = await supabase.from("emergency_contacts").select("*").in("bird_id", ids);
+      const gappy = new Set((rows ?? []).filter((r) => incompleteOwnVets(r).length > 0).map((r) => r.bird_id));
+      return (birds ?? []).filter((b) => gappy.has(b.id)).map((b) => ({ id: b.id, name: b.name }));
+    },
+  });
   const getHousehold = useServerFn(getHouseholdAccount);
   const { data: household } = useQuery({ queryKey: ["household-account"], queryFn: () => getHousehold() });
   const { data: notif } = useQuery({
@@ -154,8 +171,14 @@ function AccountPage() {
     : "";
   const providerName = (p: string) => p === "google" ? "Google" : p === "apple" ? "Apple" : p === "email" ? t("account.emailAndPassword", "Email and password") : p;
   const signInLine = providers.length ? joinAnd(t, providers.map(providerName)) : "";
+  // The account's own missing numbers come first; with those filled, a bird's
+  // half-filled own vet replaces "Ready".
   const emergencyTag = emergencyGaps.length === 0
-    ? <KyaTag tone="lime">{t("account.ready", "Ready")}</KyaTag>
+    ? vetGapBirds.length === 1
+      ? <KyaTag tone="amber">{t("account.needsBirdVetDetails", "Needs {{name}}'s vet details", { name: vetGapBirds[0].name })}</KyaTag>
+      : vetGapBirds.length > 1
+        ? <KyaTag tone="amber">{t("account.needsVetDetailsFor", "Needs vet details for {{names}}", { names: birdNames(t, vetGapBirds.map((b) => b.name)) })}</KyaTag>
+        : <KyaTag tone="lime">{t("account.ready", "Ready")}</KyaTag>
     : emergencyGaps.length === 2
       ? <KyaTag tone="amber">{t("account.needsTwoNumbers", "Needs 2 numbers")}</KyaTag>
       : <KyaTag tone="amber">{emergencyGaps[0] === "owner_phone" ? t("account.needsYourPhone", "Needs your phone") : t("account.needsVetPhone", "Needs vet phone")}</KyaTag>;
@@ -203,7 +226,12 @@ function AccountPage() {
           <section className="flex flex-col gap-2.5">
             <KyaHeading>{t("account.careSettings", "Care settings")}</KyaHeading>
             <KyaCard>
-              {row(<ShieldAlert className="size-5" />, t("account.emergencyInfo", "Emergency info"), <>{t("account.emergencyInfoDetail", "Your phone, vets, and where things are")}{emergency !== undefined && <span className="mt-1.5 block">{emergencyTag}</span>}</>, () => navigate({ to: "/account/emergency" }), { wrap: true })}
+              {row(<ShieldAlert className="size-5" />, t("account.emergencyInfo", "Emergency info"), <>{t("account.emergencyInfoDetail", "Your phone, vets, and where things are")}{emergency !== undefined && <span className="mt-1.5 block">{emergencyTag}</span>}</>, () => (
+                // One bird to finish: go straight to its page, where the card's Add opens the vet.
+                emergencyGaps.length === 0 && vetGapBirds.length === 1
+                  ? navigate({ to: "/birds/$birdId/emergency", params: { birdId: vetGapBirds[0].id } })
+                  : navigate({ to: "/account/emergency" })
+              ), { wrap: true })}
               {row(<Users className="size-5" />, t("account.household", "Household"), household ? householdLine : undefined, () => navigate({ to: "/household" }))}
               {row(<Bell className="size-5" />, t("account.notifications", "Notifications"), notifLine || undefined, () => navigate({ to: "/scans/settings" }), { last: !showGetApp })}
               {showGetApp && row(

@@ -4,6 +4,7 @@ import i18next from "i18next";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useBirdRole } from "@/lib/useBirdRole";
+import { useCapability } from "@/lib/useCapability";
 import { K, KyaPage, KyaBody } from "@/components/kya";
 import { PageHeader } from "@/components/headers";
 import { EmergencyInfo } from "@/components/EmergencyInfo";
@@ -25,6 +26,8 @@ function BirdEmergency() {
   const canGoBack = useCanGoBack();
   const qc = useQueryClient();
   const isOwner = useBirdRole(birdId) === "owner";
+  // Owners always; household members with "Manage emergency info".
+  const canEdit = useCapability("manage_emergency", { birdId });
   // Throws on a failed request so that a dropped connection isn't mistaken for
   // a bird that's gone (null = no such bird, or no longer shared with you).
   const { data: bird, isSuccess: birdKnown, isError: birdError } = useQuery({
@@ -78,6 +81,8 @@ function BirdEmergency() {
               defaults={defaults ?? null}
               ownerName={ownerName}
               isOwner={isOwner}
+              vetGapCard
+              canEdit={canEdit}
               onSaved={() => qc.invalidateQueries({ queryKey: ["contacts", birdId] })}
             />
           ) : (
