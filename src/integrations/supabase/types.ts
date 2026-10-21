@@ -1254,6 +1254,7 @@ export type Database = {
           signup_referrer: string | null
           signup_source: string | null
           signup_term: string | null
+          time_zone: string | null
           updated_at: string
           welcome_seen_at: string | null
         }
@@ -1283,6 +1284,7 @@ export type Database = {
           signup_referrer?: string | null
           signup_source?: string | null
           signup_term?: string | null
+          time_zone?: string | null
           updated_at?: string
           welcome_seen_at?: string | null
         }
@@ -1312,6 +1314,7 @@ export type Database = {
           signup_referrer?: string | null
           signup_source?: string | null
           signup_term?: string | null
+          time_zone?: string | null
           updated_at?: string
           welcome_seen_at?: string | null
         }

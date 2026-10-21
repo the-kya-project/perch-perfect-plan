@@ -9,7 +9,8 @@ import { track } from "@/lib/analytics";
 import { useServerFn } from "@tanstack/react-start";
 import { resolveHouseholdNames } from "@/lib/home.functions";
 import { getSitReadiness, type SitGapSection } from "@/lib/household.functions";
-import { deviceTimeZone, isMissingTimeZoneColumn } from "@/lib/sitTimeZone";
+import { isMissingTimeZoneColumn } from "@/lib/sitTimeZone";
+import { resolveSitTimeZone } from "@/lib/sitTimeZoneBackfill";
 import { BottomSheet } from "@/components/setup/BottomSheet";
 import type { TFunction } from "i18next";
 import { S, SERIF, Tag, SetupPrimaryButton, SetupSecondaryButton, SetupTextButton } from "@/components/setup/controls";
@@ -381,9 +382,11 @@ export function SitForm({
 
       // External sits keep a token window ending at the end of the end date in
       // the owner's time zone. The sits trigger (enforce_sit_token_rules)
-      // computes token_expires_at from end_date + time_zone, so we only send the
-      // zone: this device's, saved once and kept. Household sits have no token.
-      const tz = deviceTimeZone();
+      // computes token_expires_at from end_date + time_zone and applies the
+      // ACCOUNT's home zone (Account → Time zone), never the device's current
+      // one. We send that zone too (the device's only before the account has
+      // one, which also saves it there). Household sits have no token.
+      const tz = await resolveSitTimeZone(u.user.id);
 
       if (editing) {
         // PR 1: caregiver KIND is locked on edit (UI disables the picker too).
@@ -399,7 +402,7 @@ export function SitForm({
           lead_user_id: leadUserId,
         };
         // Sits made before time zones were saved: fill it in now (the trigger
-        // then moves the link's end to the end of the last day locally).
+        // then moves the link's end to the end of the last day in that zone).
         if (!editSit.time_zone && tz) update.time_zone = tz;
         if (kind === "external") {
           update.sitter_name = sitterName || null;

@@ -14,6 +14,7 @@
  */
 import assert from "node:assert/strict";
 import { dateInTimeZone, isValidTimeZone, sitPhase } from "@/lib/sitTimeZone";
+import { allTimeZones, pickSitTimeZone, searchTimeZones, timeZoneCity, timeZoneParts, timeZoneRowLabel } from "@/lib/sitTimeZoneNames";
 
 let passed = 0;
 function check(name: string, fn: () => void) {
@@ -102,6 +103,60 @@ check("the owner's zone moves the last day for a late-evening sitter", () => {
   const at = new Date("2026-10-26T03:00:00Z");
   assert.equal(sitPhase(dateInTimeZone("America/Los_Angeles", at), "2026-10-23", "2026-10-25").kind, "lastDay");
   assert.equal(sitPhase(dateInTimeZone("UTC", at), "2026-10-23", "2026-10-25").kind, "after");
+});
+
+// ---- The account's home zone (profiles.time_zone, 20261021180000) ----------
+
+check("a sit uses the account zone, not the travelling device's", () => {
+  assert.deepEqual(pickSitTimeZone("America/Los_Angeles", "Europe/Paris"), { zone: "America/Los_Angeles", saveToAccount: false });
+});
+
+check("before the account has a zone, the device's is used and saved to it", () => {
+  assert.deepEqual(pickSitTimeZone(null, "Europe/Paris"), { zone: "Europe/Paris", saveToAccount: true });
+  assert.deepEqual(pickSitTimeZone("Not/AZone", "Europe/Paris"), { zone: "Europe/Paris", saveToAccount: true });
+  assert.deepEqual(pickSitTimeZone(null, null), { zone: null, saveToAccount: false });
+});
+
+check("a zone reads as region and city, with the offset now", () => {
+  const winter = new Date("2026-01-15T12:00:00Z");
+  const p = timeZoneParts("America/Los_Angeles", "en-US", winter);
+  assert.equal(p.city, "Los Angeles");
+  assert.equal(p.label, "Pacific Time — Los Angeles");
+  assert.equal(p.offset, "GMT-8");
+  assert.equal(timeZoneParts("America/Los_Angeles", "en-US", new Date("2026-07-15T12:00:00Z")).offset, "GMT-7");
+  assert.equal(timeZoneRowLabel("America/Los_Angeles", "en-US", winter), "Pacific Time — Los Angeles (GMT-8)");
+});
+
+check("nested and underscored ids give a plain city", () => {
+  assert.equal(timeZoneCity("America/Argentina/Buenos_Aires"), "Buenos Aires");
+  assert.equal(timeZoneCity("UTC"), "UTC");
+  const utc = timeZoneParts("UTC", "en-US");
+  assert.ok(utc.label.includes("UTC") || utc.label.includes("Coordinated"), utc.label);
+});
+
+check("the zone list is never empty and keeps the saved alias", () => {
+  const zones = allTimeZones(["Asia/Calcutta", "Not/AZone", null]);
+  assert.ok(zones.length > 50);
+  assert.ok(zones.includes("UTC"));
+  assert.ok(zones.includes("America/New_York"));
+  assert.ok(zones.includes("Asia/Calcutta") || zones.includes("Asia/Kolkata"));
+  assert.ok(!zones.includes("Not/AZone"));
+  assert.equal(new Set(zones).size, zones.length);
+});
+
+check("search finds a zone by city, region, offset or id", () => {
+  const at = new Date("2026-01-15T12:00:00Z");
+  const zones = allTimeZones().map((z) => timeZoneParts(z, "en-US", at));
+  const ids = (q: string) => searchTimeZones(zones, q).map((z) => z.id);
+  assert.ok(ids("los ang").includes("America/Los_Angeles"));
+  assert.ok(ids("Pacific time").includes("America/Los_Angeles"));
+  assert.ok(ids("new_york").includes("America/New_York"));
+  // ICU lists it as America/Buenos_Aires or America/Argentina/Buenos_Aires.
+  assert.ok(searchTimeZones(zones, "buenos aires").some((z) => z.city === "Buenos Aires"));
+  assert.ok(ids("gmt-8").includes("America/Los_Angeles"));
+  assert.ok(ids("amsterdam").includes("Europe/Amsterdam"));
+  assert.equal(searchTimeZones(zones, "  ").length, zones.length);
+  assert.equal(ids("zzzz nowhere").length, 0);
 });
 
 console.log(`\n${passed} passed${process.exitCode ? ", some FAILED" : ""}`);
