@@ -17,6 +17,21 @@ import { cleanupOutdatedCaches, precacheAndRoute, type PrecacheEntry } from "wor
 import { registerRoute } from "workbox-routing";
 import { CacheFirst, NetworkFirst, NetworkOnly } from "workbox-strategies";
 import { ExpirationPlugin } from "workbox-expiration";
+import { CacheableResponsePlugin } from "workbox-cacheable-response";
+import type { WorkboxPlugin } from "workbox-core/types";
+
+/** Never store a response that isn't the real file: a 404 page, a redirect, or
+ *  HTML served in place of a script. Cache-first never re-checks what it has,
+ *  so one bad copy caught mid-deploy would be served forever (the 2026-10-21
+ *  iOS reload loop). */
+const onlyRealFiles: WorkboxPlugin = {
+  cacheWillUpdate: async ({ response, request }) => {
+    if (!response || response.status !== 200 || response.redirected) return null;
+    const type = response.headers.get("content-type") ?? "";
+    if (/text\/html/i.test(type) && request.destination !== "document") return null;
+    return response;
+  },
+};
 
 declare let self: ServiceWorkerGlobalScope & {
   __WB_MANIFEST: Array<PrecacheEntry | string>;
@@ -79,7 +94,11 @@ registerRoute(
     ["style", "script", "worker", "font"].includes(request.destination),
   new CacheFirst({
     cacheName: "static-assets",
-    plugins: [new ExpirationPlugin({ maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 30 })],
+    plugins: [
+      new CacheableResponsePlugin({ statuses: [200] }),
+      onlyRealFiles,
+      new ExpirationPlugin({ maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 30 }),
+    ],
   }),
 );
 

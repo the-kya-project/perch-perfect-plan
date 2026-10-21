@@ -18,6 +18,7 @@ import { incomingLink } from "./appLinks";
 import { isNativeApp } from "./nativeApp";
 
 const REPEAT_MS = 5_000;
+const LAUNCH_KEY = "kya-launch-link";
 
 export async function attachAppLinkHandler(navigate: (href: string) => void): Promise<void> {
   if (!isNativeApp()) return;
@@ -39,8 +40,19 @@ export async function attachAppLinkHandler(navigate: (href: string) => void): Pr
   try {
     const { App } = await import("@capacitor/app");
     await App.addListener("appUrlOpen", (event) => open(event.url));
+    // getLaunchUrl keeps returning the link that started the app for as long
+    // as the app runs, so after any full page load (a tracked link, a reload)
+    // it would be handled again — and a tracked link loads a page, which
+    // would loop. Handle each launch link once per app run.
     const launch = await App.getLaunchUrl();
-    open(launch?.url);
+    if (launch?.url) {
+      let seen = false;
+      try {
+        seen = sessionStorage.getItem(LAUNCH_KEY) === launch.url;
+        sessionStorage.setItem(LAUNCH_KEY, launch.url);
+      } catch { /* storage blocked: the 5s repeat guard still applies */ }
+      if (!seen) open(launch.url);
+    }
   } catch (err) {
     console.error("[app-links] could not attach the link handler", err);
   }

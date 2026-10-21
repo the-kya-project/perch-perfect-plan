@@ -7605,8 +7605,8 @@
     "resetPassword.updatePassword": {
       "stamp": "22e63e81809b3896"
     },
-    "root.errorBody": {
-      "stamp": "702eb95aad6b7a15"
+    "root.errorBodyReload": {
+      "stamp": "672c359d9ffba1b3"
     },
     "root.goHome": {
       "stamp": "e42c11dbc8ca8616"
@@ -7623,8 +7623,8 @@
     "root.pageNotFoundBody": {
       "stamp": "2a61b3f8a58e2cea"
     },
-    "root.refresh": {
-      "stamp": "0cf7d11a404ae27f"
+    "root.reload": {
+      "stamp": "24634d75d839c914"
     },
     "root.somethingWentWrong": {
       "stamp": "7240889e0bebf7a8"

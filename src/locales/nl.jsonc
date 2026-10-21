@@ -5073,8 +5073,8 @@
   "resetPassword.updated": "Wachtwoord bijgewerkt. Je bent ingelogd.",
   // Update password
   "resetPassword.updatePassword": "Wachtwoord bijwerken",
-  // Sorry, that page didn't load properly. Try refreshing, and if it keeps happening, email us at {{email}}.
-  "root.errorBody": "Sorry, die pagina laadde niet goed. Probeer te vernieuwen, en als het blijft gebeuren, mail ons op {{email}}.",
+  // Sorry, the app didn't load properly. Tap Reload, and if it keeps happening, email us at {{email}}.
+  "root.errorBodyReload": "Sorry, de app is niet goed geladen. Tik op Opnieuw laden, en mail ons op {{email}} als het blijft gebeuren.",
   // Go home
   "root.goHome": "Naar home",
   // Shared care for your bird. Build one care plan, then share it so family, pet sitters, and household members all stay on the same page.
@@ -5085,8 +5085,8 @@
   "root.pageNotFound": "Pagina niet gevonden",
   // The page you're looking for doesn't exist or the sitter link is invalid.
   "root.pageNotFoundBody": "De pagina die je zoekt bestaat niet, of de oppaslink is ongeldig.",
-  // Refresh
-  "root.refresh": "Vernieuwen",
+  // Reload
+  "root.reload": "Opnieuw laden",
   // Something went wrong
   "root.somethingWentWrong": "Er ging iets mis",
   // Concerning
