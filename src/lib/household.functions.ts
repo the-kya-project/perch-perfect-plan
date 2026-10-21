@@ -10,7 +10,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { PRESET_CAPABILITIES, ASSIGNABLE_PRESETS, type AssignablePreset } from "@/lib/capabilities";
+import { PRESET_CAPABILITIES, ASSIGNABLE_PRESETS, type AssignablePreset, type Capability } from "@/lib/capabilities";
 import { activeOwnerBirdsMin } from "@/lib/activeBirds";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { buildHouseholdInviteEmail } from "./emailTemplates";
@@ -321,12 +321,14 @@ export const getHouseholdInvite = createServerFn({ method: "GET" })
   .inputValidator((d: { token: string }) => z.object({ token: z.string().min(16) }).parse(d))
   .handler(async ({ data }) => {
     const sb = await getAdmin();
-    const { data: invite } = await sb
+    // Cast the builder: `preset` (migration 20260630160000) isn't in the
+    // generated types yet, which would otherwise poison the whole select type.
+    const { data: invite } = await (sb as any)
       .from("household_invites")
-      .select("id, owner_id, invitee_email, invitee_name, bird_ids, status, expires_at")
+      .select("id, owner_id, invitee_email, invitee_name, bird_ids, status, expires_at, preset")
       .eq("token", data.token)
       .maybeSingle();
-    if (!invite) return { valid: false as const };
+    if (!invite) return { valid: false as const, inviterName: null as string | null };
 
     const expired = new Date(invite.expires_at).getTime() <= Date.now();
     if (invite.status !== "pending" || expired) {
@@ -334,18 +336,35 @@ export const getHouseholdInvite = createServerFn({ method: "GET" })
       if (invite.status === "pending" && expired) {
         await sb.from("household_invites").update({ status: "expired" }).eq("id", invite.id);
       }
-      return { valid: false as const };
+      // Only the inviter's name (the link holder already has it from the
+      // email) so the screen can say who to ask for a new one. No bird data.
+      return { valid: false as const, inviterName: (await ownerDisplayNameRaw(sb, invite.owner_id)) as string | null };
     }
 
     // Raw data only: the invite screen joins the names and supplies the
     // "An owner" fallback in the reader's language (joinNamesDisplay / t()).
     const inviterName: string | null = await ownerDisplayNameRaw(sb, invite.owner_id);
-    const { data: birds } = await sb.from("birds").select("name").in("id", invite.bird_ids);
+    const { data: birds } = await sb.from("birds").select("name, photo_url, photo_position").in("id", invite.bird_ids);
     const birdNames: string[] = (birds ?? []).map((b: any) => b.name as string).filter(Boolean);
+    // Name + signed photo for the avatar row on the accept screen.
+    const birdPreviews = await Promise.all(
+      (birds ?? []).filter((b: any) => b.name).map(async (b: any) => ({
+        name: b.name as string,
+        photoUrl: await signBirdPhotoPath(sb, b.photo_url),
+        photoPosition: (b.photo_position ?? null) as string | null,
+      })),
+    );
+    // What the member will be able to do once they accept: the preset's
+    // capability bundle (Caregiver for older invites with no stored preset,
+    // matching acceptHouseholdInvite).
+    const preset = ((invite.preset ?? "caregiver") as AssignablePreset);
+    const capabilities: Capability[] = PRESET_CAPABILITIES[preset] ? [...PRESET_CAPABILITIES[preset]] : [];
     return {
       valid: true as const,
       inviterName,
       birdNames,
+      birds: birdPreviews,
+      capabilities,
       birdCount: invite.bird_ids.length,
       inviteeEmail: invite.invitee_email as string,
       inviteeName: invite.invitee_name as string | null,

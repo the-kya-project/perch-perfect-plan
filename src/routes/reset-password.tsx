@@ -2,7 +2,9 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { InkHero, PrimaryButton, CtaLink } from "@/components/system";
+import { Loader2 } from "lucide-react";
+import { K, KyaLabel, KyaLink } from "@/components/kya";
+import { FrontDoorBody, FrontDoorError, FrontDoorHeader, FrontDoorPage } from "@/components/frontDoor";
 import { authErrorMessage } from "@/lib/authErrorMessage";
 import { useTranslation } from "react-i18next";
 import i18next from "i18next";
@@ -25,6 +27,16 @@ function ResetPasswordPage() {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  // Only for what the page shows while not ready: a link Supabase already
+  // rejected (an error in the URL hash), or one that never produced a session.
+  // Readiness itself is unchanged — a late recovery event still makes it ready.
+  const [linkLooksBad, setLinkLooksBad] = useState(false);
+  useEffect(() => {
+    if (/(^|[#&?])error(_code)?=/.test(window.location.hash + window.location.search)) setLinkLooksBad(true);
+    const id = window.setTimeout(() => setLinkLooksBad(true), 6000);
+    return () => window.clearTimeout(id);
+  }, []);
 
   // Supabase puts the recovery token in the URL hash and exchanges it for a
   // session. Wait for the recovery event (or an existing session) before
@@ -45,12 +57,13 @@ function ResetPasswordPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    setError(null);
     if (password.length < 6) {
-      toast.error(t("resetPassword.tooShort", "Password must be at least 6 characters."));
+      setError(t("resetPassword.tooShort", "Password must be at least 6 characters."));
       return;
     }
     if (password !== confirm) {
-      toast.error(t("resetPassword.mismatch", "Passwords don't match."));
+      setError(t("resetPassword.mismatch", "Passwords don't match."));
       return;
     }
     setLoading(true);
@@ -60,66 +73,90 @@ function ResetPasswordPage() {
       toast.success(t("resetPassword.updated", "Password updated. You're signed in."));
       navigate({ to: "/dashboard" });
     } catch (err: any) {
-      toast.error(authErrorMessage(err, t("resetPassword.couldNotUpdate", "Could not update password.")));
+      setError(authErrorMessage(err, t("resetPassword.couldNotUpdate", "Could not update password.")));
     } finally {
       setLoading(false);
     }
   }
 
-  return (
-    <div className="min-h-screen bg-[var(--cream)]">
-      <InkHero
-        eyebrow="Kya & Co."
-        headline={t("resetPassword.headline", "Set a new password.")}
-        body={
-          ready
-            ? t("resetPassword.bodyReady", "Choose a new password for your account.")
-            : t("resetPassword.bodyNotReady", "Open this page from the password reset email you received.")
-        }
-      />
+  const backToSignIn = () => navigate({ to: "/auth", search: { mode: "signin" } });
 
-      <main className="mx-auto max-w-md px-5 py-8">
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <label className="block">
-            <span className="t-eyebrow mb-1 block text-[var(--mute)]">{t("resetPassword.newPassword", "New password")}</span>
+  return (
+    <FrontDoorPage>
+      <FrontDoorHeader
+        onBack={backToSignIn}
+        title={t("resetPassword.headlineV2", "Set a new password")}
+        line={ready ? t("resetPassword.bodyReady", "Choose a new password for your account.") : undefined}
+      />
+      <FrontDoorBody>
+        {!ready && !linkLooksBad && (
+          <p className="m-0 flex items-center gap-2 text-[14px]" style={{ color: K.quiet }}>
+            <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+            {t("resetPassword.checkingLink", "Checking your link…")}
+          </p>
+        )}
+        {!ready && linkLooksBad && (
+          <FrontDoorError>
+            {t("resetPassword.bodyNotReady", "Open this page from the password reset email you received.")}
+          </FrontDoorError>
+        )}
+        {error && <FrontDoorError>{error}</FrontDoorError>}
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <KyaLabel htmlFor="reset-new">{t("resetPassword.newPassword", "New password")}</KyaLabel>
             <input
+              id="reset-new"
               type="password"
+              autoComplete="new-password"
               required
               minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="input"
+              className="kya-input"
               placeholder="••••••••"
               disabled={!ready}
             />
-          </label>
-          <label className="block">
-            <span className="t-eyebrow mb-1 block text-[var(--mute)]">{t("resetPassword.confirmPassword", "Confirm password")}</span>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <KyaLabel htmlFor="reset-confirm">{t("resetPassword.confirmNewPassword", "Confirm new password")}</KyaLabel>
             <input
+              id="reset-confirm"
               type="password"
+              autoComplete="new-password"
               required
               minLength={6}
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
-              className="input"
+              className="kya-input"
               placeholder="••••••••"
               disabled={!ready}
             />
-          </label>
-          <div className="pt-2">
-            <PrimaryButton tone="ink" type="submit" disabled={loading || !ready}>
-              {loading ? "..." : t("resetPassword.updatePassword", "Update password")}
-            </PrimaryButton>
           </div>
+          <SubmitButton disabled={loading || !ready} busy={loading}>
+            {t("resetPassword.saveNewPassword", "Save new password")}
+          </SubmitButton>
         </form>
 
-        <div className="mt-6">
-          <CtaLink
-            label={t("resetPassword.backToSignIn", "Back to sign in")}
-            onPress={() => navigate({ to: "/auth", search: { mode: "signin" } })}
-          />
+        <div className="flex justify-center">
+          <KyaLink onClick={backToSignIn}>{t("resetPassword.backToSignIn", "Back to sign in")}</KyaLink>
         </div>
-      </main>
-    </div>
+      </FrontDoorBody>
+    </FrontDoorPage>
+  );
+}
+
+/** KyaPrimaryButton's look as a real submit button, so Enter submits the form. */
+function SubmitButton({ children, disabled, busy }: { children: React.ReactNode; disabled?: boolean; busy?: boolean }) {
+  return (
+    <button
+      type="submit"
+      disabled={disabled}
+      className="mt-1 inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-full border-2 px-6 text-[16px] font-[700] disabled:opacity-45"
+      style={{ background: K.sunflower, borderColor: K.forest, color: K.forest }}
+    >
+      {busy && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
+      {children}
+    </button>
   );
 }

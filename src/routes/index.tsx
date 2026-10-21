@@ -1,10 +1,10 @@
-import { createFileRoute, Link, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { ArrowRight } from "lucide-react";
 import { hasStoredSession, getReadySession } from "@/lib/authReady";
 import { track } from "@/lib/analytics";
-import { Disclaimer } from "@/components/Disclaimer";
 import { BrandLockup } from "@/components/BrandLogo";
+import { K, KyaHeading, KyaPrimaryButton } from "@/components/kya";
+import { FrontDoorPage, OnForestOutlineButton } from "@/components/frontDoor";
 import { useTranslation } from "react-i18next";
 import i18next from "i18next";
 
@@ -52,63 +52,59 @@ function Welcome() {
   }, [navigate]);
 
   return (
-    <div className="min-h-screen bg-[#f4f1e8]">
-      <main className="mx-auto flex min-h-screen max-w-md flex-col px-5 pb-10 pt-[calc(env(safe-area-inset-top)+36px)]">
-        {/* Left-aligned lockup anchors the page's reading axis (lockup →
-            headline → subhead → primary card). ~42px tall via size 137. */}
-        <div className="flex justify-start">
-          <BrandLockup orientation="horizontal" variant="cream" size={137} />
+    <FrontDoorPage>
+      {/* The photo fills the top of the screen and fades into forest; the
+          headline sits on its lower edge. */}
+      <div className="relative h-[60dvh] min-h-[400px] w-full overflow-hidden">
+        <img
+          src="/brand/email/app-launch-hero.jpg"
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover"
+          // The conure's head sits right of center in the 1040x640 frame; this
+          // keeps head and beak in view on a ~390px-wide phone.
+          style={{ objectPosition: "64% 30%" }}
+        />
+        <div
+          className="absolute inset-0"
+          aria-hidden="true"
+          style={{ background: `linear-gradient(to bottom, rgba(18,41,31,0.55) 0%, rgba(18,41,31,0) 26%, rgba(26,61,46,0) 42%, rgba(26,61,46,0.82) 74%, ${K.forest} 100%)` }}
+        />
+        <div className="absolute inset-x-0 top-0">
+          <div className="mx-auto max-w-md px-5 pt-[calc(env(safe-area-inset-top)+14px)]">
+            {/* White on the photo: the transparent lockup, knocked out to white. */}
+            <BrandLockup orientation="horizontal" variant="white" size={124} />
+          </div>
+        </div>
+        <div className="absolute inset-x-0 bottom-0">
+          <div className="mx-auto max-w-md px-5 pb-1">
+            <KyaHeading as="h1" size={34} className="text-balance text-white">
+              {t("landing.headlineV2", "Everything it takes to care for your parrots, in one place you can share")}
+            </KyaHeading>
+          </div>
+        </div>
+      </div>
+
+      <main className="mx-auto flex w-full max-w-md flex-1 flex-col px-5 pb-[max(env(safe-area-inset-bottom),24px)] pt-3">
+        <p className="m-0 text-pretty text-[15px] leading-[1.5]" style={{ color: K.paleGreen }}>
+          {t("landing.subheadV2", "A care plan and health record for each bird: routine, diet, weight, and the little things only you know. Share it with family, sitters, and anyone who helps.")}
+        </p>
+
+        <div className="mt-6 flex flex-col gap-3">
+          <KyaPrimaryButton onClick={() => navigate({ to: "/auth", search: { mode: "signup" as const } })}>
+            {t("landing.addYourFirstBird", "Add your first bird")}
+          </KyaPrimaryButton>
+          <OnForestOutlineButton onClick={() => navigate({ to: "/auth", search: { mode: "signin" as const } })}>
+            {t("landing.alreadyHaveAccountButton", "I already have an account")}
+          </OnForestOutlineButton>
         </div>
 
-        <div className="mt-[42px] space-y-3">
-          <h1 className="text-balance text-4xl font-medium leading-[1.05] tracking-tight">
-            {t("landing.headline", "Everything it takes to care for your parrots, in one place you can share.")}
-          </h1>
-          <p className="text-pretty text-base text-[#5f5e5a]">
-            {t("landing.subhead", "Keep a complete care plan and health record for each of your birds — routine, diet, weight, and the little things only you know. Share it with the family, sitters, and household members who help.")}
-          </p>
-        </div>
-
-        {/* One primary action — the dark-green card routes to sign-up. */}
-        <div className="mt-10">
-          <Link
-            to="/auth"
-            search={{ mode: "signup" as const }}
-            className="block rounded-2xl bg-[#1a3d2e] px-5 py-5 text-white shadow-sm active:scale-[0.99]"
-          >
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-[11px] font-medium uppercase tracking-widest text-[#cdeab0]">{t("landing.startHere", "Start here")}</p>
-                <p className="mt-1 text-lg font-medium">{t("landing.addYourFirstBird", "Add your first bird")}</p>
-              </div>
-              <span className="grid size-10 shrink-0 place-items-center rounded-full bg-[#cdeab0] text-[#1a3d2e]">
-                <ArrowRight className="size-5" strokeWidth={2.2} />
-              </span>
-            </div>
-          </Link>
-        </div>
-
-        {/* Returning users get a real tap target — an outlined secondary button,
-            visually subordinate to the filled primary card above. The invite
-            line stays informational (no button, no underline). */}
-        <div className="mt-6">
-          <p className="text-center text-[13px] text-[#5f5e5a]">{t("landing.alreadyHaveAccount", "Already have an account?")}</p>
-          <Link
-            to="/auth"
-            search={{ mode: "signin" as const }}
-            className="mt-2 block w-full rounded-2xl border-[1.5px] border-[#1a3d2e] bg-transparent px-5 py-4 text-center text-base font-medium text-[#1a3d2e] active:scale-[0.99]"
-          >
-            {t("landing.signIn", "Sign in")}
-          </Link>
-          <p className="mt-4 text-center text-[13px] leading-relaxed text-[#8a897f]">
-            {t("landing.invitedHint", "Were you invited by someone? Open the link they sent you.")}
-          </p>
-        </div>
-
-        <div className="mt-auto pt-10">
-          <Disclaimer compact />
-        </div>
+        <p className="m-0 mt-5 text-center text-[12.5px] leading-[1.45]" style={{ color: K.paleGreen }}>
+          {t("landing.invitedHintV2", "Invited by someone? Open the link they sent you.")}
+        </p>
+        <p className="m-0 mt-auto pt-5 text-center text-[12.5px] leading-[1.45]" style={{ color: K.teal }}>
+          {t("disclaimer.compactBody", "Not a substitute for veterinary care. Call a vet for any medical concern.")}
+        </p>
       </main>
-    </div>
+    </FrontDoorPage>
   );
 }
