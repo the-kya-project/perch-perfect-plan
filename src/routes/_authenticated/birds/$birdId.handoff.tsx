@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,7 +37,13 @@ function HandoffFlow() {
     },
   });
   const name = bird?.row?.name ?? t("birdHandoff.thisBird", "this bird");
-  const notOwner = bird?.row && bird.uid && bird.row.owner_id !== bird.uid;
+  // Not the owner → this screen isn't for them. Redirect from an effect, not
+  // during render (navigating while rendering is a React warning and can loop);
+  // render nothing meanwhile.
+  const notOwner = !!(bird?.row && bird.uid && bird.row.owner_id !== bird.uid);
+  useEffect(() => {
+    if (notOwner) navigate({ to: "/birds/$birdId", params: { birdId }, replace: true });
+  }, [notOwner, navigate, birdId]);
 
   const create = useServerFn(createHandoff);
   const m = useMutation({
@@ -53,10 +59,7 @@ function HandoffFlow() {
 
   const emailOk = /\S+@\S+\.\S+/.test(email.trim());
 
-  if (notOwner) {
-    navigate({ to: "/birds/$birdId", params: { birdId }, replace: true });
-    return null;
-  }
+  if (notOwner) return null;
 
   return (
     <KyaPage>

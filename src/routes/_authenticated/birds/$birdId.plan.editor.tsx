@@ -1,4 +1,4 @@
-import { createFileRoute, useLocation, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { speciesLabel } from "@/lib/speciesLabel";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -12,8 +12,7 @@ import { ChevronDown, AlertTriangle, Eye } from "lucide-react";
 import { EmergencyInfo } from "@/components/EmergencyInfo";
 import { useBirdOwnerEmergency } from "@/lib/useOwnerEmergency";
 import { K, KyaBody, KyaCard, KyaHeading, KyaTag, KyaSecondaryButton, KyaPrimaryButton, KyaLink } from "@/components/kya";
-import { HeaderPill, TaskHeader, TaskFooter, TASK_FOOTER_SPACE } from "@/components/headers";
-import { isTaskPath } from "@/components/OwnerTabBar";
+import { TaskHeader, TaskFooter, TASK_FOOTER_SPACE } from "@/components/headers";
 import { SETUP_STEPS } from "@/components/SetupShell";
 // The editor renders the guided-setup step components directly so the two UIs
 // are identical (same fields, pickers, autosave, clip recording).
@@ -26,7 +25,7 @@ import { useCapability, useMyPermissions } from "@/lib/useCapability";
 import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 import { formatLocalDateTime } from "@/lib/dates";
 import { LoadError } from "@/components/LoadError";
-import { useLoadState } from "@/lib/useTooLong";
+import { useLoadState, useTooLong } from "@/lib/useTooLong";
 
 
 // The care-plan editor is reached via the new overview front door (/plan).
@@ -109,9 +108,6 @@ function BirdEditor() {
   // A bird with no care plan row would leave every tab waiting; create it (as
   // the walkthrough does) for anyone allowed to edit the plan.
   useEnsureCarePlan(birdId, role === "owner" || canEdit);
-  // A task page hides the bottom nav (isTaskPath); until this route is listed
-  // there the nav still shows, so the Done footer sits just above it.
-  const navHidden = useLocation({ select: (l) => isTaskPath(l.pathname) });
   useEffect(() => {
     if (role === "owner") return;
     if (role == null || !perms) return; // still loading
@@ -179,6 +175,16 @@ function BirdEditor() {
 
   const resolvePhoto = useBirdPhotos([bird?.photo_url], 96);
 
+  // The Emergency tab needs the bird's contacts, the owner's defaults and the
+  // viewer's role before it can render safely (saving earlier would copy the
+  // owner's values onto the bird). While they load, show a skeleton inside the
+  // normal page chrome — never a blank body — and after 10 s offer a retry.
+  const emergencyLoading = contacts === undefined || defaults === undefined || role === undefined;
+  const { tooLong: emergencyTooLong, restart: restartEmergency } = useTooLong(
+    tab === "emergency" && emergencyLoading && !ownerEmergencyFailed,
+  );
+  const retryEmergency = () => { restartEmergency(); void qc.refetchQueries({ type: "active" }); };
+
   if (birdMissing || birdLoad.failed) {
     const goHome = () => navigate({ to: "/dashboard" });
     const goOverview = () => navigate({ to: "/birds/$birdId/plan", params: { birdId } });
@@ -234,11 +240,9 @@ function BirdEditor() {
   const doneButton = <KyaPrimaryButton onClick={done}>{t("planEditor.done", "Done")}</KyaPrimaryButton>;
 
   return (
-    <div className={`setup-frame min-h-screen ${navHidden ? "" : "pb-nav"}`} style={{ background: K.mist, color: K.forest }}>
+    <div className="setup-frame min-h-screen" style={{ background: K.mist, color: K.forest }}>
       <TaskHeader
         onClose={goToOverview}
-        // Top right holds the one header action instead of a progress count.
-        progress={{ label: <HeaderPill action={{ label: t("planEditor.viewAsSitter", "View as sitter"), icon: <Eye className="size-4" />, onClick: () => navigate({ to: "/birds/$birdId/view-as-sitter", params: { birdId } }) }} /> }}
         title={
           <span className="flex items-center gap-3">
             {headerPhoto && (
@@ -281,6 +285,15 @@ function BirdEditor() {
 
       <div className={TASK_FOOTER_SPACE}>
         <KyaBody>
+          {/* Check the plan as the sitter will see it — a body action, so the
+              header's top-right slot stays free. */}
+          <KyaSecondaryButton
+            className="w-full"
+            icon={<Eye className="size-4" />}
+            onClick={() => navigate({ to: "/birds/$birdId/view-as-sitter", params: { birdId } })}
+          >
+            {t("planEditor.viewAsSitter", "View as sitter")}
+          </KyaSecondaryButton>
           {/* Every section tab renders the guided-setup step component directly, so
               the editor and the setup wizard are the exact same UI — except the
               green per-step instruction banner, hidden here via HideStepInstruction
@@ -297,10 +310,17 @@ function BirdEditor() {
             {tab === "clips" && <OwnerTipsClipsStep birdId={birdId} birdName={birdName} onBlockNext={() => {}} />}
             {/* Wait for the owner's info as well as the bird's: saving before it
                 arrives would store a copy of the owner's values on this bird. */}
-            {tab === "emergency" && ownerEmergencyFailed && (
-              <LoadError onRetry={() => void qc.refetchQueries({ queryKey: ["bird-owner-emergency", birdId] })} />
+            {tab === "emergency" && (ownerEmergencyFailed || emergencyTooLong) && (
+              <LoadError onRetry={retryEmergency} />
             )}
-            {tab === "emergency" && !ownerEmergencyFailed && contacts !== undefined && defaults !== undefined && role !== undefined && <EmergencyInfo birdId={birdId} birdName={birdName} contacts={contacts ?? null} defaults={defaults ?? null} ownerName={ownerName} isOwner={role === "owner"} onSaved={() => qc.invalidateQueries({ queryKey: ["contacts", birdId] })} />}
+            {tab === "emergency" && !ownerEmergencyFailed && !emergencyTooLong && emergencyLoading && (
+              <div role="status" className="flex flex-col gap-3">
+                <span className="sr-only">{t("planEditor.loading", "Loading...")}</span>
+                <div className="h-28 animate-pulse rounded-[20px] bg-white" aria-hidden="true" />
+                <div className="h-48 animate-pulse rounded-[20px] bg-white" aria-hidden="true" />
+              </div>
+            )}
+            {tab === "emergency" && !ownerEmergencyFailed && !emergencyTooLong && !emergencyLoading && <EmergencyInfo birdId={birdId} birdName={birdName} contacts={contacts ?? null} defaults={defaults ?? null} ownerName={ownerName} isOwner={role === "owner"} onSaved={() => qc.invalidateQueries({ queryKey: ["contacts", birdId] })} />}
             {tab === "sits" && <SitsPanel birdId={birdId} birdName={birdName} isOwner={role === "owner"} />}
             {tab === "logs" && <LogsPanel birdId={birdId} initialScan={scanParam} />}
           </HideStepInstruction.Provider>
@@ -313,15 +333,9 @@ function BirdEditor() {
           refactor (#163), which left onPlanSaved orphaned. Autosave has already
           persisted, so Done just refreshes derived views (via onPlanSaved) and
           returns to the overview. Everyone who reaches the editor is an editor
-          (others are redirected), so it's shown for editors only. While the
-          bottom nav shows on this route, the same white footer sits above it. */}
-      {navHidden ? (
-        <TaskFooter>{doneButton}</TaskFooter>
-      ) : (
-        <div className="fixed inset-x-0 bottom-[var(--nav-spacer)] z-30 border-t bg-white py-3" style={{ borderColor: K.line }}>
-          <div className="mx-auto max-w-md px-4">{doneButton}</div>
-        </div>
-      )}
+          (others are redirected), so it's shown for editors only. This route is
+          a task path (isTaskPath), so the bottom nav never shows here. */}
+      <TaskFooter>{doneButton}</TaskFooter>
     </div>
   );
 }
