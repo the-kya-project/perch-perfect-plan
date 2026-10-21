@@ -25,7 +25,7 @@ export const Route = createFileRoute("/review")({
         ]);
 
         if (resolved === "chooser") {
-          return new Response(chooserPage("review"), {
+          return new Response(chooserPage("review", {}, { origin: url.origin }), {
             status: 200,
             headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" },
           });
