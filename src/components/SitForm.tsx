@@ -59,8 +59,8 @@ export function SitForm({
       ? new Set([preselectBirdId])
       : new Set<string>(birds.length === 1 ? [birds[0].id] : []);
   });
-  // Authoritative current bird list for reconcile (SitCard in the bird editor
-  // doesn't pass sit_birds, so we fetch it below).
+  // Authoritative current bird list for reconcile (a caller may not pass
+  // sit_birds, so we fetch it below).
   const currentBirdIds = useRef<string[]>(editing ? Array.from(selected) : []);
 
   const [title, setTitle] = useState(editing ? (editSit.title ?? "") : "");

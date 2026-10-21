@@ -1,4 +1,4 @@
-import { createFileRoute, Link, useLocation, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useLocation, useNavigate } from "@tanstack/react-router";
 import { speciesLabel } from "@/lib/speciesLabel";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Trans, useTranslation } from "react-i18next";
@@ -10,18 +10,16 @@ import { useServerFn } from "@tanstack/react-start";
 import { purgeBirdMedia } from "@/lib/birdMedia.functions";
 import { resolveHouseholdNames } from "@/lib/home.functions";
 import { birdMediaPurgeFailedText } from "@/lib/i18n/serverErrors";
-import { activeOwnerBirdsMin } from "@/lib/activeBirds";
 import { Trash2, ChevronDown, AlertTriangle, Eye } from "lucide-react";
 import { EmergencyInfo } from "@/components/EmergencyInfo";
 import { useBirdOwnerEmergency } from "@/lib/useOwnerEmergency";
-import { K, KyaBody, KyaCard, KyaHeading, KyaTag, KyaLabel, KyaSecondaryButton, KyaPrimaryButton } from "@/components/kya";
+import { K, KyaBody, KyaCard, KyaHeading, KyaTag, KyaLabel, KyaSecondaryButton, KyaPrimaryButton, KyaLink } from "@/components/kya";
 import { HeaderPill, TaskHeader, TaskFooter, TASK_FOOTER_SPACE } from "@/components/headers";
 import { isTaskPath } from "@/components/OwnerTabBar";
 import { SETUP_STEPS } from "@/components/SetupShell";
 // The editor renders the guided-setup step components directly so the two UIs
 // are identical (same fields, pickers, autosave, clip recording).
 import { BasicsStep, DayInLifeStep, PersonalityStep, OwnerTipsClipsStep, FoodWaterStep, EnvironmentStep, HealthBaselineStep, HideStepInstruction, useEnsureCarePlan } from "./$birdId.setup";
-import { SitCard } from "@/components/SitCard";
 import { toast } from "sonner";
 import { Disclaimer } from "@/components/Disclaimer";
 import { useBirdPhotos } from "@/lib/useBirdPhotos";
@@ -182,18 +180,6 @@ function BirdEditor() {
       return data ?? [];
     },
   });
-  const { data: sits = [] } = useQuery({
-    queryKey: ["sits", birdId],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("sit_birds")
-        .select("sit:sits(*)")
-        .eq("bird_id", birdId);
-      const rows = (data ?? []).map((r: any) => r.sit).filter(Boolean);
-      rows.sort((a: any, b: any) => (a.start_date < b.start_date ? 1 : -1));
-      return rows;
-    },
-  });
 
   const resolvePhoto = useBirdPhotos([bird?.photo_url], 96);
 
@@ -319,7 +305,7 @@ function BirdEditor() {
               <LoadError onRetry={() => void qc.refetchQueries({ queryKey: ["bird-owner-emergency", birdId] })} />
             )}
             {tab === "emergency" && !ownerEmergencyFailed && contacts !== undefined && defaults !== undefined && role !== undefined && <EmergencyInfo birdId={birdId} birdName={birdName} contacts={contacts ?? null} defaults={defaults ?? null} ownerName={ownerName} isOwner={role === "owner"} onSaved={() => qc.invalidateQueries({ queryKey: ["contacts", birdId] })} />}
-            {tab === "sits" && <SitsPanel birdId={birdId} sits={sits} onChange={() => { qc.invalidateQueries({ queryKey: ["sits", birdId] }); qc.invalidateQueries({ queryKey: ["sit-birds-for-sits"] }); }} />}
+            {tab === "sits" && <SitsPanel birdId={birdId} birdName={birdName} isOwner={role === "owner"} />}
             {tab === "logs" && <LogsPanel birdId={birdId} initialScan={scanParam} />}
           </HideStepInstruction.Provider>
         </KyaBody>
@@ -439,49 +425,40 @@ function DeleteBirdCard({ birdId, bird, plan }: { birdId: string; bird: any; pla
   );
 }
 
-function SitsPanel({ birdId, sits, onChange }: { birdId: string; sits: any[]; onChange: () => void }) {
+// The old Sits tab (only reachable via ?tab=sits now: notification deep links,
+// old bookmarks). Sits aren't care-plan content and one sit can cover several
+// birds, so they're managed in one place, the Sits tab; this points there
+// instead of keeping a second, per-bird copy of the sit cards.
+function SitsPanel({ birdId, birdName, isOwner }: { birdId: string; birdName: string; isOwner: boolean }) {
   const { t } = useTranslation();
-  // All the owner's birds, so editing a sit here can add/remove any of them.
-  const { data: allBirds = [] } = useQuery({
-    queryKey: ["owner-birds-min-sit-editor"],
-    queryFn: async () => {
-      // Active birds only — a sit can't cover a passed bird.
-      const { data } = await activeOwnerBirdsMin(supabase).order("created_at");
-      return data ?? [];
-    },
-  });
-  // Each sit's birds (a sit can cover several), so the cards can list them,
-  // link each one's sitter preview and checklist, and check emergency contacts
-  // before a link is copied. RLS limits the embed to birds the user can see.
-  const sitIds = sits.map((s) => s.id as string).sort();
-  const { data: birdsBySit = {} } = useQuery({
-    queryKey: ["sit-birds-for-sits", sitIds.join(",")],
-    enabled: sitIds.length > 0,
-    queryFn: async () => {
-      const { data, error } = await supabase.from("sit_birds").select("sit_id, birds(id, name)").in("sit_id", sitIds);
-      if (error) throw error;
-      const out: Record<string, { id: string; name: string }[]> = {};
-      for (const r of (data ?? []) as any[]) {
-        if (!r.birds) continue;
-        (out[r.sit_id] ??= []).push({ id: r.birds.id, name: r.birds.name });
-      }
-      return out;
-    },
-  });
+  const navigate = useNavigate();
   return (
-    <>
-      <KyaCard className="p-4">
-        <p className="m-0 text-[15px] leading-[1.5]" style={{ color: K.ink }}>
-          <Trans i18nKey="planEditor.sitsSetUpFromSits" defaults="To add a sit, <1>set up a sit</1> from the Sits tab. One sit can include several birds." components={{ 1: <Link to="/sits/new" search={{ bird: birdId }} className="font-[700] underline" style={{ color: K.moss }} /> }} />
-        </p>
-      </KyaCard>
-      {sits.length === 0 && (
-        <KyaCard className="p-4">
-          <p className="m-0 text-[15px]" style={{ color: K.quiet }}>{t("planEditor.noSits", "This bird isn't part of any sit yet.")}</p>
-        </KyaCard>
+    <KyaCard className="p-5">
+      <KyaHeading size={22}>{t("planEditor.sitsMovedTitle", "Sits are on the Sits tab")}</KyaHeading>
+      <p className="m-0 mt-2 text-[15px] leading-[1.5]" style={{ color: K.ink }}>
+        {t("planEditor.sitsMovedBody", "Set up, share and follow every sit there. One sit can cover several birds, so they all live in one place.")}
+      </p>
+      <div className="mt-5 flex flex-col gap-2.5">
+        <KyaSecondaryButton className="w-full" onClick={() => navigate({ to: "/sits" })}>
+          {t("planEditor.goToSits", "Go to Sits")}
+        </KyaSecondaryButton>
+        {isOwner && (
+          <KyaSecondaryButton className="w-full" onClick={() => navigate({ to: "/sits/new", search: { bird: birdId } })}>
+            {t("planEditor.setUpSitFor", "Set up a sit for {{name}}", { name: birdName })}
+          </KyaSecondaryButton>
+        )}
+      </div>
+      {isOwner && (
+        <>
+          <p className="m-0 mt-5 text-[15px] leading-[1.5]" style={{ color: K.ink }}>
+            {t("planEditor.sitsNeedEmergency", "A sitter link needs your phone number and an avian vet. Your account's emergency info covers every bird.")}
+          </p>
+          <KyaLink onClick={() => navigate({ to: "/account/emergency" })}>
+            {t("planEditor.openAccountEmergency", "Account → Emergency info")}
+          </KyaLink>
+        </>
       )}
-      {sits.map((s) => <SitCard key={s.id} sit={s} birds={birdsBySit[s.id] ?? []} allBirds={allBirds} onChange={onChange} />)}
-    </>
+    </KyaCard>
   );
 }
 

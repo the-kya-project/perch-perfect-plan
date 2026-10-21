@@ -44,8 +44,8 @@ export async function copySitterLink(sit: SitLike, birds: Array<{ id: string; na
     if (missing.length) {
       toast.error(
         i18next.t(
-          "sitLink.missingContacts",
-          "Add the required emergency contacts before sharing — {{missing}}. Set account defaults on the dashboard or fill the bird's Emergency tab.",
+          "sitLink.missingContactsAccount",
+          "A sitter needs emergency contacts before you share this link — {{missing}}. Add them in Account → Emergency info, or on the bird's Emergency tab.",
           { missing: missing.join("; ") },
         ),
         { duration: 8000 },

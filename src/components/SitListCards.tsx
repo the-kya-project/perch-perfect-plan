@@ -1,7 +1,7 @@
 // The Sits tab's cards, in the Kya & Co. look: the active sit (forest card), one
 // white card per upcoming sit, and past sits as rows in one white card. They're
-// presentational — the page resolves caregiver names and passes them in. (The
-// older SitCard stays in the bird plan editor.)
+// presentational — the page resolves caregiver names and passes them in. These
+// are the only sit cards; the plan editor's ?tab=sits points here.
 import { useState, type CSSProperties, type ReactNode } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { Activity, Eye, Link2, Home, Pencil, Star, ChevronRight } from "lucide-react";

@@ -5,6 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Eye, Loader2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import i18next from "i18next";
+import { K } from "@/components/kya";
+import { PreviewNotice } from "@/components/PreviewNotice";
 
 // Owner "View as sitter" — previews the REAL token-based sitter view for a
 // specific sit (the exact renderer + content the sitter gets), in an iframe
@@ -65,16 +67,36 @@ function SitPreview() {
   useEffect(() => {
     if (household && !missing && !resolving) navigate({ to: "/sits/$sitId", params: { sitId }, replace: true });
   }, [household, missing, resolving, navigate, sitId]);
+  const closeToSits = () => navigate({ to: "/sits" });
+  const closeLabel = t("sitPreview.closePreview", "Close preview");
   if (household && !missing) {
+    return <PreviewNotice closeLabel={closeLabel} onClose={closeToSits} loading={t("sitPreview.openingSit", "Opening this sit…")} />;
+  }
+  // Still looking the sit up (opened without the sit card's state).
+  if (resolving) {
+    return <PreviewNotice closeLabel={closeLabel} onClose={closeToSits} loading={t("sitPreview.loading", "Loading preview…")} />;
+  }
+  // Deleted sit, or a sitter sit with no link (household sits redirect
+  // above): say so in a card, with one way on so it's never a dead end.
+  if (!src) {
     return (
-      <div className="flex h-[100dvh] items-center justify-center gap-2 bg-[#f1f5f0] text-[14px] text-[var(--mute)]">
-        <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-      </div>
+      <PreviewNotice
+        closeLabel={closeLabel}
+        onClose={closeToSits}
+        mode={t("sitPreview.mode", "Sitter preview")}
+        title={missing ? t("sitPreview.sitGoneTitle", "This sit was deleted") : t("sitPreview.noLinkTitle", "No sitter link")}
+        body={missing
+          ? t("sitPreview.sitGoneBody", "Its sitter link stopped working when it was deleted, so there's nothing to preview.")
+          : t("sitPreview.noSitterLink", "This sit doesn't have a sitter link, so there's nothing to preview.")}
+        action={missing
+          ? { label: t("sitPreview.backToSits", "Back to Sits"), onClick: closeToSits }
+          : { label: t("sitPreview.seeActivity", "See this sit's activity"), onClick: () => navigate({ to: "/sits/$sitId", params: { sitId } }) }}
+      />
     );
   }
 
   return (
-    <div className="flex h-[100dvh] flex-col bg-[#f1f5f0]">
+    <div className="flex h-[100dvh] flex-col" style={{ background: K.mist }}>
       {/* Close top left (44px), like a task's Close, then the mode line. */}
       <div className="setup-frame flex items-center gap-3 bg-[#12291f] px-4 py-2 pt-[max(env(safe-area-inset-top),0.5rem)] text-white">
         <Link
@@ -86,62 +108,24 @@ function SitPreview() {
         </Link>
         <span className="flex min-w-0 items-center gap-2 text-[13.5px] font-[500] text-white">
           <Eye className="size-4 shrink-0" aria-hidden="true" />
-          {/* Blank until we know it's a sitter sit (a household sit redirects). */}
-          <span className="truncate">{!resolving && t("sitPreview.sitterBanner", "Sitter preview · how {{label}} will see this sit", { label })}</span>
+          <span className="truncate">{t("sitPreview.sitterBanner", "Sitter preview · how {{label}} will see this sit", { label })}</span>
         </span>
       </div>
 
-      {resolving ? (
-        <div className="flex flex-1 items-center justify-center gap-2 text-[14px] text-[var(--mute)]">
-          <Loader2 className="size-4 animate-spin" /> {t("sitPreview.loading", "Loading preview…")}
-        </div>
-      ) : src ? (
-        <div className="relative flex-1">
-          <iframe
-            src={src}
-            title={t("sitPreview.iframeTitle", "Sitter view preview")}
-            onLoad={() => setFrameReady(true)}
-            className="absolute inset-0 size-full border-0 bg-[#f1f5f0]"
-          />
-          {!frameReady && (
-            <div className="pointer-events-none absolute inset-0 flex items-center justify-center gap-2 bg-[#f1f5f0] text-[14px] text-[var(--mute)]">
-              <Loader2 className="size-4 animate-spin" /> {t("sitPreview.loading", "Loading preview…")}
-            </div>
-          )}
-        </div>
-      ) : missing ? (
-        <div className="grid flex-1 place-items-center p-6 text-center">
-          <div className="max-w-[34ch]">
-            <p className="t-body text-[var(--ink2)]">
-              {t("sitPreview.sitGone", "This sit was deleted, so there's nothing to preview.")}
-            </p>
-            <button
-              type="button"
-              onClick={() => navigate({ to: "/sits" })}
-              className="mt-4 inline-flex min-h-[44px] items-center justify-center rounded-[12px] bg-[var(--ink)] px-[18px] text-[15px] font-[500] text-white"
-            >
-              {t("sitPreview.backToSits", "Back to Sits")}
-            </button>
+      <div className="relative flex-1">
+        <iframe
+          src={src}
+          title={t("sitPreview.iframeTitle", "Sitter view preview")}
+          onLoad={() => setFrameReady(true)}
+          className="absolute inset-0 size-full border-0"
+          style={{ background: K.mist }}
+        />
+        {!frameReady && (
+          <div className="setup-frame pointer-events-none absolute inset-0 flex items-center justify-center gap-2 text-[15px]" style={{ background: K.mist, color: K.quiet }}>
+            <Loader2 className="size-4 animate-spin" aria-hidden="true" /> {t("sitPreview.loading", "Loading preview…")}
           </div>
-        </div>
-      ) : (
-        // A sitter sit with no link (household sits redirect above). Point the
-        // owner to the sit's activity so the screen is never a dead end.
-        <div className="grid flex-1 place-items-center p-6 text-center">
-          <div className="max-w-[34ch]">
-            <p className="t-body text-[var(--ink2)]">
-              {t("sitPreview.noSitterLink", "This sit doesn't have a sitter link, so there's nothing to preview.")}
-            </p>
-            <button
-              type="button"
-              onClick={() => navigate({ to: "/sits/$sitId", params: { sitId } })}
-              className="mt-4 inline-flex min-h-[44px] items-center justify-center rounded-[12px] bg-[var(--ink)] px-[18px] text-[15px] font-[500] text-white"
-            >
-              {t("sitPreview.seeActivity", "See this sit's activity")}
-            </button>
-          </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
