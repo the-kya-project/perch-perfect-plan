@@ -13,6 +13,7 @@ import { useDailyCheckToday, type BirdToday } from "@/lib/dailyCheck";
 import { noticedItems } from "@/lib/dailyCheckLabels";
 import { daysSince, staleThreshold } from "@/lib/homeData";
 import { DailyCheckCard } from "@/components/DailyCheckCard";
+import { useCapability } from "@/lib/useCapability";
 import { BirdPhotoCrop } from "@/components/BirdPhotoCrop";
 import { TaskFooter, TaskHeader, TASK_FOOTER_SPACE } from "@/components/headers";
 import { K, SERIF, KyaCard, KyaGroupLabel, KyaHeading, KyaPrimaryButton } from "@/components/kya";
@@ -289,7 +290,7 @@ function FlockCheck() {
           </span>
           <ChevronUp className="size-[18px]" />
         </button>
-        <DailyCheckCard
+        <CheckCardForBird
           birdId={b.id}
           name={b.name}
           today={d}
@@ -403,4 +404,12 @@ function weighedLine(t: TFunction, d: BirdToday | undefined, isFoster: boolean |
 
 function SectionLabel({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return <KyaGroupLabel className={className}>{children}</KyaGroupLabel>;
+}
+
+/** The daily check for one bird, with the weight step only when the viewer may
+ *  log weights for it (weight_entries RLS needs log_daily_care; the check
+ *  itself needs record_health, which is how a bird gets onto this page). */
+function CheckCardForBird(props: React.ComponentProps<typeof DailyCheckCard>) {
+  const canWeigh = useCapability("log_daily_care", { birdId: props.birdId });
+  return <DailyCheckCard {...props} canWeigh={canWeigh} />;
 }

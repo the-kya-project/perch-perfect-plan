@@ -238,9 +238,8 @@ select.kya-input {
 /* Native shell only (html.native-app is set at boot inside the App Store /
    Play Store builds): a solid strip the height of the status bar, so scrolled
    content never collides with the clock. It is forest, the color of the
-   header nearly every screen opens with; a screen without a forest header
-   sets --status-bar-bg to its own top color with useStatusBarColor()
-   (src/lib/statusBar.ts). pointer-events: none keeps it inert; browsers and
+   header every screen opens with (404, error and delete-account included),
+   so the clock always reads white on forest. pointer-events: none keeps it inert; browsers and
    the PWA never get the class. */
 html.native-app body::before {
   content: "";

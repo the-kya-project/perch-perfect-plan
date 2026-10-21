@@ -39,8 +39,8 @@ type Tab = (typeof TAB_IDS)[number];
 // replace watch clips ANY time (not only in the setup wizard) — it renders the
 // same OwnerTipsClipsStep + Cloudflare upload, gated by edit_care_plans like the
 // other care sections. basics/sits/logs stay accessible only via `?tab=…`
-// back-compat (DeleteBirdCard under basics; notifications deep-link to logs;
-// sit-management under sits), not shown in the strip.
+// back-compat (basics fields; notifications deep-link to logs; a pointer to
+// the Sits tab under sits), not shown in the strip.
 const VISIBLE_TABS: Tab[] = ["food", "routine", "behavior", "home", "health", "clips", "emergency"];
 
 // Map each editor tab to its matching guided-setup SECTION (by SETUP_STEPS key),
