@@ -7,6 +7,8 @@ import { getLocalUser } from "@/integrations/supabase/currentUser";
 import { useBirdPhotos } from "@/lib/useBirdPhotos";
 import { K, KyaPage, KyaBody, KyaCard, KyaHeading, KyaRow, KyaIconTile } from "@/components/kya";
 import { PageHeader } from "@/components/headers";
+import { LoadError } from "@/components/LoadError";
+import { useLoadState } from "@/lib/useTooLong";
 import i18next from "i18next";
 import { useTranslation } from "react-i18next";
 
@@ -27,7 +29,7 @@ function Remembering() {
   const canGoBack = useCanGoBack();
   const goBack = () => (canGoBack ? router.history.back() : navigate({ to: "/account" }));
 
-  const { data: birds = [], isLoading } = useQuery({
+  const birdsQ = useQuery({
     queryKey: ["remembering-birds"],
     queryFn: async () => {
       const { data: u } = await getLocalUser();
@@ -42,13 +44,19 @@ function Remembering() {
       return (data ?? []) as any[];
     },
   });
+  const birds = birdsQ.data ?? [];
+  // A failed load must not read as "Nothing here": offer a retry.
+  const load = useLoadState([birdsQ]);
+  const isLoading = load.loading;
   const resolvePhoto = useBirdPhotos(birds.map((b: any) => b.photo_url), 200);
 
   return (
     <KyaPage>
       <PageHeader title={t("remembering.headline", "Remembering")} onBack={goBack} />
       <KyaBody>
-        {isLoading ? (
+        {load.failed ? (
+          <LoadError onRetry={load.retry} />
+        ) : isLoading ? (
           <div className="flex items-center justify-center gap-2 py-12 text-[14px]" style={{ color: K.quiet }}>
             <Loader2 className="size-4 animate-spin" /> {t("remembering.loading", "Loading…")}
           </div>
