@@ -20,7 +20,7 @@ import {
 import { memberDisplayName, memberInitials } from "@/lib/memberDisplay";
 import { useHouseholdCapability, useMyPermissions } from "@/lib/useCapability";
 import { Mail, Check, X, AlertTriangle } from "lucide-react";
-import { K, KyaLink } from "@/components/kya";
+import { K, KyaLink, KyaRequiredTag } from "@/components/kya";
 import { TaskHeader, useLeaveGuard } from "@/components/headers";
 import { copySitterLink } from "@/lib/sitLink";
 import { friendlyError } from "@/lib/errorMessage";
@@ -563,7 +563,7 @@ export function SitForm({
         <main className="relative -mt-[26px] flex flex-col gap-7 rounded-t-[26px] bg-white px-5 pb-8 pt-6">
           {/* 1. Which birds? */}
           <section>
-            <Question>{t("sitForm.whichBirds", "Which birds?")}</Question>
+            <Question required>{t("sitForm.whichBirds", "Which birds?")}</Question>
             <div className="mt-3 flex flex-wrap items-center gap-2">
               {birds.map((b: any) => {
                 const on = selected.has(b.id);
@@ -587,7 +587,7 @@ export function SitForm({
 
           {/* 2. When? */}
           <section>
-            <Question>{t("sitForm.when", "When?")}</Question>
+            <Question required>{t("sitForm.when", "When?")}</Question>
             {/* min-w-0 lets the cells shrink; the global date-input reset
                 (styles.css) keeps the native iOS control from overflowing. */}
             <div className="mt-3 grid grid-cols-2 items-start gap-3">
@@ -604,7 +604,7 @@ export function SitForm({
 
           {/* 3. Who's covering? */}
           <section>
-            <Question>{t("sitForm.whosCoveringQ", "Who's covering?")}</Question>
+            <Question required={!editing}>{t("sitForm.whosCoveringQ", "Who's covering?")}</Question>
             <Hint>{t("sitForm.coveringHint", "Household members already have access. Anyone else gets a private link, no account needed.")}</Hint>
             {editing ? (
               <div className="mt-3 flex flex-col gap-3">
@@ -801,14 +801,23 @@ function firstNameOf(name: string): string {
   return name.trim().split(/\s+/)[0] || name;
 }
 
-function Question({ children }: { children: React.ReactNode }) {
+function Question({ children, required }: { children: React.ReactNode; required?: boolean }) {
+  const { t } = useTranslation();
+  if (required) {
+    return (
+      <div className="flex flex-wrap items-center gap-2">
+        <h2 className="m-0 text-[20px] font-[700] leading-[1.2]" style={{ fontFamily: SERIF }}>{children}</h2>
+        <KyaRequiredTag tone="forest">{t("sitForm.required", "Required")}</KyaRequiredTag>
+      </div>
+    );
+  }
   return <h2 className="m-0 text-[20px] font-[700] leading-[1.2]" style={{ fontFamily: SERIF }}>{children}</h2>;
 }
 function Hint({ children }: { children: React.ReactNode }) {
   return <p className="m-0 mt-1 text-[14px] leading-[1.45]" style={{ color: K.quiet }}>{children}</p>;
 }
 
-function SitterFields({ name, email, onName, onEmail }: { name: string; email: string; onName: (v: string) => void; onEmail: (v: string) => void }) {
+function SitterFields({ name, email, onName, onEmail, emailRequired }: { name: string; email: string; onName: (v: string) => void; onEmail: (v: string) => void; emailRequired?: boolean }) {
   const { t } = useTranslation();
   return (
     <div className="flex flex-col gap-3">
@@ -817,7 +826,7 @@ function SitterFields({ name, email, onName, onEmail }: { name: string; email: s
         <input className={PILL_FIELD} style={PILL_STYLE} value={name} onChange={(e) => onName(e.target.value)} />
       </label>
       <label className="block">
-        <span className="mb-1.5 block text-[13.5px] font-[700]">{t("sitForm.sittersEmail", "Sitter's email")}</span>
+        <span className="mb-1.5 flex flex-wrap items-center gap-2 text-[13.5px] font-[700]">{t("sitForm.sittersEmail", "Sitter's email")}{emailRequired && <KyaRequiredTag tone="forest">{t("sitForm.required", "Required")}</KyaRequiredTag>}</span>
         <input className={PILL_FIELD} style={PILL_STYLE} type="email" value={email} onChange={(e) => onEmail(e.target.value)} placeholder={t("sitForm.sitterExampleCom", "sitter@example.com")} />
       </label>
     </div>
@@ -897,7 +906,7 @@ function CaregiverPicker({
       />
       {externalOn && (
         <div className="mt-1.5">
-          <SitterFields name={sitterName} email={sitterEmail} onName={onChangeSitterName} onEmail={onChangeSitterEmail} />
+          <SitterFields name={sitterName} email={sitterEmail} onName={onChangeSitterName} onEmail={onChangeSitterEmail} emailRequired />
         </div>
       )}
     </div>
