@@ -9,10 +9,11 @@ import { AccountAvatar } from "@/components/AccountAvatar";
 import { rememberMode } from "@/lib/flock";
 
 // The Flock's own chrome: a bottom bar on phones, a left sidebar from 1024px.
-// Same four destinations in the same order either way. Care is last (far right
-// on the bar), in the slot the Flock button occupies on the care tab bar, so
-// switching back is one tap in a familiar place. Admins only until launch; the
-// /flock route guard is what keeps everyone else out (see routes/.../flock.tsx).
+// Same four destinations in the same order either way. "My birds" (back to
+// care) is last (far right on the bar), in the slot the Community button
+// occupies on the care tab bar, so switching back is one tap in a familiar
+// place. Admins only until launch; the /flock route guard is what keeps
+// everyone else out (see routes/.../flock.tsx).
 
 type FlockDest = "feed" | "spaces" | "learn" | "care";
 type DestSpec = { key: FlockDest; to: string; Icon: typeof Newspaper };
@@ -28,7 +29,7 @@ function destLabel(t: TFunction, key: FlockDest): string {
     case "feed": return t("flock.nav.feed", "Feed");
     case "spaces": return t("flock.nav.spaces", "Spaces");
     case "learn": return t("flock.nav.learn", "Learn");
-    case "care": return t("flock.nav.care", "Care");
+    case "care": return t("flock.nav.care", "My birds");
   }
 }
 
@@ -44,7 +45,7 @@ function FlockTabBar({ current }: { current: FlockDest }) {
   const { t } = useTranslation();
   return (
     <nav
-      aria-label={t("flock.nav.aria", "The Flock")}
+      aria-label={t("flock.nav.aria", "Community")}
       className="fixed inset-x-0 bottom-0 z-40 border-t border-[#d5dfd5] bg-white pb-[env(safe-area-inset-bottom)] lg:hidden"
     >
       <div className="mx-auto flex max-w-md items-stretch justify-around">
@@ -75,7 +76,7 @@ function FlockSidebar({ current }: { current: FlockDest }) {
   const { t } = useTranslation();
   return (
     <nav
-      aria-label={t("flock.nav.aria", "The Flock")}
+      aria-label={t("flock.nav.aria", "Community")}
       className="fixed inset-y-0 left-0 z-40 hidden w-60 flex-col border-r border-[#d5dfd5] bg-white px-3 pb-6 pt-[calc(env(safe-area-inset-top)+20px)] lg:flex"
     >
       <div className="px-3 pb-6">
