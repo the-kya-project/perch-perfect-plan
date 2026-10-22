@@ -3151,6 +3151,28 @@
   "farewell.you": "jij",
   // your bird
   "farewell.yourBird": "je vogel",
+  // This is where the flock gathers. Posts will show up here soon.
+  "flock.feed.line": "Hier komt de Flock samen. Berichten verschijnen hier binnenkort.",
+  // Feed
+  "flock.feed.title": "Feed",
+  // Guides, recordings, and the podcast will live here.
+  "flock.learn.line": "Gidsen, opnames en de podcast komen hier te staan.",
+  // Learn
+  "flock.learn.title": "Leren",
+  // The Flock
+  "flock.nav.aria": "The Flock",
+  // Care
+  "flock.nav.care": "Zorg",
+  // Feed
+  "flock.nav.feed": "Feed",
+  // Learn
+  "flock.nav.learn": "Leren",
+  // Spaces
+  "flock.nav.spaces": "Ruimtes",
+  // Spaces for every kind of question, coming soon.
+  "flock.spaces.line": "Ruimtes voor elk soort vraag, binnenkort beschikbaar.",
+  // Spaces
+  "flock.spaces.title": "Ruimtes",
   // Add weight
   "flockCheck.addWeight": "Gewicht toevoegen",
   // Back to home
@@ -4815,6 +4837,8 @@
   "ownerScan.whatYouFlagged": "Wat je hebt gemarkeerd",
   // Explore
   "ownerTabs.explore": "Ontdekken",
+  // Flock
+  "ownerTabs.flock": "Flock",
   // Health
   "ownerTabs.health": "Gezondheid",
   // Home
