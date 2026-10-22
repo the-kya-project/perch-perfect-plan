@@ -260,6 +260,10 @@ function NotificationsSettingsPage() {
       }
 
       const { publicKey } = await getVapidKey();
+      if (!publicKey) {
+        toast.error(t("notifSettings.pushUnavailable", "Push notifications aren't available in preview links."));
+        return;
+      }
       const sub = await subscribeToPush(publicKey);
       setPermission(getNotificationPermission());
       if (!sub) {

@@ -31,6 +31,7 @@
  *    raw Supabase auth UUID.
  */
 
+import { DEPLOY_ENV, POSTHOG_PROJECT_KEY } from "./deployEnv";
 import { sanitizeAnalyticsEvent, sanitizeAnalyticsProperties } from "./urlScrub";
 import { scrubExceptionProperties } from "./errorScrub";
 import { hashUserId } from "./userHash";
@@ -111,13 +112,12 @@ type EventProps = Record<string, string | number | boolean | null | undefined>;
 
 type Provider = "posthog" | "plausible" | null;
 
-// PostHog project key, hardcoded for production. It's a public client
-// identifier (it ships in the page source of every site running PostHog,
-// like any analytics key) — not a secret. It lives here rather than in a
-// Vercel env var because adding it as VITE_POSTHOG_KEY reliably broke
-// Vercel's runtime env bundling (EnvFileReadError 500s on every request,
-// reproduced twice on 2026-07-17). An env var still overrides when present.
-const PROD_POSTHOG_KEY = "phc_qkMPyAbqFHDcG6FdXFBQUsiyPsbMjbCX2hNSw2bddPKh";
+// The PostHog project key is a literal (POSTHOG_PROJECT_KEY in deployEnv.ts),
+// not a Vercel env var: adding it as VITE_POSTHOG_KEY reliably broke Vercel's
+// runtime env bundling (EnvFileReadError 500s on every request, reproduced
+// twice on 2026-07-17). It's a public client identifier, not a secret, and only
+// production builds carry it. An env var still overrides when present, except
+// in a Vercel preview, where analytics are off no matter what.
 
 function readEnv(): {
   provider: Provider;
@@ -128,13 +128,17 @@ function readEnv(): {
 } {
   // import.meta.env is statically inlined by Vite at build time.
   const env = (import.meta as any).env ?? {};
-  // The hardcoded key applies in production builds only, so dev and previews
-  // stay silent no-ops exactly as before.
-  const posthogKey: string | undefined =
-    env.VITE_POSTHOG_KEY || (import.meta.env.PROD ? PROD_POSTHOG_KEY : undefined);
+  // Vercel builds previews in production mode too, so import.meta.env.PROD
+  // alone let previews send to the production project. The key now comes from
+  // the deploy environment: production builds only, and nothing in a preview.
+  const preview = DEPLOY_ENV === "preview";
+  const posthogKey: string | undefined = preview
+    ? undefined
+    : env.VITE_POSTHOG_KEY || (import.meta.env.PROD ? POSTHOG_PROJECT_KEY ?? undefined : undefined);
   const raw = String(env.VITE_ANALYTICS_PROVIDER ?? "").toLowerCase().trim();
   let provider: Provider = null;
-  if (raw === "posthog" && posthogKey) provider = "posthog";
+  if (preview) provider = null;
+  else if (raw === "posthog" && posthogKey) provider = "posthog";
   else if (raw === "plausible" && env.VITE_PLAUSIBLE_DOMAIN) provider = "plausible";
   else if (!raw) {
     // Auto-detect when provider not explicitly set.

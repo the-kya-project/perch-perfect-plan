@@ -133,6 +133,13 @@ async function waitForReady(uid: string): Promise<boolean> {
   return false;
 }
 
+// False only in a Vercel preview built without Cloudflare Stream credentials
+// (see vite.config.ts): say so before anyone records a clip that can't upload.
+const CLIPS_AVAILABLE = typeof __KYA_CLIPS_AVAILABLE__ === "undefined" || __KYA_CLIPS_AVAILABLE__ !== false;
+function previewUnavailable(): string {
+  return i18next.t("clipRecorder.previewUnavailable", "Clips aren't available in preview links.");
+}
+
 function friendlyUploadError(err: any): string {
   const m = String(err?.message ?? "");
   if (/not configured/i.test(m)) return i18next.t("clipRecorder.notConfigured", "Video uploads aren't set up yet — please try again later.");
@@ -282,6 +289,7 @@ export function ClipRecorder({
   async function start() {
     setError(null);
     setNote(null);
+    if (!CLIPS_AVAILABLE) { setError(previewUnavailable()); return; }
     const cand = pickCandidate();
     if (!cand) { setError(t("clipRecorder.cantRecord", "Your browser can't record video here. Try Safari on iPhone or Chrome.")); return; }
     candidateRef.current = cand;
@@ -462,6 +470,7 @@ export function ClipRecorder({
     if (!file) return;
     setError(null);
     setNote(null);
+    if (!CLIPS_AVAILABLE) { setError(previewUnavailable()); return; }
 
     // Accept by MIME or extension. iPhone clips are often video/quicktime (.mov,
     // frequently HEVC); some browsers report an empty type for .mov/.m4v, so fall

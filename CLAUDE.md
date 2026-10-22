@@ -62,6 +62,14 @@ Every Vercel preview runs against the persistent Supabase **`staging`** branch (
 - Guards (`src/lib/supabaseEnv.ts`): a preview build fails if its Supabase settings are missing, disagree, or name production, and the server clients refuse production when `VERCEL_ENV=preview`. Production builds skip both and read their variables exactly as before. `npm run test:supabase-env` pins this.
 - Test accounts on staging come from `supabase/staging/seed.sql` (password passed in with `psql -v`, never committed): `staging-owner@example.com` (owns Kiwi and Mango) and `staging-household@example.com` (household on Kiwi). Previews use **email/password** sign-in: Google and Apple are configured on production only, and a branch has its own auth callback URL.
 
+## Previews never touch production's outside services
+Vercel's Preview scope holds **no** third-party production credentials: no Brevo, PostHog CLI, Cloudflare Stream, VAPID, Webflow, APNs IDs, Apple provider token or `CARE_PLAN_REMINDER_SECRET`. Those are Production-only; don't re-add Preview to them. In a preview:
+- **PostHog is off in code**, not just by env: the project key is a literal, and `src/lib/deployEnv.ts` gives it to production builds only (`__KYA_DEPLOY_ENV__`, injected from `VERCEL_ENV` in `vite.config.ts`), so preview bundles don't contain it. Analytics, server error reports, cron telemetry, the source-map upload and the `sourcemap_build` event all skip previews.
+- **Brevo refuses to send** (`brevoEmail.server.ts`) even if a key reappears, and every sender treats that as "not emailed".
+- **Clips** say "Clips aren't available in preview links" before recording (`__KYA_CLIPS_AVAILABLE__`). Adding a test Cloudflare Stream token to Preview turns them back on with the next build.
+- **Push** reports "not available" instead of failing.
+- The build prints one `[preview] third-party services: …` line saying what it saw. `npm run test:preview-services` pins the runtime guards.
+
 ## Deploy
 - Pushing to `main` auto-deploys the web app to Vercel at https://app.thekyaproject.com.
 - Changing an Edge Function requires a separate Supabase deploy; it does not ship with the Vercel build.
