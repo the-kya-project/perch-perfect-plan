@@ -106,6 +106,10 @@ function AuthPage() {
     setBusy("email");
     try {
       if (mode === "signup") {
+        // A new account lands on /welcome (straight away, or from the
+        // confirmation email), which forwards to a stashed deep link such as
+        // /founding. Only stash when there is one.
+        if (returnTo) stashReturnTo(returnTo);
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
@@ -141,7 +145,7 @@ function AuthPage() {
           // The card stays on the sign-in form this lands on (same page);
           // it's the one place this shows, no toast on top of it.
           setError(t("auth.emailAlreadyHasAccount", "That email already has an account — sign in instead."));
-          navigate({ to: "/auth", search: { mode: "signin" } });
+          navigate({ to: "/auth", search: { mode: "signin", ...(returnTo ? { redirect: returnTo } : {}) } });
           return;
         }
         if (error) throw error; // any other signup error
@@ -443,13 +447,13 @@ function AuthPage() {
                 <Trans
                   i18nKey="auth.haveAccountSignIn"
                   defaults="Already have an account? <go>Sign in</go>"
-                  components={{ go: <Link to="/auth" search={{ mode: "signin" }} onClick={() => setError(null)} className={linkCls} style={{ color: K.moss }} /> }}
+                  components={{ go: <Link to="/auth" search={{ mode: "signin", ...(returnTo ? { redirect: returnTo } : {}) }} onClick={() => setError(null)} className={linkCls} style={{ color: K.moss }} /> }}
                 />
               ) : (
                 <Trans
                   i18nKey="auth.newHereCreate"
                   defaults="New here? <go>Create an account</go>"
-                  components={{ go: <Link to="/auth" search={{ mode: "signup" }} onClick={() => setError(null)} className={linkCls} style={{ color: K.moss }} /> }}
+                  components={{ go: <Link to="/auth" search={{ mode: "signup", ...(returnTo ? { redirect: returnTo } : {}) }} onClick={() => setError(null)} className={linkCls} style={{ color: K.moss }} /> }}
                 />
               )}
             </p>

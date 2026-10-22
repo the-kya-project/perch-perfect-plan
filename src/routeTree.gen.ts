@@ -14,6 +14,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as ConfirmEmailRouteImport } from './routes/confirm-email'
 import { Route as DeleteAccountRouteImport } from './routes/delete-account'
+import { Route as FoundingRouteImport } from './routes/founding'
 import { Route as GetRouteImport } from './routes/get'
 import { Route as GetAppRouteImport } from './routes/get-app'
 import { Route as PrivacyRouteImport } from './routes/privacy'
@@ -43,6 +44,7 @@ import { Route as SitterTokenRouteRouteImport } from './routes/sitter/$token/rou
 import { Route as AuthenticatedAccountIndexRouteImport } from './routes/_authenticated/account.index'
 import { Route as AuthenticatedAccountEmergencyRouteImport } from './routes/_authenticated/account.emergency'
 import { Route as AuthenticatedAccountSecurityRouteImport } from './routes/_authenticated/account.security'
+import { Route as AuthenticatedAdminFoundingRouteImport } from './routes/_authenticated/admin.founding'
 import { Route as AuthenticatedBirdsBirdIdRouteImport } from './routes/_authenticated/birds/$birdId'
 import { Route as AuthenticatedBirdsNewRouteImport } from './routes/_authenticated/birds/new'
 import { Route as AuthenticatedFlockIndexRouteImport } from './routes/_authenticated/flock.index'
@@ -120,6 +122,11 @@ const ConfirmEmailRoute = ConfirmEmailRouteImport.update({
 const DeleteAccountRoute = DeleteAccountRouteImport.update({
   id: '/delete-account',
   path: '/delete-account',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FoundingRoute = FoundingRouteImport.update({
+  id: '/founding',
+  path: '/founding',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GetRoute = GetRouteImport.update({
@@ -274,6 +281,12 @@ const AuthenticatedAccountSecurityRoute =
     id: '/security',
     path: '/security',
     getParentRoute: () => AuthenticatedAccountRoute,
+  } as any)
+const AuthenticatedAdminFoundingRoute =
+  AuthenticatedAdminFoundingRouteImport.update({
+    id: '/admin/founding',
+    path: '/admin/founding',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedBirdsBirdIdRoute =
   AuthenticatedBirdsBirdIdRouteImport.update({
@@ -588,6 +601,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/confirm-email': typeof ConfirmEmailRoute
   '/delete-account': typeof DeleteAccountRoute
+  '/founding': typeof FoundingRoute
   '/get': typeof GetRoute
   '/get-app': typeof GetAppRoute
   '/privacy': typeof PrivacyRoute
@@ -616,6 +630,7 @@ export interface FileRoutesByFullPath {
   '/r/$token': typeof RTokenRoute
   '/account/emergency': typeof AuthenticatedAccountEmergencyRoute
   '/account/security': typeof AuthenticatedAccountSecurityRoute
+  '/admin/founding': typeof AuthenticatedAdminFoundingRoute
   '/birds/$birdId': typeof AuthenticatedBirdsBirdIdRouteWithChildren
   '/birds/new': typeof AuthenticatedBirdsNewRoute
   '/flock/learn': typeof AuthenticatedFlockLearnRoute
@@ -677,6 +692,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/confirm-email': typeof ConfirmEmailRoute
   '/delete-account': typeof DeleteAccountRoute
+  '/founding': typeof FoundingRoute
   '/get': typeof GetRoute
   '/get-app': typeof GetAppRoute
   '/privacy': typeof PrivacyRoute
@@ -700,6 +716,7 @@ export interface FileRoutesByTo {
   '/r/$token': typeof RTokenRoute
   '/account/emergency': typeof AuthenticatedAccountEmergencyRoute
   '/account/security': typeof AuthenticatedAccountSecurityRoute
+  '/admin/founding': typeof AuthenticatedAdminFoundingRoute
   '/birds/new': typeof AuthenticatedBirdsNewRoute
   '/flock/learn': typeof AuthenticatedFlockLearnRoute
   '/flock/spaces': typeof AuthenticatedFlockSpacesRoute
@@ -761,6 +778,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/confirm-email': typeof ConfirmEmailRoute
   '/delete-account': typeof DeleteAccountRoute
+  '/founding': typeof FoundingRoute
   '/get': typeof GetRoute
   '/get-app': typeof GetAppRoute
   '/privacy': typeof PrivacyRoute
@@ -789,6 +807,7 @@ export interface FileRoutesById {
   '/r/$token': typeof RTokenRoute
   '/_authenticated/account/emergency': typeof AuthenticatedAccountEmergencyRoute
   '/_authenticated/account/security': typeof AuthenticatedAccountSecurityRoute
+  '/_authenticated/admin/founding': typeof AuthenticatedAdminFoundingRoute
   '/_authenticated/birds/$birdId': typeof AuthenticatedBirdsBirdIdRouteWithChildren
   '/_authenticated/birds/new': typeof AuthenticatedBirdsNewRoute
   '/_authenticated/flock/learn': typeof AuthenticatedFlockLearnRoute
@@ -852,6 +871,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/confirm-email'
     | '/delete-account'
+    | '/founding'
     | '/get'
     | '/get-app'
     | '/privacy'
@@ -880,6 +900,7 @@ export interface FileRouteTypes {
     | '/r/$token'
     | '/account/emergency'
     | '/account/security'
+    | '/admin/founding'
     | '/birds/$birdId'
     | '/birds/new'
     | '/flock/learn'
@@ -941,6 +962,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/confirm-email'
     | '/delete-account'
+    | '/founding'
     | '/get'
     | '/get-app'
     | '/privacy'
@@ -964,6 +986,7 @@ export interface FileRouteTypes {
     | '/r/$token'
     | '/account/emergency'
     | '/account/security'
+    | '/admin/founding'
     | '/birds/new'
     | '/flock/learn'
     | '/flock/spaces'
@@ -1024,6 +1047,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/confirm-email'
     | '/delete-account'
+    | '/founding'
     | '/get'
     | '/get-app'
     | '/privacy'
@@ -1052,6 +1076,7 @@ export interface FileRouteTypes {
     | '/r/$token'
     | '/_authenticated/account/emergency'
     | '/_authenticated/account/security'
+    | '/_authenticated/admin/founding'
     | '/_authenticated/birds/$birdId'
     | '/_authenticated/birds/new'
     | '/_authenticated/flock/learn'
@@ -1115,6 +1140,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ConfirmEmailRoute: typeof ConfirmEmailRoute
   DeleteAccountRoute: typeof DeleteAccountRoute
+  FoundingRoute: typeof FoundingRoute
   GetRoute: typeof GetRoute
   GetAppRoute: typeof GetAppRoute
   PrivacyRoute: typeof PrivacyRoute
@@ -1174,6 +1200,13 @@ declare module '@tanstack/react-router' {
       path: '/delete-account'
       fullPath: '/delete-account'
       preLoaderRoute: typeof DeleteAccountRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/founding': {
+      id: '/founding'
+      path: '/founding'
+      fullPath: '/founding'
+      preLoaderRoute: typeof FoundingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/get': {
@@ -1378,6 +1411,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/account/security'
       preLoaderRoute: typeof AuthenticatedAccountSecurityRouteImport
       parentRoute: typeof AuthenticatedAccountRoute
+    }
+    '/_authenticated/admin/founding': {
+      id: '/_authenticated/admin/founding'
+      path: '/admin/founding'
+      fullPath: '/admin/founding'
+      preLoaderRoute: typeof AuthenticatedAdminFoundingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/birds/$birdId': {
       id: '/_authenticated/birds/$birdId'
@@ -1911,6 +1951,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedTodayRoute: typeof AuthenticatedTodayRoute
   AuthenticatedUpdatesRoute: typeof AuthenticatedUpdatesRoute
   AuthenticatedWelcomeRoute: typeof AuthenticatedWelcomeRoute
+  AuthenticatedAdminFoundingRoute: typeof AuthenticatedAdminFoundingRoute
   AuthenticatedBirdsBirdIdRoute: typeof AuthenticatedBirdsBirdIdRouteWithChildren
   AuthenticatedBirdsNewRoute: typeof AuthenticatedBirdsNewRoute
   AuthenticatedSitPreviewSitIdRoute: typeof AuthenticatedSitPreviewSitIdRoute
@@ -1937,6 +1978,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedTodayRoute: AuthenticatedTodayRoute,
   AuthenticatedUpdatesRoute: AuthenticatedUpdatesRoute,
   AuthenticatedWelcomeRoute: AuthenticatedWelcomeRoute,
+  AuthenticatedAdminFoundingRoute: AuthenticatedAdminFoundingRoute,
   AuthenticatedBirdsBirdIdRoute: AuthenticatedBirdsBirdIdRouteWithChildren,
   AuthenticatedBirdsNewRoute: AuthenticatedBirdsNewRoute,
   AuthenticatedSitPreviewSitIdRoute: AuthenticatedSitPreviewSitIdRoute,
@@ -1981,6 +2023,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ConfirmEmailRoute: ConfirmEmailRoute,
   DeleteAccountRoute: DeleteAccountRoute,
+  FoundingRoute: FoundingRoute,
   GetRoute: GetRoute,
   GetAppRoute: GetAppRoute,
   PrivacyRoute: PrivacyRoute,

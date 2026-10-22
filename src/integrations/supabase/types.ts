@@ -674,6 +674,44 @@ export type Database = {
           },
         ]
       }
+      founding_claims: {
+        Row: {
+          claimed_at: string
+          id: string
+          locked_price_cents: number
+          region_slug: string
+          source: string | null
+          spot_number: number
+          user_id: string
+        }
+        Insert: {
+          claimed_at?: string
+          id?: string
+          locked_price_cents?: number
+          region_slug: string
+          source?: string | null
+          spot_number: number
+          user_id: string
+        }
+        Update: {
+          claimed_at?: string
+          id?: string
+          locked_price_cents?: number
+          region_slug?: string
+          source?: string | null
+          spot_number?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "founding_claims_region_slug_fkey"
+            columns: ["region_slug"]
+            isOneToOne: false
+            referencedRelation: "regions"
+            referencedColumns: ["slug"]
+          },
+        ]
+      }
       guide_cards: {
         Row: {
           category: string
@@ -1766,6 +1804,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_founding_claims: {
+        Args: never
+        Returns: {
+          claimed_at: string
+          email: string
+          name: string
+          region_name: string
+          region_slug: string
+          source: string
+          spot_number: number
+        }[]
+      }
       admin_grant_entitlement: {
         Args: {
           p_email: string
@@ -1815,7 +1865,33 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      claim_founding_spot: {
+        Args: { p_region_slug: string; p_source?: string }
+        Returns: {
+          claimed_at: string
+          id: string
+          locked_price_cents: number
+          region_slug: string
+          source: string | null
+          spot_number: number
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "founding_claims"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       flock_enabled: { Args: never; Returns: boolean }
+      founding_status: {
+        Args: never
+        Returns: {
+          cap: number
+          claimed: number
+          open: boolean
+        }[]
+      }
       handoff_accept_transfer: {
         Args: {
           p_handoff_id: string
