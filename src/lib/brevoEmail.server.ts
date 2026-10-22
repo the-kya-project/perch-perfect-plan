@@ -118,6 +118,9 @@ export async function sendTransactionalEmail(
   const apiKey = process.env.BREVO_API_KEY;
   const senderEmail = process.env.BREVO_SENDER_EMAIL;
   const senderName = process.env.BREVO_SENDER_NAME || "The Kya Project";
+  // Previews never email anyone, even if a Brevo key reappears in Vercel's
+  // Preview scope: they run unreviewed PR code against staging data.
+  if (process.env.VERCEL_ENV === "preview") { console.warn("[brevoEmail] skipped: Vercel preview (email is off in previews)", { tag: email.tag }); return { ok: false, skipped: "preview-deployment" }; }
   if (!apiKey) { console.warn("[brevoEmail] skipped: BREVO_API_KEY not set"); return { ok: false, skipped: "brevo-api-key-not-configured" }; }
   if (!senderEmail) { console.warn("[brevoEmail] skipped: BREVO_SENDER_EMAIL not set"); return { ok: false, skipped: "brevo-sender-not-configured" }; }
   if (!email.to) { console.warn("[brevoEmail] skipped: no recipient"); return { ok: false, skipped: "no-recipient" }; }

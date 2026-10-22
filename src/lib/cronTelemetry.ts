@@ -16,13 +16,16 @@
 // can never slow down or break the hook.
 
 // Public PostHog project key — the same client identifier analytics.ts already
-// ships in every page. Kept a literal on purpose: a Vercel env var for this key
-// previously 500'd production (see src/lib/analytics.ts).
-const POSTHOG_KEY = "phc_qkMPyAbqFHDcG6FdXFBQUsiyPsbMjbCX2hNSw2bddPKh";
+// ships in every page. Kept a literal on purpose (a Vercel env var for this key
+// previously 500'd production, see src/lib/analytics.ts), and present in
+// production builds only: previews and local runs send nothing (deployEnv.ts).
+import { POSTHOG_PROJECT_KEY } from "./deployEnv";
 const POSTHOG_CAPTURE_URL = "https://us.i.posthog.com/capture/";
 const CAPTURE_TIMEOUT_MS = 2000;
 
 async function captureCronHookRun(properties: Record<string, unknown>): Promise<void> {
+  const env = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env;
+  if (!POSTHOG_PROJECT_KEY || env?.VERCEL_ENV !== "production") return;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), CAPTURE_TIMEOUT_MS);
   try {
@@ -30,7 +33,7 @@ async function captureCronHookRun(properties: Record<string, unknown>): Promise<
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        api_key: POSTHOG_KEY,
+        api_key: POSTHOG_PROJECT_KEY,
         event: "cron_hook_run",
         distinct_id: "cron-hooks",
         properties,

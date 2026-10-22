@@ -2373,6 +2373,8 @@
   "clipRecorder.notConfigured": "Video-uploads zijn nog niet ingesteld — probeer het later opnieuw.",
   // No video was captured. Please try recording again.
   "clipRecorder.nothingCaptured": "Er is geen video opgenomen. Probeer opnieuw op te nemen.",
+  // Clips aren't available in preview links.
+  "clipRecorder.previewUnavailable": "Clips zijn niet beschikbaar in voorbeeldlinks.",
   // Record
   "clipRecorder.record": "Opnemen",
   // Clip recorded — review it below.
@@ -4667,6 +4669,8 @@
   "notifSettings.pushOnDevice": "Push op dit apparaat",
   // Push is on. The switches below choose what reaches this device.
   "notifSettings.pushOnLine": "Push staat aan. Met de schakelaars hieronder kies je wat dit apparaat bereikt.",
+  // Push notifications aren't available in preview links.
+  "notifSettings.pushUnavailable": "Pushmeldingen zijn niet beschikbaar in voorbeeldlinks.",
   // Reminders
   "notifSettings.reminders": "Herinneringen",
   // Review the care plan before a sit

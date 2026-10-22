@@ -28,6 +28,7 @@
     "test:local-day": "npx --yes vite-node scripts/local-day.test.ts",
     "test:supabase-env": "npx --yes vite-node scripts/supabase-env.test.ts",
     "test:email-link-keys": "npx --yes vite-node scripts/email-link-keys.test.ts",
+    "test:preview-services": "npx --yes vite-node scripts/preview-services.test.ts",
     "test:setup-progress": "npx --yes vite-node scripts/setup-progress.test.ts",
     "test:home-defaults": "npx --yes vite-node scripts/home-defaults.test.ts",
     "test:chop-ingredients": "npx --yes vite-node scripts/chop-ingredients.test.ts",
