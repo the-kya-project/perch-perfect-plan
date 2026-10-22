@@ -26,6 +26,7 @@ import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedCheckRouteImport } from './routes/_authenticated/check'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedExploreRouteImport } from './routes/_authenticated/explore'
+import { Route as AuthenticatedFlockRouteImport } from './routes/_authenticated/flock'
 import { Route as AuthenticatedHouseholdRouteImport } from './routes/_authenticated/household'
 import { Route as AuthenticatedHouseholdPermissionsRouteImport } from './routes/_authenticated/household-permissions'
 import { Route as AuthenticatedNotificationsRouteImport } from './routes/_authenticated/notifications'
@@ -44,6 +45,9 @@ import { Route as AuthenticatedAccountEmergencyRouteImport } from './routes/_aut
 import { Route as AuthenticatedAccountSecurityRouteImport } from './routes/_authenticated/account.security'
 import { Route as AuthenticatedBirdsBirdIdRouteImport } from './routes/_authenticated/birds/$birdId'
 import { Route as AuthenticatedBirdsNewRouteImport } from './routes/_authenticated/birds/new'
+import { Route as AuthenticatedFlockIndexRouteImport } from './routes/_authenticated/flock.index'
+import { Route as AuthenticatedFlockLearnRouteImport } from './routes/_authenticated/flock.learn'
+import { Route as AuthenticatedFlockSpacesRouteImport } from './routes/_authenticated/flock.spaces'
 import { Route as AuthenticatedNotificationsIndexRouteImport } from './routes/_authenticated/notifications.index'
 import { Route as AuthenticatedNotificationsSettingsRouteImport } from './routes/_authenticated/notifications.settings'
 import { Route as AuthenticatedScansIndexRouteImport } from './routes/_authenticated/scans.index'
@@ -180,6 +184,11 @@ const AuthenticatedExploreRoute = AuthenticatedExploreRouteImport.update({
   path: '/explore',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedFlockRoute = AuthenticatedFlockRouteImport.update({
+  id: '/flock',
+  path: '/flock',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedHouseholdRoute = AuthenticatedHouseholdRouteImport.update({
   id: '/household',
   path: '/household',
@@ -277,6 +286,22 @@ const AuthenticatedBirdsNewRoute = AuthenticatedBirdsNewRouteImport.update({
   path: '/birds/new',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedFlockIndexRoute = AuthenticatedFlockIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedFlockRoute,
+} as any)
+const AuthenticatedFlockLearnRoute = AuthenticatedFlockLearnRouteImport.update({
+  id: '/learn',
+  path: '/learn',
+  getParentRoute: () => AuthenticatedFlockRoute,
+} as any)
+const AuthenticatedFlockSpacesRoute =
+  AuthenticatedFlockSpacesRouteImport.update({
+    id: '/spaces',
+    path: '/spaces',
+    getParentRoute: () => AuthenticatedFlockRoute,
+  } as any)
 const AuthenticatedNotificationsIndexRoute =
   AuthenticatedNotificationsIndexRouteImport.update({
     id: '/',
@@ -576,6 +601,7 @@ export interface FileRoutesByFullPath {
   '/check': typeof AuthenticatedCheckRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/explore': typeof AuthenticatedExploreRoute
+  '/flock': typeof AuthenticatedFlockRouteWithChildren
   '/household': typeof AuthenticatedHouseholdRoute
   '/household-permissions': typeof AuthenticatedHouseholdPermissionsRoute
   '/notifications': typeof AuthenticatedNotificationsRouteWithChildren
@@ -592,6 +618,8 @@ export interface FileRoutesByFullPath {
   '/account/security': typeof AuthenticatedAccountSecurityRoute
   '/birds/$birdId': typeof AuthenticatedBirdsBirdIdRouteWithChildren
   '/birds/new': typeof AuthenticatedBirdsNewRoute
+  '/flock/learn': typeof AuthenticatedFlockLearnRoute
+  '/flock/spaces': typeof AuthenticatedFlockSpacesRoute
   '/notifications/settings': typeof AuthenticatedNotificationsSettingsRoute
   '/scans/history': typeof AuthenticatedScansHistoryRoute
   '/scans/settings': typeof AuthenticatedScansSettingsRoute
@@ -607,6 +635,7 @@ export interface FileRoutesByFullPath {
   '/sitter/$token/home': typeof SitterTokenHomeRoute
   '/sitter/$token/scan': typeof SitterTokenScanRoute
   '/account/': typeof AuthenticatedAccountIndexRoute
+  '/flock/': typeof AuthenticatedFlockIndexRoute
   '/notifications/': typeof AuthenticatedNotificationsIndexRoute
   '/scans/': typeof AuthenticatedScansIndexRoute
   '/sits/': typeof AuthenticatedSitsIndexRoute
@@ -672,6 +701,8 @@ export interface FileRoutesByTo {
   '/account/emergency': typeof AuthenticatedAccountEmergencyRoute
   '/account/security': typeof AuthenticatedAccountSecurityRoute
   '/birds/new': typeof AuthenticatedBirdsNewRoute
+  '/flock/learn': typeof AuthenticatedFlockLearnRoute
+  '/flock/spaces': typeof AuthenticatedFlockSpacesRoute
   '/notifications/settings': typeof AuthenticatedNotificationsSettingsRoute
   '/scans/history': typeof AuthenticatedScansHistoryRoute
   '/scans/settings': typeof AuthenticatedScansSettingsRoute
@@ -687,6 +718,7 @@ export interface FileRoutesByTo {
   '/sitter/$token/home': typeof SitterTokenHomeRoute
   '/sitter/$token/scan': typeof SitterTokenScanRoute
   '/account': typeof AuthenticatedAccountIndexRoute
+  '/flock': typeof AuthenticatedFlockIndexRoute
   '/notifications': typeof AuthenticatedNotificationsIndexRoute
   '/scans': typeof AuthenticatedScansIndexRoute
   '/sits': typeof AuthenticatedSitsIndexRoute
@@ -742,6 +774,7 @@ export interface FileRoutesById {
   '/_authenticated/check': typeof AuthenticatedCheckRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/explore': typeof AuthenticatedExploreRoute
+  '/_authenticated/flock': typeof AuthenticatedFlockRouteWithChildren
   '/_authenticated/household': typeof AuthenticatedHouseholdRoute
   '/_authenticated/household-permissions': typeof AuthenticatedHouseholdPermissionsRoute
   '/_authenticated/notifications': typeof AuthenticatedNotificationsRouteWithChildren
@@ -758,6 +791,8 @@ export interface FileRoutesById {
   '/_authenticated/account/security': typeof AuthenticatedAccountSecurityRoute
   '/_authenticated/birds/$birdId': typeof AuthenticatedBirdsBirdIdRouteWithChildren
   '/_authenticated/birds/new': typeof AuthenticatedBirdsNewRoute
+  '/_authenticated/flock/learn': typeof AuthenticatedFlockLearnRoute
+  '/_authenticated/flock/spaces': typeof AuthenticatedFlockSpacesRoute
   '/_authenticated/notifications/settings': typeof AuthenticatedNotificationsSettingsRoute
   '/_authenticated/scans/history': typeof AuthenticatedScansHistoryRoute
   '/_authenticated/scans/settings': typeof AuthenticatedScansSettingsRoute
@@ -773,6 +808,7 @@ export interface FileRoutesById {
   '/sitter/$token/home': typeof SitterTokenHomeRoute
   '/sitter/$token/scan': typeof SitterTokenScanRoute
   '/_authenticated/account/': typeof AuthenticatedAccountIndexRoute
+  '/_authenticated/flock/': typeof AuthenticatedFlockIndexRoute
   '/_authenticated/notifications/': typeof AuthenticatedNotificationsIndexRoute
   '/_authenticated/scans/': typeof AuthenticatedScansIndexRoute
   '/_authenticated/sits/': typeof AuthenticatedSitsIndexRoute
@@ -829,6 +865,7 @@ export interface FileRouteTypes {
     | '/check'
     | '/dashboard'
     | '/explore'
+    | '/flock'
     | '/household'
     | '/household-permissions'
     | '/notifications'
@@ -845,6 +882,8 @@ export interface FileRouteTypes {
     | '/account/security'
     | '/birds/$birdId'
     | '/birds/new'
+    | '/flock/learn'
+    | '/flock/spaces'
     | '/notifications/settings'
     | '/scans/history'
     | '/scans/settings'
@@ -860,6 +899,7 @@ export interface FileRouteTypes {
     | '/sitter/$token/home'
     | '/sitter/$token/scan'
     | '/account/'
+    | '/flock/'
     | '/notifications/'
     | '/scans/'
     | '/sits/'
@@ -925,6 +965,8 @@ export interface FileRouteTypes {
     | '/account/emergency'
     | '/account/security'
     | '/birds/new'
+    | '/flock/learn'
+    | '/flock/spaces'
     | '/notifications/settings'
     | '/scans/history'
     | '/scans/settings'
@@ -940,6 +982,7 @@ export interface FileRouteTypes {
     | '/sitter/$token/home'
     | '/sitter/$token/scan'
     | '/account'
+    | '/flock'
     | '/notifications'
     | '/scans'
     | '/sits'
@@ -994,6 +1037,7 @@ export interface FileRouteTypes {
     | '/_authenticated/check'
     | '/_authenticated/dashboard'
     | '/_authenticated/explore'
+    | '/_authenticated/flock'
     | '/_authenticated/household'
     | '/_authenticated/household-permissions'
     | '/_authenticated/notifications'
@@ -1010,6 +1054,8 @@ export interface FileRouteTypes {
     | '/_authenticated/account/security'
     | '/_authenticated/birds/$birdId'
     | '/_authenticated/birds/new'
+    | '/_authenticated/flock/learn'
+    | '/_authenticated/flock/spaces'
     | '/_authenticated/notifications/settings'
     | '/_authenticated/scans/history'
     | '/_authenticated/scans/settings'
@@ -1025,6 +1071,7 @@ export interface FileRouteTypes {
     | '/sitter/$token/home'
     | '/sitter/$token/scan'
     | '/_authenticated/account/'
+    | '/_authenticated/flock/'
     | '/_authenticated/notifications/'
     | '/_authenticated/scans/'
     | '/_authenticated/sits/'
@@ -1213,6 +1260,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedExploreRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/flock': {
+      id: '/_authenticated/flock'
+      path: '/flock'
+      fullPath: '/flock'
+      preLoaderRoute: typeof AuthenticatedFlockRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/household': {
       id: '/_authenticated/household'
       path: '/household'
@@ -1338,6 +1392,27 @@ declare module '@tanstack/react-router' {
       fullPath: '/birds/new'
       preLoaderRoute: typeof AuthenticatedBirdsNewRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/flock/': {
+      id: '/_authenticated/flock/'
+      path: '/'
+      fullPath: '/flock/'
+      preLoaderRoute: typeof AuthenticatedFlockIndexRouteImport
+      parentRoute: typeof AuthenticatedFlockRoute
+    }
+    '/_authenticated/flock/learn': {
+      id: '/_authenticated/flock/learn'
+      path: '/learn'
+      fullPath: '/flock/learn'
+      preLoaderRoute: typeof AuthenticatedFlockLearnRouteImport
+      parentRoute: typeof AuthenticatedFlockRoute
+    }
+    '/_authenticated/flock/spaces': {
+      id: '/_authenticated/flock/spaces'
+      path: '/spaces'
+      fullPath: '/flock/spaces'
+      preLoaderRoute: typeof AuthenticatedFlockSpacesRouteImport
+      parentRoute: typeof AuthenticatedFlockRoute
     }
     '/_authenticated/notifications/': {
       id: '/_authenticated/notifications/'
@@ -1700,6 +1775,21 @@ const AuthenticatedAccountRouteChildren: AuthenticatedAccountRouteChildren = {
 const AuthenticatedAccountRouteWithChildren =
   AuthenticatedAccountRoute._addFileChildren(AuthenticatedAccountRouteChildren)
 
+interface AuthenticatedFlockRouteChildren {
+  AuthenticatedFlockLearnRoute: typeof AuthenticatedFlockLearnRoute
+  AuthenticatedFlockSpacesRoute: typeof AuthenticatedFlockSpacesRoute
+  AuthenticatedFlockIndexRoute: typeof AuthenticatedFlockIndexRoute
+}
+
+const AuthenticatedFlockRouteChildren: AuthenticatedFlockRouteChildren = {
+  AuthenticatedFlockLearnRoute: AuthenticatedFlockLearnRoute,
+  AuthenticatedFlockSpacesRoute: AuthenticatedFlockSpacesRoute,
+  AuthenticatedFlockIndexRoute: AuthenticatedFlockIndexRoute,
+}
+
+const AuthenticatedFlockRouteWithChildren =
+  AuthenticatedFlockRoute._addFileChildren(AuthenticatedFlockRouteChildren)
+
 interface AuthenticatedNotificationsRouteChildren {
   AuthenticatedNotificationsSettingsRoute: typeof AuthenticatedNotificationsSettingsRoute
   AuthenticatedNotificationsIndexRoute: typeof AuthenticatedNotificationsIndexRoute
@@ -1811,6 +1901,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCheckRoute: typeof AuthenticatedCheckRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedExploreRoute: typeof AuthenticatedExploreRoute
+  AuthenticatedFlockRoute: typeof AuthenticatedFlockRouteWithChildren
   AuthenticatedHouseholdRoute: typeof AuthenticatedHouseholdRoute
   AuthenticatedHouseholdPermissionsRoute: typeof AuthenticatedHouseholdPermissionsRoute
   AuthenticatedNotificationsRoute: typeof AuthenticatedNotificationsRouteWithChildren
@@ -1835,6 +1926,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCheckRoute: AuthenticatedCheckRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedExploreRoute: AuthenticatedExploreRoute,
+  AuthenticatedFlockRoute: AuthenticatedFlockRouteWithChildren,
   AuthenticatedHouseholdRoute: AuthenticatedHouseholdRoute,
   AuthenticatedHouseholdPermissionsRoute:
     AuthenticatedHouseholdPermissionsRoute,
