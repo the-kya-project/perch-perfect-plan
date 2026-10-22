@@ -73,7 +73,7 @@ export function OwnerTabBar({ active, embedded }: { active?: OwnerTab; embedded?
   // signup type, so there's no owner-vs-caregiver nav split (a recurring bug
   // source). A sit you're covering shows as a section on Home, not a nav tab.
   const TABS: TabSpec[] = [HOME_TAB, SITS_TAB, ACTIVITY_TAB, EXPLORE_TAB];
-  // The Flock entry: admins only until launch (flock_enabled() on the server).
+  // The Community entry (the Flock): admins only until launch (flock_enabled() on the server).
   // While that loads, on any error, and for everyone else, nothing is added and
   // the bar is exactly the four tabs above.
   const flock = useFlockEnabled() === true;
@@ -108,7 +108,7 @@ export function OwnerTabBar({ active, embedded }: { active?: OwnerTab; embedded?
             className="flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] font-medium text-[#5f5e5a] transition-colors"
           >
             <Users className="size-6" strokeWidth={1.9} />
-            {t("ownerTabs.flock", "Flock")}
+            {t("ownerTabs.flock", "Community")}
           </Link>
         )}
       </div>
