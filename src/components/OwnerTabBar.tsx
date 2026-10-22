@@ -1,5 +1,6 @@
 import { Link, useLocation } from "@tanstack/react-router";
-import { Home, Calendar, Activity, Compass } from "lucide-react";
+import { Home, Calendar, Activity, Compass, Users } from "lucide-react";
+import { rememberMode, useFlockEnabled } from "@/lib/flock";
 import { useTranslation } from "react-i18next";
 import type { TFunction } from "i18next";
 
@@ -72,6 +73,10 @@ export function OwnerTabBar({ active, embedded }: { active?: OwnerTab; embedded?
   // signup type, so there's no owner-vs-caregiver nav split (a recurring bug
   // source). A sit you're covering shows as a section on Home, not a nav tab.
   const TABS: TabSpec[] = [HOME_TAB, SITS_TAB, ACTIVITY_TAB, EXPLORE_TAB];
+  // The Flock entry: admins only until launch (flock_enabled() on the server).
+  // While that loads, on any error, and for everyone else, nothing is added and
+  // the bar is exactly the four tabs above.
+  const flock = useFlockEnabled() === true;
   return (
     <nav
       aria-label={t("ownerTabs.navAria", "Primary")}
@@ -95,6 +100,17 @@ export function OwnerTabBar({ active, embedded }: { active?: OwnerTab; embedded?
             </Link>
           );
         })}
+        {flock && (
+          <Link
+            to="/flock"
+            onClick={() => rememberMode("flock")}
+            data-coach="owner-tab-flock"
+            className="flex flex-1 flex-col items-center gap-0.5 py-2 text-[11px] font-medium text-[#5f5e5a] transition-colors"
+          >
+            <Users className="size-6" strokeWidth={1.9} />
+            {t("ownerTabs.flock", "Flock")}
+          </Link>
+        )}
       </div>
     </nav>
   );

@@ -1,5 +1,6 @@
 import { createFileRoute, Outlet, redirect, useLocation, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthClientStalled, getReadySession } from "@/lib/authReady";
 import { applyOAuthAttribution } from "@/lib/attribution";
@@ -7,6 +8,7 @@ import { ensureAccountTimeZone } from "@/lib/sitTimeZoneBackfill";
 import { PullToRefresh } from "@/components/PullToRefresh";
 import { OwnerTabBar, isTaskPath } from "@/components/OwnerTabBar";
 import { StartupSplash } from "@/components/StartupSplash";
+import { FLOCK_ENABLED_QUERY, rememberMode, rememberedMode } from "@/lib/flock";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -73,6 +75,24 @@ function isUserGone(error: { code?: string; message?: string } | null): boolean 
 
 function AuthenticatedLayout() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  // Reopen in the mode this device was last in. Only when the app opens on its
+  // default landing (Home), only once per app load, and only after the server
+  // confirms flock_enabled(): anyone who isn't an admin always opens in care,
+  // and a stale "flock" left on the device is cleared.
+  useEffect(() => {
+    if (rememberedMode() !== "flock" || window.location.pathname !== "/dashboard") return;
+    let cancelled = false;
+    void queryClient.fetchQuery(FLOCK_ENABLED_QUERY).catch(() => false).then((enabled) => {
+      if (cancelled) return;
+      if (enabled) void navigate({ to: "/flock", replace: true });
+      else rememberMode("care");
+    });
+    return () => { cancelled = true; };
+    // Once per app load: later visits to Home are deliberate.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // An account deleted ELSEWHERE — another device, or server-side — leaves this
   // device holding a session for a user that no longer exists. The guard above
@@ -118,6 +138,8 @@ function AuthenticatedLayout() {
     // The sitter preview renders the sitter's OWN chrome (its iframe) — the
     // owner's bottom nav must not show under it.
     l.pathname.startsWith("/sit-preview") ||
+    // The Flock has its own bar (FlockShell).
+    l.pathname === "/flock" || l.pathname.startsWith("/flock/") ||
     // Tasks (daily check, full health check, set up / edit a sit, edit a
     // bird's identity) end with one pinned button instead of the nav.
     isTaskPath(l.pathname, l.search as Record<string, unknown>) });

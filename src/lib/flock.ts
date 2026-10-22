@@ -16,11 +16,32 @@ export async function fetchFlockEnabled(): Promise<boolean> {
   return data === true;
 }
 
+/** Shared by the hook, the /flock route guard and the last-mode check, so all
+ *  three read one cached answer. Five minutes: it only changes when someone's
+ *  role does, and every non-admin pays this one RPC. */
+export const FLOCK_ENABLED_QUERY = {
+  queryKey: ["flock-enabled"] as const,
+  staleTime: 5 * 60_000,
+  queryFn: fetchFlockEnabled,
+};
+
 export function useFlockEnabled(): boolean | undefined {
-  const { data } = useQuery({
-    queryKey: ["flock-enabled"],
-    staleTime: 60_000,
-    queryFn: fetchFlockEnabled,
-  });
+  const { data } = useQuery(FLOCK_ENABLED_QUERY);
   return data;
+}
+
+// ---- Last mode, per device ------------------------------------------------
+// Which side of the app this device was last in, so reopening the app returns
+// there. Only ever acted on after the server confirms flock_enabled(); anyone
+// else always opens in care (and the stored value is cleared).
+
+export type AppMode = "care" | "flock";
+const MODE_KEY = "kya_mode";
+
+export function rememberMode(mode: AppMode): void {
+  try { localStorage.setItem(MODE_KEY, mode); } catch { /* private mode etc. */ }
+}
+
+export function rememberedMode(): AppMode {
+  try { return localStorage.getItem(MODE_KEY) === "flock" ? "flock" : "care"; } catch { return "care"; }
 }

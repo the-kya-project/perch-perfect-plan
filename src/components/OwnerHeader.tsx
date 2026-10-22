@@ -5,6 +5,8 @@ import { useUpdates } from "@/lib/updates";
 import { replayOwnerOnboarding } from "@/components/OwnerOnboarding";
 import { HelpSheet } from "@/components/HelpSheet";
 import { useTranslation } from "react-i18next";
+import { useFlockEnabled } from "@/lib/flock";
+import { AccountAvatar } from "@/components/AccountAvatar";
 
 // THE single shared top-right hero icon cluster — help (the help sheet), bell
 // (Updates, with an unread dot), settings (gear) — in a consistent
@@ -18,6 +20,10 @@ export function OwnerHeaderIcons() {
   const navigate = useNavigate();
   const { unread } = useUpdates();
   const [helpOpen, setHelpOpen] = useState(false);
+  // Flock admins see their avatar in place of the gear (it opens the same
+  // Account screen). Everyone else, and everyone while the check loads, keeps
+  // the gear exactly as before.
+  const flock = useFlockEnabled() === true;
 
   // "Take the tour" in the help sheet replays the onboarding tour. It navigates
   // Home first (the tour lives on the dashboard); replayOwnerOnboarding sets a
@@ -41,9 +47,13 @@ export function OwnerHeaderIcons() {
         {/* Unread: a small sunflower dot with a forest outline. */}
         {unread > 0 && <span className="absolute right-[7px] top-[7px] size-[10px] rounded-full" style={{ background: "#f2b33d", boxShadow: "0 0 0 2px #1a3d2e" }} aria-hidden="true" />}
       </Link>
-      <Link to="/account" className={btn} style={bg} aria-label={t("ownerHeader.accountSettings", "Account settings")}>
-        <Settings className="size-[18px]" />
-      </Link>
+      {flock ? (
+        <AccountAvatar />
+      ) : (
+        <Link to="/account" className={btn} style={bg} aria-label={t("ownerHeader.accountSettings", "Account settings")}>
+          <Settings className="size-[18px]" />
+        </Link>
+      )}
       <HelpSheet open={helpOpen} onClose={() => setHelpOpen(false)} onTakeTour={replayTour} />
     </div>
   );
