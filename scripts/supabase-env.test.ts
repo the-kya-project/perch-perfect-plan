@@ -4,7 +4,7 @@
  *   npm run test:supabase-env
  *
  * Pins src/lib/supabaseEnv.ts: a preview build picks one Supabase project from
- * its variables (a PR's preview branch or staging), and fails the build when
+ * its variables (the staging branch), and fails the build when
  * those variables are missing, disagree, or name production. The runtime guard
  * refuses production only in a preview, so production itself is untouched.
  *
@@ -30,7 +30,6 @@ function check(name: string, fn: () => void) {
 
 const PROD = `https://${PRODUCTION_SUPABASE_REF}.supabase.co`;
 const STAGING = "https://stagingrefabcdefghij.supabase.co";
-const BRANCH = "https://branchrefabcdefghijk.supabase.co";
 
 check("reads the ref from a Supabase URL", () => {
   assert.equal(supabaseRef(PROD), PRODUCTION_SUPABASE_REF);
@@ -44,19 +43,10 @@ check("staging fallback: unprefixed variables only", () => {
   assert.equal(r.publishableKey, "sb_publishable_s");
 });
 
-check("PR branch from the integration, NEXT_PUBLIC_ copy agrees", () => {
-  const r = resolvePreviewSupabase({
-    SUPABASE_URL: BRANCH,
-    NEXT_PUBLIC_SUPABASE_URL: BRANCH,
-    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_b",
-  });
-  assert.equal(r.url, BRANCH);
-  assert.equal(r.publishableKey, "sb_publishable_b");
-});
-
-check("falls back to a legacy anon key name", () => {
-  const r = resolvePreviewSupabase({ SUPABASE_URL: BRANCH, SUPABASE_ANON_KEY: "eyJ.anon" });
-  assert.equal(r.publishableKey, "eyJ.anon");
+check("a VITE_ copy that agrees is fine", () => {
+  const r = resolvePreviewSupabase({ SUPABASE_URL: STAGING, VITE_SUPABASE_URL: STAGING, VITE_SUPABASE_PUBLISHABLE_KEY: "k" });
+  assert.equal(r.url, STAGING);
+  assert.equal(r.publishableKey, "k");
 });
 
 check("fails on production", () => {

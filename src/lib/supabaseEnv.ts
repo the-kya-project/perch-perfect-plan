@@ -3,17 +3,17 @@
  * Vercel preview deployments off the production database.
  *
  * Production is unchanged: its builds read the same VITE_/SUPABASE_ variables
- * they always have, and nothing here runs for them. Previews get their settings
- * from two places, in this order of precedence (Vercel applies it, not us):
- *   1. A PR that changes supabase/ gets its own Supabase preview branch, and the
- *      Supabase–Vercel integration writes that branch's URL and keys as Preview
- *      variables scoped to the PR's git branch.
- *   2. Every other PR falls back to the general Preview variables, which point
- *      at the persistent "staging" branch.
- * Either way a preview must never resolve to production. If it does (a Vercel
- * setting drifts, someone re-adds Preview to a production variable), the build
- * fails and the server clients refuse to start, rather than quietly writing to
- * real people's data.
+ * they always have, and nothing here runs for them. Every preview uses the
+ * persistent "staging" Supabase branch through the general Preview variables
+ * in Vercel (SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, SUPABASE_SECRET_KEY); the
+ * production Supabase variables are scoped to Production only. A PR with its
+ * own migrations still gets a Supabase preview branch for testing the SQL, but
+ * its Vercel preview stays on staging.
+ *
+ * A preview must never resolve to production. If it does (a Vercel setting
+ * drifts, someone re-adds Preview to a production variable), the build fails
+ * and the server clients refuse to start, rather than quietly writing to real
+ * people's data.
  *
  * Imported by vite.config.ts at build time, so keep it free of app imports.
  */
@@ -22,24 +22,16 @@ export const PRODUCTION_SUPABASE_REF = "koyqdyamazuuwvqbttnj";
 
 export const PREVIEW_ON_PRODUCTION_MESSAGE =
   "This Vercel preview resolved to the PRODUCTION Supabase project. Previews must use " +
-  "their PR's Supabase preview branch or the staging branch. Check the Preview-scoped " +
+  "the staging Supabase branch. Check the Preview-scoped " +
   "Supabase variables in Vercel (Settings → Environment Variables).";
 
 type Env = Record<string, string | undefined>;
 
-// The integration writes unprefixed names plus a public-prefixed copy (VITE_ if
-// the connection's prefix is set to it, NEXT_PUBLIC_ by default). Unprefixed
-// comes first because it is the name the server reads at runtime, so the
-// browser bundle and the server functions always agree on one project.
-const URL_KEYS = ["SUPABASE_URL", "VITE_SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_URL"];
-const PUBLISHABLE_KEY_KEYS = [
-  "SUPABASE_PUBLISHABLE_KEY",
-  "VITE_SUPABASE_PUBLISHABLE_KEY",
-  "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
-  "SUPABASE_ANON_KEY",
-  "VITE_SUPABASE_ANON_KEY",
-  "NEXT_PUBLIC_SUPABASE_ANON_KEY",
-];
+// Unprefixed first: it is the name the server reads at runtime, so the browser
+// bundle and the server functions always agree on one project. A VITE_ copy
+// that names a different project fails the build instead of splitting them.
+const URL_KEYS = ["SUPABASE_URL", "VITE_SUPABASE_URL"];
+const PUBLISHABLE_KEY_KEYS = ["SUPABASE_PUBLISHABLE_KEY", "VITE_SUPABASE_PUBLISHABLE_KEY"];
 
 /** Project ref from a Supabase URL (`https://<ref>.supabase.co`), else the host. */
 export function supabaseRef(url: string): string | null {
@@ -77,7 +69,7 @@ export function resolvePreviewSupabase(env: Env): { url: string; publishableKey:
   if (urls.length === 0) {
     throw new Error(
       "This Vercel preview has no Supabase URL. Previews need the Preview-scoped staging " +
-        "variables in Vercel (or a Supabase preview branch for PRs that change supabase/).",
+        "variables in Vercel (SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY).",
     );
   }
   const refs = new Set(urls.map((u) => u.ref));
