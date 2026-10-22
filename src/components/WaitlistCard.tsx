@@ -58,7 +58,7 @@ export function WaitlistCard() {
   );
 }
 
-function WaitlistModal({ onClose }: { onClose: () => void }) {
+export function WaitlistModal({ onClose }: { onClose: () => void }) {
   const { t } = useTranslation();
   const join = useServerFn(joinWaitlist);
   const [firstName, setFirstName] = useState("");

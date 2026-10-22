@@ -104,7 +104,11 @@ export type AnalyticsEventName =
   | "daily_check_saved"
   | "daily_check_different_opened"
   | "flock_check_completed"
-  | "extra_weight_added";
+  | "extra_weight_added"
+  // The Founding 50 page (/founding): `source` is its ?src=, `region` the
+  // chosen region slug.
+  | "founding_page_viewed"
+  | "founding_spot_claimed";
 
 type EventProps = Record<string, string | number | boolean | null | undefined>;
 
