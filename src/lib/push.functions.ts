@@ -8,10 +8,11 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
+// null when web push isn't configured (Vercel previews have no VAPID keys), so
+// the settings screen can say so instead of failing.
 export const getVapidPublicKey = createServerFn({ method: "GET" }).handler(async () => {
   const key = process.env.VAPID_PUBLIC_KEY;
-  if (!key) throw new Error("VAPID_PUBLIC_KEY is not configured.");
-  return { publicKey: key };
+  return { publicKey: key || null };
 });
 
 export const savePushSubscription = createServerFn({ method: "POST" })

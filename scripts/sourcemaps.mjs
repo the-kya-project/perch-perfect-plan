@@ -17,6 +17,10 @@
 // Credentials (Vercel build env, never committed): POSTHOG_CLI_API_KEY — a
 // personal API key with "error tracking write" + "organization read" scopes —
 // and POSTHOG_CLI_PROJECT_ID. Touches nothing outside the build output.
+//
+// Vercel previews skip steps 1 and 4 entirely: they must not send anything to
+// the production PostHog project (the credentials are Production-only too, so
+// this is the backstop). Steps 2 and 3 still run.
 import { spawnSync } from "node:child_process";
 import { readdirSync, readFileSync, statSync, unlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
@@ -26,6 +30,7 @@ const ASSETS = join(OUTPUT, "static", "assets");
 const HOST = "https://us.posthog.com";
 const RELEASE_NAME = "kya-web";
 const RELEASE_VERSION = (process.env.VERCEL_GIT_COMMIT_SHA ?? "local").slice(0, 7);
+const PREVIEW = process.env.VERCEL_ENV === "preview";
 
 function walk(dir) {
   let out = [];
@@ -69,7 +74,9 @@ function cli(args) {
 }
 
 // 1. Upload
-if (process.env.POSTHOG_CLI_API_KEY && process.env.POSTHOG_CLI_PROJECT_ID) {
+if (PREVIEW) {
+  console.log("sourcemaps: Vercel preview — upload skipped (PostHog is off in previews)");
+} else if (process.env.POSTHOG_CLI_API_KEY && process.env.POSTHOG_CLI_PROJECT_ID) {
   const release = ["--release-name", RELEASE_NAME, "--release-version", RELEASE_VERSION];
   const ok =
     cli(["sourcemap", "inject", "--directory", ASSETS, ...release]) &&
@@ -115,8 +122,8 @@ console.log(`sourcemaps: ${deleted} map file(s) removed, ${stripped} reference(s
 
 // 4. Report the outcome as a PostHog event (`sourcemap_build`), so a build on
 // Vercel can be checked without access to its build log. Only on Vercel, never
-// fatal, bounded. Contains no credentials (see redact()).
-if (process.env.VERCEL) {
+// fatal, bounded. Contains no credentials (see redact()). Not from previews.
+if (process.env.VERCEL && !PREVIEW) {
   report.maps_deleted = deleted;
   report.refs_stripped = stripped;
   const controller = new AbortController();
