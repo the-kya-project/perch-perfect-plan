@@ -68,6 +68,43 @@ const BASE_CSS = `
   p { margin:0 0 20px; font-size:15px; line-height:1.55; color:${MUTED}; }
   @media (max-width:420px) { h1 { font-size:26px; } }`;
 
+/**
+ * First-touch attribution for desktop visitors to /get and /get-app.
+ *
+ * This page is server-built HTML, so the app's captureFirstTouch (attribution.ts)
+ * never runs here. Without this, someone who lands from a campaign link (the
+ * printed postcard's QR, a bio link) and later signs up on the web from the same
+ * browser would be credited to "direct". It writes the same localStorage key in
+ * the same shape, with the same first-touch rule (never overwrite), so the app
+ * picks it up at signup unchanged.
+ *
+ * UTMs are read from location.search in the browser rather than interpolated
+ * from the server, so nothing from the query string is written into the script.
+ * The referrer is kept to its origin: a same-origin referrer could be a
+ * tokened path, and this runs without attribution.ts's scrubber.
+ */
+const FIRST_TOUCH_SCRIPT = `<script>
+  try {
+    var K = "ppc_attribution_first_touch";
+    if (!localStorage.getItem(K)) {
+      var p = new URLSearchParams(location.search);
+      var g = function (k) { return (p.get(k) || "").trim(); };
+      var ref = "";
+      try { ref = document.referrer ? new URL(document.referrer).origin + "/" : ""; } catch (e) {}
+      var source = g("utm_source"), medium = g("utm_medium");
+      if (!source) {
+        if (ref) { source = new URL(ref).hostname.replace(/^www\\./, ""); if (!medium) medium = "referral"; }
+        else { source = "direct"; if (!medium) medium = "direct"; }
+      }
+      localStorage.setItem(K, JSON.stringify({
+        source: source, medium: medium, campaign: g("utm_campaign"), term: g("utm_term"),
+        content: g("utm_content"), referrer: ref, landing_page: location.pathname + location.search,
+        first_seen_at: new Date().toISOString()
+      }));
+    }
+  } catch (e) {}
+</script>`;
+
 /** Escape a string for use inside a double-quoted HTML attribute. */
 function attr(v: string): string {
   return v
@@ -186,13 +223,15 @@ export function chooserPage(
 <meta name="twitter:image:alt" content="${attr(SHARE_IMAGE_ALT)}" />`
       : "";
 
+  const firstTouch = kind === "get" ? `\n${FIRST_TOUCH_SCRIPT}` : "";
+
   return `<!doctype html>
 <html lang="en"><head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
 <meta name="robots" content="noindex" />
 <meta name="theme-color" content="${FOREST}" />
-<title>${title.replace(/&amp;/g, "&")} — Kya &amp; Co.</title>${preview}
+<title>${title.replace(/&amp;/g, "&")} — Kya &amp; Co.</title>${preview}${firstTouch}
 ${FONTS}
 <style>${BASE_CSS}
   .qr { width:200px; height:200px; display:block; margin:0 auto 22px; border-radius:12px; background:#fff; padding:10px; box-sizing:content-box; }
