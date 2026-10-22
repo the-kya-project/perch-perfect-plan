@@ -7,10 +7,11 @@
 //
 // The signature has no expiry on purpose. An unsubscribe link that stops
 // working is worse than useless: the reader clicks it, nothing happens, and
-// the next email arrives anyway. Rotating CARE_PLAN_REMINDER_SECRET would
-// invalidate every outstanding link, which is the one thing to weigh before
-// rotating it.
+// the next email arrives anyway. So the key is EMAIL_LINK_SECRET, separate from
+// the cron token, and links signed before the split stay valid through
+// EMAIL_LINK_LEGACY_SECRET until its cutoff (see emailLinkKeys.ts).
 import { createHmac } from "node:crypto";
+import { linkSigningKey, linkVerifyingKeys, sameString } from "./emailLinkKeys";
 
 /** The two things a reader can turn off. Everything else is transactional and
  *  cannot be unsubscribed from here — see the migration comment. */
@@ -27,22 +28,16 @@ export function isUnsubCategory(v: string): v is UnsubCategory {
   return (UNSUB_CATEGORIES as readonly string[]).includes(v);
 }
 
-function secret(): string {
-  const s = process.env.CARE_PLAN_REMINDER_SECRET;
-  if (!s) throw new Error("CARE_PLAN_REMINDER_SECRET is required to sign unsubscribe links");
-  return s;
+function sigWith(key: string, userId: string, category: UnsubCategory): string {
+  return createHmac("sha256", key).update(`unsub:${userId}:${category}`).digest("hex").slice(0, 32);
 }
 
 export function unsubSig(userId: string, category: UnsubCategory): string {
-  return createHmac("sha256", secret()).update(`unsub:${userId}:${category}`).digest("hex").slice(0, 32);
+  return sigWith(linkSigningKey("unsubscribe links"), userId, category);
 }
 
 export function unsubSigValid(userId: string, category: UnsubCategory, sig: string): boolean {
-  const want = unsubSig(userId, category);
-  if (want.length !== sig.length) return false;
-  let diff = 0;
-  for (let i = 0; i < want.length; i++) diff |= want.charCodeAt(i) ^ sig.charCodeAt(i);
-  return diff === 0;
+  return linkVerifyingKeys().some((k) => sameString(sigWith(k, userId, category), sig));
 }
 
 /** `{base}/api/public/unsubscribe/{category}/{userId}/{sig}` */

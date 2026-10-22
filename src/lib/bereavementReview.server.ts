@@ -18,6 +18,7 @@
  * never on a handoff (a transferred bird's passed_at stays null), reply-to is
  * Brittany.
  */
+import { linkSigningKey, linkVerifyingKeys, sameString } from "./emailLinkKeys";
 import { createHmac } from "node:crypto";
 
 // Birds marked as passed before this never get a note (see the original
@@ -31,25 +32,21 @@ const PAST_LOSS_MINUTES = 10;
 
 const APP_URL = () => process.env.APP_URL || "https://app.thekyaproject.com";
 
-function secret(): string {
-  const s = process.env.CARE_PLAN_REMINDER_SECRET;
-  if (!s) throw new Error("CARE_PLAN_REMINDER_SECRET is required to sign bereavement review links");
-  return s;
-}
-
-export function reviewSig(reviewId: string): string {
-  return createHmac("sha256", secret())
+// Review links are email links: EMAIL_LINK_SECRET, with the pre-split key
+// accepted until its cutoff (emailLinkKeys.ts).
+function sigWith(key: string, reviewId: string): string {
+  return createHmac("sha256", key)
     .update(`bereavement-review:${reviewId}`)
     .digest("hex")
     .slice(0, 32);
 }
 
+export function reviewSig(reviewId: string): string {
+  return sigWith(linkSigningKey("bereavement review links"), reviewId);
+}
+
 export function reviewSigValid(reviewId: string, sig: string): boolean {
-  const want = reviewSig(reviewId);
-  if (want.length !== sig.length) return false;
-  let diff = 0;
-  for (let i = 0; i < want.length; i++) diff |= want.charCodeAt(i) ^ sig.charCodeAt(i);
-  return diff === 0;
+  return linkVerifyingKeys().some((k) => sameString(sigWith(k, reviewId), sig));
 }
 
 export function reviewUrl(reviewId: string): string {

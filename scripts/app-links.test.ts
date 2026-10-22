@@ -10,7 +10,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-process.env.CARE_PLAN_REMINDER_SECRET ||= "test-secret-not-real";
+process.env.EMAIL_LINK_SECRET ||= "test-secret-not-real";
 
 const L = await import("@/lib/appLinks");
 const C = await import("@/lib/emailClicks.server");

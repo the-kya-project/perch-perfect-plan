@@ -8,7 +8,7 @@
  */
 import assert from "node:assert/strict";
 
-process.env.CARE_PLAN_REMINDER_SECRET ||= "test-secret-not-real";
+process.env.EMAIL_LINK_SECRET ||= "test-secret-not-real";
 
 const C = await import("@/lib/emailClicks.server");
 const { prepareContent } = await import("@/lib/brevoEmail.server");

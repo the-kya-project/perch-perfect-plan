@@ -8,28 +8,27 @@
 //
 // The signature stops the endpoint being enumerable: without it you would be
 // able to walk bird ids and read any flock's numbers.
+//
+// Signed with EMAIL_LINK_SECRET; charts in emails sent before that key existed
+// still verify through EMAIL_LINK_LEGACY_SECRET until its cutoff
+// (emailLinkKeys.ts).
 import { createHmac } from "node:crypto";
+import { linkSigningKey, linkVerifyingKeys, sameString } from "./emailLinkKeys";
 
 export const CHART_DEMO_ID = "demo";
 
-function secret(): string {
-  const s = process.env.CARE_PLAN_REMINDER_SECRET;
-  if (!s) throw new Error("CARE_PLAN_REMINDER_SECRET is required to sign chart URLs");
-  return s;
+function sigWith(key: string, birdId: string, month: string): string {
+  return createHmac("sha256", key).update(`${birdId}:${month}`).digest("hex").slice(0, 24);
 }
 
 export function chartSig(birdId: string, month: string): string {
-  return createHmac("sha256", secret()).update(`${birdId}:${month}`).digest("hex").slice(0, 24);
+  return sigWith(linkSigningKey("chart URLs"), birdId, month);
 }
 
 export function chartSigValid(birdId: string, month: string, sig: string): boolean {
-  const want = chartSig(birdId, month);
-  // Length-equal compare; the values are short and public-ish, but there is no
-  // reason to leak timing.
-  if (want.length !== sig.length) return false;
-  let diff = 0;
-  for (let i = 0; i < want.length; i++) diff |= want.charCodeAt(i) ^ sig.charCodeAt(i);
-  return diff === 0;
+  // Constant-time compare; the values are short and public-ish, but there is
+  // no reason to leak timing.
+  return linkVerifyingKeys().some((k) => sameString(sigWith(k, birdId, month), sig));
 }
 
 /** `{base}/api/public/chart/{birdId}/{YYYY-MM}/{sig}` */

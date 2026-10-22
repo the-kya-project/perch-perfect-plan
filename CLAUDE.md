@@ -39,6 +39,7 @@ It is **not** a pet-sitting app. Sharing the care plan with a sitter began as th
 - Storage: bird photos and care clips live in the `bird-photos` bucket; sitters get access through time-limited signed URLs.
 - Edge Functions: `capture-lead` adds signup leads to Brevo (first name, last name, source, consent) and, when the person opts in, to the marketing list. Secrets (Brevo API key, list id) live in Supabase function secrets, never in the repo.
 - Edge Functions deploy through Supabase, separately from the Vercel app deploy.
+- **Two secrets, two jobs (both Production-only in Vercel).** `CARE_PLAN_REMINDER_SECRET` is only the cron hooks' bearer token; it matches the Vault secret `cron_function_token` that the pg_cron jobs send, so rotate both together. `EMAIL_LINK_SECRET` signs every link inside emails (unsubscribe, chart images, `/r/` click tracking, bereavement review), so the cron token can rotate without breaking sent email. `EMAIL_LINK_LEGACY_SECRET` holds the pre-split value and verifies old links until 2027-01-20 (`LEGACY_LINK_KEY_UNTIL` in `src/lib/emailLinkKeys.ts`); after that it is ignored and can be deleted. `npm run test:email-link-keys` pins this.
 
 ## Database migrations (migration-first — never the dashboard)
 Schema changes are migration-first. **Do NOT edit the schema in the Supabase dashboard SQL editor.**

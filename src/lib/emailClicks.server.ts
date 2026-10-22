@@ -22,9 +22,10 @@
  * anything carrying a token or auth code, assets (images, stylesheets), mailto/
  * tel, and anything that is not an <a href>. See shouldTrack().
  *
- * The signing key is CARE_PLAN_REMINDER_SECRET with its own "click:" prefix, the
- * same key the unsubscribe links use. Rotating it breaks outstanding /r/ links'
- * logging, not the links: a bad signature still redirects, to the app home.
+ * The signing key is EMAIL_LINK_SECRET with its own "click:" prefix, the same key
+ * the unsubscribe links use; tokens from before the split still verify through
+ * EMAIL_LINK_LEGACY_SECRET until its cutoff (emailLinkKeys.ts). An unverified
+ * token loses its logging, not the link: it still redirects, to the app home.
  *
  * Signing uses Web Crypto (crypto.subtle), not node:crypto. The send path
  * (brevoEmail.server) is reachable from server functions whose files are also
@@ -32,6 +33,7 @@
  * Crypto is a global in Node and browsers alike, so nothing needs importing.
  */
 import { detectInAppBrowser, detectPlatform, isBot } from "./storeRedirect.server";
+import { linkSigningKey, linkVerifyingKeys, sameString } from "./emailLinkKeys";
 import type { EmailTag } from "./emailTracking";
 import { clickOriginFor } from "./appLinks";
 
@@ -67,37 +69,28 @@ export type ClickPayload = {
   x?: 1;
 };
 
-function key(): string {
-  const s = process.env.CARE_PLAN_REMINDER_SECRET;
-  if (!s) throw new Error("CARE_PLAN_REMINDER_SECRET is required to sign click links");
-  return s;
-}
-
 const b64u = (b: Uint8Array) => Buffer.from(b).toString("base64url");
 
-let keyPromise: Promise<CryptoKey> | null = null;
-function hmacKey(): Promise<CryptoKey> {
-  keyPromise ??= crypto.subtle.importKey("raw", new TextEncoder().encode(key()), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
-  return keyPromise;
+// Imported CryptoKeys by raw key, so a warm instance imports each key once.
+const hmacKeys = new Map<string, Promise<CryptoKey>>();
+function hmacKey(raw: string): Promise<CryptoKey> {
+  let k = hmacKeys.get(raw);
+  if (!k) {
+    k = crypto.subtle.importKey("raw", new TextEncoder().encode(raw), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+    hmacKeys.set(raw, k);
+  }
+  return k;
 }
 
-async function sign(body: string): Promise<string> {
-  const mac = new Uint8Array(await crypto.subtle.sign("HMAC", await hmacKey(), new TextEncoder().encode(`click:${body}`)));
+async function sign(body: string, raw: string): Promise<string> {
+  const mac = new Uint8Array(await crypto.subtle.sign("HMAC", await hmacKey(raw), new TextEncoder().encode(`click:${body}`)));
   // 128 bits is plenty for a link signature and keeps the URL short.
   return b64u(mac.subarray(0, 16));
 }
 
-/** Constant-time string compare, so a signature can't be guessed byte by byte. */
-function sameString(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return diff === 0;
-}
-
 export async function clickToken(p: ClickPayload): Promise<string> {
   const body = b64u(new TextEncoder().encode(JSON.stringify(p)));
-  return `${body}.${await sign(body)}`;
+  return `${body}.${await sign(body, linkSigningKey("click links"))}`;
 }
 
 /** The payload, or null when the token is malformed, tampered with, or points
@@ -107,7 +100,12 @@ export async function readClickToken(token: string): Promise<ClickPayload | null
     const dot = token.lastIndexOf(".");
     if (dot <= 0) return null;
     const body = token.slice(0, dot);
-    if (!sameString(token.slice(dot + 1), await sign(body))) return null;
+    const sig = token.slice(dot + 1);
+    let verified = false;
+    for (const k of linkVerifyingKeys()) {
+      if (sameString(sig, await sign(body, k))) { verified = true; break; }
+    }
+    if (!verified) return null;
     const p = JSON.parse(Buffer.from(body, "base64url").toString("utf8")) as ClickPayload;
     if (!p || typeof p.u !== "string" || typeof p.e !== "string" || typeof p.k !== "string" || typeof p.d !== "string") return null;
     const dest = new URL(p.d);
