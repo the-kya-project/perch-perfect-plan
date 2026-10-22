@@ -3159,10 +3159,10 @@
   "flock.learn.line": "Gidsen, opnames en de podcast komen hier te staan.",
   // Learn
   "flock.learn.title": "Leren",
-  // The Flock
-  "flock.nav.aria": "The Flock",
-  // Care
-  "flock.nav.care": "Zorg",
+  // Community
+  "flock.nav.aria": "Community",
+  // My birds
+  "flock.nav.care": "Mijn vogels",
   // Feed
   "flock.nav.feed": "Feed",
   // Learn
@@ -4837,8 +4837,8 @@
   "ownerScan.whatYouFlagged": "Wat je hebt gemarkeerd",
   // Explore
   "ownerTabs.explore": "Ontdekken",
-  // Flock
-  "ownerTabs.flock": "Flock",
+  // Community
+  "ownerTabs.flock": "Community",
   // Health
   "ownerTabs.health": "Gezondheid",
   // Home
