@@ -229,7 +229,10 @@ console.log("\nchooser: the QR carries this visitor's UTMs");
   check("no UTMs -> the QR still works, just without them", () => {
     const bare = chooserPage("get", NONE, { basePath: "/get", origin: ORIGIN });
     assert.ok(/<div class="qr" data-qr-target="[^"]+"><svg/.test(bare));
-    assert.ok(!bare.includes("utm_"), "nothing invents a UTM");
+    // The first-touch script names the utm_ keys it reads; everything else on
+    // the page (QR, badges, og tags) must carry none.
+    const links = bare.replace(/<script>[\s\S]*?ppc_attribution_first_touch[\s\S]*?<\/script>/, "");
+    assert.ok(!links.includes("utm_"), "nothing invents a UTM");
   });
 }
 
@@ -327,6 +330,50 @@ check("tap param: only app|web are recognised", () => {
   assert.equal(readHandoffTap(u("?tap=web")), "web");
   assert.equal(readHandoffTap(u("?tap=evil")), null);
   assert.equal(readHandoffTap(u("")), null);
+});
+
+// ── The printed postcard's QR ──────────────────────────────────────────────
+const POSTCARD = "?utm_source=postcard&utm_medium=print&utm_campaign=app_postcard";
+check("postcard: Play referrer carries all three UTMs", () => {
+  const url = new URL(playStoreUrl(readUtms(u(POSTCARD))));
+  assert.equal(url.searchParams.get("referrer"), "utm_source=postcard&utm_medium=print&utm_campaign=app_postcard");
+});
+check("postcard: iPhone still lands on the App Store listing", () => {
+  assert.ok(appStoreUrl(readUtms(u(POSTCARD))).startsWith(STORE.ios));
+});
+
+/** Run the chooser's first-touch script against a fake browser. */
+function runFirstTouch(html: string, search: string, referrer: string, store: Map<string, string>) {
+  const m = html.match(/<script>([\s\S]*?ppc_attribution_first_touch[\s\S]*?)<\/script>/);
+  assert.ok(m, "first-touch script missing");
+  const localStorage = { getItem: (k: string) => store.get(k) ?? null, setItem: (k: string, v: string) => void store.set(k, v) };
+  new Function("localStorage", "location", "document", m[1])(localStorage, { search, pathname: "/get" }, { referrer });
+}
+check("chooser for /get saves postcard UTMs as first touch", () => {
+  const store = new Map<string, string>();
+  runFirstTouch(chooserPage("get", {}, { basePath: "/get", origin: "https://app.thekyaproject.com" }), POSTCARD, "", store);
+  const d = JSON.parse(store.get("ppc_attribution_first_touch")!);
+  assert.equal(d.source, "postcard");
+  assert.equal(d.medium, "print");
+  assert.equal(d.campaign, "app_postcard");
+  assert.equal(d.landing_page, `/get${POSTCARD}`);
+  assert.ok(!Number.isNaN(Date.parse(d.first_seen_at)));
+});
+check("chooser first touch never overwrites an earlier one", () => {
+  const store = new Map([["ppc_attribution_first_touch", '{"source":"tiktok"}']]);
+  runFirstTouch(chooserPage("get", {}, { basePath: "/get", origin: "https://app.thekyaproject.com" }), POSTCARD, "", store);
+  assert.equal(store.get("ppc_attribution_first_touch"), '{"source":"tiktok"}');
+});
+check("chooser first touch keeps only the referrer's origin", () => {
+  const store = new Map<string, string>();
+  runFirstTouch(chooserPage("get", {}, { basePath: "/get", origin: "https://app.thekyaproject.com" }), "", "https://www.example.com/invite/abc?x=1", store);
+  const d = JSON.parse(store.get("ppc_attribution_first_touch")!);
+  assert.equal(d.referrer, "https://www.example.com/");
+  assert.equal(d.source, "example.com");
+  assert.equal(d.medium, "referral");
+});
+check("review chooser does not record first touch", () => {
+  assert.equal(chooserPage("review").includes("ppc_attribution_first_touch"), false);
 });
 
 console.log(`\n${passed} passed${process.exitCode ? ", WITH FAILURES" : ", no failures"}`);
