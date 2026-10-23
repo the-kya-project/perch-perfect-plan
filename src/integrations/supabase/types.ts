@@ -1982,16 +1982,16 @@ export type Database = {
         Args: {
           p_amount_paid_cents: number
           p_buyer_email: string
-          p_buyer_name?: string
+          p_buyer_name: string | null
           p_checkout_session_id: string
-          p_message?: string
-          p_payment_intent_id?: string
+          p_message: string | null
+          p_payment_intent_id: string | null
           p_plan: string
-          p_promo_code?: string
+          p_promo_code: string | null
           p_purchased_at: string
-          p_recipient_email?: string
+          p_recipient_email: string | null
           p_recipient_name: string
-          p_send_on?: string
+          p_send_on: string | null
         }
         Returns: {
           created: boolean
