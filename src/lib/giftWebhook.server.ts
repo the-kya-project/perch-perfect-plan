@@ -38,18 +38,21 @@ async function recordPurchase(event: Stripe.Event, sessionId: string): Promise<G
   const recipientEmail = md.recipient_email || null;
 
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  // Every argument is sent, null included: the function has no defaults, and
+  // PostgREST matches an RPC by its argument names, so leaving one out (say,
+  // no promo code) finds no function at all.
   const { data, error } = await supabaseAdmin.rpc("record_gift_purchase", {
     p_checkout_session_id: session.id,
-    p_payment_intent_id: paymentIntent ?? undefined,
+    p_payment_intent_id: paymentIntent,
     p_plan: md.plan,
     p_buyer_email: buyerEmail,
-    p_buyer_name: session.customer_details?.name ?? undefined,
+    p_buyer_name: session.customer_details?.name ?? null,
     p_recipient_name: md.recipient_name ?? "",
-    p_recipient_email: recipientEmail ?? undefined,
-    p_message: md.message || undefined,
-    p_send_on: recipientEmail ? md.send_on || undefined : undefined,
+    p_recipient_email: recipientEmail,
+    p_message: md.message || null,
+    p_send_on: recipientEmail ? md.send_on || null : null,
     p_amount_paid_cents: session.amount_total ?? 0,
-    p_promo_code: promoCode ?? undefined,
+    p_promo_code: promoCode,
     // When Stripe completed the payment: the event's own timestamp.
     p_purchased_at: new Date(event.created * 1000).toISOString(),
   });
