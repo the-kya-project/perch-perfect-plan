@@ -108,7 +108,12 @@ export type AnalyticsEventName =
   // The Founding 50 page (/founding): `source` is its ?src=, `region` the
   // chosen region slug.
   | "founding_page_viewed"
-  | "founding_spot_claimed";
+  | "founding_spot_claimed"
+  // Gift memberships (/gift, /redeem). gift_purchased is sent server-side by
+  // the Stripe webhook (giftTelemetry.server.ts), not from here.
+  | "gift_page_viewed"
+  | "gift_checkout_started"
+  | "gift_redeemed";
 
 type EventProps = Record<string, string | number | boolean | null | undefined>;
 

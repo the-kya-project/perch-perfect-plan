@@ -72,6 +72,12 @@ Vercel's Preview scope holds **no** third-party production credentials: no Brevo
 - **Push** reports "not available" instead of failing.
 - The build prints one `[preview] third-party services: …` line saying what it saw. `npm run test:preview-services` pins the runtime guards.
 
+## Payments (Stripe, web only)
+- Gift memberships (`/gift`, `/gift/thanks`, `/redeem`, `/admin/gifts`) are the first Stripe code. One-time Checkout payments; RevenueCat and in-app purchases come with the launch build.
+- Env (Vercel, server only): `STRIPE_SECRET_KEY`, `STRIPE_PRICE_FLOCK_YEAR_GIFT`, `STRIPE_PRICE_APP_PREMIUM_YEAR_GIFT`, `STRIPE_WEBHOOK_SECRET`. Preview holds test-mode values; `src/lib/stripe.server.ts` refuses a live key in a preview. Prices are read from Stripe, never hard-coded.
+- `gift_purchases` rows are created **only** by the verified webhook at `/api/public/stripe/webhook` (`checkout.session.completed`, `charge.refunded`), idempotent on the Checkout session id. Stripe can't reach a preview unless its webhook URL carries Vercel's Protection Bypass for Automation secret.
+- Double-giving days (40% instead of 20%) live in one place: `private.double_giving_days()`.
+
 ## Deploy
 - Pushing to `main` auto-deploys the web app to Vercel at https://app.thekyaproject.com.
 - Changing an Edge Function requires a separate Supabase deploy; it does not ship with the Vercel build.

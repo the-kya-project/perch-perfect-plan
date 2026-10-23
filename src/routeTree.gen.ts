@@ -18,6 +18,7 @@ import { Route as FoundingRouteImport } from './routes/founding'
 import { Route as GetRouteImport } from './routes/get'
 import { Route as GetAppRouteImport } from './routes/get-app'
 import { Route as PrivacyRouteImport } from './routes/privacy'
+import { Route as RedeemRouteImport } from './routes/redeem'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ReviewRouteImport } from './routes/review'
 import { Route as TermsRouteImport } from './routes/terms'
@@ -37,6 +38,8 @@ import { Route as AuthenticatedScansRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedTodayRouteImport } from './routes/_authenticated/today'
 import { Route as AuthenticatedUpdatesRouteImport } from './routes/_authenticated/updates'
 import { Route as AuthenticatedWelcomeRouteImport } from './routes/_authenticated/welcome'
+import { Route as GiftIndexRouteImport } from './routes/gift.index'
+import { Route as GiftThanksRouteImport } from './routes/gift.thanks'
 import { Route as HandoffTokenRouteImport } from './routes/handoff.$token'
 import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 import { Route as RTokenRouteImport } from './routes/r.$token'
@@ -45,6 +48,7 @@ import { Route as AuthenticatedAccountIndexRouteImport } from './routes/_authent
 import { Route as AuthenticatedAccountEmergencyRouteImport } from './routes/_authenticated/account.emergency'
 import { Route as AuthenticatedAccountSecurityRouteImport } from './routes/_authenticated/account.security'
 import { Route as AuthenticatedAdminFoundingRouteImport } from './routes/_authenticated/admin.founding'
+import { Route as AuthenticatedAdminGiftsRouteImport } from './routes/_authenticated/admin.gifts'
 import { Route as AuthenticatedBirdsBirdIdRouteImport } from './routes/_authenticated/birds/$birdId'
 import { Route as AuthenticatedBirdsNewRouteImport } from './routes/_authenticated/birds/new'
 import { Route as AuthenticatedFlockIndexRouteImport } from './routes/_authenticated/flock.index'
@@ -90,9 +94,11 @@ import { Route as AuthenticatedSitsEditSitIdRouteImport } from './routes/_authen
 import { Route as ApiPublicHooksBereavementNoteRouteImport } from './routes/api/public/hooks/bereavement-note'
 import { Route as ApiPublicHooksCarePlanRemindersRouteImport } from './routes/api/public/hooks/care-plan-reminders'
 import { Route as ApiPublicHooksEngagementNudgesRouteImport } from './routes/api/public/hooks/engagement-nudges'
+import { Route as ApiPublicHooksGiftEmailsRouteImport } from './routes/api/public/hooks/gift-emails'
 import { Route as ApiPublicHooksMonthlyLetterRouteImport } from './routes/api/public/hooks/monthly-letter'
 import { Route as ApiPublicHooksOnboardingEmailsRouteImport } from './routes/api/public/hooks/onboarding-emails'
 import { Route as ApiPublicHooksSendEmailRouteImport } from './routes/api/public/hooks/send-email'
+import { Route as ApiPublicStripeWebhookRouteImport } from './routes/api/public/stripe/webhook'
 import { Route as AuthenticatedBirdsBirdIdPlanIndexRouteImport } from './routes/_authenticated/birds/$birdId.plan.index'
 import { Route as AuthenticatedBirdsBirdIdPlanEditorRouteImport } from './routes/_authenticated/birds/$birdId.plan.editor'
 import { Route as AuthenticatedBirdsBirdIdScansScanIdRouteImport } from './routes/_authenticated/birds/$birdId.scans.$scanId'
@@ -142,6 +148,11 @@ const GetAppRoute = GetAppRouteImport.update({
 const PrivacyRoute = PrivacyRouteImport.update({
   id: '/privacy',
   path: '/privacy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RedeemRoute = RedeemRouteImport.update({
+  id: '/redeem',
+  path: '/redeem',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -244,6 +255,16 @@ const AuthenticatedWelcomeRoute = AuthenticatedWelcomeRouteImport.update({
   path: '/welcome',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const GiftIndexRoute = GiftIndexRouteImport.update({
+  id: '/gift/',
+  path: '/gift/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GiftThanksRoute = GiftThanksRouteImport.update({
+  id: '/gift/thanks',
+  path: '/gift/thanks',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const HandoffTokenRoute = HandoffTokenRouteImport.update({
   id: '/handoff/$token',
   path: '/handoff/$token',
@@ -288,6 +309,11 @@ const AuthenticatedAdminFoundingRoute =
     path: '/admin/founding',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAdminGiftsRoute = AuthenticatedAdminGiftsRouteImport.update({
+  id: '/admin/gifts',
+  path: '/admin/gifts',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedBirdsBirdIdRoute =
   AuthenticatedBirdsBirdIdRouteImport.update({
     id: '/birds/$birdId',
@@ -542,6 +568,12 @@ const ApiPublicHooksEngagementNudgesRoute =
     path: '/api/public/hooks/engagement-nudges',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksGiftEmailsRoute =
+  ApiPublicHooksGiftEmailsRouteImport.update({
+    id: '/api/public/hooks/gift-emails',
+    path: '/api/public/hooks/gift-emails',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksMonthlyLetterRoute =
   ApiPublicHooksMonthlyLetterRouteImport.update({
     id: '/api/public/hooks/monthly-letter',
@@ -557,6 +589,11 @@ const ApiPublicHooksOnboardingEmailsRoute =
 const ApiPublicHooksSendEmailRoute = ApiPublicHooksSendEmailRouteImport.update({
   id: '/api/public/hooks/send-email',
   path: '/api/public/hooks/send-email',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicStripeWebhookRoute = ApiPublicStripeWebhookRouteImport.update({
+  id: '/api/public/stripe/webhook',
+  path: '/api/public/stripe/webhook',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedBirdsBirdIdPlanIndexRoute =
@@ -605,6 +642,7 @@ export interface FileRoutesByFullPath {
   '/get': typeof GetRoute
   '/get-app': typeof GetAppRoute
   '/privacy': typeof PrivacyRoute
+  '/redeem': typeof RedeemRoute
   '/reset-password': typeof ResetPasswordRoute
   '/review': typeof ReviewRoute
   '/terms': typeof TermsRoute
@@ -625,12 +663,15 @@ export interface FileRoutesByFullPath {
   '/today': typeof AuthenticatedTodayRoute
   '/updates': typeof AuthenticatedUpdatesRoute
   '/welcome': typeof AuthenticatedWelcomeRoute
+  '/gift/thanks': typeof GiftThanksRoute
   '/handoff/$token': typeof HandoffTokenRoute
   '/invite/$token': typeof InviteTokenRoute
   '/r/$token': typeof RTokenRoute
+  '/gift/': typeof GiftIndexRoute
   '/account/emergency': typeof AuthenticatedAccountEmergencyRoute
   '/account/security': typeof AuthenticatedAccountSecurityRoute
   '/admin/founding': typeof AuthenticatedAdminFoundingRoute
+  '/admin/gifts': typeof AuthenticatedAdminGiftsRoute
   '/birds/$birdId': typeof AuthenticatedBirdsBirdIdRouteWithChildren
   '/birds/new': typeof AuthenticatedBirdsNewRoute
   '/flock/learn': typeof AuthenticatedFlockLearnRoute
@@ -676,9 +717,11 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/bereavement-note': typeof ApiPublicHooksBereavementNoteRoute
   '/api/public/hooks/care-plan-reminders': typeof ApiPublicHooksCarePlanRemindersRoute
   '/api/public/hooks/engagement-nudges': typeof ApiPublicHooksEngagementNudgesRoute
+  '/api/public/hooks/gift-emails': typeof ApiPublicHooksGiftEmailsRoute
   '/api/public/hooks/monthly-letter': typeof ApiPublicHooksMonthlyLetterRoute
   '/api/public/hooks/onboarding-emails': typeof ApiPublicHooksOnboardingEmailsRoute
   '/api/public/hooks/send-email': typeof ApiPublicHooksSendEmailRoute
+  '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
   '/birds/$birdId/': typeof AuthenticatedBirdsBirdIdIndexRoute
   '/birds/$birdId/plan/editor': typeof AuthenticatedBirdsBirdIdPlanEditorRoute
   '/birds/$birdId/scans/$scanId': typeof AuthenticatedBirdsBirdIdScansScanIdRoute
@@ -696,6 +739,7 @@ export interface FileRoutesByTo {
   '/get': typeof GetRoute
   '/get-app': typeof GetAppRoute
   '/privacy': typeof PrivacyRoute
+  '/redeem': typeof RedeemRoute
   '/reset-password': typeof ResetPasswordRoute
   '/review': typeof ReviewRoute
   '/terms': typeof TermsRoute
@@ -711,12 +755,15 @@ export interface FileRoutesByTo {
   '/today': typeof AuthenticatedTodayRoute
   '/updates': typeof AuthenticatedUpdatesRoute
   '/welcome': typeof AuthenticatedWelcomeRoute
+  '/gift/thanks': typeof GiftThanksRoute
   '/handoff/$token': typeof HandoffTokenRoute
   '/invite/$token': typeof InviteTokenRoute
   '/r/$token': typeof RTokenRoute
+  '/gift': typeof GiftIndexRoute
   '/account/emergency': typeof AuthenticatedAccountEmergencyRoute
   '/account/security': typeof AuthenticatedAccountSecurityRoute
   '/admin/founding': typeof AuthenticatedAdminFoundingRoute
+  '/admin/gifts': typeof AuthenticatedAdminGiftsRoute
   '/birds/new': typeof AuthenticatedBirdsNewRoute
   '/flock/learn': typeof AuthenticatedFlockLearnRoute
   '/flock/spaces': typeof AuthenticatedFlockSpacesRoute
@@ -760,9 +807,11 @@ export interface FileRoutesByTo {
   '/api/public/hooks/bereavement-note': typeof ApiPublicHooksBereavementNoteRoute
   '/api/public/hooks/care-plan-reminders': typeof ApiPublicHooksCarePlanRemindersRoute
   '/api/public/hooks/engagement-nudges': typeof ApiPublicHooksEngagementNudgesRoute
+  '/api/public/hooks/gift-emails': typeof ApiPublicHooksGiftEmailsRoute
   '/api/public/hooks/monthly-letter': typeof ApiPublicHooksMonthlyLetterRoute
   '/api/public/hooks/onboarding-emails': typeof ApiPublicHooksOnboardingEmailsRoute
   '/api/public/hooks/send-email': typeof ApiPublicHooksSendEmailRoute
+  '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
   '/birds/$birdId': typeof AuthenticatedBirdsBirdIdIndexRoute
   '/birds/$birdId/plan/editor': typeof AuthenticatedBirdsBirdIdPlanEditorRoute
   '/birds/$birdId/scans/$scanId': typeof AuthenticatedBirdsBirdIdScansScanIdRoute
@@ -782,6 +831,7 @@ export interface FileRoutesById {
   '/get': typeof GetRoute
   '/get-app': typeof GetAppRoute
   '/privacy': typeof PrivacyRoute
+  '/redeem': typeof RedeemRoute
   '/reset-password': typeof ResetPasswordRoute
   '/review': typeof ReviewRoute
   '/terms': typeof TermsRoute
@@ -802,12 +852,15 @@ export interface FileRoutesById {
   '/_authenticated/today': typeof AuthenticatedTodayRoute
   '/_authenticated/updates': typeof AuthenticatedUpdatesRoute
   '/_authenticated/welcome': typeof AuthenticatedWelcomeRoute
+  '/gift/thanks': typeof GiftThanksRoute
   '/handoff/$token': typeof HandoffTokenRoute
   '/invite/$token': typeof InviteTokenRoute
   '/r/$token': typeof RTokenRoute
+  '/gift/': typeof GiftIndexRoute
   '/_authenticated/account/emergency': typeof AuthenticatedAccountEmergencyRoute
   '/_authenticated/account/security': typeof AuthenticatedAccountSecurityRoute
   '/_authenticated/admin/founding': typeof AuthenticatedAdminFoundingRoute
+  '/_authenticated/admin/gifts': typeof AuthenticatedAdminGiftsRoute
   '/_authenticated/birds/$birdId': typeof AuthenticatedBirdsBirdIdRouteWithChildren
   '/_authenticated/birds/new': typeof AuthenticatedBirdsNewRoute
   '/_authenticated/flock/learn': typeof AuthenticatedFlockLearnRoute
@@ -853,9 +906,11 @@ export interface FileRoutesById {
   '/api/public/hooks/bereavement-note': typeof ApiPublicHooksBereavementNoteRoute
   '/api/public/hooks/care-plan-reminders': typeof ApiPublicHooksCarePlanRemindersRoute
   '/api/public/hooks/engagement-nudges': typeof ApiPublicHooksEngagementNudgesRoute
+  '/api/public/hooks/gift-emails': typeof ApiPublicHooksGiftEmailsRoute
   '/api/public/hooks/monthly-letter': typeof ApiPublicHooksMonthlyLetterRoute
   '/api/public/hooks/onboarding-emails': typeof ApiPublicHooksOnboardingEmailsRoute
   '/api/public/hooks/send-email': typeof ApiPublicHooksSendEmailRoute
+  '/api/public/stripe/webhook': typeof ApiPublicStripeWebhookRoute
   '/_authenticated/birds/$birdId/': typeof AuthenticatedBirdsBirdIdIndexRoute
   '/_authenticated/birds/$birdId/plan/editor': typeof AuthenticatedBirdsBirdIdPlanEditorRoute
   '/_authenticated/birds/$birdId/scans/$scanId': typeof AuthenticatedBirdsBirdIdScansScanIdRoute
@@ -875,6 +930,7 @@ export interface FileRouteTypes {
     | '/get'
     | '/get-app'
     | '/privacy'
+    | '/redeem'
     | '/reset-password'
     | '/review'
     | '/terms'
@@ -895,12 +951,15 @@ export interface FileRouteTypes {
     | '/today'
     | '/updates'
     | '/welcome'
+    | '/gift/thanks'
     | '/handoff/$token'
     | '/invite/$token'
     | '/r/$token'
+    | '/gift/'
     | '/account/emergency'
     | '/account/security'
     | '/admin/founding'
+    | '/admin/gifts'
     | '/birds/$birdId'
     | '/birds/new'
     | '/flock/learn'
@@ -946,9 +1005,11 @@ export interface FileRouteTypes {
     | '/api/public/hooks/bereavement-note'
     | '/api/public/hooks/care-plan-reminders'
     | '/api/public/hooks/engagement-nudges'
+    | '/api/public/hooks/gift-emails'
     | '/api/public/hooks/monthly-letter'
     | '/api/public/hooks/onboarding-emails'
     | '/api/public/hooks/send-email'
+    | '/api/public/stripe/webhook'
     | '/birds/$birdId/'
     | '/birds/$birdId/plan/editor'
     | '/birds/$birdId/scans/$scanId'
@@ -966,6 +1027,7 @@ export interface FileRouteTypes {
     | '/get'
     | '/get-app'
     | '/privacy'
+    | '/redeem'
     | '/reset-password'
     | '/review'
     | '/terms'
@@ -981,12 +1043,15 @@ export interface FileRouteTypes {
     | '/today'
     | '/updates'
     | '/welcome'
+    | '/gift/thanks'
     | '/handoff/$token'
     | '/invite/$token'
     | '/r/$token'
+    | '/gift'
     | '/account/emergency'
     | '/account/security'
     | '/admin/founding'
+    | '/admin/gifts'
     | '/birds/new'
     | '/flock/learn'
     | '/flock/spaces'
@@ -1030,9 +1095,11 @@ export interface FileRouteTypes {
     | '/api/public/hooks/bereavement-note'
     | '/api/public/hooks/care-plan-reminders'
     | '/api/public/hooks/engagement-nudges'
+    | '/api/public/hooks/gift-emails'
     | '/api/public/hooks/monthly-letter'
     | '/api/public/hooks/onboarding-emails'
     | '/api/public/hooks/send-email'
+    | '/api/public/stripe/webhook'
     | '/birds/$birdId'
     | '/birds/$birdId/plan/editor'
     | '/birds/$birdId/scans/$scanId'
@@ -1051,6 +1118,7 @@ export interface FileRouteTypes {
     | '/get'
     | '/get-app'
     | '/privacy'
+    | '/redeem'
     | '/reset-password'
     | '/review'
     | '/terms'
@@ -1071,12 +1139,15 @@ export interface FileRouteTypes {
     | '/_authenticated/today'
     | '/_authenticated/updates'
     | '/_authenticated/welcome'
+    | '/gift/thanks'
     | '/handoff/$token'
     | '/invite/$token'
     | '/r/$token'
+    | '/gift/'
     | '/_authenticated/account/emergency'
     | '/_authenticated/account/security'
     | '/_authenticated/admin/founding'
+    | '/_authenticated/admin/gifts'
     | '/_authenticated/birds/$birdId'
     | '/_authenticated/birds/new'
     | '/_authenticated/flock/learn'
@@ -1122,9 +1193,11 @@ export interface FileRouteTypes {
     | '/api/public/hooks/bereavement-note'
     | '/api/public/hooks/care-plan-reminders'
     | '/api/public/hooks/engagement-nudges'
+    | '/api/public/hooks/gift-emails'
     | '/api/public/hooks/monthly-letter'
     | '/api/public/hooks/onboarding-emails'
     | '/api/public/hooks/send-email'
+    | '/api/public/stripe/webhook'
     | '/_authenticated/birds/$birdId/'
     | '/_authenticated/birds/$birdId/plan/editor'
     | '/_authenticated/birds/$birdId/scans/$scanId'
@@ -1144,22 +1217,27 @@ export interface RootRouteChildren {
   GetRoute: typeof GetRoute
   GetAppRoute: typeof GetAppRoute
   PrivacyRoute: typeof PrivacyRoute
+  RedeemRoute: typeof RedeemRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   ReviewRoute: typeof ReviewRoute
   TermsRoute: typeof TermsRoute
   SitterTokenRouteRoute: typeof SitterTokenRouteRouteWithChildren
   DotwellKnownAppleAppSiteAssociationRoute: typeof DotwellKnownAppleAppSiteAssociationRoute
   DotwellKnownAssetlinksDotjsonRoute: typeof DotwellKnownAssetlinksDotjsonRoute
+  GiftThanksRoute: typeof GiftThanksRoute
   HandoffTokenRoute: typeof HandoffTokenRoute
   InviteTokenRoute: typeof InviteTokenRoute
   RTokenRoute: typeof RTokenRoute
+  GiftIndexRoute: typeof GiftIndexRoute
   ApiPublicCspReportRoute: typeof ApiPublicCspReportRoute
   ApiPublicHooksBereavementNoteRoute: typeof ApiPublicHooksBereavementNoteRoute
   ApiPublicHooksCarePlanRemindersRoute: typeof ApiPublicHooksCarePlanRemindersRoute
   ApiPublicHooksEngagementNudgesRoute: typeof ApiPublicHooksEngagementNudgesRoute
+  ApiPublicHooksGiftEmailsRoute: typeof ApiPublicHooksGiftEmailsRoute
   ApiPublicHooksMonthlyLetterRoute: typeof ApiPublicHooksMonthlyLetterRoute
   ApiPublicHooksOnboardingEmailsRoute: typeof ApiPublicHooksOnboardingEmailsRoute
   ApiPublicHooksSendEmailRoute: typeof ApiPublicHooksSendEmailRoute
+  ApiPublicStripeWebhookRoute: typeof ApiPublicStripeWebhookRoute
   ApiPublicBereavementReviewReviewIdSigRoute: typeof ApiPublicBereavementReviewReviewIdSigRoute
   ApiPublicChartBirdIdMonthSigRoute: typeof ApiPublicChartBirdIdMonthSigRoute
   ApiPublicUnsubscribeCategoryUserIdSigRoute: typeof ApiPublicUnsubscribeCategoryUserIdSigRoute
@@ -1228,6 +1306,13 @@ declare module '@tanstack/react-router' {
       path: '/privacy'
       fullPath: '/privacy'
       preLoaderRoute: typeof PrivacyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/redeem': {
+      id: '/redeem'
+      path: '/redeem'
+      fullPath: '/redeem'
+      preLoaderRoute: typeof RedeemRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reset-password': {
@@ -1363,6 +1448,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedWelcomeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/gift/': {
+      id: '/gift/'
+      path: '/gift'
+      fullPath: '/gift/'
+      preLoaderRoute: typeof GiftIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/gift/thanks': {
+      id: '/gift/thanks'
+      path: '/gift/thanks'
+      fullPath: '/gift/thanks'
+      preLoaderRoute: typeof GiftThanksRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/handoff/$token': {
       id: '/handoff/$token'
       path: '/handoff/$token'
@@ -1417,6 +1516,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/founding'
       fullPath: '/admin/founding'
       preLoaderRoute: typeof AuthenticatedAdminFoundingRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/admin/gifts': {
+      id: '/_authenticated/admin/gifts'
+      path: '/admin/gifts'
+      fullPath: '/admin/gifts'
+      preLoaderRoute: typeof AuthenticatedAdminGiftsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/birds/$birdId': {
@@ -1734,6 +1840,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksEngagementNudgesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/gift-emails': {
+      id: '/api/public/hooks/gift-emails'
+      path: '/api/public/hooks/gift-emails'
+      fullPath: '/api/public/hooks/gift-emails'
+      preLoaderRoute: typeof ApiPublicHooksGiftEmailsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/monthly-letter': {
       id: '/api/public/hooks/monthly-letter'
       path: '/api/public/hooks/monthly-letter'
@@ -1753,6 +1866,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/hooks/send-email'
       fullPath: '/api/public/hooks/send-email'
       preLoaderRoute: typeof ApiPublicHooksSendEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/stripe/webhook': {
+      id: '/api/public/stripe/webhook'
+      path: '/api/public/stripe/webhook'
+      fullPath: '/api/public/stripe/webhook'
+      preLoaderRoute: typeof ApiPublicStripeWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/birds/$birdId/plan/': {
@@ -1952,6 +2072,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedUpdatesRoute: typeof AuthenticatedUpdatesRoute
   AuthenticatedWelcomeRoute: typeof AuthenticatedWelcomeRoute
   AuthenticatedAdminFoundingRoute: typeof AuthenticatedAdminFoundingRoute
+  AuthenticatedAdminGiftsRoute: typeof AuthenticatedAdminGiftsRoute
   AuthenticatedBirdsBirdIdRoute: typeof AuthenticatedBirdsBirdIdRouteWithChildren
   AuthenticatedBirdsNewRoute: typeof AuthenticatedBirdsNewRoute
   AuthenticatedSitPreviewSitIdRoute: typeof AuthenticatedSitPreviewSitIdRoute
@@ -1979,6 +2100,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedUpdatesRoute: AuthenticatedUpdatesRoute,
   AuthenticatedWelcomeRoute: AuthenticatedWelcomeRoute,
   AuthenticatedAdminFoundingRoute: AuthenticatedAdminFoundingRoute,
+  AuthenticatedAdminGiftsRoute: AuthenticatedAdminGiftsRoute,
   AuthenticatedBirdsBirdIdRoute: AuthenticatedBirdsBirdIdRouteWithChildren,
   AuthenticatedBirdsNewRoute: AuthenticatedBirdsNewRoute,
   AuthenticatedSitPreviewSitIdRoute: AuthenticatedSitPreviewSitIdRoute,
@@ -2027,6 +2149,7 @@ const rootRouteChildren: RootRouteChildren = {
   GetRoute: GetRoute,
   GetAppRoute: GetAppRoute,
   PrivacyRoute: PrivacyRoute,
+  RedeemRoute: RedeemRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   ReviewRoute: ReviewRoute,
   TermsRoute: TermsRoute,
@@ -2034,16 +2157,20 @@ const rootRouteChildren: RootRouteChildren = {
   DotwellKnownAppleAppSiteAssociationRoute:
     DotwellKnownAppleAppSiteAssociationRoute,
   DotwellKnownAssetlinksDotjsonRoute: DotwellKnownAssetlinksDotjsonRoute,
+  GiftThanksRoute: GiftThanksRoute,
   HandoffTokenRoute: HandoffTokenRoute,
   InviteTokenRoute: InviteTokenRoute,
   RTokenRoute: RTokenRoute,
+  GiftIndexRoute: GiftIndexRoute,
   ApiPublicCspReportRoute: ApiPublicCspReportRoute,
   ApiPublicHooksBereavementNoteRoute: ApiPublicHooksBereavementNoteRoute,
   ApiPublicHooksCarePlanRemindersRoute: ApiPublicHooksCarePlanRemindersRoute,
   ApiPublicHooksEngagementNudgesRoute: ApiPublicHooksEngagementNudgesRoute,
+  ApiPublicHooksGiftEmailsRoute: ApiPublicHooksGiftEmailsRoute,
   ApiPublicHooksMonthlyLetterRoute: ApiPublicHooksMonthlyLetterRoute,
   ApiPublicHooksOnboardingEmailsRoute: ApiPublicHooksOnboardingEmailsRoute,
   ApiPublicHooksSendEmailRoute: ApiPublicHooksSendEmailRoute,
+  ApiPublicStripeWebhookRoute: ApiPublicStripeWebhookRoute,
   ApiPublicBereavementReviewReviewIdSigRoute:
     ApiPublicBereavementReviewReviewIdSigRoute,
   ApiPublicChartBirdIdMonthSigRoute: ApiPublicChartBirdIdMonthSigRoute,

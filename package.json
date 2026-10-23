@@ -45,7 +45,8 @@
     "test:bird-names": "npx --yes vite-node scripts/bird-names.test.ts",
     "test:emergency-merge": "npx --yes vite-node scripts/emergency-merge.test.ts",
     "test:intake-date": "npx --yes vite-node scripts/intake-date.test.ts",
-    "test:check-kind": "npx --yes vite-node scripts/check-kind.test.ts"
+    "test:check-kind": "npx --yes vite-node scripts/check-kind.test.ts",
+    "test:gifts": "npx --yes vite-node scripts/gifts.test.ts"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.2",
@@ -109,6 +110,7 @@
     "react-resizable-panels": "^4.6.5",
     "recharts": "^2.15.4",
     "sonner": "^2.0.7",
+    "stripe": "22.6.2",
     "tailwind-merge": "^3.5.0",
     "tailwindcss": "^4.2.1",
     "tus-js-client": "^4.3.1",
