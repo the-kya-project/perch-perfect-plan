@@ -712,6 +712,81 @@ export type Database = {
           },
         ]
       }
+      gift_purchases: {
+        Row: {
+          amount_paid_cents: number
+          buyer_email: string
+          buyer_emailed_at: string | null
+          buyer_name: string | null
+          created_at: string
+          gift_code: string
+          giving_rate: number
+          id: string
+          message: string | null
+          plan: string
+          promo_code: string | null
+          purchased_at: string
+          recipient_email: string | null
+          recipient_emailed_at: string | null
+          recipient_name: string
+          redeemed_at: string | null
+          redeemed_by: string | null
+          refunded_at: string | null
+          send_on: string | null
+          status: string
+          stripe_checkout_session_id: string
+          stripe_payment_intent_id: string | null
+        }
+        Insert: {
+          amount_paid_cents: number
+          buyer_email: string
+          buyer_emailed_at?: string | null
+          buyer_name?: string | null
+          created_at?: string
+          gift_code: string
+          giving_rate?: number
+          id?: string
+          message?: string | null
+          plan: string
+          promo_code?: string | null
+          purchased_at?: string
+          recipient_email?: string | null
+          recipient_emailed_at?: string | null
+          recipient_name: string
+          redeemed_at?: string | null
+          redeemed_by?: string | null
+          refunded_at?: string | null
+          send_on?: string | null
+          status?: string
+          stripe_checkout_session_id: string
+          stripe_payment_intent_id?: string | null
+        }
+        Update: {
+          amount_paid_cents?: number
+          buyer_email?: string
+          buyer_emailed_at?: string | null
+          buyer_name?: string | null
+          created_at?: string
+          gift_code?: string
+          giving_rate?: number
+          id?: string
+          message?: string | null
+          plan?: string
+          promo_code?: string | null
+          purchased_at?: string
+          recipient_email?: string | null
+          recipient_emailed_at?: string | null
+          recipient_name?: string
+          redeemed_at?: string | null
+          redeemed_by?: string | null
+          refunded_at?: string | null
+          send_on?: string | null
+          status?: string
+          stripe_checkout_session_id?: string
+          stripe_payment_intent_id?: string | null
+        }
+        Relationships: []
+      }
       guide_cards: {
         Row: {
           category: string
@@ -1903,6 +1978,35 @@ export type Database = {
       has_app_premium: { Args: { p_user_id?: string }; Returns: boolean }
       is_admin: { Args: { p_user_id?: string }; Returns: boolean }
       is_flock_member: { Args: { p_user_id?: string }; Returns: boolean }
+      record_gift_purchase: {
+        Args: {
+          p_amount_paid_cents: number
+          p_buyer_email: string
+          p_buyer_name?: string
+          p_checkout_session_id: string
+          p_message?: string
+          p_payment_intent_id?: string
+          p_plan: string
+          p_promo_code?: string
+          p_purchased_at: string
+          p_recipient_email?: string
+          p_recipient_name: string
+          p_send_on?: string
+        }
+        Returns: {
+          created: boolean
+          gift_code: string
+          id: string
+        }[]
+      }
+      redeem_gift: {
+        Args: { p_code: string }
+        Returns: {
+          ok: boolean
+          plan: string
+          reason: string
+        }[]
+      }
       safe_uuid: { Args: { t: string }; Returns: string }
     }
     Enums: {
