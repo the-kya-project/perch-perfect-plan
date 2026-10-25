@@ -112,10 +112,21 @@ export const STARTUP_FAILED_EVENT = "kya:startup-failed";
  *  root error boundary both fire for the same failure. */
 let reloadScheduled = false;
 
+/** The page is navigating away (set by the startup guard in __root.tsx).
+ *  Safari reports the loads a navigation cancels as failures; those are not a
+ *  stale build, and reloading would replace the page the person asked for. */
+function leavingPage(): boolean {
+  try {
+    return (window as unknown as { __kyaLeaving?: () => boolean }).__kyaLeaving?.() === true;
+  } catch {
+    return false;
+  }
+}
+
 /** Recover from a code file that failed to load: one hard reset, then the
  *  error screen. */
 export function reloadForStaleChunk() {
-  if (typeof window === "undefined" || reloadScheduled) return;
+  if (typeof window === "undefined" || reloadScheduled || leavingPage()) return;
   if (!claimAutoReload()) {
     window.dispatchEvent(new Event(STARTUP_FAILED_EVENT));
     return;
@@ -127,7 +138,7 @@ export function reloadForStaleChunk() {
 /** The page's stylesheet didn't apply: one hard reset if the automatic
  *  attempt is unspent, otherwise leave the (working, unstyled) page alone. */
 export function recoverMissingStyles(): boolean {
-  if (typeof window === "undefined" || reloadScheduled || !claimAutoReload()) return false;
+  if (typeof window === "undefined" || reloadScheduled || leavingPage() || !claimAutoReload()) return false;
   reloadScheduled = true;
   void hardResetAndReload();
   return true;
