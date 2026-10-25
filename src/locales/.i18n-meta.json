@@ -351,17 +351,29 @@
     "auth.agreeToTermsOfService": {
       "stamp": "e6d5bbd4ee8a7cac"
     },
+    "auth.alreadyConfirmedSignInBelow": {
+      "stamp": "c2ea787976101696"
+    },
+    "auth.alreadyHaveAccountCheckInbox": {
+      "stamp": "f39e7029313f4ad4"
+    },
     "auth.appleSignInFailed": {
       "stamp": "5b5b6aad1137423b"
     },
     "auth.backToSignIn": {
       "stamp": "9c8f60e559c93e73"
     },
+    "auth.confirmationResentTo": {
+      "stamp": "e830006fb5afa828"
+    },
     "auth.continueWithApple": {
       "stamp": "ab4037c281b95f3b"
     },
     "auth.continueWithGoogle": {
       "stamp": "d94703f4fb00fed2"
+    },
+    "auth.couldNotResendConfirmation": {
+      "stamp": "e502e488544911e0"
     },
     "auth.couldNotSendReset": {
       "stamp": "7b6acb05f4d70cfd"
@@ -371,9 +383,6 @@
     },
     "auth.email": {
       "stamp": "e5b1775d3be10b14"
-    },
-    "auth.emailAlreadyHasAccount": {
-      "stamp": "b948d8aeb6195800"
     },
     "auth.enterEmailForReset": {
       "stamp": "264e9630da86d509"
@@ -416,6 +425,15 @@
     },
     "auth.password": {
       "stamp": "03ba02a186c36edb"
+    },
+    "auth.resendConfirmation": {
+      "stamp": "1efc9736b2014817"
+    },
+    "auth.resendConfirmationIn": {
+      "stamp": "b14dd6f1a5d7ed24"
+    },
+    "auth.resendingConfirmation": {
+      "stamp": "2696b1cead25f426"
     },
     "auth.resetLine": {
       "stamp": "fcdc098b427b5853"

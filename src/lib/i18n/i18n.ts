@@ -60,6 +60,20 @@ if (!i18next.isInitialized) {
 }
 export const globalI18n = i18next;
 
+// ---- Hydration instance: English, never switches. ----
+// The server always renders public pages in English. The browser switches
+// globalI18n to the owner's language (applyOwnerLocale) as soon as the root has
+// mounted, but React hydrates each route's own subtree a moment later, in a
+// separate pass (it sits in a Suspense boundary and its code arrives as its own
+// chunk). If that subtree read globalI18n, a Dutch phone would hydrate "Welkom
+// terug" over the server's "Welcome back": React #418, then #422 as it threw the
+// page away and rendered it again. So RootComponent provides THIS instance until
+// the page has hydrated, then hands over to globalI18n inside a transition, which
+// React applies only once the pending subtrees have hydrated. initImmediate:false
+// makes init synchronous, so it's ready on the very first render.
+export const hydrationI18n: I18nInstance = i18next.createInstance();
+void hydrationI18n.init({ ...commonInit, lng: DEFAULT_LOCALE, initImmediate: false });
+
 // ---- Sitter instance: scoped to the sitter subtree via <I18nextProvider>. ----
 // NOT wired with initReactI18next (that would steal the global default and flip
 // the owner app). Components under the provider read it from context.

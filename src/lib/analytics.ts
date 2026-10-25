@@ -40,6 +40,9 @@ import { hashUserId } from "./userHash";
 
 export type AnalyticsEventName =
   | "owner_signup"
+  // Sign-up met an email that already has an account; and the resend from its card.
+  | "signup_existing_account"
+  | "signup_existing_resend"
   | "guided_editor_opened"
   | "setup_stop_point_viewed"
   | "setup_stop_point_choice"
