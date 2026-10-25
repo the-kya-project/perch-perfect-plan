@@ -130,7 +130,9 @@ function AuthPage() {
           password,
           options: {
             data: {
-              display_name: [firstName, lastName].filter(Boolean).join(" ") || email.split("@")[0],
+              // No name typed → no name. Never the part of the email before
+              // the @: emails would greet "Welcome to the flock, jdoe42."
+              display_name: [firstName, lastName].filter(Boolean).join(" ") || undefined,
               marketing_opt_in: marketingOptIn,
               // Read by the "Confirm signup" email template ({{ .Data.locale }}).
               locale: currentLocale(),

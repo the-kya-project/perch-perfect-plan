@@ -15,6 +15,7 @@ import { activeOwnerBirdsMin } from "@/lib/activeBirds";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { buildHouseholdInviteEmail } from "./emailTemplates";
 import { localeForUser, joinNamesLocalized, fallbackOwnerLabel } from "./emailLocale.server";
+import { realPersonName } from "./personName.server";
 import { mergeEmergency, emergencyDifferent } from "./emergency";
 import { mergeHome, homeDifferences, birdHasOwn, HOME_GROUPS } from "./homeDefaults";
 import { isCfClip, cfUid } from "./clipRef";
@@ -62,29 +63,11 @@ function joinNames(names: string[], locale: string = "en"): string {
 /** Owner's display name, or null when there's nothing to show (no profile
  *  name, metadata name, or email). Callers supply their own fallback. */
 async function ownerDisplayNameRaw(sb: any, ownerId: string): Promise<string | null> {
-  const { data } = await sb.from("profiles").select("display_name").eq("id", ownerId).maybeSingle();
-  const name = (data?.display_name ?? "").toString().trim();
-  if (name) return name;
-  try {
-    const { data: u } = await sb.auth.admin.getUserById(ownerId);
-    const meta = (u?.user?.user_metadata?.display_name ?? "").toString().trim();
-    return meta || u?.user?.email?.split("@")[0] || null;
-  } catch {
-    return null;
-  }
+  return realPersonName(sb, ownerId);
 }
 
 async function ownerDisplayName(sb: any, ownerId: string, locale: string = "en"): Promise<string> {
-  const { data } = await sb.from("profiles").select("display_name").eq("id", ownerId).maybeSingle();
-  const name = (data?.display_name ?? "").toString().trim();
-  if (name) return name;
-  try {
-    const { data: u } = await sb.auth.admin.getUserById(ownerId);
-    const meta = (u?.user?.user_metadata?.display_name ?? "").toString().trim();
-    return meta || u?.user?.email?.split("@")[0] || fallbackOwnerLabel(locale);
-  } catch {
-    return fallbackOwnerLabel(locale);
-  }
+  return (await realPersonName(sb, ownerId)) ?? fallbackOwnerLabel(locale);
 }
 
 // ---- Owner: create an invite -----------------------------------------------

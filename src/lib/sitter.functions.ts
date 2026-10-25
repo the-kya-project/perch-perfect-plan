@@ -7,6 +7,7 @@
 // access check. We load supabaseAdmin inside the handler to keep it out of the
 // client bundle.
 
+import { realFirstName } from "./personName";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { computeTriage, SCAN_FIELDS, type ScanAnswer, type ScanFieldKey } from "./triage";
@@ -120,14 +121,19 @@ async function loadPreviewByToken(token: string): Promise<LoadedSit> {
 /** The owner's first name for sitter-facing copy, or null. Real names only —
  *  never an email prefix. */
 async function ownerFirstNameFor(sb: any, ownerId: string): Promise<string | null> {
-  const first = (v: unknown) => (v ?? "").toString().trim().split(/\s+/)[0] || null;
+  const str = (v: unknown) => (typeof v === "string" ? v : null);
   try {
-    const { data: prof } = await sb.from("profiles").select("first_name, display_name").eq("id", ownerId).maybeSingle();
-    const fromProfile = first(prof?.first_name) ?? first(prof?.display_name);
-    if (fromProfile) return fromProfile;
+    const { data: prof } = await sb.from("profiles").select("first_name, full_name, display_name, email").eq("id", ownerId).maybeSingle();
     const { data: u } = await sb.auth.admin.getUserById(ownerId);
+    const authEmail = u?.user?.email ?? null;
+    const fromProfile = prof ? realFirstName(prof, prof.email, authEmail) : undefined;
+    if (fromProfile) return fromProfile;
     const m = u?.user?.user_metadata ?? {};
-    return first(m.first_name) ?? first(m.display_name) ?? first(m.full_name) ?? first(m.name);
+    return realFirstName(
+      { first_name: str(m.first_name) ?? str(m.given_name), full_name: str(m.full_name) ?? str(m.name), display_name: str(m.display_name) },
+      prof?.email,
+      authEmail,
+    ) ?? null;
   } catch {
     return null;
   }

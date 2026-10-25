@@ -20,6 +20,8 @@ import {
   type BuiltEmail,
 } from "./emailTemplates";
 import { localeForUser, joinNamesLocalized, fallbackOwnerLabel } from "./emailLocale.server";
+import { realPersonName } from "./personName.server";
+import { realFullName } from "./personName";
 import { emailT } from "./i18n/emailI18n.server";
 
 async function getAdmin() {
@@ -53,16 +55,7 @@ function fmtRange(start: string, end: string, locale: string = "en"): string {
 }
 
 async function ownerDisplayName(sb: any, ownerId: string, locale: string = "en"): Promise<string> {
-  const { data } = await sb.from("profiles").select("display_name").eq("id", ownerId).maybeSingle();
-  const name = (data?.display_name ?? "").toString().trim();
-  if (name) return name;
-  try {
-    const { data: u } = await sb.auth.admin.getUserById(ownerId);
-    const meta = (u?.user?.user_metadata?.display_name ?? "").toString().trim();
-    return meta || u?.user?.email?.split("@")[0] || fallbackOwnerLabel(locale);
-  } catch {
-    return fallbackOwnerLabel(locale);
-  }
+  return (await realPersonName(sb, ownerId)) ?? fallbackOwnerLabel(locale);
 }
 
 // Caregiver email + display name via the service role. auth.email is the reliable
@@ -71,8 +64,8 @@ async function resolveCaregiver(sb: any, userId: string): Promise<{ email: strin
   try {
     const { data: u } = await sb.auth.admin.getUserById(userId);
     const email = (u?.user?.email ?? "").toString().trim() || null;
-    const meta = (u?.user?.user_metadata?.display_name ?? "").toString().trim();
-    const name = meta || (email ? email.split("@")[0] : "") || null;
+    // Real names only, never the part of the address before the @.
+    const name = realFullName([u?.user?.user_metadata?.display_name, u?.user?.user_metadata?.full_name], email);
     return { email, name };
   } catch {
     return { email: null, name: null };

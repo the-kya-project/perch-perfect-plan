@@ -245,6 +245,11 @@ async function nativeApple(): Promise<void> {
     supabase.auth.signInWithIdToken({ provider: "apple", token: idToken }),
   );
   if (error) throw new Error(error.message);
+  // Apple's name arrives here once, on the first authorization, and the ID
+  // token doesn't carry it: save it now or it's gone (see appleName.ts).
+  // Best effort, never fails the sign-in.
+  const { saveAppleName } = await import("./appleName");
+  await saveAppleName((res.result as { profile?: { givenName?: string | null; familyName?: string | null } })?.profile);
 }
 
 

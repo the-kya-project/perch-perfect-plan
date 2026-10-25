@@ -18,6 +18,7 @@
  * never on a handoff (a transferred bird's passed_at stays null), reply-to is
  * Brittany.
  */
+import { realFirstName } from "./personName";
 import { createHmac } from "node:crypto";
 
 // Birds marked as passed before this never get a note (see the original
@@ -110,8 +111,9 @@ async function ownerContact(sb: any, ownerId: string) {
     email = au?.user?.email ?? "";
   }
   const displayName = (profile?.display_name ?? "").toString().trim();
-  const first =
-    (profile?.first_name ?? "").toString().trim() || displayName.split(/\s+/)[0] || "" || undefined;
+  // Real names only: never the part of the address before the @, which the
+  // capitalising below would otherwise turn into "W4hnt2hfdm".
+  const first = realFirstName(profile ?? {}, email, profile?.email);
   return {
     email,
     displayName: displayName || email,

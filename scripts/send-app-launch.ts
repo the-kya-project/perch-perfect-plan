@@ -54,6 +54,7 @@ if (!process.env.BREVO_SENDER_EMAIL) {
 }
 
 const { buildAppLaunchEmail } = await import("@/lib/appLaunchEmail");
+const { realFullName } = await import("@/lib/personName");
 const { unsubUrl, unsubHeaders } = await import("@/lib/unsubscribe");
 const { sendTransactionalEmail } = await import("@/lib/brevoEmail.server");
 const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -136,10 +137,12 @@ if (TEST) {
   let sent = 0;
   let failed = 0;
   for (const p of pending) {
-    const b = buildAppLaunchEmail({ displayName: p.display_name, unsubscribeUrl: unsubUrl(APP_URL, p.id, "monthly"), locale: (p as any).locale ?? undefined });
+    // Real names only: never the part of the address before the @.
+    const name = realFullName([p.display_name], p.email);
+    const b = buildAppLaunchEmail({ displayName: name, unsubscribeUrl: unsubUrl(APP_URL, p.id, "monthly"), locale: (p as any).locale ?? undefined });
     const res = await sendTransactionalEmail({
       to: p.email!,
-      toName: p.display_name ?? undefined,
+      toName: name ?? undefined,
       subject: b.subject,
       htmlContent: b.html,
       textContent: b.text,
