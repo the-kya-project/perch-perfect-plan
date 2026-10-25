@@ -1,0 +1,65 @@
+# The iPhone hydration check (e2e/), on every pull request.
+#
+# Builds the app exactly as for production, serves it the way Vercel does, and
+# loads every front-door page (/, sign-in, sign-up, check-your-email,
+# link-expired) in every language the app ships, as iPhone Safari and as the
+# iOS app, on WebKit (Safari's engine) and Chromium. Any React hydration error
+# or uncaught error fails it. It also walks the duplicate-email sign-up and an
+# old confirmation link. Supabase is a local mock (e2e/mock-supabase.mjs): no
+# secrets, no real data.
+#
+# To block merging on it: Settings → Rules → Rulesets (or Branches) → main →
+# Require status checks to pass → add "iPhone hydration". How to read a
+# failure: e2e/README.md.
+name: iPhone hydration
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: hydration-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  hydration:
+    name: iPhone hydration
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # --ignore-scripts skips the PostHog CLI binary download (only the
+      # production deploy uploads source maps); patch-package is the one
+      # postinstall step the app needs.
+      - name: Install
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npx patch-package
+
+      - name: Install browsers (WebKit and Chromium)
+        run: npx playwright install --with-deps webkit chromium
+
+      - name: Build (production build, pointed at the mock Supabase)
+        run: node e2e/build.mjs
+
+      - name: Run the iPhone hydration check
+        run: npm run test:hydration:run
+
+      - name: Upload the report (screenshots and traces of failures)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hydration-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
