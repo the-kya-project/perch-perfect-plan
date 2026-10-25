@@ -17,9 +17,11 @@ export function sitterUrl(sit: SitLike): string {
     : "";
 }
 
-export async function copySitterLink(sit: SitLike, birds: Array<{ id: string; name: string }>): Promise<void> {
+/** Copies the sitter link. True once it's on the clipboard; false when there's
+ *  no link, a sitter's emergency contacts are missing, or the copy failed. */
+export async function copySitterLink(sit: SitLike, birds: Array<{ id: string; name: string }>): Promise<boolean> {
   const url = sitterUrl(sit);
-  if (!url) return;
+  if (!url) return false;
   const birdIds = birds.map((b) => b.id);
   if (birdIds.length) {
     const [{ data: contacts }, { data: u }] = await Promise.all([
@@ -50,9 +52,15 @@ export async function copySitterLink(sit: SitLike, birds: Array<{ id: string; na
         ),
         { duration: 8000 },
       );
-      return;
+      return false;
     }
   }
-  await navigator.clipboard.writeText(url);
+  try {
+    await navigator.clipboard.writeText(url);
+  } catch {
+    toast.error(i18next.t("sitLink.copyFailed", "Couldn't copy the link. Open the sit and copy it from there."));
+    return false;
+  }
   toast.success(i18next.t("sitLink.copied", "Link copied."));
+  return true;
 }

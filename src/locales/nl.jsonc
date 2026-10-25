@@ -5808,7 +5808,7 @@
   // Bird
   "sitForm.bird": "Vogel",
   // Copy link
-  "sitForm.copyLink": "Link kopiëren",
+  "sitForm.copySitterLink": "Oppaslink kopiëren",
   // Could not create sit.
   "sitForm.couldNotCreate": "Kon de oppasperiode niet aanmaken.",
   // Household members already have access. Anyone else gets a private link, no account needed.
@@ -5816,6 +5816,7 @@
   // Create sit and email {{name}}
   "sitForm.createAndEmail": "Oppasperiode maken en {{name}} mailen",
   // Sit created. We couldn't email {{name}}, so copy the link and send it yourself.
+  "sitForm.createdAddressUndeliverable": "Oppasperiode gemaakt, maar {{email}} kan geen e-mail ontvangen, dus de uitnodiging is niet verstuurd. Kopieer de oppaslink en stuur hem zelf, of pas het adres aan in de oppasperiode.",
   "sitForm.createdCopyLink": "Oppasperiode gemaakt. We konden {{name}} niet mailen, dus kopieer de link en stuur hem zelf.",
   // Sit created — your household member is set.
   "sitForm.createdHousehold": "Oppasperiode aangemaakt — je huisgenoot is ingesteld.",
@@ -5958,6 +5959,7 @@
   // Their info
   "sitForm.theirInfo": "Hun gegevens",
   // Sit updated, but we couldn't email {{name}} the change. Let them know directly.
+  "sitForm.updatedAddressUndeliverable": "Oppasperiode bijgewerkt, maar {{email}} kan geen e-mail ontvangen, dus de wijziging is niet verstuurd. Kopieer de oppaslink en stuur hem zelf, of pas het adres aan.",
   "sitForm.updatedHouseholdEmailFailed": "Oppasperiode bijgewerkt, maar we konden {{name}} niet mailen over de wijziging. Laat het diegene zelf even weten.",
   // Sit updated, but we couldn't email {{name}} the change. The link still works — send them the new details.
   "sitForm.updatedSitterEmailFailed": "Oppasperiode bijgewerkt, maar we konden {{name}} niet mailen over de wijziging. De link werkt nog — stuur diegene de nieuwe details.",
@@ -5977,6 +5979,7 @@
   "sitForm.yourSitterLower": "je oppas",
   // Link copied.
   "sitLink.copied": "Link gekopieerd.",
+  "sitLink.copyFailed": "De link kon niet worden gekopieerd. Open de oppasperiode en kopieer hem daar.",
   // A sitter needs emergency contacts before you share this link — {{missing}}. Add them in Account → Emergency info, or on the bird's Emergency tab.
   "sitLink.missingContactsAccount": "Een oppas heeft noodcontacten nodig voordat je deze link deelt — {{missing}}. Voeg ze toe via Account → Noodinformatie, of op het tabblad Noodinformatie van de vogel.",
   //  & 
