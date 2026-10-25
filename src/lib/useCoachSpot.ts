@@ -118,8 +118,9 @@ function scrollTargetFor(el: HTMLElement, insets: CoachInsets, reserveBelow: num
   // Fits with the tooltip under it: center it in the space above the tooltip.
   // Taller than that: show its top, just under the pinned header.
   const wantTop = r.height <= room ? bandTop + (room - r.height) / 2 : bandTop;
-  const max = Math.max(0, document.documentElement.scrollHeight - vh);
-  return Math.min(max, Math.max(0, window.scrollY + r.top - wantTop));
+  // The browser stops at the end of the page on its own; working that limit
+  // out here (scrollHeight) undercounts on some WebKit layouts.
+  return Math.max(0, window.scrollY + r.top - wantTop);
 }
 
 const reducedMotion = () => {

@@ -58,6 +58,15 @@ async function walkTour(page: Page, locale: string) {
     expect(spot, `${where}: a highlight is drawn`).not.toBeNull();
     // On screen: the element's top is visible (tall sections may run past the bottom).
     expect(el!.top, `${where}: element top on screen`).toBeGreaterThanOrEqual(0);
+    if (el!.top >= vh - 40) {
+      // Say why, for a failure that only shows in CI.
+      const why = await page.evaluate((sel) => {
+        const e = document.querySelector(sel)!;
+        const se = document.scrollingElement!;
+        return { scrollY: Math.round(window.scrollY), scrollHeight: se.scrollHeight, docHeight: document.documentElement.scrollHeight, bodyHeight: document.body.scrollHeight, innerHeight: window.innerHeight, elDocTop: Math.round(e.getBoundingClientRect().top + window.scrollY), maxScroll: se.scrollHeight - window.innerHeight };
+      }, `[data-coach="${target}"]`);
+      console.log(`[tour] ${where} below the fold:`, JSON.stringify(why));
+    }
     expect(el!.top, `${where}: element top above the fold`).toBeLessThan(vh - 40);
     // The tooltip is fully on screen, under the tour's top buttons and above the bar.
     expect(bubble!.top, `${where}: tooltip below the top buttons`).toBeGreaterThanOrEqual(56);
