@@ -10,7 +10,8 @@ import { currentLocale } from "@/lib/i18n/ownerLocale";
 import { PENDING_EMAIL_KEY } from "./confirm-email";
 import { K, KyaLabel, KyaSecondaryButton } from "@/components/kya";
 import { FrontDoorBody, FrontDoorError, FrontDoorHeader, FrontDoorPage, LegalLinks } from "@/components/frontDoor";
-import { CheckEmailView } from "@/components/CheckEmailView";
+import { CheckEmailView, NewestLinkSent } from "@/components/CheckEmailView";
+import { CONFIRM_RESEND_COOLDOWN_S, confirmRedirectTo, takeSignInPrefill } from "@/lib/confirmResend";
 import { SocialSignInButtons } from "@/components/SocialSignInButtons";
 import { authErrorMessage } from "@/lib/authErrorMessage";
 import { existingAccountSignal } from "@/lib/signupExisting";
@@ -59,6 +60,15 @@ function AuthPage() {
   // Sign-up hit an email that already has an account: that address, for the
   // "You already have an account" card and its resend button.
   const [existingEmail, setExistingEmail] = useState<string | null>(null);
+  // Came from /link-expired for an account that's already confirmed: fill in
+  // the email and say why they're here. Read after mount (sessionStorage).
+  const [confirmedNotice, setConfirmedNotice] = useState(false);
+  useEffect(() => {
+    const prefill = takeSignInPrefill();
+    if (!prefill) return;
+    setEmail(prefill.email);
+    setConfirmedNotice(true);
+  }, []);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -298,6 +308,11 @@ function AuthPage() {
       <FrontDoorBody>
         {error && <FrontDoorError>{error}</FrontDoorError>}
         {existingEmail && !forgot && <ExistingAccountCard email={existingEmail} />}
+        {confirmedNotice && !forgot && mode === "signin" && (
+          <div role="status" className="rounded-[16px] border-[1.5px] bg-white px-4 py-3 text-[14.5px] font-[600] leading-[1.45]" style={{ borderColor: K.forest, color: K.forest }}>
+            {t("auth.alreadyConfirmedSignIn", "Your email is already confirmed. Sign in to continue.")}
+          </div>
+        )}
 
         {forgot ? (
           <form
@@ -469,7 +484,6 @@ function AuthPage() {
   );
 }
 
-const RESEND_COOLDOWN_S = 30;
 
 /** Shown when sign-up meets an email that already has an account. Supabase
  *  doesn't say whether that account is confirmed (it hides which emails are
@@ -497,11 +511,11 @@ function ExistingAccountCard({ email }: { email: string }) {
       const { error } = await supabase.auth.resend({
         type: "signup",
         email,
-        options: { emailRedirectTo: window.location.origin + "/welcome" },
+        options: { emailRedirectTo: confirmRedirectTo() },
       });
       if (error) throw error;
       setSent(true);
-      setCooldown(RESEND_COOLDOWN_S);
+      setCooldown(CONFIRM_RESEND_COOLDOWN_S);
       track("signup_existing_resend", { ok: true });
     } catch (err) {
       setError(authErrorMessage(err, t("auth.couldNotResendConfirmation", "Couldn't resend. Try again in a moment.")));
@@ -522,16 +536,10 @@ function ExistingAccountCard({ email }: { email: string }) {
       <p className="m-0 text-[14.5px] font-[600] leading-[1.45]" style={{ color: K.forest }}>
         {t("auth.alreadyHaveAccountCheckInbox", "You already have an account — check your inbox or resend the confirmation.")}
       </p>
-      {sent && (
-        <p className="m-0 text-[13.5px] leading-[1.45]" style={{ color: K.ink }}>
-          <Trans
-            i18nKey="auth.confirmationResentTo"
-            defaults="We sent a new link to <b>{{email}}</b>. Check spam if it isn't there."
-            values={{ email }}
-            components={{ b: <strong className="font-[700] [overflow-wrap:anywhere]" /> }}
-          />
-        </p>
-      )}
+      <p className="m-0 text-[13.5px] leading-[1.45]" style={{ color: K.ink }}>
+        {t("confirmNote.newestLinkOnly", "If you ask for another email, only the link in the newest one will work.")}
+      </p>
+      {sent && <NewestLinkSent />}
       {error && <p className="m-0 text-[13.5px] font-[500] leading-[1.45]" style={{ color: K.red }}>{error}</p>}
       <KyaSecondaryButton
         className="w-full"

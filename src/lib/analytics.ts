@@ -43,6 +43,10 @@ export type AnalyticsEventName =
   // Sign-up met an email that already has an account; and the resend from its card.
   | "signup_existing_account"
   | "signup_existing_resend"
+  // An emailed confirmation link Supabase rejected (expired, used, or replaced)
+  // landed on /link-expired; and the "Send a new link" tap there.
+  | "confirm_link_expired"
+  | "confirm_resend_from_expired"
   | "guided_editor_opened"
   | "setup_stop_point_viewed"
   | "setup_stop_point_choice"

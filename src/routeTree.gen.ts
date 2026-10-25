@@ -17,6 +17,7 @@ import { Route as DeleteAccountRouteImport } from './routes/delete-account'
 import { Route as FoundingRouteImport } from './routes/founding'
 import { Route as GetRouteImport } from './routes/get'
 import { Route as GetAppRouteImport } from './routes/get-app'
+import { Route as LinkExpiredRouteImport } from './routes/link-expired'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as RedeemRouteImport } from './routes/redeem'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
@@ -143,6 +144,11 @@ const GetRoute = GetRouteImport.update({
 const GetAppRoute = GetAppRouteImport.update({
   id: '/get-app',
   path: '/get-app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LinkExpiredRoute = LinkExpiredRouteImport.update({
+  id: '/link-expired',
+  path: '/link-expired',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PrivacyRoute = PrivacyRouteImport.update({
@@ -641,6 +647,7 @@ export interface FileRoutesByFullPath {
   '/founding': typeof FoundingRoute
   '/get': typeof GetRoute
   '/get-app': typeof GetAppRoute
+  '/link-expired': typeof LinkExpiredRoute
   '/privacy': typeof PrivacyRoute
   '/redeem': typeof RedeemRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -738,6 +745,7 @@ export interface FileRoutesByTo {
   '/founding': typeof FoundingRoute
   '/get': typeof GetRoute
   '/get-app': typeof GetAppRoute
+  '/link-expired': typeof LinkExpiredRoute
   '/privacy': typeof PrivacyRoute
   '/redeem': typeof RedeemRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -830,6 +838,7 @@ export interface FileRoutesById {
   '/founding': typeof FoundingRoute
   '/get': typeof GetRoute
   '/get-app': typeof GetAppRoute
+  '/link-expired': typeof LinkExpiredRoute
   '/privacy': typeof PrivacyRoute
   '/redeem': typeof RedeemRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -929,6 +938,7 @@ export interface FileRouteTypes {
     | '/founding'
     | '/get'
     | '/get-app'
+    | '/link-expired'
     | '/privacy'
     | '/redeem'
     | '/reset-password'
@@ -1026,6 +1036,7 @@ export interface FileRouteTypes {
     | '/founding'
     | '/get'
     | '/get-app'
+    | '/link-expired'
     | '/privacy'
     | '/redeem'
     | '/reset-password'
@@ -1117,6 +1128,7 @@ export interface FileRouteTypes {
     | '/founding'
     | '/get'
     | '/get-app'
+    | '/link-expired'
     | '/privacy'
     | '/redeem'
     | '/reset-password'
@@ -1216,6 +1228,7 @@ export interface RootRouteChildren {
   FoundingRoute: typeof FoundingRoute
   GetRoute: typeof GetRoute
   GetAppRoute: typeof GetAppRoute
+  LinkExpiredRoute: typeof LinkExpiredRoute
   PrivacyRoute: typeof PrivacyRoute
   RedeemRoute: typeof RedeemRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
@@ -1299,6 +1312,13 @@ declare module '@tanstack/react-router' {
       path: '/get-app'
       fullPath: '/get-app'
       preLoaderRoute: typeof GetAppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/link-expired': {
+      id: '/link-expired'
+      path: '/link-expired'
+      fullPath: '/link-expired'
+      preLoaderRoute: typeof LinkExpiredRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/privacy': {
@@ -2148,6 +2168,7 @@ const rootRouteChildren: RootRouteChildren = {
   FoundingRoute: FoundingRoute,
   GetRoute: GetRoute,
   GetAppRoute: GetAppRoute,
+  LinkExpiredRoute: LinkExpiredRoute,
   PrivacyRoute: PrivacyRoute,
   RedeemRoute: RedeemRoute,
   ResetPasswordRoute: ResetPasswordRoute,

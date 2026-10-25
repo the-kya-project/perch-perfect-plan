@@ -254,7 +254,10 @@ export const Route = createFileRoute("/api/public/hooks/onboarding-emails")({
           if (!email) return { ok: false as const, skipped: "no-email" };
           const profile = profileById.get(userId);
           const firstName = ((profile?.display_name ?? "").trim().split(/\s+/)[0] || "").trim() || undefined;
-          const locale = profile?.locale ?? undefined;
+          // profiles.locale, else the language their auth emails used (null
+          // locales got English onboarding after Dutch confirmation emails).
+          const { lifecycleLocaleFor } = await import("@/lib/emailLocale.server");
+          const locale = await lifecycleLocaleFor(supabaseAdmin, userId, profile?.locale);
           const unsub = unsubUrl(appUrl, userId, "onboarding");
           const hasBird = ctaVariant === "standard";
           const bird = account.linkBird;

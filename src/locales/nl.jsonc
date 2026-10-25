@@ -237,6 +237,8 @@
   "addressInput.zip": "Postcode",
   // By creating an account you agree to our <terms>Terms of service</terms> and <privacy>Privacy policy</privacy>.
   "auth.agreeToTermsOfService": "Door een account aan te maken ga je akkoord met onze <terms>servicevoorwaarden</terms> en ons <privacy>privacybeleid</privacy>.",
+  // Your email is already confirmed. Sign in to continue.
+  "auth.alreadyConfirmedSignIn": "Je e-mailadres is al bevestigd. Log in om verder te gaan.",
   // Already confirmed? Sign in below.
   "auth.alreadyConfirmedSignInBelow": "Al bevestigd? Log hieronder in.",
   // You already have an account — check your inbox or resend the confirmation.
@@ -245,8 +247,6 @@
   "auth.appleSignInFailed": "Inloggen met Apple mislukt.",
   // Back to sign in
   "auth.backToSignIn": "Terug naar inloggen",
-  // We sent a new link to <b>{{email}}</b>. Check spam if it isn't there.
-  "auth.confirmationResentTo": "We hebben een nieuwe link gestuurd naar <b>{{email}}</b>. Kijk ook in je spammap als hij er niet is.",
   // Continue with Apple
   "auth.continueWithApple": "Doorgaan met Apple",
   // Continue with Google
@@ -2465,6 +2465,12 @@
   "confirmEmail.pageTitle": "Bevestig je e-mail — Kya & Co.",
   // Sign in
   "confirmEmail.signIn": "Inloggen",
+  // Emails can sometimes take a few minutes to arrive, and iCloud and some other providers can be slower. Check your spam or junk folder too.
+  "confirmNote.mayTakeMinutes": "Soms duurt het een paar minuten voordat een e-mail aankomt, en bij iCloud en sommige andere providers kan het langer duren. Kijk ook in je spam- of ongewenste map.",
+  // If you ask for another email, only the link in the newest one will work.
+  "confirmNote.newestLinkOnly": "Vraag je nog een e-mail aan, dan werkt alleen de link in de nieuwste.",
+  // Sent. Use the link in this newest email.
+  "confirmNote.sentUseNewest": "Verstuurd. Gebruik de link in deze nieuwste e-mail.",
   // Cancel
   "confirmSheet.cancel": "Annuleren",
   // Close
@@ -4435,6 +4441,26 @@
   "legal.termsMetaTitle": "Servicevoorwaarden — Kya & Co.",
   // Terms of service
   "legal.termsTitle": "Servicevoorwaarden",
+  // Already confirmed?
+  "linkExpired.alreadyConfirmed": "Al bevestigd?",
+  // Couldn't send a new link. Try again in a moment.
+  "linkExpired.couldNotSend": "Een nieuwe link versturen lukte niet. Probeer het zo nog eens.",
+  // Your email
+  "linkExpired.email": "Je e-mailadres",
+  // Enter the email you signed up with.
+  "linkExpired.enterEmail": "Vul het e-mailadres in waarmee je je hebt aangemeld.",
+  // It may have been replaced by a newer email, or it's too old to use. We can send you a fresh one.
+  "linkExpired.line": "Misschien is hij vervangen door een nieuwere e-mail, of is hij te oud. We kunnen je een nieuwe sturen.",
+  // Link expired — Kya & Co.
+  "linkExpired.pageTitle": "Link verlopen — Kya & Co.",
+  // Send a new link
+  "linkExpired.sendNewLink": "Stuur een nieuwe link",
+  // Send a new link ({{cooldown}}s)
+  "linkExpired.sendNewLinkIn": "Stuur een nieuwe link ({{cooldown}}s)",
+  // Sign in
+  "linkExpired.signIn": "Inloggen",
+  // This link has expired
+  "linkExpired.title": "Deze link is verlopen",
   // Back to home
   "loadError.backHome": "Terug naar home",
   // Check your connection and try again.
